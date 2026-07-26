@@ -1,7 +1,12 @@
 use super::*;
+use std::sync::LazyLock;
+use tokio::sync::Mutex;
+
+static TEST_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 #[tokio::test]
 async fn cache_is_bounded_to_connection_limit() {
+    let _guard = TEST_LOCK.lock().await;
     clear().await;
     for index in 0..(CONNECTION_LIMIT + 4) {
         let connection_id = format!("provider-{index}");
@@ -20,6 +25,7 @@ async fn cache_is_bounded_to_connection_limit() {
 
 #[tokio::test]
 async fn removes_only_the_selected_connection() {
+    let _guard = TEST_LOCK.lock().await;
     clear().await;
     let xai_generation = super::super::credential_epoch::current("xai").unwrap();
     let moonshot_generation = super::super::credential_epoch::current("moonshot").unwrap();
@@ -32,6 +38,7 @@ async fn removes_only_the_selected_connection() {
 
 #[tokio::test]
 async fn old_generation_is_hidden_immediately() {
+    let _guard = TEST_LOCK.lock().await;
     clear().await;
     let generation = super::super::credential_epoch::current("deepseek").unwrap();
     put("deepseek", generation, RemoteData::default()).await;
