@@ -1,62 +1,65 @@
 # Beaver
 
-Agentic desktop application (Tauri 2 + React 19) for local LLMs via Ollama and cloud providers (Groq, Gemini, Mistral, OpenAI, OpenRouter, DeepSeek, Cerebras, xAI, Moonshot Kimi, Z.ai GLM). Tabbed chat, tools, subagents, MCP connectors, automated wakeups, forecasting, Git workflows, file previews, and an integrated terminal.
+Beaver is an agentic desktop workspace for local models through Ollama and cloud models through API keys or web accounts. It combines conversations, tools, planning, subagents, persistent memory, an embedded browser, Git workflows, forecasting, MCP connectors, automated wakeups, file previews, and a terminal in one application.
 
 ## Features
 
-- **Local Agent**: chat with any Ollama model or cloud provider, tabbed conversation management, manual/auto/chat permissions for tools, advanced reasoning, model favorites, projects, and `AGENTS.md` context
-- **Agent planning**: Plan mode with read-only exploration, local Markdown plans, approval gating, and implementation handoff
-- **Agent workflow UI**: live todo progress, hidden todo history for the agent, interactive choices, and safe structured diagnostics after stream/tool failures
-- **Tools**: bash, file read/write, web fetch/search, Git actions, file tree, file preview, Office preview, link preview, MCP tools, forecasting tools, diagnostics, todos, and interactive choices
-- **Session branching**: clone a chat from any message into a header tab, optionally carry forward a hidden summary, and keep branched sessions out of the main sidebar
-- **Archived chats**: deleting a chat archives it first; restore sessions or permanently delete them from Settings
-- **Parent-controlled subagents**: run isolated assistant sessions coordinated by the parent agent, with live status, hidden report injection, reusable child sessions, and safer cleanup of queued runs
-- **Wakeups**: internal scheduler that prompts an LLM at a fixed time (one-time / daily / weekly), with responses stored in a dedicated conversation per model
-- **Forecast**: time-series forecasting with local and cloud models, history, comparisons, scenarios, notes, exports, and agent-callable analysis
-- **MCP connectors**: cloud and local connectors with OAuth or environment tokens, status testing, and per-chat activation
-- **Gateway / channels**: optional background gateway for external channels such as Telegram, Slack, and Discord
-- **API keys**: centralized management for LLM, search, forecast, MCP, and gateway credentials. Keys are stored in an **XChaCha20-Poly1305 encrypted vault** (master key in the OS keyring) — never plaintext on disk, never exposed to the frontend
-- **Bundled Ollama**: downloaded on first launch, no need to install Ollama separately
-- **Git branch management**: branch selector in chat with switching, inline creation, worktree navigation, real-time file watcher, conflict dialog with automatic WIP commit
-- **Integrated terminal**: cross-platform PTY with tabs, Cmd/Ctrl+J shortcut
-- **Personality and memory**: edit Markdown context files, personality injection, and local memory folders
-- **Context usage breakdown**: the chat input ring shows a compact breakdown by messages, tools, MCP/connectors, skills, meta context, and system prompt
-- **Onboarding**: a first-launch screen to set up preferences and Ollama
-- **Ollama browser**: model search, pull, modelfile editing
+- **Local Agent and tools**: use local or cloud models with files, shell commands, web search, Office documents, Git, MCP, Forecast, diagnostics, todos, and interactive choices
+- **Planning and permissions**: explore safely in Plan mode, save Markdown plans, approve implementation, and choose automatic, manual, or per-chat tool permissions
+- **Conversations and projects**: manage tabbed chats, attachments, favorites, queued messages, session branches, archived chats, hidden summaries, and project folders
+- **Parent-controlled subagents**: coordinate isolated child sessions, follow their live status, correct or reuse them, review their changes, and clean up their worktrees safely
+- **Persistent memory**: keep optional global and per-project memory with manual or automatic modes, bounded summaries, topic files, live activity, and read-only access for subagents
+- **Embedded browser**: browse in up to ten tabs per conversation, keep signed-in sessions, detect local development sites, and share the side panel with previews and Forecast. Available on macOS and Windows
+- **Complete Git workflow**: create, switch, merge, and delete branches or worktrees; commit and push; browse uncommitted changes; and inspect recent or historical diffs
+- **Forecast V2**: audit time-series data, select models manually or automatically, run local or cloud forecasts, compare backtests, build ensembles, explore advanced analysis, and export results
+- **Providers and usage**: connect OpenAI/Codex, Grok, and Kimi through web authentication, use API-key providers, and view available limits, credits, token usage, request counts, and estimated costs
+- **MCP connectors and channels**: activate local or cloud MCP connectors per chat and optionally connect the background Gateway to Telegram, Slack, or Discord
+- **Wakeups**: schedule one-time, daily, or weekly prompts with the internal scheduler and keep each result in a dedicated conversation
+- **Managed Ollama runtime**: download Ollama on first launch, reuse an existing daemon when available, browse and install models, edit modelfiles, and configure model parameters or system prompts
+- **Desktop workspace**: use the cross-platform tabbed terminal, file tree, rich text and Office previews, link previews, context usage breakdown, six visual themes, and the interactive Beaver companion
+- **Guided onboarding and migration**: configure Beaver on first launch and import instructions, skills, or rules from Claude Code, Codex, Agents, Hermes, Qwen Code, ZCode, OpenClaw, OpenCode, and Kimi Code
+- **Secure local storage**: keep credentials in an XChaCha20-Poly1305 encrypted vault whose master key stays in the OS keyring; raw secrets never reach the frontend
 
 ## Supported providers
 
-| Type | Provider | Limit / pricing label |
+| Type | Provider | Connection |
 |---|---|---|
-| LLM | [Groq](https://console.groq.com/keys) | 14,400 req/day |
-| LLM | [Google Gemini](https://aistudio.google.com/app/apikey) | 1M tokens/min |
-| LLM | [Mistral](https://console.mistral.ai/api-keys) | 1B tokens/month |
-| LLM | [Cerebras](https://cloud.cerebras.ai/) | 1M tokens/day |
-| LLM | [OpenRouter](https://openrouter.ai/settings/keys) | 30+ free models |
-| LLM | [OpenAI](https://platform.openai.com/api-keys) | GPT-5.6 Sol / Terra / Luna |
-| LLM | [DeepSeek](https://platform.deepseek.com/api_keys) | Low-cost ($0.14/Mtok) |
-| LLM | [xAI](https://console.x.ai) | Grok 4.5 / 4.3 / 4.20 |
-| LLM | [Moonshot Kimi](https://platform.kimi.ai/console/api-keys) | Low-cost ($0.60/Mtok) |
-| LLM | [Z.ai GLM](https://z.ai/manage-apikey/apikey-list) | GLM-4.5-Flash free |
-| Search | [Brave Search](https://api-dashboard.search.brave.com/app/keys) | 2,000 req/month |
-| Search | [Exa](https://dashboard.exa.ai/api-keys) | 1,000 req/month |
-| Scraping | [Firecrawl](https://www.firecrawl.dev/app/api-keys) | 500 credits |
-| Forecast | [Nixtla TimeGPT](https://dashboard.nixtla.io/) | Cloud forecast API |
+| LLM | [Groq](https://console.groq.com/keys) | API key |
+| LLM | [Google Gemini](https://aistudio.google.com/app/apikey) | API key |
+| LLM | [Mistral](https://console.mistral.ai/api-keys) | API key |
+| LLM | [Cerebras](https://cloud.cerebras.ai/) | API key |
+| LLM | [OpenRouter](https://openrouter.ai/settings/keys) | API key |
+| LLM | [OpenAI](https://platform.openai.com/api-keys) | API key or OpenAI/Codex web account |
+| LLM | [DeepSeek](https://platform.deepseek.com/api_keys) | API key |
+| LLM | [xAI](https://console.x.ai) | API key or Grok web account |
+| LLM | [Moonshot Kimi](https://platform.kimi.ai/console/api-keys) | API key or experimental Kimi web account |
+| LLM | [Z.ai GLM](https://z.ai/manage-apikey/apikey-list) | API key |
+| Search | [Brave Search](https://api-dashboard.search.brave.com/app/keys) | API key |
+| Search | [Exa](https://dashboard.exa.ai/api-keys) | API key |
+| Search / scraping | [Firecrawl](https://www.firecrawl.dev/app/api-keys) | API key |
+| Search | SearXNG | Local fallback without an API key |
+| Forecast | [Nixtla TimeGPT](https://dashboard.nixtla.io/) | API key |
+
+Models, quotas, and prices can change at the provider. Beaver displays current account information when the provider makes it available.
 
 ## Forecast models
 
-Beaver includes a Forecast workspace for time-series analysis:
+Beaver includes a dedicated Forecast workspace for time-series analysis:
 
 - **Local families**: Amazon Chronos / Chronos-Bolt, Google TimesFM, Datadog Toto 2.0, Salesforce MOIRAI 2.0, IBM FlowState, PriorLabs TabPFN-TS, NX-AI TiRex, Kairos, and THUML Sundial
 - **Cloud family**: Nixtla TimeGPT-2 / TimeGPT-2.1
-- **Workflow**: run forecasts, keep analysis history, compare runs, create scenarios, add notes, export results, and call forecast tools from the Local Agent
+- **Selection and data quality**: choose a model manually or let Beaver select one from the data profile, hardware, horizon, frequency, uncertainty needs, and model capabilities
+- **Evaluation and analysis**: run rolling backtests, compare baselines and models, inspect MASE, sMAPE, MAE, coverage, anomalies, drift, decomposition, variable importance, and weighted ensembles
+- **Workspace and exports**: explore Data, Forecast, Evaluation, Comparison, Scenarios, Notes, and Report views, then export to CSV, Excel, JSON, PNG, SVG, PDF, or the clipboard
 
 ## Technical stack
 
 - **Backend**: Rust + Tauri 2
 - **Frontend**: React 19 + TypeScript + Vite
-- **LLM runtime**: Ollama (bundled as a sidecar)
+- **Local LLM runtime**: Ollama managed and downloaded by Beaver
 - **Forecast runtime**: local forecast sidecar plus optional Nixtla API
+- **Browser runtime**: sandboxed Chromium Embedded Framework on macOS and Windows
+- **Search runtime**: Brave, Exa, and Firecrawl with a local SearXNG fallback
 - **Connector runtime**: MCP bridge, OAuth storage, and Gateway channel service
 - **Security**: XChaCha20-Poly1305 vault, master key in the OS keyring (macOS Keychain / Windows DPAPI / Linux Secret Service)
 - **File watching**: `notify` crate (FSEvents on macOS, inotify on Linux, ReadDirectoryChangesW on Windows)
@@ -108,6 +111,10 @@ Downloads the latest release and launches the Windows NSIS `-setup.exe` installe
 
 Updates are automatic: a notification appears in the app when a new version is available. One click and the app updates itself.
 
+### From CL-GO to Beaver
+
+Beaver is the new name of CL-GO. Existing users migrate through the CL-GO 1.0.2 bridge release and keep their conversations, settings, credentials, MCP connectors, memory, Forecast models, Ollama data, and browser sessions. Historical internal identifiers and the data directory described below are intentionally preserved for compatibility.
+
 ---
 
 ## Development
@@ -129,6 +136,8 @@ cd src-tauri && bash scripts/download-ollama.sh
 ```bash
 npm run tauri dev       # Dev mode (hot reload)
 npm run tauri build     # Release build (.dmg / -setup.exe / .deb)
+npm run lint            # Frontend lint and React boundary checks
+npm test                # Frontend and embedded browser tests
 npx tsc --noEmit        # TypeScript check
 cd src-tauri && cargo check    # Rust check
 cd src-tauri && cargo clippy --all-targets  # Strict lint
@@ -140,56 +149,44 @@ cd src-tauri && cargo test     # Unit tests
 ```
 src-tauri/                # Rust + Tauri backend
 ├── src/
-│   ├── commands/         # Tauri IPC (agent_chat, heartbeat, api_keys, llm, forecast, mcp, gateway, ...)
+│   ├── commands/         # Tauri commands grouped by application domain
 │   ├── services/
-│   │   ├── agent_local/  # Sessions, tools, permissions, subagents, todos, diagnostics, Plan mode
-│   │   ├── llm/          # Unified OpenAI-compatible client, catalog, SSE streaming
-│   │   ├── search/       # Brave, Exa, Firecrawl + routing
-│   │   ├── forecast/     # Forecast catalog, runs, scenarios, notes, exports, sidecar runtime
-│   │   ├── mcp_bridge/   # MCP connector config, process manager, stdio/HTTP bridge
-│   │   ├── mcp_oauth/    # OAuth callback, token storage, connector auth
-│   │   ├── gateway/      # External channels, background runtime, audit log
-│   │   ├── scheduler/    # Internal Tokio scheduler (wakeups)
-│   │   ├── git/          # Branch ops, status, watcher, worktree listing (git2)
-│   │   ├── terminal/     # Cross-platform PTY (portable-pty)
-│   │   ├── file_preview/ # Text, binary, image, spreadsheet, and document previews
-│   │   ├── link_preview.rs  # URL metadata preview
-│   │   ├── compress.rs   # Context compression helpers
-│   │   ├── codex_client.rs / codex_oauth.rs  # Codex-compatible client and OAuth
+│   │   ├── agent_local/  # Sessions, tools, permissions, plans, memory, subagents
+│   │   ├── agent_import/ # Guided import from other agent applications
+│   │   ├── browser/      # Sandboxed Chromium sessions and native views
+│   │   ├── llm/          # Unified cloud client, catalog, reasoning, streaming
+│   │   ├── codex_client/ and *_oauth/  # OpenAI, Grok, Kimi, and MCP web auth
+│   │   ├── provider_usage/  # Limits, usage history, and cost estimates
+│   │   ├── search/ and searxng/  # Cloud search and local fallback
+│   │   ├── forecast/     # Data audits, models, runs, evaluations, exports
+│   │   ├── mcp_bridge/ and mcp_oauth/  # Local and cloud MCP connectors
+│   │   ├── gateway/      # Telegram, Slack, and Discord background channels
+│   │   ├── git/          # Branches, worktrees, commits, pushes, merges, diffs
+│   │   ├── scheduler/ and terminal/  # Wakeups and cross-platform PTY
 │   │   ├── paths.rs      # Centralized cross-platform data path
 │   │   ├── vault.rs      # XChaCha20-Poly1305 encrypted vault
-│   │   ├── api_keys.rs   # API key management (Zeroizing in memory)
-│   │   ├── favorite_models.rs  # Favorite model persistence
-│   │   ├── config.rs     # Tolerant config.json read/write
-│   │   ├── stream_utils.rs  # Shared compute_tps, clean_think_tags
-│   │   └── ollama_lifecycle.rs  # Ollama sidecar management
-│   ├── tray.rs           # Tray icon (dynamic FR/EN labels)
-│   ├── storage_migration.rs  # One-shot migration from legacy CL-GO
-│   ├── ollama_polling.rs # Ollama status polling
-│   └── models/           # ScheduledWakeup, HeartbeatConfig schemas
+│   │   └── private_store/  # Private files and platform permissions
+│   ├── tray.rs           # System tray integration
+│   ├── storage_migration.rs  # Storage initialization and compatibility
+│   └── ollama_polling.rs # Ollama status polling
 └── resources/            # Icons and static resources
 
 src/                      # React frontend
 ├── components/
-│   ├── agent-local/      # Chat, permissions, tabs, tools, file tree, previews, forecast panel, session branching, archived chats
-│   ├── heartbeat/        # Wakeup grid, creation popup, details
-│   ├── forecast/         # Forecast workspace, charts, scenarios, notes, model manager
-│   ├── forecast-docs/    # In-app Forecast documentation
-│   ├── ollama/           # Model browser
-│   ├── modelfile/        # Modelfile editor
-│   ├── personality/      # Markdown viewer
-│   ├── connectors/       # MCP connector configuration
-│   ├── channels/         # Gateway channel configuration (Telegram, Slack, Discord)
-│   ├── onboarding/       # First-launch setup screen
-│   ├── settings/         # General, Ollama, connectors, channels, API keys, forecast, LLM, advanced, archived chats
-│   ├── terminal/         # Integrated PTY terminal
-│   ├── api-keys/         # API key configuration
-│   ├── file-tree/        # File tree navigation
-│   ├── file-preview/     # Text, binary, image previews
-│   ├── layout/           # Sidebar, toolbar, drag region
-│   └── ui/               # Reusable primitives
+│   ├── agent-local/ and agent-side-panel/  # Chat and shared side panel
+│   ├── agent-import/     # External assistant migration wizard
+│   ├── internal-browser/ # Embedded browser interface
+│   ├── forecast/         # Workbench, charts, evaluations, notes, models
+│   ├── providers/        # API/web connections and usage details
+│   ├── connectors/ and channels/  # MCP and Gateway configuration
+│   ├── ollama/           # Local model browser and customization
+│   ├── heartbeat/        # Wakeup planning and history
+│   ├── file-tree/ and file-preview/  # Navigation and rich previews
+│   ├── mascot/           # Interactive Beaver companion
+│   ├── onboarding/ and settings/  # Setup and application preferences
+│   └── terminal/ and ui/ # Integrated PTY and shared interface components
 ├── hooks/                # Logic extracted by domain
-├── lib/                  # platform.ts (OS detection)
+├── lib/                  # Shared helpers and platform detection
 ├── types/                # TS types aligned with Rust
 └── i18n/                 # 7 languages (FR, EN, DE, ES, IT, JA, ZH)
 ```
@@ -201,37 +198,28 @@ historical identifier for compatibility with existing installations:
 
 | Path | Contents |
 |---|---|
-| `secrets.enc` | Encrypted vault containing API keys |
-| `configured-providers.json` | Configured providers registry |
-| `config.json` | Heartbeat config + scheduled_wakeups + advanced settings |
+| `secrets.enc` | Encrypted API and OAuth credentials |
+| `configured-providers.json`, `provider-usage.json` | Connected providers and local usage history |
+| `config.json`, `heartbeat-runtime.json` | Application settings and wakeup runtime state |
 | `agent-sessions/*.json` | Local Agent conversations |
-| `agent-settings.json` | Default permission mode (auto/manual/chat) |
-| `agent-tabs.json` | Open tabs state |
-| `plans/<session_id>/*.md` | Local Markdown plans created by Plan mode |
-| `projects.json` | Saved projects |
-| `favorite-models.json` | Favorite model list |
-| `terminal-tabs.json` | Integrated terminal tabs |
-| `personality-injection.json` | Personality injection settings |
-| `memory/core/*.md` | Personality files |
-| `skills/` | Local skills |
-| `tool-results/` | Full persisted outputs for large tool results |
-| `mcp-connectors.json` | Configured MCP connectors |
-| `mcp-runtime/` | MCP runtime data |
-| `gateway-session-map.json` | Gateway-to-agent session links |
-| `forecast-analyses/` | Saved forecast analyses |
-| `forecast-notes/` | Forecast notes |
-| `forecast-models/` | Installed local forecast models |
-| `forecast-model-configs.json` | Forecast model configuration |
-| `forecast-selected-model.json` | Last selected forecast model |
-| `forecast-exports/` | Forecast exports |
-| `ollama-custom-models.json` | Custom Ollama model metadata |
-| `logs/wakeups.jsonl` | Wakeup execution history (rolling 500 lines) |
-| `logs/gateway-audit.jsonl` | Gateway audit log |
-| `logs/ollama-sidecar.log` | Ollama sidecar stderr logs (overwritten on each startup) |
+| `agent-settings.json`, `session-tabs.json` | Permissions and open conversation tabs |
+| `projects.json`, `favorite-models.json`, `terminal-tabs.json` | Projects, model favorites, and terminal tabs |
+| `AGENTS.md`, `external-agent-sources.json`, `agent-import-backups/` | Imported instructions, external sources, and safe backups |
+| `plans/`, `skills/`, `tool-results/` | Agent plans, local skills, and large tool outputs |
+| `subagent-changes/`, `subagent-worktrees/` | Isolated subagent changes and worktrees |
+| `memory/core/` | Personality and context Markdown files |
+| `memory/global/`, `memory/projects/`, `memory-settings.json` | Persistent global and per-project memory |
+| `browser/` | Encrypted browser sessions and private Chromium profile |
+| `mcp-connectors.json`, `mcp-runtime/` | MCP connector configuration and runtime data |
+| `gateway-session-map.json`, `logs/gateway-audit.jsonl` | Gateway session links and audit history |
+| `forecast-*` | Forecast analyses, data profiles, models, settings, drafts, notes, and exports |
+| `ollama-*` | Managed Ollama runtime, model metadata, and system prompt overrides |
+| `searxng-sidecar/` | Local SearXNG search runtime |
+| `logs/` | Bounded wakeup, gateway, Ollama, SearXNG, and tool logs |
 
-## Ollama — bundled sidecar
+## Ollama — managed runtime
 
-The application bundles **Ollama** as a sidecar to avoid external dependencies:
+Beaver manages **Ollama** locally so a separate manual installation is not required:
 
 - On first launch, a setup screen downloads Ollama automatically into `~/.local/share/cl-go-dash/ollama-bundle/`
 - On startup, the app checks whether an Ollama daemon is already running on `localhost:11434`
@@ -239,6 +227,7 @@ The application bundles **Ollama** as a sidecar to avoid external dependencies:
 - If not, it launches its own downloaded binary
 - On close, the sidecar is stopped cleanly (Unix SIGTERM / Windows kill + 3s grace period)
 - On Linux, automatic GPU detection (AMD → ROCm archive, Nvidia → standard archive with CUDA)
+- Model parameters, system prompts, and complete modelfiles can be customized from Beaver
 
 **Models are shared** with Ollama.app if it is installed (`~/.ollama/models/`).
 
@@ -246,13 +235,17 @@ The application bundles **Ollama** as a sidecar to avoid external dependencies:
 
 - **Encrypted vault**: API keys encrypted with XChaCha20-Poly1305, master key in the native OS keyring (Keychain / DPAPI / Secret Service)
 - **JS never sees a key**: no Tauri command exposes `get_api_key`; secrets stay in the Rust backend and are zeroized after use
-- **Path traversal protection**: `canonicalize()` + `starts_with()` on every path coming from the frontend
+- **Path traversal protection**: paths requested through the frontend are validated, canonicalized, and kept inside their allowed roots
 - **Bounded collections**: ActiveStreams (32), PTY sessions (16), messages per session (2000), capped MCP JSON depth/size
 - **Secure HTTP for credentials**: redirects blocked, HTTPS enforced, error messages sanitized
 - **MCP hardening**: program allowlist, no shell, argument validation, environment isolation
+- **Protected browser**: sandboxed helpers, restricted navigation, blocked sensitive permissions, private profile, and encrypted restored tabs
+- **Verified updates**: strict release metadata, bounded downloads, SHA-256 manifests, health checks, and fail-closed installation
 - **Filtered logs**: provider HTTP bodies truncated to 200 chars, known credential formats redacted
 
 For the full threat model, vulnerability reporting policy, and safe usage guidance, see **[SECURITY.md](SECURITY.md)**.
+
+For the complete release history, see **[CHANGELOG.md](CHANGELOG.md)**.
 
 ## License
 
