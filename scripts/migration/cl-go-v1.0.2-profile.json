@@ -1,0 +1,648 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "version": "1.0.2",
+    "commit": "fdf43447ac8444683527cb06f9f5669407d7c12f",
+    "dataRoot": ".local/share/cl-go-dash",
+    "bundleIdentifier": "com.clgo.dash",
+    "keyringService": "cl-go-dash",
+    "keyringUser": "master-key"
+  },
+  "transientRoots": [
+    "chronos-sidecar.pid",
+    "ollama-sidecar.pid",
+    "searxng-sidecar.pid",
+    "update-health"
+  ],
+  "domains": [
+    {
+      "id": "vault-api",
+      "profilePaths": [
+        "secrets.enc",
+        "configured-providers.json"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/paths.rs",
+          "snippets": [".join(\".local/share/cl-go-dash\")"]
+        },
+        {
+          "file": "src-tauri/src/services/vault.rs",
+          "snippets": [
+            "const KEYRING_SERVICE: &str = \"cl-go-dash\";",
+            "const MASTER_KEY_USER: &str = \"master-key\";",
+            "data_dir().join(\"secrets.enc\")"
+          ]
+        },
+        {
+          "file": "src-tauri/src/services/api_keys_registry.rs",
+          "snippets": [".join(\"configured-providers.json\")"]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/vault_tests.rs"],
+      "manualGates": ["Teste une clé factice dans le vrai keyring de chaque OS."]
+    },
+    {
+      "id": "llm-oauth",
+      "profilePaths": ["oauth-providers/kimi-device-id"],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/llm_oauth/types.rs",
+          "snippets": ["\"_llm_oauth_xai\"", "\"_llm_oauth_kimi\""]
+        },
+        {
+          "file": "src-tauri/src/services/llm_oauth/headers.rs",
+          "snippets": ["\"oauth-providers/kimi-device-id\""]
+        },
+        {
+          "file": "src-tauri/src/services/llm_oauth/xai.rs",
+          "snippets": ["\"http://127.0.0.1:56121/callback\""]
+        },
+        {
+          "file": "src-tauri/src/services/codex_oauth/store.rs",
+          "snippets": ["const VAULT_KEY: &str = \"_codex_oauth\";"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/llm_oauth/callback_tests.rs",
+        "src-tauri/src/services/llm_oauth/device_flow_tests.rs",
+        "src-tauri/src/services/codex_oauth/store_tests.rs"
+      ],
+      "manualGates": ["Rafraîchis réellement les jetons xAI, Kimi et Codex configurés sans reconnexion."]
+    },
+    {
+      "id": "mcp-oauth",
+      "profilePaths": [
+        "mcp-connectors.json",
+        "mcp-runtime/compatibility-marker"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/mcp_bridge/config.rs",
+          "snippets": ["const FILENAME: &str = \"mcp-connectors.json\";"]
+        },
+        {
+          "file": "src-tauri/src/services/mcp_oauth/static_credentials.rs",
+          "snippets": [
+            "\"_oauth_google_client_id\"",
+            "\"_oauth_github_client_id\""
+          ]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/mcp_bridge/config_persistence_tests.rs",
+        "src-tauri/src/services/mcp_oauth/flow_auth_tests.rs"
+      ],
+      "manualGates": ["Rouvre un connecteur OAuth réel sans nouvelle autorisation."]
+    },
+    {
+      "id": "agent-sessions",
+      "profilePaths": [
+        "agent-sessions/index.json",
+        "agent-sessions/550e8400-e29b-41d4-a716-446655440000.json",
+        "plans/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440001.md",
+        "tool-results/550e8400-e29b-41d4-a716-446655440000/result.txt"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_local/session_index_io.rs",
+          "snippets": [".join(\"agent-sessions\")", ".join(\"index.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/tool_plan_storage.rs",
+          "snippets": [".join(\"plans\")"]
+        },
+        {
+          "file": "src-tauri/src/services/attachment_access.rs",
+          "snippets": ["b\"cl-go-dash:attachment-access:v1\""]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/tool_result_budget.rs",
+          "snippets": [".join(\"tool-results\")"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/agent_local/session_store_tests.rs",
+        "src-tauri/src/services/attachment_access_tests.rs"
+      ],
+      "manualGates": ["Rouvre une vraie pièce jointe située hors du profil."]
+    },
+    {
+      "id": "tabs-permissions",
+      "profilePaths": [
+        "session-tabs.json",
+        "agent-settings.json",
+        "session-permissions/550e8400-e29b-41d4-a716-446655440000.json"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_local/session_tabs_file.rs",
+          "snippets": [".join(\"session-tabs.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/agent_settings.rs",
+          "snippets": [".join(\"agent-settings.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/session_permission_state.rs",
+          "snippets": [".join(\"session-permissions\")"]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/agent_local/session_permission_state_tests.rs"],
+      "manualGates": []
+    },
+    {
+      "id": "global-memory",
+      "profilePaths": [
+        "memory/core/user.md",
+        "memory/global/MEMORY.md",
+        "memory/global/topics/550e8400-e29b-41d4-a716-446655440002.md",
+        "memory-settings.json",
+        "personality-injection.json",
+        "inbox/idea-discovery.md",
+        "skills/custom/SKILL.md",
+        "translations/custom-model.fr.md"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_local/memory_paths.rs",
+          "snippets": ["data_dir().join(\"memory\")", "self.root.join(\"global\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/memory_settings.rs",
+          "snippets": [".join(\"memory-settings.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/personality_injection.rs",
+          "snippets": [".join(\"personality-injection.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/skill_catalog.rs",
+          "snippets": [".join(\"skills\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/translation_cache.rs",
+          "snippets": [".join(\"translations\")"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/agent_local/memory_store_tests.rs",
+        "src-tauri/src/storage_default_skills_tests.rs"
+      ],
+      "manualGates": []
+    },
+    {
+      "id": "project-memory",
+      "profilePaths": [
+        "memory/projects/d316bc220f786a9b54eca7b0/MEMORY.md",
+        "memory/projects/d316bc220f786a9b54eca7b0/.project-folder-migration-v2"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_local/memory_project_migration.rs",
+          "snippets": ["const PENDING_MARKER: &str = \".project-folder-migration-v2\";"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/agent_local/memory_project_id_tests.rs",
+        "src-tauri/src/services/agent_local/memory_project_migration_tests.rs"
+      ],
+      "manualGates": ["Ouvre un projet réel dont le chemin n’a pas changé."]
+    },
+    {
+      "id": "external-agents",
+      "profilePaths": [
+        "external-agent-sources.json",
+        "AGENTS.md",
+        "agent-import-backups/AGENTS.md.550e8400-e29b-41d4-a716-446655440003.bak"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_import/registry.rs",
+          "snippets": [".join(\"external-agent-sources.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_import/document_io.rs",
+          "snippets": ["data_dir.join(\"agent-import-backups\")"]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/agent_import/documents_persistence_tests.rs"],
+      "manualGates": []
+    },
+    {
+      "id": "git-projects",
+      "profilePaths": ["projects.json"],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_local/project_store.rs",
+          "snippets": [".join(\"projects.json\")"]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/agent_local/project_store.rs"],
+      "manualGates": ["Vérifie un vrai dépôt et un worktree externe au profil."]
+    },
+    {
+      "id": "subagents",
+      "profilePaths": [
+        "subagent-worktrees/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD",
+        "subagent-changes/550e8400-e29b-41d4-a716-446655440004.json",
+        "subagent-directory-repos/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/agent_local/subagent_worktree.rs",
+          "snippets": [".join(\"subagent-worktrees\")", "\"cl-go/subagent/{execution_id}\""]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/subagent_change_store.rs",
+          "snippets": [".join(\"subagent-changes\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/subagent_directory_workspace.rs",
+          "snippets": [".join(\"subagent-directory-repos\")"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/agent_local/subagent_worktree_ownership_tests.rs",
+        "src-tauri/src/services/agent_local/subagent_directory_recovery_tests.rs",
+        "src-tauri/src/services/agent_local/subagent_startup_cleanup_tests.rs"
+      ],
+      "manualGates": ["Récupère un vrai worktree non fusionné."]
+    },
+    {
+      "id": "ollama",
+      "profilePaths": [
+        "ollama-bundle/VERSION",
+        "ollama-custom-models.json",
+        "ollama-system-prompts.json"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/ollama_lifecycle.rs",
+          "snippets": [".join(\"ollama-bundle\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/model_customizations.rs",
+          "snippets": [".join(\"ollama-custom-models.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/agent_local/ollama_behavior_overrides.rs",
+          "snippets": [".join(\"ollama-system-prompts.json\")"]
+        }
+      ],
+      "evidence": ["src-tauri/src/commands/ollama_audit_tests.rs"],
+      "manualGates": ["Vérifie qu’aucun modèle Ollama réel n’est retéléchargé."]
+    },
+    {
+      "id": "forecast-v2",
+      "profilePaths": [
+        "forecast-analyses/index.json",
+        "forecast-analyses/550e8400-e29b-41d4-a716-446655440006.json",
+        "forecast-notes/550e8400-e29b-41d4-a716-446655440006/550e8400-e29b-41d4-a716-446655440007.md",
+        "forecast-exports/550e8400-e29b-41d4-a716-446655440006.json"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/forecast/storage_paths.rs",
+          "snippets": [".join(\"forecast-analyses\")", ".join(\"index.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/notes_paths.rs",
+          "snippets": ["const NOTES_DIRECTORY: &str = \"forecast-notes\";"]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/export/mod.rs",
+          "snippets": [".join(\"forecast-exports\")"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/forecast/storage_backtests.rs",
+        "src-tauri/src/services/forecast/storage_index_tests.rs"
+      ],
+      "manualGates": []
+    },
+    {
+      "id": "forecast-models",
+      "profilePaths": [
+        "forecast-models/chronos-bolt-tiny/.complete",
+        "forecast-models/chronos-bolt-tiny/.artifacts-v1.json",
+        "forecast-model-configs.json",
+        "forecast-selection-policy.json",
+        "forecast-selected-model.json"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/forecast/model_manager/mod.rs",
+          "snippets": ["data_dir().join(\"forecast-models\")", ".join(\".complete\")"]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/model_config/storage.rs",
+          "snippets": [".join(\"forecast-model-configs.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/selection_policy.rs",
+          "snippets": [
+            ".join(\"forecast-selection-policy.json\")",
+            ".join(\"forecast-selected-model.json\")"
+          ]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/forecast/model_manager/tests.rs"],
+      "manualGates": ["Vérifie qu’aucun modèle Forecast réel n’est retéléchargé."]
+    },
+    {
+      "id": "forecast-runtime",
+      "profilePaths": [
+        "forecast-sidecar/.venvs/chronos/bin/python",
+        "forecast-sidecar/.venvs/chronos/.requirements.stamp",
+        "forecast-sidecar/.runtime-cache/pip/compatibility-marker"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/forecast/model_manager/mod.rs",
+          "snippets": ["data_dir().join(\"forecast-sidecar\")"]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/sidecar_runtime_paths.rs",
+          "snippets": ["sidecar_dir.join(\".venvs\")"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/forecast/sidecar_runtime_tests.rs",
+        "src-tauri/src/storage_migration_files_tests.rs"
+      ],
+      "manualGates": ["Vérifie que le runtime Forecast réel n’est pas réinstallé."]
+    },
+    {
+      "id": "forecast-profiles-workbench",
+      "profilePaths": [
+        "forecast-data-profiles/550e8400-e29b-41d4-a716-446655440008.json",
+        "forecast-workbench/drafts.json",
+        "forecast-workbench/geometry.json"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/forecast/data_profiles.rs",
+          "snippets": ["\"forecast-data-profiles\""]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/workbench_drafts.rs",
+          "snippets": ["\"forecast-workbench\"", "\"drafts.json\""]
+        },
+        {
+          "file": "src-tauri/src/services/forecast/workbench_geometry.rs",
+          "snippets": ["\"forecast-workbench\"", "\"geometry.json\""]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/forecast/workbench_context_tests.rs"],
+      "manualGates": []
+    },
+    {
+      "id": "browser",
+      "profilePaths": [
+        "browser/profile/Default/Cookies",
+        "browser/sessions/550e8400-e29b-41d4-a716-446655440009.enc"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/browser/cef_engine_config.rs",
+          "snippets": [".join(\"browser\")", "browser_root.join(\"profile\")"]
+        },
+        {
+          "file": "src-tauri/src/services/browser/session_store.rs",
+          "snippets": [
+            "const SESSION_KEY_NAME: &str = \"browser-session-key-v1\";",
+            ".join(\"sessions\")"
+          ]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/browser/cookie_store_probe_tests.rs",
+        "src-tauri/src/services/browser/session_store_tests.rs"
+      ],
+      "manualGates": ["Reconnecte un site de test et redémarre complètement l’application."]
+    },
+    {
+      "id": "local-sites",
+      "profilePaths": [],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/browser/local_site_types.rs",
+          "snippets": ["\"browser-local-sites-changed-v1\""]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/browser/local_site_candidates_tests.rs"],
+      "manualGates": ["Redétecte et ouvre un vrai site local."]
+    },
+    {
+      "id": "providers",
+      "profilePaths": [
+        "provider-usage.json",
+        "favorite-models.json",
+        "litellm-models.json",
+        "searxng-sidecar/.venv/bin/python",
+        "searxng-sidecar/.source-archive.sha256",
+        "searxng-sidecar/settings.yml"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/provider_usage/ledger.rs",
+          "snippets": [".join(\"provider-usage.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/favorite_models.rs",
+          "snippets": [".join(\"favorite-models.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/llm/model_registry_refresh.rs",
+          "snippets": [".join(\"litellm-models.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/searxng/paths.rs",
+          "snippets": [
+            ".join(\"searxng-sidecar\")",
+            ".join(\".source-archive.sha256\")",
+            ".join(\"settings.yml\")"
+          ]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/provider_usage/ledger_tests.rs"],
+      "manualGates": []
+    },
+    {
+      "id": "gateway",
+      "profilePaths": [
+        "agent-sessions/gateway-session-map.json",
+        "logs/gateway-audit.jsonl"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/gateway/session_map.rs",
+          "snippets": [".join(\"gateway-session-map.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/gateway/security/audit.rs",
+          "snippets": [".join(\"logs/gateway-audit.jsonl\")"]
+        }
+      ],
+      "evidence": [
+        "src-tauri/src/services/gateway/service_tests.rs",
+        "src-tauri/src/services/gateway/security/audit_tests.rs"
+      ],
+      "manualGates": ["Fais transiter un message sur un canal de test non public."]
+    },
+    {
+      "id": "scheduler",
+      "profilePaths": [
+        "config.json",
+        "heartbeat-runtime.json",
+        "logs/wakeups.jsonl"
+      ],
+      "contracts": [
+        {
+          "file": "src-tauri/src/services/config.rs",
+          "snippets": [".join(\"config.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/scheduler/state.rs",
+          "snippets": [".join(\"heartbeat-runtime.json\")"]
+        },
+        {
+          "file": "src-tauri/src/services/scheduler/log.rs",
+          "snippets": [".join(\"wakeups.jsonl\")"]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/scheduler/next_fire_tests.rs"],
+      "manualGates": ["Laisse un réveil de test se déclencher après le redémarrage."]
+    },
+    {
+      "id": "terminal",
+      "profilePaths": ["terminal-tabs.json"],
+      "contracts": [
+        {
+          "file": "src/hooks/terminal-persistence.ts",
+          "snippets": ["\"cl-go-dash\"", "\"terminal-tabs.json\""]
+        }
+      ],
+      "evidence": ["src/hooks/__tests__/use-terminal.test.ts"],
+      "manualGates": ["Rouvre un onglet pointant vers un dossier réel."]
+    },
+    {
+      "id": "mascot",
+      "profilePaths": ["config.json"],
+      "contracts": [
+        {
+          "file": "src-tauri/src/models/mascot.rs",
+          "snippets": ["\"cl-go-beaver\""]
+        },
+        {
+          "file": "src-tauri/src/services/config.rs",
+          "snippets": ["config.mascot"]
+        }
+      ],
+      "evidence": ["src-tauri/src/commands/config_mascot_tests.rs"],
+      "manualGates": ["Vérifie visuellement position, taille et animation."]
+    },
+    {
+      "id": "theme-language",
+      "profilePaths": [],
+      "contracts": [
+        {
+          "file": "src/i18n/index.ts",
+          "snippets": ["\"clgo-language\""]
+        },
+        {
+          "file": "src/hooks/use-theme.ts",
+          "snippets": ["\"clgo-theme\""]
+        },
+        {
+          "file": "src/hooks/use-settings.ts",
+          "snippets": [
+            "\"clgo-font-size\"",
+            "\"clgo-font-family\"",
+            "\"clgo-code-theme\"",
+            "\"clgo-sidebar-expand\""
+          ]
+        },
+        {
+          "file": "src/hooks/forecast-panel-storage.ts",
+          "snippets": ["\"fc-panel-\"", "\"fc-panel-session-order\""]
+        },
+        {
+          "file": "src/hooks/file-preview-storage.ts",
+          "snippets": ["clgo-file-preview-tabs:", "clgo-file-preview-panel:"]
+        },
+        {
+          "file": "src/hooks/use-file-tree.ts",
+          "snippets": ["clgo-file-tree-width:"]
+        },
+        {
+          "file": "src/components/agent-local/use-conversation-collapse-state.ts",
+          "snippets": ["\"clgo-conversation-collapse-v1\""]
+        },
+        {
+          "file": "src/components/internal-browser/browser-native-occlusion.ts",
+          "snippets": ["\"clgo-browser-native-occlusion-v1\""]
+        },
+        {
+          "file": "src/components/settings/general-settings.tsx",
+          "snippets": ["\"clgo-link-preview\""]
+        },
+        {
+          "file": "src/components/ollama/system-prompt-warning-dialog.tsx",
+          "snippets": ["\"ollama-system-prompt-warning-dismissed-v1\""]
+        },
+        {
+          "file": "src/lib/onboarding-gate.ts",
+          "snippets": ["\"onboarding_completed\""]
+        },
+        {
+          "file": "src/lib/ollama-setup-gate.ts",
+          "snippets": ["\"ollama_setup_skipped\""]
+        }
+      ],
+      "evidence": [
+        "src/hooks/__tests__/use-theme.test.ts",
+        "src/hooks/__tests__/use-settings.test.ts"
+      ],
+      "manualGates": ["Vérifie le stockage WebView réel sur chaque OS."]
+    },
+    {
+      "id": "autostart",
+      "profilePaths": ["migrations/autostart-beaver-v1"],
+      "contracts": [
+        {
+          "file": "src-tauri/src/app_events.rs",
+          "snippets": ["\"--clgo-autostart\""]
+        },
+        {
+          "file": "src-tauri/src/services/autostart_migration.rs",
+          "scope": "migration",
+          "snippets": [
+            "const LEGACY_ENTRY_NAME: &str = \"CL-GO\";",
+            "const MARKER_DIRECTORY: &str = \"migrations\";",
+            "const MARKER_FILE: &str = \"autostart-beaver-v1\";"
+          ]
+        }
+      ],
+      "evidence": ["src-tauri/src/services/autostart_migration_tests.rs"],
+      "manualGates": ["Vérifie une seule entrée de démarrage sur chaque OS."]
+    },
+    {
+      "id": "single-instance",
+      "profilePaths": [],
+      "contracts": [
+        {
+          "file": "src-tauri/tauri.conf.json",
+          "snippets": ["\"identifier\": \"com.clgo.dash\""]
+        },
+        {
+          "file": "src-tauri/src/lib.rs",
+          "snippets": ["tauri_plugin_single_instance::init"]
+        }
+      ],
+      "evidence": ["scripts/release/package-migration.test.mjs"],
+      "manualGates": ["Lance CL-GO puis Beaver dans un test contrôlé sur chaque OS."]
+    }
+  ]
+}

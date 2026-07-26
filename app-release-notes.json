@@ -1,0 +1,491 @@
+{
+  "1.1.0": {
+    "de": [
+      "CL-GO heißt jetzt Beaver und erhält einen neuen Namen, ein neues Maskottchen, neue Symbole und aktualisierte Oberflächentexte.",
+      "Unterhaltungen, API-Verbindungen, Einstellungen, Speicher, Forecast-Modelle und das Browserprofil bleiben erhalten.",
+      "Die Migration ersetzt kompatibel frühere CL-GO-Pakete, Verknüpfungen und Autostart-Einträge auf jedem System.",
+      "Die Installation prüft das Beaver-Paket und den erfolgreichen Neustart; unter macOS schützt zusätzlich eine automatische Wiederherstellung."
+    ],
+    "en": [
+      "CL-GO is now Beaver, with a new name, mascot, icons, and updated interface text.",
+      "Your conversations, API connections, settings, memory, Forecast models, and browser profile remain in place.",
+      "The migration safely replaces earlier CL-GO packages, shortcuts, and startup entries on each system.",
+      "Installation verifies the Beaver package and its successful restart, with additional automatic recovery protection on macOS."
+    ],
+    "es": [
+      "CL-GO ahora se llama Beaver, con un nuevo nombre, mascota, iconos y textos actualizados en la interfaz.",
+      "Tus conversaciones, conexiones API, ajustes, memoria, modelos de Forecast y perfil del navegador se conservan.",
+      "La migración sustituye de forma compatible los paquetes, accesos directos y entradas de inicio anteriores de CL-GO.",
+      "La instalación verifica el paquete Beaver y su reinicio correcto, con protección de recuperación automática adicional en macOS."
+    ],
+    "fr": [
+      "CL-GO devient Beaver, avec un nouveau nom, une mascotte, de nouvelles icônes et une interface mise à jour.",
+      "Vos conversations, connexions API, réglages, mémoire, modèles Forecast et profil de navigateur restent en place.",
+      "La migration remplace proprement les anciens paquets, raccourcis et démarrages automatiques de CL-GO sur chaque système.",
+      "L’installation vérifie le paquet Beaver et son redémarrage, avec une protection de restauration automatique supplémentaire sur macOS."
+    ],
+    "it": [
+      "CL-GO ora si chiama Beaver, con un nuovo nome, una mascotte, nuove icone e testi aggiornati nell’interfaccia.",
+      "Conversazioni, connessioni API, impostazioni, memoria, modelli Forecast e profilo del browser restano al loro posto.",
+      "La migrazione sostituisce in modo compatibile i precedenti pacchetti, collegamenti e avvii automatici di CL-GO.",
+      "L’installazione verifica il pacchetto Beaver e il suo riavvio, con una protezione di ripristino automatico aggiuntiva su macOS."
+    ],
+    "ja": [
+      "CL-GO は Beaver に名称変更され、新しい名前、マスコット、アイコン、画面表示が導入されました。",
+      "会話、API 接続、設定、メモリ、Forecast モデル、ブラウザープロファイルはそのまま保持されます。",
+      "移行処理は、各システムの従来の CL-GO パッケージ、ショートカット、自動起動項目を安全に置き換えます。",
+      "インストール時に Beaver パッケージと再起動を検証し、macOS では自動復元による追加保護も行います。"
+    ],
+    "zh": [
+      "CL-GO 现已更名为 Beaver，并采用了新名称、吉祥物、图标和更新后的界面文字。",
+      "您的对话、API 连接、设置、记忆、Forecast 模型和浏览器配置都会保留。",
+      "迁移会安全替换各系统中原有的 CL-GO 软件包、快捷方式和自动启动项。",
+      "安装过程会验证 Beaver 软件包和成功重启，并在 macOS 上提供额外的自动恢复保护。"
+    ]
+  },
+  "1.0.2": {
+    "de": [
+      "Anweisungen, Skills und Regeln anderer Assistenten lassen sich jetzt beim Einstieg oder später in den Einstellungen importieren.",
+      "Der dauerhafte globale und projektbezogene Speicher bewahrt nützliche Informationen mit manueller oder automatischer Verwaltung sicher auf.",
+      "Forecast erhält einen vollständigen Arbeitsbereich, automatische Modellauswahl, Datenprüfungen, Backtests und erweiterte Analysen.",
+      "Der interaktive Begleiter, Markdown-Nachrichten und Verbesserungen der Oberfläche machen Unterhaltungen flüssiger und zuverlässiger.",
+      "Updates prüfen jetzt heruntergeladene Dateien und kontrollieren, ob die Anwendung nach der Installation erfolgreich neu startet."
+    ],
+    "en": [
+      "You can now import instructions, skills, and rules from other assistants during onboarding or later from Settings.",
+      "Global and project persistent memory keeps useful information with manual or automatic management and secure storage.",
+      "Forecast gains a complete workspace, automatic model selection, data audits, rolling backtests, and advanced analysis.",
+      "The interactive companion, Markdown messages, and interface refinements make conversations smoother and more reliable.",
+      "Updates now verify downloaded files and check that the application restarts successfully after installation."
+    ],
+    "es": [
+      "Ahora puedes importar instrucciones, skills y reglas de otros asistentes durante la bienvenida o más tarde desde Ajustes.",
+      "La memoria persistente global y por proyecto conserva información útil con gestión manual o automática y almacenamiento seguro.",
+      "Forecast incorpora un espacio completo, selección automática de modelos, auditorías de datos, backtests y análisis avanzados.",
+      "El compañero interactivo, los mensajes Markdown y las mejoras de interfaz hacen que las conversaciones sean más fluidas y fiables.",
+      "Las actualizaciones verifican los archivos descargados y comprueban que la aplicación se reinicie correctamente después de la instalación."
+    ],
+    "fr": [
+      "Vous pouvez maintenant importer les instructions, skills et règles de vos autres assistants depuis l’accueil ou les réglages.",
+      "La mémoire persistante globale et par projet conserve les informations utiles avec une gestion manuelle ou automatique et un stockage sécurisé.",
+      "Forecast gagne un espace de travail complet, la sélection automatique des modèles, des audits de données, des backtests et des analyses avancées.",
+      "Le compagnon interactif, les messages Markdown et les améliorations de l’interface rendent les conversations plus agréables et plus stables.",
+      "Les mises à jour vérifient les fichiers téléchargés et contrôlent que l’application redémarre correctement après l’installation."
+    ],
+    "it": [
+      "Ora puoi importare istruzioni, skill e regole da altri assistenti durante la configurazione iniziale o in seguito dalle Impostazioni.",
+      "La memoria persistente globale e per progetto conserva informazioni utili con gestione manuale o automatica e archiviazione sicura.",
+      "Forecast offre uno spazio di lavoro completo, selezione automatica dei modelli, controlli dei dati, backtest e analisi avanzate.",
+      "Il compagno interattivo, i messaggi Markdown e i miglioramenti dell’interfaccia rendono le conversazioni più fluide e affidabili.",
+      "Gli aggiornamenti verificano i file scaricati e controllano che l’applicazione si riavvii correttamente dopo l’installazione."
+    ],
+    "ja": [
+      "初期設定時または後から設定画面で、ほかのアシスタントの指示、スキル、ルールを取り込めるようになりました。",
+      "グローバルおよびプロジェクト別の永続メモリが、手動または自動管理で有用な情報を安全に保持します。",
+      "Forecast に、完全なワークスペース、自動モデル選択、データ監査、ローリングバックテスト、高度な分析を追加しました。",
+      "インタラクティブなコンパニオン、Markdown メッセージ、画面改善により、会話がより快適で安定しました。",
+      "更新ファイルの整合性を検証し、インストール後にアプリケーションが正常に再起動することを確認します。"
+    ],
+    "zh": [
+      "现在可以在初始设置期间或稍后从“设置”中导入其他助手的指令、技能和规则。",
+      "全局和项目持久记忆可通过手动或自动管理安全保存有用信息。",
+      "Forecast 现提供完整工作区、自动模型选择、数据审计、滚动回测和高级分析。",
+      "交互式伙伴、Markdown 消息和界面改进让对话更加流畅可靠。",
+      "更新现在会验证下载文件，并确认应用程序在安装后能够正常重新启动。"
+    ]
+  },
+  "1.0.1": {
+    "de": [
+      "Grok und Kimi können jetzt über eine native Web-Anmeldung verbunden werden, ohne eine Anbieter-CLI zu installieren; Kimi bleibt experimentell und inoffiziell.",
+      "OAuth-Modelle nutzen in manuellen Chats die Agentenschleife, Werkzeuge, Skills, MCP-Verbindungen, Berechtigungen, Pläne und Subagenten von CL-GO-DASH.",
+      "Die Anbieter-Einstellungen zeigen nun Limits, Rücksetzzeiten, Guthaben, Tokenverbrauch, Anfragen sowie exakte oder geschätzte Kosten für API- und OAuth-Verbindungen.",
+      "Die Codex-Nutzung unterscheidet jetzt zwischen dem allgemeinen Wochenlimit und dem eigenen Wochenlimit von GPT-5.3-Codex-Spark.",
+      "OAuth-Lebenszyklus, Kontowechsel, Nutzungsaktualisierung und Kostenberechnung wurden zusätzlich abgesichert.",
+      "Git unterstützt jetzt Branches, Worktrees, Commits, authentifizierte Pushes, Merges und sichere Bereinigung. Die Oberfläche erhält vier Themes und ein einheitliches Design."
+    ],
+    "en": [
+      "Grok and Kimi can now be connected through native web authentication without installing a provider CLI; Kimi remains experimental and unofficial.",
+      "OAuth models use CL-GO-DASH's agent loop, tools, skills, MCP connectors, permissions, plans, and subagents in manual chats.",
+      "Provider settings now show limits, reset times, credits, token usage, requests, and exact or estimated costs for API and OAuth connections.",
+      "Codex usage now separates the general weekly allowance from the dedicated GPT-5.3-Codex-Spark weekly allowance.",
+      "OAuth lifecycle, account switching, usage refreshes, and cost calculation received additional security hardening.",
+      "Git now covers branches, worktrees, commits, authenticated pushes, merges, and safer cleanup. The interface gains four themes and a unified visual system."
+    ],
+    "es": [
+      "Grok y Kimi ya se pueden conectar mediante autenticación web nativa sin instalar una CLI del proveedor; Kimi sigue siendo experimental y no oficial.",
+      "Los modelos OAuth utilizan el bucle de agente, las herramientas, las skills, los conectores MCP, los permisos, los planes y los subagentes de CL-GO-DASH en los chats manuales.",
+      "Los ajustes de proveedores ahora muestran límites, reinicios, créditos, consumo de tokens, solicitudes y costes exactos o estimados para conexiones API y OAuth.",
+      "El consumo de Codex ahora separa el límite semanal general del límite semanal específico de GPT-5.3-Codex-Spark.",
+      "Se reforzó la seguridad del ciclo OAuth, los cambios de cuenta, la actualización del consumo y el cálculo de costes.",
+      "Git ahora incluye ramas, worktrees, commits, pushes autenticados, fusiones y limpieza segura. La interfaz incorpora cuatro temas y un diseño unificado."
+    ],
+    "fr": [
+      "Grok et Kimi peuvent maintenant être connectés par authentification web native sans installer de CLI fournisseur ; Kimi reste expérimental et non officiel.",
+      "Les modèles OAuth utilisent la boucle agentique, les outils, les skills, les connecteurs MCP, les permissions, les plans et les sous-agents de CL-GO-DASH dans les chats manuels.",
+      "Les réglages des fournisseurs affichent maintenant les limites, réinitialisations, crédits, tokens, requêtes et coûts exacts ou estimés des connexions API et OAuth.",
+      "La consommation Codex distingue maintenant la limite hebdomadaire générale de la limite hebdomadaire dédiée à GPT-5.3-Codex-Spark.",
+      "Le cycle OAuth, les changements de compte, l'actualisation de la consommation et le calcul des coûts ont reçu un renforcement de sécurité supplémentaire.",
+      "Git couvre maintenant les branches, worktrees, commits, pushs authentifiés, fusions et nettoyages sécurisés. L'interface gagne quatre thèmes et un design unifié."
+    ],
+    "it": [
+      "Grok e Kimi possono ora essere collegati tramite autenticazione web nativa senza installare una CLI del provider; Kimi resta sperimentale e non ufficiale.",
+      "Nei chat manuali, i modelli OAuth usano il ciclo agente, gli strumenti, le skill, i connettori MCP, i permessi, i piani e i subagenti di CL-GO-DASH.",
+      "Le impostazioni dei provider mostrano ora limiti, ripristini, crediti, consumo di token, richieste e costi esatti o stimati per le connessioni API e OAuth.",
+      "Il consumo Codex distingue ora il limite settimanale generale dal limite settimanale dedicato a GPT-5.3-Codex-Spark.",
+      "Il ciclo OAuth, i cambi di account, l'aggiornamento dei consumi e il calcolo dei costi hanno ricevuto ulteriori protezioni di sicurezza.",
+      "Git ora include branch, worktree, commit, push autenticati, merge e pulizia sicura. L'interfaccia riceve quattro temi e un design unificato."
+    ],
+    "ja": [
+      "Grok と Kimi をプロバイダーの CLI をインストールせずに、ネイティブ Web 認証で接続できるようになりました。Kimi は引き続き実験的な非公式連携です。",
+      "手動チャットの OAuth モデルは、CL-GO-DASH のエージェントループ、ツール、スキル、MCP コネクター、権限、プラン、サブエージェントを利用します。",
+      "プロバイダー設定で、API と OAuth 接続の上限、リセット時刻、クレジット、トークン使用量、リクエスト数、正確または推定の費用を確認できるようになりました。",
+      "Codex の使用量で、全体の週間上限と GPT-5.3-Codex-Spark 専用の週間上限を分けて表示するようになりました。",
+      "OAuth のライフサイクル、アカウント切り替え、使用量の更新、費用計算の安全性をさらに強化しました。",
+      "Git ワークフローがブランチ、ワークツリー、コミット、認証付きプッシュ、マージ、安全なクリーンアップに対応し、画面には 4 つの新テーマと統一されたデザインシステムが追加されました。"
+    ],
+    "zh": [
+      "现在无需安装提供商 CLI，即可通过原生网页认证连接 Grok 和 Kimi；Kimi 仍属于实验性非官方集成。",
+      "在手动聊天中，OAuth 模型会使用 CL-GO-DASH 的代理循环、工具、技能、MCP 连接器、权限、计划和子代理。",
+      "提供商设置现在会显示 API 和 OAuth 连接的限额、重置时间、余额、Token 用量、请求次数以及精确或估算费用。",
+      "Codex 用量现在会分别显示通用每周限额和 GPT-5.3-Codex-Spark 专用每周限额。",
+      "OAuth 生命周期、账户切换、用量刷新和费用计算获得了进一步的安全加固。",
+      "Git 工作流现已涵盖分支、工作树、提交、认证推送、合并和更安全的清理，同时界面新增了四个主题和统一的视觉系统。"
+    ]
+  },
+  "1.0.0": {
+    "de": [
+      "CL-GO erreicht offiziell Version 1.0.",
+      "Der sichere Chromium-Browser ist unter Windows nun verfügbar, da die Prüfung den Datenbankschutz von Chromium berücksichtigt.",
+      "CEF-Schutz und Sandbox bleiben unter Windows aktiv, während macOS seine bestehende Festplattenprüfung beibehält."
+    ],
+    "en": [
+      "CL-GO officially reaches version 1.0.",
+      "The secure Chromium browser is now available on Windows after adapting validation to Chromium's database lock.",
+      "CEF protections and the sandbox remain enabled on Windows, while macOS keeps its existing disk protection check."
+    ],
+    "es": [
+      "CL-GO alcanza oficialmente la versión 1.0.",
+      "El navegador Chromium seguro ya está disponible en Windows gracias a una validación compatible con el bloqueo de la base de Chromium.",
+      "Las protecciones de CEF y el sandbox siguen activos en Windows, mientras macOS conserva su comprobación en disco."
+    ],
+    "fr": [
+      "CL-GO atteint officiellement la version 1.0.",
+      "Le navigateur Chromium sécurisé est maintenant disponible sous Windows grâce à une validation compatible avec le verrouillage de Chromium.",
+      "Les protections CEF et le sandbox restent actifs sous Windows, tandis que le contrôle sur disque de macOS est conservé."
+    ],
+    "it": [
+      "CL-GO raggiunge ufficialmente la versione 1.0.",
+      "Il browser Chromium sicuro è ora disponibile su Windows grazie a una verifica compatibile con il blocco del database di Chromium.",
+      "Le protezioni CEF e la sandbox restano attive su Windows, mentre macOS mantiene il controllo su disco esistente."
+    ],
+    "ja": [
+      "CL-GO は正式にバージョン 1.0 になりました。",
+      "Chromium のデータベースロックに対応した検証により、Windows でも安全な Chromium ブラウザーを利用できるようになりました。",
+      "Windows では CEF の保護とサンドボックスを維持し、macOS では既存のディスク保護確認を継続します。"
+    ],
+    "zh": [
+      "CL-GO 正式迈入 1.0 版本。",
+      "安全的 Chromium 浏览器现已可在 Windows 上使用，验证流程已兼容 Chromium 的数据库锁定机制。",
+      "Windows 继续启用 CEF 安全保护和沙箱，macOS 则保留现有的磁盘保护检查。"
+    ]
+  },
+  "0.9.9": {
+    "de": [
+      "Die Windows-Version lädt wieder die mitgelieferte Oberfläche, statt eine lokale Entwicklungsadresse zu öffnen.",
+      "Der sichere Chromium-Browser ist in lokal signierten macOS-Versionen wieder verfügbar.",
+      "Neue Release-Prüfungen verhindern, dass diese beiden Paketierungsfehler erneut veröffentlicht werden."
+    ],
+    "en": [
+      "The Windows release now loads the bundled interface instead of opening a local development address.",
+      "The secure Chromium browser is available again in locally signed macOS releases.",
+      "New release checks prevent these two packaging regressions from being published again."
+    ],
+    "es": [
+      "La versión de Windows vuelve a cargar la interfaz incluida en lugar de abrir una dirección de desarrollo local.",
+      "El navegador Chromium seguro vuelve a estar disponible en las versiones de macOS con firma local.",
+      "Nuevas comprobaciones evitan que estos dos errores de empaquetado se vuelvan a publicar."
+    ],
+    "fr": [
+      "La version Windows charge de nouveau l’interface intégrée au lieu d’ouvrir une adresse de développement locale.",
+      "Le navigateur Chromium sécurisé est de nouveau disponible dans les versions macOS signées localement.",
+      "De nouveaux contrôles empêchent que ces deux erreurs de packaging soient publiées à nouveau."
+    ],
+    "it": [
+      "La versione Windows carica di nuovo l’interfaccia inclusa invece di aprire un indirizzo di sviluppo locale.",
+      "Il browser Chromium sicuro è nuovamente disponibile nelle versioni macOS con firma locale.",
+      "Nuovi controlli impediscono che questi due errori di pacchettizzazione vengano pubblicati di nuovo."
+    ],
+    "ja": [
+      "Windows 版はローカルの開発用アドレスではなく、同梱された画面を再び読み込むようになりました。",
+      "ローカル署名された macOS 版で、安全な Chromium ブラウザーを再び利用できるようになりました。",
+      "新しいリリース検査により、この二つのパッケージ問題の再発を防止します。"
+    ],
+    "zh": [
+      "Windows 版本现在会重新加载内置界面，而不是打开本地开发地址。",
+      "经过本地签名的 macOS 版本现在可以再次使用安全的 Chromium 浏览器。",
+      "新的发布检查可防止这两个打包问题再次进入正式版本。"
+    ]
+  },
+  "0.9.8": {
+    "de": [
+      "Windows-Installationspakete können wieder erstellt werden, da die Chromium-Dateien nun in der erwarteten Struktur vorbereitet werden.",
+      "macOS-Disk-Images verwenden jetzt ausdrücklich die lokale Signaturmethode des Projekts.",
+      "Veraltete Chromium-Caches werden automatisch ersetzt, und neue Tests schützen die Release-Builds.",
+      "Windows akzeptiert jetzt auch gültige private Berechtigungen, wenn der Kontotyp nicht angegeben wird."
+    ],
+    "en": [
+      "Windows installers can be built again because Chromium files are now prepared in the expected layout.",
+      "macOS disk images now explicitly use the project's local signing method.",
+      "Outdated Chromium caches are replaced automatically, and new tests protect release builds.",
+      "Windows now accepts valid private permissions when the account type is reported as unspecified."
+    ],
+    "es": [
+      "Los instaladores de Windows se pueden volver a crear porque los archivos de Chromium ahora usan la estructura esperada.",
+      "Las imágenes de disco de macOS ahora utilizan explícitamente el método de firma local del proyecto.",
+      "Las cachés antiguas de Chromium se reemplazan automáticamente y nuevas pruebas protegen las compilaciones de publicación.",
+      "Windows ahora acepta permisos privados válidos cuando el tipo de cuenta aparece sin especificar."
+    ],
+    "fr": [
+      "Les installateurs Windows peuvent de nouveau être créés, car les fichiers Chromium utilisent maintenant la structure attendue.",
+      "Les images disque macOS utilisent maintenant explicitement la méthode de signature locale du projet.",
+      "Les anciens caches Chromium sont remplacés automatiquement et de nouveaux tests protègent les builds de publication.",
+      "Windows accepte maintenant les autorisations privées valides lorsque le type de compte est indiqué comme non précisé."
+    ],
+    "it": [
+      "Gli installer Windows possono essere creati di nuovo perché i file Chromium ora usano la struttura prevista.",
+      "Le immagini disco macOS ora utilizzano esplicitamente il metodo di firma locale del progetto.",
+      "Le vecchie cache Chromium vengono sostituite automaticamente e nuovi test proteggono le build di rilascio.",
+      "Windows ora accetta autorizzazioni private valide quando il tipo di account risulta non specificato."
+    ],
+    "ja": [
+      "Chromium ファイルを必要な構成で準備するよう修正し、Windows インストーラーを再び作成できるようにしました。",
+      "macOS のディスクイメージで、プロジェクトのローカル署名方式を明示的に使用するようにしました。",
+      "古い Chromium キャッシュを自動的に置き換え、リリースビルドを守るテストを追加しました。",
+      "Windows がアカウント種別を未指定として返す場合でも、有効な非公開アクセス権を受け入れるようにしました。"
+    ],
+    "zh": [
+      "Chromium 文件现在会按预期结构准备，因此可以再次构建 Windows 安装程序。",
+      "macOS 磁盘映像现在会明确使用项目的本地签名方式。",
+      "旧的 Chromium 缓存会自动替换，并新增测试来保护发布构建。",
+      "当 Windows 将账户类型报告为未指定时，应用现在也会接受有效的私有权限。"
+    ]
+  },
+  "0.9.7": {
+    "de": [
+      "Ein Chromium-Browser ist jetzt unter macOS und Windows in das gemeinsame Seitenpanel integriert, einschließlich Tabs, Navigation, Größenänderung und internem Vollbild.",
+      "Browser-Tabs werden pro Unterhaltung wiederhergestellt, während ein gemeinsames Profil Cookies und angemeldete Sitzungen beibehält.",
+      "Die Startseite erkennt lokale Entwicklungsseiten, und die Adressleiste akzeptiert Webadressen oder Google-Suchen.",
+      "Browserdaten, Berechtigungen, Zertifikate, externe Protokolle, CEF-Dateien und die Position nativer Ansichten werden strenger geschützt.",
+      "Unter Linux bleibt der Browser-Eintrag verborgen, bis die eingebettete CEF-Engine dort unterstützt wird."
+    ],
+    "en": [
+      "A Chromium browser is now built into the shared side panel on macOS and Windows, with tabs, navigation, resizing, and internal full screen.",
+      "Browser tabs are restored per conversation, while a shared profile keeps cookies and signed-in sessions available.",
+      "The home page detects local development sites, and the address bar accepts web addresses or Google searches.",
+      "Browser state, permissions, certificates, external protocols, CEF files, and native view positioning now use stricter security controls.",
+      "Linux keeps the Browser entry hidden until the embedded CEF engine is supported there."
+    ],
+    "es": [
+      "Un navegador Chromium está integrado en el panel lateral compartido de macOS y Windows, con pestañas, navegación, tamaño ajustable y pantalla completa interna.",
+      "Las pestañas se restauran por conversación, mientras un perfil compartido conserva las cookies y las sesiones iniciadas.",
+      "La página de inicio detecta sitios de desarrollo locales y la barra acepta direcciones web o búsquedas de Google.",
+      "El estado, los permisos, los certificados, los protocolos externos, los archivos CEF y la posición de la vista tienen controles más estrictos.",
+      "En Linux, la entrada Navegador permanece oculta hasta que el motor CEF integrado sea compatible."
+    ],
+    "fr": [
+      "Un navigateur Chromium est maintenant intégré au panneau latéral partagé sur macOS et Windows, avec onglets, navigation, redimensionnement et plein écran interne.",
+      "Les onglets sont restaurés par conversation, tandis qu'un profil partagé conserve les cookies et les sessions connectées.",
+      "La page d'accueil détecte les sites de développement locaux et la barre accepte les adresses web ou les recherches Google.",
+      "L'état, les permissions, les certificats, les protocoles externes, les fichiers CEF et le placement natif utilisent des contrôles renforcés.",
+      "Sous Linux, l'entrée Navigateur reste masquée jusqu'à la prise en charge du moteur CEF intégré."
+    ],
+    "it": [
+      "Un browser Chromium è ora integrato nel pannello laterale condiviso su macOS e Windows, con schede, navigazione, ridimensionamento e schermo intero interno.",
+      "Le schede vengono ripristinate per conversazione, mentre un profilo condiviso conserva cookie e sessioni connesse.",
+      "La pagina iniziale rileva i siti di sviluppo locali e la barra accetta indirizzi web o ricerche Google.",
+      "Stato, permessi, certificati, protocolli esterni, file CEF e posizione della vista nativa usano controlli più rigorosi.",
+      "Su Linux, la voce Browser resta nascosta finché il motore CEF integrato non sarà supportato."
+    ],
+    "ja": [
+      "macOS と Windows の共有サイドパネルに Chromium ブラウザーを統合し、タブ、ナビゲーション、サイズ変更、内部全画面表示に対応しました。",
+      "ブラウザータブは会話ごとに復元され、共有プロファイルによって Cookie とログイン状態が維持されます。",
+      "ホーム画面でローカル開発サイトを検出でき、アドレスバーから Web アドレスまたは Google 検索を開けます。",
+      "状態、権限、証明書、外部プロトコル、CEF ファイル、ネイティブビュー配置の保護を強化しました。",
+      "Linux では、組み込み CEF エンジンが対応するまでブラウザー項目は表示されません。"
+    ],
+    "zh": [
+      "macOS 和 Windows 的共享侧边面板现已集成 Chromium 浏览器，并支持标签页、导航、调整大小和应用内全屏。",
+      "浏览器标签页会按对话恢复，共享配置文件会保留 Cookie 和登录会话。",
+      "主页可以检测本地开发站点，地址栏可以打开网页地址或执行 Google 搜索。",
+      "浏览器状态、权限、证书、外部协议、CEF 文件和原生视图定位现在使用更严格的安全控制。",
+      "Linux 会继续隐藏浏览器入口，直到支持嵌入式 CEF 引擎。"
+    ]
+  },
+  "0.9.6": {
+    "de": [
+      "Archivierte Chats können wiederhergestellt oder endgültig gelöscht werden, und Unterhaltungen lassen sich in isolierte Zweige klonen.",
+      "Vom Elternagenten gesteuerte Subagenten laufen nun als sichtbare Sitzungen mit sichererer Koordination, Beendigung und Änderungsprüfung.",
+      "Gateway, OAuth, Vault, Anhänge, Vorschauen, MCP und authentifizierte LLM-Verbindungen wurden umfassend abgesichert.",
+      "Modell- und Reasoning-Auswahl sind nun getrennt, Medium ist der Standard, und neue OpenAI- und xAI-Modelle sind verfügbar.",
+      "Einstellungen, Forecast, Wakeup-Details, Tooltips, Tabellen, Startbildschirm und Live-Chat-Anzeigen wurden verbessert.",
+      "Forecast-Dokumentation und Tool-Beschreibungen sind jetzt in allen sieben unterstützten Sprachen verfügbar."
+    ],
+    "en": [
+      "Archived chats can now be restored or permanently deleted, and conversations can be cloned into isolated branches.",
+      "Parent-controlled subagents now run as visible child sessions with safer orchestration, cancellation, cleanup, and change review.",
+      "Gateway, OAuth, vault, attachment, preview, MCP, and authenticated LLM paths received broad security hardening.",
+      "Model and reasoning controls are now separate, reasoning defaults to Medium, and new OpenAI and xAI models are available.",
+      "Settings, Forecast, wakeup details, tooltips, tables, splash styling, and live chat activity received interface improvements.",
+      "Forecast documentation and tool descriptions are now available in all seven supported languages."
+    ],
+    "es": [
+      "Los chats archivados ahora se pueden restaurar o eliminar definitivamente, y las conversaciones se pueden clonar en ramas aisladas.",
+      "Los subagentes controlados por el agente principal ahora son sesiones visibles con coordinación, cancelación y revisión más seguras.",
+      "Gateway, OAuth, la bóveda, los adjuntos, las vistas previas, MCP y las conexiones LLM autenticadas tienen mayor seguridad.",
+      "Los controles de modelo y razonamiento ahora están separados, Medium es el valor inicial y hay nuevos modelos de OpenAI y xAI.",
+      "Se mejoraron Ajustes, Forecast, los detalles de wakeups, tooltips, tablas, la pantalla inicial y la actividad del chat.",
+      "La documentación de Forecast y las descripciones de herramientas ya están disponibles en los siete idiomas admitidos."
+    ],
+    "fr": [
+      "Les chats archivés peuvent maintenant être restaurés ou supprimés définitivement, et les conversations peuvent être clonées dans des branches isolées.",
+      "Les sous-agents contrôlés par le parent deviennent des sessions visibles avec une orchestration, une annulation et une révision plus sûres.",
+      "La sécurité a été renforcée pour Gateway, OAuth, le coffre, les pièces jointes, les aperçus, MCP et les connexions LLM authentifiées.",
+      "Les choix du modèle et du raisonnement sont séparés, Medium devient la valeur initiale et de nouveaux modèles OpenAI et xAI sont disponibles.",
+      "Les réglages, Forecast, les réveils, les infobulles, les tableaux, l'écran de démarrage et l'activité du chat ont été améliorés.",
+      "La documentation Forecast et les descriptions des outils sont maintenant disponibles dans les sept langues prises en charge."
+    ],
+    "it": [
+      "Le chat archiviate ora possono essere ripristinate o eliminate definitivamente e le conversazioni si possono clonare in branch isolati.",
+      "I subagenti controllati dal genitore ora sono sessioni visibili con coordinamento, annullamento e revisione delle modifiche più sicuri.",
+      "Gateway, OAuth, vault, allegati, anteprime, MCP e connessioni LLM autenticate hanno ricevuto ampi miglioramenti di sicurezza.",
+      "I controlli di modello e ragionamento ora sono separati, Medium è il valore iniziale e sono disponibili nuovi modelli OpenAI e xAI.",
+      "Impostazioni, Forecast, dettagli dei wakeup, tooltip, tabelle, schermata iniziale e attività della chat sono stati migliorati.",
+      "La documentazione Forecast e le descrizioni degli strumenti sono ora disponibili in tutte le sette lingue supportate."
+    ],
+    "ja": [
+      "アーカイブしたチャットを復元または完全削除でき、会話を分離されたブランチへ複製できるようになりました。",
+      "親エージェントが管理するサブエージェントは、調整、停止、整理、変更確認がより安全な表示可能セッションとして動作します。",
+      "Gateway、OAuth、Vault、添付ファイル、プレビュー、MCP、認証済み LLM 接続のセキュリティを強化しました。",
+      "モデルと推論の選択を分離し、初期値を Medium に変更して、新しい OpenAI と xAI モデルを追加しました。",
+      "設定、Forecast、Wakeup 詳細、ツールチップ、表、起動画面、ライブチャット表示を改善しました。",
+      "Forecast ドキュメントとツール説明を、対応する七つの言語すべてで利用できるようにしました。"
+    ],
+    "zh": [
+      "归档的聊天现在可以恢复或永久删除，对话也可以克隆到隔离的分支中。",
+      "由父代理控制的子代理现在会作为可见会话运行，并改进了协调、取消、清理和变更审查。",
+      "Gateway、OAuth、保险库、附件、预览、MCP 和已认证 LLM 连接的安全性已全面加强。",
+      "模型和推理控制现在相互独立，默认推理级别为 Medium，并新增了 OpenAI 和 xAI 模型。",
+      "设置、Forecast、唤醒详情、工具提示、表格、启动画面和实时聊天活动均已改进。",
+      "Forecast 文档和工具说明现在已支持全部七种应用语言。"
+    ]
+  },
+  "0.9.5": {
+    "de": [
+      "Der Chat zeigt jetzt eine kompakte Zusammenfassung der Sitzung mit Todos, Plänen, Subagenten, Git-Status und zuletzt geänderten Dateien.",
+      "Antworten können jetzt eine Blase mit den Dateien anzeigen, die nur in dieser Anfrage geändert wurden.",
+      "Einzelne Tool-Aufrufe werden direkter angezeigt, während mehrere Tools weiterhin gruppiert bleiben.",
+      "Chat, Markdown-Blasen, Tool-Ergebnisse und das Vorschaupanel wurden visuell verfeinert.",
+      "Die Tools-Einstellungen zeigen jetzt wichtige Tools und optionale Tool-Gruppen klarer an."
+    ],
+    "en": [
+      "The chat now shows a compact session summary with todos, generated plans, subagents, git status, and recent file changes.",
+      "Assistant replies can now show a file changes bubble for only the files modified during that request.",
+      "Single tool calls now appear directly, while multiple tools still stay grouped for readability.",
+      "Chat rendering, Markdown bubbles, tool results, and the side preview panel have been visually refined.",
+      "Tools settings now clearly show always-on tools and optional tool groups."
+    ],
+    "es": [
+      "El chat ahora muestra un resumen compacto de sesión con tareas, planes, subagentes, estado Git y archivos recientes.",
+      "Las respuestas ahora pueden mostrar una burbuja con solo los archivos modificados durante esa petición.",
+      "Las llamadas únicas a herramientas ahora se muestran directamente, mientras que varias herramientas siguen agrupadas.",
+      "El renderizado del chat, las burbujas Markdown, los resultados de herramientas y la vista previa se han refinado.",
+      "Los ajustes de herramientas ahora muestran mejor las herramientas siempre activas y los grupos opcionales."
+    ],
+    "fr": [
+      "Le chat affiche maintenant un résumé compact avec todos, plans générés, sous-agents, état Git et fichiers récents.",
+      "Les réponses peuvent maintenant afficher une bulle avec uniquement les fichiers modifiés pendant la requête.",
+      "Les appels tool uniques s'affichent maintenant directement, tandis que plusieurs tools restent groupés.",
+      "Le rendu du chat, les bulles Markdown, les résultats de tools et le panneau preview ont été affinés.",
+      "Les réglages Tools montrent maintenant plus clairement les tools toujours actifs et les groupes optionnels."
+    ],
+    "it": [
+      "La chat ora mostra un riepilogo compatto con todo, piani generati, subagenti, stato Git e file recenti.",
+      "Le risposte ora possono mostrare una bolla con solo i file modificati durante quella richiesta.",
+      "Le singole chiamate agli strumenti ora appaiono direttamente, mentre più strumenti restano raggruppati.",
+      "Rendering della chat, bolle Markdown, risultati degli strumenti e pannello di anteprima sono stati rifiniti.",
+      "Le impostazioni Tools mostrano meglio gli strumenti sempre attivi e i gruppi opzionali."
+    ],
+    "ja": [
+      "チャットに、Todo、生成された計画、サブエージェント、Git 状態、最近の変更ファイルをまとめた概要が表示されます。",
+      "返信に、そのリクエストで変更されたファイルだけを示すバブルを表示できるようになりました。",
+      "単一のツール呼び出しは直接表示され、複数のツールは読みやすいようにグループ化されます。",
+      "チャット表示、Markdown バブル、ツール結果、サイドプレビューの見た目を調整しました。",
+      "Tools 設定で、常時有効なツールと任意のツールグループが分かりやすくなりました。"
+    ],
+    "zh": [
+      "聊天现在会显示紧凑的会话摘要，包括待办、生成的计划、子代理、Git 状态和最近文件变化。",
+      "助手回复现在可以显示文件变化气泡，只包含本次请求修改的文件。",
+      "单个工具调用现在会直接显示，多个工具仍会保持分组以便阅读。",
+      "聊天渲染、Markdown 气泡、工具结果和侧边预览面板的视觉效果已优化。",
+      "Tools 设置现在更清楚地显示常开工具和可选工具组。"
+    ]
+  },
+  "0.9.4": {
+    "de": [
+      "Die Kontextanzeige zeigt nun eine klare Aufschlüsselung direkt im Eingabefeld.",
+      "Chat-Steuerung, Sidebars, Icons und Dropdowns wurden optisch verfeinert.",
+      "Die Schriftgröße wird nun in Pixeln eingestellt und beim Start mit den Theme-Einstellungen angewendet.",
+      "Update-Benachrichtigungen öffnen jetzt kurze Versionshinweise mit besserem Glass-Hintergrund.",
+      "Office-Tools unterstützen nun reichere Excel-Formatierung sowie Word-Rich-Text und Styles.",
+      "Das Lesen von Office-Dokumenten und die Sicherheitsprüfungen wurden verbessert."
+    ],
+    "en": [
+      "Context usage now shows a clear breakdown inside the chat input ring.",
+      "Chat controls, sidebars, icons, and dropdowns have been visually refined.",
+      "Font size is now set in pixels and applies with theme settings at startup.",
+      "Update notifications now open short release notes with better glass styling.",
+      "Office tools now support richer Excel formatting plus Word rich text and styles.",
+      "Office document reading and safety checks have been improved."
+    ],
+    "es": [
+      "El uso del contexto ahora muestra un desglose claro en el anillo del campo de chat.",
+      "Los controles del chat, barras laterales, iconos y menús se han refinado visualmente.",
+      "El tamaño de fuente ahora se define en píxeles y se aplica al iniciar junto con el tema.",
+      "Las notificaciones de actualización ahora abren notas breves con mejor estilo glass.",
+      "Las herramientas Office ahora admiten más formato en Excel y texto enriquecido en Word.",
+      "La lectura de documentos Office y las comprobaciones de seguridad se han mejorado."
+    ],
+    "fr": [
+      "L'utilisation du contexte affiche maintenant un détail clair dans l'anneau du champ de chat.",
+      "Les contrôles du chat, les sidebars, les icônes et les menus ont été affinés visuellement.",
+      "La taille de police se règle maintenant en pixels et s'applique au démarrage avec le thème.",
+      "Les notifications d'update ouvrent maintenant des notes courtes avec un meilleur fond glass.",
+      "Les outils Office gèrent mieux le formatage Excel, le texte riche Word et les styles.",
+      "La lecture des documents Office et les contrôles de sécurité ont été améliorés."
+    ],
+    "it": [
+      "L'uso del contesto ora mostra un dettaglio chiaro nell'anello del campo chat.",
+      "Controlli della chat, sidebar, icone e menu sono stati rifiniti visivamente.",
+      "La dimensione del font ora si imposta in pixel e si applica all'avvio con il tema.",
+      "Le notifiche di aggiornamento ora aprono note brevi con uno stile glass migliore.",
+      "Gli strumenti Office ora supportano formattazione Excel più ricca, testo Word e stili.",
+      "La lettura dei documenti Office e i controlli di sicurezza sono stati migliorati."
+    ],
+    "ja": [
+      "コンテキスト使用量がチャット入力欄のリング内で明確に分解表示されるようになりました。",
+      "チャット操作、サイドバー、アイコン、ドロップダウンの見た目を調整しました。",
+      "フォントサイズはピクセルで設定でき、起動時にテーマ設定と一緒に適用されます。",
+      "更新通知で短いリリースノートを開けるようになり、glass 表現も改善しました。",
+      "Office ツールで Excel の詳細な書式設定と Word のリッチテキストやスタイルに対応しました。",
+      "Office ドキュメントの読み取りと安全チェックを改善しました。"
+    ],
+    "zh": [
+      "上下文用量现在会在聊天输入框圆环中显示清晰明细。",
+      "聊天控件、侧边栏、图标和下拉菜单的视觉效果已优化。",
+      "字体大小现在以像素设置，并会在启动时与主题设置一起应用。",
+      "更新通知现在可以展开简短版本说明，并改进了 glass 背景效果。",
+      "Office 工具现在支持更丰富的 Excel 格式，以及 Word 富文本和样式。",
+      "Office 文档读取和安全检查已改进。"
+    ]
+  }
+}

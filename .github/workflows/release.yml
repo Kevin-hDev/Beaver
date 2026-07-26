@@ -1,0 +1,380 @@
+name: Beaver Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Existing version tag (ex: v1.1.0)"
+        required: true
+
+concurrency:
+  group: release-${{ inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_TAG: ${{ inputs.version || github.ref_name }}
+
+jobs:
+  gate:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Accept only an existing semantic version tag
+        run: |
+          if [ "${#RELEASE_TAG}" -gt 33 ] || [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release validation failed." >&2
+            exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" != "refs/tags/$RELEASE_TAG" ]; then
+            echo "Release validation failed." >&2
+            exit 1
+          fi
+
+  validate:
+    needs: gate
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Validate Beaver release metadata
+        run: |
+          node scripts/release/check-brand-artifacts.mjs source "$RELEASE_TAG" .
+          node scripts/app-release-notes.mjs "$RELEASE_TAG"
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Frontend build
+        run: npm run build
+
+      - name: Frontend lint
+        run: npm run lint
+
+      - name: Installer tests
+        run: npm run test:install
+
+      - name: Brand boundary tests
+        run: npm run test:brand-boundaries
+
+      - name: Persistent profile migration tests
+        run: npm run test:persistence-migration
+
+      - name: Beaver release workflow tests
+        run: npm run test:release-workflow
+
+      - name: Bridge release tests
+        run: npm run test:bridge-release
+
+      - name: Update manifest tests
+        run: npm run test:update-manifest
+
+      - name: Rust format
+        working-directory: src-tauri
+        run: cargo fmt --check
+
+      - name: Rust check
+        working-directory: src-tauri
+        run: cargo check
+
+      - name: Rust clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Rust tests
+        working-directory: src-tauri
+        run: cargo test
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            label: beaver-macos-arm64
+            bundles: app,dmg
+            bundle_dir: dmg
+            asset_suffix: _aarch64.dmg
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            label: beaver-linux-x64
+            bundles: deb
+            bundle_dir: deb
+            asset_suffix: _amd64.deb
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: beaver-windows-x64
+            bundles: nsis
+            bundle_dir: nsis
+            asset_suffix: _x64-setup.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            zstd
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Tauri app without publishing
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ""
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+          CLGO_CEF_ALLOW_ADHOC_SIGNING: ${{ runner.os == 'macOS' && '1' || '0' }}
+        with:
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      - name: Resolve exact artifact paths
+        id: paths
+        shell: bash
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          BASE="src-tauri/target/${{ matrix.target }}/release/bundle"
+          ASSET="$BASE/${{ matrix.bundle_dir }}/Beaver_${VERSION}${{ matrix.asset_suffix }}"
+          printf 'asset=%s\n' "$ASSET" >> "$GITHUB_OUTPUT"
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            printf 'app=%s\n' "$BASE/macos/Beaver.app" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Inspect macOS bundle
+        if: runner.os == 'macOS'
+        run: >-
+          node scripts/release/check-brand-artifacts.mjs macos "$RELEASE_TAG"
+          "${{ steps.paths.outputs.app }}" "${{ steps.paths.outputs.asset }}"
+
+      - name: Inspect Debian package
+        if: runner.os == 'Linux'
+        run: |
+          ASSET="$(realpath "${{ steps.paths.outputs.asset }}")"
+          node scripts/release/check-brand-artifacts.mjs linux "$RELEASE_TAG" "$ASSET"
+          bash scripts/release/check-deb-migration.sh "$ASSET"
+
+      - name: Inspect and install Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          BEAVER_INSTALLER: ${{ steps.paths.outputs.asset }}
+        run: |
+          & scripts/test-install-ps1.ps1
+          $installer = (Resolve-Path -LiteralPath $env:BEAVER_INSTALLER).Path
+          node scripts/release/check-brand-artifacts.mjs windows $env:RELEASE_TAG $installer
+          & scripts/release/check-nsis-migration.ps1 -Mode Source -InstallerPath $installer
+          $installDir = Join-Path $env:RUNNER_TEMP "beaver-package-validation"
+          $process = Start-Process -FilePath $installer -ArgumentList @("/S", "/D=$installDir") -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            throw "Windows package validation failed."
+          }
+          & scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
+
+      - name: Upload verified native artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ matrix.label }}
+          path: ${{ steps.paths.outputs.asset }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: beaver-macos-arm64
+          path: release-candidate
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: beaver-linux-x64
+          path: release-candidate
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: beaver-windows-x64
+          path: release-candidate
+
+      - name: Create and validate update manifest
+        run: |
+          node scripts/release/create-update-manifest.mjs "$RELEASE_TAG" release-candidate
+          node scripts/release/check-brand-artifacts.mjs release "$RELEASE_TAG" release-candidate
+
+      - name: Upload complete release candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: beaver-release-candidate
+          path: release-candidate
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+
+  verify_release:
+    needs: manifest
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Download complete release candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: beaver-release-candidate
+          path: release-candidate
+
+      - name: Independently verify every SHA-256
+        run: node scripts/release/check-brand-artifacts.mjs release "$RELEASE_TAG" release-candidate
+
+  draft_release:
+    needs: verify_release
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+
+      - name: Download verified release candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: beaver-release-candidate
+          path: release-candidate
+
+      - name: Recheck candidate and prepare notes
+        id: notes
+        run: |
+          node scripts/release/check-brand-artifacts.mjs release "$RELEASE_TAG" release-candidate
+          NOTES_FILE="$RUNNER_TEMP/beaver-release-notes.md"
+          node scripts/app-release-notes.mjs "$RELEASE_TAG" > "$NOTES_FILE"
+          printf 'path=%s\n' "$NOTES_FILE" >> "$GITHUB_OUTPUT"
+
+      - name: Create or update Beaver draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES_FILE: ${{ steps.notes.outputs.path }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          DMG="release-candidate/Beaver_${VERSION}_aarch64.dmg"
+          DEB="release-candidate/Beaver_${VERSION}_amd64.deb"
+          EXE="release-candidate/Beaver_${VERSION}_x64-setup.exe"
+          MANIFEST="release-candidate/update-manifest.json"
+          if STATE="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null)"; then
+            if [ "$STATE" != "true" ]; then
+              echo "Release validation failed." >&2
+              exit 1
+            fi
+            if ! EXISTING_ASSETS="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"; then
+              echo "Release validation failed." >&2
+              exit 1
+            fi
+            while IFS= read -r NAME; do
+              case "$NAME" in
+                ""|"Beaver_${VERSION}_aarch64.dmg"|"Beaver_${VERSION}_amd64.deb"|"Beaver_${VERSION}_x64-setup.exe"|"update-manifest.json") ;;
+                *)
+                  echo "Release validation failed." >&2
+                  exit 1
+                  ;;
+              esac
+            done <<< "$EXISTING_ASSETS"
+            gh release edit "$RELEASE_TAG" --draft --title "Beaver $RELEASE_TAG" --notes-file "$NOTES_FILE"
+            gh release upload "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MANIFEST" --clobber
+          else
+            gh release create "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MANIFEST" \
+              --draft \
+              --verify-tag \
+              --title "Beaver $RELEASE_TAG" \
+              --notes-file "$NOTES_FILE"
+          fi

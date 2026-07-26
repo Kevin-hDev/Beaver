@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Beaver</title>
+    <script>
+      (function() {
+        var choice = "system";
+        try {
+          choice = localStorage.getItem("clgo-theme") || "system";
+        } catch (_error) {
+          choice = "system";
+        }
+        if (choice !== "light" && choice !== "dark" && choice !== "emerald-night") {
+          choice = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        var colorScheme = choice === "light" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", colorScheme);
+        document.documentElement.setAttribute("data-palette", choice);
+      })();
+    </script>
+    <link rel="preload" href="/castor.svg" as="image" type="image/svg+xml" />
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      [data-theme="dark"] #splash {
+        background: #121212;
+        --splash-mark: #c8c8ce;
+      }
+      [data-palette="emerald-night"] #splash {
+        background: #031f1c;
+        --splash-mark: #f1e2c3;
+      }
+      [data-theme="light"] #splash {
+        background: #f7f7f9;
+        --splash-mark: #1a1a1a;
+      }
+      #splash .splash-icon {
+        width: 170px;
+        height: 170px;
+        display: block;
+        background: var(--splash-mark);
+        -webkit-mask: url("/castor.svg") center / contain no-repeat;
+        mask: url("/castor.svg") center / contain no-repeat;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="splash" aria-hidden="true">
+      <span class="splash-icon"></span>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
