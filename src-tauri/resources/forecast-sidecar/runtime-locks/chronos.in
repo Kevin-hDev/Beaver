@@ -1,0 +1,8 @@
+# Approved Forecast runtime. Regenerate the lock only after adapter validation.
+chronos-forecasting==2.3.1
+accelerate==1.14.0
+huggingface-hub==0.36.2
+numpy==2.5.1
+pandas==2.3.3
+torch==2.10.0
+transformers==4.57.6

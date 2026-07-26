@@ -1,0 +1,7 @@
+# XReg uses scikit-learn; avoid the upstream xreg extra because it pulls a CUDA JAX extra.
+timesfm[torch]==2.0.2
+huggingface-hub==1.24.0
+numpy==2.5.1
+safetensors==0.8.0
+scikit-learn==1.9.0
+torch==2.10.0

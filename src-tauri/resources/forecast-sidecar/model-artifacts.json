@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "modelId": "chronos-bolt-tiny",
+      "repository": "amazon/chronos-bolt-tiny",
+      "revision": "a0e552de83495b5c28c14c71c374f3e33280b340",
+      "artifacts": [
+        { "path": "config.json", "size": 1120, "sha256": "278f0086733031635fb1c861cb01c1bad6477420c7fcb19381a2993e335785e0" },
+        { "path": "model.safetensors", "size": 34622352, "sha256": "75068728d376d2bec670379eeef4bfb4d24c0cfe24d957451f8d19b447030a32" }
+      ]
+    },
+    {
+      "modelId": "chronos-bolt-mini",
+      "repository": "amazon/chronos-bolt-mini",
+      "revision": "251268337516a88e253628c43e1d26ec577b376b",
+      "artifacts": [
+        { "path": "config.json", "size": 1120, "sha256": "4299e93f30bb8d99d8f7dbaa39a1dfc6bf827ae67d4ef4c0b6ba4ca3df514980" },
+        { "path": "model.safetensors", "size": 84956096, "sha256": "1a1a4297f132b808c5c7da24e3cce549d519c01ff5c2661fcad404baba018f24" }
+      ]
+    },
+    {
+      "modelId": "chronos-bolt-small",
+      "repository": "amazon/chronos-bolt-small",
+      "revision": "772f3d25d38aec6d914c8949dab4462e2d46f5d8",
+      "artifacts": [
+        { "path": "config.json", "size": 1121, "sha256": "9ca0ebbe049ccebacb0546361e8aa728f0cf104cd18d1838d78d296aa317bd21" },
+        { "path": "model.safetensors", "size": 190888824, "sha256": "06a6a19bbe74bc10a9cd193bd4bf2bf638ae07f7e0d51653ae7ab8ea968a21dd" }
+      ]
+    },
+    {
+      "modelId": "chronos-bolt-base",
+      "repository": "amazon/chronos-bolt-base",
+      "revision": "5d9f166d69f47aef3401367a7b842e78fe97b121",
+      "artifacts": [
+        { "path": "config.json", "size": 1123, "sha256": "46f7e7e695569f67b06178faa4f236c281392945aa2d1bdf844442e57155530b" },
+        { "path": "model.safetensors", "size": 821203576, "sha256": "31f875483a3215bc6880a0837ea608a13ce55f88ad90538c3cdd0b29aeb60b36" }
+      ]
+    },
+    {
+      "modelId": "chronos-2",
+      "repository": "amazon/chronos-2",
+      "revision": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+      "artifacts": [
+        { "path": "config.json", "size": 1067, "sha256": "ef1143bfdc9c0376d9a056eefca46cb4b1ec3d0ffacd541ff56feb40fb708031" },
+        { "path": "model.safetensors", "size": 477930472, "sha256": "ddcda3c7508bf2528087723e98a20707cc04b7f370ae275a9fd88078ddba4f42" }
+      ]
+    },
+    {
+      "modelId": "timesfm-2.5-200m",
+      "repository": "google/timesfm-2.5-200m-pytorch",
+      "revision": "1d952420fba87f3c6dee4f240de0f1a0fbc790e3",
+      "artifacts": [
+        { "path": "config.json", "size": 475, "sha256": "cd3315b760d5cc7e278d7afdf41b897031ced888fc6c115bd9b3ac0ea2c47408" },
+        { "path": "model.safetensors", "size": 925181104, "sha256": "2f776efe6245e42b24bc4153ffdf61810140210e4bd3b01fb21f7aa779ab6ce8" }
+      ]
+    },
+    {
+      "modelId": "toto-2.0-4m",
+      "repository": "Datadog/Toto-2.0-4m",
+      "revision": "8306a9801cf98c0f5ffe4b2dcc8f496e616d84d9",
+      "artifacts": [
+        { "path": "config.json", "size": 592, "sha256": "7a926d130e401ab0c5fdb3564f46c8d917bd05c7b3ae26b9c22d2da2ef01d2d8" },
+        { "path": "model.safetensors", "size": 16582848, "sha256": "316660d5afb47943e531f39242e0b02ca0b8bb73be5709dfe07ca80dfce9805e" }
+      ]
+    },
+    {
+      "modelId": "toto-2.0-22m",
+      "repository": "Datadog/Toto-2.0-22m",
+      "revision": "685e4ae3e2be8d8998025e53dd98e7fdcb296a89",
+      "artifacts": [
+        { "path": "config.json", "size": 593, "sha256": "abeaf0fcd54aaac66757fde69ec3ddb4d3bfdcf96e0c8f767aefd03ab4c9e8d9" },
+        { "path": "model.safetensors", "size": 87669368, "sha256": "9cd503d82df3aa71747862688f47a31c1d0a4b80f898df6e046189016eaa21dd" }
+      ]
+    },
+    {
+      "modelId": "toto-2.0-313m",
+      "repository": "Datadog/Toto-2.0-313m",
+      "revision": "a7bab288f5e95f8606f8306f86659357e1c001ef",
+      "artifacts": [
+        { "path": "config.json", "size": 598, "sha256": "9cd42ebab5167752f4382f9304a26c05a44e20eb13b71eea8810f729fed0ffd7" },
+        { "path": "model.safetensors", "size": 1250763568, "sha256": "5ee6066497963cb904bf1324ab850661c3201bbb3406052459f1f792386aa2f9" }
+      ]
+    },
+    {
+      "modelId": "toto-2.0-1b",
+      "repository": "Datadog/Toto-2.0-1B",
+      "revision": "1604e1a5242884fb9848f88c4ced14f4dc62d9d3",
+      "artifacts": [
+        { "path": "config.json", "size": 598, "sha256": "c8aa025e7155b78e01e257f79ec1cf610205b720007bc7369f7fc6acf2328eed" },
+        { "path": "model.safetensors", "size": 4164169600, "sha256": "eabb9dfae622fdb2f19744a46f1e9c4e5ed6ee0d3c6cba7c227865d39974658f" }
+      ]
+    },
+    {
+      "modelId": "toto-2.0-2.5b",
+      "repository": "Datadog/Toto-2.0-2.5B",
+      "revision": "51a2812bbe449437c01b79c0e425ed578f335f5b",
+      "artifacts": [
+        { "path": "config.json", "size": 598, "sha256": "172904c65bb5af77a95e1a81cdd9214f4c9d983651d6dceef1375d3d09f47a36" },
+        { "path": "model.safetensors", "size": 9817176960, "sha256": "dc08942b20751ac906167194d4ca4aa06b4367e80aabe5f1d5153b30b874bdb9" }
+      ]
+    },
+    {
+      "modelId": "moirai-2.0-r-small",
+      "repository": "Salesforce/moirai-2.0-R-small",
+      "revision": "30f43ff08c8494f4943ae1521e9d4e94a0fbb389",
+      "artifacts": [
+        { "path": "config.json", "size": 291, "sha256": "6b74b03c8ec199fabc352c0203465958142ca468183da68549652734836f853d" },
+        { "path": "model.safetensors", "size": 45557824, "sha256": "fb5652a3db8ea572606221b7cb1e77bb8962b168e4d4cc752cf31ceb04074669" }
+      ]
+    },
+    {
+      "modelId": "flowstate-r1",
+      "repository": "ibm-granite/granite-timeseries-flowstate-r1",
+      "revision": "05effc6cb39ee16dce9dd0064ed1a76e4b8ff464",
+      "artifacts": [
+        { "path": "config.json", "size": 593, "sha256": "ba2cfa7a3cfb6f0137e3c39bc855dbd4fa7a6a035136960b256e558a13902dc8" },
+        { "path": "model.safetensors", "size": 36284680, "sha256": "07a7844db841047d3a99ce9c6ce0ce5139a24d1f42e919c37c2d1e285fa0ff98" }
+      ]
+    },
+    {
+      "modelId": "flowstate-r1.1",
+      "repository": "ibm-granite/granite-timeseries-flowstate-r1",
+      "revision": "b80e0f1b1c2d90edebe3d4f243ad046a3f935daa",
+      "artifacts": [
+        { "path": "config.json", "size": 696, "sha256": "e3996b95dc06812087d742e2a1db5cb5061c3cf77549d7843220baccfac02980" },
+        { "path": "model.safetensors", "size": 74111496, "sha256": "a4a745458cfef1cce84ef060a2e7fe515e40a2e5b0ea54fb079570a75f324862" }
+      ]
+    },
+    {
+      "modelId": "tabpfn-ts-3",
+      "repository": "Prior-Labs/tabpfn_3",
+      "revision": "24a16a89d245878b846555110985634aa2e656d7",
+      "artifacts": [
+        { "path": "tabpfn-v3-regressor-v3_20260506_timeseries.ckpt", "size": 233289807, "sha256": "48ca82019fec74f08e15d56a157bbe728d6ec25c221f2ff2d4fd22fd4e09ec6e" }
+      ]
+    },
+    {
+      "modelId": "tirex-35m",
+      "repository": "NX-AI/TiRex",
+      "revision": "63c740922493f5fbe60b277609ec62babfba2762",
+      "artifacts": [
+        { "path": "model.ckpt", "size": 141230262, "sha256": "b8c3f5a036c63272ce4b91c00187e26922a394cb6cb49d4e16db070ad0422314" }
+      ]
+    },
+    {
+      "modelId": "kairos-10m",
+      "repository": "mldi-lab/Kairos_10m",
+      "revision": "786ecafbb3fb1e33208ebdd706e0ccb09e3486ef",
+      "artifacts": [
+        { "path": "config.json", "size": 1621, "sha256": "4d12a0147f39e0caad3b6fbd97ed12958722233bc6cb54f9804b4fb9546ea9d8" },
+        { "path": "model.safetensors", "size": 39806164, "sha256": "386636f9fcd8de9f09cacc0e55d922fc46dc496fd3fa7d3550169aa4d8517440" }
+      ]
+    },
+    {
+      "modelId": "kairos-23m",
+      "repository": "mldi-lab/Kairos_23m",
+      "revision": "5123edcc9d6ee6f495bef78ec9fb63bb00ce878d",
+      "artifacts": [
+        { "path": "config.json", "size": 1621, "sha256": "34c8ea2bdcb6847a7b2a1594b44b9925a265c47d1312fe4537deca4153dc4d14" },
+        { "path": "model.safetensors", "size": 92028212, "sha256": "8ad0e8f8348f59728fb7a52c80a0068d93dc1751c3c09571f6e91b08ffe482e3" }
+      ]
+    },
+    {
+      "modelId": "kairos-50m",
+      "repository": "mldi-lab/Kairos_50m",
+      "revision": "b788434dd95f9893be002e6858bfb2afb0e3f360",
+      "artifacts": [
+        { "path": "config.json", "size": 1643, "sha256": "d9c35e5eeffdffd92968f175820045b5a9cb2dc4946a3c8d42f2b2360dfadccf" },
+        { "path": "model.safetensors", "size": 200551636, "sha256": "c68503d9a3a3141d25ef40fb71f182556de566989c95331efdab4eeb1b48f177" }
+      ]
+    },
+    {
+      "modelId": "sundial-128m",
+      "repository": "thuml/sundial-base-128m",
+      "revision": "3212e42564493f520593e5414af4367fc4b49226",
+      "artifacts": [
+        { "path": "config.json", "size": 739, "sha256": "173dd40c0a7e08a71b660110fd6334ee85eb9f6ce6f30df0a6cbaea3bb1ff3b4" },
+        { "path": "configuration_sundial.py", "size": 1577, "sha256": "1a79b4265d7a7feabb1fadc336c2c7580157ededd7cc58655f007213447eb7e4" },
+        { "path": "flow_loss.py", "size": 7829, "sha256": "fb33d3c3988015124c9f4e05728127d85afee8b416930c0e6d5097e4ced2ecf8" },
+        { "path": "generation_config.json", "size": 69, "sha256": "d90f7f1d9ef012f9ec0bd76fdf42e6979d086f157d65910b3b273edfb100e748" },
+        { "path": "model.safetensors", "size": 513341448, "sha256": "414435b508391f92afadd2aaeec418c806776aeccbce12e638d73a139ca5ca78" },
+        { "path": "modeling_sundial.py", "size": 24413, "sha256": "4a7ce7defa6578d0ae84593587d164afb933cfa6e52aee53f709f236b00b85e4" },
+        { "path": "ts_generation_mixin.py", "size": 13765, "sha256": "789577dafbd9605d4c1b2d8930ff2861277090b004b6e7ddef6011b79444942e" }
+      ]
+    }
+  ]
+}

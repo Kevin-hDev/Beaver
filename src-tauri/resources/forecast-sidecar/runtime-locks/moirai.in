@@ -1,0 +1,6 @@
+uni2ts==2.0.0
+gluonts==0.14.4
+jax[cpu]==0.6.1
+multiprocess==0.70.16
+numpy==1.26.4
+torch==2.4.1

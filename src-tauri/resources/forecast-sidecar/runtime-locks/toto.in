@@ -1,0 +1,5 @@
+toto-2==2.0.0
+huggingface-hub==1.24.0
+numpy==2.4.6
+safetensors==0.8.0
+torch==2.10.0
