@@ -1,0 +1,19 @@
+{
+  "version": "150.0.0+150.0.10",
+  "artifacts": {
+    "darwin-arm64": {
+      "file": "cef_binary_150.0.10+g8042e43+chromium-150.0.7871.101_macosarm64_minimal.tar.bz2",
+      "url": "https://cef-builds.spotifycdn.com/cef_binary_150.0.10%2Bg8042e43%2Bchromium-150.0.7871.101_macosarm64_minimal.tar.bz2",
+      "sha256": "ef5fe464184e2e00381a2cc73e911bb4b8cc219f0e6f9fd610af0bc89d0ea58d",
+      "bytes": 124472446,
+      "root": "cef_binary_150.0.10+g8042e43+chromium-150.0.7871.101_macosarm64_minimal"
+    },
+    "win32-x64": {
+      "file": "cef_binary_150.0.10+g8042e43+chromium-150.0.7871.101_windows64_minimal.tar.bz2",
+      "url": "https://cef-builds.spotifycdn.com/cef_binary_150.0.10%2Bg8042e43%2Bchromium-150.0.7871.101_windows64_minimal.tar.bz2",
+      "sha256": "ff10d09944e976e281b2eaed17a20eaecb60ae5142ee2bd06fe2f7b38a23bf73",
+      "bytes": 164251485,
+      "root": "cef_binary_150.0.10+g8042e43+chromium-150.0.7871.101_windows64_minimal"
+    }
+  }
+}

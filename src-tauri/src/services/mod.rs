@@ -1,0 +1,63 @@
+pub mod agent_import;
+pub mod agent_local;
+pub mod api_keys;
+pub mod attachment_access;
+#[cfg(test)]
+mod attachment_access_tests;
+pub mod autostart_migration;
+pub mod brand;
+#[cfg(test)]
+mod brand_tests;
+pub mod browser;
+pub mod codex_client;
+pub mod codex_oauth;
+pub mod compress;
+pub mod config;
+pub mod env_detect;
+pub mod favorite_models;
+pub mod file_watcher;
+pub mod forecast;
+pub mod gateway;
+pub mod git;
+pub mod git_context;
+pub mod gpu_detect;
+pub mod gpu_vram;
+pub mod link_preview;
+pub mod llm;
+pub mod llm_oauth;
+pub mod mascot;
+pub mod mcp_bridge;
+pub mod mcp_oauth;
+pub mod model_downloads;
+pub mod model_downloads_store;
+#[cfg(test)]
+mod model_downloads_store_tests;
+pub mod model_downloads_types;
+pub mod oauth_providers;
+pub mod ollama_env;
+pub mod ollama_kill;
+#[cfg(test)]
+mod ollama_kill_tests;
+pub mod ollama_lifecycle;
+pub mod ollama_port;
+pub mod ollama_ps;
+pub mod paths;
+pub mod personality_injection;
+pub mod private_store;
+pub mod process_tree;
+pub mod provider_usage;
+pub mod reasoning;
+mod reasoning_effort;
+mod reasoning_google;
+#[cfg(test)]
+mod reasoning_tests;
+pub mod scheduler;
+pub mod search;
+pub mod searxng;
+pub mod secure_http;
+pub mod security_cleanup;
+pub mod stream_utils;
+pub mod terminal;
+pub mod token_counting;
+pub mod update_health;
+pub mod vault;

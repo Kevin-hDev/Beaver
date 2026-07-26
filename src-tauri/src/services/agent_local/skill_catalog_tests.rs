@@ -1,0 +1,66 @@
+use super::*;
+
+#[test]
+fn command_name_is_qualified_by_source() {
+    let command = command_name(
+        "claude",
+        "frontend-design",
+        "claude:skill:0123456789abcdef",
+    );
+
+    assert_eq!(command, "claude:frontend-design");
+}
+
+#[test]
+fn local_command_keeps_legacy_unqualified_name() {
+    let command = command_name("local", "frontend-design", "local:skill:0123456789");
+
+    assert_eq!(command, "frontend-design");
+}
+
+#[test]
+fn local_skills_use_the_beaver_source_name() {
+    assert_eq!(local_source_name(), "Beaver");
+}
+
+#[test]
+fn command_name_filters_unsafe_characters() {
+    let command = command_name("agents", "review / ../ secrets", "agents:skill:123456789012");
+
+    assert_eq!(command, "agents:reviewsecrets");
+    assert!(!command.contains('/'));
+}
+
+#[test]
+fn catalog_id_does_not_expose_path() {
+    let id = catalog_id("local", Path::new("/private/example/skill"));
+
+    assert!(id.starts_with("local:skill:"));
+    assert!(!id.contains("private"));
+}
+
+#[test]
+fn duplicate_commands_receive_stable_id_suffixes() {
+    let make_entry = |id: &str| SkillCatalogEntry {
+        info: SkillInfo {
+            id: id.to_string(),
+            name: "review".into(),
+            command: "claude:review".into(),
+            description: String::new(),
+            path: id.to_string(),
+            source: "claude".into(),
+            source_name: "Claude Code".into(),
+        },
+        manifest: PathBuf::from("SKILL.md"),
+        bundle_root: PathBuf::from("."),
+    };
+    let mut entries = vec![
+        make_entry("claude:skill:11111111"),
+        make_entry("claude:skill:22222222"),
+    ];
+
+    make_commands_unique(&mut entries);
+
+    assert_eq!(entries[0].info.command, "claude:review:11111111");
+    assert_eq!(entries[1].info.command, "claude:review:22222222");
+}

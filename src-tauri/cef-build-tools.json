@@ -1,0 +1,21 @@
+{
+  "version": "1.12.1",
+  "tools": {
+    "darwin-arm64": {
+      "file": "ninja-mac-1.12.1.zip",
+      "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-mac.zip",
+      "sha256": "89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9",
+      "bytes": 281130,
+      "entry": "ninja",
+      "output": "ninja"
+    },
+    "win32-x64": {
+      "file": "ninja-win-1.12.1.zip",
+      "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip",
+      "sha256": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a",
+      "bytes": 275425,
+      "entry": "ninja.exe",
+      "output": "ninja.exe"
+    }
+  }
+}

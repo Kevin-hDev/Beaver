@@ -1,0 +1,12 @@
+pub const MAX_SOURCES: usize = 9;
+pub const MAX_ROOTS_PER_SOURCE: usize = 8;
+pub const MAX_SKILLS_PER_SOURCE: usize = 512;
+pub const MAX_RULES_PER_SOURCE: usize = 256;
+pub const MAX_TOTAL_SKILLS: usize = 2_048;
+pub const MAX_SCAN_DEPTH: usize = 12;
+pub const MAX_SCAN_ENTRIES: usize = 10_000;
+pub const MAX_MANIFEST_BYTES: u64 = 256 * 1024;
+pub const MAX_INSTRUCTION_BYTES: u64 = 256 * 1024;
+pub const MAX_ITEM_ID_BYTES: usize = 768;
+pub const MAX_PATH_BYTES: usize = 4096;
+pub const MAX_BACKUPS_PER_DOCUMENT: usize = 5;

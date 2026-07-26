@@ -1,0 +1,183 @@
+[package]
+name = "cl-go-dash"
+default-run = "cl-go-dash"
+version = "1.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+name = "cl_go_dash_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[features]
+default = []
+# Profil isolé réservé aux validations manuelles CEF. Les builds normaux
+# n'incluent pas cette redirection.
+cef-test-profile = []
+# Permet de vérifier le code Windows depuis un autre OS sans télécharger ni
+# lier le runtime natif. Les installateurs n'activent jamais cette option.
+cef-cross-check = ["cef/dox"]
+
+[[bin]]
+name = "cl-go-dash"
+path = "src/main.rs"
+
+[[bin]]
+name = "cl-go-dash-helper"
+path = "src/bin/cl-go-dash-helper.rs"
+
+[[bin]]
+name = "cl-go-dash-updater"
+path = "src/bin/cl-go-dash-updater.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Framework
+tauri = { version = "2", features = ["macos-private-api", "tray-icon", "image-png"] }
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-autostart = "2"
+auto-launch = "=0.5.0"
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+indexmap = { version = "2", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+dirs = "6"
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.13", features = ["json", "stream", "rustls", "query", "form"] }
+netstat2 = "=0.11.2"
+
+# Gateway messaging
+url = "2"
+subtle = "2"
+tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+hmac = "0.12"
+
+# Streaming NDJSON
+tokio-util = { version = "0.7", features = ["io"] }
+futures-util = "0.3"
+
+# Locale detection cross-plateforme
+sys-locale = "0.3"
+tempfile = "3"
+
+# HTML -> Markdown
+htmd = "0.5"
+
+# Readability
+dom_smoothie = { version = "0.18", features = ["aho-corasick"] }
+
+# PDF
+pdf-extract = "0.12"
+
+# DOCX
+zip = "8"
+quick-xml = "0.41"
+
+# XLSX / Spreadsheets
+calamine = "0.36"
+csv = "1"
+rust_xlsxwriter = "0.82"
+umya-spreadsheet = "3"
+
+# Image metadata
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+
+# Base64
+base64 = "0.22"
+
+# Keyring (1 seule entrée master key)
+keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service"] }
+
+# Vault chiffré (XChaCha20-Poly1305)
+chacha20poly1305 = "0.10"
+rand = "0.8.6"
+
+# Zeroize mémoire pour les secrets (clés API)
+zeroize = { version = "1.8", features = ["derive"] }
+
+# Chargement .env au démarrage (credentials OAuth runtime)
+dotenvy = "0.15"
+
+sha2 = "0.10"
+hex = "0.4"
+urlencoding = "2"
+open = "5"
+
+# Trait async (pour abstraction providers LLM)
+async-trait = "0.1"
+
+# Streaming SSE (pour client LLM unifié)
+eventsource-stream = "0.2"
+
+# Shell cross-platform
+which = "7"
+
+# Terminal PTY cross-platform
+portable-pty = "0.9"
+
+# Archive extraction (Ollama bundle)
+zstd = "0.13"
+tar = "0.4"
+flate2 = "1"
+
+# Existants
+regex = "1"
+notify = "7"
+notify-debouncer-mini = "0.5"
+
+# Git operations (branch, status, worktree, HTTPS/SSH push)
+git2 = { version = "0.21", features = ["https", "ssh"] }
+
+# Tools grep/glob (crates de ripgrep)
+grep-regex = "0.1"
+grep-searcher = "0.1"
+ignore = "0.4"
+globset = "0.4"
+
+# Process tree (tree-kill sidecar Ollama)
+sysinfo = { version = "0.35", default-features = false, features = ["system"] }
+
+# Traductions pré-bundlées (embarquées dans le binaire)
+include_dir = "0.7"
+httpdate = "1.0.3"
+resvg = "0.47.0"
+plist = "1.10"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+notify = { version = "7", features = ["macos_fsevent"] }
+git2 = { version = "0.21", features = ["vendored-openssl"] }
+core-foundation = "0.10"
+objc2 = "0.6"
+objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSEvent", "NSView"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSDate", "NSGeometry", "NSObject", "NSObjCRuntime", "NSRunLoop", "NSString", "NSTimer", "objc2-core-foundation"] }
+dispatch2 = "0.3"
+# Cargo ignore le suffixe build dans une contrainte semver ; Cargo.lock fixe
+# précisément le paquet publié 150.0.0+150.0.10.
+cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+] }
+cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
+
+[dev-dependencies]
+# Mock de serveur HTTP pour tests d'intégration (LLM, search, gateway, forecast)
+wiremock = "0.6"
+# Horloge simulée pour les attentes événementielles
+tokio = { version = "1", features = ["test-util"] }

@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "forecast-docs",
+  "description": "Read-only Forecast documentation window",
+  "windows": ["forecast-docs"],
+  "permissions": [
+    "core:default"
+  ]
+}

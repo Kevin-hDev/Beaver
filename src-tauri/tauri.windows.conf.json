@@ -1,0 +1,13 @@
+{
+  "build": {
+    "beforeBundleCommand": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File src-tauri/scripts/prepare-cef-windows.ps1"
+  },
+  "bundle": {
+    "resources": {
+      "default-skills/": "default-skills/",
+      "resources/forecast-sidecar/": "resources/forecast-sidecar/",
+      "resources/searxng-sidecar/": "resources/searxng-sidecar/",
+      "target/cef-runtime/windows/": ""
+    }
+  }
+}

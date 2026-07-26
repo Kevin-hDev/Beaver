@@ -1,0 +1,7 @@
+[env]
+CEF_PATH = { value = ".cef-verified/current", relative = true, force = true }
+CEF_DOWNLOAD_URL = { value = "https://cef-download-disabled.invalid", force = true }
+CMAKE_aarch64_apple_darwin = { value = ".cef-tools/cmake-wrapper", relative = true, force = true }
+
+[target.'cfg(target_os = "macos")']
+runner = "bash scripts/run-cef-dev-app.sh"
