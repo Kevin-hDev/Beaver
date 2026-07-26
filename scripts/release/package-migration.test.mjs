@@ -90,5 +90,16 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(nsis, /Get-ItemProperty/);
   assert.match(nsis, /cl-go-dash\.exe/);
   assert.match(nsis, /windows-artifact-helpers\.ps1/);
+  for (const variable of [
+    "oldUninstall",
+    "newUninstall",
+    "oldProduct",
+    "newProduct",
+  ]) {
+    assert.match(
+      nsis,
+      new RegExp(`\\$${variable} = @\\(Get-ExistingRegistryPaths `),
+    );
+  }
   assert.doesNotMatch(`${nsis}\n${windowsHelpers}`, /Invoke-Expression|cmd\.exe/i);
 });

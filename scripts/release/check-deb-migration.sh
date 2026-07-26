@@ -24,13 +24,21 @@ read_control_field() {
   printf '%s' "${value}"
 }
 
-validate_contents() {
-  dpkg-deb -c "$1" | awk '
+validate_content_listing() {
+  awk '
     NR > 4096 { overflow = 1; exit }
-    $NF == "./usr/bin/cl-go-dash" { binary += 1 }
-    $NF == "./usr/share/applications/Beaver.desktop" { desktop += 1 }
+    {
+      path = $NF
+      sub(/^\.\//, "", path)
+    }
+    path == "usr/bin/cl-go-dash" { binary += 1 }
+    path == "usr/share/applications/Beaver.desktop" { desktop += 1 }
     END { exit (overflow || binary != 1 || desktop != 1) }
   '
+}
+
+validate_contents() {
+  dpkg-deb -c "$1" | validate_content_listing
 }
 
 main() {

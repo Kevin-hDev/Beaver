@@ -90,6 +90,34 @@ if control_contract_matches "beaver" "cl-go" "other" "cl-go"; then
   exit 1
 fi
 
+for prefix in "" "./"; do
+  if ! printf '%s\n' \
+    "-rwxr-xr-x root/root usr/bin/unrelated" \
+    "-rwxr-xr-x root/root ${prefix}usr/bin/cl-go-dash" \
+    "-rw-r--r-- root/root ${prefix}usr/share/applications/Beaver.desktop" |
+    validate_content_listing; then
+    printf "FAIL valid Debian content listing was rejected\n" >&2
+    exit 1
+  fi
+done
+
+if printf '%s\n' \
+  "-rwxr-xr-x root/root usr/bin/cl-go-dash" \
+  "-rwxr-xr-x root/root usr/bin/cl-go-dash" \
+  "-rw-r--r-- root/root usr/share/applications/Beaver.desktop" |
+  validate_content_listing; then
+  printf "FAIL duplicate Debian binary was accepted\n" >&2
+  exit 1
+fi
+
+if printf '%s\n' \
+  "-rwxr-xr-x root/root ../usr/bin/cl-go-dash" \
+  "-rw-r--r-- root/root usr/share/applications/Beaver.desktop" |
+  validate_content_listing; then
+  printf "FAIL unsafe Debian content listing was accepted\n" >&2
+  exit 1
+fi
+
 /bin/rm -rf "${TMP_DIR}"
 TMP_DIR=""
 printf "install.sh tests OK\n"

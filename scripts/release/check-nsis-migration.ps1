@@ -120,10 +120,10 @@ function Get-ExistingRegistryPaths([string]$Suffix) {
 }
 
 function Test-InstalledState {
-    $oldUninstall = Get-ExistingRegistryPaths "Software\Microsoft\Windows\CurrentVersion\Uninstall\CL-GO"
-    $newUninstall = Get-ExistingRegistryPaths "Software\Microsoft\Windows\CurrentVersion\Uninstall\Beaver"
-    $oldProduct = Get-ExistingRegistryPaths "Software\clgo\CL-GO"
-    $newProduct = Get-ExistingRegistryPaths "Software\clgo\Beaver"
+    $oldUninstall = @(Get-ExistingRegistryPaths "Software\Microsoft\Windows\CurrentVersion\Uninstall\CL-GO")
+    $newUninstall = @(Get-ExistingRegistryPaths "Software\Microsoft\Windows\CurrentVersion\Uninstall\Beaver")
+    $oldProduct = @(Get-ExistingRegistryPaths "Software\clgo\CL-GO")
+    $newProduct = @(Get-ExistingRegistryPaths "Software\clgo\Beaver")
     if ($oldUninstall.Count -ne 0 -or $oldProduct.Count -ne 0) {
         Stop-Validation
     }
