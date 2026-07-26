@@ -42,13 +42,18 @@ function readBaselineFile(commit, file) {
   });
 }
 
-test("les contrats historiques existaient dans le commit de référence", () => {
-  const manifest = loadManifest();
-  execFileSync("git", ["merge-base", "--is-ancestor", manifest.baseline.commit, "HEAD"], {
+function assertBaselineCommit(commit) {
+  assert.match(commit, /^[a-f0-9]{40}$/u);
+  execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], {
     cwd: ROOT,
     maxBuffer: 1024,
     stdio: ["ignore", "pipe", "pipe"],
   });
+}
+
+test("les contrats historiques existaient dans le commit de référence", () => {
+  const manifest = loadManifest();
+  assertBaselineCommit(manifest.baseline.commit);
   const packageJson = JSON.parse(
     readBaselineFile(manifest.baseline.commit, "package.json"),
   );

@@ -17,6 +17,10 @@ test("valide tout le projet et les métadonnées Beaver avant les builds", () =>
     workflow,
     /check-brand-artifacts\.mjs source "\$RELEASE_TAG" \./,
   );
+  assert.match(
+    workflow,
+    /git fetch --no-tags --depth=2[\s\S]*?refs\/tags\/v1\.0\.2:refs\/tags\/cl-go-v1\.0\.2-baseline/,
+  );
   assert.doesNotMatch(workflow, /check-bridge-metadata\.mjs/);
   for (const command of [
     "npm test",
