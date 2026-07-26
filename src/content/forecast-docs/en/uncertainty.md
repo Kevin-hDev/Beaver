@@ -1,60 +1,35 @@
 # Uncertainty
 
-A forecast is never an absolute truth. Forecast therefore displays a central value and an uncertainty range to show the risk around the trajectory.
+A serious forecast is more than one curve. Forecast combines the central value with an interval representing model uncertainty at the requested confidence level.
 
 ## Central value
 
-The central value is the model's main estimate.
+The central value is generally the median, often named `q50`. Roughly half of possible results are below and half are above. It does not guarantee the actual value will follow that path.
 
-Example:
+## Confidence level
 
-```text
-2026-06-01 -> 142 orders predicted
-```
+Accepted confidence ranges from 50% to 99% in whole percentage-point steps for continuous models. When the user gives no preference, the LLM uses 80%.
 
-It represents the most likely scenario given the data used.
+Some models honestly provide only fixed levels, currently 60% or 80%. Forecast always preserves the exact request:
 
-## Uncertainty bounds
+- Auto returns only compatible candidates;
+- Manual reports incompatibility;
+- no request is silently rounded.
 
-The bounds indicate a likely zone around the central value.
+## Bounds and quantiles
 
-Example:
+An 80% central interval generally uses `q10`, `q50` and `q90`. A 90% interval generally uses `q05`, `q50` and `q95`. Labels follow the levels actually computed.
 
-```text
-Forecast: 142
-Lower bound: 128
-Upper bound: 157
-```
+## Uncertainty fan
 
-Simple reading: the model estimates 142, but considers that a value around 128 to 157 remains plausible.
+The fan chart shows how intervals widen or narrow over the horizon. Wider bounds mean lower precision for that period. A narrow interval is useful only when correctly calibrated.
 
-## Quantiles
+## Measured coverage
 
-Models can return quantiles.
+After backtesting, Forecast compares the announced level with the share of validation values actually covered. An 80% interval should contain roughly 80% of observations.
 
-| Field | Meaning |
-| --- | --- |
-| q10 | Likely low value |
-| q50 | Central or median value |
-| q90 | Likely high value |
+Short history can make this estimate unstable, and the interface reports that limitation.
 
-The wider the gap between q10 and q90, the more uncertain the model is.
+## Good use
 
-## Why uncertainty increases
-
-Uncertainty can increase when:
-
-- the history is short;
-- the target varies strongly;
-- the horizon is long;
-- contextual variables are missing;
-- a recent break appears in the data;
-- several future scenarios are possible.
-
-## Proper use
-
-The central value is used to read the trend.
-
-The uncertainty range is used to read the risk.
-
-A serious decision must look at both.
+Use uncertainty to compare risk across periods, distinguish robust trends from fragile paths, prepare cautious thresholds, verify calibration and compare scenarios without confusing assumptions with certainty.

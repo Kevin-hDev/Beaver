@@ -1,100 +1,37 @@
 # Scenarios
 
-A scenario is used to test a hypothesis about the future. It compares the baseline forecast with a modified trajectory.
-
-## Why create a scenario
-
-The baseline forecast answers: "what does the model predict with the current data?"
-
-A scenario answers: "what happens if the context changes?"
-
-Examples:
-
-- what happens to sales if a promotion is launched?
-- what happens to revenue if traffic drops?
-- what happens to an asset if the VIX rises?
-- what happens to demand if a local event is added?
-
-The scenario turns Forecast into a simulation tool, not just a forecast graph.
+A scenario explores an assumption from an existing analysis. It does not replace observed data or the original forecast.
 
 ## Global adjustment
 
-The global adjustment applies a simple variation to the curve.
+A percentage adjustment creates a derived curve, such as demand up 10%, revenue down 5% or capacity up 15%.
 
-Example:
-
-```text
-Baseline forecast: 100, 110, 120
-Scenario +10%   : 110, 121, 132
-```
-
-This mode is fast and readable. It does not rerun the model, so it does not understand the relationships between variables.
+It is quick to read but does not rerun the model and does not prove that a real cause would create the same effect.
 
 ## Contextual scenario
 
-The contextual scenario modifies the future variables, then reruns the model.
+A contextual scenario changes one or more future covariates and reruns the model when supported.
 
-Example:
+Examples include changing a planned budget, price, weather, future capacity or one target series. Modified values remain assumptions.
 
-```text
-Hypothesis: vix_close +20%
-Expected effect: the model recomputes the target with this more stressed market context.
-```
+## Creation and editing
 
-This mode is more important for Chronos-2 and TimeGPT, because it uses covariates as real prediction signals.
+The Forecast workspace keeps scenario creation, editing and deletion in its dedicated section. The panel retains quick reading of existing scenarios.
 
-## Modifiable variables
+The LLM can also manage them through `forecast_analyze` when requested in chat.
 
-The available variables depend on the dataset.
+## Comparing curves
 
-They can represent:
+Compare the original forecast and useful scenarios over the same period. Check when curves diverge, the size of the gap, uncertainty, affected series and covariates actually changed.
 
-- environment: weather, traffic, events;
-- finance: volatility, rates, indices, news score;
-- calendar: weekend, public holiday, month-end;
-- business: promo, stock, budget, campaign;
-- risk: alert, incident, competitive pressure.
+A small difference can be normal when the chosen variable has little influence.
 
-Each modification must make business sense. Modifying a variable at random produces a scenario that is hard to interpret.
+## Model ensemble
 
-## Reading in the graph
+An ensemble is not a business scenario. It combines two to four models that succeeded in a multi-model backtest, weighted by inverse MASE.
 
-When a scenario is selected, the graph must allow comparison of:
+Forecast marks it as not independently evaluated until a dedicated backtest confirms its performance.
 
-- actual history;
-- baseline forecast;
-- scenario forecast;
-- displayed contextual variables;
-- difference between baseline and scenario.
+## Good use
 
-Typical diagram of a comparison:
-
-```text
-value
-  ^
-  |              ╭───── scenario (VIX +20%)
-  |           ╭──╯
-  |       · ·─·      ← baseline forecast
-  |     ·
-  |   ·
-  | ·
-  ──────────────────────────────> time
-       history       │   future
-                     │
-                horizon
-```
-
-The main question is not "is the curve different?", but "which hypothesis moved the trajectory, on which date, and by how much?"
-
-## Proper use
-
-A good scenario must be clearly named.
-
-Examples:
-
-- `VIX +20% for 30 days`
-- `Active weekend promo`
-- `Heavy rain week 2`
-- `Traffic -15% after incident`
-
-A vague name like `test` or `crash` makes comparison pointless when several scenarios exist.
+Give every scenario a clear name, measurable assumption, time range, value source, explanation of changes and comparison with the original forecast.

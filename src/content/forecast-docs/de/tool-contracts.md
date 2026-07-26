@@ -1,65 +1,58 @@
 # Forecast-Tools
 
-Die Forecast-Tools ermöglichen es LLM-Agenten, den Vorhersage-Motor aus dem Chat heraus zu nutzen. Sie müssen mit präzisen Parametern aufgerufen werden, denn eine falsche Spalte oder ein inkohärenter Horizont erzeugt eine nutzlose Prognose.
+Die sieben Forecast-Tools bilden einen kontrollierten Ablauf. Große Ergebnisse bleiben im Forecast-Speicher; das LLM tauscht kompakte IDs aus.
+
+## Empfohlene Reihenfolge
+
+```text
+forecast_data_audit
+  → forecast_models
+  → forecast
+  → forecast_read
+  → forecast_backtest
+  → forecast_compare_models
+```
+
+Nutze `forecast_analyze` danach für Notizen, Szenarien oder Ensembles.
+
+## `forecast_data_audit`
+
+Rufe dieses Tool vor der ersten Prognose jedes Datensatzes auf. Übergib Daten oder Datei, Ziel, Datum, Frequenz, Horizont und exakte Konfidenz.
+
+Es prüft Daten, Duplikate, fehlende Perioden, ungültige Werte, Verlauf, Serien, Zukunft und Ausreißer. Eine gültige Antwort liefert `data_profile_id`.
+
+## `forecast_models`
+
+Prüfe aktive Richtlinie und Intervalle. Kontrolliere im manuellen Modus das erzwungene Modell. Übergib in Auto `data_profile_id`, wähle einen Kandidaten und behalte `selection_id`.
+
+Hardwareinformationen erscheinen nur in dieser Antwort. Runde die Konfidenz nicht.
 
 ## `forecast`
 
-`forecast` startet eine neue Vorhersage.
+Starte die Prognose mit Profil, Ziel, Datum, Horizont, Frequenz und unveränderter Konfidenz. Ergänze Serie und Kovariaten nur bei Unterstützung.
 
-Haupteingaben:
-
-| Parameter | Rolle |
-| --- | --- |
-| `file_path` | Zu lesende Excel-, CSV- oder JSON-Datei |
-| `data` | Bereits vorbereitete JSON-Daten |
-| `date_column` | Spalte mit den Daten |
-| `target_column` | Zu prognostizierende Spalte |
-| `series_column` | Spalte, die die Serien identifiziert |
-| `covariate_columns` | Zu verwendende Kontextvariablen |
-| `frequency` | Zeitlicher Rhythmus |
-| `horizon` | Anzahl zukünftiger Punkte |
-| `model` | Zu verwendender Motor |
-
-Hauptausgabe:
-
-- `analysis_id`, der Identifikator des Forecast-Ergebnisses.
+Übergib in Auto auch Modell, `selection_id`, Quelle und erlaubte Gründe. Die Antwort liefert `analysis_id`.
 
 ## `forecast_read`
 
-`forecast_read` liest ein Forecast-Ergebnis.
+Lasse `analysis_id` weg, um Analysen aufzulisten, oder gib sie für eine Analyse an. Nutze `offset` und `limit`, höchstens 200 Punkte pro Seite.
 
-Es dient dem Abruf von:
+Die Antwort kann Zerlegung, Residuenanomalien, chronologische Permutationsbedeutung und Drift enthalten. Erfinde keinen Ersatz.
 
-- der Prognose;
-- der Historie;
-- der Unsicherheit;
-- den Szenarien;
-- den verfügbaren Variablen;
-- den Modell-Metadaten.
+## `forecast_backtest`
 
-Wenn kein `analysis_id` angegeben wird, kann der Agent ihn nutzen, um die verfügbaren Ergebnisse aufzulisten.
+Führe eine begrenzte rollierende Prüfung auf einer gespeicherten Analyse aus. Modelle und Baselines Naive, saisonale Naive, Drift und ETS werden auf gleichen Perioden bewertet.
+
+Prüfe immer Status und Fehler.
+
+## `forecast_compare_models`
+
+Lies die gespeicherte Rangliste mit Fehlern, Abdeckung, Dauer, beobachtetem Speicher und Baseline-Status. Nenne ein Modell nur bei vollständigem Nachweis das beste.
 
 ## `forecast_analyze`
 
-`forecast_analyze` fügt Elemente rund um eine Prognose hinzu oder verändert sie.
+Nutze `annotate`, `scenario`, `scenario_update`, `scenario_delete` oder `ensemble`. Erstelle ein Ensemble nur nach erfolgreichem Mehrmodell-Backtest und erkläre inverse MASE-Gewichtung sowie fehlende unabhängige Auswertung.
 
-Es dient insbesondere dazu:
+## Ablauf neu starten
 
-- eine Annotation zu erstellen;
-- ein Szenario zu erstellen;
-- ein kontextuelles Szenario neu zu starten;
-- ein Szenario zu ändern;
-- ein Szenario zu löschen.
-
-## Was der Agent prüfen muss
-
-Vor dem Aufruf eines Tools muss der Agent prüfen:
-
-- die Zielgröße existiert;
-- das Datum ist lesbar;
-- der Horizont entspricht den zukünftigen Zeilen;
-- die Kovariablen existieren tatsächlich;
-- die erstellten oder im Web gefundenen Daten sind identifiziert;
-- das gewählte Modell unterstützt das Bedürfnis.
-
-Der Agent muss seine Entscheidungen erklären, anstatt einen undurchsichtigen Aufruf abzusetzen.
+Wiederhole `forecast_data_audit` und `forecast_models`, wenn sich Daten, Zuordnung, Ziel, Frequenz, Horizont, Konfidenz, Kovariaten, Serienstruktur oder Ressourcen ändern.

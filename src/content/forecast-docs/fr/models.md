@@ -1,41 +1,67 @@
 # Modèles
 
-Un modèle est le moteur qui calcule la prévision. Forecast propose plusieurs familles de modèles, locales (le calcul reste sur la machine) ou cloud (les données utiles sont envoyées au provider configuré).
+Un modèle est le moteur qui calcule la prévision. Forecast propose plusieurs familles locales et une famille cloud, puis vérifie leurs capacités, leur état et les ressources disponibles avant chaque exécution.
 
-## Familles locales
+## Familles disponibles
 
-| Famille | Éditeur | Détail |
+| Famille | Éditeur | Usage principal |
 | --- | --- | --- |
-| Chronos / Chronos-Bolt | Amazon | Modèle local rapide, bon pour un premier test ou une cible simple |
-| TimesFM | Google | Modèle local de prévision de séries temporelles |
-| Toto 2.0 | Datadog | Modèle local orienté monitoring et métriques |
-| MOIRAI 2.0 | Salesforce | Modèle local, gère le multi-séries et les covariables |
-| FlowState | IBM | Modèle local pour séries temporelles |
-| TabPFN-TS | PriorLabs | Modèle local expérimental |
-| TiRex | NX-AI | Modèle local expérimental |
-| Kairos | Foundation Model Research | Modèle local expérimental |
-| Sundial | THUML | Modèle local expérimental |
+| Chronos / Chronos-Bolt | Amazon | Prévisions locales rapides et probabilistes |
+| TimesFM | Google | Prévision généraliste de séries temporelles |
+| Toto 2.0 | Datadog | Métriques et séries de monitoring |
+| MOIRAI 2.0 | Salesforce | Multi-séries et variables de contexte |
+| FlowState | IBM | Prévision locale probabiliste |
+| TabPFN-TS | PriorLabs | Prévision locale expérimentale |
+| TiRex | NX-AI | Prévision locale expérimentale |
+| Kairos | Foundation Model Research | Prévision locale expérimentale |
+| Sundial | THUML | Prévision locale probabiliste |
+| TimeGPT | Nixtla | Prévision cloud via une clé API |
 
-## Famille cloud
+Les capacités exactes dépendent de la variante choisie. Le catalogue de l'application reste la source de vérité pour les fréquences, l'horizon, les covariables, le multi-séries et les intervalles supportés.
 
-| Famille | Éditeur | Détail |
-| --- | --- | --- |
-| TimeGPT-2 / TimeGPT-2.1 | Nixtla | Moteur cloud spécialisé en séries temporelles. Nécessite une clé API et envoie les données utiles au provider. |
+## Mode Manuel
 
-Les modèles cloud peuvent être plus puissants, mais impliquent une dépendance externe et un envoi de données. Pour des données sensibles, préférer un modèle local.
+En mode Manuel, vous choisissez le modèle dans le sélecteur. Forecast impose ce choix au LLM.
 
-## Choisir un modèle
+Le LLM vérifie tout de même que le modèle est prêt et qu'il accepte les données et le niveau de confiance exact. En cas d'incompatibilité, il doit demander de choisir un autre modèle ou un autre niveau de confiance. Il ne remplace pas silencieusement votre sélection.
 
-Le choix dépend surtout du dataset et du cas d'usage :
+## Mode Auto
 
-- **Test rapide, cible simple** : Chronos-Bolt.
-- **Données sensibles, calcul local** : n'importe quelle famille locale.
-- **Covariables et contexte futur** : un modèle qui gère les variables de contexte (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Multi-séries** : un modèle qui gère plusieurs séries (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Qualité cloud avancée** : TimeGPT, en acceptant l'envoi des données.
+En mode Auto, le LLM doit sélectionner un modèle parmi une courte liste déjà filtrée par Forecast.
 
-Un modèle avancé ne compense pas des données mal structurées. Avant de changer de modèle, vérifier la qualité du dataset, la fréquence, l'horizon et les variables de contexte.
+Le backend exclut les modèles :
 
-## Installer un modèle local
+- non installés ou non préparés ;
+- incompatibles avec la fréquence, l'horizon ou les séries ;
+- incapables d'utiliser les covariables nécessaires ;
+- incompatibles avec le niveau de confiance exact ;
+- trop lourds pour les ressources disponibles ;
+- cloud lorsque le cloud n'est pas autorisé.
 
-Les modèles locaux doivent être installés depuis le gestionnaire de modèles (Settings → Forecast) ou via l'onglet modèles de l'espace Forecast. Ils sont téléchargés depuis Hugging Face ou GitHub selon la famille, puis stockés localement dans `~/.local/share/cl-go-dash/forecast-models/`.
+Le LLM reçoit uniquement les informations matérielles utiles pendant cette opération Forecast. Ces informations ne sont pas ajoutées au reste de la conversation.
+
+Avant tout backtest comparable, Auto indique seulement qu'un modèle est compatible ou recommandé selon ses capacités. Il ne le présente pas comme le meilleur.
+
+## Installation et préparation
+
+Depuis les réglages Forecast, le bouton Préparer télécharge le modèle, installe le moteur nécessaire et effectue une vérification réelle. Ces étapes ont lieu pendant la préparation, pas au lancement de la première prévision.
+
+Plusieurs préparations peuvent être ajoutées à une file d'attente. Une famille peut partager son moteur entre plusieurs variantes, ce qui évite de réinstaller les mêmes dépendances.
+
+Les états principaux sont :
+
+| État | Signification |
+| --- | --- |
+| Non installé | Les fichiers du modèle ne sont pas présents |
+| Mise à jour requise | Les fichiers existent, mais le moteur ou la validation doit être actualisé |
+| Invalide | L'installation est incomplète ou ne passe pas les contrôles |
+| Prêt | Le modèle et son moteur ont été vérifiés |
+| Provider requis | Le modèle cloud attend une clé API configurée |
+
+Un modèle local n'apparaît comme sélectionnable que lorsqu'il est prêt. Sa désinstallation retire ses fichiers et supprime le moteur partagé seulement lorsqu'aucun autre modèle de la famille n'en a besoin.
+
+## Modèles cloud
+
+Un modèle cloud envoie les données nécessaires au fournisseur configuré. Auto ne l'utilise que si le cloud a été autorisé, si le fournisseur est prêt et si la politique de données permet l'envoi externe.
+
+Forecast ne bascule jamais silencieusement d'un modèle local vers le cloud.

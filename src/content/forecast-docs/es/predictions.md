@@ -1,67 +1,33 @@
 # Previsiones
 
-Una previsión es el resultado calculado por Forecast para estimar los próximos valores de un objetivo. Responde a una pregunta concreta: "si los datos pasados y el contexto conocido se mantienen coherentes, ¿qué valores se pueden esperar a continuación?"
+Una previsión prolonga una o varias series a partir de su historial, variables contextuales y modelo seleccionado. Incluye una estimación central y límites de incertidumbre cuando están disponibles.
 
-## Lo que representa una previsión
+## Resultado guardado
 
-Una previsión contiene una serie de puntos futuros.
+Cada ejecución válida crea un `analysis_id` que vincula el panel, el espacio Forecast, escenarios, notas, evaluaciones y exportaciones.
 
-Cada punto corresponde a una fecha o un periodo:
+Antes de guardar, Forecast valida cantidades, fechas, orden, valores finitos, cuantiles y horizonte. Una salida parcial o incoherente no se guarda como análisis válido.
 
-```text
-2026-06-01 -> 142 pedidos previstos
-2026-06-02 -> 151 pedidos previstos
-2026-06-03 -> 149 pedidos previstos
-```
+## Gráfico principal
 
-Estos valores no son una certeza. Representan la estimación del modelo.
+El gráfico separa historial y zona prevista. Los filtros muestran u ocultan series, incertidumbre, escenarios, eventos, comparaciones, anomalías y señales de calidad.
 
-## Entradas necesarias
+Puedes arrastrar para desplazarte, usar rueda o trackpad para ampliar, usar las barras de salto, plegar tarjetas y abrir la tabla de puntos. El zoom no bloquea el desplazamiento de la página cuando ya no puede cambiar.
 
-Para lanzar una previsión, Forecast necesita:
+## Gráficos complementarios
 
-| Elemento | Rol |
-| --- | --- |
-| Fecha | Sitúa cada línea en el tiempo |
-| Objetivo | Valor a predecir |
-| Frecuencia | Ritmo de los datos: día, hora, mes, etc. |
-| Horizonte | Número de puntos futuros a predecir |
-| Modelo | Motor utilizado para calcular la trayectoria |
+El espacio puede mostrar un abanico de incertidumbre, una comparación estacional y un gráfico de fiabilidad tras un backtest. En multi-serie, la serie activa permanece sincronizada.
 
-Las variables de contexto y el multi-series no son obligatorios, pero se vuelven importantes en cuanto se quiere explicar o simular el futuro.
+## Tabla de previsiones
 
-## Horizonte
+La tabla está plegada por defecto. Al abrirla muestra fechas, valor central y límites en una zona desplazable y limitada.
 
-El horizonte indica la profundidad de la previsión.
+Para análisis largos, `forecast_read` devuelve páginas limitadas en lugar de cargar toda la serie en el contexto del LLM.
 
-Ejemplos:
+## Actualización en tiempo real
 
-- horizonte `24` con frecuencia horaria: prever las próximas 24 horas;
-- horizonte `31` con frecuencia diaria: prever los próximos 31 días;
-- horizonte `12` con frecuencia mensual: prever los próximos 12 meses.
-
-Cuanto más largo es el horizonte, más aumenta generalmente la incertidumbre.
-
-## Resultado e identificador
-
-Cada lanzamiento produce un identificador `analysis_id`.
-
-Este identificador no significa "archivo guardado". Sirve para encontrar el resultado calculado: curva futura, incertidumbre, parámetros, variables, escenarios y anotaciones.
-
-La aplicación lo utiliza para:
-
-- reabrir una previsión;
-- mostrar el gráfico;
-- comparar varios resultados;
-- crear o relanzar escenarios;
-- permitir a un agente LLM revisar el resultado.
+El panel y el espacio Forecast leen el mismo análisis. Nuevas previsiones, cambios y selección de análisis actualizan las vistas sin cerrar y volver a abrir la ventana.
 
 ## Interpretación correcta
 
-Una previsión debe leerse con tres preguntas:
-
-- ¿la tendencia sube, baja o se mantiene estable?
-- ¿la incertidumbre es pequeña o grande?
-- ¿qué variables de contexto pueden explicar el movimiento?
-
-Una curva sola no basta. Forecast se vuelve útil cuando la previsión se vincula a su contexto.
+Interpreta la curva junto con la calidad de datos, incertidumbre, horizonte, anomalías, backtests, referencias e hipótesis. Una curva suave no demuestra precisión.

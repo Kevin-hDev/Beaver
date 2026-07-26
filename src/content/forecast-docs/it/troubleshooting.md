@@ -1,67 +1,47 @@
 # Diagnostica
 
-Questa sezione aiuta a capire perché una previsione non dà il risultato atteso.
+Questa sezione distingue il comportamento normale dai problemi che richiedono un'azione.
 
-## Dati JSON non validi
+## Preparazione del modello
 
-Questo errore significa che Forecast non ha ricevuto una tabella sfruttabile.
+Un modello può essere Non installato, Aggiornamento richiesto, Non valido, Pronto o Provider richiesto. Prepara i modelli mancanti o vecchi, reinstalla quelli non validi e configura il provider cloud.
 
-Può dipendere da:
+Più preparazioni entrano in coda e i file validi vengono riutilizzati.
 
-- JSON mal formato;
-- file non convertito correttamente;
-- campo `data` vuoto o troncato;
-- formato di riga errato;
-- colonne assenti.
+## Ciclo del sidecar
 
-Se l'utente fornisce un file, l'agente deve verificare che il file sia letto correttamente prima di convertire i dati.
+Il runtime locale si avvia per una previsione o un backtest e può fermarsi subito dopo. È normale e libera risorse.
 
-## Modello non disponibile
+C'è un problema solo se non diventa pronto, la richiesta fallisce o Forecast restituisce un errore.
 
-Questo errore può dipendere da:
+## Audit rifiutato
 
-- modello locale non installato;
-- sidecar fermato;
-- chiave API assente;
-- modello incompatibile con i parametri;
-- dati troppo corti per il modello richiesto.
+Può dipendere da colonne mancanti, date non valide o duplicate, frequenza incoerente, storico insufficiente, futuro errato o limiti superati.
 
-La reazione giusta è verificare il modello, poi testare con un dataset minimale.
+Correggi il problema e ripeti l'audit. Non usare un vecchio profilo dopo una modifica dei dati.
 
-## Variabili di contesto ignorate
+## Confidenza incompatibile
 
-Una variabile può essere ignorata o inutile se:
+I modelli continui accettano valori interi dal 50% al 99%; alcuni modelli fissi solo 60% o 80%.
 
-- non esiste nello storico;
-- è vuota nel futuro;
-- è costante;
-- è mal tipizzata;
-- non corrisponde all'orizzonte;
-- contiene testo non trasformato in numero o categoria sfruttabile.
+In Manuale cambia livello o modello. In Auto ripeti la selezione con il valore esatto. Non arrotondarlo.
 
-In questo caso, ispezionare il dataset prima di accusare il modello.
+## Selezione Auto scaduta
 
-## Risultato piatto
+La selezione è legata a dataset, sessione e risorse. Se scade, richiama `forecast_models`, ottieni un nuovo identificatore e ripeti `forecast`.
 
-Una previsione piatta può essere normale se il target è stabile.
+## Risultato assente
 
-Può anche indicare:
+Controlla che Forecast abbia restituito `analysis_id`, seleziona l'analisi nello storico, verifica la sessione e rileggila. Un output rifiutato non viene mostrato come valido.
 
-- storico troppo corto;
-- frequenza mal scelta;
-- contesto assente;
-- target poco variabile;
-- modello troppo semplice;
-- futuro noto poco informativo.
+## Backtest parziale
 
-## Scenario senza effetto visibile
+Controlla stato generale e fallimenti individuali. Non considerare completa la classifica finché i modelli confrontati non hanno risultati omogenei.
 
-Uno scenario contestuale può mostrare poca differenza se:
+## Covariate ignorate
 
-- la variabile modificata ha poca influenza;
-- la modifica è troppo debole;
-- il modello non usa questa variabile come segnale forte;
-- la variabile futura non è stata realmente trasmessa;
-- la curva è nascosta nei filtri.
+Una covariata può mancare, essere vuota nel futuro, costante, mal tipizzata, disallineata o non supportata. Controlla Dati, modello e valori futuri.
 
-Bisogna verificare il grafico, i filtri, il tooltip e i dati dello scenario.
+## Risultato piatto o scenario debole
+
+Una curva piatta può riflettere target stabile, storico corto, frequenza errata o contesto assente. Uno scenario può avere poco effetto se la modifica è piccola o il livello è nascosto.

@@ -1,111 +1,48 @@
 # Datasets
 
-A dataset is the table Forecast uses to learn the past and predict the future. It must be structured so the model understands what to predict, on which dates, and with what context.
+Forecast quality starts with the data. Forecast separates historical rows, future information that is already known and assumptions created for scenarios.
 
 ## Minimum structure
 
-A Forecast dataset contains at minimum:
+A usable dataset contains at least:
 
-| Column | Role |
+| Element | Purpose |
 | --- | --- |
-| Date | Indicates when each observation occurred |
-| Target | Value to predict |
+| Date column | Places each observation in time |
+| Target column | Holds the value to predict |
+| Frequency | Defines the time step: hour, day, week, month, quarter or year |
+| Horizon | Defines how many future steps to predict |
 
-Simple example:
+An optional series column separates products, regions or sensors. Covariates add context.
 
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03  128
-```
+## Historical area
 
-With this table, Forecast can learn the dynamics of commandes and predict the next dates.
+Historical rows contain a date and an observed target. They must be ordered, long enough and consistent with the selected frequency.
 
-## History zone
+Forecast checks invalid or unordered dates, duplicates, missing periods, missing or non-numeric values, outliers, history length relative to the horizon and consistency across series.
 
-The history zone contains the real values already known.
+A structural error blocks the run. A non-blocking risk remains visible as a warning.
 
-It lets the model detect:
+## Future area
 
-- trend;
-- seasonality;
-- rhythm;
-- spikes;
-- drops;
-- normal variations.
+Future rows may omit the target because it is the value to predict. They are useful when they contain information already known for future periods, such as calendars, planned prices, budgets, campaigns, weather forecasts or expected capacity.
 
-The target must be filled in this zone.
+Never present unknown future information as a fact.
 
-## Future zone
+## Audit before prediction
 
-The future zone contains the dates to predict.
+Every new dataset goes through `forecast_data_audit` before prediction. The audit validates the data, horizon, frequency and requested confidence level.
 
-In this zone, the target is empty, because that is precisely what Forecast must compute.
+A valid audit creates a reusable profile. The LLM uses it to select a model and run the forecast without repeatedly sending all data through the conversation.
 
-Example:
+Run a new audit when data, target, horizon, frequency or confidence changes.
 
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03
-2026-05-04
-```
+## Data created by the LLM
 
-Here, Forecast must predict `commandes` for May 3 and 4.
+The LLM may read CSV, spreadsheet or JSON data, research context and create useful columns. It must clearly distinguish data read from a file, found online, calculated or assumed for a simulation.
 
-## Known future
+This provenance makes real, derived and hypothetical values understandable.
 
-The known future adds contextual variables on the future rows.
+## Workspace preview
 
-Example:
-
-```text
-date        commandes   pluie_mm   promo
-2026-05-01  120        0          0
-2026-05-02  135        4          1
-2026-05-03             12         0
-2026-05-04             0          1
-```
-
-The future target is empty, but the rain and the promo are already known or assumed. The model can use this information to produce a more realistic forecast.
-
-## Series column
-
-The series column is used when a single file contains several objects to predict.
-
-Examples:
-
-- several stores;
-- several products;
-- several cities;
-- several financial assets;
-- several servers.
-
-Example:
-
-```text
-date        magasin   ventes   promo
-2026-05-01  paris    120      0
-2026-05-01  lyon     92       1
-2026-05-02  paris    132      1
-2026-05-02  lyon     95       0
-```
-
-Forecast can then predict each series while accounting for the group it belongs to.
-
-## Dataset created by an agent
-
-An LLM agent can create or enrich a dataset.
-
-For example, it can:
-
-- convert an Excel file to JSON;
-- add a `weekend` column;
-- fetch events from the web;
-- turn textual information into a score;
-- fill future rows with hypotheses;
-- clean up dates or columns.
-
-The agent must clearly indicate which data comes from the file, the web, a computation, or a hypothesis.
+The Data section displays rows, history points, future rows, series, missing periods and outliers. It also shows the target, date, frequency, covariates and a bounded preview.

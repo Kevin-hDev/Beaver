@@ -1,67 +1,33 @@
 # Previsioni
 
-Una previsione è il risultato calcolato da Forecast per stimare i prossimi valori di un target. Risponde a una domanda concreta: "se i dati passati e il contesto noto restano coerenti, quali valori ci si può aspettare in seguito?"
+Una previsione estende una o più serie usando storico, variabili contestuali e modello selezionato. Include una stima centrale e limiti di incertezza quando disponibili.
 
-## Cosa rappresenta una previsione
+## Risultato salvato
 
-Una previsione contiene una serie di punti futuri.
+Ogni esecuzione valida crea un `analysis_id` che collega pannello, spazio Forecast, scenari, note, valutazioni ed esportazioni.
 
-Ciascun punto corrisponde a una data o a un periodo:
+Prima del salvataggio, Forecast verifica quantità, date, ordine, valori finiti, quantili e orizzonte. Un output parziale o incoerente non viene salvato come analisi valida.
 
-```text
-2026-06-01 -> 142 ordini previsti
-2026-06-02 -> 151 ordini previsti
-2026-06-03 -> 149 ordini previsti
-```
+## Grafico principale
 
-Questi valori non sono una certezza. Rappresentano la stima del modello.
+Il grafico separa storico e area prevista. I filtri controllano serie, incertezza, scenari, eventi, confronti, anomalie e segnali di qualità.
 
-## Input necessari
+Puoi trascinare, usare rotella o trackpad per lo zoom, usare le barre di salto, comprimere le schede e aprire la tabella. Lo zoom non blocca lo scorrimento quando non può più cambiare.
 
-Per lanciare una previsione, Forecast ha bisogno di:
+## Grafici complementari
 
-| Elemento | Ruolo |
-| --- | --- |
-| Data | Posiziona ciascuna riga nel tempo |
-| Target | Valore da prevedere |
-| Frequenza | Ritmo dei dati: giorno, ora, mese, ecc. |
-| Orizzonte | Numero di punti futuri da prevedere |
-| Modello | Motore utilizzato per calcolare la traiettoria |
+Lo spazio può mostrare un ventaglio d'incertezza, un confronto stagionale e, dopo un backtest, un grafico di affidabilità. Nelle analisi multi-serie, la serie attiva resta sincronizzata.
 
-Le variabili di contesto e il multi-serie non sono obbligatori, ma diventano importanti non appena si vuole spiegare o simulare il futuro.
+## Tabella delle previsioni
 
-## Orizzonte
+La tabella è chiusa per impostazione predefinita. Una volta aperta mostra date, valore centrale e limiti in un'area scorrevole limitata.
 
-L'orizzonte indica la profondità della previsione.
+Per analisi lunghe, `forecast_read` restituisce pagine limitate invece dell'intera serie nel contesto del LLM.
 
-Esempi:
+## Aggiornamento in tempo reale
 
-- orizzonte `24` con frequenza oraria: prevedere le prossime 24 ore;
-- orizzonte `31` con frequenza quotidiana: prevedere i prossimi 31 giorni;
-- orizzonte `12` con frequenza mensile: prevedere i prossimi 12 mesi.
-
-Più l'orizzonte è lungo, più l'incertezza aumenta generalmente.
-
-## Risultato e identificatore
-
-Ogni lancio produce un identificatore `analysis_id`.
-
-Questo identificatore non significa "file salvato". Serve a ritrovare il risultato calcolato: curva futura, incertezza, parametri, variabili, scenari e annotazioni.
-
-L'applicazione lo utilizza per:
-
-- riaprire una previsione;
-- visualizzare il grafico;
-- confrontare più risultati;
-- creare o rilanciare scenari;
-- permettere a un agente LLM di rileggere il risultato.
+Pannello e spazio Forecast leggono la stessa analisi. Nuove previsioni, modifiche e cambi di analisi aggiornano le viste senza riaprire la finestra.
 
 ## Interpretazione corretta
 
-Una previsione deve essere letta con tre domande:
-
-- la tendenza sale, scende o resta stabile?
-- l'incertezza è piccola o ampia?
-- quali variabili di contesto possono spiegare il movimento?
-
-Una curva da sola non basta. Forecast diventa utile quando la previsione è collegata al suo contesto.
+Leggi la curva con qualità dei dati, incertezza, orizzonte, anomalie, backtest, baseline e ipotesi. Una curva regolare non dimostra precisione.

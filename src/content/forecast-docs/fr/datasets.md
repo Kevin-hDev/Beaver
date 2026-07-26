@@ -1,111 +1,70 @@
 # Datasets
 
-Un dataset est le tableau que Forecast utilise pour apprendre le passé et prédire le futur. Il doit être structuré pour que le modèle comprenne quoi prédire, à quelles dates, et avec quel contexte.
+La qualité d'une prévision dépend d'abord des données. Forecast sépare les lignes historiques, les informations futures déjà connues et les hypothèses créées pour un scénario.
 
 ## Structure minimale
 
-Un dataset Forecast contient au minimum :
+Un dataset exploitable contient au minimum :
 
-| Colonne | Rôle |
+| Élément | Rôle |
 | --- | --- |
-| Date | Indique quand chaque observation a eu lieu |
-| Cible | Valeur à prédire |
+| Colonne de date | Place chaque observation dans le temps |
+| Colonne cible | Contient la valeur à prévoir |
+| Fréquence | Définit le rythme : heure, jour, semaine, mois, trimestre ou année |
+| Horizon | Définit le nombre de prochaines périodes à prévoir |
 
-Exemple simple :
-
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03  128
-```
-
-Avec ce tableau, Forecast peut apprendre la dynamique des commandes et prédire les prochaines dates.
+Une colonne de série peut séparer plusieurs produits, régions ou capteurs. Des covariables peuvent ajouter du contexte.
 
 ## Zone historique
 
-La zone historique contient les valeurs réelles déjà connues.
+Les lignes historiques contiennent une date et une cible observée. Elles doivent être ordonnées, suffisamment nombreuses et cohérentes avec la fréquence choisie.
 
-Elle sert au modèle pour détecter :
+Forecast vérifie notamment :
 
-- tendance ;
-- saisonnalité ;
-- rythme ;
-- pics ;
-- baisses ;
-- variations normales.
+- les dates invalides ou désordonnées ;
+- les doublons ;
+- les périodes manquantes ;
+- les valeurs absentes ou non numériques ;
+- les valeurs atypiques ;
+- la longueur de l'historique par rapport à l'horizon ;
+- la cohérence de chaque série.
 
-La cible doit être remplie dans cette zone.
+Une erreur structurelle bloque la prévision. Un risque non bloquant reste visible comme avertissement.
 
 ## Zone future
 
-La zone future contient les dates à prédire.
-
-Dans cette zone, la cible est vide, parce que c'est justement ce que Forecast doit calculer.
-
-Exemple :
-
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03
-2026-05-04
-```
-
-Ici, Forecast doit prédire `commandes` pour les 3 et 4 mai.
-
-## Futur connu
-
-Le futur connu ajoute des variables de contexte sur les lignes futures.
-
-Exemple :
-
-```text
-date        commandes   pluie_mm   promo
-2026-05-01  120        0          0
-2026-05-02  135        4          1
-2026-05-03             12         0
-2026-05-04             0          1
-```
-
-La cible future est vide, mais la pluie et la promo sont déjà connues ou supposées. Le modèle peut utiliser ces informations pour produire une prévision plus réaliste.
-
-## Colonne série
-
-La colonne série sert quand un même fichier contient plusieurs objets à prédire.
+Les lignes futures peuvent omettre la cible, puisque c'est la valeur à prévoir. Elles sont utiles lorsqu'elles contiennent des informations déjà connues pour les prochaines périodes.
 
 Exemples :
 
-- plusieurs magasins ;
-- plusieurs produits ;
-- plusieurs villes ;
-- plusieurs actifs financiers ;
-- plusieurs serveurs.
+- calendrier et jours fériés ;
+- prix planifié ;
+- budget prévu ;
+- campagne programmée ;
+- météo prévisionnelle ;
+- capacité ou stock attendu.
 
-Exemple :
+Une information future inconnue ne doit pas être présentée comme un fait.
 
-```text
-date        magasin   ventes   promo
-2026-05-01  paris    120      0
-2026-05-01  lyon     92       1
-2026-05-02  paris    132      1
-2026-05-02  lyon     95       0
-```
+## Audit avant prévision
 
-Forecast peut alors prédire chaque série en tenant compte du groupe auquel elle appartient.
+Chaque nouveau dataset passe par `forecast_data_audit` avant le calcul. L'audit vérifie les données, l'horizon, la fréquence et le niveau de confiance demandé.
 
-## Dataset créé par un agent
+Quand l'audit est valide, Forecast crée un profil réutilisable. Le LLM utilise ensuite ce profil pour sélectionner un modèle et lancer la prévision sans renvoyer inutilement toutes les données dans la conversation.
 
-Un agent LLM peut créer ou enrichir un dataset.
+Si les données, la cible, l'horizon, la fréquence ou le niveau de confiance changent, un nouvel audit est nécessaire.
 
-Il peut par exemple :
+## Données créées ou enrichies par le LLM
 
-- convertir un Excel en JSON ;
-- ajouter une colonne `weekend` ;
-- récupérer des événements sur le web ;
-- transformer une information textuelle en score ;
-- remplir les lignes futures avec des hypothèses ;
-- nettoyer des dates ou des colonnes.
+Le LLM peut lire un CSV, un tableur ou du JSON, rechercher du contexte et créer des colonnes utiles. Il doit distinguer clairement :
 
-L'agent doit indiquer clairement quelles données viennent du fichier, du web, d'un calcul ou d'une hypothèse.
+- une donnée lue dans un fichier ;
+- une donnée trouvée sur le web ;
+- une donnée calculée ;
+- une hypothèse de simulation.
+
+Cette provenance permet de comprendre ce qui est réel, dérivé ou supposé.
+
+## Aperçu dans l'espace Forecast
+
+L'onglet Données affiche le nombre de lignes, les points historiques, les lignes futures, les séries, les périodes manquantes et les valeurs atypiques. Il montre aussi la cible, la date, la fréquence, les covariables et un aperçu borné du dataset.

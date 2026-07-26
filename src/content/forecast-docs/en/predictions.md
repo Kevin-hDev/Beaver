@@ -1,67 +1,37 @@
 # Forecasts
 
-A forecast is the result computed by Forecast to estimate the next values of a target. It answers a concrete question: "if the past data and the known context stay consistent, what values can we expect next?"
+A forecast extends one or more series from their history, contextual variables and selected model. It contains a central estimate and uncertainty bounds when supported.
 
-## What a forecast represents
+## Saved result
 
-A forecast contains a sequence of future points.
+Every valid run creates an `analysis_id`. It links the result to the panel, workspace, scenarios, notes, evaluations and exports.
 
-Each point corresponds to a date or a period:
+Before saving, Forecast validates point and series counts, future dates and ordering, finite values, quantile alignment and the effective horizon. A partial or inconsistent output is not saved as a valid analysis.
 
-```text
-2026-06-01 -> 142 orders predicted
-2026-06-02 -> 151 orders predicted
-2026-06-03 -> 149 orders predicted
-```
+## Main chart
 
-These values are not a certainty. They represent the model's estimate.
+The main chart separates history from the forecast area. Filters can show or hide series, uncertainty, scenarios, events, comparisons, anomalies and quality signals.
 
-## Required inputs
+You can drag to pan, use a wheel or trackpad to zoom, use jump bars to change detail, collapse cards and open the points table when exact values are needed.
 
-To run a forecast, Forecast needs:
+Zoom does not trap page scrolling when no zoom change is possible.
 
-| Element | Role |
-| --- | --- |
-| Date | Places each row in time |
-| Target | Value to predict |
-| Frequency | Rhythm of the data: day, hour, month, etc. |
-| Horizon | Number of future points to predict |
-| Model | Engine used to compute the trajectory |
+## Companion charts
 
-Contextual variables and multi-series are not mandatory, but they become important as soon as you want to explain or simulate the future.
+The workspace may display an uncertainty fan, a seasonal comparison and, after backtesting, a reliability chart.
 
-## Horizon
+For multi-series analyses, the active series stays synchronized across charts.
 
-The horizon indicates the depth of the forecast.
+## Prediction table
 
-Examples:
+The table is collapsed by default. When opened, it shows dates, central values and available bounds inside a height-limited scroll area.
 
-- horizon `24` with hourly frequency: predict the next 24 hours;
-- horizon `31` with daily frequency: predict the next 31 days;
-- horizon `12` with monthly frequency: predict the next 12 months.
+For long analyses, `forecast_read` returns bounded pages instead of placing the entire series in the LLM context.
 
-The longer the horizon, the more uncertainty generally increases.
+## Real-time updates
 
-## Result and identifier
-
-Each run produces an `analysis_id` identifier.
-
-This identifier does not mean "saved file". It is used to retrieve the computed result: future curve, uncertainty, parameters, variables, scenarios, and annotations.
-
-The application uses it to:
-
-- reopen a forecast;
-- display the graph;
-- compare several results;
-- create or rerun scenarios;
-- let an LLM agent review the result.
+The panel and workspace read the same saved analysis. New forecasts, edits and active-analysis changes update the relevant views without closing and reopening the window.
 
 ## Correct interpretation
 
-A forecast must be read with three questions:
-
-- is the trend rising, falling, or stable?
-- is the uncertainty small or large?
-- which contextual variables can explain the movement?
-
-A curve alone is not enough. Forecast becomes useful when the forecast is connected to its context.
+Read the curve together with data quality, uncertainty, horizon, breaks or anomalies, backtest results, baselines and assumptions. A smooth curve is not evidence of accuracy.

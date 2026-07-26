@@ -1,67 +1,53 @@
-# Troubleshooting
+# Diagnostics
 
-This section helps you understand why a forecast does not give the expected result.
+This section separates normal behavior from problems requiring action.
 
-## Invalid JSON data
+## Model preparation
 
-This error means Forecast did not receive a usable table.
+A model can be Not installed, Update required, Invalid, Ready or Provider required. Use Prepare for missing or outdated local models, reinstall invalid models and configure the cloud provider when required.
 
-It can come from:
+Multiple preparations enter a queue. Already valid files are reused when possible.
 
-- malformed JSON;
-- a file not converted correctly;
-- an empty or truncated `data` field;
-- a wrong row format;
-- missing columns.
+## Sidecar lifecycle
 
-If the user provides a file, the agent must check that the file is read correctly before converting the data.
+The local runtime starts for a forecast or backtest and may stop immediately after the operation. This is normal and releases resources.
 
-## Model unavailable
+There is a problem only when the runtime never becomes ready, the request fails or Forecast returns an error.
 
-This error can come from:
+## Rejected data audit
 
-- a local model not installed;
-- a stopped sidecar;
-- a missing API key;
-- a model incompatible with the parameters;
-- data too short for the requested model.
+An audit may block because of missing columns, invalid or duplicate dates, inconsistent frequency, insufficient history, incorrect future rows or exceeded limits.
 
-The right reflex is to check the model, then test with a minimal dataset.
+Fix the reported issue and rerun the audit. Never use an old profile after the dataset changes.
 
-## Contextual variables ignored
+## Incompatible confidence
 
-A variable can be ignored or useless if:
+Continuous models accept whole levels from 50% to 99%. Some fixed-grid models accept only 60% or 80%.
 
-- it does not exist in the history;
-- it is empty in the future;
-- it is constant;
-- it is mistyped;
-- it does not match the horizon;
-- it contains text not converted into a usable number or category.
+In Manual, choose a supported level or another model. In Auto, rerun selection with the exact requested level. Never round it silently.
 
-In this case, inspect the dataset before blaming the model.
+## Expired Auto selection
 
-## Flat result
+An Auto selection is bound to the dataset, session and available resources. If it expires or conditions change, call `forecast_models` again, obtain a new identifier and rerun `forecast`.
 
-A flat forecast can be normal if the target is stable.
+## Result missing from the panel
 
-It can also indicate:
+A valid analysis normally opens the panel and synchronizes the workspace. Check that Forecast returned an `analysis_id`, select the analysis in history, verify the active session and read the analysis again.
 
-- history too short;
-- poorly chosen frequency;
-- missing context;
-- low-variability target;
-- model too simple;
-- uninformative known future.
+An output rejected during validation is not displayed as valid.
 
-## Scenario with no visible effect
+## Partial backtest
 
-A contextual scenario may show little difference if:
+A backtest may succeed for baselines and fail for one or more models. Inspect global status and individual failures.
 
-- the modified variable has little influence;
-- the modification is too small;
-- the model does not use this variable as a strong signal;
-- the future variable was not actually transmitted;
-- the curve is hidden by the filters.
+Do not treat the ranking as complete until the models being compared have homogeneous results.
 
-You must check the graph, the filters, the tooltip, and the scenario data.
+## Ignored covariates
+
+A covariate may be missing, empty in the future, constant, incorrectly typed, misaligned with the horizon or unsupported by the model. Check the Data section, selected model and future values.
+
+## Flat result or weak scenario effect
+
+A flat curve may reflect a stable target, short history, incorrect frequency or missing context. A scenario may have little effect when its change is small, its variable has little influence or the layer is hidden.
+
+Compare data and assumptions before treating it as an error.

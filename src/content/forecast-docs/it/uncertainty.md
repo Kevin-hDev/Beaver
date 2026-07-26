@@ -1,60 +1,29 @@
 # Incertezza
 
-Una previsione non è mai una verità assoluta. Forecast mostra quindi un valore centrale e una fascia di incertezza per indicare il rischio attorno alla traiettoria.
+Una previsione seria non è una sola curva. Forecast associa il valore centrale a un intervallo che rappresenta l'incertezza al livello di confidenza richiesto.
 
 ## Valore centrale
 
-Il valore centrale è la stima principale del modello.
+Il valore centrale è generalmente la mediana `q50`. Circa metà dei risultati possibili è sotto e metà sopra.
 
-Esempio:
+## Livello di confidenza
 
-```text
-2026-06-01 -> 142 ordini previsti
-```
+I modelli continui accettano dal 50% al 99% a passi di un punto percentuale. Senza preferenze, il LLM usa 80%.
 
-Rappresenta lo scenario più probabile in base ai dati utilizzati.
+Alcuni modelli offrono solo livelli fissi, attualmente 60% o 80%. Forecast conserva la richiesta esatta: Auto restituisce solo candidati compatibili, Manuale segnala l'incompatibilità e non arrotonda mai in silenzio.
 
-## Limiti di incertezza
+## Limiti e quantili
 
-I limiti indicano una zona probabile attorno al valore centrale.
+Un intervallo centrale dell'80% usa generalmente `q10`, `q50` e `q90`; al 90% usa `q05`, `q50` e `q95`.
 
-Esempio:
+## Ventaglio d'incertezza
 
-```text
-Previsione: 142
-Limite basso: 128
-Limite alto: 157
-```
+Il ventaglio mostra intervalli che si allargano o restringono. Limiti più larghi indicano minore precisione. Un intervallo stretto è utile solo se ben calibrato.
 
-Lettura semplice: il modello stima 142, ma considera che un valore attorno a 128-157 resti plausibile.
+## Copertura misurata
 
-## Quantili
-
-I modelli possono restituire dei quantili.
-
-| Campo | Significato |
-| --- | --- |
-| q10 | Valore basso probabile |
-| q50 | Valore centrale o mediano |
-| q90 | Valore alto probabile |
-
-Più lo scarto tra q10 e q90 è ampio, più il modello è incerto.
-
-## Perché l'incertezza aumenta
-
-L'incertezza può aumentare quando:
-
-- lo storico è corto;
-- il target varia fortemente;
-- l'orizzonte è lungo;
-- le variabili di contesto sono assenti;
-- compare una rottura recente nei dati;
-- sono possibili più scenari futuri.
+Dopo il backtest, Forecast confronta il livello dichiarato con la quota realmente coperta. Uno storico breve può rendere instabile questa misura.
 
 ## Buon uso
 
-Il valore centrale serve a leggere la tendenza.
-
-La fascia di incertezza serve a leggere il rischio.
-
-Una decisione seria deve tenere conto di entrambi.
+Usa l'incertezza per confrontare rischi, distinguere tendenze robuste, preparare soglie prudenti, verificare la calibrazione e non confondere scenari e certezze.

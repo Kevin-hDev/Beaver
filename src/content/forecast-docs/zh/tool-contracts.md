@@ -1,65 +1,58 @@
-# Forecast Tools
+# Forecast 工具
 
-Forecast tools 让 LLM 代理可以在聊天中调用预测引擎。它们必须用精确的参数调用，因为列错误或预测期不一致会产生毫无意义的预测。
+七个 Forecast 工具组成受控流程。大型结果保存在 Forecast 存储中，LLM 主要交换紧凑的标识符。
+
+## 推荐顺序
+
+```text
+forecast_data_audit
+  → forecast_models
+  → forecast
+  → forecast_read
+  → forecast_backtest
+  → forecast_compare_models
+```
+
+之后使用 `forecast_analyze` 处理笔记、场景或模型组合。
+
+## `forecast_data_audit`
+
+每个新数据集第一次预测前，请调用此工具。请提供数据或文件、目标、日期、频率、范围和精确置信水平。
+
+它会验证日期、重复项、缺失周期、无效值、历史长度、序列、未来行和异常值。有效响应会返回 `data_profile_id`。
+
+## `forecast_models`
+
+请检查当前策略和区间能力。手动模式中检查强制模型；自动模式中传入 `data_profile_id`，选择一个候选并保留 `selection_id`。
+
+硬件信息只会在此 Forecast 响应中出现。不要对置信水平进行四舍五入。
 
 ## `forecast`
 
-`forecast` 启动一次新的预测。
+请使用档案、目标、日期、范围、频率和不变的置信水平运行预测。只有模型支持时才添加序列和协变量。
 
-主要输入：
-
-| 参数 | 作用 |
-| --- | --- |
-| `file_path` | 要读取的 Excel、CSV 或 JSON 文件 |
-| `data` | 已准备好的 JSON 数据 |
-| `date_column` | 包含日期的列 |
-| `target_column` | 需要预测的列 |
-| `series_column` | 标识序列的列 |
-| `covariate_columns` | 要使用的上下文变量 |
-| `frequency` | 时间节奏 |
-| `horizon` | 未来点数 |
-| `model` | 要使用的引擎 |
-
-主要输出：
-
-- `analysis_id`，Forecast 结果的标识符。
+自动模式还需传入模型、`selection_id`、选择来源和允许的理由。响应会返回 `analysis_id`。
 
 ## `forecast_read`
 
-`forecast_read` 复查一份 Forecast 结果。
+省略 `analysis_id` 可列出有限数量的分析；提供它可读取指定分析。使用 `offset` 和 `limit` 分页，每页最多 200 点。
 
-它用于取回：
+读取结果还可能包含分解、残差异常、按时间顺序的置换重要性和漂移。缺失时不要编造替代结果。
 
-- 预测；
-- 历史；
-- 不确定性；
-- 场景；
-- 可用变量；
-- 模型元数据。
+## `forecast_backtest`
 
-如果没有提供 `analysis_id`，代理可以用它列出可用结果。
+请对已保存分析运行受限的滚动时间验证。模型以及 Naive、Seasonal Naive、Drift 和 ETS 基准会在相同周期上评估。
+
+请始终检查状态和失败项。
+
+## `forecast_compare_models`
+
+请读取已保存排名，包括误差、覆盖率、耗时、观测内存和基准状态。只有完整可比结果支持时，才可以称某模型最佳。
 
 ## `forecast_analyze`
 
-`forecast_analyze` 添加或修改预测周边的元素。
+请使用 `annotate`、`scenario`、`scenario_update`、`scenario_delete` 或 `ensemble`。只有多模型回测成功后才创建组合，并说明它按 MASE 倒数加权且尚未独立评估。
 
-它尤其用于：
+## 重新开始流程
 
-- 创建一条注释；
-- 创建一个场景；
-- 重新运行一个上下文场景；
-- 修改一个场景；
-- 删除一个场景。
-
-## 代理应检查的内容
-
-调用某个 tool 之前，代理必须检查：
-
-- 目标存在；
-- 日期可读；
-- 预测期与未来行匹配；
-- 协变量确实存在；
-- 创建的或从网上找到的数据已标注来源；
-- 所选模型支持该需求。
-
-代理应当解释自己的选择，而不是发出一个不透明的调用。
+数据、映射、目标、频率、范围、置信水平、协变量、序列结构或资源发生变化时，请重新调用 `forecast_data_audit` 和 `forecast_models`。

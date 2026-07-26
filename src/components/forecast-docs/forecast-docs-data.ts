@@ -2,11 +2,12 @@ import i18n from "@/i18n";
 import { parseForecastDoc } from "./forecast-docs-parser";
 import type { ForecastDocPage } from "./forecast-docs-types";
 
-const FORECAST_DOC_IDS = [
+export const FORECAST_DOC_IDS = [
   "overview",
   "datasets",
   "models",
   "predictions",
+  "evaluation",
   "uncertainty",
   "covariates",
   "multiseries",
@@ -22,6 +23,7 @@ const FORECAST_DOC_NAV_KEYS: Record<(typeof FORECAST_DOC_IDS)[number], string> =
   datasets: "forecast.docs.nav.datasets",
   models: "forecast.docs.nav.models",
   predictions: "forecast.docs.nav.predictions",
+  evaluation: "forecast.docs.nav.evaluation",
   uncertainty: "forecast.docs.nav.uncertainty",
   covariates: "forecast.docs.nav.covariates",
   multiseries: "forecast.docs.nav.multiseries",

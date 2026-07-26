@@ -1,60 +1,29 @@
 # Unsicherheit
 
-Eine Prognose ist nie eine absolute Wahrheit. Forecast zeigt daher einen zentralen Wert und eine Unsicherheitsmarge an, um das Risiko rund um die Trajektorie aufzuzeigen.
+Eine seriöse Prognose besteht nicht nur aus einer Kurve. Forecast verbindet den Zentralwert mit einem Intervall für das angeforderte Konfidenzniveau.
 
-## Zentraler Wert
+## Zentralwert
 
-Der zentrale Wert ist die Hauptschätzung des Modells.
+Der Zentralwert ist meist der Median `q50`. Ungefähr die Hälfte möglicher Ergebnisse liegt darunter und die andere Hälfte darüber.
 
-Beispiel:
+## Konfidenzniveau
 
-```text
-2026-06-01 -> 142 Bestellungen prognostiziert
-```
+Kontinuierliche Modelle akzeptieren 50% bis 99% in ganzen Prozentpunkten. Ohne Benutzerwunsch verwendet das LLM 80%.
 
-Er stellt das wahrscheinlichste Szenario gemäß den verwendeten Daten dar.
+Einige Modelle liefern nur feste Niveaus, derzeit 60% oder 80%. Forecast erhält den exakten Wunsch: Auto liefert nur kompatible Kandidaten, Manuell meldet die Inkompatibilität und rundet nie still.
 
-## Unsicherheitsschranken
+## Grenzen und Quantile
 
-Die Schranken geben eine wahrscheinliche Zone rund um den zentralen Wert an.
+Ein zentrales 80%-Intervall nutzt meist `q10`, `q50` und `q90`; 90% meist `q05`, `q50` und `q95`.
 
-Beispiel:
+## Unsicherheitsfächer
 
-```text
-Prognose:    142
-Untere Schranke: 128
-Obere Schranke:  157
-```
+Das Fächerdiagramm zeigt breitere oder engere Intervalle über den Horizont. Breitere Grenzen bedeuten weniger Präzision. Ein enges Intervall ist nur bei guter Kalibrierung nützlich.
 
-Einfache Lesart: das Modell schätzt 142, hält aber einen Wert zwischen 128 und 157 für plausibel.
+## Gemessene Abdeckung
 
-## Quantile
+Nach dem Backtest vergleicht Forecast das angegebene Niveau mit dem tatsächlich abgedeckten Anteil. Ein kurzer Verlauf kann diese Messung instabil machen.
 
-Die Modelle können Quantile zurückgeben.
+## Gute Nutzung
 
-| Feld | Bedeutung |
-| --- | --- |
-| q10 | Wahrscheinlicher niedriger Wert |
-| q50 | Zentraler oder medianer Wert |
-| q90 | Wahrscheinlicher hoher Wert |
-
-Je größer die Spanne zwischen q10 und q90, desto unsicherer ist das Modell.
-
-## Warum die Unsicherheit wächst
-
-Die Unsicherheit kann wachsen, wenn:
-
-- die Historie kurz ist;
-- die Zielgröße stark schwankt;
-- der Horizont lang ist;
-- die Kontextvariablen fehlen;
-- ein aktueller Bruch in den Daten auftritt;
-- mehrere zukünftige Szenarien möglich sind.
-
-## Korrekte Verwendung
-
-Der zentrale Wert dient dazu, den Trend zu lesen.
-
-Die Unsicherheitsmarge dient dazu, das Risiko zu lesen.
-
-Eine ernsthafte Entscheidung muss beide betrachten.
+Nutze Unsicherheit, um Risiken zu vergleichen, robuste Trends zu erkennen, vorsichtige Schwellen zu planen, Kalibrierung zu prüfen und Szenarien nicht mit Gewissheit zu verwechseln.

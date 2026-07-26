@@ -1479,6 +1479,7 @@
         "datasets": "Datasets",
         "models": "Modèles",
         "predictions": "Prévisions",
+        "evaluation": "Évaluation",
         "uncertainty": "Incertitude",
         "covariates": "Covariables",
         "multiseries": "Multi-séries",

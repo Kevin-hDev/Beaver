@@ -1,100 +1,64 @@
 # Scénarios
 
-Un scénario sert à tester une hypothèse sur le futur. Il compare la prévision de base avec une trajectoire modifiée.
-
-## Pourquoi créer un scénario
-
-La prévision de base répond à : "que prévoit le modèle avec les données actuelles ?"
-
-Un scénario répond à : "que se passe-t-il si le contexte change ?"
-
-Exemples :
-
-- que deviennent les ventes si une promotion est lancée ?
-- que devient le chiffre d'affaires si le trafic baisse ?
-- que devient un actif si le VIX augmente ?
-- que devient la demande si un événement local est ajouté ?
-
-Le scénario transforme Forecast en outil de simulation, pas seulement en graphe de prévision.
+Un scénario explore une hypothèse à partir d'une analyse existante. Il ne remplace ni les données observées ni la prévision d'origine.
 
 ## Ajustement global
 
-L'ajustement global applique une variation simple à la courbe.
-
-Exemple :
-
-```text
-Prévision de base : 100, 110, 120
-Scénario +10 %   : 110, 121, 132
-```
-
-Ce mode est rapide et lisible. Il ne relance pas le modèle, donc il ne comprend pas les relations entre variables.
-
-## Scénario contextuel
-
-Le scénario contextuel modifie les variables futures, puis relance le modèle.
-
-Exemple :
-
-```text
-Hypothèse : vix_close +20 %
-Effet attendu : le modèle recalcule la cible avec ce contexte de marché plus stressé.
-```
-
-Ce mode est plus important pour Chronos-2 et TimeGPT, car il utilise les covariables comme vrais signaux de prédiction.
-
-## Variables modifiables
-
-Les variables disponibles dépendent du dataset.
-
-Elles peuvent représenter :
-
-- environnement : météo, trafic, événements ;
-- finance : volatilité, taux, indices, news score ;
-- calendrier : weekend, jour férié, fin de mois ;
-- métier : promo, stock, budget, campagne ;
-- risque : alerte, incident, pression concurrentielle.
-
-Chaque modification doit avoir un sens métier. Modifier une variable au hasard produit un scénario difficile à interpréter.
-
-## Lecture dans le graphe
-
-Quand un scénario est sélectionné, le graphe doit permettre de comparer :
-
-- historique réel ;
-- prévision de base ;
-- prévision du scénario ;
-- variables de contexte affichées ;
-- différence entre base et scénario.
-
-Schéma typique d'une comparaison :
-
-```text
-valeur
-  ^
-  |              ╭───── scenar (VIX +20 %)
-  |           ╭──╯
-  |       · ·─·      ← prévision de base
-  |     ·
-  |   ·
-  | ·
-  ──────────────────────────────> temps
-       historique    │   futur
-                     │
-                horizon
-```
-
-La question principale n'est pas "la courbe est-elle différente ?", mais "quelle hypothèse a déplacé la trajectoire, à quelle date, et de combien ?"
-
-## Bon usage
-
-Un bon scénario doit être nommé clairement.
+Un ajustement en pourcentage crée une courbe dérivée.
 
 Exemples :
 
-- `VIX +20% pendant 30 jours`
-- `Promo week-end active`
-- `Pluie forte semaine 2`
-- `Trafic -15% après incident`
+- demande supérieure de 10 % ;
+- revenus inférieurs de 5 % ;
+- capacité augmentée de 15 %.
 
-Un nom vague comme `test` ou `crash` rend la comparaison inutile quand plusieurs scénarios existent.
+Ce scénario est rapide à lire, mais il ne relance pas le modèle et ne prouve pas qu'une cause réelle produirait cet effet.
+
+## Scénario contextuel
+
+Un scénario contextuel modifie une ou plusieurs covariables futures, puis relance le modèle lorsque celui-ci supporte ces variables.
+
+Exemples :
+
+- augmenter un budget publicitaire ;
+- modifier un prix prévu ;
+- appliquer une météo plus chaude ;
+- réduire une capacité future ;
+- cibler une série particulière.
+
+Les valeurs modifiées restent des hypothèses et doivent être présentées comme telles.
+
+## Création et modification
+
+L'espace Forecast regroupe les scénarios dans son onglet dédié. Vous pouvez y créer, modifier ou supprimer une hypothèse sans surcharger le panneau latéral.
+
+Le panneau conserve la lecture rapide des scénarios existants. Le LLM peut également les gérer avec `forecast_analyze` lorsque vous le demandez dans le chat.
+
+## Comparer les courbes
+
+Affichez la prévision d'origine et les scénarios utiles sur la même période. Vérifiez :
+
+- la date où les courbes commencent à diverger ;
+- l'amplitude de l'écart ;
+- l'évolution de l'incertitude ;
+- les séries concernées ;
+- les covariables réellement modifiées.
+
+Une faible différence peut être normale si la variable choisie influence peu le modèle.
+
+## Ensemble de modèles
+
+Un ensemble n'est pas un scénario métier. Il combine deux à quatre modèles ayant réussi un backtest multi-modèles, avec une pondération fondée sur l'inverse du MASE.
+
+Forecast l'indique comme non évalué indépendamment tant qu'un backtest spécifique ne confirme pas ses performances.
+
+## Bon usage
+
+Donnez à chaque scénario :
+
+- un nom clair ;
+- une hypothèse mesurable ;
+- une période ;
+- la source des valeurs ;
+- une explication de ce qui change ;
+- une comparaison avec la prévision d'origine.

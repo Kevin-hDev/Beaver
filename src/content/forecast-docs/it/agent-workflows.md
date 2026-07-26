@@ -1,76 +1,48 @@
 # Agenti LLM
 
-Gli agenti LLM possono usare Forecast come motore specializzato. Il loro ruolo non si limita a leggere un file e cliccare su un tool: possono preparare i dati, cercare contesto sul web, costruire un dataset, lanciare la previsione e spiegare il risultato.
+Il LLM guida Forecast dalla conversazione attiva. Può preparare o cercare dati, controllarne la qualità, selezionare un modello autorizzato, eseguire calcoli e spiegare risultati.
 
-## Cosa può fare l'agente
+## Flusso obbligatorio
 
-Un agente può intervenire in più momenti:
+Per ogni nuovo dataset, segui quest'ordine:
 
-| Fase | Ruolo dell'agente |
-| --- | --- |
-| Preparazione | Leggere un file Excel, CSV o JSON |
-| Ricerca | Andare a cercare informazioni esterne sul web |
-| Dataset | Creare o completare colonne utili |
-| Lancio | Chiamare `forecast` con i parametri giusti |
-| Lettura | Usare `forecast_read` per recuperare il risultato |
-| Scenario | Creare ipotesi e rilanciare il modello |
-| Spiegazione | Riassumere tendenza, incertezza, variabili e limiti |
+1. Comprendi target, periodo, orizzonte e confidenza richiesta.
+2. Leggi o costruisci i dati e distingui le fonti.
+3. Chiama `forecast_data_audit`.
+4. Correggi gli errori bloccanti o spiegali.
+5. Chiama `forecast_models` con il profilo validato.
+6. In Manuale, rispetta il modello imposto e verifica la compatibilità esatta.
+7. In Auto, scegli un solo candidato restituito.
+8. Chiama `forecast` con profilo, modello autorizzato e confidenza invariata.
+9. Usa `forecast_read` per pagine e analisi necessarie.
+10. Spiega previsione, incertezza e limiti.
 
-Esempio: per una previsione finanziaria, l'agente può leggere il file locale, cercare il contesto di mercato recente, produrre colonne come `news_score` o `event_flag`, poi lanciare Forecast.
+Ripeti l'audit quando cambiano dati, target, frequenza, orizzonte o confidenza.
 
-## Workflow consigliato
+## Modalità Manuale
 
-L'agente deve seguire questo ordine:
+Non modificare mai la selezione salvata dell'utente. Se il modello manca, non è pronto o è incompatibile, chiedi un'azione chiara invece di sostituirlo.
 
-1. capire la richiesta dell'utente;
-2. ispezionare i dati disponibili;
-3. identificare il target da prevedere;
-4. identificare le date, la frequenza e l'orizzonte;
-5. cercare o creare le variabili di contesto utili se necessario;
-6. verificare che le righe future siano coerenti;
-7. scegliere un modello compatibile;
-8. lanciare `forecast`;
-9. rileggere il risultato con `forecast_read`;
-10. spiegare la previsione e proporre scenari utili.
+## Modalità Auto
 
-## Creazione di dati da parte dell'agente
+Scegli un candidato restituito e non aggirare le esclusioni del backend. Rispetta una richiesta esplicita solo se Forecast la conferma sicura.
 
-L'agente può creare dati se l'utente lo richiede o se la previsione lo richiede.
+Trasmetti a `forecast` identificatore e motivi brevi autorizzati. Non definire migliore una scelta basata solo su capacità e risorse.
 
-Esempi:
+## Valutazione e confronto
 
-- aggiungere una colonna `weekend` a partire dalla data;
-- creare `month_end_flag`;
-- trasformare un evento web in punteggio numerico;
-- compilare una zona futura con ipotesi meteo;
-- costruire un dataset di test per validare un workflow;
-- convertire un file Excel in JSON sfruttabile.
+Quando l'utente chiede il modello migliore:
 
-L'agente deve sempre spiegare quali colonne ha creato e perché.
+1. Esegui `forecast_backtest` su modelli compatibili.
+2. Controlla stato e fallimenti individuali.
+3. Leggi la classifica con `forecast_compare_models`.
+4. Confronta con Naive, Naive stagionale, Drift ed ETS.
+5. Presenta errore, copertura, velocità e memoria.
 
-## Regole di sicurezza e di qualità
+Non presentare un backtest parziale come completo e non definire migliore un modello che non supera una baseline credibile.
 
-L'agente non deve inventare silenziosamente un dato importante.
+## Provenienza e spiegazione
 
-Se crea una variabile, deve distinguere:
+Indica sempre se un valore proviene da file, fonte esterna, calcolo o ipotesi. Non inventare silenziosamente dati importanti.
 
-- dato letto in un file;
-- dato trovato sul web;
-- dato calcolato;
-- ipotesi di simulazione.
-
-Questa separazione è essenziale affinché l'utente sappia cosa è reale, calcolato o supposto.
-
-## Comandi slash
-
-I comandi slash fungono da guide rapide per agenti e utenti.
-
-Esempi:
-
-- `/forecast`: capire il modulo Forecast;
-- `/forecast-predict`: preparare e lanciare una previsione;
-- `/forecast-dataset`: costruire un dataset pulito;
-- `/forecast-scenarios`: creare ipotesi utili;
-- `/forecast-cmd`: capire i tool disponibili.
-
-Questi comandi devono fornire una procedura breve, chiara e direttamente azionabile.
+Usa la conversazione esistente per spiegare, confrontare o rieseguire. Presenta onestamente analisi mancanti o poco affidabili.

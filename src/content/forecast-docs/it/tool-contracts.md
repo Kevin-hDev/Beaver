@@ -1,65 +1,58 @@
 # Tool Forecast
 
-I tool Forecast permettono agli agenti LLM di usare il motore di previsione dalla chat. Devono essere chiamati con parametri precisi, perché una colonna sbagliata o un orizzonte incoerente produce una previsione inutile.
+I sette tool Forecast formano un flusso controllato. I risultati grandi restano nello storage Forecast e il LLM scambia identificatori compatti.
+
+## Ordine consigliato
+
+```text
+forecast_data_audit
+  → forecast_models
+  → forecast
+  → forecast_read
+  → forecast_backtest
+  → forecast_compare_models
+```
+
+Usa `forecast_analyze` dopo per note, scenari o ensemble.
+
+## `forecast_data_audit`
+
+Chiama questo tool prima della prima previsione di ogni dataset. Fornisci dati o file, target, data, frequenza, orizzonte e confidenza esatta.
+
+Valida date, duplicati, periodi mancanti, valori non validi, storico, serie, futuro e anomalie. Una risposta valida restituisce `data_profile_id`.
+
+## `forecast_models`
+
+Controlla politica e intervalli. In Manuale verifica il modello imposto. In Auto passa `data_profile_id`, scegli un candidato e conserva `selection_id`.
+
+Le informazioni hardware compaiono solo qui. Non arrotondare la confidenza.
 
 ## `forecast`
 
-`forecast` lancia una nuova previsione.
+Esegui la previsione con profilo, target, data, orizzonte, frequenza e confidenza invariata. Aggiungi serie e covariate solo se supportate.
 
-Input principali:
-
-| Parametro | Ruolo |
-| --- | --- |
-| `file_path` | File Excel, CSV o JSON da leggere |
-| `data` | Dati già preparati in JSON |
-| `date_column` | Colonna che contiene le date |
-| `target_column` | Colonna da prevedere |
-| `series_column` | Colonna che identifica le serie |
-| `covariate_columns` | Variabili di contesto da usare |
-| `frequency` | Ritmo temporale |
-| `horizon` | Numero di punti futuri |
-| `model` | Motore da usare |
-
-Output principale:
-
-- `analysis_id`, l'identificatore del risultato Forecast.
+In Auto passa anche modello, `selection_id`, origine e motivi autorizzati. La risposta restituisce `analysis_id`.
 
 ## `forecast_read`
 
-`forecast_read` rilegge un risultato Forecast.
+Ometti `analysis_id` per elencare analisi o forniscilo per leggerne una. Usa `offset` e `limit`, massimo 200 punti per pagina.
 
-Serve a recuperare:
+Può restituire decomposizione, anomalie residue, importanza per permutazione cronologica e drift. Non inventare sostituti.
 
-- la previsione;
-- lo storico;
-- l'incertezza;
-- gli scenari;
-- le variabili disponibili;
-- i metadati del modello.
+## `forecast_backtest`
 
-Se non viene fornito alcun `analysis_id`, l'agente può usarlo per elencare i risultati disponibili.
+Esegui una validazione temporale limitata su un'analisi salvata. Valuta modelli e baseline Naive, Naive stagionale, Drift ed ETS negli stessi periodi.
+
+Controlla sempre stato e fallimenti.
+
+## `forecast_compare_models`
+
+Leggi la classifica salvata con errori, copertura, durata, memoria osservata e stato delle baseline. Definisci migliore un modello solo con un risultato completo.
 
 ## `forecast_analyze`
 
-`forecast_analyze` aggiunge o modifica elementi attorno a una previsione.
+Usa `annotate`, `scenario`, `scenario_update`, `scenario_delete` o `ensemble`. Crea un ensemble solo dopo un backtest multi-modello riuscito e indica ponderazione inversa al MASE e assenza di valutazione indipendente.
 
-Serve in particolare a:
+## Riavviare il flusso
 
-- creare un'annotazione;
-- creare uno scenario;
-- rilanciare uno scenario contestuale;
-- modificare uno scenario;
-- eliminare uno scenario.
-
-## Cosa deve verificare l'agente
-
-Prima di chiamare un tool, l'agente deve verificare:
-
-- il target esiste;
-- la data è leggibile;
-- l'orizzonte corrisponde alle righe future;
-- le covariate esistono davvero;
-- i dati creati o trovati sul web sono identificati;
-- il modello scelto supporta il bisogno.
-
-L'agente deve spiegare le sue scelte invece di inviare una chiamata opaca.
+Ripeti `forecast_data_audit` e `forecast_models` quando cambiano dati, mappatura, target, frequenza, orizzonte, confidenza, covariate, struttura delle serie o risorse.

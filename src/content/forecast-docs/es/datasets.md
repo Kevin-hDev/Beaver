@@ -1,111 +1,37 @@
 # Datasets
 
-Un dataset es la tabla que Forecast utiliza para aprender el pasado y predecir el futuro. Debe estar estructurado para que el modelo entienda qué predecir, en qué fechas y con qué contexto.
+La calidad de una previsión empieza por los datos. Forecast separa las filas históricas, la información futura ya conocida y las hipótesis creadas para escenarios.
 
 ## Estructura mínima
 
-Un dataset de Forecast contiene como mínimo:
+Un dataset utilizable contiene una columna de fecha, una columna objetivo, una frecuencia y un horizonte. Una columna de serie opcional separa productos, regiones o sensores, y las covariables añaden contexto.
 
-| Columna | Rol |
-| --- | --- |
-| Fecha | Indica cuándo ocurrió cada observación |
-| Objetivo | Valor a predecir |
+## Zona histórica
 
-Ejemplo sencillo:
+Las filas históricas contienen una fecha y un objetivo observado. Deben estar ordenadas, ser suficientemente numerosas y corresponder a la frecuencia elegida.
 
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03  128
-```
+Forecast comprueba fechas inválidas o desordenadas, duplicados, periodos ausentes, valores vacíos o no numéricos, valores atípicos, longitud del historial y coherencia entre series.
 
-Con esta tabla, Forecast puede aprender la dinámica de los pedidos y predecir las próximas fechas.
+Un error estructural bloquea la ejecución. Un riesgo no bloqueante permanece visible como aviso.
 
-## Zona historial
+## Zona futura
 
-La zona historial contiene los valores reales ya conocidos.
+Las filas futuras pueden omitir el objetivo. Son útiles cuando incluyen información ya conocida, como calendario, precios, presupuestos, campañas, previsiones meteorológicas o capacidad prevista.
 
-Sirve al modelo para detectar:
+No presentes como hecho una información futura desconocida.
 
-- tendencia;
-- estacionalidad;
-- ritmo;
-- picos;
-- caídas;
-- variaciones normales.
+## Auditoría antes de prever
 
-El objetivo debe estar relleno en esta zona.
+Cada dataset nuevo pasa por `forecast_data_audit`. La auditoría valida los datos, el horizonte, la frecuencia y el nivel de confianza solicitado.
 
-## Zona futuro
+Una auditoría válida crea un perfil reutilizable. El LLM lo utiliza para seleccionar el modelo y lanzar la previsión sin reenviar todos los datos.
 
-La zona futuro contiene las fechas a predecir.
+Repite la auditoría si cambian los datos, el objetivo, el horizonte, la frecuencia o la confianza.
 
-En esta zona, el objetivo está vacío, porque es justamente lo que Forecast debe calcular.
+## Datos creados por el LLM
 
-Ejemplo:
+El LLM puede leer CSV, hojas de cálculo o JSON, buscar contexto y crear columnas. Debe distinguir datos leídos de un archivo, encontrados en la web, calculados o supuestos para una simulación.
 
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03
-2026-05-04
-```
+## Vista previa
 
-Aquí, Forecast debe predecir `commandes` para el 3 y el 4 de mayo.
-
-## Futuro conocido
-
-El futuro conocido añade variables de contexto en las líneas futuras.
-
-Ejemplo:
-
-```text
-date        commandes   pluie_mm   promo
-2026-05-01  120        0          0
-2026-05-02  135        4          1
-2026-05-03             12         0
-2026-05-04             0          1
-```
-
-El objetivo futuro está vacío, pero la lluvia y la promo ya son conocidas o supuestas. El modelo puede usar esta información para producir una previsión más realista.
-
-## Columna serie
-
-La columna serie se usa cuando un mismo archivo contiene varios objetos a predecir.
-
-Ejemplos:
-
-- varias tiendas;
-- varios productos;
-- varias ciudades;
-- varios activos financieros;
-- varios servidores.
-
-Ejemplo:
-
-```text
-date        magasin   ventes   promo
-2026-05-01  paris    120      0
-2026-05-01  lyon     92       1
-2026-05-02  paris    132      1
-2026-05-02  lyon     95       0
-```
-
-Forecast puede entonces predecir cada serie teniendo en cuenta el grupo al que pertenece.
-
-## Dataset creado por un agente
-
-Un agente LLM puede crear o enriquecer un dataset.
-
-Puede por ejemplo:
-
-- convertir un Excel en JSON;
-- añadir una columna `weekend`;
-- recuperar eventos en la web;
-- transformar una información textual en puntuación;
-- rellenar las líneas futuras con hipótesis;
-- limpiar fechas o columnas.
-
-El agente debe indicar claramente qué datos provienen del archivo, de la web, de un cálculo o de una hipótesis.
+La sección Datos muestra filas, puntos históricos, filas futuras, series, periodos ausentes y valores atípicos, además del mapeo y una vista previa limitada.

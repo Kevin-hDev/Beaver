@@ -1,76 +1,48 @@
 # LLM-Agenten
 
-LLM-Agenten können Forecast als spezialisierten Motor nutzen. Ihre Rolle beschränkt sich nicht darauf, eine Datei zu lesen und auf ein Tool zu klicken: Sie können Daten vorbereiten, Kontext im Web suchen, ein Dataset aufbauen, die Vorhersage starten und das Ergebnis erklären.
+Das LLM steuert Forecast aus der aktiven Unterhaltung. Es kann Daten vorbereiten oder recherchieren, Qualität prüfen, ein erlaubtes Modell wählen, rechnen und Ergebnisse erklären.
 
-## Was der Agent tun kann
+## Verbindlicher Ablauf
 
-Ein Agent kann an mehreren Stellen eingreifen:
+Gehe bei jedem neuen Datensatz so vor:
 
-| Schritt | Rolle des Agenten |
-| --- | --- |
-| Vorbereitung | Excel, CSV oder JSON lesen |
-| Recherche | Externe Informationen im Web abrufen |
-| Dataset | Nützliche Spalten erstellen oder ergänzen |
-| Start | `forecast` mit den richtigen Parametern aufrufen |
-| Lesen | `forecast_read` verwenden, um das Ergebnis abzurufen |
-| Szenario | Hypothesen erstellen und das Modell neu starten |
-| Erklärung | Trend, Unsicherheit, Variablen und Grenzen zusammenfassen |
+1. Verstehe Ziel, Zeitraum, Horizont und gewünschte Konfidenz.
+2. Lies oder erstelle die Daten und unterscheide ihre Quellen.
+3. Rufe `forecast_data_audit` auf.
+4. Behebe blockierende Fehler oder erkläre sie.
+5. Rufe `forecast_models` mit dem geprüften Profil auf.
+6. Respektiere im manuellen Modus das erzwungene Modell und prüfe die exakte Kompatibilität.
+7. Wähle im Auto-Modus genau einen zurückgegebenen Kandidaten.
+8. Rufe `forecast` mit Profil, erlaubtem Modell und unveränderter Konfidenz auf.
+9. Nutze `forecast_read` für benötigte Seiten und Analysen.
+10. Erkläre Prognose, Unsicherheit und Grenzen.
 
-Beispiel: Für eine Finanzprognose kann der Agent die lokale Datei lesen, den aktuellen Marktkontext suchen, Spalten wie `news_score` oder `event_flag` erzeugen und dann Forecast starten.
+Wiederhole die Prüfung, wenn sich Daten, Ziel, Frequenz, Horizont oder Konfidenz ändern.
 
-## Empfohlener Workflow
+## Manueller Modus
 
-Der Agent sollte dieser Reihenfolge folgen:
+Ändere niemals die gespeicherte Benutzerauswahl. Fehlt das Modell oder ist es nicht bereit oder inkompatibel, fordere eine klare Aktion statt einer stillen Ersetzung.
 
-1. die Anfrage des Nutzers verstehen;
-2. die verfügbaren Daten prüfen;
-3. die vorherzusagende Zielgröße identifizieren;
-4. Daten, Frequenz und Horizont identifizieren;
-5. bei Bedarf nützliche Kontextvariablen suchen oder erstellen;
-6. prüfen, dass die zukünftigen Zeilen kohärent sind;
-7. ein kompatibles Modell wählen;
-8. `forecast` starten;
-9. das Ergebnis mit `forecast_read` prüfen;
-10. die Prognose erklären und nützliche Szenarien vorschlagen.
+## Auto-Modus
 
-## Datenerstellung durch den Agenten
+Wähle einen zurückgegebenen Kandidaten und umgehe keine Backend-Ausschlüsse. Respektiere einen ausdrücklichen Modellwunsch nur, wenn Forecast ihn als sicher bestätigt.
 
-Der Agent kann Daten erstellen, wenn der Nutzer es verlangt oder die Vorhersage es erfordert.
+Übermittle Auswahl-ID und erlaubte kurze Gründe an `forecast`. Bezeichne eine reine Fähigkeiten- und Ressourcenwahl nicht als bestes Modell.
 
-Beispiele:
+## Auswertung und Vergleich
 
-- eine `weekend`-Spalte aus dem Datum hinzufügen;
-- `month_end_flag` erstellen;
-- ein Web-Ereignis in einen numerischen Score umwandeln;
-- einen Zukunftsbereich mit Wetter-Hypothesen füllen;
-- ein Test-Dataset erstellen, um einen Workflow zu validieren;
-- eine Excel-Datei in nutzbares JSON umwandeln.
+Wenn der Benutzer das beste Modell verlangt:
 
-Der Agent muss stets erklären, welche Spalten er erstellt hat und warum.
+1. Führe `forecast_backtest` mit kompatiblen Modellen aus.
+2. Prüfe Status und einzelne Fehler.
+3. Lies die Rangliste mit `forecast_compare_models`.
+4. Vergleiche mit Naive, saisonaler Naive, Drift und ETS.
+5. Zeige Fehler, Abdeckung, Geschwindigkeit und Speicher.
 
-## Sicherheits- und Qualitätsregeln
+Präsentiere keinen teilweisen Backtest als vollständig und kein Modell als bestes, wenn es keine glaubwürdige Baseline schlägt.
 
-Der Agent darf keine wichtige Daten stillschweigend erfinden.
+## Herkunft und Erklärung
 
-Wenn er eine Variable erstellt, muss er unterscheiden zwischen:
+Kennzeichne Werte aus Dateien, externen Quellen, Berechnungen oder Annahmen. Erfinde wichtige Daten niemals still.
 
-- aus einer Datei gelesenen Daten;
-- im Web gefundenen Daten;
-- berechneten Daten;
-- einer Simulations-Hypothese.
-
-Diese Trennung ist wesentlich, damit der Nutzer weiß, was real, berechnet oder angenommen ist.
-
-## Slash-Befehle
-
-Slash-Befehle dienen als schnelle Leitfäden für Agenten und Nutzer.
-
-Beispiele:
-
-- `/forecast`: das Forecast-Modul verstehen;
-- `/forecast-predict`: eine Vorhersage vorbereiten und starten;
-- `/forecast-dataset`: ein sauberes Dataset aufbauen;
-- `/forecast-scenarios`: nützliche Hypothesen erstellen;
-- `/forecast-cmd`: die verfügbaren Tools verstehen.
-
-Diese Befehle sollen ein kurzes, klares und direkt ausführbares Verfahren geben.
+Nutze den bestehenden Chat für Erklärung, Vergleich oder Neustart. Stelle fehlende oder wenig zuverlässige Analysen ehrlich dar.

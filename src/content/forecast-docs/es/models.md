@@ -1,41 +1,45 @@
 # Modelos
 
-Un modelo es el motor que calcula la previsión. Forecast propone varias familias de modelos, locales (el cálculo se queda en la máquina) o cloud (los datos útiles se envían al provider configurado).
+Un modelo es el motor que calcula la previsión. Forecast ofrece familias locales y cloud y verifica sus capacidades, estado y ajuste a los recursos antes de ejecutarlas.
 
-## Familias locales
+## Familias disponibles
 
-| Familia | Editor | Detalle |
+| Familia | Editor | Uso principal |
 | --- | --- | --- |
-| Chronos / Chronos-Bolt | Amazon | Modelo local rápido, bueno para una primera prueba o un objetivo sencillo |
-| TimesFM | Google | Modelo local de previsión de series temporales |
-| Toto 2.0 | Datadog | Modelo local orientado a monitoring y métricas |
-| MOIRAI 2.0 | Salesforce | Modelo local, gestiona el multi-series y las covariables |
-| FlowState | IBM | Modelo local para series temporales |
-| TabPFN-TS | PriorLabs | Modelo local experimental |
-| TiRex | NX-AI | Modelo local experimental |
-| Kairos | Foundation Model Research | Modelo local experimental |
-| Sundial | THUML | Modelo local experimental |
+| Chronos / Chronos-Bolt | Amazon | Previsiones locales rápidas y probabilísticas |
+| TimesFM | Google | Previsión general de series temporales |
+| Toto 2.0 | Datadog | Métricas y monitorización |
+| MOIRAI 2.0 | Salesforce | Multi-serie y variables contextuales |
+| FlowState | IBM | Previsión local probabilística |
+| TabPFN-TS, TiRex, Kairos, Sundial | Varios | Modelos locales especializados o experimentales |
+| TimeGPT | Nixtla | Previsión cloud con clave API |
 
-## Familia cloud
+El catálogo de la aplicación es la referencia para frecuencias, horizonte, covariables, multi-serie e intervalos compatibles.
 
-| Familia | Editor | Detalle |
-| --- | --- | --- |
-| TimeGPT-2 / TimeGPT-2.1 | Nixtla | Motor cloud especializado en series temporales. Necesita una clave API y envía los datos útiles al provider. |
+## Modo Manual
 
-Los modelos cloud pueden ser más potentes, pero implican una dependencia externa y un envío de datos. Para datos sensibles, preferir un modelo local.
+En Manual, eliges el modelo y Forecast impone esa elección. Si no está preparado o no acepta los datos o la confianza exacta, el LLM pide otra elección en vez de sustituirla en silencio.
 
-## Elegir un modelo
+## Modo Auto
 
-La elección depende sobre todo del dataset y del caso de uso:
+En Auto, el LLM elige un único modelo de una lista corta ya filtrada. Forecast excluye modelos no preparados, incompatibles, demasiado pesados o cloud cuando el cloud no está autorizado.
 
-- **Prueba rápida, objetivo sencillo**: Chronos-Bolt.
-- **Datos sensibles, cálculo local**: cualquier familia local.
-- **Covariables y contexto futuro**: un modelo que gestione las variables de contexto (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Multi-series**: un modelo que gestione varias series (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Calidad cloud avanzada**: TimeGPT, aceptando el envío de los datos.
+La información de hardware se expone al LLM solo durante esta selección Forecast. Sin backtests comparables, Auto habla de compatibilidad o recomendación por capacidades, nunca del mejor modelo.
 
-Un modelo avanzado no compensa datos mal estructurados. Antes de cambiar de modelo, verificar la calidad del dataset, la frecuencia, el horizonte y las variables de contexto.
+## Instalación y preparación
 
-## Instalar un modelo local
+Preparar descarga el modelo, instala su motor y realiza una validación real antes de la primera previsión. Varias preparaciones pueden entrar en una cola y las variantes de una familia pueden compartir el motor.
 
-Los modelos locales deben instalarse desde el gestor de modelos (Settings → Forecast) o a través de la pestaña modelos del espacio Forecast. Se descargan desde Hugging Face o GitHub según la familia y luego se almacenan localmente en `~/.local/share/cl-go-dash/forecast-models/`.
+| Estado | Significado |
+| --- | --- |
+| No instalado | Faltan los archivos |
+| Actualización requerida | El motor o la validación deben actualizarse |
+| Inválido | La instalación está incompleta o no supera la validación |
+| Listo | Modelo y motor verificados |
+| Provider requerido | Falta la clave del servicio cloud |
+
+Un modelo local solo puede seleccionarse cuando está listo. Al desinstalarlo, el motor compartido se elimina únicamente si ningún otro modelo lo necesita.
+
+## Modelos cloud
+
+Un modelo cloud envía los datos necesarios al proveedor configurado. Auto solo lo usa con autorización, proveedor listo y política de datos compatible. Forecast nunca cambia silenciosamente de local a cloud.

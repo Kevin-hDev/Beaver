@@ -1,67 +1,47 @@
 # Diagnose
 
-Dieser Abschnitt hilft zu verstehen, warum eine Prognose nicht das erwartete Ergebnis liefert.
+Dieser Abschnitt trennt normales Verhalten von Problemen, die eine Aktion erfordern.
 
-## Ungültige JSON-Daten
+## Modellvorbereitung
 
-Dieser Fehler bedeutet, dass Forecast keine verwendbare Tabelle erhalten hat.
+Ein Modell kann Nicht installiert, Aktualisierung erforderlich, Ungültig, Bereit oder Anbieter erforderlich anzeigen. Bereite fehlende oder veraltete Modelle vor, installiere ungültige neu und konfiguriere bei Bedarf den Cloud-Anbieter.
 
-Es kann liegen an:
+Mehrere Vorbereitungen werden eingereiht; gültige Dateien werden wiederverwendet.
 
-- fehlerhaftem JSON;
-- einer nicht korrekt konvertierten Datei;
-- einem leeren oder abgeschnittenen Feld `data`;
-- einem falschen Zeilenformat;
-- fehlenden Spalten.
+## Sidecar-Lebenszyklus
 
-Wenn der Nutzer eine Datei bereitstellt, muss der Agent prüfen, ob die Datei korrekt gelesen wird, bevor die Daten konvertiert werden.
+Die lokale Laufzeit startet für Prognose oder Backtest und kann direkt danach stoppen. Das ist normal und gibt Ressourcen frei.
 
-## Modell nicht verfügbar
+Ein Problem besteht nur, wenn sie nicht bereit wird, die Anfrage fehlschlägt oder Forecast einen Fehler meldet.
 
-Dieser Fehler kann liegen an:
+## Abgelehnte Datenprüfung
 
-- einem nicht installierten lokalen Modell;
-- einem angehaltenen Sidecar;
-- einem fehlenden API-Schlüssel;
-- einem Modell, das nicht mit den Parametern kompatibel ist;
-- Daten, die für das angeforderte Modell zu kurz sind.
+Ursachen können fehlende Spalten, ungültige oder doppelte Daten, falsche Frequenz, zu kurzer Verlauf, falsche Zukunftszeilen oder überschrittene Grenzen sein.
 
-Der richtige Reflex ist, das Modell zu prüfen und dann mit einem minimalen Dataset zu testen.
+Behebe das Problem und wiederhole die Prüfung. Nutze nach Datenänderungen kein altes Profil.
 
-## Ignorierte Kontextvariablen
+## Inkompatible Konfidenz
 
-Eine Variable kann ignoriert oder nutzlos sein, wenn:
+Kontinuierliche Modelle akzeptieren ganze Werte von 50% bis 99%, einige feste Modelle nur 60% oder 80%.
 
-- sie in der Historie nicht existiert;
-- sie in der Zukunft leer ist;
-- sie konstant ist;
-- sie falsch typisiert ist;
-- sie nicht zum Horizont passt;
-- sie Text enthält, der nicht in eine nutzbare Zahl oder Kategorie umgewandelt wurde.
+Ändere im manuellen Modus Niveau oder Modell. Starte in Auto die Auswahl mit dem exakten Wert neu. Runde niemals still.
 
-In diesem Fall sollte das Dataset geprüft werden, bevor das Modell beschuldigt wird.
+## Abgelaufene Auto-Auswahl
 
-## Flaches Ergebnis
+Die Auswahl ist an Datensatz, Sitzung und Ressourcen gebunden. Rufe bei Ablauf `forecast_models` erneut auf, hole eine neue ID und wiederhole `forecast`.
 
-Eine flache Prognose kann normal sein, wenn die Zielgröße stabil ist.
+## Fehlendes Ergebnis
 
-Sie kann auch auf Folgendes hinweisen:
+Prüfe `analysis_id`, wähle die Analyse im Verlauf, kontrolliere die Sitzung und lies sie erneut. Eine bei der Validierung verworfene Ausgabe wird nicht als gültig angezeigt.
 
-- Historie zu kurz;
-- Frequenz falsch gewählt;
-- Kontext abwesend;
-- Zielgröße wenig variabel;
-- Modell zu einfach;
-- bekannte Zukunft wenig informativ.
+## Teilweiser Backtest
 
-## Szenario ohne sichtbare Wirkung
+Prüfe Gesamtstatus und einzelne Fehler. Betrachte die Rangliste erst als vollständig, wenn die verglichenen Modelle homogene Ergebnisse haben.
 
-Ein kontextuelles Szenario kann wenig Unterschied zeigen, wenn:
+## Ignorierte Kovariaten
 
-- die veränderte Variable wenig Einfluss hat;
-- die Änderung zu gering ist;
-- das Modell diese Variable nicht als starkes Signal nutzt;
-- die zukünftige Variable nicht wirklich übertragen wurde;
-- die Kurve in den Filtern verdeckt ist.
+Eine Kovariate kann fehlen, in der Zukunft leer, konstant, falsch typisiert, falsch ausgerichtet oder nicht unterstützt sein. Prüfe Daten, Modell und Zukunftswerte.
 
-Der Graph, die Filter, der Tooltip und die Daten des Szenarios sollten geprüft werden.
+## Flache Kurve oder schwaches Szenario
+
+Eine flache Kurve kann ein stabiles Ziel, kurzen Verlauf, falsche Frequenz oder fehlenden Kontext zeigen. Ein Szenario kann wenig wirken, wenn die Änderung klein oder die Ebene ausgeblendet ist.

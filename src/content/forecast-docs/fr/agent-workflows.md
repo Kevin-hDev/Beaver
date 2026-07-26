@@ -1,76 +1,63 @@
 # Agents LLM
 
-Les agents LLM peuvent utiliser Forecast comme un moteur spécialisé. Leur rôle ne se limite pas à lire un fichier et cliquer sur un tool : ils peuvent préparer les données, chercher du contexte sur le web, construire un dataset, lancer la prédiction et expliquer le résultat.
+Le LLM pilote Forecast depuis la conversation active. Il peut préparer ou rechercher les données, contrôler leur qualité, sélectionner un modèle autorisé, lancer les calculs et expliquer les résultats.
 
-## Ce que l'agent peut faire
+## Workflow obligatoire
 
-Un agent peut intervenir à plusieurs moments :
+Pour chaque nouveau dataset, tu suis cet ordre :
 
-| Étape | Rôle de l'agent |
-| --- | --- |
-| Préparation | Lire un Excel, CSV ou JSON |
-| Recherche | Aller chercher des informations externes sur le web |
-| Dataset | Créer ou compléter des colonnes utiles |
-| Lancement | Appeler `forecast` avec les bons paramètres |
-| Lecture | Utiliser `forecast_read` pour récupérer le résultat |
-| Scénario | Créer des hypothèses et relancer le modèle |
-| Explication | Résumer tendance, incertitude, variables et limites |
+1. Tu comprends la cible, la période, l'horizon et le niveau de confiance demandé.
+2. Tu lis ou construis les données et tu distingues leurs sources.
+3. Tu appelles `forecast_data_audit`.
+4. Tu corriges les erreurs bloquantes ou tu les expliques à l'utilisateur.
+5. Tu appelles `forecast_models` avec le profil validé.
+6. En mode Manuel, tu respectes le modèle imposé et tu vérifies sa compatibilité exacte.
+7. En mode Auto, tu choisis un seul candidat retourné par Forecast.
+8. Tu appelles `forecast` avec le profil, le modèle autorisé et le même niveau de confiance.
+9. Tu appelles `forecast_read` pour lire les pages et analyses nécessaires.
+10. Tu expliques la prévision, son incertitude et ses limites.
 
-Exemple : pour une prévision financière, l'agent peut lire le fichier local, chercher le contexte marché récent, produire des colonnes comme `news_score` ou `event_flag`, puis lancer Forecast.
+Tu relances l'audit si les données, la cible, la fréquence, l'horizon ou le niveau de confiance changent.
 
-## Workflow recommandé
+## Mode Manuel
 
-L'agent doit suivre cet ordre :
+Tu n'altères jamais la sélection persistée de l'utilisateur. Si le modèle imposé est absent, non préparé ou incompatible, tu demandes une action claire au lieu d'en choisir silencieusement un autre.
 
-1. comprendre la demande de l'utilisateur ;
-2. inspecter les données disponibles ;
-3. identifier la cible à prédire ;
-4. identifier les dates, la fréquence et l'horizon ;
-5. chercher ou créer les variables de contexte utiles si nécessaire ;
-6. vérifier que les lignes futures sont cohérentes ;
-7. choisir un modèle compatible ;
-8. lancer `forecast` ;
-9. relire le résultat avec `forecast_read` ;
-10. expliquer la prévision et proposer des scénarios utiles.
+## Mode Auto
 
-## Création de données par l'agent
+Tu choisis obligatoirement un modèle parmi les candidats retournés. Tu ne contournes jamais les exclusions appliquées par le backend.
 
-L'agent peut créer des données si l'utilisateur le demande ou si la prédiction le nécessite.
+Tu respectes une demande explicite de modèle uniquement si Forecast confirme qu'il reste un candidat sûr. Tu transmets ensuite l'identifiant de sélection et les raisons courtes attendues par `forecast`.
 
-Exemples :
+Tu ne qualifies pas un choix fondé seulement sur les capacités et les ressources de meilleur modèle. Tu privilégies un classement issu de backtests comparables lorsqu'il existe.
 
-- ajouter une colonne `weekend` à partir de la date ;
-- créer `month_end_flag` ;
-- transformer un événement web en score numérique ;
-- remplir une zone future avec des hypothèses météo ;
-- construire un dataset de test pour valider un workflow ;
-- convertir un fichier Excel en JSON exploitable.
+## Évaluation et comparaison
 
-L'agent doit toujours expliquer quelles colonnes il a créées et pourquoi.
+Lorsque l'utilisateur demande le meilleur modèle ou une comparaison fiable :
 
-## Règles de sécurité et de qualité
+1. Tu lances `forecast_backtest` sur des modèles compatibles.
+2. Tu vérifies le statut global et les échecs individuels.
+3. Tu lis le classement avec `forecast_compare_models`.
+4. Tu compares les modèles aux références Naive, Naive saisonnier, Drift et ETS.
+5. Tu présentes les compromis entre erreur, couverture, vitesse et mémoire.
 
-L'agent ne doit pas inventer silencieusement une donnée importante.
+Tu ne présentes jamais un backtest partiel comme complet. Tu ne déclares jamais un modèle meilleur s'il ne bat pas une référence crédible.
 
-S'il crée une variable, il doit distinguer :
+## Création et provenance des données
 
-- donnée lue dans un fichier ;
-- donnée trouvée sur le web ;
-- donnée calculée ;
-- hypothèse de simulation.
+Tu peux ajouter des calendriers, indicateurs, événements ou variables trouvées sur le web lorsque cela aide réellement la prévision.
 
-Cette séparation est essentielle pour que l'utilisateur sache ce qui est réel, calculé ou supposé.
+Tu indiques toujours si une valeur est :
 
-## Commandes slash
+- lue dans un fichier ;
+- trouvée dans une source externe ;
+- calculée ;
+- supposée pour un scénario.
 
-Les commandes slash servent de guides rapides pour les agents et les utilisateurs.
+Tu n'inventes jamais silencieusement une donnée importante.
 
-Exemples :
+## Explication dans le chat
 
-- `/forecast` : comprendre le module Forecast ;
-- `/forecast-predict` : préparer et lancer une prédiction ;
-- `/forecast-dataset` : construire un dataset propre ;
-- `/forecast-scenarios` : créer des hypothèses utiles ;
-- `/forecast-cmd` : comprendre les tools disponibles.
+Tu utilises la conversation existante. Tu n'attends pas un bouton spécial pour expliquer, comparer, relancer ou interpréter une prévision.
 
-Ces commandes doivent donner une procédure courte, claire et directement actionnable.
+Tu relies ton explication aux données, aux intervalles, aux résultats de backtest et aux hypothèses visibles. Tu présentes honnêtement les analyses avancées indisponibles ou peu fiables.

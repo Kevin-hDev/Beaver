@@ -1,72 +1,51 @@
 # Overview
 
-Forecast is used to predict the future evolution of a measurable quantity. The module analyzes history, recent trends, and contextual variables to produce a dated prediction, with a margin of uncertainty and comparable scenarios.
+Forecast is directly linked to the active conversation. The LLM prepares or researches data, runs calculations and explains results. The chat remains the command center, while two complementary surfaces display and explore each analysis.
 
-## Simple definition of forecasting
+## Main workflow
 
-Forecasting means observing past and current data to estimate what may happen next.
+The normal workflow is:
 
-Examples:
+1. the user describes what to predict in the chat;
+2. the LLM reads, creates or enriches the required data;
+3. Forecast audits data quality;
+4. Manual mode enforces the user's model, while Auto chooses from safe candidates;
+5. Forecast computes and saves the prediction;
+6. the panel immediately displays the main result;
+7. the user continues the conversation or opens the Forecast workspace.
 
-- predict sales for the next 30 days;
-- estimate next month's revenue;
-- anticipate server load over the coming hours;
-- project the price or volume of an asset;
-- simulate the effect of a known future context.
+There is no separate Forecast chat. Ask for an explanation, comparison or rerun by writing a normal message.
 
-The model does not read the future. It computes a likely trajectory from patterns visible in the data.
+## Complementary surfaces
 
-## What Forecast adds to an LLM chat
-
-An LLM can read a table and write an explanation. Forecast adds a specialized engine that actually computes a future series.
-
-The difference matters:
-
-| LLM chat alone | Forecast |
+| Surface | Purpose |
 | --- | --- |
-| Explains a file | Computes dated future points |
-| Can reason qualitatively | Produces a numerical curve |
-| May invent when data is vague | Uses a strict data contract |
-| Summarizes a trend | Generates a forecast, bounds, and scenarios |
+| Chat | Prepare data, guide the LLM and request explanations |
+| Forecast panel | Quickly read the chart, key indicators and warnings |
+| Forecast workspace | Explore data, charts, evaluations, scenarios, notes and the report |
 
-The LLM remains useful around the engine: it prepares the data, selects the columns, can search for information on the web, builds a dataset, runs Forecast, then explains the result.
+The panel intentionally stays compact. The workspace opens in a dedicated window without hiding or replacing the conversation.
 
-## Main object: the target
+## Forecast workspace
 
-The target is the column Forecast must predict.
+The workspace remains linked to the active session and analysis. Selecting another analysis in the panel updates the open window automatically.
 
-Examples:
+Its sections are:
 
-- `ventes`
-- `ca_total_eur`
-- `commandes_total`
-- `temperature`
-- `stock_price`
-- `incidents_count`
+| Section | Content |
+| --- | --- |
+| Data | Dataset summary, mapping, quality and row preview |
+| Forecast | Main chart, uncertainty, seasonality, filters and prediction table |
+| Evaluation | Temporal backtest, baselines and interval reliability |
+| Comparison | Comparable model ranking and optional ensemble creation |
+| Scenarios | Create and edit assumptions |
+| Notes | Context, risks, decisions and annotations |
+| Report | Detailed analysis and exports |
 
-The entire forecast revolves around this target: the model learns its past behavior, then estimates its future values.
+## Saved analysis
 
-## What a Forecast result contains
+An analysis keeps the effective columns and settings, data-quality profile, model and selection source, central prediction and intervals, scenarios, notes, backtests and the provenance needed for reproducibility.
 
-A Forecast result contains:
+## Key point
 
-- the historical values used;
-- the future forecast point by point;
-- an uncertainty range;
-- the contextual variables used;
-- the scenarios created from this forecast;
-- the metadata needed to review, compare, and export the result.
-
-This is not a passive file. It is a complete working object for understanding what is likely, what is risky, and what changes if the context evolves.
-
-## General logic
-
-The standard workflow is:
-
-1. provide a dataset;
-2. choose the date, the target, and optionally the series;
-3. select the useful contextual variables;
-4. run a forecast model;
-5. read the future curve and the uncertainty;
-6. create scenarios to test hypotheses;
-7. ask the LLM to explain the results or prepare new data.
+Forecast produces a structured estimate, not certainty. Read every curve together with data quality, uncertainty, baselines and the limits of the available context.

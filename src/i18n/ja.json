@@ -1404,6 +1404,7 @@
         "datasets": "データセット",
         "models": "モデル",
         "predictions": "予測",
+        "evaluation": "評価",
         "uncertainty": "不確実性",
         "covariates": "共変量",
         "multiseries": "複数系列",

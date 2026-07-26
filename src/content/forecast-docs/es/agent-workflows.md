@@ -1,76 +1,48 @@
 # Agentes LLM
 
-Los agentes LLM pueden usar Forecast como un motor especializado. Su rol no se limita a leer un archivo y clicar en una tool: pueden preparar los datos, buscar contexto en la web, construir un dataset, lanzar la predicción y explicar el resultado.
+El LLM dirige Forecast desde la conversación activa. Puede preparar o buscar datos, auditar su calidad, seleccionar un modelo autorizado, ejecutar cálculos y explicar resultados.
 
-## Lo que el agente puede hacer
+## Flujo obligatorio
 
-Un agente puede intervenir en varios momentos:
+Para cada dataset nuevo, sigue este orden:
 
-| Etapa | Rol del agente |
-| --- | --- |
-| Preparación | Leer un Excel, CSV o JSON |
-| Búsqueda | Ir a buscar información externa en la web |
-| Dataset | Crear o completar columnas útiles |
-| Lanzamiento | Llamar a `forecast` con los parámetros correctos |
-| Lectura | Usar `forecast_read` para recuperar el resultado |
-| Escenario | Crear hipótesis y relanzar el modelo |
-| Explicación | Resumir tendencia, incertidumbre, variables y límites |
+1. Comprende el objetivo, periodo, horizonte y confianza solicitada.
+2. Lee o construye los datos y distingue sus fuentes.
+3. Llama a `forecast_data_audit`.
+4. Corrige los errores bloqueantes o explícalos.
+5. Llama a `forecast_models` con el perfil validado.
+6. En Manual, respeta el modelo impuesto y verifica la compatibilidad exacta.
+7. En Auto, elige un único candidato devuelto.
+8. Llama a `forecast` con el perfil, modelo autorizado y confianza sin cambios.
+9. Usa `forecast_read` para las páginas y análisis necesarios.
+10. Explica la previsión, incertidumbre y límites.
 
-Ejemplo: para una previsión financiera, el agente puede leer el archivo local, buscar el contexto de mercado reciente, producir columnas como `news_score` o `event_flag` y luego lanzar Forecast.
+Repite la auditoría cuando cambien los datos, objetivo, frecuencia, horizonte o confianza.
 
-## Flujo de trabajo recomendado
+## Modo Manual
 
-El agente debe seguir este orden:
+No alteres nunca la selección persistida. Si el modelo falta, no está preparado o es incompatible, pide una acción clara en vez de elegir otro silenciosamente.
 
-1. entender la petición del usuario;
-2. inspeccionar los datos disponibles;
-3. identificar el objetivo a predecir;
-4. identificar las fechas, la frecuencia y el horizonte;
-5. buscar o crear las variables de contexto útiles si es necesario;
-6. verificar que las líneas futuras son coherentes;
-7. elegir un modelo compatible;
-8. lanzar `forecast`;
-9. revisar el resultado con `forecast_read`;
-10. explicar la previsión y proponer escenarios útiles.
+## Modo Auto
 
-## Creación de datos por el agente
+Elige un candidato devuelto y no evites las exclusiones del backend. Respeta una solicitud explícita solo si Forecast confirma que sigue siendo segura.
 
-El agente puede crear datos si el usuario se lo pide o si la predicción lo requiere.
+Transmite a `forecast` el identificador de selección y las razones cortas autorizadas. No llames mejor a una selección basada solo en capacidades y recursos.
 
-Ejemplos:
+## Evaluación y comparación
 
-- añadir una columna `weekend` a partir de la fecha;
-- crear `month_end_flag`;
-- transformar un evento web en puntuación numérica;
-- rellenar una zona futura con hipótesis meteorológicas;
-- construir un dataset de prueba para validar un flujo de trabajo;
-- convertir un archivo Excel en JSON explotable.
+Cuando el usuario pida el mejor modelo:
 
-El agente debe siempre explicar qué columnas ha creado y por qué.
+1. Ejecuta `forecast_backtest` con modelos compatibles.
+2. Comprueba el estado y los fallos individuales.
+3. Lee la clasificación con `forecast_compare_models`.
+4. Compara con Naive, Naive estacional, Drift y ETS.
+5. Presenta error, cobertura, velocidad y memoria.
 
-## Reglas de seguridad y de calidad
+No presentes un backtest parcial como completo ni un modelo como mejor si no supera una referencia creíble.
 
-El agente no debe inventar silenciosamente un dato importante.
+## Procedencia y explicación
 
-Si crea una variable, debe distinguir:
+Indica siempre si un valor procede de un archivo, una fuente externa, un cálculo o una hipótesis. No inventes datos importantes en silencio.
 
-- dato leído en un archivo;
-- dato encontrado en la web;
-- dato calculado;
-- hipótesis de simulación.
-
-Esta separación es esencial para que el usuario sepa qué es real, calculado o supuesto.
-
-## Comandos slash
-
-Los comandos slash sirven de guías rápidas para los agentes y los usuarios.
-
-Ejemplos:
-
-- `/forecast`: entender el módulo Forecast;
-- `/forecast-predict`: preparar y lanzar una predicción;
-- `/forecast-dataset`: construir un dataset limpio;
-- `/forecast-scenarios`: crear hipótesis útiles;
-- `/forecast-cmd`: entender las tools disponibles.
-
-Estos comandos deben dar un procedimiento corto, claro y directamente accionable.
+Usa la conversación existente para explicar, comparar o relanzar. Presenta honestamente los análisis avanzados ausentes o poco fiables.

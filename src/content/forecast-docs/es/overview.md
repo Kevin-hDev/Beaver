@@ -1,72 +1,49 @@
-# Visión general
+# Vista general
 
-Forecast sirve para prever la evolución futura de un dato medible. El módulo analiza el historial, las tendencias recientes y las variables de contexto para producir una predicción fechada, con un margen de incertidumbre y escenarios comparables.
+Forecast está vinculado directamente a la conversación activa. El LLM prepara o busca los datos, ejecuta los cálculos y explica los resultados. El chat sigue siendo el centro de control y dos superficies complementarias permiten leer y explorar cada análisis.
 
-## Definición sencilla del forecasting
+## Flujo principal
 
-El forecasting consiste en observar datos pasados y actuales para estimar lo que puede ocurrir a continuación.
+El flujo normal es:
 
-Ejemplos:
+1. el usuario describe en el chat qué quiere prever;
+2. el LLM lee, crea o enriquece los datos necesarios;
+3. Forecast audita la calidad de los datos;
+4. el modo Manual impone el modelo elegido y Auto selecciona entre candidatos seguros;
+5. Forecast calcula y guarda la previsión;
+6. el panel muestra inmediatamente el resultado principal;
+7. el usuario continúa la conversación o abre el espacio Forecast.
 
-- prever las ventas de los próximos 30 días;
-- estimar la facturación del mes siguiente;
-- anticipar la carga del servidor de las próximas horas;
-- proyectar el precio o el volumen de un activo;
-- simular el efecto de un contexto futuro conocido.
+No existe un chat Forecast separado. Pide una explicación, comparación o nueva ejecución mediante un mensaje normal.
 
-El modelo no lee el futuro. Calcula una trayectoria probable a partir de patrones visibles en los datos.
+## Superficies complementarias
 
-## Lo que Forecast añade a un chat LLM
-
-Un LLM puede leer una tabla y escribir una explicación. Forecast añade un motor especializado que calcula realmente una serie futura.
-
-La diferencia es importante:
-
-| Chat LLM solo | Forecast |
+| Superficie | Función |
 | --- | --- |
-| Explica un archivo | Calcula puntos futuros fechados |
-| Puede razonar cualitativamente | Produce una curva numérica |
-| Puede inventar si los datos son difusos | Usa un contrato de datos estricto |
-| Resume una tendencia | Genera una previsión, unos límites y escenarios |
+| Chat | Preparar datos, guiar al LLM y pedir explicaciones |
+| Panel Forecast | Leer rápidamente el gráfico, indicadores y avisos |
+| Espacio Forecast | Explorar datos, gráficos, evaluaciones, escenarios, notas e informe |
 
-El LLM sigue siendo útil alrededor del motor: prepara los datos, elige las columnas, puede buscar información en la web, construye un dataset, lanza Forecast y luego explica el resultado.
+El panel se mantiene compacto. El espacio Forecast se abre en una ventana dedicada sin ocultar ni sustituir la conversación.
 
-## Objeto principal: el objetivo
+## Espacio Forecast
 
-El objetivo es la columna que Forecast debe predecir.
+El espacio permanece vinculado a la sesión y al análisis activos. Al seleccionar otro análisis en el panel, la ventana abierta se actualiza automáticamente.
 
-Ejemplos:
+| Sección | Contenido |
+| --- | --- |
+| Datos | Resumen, mapeo, calidad y vista previa |
+| Previsión | Gráfico principal, incertidumbre, estacionalidad, filtros y tabla |
+| Evaluación | Backtest temporal, referencias y fiabilidad de intervalos |
+| Comparación | Clasificación comparable y posible conjunto de modelos |
+| Escenarios | Creación y edición de hipótesis |
+| Notas | Contexto, riesgos, decisiones y anotaciones |
+| Informe | Análisis detallado y exportaciones |
 
-- `ventes`
-- `ca_total_eur`
-- `commandes_total`
-- `temperature`
-- `stock_price`
-- `incidents_count`
+## Análisis guardado
 
-Toda la previsión gira en torno a este objetivo: el modelo aprende su comportamiento pasado y luego estima sus valores futuros.
+Un análisis conserva las columnas y ajustes efectivos, el perfil de calidad, el modelo y el origen de la selección, la previsión y sus intervalos, escenarios, notas, backtests y la procedencia necesaria para reproducirlo.
 
-## Lo que contiene un resultado Forecast
+## Idea esencial
 
-Un resultado Forecast contiene:
-
-- los valores históricos utilizados;
-- la previsión futura punto por punto;
-- un rango de incertidumbre;
-- las variables de contexto utilizadas;
-- los escenarios creados a partir de esta previsión;
-- los metadatos necesarios para revisar, comparar y exportar el resultado.
-
-No es un archivo pasivo. Es un objeto de trabajo completo para entender lo que es probable, lo que es arriesgado y lo que cambia si el contexto evoluciona.
-
-## Lógica general
-
-El flujo de trabajo estándar es:
-
-1. proporcionar un dataset;
-2. elegir la fecha, el objetivo y, eventualmente, las series;
-3. seleccionar las variables de contexto útiles;
-4. lanzar un modelo de previsión;
-5. leer la curva futura y la incertidumbre;
-6. crear escenarios para probar hipótesis;
-7. pedir al LLM que explique los resultados o que prepare nuevos datos.
+Forecast produce una estimación estructurada, no una certeza. Interpreta cada curva junto con la calidad de los datos, la incertidumbre, las referencias y los límites del contexto disponible.

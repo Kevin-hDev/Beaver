@@ -1,41 +1,45 @@
 # Modelli
 
-Un modello è il motore che calcola la previsione. Forecast propone diverse famiglie di modelli, locali (il calcolo resta sulla macchina) o cloud (i dati utili vengono inviati al provider configurato).
+Un modello è il motore che calcola la previsione. Forecast offre famiglie locali e cloud e ne verifica capacità, stato e compatibilità con le risorse prima dell'esecuzione.
 
-## Famiglie locali
+## Famiglie disponibili
 
-| Famiglia | Editore | Dettaglio |
+| Famiglia | Editore | Uso principale |
 | --- | --- | --- |
-| Chronos / Chronos-Bolt | Amazon | Modello locale veloce, adatto a un primo test o a un target semplice |
-| TimesFM | Google | Modello locale di previsione di serie temporali |
-| Toto 2.0 | Datadog | Modello locale orientato al monitoring e alle metriche |
-| MOIRAI 2.0 | Salesforce | Modello locale, gestisce il multi-serie e le covariate |
-| FlowState | IBM | Modello locale per serie temporali |
-| TabPFN-TS | PriorLabs | Modello locale sperimentale |
-| TiRex | NX-AI | Modello locale sperimentale |
-| Kairos | Foundation Model Research | Modello locale sperimentale |
-| Sundial | THUML | Modello locale sperimentale |
+| Chronos / Chronos-Bolt | Amazon | Previsioni locali rapide e probabilistiche |
+| TimesFM | Google | Previsione generale di serie temporali |
+| Toto 2.0 | Datadog | Metriche e monitoraggio |
+| MOIRAI 2.0 | Salesforce | Multi-serie e variabili contestuali |
+| FlowState | IBM | Previsione locale probabilistica |
+| TabPFN-TS, TiRex, Kairos, Sundial | Vari | Modelli locali specializzati o sperimentali |
+| TimeGPT | Nixtla | Previsione cloud con chiave API |
 
-## Famiglia cloud
+Il catalogo dell'app è il riferimento per frequenze, orizzonte, covariate, multi-serie e intervalli.
 
-| Famiglia | Editore | Dettaglio |
-| --- | --- | --- |
-| TimeGPT-2 / TimeGPT-2.1 | Nixtla | Motore cloud specializzato in serie temporali. Richiede una chiave API e invia i dati utili al provider. |
+## Modalità Manuale
 
-I modelli cloud possono essere più potenti, ma comportano una dipendenza esterna e un invio di dati. Per dati sensibili, preferire un modello locale.
+In Manuale scegli il modello e Forecast impone la scelta. Se non è pronto o non è compatibile con dati o confidenza esatta, il LLM chiede un'altra scelta senza sostituirlo in silenzio.
 
-## Scegliere un modello
+## Modalità Auto
 
-La scelta dipende soprattutto dal dataset e dal caso d'uso:
+In Auto il LLM sceglie un solo modello da una lista breve già filtrata. Forecast esclude modelli non pronti, incompatibili, troppo pesanti o cloud non autorizzati.
 
-- **Test rapido, target semplice**: Chronos-Bolt.
-- **Dati sensibili, calcolo locale**: qualsiasi famiglia locale.
-- **Covariate e contesto futuro**: un modello che gestisce le variabili di contesto (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Multi-serie**: un modello che gestisce più serie (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Qualità cloud avanzata**: TimeGPT, accettando l'invio dei dati.
+Le informazioni hardware vengono esposte al LLM solo durante questa selezione Forecast. Senza backtest comparabili, Auto parla di compatibilità o raccomandazione per capacità, mai del modello migliore.
 
-Un modello avanzato non compensa dati mal strutturati. Prima di cambiare modello, verificare la qualità del dataset, la frequenza, l'orizzonte e le variabili di contesto.
+## Installazione e preparazione
 
-## Installare un modello locale
+Prepara scarica il modello, installa il runtime ed esegue una verifica reale prima della prima previsione. Più preparazioni entrano in coda e varianti della stessa famiglia possono condividere il runtime.
 
-I modelli locali devono essere installati dal gestore dei modelli (Impostazioni → Forecast) o tramite la scheda modelli dello spazio Forecast. Vengono scaricati da Hugging Face o GitHub a seconda della famiglia, poi memorizzati localmente in `~/.local/share/cl-go-dash/forecast-models/`.
+| Stato | Significato |
+| --- | --- |
+| Non installato | Mancano i file |
+| Aggiornamento richiesto | Runtime o validazione devono essere aggiornati |
+| Non valido | Installazione incompleta o non validata |
+| Pronto | Modello e runtime verificati |
+| Provider richiesto | Manca la chiave del servizio cloud |
+
+Un modello locale è selezionabile solo quando è pronto. Il runtime condiviso viene rimosso solo se nessun altro modello ne ha bisogno.
+
+## Modelli cloud
+
+Un modello cloud invia i dati necessari al provider configurato. Auto lo usa solo con autorizzazione, provider pronto e politica dati compatibile. Forecast non passa mai silenziosamente da locale a cloud.

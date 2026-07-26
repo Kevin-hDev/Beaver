@@ -1,67 +1,33 @@
 # Prognosen
 
-Eine Prognose ist das von Forecast berechnete Ergebnis, um die nächsten Werte einer Zielgröße zu schätzen. Sie beantwortet eine konkrete Frage: "Wenn die vergangenen Daten und der bekannte Kontext kohärent bleiben, welche Werte kann man dann als Nächstes erwarten?"
+Eine Prognose verlängert eine oder mehrere Serien aus Verlauf, Kontextvariablen und ausgewähltem Modell. Sie enthält eine zentrale Schätzung und, wenn verfügbar, Unsicherheitsgrenzen.
 
-## Was eine Prognose darstellt
+## Gespeichertes Ergebnis
 
-Eine Prognose enthält eine Folge zukünftiger Punkte.
+Jede gültige Ausführung erstellt eine `analysis_id`. Sie verbindet Panel, Arbeitsbereich, Szenarien, Notizen, Auswertungen und Exporte.
 
-Jeder Punkt entspricht einem Datum oder einer Periode:
+Forecast validiert vor dem Speichern Anzahl, Daten, Reihenfolge, endliche Werte, Quantile und Horizont. Eine teilweise oder inkonsistente Ausgabe wird nicht als gültige Analyse gespeichert.
 
-```text
-2026-06-01 -> 142 Bestellungen prognostiziert
-2026-06-02 -> 151 Bestellungen prognostiziert
-2026-06-03 -> 149 Bestellungen prognostiziert
-```
+## Hauptdiagramm
 
-Diese Werte sind keine Gewissheit. Sie stellen die Schätzung des Modells dar.
+Das Diagramm trennt Verlauf und Prognosebereich. Filter steuern Serien, Unsicherheit, Szenarien, Ereignisse, Vergleiche, Anomalien und Qualitätssignale.
 
-## Benötigte Eingaben
+Du kannst ziehen, mit Mausrad oder Trackpad zoomen, Sprungleisten nutzen, Karten einklappen und die Punkttabelle öffnen. Ist kein weiterer Zoom möglich, bleibt das Scrollen der Seite frei.
 
-Um eine Prognose zu starten, benötigt Forecast:
+## Ergänzende Diagramme
 
-| Element | Rolle |
-| --- | --- |
-| Datum | Verortet jede Zeile in der Zeit |
-| Zielgröße | Zu prognostizierender Wert |
-| Frequenz | Rhythmus der Daten: Tag, Stunde, Monat usw. |
-| Horizont | Anzahl der vorherzusagenden zukünftigen Punkte |
-| Modell | Motor, der die Trajektorie berechnet |
+Der Arbeitsbereich kann Unsicherheitsfächer, saisonale Vergleiche und nach einem Backtest ein Zuverlässigkeitsdiagramm zeigen. Bei mehreren Serien bleibt die aktive Serie synchronisiert.
 
-Kontextvariablen und Multi-Serien sind nicht zwingend, werden aber wichtig, sobald man die Zukunft erklären oder simulieren will.
+## Prognosetabelle
 
-## Horizont
+Die Tabelle ist standardmäßig eingeklappt. Geöffnet zeigt sie Datum, Zentralwert und Grenzen in einem begrenzten scrollbaren Bereich.
 
-Der Horizont gibt die Tiefe der Prognose an.
+Bei langen Analysen liefert `forecast_read` begrenzte Seiten statt der ganzen Serie im LLM-Kontext.
 
-Beispiele:
+## Echtzeit-Aktualisierung
 
-- Horizont `24` bei stündlicher Frequenz: die nächsten 24 Stunden vorhersagen;
-- Horizont `31` bei täglicher Frequenz: die nächsten 31 Tage vorhersagen;
-- Horizont `12` bei monatlicher Frequenz: die nächsten 12 Monate vorhersagen.
+Panel und Arbeitsbereich lesen dieselbe Analyse. Neue Prognosen, Änderungen und Analysewechsel aktualisieren die Ansichten ohne erneutes Öffnen.
 
-Je länger der Horizont, desto größer wird im Allgemeinen die Unsicherheit.
+## Richtige Interpretation
 
-## Ergebnis und Identifikator
-
-Jeder Start erzeugt einen Identifikator `analysis_id`.
-
-Dieser Identifikator bedeutet nicht "gespeicherte Datei". Er dient dazu, das berechnete Ergebnis wiederzufinden: zukünftige Kurve, Unsicherheit, Parameter, Variablen, Szenarien und Annotationen.
-
-Die Anwendung nutzt ihn, um:
-
-- eine Prognose wieder zu öffnen;
-- den Graphen anzuzeigen;
-- mehrere Ergebnisse zu vergleichen;
-- Szenarien zu erstellen oder erneut zu starten;
-- einem LLM-Agent zu ermöglichen, das Ergebnis zu prüfen.
-
-## Korrekte Interpretation
-
-Eine Prognose muss mit drei Fragen gelesen werden:
-
-- steigt der Trend, fällt er oder bleibt er stabil?
-- ist die Unsicherheit gering oder groß?
-- welche Kontextvariablen können die Bewegung erklären?
-
-Eine Kurve allein reicht nicht. Forecast wird nützlich, wenn die Prognose mit ihrem Kontext verbunden wird.
+Lies die Kurve zusammen mit Datenqualität, Unsicherheit, Horizont, Anomalien, Backtests, Baselines und Annahmen. Eine glatte Kurve beweist keine Genauigkeit.

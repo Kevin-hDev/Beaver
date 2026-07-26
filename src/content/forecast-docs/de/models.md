@@ -1,41 +1,45 @@
 # Modelle
 
-Ein Modell ist der Motor, der die Prognose berechnet. Forecast bietet mehrere Modellfamilien, lokal (die Berechnung bleibt auf der Maschine) oder Cloud (die benötigten Daten werden an den konfigurierten Provider gesendet).
+Ein Modell ist der Motor der Prognose. Forecast bietet lokale und Cloud-Familien und prüft vor jeder Ausführung Fähigkeiten, Bereitschaft und Ressourcen.
 
-## Lokale Familien
+## Verfügbare Familien
 
-| Familie | Herausgeber | Detail |
+| Familie | Anbieter | Haupteinsatz |
 | --- | --- | --- |
-| Chronos / Chronos-Bolt | Amazon | Schnelles lokales Modell, gut für einen ersten Test oder eine einfache Zielgröße |
-| TimesFM | Google | Lokales Modell zur Zeitreihen-Prognose |
-| Toto 2.0 | Datadog | Lokales Modell für Monitoring und Metriken |
-| MOIRAI 2.0 | Salesforce | Lokales Modell, unterstützt Multi-Serien und Kovariablen |
-| FlowState | IBM | Lokales Modell für Zeitreihen |
-| TabPFN-TS | PriorLabs | Experimentelles lokales Modell |
-| TiRex | NX-AI | Experimentelles lokales Modell |
-| Kairos | Foundation Model Research | Experimentelles lokales Modell |
-| Sundial | THUML | Experimentelles lokales Modell |
+| Chronos / Chronos-Bolt | Amazon | Schnelle lokale probabilistische Prognosen |
+| TimesFM | Google | Allgemeine Zeitreihenprognose |
+| Toto 2.0 | Datadog | Metriken und Monitoring |
+| MOIRAI 2.0 | Salesforce | Mehrere Serien und Kontextvariablen |
+| FlowState | IBM | Lokale probabilistische Prognose |
+| TabPFN-TS, TiRex, Kairos, Sundial | Verschiedene | Spezialisierte oder experimentelle lokale Modelle |
+| TimeGPT | Nixtla | Cloud-Prognose mit API-Schlüssel |
 
-## Cloud-Familie
+Der App-Katalog ist die Referenz für Frequenzen, Horizont, Kovariaten, Mehrserien und Intervalle.
 
-| Familie | Herausgeber | Detail |
-| --- | --- | --- |
-| TimeGPT-2 / TimeGPT-2.1 | Nixtla | Cloud-Motor spezialisiert auf Zeitreihen. Erfordert einen API-Schlüssel und sendet die benötigten Daten an den Provider. |
+## Manueller Modus
 
-Cloud-Modelle können leistungsfähiger sein, bringen aber eine externe Abhängigkeit und eine Datenübertragung mit sich. Für sensible Daten ein lokales Modell bevorzugen.
+Im manuellen Modus wählst du das Modell und Forecast erzwingt diese Wahl. Ist es nicht bereit oder nicht exakt kompatibel, fordert das LLM eine andere Auswahl an, statt sie still zu ersetzen.
 
-## Ein Modell wählen
+## Auto-Modus
 
-Die Wahl hängt vor allem vom Dataset und vom Anwendungsfall ab:
+Im Auto-Modus wählt das LLM genau ein Modell aus einer von Forecast gefilterten Liste. Nicht bereite, inkompatible, zu große oder nicht erlaubte Cloud-Modelle werden ausgeschlossen.
 
-- **Schneller Test, einfache Zielgröße**: Chronos-Bolt.
-- **Sensible Daten, lokale Berechnung**: eine beliebige lokale Familie.
-- **Kovariablen und bekannter Zukunftskontext**: ein Modell, das Kontextvariablen unterstützt (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Multi-Serien**: ein Modell, das mehrere Serien unterstützt (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Fortgeschrittene Cloud-Qualität**: TimeGPT, bei Akzeptanz der Datenübertragung.
+Hardwareinformationen erhält das LLM nur während dieser Forecast-Auswahl. Ohne vergleichbare Backtests spricht Auto von Kompatibilität oder einer Empfehlung nach Fähigkeiten, nie vom besten Modell.
 
-Ein fortgeschrittenes Modell gleicht schlecht strukturierte Daten nicht aus. Bevor das Modell gewechselt wird, sollten Dataset-Qualität, Frequenz, Horizont und Kontextvariablen geprüft werden.
+## Installation und Vorbereitung
 
-## Ein lokales Modell installieren
+Vorbereiten lädt das Modell, installiert seine Laufzeit und führt vor der ersten Prognose eine echte Prüfung aus. Mehrere Vorbereitungen werden eingereiht; Varianten einer Familie können eine Laufzeit teilen.
 
-Lokale Modelle müssen über den Modell-Manager (Settings → Forecast) oder über den Reiter Modelle im Forecast-Bereich installiert werden. Sie werden je nach Familie von Hugging Face oder GitHub heruntergeladen und lokal unter `~/.local/share/cl-go-dash/forecast-models/` gespeichert.
+| Status | Bedeutung |
+| --- | --- |
+| Nicht installiert | Modelldateien fehlen |
+| Aktualisierung erforderlich | Laufzeit oder Prüfung muss erneuert werden |
+| Ungültig | Installation ist unvollständig oder nicht validiert |
+| Bereit | Modell und Laufzeit sind geprüft |
+| Anbieter erforderlich | Cloud-API-Schlüssel fehlt |
+
+Ein lokales Modell ist nur im Status Bereit wählbar. Eine gemeinsam genutzte Laufzeit wird beim Entfernen nur gelöscht, wenn kein anderes Modell sie benötigt.
+
+## Cloud-Modelle
+
+Ein Cloud-Modell sendet notwendige Daten an den konfigurierten Anbieter. Auto nutzt es nur mit Erlaubnis, bereitem Anbieter und passender Datenrichtlinie. Forecast wechselt nie still von lokal zu Cloud.

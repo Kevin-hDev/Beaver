@@ -1,111 +1,37 @@
 # Datasets
 
-Ein Dataset ist die Tabelle, die Forecast verwendet, um die Vergangenheit zu lernen und die Zukunft vorherzusagen. Es muss so strukturiert sein, dass das Modell versteht, was vorhergesagt werden soll, zu welchen Daten und mit welchem Kontext.
+Die Qualität einer Prognose beginnt bei den Daten. Forecast trennt historische Zeilen, bereits bekannte Zukunftsinformationen und Szenarioannahmen.
 
 ## Mindeststruktur
 
-Ein Forecast-Dataset enthält mindestens:
-
-| Spalte | Rolle |
-| --- | --- |
-| Datum | Gibt an, wann jede Beobachtung stattfand |
-| Zielgröße | Zu prognostizierender Wert |
-
-Einfaches Beispiel:
-
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03  128
-```
-
-Mit dieser Tabelle kann Forecast die Dynamik der Bestellungen lernen und die nächsten Daten vorhersagen.
+Ein nutzbarer Datensatz enthält Datumsspalte, Zielspalte, Frequenz und Horizont. Eine optionale Serienspalte trennt Produkte, Regionen oder Sensoren; Kovariaten ergänzen Kontext.
 
 ## Historischer Bereich
 
-Der historische Bereich enthält die bereits bekannten realen Werte.
+Historische Zeilen enthalten Datum und beobachtetes Ziel. Sie müssen geordnet, ausreichend lang und mit der gewählten Frequenz konsistent sein.
 
-Er dient dem Modell, um Folgendes zu erkennen:
+Forecast prüft ungültige oder ungeordnete Daten, Duplikate, fehlende Perioden, leere oder nicht numerische Werte, Ausreißer, Verlaufslänge und Konsistenz zwischen Serien.
 
-- Trend;
-- Saisonalität;
-- Rhythmus;
-- Spitzen;
-- Rückgänge;
-- normale Schwankungen.
+Ein struktureller Fehler blockiert die Ausführung. Ein nicht blockierendes Risiko bleibt als Warnung sichtbar.
 
-Die Zielgröße muss in diesem Bereich gefüllt sein.
+## Zukünftiger Bereich
 
-## Zukunftsbereich
+Zukünftige Zeilen dürfen das Ziel auslassen. Sie sind nützlich für bereits bekannte Informationen wie Kalender, geplante Preise, Budgets, Kampagnen, Wetterprognosen oder Kapazitäten.
 
-Der Zukunftsbereich enthält die Daten, die vorhergesagt werden sollen.
+Stelle unbekannte Zukunftsinformationen niemals als Fakten dar.
 
-In diesem Bereich ist die Zielgröße leer, denn genau das soll Forecast berechnen.
+## Prüfung vor der Prognose
 
-Beispiel:
+Jeder neue Datensatz durchläuft `forecast_data_audit`. Die Prüfung validiert Daten, Horizont, Frequenz und angefordertes Konfidenzniveau.
 
-```text
-date        commandes
-2026-05-01  120
-2026-05-02  135
-2026-05-03
-2026-05-04
-```
+Eine gültige Prüfung erstellt ein wiederverwendbares Profil. Das LLM verwendet es für Modellauswahl und Prognose, ohne alle Daten erneut zu übertragen.
 
-Hier muss Forecast `commandes` für den 3. und 4. Mai vorhersagen.
+Wiederhole die Prüfung, wenn sich Daten, Ziel, Horizont, Frequenz oder Konfidenz ändern.
 
-## Bekannte Zukunft
+## Vom LLM erstellte Daten
 
-Die bekannte Zukunft fügt Kontextvariablen in den zukünftigen Zeilen hinzu.
+Das LLM kann CSV, Tabellen oder JSON lesen, Kontext recherchieren und Spalten erstellen. Es muss klar zwischen Datei-, Web-, berechneten und angenommenen Werten unterscheiden.
 
-Beispiel:
+## Vorschau
 
-```text
-date        commandes   pluie_mm   promo
-2026-05-01  120        0          0
-2026-05-02  135        4          1
-2026-05-03             12         0
-2026-05-04             0          1
-```
-
-Die zukünftige Zielgröße ist leer, aber Regen und Promo sind bereits bekannt oder angenommen. Das Modell kann diese Informationen nutzen, um eine realistischere Prognose zu erzeugen.
-
-## Serienspalte
-
-Die Serienspalte dient, wenn eine einzige Datei mehrere Objekte enthält, die vorhergesagt werden sollen.
-
-Beispiele:
-
-- mehrere Geschäfte;
-- mehrere Produkte;
-- mehrere Städte;
-- mehrere Finanzwerte;
-- mehrere Server.
-
-Beispiel:
-
-```text
-date        magasin   ventes   promo
-2026-05-01  paris    120      0
-2026-05-01  lyon     92       1
-2026-05-02  paris    132      1
-2026-05-02  lyon     95       0
-```
-
-Forecast kann dann jede Serie vorhersagen und dabei die Gruppe berücksichtigen, zu der sie gehört.
-
-## Von einem Agent erstelltes Dataset
-
-Ein LLM-Agent kann ein Dataset erstellen oder anreichern.
-
-Er kann zum Beispiel:
-
-- ein Excel in JSON umwandeln;
-- eine `weekend`-Spalte hinzufügen;
-- Ereignisse im Web abrufen;
-- eine textuelle Information in einen Score umwandeln;
-- die zukünftigen Zeilen mit Hypothesen füllen;
-- Daten oder Spalten bereinigen.
-
-Der Agent muss klar angeben, welche Daten aus der Datei, aus dem Web, aus einer Berechnung oder aus einer Annahme stammen.
+Der Bereich Daten zeigt Zeilen, historische Punkte, zukünftige Zeilen, Serien, fehlende Perioden, Ausreißer, Zuordnung und eine begrenzte Vorschau.

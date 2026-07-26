@@ -1,76 +1,54 @@
 # LLM agents
 
-LLM agents can use Forecast as a specialized engine. Their role is not limited to reading a file and clicking a tool: they can prepare data, search for context on the web, build a dataset, run the prediction, and explain the result.
+The LLM drives Forecast from the active conversation. It may prepare or research data, audit quality, select an authorized model, run calculations and explain results.
 
-## What the agent can do
+## Required workflow
 
-An agent can intervene at several moments:
+For every new dataset, follow this order:
 
-| Step | Agent role |
-| --- | --- |
-| Preparation | Read an Excel, CSV, or JSON file |
-| Research | Fetch external information from the web |
-| Dataset | Create or complete useful columns |
-| Run | Call `forecast` with the right parameters |
-| Read | Use `forecast_read` to retrieve the result |
-| Scenario | Create hypotheses and rerun the model |
-| Explanation | Summarize trend, uncertainty, variables, and limits |
+1. Understand the target, period, horizon and requested confidence.
+2. Read or build the data and distinguish its sources.
+3. Call `forecast_data_audit`.
+4. Fix blocking errors or explain them to the user.
+5. Call `forecast_models` with the validated profile.
+6. In Manual, respect the forced model and verify exact compatibility.
+7. In Auto, choose exactly one returned candidate.
+8. Call `forecast` with the profile, authorized model and unchanged confidence.
+9. Call `forecast_read` for the required pages and analytics.
+10. Explain the prediction, uncertainty and limitations.
 
-Example: for a financial forecast, the agent can read the local file, search for recent market context, produce columns like `news_score` or `event_flag`, then run Forecast.
+Run the audit again when data, target, frequency, horizon or confidence changes.
 
-## Recommended workflow
+## Manual mode
 
-The agent must follow this order:
+Never alter the user's persisted selection. If the forced model is absent, unprepared or incompatible, ask for a clear action instead of silently choosing another model.
 
-1. understand the user's request;
-2. inspect the available data;
-3. identify the target to predict;
-4. identify the dates, the frequency, and the horizon;
-5. search for or create the useful contextual variables if needed;
-6. check that the future rows are consistent;
-7. choose a compatible model;
-8. run `forecast`;
-9. review the result with `forecast_read`;
-10. explain the forecast and propose useful scenarios.
+## Auto mode
 
-## Data creation by the agent
+Choose one returned candidate and never bypass backend exclusions. Respect an explicit model request only when Forecast confirms it is still safe.
 
-The agent can create data if the user asks for it or if the prediction requires it.
+Pass the selection identifier and allowed short reasons to `forecast`. Do not call a capability-and-resource choice the best model. Prefer comparable backtest rankings when available.
 
-Examples:
+## Evaluation and comparison
 
-- add a `weekend` column from the date;
-- create `month_end_flag`;
-- turn a web event into a numeric score;
-- fill a future zone with weather hypotheses;
-- build a test dataset to validate a workflow;
-- convert an Excel file into usable JSON.
+When the user requests the best model or a reliable comparison:
 
-The agent must always explain which columns it created and why.
+1. Run `forecast_backtest` on compatible models.
+2. Check global status and individual failures.
+3. Read the ranking with `forecast_compare_models`.
+4. Compare models with Naive, Seasonal Naive, Drift and ETS.
+5. Present trade-offs between error, coverage, speed and memory.
 
-## Safety and quality rules
+Never present a partial backtest as complete. Never call a model best when it does not beat a credible baseline.
 
-The agent must not silently invent important data.
+## Data provenance
 
-If it creates a variable, it must distinguish:
+You may add calendars, indicators, events or web data when useful. Always state whether a value was read from a file, found externally, calculated or assumed for a scenario.
 
-- data read from a file;
-- data found on the web;
-- computed data;
-- simulation hypothesis.
+Never silently invent important data.
 
-This separation is essential so the user knows what is real, computed, or assumed.
+## Explanation in chat
 
-## Slash commands
+Use the existing conversation. Do not wait for a special button to explain, compare, rerun or interpret a forecast.
 
-Slash commands act as quick guides for agents and users.
-
-Examples:
-
-- `/forecast`: understand the Forecast module;
-- `/forecast-predict`: prepare and run a prediction;
-- `/forecast-dataset`: build a clean dataset;
-- `/forecast-scenarios`: create useful hypotheses;
-- `/forecast-cmd`: understand the available tools.
-
-These commands must give a short, clear, and directly actionable procedure.
+Connect explanations to data, intervals, backtests and visible assumptions. Report unavailable or low-reliability advanced analytics honestly.

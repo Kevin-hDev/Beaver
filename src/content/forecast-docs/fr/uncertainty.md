@@ -1,60 +1,54 @@
 # Incertitude
 
-Une prévision n'est jamais une vérité absolue. Forecast affiche donc une valeur centrale et une plage d'incertitude pour montrer le risque autour de la trajectoire.
+Une prévision sérieuse ne se limite pas à une seule courbe. Forecast associe la valeur centrale à un intervalle qui représente l'incertitude du modèle pour le niveau de confiance demandé.
 
 ## Valeur centrale
 
-La valeur centrale est l'estimation principale du modèle.
+La valeur centrale correspond généralement à la médiane, souvent notée `q50`. Elle sépare les résultats possibles en deux groupes :
 
-Exemple :
+- environ la moitié en dessous ;
+- environ la moitié au-dessus.
 
-```text
-2026-06-01 -> 142 commandes prévues
-```
+Elle ne garantit pas que la valeur réelle suivra exactement cette trajectoire.
 
-Elle représente le scénario le plus probable selon les données utilisées.
+## Niveau de confiance
 
-## Bornes d'incertitude
+Le niveau de confiance accepté se situe entre 50 % et 99 %, par pas d'un point de pourcentage pour les modèles continus. Si l'utilisateur ne précise rien, le LLM utilise 80 %.
 
-Les bornes indiquent une zone probable autour de la valeur centrale.
+Certains modèles ne fournissent honnêtement que des niveaux fixes, actuellement 60 % ou 80 %. Forecast respecte toujours la valeur exacte demandée :
 
-Exemple :
+- en mode Auto, il ne propose que des modèles compatibles ;
+- en mode Manuel, il signale l'incompatibilité ;
+- il n'arrondit jamais silencieusement la demande vers une valeur supportée.
 
-```text
-Prévision : 142
-Borne basse : 128
-Borne haute : 157
-```
+## Bornes et quantiles
 
-Lecture simple : le modèle estime 142, mais considère qu'une valeur autour de 128 à 157 reste plausible.
+Pour un niveau central de 80 %, Forecast utilise généralement :
 
-## Quantiles
+- `q10` comme borne basse ;
+- `q50` comme médiane ;
+- `q90` comme borne haute.
 
-Les modèles peuvent retourner des quantiles.
+Pour 90 %, les bornes deviennent généralement `q05` et `q95`. Les libellés s'adaptent aux niveaux réellement calculés.
 
-| Champ | Sens |
-| --- | --- |
-| q10 | Valeur basse probable |
-| q50 | Valeur centrale ou médiane |
-| q90 | Valeur haute probable |
+## Éventail d'incertitude
 
-Plus l'écart entre q10 et q90 est large, plus le modèle est incertain.
+Le graphique en éventail aide à voir l'élargissement ou le resserrement des intervalles au fil de l'horizon. Plus les bornes s'écartent, moins le modèle est précis sur cette période.
 
-## Pourquoi l'incertitude augmente
+Un intervalle étroit n'est utile que s'il est bien calibré.
 
-L'incertitude peut augmenter quand :
+## Couverture mesurée
 
-- l'historique est court ;
-- la cible varie fortement ;
-- l'horizon est long ;
-- les variables de contexte sont absentes ;
-- une rupture récente apparaît dans les données ;
-- plusieurs scénarios futurs sont possibles.
+Après un backtest, Forecast compare le niveau annoncé à la proportion de valeurs réellement couvertes. Par exemple, un intervalle théorique de 80 % devrait contenir environ 80 % des observations de validation.
+
+Un historique trop court peut rendre cette mesure instable. L'interface le signale.
 
 ## Bon usage
 
-La valeur centrale sert à lire la tendance.
+Utilisez l'incertitude pour :
 
-La plage d'incertitude sert à lire le risque.
-
-Une décision sérieuse doit regarder les deux.
+- comparer les risques entre plusieurs périodes ;
+- distinguer une tendance robuste d'une trajectoire fragile ;
+- préparer des seuils prudents ;
+- vérifier la calibration avec un backtest ;
+- comparer des scénarios sans confondre hypothèse et certitude.

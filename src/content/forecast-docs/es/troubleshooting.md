@@ -1,67 +1,47 @@
 # Diagnóstico
 
-Esta sección ayuda a entender por qué una previsión no da el resultado esperado.
+Esta sección separa el comportamiento normal de los problemas que requieren una acción.
 
-## Datos JSON no válidos
+## Preparación del modelo
 
-Este error significa que Forecast no ha recibido una tabla explotable.
+Un modelo puede estar No instalado, Actualización requerida, Inválido, Listo o Provider requerido. Usa Preparar para modelos ausentes o antiguos, reinstala los inválidos y configura el proveedor cloud cuando sea necesario.
 
-Puede provenir de:
+Varias preparaciones entran en una cola y los archivos válidos se reutilizan.
 
-- JSON mal formado;
-- archivo no convertido correctamente;
-- campo `data` vacío o truncado;
-- formato de línea incorrecto;
-- columnas ausentes.
+## Ciclo del sidecar
 
-Si el usuario proporciona un archivo, el agente debe verificar que el archivo se lee bien antes de convertir los datos.
+El motor local arranca para una previsión o backtest y puede detenerse justo después. Es normal y libera recursos.
 
-## Modelo no disponible
+Solo hay problema si no llega a estar listo, falla la petición o Forecast devuelve un error.
 
-Este error puede provenir de:
+## Auditoría rechazada
 
-- modelo local no instalado;
-- sidecar detenido;
-- clave API ausente;
-- modelo incompatible con los parámetros;
-- datos demasiado cortos para el modelo solicitado.
+Puede deberse a columnas ausentes, fechas inválidas o duplicadas, frecuencia incoherente, historial insuficiente, futuro incorrecto o límites superados.
 
-El buen reflejo es verificar el modelo y luego probar con un dataset mínimo.
+Corrige el problema y repite la auditoría. No uses un perfil antiguo si cambió el dataset.
 
-## Variables de contexto ignoradas
+## Confianza incompatible
 
-Una variable puede ser ignorada o inútil si:
+Los modelos continuos aceptan niveles enteros entre 50% y 99%. Algunos modelos fijos solo aceptan 60% u 80%.
 
-- no existe en el historial;
-- está vacía en el futuro;
-- es constante;
-- está mal tipada;
-- no corresponde al horizonte;
-- contiene texto no transformado en número o categoría explotable.
+En Manual, cambia el nivel o el modelo. En Auto, repite la selección con el nivel exacto. No lo redondees.
 
-En este caso, hay que inspeccionar el dataset antes de acusar al modelo.
+## Selección Auto caducada
 
-## Resultado plano
+La selección está ligada al dataset, sesión y recursos. Si caduca, llama de nuevo a `forecast_models`, obtiene otro identificador y repite `forecast`.
 
-Una previsión plana puede ser normal si el objetivo es estable.
+## Resultado ausente
 
-También puede indicar:
+Comprueba que Forecast devolvió `analysis_id`, selecciona el análisis en el historial, verifica la sesión y vuelve a leerlo. Una salida rechazada por validación no se muestra como válida.
 
-- historial demasiado corto;
-- frecuencia mal elegida;
-- contexto ausente;
-- objetivo poco variable;
-- modelo demasiado sencillo;
-- futuro conocido poco informativo.
+## Backtest parcial
 
-## Escenario sin efecto visible
+Revisa el estado general y los fallos individuales. No consideres completa la clasificación hasta obtener resultados homogéneos para los modelos comparados.
 
-Un escenario contextual puede mostrar poca diferencia si:
+## Covariables ignoradas
 
-- la variable modificada tiene poca influencia;
-- la modificación es demasiado débil;
-- el modelo no usa esta variable como señal fuerte;
-- la variable futura no se ha transmitido realmente;
-- la curva está oculta en los filtros.
+Una covariable puede faltar, estar vacía en el futuro, ser constante, tener tipo incorrecto, estar desalineada o no ser compatible. Revisa Datos, el modelo y los valores futuros.
 
-Hay que verificar el gráfico, los filtros, el tooltip y los datos del escenario.
+## Resultado plano o escenario débil
+
+Una curva plana puede reflejar un objetivo estable, historial corto, frecuencia incorrecta o contexto ausente. Un escenario puede tener poco efecto si el cambio es pequeño o la capa está oculta.

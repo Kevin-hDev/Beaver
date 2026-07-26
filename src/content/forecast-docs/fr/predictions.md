@@ -1,67 +1,65 @@
 # Prévisions
 
-Une prévision est le résultat calculé par Forecast pour estimer les prochaines valeurs d'une cible. Elle répond à une question concrète : "si les données passées et le contexte connu restent cohérents, quelles valeurs peut-on attendre ensuite ?"
+Une prévision prolonge une ou plusieurs séries à partir de leur historique, de leurs variables de contexte et du modèle sélectionné. Elle contient une estimation centrale ainsi que des bornes d'incertitude lorsque le modèle les supporte.
 
-## Ce qu'une prévision représente
+## Résultat sauvegardé
 
-Une prévision contient une suite de points futurs.
+Chaque calcul valide crée un `analysis_id`. Cet identifiant relie la prévision au panneau, à l'espace Forecast, aux scénarios, aux notes, aux évaluations et aux exports.
 
-Chaque point correspond à une date ou une période :
+Forecast vérifie avant la sauvegarde :
 
-```text
-2026-06-01 -> 142 commandes prévues
-2026-06-02 -> 151 commandes prévues
-2026-06-03 -> 149 commandes prévues
-```
+- le nombre de points et de séries attendu ;
+- les dates futures et leur ordre ;
+- l'absence de valeurs non numériques ;
+- l'alignement de la médiane et des quantiles ;
+- l'horizon réellement produit.
 
-Ces valeurs ne sont pas une certitude. Elles représentent l'estimation du modèle.
+Une sortie partielle ou incohérente n'est pas enregistrée comme une analyse valide.
 
-## Entrées nécessaires
+## Graphique principal
 
-Pour lancer une prévision, Forecast a besoin de :
+Le graphique principal distingue l'historique de la zone prévue. Les filtres permettent d'afficher ou masquer les séries, l'incertitude, les scénarios, les événements, les comparaisons, les anomalies et les signaux de qualité disponibles.
 
-| Élément | Rôle |
-| --- | --- |
-| Date | Situe chaque ligne dans le temps |
-| Cible | Valeur à prédire |
-| Fréquence | Rythme des données : jour, heure, mois, etc. |
-| Horizon | Nombre de points futurs à prédire |
-| Modèle | Moteur utilisé pour calculer la trajectoire |
+Vous pouvez :
 
-Les variables de contexte et le multi-séries ne sont pas obligatoires, mais ils deviennent importants dès qu'on veut expliquer ou simuler le futur.
+- faire glisser le graphique pour vous déplacer ;
+- utiliser la molette ou le pavé tactile pour zoomer ;
+- utiliser les barres de saut pour changer rapidement de niveau de détail ;
+- replier une carte pour alléger la page ;
+- ouvrir le tableau des points lorsque des valeurs exactes sont nécessaires.
 
-## Horizon
+Le zoom ne bloque pas le défilement de la page lorsqu'aucun changement de zoom n'est possible.
 
-L'horizon indique la profondeur de la prévision.
+## Graphiques complémentaires
 
-Exemples :
+L'espace Forecast peut afficher :
 
-- horizon `24` avec fréquence horaire : prévoir les 24 prochaines heures ;
-- horizon `31` avec fréquence quotidienne : prévoir les 31 prochains jours ;
-- horizon `12` avec fréquence mensuelle : prévoir les 12 prochains mois.
+- un éventail d'incertitude pour voir comment les intervalles évoluent ;
+- une vue saisonnière qui compare les périodes disponibles ;
+- un graphique de fiabilité après un backtest.
 
-Plus l'horizon est long, plus l'incertitude augmente généralement.
+Pour une analyse multi-séries, la série active reste synchronisée entre les graphiques.
 
-## Résultat et identifiant
+## Tableau des prédictions
 
-Chaque lancement produit un identifiant `analysis_id`.
+Le tableau reste replié par défaut pour ne pas alourdir l'affichage. Une fois ouvert, il présente les dates, la valeur centrale et les bornes disponibles dans une zone à hauteur limitée et défilable.
 
-Cet identifiant ne signifie pas "fichier sauvegardé". Il sert à retrouver le résultat calculé : courbe future, incertitude, paramètres, variables, scénarios et annotations.
+Pour une analyse très longue, `forecast_read` renvoie les points par pages bornées plutôt que de charger toute la série dans le contexte du LLM.
 
-L'application l'utilise pour :
+## Mise à jour en temps réel
 
-- rouvrir une prévision ;
-- afficher le graphe ;
-- comparer plusieurs résultats ;
-- créer ou relancer des scénarios ;
-- permettre à un agent LLM de relire le résultat.
+Le panneau et l'espace Forecast lisent la même analyse sauvegardée. Une nouvelle prévision, une modification ou un changement d'analyse active actualise les vues concernées sans exiger de fermer puis rouvrir la fenêtre.
 
 ## Interprétation correcte
 
-Une prévision doit être lue avec trois questions :
+Lisez toujours la courbe avec :
 
-- la tendance monte, baisse ou reste stable ?
-- l'incertitude est-elle faible ou large ?
-- quelles variables de contexte peuvent expliquer le mouvement ?
+- la qualité des données ;
+- le niveau d'incertitude ;
+- l'horizon ;
+- les ruptures ou anomalies ;
+- les résultats de backtest ;
+- les modèles de référence ;
+- les hypothèses utilisées.
 
-Une courbe seule ne suffit pas. Forecast devient utile quand la prévision est reliée à son contexte.
+Une courbe régulière n'est pas une preuve de précision.

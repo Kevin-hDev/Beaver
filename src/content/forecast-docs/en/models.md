@@ -1,41 +1,56 @@
 # Models
 
-A model is the engine that computes the forecast. Forecast offers several model families, local (the computation stays on the machine) or cloud (the useful data is sent to the configured provider).
+A model is the engine that computes the forecast. Forecast provides local and cloud families, then verifies their capabilities, readiness and current resource fit before execution.
 
-## Local families
+## Available families
 
-| Family | Publisher | Detail |
+| Family | Publisher | Main use |
 | --- | --- | --- |
-| Chronos / Chronos-Bolt | Amazon | Fast local model, good for a first test or a simple target |
-| TimesFM | Google | Local time-series forecasting model |
-| Toto 2.0 | Datadog | Local model oriented toward monitoring and metrics |
-| MOIRAI 2.0 | Salesforce | Local model, handles multi-series and covariates |
-| FlowState | IBM | Local model for time series |
-| TabPFN-TS | PriorLabs | Experimental local model |
-| TiRex | NX-AI | Experimental local model |
-| Kairos | Foundation Model Research | Experimental local model |
-| Sundial | THUML | Experimental local model |
+| Chronos / Chronos-Bolt | Amazon | Fast local probabilistic forecasts |
+| TimesFM | Google | General time-series forecasting |
+| Toto 2.0 | Datadog | Metrics and monitoring series |
+| MOIRAI 2.0 | Salesforce | Multi-series and contextual variables |
+| FlowState | IBM | Local probabilistic forecasting |
+| TabPFN-TS | PriorLabs | Experimental local forecasting |
+| TiRex | NX-AI | Experimental local forecasting |
+| Kairos | Foundation Model Research | Experimental local forecasting |
+| Sundial | THUML | Local probabilistic forecasting |
+| TimeGPT | Nixtla | Cloud forecasting with an API key |
 
-## Cloud family
+Exact capabilities depend on the variant. The in-app catalog is the source of truth for frequencies, horizons, covariates, multi-series support and intervals.
 
-| Family | Publisher | Detail |
-| --- | --- | --- |
-| TimeGPT-2 / TimeGPT-2.1 | Nixtla | Cloud engine specialized in time series. Requires an API key and sends the useful data to the provider. |
+## Manual mode
 
-Cloud models may be more powerful, but involve an external dependency and data being sent out. For sensitive data, prefer a local model.
+In Manual mode, you choose the model in the selector and Forecast enforces that choice.
 
-## Choosing a model
+The LLM still checks readiness and exact compatibility. If the model cannot handle the data or requested confidence, it asks for another model or level instead of silently replacing your choice.
 
-The choice mostly depends on the dataset and the use case:
+## Auto mode
 
-- **Quick test, simple target**: Chronos-Bolt.
-- **Sensitive data, local computation**: any local family.
-- **Covariates and future context**: a model that handles contextual variables (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Multi-series**: a model that handles several series (MOIRAI 2.0, Chronos-2, TimeGPT).
-- **Advanced cloud quality**: TimeGPT, accepting that data is sent out.
+In Auto mode, the LLM must select one model from a short list already filtered by Forecast.
 
-An advanced model does not compensate for poorly structured data. Before changing models, check the dataset quality, the frequency, the horizon, and the contextual variables.
+The backend excludes models that are not ready, incompatible with the data or exact confidence, too large for current resources, or cloud-based when cloud use is not allowed.
 
-## Installing a local model
+Hardware context is exposed to the LLM only during this Forecast selection. Before comparable backtests exist, Auto describes a model as compatible or capability-based recommended, never as the best.
 
-Local models must be installed from the model manager (Settings → Forecast) or via the models tab of the Forecast workspace. They are downloaded from Hugging Face or GitHub depending on the family, then stored locally in `~/.local/share/cl-go-dash/forecast-models/`.
+## Installation and preparation
+
+The Prepare action downloads the model, installs its required runtime and performs a real validation. This happens during preparation, not during the first forecast.
+
+Several preparations can be queued. Variants from the same family may share a runtime.
+
+| State | Meaning |
+| --- | --- |
+| Not installed | Model files are absent |
+| Update required | Files exist, but runtime or validation must be refreshed |
+| Invalid | Installation is incomplete or failed validation |
+| Ready | Model and runtime passed validation |
+| Provider required | A cloud provider API key is missing |
+
+A local model is selectable only when ready. Uninstalling it removes its files and removes a shared runtime only when no other model still needs it.
+
+## Cloud models
+
+A cloud model sends the required data to the configured provider. Auto uses it only when cloud access is allowed, the provider is ready and data policy permits external transfer.
+
+Forecast never silently falls back from local to cloud.

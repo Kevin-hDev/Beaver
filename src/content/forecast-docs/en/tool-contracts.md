@@ -1,65 +1,78 @@
 # Forecast tools
 
-Forecast tools let LLM agents use the prediction engine from chat. They must be called with precise parameters, because a wrong column or an inconsistent horizon produces a useless forecast.
+The seven Forecast tools form a controlled workflow. Large outputs stay in Forecast storage while the LLM exchanges compact identifiers.
+
+## Recommended order
+
+For a new dataset, use:
+
+```text
+forecast_data_audit
+  → forecast_models
+  → forecast
+  → forecast_read
+  → forecast_backtest
+  → forecast_compare_models
+```
+
+Use `forecast_analyze` afterwards for notes, scenarios or ensembles.
+
+## `forecast_data_audit`
+
+Call this tool before the first forecast for every new dataset. Provide data or file, target, date, frequency, horizon and exact confidence.
+
+It validates dates, duplicates, missing periods, invalid values, history length, series, future rows and outliers. A valid response returns a reusable `data_profile_id`.
+
+## `forecast_models`
+
+Inspect the active policy and interval capabilities.
+
+In Manual, verify the forced model and exact confidence compatibility. In Auto, pass `data_profile_id`, choose one returned candidate and retain its `selection_id`.
+
+Hardware information is exposed only in this Forecast response. Never round confidence to fit a model.
 
 ## `forecast`
 
-`forecast` runs a new prediction.
+Run the validated forecast with the profile, target, date, horizon, frequency and unchanged confidence. Add series and covariates only when supported.
 
-Main inputs:
+In Auto, also pass the model, `selection_id`, selection source and allowed reasons. The response returns an `analysis_id`.
 
-| Parameter | Role |
-| --- | --- |
-| `file_path` | Excel, CSV, or JSON file to read |
-| `data` | Already-prepared data in JSON |
-| `date_column` | Column that contains the dates |
-| `target_column` | Column to predict |
-| `series_column` | Column that identifies the series |
-| `covariate_columns` | Contextual variables to use |
-| `frequency` | Temporal rhythm |
-| `horizon` | Number of future points |
-| `model` | Engine to use |
-
-Main output:
-
-- `analysis_id`, the identifier of the Forecast result.
+Never use a model different from the Manual choice or Auto authorization.
 
 ## `forecast_read`
 
-`forecast_read` reviews a Forecast result.
+Omit `analysis_id` to list a bounded set of analyses, or provide it to read one analysis.
 
-It is used to retrieve:
+Predictions use `offset` and `limit`, with at most 200 points per page. Reading may also return decomposition, residual anomalies, chronological permutation importance and drift.
 
-- the forecast;
-- the history;
-- the uncertainty;
-- the scenarios;
-- the available variables;
-- the model metadata.
+Report unavailable or low-reliability analytics honestly. Never invent a substitute.
 
-If no `analysis_id` is provided, the agent can use it to list the available results.
+## `forecast_backtest`
+
+Run bounded rolling validation on a saved analysis. Request compatible models and a bounded number of windows.
+
+The tool evaluates models and attempts Naive, Seasonal Naive, Drift and ETS on identical periods. Always inspect status and model failures.
+
+## `forecast_compare_models`
+
+Read the saved post-backtest ranking. It summarizes errors, coverage, duration, observed memory and baseline status.
+
+Call a model best only when a complete comparable result supports that claim.
 
 ## `forecast_analyze`
 
-`forecast_analyze` adds or modifies elements around a forecast.
+Modify an existing analysis with:
 
-It is notably used to:
+| Action | Purpose |
+| --- | --- |
+| `annotate` | Add a dated note |
+| `scenario` | Create a global or contextual scenario |
+| `scenario_update` | Edit a scenario |
+| `scenario_delete` | Delete a scenario |
+| `ensemble` | Combine two to four successfully backtested models |
 
-- create an annotation;
-- create a scenario;
-- rerun a contextual scenario;
-- modify a scenario;
-- delete a scenario.
+Create an ensemble only after a successful multi-model backtest. State that it uses inverse-MASE weighting and was not independently evaluated.
 
-## What the agent must check
+## Restarting the workflow
 
-Before calling a tool, the agent must check:
-
-- the target exists;
-- the date is readable;
-- the horizon matches the future rows;
-- the covariates actually exist;
-- the data created or found on the web is identified;
-- the chosen model supports the need.
-
-The agent must explain its choices instead of sending an opaque call.
+Call `forecast_data_audit` and `forecast_models` again when the dataset, mapping, target, frequency, horizon, confidence, covariate needs, series structure or resource conditions change.

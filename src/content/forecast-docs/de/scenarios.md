@@ -1,100 +1,29 @@
 # Szenarien
 
-Ein Szenario dient dazu, eine Hypothese über die Zukunft zu testen. Es vergleicht die Basis-Prognose mit einer veränderten Trajektorie.
-
-## Warum ein Szenario erstellen
-
-Die Basis-Prognose beantwortet: "Was sagt das Modell mit den aktuellen Daten voraus?"
-
-Ein Szenario beantwortet: "Was passiert, wenn sich der Kontext ändert?"
-
-Beispiele:
-
-- was werden aus den Verkäufen, wenn eine Promotion gestartet wird?
-- was wird aus dem Umsatz, wenn der Verkehr sinkt?
-- was wird aus einem Wert, wenn der VIX steigt?
-- was wird aus der Nachfrage, wenn ein lokales Ereignis hinzugefügt wird?
-
-Das Szenario macht Forecast zu einem Simulationswerkzeug, nicht nur zu einem Prognose-Graphen.
+Ein Szenario untersucht eine Annahme aus einer bestehenden Analyse. Es ersetzt weder beobachtete Daten noch die ursprüngliche Prognose.
 
 ## Globale Anpassung
 
-Die globale Anpassung wendet eine einfache Veränderung auf die Kurve an.
-
-Beispiel:
-
-```text
-Basis-Prognose:  100, 110, 120
-Szenario +10 %:  110, 121, 132
-```
-
-Dieser Modus ist schnell und gut lesbar. Er startet das Modell nicht neu und versteht daher nicht die Beziehungen zwischen Variablen.
+Eine prozentuale Anpassung erzeugt eine abgeleitete Kurve, etwa Nachfrage +10%, Umsatz -5% oder Kapazität +15%. Das Modell wird dabei nicht neu ausgeführt.
 
 ## Kontextuelles Szenario
 
-Das kontextuelle Szenario verändert die zukünftigen Variablen und startet dann das Modell neu.
+Ein kontextuelles Szenario ändert zukünftige Kovariaten und führt das Modell erneut aus, wenn es diese unterstützt. Geändert werden können Budget, Preis, Wetter, Kapazität oder eine bestimmte Serie.
 
-Beispiel:
+Geänderte Werte bleiben Annahmen.
 
-```text
-Hypothese: vix_close +20 %
-Erwartete Wirkung: das Modell berechnet die Zielgröße mit diesem stressigeren Marktkontext neu.
-```
+## Erstellen und Bearbeiten
 
-Dieser Modus ist wichtiger für Chronos-2 und TimeGPT, da er die Kovariablen als echte Vorhersagesignale nutzt.
+Der Forecast-Arbeitsbereich bündelt Erstellen, Bearbeiten und Löschen. Das Panel behält die schnelle Anzeige. Das LLM kann Szenarien auf Anfrage mit `forecast_analyze` verwalten.
 
-## Veränderbare Variablen
+## Kurven vergleichen
 
-Die verfügbaren Variablen hängen vom Dataset ab.
+Vergleiche Ursprung und Szenarien im selben Zeitraum. Prüfe Beginn und Größe der Abweichung, Unsicherheit, betroffene Serien und tatsächlich geänderte Kovariaten.
 
-Sie können darstellen:
+## Modell-Ensemble
 
-- Umgebung: Wetter, Verkehr, Ereignisse;
-- Finanzen: Volatilität, Zinsen, Indizes, News-Score;
-- Kalender: Wochenende, Feiertag, Monatsende;
-- Fachbereich: Promo, Bestand, Budget, Kampagne;
-- Risiko: Alarm, Vorfall, Wettbewerbsdruck.
+Ein Ensemble ist kein Geschäftsszenario. Es kombiniert zwei bis vier erfolgreich getestete Modelle mit inverser MASE-Gewichtung und ist als nicht unabhängig ausgewertet markiert.
 
-Jede Änderung muss eine fachliche Bedeutung haben. Eine zufällig geänderte Variable erzeugt ein schwer interpretierbares Szenario.
+## Gute Nutzung
 
-## Lesart im Graphen
-
-Wenn ein Szenario ausgewählt ist, sollte der Graph Folgendes vergleichen:
-
-- tatsächlicher Verlauf;
-- Basis-Prognose;
-- Szenario-Prognose;
-- angezeigte Kontextvariablen;
-- Differenz zwischen Basis und Szenario.
-
-Typisches Schema eines Vergleichs:
-
-```text
-wert
-  ^
-  |              ╭───── Szenario (VIX +20 %)
-  |           ╭──╯
-  |       · ·─·      ← Basis-Prognose
-  |     ·
-  |   ·
-  | ·
-  ──────────────────────────────> zeit
-       Verlauf         │   Zukunft
-                       │
-                  Horizont
-```
-
-Die Hauptfrage ist nicht "Ist die Kurve anders?", sondern "Welche Hypothese hat die Trajektorie verschoben, an welchem Datum und um wie viel?"
-
-## Korrekte Verwendung
-
-Ein gutes Szenario muss klar benannt sein.
-
-Beispiele:
-
-- `VIX +20% während 30 Tagen`
-- `Wochenend-Promo aktiv`
-- `Starker Regen Woche 2`
-- `Verkehr -15% nach Vorfall`
-
-Ein vager Name wie `test` oder `crash` macht den Vergleich nutzlos, wenn mehrere Szenarien existieren.
+Gib jedem Szenario einen klaren Namen, eine messbare Annahme, einen Zeitraum, eine Wertquelle, eine Erklärung und den Vergleich zur ursprünglichen Prognose.
