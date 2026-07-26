@@ -1,0 +1,134 @@
+.prv-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.prv-subtabs-wrap {
+  flex-shrink: 0;
+  padding: var(--space-md) var(--space-lg) 0;
+}
+
+.prv-subtabs {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.prv-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.prv-oauth-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+.prv-oauth-inner {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.prv-oauth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.prv-oauth-header h2 {
+  color: var(--ink);
+  font-size: var(--text-xl);
+  margin: 0;
+}
+
+.prv-oauth-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 600px;
+}
+
+.prv-oauth-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.prv-oauth-identity div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prv-oauth-identity strong,
+.prv-oauth-status strong {
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.prv-oauth-identity span,
+.prv-oauth-status span {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.prv-oauth-status {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-md);
+  gap: var(--space-md);
+}
+
+.prv-oauth-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.prv-oauth-issue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.prv-oauth-issue .ollama-btn {
+  flex-shrink: 0;
+}
+
+.prv-oauth-detail .ollama-btn {
+  align-self: flex-start;
+}
+
+.prv-modal {
+  height: auto;
+  max-height: 85vh;
+}
+
+.prv-modal-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 760px) {
+  .prv-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}

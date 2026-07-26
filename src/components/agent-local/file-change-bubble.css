@@ -1,0 +1,185 @@
+.fcb-root {
+  margin: 6px auto var(--space-md);
+  padding: 0;
+  overflow: hidden;
+  border: 0.5px solid var(--tooltip-border);
+  border-radius: 18px; /* intentional: speech-bubble shape */
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.chat-messages > .fcb-root {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.fcb-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.fcb-toggle:hover,
+.fcb-toggle:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+}
+
+.fcb-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.fcb-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fcb-stats {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 2px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fcb-add {
+  color: var(--signal-ok);
+}
+
+.fcb-del {
+  color: var(--signal-error);
+}
+
+.fcb-accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 260ms ease;
+}
+
+.fcb-accordion.fcb-open {
+  grid-template-rows: 1fr;
+}
+
+.fcb-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--edge);
+  padding: 8px 0;
+}
+
+.fcb-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.fcb-row:hover {
+  background: var(--surface-hover);
+}
+
+.fcb-single .fcb-row {
+  min-height: 48px;
+}
+
+.fcb-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fcb-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  text-overflow: ellipsis;
+}
+
+.fcb-path {
+  min-width: 48px;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+}
+
+/* Review action — thin alias of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry; keeps its weight. */
+.fcb-review {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 650;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.fcb-review:hover,
+.fcb-review:focus-visible {
+  background: var(--surface-hover);
+  color: var(--ink);
+  outline: none;
+}
+
+[data-theme="light"] .fcb-root {
+  background: var(--chat-composer-bg);
+}
+
+[data-theme="dark"] .fcb-root {
+  background: var(--surface-glass);
+}
+
+@media (max-width: 640px) {
+  .fcb-row {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+  }
+
+  .fcb-row > .fcb-stats {
+    grid-column: 2 / 3;
+    margin-top: -6px;
+  }
+
+  .fcb-review {
+    grid-column: 3 / 4;
+    grid-row: 1 / 3;
+  }
+}

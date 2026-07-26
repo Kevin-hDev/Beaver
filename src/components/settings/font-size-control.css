@@ -1,0 +1,68 @@
+.fsc-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fsc-control:focus-within .fsc-stepper,
+.fsc-control:hover .fsc-stepper {
+  opacity: 1;
+}
+
+.fsc-input {
+  width: 82px;
+  height: 28px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--void);
+  color: var(--ink);
+  font-size: var(--text-lg);
+  text-align: center;
+  outline: none;
+  appearance: textfield;
+  transition: border-color var(--ease-smooth);
+}
+
+.fsc-input::-webkit-outer-spin-button,
+.fsc-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.fsc-input:hover,
+.fsc-input:focus {
+  border-color: var(--ink-faint);
+}
+
+.fsc-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: -34px;
+  opacity: 0;
+  transition: opacity var(--ease-smooth);
+}
+
+.fsc-step-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.fsc-step-btn:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.fsc-unit {
+  color: var(--ink-muted);
+  font-size: var(--text-lg);
+}

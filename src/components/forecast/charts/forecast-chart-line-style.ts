@@ -1,0 +1,2 @@
+export const FORECAST_CHART_LINE_SMOOTHING = 0.25;
+export const FORECAST_CHART_LINE_MONOTONE_AXIS = "x" as const;

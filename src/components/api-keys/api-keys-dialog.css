@@ -1,0 +1,193 @@
+/* === Dialog config — réutilise les classes .wk-* de heartbeat-dialog.css === */
+
+/* Confirmation de suppression — bouton rouge pulsant */
+/* Delete confirm — full-width alias of the shared .btn system with the shared
+   28px geometry; keeps its danger colors and pulse animation. */
+.ak-confirm-delete {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  width: 100%;
+  height: 28px;
+  margin-top: var(--space-md);
+  padding: 0 var(--chrome-3);
+  background: var(--signal-error);
+  border: 1px solid var(--signal-error);
+  border-radius: var(--radius-sm);
+  color: var(--ink-on-danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.ak-confirm-delete::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 6px var(--signal-error-pulse);
+  animation: ak-pulse 1s ease-in-out infinite;
+}
+
+@keyframes ak-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Bouton "Effacer la clé" — même style que Annuler, alias du système .btn
+   partagé (src/styles/buttons.css) avec la géométrie partagée 28px. */
+.ak-btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  height: 28px;
+  margin-right: auto;
+  padding: 0 var(--chrome-3);
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.ak-btn-danger-outline:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+/* Message de résultat de test — succès ou erreur */
+.ak-test-result {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  margin-top: var(--space-sm);
+}
+
+.ak-test-result.success {
+  background: var(--signal-ok-bg);
+  color: var(--signal-ok);
+  border: 1px solid var(--signal-ok-border);
+}
+
+.ak-test-result.error {
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+  border: 1px solid var(--signal-error-border);
+}
+
+.ak-test-result.loading {
+  background: var(--surface);
+  color: var(--ink-muted);
+  border: 1px solid var(--edge);
+}
+
+/* Lien URL inscription dans le dialog */
+.ak-signup-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--select-text);
+  text-decoration: none;
+  font-size: var(--text-xs);
+}
+
+.ak-signup-inline:hover {
+  text-decoration: underline;
+}
+
+/* === Picker dialog — grille 2 colonnes === */
+.ak-picker-grid {
+  padding: var(--space-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  overflow-y: auto;
+  max-height: 70vh;
+}
+
+.ak-picker-allset {
+  grid-column: span 2;
+  padding: var(--space-lg);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.ak-picker-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+[data-theme="dark"] .ak-picker-card {
+  background: var(--surface-glass);
+  border-color: transparent;
+}
+
+.ak-picker-card:hover {
+  background: var(--select-bg);
+  border-color: var(--select-text);
+}
+
+.ak-picker-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ak-picker-card-name {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin-bottom: 2px;
+}
+
+.ak-picker-card-desc {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ak-picker-card-meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+
+.ak-picker-card-cat {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+}
+
+.ak-picker-card-tier {
+  color: var(--select-text);
+}
+
+.ak-picker-card-plus {
+  color: var(--select-text);
+  flex-shrink: 0;
+}

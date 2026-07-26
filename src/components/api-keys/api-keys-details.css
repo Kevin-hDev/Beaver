@@ -1,0 +1,94 @@
+/* api-keys-details.css — ApiKeysDetails component */
+
+.akd-scroll {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.akd-inner {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.akd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.akd-provider-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.akd-provider-name {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.akd-provider-desc {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.akd-header-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.akd-connection-card {
+  margin-top: var(--space-lg);
+}
+
+
+.ak-confirm-delete {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--signal-error);
+  background: var(--signal-error-bg);
+  border: 1px solid var(--signal-error-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+}
+
+.ak-confirm-delete:hover {
+  opacity: 0.9;
+}
+
+.akd-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  font-size: var(--text-sm);
+}
+
+.akd-row-border {
+  border-bottom: 1px solid var(--edge);
+}
+
+.akd-row-label {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.akd-row-value {
+  color: var(--ink);
+  font-family: var(--font-mono);
+}

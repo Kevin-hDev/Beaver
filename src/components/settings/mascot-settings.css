@@ -1,0 +1,132 @@
+.msp-page {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--chrome-5);
+}
+
+.msp-content {
+  width: 100%;
+  max-width: var(--settings-content-max-width);
+  margin: 0 auto;
+}
+
+.msp-title {
+  margin-bottom: 1.75rem;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.msp-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  text-align: center;
+}
+
+.msp-bubble {
+  display: grid;
+  width: 11rem;
+  height: 11rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-full);
+  background: radial-gradient(circle, var(--pulse-muted), var(--shell));
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .msp-bubble {
+  background: radial-gradient(circle, var(--pulse-muted), var(--surface-glass));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.msp-preview-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.msp-preview-copy strong,
+.msp-choice-copy strong {
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 650;
+}
+
+.msp-preview-copy span,
+.msp-choice-copy span {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.msp-section-title {
+  margin: var(--space-lg) 0 var(--chrome-3);
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.msp-size-control {
+  display: flex;
+  align-items: center;
+  gap: var(--chrome-3);
+}
+
+.msp-size-slider {
+  width: 7.5rem;
+  accent-color: var(--pulse);
+  cursor: pointer;
+}
+
+.msp-size-control span {
+  min-width: 2.75rem;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  text-align: right;
+}
+
+.msp-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--chrome-3);
+  padding: var(--chrome-3) var(--chrome-4);
+}
+
+.msp-choice-portrait {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--pulse-muted);
+}
+
+.msp-choice-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.msp-choice-check {
+  flex: 0 0 auto;
+  color: var(--pulse);
+}
+
+@media (max-width: 44rem) {
+  .msp-page {
+    padding: var(--chrome-4);
+  }
+
+  .msp-bubble {
+    width: 9.5rem;
+    height: 9.5rem;
+  }
+}

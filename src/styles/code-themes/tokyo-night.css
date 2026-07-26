@@ -1,0 +1,164 @@
+/* Tokyo Night — Night (dark) / Day (light)
+   Palette officielle TokyoNight */
+
+/* Dark variant — Tokyo Night */
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-keyword,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-selector-tag,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-built_in {
+  color: #bb9af7;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-string,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-doctag {
+  color: #9ece6a;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-number,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-literal {
+  color: #ff9e64;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-comment {
+  color: #565f89;
+  font-style: italic;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-type,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-title {
+  color: #7aa2f7;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-attr,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-attribute {
+  color: #ff9e64;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-variable,
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-template-variable {
+  color: #f7768e;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-meta {
+  color: #7dcfff;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-regexp {
+  color: #b4f9f8;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-operator {
+  color: #89ddff;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-section {
+  color: #f7768e;
+  font-weight: 700;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-strong {
+  font-weight: 700;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-bullet {
+  color: #7dcfff;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-code {
+  color: #9ece6a;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-link {
+  color: #7dcfff;
+  text-decoration: underline;
+}
+
+[data-code-theme="tokyo-night"][data-theme="dark"] .hljs-quote {
+  color: #565f89;
+  font-style: italic;
+}
+
+/* Light variant — Tokyo Night Day */
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-keyword,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-selector-tag,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-built_in {
+  color: #8c6c9e;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-string,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-doctag {
+  color: #587539;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-number,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-literal {
+  color: #b15c00;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-comment {
+  color: #8c8c8c;
+  font-style: italic;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-type,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-title {
+  color: #2e7de9;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-attr,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-attribute {
+  color: #b15c00;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-variable,
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-template-variable {
+  color: #f0076a;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-meta {
+  color: #007197;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-regexp {
+  color: #118c74;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-operator {
+  color: #399ee6;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-section {
+  color: #f0076a;
+  font-weight: 700;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-strong {
+  font-weight: 700;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-bullet {
+  color: #007197;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-code {
+  color: #587539;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-link {
+  color: #007197;
+  text-decoration: underline;
+}
+
+[data-code-theme="tokyo-night"][data-theme="light"] .hljs-quote {
+  color: #8c8c8c;
+  font-style: italic;
+}

@@ -1,0 +1,47 @@
+.fzjb-root {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.fzjb-root.is-visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.fzjb-bar {
+  width: 4px;
+  border: none;
+  border-radius: 2px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--ink-faint);
+  opacity: 0.55;
+  transition: height 200ms ease, background 200ms ease, opacity 200ms ease;
+}
+
+.fzjb-bar.is-current {
+  background: var(--ink-muted);
+  opacity: 0.9;
+}
+
+.fzjb-bar.is-hovered {
+  background: var(--ink);
+  opacity: 1;
+}
+
+.fzjb-bar[data-dist="1"] {
+  background: var(--ink-muted);
+  opacity: 0.8;
+}
+
+.fzjb-bar[data-dist="2"] {
+  background: var(--ink-muted);
+  opacity: 0.65;
+}

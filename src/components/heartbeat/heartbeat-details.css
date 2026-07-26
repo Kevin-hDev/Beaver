@@ -1,0 +1,192 @@
+.wk-details {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.wk-details-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--edge);
+}
+
+.wk-back {
+  padding: var(--space-xs);
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+}
+
+.wk-back:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.wk-details-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.wk-details-model {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.wk-details-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* Row actions — compose .icon-btn (src/styles/buttons.css); keep the
+   danger hover. */
+.wk-icon-btn {
+  color: var(--ink-muted);
+}
+
+.wk-icon-btn-danger:hover:not(:disabled) {
+  color: var(--signal-error);
+  background: var(--signal-error-bg);
+}
+
+/* Inline delete confirm — alias of the shared .btn system with .btn-sm
+   geometry; keeps its danger colors and pulse animation. */
+.wk-confirm-delete {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid var(--signal-error);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.wk-confirm-delete::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 4px var(--signal-error-pulse);
+  animation: wk-confirm-pulse 1.2s ease-in-out infinite;
+}
+
+.wk-confirm-delete:hover {
+  background: var(--signal-error);
+  color: var(--ink-on-danger);
+}
+
+@keyframes wk-confirm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+
+.wk-details-body {
+  padding: var(--chrome-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.wk-row-value {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  text-align: right;
+  word-break: break-word;
+}
+
+.wk-row-multi {
+  white-space: pre-wrap;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.wk-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.wk-history-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wk-history-empty {
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.wk-history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-history-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-xs);
+  align-items: center;
+  padding: 12px 20px;
+  font-size: var(--text-xs);
+  border-bottom: 1px solid var(--edge);
+}
+
+.wk-history-row:last-child {
+  border-bottom: none;
+}
+
+.wk-history-status {
+  font-weight: 600;
+}
+
+.wk-history-status-ok {
+  color: var(--signal-ok);
+}
+
+.wk-history-status-error,
+.wk-history-status-missed {
+  color: var(--signal-error);
+}
+
+.wk-history-time {
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-history-error {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+}

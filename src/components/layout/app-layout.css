@@ -1,0 +1,163 @@
+.app-root,
+body.os-mac {
+  --popover-bg: var(--surface-glass);
+  --popover-backdrop-filter: blur(20px);
+  /* Tooltips: lighter blur than menus/popovers (Phase 1 spec §5). */
+  --tooltip-backdrop-filter: blur(12px);
+  /* Unified dialog contract (Phase 1 spec §4.1): overlay blur, macOS only. */
+  --dialog-overlay-filter: blur(8px);
+}
+
+.app-root {
+  --app-sidebar-hidden-offset: calc(var(--sidebar-collapsed) + var(--list-width) + 20px);
+  display: flex;
+  height: 100vh;
+  padding: 1px;
+  gap: 3px;
+  background: transparent;
+}
+
+.app-sidebar-block {
+  display: flex;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--shell-translucent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--edge);
+  flex-shrink: 0;
+  width: auto;
+  animation: keep-compositing 1s linear infinite;
+  transition: margin-left 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* WebKit bug workaround: forces continuous compositing so backdrop-filter
+   blur stays active even when the app loses focus. Do not remove. */
+@keyframes keep-compositing {
+  0%, 100% { transform: translateZ(0); }
+  50% { transform: translateZ(0.1px); }
+}
+
+.app-sidebar-block.app-sidebar-hidden {
+  margin-left: calc(-1 * var(--app-sidebar-hidden-offset));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-list-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: var(--list-width);
+  min-width: var(--list-width);
+}
+
+.app-panel-slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Sidebar nav items: centered when collapsed, left-aligned when expanded */
+.sb-nav-item {
+  gap: 0;
+  justify-content: center;
+  width: var(--nav-item-height);
+  height: var(--nav-item-height);
+  overflow: hidden;
+}
+
+.sb-nav-item:hover {
+  background: var(--surface-hover);
+}
+
+.group\/sb:hover .sb-nav-item {
+  gap: var(--nav-item-gap);
+  justify-content: flex-start;
+  width: auto;
+  height: var(--nav-item-height);
+  padding-left: var(--nav-item-padding-x);
+}
+
+.group\/sb:not(:hover) .sb-nav-item {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.group\/sb:hover .sb-nav-label {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-locked:hover .sb-nav-item {
+  gap: 0;
+  justify-content: center;
+  padding-left: 0;
+}
+
+.sb-locked span {
+  display: none;
+}
+
+.sidebar-resize-handle {
+  width: 4px;
+  cursor: ew-resize;
+  flex-shrink: 0;
+  transition: background var(--ease-smooth);
+}
+
+.sidebar-resize-handle:hover {
+  background: var(--edge);
+}
+
+.app-detail-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--void);
+  border: 1px solid var(--edge);
+  position: relative;
+  transition: border-radius 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-hidden .app-detail-panel {
+  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+  border-left: none;
+  padding-left: 19px;
+}
+
+/* Linux/Windows : pas de blur, sidebar quasi-opaque */
+.app-root.os-other,
+body.os-other {
+  --popover-bg: var(--shell-opaque);
+  --popover-backdrop-filter: none;
+  --tooltip-backdrop-filter: none;
+  --dialog-overlay-filter: none;
+}
+
+.app-root.os-other {
+  background: transparent;
+  padding: 0;
+  gap: 2px;
+}
+
+.os-other .app-sidebar-block {
+  background: var(--shell-opaque);
+  animation: none;
+}
+
+/* Linux/Windows sidebar masquée : coins gauches carrés (fenêtre sans décorations) */
+.sidebar-hidden.os-other .app-detail-panel {
+  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+  border-left: none;
+  padding-left: 19px;
+}

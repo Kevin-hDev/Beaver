@@ -1,0 +1,148 @@
+/* === Provider detail view === */
+.ak-detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ak-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.ak-detail-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.ak-detail-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--select-text);
+  flex-shrink: 0;
+}
+
+.ak-detail-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ak-detail-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ak-detail-description {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.ak-detail-badges {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ak-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ak-badge.ak-badge-success {
+  background: var(--signal-ok-bg);
+  color: var(--signal-ok);
+}
+
+.ak-detail-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ak-icon-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+  display: flex;
+}
+
+.ak-icon-btn:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.ak-icon-btn.danger:hover {
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+  border-color: var(--signal-error-border);
+}
+
+.ak-detail-body {
+  padding: 0 var(--space-lg) var(--space-lg);
+  overflow-y: auto;
+}
+
+.ak-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  border-top: 1px solid var(--edge);
+  font-size: var(--text-sm);
+}
+
+.ak-detail-label {
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.ak-detail-value {
+  color: var(--ink);
+  font-family: var(--font-mono, monospace);
+}
+
+.ak-signup-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--select-text);
+  text-decoration: none;
+  font-size: var(--text-xs);
+}
+
+.ak-signup-link:hover {
+  text-decoration: underline;
+}

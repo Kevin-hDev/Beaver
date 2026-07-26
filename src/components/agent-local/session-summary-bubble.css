@@ -1,0 +1,193 @@
+.ssb-root {
+  position: relative;
+  display: inline-flex;
+}
+
+.ssb-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: fit-content;
+  min-width: min(320px, calc(100vw - 24px));
+  max-width: min(380px, calc(100vw - 24px));
+  max-height: min(560px, 72vh);
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--popover-bg, var(--shell));
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+  z-index: var(--z-dropdown);
+}
+
+[data-theme="dark"] .ssb-popover {
+  border-color: transparent;
+}
+
+.ssb-kicker {
+  margin-bottom: 10px;
+  color: var(--ink-faint);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.ssb-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+}
+
+.ssb-git-panel {
+  padding: 4px 0 10px 34px;
+}
+
+.ssb-git-status {
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.ssb-git-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+/* Clickable controls (.ssb-git-toggle, .ssb-git-action, .ssb-section-toggle,
+   .ssb-item) live in session-summary-bubble-controls.css, imported after
+   this file. */
+
+.ssb-git-error {
+  margin-top: 8px;
+  color: var(--signal-warning);
+  font-size: var(--text-xs);
+}
+
+.ssb-row-icon,
+.ssb-item-icon {
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+.ssb-row-label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssb-row-value {
+  max-width: 130px;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssb-change-stats {
+  display: inline-flex;
+  gap: 6px;
+  font-size: var(--text-base);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ssb-change-add {
+  color: var(--signal-ok);
+}
+
+.ssb-change-del {
+  color: var(--signal-error);
+}
+
+.ssb-separator {
+  height: 1px;
+  margin: 12px 0;
+  background: var(--edge);
+}
+
+.ssb-section {
+  border-top: 1px solid var(--edge);
+}
+
+.ssb-section:first-of-type {
+  border-top: none;
+}
+
+.ssb-section-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.ssb-section-icon {
+  display: inline-flex;
+  width: var(--summary-icon-column);
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+.ssb-section-icon svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+.ssb-section-caret {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  transition: transform var(--ease-smooth);
+}
+
+.ssb-section-caret-open {
+  transform: rotate(180deg);
+}
+
+.ssb-accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease;
+}
+
+.ssb-accordion-open {
+  grid-template-rows: 1fr;
+}
+
+.ssb-accordion-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ssb-item-main {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssb-item-meta {
+  max-width: 90px;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssb-empty {
+  padding: 4px 0 10px;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}

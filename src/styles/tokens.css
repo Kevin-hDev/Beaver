@@ -1,0 +1,119 @@
+/* Layout & spacing tokens — shared across all themes */
+/* Spacing and text scale with font-size; fixed chrome widths use px when needed. */
+:root {
+  --space-2xs: 0.125rem; /* 2px at the default 16px-equivalent step */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Structural chrome spacing in fixed px — stable across font-size settings. */
+  --chrome-1: 4px;
+  --chrome-2: 8px;
+  --chrome-3: 12px;
+  --chrome-4: 16px;
+  --chrome-5: 24px;
+
+  /* Radii stay in px: chrome must remain crisp whatever the font-size setting. */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-panel: 16px; /* Shell panels (sidebar, detail) */
+  --radius-full: 50%;
+  --radius-md-bubble: 14px; /* Bubbles markdown/chat (code, tool-results) */
+
+  --ease-smooth: 200ms ease-out;
+  --ease-gentle: 300ms ease-out;
+  --motion-attention-loop: 2.4s;
+
+  /* Z-index scale — any z-index outside this scale is forbidden. */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-panel: 20;
+  --z-dropdown: 30;
+  --z-tooltip: 40;
+  --z-overlay: 50;
+  --z-dialog: 60;
+  --z-toast: 70;
+
+  --font-sans: "Geist Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  --text-2xs: 0.6111rem;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-md: var(--text-sm);
+  --text-base: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+
+  --icon-2xs: 0.5556rem;
+  --icon-xs: 0.6667rem;
+  --icon-13: 0.7222rem;
+  --icon-sm: 0.7778rem;
+  --icon-15: 0.8333rem;
+  --icon-md: 0.8889rem;
+  --icon-lg: 1rem;
+  --icon-xl: 1.1111rem;
+  --icon-2xl: 1.3333rem;
+  --chrome-icon-md: 16px;
+  --chrome-icon-docs: 17px;
+  --chrome-icon-lg: 18px;
+  --chat-column-width: 720px;
+  --chat-column-gutter: 18px;
+  --dialog-compact-min-width: 18.75rem;
+  --dialog-compact-max-width: 27.5rem;
+  --dialog-wide-max-width: 53.75rem;
+  --dialog-tall-max-height: 45rem;
+  --onboarding-panel-max-height: 43rem;
+  --agent-import-card-logo-size: 2rem;
+  --agent-import-detail-logo-height: 2.25rem;
+  --control-height-sm: 1.75rem;
+  --summary-commit-row-height: 2rem;
+  --summary-icon-column: 1.3333rem;
+  --summary-panel-indent: 1.8889rem;
+  --summary-caret-column: var(--chrome-icon-md);
+  --summary-file-icon-column: var(--chrome-icon-lg);
+  --switch-unit: 10px;
+
+  --browser-toolbar-height: 2rem;
+  --browser-control-size: 1.75rem;
+  --compact-control-height: 24px;
+  --browser-toolbar-padding-y: 0.125rem;
+  --browser-field-padding-y: var(--space-xs);
+  --browser-tab-max-width: 12rem;
+  --browser-home-max-width: 26rem;
+  --forecast-model-trigger-max-width: 12.25rem;
+  --forecast-model-menu-width: 17.5rem;
+  --forecast-download-progress-width: 18rem;
+  --forecast-workbench-nav-width: 13rem;
+  --forecast-workbench-copy-width: 42rem;
+  --forecast-workbench-content-width: 64rem;
+  --forecast-workbench-table-cell-width: 18rem;
+  --forecast-filter-menu-width: 13.75rem;
+  --forecast-note-date-width: 7.5rem;
+  --forecast-note-type-width: 8rem;
+  --forecast-series-menu-width: 10rem;
+  --forecast-evaluation-table-min-width: 48rem;
+  --forecast-predictions-table-max-height: 18.8889rem;
+
+  --settings-content-max-width: 37.5rem;
+  --settings-editor-min-height: 20rem;
+  --memory-section-gap: 28px;
+  --memory-legacy-gap: 3px;
+  --memory-filter-min-width: 180px;
+  --memory-topic-padding-y: 11px;
+  --memory-topic-padding-x: 14px;
+  --memory-page-padding-compact: 18px;
+  --memory-preview-padding: 14px;
+
+  --nav-item-height: 1.75rem;
+  --nav-item-gap: var(--space-xs);
+  --nav-item-padding-x: var(--space-sm);
+  --nav-item-radius: var(--radius-sm);
+  --sidebar-collapsed: 2.75rem;
+  --sidebar-expanded: 8.25rem;
+  /* 10.5rem at the default 18px root font size, kept stable across font-size settings. */
+  --list-width: 189px;
+}

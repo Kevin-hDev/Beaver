@@ -1,0 +1,43 @@
+.ppb-root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px auto var(--space-md);
+  padding: 14px 16px;
+  border-radius: 18px; /* intentional: speech-bubble shape */
+  border: 1px solid var(--edge);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.ppb-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-muted);
+}
+
+.ppb-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ppb-content {
+  max-height: 420px;
+  overflow: auto;
+  color: var(--ink-muted);
+}
+
+[data-theme="light"] .ppb-root {
+  background: var(--surface-glass);
+  border-color: transparent;
+}
+
+[data-theme="dark"] .ppb-root {
+  background: var(--surface-glass);
+  border-color: transparent;
+}

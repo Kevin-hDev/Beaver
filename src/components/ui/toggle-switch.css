@@ -1,0 +1,73 @@
+/* Adapted from Uiverse.io by iSweat-exe. */
+.uis-switch {
+  position: relative;
+  display: inline-block;
+  width: 3.5em;
+  height: 2em;
+  font-size: var(--switch-unit);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.uis-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.uis-slider {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--switch-track-border);
+  border-radius: 0.5em;
+  background: var(--switch-track-off);
+  pointer-events: none;
+  transition: background var(--ease-smooth), border-color var(--ease-smooth), box-shadow var(--ease-smooth);
+}
+
+.uis-slider::before {
+  position: absolute;
+  top: 50%;
+  left: 0.3em;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 0.25em;
+  background: var(--switch-knob);
+  box-shadow: var(--shadow-sm);
+  content: "";
+  transform: translateY(-50%);
+  transition: transform var(--ease-smooth);
+}
+
+.uis-input:checked + .uis-slider {
+  border-color: var(--switch-track-on);
+  background: var(--switch-track-on);
+}
+
+.uis-input:checked + .uis-slider::before {
+  transform: translate(1.5em, -50%);
+}
+
+.uis-input:focus-visible + .uis-slider {
+  box-shadow: 0 0 0 3px var(--switch-focus-ring);
+}
+
+.uis-switch:hover .uis-input:not(:disabled) + .uis-slider {
+  border-color: var(--switch-track-hover);
+}
+
+.uis-switch-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uis-slider,
+  .uis-slider::before {
+    transition: none;
+  }
+}

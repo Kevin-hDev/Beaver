@@ -1,0 +1,118 @@
+/* modelfile-view.css — ModelfileView component */
+
+.mfv-scroll {
+  padding: var(--chrome-5);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.mfv-inner {
+  max-width: var(--settings-content-max-width);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mfv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.mfv-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.mfv-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mfv-section {
+  padding: 12px 20px;
+}
+
+.mfv-section-border {
+  border-bottom: 1px solid var(--edge);
+}
+
+.mfv-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.mfv-section-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.mfv-system-prompt {
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  line-height: 1.5;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.mfv-system-prompt-filled {
+  color: var(--ink);
+  font-style: normal;
+}
+
+.mfv-system-prompt-empty {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.mfv-no-params {
+  font-style: italic;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.mfv-params-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mfv-param-row {
+  display: flex;
+  gap: 12px;
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+}
+
+.mfv-param-key {
+  color: var(--ink-muted);
+  min-width: 140px;
+}
+
+.mfv-param-value {
+  color: var(--ink);
+}
+
+.mf-raw-block {
+  margin-top: 16px;
+  padding: var(--space-md);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+  white-space: pre-wrap;
+  background: var(--shell);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge);
+}
+
+[data-theme="dark"] .mf-raw-block {
+  background: var(--surface-glass) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: transparent !important;
+}

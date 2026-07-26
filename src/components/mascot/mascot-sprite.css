@@ -1,0 +1,8 @@
+.mcs-sprite {
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}

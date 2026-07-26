@@ -1,0 +1,145 @@
+/* tool-previews.css — ContentPreview, DiffPreview, WebResultsPreview */
+
+.tp-wrapper {
+  margin-top: var(--space-xs);
+  max-height: 27.2em;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: auto;
+  font-size: var(--text-xs, 11px);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--code-block-border, var(--edge));
+  background: var(--surface-glass);
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.tp-line {
+  display: flex;
+  font-family: var(--font-mono, monospace);
+  font-size: inherit;
+  line-height: 1.7;
+}
+
+.tp-line-ok {
+  background: var(--diff-add-bg);
+}
+
+.tp-line-error {
+  background: var(--diff-del-bg);
+}
+
+.tp-num {
+  width: 46px;
+  text-align: right;
+  padding-left: 14px;
+  padding-right: 12px;
+  color: var(--ink-muted);
+  background: var(--void);
+  border-right: 1px solid var(--code-block-border, var(--edge));
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.tp-line-ok .tp-num {
+  color: var(--diff-new);
+  background: var(--diff-add-gutter);
+}
+
+.tp-line-error .tp-num {
+  color: var(--diff-old);
+  background: var(--diff-del-gutter);
+}
+
+.tp-code {
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding-left: 14px;
+  padding-right: 8px;
+}
+
+.tp-code-ok {
+  color: var(--diff-new);
+}
+
+.tp-code-error {
+  color: var(--diff-old);
+}
+
+.tp-code-context {
+  color: var(--ink-muted);
+}
+
+.tp-wrapper.tp-nowrap {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.tp-nowrap .tp-inner {
+  min-width: max-content;
+}
+
+.tp-nowrap .tp-code {
+  white-space: pre;
+  word-break: normal;
+  flex: none;
+}
+
+/* WebResultsPreview */
+.tp-web-wrapper {
+  margin-top: var(--space-xs);
+  padding: 6px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-glass);
+  border: 1px solid var(--edge);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+}
+
+.tp-web-item {
+  margin-bottom: var(--space-xs);
+}
+
+.tp-web-item:last-child {
+  margin-bottom: 0;
+}
+
+.tp-web-title {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tp-web-url {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--ink-faint);
+  font-size: 10px;
+  word-break: break-all;
+}
+
+.tp-web-url-text {
+  min-width: 0;
+}
+
+.tp-web-favicon {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.tp-web-fetch {
+  margin-top: var(--space-xs);
+  padding: 6px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-glass);
+  border: 1px solid var(--edge);
+  font-size: 10px;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 150px;
+  overflow: hidden;
+}

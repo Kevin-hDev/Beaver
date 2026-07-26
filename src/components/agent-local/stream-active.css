@@ -1,0 +1,30 @@
+.stream-active-label {
+  background: linear-gradient(
+    90deg,
+    var(--agent-trace-text) 0%,
+    var(--pulse) 28%,
+    var(--pulse) 50%,
+    var(--pulse) 72%,
+    var(--agent-trace-text) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--pulse) 32%, transparent));
+  animation: thinking-shimmer 1.1s ease-in-out infinite;
+}
+
+.stream-active-label:hover,
+.stream-active:hover .stream-active-label {
+  -webkit-text-fill-color: unset;
+  background: none;
+  color: var(--pulse);
+  filter: none;
+  animation: none;
+}
+
+@keyframes thinking-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}

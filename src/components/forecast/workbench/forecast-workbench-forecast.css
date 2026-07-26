@@ -1,0 +1,56 @@
+.fcwf-root {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  margin-top: var(--space-lg);
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.fcwf-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--edge);
+}
+
+.fcwf-stack {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.fcwf-companion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 280px;
+  padding: 4px 8px 8px;
+}
+
+.fcwf-companion-chart {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.fcwf-companion-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+}

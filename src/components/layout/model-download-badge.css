@@ -1,0 +1,48 @@
+.mdb-badge {
+  position: absolute;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  z-index: var(--z-panel);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--popover-bg);
+  color: var(--ink);
+  backdrop-filter: var(--popover-backdrop-filter);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter);
+}
+
+.mdb-label {
+  font-size: var(--text-xs);
+  color: var(--ink);
+}
+
+.mdb-phase {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+}
+
+.mdb-track {
+  width: 72px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--edge);
+}
+
+.mdb-fill {
+  height: 100%;
+  background: var(--pulse);
+  transition: width 160ms ease-out;
+}
+
+.mdb-percent {
+  min-width: 32px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  text-align: right;
+}

@@ -1,0 +1,34 @@
+.settings-subtab {
+  display: flex;
+  align-items: center;
+  gap: var(--nav-item-gap);
+  min-width: 0;
+  min-height: var(--nav-item-height);
+  padding: 5px var(--nav-item-padding-x);
+  border-radius: var(--nav-item-radius);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  background: transparent;
+  font-weight: 400;
+  margin-bottom: 2px;
+  transition: all 200ms ease;
+}
+
+.settings-subtab-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-subtab:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.settings-subtab.active {
+  color: var(--ink);
+  background: var(--surface-hover);
+  font-weight: 500;
+}

@@ -1,0 +1,28 @@
+.fcn-markdown {
+  max-width: 860px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.fcn-markdown p,
+.fcn-markdown ul,
+.fcn-markdown ol,
+.fcn-markdown pre {
+  margin: 0 0 var(--chrome-4);
+}
+
+.fcn-markdown code {
+  border-radius: var(--radius-sm);
+  background: var(--shell);
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+}
+
+.fcn-markdown pre {
+  overflow-x: auto;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 12px;
+}

@@ -1,0 +1,110 @@
+/* tool-office-previews.css — SpreadsheetResultPreview, DocumentResultPreview */
+
+.tp-spreadsheet {
+  margin-top: 6px;
+  border-radius: var(--radius-xs);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+  border: 1px solid color-mix(in srgb, var(--tool-read) 15%, transparent);
+  background: color-mix(in srgb, var(--tool-read) 4%, transparent);
+}
+
+.tp-spreadsheet table {
+  border-collapse: collapse;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+  min-width: 100%;
+}
+
+.tp-spreadsheet th {
+  background: color-mix(in srgb, var(--tool-read) 12%, transparent);
+  color: var(--tool-read);
+  font-weight: 600;
+  padding: 3px 10px;
+  text-align: left;
+  border-bottom: 1px solid color-mix(in srgb, var(--tool-read) 15%, transparent);
+}
+
+.tp-spreadsheet td {
+  padding: 2px 10px;
+  color: var(--ink-muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink-faint) 15%, transparent);
+}
+
+.tp-spreadsheet tr:last-child td {
+  border-bottom: none;
+}
+
+.tp-sp-corner {
+  width: 28px;
+  min-width: 28px;
+  background: color-mix(in srgb, var(--tool-read) 8%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--tool-read) 15%, transparent);
+}
+
+.tp-sp-col {
+  text-align: center;
+  color: var(--ink-faint);
+  font-weight: 500;
+  font-size: 9px;
+  padding: 2px 10px;
+  background: color-mix(in srgb, var(--tool-read) 8%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--tool-read) 10%, transparent);
+}
+
+.tp-sp-row {
+  width: 28px;
+  min-width: 28px;
+  text-align: right;
+  padding-right: 6px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--tool-read) 8%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--tool-read) 15%, transparent);
+  user-select: none;
+}
+
+.tp-spreadsheet-footer {
+  padding: 3px 10px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono, monospace);
+  border-top: 1px solid color-mix(in srgb, var(--tool-read) 10%, transparent);
+}
+
+.tp-document {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--tool-read) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tool-read) 15%, transparent);
+  font-size: 11px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  max-height: 120px;
+  overflow: hidden;
+  position: relative;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tp-document-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: linear-gradient(transparent, var(--void));
+  pointer-events: none;
+}
+
+.tp-document-meta {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono, monospace);
+}

@@ -1,0 +1,224 @@
+/* Conteneur racine inline (remplace l'ancienne .chat-bubble) */
+.tb-stream {
+  width: 100%;
+  margin: 4px 0;
+}
+
+.tb-accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 400ms ease;
+}
+
+.tb-accordion.tb-open {
+  grid-template-rows: 1fr;
+}
+
+.tb-accordion-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.tb-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* En-tête de groupe */
+.tb-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--agent-trace-text);
+  font: inherit;
+  text-align: left;
+}
+
+.tb-group-toggle:hover {
+  color: var(--agent-trace-hover);
+}
+
+.tb-group-icon {
+  flex-shrink: 0;
+}
+
+.tb-group-title {
+  min-width: 0;
+  color: inherit;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tb-group-sep {
+  color: var(--agent-trace-text);
+  opacity: 0.7;
+}
+
+.tb-group-details-text {
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-group-progress {
+  color: var(--agent-trace-text);
+  flex-shrink: 0;
+}
+
+.tb-group-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  color: var(--agent-trace-text);
+  flex-shrink: 0;
+}
+
+/* Accordion du groupe : les sous-lignes restent toujours muted */
+.tb-group-accordion {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease;
+}
+
+.tb-group-accordion.tb-open {
+  grid-template-rows: 1fr;
+}
+
+.tb-group-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 4px;
+}
+
+.tb-group-details .tb-row {
+  padding-left: 23px;
+}
+
+.tb-spinner {
+  color: var(--agent-trace-text);
+  animation: spin 1s linear infinite;
+}
+
+/* Ligne d'outil individuelle */
+.tb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.6875rem;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.6;
+  color: var(--agent-trace-text);
+}
+
+.tb-toggle,
+.tb-static-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  font: inherit;
+}
+
+.tb-toggle {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.tb-tool-icon {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.tb-tool-verb {
+  font-weight: 600;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.tb-item-summary {
+  /* grow:0, shrink:1, basis:auto → taille naturelle, peut rétrécir avec troncature */
+  flex: 0 1 auto;
+  min-width: 0;
+  color: inherit;
+  /* Une seule ligne : troncature en gardant la fin du texte */
+  white-space: nowrap;
+  overflow: hidden;
+  direction: rtl;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.tb-item-summary[role="button"],
+.tb-item-name[role="button"] {
+  color: var(--agent-trace-text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--edge);
+  unicode-bidi: plaintext;
+}
+
+.tb-item-summary[role="button"]:hover,
+.tb-item-name[role="button"]:hover,
+.tb-item-name[role="button"]:hover .tb-item-name-text {
+  color: var(--agent-trace-hover);
+}
+
+/* Layout fichier : dossiers tronçables (gauche) + nom fixe (droite) */
+.tb-item-dirs {
+  /* grow:0, shrink:1, basis:auto → taille naturelle, peut rétrécir avec troncature */
+  flex: 0 1 auto;
+  min-width: 0;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  direction: rtl;
+  text-overflow: ellipsis;
+  text-align: left;
+  unicode-bidi: plaintext;
+}
+
+.tb-item-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.tb-item-name-text {
+  color: var(--ink);
+}
+
+.tb-change-stats {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-shrink: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.6875rem;
+}
+
+.tb-change-add {
+  color: var(--signal-ok);
+}
+
+.tb-change-del {
+  color: var(--signal-error);
+}

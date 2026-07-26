@@ -1,0 +1,36 @@
+@container (max-width: 48rem) {
+  .fcw-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .fcw-sidebar-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--chrome-2) var(--chrome-3);
+  }
+
+  .fcw-nav {
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    padding: var(--chrome-2) var(--chrome-3);
+  }
+
+  .fcw-nav-item {
+    flex: 0 0 auto;
+    height: var(--nav-item-height);
+  }
+
+  .fcw-content {
+    padding: var(--space-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-mac .fcw-sidebar {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

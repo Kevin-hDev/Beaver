@@ -1,0 +1,80 @@
+/* Unified dialog contract (Phase 1 spec §4.1) — see heartbeat-dialog.css. */
+.ib-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--dialog-backdrop);
+  backdrop-filter: var(--dialog-overlay-filter, none);
+  -webkit-backdrop-filter: var(--dialog-overlay-filter, none);
+  z-index: var(--z-overlay);
+}
+
+.ib-dialog {
+  width: min(100%, 24rem);
+  padding: var(--space-lg);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--popover-bg, var(--surface-glass));
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+  box-shadow: var(--shadow-lg);
+}
+
+.ib-dialog h2 {
+  margin: 0 0 var(--space-sm);
+  color: var(--ink);
+  font-size: var(--text-lg);
+}
+
+.ib-dialog p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.ib-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+/* Dialog footer buttons — thin aliases of the shared .btn system
+   (src/styles/buttons.css) with the shared 28px geometry; only colors stay here. */
+.ib-dialog-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  background: var(--btn-secondary-bg);
+  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.ib-dialog-button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.ib-dialog-confirm {
+  border-color: var(--pulse);
+  background: var(--pulse);
+  color: var(--ink-on-pulse);
+  box-shadow: none;
+}
+
+.ib-dialog-confirm:hover:not(:disabled) {
+  background: var(--pulse);
+}

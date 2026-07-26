@@ -1,0 +1,46 @@
+/* Badge "Mode plan" — aligné sur .perm-mode-trigger pour rester
+   cohérent avec le sélecteur de mode de permission voisin.
+   Thin alias of the shared .btn system (src/styles/buttons.css) with
+   .btn-sm geometry; keeps its ghost look and optical offset. */
+.pmb-root {
+  position: relative;
+  top: 4px;
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color var(--ease-smooth), background-color var(--ease-smooth), color var(--ease-smooth);
+}
+
+.pmb-root:hover,
+.pmb-root:focus-visible {
+  border-color: transparent;
+  background: var(--select-bg);
+  color: var(--select-text);
+  outline: none;
+}
+
+.pmb-text {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pmb-x {
+  margin-left: -2px;
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity var(--ease-smooth);
+}
+
+.pmb-root:hover .pmb-x,
+.pmb-root:focus-visible .pmb-x {
+  opacity: 1;
+}

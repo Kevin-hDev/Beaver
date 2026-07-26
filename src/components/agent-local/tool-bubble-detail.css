@@ -1,0 +1,56 @@
+/* Tooltip d'erreur (conservé : branché sur ToolStatusIcon) */
+.tb-error-tooltip {
+  position: fixed;
+  width: max-content;
+  max-width: 360px;
+  background: var(--toast-bg);
+  backdrop-filter: var(--tooltip-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--tooltip-backdrop-filter, none);
+  border-radius: var(--radius-xs);
+  padding: 6px 8px 6px 10px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: tb-tooltip-in 150ms ease-out;
+  z-index: var(--z-tooltip);
+}
+
+.tb-error-tooltip-text {
+  color: var(--toast-error-text);
+  font-size: 0.625rem;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Copy — composes .icon-btn (src/styles/buttons.css). */
+.tb-error-tooltip-copy {
+  color: var(--ink-faint);
+}
+
+@keyframes tb-tooltip-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Previews de commande / résultat (dépliés) */
+.tb-command-preview,
+.tb-result-preview {
+  margin: 4px auto 0;
+  padding: 6px 10px;
+  background: var(--void);
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.6875rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 240px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.tb-command-preview {
+  color: var(--ink);
+}

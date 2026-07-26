@@ -1,0 +1,189 @@
+.ib-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--ink);
+  container-type: inline-size;
+}
+
+.ib-tabs-bar,
+.ib-navigation-bar {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--browser-toolbar-height);
+  border-bottom: 1px solid var(--edge);
+  flex-shrink: 0;
+}
+
+.ib-tabs-bar {
+  gap: var(--space-xs);
+  padding: var(--browser-toolbar-padding-y) var(--space-sm);
+}
+
+.ib-tabs-scroll {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+
+.ib-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.ib-tab {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: var(--browser-tab-max-width);
+  border-radius: var(--radius-md);
+  color: var(--ink-muted);
+  flex: 0 0 auto;
+}
+
+.ib-tab:hover,
+.ib-tab-active {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.ib-tab-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: var(--browser-field-padding-y) var(--space-xs) var(--browser-field-padding-y) var(--space-sm);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ib-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ib-tab-icon {
+  display: block;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.ib-tab-close,
+.ib-tab-add,
+.ib-nav-button,
+.ib-address-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--browser-control-size);
+  height: var(--browser-control-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.ib-tab-close {
+  width: var(--space-lg);
+  height: var(--space-lg);
+  margin-right: var(--space-xs);
+}
+
+.ib-tab-close:hover,
+.ib-tab-add:hover,
+.ib-nav-button:hover:not(:disabled),
+.ib-address-go:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.ib-navigation-bar {
+  gap: var(--space-xs);
+  padding: var(--browser-toolbar-padding-y) var(--space-sm);
+}
+
+.ib-navigation-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.ib-nav-button:disabled {
+  color: var(--ink-faint);
+  cursor: default;
+  opacity: 0.5;
+}
+
+.ib-address-form {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  flex: 1;
+}
+
+.ib-address-input {
+  min-width: 0;
+  padding: var(--browser-field-padding-y) var(--space-sm);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  flex: 1;
+}
+
+.ib-address-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.ib-surface {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--void);
+  flex: 1;
+}
+
+.ib-status {
+  margin: 0;
+  padding: var(--space-xs) var(--space-md);
+  color: var(--signal-error);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+@container (max-width: 20rem) {
+  .ib-tabs-bar,
+  .ib-navigation-bar {
+    padding-inline: var(--space-xs);
+  }
+
+  .ib-navigation-bar,
+  .ib-tabs-bar,
+  .ib-tab-select {
+    gap: var(--space-xs);
+  }
+}

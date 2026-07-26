@@ -1,0 +1,108 @@
+.fcs-list {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.fcs-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--edge);
+  cursor: pointer;
+  transition: background var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.fcs-row:hover,
+.fcs-row.is-active {
+  background: var(--fcs-hover-bg);
+}
+
+.fcs-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fcs-row-name {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.fcs-row-description {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+
+.fcs-row-meta {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fcs-row-summary {
+  white-space: nowrap;
+}
+
+.fcs-row-actions {
+  position: relative;
+  display: flex;
+  gap: 4px;
+}
+
+/* Panel actions — compose .icon-btn (src/styles/buttons.css);
+   keep their border and hover. */
+.fcs-icon-btn {
+  border: 1px solid var(--edge);
+  color: var(--ink-muted);
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.fcs-icon-btn:hover:not(:disabled),
+.fcs-icon-btn-danger:hover:not(:disabled) {
+  background: var(--fcs-hover-bg);
+  color: var(--ink);
+  border-color: var(--edge);
+}
+
+/* Inline delete confirm — alias of the shared .btn system with the shared
+   28px geometry; keeps its danger colors, absolute position and pulse animation. */
+.fcs-confirm-delete {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid var(--signal-error);
+  border-radius: var(--radius-sm);
+  background: var(--signal-error);
+  color: var(--ink-on-danger);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: fcs-confirm-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes fcs-confirm-pulse {
+  0%, 100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,1945 @@
+{
+  "nav": {
+    "heartbeat": "Heartbeat",
+    "personality": "/beaver",
+    "settings": "Settings",
+    "agentLocal": "Session"
+  },
+  "common": {
+    "delete": "Delete",
+    "loading": "Loading…"
+  },
+  "providers": {
+    "tabs": { "apiKeys": "API Keys", "oauth": "OAuth" },
+    "oauth": {
+      "title": "OAuth connections", "openCatalog": "Providers", "catalogTitle": "OAuth providers",
+      "catalogSubtitle": "Native web sign-in, no installation required.", "connected": "Connected",
+      "emptySidebar": "No OAuth connection", "empty": "No OAuth provider selected",
+      "connectionLabel": "Connection", "nativeConnection": "Native web — no installation required", "experimental": "Experimental / unofficial", "connect": "Connect", "disconnect": "Disconnect", "cancel": "Cancel",
+      "progress": { "waiting": "Waiting for sign-in…", "verification": "Verification required", "success": "Connected", "cancelled": "Sign-in cancelled", "error": "Unable to connect" },
+      "successMessage": "The provider was connected successfully.", "retryCatalog": "Try again",
+      "issues": { "moonshotMembershipUnverified": "Sign-in succeeded, but Moonshot cannot confirm an active Kimi Code membership. Check the subscription and try again.", "xaiSubscriptionOrCreditsRequired": "xAI reports that a Grok subscription or the required credits are missing or exhausted.", "reauthenticationRequired": "The connection has expired. Reconnect this provider.", "rateLimited": "The catalog is temporarily rate limited. Try again shortly.", "accessUnavailable": "The provider is currently refusing access to the catalog.", "catalogUnavailable": "The model catalog is temporarily unavailable." },
+      "deviceInstructions": "Enter this code on the page opened in your browser.", "codeLabel": "Sign-in code", "copyCode": "Copy code", "openVerification": "Reopen sign-in page",
+      "descriptions": { "openai": "ChatGPT through Codex", "moonshot": "Kimi through native web sign-in, without a client", "xai": "Grok through native web sign-in, without a client" }
+    },
+    "usage": {
+      "providerTitle": "Provider limits and credits", "generalLimitsTitle": "General usage limits", "namedLimitsTitle": "{{name}} usage limits", "localTitle": "Usage in Beaver", "refresh": "Refresh", "remoteUnavailable": "Account usage data is unavailable", "remainingPercent": "{{value}}% remaining", "updated": "Updated", "stale": "Older data", "resetsAt": "Resets: {{date}}", "openProviderSite": "View at provider", "periodLabel": "Period", "historyEmpty": "No usage recorded", "requests": "Requests", "inputTokens": "Input tokens", "outputTokens": "Output tokens", "cachedTokens": "Cached tokens", "reasoningTokens": "Reasoning tokens", "totalTokens": "Total tokens", "cost": "Cost", "byOrigin": "By origin", "byWorkload": "By workload",
+      "periods": { "today": "Today", "seven_days": "7 days", "thirty_days": "30 days", "all_time": "All time" },
+      "quality": { "exact": "Exact", "estimated": "Estimated", "partial": "Partial", "unavailable": "Unavailable" },
+      "origins": { "manual_chat": "Manual chat", "external_channel": "External channel", "automation": "Automation" },
+      "workloads": { "primary": "Primary", "subagent": "Subagent", "compression": "Compression" },
+      "windows": { "today": "Today", "seven_days": "7 days", "thirty_days": "30 days", "key_limit": "Key limit", "requests_day": "Requests per day", "tokens_minute": "Tokens per minute", "requests_limit": "Request limit", "tokens_limit": "Token limit", "rolling_five_hours": "5-hour window", "weekly": "Weekly limit", "provider_limit": "Provider limit" },
+      "balances": { "remaining_credits": "Remaining credits", "available_balance": "Available balance", "voucher_balance": "Voucher balance", "cash_balance": "Cash balance", "reset_credits": "Reset credits", "extra_usage_balance": "Extra Usage balance", "extra_usage_monthly_limit": "Extra Usage monthly limit", "extra_usage_monthly_used": "Extra Usage used this month" },
+      "notices": { "usage_fetch_failed": "Provider usage could not be refreshed. Recent valid data remains visible when available.", "provider_usage_site_only": "xAI does not publish access to these limits. Local usage remains available.", "provider_account_usage_unavailable": "This provider does not publish account limits for this connection." }
+    }
+  },
+  "apiKeys": {
+    "main": {
+      "title": "API Keys",
+      "connectorsBtn": "API Connectors"
+    },
+    "sidebar": {
+      "configured": "Configured",
+      "empty": "No provider configured"
+    },
+    "empty": {
+      "title": "No provider configured",
+      "subtitle": "Add an API key to access remote LLMs (Groq, Gemini, Mistral…) or web search services (Brave, Exa, Firecrawl)."
+    },
+    "details": {
+      "connected": "Connected",
+      "edit": "Edit",
+      "delete": "Delete",
+      "freeTier": "Free tier",
+      "signupLink": "Website",
+      "openSite": "Open site",
+      "quota": "Quota",
+      "quotaUnavailable": "Unavailable",
+      "apiKey": "API key",
+      "confirmDelete": "Confirm deletion"
+    },
+    "dialog": {
+      "addTitle": "Add {{name}}",
+      "editTitle": "Edit {{name}}",
+      "apiKey": "API key",
+      "keyPlaceholder": "Paste your API key here",
+      "keyPlaceholderEdit": "Leave empty to keep current key",
+      "getKeyAt": "Get a key on {{name}}",
+      "description": "Description",
+      "testing": "Testing key…",
+      "testOk": "Key valid, provider connected.",
+      "cancel": "Cancel",
+      "addAndTest": "Add and test",
+      "save": "Save",
+      "clearKey": "Clear key",
+      "showKey": "Show",
+      "hideKey": "Hide"
+    },
+    "connectors": {
+      "title": "API Connectors",
+      "subtitle": "Add data sources to your instance.",
+      "search": "Search connectors…",
+      "empty": "No connector matches the search.",
+      "tabs": {
+        "all": "All",
+        "llm": "AI / LLM",
+        "search": "Search",
+        "scraping": "Scraping",
+        "forecast": "Forecast"
+      }
+    }
+  },
+  "channels": {
+    "sidebar": {
+      "empty": "No channels configured",
+      "configured": "Configured"
+    },
+    "detail": {
+      "token": "Bot token",
+      "removeUser": "Remove",
+      "tokenPlaceholder": "Paste token here…",
+      "botToken": "Slack bot token",
+      "appToken": "Slack app token",
+      "appTokenPlaceholder": "Paste app token here…",
+      "allowlist": "Allowed users",
+      "allowlistPlaceholder": "User ID…",
+      "allowlistAdd": "Add",
+      "requireMention": "Mention required in groups",
+      "provider": "LLM Provider",
+      "model": "Model",
+      "testSuccess": "Connection successful",
+      "testFailed": "Connection failed",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "accountId": "Account ID",
+      "confirmDelete": "Delete this account?",
+      "connected": "Connected",
+      "disconnected": "Disconnected"
+    },
+    "status": {
+      "off": "Stopped",
+      "starting": "Starting…",
+      "running": "Active",
+      "error": "Error",
+      "stopping": "Stopping…"
+    },
+    "errors": {
+      "invalidConfig": "The channel configuration is invalid.",
+      "unavailable": "The channel is unavailable.",
+      "generic": "The operation failed. Try again."
+    },
+    "browse": {
+      "title": "Messaging channels",
+      "subtitle": "Connect your messaging bots to communicate with LLMs.",
+      "telegramDesc": "Telegram bot — long polling, groups and private messages.",
+      "slackDesc": "Slack bot — Socket Mode, channels and direct messages.",
+      "discordDesc": "Discord bot — Gateway WebSocket, servers and private messages.",
+      "messaging": "Messaging",
+      "pro": "Professional"
+    },
+    "config": {
+      "addTitle": "Add {{name}}",
+      "description": "Description",
+      "testing": "Testing…",
+      "addAndTest": "Add and test"
+    },
+    "main": {
+      "subtitle": "Connect messaging bots to communicate with LLMs.",
+      "browseBtn": "Browse channels"
+    }
+  },
+  "welcome": {
+    "title": "What are we doing today?"
+  },
+  "projects": {
+    "title": "Projects",
+    "discussions": "Discussions",
+    "workInFolder": "Work in a folder",
+    "search": "Search projects",
+    "noFolder": "No folder",
+    "noMatch": "No folder found",
+    "addNew": "Add a new project",
+    "openFolder": "Open folder",
+    "rename": "Rename",
+    "delete": "Delete",
+    "noDiscussion": "No sessions"
+  },
+  "branches": {
+    "search": "Search branches",
+    "title": "Branches",
+    "worktrees": "Worktrees",
+    "uncommitted": "Uncommitted: {{count}} file(s)",
+    "createNew": "Create and checkout a new branch…",
+    "detachedHead": "Detached HEAD",
+    "noMatch": "No matching branch",
+    "conflictTitle": "Commit changes to switch branch",
+    "conflictDescription": "Changes to the following files would be overwritten by checkout:",
+    "conflictCommitAndSwitch": "Commit and switch branch…",
+    "conflictCancel": "Cancel",
+    "bubbleCreated": "Branch created",
+    "bubbleSwitched": "Branch switched",
+    "createPlaceholder": "New branch name",
+    "commitRequired": "Commit your changes to continue",
+    "commitDescription": "Description",
+    "createSubmit": "Create branch",
+    "errorInvalidName": "Invalid name: forbidden characters or wrong format",
+    "errorNameTooLong": "Name too long (max 100 characters)",
+    "errorAlreadyExists": "This branch already exists",
+    "errorUnbornHead": "The repository has no commits. Create a commit first",
+    "errorGithubAuth": "Connect GitHub before creating a branch",
+    "errorInternal": "Internal error. Try again or check the repository",
+    "errorRepositoryUnavailable": "The Git repository is no longer accessible.",
+    "errorBranchUnavailable": "This branch no longer exists or is not accessible.",
+    "errorDirtyWorktree": "Save the current changes before continuing ({{count}} file(s)).",
+    "errorProtectedBranch": "The main branch is protected and cannot be cleaned up.",
+    "errorBranchActive": "This branch is currently in use. Switch branches before deleting it.",
+    "errorIdentityMissing": "Configure your Git name and email address before creating a commit.",
+    "errorInvalidCommitDescription": "The commit description is invalid or too long.",
+    "errorCheckoutFailed": "Could not switch branches. Check the repository and try again.",
+    "errorCommitFailed": "Could not create the commit. Check your Git configuration and try again.",
+    "errorUnmergedCommits": "This branch contains {{count}} unmerged commit(s).",
+    "errorWorktreeUnavailable": "This worktree no longer exists or is not accessible.",
+    "commitSwitchError": "Commit or branch switch failed. Check your Git configuration and try again.",
+    "githubAuthTitle": "Connect GitHub to create a branch",
+    "githubAuthDescription": "This repository is linked to GitHub. Connect GitHub before creating a branch from the app.",
+    "githubAuthConnect": "Connect GitHub",
+    "githubAuthConnecting": "Opening GitHub connection…",
+    "githubAuthTesting": "Checking GitHub connection…",
+    "githubAuthError": "Could not connect GitHub. Try again or configure GitHub in connectors.",
+    "githubAuthCancel": "Cancel",
+    "deleteBranch": "Delete {{name}}",
+    "deleteWorktree": "Delete worktree {{name}}",
+    "confirmDelete": "Confirm",
+    "deleteRiskTitle": "Delete this branch?",
+    "deleteWorktreeRiskTitle": "Delete this worktree?",
+    "deleteRiskDescription": "This branch contains work that may be lost. Choose how to continue.",
+    "deleteWorktreeRiskDescription": "This worktree contains unsaved changes.",
+    "deleteCurrentDescription": "This branch is in use. Beaver will switch to {{branch}} before deleting it.",
+    "deleteNoFallback": "Create another branch first so this one can be deleted.",
+    "deleteUnmerged": "{{count}} unmerged commit(s)",
+    "deleteCurrent": "Switch branch and delete",
+    "deletePreserve": "Merge then delete",
+    "deleteCommitMerge": "Save, merge then delete",
+    "deleteWorktreePreserve": "Save then delete",
+    "deleteDiscardChanges": "Delete and discard changes",
+    "deleteDiscardUnmerged": "Delete without merging",
+    "deleteCancel": "Cancel",
+    "deleteError": "Deletion failed. Check the repository and try again."
+  },
+  "history": {
+    "rename": "Rename",
+    "delete": "Delete",
+    "archive": "Archive",
+    "loading": "Loading…"
+  },
+  "sessionAge": {
+    "minute": "{{count}} min",
+    "hour": "{{count}}h",
+    "day": "{{count}}d",
+    "month": "{{count}}mo",
+    "year": "{{count}}y"
+  },
+  "agentLocal": {
+    "newSession": "New session",
+    "noConversations": "No conversations",
+    "placeholder": "How can I help you?",
+    "thinking": "Thinking",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "modelSearch": "Search a model…",
+    "modelEmpty": "No matching model.",
+    "selectModel": "Choose a model",
+    "selectModelHint": "Select model",
+    "reasoningTitle": "Reasoning",
+    "reasoningOff": "Off",
+    "reasoningAuto": "On",
+    "reasoningLow": "Low",
+    "reasoningMedium": "Medium",
+    "reasoningHigh": "High",
+    "reasoningXhigh": "Very high",
+    "reasoningMax": "Max",
+    "reasoningUltra": "Ultra",
+    "send": "Send",
+    "cancel": "Cancel",
+    "stop": "Stop",
+    "editMessage": "Edit and regenerate",
+    "regenerate": "Regenerate",
+    "copy": "Copy",
+    "clone": {
+      "action": "Clone",
+      "title": "Clone session",
+      "close": "Close",
+      "tabs": "Session branches",
+      "mainTab": "Main",
+      "closeTab": "Close tab",
+      "cut": "Clone from this message",
+      "summary": "Clone with hidden summary",
+      "summaryFocus": "Clone with custom focus",
+      "focusPlaceholder": "Focus point for the summary...",
+      "create": "Create",
+      "running": "Summarizing...",
+      "summaryFailed": "The summary could not be generated.",
+      "withoutSummary": "Without summary",
+      "errorUnavailable": "This clone no longer exists or is not accessible.",
+      "gitCreate": "New git branch",
+      "gitCreating": "Creating...",
+      "gitCreated": "Git branch created",
+      "gitBranchMissing": "The linked git branch no longer exists.",
+      "gitMissingCheckpoint": "Cannot clean up: main branch is unknown.",
+      "gitArchiveTitle": "Archive this clone?",
+      "gitArchiveDescription": "This session is linked to the Git branch \"{{branch}}\".",
+      "gitArchiveKeep": "Yes",
+      "gitArchiveCancel": "Cancel",
+      "gitArchiveCleanup": "Clean branch and archive"
+    },
+    "compression": "Context compression",
+    "retry": {
+      "thinkingOnly": "Retrying...",
+      "parserCrash": "Fixing format...",
+      "featureDropped": "Adjusting feature...",
+      "server": "Retrying Ollama...",
+      "connection": "Reconnecting...",
+      "button": "Retry"
+    },
+    "contextCompressed": "Context compressed",
+    "searchBarPlaceholder": "Search...",
+    "resultCount_one": "{{count}} result",
+    "resultCount_other": "{{count}} results",
+    "favorites": "Favorites",
+    "freeCount": "{{free}} free / {{total}}",
+    "thinkingDuration": "Thought for {{seconds}}s",
+    "working": "Working for {{duration}}",
+    "workSummary": "Worked for {{duration}}",
+    "workSummaryNoDuration": "Work completed",
+    "sessionSummary": {
+      "tooltip": "Toggle session summary",
+      "title": "Session summary",
+      "environment": "Environment",
+      "modifications": "Changes",
+      "modificationsUnavailable": "Changes are temporarily unavailable.",
+      "modificationsPartial": "{{count}} files changed. The displayed totals are partial.",
+      "branch": "Branch",
+      "noGit": "No Git repository",
+      "commits": {
+        "title": "Commits",
+        "toggle": "Expand commit history",
+        "empty": "No commits on this branch",
+        "noMessage": "Commit without a message",
+        "noFiles": "No files in this commit",
+        "error": "Commit history is unavailable."
+      },
+      "git": {
+        "toggle": "Expand branch {{branch}}",
+        "changesToCommit": "{{count}} file(s) to Commit",
+        "commitsToPush": "{{count}} commit(s) to Push to {{destination}} · {{branch}}",
+        "commit": "Commit",
+        "push": "Push",
+        "merge": "Merge into {{branch}}",
+        "mergeTitle": "Merge into {{branch}}",
+        "mergeDescription": "Choose the branch to integrate into {{branch}}.",
+        "mergeSource": "Source branch",
+        "mergeSummary": "{{count}} commit(s) will be added to {{branch}}.",
+        "mergeDirty": "{{count}} local change(s) will be Committed before the Merge.",
+        "mergeAlready": "This branch is already merged into {{branch}}.",
+        "confirmMerge": "Merge into {{branch}}",
+        "commitAndMerge": "Commit then Merge into {{branch}}",
+        "mergeError": "Unable to Merge. Check the repository and try again.",
+        "mergeConflict": "The Merge creates a conflict. It was cancelled without changing the branch.",
+        "mergeContextChanged": "The active branch changed. Start the Merge again.",
+        "mergeDirtyError": "New local changes appeared. Check them before the Merge.",
+        "upToDate": "Everything is up to date",
+        "noRemote": "No remote repository",
+        "remoteStatusUnavailable": "Remote repository status is unavailable.",
+        "localBranch": "Local branch · no Push to {{branch}} yet",
+        "destinationGithub": "GitHub",
+        "destinationRemote": "the remote repository",
+        "remoteChanges": "Remote changes are available",
+        "commitTitle": "Commit changes",
+        "commitDescription": "Commit message (optional)",
+        "cancel": "Cancel",
+        "confirmCommit": "Commit",
+        "commitError": "Unable to create the commit.",
+        "pushError": "Unable to Push.",
+        "authenticationError": "Git authentication is required to Push.",
+        "permissionDenied": "The remote repository rejected the Push. Check your access or branch protection.",
+        "networkError": "Unable to connect to the remote repository.",
+        "contextChanged": "The project or branch changed. Start the Push again.",
+        "remoteChanged": "The remote branch has newer changes. Sync the repository before pushing again."
+      },
+      "sections": {
+        "todos": "Todo list",
+        "plans": "Plan",
+        "subagents": "Subagents"
+      },
+      "emptyTodos": "No active todo",
+      "emptyPlans": "No plan",
+      "emptySubagents": "No subagent",
+      "todoProgress": "{{done}}/{{total}}",
+      "todoRunStatus": {
+        "active": "Active",
+        "paused": "Paused"
+      },
+      "planStatus": {
+        "draft": "draft",
+        "awaiting_approval": "to approve",
+        "approved": "approved",
+        "rejected": "rejected",
+        "cancelled": "cancelled"
+      },
+      "subagentType": {
+        "explorer": "Explore",
+        "coder": "Coder"
+      }
+    },
+    "fileChanges": {
+      "changed_one": "{{count}} file changed",
+      "changed_other": "{{count}} files changed",
+      "toggle": "Show changed files",
+      "review": "Review",
+      "reviewFile": "Review {{name}}"
+    },
+    "tokens": "tokens",
+    "contextUsage": {
+      "title": "Context window",
+      "categories": {
+        "messages": "Messages",
+        "systemTools": "System tools",
+        "mcpConnectors": "MCP / connectors",
+        "skills": "Skills",
+        "memory": "Memory",
+        "metaContext": "Meta context",
+        "systemPrompt": "System prompt"
+      }
+    },
+    "tps": "t/s",
+    "fileReadError": "Could not read file",
+    "toolActivity": {
+      "inProgress": "in progress",
+      "completed": "completed",
+      "toggleDetails": "Show tool details",
+      "groups": {
+        "exploration": "Exploration",
+        "modification": "Changes",
+        "command": "Commands",
+        "web": "Web",
+        "git": "Git",
+        "memory": "MEMORY",
+        "other": "Tools"
+      },
+      "counts": {
+        "files_one": "{{count}} file",
+        "files_other": "{{count}} files",
+        "searches_one": "{{count}} search",
+        "searches_other": "{{count}} searches",
+        "lists_one": "{{count}} list",
+        "lists_other": "{{count}} lists",
+        "writes_one": "{{count}} written",
+        "writes_other": "{{count}} written",
+        "edits_one": "{{count}} edited",
+        "edits_other": "{{count}} edited",
+        "commands_one": "{{count}} command",
+        "commands_other": "{{count}} commands",
+        "webSearches_one": "{{count}} web search",
+        "webSearches_other": "{{count}} web searches",
+        "webFetches_one": "{{count}} page",
+        "webFetches_other": "{{count}} pages",
+        "gitActions_one": "{{count}} git action",
+        "gitActions_other": "{{count}} git actions",
+        "otherActions_one": "{{count}} action",
+        "otherActions_other": "{{count}} actions"
+      },
+      "actions": {
+        "read": "Read",
+        "create": "Created",
+        "edit": "Edited",
+        "list": "Listed",
+        "search": "Searched",
+        "run": "Ran",
+        "createBranch": "Branch created",
+        "switchBranch": "Branch switched",
+        "skill": "Skill loaded",
+        "agent": "Delegated",
+        "forecast": "Analyzed",
+        "mcp": "MCP searched",
+        "tool": "Tool"
+      },
+      "groupError": "An error occurred in this group"
+    }
+  },
+  "switchModel": {
+    "title": "Model change",
+    "description": "Switching from {{from}} to {{to}}. What do you want to do with the current conversation?",
+    "remember": "Remember my choice for this session",
+    "newSession": "New session",
+    "continue": "Continue in this session"
+  },
+  "switchWorktree": {
+    "title": "Folder change",
+    "description": "This worktree uses a different working folder. Create a new session to keep the current conversation intact.",
+    "cancel": "Cancel",
+    "newSession": "New session",
+    "close": "Close"
+  },
+  "permissionMode": {
+    "chatLabel": "Chatbot",
+    "chatDescription": "Chat without access to tools, files, or the Internet",
+    "autoLabel": "Full access",
+    "autoDescription": "Unrestricted access to the Internet and files on your computer",
+    "manualLabel": "Ask permission",
+    "manualDescription": "Always ask before changing external files or using the Internet",
+    "toggleHint": "Change permissions (Shift+Tab)"
+  },
+  "missingDirectory": {
+    "title": "This folder no longer exists",
+    "parent": "Available folder: {{path}}",
+    "switch": "Switch",
+    "create": "Create",
+    "error": "Could not prepare this session folder."
+  },
+  "permissionDialog": {
+    "title": "Allow {{action}}?",
+    "allow": "Allow once",
+    "allowSession": "Always allow",
+    "deny": "Deny",
+    "tools": {
+      "write_file": "write a file",
+      "edit_file": "edit a file",
+      "bash": "run a command",
+      "web_fetch": "fetch a URL"
+    }
+  },
+  "modelDownloads": {
+    "queued": "Queued",
+    "kinds": {
+      "ollama": "Ollama",
+      "forecast": "Forecast"
+    },
+    "phases": {
+      "starting": "Starting",
+      "downloading": "Downloading",
+      "installing": "Installing",
+      "preparing-runtime": "Preparing engine",
+      "completed": "Completed"
+    },
+    "errors": {
+      "queueUnavailable": "This model could not be added to the queue."
+    }
+  },
+  "ollama": {
+    "selectModel": "Select a model",
+    "edit": "Edit",
+    "editing": "Editing",
+    "save": "Save",
+    "cancel": "Cancel",
+    "searchPlaceholder": "Search a model...",
+    "install": "Install",
+    "update": "Update",
+    "updateAvailable": "A new version is available",
+    "installedUpToDate": "Installed and up to date",
+    "ctx": "ctx",
+    "vramWarning": "This model may exceed your available VRAM",
+    "editModelfile": "Edit modelfile",
+    "systemPrompt": "System prompt",
+    "systemPromptWarningTitle": "Warning",
+    "systemPromptWarningBody": "This custom prompt will replace the application’s default behavior instructions for this model only. The technical instructions required for tools and Agent modes will remain active. Enabled context files will also continue to be injected. Clearing this prompt will automatically restore the application’s default instructions.",
+    "systemPromptWarningRemember": "Do not show this warning again",
+    "systemPromptWarningContinue": "Continue",
+    "parameters": "Parameters",
+    "noSystemPrompt": "(no system prompt defined)",
+    "noParameters": "(no parameter — Ollama uses its defaults)",
+    "parameterEditorHint": "Leave a value empty to use Ollama’s default setting.",
+    "parameterDefaultValue": "Default value: {{value}}",
+    "parameterDefaultShort": "default {{value}}",
+    "useDefaultValue": "Use the default value",
+    "addStopSequence": "+ Add a stop sequence",
+    "removeStopSequence": "Remove this stop sequence",
+    "stopSequencePlaceholder": "Stop text or token",
+    "customParameters": "Custom parameters",
+    "customParametersHint": "Use only for an Ollama option that is not yet included in the official list.",
+    "customParameterName": "Parameter name",
+    "customParameterValue": "Value",
+    "addCustomParameter": "+ Add a custom parameter",
+    "invalidCustomParameter": "Check the custom parameter name and value.",
+    "invalidOfficialParameter": "Check the numeric values of the official parameters.",
+    "parameterGroups": {
+      "context": "Context",
+      "length": "Response length",
+      "creativity": "Creativity and reproducibility",
+      "repetition": "Repetition",
+      "sampling": "Token selection",
+      "stop": "Response stopping"
+    },
+    "parameterTypes": {
+      "integer": "integer",
+      "decimal": "decimal",
+      "text": "text"
+    },
+    "parameterDescriptions": {
+      "num_ctx": "Maximum amount of text kept in memory during the conversation. Higher values use more memory.",
+      "num_predict": "Maximum number of tokens to generate. -1 lets Ollama continue without a fixed limit.",
+      "draft_num_predict": "Number of tokens proposed ahead by a draft model. Useful only for speculative generation.",
+      "temperature": "Creativity level. Lower values are more predictable; higher values are more varied.",
+      "seed": "Number used to reproduce a generation with the same prompt and settings.",
+      "repeat_last_n": "Number of previous tokens checked to prevent repetition. 0 disables it and -1 uses the full context.",
+      "repeat_penalty": "Strength of the repetition penalty. A value that is too high can degrade the text.",
+      "top_k": "Number of choices kept at each step. Lower values make responses more conservative.",
+      "top_p": "Keeps choices until this cumulative probability is reached. Lower values make responses more focused.",
+      "min_p": "Removes choices that are too unlikely compared with the best choice. Higher values are stricter.",
+      "stop": "Text or token that immediately stops the response. Multiple sequences can be added."
+    },
+    "systemPromptPlaceholder": "Define the model's behavior and personality…",
+    "description": "Description",
+    "translate": "Translate…",
+    "translating": "Translating…",
+    "original": "Original",
+    "searchHint": "Type a name (e.g. gemma, qwen, mistral) then Enter",
+    "loadingProfile": "Loading profile…",
+    "loadingVariants": "Loading variants…",
+    "capabilities": "Capabilities",
+    "fileSize": "File size",
+    "context": "Context",
+    "architecture": "Architecture",
+    "moe": "MoE",
+    "yes": "Yes",
+    "no": "No",
+    "digest": "Digest",
+    "quantization": "Quantization",
+    "paramsLabel": "Parameters",
+    "contextTokens": "K tokens",
+    "remove": "Remove",
+    "modelfileTab": "Modelfile",
+    "modelsTab": "Models"
+  },
+  "heartbeat": {
+    "back": "Back",
+    "toggle": "Enable/Disable",
+    "title": "Wakeups",
+    "subtitle": "Automate scheduled tasks for any LLM",
+    "empty": "No wakeup configured yet. Click New wakeup to start.",
+    "newWakeup": "New wakeup",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Confirm deletion",
+    "pausedHint": "Wakeups paused — disable the master switch",
+    "badges": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "fields": {
+      "name": "Name",
+      "provider": "Provider",
+      "model": "Model",
+      "schedule": "Schedule",
+      "nextFire": "Next run",
+      "lastStatus": "Last status",
+      "lastRun": "Last run",
+      "description": "Description",
+      "prompt": "Prompt"
+    },
+    "status": {
+      "ok": "Succeeded",
+      "error": "Failed",
+      "missed": "Missed",
+      "never": "Never run",
+      "none": "None"
+    },
+    "history": {
+      "title": "History",
+      "empty": "No runs yet"
+    },
+    "sidebar": {
+      "title": "Wakeups",
+      "pause": "Pause all",
+      "resume": "Resume",
+      "empty": "No active wakeup",
+      "pausedEmpty": "Wakeups paused"
+    },
+    "form": {
+      "createTitle": "New wakeup",
+      "editTitle": "Edit wakeup",
+      "name": "Name",
+      "provider": "Provider",
+      "model": "Model",
+      "pickModel": "Pick a model",
+      "noToolCapable": "No tool-capable model",
+      "prompt": "Prompt",
+      "description": "Description (short)",
+      "schedule": "Schedule",
+      "cancel": "Cancel",
+      "create": "Create",
+      "save": "Save",
+      "scheduleKind": {
+        "once": "Once",
+        "daily": "Daily",
+        "weekly": "Weekly"
+      },
+      "weekdays": {
+        "0": "Monday",
+        "1": "Tuesday",
+        "2": "Wednesday",
+        "3": "Thursday",
+        "4": "Friday",
+        "5": "Saturday",
+        "6": "Sunday"
+      }
+    }
+  },
+  "personality": {
+    "files": "Core",
+    "selectFile": "Select a file",
+    "open": "Open",
+    "inject": "Context",
+    "injected": "Injected",
+    "failedToLoad": "Failed to load",
+    "failedToRead": "Failed to read file"
+  },
+  "settings": {
+    "light": "Light",
+    "dark": "Dark",
+    "emeraldNight": "Emerald Night",
+    "cobaltFrost": "Frosted Cobalt",
+    "astralMist": "Astral Mist",
+    "crimsonEclipse": "Crimson Eclipse",
+    "system": "System",
+    "memory": {
+      "intro": "Manage what the agent can remember over time without loading every detail into each conversation.",
+      "modeTitle": "Memory mode",
+      "modeDesc": "Manual mode requires an explicit request. Automatic mode keeps only durable facts.",
+      "modes": { "disabled": "Disabled", "manual": "Manual", "automatic": "Automatic" },
+      "budgetTitle": "Context budget",
+      "budgetDesc": "Maximum space reserved for the memory summary and memory reads.",
+      "topics": "Saved memories",
+      "search": "Search memories",
+      "allTypes": "All types",
+      "allStatuses": "All statuses",
+      "global": "Global memory",
+      "activeProject": "Active project · {{name}}",
+      "topicCount_one": "{{count}} topic",
+      "topicCount_other": "{{count}} topics",
+      "empty": "No memory in this scope",
+      "disabledHint": "Memory is disabled. Existing files are kept.",
+      "legacyTitle": "Legacy content detected",
+      "legacyDesc": "Old folders are preserved but never injected.",
+      "loading": "Loading memory…",
+      "error": "Could not load memory",
+      "retry": "Retry",
+      "tokenUnit": "tokens",
+      "loadTopics": "Show memories",
+      "loadingTopics": "Loading memories…",
+      "previewError": "Could not read this memory.",
+      "closePreview": "Close",
+      "archive": "Archive",
+      "confirmArchive": "Confirm",
+      "sources": { "user": "User", "parent": "Main agent", "extractor": "Automatic", "subagent-suggestion": "Subagent suggestion" },
+      "types": { "preference": "Preference", "feedback": "Feedback", "project": "Project", "reference": "Reference" },
+      "statuses": { "confirmed": "Confirmed", "inferred": "Inferred", "stale": "Needs review", "archived": "Archived" }
+    },
+    "tabs": {
+      "general": "General",
+      "ollama": "Ollama",
+      "connectors": "Connectors",
+      "apiKeys": "API Keys",
+      "providers": "Providers",
+      "llm": "LLM",
+      "tools": "Tools",
+      "memory": "Memory",
+      "mascot": "Mascot",
+      "archivedChats": "Archived chats",
+      "advanced": "Advanced",
+      "shortcuts": "Keyboard Shortcuts",
+      "about": "About",
+      "channels": "Channels"
+    },
+    "mascot": {
+      "previewTitle": "Mascot preview",
+      "beaverName": "Beaver",
+      "previewActive": "Animated preview",
+      "previewPaused": "Animation paused",
+      "settingsTitle": "Settings",
+      "enabledTitle": "Show mascot",
+      "enabledDesc": "Keep the beaver visible above the desktop and other applications",
+      "sizeTitle": "Size",
+      "sizeDesc": "Adjust the mascot size on screen",
+      "collectionTitle": "Collection",
+      "beaverDesc": "Beaver's main mascot",
+      "moveLabel": "Move the mascot"
+    },
+    "archivedChats": {
+      "title": "Archived chats",
+      "deleteAll": "Delete all",
+      "searchPlaceholder": "Search archived conversations",
+      "allProjects": "All projects",
+      "count": "{{count}} conversation(s)",
+      "restore": "Restore",
+      "delete": "Delete",
+      "confirmDeleteButton": "Confirm",
+      "empty": "No archived chats",
+      "loading": "Loading archives…",
+      "restoreOk": "Chat restored",
+      "restoreFailed": "Could not restore chat",
+      "deleteOk": "Chat deleted",
+      "deleteAllOk": "Archived chats deleted",
+      "deleteFailed": "Could not delete chat",
+      "deleteConfirm": "Permanently delete this archived chat?",
+      "deleteAllConfirm": "Permanently delete all archived chats?"
+    },
+    "general": {
+      "themeTitle": "Theme",
+      "themeDesc": "App appearance",
+      "fontSizeTitle": "Font size",
+      "fontSizeDesc": "Base interface size in pixels",
+      "fontSizeIncrease": "Increase font size",
+      "fontSizeDecrease": "Decrease font size",
+      "fontFamilyTitle": "Font family",
+      "fontFamilyDesc": "Font used in the app",
+      "codeThemeTitle": "Code theme",
+      "codeThemeDesc": "Coloring of code blocks and previews",
+      "languageTitle": "Language",
+      "languageDesc": "Interface language",
+      "responseLangTitle": "LLM response language",
+      "responseLangDesc": "Language the AI model will respond in",
+      "sidebarExpandTitle": "Expand sidebar on hover",
+      "sidebarExpandDesc": "Sidebar expands when you hover over it",
+      "linkPreviewTitle": "Link previews",
+      "linkPreviewDesc": "Show a preview card for URLs in chat"
+    },
+    "tools": {
+      "intro": "These tools define what the agent can do for you. Essential tools are always on. Optional tools turn on or off based on your needs: the agent will only use what's enabled.",
+      "lockedTitle": "Essential tools",
+      "optionalTitle": "Optional tools",
+      "lockedBadge": "Always on",
+      "groups": {
+        "terminal": { "title": "Terminal", "description": "Lets the agent run commands directly on your machine (git, builds, scripts). This is the most powerful tool: anything your terminal can do, the agent can do." },
+        "files": { "title": "Files", "description": "Lets the agent read, create, and edit files in your project: code, configs, notes, documents." },
+        "file_search": { "title": "File search", "description": "Lets the agent dig through your project to find a file or search for a specific word in the code." },
+        "web": { "title": "Web", "description": "Lets the agent search for information online and open web pages when it needs current data." },
+        "mcp": { "title": "External connectors", "description": "Lets the agent use the external connectors you configured in the Connectors tab." },
+        "skills": { "title": "Skills", "description": "Lets the agent follow specialized guides (skills) for certain tasks. Turn off if you don't use them." },
+        "user_choice": { "title": "User choices", "description": "Lets the agent ask for your input when it hesitates between several options. Turn off if you'd rather it decide on its own." },
+        "subagents": { "title": "Subagents", "description": "Lets the agent delegate a subtask to a secondary agent, then pick up the result. Turn off if you want to keep everything in a single conversation." },
+        "plan_mode": { "title": "Plan mode", "description": "Lets the agent propose an action plan and wait for your approval before acting. Turn off if you'd rather it jump straight to action." },
+        "todo_list": { "title": "Todo list", "description": "Lets the agent keep a checklist during a long task, so nothing gets forgotten. Turn off if checklists aren't useful to you." },
+        "agent_diagnostics": { "title": "Agent diagnostics", "description": "Lets the agent review its recent errors to self-correct after a failure. Turn off if you don't want it spending time analyzing its failures." },
+        "git_branches": { "title": "Git branches", "description": "Lets the agent create or switch Git branches to isolate its work. Turn off if you prefer to manage branches yourself." },
+        "forecast": { "title": "Forecast", "description": "Lets the agent use the Forecast module: run forecasts, read the results, add scenarios. Turn off if you don't use Forecast." },
+        "spreadsheet": { "title": "Spreadsheet / Excel", "description": "Lets the agent read or create spreadsheets (Excel, ODS, CSV, TSV). Turn off if you don't work with this kind of file." },
+        "document": { "title": "Document / Word", "description": "Lets the agent extract text from existing documents or create Word files. Turn off if you don't work with these documents." },
+        "images": { "title": "Images", "description": "Lets the agent inspect, resize, crop, or convert images. Turn off if you don't need to process images." }
+      }
+    },
+    "advanced": {
+      "autostartTitle": "Launch at startup",
+      "autostartDesc": "Open Beaver automatically at system startup",
+      "startHiddenTitle": "Start hidden",
+      "startHiddenDesc": "Start in the background without opening the window",
+      "trayTitle": "Menu bar icon",
+      "trayDesc": "Keep Beaver in the system tray",
+      "defaultModelTitle": "Default model",
+      "defaultModelDesc": "Model used by default for new conversations",
+      "keepAliveTitle": "Unload model",
+      "keepAliveDesc": "Time before freeing model memory",
+      "searchModel": "Search a model…",
+      "keepAlive": {
+        "immediately": "Immediately",
+        "2min": "After 2 min",
+        "5min": "After 5 min",
+        "10min": "After 10 min",
+        "15min": "After 15 min",
+        "30min": "After 30 min",
+        "onClose": "On app close"
+      },
+      "hardwareAccelTitle": "Hardware Acceleration",
+      "hardwareAccelDesc": "Inference engine for local models",
+      "hardwareAccelCpu": "CPU",
+      "hardwareAccelGpu": "GPU",
+      "hardwareAccelRestart": "Restart Ollama",
+      "hardwareAccelRestarted": "Ollama restarted",
+      "ollamaExternalReused": "External Ollama reused",
+      "restartRequiredTitle": "Restart required",
+      "restartRequiredDesc": "Changes will be applied after restarting Ollama",
+      "ollamaTitle": "Ollama",
+      "multiModelTitle": "Load multiple models",
+      "multiModelDesc": "Keep multiple models in VRAM simultaneously (requires more GPU memory)",
+      "showGpuStatusTitle": "Show GPU status",
+      "showGpuStatusDesc": "Display CPU/GPU indicator and VRAM usage in the chat",
+      "vramTableTitle": "Required VRAM per model",
+      "vramTableDesc": "Estimated VRAM needed based on model size and quantization",
+      "vramTableSize": "Size",
+      "vramFormula": "model size + (context/1000 × 0.5 GB) + 0.5 GB",
+      "fileAccessTitle": "File Access",
+      "fileAccessDesc": "Folders the LLM can read and write to",
+      "addPath": "Add folder",
+      "resetPaths": "Reset",
+      "fullDisk": "Full disk",
+      "compressionTitle": "Compression",
+      "compressionEnabledTitle": "Automatic compression",
+      "compressionEnabledDesc": "Automatically summarizes the conversation when the context approaches its limit",
+      "compressionThresholdTitle": "Compression threshold",
+      "compressionThresholdDesc": "Percentage of the context window at which compression triggers"
+    },
+    "llm": {
+      "searchPlaceholder": "Search a model…",
+      "families": "Families",
+      "back": "Back",
+      "maxInput": "Context (input)",
+      "maxOutput": "Max output",
+      "inputCost": "Input cost",
+      "outputCost": "Output cost",
+      "vision": "Vision",
+      "tools": "Tools",
+      "reasoning": "Reasoning",
+      "caching": "Prompt caching",
+      "webSearch": "Web search",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "shortcuts": {
+      "toggleTerminal": "Toggle terminal",
+      "toggleSidebar": "Toggle sidebar",
+      "goBack": "Go back",
+      "goForward": "Go forward",
+      "newSession": "New session",
+      "searchDialog": "Search conversations",
+      "togglePreview": "Toggle file preview panel"
+    },
+    "confirm": {
+      "deleteModel": "Confirm?"
+    }
+  },
+  "terminal": {
+    "newTab": "New tab",
+    "closePanel": "Close panel",
+    "processExited": "Process exited with code {{code}}",
+    "failedToStart": "Terminal failed to start"
+  },
+  "skills": {
+    "sourceBuiltIn": "Built-in",
+    "sourceUser": "User",
+    "sourceProject": "Project",
+    "noResults": "No skills found"
+  },
+  "search": {
+    "placeholder": "Search conversations…",
+    "recent": "Recent conversations",
+    "results": "Results",
+    "empty": "No conversation found"
+  },
+  "about": {
+    "version": "Version",
+    "tauri": "Tauri",
+    "os": "System",
+    "viewOnGithub": "View on GitHub",
+    "description": "Agentic desktop app for local and cloud LLMs."
+  },
+  "browser": {
+    "title": "Browser",
+    "addressLabel": "Browser address",
+    "addressPlaceholder": "Enter a URL or search",
+    "openAddress": "Open address",
+    "startTitle": "Start browsing",
+    "startDescription": "Enter a URL or search the web",
+    "invalidUrl": "Enter a valid HTTP or HTTPS address.",
+    "tabsLabel": "Browser tabs",
+    "newTab": "New tab",
+    "closeTab": "Close {{title}}",
+    "addTab": "Add a tab",
+    "back": "Back",
+    "forward": "Forward",
+    "reload": "Reload",
+    "stop": "Stop loading",
+    "localSites": "Available local sites",
+    "tabLimitTitle": "Ten-tab limit reached",
+    "tabLimitDescription": "Replace the inactive tab “{{title}}”?",
+    "replaceTab": "Replace",
+    "operationFailed": "The browser could not complete this action.",
+    "loading": "Loading browser…",
+    "blockedFeature": "This feature is disabled in this version.",
+    "unavailable": "The secure browser is unavailable."
+  },
+  "filePreview": {
+    "closeTab": "Close tab",
+    "default": "default",
+    "noFiles": "No files created or modified in this session.",
+    "listModes": {
+      "latest": "Latest run",
+      "all": "All files",
+      "uncommitted": "Uncommitted"
+    },
+    "filesModified": "Files",
+    "loading": "Reading file...",
+    "fileNotFound": "The file could not be read. It may have been deleted or moved.",
+    "diffUnavailable": "The changes for this file cannot be displayed.",
+    "diffTruncated": "Limited preview: this file contains more changes.",
+    "gitStatus": {
+      "added": "Created",
+      "modified": "Modified",
+      "deleted": "Deleted",
+      "renamed": "Renamed",
+      "copied": "Copied",
+      "changed": "Changed"
+    },
+    "togglePanel": "File preview",
+    "reduce": "Reduce",
+    "fullscreen": "Full screen",
+    "open": "Open",
+    "openWith": "Open with...",
+    "noEditorDetected": "No editor detected",
+    "moreRows": "+{{count}} rows",
+    "totalRows": "{{count}} rows total — limited preview",
+    "charCount": "{{format}} — {{count}} characters",
+    "blockCount": "DOCX — {{count}} blocks"
+  },
+  "fileTree": {
+    "clearFilter": "Clear filter",
+    "filterPlaceholder": "Filter files...",
+    "toggleTree": "Project file tree",
+    "loadError": "Could not read this folder",
+    "noResults": "No results"
+  },
+  "errors": {
+    "crashMessage": "An error occurred. Please restart the application.",
+    "operationFailed": "Operation failed. Please try again.",
+    "streamStartFailed": "Stream could not start.",
+    "streamInterrupted": "Stream was interrupted.",
+    "ollamaConnectionLost": "Connection to Ollama lost",
+    "ollamaServerError": "Ollama server error",
+    "ollamaWaiting": "Connection to Ollama lost ({{seconds}}s) — reconnecting…",
+    "ollamaReconnected": "Ollama reconnected",
+    "ollamaReconnecting": "Ollama reconnected — retrying in {{seconds}}s…",
+    "keyringFailed": "Cannot access keyring. Install gnome-keyring or kwallet to store API keys.",
+    "ollamaRestartFailed": "Ollama restart failed",
+    "maxFiles": "Maximum {{max}} files",
+    "fileTooLarge": "{{name}} exceeds 20MB",
+    "saveFailed": "Save failed",
+    "projectRenameFailed": "Could not rename project",
+    "projectDeleteFailed": "Could not delete project",
+    "projectOpenFailed": "Could not open folder",
+    "sessionSaveFailed": "Session could not be saved",
+    "downloadFailed": "Download failed",
+    "updateFailed": "Update failed",
+    "apiKeyFailed": "Could not save key",
+    "apiKeyDeleteFailed": "Could not delete key",
+    "readError": "Could not read file",
+    "modelNotFound": "Model not found",
+    "rateLimited": "Too many requests, try again shortly",
+    "authFailed": "Authentication failed, check your API key",
+    "moonshotMembershipUnverified": "Moonshot cannot confirm an active Kimi Code membership.",
+    "xaiSubscriptionOrCreditsRequired": "xAI reports that a Grok subscription or credits are required.",
+    "providerAccessUnavailable": "The provider is currently refusing access to the model.",
+    "providerConnectionFailed": "Unable to connect to the provider.",
+    "providerTemporarilyUnavailable": "The provider is temporarily unavailable. Try again shortly.",
+    "providerRequestRejected": "The provider rejected the request.",
+    "providerConfigurationInvalid": "The request could not be prepared.",
+    "oauthReauthenticationRequired": "The OAuth connection has expired. Reconnect the provider.",
+    "toolFailed": "Tool failed",
+    "webToolFailed": "Web tool failed: {{message}}"
+  },
+  "updates": {
+    "tooltip": "Updates available",
+    "appUpdate": "Update",
+    "modelUpdate": "Update",
+    "version": "Version {{version}}",
+    "ollamaBinaryUpdate": "Update",
+    "forecastDevRuntime": "DEV · Runtime",
+    "forecastDevModel": "DEV · Model",
+    "forecastDevReview": "Review",
+    "releaseNotesTitle": "Version {{version}} release notes",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
+  },
+  "units": {
+    "gb": "GB"
+  },
+  "a11y": {
+    "close": "Close",
+    "minimize": "Minimize",
+    "maximize": "Maximize"
+  },
+  "wakeupFormat": {
+    "daily": "Daily",
+    "weekly": "Weekly"
+  },
+  "codex": {
+    "title": "GPT via Codex (dev)",
+    "description": "OAuth connection to ChatGPT for internal testing.",
+    "login": "Log in",
+    "logout": "Log out",
+    "loggedIn": "Connected",
+    "loggedOut": "Not connected",
+    "loggingIn": "Connecting…"
+  },
+  "agentImport": {
+    "title": "Import from your other assistants",
+    "description": "Choose each application separately. Skills and rules stay read-only in their original folders.",
+    "loading": "Looking for compatible configurations…",
+    "onboardingLater": "You can change these choices later in Settings > Advanced.",
+    "status": {
+      "detected": "Detected",
+      "empty": "No compatible content",
+      "missing": "Not detected",
+      "unavailable": "Access unavailable"
+    },
+    "card": {
+      "counts": "{{documents}} document(s) · {{rules}} rule(s) · {{skills}} skill(s)",
+      "migrated": "Migrated",
+      "active": "Migration active",
+      "activeCount": "{{count}} active item(s)",
+      "disabled": "Disabled"
+    },
+    "sections": {
+      "documents": "Global instructions",
+      "rules": "Rules",
+      "skills": "Skills"
+    },
+    "detail": {
+      "description": "Select exactly what Beaver may use.",
+      "selectedCount": "{{selected}} of {{total}} selected",
+      "searchSkills": "Search skills",
+      "partial": "Part of this configuration was skipped: a file is too large, a folder is inaccessible, or the scan limit was reached. The items shown remain ready to use.",
+      "updateAvailable": "A newer version is available.",
+      "imported": "Imported into Beaver",
+      "empty": "No compatible content was detected for this source."
+    },
+    "actions": {
+      "all": "All",
+      "none": "None",
+      "back": "Back to sources",
+      "confirmSource": "Confirm this source",
+      "confirmChanges": "Confirm changes",
+      "reactivate": "Reactivate this source",
+      "disable": "Disable",
+      "saving": "Saving…",
+      "rescan": "Scan again",
+      "retry": "Retry"
+    },
+    "conflict": {
+      "title": "A document already exists",
+      "description": "{{names}} already exists in Beaver.",
+      "keep": "Cancel",
+      "replace": "Replace with backup"
+    },
+    "messages": {
+      "saved": "Import configuration saved",
+      "scanFailed": "Sources cannot be scanned right now."
+    },
+    "settings": {
+      "title": "Import from other assistants",
+      "description": "Manage rules, instructions, and skills read from your other tools.",
+      "manage": "Manage"
+    }
+  },
+  "onboarding": {
+    "common": {
+      "back": "Back",
+      "continue": "Continue",
+      "skip": "Skip"
+    },
+    "welcome": {
+      "title": "Welcome to Beaver",
+      "description": "An AI assistant for working with local models or cloud providers, depending on what you prefer.",
+      "getStarted": "Get started"
+    },
+    "preferences": {
+      "title": "Customize Beaver",
+      "description": "Choose the theme and interface language before opening the app."
+    },
+    "api": {
+      "title": "Set up an LLM provider",
+      "description": "Add an API key to use cloud models. Only LLM providers are shown here.",
+      "loading": "Loading LLM providers…",
+      "keyLabel": "{{name}} API key",
+      "keyLabelFallback": "API key",
+      "keyPlaceholder": "Paste your API key",
+      "getKey": "Get a {{name}} key",
+      "saving": "Checking…"
+    }
+  },
+  "ollamaSetup": {
+    "title": "Ollama Setup",
+    "description": "Ollama lets you run AI models locally on your machine. You can also skip this step and use cloud providers.",
+    "download": "Download Ollama",
+    "downloading": "Downloading Ollama…",
+    "cancel": "Cancel",
+    "cancelling": "Cancelling…",
+    "skip": "Skip",
+    "skipping": "Skipping…",
+    "extracting": "Installing…",
+    "verifying": "Verifying…",
+    "starting": "Starting Ollama…",
+    "downloadingGpu": "Downloading GPU support…",
+    "error": "Installation failed. Details below."
+  },
+  "connectors": {
+    "main": {
+      "subtitle": "Allow LLMs to connect to other apps and services",
+      "browseBtn": "Browse connectors"
+    },
+    "sidebar": {
+      "configured": "Configured",
+      "empty": "No connector configured",
+      "loadError": "Unable to load connectors"
+    },
+    "detail": {
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "description": "Description",
+      "tools": "Available tools",
+      "author": "Author",
+      "website": "Website",
+      "openSite": "Open site",
+      "confirmDeleteBtn": "Delete",
+      "confirmDisconnectTitle": "Disconnect {{name}}?",
+      "confirmDisconnectDesc": "The LLM will no longer have access to {{name}} services.",
+      "confirmDisconnectBtn": "Disconnect",
+      "cancel": "Cancel"
+    },
+    "browse": {
+      "title": "Browse connectors",
+      "subtitle": "Add connectors to your instance.",
+      "search": "Search connectors…",
+      "empty": "No connector matches.",
+      "tabMcp": "MCP",
+      "tabPlugins": "Plugins",
+      "pluginsEmpty": "Coming soon",
+      "categories": {
+        "all": "All",
+        "productivity": "Productivity",
+        "design": "Design",
+        "devtools": "Dev Tools",
+        "communication": "Communication",
+        "ai-ml": "AI / ML",
+        "scraping": "Scraping",
+        "community": "Community"
+      }
+    },
+    "comingSoon": "Soon",
+    "localSecurityWarning": "A local MCP connector runs code with your user account permissions.",
+    "config": {
+      "addTitle": "Add {{name}}",
+      "token": "Token",
+      "tokenPlaceholder": "Paste your token here",
+      "testing": "Testing…",
+      "testOk": "Connector validated.",
+      "addAndTest": "Add and test",
+      "testError": "Unable to validate the connector. Check the token and try again.",
+      "cancel": "Cancel",
+      "confirmAddDesc": "Add {{name}} to your connectors?",
+      "confirmAddBtn": "Add"
+    },
+    "oauth": {
+      "title": "Authentication in progress",
+      "discovering": "Connecting to server…",
+      "message": "Complete the connection steps in your browser.",
+      "testing": "Validating connector…",
+      "retry": "Didn't work? Retry.",
+      "cancel": "Cancel",
+      "successTitle": "Connection successful",
+      "successMessage": "The connector has been added successfully.",
+      "errorGeneric": "Connection failed. Please try again."
+    }
+  },
+  "linkPreview": {
+    "noTitle": "No title",
+    "openSite": "Open website"
+  },
+  "chatMenu": {
+    "plusButtonHint": "Add files and more",
+    "addFile": "Add an image or file",
+    "planMode": "Plan mode",
+    "planModeDesc": "Prepare a plan",
+    "disablePlanMode": "Disable Plan mode",
+    "connectors": "Connectors",
+    "plugins": "Plugins",
+    "noConnectors": "No connectors",
+    "pluginsEmpty": "Coming soon"
+  },
+  "vision": {
+    "unsupportedModel": "Vision is not supported by this model"
+  },
+  "subagents": {
+    "backgroundCount_one": "{{count}} active subagent",
+    "backgroundCount_other": "{{count}} active subagents",
+    "stopAll": "Stop all",
+    "running": "running...",
+    "stop": "Stop",
+    "open": "Open",
+    "bubbleLabel_one": "Subagent: {{count}} agent created",
+    "bubbleLabel_other": "Subagents: {{count}} agents created",
+    "completed": "completed",
+    "failed": "failed",
+    "cancelled": "cancelled",
+    "interrupted": "interrupted"
+  },
+  "todos": {
+    "progress": "{{done}}/{{total}} tasks",
+    "noActive": "Todo complete",
+    "status": {
+      "pending": "pending",
+      "in_progress": "in progress",
+      "completed": "completed"
+    }
+  },
+  "interactiveChoice": {
+    "title": "Interactive choice",
+    "step": "{{current}}/{{total}}",
+    "recommended": "Recommended",
+    "otherLabel": "Other",
+    "other": "Other answer",
+    "otherPlaceholder": "Write your answer",
+    "inputLocked": "Answer the question above"
+  },
+  "forecast": {
+    "chart": {
+      "resetZoom": "Reset zoom",
+      "forecastStart": "Forecast start"
+    },
+    "chartCard": {
+      "main": "Main chart",
+      "fan": "Zoomed horizon",
+      "seasonality": "Seasonality",
+      "reliability": "Backtest error (sMAPE)",
+      "withSeries": "{{title}} — {{series}}",
+      "collapse": "Collapse card",
+      "expand": "Expand card"
+    },
+    "companion": {
+      "mean": "mean",
+      "insufficientData": "Not enough data for this chart.",
+      "indexBase": "Index (first month = 100)",
+      "showAll": "All",
+      "showNone": "None"
+    },
+    "zoomJump": {
+      "goTo": "Jump to position {{index}} of {{count}}",
+      "label": "Zoom jumps"
+    },
+    "title": "Forecast",
+    "noAnalysis": "No analysis in progress",
+    "selection": {
+      "label": "Selection",
+      "manual": "Manual",
+      "auto": "Auto",
+      "allowCloud": "Allow cloud models",
+      "loadFailed": "Unable to load the Forecast selection.",
+      "saveFailed": "Unable to save the Forecast selection."
+    },
+    "workbench": {
+      "windowTitle": "Forecast workspace",
+      "navigation": "Forecast workspaces",
+      "open": "Open Forecast workspace",
+      "openFailed": "Unable to open the Forecast workspace.",
+      "syncFailed": "Unable to update the Forecast workspace.",
+      "loading": "Loading Forecast workspace…",
+      "unavailable": "The Forecast context is unavailable.",
+      "draftSaveFailed": "Unable to save the Forecast workspace changes.",
+      "newAnalysis": "New analysis",
+      "workspace": "Workspace",
+      "sections": {
+        "data": "Data",
+        "forecast": "Forecast",
+        "evaluation": "Evaluation",
+        "comparison": "Comparison",
+        "scenarios": "Scenarios",
+        "notes": "Notes",
+        "report": "Report"
+      },
+      "sectionDescriptions": {
+        "data": "Inspect the data, its mapping, and quality checks.",
+        "forecast": "Review the complete forecast and its available layers.",
+        "evaluation": "Measure models with baselines and temporal validation.",
+        "comparison": "Compare model quality, speed, and constraints.",
+        "scenarios": "Create and edit assumptions without losing the reference forecast.",
+        "notes": "Create, organize, and review notes linked to this forecast.",
+        "report": "Collect provenance, notes, and advanced exports."
+      },
+      "data": {
+        "loadFailed": "Unable to load the analysis data.",
+        "rows": "Source rows",
+        "historyPoints": "Historical points",
+        "futureRows": "Future rows",
+        "series": "Series",
+        "missingPeriods": "Missing periods",
+        "outliers": "Outliers",
+        "target": "Target",
+        "date": "Date",
+        "frequency": "Frequency",
+        "covariates": "External variables",
+        "none": "None",
+        "quality": "Data quality",
+        "valid": "Data validated",
+        "notAvailable": "Quality check unavailable for this legacy analysis",
+        "needsAttention": "Attention required",
+        "issueError": "Blocking error",
+        "issueWarning": "Warning",
+        "preview": "Data preview",
+        "rowsDisplayed": "{{shown}} of {{total}} rows",
+        "noRows": "No rows are available for this analysis.",
+        "previewLimited": "The preview is limited to the first 200 rows."
+      },
+      "evaluation": {
+        "loading": "Loading evaluations…",
+        "loadFailed": "Unable to load Forecast evaluations.",
+        "runFailed": "Unable to complete the Forecast backtest.",
+        "run": "Run backtest",
+        "running": "Backtest running…",
+        "rollingBacktest": "Rolling temporal validation",
+        "summary": "{{windows}} windows · horizon {{horizon}}",
+        "notRun": "No backtest has been run",
+        "model": "Model",
+        "coverage": "Coverage",
+        "duration": "Duration",
+        "status": "Result",
+        "baseline": "Baseline",
+        "modelKind": "Forecast model",
+        "current": "current",
+        "reference": "Reference",
+        "beatsBaseline": "Beats the baseline",
+        "missesBaseline": "Does not beat the baseline",
+        "noAnalysis": "No analysis to evaluate",
+        "noAnalysisDescription": "Run a forecast from the conversation first.",
+        "emptyTitle": "Comparable results will appear here",
+        "emptyEvaluation": "The backtest compares the current model with four baselines without training on future data.",
+        "emptyComparison": "Run a backtest in Evaluation to obtain a reliable ranking.",
+        "createEnsemble": "Create ensemble", "ensembleRunning": "Creating ensemble…",
+        "ensembleFailed": "Unable to create the model ensemble.",
+        "ensembleReady": "Ensemble created from {{count}} backtested models. The combination still requires separate validation.",
+        "baselines": {"naive": "Naive", "seasonal_naive": "Seasonal Naive", "drift": "Drift", "ets": "ETS"},
+        "warnings": {
+          "history": "Insufficient history",
+          "cloud": "Cloud service not configured",
+          "notInstalled": "Model not installed",
+          "resources": "Insufficient resources",
+          "execution": "Incomplete evaluation",
+          "unavailable": "Result unavailable"
+        },
+        "planWarnings": {
+          "short_history": "Fewer than three windows are available; interpret the ranking cautiously.",
+          "reduced_horizon": "The evaluation horizon was reduced to keep valid temporal windows.",
+          "unavailable": "This evaluation has limited reliability."
+        }
+      }
+    },
+    "docs": {
+      "windowTitle": "Forecast documentation",
+      "openFailed": "Unable to open Forecast documentation.",
+      "kicker": "Technical documentation",
+      "status": "Forecast guide",
+      "navLabel": "Forecast documentation",
+      "openTooltip": "Open Forecast documentation",
+      "nav": {
+        "overview": "Overview",
+        "datasets": "Datasets",
+        "models": "Models",
+        "predictions": "Forecasts",
+        "uncertainty": "Uncertainty",
+        "covariates": "Covariates",
+        "multiseries": "Multi-series",
+        "scenarios": "Scenarios",
+        "agentWorkflows": "LLM agents",
+        "toolContracts": "Forecast tools",
+        "troubleshooting": "Diagnostics",
+        "limits": "Limits"
+      }
+    },
+    "askAgent": "Ask the agent",
+    "importFile": "Import file (CSV, Excel)",
+    "pasteData": "Paste data",
+    "fromUrl": "From URL",
+    "recentAnalyses": "Recent analyses",
+    "comingSoon": "Coming soon",
+    "panelMode": {
+      "title": "Panel mode",
+      "preview": "File preview",
+      "forecast": "Forecast"
+    },
+    "nav": {
+      "mainView": "Main view",
+      "scenarios": "Scenarios",
+      "comparisons": "Comparisons",
+      "notes": "Notes",
+      "history": "History"
+    },
+    "history": {
+      "searchPlaceholder": "Search…",
+      "empty": "No saved analysis.",
+      "points_one": "{{count}} point",
+      "points_other": "{{count}} points",
+      "horizonShort": "Horizon {{count}}",
+      "mapeShort": "MAPE {{value}}%",
+      "edit": "Rename",
+      "delete": "Delete",
+      "validate": "Confirm",
+      "cancel": "Cancel",
+      "renameFailed": "Could not rename the analysis.",
+      "deleteFailed": "Could not delete the analysis."
+    },
+    "view": {
+      "period": "Period",
+      "detailedPredictions": "Detailed predictions",
+      "series": "Series",
+      "historySeries": "History",
+      "forecastSeries": "Forecast",
+      "confidenceRange": "Confidence range",
+      "ensembleSeries": "Weighted ensemble",
+      "filters": {
+        "button": "Filters",
+        "series": "Series",
+        "uncertainty": "Uncertainty",
+        "scenarios": "Scenarios",
+        "variables": "Variables",
+        "events": "Events",
+        "comparisons": "Comparisons",
+        "anomalies": "Anomalies",
+        "quality": "Quality",
+        "history": "History",
+        "forecast": "Forecast",
+        "confidence": "Confidence range",
+        "annotations": "Annotations",
+        "residualAnomalies": "Residual anomalies",
+        "dataQualityIssues": "Data quality alerts",
+        "noScenarioLayers": "No scenario layer is available for this analysis.",
+        "noVariableLayers": "No displayable variable is available for this analysis.",
+        "noLayersYet": "No layer is available yet."
+      }
+    },
+    "scenarios": {
+      "name": "Scenario name",
+      "description": "Optional description",
+      "adjustment": "Percent adjustment",
+      "percentType": "Global adjustment",
+      "contextType": "Context",
+      "seriesScope": "Target series",
+      "allSeries": "All series",
+      "percentMode": "%",
+      "absoluteMode": "Value",
+      "contextValue": "Context value",
+      "removeContext": "Remove variable",
+      "addContext": "Add variable",
+      "contextSummary_one": "Context {{count}} variable",
+      "contextSummary_other": "Context {{count}} variables",
+      "launch": "Run scenario",
+      "relaunch": "Rerun scenario",
+      "percentHint": "Creates a derived curve from the current forecast without rerunning the model.",
+      "contextHint": "Reruns the model with the new future values for the selected variables.",
+      "preview": "Preview",
+      "update": "Update",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Confirm deletion",
+      "togglePredictions": "Show predictions",
+      "predictions": "Predictions",
+      "noPredictions": "No prediction available.",
+      "saving": "Saving…",
+      "empty": "No scenario for this analysis.",
+      "emptySub": "Add an assumption to compare against the main forecast.",
+      "points_one": "{{count}} point",
+      "points_other": "{{count}} points",
+      "loadFailed": "Unable to load scenarios.",
+      "saveFailed": "Unable to save scenario.",
+      "updateFailed": "Unable to update scenario.",
+      "deleteFailed": "Unable to delete scenario."
+    },
+    "comparisons": {
+      "series": "Series",
+      "scenarioMeta": "Scenario",
+      "forecastMeta": "{{model}} · H{{horizon}}",
+      "base": "Reference",
+      "diff": "Diff",
+      "delta": "Delta",
+      "averageDelta": "Average delta",
+      "maxDelta": "Max delta",
+      "averageDeltaPct": "Average delta %",
+      "direction": "Direction",
+      "higher": "Higher",
+      "lower": "Lower",
+      "mixed": "Mixed",
+      "empty": "No comparison available.",
+      "emptySub": "Create a scenario or a compatible forecast to compare curves.",
+      "loadFailed": "Unable to load comparisons."
+    },
+    "notes": {
+      "open": "Open note",
+      "edit": "Edit",
+      "delete": "Delete",
+      "timeline": "Annotated timeline",
+      "timelineEmpty": "No note placed on this forecast.",
+      "count_one": "{{count}} note",
+      "count_other": "{{count}} notes",
+      "new": "New note",
+      "userSource": "User",
+      "llmSource": "LLM",
+      "sources": {
+        "user": "User",
+        "llm": "LLM"
+      },
+      "types": {
+        "context": "Context",
+        "risk": "Risk",
+        "decision": "Decision",
+        "anomaly": "Anomaly",
+        "hypothesis": "Hypothesis"
+      },
+      "empty": "No note yet.",
+      "selectNote": "Select a note or create a new one.",
+      "titlePlaceholder": "Note title",
+      "datePlaceholder": "Date",
+      "contentPlaceholder": "Markdown note content",
+      "save": "Save",
+      "saving": "Saving",
+      "cancel": "Cancel",
+      "confirmDelete": "Confirm deletion",
+      "loadFailed": "Unable to load notes.",
+      "saveFailed": "Unable to save note.",
+      "deleteFailed": "Unable to delete note.",
+      "openFailed": "Unable to open note."
+    },
+    "analysis": {
+      "loadFailed": "Unable to load analysis.",
+      "series": "Series",
+      "trend": "Trend",
+      "trendSub": "General forecast reading.",
+      "uncertainty": "Uncertainty",
+      "uncertaintySub": "Confidence range amplitude.",
+      "highlights": "Highlights",
+      "highlightsSub": "Important values and movements.",
+      "anomalies": "Anomalies",
+      "anomaliesSub": "Unusual deviations measured on residuals.",
+      "variables": "Variables",
+      "variablesSub": "Impact verified by chronological permutation.",
+      "direction": "Direction",
+      "totalChange": "Total change",
+      "startValue": "Start",
+      "endValue": "End",
+      "rising": "Rising",
+      "falling": "Falling",
+      "stable": "Stable",
+      "averageRange": "Average range",
+      "maxRange": "Max range",
+      "maxRangePeriod": "Max period",
+      "highestPoint": "Highest point",
+      "lowestPoint": "Lowest point",
+      "strongestRise": "Strongest rise",
+      "strongestDrop": "Strongest drop",
+      "unusualPoint": "Unusual point",
+      "noHighlights": "No highlight detected.",
+      "noAnomalies": "No residual anomaly detected.",
+      "noVariables": "Importance unavailable or insufficient data.",
+      "decomposition": "Decomposition",
+      "decompositionSub": "Trend, seasonality and residuals separated.",
+      "drift": "Drift",
+      "driftSub": "Change between the reference history and the recent period.",
+      "noDecomposition": "Insufficient history for decomposition.",
+      "noDriftData": "Insufficient history to measure drift.",
+      "decompositionMethod": "Method",
+      "seasonalPeriod": "Seasonal period",
+      "seasonalStrength": "Seasonal strength",
+      "notDetected": "Not detected",
+      "notAvailable": "Unavailable",
+      "residualAnomaly": "Residual anomaly",
+      "residualAnomalyMeta": "{{date}} · score {{score}}",
+      "variableImportanceValue": "{{value}}% · {{direction}}",
+      "variableDirection": {"positive": "positive", "negative": "negative", "neutral": "neutral"},
+      "driftStatus": "Status",
+      "driftDetected": "Drift detected",
+      "driftStable": "Stable",
+      "driftScore": "Drift score",
+      "distributionShift": "Distribution shift",
+      "methods": {"classical_additive": "Classical additive", "moving_average_trend": "Moving average"},
+      "variableRange": "{{min}} → {{max}}"
+    },
+    "config": {
+      "title": "Configuration",
+      "back": "Back",
+      "dataPhases": "Data phases",
+      "historyRows": "History",
+      "futureRows": "Known future",
+      "seriesCount": "Series",
+      "selectedContext": "Selected context",
+      "detectedFutureContext": "Detected future context",
+      "futureContextColumns": "Detected future context columns",
+      "target": "Target",
+      "dateColumn": "Date column",
+      "seriesColumn": "Series column",
+      "noSeriesColumn": "No series column",
+      "covariates": "Covariates",
+      "frequency": "Frequency",
+      "horizon": "Horizon",
+      "confidence": "Confidence",
+      "model": "Model",
+      "launch": "Launch forecast",
+      "launching": "Calculating…",
+      "rows_one": "{{count}} row",
+      "rows_other": "{{count}} rows",
+      "validation": {
+        "horizonTooLong": "The horizon exceeds this model's limit ({{max}}).",
+        "futureRowsMismatch": "The number of known future rows must match the selected horizon.",
+        "futureRowsPerSeriesMismatch": "Each series must have the same number of known future rows.",
+        "contextUnsupported": "The selected model does not support context variables.",
+        "futureContextUnsupported": "The selected model does not support known future context."
+      },
+      "messages": {
+        "futureRowsMismatchTitle": "Horizon mismatch",
+        "futureRowsMismatchBody": "{{future}} known future rows were detected, but the current horizon is {{horizon}}.",
+        "futureRowsPerSeriesMismatchTitle": "Incomplete series",
+        "futureRowsPerSeriesMismatchBody": "The series do not all have the same number of known future rows.",
+        "contextUnsupportedTitle": "Context unavailable",
+        "contextUnsupportedBody": "The selected covariates will not be used with this model.",
+        "futureContextUnsupportedTitle": "Future context unavailable",
+        "futureContextUnsupportedBody": "This model reads the main history, but does not use future-known covariate values.",
+        "futureContextReadyTitle": "Future context ready",
+        "futureContextReadyBody": "{{count}} selected column(s) already contain values on known future rows.",
+        "futureContextMissingTitle": "Future context incomplete",
+        "futureContextMissingBody": "Known future rows exist, but none of the selected covariates has usable values there yet.",
+        "addFutureRowsTitle": "Future context available",
+        "addFutureRowsBody": "Append rows without the target at the end of the file to provide known future values to this model.",
+        "futureDatesOnlyTitle": "Future dates only",
+        "futureDatesOnlyBody": "Known future rows will mostly be used to set output dates while no covariate is selected."
+      }
+    },
+    "frequency": {
+      "D": "Day",
+      "B": "Business day",
+      "W": "Week",
+      "M": "Month",
+      "Q": "Quarter",
+      "Y": "Year",
+      "H": "Hour",
+      "T": "Minute"
+    },
+    "errors": {
+      "importFailed": "Import failed. Check the file format.",
+      "launchFailed": "The calculation failed. Check the columns, model, and API key."
+    },
+    "modelConfig": {
+      "sidebarTitle": "Config",
+      "title": "Configuration",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "noModel": "No Forecast model is installed or configured.",
+      "inherited": "Inherited",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "params": {
+        "horizon_max_override": {
+          "label": "Horizon limit",
+          "description": "Maximum number of future points this model may forecast in one call. Example: daily data with 31 means 31 days; hourly data with 24 means 24 hours. Empty or 0 keeps the native model limit."
+        },
+        "context_length": {
+          "label": "History length",
+          "description": "Number of past points given to the model to learn trend, seasonality and breaks. Higher uses more history, but can slow down and dilute recent changes."
+        },
+        "quantiles": {
+          "label": "Quantiles",
+          "description": "Probabilistic levels returned by the model. 0.5 is the central forecast; 0.1 and 0.9 form the lower/upper uncertainty range. A wider range means higher uncertainty."
+        },
+        "precision": {
+          "label": "Precision",
+          "description": "Numeric format used locally. auto lets the engine choose; float32 favors stability; float16/bfloat16 save RAM/VRAM when supported."
+        },
+        "dtype": {
+          "label": "Numeric type",
+          "description": "Numeric type used during inference. auto is recommended; float32 is safer; float16/bfloat16 can be faster and lighter but are not supported everywhere."
+        },
+        "batch_size": {
+          "label": "Batch size",
+          "description": "Number of series processed together. Increasing can speed up large datasets but uses more RAM/VRAM; lower it if the model runs out of memory."
+        },
+        "horizon_len": {
+          "label": "Internal horizon",
+          "description": "Internal output length for engines that separate requested horizon from computed horizon. Keep default unless long horizons are refused or under-produced."
+        },
+        "prediction_length": {
+          "label": "Prediction length",
+          "description": "Number of future steps generated by engines exposing this setting. It must match the requested horizon: too low cuts the forecast, too high wastes compute."
+        },
+        "confidence_level": {
+          "label": "Confidence",
+          "description": "Requested uncertainty interval width. 0.9 means 90%: wider and more conservative; 0.8 is tighter but less cautious."
+        },
+        "level": {
+          "label": "Level",
+          "description": "Interval level sent to TimeGPT. Example: 90 requests a 90% confidence range. Higher levels display wider ranges."
+        },
+        "normalization": {
+          "label": "Normalization",
+          "description": "Stabilizes the scale of series before forecasting. Useful when values vary by large orders of magnitude; disable only when raw scale is meaningful signal."
+        },
+        "quantile_head": {
+          "label": "Quantile head",
+          "description": "Enables the native probabilistic head when the model has one. Use it when you need a real uncertainty range, not only a central line."
+        },
+        "xreg_mode": {
+          "label": "XReg",
+          "description": "Controls how external variables such as weather, traffic or holidays are used. auto lets the engine decide; disabling returns closer to target-only forecasting."
+        },
+        "clean_ex_first": {
+          "label": "Clean exogenous",
+          "description": "Asks TimeGPT to clean external variables before inference. Useful when covariates have gaps or outliers, but adds latency."
+        },
+        "finetune_steps": {
+          "label": "Finetune steps",
+          "description": "Small adaptation steps on the current dataset. More steps can fit history better, but take longer and may overfit short histories."
+        },
+        "finetune_loss": {
+          "label": "Finetune loss",
+          "description": "Optimization objective used during TimeGPT adaptation. Keep default unless you know how you want errors penalized."
+        },
+        "finetune_depth": {
+          "label": "Finetune depth",
+          "description": "Strength of TimeGPT adaptation. Low is light tuning; high adapts more strongly but is riskier on small histories."
+        },
+        "feature_contributions": {
+          "label": "Contributions",
+          "description": "Requests estimated impact of external variables. Useful to explain a forecast, but can slow calls or be unavailable depending on the service."
+        },
+        "decode_block_size": {
+          "label": "Decode block",
+          "description": "Number of future points generated per Toto block. Larger can speed long horizons but uses more memory; smaller is safer on limited machines."
+        },
+        "has_missing_values": {
+          "label": "Missing values",
+          "description": "Tells the engine that history contains missing values. Enable only when the dataset has gaps; otherwise leave it off to avoid unnecessary handling."
+        },
+        "non_negative_output": {
+          "label": "Positive output",
+          "description": "Prevents negative forecasts or lower bounds. Enable for sales, revenue, volume, stock or any metric that cannot go below zero."
+        },
+        "target_dim": {
+          "label": "Target dimension",
+          "description": "Number of target dimensions predicted together by MOIRAI. 1 means one target; increase only for real multi-dimensional datasets."
+        },
+        "feat_dynamic_real_dim": {
+          "label": "Future variables",
+          "description": "Number of known future numeric variables given to MOIRAI, such as planned weather, calendar or promotions. Must match the actual future columns."
+        },
+        "past_feat_dynamic_real_dim": {
+          "label": "Past variables",
+          "description": "Number of historical numeric variables given to MOIRAI. Explains the past; it does not replace known future variables."
+        },
+        "scale_factor": {
+          "label": "Scale factor",
+          "description": "Adjusts FlowState internal amplitude. Keep default unless outputs are systematically too low or too high."
+        },
+        "batch_first": {
+          "label": "Batch first",
+          "description": "Dimension order expected by some PyTorch engines. Change only if the model reports a shape/order error."
+        },
+        "known_future_covariates": {
+          "label": "Future covariates",
+          "description": "Allows using variables already known in the future: holidays, planned prices, weather forecasts or campaigns. Enable when these columns are filled in the future zone."
+        },
+        "local_mode": {
+          "label": "Local mode",
+          "description": "Forces local execution when the engine supports several modes. Keep enabled to avoid external calls and keep data on the machine."
+        },
+        "probabilistic_output": {
+          "label": "Probabilistic output",
+          "description": "Requests uncertainty bounds or multiple paths instead of one central value. Useful for risk, but can take longer."
+        },
+        "backend": {
+          "label": "Backend",
+          "description": "Internal backend used by the adapter. auto picks the best available; change mainly for diagnostics or to force CPU/GPU support."
+        },
+        "output_type": {
+          "label": "Output type",
+          "description": "Chooses central forecast or forecast with quantiles/uncertainty. Use quantiles when you want a confidence range."
+        },
+        "frequency_resampling": {
+          "label": "Resampling",
+          "description": "Controls whether dates are regularized before forecasting. Useful when dates are missing; risky when gaps are meaningful."
+        },
+        "preserve_positivity": {
+          "label": "Preserve positivity",
+          "description": "Asks Kairos to keep outputs positive. Enable for metrics that cannot be negative, such as revenue, orders, traffic or volume."
+        },
+        "average_with_flipped_input": {
+          "label": "Flipped input",
+          "description": "Runs Kairos on a reversed input too and averages results. Can stabilize the curve, but adds compute time."
+        },
+        "generation": {
+          "label": "Generation",
+          "description": "Enables the engine generative mode when available. Useful for richer trajectories; keep default for classic forecasting."
+        },
+        "num_samples": {
+          "label": "Samples",
+          "description": "Number of simulated paths used to estimate quantiles. Higher is more stable but slower."
+        },
+        "device": {
+          "label": "Device",
+          "description": "Default hardware inherited from Settings > Advanced. auto lets the app choose; GPU accelerates if available; CPU is slower but more compatible."
+        },
+        "model_unload_timeout": {
+          "label": "Unload timeout",
+          "description": "How long the model stays loaded after use, inherited from Settings > Advanced. Longer avoids reloads; shorter frees memory sooner."
+        }
+      }
+    },
+    "models": {
+      "title": "Forecast models",
+      "sidebarTitle": "Models",
+      "modelCapabilities": "Model capabilities",
+      "engine": "Engine used",
+      "install": "Install",
+      "prepare": "Prepare",
+      "installed": "Installed",
+      "preparationRequired": "Preparation required",
+      "updateRequired": "Update required",
+      "uninstall": "Uninstall",
+      "confirmUninstall": "Confirm uninstall",
+      "uninstalling": "Uninstalling…",
+      "cancel": "Cancel",
+      "parameters": "Parameters",
+      "diskSize": "Disk size",
+      "ram": "RAM",
+      "cpuLabel": "CPU",
+      "gpuLabel": "GPU",
+      "licenseLabel": "License",
+      "libraryLabel": "Library",
+      "pipelineLabel": "Pipeline",
+      "supported": "Supported",
+      "unsupported": "Unsupported",
+      "uninstalled": "Not installed",
+      "horizonMax": "Max horizon",
+      "frequencies": "Frequencies",
+      "status": "Status",
+      "cloud": "Cloud (key required)",
+      "noKeyConfigured": "API key not configured",
+      "noneAvailable": "No model is available for this launch.",
+      "hardware": {
+        "light": "Light hardware",
+        "balanced": "Balanced hardware",
+        "heavy": "Powerful hardware",
+        "remote": "Remote processing"
+      },
+      "engines": {
+        "localChronosBolt": "Local Chronos-Bolt",
+        "localChronos2": "Local Chronos-2",
+        "localPackage": "Local package",
+        "cloudApi": "Cloud API"
+      },
+      "capabilities": {
+        "context": "Context variables",
+        "futureContext": "Future context",
+        "multiSeries": "Independent multi-series",
+        "multivariate": "Joint multivariate",
+        "probabilistic": "Probabilistic forecast",
+        "backtesting": "Backtesting"
+      }
+    },
+    "export": {
+      "title": "Export",
+      "csv": "CSV",
+      "excel": "Excel (.xlsx)",
+      "png": "PNG",
+      "svg": "SVG",
+      "json": "JSON",
+      "pdf": "PDF (report)",
+      "clipboard": "Copy (clipboard)",
+      "saved": "Export saved",
+      "copied": "Export copied",
+      "failed": "Export failed"
+    }
+  }
+}

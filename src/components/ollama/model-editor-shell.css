@@ -1,0 +1,110 @@
+/* Shared centered layout for Ollama model editors. */
+
+.mes-page {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--chrome-5);
+}
+
+.mes-inner {
+  width: 100%;
+  max-width: var(--settings-content-max-width);
+  margin: 0 auto;
+}
+
+.mes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.mes-title {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+.mes-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+}
+
+.mes-card {
+  overflow: hidden;
+}
+
+.mes-page-fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.mes-page-fill .mes-inner {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mes-page-fill .mes-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: var(--settings-editor-min-height);
+}
+
+.mes-error {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--edge);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+  font-size: var(--text-xs);
+}
+
+.mes-textarea {
+  display: block;
+  width: 100%;
+  min-height: var(--settings-editor-min-height);
+  padding: var(--space-md);
+  resize: vertical;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+}
+
+.mes-page-fill .mes-textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+}
+
+.mfed-textarea {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.sped-textarea {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .mes-page {
+    padding: var(--space-md);
+  }
+
+  .mes-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

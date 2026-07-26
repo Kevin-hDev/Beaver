@@ -1,0 +1,65 @@
+.eb-root {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-sm);
+  border: 0.5px solid var(--tooltip-border);
+  border-radius: 20px; /* intentional: speech-bubble shape */
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.eb-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.eb-message {
+  color: var(--ink);
+}
+
+.eb-diagnostic {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+/* Retry action — thin alias of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry; keeps its ghost look. */
+.eb-retry {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.eb-retry:hover,
+.eb-retry:focus-visible {
+  background: var(--select-bg);
+  color: var(--ink);
+  outline: none;
+}
+
+[data-theme="light"] .eb-root {
+  background: var(--chat-composer-bg);
+}
+
+[data-theme="dark"] .eb-root {
+  background: var(--surface-glass);
+}

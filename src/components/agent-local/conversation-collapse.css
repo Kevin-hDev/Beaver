@@ -1,0 +1,42 @@
+.conv-collapse-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    grid-template-rows 400ms ease,
+    opacity 400ms ease,
+    transform 400ms ease;
+}
+
+.conv-collapse-panel-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.conv-collapse-content {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.conv-section-toggle,
+.conv-project-header,
+.conv-project-wrapper,
+.conv-project-actions,
+.conv-folder-icon {
+  transition-duration: 400ms;
+}
+
+.conv-collapse-chevron {
+  transition:
+    transform 400ms ease,
+    color 400ms ease;
+}
+
+.conv-folder-icon {
+  transition:
+    color 400ms ease,
+    opacity 400ms ease,
+    transform 400ms ease;
+}

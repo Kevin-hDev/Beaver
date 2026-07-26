@@ -1,0 +1,13 @@
+.ms-item-disabled {
+  cursor: not-allowed;
+  color: var(--ink-faint);
+}
+
+.ms-item-disabled:hover,
+.ms-item-disabled[data-local-nav-active="true"] {
+  background: transparent;
+}
+
+.ms-item-disabled .ms-star {
+  visibility: hidden;
+}

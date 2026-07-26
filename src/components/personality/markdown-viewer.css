@@ -1,0 +1,31 @@
+.md-header {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.md-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.md-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+.md-scroll .markdown-body {
+  --bgColor-default: transparent;
+  --bgColor-muted: var(--surface-hover);
+  --fgColor-default: var(--ink);
+  --fgColor-muted: var(--ink-muted);
+  --borderColor-default: var(--edge);
+  --borderColor-muted: var(--edge);
+  max-width: 700px;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-sm);
+}

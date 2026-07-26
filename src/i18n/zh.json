@@ -1,0 +1,1922 @@
+{
+  "nav": {
+    "heartbeat": "Heartbeat",
+    "personality": "/beaver",
+    "settings": "设置",
+    "agentLocal": "会话"
+  },
+  "common": {
+    "delete": "删除",
+    "loading": "加载中…"
+  },
+  "providers": {
+    "tabs": { "apiKeys": "API 密钥", "oauth": "OAuth" },
+    "oauth": {
+      "title": "OAuth 连接", "openCatalog": "提供商", "catalogTitle": "OAuth 提供商",
+      "catalogSubtitle": "原生网页登录，无需安装。", "connected": "已连接",
+      "emptySidebar": "没有 OAuth 连接", "empty": "未选择 OAuth 提供商",
+      "connectionLabel": "连接", "nativeConnection": "原生网页 — 无需安装", "experimental": "实验性 / 非官方", "connect": "连接", "disconnect": "断开连接", "cancel": "取消",
+      "progress": { "waiting": "等待登录…", "verification": "需要验证", "success": "已连接", "cancelled": "登录已取消", "error": "无法连接" },
+      "successMessage": "提供商连接成功。", "retryCatalog": "重试",
+      "issues": { "moonshotMembershipUnverified": "登录成功，但 Moonshot 无法确认有效的 Kimi Code 订阅。请检查订阅后重试。", "xaiSubscriptionOrCreditsRequired": "xAI 表示缺少 Grok 订阅或所需额度已用尽。", "reauthenticationRequired": "连接已过期。请重新连接此提供商。", "rateLimited": "模型目录暂时受到限流。请稍后重试。", "accessUnavailable": "提供商当前拒绝访问模型目录。", "catalogUnavailable": "模型目录暂时不可用。" },
+      "deviceInstructions": "请在浏览器中打开的页面上输入此代码。", "codeLabel": "登录代码", "copyCode": "复制代码", "openVerification": "重新打开登录页面",
+      "descriptions": { "openai": "通过 Codex 使用 ChatGPT", "moonshot": "Kimi 原生网页登录，无需客户端", "xai": "Grok 原生网页登录，无需客户端" }
+    },
+    "usage": {
+      "providerTitle": "提供商限制与额度", "generalLimitsTitle": "常规使用限制", "namedLimitsTitle": "{{name}} 使用限制", "localTitle": "Beaver 中的用量", "refresh": "刷新", "remoteUnavailable": "账户用量数据不可用", "remainingPercent": "剩余 {{value}}%", "updated": "已更新", "stale": "较早的数据", "resetsAt": "重置时间：{{date}}", "openProviderSite": "前往提供商查看", "periodLabel": "时间范围", "historyEmpty": "尚无用量记录", "requests": "请求次数", "inputTokens": "输入 Token", "outputTokens": "输出 Token", "cachedTokens": "缓存 Token", "reasoningTokens": "推理 Token", "totalTokens": "Token 总数", "cost": "费用", "byOrigin": "按来源", "byWorkload": "按工作类型",
+      "periods": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "all_time": "全部" }, "quality": { "exact": "精确", "estimated": "估算", "partial": "部分", "unavailable": "不可用" }, "origins": { "manual_chat": "手动聊天", "external_channel": "外部频道", "automation": "自动化" }, "workloads": { "primary": "主要", "subagent": "子代理", "compression": "压缩" },
+      "windows": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "key_limit": "密钥限制", "requests_day": "每日请求", "tokens_minute": "每分钟 Token", "requests_limit": "请求限制", "tokens_limit": "Token 限制", "rolling_five_hours": "5 小时窗口", "weekly": "每周限制", "provider_limit": "提供商限制" }, "balances": { "remaining_credits": "剩余额度", "available_balance": "可用余额", "voucher_balance": "代金券余额", "cash_balance": "现金余额", "reset_credits": "重置额度", "extra_usage_balance": "Extra Usage 余额", "extra_usage_monthly_limit": "Extra Usage 每月限额", "extra_usage_monthly_used": "本月已用 Extra Usage" }, "notices": { "usage_fetch_failed": "无法刷新提供商数据。近期有效数据仍会保留显示。", "provider_usage_site_only": "xAI 未公开这些限制的访问方式。本地用量仍可查看。", "provider_account_usage_unavailable": "此提供商未针对该连接公开账户限制。" }
+    }
+  },
+  "apiKeys": {
+    "main": {
+      "title": "API 密钥",
+      "connectorsBtn": "API 连接器"
+    },
+    "sidebar": {
+      "configured": "已配置",
+      "empty": "暂无已配置的提供商"
+    },
+    "empty": {
+      "title": "暂无已配置的提供商",
+      "subtitle": "添加 API 密钥以访问远程 LLM（Groq、Gemini、Mistral…）或网络搜索服务（Brave、Exa、Firecrawl）。"
+    },
+    "details": {
+      "connected": "已连接",
+      "edit": "编辑",
+      "delete": "删除",
+      "freeTier": "免费套餐",
+      "signupLink": "官网",
+      "openSite": "打开网站",
+      "quota": "配额",
+      "quotaUnavailable": "不可用",
+      "apiKey": "API 密钥",
+      "confirmDelete": "确认删除"
+    },
+    "dialog": {
+      "addTitle": "添加 {{name}}",
+      "editTitle": "编辑 {{name}}",
+      "apiKey": "API 密钥",
+      "keyPlaceholder": "在此粘贴你的 API 密钥",
+      "keyPlaceholderEdit": "留空则保留当前密钥",
+      "getKeyAt": "在 {{name}} 获取密钥",
+      "description": "描述",
+      "testing": "正在验证密钥…",
+      "testOk": "密钥有效，提供商已连接。",
+      "cancel": "取消",
+      "addAndTest": "添加并验证",
+      "save": "保存",
+      "clearKey": "清除密钥",
+      "showKey": "显示",
+      "hideKey": "隐藏"
+    },
+    "connectors": {
+      "title": "API 连接器",
+      "subtitle": "为你的实例添加数据源。",
+      "search": "搜索连接器…",
+      "empty": "没有符合搜索条件的连接器。",
+      "tabs": {
+        "all": "全部",
+        "llm": "AI / LLM",
+        "search": "搜索",
+        "scraping": "抓取",
+        "forecast": "预测"
+      }
+    }
+  },
+  "channels": {
+    "sidebar": {
+      "empty": "未配置任何频道",
+      "configured": "已配置"
+    },
+    "detail": {
+      "token": "机器人令牌",
+      "removeUser": "移除",
+      "tokenPlaceholder": "在此粘贴令牌…",
+      "botToken": "Slack 机器人令牌",
+      "appToken": "Slack 应用令牌",
+      "appTokenPlaceholder": "在此粘贴应用令牌…",
+      "allowlist": "授权用户",
+      "allowlistPlaceholder": "用户 ID…",
+      "allowlistAdd": "添加",
+      "requireMention": "群组中需要@提及",
+      "provider": "LLM 提供商",
+      "model": "模型",
+      "testSuccess": "连接成功",
+      "testFailed": "连接失败",
+      "delete": "删除",
+      "cancel": "取消",
+      "accountId": "账户 ID",
+      "confirmDelete": "删除此账户？",
+      "connected": "已连接",
+      "disconnected": "已断开"
+    },
+    "status": {
+      "off": "已停止",
+      "starting": "启动中…",
+      "running": "运行中",
+      "error": "错误",
+      "stopping": "停止中…"
+    },
+    "errors": {
+      "invalidConfig": "频道配置无效。",
+      "unavailable": "频道不可用。",
+      "generic": "操作失败，请重试。"
+    },
+    "browse": {
+      "title": "消息渠道",
+      "subtitle": "连接你的消息机器人以与 LLM 通信。",
+      "telegramDesc": "Telegram 机器人 — 长轮询，群组和私信。",
+      "slackDesc": "Slack 机器人 — Socket Mode，频道和私信。",
+      "discordDesc": "Discord 机器人 — Gateway WebSocket，服务器和私信。",
+      "messaging": "消息",
+      "pro": "专业"
+    },
+    "config": {
+      "addTitle": "添加 {{name}}",
+      "description": "描述",
+      "testing": "测试中…",
+      "addAndTest": "添加并测试"
+    },
+    "main": {
+      "subtitle": "连接消息机器人以与 LLM 通信。",
+      "browseBtn": "浏览渠道"
+    }
+  },
+  "welcome": {
+    "title": "今天我们做什么？"
+  },
+  "projects": {
+    "title": "项目",
+    "discussions": "对话",
+    "workInFolder": "在文件夹中工作",
+    "search": "搜索项目",
+    "noFolder": "无文件夹",
+    "noMatch": "未找到文件夹",
+    "addNew": "添加新项目",
+    "openFolder": "打开文件夹",
+    "rename": "重命名",
+    "delete": "删除",
+    "noDiscussion": "暂无会话"
+  },
+  "branches": {
+    "search": "搜索分支",
+    "title": "分支",
+    "worktrees": "工作树",
+    "uncommitted": "未提交： {{count}} 个文件",
+    "createNew": "创建并检出新分支…",
+    "detachedHead": "分离的 HEAD",
+    "noMatch": "未找到匹配的分支",
+    "conflictTitle": "提交更改以切换分支",
+    "conflictDescription": "以下文件的更改将在检出时被覆盖：",
+    "conflictCommitAndSwitch": "提交并切换分支…",
+    "conflictCancel": "取消",
+    "bubbleCreated": "分支已创建",
+    "bubbleSwitched": "分支已切换",
+    "createPlaceholder": "新分支名称",
+    "commitRequired": "请提交更改以继续",
+    "commitDescription": "描述",
+    "createSubmit": "创建分支",
+    "errorInvalidName": "名称无效：包含禁用字符或格式不正确",
+    "errorNameTooLong": "名称过长（最多 100 个字符）",
+    "errorAlreadyExists": "此分支已存在",
+    "errorUnbornHead": "仓库还没有提交。请先创建一次提交",
+    "errorGithubAuth": "创建分支前请先连接 GitHub",
+    "errorInternal": "内部错误。请重试或检查仓库",
+    "errorRepositoryUnavailable": "Git 仓库已无法访问。",
+    "errorBranchUnavailable": "此分支已不存在或无法访问。",
+    "errorDirtyWorktree": "继续前请先保存当前更改（{{count}} 个文件）。",
+    "errorProtectedBranch": "主分支受保护，无法清理。",
+    "errorBranchActive": "此分支正在使用中。请切换分支后再删除。",
+    "errorIdentityMissing": "创建提交前，请先配置 Git 用户名和电子邮箱。",
+    "errorInvalidCommitDescription": "提交描述无效或过长。",
+    "errorCheckoutFailed": "无法切换分支。请检查仓库后重试。",
+    "errorCommitFailed": "无法创建提交。请检查 Git 配置后重试。",
+    "errorUnmergedCommits": "此分支包含 {{count}} 个未合并的提交。",
+    "errorWorktreeUnavailable": "此 worktree 已不存在或无法访问。",
+    "commitSwitchError": "提交或切换分支失败。请检查 Git 配置后重试。",
+    "githubAuthTitle": "连接 GitHub 以创建分支",
+    "githubAuthDescription": "此仓库已关联 GitHub。请先连接 GitHub，再从应用创建分支。",
+    "githubAuthConnect": "连接 GitHub",
+    "githubAuthConnecting": "正在打开 GitHub 连接…",
+    "githubAuthTesting": "正在检查 GitHub 连接…",
+    "githubAuthError": "无法连接 GitHub。请重试，或在连接器中配置 GitHub。",
+    "githubAuthCancel": "取消",
+    "deleteBranch": "删除 {{name}}",
+    "deleteWorktree": "删除工作树 {{name}}",
+    "confirmDelete": "确认",
+    "deleteRiskTitle": "删除此分支？",
+    "deleteWorktreeRiskTitle": "删除此工作树？",
+    "deleteRiskDescription": "此分支包含可能丢失的工作。请选择如何继续。",
+    "deleteWorktreeRiskDescription": "此工作树包含未保存的修改。",
+    "deleteCurrentDescription": "此分支正在使用。删除前，Beaver 将切换到 {{branch}}。",
+    "deleteNoFallback": "请先创建另一个分支，然后才能删除此分支。",
+    "deleteUnmerged": "{{count}} 个提交尚未合并",
+    "deleteCurrent": "切换分支并删除",
+    "deletePreserve": "合并后删除",
+    "deleteCommitMerge": "保存、合并后删除",
+    "deleteWorktreePreserve": "保存后删除",
+    "deleteDiscardChanges": "删除并放弃修改",
+    "deleteDiscardUnmerged": "不合并直接删除",
+    "deleteCancel": "取消",
+    "deleteError": "删除失败。请检查仓库后重试。"
+  },
+  "history": {
+    "rename": "重命名",
+    "delete": "删除",
+    "archive": "归档",
+    "loading": "加载中…"
+  },
+  "sessionAge": {
+    "minute": "{{count}}分钟",
+    "hour": "{{count}}小时",
+    "day": "{{count}}天",
+    "month": "{{count}}月",
+    "year": "{{count}}年"
+  },
+  "agentLocal": {
+    "newSession": "新建会话",
+    "noConversations": "暂无对话",
+    "placeholder": "有什么可以帮你的？",
+    "thinking": "思考中",
+    "showMore": "显示更多",
+    "showLess": "收起",
+    "modelSearch": "搜索模型…",
+    "modelEmpty": "没有匹配的模型。",
+    "selectModel": "选择模型",
+    "selectModelHint": "选择模型",
+    "reasoningTitle": "推理",
+    "reasoningOff": "关闭",
+    "reasoningAuto": "开启",
+    "reasoningLow": "低",
+    "reasoningMedium": "中",
+    "reasoningHigh": "高",
+    "reasoningXhigh": "最高",
+    "reasoningMax": "最大",
+    "reasoningUltra": "超高",
+    "send": "发送",
+    "cancel": "取消",
+    "stop": "停止",
+    "editMessage": "编辑并重新生成",
+    "regenerate": "重新生成",
+    "copy": "复制",
+    "clone": {
+      "action": "克隆",
+      "title": "克隆会话",
+      "close": "关闭",
+      "tabs": "会话分支",
+      "mainTab": "Main",
+      "closeTab": "关闭标签",
+      "cut": "从这条消息克隆",
+      "summary": "使用隐藏摘要克隆",
+      "summaryFocus": "使用自定义重点克隆",
+      "focusPlaceholder": "摘要要优先关注的内容...",
+      "create": "创建",
+      "running": "正在摘要...",
+      "summaryFailed": "无法生成摘要。",
+      "withoutSummary": "不使用摘要",
+      "errorUnavailable": "此克隆会话已不存在或无法访问。",
+      "gitCreate": "新建 git 分支",
+      "gitCreating": "正在创建...",
+      "gitCreated": "Git 分支已创建",
+      "gitBranchMissing": "关联的 git 分支已不存在。",
+      "gitMissingCheckpoint": "无法清理：主分支未知。",
+      "gitArchiveTitle": "归档此克隆？",
+      "gitArchiveDescription": "此会话已关联到 Git 分支 \"{{branch}}\"。",
+      "gitArchiveKeep": "是",
+      "gitArchiveCancel": "取消",
+      "gitArchiveCleanup": "清理分支并归档"
+    },
+    "compression": "上下文压缩中",
+    "retry": {
+      "thinkingOnly": "正在重试...",
+      "parserCrash": "正在修正格式...",
+      "featureDropped": "正在调整功能...",
+      "server": "正在重试 Ollama...",
+      "connection": "正在重连...",
+      "button": "重试"
+    },
+    "contextCompressed": "上下文已压缩",
+    "searchBarPlaceholder": "搜索…",
+    "resultCount_one": "{{count}} 条结果",
+    "resultCount_other": "{{count}} 条结果",
+    "favorites": "收藏",
+    "freeCount": "{{free}} free / {{total}}",
+    "thinkingDuration": "思考了 {{seconds}}s",
+    "working": "已工作 {{duration}}",
+    "workSummary": "已工作 {{duration}}",
+    "workSummaryNoDuration": "工作已完成",
+    "sessionSummary": {
+      "tooltip": "显示/隐藏会话摘要",
+      "title": "会话摘要",
+      "environment": "环境",
+      "modifications": "修改",
+      "modificationsUnavailable": "修改内容暂时不可用。",
+      "modificationsPartial": "已修改 {{count}} 个文件。显示的统计数据不完整。",
+      "branch": "分支",
+      "noGit": "无 Git 仓库",
+      "commits": {
+        "title": "提交",
+        "toggle": "展开提交历史",
+        "empty": "此分支没有提交",
+        "noMessage": "无消息的提交",
+        "noFiles": "此提交中没有文件",
+        "error": "提交历史不可用。"
+      },
+      "git": {
+        "toggle": "展开分支 {{branch}}",
+        "changesToCommit": "有 {{count}} 个文件待 Commit",
+        "commitsToPush": "有 {{count}} 个提交待 Push 到 {{destination}} · {{branch}}",
+        "commit": "Commit",
+        "push": "Push",
+        "merge": "Merge 到 {{branch}}",
+        "mergeTitle": "Merge 到 {{branch}}",
+        "mergeDescription": "选择要合并到 {{branch}} 的分支。",
+        "mergeSource": "源分支",
+        "mergeSummary": "将向 {{branch}} 添加 {{count}} 个 Commit。",
+        "mergeDirty": "Merge 前会先 Commit {{count}} 个本地修改。",
+        "mergeAlready": "此分支已 Merge 到 {{branch}}。",
+        "confirmMerge": "Merge 到 {{branch}}",
+        "commitAndMerge": "Commit 后 Merge 到 {{branch}}",
+        "mergeError": "无法 Merge。请检查仓库后重试。",
+        "mergeConflict": "Merge 会产生冲突，操作已取消，分支未被修改。",
+        "mergeContextChanged": "当前分支已更改。请重新执行 Merge。",
+        "mergeDirtyError": "出现了新的本地修改。请在 Merge 前检查。",
+        "upToDate": "已全部同步",
+        "noRemote": "没有远程仓库",
+        "remoteStatusUnavailable": "远程仓库状态不可用。",
+        "localBranch": "本地分支 · 尚未 Push 到 {{branch}}",
+        "destinationGithub": "GitHub",
+        "destinationRemote": "远程仓库",
+        "remoteChanges": "有可用的远程修改",
+        "commitTitle": "Commit 修改",
+        "commitDescription": "Commit 消息（可选）",
+        "cancel": "取消",
+        "confirmCommit": "Commit",
+        "commitError": "无法创建 Commit。",
+        "pushError": "无法 Push。",
+        "authenticationError": "需要 Git 身份验证才能 Push。",
+        "permissionDenied": "远程仓库拒绝了 Push。请检查访问权限或分支保护。",
+        "networkError": "无法连接到远程仓库。",
+        "contextChanged": "项目或分支已更改。请重新执行 Push。",
+        "remoteChanged": "远程分支包含更新的修改。请先同步仓库再 Push。"
+      },
+      "sections": {
+        "todos": "Todo 列表",
+        "plans": "计划",
+        "subagents": "子代理"
+      },
+      "emptyTodos": "没有活跃 Todo",
+      "emptyPlans": "没有计划",
+      "emptySubagents": "没有子代理",
+      "todoProgress": "{{done}}/{{total}}",
+      "todoRunStatus": {
+        "active": "进行中",
+        "paused": "已暂停"
+      },
+      "planStatus": {
+        "draft": "草稿",
+        "awaiting_approval": "待批准",
+        "approved": "已批准",
+        "rejected": "已拒绝",
+        "cancelled": "已取消"
+      },
+      "subagentType": {
+        "explorer": "Explore",
+        "coder": "Coder"
+      }
+    },
+    "fileChanges": {
+      "changed_one": "已修改 {{count}} 个文件",
+      "changed_other": "已修改 {{count}} 个文件",
+      "toggle": "显示已修改文件",
+      "review": "Review",
+      "reviewFile": "Review {{name}}"
+    },
+    "tokens": "tokens",
+    "contextUsage": {
+      "title": "上下文窗口",
+      "categories": {
+        "messages": "消息",
+        "systemTools": "系统工具",
+        "mcpConnectors": "MCP / 连接器",
+        "skills": "Skills",
+        "memory": "记忆",
+        "metaContext": "元上下文",
+        "systemPrompt": "System prompt"
+      }
+    },
+    "tps": "t/s",
+    "fileReadError": "无法读取文件",
+    "toolActivity": {
+      "inProgress": "进行中",
+      "completed": "已完成",
+      "toggleDetails": "显示工具详情",
+      "groups": {
+        "exploration": "探索",
+        "modification": "更改",
+        "command": "命令",
+        "web": "网页",
+        "git": "Git",
+        "memory": "MEMORY",
+        "other": "工具"
+      },
+      "counts": {
+        "files_one": "{{count}} 个文件",
+        "files_other": "{{count}} 个文件",
+        "searches_one": "{{count}} 次搜索",
+        "searches_other": "{{count}} 次搜索",
+        "lists_one": "{{count}} 次列表",
+        "lists_other": "{{count}} 次列表",
+        "writes_one": "{{count}} 个写入",
+        "writes_other": "{{count}} 个写入",
+        "edits_one": "{{count}} 个修改",
+        "edits_other": "{{count}} 个修改",
+        "commands_one": "{{count}} 条命令",
+        "commands_other": "{{count}} 条命令",
+        "webSearches_one": "{{count}} 次网页搜索",
+        "webSearches_other": "{{count}} 次网页搜索",
+        "webFetches_one": "{{count}} 个页面",
+        "webFetches_other": "{{count}} 个页面",
+        "gitActions_one": "{{count}} 个 Git 操作",
+        "gitActions_other": "{{count}} 个 Git 操作",
+        "otherActions_one": "{{count}} 个操作",
+        "otherActions_other": "{{count}} 个操作"
+      },
+      "actions": {
+        "read": "已读",
+        "create": "已创建",
+        "edit": "已修改",
+        "list": "已列出",
+        "search": "已搜索",
+        "run": "已执行",
+        "createBranch": "已创建分支",
+        "switchBranch": "已切换分支",
+        "skill": "已加载 Skill",
+        "agent": "已委派",
+        "forecast": "已分析",
+        "mcp": "已搜索 MCP",
+        "tool": "工具"
+      },
+      "groupError": "此组中发生了错误"
+    }
+  },
+  "switchModel": {
+    "title": "切换模型",
+    "description": "正在从 {{from}} 切换到 {{to}}。你希望如何处理当前对话？",
+    "remember": "记住本次会话的选择",
+    "newSession": "新建会话",
+    "continue": "在当前会话中继续"
+  },
+  "switchWorktree": {
+    "title": "切换文件夹",
+    "description": "这个 worktree 使用另一个工作文件夹。请创建新会话，以保持当前对话不变。",
+    "cancel": "取消",
+    "newSession": "新建会话",
+    "close": "关闭"
+  },
+  "permissionMode": {
+    "chatLabel": "聊天机器人",
+    "chatDescription": "聊天，不访问工具、文件或互联网",
+    "autoLabel": "完全访问",
+    "autoDescription": "不受限制地访问互联网和你电脑上的文件",
+    "manualLabel": "请求授权",
+    "manualDescription": "修改外部文件或使用互联网前始终先询问",
+    "toggleHint": "修改权限（Shift+Tab）"
+  },
+  "missingDirectory": {
+    "title": "此文件夹已不存在",
+    "parent": "可用文件夹：{{path}}",
+    "switch": "切换",
+    "create": "创建",
+    "error": "无法准备此会话的文件夹。"
+  },
+  "permissionDialog": {
+    "title": "允许 {{action}}？",
+    "allow": "允许一次",
+    "allowSession": "始终允许",
+    "deny": "拒绝",
+    "tools": {
+      "write_file": "写入文件",
+      "edit_file": "编辑文件",
+      "bash": "执行命令",
+      "web_fetch": "访问网址"
+    }
+  },
+  "modelDownloads": {
+    "queued": "排队中",
+    "kinds": {
+      "ollama": "Ollama",
+      "forecast": "Forecast"
+    },
+    "phases": {
+      "starting": "正在启动",
+      "downloading": "正在下载",
+      "installing": "正在安装",
+      "preparing-runtime": "正在准备运行环境",
+      "completed": "已完成"
+    },
+    "errors": {
+      "queueUnavailable": "无法将此模型加入队列。"
+    }
+  },
+  "ollama": {
+    "selectModel": "选择模型",
+    "edit": "编辑",
+    "editing": "编辑中",
+    "save": "保存",
+    "cancel": "取消",
+    "searchPlaceholder": "搜索模型…",
+    "install": "安装",
+    "update": "更新",
+    "updateAvailable": "有新版本可用",
+    "installedUpToDate": "已安装且为最新版本",
+    "ctx": "ctx",
+    "vramWarning": "该模型可能超出你的可用 VRAM",
+    "editModelfile": "编辑 Modelfile",
+    "systemPrompt": "System prompt",
+    "systemPromptWarningTitle": "注意",
+    "systemPromptWarningBody": "此自定义提示词只会替换该模型的应用默认行为指令。工具和智能体模式正常运行所需的技术指令仍会保留，已启用的上下文文件也会继续注入。清空此提示词后，将自动恢复应用的默认指令。",
+    "systemPromptWarningRemember": "不再显示此警告",
+    "systemPromptWarningContinue": "继续",
+    "parameters": "参数",
+    "noSystemPrompt": "（未定义 System prompt）",
+    "noParameters": "（无参数 — Ollama 使用默认值）",
+    "parameterEditorHint": "留空即可使用 Ollama 的默认设置。",
+    "parameterDefaultValue": "默认值：{{value}}",
+    "parameterDefaultShort": "默认 {{value}}",
+    "useDefaultValue": "使用默认值",
+    "addStopSequence": "+ 添加停止序列",
+    "removeStopSequence": "删除此停止序列",
+    "stopSequencePlaceholder": "停止文本或 token",
+    "customParameters": "自定义参数",
+    "customParametersHint": "仅用于官方列表中尚未包含的 Ollama 选项。",
+    "customParameterName": "参数名称",
+    "customParameterValue": "值",
+    "addCustomParameter": "+ 添加自定义参数",
+    "invalidCustomParameter": "请检查自定义参数的名称和值。",
+    "invalidOfficialParameter": "请检查官方参数的数值。",
+    "parameterGroups": {
+      "context": "上下文",
+      "length": "回复长度",
+      "creativity": "创造性与可复现性",
+      "repetition": "重复控制",
+      "sampling": "Token 选择",
+      "stop": "停止回复"
+    },
+    "parameterTypes": {
+      "integer": "整数",
+      "decimal": "小数",
+      "text": "文本"
+    },
+    "parameterDescriptions": {
+      "num_ctx": "对话期间保留在内存中的最大文本量。数值越高，占用的内存越多。",
+      "num_predict": "生成的最大 token 数。-1 表示 Ollama 不使用固定上限。",
+      "draft_num_predict": "草稿模型预先提出的 token 数。仅用于推测式生成。",
+      "temperature": "创造性水平。较低值更可预测，较高值更多样。",
+      "seed": "用于在相同请求和设置下复现生成结果的数字。",
+      "repeat_last_n": "为避免重复而检查的先前 token 数。0 表示关闭，-1 表示使用全部上下文。",
+      "repeat_penalty": "对重复内容的惩罚强度。数值过高可能降低文本质量。",
+      "top_k": "每一步保留的候选数量。较低值会让回答更保守。",
+      "top_p": "保留候选直到达到此累计概率。较低值会让回答更集中。",
+      "min_p": "相对于最佳候选，移除概率过低的选项。较高值更严格。",
+      "stop": "遇到此文本或 token 时立即停止回复。可以添加多个停止序列。"
+    },
+    "systemPromptPlaceholder": "定义模型的行为和个性…",
+    "description": "描述",
+    "translate": "翻译…",
+    "translating": "翻译中…",
+    "original": "原文",
+    "searchHint": "输入名称（如 gemma、qwen、mistral）后按 Enter",
+    "loadingProfile": "正在加载配置…",
+    "loadingVariants": "正在加载变体…",
+    "capabilities": "能力",
+    "fileSize": "文件大小",
+    "context": "上下文",
+    "architecture": "架构",
+    "moe": "MoE",
+    "yes": "是",
+    "no": "否",
+    "digest": "Digest",
+    "quantization": "量化",
+    "paramsLabel": "参数",
+    "contextTokens": "K token",
+    "remove": "移除",
+    "modelfileTab": "Modelfile",
+    "modelsTab": "模型"
+  },
+  "heartbeat": {
+    "back": "返回",
+    "toggle": "启用/禁用",
+    "title": "定时唤醒",
+    "subtitle": "为任意 LLM 自动化计划任务",
+    "empty": "尚未配置任何唤醒。点击「新建唤醒」开始。",
+    "newWakeup": "新建唤醒",
+    "edit": "编辑",
+    "delete": "删除",
+    "confirmDelete": "确认删除",
+    "pausedHint": "唤醒已暂停 — 请关闭主开关",
+    "badges": {
+      "active": "活跃",
+      "inactive": "未激活"
+    },
+    "fields": {
+      "name": "名称",
+      "provider": "提供商",
+      "model": "模型",
+      "schedule": "计划",
+      "nextFire": "下次触发",
+      "lastStatus": "最近状态",
+      "lastRun": "最近执行",
+      "description": "描述",
+      "prompt": "提示词"
+    },
+    "status": {
+      "ok": "成功",
+      "error": "失败",
+      "missed": "已错过",
+      "never": "从未执行",
+      "none": "无"
+    },
+    "history": {
+      "title": "历史",
+      "empty": "暂无执行记录"
+    },
+    "sidebar": {
+      "title": "定时唤醒",
+      "pause": "全部暂停",
+      "resume": "恢复",
+      "empty": "无活跃唤醒",
+      "pausedEmpty": "唤醒已暂停"
+    },
+    "form": {
+      "createTitle": "新建唤醒",
+      "editTitle": "编辑唤醒",
+      "name": "名称",
+      "provider": "提供商",
+      "model": "模型",
+      "pickModel": "选择模型",
+      "noToolCapable": "无支持工具的模型",
+      "prompt": "提示词",
+      "description": "描述（简短）",
+      "schedule": "计划",
+      "cancel": "取消",
+      "create": "创建",
+      "save": "保存",
+      "scheduleKind": {
+        "once": "一次",
+        "daily": "每天",
+        "weekly": "每周"
+      },
+      "weekdays": {
+        "0": "周一",
+        "1": "周二",
+        "2": "周三",
+        "3": "周四",
+        "4": "周五",
+        "5": "周六",
+        "6": "周日"
+      }
+    }
+  },
+  "personality": {
+    "files": "核心",
+    "selectFile": "选择文件",
+    "open": "打开",
+    "inject": "上下文",
+    "injected": "已注入",
+    "failedToLoad": "加载失败",
+    "failedToRead": "读取文件失败"
+  },
+  "settings": {
+    "light": "浅色",
+    "dark": "深色",
+    "emeraldNight": "夜幕翡翠",
+    "cobaltFrost": "冰霜钴蓝",
+    "astralMist": "星雾",
+    "crimsonEclipse": "绯红之蚀",
+    "system": "跟随系统",
+    "memory": {
+      "intro": "管理智能体可长期记住的内容，无需在每次对话中加载全部细节。",
+      "modeTitle": "记忆模式",
+      "modeDesc": "手动模式需要明确请求；自动模式只保留长期有效的信息。",
+      "modes": { "disabled": "已停用", "manual": "手动", "automatic": "自动" },
+      "budgetTitle": "上下文预算",
+      "budgetDesc": "为记忆摘要和记忆读取保留的最大空间。",
+      "topics": "已保存的记忆",
+      "search": "搜索记忆",
+      "allTypes": "所有类型",
+      "allStatuses": "所有状态",
+      "global": "全局记忆",
+      "activeProject": "当前项目 · {{name}}",
+      "topicCount_one": "{{count}} 个主题",
+      "topicCount_other": "{{count}} 个主题",
+      "empty": "此范围内没有记忆",
+      "disabledHint": "记忆已停用，现有文件会保留。",
+      "legacyTitle": "检测到旧内容",
+      "legacyDesc": "旧文件夹会保留，但不会注入上下文。",
+      "loading": "正在加载记忆…",
+      "error": "无法加载记忆",
+      "retry": "重试",
+      "tokenUnit": "令牌",
+      "loadTopics": "显示记忆",
+      "loadingTopics": "正在加载记忆…",
+      "previewError": "无法读取此记忆。",
+      "closePreview": "关闭",
+      "archive": "归档",
+      "confirmArchive": "确认",
+      "sources": { "user": "用户", "parent": "主智能体", "extractor": "自动", "subagent-suggestion": "子智能体建议" },
+      "types": { "preference": "偏好", "feedback": "反馈", "project": "项目", "reference": "参考" },
+      "statuses": { "confirmed": "已确认", "inferred": "已推断", "stale": "待核实", "archived": "已归档" }
+    },
+    "tabs": {
+      "general": "通用",
+      "ollama": "Ollama",
+      "connectors": "连接器",
+      "apiKeys": "API 密钥",
+      "providers": "提供商",
+      "llm": "LLM",
+      "tools": "Tools",
+      "memory": "记忆",
+      "mascot": "吉祥物",
+      "archivedChats": "已归档聊天",
+      "advanced": "高级",
+      "shortcuts": "键盘快捷键",
+      "about": "关于",
+      "channels": "频道"
+    },
+    "mascot": {
+      "previewTitle": "吉祥物预览",
+      "beaverName": "Beaver",
+      "previewActive": "动画预览",
+      "previewPaused": "动画已暂停",
+      "settingsTitle": "设置",
+      "enabledTitle": "显示吉祥物",
+      "enabledDesc": "让海狸始终显示在桌面和其他应用上方",
+      "sizeTitle": "大小",
+      "sizeDesc": "调整吉祥物在屏幕上的大小",
+      "collectionTitle": "收藏",
+      "beaverDesc": "Beaver 的主要吉祥物",
+      "moveLabel": "移动吉祥物"
+    },
+    "archivedChats": {
+      "title": "已归档聊天",
+      "deleteAll": "全部删除",
+      "searchPlaceholder": "搜索已归档对话",
+      "allProjects": "所有项目",
+      "count": "{{count}} 个对话",
+      "restore": "取消归档",
+      "delete": "删除",
+      "confirmDeleteButton": "确认",
+      "empty": "没有已归档聊天",
+      "loading": "正在加载归档…",
+      "restoreOk": "聊天已取消归档",
+      "restoreFailed": "无法取消归档聊天",
+      "deleteOk": "聊天已删除",
+      "deleteAllOk": "已归档聊天已删除",
+      "deleteFailed": "无法删除聊天",
+      "deleteConfirm": "永久删除这个已归档聊天？",
+      "deleteAllConfirm": "永久删除所有已归档聊天？"
+    },
+    "general": {
+      "themeTitle": "主题",
+      "themeDesc": "应用外观",
+      "fontSizeTitle": "字体大小",
+      "fontSizeDesc": "界面基础字号（像素）",
+      "fontSizeIncrease": "增大字体大小",
+      "fontSizeDecrease": "减小字体大小",
+      "fontFamilyTitle": "字体",
+      "fontFamilyDesc": "应用中使用的字体",
+      "codeThemeTitle": "代码主题",
+      "codeThemeDesc": "代码块和预览的配色",
+      "languageTitle": "语言",
+      "languageDesc": "界面语言",
+      "responseLangTitle": "LLM 回复语言",
+      "responseLangDesc": "AI 模型回复使用的语言",
+      "sidebarExpandTitle": "悬停时展开侧边栏",
+      "sidebarExpandDesc": "鼠标悬停时侧边栏自动展开",
+      "linkPreviewTitle": "链接预览",
+      "linkPreviewDesc": "在聊天中显示 URL 的预览卡片"
+    },
+    "tools": {
+      "intro": "这些工具决定了代理能为你做什么。核心工具始终开启。可选工具可根据你的需要开启或关闭：代理只会使用已开启的工具。",
+      "lockedTitle": "核心工具",
+      "optionalTitle": "可选工具",
+      "lockedBadge": "始终开启",
+      "groups": {
+        "terminal": { "title": "Terminal", "description": "让代理直接在你的机器上运行命令（git、构建、脚本）。这是最强大的工具：你的终端能做的，代理都能做。" },
+        "files": { "title": "文件", "description": "让代理读取、创建和修改你项目的文件：代码、配置、笔记、文档。" },
+        "file_search": { "title": "文件搜索", "description": "让代理在你的项目中翻找文件，或在代码中搜索某个具体的词。" },
+        "web": { "title": "网络", "description": "让代理在线搜索信息、打开网页，以获取最新的数据。" },
+        "mcp": { "title": "外部连接器", "description": "让代理使用你在「连接器」标签页中配置的外部连接器。" },
+        "skills": { "title": "Skills", "description": "让代理在执行某些任务时调用专门的指南（skills）。如果你不使用 skills，可以关闭它。" },
+        "user_choice": { "title": "用户选择", "description": "让代理在多个选项之间犹豫时，主动询问你的意见。如果你希望它自己决定，可以关闭它。" },
+        "subagents": { "title": "子代理", "description": "让代理把子任务交给一个次级代理处理，再收回结果。如果你想把所有内容保留在同一个对话里，可以关闭它。" },
+        "plan_mode": { "title": "Plan mode", "description": "让代理先提出行动计划，并等待你同意后再执行。如果你希望它直接开始行动，可以关闭它。" },
+        "todo_list": { "title": "待办清单", "description": "让代理在处理长任务时维护一份清单，避免遗漏。如果你用不上清单，可以关闭它。" },
+        "agent_diagnostics": { "title": "代理诊断", "description": "让代理在失败后回顾自己最近的错误，从而自我修正。如果你不希望它花时间分析失败，可以关闭它。" },
+        "git_branches": { "title": "Git 分支", "description": "让代理创建或切换 Git 分支，以隔离它的工作。如果你希望自己管理分支，可以关闭它。" },
+        "forecast": { "title": "Forecast", "description": "让代理使用 Forecast 模块：运行预测、读取结果、添加场景。如果你不使用 Forecast，可以关闭它。" },
+        "spreadsheet": { "title": "表格 / Excel", "description": "让代理读取或创建表格文件（Excel、ODS、CSV、TSV）。如果你不处理这类文件，可以关闭它。" },
+        "document": { "title": "文档 / Word", "description": "让代理从已有文档中提取文本，或创建 Word 文件。如果你不处理这类文档，可以关闭它。" },
+        "images": { "title": "图像", "description": "让代理查看、调整大小、裁剪或转换图像。如果你不需要处理图像，可以关闭它。" }
+      }
+    },
+    "advanced": {
+      "autostartTitle": "开机启动",
+      "autostartDesc": "系统启动时自动打开 Beaver",
+      "startHiddenTitle": "后台启动",
+      "startHiddenDesc": "在后台启动，不打开窗口",
+      "trayTitle": "菜单栏图标",
+      "trayDesc": "在系统托盘中保留 Beaver",
+      "defaultModelTitle": "默认模型",
+      "defaultModelDesc": "新对话默认使用的模型",
+      "keepAliveTitle": "卸载模型",
+      "keepAliveDesc": "释放模型内存前的等待时间",
+      "searchModel": "搜索模型…",
+      "keepAlive": {
+        "immediately": "立即",
+        "2min": "2 分钟后",
+        "5min": "5 分钟后",
+        "10min": "10 分钟后",
+        "15min": "15 分钟后",
+        "30min": "30 分钟后",
+        "onClose": "关闭应用时"
+      },
+      "hardwareAccelTitle": "硬件加速",
+      "hardwareAccelDesc": "本地模型的推理引擎",
+      "hardwareAccelCpu": "CPU",
+      "hardwareAccelGpu": "GPU",
+      "hardwareAccelRestart": "重启 Ollama",
+      "hardwareAccelRestarted": "Ollama 已重启",
+      "ollamaExternalReused": "使用外部 Ollama",
+      "restartRequiredTitle": "需要重启",
+      "restartRequiredDesc": "重启 Ollama 后更改将生效",
+      "ollamaTitle": "Ollama",
+      "multiModelTitle": "加载多个模型",
+      "multiModelDesc": "同时在 VRAM 中保留多个模型（需要更多 GPU 内存）",
+      "showGpuStatusTitle": "显示 GPU 状态",
+      "showGpuStatusDesc": "在聊天中显示 CPU/GPU 指示器及 VRAM 使用情况",
+      "vramTableTitle": "各模型所需 VRAM",
+      "vramTableDesc": "根据模型大小和量化方式估算所需 VRAM",
+      "vramTableSize": "大小",
+      "vramFormula": "模型大小 + (上下文/1000 × 0.5 GB) + 0.5 GB",
+      "fileAccessTitle": "文件访问",
+      "fileAccessDesc": "LLM 可读写的文件夹",
+      "addPath": "添加文件夹",
+      "resetPaths": "重置",
+      "fullDisk": "完整磁盘",
+      "compressionTitle": "压缩",
+      "compressionEnabledTitle": "自动压缩",
+      "compressionEnabledDesc": "当上下文接近上限时自动总结对话",
+      "compressionThresholdTitle": "压缩阈值",
+      "compressionThresholdDesc": "触发压缩的上下文窗口使用百分比"
+    },
+    "llm": {
+      "searchPlaceholder": "搜索模型…",
+      "families": "系列",
+      "back": "返回",
+      "maxInput": "上下文（输入）",
+      "maxOutput": "最大输出",
+      "inputCost": "输入费用",
+      "outputCost": "输出费用",
+      "vision": "视觉",
+      "tools": "工具",
+      "reasoning": "推理",
+      "caching": "提示词缓存",
+      "webSearch": "网络搜索",
+      "yes": "是",
+      "no": "否"
+    },
+    "shortcuts": {
+      "toggleTerminal": "切换 Terminal",
+      "toggleSidebar": "切换侧边栏",
+      "goBack": "返回",
+      "goForward": "前进",
+      "newSession": "新建会话",
+      "searchDialog": "搜索对话",
+      "togglePreview": "打开/关闭文件预览面板"
+    },
+    "confirm": {
+      "deleteModel": "确认删除？"
+    }
+  },
+  "terminal": {
+    "newTab": "新标签页",
+    "closePanel": "关闭面板",
+    "processExited": "进程已退出，退出码 {{code}}",
+    "failedToStart": "Terminal 启动失败"
+  },
+  "skills": {
+    "sourceBuiltIn": "内置",
+    "sourceUser": "用户",
+    "sourceProject": "项目",
+    "noResults": "未找到 Skill"
+  },
+  "search": {
+    "placeholder": "搜索对话…",
+    "recent": "最近对话",
+    "results": "结果",
+    "empty": "未找到对话"
+  },
+  "about": {
+    "version": "版本",
+    "tauri": "Tauri",
+    "os": "系统",
+    "viewOnGithub": "在 GitHub 上查看",
+    "description": "面向本地和云端 LLM 的智能桌面应用。"
+  },
+  "browser": {
+    "title": "浏览器",
+    "addressLabel": "浏览器地址",
+    "addressPlaceholder": "输入网址或搜索",
+    "openAddress": "打开地址",
+    "startTitle": "开始浏览",
+    "startDescription": "输入网址或搜索网页",
+    "invalidUrl": "请输入有效的 HTTP 或 HTTPS 地址。",
+    "tabsLabel": "浏览器标签页",
+    "newTab": "新标签页",
+    "closeTab": "关闭 {{title}}",
+    "addTab": "添加标签页",
+    "back": "后退",
+    "forward": "前进",
+    "reload": "重新加载",
+    "stop": "停止加载",
+    "localSites": "可用的本地网站",
+    "tabLimitTitle": "已达到十个标签页的上限",
+    "tabLimitDescription": "要替换未使用的标签页“{{title}}”吗？",
+    "replaceTab": "替换",
+    "operationFailed": "浏览器无法完成此操作。",
+    "loading": "正在加载浏览器…",
+    "blockedFeature": "此版本已禁用该功能。",
+    "unavailable": "安全浏览器不可用。"
+  },
+  "filePreview": {
+    "closeTab": "关闭标签页",
+    "default": "默认",
+    "noFiles": "本次会话中未创建或修改任何文件。",
+    "listModes": {
+      "latest": "最近一次执行",
+      "all": "所有文件",
+      "uncommitted": "未提交"
+    },
+    "filesModified": "文件",
+    "loading": "正在读取文件…",
+    "fileNotFound": "无法读取该文件，它可能已被删除或移动。",
+    "diffUnavailable": "无法显示此文件的更改。",
+    "diffTruncated": "预览受限：此文件还包含更多更改。",
+    "gitStatus": {
+      "added": "已创建",
+      "modified": "已修改",
+      "deleted": "已删除",
+      "renamed": "已重命名",
+      "copied": "已复制",
+      "changed": "已更改"
+    },
+    "togglePanel": "文件预览",
+    "reduce": "缩小",
+    "fullscreen": "全屏",
+    "open": "打开",
+    "openWith": "打开方式…",
+    "noEditorDetected": "未检测到编辑器",
+    "moreRows": "+{{count}} 行",
+    "totalRows": "共 {{count}} 行 — 预览受限",
+    "charCount": "{{format}} — {{count}} 个字符",
+    "blockCount": "DOCX — {{count}} 个块"
+  },
+  "fileTree": {
+    "clearFilter": "清除筛选",
+    "filterPlaceholder": "筛选文件…",
+    "toggleTree": "项目文件树",
+    "loadError": "无法读取此文件夹",
+    "noResults": "无结果"
+  },
+  "errors": {
+    "crashMessage": "发生错误，请重启应用。",
+    "operationFailed": "操作失败，请重试。",
+    "streamStartFailed": "流无法启动。",
+    "streamInterrupted": "流传输被中断。",
+    "ollamaConnectionLost": "与 Ollama 的连接已断开",
+    "ollamaServerError": "Ollama 服务器错误",
+    "ollamaWaiting": "与 Ollama 的连接已断开（{{seconds}}s）— 正在重连…",
+    "ollamaReconnected": "Ollama 已重新连接",
+    "ollamaReconnecting": "Ollama 已重新连接 — 将在 {{seconds}}s 后重试…",
+    "keyringFailed": "无法访问密钥环。请安装 gnome-keyring 或 kwallet 以存储 API 密钥。",
+    "ollamaRestartFailed": "Ollama 重启失败",
+    "maxFiles": "最多 {{max}} 个文件",
+    "fileTooLarge": "{{name}} 超过 20MB",
+    "saveFailed": "保存失败",
+    "projectRenameFailed": "无法重命名项目",
+    "projectDeleteFailed": "无法删除项目",
+    "projectOpenFailed": "无法打开文件夹",
+    "sessionSaveFailed": "会话无法保存",
+    "downloadFailed": "下载失败",
+    "updateFailed": "更新失败",
+    "apiKeyFailed": "无法保存密钥",
+    "apiKeyDeleteFailed": "无法删除密钥",
+    "readError": "无法读取文件",
+    "modelNotFound": "未找到模型",
+    "rateLimited": "请求过多，请稍后重试",
+    "authFailed": "认证失败，请检查 API 密钥",
+    "moonshotMembershipUnverified": "Moonshot 无法确认有效的 Kimi Code 订阅。",
+    "xaiSubscriptionOrCreditsRequired": "xAI 表示需要 Grok 订阅或额度。",
+    "providerAccessUnavailable": "提供商当前拒绝访问该模型。",
+    "providerConnectionFailed": "无法连接到提供商。",
+    "providerTemporarilyUnavailable": "提供商暂时不可用，请稍后重试。",
+    "providerRequestRejected": "提供商拒绝了该请求。",
+    "providerConfigurationInvalid": "无法准备该请求。",
+    "oauthReauthenticationRequired": "OAuth 连接已过期。请重新连接提供商。",
+    "toolFailed": "工具执行失败",
+    "webToolFailed": "网页工具执行失败：{{message}}"
+  },
+  "updates": {
+    "tooltip": "有可用更新",
+    "appUpdate": "更新",
+    "modelUpdate": "更新",
+    "version": "版本 {{version}}",
+    "ollamaBinaryUpdate": "更新",
+    "forecastDevRuntime": "开发 · 运行环境",
+    "forecastDevModel": "开发 · 模型",
+    "forecastDevReview": "检查",
+    "releaseNotesTitle": "{{version}} 版本说明",
+    "showDetails": "显示详情",
+    "hideDetails": "隐藏详情"
+  },
+  "units": {
+    "gb": "GB"
+  },
+  "a11y": {
+    "close": "关闭",
+    "minimize": "最小化",
+    "maximize": "最大化"
+  },
+  "wakeupFormat": {
+    "daily": "每天",
+    "weekly": "每周"
+  },
+  "codex": {
+    "title": "GPT via Codex（开发）",
+    "description": "用于内部测试的 ChatGPT OAuth 连接。",
+    "login": "登录",
+    "logout": "退出登录",
+    "loggedIn": "已连接",
+    "loggedOut": "未连接",
+    "loggingIn": "连接中…"
+  },
+  "agentImport": {
+    "title": "从其他助手导入",
+    "description": "请分别选择每个应用。技能和规则会以只读方式保留在原始文件夹中。",
+    "loading": "正在查找兼容配置…",
+    "onboardingLater": "之后可在“设置 > 高级”中修改这些选择。",
+    "status": {
+      "detected": "已检测",
+      "empty": "没有兼容内容",
+      "missing": "未检测到",
+      "unavailable": "无法访问"
+    },
+    "card": {
+      "counts": "{{documents}} 个文档 · {{rules}} 条规则 · {{skills}} 个技能",
+      "migrated": "已迁移",
+      "active": "迁移已启用",
+      "activeCount": "{{count}} 个项目已启用",
+      "disabled": "已禁用"
+    },
+    "sections": {
+      "documents": "全局指令",
+      "rules": "规则",
+      "skills": "技能"
+    },
+    "detail": {
+      "description": "准确选择 Beaver 可以使用的内容。",
+      "selectedCount": "已选择 {{selected}} / {{total}}",
+      "searchSkills": "搜索技能",
+      "partial": "此配置的一部分已被跳过：文件过大、文件夹无法访问或已达到扫描上限。下方显示的项目仍可正常使用。",
+      "updateAvailable": "有更新版本可用。",
+      "imported": "已导入 Beaver",
+      "empty": "此来源未检测到兼容内容。"
+    },
+    "actions": {
+      "all": "全部",
+      "none": "全不选",
+      "back": "返回来源",
+      "confirmSource": "确认此来源",
+      "confirmChanges": "确认更改",
+      "reactivate": "重新启用此来源",
+      "disable": "禁用",
+      "saving": "正在保存…",
+      "rescan": "重新扫描",
+      "retry": "重试"
+    },
+    "conflict": {
+      "title": "文档已存在",
+      "description": "{{names}} 已存在于 Beaver 中。",
+      "keep": "取消",
+      "replace": "备份后替换"
+    },
+    "messages": {
+      "saved": "导入配置已保存",
+      "scanFailed": "目前无法扫描来源。"
+    },
+    "settings": {
+      "title": "从其他助手导入",
+      "description": "管理从其他工具读取的规则、指令和技能。",
+      "manage": "管理"
+    }
+  },
+  "onboarding": {
+    "common": {
+      "back": "返回",
+      "continue": "继续",
+      "skip": "跳过"
+    },
+    "welcome": {
+      "title": "欢迎使用 Beaver",
+      "description": "一个可使用本地模型或云端提供商的 AI 助手，你可以按自己的偏好选择。",
+      "getStarted": "开始"
+    },
+    "preferences": {
+      "title": "自定义 Beaver",
+      "description": "在打开应用前选择主题和界面语言。"
+    },
+    "api": {
+      "title": "设置 LLM 提供商",
+      "description": "添加 API 密钥以使用云端模型。此处只显示 LLM 提供商。",
+      "loading": "正在加载 LLM 提供商…",
+      "keyLabel": "{{name}} API 密钥",
+      "keyLabelFallback": "API 密钥",
+      "keyPlaceholder": "粘贴你的 API 密钥",
+      "getKey": "获取 {{name}} 密钥",
+      "saving": "正在检查…"
+    }
+  },
+  "ollamaSetup": {
+    "title": "Ollama 安装",
+    "description": "Ollama 让你在本地机器上运行 AI 模型。你也可以跳过此步骤并使用云端提供商。",
+    "download": "下载 Ollama",
+    "downloading": "正在下载 Ollama…",
+    "cancel": "取消",
+    "cancelling": "正在取消…",
+    "skip": "跳过",
+    "skipping": "正在跳过…",
+    "extracting": "正在安装…",
+    "verifying": "正在验证…",
+    "starting": "正在启动 Ollama…",
+    "downloadingGpu": "正在下载 GPU 支持…",
+    "error": "安装失败，详情如下。"
+  },
+  "linkPreview": {
+    "noTitle": "无标题",
+    "openSite": "打开网站"
+  },
+  "subagents": {
+    "backgroundCount_one": "{{count}} 个活跃子代理",
+    "backgroundCount_other": "{{count}} 个活跃子代理",
+    "stopAll": "全部停止",
+    "running": "运行中…",
+    "stop": "停止",
+    "open": "打开",
+    "bubbleLabel_one": "子代理：已创建 {{count}} 个代理",
+    "bubbleLabel_other": "子代理：已创建 {{count}} 个代理",
+    "completed": "已完成",
+    "failed": "失败",
+    "cancelled": "已取消",
+    "interrupted": "已中断"
+  },
+  "todos": {
+    "progress": "{{done}}/{{total}} 项任务",
+    "noActive": "待办已完成",
+    "status": {
+      "pending": "待办",
+      "in_progress": "进行中",
+      "completed": "已完成"
+    }
+  },
+  "interactiveChoice": {
+    "title": "交互选择",
+    "step": "{{current}}/{{total}}",
+    "recommended": "推荐",
+    "otherLabel": "其他",
+    "other": "其他回答",
+    "otherPlaceholder": "输入你的回答",
+    "inputLocked": "请先回答上方问题"
+  },
+  "connectors": {
+    "main": {
+      "subtitle": "允许 LLM 连接其他应用和服务",
+      "browseBtn": "浏览连接器"
+    },
+    "sidebar": {
+      "configured": "已配置",
+      "empty": "没有已配置的连接器",
+      "loadError": "无法加载连接器"
+    },
+    "detail": {
+      "connected": "已连接",
+      "disconnected": "已断开",
+      "description": "描述",
+      "tools": "可用工具",
+      "author": "作者",
+      "website": "网站",
+      "openSite": "打开网站",
+      "confirmDeleteBtn": "删除",
+      "confirmDisconnectTitle": "断开 {{name}}？",
+      "confirmDisconnectDesc": "LLM 将无法再访问 {{name}} 服务。",
+      "confirmDisconnectBtn": "断开",
+      "cancel": "取消"
+    },
+    "browse": {
+      "title": "浏览连接器",
+      "subtitle": "向你的实例添加连接器。",
+      "search": "搜索连接器…",
+      "empty": "没有匹配的连接器。",
+      "tabMcp": "MCP",
+      "tabPlugins": "插件",
+      "pluginsEmpty": "即将推出",
+      "categories": {
+        "all": "全部",
+        "productivity": "生产力",
+        "design": "设计",
+        "devtools": "开发工具",
+        "communication": "通信",
+        "ai-ml": "AI / ML",
+        "scraping": "抓取",
+        "community": "社区"
+      }
+    },
+    "comingSoon": "即将推出",
+    "localSecurityWarning": "本地 MCP 连接器会使用您的用户账户权限执行代码。",
+    "config": {
+      "addTitle": "添加 {{name}}",
+      "token": "令牌",
+      "tokenPlaceholder": "在此粘贴令牌",
+      "testing": "正在测试…",
+      "testOk": "连接器已验证。",
+      "addAndTest": "添加并测试",
+      "testError": "无法验证连接器。请检查令牌后重试。",
+      "cancel": "取消",
+      "confirmAddDesc": "将 {{name}} 添加到你的连接器？",
+      "confirmAddBtn": "添加"
+    },
+    "oauth": {
+      "title": "正在认证",
+      "discovering": "正在连接服务器…",
+      "message": "请在浏览器中完成连接步骤。",
+      "testing": "正在验证连接器…",
+      "retry": "没有成功？重试。",
+      "cancel": "取消",
+      "successTitle": "连接成功",
+      "successMessage": "连接器已成功添加。",
+      "errorGeneric": "连接失败。请重试。"
+    }
+  },
+  "vision": {
+    "unsupportedModel": "此模型不支持视觉"
+  },
+  "forecast": {
+    "chart": {
+      "resetZoom": "重置缩放",
+      "forecastStart": "预测开始"
+    },
+    "chartCard": {
+      "main": "主图表",
+      "fan": "放大预测区间",
+      "seasonality": "季节性",
+      "reliability": "回测误差（sMAPE）",
+      "withSeries": "{{title}} — {{series}}",
+      "collapse": "折叠卡片",
+      "expand": "展开卡片"
+    },
+    "companion": {
+      "mean": "平均值",
+      "insufficientData": "数据不足，无法绘制此图表。",
+      "indexBase": "指数（首月 = 100）",
+      "showAll": "全部",
+      "showNone": "无"
+    },
+    "zoomJump": {
+      "goTo": "跳转到第 {{index}}/{{count}} 个位置",
+      "label": "缩放跳转"
+    },
+    "title": "预测",
+    "noAnalysis": "没有正在进行的分析",
+    "selection": {
+      "label": "选择",
+      "manual": "手动",
+      "auto": "Auto",
+      "allowCloud": "允许云端模型",
+      "loadFailed": "无法加载 Forecast 选择。",
+      "saveFailed": "无法保存 Forecast 选择。"
+    },
+    "workbench": {
+      "windowTitle": "Forecast 工作区",
+      "navigation": "Forecast 工作区导航",
+      "open": "打开 Forecast 工作区",
+      "openFailed": "无法打开 Forecast 工作区。",
+      "syncFailed": "无法更新 Forecast 工作区。",
+      "loading": "正在加载 Forecast 工作区…",
+      "unavailable": "Forecast 上下文不可用。",
+      "draftSaveFailed": "无法保存 Forecast 工作区的更改。",
+      "newAnalysis": "新分析",
+      "workspace": "工作区",
+      "sections": {
+        "data": "数据",
+        "forecast": "预测",
+        "evaluation": "评估",
+        "comparison": "比较",
+        "scenarios": "场景",
+        "notes": "笔记",
+        "report": "报告"
+      },
+      "sectionDescriptions": {
+        "data": "检查数据、字段映射和质量校验。",
+        "forecast": "查看完整预测及其可用图层。",
+        "evaluation": "使用基线和时间验证衡量模型。",
+        "comparison": "比较模型质量、速度和限制。",
+        "scenarios": "创建和修改假设，同时保留参考预测。",
+        "notes": "创建、整理和查看与此预测关联的笔记。",
+        "report": "汇总来源、备注和高级导出。"
+      },
+      "data": {
+        "loadFailed": "无法加载分析数据。",
+        "rows": "源数据行",
+        "historyPoints": "历史数据点",
+        "futureRows": "未来数据行",
+        "series": "序列",
+        "missingPeriods": "缺失周期",
+        "outliers": "异常值",
+        "target": "目标",
+        "date": "日期",
+        "frequency": "频率",
+        "covariates": "外部变量",
+        "none": "无",
+        "quality": "数据质量",
+        "valid": "数据已验证",
+        "notAvailable": "此旧版分析没有可用的质量检查",
+        "needsAttention": "需要注意",
+        "issueError": "阻塞错误",
+        "issueWarning": "警告",
+        "preview": "数据预览",
+        "rowsDisplayed": "显示 {{shown}} 行，共 {{total}} 行",
+        "noRows": "此分析没有可用数据行。",
+        "previewLimited": "预览仅显示前 200 行。"
+      },
+      "evaluation": {
+        "loading": "正在加载评估…",
+        "loadFailed": "无法加载 Forecast 评估。",
+        "runFailed": "无法完成 Forecast 回测。",
+        "run": "运行回测",
+        "running": "正在回测…",
+        "rollingBacktest": "滚动时间验证",
+        "summary": "{{windows}} 个窗口 · 预测范围 {{horizon}}",
+        "notRun": "尚未运行回测",
+        "model": "模型",
+        "coverage": "覆盖率",
+        "duration": "耗时",
+        "status": "结果",
+        "baseline": "基线",
+        "modelKind": "Forecast 模型",
+        "current": "当前",
+        "reference": "参考",
+        "beatsBaseline": "优于基线",
+        "missesBaseline": "未优于基线",
+        "noAnalysis": "没有可评估的分析",
+        "noAnalysisDescription": "请先在对话中运行预测。",
+        "emptyTitle": "可比较的结果将显示在这里",
+        "emptyEvaluation": "回测将当前模型与四个基线比较，训练过程不会使用未来数据。",
+        "emptyComparison": "请在“评估”中运行回测以获得可靠排名。",
+        "createEnsemble": "创建集成", "ensembleRunning": "正在创建集成…",
+        "ensembleFailed": "无法创建模型集成。",
+        "ensembleReady": "已从 {{count}} 个回测模型创建集成。该组合仍需单独验证。",
+        "baselines": {"naive": "朴素", "seasonal_naive": "季节朴素", "drift": "漂移", "ets": "ETS"},
+        "warnings": {"history": "历史数据不足", "cloud": "云服务未配置", "notInstalled": "模型未安装", "resources": "资源不足", "execution": "评估不完整", "unavailable": "结果不可用"},
+        "planWarnings": {"short_history": "可用窗口少于三个，请谨慎解读排名。", "reduced_horizon": "为保留有效时间窗口，评估范围已缩短。", "unavailable": "此评估的可靠性有限。"}
+      }
+    },
+    "docs": {
+      "windowTitle": "Forecast 文档",
+      "openFailed": "无法打开 Forecast 文档。",
+      "kicker": "技术文档",
+      "status": "Forecast 指南",
+      "navLabel": "Forecast 文档",
+      "openTooltip": "打开 Forecast 文档",
+      "nav": {
+        "overview": "概览",
+        "datasets": "数据集",
+        "models": "模型",
+        "predictions": "预测",
+        "uncertainty": "不确定性",
+        "covariates": "协变量",
+        "multiseries": "多序列",
+        "scenarios": "场景",
+        "agentWorkflows": "LLM 代理",
+        "toolContracts": "Forecast 工具",
+        "troubleshooting": "诊断",
+        "limits": "限制"
+      }
+    },
+    "askAgent": "询问代理",
+    "importFile": "导入文件 (CSV, Excel)",
+    "pasteData": "粘贴数据",
+    "fromUrl": "从 URL",
+    "recentAnalyses": "最近的分析",
+    "comingSoon": "即将推出",
+    "panelMode": {
+      "title": "面板模式",
+      "preview": "文件预览",
+      "forecast": "预测"
+    },
+    "nav": {
+      "mainView": "主视图",
+      "scenarios": "场景",
+      "comparisons": "对比",
+      "notes": "笔记",
+      "history": "历史"
+    },
+    "history": {
+      "searchPlaceholder": "搜索…",
+      "empty": "没有已保存的分析。",
+      "points_one": "{{count}} 个点",
+      "points_other": "{{count}} 个点",
+      "horizonShort": "预测 {{count}} 步",
+      "mapeShort": "MAPE {{value}}%",
+      "edit": "重命名",
+      "delete": "删除",
+      "validate": "确认",
+      "cancel": "取消",
+      "renameFailed": "无法重命名分析。",
+      "deleteFailed": "无法删除分析。"
+    },
+    "view": {
+      "period": "周期",
+      "detailedPredictions": "详细预测",
+      "series": "序列",
+      "historySeries": "历史",
+      "forecastSeries": "预测",
+      "confidenceRange": "置信区间",
+      "ensembleSeries": "加权集成",
+      "filters": {
+        "button": "筛选",
+        "series": "序列",
+        "uncertainty": "不确定性",
+        "scenarios": "场景",
+        "variables": "变量",
+        "events": "事件",
+        "comparisons": "比较",
+        "anomalies": "异常",
+        "quality": "质量",
+        "history": "历史",
+        "forecast": "预测",
+        "confidence": "置信区间",
+        "annotations": "注释",
+        "residualAnomalies": "残差异常",
+        "dataQualityIssues": "数据质量警告",
+        "noScenarioLayers": "此分析没有可用的场景层。",
+        "noVariableLayers": "此分析没有可显示的变量。",
+        "noLayersYet": "当前还没有可用图层。"
+      }
+    },
+    "scenarios": {
+      "name": "场景名称",
+      "description": "可选描述",
+      "adjustment": "百分比调整",
+      "percentType": "全局调整",
+      "contextType": "上下文",
+      "seriesScope": "目标序列",
+      "allSeries": "所有序列",
+      "percentMode": "%",
+      "absoluteMode": "数值",
+      "contextValue": "上下文值",
+      "removeContext": "移除变量",
+      "addContext": "添加变量",
+      "contextSummary_one": "上下文 {{count}} 个变量",
+      "contextSummary_other": "上下文 {{count}} 个变量",
+      "launch": "运行场景",
+      "relaunch": "重新运行场景",
+      "percentHint": "基于当前预测创建一条派生曲线，不会重新运行模型。",
+      "contextHint": "用所选变量的新未来值重新运行模型。",
+      "preview": "预览",
+      "update": "更新",
+      "cancel": "取消",
+      "edit": "编辑",
+      "delete": "删除",
+      "confirmDelete": "确认删除",
+      "togglePredictions": "显示预测",
+      "predictions": "预测",
+      "noPredictions": "没有可用预测。",
+      "saving": "正在保存…",
+      "empty": "此分析还没有场景。",
+      "emptySub": "添加一个假设，用来和主预测对比。",
+      "points_one": "{{count}} 个点",
+      "points_other": "{{count}} 个点",
+      "loadFailed": "无法加载场景。",
+      "saveFailed": "无法保存场景。",
+      "updateFailed": "无法更新场景。",
+      "deleteFailed": "无法删除场景。"
+    },
+    "comparisons": {
+      "series": "序列",
+      "scenarioMeta": "场景",
+      "forecastMeta": "{{model}} · H{{horizon}}",
+      "base": "基准",
+      "diff": "差异",
+      "delta": "差值",
+      "averageDelta": "平均差值",
+      "maxDelta": "最大差值",
+      "averageDeltaPct": "平均差值 %",
+      "direction": "方向",
+      "higher": "更高",
+      "lower": "更低",
+      "mixed": "混合",
+      "empty": "没有可用对比。",
+      "emptySub": "创建一个场景或兼容预测来对比曲线。",
+      "loadFailed": "无法加载对比。"
+    },
+    "notes": {
+      "open": "打开笔记",
+      "edit": "编辑",
+      "delete": "删除",
+      "timeline": "注释时间线",
+      "timelineEmpty": "此预测上还没有笔记。",
+      "count_one": "{{count}} 条笔记",
+      "count_other": "{{count}} 条笔记",
+      "new": "新建笔记",
+      "userSource": "用户",
+      "llmSource": "LLM",
+      "sources": {
+        "user": "用户",
+        "llm": "LLM"
+      },
+      "types": {
+        "context": "上下文",
+        "risk": "风险",
+        "decision": "决策",
+        "anomaly": "异常",
+        "hypothesis": "假设"
+      },
+      "empty": "还没有笔记。",
+      "selectNote": "选择一条笔记或新建笔记。",
+      "titlePlaceholder": "笔记标题",
+      "datePlaceholder": "日期",
+      "contentPlaceholder": "笔记 Markdown 内容",
+      "save": "保存",
+      "saving": "正在保存",
+      "cancel": "取消",
+      "confirmDelete": "确认删除",
+      "loadFailed": "无法加载笔记。",
+      "saveFailed": "无法保存笔记。",
+      "deleteFailed": "无法删除笔记。",
+      "openFailed": "无法打开笔记。"
+    },
+    "analysis": {
+      "loadFailed": "无法加载分析。",
+      "series": "序列",
+      "trend": "趋势",
+      "trendSub": "预测整体解读。",
+      "uncertainty": "不确定性",
+      "uncertaintySub": "置信区间宽度。",
+      "highlights": "重点",
+      "highlightsSub": "重要数值和变化。",
+      "anomalies": "异常",
+      "anomaliesSub": "基于残差测得的异常偏差。",
+      "variables": "变量",
+      "variablesSub": "通过时间顺序置换验证的影响。",
+      "direction": "方向",
+      "totalChange": "总变化",
+      "startValue": "开始",
+      "endValue": "结束",
+      "rising": "上升",
+      "falling": "下降",
+      "stable": "稳定",
+      "averageRange": "平均区间",
+      "maxRange": "最大区间",
+      "maxRangePeriod": "最大周期",
+      "highestPoint": "最高点",
+      "lowestPoint": "最低点",
+      "strongestRise": "最大上升",
+      "strongestDrop": "最大下降",
+      "unusualPoint": "异常点",
+      "noHighlights": "未检测到重点。",
+      "noAnomalies": "未检测到残差异常。",
+      "noVariables": "重要性不可用或数据不足。",
+      "decomposition": "分解",
+      "decompositionSub": "分离趋势、季节性和残差。",
+      "drift": "漂移",
+      "driftSub": "参考历史与近期时段之间的变化。",
+      "noDecomposition": "历史数据不足，无法分解。",
+      "noDriftData": "历史数据不足，无法衡量漂移。",
+      "decompositionMethod": "方法", "seasonalPeriod": "季节周期", "seasonalStrength": "季节强度",
+      "notDetected": "未检测到", "notAvailable": "不可用",
+      "residualAnomaly": "残差异常", "residualAnomalyMeta": "{{date}} · 分数 {{score}}",
+      "variableImportanceValue": "{{value}}% · {{direction}}",
+      "variableDirection": {"positive": "正向", "negative": "负向", "neutral": "中性"},
+      "driftStatus": "状态", "driftDetected": "检测到漂移", "driftStable": "稳定",
+      "driftScore": "漂移分数", "distributionShift": "分布变化",
+      "methods": {"classical_additive": "经典加法", "moving_average_trend": "移动平均"},
+      "variableRange": "{{min}} → {{max}}"
+    },
+    "config": {
+      "title": "配置",
+      "back": "返回",
+      "dataPhases": "数据阶段",
+      "historyRows": "历史",
+      "futureRows": "已知未来",
+      "seriesCount": "序列数",
+      "selectedContext": "已选上下文",
+      "detectedFutureContext": "检测到的未来上下文",
+      "futureContextColumns": "检测到的未来上下文列",
+      "target": "目标",
+      "dateColumn": "日期列",
+      "seriesColumn": "序列列",
+      "noSeriesColumn": "无序列列",
+      "covariates": "协变量",
+      "frequency": "频率",
+      "horizon": "预测范围",
+      "confidence": "置信度",
+      "model": "模型",
+      "launch": "开始预测",
+      "launching": "计算中…",
+      "rows_one": "{{count}} 行",
+      "rows_other": "{{count}} 行",
+      "validation": {
+        "horizonTooLong": "预测期超过了此模型的限制（{{max}}）。",
+        "futureRowsMismatch": "已知未来行数必须与所选预测期一致。",
+        "futureRowsPerSeriesMismatch": "每个序列都必须有相同数量的已知未来行。",
+        "contextUnsupported": "所选模型不支持上下文变量。",
+        "futureContextUnsupported": "所选模型不支持已知未来上下文。"
+      },
+      "messages": {
+        "futureRowsMismatchTitle": "预测期不一致",
+        "futureRowsMismatchBody": "检测到 {{future}} 行已知未来数据，但当前预测期是 {{horizon}}。",
+        "futureRowsPerSeriesMismatchTitle": "序列不完整",
+        "futureRowsPerSeriesMismatchBody": "各序列的已知未来行数量并不一致。",
+        "contextUnsupportedTitle": "上下文不可用",
+        "contextUnsupportedBody": "所选协变量不会被这个模型使用。",
+        "futureContextUnsupportedTitle": "未来上下文不可用",
+        "futureContextUnsupportedBody": "这个模型会读取主历史序列，但不会利用协变量的已知未来值。",
+        "futureContextReadyTitle": "未来上下文已就绪",
+        "futureContextReadyBody": "已有 {{count}} 个已选列在已知未来行中包含值。",
+        "futureContextMissingTitle": "未来上下文不完整",
+        "futureContextMissingBody": "存在已知未来行，但所选协变量中还没有可用的未来值。",
+        "addFutureRowsTitle": "可以使用未来上下文",
+        "addFutureRowsBody": "在文件末尾添加没有目标值的行，可为该模型提供已知未来值。",
+        "futureDatesOnlyTitle": "仅使用未来日期",
+        "futureDatesOnlyBody": "在未选择协变量之前，已知未来行主要只会用于确定输出日期。"
+      }
+    },
+    "frequency": {
+      "D": "天",
+      "B": "工作日",
+      "W": "周",
+      "M": "月",
+      "Q": "季度",
+      "Y": "年",
+      "H": "小时",
+      "T": "分钟"
+    },
+    "errors": {
+      "importFailed": "导入失败。请检查文件格式。",
+      "launchFailed": "计算失败。请检查列、模型和 API 密钥。"
+    },
+    "modelConfig": {
+      "sidebarTitle": "配置",
+      "title": "配置",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "noModel": "没有已安装或已配置的 Forecast 模型。",
+      "inherited": "继承",
+      "enabled": "启用",
+      "disabled": "停用",
+      "params": {
+        "horizon_max_override": {
+          "label": "预测期限制",
+          "description": "单次预测允许生成的未来点数上限。例如：日频 31 表示 31 天，小时频 24 表示 24 小时。留空或 0 使用模型原始上限。"
+        },
+        "context_length": {
+          "label": "最大历史长度",
+          "description": "模型读取的历史点数，用来理解趋势、季节性和突变。更高会使用更多历史，但会增加内存并可能削弱近期变化。"
+        },
+        "quantiles": {
+          "label": "分位数",
+          "description": "模型返回的概率分位。0.5 是中心预测；0.1 和 0.9 组成低/高不确定区间。区间越宽，不确定性越高。"
+        },
+        "precision": {
+          "label": "精度",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "dtype": {
+          "label": "数值类型",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "batch_size": {
+          "label": "批大小",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "horizon_len": {
+          "label": "内部预测期",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "prediction_length": {
+          "label": "预测长度",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "confidence_level": {
+          "label": "置信度",
+          "description": "置信区间宽度。0.9 表示 90%，更宽也更保守；0.8 更窄，但风险更高。"
+        },
+        "level": {
+          "label": "层级",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "normalization": {
+          "label": "归一化",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "quantile_head": {
+          "label": "分位数头",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "xreg_mode": {
+          "label": "XReg",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "clean_ex_first": {
+          "label": "清理外生变量",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "finetune_steps": {
+          "label": "微调步数",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "finetune_loss": {
+          "label": "微调损失",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "finetune_depth": {
+          "label": "微调深度",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "feature_contributions": {
+          "label": "变量贡献",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "decode_block_size": {
+          "label": "解码块",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "has_missing_values": {
+          "label": "缺失值",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "non_negative_output": {
+          "label": "非负输出",
+          "description": "防止预测值或下界为负。适合销售额、收入、销量、库存等不能小于 0 的指标。"
+        },
+        "target_dim": {
+          "label": "目标维度",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "feat_dynamic_real_dim": {
+          "label": "未来变量",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "past_feat_dynamic_real_dim": {
+          "label": "过去变量",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "scale_factor": {
+          "label": "缩放因子",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "batch_first": {
+          "label": "Batch first",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "known_future_covariates": {
+          "label": "已知未来协变量",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "local_mode": {
+          "label": "本地模式",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "probabilistic_output": {
+          "label": "概率输出",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "backend": {
+          "label": "后端",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "output_type": {
+          "label": "输出类型",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "frequency_resampling": {
+          "label": "重采样",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "preserve_positivity": {
+          "label": "保持正值",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "average_with_flipped_input": {
+          "label": "反向输入",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "generation": {
+          "label": "生成",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "num_samples": {
+          "label": "样本数",
+          "description": "控制模型在预测时的行为。没有明确需求时建议保留默认值；修改可能影响内存、速度或稳定性。"
+        },
+        "device": {
+          "label": "设备",
+          "description": "继承自 Settings > 高级的硬件设置。auto 由应用选择；GPU 更快；CPU 更兼容但较慢。"
+        },
+        "model_unload_timeout": {
+          "label": "卸载超时",
+          "description": "模型使用后保持加载的时间。更长可避免重复加载；更短可更快释放内存。"
+        }
+      }
+    },
+    "models": {
+      "title": "Forecast 模型",
+      "sidebarTitle": "Models",
+      "modelCapabilities": "模型能力",
+      "engine": "使用的引擎",
+      "install": "安装",
+      "prepare": "准备",
+      "installed": "已安装",
+      "preparationRequired": "需要准备",
+      "updateRequired": "需要更新",
+      "uninstall": "卸载",
+      "confirmUninstall": "确认卸载",
+      "uninstalling": "正在卸载…",
+      "cancel": "取消",
+      "parameters": "参数",
+      "diskSize": "磁盘大小",
+      "ram": "内存",
+      "cpuLabel": "CPU",
+      "gpuLabel": "GPU",
+      "licenseLabel": "许可证",
+      "libraryLabel": "库",
+      "pipelineLabel": "Pipeline",
+      "supported": "支持",
+      "unsupported": "不支持",
+      "uninstalled": "未安装",
+      "horizonMax": "最大预测步长",
+      "frequencies": "频率",
+      "status": "状态",
+      "cloud": "云端 (需要密钥)",
+      "noKeyConfigured": "API 密钥未配置",
+      "noneAvailable": "当前启动没有可用模型。",
+      "hardware": {
+        "light": "轻量硬件",
+        "balanced": "均衡硬件",
+        "heavy": "高性能硬件",
+        "remote": "远程处理"
+      },
+      "engines": {
+        "localChronosBolt": "本地 Chronos-Bolt",
+        "localChronos2": "本地 Chronos-2",
+        "localPackage": "本地包",
+        "cloudApi": "云 API"
+      },
+      "capabilities": {
+        "context": "上下文变量",
+        "futureContext": "未来上下文",
+        "multiSeries": "独立多序列",
+        "multivariate": "联合多变量",
+        "probabilistic": "概率预测",
+        "backtesting": "回测"
+      }
+    },
+    "export": {
+      "title": "导出",
+      "csv": "CSV",
+      "excel": "Excel (.xlsx)",
+      "png": "PNG",
+      "svg": "SVG",
+      "json": "JSON",
+      "pdf": "PDF (报告)",
+      "clipboard": "复制",
+      "saved": "导出已保存",
+      "copied": "导出已复制",
+      "failed": "导出失败"
+    }
+  },
+  "chatMenu": {
+    "plusButtonHint": "添加文件及更多",
+    "addFile": "添加图片或文件",
+    "planMode": "计划模式",
+    "planModeDesc": "准备计划",
+    "disablePlanMode": "关闭计划模式",
+    "connectors": "连接器",
+    "plugins": "插件",
+    "noConnectors": "没有连接器",
+    "pluginsEmpty": "即将推出"
+  }
+}

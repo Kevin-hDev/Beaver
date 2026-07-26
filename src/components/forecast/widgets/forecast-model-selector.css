@@ -1,0 +1,103 @@
+.fmsel-wrapper {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.fmsel-trigger {
+  max-width: var(--forecast-model-trigger-max-width);
+}
+
+.fmsel-trigger-empty {
+  color: var(--ink-faint);
+}
+
+.fmsel-trigger-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fmsel-caret {
+  flex-shrink: 0;
+  transition: transform var(--ease-smooth);
+}
+
+.fmsel-caret.open {
+  transform: rotate(180deg);
+}
+
+.fmsel-dropdown {
+  bottom: calc(100% + var(--chrome-2));
+  width: var(--forecast-model-menu-width);
+  margin-bottom: 0;
+}
+
+.fmsel-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--chrome-2);
+  padding: var(--chrome-2) var(--chrome-3);
+  border-bottom: 1px solid var(--edge);
+}
+
+.fmsel-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-sm);
+}
+
+.fmsel-mode-label {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.fmsel-mode-options {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: fit-content;
+  gap: var(--chrome-1);
+}
+
+.fmsel-mode-option {
+  width: auto;
+  height: var(--compact-control-height);
+  padding: 0 var(--chrome-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.fmsel-mode-option:hover,
+.fmsel-mode-option.is-active {
+  border-color: var(--edge);
+  background: var(--app-frame);
+  color: var(--ink);
+}
+
+.fmsel-mode-option.is-active {
+  font-weight: 600;
+}
+
+.fmsel-mode-option:focus-visible {
+  outline: 2px solid var(--pulse);
+  outline-offset: 1px;
+}
+
+.fmsel-cloud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--chrome-1) 0;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}

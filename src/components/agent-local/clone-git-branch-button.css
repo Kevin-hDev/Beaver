@@ -1,0 +1,39 @@
+/* Thin alias of the shared .btn system (src/styles/buttons.css) with
+   .btn-sm geometry; keeps its min-width and transparent/edge colors. */
+.cgb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-width: 148px;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--ease-smooth), border-color var(--ease-smooth), background var(--ease-smooth);
+}
+
+.cgb-btn:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.cgb-btn:disabled {
+  cursor: default;
+}
+
+.cgb-loading svg {
+  animation: cgb-spin 0.8s linear infinite;
+}
+
+@keyframes cgb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

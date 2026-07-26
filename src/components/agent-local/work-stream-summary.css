@@ -1,0 +1,39 @@
+.wss-root {
+  margin: var(--space-sm) 0 var(--space-md);
+}
+
+.wss-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--edge);
+}
+
+.wss-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-faint);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wss-toggle:hover,
+.wss-toggle:focus-visible {
+  color: var(--ink-muted);
+}
+
+.wss-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+}
+
+.wss-body {
+  padding-top: var(--space-sm);
+}

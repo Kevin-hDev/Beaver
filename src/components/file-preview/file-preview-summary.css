@@ -1,0 +1,92 @@
+.fp-summary {
+  padding: 0;
+}
+
+.fp-summary-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto 18px;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-bottom: 1px solid var(--edge);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.fp-summary-row:hover {
+  background: var(--surface-hover);
+}
+
+.fp-summary-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: var(--text-base);
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.fp-summary-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-summary-path {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-faint);
+  display: block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fp-summary-path-inner {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  direction: rtl;
+  text-align: left;
+  text-overflow: ellipsis;
+  unicode-bidi: plaintext;
+  white-space: nowrap;
+}
+
+.fp-summary-row .fp-stats {
+  justify-content: flex-end;
+  min-width: 70px;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.fp-summary-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  opacity: 0.9;
+  padding: 0;
+}
+
+.fp-summary-open:hover,
+.fp-summary-open:focus-visible {
+  color: var(--ink-muted);
+  outline: none;
+}

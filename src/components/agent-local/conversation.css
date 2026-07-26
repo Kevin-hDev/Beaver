@@ -1,0 +1,377 @@
+/* Conversation List + Tab Bar */
+
+.conv-header {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-sm) var(--space-sm) max(0px, calc(var(--space-sm) - 8px));
+}
+
+.conv-new-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  min-width: 0;
+  padding: 5px var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+  border: none;
+  background: none;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.conv-new-btn svg {
+  flex-shrink: 0;
+}
+
+.conv-new-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-new-btn:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.conv-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 var(--space-sm) var(--space-sm) max(0px, calc(var(--space-sm) - 8px));
+}
+
+.conv-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: var(--nav-item-height);
+  padding: 5px 2px 5px calc(var(--space-sm) - 8px);
+  border-radius: var(--nav-item-radius);
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+  margin-bottom: 2px;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-item:hover {
+  background: var(--surface-hover);
+  transform: translateX(2px);
+}
+
+.conv-item.active {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.conv-icon {
+  flex-shrink: 0;
+  color: var(--ink-muted);
+}
+
+.conv-item.active .conv-icon {
+  color: var(--ink);
+}
+
+.conv-session-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.conv-unread-dot {
+  position: absolute;
+  left: calc(var(--space-sm) - 2px);
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--pulse);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.conv-name.thinking-active > span {
+  background: linear-gradient(
+    90deg,
+    var(--ink-faint) 0%,
+    var(--ink-faint) 40%,
+    var(--ink) 50%,
+    var(--ink-faint) 60%,
+    var(--ink-faint) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 2s ease-in-out infinite;
+}
+
+.conv-name.thinking-active:hover > span {
+  background: linear-gradient(
+    90deg,
+    var(--ink-faint) 0%,
+    var(--ink-faint) 40%,
+    var(--ink) 50%,
+    var(--ink-faint) 60%,
+    var(--ink-faint) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: thinking-shimmer 2s ease-in-out infinite;
+}
+
+.conv-running-icon {
+  animation: conv-running-icon-shimmer 2s ease-in-out infinite;
+}
+
+.conv-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
+}
+
+@keyframes thinking-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@keyframes conv-running-icon-shimmer {
+  0%, 100% {
+    color: var(--ink-faint);
+    opacity: 0.7;
+  }
+  50% {
+    color: var(--ink);
+    opacity: 1;
+  }
+}
+
+.conv-session-tail {
+  display: inline-grid;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-items: end;
+  margin-right: 2px;
+  min-width: 0;
+  line-height: 1;
+}
+
+.conv-session-age {
+  grid-area: 1 / 1;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity var(--ease-smooth);
+  z-index: 0;
+}
+
+.conv-gw-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  background: var(--signal-info-bg);
+  color: var(--signal-info);
+  flex-shrink: 0;
+  margin-left: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Section labels (Projets / Discussions) */
+.conv-section-label {
+  padding: var(--space-sm) var(--space-sm) var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.conv-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+  user-select: none;
+}
+
+.conv-section-toggle:hover {
+  color: var(--ink-muted);
+}
+
+/* Chevron plier/déplier */
+.conv-collapse-chevron {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+  transition: transform 200ms ease;
+}
+
+.conv-collapse-chevron.conv-collapse-open {
+  transform: rotate(90deg);
+}
+
+/* Project header in sidebar */
+.conv-project-wrapper {
+  margin-bottom: var(--space-xs);
+}
+
+.conv-project-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  cursor: grab;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  transition: background var(--ease-smooth);
+}
+
+.conv-project-header:hover {
+  background: var(--surface-hover);
+}
+
+.conv-project-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.conv-project-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--ease-smooth);
+}
+
+.conv-project-header:hover .conv-project-actions {
+  opacity: 1;
+}
+
+/* Project actions + session menu — INLINE list-row buttons: they must stay
+   compact and follow the row's text size, NOT the fixed .icon-btn sizes
+   (28px inflates sidebar rows). Do not add .icon-btn here. */
+.conv-project-action-btn {
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.conv-project-action-btn:hover {
+  color: var(--ink);
+  background: var(--edge);
+}
+
+/* Session menu button (three dots) */
+.conv-session-menu-btn {
+  grid-area: 1 / 1;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-faint);
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ease-smooth), background var(--ease-smooth), color var(--ease-smooth);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
+}
+
+.conv-item:hover .conv-session-age {
+  opacity: 0;
+}
+
+.conv-item:hover .conv-session-menu-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.conv-session-menu-btn:hover {
+  color: var(--ink);
+  background: var(--edge);
+}
+
+/* Indented sessions under a project */
+.conv-session-indented {
+  padding-left: calc(var(--space-sm) + 14px + var(--space-xs) - 8px);
+}
+
+/* Drag-and-drop */
+.conv-project-wrapper {
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.conv-project-wrapper.conv-project-dragging {
+  opacity: 0.3;
+}
+
+.conv-list.is-dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
+.conv-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-toast); /* transient drag preview, above all app layers */
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--surface);
+  border: 1px solid var(--pulse);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+/* Rename input */
+.conv-rename {
+  width: 100%;
+  padding: 2px var(--space-xs);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--void);
+  border: 1px solid var(--pulse);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  outline: none;
+  box-shadow: 0 0 0 2px var(--pulse-muted);
+}
+

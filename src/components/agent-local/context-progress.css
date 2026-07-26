@@ -1,0 +1,143 @@
+.context-ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  top: 4px;
+}
+
+/* Trigger — composes .icon-btn (src/styles/buttons.css); keeps its
+   select-bg hover. */
+.context-ring-button {
+  color: var(--ink-faint);
+}
+
+.context-ring-button:hover:not(:disabled),
+.context-ring-button:focus-visible {
+  background: var(--select-bg);
+  color: var(--ink-faint);
+}
+
+.context-ring-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 300px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--tooltip-border);
+  background: var(--popover-bg, var(--tooltip-bg));
+  color: var(--tooltip-text);
+  box-shadow: var(--tooltip-shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 100ms ease, transform 100ms ease;
+  z-index: var(--z-dropdown);
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+}
+
+.context-ring:hover .context-ring-panel,
+.context-ring:focus-within .context-ring-panel {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.context-ring-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: 10px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.context-ring-header strong {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.context-ring-bar {
+  width: 100%;
+  height: 5px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--context-ring-track);
+}
+
+.context-ring-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--context-ring-fill);
+}
+
+.context-ring-list {
+  display: grid;
+  gap: 8px;
+}
+
+.context-ring-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+}
+
+.context-ring-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--context-ring-fill);
+}
+
+.context-ring-dot-systemTools { opacity: 0.85; }
+.context-ring-dot-mcpConnectors { opacity: 0.75; }
+.context-ring-dot-skills { opacity: 0.65; }
+.context-ring-dot-memory { opacity: 0.6; }
+.context-ring-dot-metaContext { opacity: 0.55; }
+.context-ring-dot-systemPrompt { opacity: 0.45; }
+
+.context-ring-label {
+  overflow: hidden;
+  color: var(--ink-muted);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-ring-values {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.context-ring-values span {
+  min-width: 42px;
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+.context-ring-track {
+  fill: none;
+  stroke: var(--context-ring-track);
+}
+
+.context-ring-fill {
+  fill: none;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 350ms cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 250ms ease;
+}

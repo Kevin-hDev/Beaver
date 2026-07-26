@@ -1,0 +1,122 @@
+.fccmp-root {
+  --fcs-hover-bg: var(--surface-hover);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+[data-theme="light"] .fccmp-root {
+  --fcs-hover-bg: var(--fc-chart-bg);
+}
+
+.fccmp-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.fccmp-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.fccmp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fccmp-option-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.fccmp-option {
+  min-width: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface-glass);
+  color: var(--ink-muted);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.fccmp-option:hover,
+.fccmp-option.is-active {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.fccmp-option-title,
+.fccmp-option-meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fccmp-option-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.fccmp-option-meta {
+  margin-top: 3px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fccmp-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.fccmp-card {
+  min-width: 0;
+  background: var(--void);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+}
+
+.fccmp-card-label,
+.fccmp-card-value {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fccmp-card-label {
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fccmp-card-value {
+  margin-top: 4px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

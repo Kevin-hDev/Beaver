@@ -1,0 +1,68 @@
+.fd-markdown {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+}
+
+.fd-markdown p,
+.fd-markdown ul,
+.fd-markdown ol,
+.fd-markdown table,
+.fd-markdown pre {
+  margin: 0 0 14px;
+}
+
+.fd-markdown ul,
+.fd-markdown ol {
+  padding-left: 1.35rem;
+}
+
+.fd-markdown li {
+  margin: 4px 0;
+}
+
+.fd-markdown code {
+  border-radius: var(--radius-sm);
+  background: var(--shell);
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.fd-markdown pre {
+  overflow-x: auto;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 12px 14px;
+}
+
+.fd-markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.fd-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.fd-markdown th,
+.fd-markdown td {
+  border-bottom: 1px solid var(--edge);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.fd-markdown th {
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.fd-markdown blockquote {
+  margin: 0 0 14px;
+  padding-left: 14px;
+  border-left: 3px solid var(--pulse);
+  color: var(--ink-muted);
+}

@@ -1,0 +1,197 @@
+@import "./chat-column.css";
+
+/* Chat zone */
+.chat-zone {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  scroll-behavior: auto;
+}
+
+.chat-messages > * {
+  max-width: 810px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-md);
+  padding-right: var(--space-md);
+}
+
+.chat-messages > .chat-bubble {
+  max-width: var(--chat-column-width);
+}
+
+/* Input area — flotte en bas du chat, pas de section séparée */
+.chat-input-area {
+  padding: 0 var(--chat-column-gutter) var(--space-md);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-sm);
+}
+
+.chat-input-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-width: var(--chat-column-width);
+  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.chat-input-under-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  min-height: 32px;
+  flex-wrap: wrap;
+}
+
+.chat-input-center-slot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: min(320px, 44vw);
+}
+
+.chat-input-project-slot {
+  display: flex;
+  min-width: 0;
+}
+
+.chat-tps-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  white-space: nowrap;
+  padding-bottom: 12px;
+  min-width: 70px;
+}
+
+.chat-input-bubble {
+  position: relative;
+  width: 100%;
+  border-radius: 20px; /* intentional: speech-bubble shape */
+  border: 0.5px solid var(--chat-composer-border);
+  background: var(--chat-composer-bg);
+  box-shadow:
+    -1px -1px 1px var(--chat-composer-edge-highlight),
+    1px 1px 1px var(--chat-composer-edge-shade);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ligne 3 : + ... model send */
+.chat-input-row3 {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-sm) var(--space-sm);
+  gap: var(--space-xs);
+}
+
+.chat-file-list {
+  display: flex;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.chat-input-spacer { flex: 1; }
+
+/* Send/stop — composes .icon-btn (src/styles/buttons.css);
+   keeps its muted color, opacity-only hover and disabled dim. */
+.send-btn {
+  color: var(--ink-muted);
+  transition: opacity var(--ease-smooth), color var(--ease-smooth);
+}
+
+.send-btn:hover:not(:disabled) {
+  opacity: 0.85;
+  background: none;
+  color: var(--ink-muted);
+}
+
+.send-btn:disabled { cursor: default; opacity: 0.25; }
+
+.send-stop-icon { width: 24px; height: 24px; }
+
+.send-stop-confirm-text {
+  fill: currentColor;
+  font-family: var(--font-sans);
+  font-size: 122px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* "+" menu trigger — composes .icon-btn; keeps its optical offset and
+   select-colors hover. */
+.chat-plus-btn {
+  position: relative;
+  top: 4px;
+  color: var(--ink-faint);
+}
+
+.chat-plus-btn:hover:not(:disabled) { color: var(--select-text); background: var(--select-bg); }
+
+/* Scroll-to-bottom — composes .icon-btn; keeps its elevated surface,
+   border, opacity and floating position. */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: var(--space-md);
+  right: var(--space-sm);
+  border: 1px solid var(--edge);
+  background: var(--surface);
+  opacity: 0.85;
+  z-index: var(--z-sticky);
+  color: var(--ink-muted);
+}
+
+.scroll-bottom-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--surface);
+  color: var(--ink-muted);
+}
+
+.scroll-bottom-btn-inline {
+  position: static;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.scroll-bottom-icon { width: 16px; height: 16px; }
+
+[data-theme="light"] .scroll-bottom-btn,
+[data-theme="light"] .scroll-bottom-btn:hover:not(:disabled) {
+  background: var(--chat-composer-bg);
+  border-color: transparent;
+}
+
+[data-theme="dark"] .scroll-bottom-btn,
+[data-theme="dark"] .scroll-bottom-btn:hover:not(:disabled) {
+  background: var(--surface-glass);
+  border-color: transparent;
+}
+
+.chat-loading { display: flex; align-items: center; margin-bottom: var(--space-md); }
+
+.working-stats {
+  font-size: 0.6875rem;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink-faint);
+}

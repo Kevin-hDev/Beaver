@@ -1,0 +1,30 @@
+.bb-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.6;
+}
+
+.bb-icon {
+  color: var(--tool-bash);
+  flex-shrink: 0;
+}
+
+.bb-label {
+  color: var(--tool-bash);
+  font-weight: 600;
+}
+
+.bb-branch-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.bb-path {
+  color: var(--ink-faint);
+  font-size: 10px;
+  word-break: break-all;
+}

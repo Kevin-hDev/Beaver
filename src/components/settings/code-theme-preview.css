@@ -1,0 +1,62 @@
+/* Preview des thèmes de code — 2 bubbles (dark + light) côte à côte */
+
+.ctp-root {
+  display: flex;
+  gap: var(--space-sm);
+  margin: var(--space-md) 0;
+}
+
+.ctp-bubble {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--edge);
+}
+
+/* Fond de la bubble selon la variante forcée localement */
+.ctp-bubble[data-theme="dark"] {
+  background: #242424;
+}
+
+.ctp-bubble[data-theme="light"] {
+  background: #f6f8fa;
+}
+
+.ctp-bubble-label {
+  padding: 4px var(--space-sm);
+  font-size: 0.625rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+.ctp-bubble[data-theme="dark"] .ctp-bubble-label {
+  color: #8b949e;
+}
+
+.ctp-bubble[data-theme="light"] .ctp-bubble-label {
+  color: #6e7781;
+}
+
+.ctp-bubble-pre {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  background: transparent;
+}
+
+.ctp-bubble[data-theme="dark"] .ctp-bubble-pre {
+  color: #c9d1d9;
+}
+
+.ctp-bubble[data-theme="light"] .ctp-bubble-pre {
+  color: #24292f;
+}

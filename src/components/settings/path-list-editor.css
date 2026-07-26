@@ -1,0 +1,77 @@
+/* path-list-editor — styles colocalisés */
+
+.ple-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ple-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge);
+}
+
+.ple-path-label {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ple-path-raw {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+/* Remove "×" — composes .icon-btn (src/styles/buttons.css); keeps its
+   larger glyph. */
+.ple-remove-btn {
+  color: var(--ink-muted);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ple-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Add/reset actions — aliases of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry. */
+.ple-add-btn {
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.ple-reset-btn {
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: none;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}

@@ -1,0 +1,164 @@
+/* Catppuccin — Mocha (dark) / Latte (light)
+   Palette officielle Catppuccin v2 */
+
+/* Dark variant — Catppuccin Mocha */
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-keyword,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-selector-tag,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-built_in {
+  color: #cba6f7;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-string,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-doctag {
+  color: #a6e3a1;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-number,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-literal {
+  color: #fab387;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-comment {
+  color: #6c7086;
+  font-style: italic;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-type,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-title {
+  color: #89b4fa;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-attr,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-attribute {
+  color: #fab387;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-variable,
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-template-variable {
+  color: #f38ba8;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-meta {
+  color: #89dceb;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-regexp {
+  color: #f5c2e7;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-operator {
+  color: #94e2d5;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-section {
+  color: #f38ba8;
+  font-weight: 700;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-strong {
+  font-weight: 700;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-bullet {
+  color: #89dceb;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-code {
+  color: #a6e3a1;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-link {
+  color: #89dceb;
+  text-decoration: underline;
+}
+
+[data-code-theme="catppuccin"][data-theme="dark"] .hljs-quote {
+  color: #6c7086;
+  font-style: italic;
+}
+
+/* Light variant — Catppuccin Latte */
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-keyword,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-selector-tag,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-built_in {
+  color: #8839ef;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-string,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-doctag {
+  color: #40a02b;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-number,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-literal {
+  color: #fe640b;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-comment {
+  color: #9ca0b0;
+  font-style: italic;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-type,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-title {
+  color: #1e66f5;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-attr,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-attribute {
+  color: #fe640b;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-variable,
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-template-variable {
+  color: #d20f39;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-meta {
+  color: #04a5e5;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-regexp {
+  color: #ea76cb;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-operator {
+  color: #179299;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-section {
+  color: #d20f39;
+  font-weight: 700;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-strong {
+  font-weight: 700;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-bullet {
+  color: #04a5e5;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-code {
+  color: #40a02b;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-link {
+  color: #04a5e5;
+  text-decoration: underline;
+}
+
+[data-code-theme="catppuccin"][data-theme="light"] .hljs-quote {
+  color: #9ca0b0;
+  font-style: italic;
+}

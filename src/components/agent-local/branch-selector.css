@@ -1,0 +1,166 @@
+.bs-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Button blocks (.bs-btn, .bs-delete-btn, .bs-create-submit) live in
+   branch-selector-controls.css, imported after this file. */
+
+.bs-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.bs-dropdown {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  min-width: 280px;
+  max-width: 380px;
+  max-height: 340px;
+  overflow-y: auto;
+  background: var(--popover-bg, var(--surface));
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-xs);
+  z-index: var(--z-dropdown);
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+}
+
+.bs-dropdown-search {
+  width: 100%;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-xs);
+  outline: none;
+  margin-bottom: var(--space-xs);
+}
+
+.bs-dropdown-search::placeholder {
+  color: var(--ink-faint);
+}
+
+.bs-section-label {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bs-item {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  transition: background var(--ease-smooth);
+}
+
+.bs-item:hover {
+  background: var(--surface-hover);
+}
+
+.bs-item.bs-selected {
+  color: var(--ink);
+}
+
+.bs-item-select {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.bs-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.bs-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bs-item-detail {
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.bs-sep {
+  height: 1px;
+  background: var(--edge);
+  margin: var(--space-xs) 0;
+}
+
+.bs-empty {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.bs-create-form {
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.bs-create-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.bs-create-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 28px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-xs);
+  outline: none;
+}
+
+.bs-create-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.bs-create-input:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.bs-create-error {
+  padding-top: var(--space-xxs, 2px);
+  font-size: 10px;
+  color: var(--signal-warning);
+}
+
+[data-theme="dark"] .bs-dropdown {
+  border-color: transparent;
+}

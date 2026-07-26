@@ -1,0 +1,69 @@
+.fccmp-table {
+  border-top: 1px solid var(--edge);
+}
+
+.fccmp-table-head,
+.fccmp-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  column-gap: 18px;
+  align-items: center;
+  min-width: 0;
+}
+
+.fccmp-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--edge);
+  background: var(--void);
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fccmp-table-body {
+  padding: 2px 0;
+}
+
+.fccmp-table-row {
+  padding: 8px 14px;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  transition: background 80ms ease;
+}
+
+.fccmp-table-row:hover {
+  background: var(--surface-hover);
+}
+
+.fccmp-table-metrics {
+  min-width: 0;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.fccmp-table-sep {
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.fccmp-table-row .is-up {
+  color: var(--pulse);
+}
+
+.fccmp-table-row .is-down {
+  color: var(--ink-muted);
+}

@@ -1,0 +1,96 @@
+/* Button blocks — split out of branch-selector.css to keep both files
+   under 200 lines; imported after it to preserve cascade order. */
+
+/* Trigger — thin alias of the shared .btn system (src/styles/buttons.css)
+   with .btn-sm geometry; keeps its transparent/edge colors. */
+.bs-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+  white-space: nowrap;
+}
+
+.bs-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.bs-delete-btn {
+  display: inline-flex;
+  min-width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 2px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.bs-item:hover .bs-delete-btn,
+.bs-delete-btn:focus-visible,
+.bs-delete-btn[data-confirming="true"] {
+  opacity: 1;
+}
+
+.bs-delete-btn:hover,
+.bs-delete-btn[data-confirming="true"] {
+  border-color: var(--signal-error);
+  color: var(--signal-error);
+}
+
+.bs-delete-btn[data-confirming="true"] {
+  position: relative;
+}
+
+.bs-delete-btn[data-confirming="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 4px var(--signal-error-bg);
+  animation: bs-confirm-pulse 1s ease-in-out infinite;
+}
+
+@keyframes bs-confirm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Create-branch submit — composes .icon-btn (src/styles/buttons.css);
+   keeps its border and flex basis. */
+.bs-create-submit {
+  flex: 0 0 28px;
+  border: 1px solid var(--edge);
+  color: var(--ink-muted);
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.bs-create-submit:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+.bs-create-submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

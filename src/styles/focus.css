@@ -1,0 +1,12 @@
+:focus,
+:focus-visible {
+  outline: none;
+}
+
+:is([data-nav-zone="sidebar"], [data-nav-zone="list"], [data-nav-zone="fileTree"]) :focus {
+  box-shadow: none;
+}
+
+:is([data-nav-zone="sidebar"], [data-nav-zone="list"], [data-nav-zone="fileTree"]) :is([data-nav-active="true"], :focus-visible) {
+  background: var(--surface-hover);
+}

@@ -1,0 +1,120 @@
+.fcn-timeline {
+  position: relative;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.fcn-timeline-year {
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  z-index: 2; /* local stacking within the timeline */
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--void);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fcn-rail {
+  position: relative;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--fc-chart-bg);
+  overflow: hidden;
+}
+
+.fcn-rail-track {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  top: 0;
+  bottom: 0;
+}
+
+.fcn-rail-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--edge);
+}
+
+.fcn-rail-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.fcn-dot {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--void);
+  border-radius: 999px;
+  background: var(--pulse);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.fcn-dot.is-llm {
+  background: var(--fc-variable-a);
+}
+
+.fcn-dot:hover,
+.fcn-dot.is-selected {
+  transform: translate(-50%, -50%) scale(1.35);
+  box-shadow: 0 0 0 5px var(--surface-hover);
+}
+
+.fcn-axis {
+  position: relative;
+  height: 22px;
+  margin-top: 8px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fcn-axis-track {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  top: 0;
+  bottom: 0;
+}
+
+.fcn-axis-mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.fcn-axis-mark.is-start {
+  transform: translateX(0);
+}
+
+.fcn-axis-mark.is-end {
+  transform: translateX(-100%);
+}
+
+.fcn-timeline-resize {
+  height: 6px;
+  cursor: ns-resize;
+  background: transparent;
+  margin-bottom: -6px;
+  position: relative;
+  z-index: 2; /* local stacking within the timeline */
+  flex-shrink: 0;
+}
+
+.fcn-timeline-resize:hover {
+  background: color-mix(in srgb, var(--surface-hover) 55%, transparent);
+}

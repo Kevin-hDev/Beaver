@@ -1,0 +1,84 @@
+.agent-detail-with-preview {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.agent-detail-chat {
+  flex: 1 1 0;
+  min-width: var(--agent-chat-min-width, 360px);
+  min-height: 0;
+  overflow: hidden;
+  transition:
+    flex-grow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    min-width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.agent-chat-compact .agent-detail-chat {
+  min-width: var(--agent-chat-min-width, var(--agent-chat-target-min-width, 240px));
+}
+
+.agent-detail-chat-fs {
+  flex-grow: 0;
+  min-width: 0;
+}
+
+.agent-detail-chat-instant {
+  transition: none;
+}
+
+body.al-panel-resizing {
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.al-panel-resizing .agent-detail-with-preview,
+body.al-panel-resizing .agent-detail-with-preview * {
+  cursor: ew-resize !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.al-panel-resizing .agent-detail-with-preview * {
+  pointer-events: none !important;
+}
+
+body.al-panel-resizing .asp-panel,
+body.al-panel-resizing .ft-panel,
+body.al-panel-resizing .agent-detail-chat {
+  transition: none !important;
+}
+
+/* Back-to-parent — thin alias of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry; keeps its absolute
+   positioning and accent hover. */
+.sa-parent-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.sa-parent-btn:hover {
+  background: var(--surface-hover);
+  color: var(--accent);
+  border-color: var(--accent);
+}

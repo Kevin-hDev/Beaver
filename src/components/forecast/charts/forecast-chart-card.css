@@ -1,0 +1,107 @@
+.fcrd-card {
+  /* Never let a flex column stack compress cards: they must keep their
+     natural height so the stack overflows and scrolls instead of
+     clipping chart content via overflow: hidden. */
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.fcrd-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 34px;
+  padding: 0 6px 0 12px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.fcrd-title {
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Ellipsize before reaching the absolutely-centered jump bars. */
+  max-width: calc(50% - 40px);
+}
+
+.fcrd-toggle {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color var(--ease-smooth), background var(--ease-smooth);
+  flex-shrink: 0;
+}
+
+.fcrd-toggle:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.fcrd-chevron {
+  transition: transform 350ms ease;
+}
+
+.fcrd-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.fcrd-center {
+  /* True center of the title bar, independent of title/chevron width. */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fcrd-card:not(.is-open) .fcrd-center {
+  display: none;
+}
+
+/* Never overlap the title or chevron: hide the bars on narrow cards. */
+.fcrd-card {
+  container-type: inline-size;
+}
+
+@container (max-width: 420px) {
+  .fcrd-center {
+    display: none;
+  }
+}
+
+.fcrd-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 350ms ease, opacity 350ms ease;
+}
+
+.fcrd-body.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.fcrd-inner {
+  overflow: hidden;
+  min-height: 0;
+}

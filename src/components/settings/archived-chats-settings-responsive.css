@@ -1,0 +1,19 @@
+@media (max-width: 760px) {
+  .acs-page {
+    padding: 16px;
+  }
+
+  .acs-heading,
+  .acs-session {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .acs-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .acs-actions {
+    justify-content: flex-end;
+  }
+}

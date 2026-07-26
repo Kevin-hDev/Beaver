@@ -1,0 +1,164 @@
+/* GitHub — Primer Dark (dark) / Primer Light (light)
+   Couleurs officielles GitHub VSCode theme */
+
+/* Dark variant — GitHub Dark */
+
+[data-code-theme="github"][data-theme="dark"] .hljs-keyword,
+[data-code-theme="github"][data-theme="dark"] .hljs-selector-tag,
+[data-code-theme="github"][data-theme="dark"] .hljs-built_in {
+  color: #ff7b72;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-string,
+[data-code-theme="github"][data-theme="dark"] .hljs-doctag {
+  color: #a5d6ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-number,
+[data-code-theme="github"][data-theme="dark"] .hljs-literal {
+  color: #79c0ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-comment {
+  color: #8b949e;
+  font-style: italic;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-type,
+[data-code-theme="github"][data-theme="dark"] .hljs-title {
+  color: #d2a8ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-attr,
+[data-code-theme="github"][data-theme="dark"] .hljs-attribute {
+  color: #79c0ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-variable,
+[data-code-theme="github"][data-theme="dark"] .hljs-template-variable {
+  color: #ffa657;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-meta {
+  color: #79c0ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-regexp {
+  color: #7ee787;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-operator {
+  color: #ff7b72;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-section {
+  color: #ffa657;
+  font-weight: 700;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-strong {
+  font-weight: 700;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-bullet {
+  color: #79c0ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-code {
+  color: #a5d6ff;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-link {
+  color: #79c0ff;
+  text-decoration: underline;
+}
+
+[data-code-theme="github"][data-theme="dark"] .hljs-quote {
+  color: #8b949e;
+  font-style: italic;
+}
+
+/* Light variant — GitHub Light */
+
+[data-code-theme="github"][data-theme="light"] .hljs-keyword,
+[data-code-theme="github"][data-theme="light"] .hljs-selector-tag,
+[data-code-theme="github"][data-theme="light"] .hljs-built_in {
+  color: #cf222e;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-string,
+[data-code-theme="github"][data-theme="light"] .hljs-doctag {
+  color: #0a3069;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-number,
+[data-code-theme="github"][data-theme="light"] .hljs-literal {
+  color: #0550ae;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-comment {
+  color: #6e7781;
+  font-style: italic;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-type,
+[data-code-theme="github"][data-theme="light"] .hljs-title {
+  color: #8250df;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-attr,
+[data-code-theme="github"][data-theme="light"] .hljs-attribute {
+  color: #0550ae;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-variable,
+[data-code-theme="github"][data-theme="light"] .hljs-template-variable {
+  color: #953800;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-meta {
+  color: #0550ae;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-regexp {
+  color: #116329;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-operator {
+  color: #cf222e;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-section {
+  color: #953800;
+  font-weight: 700;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-strong {
+  font-weight: 700;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-bullet {
+  color: #0550ae;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-code {
+  color: #0a3069;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-link {
+  color: #0550ae;
+  text-decoration: underline;
+}
+
+[data-code-theme="github"][data-theme="light"] .hljs-quote {
+  color: #6e7781;
+  font-style: italic;
+}

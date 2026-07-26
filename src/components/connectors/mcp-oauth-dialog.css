@@ -1,0 +1,86 @@
+.mco-dialog { text-align: center; max-width: 420px; }
+
+.mco-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: var(--space-md) 0;
+}
+
+.mco-icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mco-connector-line {
+  width: 40px;
+  height: 2px;
+  background: var(--edge);
+}
+
+.mco-app-icon {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--pulse);
+}
+
+.mco-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--ink);
+  margin: var(--space-md) 0 var(--space-xs);
+}
+
+.mco-message {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0 0 var(--space-md);
+}
+
+.mco-retry-link {
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  text-decoration: underline;
+  margin-bottom: var(--space-md);
+}
+
+.mco-retry-link:hover { color: var(--ink); }
+
+.mco-error { color: var(--red); }
+
+.mco-device-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+}
+
+.mco-device-code span {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.mco-device-code strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  letter-spacing: 0.08em;
+}
+
+.mco-footer { justify-content: center; }

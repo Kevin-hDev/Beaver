@@ -1,0 +1,89 @@
+.perm-card {
+  width: 100%;
+  background: var(--void);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.perm-card-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.perm-card-target {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--shell);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 90px;
+  overflow: auto;
+}
+
+.perm-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perm-card-actions-spacer { flex: 1; }
+
+/* Action buttons — thin aliases of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry; variants keep
+   their domain colors. */
+.perm-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.perm-card-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--ink-faint);
+}
+
+.perm-card-btn-primary {
+  background: var(--ink);
+  color: var(--void);
+  border-color: var(--ink);
+}
+
+.perm-card-btn-primary:hover {
+  filter: brightness(0.95);
+  background: var(--ink);
+}
+
+.perm-card-btn-deny {
+  border-color: transparent;
+}
+
+.perm-card-kbd {
+  font-size: 10px;
+  color: var(--ink-faint);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-hover);
+  font-family: var(--font-mono);
+}

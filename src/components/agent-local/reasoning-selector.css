@@ -1,0 +1,111 @@
+.rs-root {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Trigger — thin alias of the shared .btn system (src/styles/buttons.css)
+   with .btn-sm geometry; keeps its ghost look and optical offset. */
+.rs-trigger {
+  position: relative;
+  top: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: min(132px, 24cqw);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink-faint);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--ease-smooth), background-color var(--ease-smooth), color var(--ease-smooth);
+}
+
+.rs-trigger:hover,
+.rs-trigger:focus-visible,
+.rs-trigger[aria-expanded="true"] {
+  border-color: transparent;
+  background: var(--select-bg);
+  color: var(--select-text);
+  outline: none;
+}
+
+.rs-trigger-icon,
+.rs-trigger-caret {
+  flex-shrink: 0;
+}
+
+.rs-trigger-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rs-trigger-caret {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.rs-trigger:hover .rs-trigger-caret,
+.rs-trigger:focus-visible .rs-trigger-caret,
+.rs-trigger[aria-expanded="true"] .rs-trigger-caret {
+  opacity: 1;
+}
+
+.rs-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 150px;
+  max-width: min(220px, calc(100vw - 24px));
+  padding: 6px;
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--popover-bg, var(--shell));
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+}
+
+.rs-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  width: 100%;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rs-option:hover,
+.rs-option:focus-visible {
+  background: var(--surface-hover);
+  color: var(--ink);
+  outline: none;
+}
+
+.rs-option-active {
+  background: var(--select-bg);
+  color: var(--select-text);
+}

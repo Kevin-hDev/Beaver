@@ -1,0 +1,59 @@
+.fcse-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding: 2px 4px 6px;
+  flex: none;
+}
+
+.fcse-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  opacity: 0.45;
+  transition: opacity var(--ease-smooth), color var(--ease-smooth),
+    border-color var(--ease-smooth);
+}
+
+.fcse-chip:hover {
+  opacity: 1;
+  color: var(--ink);
+}
+
+.fcse-chip.is-active {
+  opacity: 1;
+  color: var(--ink);
+}
+
+.fcse-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fcse-action {
+  padding: 1px 7px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: color var(--ease-smooth), background var(--ease-smooth);
+}
+
+.fcse-action:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}

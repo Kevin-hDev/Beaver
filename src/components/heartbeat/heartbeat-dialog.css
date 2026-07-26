@@ -1,0 +1,186 @@
+/* Unified dialog contract — Phase 1 spec §4.1.
+   Overlay: --dialog-backdrop + OS-gated blur(8px), z --z-overlay.
+   Panel: radius-md glass (OS-gated via --popover-* tokens), border --edge,
+   shadow --shadow-lg. Shared by every .wk-dialog across the app. */
+.wk-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--dialog-backdrop);
+  backdrop-filter: var(--dialog-overlay-filter, none);
+  -webkit-backdrop-filter: var(--dialog-overlay-filter, none);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  padding: var(--space-lg);
+}
+
+.wk-dialog {
+  background: var(--popover-bg, var(--surface-glass));
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+/* WebKit nested-blur workaround: disable the panel blur when the dialog
+   contains a custom-select dropdown. */
+.wk-dialog:has(.cs-dropdown) {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.wk-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--edge);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wk-dialog > h3 {
+  padding: var(--space-lg) var(--space-lg) 0;
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wk-dialog-close {
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+}
+
+.wk-dialog-close:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.wk-form {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow-y: auto;
+}
+
+.wk-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wk-form-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-md);
+}
+
+.wk-form-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.wk-input {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  transition: border-color var(--ease-smooth);
+}
+
+.wk-input option {
+  background: var(--shell-opaque);
+  color: var(--ink);
+}
+
+.wk-input:focus {
+  outline: none;
+  border-color: var(--edge);
+}
+
+.wk-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wk-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+.wk-schedule-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+}
+
+.wk-schedule-tab {
+  flex: 1;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+}
+
+.wk-schedule-tab.active {
+  background: var(--select-bg);
+  color: var(--select-text);
+}
+
+.wk-schedule-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-sm);
+}
+
+.wk-form-error {
+  color: var(--signal-error);
+  font-size: var(--text-xs);
+  padding: var(--space-sm);
+  background: var(--signal-error-bg);
+  border: 1px solid var(--signal-error-border);
+  border-radius: var(--radius-sm);
+}
+
+.wk-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--edge);
+  margin-top: var(--space-sm);
+}
+
+/* Dialog footer buttons (.wk-btn-secondary, .wk-btn-primary) live in
+   heartbeat-dialog-controls.css, imported after this file. */

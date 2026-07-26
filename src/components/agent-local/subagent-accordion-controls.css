@@ -1,0 +1,63 @@
+/* Button blocks — split out of subagent-accordion.css to keep both files
+   under 200 lines; imported after it to preserve cascade order. */
+
+/* Icon buttons — compose .icon-btn (src/styles/buttons.css); keep their
+   danger/pulse hover colors. */
+.sa-stop-all,
+.sa-chevron-btn {
+  color: var(--ink-faint);
+}
+
+.sa-stop-all:hover:not(:disabled) {
+  color: var(--signal-error);
+  background: var(--surface-hover);
+}
+
+.sa-btn-stop,
+.sa-btn-open {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--ink-muted);
+}
+
+/* .sa-btn-stop composes .icon-btn (src/styles/buttons.css) — geometry
+   comes from the base class added in the TSX. */
+
+/* Open action — thin alias of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry. */
+.sa-btn-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.sa-stop-all svg,
+.sa-btn-stop svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+}
+
+.sa-btn-stop,
+.sa-btn-open,
+.sa-stop-all,
+.sa-chevron-btn {
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.sa-btn-stop:hover:not(:disabled) {
+  color: var(--signal-error);
+  background: var(--surface-hover);
+}
+
+.sa-btn-open:hover:not(:disabled) {
+  color: var(--pulse);
+  background: var(--surface-hover);
+}

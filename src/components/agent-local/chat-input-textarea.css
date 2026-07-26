@@ -1,0 +1,109 @@
+/* Shell wrapper for the CodeMirror 6 host. */
+.chat-textarea-shell {
+  position: relative;
+  min-height: 44px;
+}
+
+/* Host div that CodeMirror mounts into. */
+.chat-cm-host {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  background: transparent;
+}
+
+/*
+ * CodeMirror 6 resets.
+ * The editor must blend into the chat bubble: no border, no default padding,
+ * transparent background, and font metrics that match the host so the caret
+ * lands exactly where the user expects.
+ */
+.chat-cm-host .cm-editor {
+  background: transparent;
+  border: 0;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  max-height: 200px;
+}
+
+.chat-cm-host .cm-editor.cm-focused {
+  outline: none;
+}
+
+.chat-cm-host .cm-scroller {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  padding: 0;
+}
+
+.chat-cm-host .cm-content {
+  padding: 0;
+  caret-color: var(--ink);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-cm-host .cm-line {
+  padding: 0;
+}
+
+.chat-cm-host .cm-placeholder {
+  color: var(--ink-faint);
+}
+
+.chat-cm-host .cm-cursor {
+  border-left-color: var(--ink);
+}
+
+.chat-cm-host .cm-selectionBackground,
+.chat-cm-host .cm-content ::selection {
+  background: var(--select-bg);
+}
+
+.chat-md-input-bullet {
+  display: inline-block;
+  min-width: 1ch;
+  color: var(--ink);
+  font-weight: 600;
+  line-height: inherit;
+  text-align: center;
+}
+
+/* Read-only (interactive pending) state: dim the editor. */
+.chat-cm-host .cm-editor.cm-readonly {
+  opacity: 0.6;
+}
+
+/*
+ * Skill chip : magic-wand (or clock for built-in) icon + colored name.
+ * No background, no visible slash. The "/name" text is replaced by CodeMirror
+ * so the chip renders exactly the same way in the input and in the chat.
+ */
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--pulse);
+  font-weight: 600;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.skill-chip-built-in {
+  color: var(--ink-muted);
+}
+
+.skill-chip-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.skill-chip-name {
+  vertical-align: middle;
+}

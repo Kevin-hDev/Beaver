@@ -1,0 +1,8 @@
+.app-startup-shell {
+  width: 100vw;
+  height: 100vh;
+  background: var(--void);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

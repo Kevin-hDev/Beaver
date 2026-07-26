@@ -1,0 +1,111 @@
+.settings-row:has(.ts-grid) {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.settings-row:has(.ts-grid) .settings-row-control {
+  width: 100%;
+}
+
+.ts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.ts-option {
+  position: relative;
+  min-width: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font: inherit;
+  transition: background var(--ease-smooth), border-color var(--ease-smooth), color var(--ease-smooth);
+}
+
+.ts-option:hover {
+  background: var(--surface-hover);
+}
+
+.ts-option.is-active {
+  border-color: var(--ink-faint);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.ts-preview {
+  height: 2.25rem;
+  margin-bottom: var(--space-xs);
+  padding: var(--space-xs);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-xs);
+  overflow: hidden;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.ts-preview-accent,
+.ts-preview-text {
+  display: block;
+  height: 0.2rem;
+  border-radius: var(--radius-full);
+}
+
+.ts-preview-accent {
+  width: 0.9rem;
+  background: var(--pulse);
+}
+
+.ts-preview-text {
+  width: 0.55rem;
+  background: var(--ink);
+  opacity: 0.35;
+}
+
+.ts-preview-system {
+  padding: 0;
+  gap: 0;
+}
+
+.ts-preview-half {
+  width: 50%;
+  height: 100%;
+  padding: var(--space-xs);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-xs);
+  background: var(--void);
+}
+
+.ts-label {
+  display: block;
+  min-height: 2em;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.ts-option.is-active .ts-label {
+  font-weight: 700;
+}
+
+.ts-check {
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  display: flex;
+  color: var(--ink);
+}
+
+@media (max-width: 760px) {
+  .ts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

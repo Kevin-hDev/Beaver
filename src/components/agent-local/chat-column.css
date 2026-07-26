@@ -1,0 +1,15 @@
+.chat-zone {
+  container-type: inline-size;
+}
+
+.chat-column-surface {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--chat-column-width);
+  width: min(
+    var(--chat-column-width),
+    calc(100cqi - var(--chat-column-gutter) - var(--chat-column-gutter))
+  );
+  min-width: 0;
+  margin-inline: auto;
+}

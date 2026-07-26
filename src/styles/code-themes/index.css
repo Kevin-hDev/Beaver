@@ -1,0 +1,10 @@
+/* Thèmes de coloration de code — point d'entrée unique
+   Charge tous les thèmes. Le thème actif est sélectionné via
+   l'attribut data-code-theme (posé par use-settings) combiné à
+   data-theme (posé par use-theme, dark|light). */
+
+@import "./default.css";
+@import "./github.css";
+@import "./one-dark-pro.css";
+@import "./tokyo-night.css";
+@import "./catppuccin.css";

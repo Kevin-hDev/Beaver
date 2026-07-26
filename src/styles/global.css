@@ -1,0 +1,163 @@
+@import "tailwindcss" source("../");
+@import "@fontsource-variable/jetbrains-mono";
+@import "./tokens.css";
+@import "./themes/light.css";
+@import "./themes/dark.css";
+@import "./themes/emerald-night.css";
+@import "./themes/cobalt-frost.css";
+@import "./themes/astral-mist.css";
+@import "./themes/crimson-eclipse.css";
+@import "./focus.css";
+@import "./buttons.css";
+
+@theme {
+  --font-sans: "Geist Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-panel: 16px;
+  --radius-full: 50%;
+}
+
+@font-face {
+  font-family: "Pacifico";
+  src: url("../assets/fonts/Pacifico-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rancho";
+  src: url("../assets/fonts/Rancho-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background: transparent !important;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+
+/* Themed icon toggle */
+[data-theme="dark"] .themed-icon-light { display: none; }
+[data-theme="dark"] .themed-icon-dark { display: inline; }
+[data-theme="light"] .themed-icon-dark { display: none; }
+[data-theme="light"] .themed-icon-light { display: inline; }
+
+/* Monochrome provider icons — invert in dark theme */
+[data-theme="dark"] .provider-icon-mono {
+  filter: invert(0.7);
+}
+
+.mcp-icon-inline {
+  overflow: visible;
+}
+
+.mcp-icon-inline svg {
+  width: 100%;
+  height: 100%;
+}
+
+.mcp-icon-brand {
+  color: inherit;
+}
+
+.mcp-icon-mono {
+  color: var(--ink-muted);
+}
+
+[data-theme="dark"] .mcp-icon-mono {
+  color: var(--ink);
+}
+
+.mcp-icon-text svg {
+  width: auto;
+  height: 100%;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Shared form input */
+.form-input {
+  width: 100%;
+  padding: var(--space-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--void);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  transition: border-color var(--ease-smooth);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--pulse);
+  box-shadow: 0 0 0 2px var(--pulse-muted);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover,
+*:active {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--radius-xs);
+}
+
+*:hover::-webkit-scrollbar-thumb,
+*:active::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Exception: keep-compositing is not a visual animation — it keeps the
+     WebKit backdrop-filter blur alive. It must keep running. */
+  .app-sidebar-block {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

@@ -1,0 +1,149 @@
+.perm-mode-root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  top: 4px;
+}
+
+/* Trigger — thin alias of the shared .btn system (src/styles/buttons.css)
+   with .btn-sm geometry; keeps its ghost look and optical offset. */
+.perm-mode-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color var(--ease-smooth), background-color var(--ease-smooth);
+}
+
+.perm-mode-trigger:hover,
+.perm-mode-trigger:focus-visible {
+  border-color: transparent;
+  background: var(--select-bg);
+  outline: none;
+}
+
+.perm-mode-caret {
+  opacity: 0;
+  color: var(--ink-faint);
+  transition: opacity 120ms ease;
+}
+
+.perm-mode-trigger-auto .perm-mode-caret {
+  color: var(--pulse);
+}
+
+.perm-mode-trigger-icon {
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.perm-mode-trigger-auto .perm-mode-trigger-icon {
+  color: var(--pulse);
+}
+
+.perm-mode-trigger:hover .perm-mode-caret,
+.perm-mode-trigger:focus-visible .perm-mode-caret { opacity: 1; }
+
+.perm-mode-text {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.perm-mode-auto {
+  color: var(--pulse);
+}
+
+.perm-mode-manual {
+  color: var(--ink);
+}
+
+.perm-mode-chat {
+  color: var(--ink);
+}
+
+.perm-mode-dropdown {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: min(620px, calc(100vw - 32px));
+  background: var(--popover-bg, var(--shell));
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 4px;
+  z-index: var(--z-dropdown);
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+}
+
+[data-theme="dark"] .perm-mode-dropdown {
+  border-color: transparent;
+}
+
+.perm-mode-option {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  text-align: left;
+}
+
+.perm-mode-option:hover,
+.perm-mode-option[data-local-nav-active="true"] { background: var(--select-bg); }
+
+.perm-mode-option-icon {
+  color: var(--ink-muted);
+}
+
+.perm-mode-option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.perm-mode-option-label {
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.perm-mode-option-description {
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perm-mode-option-auto .perm-mode-option-icon,
+.perm-mode-option-auto .perm-mode-option-label {
+  color: var(--pulse);
+}
+
+.perm-mode-option-right {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}

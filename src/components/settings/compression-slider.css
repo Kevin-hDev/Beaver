@@ -1,0 +1,7 @@
+.compression-slider {
+  accent-color: var(--pulse);
+}
+
+.compression-slider:disabled {
+  accent-color: var(--ink-faint);
+}

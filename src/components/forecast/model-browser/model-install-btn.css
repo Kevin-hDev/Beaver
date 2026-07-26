@@ -1,0 +1,72 @@
+.fmi-progress {
+  display: grid;
+  flex: 0 1 var(--forecast-download-progress-width);
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-xs);
+  width: min(100%, var(--forecast-download-progress-width));
+}
+
+.fmi-phase {
+  grid-column: 1 / -1;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.fmi-bar {
+  height: var(--space-xs);
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--edge);
+}
+
+.fmi-fill {
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
+  background: var(--pulse);
+  transition: transform var(--ease-smooth);
+}
+
+.fmi-pct {
+  min-width: var(--space-xl);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+
+.fmi-btn,
+.fmi-cancel {
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.fmi-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.fmi-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fmi-error {
+  color: var(--signal-error);
+  font-size: var(--text-xs);
+}
+
+.fmi-uninstall[data-confirming="true"] {
+  background: var(--surface-hover);
+}
+
+.fmi-installed {
+  display: flex;
+  align-items: center;
+  color: var(--select-text);
+}

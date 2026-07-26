@@ -1,0 +1,72 @@
+.chat-input-bubble {
+  container-type: inline-size;
+}
+
+.chat-input-area,
+.chat-input-row3 {
+  min-width: 0;
+}
+
+.chat-input-spacer {
+  min-width: 0;
+}
+
+.perm-mode-root,
+.ms-root,
+.rs-root {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.perm-mode-trigger,
+.ms-trigger,
+.rs-trigger {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ms-trigger {
+  max-width: min(220px, 34cqw);
+}
+
+.perm-mode-text,
+.ms-trigger-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perm-mode-dropdown,
+.ms-dropdown,
+.rs-dropdown {
+  z-index: var(--z-dropdown);
+}
+
+@container (max-width: 430px) {
+  .perm-mode-text,
+  .rs-trigger-label {
+    display: none;
+  }
+
+  .perm-mode-caret,
+  .ms-trigger-caret,
+  .rs-trigger-caret {
+    opacity: 1;
+  }
+
+  .ms-trigger-label {
+    max-width: 96px;
+  }
+}
+
+@container (max-width: 360px) {
+  .ms-trigger-label {
+    max-width: 64px;
+  }
+}
+
+@container (max-width: 300px) {
+  .ms-trigger-label {
+    display: none;
+  }
+}

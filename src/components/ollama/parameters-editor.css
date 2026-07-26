@@ -1,0 +1,161 @@
+/* Parameter catalog displayed inside the shared model editor card. */
+
+.pe-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.pe-intro {
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.pe-group,
+.pe-custom-section {
+  border-top: 1px solid var(--edge);
+}
+
+.pe-group-title {
+  margin: 0;
+  padding: var(--space-md) var(--space-lg) var(--space-sm);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.pe-parameter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 0.7fr);
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.pe-parameter-row + .pe-parameter-row {
+  border-top: 1px solid var(--edge);
+}
+
+.pe-parameter-info {
+  min-width: 0;
+}
+
+.pe-parameter-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.pe-parameter-name {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.pe-type-badge,
+.pe-default-badge {
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--surface-hover);
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.pe-parameter-description,
+.pe-custom-hint {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.pe-value-control,
+.pe-custom-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.pe-input {
+  min-width: 0;
+  height: 28px;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.pe-input:focus-visible {
+  border-color: var(--ink-faint);
+}
+
+.pe-fixed-input,
+.pe-custom-value {
+  flex: 1;
+}
+
+.pe-clear-btn {
+  flex-shrink: 0;
+}
+
+.pe-stop-row {
+  align-items: flex-start;
+}
+
+.pe-stop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.pe-inline-add-btn {
+  align-self: flex-start;
+}
+
+.pe-custom-hint {
+  padding: 0 var(--space-lg);
+}
+
+.pe-custom-row {
+  padding: var(--space-md) var(--space-lg) 0;
+}
+
+.pe-custom-key {
+  width: 11rem;
+}
+
+.pe-add-btn {
+  align-self: flex-start;
+  margin: var(--space-md) var(--space-lg) var(--space-lg);
+}
+
+@media (max-width: 720px) {
+  .pe-parameter-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .pe-custom-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pe-custom-key {
+    width: 100%;
+  }
+
+  .pe-custom-row .pe-clear-btn {
+    align-self: flex-end;
+  }
+}

@@ -1,0 +1,120 @@
+.sp-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sp-sheets {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--edge);
+  padding: 0 8px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.sp-sheet-tab {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sp-sheet-tab:hover {
+  color: var(--ink);
+}
+
+.sp-sheet-tab.active {
+  color: var(--tool-read);
+  border-bottom-color: var(--tool-read);
+}
+
+.sp-table-wrapper {
+  flex: 1;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.sp-table {
+  border-collapse: collapse;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+  min-width: 100%;
+}
+
+.sp-corner {
+  width: 40px;
+  min-width: 40px;
+  background: color-mix(in srgb, var(--surface) 80%, var(--edge));
+  border-right: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 3; /* local stacking: corner above col/row headers */
+}
+
+.sp-col-header {
+  padding: 4px 12px;
+  text-align: center;
+  color: var(--ink-muted);
+  font-weight: 500;
+  background: color-mix(in srgb, var(--surface) 80%, var(--edge));
+  border-bottom: 1px solid var(--edge);
+  border-right: 1px solid color-mix(in srgb, var(--edge) 40%, transparent);
+  position: sticky;
+  top: 0;
+  z-index: 2; /* local stacking: header above grid cells */
+}
+
+.sp-row-num {
+  width: 40px;
+  min-width: 40px;
+  text-align: right;
+  padding-right: 8px;
+  color: var(--ink-faint);
+  background: color-mix(in srgb, var(--surface) 80%, var(--edge));
+  border-right: 1px solid var(--edge);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  user-select: none;
+}
+
+.sp-header-cell {
+  padding: 4px 12px;
+  font-weight: 600;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--tool-read) 6%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--tool-read) 25%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--edge) 40%, transparent);
+}
+
+.sp-cell {
+  padding: 3px 12px;
+  color: var(--ink-muted);
+  border-bottom: 1px solid color-mix(in srgb, var(--edge) 30%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--edge) 20%, transparent);
+}
+
+.sp-table tbody tr:hover .sp-cell {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.sp-truncated {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono, monospace);
+  border-top: 1px solid var(--edge);
+  text-align: center;
+}

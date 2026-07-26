@@ -1,0 +1,77 @@
+/* En-tête du chat : nom de session (gauche) + actions (droite) + zone drag (milieu). */
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 38px;
+  padding: 0 var(--space-sm) 6px var(--space-md);
+  background: var(--void);
+  position: relative;
+  z-index: var(--z-sticky);
+  flex-shrink: 0;
+  /* Animé en sync avec le repli des sidebars (cf. .sidebar-hidden). */
+  transition: padding-left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Quand les sidebars sont masquées, le titre vient se loger à droite
+   du bouton "nouvelle session" flottant de la window-toolbar. */
+.sidebar-hidden .chat-header {
+  padding-left: 229px;
+}
+
+.sidebar-hidden.is-fullscreen .chat-header {
+  padding-left: 185px;
+}
+
+.chat-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.5px;
+  background: var(--edge);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.chat-header-empty::after {
+  display: none;
+}
+
+.sidebar-hidden .chat-header::after {
+  left: -19px;
+}
+
+.chat-header-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+  flex-shrink: 0;
+  user-select: none;
+  transform: translateY(4px);
+}
+
+.chat-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  transform: translateY(4px);
+}
+
+/* Boutons d'action partagés (aussi utilisé par ModeSelector).
+   Compose .icon-btn (src/styles/buttons.css); garde l'état actif. */
+.tab-action-btn {
+  color: var(--ink-muted);
+}
+
+.tab-action-btn.active {
+  color: var(--ink);
+  background: var(--surface-hover);
+}

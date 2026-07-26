@@ -1,0 +1,183 @@
+.fcn-detail {
+  padding: var(--chrome-5);
+  min-width: 0;
+}
+
+.fcn-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--chrome-4);
+  margin-bottom: 16px;
+}
+
+.fcn-detail h3 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: var(--text-lg);
+}
+
+.fcn-detail-actions,
+.fcn-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Panel actions — compose .icon-btn (src/styles/buttons.css);
+   keep their border and chart background. */
+.fcn-icon-btn {
+  border: 1px solid var(--edge);
+  background: var(--fc-chart-bg);
+  color: var(--ink-muted);
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.fcn-icon-btn:hover:not(:disabled) {
+  background: var(--fcs-hover-bg);
+  color: var(--ink);
+}
+
+/* Inline delete confirm — alias of the shared .btn system with the shared
+   28px geometry; keeps its danger colors and pulse animation. */
+.fcn-confirm-delete {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid var(--signal-error);
+  border-radius: var(--radius-sm);
+  background: var(--signal-error);
+  color: var(--ink-on-danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.fcn-confirm-delete::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 6px var(--signal-error-pulse);
+  animation: fcn-confirm-pulse 1s ease-in-out infinite;
+}
+
+.fcn-confirm-delete:hover {
+  background: var(--signal-error);
+  color: var(--ink-on-danger);
+}
+
+@keyframes fcn-confirm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.fcn-form-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    var(--forecast-note-date-width)
+    var(--forecast-note-type-width);
+  gap: var(--chrome-3);
+  margin-bottom: var(--chrome-3);
+}
+
+.fcn-type-menu {
+  min-width: var(--forecast-note-type-width);
+}
+
+.fcn-type-menu .fcs-menu-trigger {
+  background: var(--fc-chart-bg);
+  font-size: var(--text-sm);
+}
+
+.fcn-input,
+.fcn-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--fc-chart-bg);
+  color: var(--ink);
+  font: inherit;
+  outline: none;
+  transition: border-color var(--ease-smooth);
+}
+
+.fcn-input {
+  height: 28px;
+  padding: 0 var(--chrome-3);
+}
+
+.fcn-textarea {
+  min-height: 220px;
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.fcn-input:hover,
+.fcn-input:focus,
+.fcn-textarea:hover,
+.fcn-textarea:focus {
+  border-color: var(--edge);
+  background: var(--fc-chart-bg);
+  box-shadow: none;
+}
+
+.fcn-form-actions {
+  margin-top: 12px;
+}
+
+/* Form actions — thin aliases of the shared .btn system
+   (src/styles/buttons.css) with .btn-sm geometry; only colors stay here. */
+.fcn-primary-btn,
+.fcn-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--chrome-2);
+  height: 28px;
+  padding: 0 var(--chrome-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+}
+
+.fcn-primary-btn {
+  border: 1px solid var(--pulse);
+  background: var(--pulse);
+  color: var(--ink-on-pulse);
+}
+
+.fcn-secondary-btn {
+  border: 1px solid var(--edge);
+  background: var(--surface-glass);
+  color: var(--ink);
+}
+
+.fcn-secondary-btn:hover {
+  background: var(--fcs-hover-bg);
+  color: var(--ink);
+}
+
+@container (max-width: 48rem) {
+  .fcn-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fcn-type-menu {
+    width: 100%;
+  }
+}

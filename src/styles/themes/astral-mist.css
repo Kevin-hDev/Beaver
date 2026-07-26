@@ -1,0 +1,132 @@
+/* Astral Mist — near-black navy, smoky blue glass, silver-blue highlights */
+[data-theme="dark"][data-palette="astral-mist"] {
+  color-scheme: dark;
+
+  --void: #030817;
+  --app-frame: #010511;
+  --shell: var(--surface-glass);
+  --shell-opaque: rgba(10, 20, 38, 0.98);
+  --shell-translucent: rgba(10, 20, 38, 0.88);
+  --surface: var(--surface-glass);
+  --surface-hover: rgba(154, 181, 213, 0.10);
+  --edge: rgba(186, 205, 226, 0.12);
+  --ink: #dce4ee;
+  --ink-muted: #aab9cb;
+  --ink-faint: #7487a1;
+  --scrollbar-thumb: rgba(116, 135, 161, 0.36);
+  --pulse: #9ab5d5;
+  --pulse-muted: rgba(154, 181, 213, 0.16);
+  --ink-on-pulse: #07111f;
+  --ink-on-danger: #07111f;
+  --switch-track-off: var(--select-bg);
+  --switch-track-border: var(--edge);
+  --switch-track-hover: var(--ink-faint);
+  --switch-track-on: var(--pulse);
+  --switch-knob: var(--ink-on-pulse);
+  --switch-focus-ring: var(--pulse-muted);
+  --select-bg: rgba(154, 181, 213, 0.12);
+  --select-text: #c3d1e1;
+  --signal-error: #f07680;
+  --signal-error-border: rgba(240, 118, 128, 0.32);
+  --signal-error-pulse: rgba(240, 118, 128, 0.50);
+  --signal-error-pulse-fade: rgba(240, 118, 128, 0);
+  --signal-ok: #68c39c;
+  --signal-ok-border: rgba(104, 195, 156, 0.32);
+  --context-ring-fill: #a8bad0;
+  --context-ring-track: rgba(168, 186, 208, 0.20);
+  --shadow-card: 0 1px 3px rgba(0, 3, 12, 0.50), 0 8px 22px rgba(0, 3, 12, 0.34);
+  --shadow-sm: 0 2px 6px rgba(0, 3, 12, 0.32);
+  --shadow-lg: 0 12px 38px rgba(0, 3, 12, 0.56);
+  --dialog-backdrop: rgba(0, 3, 12, 0.68);
+
+  /* Aliases — tokens référencés par les composants (spec phase 2 §2) */
+  --accent: var(--pulse);
+  --pulse-hover: color-mix(in srgb, var(--pulse) 90%, white);
+  --danger: var(--signal-error);
+  --red: var(--signal-error);
+  --border-subtle: var(--edge);
+  --surface-secondary: var(--surface);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-muted);
+  --text-tertiary: var(--ink-faint);
+  --ink-primary: var(--ink);
+  /* Un cran de contraste au-dessus de --edge (sert aussi au §1.1) */
+  --edge-strong: rgba(186, 205, 226, 0.20);
+  /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
+  --btn-secondary-bg: rgba(154, 181, 213, 0.07);
+  --btn-inner-highlight: rgba(186, 205, 226, 0.05);
+
+  /* Surface variants */
+  --surface-glass: rgba(18, 33, 58, 0.58);
+  --surface-overlay: rgba(24, 42, 70, 0.78);
+  --memory-topic-list-border: transparent;
+  --memory-topic-list-bg: var(--surface-glass);
+  /* Marche d'élévation au-dessus de l'overlay, dans la famille bleu-argent */
+  --surface-raised: rgba(30, 52, 86, 0.82);
+  --tooltip-bg: #111d32;
+  --tooltip-border: rgba(186, 205, 226, 0.16);
+  --tooltip-text: var(--ink);
+  --tooltip-shadow: 0 5px 18px rgba(0, 3, 12, 0.44);
+  --chat-composer-bg: rgba(24, 42, 70, 0.62);
+  --chat-composer-border: rgba(186, 205, 226, 0.18);
+  --chat-composer-edge-highlight: rgba(186, 205, 226, 0.12);
+  --chat-composer-edge-shade: rgba(0, 3, 12, 0.55);
+  --code-block-border: rgba(186, 205, 226, 0.12);
+  --agent-trace-text: #6e819d;
+  --agent-trace-hover: #92a5bd;
+  --agent-trace-border: rgba(116, 135, 161, 0.30);
+
+  /* Semantic signals */
+  --signal-ok-bg: rgba(104, 195, 156, 0.14);
+  --signal-error-bg: rgba(240, 118, 128, 0.14);
+  --signal-warning: #c6a18f;
+  --signal-warning-bg: rgba(198, 161, 143, 0.15);
+  --signal-info: #8fb8dd;
+  --signal-info-bg: rgba(143, 184, 221, 0.15);
+
+  /* Toasts */
+  --toast-bg: rgba(10, 20, 38, 0.92);
+  --toast-error-text: #f48a93;
+  --toast-ok-text: #82d2af;
+
+  /* Diff line backgrounds — smoky blue additions, muted red deletions */
+  --diff-add-bg: rgba(124, 153, 188, 0.22);
+  --diff-add-gutter: rgb(23, 39, 61);
+  --diff-del-bg: rgba(240, 118, 128, 0.18);
+  --diff-del-gutter: rgb(57, 28, 39);
+
+  --diff-new: #9cb6d3;
+  --diff-old: #f07680;
+
+  --thinking-accent: var(--agent-trace-border);
+
+  /* Tool colors — cool smoke with restrained champagne warmth */
+  --tool-bash: #c6a18f;
+  --tool-read: #8fb8dd;
+  --tool-web: #a49acb;
+  --subagent-claudiator: #c6a18f;
+  --subagent-geminitor: #8fb8dd;
+
+  /* Forecast panel */
+  --fc-chart-bg: var(--surface-glass);
+  --fc-tooltip-bg: rgba(7, 15, 29, 0.92);
+  --fc-tooltip-text: var(--ink);
+  --fc-line-history: var(--ink-muted);
+  --fc-line-predict: var(--pulse);
+  --fc-point-predict: #dce4ee;
+  --fc-band-90: rgba(154, 181, 213, 0.06);
+  --fc-separator: var(--ink-faint);
+  --fc-forecast-zone: rgba(154, 181, 213, 0.04);
+  --fc-area-history-from: rgba(220, 228, 238, 0.15);
+  --fc-area-history-to: rgba(220, 228, 238, 0);
+  --fc-annotation: var(--signal-info);
+  --fc-anomaly: var(--signal-error);
+  --fc-scenario-a: #8fb8dd;
+  --fc-scenario-b: #a49acb;
+  --fc-scenario-c: #68c39c;
+  --fc-variable-a: #c6a18f;
+  --fc-variable-b: #cf8fa9;
+  --fc-variable-c: #78b8c7;
+  --fc-variable-d: #9fb879;
+  --fc-nav-active: var(--pulse);
+}

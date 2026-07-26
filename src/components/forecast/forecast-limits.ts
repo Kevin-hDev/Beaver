@@ -1,0 +1,8 @@
+export const MAX_FORECAST_INPUT_ROWS = 5_000;
+export const MAX_FORECAST_INPUT_COLUMNS = 256;
+export const MAX_FORECAST_CELL_CHARS = 32_768;
+export const MAX_FORECAST_COLUMN_CHARS = 80;
+export const MAX_FORECAST_INLINE_DATA_BYTES = 5 * 1024 * 1024;
+export const MAX_FORECAST_PREVIEW_CHARS = 50 * 1024 * 1024;
+export const MAX_FORECAST_COMPARISON_ANALYSES = 20;
+export const FORECAST_FREQUENCIES = ["D", "B", "W", "M", "Q", "Y", "H", "T"];

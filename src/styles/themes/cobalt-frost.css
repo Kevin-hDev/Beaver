@@ -1,0 +1,132 @@
+/* Cobalt Frost — icy white surfaces, blue-grey glass, vivid cobalt accents */
+[data-theme="light"][data-palette="cobalt-frost"] {
+  color-scheme: light;
+
+  --void: #f7f9fd;
+  --app-frame: #d8e3f0;
+  --shell: var(--surface-glass);
+  --shell-opaque: rgba(235, 241, 248, 0.98);
+  --shell-translucent: rgba(235, 241, 248, 0.86);
+  --surface: #ffffff;
+  --surface-hover: #edf4ff;
+  --edge: #d2dce9;
+  --ink: #101828;
+  --ink-muted: #344054;
+  --ink-faint: #667085;
+  --scrollbar-thumb: rgba(75, 96, 124, 0.28);
+  --pulse: #075dcc;
+  --pulse-muted: rgba(7, 93, 204, 0.12);
+  --ink-on-pulse: #ffffff;
+  --ink-on-danger: #ffffff;
+  --switch-track-off: var(--select-bg);
+  --switch-track-border: var(--edge);
+  --switch-track-hover: var(--ink-faint);
+  --switch-track-on: var(--pulse);
+  --switch-knob: var(--ink-on-pulse);
+  --switch-focus-ring: var(--pulse-muted);
+  --select-bg: #e6efff;
+  --select-text: #174ea6;
+  --signal-error: #c5303c;
+  --signal-error-border: rgba(197, 48, 60, 0.24);
+  --signal-error-pulse: rgba(197, 48, 60, 0.36);
+  --signal-error-pulse-fade: rgba(197, 48, 60, 0);
+  --signal-ok: #15803d;
+  --signal-ok-border: rgba(21, 128, 61, 0.24);
+  --context-ring-fill: #6f8097;
+  --context-ring-track: rgba(111, 128, 151, 0.20);
+  --shadow-card: 0 1px 3px rgba(29, 50, 78, 0.08), 0 8px 24px rgba(29, 50, 78, 0.07);
+  --shadow-sm: 0 1px 4px rgba(29, 50, 78, 0.12);
+  --shadow-lg: 0 12px 36px rgba(29, 50, 78, 0.16);
+  --dialog-backdrop: rgba(36, 55, 82, 0.20);
+
+  /* Aliases — tokens référencés par les composants (spec phase 2 §2) */
+  --accent: var(--pulse);
+  --pulse-hover: color-mix(in srgb, var(--pulse) 90%, white);
+  --danger: var(--signal-error);
+  --red: var(--signal-error);
+  --border-subtle: var(--edge);
+  --surface-secondary: var(--surface);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-muted);
+  --text-tertiary: var(--ink-faint);
+  --ink-primary: var(--ink);
+  /* Un cran de contraste au-dessus de --edge (sert aussi au §1.1) */
+  --edge-strong: #c0cde0;
+  /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
+  --btn-secondary-bg: #ffffff;
+  --btn-inner-highlight: rgba(255, 255, 255, 0.6);
+
+  /* Surface variants */
+  --surface-glass: rgba(232, 238, 247, 0.68);
+  --surface-overlay: rgba(255, 255, 255, 0.86);
+  --memory-topic-list-border: var(--edge);
+  --memory-topic-list-bg: var(--shell);
+  /* Thème clair : le blanc est le sommet — l'élévation est portée par l'ombre */
+  --surface-raised: var(--surface);
+  --tooltip-bg: #ffffff;
+  --tooltip-border: rgba(69, 91, 122, 0.18);
+  --tooltip-text: var(--ink);
+  --tooltip-shadow: 0 4px 16px rgba(29, 50, 78, 0.14);
+  --chat-composer-bg: rgba(255, 255, 255, 0.72);
+  --chat-composer-border: rgba(69, 91, 122, 0.22);
+  --chat-composer-edge-highlight: rgba(255, 255, 255, 0.72);
+  --chat-composer-edge-shade: rgba(29, 50, 78, 0.12);
+  --code-block-border: rgba(69, 91, 122, 0.18);
+  --agent-trace-text: #69788d;
+  --agent-trace-hover: #47566b;
+  --agent-trace-border: rgba(75, 96, 124, 0.24);
+
+  /* Semantic signals */
+  --signal-ok-bg: rgba(21, 128, 61, 0.10);
+  --signal-error-bg: rgba(197, 48, 60, 0.10);
+  --signal-warning: #a16207;
+  --signal-warning-bg: rgba(161, 98, 7, 0.11);
+  --signal-info: #075dcc;
+  --signal-info-bg: rgba(7, 93, 204, 0.11);
+
+  /* Toasts */
+  --toast-bg: rgba(255, 255, 255, 0.92);
+  --toast-error-text: #9f2430;
+  --toast-ok-text: #166534;
+
+  /* Diff line backgrounds — cobalt additions, red deletions */
+  --diff-add-bg: rgba(7, 93, 204, 0.15);
+  --diff-add-gutter: rgba(7, 93, 204, 0.12);
+  --diff-del-bg: rgba(197, 48, 60, 0.14);
+  --diff-del-gutter: rgba(197, 48, 60, 0.12);
+
+  --diff-new: #075dcc;
+  --diff-old: #c5303c;
+
+  --thinking-accent: var(--agent-trace-border);
+
+  /* Tool colors — distinct, with cobalt reserved for the primary action */
+  --tool-bash: #a15c08;
+  --tool-read: #0369a1;
+  --tool-web: #6941c6;
+  --subagent-claudiator: #a15c08;
+  --subagent-geminitor: #075dcc;
+
+  /* Forecast panel */
+  --fc-chart-bg: rgba(255, 255, 255, 0.66);
+  --fc-tooltip-bg: rgba(255, 255, 255, 0.94);
+  --fc-tooltip-text: var(--ink);
+  --fc-line-history: var(--ink-muted);
+  --fc-line-predict: var(--pulse);
+  --fc-point-predict: #101828;
+  --fc-band-90: rgba(7, 93, 204, 0.06);
+  --fc-separator: var(--ink-faint);
+  --fc-forecast-zone: rgba(7, 93, 204, 0.05);
+  --fc-area-history-from: rgba(16, 24, 40, 0.12);
+  --fc-area-history-to: rgba(16, 24, 40, 0);
+  --fc-annotation: var(--signal-info);
+  --fc-anomaly: var(--signal-error);
+  --fc-scenario-a: #075dcc;
+  --fc-scenario-b: #6941c6;
+  --fc-scenario-c: #15803d;
+  --fc-variable-a: #a15c08;
+  --fc-variable-b: #b4236a;
+  --fc-variable-c: #037a9f;
+  --fc-variable-d: #4d7c0f;
+  --fc-nav-active: var(--pulse);
+}

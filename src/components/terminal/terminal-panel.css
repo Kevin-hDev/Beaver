@@ -1,0 +1,40 @@
+.terminal-panel {
+  background: var(--void);
+  border-top: 1px solid var(--edge);
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.terminal-panel.closing {
+  height: 0 !important;
+}
+
+.terminal-panel.resizing {
+  transition: none;
+}
+
+.terminal-resize-handle {
+  height: 4px;
+  cursor: ns-resize;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.terminal-resize-handle:hover {
+  background: var(--edge);
+}
+
+.terminal-body {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 4px);
+  overflow: hidden;
+}
+
+.terminal-instances {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}

@@ -1,0 +1,119 @@
+.fca-accordion-content {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 12px;
+  opacity: 0;
+  transition: padding var(--ease-smooth), opacity var(--ease-smooth);
+}
+
+.fca-accordion.is-open .fca-accordion-content {
+  padding-bottom: 12px;
+  opacity: 1;
+}
+
+.fca-event-list,
+.fca-variable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fca-event {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  padding: 8px 10px;
+}
+
+.fca-severity {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--ink-faint);
+}
+
+.fca-severity.is-medium,
+.fca-severity.is-high {
+  background: var(--pulse);
+}
+
+.fca-event-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fca-event-label,
+.fca-event-meta,
+.fca-event-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fca-event-label {
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.fca-event-meta {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fca-event-value {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.fca-empty-line {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.fca-variable {
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  padding: 9px 10px;
+}
+
+.fca-variable-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.fca-variable-head span:last-child {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.fca-variable-track {
+  height: 5px;
+  margin-top: 8px;
+  border-radius: var(--radius-full);
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+.fca-variable-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--pulse);
+}

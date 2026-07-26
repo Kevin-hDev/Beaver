@@ -1,0 +1,76 @@
+/*
+ * Rendu Markdown des résultats de commandes shell dépliés.
+ * Même fond/typo que les blocs de code des bulles assistant (.code-block),
+ * mais sans coloration syntaxique.
+ */
+.tb-result-md {
+  margin: var(--space-xs) auto 0;
+  padding: var(--space-sm);
+  background: var(--shell);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md-bubble);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--ink-muted);
+  line-height: 1.5;
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  word-break: break-word;
+}
+
+[data-theme="light"] .tb-result-md {
+  border-color: var(--code-block-border);
+}
+
+[data-theme="dark"] .tb-result-md {
+  background: var(--surface-glass);
+  border-color: var(--code-block-border);
+}
+
+/* Scrollbar fine cohérente avec .code-block */
+.tb-result-md::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.tb-result-md::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tb-result-md::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-xs);
+}
+
+/* Bloc de code sans couleur : juste un cadre sobre sur fond shell */
+.tb-md-codeblock {
+  margin: var(--space-xs) 0;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--void);
+  border-radius: var(--radius-sm, 4px);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.tb-result-code {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Inline code sans couleur */
+.tb-result-md :not(pre) > code {
+  background: var(--void);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  color: var(--ink-muted);
+}

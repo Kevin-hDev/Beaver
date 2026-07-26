@@ -1,0 +1,190 @@
+.ms-root {
+  position: relative;
+  min-width: 0;
+}
+
+/* Trigger, star, search and badge blocks live in
+   model-selector-controls.css, imported after this file. */
+
+.ms-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 4px;
+  width: 340px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--edge);
+  background: var(--popover-bg, var(--shell));
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  overflow: hidden;
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+}
+
+.ms-root-align-right .ms-dropdown {
+  right: 0;
+  left: auto;
+}
+
+.ms-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ms-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overscroll-behavior: contain;
+}
+
+.ms-empty {
+  padding: var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+/* Provider header — collapsable */
+.ms-provider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 0 var(--space-md);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  background: transparent;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  user-select: none;
+  border-bottom: 1px solid var(--edge);
+}
+
+.ms-provider:hover,
+.ms-provider[data-local-nav-active="true"] {
+  background: var(--surface-hover);
+}
+
+.ms-provider-caret {
+  display: flex;
+  align-items: center;
+  color: var(--ink-faint);
+}
+
+.ms-provider-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-provider-count {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.ms-provider-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  transition: grid-template-rows 200ms ease;
+}
+
+.ms-provider-body.open {
+  grid-template-rows: 1fr;
+}
+
+.ms-provider-body-inner {
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Favoris header */
+.ms-section-fav {
+  min-height: 28px;
+  padding: 0 var(--space-md);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--select-text);
+  background: transparent;
+  border-bottom: 1px solid var(--edge);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Model item */
+.ms-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) max-content;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: 0 var(--space-md);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  color: var(--ink);
+  transition: background var(--ease-smooth);
+  gap: 6px;
+}
+
+.ms-item:hover,
+.ms-item[data-local-nav-active="true"] {
+  background: var(--select-bg);
+}
+
+.ms-item.active {
+  color: var(--select-text);
+}
+
+.ms-item-paid {
+  opacity: 0.4;
+}
+
+.ms-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ms-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: max-content;
+  flex-shrink: 0;
+}
+
+.ms-hint {
+  color: var(--ink-faint);
+  font-size: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

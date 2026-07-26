@@ -1,0 +1,8 @@
+/* ChatProjectControls — ligne de contrôles projet (sélecteur + branche + clone-git). */
+
+.cpc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}

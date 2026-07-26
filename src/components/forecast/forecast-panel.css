@@ -1,0 +1,99 @@
+.fc-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.fc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  padding: 0 12px 0 13px;
+  border-bottom: 1px solid var(--edge);
+  flex-shrink: 0;
+}
+
+.fc-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.fc-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.fc-context-label {
+  min-width: 0;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.fc-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.fc-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+}
+
+.fc-loading {
+  padding: 20px;
+}
+
+.fc-skeleton {
+  height: 200px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    110deg,
+    var(--surface-hover) 30%,
+    var(--edge) 50%,
+    var(--surface-hover) 70%
+  );
+  background-size: 200% 100%;
+  animation: fc-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes fc-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.fc-error {
+  padding: 20px;
+  color: var(--signal-error);
+  font-size: var(--text-sm);
+}
+
+.fc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+
+.fc-footer-end {
+  justify-content: flex-end;
+}

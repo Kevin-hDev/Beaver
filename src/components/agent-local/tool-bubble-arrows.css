@@ -1,0 +1,29 @@
+/* Chevron : uniquement au survol */
+.tb-arrow {
+  font-size: 0.5625rem;
+  color: inherit;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  text-align: center;
+}
+
+.tb-group-arrow,
+.tb-tool-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  opacity: 0;
+  line-height: 0;
+  pointer-events: none;
+  transition: opacity var(--ease-smooth), color var(--ease-smooth);
+}
+
+.tb-group-toggle:hover .tb-group-arrow,
+.tb-group-toggle:focus-visible .tb-group-arrow,
+.tb-toggle:hover .tb-tool-arrow,
+.tb-toggle:focus-visible .tb-tool-arrow,
+.tb-row:hover .tb-tool-arrow {
+  opacity: 1;
+}

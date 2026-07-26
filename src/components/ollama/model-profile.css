@@ -1,0 +1,78 @@
+/* model-profile — styles colocalisés */
+
+.mp-root {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.mp-inner {
+  padding: var(--chrome-5);
+  max-width: var(--settings-content-max-width);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.mp-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.mp-description {
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.mp-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--chrome-3) 20px;
+  font-size: var(--text-sm);
+}
+
+.mp-spec-row-border {
+  border-bottom: 1px solid var(--edge);
+}
+
+.mp-spec-label {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.mp-spec-value {
+  color: var(--ink);
+}
+
+.mp-spec-value-mono {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.mp-translation-wrapper {
+  margin-top: 24px;
+}
+
+.mp-readme {
+  padding: 0 24px 24px;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.mp-loading {
+  padding: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}

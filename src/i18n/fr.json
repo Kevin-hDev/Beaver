@@ -1,0 +1,1993 @@
+{
+  "nav": {
+    "heartbeat": "Heartbeat",
+    "personality": "/beaver",
+    "settings": "Paramètres",
+    "agentLocal": "Session"
+  },
+  "common": {
+    "delete": "Supprimer",
+    "loading": "Chargement…"
+  },
+  "providers": {
+    "tabs": { "apiKeys": "Clés API", "oauth": "OAuth" },
+    "oauth": {
+      "title": "Connexions OAuth", "openCatalog": "Providers", "catalogTitle": "Providers OAuth",
+      "catalogSubtitle": "Connexion web native, aucune installation requise.", "connected": "Connectés",
+      "emptySidebar": "Aucune connexion OAuth", "empty": "Aucun provider OAuth sélectionné",
+      "connectionLabel": "Connexion", "nativeConnection": "Web native — aucune installation requise", "experimental": "Expérimental / non officiel", "connect": "Se connecter", "disconnect": "Se déconnecter", "cancel": "Annuler",
+      "progress": { "waiting": "En attente de connexion…", "verification": "Validation requise", "success": "Connecté", "cancelled": "Connexion annulée", "error": "Connexion impossible" },
+      "successMessage": "Le provider a été connecté avec succès.", "retryCatalog": "Réessayer",
+      "issues": { "moonshotMembershipUnverified": "Connexion réussie, mais Moonshot ne parvient pas à confirmer un abonnement Kimi Code actif. Vérifie l’abonnement puis réessaie.", "xaiSubscriptionOrCreditsRequired": "xAI indique que l’abonnement Grok ou les crédits requis sont absents ou épuisés.", "reauthenticationRequired": "La connexion a expiré. Reconnecte ce provider.", "rateLimited": "Le catalogue est temporairement limité. Réessaie dans un instant.", "accessUnavailable": "Le provider refuse actuellement l’accès au catalogue.", "catalogUnavailable": "Le catalogue de modèles est temporairement indisponible." },
+      "deviceInstructions": "Saisissez ce code sur la page ouverte dans votre navigateur.", "codeLabel": "Code de connexion", "copyCode": "Copier le code", "openVerification": "Rouvrir la page de connexion",
+      "descriptions": { "openai": "ChatGPT via Codex", "moonshot": "Kimi par connexion web native, sans client", "xai": "Grok par connexion web native, sans client" }
+    },
+    "usage": {
+      "providerTitle": "Limites et crédits du fournisseur", "generalLimitsTitle": "Limites d’utilisation générales", "namedLimitsTitle": "Limites d’utilisation de {{name}}", "localTitle": "Consommation dans Beaver", "refresh": "Actualiser", "remoteUnavailable": "Les données du compte ne sont pas disponibles", "remainingPercent": "{{value}} % restants", "updated": "Actualisé", "stale": "Données anciennes", "resetsAt": "Réinitialisation : {{date}}", "openProviderSite": "Voir chez le fournisseur", "periodLabel": "Période", "historyEmpty": "Aucune consommation enregistrée", "requests": "Appels", "inputTokens": "Tokens entrants", "outputTokens": "Tokens sortants", "cachedTokens": "Tokens en cache", "reasoningTokens": "Tokens de raisonnement", "totalTokens": "Tokens totaux", "cost": "Coût", "byOrigin": "Répartition par origine", "byWorkload": "Répartition par travail",
+      "periods": { "today": "Aujourd’hui", "seven_days": "7 jours", "thirty_days": "30 jours", "all_time": "Total" },
+      "quality": { "exact": "Exact", "estimated": "Estimé", "partial": "Partiel", "unavailable": "Indisponible" },
+      "origins": { "manual_chat": "Chat manuel", "external_channel": "Canal externe", "automation": "Automatisation" },
+      "workloads": { "primary": "Principal", "subagent": "Sous-agent", "compression": "Compression" },
+      "windows": { "today": "Aujourd’hui", "seven_days": "7 jours", "thirty_days": "30 jours", "key_limit": "Limite de la clé", "requests_day": "Requêtes par jour", "tokens_minute": "Tokens par minute", "requests_limit": "Limite de requêtes", "tokens_limit": "Limite de tokens", "rolling_five_hours": "Fenêtre de 5 heures", "weekly": "Limite hebdomadaire", "provider_limit": "Limite du fournisseur" },
+      "balances": { "remaining_credits": "Crédits restants", "available_balance": "Solde disponible", "voucher_balance": "Solde bons", "cash_balance": "Solde espèces", "reset_credits": "Crédits de réinitialisation", "extra_usage_balance": "Solde Extra Usage", "extra_usage_monthly_limit": "Limite mensuelle Extra Usage", "extra_usage_monthly_used": "Extra Usage utilisé ce mois" },
+      "notices": { "usage_fetch_failed": "Impossible d’actualiser les données du fournisseur. Les dernières données valides restent affichées lorsqu’elles sont récentes.", "provider_usage_site_only": "xAI ne publie pas d’accès à ces limites. La consommation locale reste disponible.", "provider_account_usage_unavailable": "Ce fournisseur ne publie pas les limites du compte avec cette connexion." }
+    }
+  },
+  "apiKeys": {
+    "main": {
+      "title": "Clés API",
+      "connectorsBtn": "Connecteurs API"
+    },
+    "sidebar": {
+      "configured": "Configurés",
+      "empty": "Aucun provider configuré"
+    },
+    "empty": {
+      "title": "Aucun provider configuré",
+      "subtitle": "Ajoute une clé API pour accéder à des LLM distants (Groq, Gemini, Mistral…) ou des services de recherche web (Brave, Exa, Firecrawl)."
+    },
+    "details": {
+      "connected": "Connecté",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "freeTier": "Free tier",
+      "signupLink": "Site",
+      "openSite": "Ouvrir le site",
+      "quota": "Quota",
+      "quotaUnavailable": "Non disponible",
+      "apiKey": "Clé API",
+      "confirmDelete": "Confirmer la suppression"
+    },
+    "dialog": {
+      "addTitle": "Ajouter {{name}}",
+      "editTitle": "Modifier {{name}}",
+      "apiKey": "Clé API",
+      "keyPlaceholder": "Colle ta clé API ici",
+      "keyPlaceholderEdit": "Laisser vide pour garder la clé actuelle",
+      "getKeyAt": "Obtenir une clé sur {{name}}",
+      "description": "Description",
+      "testing": "Test de la clé en cours…",
+      "testOk": "Clé valide, provider connecté.",
+      "cancel": "Annuler",
+      "addAndTest": "Ajouter et tester",
+      "save": "Enregistrer",
+      "clearKey": "Effacer la clé",
+      "showKey": "Afficher",
+      "hideKey": "Masquer"
+    },
+    "connectors": {
+      "title": "Connecteurs API",
+      "subtitle": "Ajoutez des sources de données à votre instance.",
+      "search": "Rechercher des connecteurs…",
+      "empty": "Aucun connecteur ne correspond à la recherche.",
+      "tabs": {
+        "all": "Tous",
+        "llm": "AI / LLM",
+        "search": "Recherche",
+        "scraping": "Scraping",
+        "forecast": "Prévision"
+      }
+    }
+  },
+  "channels": {
+    "sidebar": {
+      "empty": "Aucun canal configuré",
+      "configured": "Configurés"
+    },
+    "detail": {
+      "token": "Token du bot",
+      "removeUser": "Retirer",
+      "tokenPlaceholder": "Collez le token ici…",
+      "botToken": "Token bot Slack",
+      "appToken": "Token app Slack",
+      "appTokenPlaceholder": "Collez le token app ici…",
+      "allowlist": "Utilisateurs autorisés",
+      "allowlistPlaceholder": "ID utilisateur…",
+      "allowlistAdd": "Ajouter",
+      "requireMention": "Mention requise en groupe",
+      "provider": "Provider LLM",
+      "model": "Modèle",
+      "testSuccess": "Connexion réussie",
+      "testFailed": "Connexion échouée",
+      "delete": "Supprimer",
+      "cancel": "Annuler",
+      "accountId": "Identifiant du compte",
+      "confirmDelete": "Supprimer ce compte ?",
+      "connected": "Connecté",
+      "disconnected": "Déconnecté"
+    },
+    "status": {
+      "off": "Arrêté",
+      "starting": "Démarrage…",
+      "running": "Actif",
+      "error": "Erreur",
+      "stopping": "Arrêt…"
+    },
+    "errors": {
+      "invalidConfig": "La configuration du canal est invalide.",
+      "unavailable": "Le canal est indisponible.",
+      "generic": "L’opération a échoué. Réessayez."
+    },
+    "browse": {
+      "title": "Canaux de messagerie",
+      "subtitle": "Connectez vos bots de messagerie pour communiquer avec les LLM.",
+      "telegramDesc": "Bot Telegram — long polling, groupes et messages privés.",
+      "slackDesc": "Bot Slack — Socket Mode, canaux et messages directs.",
+      "discordDesc": "Bot Discord — Gateway WebSocket, serveurs et messages privés.",
+      "messaging": "Messagerie",
+      "pro": "Professionnel"
+    },
+    "config": {
+      "addTitle": "Ajouter {{name}}",
+      "description": "Description",
+      "testing": "Test en cours…",
+      "addAndTest": "Ajouter et tester"
+    },
+    "main": {
+      "subtitle": "Connectez des bots de messagerie pour communiquer avec les LLM.",
+      "browseBtn": "Parcourir les canaux"
+    }
+  },
+  "welcome": {
+    "title": "Qu'allons-nous faire aujourd'hui?"
+  },
+  "projects": {
+    "title": "Projets",
+    "discussions": "Discussions",
+    "workInFolder": "Travailler dans un dossier",
+    "search": "Rechercher des projets",
+    "noFolder": "Aucun dossier",
+    "noMatch": "Aucun dossier trouvé",
+    "addNew": "Ajouter un nouveau projet",
+    "openFolder": "Ouvrir le dossier",
+    "rename": "Renommer",
+    "delete": "Supprimer",
+    "noDiscussion": "Aucune session"
+  },
+  "branches": {
+    "search": "Rechercher dans les branches",
+    "title": "Branches",
+    "worktrees": "Worktrees",
+    "uncommitted": "Non validés : {{count}} fichier(s)",
+    "createNew": "Créer et extraire une nouvelle branche…",
+    "detachedHead": "HEAD détaché",
+    "noMatch": "Aucune branche trouvée",
+    "conflictTitle": "Effectuez un commit pour changer de branche",
+    "conflictDescription": "Les modifications apportées aux fichiers suivants seraient remplacées par l'extraction :",
+    "conflictCommitAndSwitch": "Effectuer le commit et changer de branche…",
+    "conflictCancel": "Annuler",
+    "bubbleCreated": "Branche créée",
+    "bubbleSwitched": "Branche changée",
+    "createPlaceholder": "Nom de la nouvelle branche",
+    "commitRequired": "Effectuez un commit de vos modifications pour continuer",
+    "commitDescription": "Description",
+    "createSubmit": "Créer la branche",
+    "errorInvalidName": "Nom invalide : caractères interdits ou format incorrect",
+    "errorNameTooLong": "Nom trop long (max 100 caractères)",
+    "errorAlreadyExists": "Cette branche existe déjà",
+    "errorUnbornHead": "Le dépôt n'a aucun commit, crée un commit d'abord",
+    "errorGithubAuth": "Connecte GitHub avant de créer une branche",
+    "errorInternal": "Erreur interne. Réessaie ou vérifie le dépôt",
+    "errorRepositoryUnavailable": "Le dépôt Git n’est plus accessible.",
+    "errorBranchUnavailable": "Cette branche n’existe plus ou n’est pas accessible.",
+    "errorDirtyWorktree": "Enregistre les modifications en cours avant de continuer ({{count}} fichier(s)).",
+    "errorProtectedBranch": "La branche principale est protégée et ne peut pas être nettoyée.",
+    "errorBranchActive": "Cette branche est actuellement utilisée. Change de branche avant de la supprimer.",
+    "errorIdentityMissing": "Configure ton nom et ton adresse e-mail Git avant de créer un commit.",
+    "errorInvalidCommitDescription": "La description du commit est invalide ou trop longue.",
+    "errorCheckoutFailed": "Impossible de changer de branche. Vérifie le dépôt puis réessaie.",
+    "errorCommitFailed": "Impossible de créer le commit. Vérifie la configuration Git puis réessaie.",
+    "errorUnmergedCommits": "Cette branche contient {{count}} commit(s) non fusionné(s).",
+    "errorWorktreeUnavailable": "Ce worktree n’existe plus ou n’est pas accessible.",
+    "commitSwitchError": "Le commit ou le changement de branche a échoué. Vérifie ta configuration Git puis réessaie.",
+    "githubAuthTitle": "Connectez GitHub pour créer une branche",
+    "githubAuthDescription": "Ce dépôt est lié à GitHub. Connecte GitHub avant de créer une branche depuis l'application.",
+    "githubAuthConnect": "Connecter GitHub",
+    "githubAuthConnecting": "Ouverture de la connexion GitHub…",
+    "githubAuthTesting": "Vérification de la connexion GitHub…",
+    "githubAuthError": "Connexion GitHub impossible. Réessaie ou configure GitHub dans les connecteurs.",
+    "githubAuthCancel": "Annuler",
+    "deleteBranch": "Supprimer {{name}}",
+    "deleteWorktree": "Supprimer le worktree {{name}}",
+    "confirmDelete": "Confirmer",
+    "deleteRiskTitle": "Supprimer cette branche ?",
+    "deleteWorktreeRiskTitle": "Supprimer ce worktree ?",
+    "deleteRiskDescription": "Cette branche contient du travail qui risque d’être perdu. Choisis comment continuer.",
+    "deleteWorktreeRiskDescription": "Ce worktree contient des modifications non enregistrées.",
+    "deleteCurrentDescription": "Cette branche est utilisée. Beaver passera sur {{branch}} avant de la supprimer.",
+    "deleteNoFallback": "Crée d’abord une autre branche pour pouvoir supprimer celle-ci.",
+    "deleteUnmerged": "{{count}} commit(s) ne sont pas fusionné(s)",
+    "deleteCurrent": "Changer de branche et supprimer",
+    "deletePreserve": "Fusionner puis supprimer",
+    "deleteCommitMerge": "Enregistrer, fusionner puis supprimer",
+    "deleteWorktreePreserve": "Enregistrer puis supprimer",
+    "deleteDiscardChanges": "Supprimer et abandonner les modifications",
+    "deleteDiscardUnmerged": "Supprimer sans fusionner",
+    "deleteCancel": "Annuler",
+    "deleteError": "La suppression a échoué. Vérifie le dépôt puis réessaie."
+  },
+  "history": {
+    "rename": "Renommer",
+    "delete": "Supprimer",
+    "archive": "Archiver",
+    "loading": "Chargement…"
+  },
+  "sessionAge": {
+    "minute": "{{count}} min",
+    "hour": "{{count}}H",
+    "day": "{{count}} j",
+    "month": "{{count}}M",
+    "year": "{{count}} ans"
+  },
+  "agentLocal": {
+    "newSession": "Nouvelle session",
+    "noConversations": "Aucune conversation",
+    "placeholder": "Comment puis-je vous aider ?",
+    "thinking": "Réflexion",
+    "showMore": "Afficher plus",
+    "showLess": "Afficher moins",
+    "modelSearch": "Rechercher un modèle…",
+    "modelEmpty": "Aucun modèle ne correspond.",
+    "selectModel": "Choisir un modèle",
+    "selectModelHint": "Sélectionner le modèle",
+    "reasoningTitle": "Réflexion",
+    "reasoningOff": "Désactivée",
+    "reasoningAuto": "Activée",
+    "reasoningLow": "Limitée",
+    "reasoningMedium": "Moyenne",
+    "reasoningHigh": "Forte",
+    "reasoningXhigh": "Très forte",
+    "reasoningMax": "Max",
+    "reasoningUltra": "Ultra",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "stop": "Arrêter",
+    "editMessage": "Modifier et relancer",
+    "regenerate": "Relancer",
+    "copy": "Copier",
+    "clone": {
+      "action": "Cloner",
+      "title": "Cloner la session",
+      "close": "Fermer",
+      "tabs": "Branches de session",
+      "mainTab": "Main",
+      "closeTab": "Fermer l'onglet",
+      "cut": "Cloner depuis ce message",
+      "summary": "Cloner avec résumé caché",
+      "summaryFocus": "Cloner avec focus personnalisé",
+      "focusPlaceholder": "Point à privilégier dans le résumé...",
+      "create": "Créer",
+      "running": "Résumé en cours...",
+      "summaryFailed": "Le résumé n'a pas pu être généré.",
+      "withoutSummary": "Sans résumé",
+      "errorUnavailable": "Ce clone n’existe plus ou n’est plus accessible.",
+      "gitCreate": "Nouvelle branche git",
+      "gitCreating": "Création...",
+      "gitCreated": "Branche git créée",
+      "gitBranchMissing": "La branche git liée n'existe plus.",
+      "gitMissingCheckpoint": "Impossible de nettoyer : branche principale inconnue.",
+      "gitArchiveTitle": "Archiver ce clone ?",
+      "gitArchiveDescription": "Cette session est liée à la branche Git \"{{branch}}\".",
+      "gitArchiveKeep": "Oui",
+      "gitArchiveCancel": "Annuler",
+      "gitArchiveCleanup": "Nettoyer la branche et archiver"
+    },
+    "compression": "Compression du contexte",
+    "retry": {
+      "thinkingOnly": "Relance...",
+      "parserCrash": "Format corrigé...",
+      "featureDropped": "Fonction ajustée...",
+      "server": "Ollama relance...",
+      "connection": "Reconnexion...",
+      "button": "Réessayer"
+    },
+    "contextCompressed": "Contexte compressée",
+    "searchBarPlaceholder": "Rechercher…",
+    "resultCount_one": "{{count}} résultat",
+    "resultCount_other": "{{count}} résultats",
+    "favorites": "Favoris",
+    "freeCount": "{{free}} gratuit / {{total}}",
+    "thinkingDuration": "A réfléchi pendant {{seconds}}s",
+    "working": "En cours depuis {{duration}}",
+    "workSummary": "A travaillé pendant {{duration}}",
+    "workSummaryNoDuration": "Travail effectué",
+    "sessionSummary": {
+      "tooltip": "Activer/désactiver le résumé de session",
+      "title": "Résumé de session",
+      "environment": "Environnement",
+      "modifications": "Modifications",
+      "modificationsUnavailable": "Modifications temporairement indisponibles.",
+      "modificationsPartial": "{{count}} fichiers modifiés. Les chiffres affichés sont partiels.",
+      "branch": "Branche",
+      "noGit": "Aucun dépôt Git",
+      "commits": {
+        "title": "Commits",
+        "toggle": "Déplier l’historique des commits",
+        "empty": "Aucun commit sur cette branche",
+        "noMessage": "Commit sans message",
+        "noFiles": "Aucun fichier dans ce commit",
+        "error": "Historique des commits indisponible."
+      },
+      "git": {
+        "toggle": "Déplier la branche {{branch}}",
+        "changesToCommit": "{{count}} fichier(s) à Commit",
+        "commitsToPush": "{{count}} commit(s) à Push vers {{destination}} · {{branch}}",
+        "commit": "Commit",
+        "push": "Push",
+        "merge": "Merge dans {{branch}}",
+        "mergeTitle": "Merge dans {{branch}}",
+        "mergeDescription": "Choisis la branche à intégrer dans {{branch}}.",
+        "mergeSource": "Branche source",
+        "mergeSummary": "{{count}} commit(s) seront ajoutés à {{branch}}.",
+        "mergeDirty": "{{count}} modification(s) feront l’objet d’un Commit avant le Merge.",
+        "mergeAlready": "Cette branche est déjà mergée dans {{branch}}.",
+        "confirmMerge": "Merge dans {{branch}}",
+        "commitAndMerge": "Commit puis Merge dans {{branch}}",
+        "mergeError": "Merge impossible. Vérifie le dépôt puis réessaie.",
+        "mergeConflict": "Le Merge crée un conflit. Il a été annulé sans modifier la branche.",
+        "mergeContextChanged": "La branche active a changé. Relance le Merge.",
+        "mergeDirtyError": "De nouvelles modifications sont apparues. Vérifie-les avant le Merge.",
+        "upToDate": "Tout est à jour",
+        "noRemote": "Aucun dépôt distant",
+        "remoteStatusUnavailable": "Statut du dépôt distant indisponible.",
+        "localBranch": "Branche locale · aucun Push vers {{branch}}",
+        "destinationGithub": "GitHub",
+        "destinationRemote": "le dépôt distant",
+        "remoteChanges": "Des changements distants sont disponibles",
+        "commitTitle": "Commit des modifications",
+        "commitDescription": "Message du commit (facultatif)",
+        "cancel": "Annuler",
+        "confirmCommit": "Commit",
+        "commitError": "Impossible de créer le commit.",
+        "pushError": "Push impossible.",
+        "authenticationError": "Connexion Git requise pour effectuer le Push.",
+        "permissionDenied": "Le dépôt distant a refusé le Push. Vérifie tes droits ou la protection de la branche.",
+        "networkError": "Connexion au dépôt distant impossible.",
+        "contextChanged": "Le projet ou la branche a changé. Relance le Push.",
+        "remoteChanged": "La branche distante contient des changements plus récents. Synchronise le dépôt avant de refaire le Push."
+      },
+      "sections": {
+        "todos": "Todo list",
+        "plans": "Plan",
+        "subagents": "Sous-agents"
+      },
+      "emptyTodos": "Aucune todo active",
+      "emptyPlans": "Aucun plan",
+      "emptySubagents": "Aucun sous-agent",
+      "todoProgress": "{{done}}/{{total}}",
+      "todoRunStatus": {
+        "active": "En cours",
+        "paused": "En pause"
+      },
+      "planStatus": {
+        "draft": "brouillon",
+        "awaiting_approval": "à valider",
+        "approved": "validé",
+        "rejected": "rejeté",
+        "cancelled": "annulé"
+      },
+      "subagentType": {
+        "explorer": "Explore",
+        "coder": "Coder"
+      }
+    },
+    "fileChanges": {
+      "changed_one": "{{count}} fichier modifié",
+      "changed_other": "{{count}} fichiers modifiés",
+      "toggle": "Afficher les fichiers modifiés",
+      "review": "Review",
+      "reviewFile": "Review {{name}}"
+    },
+    "tokens": "tokens",
+    "contextUsage": {
+      "title": "Fenêtre de contexte",
+      "categories": {
+        "messages": "Messages",
+        "systemTools": "Outils système",
+        "mcpConnectors": "MCP / connecteurs",
+        "skills": "Skills",
+        "memory": "Mémoire",
+        "metaContext": "Meta contexte",
+        "systemPrompt": "System prompt"
+      }
+    },
+    "tps": "t/s",
+    "fileReadError": "Impossible de lire le fichier",
+    "toolActivity": {
+      "inProgress": "en cours",
+      "completed": "terminé",
+      "toggleDetails": "Afficher les détails des outils",
+      "groups": {
+        "exploration": "Exploration",
+        "modification": "Modifications",
+        "command": "Commandes",
+        "web": "Web",
+        "git": "Git",
+        "memory": "MEMORY",
+        "other": "Outils"
+      },
+      "counts": {
+        "files_one": "{{count}} fichier",
+        "files_other": "{{count}} fichiers",
+        "searches_one": "{{count}} recherche",
+        "searches_other": "{{count}} recherches",
+        "lists_one": "{{count}} liste",
+        "lists_other": "{{count}} listes",
+        "writes_one": "{{count}} écrit",
+        "writes_other": "{{count}} écrits",
+        "edits_one": "{{count}} modifié",
+        "edits_other": "{{count}} modifiés",
+        "commands_one": "{{count}} commande",
+        "commands_other": "{{count}} commandes",
+        "webSearches_one": "{{count}} recherche web",
+        "webSearches_other": "{{count}} recherches web",
+        "webFetches_one": "{{count}} page",
+        "webFetches_other": "{{count}} pages",
+        "gitActions_one": "{{count}} action git",
+        "gitActions_other": "{{count}} actions git",
+        "otherActions_one": "{{count}} action",
+        "otherActions_other": "{{count}} actions"
+      },
+      "actions": {
+        "read": "Lu",
+        "create": "Créé",
+        "edit": "Modifié",
+        "list": "Listé",
+        "search": "Cherché",
+        "run": "Exécuté",
+        "createBranch": "Branche créée",
+        "switchBranch": "Branche basculée",
+        "skill": "Skill chargé",
+        "agent": "Délégué",
+        "forecast": "Analysé",
+        "mcp": "MCP cherché",
+        "tool": "Outil"
+      },
+      "groupError": "Une erreur est survenue dans ce groupe"
+    }
+  },
+  "switchModel": {
+    "title": "Changement de modèle",
+    "description": "Tu passes de {{from}} à {{to}}. Que veux-tu faire avec la conversation actuelle ?",
+    "remember": "Mémoriser mon choix pour cette session",
+    "newSession": "Nouvelle session",
+    "continue": "Continuer dans cette session"
+  },
+  "switchWorktree": {
+    "title": "Changement de dossier",
+    "description": "Ce worktree utilise un autre dossier de travail. Crée une nouvelle session pour garder la conversation actuelle intacte.",
+    "cancel": "Annuler",
+    "newSession": "Nouvelle session",
+    "close": "Fermer"
+  },
+  "permissionMode": {
+    "chatLabel": "Chatbot",
+    "chatDescription": "Discuter sans accès aux outils, aux fichiers ou à Internet",
+    "autoLabel": "Accès complet",
+    "autoDescription": "Accès non restreint à Internet et aux fichiers de votre ordinateur",
+    "manualLabel": "Demander l’autorisation",
+    "manualDescription": "Toujours demander avant de modifier les fichiers externes et d’utiliser Internet",
+    "toggleHint": "Modifier les permissions (Shift+Tab)"
+  },
+  "missingDirectory": {
+    "title": "Ce dossier n’existe plus",
+    "parent": "Dossier disponible : {{path}}",
+    "switch": "Switcher",
+    "create": "Créer",
+    "error": "Impossible de préparer le dossier de cette session."
+  },
+  "permissionDialog": {
+    "title": "Autoriser à {{action}} ?",
+    "allow": "Autoriser une fois",
+    "allowSession": "Toujours autoriser",
+    "deny": "Refuser",
+    "tools": {
+      "write_file": "écrire un fichier",
+      "edit_file": "modifier un fichier",
+      "bash": "exécuter une commande",
+      "web_fetch": "récupérer une URL"
+    }
+  },
+  "modelDownloads": {
+    "queued": "En attente",
+    "kinds": {
+      "ollama": "Ollama",
+      "forecast": "Forecast"
+    },
+    "phases": {
+      "starting": "Démarrage",
+      "downloading": "Téléchargement",
+      "installing": "Installation",
+      "preparing-runtime": "Préparation du moteur",
+      "completed": "Terminé"
+    },
+    "errors": {
+      "queueUnavailable": "Impossible d'ajouter ce modèle à la file d'attente."
+    }
+  },
+  "ollama": {
+    "selectModel": "Sélectionne un modèle",
+    "edit": "Modifier",
+    "editing": "Édition",
+    "save": "Sauvegarder",
+    "cancel": "Annuler",
+    "searchPlaceholder": "Rechercher un modèle...",
+    "install": "Installer",
+    "update": "Mettre à jour",
+    "updateAvailable": "Une nouvelle version est disponible",
+    "installedUpToDate": "Installé et à jour",
+    "ctx": "ctx",
+    "vramWarning": "Ce modèle pourrait dépasser votre VRAM disponible",
+    "editModelfile": "Éditer le modelfile",
+    "systemPrompt": "System prompt",
+    "systemPromptWarningTitle": "Attention",
+    "systemPromptWarningBody": "Ce prompt personnalisé remplacera les instructions de comportement par défaut de l’application pour ce modèle uniquement. Les instructions techniques nécessaires au fonctionnement des outils et des modes Agent resteront actives. Les fichiers de contexte activés resteront également injectés. Effacer ce prompt rétablira automatiquement les instructions par défaut de l’application.",
+    "systemPromptWarningRemember": "Ne plus afficher cet avertissement",
+    "systemPromptWarningContinue": "Continuer",
+    "parameters": "Paramètres",
+    "noSystemPrompt": "(aucun system prompt défini)",
+    "noParameters": "(aucun paramètre — Ollama utilise ses valeurs par défaut)",
+    "parameterEditorHint": "Laisse une valeur vide pour utiliser le réglage par défaut d’Ollama.",
+    "parameterDefaultValue": "Valeur par défaut : {{value}}",
+    "parameterDefaultShort": "défaut {{value}}",
+    "useDefaultValue": "Utiliser la valeur par défaut",
+    "addStopSequence": "+ Ajouter une séquence d’arrêt",
+    "removeStopSequence": "Supprimer cette séquence d’arrêt",
+    "stopSequencePlaceholder": "Texte ou token d’arrêt",
+    "customParameters": "Paramètres personnalisés",
+    "customParametersHint": "À utiliser seulement pour une option Ollama qui n’apparaît pas encore dans la liste officielle.",
+    "customParameterName": "Nom du paramètre",
+    "customParameterValue": "Valeur",
+    "addCustomParameter": "+ Ajouter un paramètre personnalisé",
+    "invalidCustomParameter": "Vérifie le nom et la valeur du paramètre personnalisé.",
+    "invalidOfficialParameter": "Vérifie les valeurs numériques des paramètres officiels.",
+    "parameterGroups": {
+      "context": "Contexte",
+      "length": "Longueur de réponse",
+      "creativity": "Créativité et reproductibilité",
+      "repetition": "Répétitions",
+      "sampling": "Sélection des tokens",
+      "stop": "Arrêt de la réponse"
+    },
+    "parameterTypes": {
+      "integer": "entier",
+      "decimal": "décimal",
+      "text": "texte"
+    },
+    "parameterDescriptions": {
+      "num_ctx": "Quantité maximale de texte gardée en mémoire pendant la conversation. Une valeur élevée utilise plus de mémoire.",
+      "num_predict": "Nombre maximal de tokens générés. -1 laisse Ollama continuer sans limite fixe.",
+      "draft_num_predict": "Nombre de tokens proposés à l’avance par un modèle brouillon. Utile seulement pour la génération spéculative.",
+      "temperature": "Niveau de créativité. Plus bas rend les réponses prévisibles, plus haut les rend variées.",
+      "seed": "Nombre utilisé pour reproduire une génération avec la même demande et les mêmes réglages.",
+      "repeat_last_n": "Nombre de tokens précédents examinés pour éviter les répétitions. 0 désactive ce contrôle et -1 utilise tout le contexte.",
+      "repeat_penalty": "Force de la pénalité contre les répétitions. Une valeur trop élevée peut dégrader le texte.",
+      "top_k": "Nombre de choix conservés à chaque étape. Plus bas rend les réponses plus prudentes.",
+      "top_p": "Conserve les choix jusqu’à cette probabilité cumulée. Plus bas rend les réponses plus ciblées.",
+      "min_p": "Élimine les choix trop improbables par rapport au meilleur choix. Plus haut rend la sélection plus stricte.",
+      "stop": "Texte ou token qui arrête immédiatement la réponse. Plusieurs séquences peuvent être ajoutées."
+    },
+    "systemPromptPlaceholder": "Définis le comportement et la personnalité du modèle…",
+    "description": "Description",
+    "translate": "Traduire…",
+    "translating": "Traduction en cours…",
+    "original": "Original",
+    "searchHint": "Tape un nom (ex : gemma, qwen, mistral) puis Entrée",
+    "loadingProfile": "Chargement de la fiche…",
+    "loadingVariants": "Chargement des variantes…",
+    "capabilities": "Capacités",
+    "fileSize": "Taille fichier",
+    "context": "Contexte",
+    "architecture": "Architecture",
+    "moe": "MoE",
+    "yes": "Oui",
+    "no": "Non",
+    "digest": "Digest",
+    "quantization": "Quantization",
+    "paramsLabel": "Paramètres",
+    "contextTokens": "K tokens",
+    "remove": "Supprimer",
+    "modelfileTab": "Modelfile",
+    "modelsTab": "Modèles"
+  },
+  "heartbeat": {
+    "back": "Retour",
+    "toggle": "Activer/Désactiver",
+    "title": "Réveils",
+    "subtitle": "Créer des réveils automatisés pour planifier différentes tâches",
+    "empty": "Aucun réveil configuré. Clique sur Nouveau réveil pour commencer.",
+    "newWakeup": "Nouveau réveil",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "confirmDelete": "Confirmer la suppression",
+    "pausedHint": "Réveils en veille — désactive le master switch",
+    "badges": {
+      "active": "Actif",
+      "inactive": "Inactif"
+    },
+    "fields": {
+      "name": "Nom",
+      "provider": "Provider",
+      "model": "Modèle",
+      "schedule": "Planification",
+      "nextFire": "Prochain déclenchement",
+      "lastStatus": "Dernier statut",
+      "lastRun": "Dernière exécution",
+      "description": "Description",
+      "prompt": "Prompt"
+    },
+    "status": {
+      "ok": "Réussi",
+      "error": "Échoué",
+      "missed": "Raté",
+      "never": "Jamais exécuté",
+      "none": "Aucun"
+    },
+    "history": {
+      "title": "Historique",
+      "empty": "Aucune exécution"
+    },
+    "sidebar": {
+      "title": "Réveils",
+      "pause": "Mettre en veille",
+      "resume": "Reprendre",
+      "empty": "Aucun réveil actif",
+      "pausedEmpty": "Réveils en veille"
+    },
+    "form": {
+      "createTitle": "Nouveau réveil",
+      "editTitle": "Modifier le réveil",
+      "name": "Nom",
+      "provider": "Provider",
+      "model": "Modèle",
+      "pickModel": "Choisir un modèle",
+      "noToolCapable": "Aucun modèle tool-capable",
+      "prompt": "Prompt",
+      "description": "Description (courte)",
+      "schedule": "Planification",
+      "cancel": "Annuler",
+      "create": "Créer",
+      "save": "Enregistrer",
+      "scheduleKind": {
+        "once": "Ponctuel",
+        "daily": "Journalier",
+        "weekly": "Hebdo"
+      },
+      "weekdays": {
+        "0": "Lundi",
+        "1": "Mardi",
+        "2": "Mercredi",
+        "3": "Jeudi",
+        "4": "Vendredi",
+        "5": "Samedi",
+        "6": "Dimanche"
+      }
+    }
+  },
+  "personality": {
+    "files": "Core",
+    "selectFile": "Sélectionne un fichier",
+    "open": "Ouvrir",
+    "inject": "Contexte",
+    "injected": "Injecté",
+    "failedToLoad": "Échec du chargement",
+    "failedToRead": "Échec de la lecture"
+  },
+  "settings": {
+    "light": "Clair",
+    "dark": "Sombre",
+    "emeraldNight": "Émeraude nocturne",
+    "cobaltFrost": "Cobalt givré",
+    "astralMist": "Brume astrale",
+    "crimsonEclipse": "Éclipse écarlate",
+    "system": "Système",
+    "memory": {
+      "intro": "Gère ce que l'agent peut retenir durablement, sans charger tous les détails dans chaque conversation.",
+      "modeTitle": "Mode mémoire",
+      "modeDesc": "Le mode manuel exige une demande explicite. Le mode automatique retient seulement les faits durables.",
+      "modes": { "disabled": "Désactivé", "manual": "Manuel", "automatic": "Automatique" },
+      "budgetTitle": "Budget de contexte",
+      "budgetDesc": "Limite maximale réservée au résumé et aux lectures mémoire.",
+      "topics": "Mémoires enregistrées",
+      "search": "Rechercher dans les mémoires",
+      "allTypes": "Tous les types",
+      "allStatuses": "Tous les statuts",
+      "global": "Mémoire globale",
+      "activeProject": "Projet actif · {{name}}",
+      "topicCount_one": "{{count}} sujet",
+      "topicCount_other": "{{count}} sujets",
+      "empty": "Aucune mémoire pour cette portée",
+      "disabledHint": "La mémoire est désactivée. Les fichiers existants sont conservés.",
+      "legacyTitle": "Ancien contenu détecté",
+      "legacyDesc": "Les anciens dossiers sont conservés mais ne sont pas injectés.",
+      "loading": "Chargement de la mémoire…",
+      "error": "Impossible de charger la mémoire",
+      "retry": "Réessayer",
+      "tokenUnit": "tokens",
+      "loadTopics": "Afficher les mémoires",
+      "loadingTopics": "Chargement des mémoires…",
+      "previewError": "Impossible de lire cette mémoire.",
+      "closePreview": "Fermer",
+      "archive": "Archiver",
+      "confirmArchive": "Confirmer",
+      "sources": { "user": "Utilisateur", "parent": "Agent principal", "extractor": "Automatique", "subagent-suggestion": "Suggestion d’un sous-agent" },
+      "types": { "preference": "Préférence", "feedback": "Retour", "project": "Projet", "reference": "Référence" },
+      "statuses": { "confirmed": "Confirmé", "inferred": "Déduit", "stale": "À vérifier", "archived": "Archivé" }
+    },
+    "tabs": {
+      "general": "Général",
+      "ollama": "Ollama",
+      "connectors": "Connecteurs",
+      "apiKeys": "Clés API",
+      "providers": "Providers",
+      "llm": "LLM",
+      "tools": "Tools",
+      "memory": "Mémoire",
+      "mascot": "Mascotte",
+      "archivedChats": "Chats archivés",
+      "advanced": "Avancé",
+      "shortcuts": "Raccourcis clavier",
+      "about": "À propos",
+      "channels": "Canaux"
+    },
+    "mascot": {
+      "previewTitle": "Aperçu de la mascotte",
+      "beaverName": "Beaver",
+      "previewActive": "Aperçu animé",
+      "previewPaused": "Animation en pause",
+      "settingsTitle": "Réglages",
+      "enabledTitle": "Afficher la mascotte",
+      "enabledDesc": "Garder le castor visible au-dessus du bureau et des autres applications",
+      "sizeTitle": "Taille",
+      "sizeDesc": "Ajuster la taille de la mascotte à l'écran",
+      "collectionTitle": "Collection",
+      "beaverDesc": "La mascotte principale de Beaver",
+      "moveLabel": "Déplacer la mascotte"
+    },
+    "archivedChats": {
+      "title": "Chats archivés",
+      "deleteAll": "Tout supprimer",
+      "searchPlaceholder": "Rechercher des discussions archivées",
+      "allProjects": "Tous les projets",
+      "count": "{{count}} discussion(s)",
+      "restore": "Désarchiver",
+      "delete": "Supprimer",
+      "confirmDeleteButton": "Confirmer",
+      "empty": "Aucun chat archivé",
+      "loading": "Chargement des archives…",
+      "restoreOk": "Chat désarchivé",
+      "restoreFailed": "Impossible de désarchiver le chat",
+      "deleteOk": "Chat supprimé",
+      "deleteAllOk": "Chats archivés supprimés",
+      "deleteFailed": "Impossible de supprimer le chat",
+      "deleteConfirm": "Supprimer définitivement ce chat archivé ?",
+      "deleteAllConfirm": "Supprimer définitivement tous les chats archivés ?"
+    },
+    "general": {
+      "themeTitle": "Thème",
+      "themeDesc": "Apparence de l'application",
+      "fontSizeTitle": "Taille de police",
+      "fontSizeDesc": "Taille de base de l'interface en pixels",
+      "fontSizeIncrease": "Augmenter la taille de police",
+      "fontSizeDecrease": "Réduire la taille de police",
+      "fontFamilyTitle": "Police d'écriture",
+      "fontFamilyDesc": "Police utilisée dans l'application",
+      "codeThemeTitle": "Thème de code",
+      "codeThemeDesc": "Coloration des blocs de code et previews",
+      "languageTitle": "Langue",
+      "languageDesc": "Langue de l'interface",
+      "responseLangTitle": "Langue de réponse du LLM",
+      "responseLangDesc": "Langue dans laquelle le modèle IA répondra",
+      "sidebarExpandTitle": "Déplier la barre latérale au survol",
+      "sidebarExpandDesc": "La barre latérale se déplie quand vous la survolez",
+      "linkPreviewTitle": "Aperçu des liens",
+      "linkPreviewDesc": "Afficher une carte d'aperçu pour les URL dans le chat"
+    },
+    "tools": {
+      "intro": "Ces outils définissent ce que l'agent peut faire pour toi. Les outils essentiels sont toujours actifs. Les outils optionnels s'activent ou se désactivent selon tes besoins : l'agent n'utilisera que ce qui est activé.",
+      "lockedTitle": "Tools essentiels",
+      "optionalTitle": "Tools optionnels",
+      "lockedBadge": "Toujours actif",
+      "groups": {
+        "terminal": {
+          "title": "Terminal",
+          "description": "Permet à l'agent de lancer des commandes directement sur ta machine (git, builds, scripts). C'est l'outil le plus puissant : tout ce que ton terminal peut faire, l'agent peut le faire."
+        },
+        "files": {
+          "title": "Fichiers",
+          "description": "Permet à l'agent de lire, créer et modifier les fichiers de ton projet : code, configs, notes, documents."
+        },
+        "file_search": {
+          "title": "Recherche de fichiers",
+          "description": "Permet à l'agent de fouiller ton projet pour retrouver un fichier ou chercher un mot précis dans le code."
+        },
+        "web": {
+          "title": "Web",
+          "description": "Permet à l'agent de chercher des infos en ligne et d'ouvrir des pages web quand il a besoin de données actuelles."
+        },
+        "mcp": {
+          "title": "Connecteurs externes",
+          "description": "Permet à l'agent d'utiliser les connecteurs externes que tu as configurés dans l'onglet Connecteurs."
+        },
+        "skills": {
+          "title": "Skills",
+          "description": "Permet à l'agent de suivre des guides spécialisés (skills) pour certaines tâches. Désactive si tu n'en utilises pas."
+        },
+        "user_choice": {
+          "title": "Choix utilisateur",
+          "description": "Permet à l'agent de te demander ton avis quand il hésite entre plusieurs options. Désactive si tu préfères qu'il décide seul."
+        },
+        "subagents": {
+          "title": "Sous-agents",
+          "description": "Permet à l'agent de déléguer une sous-tâche à un agent secondaire, puis de reprendre le résultat. Désactive si tu veux tout garder dans une seule conversation."
+        },
+        "plan_mode": {
+          "title": "Plan mode",
+          "description": "Permet à l'agent de te proposer un plan d'action et d'attendre ton accord avant d'agir. Désactive si tu préfères qu'il passe directement à l'action."
+        },
+        "todo_list": {
+          "title": "Todo list",
+          "description": "Permet à l'agent de tenir une checklist pendant un long travail, pour ne rien oublier. Désactive si les checklists ne te servent pas."
+        },
+        "agent_diagnostics": {
+          "title": "Diagnostics agent",
+          "description": "Permet à l'agent de relire ses erreurs récentes pour se corriger après un échec. Désactive si tu ne veux pas qu'il perde du temps à analyser ses échecs."
+        },
+        "git_branches": {
+          "title": "Branches Git",
+          "description": "Permet à l'agent de créer ou changer de branche Git pour isoler son travail. Désactive si tu préfères gérer les branches toi-même."
+        },
+        "forecast": {
+          "title": "Forecast",
+          "description": "Permet à l'agent d'utiliser le module Forecast : lancer des prévisions, lire les résultats, ajouter des scénarios. Désactive si tu n'utilises pas Forecast."
+        },
+        "spreadsheet": {
+          "title": "Spreadsheet / Excel",
+          "description": "Permet à l'agent de lire ou créer des tableurs (Excel, ODS, CSV, TSV). Désactive si tu ne travailles pas avec ce genre de fichiers."
+        },
+        "document": {
+          "title": "Document / Word",
+          "description": "Permet à l'agent d'extraire le texte de documents existants ou de créer des fichiers Word. Désactive si tu ne travailles pas avec ces documents."
+        },
+        "images": {
+          "title": "Images",
+          "description": "Permet à l'agent d'inspecter, redimensionner, recadrer ou convertir des images. Désactive si tu n'as pas besoin de traiter d'images."
+        }
+      }
+    },
+    "advanced": {
+      "autostartTitle": "Lancer au démarrage",
+      "autostartDesc": "Ouvrir Beaver automatiquement au démarrage du système",
+      "startHiddenTitle": "Démarrage masqué",
+      "startHiddenDesc": "Démarrer en arrière-plan sans ouvrir la fenêtre",
+      "trayTitle": "Icône dans la barre",
+      "trayDesc": "Garder Beaver dans la barre système",
+      "defaultModelTitle": "Modèle par défaut",
+      "defaultModelDesc": "Modèle utilisé par défaut pour les nouvelles conversations",
+      "keepAliveTitle": "Décharger le modèle",
+      "keepAliveDesc": "Durée avant de libérer la mémoire du modèle",
+      "searchModel": "Rechercher un modèle…",
+      "keepAlive": {
+        "immediately": "Immédiatement",
+        "2min": "Après 2 min",
+        "5min": "Après 5 min",
+        "10min": "Après 10 min",
+        "15min": "Après 15 min",
+        "30min": "Après 30 min",
+        "onClose": "À la fermeture"
+      },
+      "hardwareAccelTitle": "Accélération matérielle",
+      "hardwareAccelDesc": "Moteur d'inférence pour les modèles locaux",
+      "hardwareAccelCpu": "CPU",
+      "hardwareAccelGpu": "GPU",
+      "hardwareAccelRestart": "Restart Ollama",
+      "hardwareAccelRestarted": "Ollama redémarré",
+      "ollamaExternalReused": "Ollama externe réutilisé",
+      "restartRequiredTitle": "Redémarrage nécessaire",
+      "restartRequiredDesc": "Les changements seront appliqués après le redémarrage d'Ollama",
+      "ollamaTitle": "Ollama",
+      "multiModelTitle": "Charger plusieurs modèles",
+      "multiModelDesc": "Garder plusieurs modèles en VRAM simultanément (nécessite plus de mémoire GPU)",
+      "showGpuStatusTitle": "Afficher l'état GPU",
+      "showGpuStatusDesc": "Afficher l'indicateur CPU/GPU et l'utilisation VRAM dans le chat",
+      "vramTableTitle": "VRAM requise par modèle",
+      "vramTableDesc": "Estimation de la VRAM nécessaire selon la taille et la quantification",
+      "vramTableSize": "Taille",
+      "vramFormula": "taille modèle + (contexte/1000 × 0.5 GB) + 0.5 GB",
+      "fileAccessTitle": "Accès fichiers",
+      "fileAccessDesc": "Dossiers accessibles par le LLM pour la lecture et l'écriture de fichiers",
+      "addPath": "Ajouter un dossier",
+      "resetPaths": "Réinitialiser",
+      "fullDisk": "Tout le disque",
+      "compressionTitle": "Compression",
+      "compressionEnabledTitle": "Compression automatique",
+      "compressionEnabledDesc": "Résume automatiquement la conversation quand le contexte approche de sa limite",
+      "compressionThresholdTitle": "Seuil de compression",
+      "compressionThresholdDesc": "Pourcentage de la fenêtre de contexte à partir duquel la compression se déclenche"
+    },
+    "llm": {
+      "searchPlaceholder": "Rechercher un modèle…",
+      "families": "Familles",
+      "back": "Retour",
+      "maxInput": "Contexte (entrée)",
+      "maxOutput": "Sortie max",
+      "inputCost": "Coût entrée",
+      "outputCost": "Coût sortie",
+      "vision": "Vision",
+      "tools": "Tools",
+      "reasoning": "Raisonnement",
+      "caching": "Prompt caching",
+      "webSearch": "Recherche web",
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "shortcuts": {
+      "toggleTerminal": "Ouvrir/fermer le terminal",
+      "toggleSidebar": "Ouvrir/fermer la sidebar",
+      "goBack": "Précédent",
+      "goForward": "Suivant",
+      "newSession": "Nouvelle session",
+      "searchDialog": "Rechercher une conversation",
+      "togglePreview": "Ouvrir/fermer le panneau de prévisualisation"
+    },
+    "confirm": {
+      "deleteModel": "Confirmer ?"
+    }
+  },
+  "terminal": {
+    "newTab": "Nouvel onglet",
+    "closePanel": "Fermer le panneau",
+    "processExited": "Processus terminé avec le code {{code}}",
+    "failedToStart": "Le terminal n'a pas pu démarrer"
+  },
+  "skills": {
+    "sourceBuiltIn": "Intégré",
+    "sourceUser": "Personnel",
+    "sourceProject": "Projet",
+    "noResults": "Aucun skill trouvé"
+  },
+  "search": {
+    "placeholder": "Rechercher des conversations…",
+    "recent": "Conversations récentes",
+    "results": "Résultats",
+    "empty": "Aucune conversation trouvée"
+  },
+  "about": {
+    "version": "Version",
+    "tauri": "Tauri",
+    "os": "Système",
+    "viewOnGithub": "Voir sur GitHub",
+    "description": "Application desktop agentique pour LLM locaux et cloud."
+  },
+  "browser": {
+    "title": "Navigateur",
+    "addressLabel": "Adresse du navigateur",
+    "addressPlaceholder": "Saisir une URL ou rechercher",
+    "openAddress": "Ouvrir l’adresse",
+    "startTitle": "Commencez à naviguer",
+    "startDescription": "Saisissez une URL ou lancez une recherche",
+    "invalidUrl": "Saisissez une adresse HTTP ou HTTPS valide.",
+    "tabsLabel": "Onglets du navigateur",
+    "newTab": "Nouvel onglet",
+    "closeTab": "Fermer {{title}}",
+    "addTab": "Ajouter un onglet",
+    "back": "Retour",
+    "forward": "Avancer",
+    "reload": "Recharger",
+    "stop": "Arrêter le chargement",
+    "localSites": "Sites locaux disponibles",
+    "tabLimitTitle": "Limite de dix onglets atteinte",
+    "tabLimitDescription": "Remplacer l’onglet inactif « {{title}} » ?",
+    "replaceTab": "Remplacer",
+    "operationFailed": "Le navigateur n’a pas pu effectuer cette action.",
+    "loading": "Chargement du navigateur…",
+    "blockedFeature": "Cette fonction est désactivée dans cette version.",
+    "unavailable": "Le navigateur sécurisé est indisponible."
+  },
+  "filePreview": {
+    "closeTab": "Fermer l'onglet",
+    "default": "par défaut",
+    "noFiles": "Aucun fichier créé ou modifié dans cette session.",
+    "listModes": {
+      "latest": "Dernière exécution",
+      "all": "Tous les fichiers",
+      "uncommitted": "Non commit"
+    },
+    "filesModified": "Fichiers",
+    "loading": "Lecture du fichier...",
+    "fileNotFound": "Le fichier n'a pas pu être lu. Il a peut-être été supprimé ou déplacé.",
+    "diffUnavailable": "Les différences de ce fichier ne peuvent pas être affichées.",
+    "diffTruncated": "Aperçu limité : le fichier contient davantage de modifications.",
+    "gitStatus": {
+      "added": "Créé",
+      "modified": "Modifié",
+      "deleted": "Supprimé",
+      "renamed": "Renommé",
+      "copied": "Copié",
+      "changed": "Modifié"
+    },
+    "togglePanel": "Aperçu fichiers",
+    "reduce": "Réduire",
+    "fullscreen": "Plein écran",
+    "open": "Ouvrir",
+    "openWith": "Ouvrir avec...",
+    "noEditorDetected": "Aucun éditeur détecté",
+    "moreRows": "+{{count}} lignes",
+    "totalRows": "{{count}} lignes au total — aperçu limité",
+    "charCount": "{{format}} — {{count}} caractères",
+    "blockCount": "DOCX — {{count}} blocs"
+  },
+  "fileTree": {
+    "clearFilter": "Effacer le filtre",
+    "filterPlaceholder": "Filtrer les fichiers...",
+    "toggleTree": "Arborescence du projet",
+    "loadError": "Impossible de lire ce dossier",
+    "noResults": "Aucun résultat"
+  },
+  "errors": {
+    "crashMessage": "Une erreur est survenue. Relance l'application.",
+    "operationFailed": "L'opération a échoué. Réessaye.",
+    "streamStartFailed": "Le flux n'a pas pu démarrer.",
+    "streamInterrupted": "Le flux s'est interrompu.",
+    "ollamaConnectionLost": "Connexion à Ollama perdue",
+    "ollamaServerError": "Erreur serveur Ollama",
+    "ollamaWaiting": "Connexion à Ollama perdue ({{seconds}}s) — reconnexion en cours…",
+    "ollamaReconnected": "Ollama reconnecté",
+    "ollamaReconnecting": "Ollama reconnecté — relance dans {{seconds}}s…",
+    "keyringFailed": "Impossible d'accéder au trousseau de clés. Installe gnome-keyring ou kwallet pour stocker les clés API.",
+    "ollamaRestartFailed": "Le redémarrage d'Ollama a échoué",
+    "maxFiles": "Maximum {{max}} fichiers",
+    "fileTooLarge": "{{name}} dépasse 20 Mo",
+    "saveFailed": "La sauvegarde a échoué",
+    "projectRenameFailed": "Impossible de renommer le projet",
+    "projectDeleteFailed": "Impossible de supprimer le projet",
+    "projectOpenFailed": "Impossible d'ouvrir le dossier",
+    "sessionSaveFailed": "La session n'a pas pu être sauvegardée",
+    "downloadFailed": "Le téléchargement a échoué",
+    "updateFailed": "La mise à jour a échoué",
+    "apiKeyFailed": "Impossible de sauvegarder la clé",
+    "apiKeyDeleteFailed": "Impossible de supprimer la clé",
+    "readError": "Impossible de lire le fichier",
+    "modelNotFound": "Modèle introuvable",
+    "rateLimited": "Trop de requêtes, réessaye dans un instant",
+    "authFailed": "Authentification échouée, vérifie ta clé API",
+    "moonshotMembershipUnverified": "Moonshot ne parvient pas à confirmer un abonnement Kimi Code actif.",
+    "xaiSubscriptionOrCreditsRequired": "xAI indique qu’un abonnement Grok ou des crédits sont requis.",
+    "providerAccessUnavailable": "Le provider refuse actuellement l’accès au modèle.",
+    "providerConnectionFailed": "Connexion au provider impossible.",
+    "providerTemporarilyUnavailable": "Le provider est temporairement indisponible. Réessaie dans un instant.",
+    "providerRequestRejected": "Le provider a refusé la requête.",
+    "providerConfigurationInvalid": "La requête n’a pas pu être préparée.",
+    "oauthReauthenticationRequired": "La connexion OAuth a expiré. Reconnecte le provider.",
+    "toolFailed": "L'outil a échoué",
+    "webToolFailed": "Outil web échoué : {{message}}"
+  },
+  "updates": {
+    "tooltip": "Mises à jour disponibles",
+    "appUpdate": "Mettre à jour",
+    "modelUpdate": "Mettre à jour",
+    "version": "Version {{version}}",
+    "ollamaBinaryUpdate": "Mettre à jour",
+    "forecastDevRuntime": "DEV · Moteur",
+    "forecastDevModel": "DEV · Modèle",
+    "forecastDevReview": "Examiner",
+    "releaseNotesTitle": "Notes de version {{version}}",
+    "showDetails": "Afficher les détails",
+    "hideDetails": "Masquer les détails"
+  },
+  "units": {
+    "gb": "Go"
+  },
+  "a11y": {
+    "close": "Fermer",
+    "minimize": "Réduire",
+    "maximize": "Agrandir"
+  },
+  "wakeupFormat": {
+    "daily": "Journalier",
+    "weekly": "Hebdo"
+  },
+  "codex": {
+    "title": "GPT via Codex (dev)",
+    "description": "Connexion OAuth à ChatGPT pour les tests internes.",
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "loggedIn": "Connecté",
+    "loggedOut": "Non connecté",
+    "loggingIn": "Connexion en cours…"
+  },
+  "agentImport": {
+    "title": "Importer depuis tes autres assistants",
+    "description": "Choisis chaque application séparément. Les skills et règles restent dans leurs dossiers d'origine en lecture seule.",
+    "loading": "Recherche des configurations compatibles…",
+    "onboardingLater": "Tu pourras modifier ces choix plus tard dans Réglages > Avancé.",
+    "status": {
+      "detected": "Détecté",
+      "empty": "Aucun contenu compatible",
+      "missing": "Non détecté",
+      "unavailable": "Accès impossible"
+    },
+    "card": {
+      "counts": "{{documents}} document(s) · {{rules}} règle(s) · {{skills}} skill(s)",
+      "migrated": "Migré",
+      "active": "Migration active",
+      "activeCount": "{{count}} élément(s) actif(s)",
+      "disabled": "Désactivé"
+    },
+    "sections": {
+      "documents": "Instructions globales",
+      "rules": "Règles",
+      "skills": "Skills"
+    },
+    "detail": {
+      "description": "Sélectionne exactement ce que Beaver pourra utiliser.",
+      "selectedCount": "{{selected}} sur {{total}} sélectionné(s)",
+      "searchSkills": "Rechercher un skill",
+      "partial": "Une partie de cette configuration a été ignorée : fichier trop volumineux, dossier inaccessible ou limite d'analyse atteinte. Les éléments affichés restent utilisables.",
+      "updateAvailable": "Une version plus récente est disponible.",
+      "imported": "Importé dans Beaver",
+      "empty": "Aucun contenu compatible détecté pour cette source."
+    },
+    "actions": {
+      "all": "Tout",
+      "none": "Rien",
+      "back": "Retour aux sources",
+      "confirmSource": "Confirmer cette source",
+      "confirmChanges": "Confirmer les changements",
+      "reactivate": "Réactiver cette source",
+      "disable": "Désactiver",
+      "saving": "Enregistrement…",
+      "rescan": "Relancer l'analyse",
+      "retry": "Réessayer"
+    },
+    "conflict": {
+      "title": "Un document existe déjà",
+      "description": "{{names}} est déjà présent dans Beaver.",
+      "keep": "Annuler",
+      "replace": "Remplacer avec sauvegarde"
+    },
+    "messages": {
+      "saved": "Configuration d'importation enregistrée",
+      "scanFailed": "Impossible d'analyser les sources pour le moment."
+    },
+    "settings": {
+      "title": "Importation depuis d'autres assistants",
+      "description": "Gère les règles, instructions et skills lus depuis tes autres outils.",
+      "manage": "Gérer"
+    }
+  },
+  "onboarding": {
+    "common": {
+      "back": "Retour",
+      "continue": "Continuer",
+      "skip": "Passer"
+    },
+    "welcome": {
+      "title": "Bienvenue dans Beaver",
+      "description": "Un assistant IA pour travailler avec des modèles locaux ou des providers cloud, selon ce que tu préfères.",
+      "getStarted": "Commencer"
+    },
+    "preferences": {
+      "title": "Personnalise Beaver",
+      "description": "Choisis le thème et la langue de l'interface avant d'ouvrir l'application."
+    },
+    "api": {
+      "title": "Configure un provider LLM",
+      "description": "Ajoute une clé API pour utiliser les modèles cloud. Seuls les providers LLM sont affichés ici.",
+      "loading": "Chargement des providers LLM…",
+      "keyLabel": "Clé API {{name}}",
+      "keyLabelFallback": "Clé API",
+      "keyPlaceholder": "Colle ta clé API",
+      "getKey": "Obtenir une clé {{name}}",
+      "saving": "Vérification…"
+    }
+  },
+  "ollamaSetup": {
+    "title": "Configuration d'Ollama",
+    "description": "Ollama permet de faire tourner des modèles d'IA directement sur ta machine. Tu peux aussi passer cette étape et utiliser les providers cloud.",
+    "download": "Télécharger Ollama",
+    "downloading": "Téléchargement d'Ollama…",
+    "cancel": "Annuler",
+    "cancelling": "Annulation en cours…",
+    "skip": "Passer",
+    "skipping": "Passage en cours…",
+    "extracting": "Installation en cours…",
+    "verifying": "Vérification en cours…",
+    "starting": "Démarrage d'Ollama…",
+    "downloadingGpu": "Téléchargement GPU…",
+    "error": "L'installation a échoué. Détails ci-dessous."
+  },
+  "connectors": {
+    "main": {
+      "subtitle": "Permettez aux LLM de se connecter à d'autres applications et services",
+      "browseBtn": "Parcourir les connecteurs"
+    },
+    "sidebar": {
+      "configured": "Configurés",
+      "empty": "Aucun connecteur configuré",
+      "loadError": "Impossible de charger les connecteurs"
+    },
+    "detail": {
+      "connected": "Connecté",
+      "disconnected": "Déconnecté",
+      "description": "Description",
+      "tools": "Outils disponibles",
+      "author": "Auteur",
+      "website": "Site web",
+      "openSite": "Ouvrir le site",
+      "confirmDeleteBtn": "Supprimer",
+      "confirmDisconnectTitle": "Déconnecter {{name}} ?",
+      "confirmDisconnectDesc": "Le LLM n'aura plus accès aux services {{name}}.",
+      "confirmDisconnectBtn": "Déconnecter",
+      "cancel": "Annuler"
+    },
+    "browse": {
+      "title": "Parcourir les connecteurs",
+      "subtitle": "Ajoutez des connecteurs à votre instance.",
+      "search": "Rechercher des connecteurs…",
+      "empty": "Aucun connecteur ne correspond.",
+      "tabMcp": "MCP",
+      "tabPlugins": "Plugins",
+      "pluginsEmpty": "Bientôt disponible",
+      "categories": {
+        "all": "Tous",
+        "productivity": "Productivité",
+        "design": "Design",
+        "devtools": "Dev Tools",
+        "communication": "Communication",
+        "ai-ml": "IA / ML",
+        "scraping": "Scraping",
+        "community": "Communauté"
+      }
+    },
+    "comingSoon": "Bientôt",
+    "localSecurityWarning": "Un connecteur MCP local exécute du code avec les droits de votre compte utilisateur.",
+    "config": {
+      "addTitle": "Ajouter {{name}}",
+      "token": "Token",
+      "tokenPlaceholder": "Colle ton token ici",
+      "testing": "Test en cours…",
+      "testOk": "Connecteur validé.",
+      "addAndTest": "Ajouter et tester",
+      "testError": "Impossible de valider le connecteur. Vérifiez le token puis réessayez.",
+      "cancel": "Annuler",
+      "confirmAddDesc": "Ajouter {{name}} à vos connecteurs ?",
+      "confirmAddBtn": "Ajouter"
+    },
+    "oauth": {
+      "title": "Authentification en cours",
+      "discovering": "Connexion au serveur en cours…",
+      "message": "Complétez les étapes de connexion dans le nouvel onglet du navigateur.",
+      "testing": "Validation du connecteur en cours…",
+      "retry": "Cela n'a pas fonctionné ? Relancez.",
+      "cancel": "Annuler",
+      "successTitle": "Connexion réussie",
+      "successMessage": "Le connecteur a été ajouté avec succès.",
+      "errorGeneric": "Échec de la connexion. Réessayez."
+    }
+  },
+  "linkPreview": {
+    "noTitle": "Sans titre",
+    "openSite": "Ouvrir le site"
+  },
+  "chatMenu": {
+    "plusButtonHint": "Ajouter des fichiers et plus encore",
+    "addFile": "Ajouter une image ou un fichier",
+    "planMode": "Mode plan",
+    "planModeDesc": "Préparer un plan",
+    "disablePlanMode": "Désactiver le mode plan",
+    "connectors": "Connecteurs",
+    "plugins": "Plugins",
+    "noConnectors": "Aucun connecteur",
+    "pluginsEmpty": "Bientôt disponible"
+  },
+  "vision": {
+    "unsupportedModel": "Vision non prise en charge par ce modèle"
+  },
+  "subagents": {
+    "backgroundCount_one": "{{count}} sous-agent actif",
+    "backgroundCount_other": "{{count}} sous-agents actifs",
+    "stopAll": "Tout arrêter",
+    "running": "en cours...",
+    "stop": "Arrêter",
+    "open": "Ouvrir",
+    "bubbleLabel_one": "Sous-agent : {{count}} agent créé",
+    "bubbleLabel_other": "Sous-agents : {{count}} agents créés",
+    "completed": "terminé",
+    "failed": "échoué",
+    "cancelled": "annulé",
+    "interrupted": "interrompu"
+  },
+  "todos": {
+    "progress": "{{done}}/{{total}} tâches",
+    "noActive": "Todo terminée",
+    "status": {
+      "pending": "à faire",
+      "in_progress": "en cours",
+      "completed": "terminée"
+    }
+  },
+  "interactiveChoice": {
+    "title": "Choix interactif",
+    "step": "{{current}}/{{total}}",
+    "recommended": "Recommandé",
+    "otherLabel": "Autre",
+    "other": "Autre réponse",
+    "otherPlaceholder": "Écrire votre réponse",
+    "inputLocked": "Répondez à la question ci-dessus"
+  },
+  "forecast": {
+    "chart": {
+      "resetZoom": "Réinitialiser le zoom",
+      "forecastStart": "Début prévision"
+    },
+    "chartCard": {
+      "main": "Graphe principal",
+      "fan": "Horizon zoomé",
+      "seasonality": "Saisonnalité",
+      "reliability": "Erreur du backtest (sMAPE)",
+      "withSeries": "{{title}} — {{series}}",
+      "collapse": "Replier la carte",
+      "expand": "Déplier la carte"
+    },
+    "companion": {
+      "mean": "moyenne",
+      "insufficientData": "Pas assez de données pour ce graphique.",
+      "indexBase": "Indice (premier mois = 100)",
+      "showAll": "Tout",
+      "showNone": "Rien"
+    },
+    "zoomJump": {
+      "goTo": "Aller à la position {{index}} sur {{count}}",
+      "label": "Raccourcis de zoom"
+    },
+    "title": "Forecast",
+    "noAnalysis": "Aucune analyse en cours",
+    "selection": {
+      "label": "Sélection",
+      "manual": "Manuel",
+      "auto": "Auto",
+      "allowCloud": "Autoriser les modèles cloud",
+      "loadFailed": "Impossible de charger la sélection Forecast.",
+      "saveFailed": "Impossible d'enregistrer la sélection Forecast."
+    },
+    "workbench": {
+      "windowTitle": "Espace Forecast",
+      "navigation": "Espaces Forecast",
+      "open": "Ouvrir l'espace Forecast",
+      "openFailed": "Impossible d'ouvrir l'espace Forecast.",
+      "syncFailed": "Impossible d'actualiser l'espace Forecast.",
+      "loading": "Chargement de l'espace Forecast…",
+      "unavailable": "Le contexte Forecast est indisponible.",
+      "draftSaveFailed": "Impossible d'enregistrer les modifications de l'espace Forecast.",
+      "newAnalysis": "Nouvelle analyse",
+      "workspace": "Espace de travail",
+      "sections": {
+        "data": "Données",
+        "forecast": "Prévision",
+        "evaluation": "Évaluation",
+        "comparison": "Comparaison",
+        "scenarios": "Scénarios",
+        "notes": "Notes",
+        "report": "Rapport"
+      },
+      "sectionDescriptions": {
+        "data": "Inspecter les données, leur mapping et les contrôles de qualité.",
+        "forecast": "Consulter la prévision complète et ses différentes couches.",
+        "evaluation": "Mesurer les modèles avec des baselines et des validations temporelles.",
+        "comparison": "Comparer la qualité, la vitesse et les contraintes des modèles.",
+        "scenarios": "Créer et modifier des hypothèses sans perdre la prévision de référence.",
+        "notes": "Créer, organiser et consulter les notes liées à cette prévision.",
+        "report": "Rassembler la provenance, les notes et les exports avancés."
+      },
+      "data": {
+        "loadFailed": "Impossible de charger les données de l'analyse.",
+        "rows": "Lignes source",
+        "historyPoints": "Points historiques",
+        "futureRows": "Lignes futures",
+        "series": "Séries",
+        "missingPeriods": "Périodes manquantes",
+        "outliers": "Valeurs atypiques",
+        "target": "Cible",
+        "date": "Date",
+        "frequency": "Fréquence",
+        "covariates": "Variables externes",
+        "none": "Aucune",
+        "quality": "Qualité des données",
+        "valid": "Données validées",
+        "notAvailable": "Contrôle indisponible pour cette ancienne analyse",
+        "needsAttention": "Attention requise",
+        "issueError": "Erreur bloquante",
+        "issueWarning": "Avertissement",
+        "preview": "Aperçu des données",
+        "rowsDisplayed": "{{shown}} sur {{total}} lignes",
+        "noRows": "Aucune ligne n'est disponible pour cette analyse.",
+        "previewLimited": "L'aperçu est limité aux 200 premières lignes."
+      },
+      "evaluation": {
+        "loading": "Chargement des évaluations…",
+        "loadFailed": "Impossible de charger les évaluations Forecast.",
+        "runFailed": "Impossible de terminer le backtest Forecast.",
+        "run": "Lancer le backtest",
+        "running": "Backtest en cours…",
+        "rollingBacktest": "Validation temporelle glissante",
+        "summary": "{{windows}} fenêtres · horizon {{horizon}}",
+        "notRun": "Aucun backtest lancé",
+        "model": "Modèle",
+        "coverage": "Couverture",
+        "duration": "Durée",
+        "status": "Résultat",
+        "baseline": "Baseline",
+        "modelKind": "Modèle Forecast",
+        "current": "actuel",
+        "reference": "Référence",
+        "beatsBaseline": "Meilleur que la baseline",
+        "missesBaseline": "Ne bat pas la baseline",
+        "noAnalysis": "Aucune analyse à évaluer",
+        "noAnalysisDescription": "Lancez d'abord une prévision depuis la conversation.",
+        "emptyTitle": "Les résultats comparables apparaîtront ici",
+        "emptyEvaluation": "Le backtest compare le modèle actuel à quatre baselines sans utiliser le futur pendant l'entraînement.",
+        "emptyComparison": "Lancez un backtest dans l'espace Évaluation pour obtenir un classement fiable.",
+        "createEnsemble": "Créer l'ensemble", "ensembleRunning": "Création en cours…",
+        "ensembleFailed": "Impossible de créer l'ensemble de modèles.",
+        "ensembleReady": "Ensemble créé à partir de {{count}} modèles backtestés. Sa combinaison reste à valider séparément.",
+        "baselines": {"naive": "Naive", "seasonal_naive": "Naive saisonnier", "drift": "Drift", "ets": "ETS"},
+        "warnings": {
+          "history": "Historique insuffisant",
+          "cloud": "Service cloud non configuré",
+          "notInstalled": "Modèle non installé",
+          "resources": "Ressources insuffisantes",
+          "execution": "Évaluation incomplète",
+          "unavailable": "Résultat indisponible"
+        },
+        "planWarnings": {
+          "short_history": "Moins de trois fenêtres sont disponibles : interprétez le classement avec prudence.",
+          "reduced_horizon": "L'horizon d'évaluation a été réduit pour conserver des fenêtres temporelles valides.",
+          "unavailable": "La fiabilité de cette évaluation est limitée."
+        }
+      }
+    },
+    "docs": {
+      "windowTitle": "Documentation Forecast",
+      "openFailed": "Impossible d'ouvrir la documentation Forecast.",
+      "kicker": "Documentation technique",
+      "status": "Guide Forecast",
+      "navLabel": "Documentation Forecast",
+      "openTooltip": "Ouvrir la documentation Forecast",
+      "nav": {
+        "overview": "Vue d'ensemble",
+        "datasets": "Datasets",
+        "models": "Modèles",
+        "predictions": "Prévisions",
+        "uncertainty": "Incertitude",
+        "covariates": "Covariables",
+        "multiseries": "Multi-séries",
+        "scenarios": "Scénarios",
+        "agentWorkflows": "Agents LLM",
+        "toolContracts": "Tools Forecast",
+        "troubleshooting": "Diagnostic",
+        "limits": "Limites"
+      }
+    },
+    "askAgent": "Demander à l'agent",
+    "importFile": "Importer un fichier (CSV, Excel)",
+    "pasteData": "Coller des données",
+    "fromUrl": "Depuis une URL",
+    "recentAnalyses": "Analyses récentes",
+    "comingSoon": "Bientôt disponible",
+    "panelMode": {
+      "title": "Mode du panneau",
+      "preview": "Aperçu fichier",
+      "forecast": "Forecast"
+    },
+    "nav": {
+      "mainView": "Vue principale",
+      "scenarios": "Scénarios",
+      "comparisons": "Comparaisons",
+      "notes": "Notes",
+      "history": "Historique"
+    },
+    "history": {
+      "searchPlaceholder": "Rechercher…",
+      "empty": "Aucune analyse sauvegardée.",
+      "points_one": "{{count}} point",
+      "points_other": "{{count}} points",
+      "horizonShort": "Horiz. {{count}}",
+      "mapeShort": "MAPE {{value}}%",
+      "edit": "Renommer",
+      "delete": "Supprimer",
+      "validate": "Valider",
+      "cancel": "Annuler",
+      "renameFailed": "Impossible de renommer l'analyse.",
+      "deleteFailed": "Impossible de supprimer l'analyse."
+    },
+    "view": {
+      "period": "Période",
+      "detailedPredictions": "Prévisions détaillées",
+      "series": "Série",
+      "historySeries": "Historique",
+      "forecastSeries": "Prévision",
+      "confidenceRange": "Plage de confiance",
+      "ensembleSeries": "Ensemble pondéré",
+      "filters": {
+        "button": "Filtres",
+        "series": "Série",
+        "uncertainty": "Incertitude",
+        "scenarios": "Scénarios",
+        "variables": "Variables",
+        "events": "Événements",
+        "comparisons": "Comparaisons",
+        "anomalies": "Anomalies",
+        "quality": "Qualité",
+        "history": "Historique",
+        "forecast": "Prévision",
+        "confidence": "Plage de confiance",
+        "annotations": "Annotations",
+        "residualAnomalies": "Anomalies résiduelles",
+        "dataQualityIssues": "Alertes qualité",
+        "noScenarioLayers": "Aucun scénario disponible pour cette analyse.",
+        "noVariableLayers": "Aucune variable affichable pour cette analyse.",
+        "noLayersYet": "Aucune couche disponible pour le moment."
+      }
+    },
+    "scenarios": {
+      "name": "Nom du scénario",
+      "description": "Description optionnelle",
+      "adjustment": "Ajustement en pourcentage",
+      "percentType": "Ajustement global",
+      "contextType": "Contexte",
+      "seriesScope": "Série ciblée",
+      "allSeries": "Toutes les séries",
+      "percentMode": "%",
+      "absoluteMode": "Valeur",
+      "contextValue": "Valeur du contexte",
+      "removeContext": "Retirer la variable",
+      "addContext": "Ajouter une variable",
+      "contextSummary_one": "Contexte {{count}} variable",
+      "contextSummary_other": "Contexte {{count}} variables",
+      "launch": "Lancer le scénario",
+      "relaunch": "Relancer le scénario",
+      "percentHint": "Crée une courbe dérivée à partir de la prévision actuelle, sans relancer le modèle.",
+      "contextHint": "Relance le modèle avec les nouvelles valeurs futures des variables sélectionnées.",
+      "preview": "Aperçu",
+      "update": "Mettre à jour",
+      "cancel": "Annuler",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "confirmDelete": "Confirmer suppression",
+      "togglePredictions": "Afficher les prédictions",
+      "predictions": "Prédictions",
+      "noPredictions": "Aucune prédiction disponible.",
+      "saving": "Enregistrement…",
+      "empty": "Aucun scénario pour cette analyse.",
+      "emptySub": "Ajoutez une hypothèse pour comparer la prévision principale.",
+      "points_one": "{{count}} point",
+      "points_other": "{{count}} points",
+      "loadFailed": "Impossible de charger les scénarios.",
+      "saveFailed": "Impossible d'enregistrer le scénario.",
+      "updateFailed": "Impossible de mettre à jour le scénario.",
+      "deleteFailed": "Impossible de supprimer le scénario."
+    },
+    "comparisons": {
+      "series": "Série",
+      "scenarioMeta": "Scénario",
+      "forecastMeta": "{{model}} · H{{horizon}}",
+      "base": "Référence",
+      "diff": "Diff",
+      "delta": "Écart",
+      "averageDelta": "Écart moyen",
+      "maxDelta": "Écart max",
+      "averageDeltaPct": "Écart moyen %",
+      "direction": "Direction",
+      "higher": "Plus haut",
+      "lower": "Plus bas",
+      "mixed": "Mixte",
+      "empty": "Aucune comparaison disponible.",
+      "emptySub": "Créez un scénario ou une prévision compatible pour comparer les courbes.",
+      "loadFailed": "Impossible de charger les comparaisons."
+    },
+    "notes": {
+      "open": "Ouvrir la note",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "timeline": "Timeline annotée",
+      "timelineEmpty": "Aucune note placée sur cette prévision.",
+      "count_one": "{{count}} note",
+      "count_other": "{{count}} notes",
+      "new": "Nouvelle note",
+      "userSource": "Utilisateur",
+      "llmSource": "LLM",
+      "sources": {
+        "user": "Utilisateur",
+        "llm": "LLM"
+      },
+      "types": {
+        "context": "Contexte",
+        "risk": "Risque",
+        "decision": "Décision",
+        "anomaly": "Anomalie",
+        "hypothesis": "Hypothèse"
+      },
+      "empty": "Aucune note pour le moment.",
+      "selectNote": "Sélectionne une note ou crée une nouvelle note.",
+      "titlePlaceholder": "Titre de la note",
+      "datePlaceholder": "Date",
+      "contentPlaceholder": "Contenu Markdown de la note",
+      "save": "Enregistrer",
+      "saving": "Enregistrement",
+      "cancel": "Annuler",
+      "confirmDelete": "Confirmer suppression",
+      "loadFailed": "Impossible de charger les notes.",
+      "saveFailed": "Impossible d'enregistrer la note.",
+      "deleteFailed": "Impossible de supprimer la note.",
+      "openFailed": "Impossible d'ouvrir la note."
+    },
+    "analysis": {
+      "loadFailed": "Impossible de charger l'analyse.",
+      "series": "Série",
+      "trend": "Tendance",
+      "trendSub": "Lecture générale de la prévision.",
+      "uncertainty": "Incertitude",
+      "uncertaintySub": "Amplitude de la plage de confiance.",
+      "highlights": "Points marquants",
+      "highlightsSub": "Valeurs et mouvements importants.",
+      "anomalies": "Anomalies",
+      "anomaliesSub": "Écarts inhabituels mesurés sur les résidus.",
+      "variables": "Variables",
+      "variablesSub": "Impact vérifié par permutation chronologique.",
+      "direction": "Direction",
+      "totalChange": "Variation totale",
+      "startValue": "Début",
+      "endValue": "Fin",
+      "rising": "Hausse",
+      "falling": "Baisse",
+      "stable": "Stable",
+      "averageRange": "Plage moyenne",
+      "maxRange": "Plage max",
+      "maxRangePeriod": "Période max",
+      "highestPoint": "Point le plus haut",
+      "lowestPoint": "Point le plus bas",
+      "strongestRise": "Plus forte hausse",
+      "strongestDrop": "Plus forte baisse",
+      "unusualPoint": "Point inhabituel",
+      "noHighlights": "Aucun point marquant détecté.",
+      "noAnomalies": "Aucune anomalie résiduelle détectée.",
+      "noVariables": "Importance indisponible ou données insuffisantes.",
+      "decomposition": "Décomposition",
+      "decompositionSub": "Tendance, saisonnalité et résidus séparés.",
+      "drift": "Dérive",
+      "driftSub": "Évolution entre l'historique de référence et la période récente.",
+      "noDecomposition": "Historique insuffisant pour la décomposition.",
+      "noDriftData": "Historique insuffisant pour mesurer la dérive.",
+      "decompositionMethod": "Méthode",
+      "seasonalPeriod": "Période saisonnière",
+      "seasonalStrength": "Force saisonnière",
+      "notDetected": "Non détectée",
+      "notAvailable": "Indisponible",
+      "residualAnomaly": "Anomalie résiduelle",
+      "residualAnomalyMeta": "{{date}} · score {{score}}",
+      "variableImportanceValue": "{{value}} % · {{direction}}",
+      "variableDirection": {"positive": "positive", "negative": "négative", "neutral": "neutre"},
+      "driftStatus": "État",
+      "driftDetected": "Dérive détectée",
+      "driftStable": "Stable",
+      "driftScore": "Score de dérive",
+      "distributionShift": "Écart de distribution",
+      "methods": {"classical_additive": "Additive classique", "moving_average_trend": "Moyenne mobile"},
+      "variableRange": "{{min}} → {{max}}"
+    },
+    "config": {
+      "title": "Configuration",
+      "back": "Retour",
+      "dataPhases": "Phases des données",
+      "historyRows": "Historique",
+      "futureRows": "Futur connu",
+      "seriesCount": "Séries",
+      "selectedContext": "Contexte sélectionné",
+      "detectedFutureContext": "Contexte futur détecté",
+      "futureContextColumns": "Colonnes de contexte futur détectées",
+      "target": "Cible",
+      "dateColumn": "Colonne date",
+      "seriesColumn": "Colonne série",
+      "noSeriesColumn": "Aucune colonne série",
+      "covariates": "Covariables",
+      "frequency": "Fréquence",
+      "horizon": "Horizon",
+      "confidence": "Confiance",
+      "model": "Modèle",
+      "launch": "Lancer le forecast",
+      "launching": "Calcul en cours…",
+      "rows_one": "{{count}} ligne",
+      "rows_other": "{{count}} lignes",
+      "validation": {
+        "horizonTooLong": "L'horizon dépasse la limite de ce modèle ({{max}}).",
+        "futureRowsMismatch": "Le nombre de lignes futures connues doit être égal à l'horizon choisi.",
+        "futureRowsPerSeriesMismatch": "Chaque série doit avoir le même nombre de lignes futures connues.",
+        "contextUnsupported": "Le modèle choisi ne prend pas en charge les variables de contexte.",
+        "futureContextUnsupported": "Le modèle choisi ne prend pas en charge le contexte futur connu."
+      },
+      "messages": {
+        "futureRowsMismatchTitle": "Horizon incohérent",
+        "futureRowsMismatchBody": "{{future}} lignes futures connues ont été détectées, mais l'horizon actuel est de {{horizon}}.",
+        "futureRowsPerSeriesMismatchTitle": "Séries incomplètes",
+        "futureRowsPerSeriesMismatchBody": "Les séries n'ont pas toutes le même nombre de lignes futures connues.",
+        "contextUnsupportedTitle": "Contexte non disponible",
+        "contextUnsupportedBody": "Les covariables sélectionnées ne seront pas utilisées avec ce modèle.",
+        "futureContextUnsupportedTitle": "Contexte futur non disponible",
+        "futureContextUnsupportedBody": "Ce modèle lit l'historique principal, mais n'exploite pas les valeurs futures connues des covariables.",
+        "futureContextReadyTitle": "Contexte futur prêt",
+        "futureContextReadyBody": "{{count}} colonne(s) sélectionnée(s) ont déjà des valeurs sur les lignes futures connues.",
+        "futureContextMissingTitle": "Contexte futur incomplet",
+        "futureContextMissingBody": "Des lignes futures connues existent, mais aucune covariable sélectionnée n'y a encore de valeur exploitable.",
+        "addFutureRowsTitle": "Contexte futur possible",
+        "addFutureRowsBody": "Ajoute des lignes sans cible à la fin du fichier pour fournir des valeurs futures connues à ce modèle.",
+        "futureDatesOnlyTitle": "Dates futures seulement",
+        "futureDatesOnlyBody": "Les lignes futures connues serviront surtout à fixer les dates de sortie tant qu'aucune covariable n'est sélectionnée."
+      }
+    },
+    "frequency": {
+      "D": "Jour",
+      "B": "Jour ouvré",
+      "W": "Semaine",
+      "M": "Mois",
+      "Q": "Trimestre",
+      "Y": "Année",
+      "H": "Heure",
+      "T": "Minute"
+    },
+    "errors": {
+      "importFailed": "Import impossible. Vérifie le format du fichier.",
+      "launchFailed": "Le calcul a échoué. Vérifie les colonnes, le modèle et la clé API."
+    },
+    "modelConfig": {
+      "sidebarTitle": "Config",
+      "title": "Configuration",
+      "edit": "Éditer",
+      "save": "Sauvegarder",
+      "cancel": "Annuler",
+      "noModel": "Aucun modèle Forecast disponible.",
+      "inherited": "Hérité",
+      "enabled": "Activé",
+      "disabled": "Désactivé",
+      "params": {
+        "horizon_max_override": {
+          "label": "Horizon maximum",
+          "description": "Nombre maximal de points futurs que ce modèle peut prévoir par appel. Exemple : avec une fréquence journalière, 31 = 31 jours ; avec une fréquence horaire, 24 = 24 heures. Vide ou 0 garde la limite native du modèle."
+        },
+        "context_length": {
+          "label": "Contexte historique",
+          "description": "Nombre de points passés donnés au modèle pour comprendre la tendance, la saisonnalité et les ruptures. Plus haut donne plus d'historique, mais peut ralentir et diluer les changements récents."
+        },
+        "quantiles": {
+          "label": "Quantiles",
+          "description": "Niveaux probabilistes retournés par le modèle. 0.5 est la prévision centrale ; 0.1 et 0.9 donnent une plage basse/haute où le résultat a de fortes chances de se trouver. Plus la plage est large, plus l'incertitude est élevée."
+        },
+        "precision": {
+          "label": "Précision",
+          "description": "Format numérique utilisé en local. auto laisse le moteur choisir ; float32 privilégie la stabilité ; float16/bfloat16 économisent mémoire et VRAM si le GPU les supporte."
+        },
+        "dtype": {
+          "label": "Type numérique",
+          "description": "Type de nombres utilisé pendant le calcul. auto est recommandé ; float32 est plus robuste ; float16/bfloat16 peuvent accélérer et réduire la mémoire, mais tous les moteurs ne les supportent pas."
+        },
+        "batch_size": {
+          "label": "Taille de lot",
+          "description": "Nombre de séries traitées en même temps. L'augmenter peut accélérer les gros datasets, mais augmente la RAM/VRAM ; réduire aide si le modèle manque de mémoire."
+        },
+        "horizon_len": {
+          "label": "Horizon interne",
+          "description": "Longueur de sortie interne pour les moteurs qui séparent horizon demandé et horizon calculé. En général, garder le défaut sauf si le modèle sous-prédit ou refuse un horizon long."
+        },
+        "prediction_length": {
+          "label": "Longueur prédiction",
+          "description": "Nombre de pas futurs générés par le moteur quand ce réglage est exposé. Il doit rester cohérent avec l'horizon demandé : trop bas coupe la prévision, trop haut peut consommer inutilement."
+        },
+        "confidence_level": {
+          "label": "Niveau de confiance",
+          "description": "Largeur de l'intervalle d'incertitude demandé. 0.9 signifie 90 % : l'intervalle est plus large mais plus prudent ; 0.8 est plus serré mais moins conservateur."
+        },
+        "level": {
+          "label": "Niveau TimeGPT",
+          "description": "Niveau d'intervalle envoyé à TimeGPT. Exemple : 90 demande une plage de confiance à 90 %. Plus le niveau est haut, plus la plage affichée est large."
+        },
+        "normalization": {
+          "label": "Normalisation",
+          "description": "Remet les séries sur une échelle plus stable avant calcul. Utile quand les valeurs changent fortement d'ordre de grandeur ; à éviter seulement si l'échelle brute porte elle-même le signal."
+        },
+        "quantile_head": {
+          "label": "Sortie quantile",
+          "description": "Active la tête probabiliste native quand le modèle en possède une. À activer si tu veux une plage d'incertitude réelle plutôt qu'une simple courbe centrale."
+        },
+        "xreg_mode": {
+          "label": "Mode variables externes",
+          "description": "Définit comment le modèle utilise les variables externes comme météo, trafic ou jours fériés. auto laisse le moteur choisir ; désactiver revient à une prévision basée surtout sur la cible."
+        },
+        "clean_ex_first": {
+          "label": "Nettoyage variables",
+          "description": "Demande à TimeGPT de nettoyer les variables externes avant calcul. Utile si les colonnes météo/trafic contiennent trous ou valeurs aberrantes, mais ajoute du temps d'appel."
+        },
+        "finetune_steps": {
+          "label": "Étapes finetune",
+          "description": "Nombre de petites étapes d'adaptation au dataset courant. Plus haut peut mieux coller à l'historique, mais augmente le temps et peut sur-apprendre sur peu de données."
+        },
+        "finetune_loss": {
+          "label": "Objectif finetune",
+          "description": "Fonction utilisée pour adapter TimeGPT. Garde le défaut si tu n'as pas de besoin précis ; changer ce réglage modifie la façon dont le modèle pénalise ses erreurs."
+        },
+        "finetune_depth": {
+          "label": "Profondeur finetune",
+          "description": "Intensité de l'adaptation TimeGPT. Faible = ajustement léger ; élevé = adaptation plus forte, utile sur un domaine spécifique mais plus risquée sur petits historiques."
+        },
+        "feature_contributions": {
+          "label": "Contributions variables",
+          "description": "Demande l'importance estimée de chaque variable externe dans la prévision. Utile pour expliquer le résultat, mais peut ralentir l'appel ou ne pas être disponible selon le service."
+        },
+        "decode_block_size": {
+          "label": "Bloc décodage",
+          "description": "Nombre de points générés par bloc pour Toto. Plus grand peut accélérer les horizons longs, mais consomme plus de mémoire ; plus petit est plus sûr sur machines limitées."
+        },
+        "has_missing_values": {
+          "label": "Valeurs manquantes",
+          "description": "Indique au moteur que certaines valeurs de l'historique sont absentes. Active-le si le dataset contient des trous ; sinon laisse désactivé pour éviter un traitement inutile."
+        },
+        "non_negative_output": {
+          "label": "Sortie positive",
+          "description": "Empêche les prévisions ou bornes basses négatives. À activer pour ventes, chiffre d'affaires, volumes, stocks ou toute métrique qui ne peut pas passer sous zéro."
+        },
+        "target_dim": {
+          "label": "Dimension cible",
+          "description": "Nombre de variables cibles prédites ensemble par MOIRAI. 1 = une seule cible ; augmenter seulement pour un vrai dataset multi-dimensions."
+        },
+        "feat_dynamic_real_dim": {
+          "label": "Variables futures",
+          "description": "Nombre de variables numériques futures connues fournies à MOIRAI. Exemple : météo prévue, calendrier, promotions. Doit correspondre aux colonnes réellement présentes."
+        },
+        "past_feat_dynamic_real_dim": {
+          "label": "Variables passées",
+          "description": "Nombre de variables numériques historiques fournies à MOIRAI. Sert à expliquer le passé ; ne remplace pas les variables futures si elles sont connues."
+        },
+        "scale_factor": {
+          "label": "Facteur d'échelle",
+          "description": "Ajuste l'amplitude interne utilisée par FlowState. Garde le défaut sauf si les sorties sont systématiquement trop faibles ou trop fortes."
+        },
+        "batch_first": {
+          "label": "Batch en premier",
+          "description": "Ordre des dimensions attendu par certains moteurs PyTorch. Ce réglage sert à compatibilité runtime ; ne le change que si le modèle signale une erreur de forme."
+        },
+        "known_future_covariates": {
+          "label": "Covariables futures",
+          "description": "Autorise l'utilisation de variables déjà connues dans le futur : jours fériés, météo prévue, prix planifiés, campagnes. À activer quand ces colonnes sont remplies sur la zone future."
+        },
+        "local_mode": {
+          "label": "Mode local",
+          "description": "Force l'exécution locale quand le moteur propose plusieurs modes. À garder activé pour éviter un appel externe et garder les données sur la machine."
+        },
+        "probabilistic_output": {
+          "label": "Sortie probabiliste",
+          "description": "Demande plusieurs trajectoires ou bornes d'incertitude au lieu d'une seule valeur centrale. Utile pour voir le risque, mais peut prendre plus de temps."
+        },
+        "backend": {
+          "label": "Backend",
+          "description": "Moteur interne utilisé par l'adapter. auto choisit le meilleur disponible ; changer ce réglage sert surtout au diagnostic ou à forcer CPU/GPU selon support."
+        },
+        "output_type": {
+          "label": "Type de sortie",
+          "description": "Choisit la forme du résultat : prévision centrale simple ou sortie avec quantiles/incertitude. Utilise quantiles si tu veux afficher une plage de confiance."
+        },
+        "frequency_resampling": {
+          "label": "Rééchantillonnage fréquence",
+          "description": "Indique si le moteur doit réajuster les dates à une fréquence régulière avant prédiction. Utile si des dates manquent ; risqué si les trous ont un sens métier."
+        },
+        "preserve_positivity": {
+          "label": "Préserver positif",
+          "description": "Demande à Kairos de garder les sorties positives. À activer pour les métriques qui ne peuvent pas être négatives, comme revenus, commandes, trafic ou volumes."
+        },
+        "average_with_flipped_input": {
+          "label": "Moyenne entrée inversée",
+          "description": "Lance Kairos aussi sur une version inversée de l'entrée puis moyenne les résultats. Peut stabiliser la courbe, mais ajoute du temps de calcul."
+        },
+        "generation": {
+          "label": "Mode génération",
+          "description": "Active le mode génératif du moteur quand disponible. Utile pour produire des trajectoires plus riches ; garde le défaut si tu veux une prévision classique."
+        },
+        "num_samples": {
+          "label": "Échantillons",
+          "description": "Nombre de trajectoires simulées pour estimer les quantiles. Plus haut donne une incertitude plus stable, mais augmente le temps de calcul."
+        },
+        "device": {
+          "label": "Device",
+          "description": "Matériel utilisé par défaut, hérité de Settings > Avancé. auto laisse l'app choisir ; GPU accélère si disponible ; CPU est plus lent mais plus compatible."
+        },
+        "model_unload_timeout": {
+          "label": "Déchargement",
+          "description": "Durée pendant laquelle le modèle reste chargé après usage, héritée de Settings > Avancé. Plus long évite de recharger souvent ; plus court libère la mémoire plus vite."
+        }
+      }
+    },
+    "models": {
+      "title": "Modèles Forecast",
+      "sidebarTitle": "Models",
+      "modelCapabilities": "Capacités du modèle",
+      "engine": "Moteur utilisé",
+      "install": "Installer",
+      "prepare": "Préparer",
+      "installed": "Installé",
+      "preparationRequired": "Préparation requise",
+      "updateRequired": "Mise à jour requise",
+      "uninstall": "Désinstaller",
+      "confirmUninstall": "Confirmer la désinstallation",
+      "uninstalling": "Désinstallation…",
+      "cancel": "Annuler",
+      "parameters": "Paramètres",
+      "diskSize": "Taille disque",
+      "ram": "RAM",
+      "cpuLabel": "CPU",
+      "gpuLabel": "GPU",
+      "licenseLabel": "Licence",
+      "libraryLabel": "Bibliothèque",
+      "pipelineLabel": "Pipeline",
+      "supported": "Supporté",
+      "unsupported": "Non supporté",
+      "uninstalled": "Non installé",
+      "horizonMax": "Horizon max",
+      "frequencies": "Fréquences",
+      "status": "Statut",
+      "cloud": "Cloud (clé requise)",
+      "noKeyConfigured": "Clé API non configurée",
+      "noneAvailable": "Aucun modèle disponible pour ce lancement.",
+      "hardware": {
+        "light": "Machine légère",
+        "balanced": "Machine moyenne",
+        "heavy": "Machine puissante",
+        "remote": "Traitement distant"
+      },
+      "engines": {
+        "localChronosBolt": "Chronos-Bolt local",
+        "localChronos2": "Chronos-2 local",
+        "localPackage": "Package local",
+        "cloudApi": "API cloud"
+      },
+      "capabilities": {
+        "context": "Variables de contexte",
+        "futureContext": "Contexte futur",
+        "multiSeries": "Multi-séries indépendantes",
+        "multivariate": "Multivarié conjoint",
+        "probabilistic": "Prévision probabiliste",
+        "backtesting": "Backtesting"
+      }
+    },
+    "export": {
+      "title": "Export",
+      "csv": "CSV",
+      "excel": "Excel (.xlsx)",
+      "png": "PNG",
+      "svg": "SVG",
+      "json": "JSON",
+      "pdf": "PDF (rapport)",
+      "clipboard": "Copier (clipboard)",
+      "saved": "Export enregistré",
+      "copied": "Export copié",
+      "failed": "Export impossible"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl) var(--space-lg);
+  gap: var(--space-md);
+}
+
+.empty-msg {
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+.empty-action {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  border: 1px dashed var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+}
+
+.empty-action:hover {
+  border-color: var(--select-text);
+  color: var(--select-text);
+  background: var(--select-bg);
+}

@@ -1,0 +1,99 @@
+.wk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.wk-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--ease-smooth);
+  color: inherit;
+  min-width: 0;
+}
+
+.wk-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--select-text);
+}
+
+.wk-card-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.wk-card-row-top {
+  justify-content: space-between;
+}
+
+.wk-card-model {
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-card-desc {
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-card-next {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wk-badge-active {
+  background: var(--signal-ok-bg);
+  color: var(--signal-ok);
+  border: 1px solid var(--signal-ok-border);
+}
+
+.wk-badge-inactive {
+  background: var(--surface-hover);
+  color: var(--ink-faint);
+  border: 1px solid var(--edge);
+}
+
+.wk-badge-schedule {
+  background: var(--signal-warning-bg);
+  color: var(--signal-warning);
+}
+
+[data-theme="dark"] .wk-card {
+  background: var(--surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: transparent;
+}

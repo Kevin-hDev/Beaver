@@ -1,0 +1,1922 @@
+{
+  "nav": {
+    "heartbeat": "Heartbeat",
+    "personality": "/beaver",
+    "settings": "設定",
+    "agentLocal": "セッション"
+  },
+  "common": {
+    "delete": "削除",
+    "loading": "読み込み中…"
+  },
+  "providers": {
+    "tabs": { "apiKeys": "API キー", "oauth": "OAuth" },
+    "oauth": {
+      "title": "OAuth 接続", "openCatalog": "プロバイダー", "catalogTitle": "OAuth プロバイダー",
+      "catalogSubtitle": "ネイティブなウェブログイン。インストールは不要です。", "connected": "接続済み",
+      "emptySidebar": "OAuth 接続なし", "empty": "OAuth プロバイダーが未選択です",
+      "connectionLabel": "接続", "nativeConnection": "ネイティブウェブ — インストール不要", "experimental": "実験的 / 非公式", "connect": "接続", "disconnect": "切断", "cancel": "キャンセル",
+      "progress": { "waiting": "ログイン待機中…", "verification": "確認が必要です", "success": "接続済み", "cancelled": "ログインをキャンセルしました", "error": "接続できません" },
+      "successMessage": "プロバイダーに接続しました。", "retryCatalog": "再試行",
+      "issues": { "moonshotMembershipUnverified": "サインインは成功しましたが、Moonshot は有効な Kimi Code サブスクリプションを確認できません。契約状況を確認して再試行してください。", "xaiSubscriptionOrCreditsRequired": "xAI は、Grok サブスクリプションがないか、必要なクレジットが不足していると報告しています。", "reauthenticationRequired": "接続の有効期限が切れました。このプロバイダーに再接続してください。", "rateLimited": "モデルカタログは一時的に制限されています。しばらくしてから再試行してください。", "accessUnavailable": "プロバイダーは現在、モデルカタログへのアクセスを拒否しています。", "catalogUnavailable": "モデルカタログは一時的に利用できません。" },
+      "deviceInstructions": "ブラウザで開いたページにこのコードを入力してください。", "codeLabel": "ログインコード", "copyCode": "コードをコピー", "openVerification": "ログインページを再度開く",
+      "descriptions": { "openai": "Codex 経由の ChatGPT", "moonshot": "ネイティブウェブログインで Kimi、クライアント不要", "xai": "ネイティブウェブログインで Grok、クライアント不要" }
+    },
+    "usage": {
+      "providerTitle": "プロバイダーの上限とクレジット", "generalLimitsTitle": "全般的な使用制限", "namedLimitsTitle": "{{name}} の使用制限", "localTitle": "Beaver での使用量", "refresh": "更新", "remoteUnavailable": "アカウントの使用量データを取得できません", "remainingPercent": "残り {{value}}%", "updated": "更新済み", "stale": "古いデータ", "resetsAt": "リセット：{{date}}", "openProviderSite": "プロバイダーで確認", "periodLabel": "期間", "historyEmpty": "使用量の記録はありません", "requests": "リクエスト", "inputTokens": "入力トークン", "outputTokens": "出力トークン", "cachedTokens": "キャッシュトークン", "reasoningTokens": "推論トークン", "totalTokens": "合計トークン", "cost": "費用", "byOrigin": "送信元別", "byWorkload": "作業別",
+      "periods": { "today": "今日", "seven_days": "7 日", "thirty_days": "30 日", "all_time": "全期間" }, "quality": { "exact": "正確", "estimated": "推定", "partial": "一部", "unavailable": "利用不可" }, "origins": { "manual_chat": "手動チャット", "external_channel": "外部チャネル", "automation": "自動化" }, "workloads": { "primary": "メイン", "subagent": "サブエージェント", "compression": "圧縮" },
+      "windows": { "today": "今日", "seven_days": "7 日", "thirty_days": "30 日", "key_limit": "キー上限", "requests_day": "1 日のリクエスト", "tokens_minute": "1 分のトークン", "requests_limit": "リクエスト上限", "tokens_limit": "トークン上限", "rolling_five_hours": "5 時間枠", "weekly": "週間上限", "provider_limit": "プロバイダー上限" }, "balances": { "remaining_credits": "残りクレジット", "available_balance": "利用可能残高", "voucher_balance": "バウチャー残高", "cash_balance": "現金残高", "reset_credits": "リセットクレジット", "extra_usage_balance": "Extra Usage 残高", "extra_usage_monthly_limit": "Extra Usage の月間上限", "extra_usage_monthly_used": "今月使用した Extra Usage" }, "notices": { "usage_fetch_failed": "プロバイダーのデータを更新できませんでした。直近の有効なデータは引き続き表示されます。", "provider_usage_site_only": "xAI はこれらの上限へのアクセスを公開していません。ローカル使用量は確認できます。", "provider_account_usage_unavailable": "このプロバイダーは、この接続のアカウント上限を公開していません。" }
+    }
+  },
+  "apiKeys": {
+    "main": {
+      "title": "API キー",
+      "connectorsBtn": "API コネクター"
+    },
+    "sidebar": {
+      "configured": "設定済み",
+      "empty": "プロバイダーが設定されていません"
+    },
+    "empty": {
+      "title": "プロバイダーが設定されていません",
+      "subtitle": "API キーを追加してリモート LLM（Groq、Gemini、Mistral…）やウェブ検索サービス（Brave、Exa、Firecrawl）にアクセスしましょう。"
+    },
+    "details": {
+      "connected": "接続済み",
+      "edit": "編集",
+      "delete": "削除",
+      "freeTier": "無料枠",
+      "signupLink": "ウェブサイト",
+      "openSite": "サイトを開く",
+      "quota": "クォータ",
+      "quotaUnavailable": "取得不可",
+      "apiKey": "API キー",
+      "confirmDelete": "削除の確認"
+    },
+    "dialog": {
+      "addTitle": "{{name}} を追加",
+      "editTitle": "{{name}} を編集",
+      "apiKey": "API キー",
+      "keyPlaceholder": "API キーをここに貼り付けてください",
+      "keyPlaceholderEdit": "空白のままにすると現在のキーを保持します",
+      "getKeyAt": "{{name}} でキーを取得",
+      "description": "説明",
+      "testing": "キーを確認中…",
+      "testOk": "キーが有効です。プロバイダーに接続しました。",
+      "cancel": "キャンセル",
+      "addAndTest": "追加してテスト",
+      "save": "保存",
+      "clearKey": "キーをクリア",
+      "showKey": "表示",
+      "hideKey": "非表示"
+    },
+    "connectors": {
+      "title": "API コネクター",
+      "subtitle": "インスタンスにデータソースを追加します。",
+      "search": "コネクターを検索…",
+      "empty": "検索に一致するコネクターがありません。",
+      "tabs": {
+        "all": "すべて",
+        "llm": "AI / LLM",
+        "search": "検索",
+        "scraping": "スクレイピング",
+        "forecast": "予測"
+      }
+    }
+  },
+  "channels": {
+    "sidebar": {
+      "empty": "チャンネルが設定されていません",
+      "configured": "設定済み"
+    },
+    "detail": {
+      "token": "ボットトークン",
+      "removeUser": "削除",
+      "tokenPlaceholder": "トークンを貼り付け…",
+      "botToken": "Slack ボットトークン",
+      "appToken": "Slack アプリトークン",
+      "appTokenPlaceholder": "アプリトークンを貼り付け…",
+      "allowlist": "許可ユーザー",
+      "allowlistPlaceholder": "ユーザー ID…",
+      "allowlistAdd": "追加",
+      "requireMention": "グループではメンション必須",
+      "provider": "LLM プロバイダー",
+      "model": "モデル",
+      "testSuccess": "接続成功",
+      "testFailed": "接続失敗",
+      "delete": "削除",
+      "cancel": "キャンセル",
+      "accountId": "アカウント ID",
+      "confirmDelete": "このアカウントを削除しますか？",
+      "connected": "接続済み",
+      "disconnected": "未接続"
+    },
+    "status": {
+      "off": "停止",
+      "starting": "起動中…",
+      "running": "稼働中",
+      "error": "エラー",
+      "stopping": "停止中…"
+    },
+    "errors": {
+      "invalidConfig": "チャンネル設定が無効です。",
+      "unavailable": "チャンネルを利用できません。",
+      "generic": "操作に失敗しました。もう一度お試しください。"
+    },
+    "browse": {
+      "title": "メッセージングチャネル",
+      "subtitle": "メッセージングボットを接続して LLM と通信します。",
+      "telegramDesc": "Telegram ボット — ロングポーリング、グループとプライベートメッセージ。",
+      "slackDesc": "Slack ボット — Socket Mode、チャネルとダイレクトメッセージ。",
+      "discordDesc": "Discord ボット — Gateway WebSocket、サーバーとプライベートメッセージ。",
+      "messaging": "メッセージング",
+      "pro": "プロフェッショナル"
+    },
+    "config": {
+      "addTitle": "{{name}}を追加",
+      "description": "説明",
+      "testing": "テスト中…",
+      "addAndTest": "追加してテスト"
+    },
+    "main": {
+      "subtitle": "メッセージングボットを接続して LLM と通信します。",
+      "browseBtn": "チャネルを閲覧"
+    }
+  },
+  "welcome": {
+    "title": "今日は何をしましょうか？"
+  },
+  "projects": {
+    "title": "プロジェクト",
+    "discussions": "ディスカッション",
+    "workInFolder": "フォルダで作業",
+    "search": "プロジェクトを検索",
+    "noFolder": "フォルダなし",
+    "noMatch": "フォルダが見つかりません",
+    "addNew": "新しいプロジェクトを追加",
+    "openFolder": "フォルダを開く",
+    "rename": "名前を変更",
+    "delete": "削除",
+    "noDiscussion": "セッションなし"
+  },
+  "branches": {
+    "search": "ブランチを検索",
+    "title": "ブランチ",
+    "worktrees": "ワークツリー",
+    "uncommitted": "未コミット： {{count}} ファイル",
+    "createNew": "新しいブランチを作成してチェックアウト…",
+    "detachedHead": "デタッチド HEAD",
+    "noMatch": "ブランチが見つかりません",
+    "conflictTitle": "ブランチを切り替えるにはコミットしてください",
+    "conflictDescription": "以下のファイルへの変更はチェックアウトにより上書きされます：",
+    "conflictCommitAndSwitch": "コミットしてブランチを切り替え…",
+    "conflictCancel": "キャンセル",
+    "bubbleCreated": "ブランチ作成済み",
+    "bubbleSwitched": "ブランチ切り替え済み",
+    "createPlaceholder": "新しいブランチ名",
+    "commitRequired": "続行するには変更をコミットしてください",
+    "commitDescription": "説明",
+    "createSubmit": "ブランチを作成",
+    "errorInvalidName": "無効な名前です。使用できない文字または形式です",
+    "errorNameTooLong": "名前が長すぎます（最大100文字）",
+    "errorAlreadyExists": "このブランチはすでに存在します",
+    "errorUnbornHead": "このリポジトリにはコミットがありません。先にコミットを作成してください",
+    "errorGithubAuth": "ブランチを作成する前に GitHub へ接続してください",
+    "errorInternal": "内部エラーです。再試行するかリポジトリを確認してください",
+    "errorRepositoryUnavailable": "Git リポジトリにアクセスできなくなりました。",
+    "errorBranchUnavailable": "このブランチは存在しないか、アクセスできません。",
+    "errorDirtyWorktree": "続行する前に現在の変更を保存してください（{{count}} ファイル）。",
+    "errorProtectedBranch": "メインブランチは保護されているため、クリーンアップできません。",
+    "errorBranchActive": "このブランチは現在使用中です。削除する前に別のブランチへ切り替えてください。",
+    "errorIdentityMissing": "コミットを作成する前に Git の名前とメールアドレスを設定してください。",
+    "errorInvalidCommitDescription": "コミットの説明が無効か長すぎます。",
+    "errorCheckoutFailed": "ブランチを切り替えられませんでした。リポジトリを確認して再試行してください。",
+    "errorCommitFailed": "コミットを作成できませんでした。Git の設定を確認して再試行してください。",
+    "errorUnmergedCommits": "このブランチには未マージのコミットが {{count}} 件あります。",
+    "errorWorktreeUnavailable": "この worktree は存在しないか、アクセスできません。",
+    "commitSwitchError": "コミットまたはブランチ切り替えに失敗しました。Git 設定を確認して再試行してください。",
+    "githubAuthTitle": "ブランチ作成には GitHub 接続が必要です",
+    "githubAuthDescription": "このリポジトリは GitHub に紐づいています。アプリからブランチを作成する前に GitHub を接続してください。",
+    "githubAuthConnect": "GitHub に接続",
+    "githubAuthConnecting": "GitHub 接続を開いています…",
+    "githubAuthTesting": "GitHub 接続を確認しています…",
+    "githubAuthError": "GitHub に接続できませんでした。再試行するか、コネクタで GitHub を設定してください。",
+    "githubAuthCancel": "キャンセル",
+    "deleteBranch": "{{name}} を削除",
+    "deleteWorktree": "ワークツリー {{name}} を削除",
+    "confirmDelete": "確認",
+    "deleteRiskTitle": "このブランチを削除しますか？",
+    "deleteWorktreeRiskTitle": "このワークツリーを削除しますか？",
+    "deleteRiskDescription": "このブランチには失われる可能性のある作業があります。続行方法を選択してください。",
+    "deleteWorktreeRiskDescription": "このワークツリーには未保存の変更があります。",
+    "deleteCurrentDescription": "このブランチは使用中です。Beaver は削除前に {{branch}} に切り替えます。",
+    "deleteNoFallback": "このブランチを削除するには、先に別のブランチを作成してください。",
+    "deleteUnmerged": "未マージのコミット {{count}} 件",
+    "deleteCurrent": "ブランチを切り替えて削除",
+    "deletePreserve": "マージして削除",
+    "deleteCommitMerge": "保存、マージして削除",
+    "deleteWorktreePreserve": "保存して削除",
+    "deleteDiscardChanges": "変更を破棄して削除",
+    "deleteDiscardUnmerged": "マージせずに削除",
+    "deleteCancel": "キャンセル",
+    "deleteError": "削除できませんでした。リポジトリを確認して再試行してください。"
+  },
+  "history": {
+    "rename": "名前を変更",
+    "delete": "削除",
+    "archive": "アーカイブ",
+    "loading": "読み込み中…"
+  },
+  "sessionAge": {
+    "minute": "{{count}}分",
+    "hour": "{{count}}時間",
+    "day": "{{count}}日",
+    "month": "{{count}}か月",
+    "year": "{{count}}年"
+  },
+  "agentLocal": {
+    "newSession": "新しいセッション",
+    "noConversations": "会話がありません",
+    "placeholder": "何かお手伝いできますか？",
+    "thinking": "考え中",
+    "showMore": "もっと見る",
+    "showLess": "閉じる",
+    "modelSearch": "モデルを検索…",
+    "modelEmpty": "一致するモデルがありません。",
+    "selectModel": "モデルを選択",
+    "selectModelHint": "モデルを選択",
+    "reasoningTitle": "推論",
+    "reasoningOff": "オフ",
+    "reasoningAuto": "オン",
+    "reasoningLow": "低",
+    "reasoningMedium": "中",
+    "reasoningHigh": "高",
+    "reasoningXhigh": "最高",
+    "reasoningMax": "最大",
+    "reasoningUltra": "ウルトラ",
+    "send": "送信",
+    "cancel": "キャンセル",
+    "stop": "停止",
+    "editMessage": "編集して再生成",
+    "regenerate": "再生成",
+    "copy": "コピー",
+    "clone": {
+      "action": "クローン",
+      "title": "セッションをクローン",
+      "close": "閉じる",
+      "tabs": "セッション分岐",
+      "mainTab": "Main",
+      "closeTab": "タブを閉じる",
+      "cut": "このメッセージからクローン",
+      "summary": "隠し要約付きでクローン",
+      "summaryFocus": "カスタム重点でクローン",
+      "focusPlaceholder": "要約で重視する点...",
+      "create": "作成",
+      "running": "要約中...",
+      "summaryFailed": "要約を生成できませんでした。",
+      "withoutSummary": "要約なし",
+      "errorUnavailable": "このクローンは存在しないか、アクセスできません。",
+      "gitCreate": "新しい git ブランチ",
+      "gitCreating": "作成中...",
+      "gitCreated": "Git ブランチを作成しました",
+      "gitBranchMissing": "リンクされた git ブランチはもう存在しません。",
+      "gitMissingCheckpoint": "クリーンアップできません: メインブランチが不明です。",
+      "gitArchiveTitle": "このクローンをアーカイブしますか？",
+      "gitArchiveDescription": "このセッションは Git ブランチ \"{{branch}}\" にリンクされています。",
+      "gitArchiveKeep": "はい",
+      "gitArchiveCancel": "キャンセル",
+      "gitArchiveCleanup": "ブランチを削除してアーカイブ"
+    },
+    "compression": "コンテキストを圧縮中",
+    "retry": {
+      "thinkingOnly": "再試行中...",
+      "parserCrash": "形式を修正中...",
+      "featureDropped": "機能を調整中...",
+      "server": "Ollama を再試行中...",
+      "connection": "再接続中...",
+      "button": "再試行"
+    },
+    "contextCompressed": "コンテキストを圧縮済み",
+    "searchBarPlaceholder": "検索…",
+    "resultCount_one": "{{count}} 件",
+    "resultCount_other": "{{count}} 件",
+    "favorites": "お気に入り",
+    "freeCount": "{{free}} free / {{total}}",
+    "thinkingDuration": "{{seconds}}秒間考えました",
+    "working": "作業中 {{duration}}",
+    "workSummary": "{{duration}}作業しました",
+    "workSummaryNoDuration": "作業が完了しました",
+    "sessionSummary": {
+      "tooltip": "セッション概要を表示/非表示",
+      "title": "セッション概要",
+      "environment": "環境",
+      "modifications": "変更",
+      "modificationsUnavailable": "変更内容は一時的に利用できません。",
+      "modificationsPartial": "{{count}} 件のファイルが変更されています。表示されている集計は一部です。",
+      "branch": "ブランチ",
+      "noGit": "Git リポジトリなし",
+      "commits": {
+        "title": "コミット",
+        "toggle": "コミット履歴を展開",
+        "empty": "このブランチにはコミットがありません",
+        "noMessage": "メッセージのないコミット",
+        "noFiles": "このコミットにはファイルがありません",
+        "error": "コミット履歴を利用できません。"
+      },
+      "git": {
+        "toggle": "ブランチ {{branch}} を展開",
+        "changesToCommit": "Commit するファイルが {{count}} 件あります",
+        "commitsToPush": "{{count}} 件のコミットを {{destination}} · {{branch}} に Push",
+        "commit": "Commit",
+        "push": "Push",
+        "merge": "{{branch}} に Merge",
+        "mergeTitle": "{{branch}} に Merge",
+        "mergeDescription": "{{branch}} に統合するブランチを選択します。",
+        "mergeSource": "マージ元ブランチ",
+        "mergeSummary": "{{count}} 件の Commit が {{branch}} に追加されます。",
+        "mergeDirty": "Merge の前に {{count}} 件のローカル変更を Commit します。",
+        "mergeAlready": "このブランチはすでに {{branch}} に Merge されています。",
+        "confirmMerge": "{{branch}} に Merge",
+        "commitAndMerge": "Commit して {{branch}} に Merge",
+        "mergeError": "Merge できませんでした。リポジトリを確認して再試行してください。",
+        "mergeConflict": "Merge が競合するため、ブランチを変更せずに中止しました。",
+        "mergeContextChanged": "アクティブなブランチが変わりました。もう一度 Merge してください。",
+        "mergeDirtyError": "新しいローカル変更があります。Merge の前に確認してください。",
+        "upToDate": "すべて最新です",
+        "noRemote": "リモートリポジトリなし",
+        "remoteStatusUnavailable": "リモートリポジトリの状態を取得できません。",
+        "localBranch": "ローカルブランチ · {{branch}} への Push はまだありません",
+        "destinationGithub": "GitHub",
+        "destinationRemote": "リモートリポジトリ",
+        "remoteChanges": "リモートの変更があります",
+        "commitTitle": "変更を Commit",
+        "commitDescription": "Commit メッセージ（任意）",
+        "cancel": "キャンセル",
+        "confirmCommit": "Commit",
+        "commitError": "Commit を作成できませんでした。",
+        "pushError": "Push できませんでした。",
+        "authenticationError": "Push には Git 認証が必要です。",
+        "permissionDenied": "リモートリポジトリが Push を拒否しました。アクセス権またはブランチ保護を確認してください。",
+        "networkError": "リモートリポジトリに接続できませんでした。",
+        "contextChanged": "プロジェクトまたはブランチが変更されました。もう一度 Push してください。",
+        "remoteChanged": "リモートブランチに新しい変更があります。同期してから再度 Push してください。"
+      },
+      "sections": {
+        "todos": "Todo リスト",
+        "plans": "プラン",
+        "subagents": "サブエージェント"
+      },
+      "emptyTodos": "有効な Todo はありません",
+      "emptyPlans": "プランはありません",
+      "emptySubagents": "サブエージェントはいません",
+      "todoProgress": "{{done}}/{{total}}",
+      "todoRunStatus": {
+        "active": "進行中",
+        "paused": "一時停止"
+      },
+      "planStatus": {
+        "draft": "下書き",
+        "awaiting_approval": "承認待ち",
+        "approved": "承認済み",
+        "rejected": "却下",
+        "cancelled": "キャンセル"
+      },
+      "subagentType": {
+        "explorer": "Explore",
+        "coder": "Coder"
+      }
+    },
+    "fileChanges": {
+      "changed_one": "{{count}} 件のファイルを変更",
+      "changed_other": "{{count}} 件のファイルを変更",
+      "toggle": "変更ファイルを表示",
+      "review": "Review",
+      "reviewFile": "Review {{name}}"
+    },
+    "tokens": "tokens",
+    "contextUsage": {
+      "title": "コンテキストウィンドウ",
+      "categories": {
+        "messages": "メッセージ",
+        "systemTools": "システムツール",
+        "mcpConnectors": "MCP / コネクタ",
+        "skills": "Skills",
+        "memory": "メモリ",
+        "metaContext": "メタコンテキスト",
+        "systemPrompt": "System prompt"
+      }
+    },
+    "tps": "t/s",
+    "fileReadError": "ファイルを読み取れませんでした",
+    "toolActivity": {
+      "inProgress": "進行中",
+      "completed": "完了",
+      "toggleDetails": "ツール詳細を表示",
+      "groups": {
+        "exploration": "探索",
+        "modification": "変更",
+        "command": "コマンド",
+        "web": "Web",
+        "git": "Git",
+        "memory": "MEMORY",
+        "other": "ツール"
+      },
+      "counts": {
+        "files_one": "{{count}} ファイル",
+        "files_other": "{{count}} ファイル",
+        "searches_one": "{{count}} 検索",
+        "searches_other": "{{count}} 検索",
+        "lists_one": "{{count}} 一覧",
+        "lists_other": "{{count}} 一覧",
+        "writes_one": "{{count}} 書き込み",
+        "writes_other": "{{count}} 書き込み",
+        "edits_one": "{{count}} 編集",
+        "edits_other": "{{count}} 編集",
+        "commands_one": "{{count}} コマンド",
+        "commands_other": "{{count}} コマンド",
+        "webSearches_one": "{{count}} Web 検索",
+        "webSearches_other": "{{count}} Web 検索",
+        "webFetches_one": "{{count}} ページ",
+        "webFetches_other": "{{count}} ページ",
+        "gitActions_one": "{{count}} Git 操作",
+        "gitActions_other": "{{count}} Git 操作",
+        "otherActions_one": "{{count}} 操作",
+        "otherActions_other": "{{count}} 操作"
+      },
+      "actions": {
+        "read": "読込",
+        "create": "作成",
+        "edit": "編集",
+        "list": "一覧",
+        "search": "検索",
+        "run": "実行",
+        "createBranch": "ブランチ作成",
+        "switchBranch": "ブランチ切替",
+        "skill": "Skill 読込",
+        "agent": "委任",
+        "forecast": "分析",
+        "mcp": "MCP 検索",
+        "tool": "ツール"
+      },
+      "groupError": "このグループでエラーが発生しました"
+    }
+  },
+  "switchModel": {
+    "title": "モデルの変更",
+    "description": "{{from}} から {{to}} に切り替えます。現在の会話はどうしますか？",
+    "remember": "このセッションの選択を記憶する",
+    "newSession": "新しいセッション",
+    "continue": "このセッションを続ける"
+  },
+  "switchWorktree": {
+    "title": "フォルダの変更",
+    "description": "この worktree は別の作業フォルダを使います。現在の会話をそのまま残すため、新しいセッションを作成してください。",
+    "cancel": "キャンセル",
+    "newSession": "新しいセッション",
+    "close": "閉じる"
+  },
+  "permissionMode": {
+    "chatLabel": "チャットボット",
+    "chatDescription": "ツール、ファイル、インターネットにアクセスせずに会話します",
+    "autoLabel": "フルアクセス",
+    "autoDescription": "インターネットとコンピューター上のファイルへ制限なくアクセスします",
+    "manualLabel": "許可を求める",
+    "manualDescription": "外部ファイルを変更したりインターネットを使う前に必ず確認します",
+    "toggleHint": "権限を変更（Shift+Tab）"
+  },
+  "missingDirectory": {
+    "title": "このフォルダは存在しません",
+    "parent": "利用可能なフォルダ: {{path}}",
+    "switch": "切り替え",
+    "create": "作成",
+    "error": "このセッションのフォルダを準備できませんでした。"
+  },
+  "permissionDialog": {
+    "title": "{{action}} を許可しますか？",
+    "allow": "一度だけ許可",
+    "allowSession": "常に許可",
+    "deny": "拒否",
+    "tools": {
+      "write_file": "ファイルを書き込む",
+      "edit_file": "ファイルを編集する",
+      "bash": "コマンドを実行する",
+      "web_fetch": "URL を取得する"
+    }
+  },
+  "modelDownloads": {
+    "queued": "待機中",
+    "kinds": {
+      "ollama": "Ollama",
+      "forecast": "Forecast"
+    },
+    "phases": {
+      "starting": "開始中",
+      "downloading": "ダウンロード中",
+      "installing": "インストール中",
+      "preparing-runtime": "実行環境を準備中",
+      "completed": "完了"
+    },
+    "errors": {
+      "queueUnavailable": "このモデルをキューに追加できませんでした。"
+    }
+  },
+  "ollama": {
+    "selectModel": "モデルを選択",
+    "edit": "編集",
+    "editing": "編集中",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "searchPlaceholder": "モデルを検索…",
+    "install": "インストール",
+    "update": "更新",
+    "updateAvailable": "新しいバージョンが利用可能です",
+    "installedUpToDate": "インストール済み・最新",
+    "ctx": "ctx",
+    "vramWarning": "このモデルは利用可能な VRAM を超える可能性があります",
+    "editModelfile": "Modelfile を編集",
+    "systemPrompt": "System prompt",
+    "systemPromptWarningTitle": "注意",
+    "systemPromptWarningBody": "このカスタムプロンプトは、このモデルに限りアプリケーションの既定の動作指示を置き換えます。ツールとエージェントモードに必要な技術的指示は引き続き有効です。有効化されたコンテキストファイルも引き続き挿入されます。このプロンプトを消去すると、アプリケーションの既定の指示が自動的に復元されます。",
+    "systemPromptWarningRemember": "この警告を今後表示しない",
+    "systemPromptWarningContinue": "続ける",
+    "parameters": "パラメーター",
+    "noSystemPrompt": "（System prompt が定義されていません）",
+    "noParameters": "（パラメーターなし — Ollama のデフォルト設定を使用）",
+    "parameterEditorHint": "空欄のままにすると Ollama の既定値を使用します。",
+    "parameterDefaultValue": "既定値：{{value}}",
+    "parameterDefaultShort": "既定 {{value}}",
+    "useDefaultValue": "既定値を使用",
+    "addStopSequence": "+ 停止シーケンスを追加",
+    "removeStopSequence": "この停止シーケンスを削除",
+    "stopSequencePlaceholder": "停止テキストまたは token",
+    "customParameters": "カスタムパラメーター",
+    "customParametersHint": "公式リストにまだ含まれていない Ollama オプションにのみ使用してください。",
+    "customParameterName": "パラメーター名",
+    "customParameterValue": "値",
+    "addCustomParameter": "+ カスタムパラメーターを追加",
+    "invalidCustomParameter": "カスタムパラメーターの名前と値を確認してください。",
+    "invalidOfficialParameter": "公式パラメーターの数値を確認してください。",
+    "parameterGroups": {
+      "context": "コンテキスト",
+      "length": "応答の長さ",
+      "creativity": "創造性と再現性",
+      "repetition": "繰り返し",
+      "sampling": "Token の選択",
+      "stop": "応答の停止"
+    },
+    "parameterTypes": {
+      "integer": "整数",
+      "decimal": "小数",
+      "text": "テキスト"
+    },
+    "parameterDescriptions": {
+      "num_ctx": "会話中にメモリへ保持するテキストの最大量です。値を大きくするとメモリ使用量が増えます。",
+      "num_predict": "生成する token の最大数です。-1 では Ollama が固定上限なしで続行します。",
+      "draft_num_predict": "ドラフトモデルが先読みで提案する token 数です。投機的生成でのみ有効です。",
+      "temperature": "創造性のレベルです。低い値は予測しやすく、高い値は多様になります。",
+      "seed": "同じ依頼と設定で生成結果を再現するために使う数値です。",
+      "repeat_last_n": "繰り返しを防ぐために確認する直前の token 数です。0 で無効、-1 で全コンテキストを使用します。",
+      "repeat_penalty": "繰り返しへのペナルティ強度です。高すぎる値は文章品質を下げることがあります。",
+      "top_k": "各段階で残す候補数です。低い値ほど応答が慎重になります。",
+      "top_p": "累積確率がこの値に達するまで候補を残します。低い値ほど応答が絞られます。",
+      "min_p": "最良候補と比べて確率が低すぎる候補を除外します。高い値ほど厳しくなります。",
+      "stop": "このテキストまたは token に達すると応答を直ちに停止します。複数追加できます。"
+    },
+    "systemPromptPlaceholder": "モデルの動作とキャラクターを定義してください…",
+    "description": "説明",
+    "translate": "翻訳…",
+    "translating": "翻訳中…",
+    "original": "原文",
+    "searchHint": "名前を入力（例：gemma、qwen、mistral）して Enter を押してください",
+    "loadingProfile": "プロフィールを読み込み中…",
+    "loadingVariants": "バリアントを読み込み中…",
+    "capabilities": "機能",
+    "fileSize": "ファイルサイズ",
+    "context": "コンテキスト",
+    "architecture": "アーキテクチャ",
+    "moe": "MoE",
+    "yes": "はい",
+    "no": "いいえ",
+    "digest": "Digest",
+    "quantization": "量子化",
+    "paramsLabel": "パラメーター",
+    "contextTokens": "K トークン",
+    "remove": "削除",
+    "modelfileTab": "Modelfile",
+    "modelsTab": "モデル"
+  },
+  "heartbeat": {
+    "back": "戻る",
+    "toggle": "有効/無効",
+    "title": "ウェイクアップ",
+    "subtitle": "任意の LLM にスケジュールタスクを自動化",
+    "empty": "ウェイクアップが設定されていません。「新しいウェイクアップ」をクリックして開始してください。",
+    "newWakeup": "新しいウェイクアップ",
+    "edit": "編集",
+    "delete": "削除",
+    "confirmDelete": "削除の確認",
+    "pausedHint": "ウェイクアップが一時停止中 — マスタースイッチを無効にしてください",
+    "badges": {
+      "active": "有効",
+      "inactive": "無効"
+    },
+    "fields": {
+      "name": "名前",
+      "provider": "プロバイダー",
+      "model": "モデル",
+      "schedule": "スケジュール",
+      "nextFire": "次回実行",
+      "lastStatus": "最新ステータス",
+      "lastRun": "最新実行",
+      "description": "説明",
+      "prompt": "プロンプト"
+    },
+    "status": {
+      "ok": "成功",
+      "error": "失敗",
+      "missed": "未実行",
+      "never": "未実行",
+      "none": "なし"
+    },
+    "history": {
+      "title": "履歴",
+      "empty": "実行履歴なし"
+    },
+    "sidebar": {
+      "title": "ウェイクアップ",
+      "pause": "すべて一時停止",
+      "resume": "再開",
+      "empty": "有効なウェイクアップなし",
+      "pausedEmpty": "ウェイクアップ一時停止中"
+    },
+    "form": {
+      "createTitle": "新しいウェイクアップ",
+      "editTitle": "ウェイクアップを編集",
+      "name": "名前",
+      "provider": "プロバイダー",
+      "model": "モデル",
+      "pickModel": "モデルを選択",
+      "noToolCapable": "ツール対応モデルがありません",
+      "prompt": "プロンプト",
+      "description": "説明（短め）",
+      "schedule": "スケジュール",
+      "cancel": "キャンセル",
+      "create": "作成",
+      "save": "保存",
+      "scheduleKind": {
+        "once": "一回のみ",
+        "daily": "毎日",
+        "weekly": "毎週"
+      },
+      "weekdays": {
+        "0": "月曜日",
+        "1": "火曜日",
+        "2": "水曜日",
+        "3": "木曜日",
+        "4": "金曜日",
+        "5": "土曜日",
+        "6": "日曜日"
+      }
+    }
+  },
+  "personality": {
+    "files": "コア",
+    "selectFile": "ファイルを選択",
+    "open": "開く",
+    "inject": "コンテキスト",
+    "injected": "注入済み",
+    "failedToLoad": "読み込みに失敗しました",
+    "failedToRead": "ファイルの読み取りに失敗しました"
+  },
+  "settings": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "emeraldNight": "夜のエメラルド",
+    "cobaltFrost": "フロストコバルト",
+    "astralMist": "星霧",
+    "crimsonEclipse": "深紅の蝕",
+    "system": "システム",
+    "memory": {
+      "intro": "すべての詳細を毎回読み込まずに、エージェントが長期的に覚える内容を管理します。",
+      "modeTitle": "メモリモード",
+      "modeDesc": "手動では明示的な依頼が必要です。自動では長く有効な情報だけを保存します。",
+      "modes": { "disabled": "無効", "manual": "手動", "automatic": "自動" },
+      "budgetTitle": "コンテキスト予算",
+      "budgetDesc": "メモリの要約と読み取りに使う最大量です。",
+      "topics": "保存済みメモリ",
+      "search": "メモリを検索",
+      "allTypes": "すべての種類",
+      "allStatuses": "すべての状態",
+      "global": "グローバルメモリ",
+      "activeProject": "現在のプロジェクト · {{name}}",
+      "topicCount_one": "{{count}} 件",
+      "topicCount_other": "{{count}} 件",
+      "empty": "この範囲にメモリはありません",
+      "disabledHint": "メモリは無効です。既存のファイルは保持されます。",
+      "legacyTitle": "旧形式の内容を検出",
+      "legacyDesc": "古いフォルダは保持されますが、挿入されません。",
+      "loading": "メモリを読み込み中…",
+      "error": "メモリを読み込めませんでした",
+      "retry": "再試行",
+      "tokenUnit": "トークン",
+      "loadTopics": "メモリを表示",
+      "loadingTopics": "メモリを読み込み中…",
+      "previewError": "このメモリを読み取れませんでした。",
+      "closePreview": "閉じる",
+      "archive": "アーカイブ",
+      "confirmArchive": "確認",
+      "sources": { "user": "ユーザー", "parent": "メインエージェント", "extractor": "自動", "subagent-suggestion": "サブエージェントの提案" },
+      "types": { "preference": "設定", "feedback": "フィードバック", "project": "プロジェクト", "reference": "参照" },
+      "statuses": { "confirmed": "確認済み", "inferred": "推定", "stale": "要確認", "archived": "アーカイブ済み" }
+    },
+    "tabs": {
+      "general": "一般",
+      "ollama": "Ollama",
+      "connectors": "コネクタ",
+      "apiKeys": "API キー",
+      "providers": "プロバイダー",
+      "llm": "LLM",
+      "tools": "Tools",
+      "memory": "メモリ",
+      "mascot": "マスコット",
+      "archivedChats": "アーカイブ済みチャット",
+      "advanced": "詳細設定",
+      "shortcuts": "キーボードショートカット",
+      "about": "このアプリについて",
+      "channels": "チャンネル"
+    },
+    "mascot": {
+      "previewTitle": "マスコットのプレビュー",
+      "beaverName": "Beaver",
+      "previewActive": "アニメーションプレビュー",
+      "previewPaused": "アニメーション停止中",
+      "settingsTitle": "設定",
+      "enabledTitle": "マスコットを表示",
+      "enabledDesc": "ビーバーをデスクトップや他のアプリより手前に表示します",
+      "sizeTitle": "サイズ",
+      "sizeDesc": "画面上のマスコットの大きさを調整します",
+      "collectionTitle": "コレクション",
+      "beaverDesc": "Beaver のメインマスコット",
+      "moveLabel": "マスコットを移動"
+    },
+    "archivedChats": {
+      "title": "アーカイブ済みチャット",
+      "deleteAll": "すべて削除",
+      "searchPlaceholder": "アーカイブ済み会話を検索",
+      "allProjects": "すべてのプロジェクト",
+      "count": "{{count}} 件の会話",
+      "restore": "アーカイブ解除",
+      "delete": "削除",
+      "confirmDeleteButton": "確認",
+      "empty": "アーカイブ済みチャットはありません",
+      "loading": "アーカイブを読み込み中…",
+      "restoreOk": "チャットのアーカイブを解除しました",
+      "restoreFailed": "チャットのアーカイブを解除できませんでした",
+      "deleteOk": "チャットを削除しました",
+      "deleteAllOk": "アーカイブ済みチャットを削除しました",
+      "deleteFailed": "チャットを削除できませんでした",
+      "deleteConfirm": "このアーカイブ済みチャットを完全に削除しますか？",
+      "deleteAllConfirm": "すべてのアーカイブ済みチャットを完全に削除しますか？"
+    },
+    "general": {
+      "themeTitle": "テーマ",
+      "themeDesc": "アプリの外観",
+      "fontSizeTitle": "フォントサイズ",
+      "fontSizeDesc": "インターフェイスの基本サイズ（px）",
+      "fontSizeIncrease": "フォントサイズを上げる",
+      "fontSizeDecrease": "フォントサイズを下げる",
+      "fontFamilyTitle": "フォントファミリー",
+      "fontFamilyDesc": "アプリで使用するフォント",
+      "codeThemeTitle": "コードテーマ",
+      "codeThemeDesc": "コードブロックとプレビューの配色",
+      "languageTitle": "言語",
+      "languageDesc": "インターフェース言語",
+      "responseLangTitle": "LLM 応答言語",
+      "responseLangDesc": "AI モデルが応答する言語",
+      "sidebarExpandTitle": "ホバーでサイドバーを展開",
+      "sidebarExpandDesc": "マウスを重ねるとサイドバーが展開されます",
+      "linkPreviewTitle": "リンクプレビュー",
+      "linkPreviewDesc": "チャット内の URL にプレビューカードを表示"
+    },
+    "tools": {
+      "intro": "これらのツールは、エージェントがあなたのためにできることを定義します。必須ツールは常にオンです。オプションツールは必要に応じてオン/オフを切り替えられます。エージェントは有効になっているものだけを使います。",
+      "lockedTitle": "必須ツール",
+      "optionalTitle": "オプションツール",
+      "lockedBadge": "常にオン",
+      "groups": {
+        "terminal": { "title": "Terminal", "description": "エージェントがあなたのマシンで直接コマンドを実行できます（git、ビルド、スクリプト）。最も強力なツールです。ターミナルでできることはすべてエージェントにもできます。" },
+        "files": { "title": "ファイル", "description": "エージェントがプロジェクトのファイルを読み込み、作成、編集できます。コード、設定、メモ、ドキュメントなどを扱えます。" },
+        "file_search": { "title": "ファイル検索", "description": "エージェントがプロジェクトを探索してファイルを見つけたり、コード内の特定の語を検索したりできます。" },
+        "web": { "title": "Web", "description": "エージェントが最新情報が必要なときにオンラインで検索し、ウェブページを開けます。" },
+        "mcp": { "title": "外部コネクター", "description": "エージェントがコネクタータブで設定した外部コネクターを使えるようにします。" },
+        "skills": { "title": "Skills", "description": "エージェントが特定のタスクで専門ガイド（skills）を参照できるようにします。使わないなら無効にできます。" },
+        "user_choice": { "title": "ユーザー選択", "description": "エージェントが複数の選択肢で迷ったときにあなたに意見を尋ねられるようにします。一人で決めてほしいなら無効にできます。" },
+        "subagents": { "title": "サブエージェント", "description": "エージェントがサブタスクを別のエージェントに任せ、結果を受け取れるようにします。すべてを一つの会話に留めたいなら無効にできます。" },
+        "plan_mode": { "title": "Plan mode", "description": "エージェントが作業計画を提案し、実行前にあなたの同意を待てるようにします。すぐに行動してほしいなら無効にできます。" },
+        "todo_list": { "title": "Todo リスト", "description": "エージェントが長い作業中にチェックリストを持ち、忘れ物を防げるようにします。チェックリストが不要なら無効にできます。" },
+        "agent_diagnostics": { "title": "エージェント診断", "description": "エージェントが失敗後に最近のエラーを見直して自己修正できるようにします。失敗の分析に時間をかけたくないなら無効にできます。" },
+        "git_branches": { "title": "Git ブランチ", "description": "エージェントが作業を隔離するために Git ブランチを作成・切り替えできるようにします。ブランチ管理を自分でするなら無効にできます。" },
+        "forecast": { "title": "Forecast", "description": "エージェントが Forecast モジュールを使えるようにします。予測の実行、結果の確認、シナリオの追加が可能です。Forecast を使わないなら無効にできます。" },
+        "spreadsheet": { "title": "スプレッドシート / Excel", "description": "エージェントが表計算ファイル（Excel、ODS、CSV、TSV）を読み込んだり作成したりできるようにします。こうしたファイルを扱わないなら無効にできます。" },
+        "document": { "title": "ドキュメント / Word", "description": "エージェントが既存のドキュメントからテキストを抽出したり、Word ファイルを作成したりできるようにします。こうしたドキュメントを扱わないなら無効にできます。" },
+        "images": { "title": "画像", "description": "エージェントが画像の確認、リサイズ、切り抜き、変換を行えるようにします。画像を処理する必要がないなら無効にできます。" }
+      }
+    },
+    "advanced": {
+      "autostartTitle": "起動時に開く",
+      "autostartDesc": "システム起動時に Beaver を自動的に開く",
+      "startHiddenTitle": "バックグラウンドで起動",
+      "startHiddenDesc": "ウィンドウを開かずにバックグラウンドで起動する",
+      "trayTitle": "メニューバーアイコン",
+      "trayDesc": "システムトレイに Beaver を表示し続ける",
+      "defaultModelTitle": "デフォルトモデル",
+      "defaultModelDesc": "新しい会話でデフォルトで使用するモデル",
+      "keepAliveTitle": "モデルのアンロード",
+      "keepAliveDesc": "モデルのメモリを解放するまでの時間",
+      "searchModel": "モデルを検索…",
+      "keepAlive": {
+        "immediately": "すぐに",
+        "2min": "2 分後",
+        "5min": "5 分後",
+        "10min": "10 分後",
+        "15min": "15 分後",
+        "30min": "30 分後",
+        "onClose": "アプリを閉じたとき"
+      },
+      "hardwareAccelTitle": "ハードウェアアクセラレーション",
+      "hardwareAccelDesc": "ローカルモデルの推論エンジン",
+      "hardwareAccelCpu": "CPU",
+      "hardwareAccelGpu": "GPU",
+      "hardwareAccelRestart": "Ollama を再起動",
+      "hardwareAccelRestarted": "Ollama が再起動されました",
+      "ollamaExternalReused": "外部 Ollama を再利用中",
+      "restartRequiredTitle": "再起動が必要です",
+      "restartRequiredDesc": "変更は Ollama の再起動後に適用されます",
+      "ollamaTitle": "Ollama",
+      "multiModelTitle": "複数モデルを読み込む",
+      "multiModelDesc": "複数のモデルを同時に VRAM に保持する（より多くの GPU メモリが必要）",
+      "showGpuStatusTitle": "GPU 状態を表示",
+      "showGpuStatusDesc": "チャットに CPU/GPU インジケーターと VRAM 使用量を表示する",
+      "vramTableTitle": "モデルごとに必要な VRAM",
+      "vramTableDesc": "モデルサイズと量子化に基づいた推定 VRAM",
+      "vramTableSize": "サイズ",
+      "vramFormula": "モデルサイズ + （コンテキスト÷1000 × 0.5 GB）+ 0.5 GB",
+      "fileAccessTitle": "ファイルアクセス",
+      "fileAccessDesc": "LLM が読み書きできるフォルダー",
+      "addPath": "フォルダーを追加",
+      "resetPaths": "リセット",
+      "fullDisk": "フルディスク",
+      "compressionTitle": "圧縮",
+      "compressionEnabledTitle": "自動圧縮",
+      "compressionEnabledDesc": "コンテキストが上限に近づくと自動的に会話を要約します",
+      "compressionThresholdTitle": "圧縮しきい値",
+      "compressionThresholdDesc": "圧縮が発動するコンテキストウィンドウの使用率"
+    },
+    "llm": {
+      "searchPlaceholder": "モデルを検索…",
+      "families": "ファミリー",
+      "back": "戻る",
+      "maxInput": "コンテキスト（入力）",
+      "maxOutput": "最大出力",
+      "inputCost": "入力コスト",
+      "outputCost": "出力コスト",
+      "vision": "ビジョン",
+      "tools": "ツール",
+      "reasoning": "推論",
+      "caching": "プロンプトキャッシュ",
+      "webSearch": "ウェブ検索",
+      "yes": "はい",
+      "no": "いいえ"
+    },
+    "shortcuts": {
+      "toggleTerminal": "Terminal の表示切替",
+      "toggleSidebar": "サイドバーの表示切替",
+      "goBack": "戻る",
+      "goForward": "進む",
+      "newSession": "新しいセッション",
+      "searchDialog": "会話を検索",
+      "togglePreview": "ファイルプレビューパネルの表示/非表示"
+    },
+    "confirm": {
+      "deleteModel": "確認しますか？"
+    }
+  },
+  "terminal": {
+    "newTab": "新しいタブ",
+    "closePanel": "パネルを閉じる",
+    "processExited": "プロセスがコード {{code}} で終了しました",
+    "failedToStart": "Terminal を起動できませんでした"
+  },
+  "skills": {
+    "sourceBuiltIn": "内蔵",
+    "sourceUser": "ユーザー",
+    "sourceProject": "プロジェクト",
+    "noResults": "Skill が見つかりません"
+  },
+  "search": {
+    "placeholder": "会話を検索…",
+    "recent": "最近の会話",
+    "results": "結果",
+    "empty": "会話が見つかりません"
+  },
+  "about": {
+    "version": "バージョン",
+    "tauri": "Tauri",
+    "os": "システム",
+    "viewOnGithub": "GitHub で見る",
+    "description": "ローカルおよびクラウド LLM 向けのエージェント型デスクトップアプリ。"
+  },
+  "browser": {
+    "title": "ブラウザ",
+    "addressLabel": "ブラウザのアドレス",
+    "addressPlaceholder": "URLを入力または検索",
+    "openAddress": "アドレスを開く",
+    "startTitle": "ブラウジングを開始",
+    "startDescription": "URLを入力するかウェブを検索します",
+    "invalidUrl": "有効なHTTPまたはHTTPSアドレスを入力してください。",
+    "tabsLabel": "ブラウザーのタブ",
+    "newTab": "新しいタブ",
+    "closeTab": "{{title}} を閉じる",
+    "addTab": "タブを追加",
+    "back": "戻る",
+    "forward": "進む",
+    "reload": "再読み込み",
+    "stop": "読み込みを停止",
+    "localSites": "利用可能なローカルサイト",
+    "tabLimitTitle": "タブ数が上限の10個に達しました",
+    "tabLimitDescription": "非アクティブなタブ「{{title}}」を置き換えますか？",
+    "replaceTab": "置き換える",
+    "operationFailed": "ブラウザーはこの操作を完了できませんでした。",
+    "loading": "ブラウザーを読み込み中…",
+    "blockedFeature": "この機能は現在のバージョンでは無効です。",
+    "unavailable": "安全なブラウザーは利用できません。"
+  },
+  "filePreview": {
+    "closeTab": "タブを閉じる",
+    "default": "デフォルト",
+    "noFiles": "このセッションで作成または変更されたファイルはありません。",
+    "listModes": {
+      "latest": "最新の実行",
+      "all": "すべてのファイル",
+      "uncommitted": "未コミット"
+    },
+    "filesModified": "ファイル",
+    "loading": "ファイルを読み込み中…",
+    "fileNotFound": "ファイルを読み取れませんでした。削除または移動された可能性があります。",
+    "diffUnavailable": "このファイルの変更を表示できません。",
+    "diffTruncated": "プレビューは制限されています。このファイルにはさらに変更があります。",
+    "gitStatus": {
+      "added": "作成",
+      "modified": "変更",
+      "deleted": "削除",
+      "renamed": "名前変更",
+      "copied": "コピー",
+      "changed": "変更"
+    },
+    "togglePanel": "ファイルプレビュー",
+    "reduce": "縮小",
+    "fullscreen": "全画面",
+    "open": "開く",
+    "openWith": "アプリで開く…",
+    "noEditorDetected": "エディターが検出されませんでした",
+    "moreRows": "+{{count}} 行",
+    "totalRows": "{{count}} 行（プレビュー制限あり）",
+    "charCount": "{{format}} — {{count}} 文字",
+    "blockCount": "DOCX — {{count}} ブロック"
+  },
+  "fileTree": {
+    "clearFilter": "フィルターをクリア",
+    "filterPlaceholder": "ファイルを検索…",
+    "toggleTree": "プロジェクトファイルツリー",
+    "loadError": "このフォルダを読み取れません",
+    "noResults": "結果なし"
+  },
+  "errors": {
+    "crashMessage": "エラーが発生しました。アプリケーションを再起動してください。",
+    "operationFailed": "操作に失敗しました。もう一度お試しください。",
+    "streamStartFailed": "ストリームを開始できませんでした。",
+    "streamInterrupted": "ストリームが中断されました。",
+    "ollamaConnectionLost": "Ollama への接続が失われました",
+    "ollamaServerError": "Ollama サーバーエラー",
+    "ollamaWaiting": "Ollama への接続が失われました（{{seconds}}秒）— 再接続中…",
+    "ollamaReconnected": "Ollama に再接続しました",
+    "ollamaReconnecting": "Ollama に再接続しました — {{seconds}}秒後に再試行…",
+    "keyringFailed": "キーリングにアクセスできません。API キーを保存するには gnome-keyring または kwallet をインストールしてください。",
+    "ollamaRestartFailed": "Ollama の再起動に失敗しました",
+    "maxFiles": "最大 {{max}} ファイル",
+    "fileTooLarge": "{{name}} は 20MB を超えています",
+    "saveFailed": "保存に失敗しました",
+    "projectRenameFailed": "プロジェクトの名前を変更できませんでした",
+    "projectDeleteFailed": "プロジェクトを削除できませんでした",
+    "projectOpenFailed": "フォルダーを開けませんでした",
+    "sessionSaveFailed": "セッションを保存できませんでした",
+    "downloadFailed": "ダウンロードに失敗しました",
+    "updateFailed": "更新に失敗しました",
+    "apiKeyFailed": "キーを保存できませんでした",
+    "apiKeyDeleteFailed": "キーを削除できませんでした",
+    "readError": "ファイルを読み取れませんでした",
+    "modelNotFound": "モデルが見つかりません",
+    "rateLimited": "リクエストが多すぎます。しばらくしてから再試行してください",
+    "authFailed": "認証に失敗しました。API キーを確認してください",
+    "moonshotMembershipUnverified": "Moonshot は有効な Kimi Code サブスクリプションを確認できません。",
+    "xaiSubscriptionOrCreditsRequired": "xAI は Grok サブスクリプションまたはクレジットが必要だと報告しています。",
+    "providerAccessUnavailable": "プロバイダーは現在、このモデルへのアクセスを拒否しています。",
+    "providerConnectionFailed": "プロバイダーに接続できませんでした。",
+    "providerTemporarilyUnavailable": "プロバイダーは一時的に利用できません。しばらくしてからもう一度お試しください。",
+    "providerRequestRejected": "プロバイダーがリクエストを拒否しました。",
+    "providerConfigurationInvalid": "リクエストを準備できませんでした。",
+    "oauthReauthenticationRequired": "OAuth 接続の有効期限が切れました。プロバイダーに再接続してください。",
+    "toolFailed": "ツールが失敗しました",
+    "webToolFailed": "Web ツールが失敗しました： {{message}}"
+  },
+  "updates": {
+    "tooltip": "アップデートが利用可能です",
+    "appUpdate": "更新",
+    "modelUpdate": "更新",
+    "version": "バージョン {{version}}",
+    "ollamaBinaryUpdate": "更新",
+    "forecastDevRuntime": "開発 · ランタイム",
+    "forecastDevModel": "開発 · モデル",
+    "forecastDevReview": "確認",
+    "releaseNotesTitle": "バージョン {{version}} のリリースノート",
+    "showDetails": "詳細を表示",
+    "hideDetails": "詳細を非表示"
+  },
+  "units": {
+    "gb": "GB"
+  },
+  "a11y": {
+    "close": "閉じる",
+    "minimize": "最小化",
+    "maximize": "最大化"
+  },
+  "wakeupFormat": {
+    "daily": "毎日",
+    "weekly": "毎週"
+  },
+  "codex": {
+    "title": "GPT via Codex（開発用）",
+    "description": "内部テスト用の ChatGPT OAuth 接続。",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "loggedIn": "接続済み",
+    "loggedOut": "未接続",
+    "loggingIn": "接続中…"
+  },
+  "agentImport": {
+    "title": "他のアシスタントからインポート",
+    "description": "アプリごとに選択します。スキルとルールは元のフォルダーに読み取り専用で残ります。",
+    "loading": "互換性のある設定を検索しています…",
+    "onboardingLater": "この選択は後で「設定 > 詳細」から変更できます。",
+    "status": {
+      "detected": "検出済み",
+      "empty": "互換コンテンツなし",
+      "missing": "未検出",
+      "unavailable": "アクセス不可"
+    },
+    "card": {
+      "counts": "文書 {{documents}} · ルール {{rules}} · スキル {{skills}}",
+      "migrated": "移行済み",
+      "active": "移行は有効です",
+      "activeCount": "{{count}} 件が有効",
+      "disabled": "無効"
+    },
+    "sections": {
+      "documents": "グローバル指示",
+      "rules": "ルール",
+      "skills": "スキル"
+    },
+    "detail": {
+      "description": "Beaver が使用できる内容を正確に選択します。",
+      "selectedCount": "{{total}} 件中 {{selected}} 件を選択",
+      "searchSkills": "スキルを検索",
+      "partial": "この設定の一部をスキップしました。ファイルが大きすぎる、フォルダーにアクセスできない、またはスキャン上限に達した可能性があります。表示されている項目は引き続き使用できます。",
+      "updateAvailable": "新しいバージョンを利用できます。",
+      "imported": "Beaver に移行済み",
+      "empty": "このソースに互換コンテンツは見つかりませんでした。"
+    },
+    "actions": {
+      "all": "すべて",
+      "none": "なし",
+      "back": "ソースに戻る",
+      "confirmSource": "このソースを確認",
+      "confirmChanges": "変更を確定",
+      "reactivate": "このソースを再有効化",
+      "disable": "無効化",
+      "saving": "保存中…",
+      "rescan": "再スキャン",
+      "retry": "再試行"
+    },
+    "conflict": {
+      "title": "文書がすでに存在します",
+      "description": "{{names}} は Beaver にすでに存在します。",
+      "keep": "キャンセル",
+      "replace": "バックアップして置換"
+    },
+    "messages": {
+      "saved": "インポート設定を保存しました",
+      "scanFailed": "現在ソースをスキャンできません。"
+    },
+    "settings": {
+      "title": "他のアシスタントからインポート",
+      "description": "他のツールから読み取るルール、指示、スキルを管理します。",
+      "manage": "管理"
+    }
+  },
+  "onboarding": {
+    "common": {
+      "back": "戻る",
+      "continue": "続ける",
+      "skip": "スキップ"
+    },
+    "welcome": {
+      "title": "Beaver へようこそ",
+      "description": "ローカルモデルまたはクラウドプロバイダーを好みに合わせて使える AI アシスタントです。",
+      "getStarted": "始める"
+    },
+    "preferences": {
+      "title": "Beaver をカスタマイズ",
+      "description": "アプリを開く前にテーマとインターフェース言語を選択します。"
+    },
+    "api": {
+      "title": "LLM プロバイダーを設定",
+      "description": "クラウドモデルを使うために API キーを追加します。ここには LLM プロバイダーのみ表示されます。",
+      "loading": "LLM プロバイダーを読み込み中…",
+      "keyLabel": "{{name}} API キー",
+      "keyLabelFallback": "API キー",
+      "keyPlaceholder": "API キーを貼り付け",
+      "getKey": "{{name}} キーを取得",
+      "saving": "確認中…"
+    }
+  },
+  "ollamaSetup": {
+    "title": "Ollama セットアップ",
+    "description": "Ollama を使うとローカルマシン上で AI モデルを実行できます。この手順をスキップしてクラウドプロバイダーを使うこともできます。",
+    "download": "Ollama をダウンロード",
+    "downloading": "Ollama をダウンロード中…",
+    "cancel": "キャンセル",
+    "cancelling": "キャンセル中…",
+    "skip": "スキップ",
+    "skipping": "スキップ中…",
+    "extracting": "インストール中…",
+    "verifying": "検証中…",
+    "starting": "Ollama を起動中…",
+    "downloadingGpu": "GPU サポートをダウンロード中…",
+    "error": "インストールに失敗しました。詳細は以下を確認してください。"
+  },
+  "linkPreview": {
+    "noTitle": "タイトルなし",
+    "openSite": "ウェブサイトを開く"
+  },
+  "subagents": {
+    "backgroundCount_one": "{{count}} 件のアクティブなサブエージェント",
+    "backgroundCount_other": "{{count}} 件のアクティブなサブエージェント",
+    "stopAll": "すべて停止",
+    "running": "実行中…",
+    "stop": "停止",
+    "open": "開く",
+    "bubbleLabel_one": "サブエージェント：{{count}} エージェント作成済み",
+    "bubbleLabel_other": "サブエージェント：{{count}} エージェント作成済み",
+    "completed": "完了",
+    "failed": "失敗",
+    "cancelled": "キャンセル済み",
+    "interrupted": "中断済み"
+  },
+  "todos": {
+    "progress": "{{done}}/{{total}} 件のタスク",
+    "noActive": "Todo 完了",
+    "status": {
+      "pending": "未着手",
+      "in_progress": "進行中",
+      "completed": "完了"
+    }
+  },
+  "interactiveChoice": {
+    "title": "対話式の選択",
+    "step": "{{current}}/{{total}}",
+    "recommended": "推奨",
+    "otherLabel": "その他",
+    "other": "別の回答",
+    "otherPlaceholder": "回答を入力",
+    "inputLocked": "上の質問に回答してください"
+  },
+  "connectors": {
+    "main": {
+      "subtitle": "LLM が他のアプリやサービスに接続できるようにします",
+      "browseBtn": "コネクターを探す"
+    },
+    "sidebar": {
+      "configured": "設定済み",
+      "empty": "設定済みのコネクターはありません",
+      "loadError": "コネクターを読み込めませんでした"
+    },
+    "detail": {
+      "connected": "接続済み",
+      "disconnected": "切断済み",
+      "description": "説明",
+      "tools": "利用可能なツール",
+      "author": "作者",
+      "website": "Web サイト",
+      "openSite": "サイトを開く",
+      "confirmDeleteBtn": "削除",
+      "confirmDisconnectTitle": "{{name}} を切断しますか？",
+      "confirmDisconnectDesc": "LLM は {{name}} のサービスにアクセスできなくなります。",
+      "confirmDisconnectBtn": "切断",
+      "cancel": "キャンセル"
+    },
+    "browse": {
+      "title": "コネクターを探す",
+      "subtitle": "インスタンスにコネクターを追加します。",
+      "search": "コネクターを検索…",
+      "empty": "一致するコネクターはありません。",
+      "tabMcp": "MCP",
+      "tabPlugins": "プラグイン",
+      "pluginsEmpty": "近日公開",
+      "categories": {
+        "all": "すべて",
+        "productivity": "生産性",
+        "design": "デザイン",
+        "devtools": "開発ツール",
+        "communication": "コミュニケーション",
+        "ai-ml": "AI / ML",
+        "scraping": "スクレイピング",
+        "community": "コミュニティ"
+      }
+    },
+    "comingSoon": "近日公開",
+    "localSecurityWarning": "ローカル MCP コネクタは、ユーザーアカウントの権限でコードを実行します。",
+    "config": {
+      "addTitle": "{{name}} を追加",
+      "token": "トークン",
+      "tokenPlaceholder": "ここにトークンを貼り付け",
+      "testing": "テスト中…",
+      "testOk": "コネクターを検証しました。",
+      "addAndTest": "追加してテスト",
+      "testError": "コネクターを検証できませんでした。トークンを確認して再試行してください。",
+      "cancel": "キャンセル",
+      "confirmAddDesc": "{{name}} をコネクターに追加しますか？",
+      "confirmAddBtn": "追加"
+    },
+    "oauth": {
+      "title": "認証中",
+      "discovering": "サーバーに接続中…",
+      "message": "ブラウザで接続手順を完了してください。",
+      "testing": "コネクターを検証中…",
+      "retry": "うまくいきませんか？再試行してください。",
+      "cancel": "キャンセル",
+      "successTitle": "接続に成功しました",
+      "successMessage": "コネクターが正常に追加されました。",
+      "errorGeneric": "接続に失敗しました。もう一度お試しください。"
+    }
+  },
+  "vision": {
+    "unsupportedModel": "このモデルはビジョンに対応していません"
+  },
+  "forecast": {
+    "chart": {
+      "resetZoom": "ズームをリセット",
+      "forecastStart": "予測開始"
+    },
+    "chartCard": {
+      "main": "メインチャート",
+      "fan": "予測期間の拡大",
+      "seasonality": "季節性",
+      "reliability": "バックテスト誤差（sMAPE）",
+      "withSeries": "{{title}} — {{series}}",
+      "collapse": "カードを折りたたむ",
+      "expand": "カードを展開"
+    },
+    "companion": {
+      "mean": "平均",
+      "insufficientData": "このグラフを表示するにはデータが不足しています。",
+      "indexBase": "指数（最初の月 = 100）",
+      "showAll": "すべて",
+      "showNone": "なし"
+    },
+    "zoomJump": {
+      "goTo": "{{count}} 個中 {{index}} 番目へ移動",
+      "label": "ズームジャンプ"
+    },
+    "title": "予測",
+    "noAnalysis": "分析が進行中ではありません",
+    "selection": {
+      "label": "選択",
+      "manual": "手動",
+      "auto": "Auto",
+      "allowCloud": "クラウドモデルを許可",
+      "loadFailed": "Forecast の選択を読み込めませんでした。",
+      "saveFailed": "Forecast の選択を保存できませんでした。"
+    },
+    "workbench": {
+      "windowTitle": "Forecast ワークスペース",
+      "navigation": "Forecast ワークスペース",
+      "open": "Forecast ワークスペースを開く",
+      "openFailed": "Forecast ワークスペースを開けませんでした。",
+      "syncFailed": "Forecast ワークスペースを更新できませんでした。",
+      "loading": "Forecast ワークスペースを読み込み中…",
+      "unavailable": "Forecast のコンテキストを利用できません。",
+      "draftSaveFailed": "Forecast ワークスペースの変更を保存できません。",
+      "newAnalysis": "新しい分析",
+      "workspace": "ワークスペース",
+      "sections": {
+        "data": "データ",
+        "forecast": "予測",
+        "evaluation": "評価",
+        "comparison": "比較",
+        "scenarios": "シナリオ",
+        "notes": "ノート",
+        "report": "レポート"
+      },
+      "sectionDescriptions": {
+        "data": "データ、項目の対応付け、品質チェックを確認します。",
+        "forecast": "予測全体と利用可能なレイヤーを確認します。",
+        "evaluation": "ベースラインと時系列検証でモデルを評価します。",
+        "comparison": "モデルの品質、速度、制約を比較します。",
+        "scenarios": "基準予測を保ったまま仮説を作成、編集します。",
+        "notes": "この予測に関連するノートを作成、整理、確認します。",
+        "report": "出典、メモ、高度なエクスポートをまとめます。"
+      },
+      "data": {
+        "loadFailed": "分析データを読み込めません。",
+        "rows": "元データ行",
+        "historyPoints": "履歴ポイント",
+        "futureRows": "将来データ行",
+        "series": "系列",
+        "missingPeriods": "欠損期間",
+        "outliers": "外れ値",
+        "target": "対象",
+        "date": "日付",
+        "frequency": "頻度",
+        "covariates": "外部変数",
+        "none": "なし",
+        "quality": "データ品質",
+        "valid": "データ検証済み",
+        "notAvailable": "この旧形式の分析では品質チェックを利用できません",
+        "needsAttention": "確認が必要",
+        "issueError": "処理を止めるエラー",
+        "issueWarning": "警告",
+        "preview": "データプレビュー",
+        "rowsDisplayed": "{{total}} 行中 {{shown}} 行",
+        "noRows": "この分析で利用できるデータ行はありません。",
+        "previewLimited": "プレビューは先頭 200 行に制限されています。"
+      },
+      "evaluation": {
+        "loading": "評価を読み込み中…",
+        "loadFailed": "Forecast の評価を読み込めません。",
+        "runFailed": "Forecast のバックテストを完了できません。",
+        "run": "バックテストを実行",
+        "running": "バックテスト実行中…",
+        "rollingBacktest": "ローリング時系列検証",
+        "summary": "{{windows}} ウィンドウ · 期間 {{horizon}}",
+        "notRun": "バックテストは未実行です",
+        "model": "モデル",
+        "coverage": "カバレッジ",
+        "duration": "時間",
+        "status": "結果",
+        "baseline": "ベースライン",
+        "modelKind": "Forecast モデル",
+        "current": "現在",
+        "reference": "基準",
+        "beatsBaseline": "ベースラインを上回る",
+        "missesBaseline": "ベースラインを上回らない",
+        "noAnalysis": "評価する分析がありません",
+        "noAnalysisDescription": "先に会話から予測を実行してください。",
+        "emptyTitle": "比較可能な結果がここに表示されます",
+        "emptyEvaluation": "未来データを学習に使わず、現在のモデルを4つのベースラインと比較します。",
+        "emptyComparison": "信頼できる順位を得るには評価でバックテストを実行してください。",
+        "createEnsemble": "アンサンブルを作成", "ensembleRunning": "アンサンブルを作成中…",
+        "ensembleFailed": "モデルアンサンブルを作成できません。",
+        "ensembleReady": "{{count}} 個のバックテスト済みモデルから作成しました。組み合わせ自体は別途検証が必要です。",
+        "baselines": {"naive": "ナイーブ", "seasonal_naive": "季節ナイーブ", "drift": "ドリフト", "ets": "ETS"},
+        "warnings": {"history": "履歴が不足しています", "cloud": "クラウド未設定", "notInstalled": "モデル未インストール", "resources": "リソース不足", "execution": "評価が不完全です", "unavailable": "結果を利用できません"},
+        "planWarnings": {"short_history": "利用可能なウィンドウは3未満です。順位は慎重に解釈してください。", "reduced_horizon": "有効な時間ウィンドウを保つため評価期間を短縮しました。", "unavailable": "この評価の信頼性は限定的です。"}
+      }
+    },
+    "docs": {
+      "windowTitle": "Forecast ドキュメント",
+      "openFailed": "Forecast ドキュメントを開けません。",
+      "kicker": "技術ドキュメント",
+      "status": "Forecast ガイド",
+      "navLabel": "Forecast ドキュメント",
+      "openTooltip": "Forecast ドキュメントを開く",
+      "nav": {
+        "overview": "概要",
+        "datasets": "データセット",
+        "models": "モデル",
+        "predictions": "予測",
+        "uncertainty": "不確実性",
+        "covariates": "共変量",
+        "multiseries": "複数系列",
+        "scenarios": "シナリオ",
+        "agentWorkflows": "LLM エージェント",
+        "toolContracts": "Forecast ツール",
+        "troubleshooting": "診断",
+        "limits": "制限"
+      }
+    },
+    "askAgent": "エージェントに聞く",
+    "importFile": "ファイルをインポート (CSV, Excel)",
+    "pasteData": "データを貼り付け",
+    "fromUrl": "URL から",
+    "recentAnalyses": "最近の分析",
+    "comingSoon": "近日対応",
+    "panelMode": {
+      "title": "パネルモード",
+      "preview": "ファイルプレビュー",
+      "forecast": "予測"
+    },
+    "nav": {
+      "mainView": "メインビュー",
+      "scenarios": "シナリオ",
+      "comparisons": "比較",
+      "notes": "ノート",
+      "history": "履歴"
+    },
+    "history": {
+      "searchPlaceholder": "検索…",
+      "empty": "保存された分析はありません。",
+      "points_one": "{{count}} 点",
+      "points_other": "{{count}} 点",
+      "horizonShort": "予測 {{count}}",
+      "mapeShort": "MAPE {{value}}%",
+      "edit": "名前を変更",
+      "delete": "削除",
+      "validate": "確定",
+      "cancel": "キャンセル",
+      "renameFailed": "分析の名前を変更できませんでした。",
+      "deleteFailed": "分析を削除できませんでした。"
+    },
+    "view": {
+      "period": "期間",
+      "detailedPredictions": "詳細な予測",
+      "series": "系列",
+      "historySeries": "履歴",
+      "forecastSeries": "予測",
+      "confidenceRange": "信頼区間",
+      "ensembleSeries": "加重アンサンブル",
+      "filters": {
+        "button": "フィルター",
+        "series": "系列",
+        "uncertainty": "不確実性",
+        "scenarios": "シナリオ",
+        "variables": "変数",
+        "events": "イベント",
+        "comparisons": "比較",
+        "anomalies": "異常",
+        "quality": "品質",
+        "history": "履歴",
+        "forecast": "予測",
+        "confidence": "信頼区間",
+        "annotations": "注釈",
+        "residualAnomalies": "残差異常",
+        "dataQualityIssues": "データ品質の警告",
+        "noScenarioLayers": "この分析には利用できるシナリオ層がありません。",
+        "noVariableLayers": "この分析には表示できる変数がありません。",
+        "noLayersYet": "現在利用できるレイヤーはありません。"
+      }
+    },
+    "scenarios": {
+      "name": "シナリオ名",
+      "description": "任意の説明",
+      "adjustment": "割合調整",
+      "percentType": "全体調整",
+      "contextType": "コンテキスト",
+      "seriesScope": "対象系列",
+      "allSeries": "すべての系列",
+      "percentMode": "%",
+      "absoluteMode": "値",
+      "contextValue": "コンテキスト値",
+      "removeContext": "変数を削除",
+      "addContext": "変数を追加",
+      "contextSummary_one": "コンテキスト {{count}} 変数",
+      "contextSummary_other": "コンテキスト {{count}} 変数",
+      "launch": "シナリオを実行",
+      "relaunch": "シナリオを再実行",
+      "percentHint": "現在の予測から派生カーブを作成します。モデルの再実行は行いません。",
+      "contextHint": "選択した変数の新しい未来値でモデルを再実行します。",
+      "preview": "プレビュー",
+      "update": "更新",
+      "cancel": "キャンセル",
+      "edit": "編集",
+      "delete": "削除",
+      "confirmDelete": "削除を確認",
+      "togglePredictions": "予測を表示",
+      "predictions": "予測",
+      "noPredictions": "利用できる予測がありません。",
+      "saving": "保存中…",
+      "empty": "この分析にはまだシナリオがありません。",
+      "emptySub": "仮説を追加してメイン予測と比較します。",
+      "points_one": "{{count}} 点",
+      "points_other": "{{count}} 点",
+      "loadFailed": "シナリオを読み込めません。",
+      "saveFailed": "シナリオを保存できません。",
+      "updateFailed": "シナリオを更新できません。",
+      "deleteFailed": "シナリオを削除できません。"
+    },
+    "comparisons": {
+      "series": "系列",
+      "scenarioMeta": "シナリオ",
+      "forecastMeta": "{{model}} · H{{horizon}}",
+      "base": "基準",
+      "diff": "差分",
+      "delta": "差分",
+      "averageDelta": "平均差分",
+      "maxDelta": "最大差分",
+      "averageDeltaPct": "平均差分 %",
+      "direction": "方向",
+      "higher": "高い",
+      "lower": "低い",
+      "mixed": "混在",
+      "empty": "利用できる比較がありません。",
+      "emptySub": "曲線を比較するには、シナリオまたは互換性のある予測を作成してください。",
+      "loadFailed": "比較を読み込めません。"
+    },
+    "notes": {
+      "open": "ノートを開く",
+      "edit": "編集",
+      "delete": "削除",
+      "timeline": "注釈付きタイムライン",
+      "timelineEmpty": "この予測にはまだノートがありません。",
+      "count_one": "{{count}} 件のノート",
+      "count_other": "{{count}} 件のノート",
+      "new": "新規ノート",
+      "userSource": "ユーザー",
+      "llmSource": "LLM",
+      "sources": {
+        "user": "ユーザー",
+        "llm": "LLM"
+      },
+      "types": {
+        "context": "コンテキスト",
+        "risk": "リスク",
+        "decision": "決定",
+        "anomaly": "異常",
+        "hypothesis": "仮説"
+      },
+      "empty": "まだノートはありません。",
+      "selectNote": "ノートを選択するか、新規作成してください。",
+      "titlePlaceholder": "ノートのタイトル",
+      "datePlaceholder": "日付",
+      "contentPlaceholder": "ノートの Markdown 内容",
+      "save": "保存",
+      "saving": "保存中",
+      "cancel": "キャンセル",
+      "confirmDelete": "削除を確認",
+      "loadFailed": "ノートを読み込めません。",
+      "saveFailed": "ノートを保存できません。",
+      "deleteFailed": "ノートを削除できません。",
+      "openFailed": "ノートを開けません。"
+    },
+    "analysis": {
+      "loadFailed": "分析を読み込めません。",
+      "series": "系列",
+      "trend": "傾向",
+      "trendSub": "予測全体の読み取り。",
+      "uncertainty": "不確実性",
+      "uncertaintySub": "信頼範囲の幅。",
+      "highlights": "注目点",
+      "highlightsSub": "重要な値と動き。",
+      "anomalies": "異常",
+      "anomaliesSub": "残差から測定した異常な偏差。",
+      "variables": "変数",
+      "variablesSub": "時系列順の置換で検証した影響。",
+      "direction": "方向",
+      "totalChange": "全体変化",
+      "startValue": "開始",
+      "endValue": "終了",
+      "rising": "上昇",
+      "falling": "下降",
+      "stable": "安定",
+      "averageRange": "平均範囲",
+      "maxRange": "最大範囲",
+      "maxRangePeriod": "最大期間",
+      "highestPoint": "最高点",
+      "lowestPoint": "最低点",
+      "strongestRise": "最大上昇",
+      "strongestDrop": "最大下降",
+      "unusualPoint": "通常と異なる点",
+      "noHighlights": "注目点は検出されませんでした。",
+      "noAnomalies": "残差異常は検出されませんでした。",
+      "noVariables": "重要度を算出できないか、データが不足しています。",
+      "decomposition": "分解",
+      "decompositionSub": "トレンド、季節性、残差を分離。",
+      "drift": "ドリフト",
+      "driftSub": "基準履歴と直近期間の変化。",
+      "noDecomposition": "分解に必要な履歴が不足しています。",
+      "noDriftData": "ドリフト測定に必要な履歴が不足しています。",
+      "decompositionMethod": "方式", "seasonalPeriod": "季節周期", "seasonalStrength": "季節性の強さ",
+      "notDetected": "未検出", "notAvailable": "利用不可",
+      "residualAnomaly": "残差異常", "residualAnomalyMeta": "{{date}} · スコア {{score}}",
+      "variableImportanceValue": "{{value}}% · {{direction}}",
+      "variableDirection": {"positive": "正", "negative": "負", "neutral": "中立"},
+      "driftStatus": "状態", "driftDetected": "ドリフトを検出", "driftStable": "安定",
+      "driftScore": "ドリフトスコア", "distributionShift": "分布の変化",
+      "methods": {"classical_additive": "古典的加法", "moving_average_trend": "移動平均"},
+      "variableRange": "{{min}} → {{max}}"
+    },
+    "config": {
+      "title": "設定",
+      "back": "戻る",
+      "dataPhases": "データの段階",
+      "historyRows": "履歴",
+      "futureRows": "既知の未来",
+      "seriesCount": "系列数",
+      "selectedContext": "選択したコンテキスト",
+      "detectedFutureContext": "検出された未来コンテキスト",
+      "futureContextColumns": "検出された未来コンテキスト列",
+      "target": "ターゲット",
+      "dateColumn": "日付列",
+      "seriesColumn": "系列列",
+      "noSeriesColumn": "系列列なし",
+      "covariates": "共変量",
+      "frequency": "頻度",
+      "horizon": "予測期間",
+      "confidence": "信頼度",
+      "model": "モデル",
+      "launch": "予測を開始",
+      "launching": "計算中…",
+      "rows_one": "{{count}} 行",
+      "rows_other": "{{count}} 行",
+      "validation": {
+        "horizonTooLong": "予測期間がこのモデルの上限（{{max}}）を超えています。",
+        "futureRowsMismatch": "既知の未来行の数は、選択した予測期間と一致している必要があります。",
+        "futureRowsPerSeriesMismatch": "各系列は同じ数の既知の未来行を持つ必要があります。",
+        "contextUnsupported": "選択したモデルはコンテキスト変数に対応していません。",
+        "futureContextUnsupported": "選択したモデルは既知の未来コンテキストに対応していません。"
+      },
+      "messages": {
+        "futureRowsMismatchTitle": "予測期間が不一致です",
+        "futureRowsMismatchBody": "{{future}} 行の既知の未来データが見つかりましたが、現在の予測期間は {{horizon}} です。",
+        "futureRowsPerSeriesMismatchTitle": "系列が不完全です",
+        "futureRowsPerSeriesMismatchBody": "すべての系列が同じ数の既知の未来行を持っているわけではありません。",
+        "contextUnsupportedTitle": "コンテキストは利用できません",
+        "contextUnsupportedBody": "選択した共変量はこのモデルでは使われません。",
+        "futureContextUnsupportedTitle": "未来コンテキストは利用できません",
+        "futureContextUnsupportedBody": "このモデルは主系列の履歴は読みますが、共変量の既知の未来値は利用しません。",
+        "futureContextReadyTitle": "未来コンテキストの準備完了",
+        "futureContextReadyBody": "選択した {{count}} 列は、既知の未来行にすでに値があります。",
+        "futureContextMissingTitle": "未来コンテキストが不完全です",
+        "futureContextMissingBody": "既知の未来行はありますが、選択した共変量にはまだ利用可能な未来値がありません。",
+        "addFutureRowsTitle": "未来コンテキストを使えます",
+        "addFutureRowsBody": "ファイル末尾にターゲットなしの行を追加すると、このモデルに既知の未来値を渡せます。",
+        "futureDatesOnlyTitle": "未来の日付のみ",
+        "futureDatesOnlyBody": "共変量が未選択の間、既知の未来行は主に出力日付の確定に使われます。"
+      }
+    },
+    "frequency": {
+      "D": "日",
+      "B": "営業日",
+      "W": "週",
+      "M": "月",
+      "Q": "四半期",
+      "Y": "年",
+      "H": "時間",
+      "T": "分"
+    },
+    "errors": {
+      "importFailed": "インポートできません。ファイル形式を確認してください。",
+      "launchFailed": "計算に失敗しました。列、モデル、API キーを確認してください。"
+    },
+    "modelConfig": {
+      "sidebarTitle": "設定",
+      "title": "設定",
+      "edit": "編集",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "noModel": "インストール済みまたは設定済みの Forecast モデルがありません。",
+      "inherited": "継承",
+      "enabled": "有効",
+      "disabled": "無効",
+      "params": {
+        "horizon_max_override": {
+          "label": "予測期間の上限",
+          "description": "1 回の予測で生成できる未来ポイント数の上限です。例： 日次で 31 なら 31 日、時間単位で 24 なら 24 時間。空または 0 ならモデル本来の上限を使います。"
+        },
+        "context_length": {
+          "label": "最大履歴長",
+          "description": "モデルが参照する過去データ点数です。傾向、季節性、変化点を読むために使います。大きいほど履歴は増えますが、メモリ消費も増えます。"
+        },
+        "quantiles": {
+          "label": "分位点",
+          "description": "モデルが返す確率分位です。0.5 は中心予測、0.1 と 0.9 は低め/高めの不確実性範囲です。範囲が広いほど不確実性が高いです。"
+        },
+        "precision": {
+          "label": "精度",
+          "description": "ローカルで使用する数値形式。auto はエンジンに選択させ、float32 は安定性を優先、float16/bfloat16 は対応 GPU でメモリと VRAM を節約します。"
+        },
+        "dtype": {
+          "label": "数値型",
+          "description": "計算中に使用する数値型。auto を推奨。float32 はより堅牢、float16/bfloat16 は高速化とメモリ削減が可能ですが、すべてのエンジンが対応しているわけではありません。"
+        },
+        "batch_size": {
+          "label": "バッチサイズ",
+          "description": "同時に処理する系列の数。大きくすると大規模データセットを加速できますが、RAM/VRAM が増加します。メモリ不足の場合は減らしてください。"
+        },
+        "horizon_len": {
+          "label": "内部予測期間",
+          "description": "要求された予測期間と計算期間を分けるエンジン用の内部出力長。基本的に既定値のまま、予測不足や長い期間の拒否がない限り変更不要です。"
+        },
+        "prediction_length": {
+          "label": "予測長",
+          "description": "この設定が公開されている場合、エンジンが生成する将来のステップ数。要求された予測期間と一致させる必要があります。低すぎると予測が途切れ、高すぎると無駄に消費します。"
+        },
+        "confidence_level": {
+          "label": "信頼度",
+          "description": "不確実性区間の幅です。0.9 は 90%で、より広く保守的です。0.8 は狭いですが慎重さは下がります。"
+        },
+        "level": {
+          "label": "レベル",
+          "description": "TimeGPT に送信する区間のレベル。例 : 90 は 90% 信頼区間を要求します。レベルが高いほど表示される区間が広くなります。"
+        },
+        "normalization": {
+          "label": "正規化",
+          "description": "計算前に系列をより安定したスケールに戻します。値の桁差が大きい場合に有効。生のスケール自体がシグナルを担う場合は避けてください。"
+        },
+        "quantile_head": {
+          "label": "分位点ヘッド",
+          "description": "モデルがネイティブな確率ヘッドを備えている場合に有効化します。単一の中心曲線ではなく、実際の不確実性区間が必要な場合に有効にしてください。"
+        },
+        "xreg_mode": {
+          "label": "外部変数モード",
+          "description": "気象、トラフィック、祝日などの外部変数の使用方法を定義します。auto はエンジンに選択させ、無効化すると主にターゲットのみの予測になります。"
+        },
+        "clean_ex_first": {
+          "label": "外生変数の清掃",
+          "description": "計算前に TimeGPT に外部変数のクリーニングを要求します。気象やトラフィック列に欠損や外れ値がある場合に有効ですが、呼び出し時間が増加します。"
+        },
+        "finetune_steps": {
+          "label": "微調整ステップ",
+          "description": "現在のデータセットへ適応する小さなステップ数。大きくすると履歴に良く合致しますが、時間が増加し、少ないデータでは過学習する恐れがあります。"
+        },
+        "finetune_loss": {
+          "label": "微調整損失",
+          "description": "TimeGPT の適応に使用する関数。特別な要件がなければ既定値を維持してください。変更するとモデルのエラー罰則方式が変わります。"
+        },
+        "finetune_depth": {
+          "label": "微調整深度",
+          "description": "TimeGPT の適応強度。低い = 軽微な調整、高い = より強い適応。特定ドメインで有効ですが、少ない履歴ではリスクが高くなります。"
+        },
+        "feature_contributions": {
+          "label": "寄与度",
+          "description": "予測における各外部変数の推定重要度を要求します。結果の説明に有用ですが、呼び出しを遅くしたり、サービスによっては利用できない場合があります。"
+        },
+        "decode_block_size": {
+          "label": "デコードブロック",
+          "description": "Toto 用のブロックごとに生成されるポイント数。大きくすると長い予測期間を加速できますが、メモリ消費が増加します。制限のあるマシンでは小さくする方が安全です。"
+        },
+        "has_missing_values": {
+          "label": "欠損値",
+          "description": "履歴の一部の値が欠落していることをエンジンに指示します。データセットに欠損がある場合は有効にし、不要な処理を避けるなら無効のままにしてください。"
+        },
+        "non_negative_output": {
+          "label": "非負出力",
+          "description": "予測値や下限が負にならないようにします。売上、収益、数量、在庫など 0 未満にならない指標で有効です。"
+        },
+        "target_dim": {
+          "label": "ターゲット次元",
+          "description": "MOIRAI が同時に予測するターゲット変数の数。1 = 単一ターゲット。実際の多次元データセットでのみ増やしてください。"
+        },
+        "feat_dynamic_real_dim": {
+          "label": "未来変数",
+          "description": "MOIRAI に提供する既知の将来数値変数の数。例 : 予報気象、カレンダー、プロモーション。実際に存在する列と一致させる必要があります。"
+        },
+        "past_feat_dynamic_real_dim": {
+          "label": "過去変数",
+          "description": "MOIRAI に提供する過去の数値変数の数。過去の説明に使用します。既知の将来変数がある場合、それを置き換えることはできません。"
+        },
+        "scale_factor": {
+          "label": "スケール係数",
+          "description": "FlowState が使用する内部振幅を調整します。出力が常に小さすぎるまたは大きすぎる場合を除き、既定値を維持してください。"
+        },
+        "batch_first": {
+          "label": "バッチファースト",
+          "description": "一部の PyTorch エンジンが期待する次元の順序。ランタイム互換性用の設定です。モデルが形状エラーを報告した場合のみ変更してください。"
+        },
+        "known_future_covariates": {
+          "label": "既知の未来共変量",
+          "description": "将来で既に判明している変数の使用を許可します : 祝日、予報気象、計画価格、キャンペーン。将来領域にこれらの列が入力されている場合に有効にしてください。"
+        },
+        "local_mode": {
+          "label": "ローカルモード",
+          "description": "エンジンが複数のモードを提供する場合、ローカル実行を強制します。外部呼び出しを避け、データをマシン上に保持するために有効のままにしてください。"
+        },
+        "probabilistic_output": {
+          "label": "確率出力",
+          "description": "単一の中心値ではなく、複数の軌跡や不確実性境界を要求します。リスクを確認するのに有用ですが、より時間がかかる場合があります。"
+        },
+        "backend": {
+          "label": "バックエンド",
+          "description": "アダプターが使用する内部エンジン。auto は利用可能な最適なものを選択します。変更は主に診断や、サポートに応じて CPU/GPU を強制するために使用します。"
+        },
+        "output_type": {
+          "label": "出力タイプ",
+          "description": "結果の形式を選択します : 単純な中心予測、または分位点/不確実性付きの出力。信頼区間を表示したい場合は quantiles を使用してください。"
+        },
+        "frequency_resampling": {
+          "label": "再サンプリング",
+          "description": "予測前にエンジンが日付を規則的な頻度に再調整するかどうかを指示します。日付の欠落がある場合に有効。欠落にビジネス上の意味がある場合はリスクがあります。"
+        },
+        "preserve_positivity": {
+          "label": "正値を保持",
+          "description": "Kairos に出力を正に保つよう要求します。収益、注文、トラフィック、ボリュームなど、負になり得ない指標に対して有効にしてください。"
+        },
+        "average_with_flipped_input": {
+          "label": "反転入力",
+          "description": "入力の反転版でも Kairos を実行し、結果を平均化します。曲線を安定化できますが、計算時間が増加します。"
+        },
+        "generation": {
+          "label": "生成",
+          "description": "対応している場合、エンジンの生成モードを有効化します。より豊かな軌跡を生成するのに有用。従来の予測が必要な場合は既定値を維持してください。"
+        },
+        "num_samples": {
+          "label": "サンプル数",
+          "description": "分位点を推定するためにシミュレートする軌跡の数。大きくすると不確実性が安定しますが、計算時間が増加します。"
+        },
+        "device": {
+          "label": "デバイス",
+          "description": "Settings > 詳細から継承される実行ハードウェアです。auto はアプリが選択、GPU は高速、CPU は遅いが互換性が高いです。"
+        },
+        "model_unload_timeout": {
+          "label": "アンロード",
+          "description": "使用後にモデルをメモリへ保持する時間です。長いほど再読み込みを避け、短いほどメモリを早く解放します。"
+        }
+      }
+    },
+    "models": {
+      "title": "Forecast モデル",
+      "sidebarTitle": "Models",
+      "modelCapabilities": "モデルの能力",
+      "engine": "使用エンジン",
+      "install": "インストール",
+      "prepare": "準備",
+      "installed": "インストール済み",
+      "preparationRequired": "準備が必要",
+      "updateRequired": "更新が必要",
+      "uninstall": "アンインストール",
+      "confirmUninstall": "アンインストールを確認",
+      "uninstalling": "アンインストール中…",
+      "cancel": "キャンセル",
+      "parameters": "パラメータ",
+      "diskSize": "ディスクサイズ",
+      "ram": "RAM",
+      "cpuLabel": "CPU",
+      "gpuLabel": "GPU",
+      "licenseLabel": "ライセンス",
+      "libraryLabel": "ライブラリ",
+      "pipelineLabel": "パイプライン",
+      "supported": "対応",
+      "unsupported": "非対応",
+      "uninstalled": "未インストール",
+      "horizonMax": "最大予測期間",
+      "frequencies": "頻度",
+      "status": "ステータス",
+      "cloud": "クラウド (キー必要)",
+      "noKeyConfigured": "API キー未設定",
+      "noneAvailable": "この起動で利用できるモデルはありません。",
+      "hardware": {
+        "light": "軽量ハードウェア",
+        "balanced": "標準ハードウェア",
+        "heavy": "高性能ハードウェア",
+        "remote": "リモート処理"
+      },
+      "engines": {
+        "localChronosBolt": "ローカル Chronos-Bolt",
+        "localChronos2": "ローカル Chronos-2",
+        "localPackage": "ローカルパッケージ",
+        "cloudApi": "クラウド API"
+      },
+      "capabilities": {
+        "context": "コンテキスト変数",
+        "futureContext": "将来コンテキスト",
+        "multiSeries": "独立した複数系列",
+        "multivariate": "共同多変量",
+        "probabilistic": "確率予測",
+        "backtesting": "バックテスト"
+      }
+    },
+    "export": {
+      "title": "エクスポート",
+      "csv": "CSV",
+      "excel": "Excel (.xlsx)",
+      "png": "PNG",
+      "svg": "SVG",
+      "json": "JSON",
+      "pdf": "PDF (レポート)",
+      "clipboard": "コピー",
+      "saved": "エクスポートを保存しました",
+      "copied": "エクスポートをコピーしました",
+      "failed": "エクスポートできませんでした"
+    }
+  },
+  "chatMenu": {
+    "plusButtonHint": "ファイルなどを追加",
+    "addFile": "画像またはファイルを追加",
+    "planMode": "計画モード",
+    "planModeDesc": "計画を作成",
+    "disablePlanMode": "計画モードを無効化",
+    "connectors": "コネクター",
+    "plugins": "プラグイン",
+    "noConnectors": "コネクターなし",
+    "pluginsEmpty": "近日公開"
+  }
+}

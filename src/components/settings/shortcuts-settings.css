@@ -1,0 +1,43 @@
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.shortcut-row:last-child {
+  border-bottom: none;
+}
+
+.shortcut-label {
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shortcut-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-hover);
+  border: 1px solid var(--edge);
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--ink-muted);
+}
+
+.shortcut-plus {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin: 0 1px;
+}

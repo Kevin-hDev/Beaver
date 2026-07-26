@@ -1,0 +1,61 @@
+/* model-search — styles colocalisés */
+
+.msearch-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.msearch-bar {
+  padding: 6px var(--space-sm) 0;
+}
+
+.msearch-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px var(--space-sm) 20px;
+}
+
+.msearch-loading {
+  padding: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+.msearch-hint {
+  padding: var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.msearch-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.msearch-item-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.msearch-item-name {
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.msearch-item-desc {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msearch-installed-icon {
+  color: var(--select-text);
+}

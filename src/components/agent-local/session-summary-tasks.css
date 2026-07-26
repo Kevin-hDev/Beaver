@@ -1,0 +1,150 @@
+.ssb-run > .ssb-item {
+  grid-template-columns: 20px minmax(0, 1fr) auto 16px;
+}
+
+.ssb-item-caret {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--ink-faint);
+  transition: transform var(--ease-smooth);
+}
+
+.ssb-item-caret-open {
+  transform: rotate(180deg);
+}
+
+.ssb-item-status {
+  display: inline-flex;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  align-items: center;
+  justify-content: center;
+}
+
+.ssb-item-status-active {
+  color: var(--pulse);
+}
+
+.ssb-item-status-paused {
+  color: var(--ink-faint);
+}
+
+.ssb-task-list {
+  padding: 0 0 6px 28px;
+}
+
+.ssb-task {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.ssb-task-icon {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  color: var(--ink);
+}
+
+.ssb-task-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssb-task-status {
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.ssb-task-in_progress .ssb-task-icon {
+  color: var(--pulse);
+}
+
+.ssb-task-completed .ssb-task-icon {
+  color: var(--signal-ok);
+}
+
+.ssb-task-completed .ssb-task-text {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+}
+
+.ssb-subagent-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.ssb-subagent-icon.sai-claudiator {
+  color: var(--subagent-claudiator);
+}
+
+.ssb-subagent-icon.sai-geminitor {
+  color: var(--subagent-geminitor);
+}
+
+.ssb-subagent-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ssb-subagent-name,
+.ssb-subagent-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssb-subagent-desc {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.ssb-subagent-action-wrap {
+  display: grid;
+  min-width: 90px;
+  justify-items: end;
+}
+
+.ssb-subagent-status,
+.ssb-subagent-action {
+  grid-area: 1 / 1;
+}
+
+/* Row action — composes .icon-btn (src/styles/buttons.css); keeps its
+   border-on-hover and reveal behavior. */
+.ssb-subagent-action {
+  border: 1px solid transparent;
+  color: var(--ink-faint);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    background-color var(--ease-smooth),
+    border-color var(--ease-smooth),
+    color var(--ease-smooth),
+    opacity var(--ease-smooth);
+}
+
+.ssb-subagent-action:hover:not(:disabled),
+.ssb-subagent-action:focus-visible {
+  border-color: var(--edge);
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.ssb-subagent-item:hover .ssb-subagent-status,
+.ssb-subagent-item:focus-within .ssb-subagent-status {
+  opacity: 0;
+}
+
+.ssb-subagent-item:hover .ssb-subagent-action,
+.ssb-subagent-item:focus-within .ssb-subagent-action {
+  opacity: 1;
+  pointer-events: auto;
+}

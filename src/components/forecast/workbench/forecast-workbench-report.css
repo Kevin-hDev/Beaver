@@ -1,0 +1,36 @@
+.fcwr-root {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin-top: var(--space-lg);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.fcwr-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--edge);
+}
+
+.fcwr-analysis {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fcwr-analysis .fca-root {
+  height: 100%;
+  min-height: 0;
+}
+
+.fcwr-analysis .fca-scroll {
+  overflow: auto;
+  padding: var(--space-md);
+}

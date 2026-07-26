@@ -1,0 +1,163 @@
+/* onboarding.css — Onboarding screens */
+
+.ob-shell {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--void);
+}
+
+.ob-shell.os-mac {
+  --popover-bg: var(--surface-glass);
+  --popover-backdrop-filter: blur(20px);
+}
+
+.ob-shell.os-other {
+  --popover-bg: var(--shell-opaque);
+  --popover-backdrop-filter: none;
+}
+
+.ob-track {
+  height: 100%;
+  display: flex;
+  transition: transform 500ms ease-out;
+  will-change: transform;
+}
+
+.ob-slide {
+  width: 100vw;
+  height: 100vh;
+  flex: 0 0 100vw;
+  min-width: 0;
+}
+
+.ob-page {
+  width: 100%;
+  height: 100%;
+  padding: var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+}
+
+.ob-page-centered {
+  gap: var(--space-lg);
+}
+
+.ob-page-api {
+  justify-content: flex-start;
+  gap: var(--space-lg);
+  overflow-y: auto;
+  padding-top: var(--space-2xl);
+  padding-bottom: var(--space-xl);
+}
+
+.ob-brand-castor {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  background: var(--ink);
+  -webkit-mask: url("/castor.svg") center / contain no-repeat;
+  mask: url("/castor.svg") center / contain no-repeat;
+}
+
+.ob-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  max-width: 34rem;
+  text-align: center;
+}
+
+.ob-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: 800;
+}
+
+.ob-description {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+.ob-primary-btn,
+.ob-secondary-btn,
+.ob-provider-card,
+.ob-link-btn {
+  font: inherit;
+}
+
+.ob-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--pulse);
+  color: var(--ink-on-pulse);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--ease-smooth);
+}
+
+.ob-primary-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.ob-primary-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.ob-secondary-btn {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-md);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.ob-secondary-btn:hover:not(:disabled) {
+  border-color: var(--ink-faint);
+}
+
+.ob-secondary-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.ob-link-btn:hover {
+  color: var(--ink);
+}
+
+.ob-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+@media (max-width: 760px) {
+  .ob-page {
+    padding: var(--space-xl);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-track {
+    transition: none;
+  }
+}

@@ -1,0 +1,18 @@
+@media (max-width: 720px) {
+  .mems-page {
+    padding: var(--memory-page-padding-compact);
+  }
+
+  .mems-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .mems-topic {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mems-topic-meta {
+    grid-column: 2;
+    white-space: normal;
+  }
+}

@@ -1,0 +1,26 @@
+.gdd-dialog {
+  width: fit-content;
+  min-width: min(var(--dialog-compact-min-width), calc(100vw - 24px));
+  max-width: min(var(--dialog-compact-max-width), calc(100vw - 24px));
+}
+
+.gdd-warning {
+  margin-bottom: var(--space-sm);
+  color: var(--signal-warning);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.gdd-actions {
+  flex-wrap: wrap;
+}
+
+.bcd-btn.gdd-danger {
+  border-color: var(--signal-error);
+  color: var(--signal-error);
+}
+
+.bcd-btn.gdd-danger:hover {
+  border-color: var(--signal-error);
+  color: var(--signal-error);
+}

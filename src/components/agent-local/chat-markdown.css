@@ -1,0 +1,174 @@
+/* Markdown rendering in chat bubbles — tables, lists, inline code, bold/italic */
+
+.chat-md {
+  word-break: break-word;
+}
+
+.chat-md > :first-child {
+  margin-top: 0;
+}
+
+.chat-md > :last-child {
+  margin-bottom: 0;
+}
+
+.chat-md p {
+  white-space: pre-wrap;
+  margin: 0 0 0.5em;
+}
+
+.chat-md p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-md-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: var(--space-sm) 0;
+  scrollbar-width: thin;
+}
+
+/* Tables — cellules séparées, mais colonnes pilotées par leur rôle */
+.chat-md table {
+  border-collapse: separate;
+  border-spacing: 3px;
+  width: 100%;
+  min-width: min(38rem, 100%);
+  table-layout: auto;
+  margin: 0;
+  font-size: var(--text-xs);
+  white-space: normal;
+  border: none;
+}
+
+.chat-md th,
+.chat-md td {
+  padding: 8px 12px;
+  min-width: 4rem;
+  text-align: left;
+  border-radius: var(--radius-xs);
+  vertical-align: top;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+.chat-md .chat-md-cell-list-break {
+  display: block;
+  margin-top: 0.35em;
+}
+
+.chat-md th {
+  font-weight: 600;
+  color: var(--ink-muted);
+  font-size: 0.85em;
+  letter-spacing: 0.02em;
+}
+
+/* Dark */
+[data-theme="dark"] .chat-md th {
+  background: var(--surface-overlay);
+}
+
+[data-theme="dark"] .chat-md td {
+  background: var(--surface-glass);
+}
+
+/* Light */
+[data-theme="light"] .chat-md th {
+  background: var(--surface-overlay);
+}
+
+[data-theme="light"] .chat-md td {
+  background: var(--surface-glass);
+}
+
+.chat-md tbody tr:hover td {
+  filter: brightness(1.08);
+}
+
+/* Lists */
+.chat-md ul,
+.chat-md ol {
+  padding-left: 1.5em;
+  margin: var(--space-xs) 0;
+  white-space: normal;
+}
+
+.chat-md li {
+  margin: 2px 0;
+}
+
+.chat-md li p {
+  margin: 0;
+}
+
+.chat-md ul.contains-task-list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.chat-md .task-list-item {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: flex-start;
+}
+
+.chat-md .task-list-item > input {
+  flex: 0 0 auto;
+  margin-top: 0.25em;
+  accent-color: var(--pulse);
+}
+
+/* Inline code */
+.chat-md :not(pre) > code {
+  background: var(--shell);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* Headings */
+.chat-md h1, .chat-md h2, .chat-md h3,
+.chat-md h4, .chat-md h5, .chat-md h6 {
+  margin: 0.8em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.chat-md h1 { font-size: 1.3em; }
+.chat-md h2 { font-size: 1.15em; }
+.chat-md h3 { font-size: 1.05em; }
+
+.chat-md-user h1 { font-size: var(--text-xl); }
+.chat-md-user h2 { font-size: var(--text-lg); }
+.chat-md-user h3 { font-size: var(--text-base); }
+
+/* Blockquote */
+.chat-md blockquote {
+  margin: var(--space-xs) 0;
+  padding-left: var(--space-sm);
+  border-left: 3px solid var(--edge);
+  color: var(--ink-muted);
+}
+
+/* Horizontal rule */
+.chat-md hr {
+  border: none;
+  border-top: 1px solid var(--edge);
+  margin: var(--space-sm) 0;
+}
+
+.chat-md-user hr {
+  margin: var(--space-md) 0;
+}
+
+.chat-md img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: var(--space-sm) 0;
+  border-radius: var(--radius-sm);
+}

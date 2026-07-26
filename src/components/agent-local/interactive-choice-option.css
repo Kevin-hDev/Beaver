@@ -1,0 +1,90 @@
+.icp-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.icp-option:hover,
+.icp-option.icp-active {
+  background: var(--surface-hover);
+}
+
+.icp-option-marker {
+  display: inline-flex;
+  flex: 0 0 var(--control-height-sm);
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.icp-option-marker-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.icp-option-label-host,
+.icp-recommended-host {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.icp-option-label,
+.icp-recommended,
+.icp-option-description-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icp-option-label {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.icp-recommended {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.icp-option-description {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.icp-option-description-text {
+  color: inherit;
+  font-size: inherit;
+}
+
+.icp-arrow {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  color: var(--text-tertiary);
+}

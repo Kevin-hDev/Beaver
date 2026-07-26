@@ -1,0 +1,100 @@
+.ssb-commit-toggle {
+  width: 100%;
+  grid-template-columns: var(--summary-icon-column) minmax(0, 1fr) var(--summary-caret-column);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.ssbc-panel {
+  padding: var(--space-xs) 0 var(--space-sm) var(--summary-panel-indent);
+}
+
+.ssbc-scroll,
+.ssbc-files {
+  max-height: calc(var(--summary-commit-row-height) * 8);
+  overflow-y: auto;
+}
+
+.ssbc-commit,
+.ssbc-file,
+.ssbc-back {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.ssbc-commit {
+  display: flex;
+  min-height: var(--summary-commit-row-height);
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-xs) 0;
+}
+
+.ssbc-commit:hover,
+.ssbc-file:hover,
+.ssbc-back:hover {
+  color: var(--ink);
+}
+
+.ssbc-message,
+.ssbc-back span,
+.ssbc-file > span:not(.ssbc-stats) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ssbc-meta,
+.ssbc-loading {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.ssbc-back {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: var(--summary-commit-row-height);
+  padding: 0;
+  font-weight: 600;
+}
+
+.ssbc-file {
+  display: grid;
+  grid-template-columns: var(--summary-file-icon-column) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: var(--summary-commit-row-height);
+  padding: var(--space-xs) 0;
+  font-size: var(--text-sm);
+}
+
+.ssbc-stats {
+  display: flex;
+  gap: var(--space-xs);
+  font-size: var(--text-xs);
+}
+
+.ssbc-stats b {
+  color: var(--signal-ok);
+  font-style: normal;
+}
+
+.ssbc-stats i {
+  color: var(--signal-error);
+  font-style: normal;
+}
+
+.ssbc-loading {
+  padding: var(--space-xs) 0;
+}

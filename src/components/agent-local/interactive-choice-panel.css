@@ -1,0 +1,123 @@
+/*
+ * Standalone panel (e.g. isolated tests): keeps its own chrome so it renders
+ * correctly outside of the chat bubble.
+ */
+.icp-panel {
+  margin-bottom: 6px;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+[data-theme="light"] .icp-panel {
+  border-color: transparent;
+  background: var(--chat-composer-bg);
+}
+
+[data-theme="dark"] .icp-panel {
+  border-color: transparent;
+  background: var(--surface-glass);
+}
+
+/*
+ * In-bubble mode: the panel replaces the editor inside .chat-input-bubble,
+ * which already provides the border, background and radius. We neutralize the
+ * panel's own chrome and let its children breathe inside the 20px bubble.
+ */
+.chat-input-bubble-interactive .icp-panel {
+  margin-bottom: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px var(--space-sm) var(--space-sm);
+}
+
+.icp-header {
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: 18px max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.icp-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.icp-step {
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.icp-title,
+.icp-question {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icp-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.icp-question {
+  padding: 0 12px 8px;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.icp-options {
+  display: grid;
+  gap: 2px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 4px;
+}
+
+.icp-other-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.icp-other-input {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 10px;
+  outline: none;
+}
+
+.icp-other-input:focus {
+  border-color: var(--accent);
+}
+
+/* Submit "other" — composes .icon-btn (src/styles/buttons.css);
+   keeps its border, surface background and disabled dim. */
+.icp-submit {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.icp-submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.icp-submit-icon {
+  width: 15px;
+  height: 15px;
+}

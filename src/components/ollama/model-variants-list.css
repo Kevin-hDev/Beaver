@@ -1,0 +1,67 @@
+/* model-variants-list — styles colocalisés */
+
+.mvl-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.mvl-back-btn {
+  margin: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.mvl-loading {
+  padding: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--ink-faint);
+}
+
+.mvl-error {
+  padding: var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--signal-error);
+}
+
+.mvl-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  padding-bottom: 20px;
+}
+
+.mvl-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.mvl-item-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.mvl-item-name {
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.mvl-item-meta {
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.mvl-update-badge {
+  font-size: var(--text-xs);
+  color: var(--signal-warning);
+  font-weight: 600;
+}
+
+.mvl-installed-icon {
+  color: var(--select-text);
+}

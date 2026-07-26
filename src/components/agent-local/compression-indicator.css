@@ -1,0 +1,39 @@
+.compression-indicator {
+  display: grid;
+  grid-template-columns: minmax(var(--space-xl), 1fr) auto minmax(var(--space-xl), 1fr);
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  margin-bottom: var(--space-md);
+  color: var(--ink-faint);
+}
+
+.compression-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  animation: compression-pulse 2s ease-in-out infinite;
+}
+
+.compression-line {
+  height: 1px;
+  background: var(--edge);
+  animation: compression-line-pulse 2s ease-in-out infinite;
+}
+
+@keyframes compression-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@keyframes compression-line-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compression-label,
+  .compression-line {
+    animation: none;
+  }
+}

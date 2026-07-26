@@ -1,0 +1,148 @@
+.sa-accordion {
+  margin-bottom: 6px;
+  border-radius: 20px; /* intentional: speech-bubble shape */
+  background: var(--chat-composer-bg);
+  border: 0.5px solid var(--chat-composer-border);
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.sa-accordion-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px 32px;
+  align-items: center;
+  min-height: 42px;
+}
+
+.sa-accordion-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 12px;
+  background: none;
+  border: none;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.sa-accordion-toggle:hover {
+  background: var(--surface-hover);
+}
+
+.sa-accordion-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  animation: sa-spin 2s linear infinite;
+}
+
+@keyframes sa-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sa-accordion-title {
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Button blocks (.sa-stop-all, .sa-chevron-btn, .sa-btn-stop, .sa-btn-open)
+   live in subagent-accordion-controls.css, imported after this file. */
+
+.sa-chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 300ms ease;
+}
+
+.sa-chevron-up {
+  transform: rotate(180deg);
+}
+
+.sa-accordion-body-inner {
+  max-height: 175px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sa-agent-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--edge);
+  font-size: var(--text-sm);
+}
+
+.sa-agent-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.sa-agent-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sa-agent-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sa-agent-name {
+  color: var(--ink);
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-agent-description {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sa-agent-timer {
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+}
+
+.sa-agent-status {
+  color: var(--ink-faint);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.sa-agent-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@container (max-width: 520px) {
+  .sa-agent-row {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .sa-agent-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+    margin-top: 4px;
+  }
+}

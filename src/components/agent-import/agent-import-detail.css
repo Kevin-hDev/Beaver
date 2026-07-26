@@ -1,0 +1,130 @@
+.aim-detail {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.aim-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.aim-detail-brand {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.aim-status-badge {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.aim-status-badge.is-active {
+  border-color: var(--toast-ok-text);
+  color: var(--toast-ok-text);
+}
+
+.aim-status-badge.is-disabled {
+  color: var(--ink-faint);
+}
+
+.aim-item-section {
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.aim-section-title {
+  font-size: var(--text-base);
+}
+
+.aim-bulk-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.aim-bulk-actions button {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.aim-bulk-actions button:hover:not(:disabled) {
+  border-color: var(--pulse);
+  color: var(--pulse);
+}
+
+.aim-bulk-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.aim-search {
+  margin-top: var(--space-sm);
+  padding: 0 var(--space-sm);
+  height: var(--control-height-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+}
+
+.aim-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+}
+
+.aim-item-list {
+  margin-top: var(--space-sm);
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.aim-item {
+  padding: var(--space-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.aim-item:hover {
+  background: var(--surface-hover);
+}
+
+.aim-item-copy {
+  min-width: 0;
+  gap: var(--space-2xs);
+}
+
+.aim-item-update {
+  color: var(--signal-warning);
+  font-size: var(--text-xs);
+}
+
+.aim-item-imported {
+  color: var(--toast-ok-text);
+  font-size: var(--text-xs);
+}

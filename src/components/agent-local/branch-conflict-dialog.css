@@ -1,0 +1,164 @@
+/* Unified dialog contract (Phase 1 spec §4.1) — see heartbeat-dialog.css. */
+.bcd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dialog-backdrop);
+  backdrop-filter: var(--dialog-overlay-filter, none);
+  -webkit-backdrop-filter: var(--dialog-overlay-filter, none);
+}
+
+.bcd-dialog {
+  max-width: 440px;
+  width: 90%;
+  background: var(--popover-bg, var(--surface-glass));
+  backdrop-filter: var(--popover-backdrop-filter, none);
+  -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-md);
+  position: relative;
+  z-index: var(--z-dialog);
+}
+
+/* Close — composes .icon-btn (src/styles/buttons.css); keeps its absolute
+   position and color-only hover. */
+.bcd-close {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  color: var(--ink-faint);
+}
+
+.bcd-close:hover:not(:disabled) {
+  color: var(--ink);
+  background: none;
+}
+
+.bcd-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: var(--space-sm);
+  padding-right: var(--space-md);
+}
+
+.bcd-description {
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin-bottom: var(--space-sm);
+}
+
+.bcd-file-list {
+  max-height: 160px;
+  overflow-y: auto;
+  margin-bottom: var(--space-sm);
+}
+
+.bcd-file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink-muted);
+}
+
+.bcd-file-stat {
+  font-size: 10px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.bcd-file-stat-add {
+  color: var(--diff-new);
+}
+
+.bcd-file-stat-del {
+  color: var(--diff-old);
+}
+
+.bcd-description-section {
+  margin-bottom: var(--space-sm);
+}
+
+.bcd-description-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 11px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bcd-description-toggle:hover {
+  color: var(--ink);
+}
+
+.bcd-description-toggle svg {
+  transition: transform 300ms ease;
+}
+
+.bcd-chevron-open {
+  transform: rotate(90deg);
+}
+
+.bcd-description-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms ease, opacity 300ms ease;
+  opacity: 0;
+}
+
+.bcd-description-panel.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.bcd-description-panel-inner {
+  overflow: hidden;
+}
+
+.bcd-description-input {
+  width: 100%;
+  min-height: 76px;
+  margin-top: var(--space-xs);
+  resize: vertical;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  padding: var(--space-xs);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.bcd-description-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.bcd-hint {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-sm);
+}
+
+.bcd-error {
+  padding-top: var(--space-xxs, 2px);
+  font-size: 10px;
+  color: var(--signal-warning);
+}
+
+/* Action buttons (.bcd-actions, .bcd-btn and variants) live in
+   branch-conflict-dialog-controls.css, imported after this file. */
+

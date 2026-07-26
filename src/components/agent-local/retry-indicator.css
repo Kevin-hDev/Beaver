@@ -1,0 +1,51 @@
+.ri-root {
+  position: relative;
+  top: 4px;
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  min-width: 0;
+  max-width: min(240px, 34cqw);
+  margin-left: var(--space-xs);
+  gap: 6px;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  animation: ri-pulse 1.8s ease-in-out infinite;
+}
+
+.ri-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ri-spinner {
+  flex-shrink: 0;
+  opacity: 0.7;
+  animation: ri-spin 0.9s linear infinite;
+}
+
+@keyframes ri-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ri-pulse {
+  0%, 100% { opacity: 0.95; }
+  50% { opacity: 0.55; }
+}
+
+@container (max-width: 430px) {
+  .ri-root {
+    max-width: 132px;
+    font-size: var(--text-xs);
+  }
+}
+
+@container (max-width: 340px) {
+  .ri-root {
+    max-width: 88px;
+  }
+}

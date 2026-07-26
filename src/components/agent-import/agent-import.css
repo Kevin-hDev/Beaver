@@ -1,0 +1,142 @@
+.aim-wizard {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  color: var(--ink);
+}
+
+.aim-onboarding-shell {
+  width: min(var(--dialog-wide-max-width), 92vw);
+  height: min(var(--onboarding-panel-max-height), 86vh);
+}
+
+.aim-heading,
+.aim-detail-heading,
+.aim-section-header,
+.aim-detail-actions,
+.aim-heading-actions {
+  display: flex;
+  align-items: center;
+}
+
+.aim-heading,
+.aim-detail-heading,
+.aim-section-header {
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.aim-heading h1,
+.aim-section-title {
+  margin: 0;
+}
+
+.aim-heading p,
+.aim-detail-heading p {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.aim-heading-actions,
+.aim-detail-actions {
+  gap: var(--space-sm);
+}
+
+.aim-icon-btn,
+.aim-btn,
+.aim-back,
+.aim-bulk-actions button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.aim-icon-btn {
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.aim-grid-scroll,
+.aim-detail-scroll {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.aim-item-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.aim-item-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.aim-section-count,
+.aim-item-description {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.aim-btn {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.aim-btn-primary {
+  border: 1px solid transparent;
+  background: var(--pulse);
+  color: var(--ink-on-pulse);
+  font-weight: 700;
+}
+
+.aim-btn-secondary {
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink);
+}
+
+.aim-detail-actions {
+  justify-content: flex-end;
+}
+
+.aim-empty,
+.aim-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+
+.aim-footer-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.aim-conflict {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  border: 1px solid var(--signal-warning);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.aim-conflict div {
+  display: flex;
+  gap: var(--space-sm);
+}

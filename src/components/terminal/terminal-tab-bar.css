@@ -1,0 +1,106 @@
+.terminal-tab-bar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  background: var(--void);
+  border-bottom: 1px solid var(--edge);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  user-select: none;
+}
+
+.terminal-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 100%;
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+
+.terminal-tab-item:hover {
+  color: var(--ink);
+}
+
+.terminal-tab-item.active-multi {
+  color: var(--ink);
+  background: var(--edge);
+}
+
+.terminal-tab-item.dragging {
+  opacity: 0.5;
+}
+
+/* Icône terminal devant le label — taille fixe, pas de décalage au hover */
+.terminal-tab-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: background 150ms ease;
+}
+
+.terminal-tab-icon-wrap .tab-icon-terminal {
+  display: flex;
+}
+
+.terminal-tab-icon-wrap .tab-icon-close {
+  display: none;
+}
+
+.terminal-tab-item:hover .terminal-tab-icon-wrap {
+  background: var(--ink-faint);
+}
+
+.terminal-tab-item:hover .terminal-tab-icon-wrap .tab-icon-terminal {
+  display: none;
+}
+
+.terminal-tab-item:hover .terminal-tab-icon-wrap .tab-icon-close {
+  display: flex;
+}
+
+.terminal-tab-rename {
+  background: transparent;
+  border: 1px solid var(--edge);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  width: 100px;
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  outline: none;
+}
+
+/* Tab bar actions — compose .icon-btn (src/styles/buttons.css); keep
+   their color-only hover. */
+.terminal-tab-add {
+  color: var(--ink-muted);
+}
+
+.terminal-tab-add:hover:not(:disabled) {
+  color: var(--ink);
+  background: none;
+}
+
+.terminal-tab-bar-close {
+  margin-left: auto;
+  color: var(--ink-muted);
+}
+
+.terminal-tab-bar-close:hover:not(:disabled) {
+  color: var(--ink);
+  background: none;
+}

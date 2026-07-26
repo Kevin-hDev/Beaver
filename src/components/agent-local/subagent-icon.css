@@ -1,0 +1,114 @@
+.sai-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  color: var(--subagent-geminitor);
+  overflow: visible;
+}
+
+.sai-claudiator {
+  color: var(--subagent-claudiator);
+}
+
+.sai-geminitor {
+  color: var(--subagent-geminitor);
+}
+
+.sai-node {
+  fill: currentColor;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sai-running .sai-node-a {
+  animation: sai-form-a 3.8s ease-in-out infinite;
+}
+
+.sai-running .sai-node-b {
+  animation: sai-form-b 3.8s ease-in-out infinite;
+}
+
+.sai-running .sai-node-c {
+  animation: sai-form-c 3.8s ease-in-out infinite;
+}
+
+.sai-running .sai-node-d {
+  animation: sai-form-d 3.8s ease-in-out infinite;
+}
+
+@keyframes sai-form-a {
+  0%, 18% {
+    transform: translate(0, 0) scale(1);
+  }
+  25%, 43% {
+    transform: translate(1.5px, -1px) scale(0.82);
+  }
+  50%, 68% {
+    transform: translate(-1px, 1.5px) scale(1.18);
+  }
+  75%, 93% {
+    transform: translate(0.8px, 0.8px) scale(0.95);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes sai-form-b {
+  0%, 18% {
+    transform: translate(0, 0) scale(1);
+  }
+  25%, 43% {
+    transform: translate(-1.2px, 1px) scale(1.16);
+  }
+  50%, 68% {
+    transform: translate(1.4px, 0) scale(0.88);
+  }
+  75%, 93% {
+    transform: translate(-0.8px, -1.4px) scale(1.04);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes sai-form-c {
+  0%, 18% {
+    transform: translate(0, 0) scale(1);
+  }
+  25%, 43% {
+    transform: translate(0.8px, 1.4px) scale(0.92);
+  }
+  50%, 68% {
+    transform: translate(-1.5px, -0.6px) scale(1.14);
+  }
+  75%, 93% {
+    transform: translate(1.2px, -1.2px) scale(0.86);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes sai-form-d {
+  0%, 18% {
+    transform: translate(0, 0) scale(1);
+  }
+  25%, 43% {
+    transform: translate(-1px, -1px) scale(0.84);
+  }
+  50%, 68% {
+    transform: translate(1px, 1.2px) scale(1.2);
+  }
+  75%, 93% {
+    transform: translate(-1.3px, 0.8px) scale(0.94);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sai-running .sai-node {
+    animation: none;
+  }
+}

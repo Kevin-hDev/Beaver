@@ -1,0 +1,5 @@
+/* Syntax highlight colors — delegated to per-theme files in src/styles/code-themes
+   Ce fichier ne fait que ré-exporter l'index des thèmes pour préserver
+   l'import existant dans code-block.tsx et file-preview. */
+
+@import "../../styles/code-themes/index.css";
