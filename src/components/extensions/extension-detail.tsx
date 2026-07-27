@@ -11,6 +11,10 @@ import { ConfirmButton } from "@/components/settings/confirm-button";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
+import {
+  extensionDisplayName,
+  extensionToolDescription,
+} from "./official-plugin-copy";
 import "./extension-detail.css";
 
 interface ExtensionDetailProps {
@@ -27,6 +31,7 @@ interface ExtensionDetailProps {
 export function ExtensionDetail(props: ExtensionDetailProps) {
   const { t } = useTranslation();
   const { extension } = props;
+  const name = extensionDisplayName(t, extension);
   return (
     <div className="extp-content">
       <header className="extd-header">
@@ -35,13 +40,13 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
         </button>
         <span className="extr-icon"><ExtensionIcon extension={extension} /></span>
         <div className="extd-title">
-          <h2>{extension.manifest.name}</h2>
+          <h2>{name}</h2>
           <p>{extension.manifest.version} · {t(`extensions.kinds.${extension.kind}`)}</p>
         </div>
         <ToggleSwitch
           checked={extension.enabled}
           disabled={props.busy}
-          ariaLabel={t("extensions.enableFor", { name: extension.manifest.name })}
+          ariaLabel={t("extensions.enableFor", { name })}
           onCheckedChange={props.onEnabled}
         />
       </header>
@@ -67,7 +72,7 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
           <ToggleSwitch
             checked={extension.showInChat}
             disabled={props.busy}
-            ariaLabel={t("extensions.showInChatFor", { name: extension.manifest.name })}
+            ariaLabel={t("extensions.showInChatFor", { name })}
             onCheckedChange={props.onShowInChat}
           />
         </div>
@@ -123,7 +128,14 @@ function Contributions({ extension }: { extension: ExtensionRecord }) {
                   </span>
                 )}
               </div>
-              <p>{tool.description}</p>
+              <p>
+                {extensionToolDescription(
+                  t,
+                  extension,
+                  tool.name,
+                  tool.description,
+                )}
+              </p>
             </div>
           ))}
         </div>

@@ -1937,6 +1937,42 @@
         "empty": "Keine externen Anwendungen verbunden."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Dokumente",
+        "description": "Erstelle und aktualisiere bearbeitbare DOCX-Dokumente.",
+        "tools": {
+          "create": "Ein bearbeitbares DOCX-Dokument erstellen.",
+          "patch": "Eine vorhandene DOCX-Vorlage ausfüllen."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Lies, erstelle, verbinde und prüfe PDF-Dateien.",
+        "tools": {
+          "create": "Eine mehrseitige PDF-Datei erstellen.",
+          "inspect": "Text und Seiteninformationen einer PDF-Datei lesen.",
+          "merge": "Mehrere PDF-Dateien zusammenführen."
+        }
+      },
+      "spreadsheets": {
+        "name": "Tabellen",
+        "description": "Erstelle, prüfe und aktualisiere XLSX-Arbeitsmappen.",
+        "tools": {
+          "create": "Eine bearbeitbare XLSX-Arbeitsmappe erstellen.",
+          "inspect": "Zellen und Abmessungen einer XLSX-Arbeitsmappe anzeigen.",
+          "update": "Ausgewählte Zellen einer XLSX-Arbeitsmappe aktualisieren."
+        }
+      },
+      "presentations": {
+        "name": "Präsentationen",
+        "description": "Erstelle bearbeitbare PPTX-Präsentationen und aktualisiere Vorlagen.",
+        "tools": {
+          "create": "Eine bearbeitbare PPTX-Präsentation erstellen.",
+          "patch": "Eine vorhandene PPTX-Vorlage ausfüllen."
+        }
+      }
+    },
     "actions": {
       "add": "Hinzufügen",
       "cancel": "Abbrechen",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "Host und Diagnose",
-      "description": "Status des separaten Prozesses, der eigene Erweiterungen ausführt.",
+      "description": "Status des separaten Prozesses, der offizielle Plugins und eigene Erweiterungen ausführt.",
       "state": "Status",
       "node": "Node.js",
       "jiti": "Jiti",

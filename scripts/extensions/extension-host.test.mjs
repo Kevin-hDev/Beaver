@@ -61,6 +61,7 @@ test("loads TypeScript tools, events and core calls through Jiti", async () => {
     const result = await host.request("tool.call", {
       name: "com.beaver.test.echo",
       arguments: { text: "hello" },
+      context: { workingDirectory: directory },
     });
     assert.equal(result.content, "1:hello");
   } finally {
@@ -112,6 +113,7 @@ test("isolates a failed extension and supports explicit advanced replacements", 
     const result = await host.request("tool.call", {
       name: "web_search",
       arguments: {},
+      context: { workingDirectory: directory },
     });
     assert.equal(result.content, "custom");
   } finally {

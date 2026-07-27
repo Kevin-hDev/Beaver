@@ -1,6 +1,7 @@
 {
   "limits": {
-    "maxExtensions": 128,
+    "maxExtensions": 132,
+    "maxUserExtensions": 128,
     "maxTools": 256,
     "maxToolsPerExtension": 64,
     "maxEventsPerExtension": 64,

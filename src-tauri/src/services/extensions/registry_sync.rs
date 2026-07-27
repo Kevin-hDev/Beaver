@@ -5,7 +5,7 @@ pub fn mark_enabled_loading() -> Result<(), String> {
     super::registry::mutate(|records| {
         for record in records
             .iter_mut()
-            .filter(|record| record.kind == ExtensionKind::Local && record.enabled)
+            .filter(|record| record.kind != ExtensionKind::External && record.enabled)
         {
             record.status = ExtensionStatus::Loading;
             record.last_error = None;
@@ -52,7 +52,7 @@ pub fn mark_all_enabled_error() {
     let _ = super::registry::mutate(|records| {
         for record in records
             .iter_mut()
-            .filter(|record| record.kind == ExtensionKind::Local && record.enabled)
+            .filter(|record| record.kind != ExtensionKind::External && record.enabled)
         {
             record.status = ExtensionStatus::Error;
             record.last_error = Some("host_unavailable".to_string());

@@ -1937,6 +1937,42 @@
         "empty": "No hay aplicaciones externas conectadas."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documentos",
+        "description": "Crea y actualiza documentos DOCX editables.",
+        "tools": {
+          "create": "Crear un documento DOCX editable.",
+          "patch": "Rellenar una plantilla DOCX existente."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Lee, crea, combina y verifica archivos PDF.",
+        "tools": {
+          "create": "Crear un archivo PDF paginado.",
+          "inspect": "Leer el texto y la información de páginas de un PDF.",
+          "merge": "Combinar varios archivos PDF."
+        }
+      },
+      "spreadsheets": {
+        "name": "Hojas de cálculo",
+        "description": "Crea, inspecciona y actualiza libros XLSX.",
+        "tools": {
+          "create": "Crear un libro XLSX editable.",
+          "inspect": "Previsualizar celdas y dimensiones de un libro XLSX.",
+          "update": "Actualizar celdas seleccionadas de un libro XLSX."
+        }
+      },
+      "presentations": {
+        "name": "Presentaciones",
+        "description": "Crea presentaciones PPTX editables y actualiza plantillas.",
+        "tools": {
+          "create": "Crear una presentación PPTX editable.",
+          "patch": "Rellenar una plantilla PPTX existente."
+        }
+      }
+    },
     "actions": {
       "add": "Añadir",
       "cancel": "Cancelar",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "Host y diagnósticos",
-      "description": "Estado del proceso separado que ejecuta las extensiones personalizadas.",
+      "description": "Estado del proceso separado que ejecuta los plugins oficiales y las extensiones personalizadas.",
       "state": "Estado",
       "node": "Node.js",
       "jiti": "Jiti",

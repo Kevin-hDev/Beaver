@@ -24,7 +24,7 @@ function record(kind: ExtensionRecord["kind"], id: string, name: string): Extens
       name,
       version: "1.0.0",
       beaverApi: "1",
-      runtime: kind === "builtin" ? "builtin" : "node",
+      runtime: "node",
       access: "full",
       apiLevel: "stable",
     },
@@ -45,7 +45,7 @@ const records = [
 ];
 
 function renderPage(section: "plugins" | "custom" | "external", items = records) {
-  render(
+  return render(
     <ExtensionsPage
       section={section}
       selected={null}
@@ -81,6 +81,18 @@ describe("ExtensionsPage", () => {
 
     expect(screen.getByText("Plugin officiel")).toBeInTheDocument();
     expect(screen.queryByText("Extension locale")).not.toBeInTheDocument();
+  });
+
+  it("utilise le nom localisé et l'icône du plugin Documents", () => {
+    const { container } = renderPage(
+      "plugins",
+      [record("builtin", "beaver.office.documents", "Fallback")],
+    );
+
+    expect(
+      screen.getByText("extensions.official.documents.name"),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".exti-artwork")).toBeInTheDocument();
   });
 
   it("garde le catalogue officiel vide sans transformer les Tools en plugins", () => {

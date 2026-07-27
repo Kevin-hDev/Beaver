@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, readdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareNodeRuntime } from "./node-runtime.mjs";
@@ -54,6 +54,26 @@ async function copyHostSources(source, destination) {
       copyFile(resolve(source, "sdk", file), resolve(destination, "sdk", file)),
     ),
   ]);
+  await copyDirectory(
+    resolve(source, "builtin-plugins"),
+    resolve(destination, "builtin-plugins"),
+    { count: 0 },
+  );
+}
+
+async function copyDirectory(source, destination, state) {
+  await mkdir(destination, { recursive: true, mode: 0o700 });
+  const entries = await readdir(source, { withFileTypes: true });
+  if (entries.length > 128) throw new Error("Too many bundled plugin entries");
+  for (const entry of entries) {
+    if (state.count >= 512) throw new Error("Too many bundled plugin files");
+    state.count += 1;
+    const from = resolve(source, entry.name);
+    const to = resolve(destination, entry.name);
+    if (entry.isDirectory()) await copyDirectory(from, to, state);
+    else if (entry.isFile()) await copyFile(from, to);
+    else throw new Error("Unsupported bundled plugin entry");
+  }
 }
 
 function run(program, args) {

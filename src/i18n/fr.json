@@ -1318,6 +1318,42 @@
         "empty": "Aucune application externe connectée."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documents",
+        "description": "Créez et modifiez des documents DOCX éditables.",
+        "tools": {
+          "create": "Créer un document DOCX éditable.",
+          "patch": "Remplir un modèle DOCX existant."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Lisez, créez, fusionnez et vérifiez des fichiers PDF.",
+        "tools": {
+          "create": "Créer un fichier PDF paginé.",
+          "inspect": "Lire le texte et les informations de pages d’un fichier PDF.",
+          "merge": "Fusionner plusieurs fichiers PDF."
+        }
+      },
+      "spreadsheets": {
+        "name": "Feuilles de calcul",
+        "description": "Créez, inspectez et modifiez des classeurs XLSX.",
+        "tools": {
+          "create": "Créer un classeur XLSX éditable.",
+          "inspect": "Prévisualiser les cellules et dimensions d’un classeur XLSX.",
+          "update": "Modifier des cellules choisies dans un classeur XLSX."
+        }
+      },
+      "presentations": {
+        "name": "Présentations",
+        "description": "Créez des présentations PPTX éditables et modifiez des modèles.",
+        "tools": {
+          "create": "Créer une présentation PPTX éditable.",
+          "patch": "Remplir un modèle PPTX existant."
+        }
+      }
+    },
     "actions": {
       "add": "Ajouter",
       "cancel": "Annuler",
@@ -1372,7 +1408,7 @@
     },
     "host": {
       "title": "Hôte et diagnostics",
-      "description": "État du processus séparé qui exécute les extensions personnalisées.",
+      "description": "État du processus séparé qui exécute les plugins officiels et les extensions personnalisées.",
       "state": "État",
       "node": "Node.js",
       "jiti": "Jiti",

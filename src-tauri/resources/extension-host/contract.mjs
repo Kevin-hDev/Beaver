@@ -31,6 +31,7 @@ function codes(name) {
 
 export const LIMITS = Object.freeze({
   maxExtensions: limit("maxExtensions"),
+  maxUserExtensions: limit("maxUserExtensions"),
   maxTools: limit("maxTools"),
   maxToolsPerExtension: limit("maxToolsPerExtension"),
   maxEventsPerExtension: limit("maxEventsPerExtension"),

@@ -31,7 +31,11 @@ startProtocol(async (method, params) => {
       return syncExtensions(specifications);
     }
     case "tool.call":
-      return callExtensionTool(String(params.name ?? ""), params.arguments ?? {});
+      return callExtensionTool(
+        String(params.name ?? ""),
+        params.arguments ?? {},
+        params.context,
+      );
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);
     case "host.shutdown":

@@ -1937,6 +1937,42 @@
         "empty": "接続された外部アプリケーションはありません。"
       }
     },
+    "official": {
+      "documents": {
+        "name": "ドキュメント",
+        "description": "編集可能な DOCX 文書を作成・更新します。",
+        "tools": {
+          "create": "編集可能な DOCX 文書を作成します。",
+          "patch": "既存の DOCX テンプレートを入力します。"
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "PDF ファイルを読み取り、作成、結合、検証します。",
+        "tools": {
+          "create": "ページ分けされた PDF ファイルを作成します。",
+          "inspect": "PDF のテキストとページ情報を読み取ります。",
+          "merge": "複数の PDF ファイルを結合します。"
+        }
+      },
+      "spreadsheets": {
+        "name": "スプレッドシート",
+        "description": "XLSX ブックを作成、確認、更新します。",
+        "tools": {
+          "create": "編集可能な XLSX ブックを作成します。",
+          "inspect": "XLSX ブックのセルとサイズを確認します。",
+          "update": "XLSX ブックの選択したセルを更新します。"
+        }
+      },
+      "presentations": {
+        "name": "プレゼンテーション",
+        "description": "編集可能な PPTX プレゼンテーションを作成し、テンプレートを更新します。",
+        "tools": {
+          "create": "編集可能な PPTX プレゼンテーションを作成します。",
+          "patch": "既存の PPTX テンプレートを入力します。"
+        }
+      }
+    },
     "actions": {
       "add": "追加",
       "cancel": "キャンセル",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "ホストと診断",
-      "description": "カスタム拡張機能を実行する別プロセスの状態です。",
+      "description": "公式プラグインとカスタム拡張機能を実行する別プロセスの状態です。",
       "state": "状態",
       "node": "Node.js",
       "jiti": "Jiti",

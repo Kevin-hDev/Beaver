@@ -2,6 +2,7 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { ExtensionIcon } from "@/components/extensions/extension-icon";
+import { extensionDisplayName } from "@/components/extensions/official-plugin-copy";
 import type { ExtensionRecord } from "@/types/extensions";
 
 interface ChatPlusPluginMenuProps {
@@ -46,18 +47,20 @@ function PluginToggleRow({
   busy: boolean;
   onToggle: (id: string, enabled: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const switchId = useId();
+  const name = extensionDisplayName(t, extension);
   return (
     <div className="cpm-sub-item cpm-plugin-item">
       <span className="cpm-plugin-icon"><ExtensionIcon extension={extension} /></span>
       <label className={extension.enabled ? "cpm-connector-label" : "cpm-connector-label cpm-disabled"} htmlFor={switchId}>
-        {extension.manifest.name}
+        {name}
       </label>
       <ToggleSwitch
         id={switchId}
         checked={extension.enabled}
         disabled={busy}
-        ariaLabel={extension.manifest.name}
+        ariaLabel={name}
         className="cpm-connector-switch"
         onCheckedChange={(enabled) => onToggle(extension.manifest.id, enabled)}
       />

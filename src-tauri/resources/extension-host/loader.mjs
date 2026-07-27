@@ -25,12 +25,13 @@ export async function syncExtensions(specifications) {
   return { extensions: loaded };
 }
 
-export async function callExtensionTool(name, arguments_) {
+export async function callExtensionTool(name, arguments_, context) {
   const entry = tools.get(name);
   if (!entry) throw new Error("tool_not_found");
+  const executionContext = toolExecutionContext(context);
   let timer;
   const raw = await Promise.race([
-    Promise.resolve().then(() => entry.execute(arguments_ ?? {})),
+    Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext)),
     new Promise((_, reject) => {
       timer = setTimeout(() => reject(new Error("tool_timeout")), TOOL_TIMEOUT_MS);
       timer.unref();
@@ -48,6 +49,19 @@ export async function callExtensionTool(name, arguments_) {
     displaySummary:
       typeof raw.displaySummary === "string" ? raw.displaySummary : undefined,
   };
+}
+
+function toolExecutionContext(context) {
+  const workingDirectory = context?.workingDirectory;
+  if (
+    typeof workingDirectory !== "string"
+    || workingDirectory.length === 0
+    || workingDirectory.length > 4_096
+    || workingDirectory.includes("\0")
+  ) {
+    throw new Error("invalid_tool_context");
+  }
+  return Object.freeze({ workingDirectory });
 }
 
 export async function emitExtensionEvent(event, payload) {

@@ -60,6 +60,7 @@ test("extensions receive bounded structured core errors with retry guidance", as
     const result = await host.request("tool.call", {
       name: "com.beaver.errors.errors",
       arguments: {},
+      context: { workingDirectory: directory },
     });
     const errors = JSON.parse(result.content);
 

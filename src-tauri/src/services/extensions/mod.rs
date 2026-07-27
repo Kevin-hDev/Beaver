@@ -37,4 +37,8 @@ pub(crate) use manifest::load_local as install_local;
 pub(crate) use validation::identifier as validate_identifier;
 
 #[cfg(test)]
+mod builtin_tests;
+#[cfg(test)]
+mod runtime_sync_tests;
+#[cfg(test)]
 mod tests;

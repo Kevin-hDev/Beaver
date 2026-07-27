@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@xlsx/xlsx-populate": "0.2.0",
+    "docx": "9.7.1",
+    "fflate": "0.8.3",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.1.200",
+    "pptxgenjs": "4.0.1",
     "jiti": "2.7.0"
   }
 }

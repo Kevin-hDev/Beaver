@@ -12,6 +12,10 @@ export interface BeaverToolResult {
   displaySummary?: string;
 }
 
+export interface BeaverToolContext {
+  readonly workingDirectory: string;
+}
+
 export interface BeaverExtensionError extends Error {
   readonly name: "BeaverExtensionError";
   readonly code: number;
@@ -23,7 +27,10 @@ export interface BeaverTool {
   name: string;
   description: string;
   parameters: Record<string, JsonValue>;
-  execute(arguments_: Record<string, JsonValue>): BeaverToolResult | string | Promise<BeaverToolResult | string>;
+  execute(
+    arguments_: Record<string, JsonValue>,
+    context: BeaverToolContext,
+  ): BeaverToolResult | string | Promise<BeaverToolResult | string>;
 }
 
 export interface BeaverExtensionApi {

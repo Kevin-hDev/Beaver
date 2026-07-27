@@ -1270,6 +1270,42 @@
         "empty": "No external applications connected."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documents",
+        "description": "Create and update editable DOCX documents.",
+        "tools": {
+          "create": "Create an editable DOCX document.",
+          "patch": "Fill an existing DOCX template."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Read, create, merge, and verify PDF files.",
+        "tools": {
+          "create": "Create a paginated PDF file.",
+          "inspect": "Read text and page information from a PDF file.",
+          "merge": "Merge several PDF files."
+        }
+      },
+      "spreadsheets": {
+        "name": "Spreadsheets",
+        "description": "Create, inspect, and update XLSX workbooks.",
+        "tools": {
+          "create": "Create an editable XLSX workbook.",
+          "inspect": "Preview cells and dimensions from an XLSX workbook.",
+          "update": "Update selected cells in an XLSX workbook."
+        }
+      },
+      "presentations": {
+        "name": "Presentations",
+        "description": "Create editable PPTX presentations and update templates.",
+        "tools": {
+          "create": "Create an editable PPTX presentation.",
+          "patch": "Fill an existing PPTX template."
+        }
+      }
+    },
     "actions": {
       "add": "Add",
       "cancel": "Cancel",
@@ -1324,7 +1360,7 @@
     },
     "host": {
       "title": "Host and Diagnostics",
-      "description": "Status of the separate process that runs custom extensions.",
+      "description": "Status of the separate process that runs official plugins and custom extensions.",
       "state": "Status",
       "node": "Node.js",
       "jiti": "Jiti",

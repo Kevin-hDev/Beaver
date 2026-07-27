@@ -121,9 +121,15 @@ impl ExtensionRuntime {
         if hello.api_version != BEAVER_API_VERSION {
             return Err("Version de l'hôte d'extensions incompatible.".to_string());
         }
-        let records = super::registry::enabled_local()?;
+        let records = super::registry::enabled_hosted()?;
         super::runtime_version::validate_node(&hello.node_version)?;
-        let build = super::runtime_sync::build_specs(records)?;
+        let directory = self
+            .paths
+            .as_ref()
+            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?
+            .directory
+            .as_path();
+        let build = super::runtime_sync::build_specs(records, directory)?;
         let response = process
             .request("host.sync", json!({"extensions": build.specs}))
             .await

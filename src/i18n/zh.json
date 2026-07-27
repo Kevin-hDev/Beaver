@@ -1937,6 +1937,42 @@
         "empty": "没有已连接的外部应用。"
       }
     },
+    "official": {
+      "documents": {
+        "name": "文档",
+        "description": "创建和更新可编辑的 DOCX 文档。",
+        "tools": {
+          "create": "创建可编辑的 DOCX 文档。",
+          "patch": "填写现有的 DOCX 模板。"
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "读取、创建、合并和验证 PDF 文件。",
+        "tools": {
+          "create": "创建分页 PDF 文件。",
+          "inspect": "读取 PDF 的文本和页面信息。",
+          "merge": "合并多个 PDF 文件。"
+        }
+      },
+      "spreadsheets": {
+        "name": "电子表格",
+        "description": "创建、检查和更新 XLSX 工作簿。",
+        "tools": {
+          "create": "创建可编辑的 XLSX 工作簿。",
+          "inspect": "预览 XLSX 工作簿的单元格和尺寸。",
+          "update": "更新 XLSX 工作簿中的选定单元格。"
+        }
+      },
+      "presentations": {
+        "name": "演示文稿",
+        "description": "创建可编辑的 PPTX 演示文稿并更新模板。",
+        "tools": {
+          "create": "创建可编辑的 PPTX 演示文稿。",
+          "patch": "填写现有的 PPTX 模板。"
+        }
+      }
+    },
     "actions": {
       "add": "添加",
       "cancel": "取消",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "宿主与诊断",
-      "description": "运行自定义扩展的独立进程状态。",
+      "description": "运行官方插件和自定义扩展的独立进程状态。",
       "state": "状态",
       "node": "Node.js",
       "jiti": "Jiti",
