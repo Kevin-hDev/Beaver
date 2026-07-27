@@ -2,6 +2,8 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::BTreeSet;
 
+pub use super::tool_catalog_filter::filter_tool_definitions;
+
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolCatalogEntry {
@@ -162,17 +164,6 @@ pub fn is_enabled(tool_id: &str, enabled_optional_tools: &[String]) -> bool {
                 .any(|enabled| enabled == tool_id))
 }
 
-pub fn filter_tool_definitions(defs: Vec<Value>, enabled_optional_tools: &[String]) -> Vec<Value> {
-    defs.into_iter()
-        .filter(|def| {
-            tool_name(def).as_deref().is_some_and(|name| {
-                is_enabled(name, enabled_optional_tools)
-                    || crate::services::extensions::is_dynamic_tool(name)
-            })
-        })
-        .collect()
-}
-
 pub fn tool_names(defs: &[Value]) -> Vec<String> {
     defs.iter().filter_map(tool_name).collect()
 }
@@ -189,7 +180,7 @@ pub fn has_plan_tools(names: &[String]) -> bool {
     has_tool(names, "planmode") && has_tool(names, "exitplanmode")
 }
 
-fn tool_name(def: &Value) -> Option<String> {
+pub(super) fn tool_name(def: &Value) -> Option<String> {
     def.get("function")?
         .get("name")?
         .as_str()

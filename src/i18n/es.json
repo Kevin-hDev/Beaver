@@ -1972,8 +1972,14 @@
       "author": "Autor",
       "source": "Fuente",
       "unknown": "No indicado",
-      "contributions": "Contribuciones registradas"
-    },
+    "contributions": "Contribuciones registradas",
+    "replacesCore": "Sustituye una herramienta integrada"
+  },
+  "activation": {
+    "title": "¿Activar {{name}}?",
+    "description": "Esta extensión tendrá acceso total a los datos, secretos y funciones de tu cuenta. Beaver no la ha auditado.",
+    "confirm": "Confiar y activar"
+  },
     "add": {
       "title": "Añadir una extensión",
       "fullAccessWarning": "El código seleccionado se ejecutará con los derechos de tu cuenta de usuario. Instala solo una extensión en la que decidas confiar.",
@@ -1990,7 +1996,8 @@
       "node": "Node.js",
       "jiti": "Jiti",
       "api": "API de Beaver",
-      "active": "Extensiones activas",
+    "active": "Extensiones activas",
+    "diagnostics": "Últimos errores de carga",
       "unavailable": "No disponible",
       "states": {
         "stopped": "Detenido",
@@ -2005,6 +2012,19 @@
       "load": "No se pudieron cargar las extensiones.",
       "operation": "No se pudo completar la operación.",
       "host": "El host de extensiones no está disponible."
+    }
+  },
+  "diagnostics": {
+    "codes": {
+      "module_not_found": "No se encontró el módulo o la dependencia",
+      "syntax_error": "Error de sintaxis",
+      "activation_failed": "La activación falló",
+      "registration_failed": "Falló el registro de contribuciones",
+      "import_failed": "Falló la importación del módulo",
+      "entry_unavailable": "El punto de entrada de la extensión no está disponible",
+      "load_failed": "No se pudo cargar la extensión",
+      "host_missing_response": "El host no confirmó la carga de esta extensión",
+      "advanced_required": "Se requiere el modo avanzado para sustituir una herramienta integrada"
     }
   },
   "chatMenu": {

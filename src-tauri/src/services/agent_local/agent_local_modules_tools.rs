@@ -6,7 +6,9 @@ pub mod tool_bash;
 pub mod tool_bash_background;
 pub mod tool_bash_changes;
 pub mod tool_bash_long;
+pub mod tool_availability;
 pub mod tool_catalog;
+mod tool_catalog_filter;
 #[cfg(test)]
 pub mod tool_catalog_tests;
 pub mod tool_definitions;

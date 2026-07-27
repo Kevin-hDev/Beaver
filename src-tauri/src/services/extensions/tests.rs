@@ -91,6 +91,28 @@ fn storage_round_trip_is_bounded() {
 }
 
 #[test]
+fn runtime_contributions_are_not_persisted() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("extension.ts");
+    let storage = directory.path().join("extensions.json");
+    std::fs::write(&source, "export default function () {}").unwrap();
+    let mut record = super::manifest::load_local(source.to_str().unwrap())
+        .unwrap()
+        .record;
+    record.contributions.tools.push(ExtensionTool {
+        name: "com.example.runtime".to_string(),
+        description: "Runtime only".to_string(),
+        parameters: json!({"type": "object"}),
+        replaces_core: false,
+    });
+
+    super::storage::save_to(&storage, &[record]).unwrap();
+    let loaded = super::storage::load_from(&storage).unwrap();
+
+    assert!(loaded[0].contributions.tools.is_empty());
+}
+
+#[test]
 fn builtin_catalog_starts_empty_instead_of_reclassifying_internal_tools() {
     assert!(super::builtin::records().is_empty());
 }

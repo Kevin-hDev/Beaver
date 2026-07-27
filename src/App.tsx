@@ -16,6 +16,7 @@ import { ForecastDocsWindow } from "@/components/forecast-docs/forecast-docs-win
 import { ForecastWorkbenchApp } from "@/components/forecast/workbench/forecast-workbench-app";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { useStartupGate } from "@/hooks/use-startup-gate";
+import { ExtensionsProvider } from "@/hooks/use-extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
 import type { TabId } from "@/components/layout/sidebar";
 import "./App.css";
@@ -136,7 +137,7 @@ function MainApp() {
   }
 
   return (
-    <>
+    <ExtensionsProvider>
     {vaultError && (
       <div style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
@@ -191,6 +192,6 @@ function MainApp() {
         />
       )}
     </AppLayout>
-    </>
+    </ExtensionsProvider>
   );
 }

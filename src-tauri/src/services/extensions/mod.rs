@@ -1,14 +1,21 @@
 mod builtin;
 mod core_bridge;
+mod host_channel;
 mod host_paths;
 mod host_process;
+mod host_reader;
 mod manifest;
 mod message_validation;
 mod protocol;
 mod registry;
+mod registry_index;
+mod registry_sync;
 mod runtime;
+mod runtime_diagnostics;
 mod runtime_dispatch;
+mod runtime_restart;
 mod runtime_sync;
+mod runtime_version;
 mod startup;
 mod storage;
 mod tool_bridge;
@@ -18,10 +25,10 @@ mod validation;
 pub use types::{ExtensionHostStatus, ExtensionKind, ExtensionRecord};
 
 pub use registry::{
-    add_local, disable_user_extensions, is_dynamic_tool, list, remove, set_enabled,
-    set_show_in_chat,
+    add_local, disable_user_extensions, list, remove, set_enabled, set_show_in_chat,
 };
-pub use runtime::{restart, start_and_sync, status, stop};
+pub use registry_index::{is_dynamic_tool, is_replacement};
+pub use runtime::{restart, status, stop};
 pub use runtime_dispatch::{dispatch_tool, emit_event};
 pub use startup::initialize_on_startup;
 pub use tool_bridge::{merge_definitions as merge_tool_definitions, validate_arguments};

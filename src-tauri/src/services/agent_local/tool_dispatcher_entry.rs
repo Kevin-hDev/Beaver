@@ -11,10 +11,13 @@ pub async fn dispatch(
     cancel: CancellationToken,
 ) -> ToolResult {
     let dynamic_tool = crate::services::extensions::is_dynamic_tool(tool_name);
-    if !dynamic_tool
-        && super::tool_catalog::is_optional_tool(tool_name)
-        && !super::agent_settings::is_tool_enabled(tool_name).await
-    {
+    let enabled_by_settings = !super::tool_catalog::is_optional_tool(tool_name)
+        || super::agent_settings::is_tool_enabled(tool_name).await;
+    if !super::tool_availability::available(
+        enabled_by_settings,
+        dynamic_tool,
+        crate::services::extensions::is_replacement(tool_name),
+    ) {
         return ToolResult::err("Outil désactivé dans les paramètres.");
     }
     let profile = match super::subagent_tool_guard::validate_for_session(

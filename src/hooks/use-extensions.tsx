@@ -1,22 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
+import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
 const EMPTY_HOST: ExtensionHostStatus = {
   state: "stopped",
-  jitiVersion: "2.7.0",
+  jitiVersion: "",
   apiVersion: "1",
   activeExtensions: 0,
+  diagnostics: [],
 };
 
-export function useExtensions() {
+function useExtensionsState() {
   const [extensions, setExtensions] = useState<ExtensionRecord[]>([]);
   const [host, setHost] = useState<ExtensionHostStatus>(EMPTY_HOST);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [operationError, setOperationError] = useState(false);
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
+  const [pendingActivation, setPendingActivation] =
+    useState<ExtensionRecord | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -66,9 +77,33 @@ export function useExtensions() {
     }
   }, [refresh]);
 
-  const setEnabled = useCallback((id: string, enabled: boolean) =>
-    mutate(id, "set_extension_enabled", { extensionId: id, enabled },
+  const applyEnabled = useCallback((
+    id: string,
+    enabled: boolean,
+    trustConfirmed = false,
+  ) =>
+    mutate(id, "set_extension_enabled", {
+      extensionId: id,
+      enabled,
+      trustConfirmed,
+    },
       (record) => ({ ...record, enabled })), [mutate]);
+
+  const setEnabled = useCallback((id: string, enabled: boolean) => {
+    const extension = extensions.find((record) => record.manifest.id === id);
+    if (enabled && extension && extension.kind !== "builtin" && !extension.trusted) {
+      setPendingActivation(extension);
+      return Promise.resolve();
+    }
+    return applyEnabled(id, enabled);
+  }, [applyEnabled, extensions]);
+
+  const confirmActivation = useCallback(async () => {
+    if (!pendingActivation) return;
+    const id = pendingActivation.manifest.id;
+    await applyEnabled(id, true, true);
+    setPendingActivation(null);
+  }, [applyEnabled, pendingActivation]);
 
   const setShowInChat = useCallback((id: string, showInChat: boolean) =>
     mutate(id, "set_extension_show_in_chat", { extensionId: id, showInChat },
@@ -104,13 +139,42 @@ export function useExtensions() {
     loadError,
     operationError,
     busyIds,
+    pendingActivation,
     refresh,
     addLocal,
     setEnabled,
+    confirmActivation,
+    cancelActivation: () => setPendingActivation(null),
     setShowInChat,
     remove: (id: string) => run("remove_extension", { extensionId: id }),
     reload: () => run("reload_extension_host"),
     recover: () => run("recover_without_user_extensions"),
     openSource: (id: string) => run("open_extension_source", { extensionId: id }),
   };
+}
+
+type ExtensionsContextValue = ReturnType<typeof useExtensionsState>;
+const ExtensionsContext = createContext<ExtensionsContextValue | null>(null);
+
+export function ExtensionsProvider({ children }: { children: ReactNode }) {
+  const value = useExtensionsState();
+  return (
+    <ExtensionsContext.Provider value={value}>
+      {children}
+      {value.pendingActivation && (
+        <ExtensionActivationDialog
+          extension={value.pendingActivation}
+          busy={value.busyIds.has(value.pendingActivation.manifest.id)}
+          onCancel={value.cancelActivation}
+          onConfirm={() => void value.confirmActivation()}
+        />
+      )}
+    </ExtensionsContext.Provider>
+  );
+}
+
+export function useExtensions() {
+  const context = useContext(ExtensionsContext);
+  if (!context) throw new Error("ExtensionsProvider is missing");
+  return context;
 }

@@ -8,8 +8,10 @@ import { fileURLToPath } from "node:url";
 import {
   prepareNodeRuntime,
   readBoundedResponse,
+  validateArtifactTable,
   verifyChecksum,
 } from "./node-runtime.mjs";
+import { windowsExtractionArguments } from "./archive-extract.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -30,6 +32,25 @@ test("runtime downloads and checksums fail closed", async () => {
   const checksum = createHash("sha256").update(bytes).digest("hex");
   assert.doesNotThrow(() => verifyChecksum(bytes, checksum));
   assert.throws(() => verifyChecksum(bytes, "0".repeat(64)), /Invalid Node.js checksum/);
+});
+
+test("all bundled Node.js checksums are valid SHA-256 values", () => {
+  assert.doesNotThrow(() => validateArtifactTable());
+});
+
+test("Windows extraction uses a script file with positional arguments", () => {
+  const arguments_ = windowsExtractionArguments(
+    "C:\\temp\\extract.ps1",
+    "C:\\temp\\node.zip",
+    "C:\\temp\\runtime",
+  );
+
+  assert.deepEqual(arguments_.slice(0, 3), [
+    "-NoProfile",
+    "-NonInteractive",
+    "-File",
+  ]);
+  assert.equal(arguments_.includes("-Command"), false);
 });
 
 test("host preparation accepts only its explicit development flag", () => {

@@ -16,6 +16,14 @@ vi.mock("@/hooks/use-connectors", () => ({
   useConnectors: () => connectorState,
 }));
 
+vi.mock("@/hooks/use-extensions", () => ({
+  useExtensions: () => ({
+    extensions: [],
+    busyIds: new Set(),
+    setEnabled: vi.fn(),
+  }),
+}));
+
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {

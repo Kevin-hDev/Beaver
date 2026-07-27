@@ -31,6 +31,16 @@ pub struct LoadedExtension {
     pub id: String,
     pub contributions: Option<ExtensionContributions>,
     pub error: Option<String>,
+    pub diagnostic: Option<HostDiagnostic>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct HostDiagnostic {
+    pub stage: String,
+    pub code: String,
+    pub file: Option<String>,
+    pub line: Option<u64>,
+    pub column: Option<u64>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -26,12 +26,29 @@ export function ExtensionsHostPanel({
       <div className="extp-lines">
         <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
         <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
-        <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion} />
+        <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
         <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
         <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
       </div>
       {host.lastError && (
         <div className="extp-message extp-message-error">{t("extensions.errors.host")}</div>
+      )}
+      {host.diagnostics.length > 0 && (
+        <section className="exth-diagnostics">
+          <h3>{t("extensions.host.diagnostics")}</h3>
+          {host.diagnostics.map((diagnostic) => (
+            <div className="exth-diagnostic" key={`${diagnostic.extensionId}-${diagnostic.stage}`}>
+              <code>{diagnostic.extensionId}</code>
+              <span>{t(`extensions.diagnostics.codes.${diagnostic.code}`)}</span>
+              {diagnostic.file && (
+                <small>
+                  {diagnostic.file}
+                  {diagnostic.line ? `:${diagnostic.line}${diagnostic.column ? `:${diagnostic.column}` : ""}` : ""}
+                </small>
+              )}
+            </div>
+          ))}
+        </section>
       )}
       <div className="extp-actions">
         <button type="button" className="wk-btn-secondary" onClick={onRestart}>

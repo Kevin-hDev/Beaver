@@ -35,11 +35,21 @@ export interface ExtensionRecord {
   kind: ExtensionKind;
   source: string;
   enabled: boolean;
+  trusted: boolean;
   showInChat: boolean;
   status: ExtensionStatus;
   lastError?: string;
   lastActivatedAt?: string;
   contributions: ExtensionContributions;
+}
+
+export interface ExtensionDiagnostic {
+  extensionId: string;
+  stage: "import" | "activate" | "register";
+  code: string;
+  file?: string;
+  line?: number;
+  column?: number;
 }
 
 export interface ExtensionHostStatus {
@@ -49,4 +59,5 @@ export interface ExtensionHostStatus {
   apiVersion: string;
   activeExtensions: number;
   lastError?: string;
+  diagnostics: ExtensionDiagnostic[];
 }

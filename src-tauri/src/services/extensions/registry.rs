@@ -1,6 +1,5 @@
 use super::types::{
-    ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, ExtensionTool,
-    MAX_EXTENSIONS, MAX_TOOLS,
+    ExtensionContributions, ExtensionKind, ExtensionRecord, ExtensionStatus, MAX_EXTENSIONS,
 };
 use std::sync::{LazyLock, Mutex, RwLock};
 
@@ -55,8 +54,14 @@ pub fn remove(id: &str) -> Result<(), String> {
     })
 }
 
-pub fn set_enabled(id: &str, enabled: bool) -> Result<(), String> {
+pub fn set_enabled(id: &str, enabled: bool, trust_confirmed: bool) -> Result<(), String> {
     update(id, |record| {
+        if enabled && record.kind != ExtensionKind::Builtin && !record.trusted && !trust_confirmed {
+            return Err("Confirmation d'activation requise.".to_string());
+        }
+        if enabled && trust_confirmed {
+            record.trusted = true;
+        }
         record.enabled = enabled;
         record.status = if enabled && record.kind == ExtensionKind::Builtin {
             ExtensionStatus::Active
@@ -69,11 +74,15 @@ pub fn set_enabled(id: &str, enabled: bool) -> Result<(), String> {
         } else if record.kind != ExtensionKind::Builtin {
             record.contributions = ExtensionContributions::default();
         }
+        Ok(())
     })
 }
 
 pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
-    update(id, |record| record.show_in_chat = show)
+    update(id, |record| {
+        record.show_in_chat = show;
+        Ok(())
+    })
 }
 
 pub fn disable_user_extensions() -> Result<(), String> {
@@ -90,38 +99,6 @@ pub fn disable_user_extensions() -> Result<(), String> {
     })
 }
 
-pub fn mark_loading(id: &str) -> Result<(), String> {
-    update(id, |record| {
-        record.status = ExtensionStatus::Loading;
-        record.last_error = None;
-    })
-}
-
-pub fn apply_loaded(id: &str, contributions: ExtensionContributions) -> Result<(), String> {
-    super::validation::contributions(&contributions.tools, &contributions.events)?;
-    let current_total = list()?
-        .iter()
-        .filter(|record| record.manifest.id != id && record.enabled)
-        .map(|record| record.contributions.tools.len())
-        .sum::<usize>();
-    if current_total.saturating_add(contributions.tools.len()) > MAX_TOOLS {
-        return Err("Nombre maximal d'outils d'extension atteint.".to_string());
-    }
-    update(id, |record| {
-        record.contributions = contributions;
-        record.status = ExtensionStatus::Active;
-        record.last_error = None;
-    })
-}
-
-pub fn mark_error(id: &str) {
-    let _ = update(id, |record| {
-        record.status = ExtensionStatus::Error;
-        record.last_error = Some("Impossible de charger cette extension.".to_string());
-        record.contributions = ExtensionContributions::default();
-    });
-}
-
 pub fn enabled_local() -> Result<Vec<ExtensionRecord>, String> {
     Ok(list()?
         .into_iter()
@@ -129,36 +106,22 @@ pub fn enabled_local() -> Result<Vec<ExtensionRecord>, String> {
         .collect())
 }
 
-pub fn dynamic_tools() -> Vec<ExtensionTool> {
-    list()
-        .unwrap_or_default()
-        .into_iter()
-        .filter(|record| {
-            record.kind == ExtensionKind::Local
-                && record.enabled
-                && record.status == ExtensionStatus::Active
-        })
-        .flat_map(|record| record.contributions.tools)
-        .collect()
-}
-
-pub fn is_dynamic_tool(tool_name: &str) -> bool {
-    dynamic_tools().iter().any(|tool| tool.name == tool_name)
-}
-
-fn update(id: &str, update: impl FnOnce(&mut ExtensionRecord)) -> Result<(), String> {
+fn update(
+    id: &str,
+    update: impl FnOnce(&mut ExtensionRecord) -> Result<(), String>,
+) -> Result<(), String> {
     super::validation::identifier(id)?;
     mutate(|records| {
         let record = records
             .iter_mut()
             .find(|record| record.manifest.id == id)
             .ok_or_else(|| "Extension introuvable.".to_string())?;
-        update(record);
+        update(record)?;
         Ok(())
     })
 }
 
-fn mutate(
+pub(super) fn mutate(
     operation: impl FnOnce(&mut Vec<ExtensionRecord>) -> Result<(), String>,
 ) -> Result<(), String> {
     let _guard = MUTATIONS
@@ -174,6 +137,7 @@ fn replace(records: Vec<ExtensionRecord>) -> Result<(), String> {
     let mut state = RECORDS
         .write()
         .map_err(|_| "Registre d'extensions indisponible.".to_string())?;
+    super::registry_index::rebuild(&records)?;
     *state = records;
     Ok(())
 }
@@ -181,6 +145,9 @@ fn replace(records: Vec<ExtensionRecord>) -> Result<(), String> {
 fn reset_local_runtime(mut records: Vec<ExtensionRecord>) -> Vec<ExtensionRecord> {
     for record in &mut records {
         if record.kind == ExtensionKind::Local {
+            if !record.trusted {
+                record.enabled = false;
+            }
             record.status = ExtensionStatus::Inactive;
             record.last_error = None;
             record.contributions = ExtensionContributions::default();

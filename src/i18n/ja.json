@@ -1972,8 +1972,14 @@
       "author": "作者",
       "source": "ソース",
       "unknown": "未記載",
-      "contributions": "登録された拡張項目"
-    },
+    "contributions": "登録された拡張項目",
+    "replacesCore": "内蔵ツールを置き換えます"
+  },
+  "activation": {
+    "title": "{{name}} を有効にしますか？",
+    "description": "この拡張機能はアカウントのデータ、シークレット、機能へ完全にアクセスできます。Beaver は監査していません。",
+    "confirm": "信頼して有効化"
+  },
     "add": {
       "title": "拡張機能を追加",
       "fullAccessWarning": "選択したコードはユーザーアカウントの権限で実行されます。信頼すると決めた拡張機能だけをインストールしてください。",
@@ -1990,7 +1996,8 @@
       "node": "Node.js",
       "jiti": "Jiti",
       "api": "Beaver API",
-      "active": "有効な拡張機能",
+    "active": "有効な拡張機能",
+    "diagnostics": "最新の読み込みエラー",
       "unavailable": "利用不可",
       "states": {
         "stopped": "停止",
@@ -2005,6 +2012,19 @@
       "load": "拡張機能を読み込めません。",
       "operation": "操作を完了できませんでした。",
       "host": "拡張機能ホストを利用できません。"
+    }
+  },
+  "diagnostics": {
+    "codes": {
+      "module_not_found": "モジュールまたは依存関係が見つかりません",
+      "syntax_error": "構文エラー",
+      "activation_failed": "有効化に失敗しました",
+      "registration_failed": "拡張項目の登録に失敗しました",
+      "import_failed": "モジュールの読み込みに失敗しました",
+      "entry_unavailable": "拡張機能のエントリーポイントを利用できません",
+      "load_failed": "拡張機能の読み込みに失敗しました",
+      "host_missing_response": "ホストがこの拡張機能の読み込みを確認しませんでした",
+      "advanced_required": "内蔵ツールの置き換えには高度モードが必要です"
     }
   },
   "chatMenu": {

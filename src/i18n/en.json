@@ -1305,8 +1305,14 @@
       "author": "Author",
       "source": "Source",
       "unknown": "Not provided",
-      "contributions": "Registered contributions"
-    },
+    "contributions": "Registered contributions",
+    "replacesCore": "Replaces a built-in tool"
+  },
+  "activation": {
+    "title": "Enable {{name}}?",
+    "description": "This extension will have full access to your account data, secrets, and features. Beaver has not audited it.",
+    "confirm": "Trust and enable"
+  },
     "add": {
       "title": "Add an extension",
       "fullAccessWarning": "The selected code will run with your user account’s rights. Only install an extension you choose to trust.",
@@ -1323,7 +1329,8 @@
       "node": "Node.js",
       "jiti": "Jiti",
       "api": "Beaver API",
-      "active": "Active extensions",
+    "active": "Active extensions",
+    "diagnostics": "Latest loading errors",
       "unavailable": "Unavailable",
       "states": {
         "stopped": "Stopped",
@@ -1338,6 +1345,19 @@
       "load": "Unable to load extensions.",
       "operation": "The operation could not be completed.",
       "host": "The extension host is unavailable."
+    }
+  },
+  "diagnostics": {
+    "codes": {
+      "module_not_found": "Module or dependency not found",
+      "syntax_error": "Syntax error",
+      "activation_failed": "Activation failed",
+      "registration_failed": "Contribution registration failed",
+      "import_failed": "Module import failed",
+      "entry_unavailable": "The extension entry point is unavailable",
+      "load_failed": "The extension failed to load",
+      "host_missing_response": "The host did not confirm that this extension loaded",
+      "advanced_required": "Advanced mode is required to replace a built-in tool"
     }
   },
   "chatMenu": {

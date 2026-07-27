@@ -49,14 +49,3 @@ pub fn resolve(app: &tauri::AppHandle) -> Result<HostPaths, String> {
         directory,
     })
 }
-
-pub fn runtime_env() -> Result<(String, String), String> {
-    let cache = crate::services::paths::data_dir().join("extension-runtime");
-    std::fs::create_dir_all(&cache)
-        .map_err(|_| "Cache de l'hôte d'extensions indisponible.".to_string())?;
-    crate::services::private_store::repair_path(&cache)?;
-    Ok((
-        "JITI_FS_CACHE".to_string(),
-        cache.to_string_lossy().into_owned(),
-    ))
-}

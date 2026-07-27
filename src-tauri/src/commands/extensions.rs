@@ -23,7 +23,7 @@ pub async fn add_local_extension(
 #[tauri::command]
 pub async fn remove_extension(app: tauri::AppHandle, extension_id: String) -> Result<(), String> {
     extensions::remove(&extension_id)?;
-    let result = extensions::start_and_sync().await;
+    let result = extensions::restart().await;
     emit_changed(&app);
     result
 }
@@ -33,9 +33,10 @@ pub async fn set_extension_enabled(
     app: tauri::AppHandle,
     extension_id: String,
     enabled: bool,
+    trust_confirmed: bool,
 ) -> Result<(), String> {
-    extensions::set_enabled(&extension_id, enabled)?;
-    let result = extensions::start_and_sync().await;
+    extensions::set_enabled(&extension_id, enabled, trust_confirmed)?;
+    let result = extensions::restart().await;
     emit_changed(&app);
     result
 }

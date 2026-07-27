@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
-import { useExtensions } from "./use-extensions";
+import { ExtensionsProvider, useExtensions } from "./use-extensions";
 
 const record: ExtensionRecord = {
   manifest: {
@@ -17,6 +17,7 @@ const record: ExtensionRecord = {
   kind: "local",
   source: "/extension",
   enabled: false,
+  trusted: true,
   showInChat: false,
   status: "inactive",
   contributions: { tools: [], events: [] },
@@ -28,6 +29,7 @@ const host: ExtensionHostStatus = {
   jitiVersion: "2.7.0",
   apiVersion: "1",
   activeExtensions: 0,
+  diagnostics: [],
 };
 
 describe("useExtensions", () => {
@@ -40,7 +42,7 @@ describe("useExtensions", () => {
   });
 
   it("utilise le registre Rust comme unique source de vérité", async () => {
-    const view = renderHook(() => useExtensions());
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
     await waitFor(() => expect(view.result.current.loading).toBe(false));
 
     expect(view.result.current.extensions).toEqual([record]);
@@ -48,13 +50,14 @@ describe("useExtensions", () => {
   });
 
   it("garde enabled et showInChat comme deux mutations indépendantes", async () => {
-    const view = renderHook(() => useExtensions());
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
     await waitFor(() => expect(view.result.current.loading).toBe(false));
 
     await act(() => view.result.current.setEnabled(record.manifest.id, true));
     expect(invoke).toHaveBeenCalledWith("set_extension_enabled", {
       extensionId: record.manifest.id,
       enabled: true,
+      trustConfirmed: false,
     });
 
     await act(() => view.result.current.setShowInChat(record.manifest.id, true));

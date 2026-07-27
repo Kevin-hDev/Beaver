@@ -42,6 +42,7 @@ pub fn load_local(input: &str) -> Result<LocalExtension, String> {
         kind: ExtensionKind::Local,
         source: source.to_string(),
         enabled: false,
+        trusted: false,
         show_in_chat: false,
         status: ExtensionStatus::Inactive,
         last_error: None,

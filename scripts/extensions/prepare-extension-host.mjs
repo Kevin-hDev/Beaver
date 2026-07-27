@@ -20,27 +20,27 @@ const hostDirectory = developmentOnly
 
 if (developmentOnly) {
   await copyHostSources(sourceDirectory, hostDirectory);
-}
-
-await run(process.platform === "win32" ? "npm.cmd" : "npm", [
-  "ci",
-  "--ignore-scripts",
-  "--omit=dev",
-  "--prefix",
-  hostDirectory,
-]);
-if (!developmentOnly) {
+} else {
+  await run(process.platform === "win32" ? "npm.cmd" : "npm", [
+    "ci",
+    "--ignore-scripts",
+    "--omit=dev",
+    "--prefix",
+    hostDirectory,
+  ]);
   await prepareNodeRuntime(hostDirectory);
 }
 
 async function copyHostSources(source, destination) {
   const rootFiles = [
+    "diagnostics.mjs",
     "extension-api.mjs",
     "host.mjs",
     "loader.mjs",
     "package-lock.json",
     "package.json",
     "protocol.mjs",
+    "versions.mjs",
   ];
   const sdkFiles = ["README.md", "index.d.ts", "index.mjs", "package.json"];
   await mkdir(resolve(destination, "sdk"), { recursive: true, mode: 0o700 });

@@ -7,6 +7,7 @@ pub const MAX_TOOLS: usize = 256;
 pub const MAX_TOOLS_PER_EXTENSION: usize = 64;
 pub const MAX_EVENTS_PER_EXTENSION: usize = 64;
 pub const MAX_MESSAGE_BYTES: usize = 1_048_576;
+pub const MINIMUM_NODE_MAJOR: u64 = 20;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -86,12 +87,25 @@ pub struct ExtensionRecord {
     pub kind: ExtensionKind,
     pub source: String,
     pub enabled: bool,
+    #[serde(default)]
+    pub trusted: bool,
     pub show_in_chat: bool,
     pub status: ExtensionStatus,
     pub last_error: Option<String>,
     pub last_activated_at: Option<String>,
-    #[serde(default)]
+    #[serde(skip)]
     pub contributions: ExtensionContributions,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionDiagnostic {
+    pub extension_id: String,
+    pub stage: String,
+    pub code: String,
+    pub file: Option<String>,
+    pub line: Option<u64>,
+    pub column: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -112,6 +126,7 @@ pub struct ExtensionHostStatus {
     pub api_version: String,
     pub active_extensions: usize,
     pub last_error: Option<String>,
+    pub diagnostics: Vec<ExtensionDiagnostic>,
 }
 
 impl Default for ExtensionHostStatus {
@@ -119,10 +134,11 @@ impl Default for ExtensionHostStatus {
         Self {
             state: HostState::Stopped,
             node_version: None,
-            jiti_version: "2.7.0".to_string(),
+            jiti_version: String::new(),
             api_version: BEAVER_API_VERSION.to_string(),
             active_extensions: 0,
             last_error: None,
+            diagnostics: Vec::new(),
         }
     }
 }

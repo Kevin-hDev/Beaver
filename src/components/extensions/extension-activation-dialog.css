@@ -1,0 +1,26 @@
+.extc-dialog {
+  width: min(var(--dialog-compact-max-width), calc(100vw - var(--space-xl)));
+}
+
+.extc-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin: 0 var(--space-lg) var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: var(--line-thin) solid var(--signal-warning);
+  border-radius: var(--radius-sm);
+  background: var(--signal-warning-bg);
+  color: var(--ink);
+}
+
+.extc-warning svg {
+  flex-shrink: 0;
+  color: var(--signal-warning);
+}
+
+.extc-warning p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--extensions-copy-line-height);
+}

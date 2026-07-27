@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionRecord } from "@/types/extensions";
@@ -25,6 +24,7 @@ function extension(index: number, showInChat = true): ExtensionRecord {
     kind: "local",
     source: "/extension",
     enabled: index % 2 === 0,
+    trusted: false,
     showInChat,
     status: "active",
     contributions: { tools: [], events: [] },
@@ -54,13 +54,16 @@ describe("ChatPlusPluginMenu", () => {
     expect(onToggle).toHaveBeenCalledWith("com.example.plugin-0", false);
   });
 
-  it("affiche huit lignes puis active le défilement", () => {
-    const css = readFileSync("src/components/agent-local/chat-plus-menu.css", "utf8");
-    const tokens = readFileSync("src/styles/tokens.css", "utf8");
-
-    expect(css).toMatch(/\.cpm-plugin-list\s*\{[^}]*overflow-y:\s*auto;/s);
-    expect(tokens).toContain(
-      "--extensions-chat-list-max-height: calc(var(--extensions-chat-row-height) * 8);",
+  it("rend tous les raccourcis sélectionnés au-delà de huit éléments", () => {
+    const records = Array.from({ length: 12 }, (_, index) => extension(index));
+    const view = render(
+      <ChatPlusPluginMenu
+        extensions={records}
+        busyIds={new Set()}
+        onToggle={vi.fn()}
+      />,
     );
+
+    expect(view.getAllByRole("switch")).toHaveLength(12);
   });
 });

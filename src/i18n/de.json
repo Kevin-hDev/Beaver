@@ -1972,8 +1972,14 @@
       "author": "Autor",
       "source": "Quelle",
       "unknown": "Nicht angegeben",
-      "contributions": "Registrierte Beiträge"
-    },
+    "contributions": "Registrierte Beiträge",
+    "replacesCore": "Ersetzt ein integriertes Tool"
+  },
+  "activation": {
+    "title": "{{name}} aktivieren?",
+    "description": "Diese Erweiterung erhält vollen Zugriff auf Daten, Geheimnisse und Funktionen deines Kontos. Beaver hat sie nicht geprüft.",
+    "confirm": "Vertrauen und aktivieren"
+  },
     "add": {
       "title": "Erweiterung hinzufügen",
       "fullAccessWarning": "Der ausgewählte Code wird mit den Rechten deines Benutzerkontos ausgeführt. Installiere nur Erweiterungen, denen du vertrauen möchtest.",
@@ -1990,7 +1996,8 @@
       "node": "Node.js",
       "jiti": "Jiti",
       "api": "Beaver-API",
-      "active": "Aktive Erweiterungen",
+    "active": "Aktive Erweiterungen",
+    "diagnostics": "Letzte Ladefehler",
       "unavailable": "Nicht verfügbar",
       "states": {
         "stopped": "Gestoppt",
@@ -2005,6 +2012,19 @@
       "load": "Erweiterungen konnten nicht geladen werden.",
       "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
       "host": "Der Erweiterungs-Host ist nicht verfügbar."
+    }
+  },
+  "diagnostics": {
+    "codes": {
+      "module_not_found": "Modul oder Abhängigkeit nicht gefunden",
+      "syntax_error": "Syntaxfehler",
+      "activation_failed": "Aktivierung fehlgeschlagen",
+      "registration_failed": "Registrierung der Beiträge fehlgeschlagen",
+      "import_failed": "Modulimport fehlgeschlagen",
+      "entry_unavailable": "Der Einstiegspunkt der Erweiterung ist nicht verfügbar",
+      "load_failed": "Die Erweiterung konnte nicht geladen werden",
+      "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
+      "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich"
     }
   },
   "chatMenu": {

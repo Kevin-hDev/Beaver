@@ -1972,8 +1972,14 @@
       "author": "Autore",
       "source": "Origine",
       "unknown": "Non indicato",
-      "contributions": "Contributi registrati"
-    },
+    "contributions": "Contributi registrati",
+    "replacesCore": "Sostituisce uno strumento integrato"
+  },
+  "activation": {
+    "title": "Attivare {{name}}?",
+    "description": "Questa estensione avrà accesso completo ai dati, ai segreti e alle funzioni del tuo account. Beaver non l’ha verificata.",
+    "confirm": "Considera attendibile e attiva"
+  },
     "add": {
       "title": "Aggiungi un’estensione",
       "fullAccessWarning": "Il codice selezionato verrà eseguito con i diritti del tuo account utente. Installa solo un’estensione di cui scegli di fidarti.",
@@ -1990,7 +1996,8 @@
       "node": "Node.js",
       "jiti": "Jiti",
       "api": "API Beaver",
-      "active": "Estensioni attive",
+    "active": "Estensioni attive",
+    "diagnostics": "Ultimi errori di caricamento",
       "unavailable": "Non disponibile",
       "states": {
         "stopped": "Arrestato",
@@ -2005,6 +2012,19 @@
       "load": "Impossibile caricare le estensioni.",
       "operation": "Impossibile completare l’operazione.",
       "host": "L’host delle estensioni non è disponibile."
+    }
+  },
+  "diagnostics": {
+    "codes": {
+      "module_not_found": "Modulo o dipendenza non trovati",
+      "syntax_error": "Errore di sintassi",
+      "activation_failed": "Attivazione non riuscita",
+      "registration_failed": "Registrazione dei contributi non riuscita",
+      "import_failed": "Importazione del modulo non riuscita",
+      "entry_unavailable": "Il punto di ingresso dell’estensione non è disponibile",
+      "load_failed": "Caricamento dell’estensione non riuscito",
+      "host_missing_response": "L’host non ha confermato il caricamento di questa estensione",
+      "advanced_required": "La modalità avanzata è necessaria per sostituire uno strumento integrato"
     }
   },
   "chatMenu": {

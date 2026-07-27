@@ -4,12 +4,14 @@ import {
   emitExtensionEvent,
   syncExtensions,
 } from "./loader.mjs";
+import { JITI_VERSION } from "./versions.mjs";
 
 const MAX_EXTENSIONS = 128;
 
 for (const method of ["log", "info", "debug", "warn", "error"]) {
   console[method] = () => {};
 }
+process.stdout.write = () => true;
 process.on("uncaughtException", () => process.exit(1));
 process.on("unhandledRejection", () => process.exit(1));
 
@@ -18,7 +20,7 @@ startProtocol(async (method, params) => {
     case "host.hello":
       return {
         apiVersion: "1",
-        jitiVersion: "2.7.0",
+        jitiVersion: JITI_VERSION,
         nodeVersion: process.version,
       };
     case "host.sync": {

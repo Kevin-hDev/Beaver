@@ -1,7 +1,7 @@
 use serde_json::{json, Value};
 
 pub fn definitions() -> Vec<Value> {
-    super::registry::dynamic_tools()
+    super::registry_index::dynamic_tools()
         .into_iter()
         .map(|tool| {
             json!({
@@ -39,9 +39,7 @@ fn merge(mut core: Vec<Value>, extensions: Vec<Value>) -> Vec<Value> {
 
 pub fn validate_arguments(tool_name: &str, arguments: &Value) -> Result<Value, String> {
     super::validation::message(arguments)?;
-    let tool = super::registry::dynamic_tools()
-        .into_iter()
-        .find(|tool| tool.name == tool_name)
+    let tool = super::registry_index::dynamic_tool(tool_name)
         .ok_or_else(|| "Outil d'extension indisponible.".to_string())?;
     crate::services::mcp_bridge::arguments::validate(arguments, Some(&tool.parameters))
         .map_err(|_| "Arguments d'extension invalides.".to_string())?;

@@ -106,15 +106,33 @@ function DetailLine({ label, value, mono = false }: { label: string; value: stri
 
 function Contributions({ extension }: { extension: ExtensionRecord }) {
   const { t } = useTranslation();
-  const items = [
-    ...extension.contributions.tools.map((tool) => tool.name),
-    ...extension.contributions.events.map((event) => event),
-  ];
-  if (items.length === 0) return null;
+  const { tools, events } = extension.contributions;
+  if (tools.length === 0 && events.length === 0) return null;
   return (
     <section className="extd-contributions">
       <h3>{t("extensions.detail.contributions")}</h3>
-      <div>{items.map((item) => <code key={item}>{item}</code>)}</div>
+      {tools.length > 0 && (
+        <div className="extd-tool-list">
+          {tools.map((tool) => (
+            <div className="extd-tool-row" key={tool.name}>
+              <div className="extd-tool-heading">
+                <code>{tool.name}</code>
+                {tool.replacesCore && (
+                  <span className="extd-replacement">
+                    {t("extensions.detail.replacesCore")}
+                  </span>
+                )}
+              </div>
+              <p>{tool.description}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {events.length > 0 && (
+        <div className="extd-event-list">
+          {events.map((event) => <code key={event}>{event}</code>)}
+        </div>
+      )}
     </section>
   );
 }

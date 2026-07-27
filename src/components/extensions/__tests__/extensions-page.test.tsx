@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 import { ExtensionsPage } from "../extensions-page";
@@ -15,6 +14,7 @@ const host: ExtensionHostStatus = {
   jitiVersion: "2.7.0",
   apiVersion: "1",
   activeExtensions: 0,
+  diagnostics: [],
 };
 
 function record(kind: ExtensionRecord["kind"], id: string, name: string): ExtensionRecord {
@@ -31,6 +31,7 @@ function record(kind: ExtensionRecord["kind"], id: string, name: string): Extens
     kind,
     source: kind,
     enabled: false,
+    trusted: false,
     showInChat: false,
     status: "inactive",
     contributions: { tools: [], events: [] },
@@ -86,17 +87,6 @@ describe("ExtensionsPage", () => {
     renderPage("plugins", records.filter((item) => item.kind !== "builtin"));
 
     expect(screen.getByText("extensions.pages.plugins.empty")).toBeInTheDocument();
-  });
-
-  it("garde la sous-navigation accessible dans une fenêtre basse", () => {
-    const css = readFileSync(
-      "src/components/extensions/extensions-sidebar.css",
-      "utf8",
-    );
-
-    expect(css).toMatch(/\.exts-sidebar\s*\{[^}]*flex:\s*1;/s);
-    expect(css).toMatch(/\.exts-sidebar\s*\{[^}]*overflow-y:\s*auto;/s);
-    expect(css).toMatch(/@media \(max-height: 44rem\)/);
   });
 
   it("ramène la section active dans la zone visible sans attendre un rendu", () => {

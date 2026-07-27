@@ -1,11 +1,12 @@
 import { createJiti } from "jiti";
 import { fileURLToPath } from "node:url";
 import { createExtensionApi } from "./extension-api.mjs";
+import { createDiagnostic } from "./diagnostics.mjs";
 
 const sdkPath = fileURLToPath(new URL("./sdk/index.mjs", import.meta.url));
 const jiti = createJiti(import.meta.url, {
   alias: { "@beaver/sdk": sdkPath },
-  fsCache: process.env.JITI_FS_CACHE || false,
+  fsCache: false,
   interopDefault: true,
   moduleCache: false,
   sourceMaps: false,
@@ -61,9 +62,11 @@ export async function emitExtensionEvent(event, payload) {
 }
 
 async function loadExtension(specification) {
+  let stage = "import";
   try {
     const context = createExtensionApi(specification);
     const module = await jiti.import(specification.mainPath, { default: true });
+    stage = "activate";
     const activate =
       typeof module === "function"
         ? module
@@ -72,6 +75,7 @@ async function loadExtension(specification) {
           : null;
     if (!activate) throw new Error("activate_missing");
     await activate(context.api);
+    stage = "register";
     ensureUniqueTools(context.tools);
     for (const tool of context.tools) {
       tools.set(tool.metadata.name, {
@@ -87,8 +91,12 @@ async function loadExtension(specification) {
         events: [...context.events.keys()],
       },
     };
-  } catch {
-    return { id: specification.id, error: "load_failed" };
+  } catch (error) {
+    return {
+      id: specification.id,
+      error: "load_failed",
+      diagnostic: createDiagnostic(error, stage, specification.mainPath),
+    };
   }
 }
 

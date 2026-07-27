@@ -1972,8 +1972,14 @@
       "author": "作者",
       "source": "来源",
       "unknown": "未提供",
-      "contributions": "已注册的扩展项"
-    },
+    "contributions": "已注册的扩展项",
+    "replacesCore": "替换内置工具"
+  },
+  "activation": {
+    "title": "启用 {{name}}？",
+    "description": "此扩展将完全访问你账户中的数据、密钥和功能。Beaver 未对其进行审核。",
+    "confirm": "信任并启用"
+  },
     "add": {
       "title": "添加扩展",
       "fullAccessWarning": "所选代码将以你的用户账户权限运行。请只安装你决定信任的扩展。",
@@ -1990,7 +1996,8 @@
       "node": "Node.js",
       "jiti": "Jiti",
       "api": "Beaver API",
-      "active": "活动扩展",
+    "active": "活动扩展",
+    "diagnostics": "最近的加载错误",
       "unavailable": "不可用",
       "states": {
         "stopped": "已停止",
@@ -2005,6 +2012,19 @@
       "load": "无法加载扩展。",
       "operation": "无法完成此操作。",
       "host": "扩展宿主不可用。"
+    }
+  },
+  "diagnostics": {
+    "codes": {
+      "module_not_found": "找不到模块或依赖项",
+      "syntax_error": "语法错误",
+      "activation_failed": "激活失败",
+      "registration_failed": "扩展项注册失败",
+      "import_failed": "模块导入失败",
+      "entry_unavailable": "扩展入口点不可用",
+      "load_failed": "扩展加载失败",
+      "host_missing_response": "宿主未确认此扩展已加载",
+      "advanced_required": "替换内置工具需要高级模式"
     }
   },
   "chatMenu": {

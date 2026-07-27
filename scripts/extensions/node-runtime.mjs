@@ -9,12 +9,11 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { extractArchive } from "./archive-extract.mjs";
 
 const VERSION = "24.18.0";
 const MAX_RUNTIME_ARCHIVE_BYTES = 100 * 1024 * 1024;
-const MAX_DOWNLOAD_CHUNKS = 4_096;
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const ALLOWED_HOST_DIRECTORIES = new Set([
   resolve(PROJECT_ROOT, "src-tauri/resources/extension-host"),
@@ -43,7 +42,7 @@ const ARTIFACTS = {
   },
   "win32-arm64": {
     archive: `node-v${VERSION}-win-arm64.zip`,
-    checksum: "f274669adb93b1fd0fb8f21fd078609e9dcc84333d4f2718d2dde3f9a161a01",
+    checksum: "f274669adb93b1fd0fbf8f21fd078609e9dcc84333d4f2718d2dde3f9a161a01",
     executable: `node-v${VERSION}-win-arm64/node.exe`,
   },
   "win32-x64": {
@@ -59,6 +58,7 @@ export async function prepareNodeRuntime(hostDirectory) {
   }
   const artifact = ARTIFACTS[`${process.platform}-${process.arch}`];
   if (!artifact) throw new Error("Unsupported extension host platform");
+  validateArtifactTable();
   const runtime = join(hostDirectory, "runtime");
   const destination = join(runtime, process.platform === "win32" ? "node.exe" : "node");
 
@@ -75,7 +75,7 @@ export async function prepareNodeRuntime(hostDirectory) {
     await writeFile(archivePath, bytes, { mode: 0o600 });
     const extracted = join(temporary, "extracted");
     await mkdir(extracted);
-    await extractArchive(archivePath, extracted);
+    await extractArchive(archivePath, extracted, temporary);
     await rm(runtime, { recursive: true, force: true });
     await mkdir(runtime, { recursive: true, mode: 0o700 });
     await copyFile(join(extracted, artifact.executable), destination);
@@ -100,7 +100,7 @@ export async function readBoundedResponse(response) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_RUNTIME_ARCHIVE_BYTES || chunks.length >= MAX_DOWNLOAD_CHUNKS) {
+    if (size > MAX_RUNTIME_ARCHIVE_BYTES) {
       await reader.cancel();
       throw new Error("Node.js runtime archive is too large");
     }
@@ -119,35 +119,10 @@ export function verifyChecksum(bytes, expected) {
   if (difference !== 0) throw new Error("Invalid Node.js checksum");
 }
 
-async function extractArchive(archive, destination) {
-  if (process.platform === "win32") {
-    const script = "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1]";
-    await run("powershell.exe", [
-      "-NoProfile",
-      "-NonInteractive",
-      "-Command",
-      script,
-      archive,
-      destination,
-    ]);
-    return;
+export function validateArtifactTable() {
+  for (const artifact of Object.values(ARTIFACTS)) {
+    if (!/^[0-9a-f]{64}$/.test(artifact.checksum)) {
+      throw new Error("Invalid Node.js artifact checksum");
+    }
   }
-  await run("tar", ["-xzf", archive, "-C", destination]);
-}
-
-function run(program, args) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(program, args, { shell: false, stdio: ["ignore", "pipe", "ignore"] });
-    const chunks = [];
-    let size = 0;
-    child.stdout.on("data", (chunk) => {
-      size += chunk.length;
-      if (size <= 4_096) chunks.push(chunk);
-    });
-    child.once("error", reject);
-    child.once("close", (code) => {
-      if (code === 0) resolve(Buffer.concat(chunks).toString("utf8"));
-      else reject(new Error("Runtime preparation failed"));
-    });
-  });
 }

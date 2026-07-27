@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { spawn } from "node:child_process";
-import readline from "node:readline";
+import { createHost } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
@@ -18,6 +16,7 @@ test("loads TypeScript tools, events and core calls through Jiti", async () => {
     source,
     `import { defineExtension } from "@beaver/sdk";
     export default defineExtension(async function (api: any) {
+      process.stdout.write("third-party-noise\\n");
       api.on("session.turn.started", async () => {});
       api.registerTool({
         name: "echo",
@@ -37,7 +36,7 @@ test("loads TypeScript tools, events and core calls through Jiti", async () => {
     { mode: 0o600 },
   );
 
-  const host = createHost();
+  const host = createHost(hostScript);
   try {
     const hello = await host.request("host.hello", {});
     assert.equal(hello.apiVersion, "1");
@@ -88,7 +87,7 @@ test("isolates a failed extension and supports explicit advanced replacements", 
     { mode: 0o600 },
   );
 
-  const host = createHost();
+  const host = createHost(hostScript);
   try {
     const sync = await host.request("host.sync", {
       extensions: [
@@ -105,6 +104,8 @@ test("isolates a failed extension and supports explicit advanced replacements", 
       ],
     });
     assert.equal(sync.extensions[0].error, "load_failed");
+    assert.equal(sync.extensions[0].diagnostic.stage, "activate");
+    assert.equal(sync.extensions[0].diagnostic.code, "activation_failed");
     assert.equal(sync.extensions[1].contributions.tools[0].name, "web_search");
     assert.equal(sync.extensions[1].contributions.tools[0].replacesCore, true);
 
@@ -118,48 +119,3 @@ test("isolates a failed extension and supports explicit advanced replacements", 
     await rm(directory, { recursive: true, force: true });
   }
 });
-
-function createHost() {
-  const child = spawn(process.execPath, [hostScript], {
-    shell: false,
-    stdio: ["pipe", "pipe", "ignore"],
-  });
-  const pending = new Map();
-  const lines = readline.createInterface({ input: child.stdout });
-  lines.on("line", (line) => {
-    const message = JSON.parse(line);
-    if (message.method === "app.info") {
-      child.stdin.write(`${JSON.stringify({
-        jsonrpc: "2.0",
-        id: message.id,
-        result: { apiVersion: "1" },
-      })}\n`);
-      return;
-    }
-    const request = pending.get(message.id);
-    if (!request) return;
-    clearTimeout(request.timer);
-    pending.delete(message.id);
-    if (message.error) request.reject(new Error("host request failed"));
-    else request.resolve(message.result);
-  });
-  return {
-    request(method, params) {
-      if (pending.size >= 64) {
-        return Promise.reject(new Error("too many pending host requests"));
-      }
-      const id = randomUUID();
-      return new Promise((resolvePromise, reject) => {
-        const timer = setTimeout(() => {
-          pending.delete(id);
-          reject(new Error("host request timeout"));
-        }, 5_000);
-        pending.set(id, { resolve: resolvePromise, reject, timer });
-        child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
-      });
-    },
-    stop() {
-      child.kill();
-    },
-  };
-}
