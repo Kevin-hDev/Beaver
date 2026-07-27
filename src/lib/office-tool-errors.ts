@@ -27,5 +27,8 @@ export function officeToolErrorMessage(
   if (error === "too_many_requests") {
     return t("extensions.errors.office.tooManyRequests");
   }
+  if (error === "input_too_large") {
+    return t("extensions.errors.office.inputTooLarge");
+  }
   return undefined;
 }

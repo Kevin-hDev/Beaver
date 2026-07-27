@@ -2,6 +2,12 @@ import { LIMITS } from "../../contract.mjs";
 
 const PREVIEW_CHANNEL_FRACTION = 3 / 8;
 const STRUCTURED_CHANNEL_FRACTION = 7 / 16;
+// Un caractère pèse 1 octet en latin mais 3 en CJK, arabe ou devanagari, et 4 en
+// emoji. Sans borne en octets, `maxTextChars` reste inatteignable pour ces
+// écritures : la limite du transport tombe la première, avec une erreur qui ne
+// désigne pas le texte de l'appelant. La fraction laisse la place à l'enveloppe
+// JSON-RPC et au reste des arguments.
+const TEXT_CHANNEL_FRACTION = 3 / 4;
 
 export const OFFICE_LIMITS = Object.freeze({
   maxInputBytes: 25 * 1024 * 1024,
@@ -14,6 +20,7 @@ export const OFFICE_LIMITS = Object.freeze({
     LIMITS.maxMessageBytes * STRUCTURED_CHANNEL_FRACTION,
   ),
   maxTextChars: 500_000,
+  maxTextBytes: Math.floor(LIMITS.maxMessageBytes * TEXT_CHANNEL_FRACTION),
   maxBlocks: 500,
   maxPdfPages: 200,
   maxPdfSources: 32,

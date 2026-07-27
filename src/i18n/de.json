@@ -2052,7 +2052,8 @@
         "unsupportedCharacter": "Das PDF enthält ein Zeichen, das nicht dargestellt werden kann.",
         "unsupportedCharacterAtParagraph": "Das Zeichen {{codePoint}} kann in Absatz {{paragraph}} nicht dargestellt werden.",
         "unsupportedCharacterInTitle": "Das Zeichen {{codePoint}} kann im Titel nicht dargestellt werden.",
-        "tooManyRequests": "Es werden zu viele PDFs gleichzeitig erstellt. Versuche es gleich noch einmal."
+        "tooManyRequests": "Es werden zu viele PDFs gleichzeitig erstellt. Versuche es gleich noch einmal.",
+        "inputTooLarge": "Der Text ist zu lang für die Verarbeitung. Reduziere die Textmenge."
       },
       "codes": {
         "extensions_builtin_catalog_invalid": "Der Beaver-Plugin-Katalog ist ungültig.",
@@ -2061,7 +2062,13 @@
         "extensions_builtin_catalog_unavailable": "Der Beaver-Plugin-Katalog ist nicht verfügbar.",
         "extensions_builtin_entry_missing": "Die Hauptdatei eines Beaver-Plugins fehlt.",
         "extensions_builtin_entry_unavailable": "Die Hauptdatei eines Beaver-Plugins ist nicht verfügbar.",
-        "extensions_builtin_entry_invalid": "Die Hauptdatei eines Beaver-Plugins ist ungültig."
+        "extensions_builtin_entry_invalid": "Die Hauptdatei eines Beaver-Plugins ist ungültig.",
+        "extensions_host_busy": "Der Erweiterungs-Host verarbeitet zu viele Anfragen. Versuche es gleich noch einmal.",
+        "extensions_host_timeout": "Der Erweiterungs-Host hat nicht rechtzeitig geantwortet.",
+        "extensions_request_too_large": "Die Anfrage ist zu groß zum Senden. Reduziere die Textmenge.",
+        "extensions_request_invalid": "Die an die Erweiterung gesendete Anfrage ist ungültig.",
+        "extensions_tool_unavailable": "Dieses Erweiterungswerkzeug ist nicht verfügbar.",
+        "extensions_tool_arguments_invalid": "Die an dieses Werkzeug gesendeten Parameter sind ungültig."
       }
     },
     "diagnostics": {

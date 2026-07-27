@@ -2,6 +2,7 @@ import { PptxGenJS } from "../common/formats/presentation.mjs";
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
 import {
+  assertTextBudget,
   boundedArray,
   optionalString,
   plainObject,
@@ -26,13 +27,11 @@ export async function createPresentation(arguments_, context) {
   if (!theme) rejectOffice("invalid_input");
   const slides = boundedArray(arguments_?.slides, OFFICE_LIMITS.maxSlides)
     .map(validateSlide);
-  const totalText = slides.reduce(
-    (sum, slide) => sum + slide.title.length
-      + slide.bullets.reduce((subtotal, bullet) => subtotal + bullet.length, 0)
-      + (slide.notes?.length ?? 0),
-    0,
-  );
-  if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
+  assertTextBudget(slides.flatMap((slide) => [
+    slide.title,
+    ...slide.bullets,
+    ...(slide.notes === undefined ? [] : [slide.notes]),
+  ]));
   const output = await workspaceOutput(
     context,
     path,

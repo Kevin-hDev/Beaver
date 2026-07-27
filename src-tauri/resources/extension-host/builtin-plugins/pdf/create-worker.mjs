@@ -47,8 +47,23 @@ function validRequest(request) {
     && paragraphs.every(
       (value) => typeof value === "string" && value.length <= 32_767,
     )
-    && paragraphs.reduce((sum, value) => sum + value.length, 0)
-      <= OFFICE_LIMITS.maxTextChars;
+    && withinTextBudget(title === undefined ? paragraphs : [title, ...paragraphs]);
+}
+
+function withinTextBudget(texts) {
+  let characters = 0;
+  let bytes = 0;
+  for (const text of texts) {
+    characters += text.length;
+    bytes += Buffer.byteLength(text, "utf8");
+    if (
+      characters > OFFICE_LIMITS.maxTextChars
+      || bytes > OFFICE_LIMITS.maxTextBytes
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function safeId(request) {

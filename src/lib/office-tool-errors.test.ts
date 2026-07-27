@@ -25,6 +25,8 @@ describe("officeToolErrorMessage", () => {
       .toContain("unsupportedCharacter");
     expect(officeToolErrorMessage("too_many_requests", t))
       .toContain("tooManyRequests");
+    expect(officeToolErrorMessage("input_too_large", t))
+      .toContain("inputTooLarge");
   });
 
   it("rejects malformed or untrusted details", () => {

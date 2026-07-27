@@ -10,6 +10,7 @@ import {
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
 import {
+  assertTextBudget,
   boundedArray,
   optionalString,
   plainObject,
@@ -30,8 +31,7 @@ export async function createDocument(arguments_, context) {
   const path = requiredString(arguments_?.path, OFFICE_LIMITS.maxPathChars);
   const output = await workspaceOutput(context, path, OFFICE_EXTENSIONS.document);
   const children = blocks.map(toParagraph);
-  const totalText = blocks.reduce((sum, block) => sum + block.text.length, 0);
-  if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
+  assertTextBudget(blocks.map((block) => block.text));
   const document = new Document({
     creator: "Beaver",
     title,
@@ -55,17 +55,17 @@ export async function patchDocumentTemplate(arguments_, context) {
   const entries = Object.entries(replacements);
   if (entries.length === 0 || entries.length > 256) rejectOffice("invalid_input");
   const patches = Object.create(null);
-  let totalText = 0;
+  const values = [];
   for (const [name, rawValue] of entries) {
     if (!PLACEHOLDER.test(name)) rejectOffice("invalid_input");
     const value = requiredString(rawValue, 32_767);
-    totalText += value.length;
+    values.push(value);
     patches[name] = {
       type: PatchType.PARAGRAPH,
       children: [new TextRun(value)],
     };
   }
-  if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
+  assertTextBudget(values);
   const output = await workspaceOutput(
     context,
     outputPath,

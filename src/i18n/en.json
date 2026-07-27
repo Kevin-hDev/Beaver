@@ -1385,7 +1385,8 @@
         "unsupportedCharacter": "The PDF contains a character that cannot be displayed.",
         "unsupportedCharacterAtParagraph": "Character {{codePoint}} cannot be displayed in paragraph {{paragraph}}.",
         "unsupportedCharacterInTitle": "Character {{codePoint}} cannot be displayed in the title.",
-        "tooManyRequests": "Too many PDFs are being created at once. Try again in a moment."
+        "tooManyRequests": "Too many PDFs are being created at once. Try again in a moment.",
+        "inputTooLarge": "The text is too long to process. Reduce the amount of text."
       },
       "codes": {
         "extensions_builtin_catalog_invalid": "The Beaver plugin catalog is invalid.",
@@ -1394,7 +1395,13 @@
         "extensions_builtin_catalog_unavailable": "The Beaver plugin catalog is unavailable.",
         "extensions_builtin_entry_missing": "A Beaver plugin’s main file is missing.",
         "extensions_builtin_entry_unavailable": "A Beaver plugin’s main file is unavailable.",
-        "extensions_builtin_entry_invalid": "A Beaver plugin’s main file is invalid."
+        "extensions_builtin_entry_invalid": "A Beaver plugin’s main file is invalid.",
+        "extensions_host_busy": "The extension host is handling too many requests. Try again in a moment.",
+        "extensions_host_timeout": "The extension host did not respond in time.",
+        "extensions_request_too_large": "The request is too large to send. Reduce the amount of text.",
+        "extensions_request_invalid": "The request sent to the extension is invalid.",
+        "extensions_tool_unavailable": "This extension tool is unavailable.",
+        "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid."
       }
     },
     "diagnostics": {

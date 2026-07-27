@@ -2052,7 +2052,8 @@
         "unsupportedCharacter": "PDF 包含无法显示的字符。",
         "unsupportedCharacterAtParagraph": "字符 {{codePoint}} 无法显示在第 {{paragraph}} 段中。",
         "unsupportedCharacterInTitle": "字符 {{codePoint}} 无法显示在标题中。",
-        "tooManyRequests": "同时创建的 PDF 过多，请稍后重试。"
+        "tooManyRequests": "同时创建的 PDF 过多，请稍后重试。",
+        "inputTooLarge": "文本过长，无法处理。请减少文本量。"
       },
       "codes": {
         "extensions_builtin_catalog_invalid": "Beaver 插件目录无效。",
@@ -2061,7 +2062,13 @@
         "extensions_builtin_catalog_unavailable": "Beaver 插件目录不可用。",
         "extensions_builtin_entry_missing": "一个 Beaver 插件缺少主文件。",
         "extensions_builtin_entry_unavailable": "一个 Beaver 插件的主文件不可用。",
-        "extensions_builtin_entry_invalid": "一个 Beaver 插件的主文件无效。"
+        "extensions_builtin_entry_invalid": "一个 Beaver 插件的主文件无效。",
+        "extensions_host_busy": "扩展宿主处理的请求过多，请稍后重试。",
+        "extensions_host_timeout": "扩展宿主未在规定时间内响应。",
+        "extensions_request_too_large": "请求过大，无法发送。请减少文本量。",
+        "extensions_request_invalid": "发送给扩展的请求无效。",
+        "extensions_tool_unavailable": "此扩展工具不可用。",
+        "extensions_tool_arguments_invalid": "发送给此工具的参数无效。"
       }
     },
     "diagnostics": {

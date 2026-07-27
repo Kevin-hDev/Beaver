@@ -6,6 +6,12 @@ export const EXTENSION_BACKEND_ERROR_CODES = Object.freeze([
   "extensions_builtin_entry_missing",
   "extensions_builtin_entry_unavailable",
   "extensions_builtin_entry_invalid",
+  "extensions_host_busy",
+  "extensions_host_timeout",
+  "extensions_request_too_large",
+  "extensions_request_invalid",
+  "extensions_tool_unavailable",
+  "extensions_tool_arguments_invalid",
 ]);
 const BACKEND_CODES = new Set(EXTENSION_BACKEND_ERROR_CODES);
 

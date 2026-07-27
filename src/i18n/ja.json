@@ -2052,7 +2052,8 @@
         "unsupportedCharacter": "PDF に表示できない文字が含まれています。",
         "unsupportedCharacterAtParagraph": "文字 {{codePoint}} は段落 {{paragraph}} に表示できません。",
         "unsupportedCharacterInTitle": "文字 {{codePoint}} はタイトルに表示できません。",
-        "tooManyRequests": "同時に作成している PDF が多すぎます。しばらくしてから再試行してください。"
+        "tooManyRequests": "同時に作成している PDF が多すぎます。しばらくしてから再試行してください。",
+        "inputTooLarge": "テキストが長すぎて処理できません。テキストの量を減らしてください。"
       },
       "codes": {
         "extensions_builtin_catalog_invalid": "Beaver プラグインカタログが無効です。",
@@ -2061,7 +2062,13 @@
         "extensions_builtin_catalog_unavailable": "Beaver プラグインカタログを利用できません。",
         "extensions_builtin_entry_missing": "Beaver プラグインのメインファイルがありません。",
         "extensions_builtin_entry_unavailable": "Beaver プラグインのメインファイルを利用できません。",
-        "extensions_builtin_entry_invalid": "Beaver プラグインのメインファイルが無効です。"
+        "extensions_builtin_entry_invalid": "Beaver プラグインのメインファイルが無効です。",
+        "extensions_host_busy": "拡張機能ホストの処理が混み合っています。しばらくしてから再試行してください。",
+        "extensions_host_timeout": "拡張機能ホストが時間内に応答しませんでした。",
+        "extensions_request_too_large": "リクエストが大きすぎて送信できません。テキストの量を減らしてください。",
+        "extensions_request_invalid": "拡張機能に送信されたリクエストが無効です。",
+        "extensions_tool_unavailable": "この拡張機能ツールは利用できません。",
+        "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。"
       }
     },
     "diagnostics": {

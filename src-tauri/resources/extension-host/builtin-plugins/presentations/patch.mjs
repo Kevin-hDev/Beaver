@@ -6,7 +6,11 @@ import {
 } from "../common/formats/archive.mjs";
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
-import { plainObject, requiredString } from "../common/validation.mjs";
+import {
+  assertTextBudget,
+  plainObject,
+  requiredString,
+} from "../common/validation.mjs";
 import {
   atomicWrite,
   readWorkspaceFile,
@@ -62,13 +66,10 @@ function validateReplacements(raw) {
   const entries = Object.entries(object);
   if (entries.length === 0 || entries.length > 256) rejectOffice("invalid_input");
   const values = [];
-  let totalText = 0;
   for (const [name, rawValue] of entries) {
     if (!PLACEHOLDER.test(name)) rejectOffice("invalid_input");
-    const value = requiredString(rawValue, 32_767);
-    totalText += value.length;
-    values.push([`{{${name}}}`, value]);
+    values.push([`{{${name}}}`, requiredString(rawValue, 32_767)]);
   }
-  if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
+  assertTextBudget(values.map(([, value]) => value));
   return values;
 }

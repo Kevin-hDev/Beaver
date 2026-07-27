@@ -118,6 +118,10 @@ pub fn message(value: &Value) -> Result<(), String> {
     super::message_validation::validate(value)
 }
 
+pub fn request_payload(value: &Value) -> Result<(), String> {
+    super::message_validation::validate_request_payload(value)
+}
+
 fn relative_source_path(value: &str) -> Result<(), String> {
     source_input(value)?;
     let path = Path::new(value);

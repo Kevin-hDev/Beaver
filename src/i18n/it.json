@@ -2052,7 +2052,8 @@
         "unsupportedCharacter": "Il PDF contiene un carattere che non può essere visualizzato.",
         "unsupportedCharacterAtParagraph": "Il carattere {{codePoint}} non può essere visualizzato nel paragrafo {{paragraph}}.",
         "unsupportedCharacterInTitle": "Il carattere {{codePoint}} non può essere visualizzato nel titolo.",
-        "tooManyRequests": "Sono in creazione troppi PDF contemporaneamente. Riprova tra poco."
+        "tooManyRequests": "Sono in creazione troppi PDF contemporaneamente. Riprova tra poco.",
+        "inputTooLarge": "Il testo è troppo lungo per essere elaborato. Riduci la quantità di testo."
       },
       "codes": {
         "extensions_builtin_catalog_invalid": "Il catalogo dei plugin Beaver non è valido.",
@@ -2061,7 +2062,13 @@
         "extensions_builtin_catalog_unavailable": "Il catalogo dei plugin Beaver non è disponibile.",
         "extensions_builtin_entry_missing": "Manca il file principale di un plugin Beaver.",
         "extensions_builtin_entry_unavailable": "Il file principale di un plugin Beaver non è disponibile.",
-        "extensions_builtin_entry_invalid": "Il file principale di un plugin Beaver non è valido."
+        "extensions_builtin_entry_invalid": "Il file principale di un plugin Beaver non è valido.",
+        "extensions_host_busy": "L’host delle estensioni sta gestendo troppe richieste. Riprova tra poco.",
+        "extensions_host_timeout": "L’host delle estensioni non ha risposto in tempo.",
+        "extensions_request_too_large": "La richiesta è troppo grande per essere inviata. Riduci la quantità di testo.",
+        "extensions_request_invalid": "La richiesta inviata all’estensione non è valida.",
+        "extensions_tool_unavailable": "Questo strumento dell’estensione non è disponibile.",
+        "extensions_tool_arguments_invalid": "I parametri inviati a questo strumento non sono validi."
       }
     },
     "diagnostics": {

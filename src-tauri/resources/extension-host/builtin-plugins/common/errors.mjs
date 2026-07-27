@@ -4,6 +4,7 @@ import { structuredResultBytes } from "./result-budget.mjs";
 const SAFE_CODES = new Set([
   "file_not_found",
   "file_too_large",
+  "input_too_large",
   "invalid_input",
   "invalid_path",
   "operation_failed",

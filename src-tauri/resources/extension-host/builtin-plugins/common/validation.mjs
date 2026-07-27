@@ -54,6 +54,22 @@ export function scalar(value) {
   return value;
 }
 
+export function assertTextBudget(texts) {
+  let characters = 0;
+  let bytes = 0;
+  for (const text of texts) {
+    if (typeof text !== "string") continue;
+    characters += text.length;
+    bytes += Buffer.byteLength(text, "utf8");
+    if (
+      characters > OFFICE_LIMITS.maxTextChars
+      || bytes > OFFICE_LIMITS.maxTextBytes
+    ) {
+      rejectOffice("input_too_large");
+    }
+  }
+}
+
 export function containsInvalidXmlCharacter(value) {
   for (const character of value) {
     const codePoint = character.codePointAt(0);

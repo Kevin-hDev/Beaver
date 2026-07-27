@@ -1,5 +1,6 @@
 mod builtin;
 mod core_bridge;
+mod error_codes;
 mod host_channel;
 mod host_paths;
 mod host_process;
