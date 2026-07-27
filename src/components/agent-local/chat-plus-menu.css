@@ -78,6 +78,7 @@
   position: absolute;
   bottom: calc(100% + 8px);
   min-width: 220px;
+  max-width: calc(100vw - (var(--space-md) * 2));
   background: var(--popover-bg, var(--shell));
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
@@ -128,4 +129,22 @@
 
 .cpm-connector-switch {
   margin-left: auto;
+}
+
+.cpm-plugin-list {
+  max-height: var(--extensions-chat-list-max-height);
+  overflow-y: auto;
+}
+
+.cpm-plugin-item {
+  min-height: var(--extensions-chat-row-height);
+}
+
+.cpm-plugin-icon {
+  display: grid;
+  place-items: center;
+  width: var(--icon-xl);
+  height: var(--icon-xl);
+  flex: 0 0 var(--icon-xl);
+  color: var(--ink-muted);
 }

@@ -1,0 +1,75 @@
+.exta-dialog {
+  width: min(var(--dialog-compact-max-width), calc(100vw - var(--space-xl)));
+}
+
+.exta-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin: 0 var(--space-lg) var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: var(--line-thin) solid var(--signal-warning);
+  border-radius: var(--radius-sm);
+  background: var(--signal-warning-bg);
+  color: var(--ink);
+}
+
+.exta-warning svg {
+  flex-shrink: 0;
+  color: var(--signal-warning);
+}
+
+.exta-warning p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--extensions-copy-line-height);
+}
+
+.exta-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: 0 var(--space-lg);
+}
+
+.exta-error {
+  margin: 0 var(--space-lg) var(--space-sm);
+  color: var(--signal-error);
+  font-size: var(--text-xs);
+}
+
+.exta-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--ease-smooth);
+}
+
+.exta-option:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.exta-option span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.exta-option strong {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.exta-option small {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}

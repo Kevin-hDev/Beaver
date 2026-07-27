@@ -165,9 +165,10 @@ pub fn is_enabled(tool_id: &str, enabled_optional_tools: &[String]) -> bool {
 pub fn filter_tool_definitions(defs: Vec<Value>, enabled_optional_tools: &[String]) -> Vec<Value> {
     defs.into_iter()
         .filter(|def| {
-            tool_name(def)
-                .as_deref()
-                .is_some_and(|name| is_enabled(name, enabled_optional_tools))
+            tool_name(def).as_deref().is_some_and(|name| {
+                is_enabled(name, enabled_optional_tools)
+                    || crate::services::extensions::is_dynamic_tool(name)
+            })
         })
         .collect()
 }

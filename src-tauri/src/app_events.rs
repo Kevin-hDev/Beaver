@@ -55,6 +55,7 @@ fn cleanup(app_handle: &tauri::AppHandle) {
         tauri::async_runtime::block_on(async { gw.stop().await });
     }
     services::mcp_bridge::process_manager::shutdown_all();
+    tauri::async_runtime::block_on(services::extensions::stop());
     if let Some(pty) = app_handle.try_state::<services::terminal::PtyManager>() {
         pty.kill_all();
     }

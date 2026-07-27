@@ -152,6 +152,22 @@ mod tests {
     }
 
     #[test]
+    fn internal_office_tools_remain_in_the_tools_catalog() {
+        assert_eq!(
+            optional_group_tool_ids("spreadsheet").unwrap(),
+            ["read_spreadsheet", "write_spreadsheet"]
+        );
+        assert_eq!(
+            optional_group_tool_ids("document").unwrap(),
+            ["read_document", "write_document"]
+        );
+        assert_eq!(
+            optional_group_tool_ids("images").unwrap(),
+            ["read_image", "process_image"]
+        );
+    }
+
+    #[test]
     fn locked_or_unknown_group_cannot_be_toggled() {
         assert!(optional_group_tool_ids("web").is_err());
         assert!(optional_group_tool_ids("unknown").is_err());

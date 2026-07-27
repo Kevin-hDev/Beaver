@@ -1,0 +1,9 @@
+{
+  "name": "@beaver/extension-host",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "jiti": "2.7.0"
+  }
+}

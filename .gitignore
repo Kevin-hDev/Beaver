@@ -14,6 +14,7 @@ src-tauri/gen/
 src-tauri/resources/ollama-bundle/
 src-tauri/resources/searxng-sidecar/wheels/
 src-tauri/resources/searxng-sidecar/wheels.tmp/
+src-tauri/resources/extension-host/runtime/
 .DS_Store
 docs/
 !/docs/

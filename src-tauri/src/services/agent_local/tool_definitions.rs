@@ -16,7 +16,7 @@ pub fn get_tool_definitions() -> Vec<Value> {
     defs.extend(super::tool_definitions_forecast::forecast_tool_definitions());
     defs.extend(super::tool_definitions_office::office_tool_definitions());
     defs.extend(super::tool_definitions_mcp::mcp_tool_definitions());
-    defs
+    crate::services::extensions::merge_tool_definitions(defs)
 }
 
 /// Build a single OpenAI-style function tool definition.

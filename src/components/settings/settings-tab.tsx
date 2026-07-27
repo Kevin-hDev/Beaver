@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "@/hooks/use-settings";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import type { ThemeChoice } from "@/hooks/use-theme";
-import { Archive, Brain, GearSix, Key, Sliders, Info, BookOpenText, Keyboard, Plugs, Broadcast, ChartLineUp, Wrench, PawPrint } from "@/components/ui/icons";
+import { Archive, Brain, GearSix, Key, Sliders, Info, BookOpenText, Keyboard, Plugs, Broadcast, ChartLineUp, Wrench, PawPrint, PuzzlePiece } from "@/components/ui/icons";
 import { ThemedIcon } from "@/components/ui/themed-icon";
 import { GeneralSettings } from "./general-settings";
 import { AdvancedSettings } from "./advanced-settings";
@@ -44,6 +44,7 @@ const SUB_TABS: SubTabDef[] = [
   { id: "ollama", i18n: "settings.tabs.ollama", imgDark: ollamaDark, imgLight: ollamaLight },
   { id: "providers", i18n: "settings.tabs.providers", icon: Key },
   { id: "connectors", i18n: "settings.tabs.connectors", icon: Plugs },
+  { id: "extensions", i18n: "settings.tabs.extensions", icon: PuzzlePiece },
   { id: "channels", i18n: "settings.tabs.channels", icon: Broadcast },
   { id: "forecast", i18n: "forecast.title", icon: ChartLineUp },
   { id: "llm", i18n: "settings.tabs.llm", icon: BookOpenText },

@@ -1,0 +1,36 @@
+.extp-recovery {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: var(--line-thin) solid var(--edge);
+}
+
+.extp-recovery > svg {
+  flex-shrink: 0;
+  color: var(--signal-warning);
+}
+
+.extp-recovery > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.extp-recovery strong {
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.extp-recovery p {
+  margin: var(--space-2xs) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 48rem) {
+  .extp-recovery {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

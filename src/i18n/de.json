@@ -733,6 +733,7 @@
       "general": "Allgemein",
       "ollama": "Ollama",
       "connectors": "Verbindungen",
+      "extensions": "Erweiterungen",
       "apiKeys": "API Keys",
       "providers": "Anbieter",
       "llm": "LLM",
@@ -1234,9 +1235,6 @@
       "subtitle": "Füge deiner Instanz Connectors hinzu.",
       "search": "Connectors suchen…",
       "empty": "Kein Connector passt.",
-      "tabMcp": "MCP",
-      "tabPlugins": "Plugins",
-      "pluginsEmpty": "Demnächst verfügbar",
       "categories": {
         "all": "Alle",
         "productivity": "Produktivität",
@@ -1914,6 +1912,101 @@
       "failed": "Export fehlgeschlagen"
     }
   },
+  "extensions": {
+    "title": "Erweiterungen",
+    "sections": {
+      "plugins": "Beaver-Plugins",
+      "custom": "Eigene Erweiterungen",
+      "external": "Externe Anwendungen",
+      "host": "Host und Diagnose"
+    },
+    "pages": {
+      "plugins": {
+        "title": "Beaver-Plugins",
+        "description": "Offizielle Beaver-Plugins, getrennt von den internen Tools.",
+        "empty": "Die offizielle Plugin-Suite erscheint hier, sobald sie verfügbar ist."
+      },
+      "custom": {
+        "title": "Eigene Erweiterungen",
+        "description": "Füge selbst ausgewählten JavaScript- oder TypeScript-Code hinzu.",
+        "empty": "Keine eigenen Erweiterungen."
+      },
+      "external": {
+        "title": "Externe Anwendungen",
+        "description": "Unabhängige Programme, die über das Beaver-Erweiterungsprotokoll verbunden sind.",
+        "empty": "Keine externen Anwendungen verbunden."
+      }
+    },
+    "actions": {
+      "add": "Hinzufügen",
+      "cancel": "Abbrechen",
+      "back": "Zurück",
+      "openSource": "Quelle öffnen",
+      "reload": "Neu laden",
+      "remove": "Entfernen",
+      "confirmRemove": "Bestätigen",
+      "restartHost": "Host neu starten",
+      "recovery": "Benutzererweiterungen deaktivieren"
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "loading": "Wird geladen",
+      "error": "Fehler",
+      "incompatible": "Inkompatibel"
+    },
+    "kinds": {
+      "builtin": "Offizielles Plugin",
+      "local": "Lokale Erweiterung",
+      "external": "Externe Anwendung"
+    },
+    "loading": "Erweiterungen werden geladen…",
+    "showInChat": "Im Chat anzeigen",
+    "showInChatFor": "{{name}} im Chat anzeigen",
+    "enableFor": "{{name}} aktivieren",
+    "fullAccessWarning": "Diese Erweiterung wird nicht von Beaver geprüft und kann auf Daten, Geheimnisse und Funktionen deines Kontos zugreifen.",
+    "detail": {
+      "status": "Status",
+      "runtime": "Runtime",
+      "api": "Beaver-API",
+      "author": "Autor",
+      "source": "Quelle",
+      "unknown": "Nicht angegeben",
+      "contributions": "Registrierte Beiträge"
+    },
+    "add": {
+      "title": "Erweiterung hinzufügen",
+      "fullAccessWarning": "Der ausgewählte Code wird mit den Rechten deines Benutzerkontos ausgeführt. Installiere nur Erweiterungen, denen du vertrauen möchtest.",
+      "supportedFiles": "Beaver-Erweiterung",
+      "file": "Datei auswählen",
+      "fileDescription": "JavaScript, TypeScript oder JSON-Manifest",
+      "folder": "Ordner auswählen",
+      "folderDescription": "Ordner mit Beaver-Manifest oder package.json"
+    },
+    "host": {
+      "title": "Host und Diagnose",
+      "description": "Status des separaten Prozesses, der eigene Erweiterungen ausführt.",
+      "state": "Status",
+      "node": "Node.js",
+      "jiti": "Jiti",
+      "api": "Beaver-API",
+      "active": "Aktive Erweiterungen",
+      "unavailable": "Nicht verfügbar",
+      "states": {
+        "stopped": "Gestoppt",
+        "starting": "Startet",
+        "running": "Läuft",
+        "error": "Fehler"
+      },
+      "recoveryTitle": "Wiederherstellungsmodus",
+      "recoveryDescription": "Deaktiviert alle Benutzererweiterungen, damit Beaver wieder funktioniert."
+    },
+    "errors": {
+      "load": "Erweiterungen konnten nicht geladen werden.",
+      "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
+      "host": "Der Erweiterungs-Host ist nicht verfügbar."
+    }
+  },
   "chatMenu": {
     "plusButtonHint": "Dateien und mehr hinzufügen",
     "addFile": "Bild oder Datei hinzufügen",
@@ -1923,6 +2016,6 @@
     "connectors": "Connectors",
     "plugins": "Plugins",
     "noConnectors": "Keine Connectors",
-    "pluginsEmpty": "Demnächst verfügbar"
+    "noPlugins": "Keine Plugin-Verknüpfungen"
   }
 }

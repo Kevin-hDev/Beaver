@@ -100,6 +100,17 @@
 
   --settings-content-max-width: 37.5rem;
   --settings-editor-min-height: 20rem;
+  --line-thin: 1px;
+  --extensions-row-height: 3rem;
+  --extensions-info-row-height: 2.5rem;
+  --extensions-chat-row-height: 2.25rem;
+  --extensions-chat-list-max-height: calc(var(--extensions-chat-row-height) * 8);
+  --extensions-icon-size: 2rem;
+  --extensions-status-size: 0.375rem;
+  --extensions-label-spacing: 0.03125rem;
+  --extensions-copy-line-height: 1.5;
+  --extensions-value-max-width: 22rem;
+  --extensions-value-max-width-compact: 12rem;
   --memory-section-gap: 28px;
   --memory-legacy-gap: 3px;
   --memory-filter-min-width: 180px;

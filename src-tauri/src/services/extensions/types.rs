@@ -1,0 +1,128 @@
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+pub const BEAVER_API_VERSION: &str = "1";
+pub const MAX_EXTENSIONS: usize = 128;
+pub const MAX_TOOLS: usize = 256;
+pub const MAX_TOOLS_PER_EXTENSION: usize = 64;
+pub const MAX_EVENTS_PER_EXTENSION: usize = 64;
+pub const MAX_MESSAGE_BYTES: usize = 1_048_576;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ExtensionKind {
+    Builtin,
+    Local,
+    External,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ExtensionStatus {
+    Active,
+    Inactive,
+    Loading,
+    Error,
+    Incompatible,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum ExtensionApiLevel {
+    Stable,
+    Advanced,
+}
+
+fn default_api_level() -> ExtensionApiLevel {
+    ExtensionApiLevel::Stable
+}
+
+fn default_access() -> String {
+    "full".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionManifest {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+    pub beaver_api: String,
+    pub runtime: String,
+    pub main: Option<String>,
+    pub ui: Option<String>,
+    #[serde(default = "default_access")]
+    pub access: String,
+    #[serde(default = "default_api_level")]
+    pub api_level: ExtensionApiLevel,
+    pub author: Option<String>,
+    pub homepage: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionContributions {
+    #[serde(default)]
+    pub tools: Vec<ExtensionTool>,
+    #[serde(default)]
+    pub events: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionTool {
+    pub name: String,
+    pub description: String,
+    pub parameters: Value,
+    #[serde(default)]
+    pub replaces_core: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionRecord {
+    pub manifest: ExtensionManifest,
+    pub kind: ExtensionKind,
+    pub source: String,
+    pub enabled: bool,
+    pub show_in_chat: bool,
+    pub status: ExtensionStatus,
+    pub last_error: Option<String>,
+    pub last_activated_at: Option<String>,
+    #[serde(default)]
+    pub contributions: ExtensionContributions,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum HostState {
+    Stopped,
+    Starting,
+    Running,
+    Error,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionHostStatus {
+    pub state: HostState,
+    pub node_version: Option<String>,
+    pub jiti_version: String,
+    pub api_version: String,
+    pub active_extensions: usize,
+    pub last_error: Option<String>,
+}
+
+impl Default for ExtensionHostStatus {
+    fn default() -> Self {
+        Self {
+            state: HostState::Stopped,
+            node_version: None,
+            jiti_version: "2.7.0".to_string(),
+            api_version: BEAVER_API_VERSION.to_string(),
+            active_extensions: 0,
+            last_error: None,
+        }
+    }
+}

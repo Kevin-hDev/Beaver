@@ -26,8 +26,7 @@ use services::gateway::GatewayService;
 use services::ollama_lifecycle::{self, OllamaSidecar};
 use services::scheduler::Scheduler;
 use std::collections::HashMap;
-use tauri::Emitter;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tokio::sync::Mutex;
 
 pub struct ActiveStreams(
@@ -109,6 +108,7 @@ pub fn run() {
                     let _ = handle.emit("vault-init-failed", msg);
                 });
             }
+            services::extensions::initialize_on_startup(app.handle());
             services::searxng::prepare_on_startup(app.handle().clone());
             if ollama_lifecycle::ollama_binary_path().is_ok() {
                 let handle = app.handle().clone();

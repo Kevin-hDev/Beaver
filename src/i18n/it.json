@@ -733,6 +733,7 @@
       "general": "Generale",
       "ollama": "Ollama",
       "connectors": "Connettori",
+      "extensions": "Estensioni",
       "apiKeys": "Chiavi API",
       "providers": "Provider",
       "llm": "LLM",
@@ -1234,9 +1235,6 @@
       "subtitle": "Aggiungi connettori alla tua istanza.",
       "search": "Cerca connettori…",
       "empty": "Nessun connettore corrisponde.",
-      "tabMcp": "MCP",
-      "tabPlugins": "Plugin",
-      "pluginsEmpty": "Prossimamente",
       "categories": {
         "all": "Tutti",
         "productivity": "Produttività",
@@ -1914,6 +1912,101 @@
       "failed": "Esportazione non riuscita"
     }
   },
+  "extensions": {
+    "title": "Estensioni",
+    "sections": {
+      "plugins": "Plugin Beaver",
+      "custom": "Estensioni personalizzate",
+      "external": "Applicazioni esterne",
+      "host": "Host e diagnostica"
+    },
+    "pages": {
+      "plugins": {
+        "title": "Plugin Beaver",
+        "description": "Plugin ufficiali di Beaver, separati dai Tools interni.",
+        "empty": "La suite ufficiale di plugin apparirà qui quando sarà disponibile."
+      },
+      "custom": {
+        "title": "Estensioni personalizzate",
+        "description": "Aggiungi codice JavaScript o TypeScript scelto da te.",
+        "empty": "Nessuna estensione personalizzata."
+      },
+      "external": {
+        "title": "Applicazioni esterne",
+        "description": "Programmi indipendenti collegati tramite il protocollo di estensione Beaver.",
+        "empty": "Nessuna applicazione esterna collegata."
+      }
+    },
+    "actions": {
+      "add": "Aggiungi",
+      "cancel": "Annulla",
+      "back": "Indietro",
+      "openSource": "Apri sorgente",
+      "reload": "Ricarica",
+      "remove": "Rimuovi",
+      "confirmRemove": "Conferma",
+      "restartHost": "Riavvia host",
+      "recovery": "Disattiva estensioni utente"
+    },
+    "status": {
+      "active": "Attiva",
+      "inactive": "Inattiva",
+      "loading": "Caricamento",
+      "error": "Errore",
+      "incompatible": "Incompatibile"
+    },
+    "kinds": {
+      "builtin": "Plugin ufficiale",
+      "local": "Estensione locale",
+      "external": "Applicazione esterna"
+    },
+    "loading": "Caricamento estensioni…",
+    "showInChat": "Mostra nella chat",
+    "showInChatFor": "Mostra {{name}} nella chat",
+    "enableFor": "Attiva {{name}}",
+    "fullAccessWarning": "Questa estensione non è verificata da Beaver e può accedere a dati, segreti e funzioni del tuo account.",
+    "detail": {
+      "status": "Stato",
+      "runtime": "Runtime",
+      "api": "API Beaver",
+      "author": "Autore",
+      "source": "Origine",
+      "unknown": "Non indicato",
+      "contributions": "Contributi registrati"
+    },
+    "add": {
+      "title": "Aggiungi un’estensione",
+      "fullAccessWarning": "Il codice selezionato verrà eseguito con i diritti del tuo account utente. Installa solo un’estensione di cui scegli di fidarti.",
+      "supportedFiles": "Estensione Beaver",
+      "file": "Scegli un file",
+      "fileDescription": "JavaScript, TypeScript o manifesto JSON",
+      "folder": "Scegli una cartella",
+      "folderDescription": "Cartella con un manifesto Beaver o package.json"
+    },
+    "host": {
+      "title": "Host e diagnostica",
+      "description": "Stato del processo separato che esegue le estensioni personalizzate.",
+      "state": "Stato",
+      "node": "Node.js",
+      "jiti": "Jiti",
+      "api": "API Beaver",
+      "active": "Estensioni attive",
+      "unavailable": "Non disponibile",
+      "states": {
+        "stopped": "Arrestato",
+        "starting": "Avvio",
+        "running": "In esecuzione",
+        "error": "Errore"
+      },
+      "recoveryTitle": "Modalità di recupero",
+      "recoveryDescription": "Disattiva tutte le estensioni utente per ripristinare il funzionamento di Beaver."
+    },
+    "errors": {
+      "load": "Impossibile caricare le estensioni.",
+      "operation": "Impossibile completare l’operazione.",
+      "host": "L’host delle estensioni non è disponibile."
+    }
+  },
   "chatMenu": {
     "plusButtonHint": "Aggiungi file e altro",
     "addFile": "Aggiungi immagine o file",
@@ -1923,6 +2016,6 @@
     "connectors": "Connettori",
     "plugins": "Plugin",
     "noConnectors": "Nessun connettore",
-    "pluginsEmpty": "Prossimamente"
+    "noPlugins": "Nessuna scorciatoia plugin"
   }
 }

@@ -4,8 +4,8 @@
   "version": "1.1.0",
   "identifier": "com.clgo.dash",
   "build": {
-    "beforeDevCommand": "node scripts/cef/prepare-cef-source.mjs && npm run dev",
-    "beforeBuildCommand": "node scripts/cef/prepare-cef-source.mjs && npm run build && cd src-tauri && bash scripts/prepare-updater-helper.sh && bash scripts/prepare-searxng.sh && bash scripts/prepare-cef.sh",
+    "beforeDevCommand": "node scripts/extensions/prepare-extension-host.mjs --dev && node scripts/cef/prepare-cef-source.mjs && npm run dev",
+    "beforeBuildCommand": "node scripts/extensions/prepare-extension-host.mjs && node scripts/cef/prepare-cef-source.mjs && npm run build && cd src-tauri && bash scripts/prepare-updater-helper.sh && bash scripts/prepare-searxng.sh && bash scripts/prepare-cef.sh",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },
@@ -46,6 +46,7 @@
       "resources/forecast-sidecar/test_model_smoke.py",
       "resources/forecast-sidecar/requirements.txt",
       "resources/forecast-sidecar/forecast_runtime/**/*",
+      "resources/extension-host/**/*",
       "resources/searxng-sidecar/**/*",
       "target/updater-helper/*"
     ],

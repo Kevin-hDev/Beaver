@@ -10,7 +10,9 @@ pub async fn dispatch(
     session_id: &str,
     cancel: CancellationToken,
 ) -> ToolResult {
-    if super::tool_catalog::is_optional_tool(tool_name)
+    let dynamic_tool = crate::services::extensions::is_dynamic_tool(tool_name);
+    if !dynamic_tool
+        && super::tool_catalog::is_optional_tool(tool_name)
         && !super::agent_settings::is_tool_enabled(tool_name).await
     {
         return ToolResult::err("Outil désactivé dans les paramètres.");
@@ -26,30 +28,30 @@ pub async fn dispatch(
         Ok(profile) => profile,
         Err(msg) => return ToolResult::err(msg),
     };
-    let args = match super::tool_validate::validate(tool_name, args) {
+    let args = match validate_arguments(dynamic_tool, tool_name, args) {
         Ok(cleaned) => cleaned,
         Err(msg) => return ToolResult::err(format!("[{tool_name}] {msg}")),
     };
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
-    let mut result = match super::memory_tool::dispatch_if_memory(
-        tool_name,
-        &args,
-        working_dir,
-        session_id,
-    )
-    .await
-    {
-        Some(result) => result,
-        None => {
-            super::tool_dispatcher::dispatch_inner(
-                tool_name,
-                &args,
-                working_dir,
-                session_id,
-                cancel,
-                profile,
-            )
+    let mut result = if dynamic_tool {
+        crate::services::extensions::dispatch_tool(tool_name, &args)
             .await
+            .unwrap_or_else(|| ToolResult::err("Extension indisponible."))
+    } else {
+        match super::memory_tool::dispatch_if_memory(tool_name, &args, working_dir, session_id).await
+        {
+            Some(result) => result,
+            None => {
+                super::tool_dispatcher::dispatch_inner(
+                    tool_name,
+                    &args,
+                    working_dir,
+                    session_id,
+                    cancel,
+                    profile,
+                )
+                .await
+            }
         }
     };
     if let Some(change) = before.and_then(super::tool_file_changes::direct_change) {
@@ -60,6 +62,14 @@ pub async fn dispatch(
     }
     let result = super::tool_result_truncate::truncate_result(result, tool_name, session_id);
     enrich_error(result, tool_name)
+}
+
+fn validate_arguments(dynamic_tool: bool, tool_name: &str, args: &Value) -> Result<Value, String> {
+    if dynamic_tool {
+        crate::services::extensions::validate_arguments(tool_name, args)
+    } else {
+        super::tool_validate::validate(tool_name, args)
+    }
 }
 
 pub(crate) fn enrich_error(mut result: ToolResult, tool_name: &str) -> ToolResult {

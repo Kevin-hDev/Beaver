@@ -8,11 +8,12 @@ import {
 type MainTabId = "heartbeat" | "personality" | "agent-local" | "settings";
 export type SettingsSubTab =
   | "general" | "ollama" | "connectors" | "channels" | "providers"
-  | "forecast" | "llm" | "tools" | "memory" | "mascot" | "archived-chats" | "advanced" | "shortcuts" | "about";
+  | "extensions" | "forecast" | "llm" | "tools" | "memory" | "mascot" | "archived-chats" | "advanced" | "shortcuts" | "about";
 
 type OllamaSettingsSubTab = "modelfile" | "models";
 type ForecastSettingsSubTab = "config" | "models";
 export type ProvidersSettingsSubTab = "api" | "oauth";
+export type ExtensionsSettingsSection = "plugins" | "custom" | "external" | "host";
 
 export interface AgentLocalNavState {
   sessionId: string | null;
@@ -33,6 +34,8 @@ export interface SettingsNavState {
   oauthProviderId: string | null;
   providersSubTab: ProvidersSettingsSubTab;
   connectorId: string | null;
+  extensionsSection: ExtensionsSettingsSection;
+  extensionId: string | null;
   channelKey: string | null;
   ollamaSubTab: OllamaSettingsSubTab;
   ollamaInstalledModel: string | null;
@@ -87,6 +90,8 @@ export const DEFAULT_APP_NAV: AppNavState = {
     oauthProviderId: null,
     providersSubTab: "api",
     connectorId: null,
+    extensionsSection: "plugins",
+    extensionId: null,
     channelKey: null,
     ollamaSubTab: "modelfile",
     ollamaInstalledModel: null,
@@ -105,6 +110,8 @@ export function migrateAppNav(input: AppNavState): AppNavState {
     subTab: SettingsSubTab | "api-keys";
     providersSubTab?: ProvidersSettingsSubTab;
     oauthProviderId?: string | null;
+    extensionsSection?: ExtensionsSettingsSection;
+    extensionId?: string | null;
   };
   const subTab: SettingsSubTab = settings.subTab === "api-keys" ? "providers" : settings.subTab;
   return {
@@ -118,6 +125,8 @@ export function migrateAppNav(input: AppNavState): AppNavState {
       subTab,
       providersSubTab: settings.providersSubTab ?? "api",
       oauthProviderId: settings.oauthProviderId ?? null,
+      extensionsSection: settings.extensionsSection ?? "plugins",
+      extensionId: settings.extensionId ?? null,
     },
   };
 }
