@@ -2012,19 +2012,19 @@
       "load": "无法加载扩展。",
       "operation": "无法完成此操作。",
       "host": "扩展宿主不可用。"
-    }
-  },
-  "diagnostics": {
-    "codes": {
-      "module_not_found": "找不到模块或依赖项",
-      "syntax_error": "语法错误",
-      "activation_failed": "激活失败",
-      "registration_failed": "扩展项注册失败",
-      "import_failed": "模块导入失败",
-      "entry_unavailable": "扩展入口点不可用",
-      "load_failed": "扩展加载失败",
-      "host_missing_response": "宿主未确认此扩展已加载",
-      "advanced_required": "替换内置工具需要高级模式"
+    },
+    "diagnostics": {
+      "codes": {
+        "module_not_found": "找不到模块或依赖项",
+        "syntax_error": "语法错误",
+        "activation_failed": "激活失败",
+        "registration_failed": "扩展项注册失败",
+        "import_failed": "模块导入失败",
+        "entry_unavailable": "扩展入口点不可用",
+        "load_failed": "扩展加载失败",
+        "host_missing_response": "宿主未确认此扩展已加载",
+        "advanced_required": "替换内置工具需要高级模式"
+      }
     }
   },
   "chatMenu": {

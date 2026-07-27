@@ -45,9 +45,11 @@ test("Windows extraction uses a script file with positional arguments", () => {
     "C:\\temp\\runtime",
   );
 
-  assert.deepEqual(arguments_.slice(0, 3), [
+  assert.deepEqual(arguments_.slice(0, 5), [
     "-NoProfile",
     "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
     "-File",
   ]);
   assert.equal(arguments_.includes("-Command"), false);
@@ -63,12 +65,20 @@ test("host preparation accepts only its explicit development flag", () => {
   assert.notEqual(result.status, 0);
 });
 
-test("the bundled host has no local dependency symlink", async () => {
-  const packagePath = resolve(
+test("the bundled host uses the same exact jiti version as Beaver", async () => {
+  const hostPackagePath = resolve(
     root,
     "src-tauri/resources/extension-host/package.json",
   );
-  const packageData = JSON.parse(await readFile(packagePath, "utf8"));
+  const rootPackagePath = resolve(root, "package.json");
+  const [hostPackage, rootPackage] = await Promise.all([
+    readFile(hostPackagePath, "utf8").then(JSON.parse),
+    readFile(rootPackagePath, "utf8").then(JSON.parse),
+  ]);
 
-  assert.deepEqual(packageData.dependencies, { jiti: "2.7.0" });
+  assert.equal(
+    hostPackage.dependencies.jiti,
+    rootPackage.devDependencies.jiti,
+  );
+  assert.match(hostPackage.dependencies.jiti, /^\d+\.\d+\.\d+$/);
 });

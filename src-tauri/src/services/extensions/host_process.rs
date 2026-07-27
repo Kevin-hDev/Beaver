@@ -12,6 +12,7 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
+const KILL_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct HostProcess {
     child: Mutex<Child>,
@@ -101,7 +102,7 @@ impl HostProcess {
         self.alive.store(false, Ordering::Release);
         let mut child = self.child.lock().await;
         let _ = child.start_kill();
-        let _ = child.wait().await;
+        let _ = tokio::time::timeout(KILL_TIMEOUT, child.wait()).await;
         drop(child);
         if let Some(reader) = self.reader.lock().await.take() {
             reader.abort();

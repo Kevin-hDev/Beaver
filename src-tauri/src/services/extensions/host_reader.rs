@@ -56,11 +56,9 @@ async fn receive(
         )
         .await;
     }
-    let sender = pending
-        .lock()
-        .await
-        .remove(id)
-        .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
+    let Some(sender) = pending.lock().await.remove(id) else {
+        return Ok(());
+    };
     let result = if object.contains_key("error") {
         Err("L'hôte d'extensions a refusé la requête.".to_string())
     } else {
@@ -80,10 +78,20 @@ async fn spawn_core_call(
     writer: &SharedWriter,
     core_limit: &Arc<Semaphore>,
 ) -> Result<(), String> {
-    let permit = core_limit
-        .clone()
-        .try_acquire_owned()
-        .map_err(|_| "Trop de requêtes d'extension.".to_string())?;
+    let Ok(permit) = core_limit.clone().try_acquire_owned() else {
+        return host_channel::write(
+            writer,
+            &RpcError {
+                jsonrpc: "2.0",
+                id: &id,
+                error: RpcErrorBody {
+                    code: -32000,
+                    message: "core_busy",
+                },
+            },
+        )
+        .await;
+    };
     let output = writer.clone();
     tokio::spawn(async move {
         let _permit = permit;
@@ -128,6 +136,10 @@ async fn spawn_core_call(
     });
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "host_reader_tests.rs"]
+mod tests;
 
 async fn read_bounded_line(reader: &mut BufReader<ChildStdout>) -> Result<Vec<u8>, String> {
     let mut line = Vec::new();

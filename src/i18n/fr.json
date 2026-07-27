@@ -1393,19 +1393,19 @@
       "load": "Impossible de charger les extensions.",
       "operation": "L’opération n’a pas pu être terminée.",
       "host": "L’hôte d’extensions est indisponible."
-    }
-  },
-  "diagnostics": {
-    "codes": {
-      "module_not_found": "Module ou dépendance introuvable",
-      "syntax_error": "Erreur de syntaxe",
-      "activation_failed": "L’activation a échoué",
-      "registration_failed": "L’enregistrement des contributions a échoué",
-      "import_failed": "L’import du module a échoué",
-      "entry_unavailable": "Le point d’entrée de l’extension est indisponible",
-      "load_failed": "Le chargement de l’extension a échoué",
-      "host_missing_response": "L’hôte n’a pas confirmé le chargement de cette extension",
-      "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré"
+    },
+    "diagnostics": {
+      "codes": {
+        "module_not_found": "Module ou dépendance introuvable",
+        "syntax_error": "Erreur de syntaxe",
+        "activation_failed": "L’activation a échoué",
+        "registration_failed": "L’enregistrement des contributions a échoué",
+        "import_failed": "L’import du module a échoué",
+        "entry_unavailable": "Le point d’entrée de l’extension est indisponible",
+        "load_failed": "Le chargement de l’extension a échoué",
+        "host_missing_response": "L’hôte n’a pas confirmé le chargement de cette extension",
+        "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré"
+      }
     }
   },
   "chatMenu": {

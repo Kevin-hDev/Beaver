@@ -2012,19 +2012,19 @@
       "load": "Erweiterungen konnten nicht geladen werden.",
       "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
       "host": "Der Erweiterungs-Host ist nicht verfügbar."
-    }
-  },
-  "diagnostics": {
-    "codes": {
-      "module_not_found": "Modul oder Abhängigkeit nicht gefunden",
-      "syntax_error": "Syntaxfehler",
-      "activation_failed": "Aktivierung fehlgeschlagen",
-      "registration_failed": "Registrierung der Beiträge fehlgeschlagen",
-      "import_failed": "Modulimport fehlgeschlagen",
-      "entry_unavailable": "Der Einstiegspunkt der Erweiterung ist nicht verfügbar",
-      "load_failed": "Die Erweiterung konnte nicht geladen werden",
-      "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
-      "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich"
+    },
+    "diagnostics": {
+      "codes": {
+        "module_not_found": "Modul oder Abhängigkeit nicht gefunden",
+        "syntax_error": "Syntaxfehler",
+        "activation_failed": "Aktivierung fehlgeschlagen",
+        "registration_failed": "Registrierung der Beiträge fehlgeschlagen",
+        "import_failed": "Modulimport fehlgeschlagen",
+        "entry_unavailable": "Der Einstiegspunkt der Erweiterung ist nicht verfügbar",
+        "load_failed": "Die Erweiterung konnte nicht geladen werden",
+        "host_missing_response": "Der Host hat das Laden dieser Erweiterung nicht bestätigt",
+        "advanced_required": "Zum Ersetzen eines integrierten Tools ist der erweiterte Modus erforderlich"
+      }
     }
   },
   "chatMenu": {

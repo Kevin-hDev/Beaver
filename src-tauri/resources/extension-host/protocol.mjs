@@ -4,6 +4,7 @@ const MAX_MESSAGE_BYTES = 1_048_576;
 const MAX_PENDING = 64;
 const MAX_IN_FLIGHT_REQUESTS = 64;
 const REQUEST_TIMEOUT_MS = 30_000;
+// Capture the protocol writer before host.mjs silences accidental stdout writes.
 const writeProtocol = process.stdout.write.bind(process.stdout);
 const pending = new Map();
 let input = Buffer.alloc(0);

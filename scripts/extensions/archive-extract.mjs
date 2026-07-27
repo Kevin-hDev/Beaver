@@ -28,6 +28,8 @@ export function windowsExtractionArguments(scriptPath, archive, destination) {
   return [
     "-NoProfile",
     "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
     "-File",
     scriptPath,
     archive,

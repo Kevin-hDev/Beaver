@@ -4,6 +4,8 @@ Beaver extensions are trusted local code. They run in a separate Node.js host wi
 
 `access` and `apiLevel` describe compatibility and intended use. They are not process-isolation or security boundaries. Beaver validates registered contributions again in Rust, but extension code remains fully trusted code.
 
+Approval is associated with the extension identity and source, not with a content hash. Updating files inside an approved extension does not request approval again. Users are responsible for auditing updates from that source.
+
 ## Minimal manifest
 
 Create `beaver-extension.json` in the extension folder:
@@ -88,5 +90,7 @@ The host is shared by the enabled local extensions. Changing the enabled set res
 Secrets are zeroized by Beaver on the Rust side after transfer. Once a secret crosses into JavaScript, immutable strings and the JavaScript garbage collector prevent Beaver from guaranteeing immediate memory erasure.
 
 Safe loading diagnostics (stage, category, source filename, and position when available) appear in **Settings → Extensions → Host and Diagnostics**. Raw extension output is not persisted because it may contain secrets.
+
+The host redirects `console` and ordinary `process.stdout.write` calls to protect the JSON-RPC transport from accidental output. This is not a security boundary: trusted code can still write directly to file descriptor 1 and disrupt its own host.
 
 The extension author and user are responsible for any secret, file, process, or network access performed after activation.

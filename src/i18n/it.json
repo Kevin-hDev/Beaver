@@ -2012,19 +2012,19 @@
       "load": "Impossibile caricare le estensioni.",
       "operation": "Impossibile completare l’operazione.",
       "host": "L’host delle estensioni non è disponibile."
-    }
-  },
-  "diagnostics": {
-    "codes": {
-      "module_not_found": "Modulo o dipendenza non trovati",
-      "syntax_error": "Errore di sintassi",
-      "activation_failed": "Attivazione non riuscita",
-      "registration_failed": "Registrazione dei contributi non riuscita",
-      "import_failed": "Importazione del modulo non riuscita",
-      "entry_unavailable": "Il punto di ingresso dell’estensione non è disponibile",
-      "load_failed": "Caricamento dell’estensione non riuscito",
-      "host_missing_response": "L’host non ha confermato il caricamento di questa estensione",
-      "advanced_required": "La modalità avanzata è necessaria per sostituire uno strumento integrato"
+    },
+    "diagnostics": {
+      "codes": {
+        "module_not_found": "Modulo o dipendenza non trovati",
+        "syntax_error": "Errore di sintassi",
+        "activation_failed": "Attivazione non riuscita",
+        "registration_failed": "Registrazione dei contributi non riuscita",
+        "import_failed": "Importazione del modulo non riuscita",
+        "entry_unavailable": "Il punto di ingresso dell’estensione non è disponibile",
+        "load_failed": "Caricamento dell’estensione non riuscito",
+        "host_missing_response": "L’host non ha confermato il caricamento di questa estensione",
+        "advanced_required": "La modalità avanzata è necessaria per sostituire uno strumento integrato"
+      }
     }
   },
   "chatMenu": {

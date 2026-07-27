@@ -11,6 +11,7 @@ const MAX_EXTENSIONS = 128;
 for (const method of ["log", "info", "debug", "warn", "error"]) {
   console[method] = () => {};
 }
+// protocol.mjs already captured the real writer used exclusively for JSON-RPC.
 process.stdout.write = () => true;
 process.on("uncaughtException", () => process.exit(1));
 process.on("unhandledRejection", () => process.exit(1));

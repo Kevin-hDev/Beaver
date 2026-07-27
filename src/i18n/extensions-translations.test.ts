@@ -8,6 +8,17 @@ import ja from "./ja.json";
 import zh from "./zh.json";
 
 const locales = [fr, en, es, de, itJson, zh, ja];
+const diagnosticCodes = [
+  "module_not_found",
+  "syntax_error",
+  "activation_failed",
+  "registration_failed",
+  "import_failed",
+  "entry_unavailable",
+  "load_failed",
+  "host_missing_response",
+  "advanced_required",
+] as const;
 
 function leafPaths(value: unknown, prefix = ""): string[] {
   if (!value || typeof value !== "object") return [prefix];
@@ -34,6 +45,14 @@ describe("extensions translations", () => {
       expect("tabPlugins" in locale.connectors.browse).toBe(false);
       expect("pluginsEmpty" in locale.connectors.browse).toBe(false);
       expect("pluginsEmpty" in locale.chatMenu).toBe(false);
+    }
+  });
+
+  it("traduit chaque diagnostic d'extension dans les sept langues", () => {
+    for (const locale of locales) {
+      for (const code of diagnosticCodes) {
+        expect(locale.extensions.diagnostics.codes[code].trim()).not.toBe("");
+      }
     }
   });
 });
