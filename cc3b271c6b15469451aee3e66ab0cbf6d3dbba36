@@ -1,0 +1,147 @@
+BEAVER — REVIEW DU COMMIT cc3b271 « feat: add official Beaver Office plugins » — 27 JUILLET 2026
+
+STATUT
+Review complète en lecture seule : structure, qualité, maintenabilité, sécurité avec revue adversariale, dépendances.
+68 fichiers, 3 431 insertions. Quatre plugins officiels (Documents, PDF, Feuilles de calcul, Présentations), 10 outils, 6 nouvelles dépendances.
+Architecture saine et confinement sérieux. Quatre défauts ont été PROUVÉS PAR EXÉCUTION sur des cas d’usage ordinaires.
+
+CONSIGNE
+Tous les points listés ci-dessous doivent être corrigés. Aucun n’est à classer sans suite.
+Les suites de tests actuelles ne détectent aucun des quatre défauts prouvés : elles valident les plugins contre des fichiers que les plugins ont eux-mêmes produits. Toute correction doit s’accompagner d’un test qui part d’un fichier produit ailleurs.
+
+DÉFAUTS PROUVÉS PAR EXÉCUTION — À CORRIGER EN PRIORITÉ
+
+1. LES LIMITES DES PLUGINS IGNORENT LA LIMITE DU CANAL
+   Un classeur XLSX de 9 547 octets fait échouer spreadsheets.inspect (« host request failed »).
+   Aucune limite du plugin n’est atteinte : le fichier est 2 600 fois sous maxInputBytes (25 Mo).
+   Cause : OFFICE_LIMITS autorise un aperçu de 200 lignes × 100 colonnes × 32 767 caractères, soit une réponse
+   théorique de 655 Mo, dans un canal borné à maxMessageBytes = 1 Mo. protocol.mjs:130 lève message_too_large,
+   converti en extension_host_request_failed. Même problème sur pdf.inspect : maxTextChars = 500 000 caractères
+   représente jusqu’à 1,5 Mo en japonais ou en chinois (3 octets par caractère).
+   À faire : rapprocher OFFICE_LIMITS de maxMessageBytes, borner la taille sérialisée de la réponse avant l’envoi
+   et tronquer proprement avec un indicateur explicite plutôt que d’échouer.
+
+2. LE PLUGIN PDF NE SAIT PAS ÉCRIRE EN JAPONAIS, CHINOIS, CORÉEN, RUSSE NI ARABE
+   pdf.create avec « これはテストです。 » renvoie operation_failed. Le même texte en DOCX réussit.
+   Cause : create.mjs utilise StandardFonts.Helvetica, limité au jeu de caractères occidental.
+   Beaver est traduit en 7 langues dont le japonais et le chinois : pour ces utilisateurs « crée-moi un PDF »
+   ne fonctionnera jamais, alors que « crée-moi un Word » fonctionne.
+   À faire : embarquer une police Unicode et l’enregistrer via fontkit. ATTENTION : le remplacement de pdf-lib
+   par @cantoo/pdf-lib ne corrige PAS ce point, la limite vient des polices standard du format PDF.
+
+3. UN CARACTÈRE DE CONTRÔLE PRODUIT UN PPTX CORROMPU ANNONCÉ COMME RÉUSSI
+   presentations.patch avec une valeur contenant l’octet 0x01 renvoie isError:false et écrit le fichier.
+   L’octet brut se retrouve dans le XML produit : le fichier est invalide au sens XML 1.0, PowerPoint le refusera.
+   Cause : escapeXml (patch.mjs:94) couvre &, <, >, " et ' mais pas les caractères de contrôle 0x01–0x1F.
+   requiredString bloque l’octet nul uniquement.
+   À faire : rejeter ou échapper les caractères interdits par XML 1.0. Un succès qui produit un fichier illisible
+   est plus grave qu’un échec.
+
+4. LE REMPLACEMENT PPTX ÉCHOUE SUR UN VRAI MODÈLE POWERPOINT
+   Quand le marqueur {{name}} est réparti sur plusieurs runs <a:r>/<a:t> — ce que PowerPoint fait systématiquement —
+   presentations.patch renvoie invalid_input.
+   Le test du projet passe uniquement parce qu’il patche un fichier généré par pptxgenjs, qui ne fragmente pas.
+   À faire : reconstituer le texte des runs consécutifs avant de chercher le marqueur, puis réécrire la répartition.
+
+DÉPENDANCES
+
+REMPLACEMENT DE PDF-LIB PAR @CANTOO/PDF-LIB — À FAIRE
+   pdf-lib 1.17.1 est abandonné : dernière publication le 6 novembre 2021, soit 4 ans et 8 mois.
+   Ses 10 millions de téléchargements hebdomadaires ne sont que de l’inertie. Aucune vulnérabilité répertoriée
+   à ce jour sur la 1.17.1, mais aucun correctif ne viendra si une faille est publiée.
+   Remplacement retenu : @cantoo/pdf-lib 2.7.4, publié le 16 juillet 2026, 112 versions, 383 000 téléchargements
+   par semaine, API compatible — le portage de pdf/create.mjs et pdf/read.mjs est mécanique.
+   COMPROMIS À ACCEPTER EN CONNAISSANCE DE CAUSE : le fork passe de 4 à 7 dépendances en ajoutant color,
+   crypto-js et node-html-better-parser. crypto-js n’a pas été publié depuis octobre 2023. Vérifier que crypto-js
+   n’est chargé que pour le chiffrement PDF, non utilisé ici puisque ignoreEncryption reste à false.
+   Le mainteneur annonce explicitement qu’il maintient « aussi longtemps que nécessaire pour ses propres besoins ».
+   Alternative de repli : @pdfme/pdf-lib.
+
+AUTRES POINTS DE DÉPENDANCES À CORRIGER
+   - https@1.0.0 : paquet vide — il ne contient qu’un package.json, sans le index.js qu’il déclare. Nom squatté
+     sur npm, tiré par pptxgenjs. Compte tiers dormant dans la chaîne d’approvisionnement d’un processus de
+     confiance totale. Neutraliser par un overrides dans le package.json de l’hôte.
+   - @napi-rs/canvas : 31 Mo de binaires natifs installés pour rien. Dépendance optionnelle de pdfjs-dist, jamais
+     utilisée car seul getTextContent() sert. Ajouter --omit=optional dans prepare-extension-host.mjs:24.
+   - Les 6 dépendances Office figurent en dependencies du package.json racine alors qu’aucun fichier de src/ ne les
+     importe : elles n’y servent qu’à la résolution des tests en mode --dev. Les déplacer en devDependencies.
+   - Le test « dépendances explicites et épinglées » lit le package.json de l’hôte mais s’exécute contre l’arbre
+     node_modules de la racine. Il ne valide pas l’arbre de production, qui provient d’un second package-lock.
+   - Poids ajouté à l’application : environ 105 Mo utiles plus 31 Mo évitables.
+
+ÉTAT DE SANTÉ DES AUTRES BIBLIOTHÈQUES — VÉRIFIÉ SUR LE REGISTRE NPM LE 27 JUILLET 2026
+   - pdfjs-dist 6.1.200 : publié il y a 1 mois, Mozilla, 21 M/semaine. Aucune inquiétude.
+   - docx 9.7.1 : publié il y a 2 mois, 5,7 M/semaine. Aucune inquiétude.
+   - pptxgenjs 4.0.1 : publié il y a 13 mois, 2,6 M/semaine. À surveiller, pas d’action.
+   - @xlsx/xlsx-populate 0.2.0 : publié il y a 7 mois, 575/semaine. Fork légitime de weirongxu, contributeurs
+     d’origine crédités, aucune dépendance. VIVANT — ne pas remplacer. Les alternatives sont pires : ExcelJS
+     est inactif depuis octobre 2023, SheetJS est figé sur npm depuis mars 2022 avec les fonctions d’écriture
+     avancées en offre payante.
+   - @office-kit/xlsx : NE PAS ADOPTER. Créé le 5 juillet 2026, deux versions publiées, et déjà 31 579
+     téléchargements par semaine. Ce ratio n’est pas organique. Profil typique d’un paquet poussé artificiellement.
+
+QUALITÉ ET MAINTENABILITÉ — À CORRIGER
+   - builtin.rs renvoie six messages d’erreur en français codés en dur alors que tout le reste de l’application
+     passe par i18n en 7 langues.
+   - presentations/create.mjs:37 : lang « fr-FR » codé en dur dans toutes les présentations générées.
+   - Deux bornes pour la même donnée : le chargeur accepte un dossier de travail de 4 096 caractères (valeur en dur,
+     hors contrat), les plugins de 1 024.
+   - workspace.mjs:89 : ensureInside n’est appelé que si le chemin est relatif, or un chemin relatif sans « .. »
+     est toujours à l’intérieur. Contrôle inatteignable.
+   - atomicWrite remplit de zéros le tampon de l’appelant lorsqu’on lui passe un Buffer, au lieu d’une copie.
+   - updateSpreadsheet valide le chemin de sortie après avoir fait tout le travail ; les trois autres outils
+     le valident avant.
+   - Polices Aptos absentes de macOS et Linux sans Office : substitution silencieuse à l’affichage.
+
+POINT DE ROBUSTESSE À TRANCHER
+   recover_without_user_extensions — le bouton de récupération quand l’hôte est en vrac — ne désactive que les
+   extensions utilisateur (registry.rs:91). Si un plugin Office fait tomber l’hôte, le bouton de secours le
+   redémarre avec le plugin fautif toujours actif et l’utilisateur n’a aucune sortie.
+   Dans le même esprit : les quatre plugins sont livrés enabled:true et trusted:true, et set_enabled les dispense
+   de la confirmation d’activation (registry.rs:63). Choix défendable pour du code livré avec l’application,
+   mais à assumer explicitement.
+
+CE QUI EST VALIDÉ SANS RÉSERVE
+   - Confinement au dossier de travail solide : chemin absolu hors dossier, lien symbolique sortant et remontée
+     par « .. » sont bloqués dans les deux sens (realpath avant vérification à la lecture, lstat de détection
+     à l’écriture, O_NOFOLLOW à l’ouverture). Tentatives de contournement infructueuses.
+   - zip-guard.mjs au-dessus du niveau habituel : rejet du chiffrement, de ZIP64, des taux d’expansion anormaux,
+     des doublons de noms, des entrées __proto__/constructor/prototype, des chemins absolus et des lettres de
+     lecteur Windows. Le contrôle final offset !== limit interdit les octets cachés entre les entrées.
+   - pdfjs configuré avec isEvalSupported:false et disableFontFace:true — ferme la classe de failles CVE-2024-4367.
+     pdf-lib configuré avec ignoreEncryption:false.
+   - Les plugins ne reçoivent que le dossier de travail de la session, là où l’agent a déjà ses outils fichiers :
+     ils n’élargissent pas la surface d’attaque de Beaver.
+   - Contrat étendu correctement : maxUserExtensions 128 + maxExtensions 132, avec un test qui vérifie
+     mécaniquement MAX_EXTENSIONS >= plugins + MAX_USER_EXTENSIONS.
+   - Le test stable_extensions_cannot_replace_core_tools retiré de runtime_sync.rs a été déplacé à l’identique
+     dans runtime_sync_tests.rs — rien n’a été affaibli.
+   - resolve_entry résout le chemin réel puis vérifie l’appartenance au dossier des plugins et la nature du fichier.
+   - copyDirectory borné à 128 entrées par dossier et 512 fichiers, création en 0700, rejet des liens symboliques.
+   - i18n : 1 753 clés identiques sur les 7 langues, zéro écart, 18 clés ajoutées correspondant exactement aux
+     4 plugins et 10 outils.
+   - Aucun fichier du commit ne dépasse 200 lignes.
+   - THIRD_PARTY_NOTICES.md présent, licences listées, origine des icônes précisée.
+
+TESTS EXÉCUTÉS SUR CE COMMIT
+   npx vitest run                 1586 passés, 0 échec
+   cargo test --lib extensions      23 passés, 0 échec
+   npm run test:extensions-host     16 passés, 0 échec (12 avant ce commit)
+   npx tsc --noEmit                 aucune erreur
+   git status                       propre — review menée en lecture seule
+
+ORDRE DE CORRECTION RECOMMANDÉ
+   1. Rapprocher OFFICE_LIMITS de maxMessageBytes — seul point qui casse un usage courant sans explication.
+   2. Échapper ou rejeter les caractères de contrôle dans escapeXml.
+   3. Embarquer une police Unicode pour le plugin PDF.
+   4. Reconstituer les runs fragmentés dans presentations.patch.
+   5. Remplacer pdf-lib par @cantoo/pdf-lib.
+   6. --omit=optional, overrides sur https, déplacement des dépendances racine en devDependencies.
+   7. Reste des points de qualité et de maintenabilité.
+
+RECOMMANDATION D’ARCHITECTURE POUR LA SUITE
+   Chaque plugin importe aujourd’hui directement sa bibliothèque : documents/tools.mjs appelle docx,
+   spreadsheets/workbook.mjs appelle xlsx-populate. Le jour où l’une meurt — et pdf-lib prouve que cela arrive —
+   il faut rouvrir la logique métier. Le dossier common/ joue déjà ce rôle d’isolation pour les chemins et les
+   archives. L’étendre avec une fine couche d’écriture par format rendrait tout remplacement futur mécanique,
+   sans réécrire les tests. À faire avant d’ajouter d’autres plugins officiels.
