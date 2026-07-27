@@ -1,0 +1,379 @@
+REVIEW DU COMMIT 4504f60 — « fix: complete Office plugin hardening »
+Review adversariale en lecture seule. Dépôt resté propre (git status vide).
+Fait suite à la note attachée à 94a38d5, dont tous les points sont refermés.
+
+====================================================================
+STATUT : les deux défauts de 94a38d5 sont corrigés. Deux nouveaux
+défauts introduits par la correction bloquent la livraison.
+====================================================================
+
+CONSIGNE : tu corriges les points D1 et D2 ci-dessous en priorité, puis
+D3 à D7. Tu ne touches pas à ce qui est listé en « validé sans réserve ».
+
+====================================================================
+CE QUI EST REFERMÉ (rappel de la note 94a38d5)
+====================================================================
+
+1. Plantage du processus d'extensions sur 9 écritures  → CORRIGÉ.
+   Trois corrections cumulées, toutes vérifiées :
+   - le rendu PDF est passé dans un worker_thread dédié
+     (pdf/create-worker.mjs + pdf/worker-client.mjs) : une exception
+     hors chaîne de promesses tue le worker, jamais l'hôte ;
+   - @pdf-lib/fontkit 1.1.1 (fork figé, source du RangeError dans
+     CFFSubset.encode) remplacé par fontkit 2.0.4 upstream, avec une
+     couche de compatibilité qui réintroduit encodeStream ;
+   - une garde de couverture (assertCoverage) refuse en amont tout
+     caractère sans glyphe, au lieu de laisser fontkit exploser.
+   Vérifié : 25 écritures créées à la suite, processus vivant à la fin,
+   0 mort. Un échec ne casse pas les créations suivantes.
+
+2. Documents au texte invisible annoncés comme réussis → CORRIGÉ.
+   Vérifié par aller-retour create → inspect sur 25 écritures :
+   arabe, hébreu, hindi, arménien, éthiopien, khmer, tibétain, birman,
+   tamoul, bengali, cinghalais, thaï, lao, géorgien, cherokee, japonais,
+   chinois, coréen, russe, grec, vietnamien, turc, polonais : texte relu
+   à l'identique. Les emoji aussi (📊 🟢 😀 👍 🇫🇷 ❤️).
+
+3. Les 15 polices demandées → 18 fichiers ajoutés, catalogue de 20 polices,
+   sommes SHA-256 vérifiées : 20/20 conformes, 0 écart.
+
+4. Piège NotoColorEmoji → évité, c'est bien NotoEmoji-Regular monochrome.
+
+5. Chargement paresseux → FAIT. Cache à la demande dans le worker, test
+   dédié qui vérifie qu'un PDF latin n'embarque pas la police CJK.
+   Mesuré : CJK au 2e appel aussi rapide qu'au 1er (79 vs 84 ms).
+
+6. i18n des 7 constantes d'erreur → FAIT. 7 langues, 1760 clés symétriques.
+   src/lib/extension-errors.ts fait la correspondance code → clé i18n.
+
+====================================================================
+D1 — MAJEUR : 884 caractères courants sont refusés, alors qu'ils sont
+tous présents dans les polices déjà embarquées
+====================================================================
+
+La garde de couverture est bonne. Le routage qui l'alimente ne l'est pas :
+il choisit une police par plage d'écriture, et si cette police n'a pas le
+glyphe, il refuse — sans jamais essayer les autres polices embarquées.
+
+Mesure exacte (fontkit sur les 20 polices du catalogue, balayage bloc
+par bloc, en ne comptant que les caractères présents dans au moins une
+police embarquée) :
+
+  bloc                              définis  refusés  récupérables
+  Formes numériques (fractions)          60       41       41
+  Flèches                                36       24       24
+  Opérateurs mathématiques               80       79       79
+  Divers techniques (⌘ ⏎)               144      126      126
+  Alphanumériques cerclés (①)           160      159      159
+  Dessin de tableaux (│ ─ ┌)            128      128      128   BLOC ENTIER
+  Blocs pleins (█ ░)                     32       32       32   BLOC ENTIER
+  Formes géométriques (■ ● ▲)            96       87       87
+  Symboles divers (☀ ♪ ★)               256      173      173
+  Dingbats (✓ ✒ ➔)                      192       33       33
+  Latin-1 / Ponctuation générale         207        2        2
+  ------------------------------------------------------------------
+  TOTAL                                          884      884  (100 %)
+
+Aucun de ces 884 caractères n'est réellement manquant. Exemples relevés
+par sonde, avec la police embarquée qui les contient déjà :
+
+  ≤ ≥ ≠ ≈ √ ∞ ∑ ∫ ∂ ∆        → routés vers « base »     présents dans cjk
+  │ ─ ┌ ├ ┼ ═ (tableaux)      → routés vers « base »     présents dans cjk
+  ■ □ ● ○ ◆ ▲ ▼ ★ ☆          → routés vers « base »     présents dans symbols2, cjk
+  ① ② … ⑩ ⓪                  → routés vers « base »     présents dans symbols, cjk
+  ♪ ♫                         → routés vers « base »     présents dans symbols, cjk
+  ⌘ ⌥ ⏎                       → routés vers « base »     présents dans symbols2
+  ⇒ ⇐ ⇔ ⇧                     → routés vers « symbols »  présents dans cjk / symbols2
+  ☒                           → routé  vers « base »     présent  dans symbols2
+
+Conséquence directe : les deux polices de symboles ajoutées par ce commit
+sont quasiment inutilisables en l'état.
+
+  NotoSansSymbols-Regular.ttf    258 Ko   1107 caractères présents
+                                          → 10 atteignables (0,9 %)
+  NotoSansSymbols2-Regular.ttf  1204 Ko   2955 caractères présents
+                                          → 145 atteignables (4,9 %)
+
+1,5 Mo embarqués pour 155 caractères réellement joignables, parce que
+font-routing.mjs ne les atteint que par deux plages étroites :
+  ["symbols",  /[←-⇿]/u]     (flèches seulement)
+  ["symbols2", /[✀-➿]/u]     (dingbats seulement)
+
+Cas concrets qui échouent aujourd'hui, tous refusés en bloc (le document
+entier est rejeté, pas seulement le caractère) :
+  "a ≤ b ≠ c"                    → unsupported_character
+  "① premier ② deuxième"         → unsupported_character
+  "■ élément ● sous-élément"     → unsupported_character
+  "│ nom │ total │"              → unsupported_character
+  "colonne\tvaleur"              → unsupported_character
+
+CORRECTION DEMANDÉE — tu remplaces la sélection « une plage → une police »
+par une sélection « première police qui possède réellement le glyphe » :
+
+  1. Tu gardes SCRIPT_FONTS comme ordre de préférence, pas comme verdict.
+  2. Pour chaque caractère, tu prends la première police préférée qui
+     répond hasGlyphForCodePoint(cp).
+  3. Si aucune ne répond, tu parcours une chaîne de repli explicite
+     (base → symbols → symbols2 → cjk → emoji) et tu prends la première
+     qui possède le glyphe.
+  4. Tu ne refuses (unsupported_character) que si AUCUNE des 20 polices
+     ne possède le glyphe. C'est le comportement fail-closed voulu, mais
+     il doit être le dernier recours et non le premier.
+  5. Attention au coût : hasGlyphForCodePoint force le chargement de la
+     police. Tu ne charges pas les 20 polices pour tester un caractère —
+     tu précalcules au build une table codepoint → polices possibles
+     (un fichier généré, comme le contrat d'extension), ou tu ne teste
+     la chaîne de repli qu'après échec de la police préférée, en
+     s'arrêtant à la première qui répond.
+
+Note : le repli « cjk » est légitime ICI (la police CJK contient déjà tous
+les opérateurs mathématiques et tout le dessin de tableaux), mais il ne
+doit intervenir qu'en dernier — sinon un simple « ≤ » dans un document
+latin fait charger 16,5 Mo. Ordre recommandé : base, symbols, symbols2,
+puis les polices d'écriture, puis cjk, puis emoji.
+
+====================================================================
+D2 — MAJEUR : tout lecteur PDF tiers extrait le texte en double
+====================================================================
+
+drawTextLine dessine chaque ligne DEUX FOIS :
+  - une passe visible, marquée /Artifact, avec le rendu mis en forme ;
+  - une passe invisible (TextRenderingMode.Invisible), marquée
+    /BeaverLogical, avec les glyphes en ordre logique.
+
+pdf.inspect filtre correctement grâce à readableItems() : Beaver relit
+bien son propre texte, une seule fois. Mais aucun autre outil ne connaît
+la convention « BeaverLogical », et pdfjs — donc Chrome et Firefox —
+n'ignore pas les Artifacts à l'extraction.
+
+Preuve (extraction pdfjs standard, sans le filtre maison) :
+
+  texte source  : "Rapport annuel 2026 avec du japonais 日本語 et un emoji 📊 final"
+  texte extrait : "Rapport annuel 2026 avec du japonais 日本語 et un emoji 📊 final
+                   Rapport annuel 2026 avec du japonais 日本語 et un emoji 📊 final"
+  occurrences de « Rapport annuel » : 2
+
+Impact réel pour l'utilisateur : un copier-coller depuis Aperçu, Acrobat,
+Chrome ou Firefox donne le texte en double. Une recherche plein texte
+trouve tout deux fois. Un lecteur d'écran lit tout deux fois. Une autre IA
+qui relit le PDF reçoit le texte en double. Le PDF n'est correctement
+lisible que par Beaver.
+
+Deux effets secondaires mesurés :
+  - chaque police est embarquée DEUX fois dans le PDF (une variante
+    « visual », une variante « logical ») ;
+  - poids constaté : 3 566 octets pour un PDF d'un mot, 115 527 octets
+    pour une ligne mêlant latin, japonais et un emoji.
+
+Le problème sémantique en plus : /Artifact désigne en PDF un contenu
+DÉCORATIF à ignorer. Marquer le texte visible comme décoratif et le texte
+réel comme un tag privé inconnu est l'inverse de la convention.
+
+CORRECTION DEMANDÉE — tu passes à un seul rendu, avec le mécanisme PDF
+standard prévu exactement pour ça : /Span << /ActualText (…) >> BDC.
+ActualText déclare « ce contenu graphique représente ce texte-là » ;
+c'est ce que lisent tous les extracteurs conformes, y compris pdfjs.
+
+Faisabilité vérifiée : @cantoo/pdf-lib 2.7.4 exporte PDFOperator,
+PDFOperatorNames, PDFName, PDFDict, PDFHexString et PDFString. L'helper
+beginMarkedContent(tag) n'accepte qu'un nom, donc tu construis l'opérateur
+à la main :
+
+  PDFOperator.of(PDFOperatorNames.BeginMarkedContentSequence,
+                 [PDFName.of("Span"), dictContenantActualText])
+
+avec ActualText en PDFHexString UTF-16BE (BOM FEFF inclus). Tu supprimes
+alors la passe invisible, la variante « logical » du fontkit, le double
+embarquement des polices, et readableItems() dans pdf/read.mjs devient
+inutile — l'extraction standard suffit.
+
+Si tu juges ActualText irréalisable après essai, tu le dis explicitement
+plutôt que de garder le double rendu : le double rendu n'est pas
+acceptable en l'état.
+
+====================================================================
+D3 — La tabulation fait rejeter tout le document
+====================================================================
+
+"colonne\tvaleur" → unsupported_character.
+
+U+0009 est le SEUL caractère réellement absent des 20 polices (les 884
+autres sont récupérables). isCoverageIgnorable() ne couvre que \n, \r,
+ZWNJ, ZWJ, VS15 et VS16.
+
+Tu ajoutes les caractères blancs à isCoverageIgnorable, ou tu convertis
+la tabulation en espaces avant le rendu. Une tabulation dans un texte est
+banale et ne doit jamais rejeter un document.
+
+====================================================================
+D4 — Le point médian « · » est routé vers la police géorgienne
+====================================================================
+
+U+00B7 → fontId « georgian » → NotoSansGeorgian n'a pas le glyphe →
+refus. Le point médian est un caractère latin ordinaire (catalan l·l,
+séparateur courant). Il est présent dans base, symbols, symbols2 et cjk.
+
+Cause : \p{Script_Extensions=Georgian} inclut U+00B7, parce que
+Script_Extensions liste TOUTES les écritures qui utilisent un caractère
+commun. Le même piège existe pour d'autres caractères partagés.
+
+Tu utilises \p{Script=…} (script principal) pour la sélection, et tu
+réserves Script_Extensions à un second passage ; ou tu exclus
+explicitement les caractères de script Common/Inherited du routage par
+écriture. La correction D1 (repli sur la première police qui a le glyphe)
+rattrape ce cas au passage, mais la cause reste à traiter.
+
+====================================================================
+D5 — Les quatre plugins Office ne traitent pas les mêmes caractères
+====================================================================
+
+Même échantillon envoyé aux quatre outils :
+
+  cas              pdf                     word      powerpoint  excel
+  tabulation       unsupported_character   accepté   accepté     accepté
+  a ≤ b ≠ c        unsupported_character   accepté   accepté     accepté
+  ① premier        unsupported_character   accepté   accepté     accepté
+  ■ élément        unsupported_character   accepté   accepté     accepté
+  │ nom │ total │  unsupported_character   accepté   accepté     accepté
+  A ⇒ B            unsupported_character   accepté   accepté     accepté
+  l·l catalan      unsupported_character   accepté   accepté     accepté
+  ♪ musique        unsupported_character   accepté   accepté     accepté
+  emoji 📊          accepté                 accepté   accepté     accepté
+  日本語            accepté                 accepté   accepté     accepté
+
+Word, PowerPoint et Excel s'appuient sur les polices du système du lecteur
+et acceptent tout ; seul le PDF embarque ses polices et refuse. C'est
+techniquement normal, mais l'utilisateur ne le comprendra pas : le même
+texte passe dans trois outils sur quatre. La correction D1 supprime
+l'essentiel de l'écart.
+
+====================================================================
+D6 — Le refus ne dit ni quoi ni où
+====================================================================
+
+L'appelant reçoit exactement « unsupported_character ». Rien d'autre.
+Sur un document de 500 paragraphes, ni l'utilisateur ni l'IA ne peuvent
+savoir quel caractère retirer.
+
+Le code n'est traduit nulle part : grep « unsupported_character » dans
+src/ et src-tauri/src/ ne renvoie rien. Les 7 codes ajoutés dans
+extensions.errors.codes concernent le catalogue et l'hôte, pas celui-ci.
+
+Tu ajoutes au message le code du point de code fautif et l'index du
+paragraphe (ex. « unsupported_character U+2264 paragraphe 12 ») — sans
+recopier de contenu utilisateur dans le message — et tu ajoutes la clé
+i18n correspondante dans les 7 langues.
+
+====================================================================
+D7 — Les séquences emoji ZWJ sont désassemblées
+====================================================================
+
+"Famille 👨‍👩‍👧" est accepté mais relu "Famille 👨👩👧" : les liaisons ZWJ
+sont perdues, la famille devient trois personnages séparés. NotoEmoji
+monochrome ne compose pas ces séquences. Défaut cosmétique, à documenter
+si tu ne le corriges pas.
+
+====================================================================
+POINTS D'ATTENTION (pas des défauts, à connaître)
+====================================================================
+
+- Concurrence : au-delà de 4 créations PDF simultanées, les suivantes
+  sont refusées avec « operation_failed » (vérifié : 10 demandes → 4
+  réussies, 6 refusées, hôte vivant). Le comportement est sain, mais le
+  code générique ne dit pas à l'appelant qu'il suffit de réessayer.
+  Un code distinct (« too_many_requests ») serait plus utile.
+
+- Mémoire : le cache de polices du worker n'est jamais vidé. Après un
+  document couvrant toutes les écritures, l'empreinte passe de 283 à
+  318 Mo et y reste. Le cache est borné à 20 entrées connues, ce n'est
+  donc pas une fuite ; mais la police CJK (16,5 Mo) reste chargée à vie
+  après un seul document japonais. Une éviction par ancienneté au-delà
+  d'un seuil serait prudente.
+
+- fontkit 2.0.4 est bien la dernière version publiée, mais elle date du
+  9 août 2024 et le dépôt foliojs/fontkit n'a plus bougé depuis le
+  14 août 2024 (165 issues ouvertes). C'est un paquet très utilisé
+  (10,7 M téléchargements/semaine, il est sous pdfkit), donc le choix est
+  défendable et bien meilleur que le fork figé précédent. Mais la couche
+  compatibleSubset() de common/formats/pdf.mjs réimplémente encodeStream
+  pour @cantoo/pdf-lib : c'est un contournement entre deux paquets qui
+  n'ont pas de contrat commun. Tu ajoutes un commentaire qui explique
+  pourquoi il existe, et un test qui échoue si pdf-lib cesse d'appeler
+  encodeStream.
+
+- Poids : 5,6 Mo de polices ajoutées par ce commit (total 23 Mo sur
+  disque avec la CJK). Dépôt .git : 89 Mo. Le commit n'est toujours pas
+  poussé. Après correction de D1, les 1,5 Mo de polices de symboles
+  deviendront réellement utiles.
+
+====================================================================
+VALIDÉ SANS RÉSERVE — tu n'y touches pas
+====================================================================
+
+- Isolation du rendu PDF dans un worker_thread : conception correcte.
+  Le client (worker-client.mjs) valide le type, la taille et le nombre de
+  pages du message de retour, borne les requêtes en vol, pose un délai
+  d'expiration, et recrée le worker après un échec. Vérifié en pratique :
+  un document refusé n'empêche pas le suivant de réussir.
+- Le worker revalide intégralement les arguments qu'il reçoit au lieu de
+  faire confiance à l'appelant.
+- Vérification d'intégrité des polices : taille + SHA-256 comparé en
+  temps constant (timingSafeEqual), buffers remis à zéro en cas d'échec.
+  20/20 polices conformes au catalogue.
+- Chargement paresseux réel, avec test de non-régression.
+- fatalProtocolExit : répond une erreur à toutes les requêtes en vol
+  avant de quitter, au lieu de laisser l'appelant en attente. Le drapeau
+  « fatal » empêche toute réponse tardive.
+- Le suivi des requêtes par identifiant (au lieu d'un simple compteur)
+  rejette les identifiants dupliqués et borne leur longueur à 128.
+- protocol-output.mjs extrait proprement la troncature dichotomique, qui
+  respecte toujours les paires de substitution UTF-16.
+- Aucun fichier source du commit ne dépasse 200 lignes.
+- i18n : 1760 clés, symétrie parfaite sur les 7 langues.
+- Les tests unicode couvrent maintenant 21 échantillons (toutes les
+  écritures + emoji), plus un test de refus, plus un test de chargement
+  paresseux. La lacune signalée dans la note précédente est refermée.
+
+====================================================================
+LACUNE DE TEST RESTANTE
+====================================================================
+
+office-unicode.test.mjs teste "Symboles • — « » → € ✓" — exactement les
+symboles qui passent. Aucun test sur ≤ ① ■ │ ⇒ ♪ ni sur la tabulation,
+c'est-à-dire précisément les 884 caractères cassés. La lacune ne s'est
+pas refermée, elle s'est déplacée.
+
+Tu ajoutes un test qui crée un PDF contenant : une tabulation, un bloc
+mathématique (≤ ≥ ≠ √ ∞), un tableau ASCII (│ ─ ┌ ┼), des puces cerclées
+(① ② ③), des formes géométriques (■ ● ▲ ★), des flèches doubles (⇒ ⇔),
+un point médian (·) et des symboles musicaux (♪ ♫) — et qui vérifie que
+la création réussit ET que la relecture rend le texte à l'identique.
+
+====================================================================
+TESTS EXÉCUTÉS SUR CE COMMIT
+====================================================================
+
+  npx vitest run                 1591 passés, 349 fichiers, 0 échec
+  npm run test:extensions-host     32 passés, 0 échec   (27 avant)
+  cargo test --lib extensions      24 passés, 0 échec
+  npx tsc --noEmit                 aucune erreur
+  npm audit --omit=dev --omit=optional   0 vulnérabilité
+  git status --short               propre
+
+Sondes adversariales (résultats détaillés ci-dessus) : 25 écritures,
+30 cas de symboles et emoji, balayage de 16 blocs Unicode, cohérence des
+4 plugins, résilience du worker, concurrence, mémoire, extraction tierce.
+
+====================================================================
+ORDRE DE CORRECTION
+====================================================================
+
+1. D1 — routage par glyphe réellement présent, avec chaîne de repli et
+   refus en dernier recours seulement. C'est le plus gros gain.
+2. D3 — tabulation et caractères blancs ignorés ou convertis.
+3. D4 — Script au lieu de Script_Extensions pour la sélection.
+4. D2 — passage à ActualText et suppression du double rendu.
+5. D6 — message d'erreur exploitable + clé i18n dans les 7 langues.
+6. Test de non-régression sur les caractères de D1, D3, D4.
+7. D7 et les points d'attention (code de refus distinct pour la
+   concurrence, éviction du cache, commentaire + test sur encodeStream).
