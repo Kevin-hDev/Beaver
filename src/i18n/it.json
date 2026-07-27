@@ -2048,6 +2048,12 @@
       "load": "Impossibile caricare le estensioni.",
       "operation": "Impossibile completare l’operazione.",
       "host": "L’host delle estensioni non è disponibile.",
+      "office": {
+        "unsupportedCharacter": "Il PDF contiene un carattere che non può essere visualizzato.",
+        "unsupportedCharacterAtParagraph": "Il carattere {{codePoint}} non può essere visualizzato nel paragrafo {{paragraph}}.",
+        "unsupportedCharacterInTitle": "Il carattere {{codePoint}} non può essere visualizzato nel titolo.",
+        "tooManyRequests": "Sono in creazione troppi PDF contemporaneamente. Riprova tra poco."
+      },
       "codes": {
         "extensions_builtin_catalog_invalid": "Il catalogo dei plugin Beaver non è valido.",
         "extensions_host_unavailable": "L’host delle estensioni non è disponibile.",

@@ -2,71 +2,110 @@ const SCRIPT_FONTS = Object.freeze([
   ["emoji", /[\p{Emoji_Presentation}\p{Extended_Pictographic}\p{Regional_Indicator}]/u],
   ["symbols", /[\u2190-\u21ff]/u],
   ["symbols2", /[\u2700-\u27bf]/u],
-  ["arabic", /\p{Script_Extensions=Arabic}/u],
-  ["armenian", /\p{Script_Extensions=Armenian}/u],
-  ["hebrew", /\p{Script_Extensions=Hebrew}/u],
-  ["devanagari", /\p{Script_Extensions=Devanagari}/u],
-  ["bengali", /\p{Script_Extensions=Bengali}/u],
-  ["tamil", /\p{Script_Extensions=Tamil}/u],
-  ["sinhala", /\p{Script_Extensions=Sinhala}/u],
-  ["thai", /\p{Script_Extensions=Thai}/u],
-  ["lao", /\p{Script_Extensions=Lao}/u],
-  ["tibetan", /\p{Script_Extensions=Tibetan}/u],
-  ["myanmar", /\p{Script_Extensions=Myanmar}/u],
-  ["georgian", /\p{Script_Extensions=Georgian}/u],
-  ["ethiopic", /\p{Script_Extensions=Ethiopic}/u],
-  ["cherokee", /\p{Script_Extensions=Cherokee}/u],
-  ["khmer", /\p{Script_Extensions=Khmer}/u],
-  ["cjk", /[\p{Script_Extensions=Han}\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script_Extensions=Hangul}\p{Script_Extensions=Bopomofo}]/u],
+  ["arabic", /\p{Script=Arabic}/u],
+  ["armenian", /\p{Script=Armenian}/u],
+  ["hebrew", /\p{Script=Hebrew}/u],
+  ["devanagari", /\p{Script=Devanagari}/u],
+  ["bengali", /\p{Script=Bengali}/u],
+  ["tamil", /\p{Script=Tamil}/u],
+  ["sinhala", /\p{Script=Sinhala}/u],
+  ["thai", /\p{Script=Thai}/u],
+  ["lao", /\p{Script=Lao}/u],
+  ["tibetan", /\p{Script=Tibetan}/u],
+  ["myanmar", /\p{Script=Myanmar}/u],
+  ["georgian", /\p{Script=Georgian}/u],
+  ["ethiopic", /\p{Script=Ethiopic}/u],
+  ["cherokee", /\p{Script=Cherokee}/u],
+  ["khmer", /\p{Script=Khmer}/u],
+  ["cjk", /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Bopomofo}]/u],
 ]);
 
-const GRAPHEMES = new Intl.Segmenter("und", { granularity: "grapheme" });
-const INHERITED_FORMAT = /[\u200c\u200d\ufe0e\ufe0f]/u;
+const FALLBACK_FONT_IDS = Object.freeze([
+  "base",
+  "symbols",
+  "symbols2",
+  "arabic",
+  "armenian",
+  "hebrew",
+  "devanagari",
+  "bengali",
+  "tamil",
+  "sinhala",
+  "thai",
+  "lao",
+  "tibetan",
+  "myanmar",
+  "georgian",
+  "ethiopic",
+  "cherokee",
+  "khmer",
+  "cjk",
+  "emoji",
+]);
+
+const INHERITED_SCRIPT = /\p{Script=Inherited}/u;
+const JOIN_OR_VARIATION = /[\u200c\u200d\ufe0e\ufe0f]/u;
+const WHITE_SPACE = /\p{White_Space}/u;
 
 export function fontRuns(text, fonts) {
   const runs = [];
-  for (const planned of plannedRuns(text)) {
-    const font = fonts.get(planned.fontId);
+  for (const { text: runText, fontId } of plannedRuns(text, fonts)) {
+    const font = fonts.get(fontId)?.embedded;
     if (!font) throw new Error("font_unavailable");
-    runs.push({ text: planned.text, font });
+    runs.push({ text: runText, font });
   }
   return runs;
 }
 
-export function plannedRuns(text) {
+export function plannedRuns(text, fonts) {
   const runs = [];
   let previousFontId = "base";
-  for (const { segment } of GRAPHEMES.segment(text)) {
-    const fontId = fontIdForGrapheme(segment, previousFontId);
+  for (const character of text) {
+    const fontId = selectFontId(character, previousFontId, fonts);
+    if (!fontId) throw unsupportedCharacter(character);
     const previous = runs.at(-1);
-    if (previous?.fontId === fontId) previous.text += segment;
-    else runs.push({ text: segment, fontId });
+    if (previous?.fontId === fontId) previous.text += character;
+    else runs.push({ text: character, fontId });
     previousFontId = fontId;
   }
   return runs;
 }
 
-export function requiredFontIds(texts) {
-  const ids = new Set();
-  for (const text of texts) {
-    for (const run of plannedRuns(text)) ids.add(run.fontId);
-  }
-  return ids;
+export function candidateFontIds(character, previousFontId = "base") {
+  if (WHITE_SPACE.test(character)) return ["base"];
+  if (JOIN_OR_VARIATION.test(character)) return [previousFontId];
+  const preferred = preferredFontId(character, previousFontId);
+  return [...new Set([preferred, ...FALLBACK_FONT_IDS])];
+}
+
+export function fontSupportsCharacter(font, character) {
+  return isCoverageIgnorable(character)
+    || font.hasGlyphForCodePoint(character.codePointAt(0));
 }
 
 export function isCoverageIgnorable(character) {
-  return character === "\n"
-    || character === "\r"
-    || INHERITED_FORMAT.test(character);
+  return WHITE_SPACE.test(character) || JOIN_OR_VARIATION.test(character);
 }
 
-function fontIdForGrapheme(grapheme, fallback) {
-  for (const character of grapheme) {
-    if (INHERITED_FORMAT.test(character)) continue;
-    for (const [fontId, pattern] of SCRIPT_FONTS) {
-      if (pattern.test(character)) return fontId;
-    }
-    if (!/\s/u.test(character)) return "base";
+export function preferredFontId(character, previousFontId = "base") {
+  if (INHERITED_SCRIPT.test(character)) return previousFontId;
+  for (const [fontId, pattern] of SCRIPT_FONTS) {
+    if (pattern.test(character)) return fontId;
   }
-  return fallback;
+  return "base";
+}
+
+function selectFontId(character, previousFontId, fonts) {
+  for (const id of candidateFontIds(character, previousFontId)) {
+    const parsed = fonts.get(id)?.parsed;
+    if (parsed && fontSupportsCharacter(parsed, character)) return id;
+  }
+  return undefined;
+}
+
+function unsupportedCharacter(character) {
+  const error = new Error("unsupported_character");
+  error.code = "unsupported_character";
+  error.codePoint = character.codePointAt(0);
+  return error;
 }

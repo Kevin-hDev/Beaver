@@ -1,5 +1,6 @@
 import { parentPort } from "node:worker_threads";
 import { OFFICE_LIMITS } from "../common/constants.mjs";
+import { OfficePluginError } from "../common/errors.mjs";
 import { renderPdf } from "./render.mjs";
 
 if (!parentPort) throw new Error("pdf_worker_unavailable");
@@ -23,10 +24,14 @@ parentPort.on("message", async (request) => {
       [bytes.buffer],
     );
   } catch (error) {
-    const code = error?.code === "unsupported_character"
-      ? "unsupported_character"
-      : "operation_failed";
-    parentPort.postMessage({ id: request.id, error: code });
+    const safeError = error instanceof OfficePluginError
+      ? error
+      : new OfficePluginError("operation_failed");
+    parentPort.postMessage({
+      id: request.id,
+      error: safeError.code,
+      details: safeError.details,
+    });
   }
 });
 

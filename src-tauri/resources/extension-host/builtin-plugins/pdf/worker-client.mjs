@@ -11,7 +11,7 @@ export function createPdfWorkerClient(workerUrl = DEFAULT_WORKER) {
 
   function render(payload) {
     if (pending.size >= OFFICE_LIMITS.maxPdfRenderRequests) {
-      return Promise.reject(new OfficePluginError("operation_failed"));
+      return Promise.reject(new OfficePluginError("too_many_requests"));
     }
     const activeWorker = ensureWorker();
     const id = randomUUID();
@@ -51,7 +51,7 @@ export function createPdfWorkerClient(workerUrl = DEFAULT_WORKER) {
     clearTimeout(request.timer);
     pending.delete(message.id);
     if (message.error) {
-      request.reject(new OfficePluginError(message.error));
+      request.reject(new OfficePluginError(message.error, message.details));
       return;
     }
     if (

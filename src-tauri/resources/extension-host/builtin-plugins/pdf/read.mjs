@@ -34,14 +34,19 @@ export async function inspectPdf(arguments_, context) {
     const count = Math.min(document.numPages, maxPages);
     for (let number = 1; number <= count && !resultTruncated; number += 1) {
       const page = await document.getPage(number);
-      const content = await page.getTextContent({ includeMarkedContent: true });
+      const structuredText = actualTextItems(await page.getStructTree());
+      const content = structuredText
+        ? undefined
+        : await page.getTextContent();
       const textParts = [];
-      const items = content.items.slice(0, 10_000);
-      if (content.items.length > items.length) resultTruncated = true;
+      const sourceItems = structuredText
+        ?? content.items.flatMap((item) =>
+          typeof item?.str === "string" ? [item.str] : []);
+      const items = sourceItems.slice(0, 10_000);
+      if (sourceItems.length > items.length) resultTruncated = true;
       budget.reserve(128);
-      for (const item of readableItems(items)) {
-        if (typeof item?.str !== "string") continue;
-        const part = budget.takeText(item.str, 2);
+      for (const item of items) {
+        const part = budget.takeText(item, 2);
         if (part.value) textParts.push(part.value);
         if (part.truncated) {
           resultTruncated = true;
@@ -69,25 +74,30 @@ export async function inspectPdf(arguments_, context) {
   }
 }
 
-function readableItems(items) {
-  const visible = [];
-  const logical = [];
-  let logicalText;
-  let hasLogical = false;
-  for (const item of items) {
-    if (item?.type === "beginMarkedContent" && item.tag === "BeaverLogical") {
-      logicalText = "";
-      hasLogical = true;
-    } else if (item?.type === "endMarkedContent") {
-      if (logicalText !== undefined) logical.push({ str: logicalText });
-      logicalText = undefined;
-    } else if (typeof item?.str === "string") {
-      visible.push(item);
-      if (logicalText !== undefined) logicalText += item.str;
-    }
+function actualTextItems(tree) {
+  if (!tree || tree.role !== "Root" || !Array.isArray(tree.children)) {
+    return undefined;
   }
-  if (logicalText !== undefined) logical.push({ str: logicalText });
-  return hasLogical ? logical : visible;
+  if (tree.children.length === 0 || tree.children.length > 10_000) {
+    return undefined;
+  }
+  const items = [];
+  for (const child of tree.children) {
+    if (
+      child?.role !== "Span"
+      || typeof child.alt !== "string"
+      || child.alt.length > 32_767
+      || !Array.isArray(child.children)
+      || child.children.length !== 1
+      || child.children[0]?.type !== "content"
+      || typeof child.children[0]?.id !== "string"
+      || child.children[0].id.length > 128
+    ) {
+      return undefined;
+    }
+    items.push(child.alt);
+  }
+  return items;
 }
 
 export async function mergePdfs(arguments_, context) {

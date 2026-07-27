@@ -1,31 +1,23 @@
 import { PassThrough } from "node:stream";
 import * as currentFontkit from "fontkit";
 
-const RTL_TEXT = /[\p{Script=Arabic}\p{Script=Hebrew}]/u;
-
 export {
-  beginMarkedContent,
   endMarkedContent,
   PDFDocument,
   rgb,
-  TextRenderingMode,
 } from "@cantoo/pdf-lib";
+export { createTaggedText } from "./pdf-tags.mjs";
 
 export const fontkit = Object.freeze({
   ...currentFontkit,
   create(fontData, postscriptName) {
-    return compatibleFont(fontData, postscriptName, false);
-  },
-});
-
-export const logicalFontkit = Object.freeze({
-  ...currentFontkit,
-  create(fontData, postscriptName) {
-    return compatibleFont(fontData, postscriptName, true);
+    return compatibleFont(fontData, postscriptName);
   },
 });
 
 function compatibleSubset(subset) {
+  // @cantoo/pdf-lib attend l'ancien contrat fontkit encodeStream(), alors que
+  // fontkit 2 expose encode(). Cet adaptateur garde le flux asynchrone attendu.
   subset.encodeStream = () => {
     const stream = new PassThrough();
     queueMicrotask(() => {
@@ -40,15 +32,9 @@ function compatibleSubset(subset) {
   return subset;
 }
 
-function compatibleFont(fontData, postscriptName, logical) {
+function compatibleFont(fontData, postscriptName) {
   const font = currentFontkit.create(fontData, postscriptName);
   const createSubset = font.createSubset.bind(font);
   font.createSubset = () => compatibleSubset(createSubset());
-  if (logical) {
-    font.layout = (text) => {
-      const glyphs = font.glyphsForString(text);
-      return { glyphs: RTL_TEXT.test(text) ? glyphs.reverse() : glyphs };
-    };
-  }
   return font;
 }

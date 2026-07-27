@@ -2048,6 +2048,12 @@
       "load": "拡張機能を読み込めません。",
       "operation": "操作を完了できませんでした。",
       "host": "拡張機能ホストを利用できません。",
+      "office": {
+        "unsupportedCharacter": "PDF に表示できない文字が含まれています。",
+        "unsupportedCharacterAtParagraph": "文字 {{codePoint}} は段落 {{paragraph}} に表示できません。",
+        "unsupportedCharacterInTitle": "文字 {{codePoint}} はタイトルに表示できません。",
+        "tooManyRequests": "同時に作成している PDF が多すぎます。しばらくしてから再試行してください。"
+      },
       "codes": {
         "extensions_builtin_catalog_invalid": "Beaver プラグインカタログが無効です。",
         "extensions_host_unavailable": "拡張機能ホストを利用できません。",

@@ -19,5 +19,10 @@ CJK and Arabic use their separate repositories, while Noto Emoji comes from
 the official Google Fonts distribution. Their exact commits are recorded in
 the catalog.
 
+The monochrome emoji font preserves ZWJ sequences through the PDF standard
+`ActualText` value for copy, search, accessibility, and extraction. Some
+viewers may still draw the individual emoji components instead of one
+composed family glyph.
+
 All bundled fonts are distributed under the SIL Open Font License 1.1 in
 `OFL.txt`.

@@ -2048,6 +2048,12 @@
       "load": "Erweiterungen konnten nicht geladen werden.",
       "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
       "host": "Der Erweiterungs-Host ist nicht verfügbar.",
+      "office": {
+        "unsupportedCharacter": "Das PDF enthält ein Zeichen, das nicht dargestellt werden kann.",
+        "unsupportedCharacterAtParagraph": "Das Zeichen {{codePoint}} kann in Absatz {{paragraph}} nicht dargestellt werden.",
+        "unsupportedCharacterInTitle": "Das Zeichen {{codePoint}} kann im Titel nicht dargestellt werden.",
+        "tooManyRequests": "Es werden zu viele PDFs gleichzeitig erstellt. Versuche es gleich noch einmal."
+      },
       "codes": {
         "extensions_builtin_catalog_invalid": "Der Beaver-Plugin-Katalog ist ungültig.",
         "extensions_host_unavailable": "Der Erweiterungs-Host ist nicht verfügbar.",

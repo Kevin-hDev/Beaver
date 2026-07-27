@@ -1381,6 +1381,12 @@
       "load": "Unable to load extensions.",
       "operation": "The operation could not be completed.",
       "host": "The extension host is unavailable.",
+      "office": {
+        "unsupportedCharacter": "The PDF contains a character that cannot be displayed.",
+        "unsupportedCharacterAtParagraph": "Character {{codePoint}} cannot be displayed in paragraph {{paragraph}}.",
+        "unsupportedCharacterInTitle": "Character {{codePoint}} cannot be displayed in the title.",
+        "tooManyRequests": "Too many PDFs are being created at once. Try again in a moment."
+      },
       "codes": {
         "extensions_builtin_catalog_invalid": "The Beaver plugin catalog is invalid.",
         "extensions_host_unavailable": "The extension host is unavailable.",

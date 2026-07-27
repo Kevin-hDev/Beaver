@@ -1,7 +1,5 @@
 import {
-  beginMarkedContent,
   endMarkedContent,
-  TextRenderingMode,
 } from "../common/formats/pdf.mjs";
 import { fontRuns } from "./font-routing.mjs";
 
@@ -17,23 +15,18 @@ export function wrapText(text, fonts, size, width) {
   return lines;
 }
 
-export function drawTextLine(page, text, fonts, options) {
-  page.pushOperators(beginMarkedContent("Artifact"));
-  drawRuns(page, text, fonts.visual, options);
-  page.pushOperators(endMarkedContent());
-  page.pushOperators(beginMarkedContent("BeaverLogical"));
-  drawRuns(page, text, fonts.logical, {
-    ...options,
-    renderMode: TextRenderingMode.Invisible,
-  });
+export function drawTextLine(page, text, fonts, options, taggedText) {
+  page.pushOperators(taggedText.begin(page, text));
+  drawRuns(page, text, fonts, options);
   page.pushOperators(endMarkedContent());
 }
 
 function drawRuns(page, text, fonts, options) {
   let x = options.x;
   for (const run of fontRuns(text, fonts)) {
-    page.drawText(run.text, { ...options, x, font: run.font });
-    x += run.font.widthOfTextAtSize(run.text, options.size);
+    const visibleText = drawableText(run.text);
+    page.drawText(visibleText, { ...options, x, font: run.font });
+    x += run.font.widthOfTextAtSize(visibleText, options.size);
   }
 }
 
@@ -82,7 +75,14 @@ function splitWideToken(token, fonts, size, width) {
 
 function textWidth(text, fonts, size) {
   return fontRuns(text, fonts).reduce(
-    (width, run) => width + run.font.widthOfTextAtSize(run.text, size),
+    (width, run) => width + run.font.widthOfTextAtSize(drawableText(run.text), size),
     0,
   );
+}
+
+function drawableText(text) {
+  return text
+    .replace(/\p{White_Space}/gu, (character) =>
+      character === "\t" ? "    " : " ")
+    .replace(/[\b\v\f]/gu, "");
 }

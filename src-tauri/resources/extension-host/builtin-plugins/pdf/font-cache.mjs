@@ -1,53 +1,84 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { OFFICE_LIMITS } from "../common/constants.mjs";
+import { OfficePluginError } from "../common/errors.mjs";
 import { PDF_FONT_SPECS } from "../common/fonts/catalog.mjs";
+import { fontkit } from "../common/formats/pdf.mjs";
 import {
-  fontkit,
-  logicalFontkit,
-} from "../common/formats/pdf.mjs";
-import {
-  isCoverageIgnorable,
-  plannedRuns,
-  requiredFontIds,
+  candidateFontIds,
+  fontSupportsCharacter,
 } from "./font-routing.mjs";
 
-const MAX_CACHED_FONTS = Object.keys(PDF_FONT_SPECS).length;
 const cache = new Map();
 
-export async function embedRequiredFonts(document, texts) {
-  const ids = requiredFontIds(texts);
-  const assets = new Map();
-  for (const id of ids) assets.set(id, await fontAsset(id));
-  assertCoverage(texts, assets);
+export async function embedRequiredFonts(document, textEntries) {
+  const assets = await resolveAssets(textEntries);
   document.registerFontkit(fontkit);
-  const visual = await embedAssets(document, assets);
-  document.registerFontkit(logicalFontkit);
-  const logical = await embedAssets(document, assets);
-  document.registerFontkit(fontkit);
-  return Object.freeze({ visual, logical });
-}
-
-async function embedAssets(document, assets) {
-  const embeddedFonts = new Map();
+  const fonts = new Map();
   await Promise.all([...assets].map(async ([id, asset]) => {
     const embedded = await document.embedFont(asset.bytes, { subset: true });
-    embeddedFonts.set(id, embedded);
+    fonts.set(id, Object.freeze({ embedded, parsed: asset.parsed }));
   }));
-  return embeddedFonts;
+  return fonts;
+}
+
+async function resolveAssets(textEntries) {
+  const loadedAssets = new Map();
+  const selectedAssets = new Map();
+  for (const entry of textEntries) {
+    let previousFontId = "base";
+    for (const character of entry.text) {
+      const selected = await resolveCharacterFont(
+        character,
+        previousFontId,
+        loadedAssets,
+      );
+      if (!selected) throw unsupportedCharacter(character, entry);
+      selectedAssets.set(selected.id, selected.asset);
+      previousFontId = selected.id;
+    }
+  }
+  return selectedAssets;
+}
+
+async function resolveCharacterFont(character, previousFontId, loadedAssets) {
+  for (const id of candidateFontIds(character, previousFontId)) {
+    let asset = loadedAssets.get(id);
+    if (!asset) {
+      asset = await fontAsset(id);
+      loadedAssets.set(id, asset);
+    }
+    if (fontSupportsCharacter(asset.parsed, character)) {
+      return Object.freeze({ id, asset });
+    }
+  }
+  return undefined;
 }
 
 async function fontAsset(id) {
   const existing = cache.get(id);
-  if (existing) return existing;
+  if (existing) {
+    cache.delete(id);
+    cache.set(id, existing);
+    return existing;
+  }
   const spec = PDF_FONT_SPECS[id];
-  if (!spec || cache.size >= MAX_CACHED_FONTS) throw new Error("font_unavailable");
+  if (!spec) throw new Error("font_unavailable");
   const loading = loadFont(spec);
   cache.set(id, loading);
+  evictOldestFont();
   try {
     return await loading;
   } catch (error) {
-    cache.delete(id);
+    if (cache.get(id) === loading) cache.delete(id);
     throw error;
+  }
+}
+
+function evictOldestFont() {
+  while (cache.size > OFFICE_LIMITS.maxCachedPdfFonts) {
+    const oldest = cache.keys().next().value;
+    cache.delete(oldest);
   }
 }
 
@@ -67,23 +98,12 @@ async function loadFont(spec) {
   }
 }
 
-function assertCoverage(texts, assets) {
-  for (const text of texts) {
-    for (const run of plannedRuns(text)) {
-      const font = assets.get(run.fontId)?.parsed;
-      if (!font) throw new Error("font_unavailable");
-      for (const character of run.text) {
-        if (
-          !isCoverageIgnorable(character)
-          && !font.hasGlyphForCodePoint(character.codePointAt(0))
-        ) {
-          const error = new Error("unsupported_character");
-          error.code = "unsupported_character";
-          throw error;
-        }
-      }
-    }
-  }
+function unsupportedCharacter(character, entry) {
+  return new OfficePluginError("unsupported_character", {
+    codePoint: character.codePointAt(0),
+    paragraph: entry.paragraph,
+    title: entry.title,
+  });
 }
 
 function matchesSha256(bytes, expectedHex) {

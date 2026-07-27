@@ -3,12 +3,26 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import {
   callOffice,
   createOfficeHost,
   fixtureDirectory,
   syncOfficePlugins,
 } from "./office-test-helpers.mjs";
+
+const ADVERSARIAL_TEXT = [
+  "colonne\tvaleur",
+  "≤ ≥ ≠ √ ∞",
+  "│ ─ ┌ ┼",
+  "① ② ③",
+  "■ ● ▲ ★",
+  "⇒ ⇔",
+  "l·l",
+  "♪ ♫",
+].join(" — ");
+const THIRD_PARTY_TEXT =
+  "Rapport annuel Beaver avec du japonais 日本語 et un emoji 📊 final";
 
 const SAMPLES = [
   "日本語",
@@ -32,6 +46,9 @@ const SAMPLES = [
   "ᎣᏏᏲ ᎡᎶᎯ",
   "សួស្តីពិភពលោក",
   "Bilan 📊 validé ✅ statut 🟢 lancement 🚀",
+  "Famille 👨‍👩‍👧",
+  ADVERSARIAL_TEXT,
+  THIRD_PARTY_TEXT,
 ];
 
 test("creates an offline Unicode PDF across Beaver's supported scripts", async () => {
@@ -62,6 +79,11 @@ test("creates an offline Unicode PDF across Beaver's supported scripts", async (
     for (const sample of SAMPLES) {
       assert.equal(extracted.includes(sample), true, sample);
     }
+    const standardText = await extractWithStandardPdfjs(
+      await readFile(join(workspace, "unicode.pdf")),
+    );
+    assert.equal(standardText.includes(THIRD_PARTY_TEXT), true);
+    assert.equal(occurrences(standardText, "Rapport annuel Beaver"), 1);
   } finally {
     host.stop();
     await rm(workspace, { recursive: true, force: true });
@@ -79,13 +101,58 @@ test("rejects an uncovered script without losing the extension host", async () =
     });
 
     assert.equal(result.isError, true);
-    assert.equal(result.content, "unsupported_character");
+    assert.equal(
+      result.content,
+      "unsupported_character U+1E4D0 paragraph 1",
+    );
+    const titleResult = await callOffice(
+      host,
+      workspace,
+      "beaver.office.pdf.create",
+      {
+        path: "unsupported-title.pdf",
+        title: "Nag Mundari: \u{1E4D0}",
+        paragraphs: ["Contenu valide"],
+      },
+    );
+    assert.equal(
+      titleResult.content,
+      "unsupported_character U+1E4D0 title",
+    );
     assert.equal((await host.request("host.hello", {})).apiVersion, "1");
   } finally {
     host.stop();
     await rm(workspace, { recursive: true, force: true });
   }
 });
+
+async function extractWithStandardPdfjs(bytes) {
+  const task = getDocument({
+    data: new Uint8Array(bytes),
+    disableFontFace: true,
+    isEvalSupported: false,
+    useSystemFonts: false,
+  });
+  const document = await task.promise;
+  try {
+    const parts = [];
+    for (let number = 1; number <= document.numPages; number += 1) {
+      const page = await document.getPage(number);
+      const content = await page.getTextContent();
+      parts.push(...content.items.flatMap((item) =>
+        typeof item?.str === "string" ? [item.str] : []));
+      page.cleanup();
+    }
+    return parts.join("");
+  } finally {
+    document.cleanup();
+    await task.destroy();
+  }
+}
+
+function occurrences(text, needle) {
+  return text.split(needle).length - 1;
+}
 
 test("a Latin PDF does not embed the large CJK font", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "beaver-lazy-font-pdf-"));

@@ -2048,6 +2048,12 @@
       "load": "无法加载扩展。",
       "operation": "无法完成此操作。",
       "host": "扩展宿主不可用。",
+      "office": {
+        "unsupportedCharacter": "PDF 包含无法显示的字符。",
+        "unsupportedCharacterAtParagraph": "字符 {{codePoint}} 无法显示在第 {{paragraph}} 段中。",
+        "unsupportedCharacterInTitle": "字符 {{codePoint}} 无法显示在标题中。",
+        "tooManyRequests": "同时创建的 PDF 过多，请稍后重试。"
+      },
       "codes": {
         "extensions_builtin_catalog_invalid": "Beaver 插件目录无效。",
         "extensions_host_unavailable": "扩展宿主不可用。",
