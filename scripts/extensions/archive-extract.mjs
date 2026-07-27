@@ -1,52 +1,55 @@
 import { spawn } from "node:child_process";
-import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
 
-const POWERSHELL_SCRIPT = `param(
-  [Parameter(Mandatory = $true)][string]$Archive,
-  [Parameter(Mandatory = $true)][string]$Destination
-)
-$ErrorActionPreference = "Stop"
-Expand-Archive -LiteralPath $Archive -DestinationPath $Destination
-`;
+const MAX_STDERR_CHARS = 2_048;
+const MAX_ERROR_DETAIL_CHARS = 512;
 
-export async function extractArchive(archive, destination, temporaryDirectory) {
+export async function extractArchive(archive, destination) {
   if (process.platform === "win32") {
-    const scriptPath = join(temporaryDirectory, "extract-runtime.ps1");
-    await writeFile(scriptPath, POWERSHELL_SCRIPT, { mode: 0o600 });
-    await run("powershell.exe", windowsExtractionArguments(
-      scriptPath,
-      archive,
-      destination,
-    ));
+    await run(
+      "tar.exe",
+      windowsExtractionArguments(archive, destination),
+      [archive, destination],
+    );
     return;
   }
-  await run("tar", ["-xzf", archive, "-C", destination]);
+  await run("tar", ["-xzf", archive, "-C", destination], [archive, destination]);
 }
 
-export function windowsExtractionArguments(scriptPath, archive, destination) {
-  return [
-    "-NoProfile",
-    "-NonInteractive",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    scriptPath,
-    archive,
-    destination,
-  ];
+export function windowsExtractionArguments(archive, destination) {
+  return ["-xf", archive, "-C", destination];
 }
 
-function run(program, args) {
+export function sanitizeExtractionError(message, redactions) {
+  let sanitized = String(message)
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  for (const value of redactions) {
+    if (value) sanitized = sanitized.split(value).join("<path>");
+  }
+  return sanitized.slice(0, MAX_ERROR_DETAIL_CHARS);
+}
+
+function run(program, args, redactions) {
   return new Promise((resolve, reject) => {
+    let stderr = "";
     const child = spawn(program, args, {
       shell: false,
-      stdio: ["ignore", "ignore", "ignore"],
+      stdio: ["ignore", "ignore", "pipe"],
     });
-    child.once("error", reject);
+    child.stderr.setEncoding("utf8");
+    child.stderr.on("data", (chunk) => {
+      const remaining = MAX_STDERR_CHARS - stderr.length;
+      if (remaining > 0) stderr += String(chunk).slice(0, remaining);
+    });
+    child.once("error", () => reject(new Error("Runtime preparation failed")));
     child.once("close", (code) => {
       if (code === 0) resolve();
-      else reject(new Error("Runtime preparation failed"));
+      else {
+        const detail = sanitizeExtractionError(stderr, redactions);
+        const suffix = detail ? `: ${detail}` : "";
+        reject(new Error(`Runtime preparation failed${suffix}`));
+      }
     });
   });
 }

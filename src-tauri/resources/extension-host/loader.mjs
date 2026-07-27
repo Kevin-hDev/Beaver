@@ -1,5 +1,6 @@
 import { createJiti } from "jiti";
 import { fileURLToPath } from "node:url";
+import { LIMITS } from "./contract.mjs";
 import { createExtensionApi } from "./extension-api.mjs";
 import { createDiagnostic } from "./diagnostics.mjs";
 
@@ -11,7 +12,6 @@ const jiti = createJiti(import.meta.url, {
   moduleCache: false,
   sourceMaps: false,
 });
-const MAX_TOOLS = 256;
 const TOOL_TIMEOUT_MS = 55_000;
 const extensions = new Map();
 const tools = new Map();
@@ -101,7 +101,7 @@ async function loadExtension(specification) {
 }
 
 function ensureUniqueTools(newTools) {
-  if (tools.size + newTools.length > MAX_TOOLS) {
+  if (tools.size + newTools.length > LIMITS.maxTools) {
     throw new Error("too_many_tools");
   }
   const names = new Set();

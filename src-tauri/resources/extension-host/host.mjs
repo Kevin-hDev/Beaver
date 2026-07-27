@@ -1,12 +1,11 @@
 import { startProtocol } from "./protocol.mjs";
+import { LIMITS } from "./contract.mjs";
 import {
   callExtensionTool,
   emitExtensionEvent,
   syncExtensions,
 } from "./loader.mjs";
 import { JITI_VERSION } from "./versions.mjs";
-
-const MAX_EXTENSIONS = 128;
 
 for (const method of ["log", "info", "debug", "warn", "error"]) {
   console[method] = () => {};
@@ -26,7 +25,9 @@ startProtocol(async (method, params) => {
       };
     case "host.sync": {
       const specifications = Array.isArray(params.extensions) ? params.extensions : [];
-      if (specifications.length > MAX_EXTENSIONS) throw new Error("too_many_extensions");
+      if (specifications.length > LIMITS.maxExtensions) {
+        throw new Error("too_many_extensions");
+      }
       return syncExtensions(specifications);
     }
     case "tool.call":

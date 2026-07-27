@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import readline from "node:readline";
 
-export function createHost(hostScript) {
+export function createHost(hostScript, options = {}) {
   const child = spawn(process.execPath, [hostScript], {
     shell: false,
     stdio: ["pipe", "pipe", "ignore"],
@@ -11,11 +11,20 @@ export function createHost(hostScript) {
   const lines = readline.createInterface({ input: child.stdout });
   lines.on("line", (line) => {
     const message = JSON.parse(line);
-    if (message.method === "app.info") {
+    if (typeof message.method === "string") {
+      const response = options.respondToCore?.(message)
+        ?? (message.method === "app.info"
+          ? { result: { apiVersion: "1" } }
+          : {
+              error: {
+                code: -32_601,
+                message: "core_method_unavailable",
+              },
+            });
       child.stdin.write(`${JSON.stringify({
         jsonrpc: "2.0",
         id: message.id,
-        result: { apiVersion: "1" },
+        ...response,
       })}\n`);
       return;
     }

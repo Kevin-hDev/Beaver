@@ -11,7 +11,10 @@ import {
   validateArtifactTable,
   verifyChecksum,
 } from "./node-runtime.mjs";
-import { windowsExtractionArguments } from "./archive-extract.mjs";
+import {
+  sanitizeExtractionError,
+  windowsExtractionArguments,
+} from "./archive-extract.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -38,21 +41,30 @@ test("all bundled Node.js checksums are valid SHA-256 values", () => {
   assert.doesNotThrow(() => validateArtifactTable());
 });
 
-test("Windows extraction uses a script file with positional arguments", () => {
+test("Windows extraction uses tar.exe arguments without a shell or script", () => {
   const arguments_ = windowsExtractionArguments(
-    "C:\\temp\\extract.ps1",
     "C:\\temp\\node.zip",
     "C:\\temp\\runtime",
   );
 
-  assert.deepEqual(arguments_.slice(0, 5), [
-    "-NoProfile",
-    "-NonInteractive",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
+  assert.deepEqual(arguments_, [
+    "-xf",
+    "C:\\temp\\node.zip",
+    "-C",
+    "C:\\temp\\runtime",
   ]);
-  assert.equal(arguments_.includes("-Command"), false);
+});
+
+test("archive extraction diagnostics are bounded and redact input paths", () => {
+  const archive = "C:\\temp\\node.zip";
+  const detail = sanitizeExtractionError(
+    `tar.exe:\n${archive}\twas not found`,
+    [archive],
+  );
+
+  assert.equal(detail, "tar.exe: <path> was not found");
+  assert.equal(detail.includes(archive), false);
+  assert.ok(detail.length <= 512);
 });
 
 test("host preparation accepts only its explicit development flag", () => {

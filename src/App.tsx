@@ -138,60 +138,60 @@ function MainApp() {
 
   return (
     <ExtensionsProvider>
-    {vaultError && (
-      <div style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-        padding: "8px 16px", background: "var(--signal-error)", color: "var(--ink-on-danger)",
-        fontSize: "var(--text-xs)", textAlign: "center", cursor: "pointer",
-      }} role="button" tabIndex={0} onClick={() => setVaultError(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVaultError(null); }}>
-        {t("errors.keyringFailed")}
-      </div>
-    )}
-    <AppLayout
-      activeTab={activeTab}
-      onTabChange={(t) => pushNav({ tab: t })}
-      onShowWelcome={handleShowWelcome}
-      onBack={goBack}
-      onForward={goForward}
-      canGoBack={canGoBack}
-      canGoForward={canGoForward}
-      onSearchSelect={handleSearchSelect}
-      onNewSession={handleShowWelcome}
-    >
-      {activeTab === "heartbeat" && (
-        <HeartbeatTab
-          activeWakeupId={nav.heartbeat.wakeupId}
-          onWakeupChange={handleWakeupChange}
-          listFocused={listActive("heartbeat")}
-        />
+      {vaultError && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          padding: "8px 16px", background: "var(--signal-error)", color: "var(--ink-on-danger)",
+          fontSize: "var(--text-xs)", textAlign: "center", cursor: "pointer",
+        }} role="button" tabIndex={0} onClick={() => setVaultError(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVaultError(null); }}>
+          {t("errors.keyringFailed")}
+        </div>
       )}
-      {activeTab === "personality" && (
-        <PersonalityTab
-          activePath={nav.personality.path}
-          onPathChange={handlePathChange}
-          listFocused={listActive("personality")}
-        />
-      )}
-      {activeTab === "agent-local" && (
-        <AgentLocalTab
-          navState={nav.agentLocal}
-          onSessionChange={handleSessionChange}
-          onNavChange={handleAgentNavChange}
-          listFocused={listActive("agent-local")}
-        />
-      )}
-      {activeTab === "settings" && (
-        <SettingsTab
-          themeChoice={choice}
-          onThemeChange={setTheme}
-          navState={nav.settings}
-          onNavChange={handleSettingsNavChange}
-          onNavReplace={handleSettingsNavReplace}
-          listFocused={listActive("settings")}
-          activeSessionId={nav.agentLocal.sessionId}
-        />
-      )}
-    </AppLayout>
+      <AppLayout
+        activeTab={activeTab}
+        onTabChange={(t) => pushNav({ tab: t })}
+        onShowWelcome={handleShowWelcome}
+        onBack={goBack}
+        onForward={goForward}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onSearchSelect={handleSearchSelect}
+        onNewSession={handleShowWelcome}
+      >
+        {activeTab === "heartbeat" && (
+          <HeartbeatTab
+            activeWakeupId={nav.heartbeat.wakeupId}
+            onWakeupChange={handleWakeupChange}
+            listFocused={listActive("heartbeat")}
+          />
+        )}
+        {activeTab === "personality" && (
+          <PersonalityTab
+            activePath={nav.personality.path}
+            onPathChange={handlePathChange}
+            listFocused={listActive("personality")}
+          />
+        )}
+        {activeTab === "agent-local" && (
+          <AgentLocalTab
+            navState={nav.agentLocal}
+            onSessionChange={handleSessionChange}
+            onNavChange={handleAgentNavChange}
+            listFocused={listActive("agent-local")}
+          />
+        )}
+        {activeTab === "settings" && (
+          <SettingsTab
+            themeChoice={choice}
+            onThemeChange={setTheme}
+            navState={nav.settings}
+            onNavChange={handleSettingsNavChange}
+            onNavReplace={handleSettingsNavReplace}
+            listFocused={listActive("settings")}
+            activeSessionId={nav.agentLocal.sessionId}
+          />
+        )}
+      </AppLayout>
     </ExtensionsProvider>
   );
 }

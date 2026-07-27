@@ -6,19 +6,13 @@ import fr from "./fr.json";
 import itJson from "./it.json";
 import ja from "./ja.json";
 import zh from "./zh.json";
+import extensionContract from "../../src-tauri/resources/extension-host/contract.json";
 
 const locales = [fr, en, es, de, itJson, zh, ja];
 const diagnosticCodes = [
-  "module_not_found",
-  "syntax_error",
-  "activation_failed",
-  "registration_failed",
-  "import_failed",
-  "entry_unavailable",
-  "load_failed",
-  "host_missing_response",
-  "advanced_required",
-] as const;
+  ...extensionContract.diagnostics.hostCodes,
+  ...extensionContract.diagnostics.runtimeCodes,
+].sort();
 
 function leafPaths(value: unknown, prefix = ""): string[] {
   if (!value || typeof value !== "object") return [prefix];
@@ -50,8 +44,10 @@ describe("extensions translations", () => {
 
   it("traduit chaque diagnostic d'extension dans les sept langues", () => {
     for (const locale of locales) {
-      for (const code of diagnosticCodes) {
-        expect(locale.extensions.diagnostics.codes[code].trim()).not.toBe("");
+      const translations = locale.extensions.diagnostics.codes as Record<string, string>;
+      expect(Object.keys(translations).sort()).toEqual(diagnosticCodes);
+      for (const translation of Object.values(translations)) {
+        expect(translation.trim()).not.toBe("");
       }
     }
   });

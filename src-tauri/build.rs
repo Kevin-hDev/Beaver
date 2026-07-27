@@ -1,4 +1,7 @@
+mod extension_contract_build;
+
 fn main() {
+    extension_contract_build::generate();
     prepare_cef_bundle_placeholders();
     prepare_updater_helper_placeholder();
     tauri_build::build();

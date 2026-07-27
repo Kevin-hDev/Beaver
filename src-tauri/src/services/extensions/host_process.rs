@@ -1,6 +1,7 @@
-use super::host_channel::{self, PendingRequests, SharedWriter, MAX_PENDING_REQUESTS};
+use super::host_channel::{self, PendingRequests, SharedWriter};
 use super::host_paths::HostPaths;
 use super::protocol::RpcRequest;
+use super::types::MAX_PENDING_REQUESTS;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::process::Stdio;

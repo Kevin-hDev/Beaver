@@ -8,7 +8,6 @@ use tokio::process::ChildStdin;
 use tokio::sync::{oneshot, Mutex};
 use zeroize::Zeroizing;
 
-pub const MAX_PENDING_REQUESTS: usize = 64;
 pub type PendingSender = oneshot::Sender<Result<Value, String>>;
 pub type PendingRequests = Arc<Mutex<HashMap<String, PendingSender>>>;
 pub type SharedWriter = Arc<Mutex<ChildStdin>>;

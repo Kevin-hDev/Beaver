@@ -85,6 +85,10 @@ beaver.unstable.registerReplacement({
 
 `beaver.unstable.call(...)` and replacement points may change between Beaver versions.
 
+## Core call errors
+
+Core calls reject with a `BeaverExtensionError`. Use `isBeaverExtensionError(error)` to read its bounded `code`, `reason`, and `retryable` fields. A `core_busy` or `core_request_timeout` error is retryable; an unavailable method is not.
+
 The host is shared by the enabled local extensions. Changing the enabled set restarts the host so that removed or disabled code is terminated; other extensions are therefore activated again.
 
 Secrets are zeroized by Beaver on the Rust side after transfer. Once a secret crosses into JavaScript, immutable strings and the JavaScript garbage collector prevent Beaver from guaranteeing immediate memory erasure.

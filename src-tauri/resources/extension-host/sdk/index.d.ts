@@ -12,6 +12,13 @@ export interface BeaverToolResult {
   displaySummary?: string;
 }
 
+export interface BeaverExtensionError extends Error {
+  readonly name: "BeaverExtensionError";
+  readonly code: number;
+  readonly reason: string;
+  readonly retryable: boolean;
+}
+
 export interface BeaverTool {
   name: string;
   description: string;
@@ -64,3 +71,5 @@ export interface BeaverExtension {
 export function defineExtension<T extends BeaverExtension | ((api: BeaverExtensionApi) => unknown)>(
   extension: T,
 ): T;
+
+export function isBeaverExtensionError(error: unknown): error is BeaverExtensionError;

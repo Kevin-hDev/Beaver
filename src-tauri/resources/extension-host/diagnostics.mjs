@@ -1,4 +1,5 @@
 import { basename } from "node:path";
+import { DIAGNOSTIC } from "./contract.mjs";
 
 const MAX_POSITION = 10_000_000;
 const KNOWN_NODE_CODES = new Set([
@@ -21,15 +22,15 @@ export function createDiagnostic(error, stage, mainPath) {
 
 function diagnosticCode(error, stage) {
   const nodeCode = typeof error?.code === "string" ? error.code : "";
-  if (KNOWN_NODE_CODES.has(nodeCode)) return "module_not_found";
+  if (KNOWN_NODE_CODES.has(nodeCode)) return DIAGNOSTIC.module_not_found;
   const messagePrefix =
     typeof error?.message === "string" ? error.message.slice(0, 64) : "";
   if (error?.name === "SyntaxError" || messagePrefix.startsWith("ParseError:")) {
-    return "syntax_error";
+    return DIAGNOSTIC.syntax_error;
   }
-  if (stage === "activate") return "activation_failed";
-  if (stage === "register") return "registration_failed";
-  return "import_failed";
+  if (stage === "activate") return DIAGNOSTIC.activation_failed;
+  if (stage === "register") return DIAGNOSTIC.registration_failed;
+  return DIAGNOSTIC.import_failed;
 }
 
 function sourcePosition(error, file) {

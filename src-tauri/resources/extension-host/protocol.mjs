@@ -1,9 +1,13 @@
 import { randomUUID } from "node:crypto";
+import { LIMITS } from "./contract.mjs";
 
-const MAX_MESSAGE_BYTES = 1_048_576;
-const MAX_PENDING = 64;
-const MAX_IN_FLIGHT_REQUESTS = 64;
 const REQUEST_TIMEOUT_MS = 30_000;
+const ERROR_REASON_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
+const RETRYABLE_REASONS = new Set([
+  "core_busy",
+  "core_request_timeout",
+  "core_transport_failed",
+]);
 // Capture the protocol writer before host.mjs silences accidental stdout writes.
 const writeProtocol = process.stdout.write.bind(process.stdout);
 const pending = new Map();
@@ -19,30 +23,30 @@ export function startProtocol(requestHandler) {
 }
 
 export function callCore(method, params = {}) {
-  if (pending.size >= MAX_PENDING) {
-    return Promise.reject(new Error("too_many_pending_requests"));
+  if (pending.size >= LIMITS.maxPendingRequests) {
+    return Promise.reject(coreError(-32_000, "core_busy"));
   }
   const id = randomUUID();
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       pending.delete(id);
-      reject(new Error("core_request_timeout"));
+      reject(coreError(-32_000, "core_request_timeout"));
     }, REQUEST_TIMEOUT_MS);
     timer.unref();
     pending.set(id, { resolve, reject, timer });
     try {
       send({ jsonrpc: "2.0", id, method, params });
-    } catch (error) {
+    } catch {
       clearTimeout(timer);
       pending.delete(id);
-      reject(error);
+      reject(coreError(-32_000, "core_transport_failed"));
     }
   });
 }
 
 function receiveChunk(chunk) {
   input = Buffer.concat([input, chunk]);
-  if (input.length > MAX_MESSAGE_BYTES) {
+  if (input.length > LIMITS.maxMessageBytes) {
     process.exit(1);
   }
   let newline;
@@ -69,7 +73,7 @@ async function receiveLine(line) {
     settle(message);
     return;
   }
-  if (inFlightRequests >= MAX_IN_FLIGHT_REQUESTS) {
+  if (inFlightRequests >= LIMITS.maxInFlightRequests) {
     send({
       jsonrpc: "2.0",
       id: message.id,
@@ -98,15 +102,32 @@ function settle(message) {
   clearTimeout(request.timer);
   pending.delete(message.id);
   if (message.error) {
-    request.reject(new Error("core_request_failed"));
+    request.reject(coreError(message.error.code, message.error.message));
   } else {
     request.resolve(message.result);
   }
 }
 
+function coreError(code, reason) {
+  const safeCode =
+    Number.isSafeInteger(code) && code >= -32_768 && code <= -32_000
+      ? code
+      : -32_000;
+  const safeReason =
+    typeof reason === "string" && ERROR_REASON_PATTERN.test(reason)
+      ? reason
+      : "core_request_failed";
+  const error = new Error(safeReason);
+  error.name = "BeaverExtensionError";
+  error.code = safeCode;
+  error.reason = safeReason;
+  error.retryable = RETRYABLE_REASONS.has(safeReason);
+  return error;
+}
+
 function send(message) {
   const line = Buffer.from(`${JSON.stringify(message)}\n`, "utf8");
-  if (line.length > MAX_MESSAGE_BYTES) {
+  if (line.length > LIMITS.maxMessageBytes) {
     throw new Error("message_too_large");
   }
   writeProtocol(line);

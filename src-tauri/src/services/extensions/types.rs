@@ -2,12 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const BEAVER_API_VERSION: &str = "1";
-pub const MAX_EXTENSIONS: usize = 128;
-pub const MAX_TOOLS: usize = 256;
-pub const MAX_TOOLS_PER_EXTENSION: usize = 64;
-pub const MAX_EVENTS_PER_EXTENSION: usize = 64;
-pub const MAX_MESSAGE_BYTES: usize = 1_048_576;
 pub const MINIMUM_NODE_MAJOR: u64 = 20;
+include!(concat!(env!("OUT_DIR"), "/extension_contract.rs"));
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]

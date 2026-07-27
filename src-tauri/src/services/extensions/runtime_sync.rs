@@ -1,6 +1,8 @@
 use super::protocol::{HostExtensionSpec, SyncResult};
 use super::types::{
-    ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, MAX_EXTENSIONS,
+    ExtensionApiLevel, ExtensionContributions, ExtensionDiagnostic, DIAGNOSTIC_ADVANCED_REQUIRED,
+    DIAGNOSTIC_ENTRY_UNAVAILABLE, DIAGNOSTIC_HOST_MISSING_RESPONSE, DIAGNOSTIC_LOAD_FAILED,
+    MAX_EXTENSIONS, RUNTIME_DIAGNOSTIC_CODES,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -29,14 +31,11 @@ pub fn build_specs(records: Vec<super::types::ExtensionRecord>) -> Result<BuildS
         if let Some(specification) = build_spec(record) {
             specs.push(specification);
         } else {
-            diagnostics.push(ExtensionDiagnostic {
-                extension_id,
-                stage: "import".to_string(),
-                code: "entry_unavailable".to_string(),
-                file: None,
-                line: None,
-                column: None,
-            });
+            diagnostics.push(runtime_diagnostic(
+                &extension_id,
+                "import",
+                DIAGNOSTIC_ENTRY_UNAVAILABLE,
+            ));
         }
     }
     Ok(BuildSpecs {
@@ -82,7 +81,11 @@ pub fn apply(response: SyncResult, build: &BuildSpecs) -> Result<ApplyResult, St
             )?);
         }
         if failed && !has_diagnostic {
-            diagnostics.push(runtime_diagnostic(&loaded.id, "load_failed"));
+            diagnostics.push(runtime_diagnostic(
+                &loaded.id,
+                "import",
+                DIAGNOSTIC_LOAD_FAILED,
+            ));
         }
         let Some(contributions) = loaded.contributions.filter(|_| loaded.error.is_none()) else {
             continue;
@@ -90,21 +93,22 @@ pub fn apply(response: SyncResult, build: &BuildSpecs) -> Result<ApplyResult, St
         if accepts_contributions(spec, &contributions) {
             successful.insert(loaded.id, contributions);
         } else {
-            diagnostics.push(ExtensionDiagnostic {
-                extension_id: loaded.id,
-                stage: "register".to_string(),
-                code: "advanced_required".to_string(),
-                file: None,
-                line: None,
-                column: None,
-            });
+            diagnostics.push(runtime_diagnostic(
+                &loaded.id,
+                "register",
+                DIAGNOSTIC_ADVANCED_REQUIRED,
+            ));
         }
     }
     for missing in requested
         .keys()
         .filter(|extension_id| !received.contains(**extension_id))
     {
-        diagnostics.push(runtime_diagnostic(missing, "host_missing_response"));
+        diagnostics.push(runtime_diagnostic(
+            missing,
+            "import",
+            DIAGNOSTIC_HOST_MISSING_RESPONSE,
+        ));
     }
     let active = super::registry_sync::apply_results(&build.enabled_ids, successful)?;
     Ok(ApplyResult {
@@ -113,10 +117,15 @@ pub fn apply(response: SyncResult, build: &BuildSpecs) -> Result<ApplyResult, St
     })
 }
 
-fn runtime_diagnostic(extension_id: &str, code: &str) -> ExtensionDiagnostic {
+fn runtime_diagnostic(
+    extension_id: &str,
+    stage: &'static str,
+    code: &'static str,
+) -> ExtensionDiagnostic {
+    debug_assert!(RUNTIME_DIAGNOSTIC_CODES.contains(&code));
     ExtensionDiagnostic {
         extension_id: extension_id.to_string(),
-        stage: "import".to_string(),
+        stage: stage.to_string(),
         code: code.to_string(),
         file: None,
         line: None,

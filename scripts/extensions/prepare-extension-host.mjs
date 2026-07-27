@@ -33,6 +33,8 @@ if (developmentOnly) {
 
 async function copyHostSources(source, destination) {
   const rootFiles = [
+    "contract.json",
+    "contract.mjs",
     "diagnostics.mjs",
     "extension-api.mjs",
     "host.mjs",

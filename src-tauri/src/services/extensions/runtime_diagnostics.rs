@@ -1,20 +1,13 @@
 use super::protocol::HostDiagnostic;
-use super::types::ExtensionDiagnostic;
+use super::types::{ExtensionDiagnostic, HOST_DIAGNOSTIC_CODES};
 
 pub fn from_host(
     extension_id: String,
     diagnostic: HostDiagnostic,
 ) -> Result<ExtensionDiagnostic, String> {
     const STAGES: &[&str] = &["import", "activate", "register"];
-    const CODES: &[&str] = &[
-        "module_not_found",
-        "syntax_error",
-        "activation_failed",
-        "registration_failed",
-        "import_failed",
-    ];
     if !STAGES.contains(&diagnostic.stage.as_str())
-        || !CODES.contains(&diagnostic.code.as_str())
+        || !HOST_DIAGNOSTIC_CODES.contains(&diagnostic.code.as_str())
         || diagnostic
             .file
             .as_ref()
@@ -33,3 +26,7 @@ pub fn from_host(
         column: diagnostic.column,
     })
 }
+
+#[cfg(test)]
+#[path = "runtime_diagnostics_tests.rs"]
+mod tests;

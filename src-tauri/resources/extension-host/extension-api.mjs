@@ -1,8 +1,6 @@
 import { callCore } from "./protocol.mjs";
+import { LIMITS } from "./contract.mjs";
 
-const MAX_TOOLS = 64;
-const MAX_EVENTS = 64;
-const MAX_IN_FLIGHT_HANDLERS = 64;
 const EVENT_TIMEOUT_MS = 5_000;
 const inFlightHandlers = new Set();
 const IDENTIFIER = /^[a-zA-Z0-9](?:[a-zA-Z0-9._-]{0,94}[a-zA-Z0-9])?$/;
@@ -13,7 +11,11 @@ export function createExtensionApi(specification) {
   let handlerCount = 0;
 
   function registerTool(definition, replacesCore = false) {
-    if (tools.length >= MAX_TOOLS || !definition || typeof definition.execute !== "function") {
+    if (
+      tools.length >= LIMITS.maxToolsPerExtension
+      || !definition
+      || typeof definition.execute !== "function"
+    ) {
       throw new Error("invalid_tool");
     }
     const requestedName = String(definition.name ?? "");
@@ -42,7 +44,10 @@ export function createExtensionApi(specification) {
   }
 
   function on(eventName, eventHandler) {
-    if (typeof eventHandler !== "function" || handlerCount >= MAX_EVENTS) {
+    if (
+      typeof eventHandler !== "function"
+      || handlerCount >= LIMITS.maxEventsPerExtension
+    ) {
       throw new Error("invalid_event_handler");
     }
     const event = String(eventName);
@@ -129,7 +134,7 @@ export function createExtensionApi(specification) {
 }
 
 async function runEventHandler(handler, payload) {
-  if (inFlightHandlers.size >= MAX_IN_FLIGHT_HANDLERS) {
+  if (inFlightHandlers.size >= LIMITS.maxInFlightHandlers) {
     throw new Error("too_many_event_handlers_running");
   }
   const execution = Promise.resolve().then(() => handler(payload));

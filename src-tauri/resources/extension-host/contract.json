@@ -1,0 +1,27 @@
+{
+  "limits": {
+    "maxExtensions": 128,
+    "maxTools": 256,
+    "maxToolsPerExtension": 64,
+    "maxEventsPerExtension": 64,
+    "maxPendingRequests": 64,
+    "maxInFlightRequests": 64,
+    "maxInFlightHandlers": 64,
+    "maxMessageBytes": 1048576
+  },
+  "diagnostics": {
+    "hostCodes": [
+      "module_not_found",
+      "syntax_error",
+      "activation_failed",
+      "registration_failed",
+      "import_failed"
+    ],
+    "runtimeCodes": [
+      "entry_unavailable",
+      "load_failed",
+      "host_missing_response",
+      "advanced_required"
+    ]
+  }
+}

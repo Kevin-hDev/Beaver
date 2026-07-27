@@ -1,15 +1,13 @@
 use super::core_bridge::CoreResponse;
 use super::host_channel::{self, PendingRequests, SharedWriter};
 use super::protocol::{RpcError, RpcErrorBody, RpcResult};
-use super::types::MAX_MESSAGE_BYTES;
+use super::types::{MAX_IN_FLIGHT_REQUESTS, MAX_MESSAGE_BYTES};
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::ChildStdout;
 use tokio::sync::Semaphore;
-
-const MAX_CORE_REQUESTS: usize = 64;
 
 pub async fn run(
     stdout: ChildStdout,
@@ -18,7 +16,7 @@ pub async fn run(
     alive: Arc<AtomicBool>,
 ) {
     let mut reader = BufReader::new(stdout);
-    let core_limit = Arc::new(Semaphore::new(MAX_CORE_REQUESTS));
+    let core_limit = Arc::new(Semaphore::new(MAX_IN_FLIGHT_REQUESTS));
     while let Ok(bytes) = read_bounded_line(&mut reader).await {
         if receive(&bytes, &writer, &pending, &core_limit)
             .await
