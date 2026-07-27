@@ -1,3 +1,5 @@
+import { OFFICE_LIMITS } from "../common/constants.mjs";
+
 const block = {
   type: "object",
   properties: {
@@ -12,12 +14,12 @@ const block = {
 export const createDocumentSchema = {
   type: "object",
   properties: {
-    path: { type: "string", minLength: 1, maxLength: 1_024 },
+    path: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     title: { type: "string", minLength: 1, maxLength: 300 },
     blocks: {
       type: "array",
       minItems: 1,
-      maxItems: 500,
+      maxItems: OFFICE_LIMITS.maxBlocks,
       items: block,
     },
   },
@@ -28,8 +30,8 @@ export const createDocumentSchema = {
 export const patchDocumentSchema = {
   type: "object",
   properties: {
-    sourcePath: { type: "string", minLength: 1, maxLength: 1_024 },
-    outputPath: { type: "string", minLength: 1, maxLength: 1_024 },
+    sourcePath: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
+    outputPath: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     replacements: {
       type: "object",
       minProperties: 1,

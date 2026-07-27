@@ -1315,7 +1315,7 @@
       "remove": "Remove",
       "confirmRemove": "Confirm",
       "restartHost": "Restart host",
-      "recovery": "Disable user extensions"
+      "recovery": "Disable hosted extensions"
     },
     "status": {
       "active": "Active",
@@ -1375,7 +1375,7 @@
         "error": "Error"
       },
       "recoveryTitle": "Recovery mode",
-      "recoveryDescription": "Disables all user extensions so Beaver can return to a working state."
+      "recoveryDescription": "Disables Beaver plugins and local extensions so Beaver can return to a working state."
     },
     "errors": {
       "load": "Unable to load extensions.",

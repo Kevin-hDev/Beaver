@@ -49,6 +49,8 @@ pub struct HostToolResult {
     pub content: String,
     #[serde(default)]
     pub is_error: bool,
+    #[serde(default)]
+    pub truncated: bool,
     pub display_summary: Option<String>,
 }
 

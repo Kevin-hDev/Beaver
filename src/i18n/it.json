@@ -1982,7 +1982,7 @@
       "remove": "Rimuovi",
       "confirmRemove": "Conferma",
       "restartHost": "Riavvia host",
-      "recovery": "Disattiva estensioni utente"
+      "recovery": "Disattiva estensioni ospitate"
     },
     "status": {
       "active": "Attiva",
@@ -2042,7 +2042,7 @@
         "error": "Errore"
       },
       "recoveryTitle": "Modalità di recupero",
-      "recoveryDescription": "Disattiva tutte le estensioni utente per ripristinare il funzionamento di Beaver."
+      "recoveryDescription": "Disattiva i plugin Beaver e le estensioni locali per ripristinare il funzionamento di Beaver."
     },
     "errors": {
       "load": "Impossibile caricare le estensioni.",

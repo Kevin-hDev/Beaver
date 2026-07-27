@@ -1363,7 +1363,7 @@
       "remove": "Supprimer",
       "confirmRemove": "Confirmer",
       "restartHost": "Redémarrer l’hôte",
-      "recovery": "Désactiver les extensions utilisateur"
+      "recovery": "Désactiver les extensions hébergées"
     },
     "status": {
       "active": "Actif",
@@ -1423,7 +1423,7 @@
         "error": "Erreur"
       },
       "recoveryTitle": "Mode de récupération",
-      "recoveryDescription": "Désactive toutes les extensions utilisateur afin de retrouver un Beaver fonctionnel."
+      "recoveryDescription": "Désactive les plugins Beaver et les extensions locales afin de retrouver un Beaver fonctionnel."
     },
     "errors": {
       "load": "Impossible de charger les extensions.",

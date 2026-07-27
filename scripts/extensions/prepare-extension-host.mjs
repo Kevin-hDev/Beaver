@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
-import { copyFile, mkdir, readdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareNodeRuntime } from "./node-runtime.mjs";
 
@@ -19,16 +19,34 @@ const hostDirectory = developmentOnly
   : sourceDirectory;
 
 if (developmentOnly) {
+  await resetDevelopmentHost();
   await copyHostSources(sourceDirectory, hostDirectory);
+  await installProductionDependencies(hostDirectory);
 } else {
+  await installProductionDependencies(hostDirectory);
+  await prepareNodeRuntime(hostDirectory);
+}
+
+async function resetDevelopmentHost() {
+  const targetRoot = resolve(root, "src-tauri/target");
+  if (
+    dirname(hostDirectory) !== targetRoot
+    || basename(hostDirectory) !== "extension-host"
+  ) {
+    throw new Error("Invalid development extension host directory");
+  }
+  await rm(hostDirectory, { recursive: true, force: true });
+}
+
+async function installProductionDependencies(directory) {
   await run(process.platform === "win32" ? "npm.cmd" : "npm", [
     "ci",
     "--ignore-scripts",
     "--omit=dev",
+    "--omit=optional",
     "--prefix",
-    hostDirectory,
+    directory,
   ]);
-  await prepareNodeRuntime(hostDirectory);
 }
 
 async function copyHostSources(source, destination) {

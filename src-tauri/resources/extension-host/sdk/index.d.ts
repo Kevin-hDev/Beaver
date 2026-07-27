@@ -10,6 +10,7 @@ export interface BeaverToolResult {
   content: string;
   isError?: boolean;
   displaySummary?: string;
+  truncated?: boolean;
 }
 
 export interface BeaverToolContext {

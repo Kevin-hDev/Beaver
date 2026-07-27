@@ -6,7 +6,7 @@ import {
   PatchType,
   TextRun,
   patchDocument,
-} from "docx";
+} from "../common/formats/document.mjs";
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
 import {
@@ -28,6 +28,7 @@ export async function createDocument(arguments_, context) {
   const blocks = boundedArray(arguments_?.blocks, OFFICE_LIMITS.maxBlocks);
   const title = optionalString(arguments_?.title, 300);
   const path = requiredString(arguments_?.path, OFFICE_LIMITS.maxPathChars);
+  const output = await workspaceOutput(context, path, OFFICE_EXTENSIONS.document);
   const children = blocks.map(toParagraph);
   const totalText = blocks.reduce((sum, block) => sum + block.text.length, 0);
   if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
@@ -36,7 +37,6 @@ export async function createDocument(arguments_, context) {
     title,
     sections: [{ children }],
   });
-  const output = await workspaceOutput(context, path, OFFICE_EXTENSIONS.document);
   const bytes = await Packer.toBuffer(document);
   await atomicWrite(output.path, bytes);
   return success({ path, format: "docx", blocks: blocks.length });
@@ -66,14 +66,14 @@ export async function patchDocumentTemplate(arguments_, context) {
     };
   }
   if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
-  const input = await readWorkspaceFile(
-    context,
-    sourcePath,
-    OFFICE_EXTENSIONS.document,
-  );
   const output = await workspaceOutput(
     context,
     outputPath,
+    OFFICE_EXTENSIONS.document,
+  );
+  const input = await readWorkspaceFile(
+    context,
+    sourcePath,
     OFFICE_EXTENSIONS.document,
   );
   try {

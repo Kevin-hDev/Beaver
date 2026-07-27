@@ -1,4 +1,4 @@
-import PptxGenJS from "pptxgenjs";
+import { PptxGenJS } from "../common/formats/presentation.mjs";
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
 import {
@@ -8,11 +8,19 @@ import {
   requiredString,
 } from "../common/validation.mjs";
 import { atomicWrite, workspaceOutput } from "../common/workspace.mjs";
-import { PRESENTATION_LAYOUT, PRESENTATION_THEME } from "./theme.mjs";
+import {
+  PRESENTATION_FONTS,
+  PRESENTATION_LAYOUT,
+  PRESENTATION_THEME,
+} from "./theme.mjs";
+
+const LANGUAGE_TAG = /^[a-zA-Z]{2,8}(?:-[a-zA-Z0-9]{1,8}){0,3}$/u;
 
 export async function createPresentation(arguments_, context) {
   const path = requiredString(arguments_?.path, OFFICE_LIMITS.maxPathChars);
   const title = optionalString(arguments_?.title, 300);
+  const language = optionalString(arguments_?.language, 35);
+  if (language && !LANGUAGE_TAG.test(language)) rejectOffice("invalid_input");
   const themeName = arguments_?.theme ?? "light";
   const theme = PRESENTATION_THEME[themeName];
   if (!theme) rejectOffice("invalid_input");
@@ -25,6 +33,11 @@ export async function createPresentation(arguments_, context) {
     0,
   );
   if (totalText > OFFICE_LIMITS.maxTextChars) rejectOffice("invalid_input");
+  const output = await workspaceOutput(
+    context,
+    path,
+    OFFICE_EXTENSIONS.presentation,
+  );
   const presentation = new PptxGenJS();
   presentation.layout = "LAYOUT_WIDE";
   presentation.author = "Beaver";
@@ -32,16 +45,11 @@ export async function createPresentation(arguments_, context) {
   presentation.title = title ?? slides[0].title;
   presentation.subject = "Beaver presentation";
   presentation.theme = {
-    headFontFace: "Aptos Display",
-    bodyFontFace: "Aptos",
-    lang: "fr-FR",
+    headFontFace: PRESENTATION_FONTS.heading,
+    bodyFontFace: PRESENTATION_FONTS.body,
+    ...(language ? { lang: language } : {}),
   };
   for (const definition of slides) addSlide(presentation, definition, theme);
-  const output = await workspaceOutput(
-    context,
-    path,
-    OFFICE_EXTENSIONS.presentation,
-  );
   const bytes = await presentation.write({
     outputType: "nodebuffer",
     compression: true,
@@ -58,7 +66,7 @@ function addSlide(presentation, definition, theme) {
     y: PRESENTATION_LAYOUT.titleY,
     w: PRESENTATION_LAYOUT.titleW,
     h: PRESENTATION_LAYOUT.titleH,
-    fontFace: "Aptos Display",
+    fontFace: PRESENTATION_FONTS.heading,
     fontSize: 28,
     bold: true,
     color: theme.title,
@@ -86,7 +94,7 @@ function addSlide(presentation, definition, theme) {
       y: PRESENTATION_LAYOUT.bodyY,
       w: PRESENTATION_LAYOUT.bodyW,
       h: PRESENTATION_LAYOUT.bodyH,
-      fontFace: "Aptos",
+      fontFace: PRESENTATION_FONTS.body,
       fontSize,
       color: theme.body,
       breakLine: false,

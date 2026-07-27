@@ -1982,7 +1982,7 @@
       "remove": "移除",
       "confirmRemove": "确认",
       "restartHost": "重启宿主",
-      "recovery": "禁用用户扩展"
+      "recovery": "禁用托管扩展"
     },
     "status": {
       "active": "已启用",
@@ -2042,7 +2042,7 @@
         "error": "错误"
       },
       "recoveryTitle": "恢复模式",
-      "recoveryDescription": "禁用所有用户扩展，让 Beaver 恢复正常运行。"
+      "recoveryDescription": "禁用 Beaver 插件和本地扩展，让 Beaver 恢复正常运行。"
     },
     "errors": {
       "load": "无法加载扩展。",

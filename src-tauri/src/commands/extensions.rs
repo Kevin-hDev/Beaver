@@ -65,8 +65,8 @@ pub async fn get_extension_host_status() -> Result<ExtensionHostStatus, String> 
 }
 
 #[tauri::command]
-pub async fn recover_without_user_extensions(app: tauri::AppHandle) -> Result<(), String> {
-    extensions::disable_user_extensions()?;
+pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<(), String> {
+    extensions::disable_hosted_extensions()?;
     let result = extensions::restart().await;
     emit_changed(&app);
     result

@@ -1982,7 +1982,7 @@
       "remove": "Entfernen",
       "confirmRemove": "Bestätigen",
       "restartHost": "Host neu starten",
-      "recovery": "Benutzererweiterungen deaktivieren"
+      "recovery": "Gehostete Erweiterungen deaktivieren"
     },
     "status": {
       "active": "Aktiv",
@@ -2042,7 +2042,7 @@
         "error": "Fehler"
       },
       "recoveryTitle": "Wiederherstellungsmodus",
-      "recoveryDescription": "Deaktiviert alle Benutzererweiterungen, damit Beaver wieder funktioniert."
+      "recoveryDescription": "Deaktiviert Beaver-Plugins und lokale Erweiterungen, damit Beaver wieder funktioniert."
     },
     "errors": {
       "load": "Erweiterungen konnten nicht geladen werden.",

@@ -1,3 +1,5 @@
+import { OFFICE_LIMITS } from "../common/constants.mjs";
+
 const scalar = {
   anyOf: [
     { type: "string", maxLength: 32_767 },
@@ -10,21 +12,21 @@ const scalar = {
 export const createSpreadsheetSchema = {
   type: "object",
   properties: {
-    path: { type: "string", minLength: 1, maxLength: 1_024 },
+    path: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     sheets: {
       type: "array",
       minItems: 1,
-      maxItems: 32,
+      maxItems: OFFICE_LIMITS.maxSheets,
       items: {
         type: "object",
         properties: {
           name: { type: "string", minLength: 1, maxLength: 31 },
           rows: {
             type: "array",
-            maxItems: 10_000,
+            maxItems: OFFICE_LIMITS.maxRowsPerSheet,
             items: {
               type: "array",
-              maxItems: 256,
+              maxItems: OFFICE_LIMITS.maxColumns,
               items: scalar,
             },
           },
@@ -41,7 +43,7 @@ export const createSpreadsheetSchema = {
 export const inspectSpreadsheetSchema = {
   type: "object",
   properties: {
-    path: { type: "string", minLength: 1, maxLength: 1_024 },
+    path: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     maxRows: { type: "integer", minimum: 1, maximum: 200 },
     maxColumns: { type: "integer", minimum: 1, maximum: 100 },
   },
@@ -52,12 +54,12 @@ export const inspectSpreadsheetSchema = {
 export const updateSpreadsheetSchema = {
   type: "object",
   properties: {
-    sourcePath: { type: "string", minLength: 1, maxLength: 1_024 },
-    outputPath: { type: "string", minLength: 1, maxLength: 1_024 },
+    sourcePath: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
+    outputPath: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     changes: {
       type: "array",
       minItems: 1,
-      maxItems: 5_000,
+      maxItems: OFFICE_LIMITS.maxChanges,
       items: {
         type: "object",
         properties: {

@@ -1982,7 +1982,7 @@
       "remove": "削除",
       "confirmRemove": "確認",
       "restartHost": "ホストを再起動",
-      "recovery": "ユーザー拡張機能を無効化"
+      "recovery": "ホスト型拡張機能を無効化"
     },
     "status": {
       "active": "有効",
@@ -2042,7 +2042,7 @@
         "error": "エラー"
       },
       "recoveryTitle": "復旧モード",
-      "recoveryDescription": "すべてのユーザー拡張機能を無効にして、Beaver を動作可能な状態へ戻します。"
+      "recoveryDescription": "Beaver プラグインとローカル拡張機能を無効にして、Beaver を動作可能な状態へ戻します。"
     },
     "errors": {
       "load": "拡張機能を読み込めません。",

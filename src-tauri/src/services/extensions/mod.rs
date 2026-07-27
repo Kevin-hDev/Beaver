@@ -25,7 +25,7 @@ mod validation;
 pub use types::{ExtensionHostStatus, ExtensionKind, ExtensionRecord};
 
 pub use registry::{
-    add_local, disable_user_extensions, list, remove, set_enabled, set_show_in_chat,
+    add_local, disable_hosted_extensions, list, remove, set_enabled, set_show_in_chat,
 };
 pub use registry_index::{is_dynamic_tool, is_replacement};
 pub use runtime::{restart, status, stop};

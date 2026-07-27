@@ -148,7 +148,7 @@ function useExtensionsState() {
     setShowInChat,
     remove: (id: string) => run("remove_extension", { extensionId: id }),
     reload: () => run("reload_extension_host"),
-    recover: () => run("recover_without_user_extensions"),
+    recover: () => run("recover_extension_host"),
     openSource: (id: string) => run("open_extension_source", { extensionId: id }),
   };
 }

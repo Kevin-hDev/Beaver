@@ -38,17 +38,18 @@ export async function callExtensionTool(name, arguments_, context) {
     }),
   ]).finally(() => clearTimeout(timer));
   if (typeof raw === "string") {
-    return { content: raw, isError: false };
+    return boundedToolResult({ content: raw, isError: false });
   }
   if (!raw || typeof raw !== "object" || typeof raw.content !== "string") {
     throw new Error("invalid_tool_result");
   }
-  return {
+  return boundedToolResult({
     content: raw.content,
     isError: raw.isError === true,
     displaySummary:
       typeof raw.displaySummary === "string" ? raw.displaySummary : undefined,
-  };
+    truncated: raw.truncated === true,
+  });
 }
 
 function toolExecutionContext(context) {
@@ -56,12 +57,42 @@ function toolExecutionContext(context) {
   if (
     typeof workingDirectory !== "string"
     || workingDirectory.length === 0
-    || workingDirectory.length > 4_096
+    || workingDirectory.length > LIMITS.maxWorkingDirectoryChars
     || workingDirectory.includes("\0")
   ) {
     throw new Error("invalid_tool_context");
   }
   return Object.freeze({ workingDirectory });
+}
+
+function boundedToolResult(result) {
+  const content = safeSlice(result.content, LIMITS.maxMessageBytes);
+  const displaySummary = typeof result.displaySummary === "string"
+    ? safeSlice(result.displaySummary, 1_024)
+    : undefined;
+  return {
+    content,
+    isError: result.isError,
+    displaySummary,
+    truncated: result.truncated === true || content.length < result.content.length,
+  };
+}
+
+function safeSlice(value, maxChars) {
+  if (value.length <= maxChars) return value;
+  const end = isHighSurrogate(value.charCodeAt(maxChars - 1))
+    && isLowSurrogate(value.charCodeAt(maxChars))
+    ? maxChars - 1
+    : maxChars;
+  return value.slice(0, end);
+}
+
+function isHighSurrogate(value) {
+  return value >= 0xd800 && value <= 0xdbff;
+}
+
+function isLowSurrogate(value) {
+  return value >= 0xdc00 && value <= 0xdfff;
 }
 
 export async function emitExtensionEvent(event, payload) {

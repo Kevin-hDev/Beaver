@@ -1,31 +1,16 @@
 import assert from "node:assert/strict";
 import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join } from "node:path";
 import { test } from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 import { strFromU8, unzipSync, zipSync } from "fflate";
-import { createHost } from "./host-test-client.mjs";
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const hostDirectory = join(root, "src-tauri/target/extension-host");
-const hostScript = join(hostDirectory, "host.mjs");
-const expectedDependencies = {
-  "@xlsx/xlsx-populate": "0.2.0",
-  docx: "9.7.1",
-  fflate: "0.8.3",
-  jiti: "2.7.0",
-  "pdf-lib": "1.17.1",
-  "pdfjs-dist": "6.1.200",
-  pptxgenjs: "4.0.1",
-};
-
-test("the Office runtime dependencies are explicit and exactly pinned", async () => {
-  const manifest = JSON.parse(
-    await readFile(join(hostDirectory, "package.json"), "utf8"),
-  );
-  assert.deepEqual(manifest.dependencies, expectedDependencies);
-});
+import {
+  callOffice as call,
+  createOfficeHost,
+  hostDirectory,
+  syncOfficePlugins,
+} from "./office-test-helpers.mjs";
 
 test("the Office archive guard rejects suspicious expansion ratios", async () => {
   const guardUrl = pathToFileURL(
@@ -48,7 +33,7 @@ test("the Office archive guard rejects suspicious expansion ratios", async () =>
 
 test("the bundled Office suite loads and creates real local artifacts", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "beaver-office-test-"));
-  const host = createHost(hostScript);
+  const host = createOfficeHost();
   try {
     const sync = await syncOfficePlugins(host);
     assert.equal(sync.extensions.length, 4);
@@ -151,6 +136,13 @@ test("the bundled Office suite loads and creates real local artifacts", async ()
     const slides = unzipSync(await readFile(join(workspace, "patched.pptx")));
     const slideXml = strFromU8(slides["ppt/slides/slide1.xml"]);
     assert.equal(slideXml.includes("Hello Beaver"), true);
+    const presentationXml = Object.entries(slides)
+      .filter(([name]) => name.endsWith(".xml"))
+      .map(([, bytes]) => strFromU8(bytes))
+      .join("");
+    assert.equal(presentationXml.includes("Aptos"), false);
+    assert.equal(presentationXml.includes("fr-FR"), false);
+    assert.equal(presentationXml.includes("Arial"), true);
   } finally {
     host.stop();
     await rm(workspace, { recursive: true, force: true });
@@ -160,7 +152,7 @@ test("the bundled Office suite loads and creates real local artifacts", async ()
 test("official plugins reject paths outside the active workspace", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "beaver-office-path-test-"));
   const outside = join(workspace, "..", "beaver-office-escape.docx");
-  const host = createHost(hostScript);
+  const host = createOfficeHost();
   try {
     await syncOfficePlugins(host);
     const result = await call(host, workspace, "beaver.office.documents.create", {
@@ -175,24 +167,3 @@ test("official plugins reject paths outside the active workspace", async () => {
     await rm(workspace, { recursive: true, force: true });
   }
 });
-
-async function syncOfficePlugins(host) {
-  const catalog = JSON.parse(
-    await readFile(join(hostDirectory, "builtin-plugins/catalog.json"), "utf8"),
-  );
-  return host.request("host.sync", {
-    extensions: catalog.plugins.map(({ manifest }) => ({
-      id: manifest.id,
-      mainPath: join(hostDirectory, manifest.main),
-      manifest,
-    })),
-  });
-}
-
-async function call(host, workspace, name, arguments_) {
-  return host.request("tool.call", {
-    name,
-    arguments: arguments_,
-    context: { workingDirectory: workspace },
-  });
-}

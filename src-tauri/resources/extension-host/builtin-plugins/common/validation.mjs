@@ -6,7 +6,7 @@ export function requiredString(value, maxChars = OFFICE_LIMITS.maxTextChars) {
     typeof value !== "string"
     || value.length === 0
     || value.length > maxChars
-    || value.includes("\0")
+    || containsInvalidXmlCharacter(value)
   ) {
     rejectOffice("invalid_input");
   }
@@ -52,4 +52,23 @@ export function scalar(value) {
     rejectOffice("invalid_input");
   }
   return value;
+}
+
+export function containsInvalidXmlCharacter(value) {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0);
+    if (
+      codePoint === 0
+      || (codePoint >= 0x01 && codePoint <= 0x08)
+      || codePoint === 0x0b
+      || codePoint === 0x0c
+      || (codePoint >= 0x0e && codePoint <= 0x1f)
+      || (codePoint >= 0xd800 && codePoint <= 0xdfff)
+      || codePoint === 0xfffe
+      || codePoint === 0xffff
+    ) {
+      return true;
+    }
+  }
+  return false;
 }

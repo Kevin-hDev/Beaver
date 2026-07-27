@@ -27,3 +27,8 @@ export const PRESENTATION_LAYOUT = Object.freeze({
   bodyW: 11.55,
   bodyH: 4.9,
 });
+
+export const PRESENTATION_FONTS = Object.freeze({
+  heading: "Arial",
+  body: "Arial",
+});

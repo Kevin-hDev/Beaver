@@ -1,3 +1,6 @@
+import { OFFICE_LIMITS } from "./constants.mjs";
+import { structuredResultBytes } from "./result-budget.mjs";
+
 const SAFE_CODES = new Set([
   "file_not_found",
   "file_too_large",
@@ -35,6 +38,9 @@ export function safeTool(handler) {
 }
 
 export function success(payload, displaySummary) {
+  if (structuredResultBytes(payload) > OFFICE_LIMITS.maxStructuredResultBytes) {
+    rejectOffice("output_too_large");
+  }
   return {
     content: JSON.stringify(payload),
     displaySummary,

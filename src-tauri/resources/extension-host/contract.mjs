@@ -38,6 +38,7 @@ export const LIMITS = Object.freeze({
   maxPendingRequests: limit("maxPendingRequests"),
   maxInFlightRequests: limit("maxInFlightRequests"),
   maxInFlightHandlers: limit("maxInFlightHandlers"),
+  maxWorkingDirectoryChars: limit("maxWorkingDirectoryChars"),
   maxMessageBytes: limit("maxMessageBytes"),
 });
 

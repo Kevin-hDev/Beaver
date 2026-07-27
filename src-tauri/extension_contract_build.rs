@@ -29,6 +29,7 @@ pub fn generate() {
         ("maxEventsPerExtension", "MAX_EVENTS_PER_EXTENSION"),
         ("maxPendingRequests", "MAX_PENDING_REQUESTS"),
         ("maxInFlightRequests", "MAX_IN_FLIGHT_REQUESTS"),
+        ("maxWorkingDirectoryChars", "MAX_WORKING_DIRECTORY_CHARS"),
         ("maxMessageBytes", "MAX_MESSAGE_BYTES"),
     ] {
         let value = limit(limits, json_name);

@@ -8,6 +8,7 @@
     "maxPendingRequests": 64,
     "maxInFlightRequests": 64,
     "maxInFlightHandlers": 64,
+    "maxWorkingDirectoryChars": 1024,
     "maxMessageBytes": 1048576
   },
   "diagnostics": {

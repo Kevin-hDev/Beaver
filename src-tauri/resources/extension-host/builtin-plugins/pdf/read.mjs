@@ -1,7 +1,8 @@
-import { PDFDocument } from "pdf-lib";
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { PDFDocument } from "../common/formats/pdf.mjs";
+import { getDocument } from "../common/formats/pdf-reader.mjs";
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
+import { createResultBudget } from "../common/result-budget.mjs";
 import { boundedArray, requiredString } from "../common/validation.mjs";
 import {
   atomicWrite,
@@ -28,26 +29,37 @@ export async function inspectPdf(arguments_, context) {
     document = await task.promise;
     if (document.numPages > OFFICE_LIMITS.maxPdfPages) rejectOffice("file_too_large");
     const pages = [];
-    let extractedChars = 0;
+    const budget = createResultBudget();
+    let resultTruncated = false;
     const count = Math.min(document.numPages, maxPages);
-    for (let number = 1; number <= count; number += 1) {
+    for (let number = 1; number <= count && !resultTruncated; number += 1) {
       const page = await document.getPage(number);
       const content = await page.getTextContent();
       const textParts = [];
-      for (const item of content.items.slice(0, 10_000)) {
+      const items = content.items.slice(0, 10_000);
+      if (content.items.length > items.length) resultTruncated = true;
+      budget.reserve(128);
+      for (const item of items) {
         if (typeof item?.str !== "string") continue;
-        extractedChars += item.str.length;
-        if (extractedChars > OFFICE_LIMITS.maxTextChars) rejectOffice("file_too_large");
-        textParts.push(item.str);
+        const part = budget.takeText(item.str, 2);
+        if (part.value) textParts.push(part.value);
+        if (part.truncated) {
+          resultTruncated = true;
+          break;
+        }
       }
-      pages.push({ page: number, text: textParts.join(" ") });
+      pages.push({
+        page: number,
+        text: textParts.join(" "),
+        truncated: resultTruncated,
+      });
       page.cleanup();
     }
     return success({
       path,
       format: "pdf",
       pageCount: document.numPages,
-      truncated: document.numPages > count,
+      truncated: document.numPages > count || resultTruncated,
       pages,
     });
   } finally {
@@ -66,6 +78,7 @@ export async function mergePdfs(arguments_, context) {
     arguments_?.outputPath,
     OFFICE_LIMITS.maxPathChars,
   );
+  const output = await workspaceOutput(context, outputPath, OFFICE_EXTENSIONS.pdf);
   const outputDocument = await PDFDocument.create();
   let totalInputBytes = 0;
   for (const sourcePath of sourcePaths) {
@@ -89,7 +102,6 @@ export async function mergePdfs(arguments_, context) {
       input.bytes.fill(0);
     }
   }
-  const output = await workspaceOutput(context, outputPath, OFFICE_EXTENSIONS.pdf);
   const bytes = await outputDocument.save({ useObjectStreams: true });
   await atomicWrite(output.path, bytes);
   return success({

@@ -85,18 +85,22 @@ pub fn set_show_in_chat(id: &str, show: bool) -> Result<(), String> {
     })
 }
 
-pub fn disable_user_extensions() -> Result<(), String> {
+pub fn disable_hosted_extensions() -> Result<(), String> {
     mutate(|records| {
-        for record in records {
-            if record.kind != ExtensionKind::Builtin {
-                record.enabled = false;
-                record.status = ExtensionStatus::Inactive;
-                record.last_error = None;
-                record.contributions = ExtensionContributions::default();
-            }
-        }
+        disable_hosted_records(records);
         Ok(())
     })
+}
+
+pub(super) fn disable_hosted_records(records: &mut [ExtensionRecord]) {
+    for record in records {
+        if record.kind != ExtensionKind::External {
+            record.enabled = false;
+            record.status = ExtensionStatus::Inactive;
+            record.last_error = None;
+            record.contributions = ExtensionContributions::default();
+        }
+    }
 }
 
 pub fn enabled_hosted() -> Result<Vec<ExtensionRecord>, String> {

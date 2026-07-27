@@ -1,6 +1,7 @@
-import { Workbook } from "@xlsx/xlsx-populate";
+import { Workbook } from "../common/formats/spreadsheet.mjs";
 import { OFFICE_EXTENSIONS, OFFICE_LIMITS } from "../common/constants.mjs";
 import { rejectOffice, success } from "../common/errors.mjs";
+import { createResultBudget } from "../common/result-budget.mjs";
 import {
   boundedArray,
   plainObject,
@@ -13,6 +14,7 @@ import {
   workspaceOutput,
 } from "../common/workspace.mjs";
 import { assertSafeOfficeArchive } from "../common/zip-guard.mjs";
+import { spreadsheetPreview } from "./preview.mjs";
 
 const CELL_ADDRESS = /^([a-zA-Z]{1,3})([1-9][0-9]{0,6})$/u;
 const INVALID_SHEET = /[\\/*[\]:?]/u;
@@ -21,6 +23,7 @@ export async function createSpreadsheet(arguments_, context) {
   const path = requiredString(arguments_?.path, OFFICE_LIMITS.maxPathChars);
   const definitions = boundedArray(arguments_?.sheets, OFFICE_LIMITS.maxSheets);
   const sheets = definitions.map(validateSheetDefinition);
+  const output = await workspaceOutput(context, path, OFFICE_EXTENSIONS.spreadsheet);
   const names = new Set(sheets.map((sheet) => sheet.name.toLocaleLowerCase("en")));
   if (names.size !== sheets.length) rejectOffice("invalid_input");
   const workbook = await Workbook.fromBlank();
@@ -31,7 +34,6 @@ export async function createSpreadsheet(arguments_, context) {
     if (index === 0) sheet.name(definition.name);
     if (definition.rows.length > 0) sheet.cell(1, 1).value(definition.rows);
   }
-  const output = await workspaceOutput(context, path, OFFICE_EXTENSIONS.spreadsheet);
   const bytes = await workbook.output("node:buffer");
   await atomicWrite(output.path, bytes);
   return success({ path, format: "xlsx", sheets: sheets.length });
@@ -46,6 +48,8 @@ export async function inspectSpreadsheet(arguments_, context) {
     const workbook = await loadWorkbook(input.bytes);
     const sheets = workbook.sheets();
     if (sheets.length > OFFICE_LIMITS.maxSheets) rejectOffice("file_too_large");
+    const budget = createResultBudget();
+    let resultTruncated = false;
     const summaries = sheets.map((sheet) => {
       const used = sheet.usedRange();
       if (!used) return { name: sheet.name(), rows: 0, columns: 0, preview: [] };
@@ -53,16 +57,30 @@ export async function inspectSpreadsheet(arguments_, context) {
       const columns = used.endCell().columnNumber();
       const previewRows = Math.min(rows, maxRows);
       const previewColumns = Math.min(columns, maxColumns);
-      const preview = sheet.range(1, 1, previewRows, previewColumns).value();
+      const { preview, budgetTruncated } = spreadsheetPreview(
+        sheet,
+        previewRows,
+        previewColumns,
+        budget,
+      );
+      resultTruncated ||= budgetTruncated;
       return {
         name: sheet.name(),
         rows,
         columns,
-        truncated: rows > previewRows || columns > previewColumns,
+        truncated:
+          rows > preview.length
+          || columns > (preview[0]?.length ?? 0)
+          || budgetTruncated,
         preview,
       };
     });
-    return success({ path, format: "xlsx", sheets: summaries });
+    return success({
+      path,
+      format: "xlsx",
+      truncated: resultTruncated || summaries.some((sheet) => sheet.truncated),
+      sheets: summaries,
+    });
   } finally {
     input.bytes.fill(0);
   }
@@ -73,6 +91,11 @@ export async function updateSpreadsheet(arguments_, context) {
   const outputPath = requiredString(arguments_?.outputPath, OFFICE_LIMITS.maxPathChars);
   const changes = boundedArray(arguments_?.changes, OFFICE_LIMITS.maxChanges)
     .map(validateChange);
+  const output = await workspaceOutput(
+    context,
+    outputPath,
+    OFFICE_EXTENSIONS.spreadsheet,
+  );
   const input = await readWorkspaceFile(context, sourcePath, OFFICE_EXTENSIONS.spreadsheet);
   try {
     const workbook = await loadWorkbook(input.bytes);
@@ -82,11 +105,6 @@ export async function updateSpreadsheet(arguments_, context) {
       if (!sheet) rejectOffice("invalid_input");
       sheet.cell(change.cell).value(change.value);
     }
-    const output = await workspaceOutput(
-      context,
-      outputPath,
-      OFFICE_EXTENSIONS.spreadsheet,
-    );
     const bytes = await workbook.output("node:buffer");
     await atomicWrite(output.path, bytes);
   } finally {

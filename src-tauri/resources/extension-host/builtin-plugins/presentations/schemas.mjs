@@ -1,13 +1,21 @@
+import { OFFICE_LIMITS } from "../common/constants.mjs";
+
 export const createPresentationSchema = {
   type: "object",
   properties: {
-    path: { type: "string", minLength: 1, maxLength: 1_024 },
+    path: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     title: { type: "string", minLength: 1, maxLength: 300 },
+    language: {
+      type: "string",
+      minLength: 2,
+      maxLength: 35,
+      pattern: "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8}){0,3}$",
+    },
     theme: { type: "string", enum: ["light", "dark"] },
     slides: {
       type: "array",
       minItems: 1,
-      maxItems: 100,
+      maxItems: OFFICE_LIMITS.maxSlides,
       items: {
         type: "object",
         properties: {
@@ -31,8 +39,8 @@ export const createPresentationSchema = {
 export const patchPresentationSchema = {
   type: "object",
   properties: {
-    sourcePath: { type: "string", minLength: 1, maxLength: 1_024 },
-    outputPath: { type: "string", minLength: 1, maxLength: 1_024 },
+    sourcePath: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
+    outputPath: { type: "string", minLength: 1, maxLength: OFFICE_LIMITS.maxPathChars },
     replacements: {
       type: "object",
       minProperties: 1,

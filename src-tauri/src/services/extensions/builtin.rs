@@ -8,6 +8,13 @@ use std::path::{Path, PathBuf};
 const CATALOG: &str =
     include_str!("../../../resources/extension-host/builtin-plugins/catalog.json");
 const SOURCE_LABEL: &str = "Beaver";
+const ERROR_CATALOG_INVALID: &str = "extensions_builtin_catalog_invalid";
+const ERROR_HOST_UNAVAILABLE: &str = "extensions_host_unavailable";
+const ERROR_PLUGIN_INVALID: &str = "extensions_builtin_plugin_invalid";
+const ERROR_PLUGIN_CATALOG_UNAVAILABLE: &str = "extensions_builtin_catalog_unavailable";
+const ERROR_PLUGIN_ENTRY_MISSING: &str = "extensions_builtin_entry_missing";
+const ERROR_PLUGIN_ENTRY_UNAVAILABLE: &str = "extensions_builtin_entry_unavailable";
+const ERROR_PLUGIN_ENTRY_INVALID: &str = "extensions_builtin_entry_invalid";
 
 #[derive(Deserialize)]
 struct BuiltinCatalog {
@@ -23,8 +30,8 @@ struct BuiltinDefinition {
 }
 
 pub fn records() -> Result<Vec<ExtensionRecord>, String> {
-    let catalog: BuiltinCatalog = serde_json::from_str(CATALOG)
-        .map_err(|_| "Catalogue de plugins Beaver invalide.".to_string())?;
+    let catalog: BuiltinCatalog =
+        serde_json::from_str(CATALOG).map_err(|_| ERROR_CATALOG_INVALID.to_string())?;
     let records = catalog
         .plugins
         .into_iter()
@@ -66,26 +73,26 @@ pub fn merge(mut stored: Vec<ExtensionRecord>) -> Result<Vec<ExtensionRecord>, S
 
 pub fn resolve_entry(host_directory: &Path, record: &ExtensionRecord) -> Result<PathBuf, String> {
     if record.kind != ExtensionKind::Builtin {
-        return Err("Plugin Beaver invalide.".to_string());
+        return Err(ERROR_PLUGIN_INVALID.to_string());
     }
     let root = host_directory
         .canonicalize()
-        .map_err(|_| "Hôte d'extensions indisponible.".to_string())?;
+        .map_err(|_| ERROR_HOST_UNAVAILABLE.to_string())?;
     let plugin_root = root
         .join("builtin-plugins")
         .canonicalize()
-        .map_err(|_| "Catalogue de plugins Beaver indisponible.".to_string())?;
+        .map_err(|_| ERROR_PLUGIN_CATALOG_UNAVAILABLE.to_string())?;
     let main = record
         .manifest
         .main
         .as_deref()
-        .ok_or_else(|| "Point d'entrée de plugin manquant.".to_string())?;
+        .ok_or_else(|| ERROR_PLUGIN_ENTRY_MISSING.to_string())?;
     let entry = root
         .join(main)
         .canonicalize()
-        .map_err(|_| "Point d'entrée de plugin indisponible.".to_string())?;
+        .map_err(|_| ERROR_PLUGIN_ENTRY_UNAVAILABLE.to_string())?;
     if !entry.starts_with(&plugin_root) || !entry.is_file() {
-        return Err("Point d'entrée de plugin invalide.".to_string());
+        return Err(ERROR_PLUGIN_ENTRY_INVALID.to_string());
     }
     Ok(entry)
 }

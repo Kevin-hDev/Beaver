@@ -1,7 +1,18 @@
+import { LIMITS } from "../../contract.mjs";
+
+const PREVIEW_CHANNEL_FRACTION = 3 / 8;
+const STRUCTURED_CHANNEL_FRACTION = 7 / 16;
+
 export const OFFICE_LIMITS = Object.freeze({
   maxInputBytes: 25 * 1024 * 1024,
   maxOutputBytes: 50 * 1024 * 1024,
-  maxPathChars: 1_024,
+  maxPathChars: LIMITS.maxWorkingDirectoryChars,
+  maxPreviewBytes: Math.floor(
+    LIMITS.maxMessageBytes * PREVIEW_CHANNEL_FRACTION,
+  ),
+  maxStructuredResultBytes: Math.floor(
+    LIMITS.maxMessageBytes * STRUCTURED_CHANNEL_FRACTION,
+  ),
   maxTextChars: 500_000,
   maxBlocks: 500,
   maxPdfPages: 200,

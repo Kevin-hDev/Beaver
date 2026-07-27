@@ -1,6 +1,6 @@
 use super::host_process::HostProcess;
 use super::protocol::HostToolResult;
-use super::types::HostState;
+use super::types::{HostState, MAX_WORKING_DIRECTORY_CHARS};
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::{json, Value};
 use std::path::Path;
@@ -21,6 +21,9 @@ pub async fn dispatch_tool(
     let Some(working_directory) = working_directory.to_str() else {
         return Some(ToolResult::err("Contexte d'extension indisponible."));
     };
+    if working_directory.encode_utf16().count() > MAX_WORKING_DIRECTORY_CHARS {
+        return Some(ToolResult::err("Contexte d'extension indisponible."));
+    }
     let response = host
         .request(
             "tool.call",
@@ -72,6 +75,7 @@ fn to_tool_result(result: Result<HostToolResult, String>) -> ToolResult {
             } else {
                 ToolResult::ok(result.content)
             };
+            tool_result.truncated = result.truncated;
             tool_result.display_summary = result.display_summary;
             tool_result
         }

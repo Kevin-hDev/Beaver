@@ -37,3 +37,29 @@ fn preferences_survive_catalog_updates() {
     assert!(!merged[0].show_in_chat);
     assert_eq!(merged[0].manifest.version, "1.0.0");
 }
+
+#[test]
+fn recovery_disables_builtin_and_local_extensions() {
+    let mut records = super::builtin::records().unwrap();
+    let mut local = records[0].clone();
+    local.kind = super::types::ExtensionKind::Local;
+    local.manifest.id = "com.example.local".to_string();
+    let mut external = records[0].clone();
+    external.kind = super::types::ExtensionKind::External;
+    external.manifest.id = "com.example.external".to_string();
+    records.extend([local, external]);
+
+    super::registry::disable_hosted_records(&mut records);
+
+    assert!(records
+        .iter()
+        .filter(|record| record.kind != super::types::ExtensionKind::External)
+        .all(|record| !record.enabled));
+    assert!(
+        records
+            .iter()
+            .find(|record| record.kind == super::types::ExtensionKind::External)
+            .unwrap()
+            .enabled
+    );
+}

@@ -43,7 +43,7 @@ export async function workspaceOutput(context, requestedPath, extensions) {
 }
 
 export async function atomicWrite(outputPath, value) {
-  const bytes = Buffer.isBuffer(value) ? value : Buffer.from(value);
+  const bytes = Buffer.from(value);
   if (bytes.length > OFFICE_LIMITS.maxOutputBytes) {
     bytes.fill(0);
     rejectOffice("output_too_large");
@@ -85,9 +85,7 @@ function lexicalPath(root, requestedPath) {
   if (value.split(/[\\/]/u).some((part) => part === "..")) {
     rejectOffice("invalid_path");
   }
-  const candidate = resolve(root, value);
-  if (!isAbsolute(value)) ensureInside(root, candidate);
-  return candidate;
+  return resolve(root, value);
 }
 
 async function readBoundedFile(path) {
