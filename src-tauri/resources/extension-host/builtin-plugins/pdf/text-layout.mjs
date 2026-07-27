@@ -1,4 +1,9 @@
-import { fontRuns } from "./fonts.mjs";
+import {
+  beginMarkedContent,
+  endMarkedContent,
+  TextRenderingMode,
+} from "../common/formats/pdf.mjs";
+import { fontRuns } from "./font-routing.mjs";
 
 export function wrapText(text, fonts, size, width) {
   const lines = [];
@@ -13,6 +18,18 @@ export function wrapText(text, fonts, size, width) {
 }
 
 export function drawTextLine(page, text, fonts, options) {
+  page.pushOperators(beginMarkedContent("Artifact"));
+  drawRuns(page, text, fonts.visual, options);
+  page.pushOperators(endMarkedContent());
+  page.pushOperators(beginMarkedContent("BeaverLogical"));
+  drawRuns(page, text, fonts.logical, {
+    ...options,
+    renderMode: TextRenderingMode.Invisible,
+  });
+  page.pushOperators(endMarkedContent());
+}
+
+function drawRuns(page, text, fonts, options) {
   let x = options.x;
   for (const run of fontRuns(text, fonts)) {
     page.drawText(run.text, { ...options, x, font: run.font });

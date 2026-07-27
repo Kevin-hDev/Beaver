@@ -59,6 +59,7 @@ async function copyHostSources(source, destination) {
     "loader.mjs",
     "package-lock.json",
     "package.json",
+    "protocol-output.mjs",
     "protocol.mjs",
     "versions.mjs",
   ];

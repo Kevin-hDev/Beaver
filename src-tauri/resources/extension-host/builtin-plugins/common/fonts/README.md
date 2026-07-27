@@ -1,13 +1,23 @@
 # Bundled PDF fonts
 
-Beaver embeds these fonts so official PDF creation works offline for Latin,
-Cyrillic, Japanese, Chinese, Korean, and Arabic text.
+Beaver bundles fixed Noto font files so official PDF creation works offline.
+Only the fonts required by a document are loaded, verified, cached, and
+embedded.
 
-- `NotoSansCJKjp-Regular.otf`
-  - Source commit: `notofonts/noto-cjk@f8d157532fbfaeda587e826d4cd5b21a49186f7c`
-  - SHA-256: `68a3fc98800b2a27b371f2fb79991daf3633bd89309d4ffaa6946fd587f375b5`
-- `NotoSansArabic-Regular.ttf`
-  - Source commit: `notofonts/noto-fonts@ffebf8c1ee449e544955a7e813c54f9b73848eac`
-  - SHA-256: `ceea25b464a656dc3b26849bab9356740401af62aedf1bfa8b7f0d9b75925b1b`
+Coverage includes:
 
-Both fonts are distributed under the SIL Open Font License 1.1 in `OFL.txt`.
+- Latin, Greek, Cyrillic, CJK, Arabic, arrows, symbols, and dingbats;
+- Armenian, Hebrew, Devanagari, Bengali, Tamil, Sinhala, Thai, Lao, Tibetan,
+  Myanmar, Georgian, Ethiopic, Cherokee, and Khmer;
+- monochrome vector emoji supported by `NotoEmoji-Regular.ttf`.
+
+The exact filename, byte count, SHA-256 digest, and pinned upstream commit for
+every asset live in `catalog.mjs`. Runtime loading fails closed when a file
+does not match that catalog. The main Noto distribution is pinned to
+`notofonts/notofonts.github.io@eaa1a5cf8cb83ea73941197e492d659e51bb11dd`;
+CJK and Arabic use their separate repositories, while Noto Emoji comes from
+the official Google Fonts distribution. Their exact commits are recorded in
+the catalog.
+
+All bundled fonts are distributed under the SIL Open Font License 1.1 in
+`OFL.txt`.

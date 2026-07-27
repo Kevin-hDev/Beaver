@@ -1428,7 +1428,16 @@
     "errors": {
       "load": "Impossible de charger les extensions.",
       "operation": "L’opération n’a pas pu être terminée.",
-      "host": "L’hôte d’extensions est indisponible."
+      "host": "L’hôte d’extensions est indisponible.",
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Le catalogue des plugins Beaver est invalide.",
+        "extensions_host_unavailable": "L’hôte d’extensions est indisponible.",
+        "extensions_builtin_plugin_invalid": "Un plugin Beaver est invalide.",
+        "extensions_builtin_catalog_unavailable": "Le catalogue des plugins Beaver est indisponible.",
+        "extensions_builtin_entry_missing": "Le fichier principal d’un plugin Beaver est manquant.",
+        "extensions_builtin_entry_unavailable": "Le fichier principal d’un plugin Beaver est inaccessible.",
+        "extensions_builtin_entry_invalid": "Le fichier principal d’un plugin Beaver est invalide."
+      }
     },
     "diagnostics": {
       "codes": {

@@ -1380,7 +1380,16 @@
     "errors": {
       "load": "Unable to load extensions.",
       "operation": "The operation could not be completed.",
-      "host": "The extension host is unavailable."
+      "host": "The extension host is unavailable.",
+      "codes": {
+        "extensions_builtin_catalog_invalid": "The Beaver plugin catalog is invalid.",
+        "extensions_host_unavailable": "The extension host is unavailable.",
+        "extensions_builtin_plugin_invalid": "A Beaver plugin is invalid.",
+        "extensions_builtin_catalog_unavailable": "The Beaver plugin catalog is unavailable.",
+        "extensions_builtin_entry_missing": "A Beaver plugin’s main file is missing.",
+        "extensions_builtin_entry_unavailable": "A Beaver plugin’s main file is unavailable.",
+        "extensions_builtin_entry_invalid": "A Beaver plugin’s main file is invalid."
+      }
     },
     "diagnostics": {
       "codes": {

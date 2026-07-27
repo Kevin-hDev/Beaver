@@ -3,14 +3,15 @@ import { createHash } from "node:crypto";
 import { access, readFile, readdir } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { test } from "node:test";
+import { pathToFileURL } from "node:url";
 import { hostDirectory, root } from "./office-test-helpers.mjs";
 
 const expectedDependencies = {
   "@cantoo/pdf-lib": "2.7.4",
-  "@pdf-lib/fontkit": "1.1.1",
   "@xlsx/xlsx-populate": "0.2.0",
   docx: "9.7.1",
   fflate: "0.8.3",
+  fontkit: "2.0.4",
   jiti: "2.7.0",
   "pdfjs-dist": "6.1.200",
   pptxgenjs: "4.0.1",
@@ -43,10 +44,10 @@ test("format libraries are isolated behind Beaver adapters", async () => {
   const adapters = `${join("common", "formats")}/`;
   const packageImports = [
     "@cantoo/pdf-lib",
-    "@pdf-lib/fontkit",
     "@xlsx/xlsx-populate",
     "docx",
     "fflate",
+    "fontkit",
     "pdfjs-dist",
     "pptxgenjs",
   ];
@@ -77,22 +78,28 @@ test("the PDF fork confines crypto-js imports to its encryption module", async (
 
 test("bundled Unicode fonts match their pinned upstream bytes", async () => {
   const fontRoot = join(hostDirectory, "builtin-plugins/common/fonts");
-  assert.equal(
-    await sha256(join(fontRoot, "NotoSansCJKjp-Regular.otf")),
-    "68a3fc98800b2a27b371f2fb79991daf3633bd89309d4ffaa6946fd587f375b5",
+  const catalogPath = join(fontRoot, "catalog.mjs");
+  const { PDF_FONT_SPECS } = await import(pathToFileURL(catalogPath).href);
+  const fontFiles = (await readdir(fontRoot))
+    .filter((file) => /\.(?:otf|ttf)$/u.test(file))
+    .sort();
+  assert.deepEqual(
+    Object.values(PDF_FONT_SPECS).map(({ file }) => file).sort(),
+    fontFiles,
   );
-  assert.equal(
-    await sha256(join(fontRoot, "NotoSansArabic-Regular.ttf")),
-    "ceea25b464a656dc3b26849bab9356740401af62aedf1bfa8b7f0d9b75925b1b",
-  );
+  for (const spec of Object.values(PDF_FONT_SPECS)) {
+    const bytes = await readFile(join(fontRoot, spec.file));
+    assert.equal(bytes.length, spec.bytes, spec.file);
+    assert.equal(sha256(bytes), spec.sha256, spec.file);
+  }
 });
 
 async function jsonFile(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
-async function sha256(path) {
-  return createHash("sha256").update(await readFile(path)).digest("hex");
+function sha256(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
 }
 
 async function sourceFiles(directory, maximum) {

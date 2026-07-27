@@ -2047,7 +2047,16 @@
     "errors": {
       "load": "No se pudieron cargar las extensiones.",
       "operation": "No se pudo completar la operación.",
-      "host": "El host de extensiones no está disponible."
+      "host": "El host de extensiones no está disponible.",
+      "codes": {
+        "extensions_builtin_catalog_invalid": "El catálogo de plugins de Beaver no es válido.",
+        "extensions_host_unavailable": "El host de extensiones no está disponible.",
+        "extensions_builtin_plugin_invalid": "Un plugin de Beaver no es válido.",
+        "extensions_builtin_catalog_unavailable": "El catálogo de plugins de Beaver no está disponible.",
+        "extensions_builtin_entry_missing": "Falta el archivo principal de un plugin de Beaver.",
+        "extensions_builtin_entry_unavailable": "El archivo principal de un plugin de Beaver no está disponible.",
+        "extensions_builtin_entry_invalid": "El archivo principal de un plugin de Beaver no es válido."
+      }
     },
     "diagnostics": {
       "codes": {

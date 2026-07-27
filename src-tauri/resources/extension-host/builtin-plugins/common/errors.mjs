@@ -10,6 +10,7 @@ const SAFE_CODES = new Set([
   "output_too_large",
   "unsupported_format",
   "unsafe_archive",
+  "unsupported_character",
 ]);
 
 export class OfficePluginError extends Error {

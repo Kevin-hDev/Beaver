@@ -2047,7 +2047,16 @@
     "errors": {
       "load": "无法加载扩展。",
       "operation": "无法完成此操作。",
-      "host": "扩展宿主不可用。"
+      "host": "扩展宿主不可用。",
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Beaver 插件目录无效。",
+        "extensions_host_unavailable": "扩展宿主不可用。",
+        "extensions_builtin_plugin_invalid": "一个 Beaver 插件无效。",
+        "extensions_builtin_catalog_unavailable": "Beaver 插件目录不可用。",
+        "extensions_builtin_entry_missing": "一个 Beaver 插件缺少主文件。",
+        "extensions_builtin_entry_unavailable": "一个 Beaver 插件的主文件不可用。",
+        "extensions_builtin_entry_invalid": "一个 Beaver 插件的主文件无效。"
+      }
     },
     "diagnostics": {
       "codes": {

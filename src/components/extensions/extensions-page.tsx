@@ -14,8 +14,8 @@ interface ExtensionsPageProps {
   records: ExtensionRecord[];
   host: ExtensionHostStatus;
   loading: boolean;
-  loadError: boolean;
-  operationError: boolean;
+  loadError: string | null;
+  operationError: string | null;
   busyIds: Set<string>;
   onSelect: (id: string | null) => void;
   onAdd: () => void;
@@ -73,7 +73,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
       </header>
 
       {props.operationError && (
-        <div className="extp-message extp-message-error">{t("extensions.errors.operation")}</div>
+        <div className="extp-message extp-message-error">{t(props.operationError)}</div>
       )}
 
       {visible.length > 0 ? (
@@ -93,7 +93,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
       ) : (
         <EmptyState
           message={t(props.loadError
-            ? "extensions.errors.load"
+            ? props.loadError
             : props.loading
               ? "extensions.loading"
               : `extensions.pages.${props.section}.empty`)}

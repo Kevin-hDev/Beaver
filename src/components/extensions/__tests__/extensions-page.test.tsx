@@ -52,8 +52,8 @@ function renderPage(section: "plugins" | "custom" | "external", items = records)
       records={items}
       host={host}
       loading={false}
-      loadError={false}
-      operationError={false}
+      loadError={null}
+      operationError={null}
       busyIds={new Set()}
       onSelect={vi.fn()}
       onAdd={vi.fn()}
@@ -99,6 +99,33 @@ describe("ExtensionsPage", () => {
     renderPage("plugins", records.filter((item) => item.kind !== "builtin"));
 
     expect(screen.getByText("extensions.pages.plugins.empty")).toBeInTheDocument();
+  });
+
+  it("affiche la clé d’erreur précise fournie par le registre", () => {
+    render(
+      <ExtensionsPage
+        section="plugins"
+        selected={null}
+        records={records}
+        host={host}
+        loading={false}
+        loadError={null}
+        operationError="extensions.errors.codes.extensions_host_unavailable"
+        busyIds={new Set()}
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+        onEnabled={vi.fn()}
+        onShowInChat={vi.fn()}
+        onOpenSource={vi.fn()}
+        onRemove={vi.fn()}
+        onReload={vi.fn()}
+        onRecover={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(
+      "extensions.errors.codes.extensions_host_unavailable",
+    )).toBeInTheDocument();
   });
 
   it("ramène la section active dans la zone visible sans attendre un rendu", () => {

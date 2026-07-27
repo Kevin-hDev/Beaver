@@ -17,6 +17,8 @@ export const OFFICE_LIMITS = Object.freeze({
   maxBlocks: 500,
   maxPdfPages: 200,
   maxPdfSources: 32,
+  maxPdfRenderRequests: 4,
+  pdfRenderTimeoutMs: 60_000,
   maxSheets: 32,
   maxRowsPerSheet: 10_000,
   maxColumns: 256,

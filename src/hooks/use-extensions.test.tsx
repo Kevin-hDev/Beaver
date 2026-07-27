@@ -66,4 +66,19 @@ describe("useExtensions", () => {
       showInChat: true,
     });
   });
+
+  it("expose une erreur traduisible sans afficher le détail Rust", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") {
+        return Promise.reject(new Error("extensions_builtin_catalog_invalid"));
+      }
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+    expect(view.result.current.loadError)
+      .toBe("extensions.errors.codes.extensions_builtin_catalog_invalid");
+  });
 });

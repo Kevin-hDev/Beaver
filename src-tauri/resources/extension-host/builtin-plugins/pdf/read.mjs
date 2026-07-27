@@ -34,12 +34,12 @@ export async function inspectPdf(arguments_, context) {
     const count = Math.min(document.numPages, maxPages);
     for (let number = 1; number <= count && !resultTruncated; number += 1) {
       const page = await document.getPage(number);
-      const content = await page.getTextContent();
+      const content = await page.getTextContent({ includeMarkedContent: true });
       const textParts = [];
       const items = content.items.slice(0, 10_000);
       if (content.items.length > items.length) resultTruncated = true;
       budget.reserve(128);
-      for (const item of items) {
+      for (const item of readableItems(items)) {
         if (typeof item?.str !== "string") continue;
         const part = budget.takeText(item.str, 2);
         if (part.value) textParts.push(part.value);
@@ -67,6 +67,27 @@ export async function inspectPdf(arguments_, context) {
     await task?.destroy().catch(() => {});
     input.bytes.fill(0);
   }
+}
+
+function readableItems(items) {
+  const visible = [];
+  const logical = [];
+  let logicalText;
+  let hasLogical = false;
+  for (const item of items) {
+    if (item?.type === "beginMarkedContent" && item.tag === "BeaverLogical") {
+      logicalText = "";
+      hasLogical = true;
+    } else if (item?.type === "endMarkedContent") {
+      if (logicalText !== undefined) logical.push({ str: logicalText });
+      logicalText = undefined;
+    } else if (typeof item?.str === "string") {
+      visible.push(item);
+      if (logicalText !== undefined) logicalText += item.str;
+    }
+  }
+  if (logicalText !== undefined) logical.push({ str: logicalText });
+  return hasLogical ? logical : visible;
 }
 
 export async function mergePdfs(arguments_, context) {

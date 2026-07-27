@@ -8,6 +8,9 @@ export function createHost(hostScript, options = {}) {
     stdio: ["pipe", "pipe", "ignore"],
   });
   const pending = new Map();
+  let closed = false;
+  let resolveExit;
+  const exited = new Promise((resolve) => { resolveExit = resolve; });
   const lines = readline.createInterface({ input: child.stdout });
   lines.on("line", (line) => {
     const message = JSON.parse(line);
@@ -35,8 +38,20 @@ export function createHost(hostScript, options = {}) {
     if (message.error) request.reject(new Error("host request failed"));
     else request.resolve(message.result);
   });
+  child.once("exit", (code) => {
+    closed = true;
+    for (const request of pending.values()) {
+      clearTimeout(request.timer);
+      request.reject(new Error("host exited"));
+    }
+    pending.clear();
+    resolveExit(code);
+  });
   return {
     request(method, params) {
+      if (closed) {
+        return Promise.reject(new Error("host unavailable"));
+      }
       if (pending.size >= 64) {
         return Promise.reject(new Error("too many pending host requests"));
       }
@@ -58,5 +73,6 @@ export function createHost(hostScript, options = {}) {
     stop() {
       child.kill();
     },
+    exited,
   };
 }

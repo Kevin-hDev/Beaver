@@ -2047,7 +2047,16 @@
     "errors": {
       "load": "Erweiterungen konnten nicht geladen werden.",
       "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
-      "host": "Der Erweiterungs-Host ist nicht verfügbar."
+      "host": "Der Erweiterungs-Host ist nicht verfügbar.",
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Der Beaver-Plugin-Katalog ist ungültig.",
+        "extensions_host_unavailable": "Der Erweiterungs-Host ist nicht verfügbar.",
+        "extensions_builtin_plugin_invalid": "Ein Beaver-Plugin ist ungültig.",
+        "extensions_builtin_catalog_unavailable": "Der Beaver-Plugin-Katalog ist nicht verfügbar.",
+        "extensions_builtin_entry_missing": "Die Hauptdatei eines Beaver-Plugins fehlt.",
+        "extensions_builtin_entry_unavailable": "Die Hauptdatei eines Beaver-Plugins ist nicht verfügbar.",
+        "extensions_builtin_entry_invalid": "Die Hauptdatei eines Beaver-Plugins ist ungültig."
+      }
     },
     "diagnostics": {
       "codes": {

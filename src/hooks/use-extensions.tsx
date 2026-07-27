@@ -9,6 +9,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
+import { extensionErrorKey } from "@/lib/extension-errors";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
 const EMPTY_HOST: ExtensionHostStatus = {
@@ -23,8 +24,8 @@ function useExtensionsState() {
   const [extensions, setExtensions] = useState<ExtensionRecord[]>([]);
   const [host, setHost] = useState<ExtensionHostStatus>(EMPTY_HOST);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [operationError, setOperationError] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
   const [pendingActivation, setPendingActivation] =
     useState<ExtensionRecord | null>(null);
@@ -37,9 +38,9 @@ function useExtensionsState() {
       ]);
       setExtensions(records);
       setHost(status);
-      setLoadError(false);
-    } catch {
-      setLoadError(true);
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(extensionErrorKey(error, "extensions.errors.load"));
     } finally {
       setLoading(false);
     }
@@ -59,14 +60,14 @@ function useExtensionsState() {
     payload: Record<string, unknown>,
     optimistic: (record: ExtensionRecord) => ExtensionRecord,
   ) => {
-    setOperationError(false);
+    setOperationError(null);
     setBusyIds((current) => new Set([...current, id]));
     setExtensions((current) =>
       current.map((record) => record.manifest.id === id ? optimistic(record) : record));
     try {
       await invoke(command, payload);
-    } catch {
-      setOperationError(true);
+    } catch (error) {
+      setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
     } finally {
       await refresh();
       setBusyIds((current) => {
@@ -110,23 +111,23 @@ function useExtensionsState() {
       (record) => ({ ...record, showInChat })), [mutate]);
 
   const addLocal = useCallback(async (path: string) => {
-    setOperationError(false);
+    setOperationError(null);
     try {
       const added = await invoke<ExtensionRecord>("add_local_extension", { path });
       await refresh();
       return added;
-    } catch {
-      setOperationError(true);
+    } catch (error) {
+      setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
       return null;
     }
   }, [refresh]);
 
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
-    setOperationError(false);
+    setOperationError(null);
     try {
       await invoke(command, payload);
-    } catch {
-      setOperationError(true);
+    } catch (error) {
+      setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
     } finally {
       await refresh();
     }

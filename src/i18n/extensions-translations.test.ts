@@ -7,6 +7,7 @@ import itJson from "./it.json";
 import ja from "./ja.json";
 import zh from "./zh.json";
 import extensionContract from "../../src-tauri/resources/extension-host/contract.json";
+import { EXTENSION_BACKEND_ERROR_CODES } from "@/lib/extension-errors";
 
 const locales = [fr, en, es, de, itJson, zh, ja];
 const diagnosticCodes = [
@@ -49,6 +50,15 @@ describe("extensions translations", () => {
       for (const translation of Object.values(translations)) {
         expect(translation.trim()).not.toBe("");
       }
+    }
+  });
+
+  it("traduit chaque erreur du registre d'extensions dans les sept langues", () => {
+    const expected = [...EXTENSION_BACKEND_ERROR_CODES].sort();
+    for (const locale of locales) {
+      const translations = locale.extensions.errors.codes as Record<string, string>;
+      expect(Object.keys(translations).sort()).toEqual(expected);
+      expect(Object.values(translations).every((value) => value.trim())).toBe(true);
     }
   });
 });
