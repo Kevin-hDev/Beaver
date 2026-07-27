@@ -749,6 +749,7 @@
       "previewTitle": "Anteprima della mascotte",
       "beaverName": "Beaver",
       "circuitName": "Circuit",
+      "kovaName": "Kova",
       "previewActive": "Anteprima animata",
       "previewPaused": "Animazione in pausa",
       "settingsTitle": "Impostazioni",
@@ -759,6 +760,7 @@
       "collectionTitle": "Collezione",
       "beaverDesc": "La mascotte principale di Beaver",
       "circuitDesc": "Una renna sviluppatrice calma e curiosa",
+      "kovaDesc": "Un giovane combattente low-poly calmo e determinato",
       "selected": "Selezionata",
       "moveLabel": "Sposta la mascotte"
     },

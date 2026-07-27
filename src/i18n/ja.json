@@ -749,6 +749,7 @@
       "previewTitle": "マスコットのプレビュー",
       "beaverName": "Beaver",
       "circuitName": "Circuit",
+      "kovaName": "Kova",
       "previewActive": "アニメーションプレビュー",
       "previewPaused": "アニメーション停止中",
       "settingsTitle": "設定",
@@ -759,6 +760,7 @@
       "collectionTitle": "コレクション",
       "beaverDesc": "Beaver のメインマスコット",
       "circuitDesc": "穏やかで好奇心旺盛な開発者トナカイ",
+      "kovaDesc": "冷静で意志の強いローポリの若き戦士",
       "selected": "選択中",
       "moveLabel": "マスコットを移動"
     },

@@ -749,6 +749,7 @@
       "previewTitle": "吉祥物预览",
       "beaverName": "Beaver",
       "circuitName": "Circuit",
+      "kovaName": "Kova",
       "previewActive": "动画预览",
       "previewPaused": "动画已暂停",
       "settingsTitle": "设置",
@@ -759,6 +760,7 @@
       "collectionTitle": "收藏",
       "beaverDesc": "Beaver 的主要吉祥物",
       "circuitDesc": "一只沉稳又好奇的开发者驯鹿",
+      "kovaDesc": "一位冷静而坚定的低多边形少年战士",
       "selected": "已选择",
       "moveLabel": "移动吉祥物"
     },

@@ -111,4 +111,15 @@ describe("assets de marque", () => {
     expect(manifest).toContain('"id": "work-laptop"');
     expect(manifest).toContain('"id": "sleeping"');
   });
+
+  it("embarque les planches standard et avancée de Kova", () => {
+    const manifest = readText("src/assets/mascot/kova/manifest.json");
+
+    expect(fileExists("src/assets/mascot/kova/standard.webp")).toBe(true);
+    expect(fileExists("src/assets/mascot/kova/actions.webp")).toBe(true);
+    expect(manifest).toContain('"id": "kova"');
+    expect(manifest).toContain('"startFrame": 5');
+    expect(manifest).toContain('"id": "success"');
+    expect(manifest).toContain('"id": "grabbed"');
+  });
 });

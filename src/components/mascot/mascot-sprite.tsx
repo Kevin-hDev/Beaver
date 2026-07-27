@@ -28,7 +28,7 @@ export function MascotSprite({
     backgroundImage: `url(${definition.src})`,
     backgroundSize: `${definition.columns * 100}% ${definition.rows * 100}%`,
     backgroundPosition: spritePosition(
-      frame,
+      definition.startFrame + frame,
       definition.row,
       definition.columns,
       definition.rows,

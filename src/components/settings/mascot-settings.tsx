@@ -29,6 +29,11 @@ const MASCOT_OPTIONS: Array<{
     nameKey: "settings.mascot.circuitName",
     descriptionKey: "settings.mascot.circuitDesc",
   },
+  {
+    id: "kova",
+    nameKey: "settings.mascot.kovaName",
+    descriptionKey: "settings.mascot.kovaDesc",
+  },
 ];
 
 export function MascotSettings() {

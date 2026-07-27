@@ -3,6 +3,9 @@ import beaverManifest from "@/assets/mascot/cl-go-beaver/manifest.json";
 import circuitActionsSheet from "@/assets/mascot/circuit/actions.webp";
 import circuitManifest from "@/assets/mascot/circuit/manifest.json";
 import circuitStandardSheet from "@/assets/mascot/circuit/standard.webp";
+import kovaActionsSheet from "@/assets/mascot/kova/actions.webp";
+import kovaManifest from "@/assets/mascot/kova/manifest.json";
+import kovaStandardSheet from "@/assets/mascot/kova/standard.webp";
 import {
   DEFAULT_MASCOT_ID,
   isMascotId,
@@ -22,6 +25,7 @@ interface MascotStateSpec {
   id: string;
   sheet?: string;
   row: number;
+  startFrame?: number;
   frames: number;
   loop: boolean;
   frameDurationMs?: number;
@@ -50,6 +54,7 @@ interface MascotBundle {
 export interface MascotAnimationDefinition extends MascotSheet {
   id: MascotAnimationId;
   row: number;
+  startFrame: number;
   frames: number;
   loop: boolean;
   frameRatio: number;
@@ -88,6 +93,22 @@ const MASCOT_BUNDLES: Record<MascotId, MascotBundle> = {
       },
     },
   },
+  kova: {
+    manifest: kovaManifest,
+    defaultSheet: "standard",
+    sheets: {
+      standard: {
+        src: kovaStandardSheet,
+        columns: kovaManifest.sheets.standard.columns,
+        rows: kovaManifest.sheets.standard.rows,
+      },
+      actions: {
+        src: kovaActionsSheet,
+        columns: kovaManifest.sheets.actions.columns,
+        rows: kovaManifest.sheets.actions.rows,
+      },
+    },
+  },
 };
 
 export function getMascotAnimation(
@@ -99,6 +120,10 @@ export function getMascotAnimation(
     ?? bundle.manifest.states[0];
   const sheet = bundle.sheets[state.sheet ?? bundle.defaultSheet]
     ?? bundle.sheets[bundle.defaultSheet];
+  const startFrame = Math.max(
+    0,
+    Math.min(sheet.columns - 1, state.startFrame ?? 0),
+  );
 
   return {
     id,
@@ -106,7 +131,8 @@ export function getMascotAnimation(
     columns: sheet.columns,
     rows: sheet.rows,
     row: state.row,
-    frames: Math.max(1, Math.min(sheet.columns, state.frames)),
+    startFrame,
+    frames: Math.max(1, Math.min(sheet.columns - startFrame, state.frames)),
     loop: state.loop,
     frameRatio: bundle.manifest.cellWidth / bundle.manifest.cellHeight,
     frameDurationMs: state.frameDurationMs,

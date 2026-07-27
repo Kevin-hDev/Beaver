@@ -35,6 +35,15 @@ describe("mascot service validation", () => {
     expect(settings.mascot_id).toBe("circuit");
   });
 
+  it("accepte Kova comme mascotte disponible", () => {
+    const settings = normalizeMascotSettings({
+      mascot_id: "kova",
+      size_percent: 100,
+    });
+
+    expect(settings.mascot_id).toBe("kova");
+  });
+
   it("retombe sur idle pour un état temps réel invalide", () => {
     expect(normalizeMascotState({ animation: "unknown", revision: -1 })).toEqual({
       animation: "idle",

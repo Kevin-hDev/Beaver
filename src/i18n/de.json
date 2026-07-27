@@ -749,6 +749,7 @@
       "previewTitle": "Maskottchen-Vorschau",
       "beaverName": "Beaver",
       "circuitName": "Circuit",
+      "kovaName": "Kova",
       "previewActive": "Animierte Vorschau",
       "previewPaused": "Animation pausiert",
       "settingsTitle": "Einstellungen",
@@ -759,6 +760,7 @@
       "collectionTitle": "Sammlung",
       "beaverDesc": "Das Hauptmaskottchen von Beaver",
       "circuitDesc": "Ein ruhiges und neugieriges Entwickler-Rentier",
+      "kovaDesc": "Ein ruhiger und entschlossener junger Low-Poly-Kämpfer",
       "selected": "Ausgewählt",
       "moveLabel": "Maskottchen verschieben"
     },

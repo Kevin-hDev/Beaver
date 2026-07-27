@@ -9,7 +9,7 @@ export function mascotCommandResult(
     const mascotId = patch && typeof patch === "object"
       ? (patch as Record<string, unknown>).mascot_id
       : null;
-    if (mascotId === "cl-go-beaver" || mascotId === "circuit") {
+    if (mascotId === "cl-go-beaver" || mascotId === "circuit" || mascotId === "kova") {
       selectedMascotId = mascotId;
     }
   } else if (command !== "get_mascot_settings") {

@@ -749,6 +749,7 @@
       "previewTitle": "Vista previa de la mascota",
       "beaverName": "Beaver",
       "circuitName": "Circuit",
+      "kovaName": "Kova",
       "previewActive": "Vista previa animada",
       "previewPaused": "Animación en pausa",
       "settingsTitle": "Ajustes",
@@ -759,6 +760,7 @@
       "collectionTitle": "Colección",
       "beaverDesc": "La mascota principal de Beaver",
       "circuitDesc": "Un reno desarrollador tranquilo y curioso",
+      "kovaDesc": "Un joven luchador low-poly tranquilo y decidido",
       "selected": "Seleccionada",
       "moveLabel": "Mover la mascota"
     },

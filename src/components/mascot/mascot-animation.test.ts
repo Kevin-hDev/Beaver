@@ -28,9 +28,28 @@ describe("mascot sprite playback", () => {
     expect(held).toMatchObject({ row: 4, frames: 6, frameDurationMs: 120 });
   });
 
+  it("utilise les planches standard et les poses avancées de Kova", () => {
+    const idle = getMascotAnimation("idle", "kova");
+    const work = getMascotAnimation("work-laptop", "kova");
+    const exploration = getMascotAnimation("explore-book", "kova");
+    const success = getMascotAnimation("success", "kova");
+
+    expect(idle).toMatchObject({
+      row: 0,
+      startFrame: 0,
+      frames: 6,
+      columns: 8,
+      rows: 11,
+    });
+    expect(work).toMatchObject({ row: 0, startFrame: 0, frames: 3, rows: 3 });
+    expect(exploration).toMatchObject({ row: 0, startFrame: 5, frames: 3 });
+    expect(success).toMatchObject({ row: 0, startFrame: 3, frames: 1 });
+  });
+
   it("positionne correctement les coins de la planche", () => {
     expect(spritePosition(0, 0)).toBe("0% 0%");
     expect(spritePosition(7, 18)).toBe("100% 100%");
+    expect(spritePosition(7, 2, 8, 3)).toBe("100% 100%");
   });
 
   it("conserve le repos tant qu'aucun état réel ne le remplace", () => {

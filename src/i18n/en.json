@@ -754,6 +754,7 @@
       "previewTitle": "Mascot preview",
       "beaverName": "Beaver",
       "circuitName": "Circuit",
+      "kovaName": "Kova",
       "previewActive": "Animated preview",
       "previewPaused": "Animation paused",
       "settingsTitle": "Settings",
@@ -764,6 +765,7 @@
       "collectionTitle": "Collection",
       "beaverDesc": "Beaver's main mascot",
       "circuitDesc": "A calm and curious developer reindeer",
+      "kovaDesc": "A calm and determined young low-poly fighter",
       "selected": "Selected",
       "moveLabel": "Move the mascot"
     },
