@@ -1,0 +1,4 @@
+interface:
+  display_name: "Routeur des modèles Forecast"
+  short_description: "Choisit le modèle de prévision adapté"
+  default_prompt: "Utilise $forecast-model-router pour sélectionner et justifier le modèle de prévision le plus adapté."

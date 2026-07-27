@@ -1,5 +1,6 @@
 use super::{
-    sha256_hex, sync_default_skills_from, ManagedSkillUpgrade, LEGACY_SKILL_CREATE_SHA256,
+    sha256_hex, sync_default_skills_from, ManagedSkillUpgrade, ManagedSkillUpgradeKind,
+    LEGACY_SKILL_CREATE_SHA256,
 };
 
 fn write_skill(root: &std::path::Path, content: &[u8]) {
@@ -12,6 +13,7 @@ fn upgrade_for<'a>(hash: &'a str) -> ManagedSkillUpgrade<'a> {
     ManagedSkillUpgrade {
         name: "skill-create",
         legacy_manifest_sha256: hash,
+        kind: ManagedSkillUpgradeKind::ManifestOnly,
     }
 }
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Expert Forecasting"
+  short_description: "Prévisions robustes, évaluées et explicables"
+  default_prompt: "Utilise $forecasting pour produire une prévision rigoureuse, mesurée et clairement expliquée."

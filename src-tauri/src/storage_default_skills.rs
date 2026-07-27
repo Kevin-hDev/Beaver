@@ -3,19 +3,44 @@ use std::path::Path;
 use tauri::Manager;
 
 const MAX_DEFAULT_SKILLS: usize = 64;
+const MAX_SKILL_BUNDLE_ENTRIES: usize = 128;
 const MAX_SKILL_MANIFEST_BYTES: u64 = 256 * 1024;
 const LEGACY_SKILL_CREATE_SHA256: &str =
     "83bfadbb28ba109f15e2cef383ac8317c14c2358e388ae24dd6ab3b77e428dac";
+const LEGACY_FORECASTING_STUB_SHA256: &str =
+    "a9c22c6ee64ab25be3b74b08455b7de48d7f403275127dd7ced1f026d56e46e6";
+const LEGACY_FORECAST_MODEL_ROUTER_STUB_SHA256: &str =
+    "2f29a1e024e644d6e27c9637e0776f28f906f3bcae4ed8c0844d3d0f4200e54a";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ManagedSkillUpgradeKind {
+    ManifestOnly,
+    FullBundle,
+}
 
 pub(crate) struct ManagedSkillUpgrade<'a> {
     pub(crate) name: &'a str,
     pub(crate) legacy_manifest_sha256: &'a str,
+    pub(crate) kind: ManagedSkillUpgradeKind,
 }
 
-const MANAGED_SKILL_UPGRADES: [ManagedSkillUpgrade<'static>; 1] = [ManagedSkillUpgrade {
-    name: "skill-create",
-    legacy_manifest_sha256: LEGACY_SKILL_CREATE_SHA256,
-}];
+const MANAGED_SKILL_UPGRADES: [ManagedSkillUpgrade<'static>; 3] = [
+    ManagedSkillUpgrade {
+        name: "skill-create",
+        legacy_manifest_sha256: LEGACY_SKILL_CREATE_SHA256,
+        kind: ManagedSkillUpgradeKind::ManifestOnly,
+    },
+    ManagedSkillUpgrade {
+        name: "forecasting",
+        legacy_manifest_sha256: LEGACY_FORECASTING_STUB_SHA256,
+        kind: ManagedSkillUpgradeKind::FullBundle,
+    },
+    ManagedSkillUpgrade {
+        name: "forecast-model-router",
+        legacy_manifest_sha256: LEGACY_FORECAST_MODEL_ROUTER_STUB_SHA256,
+        kind: ManagedSkillUpgradeKind::FullBundle,
+    },
+];
 
 pub(crate) fn install_default_skills(
     app_handle: &tauri::AppHandle,
@@ -69,16 +94,24 @@ pub(crate) fn sync_default_skills_from(
         else {
             continue;
         };
-        upgrade_manifest_if_untouched(&entry.path(), &target, upgrade)?;
+        upgrade_if_untouched(&entry.path(), &target, upgrade)?;
     }
     Ok(())
 }
 
-fn upgrade_manifest_if_untouched(
+fn upgrade_if_untouched(
     source_bundle: &Path,
     target_bundle: &Path,
     upgrade: &ManagedSkillUpgrade<'_>,
 ) -> Result<(), String> {
+    let metadata = match std::fs::symlink_metadata(target_bundle) {
+        Ok(metadata) => metadata,
+        Err(_) => return Ok(()),
+    };
+    if !metadata.is_dir() || metadata.file_type().is_symlink() {
+        return Ok(());
+    }
+
     let target = target_bundle.join("SKILL.md");
     let installed = match read_manifest(&target) {
         Ok(content) => content,
@@ -88,9 +121,47 @@ fn upgrade_manifest_if_untouched(
         return Ok(());
     }
 
+    match upgrade.kind {
+        ManagedSkillUpgradeKind::ManifestOnly => {
+            let current = read_manifest(&source_bundle.join("SKILL.md"))?;
+            crate::services::private_store::atomic_write(&target, &current)
+                .map_err(|_| "Mise à jour du skill impossible".to_string())
+        }
+        ManagedSkillUpgradeKind::FullBundle => {
+            sync_full_bundle_manifest_last(source_bundle, target_bundle)
+        }
+    }
+}
+
+fn sync_full_bundle_manifest_last(
+    source_bundle: &Path,
+    target_bundle: &Path,
+) -> Result<(), String> {
+    let entries = std::fs::read_dir(source_bundle).map_err(|_| skill_upgrade_error())?;
+    let mut count = 0_usize;
+    for entry in entries {
+        let entry = entry.map_err(|_| skill_upgrade_error())?;
+        if entry.file_name() == "SKILL.md" {
+            continue;
+        }
+        count += 1;
+        if count > MAX_SKILL_BUNDLE_ENTRIES {
+            return Err(skill_upgrade_error());
+        }
+        super::storage_migration_files::copy_recursive(
+            &entry.path(),
+            &target_bundle.join(entry.file_name()),
+        )
+        .map_err(|_| skill_upgrade_error())?;
+    }
+
     let current = read_manifest(&source_bundle.join("SKILL.md"))?;
-    crate::services::private_store::atomic_write(&target, &current)
-        .map_err(|_| "Mise à jour du skill impossible".to_string())
+    crate::services::private_store::atomic_write(&target_bundle.join("SKILL.md"), &current)
+        .map_err(|_| skill_upgrade_error())
+}
+
+fn skill_upgrade_error() -> String {
+    "Mise à jour du skill impossible".to_string()
 }
 
 fn read_manifest(path: &Path) -> Result<Vec<u8>, String> {
@@ -112,3 +183,7 @@ fn sha256_hex(content: &[u8]) -> String {
 #[cfg(test)]
 #[path = "storage_default_skills_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "storage_default_skills_upgrade_tests.rs"]
+mod upgrade_tests;
