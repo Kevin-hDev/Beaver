@@ -733,6 +733,7 @@
       "general": "通用",
       "ollama": "Ollama",
       "connectors": "连接器",
+      "extensions": "扩展",
       "apiKeys": "API 密钥",
       "providers": "提供商",
       "llm": "LLM",
@@ -1234,9 +1235,6 @@
       "subtitle": "向你的实例添加连接器。",
       "search": "搜索连接器…",
       "empty": "没有匹配的连接器。",
-      "tabMcp": "MCP",
-      "tabPlugins": "插件",
-      "pluginsEmpty": "即将推出",
       "categories": {
         "all": "全部",
         "productivity": "生产力",
@@ -1914,6 +1912,121 @@
       "failed": "导出失败"
     }
   },
+  "extensions": {
+    "title": "扩展",
+    "sections": {
+      "plugins": "Beaver 插件",
+      "custom": "自定义扩展",
+      "external": "外部应用",
+      "host": "宿主与诊断"
+    },
+    "pages": {
+      "plugins": {
+        "title": "Beaver 插件",
+        "description": "Beaver 官方插件，与内部 Tools 完全分开。",
+        "empty": "官方插件套件可用后会显示在这里。"
+      },
+      "custom": {
+        "title": "自定义扩展",
+        "description": "添加由你选择的 JavaScript 或 TypeScript 代码。",
+        "empty": "没有自定义扩展。"
+      },
+      "external": {
+        "title": "外部应用",
+        "description": "通过 Beaver 扩展协议连接的独立程序。",
+        "empty": "没有已连接的外部应用。"
+      }
+    },
+    "actions": {
+      "add": "添加",
+      "cancel": "取消",
+      "back": "返回",
+      "openSource": "打开源文件",
+      "reload": "重新加载",
+      "remove": "移除",
+      "confirmRemove": "确认",
+      "restartHost": "重启宿主",
+      "recovery": "禁用用户扩展"
+    },
+    "status": {
+      "active": "已启用",
+      "inactive": "未启用",
+      "loading": "加载中",
+      "error": "错误",
+      "incompatible": "不兼容"
+    },
+    "kinds": {
+      "builtin": "官方插件",
+      "local": "本地扩展",
+      "external": "外部应用"
+    },
+    "loading": "正在加载扩展…",
+    "showInChat": "在聊天中显示",
+    "showInChatFor": "在聊天中显示 {{name}}",
+    "enableFor": "启用 {{name}}",
+    "fullAccessWarning": "此扩展未经 Beaver 审核，并且可以访问你账户中的数据、密钥和功能。",
+    "detail": {
+      "status": "状态",
+      "runtime": "运行时",
+      "api": "Beaver API",
+      "author": "作者",
+      "source": "来源",
+      "unknown": "未提供",
+    "contributions": "已注册的扩展项",
+    "replacesCore": "替换内置工具"
+  },
+  "activation": {
+    "title": "启用 {{name}}？",
+    "description": "此扩展将完全访问你账户中的数据、密钥和功能。Beaver 未对其进行审核。",
+    "confirm": "信任并启用"
+  },
+    "add": {
+      "title": "添加扩展",
+      "fullAccessWarning": "所选代码将以你的用户账户权限运行。请只安装你决定信任的扩展。",
+      "supportedFiles": "Beaver 扩展",
+      "file": "选择文件",
+      "fileDescription": "JavaScript、TypeScript 或 JSON 清单",
+      "folder": "选择文件夹",
+      "folderDescription": "包含 Beaver 清单或 package.json 的文件夹"
+    },
+    "host": {
+      "title": "宿主与诊断",
+      "description": "运行自定义扩展的独立进程状态。",
+      "state": "状态",
+      "node": "Node.js",
+      "jiti": "Jiti",
+      "api": "Beaver API",
+    "active": "活动扩展",
+    "diagnostics": "最近的加载错误",
+      "unavailable": "不可用",
+      "states": {
+        "stopped": "已停止",
+        "starting": "正在启动",
+        "running": "运行中",
+        "error": "错误"
+      },
+      "recoveryTitle": "恢复模式",
+      "recoveryDescription": "禁用所有用户扩展，让 Beaver 恢复正常运行。"
+    },
+    "errors": {
+      "load": "无法加载扩展。",
+      "operation": "无法完成此操作。",
+      "host": "扩展宿主不可用。"
+    },
+    "diagnostics": {
+      "codes": {
+        "module_not_found": "找不到模块或依赖项",
+        "syntax_error": "语法错误",
+        "activation_failed": "激活失败",
+        "registration_failed": "扩展项注册失败",
+        "import_failed": "模块导入失败",
+        "entry_unavailable": "扩展入口点不可用",
+        "load_failed": "扩展加载失败",
+        "host_missing_response": "宿主未确认此扩展已加载",
+        "advanced_required": "替换内置工具需要高级模式"
+      }
+    }
+  },
   "chatMenu": {
     "plusButtonHint": "添加文件及更多",
     "addFile": "添加图片或文件",
@@ -1923,6 +2036,6 @@
     "connectors": "连接器",
     "plugins": "插件",
     "noConnectors": "没有连接器",
-    "pluginsEmpty": "即将推出"
+    "noPlugins": "没有插件快捷方式"
   }
 }

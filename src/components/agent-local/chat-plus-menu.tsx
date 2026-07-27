@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Image, Plugs, PuzzlePiece, CaretRight, ClipboardText } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useConnectors } from "@/hooks/use-connectors";
+import { useExtensions } from "@/hooks/use-extensions";
 import { McpIcon } from "@/lib/mcp-icons";
+import { ChatPlusPluginMenu, chatPluginShortcuts } from "./chat-plus-plugin-menu";
+import { useChatPlusSubmenuPosition } from "./use-chat-plus-submenu-position";
 import "./chat-plus-menu.css";
 
 interface ChatPlusMenuProps {
@@ -20,7 +23,9 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
   const [submenu, setSubmenu] = useState<"connectors" | "plugins" | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const submenuRef = useRef<HTMLDivElement>(null);
   const { configured, toggleChatEnabled } = useConnectors();
+  const extensionRegistry = useExtensions();
 
   const close = useCallback(() => { setOpen(false); setSubmenu(null); }, []);
 
@@ -39,12 +44,13 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
 
   const connectedItems = configured.filter((c) => c.status === "connected");
 
-  const [submenuLeft, setSubmenuLeft] = useState(244);
-  useLayoutEffect(() => {
-    if (open && dropdownRef.current) {
-      setSubmenuLeft(dropdownRef.current.offsetWidth + 4);
-    }
-  }, [open]);
+  const submenuLeft = useChatPlusSubmenuPosition(
+    open,
+    submenu,
+    menuRef,
+    dropdownRef,
+    submenuRef,
+  );
 
   return (
     <div className="cpm-wrapper" ref={menuRef}>
@@ -81,6 +87,10 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
             type="button"
             className={`cpm-item cpm-has-sub ${submenu === "connectors" ? "active" : ""}`}
             onMouseEnter={() => setSubmenu("connectors")}
+            onFocus={() => setSubmenu("connectors")}
+            onClick={() => setSubmenu("connectors")}
+            aria-haspopup="menu"
+            aria-expanded={submenu === "connectors"}
           >
             <Plugs size="var(--icon-md)" weight="regular" />
             <span>{t("chatMenu.connectors")}</span>
@@ -91,6 +101,10 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
             type="button"
             className={`cpm-item cpm-has-sub ${submenu === "plugins" ? "active" : ""}`}
             onMouseEnter={() => setSubmenu("plugins")}
+            onFocus={() => setSubmenu("plugins")}
+            onClick={() => setSubmenu("plugins")}
+            aria-haspopup="menu"
+            aria-expanded={submenu === "plugins"}
           >
             <PuzzlePiece size="var(--icon-md)" weight="regular" />
             <span>{t("chatMenu.plugins")}</span>
@@ -100,7 +114,14 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
       )}
 
       {open && submenu === "connectors" && (
-        <div className="cpm-submenu" style={{ left: submenuLeft }} onMouseLeave={() => setSubmenu(null)}>
+        <div
+          ref={submenuRef}
+          className="cpm-submenu"
+          role="group"
+          aria-label={t("chatMenu.connectors")}
+          style={{ left: submenuLeft }}
+          onMouseLeave={() => setSubmenu(null)}
+        >
           {connectedItems.length === 0 ? (
             <div className="cpm-sub-empty">{t("chatMenu.noConnectors")}</div>
           ) : (
@@ -118,8 +139,19 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
       )}
 
       {open && submenu === "plugins" && (
-        <div className="cpm-submenu" style={{ left: submenuLeft }} onMouseLeave={() => setSubmenu(null)}>
-          <div className="cpm-sub-empty">{t("chatMenu.pluginsEmpty")}</div>
+        <div
+          ref={submenuRef}
+          className="cpm-submenu"
+          role="group"
+          aria-label={t("chatMenu.plugins")}
+          style={{ left: submenuLeft }}
+          onMouseLeave={() => setSubmenu(null)}
+        >
+          <ChatPlusPluginMenu
+            extensions={chatPluginShortcuts(extensionRegistry.extensions)}
+            busyIds={extensionRegistry.busyIds}
+            onToggle={(id, enabled) => void extensionRegistry.setEnabled(id, enabled)}
+          />
         </div>
       )}
     </div>

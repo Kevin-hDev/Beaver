@@ -6,6 +6,7 @@ import { useOAuthProviderSlots } from "@/components/providers/oauth-providers";
 import { ProvidersShell } from "@/components/providers/providers-shell";
 import { useConnectorsTabSlots } from "@/components/connectors/connectors-tab";
 import { useChannelsTabSlots } from "@/components/channels/channels-tab";
+import { useExtensionsTabSlots } from "@/components/extensions/extensions-tab";
 import type { PanelContentSlots } from "@/components/layout/panel-slots";
 import type { DeepPartial, SettingsNavState, SettingsSubTab } from "@/types/navigation";
 
@@ -28,6 +29,7 @@ type ChildSlotProps = Omit<SlotPortalProps, "listTarget" | "detailTarget">;
 export function usesSettingsChildSlots(subTab: SettingsSubTab): boolean {
   return subTab === "ollama"
     || subTab === "connectors"
+    || subTab === "extensions"
     || subTab === "channels"
     || subTab === "providers";
 }
@@ -42,6 +44,7 @@ export function SettingsChildSlots({
   const portalProps = { ...props, listTarget, detailTarget };
   if (subTab === "ollama") return <OllamaSlotPortal {...portalProps} />;
   if (subTab === "connectors") return <ConnectorsSlotPortal {...portalProps} />;
+  if (subTab === "extensions") return <ExtensionsSlotPortal {...portalProps} />;
   if (subTab === "channels") return <ChannelsSlotPortal {...portalProps} />;
   if (subTab === "providers") return <ProvidersSlotPortal {...portalProps} />;
   return null;
@@ -54,6 +57,11 @@ const OllamaSlotPortal = memo(function OllamaSlotPortal(props: SlotPortalProps) 
 
 const ConnectorsSlotPortal = memo(function ConnectorsSlotPortal(props: SlotPortalProps) {
   const slots = useConnectorsTabSlots(childProps(props));
+  return <SlotPortals slots={slots} listTarget={props.listTarget} detailTarget={props.detailTarget} />;
+});
+
+const ExtensionsSlotPortal = memo(function ExtensionsSlotPortal(props: SlotPortalProps) {
+  const slots = useExtensionsTabSlots(childProps(props));
   return <SlotPortals slots={slots} listTarget={props.listTarget} detailTarget={props.detailTarget} />;
 });
 

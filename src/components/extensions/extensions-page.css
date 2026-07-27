@@ -1,0 +1,123 @@
+.extp-content {
+  width: 100%;
+  max-width: var(--settings-content-max-width);
+  margin: 0 auto;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+.extp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.extp-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.extp-header p {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  line-height: var(--extensions-copy-line-height);
+}
+
+.extp-header .wk-btn-primary,
+.extp-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.extp-list,
+.extp-lines {
+  overflow: hidden;
+  border-top: var(--line-thin) solid var(--edge);
+  border-bottom: var(--line-thin) solid var(--edge);
+}
+
+.extp-info-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--extensions-info-row-height);
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: var(--line-thin) solid var(--edge);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.extp-info-line:last-child {
+  border-bottom: 0;
+}
+
+.extp-info-line > span:first-child {
+  color: var(--ink-muted);
+}
+
+.extp-info-line > span:last-child,
+.extp-info-line code {
+  max-width: var(--extensions-value-max-width);
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extp-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.extp-message-error {
+  border: var(--line-thin) solid var(--signal-error-border);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+}
+
+.extp-message-warning {
+  border: var(--line-thin) solid var(--signal-warning);
+  background: var(--signal-warning-bg);
+  color: var(--ink);
+}
+
+.extp-message-warning svg {
+  flex-shrink: 0;
+  color: var(--signal-warning);
+}
+
+.extp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+@media (max-width: 48rem) {
+  .extp-content {
+    padding: var(--space-md);
+  }
+
+  .extp-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .extp-info-line > span:last-child,
+  .extp-info-line code {
+    max-width: var(--extensions-value-max-width-compact);
+  }
+}

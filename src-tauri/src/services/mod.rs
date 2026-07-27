@@ -14,6 +14,7 @@ pub mod codex_oauth;
 pub mod compress;
 pub mod config;
 pub mod env_detect;
+pub mod extensions;
 pub mod favorite_models;
 pub mod file_watcher;
 pub mod forecast;

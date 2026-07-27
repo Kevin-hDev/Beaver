@@ -29,5 +29,5 @@ pub fn get_chat_tool_definitions() -> Vec<Value> {
         ),
     ];
     defs.extend(super::tool_definitions_mcp::mcp_tool_definitions());
-    defs
+    crate::services::extensions::merge_tool_definitions(defs)
 }

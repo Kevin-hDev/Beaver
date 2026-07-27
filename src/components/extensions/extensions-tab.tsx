@@ -1,0 +1,65 @@
+import { useMemo, useState } from "react";
+import { useExtensions } from "@/hooks/use-extensions";
+import { ExtensionAddDialog } from "./extension-add-dialog";
+import { ExtensionsPage } from "./extensions-page";
+import { ExtensionsSidebar } from "./extensions-sidebar";
+import type { ExtensionsTabProps } from "./extensions-tab-types";
+
+export function useExtensionsTabSlots({
+  navState,
+  onNavChange,
+  onNavReplace,
+}: ExtensionsTabProps): { list: React.ReactNode; detail: React.ReactNode } {
+  const registry = useExtensions();
+  const [adding, setAdding] = useState(false);
+  const selected = registry.extensions.find(
+    (extension) => extension.manifest.id === navState.extensionId,
+  ) ?? null;
+
+  const list = useMemo(() => (
+    <ExtensionsSidebar
+      section={navState.extensionsSection}
+      onSelect={(extensionsSection) =>
+        onNavReplace({ extensionsSection, extensionId: null })}
+    />
+  ), [navState.extensionsSection, onNavReplace]);
+
+  const detail = (
+    <>
+      <ExtensionsPage
+        section={navState.extensionsSection}
+        selected={selected}
+        records={registry.extensions}
+        host={registry.host}
+        loading={registry.loading}
+        loadError={registry.loadError}
+        operationError={registry.operationError}
+        busyIds={registry.busyIds}
+        onSelect={(extensionId) => onNavChange({ extensionId })}
+        onAdd={() => setAdding(true)}
+        onEnabled={(id, enabled) => void registry.setEnabled(id, enabled)}
+        onShowInChat={(id, show) => void registry.setShowInChat(id, show)}
+        onOpenSource={(id) => void registry.openSource(id)}
+        onRemove={(id) => {
+          onNavReplace({ extensionId: null });
+          void registry.remove(id);
+        }}
+        onReload={() => void registry.reload()}
+        onRecover={() => void registry.recover()}
+      />
+      {adding && (
+        <ExtensionAddDialog
+          onClose={() => setAdding(false)}
+          onAdd={async (path) => {
+            const added = await registry.addLocal(path);
+            if (!added) return false;
+            onNavChange({ extensionId: added.manifest.id });
+            return true;
+          }}
+        />
+      )}
+    </>
+  );
+
+  return { list, detail };
+}

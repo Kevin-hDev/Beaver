@@ -18,6 +18,10 @@ pub fn validate(arguments: &Value, schema: Option<&Value>) -> Result<(), String>
     super::schema::validate(schema, arguments).map_err(|_| INVALID.to_string())
 }
 
+pub fn validate_schema(schema: &Value) -> Result<(), String> {
+    super::schema::validate_definition(schema).map_err(|_| INVALID.to_string())
+}
+
 fn check_structure(value: &Value, depth: usize, elements: &mut usize) -> Result<(), String> {
     if depth > MAX_DEPTH {
         return Err(INVALID.to_string());

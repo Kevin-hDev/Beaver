@@ -9,7 +9,8 @@ type FsEvent =
   | "fs:connectors-changed"
   | "fs:skills-changed"
   | "fs:external-agent-sources-changed"
-  | "fs:providers-changed";
+  | "fs:providers-changed"
+  | "fs:extensions-changed";
 
 export function useFsEvent(event: FsEvent, callback: () => void) {
   useEffect(() => {

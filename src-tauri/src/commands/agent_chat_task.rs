@@ -5,6 +5,7 @@ mod compress;
 mod gemma4_thinking_guard;
 mod ollama;
 mod params;
+mod session_events;
 
 pub(crate) use params::{StreamCapabilityHints, StreamTaskParams};
 
@@ -51,6 +52,7 @@ pub(crate) async fn run_stream_task(
 
     let mode = common::resolve_permission_mode(params.permission_mode_override.as_deref()).await;
     let response_language = common::response_language();
+    session_events::emit_started(&params.session_id, &mode.mode);
 
     if chat_engine(&params.provider) == ChatEngine::Ollama {
         ollama::run(params, mode, response_language).await

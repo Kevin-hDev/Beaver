@@ -1,0 +1,105 @@
+.extr-row {
+  display: flex;
+  align-items: center;
+  min-height: var(--extensions-row-height);
+  border-bottom: var(--line-thin) solid var(--edge);
+  transition: background var(--ease-smooth);
+}
+
+.extr-row:hover {
+  background: var(--surface-hover);
+}
+
+.extr-main {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.extr-main:disabled {
+  cursor: default;
+}
+
+.extr-icon {
+  display: grid;
+  place-items: center;
+  width: var(--extensions-icon-size);
+  height: var(--extensions-icon-size);
+  flex: 0 0 var(--extensions-icon-size);
+  border: var(--line-thin) solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-muted);
+}
+
+.extr-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.extr-name,
+.extr-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extr-name {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.extr-description {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+}
+
+.extr-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding-inline: var(--space-sm);
+  color: var(--ink-faint);
+}
+
+.extr-status {
+  width: var(--extensions-status-size);
+  height: var(--extensions-status-size);
+  flex: 0 0 var(--extensions-status-size);
+  border-radius: var(--radius-full);
+  background: var(--ink-faint);
+}
+
+.extr-status-active { background: var(--signal-ok); }
+.extr-status-error,
+.extr-status-incompatible { background: var(--signal-error); }
+.extr-status-loading { background: var(--signal-warning); }
+
+.extr-caret {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+}
+
+.extr-row > .uis-switch {
+  margin-right: var(--space-md);
+}
+
+@media (max-width: 48rem) {
+  .extr-description,
+  .extr-control > svg {
+    display: none;
+  }
+}

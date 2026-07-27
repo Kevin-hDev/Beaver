@@ -738,6 +738,7 @@
       "general": "Général",
       "ollama": "Ollama",
       "connectors": "Connecteurs",
+      "extensions": "Extensions",
       "apiKeys": "Clés API",
       "providers": "Providers",
       "llm": "LLM",
@@ -1251,9 +1252,6 @@
       "subtitle": "Ajoutez des connecteurs à votre instance.",
       "search": "Rechercher des connecteurs…",
       "empty": "Aucun connecteur ne correspond.",
-      "tabMcp": "MCP",
-      "tabPlugins": "Plugins",
-      "pluginsEmpty": "Bientôt disponible",
       "categories": {
         "all": "Tous",
         "productivity": "Productivité",
@@ -1295,6 +1293,121 @@
     "noTitle": "Sans titre",
     "openSite": "Ouvrir le site"
   },
+  "extensions": {
+    "title": "Extensions",
+    "sections": {
+      "plugins": "Plugins Beaver",
+      "custom": "Extensions personnalisées",
+      "external": "Applications externes",
+      "host": "Hôte et diagnostics"
+    },
+    "pages": {
+      "plugins": {
+        "title": "Plugins Beaver",
+        "description": "Les plugins officiels de Beaver, distincts des Tools internes.",
+        "empty": "La suite officielle de plugins apparaîtra ici lorsqu’elle sera disponible."
+      },
+      "custom": {
+        "title": "Extensions personnalisées",
+        "description": "Ajoutez du code JavaScript ou TypeScript choisi par vous.",
+        "empty": "Aucune extension personnalisée."
+      },
+      "external": {
+        "title": "Applications externes",
+        "description": "Programmes indépendants reliés au protocole d’extension Beaver.",
+        "empty": "Aucune application externe connectée."
+      }
+    },
+    "actions": {
+      "add": "Ajouter",
+      "cancel": "Annuler",
+      "back": "Retour",
+      "openSource": "Ouvrir la source",
+      "reload": "Recharger",
+      "remove": "Supprimer",
+      "confirmRemove": "Confirmer",
+      "restartHost": "Redémarrer l’hôte",
+      "recovery": "Désactiver les extensions utilisateur"
+    },
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif",
+      "loading": "Chargement",
+      "error": "Erreur",
+      "incompatible": "Incompatible"
+    },
+    "kinds": {
+      "builtin": "Plugin officiel",
+      "local": "Extension locale",
+      "external": "Application externe"
+    },
+    "loading": "Chargement des extensions…",
+    "showInChat": "Afficher dans le chat",
+    "showInChatFor": "Afficher {{name}} dans le chat",
+    "enableFor": "Activer {{name}}",
+    "fullAccessWarning": "Cette extension n’est pas auditée par Beaver et peut accéder aux données, secrets et fonctions de votre compte.",
+    "detail": {
+      "status": "État",
+      "runtime": "Runtime",
+      "api": "API Beaver",
+      "author": "Auteur",
+      "source": "Source",
+      "unknown": "Non indiqué",
+    "contributions": "Contributions enregistrées",
+    "replacesCore": "Remplace un outil intégré"
+  },
+  "activation": {
+    "title": "Activer {{name}} ?",
+    "description": "Cette extension aura un accès total aux données, secrets et fonctions de votre compte. Beaver ne l’a pas auditée.",
+    "confirm": "Faire confiance et activer"
+  },
+    "add": {
+      "title": "Ajouter une extension",
+      "fullAccessWarning": "Le code sélectionné s’exécutera avec les droits de votre compte utilisateur. Installez uniquement une extension à laquelle vous choisissez de faire confiance.",
+      "supportedFiles": "Extension Beaver",
+      "file": "Choisir un fichier",
+      "fileDescription": "JavaScript, TypeScript ou manifeste JSON",
+      "folder": "Choisir un dossier",
+      "folderDescription": "Dossier contenant un manifeste Beaver ou package.json"
+    },
+    "host": {
+      "title": "Hôte et diagnostics",
+      "description": "État du processus séparé qui exécute les extensions personnalisées.",
+      "state": "État",
+      "node": "Node.js",
+      "jiti": "Jiti",
+      "api": "API Beaver",
+    "active": "Extensions actives",
+    "diagnostics": "Dernières erreurs de chargement",
+      "unavailable": "Indisponible",
+      "states": {
+        "stopped": "Arrêté",
+        "starting": "Démarrage",
+        "running": "En cours",
+        "error": "Erreur"
+      },
+      "recoveryTitle": "Mode de récupération",
+      "recoveryDescription": "Désactive toutes les extensions utilisateur afin de retrouver un Beaver fonctionnel."
+    },
+    "errors": {
+      "load": "Impossible de charger les extensions.",
+      "operation": "L’opération n’a pas pu être terminée.",
+      "host": "L’hôte d’extensions est indisponible."
+    },
+    "diagnostics": {
+      "codes": {
+        "module_not_found": "Module ou dépendance introuvable",
+        "syntax_error": "Erreur de syntaxe",
+        "activation_failed": "L’activation a échoué",
+        "registration_failed": "L’enregistrement des contributions a échoué",
+        "import_failed": "L’import du module a échoué",
+        "entry_unavailable": "Le point d’entrée de l’extension est indisponible",
+        "load_failed": "Le chargement de l’extension a échoué",
+        "host_missing_response": "L’hôte n’a pas confirmé le chargement de cette extension",
+        "advanced_required": "Le mode avancé est requis pour remplacer un outil intégré"
+      }
+    }
+  },
   "chatMenu": {
     "plusButtonHint": "Ajouter des fichiers et plus encore",
     "addFile": "Ajouter une image ou un fichier",
@@ -1304,7 +1417,7 @@
     "connectors": "Connecteurs",
     "plugins": "Plugins",
     "noConnectors": "Aucun connecteur",
-    "pluginsEmpty": "Bientôt disponible"
+    "noPlugins": "Aucun raccourci de plugin"
   },
   "vision": {
     "unsupportedModel": "Vision non prise en charge par ce modèle"

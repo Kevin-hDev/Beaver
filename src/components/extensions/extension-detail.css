@@ -1,0 +1,120 @@
+.extd-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.extd-title {
+  min-width: 0;
+}
+
+.extd-title h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.extd-title p {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+  line-height: var(--extensions-copy-line-height);
+}
+
+.extd-header > .uis-switch {
+  margin-left: auto;
+}
+
+.extp-icon-button {
+  display: grid;
+  place-items: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  flex-shrink: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.extp-icon-button:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.extd-chat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.extd-mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.extd-contributions {
+  margin-top: var(--space-lg);
+}
+
+.extd-contributions h3 {
+  margin: 0 0 var(--space-sm);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--extensions-label-spacing);
+  text-transform: uppercase;
+}
+
+.extd-tool-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.extd-tool-row {
+  padding: var(--space-sm) 0;
+  border-bottom: var(--line-thin) solid var(--edge);
+}
+
+.extd-tool-heading,
+.extd-event-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.extd-tool-heading code,
+.extd-event-list code {
+  padding: var(--space-2xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.extd-tool-row p {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  line-height: var(--extensions-copy-line-height);
+}
+
+.extd-replacement {
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--signal-warning-bg);
+  color: var(--signal-warning);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.extd-event-list {
+  margin-top: var(--space-sm);
+}
+
+.extd-danger[data-confirming="true"] {
+  color: var(--signal-error);
+}
