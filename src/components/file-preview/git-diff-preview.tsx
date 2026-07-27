@@ -110,10 +110,10 @@ function DiffPreviewView({ data, error, loading, path, previousPath, status }: {
             {hunk.lines.map((line, lineIndex) => {
               const mode = line.kind === "added" ? "ok" : line.kind === "deleted" ? "error" : "context";
               const prefix = line.kind === "added" ? "+" : line.kind === "deleted" ? "-" : " ";
+              const lineNumber = line.kind === "deleted" ? line.old_line : line.new_line;
               return (
                 <div className={`tp-line tp-line-${mode}`} key={lineIndex}>
-                  <span className="gdp-line-number">{line.old_line ?? ""}</span>
-                  <span className="gdp-line-number">{line.new_line ?? ""}</span>
+                  <span className="gdp-line-number">{lineNumber ?? ""}</span>
                   <span className={`tp-prefix tp-prefix-${mode}`}>{prefix}</span>
                   <span
                     className={`tp-code tp-code-${mode}`}

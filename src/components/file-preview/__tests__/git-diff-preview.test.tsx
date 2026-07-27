@@ -38,7 +38,7 @@ describe("GitDiffPreview", () => {
     expect(readGitDiffPreview).not.toHaveBeenCalled();
   });
 
-  it("affiche les anciennes et nouvelles lignes du diff", async () => {
+  it("affiche les anciens et nouveaux numéros dans une seule colonne", async () => {
     readGitDiffPreview.mockResolvedValue({
       binary: false,
       truncated: true,
@@ -73,6 +73,9 @@ describe("GitDiffPreview", () => {
     await waitFor(() => expect(screen.getByText("old")).toBeInTheDocument());
     expect(screen.getByText("new")).toBeInTheDocument();
     expect(screen.getByText("filePreview.gitStatus.modified")).toBeInTheDocument();
+    expect(
+      Array.from(container.querySelectorAll(".gdp-line-number"), (element) => element.textContent),
+    ).toEqual(["4", "5", "5"]);
     expect(container.querySelector(".gdp-hunk-header")).toBeNull();
     expect(container).not.toHaveTextContent("@@");
     expect(screen.getByText("filePreview.diffTruncated")).toBeInTheDocument();
