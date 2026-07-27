@@ -89,6 +89,25 @@ describe("SettingsTab slots", () => {
     expect(screen.getAllByText("settings.mascot.beaverName").length).toBeGreaterThan(0);
   });
 
+  it("sélectionne Circuit depuis une carte sans liste déroulante", async () => {
+    render(<SettingsHarness />);
+    fireEvent.click((await screen.findAllByText("settings.tabs.mascot"))[0]);
+
+    const circuitCard = (await screen.findByText("settings.mascot.circuitName")).closest("button");
+    expect(circuitCard).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("combobox")).toBeNull();
+    fireEvent.click(circuitCard!);
+
+    await waitFor(() => {
+      expect(invokeCalls()).toContainEqual([
+        "patch_mascot_settings",
+        { patch: { mascot_id: "circuit" } },
+      ]);
+      expect(circuitCard).toHaveAttribute("aria-pressed", "true");
+      expect(document.querySelector(".msp-bubble [data-mascot-id='circuit']")).toBeTruthy();
+    });
+  });
+
   it("garde les mémoires consultables quand leur utilisation est désactivée", async () => {
     render(<SettingsHarness />);
     fireEvent.click((await screen.findAllByText("settings.tabs.memory"))[0]);

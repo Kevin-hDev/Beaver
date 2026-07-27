@@ -100,4 +100,15 @@ describe("assets de marque", () => {
     expect(manifest).toContain('"displayName": "Beaver"');
     expect(manifest).not.toContain("Castor CL-GO");
   });
+
+  it("embarque les deux planches transparentes de Circuit", () => {
+    const manifest = readText("src/assets/mascot/circuit/manifest.json");
+
+    expect(fileExists("src/assets/mascot/circuit/standard.webp")).toBe(true);
+    expect(fileExists("src/assets/mascot/circuit/actions.webp")).toBe(true);
+    expect(manifest).toContain('"id": "circuit"');
+    expect(manifest).toContain('"columns": 6');
+    expect(manifest).toContain('"id": "work-laptop"');
+    expect(manifest).toContain('"id": "sleeping"');
+  });
 });

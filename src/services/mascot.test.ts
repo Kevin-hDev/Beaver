@@ -26,6 +26,15 @@ describe("mascot service validation", () => {
     expect(settings.position).toBeNull();
   });
 
+  it("accepte Circuit comme mascotte disponible", () => {
+    const settings = normalizeMascotSettings({
+      mascot_id: "circuit",
+      size_percent: 100,
+    });
+
+    expect(settings.mascot_id).toBe("circuit");
+  });
+
   it("retombe sur idle pour un état temps réel invalide", () => {
     expect(normalizeMascotState({ animation: "unknown", revision: -1 })).toEqual({
       animation: "idle",

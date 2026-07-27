@@ -753,15 +753,18 @@
     "mascot": {
       "previewTitle": "Aperçu de la mascotte",
       "beaverName": "Beaver",
+      "circuitName": "Circuit",
       "previewActive": "Aperçu animé",
       "previewPaused": "Animation en pause",
       "settingsTitle": "Réglages",
       "enabledTitle": "Afficher la mascotte",
-      "enabledDesc": "Garder le castor visible au-dessus du bureau et des autres applications",
+      "enabledDesc": "Garder la mascotte visible au-dessus du bureau et des autres applications",
       "sizeTitle": "Taille",
       "sizeDesc": "Ajuster la taille de la mascotte à l'écran",
       "collectionTitle": "Collection",
       "beaverDesc": "La mascotte principale de Beaver",
+      "circuitDesc": "Un renne développeur calme et curieux",
+      "selected": "Sélectionnée",
       "moveLabel": "Déplacer la mascotte"
     },
     "archivedChats": {

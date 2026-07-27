@@ -1,14 +1,7 @@
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import {
-  getMascotAnimation,
-  MASCOT_COLUMNS,
-  MASCOT_FRAME_RATIO,
-  MASCOT_ROWS,
-  MASCOT_SHEET,
-  spritePosition,
-  type MascotAnimationId,
-} from "./mascot-assets";
+import { DEFAULT_MASCOT_ID, type MascotId } from "@/types/mascot";
+import { getMascotAnimation, spritePosition, type MascotAnimationId } from "./mascot-assets";
 import { useMascotFrame } from "./use-mascot-animation";
 import "./mascot-sprite.css";
 
@@ -17,17 +10,29 @@ interface MascotSpriteProps {
   active: boolean;
   width: number | string;
   className?: string;
+  mascotId?: MascotId;
 }
 
-export function MascotSprite({ animation, active, width, className }: MascotSpriteProps) {
-  const definition = getMascotAnimation(animation);
-  const frame = useMascotFrame(animation, active);
+export function MascotSprite({
+  animation,
+  active,
+  width,
+  className,
+  mascotId = DEFAULT_MASCOT_ID,
+}: MascotSpriteProps) {
+  const definition = getMascotAnimation(animation, mascotId);
+  const frame = useMascotFrame(mascotId, animation, active);
   const style = {
     width,
-    aspectRatio: MASCOT_FRAME_RATIO,
-    backgroundImage: `url(${MASCOT_SHEET})`,
-    backgroundSize: `${MASCOT_COLUMNS * 100}% ${MASCOT_ROWS * 100}%`,
-    backgroundPosition: spritePosition(frame, definition.row),
+    aspectRatio: definition.frameRatio,
+    backgroundImage: `url(${definition.src})`,
+    backgroundSize: `${definition.columns * 100}% ${definition.rows * 100}%`,
+    backgroundPosition: spritePosition(
+      frame,
+      definition.row,
+      definition.columns,
+      definition.rows,
+    ),
   } satisfies CSSProperties;
 
   return (
@@ -35,6 +40,7 @@ export function MascotSprite({ animation, active, width, className }: MascotSpri
       className={cn("mcs-sprite", className)}
       style={style}
       data-animation={animation}
+      data-mascot-id={mascotId}
       aria-hidden="true"
     />
   );

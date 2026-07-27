@@ -753,15 +753,18 @@
     "mascot": {
       "previewTitle": "Mascot preview",
       "beaverName": "Beaver",
+      "circuitName": "Circuit",
       "previewActive": "Animated preview",
       "previewPaused": "Animation paused",
       "settingsTitle": "Settings",
       "enabledTitle": "Show mascot",
-      "enabledDesc": "Keep the beaver visible above the desktop and other applications",
+      "enabledDesc": "Keep the mascot visible above the desktop and other applications",
       "sizeTitle": "Size",
       "sizeDesc": "Adjust the mascot size on screen",
       "collectionTitle": "Collection",
       "beaverDesc": "Beaver's main mascot",
+      "circuitDesc": "A calm and curious developer reindeer",
+      "selected": "Selected",
       "moveLabel": "Move the mascot"
     },
     "archivedChats": {

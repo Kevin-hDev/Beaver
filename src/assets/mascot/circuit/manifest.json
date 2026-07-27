@@ -1,0 +1,37 @@
+{
+  "id": "circuit",
+  "displayName": "Circuit",
+  "cellWidth": 192,
+  "cellHeight": 208,
+  "sheets": {
+    "standard": {
+      "columns": 8,
+      "rows": 11
+    },
+    "actions": {
+      "columns": 6,
+      "rows": 6
+    }
+  },
+  "states": [
+    { "id": "idle", "sheet": "standard", "row": 0, "frames": 6, "loop": true, "frameDurationMs": 300, "loopPauseMs": 3500 },
+    { "id": "move-right", "sheet": "standard", "row": 1, "frames": 8, "loop": true, "frameDurationMs": 130, "loopPauseMs": 120 },
+    { "id": "move-left", "sheet": "standard", "row": 2, "frames": 8, "loop": true, "frameDurationMs": 130, "loopPauseMs": 120 },
+    { "id": "wave", "sheet": "standard", "row": 3, "frames": 4, "loop": false },
+    { "id": "jump", "sheet": "standard", "row": 4, "frames": 5, "loop": false },
+    { "id": "failed", "sheet": "standard", "row": 5, "frames": 8, "loop": false },
+    { "id": "waiting", "sheet": "standard", "row": 6, "frames": 6, "loop": true, "frameDurationMs": 260, "loopPauseMs": 2500 },
+    { "id": "thinking", "sheet": "actions", "row": 2, "frames": 6, "loop": true, "frameDurationMs": 300, "loopPauseMs": 1200 },
+    { "id": "explore-book", "sheet": "actions", "row": 1, "frames": 6, "loop": true, "frameDurationMs": 240, "loopPauseMs": 900 },
+    { "id": "look-000-157.5", "sheet": "standard", "row": 9, "frames": 8, "loop": false },
+    { "id": "look-180-337.5", "sheet": "standard", "row": 10, "frames": 8, "loop": false },
+    { "id": "work-laptop", "sheet": "actions", "row": 0, "frames": 6, "loop": true, "frameDurationMs": 180, "loopPauseMs": 700 },
+    { "id": "success", "sheet": "actions", "row": 3, "frames": 6, "loop": false, "durationsMs": [150, 150, 150, 150, 150, 1200] },
+    { "id": "celebrate", "sheet": "actions", "row": 3, "frames": 6, "loop": false, "durationsMs": [150, 150, 150, 150, 150, 1200] },
+    { "id": "grabbed", "sheet": "actions", "row": 4, "frames": 3, "loop": false, "frameDurationMs": 120 },
+    { "id": "held", "sheet": "actions", "row": 4, "frames": 6, "loop": true, "frameDurationMs": 120 },
+    { "id": "dropped", "sheet": "standard", "row": 4, "frames": 5, "loop": false, "durationsMs": [100, 100, 140, 180, 350] },
+    { "id": "sleeping", "sheet": "actions", "row": 5, "frames": 6, "loop": true, "frameDurationMs": 450, "loopPauseMs": 1800 },
+    { "id": "alert", "sheet": "standard", "row": 3, "frames": 4, "loop": false, "durationsMs": [140, 140, 180, 350] }
+  ]
+}

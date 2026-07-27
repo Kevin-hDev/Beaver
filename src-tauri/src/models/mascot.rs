@@ -1,10 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_MASCOT_ID: &str = "cl-go-beaver";
+pub const CIRCUIT_MASCOT_ID: &str = "circuit";
 pub const DEFAULT_SIZE_PERCENT: u16 = 100;
 pub const MIN_SIZE_PERCENT: u16 = 70;
 pub const MAX_SIZE_PERCENT: u16 = 140;
 const POSITION_LIMIT: i32 = 100_000;
+
+pub fn is_supported_mascot_id(value: &str) -> bool {
+    matches!(value, DEFAULT_MASCOT_ID | CIRCUIT_MASCOT_ID)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MascotPosition {
@@ -40,7 +45,7 @@ impl Default for MascotSettings {
 
 impl MascotSettings {
     pub fn normalized(mut self) -> Self {
-        if self.mascot_id != DEFAULT_MASCOT_ID {
+        if !is_supported_mascot_id(&self.mascot_id) {
             self.mascot_id = DEFAULT_MASCOT_ID.to_string();
         }
         self.size_percent = self.size_percent.clamp(MIN_SIZE_PERCENT, MAX_SIZE_PERCENT);
@@ -86,6 +91,17 @@ mod tests {
 
         assert_eq!(settings.mascot_id, DEFAULT_MASCOT_ID);
         assert_eq!(settings.size_percent, MAX_SIZE_PERCENT);
+    }
+
+    #[test]
+    fn circuit_is_a_supported_mascot() {
+        let settings = MascotSettings {
+            mascot_id: CIRCUIT_MASCOT_ID.into(),
+            ..Default::default()
+        }
+        .normalized();
+
+        assert_eq!(settings.mascot_id, CIRCUIT_MASCOT_ID);
     }
 
     #[test]

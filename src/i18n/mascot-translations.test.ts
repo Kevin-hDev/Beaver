@@ -13,6 +13,9 @@ describe("mascot translations", () => {
       expect(locale.settings.tabs.mascot.trim()).not.toBe("");
       expect(locale.settings.mascot.enabledTitle.trim()).not.toBe("");
       expect(locale.settings.mascot.sizeTitle.trim()).not.toBe("");
+      expect(locale.settings.mascot.circuitName.trim()).not.toBe("");
+      expect(locale.settings.mascot.circuitDesc.trim()).not.toBe("");
+      expect(locale.settings.mascot.selected.trim()).not.toBe("");
       expect(locale.settings.mascot.moveLabel.trim()).not.toBe("");
     }
   });

@@ -22,9 +22,12 @@ describe("interaction avec la mascotte", () => {
   it("déplace la fenêtre et joue les poses directionnelles pendant le glisser", async () => {
     const { container } = render(<MascotOverlay />);
     const mascot = screen.getByRole("img");
-    const sprite = container.querySelector("[data-animation]");
 
     await waitFor(() => expect(windowMocks.setCursorIcon).toHaveBeenCalledWith("grab"));
+    await waitFor(() => {
+      expect(container.querySelector("[data-animation]")).toBeTruthy();
+    });
+    const sprite = container.querySelector("[data-animation]");
     fireEvent.pointerDown(mascot, {
       button: 0,
       clientX: 20,

@@ -748,15 +748,18 @@
     "mascot": {
       "previewTitle": "Maskottchen-Vorschau",
       "beaverName": "Beaver",
+      "circuitName": "Circuit",
       "previewActive": "Animierte Vorschau",
       "previewPaused": "Animation pausiert",
       "settingsTitle": "Einstellungen",
       "enabledTitle": "Maskottchen anzeigen",
-      "enabledDesc": "Den Biber über dem Desktop und anderen Anwendungen sichtbar halten",
+      "enabledDesc": "Das Maskottchen über dem Desktop und anderen Anwendungen sichtbar halten",
       "sizeTitle": "Größe",
       "sizeDesc": "Die Größe des Maskottchens auf dem Bildschirm anpassen",
       "collectionTitle": "Sammlung",
       "beaverDesc": "Das Hauptmaskottchen von Beaver",
+      "circuitDesc": "Ein ruhiges und neugieriges Entwickler-Rentier",
+      "selected": "Ausgewählt",
       "moveLabel": "Maskottchen verschieben"
     },
     "archivedChats": {

@@ -1,10 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
+import {
+  DEFAULT_MASCOT_ID,
+  isMascotId,
+  type MascotId,
+} from "@/types/mascot";
 
 export const MASCOT_SIZE_MIN = 70;
 export const MASCOT_SIZE_MAX = 140;
 export const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
   enabled: false,
-  mascot_id: "cl-go-beaver",
+  mascot_id: DEFAULT_MASCOT_ID,
   size_percent: 100,
   position: null,
 };
@@ -21,7 +26,7 @@ export type MascotRuntimeAnimation =
 
 export interface MascotSettings {
   enabled: boolean;
-  mascot_id: string;
+  mascot_id: MascotId;
   size_percent: number;
   position: { x: number; y: number } | null;
 }
@@ -48,7 +53,7 @@ export async function patchMascotSettings(
 ): Promise<MascotSettings> {
   const safePatch: MascotSettingsPatch = {};
   if (typeof patch.enabled === "boolean") safePatch.enabled = patch.enabled;
-  if (patch.mascot_id === "cl-go-beaver") safePatch.mascot_id = patch.mascot_id;
+  if (isMascotId(patch.mascot_id)) safePatch.mascot_id = patch.mascot_id;
   if (typeof patch.size_percent === "number") {
     safePatch.size_percent = clampSize(patch.size_percent);
   }
@@ -75,7 +80,7 @@ export function normalizeMascotSettings(value: unknown): MascotSettings {
     : null;
   return {
     enabled: record.enabled === true,
-    mascot_id: record.mascot_id === "cl-go-beaver" ? record.mascot_id : "cl-go-beaver",
+    mascot_id: isMascotId(record.mascot_id) ? record.mascot_id : DEFAULT_MASCOT_ID,
     size_percent: clampSize(Number(record.size_percent)),
     position,
   };

@@ -748,15 +748,18 @@
     "mascot": {
       "previewTitle": "Vista previa de la mascota",
       "beaverName": "Beaver",
+      "circuitName": "Circuit",
       "previewActive": "Vista previa animada",
       "previewPaused": "Animación en pausa",
       "settingsTitle": "Ajustes",
       "enabledTitle": "Mostrar la mascota",
-      "enabledDesc": "Mantener el castor visible sobre el escritorio y otras aplicaciones",
+      "enabledDesc": "Mantener la mascota visible sobre el escritorio y otras aplicaciones",
       "sizeTitle": "Tamaño",
       "sizeDesc": "Ajustar el tamaño de la mascota en la pantalla",
       "collectionTitle": "Colección",
       "beaverDesc": "La mascota principal de Beaver",
+      "circuitDesc": "Un reno desarrollador tranquilo y curioso",
+      "selected": "Seleccionada",
       "moveLabel": "Mover la mascota"
     },
     "archivedChats": {

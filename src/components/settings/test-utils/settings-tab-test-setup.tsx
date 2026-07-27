@@ -4,6 +4,7 @@ import { vi } from "vitest";
 import { SettingsTab } from "../settings-tab";
 import { PanelSlotProvider, PanelSlotTarget } from "@/components/layout/panel-slots";
 import { DEFAULT_APP_NAV, type DeepPartial, type SettingsNavState } from "@/types/navigation";
+import { resetMascotSettingsMock } from "./settings-tab-test-mascot";
 
 export const CHILD_COMMANDS = new Set([
   "list_ollama_models",
@@ -22,9 +23,12 @@ const FAILED_COMMANDS = new Set<string>();
 vi.mock("@tauri-apps/api/core", async () => {
   const { vi: mockVi } = await import("vitest");
   const data = await import("./settings-tab-test-data");
+  const mascot = await import("./settings-tab-test-mascot");
 
   return {
     invoke: mockVi.fn((cmd: string, args?: Record<string, unknown>) => {
+      const mascotResult = mascot.mascotCommandResult(cmd, args);
+      if (mascotResult.handled) return Promise.resolve(mascotResult.value);
       if (cmd === "get_advanced_settings") return Promise.resolve({
         autostart: false, start_hidden: false, show_tray: true, default_model: "", keep_alive: "5m",
         allowed_paths: ["/"], hardware_accel: "gpu", multi_model: false, show_gpu_status: false,
@@ -149,6 +153,7 @@ export function SettingsHarness() {
 export function resetSettingsTestEnvironment() {
   vi.mocked(invoke).mockClear();
   FAILED_COMMANDS.clear();
+  resetMascotSettingsMock();
   const store = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { MascotId } from "@/types/mascot";
 import {
   DEFAULT_FRAME_DURATION_MS,
   getMascotAnimation,
@@ -6,25 +7,33 @@ import {
   type MascotAnimationId,
 } from "./mascot-assets";
 
-export function useMascotFrame(animationId: MascotAnimationId, active: boolean): number {
-  const animation = useMemo(() => getMascotAnimation(animationId), [animationId]);
-  const [playback, setPlayback] = useState({ animationId, frame: 0 });
-  const frame = playback.animationId === animationId ? playback.frame : 0;
+export function useMascotFrame(
+  mascotId: MascotId,
+  animationId: MascotAnimationId,
+  active: boolean,
+): number {
+  const playbackKey = `${mascotId}:${animationId}`;
+  const animation = useMemo(
+    () => getMascotAnimation(animationId, mascotId),
+    [animationId, mascotId],
+  );
+  const [playback, setPlayback] = useState({ key: playbackKey, frame: 0 });
+  const frame = playback.key === playbackKey ? playback.frame : 0;
 
   useEffect(() => {
     if (!active || (!animation.loop && frame >= animation.frames - 1)) return;
     const duration = mascotFrameDuration(animation, frame);
     const timer = window.setTimeout(() => {
       setPlayback((current) => {
-        const currentFrame = current.animationId === animationId ? current.frame : 0;
+        const currentFrame = current.key === playbackKey ? current.frame : 0;
         return {
-          animationId,
+          key: playbackKey,
           frame: nextMascotFrame(currentFrame, animation.frames, animation.loop),
         };
       });
     }, duration);
     return () => window.clearTimeout(timer);
-  }, [active, animation, animationId, frame]);
+  }, [active, animation, frame, playbackKey]);
 
   return frame;
 }

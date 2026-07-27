@@ -748,15 +748,18 @@
     "mascot": {
       "previewTitle": "吉祥物预览",
       "beaverName": "Beaver",
+      "circuitName": "Circuit",
       "previewActive": "动画预览",
       "previewPaused": "动画已暂停",
       "settingsTitle": "设置",
       "enabledTitle": "显示吉祥物",
-      "enabledDesc": "让海狸始终显示在桌面和其他应用上方",
+      "enabledDesc": "让吉祥物始终显示在桌面和其他应用上方",
       "sizeTitle": "大小",
       "sizeDesc": "调整吉祥物在屏幕上的大小",
       "collectionTitle": "收藏",
       "beaverDesc": "Beaver 的主要吉祥物",
+      "circuitDesc": "一只沉稳又好奇的开发者驯鹿",
+      "selected": "已选择",
       "moveLabel": "移动吉祥物"
     },
     "archivedChats": {

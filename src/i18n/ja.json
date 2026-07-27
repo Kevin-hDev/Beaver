@@ -748,15 +748,18 @@
     "mascot": {
       "previewTitle": "マスコットのプレビュー",
       "beaverName": "Beaver",
+      "circuitName": "Circuit",
       "previewActive": "アニメーションプレビュー",
       "previewPaused": "アニメーション停止中",
       "settingsTitle": "設定",
       "enabledTitle": "マスコットを表示",
-      "enabledDesc": "ビーバーをデスクトップや他のアプリより手前に表示します",
+      "enabledDesc": "マスコットをデスクトップや他のアプリより手前に表示します",
       "sizeTitle": "サイズ",
       "sizeDesc": "画面上のマスコットの大きさを調整します",
       "collectionTitle": "コレクション",
       "beaverDesc": "Beaver のメインマスコット",
+      "circuitDesc": "穏やかで好奇心旺盛な開発者トナカイ",
+      "selected": "選択中",
       "moveLabel": "マスコットを移動"
     },
     "archivedChats": {

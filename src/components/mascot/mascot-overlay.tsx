@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
+import { useMascotSettings } from "@/hooks/use-mascot-settings";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import {
   getMascotState,
@@ -19,6 +20,7 @@ const POSITION_SAVE_DELAY_MS = 250;
 
 export function MascotOverlay() {
   const { t } = useTranslation();
+  const { settings, loading: settingsLoading } = useMascotSettings();
   const [runtimeAnimation, setRuntimeAnimation] = useState<MascotRuntimeAnimation>("idle");
   const revision = useRef(0);
   const drag = useMascotDrag();
@@ -69,7 +71,14 @@ export function MascotOverlay() {
       onPointerUp={drag.onPointerUp}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <MascotSprite animation={presentedAnimation} active width="100%" />
+      {!settingsLoading && (
+        <MascotSprite
+          animation={presentedAnimation}
+          active
+          mascotId={settings.mascot_id}
+          width="100%"
+        />
+      )}
     </div>
   );
 }

@@ -18,6 +18,16 @@ describe("mascot sprite playback", () => {
     expect(animation.row).toBe(11);
   });
 
+  it("utilise les planches et rythmes propres à Circuit", () => {
+    const work = getMascotAnimation("work-laptop", "circuit");
+    const thinking = getMascotAnimation("thinking", "circuit");
+    const held = getMascotAnimation("held", "circuit");
+
+    expect(work).toMatchObject({ row: 0, frames: 6, columns: 6, rows: 6 });
+    expect(thinking).toMatchObject({ row: 2, frames: 6, loopPauseMs: 1200 });
+    expect(held).toMatchObject({ row: 4, frames: 6, frameDurationMs: 120 });
+  });
+
   it("positionne correctement les coins de la planche", () => {
     expect(spritePosition(0, 0)).toBe("0% 0%");
     expect(spritePosition(7, 18)).toBe("100% 100%");
