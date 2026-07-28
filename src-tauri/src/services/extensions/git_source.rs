@@ -22,8 +22,13 @@ pub fn materialize(
     npm: &NpmRunner,
 ) -> Result<GitMaterialization, String> {
     let checkout = destination.join("repository");
-    let repository = clone_repository(source, &checkout)
-        .map_err(|_| "Téléchargement Git impossible.".to_string())?;
+    let repository = clone_repository(source, &checkout).map_err(|error| {
+        if error.code() == git2::ErrorCode::Timeout {
+            "Téléchargement Git expiré.".to_string()
+        } else {
+            "Téléchargement Git impossible.".to_string()
+        }
+    })?;
     let revision = repository
         .head()
         .and_then(|head| head.peel_to_commit())
@@ -32,6 +37,7 @@ pub fn materialize(
     drop(repository);
     std::fs::remove_dir_all(checkout.join(".git"))
         .map_err(|_| "Métadonnées Git impossibles à nettoyer.".to_string())?;
+    super::managed_tree::validate(destination)?;
     if has_runtime_dependencies(&checkout)? {
         npm.install_dependencies(&checkout)?;
     }
@@ -69,7 +75,11 @@ fn fetch_options(
     let mut callbacks = RemoteCallbacks::new();
     callbacks.credentials(move |url, username, allowed| {
         if Instant::now() >= deadline {
-            return Err(git2::Error::from_str("extension clone expired"));
+            return Err(git2::Error::new(
+                git2::ErrorCode::Timeout,
+                git2::ErrorClass::Net,
+                "extension clone expired",
+            ));
         }
         credentials.credentials(url, username, allowed)
     });

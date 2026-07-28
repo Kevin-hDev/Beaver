@@ -31,6 +31,7 @@ pub mod github_auth;
 pub mod history;
 #[cfg(test)]
 mod history_tests;
+pub(crate) mod network_policy;
 pub mod remote;
 pub(crate) mod remote_credentials;
 mod remote_status;

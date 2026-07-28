@@ -11,6 +11,11 @@ fn git_sources_accept_secure_https_ssh_and_optional_refs() {
 
     assert!(git("ssh://git@github.com/example/beaver-extension.git").is_ok());
     assert!(git("git@github.com:example/beaver-extension.git").is_ok());
+    assert!(git(&format!(
+        "https://github.com/example/beaver-extension.git#{}",
+        "a".repeat(40)
+    ))
+    .is_ok());
 }
 
 #[test]
@@ -20,11 +25,6 @@ fn git_sources_reject_insecure_or_credential_bearing_urls() {
     assert!(git("https://github.com/example/extension.git?token=secret").is_err());
     assert!(git("https://github.com/example/extension.git#main#other").is_err());
     assert!(git("https://github.com/example/extension.git#../../main").is_err());
-    assert!(git(&format!(
-        "https://github.com/example/extension.git#{}",
-        "a".repeat(40)
-    ))
-    .is_err());
     assert!(git("--upload-pack=payload").is_err());
 }
 

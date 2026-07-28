@@ -59,18 +59,18 @@ export function useExtensionsTabSlots({
         <ExtensionAddDialog
           onClose={() => setAdding(false)}
           onAdd={async (path) => {
-            const added = await registry.addLocal(path);
-            if (!added) return false;
-            onNavChange({ extensionId: added.manifest.id });
-            return true;
+            const outcome = await registry.addLocal(path);
+            if (!outcome.record) return outcome.errorKey;
+            onNavChange({ extensionId: outcome.record.manifest.id });
+            return null;
           }}
           onInstall={async (source, locator) => {
-            const added = source === "git"
+            const outcome = source === "git"
               ? await registry.installGit(locator)
               : await registry.installNpm(locator);
-            if (!added) return false;
-            onNavChange({ extensionId: added.manifest.id });
-            return true;
+            if (!outcome.record) return outcome.errorKey;
+            onNavChange({ extensionId: outcome.record.manifest.id });
+            return null;
           }}
         />
       )}

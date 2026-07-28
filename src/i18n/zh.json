@@ -1984,6 +1984,7 @@
       "reload": "重新加载",
       "remove": "移除",
       "confirmRemove": "确认",
+      "confirmUpdate": "确认更新",
       "restartHost": "重启宿主",
       "recovery": "禁用托管扩展"
     },
@@ -2009,6 +2010,7 @@
     "showInChatFor": "在聊天中显示 {{name}}",
     "enableFor": "启用 {{name}}",
     "fullAccessWarning": "此扩展未经 Beaver 审核，并且可以访问你账户中的数据、密钥和功能。",
+    "updateTrustWarning": "更新会停用此扩展。请先检查新版本，再重新信任并启用。",
     "detail": {
       "status": "状态",
       "runtime": "运行时",
@@ -2035,7 +2037,7 @@
       "folder": "选择文件夹",
       "folderDescription": "包含 Beaver 清单或 package.json 的文件夹",
       "git": "从 Git 安装",
-      "gitDescription": "包含 Beaver 扩展的 HTTPS 或 SSH 仓库",
+      "gitDescription": "HTTPS 或 SSH 仓库，可选择分支、标签或提交",
       "npm": "从 npm 安装",
       "npmDescription": "包含 Beaver 扩展的已发布软件包",
       "gitLabel": "Git 仓库 URL",
@@ -2092,7 +2094,20 @@
         "extensions_tool_arguments_invalid": "发送给此工具的参数无效。",
         "extensions_install_failed": "无法安装此扩展。",
         "extensions_update_failed": "无法更新此扩展。",
-        "extensions_uninstall_failed": "无法完整移除此扩展。"
+        "extensions_uninstall_failed": "无法完整移除此扩展。",
+        "extensions_source_invalid": "Git 地址或引用无效。",
+        "extensions_package_invalid": "npm 名称、版本或标签无效。",
+        "extensions_git_download_failed": "无法下载 Git 仓库。",
+        "extensions_git_timeout": "Git 仓库未及时响应。",
+        "extensions_runtime_unavailable": "Beaver 提供的安装运行时不可用。",
+        "extensions_dependency_install_failed": "无法安装扩展依赖项。",
+        "extensions_manifest_invalid": "扩展清单或入口点无效。",
+        "extensions_already_installed": "已安装具有此标识符的扩展。",
+        "extensions_limit_reached": "已达到扩展数量上限。",
+        "extensions_storage_failed": "本地扩展存储不可用。",
+        "extensions_update_identity_changed": "更新更改了扩展身份，因此已被拒绝。",
+        "extensions_update_unavailable": "Beaver 无法更新此扩展。",
+        "extensions_cleanup_failed": "无法清理部分旧扩展文件。"
       }
     },
     "diagnostics": {

@@ -58,7 +58,11 @@
 }
 
 .exta-option-active {
-  background: var(--surface-hover);
+  background: var(--pulse-muted);
+}
+
+.exta-option-active:hover:not(:disabled) {
+  background: var(--pulse-muted);
 }
 
 .exta-option span {

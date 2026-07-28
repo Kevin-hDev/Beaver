@@ -28,6 +28,9 @@ fn every_npm_install_disables_lifecycle_scripts_and_side_effects() {
         "--no-fund",
         "--no-bin-links",
         "--workspaces=false",
+        "--strict-ssl=true",
+        "--replace-registry-host=always",
+        "https://registry.npmjs.org/",
     ] {
         assert!(arguments.contains(&OsString::from(required)));
     }
@@ -75,4 +78,30 @@ fn local_fixture_install_never_runs_its_lifecycle_script() {
 
     assert!(installed.join("index.js").is_file());
     assert!(!installed.join("postinstall-ran").exists());
+    assert!(!prefix.join(".npm-cache").exists());
+}
+
+#[test]
+fn npm_resolution_never_falls_back_to_an_unrelated_system_cli() {
+    let temporary = tempfile::tempdir().unwrap();
+    let node = temporary.path().join("node");
+    std::fs::write(&node, "").unwrap();
+
+    assert!(resolve_cli(temporary.path(), &node).is_err());
+}
+
+#[test]
+fn an_uncleanable_cache_blocks_installation_before_validation() {
+    let temporary = tempfile::tempdir().unwrap();
+    let prefix = temporary.path().join("install");
+    std::fs::create_dir(&prefix).unwrap();
+    std::fs::write(prefix.join(".npm-cache"), "not a directory").unwrap();
+    let runner = NpmRunner::for_test(PathBuf::from("/node"), PathBuf::from("/npm-cli.js"));
+    let source = NpmSource {
+        locator: "beaver-test-extension".to_string(),
+        package_name: "beaver-test-extension".to_string(),
+    };
+
+    assert!(runner.install_package(&prefix, &source).is_err());
+    assert!(prefix.join(".npm-cache").is_file());
 }

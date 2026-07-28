@@ -1984,6 +1984,7 @@
       "reload": "Neu laden",
       "remove": "Entfernen",
       "confirmRemove": "Bestätigen",
+      "confirmUpdate": "Aktualisierung bestätigen",
       "restartHost": "Host neu starten",
       "recovery": "Gehostete Erweiterungen deaktivieren"
     },
@@ -2009,6 +2010,7 @@
     "showInChatFor": "{{name}} im Chat anzeigen",
     "enableFor": "{{name}} aktivieren",
     "fullAccessWarning": "Diese Erweiterung wird nicht von Beaver geprüft und kann auf Daten, Geheimnisse und Funktionen deines Kontos zugreifen.",
+    "updateTrustWarning": "Die Aktualisierung deaktiviert die Erweiterung. Prüfe die neue Version, bevor du ihr erneut vertraust.",
     "detail": {
       "status": "Status",
       "runtime": "Runtime",
@@ -2035,7 +2037,7 @@
       "folder": "Ordner auswählen",
       "folderDescription": "Ordner mit Beaver-Manifest oder package.json",
       "git": "Von Git installieren",
-      "gitDescription": "HTTPS- oder SSH-Repository mit einer Beaver-Erweiterung",
+      "gitDescription": "HTTPS- oder SSH-Repository mit optionalem Branch, Tag oder Commit",
       "npm": "Von npm installieren",
       "npmDescription": "Veröffentlichtes Paket mit einer Beaver-Erweiterung",
       "gitLabel": "URL des Git-Repositorys",
@@ -2092,7 +2094,20 @@
         "extensions_tool_arguments_invalid": "Die an dieses Werkzeug gesendeten Parameter sind ungültig.",
         "extensions_install_failed": "Die Erweiterung konnte nicht installiert werden.",
         "extensions_update_failed": "Die Erweiterung konnte nicht aktualisiert werden.",
-        "extensions_uninstall_failed": "Die Erweiterung konnte nicht vollständig entfernt werden."
+        "extensions_uninstall_failed": "Die Erweiterung konnte nicht vollständig entfernt werden.",
+        "extensions_source_invalid": "Die Git-Adresse oder Referenz ist ungültig.",
+        "extensions_package_invalid": "Der npm-Name, die Version oder das Tag ist ungültig.",
+        "extensions_git_download_failed": "Das Git-Repository konnte nicht heruntergeladen werden.",
+        "extensions_git_timeout": "Das Git-Repository hat nicht rechtzeitig geantwortet.",
+        "extensions_runtime_unavailable": "Die von Beaver bereitgestellte Installationslaufzeit ist nicht verfügbar.",
+        "extensions_dependency_install_failed": "Die Abhängigkeiten der Erweiterung konnten nicht installiert werden.",
+        "extensions_manifest_invalid": "Das Manifest oder der Einstiegspunkt der Erweiterung ist ungültig.",
+        "extensions_already_installed": "Eine Erweiterung mit dieser Kennung ist bereits installiert.",
+        "extensions_limit_reached": "Die maximale Anzahl an Erweiterungen wurde erreicht.",
+        "extensions_storage_failed": "Der lokale Erweiterungsspeicher ist nicht verfügbar.",
+        "extensions_update_identity_changed": "Die Aktualisierung änderte die Identität der Erweiterung und wurde abgelehnt.",
+        "extensions_update_unavailable": "Beaver kann diese Erweiterung nicht aktualisieren.",
+        "extensions_cleanup_failed": "Einige alte Erweiterungsdateien konnten nicht bereinigt werden."
       }
     },
     "diagnostics": {

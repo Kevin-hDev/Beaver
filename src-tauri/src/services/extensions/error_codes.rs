@@ -18,6 +18,19 @@ pub const BUILTIN_ENTRY_INVALID: &str = "extensions_builtin_entry_invalid";
 pub const INSTALL_FAILED: &str = "extensions_install_failed";
 pub const UPDATE_FAILED: &str = "extensions_update_failed";
 pub const UNINSTALL_FAILED: &str = "extensions_uninstall_failed";
+pub const SOURCE_INVALID: &str = "extensions_source_invalid";
+pub const PACKAGE_INVALID: &str = "extensions_package_invalid";
+pub const GIT_DOWNLOAD_FAILED: &str = "extensions_git_download_failed";
+pub const GIT_TIMEOUT: &str = "extensions_git_timeout";
+pub const RUNTIME_UNAVAILABLE: &str = "extensions_runtime_unavailable";
+pub const DEPENDENCY_INSTALL_FAILED: &str = "extensions_dependency_install_failed";
+pub const MANIFEST_INVALID: &str = "extensions_manifest_invalid";
+pub const ALREADY_INSTALLED: &str = "extensions_already_installed";
+pub const LIMIT_REACHED: &str = "extensions_limit_reached";
+pub const STORAGE_FAILED: &str = "extensions_storage_failed";
+pub const UPDATE_IDENTITY_CHANGED: &str = "extensions_update_identity_changed";
+pub const UPDATE_UNAVAILABLE: &str = "extensions_update_unavailable";
+pub const CLEANUP_FAILED: &str = "extensions_cleanup_failed";
 
 /// Sert au test qui exige une traduction par code et par langue.
 #[cfg(test)]
@@ -38,6 +51,19 @@ pub const ALL: &[&str] = &[
     INSTALL_FAILED,
     UPDATE_FAILED,
     UNINSTALL_FAILED,
+    SOURCE_INVALID,
+    PACKAGE_INVALID,
+    GIT_DOWNLOAD_FAILED,
+    GIT_TIMEOUT,
+    RUNTIME_UNAVAILABLE,
+    DEPENDENCY_INSTALL_FAILED,
+    MANIFEST_INVALID,
+    ALREADY_INSTALLED,
+    LIMIT_REACHED,
+    STORAGE_FAILED,
+    UPDATE_IDENTITY_CHANGED,
+    UPDATE_UNAVAILABLE,
+    CLEANUP_FAILED,
 ];
 
 #[cfg(test)]

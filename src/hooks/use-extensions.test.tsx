@@ -110,7 +110,9 @@ describe("useExtensions", () => {
     const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
     await waitFor(() => expect(view.result.current.loading).toBe(false));
 
-    await act(() => view.result.current.installGit("https://github.com/example/ext.git"));
+    const gitOutcome = await act(() =>
+      view.result.current.installGit("https://github.com/example/ext.git"));
+    expect(gitOutcome.record).toEqual(record);
     expect(invoke).toHaveBeenCalledWith("install_git_extension", {
       url: "https://github.com/example/ext.git",
     });
@@ -118,6 +120,27 @@ describe("useExtensions", () => {
     await act(() => view.result.current.installNpm("@example/ext@latest"));
     expect(invoke).toHaveBeenCalledWith("install_npm_extension", {
       packageSpec: "@example/ext@latest",
+    });
+  });
+
+  it("retourne le code traduit exact lorsqu’une installation échoue", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "install_git_extension") {
+        return Promise.reject(new Error("extensions_git_download_failed"));
+      }
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    const outcome = await act(() =>
+      view.result.current.installGit("https://github.com/example/ext.git"));
+
+    expect(outcome).toEqual({
+      record: null,
+      errorKey: "extensions.errors.codes.extensions_git_download_failed",
     });
   });
 

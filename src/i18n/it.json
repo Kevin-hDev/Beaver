@@ -1984,6 +1984,7 @@
       "reload": "Ricarica",
       "remove": "Rimuovi",
       "confirmRemove": "Conferma",
+      "confirmUpdate": "Conferma aggiornamento",
       "restartHost": "Riavvia host",
       "recovery": "Disattiva estensioni ospitate"
     },
@@ -2009,6 +2010,7 @@
     "showInChatFor": "Mostra {{name}} nella chat",
     "enableFor": "Attiva {{name}}",
     "fullAccessWarning": "Questa estensione non è verificata da Beaver e può accedere a dati, segreti e funzioni del tuo account.",
+    "updateTrustWarning": "L’aggiornamento disattiverà l’estensione. Controlla la nuova versione prima di considerarla nuovamente attendibile.",
     "detail": {
       "status": "Stato",
       "runtime": "Runtime",
@@ -2035,7 +2037,7 @@
       "folder": "Scegli una cartella",
       "folderDescription": "Cartella con un manifesto Beaver o package.json",
       "git": "Installa da Git",
-      "gitDescription": "Repository HTTPS o SSH contenente un’estensione Beaver",
+      "gitDescription": "Repository HTTPS o SSH con branch, tag o commit facoltativo",
       "npm": "Installa da npm",
       "npmDescription": "Pacchetto pubblicato contenente un’estensione Beaver",
       "gitLabel": "URL del repository Git",
@@ -2092,7 +2094,20 @@
         "extensions_tool_arguments_invalid": "I parametri inviati a questo strumento non sono validi.",
         "extensions_install_failed": "Non è stato possibile installare l’estensione.",
         "extensions_update_failed": "Non è stato possibile aggiornare l’estensione.",
-        "extensions_uninstall_failed": "Non è stato possibile rimuovere completamente l’estensione."
+        "extensions_uninstall_failed": "Non è stato possibile rimuovere completamente l’estensione.",
+        "extensions_source_invalid": "L’indirizzo o il riferimento Git non è valido.",
+        "extensions_package_invalid": "Il nome, la versione o il tag npm non è valido.",
+        "extensions_git_download_failed": "Non è stato possibile scaricare il repository Git.",
+        "extensions_git_timeout": "Il repository Git non ha risposto in tempo.",
+        "extensions_runtime_unavailable": "Il runtime di installazione fornito da Beaver non è disponibile.",
+        "extensions_dependency_install_failed": "Non è stato possibile installare le dipendenze dell’estensione.",
+        "extensions_manifest_invalid": "Il manifesto o il punto di ingresso dell’estensione non è valido.",
+        "extensions_already_installed": "Un’estensione con questo identificatore è già installata.",
+        "extensions_limit_reached": "È stato raggiunto il numero massimo di estensioni.",
+        "extensions_storage_failed": "L’archivio locale delle estensioni non è disponibile.",
+        "extensions_update_identity_changed": "L’aggiornamento ha cambiato l’identità dell’estensione ed è stato rifiutato.",
+        "extensions_update_unavailable": "Beaver non può aggiornare questa estensione.",
+        "extensions_cleanup_failed": "Non è stato possibile pulire alcuni vecchi file di estensione."
       }
     },
     "diagnostics": {

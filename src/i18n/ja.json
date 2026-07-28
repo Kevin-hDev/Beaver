@@ -1984,6 +1984,7 @@
       "reload": "再読み込み",
       "remove": "削除",
       "confirmRemove": "確認",
+      "confirmUpdate": "更新を確認",
       "restartHost": "ホストを再起動",
       "recovery": "ホスト型拡張機能を無効化"
     },
@@ -2009,6 +2010,7 @@
     "showInChatFor": "{{name}} をチャットに表示",
     "enableFor": "{{name}} を有効化",
     "fullAccessWarning": "この拡張機能は Beaver による監査を受けておらず、アカウントのデータ、シークレット、機能へアクセスできます。",
+    "updateTrustWarning": "更新すると拡張機能は無効になります。再度信頼する前に新しいバージョンを確認してください。",
     "detail": {
       "status": "状態",
       "runtime": "ランタイム",
@@ -2035,7 +2037,7 @@
       "folder": "フォルダーを選択",
       "folderDescription": "Beaver マニフェストまたは package.json を含むフォルダー",
       "git": "Git からインストール",
-      "gitDescription": "Beaver 拡張機能を含む HTTPS または SSH リポジトリ",
+      "gitDescription": "ブランチ、タグ、コミットを任意で指定できる HTTPS または SSH リポジトリ",
       "npm": "npm からインストール",
       "npmDescription": "Beaver 拡張機能を含む公開パッケージ",
       "gitLabel": "Git リポジトリ URL",
@@ -2092,7 +2094,20 @@
         "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。",
         "extensions_install_failed": "拡張機能をインストールできませんでした。",
         "extensions_update_failed": "拡張機能を更新できませんでした。",
-        "extensions_uninstall_failed": "拡張機能を完全に削除できませんでした。"
+        "extensions_uninstall_failed": "拡張機能を完全に削除できませんでした。",
+        "extensions_source_invalid": "Git アドレスまたは参照が無効です。",
+        "extensions_package_invalid": "npm の名前、バージョン、またはタグが無効です。",
+        "extensions_git_download_failed": "Git リポジトリをダウンロードできませんでした。",
+        "extensions_git_timeout": "Git リポジトリが時間内に応答しませんでした。",
+        "extensions_runtime_unavailable": "Beaver が提供するインストールランタイムを利用できません。",
+        "extensions_dependency_install_failed": "拡張機能の依存関係をインストールできませんでした。",
+        "extensions_manifest_invalid": "拡張機能のマニフェストまたはエントリーポイントが無効です。",
+        "extensions_already_installed": "この識別子の拡張機能はすでにインストールされています。",
+        "extensions_limit_reached": "拡張機能の最大数に達しました。",
+        "extensions_storage_failed": "ローカルの拡張機能ストレージを利用できません。",
+        "extensions_update_identity_changed": "更新によって拡張機能の識別情報が変わったため拒否されました。",
+        "extensions_update_unavailable": "Beaver はこの拡張機能を更新できません。",
+        "extensions_cleanup_failed": "一部の古い拡張機能ファイルを削除できませんでした。"
       }
     },
     "diagnostics": {

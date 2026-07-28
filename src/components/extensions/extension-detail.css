@@ -118,3 +118,17 @@
 .extd-danger[data-confirming="true"] {
   color: var(--signal-error);
 }
+
+.extd-update-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: var(--space-lg) 0 var(--space-sm);
+  color: var(--signal-warning);
+  font-size: var(--text-xs);
+  line-height: var(--extensions-copy-line-height);
+}
+
+.extd-update-warning svg {
+  flex-shrink: 0;
+}

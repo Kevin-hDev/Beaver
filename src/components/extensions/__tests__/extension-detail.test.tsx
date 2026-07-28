@@ -104,7 +104,9 @@ describe("ExtensionDetail", () => {
     );
 
     expect(screen.getByText(managed.origin?.locator ?? "")).toBeInTheDocument();
+    expect(screen.getByText("extensions.updateTrustWarning")).toBeInTheDocument();
     fireEvent.click(screen.getByText("extensions.actions.update"));
+    fireEvent.click(screen.getByText("extensions.actions.confirmUpdate"));
     expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 });

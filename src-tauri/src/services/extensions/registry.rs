@@ -12,7 +12,9 @@ pub fn init() -> Result<(), String> {
     let records = super::builtin::merge(reset_hosted_runtime(stored))?;
     super::validation::records(&records)?;
     super::storage::save(&records)?;
-    let _ = super::managed_cleanup::unreferenced(&records);
+    if let Err(error) = super::managed_cleanup::unreferenced(&records) {
+        super::operation_error::report(super::operation_error::Operation::Cleanup, &error);
+    }
     replace(records)
 }
 

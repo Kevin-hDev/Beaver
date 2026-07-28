@@ -152,11 +152,8 @@ fn valid_selector(value: &str) -> bool {
 }
 
 fn valid_git_reference(value: &str) -> bool {
-    let commit_hash = matches!(value.len(), 40 | 64)
-        && value.chars().all(|character| character.is_ascii_hexdigit());
     !value.is_empty()
         && value.chars().count() <= MAX_GIT_REF_CHARS
-        && !commit_hash
         && !value.starts_with(['-', '/', '.'])
         && !value.ends_with(['/', '.'])
         && !value.contains("..")

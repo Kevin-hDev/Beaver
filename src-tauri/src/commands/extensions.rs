@@ -27,7 +27,9 @@ pub async fn install_git_extension(
 ) -> Result<ExtensionView, String> {
     let record = extensions::install_git_source(&app, &url)
         .await
-        .map_err(|_| extensions::INSTALL_FAILED.to_string())?;
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::InstallGit, &error)
+        })?;
     let view = ExtensionView::from(record);
     emit_changed(&app);
     Ok(view)
@@ -40,7 +42,9 @@ pub async fn install_npm_extension(
 ) -> Result<ExtensionView, String> {
     let record = extensions::install_npm_source(&app, &package_spec)
         .await
-        .map_err(|_| extensions::INSTALL_FAILED.to_string())?;
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::InstallNpm, &error)
+        })?;
     let view = ExtensionView::from(record);
     emit_changed(&app);
     Ok(view)
@@ -53,7 +57,9 @@ pub async fn update_extension(
 ) -> Result<ExtensionView, String> {
     let record = extensions::update_managed_extension(&app, &extension_id)
         .await
-        .map_err(|_| extensions::UPDATE_FAILED.to_string())?;
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::Update, &error)
+        })?;
     let view = ExtensionView::from(record);
     emit_changed(&app);
     Ok(view)
@@ -63,7 +69,9 @@ pub async fn update_extension(
 pub async fn remove_extension(app: tauri::AppHandle, extension_id: String) -> Result<(), String> {
     let result = extensions::uninstall_extension(&extension_id)
         .await
-        .map_err(|_| extensions::UNINSTALL_FAILED.to_string());
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::Uninstall, &error)
+        });
     emit_changed(&app);
     result
 }

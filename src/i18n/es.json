@@ -1984,6 +1984,7 @@
       "reload": "Recargar",
       "remove": "Eliminar",
       "confirmRemove": "Confirmar",
+      "confirmUpdate": "Confirmar actualización",
       "restartHost": "Reiniciar host",
       "recovery": "Desactivar extensiones alojadas"
     },
@@ -2009,6 +2010,7 @@
     "showInChatFor": "Mostrar {{name}} en el chat",
     "enableFor": "Activar {{name}}",
     "fullAccessWarning": "Beaver no audita esta extensión y puede acceder a los datos, secretos y funciones de tu cuenta.",
+    "updateTrustWarning": "La actualización desactivará la extensión. Revisa la nueva versión antes de volver a confiar en ella.",
     "detail": {
       "status": "Estado",
       "runtime": "Runtime",
@@ -2035,7 +2037,7 @@
       "folder": "Elegir una carpeta",
       "folderDescription": "Carpeta con un manifiesto de Beaver o package.json",
       "git": "Instalar desde Git",
-      "gitDescription": "Repositorio HTTPS o SSH que contiene una extensión de Beaver",
+      "gitDescription": "Repositorio HTTPS o SSH con rama, etiqueta o commit opcional",
       "npm": "Instalar desde npm",
       "npmDescription": "Paquete publicado que contiene una extensión de Beaver",
       "gitLabel": "URL del repositorio Git",
@@ -2092,7 +2094,20 @@
         "extensions_tool_arguments_invalid": "Los parámetros enviados a esta herramienta no son válidos.",
         "extensions_install_failed": "No se pudo instalar la extensión.",
         "extensions_update_failed": "No se pudo actualizar la extensión.",
-        "extensions_uninstall_failed": "No se pudo eliminar completamente la extensión."
+        "extensions_uninstall_failed": "No se pudo eliminar completamente la extensión.",
+        "extensions_source_invalid": "La dirección o referencia Git no es válida.",
+        "extensions_package_invalid": "El nombre, la versión o la etiqueta npm no es válida.",
+        "extensions_git_download_failed": "No se pudo descargar el repositorio Git.",
+        "extensions_git_timeout": "El repositorio Git no respondió a tiempo.",
+        "extensions_runtime_unavailable": "El entorno de instalación proporcionado por Beaver no está disponible.",
+        "extensions_dependency_install_failed": "No se pudieron instalar las dependencias de la extensión.",
+        "extensions_manifest_invalid": "El manifiesto o el punto de entrada de la extensión no es válido.",
+        "extensions_already_installed": "Ya hay una extensión instalada con este identificador.",
+        "extensions_limit_reached": "Se alcanzó el número máximo de extensiones.",
+        "extensions_storage_failed": "El almacenamiento local de extensiones no está disponible.",
+        "extensions_update_identity_changed": "La actualización cambió la identidad de la extensión y fue rechazada.",
+        "extensions_update_unavailable": "Beaver no puede actualizar esta extensión.",
+        "extensions_cleanup_failed": "No se pudieron limpiar algunos archivos antiguos de extensiones."
       }
     },
     "diagnostics": {

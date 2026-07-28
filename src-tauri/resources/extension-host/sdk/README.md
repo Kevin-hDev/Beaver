@@ -8,9 +8,9 @@ Approval is associated with the extension identity and source, not with a conten
 
 ## Installation sources
 
-Add a local file or folder directly, install a repository through HTTPS or SSH Git, or install a registry package by npm name. Keep the Beaver manifest at the repository root or in the published npm package.
+Add a local file or folder directly, install a repository through HTTPS or SSH Git, or install a registry package by npm name. A Git locator can end with `#branch`, `#tag`, or a full commit hash. Keep the Beaver manifest at the repository root or in the published npm package.
 
-Beaver installs production dependencies without running npm lifecycle scripts or creating executable links. If your dependency requires an install-time build, prepare it yourself and add the resulting local folder instead.
+Beaver uses its bundled npm with the official HTTPS registry and strict TLS. It installs production dependencies without running npm lifecycle scripts or creating executable links. Repository-level npm configuration is ignored during installation. If your dependency requires an install-time build, prepare it yourself and add the resulting local folder instead.
 
 ## Minimal manifest
 

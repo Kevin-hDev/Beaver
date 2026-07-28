@@ -134,3 +134,33 @@ fn git_materialization_accepts_a_declared_branch() {
         expected_revision
     );
 }
+
+#[test]
+fn git_materialization_accepts_a_pinned_commit() {
+    let temporary = tempfile::tempdir().unwrap();
+    let repository_path = temporary.path().join("repository");
+    std::fs::create_dir(&repository_path).unwrap();
+    let expected_revision = create_repository(&repository_path);
+    let source = GitSource {
+        locator: format!("https://example.invalid/extension.git#{expected_revision}"),
+        clone_url: url::Url::from_file_path(&repository_path)
+            .unwrap()
+            .to_string(),
+        reference: Some(expected_revision.clone()),
+    };
+
+    let cloned =
+        super::git_source::clone_repository(&source, &temporary.path().join("commit-checkout"))
+            .unwrap();
+
+    assert_eq!(
+        cloned
+            .head()
+            .unwrap()
+            .peel_to_commit()
+            .unwrap()
+            .id()
+            .to_string(),
+        expected_revision
+    );
+}

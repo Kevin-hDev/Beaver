@@ -1317,6 +1317,7 @@
       "reload": "Reload",
       "remove": "Remove",
       "confirmRemove": "Confirm",
+      "confirmUpdate": "Confirm update",
       "restartHost": "Restart host",
       "recovery": "Disable hosted extensions"
     },
@@ -1342,6 +1343,7 @@
     "showInChatFor": "Show {{name}} in chat",
     "enableFor": "Enable {{name}}",
     "fullAccessWarning": "This extension is not audited by Beaver and can access your account’s data, secrets, and features.",
+    "updateTrustWarning": "Updating will disable the extension. Review the new version before trusting it again.",
     "detail": {
       "status": "Status",
       "runtime": "Runtime",
@@ -1368,7 +1370,7 @@
       "folder": "Choose a folder",
       "folderDescription": "Folder containing a Beaver manifest or package.json",
       "git": "Install from Git",
-      "gitDescription": "HTTPS or SSH repository containing a Beaver extension",
+      "gitDescription": "HTTPS or SSH repository with an optional branch, tag, or commit",
       "npm": "Install from npm",
       "npmDescription": "Published package containing a Beaver extension",
       "gitLabel": "Git repository URL",
@@ -1425,7 +1427,20 @@
         "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid.",
         "extensions_install_failed": "The extension could not be installed.",
         "extensions_update_failed": "The extension could not be updated.",
-        "extensions_uninstall_failed": "The extension could not be removed completely."
+        "extensions_uninstall_failed": "The extension could not be removed completely.",
+        "extensions_source_invalid": "The Git address or reference is invalid.",
+        "extensions_package_invalid": "The npm name, version, or tag is invalid.",
+        "extensions_git_download_failed": "The Git repository could not be downloaded.",
+        "extensions_git_timeout": "The Git repository did not respond in time.",
+        "extensions_runtime_unavailable": "The installation runtime provided by Beaver is unavailable.",
+        "extensions_dependency_install_failed": "The extension dependencies could not be installed.",
+        "extensions_manifest_invalid": "The extension manifest or entry point is invalid.",
+        "extensions_already_installed": "An extension with this identifier is already installed.",
+        "extensions_limit_reached": "The maximum number of extensions has been reached.",
+        "extensions_storage_failed": "Local extension storage is unavailable.",
+        "extensions_update_identity_changed": "The update changed the extension identity and was rejected.",
+        "extensions_update_unavailable": "Beaver cannot update this extension.",
+        "extensions_cleanup_failed": "Some old extension files could not be cleaned up."
       }
     },
     "diagnostics": {

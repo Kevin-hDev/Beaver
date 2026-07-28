@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 const INSTALL_TIMEOUT: Duration = Duration::from_secs(300);
+const REGISTRY: &str = "https://registry.npmjs.org/";
 
 #[derive(Clone)]
 pub struct NpmRunner {
@@ -23,16 +24,16 @@ impl NpmRunner {
     }
 
     pub fn install_package(&self, prefix: &Path, source: &NpmSource) -> Result<PathBuf, String> {
-        let cache = prefix.join(".npm-cache");
-        let mut arguments = self.common_arguments("install", prefix, &cache);
+        let workspace = prepare_workspace(prefix)?;
+        let mut arguments = self.common_arguments("install", prefix, &workspace);
         arguments.extend([
             OsString::from("--package-lock=false"),
             OsString::from("--save=false"),
             OsString::from("--"),
             OsString::from(&source.locator),
         ]);
-        let result = self.run(prefix, arguments);
-        let _ = std::fs::remove_dir_all(&cache);
+        let result = self.run(prefix, &workspace, arguments);
+        cleanup_workspace(&workspace)?;
         result?;
         let package_root = prefix
             .join("node_modules")
@@ -44,7 +45,8 @@ impl NpmRunner {
     }
 
     pub fn install_dependencies(&self, root: &Path) -> Result<(), String> {
-        let cache = root.join(".npm-cache");
+        let workspace = prepare_workspace(root)?;
+        let config = super::npm_environment::ProjectConfig::neutralize(root)?;
         let command = if root.join("package-lock.json").is_file()
             || root.join("npm-shrinkwrap.json").is_file()
         {
@@ -52,15 +54,18 @@ impl NpmRunner {
         } else {
             "install"
         };
-        let mut arguments = self.common_arguments(command, root, &cache);
+        let mut arguments = self.common_arguments(command, root, &workspace);
         if command == "install" {
             arguments.extend([
                 OsString::from("--package-lock=false"),
                 OsString::from("--save=false"),
             ]);
         }
-        let result = self.run(root, arguments);
-        let _ = std::fs::remove_dir_all(&cache);
+        let result = self.run(root, &workspace, arguments);
+        let restore = config.restore();
+        let cleanup = cleanup_workspace(&workspace);
+        restore?;
+        cleanup?;
         result
     }
 
@@ -68,7 +73,7 @@ impl NpmRunner {
         &self,
         command: &str,
         prefix: &Path,
-        cache: &Path,
+        workspace: &Path,
     ) -> Vec<OsString> {
         vec![
             self.cli.as_os_str().to_owned(),
@@ -83,12 +88,26 @@ impl NpmRunner {
             OsString::from("--prefix"),
             prefix.as_os_str().to_owned(),
             OsString::from("--cache"),
-            cache.as_os_str().to_owned(),
+            workspace.join("cache").into_os_string(),
+            OsString::from("--registry"),
+            OsString::from(REGISTRY),
+            OsString::from("--replace-registry-host=always"),
+            OsString::from("--strict-ssl=true"),
+            OsString::from("--userconfig"),
+            workspace.join("userconfig").into_os_string(),
+            OsString::from("--globalconfig"),
+            workspace.join("globalconfig").into_os_string(),
         ]
     }
 
-    fn run(&self, root: &Path, arguments: Vec<OsString>) -> Result<(), String> {
-        super::process_runner::run(&self.node, &arguments, root, INSTALL_TIMEOUT)
+    fn run(&self, root: &Path, workspace: &Path, arguments: Vec<OsString>) -> Result<(), String> {
+        super::process_runner::run(
+            &self.node,
+            &arguments,
+            root,
+            &workspace.join("tmp"),
+            INSTALL_TIMEOUT,
+        )
     }
 
     #[cfg(test)]
@@ -97,33 +116,53 @@ impl NpmRunner {
     }
 }
 
-pub(super) fn resolve_cli(host_directory: &Path, node: &Path) -> Result<PathBuf, String> {
+pub(super) fn resolve_cli(host_directory: &Path, _node: &Path) -> Result<PathBuf, String> {
     let bundled = host_directory.join("runtime/npm/bin/npm-cli.js");
     if bundled.is_file() {
         return bundled
             .canonicalize()
             .map_err(|_| "Gestionnaire npm indisponible.".to_string());
     }
-    let bin = node
+    #[cfg(test)]
+    let bin = _node
         .parent()
         .ok_or_else(|| "Gestionnaire npm indisponible.".to_string())?;
+    #[cfg(test)]
     #[cfg(windows)]
     let inferred = bin.join("node_modules/npm/bin/npm-cli.js");
+    #[cfg(test)]
     #[cfg(not(windows))]
     let inferred = bin.join("../lib/node_modules/npm/bin/npm-cli.js");
-    let discovered = which::which("npm")
-        .ok()
-        .and_then(|path| path.canonicalize().ok());
-    for candidate in [Some(inferred), discovered].into_iter().flatten() {
-        if let Ok(candidate) = candidate.canonicalize() {
-            if candidate.is_file()
-                && candidate.file_name().and_then(|name| name.to_str()) == Some("npm-cli.js")
-            {
-                return Ok(candidate);
-            }
+    #[cfg(test)]
+    if let Ok(candidate) = inferred.canonicalize() {
+        if candidate.is_file()
+            && candidate.file_name().and_then(|name| name.to_str()) == Some("npm-cli.js")
+        {
+            return Ok(candidate);
         }
     }
     Err("Gestionnaire npm indisponible.".to_string())
+}
+
+fn prepare_workspace(root: &Path) -> Result<PathBuf, String> {
+    let workspace = root.join(".npm-cache");
+    if workspace.exists() {
+        std::fs::remove_dir_all(&workspace)
+            .map_err(|_| "Cache npm impossible à nettoyer.".to_string())?;
+    }
+    crate::services::private_store::ensure_private_dir(&workspace.join("cache"))
+        .map_err(|_| "Cache npm indisponible.".to_string())?;
+    crate::services::private_store::ensure_private_dir(&workspace.join("tmp"))
+        .map_err(|_| "Cache npm indisponible.".to_string())?;
+    for name in ["userconfig", "globalconfig"] {
+        crate::services::private_store::atomic_write(&workspace.join(name), b"")
+            .map_err(|_| "Configuration npm indisponible.".to_string())?;
+    }
+    Ok(workspace)
+}
+
+fn cleanup_workspace(workspace: &Path) -> Result<(), String> {
+    std::fs::remove_dir_all(workspace).map_err(|_| "Cache npm impossible à nettoyer.".to_string())
 }
 
 pub(super) fn package_path(name: &str) -> PathBuf {

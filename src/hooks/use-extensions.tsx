@@ -8,9 +8,10 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
+import { useExtensionInstall } from "@/hooks/use-extension-install";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
-import { parseExtensionRecord, parseExtensionRecords } from "@/lib/extension-records";
+import { parseExtensionRecords } from "@/lib/extension-records";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
 const EMPTY_HOST: ExtensionHostStatus = {
@@ -113,20 +114,7 @@ function useExtensionsState() {
     mutate(id, "set_extension_show_in_chat", { extensionId: id, showInChat },
       (record) => ({ ...record, showInChat })), [mutate]);
 
-  const install = useCallback(async (
-    command: string,
-    payload: Record<string, unknown>,
-  ) => {
-    setOperationError(null);
-    try {
-      const added = parseExtensionRecord(await invoke<unknown>(command, payload));
-      await refresh();
-      return added;
-    } catch (error) {
-      setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
-      return null;
-    }
-  }, [refresh]);
+  const install = useExtensionInstall(refresh, setOperationError);
 
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
     setOperationError(null);

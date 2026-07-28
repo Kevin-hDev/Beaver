@@ -23,6 +23,10 @@ pub unsafe extern "C" fn RunWinMain(
 }
 
 fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
+    // SAFETY: premier travail du point d'entrée DLL, avant CEF et tout thread.
+    if !unsafe { crate::configure_git_network_policy() } {
+        return 1;
+    }
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::from(MainArgs { instance });
     let result = execute_process(
