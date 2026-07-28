@@ -24,15 +24,26 @@ pub(crate) async fn run(
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools =
         super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider);
-    let enabled_tool_names = tool_catalog::tool_names(&final_tools);
-    let openai_tools = llm::agent_loop_tools::convert_tools_to_openai(&final_tools);
+    let extension_tools =
+        crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
+            final_tools,
+            &params.messages,
+            !params.tools.is_empty(),
+        );
+    let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
+    crate::services::agent_local::extension_tool_set::record_initial(
+        &extension_tools,
+        &params.session_id,
+        &params.request_id,
+    )
+    .await;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await;
     let plan_mode_active =
         resolve_plan_mode(&params).await && tool_catalog::has_plan_tools(&enabled_tool_names);
 
     let snap = common::collect_git_snapshot(&working_dir).await;
-    let has_tools = !final_tools.is_empty();
+    let has_tools = !extension_tools.active().is_empty();
     let mut messages = params.messages;
     let prepared_memory = crate::services::agent_local::memory_context::prepare(
         &params.session_id,
@@ -99,7 +110,7 @@ pub(crate) async fn run(
         &params.provider,
         &params.model,
         &mut messages,
-        &openai_tools,
+        extension_tools,
         think_active,
         effective_reasoning_mode.as_deref(),
         working_dir,

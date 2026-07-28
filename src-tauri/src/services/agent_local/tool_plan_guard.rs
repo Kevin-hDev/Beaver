@@ -7,6 +7,7 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "list_dir",
     "web_search",
     "web_fetch",
+    "search_extension_tools",
     "read_spreadsheet",
     "read_document",
     "read_image",
@@ -23,7 +24,7 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "forecast_models",
 ];
 
-pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, read_spreadsheet, read_document, read_image, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, exitplanmode, forecast_read, forecast_models, read-only bash, and search_mcp_tools without MCP calls";
+pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, read_image, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, exitplanmode, forecast_read, forecast_models, read-only bash, and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     match tool_name {
@@ -76,6 +77,7 @@ mod tests {
     fn allows_read_tools_in_plan_mode() {
         assert!(super::ensure_allowed("read_file", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("grep", &json!({}), true).is_ok());
+        assert!(super::ensure_allowed("search_extension_tools", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("planmode", &json!({}), true).is_ok());
     }
 

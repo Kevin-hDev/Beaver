@@ -14,7 +14,19 @@ pub(crate) async fn run(
     let ctx = crate::services::compress::context_resolve::resolve_ollama(&params.model).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools = resolve_tools(&params, &mode, &settings);
-    let enabled_tool_names = tool_catalog::tool_names(&final_tools);
+    let extension_tools =
+        crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
+            final_tools,
+            &params.messages,
+            !params.tools.is_empty(),
+        );
+    let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
+    crate::services::agent_local::extension_tool_set::record_initial(
+        &extension_tools,
+        &params.session_id,
+        &params.request_id,
+    )
+    .await;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await;
     let plan_mode_active =
@@ -83,7 +95,7 @@ pub(crate) async fn run(
         &params.on_event,
         &mut messages,
         &params.model,
-        final_tools,
+        extension_tools,
         ollama_think,
         working_dir,
         params.session_id.clone(),

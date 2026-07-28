@@ -1,5 +1,7 @@
 mod builtin;
 mod core_bridge;
+pub(crate) mod discovery;
+mod discovery_text;
 mod error_codes;
 mod git_checkout;
 mod git_package;
@@ -49,7 +51,12 @@ mod view;
 pub use types::{ExtensionHostStatus, ExtensionKind};
 pub use view::ExtensionView;
 
+pub(crate) use discovery::{
+    discover_plugin_tools, search as search_tools, select_plugin_tools, MAX_SEARCH_QUERY_CHARS,
+    MAX_SEARCH_RESULTS, MAX_SELECTED_TOOLS, SEARCH_TOOL_NAME,
+};
 pub use registry::{add_local, disable_hosted_extensions, list, set_enabled, set_show_in_chat};
+pub(crate) use registry_index::dynamic_tool_names;
 pub use registry_index::{is_dynamic_tool, is_replacement};
 pub use runtime::{restart, status, stop};
 pub use runtime_dispatch::{dispatch_tool, emit_event};

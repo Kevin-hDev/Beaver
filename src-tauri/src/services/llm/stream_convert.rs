@@ -2,7 +2,17 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::vision;
 use serde_json::{json, Value};
 
+#[cfg(test)]
 pub fn message_to_openai(msg: &ChatMessage, provider_id: &str) -> Value {
+    let names = super::tool_schema::ToolNameMap::new(&[]);
+    message_to_openai_with_names(msg, provider_id, &names)
+}
+
+fn message_to_openai_with_names(
+    msg: &ChatMessage,
+    provider_id: &str,
+    names: &super::tool_schema::ToolNameMap,
+) -> Value {
     match msg.role.as_str() {
         "tool" => {
             let mut obj = json!({
@@ -39,7 +49,7 @@ pub fn message_to_openai(msg: &ChatMessage, provider_id: &str) -> Value {
                             "id": id,
                             "type": "function",
                             "function": {
-                                "name": super::tool_schema::wire_name(&tc.function.name),
+                                "name": names.wire_name(&tc.function.name),
                                 "arguments": args_str,
                             }
                         })
@@ -73,9 +83,18 @@ pub fn message_to_openai(msg: &ChatMessage, provider_id: &str) -> Value {
 }
 
 pub fn messages_to_openai(messages: &[ChatMessage], provider_id: &str) -> Vec<Value> {
+    messages_to_openai_with_tools(messages, provider_id, &[])
+}
+
+pub fn messages_to_openai_with_tools(
+    messages: &[ChatMessage],
+    provider_id: &str,
+    tools: &[Value],
+) -> Vec<Value> {
+    let names = super::tool_schema::ToolNameMap::new(tools);
     messages
         .iter()
-        .map(|m| message_to_openai(m, provider_id))
+        .map(|message| message_to_openai_with_names(message, provider_id, &names))
         .collect()
 }
 

@@ -4,6 +4,20 @@ use crate::services::agent_local::types_ollama::{
 };
 use std::path::Path;
 
+pub async fn prepare_subagents(
+    session_id: &str,
+    parent_message_inbox: Option<
+        std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>,
+    >,
+) -> super::subagent_orchestration::ParentSubagentOrchestrator {
+    super::tool_result_budget::cleanup_old_results();
+    super::subagent_orchestration::ParentSubagentOrchestrator::with_parent_inbox(
+        session_id,
+        parent_message_inbox,
+    )
+    .await
+}
+
 pub fn build_request(
     model: &str,
     messages: &[ChatMessage],
@@ -92,11 +106,13 @@ pub async fn record_detected_tool_calls(
     request_id: &str,
     tool_calls: &[(String, serde_json::Value)],
     working_dir: &Path,
+    tools: &mut super::extension_tool_set::ExtensionToolSet,
 ) {
     for (name, args) in tool_calls {
         super::tool_executor_diagnostics::detected(session_id, request_id, name, args, working_dir)
             .await;
     }
+    super::extension_tool_set::expand_and_record(tools, tool_calls, session_id, request_id).await;
 }
 
 pub async fn ensure_more_turns(turn: usize, model: &str) -> Result<(), String> {

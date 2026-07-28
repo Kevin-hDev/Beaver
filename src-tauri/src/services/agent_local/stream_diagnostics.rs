@@ -98,6 +98,20 @@ pub async fn record_retry(session_id: &str, request_id: &str, message: &str) {
     .await;
 }
 
+pub async fn record_extension_tools(
+    session_id: &str,
+    request_id: &str,
+    phase: &str,
+    names: &[String],
+) {
+    let names = names.iter().take(8).cloned().collect::<Vec<_>>().join(", ");
+    let message = format!("Extension tools selected: {names}");
+    let _ = support::update_run(session_id, request_id, |_session, run| {
+        support::push_event(run, phase, &message, None, None);
+    })
+    .await;
+}
+
 pub async fn record_completed(session_id: &str, request_id: &str) {
     let _ = support::update_run(session_id, request_id, |session, run| {
         run.status = "completed".to_string();

@@ -1,10 +1,9 @@
 use super::agent_loop_compression::{LastCounts, LoopCompression};
 use super::agent_loop_ollama_request::OllamaRequestParams;
-use super::stream_events::AgentEventEmitter;
 use super::types_ollama::{ChatMessage, OllamaThink};
 use super::{
     agent_loop_limits::MAX_TURNS, agent_loop_plan, agent_loop_support, circuit_breaker,
-    subagent_orchestration, tool_executor, tool_result_budget, write_guard_registry,
+    stream_events::AgentEventEmitter, tool_executor, write_guard_registry,
 };
 use crate::services::token_counting;
 use std::path::PathBuf;
@@ -13,7 +12,7 @@ pub async fn run_agent_loop(
     on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,
     model: &str,
-    tools: Vec<serde_json::Value>,
+    mut tools: super::extension_tool_set::ExtensionToolSet,
     think: OllamaThink,
     working_dir: PathBuf,
     session_id: String,
@@ -32,11 +31,8 @@ pub async fn run_agent_loop(
     let write_guard_arc = write_guard_registry::lock(&session_id).await;
     let mut write_guard = write_guard_arc.lock().await;
     let mut plan_repairs = 0;
-    let mut subagents = subagent_orchestration::ParentSubagentOrchestrator::with_parent_inbox(
-        &session_id,
-        parent_message_inbox,
-    )
-    .await;
+    let mut subagents =
+        agent_loop_support::prepare_subagents(&session_id, parent_message_inbox).await;
     let compression = LoopCompression {
         on_event,
         model,
@@ -46,7 +42,6 @@ pub async fn run_agent_loop(
         configured_context,
         working_dir: &working_dir,
     };
-    tool_result_budget::cleanup_old_results();
     for turn in 0..MAX_TURNS {
         if cancel.is_cancelled() {
             return Err("Annulé".to_string());
@@ -55,7 +50,7 @@ pub async fn run_agent_loop(
             on_event,
             messages,
             model,
-            tools: &tools,
+            tools: tools.active(),
             think: &think,
             working_dir: &working_dir,
             session_id: &session_id,
@@ -142,6 +137,7 @@ pub async fn run_agent_loop(
             &request_id,
             &result.tool_calls,
             &working_dir,
+            &mut tools,
         )
         .await;
         if turn == MAX_TURNS - 1 {

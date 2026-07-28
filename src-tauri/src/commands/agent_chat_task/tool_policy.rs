@@ -25,7 +25,6 @@ fn apply_with(
             extensions_blocked: false,
         };
     }
-    let before = tools.len();
     let extensions_blocked = tools
         .iter()
         .any(|tool| is_extension_tool(tool, &is_extension));
@@ -39,10 +38,13 @@ fn apply_with(
     tools.retain(|tool| {
         tool.pointer("/function/name")
             .and_then(Value::as_str)
-            .is_some_and(|name| keep_tool(provider_id, model, is_extension(name)))
+            .is_some_and(|name| {
+                name != crate::services::extensions::SEARCH_TOOL_NAME
+                    && keep_tool(provider_id, model, is_extension(name))
+            })
     });
     ToolPolicy {
-        extensions_blocked: extensions_blocked || tools.len() != before,
+        extensions_blocked,
         tools,
     }
 }
@@ -97,6 +99,7 @@ mod tests {
     fn groq_keeps_core_tools_and_removes_complete_plugins() {
         let tools = vec![
             serde_json::json!({"function": {"name": "read_file"}}),
+            serde_json::json!({"function": {"name": "search_extension_tools"}}),
             serde_json::json!({"function": {"name": "beaver.office.documents.create"}}),
         ];
 

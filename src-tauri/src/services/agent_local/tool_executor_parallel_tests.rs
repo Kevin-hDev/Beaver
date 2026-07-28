@@ -9,6 +9,7 @@ mod tests {
         assert!(is_read_only("glob"));
         assert!(is_read_only("list_dir"));
         assert!(is_read_only("web_search"));
+        assert!(is_read_only("search_extension_tools"));
         assert!(is_read_only("read_spreadsheet"));
         assert!(is_read_only("read_document"));
         assert!(is_read_only("read_image"));

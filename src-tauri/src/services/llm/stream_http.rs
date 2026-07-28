@@ -1,5 +1,4 @@
 use super::provider_error::ProviderErrorCode;
-use super::stream_convert::messages_to_openai;
 pub(super) use super::stream_http_error::RequestError;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
@@ -117,7 +116,11 @@ fn build_chat_payload(cfg: &RequestConfig<'_>, route: &LlmRoute) -> serde_json::
     let provider_id = route.canonical_provider_id;
     let mut payload = serde_json::json!({
         "model": cfg.model,
-        "messages": messages_to_openai(cfg.messages, provider_id),
+        "messages": super::stream_convert::messages_to_openai_with_tools(
+            cfg.messages,
+            provider_id,
+            cfg.tools,
+        ),
         "stream": true,
         "stream_options": { "include_usage": true },
     });

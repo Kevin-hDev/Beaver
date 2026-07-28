@@ -111,7 +111,7 @@ pub fn prepare_messages_with_tools(
         prepend_tool_system_prompt(messages, working_dir, is_git, git_root, model, behavior);
         filter_tool_prompt(messages, enabled_tool_names);
         prepend_web_search_status(messages);
-        super::disabled_tools_hint::prepend(messages, enabled_tool_names);
+        super::extension_discovery_prompt::append(messages, enabled_tool_names);
         if has_tools && !skills.is_empty() {
             prepend_skills_listing(messages, skills);
         }

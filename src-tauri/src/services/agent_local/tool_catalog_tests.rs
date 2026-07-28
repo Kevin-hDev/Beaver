@@ -37,6 +37,7 @@ fn filtered_definitions_keep_locked_and_enabled_optional_tools() {
 
     assert!(has_tool(&names, "bash"));
     assert!(has_tool(&names, "search_mcp_tools"));
+    assert!(has_tool(&names, "search_extension_tools"));
     assert!(has_tool(&names, "load_skill"));
     assert!(!has_tool(&names, "todo_write"));
     assert!(!has_tool(&names, "forecast"));

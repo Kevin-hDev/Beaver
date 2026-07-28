@@ -3,10 +3,6 @@ use crate::services::agent_local::agent_loop_limits::MAX_TURNS;
 use crate::services::agent_local::circuit_breaker::CircuitBreaker;
 use std::path::Path;
 
-pub fn convert_tools_to_openai(tools: &[serde_json::Value]) -> Vec<serde_json::Value> {
-    tools.to_vec()
-}
-
 pub(super) async fn record_detected_tool_calls(
     session_id: &str,
     request_id: &str,
@@ -32,8 +28,13 @@ pub(super) async fn prepare_tool_batch(
     working_dir: &Path,
     turn: usize,
     breaker: &mut CircuitBreaker,
+    tools: &mut crate::services::agent_local::extension_tool_set::ExtensionToolSet,
 ) -> Result<bool, String> {
     record_detected_tool_calls(session_id, request_id, tool_calls, working_dir).await;
+    crate::services::agent_local::extension_tool_set::expand_and_record(
+        tools, tool_calls, session_id, request_id,
+    )
+    .await;
     if turn == MAX_TURNS - 1 {
         return Err(agent_loop_errors::max_turns_message());
     }

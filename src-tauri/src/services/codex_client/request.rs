@@ -105,7 +105,7 @@ fn build_codex_request(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
 ) -> CodexRequest {
-    let (instructions, input) = convert::convert_messages(messages);
+    let (instructions, input) = convert::convert_messages_with_tools(messages, tools);
     let converted_tools = convert::convert_tools_to_responses_api(tools);
     CodexRequest {
         model: model.to_string(),

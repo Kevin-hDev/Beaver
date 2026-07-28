@@ -19,7 +19,7 @@ pub async fn run_agent_loop(
     provider_id: &str,
     model: &str,
     messages: &mut Vec<ChatMessage>,
-    tools: &[serde_json::Value],
+    mut tools: crate::services::agent_local::extension_tool_set::ExtensionToolSet,
     think: bool,
     reasoning_mode: Option<&str>,
     working_dir: PathBuf,
@@ -65,7 +65,7 @@ pub async fn run_agent_loop(
             messages,
             provider_id,
             model,
-            tools,
+            tools: tools.active(),
             think,
             reasoning_mode,
             session_id: &session_id,
@@ -149,6 +149,7 @@ pub async fn run_agent_loop(
             &working_dir,
             turn,
             &mut breaker,
+            &mut tools,
         )
         .await?;
         let tool_compression = (!control_only).then(|| {

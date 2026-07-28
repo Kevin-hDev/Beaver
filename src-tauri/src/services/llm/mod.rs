@@ -47,6 +47,7 @@ mod stream_tools;
 mod timeouts;
 pub mod tool_capable;
 pub(crate) mod tool_schema;
+mod tool_schema_names;
 mod tool_schema_profile;
 pub mod types;
 pub mod vision;

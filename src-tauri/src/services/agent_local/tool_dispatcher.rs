@@ -113,6 +113,7 @@ pub(super) async fn dispatch_inner(
                 Err(e) => ToolResult::err(e),
             }
         }
+        "search_extension_tools" => super::tool_extension_discovery::execute(args),
         "todo_write" => super::tool_todo::execute(args, session_id).await,
         "todo_history" => super::tool_todo::execute_history(args, session_id).await,
         "todo_pause" => super::tool_todo::execute_pause(args, session_id).await,

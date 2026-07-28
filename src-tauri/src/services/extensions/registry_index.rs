@@ -2,9 +2,17 @@ use super::types::{ExtensionKind, ExtensionRecord, ExtensionTool};
 use std::collections::HashSet;
 use std::sync::{LazyLock, RwLock};
 
+#[derive(Clone)]
+pub(crate) struct IndexedTool {
+    pub extension_id: String,
+    pub extension_name: String,
+    pub extension_description: String,
+    pub tool: ExtensionTool,
+}
+
 #[derive(Default)]
 struct DynamicIndex {
-    tools: Vec<ExtensionTool>,
+    tools: Vec<IndexedTool>,
     names: HashSet<String>,
     replacements: HashSet<String>,
 }
@@ -13,16 +21,31 @@ static INDEX: LazyLock<RwLock<DynamicIndex>> =
     LazyLock::new(|| RwLock::new(DynamicIndex::default()));
 
 pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
-    let tools: Vec<ExtensionTool> = records
+    let tools: Vec<IndexedTool> = records
         .iter()
         .filter(|record| record.kind != ExtensionKind::External && record.enabled)
-        .flat_map(|record| record.contributions.tools.iter().cloned())
+        .flat_map(|record| {
+            record
+                .contributions
+                .tools
+                .iter()
+                .cloned()
+                .map(|tool| IndexedTool {
+                    extension_id: record.manifest.id.clone(),
+                    extension_name: record.manifest.name.clone(),
+                    extension_description: record.manifest.description.clone().unwrap_or_default(),
+                    tool,
+                })
+        })
         .collect();
-    let names = tools.iter().map(|tool| tool.name.clone()).collect();
+    let names = tools
+        .iter()
+        .map(|indexed| indexed.tool.name.clone())
+        .collect();
     let replacements = tools
         .iter()
-        .filter(|tool| tool.replaces_core)
-        .map(|tool| tool.name.clone())
+        .filter(|indexed| indexed.tool.replaces_core)
+        .map(|indexed| indexed.tool.name.clone())
         .collect();
     let mut index = INDEX
         .write()
@@ -38,7 +61,27 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
 pub fn dynamic_tools() -> Vec<ExtensionTool> {
     INDEX
         .read()
+        .map(|index| {
+            index
+                .tools
+                .iter()
+                .map(|indexed| indexed.tool.clone())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+pub(crate) fn indexed_tools() -> Vec<IndexedTool> {
+    INDEX
+        .read()
         .map(|index| index.tools.clone())
+        .unwrap_or_default()
+}
+
+pub(crate) fn dynamic_tool_names() -> Vec<String> {
+    INDEX
+        .read()
+        .map(|index| index.names.iter().cloned().collect())
         .unwrap_or_default()
 }
 
@@ -61,7 +104,7 @@ pub fn dynamic_tool(tool_name: &str) -> Option<ExtensionTool> {
         index
             .tools
             .iter()
-            .find(|tool| tool.name == tool_name)
-            .cloned()
+            .find(|indexed| indexed.tool.name == tool_name)
+            .map(|indexed| indexed.tool.clone())
     })
 }

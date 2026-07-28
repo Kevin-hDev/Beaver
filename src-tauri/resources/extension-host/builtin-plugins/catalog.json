@@ -11,7 +11,7 @@
         "access": "full",
         "apiLevel": "stable",
         "author": "Beaver",
-        "description": "Create and update editable DOCX documents."
+        "description": "Create and update editable Microsoft Word DOCX documents."
       },
       "enabled": true,
       "showInChat": true
@@ -43,7 +43,7 @@
         "access": "full",
         "apiLevel": "stable",
         "author": "Beaver",
-        "description": "Create, inspect, and update XLSX workbooks."
+        "description": "Create, inspect, and update Microsoft Excel XLSX workbooks."
       },
       "enabled": true,
       "showInChat": true
@@ -59,7 +59,7 @@
         "access": "full",
         "apiLevel": "stable",
         "author": "Beaver",
-        "description": "Create editable PPTX presentations."
+        "description": "Create editable Microsoft PowerPoint PPTX presentations."
       },
       "enabled": true,
       "showInChat": true
