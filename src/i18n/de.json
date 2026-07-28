@@ -751,6 +751,7 @@
       "beaverName": "Beaver",
       "circuitName": "Circuit",
       "kovaName": "Kova",
+      "nivalName": "Nival",
       "previewActive": "Animierte Vorschau",
       "previewPaused": "Animation pausiert",
       "settingsTitle": "Einstellungen",
@@ -762,6 +763,7 @@
       "beaverDesc": "Das Hauptmaskottchen von Beaver",
       "circuitDesc": "Ein ruhiges und neugieriges Entwickler-Rentier",
       "kovaDesc": "Ein ruhiger und entschlossener junger Low-Poly-Kämpfer",
+      "nivalDesc": "Ein ruhiger, flinker und entschlossener junger Frost-Ninja",
       "selected": "Ausgewählt",
       "moveLabel": "Maskottchen verschieben"
     },

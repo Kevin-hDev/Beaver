@@ -7,29 +7,38 @@ import {
   SettingsHarness,
 } from "../test-utils/settings-tab-test-setup";
 
-describe("Kova mascot settings", () => {
+describe("collection des mascottes", () => {
   afterEach(() => cleanup());
 
   beforeEach(() => {
     resetSettingsTestEnvironment();
   });
 
-  it("sélectionne Kova depuis une carte sans liste déroulante", async () => {
+  it.each([
+    ["Kova", "kova", "settings.mascot.kovaName"],
+    ["Nival", "nival", "settings.mascot.nivalName"],
+  ])("sélectionne %s depuis une carte sans liste déroulante", async (
+    _name,
+    mascotId,
+    nameKey,
+  ) => {
     render(<SettingsHarness />);
     fireEvent.click((await screen.findAllByText("settings.tabs.mascot"))[0]);
 
-    const kovaCard = (await screen.findByText("settings.mascot.kovaName")).closest("button");
-    expect(kovaCard).toHaveAttribute("aria-pressed", "false");
+    const mascotCard = (await screen.findByText(nameKey)).closest("button");
+    expect(mascotCard).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("combobox")).toBeNull();
-    fireEvent.click(kovaCard!);
+    fireEvent.click(mascotCard!);
 
     await waitFor(() => {
       expect(invokeCalls()).toContainEqual([
         "patch_mascot_settings",
-        { patch: { mascot_id: "kova" } },
+        { patch: { mascot_id: mascotId } },
       ]);
-      expect(kovaCard).toHaveAttribute("aria-pressed", "true");
-      expect(document.querySelector(".msp-bubble [data-mascot-id='kova']")).toBeTruthy();
+      expect(mascotCard).toHaveAttribute("aria-pressed", "true");
+      expect(
+        document.querySelector(`.msp-bubble [data-mascot-id='${mascotId}']`),
+      ).toBeTruthy();
     });
   });
 });

@@ -1,0 +1,37 @@
+{
+  "id": "nival",
+  "displayName": "Nival",
+  "cellWidth": 192,
+  "cellHeight": 208,
+  "sheets": {
+    "standard": {
+      "columns": 8,
+      "rows": 11
+    },
+    "actions": {
+      "columns": 8,
+      "rows": 3
+    }
+  },
+  "states": [
+    {"id":"idle","sheet":"standard","row":0,"frames":6,"loop":true,"frameDurationMs":300,"loopPauseMs":3500},
+    {"id":"move-right","sheet":"standard","row":1,"frames":8,"loop":true,"frameDurationMs":130,"loopPauseMs":120},
+    {"id":"move-left","sheet":"standard","row":2,"frames":8,"loop":true,"frameDurationMs":130,"loopPauseMs":120},
+    {"id":"wave","sheet":"standard","row":3,"frames":4,"loop":false},
+    {"id":"jump","sheet":"standard","row":4,"frames":5,"loop":false},
+    {"id":"failed","sheet":"standard","row":5,"frames":8,"loop":false},
+    {"id":"waiting","sheet":"standard","row":6,"frames":6,"loop":true,"frameDurationMs":280,"loopPauseMs":2500},
+    {"id":"thinking","sheet":"standard","row":7,"frames":6,"loop":true,"frameDurationMs":300,"loopPauseMs":1400},
+    {"id":"explore-book","sheet":"actions","row":0,"startFrame":5,"frames":3,"loop":true,"frameDurationMs":800,"loopPauseMs":1500},
+    {"id":"look-000-157.5","sheet":"standard","row":9,"frames":8,"loop":false},
+    {"id":"look-180-337.5","sheet":"standard","row":10,"frames":8,"loop":false},
+    {"id":"work-laptop","sheet":"actions","row":0,"frames":3,"loop":true,"frameDurationMs":650,"loopPauseMs":1200},
+    {"id":"success","sheet":"actions","row":0,"startFrame":3,"frames":1,"loop":false,"durationsMs":[1200]},
+    {"id":"celebrate","sheet":"actions","row":0,"startFrame":3,"frames":1,"loop":false,"durationsMs":[1200]},
+    {"id":"grabbed","sheet":"actions","row":1,"startFrame":5,"frames":1,"loop":false,"durationsMs":[250]},
+    {"id":"held","sheet":"actions","row":1,"startFrame":6,"frames":1,"loop":false},
+    {"id":"dropped","sheet":"actions","row":1,"startFrame":7,"frames":1,"loop":false,"durationsMs":[850]},
+    {"id":"sleeping","sheet":"actions","row":2,"frames":1,"loop":false},
+    {"id":"alert","sheet":"actions","row":1,"startFrame":1,"frames":1,"loop":false,"durationsMs":[1200]}
+  ]
+}

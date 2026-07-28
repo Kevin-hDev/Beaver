@@ -756,6 +756,7 @@
       "beaverName": "Beaver",
       "circuitName": "Circuit",
       "kovaName": "Kova",
+      "nivalName": "Nival",
       "previewActive": "Animated preview",
       "previewPaused": "Animation paused",
       "settingsTitle": "Settings",
@@ -767,6 +768,7 @@
       "beaverDesc": "Beaver's main mascot",
       "circuitDesc": "A calm and curious developer reindeer",
       "kovaDesc": "A calm and determined young low-poly fighter",
+      "nivalDesc": "A calm, agile and determined young frost ninja",
       "selected": "Selected",
       "moveLabel": "Move the mascot"
     },

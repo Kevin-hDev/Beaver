@@ -17,6 +17,8 @@ describe("mascot translations", () => {
       expect(locale.settings.mascot.circuitDesc.trim()).not.toBe("");
       expect(locale.settings.mascot.kovaName.trim()).not.toBe("");
       expect(locale.settings.mascot.kovaDesc.trim()).not.toBe("");
+      expect(locale.settings.mascot.nivalName.trim()).not.toBe("");
+      expect(locale.settings.mascot.nivalDesc.trim()).not.toBe("");
       expect(locale.settings.mascot.selected.trim()).not.toBe("");
       expect(locale.settings.mascot.moveLabel.trim()).not.toBe("");
     }

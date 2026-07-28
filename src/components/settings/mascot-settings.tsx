@@ -34,6 +34,11 @@ const MASCOT_OPTIONS: Array<{
     nameKey: "settings.mascot.kovaName",
     descriptionKey: "settings.mascot.kovaDesc",
   },
+  {
+    id: "nival",
+    nameKey: "settings.mascot.nivalName",
+    descriptionKey: "settings.mascot.nivalDesc",
+  },
 ];
 
 export function MascotSettings() {

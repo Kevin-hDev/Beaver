@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_MASCOT_ID: &str = "cl-go-beaver";
 pub const CIRCUIT_MASCOT_ID: &str = "circuit";
 pub const KOVA_MASCOT_ID: &str = "kova";
+pub const NIVAL_MASCOT_ID: &str = "nival";
 pub const DEFAULT_SIZE_PERCENT: u16 = 100;
 pub const MIN_SIZE_PERCENT: u16 = 70;
 pub const MAX_SIZE_PERCENT: u16 = 140;
@@ -11,7 +12,7 @@ const POSITION_LIMIT: i32 = 100_000;
 pub fn is_supported_mascot_id(value: &str) -> bool {
     matches!(
         value,
-        DEFAULT_MASCOT_ID | CIRCUIT_MASCOT_ID | KOVA_MASCOT_ID
+        DEFAULT_MASCOT_ID | CIRCUIT_MASCOT_ID | KOVA_MASCOT_ID | NIVAL_MASCOT_ID
     )
 }
 
@@ -117,6 +118,17 @@ mod tests {
         .normalized();
 
         assert_eq!(settings.mascot_id, KOVA_MASCOT_ID);
+    }
+
+    #[test]
+    fn nival_is_a_supported_mascot() {
+        let settings = MascotSettings {
+            mascot_id: NIVAL_MASCOT_ID.into(),
+            ..Default::default()
+        }
+        .normalized();
+
+        assert_eq!(settings.mascot_id, NIVAL_MASCOT_ID);
     }
 
     #[test]

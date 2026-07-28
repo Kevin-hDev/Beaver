@@ -751,6 +751,7 @@
       "beaverName": "Beaver",
       "circuitName": "Circuit",
       "kovaName": "Kova",
+      "nivalName": "Nival",
       "previewActive": "Vista previa animada",
       "previewPaused": "Animación en pausa",
       "settingsTitle": "Ajustes",
@@ -762,6 +763,7 @@
       "beaverDesc": "La mascota principal de Beaver",
       "circuitDesc": "Un reno desarrollador tranquilo y curioso",
       "kovaDesc": "Un joven luchador low-poly tranquilo y decidido",
+      "nivalDesc": "Un joven ninja de la escarcha tranquilo, ágil y decidido",
       "selected": "Seleccionada",
       "moveLabel": "Mover la mascota"
     },

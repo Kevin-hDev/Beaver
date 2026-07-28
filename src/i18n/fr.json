@@ -756,6 +756,7 @@
       "beaverName": "Beaver",
       "circuitName": "Circuit",
       "kovaName": "Kova",
+      "nivalName": "Nival",
       "previewActive": "Aperçu animé",
       "previewPaused": "Animation en pause",
       "settingsTitle": "Réglages",
@@ -767,6 +768,7 @@
       "beaverDesc": "La mascotte principale de Beaver",
       "circuitDesc": "Un renne développeur calme et curieux",
       "kovaDesc": "Un jeune combattant low-poly calme et déterminé",
+      "nivalDesc": "Un jeune ninja du givre calme, vif et déterminé",
       "selected": "Sélectionnée",
       "moveLabel": "Déplacer la mascotte"
     },

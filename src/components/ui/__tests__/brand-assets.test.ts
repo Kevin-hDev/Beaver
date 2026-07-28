@@ -122,4 +122,15 @@ describe("assets de marque", () => {
     expect(manifest).toContain('"id": "success"');
     expect(manifest).toContain('"id": "grabbed"');
   });
+
+  it("embarque les planches standard et avancée de Nival", () => {
+    const manifest = readText("src/assets/mascot/nival/manifest.json");
+
+    expect(fileExists("src/assets/mascot/nival/standard.webp")).toBe(true);
+    expect(fileExists("src/assets/mascot/nival/actions.webp")).toBe(true);
+    expect(manifest).toContain('"id": "nival"');
+    expect(manifest).toContain('"startFrame": 5');
+    expect(manifest).toContain('"id":"success"');
+    expect(manifest).toContain('"id":"grabbed"');
+  });
 });

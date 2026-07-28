@@ -6,6 +6,9 @@ import circuitStandardSheet from "@/assets/mascot/circuit/standard.webp";
 import kovaActionsSheet from "@/assets/mascot/kova/actions.webp";
 import kovaManifest from "@/assets/mascot/kova/manifest.json";
 import kovaStandardSheet from "@/assets/mascot/kova/standard.webp";
+import nivalActionsSheet from "@/assets/mascot/nival/actions.webp";
+import nivalManifest from "@/assets/mascot/nival/manifest.json";
+import nivalStandardSheet from "@/assets/mascot/nival/standard.webp";
 import {
   DEFAULT_MASCOT_ID,
   isMascotId,
@@ -106,6 +109,22 @@ const MASCOT_BUNDLES: Record<MascotId, MascotBundle> = {
         src: kovaActionsSheet,
         columns: kovaManifest.sheets.actions.columns,
         rows: kovaManifest.sheets.actions.rows,
+      },
+    },
+  },
+  nival: {
+    manifest: nivalManifest,
+    defaultSheet: "standard",
+    sheets: {
+      standard: {
+        src: nivalStandardSheet,
+        columns: nivalManifest.sheets.standard.columns,
+        rows: nivalManifest.sheets.standard.rows,
+      },
+      actions: {
+        src: nivalActionsSheet,
+        columns: nivalManifest.sheets.actions.columns,
+        rows: nivalManifest.sheets.actions.rows,
       },
     },
   },

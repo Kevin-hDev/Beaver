@@ -46,6 +46,26 @@ describe("mascot sprite playback", () => {
     expect(success).toMatchObject({ row: 0, startFrame: 3, frames: 1 });
   });
 
+  it("utilise les planches standard et les poses avancées de Nival", () => {
+    const idle = getMascotAnimation("idle", "nival");
+    const work = getMascotAnimation("work-laptop", "nival");
+    const exploration = getMascotAnimation("explore-book", "nival");
+    const success = getMascotAnimation("success", "nival");
+    const held = getMascotAnimation("held", "nival");
+
+    expect(idle).toMatchObject({
+      row: 0,
+      startFrame: 0,
+      frames: 6,
+      columns: 8,
+      rows: 11,
+    });
+    expect(work).toMatchObject({ row: 0, startFrame: 0, frames: 3, rows: 3 });
+    expect(exploration).toMatchObject({ row: 0, startFrame: 5, frames: 3 });
+    expect(success).toMatchObject({ row: 0, startFrame: 3, frames: 1 });
+    expect(held).toMatchObject({ row: 1, startFrame: 6, frames: 1 });
+  });
+
   it("positionne correctement les coins de la planche", () => {
     expect(spritePosition(0, 0)).toBe("0% 0%");
     expect(spritePosition(7, 18)).toBe("100% 100%");

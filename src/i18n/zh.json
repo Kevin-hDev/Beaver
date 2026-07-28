@@ -751,6 +751,7 @@
       "beaverName": "Beaver",
       "circuitName": "Circuit",
       "kovaName": "Kova",
+      "nivalName": "Nival",
       "previewActive": "动画预览",
       "previewPaused": "动画已暂停",
       "settingsTitle": "设置",
@@ -762,6 +763,7 @@
       "beaverDesc": "Beaver 的主要吉祥物",
       "circuitDesc": "一只沉稳又好奇的开发者驯鹿",
       "kovaDesc": "一位冷静而坚定的低多边形少年战士",
+      "nivalDesc": "一位冷静、敏捷而坚定的年轻冰霜忍者",
       "selected": "已选择",
       "moveLabel": "移动吉祥物"
     },

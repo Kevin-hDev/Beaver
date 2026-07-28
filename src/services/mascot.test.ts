@@ -44,6 +44,15 @@ describe("mascot service validation", () => {
     expect(settings.mascot_id).toBe("kova");
   });
 
+  it("accepte Nival comme mascotte disponible", () => {
+    const settings = normalizeMascotSettings({
+      mascot_id: "nival",
+      size_percent: 100,
+    });
+
+    expect(settings.mascot_id).toBe("nival");
+  });
+
   it("retombe sur idle pour un état temps réel invalide", () => {
     expect(normalizeMascotState({ animation: "unknown", revision: -1 })).toEqual({
       animation: "idle",
