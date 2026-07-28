@@ -1,5 +1,6 @@
 mod builtin;
 mod core_bridge;
+mod error_codes;
 mod host_channel;
 mod host_paths;
 mod host_process;
@@ -21,11 +22,13 @@ mod storage;
 mod tool_bridge;
 mod types;
 mod validation;
+mod view;
 
-pub use types::{ExtensionHostStatus, ExtensionKind, ExtensionRecord};
+pub use types::{ExtensionHostStatus, ExtensionKind};
+pub use view::ExtensionView;
 
 pub use registry::{
-    add_local, disable_user_extensions, list, remove, set_enabled, set_show_in_chat,
+    add_local, disable_hosted_extensions, list, remove, set_enabled, set_show_in_chat,
 };
 pub use registry_index::{is_dynamic_tool, is_replacement};
 pub use runtime::{restart, status, stop};
@@ -37,4 +40,10 @@ pub(crate) use manifest::load_local as install_local;
 pub(crate) use validation::identifier as validate_identifier;
 
 #[cfg(test)]
+mod builtin_tests;
+#[cfg(test)]
+mod runtime_sync_tests;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod view_tests;

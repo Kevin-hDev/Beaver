@@ -1,0 +1,13 @@
+.exeb-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+}
+
+.exeb-fallback p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}

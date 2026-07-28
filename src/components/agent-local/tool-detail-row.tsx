@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { ToolActivity } from "@/hooks/agent-chat-utils";
+import { officeToolErrorMessage } from "@/lib/office-tool-errors";
 import { sanitizeToolError } from "@/lib/tool-error-sanitize";
 import type { ToolActivityRecord } from "@/types/agent";
 import { ContentPreview, DiffPreview, WebResultsPreview } from "./tool-previews";
@@ -106,8 +107,11 @@ export function ToolDetailRow({
   const operations = tool.content ?? tool.args?.operations;
   const documentContent = tool.content ?? tool.args?.content;
   const display = toolDisplayInfo(tool, projectPath, t);
+  const localizedOfficeError = tool.name.startsWith("beaver.office.")
+    ? officeToolErrorMessage(tool.result ?? "", t)
+    : undefined;
   const errorMessage = tool.is_error && tool.name !== "web_fetch"
-    ? sanitizeToolError(tool.result ?? "")
+    ? localizedOfficeError ?? sanitizeToolError(tool.result ?? "")
     : undefined;
   const showWebPreview = (tool.name === "web_search" || tool.name === "web_fetch")
     && tool.result

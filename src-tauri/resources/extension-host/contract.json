@@ -1,12 +1,14 @@
 {
   "limits": {
-    "maxExtensions": 128,
+    "maxExtensions": 132,
+    "maxUserExtensions": 128,
     "maxTools": 256,
     "maxToolsPerExtension": 64,
     "maxEventsPerExtension": 64,
     "maxPendingRequests": 64,
     "maxInFlightRequests": 64,
     "maxInFlightHandlers": 64,
+    "maxWorkingDirectoryChars": 1024,
     "maxMessageBytes": 1048576
   },
   "diagnostics": {

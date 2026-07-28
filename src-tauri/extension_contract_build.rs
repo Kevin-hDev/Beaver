@@ -23,11 +23,13 @@ pub fn generate() {
     let mut output = String::new();
     for (json_name, rust_name) in [
         ("maxExtensions", "MAX_EXTENSIONS"),
+        ("maxUserExtensions", "MAX_USER_EXTENSIONS"),
         ("maxTools", "MAX_TOOLS"),
         ("maxToolsPerExtension", "MAX_TOOLS_PER_EXTENSION"),
         ("maxEventsPerExtension", "MAX_EVENTS_PER_EXTENSION"),
         ("maxPendingRequests", "MAX_PENDING_REQUESTS"),
         ("maxInFlightRequests", "MAX_IN_FLIGHT_REQUESTS"),
+        ("maxWorkingDirectoryChars", "MAX_WORKING_DIRECTORY_CHARS"),
         ("maxMessageBytes", "MAX_MESSAGE_BYTES"),
     ] {
         let value = limit(limits, json_name);

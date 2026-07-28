@@ -1,23 +1,23 @@
-use crate::services::extensions::{self, ExtensionHostStatus, ExtensionKind, ExtensionRecord};
+use crate::services::extensions::{self, ExtensionHostStatus, ExtensionKind, ExtensionView};
 use tauri::Emitter;
 
 const CHANGED_EVENT: &str = "fs:extensions-changed";
 
 #[tauri::command]
-pub async fn list_extensions() -> Result<Vec<ExtensionRecord>, String> {
-    extensions::list()
+pub async fn list_extensions() -> Result<Vec<ExtensionView>, String> {
+    extensions::list().map(|records| records.into_iter().map(ExtensionView::from).collect())
 }
 
 #[tauri::command]
 pub async fn add_local_extension(
     app: tauri::AppHandle,
     path: String,
-) -> Result<ExtensionRecord, String> {
+) -> Result<ExtensionView, String> {
     let extension = extensions::install_local(&path)?;
-    let record = extension.record.clone();
+    let view = ExtensionView::from(extension.record.clone());
     extensions::add_local(extension.record)?;
     emit_changed(&app);
-    Ok(record)
+    Ok(view)
 }
 
 #[tauri::command]
@@ -65,8 +65,8 @@ pub async fn get_extension_host_status() -> Result<ExtensionHostStatus, String> 
 }
 
 #[tauri::command]
-pub async fn recover_without_user_extensions(app: tauri::AppHandle) -> Result<(), String> {
-    extensions::disable_user_extensions()?;
+pub async fn recover_extension_host(app: tauri::AppHandle) -> Result<(), String> {
+    extensions::disable_hosted_extensions()?;
     let result = extensions::restart().await;
     emit_changed(&app);
     result

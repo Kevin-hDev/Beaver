@@ -25,29 +25,74 @@ export async function syncExtensions(specifications) {
   return { extensions: loaded };
 }
 
-export async function callExtensionTool(name, arguments_) {
+export async function callExtensionTool(name, arguments_, context) {
   const entry = tools.get(name);
   if (!entry) throw new Error("tool_not_found");
+  const executionContext = toolExecutionContext(context);
   let timer;
   const raw = await Promise.race([
-    Promise.resolve().then(() => entry.execute(arguments_ ?? {})),
+    Promise.resolve().then(() => entry.execute(arguments_ ?? {}, executionContext)),
     new Promise((_, reject) => {
       timer = setTimeout(() => reject(new Error("tool_timeout")), TOOL_TIMEOUT_MS);
       timer.unref();
     }),
   ]).finally(() => clearTimeout(timer));
   if (typeof raw === "string") {
-    return { content: raw, isError: false };
+    return boundedToolResult({ content: raw, isError: false });
   }
   if (!raw || typeof raw !== "object" || typeof raw.content !== "string") {
     throw new Error("invalid_tool_result");
   }
-  return {
+  return boundedToolResult({
     content: raw.content,
     isError: raw.isError === true,
     displaySummary:
       typeof raw.displaySummary === "string" ? raw.displaySummary : undefined,
+    truncated: raw.truncated === true,
+  });
+}
+
+function toolExecutionContext(context) {
+  const workingDirectory = context?.workingDirectory;
+  if (
+    typeof workingDirectory !== "string"
+    || workingDirectory.length === 0
+    || workingDirectory.length > LIMITS.maxWorkingDirectoryChars
+    || workingDirectory.includes("\0")
+  ) {
+    throw new Error("invalid_tool_context");
+  }
+  return Object.freeze({ workingDirectory });
+}
+
+function boundedToolResult(result) {
+  const content = safeSlice(result.content, LIMITS.maxMessageBytes);
+  const displaySummary = typeof result.displaySummary === "string"
+    ? safeSlice(result.displaySummary, 1_024)
+    : undefined;
+  return {
+    content,
+    isError: result.isError,
+    displaySummary,
+    truncated: result.truncated === true || content.length < result.content.length,
   };
+}
+
+function safeSlice(value, maxChars) {
+  if (value.length <= maxChars) return value;
+  const end = isHighSurrogate(value.charCodeAt(maxChars - 1))
+    && isLowSurrogate(value.charCodeAt(maxChars))
+    ? maxChars - 1
+    : maxChars;
+  return value.slice(0, end);
+}
+
+function isHighSurrogate(value) {
+  return value >= 0xd800 && value <= 0xdbff;
+}
+
+function isLowSurrogate(value) {
+  return value >= 0xdc00 && value <= 0xdfff;
 }
 
 export async function emitExtensionEvent(event, payload) {

@@ -1318,6 +1318,42 @@
         "empty": "Aucune application externe connectée."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documents",
+        "description": "Créez et modifiez des documents DOCX éditables.",
+        "tools": {
+          "create": "Créer un document DOCX éditable.",
+          "patch": "Remplir un modèle DOCX existant."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Lisez, créez, fusionnez et vérifiez des fichiers PDF.",
+        "tools": {
+          "create": "Créer un fichier PDF paginé.",
+          "inspect": "Lire le texte et les informations de pages d’un fichier PDF.",
+          "merge": "Fusionner plusieurs fichiers PDF."
+        }
+      },
+      "spreadsheets": {
+        "name": "Feuilles de calcul",
+        "description": "Créez, inspectez et modifiez des classeurs XLSX.",
+        "tools": {
+          "create": "Créer un classeur XLSX éditable.",
+          "inspect": "Prévisualiser les cellules et dimensions d’un classeur XLSX.",
+          "update": "Modifier des cellules choisies dans un classeur XLSX."
+        }
+      },
+      "presentations": {
+        "name": "Présentations",
+        "description": "Créez des présentations PPTX éditables et modifiez des modèles.",
+        "tools": {
+          "create": "Créer une présentation PPTX éditable.",
+          "patch": "Remplir un modèle PPTX existant."
+        }
+      }
+    },
     "actions": {
       "add": "Ajouter",
       "cancel": "Annuler",
@@ -1327,7 +1363,7 @@
       "remove": "Supprimer",
       "confirmRemove": "Confirmer",
       "restartHost": "Redémarrer l’hôte",
-      "recovery": "Désactiver les extensions utilisateur"
+      "recovery": "Désactiver les extensions hébergées"
     },
     "status": {
       "active": "Actif",
@@ -1372,7 +1408,7 @@
     },
     "host": {
       "title": "Hôte et diagnostics",
-      "description": "État du processus séparé qui exécute les extensions personnalisées.",
+      "description": "État du processus séparé qui exécute les plugins officiels et les extensions personnalisées.",
       "state": "État",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -1387,12 +1423,35 @@
         "error": "Erreur"
       },
       "recoveryTitle": "Mode de récupération",
-      "recoveryDescription": "Désactive toutes les extensions utilisateur afin de retrouver un Beaver fonctionnel."
+      "recoveryDescription": "Désactive les plugins Beaver et les extensions locales afin de retrouver un Beaver fonctionnel."
     },
     "errors": {
       "load": "Impossible de charger les extensions.",
+      "view": "Impossible d’afficher cette extension.",
       "operation": "L’opération n’a pas pu être terminée.",
-      "host": "L’hôte d’extensions est indisponible."
+      "host": "L’hôte d’extensions est indisponible.",
+      "office": {
+        "unsupportedCharacter": "Le PDF contient un caractère qui ne peut pas être affiché.",
+        "unsupportedCharacterAtParagraph": "Le caractère {{codePoint}} ne peut pas être affiché dans le paragraphe {{paragraph}}.",
+        "unsupportedCharacterInTitle": "Le caractère {{codePoint}} ne peut pas être affiché dans le titre.",
+        "tooManyRequests": "Trop de PDF sont créés en même temps. Réessaie dans un instant.",
+        "inputTooLarge": "Le texte est trop long pour être traité. Réduis la quantité de texte."
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Le catalogue des plugins Beaver est invalide.",
+        "extensions_host_unavailable": "L’hôte d’extensions est indisponible.",
+        "extensions_builtin_plugin_invalid": "Un plugin Beaver est invalide.",
+        "extensions_builtin_catalog_unavailable": "Le catalogue des plugins Beaver est indisponible.",
+        "extensions_builtin_entry_missing": "Le fichier principal d’un plugin Beaver est manquant.",
+        "extensions_builtin_entry_unavailable": "Le fichier principal d’un plugin Beaver est inaccessible.",
+        "extensions_builtin_entry_invalid": "Le fichier principal d’un plugin Beaver est invalide.",
+        "extensions_host_busy": "L’hôte d’extensions traite trop de demandes. Réessaie dans un instant.",
+        "extensions_host_timeout": "L’hôte d’extensions n’a pas répondu à temps.",
+        "extensions_request_too_large": "La demande est trop volumineuse pour être transmise. Réduis la quantité de texte.",
+        "extensions_request_invalid": "La demande envoyée à l’extension est invalide.",
+        "extensions_tool_unavailable": "Cet outil d’extension n’est pas disponible.",
+        "extensions_tool_arguments_invalid": "Les paramètres envoyés à cet outil sont invalides."
+      }
     },
     "diagnostics": {
       "codes": {

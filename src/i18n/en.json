@@ -1270,6 +1270,42 @@
         "empty": "No external applications connected."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documents",
+        "description": "Create and update editable DOCX documents.",
+        "tools": {
+          "create": "Create an editable DOCX document.",
+          "patch": "Fill an existing DOCX template."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Read, create, merge, and verify PDF files.",
+        "tools": {
+          "create": "Create a paginated PDF file.",
+          "inspect": "Read text and page information from a PDF file.",
+          "merge": "Merge several PDF files."
+        }
+      },
+      "spreadsheets": {
+        "name": "Spreadsheets",
+        "description": "Create, inspect, and update XLSX workbooks.",
+        "tools": {
+          "create": "Create an editable XLSX workbook.",
+          "inspect": "Preview cells and dimensions from an XLSX workbook.",
+          "update": "Update selected cells in an XLSX workbook."
+        }
+      },
+      "presentations": {
+        "name": "Presentations",
+        "description": "Create editable PPTX presentations and update templates.",
+        "tools": {
+          "create": "Create an editable PPTX presentation.",
+          "patch": "Fill an existing PPTX template."
+        }
+      }
+    },
     "actions": {
       "add": "Add",
       "cancel": "Cancel",
@@ -1279,7 +1315,7 @@
       "remove": "Remove",
       "confirmRemove": "Confirm",
       "restartHost": "Restart host",
-      "recovery": "Disable user extensions"
+      "recovery": "Disable hosted extensions"
     },
     "status": {
       "active": "Active",
@@ -1324,7 +1360,7 @@
     },
     "host": {
       "title": "Host and Diagnostics",
-      "description": "Status of the separate process that runs custom extensions.",
+      "description": "Status of the separate process that runs official plugins and custom extensions.",
       "state": "Status",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -1339,12 +1375,35 @@
         "error": "Error"
       },
       "recoveryTitle": "Recovery mode",
-      "recoveryDescription": "Disables all user extensions so Beaver can return to a working state."
+      "recoveryDescription": "Disables Beaver plugins and local extensions so Beaver can return to a working state."
     },
     "errors": {
       "load": "Unable to load extensions.",
+      "view": "This extension could not be displayed.",
       "operation": "The operation could not be completed.",
-      "host": "The extension host is unavailable."
+      "host": "The extension host is unavailable.",
+      "office": {
+        "unsupportedCharacter": "The PDF contains a character that cannot be displayed.",
+        "unsupportedCharacterAtParagraph": "Character {{codePoint}} cannot be displayed in paragraph {{paragraph}}.",
+        "unsupportedCharacterInTitle": "Character {{codePoint}} cannot be displayed in the title.",
+        "tooManyRequests": "Too many PDFs are being created at once. Try again in a moment.",
+        "inputTooLarge": "The text is too long to process. Reduce the amount of text."
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "The Beaver plugin catalog is invalid.",
+        "extensions_host_unavailable": "The extension host is unavailable.",
+        "extensions_builtin_plugin_invalid": "A Beaver plugin is invalid.",
+        "extensions_builtin_catalog_unavailable": "The Beaver plugin catalog is unavailable.",
+        "extensions_builtin_entry_missing": "A Beaver plugin’s main file is missing.",
+        "extensions_builtin_entry_unavailable": "A Beaver plugin’s main file is unavailable.",
+        "extensions_builtin_entry_invalid": "A Beaver plugin’s main file is invalid.",
+        "extensions_host_busy": "The extension host is handling too many requests. Try again in a moment.",
+        "extensions_host_timeout": "The extension host did not respond in time.",
+        "extensions_request_too_large": "The request is too large to send. Reduce the amount of text.",
+        "extensions_request_invalid": "The request sent to the extension is invalid.",
+        "extensions_tool_unavailable": "This extension tool is unavailable.",
+        "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid."
+      }
     },
     "diagnostics": {
       "codes": {

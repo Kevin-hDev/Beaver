@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="pdf-bg" x1="9" y1="6" x2="52" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF737A"/>
+      <stop offset="1" stop-color="#E33B48"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#pdf-bg)" d="M13 5h25l13 13v36a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z"/>
+  <path fill="#FFB0B5" d="M38 5v10a4 4 0 0 0 4 4h9Z"/>
+  <rect width="39" height="17" x="10" y="37" fill="#FFF" fill-opacity=".94" rx="4"/>
+  <path fill="#E33B48" d="M16 42h5.2c3 0 4.8 1.6 4.8 4.2 0 2.7-1.9 4.3-5 4.3h-1.8V53H16V42Zm3.2 2.7v3.1h1.6c1.2 0 1.9-.5 1.9-1.6 0-1-.7-1.5-1.9-1.5h-1.6Zm8.1-2.7h4.5c3.8 0 6.2 2 6.2 5.5S35.6 53 31.8 53h-4.5V42Zm3.2 2.8v5.4h1.1c2 0 3.1-.9 3.1-2.7s-1.1-2.7-3.1-2.7h-1.1ZM39.5 42H48v2.8h-5.3v1.8h4.7v2.7h-4.7V53h-3.2V42Z"/>
+</svg>

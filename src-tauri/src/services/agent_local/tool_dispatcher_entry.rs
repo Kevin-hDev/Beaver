@@ -37,7 +37,7 @@ pub async fn dispatch(
     };
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
     let mut result = if dynamic_tool {
-        crate::services::extensions::dispatch_tool(tool_name, &args)
+        crate::services::extensions::dispatch_tool(tool_name, &args, working_dir)
             .await
             .unwrap_or_else(|| ToolResult::err("Extension indisponible."))
     } else {

@@ -1,0 +1,68 @@
+{
+  "plugins": [
+    {
+      "manifest": {
+        "id": "beaver.office.documents",
+        "name": "Documents",
+        "version": "1.0.0",
+        "beaverApi": "1",
+        "runtime": "node",
+        "main": "builtin-plugins/documents/index.mjs",
+        "access": "full",
+        "apiLevel": "stable",
+        "author": "Beaver",
+        "description": "Create and update editable DOCX documents."
+      },
+      "enabled": true,
+      "showInChat": true
+    },
+    {
+      "manifest": {
+        "id": "beaver.office.pdf",
+        "name": "PDF",
+        "version": "1.0.0",
+        "beaverApi": "1",
+        "runtime": "node",
+        "main": "builtin-plugins/pdf/index.mjs",
+        "access": "full",
+        "apiLevel": "stable",
+        "author": "Beaver",
+        "description": "Read, create, merge, and verify PDF files."
+      },
+      "enabled": true,
+      "showInChat": true
+    },
+    {
+      "manifest": {
+        "id": "beaver.office.spreadsheets",
+        "name": "Spreadsheets",
+        "version": "1.0.0",
+        "beaverApi": "1",
+        "runtime": "node",
+        "main": "builtin-plugins/spreadsheets/index.mjs",
+        "access": "full",
+        "apiLevel": "stable",
+        "author": "Beaver",
+        "description": "Create, inspect, and update XLSX workbooks."
+      },
+      "enabled": true,
+      "showInChat": true
+    },
+    {
+      "manifest": {
+        "id": "beaver.office.presentations",
+        "name": "Presentations",
+        "version": "1.0.0",
+        "beaverApi": "1",
+        "runtime": "node",
+        "main": "builtin-plugins/presentations/index.mjs",
+        "access": "full",
+        "apiLevel": "stable",
+        "author": "Beaver",
+        "description": "Create editable PPTX presentations."
+      },
+      "enabled": true,
+      "showInChat": true
+    }
+  ]
+}

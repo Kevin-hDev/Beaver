@@ -1937,6 +1937,42 @@
         "empty": "Nessuna applicazione esterna collegata."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documenti",
+        "description": "Crea e aggiorna documenti DOCX modificabili.",
+        "tools": {
+          "create": "Creare un documento DOCX modificabile.",
+          "patch": "Compilare un modello DOCX esistente."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Leggi, crea, unisci e verifica file PDF.",
+        "tools": {
+          "create": "Creare un file PDF impaginato.",
+          "inspect": "Leggere il testo e le informazioni sulle pagine di un PDF.",
+          "merge": "Unire più file PDF."
+        }
+      },
+      "spreadsheets": {
+        "name": "Fogli di calcolo",
+        "description": "Crea, ispeziona e aggiorna cartelle di lavoro XLSX.",
+        "tools": {
+          "create": "Creare una cartella di lavoro XLSX modificabile.",
+          "inspect": "Visualizzare celle e dimensioni di una cartella XLSX.",
+          "update": "Aggiornare celle selezionate in una cartella XLSX."
+        }
+      },
+      "presentations": {
+        "name": "Presentazioni",
+        "description": "Crea presentazioni PPTX modificabili e aggiorna i modelli.",
+        "tools": {
+          "create": "Creare una presentazione PPTX modificabile.",
+          "patch": "Compilare un modello PPTX esistente."
+        }
+      }
+    },
     "actions": {
       "add": "Aggiungi",
       "cancel": "Annulla",
@@ -1946,7 +1982,7 @@
       "remove": "Rimuovi",
       "confirmRemove": "Conferma",
       "restartHost": "Riavvia host",
-      "recovery": "Disattiva estensioni utente"
+      "recovery": "Disattiva estensioni ospitate"
     },
     "status": {
       "active": "Attiva",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "Host e diagnostica",
-      "description": "Stato del processo separato che esegue le estensioni personalizzate.",
+      "description": "Stato del processo separato che esegue i plugin ufficiali e le estensioni personalizzate.",
       "state": "Stato",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -2006,12 +2042,35 @@
         "error": "Errore"
       },
       "recoveryTitle": "Modalità di recupero",
-      "recoveryDescription": "Disattiva tutte le estensioni utente per ripristinare il funzionamento di Beaver."
+      "recoveryDescription": "Disattiva i plugin Beaver e le estensioni locali per ripristinare il funzionamento di Beaver."
     },
     "errors": {
       "load": "Impossibile caricare le estensioni.",
+      "view": "Non è stato possibile visualizzare questa estensione.",
       "operation": "Impossibile completare l’operazione.",
-      "host": "L’host delle estensioni non è disponibile."
+      "host": "L’host delle estensioni non è disponibile.",
+      "office": {
+        "unsupportedCharacter": "Il PDF contiene un carattere che non può essere visualizzato.",
+        "unsupportedCharacterAtParagraph": "Il carattere {{codePoint}} non può essere visualizzato nel paragrafo {{paragraph}}.",
+        "unsupportedCharacterInTitle": "Il carattere {{codePoint}} non può essere visualizzato nel titolo.",
+        "tooManyRequests": "Sono in creazione troppi PDF contemporaneamente. Riprova tra poco.",
+        "inputTooLarge": "Il testo è troppo lungo per essere elaborato. Riduci la quantità di testo."
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Il catalogo dei plugin Beaver non è valido.",
+        "extensions_host_unavailable": "L’host delle estensioni non è disponibile.",
+        "extensions_builtin_plugin_invalid": "Un plugin Beaver non è valido.",
+        "extensions_builtin_catalog_unavailable": "Il catalogo dei plugin Beaver non è disponibile.",
+        "extensions_builtin_entry_missing": "Manca il file principale di un plugin Beaver.",
+        "extensions_builtin_entry_unavailable": "Il file principale di un plugin Beaver non è disponibile.",
+        "extensions_builtin_entry_invalid": "Il file principale di un plugin Beaver non è valido.",
+        "extensions_host_busy": "L’host delle estensioni sta gestendo troppe richieste. Riprova tra poco.",
+        "extensions_host_timeout": "L’host delle estensioni non ha risposto in tempo.",
+        "extensions_request_too_large": "La richiesta è troppo grande per essere inviata. Riduci la quantità di testo.",
+        "extensions_request_invalid": "La richiesta inviata all’estensione non è valida.",
+        "extensions_tool_unavailable": "Questo strumento dell’estensione non è disponibile.",
+        "extensions_tool_arguments_invalid": "I parametri inviati a questo strumento non sono validi."
+      }
     },
     "diagnostics": {
       "codes": {

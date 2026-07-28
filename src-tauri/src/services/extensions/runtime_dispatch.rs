@@ -1,11 +1,16 @@
 use super::host_process::HostProcess;
 use super::protocol::HostToolResult;
-use super::types::HostState;
+use super::types::{HostState, MAX_WORKING_DIRECTORY_CHARS};
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::{json, Value};
+use std::path::Path;
 use std::sync::Arc;
 
-pub async fn dispatch_tool(name: &str, arguments: &Value) -> Option<ToolResult> {
+pub async fn dispatch_tool(
+    name: &str,
+    arguments: &Value,
+    working_directory: &Path,
+) -> Option<ToolResult> {
     if !super::registry_index::is_dynamic_tool(name) {
         return None;
     }
@@ -13,8 +18,21 @@ pub async fn dispatch_tool(name: &str, arguments: &Value) -> Option<ToolResult> 
         Ok(host) => host,
         Err(_) => return Some(ToolResult::err("Extension indisponible.")),
     };
+    let Some(working_directory) = working_directory.to_str() else {
+        return Some(ToolResult::err("Contexte d'extension indisponible."));
+    };
+    if working_directory.encode_utf16().count() > MAX_WORKING_DIRECTORY_CHARS {
+        return Some(ToolResult::err("Contexte d'extension indisponible."));
+    }
     let response = host
-        .request("tool.call", json!({"name": name, "arguments": arguments}))
+        .request(
+            "tool.call",
+            json!({
+                "name": name,
+                "arguments": arguments,
+                "context": {"workingDirectory": working_directory},
+            }),
+        )
         .await
         .and_then(super::runtime::parse::<HostToolResult>);
     if response.is_err() {
@@ -57,6 +75,7 @@ fn to_tool_result(result: Result<HostToolResult, String>) -> ToolResult {
             } else {
                 ToolResult::ok(result.content)
             };
+            tool_result.truncated = result.truncated;
             tool_result.display_summary = result.display_summary;
             tool_result
         }

@@ -1,3 +1,4 @@
+use super::error_codes;
 use super::host_channel::{self, PendingRequests, SharedWriter};
 use super::host_paths::HostPaths;
 use super::protocol::RpcRequest;
@@ -35,15 +36,15 @@ impl HostProcess {
             .kill_on_drop(true);
         let mut child = command
             .spawn()
-            .map_err(|_| "Impossible de démarrer l'hôte d'extensions.".to_string())?;
+            .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())?;
         let stdin = child
             .stdin
             .take()
-            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?;
+            .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())?;
         let stdout = child
             .stdout
             .take()
-            .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())?;
+            .ok_or_else(|| error_codes::HOST_UNAVAILABLE.to_string())?;
         let writer = Arc::new(Mutex::new(stdin));
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let alive = Arc::new(AtomicBool::new(true));
@@ -64,20 +65,20 @@ impl HostProcess {
 
     pub async fn request(&self, method: &str, params: Value) -> Result<Value, String> {
         if !self.alive.load(Ordering::Acquire) {
-            return Err("Hôte d'extensions indisponible.".to_string());
+            return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
         let id = uuid::Uuid::new_v4().to_string();
         let (sender, receiver) = tokio::sync::oneshot::channel();
         {
             let mut pending = self.pending.lock().await;
             if pending.len() >= MAX_PENDING_REQUESTS {
-                return Err("Trop de requêtes vers l'hôte d'extensions.".to_string());
+                return Err(error_codes::HOST_BUSY.to_string());
             }
             pending.insert(id.clone(), sender);
         }
         if !self.alive.load(Ordering::Acquire) {
             self.pending.lock().await.remove(&id);
-            return Err("Hôte d'extensions indisponible.".to_string());
+            return Err(error_codes::HOST_UNAVAILABLE.to_string());
         }
         let request = RpcRequest {
             jsonrpc: "2.0",
@@ -91,10 +92,10 @@ impl HostProcess {
         }
         match tokio::time::timeout(REQUEST_TIMEOUT, receiver).await {
             Ok(Ok(result)) => result,
-            Ok(Err(_)) => Err("Hôte d'extensions indisponible.".to_string()),
+            Ok(Err(_)) => Err(error_codes::HOST_UNAVAILABLE.to_string()),
             Err(_) => {
                 self.pending.lock().await.remove(&id);
-                Err("L'hôte d'extensions ne répond pas.".to_string())
+                Err(error_codes::HOST_TIMEOUT.to_string())
             }
         }
     }

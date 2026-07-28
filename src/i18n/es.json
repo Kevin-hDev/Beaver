@@ -1937,6 +1937,42 @@
         "empty": "No hay aplicaciones externas conectadas."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Documentos",
+        "description": "Crea y actualiza documentos DOCX editables.",
+        "tools": {
+          "create": "Crear un documento DOCX editable.",
+          "patch": "Rellenar una plantilla DOCX existente."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Lee, crea, combina y verifica archivos PDF.",
+        "tools": {
+          "create": "Crear un archivo PDF paginado.",
+          "inspect": "Leer el texto y la información de páginas de un PDF.",
+          "merge": "Combinar varios archivos PDF."
+        }
+      },
+      "spreadsheets": {
+        "name": "Hojas de cálculo",
+        "description": "Crea, inspecciona y actualiza libros XLSX.",
+        "tools": {
+          "create": "Crear un libro XLSX editable.",
+          "inspect": "Previsualizar celdas y dimensiones de un libro XLSX.",
+          "update": "Actualizar celdas seleccionadas de un libro XLSX."
+        }
+      },
+      "presentations": {
+        "name": "Presentaciones",
+        "description": "Crea presentaciones PPTX editables y actualiza plantillas.",
+        "tools": {
+          "create": "Crear una presentación PPTX editable.",
+          "patch": "Rellenar una plantilla PPTX existente."
+        }
+      }
+    },
     "actions": {
       "add": "Añadir",
       "cancel": "Cancelar",
@@ -1946,7 +1982,7 @@
       "remove": "Eliminar",
       "confirmRemove": "Confirmar",
       "restartHost": "Reiniciar host",
-      "recovery": "Desactivar extensiones de usuario"
+      "recovery": "Desactivar extensiones alojadas"
     },
     "status": {
       "active": "Activa",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "Host y diagnósticos",
-      "description": "Estado del proceso separado que ejecuta las extensiones personalizadas.",
+      "description": "Estado del proceso separado que ejecuta los plugins oficiales y las extensiones personalizadas.",
       "state": "Estado",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -2006,12 +2042,35 @@
         "error": "Error"
       },
       "recoveryTitle": "Modo de recuperación",
-      "recoveryDescription": "Desactiva todas las extensiones de usuario para recuperar un Beaver funcional."
+      "recoveryDescription": "Desactiva los plugins de Beaver y las extensiones locales para recuperar un Beaver funcional."
     },
     "errors": {
       "load": "No se pudieron cargar las extensiones.",
+      "view": "No se pudo mostrar esta extensión.",
       "operation": "No se pudo completar la operación.",
-      "host": "El host de extensiones no está disponible."
+      "host": "El host de extensiones no está disponible.",
+      "office": {
+        "unsupportedCharacter": "El PDF contiene un carácter que no se puede mostrar.",
+        "unsupportedCharacterAtParagraph": "El carácter {{codePoint}} no se puede mostrar en el párrafo {{paragraph}}.",
+        "unsupportedCharacterInTitle": "El carácter {{codePoint}} no se puede mostrar en el título.",
+        "tooManyRequests": "Se están creando demasiados PDF a la vez. Vuelve a intentarlo en un momento.",
+        "inputTooLarge": "El texto es demasiado largo para procesarse. Reduce la cantidad de texto."
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "El catálogo de plugins de Beaver no es válido.",
+        "extensions_host_unavailable": "El host de extensiones no está disponible.",
+        "extensions_builtin_plugin_invalid": "Un plugin de Beaver no es válido.",
+        "extensions_builtin_catalog_unavailable": "El catálogo de plugins de Beaver no está disponible.",
+        "extensions_builtin_entry_missing": "Falta el archivo principal de un plugin de Beaver.",
+        "extensions_builtin_entry_unavailable": "El archivo principal de un plugin de Beaver no está disponible.",
+        "extensions_builtin_entry_invalid": "El archivo principal de un plugin de Beaver no es válido.",
+        "extensions_host_busy": "El host de extensiones está atendiendo demasiadas solicitudes. Vuelve a intentarlo en un momento.",
+        "extensions_host_timeout": "El host de extensiones no respondió a tiempo.",
+        "extensions_request_too_large": "La solicitud es demasiado grande para enviarse. Reduce la cantidad de texto.",
+        "extensions_request_invalid": "La solicitud enviada a la extensión no es válida.",
+        "extensions_tool_unavailable": "Esta herramienta de extensión no está disponible.",
+        "extensions_tool_arguments_invalid": "Los parámetros enviados a esta herramienta no son válidos."
+      }
     },
     "diagnostics": {
       "codes": {

@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { LIMITS } from "./contract.mjs";
+import { encodeProtocolMessage } from "./protocol-output.mjs";
 
 const REQUEST_TIMEOUT_MS = 30_000;
+const MAX_REQUEST_ID_CHARS = 128;
 const ERROR_REASON_PATTERN = /^[a-z][a-z0-9_]{0,63}$/;
 const RETRYABLE_REASONS = new Set([
   "core_busy",
@@ -13,7 +15,8 @@ const writeProtocol = process.stdout.write.bind(process.stdout);
 const pending = new Map();
 let input = Buffer.alloc(0);
 let handler;
-let inFlightRequests = 0;
+let fatal = false;
+const activeRequestIds = new Set();
 
 export function startProtocol(requestHandler) {
   handler = requestHandler;
@@ -44,6 +47,38 @@ export function callCore(method, params = {}) {
   });
 }
 
+export function fatalProtocolExit() {
+  if (fatal) return;
+  fatal = true;
+  process.stdin.pause();
+  let responses;
+  try {
+    responses = [...activeRequestIds].map((id) =>
+      encodeProtocolMessage({
+        jsonrpc: "2.0",
+        id,
+        error: { code: -32_000, message: "extension_host_fatal" },
+      }));
+  } catch {
+    process.exit(1);
+    return;
+  }
+  if (responses.length === 0) {
+    process.exit(1);
+    return;
+  }
+  const timeout = setTimeout(() => process.exit(1), 100);
+  try {
+    writeProtocol(Buffer.concat(responses), () => {
+      clearTimeout(timeout);
+      process.exit(1);
+    });
+  } catch {
+    clearTimeout(timeout);
+    process.exit(1);
+  }
+}
+
 function receiveChunk(chunk) {
   input = Buffer.concat([input, chunk]);
   if (input.length > LIMITS.maxMessageBytes) {
@@ -58,6 +93,7 @@ function receiveChunk(chunk) {
 }
 
 async function receiveLine(line) {
+  if (fatal) return;
   let message;
   try {
     message = JSON.parse(line.toString("utf8"));
@@ -65,7 +101,13 @@ async function receiveLine(line) {
     process.exit(1);
     return;
   }
-  if (!message || message.jsonrpc !== "2.0" || typeof message.id !== "string") {
+  if (
+    !message
+    || message.jsonrpc !== "2.0"
+    || typeof message.id !== "string"
+    || message.id.length < 1
+    || message.id.length > MAX_REQUEST_ID_CHARS
+  ) {
     process.exit(1);
     return;
   }
@@ -73,7 +115,10 @@ async function receiveLine(line) {
     settle(message);
     return;
   }
-  if (inFlightRequests >= LIMITS.maxInFlightRequests) {
+  if (
+    activeRequestIds.size >= LIMITS.maxInFlightRequests
+    || activeRequestIds.has(message.id)
+  ) {
     send({
       jsonrpc: "2.0",
       id: message.id,
@@ -81,18 +126,20 @@ async function receiveLine(line) {
     });
     return;
   }
-  inFlightRequests += 1;
+  activeRequestIds.add(message.id);
   try {
     const result = await handler(message.method, message.params ?? {});
-    send({ jsonrpc: "2.0", id: message.id, result });
+    if (!fatal) send({ jsonrpc: "2.0", id: message.id, result });
   } catch {
-    send({
-      jsonrpc: "2.0",
-      id: message.id,
-      error: { code: -32_000, message: "extension_host_request_failed" },
-    });
+    if (!fatal) {
+      send({
+        jsonrpc: "2.0",
+        id: message.id,
+        error: { code: -32_000, message: "extension_host_request_failed" },
+      });
+    }
   } finally {
-    inFlightRequests -= 1;
+    activeRequestIds.delete(message.id);
   }
 }
 
@@ -126,9 +173,5 @@ function coreError(code, reason) {
 }
 
 function send(message) {
-  const line = Buffer.from(`${JSON.stringify(message)}\n`, "utf8");
-  if (line.length > LIMITS.maxMessageBytes) {
-    throw new Error("message_too_large");
-  }
-  writeProtocol(line);
+  writeProtocol(encodeProtocolMessage(message));
 }

@@ -113,11 +113,6 @@ fn runtime_contributions_are_not_persisted() {
 }
 
 #[test]
-fn builtin_catalog_starts_empty_instead_of_reclassifying_internal_tools() {
-    assert!(super::builtin::records().is_empty());
-}
-
-#[test]
 fn direct_typescript_react_entry_is_supported_by_jiti() {
     let directory = tempfile::tempdir().unwrap();
     let source = directory.path().join("extension.tsx");

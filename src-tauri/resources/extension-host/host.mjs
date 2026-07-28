@@ -1,4 +1,4 @@
-import { startProtocol } from "./protocol.mjs";
+import { fatalProtocolExit, startProtocol } from "./protocol.mjs";
 import { LIMITS } from "./contract.mjs";
 import {
   callExtensionTool,
@@ -12,8 +12,8 @@ for (const method of ["log", "info", "debug", "warn", "error"]) {
 }
 // protocol.mjs already captured the real writer used exclusively for JSON-RPC.
 process.stdout.write = () => true;
-process.on("uncaughtException", () => process.exit(1));
-process.on("unhandledRejection", () => process.exit(1));
+process.on("uncaughtException", fatalProtocolExit);
+process.on("unhandledRejection", fatalProtocolExit);
 
 startProtocol(async (method, params) => {
   switch (method) {
@@ -31,7 +31,11 @@ startProtocol(async (method, params) => {
       return syncExtensions(specifications);
     }
     case "tool.call":
-      return callExtensionTool(String(params.name ?? ""), params.arguments ?? {});
+      return callExtensionTool(
+        String(params.name ?? ""),
+        params.arguments ?? {},
+        params.context,
+      );
     case "event.emit":
       return emitExtensionEvent(String(params.event ?? ""), params.payload ?? null);
     case "host.shutdown":

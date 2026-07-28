@@ -24,7 +24,7 @@ function record(kind: ExtensionRecord["kind"], id: string, name: string): Extens
       name,
       version: "1.0.0",
       beaverApi: "1",
-      runtime: kind === "builtin" ? "builtin" : "node",
+      runtime: "node",
       access: "full",
       apiLevel: "stable",
     },
@@ -45,15 +45,15 @@ const records = [
 ];
 
 function renderPage(section: "plugins" | "custom" | "external", items = records) {
-  render(
+  return render(
     <ExtensionsPage
       section={section}
       selected={null}
       records={items}
       host={host}
       loading={false}
-      loadError={false}
-      operationError={false}
+      loadError={null}
+      operationError={null}
       busyIds={new Set()}
       onSelect={vi.fn()}
       onAdd={vi.fn()}
@@ -83,10 +83,49 @@ describe("ExtensionsPage", () => {
     expect(screen.queryByText("Extension locale")).not.toBeInTheDocument();
   });
 
+  it("utilise le nom localisé et l'icône du plugin Documents", () => {
+    const { container } = renderPage(
+      "plugins",
+      [record("builtin", "beaver.office.documents", "Fallback")],
+    );
+
+    expect(
+      screen.getByText("extensions.official.documents.name"),
+    ).toBeInTheDocument();
+    expect(container.querySelector(".exti-artwork")).toBeInTheDocument();
+  });
+
   it("garde le catalogue officiel vide sans transformer les Tools en plugins", () => {
     renderPage("plugins", records.filter((item) => item.kind !== "builtin"));
 
     expect(screen.getByText("extensions.pages.plugins.empty")).toBeInTheDocument();
+  });
+
+  it("affiche la clé d’erreur précise fournie par le registre", () => {
+    render(
+      <ExtensionsPage
+        section="plugins"
+        selected={null}
+        records={records}
+        host={host}
+        loading={false}
+        loadError={null}
+        operationError="extensions.errors.codes.extensions_host_unavailable"
+        busyIds={new Set()}
+        onSelect={vi.fn()}
+        onAdd={vi.fn()}
+        onEnabled={vi.fn()}
+        onShowInChat={vi.fn()}
+        onOpenSource={vi.fn()}
+        onRemove={vi.fn()}
+        onReload={vi.fn()}
+        onRecover={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(
+      "extensions.errors.codes.extensions_host_unavailable",
+    )).toBeInTheDocument();
   });
 
   it("ramène la section active dans la zone visible sans attendre un rendu", () => {

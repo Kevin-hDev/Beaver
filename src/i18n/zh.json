@@ -1937,6 +1937,42 @@
         "empty": "没有已连接的外部应用。"
       }
     },
+    "official": {
+      "documents": {
+        "name": "文档",
+        "description": "创建和更新可编辑的 DOCX 文档。",
+        "tools": {
+          "create": "创建可编辑的 DOCX 文档。",
+          "patch": "填写现有的 DOCX 模板。"
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "读取、创建、合并和验证 PDF 文件。",
+        "tools": {
+          "create": "创建分页 PDF 文件。",
+          "inspect": "读取 PDF 的文本和页面信息。",
+          "merge": "合并多个 PDF 文件。"
+        }
+      },
+      "spreadsheets": {
+        "name": "电子表格",
+        "description": "创建、检查和更新 XLSX 工作簿。",
+        "tools": {
+          "create": "创建可编辑的 XLSX 工作簿。",
+          "inspect": "预览 XLSX 工作簿的单元格和尺寸。",
+          "update": "更新 XLSX 工作簿中的选定单元格。"
+        }
+      },
+      "presentations": {
+        "name": "演示文稿",
+        "description": "创建可编辑的 PPTX 演示文稿并更新模板。",
+        "tools": {
+          "create": "创建可编辑的 PPTX 演示文稿。",
+          "patch": "填写现有的 PPTX 模板。"
+        }
+      }
+    },
     "actions": {
       "add": "添加",
       "cancel": "取消",
@@ -1946,7 +1982,7 @@
       "remove": "移除",
       "confirmRemove": "确认",
       "restartHost": "重启宿主",
-      "recovery": "禁用用户扩展"
+      "recovery": "禁用托管扩展"
     },
     "status": {
       "active": "已启用",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "宿主与诊断",
-      "description": "运行自定义扩展的独立进程状态。",
+      "description": "运行官方插件和自定义扩展的独立进程状态。",
       "state": "状态",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -2006,12 +2042,35 @@
         "error": "错误"
       },
       "recoveryTitle": "恢复模式",
-      "recoveryDescription": "禁用所有用户扩展，让 Beaver 恢复正常运行。"
+      "recoveryDescription": "禁用 Beaver 插件和本地扩展，让 Beaver 恢复正常运行。"
     },
     "errors": {
       "load": "无法加载扩展。",
+      "view": "无法显示此扩展。",
       "operation": "无法完成此操作。",
-      "host": "扩展宿主不可用。"
+      "host": "扩展宿主不可用。",
+      "office": {
+        "unsupportedCharacter": "PDF 包含无法显示的字符。",
+        "unsupportedCharacterAtParagraph": "字符 {{codePoint}} 无法显示在第 {{paragraph}} 段中。",
+        "unsupportedCharacterInTitle": "字符 {{codePoint}} 无法显示在标题中。",
+        "tooManyRequests": "同时创建的 PDF 过多，请稍后重试。",
+        "inputTooLarge": "文本过长，无法处理。请减少文本量。"
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Beaver 插件目录无效。",
+        "extensions_host_unavailable": "扩展宿主不可用。",
+        "extensions_builtin_plugin_invalid": "一个 Beaver 插件无效。",
+        "extensions_builtin_catalog_unavailable": "Beaver 插件目录不可用。",
+        "extensions_builtin_entry_missing": "一个 Beaver 插件缺少主文件。",
+        "extensions_builtin_entry_unavailable": "一个 Beaver 插件的主文件不可用。",
+        "extensions_builtin_entry_invalid": "一个 Beaver 插件的主文件无效。",
+        "extensions_host_busy": "扩展宿主处理的请求过多，请稍后重试。",
+        "extensions_host_timeout": "扩展宿主未在规定时间内响应。",
+        "extensions_request_too_large": "请求过大，无法发送。请减少文本量。",
+        "extensions_request_invalid": "发送给扩展的请求无效。",
+        "extensions_tool_unavailable": "此扩展工具不可用。",
+        "extensions_tool_arguments_invalid": "发送给此工具的参数无效。"
+      }
     },
     "diagnostics": {
       "codes": {

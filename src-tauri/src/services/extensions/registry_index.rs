@@ -15,7 +15,7 @@ static INDEX: LazyLock<RwLock<DynamicIndex>> =
 pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
     let tools: Vec<ExtensionTool> = records
         .iter()
-        .filter(|record| record.kind == ExtensionKind::Local && record.enabled)
+        .filter(|record| record.kind != ExtensionKind::External && record.enabled)
         .flat_map(|record| record.contributions.tools.iter().cloned())
         .collect();
     let names = tools.iter().map(|tool| tool.name.clone()).collect();

@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -8,6 +10,23 @@ import { createHost } from "./host-test-client.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const hostScript = join(root, "src-tauri/target/extension-host/host.mjs");
+
+test("rejects oversized protocol identifiers before tracking them", async () => {
+  const child = spawn(process.execPath, [hostScript], {
+    shell: false,
+    stdio: ["pipe", "ignore", "ignore"],
+  });
+  const exited = once(child, "exit");
+  child.stdin.end(`${JSON.stringify({
+    jsonrpc: "2.0",
+    id: "x".repeat(129),
+    method: "host.hello",
+    params: {},
+  })}\n`);
+
+  const [code] = await exited;
+  assert.equal(code, 1);
+});
 
 test("extensions receive bounded structured core errors with retry guidance", async () => {
   const directory = await mkdtemp(join(tmpdir(), "beaver-extension-errors-"));
@@ -60,6 +79,7 @@ test("extensions receive bounded structured core errors with retry guidance", as
     const result = await host.request("tool.call", {
       name: "com.beaver.errors.errors",
       arguments: {},
+      context: { workingDirectory: directory },
     });
     const errors = JSON.parse(result.content);
 

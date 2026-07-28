@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="sheet-bg" x1="9" y1="6" x2="52" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3BAA58"/>
+      <stop offset="1" stop-color="#147532"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#sheet-bg)" d="M13 5h25l13 13v36a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z"/>
+  <path fill="#84D79A" d="M38 5v10a4 4 0 0 0 4 4h9Z"/>
+  <rect width="30" height="24" x="14" y="28" fill="none" stroke="#FFF" stroke-width="3" rx="3"/>
+  <path stroke="#FFF" stroke-width="3" d="M14 36h30M14 44h30M24 28v24M34 28v24"/>
+</svg>

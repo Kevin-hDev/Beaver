@@ -1937,6 +1937,42 @@
         "empty": "接続された外部アプリケーションはありません。"
       }
     },
+    "official": {
+      "documents": {
+        "name": "ドキュメント",
+        "description": "編集可能な DOCX 文書を作成・更新します。",
+        "tools": {
+          "create": "編集可能な DOCX 文書を作成します。",
+          "patch": "既存の DOCX テンプレートを入力します。"
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "PDF ファイルを読み取り、作成、結合、検証します。",
+        "tools": {
+          "create": "ページ分けされた PDF ファイルを作成します。",
+          "inspect": "PDF のテキストとページ情報を読み取ります。",
+          "merge": "複数の PDF ファイルを結合します。"
+        }
+      },
+      "spreadsheets": {
+        "name": "スプレッドシート",
+        "description": "XLSX ブックを作成、確認、更新します。",
+        "tools": {
+          "create": "編集可能な XLSX ブックを作成します。",
+          "inspect": "XLSX ブックのセルとサイズを確認します。",
+          "update": "XLSX ブックの選択したセルを更新します。"
+        }
+      },
+      "presentations": {
+        "name": "プレゼンテーション",
+        "description": "編集可能な PPTX プレゼンテーションを作成し、テンプレートを更新します。",
+        "tools": {
+          "create": "編集可能な PPTX プレゼンテーションを作成します。",
+          "patch": "既存の PPTX テンプレートを入力します。"
+        }
+      }
+    },
     "actions": {
       "add": "追加",
       "cancel": "キャンセル",
@@ -1946,7 +1982,7 @@
       "remove": "削除",
       "confirmRemove": "確認",
       "restartHost": "ホストを再起動",
-      "recovery": "ユーザー拡張機能を無効化"
+      "recovery": "ホスト型拡張機能を無効化"
     },
     "status": {
       "active": "有効",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "ホストと診断",
-      "description": "カスタム拡張機能を実行する別プロセスの状態です。",
+      "description": "公式プラグインとカスタム拡張機能を実行する別プロセスの状態です。",
       "state": "状態",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -2006,12 +2042,35 @@
         "error": "エラー"
       },
       "recoveryTitle": "復旧モード",
-      "recoveryDescription": "すべてのユーザー拡張機能を無効にして、Beaver を動作可能な状態へ戻します。"
+      "recoveryDescription": "Beaver プラグインとローカル拡張機能を無効にして、Beaver を動作可能な状態へ戻します。"
     },
     "errors": {
       "load": "拡張機能を読み込めません。",
+      "view": "この拡張機能を表示できませんでした。",
       "operation": "操作を完了できませんでした。",
-      "host": "拡張機能ホストを利用できません。"
+      "host": "拡張機能ホストを利用できません。",
+      "office": {
+        "unsupportedCharacter": "PDF に表示できない文字が含まれています。",
+        "unsupportedCharacterAtParagraph": "文字 {{codePoint}} は段落 {{paragraph}} に表示できません。",
+        "unsupportedCharacterInTitle": "文字 {{codePoint}} はタイトルに表示できません。",
+        "tooManyRequests": "同時に作成している PDF が多すぎます。しばらくしてから再試行してください。",
+        "inputTooLarge": "テキストが長すぎて処理できません。テキストの量を減らしてください。"
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Beaver プラグインカタログが無効です。",
+        "extensions_host_unavailable": "拡張機能ホストを利用できません。",
+        "extensions_builtin_plugin_invalid": "Beaver プラグインが無効です。",
+        "extensions_builtin_catalog_unavailable": "Beaver プラグインカタログを利用できません。",
+        "extensions_builtin_entry_missing": "Beaver プラグインのメインファイルがありません。",
+        "extensions_builtin_entry_unavailable": "Beaver プラグインのメインファイルを利用できません。",
+        "extensions_builtin_entry_invalid": "Beaver プラグインのメインファイルが無効です。",
+        "extensions_host_busy": "拡張機能ホストの処理が混み合っています。しばらくしてから再試行してください。",
+        "extensions_host_timeout": "拡張機能ホストが時間内に応答しませんでした。",
+        "extensions_request_too_large": "リクエストが大きすぎて送信できません。テキストの量を減らしてください。",
+        "extensions_request_invalid": "拡張機能に送信されたリクエストが無効です。",
+        "extensions_tool_unavailable": "この拡張機能ツールは利用できません。",
+        "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。"
+      }
     },
     "diagnostics": {
       "codes": {

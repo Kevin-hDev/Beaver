@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
-import { copyFile, mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareNodeRuntime } from "./node-runtime.mjs";
 
@@ -19,16 +19,34 @@ const hostDirectory = developmentOnly
   : sourceDirectory;
 
 if (developmentOnly) {
+  await resetDevelopmentHost();
   await copyHostSources(sourceDirectory, hostDirectory);
+  await installProductionDependencies(hostDirectory);
 } else {
+  await installProductionDependencies(hostDirectory);
+  await prepareNodeRuntime(hostDirectory);
+}
+
+async function resetDevelopmentHost() {
+  const targetRoot = resolve(root, "src-tauri/target");
+  if (
+    dirname(hostDirectory) !== targetRoot
+    || basename(hostDirectory) !== "extension-host"
+  ) {
+    throw new Error("Invalid development extension host directory");
+  }
+  await rm(hostDirectory, { recursive: true, force: true });
+}
+
+async function installProductionDependencies(directory) {
   await run(process.platform === "win32" ? "npm.cmd" : "npm", [
     "ci",
     "--ignore-scripts",
     "--omit=dev",
+    "--omit=optional",
     "--prefix",
-    hostDirectory,
+    directory,
   ]);
-  await prepareNodeRuntime(hostDirectory);
 }
 
 async function copyHostSources(source, destination) {
@@ -41,6 +59,7 @@ async function copyHostSources(source, destination) {
     "loader.mjs",
     "package-lock.json",
     "package.json",
+    "protocol-output.mjs",
     "protocol.mjs",
     "versions.mjs",
   ];
@@ -54,6 +73,26 @@ async function copyHostSources(source, destination) {
       copyFile(resolve(source, "sdk", file), resolve(destination, "sdk", file)),
     ),
   ]);
+  await copyDirectory(
+    resolve(source, "builtin-plugins"),
+    resolve(destination, "builtin-plugins"),
+    { count: 0 },
+  );
+}
+
+async function copyDirectory(source, destination, state) {
+  await mkdir(destination, { recursive: true, mode: 0o700 });
+  const entries = await readdir(source, { withFileTypes: true });
+  if (entries.length > 128) throw new Error("Too many bundled plugin entries");
+  for (const entry of entries) {
+    if (state.count >= 512) throw new Error("Too many bundled plugin files");
+    state.count += 1;
+    const from = resolve(source, entry.name);
+    const to = resolve(destination, entry.name);
+    if (entry.isDirectory()) await copyDirectory(from, to, state);
+    else if (entry.isFile()) await copyFile(from, to);
+    else throw new Error("Unsupported bundled plugin entry");
+  }
 }
 
 function run(program, args) {

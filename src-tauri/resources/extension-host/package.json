@@ -4,6 +4,16 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@cantoo/pdf-lib": "2.7.4",
+    "@xlsx/xlsx-populate": "0.2.0",
+    "docx": "9.7.1",
+    "fflate": "0.8.3",
+    "fontkit": "2.0.4",
+    "pdfjs-dist": "6.1.200",
+    "pptxgenjs": "4.0.1",
     "jiti": "2.7.0"
+  },
+  "overrides": {
+    "https": "npm:https-browserify@1.0.0"
   }
 }

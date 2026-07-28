@@ -1937,6 +1937,42 @@
         "empty": "Keine externen Anwendungen verbunden."
       }
     },
+    "official": {
+      "documents": {
+        "name": "Dokumente",
+        "description": "Erstelle und aktualisiere bearbeitbare DOCX-Dokumente.",
+        "tools": {
+          "create": "Ein bearbeitbares DOCX-Dokument erstellen.",
+          "patch": "Eine vorhandene DOCX-Vorlage ausfüllen."
+        }
+      },
+      "pdf": {
+        "name": "PDF",
+        "description": "Lies, erstelle, verbinde und prüfe PDF-Dateien.",
+        "tools": {
+          "create": "Eine mehrseitige PDF-Datei erstellen.",
+          "inspect": "Text und Seiteninformationen einer PDF-Datei lesen.",
+          "merge": "Mehrere PDF-Dateien zusammenführen."
+        }
+      },
+      "spreadsheets": {
+        "name": "Tabellen",
+        "description": "Erstelle, prüfe und aktualisiere XLSX-Arbeitsmappen.",
+        "tools": {
+          "create": "Eine bearbeitbare XLSX-Arbeitsmappe erstellen.",
+          "inspect": "Zellen und Abmessungen einer XLSX-Arbeitsmappe anzeigen.",
+          "update": "Ausgewählte Zellen einer XLSX-Arbeitsmappe aktualisieren."
+        }
+      },
+      "presentations": {
+        "name": "Präsentationen",
+        "description": "Erstelle bearbeitbare PPTX-Präsentationen und aktualisiere Vorlagen.",
+        "tools": {
+          "create": "Eine bearbeitbare PPTX-Präsentation erstellen.",
+          "patch": "Eine vorhandene PPTX-Vorlage ausfüllen."
+        }
+      }
+    },
     "actions": {
       "add": "Hinzufügen",
       "cancel": "Abbrechen",
@@ -1946,7 +1982,7 @@
       "remove": "Entfernen",
       "confirmRemove": "Bestätigen",
       "restartHost": "Host neu starten",
-      "recovery": "Benutzererweiterungen deaktivieren"
+      "recovery": "Gehostete Erweiterungen deaktivieren"
     },
     "status": {
       "active": "Aktiv",
@@ -1991,7 +2027,7 @@
     },
     "host": {
       "title": "Host und Diagnose",
-      "description": "Status des separaten Prozesses, der eigene Erweiterungen ausführt.",
+      "description": "Status des separaten Prozesses, der offizielle Plugins und eigene Erweiterungen ausführt.",
       "state": "Status",
       "node": "Node.js",
       "jiti": "Jiti",
@@ -2006,12 +2042,35 @@
         "error": "Fehler"
       },
       "recoveryTitle": "Wiederherstellungsmodus",
-      "recoveryDescription": "Deaktiviert alle Benutzererweiterungen, damit Beaver wieder funktioniert."
+      "recoveryDescription": "Deaktiviert Beaver-Plugins und lokale Erweiterungen, damit Beaver wieder funktioniert."
     },
     "errors": {
       "load": "Erweiterungen konnten nicht geladen werden.",
+      "view": "Diese Erweiterung konnte nicht angezeigt werden.",
       "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
-      "host": "Der Erweiterungs-Host ist nicht verfügbar."
+      "host": "Der Erweiterungs-Host ist nicht verfügbar.",
+      "office": {
+        "unsupportedCharacter": "Das PDF enthält ein Zeichen, das nicht dargestellt werden kann.",
+        "unsupportedCharacterAtParagraph": "Das Zeichen {{codePoint}} kann in Absatz {{paragraph}} nicht dargestellt werden.",
+        "unsupportedCharacterInTitle": "Das Zeichen {{codePoint}} kann im Titel nicht dargestellt werden.",
+        "tooManyRequests": "Es werden zu viele PDFs gleichzeitig erstellt. Versuche es gleich noch einmal.",
+        "inputTooLarge": "Der Text ist zu lang für die Verarbeitung. Reduziere die Textmenge."
+      },
+      "codes": {
+        "extensions_builtin_catalog_invalid": "Der Beaver-Plugin-Katalog ist ungültig.",
+        "extensions_host_unavailable": "Der Erweiterungs-Host ist nicht verfügbar.",
+        "extensions_builtin_plugin_invalid": "Ein Beaver-Plugin ist ungültig.",
+        "extensions_builtin_catalog_unavailable": "Der Beaver-Plugin-Katalog ist nicht verfügbar.",
+        "extensions_builtin_entry_missing": "Die Hauptdatei eines Beaver-Plugins fehlt.",
+        "extensions_builtin_entry_unavailable": "Die Hauptdatei eines Beaver-Plugins ist nicht verfügbar.",
+        "extensions_builtin_entry_invalid": "Die Hauptdatei eines Beaver-Plugins ist ungültig.",
+        "extensions_host_busy": "Der Erweiterungs-Host verarbeitet zu viele Anfragen. Versuche es gleich noch einmal.",
+        "extensions_host_timeout": "Der Erweiterungs-Host hat nicht rechtzeitig geantwortet.",
+        "extensions_request_too_large": "Die Anfrage ist zu groß zum Senden. Reduziere die Textmenge.",
+        "extensions_request_invalid": "Die an die Erweiterung gesendete Anfrage ist ungültig.",
+        "extensions_tool_unavailable": "Dieses Erweiterungswerkzeug ist nicht verfügbar.",
+        "extensions_tool_arguments_invalid": "Die an dieses Werkzeug gesendeten Parameter sind ungültig."
+      }
     },
     "diagnostics": {
       "codes": {
