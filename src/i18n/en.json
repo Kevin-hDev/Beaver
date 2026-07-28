@@ -1379,6 +1379,7 @@
     },
     "errors": {
       "load": "Unable to load extensions.",
+      "view": "This extension could not be displayed.",
       "operation": "The operation could not be completed.",
       "host": "The extension host is unavailable.",
       "office": {

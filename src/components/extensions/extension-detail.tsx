@@ -111,7 +111,12 @@ function DetailLine({ label, value, mono = false }: { label: string; value: stri
 
 function Contributions({ extension }: { extension: ExtensionRecord }) {
   const { t } = useTranslation();
-  const { tools, events } = extension.contributions;
+  const tools = Array.isArray(extension.contributions?.tools)
+    ? extension.contributions.tools
+    : [];
+  const events = Array.isArray(extension.contributions?.events)
+    ? extension.contributions.events
+    : [];
   if (tools.length === 0 && events.length === 0) return null;
   return (
     <section className="extd-contributions">

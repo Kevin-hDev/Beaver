@@ -2046,6 +2046,7 @@
     },
     "errors": {
       "load": "Impossibile caricare le estensioni.",
+      "view": "Non è stato possibile visualizzare questa estensione.",
       "operation": "Impossibile completare l’operazione.",
       "host": "L’host delle estensioni non è disponibile.",
       "office": {

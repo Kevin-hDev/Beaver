@@ -2046,6 +2046,7 @@
     },
     "errors": {
       "load": "Erweiterungen konnten nicht geladen werden.",
+      "view": "Diese Erweiterung konnte nicht angezeigt werden.",
       "operation": "Der Vorgang konnte nicht abgeschlossen werden.",
       "host": "Der Erweiterungs-Host ist nicht verfügbar.",
       "office": {

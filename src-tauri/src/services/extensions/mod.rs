@@ -22,8 +22,10 @@ mod storage;
 mod tool_bridge;
 mod types;
 mod validation;
+mod view;
 
-pub use types::{ExtensionHostStatus, ExtensionKind, ExtensionRecord};
+pub use types::{ExtensionHostStatus, ExtensionKind};
+pub use view::ExtensionView;
 
 pub use registry::{
     add_local, disable_hosted_extensions, list, remove, set_enabled, set_show_in_chat,
@@ -43,3 +45,5 @@ mod builtin_tests;
 mod runtime_sync_tests;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod view_tests;

@@ -52,4 +52,28 @@ describe("ExtensionDetail", () => {
     expect(screen.getByText("extensions.detail.replacesCore")).toBeInTheDocument();
     expect(screen.getByText("Custom search behavior")).toBeInTheDocument();
   });
+
+  it("reste affichable si une ancienne réponse IPC omet les contributions", () => {
+    const incomplete = {
+      ...extension,
+      contributions: undefined,
+    } as unknown as ExtensionRecord;
+
+    render(
+      <ExtensionDetail
+        extension={incomplete}
+        busy={false}
+        onBack={vi.fn()}
+        onEnabled={vi.fn()}
+        onShowInChat={vi.fn()}
+        onOpenSource={vi.fn()}
+        onReload={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Search")).toBeInTheDocument();
+    expect(screen.queryByText("extensions.detail.contributions"))
+      .not.toBeInTheDocument();
+  });
 });

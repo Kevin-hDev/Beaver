@@ -10,6 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
+import { parseExtensionRecords } from "@/lib/extension-records";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
 const EMPTY_HOST: ExtensionHostStatus = {
@@ -33,13 +34,15 @@ function useExtensionsState() {
   const refresh = useCallback(async () => {
     try {
       const [records, status] = await Promise.all([
-        invoke<ExtensionRecord[]>("list_extensions"),
+        invoke<unknown>("list_extensions"),
         invoke<ExtensionHostStatus>("get_extension_host_status"),
       ]);
-      setExtensions(records);
+      setExtensions(parseExtensionRecords(records));
       setHost(status);
       setLoadError(null);
     } catch (error) {
+      setExtensions([]);
+      setHost(EMPTY_HOST);
       setLoadError(extensionErrorKey(error, "extensions.errors.load"));
     } finally {
       setLoading(false);

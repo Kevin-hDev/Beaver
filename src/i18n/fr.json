@@ -1427,6 +1427,7 @@
     },
     "errors": {
       "load": "Impossible de charger les extensions.",
+      "view": "Impossible d’afficher cette extension.",
       "operation": "L’opération n’a pas pu être terminée.",
       "host": "L’hôte d’extensions est indisponible.",
       "office": {

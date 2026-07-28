@@ -2046,6 +2046,7 @@
     },
     "errors": {
       "load": "No se pudieron cargar las extensiones.",
+      "view": "No se pudo mostrar esta extensión.",
       "operation": "No se pudo completar la operación.",
       "host": "El host de extensiones no está disponible.",
       "office": {

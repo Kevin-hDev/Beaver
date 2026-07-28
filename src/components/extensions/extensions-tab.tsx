@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useExtensions } from "@/hooks/use-extensions";
 import { ExtensionAddDialog } from "./extension-add-dialog";
+import { ExtensionsErrorBoundary } from "./extensions-error-boundary";
 import { ExtensionsPage } from "./extensions-page";
 import { ExtensionsSidebar } from "./extensions-sidebar";
 import type { ExtensionsTabProps } from "./extensions-tab-types";
@@ -24,29 +25,35 @@ export function useExtensionsTabSlots({
     />
   ), [navState.extensionsSection, onNavReplace]);
 
+  const detailResetKey = `${navState.extensionsSection}:${navState.extensionId ?? "list"}`;
   const detail = (
     <>
-      <ExtensionsPage
-        section={navState.extensionsSection}
-        selected={selected}
-        records={registry.extensions}
-        host={registry.host}
-        loading={registry.loading}
-        loadError={registry.loadError}
-        operationError={registry.operationError}
-        busyIds={registry.busyIds}
-        onSelect={(extensionId) => onNavChange({ extensionId })}
-        onAdd={() => setAdding(true)}
-        onEnabled={(id, enabled) => void registry.setEnabled(id, enabled)}
-        onShowInChat={(id, show) => void registry.setShowInChat(id, show)}
-        onOpenSource={(id) => void registry.openSource(id)}
-        onRemove={(id) => {
-          onNavReplace({ extensionId: null });
-          void registry.remove(id);
-        }}
-        onReload={() => void registry.reload()}
-        onRecover={() => void registry.recover()}
-      />
+      <ExtensionsErrorBoundary
+        resetKey={detailResetKey}
+        onReset={() => onNavReplace({ extensionId: null })}
+      >
+        <ExtensionsPage
+          section={navState.extensionsSection}
+          selected={selected}
+          records={registry.extensions}
+          host={registry.host}
+          loading={registry.loading}
+          loadError={registry.loadError}
+          operationError={registry.operationError}
+          busyIds={registry.busyIds}
+          onSelect={(extensionId) => onNavChange({ extensionId })}
+          onAdd={() => setAdding(true)}
+          onEnabled={(id, enabled) => void registry.setEnabled(id, enabled)}
+          onShowInChat={(id, show) => void registry.setShowInChat(id, show)}
+          onOpenSource={(id) => void registry.openSource(id)}
+          onRemove={(id) => {
+            onNavReplace({ extensionId: null });
+            void registry.remove(id);
+          }}
+          onReload={() => void registry.reload()}
+          onRecover={() => void registry.recover()}
+        />
+      </ExtensionsErrorBoundary>
       {adding && (
         <ExtensionAddDialog
           onClose={() => setAdding(false)}
