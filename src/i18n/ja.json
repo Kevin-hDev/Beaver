@@ -1930,7 +1930,7 @@
       },
       "custom": {
         "title": "カスタム拡張機能",
-        "description": "自分で選んだ JavaScript または TypeScript コードを追加します。",
+        "description": "ローカルコードを追加するか、Git または npm から拡張機能をインストールします。",
         "empty": "カスタム拡張機能はありません。"
       },
       "external": {
@@ -1980,6 +1980,7 @@
       "cancel": "キャンセル",
       "back": "戻る",
       "openSource": "ソースを開く",
+      "update": "更新",
       "reload": "再読み込み",
       "remove": "削除",
       "confirmRemove": "確認",
@@ -1998,6 +1999,11 @@
       "local": "ローカル拡張機能",
       "external": "外部アプリケーション"
     },
+    "origins": {
+      "local": "ローカルファイルまたはフォルダー",
+      "git": "Git リポジトリ",
+      "npm": "npm パッケージ"
+    },
     "loading": "拡張機能を読み込み中…",
     "showInChat": "チャットに表示",
     "showInChatFor": "{{name}} をチャットに表示",
@@ -2008,7 +2014,9 @@
       "runtime": "ランタイム",
       "api": "Beaver API",
       "author": "作者",
+      "installSource": "インストール元",
       "source": "ソース",
+      "revision": "Git リビジョン",
       "unknown": "未記載",
     "contributions": "登録された拡張項目",
     "replacesCore": "内蔵ツールを置き換えます"
@@ -2025,7 +2033,17 @@
       "file": "ファイルを選択",
       "fileDescription": "JavaScript、TypeScript、または JSON マニフェスト",
       "folder": "フォルダーを選択",
-      "folderDescription": "Beaver マニフェストまたは package.json を含むフォルダー"
+      "folderDescription": "Beaver マニフェストまたは package.json を含むフォルダー",
+      "git": "Git からインストール",
+      "gitDescription": "Beaver 拡張機能を含む HTTPS または SSH リポジトリ",
+      "npm": "npm からインストール",
+      "npmDescription": "Beaver 拡張機能を含む公開パッケージ",
+      "gitLabel": "Git リポジトリ URL",
+      "gitPlaceholder": "https://github.com/example/extension.git",
+      "npmLabel": "npm パッケージ名",
+      "npmPlaceholder": "@example/extension または extension@latest",
+      "install": "インストール",
+      "installing": "インストール中…"
     },
     "host": {
       "title": "ホストと診断",
@@ -2071,7 +2089,10 @@
         "extensions_request_too_large": "リクエストが大きすぎて送信できません。テキストの量を減らしてください。",
         "extensions_request_invalid": "拡張機能に送信されたリクエストが無効です。",
         "extensions_tool_unavailable": "この拡張機能ツールは利用できません。",
-        "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。"
+        "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。",
+        "extensions_install_failed": "拡張機能をインストールできませんでした。",
+        "extensions_update_failed": "拡張機能を更新できませんでした。",
+        "extensions_uninstall_failed": "拡張機能を完全に削除できませんでした。"
       }
     },
     "diagnostics": {

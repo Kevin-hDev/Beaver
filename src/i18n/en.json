@@ -1263,7 +1263,7 @@
       },
       "custom": {
         "title": "Custom Extensions",
-        "description": "Add JavaScript or TypeScript code that you choose.",
+        "description": "Add local code or install an extension from Git or npm.",
         "empty": "No custom extensions."
       },
       "external": {
@@ -1313,6 +1313,7 @@
       "cancel": "Cancel",
       "back": "Back",
       "openSource": "Open source",
+      "update": "Update",
       "reload": "Reload",
       "remove": "Remove",
       "confirmRemove": "Confirm",
@@ -1331,6 +1332,11 @@
       "local": "Local extension",
       "external": "External application"
     },
+    "origins": {
+      "local": "Local file or folder",
+      "git": "Git repository",
+      "npm": "npm package"
+    },
     "loading": "Loading extensions…",
     "showInChat": "Show in chat",
     "showInChatFor": "Show {{name}} in chat",
@@ -1341,7 +1347,9 @@
       "runtime": "Runtime",
       "api": "Beaver API",
       "author": "Author",
+      "installSource": "Installation source",
       "source": "Source",
+      "revision": "Git revision",
       "unknown": "Not provided",
     "contributions": "Registered contributions",
     "replacesCore": "Replaces a built-in tool"
@@ -1358,7 +1366,17 @@
       "file": "Choose a file",
       "fileDescription": "JavaScript, TypeScript, or JSON manifest",
       "folder": "Choose a folder",
-      "folderDescription": "Folder containing a Beaver manifest or package.json"
+      "folderDescription": "Folder containing a Beaver manifest or package.json",
+      "git": "Install from Git",
+      "gitDescription": "HTTPS or SSH repository containing a Beaver extension",
+      "npm": "Install from npm",
+      "npmDescription": "Published package containing a Beaver extension",
+      "gitLabel": "Git repository URL",
+      "gitPlaceholder": "https://github.com/example/extension.git",
+      "npmLabel": "npm package name",
+      "npmPlaceholder": "@example/extension or extension@latest",
+      "install": "Install",
+      "installing": "Installing…"
     },
     "host": {
       "title": "Host and Diagnostics",
@@ -1404,7 +1422,10 @@
         "extensions_request_too_large": "The request is too large to send. Reduce the amount of text.",
         "extensions_request_invalid": "The request sent to the extension is invalid.",
         "extensions_tool_unavailable": "This extension tool is unavailable.",
-        "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid."
+        "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid.",
+        "extensions_install_failed": "The extension could not be installed.",
+        "extensions_update_failed": "The extension could not be updated.",
+        "extensions_uninstall_failed": "The extension could not be removed completely."
       }
     },
     "diagnostics": {

@@ -32,7 +32,7 @@ pub mod history;
 #[cfg(test)]
 mod history_tests;
 pub mod remote;
-mod remote_credentials;
+pub(crate) mod remote_credentials;
 mod remote_status;
 mod remote_target;
 #[cfg(test)]

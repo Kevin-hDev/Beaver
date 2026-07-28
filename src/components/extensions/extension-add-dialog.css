@@ -57,6 +57,10 @@
   background: var(--surface-hover);
 }
 
+.exta-option-active {
+  background: var(--surface-hover);
+}
+
 .exta-option span {
   display: flex;
   min-width: 0;
@@ -72,4 +76,33 @@
 .exta-option small {
   color: var(--ink-faint);
   font-size: var(--text-xs);
+}
+
+.exta-source-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: var(--space-md) var(--space-lg) 0;
+}
+
+.exta-source-form label {
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.exta-source-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.exta-source-row .form-input {
+  min-width: 0;
+  flex: 1 1 var(--dialog-compact-min-width);
+}
+
+.exta-source-row .wk-btn-primary {
+  flex-shrink: 0;
 }

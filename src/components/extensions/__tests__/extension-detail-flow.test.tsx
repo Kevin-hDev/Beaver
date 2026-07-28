@@ -66,6 +66,7 @@ function SelectablePage() {
       onEnabled={vi.fn()}
       onShowInChat={vi.fn()}
       onOpenSource={vi.fn()}
+      onUpdate={vi.fn()}
       onRemove={vi.fn()}
       onReload={vi.fn()}
       onRecover={vi.fn()}

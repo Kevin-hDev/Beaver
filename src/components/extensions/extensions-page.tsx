@@ -22,6 +22,7 @@ interface ExtensionsPageProps {
   onEnabled: (id: string, enabled: boolean) => void;
   onShowInChat: (id: string, show: boolean) => void;
   onOpenSource: (id: string) => void;
+  onUpdate: (id: string) => void;
   onRemove: (id: string) => void;
   onReload: () => void;
   onRecover: () => void;
@@ -39,6 +40,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
         onEnabled={(enabled) => props.onEnabled(selected.manifest.id, enabled)}
         onShowInChat={(show) => props.onShowInChat(selected.manifest.id, show)}
         onOpenSource={() => props.onOpenSource(selected.manifest.id)}
+        onUpdate={() => props.onUpdate(selected.manifest.id)}
         onReload={props.onReload}
         onRemove={() => props.onRemove(selected.manifest.id)}
       />

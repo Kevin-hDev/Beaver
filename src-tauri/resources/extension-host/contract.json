@@ -9,6 +9,8 @@
     "maxInFlightRequests": 64,
     "maxInFlightHandlers": 64,
     "maxWorkingDirectoryChars": 1024,
+    "maxGitLocatorChars": 2048,
+    "maxNpmSpecChars": 280,
     "maxMessageBytes": 1048576
   },
   "diagnostics": {

@@ -1311,7 +1311,7 @@
       },
       "custom": {
         "title": "Extensions personnalisées",
-        "description": "Ajoutez du code JavaScript ou TypeScript choisi par vous.",
+        "description": "Ajoutez du code local ou installez une extension depuis Git ou npm.",
         "empty": "Aucune extension personnalisée."
       },
       "external": {
@@ -1361,6 +1361,7 @@
       "cancel": "Annuler",
       "back": "Retour",
       "openSource": "Ouvrir la source",
+      "update": "Mettre à jour",
       "reload": "Recharger",
       "remove": "Supprimer",
       "confirmRemove": "Confirmer",
@@ -1379,6 +1380,11 @@
       "local": "Extension locale",
       "external": "Application externe"
     },
+    "origins": {
+      "local": "Fichier ou dossier local",
+      "git": "Dépôt Git",
+      "npm": "Package npm"
+    },
     "loading": "Chargement des extensions…",
     "showInChat": "Afficher dans le chat",
     "showInChatFor": "Afficher {{name}} dans le chat",
@@ -1389,7 +1395,9 @@
       "runtime": "Runtime",
       "api": "API Beaver",
       "author": "Auteur",
+      "installSource": "Mode d’installation",
       "source": "Source",
+      "revision": "Révision Git",
       "unknown": "Non indiqué",
     "contributions": "Contributions enregistrées",
     "replacesCore": "Remplace un outil intégré"
@@ -1406,7 +1414,17 @@
       "file": "Choisir un fichier",
       "fileDescription": "JavaScript, TypeScript ou manifeste JSON",
       "folder": "Choisir un dossier",
-      "folderDescription": "Dossier contenant un manifeste Beaver ou package.json"
+      "folderDescription": "Dossier contenant un manifeste Beaver ou package.json",
+      "git": "Installer depuis Git",
+      "gitDescription": "Dépôt HTTPS ou SSH contenant une extension Beaver",
+      "npm": "Installer depuis npm",
+      "npmDescription": "Package publié contenant une extension Beaver",
+      "gitLabel": "URL du dépôt Git",
+      "gitPlaceholder": "https://github.com/exemple/extension.git",
+      "npmLabel": "Nom du package npm",
+      "npmPlaceholder": "@exemple/extension ou extension@latest",
+      "install": "Installer",
+      "installing": "Installation…"
     },
     "host": {
       "title": "Hôte et diagnostics",
@@ -1452,7 +1470,10 @@
         "extensions_request_too_large": "La demande est trop volumineuse pour être transmise. Réduis la quantité de texte.",
         "extensions_request_invalid": "La demande envoyée à l’extension est invalide.",
         "extensions_tool_unavailable": "Cet outil d’extension n’est pas disponible.",
-        "extensions_tool_arguments_invalid": "Les paramètres envoyés à cet outil sont invalides."
+        "extensions_tool_arguments_invalid": "Les paramètres envoyés à cet outil sont invalides.",
+        "extensions_install_failed": "L’extension n’a pas pu être installée.",
+        "extensions_update_failed": "L’extension n’a pas pu être mise à jour.",
+        "extensions_uninstall_failed": "L’extension n’a pas pu être supprimée complètement."
       }
     },
     "diagnostics": {

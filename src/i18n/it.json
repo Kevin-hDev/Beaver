@@ -1930,7 +1930,7 @@
       },
       "custom": {
         "title": "Estensioni personalizzate",
-        "description": "Aggiungi codice JavaScript o TypeScript scelto da te.",
+        "description": "Aggiungi codice locale o installa un’estensione da Git o npm.",
         "empty": "Nessuna estensione personalizzata."
       },
       "external": {
@@ -1980,6 +1980,7 @@
       "cancel": "Annulla",
       "back": "Indietro",
       "openSource": "Apri sorgente",
+      "update": "Aggiorna",
       "reload": "Ricarica",
       "remove": "Rimuovi",
       "confirmRemove": "Conferma",
@@ -1998,6 +1999,11 @@
       "local": "Estensione locale",
       "external": "Applicazione esterna"
     },
+    "origins": {
+      "local": "File o cartella locale",
+      "git": "Repository Git",
+      "npm": "Pacchetto npm"
+    },
     "loading": "Caricamento estensioni…",
     "showInChat": "Mostra nella chat",
     "showInChatFor": "Mostra {{name}} nella chat",
@@ -2008,7 +2014,9 @@
       "runtime": "Runtime",
       "api": "API Beaver",
       "author": "Autore",
+      "installSource": "Origine installazione",
       "source": "Origine",
+      "revision": "Revisione Git",
       "unknown": "Non indicato",
     "contributions": "Contributi registrati",
     "replacesCore": "Sostituisce uno strumento integrato"
@@ -2025,7 +2033,17 @@
       "file": "Scegli un file",
       "fileDescription": "JavaScript, TypeScript o manifesto JSON",
       "folder": "Scegli una cartella",
-      "folderDescription": "Cartella con un manifesto Beaver o package.json"
+      "folderDescription": "Cartella con un manifesto Beaver o package.json",
+      "git": "Installa da Git",
+      "gitDescription": "Repository HTTPS o SSH contenente un’estensione Beaver",
+      "npm": "Installa da npm",
+      "npmDescription": "Pacchetto pubblicato contenente un’estensione Beaver",
+      "gitLabel": "URL del repository Git",
+      "gitPlaceholder": "https://github.com/esempio/estensione.git",
+      "npmLabel": "Nome del pacchetto npm",
+      "npmPlaceholder": "@esempio/estensione o estensione@latest",
+      "install": "Installa",
+      "installing": "Installazione…"
     },
     "host": {
       "title": "Host e diagnostica",
@@ -2071,7 +2089,10 @@
         "extensions_request_too_large": "La richiesta è troppo grande per essere inviata. Riduci la quantità di testo.",
         "extensions_request_invalid": "La richiesta inviata all’estensione non è valida.",
         "extensions_tool_unavailable": "Questo strumento dell’estensione non è disponibile.",
-        "extensions_tool_arguments_invalid": "I parametri inviati a questo strumento non sono validi."
+        "extensions_tool_arguments_invalid": "I parametri inviati a questo strumento non sono validi.",
+        "extensions_install_failed": "Non è stato possibile installare l’estensione.",
+        "extensions_update_failed": "Non è stato possibile aggiornare l’estensione.",
+        "extensions_uninstall_failed": "Non è stato possibile rimuovere completamente l’estensione."
       }
     },
     "diagnostics": {

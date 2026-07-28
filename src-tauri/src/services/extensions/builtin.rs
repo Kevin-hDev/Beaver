@@ -33,6 +33,7 @@ pub fn records() -> Result<Vec<ExtensionRecord>, String> {
             manifest: definition.manifest,
             kind: ExtensionKind::Builtin,
             source: SOURCE_LABEL.to_string(),
+            origin: None,
             enabled: definition.enabled,
             trusted: true,
             show_in_chat: definition.show_in_chat,

@@ -1930,7 +1930,7 @@
       },
       "custom": {
         "title": "Eigene Erweiterungen",
-        "description": "Füge selbst ausgewählten JavaScript- oder TypeScript-Code hinzu.",
+        "description": "Füge lokalen Code hinzu oder installiere eine Erweiterung von Git oder npm.",
         "empty": "Keine eigenen Erweiterungen."
       },
       "external": {
@@ -1980,6 +1980,7 @@
       "cancel": "Abbrechen",
       "back": "Zurück",
       "openSource": "Quelle öffnen",
+      "update": "Aktualisieren",
       "reload": "Neu laden",
       "remove": "Entfernen",
       "confirmRemove": "Bestätigen",
@@ -1998,6 +1999,11 @@
       "local": "Lokale Erweiterung",
       "external": "Externe Anwendung"
     },
+    "origins": {
+      "local": "Lokale Datei oder Ordner",
+      "git": "Git-Repository",
+      "npm": "npm-Paket"
+    },
     "loading": "Erweiterungen werden geladen…",
     "showInChat": "Im Chat anzeigen",
     "showInChatFor": "{{name}} im Chat anzeigen",
@@ -2008,7 +2014,9 @@
       "runtime": "Runtime",
       "api": "Beaver-API",
       "author": "Autor",
+      "installSource": "Installationsquelle",
       "source": "Quelle",
+      "revision": "Git-Revision",
       "unknown": "Nicht angegeben",
     "contributions": "Registrierte Beiträge",
     "replacesCore": "Ersetzt ein integriertes Tool"
@@ -2025,7 +2033,17 @@
       "file": "Datei auswählen",
       "fileDescription": "JavaScript, TypeScript oder JSON-Manifest",
       "folder": "Ordner auswählen",
-      "folderDescription": "Ordner mit Beaver-Manifest oder package.json"
+      "folderDescription": "Ordner mit Beaver-Manifest oder package.json",
+      "git": "Von Git installieren",
+      "gitDescription": "HTTPS- oder SSH-Repository mit einer Beaver-Erweiterung",
+      "npm": "Von npm installieren",
+      "npmDescription": "Veröffentlichtes Paket mit einer Beaver-Erweiterung",
+      "gitLabel": "URL des Git-Repositorys",
+      "gitPlaceholder": "https://github.com/beispiel/erweiterung.git",
+      "npmLabel": "Name des npm-Pakets",
+      "npmPlaceholder": "@beispiel/erweiterung oder erweiterung@latest",
+      "install": "Installieren",
+      "installing": "Wird installiert…"
     },
     "host": {
       "title": "Host und Diagnose",
@@ -2071,7 +2089,10 @@
         "extensions_request_too_large": "Die Anfrage ist zu groß zum Senden. Reduziere die Textmenge.",
         "extensions_request_invalid": "Die an die Erweiterung gesendete Anfrage ist ungültig.",
         "extensions_tool_unavailable": "Dieses Erweiterungswerkzeug ist nicht verfügbar.",
-        "extensions_tool_arguments_invalid": "Die an dieses Werkzeug gesendeten Parameter sind ungültig."
+        "extensions_tool_arguments_invalid": "Die an dieses Werkzeug gesendeten Parameter sind ungültig.",
+        "extensions_install_failed": "Die Erweiterung konnte nicht installiert werden.",
+        "extensions_update_failed": "Die Erweiterung konnte nicht aktualisiert werden.",
+        "extensions_uninstall_failed": "Die Erweiterung konnte nicht vollständig entfernt werden."
       }
     },
     "diagnostics": {

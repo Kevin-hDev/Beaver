@@ -97,4 +97,38 @@ describe("useExtensions", () => {
     expect(view.result.current.host.state).toBe("stopped");
     expect(view.result.current.loadError).toBe("extensions.errors.load");
   });
+
+  it("installe Git et npm avec des commandes distinctes et validées au retour", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "install_git_extension" || command === "install_npm_extension") {
+        return Promise.resolve(record);
+      }
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    await act(() => view.result.current.installGit("https://github.com/example/ext.git"));
+    expect(invoke).toHaveBeenCalledWith("install_git_extension", {
+      url: "https://github.com/example/ext.git",
+    });
+
+    await act(() => view.result.current.installNpm("@example/ext@latest"));
+    expect(invoke).toHaveBeenCalledWith("install_npm_extension", {
+      packageSpec: "@example/ext@latest",
+    });
+  });
+
+  it("marque une extension occupée pendant sa mise à jour", async () => {
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    await act(() => view.result.current.update(record.manifest.id));
+
+    expect(invoke).toHaveBeenCalledWith("update_extension", {
+      extensionId: record.manifest.id,
+    });
+  });
 });

@@ -10,7 +10,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
-import { parseExtensionRecords } from "@/lib/extension-records";
+import { parseExtensionRecord, parseExtensionRecords } from "@/lib/extension-records";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 
 const EMPTY_HOST: ExtensionHostStatus = {
@@ -113,10 +113,13 @@ function useExtensionsState() {
     mutate(id, "set_extension_show_in_chat", { extensionId: id, showInChat },
       (record) => ({ ...record, showInChat })), [mutate]);
 
-  const addLocal = useCallback(async (path: string) => {
+  const install = useCallback(async (
+    command: string,
+    payload: Record<string, unknown>,
+  ) => {
     setOperationError(null);
     try {
-      const added = await invoke<ExtensionRecord>("add_local_extension", { path });
+      const added = parseExtensionRecord(await invoke<unknown>(command, payload));
       await refresh();
       return added;
     } catch (error) {
@@ -145,11 +148,20 @@ function useExtensionsState() {
     busyIds,
     pendingActivation,
     refresh,
-    addLocal,
+    addLocal: (path: string) => install("add_local_extension", { path }),
+    installGit: (url: string) => install("install_git_extension", { url }),
+    installNpm: (packageSpec: string) =>
+      install("install_npm_extension", { packageSpec }),
     setEnabled,
     confirmActivation,
     cancelActivation: () => setPendingActivation(null),
     setShowInChat,
+    update: (id: string) => mutate(
+      id,
+      "update_extension",
+      { extensionId: id },
+      (record) => record,
+    ),
     remove: (id: string) => run("remove_extension", { extensionId: id }),
     reload: () => run("reload_extension_host"),
     recover: () => run("recover_extension_host"),

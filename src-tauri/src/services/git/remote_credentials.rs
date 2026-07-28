@@ -3,7 +3,7 @@ use zeroize::Zeroizing;
 
 use super::repo;
 
-pub(super) struct CredentialProvider {
+pub(crate) struct CredentialProvider {
     config: Config,
     github_token: Option<Zeroizing<String>>,
     helper_attempted: bool,
@@ -13,7 +13,7 @@ pub(super) struct CredentialProvider {
 }
 
 impl CredentialProvider {
-    pub(super) fn new(config: Config, github_token: Option<Zeroizing<String>>) -> Self {
+    pub(crate) fn new(config: Config, github_token: Option<Zeroizing<String>>) -> Self {
         Self {
             config,
             github_token,
@@ -24,7 +24,7 @@ impl CredentialProvider {
         }
     }
 
-    pub(super) fn credentials(
+    pub(crate) fn credentials(
         &mut self,
         url: &str,
         username: Option<&str>,

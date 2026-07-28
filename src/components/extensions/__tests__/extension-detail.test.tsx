@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionDetail } from "../extension-detail";
@@ -44,6 +44,7 @@ describe("ExtensionDetail", () => {
         onEnabled={vi.fn()}
         onShowInChat={vi.fn()}
         onOpenSource={vi.fn()}
+        onUpdate={vi.fn()}
         onReload={vi.fn()}
         onRemove={vi.fn()}
       />,
@@ -67,6 +68,7 @@ describe("ExtensionDetail", () => {
         onEnabled={vi.fn()}
         onShowInChat={vi.fn()}
         onOpenSource={vi.fn()}
+        onUpdate={vi.fn()}
         onReload={vi.fn()}
         onRemove={vi.fn()}
       />,
@@ -75,5 +77,34 @@ describe("ExtensionDetail", () => {
     expect(screen.getByText("Search")).toBeInTheDocument();
     expect(screen.queryByText("extensions.detail.contributions"))
       .not.toBeInTheDocument();
+  });
+
+  it("affiche la provenance et la mise à jour uniquement pour une source gérée", () => {
+    const onUpdate = vi.fn();
+    const managed: ExtensionRecord = {
+      ...extension,
+      origin: {
+        kind: "git",
+        locator: "https://github.com/example/search.git",
+        revision: "a".repeat(40),
+      },
+    };
+    render(
+      <ExtensionDetail
+        extension={managed}
+        busy={false}
+        onBack={vi.fn()}
+        onEnabled={vi.fn()}
+        onShowInChat={vi.fn()}
+        onOpenSource={vi.fn()}
+        onUpdate={onUpdate}
+        onReload={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(managed.origin?.locator ?? "")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("extensions.actions.update"));
+    expect(onUpdate).toHaveBeenCalledTimes(1);
   });
 });

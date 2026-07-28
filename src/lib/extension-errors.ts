@@ -12,6 +12,9 @@ export const EXTENSION_BACKEND_ERROR_CODES = Object.freeze([
   "extensions_request_invalid",
   "extensions_tool_unavailable",
   "extensions_tool_arguments_invalid",
+  "extensions_install_failed",
+  "extensions_update_failed",
+  "extensions_uninstall_failed",
 ]);
 const BACKEND_CODES = new Set(EXTENSION_BACKEND_ERROR_CODES);
 

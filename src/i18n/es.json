@@ -1930,7 +1930,7 @@
       },
       "custom": {
         "title": "Extensiones personalizadas",
-        "description": "Añade código JavaScript o TypeScript elegido por ti.",
+        "description": "Añade código local o instala una extensión desde Git o npm.",
         "empty": "No hay extensiones personalizadas."
       },
       "external": {
@@ -1980,6 +1980,7 @@
       "cancel": "Cancelar",
       "back": "Volver",
       "openSource": "Abrir código fuente",
+      "update": "Actualizar",
       "reload": "Recargar",
       "remove": "Eliminar",
       "confirmRemove": "Confirmar",
@@ -1998,6 +1999,11 @@
       "local": "Extensión local",
       "external": "Aplicación externa"
     },
+    "origins": {
+      "local": "Archivo o carpeta local",
+      "git": "Repositorio Git",
+      "npm": "Paquete npm"
+    },
     "loading": "Cargando extensiones…",
     "showInChat": "Mostrar en el chat",
     "showInChatFor": "Mostrar {{name}} en el chat",
@@ -2008,7 +2014,9 @@
       "runtime": "Runtime",
       "api": "API de Beaver",
       "author": "Autor",
+      "installSource": "Origen de instalación",
       "source": "Fuente",
+      "revision": "Revisión Git",
       "unknown": "No indicado",
     "contributions": "Contribuciones registradas",
     "replacesCore": "Sustituye una herramienta integrada"
@@ -2025,7 +2033,17 @@
       "file": "Elegir un archivo",
       "fileDescription": "JavaScript, TypeScript o manifiesto JSON",
       "folder": "Elegir una carpeta",
-      "folderDescription": "Carpeta con un manifiesto de Beaver o package.json"
+      "folderDescription": "Carpeta con un manifiesto de Beaver o package.json",
+      "git": "Instalar desde Git",
+      "gitDescription": "Repositorio HTTPS o SSH que contiene una extensión de Beaver",
+      "npm": "Instalar desde npm",
+      "npmDescription": "Paquete publicado que contiene una extensión de Beaver",
+      "gitLabel": "URL del repositorio Git",
+      "gitPlaceholder": "https://github.com/ejemplo/extension.git",
+      "npmLabel": "Nombre del paquete npm",
+      "npmPlaceholder": "@ejemplo/extension o extension@latest",
+      "install": "Instalar",
+      "installing": "Instalando…"
     },
     "host": {
       "title": "Host y diagnósticos",
@@ -2071,7 +2089,10 @@
         "extensions_request_too_large": "La solicitud es demasiado grande para enviarse. Reduce la cantidad de texto.",
         "extensions_request_invalid": "La solicitud enviada a la extensión no es válida.",
         "extensions_tool_unavailable": "Esta herramienta de extensión no está disponible.",
-        "extensions_tool_arguments_invalid": "Los parámetros enviados a esta herramienta no son válidos."
+        "extensions_tool_arguments_invalid": "Los parámetros enviados a esta herramienta no son válidos.",
+        "extensions_install_failed": "No se pudo instalar la extensión.",
+        "extensions_update_failed": "No se pudo actualizar la extensión.",
+        "extensions_uninstall_failed": "No se pudo eliminar completamente la extensión."
       }
     },
     "diagnostics": {

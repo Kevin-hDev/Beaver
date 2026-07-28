@@ -21,9 +21,49 @@ pub async fn add_local_extension(
 }
 
 #[tauri::command]
+pub async fn install_git_extension(
+    app: tauri::AppHandle,
+    url: String,
+) -> Result<ExtensionView, String> {
+    let record = extensions::install_git_source(&app, &url)
+        .await
+        .map_err(|_| extensions::INSTALL_FAILED.to_string())?;
+    let view = ExtensionView::from(record);
+    emit_changed(&app);
+    Ok(view)
+}
+
+#[tauri::command]
+pub async fn install_npm_extension(
+    app: tauri::AppHandle,
+    package_spec: String,
+) -> Result<ExtensionView, String> {
+    let record = extensions::install_npm_source(&app, &package_spec)
+        .await
+        .map_err(|_| extensions::INSTALL_FAILED.to_string())?;
+    let view = ExtensionView::from(record);
+    emit_changed(&app);
+    Ok(view)
+}
+
+#[tauri::command]
+pub async fn update_extension(
+    app: tauri::AppHandle,
+    extension_id: String,
+) -> Result<ExtensionView, String> {
+    let record = extensions::update_managed_extension(&app, &extension_id)
+        .await
+        .map_err(|_| extensions::UPDATE_FAILED.to_string())?;
+    let view = ExtensionView::from(record);
+    emit_changed(&app);
+    Ok(view)
+}
+
+#[tauri::command]
 pub async fn remove_extension(app: tauri::AppHandle, extension_id: String) -> Result<(), String> {
-    extensions::remove(&extension_id)?;
-    let result = extensions::restart().await;
+    let result = extensions::uninstall_extension(&extension_id)
+        .await
+        .map_err(|_| extensions::UNINSTALL_FAILED.to_string());
     emit_changed(&app);
     result
 }

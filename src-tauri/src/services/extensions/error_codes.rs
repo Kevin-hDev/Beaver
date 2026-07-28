@@ -15,6 +15,9 @@ pub const BUILTIN_PLUGIN_INVALID: &str = "extensions_builtin_plugin_invalid";
 pub const BUILTIN_ENTRY_MISSING: &str = "extensions_builtin_entry_missing";
 pub const BUILTIN_ENTRY_UNAVAILABLE: &str = "extensions_builtin_entry_unavailable";
 pub const BUILTIN_ENTRY_INVALID: &str = "extensions_builtin_entry_invalid";
+pub const INSTALL_FAILED: &str = "extensions_install_failed";
+pub const UPDATE_FAILED: &str = "extensions_update_failed";
+pub const UNINSTALL_FAILED: &str = "extensions_uninstall_failed";
 
 /// Sert au test qui exige une traduction par code et par langue.
 #[cfg(test)]
@@ -32,6 +35,9 @@ pub const ALL: &[&str] = &[
     BUILTIN_ENTRY_MISSING,
     BUILTIN_ENTRY_UNAVAILABLE,
     BUILTIN_ENTRY_INVALID,
+    INSTALL_FAILED,
+    UPDATE_FAILED,
+    UNINSTALL_FAILED,
 ];
 
 #[cfg(test)]

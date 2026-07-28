@@ -46,6 +46,7 @@ export function useExtensionsTabSlots({
           onEnabled={(id, enabled) => void registry.setEnabled(id, enabled)}
           onShowInChat={(id, show) => void registry.setShowInChat(id, show)}
           onOpenSource={(id) => void registry.openSource(id)}
+          onUpdate={(id) => void registry.update(id)}
           onRemove={(id) => {
             onNavReplace({ extensionId: null });
             void registry.remove(id);
@@ -59,6 +60,14 @@ export function useExtensionsTabSlots({
           onClose={() => setAdding(false)}
           onAdd={async (path) => {
             const added = await registry.addLocal(path);
+            if (!added) return false;
+            onNavChange({ extensionId: added.manifest.id });
+            return true;
+          }}
+          onInstall={async (source, locator) => {
+            const added = source === "git"
+              ? await registry.installGit(locator)
+              : await registry.installNpm(locator);
             if (!added) return false;
             onNavChange({ extensionId: added.manifest.id });
             return true;

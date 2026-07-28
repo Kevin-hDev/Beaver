@@ -24,6 +24,7 @@ interface ExtensionDetailProps {
   onEnabled: (enabled: boolean) => void;
   onShowInChat: (show: boolean) => void;
   onOpenSource: () => void;
+  onUpdate: () => void;
   onReload: () => void;
   onRemove: () => void;
 }
@@ -32,6 +33,8 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
   const { t } = useTranslation();
   const { extension } = props;
   const name = extensionDisplayName(t, extension);
+  const managed = extension.origin?.kind === "git" || extension.origin?.kind === "npm";
+  const displayedSource = extension.origin?.locator ?? extension.source;
   return (
     <div className="extp-content">
       <header className="extd-header">
@@ -63,7 +66,20 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
         <DetailLine label={t("extensions.detail.runtime")} value={extension.manifest.runtime} />
         <DetailLine label={t("extensions.detail.api")} value={extension.manifest.beaverApi} />
         <DetailLine label={t("extensions.detail.author")} value={extension.manifest.author ?? t("extensions.detail.unknown")} />
-        <DetailLine label={t("extensions.detail.source")} value={extension.source} mono />
+        {extension.origin && (
+          <DetailLine
+            label={t("extensions.detail.installSource")}
+            value={t(`extensions.origins.${extension.origin.kind}`)}
+          />
+        )}
+        <DetailLine label={t("extensions.detail.source")} value={displayedSource} mono />
+        {extension.origin?.revision && (
+          <DetailLine
+            label={t("extensions.detail.revision")}
+            value={extension.origin.revision}
+            mono
+          />
+        )}
         <div className="extp-info-line">
           <span className="extd-chat-label">
             <ChatCircleDots size="var(--icon-sm)" />
@@ -82,10 +98,15 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
 
       {extension.kind === "local" && (
         <div className="extp-actions">
-          <button type="button" className="wk-btn-secondary" onClick={props.onOpenSource}>
+          <button type="button" className="wk-btn-secondary" disabled={props.busy} onClick={props.onOpenSource}>
             <FolderOpen size="var(--icon-sm)" />{t("extensions.actions.openSource")}
           </button>
-          <button type="button" className="wk-btn-secondary" onClick={props.onReload}>
+          {managed && (
+            <button type="button" className="wk-btn-secondary" disabled={props.busy} onClick={props.onUpdate}>
+              <ArrowsClockwise size="var(--icon-sm)" />{t("extensions.actions.update")}
+            </button>
+          )}
+          <button type="button" className="wk-btn-secondary" disabled={props.busy} onClick={props.onReload}>
             <ArrowsClockwise size="var(--icon-sm)" />{t("extensions.actions.reload")}
           </button>
           <ConfirmButton
@@ -93,6 +114,7 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
             label={<><Trash size="var(--icon-sm)" />{t("extensions.actions.remove")}</>}
             confirmLabel={t("extensions.actions.confirmRemove")}
             onConfirm={props.onRemove}
+            disabled={props.busy}
           />
         </div>
       )}

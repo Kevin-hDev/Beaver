@@ -12,6 +12,7 @@ pub fn init() -> Result<(), String> {
     let records = super::builtin::merge(reset_hosted_runtime(stored))?;
     super::validation::records(&records)?;
     super::storage::save(&records)?;
+    let _ = super::managed_cleanup::unreferenced(&records);
     replace(records)
 }
 
@@ -20,6 +21,14 @@ pub fn list() -> Result<Vec<ExtensionRecord>, String> {
         .read()
         .map(|records| records.clone())
         .map_err(|_| "Registre d'extensions indisponible.".to_string())
+}
+
+pub fn find(id: &str) -> Result<ExtensionRecord, String> {
+    super::validation::identifier(id)?;
+    list()?
+        .into_iter()
+        .find(|record| record.manifest.id == id)
+        .ok_or_else(|| "Extension introuvable.".to_string())
 }
 
 pub fn add_local(record: ExtensionRecord) -> Result<(), String> {
@@ -54,6 +63,32 @@ pub fn remove(id: &str) -> Result<(), String> {
             return Err("Un plugin Beaver ne peut pas être supprimé.".to_string());
         }
         records.remove(index);
+        Ok(())
+    })
+}
+
+pub fn replace_user(
+    expected: &ExtensionRecord,
+    replacement: ExtensionRecord,
+) -> Result<(), String> {
+    let id = expected.manifest.id.as_str();
+    super::validation::identifier(id)?;
+    super::validation::records(std::slice::from_ref(&replacement))?;
+    if replacement.kind != ExtensionKind::Local || replacement.manifest.id != id {
+        return Err("Mise à jour d'extension invalide.".to_string());
+    }
+    mutate(|records| {
+        let record = records
+            .iter_mut()
+            .find(|record| record.manifest.id == id)
+            .ok_or_else(|| "Extension introuvable.".to_string())?;
+        if record.kind == ExtensionKind::Builtin {
+            return Err("Un plugin Beaver ne peut pas être remplacé.".to_string());
+        }
+        if record.source != expected.source || record.origin != expected.origin {
+            return Err("L'extension a changé pendant sa mise à jour.".to_string());
+        }
+        *record = replacement;
         Ok(())
     })
 }

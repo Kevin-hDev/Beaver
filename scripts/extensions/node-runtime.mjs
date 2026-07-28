@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { extractArchive } from "./archive-extract.mjs";
+import { copyDirectoryBounded } from "./runtime-copy.mjs";
 
 const VERSION = "24.18.0";
 const MAX_RUNTIME_ARCHIVE_BYTES = 100 * 1024 * 1024;
@@ -81,6 +82,10 @@ export async function prepareNodeRuntime(hostDirectory) {
     await copyFile(join(extracted, artifact.executable), destination);
     if (process.platform !== "win32") await chmod(destination, 0o700);
     const archiveRoot = artifact.executable.split("/")[0];
+    const npmSource = process.platform === "win32"
+      ? join(extracted, archiveRoot, "node_modules", "npm")
+      : join(extracted, archiveRoot, "lib", "node_modules", "npm");
+    await copyDirectoryBounded(npmSource, join(runtime, "npm"));
     await copyFile(join(extracted, archiveRoot, "LICENSE"), join(runtime, "NODE_LICENSE"));
   } finally {
     await rm(temporary, { recursive: true, force: true });

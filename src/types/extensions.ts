@@ -1,4 +1,5 @@
 export type ExtensionKind = "builtin" | "local" | "external";
+export type ExtensionOriginKind = "local" | "git" | "npm";
 export type ExtensionStatus = "active" | "inactive" | "loading" | "error" | "incompatible";
 export type ExtensionApiLevel = "stable" | "advanced";
 export type ExtensionHostState = "stopped" | "starting" | "running" | "error";
@@ -30,10 +31,17 @@ export interface ExtensionContributions {
   events: string[];
 }
 
+export interface ExtensionOrigin {
+  kind: ExtensionOriginKind;
+  locator: string;
+  revision?: string;
+}
+
 export interface ExtensionRecord {
   manifest: ExtensionManifest;
   kind: ExtensionKind;
   source: string;
+  origin?: ExtensionOrigin;
   enabled: boolean;
   trusted: boolean;
   showInChat: boolean;

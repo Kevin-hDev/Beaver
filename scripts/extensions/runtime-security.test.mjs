@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -15,6 +16,7 @@ import {
   sanitizeExtractionError,
   windowsExtractionArguments,
 } from "./archive-extract.mjs";
+import { copyDirectoryBounded } from "./runtime-copy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -39,6 +41,27 @@ test("runtime downloads and checksums fail closed", async () => {
 
 test("all bundled Node.js checksums are valid SHA-256 values", () => {
   assert.doesNotThrow(() => validateArtifactTable());
+});
+
+test("bundled npm copying is explicitly bounded", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "beaver-runtime-copy-"));
+  const source = join(temporary, "source");
+  const destination = join(temporary, "destination");
+  try {
+    await mkdir(source);
+    await writeFile(join(source, "one.js"), "one");
+    await writeFile(join(source, "two.js"), "two");
+    await assert.rejects(
+      copyDirectoryBounded(source, destination, {
+        maxEntries: 1,
+        maxBytes: 1024,
+        maxDepth: 4,
+      }),
+      /too many entries/,
+    );
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
 });
 
 test("Windows extraction uses tar.exe arguments without a shell or script", () => {

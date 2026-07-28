@@ -1930,7 +1930,7 @@
       },
       "custom": {
         "title": "自定义扩展",
-        "description": "添加由你选择的 JavaScript 或 TypeScript 代码。",
+        "description": "添加本地代码，或从 Git 或 npm 安装扩展。",
         "empty": "没有自定义扩展。"
       },
       "external": {
@@ -1980,6 +1980,7 @@
       "cancel": "取消",
       "back": "返回",
       "openSource": "打开源文件",
+      "update": "更新",
       "reload": "重新加载",
       "remove": "移除",
       "confirmRemove": "确认",
@@ -1998,6 +1999,11 @@
       "local": "本地扩展",
       "external": "外部应用"
     },
+    "origins": {
+      "local": "本地文件或文件夹",
+      "git": "Git 仓库",
+      "npm": "npm 软件包"
+    },
     "loading": "正在加载扩展…",
     "showInChat": "在聊天中显示",
     "showInChatFor": "在聊天中显示 {{name}}",
@@ -2008,7 +2014,9 @@
       "runtime": "运行时",
       "api": "Beaver API",
       "author": "作者",
+      "installSource": "安装来源",
       "source": "来源",
+      "revision": "Git 修订版本",
       "unknown": "未提供",
     "contributions": "已注册的扩展项",
     "replacesCore": "替换内置工具"
@@ -2025,7 +2033,17 @@
       "file": "选择文件",
       "fileDescription": "JavaScript、TypeScript 或 JSON 清单",
       "folder": "选择文件夹",
-      "folderDescription": "包含 Beaver 清单或 package.json 的文件夹"
+      "folderDescription": "包含 Beaver 清单或 package.json 的文件夹",
+      "git": "从 Git 安装",
+      "gitDescription": "包含 Beaver 扩展的 HTTPS 或 SSH 仓库",
+      "npm": "从 npm 安装",
+      "npmDescription": "包含 Beaver 扩展的已发布软件包",
+      "gitLabel": "Git 仓库 URL",
+      "gitPlaceholder": "https://github.com/example/extension.git",
+      "npmLabel": "npm 软件包名称",
+      "npmPlaceholder": "@example/extension 或 extension@latest",
+      "install": "安装",
+      "installing": "正在安装…"
     },
     "host": {
       "title": "宿主与诊断",
@@ -2071,7 +2089,10 @@
         "extensions_request_too_large": "请求过大，无法发送。请减少文本量。",
         "extensions_request_invalid": "发送给扩展的请求无效。",
         "extensions_tool_unavailable": "此扩展工具不可用。",
-        "extensions_tool_arguments_invalid": "发送给此工具的参数无效。"
+        "extensions_tool_arguments_invalid": "发送给此工具的参数无效。",
+        "extensions_install_failed": "无法安装此扩展。",
+        "extensions_update_failed": "无法更新此扩展。",
+        "extensions_uninstall_failed": "无法完整移除此扩展。"
       }
     },
     "diagnostics": {
