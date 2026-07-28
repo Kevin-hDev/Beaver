@@ -10,7 +10,7 @@ pub fn mark_enabled_loading() -> Result<(), String> {
             record.status = ExtensionStatus::Loading;
             record.last_error = None;
         }
-        Ok(())
+        Ok::<(), String>(())
     })
 }
 
@@ -43,7 +43,7 @@ pub fn apply_results(
                 record.last_error = Some("load_failed".to_string());
             }
         }
-        Ok(())
+        Ok::<(), String>(())
     })?;
     Ok(active)
 }
@@ -57,6 +57,6 @@ pub fn mark_all_enabled_error() {
             record.status = ExtensionStatus::Error;
             record.last_error = Some("host_unavailable".to_string());
         }
-        Ok(())
+        Ok::<(), String>(())
     });
 }

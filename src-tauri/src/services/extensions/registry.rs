@@ -9,11 +9,14 @@ static MUTATIONS: Mutex<()> = Mutex::new(());
 
 pub fn init() -> Result<(), String> {
     let stored = super::storage::load()?;
-    let records = super::builtin::merge(reset_hosted_runtime(stored))?;
+    let records = super::builtin::merge(super::registry_state::reset_hosted_runtime(stored))?;
     super::validation::records(&records)?;
     super::storage::save(&records)?;
-    if let Err(error) = super::managed_cleanup::unreferenced(&records) {
-        super::operation_error::report(super::operation_error::Operation::Cleanup, &error);
+    if super::managed_cleanup::unreferenced(&records).is_err() {
+        super::operation_error::report(
+            super::operation_error::Operation::Cleanup,
+            super::OperationFailure::CleanupFailed,
+        );
     }
     replace(records)
 }
@@ -162,16 +165,17 @@ fn update(
     })
 }
 
-pub(super) fn mutate(
-    operation: impl FnOnce(&mut Vec<ExtensionRecord>) -> Result<(), String>,
-) -> Result<(), String> {
-    let _guard = MUTATIONS
-        .lock()
-        .map_err(|_| "Registre d'extensions indisponible.".to_string())?;
-    let mut candidate = list()?;
+pub(super) fn mutate<E>(
+    operation: impl FnOnce(&mut Vec<ExtensionRecord>) -> Result<(), E>,
+) -> Result<(), E>
+where
+    E: super::registry_mutation_error::MutationError,
+{
+    let _guard = MUTATIONS.lock().map_err(|_| E::storage())?;
+    let mut candidate = list().map_err(|_| E::storage())?;
     operation(&mut candidate)?;
-    super::storage::save(&candidate)?;
-    replace(candidate)
+    super::storage::save(&candidate).map_err(|_| E::storage())?;
+    replace(candidate).map_err(|_| E::storage())
 }
 
 fn replace(records: Vec<ExtensionRecord>) -> Result<(), String> {
@@ -181,18 +185,4 @@ fn replace(records: Vec<ExtensionRecord>) -> Result<(), String> {
     super::registry_index::rebuild(&records)?;
     *state = records;
     Ok(())
-}
-
-fn reset_hosted_runtime(mut records: Vec<ExtensionRecord>) -> Vec<ExtensionRecord> {
-    for record in &mut records {
-        if record.kind != ExtensionKind::External {
-            if record.kind == ExtensionKind::Local && !record.trusted {
-                record.enabled = false;
-            }
-            record.status = ExtensionStatus::Inactive;
-            record.last_error = None;
-            record.contributions = ExtensionContributions::default();
-        }
-    }
-    records
 }

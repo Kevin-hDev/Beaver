@@ -1,5 +1,13 @@
+use std::time::Duration;
+
 const CONNECT_TIMEOUT_MS: i32 = 30_000;
 const IDLE_TIMEOUT_MS: i32 = 30_000;
+const TIMEOUT_CLASSIFICATION_MARGIN_MS: u64 = 1_000;
+
+pub(crate) fn timeout_classification_threshold() -> Duration {
+    let shortest = CONNECT_TIMEOUT_MS.min(IDLE_TIMEOUT_MS) as u64;
+    Duration::from_millis(shortest.saturating_sub(TIMEOUT_CLASSIFICATION_MARGIN_MS))
+}
 
 /// # Safety
 ///
@@ -21,5 +29,13 @@ mod tests {
     fn network_deadlines_are_positive_and_bounded() {
         assert!((1_000..=60_000).contains(&CONNECT_TIMEOUT_MS));
         assert!((1_000..=60_000).contains(&IDLE_TIMEOUT_MS));
+    }
+
+    #[test]
+    fn timeout_classification_starts_just_before_the_network_deadline() {
+        let threshold = timeout_classification_threshold();
+
+        assert!(threshold < Duration::from_millis(CONNECT_TIMEOUT_MS as u64));
+        assert!(threshold >= Duration::from_secs(1));
     }
 }

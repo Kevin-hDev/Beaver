@@ -1,11 +1,14 @@
 mod builtin;
 mod core_bridge;
 mod error_codes;
+mod git_checkout;
+mod git_package;
 mod git_source;
 mod host_channel;
 mod host_paths;
 mod host_process;
 mod host_reader;
+mod install_preparation;
 mod installer;
 mod installer_record;
 mod managed_cleanup;
@@ -18,12 +21,16 @@ mod npm_environment;
 mod npm_runner;
 mod npm_source;
 mod operation_error;
+mod operation_failure;
 mod operation_log;
 mod origin_validation;
 mod process_runner;
 mod protocol;
 mod registry;
 mod registry_index;
+mod registry_managed;
+mod registry_mutation_error;
+mod registry_state;
 mod registry_sync;
 mod runtime;
 mod runtime_diagnostics;
@@ -55,6 +62,7 @@ pub(crate) use installer::{
 };
 pub(crate) use manifest::load_local as install_local;
 pub(crate) use operation_error::{report as report_operation_error, Operation};
+pub(crate) use operation_failure::OperationFailure;
 pub(crate) use validation::identifier as validate_identifier;
 
 #[cfg(test)]
@@ -62,7 +70,11 @@ mod builtin_tests;
 #[cfg(test)]
 mod git_dependencies_tests;
 #[cfg(test)]
+mod git_policy_tests;
+#[cfg(test)]
 mod git_source_tests;
+#[cfg(test)]
+mod managed_install_error_tests;
 #[cfg(test)]
 mod managed_store_tests;
 #[cfg(test)]

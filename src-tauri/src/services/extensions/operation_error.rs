@@ -1,4 +1,4 @@
-use super::error_codes;
+use super::operation_failure::OperationFailure;
 
 #[derive(Clone, Copy)]
 pub enum Operation {
@@ -19,129 +19,38 @@ impl Operation {
             Self::Cleanup => "cleanup",
         }
     }
-
-    fn fallback(self) -> &'static str {
-        match self {
-            Self::InstallGit | Self::InstallNpm => error_codes::INSTALL_FAILED,
-            Self::Update => error_codes::UPDATE_FAILED,
-            Self::Uninstall => error_codes::UNINSTALL_FAILED,
-            Self::Cleanup => error_codes::CLEANUP_FAILED,
-        }
-    }
 }
 
-pub fn report(operation: Operation, internal: &str) -> String {
-    let code = classify(operation, internal);
-    super::operation_log::write(operation.label(), code, internal_reason(internal));
+pub fn report(operation: Operation, failure: OperationFailure) -> String {
+    let code = failure.code();
+    super::operation_log::write(operation.label(), code, failure.reason());
     code.to_string()
-}
-
-fn classify(operation: Operation, error: &str) -> &'static str {
-    if error.contains("Nombre maximal") {
-        return error_codes::LIMIT_REACHED;
-    }
-    if error.contains("déjà enregistrée") {
-        return error_codes::ALREADY_INSTALLED;
-    }
-    if error.contains("identité") {
-        return error_codes::UPDATE_IDENTITY_CHANGED;
-    }
-    if error.contains("n'est pas gérée") || error.contains("non gérée") {
-        return error_codes::UPDATE_UNAVAILABLE;
-    }
-    if error.contains("URL Git")
-        || error.contains("Référence Git")
-        || error.contains("Source d'extension invalide")
-    {
-        return error_codes::SOURCE_INVALID;
-    }
-    if error.contains("Package npm")
-        || error.contains("package npm")
-        || error.contains("Version ou tag npm")
-        || error.contains("Nom de package npm")
-    {
-        return error_codes::PACKAGE_INVALID;
-    }
-    if error.contains("Téléchargement Git") || error.contains("Révision Git") {
-        if error.contains("expiré") {
-            return error_codes::GIT_TIMEOUT;
-        }
-        return error_codes::GIT_DOWNLOAD_FAILED;
-    }
-    if error.contains("Runtime Node.js") || error.contains("Gestionnaire npm") {
-        return error_codes::RUNTIME_UNAVAILABLE;
-    }
-    if error.contains("Commande d'installation") {
-        return error_codes::DEPENDENCY_INSTALL_FAILED;
-    }
-    if error.contains("Manifeste")
-        || error.contains("Point d'entrée")
-        || error.contains("Installation d'extension")
-        || error.contains("Package d'extension")
-        || error.contains("Source d'extension introuvable")
-    {
-        return error_codes::MANIFEST_INVALID;
-    }
-    if error.contains("Stockage")
-        || error.contains("Cache npm")
-        || error.contains("Configuration npm impossible")
-        || error.contains("nettoyer")
-        || error.contains("Nettoyage")
-        || error.contains("Suppression des fichiers")
-    {
-        return error_codes::STORAGE_FAILED;
-    }
-    operation.fallback()
-}
-
-fn internal_reason(error: &str) -> &'static str {
-    if error.contains("expiré") {
-        "timeout"
-    } else if error.contains("indisponible") {
-        "unavailable"
-    } else if error.contains("invalide") || error.contains("invalid") {
-        "invalid_input_or_content"
-    } else if error.contains("introuvable") {
-        "missing"
-    } else if error.contains("déjà enregistrée") {
-        "duplicate"
-    } else if error.contains("Nombre maximal") || error.contains("Trop de") {
-        "limit"
-    } else if error.contains("identité") {
-        "identity_changed"
-    } else if error.contains("nettoyer") || error.contains("Nettoyage") {
-        "cleanup"
-    } else if error.contains("interrompue") {
-        "interrupted"
-    } else {
-        "operation_failed"
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::extensions::error_codes;
 
     #[test]
-    fn exposes_specific_safe_codes_without_forwarding_internal_details() {
+    fn stable_failures_expose_specific_safe_codes() {
         assert_eq!(
-            classify(Operation::InstallGit, "Téléchargement Git impossible."),
-            error_codes::GIT_DOWNLOAD_FAILED
+            OperationFailure::GitTimeout.code(),
+            error_codes::GIT_TIMEOUT
         );
         assert_eq!(
-            classify(Operation::InstallNpm, "Commande d'installation expirée."),
-            error_codes::DEPENDENCY_INSTALL_FAILED
+            OperationFailure::NotBeaverExtension.code(),
+            error_codes::NOT_BEAVER_EXTENSION
         );
         assert_eq!(
-            classify(
-                Operation::Update,
-                "L'identité de l'extension mise à jour a changé."
+            OperationFailure::ApiIncompatible.code(),
+            error_codes::API_INCOMPATIBLE
+        );
+        assert_eq!(
+            OperationFailure::from(
+                crate::services::extensions::process_runner::ProcessFailure::EnvironmentInvalid
             ),
-            error_codes::UPDATE_IDENTITY_CHANGED
-        );
-        assert_eq!(
-            internal_reason("Commande d'installation expirée."),
-            "timeout"
+            OperationFailure::EnvironmentInvalid
         );
     }
 }

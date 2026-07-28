@@ -23,8 +23,12 @@ pub const PACKAGE_INVALID: &str = "extensions_package_invalid";
 pub const GIT_DOWNLOAD_FAILED: &str = "extensions_git_download_failed";
 pub const GIT_TIMEOUT: &str = "extensions_git_timeout";
 pub const RUNTIME_UNAVAILABLE: &str = "extensions_runtime_unavailable";
+pub const ENVIRONMENT_INVALID: &str = "extensions_environment_invalid";
 pub const DEPENDENCY_INSTALL_FAILED: &str = "extensions_dependency_install_failed";
 pub const MANIFEST_INVALID: &str = "extensions_manifest_invalid";
+pub const NOT_BEAVER_EXTENSION: &str = "extensions_not_beaver_extension";
+pub const API_INCOMPATIBLE: &str = "extensions_api_incompatible";
+pub const SYMLINK_UNSUPPORTED: &str = "extensions_symlink_unsupported";
 pub const ALREADY_INSTALLED: &str = "extensions_already_installed";
 pub const LIMIT_REACHED: &str = "extensions_limit_reached";
 pub const STORAGE_FAILED: &str = "extensions_storage_failed";
@@ -56,8 +60,12 @@ pub const ALL: &[&str] = &[
     GIT_DOWNLOAD_FAILED,
     GIT_TIMEOUT,
     RUNTIME_UNAVAILABLE,
+    ENVIRONMENT_INVALID,
     DEPENDENCY_INSTALL_FAILED,
     MANIFEST_INVALID,
+    NOT_BEAVER_EXTENSION,
+    API_INCOMPATIBLE,
+    SYMLINK_UNSUPPORTED,
     ALREADY_INSTALLED,
     LIMIT_REACHED,
     STORAGE_FAILED,

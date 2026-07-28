@@ -141,6 +141,27 @@ fn git_materialization_accepts_a_pinned_commit() {
     let repository_path = temporary.path().join("repository");
     std::fs::create_dir(&repository_path).unwrap();
     let expected_revision = create_repository(&repository_path);
+    let repository = Repository::open(&repository_path).unwrap();
+    std::fs::write(repository_path.join("index.ts"), "export default () => 2").unwrap();
+    let mut index = repository.index().unwrap();
+    index.add_path(Path::new("index.ts")).unwrap();
+    let tree_id = index.write_tree().unwrap();
+    let tree = repository.find_tree(tree_id).unwrap();
+    let parent = repository.head().unwrap().peel_to_commit().unwrap();
+    let signature = Signature::now("Beaver test", "test@beaver.local").unwrap();
+    repository
+        .commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            "newer fixture",
+            &tree,
+            &[&parent],
+        )
+        .unwrap();
+    drop(parent);
+    drop(tree);
+    drop(repository);
     let source = GitSource {
         locator: format!("https://example.invalid/extension.git#{expected_revision}"),
         clone_url: url::Url::from_file_path(&repository_path)

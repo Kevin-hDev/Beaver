@@ -6,7 +6,7 @@ pub fn materialize(
     source: &NpmSource,
     destination: &Path,
     npm: &NpmRunner,
-) -> Result<PathBuf, String> {
+) -> Result<PathBuf, super::OperationFailure> {
     let package = npm.install_package(destination, source)?;
     super::managed_tree::validate(destination)?;
     Ok(package)

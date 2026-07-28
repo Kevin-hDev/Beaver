@@ -1,4 +1,5 @@
 use super::source_validation::NpmSource;
+use super::OperationFailure;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -13,18 +14,24 @@ pub struct NpmRunner {
 }
 
 impl NpmRunner {
-    pub fn resolve(app: &tauri::AppHandle) -> Result<Self, String> {
-        let paths = super::host_paths::resolve(app)?;
+    pub fn resolve(app: &tauri::AppHandle) -> Result<Self, OperationFailure> {
+        let paths =
+            super::host_paths::resolve(app).map_err(|_| OperationFailure::RuntimeUnavailable)?;
         let node = paths
             .node
             .canonicalize()
-            .map_err(|_| "Runtime Node.js indisponible.".to_string())?;
-        let cli = resolve_cli(&paths.directory, &node)?;
+            .map_err(|_| OperationFailure::RuntimeUnavailable)?;
+        let cli = resolve_cli(&paths.directory, &node)
+            .map_err(|_| OperationFailure::RuntimeUnavailable)?;
         Ok(Self { node, cli })
     }
 
-    pub fn install_package(&self, prefix: &Path, source: &NpmSource) -> Result<PathBuf, String> {
-        let workspace = prepare_workspace(prefix)?;
+    pub fn install_package(
+        &self,
+        prefix: &Path,
+        source: &NpmSource,
+    ) -> Result<PathBuf, OperationFailure> {
+        let workspace = prepare_workspace(prefix).map_err(|_| OperationFailure::StorageFailed)?;
         let mut arguments = self.common_arguments("install", prefix, &workspace);
         arguments.extend([
             OsString::from("--package-lock=false"),
@@ -33,20 +40,21 @@ impl NpmRunner {
             OsString::from(&source.locator),
         ]);
         let result = self.run(prefix, &workspace, arguments);
-        cleanup_workspace(&workspace)?;
+        cleanup_workspace(&workspace).map_err(|_| OperationFailure::StorageFailed)?;
         result?;
         let package_root = prefix
             .join("node_modules")
             .join(package_path(&source.package_name));
         if !package_root.is_dir() {
-            return Err("Package npm installé introuvable.".to_string());
+            return Err(OperationFailure::PackageInvalid);
         }
         Ok(package_root)
     }
 
-    pub fn install_dependencies(&self, root: &Path) -> Result<(), String> {
-        let workspace = prepare_workspace(root)?;
-        let config = super::npm_environment::ProjectConfig::neutralize(root)?;
+    pub fn install_dependencies(&self, root: &Path) -> Result<(), OperationFailure> {
+        let workspace = prepare_workspace(root).map_err(|_| OperationFailure::StorageFailed)?;
+        let config = super::npm_environment::ProjectConfig::neutralize(root)
+            .map_err(|_| OperationFailure::StorageFailed)?;
         let command = if root.join("package-lock.json").is_file()
             || root.join("npm-shrinkwrap.json").is_file()
         {
@@ -64,8 +72,8 @@ impl NpmRunner {
         let result = self.run(root, &workspace, arguments);
         let restore = config.restore();
         let cleanup = cleanup_workspace(&workspace);
-        restore?;
-        cleanup?;
+        restore.map_err(|_| OperationFailure::StorageFailed)?;
+        cleanup.map_err(|_| OperationFailure::StorageFailed)?;
         result
     }
 
@@ -100,7 +108,12 @@ impl NpmRunner {
         ]
     }
 
-    fn run(&self, root: &Path, workspace: &Path, arguments: Vec<OsString>) -> Result<(), String> {
+    fn run(
+        &self,
+        root: &Path,
+        workspace: &Path,
+        arguments: Vec<OsString>,
+    ) -> Result<(), OperationFailure> {
         super::process_runner::run(
             &self.node,
             &arguments,
@@ -108,6 +121,7 @@ impl NpmRunner {
             &workspace.join("tmp"),
             INSTALL_TIMEOUT,
         )
+        .map_err(OperationFailure::from)
     }
 
     #[cfg(test)]

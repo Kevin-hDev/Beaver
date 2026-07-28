@@ -5,7 +5,20 @@ use std::time::{Duration, Instant};
 
 const MAX_ARGUMENTS: usize = 48;
 const MAX_ARGUMENT_CHARS: usize = 4_096;
+const MAX_PATH_CHARS: usize = 16_384;
+#[cfg(windows)]
+const MAX_SYSTEM_ROOT_CHARS: usize = 1_024;
 const POLL_INTERVAL: Duration = Duration::from_millis(100);
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ProcessFailure {
+    CommandInvalid,
+    EnvironmentInvalid,
+    Unavailable,
+    Failed,
+    Timeout,
+    Interrupted,
+}
 
 pub fn run(
     program: &Path,
@@ -13,7 +26,7 @@ pub fn run(
     working_directory: &Path,
     temporary_directory: &Path,
     timeout: Duration,
-) -> Result<(), String> {
+) -> Result<(), ProcessFailure> {
     if !program.is_absolute()
         || !program.is_file()
         || !working_directory.is_absolute()
@@ -25,11 +38,11 @@ pub fn run(
             .iter()
             .any(|argument| argument.to_string_lossy().chars().count() > MAX_ARGUMENT_CHARS)
     {
-        return Err("Commande d'installation invalide.".to_string());
+        return Err(ProcessFailure::CommandInvalid);
     }
     let path = std::env::var_os("PATH")
-        .filter(|value| valid_environment_value(value))
-        .ok_or_else(|| "Environnement d'installation invalide.".to_string())?;
+        .filter(|value| valid_environment_value(value, MAX_PATH_CHARS))
+        .ok_or(ProcessFailure::EnvironmentInvalid)?;
     let mut command = Command::new(program);
     command
         .args(arguments)
@@ -43,19 +56,18 @@ pub fn run(
         .env("TMP", temporary_directory)
         .env("TEMP", temporary_directory);
     #[cfg(windows)]
-    if let Some(system_root) =
-        std::env::var_os("SystemRoot").filter(|value| valid_environment_value(value))
-    {
+    if let Some(system_root) = std::env::var_os("SystemRoot") {
+        if !valid_environment_value(&system_root, MAX_SYSTEM_ROOT_CHARS) {
+            return Err(ProcessFailure::EnvironmentInvalid);
+        }
         command.env("SystemRoot", system_root);
     }
-    let mut child = command
-        .spawn()
-        .map_err(|_| "Commande d'installation indisponible.".to_string())?;
+    let mut child = command.spawn().map_err(|_| ProcessFailure::Unavailable)?;
     let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait() {
             Ok(Some(status)) if status.success() => return Ok(()),
-            Ok(Some(_)) => return Err("Commande d'installation échouée.".to_string()),
+            Ok(Some(_)) => return Err(ProcessFailure::Failed),
             Ok(None) if Instant::now() < deadline => std::thread::sleep(POLL_INTERVAL),
             Ok(None) => {
                 crate::services::process_tree::kill(
@@ -63,7 +75,7 @@ pub fn run(
                     crate::services::process_tree::ProcessKind::ExtensionInstaller,
                 );
                 let _ = child.wait();
-                return Err("Commande d'installation expirée.".to_string());
+                return Err(ProcessFailure::Timeout);
             }
             Err(_) => {
                 crate::services::process_tree::kill(
@@ -71,15 +83,15 @@ pub fn run(
                     crate::services::process_tree::ProcessKind::ExtensionInstaller,
                 );
                 let _ = child.wait();
-                return Err("Commande d'installation interrompue.".to_string());
+                return Err(ProcessFailure::Interrupted);
             }
         }
     }
 }
 
-fn valid_environment_value(value: &std::ffi::OsStr) -> bool {
+fn valid_environment_value(value: &std::ffi::OsStr, maximum: usize) -> bool {
     let text = value.to_string_lossy();
-    text.chars().count() <= MAX_ARGUMENT_CHARS && !text.chars().any(char::is_control)
+    text.chars().count() <= maximum && !text.chars().any(char::is_control)
 }
 
 #[cfg(test)]
@@ -88,14 +100,31 @@ mod tests {
 
     #[test]
     fn inherited_environment_is_bounded_and_single_line() {
-        assert!(valid_environment_value(std::ffi::OsStr::new(
-            "/usr/bin:/bin"
-        )));
-        assert!(!valid_environment_value(std::ffi::OsStr::new(
-            "/usr/bin\nunsafe"
-        )));
-        assert!(!valid_environment_value(std::ffi::OsStr::new(
-            &"a".repeat(MAX_ARGUMENT_CHARS + 1),
-        )));
+        assert!(valid_environment_value(
+            std::ffi::OsStr::new("/usr/bin:/bin"),
+            MAX_PATH_CHARS
+        ));
+        assert!(!valid_environment_value(
+            std::ffi::OsStr::new("/usr/bin\nunsafe"),
+            MAX_PATH_CHARS
+        ));
+        assert!(!valid_environment_value(
+            std::ffi::OsStr::new(&"a".repeat(MAX_PATH_CHARS + 1)),
+            MAX_PATH_CHARS
+        ));
+    }
+
+    #[test]
+    fn accepts_a_realistic_long_developer_path() {
+        let path = (0..69)
+            .map(|index| format!("/tmp/beaver-developer-path/{index:055}"))
+            .collect::<Vec<_>>()
+            .join(":");
+
+        assert!(path.chars().count() > MAX_ARGUMENT_CHARS);
+        assert!(valid_environment_value(
+            std::ffi::OsStr::new(&path),
+            MAX_PATH_CHARS
+        ));
     }
 }
