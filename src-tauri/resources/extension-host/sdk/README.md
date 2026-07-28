@@ -25,9 +25,14 @@ Create `beaver-extension.json` in the extension folder:
   "runtime": "node",
   "main": "./index.ts",
   "access": "full",
-  "apiLevel": "stable"
+  "apiLevel": "stable",
+  "essential": false
 }
 ```
+
+Set `essential` to `true` only when the plugin's schemas should be loaded first during
+progressive discovery. Beaver keeps at most 15 self-declared essential plugins, after
+the user's own priority list.
 
 ## Minimal extension
 

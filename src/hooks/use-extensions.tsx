@@ -9,6 +9,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
 import { useExtensionInstall } from "@/hooks/use-extension-install";
+import { useExtensionPriorities } from "@/hooks/use-extension-priorities";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
 import { parseExtensionRecords } from "@/lib/extension-records";
@@ -28,27 +29,37 @@ function useExtensionsState() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
+  const {
+    protectedPluginIds,
+    priorityBusy,
+    applyValue: applyPriorityValue,
+    reset: resetPriorities,
+    setPriorityPlugins,
+  } = useExtensionPriorities(setOperationError);
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
   const [pendingActivation, setPendingActivation] =
     useState<ExtensionRecord | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const [records, status] = await Promise.all([
+      const [records, status, preferences] = await Promise.all([
         invoke<unknown>("list_extensions"),
         invoke<ExtensionHostStatus>("get_extension_host_status"),
+        invoke<unknown>("get_extension_discovery_preferences"),
       ]);
       setExtensions(parseExtensionRecords(records));
       setHost(status);
+      applyPriorityValue(preferences);
       setLoadError(null);
     } catch (error) {
       setExtensions([]);
       setHost(EMPTY_HOST);
+      resetPriorities();
       setLoadError(extensionErrorKey(error, "extensions.errors.load"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyPriorityValue, resetPriorities]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- refresh synchronise le registre possédé par Rust
@@ -134,6 +145,8 @@ function useExtensionsState() {
     loadError,
     operationError,
     busyIds,
+    protectedPluginIds,
+    priorityBusy,
     pendingActivation,
     refresh,
     addLocal: (path: string) => install("add_local_extension", { path }),
@@ -144,6 +157,7 @@ function useExtensionsState() {
     confirmActivation,
     cancelActivation: () => setPendingActivation(null),
     setShowInChat,
+    setPriorityPlugins,
     update: (id: string) => mutate(
       id,
       "update_extension",

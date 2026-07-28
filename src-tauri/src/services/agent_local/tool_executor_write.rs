@@ -20,6 +20,17 @@ pub(super) async fn execute_write(
     cancel: CancellationToken,
     plan_mode_active: bool,
 ) -> ToolResult {
+    if mode == "chat" {
+        return tool_dispatcher::dispatch_for_mode(
+            name,
+            args,
+            working_dir,
+            session_id,
+            cancel,
+            true,
+        )
+        .await;
+    }
     if let Err(msg) =
         super::tool_plan_guard::ensure_allowed_for_session(name, args, session_id, plan_mode_active)
             .await

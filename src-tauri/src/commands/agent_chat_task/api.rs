@@ -24,17 +24,27 @@ pub(crate) async fn run(
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools =
         super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider);
-    let extension_tools =
+    let extension_tools = if mode.is_chat {
+        crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
+    } else {
         crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
             final_tools,
-            &params.messages,
-            !params.tools.is_empty(),
-        );
+            crate::services::agent_local::extension_tool_set::PrepareContext {
+                session_id: &params.session_id,
+                provider: canonical_provider,
+                model: &params.model,
+                context_window: ctx.configured,
+                preserve_dynamic_tools: !params.tools.is_empty(),
+            },
+        )
+        .await?
+    };
     let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
-    crate::services::agent_local::extension_tool_set::record_initial(
+    crate::services::agent_local::extension_tool_set::record_selection(
         &extension_tools,
         &params.session_id,
         &params.request_id,
+        "extension_tools_selected",
     )
     .await;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;

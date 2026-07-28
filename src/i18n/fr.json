@@ -484,7 +484,7 @@
   },
   "permissionMode": {
     "chatLabel": "Chatbot",
-    "chatDescription": "Discuter sans accès aux outils, aux fichiers ou à Internet",
+    "chatDescription": "Chat classique avec recherche web, sans accès aux fichiers ni aux outils agentiques",
     "autoLabel": "Accès complet",
     "autoDescription": "Accès non restreint à Internet et aux fichiers de votre ordinateur",
     "manualLabel": "Demander l’autorisation",
@@ -1322,6 +1322,17 @@
         "description": "Programmes indépendants reliés au protocole d’extension Beaver.",
         "empty": "Aucune application externe connectée."
       }
+    },
+    "discovery": {
+      "title": "Plugins prioritaires",
+      "count": "{{count}}/15",
+      "description": "Gardez les outils de ces plugins disponibles en priorité lorsque Beaver doit alléger une requête.",
+      "empty": "Aucun plugin prioritaire. Beaver chargera les autres plugins à la demande.",
+      "add": "Ajouter",
+      "dialogTitle": "Choisir les plugins prioritaires",
+      "dialogDescription": "{{count}} plugin(s) sélectionné(s) sur {{max}}.",
+      "noEnabledPlugins": "Aucun plugin activé n’est disponible.",
+      "validate": "Valider"
     },
     "official": {
       "documents": {

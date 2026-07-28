@@ -28,6 +28,10 @@ pub fn list() -> Result<Vec<ExtensionRecord>, String> {
         .map_err(|_| "Registre d'extensions indisponible.".to_string())
 }
 
+pub(super) fn refresh_index() -> Result<(), String> {
+    super::registry_index::rebuild(&list()?)
+}
+
 pub fn find(id: &str) -> Result<ExtensionRecord, String> {
     super::validation::identifier(id)?;
     list()?

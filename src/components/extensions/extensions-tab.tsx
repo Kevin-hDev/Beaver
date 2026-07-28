@@ -41,6 +41,8 @@ export function useExtensionsTabSlots({
           loadError={registry.loadError}
           operationError={registry.operationError}
           busyIds={registry.busyIds}
+          protectedPluginIds={registry.protectedPluginIds}
+          priorityBusy={registry.priorityBusy}
           onSelect={(extensionId) => onNavChange({ extensionId })}
           onAdd={() => setAdding(true)}
           onEnabled={(id, enabled) => void registry.setEnabled(id, enabled)}
@@ -53,6 +55,7 @@ export function useExtensionsTabSlots({
           }}
           onReload={() => void registry.reload()}
           onRecover={() => void registry.recover()}
+          onPrioritySave={registry.setPriorityPlugins}
         />
       </ExtensionsErrorBoundary>
       {adding && (

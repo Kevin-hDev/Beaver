@@ -28,13 +28,8 @@ pub(super) async fn prepare_tool_batch(
     working_dir: &Path,
     turn: usize,
     breaker: &mut CircuitBreaker,
-    tools: &mut crate::services::agent_local::extension_tool_set::ExtensionToolSet,
 ) -> Result<bool, String> {
     record_detected_tool_calls(session_id, request_id, tool_calls, working_dir).await;
-    crate::services::agent_local::extension_tool_set::expand_and_record(
-        tools, tool_calls, session_id, request_id,
-    )
-    .await;
     if turn == MAX_TURNS - 1 {
         return Err(agent_loop_errors::max_turns_message());
     }

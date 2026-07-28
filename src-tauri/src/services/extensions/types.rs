@@ -68,6 +68,8 @@ pub struct ExtensionManifest {
     pub access: String,
     #[serde(default = "default_api_level")]
     pub api_level: ExtensionApiLevel,
+    #[serde(default)]
+    pub essential: bool,
     pub author: Option<String>,
     pub homepage: Option<String>,
     pub description: Option<String>,

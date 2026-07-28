@@ -45,6 +45,7 @@ pub fn from_source_file(path: &Path) -> Result<(PathBuf, ExtensionManifest), Str
             ui: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Advanced,
+            essential: false,
             author: None,
             homepage: None,
             description: None,

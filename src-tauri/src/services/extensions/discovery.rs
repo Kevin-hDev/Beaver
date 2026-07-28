@@ -1,128 +1,111 @@
-use super::discovery_text::{auto_query, clip_chars, normalize, terms};
-use super::registry_index::IndexedTool;
+use std::collections::HashSet;
+
+use super::registry_index::IndexedPlugin;
 
 pub const SEARCH_TOOL_NAME: &str = "search_extension_tools";
 pub const MAX_SEARCH_QUERY_CHARS: usize = 512;
 pub const MAX_SEARCH_RESULTS: usize = 12;
-pub const MAX_SELECTED_TOOLS: usize = 64;
-const MAX_AUTO_QUERY_CHARS: usize = 4096;
-const MIN_RELEVANCE_SCORE: u32 = 5;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ToolMatch {
+pub struct PluginMatch {
     pub extension_id: String,
     pub extension_name: String,
-    pub tool_name: String,
-    pub description: String,
     pub score: u32,
 }
 
-pub fn search(query: &str, limit: usize) -> Vec<ToolMatch> {
-    ranked(query, limit, MAX_SEARCH_QUERY_CHARS)
-}
-
-fn ranked(query: &str, limit: usize, max_query_chars: usize) -> Vec<ToolMatch> {
-    let query = clip_chars(query, max_query_chars);
-    let mut matches = super::registry_index::indexed_tools()
+pub fn search(query: &str, limit: usize) -> Vec<PluginMatch> {
+    let query = clip_chars(query, MAX_SEARCH_QUERY_CHARS);
+    let mut matches = super::registry_index::indexed_plugins()
         .into_iter()
-        .filter_map(|tool| ranked_match(&query, tool))
+        .filter_map(|plugin| ranked_match(&query, plugin))
         .collect::<Vec<_>>();
     matches.sort_by(|left, right| {
         right
             .score
             .cmp(&left.score)
-            .then_with(|| left.tool_name.cmp(&right.tool_name))
+            .then_with(|| left.extension_name.cmp(&right.extension_name))
+            .then_with(|| left.extension_id.cmp(&right.extension_id))
     });
     matches.truncate(limit.min(MAX_SEARCH_RESULTS));
     matches
 }
 
-pub fn select_plugin_tools(query: &str, limit: usize) -> Vec<String> {
-    let query = auto_query(query);
-    if query.is_empty() {
-        return Vec::new();
-    }
-    select_plugins(
-        ranked(&query, MAX_SEARCH_RESULTS, MAX_AUTO_QUERY_CHARS),
-        limit,
-        MIN_RELEVANCE_SCORE,
-    )
-}
-
-pub fn discover_plugin_tools(query: &str, limit: usize) -> Vec<String> {
-    select_plugins(search(query, MAX_SEARCH_RESULTS), limit, 1)
-}
-
-fn select_plugins(matches: Vec<ToolMatch>, limit: usize, minimum_score: u32) -> Vec<String> {
-    let mut extension_ids = Vec::new();
-    for item in matches.iter().filter(|item| item.score >= minimum_score) {
-        if !extension_ids.contains(&item.extension_id) {
-            extension_ids.push(item.extension_id.clone());
-        }
-    }
-    select_complete_plugins(
-        &super::registry_index::indexed_tools(),
-        &extension_ids,
-        limit.min(MAX_SELECTED_TOOLS),
-    )
-}
-
-fn select_complete_plugins(
-    indexed: &[IndexedTool],
-    extension_ids: &[String],
-    limit: usize,
-) -> Vec<String> {
-    let mut selected = Vec::new();
-    for extension_id in extension_ids {
-        let plugin_tools = indexed
-            .iter()
-            .filter(|item| &item.extension_id == extension_id)
-            .map(|item| item.tool.name.clone())
-            .collect::<Vec<_>>();
-        if selected.len() + plugin_tools.len() <= limit {
-            selected.extend(plugin_tools);
-        }
-    }
-    selected
-}
-
-fn ranked_match(query: &str, indexed: IndexedTool) -> Option<ToolMatch> {
+fn ranked_match(query: &str, plugin: IndexedPlugin) -> Option<PluginMatch> {
     let terms = terms(query);
     if terms.is_empty() {
         return None;
     }
-    let identity = normalize(&format!(
-        "{} {} {}",
-        indexed.extension_id, indexed.extension_name, indexed.tool.name
-    ));
+    let identity = normalize(&format!("{} {}", plugin.id, plugin.name));
     let descriptions = normalize(&format!(
         "{} {}",
-        indexed.extension_description, indexed.tool.description
+        plugin.description.as_deref().unwrap_or_default(),
+        plugin
+            .tools
+            .iter()
+            .map(|tool| tool.description.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
     ));
-    let parameters = normalize(
-        &indexed
-            .tool
-            .parameters
-            .get("properties")
-            .and_then(serde_json::Value::as_object)
-            .map(|properties| properties.keys().cloned().collect::<Vec<_>>().join(" "))
-            .unwrap_or_default(),
+    let tools = normalize(
+        &plugin
+            .tools
+            .iter()
+            .map(|tool| tool.name.as_str())
+            .collect::<Vec<_>>()
+            .join(" "),
     );
     let score = terms
         .iter()
         .map(|term| {
             field_score(&identity, term, 8)
                 + field_score(&descriptions, term, 5)
-                + field_score(&parameters, term, 2)
+                + field_score(&tools, term, 3)
         })
         .sum();
-    (score > 0).then_some(ToolMatch {
-        extension_id: indexed.extension_id,
-        extension_name: indexed.extension_name,
-        tool_name: indexed.tool.name,
-        description: indexed.tool.description,
+    (score > 0).then_some(PluginMatch {
+        extension_id: plugin.id,
+        extension_name: plugin.name,
         score,
     })
+}
+
+fn terms(value: &str) -> Vec<String> {
+    normalize(value)
+        .split_whitespace()
+        .filter(|term| term.chars().count() >= 2)
+        .map(str::to_string)
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect()
+}
+
+fn normalize(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(char::to_lowercase)
+        .map(fold_latin)
+        .map(|character| {
+            if character.is_alphanumeric() {
+                character
+            } else {
+                ' '
+            }
+        })
+        .collect()
+}
+
+fn fold_latin(character: char) -> char {
+    match character {
+        'à' | 'á' | 'â' | 'ä' | 'ã' | 'å' => 'a',
+        'ç' => 'c',
+        'è' | 'é' | 'ê' | 'ë' => 'e',
+        'ì' | 'í' | 'î' | 'ï' => 'i',
+        'ñ' => 'n',
+        'ò' | 'ó' | 'ô' | 'ö' | 'õ' => 'o',
+        'ù' | 'ú' | 'û' | 'ü' => 'u',
+        'ý' | 'ÿ' => 'y',
+        other => other,
+    }
 }
 
 fn field_score(field: &str, term: &str, weight: u32) -> u32 {
@@ -133,6 +116,10 @@ fn field_score(field: &str, term: &str, weight: u32) -> u32 {
     } else {
         0
     }
+}
+
+fn clip_chars(value: &str, max: usize) -> String {
+    value.chars().take(max).collect()
 }
 
 #[cfg(test)]

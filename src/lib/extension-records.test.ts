@@ -18,6 +18,7 @@ function backendRecord() {
       ui: null,
       access: "full",
       apiLevel: "stable",
+      essential: false,
       author: "Beaver",
       homepage: null,
       description: "Create documents.",

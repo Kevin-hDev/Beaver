@@ -14,6 +14,7 @@ export interface ExtensionManifest {
   ui?: string;
   access: string;
   apiLevel: ExtensionApiLevel;
+  essential: boolean;
   author?: string;
   homepage?: string;
   description?: string;
@@ -68,4 +69,8 @@ export interface ExtensionHostStatus {
   activeExtensions: number;
   lastError?: string;
   diagnostics: ExtensionDiagnostic[];
+}
+
+export interface ExtensionDiscoveryPreferences {
+  protectedPluginIds: string[];
 }

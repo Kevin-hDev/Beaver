@@ -1,100 +1,67 @@
 use super::*;
-use crate::services::extensions::registry_index::IndexedTool;
+use crate::services::extensions::registry_index::IndexedPlugin;
 use crate::services::extensions::types::ExtensionTool;
 use serde_json::json;
 
-fn indexed(name: &str, plugin: &str, description: &str) -> IndexedTool {
-    IndexedTool {
-        extension_id: format!("example.{plugin}"),
-        extension_name: plugin.to_string(),
-        extension_description: description.to_string(),
-        tool: ExtensionTool {
-            name: name.to_string(),
+fn plugin(name: &str, description: &str) -> IndexedPlugin {
+    IndexedPlugin {
+        id: format!("example.{}", name.to_lowercase()),
+        name: name.to_string(),
+        version: "1.0.0".to_string(),
+        description: Some(description.to_string()),
+        essential: false,
+        tools: vec![ExtensionTool {
+            name: format!("example.{}.create", name.to_lowercase()),
             description: description.to_string(),
-            parameters: json!({"type": "object", "properties": {"path": {"type": "string"}}}),
+            parameters: json!({"type": "object"}),
             replaces_core: false,
-        },
+        }],
     }
 }
 
 #[test]
-fn ranks_identity_above_generic_description_words() {
+fn ranks_plugin_identity_above_generic_copy() {
     let presentation = ranked_match(
-        "Create a PowerPoint",
-        indexed(
-            "beaver.office.presentations.create",
-            "Presentations",
-            "Create editable Microsoft PowerPoint PPTX presentations",
-        ),
+        "PowerPoint",
+        plugin("Presentations", "Create Microsoft PowerPoint PPTX files"),
     )
     .expect("presentation match");
-    let generic = ranked_match(
-        "Create a PowerPoint",
-        indexed("example.files.create", "Files", "Create a generic file"),
-    )
-    .expect("generic create match");
+    let generic = ranked_match("PowerPoint", plugin("Files", "Create a generic file"));
 
-    assert!(presentation.score > generic.score);
-    assert!(presentation.score >= MIN_RELEVANCE_SCORE);
+    assert!(generic.is_none() || presentation.score > generic.unwrap().score);
 }
 
 #[test]
-fn product_name_alone_reaches_automatic_selection_threshold() {
+fn accents_are_normalized_for_explicit_search() {
     let result = ranked_match(
-        "PowerPoint",
-        indexed(
-            "beaver.office.presentations.create",
-            "Presentations",
-            "Create editable Microsoft PowerPoint PPTX presentations",
-        ),
-    )
-    .expect("product match");
+        "présentation",
+        plugin("Presentations", "Create a presentation"),
+    );
 
-    assert!(result.score >= MIN_RELEVANCE_SCORE);
+    assert!(result.is_some());
 }
 
 #[test]
-fn accents_match_normalized_plugin_identity() {
-    let result = ranked_match(
-        "prépare une présentation",
-        indexed(
-            "beaver.office.presentations.create",
-            "Presentations",
-            "Create a presentation",
-        ),
-    )
-    .expect("accented match");
-
-    assert!(result.score >= MIN_RELEVANCE_SCORE);
-}
-
-#[test]
-fn auto_query_keeps_capabilities_and_drops_generic_actions() {
-    assert_eq!(auto_query("Créer un fichier PowerPoint"), "powerpoint");
-    assert!(auto_query("create a file").is_empty());
-}
-
-#[test]
-fn search_queries_are_bounded_by_characters() {
+fn query_clipping_is_utf8_safe() {
     let query = "é".repeat(MAX_SEARCH_QUERY_CHARS + 20);
 
     assert_eq!(
         clip_chars(&query, MAX_SEARCH_QUERY_CHARS).chars().count(),
-        512
+        MAX_SEARCH_QUERY_CHARS
     );
 }
 
 #[test]
-fn never_selects_only_part_of_a_plugin() {
-    let indexed = vec![
-        indexed("example.sheets.create", "Sheets", "Create sheets"),
-        indexed("example.sheets.inspect", "Sheets", "Inspect sheets"),
-    ];
-    let ids = vec!["example.Sheets".to_string()];
+fn any_tool_description_can_match_its_complete_plugin() {
+    let mut candidate = plugin("Sheets", "Create spreadsheets");
+    candidate.tools.push(ExtensionTool {
+        name: "example.sheets.inspect".to_string(),
+        description: "Audit workbook formulas".to_string(),
+        parameters: json!({"type": "object"}),
+        replaces_core: false,
+    });
 
-    assert!(select_complete_plugins(&indexed, &ids, 1).is_empty());
-    assert_eq!(
-        select_complete_plugins(&indexed, &ids, 2),
-        vec!["example.sheets.create", "example.sheets.inspect"]
-    );
+    let result = ranked_match("formulas", candidate).expect("plugin match");
+
+    assert_eq!(result.extension_id, "example.sheets");
 }

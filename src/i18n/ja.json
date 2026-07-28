@@ -479,7 +479,7 @@
   },
   "permissionMode": {
     "chatLabel": "チャットボット",
-    "chatDescription": "ツール、ファイル、インターネットにアクセスせずに会話します",
+    "chatDescription": "Web 検索を使える通常のチャットです。ファイルやエージェント用ツールにはアクセスしません",
     "autoLabel": "フルアクセス",
     "autoDescription": "インターネットとコンピューター上のファイルへ制限なくアクセスします",
     "manualLabel": "許可を求める",
@@ -1941,6 +1941,17 @@
         "description": "Beaver 拡張プロトコルで接続された独立プログラムです。",
         "empty": "接続された外部アプリケーションはありません。"
       }
+    },
+    "discovery": {
+      "title": "優先プラグイン",
+      "count": "{{count}}/15",
+      "description": "Beaver がリクエストを縮小する必要がある場合に、これらのプラグインのツールを優先します。",
+      "empty": "優先プラグインはありません。Beaver は必要に応じて他のプラグインを読み込みます。",
+      "add": "追加",
+      "dialogTitle": "優先プラグインを選択",
+      "dialogDescription": "{{max}} 個中 {{count}} 個のプラグインを選択中。",
+      "noEnabledPlugins": "有効なプラグインはありません。",
+      "validate": "保存"
     },
     "official": {
       "documents": {

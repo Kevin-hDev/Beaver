@@ -13,6 +13,7 @@ pub async fn collect_eager_results(
     working_dir: PathBuf,
     session_id: String,
     request_id: String,
+    chat_mode: bool,
 ) -> HashMap<usize, ToolResult> {
     let mut handles: Vec<tokio::task::JoinHandle<(usize, ToolResult)>> = Vec::new();
     let mut count = 0;
@@ -39,12 +40,13 @@ pub async fn collect_eager_results(
                 false,
             )
             .await;
-            let result = tool_dispatcher::dispatch(
+            let result = tool_dispatcher::dispatch_for_mode(
                 &name,
                 &args,
                 &wd,
                 &sid,
                 tokio_util::sync::CancellationToken::new(),
+                chat_mode,
             )
             .await;
             super::stream_diagnostics::record_tool(

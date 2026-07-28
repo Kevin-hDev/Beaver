@@ -87,6 +87,7 @@ function manifest(value: unknown): ExtensionManifest {
   if (!["node", "builtin"].includes(runtime) || !["full", "core"].includes(access)) {
     invalid();
   }
+  if (typeof input.essential !== "boolean") invalid();
   return {
     id: identifier(input.id),
     name: text(input.name, MAX_NAME_CHARS),
@@ -97,6 +98,7 @@ function manifest(value: unknown): ExtensionManifest {
     ui: optionalText(input.ui, MAX_PATH_CHARS),
     access,
     apiLevel: oneOf(input.apiLevel, API_LEVELS),
+    essential: input.essential,
     author: optionalText(input.author, MAX_TEXT_CHARS),
     homepage: optionalText(input.homepage, MAX_TEXT_CHARS),
     description: optionalText(input.description, MAX_TEXT_CHARS),

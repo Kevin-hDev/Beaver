@@ -45,15 +45,15 @@ pub async fn run_with_parallel_reads(
                     &cancel,
                     write_guard,
                     &mut eager_results,
-                    session_id,
-                    request_id,
+                    session_id, request_id, mode == "chat",
                 )
                 .await;
             }
             if is_last {
                 break;
             }
-            if can_use_delegate_batch
+            if mode != "chat"
+                && can_use_delegate_batch
                 && tool_calls[i].0 == super::tool_executor_delegate_batch::DELEGATE_TOOL
             {
                 let mut delegate_items = Vec::new();

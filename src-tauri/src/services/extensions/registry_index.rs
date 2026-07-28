@@ -1,43 +1,59 @@
+use super::discovery_catalog::CatalogSnapshot;
 use super::types::{ExtensionKind, ExtensionRecord, ExtensionTool};
 use std::collections::HashSet;
 use std::sync::{LazyLock, RwLock};
 
 #[derive(Clone)]
+pub(crate) struct IndexedPlugin {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+    pub description: Option<String>,
+    pub essential: bool,
+    pub tools: Vec<ExtensionTool>,
+}
+
+#[derive(Clone)]
 pub(crate) struct IndexedTool {
     pub extension_id: String,
-    pub extension_name: String,
-    pub extension_description: String,
     pub tool: ExtensionTool,
 }
 
 #[derive(Default)]
 struct DynamicIndex {
+    plugins: Vec<IndexedPlugin>,
     tools: Vec<IndexedTool>,
     names: HashSet<String>,
     replacements: HashSet<String>,
+    catalog: CatalogSnapshot,
 }
 
 static INDEX: LazyLock<RwLock<DynamicIndex>> =
     LazyLock::new(|| RwLock::new(DynamicIndex::default()));
 
 pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
-    let tools: Vec<IndexedTool> = records
+    let preferences = super::discovery_preferences::sanitize(records)?;
+    let plugins = records
         .iter()
         .filter(|record| record.kind != ExtensionKind::External && record.enabled)
-        .flat_map(|record| {
-            record
-                .contributions
-                .tools
-                .iter()
-                .cloned()
-                .map(|tool| IndexedTool {
-                    extension_id: record.manifest.id.clone(),
-                    extension_name: record.manifest.name.clone(),
-                    extension_description: record.manifest.description.clone().unwrap_or_default(),
-                    tool,
-                })
+        .map(|record| IndexedPlugin {
+            id: record.manifest.id.clone(),
+            name: record.manifest.name.clone(),
+            version: record.manifest.version.clone(),
+            description: record.manifest.description.clone(),
+            essential: record.manifest.essential,
+            tools: record.contributions.tools.clone(),
         })
-        .collect();
+        .collect::<Vec<_>>();
+    let tools = plugins
+        .iter()
+        .flat_map(|plugin| {
+            plugin.tools.iter().cloned().map(|tool| IndexedTool {
+                extension_id: plugin.id.clone(),
+                tool,
+            })
+        })
+        .collect::<Vec<_>>();
     let names = tools
         .iter()
         .map(|indexed| indexed.tool.name.clone())
@@ -47,13 +63,29 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .filter(|indexed| indexed.tool.replaces_core)
         .map(|indexed| indexed.tool.name.clone())
         .collect();
+    let next_catalog = super::discovery_catalog::build(
+        &plugins,
+        &preferences.protected_plugin_ids,
+        &super::discovery_usage::scores()?,
+    );
+    let previous_catalog = INDEX
+        .read()
+        .map(|index| index.catalog.clone())
+        .unwrap_or_default();
+    let catalog = if previous_catalog.version == next_catalog.version {
+        previous_catalog
+    } else {
+        next_catalog
+    };
     let mut index = INDEX
         .write()
         .map_err(|_| "Index d'extensions indisponible.".to_string())?;
     *index = DynamicIndex {
+        plugins,
         tools,
         names,
         replacements,
+        catalog,
     };
     Ok(())
 }
@@ -71,11 +103,28 @@ pub fn dynamic_tools() -> Vec<ExtensionTool> {
         .unwrap_or_default()
 }
 
-pub(crate) fn indexed_tools() -> Vec<IndexedTool> {
+pub(crate) fn indexed_plugins() -> Vec<IndexedPlugin> {
     INDEX
         .read()
-        .map(|index| index.tools.clone())
+        .map(|index| index.plugins.clone())
         .unwrap_or_default()
+}
+
+pub(crate) fn catalog_snapshot() -> CatalogSnapshot {
+    INDEX
+        .read()
+        .map(|index| index.catalog.clone())
+        .unwrap_or_default()
+}
+
+pub(crate) fn plugin_id_for_tool(tool_name: &str) -> Option<String> {
+    INDEX.read().ok().and_then(|index| {
+        index
+            .tools
+            .iter()
+            .find(|indexed| indexed.tool.name == tool_name)
+            .map(|indexed| indexed.extension_id.clone())
+    })
 }
 
 pub(crate) fn dynamic_tool_names() -> Vec<String> {

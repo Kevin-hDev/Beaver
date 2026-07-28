@@ -27,6 +27,7 @@ pub(super) async fn flush_read_batch<'a>(
     eager_results: &mut Option<&mut HashMap<usize, ToolResult>>,
     session_id: &str,
     request_id: &str,
+    chat_mode: bool,
 ) {
     for chunk in batch.chunks(MAX_PARALLEL) {
         if cancel.is_cancelled() {
@@ -60,7 +61,15 @@ pub(super) async fn flush_read_batch<'a>(
         if !pending_indices.is_empty() {
             let futs: Vec<_> = pending_indices
                 .iter()
-                .map(|&pos| dispatch_pending(&chunk[pos], working_dir, session_id, request_id))
+                .map(|&pos| {
+                    dispatch_pending(
+                        &chunk[pos],
+                        working_dir,
+                        session_id,
+                        request_id,
+                        chat_mode,
+                    )
+                })
                 .collect();
             let dispatched = tokio::select! {
                 results = join_all(futs) => Some(results),
@@ -106,6 +115,7 @@ async fn dispatch_pending(
     working_dir: &std::path::Path,
     session_id: &str,
     request_id: &str,
+    chat_mode: bool,
 ) -> ToolResult {
     super::tool_executor_parallel_dispatch::dispatch_read(
         entry.name,
@@ -113,6 +123,7 @@ async fn dispatch_pending(
         working_dir,
         session_id,
         request_id,
+        chat_mode,
     )
     .await
 }

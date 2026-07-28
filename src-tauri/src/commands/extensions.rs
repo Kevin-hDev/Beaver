@@ -1,4 +1,6 @@
-use crate::services::extensions::{self, ExtensionHostStatus, ExtensionKind, ExtensionView};
+use crate::services::extensions::{
+    self, DiscoveryPreferences, ExtensionHostStatus, ExtensionKind, ExtensionView,
+};
 use tauri::Emitter;
 
 const CHANGED_EVENT: &str = "fs:extensions-changed";
@@ -110,6 +112,18 @@ pub async fn reload_extension_host(app: tauri::AppHandle) -> Result<(), String> 
 #[tauri::command]
 pub async fn get_extension_host_status() -> Result<ExtensionHostStatus, String> {
     Ok(extensions::status())
+}
+
+#[tauri::command]
+pub async fn get_extension_discovery_preferences() -> Result<DiscoveryPreferences, String> {
+    extensions::discovery_preferences()
+}
+
+#[tauri::command]
+pub async fn set_extension_discovery_preferences(
+    protected_plugin_ids: Vec<String>,
+) -> Result<DiscoveryPreferences, String> {
+    extensions::set_discovery_preferences(protected_plugin_ids)
 }
 
 #[tauri::command]

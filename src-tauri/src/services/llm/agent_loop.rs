@@ -5,6 +5,7 @@ use crate::services::agent_local::agent_loop_finish;
 use crate::services::agent_local::agent_loop_limits::MAX_TURNS;
 use crate::services::agent_local::agent_loop_plan;
 use crate::services::agent_local::circuit_breaker;
+use crate::services::agent_local::extension_tool_set;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_orchestration;
 use crate::services::agent_local::tool_executor;
@@ -149,7 +150,6 @@ pub async fn run_agent_loop(
             &working_dir,
             turn,
             &mut breaker,
-            &mut tools,
         )
         .await?;
         let tool_compression = (!control_only).then(|| {
@@ -173,6 +173,7 @@ pub async fn run_agent_loop(
             tool_compression.as_ref(),
         )
         .await;
+        extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())
             .await?;

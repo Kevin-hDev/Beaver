@@ -479,7 +479,7 @@
   },
   "permissionMode": {
     "chatLabel": "聊天机器人",
-    "chatDescription": "聊天，不访问工具、文件或互联网",
+    "chatDescription": "支持网页搜索的经典聊天，不访问文件或智能体工具",
     "autoLabel": "完全访问",
     "autoDescription": "不受限制地访问互联网和你电脑上的文件",
     "manualLabel": "请求授权",
@@ -1941,6 +1941,17 @@
         "description": "通过 Beaver 扩展协议连接的独立程序。",
         "empty": "没有已连接的外部应用。"
       }
+    },
+    "discovery": {
+      "title": "优先插件",
+      "count": "{{count}}/15",
+      "description": "当 Beaver 需要缩减请求时，优先保留这些插件的工具。",
+      "empty": "尚未设置优先插件。Beaver 会按需加载其他插件。",
+      "add": "添加",
+      "dialogTitle": "选择优先插件",
+      "dialogDescription": "已选择 {{count}}/{{max}} 个插件。",
+      "noEnabledPlugins": "没有可用的已启用插件。",
+      "validate": "保存"
     },
     "official": {
       "documents": {

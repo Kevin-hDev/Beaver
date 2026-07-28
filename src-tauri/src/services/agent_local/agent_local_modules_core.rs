@@ -31,6 +31,10 @@ pub mod diagnostic_args;
 mod diagnostic_args_tests;
 pub mod diagnostic_redaction;
 pub mod extension_discovery_prompt;
+pub mod extension_session_state;
+pub mod extension_tool_mask;
+pub mod extension_tool_selection;
+mod extension_tool_set_apply;
 pub mod eager_dispatch;
 pub mod interactive_choice_gate;
 pub mod memory_format;
@@ -87,6 +91,7 @@ mod permission_allow_cache;
 #[cfg(test)]
 pub mod permission_gate_tests;
 pub mod permission_policy;
+pub mod provider_tool_limits;
 pub mod plan_mode_controller;
 pub mod plan_mode_debug;
 pub mod project_store;

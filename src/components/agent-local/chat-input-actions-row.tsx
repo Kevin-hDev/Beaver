@@ -65,6 +65,7 @@ export function ChatInputActionsRow({
     <div className="chat-input-row3">
       <ChatPlusMenu
         onFileImport={onFileImport}
+        agentic={permissionMode !== "chat"}
         planModeEnabled={planModeEnabled}
         onPlanModeChange={onPlanModeChange ?? (() => {})}
       />

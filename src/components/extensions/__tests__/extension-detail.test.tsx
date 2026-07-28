@@ -16,6 +16,7 @@ const extension: ExtensionRecord = {
     runtime: "node",
     access: "full",
     apiLevel: "advanced",
+    essential: false,
   },
   kind: "local",
   source: "/extension",

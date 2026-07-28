@@ -51,6 +51,7 @@ describe("ChatPlusMenu plan mode", () => {
     const { getByText, getAllByRole, getByRole } = render(
       <ChatPlusMenu
         onFileImport={vi.fn()}
+        agentic
         planModeEnabled={false}
         onPlanModeChange={onPlanModeChange}
       />,
@@ -68,6 +69,7 @@ describe("ChatPlusMenu plan mode", () => {
     const { getAllByRole, getByRole } = render(
       <ChatPlusMenu
         onFileImport={vi.fn()}
+        agentic
         planModeEnabled
         onPlanModeChange={onPlanModeChange}
       />,
@@ -89,6 +91,7 @@ describe("ChatPlusMenu plan mode", () => {
     const view = render(
       <ChatPlusMenu
         onFileImport={vi.fn()}
+        agentic
         planModeEnabled={false}
         onPlanModeChange={vi.fn()}
       />,
@@ -99,5 +102,23 @@ describe("ChatPlusMenu plan mode", () => {
     fireEvent.click(view.getByRole("switch", { name: "GitHub" }));
 
     expect(connectorState.toggleChatEnabled).toHaveBeenCalledWith("github");
+  });
+
+  it("garde uniquement l'ajout de fichier dans le mode Chat", () => {
+    const view = render(
+      <ChatPlusMenu
+        onFileImport={vi.fn()}
+        agentic={false}
+        planModeEnabled={false}
+        onPlanModeChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(view.getAllByRole("button")[0]);
+
+    expect(view.getByText("Add file")).toBeTruthy();
+    expect(view.queryByText("Plan mode")).toBeNull();
+    expect(view.queryByText("Connectors")).toBeNull();
+    expect(view.queryByText("Plugins")).toBeNull();
   });
 });
