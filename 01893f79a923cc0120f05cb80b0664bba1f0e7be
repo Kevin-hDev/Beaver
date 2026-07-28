@@ -1,0 +1,19 @@
+Review note — provider tools, retries and extension runtime
+
+Root causes confirmed: provider payloads received internal dotted extension names; schemas were adapted only for one family; context estimates omitted tool definitions; retry sleeps ignored the stream cancellation token; development host preparation omitted the bundled Node/npm runtime.
+
+Tool compatibility: internal Beaver tool names remain unchanged. Every provider receives a deterministic reversible name limited to the common 64-character grammar. The generated namespace is reserved and re-aliased on deliberate collision. Provider schema transforms operate on copies only; Beaver validates returned arguments against the original schema. OpenAI, Codex, DeepSeek and Kimi use explicit non-strict function mode; Google/Kimi remove only unsupported validation keywords and structural defects are repaired. The earlier brief claim that additionalProperties=false had to be universally removed was not applied because current provider behavior and the cross-plugin pattern did not support it.
+
+Groq policy: complete plugins are disabled automatically for native Groq and Groq models routed through OpenRouter. Normal Groq models retain Beaver core Tools; Compound receives no Tools because its own tool orchestration is incompatible. The user receives a translated notice. No per-request manual tool selection was introduced.
+
+Payload sizing and 413: both proactive and realtime budgets now include every tool definition. A 413 has its own stable code, triggers one real 25-percent request reduction and one retry, and never silently retries without plugins. A remaining failure is translated in all seven languages.
+
+Errors and diagnostics: response-message substring heuristics and silent tools/images fallbacks were removed. HTTP, stream and transport failures use stable codes. A 64 KiB atomic JSONL diagnostic journal keeps only bounded provider/model identifiers, HTTP status, whitelisted type/code/param, request byte count and tool count; it never persists response messages, prompts, bodies, paths or credentials.
+
+Retry behavior: temporary provider failures use three retries with 2/4/8-second waits, the existing visible retry indicator, and the existing request CancellationToken. Double Escape or the Stop button therefore cancels both the active stream and any retry wait immediately. Raw retry errors are no longer logged.
+
+Development runtime: dev and production use the same pinned official Node 24.18.0 and bundled npm. The verified artifact is cached by version/platform/architecture/archive SHA, guarded by a lock, staged atomically and reused instead of downloaded again. Tests execute both bundled node --version and npm-cli.js --version.
+
+Review maintenance points: full 40/64-character Git hashes still request full history; ambiguous short hexadecimal refs start shallow and fall back to full history only when necessary, so hexadecimal branch/tag names stay cheap. Extension backend error codes and the tested ALL list now come from one macro declaration.
+
+Validation completed after corrections: cargo clippy --all-targets -- -D warnings; cargo test --lib (2399 passed); npm run lint; npx tsc --noEmit; npm test (353 files / 1614 frontend tests, 2 CEF tests, 46 extension-host tests). Graphify was updated. Live calls to third-party providers were intentionally not made because they require user credentials; the new safe journal exists to capture any provider-specific rejection during review.
