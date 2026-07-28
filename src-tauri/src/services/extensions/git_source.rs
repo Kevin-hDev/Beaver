@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 const MAX_TRANSFER_BYTES: usize = 512 * 1024 * 1024;
 const MAX_GIT_OBJECTS: usize = 100_000;
 const MIN_COMMIT_PREFIX_CHARS: usize = 7;
-const MAX_COMMIT_CHARS: usize = 64;
+const SHA1_CHARS: usize = 40;
+const SHA256_CHARS: usize = 64;
 const GIT_TIMEOUT: Duration = Duration::from_secs(300);
 
 pub struct GitMaterialization {
@@ -55,7 +56,7 @@ pub(super) fn clone_repository(
     builder.with_checkout(super::git_checkout::bounded());
     let repository = builder.clone(&source.clone_url, checkout)?;
     if let Some(reference) = &source.reference {
-        checkout_reference(&repository, source, reference, deadline)?;
+        checkout_reference(&repository, reference, deadline)?;
     }
     Ok(repository)
 }
@@ -93,7 +94,6 @@ fn fetch_options(deadline: Instant, shallow: bool) -> Result<FetchOptions<'stati
 
 fn checkout_reference(
     repository: &Repository,
-    source: &GitSource,
     reference: &str,
     deadline: Instant,
 ) -> Result<(), git2::Error> {
@@ -105,10 +105,30 @@ fn checkout_reference(
         return repository.set_head_detached(commit.id());
     }
     let mut remote = repository.find_remote("origin")?;
-    let mut fetch = fetch_options(deadline, should_use_shallow_clone(source))?;
-    remote.fetch(&[reference], Some(&mut fetch), None)?;
+    let mut fetch = fetch_options(deadline, true)?;
+    let targeted = remote.fetch(&[reference], Some(&mut fetch), None);
+    if let Some(commit) = resolve_commit(repository, reference) {
+        return checkout_commit(repository, &commit);
+    }
+    if looks_like_short_commit(reference) {
+        let mut complete = fetch_options(deadline, false)?;
+        remote.fetch(
+            &[
+                "+refs/heads/*:refs/remotes/origin/*",
+                "+refs/tags/*:refs/tags/*",
+            ],
+            Some(&mut complete),
+            None,
+        )?;
+    } else {
+        targeted?;
+    }
     let commit = resolve_commit(repository, reference)
         .ok_or_else(|| git2::Error::from_str("git reference unavailable"))?;
+    checkout_commit(repository, &commit)
+}
+
+fn checkout_commit(repository: &Repository, commit: &git2::Commit<'_>) -> Result<(), git2::Error> {
     repository.checkout_tree(
         commit.as_object(),
         Some(&mut super::git_checkout::bounded()),
@@ -137,11 +157,21 @@ fn resolve_commit<'a>(repository: &'a Repository, reference: &str) -> Option<git
 
 pub(super) fn should_use_shallow_clone(source: &GitSource) -> bool {
     !source.clone_url.starts_with("file://")
-        && !source.reference.as_deref().is_some_and(looks_like_commit)
+        && !source
+            .reference
+            .as_deref()
+            .is_some_and(looks_like_full_commit)
 }
 
-fn looks_like_commit(reference: &str) -> bool {
-    (MIN_COMMIT_PREFIX_CHARS..=MAX_COMMIT_CHARS).contains(&reference.len())
+pub(super) fn looks_like_full_commit(reference: &str) -> bool {
+    matches!(reference.len(), SHA1_CHARS | SHA256_CHARS)
+        && reference
+            .chars()
+            .all(|character| character.is_ascii_hexdigit())
+}
+
+pub(super) fn looks_like_short_commit(reference: &str) -> bool {
+    (MIN_COMMIT_PREFIX_CHARS..SHA1_CHARS).contains(&reference.len())
         && reference
             .chars()
             .all(|character| character.is_ascii_hexdigit())

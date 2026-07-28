@@ -11,7 +11,7 @@ fn msg(role: &str, content: &str) -> ChatMessage {
 #[test]
 fn unknown_context_does_not_prune() {
     let mut messages = vec![msg("user", &"x".repeat(100_000))];
-    let report = prepare_for_request(&mut messages, 0).expect("unknown context");
+    let report = prepare_for_request(&mut messages, 0, &[]).expect("unknown context");
     assert_eq!(report.max_input_tokens, None);
     assert_eq!(messages.len(), 1);
 }
@@ -23,7 +23,7 @@ fn preserves_system_and_recent_tail() {
         msg("user", &"a".repeat(80_000)),
         msg("assistant", "recent"),
     ];
-    let report = prepare_for_request(&mut messages, 20_000).expect("budgeted context");
+    let report = prepare_for_request(&mut messages, 20_000, &[]).expect("budgeted context");
     assert!(report.pruned_messages > 0);
     assert_eq!(messages[0].role, "system");
     assert!(messages.last().unwrap().content.contains("recent"));
@@ -41,7 +41,7 @@ fn oversized_subagent_report_fails_closed_instead_of_truncating() {
         msg("assistant", report_content.as_str()),
     ];
 
-    assert!(prepare_for_request(&mut messages, 4_000).is_err());
+    assert!(prepare_for_request(&mut messages, 4_000, &[]).is_err());
     assert_eq!(messages[1].content, report_content);
 }
 
@@ -58,8 +58,45 @@ fn fitting_subagent_report_survives_saturated_context_intact() {
         msg("assistant", report_content.as_str()),
     ];
 
-    prepare_for_request(&mut messages, 12_000).expect("complete report fits");
+    prepare_for_request(&mut messages, 12_000, &[]).expect("complete report fits");
     assert!(messages
         .iter()
         .any(|message| message.content == report_content));
+}
+
+#[test]
+fn tool_definitions_reduce_the_message_budget() {
+    let mut messages = vec![
+        msg("system", "rules"),
+        msg("user", &"old".repeat(8_000)),
+        msg("assistant", "recent"),
+    ];
+    let tools = vec![serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "large_tool",
+            "description": "d".repeat(20_000),
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+
+    let report = prepare_for_request(&mut messages, 12_000, &tools).unwrap();
+
+    assert!(report.pruned_messages > 0);
+    assert!(report.estimated_tokens <= report.max_input_tokens.unwrap());
+}
+
+#[test]
+fn payload_reduction_changes_an_oversized_request_once() {
+    let mut messages = vec![
+        msg("system", "rules"),
+        msg("user", &"a".repeat(16_000)),
+        msg("assistant", &"b".repeat(16_000)),
+    ];
+    let before = token_estimate::estimate_tokens(&messages);
+
+    let changed = reduce_after_payload_too_large(&mut messages, 100_000, &[]).unwrap();
+
+    assert!(changed);
+    assert!(token_estimate::estimate_tokens(&messages) < before);
 }

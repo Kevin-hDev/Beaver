@@ -1,7 +1,7 @@
 use super::common::{self, StreamMode};
 use super::params::StreamTaskParams;
+use crate::services::agent_local::tool_catalog;
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::{agent_settings::AgentSettings, tool_catalog, tool_dispatcher};
 use crate::services::llm;
 use crate::services::llm::{model_registry, tool_capable};
 
@@ -22,7 +22,8 @@ pub(crate) async fn run(
             .await;
     let caps = resolve_capabilities(&params, canonical_provider).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
-    let final_tools = resolve_tools(&params, &mode, caps.tools, &settings);
+    let final_tools =
+        super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider);
     let enabled_tool_names = tool_catalog::tool_names(&final_tools);
     let openai_tools = llm::agent_loop_tools::convert_tools_to_openai(&final_tools);
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
@@ -75,7 +76,7 @@ pub(crate) async fn run(
             },
         );
     }
-    if todo_tools_enabled(&enabled_tool_names) {
+    if super::api_tools::todo_tools_enabled(&enabled_tool_names) {
         crate::services::agent_local::tool_todo::append_session_reminder(
             &mut messages,
             &params.session_id,
@@ -163,36 +164,4 @@ async fn resolve_capabilities(
                 || tool_capable::supports_vision(canonical_provider, &params.model)
         }),
     }
-}
-
-fn resolve_tools(
-    params: &StreamTaskParams,
-    mode: &StreamMode,
-    model_supports_tools: bool,
-    settings: &AgentSettings,
-) -> Vec<serde_json::Value> {
-    let defs = if mode.is_chat {
-        tool_dispatcher::get_chat_tool_definitions()
-    } else if !model_supports_tools {
-        vec![]
-    } else if params.tools.is_empty() {
-        tool_dispatcher::get_tool_definitions()
-    } else {
-        params.tools.clone()
-    };
-    tool_catalog::filter_tool_definitions(defs, &settings.enabled_optional_tools)
-}
-
-fn todo_tools_enabled(enabled_tool_names: &[String]) -> bool {
-    tool_catalog::has_any_tool(
-        enabled_tool_names,
-        &[
-            "todo_write",
-            "todo_history",
-            "todo_pause",
-            "todo_resume",
-            "todo_delete",
-            "agent_diagnostics",
-        ],
-    )
 }

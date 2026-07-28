@@ -25,6 +25,7 @@ export const KNOWN_ERROR_KEYS: Record<string, string> = {
   provider_connection_failed: "errors.providerConnectionFailed",
   provider_temporarily_unavailable: "errors.providerTemporarilyUnavailable",
   provider_request_rejected: "errors.providerRequestRejected",
+  provider_payload_too_large: "errors.providerPayloadTooLarge",
   provider_configuration_invalid: "errors.providerConfigurationInvalid",
   oauth_reauthentication_required: "errors.oauthReauthenticationRequired",
   ollama_server_error: "errors.ollamaServerError",

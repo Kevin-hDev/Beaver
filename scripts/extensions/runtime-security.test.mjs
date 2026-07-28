@@ -17,6 +17,11 @@ import {
   windowsExtractionArguments,
 } from "./archive-extract.mjs";
 import { copyDirectoryBounded } from "./runtime-copy.mjs";
+import {
+  ensureCachedRuntime,
+  materializeRuntime,
+  runtimeIsValid,
+} from "./runtime-cache.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -64,6 +69,40 @@ test("bundled npm copying is explicitly bounded", async () => {
   }
 });
 
+test("verified runtimes are cached and materialized without rebuilding", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "beaver-runtime-cache-"));
+  const cache = join(temporary, "cache");
+  const destination = join(temporary, "host", "runtime");
+  const descriptor = {
+    version: "1.0.0",
+    platform: process.platform,
+    architecture: process.arch,
+    checksum: "a".repeat(64),
+  };
+  let builds = 0;
+  const build = async (directory) => {
+    builds += 1;
+    await mkdir(join(directory, "npm/bin"), { recursive: true });
+    await writeFile(
+      join(directory, process.platform === "win32" ? "node.exe" : "node"),
+      "node",
+    );
+    await writeFile(join(directory, "npm/bin/npm-cli.js"), "npm");
+    await writeFile(join(directory, "NODE_LICENSE"), "license");
+  };
+  try {
+    const first = await ensureCachedRuntime(cache, "node-fixture", descriptor, build);
+    const second = await ensureCachedRuntime(cache, "node-fixture", descriptor, build);
+    await materializeRuntime(second, destination, descriptor);
+
+    assert.equal(first, second);
+    assert.equal(builds, 1);
+    assert.equal(await runtimeIsValid(destination, descriptor), true);
+  } finally {
+    await rm(temporary, { recursive: true, force: true });
+  }
+});
+
 test("Windows extraction uses tar.exe arguments without a shell or script", () => {
   const arguments_ = windowsExtractionArguments(
     "C:\\temp\\node.zip",
@@ -98,6 +137,25 @@ test("host preparation accepts only its explicit development flag", () => {
   });
 
   assert.notEqual(result.status, 0);
+});
+
+test("the prepared development host contains a working bundled npm", () => {
+  const runtime = resolve(root, "src-tauri/target/extension-host/runtime");
+  const node = resolve(runtime, process.platform === "win32" ? "node.exe" : "node");
+  const npmCli = resolve(runtime, "npm/bin/npm-cli.js");
+  const nodeResult = spawnSync(node, ["--version"], {
+    encoding: "utf8",
+    shell: false,
+  });
+  const npmResult = spawnSync(node, [npmCli, "--version"], {
+    encoding: "utf8",
+    shell: false,
+  });
+
+  assert.equal(nodeResult.status, 0);
+  assert.match(nodeResult.stdout.trim(), /^v\d+\.\d+\.\d+$/);
+  assert.equal(npmResult.status, 0);
+  assert.match(npmResult.stdout.trim(), /^\d+\.\d+\.\d+$/);
 });
 
 test("the bundled host uses the same exact jiti version as Beaver", async () => {

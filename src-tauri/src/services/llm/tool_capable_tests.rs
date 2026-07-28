@@ -4,6 +4,8 @@ use super::*;
 fn groq_tool_capable() {
     assert!(supports_tools("groq", "llama-3.3-70b-versatile"));
     assert!(supports_tools("groq", "llama-4-scout-17b-16e-instruct"));
+    assert!(!supports_tools("groq", "groq/compound"));
+    assert!(!supports_tools("groq", "compound-mini"));
     assert!(!supports_tools("groq", "whisper-large-v3"));
 }
 

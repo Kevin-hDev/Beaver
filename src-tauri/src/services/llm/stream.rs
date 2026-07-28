@@ -1,10 +1,9 @@
 use super::stream_consume::consume_stream;
 use super::stream_http::{post_chat_request, RequestConfig, RequestError};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent, StreamOutcome};
+use crate::services::agent_local::types_ollama::{ChatMessage, StreamOutcome};
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm::request_purpose::RequestPurpose;
-use crate::services::llm::vision;
 use tokio_util::sync::CancellationToken;
 pub async fn stream_chat_no_done(
     on_event: &AgentEventEmitter,
@@ -45,50 +44,18 @@ pub async fn stream_chat_no_done(
     };
     match post_chat_request(&cfg).await {
         Ok(resp) => {
-            let (outcome, _, _) =
-                consume_stream(on_event, resp, cancel, buffer_content, realtime_budget).await?;
-            Ok(outcome)
-        }
-        Err(RequestError::RetryWithoutTools(msg)) => {
-            eprintln!("[llm stream] retry sans tools: {msg}");
-            let cfg2 = RequestConfig {
-                provider_id,
-                model,
-                messages,
-                tools: &[],
-                think,
-                reasoning_mode,
-                max_tokens: None,
-                purpose,
-            };
-            let resp = post_chat_request(&cfg2).await.map_err(|e| e.to_string())?;
-            let (outcome, _, _) =
-                consume_stream(on_event, resp, cancel, buffer_content, realtime_budget).await?;
-            Ok(outcome)
-        }
-        Err(RequestError::RetryWithoutImages(msg)) => {
-            eprintln!("[llm stream] retry sans images: {msg}");
-            let mut msgs_clean = messages.to_vec();
-            if vision::strip_images(&mut msgs_clean) > 0 {
-                let _ = on_event.send(StreamEvent::Notice {
-                    message_key: vision::NOTICE_UNSUPPORTED_MODEL.to_string(),
-                });
-            }
-            let cfg2 = RequestConfig {
-                provider_id,
-                model,
-                messages: &msgs_clean,
+            let (outcome, _, _) = consume_stream(
+                on_event,
+                resp,
+                cancel,
+                buffer_content,
+                realtime_budget,
                 tools,
-                think,
-                reasoning_mode,
-                max_tokens: None,
-                purpose,
-            };
-            let resp = post_chat_request(&cfg2).await.map_err(|e| e.to_string())?;
-            let (outcome, _, _) =
-                consume_stream(on_event, resp, cancel, buffer_content, realtime_budget).await?;
+            )
+            .await?;
             Ok(outcome)
         }
+        Err(RequestError::PayloadTooLarge) => Err("provider_payload_too_large".to_string()),
         Err(RequestError::Fatal(msg)) => Err(msg),
     }
 }

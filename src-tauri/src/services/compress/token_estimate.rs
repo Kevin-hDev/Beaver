@@ -4,6 +4,18 @@ pub fn estimate_tokens(messages: &[ChatMessage]) -> usize {
     crate::services::token_counting::estimate_chat_tokens(messages)
 }
 
+pub fn estimate_tool_tokens(tools: &[serde_json::Value]) -> usize {
+    tools.iter().fold(0usize, |total, tool| {
+        total.saturating_add(crate::services::token_counting::estimate_text_tokens(
+            &tool.to_string(),
+        ))
+    })
+}
+
+pub fn estimate_request_tokens(messages: &[ChatMessage], tools: &[serde_json::Value]) -> usize {
+    estimate_tokens(messages).saturating_add(estimate_tool_tokens(tools))
+}
+
 pub fn should_compress(used_tokens: usize, context_window: u64, threshold_pct: u8) -> bool {
     if threshold_pct == 0 {
         return false;
@@ -78,5 +90,20 @@ mod tests {
     fn estimate_counts_cjk_conservatively() {
         let msgs = vec![msg("user", &"你".repeat(1000))];
         assert_eq!(estimate_tokens(&msgs), 1250);
+    }
+
+    #[test]
+    fn estimate_request_includes_tool_definitions() {
+        let messages = vec![msg("user", "hello")];
+        let tools = vec![serde_json::json!({
+            "type": "function",
+            "function": {
+                "name": "read_file",
+                "description": "Read a file",
+                "parameters": {"type": "object", "properties": {}}
+            }
+        })];
+
+        assert!(estimate_request_tokens(&messages, &tools) > estimate_tokens(&messages));
     }
 }

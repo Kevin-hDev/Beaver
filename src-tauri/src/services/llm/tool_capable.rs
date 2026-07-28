@@ -22,7 +22,6 @@ pub fn supports_tools(provider_id: &str, model_id: &str) -> bool {
                 || model.starts_with("deepseek")
                 || model.starts_with("gemma")
                 || model.starts_with("qwen")
-                || model.starts_with("compound")
                 || model.starts_with("mistral")
         }
         "google" => {

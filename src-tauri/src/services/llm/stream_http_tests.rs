@@ -122,56 +122,6 @@ fn other_providers_keep_max_tokens() {
     assert!(payload.get("max_completion_tokens").is_none());
 }
 
-#[test]
-fn moonshot_membership_error_has_a_stable_safe_code() {
-    let body = r#"{"error":{"message":"We're unable to verify your membership benefits at this time. Please ensure your membership is active.","type":"invalid_request_error"}}"#;
-
-    let error = classify_error(402, body, "Moonshot AI", "moonshot-oauth", true);
-
-    assert_eq!(error.to_string(), "moonshot_membership_unverified");
-}
-
-#[test]
-fn xai_spending_limit_error_has_a_stable_safe_code() {
-    let body =
-        r#"{"code":"personal-team-blocked:spending-limit","error":"private upstream details"}"#;
-
-    let error = classify_error(402, body, "xAI", "xai-oauth", true);
-
-    assert_eq!(error.to_string(), "xai_subscription_or_credits_required");
-    assert!(!error.to_string().contains("private upstream details"));
-}
-
-#[test]
-fn unknown_payment_error_stays_generic() {
-    let error = classify_error(
-        402,
-        r#"{"error":{"message":"secret account detail"}}"#,
-        "Provider",
-        "unknown",
-        true,
-    );
-
-    assert_eq!(error.to_string(), "provider_access_unavailable");
-    assert!(!error.to_string().contains("secret account detail"));
-}
-
-#[test]
-fn oauth_auth_and_rate_errors_use_frontend_codes() {
-    assert_eq!(
-        classify_error(401, "", "xAI", "xai-oauth", true).to_string(),
-        "oauth_reauthentication_required"
-    );
-    assert_eq!(
-        classify_error(403, "", "xAI", "xai-oauth", true).to_string(),
-        "provider_access_unavailable"
-    );
-    assert_eq!(
-        classify_error(429, "", "xAI", "xai-oauth", true).to_string(),
-        "rate_limit"
-    );
-}
-
 #[tokio::test]
 async fn timeout_above_secure_limit_uses_a_stable_code() {
     let cfg = RequestConfig {

@@ -1,6 +1,5 @@
 use super::*;
 use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
-use crate::services::llm::vision;
 
 fn user_with_png() -> ChatMessage {
     ChatMessage {
@@ -31,14 +30,6 @@ fn mistral_image_uses_string_url() {
         out["content"][1]["image_url"],
         "data:image/png;base64,iVBORw0KGgo="
     );
-}
-
-#[test]
-fn strip_images_adds_user_note() {
-    let mut msgs = vec![user_with_png()];
-    vision::strip_images(&mut msgs);
-    assert!(msgs[0].images.is_none());
-    assert!(msgs[0].content.contains("does not support vision"));
 }
 
 #[test]

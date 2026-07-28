@@ -102,3 +102,15 @@ fn transport_failures_have_stable_safe_codes() {
         "provider_configuration_invalid"
     );
 }
+
+#[test]
+fn safe_details_keep_only_whitelisted_fields() {
+    let details = safe_details(
+        r#"{"error":{"type":"invalid_request","code":"bad_schema","param":"tools[0]","message":"private prompt"}}"#,
+    );
+
+    assert_eq!(details.error_type.as_deref(), Some("invalid_request"));
+    assert_eq!(details.error_code.as_deref(), Some("bad_schema"));
+    assert_eq!(details.error_param.as_deref(), Some("tools[0]"));
+    assert!(!format!("{details:?}").contains("private prompt"));
+}

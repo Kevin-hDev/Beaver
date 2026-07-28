@@ -18,6 +18,7 @@ pub(super) async fn consume_stream(
     cancel: CancellationToken,
     buffer_content: bool,
     mut realtime_budget: Option<RealtimeBudget>,
+    tools: &[serde_json::Value],
 ) -> Result<(StreamOutcome, u32, std::time::Instant), String> {
     let mut stream = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
@@ -31,11 +32,11 @@ pub(super) async fn consume_stream(
         tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
             _ = tokio::time::sleep(super::timeouts::idle_timeout()) => {
-                return Err("Timeout : aucune réponse du modèle depuis 180s".to_string());
+                return Err("provider_temporarily_unavailable".to_string());
             }
             event = stream.next() => {
                 let Some(event) = event else { break; };
-                let event = event.map_err(|e| format!("SSE: {e}"))?;
+                let event = event.map_err(|_| "provider_connection_failed".to_string())?;
                 if is_done_marker(&event.data) { break; }
                 process_chunk(&event.data, on_event, &mut token_count, &mut first_token, &mut result, &mut acc, &mut think_filter, buffer_content);
                 if should_interrupt(&mut realtime_budget, token_count, acc.has_pending()) {
@@ -66,13 +67,14 @@ pub(super) async fn consume_stream(
     }
 
     let (tool_calls, ids, extra_content) = acc.finalize();
-    for (i, (name, args)) in tool_calls.iter().enumerate() {
+    for (i, (wire_name, args)) in tool_calls.iter().enumerate() {
+        let name = super::tool_schema::restore_tool_name(wire_name, tools);
         let _ = on_event.send(StreamEvent::ToolCall {
             name: name.clone(),
             arguments: args.clone(),
-            domain: crate::services::agent_local::memory_tool::event_domain(name, args),
+            domain: crate::services::agent_local::memory_tool::event_domain(&name, args),
         });
-        result.tool_calls.push((name.clone(), args.clone()));
+        result.tool_calls.push((name, args.clone()));
         if let Some(id) = ids.get(i) {
             result.tool_call_ids.push(id.clone());
         }

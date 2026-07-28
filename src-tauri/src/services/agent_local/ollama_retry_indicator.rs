@@ -9,6 +9,7 @@ pub const REASON_FEATURE_DROPPED: &str = "agentLocal.retry.featureDropped";
 pub const REASON_PARSER_CRASH: &str = "agentLocal.retry.parserCrash";
 pub const REASON_THINKING_ONLY: &str = "agentLocal.retry.thinkingOnly";
 pub const REASON_SERVER: &str = "agentLocal.retry.server";
+pub const REASON_PROVIDER: &str = "agentLocal.retry.provider";
 
 pub fn retry_indicator(reason_key: &str, attempt: u32, max_attempts: u32) -> StreamEvent {
     StreamEvent::RetryIndicator {

@@ -39,7 +39,7 @@ pub fn message_to_openai(msg: &ChatMessage, provider_id: &str) -> Value {
                             "id": id,
                             "type": "function",
                             "function": {
-                                "name": tc.function.name,
+                                "name": super::tool_schema::wire_name(&tc.function.name),
                                 "arguments": args_str,
                             }
                         })

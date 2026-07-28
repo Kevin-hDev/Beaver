@@ -66,6 +66,9 @@ pub async fn post_chat_request_with_timeout(
         .ok_or_else(|| RequestError::Fatal("Fournisseur inconnu".to_string()))?;
     let url = format!("{}/chat/completions", route.base_url);
     let payload = build_chat_payload(cfg, &route);
+    let request_bytes = serde_json::to_vec(&payload)
+        .map(zeroize::Zeroizing::new)
+        .map_or(0, |bytes| bytes.len());
 
     let client = AuthenticatedClient::new(timeout).map_err(|_| {
         RequestError::Fatal(
@@ -90,6 +93,14 @@ pub async fn post_chat_request_with_timeout(
         let body = read_provider_error(resp).await;
         let log_code =
             super::provider_error::safe_log_code(route.chat_provider_id, status.as_u16(), &body);
+        super::provider_diagnostics::record_http_failure(
+            route.chat_provider_id,
+            cfg.model,
+            status.as_u16(),
+            super::provider_error::safe_details(&body),
+            request_bytes,
+            cfg.tools.len(),
+        );
         eprintln!("[llm stream] HTTP {status} code={log_code}");
         return Err(classify_error(
             status.as_u16(),
@@ -147,7 +158,7 @@ fn build_chat_payload(cfg: &RequestConfig<'_>, route: &LlmRoute) -> serde_json::
 fn classify_error(
     status: u16,
     body: &str,
-    provider_name: &str,
+    _provider_name: &str,
     provider_id: &str,
     oauth: bool,
 ) -> RequestError {
@@ -160,27 +171,24 @@ fn classify_error(
         401 if oauth => RequestError::Fatal("oauth_reauthentication_required".into()),
         403 if oauth => RequestError::Fatal("provider_access_unavailable".into()),
         401 | 403 => RequestError::Fatal("auth_failed".into()),
-        413 => RequestError::Fatal("Requête trop volumineuse (limite TPM dépassée)".into()),
+        413 => RequestError::PayloadTooLarge,
         429 => RequestError::Fatal("rate_limit".into()),
-        400 if body.contains("Developer instruction") || body.contains("system_instruction") => {
-            RequestError::Fatal("Ce modèle ne supporte pas les instructions système via ce provider. Essaie un autre modèle.".into())
-        }
-        400 if body.contains("must be a string") => {
-            RequestError::RetryWithoutImages("Format image non supporté par ce provider".into())
-        }
-        404 if body.contains("tool use") || body.contains("tool_use") => {
-            RequestError::RetryWithoutTools("Aucun endpoint ne supporte les tools pour ce modèle".into())
-        }
-        404 if body.contains("image") => {
-            RequestError::RetryWithoutImages("Aucun endpoint ne supporte les images pour ce modèle".into())
-        }
-        400 if body.contains("image") => {
-            RequestError::RetryWithoutImages("Ce modèle ne supporte pas les images".into())
-        }
-        _ => RequestError::Fatal(format!("{provider_name} HTTP {status}")),
+        500..=599 => RequestError::Fatal(
+            ProviderErrorCode::ProviderTemporarilyUnavailable
+                .as_str()
+                .to_string(),
+        ),
+        _ => RequestError::Fatal(
+            ProviderErrorCode::ProviderRequestRejected
+                .as_str()
+                .to_string(),
+        ),
     }
 }
 
+#[cfg(test)]
+#[path = "stream_http_classification_tests.rs"]
+mod classification_tests;
 #[cfg(test)]
 #[path = "stream_http_tests.rs"]
 mod tests;

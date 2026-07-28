@@ -2,10 +2,9 @@ use super::agent_chat_task::common;
 use crate::services::agent_local::{
     model_size::{self, PromptTier},
     prompt_chat_compact, prompt_chat_detailed, prompt_compact, prompt_detailed, prompt_plan,
-    tool_catalog, tool_definitions_chat, tool_definitions_mcp, tool_dispatcher,
+    tool_catalog,
 };
 use serde::Serialize;
-use serde_json::Value;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +33,19 @@ pub async fn estimate_context_hidden_usage(
     let has_tools =
         mode.is_chat || provider.as_deref() == Some("ollama") || supports_tools.unwrap_or(false);
     let settings = crate::services::agent_local::agent_settings::load().await;
-    let defs = filtered_tool_definitions(&mode.mode, has_tools, &settings.enabled_optional_tools);
+    let defs = super::context_usage_tools::filtered_definitions(
+        &mode.mode,
+        has_tools,
+        &settings.enabled_optional_tools,
+    );
+    let defs = provider
+        .as_deref()
+        .filter(|provider_id| *provider_id != "ollama")
+        .map(|provider_id| {
+            let canonical = crate::services::llm::route::canonical_provider_id(provider_id);
+            super::agent_chat_task::tool_policy::apply(canonical, &model, defs.clone()).tools
+        })
+        .unwrap_or(defs);
     let enabled_tool_names = tool_catalog::tool_names(&defs);
     let plan_active = match plan_mode {
         Some(value) => value,
@@ -64,7 +75,8 @@ pub async fn estimate_context_hidden_usage(
     )
     .await;
     let memory_context_tokens = memory_usage.summary_tokens;
-    let (system_tool_definition_tokens, mcp_definition_tokens) = tool_definition_tokens(defs);
+    let (system_tool_definition_tokens, mcp_definition_tokens) =
+        super::context_usage_tools::definition_tokens(defs);
 
     Ok(HiddenContextUsage {
         system_prompt_tokens,
@@ -148,48 +160,6 @@ async fn skill_context_tokens(mode: &common::StreamMode, has_tools: bool) -> usi
     estimate(&format!(
         "## Available skills\nThe following skills are available. Use the `load_skill` tool to load one when relevant.\n{listing}"
     ))
-}
-
-fn filtered_tool_definitions(
-    mode: &str,
-    has_tools: bool,
-    enabled_optional_tools: &[String],
-) -> Vec<Value> {
-    if !has_tools {
-        return vec![];
-    }
-    let defs = if mode == "chat" {
-        tool_definitions_chat::get_chat_tool_definitions()
-    } else {
-        tool_dispatcher::get_tool_definitions()
-    };
-    tool_catalog::filter_tool_definitions(defs, enabled_optional_tools)
-}
-
-fn tool_definition_tokens(defs: Vec<Value>) -> (usize, usize) {
-    let mcp_names = mcp_tool_names();
-    defs.into_iter().fold((0, 0), |(system, mcp), def| {
-        let tokens = estimate(&def.to_string());
-        if tool_name(&def).is_some_and(|name| mcp_names.contains(&name)) {
-            (system, mcp + tokens)
-        } else {
-            (system + tokens, mcp)
-        }
-    })
-}
-
-fn mcp_tool_names() -> Vec<String> {
-    tool_definitions_mcp::mcp_tool_definitions()
-        .iter()
-        .filter_map(tool_name)
-        .collect()
-}
-
-fn tool_name(def: &Value) -> Option<String> {
-    def.get("function")?
-        .get("name")?
-        .as_str()
-        .map(ToString::to_string)
 }
 
 fn estimate(input: &str) -> usize {

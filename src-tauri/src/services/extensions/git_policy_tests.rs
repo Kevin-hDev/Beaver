@@ -11,14 +11,14 @@ fn source(reference: Option<&str>) -> GitSource {
 }
 
 #[test]
-fn remote_branches_remain_shallow_but_pinned_commits_do_not() {
+fn ambiguous_short_hashes_start_shallow_but_full_commits_do_not() {
     let branch = source(Some("main"));
     let commit = source(Some("0123456789abcdef0123456789abcdef01234567"));
     let abbreviated_commit = source(Some("0123456"));
 
     assert!(super::git_source::should_use_shallow_clone(&branch));
     assert!(!super::git_source::should_use_shallow_clone(&commit));
-    assert!(!super::git_source::should_use_shallow_clone(
+    assert!(super::git_source::should_use_shallow_clone(
         &abbreviated_commit
     ));
 }

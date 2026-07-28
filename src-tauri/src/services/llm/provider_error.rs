@@ -17,6 +17,13 @@ pub enum ProviderErrorCode {
     ModelCatalogUnavailable,
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
+pub struct SafeProviderDetails {
+    pub error_type: Option<String>,
+    pub error_code: Option<String>,
+    pub error_param: Option<String>,
+}
+
 impl ProviderErrorCode {
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -68,6 +75,35 @@ pub fn safe_log_code(provider_id: &str, status: u16, body: &str) -> &'static str
         429 => "rate_limit",
         _ => "provider_http_error",
     }
+}
+
+pub fn safe_details(body: &str) -> SafeProviderDetails {
+    let parsed = serde_json::from_str::<serde_json::Value>(body).ok();
+    SafeProviderDetails {
+        error_type: json_field(parsed.as_ref(), &["/error/type", "/type"]),
+        error_code: json_field(parsed.as_ref(), &["/error/code", "/code"]),
+        error_param: json_field(parsed.as_ref(), &["/error/param", "/param"]),
+    }
+}
+
+fn json_field(document: Option<&serde_json::Value>, pointers: &[&str]) -> Option<String> {
+    const MAX_SAFE_FIELD_CHARS: usize = 128;
+    pointers.iter().find_map(|pointer| {
+        let value = document?.pointer(pointer)?;
+        let text = match value {
+            serde_json::Value::String(text) => text.clone(),
+            serde_json::Value::Number(number) => number.to_string(),
+            _ => return None,
+        };
+        let clipped: String = text.chars().take(MAX_SAFE_FIELD_CHARS + 1).collect();
+        (clipped.chars().count() <= MAX_SAFE_FIELD_CHARS
+            && !clipped.is_empty()
+            && clipped.chars().all(|character| {
+                character.is_ascii_alphanumeric()
+                    || matches!(character, '_' | '-' | '.' | '/' | '[' | ']')
+            }))
+        .then_some(clipped)
+    })
 }
 
 pub fn catalog_code(error: &LlmError) -> ProviderErrorCode {

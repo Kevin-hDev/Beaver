@@ -72,6 +72,8 @@ mod git_dependencies_tests;
 #[cfg(test)]
 mod git_policy_tests;
 #[cfg(test)]
+mod git_source_reference_tests;
+#[cfg(test)]
 mod git_source_tests;
 #[cfg(test)]
 mod managed_install_error_tests;

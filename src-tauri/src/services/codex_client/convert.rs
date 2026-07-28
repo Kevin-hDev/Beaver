@@ -16,7 +16,8 @@ pub fn convert_messages(messages: &[ChatMessage]) -> (String, Vec<serde_json::Va
         }
 
         if msg.role == "assistant" {
-            if let Some(items) = replay::items_from_message(msg) {
+            if let Some(mut items) = replay::items_from_message(msg) {
+                alias_replay_tool_names(&mut items);
                 input.extend(items);
                 continue;
             }
@@ -32,7 +33,7 @@ pub fn convert_messages(messages: &[ChatMessage]) -> (String, Vec<serde_json::Va
                     input.push(serde_json::json!({
                         "type": "function_call",
                         "call_id": tc.id.as_deref().unwrap_or("call_0"),
-                        "name": tc.function.name,
+                        "name": crate::services::llm::tool_schema::wire_name(&tc.function.name),
                         "arguments": args,
                     }));
                 }
@@ -58,6 +59,18 @@ pub fn convert_messages(messages: &[ChatMessage]) -> (String, Vec<serde_json::Va
         }
     }
     (instructions, input)
+}
+
+fn alias_replay_tool_names(items: &mut [serde_json::Value]) {
+    for item in items {
+        if item.get("type").and_then(serde_json::Value::as_str) != Some("function_call") {
+            continue;
+        }
+        let Some(name) = item.get("name").and_then(serde_json::Value::as_str) else {
+            continue;
+        };
+        item["name"] = crate::services::llm::tool_schema::wire_name(name).into();
+    }
 }
 
 fn user_message_to_responses(msg: &ChatMessage) -> serde_json::Value {
@@ -100,7 +113,7 @@ fn fix_array_schemas(v: &mut serde_json::Value) {
 }
 
 pub fn convert_tools_to_responses_api(tools: &[serde_json::Value]) -> Vec<serde_json::Value> {
-    tools
+    crate::services::llm::tool_schema::tools_for_provider("codex-oauth", "", tools)
         .iter()
         .filter_map(|t| {
             let func = t.get("function")?;
@@ -114,6 +127,7 @@ pub fn convert_tools_to_responses_api(tools: &[serde_json::Value]) -> Vec<serde_
                 "name": func.get("name")?,
                 "description": func.get("description").unwrap_or(&serde_json::Value::Null),
                 "parameters": params,
+                "strict": func.get("strict").unwrap_or(&serde_json::Value::Bool(false)),
             }))
         })
         .collect()

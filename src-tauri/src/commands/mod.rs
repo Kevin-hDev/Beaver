@@ -31,6 +31,7 @@ pub mod config;
 mod config_mascot_tests;
 pub mod context_usage;
 pub(crate) mod context_usage_memory;
+mod context_usage_tools;
 pub mod extensions;
 pub mod favorite_models;
 pub mod file_preview;

@@ -22,6 +22,7 @@ if (developmentOnly) {
   await resetDevelopmentHost();
   await copyHostSources(sourceDirectory, hostDirectory);
   await installProductionDependencies(hostDirectory);
+  await prepareNodeRuntime(hostDirectory);
 } else {
   await installProductionDependencies(hostDirectory);
   await prepareNodeRuntime(hostDirectory);
@@ -35,7 +36,18 @@ async function resetDevelopmentHost() {
   ) {
     throw new Error("Invalid development extension host directory");
   }
-  await rm(hostDirectory, { recursive: true, force: true });
+  await mkdir(hostDirectory, { recursive: true, mode: 0o700 });
+  const entries = await readdir(hostDirectory, { withFileTypes: true });
+  if (entries.length > 128) {
+    throw new Error("Invalid development extension host contents");
+  }
+  await Promise.all(
+    entries
+      .filter((entry) => entry.name !== "runtime" || !entry.isDirectory())
+      .map((entry) =>
+        rm(resolve(hostDirectory, entry.name), { recursive: true, force: true }),
+      ),
+  );
 }
 
 async function installProductionDependencies(directory) {

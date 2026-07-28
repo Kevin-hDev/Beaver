@@ -107,3 +107,36 @@ fn convert_replays_codex_output_items_without_rebuilding_them() {
 
     assert_eq!(input, vec![reasoning, function]);
 }
+
+#[test]
+fn codex_aliases_extension_tool_names_in_definitions_and_history() {
+    let name = "beaver.office.documents.create";
+    let tools = vec![serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": name,
+            "description": "Create a document",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+    let messages = vec![ChatMessage {
+        role: "assistant".into(),
+        tool_calls: Some(vec![ToolCallOllama {
+            id: Some("call_1".into()),
+            extra_content: None,
+            function: ToolCallFunction {
+                name: name.into(),
+                arguments: serde_json::json!({}),
+            },
+        }]),
+        ..Default::default()
+    }];
+
+    let converted_tools = convert_tools_to_responses_api(&tools);
+    let (_, input) = convert_messages(&messages);
+    let wire_name = converted_tools[0]["name"].as_str().unwrap();
+
+    assert_ne!(wire_name, name);
+    assert_eq!(input[0]["name"], wire_name);
+    assert_eq!(converted_tools[0]["strict"], false);
+}

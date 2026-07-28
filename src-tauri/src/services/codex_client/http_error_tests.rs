@@ -35,3 +35,25 @@ fn codex_permanent_rejection_stays_generic() {
 
     assert_eq!(stream_failure(&event), "provider_request_rejected");
 }
+
+#[test]
+fn provider_message_wording_cannot_change_codex_classification() {
+    let event = serde_json::json!({
+        "response": {
+            "error": {
+                "code": "invalid_request",
+                "message": "service unavailable and overloaded"
+            }
+        }
+    });
+
+    assert_eq!(stream_failure(&event), "provider_request_rejected");
+}
+
+#[test]
+fn codex_payload_too_large_is_not_mislabeled_as_rate_limit() {
+    assert_eq!(
+        status_error(StatusCode::PAYLOAD_TOO_LARGE, ""),
+        "provider_payload_too_large"
+    );
+}

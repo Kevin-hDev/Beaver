@@ -37,8 +37,13 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         .await?;
     super::session_security::sanitize_chat_messages(params.messages);
     super::tool_result_budget::apply_budget(params.messages);
-    super::context_budget::prepare_for_request(params.messages, params.configured_context)?;
-    let realtime_budget = RealtimeBudget::from_messages(params.configured_context, params.messages);
+    super::context_budget::prepare_for_request(
+        params.messages,
+        params.configured_context,
+        params.tools,
+    )?;
+    let realtime_budget =
+        RealtimeBudget::from_request(params.configured_context, params.messages, params.tools);
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let request = super::agent_loop_support::build_request(

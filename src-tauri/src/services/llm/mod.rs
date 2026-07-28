@@ -22,6 +22,7 @@ mod openai_compat_models;
 mod openai_compat_parsing;
 #[cfg(test)]
 mod openai_compat_parsing_tests;
+pub(crate) mod provider_diagnostics;
 pub mod provider_error;
 pub(crate) mod providers;
 pub mod registry_search;
@@ -45,7 +46,8 @@ mod stream_sse;
 mod stream_tools;
 mod timeouts;
 pub mod tool_capable;
-mod tool_schema;
+pub(crate) mod tool_schema;
+mod tool_schema_profile;
 pub mod types;
 pub mod vision;
 

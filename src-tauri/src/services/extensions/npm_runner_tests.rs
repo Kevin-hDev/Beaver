@@ -91,6 +91,23 @@ fn npm_resolution_never_falls_back_to_an_unrelated_system_cli() {
 }
 
 #[test]
+fn npm_resolution_prefers_the_bundled_runtime_cli() {
+    let temporary = tempfile::tempdir().unwrap();
+    let runtime = temporary.path().join("runtime");
+    let npm_bin = runtime.join("npm/bin");
+    std::fs::create_dir_all(&npm_bin).unwrap();
+    let node = runtime.join("node");
+    let cli = npm_bin.join("npm-cli.js");
+    std::fs::write(&node, "").unwrap();
+    std::fs::write(&cli, "").unwrap();
+
+    assert_eq!(
+        resolve_cli(temporary.path(), &node).unwrap(),
+        cli.canonicalize().unwrap()
+    );
+}
+
+#[test]
 fn an_uncleanable_cache_blocks_installation_before_validation() {
     let temporary = tempfile::tempdir().unwrap();
     let prefix = temporary.path().join("install");
