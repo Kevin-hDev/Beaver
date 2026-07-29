@@ -6,6 +6,7 @@ pub fn is_read_only(name: &str) -> bool {
             | "glob"
             | "list_dir"
             | "web_search"
+            | "search_extension_tools"
             | "load_skill"
             | "read_spreadsheet"
             | "read_document"

@@ -11,13 +11,17 @@ pub struct RealtimeBudget {
 }
 
 impl RealtimeBudget {
-    pub fn from_messages(configured_context: u64, messages: &[ChatMessage]) -> Option<Self> {
+    pub fn from_request(
+        configured_context: u64,
+        messages: &[ChatMessage],
+        tools: &[serde_json::Value],
+    ) -> Option<Self> {
         let config = crate::services::config::read_config().ok()?.advanced;
         Self::new(
             config.compression_enabled,
             configured_context,
             config.compression_threshold,
-            token_estimate::estimate_tokens(messages),
+            token_estimate::estimate_request_tokens(messages, tools),
         )
     }
 

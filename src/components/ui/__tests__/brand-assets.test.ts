@@ -124,13 +124,15 @@ describe("assets de marque", () => {
   });
 
   it("embarque les planches standard et avancée de Nival", () => {
-    const manifest = readText("src/assets/mascot/nival/manifest.json");
+    const manifest = JSON.parse(
+      readText("src/assets/mascot/nival/manifest.json"),
+    ) as { id: string; states: Array<{ id: string; startFrame?: number }> };
 
     expect(fileExists("src/assets/mascot/nival/standard.webp")).toBe(true);
     expect(fileExists("src/assets/mascot/nival/actions.webp")).toBe(true);
-    expect(manifest).toContain('"id": "nival"');
-    expect(manifest).toContain('"startFrame": 5');
-    expect(manifest).toContain('"id":"success"');
-    expect(manifest).toContain('"id":"grabbed"');
+    expect(manifest.id).toBe("nival");
+    expect(manifest.states.some((state) => state.startFrame === 5)).toBe(true);
+    expect(manifest.states.some((state) => state.id === "success")).toBe(true);
+    expect(manifest.states.some((state) => state.id === "grabbed")).toBe(true);
   });
 });

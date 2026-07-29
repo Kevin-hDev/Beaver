@@ -45,25 +45,6 @@ pub fn sanitize_messages(
     report
 }
 
-pub fn strip_images(messages: &mut [ChatMessage]) -> usize {
-    let mut removed = 0;
-    for msg in messages.iter_mut().filter(|m| m.role == "user") {
-        if let Some(images) = msg.images.take() {
-            let count = images.len();
-            removed += count;
-            if count > 0 {
-                let note = if count == 1 {
-                    "\n\n[1 image was attached but this model does not support vision]"
-                } else {
-                    "\n\n[Images were attached but this model does not support vision]"
-                };
-                msg.content.push_str(note);
-            }
-        }
-    }
-    removed
-}
-
 pub fn openai_image_part(base64_data: &str, provider_id: &str) -> Value {
     let data_url = data_url(base64_data);
     match provider_id {

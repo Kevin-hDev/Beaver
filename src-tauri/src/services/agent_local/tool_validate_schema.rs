@@ -31,6 +31,7 @@ static GREP: Schema = &[
 static GLOB: Schema = &[("pattern", Ty::Str, true), ("path", Ty::Str, false)];
 static WEB_SEARCH: Schema = &[("query", Ty::Str, true)];
 static WEB_FETCH: Schema = &[("url", Ty::Str, true)];
+static SEARCH_EXTENSIONS: Schema = &[("query", Ty::Str, true)];
 static TODO_WRITE: Schema = &[("todos", Ty::Arr, true)];
 static TODO_HISTORY: Schema = &[];
 static TODO_PAUSE: Schema = &[("reason", Ty::Str, false)];
@@ -114,6 +115,7 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "glob" => GLOB,
         "web_search" => WEB_SEARCH,
         "web_fetch" => WEB_FETCH,
+        "search_extension_tools" => SEARCH_EXTENSIONS,
         "todo_write" => TODO_WRITE,
         "todo_history" => TODO_HISTORY,
         "todo_pause" => TODO_PAUSE,

@@ -293,9 +293,11 @@
       "parserCrash": "正在修正格式...",
       "featureDropped": "正在调整功能...",
       "server": "正在重试 Ollama...",
+      "provider": "正在重试提供商…",
       "connection": "正在重连...",
       "button": "重试"
     },
+    "groqExtensionsUnavailable": "Groq 无法使用插件。",
     "contextCompressed": "上下文已压缩",
     "searchBarPlaceholder": "搜索…",
     "resultCount_one": "{{count}} 条结果",
@@ -477,7 +479,7 @@
   },
   "permissionMode": {
     "chatLabel": "聊天机器人",
-    "chatDescription": "聊天，不访问工具、文件或互联网",
+    "chatDescription": "支持网页搜索的经典聊天，不访问文件或智能体工具",
     "autoLabel": "完全访问",
     "autoDescription": "不受限制地访问互联网和你电脑上的文件",
     "manualLabel": "请求授权",
@@ -1032,6 +1034,7 @@
     "providerConnectionFailed": "无法连接到提供商。",
     "providerTemporarilyUnavailable": "提供商暂时不可用，请稍后重试。",
     "providerRequestRejected": "提供商拒绝了该请求。",
+    "providerPayloadTooLarge": "尝试缩减后，请求仍然过大。",
     "providerConfigurationInvalid": "无法准备该请求。",
     "oauthReauthenticationRequired": "OAuth 连接已过期。请重新连接提供商。",
     "toolFailed": "工具执行失败",
@@ -1930,7 +1933,7 @@
       },
       "custom": {
         "title": "自定义扩展",
-        "description": "添加由你选择的 JavaScript 或 TypeScript 代码。",
+        "description": "添加本地代码，或从 Git 或 npm 安装扩展。",
         "empty": "没有自定义扩展。"
       },
       "external": {
@@ -1938,6 +1941,17 @@
         "description": "通过 Beaver 扩展协议连接的独立程序。",
         "empty": "没有已连接的外部应用。"
       }
+    },
+    "discovery": {
+      "title": "优先插件",
+      "count": "{{count}}/{{max}}",
+      "description": "当 Beaver 需要缩减请求时，优先保留这些插件的工具。",
+      "empty": "尚未设置优先插件。Beaver 会按需加载其他插件。",
+      "add": "添加",
+      "dialogTitle": "选择优先插件",
+      "dialogDescription": "已选择 {{count}}/{{max}} 个插件。",
+      "noEnabledPlugins": "没有可用的已启用插件。",
+      "validate": "保存"
     },
     "official": {
       "documents": {
@@ -1980,9 +1994,11 @@
       "cancel": "取消",
       "back": "返回",
       "openSource": "打开源文件",
+      "update": "更新",
       "reload": "重新加载",
       "remove": "移除",
       "confirmRemove": "确认",
+      "confirmUpdate": "确认更新",
       "restartHost": "重启宿主",
       "recovery": "禁用托管扩展"
     },
@@ -1998,17 +2014,25 @@
       "local": "本地扩展",
       "external": "外部应用"
     },
+    "origins": {
+      "local": "本地文件或文件夹",
+      "git": "Git 仓库",
+      "npm": "npm 软件包"
+    },
     "loading": "正在加载扩展…",
     "showInChat": "在聊天中显示",
     "showInChatFor": "在聊天中显示 {{name}}",
     "enableFor": "启用 {{name}}",
     "fullAccessWarning": "此扩展未经 Beaver 审核，并且可以访问你账户中的数据、密钥和功能。",
+    "updateTrustWarning": "更新会停用此扩展。请先检查新版本，再重新信任并启用。",
     "detail": {
       "status": "状态",
       "runtime": "运行时",
       "api": "Beaver API",
       "author": "作者",
+      "installSource": "安装来源",
       "source": "来源",
+      "revision": "Git 修订版本",
       "unknown": "未提供",
     "contributions": "已注册的扩展项",
     "replacesCore": "替换内置工具"
@@ -2025,7 +2049,17 @@
       "file": "选择文件",
       "fileDescription": "JavaScript、TypeScript 或 JSON 清单",
       "folder": "选择文件夹",
-      "folderDescription": "包含 Beaver 清单或 package.json 的文件夹"
+      "folderDescription": "包含 Beaver 清单或 package.json 的文件夹",
+      "git": "从 Git 安装",
+      "gitDescription": "HTTPS 或 SSH 仓库，可选择分支、标签或提交",
+      "npm": "从 npm 安装",
+      "npmDescription": "包含 Beaver 扩展的已发布软件包",
+      "gitLabel": "Git 仓库 URL",
+      "gitPlaceholder": "https://github.com/example/extension.git",
+      "npmLabel": "npm 软件包名称",
+      "npmPlaceholder": "@example/extension 或 extension@latest",
+      "install": "安装",
+      "installing": "正在安装…"
     },
     "host": {
       "title": "宿主与诊断",
@@ -2071,7 +2105,27 @@
         "extensions_request_too_large": "请求过大，无法发送。请减少文本量。",
         "extensions_request_invalid": "发送给扩展的请求无效。",
         "extensions_tool_unavailable": "此扩展工具不可用。",
-        "extensions_tool_arguments_invalid": "发送给此工具的参数无效。"
+        "extensions_tool_arguments_invalid": "发送给此工具的参数无效。",
+        "extensions_install_failed": "无法安装此扩展。",
+        "extensions_update_failed": "无法更新此扩展。",
+        "extensions_uninstall_failed": "无法完整移除此扩展。",
+        "extensions_source_invalid": "Git 地址或引用无效。",
+        "extensions_package_invalid": "npm 名称、版本或标签无效。",
+        "extensions_git_download_failed": "无法下载 Git 仓库。",
+        "extensions_git_timeout": "Git 仓库未及时响应。",
+        "extensions_runtime_unavailable": "Beaver 提供的安装运行时不可用。",
+        "extensions_environment_invalid": "安装环境无效或过大。",
+        "extensions_dependency_install_failed": "无法安装扩展依赖项。",
+        "extensions_manifest_invalid": "扩展清单或入口点无效。",
+        "extensions_not_beaver_extension": "此软件包不是 Beaver 扩展。",
+        "extensions_api_incompatible": "此扩展与当前版本的 Beaver 不兼容。",
+        "extensions_symlink_unsupported": "此扩展包含不受支持的符号链接。",
+        "extensions_already_installed": "已安装具有此标识符的扩展。",
+        "extensions_limit_reached": "已达到扩展数量上限。",
+        "extensions_storage_failed": "本地扩展存储不可用。",
+        "extensions_update_identity_changed": "更新更改了扩展身份，因此已被拒绝。",
+        "extensions_update_unavailable": "Beaver 无法更新此扩展。",
+        "extensions_cleanup_failed": "无法清理部分旧扩展文件。"
       }
     },
     "diagnostics": {

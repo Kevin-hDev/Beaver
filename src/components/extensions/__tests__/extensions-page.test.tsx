@@ -27,6 +27,7 @@ function record(kind: ExtensionRecord["kind"], id: string, name: string): Extens
       runtime: "node",
       access: "full",
       apiLevel: "stable",
+      essential: false,
     },
     kind,
     source: kind,
@@ -55,14 +56,18 @@ function renderPage(section: "plugins" | "custom" | "external", items = records)
       loadError={null}
       operationError={null}
       busyIds={new Set()}
+      protectedPluginIds={[]}
+      priorityBusy={false}
       onSelect={vi.fn()}
       onAdd={vi.fn()}
       onEnabled={vi.fn()}
       onShowInChat={vi.fn()}
       onOpenSource={vi.fn()}
+      onUpdate={vi.fn()}
       onRemove={vi.fn()}
       onReload={vi.fn()}
       onRecover={vi.fn()}
+      onPrioritySave={vi.fn(() => Promise.resolve(true))}
     />,
   );
 }
@@ -112,14 +117,18 @@ describe("ExtensionsPage", () => {
         loadError={null}
         operationError="extensions.errors.codes.extensions_host_unavailable"
         busyIds={new Set()}
+        protectedPluginIds={[]}
+        priorityBusy={false}
         onSelect={vi.fn()}
         onAdd={vi.fn()}
         onEnabled={vi.fn()}
         onShowInChat={vi.fn()}
         onOpenSource={vi.fn()}
+        onUpdate={vi.fn()}
         onRemove={vi.fn()}
         onReload={vi.fn()}
         onRecover={vi.fn()}
+        onPrioritySave={vi.fn(() => Promise.resolve(true))}
       />,
     );
 

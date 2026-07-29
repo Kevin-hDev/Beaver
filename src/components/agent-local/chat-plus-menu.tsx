@@ -5,18 +5,24 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { useConnectors } from "@/hooks/use-connectors";
 import { useExtensions } from "@/hooks/use-extensions";
-import { McpIcon } from "@/lib/mcp-icons";
+import { ChatPlusConnectorRow } from "./chat-plus-connector-row";
 import { ChatPlusPluginMenu, chatPluginShortcuts } from "./chat-plus-plugin-menu";
 import { useChatPlusSubmenuPosition } from "./use-chat-plus-submenu-position";
 import "./chat-plus-menu.css";
 
 interface ChatPlusMenuProps {
   onFileImport: () => void;
+  agentic: boolean;
   planModeEnabled: boolean;
   onPlanModeChange: (enabled: boolean) => void;
 }
 
-export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }: ChatPlusMenuProps) {
+export function ChatPlusMenu({
+  onFileImport,
+  agentic,
+  planModeEnabled,
+  onPlanModeChange,
+}: ChatPlusMenuProps) {
   const { t } = useTranslation();
   const planModeSwitchId = useId();
   const [open, setOpen] = useState(false);
@@ -67,53 +73,57 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
             <span>{t("chatMenu.addFile")}</span>
           </button>
 
-          <div className="cpm-item">
-            <ClipboardText size="var(--icon-md)" weight="regular" />
-            <label className="cpm-switch-copy" htmlFor={planModeSwitchId}>
-              <span>{t("chatMenu.planMode")}</span>
-              <span className="cpm-item-desc">{t("chatMenu.planModeDesc")}</span>
-            </label>
-            <ToggleSwitch
-              id={planModeSwitchId}
-              checked={planModeEnabled}
-              ariaLabel={t("chatMenu.planMode")}
-              onCheckedChange={onPlanModeChange}
-            />
-          </div>
+          {agentic && (
+            <>
+              <div className="cpm-item">
+                <ClipboardText size="var(--icon-md)" weight="regular" />
+                <label className="cpm-switch-copy" htmlFor={planModeSwitchId}>
+                  <span>{t("chatMenu.planMode")}</span>
+                  <span className="cpm-item-desc">{t("chatMenu.planModeDesc")}</span>
+                </label>
+                <ToggleSwitch
+                  id={planModeSwitchId}
+                  checked={planModeEnabled}
+                  ariaLabel={t("chatMenu.planMode")}
+                  onCheckedChange={onPlanModeChange}
+                />
+              </div>
 
-          <div className="cpm-separator" />
+              <div className="cpm-separator" />
 
-          <button
-            type="button"
-            className={`cpm-item cpm-has-sub ${submenu === "connectors" ? "active" : ""}`}
-            onMouseEnter={() => setSubmenu("connectors")}
-            onFocus={() => setSubmenu("connectors")}
-            onClick={() => setSubmenu("connectors")}
-            aria-haspopup="menu"
-            aria-expanded={submenu === "connectors"}
-          >
-            <Plugs size="var(--icon-md)" weight="regular" />
-            <span>{t("chatMenu.connectors")}</span>
-            <CaretRight size="var(--icon-xs)" className="cpm-caret" />
-          </button>
+              <button
+                type="button"
+                className={`cpm-item cpm-has-sub ${submenu === "connectors" ? "active" : ""}`}
+                onMouseEnter={() => setSubmenu("connectors")}
+                onFocus={() => setSubmenu("connectors")}
+                onClick={() => setSubmenu("connectors")}
+                aria-haspopup="menu"
+                aria-expanded={submenu === "connectors"}
+              >
+                <Plugs size="var(--icon-md)" weight="regular" />
+                <span>{t("chatMenu.connectors")}</span>
+                <CaretRight size="var(--icon-xs)" className="cpm-caret" />
+              </button>
 
-          <button
-            type="button"
-            className={`cpm-item cpm-has-sub ${submenu === "plugins" ? "active" : ""}`}
-            onMouseEnter={() => setSubmenu("plugins")}
-            onFocus={() => setSubmenu("plugins")}
-            onClick={() => setSubmenu("plugins")}
-            aria-haspopup="menu"
-            aria-expanded={submenu === "plugins"}
-          >
-            <PuzzlePiece size="var(--icon-md)" weight="regular" />
-            <span>{t("chatMenu.plugins")}</span>
-            <CaretRight size="var(--icon-xs)" className="cpm-caret" />
-          </button>
+              <button
+                type="button"
+                className={`cpm-item cpm-has-sub ${submenu === "plugins" ? "active" : ""}`}
+                onMouseEnter={() => setSubmenu("plugins")}
+                onFocus={() => setSubmenu("plugins")}
+                onClick={() => setSubmenu("plugins")}
+                aria-haspopup="menu"
+                aria-expanded={submenu === "plugins"}
+              >
+                <PuzzlePiece size="var(--icon-md)" weight="regular" />
+                <span>{t("chatMenu.plugins")}</span>
+                <CaretRight size="var(--icon-xs)" className="cpm-caret" />
+              </button>
+            </>
+          )}
         </div>
       )}
 
-      {open && submenu === "connectors" && (
+      {open && agentic && submenu === "connectors" && (
         <div
           ref={submenuRef}
           className="cpm-submenu"
@@ -126,7 +136,7 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
             <div className="cpm-sub-empty">{t("chatMenu.noConnectors")}</div>
           ) : (
             connectedItems.map((c) => (
-              <ConnectorToggleRow
+              <ChatPlusConnectorRow
                 key={c.id}
                 connectorId={c.id}
                 displayName={c.display_name}
@@ -138,7 +148,7 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
         </div>
       )}
 
-      {open && submenu === "plugins" && (
+      {open && agentic && submenu === "plugins" && (
         <div
           ref={submenuRef}
           className="cpm-submenu"
@@ -154,38 +164,6 @@ export function ChatPlusMenu({ onFileImport, planModeEnabled, onPlanModeChange }
           />
         </div>
       )}
-    </div>
-  );
-}
-
-interface ConnectorToggleRowProps {
-  connectorId: string;
-  displayName: string;
-  enabled: boolean;
-  onToggle: () => void;
-}
-
-function ConnectorToggleRow({
-  connectorId,
-  displayName,
-  enabled,
-  onToggle,
-}: ConnectorToggleRowProps) {
-  const switchId = useId();
-
-  return (
-    <div className="cpm-sub-item">
-      <McpIcon connectorId={connectorId} displayName={displayName} size="var(--icon-lg)" />
-      <label className={enabled ? "cpm-connector-label" : "cpm-connector-label cpm-disabled"} htmlFor={switchId}>
-        {displayName}
-      </label>
-      <ToggleSwitch
-        id={switchId}
-        checked={enabled}
-        ariaLabel={displayName}
-        className="cpm-connector-switch"
-        onCheckedChange={onToggle}
-      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ const record: ExtensionRecord = {
     runtime: "node",
     access: "full",
     apiLevel: "stable",
+    essential: false,
   },
   kind: "local",
   source: "/extension",
@@ -37,6 +38,9 @@ describe("useExtensions", () => {
     vi.mocked(invoke).mockReset().mockImplementation((command) => {
       if (command === "list_extensions") return Promise.resolve([record]);
       if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
       return Promise.resolve(undefined);
     });
   });
@@ -73,6 +77,9 @@ describe("useExtensions", () => {
         return Promise.reject(new Error("extensions_builtin_catalog_invalid"));
       }
       if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
       return Promise.resolve(undefined);
     });
     const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
@@ -88,6 +95,9 @@ describe("useExtensions", () => {
         return Promise.resolve([{ ...record, contributions: undefined }]);
       }
       if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
       return Promise.resolve(undefined);
     });
     const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
@@ -96,5 +106,90 @@ describe("useExtensions", () => {
     expect(view.result.current.extensions).toEqual([]);
     expect(view.result.current.host.state).toBe("stopped");
     expect(view.result.current.loadError).toBe("extensions.errors.load");
+  });
+
+  it("installe Git et npm avec des commandes distinctes et validées au retour", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
+      if (command === "install_git_extension" || command === "install_npm_extension") {
+        return Promise.resolve(record);
+      }
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    const gitOutcome = await act(() =>
+      view.result.current.installGit("https://github.com/example/ext.git"));
+    expect(gitOutcome.record).toEqual(record);
+    expect(invoke).toHaveBeenCalledWith("install_git_extension", {
+      url: "https://github.com/example/ext.git",
+    });
+
+    await act(() => view.result.current.installNpm("@example/ext@latest"));
+    expect(invoke).toHaveBeenCalledWith("install_npm_extension", {
+      packageSpec: "@example/ext@latest",
+    });
+  });
+
+  it("retourne le code traduit exact lorsqu’une installation échoue", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
+      if (command === "install_git_extension") {
+        return Promise.reject(new Error("extensions_git_download_failed"));
+      }
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    const outcome = await act(() =>
+      view.result.current.installGit("https://github.com/example/ext.git"));
+
+    expect(outcome).toEqual({
+      record: null,
+      errorKey: "extensions.errors.codes.extensions_git_download_failed",
+    });
+  });
+
+  it("marque une extension occupée pendant sa mise à jour", async () => {
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    await act(() => view.result.current.update(record.manifest.id));
+
+    expect(invoke).toHaveBeenCalledWith("update_extension", {
+      extensionId: record.manifest.id,
+    });
+  });
+
+  it("enregistre la liste bornée des plugins prioritaires", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_extensions") return Promise.resolve([record]);
+      if (command === "get_extension_host_status") return Promise.resolve(host);
+      if (command === "get_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [] });
+      }
+      if (command === "set_extension_discovery_preferences") {
+        return Promise.resolve({ protectedPluginIds: [record.manifest.id] });
+      }
+      return Promise.resolve(undefined);
+    });
+    const view = renderHook(() => useExtensions(), { wrapper: ExtensionsProvider });
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+
+    const saved = await act(() =>
+      view.result.current.setPriorityPlugins([record.manifest.id]));
+
+    expect(saved).toBe(true);
+    expect(view.result.current.protectedPluginIds).toEqual([record.manifest.id]);
   });
 });

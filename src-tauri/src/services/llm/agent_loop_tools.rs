@@ -3,10 +3,6 @@ use crate::services::agent_local::agent_loop_limits::MAX_TURNS;
 use crate::services::agent_local::circuit_breaker::CircuitBreaker;
 use std::path::Path;
 
-pub fn convert_tools_to_openai(tools: &[serde_json::Value]) -> Vec<serde_json::Value> {
-    tools.to_vec()
-}
-
 pub(super) async fn record_detected_tool_calls(
     session_id: &str,
     request_id: &str,

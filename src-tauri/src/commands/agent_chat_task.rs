@@ -1,11 +1,13 @@
 mod api;
 mod api_images;
+mod api_tools;
 pub(crate) mod common;
 mod compress;
 mod gemma4_thinking_guard;
 mod ollama;
 mod params;
 mod session_events;
+pub(crate) mod tool_policy;
 
 pub(crate) use params::{StreamCapabilityHints, StreamTaskParams};
 

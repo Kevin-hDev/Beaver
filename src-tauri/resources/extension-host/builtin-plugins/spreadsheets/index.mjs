@@ -14,19 +14,19 @@ import {
 export default defineExtension((api) => {
   api.registerTool({
     name: "create",
-    description: "Create an editable XLSX workbook with one or more sheets.",
+    description: "Create an editable Microsoft Excel XLSX workbook with one or more sheets.",
     parameters: createSpreadsheetSchema,
     execute: safeTool(createSpreadsheet),
   });
   api.registerTool({
     name: "inspect",
-    description: "Inspect bounded cell previews and dimensions from an XLSX workbook.",
+    description: "Inspect bounded cell previews and dimensions from a Microsoft Excel XLSX workbook.",
     parameters: inspectSpreadsheetSchema,
     execute: safeTool(inspectSpreadsheet),
   });
   api.registerTool({
     name: "update",
-    description: "Update selected cells while preserving the existing XLSX workbook.",
+    description: "Update selected cells while preserving the existing Microsoft Excel XLSX workbook.",
     parameters: updateSpreadsheetSchema,
     execute: safeTool(updateSpreadsheet),
   });

@@ -3,10 +3,13 @@ import type {
   ExtensionContributions,
   ExtensionKind,
   ExtensionManifest,
+  ExtensionOrigin,
+  ExtensionOriginKind,
   ExtensionRecord,
   ExtensionStatus,
   ExtensionTool,
 } from "@/types/extensions";
+import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
 
 export const EXTENSION_VIEW_LIMITS = Object.freeze({
   records: 132,
@@ -19,6 +22,7 @@ const MAX_NAME_CHARS = 100;
 const MAX_TEXT_CHARS = 2_000;
 const MAX_PATH_CHARS = 4_096;
 const KINDS: readonly ExtensionKind[] = ["builtin", "local", "external"];
+const ORIGIN_KINDS: readonly ExtensionOriginKind[] = ["local", "git", "npm"];
 const STATUSES: readonly ExtensionStatus[] = [
   "active",
   "inactive",
@@ -83,6 +87,7 @@ function manifest(value: unknown): ExtensionManifest {
   if (!["node", "builtin"].includes(runtime) || !["full", "core"].includes(access)) {
     invalid();
   }
+  if (typeof input.essential !== "boolean") invalid();
   return {
     id: identifier(input.id),
     name: text(input.name, MAX_NAME_CHARS),
@@ -93,6 +98,7 @@ function manifest(value: unknown): ExtensionManifest {
     ui: optionalText(input.ui, MAX_PATH_CHARS),
     access,
     apiLevel: oneOf(input.apiLevel, API_LEVELS),
+    essential: input.essential,
     author: optionalText(input.author, MAX_TEXT_CHARS),
     homepage: optionalText(input.homepage, MAX_TEXT_CHARS),
     description: optionalText(input.description, MAX_TEXT_CHARS),
@@ -126,6 +132,26 @@ function contributions(value: unknown): ExtensionContributions {
   };
 }
 
+function origin(value: unknown): ExtensionOrigin | undefined {
+  if (value === null || value === undefined) return undefined;
+  const input = object(value);
+  const kind = oneOf(input.kind, ORIGIN_KINDS);
+  const parsed = {
+    kind,
+    locator: text(
+      input.locator,
+      kind === "local" ? MAX_PATH_CHARS : EXTENSION_INSTALL_LIMITS[kind],
+    ),
+    revision: optionalText(input.revision, 128),
+  };
+  const validRevision = parsed.revision
+    && [40, 64].includes(parsed.revision.length)
+    && /^[0-9a-f]+$/.test(parsed.revision);
+  if ((parsed.kind === "git" && !validRevision)
+    || (parsed.kind !== "git" && parsed.revision)) invalid();
+  return parsed;
+}
+
 function record(value: unknown): ExtensionRecord {
   const input = object(value);
   if (
@@ -135,10 +161,16 @@ function record(value: unknown): ExtensionRecord {
   ) {
     invalid();
   }
+  const parsedKind = oneOf(input.kind, KINDS);
+  const parsedSource = text(input.source, MAX_PATH_CHARS);
+  const parsedOrigin = origin(input.origin);
+  if (parsedOrigin && parsedKind !== "local") invalid();
+  if (parsedOrigin?.kind === "local" && parsedOrigin.locator !== parsedSource) invalid();
   return {
     manifest: manifest(input.manifest),
-    kind: oneOf(input.kind, KINDS),
-    source: text(input.source, MAX_PATH_CHARS),
+    kind: parsedKind,
+    source: parsedSource,
+    origin: parsedOrigin,
     enabled: input.enabled,
     trusted: input.trusted,
     showInChat: input.showInChat,
@@ -157,4 +189,8 @@ export function parseExtensionRecords(value: unknown): ExtensionRecord[] {
   const identifiers = new Set(records.map((item) => item.manifest.id));
   if (identifiers.size !== records.length) invalid();
   return records;
+}
+
+export function parseExtensionRecord(value: unknown): ExtensionRecord {
+  return record(value);
 }

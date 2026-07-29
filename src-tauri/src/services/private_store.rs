@@ -38,9 +38,13 @@ pub async fn write_new_async(path: PathBuf, bytes: Vec<u8>) -> Result<(), String
 }
 
 pub async fn ensure_private_dir_async(path: PathBuf) -> Result<(), String> {
-    tokio::task::spawn_blocking(move || create_private_dirs(&path))
+    tokio::task::spawn_blocking(move || ensure_private_dir(&path))
         .await
         .map_err(|_| "stockage privé indisponible".to_string())?
+}
+
+pub fn ensure_private_dir(path: &Path) -> Result<(), String> {
+    create_private_dirs(path)
 }
 
 pub fn repair_path(path: &Path) -> Result<(), String> {

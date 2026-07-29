@@ -1,21 +1,33 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileText, FolderOpen, ShieldWarning } from "@/components/ui/icons";
+import {
+  DownloadSimple,
+  FileText,
+  FolderOpen,
+  GitBranch,
+  ShieldWarning,
+} from "@/components/ui/icons";
+import type { ExtensionInstallSource } from "@/lib/extension-install";
+import { cn } from "@/lib/utils";
+import { ExtensionSourceForm } from "./extension-source-form";
 import "./extension-add-dialog.css";
 
 interface ExtensionAddDialogProps {
-  onAdd: (path: string) => Promise<boolean>;
+  onAdd: (path: string) => Promise<string | null>;
+  onInstall: (source: ExtensionInstallSource, locator: string) => Promise<string | null>;
   onClose: () => void;
 }
 
-export function ExtensionAddDialog({ onAdd, onClose }: ExtensionAddDialogProps) {
+export function ExtensionAddDialog({ onAdd, onInstall, onClose }: ExtensionAddDialogProps) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [source, setSource] = useState<ExtensionInstallSource | null>(null);
+  const [locator, setLocator] = useState("");
 
   const choose = async (directory: boolean) => {
-    setFailed(false);
+    setErrorKey(null);
     let selected: string | string[] | null;
     try {
       selected = await open(directory
@@ -31,22 +43,47 @@ export function ExtensionAddDialog({ onAdd, onClose }: ExtensionAddDialogProps) 
             }],
           });
     } catch {
-      setFailed(true);
+      setErrorKey("extensions.errors.operation");
       return;
     }
     if (typeof selected !== "string") return;
     setBusy(true);
     try {
-      const added = await onAdd(selected);
+      const error = await onAdd(selected);
       setBusy(false);
-      if (added) onClose();
-      else setFailed(true);
+      if (!error) onClose();
+      else setErrorKey(error);
     } catch {
       setBusy(false);
-      setFailed(true);
+      setErrorKey("extensions.errors.operation");
     }
   };
   const close = () => { if (!busy) onClose(); };
+  const selectSource = (next: ExtensionInstallSource) => {
+    if (busy) return;
+    setSource(next);
+    setLocator("");
+    setErrorKey(null);
+  };
+  const submitSource = async () => {
+    if (!source) return;
+    const value = locator.trim();
+    if (!value) {
+      setErrorKey("extensions.errors.operation");
+      return;
+    }
+    setBusy(true);
+    setErrorKey(null);
+    try {
+      const error = await onInstall(source, value);
+      setBusy(false);
+      if (!error) onClose();
+      else setErrorKey(error);
+    } catch {
+      setBusy(false);
+      setErrorKey("extensions.errors.operation");
+    }
+  };
 
   return (
     <div
@@ -70,8 +107,8 @@ export function ExtensionAddDialog({ onAdd, onClose }: ExtensionAddDialogProps) 
           <ShieldWarning size="var(--icon-xl)" weight="fill" />
           <p>{t("extensions.add.fullAccessWarning")}</p>
         </div>
-        {failed && (
-          <p className="exta-error" role="alert">{t("extensions.errors.operation")}</p>
+        {errorKey && (
+          <p className="exta-error" role="alert">{t(errorKey)}</p>
         )}
         <div className="exta-options">
           <button type="button" className="exta-option" disabled={busy} onClick={() => void choose(false)}>
@@ -88,7 +125,45 @@ export function ExtensionAddDialog({ onAdd, onClose }: ExtensionAddDialogProps) 
               <small>{t("extensions.add.folderDescription")}</small>
             </span>
           </button>
+          <button
+            type="button"
+            className={cn("exta-option", source === "git" && "exta-option-active")}
+            disabled={busy}
+            aria-pressed={source === "git"}
+            onClick={() => selectSource("git")}
+          >
+            <GitBranch size="var(--icon-lg)" />
+            <span>
+              <strong>{t("extensions.add.git")}</strong>
+              <small>{t("extensions.add.gitDescription")}</small>
+            </span>
+          </button>
+          <button
+            type="button"
+            className={cn("exta-option", source === "npm" && "exta-option-active")}
+            disabled={busy}
+            aria-pressed={source === "npm"}
+            onClick={() => selectSource("npm")}
+          >
+            <DownloadSimple size="var(--icon-lg)" />
+            <span>
+              <strong>{t("extensions.add.npm")}</strong>
+              <small>{t("extensions.add.npmDescription")}</small>
+            </span>
+          </button>
         </div>
+        {source && (
+          <ExtensionSourceForm
+            source={source}
+            locator={locator}
+            busy={busy}
+            onLocatorChange={(value) => {
+              setLocator(value);
+              setErrorKey(null);
+            }}
+            onSubmit={() => void submitSource()}
+          />
+        )}
         <div className="wk-dialog-footer">
           <button type="button" className="wk-btn-secondary" disabled={busy} onClick={close}>
             {t("extensions.actions.cancel")}

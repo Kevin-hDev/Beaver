@@ -60,7 +60,8 @@ pub async fn run_tools_with_eager(
         super::subagent_tool_guard::profile_for_session(session_id).await,
         Ok(None)
     );
-    if can_use_delegate_batch
+    if mode != "chat"
+        && can_use_delegate_batch
         && !tool_calls.is_empty()
         && tool_calls
             .iter()

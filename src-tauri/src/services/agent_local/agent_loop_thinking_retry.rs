@@ -25,6 +25,7 @@ pub struct ThinkingRetryParams<'a> {
     pub request_id: String,
     pub cancel: CancellationToken,
     pub plan_active: bool,
+    pub chat_mode: bool,
     pub realtime_budget: Option<RealtimeBudget>,
 }
 
@@ -67,6 +68,7 @@ pub async fn retry_if_needed(
         params.working_dir,
         params.session_id.clone(),
         params.request_id.clone(),
+        params.chat_mode,
     ));
     let retry_outcome = super::ollama_stream::stream_chat_with_tool_notify(
         params.on_event,

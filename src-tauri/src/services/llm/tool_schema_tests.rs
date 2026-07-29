@@ -1,115 +1,80 @@
 use super::*;
 
-#[test]
-fn leaves_non_gemini_tools_unchanged() {
-    let tools =
-        vec![json!({"type":"function","function":{"name":"x","parameters":{"type":"array"}}})];
-
-    assert_eq!(tools_for_provider("openai", "gpt-4o", &tools), tools);
-}
-
-#[test]
-fn adds_items_and_object_properties_for_gemini_backends() {
-    let tools = vec![json!({
+fn tool(name: &str, parameters: Value) -> Value {
+    json!({
         "type": "function",
         "function": {
-            "name": "x",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "items": {"type": "array"},
-                    "payload": {"type": "object"}
-                },
-                "required": ["items"]
-            }
+            "name": name,
+            "description": "test",
+            "parameters": parameters
         }
-    })];
-
-    let fixed = tools_for_provider("openrouter", "google/gemma-4-31b-it", &tools);
-    let params = &fixed[0]["function"]["parameters"]["properties"];
-    assert_eq!(params["items"]["items"]["type"], "string");
-    assert!(params["payload"]["properties"].is_object());
+    })
 }
 
 #[test]
-fn replaces_empty_schema_objects_for_gemini_backends() {
-    let tools = vec![json!({
-        "type": "function",
-        "function": {
-            "name": "x",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "value": {}
-                }
-            }
-        }
-    })];
+fn aliases_extension_names_and_restores_them() {
+    let original = "beaver.office.documents.create";
+    let tools = vec![tool(original, json!({"type": "object", "properties": {}}))];
 
-    let fixed = tools_for_provider("google", "gemma-4-26b-a4b-it", &tools);
-    assert_eq!(
-        fixed[0]["function"]["parameters"]["properties"]["value"]["type"],
-        "string"
-    );
+    let fixed = tools_for_provider("openai", "gpt-5.6-sol", &tools);
+    let alias = fixed[0]["function"]["name"].as_str().unwrap();
+
+    assert_eq!(alias, "beaver_office_documents_create");
+    assert!(alias.len() <= MAX_PROVIDER_TOOL_NAME);
+    assert!(has_provider_name_shape(alias));
+    assert_eq!(restore_tool_name(alias, &tools), original);
 }
 
 #[test]
-fn wraps_primitive_property_schemas_for_gemini_backends() {
-    let tools = vec![json!({
-        "type": "function",
-        "function": {
-            "name": "x",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "type": "string",
-                    "allowed": true
-                }
-            }
-        }
-    })];
+fn only_hashes_names_when_normalization_really_collides() {
+    let dotted = "beaver.office.documents.create";
+    let underscored = "beaver_office_documents_create";
+    let tools = vec![
+        tool(dotted, json!({"type": "object"})),
+        tool(underscored, json!({"type": "object"})),
+    ];
+    let left = wire_name_with_tools(dotted, &tools);
+    let repeated = wire_name_with_tools(dotted, &tools);
+    let right = wire_name_with_tools(underscored, &tools);
 
-    let fixed = tools_for_provider("google", "gemini-2.5-pro", &tools);
-    let props = &fixed[0]["function"]["parameters"]["properties"];
-    assert_eq!(props["type"]["type"], "string");
-    assert_eq!(props["allowed"], true);
+    assert_eq!(left, repeated);
+    assert_ne!(left, right);
+    assert_ne!(left, wire_name(dotted));
+    assert_eq!(right, underscored);
+    assert!(left.len() <= MAX_PROVIDER_TOOL_NAME);
+    assert!(right.len() <= MAX_PROVIDER_TOOL_NAME);
+    assert_eq!(restore_tool_name(&left, &tools), dotted);
+    assert_eq!(restore_tool_name(&right, &tools), underscored);
 }
 
 #[test]
-fn app_tool_definitions_are_safe_for_gemini_backends() {
-    let tools = crate::services::agent_local::tool_dispatcher::get_tool_definitions();
-    let fixed = tools_for_provider("openrouter", "google/gemma-4-31b-it", &tools);
-
-    for tool in fixed {
-        let params = &tool["function"]["parameters"];
-        assert_schema_safe(params);
-    }
+fn leaves_common_provider_names_unchanged() {
+    assert_eq!(wire_name("read_file"), "read_file");
+    assert_eq!(wire_name("_internal-tool"), "_internal-tool");
 }
 
-fn assert_schema_safe(value: &Value) {
-    match value {
-        Value::Object(map) => {
-            assert!(!map.is_empty(), "empty schema object");
-            match map.get("type").and_then(Value::as_str) {
-                Some("array") => assert!(map.contains_key("items"), "array schema without items"),
-                Some("object") => {
-                    let props = map
-                        .get("properties")
-                        .and_then(Value::as_object)
-                        .expect("object schema without properties");
-                    assert!(!props.is_empty(), "object schema with empty properties");
-                }
-                _ => {}
-            }
-            for child in map.values() {
-                assert_schema_safe(child);
-            }
-        }
-        Value::Array(items) => {
-            for item in items {
-                assert_schema_safe(item);
-            }
-        }
-        _ => {}
-    }
+#[test]
+fn hashes_only_the_overflow_of_names_longer_than_provider_limits() {
+    let name = format!("beaver.{}", "very_long_extension_tool_name.".repeat(4));
+    let alias = wire_name(&name);
+
+    assert_eq!(alias.len(), MAX_PROVIDER_TOOL_NAME);
+    assert!(has_provider_name_shape(&alias));
+}
+
+#[test]
+fn overflow_alias_cannot_impersonate_an_exact_canonical_name() {
+    let long_name = format!("beaver.{}", "very_long_extension_tool_name.".repeat(4));
+    let overflow_alias = wire_name(&long_name);
+    let tools = vec![
+        tool(&long_name, json!({"type": "object"})),
+        tool(&overflow_alias, json!({"type": "object"})),
+    ];
+
+    let long_wire = wire_name_with_tools(&long_name, &tools);
+    let exact_wire = wire_name_with_tools(&overflow_alias, &tools);
+
+    assert_ne!(long_wire, exact_wire);
+    assert_eq!(exact_wire, overflow_alias);
+    assert_eq!(restore_tool_name(&long_wire, &tools), long_name);
 }

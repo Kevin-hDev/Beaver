@@ -7,6 +7,7 @@ use sysinfo::{Pid, System};
 
 #[derive(Debug, Clone, Copy)]
 pub enum ProcessKind {
+    ExtensionInstaller,
     Forecast,
     ForecastRuntime,
     Ollama,
@@ -16,6 +17,7 @@ pub enum ProcessKind {
 impl ProcessKind {
     fn label(self) -> &'static str {
         match self {
+            Self::ExtensionInstaller => "extension-installer",
             Self::Forecast => "forecast",
             Self::ForecastRuntime => "forecast-runtime",
             Self::Ollama => "ollama",

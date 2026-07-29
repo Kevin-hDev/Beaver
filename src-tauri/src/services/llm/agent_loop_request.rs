@@ -37,8 +37,10 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     crate::services::agent_local::context_budget::prepare_for_request(
         params.messages,
         params.configured_context,
+        params.tools,
     )?;
-    let realtime_budget = RealtimeBudget::from_messages(params.configured_context, params.messages);
+    let realtime_budget =
+        RealtimeBudget::from_request(params.configured_context, params.messages, params.tools);
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
         params.session_id,
         params.plan_mode_active,
@@ -68,7 +70,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     .await;
     let purpose =
         crate::services::llm::request_purpose::RequestPurpose::for_session(params.session_id).await;
-    let outcome = super::retry::retry_stream(
+    let first_attempt = super::retry::retry_stream(
         params.on_event,
         params.session_id,
         params.request_id,
@@ -83,7 +85,49 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         plan_active,
         realtime_budget,
     )
-    .await?;
+    .await;
+    let outcome = match first_attempt {
+        Ok(outcome) => outcome,
+        Err(error) if error == "provider_payload_too_large" => {
+            let changed =
+                crate::services::agent_local::context_budget::reduce_after_payload_too_large(
+                    params.messages,
+                    params.configured_context,
+                    params.tools,
+                )?;
+            if !changed {
+                return Err(error);
+            }
+            crate::services::agent_local::stream_diagnostics::record_retry(
+                params.session_id,
+                params.request_id,
+                "Requête provider réduite après un rejet de taille.",
+            )
+            .await;
+            let reduced_budget = RealtimeBudget::from_request(
+                params.configured_context,
+                params.messages,
+                params.tools,
+            );
+            super::retry::retry_stream(
+                params.on_event,
+                params.session_id,
+                params.request_id,
+                params.provider_id,
+                purpose,
+                params.model,
+                params.messages,
+                params.tools,
+                params.think,
+                params.reasoning_mode,
+                params.cancel.clone(),
+                plan_active,
+                reduced_budget,
+            )
+            .await?
+        }
+        Err(error) => return Err(error),
+    };
     let interrupted = outcome.is_interrupted();
     let result = outcome.into_result();
     crate::services::provider_usage::record_for_session(

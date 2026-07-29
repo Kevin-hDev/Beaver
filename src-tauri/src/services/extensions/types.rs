@@ -15,6 +15,22 @@ pub enum ExtensionKind {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub enum ExtensionOriginKind {
+    Local,
+    Git,
+    Npm,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtensionOrigin {
+    pub kind: ExtensionOriginKind,
+    pub locator: String,
+    pub revision: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub enum ExtensionStatus {
     Active,
     Inactive,
@@ -52,6 +68,8 @@ pub struct ExtensionManifest {
     pub access: String,
     #[serde(default = "default_api_level")]
     pub api_level: ExtensionApiLevel,
+    #[serde(default)]
+    pub essential: bool,
     pub author: Option<String>,
     pub homepage: Option<String>,
     pub description: Option<String>,
@@ -82,6 +100,8 @@ pub struct ExtensionRecord {
     pub manifest: ExtensionManifest,
     pub kind: ExtensionKind,
     pub source: String,
+    #[serde(default)]
+    pub origin: Option<ExtensionOrigin>,
     pub enabled: bool,
     #[serde(default)]
     pub trusted: bool,

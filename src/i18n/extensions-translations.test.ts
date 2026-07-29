@@ -43,6 +43,13 @@ describe("extensions translations", () => {
     }
   });
 
+  it("partage la limite des plugins prioritaires avec l'interface", () => {
+    for (const locale of locales) {
+      expect(locale.extensions.discovery.count).toContain("{{max}}");
+      expect(locale.extensions.discovery.count).not.toContain("/15");
+    }
+  });
+
   it("traduit chaque diagnostic d'extension dans les sept langues", () => {
     for (const locale of locales) {
       const translations = locale.extensions.diagnostics.codes as Record<string, string>;

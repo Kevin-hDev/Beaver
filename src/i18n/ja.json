@@ -293,9 +293,11 @@
       "parserCrash": "形式を修正中...",
       "featureDropped": "機能を調整中...",
       "server": "Ollama を再試行中...",
+      "provider": "プロバイダーを再試行中…",
       "connection": "再接続中...",
       "button": "再試行"
     },
+    "groqExtensionsUnavailable": "Groq ではプラグインを利用できません。",
     "contextCompressed": "コンテキストを圧縮済み",
     "searchBarPlaceholder": "検索…",
     "resultCount_one": "{{count}} 件",
@@ -477,7 +479,7 @@
   },
   "permissionMode": {
     "chatLabel": "チャットボット",
-    "chatDescription": "ツール、ファイル、インターネットにアクセスせずに会話します",
+    "chatDescription": "Web 検索を使える通常のチャットです。ファイルやエージェント用ツールにはアクセスしません",
     "autoLabel": "フルアクセス",
     "autoDescription": "インターネットとコンピューター上のファイルへ制限なくアクセスします",
     "manualLabel": "許可を求める",
@@ -1032,6 +1034,7 @@
     "providerConnectionFailed": "プロバイダーに接続できませんでした。",
     "providerTemporarilyUnavailable": "プロバイダーは一時的に利用できません。しばらくしてからもう一度お試しください。",
     "providerRequestRejected": "プロバイダーがリクエストを拒否しました。",
+    "providerPayloadTooLarge": "縮小を試みましたが、リクエストはまだ大きすぎます。",
     "providerConfigurationInvalid": "リクエストを準備できませんでした。",
     "oauthReauthenticationRequired": "OAuth 接続の有効期限が切れました。プロバイダーに再接続してください。",
     "toolFailed": "ツールが失敗しました",
@@ -1930,7 +1933,7 @@
       },
       "custom": {
         "title": "カスタム拡張機能",
-        "description": "自分で選んだ JavaScript または TypeScript コードを追加します。",
+        "description": "ローカルコードを追加するか、Git または npm から拡張機能をインストールします。",
         "empty": "カスタム拡張機能はありません。"
       },
       "external": {
@@ -1938,6 +1941,17 @@
         "description": "Beaver 拡張プロトコルで接続された独立プログラムです。",
         "empty": "接続された外部アプリケーションはありません。"
       }
+    },
+    "discovery": {
+      "title": "優先プラグイン",
+      "count": "{{count}}/{{max}}",
+      "description": "Beaver がリクエストを縮小する必要がある場合に、これらのプラグインのツールを優先します。",
+      "empty": "優先プラグインはありません。Beaver は必要に応じて他のプラグインを読み込みます。",
+      "add": "追加",
+      "dialogTitle": "優先プラグインを選択",
+      "dialogDescription": "{{max}} 個中 {{count}} 個のプラグインを選択中。",
+      "noEnabledPlugins": "有効なプラグインはありません。",
+      "validate": "保存"
     },
     "official": {
       "documents": {
@@ -1980,9 +1994,11 @@
       "cancel": "キャンセル",
       "back": "戻る",
       "openSource": "ソースを開く",
+      "update": "更新",
       "reload": "再読み込み",
       "remove": "削除",
       "confirmRemove": "確認",
+      "confirmUpdate": "更新を確認",
       "restartHost": "ホストを再起動",
       "recovery": "ホスト型拡張機能を無効化"
     },
@@ -1998,17 +2014,25 @@
       "local": "ローカル拡張機能",
       "external": "外部アプリケーション"
     },
+    "origins": {
+      "local": "ローカルファイルまたはフォルダー",
+      "git": "Git リポジトリ",
+      "npm": "npm パッケージ"
+    },
     "loading": "拡張機能を読み込み中…",
     "showInChat": "チャットに表示",
     "showInChatFor": "{{name}} をチャットに表示",
     "enableFor": "{{name}} を有効化",
     "fullAccessWarning": "この拡張機能は Beaver による監査を受けておらず、アカウントのデータ、シークレット、機能へアクセスできます。",
+    "updateTrustWarning": "更新すると拡張機能は無効になります。再度信頼する前に新しいバージョンを確認してください。",
     "detail": {
       "status": "状態",
       "runtime": "ランタイム",
       "api": "Beaver API",
       "author": "作者",
+      "installSource": "インストール元",
       "source": "ソース",
+      "revision": "Git リビジョン",
       "unknown": "未記載",
     "contributions": "登録された拡張項目",
     "replacesCore": "内蔵ツールを置き換えます"
@@ -2025,7 +2049,17 @@
       "file": "ファイルを選択",
       "fileDescription": "JavaScript、TypeScript、または JSON マニフェスト",
       "folder": "フォルダーを選択",
-      "folderDescription": "Beaver マニフェストまたは package.json を含むフォルダー"
+      "folderDescription": "Beaver マニフェストまたは package.json を含むフォルダー",
+      "git": "Git からインストール",
+      "gitDescription": "ブランチ、タグ、コミットを任意で指定できる HTTPS または SSH リポジトリ",
+      "npm": "npm からインストール",
+      "npmDescription": "Beaver 拡張機能を含む公開パッケージ",
+      "gitLabel": "Git リポジトリ URL",
+      "gitPlaceholder": "https://github.com/example/extension.git",
+      "npmLabel": "npm パッケージ名",
+      "npmPlaceholder": "@example/extension または extension@latest",
+      "install": "インストール",
+      "installing": "インストール中…"
     },
     "host": {
       "title": "ホストと診断",
@@ -2071,7 +2105,27 @@
         "extensions_request_too_large": "リクエストが大きすぎて送信できません。テキストの量を減らしてください。",
         "extensions_request_invalid": "拡張機能に送信されたリクエストが無効です。",
         "extensions_tool_unavailable": "この拡張機能ツールは利用できません。",
-        "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。"
+        "extensions_tool_arguments_invalid": "このツールに送信されたパラメーターが無効です。",
+        "extensions_install_failed": "拡張機能をインストールできませんでした。",
+        "extensions_update_failed": "拡張機能を更新できませんでした。",
+        "extensions_uninstall_failed": "拡張機能を完全に削除できませんでした。",
+        "extensions_source_invalid": "Git アドレスまたは参照が無効です。",
+        "extensions_package_invalid": "npm の名前、バージョン、またはタグが無効です。",
+        "extensions_git_download_failed": "Git リポジトリをダウンロードできませんでした。",
+        "extensions_git_timeout": "Git リポジトリが時間内に応答しませんでした。",
+        "extensions_runtime_unavailable": "Beaver が提供するインストールランタイムを利用できません。",
+        "extensions_environment_invalid": "インストール環境が無効か、大きすぎます。",
+        "extensions_dependency_install_failed": "拡張機能の依存関係をインストールできませんでした。",
+        "extensions_manifest_invalid": "拡張機能のマニフェストまたはエントリーポイントが無効です。",
+        "extensions_not_beaver_extension": "このパッケージは Beaver 拡張機能ではありません。",
+        "extensions_api_incompatible": "この拡張機能は現在の Beaver のバージョンと互換性がありません。",
+        "extensions_symlink_unsupported": "この拡張機能には対応していないシンボリックリンクが含まれています。",
+        "extensions_already_installed": "この識別子の拡張機能はすでにインストールされています。",
+        "extensions_limit_reached": "拡張機能の最大数に達しました。",
+        "extensions_storage_failed": "ローカルの拡張機能ストレージを利用できません。",
+        "extensions_update_identity_changed": "更新によって拡張機能の識別情報が変わったため拒否されました。",
+        "extensions_update_unavailable": "Beaver はこの拡張機能を更新できません。",
+        "extensions_cleanup_failed": "一部の古い拡張機能ファイルを削除できませんでした。"
       }
     },
     "diagnostics": {

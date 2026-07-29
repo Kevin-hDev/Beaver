@@ -14,7 +14,13 @@ describe("ExtensionAddDialog", () => {
   });
 
   it("affiche l’avertissement d’accès complet avant la sélection", () => {
-    render(<ExtensionAddDialog onAdd={vi.fn()} onClose={vi.fn()} />);
+    render(
+      <ExtensionAddDialog
+        onAdd={vi.fn()}
+        onInstall={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText("extensions.add.fullAccessWarning")).toBeInTheDocument();
   });
@@ -23,7 +29,8 @@ describe("ExtensionAddDialog", () => {
     const onClose = vi.fn();
     render(
       <ExtensionAddDialog
-        onAdd={vi.fn().mockResolvedValue(false)}
+        onAdd={vi.fn().mockResolvedValue("extensions.errors.operation")}
+        onInstall={vi.fn()}
         onClose={onClose}
       />,
     );
@@ -39,12 +46,60 @@ describe("ExtensionAddDialog", () => {
     const onClose = vi.fn();
     render(
       <ExtensionAddDialog
-        onAdd={vi.fn().mockResolvedValue(true)}
+        onAdd={vi.fn().mockResolvedValue(null)}
+        onInstall={vi.fn()}
         onClose={onClose}
       />,
     );
 
     fireEvent.click(screen.getByText("extensions.add.file"));
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it.each([
+    ["git", "extensions.add.git", "extensions.add.gitLabel", "https://github.com/example/ext.git"],
+    ["npm", "extensions.add.npm", "extensions.add.npmLabel", "@example/ext@latest"],
+  ] as const)("installe une source %s saisie explicitement", async (
+    source,
+    button,
+    label,
+    locator,
+  ) => {
+    const onInstall = vi.fn().mockResolvedValue(null);
+    render(
+      <ExtensionAddDialog
+        onAdd={vi.fn()}
+        onInstall={onInstall}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText(button));
+    fireEvent.change(screen.getByLabelText(label), { target: { value: locator } });
+    fireEvent.click(screen.getByText("extensions.add.install"));
+
+    await waitFor(() => expect(onInstall).toHaveBeenCalledWith(source, locator));
+  });
+
+  it("affiche la cause sûre et traduite renvoyée par le backend", async () => {
+    render(
+      <ExtensionAddDialog
+        onAdd={vi.fn()}
+        onInstall={vi.fn().mockResolvedValue(
+          "extensions.errors.codes.extensions_git_download_failed",
+        )}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("extensions.add.git"));
+    fireEvent.change(screen.getByLabelText("extensions.add.gitLabel"), {
+      target: { value: "https://github.com/example/ext.git" },
+    });
+    fireEvent.click(screen.getByText("extensions.add.install"));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(
+      "extensions.errors.codes.extensions_git_download_failed",
+    ));
   });
 });

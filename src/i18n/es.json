@@ -293,9 +293,11 @@
       "parserCrash": "Corrigiendo formato...",
       "featureDropped": "Ajustando función...",
       "server": "Reintentando Ollama...",
+      "provider": "Reintentando con el proveedor…",
       "connection": "Reconectando...",
       "button": "Reintentar"
     },
+    "groqExtensionsUnavailable": "Los plugins no están disponibles con Groq.",
     "contextCompressed": "Contexto comprimido",
     "searchBarPlaceholder": "Buscar...",
     "resultCount_one": "{{count}} resultado",
@@ -477,7 +479,7 @@
   },
   "permissionMode": {
     "chatLabel": "Chatbot",
-    "chatDescription": "Conversar sin acceso a herramientas, archivos ni Internet",
+    "chatDescription": "Chat clásico con búsqueda web, sin acceso a archivos ni herramientas agénticas",
     "autoLabel": "Acceso completo",
     "autoDescription": "Acceso sin restricciones a Internet y a los archivos de tu ordenador",
     "manualLabel": "Pedir autorización",
@@ -1032,6 +1034,7 @@
     "providerConnectionFailed": "No se pudo conectar con el proveedor.",
     "providerTemporarilyUnavailable": "El proveedor no está disponible temporalmente. Vuelve a intentarlo en unos instantes.",
     "providerRequestRejected": "El proveedor rechazó la solicitud.",
+    "providerPayloadTooLarge": "La solicitud sigue siendo demasiado grande tras el intento de reducción.",
     "providerConfigurationInvalid": "No se pudo preparar la solicitud.",
     "oauthReauthenticationRequired": "La conexión OAuth ha caducado. Vuelve a conectar el proveedor.",
     "toolFailed": "La herramienta falló",
@@ -1930,7 +1933,7 @@
       },
       "custom": {
         "title": "Extensiones personalizadas",
-        "description": "Añade código JavaScript o TypeScript elegido por ti.",
+        "description": "Añade código local o instala una extensión desde Git o npm.",
         "empty": "No hay extensiones personalizadas."
       },
       "external": {
@@ -1938,6 +1941,17 @@
         "description": "Programas independientes conectados mediante el protocolo de extensiones de Beaver.",
         "empty": "No hay aplicaciones externas conectadas."
       }
+    },
+    "discovery": {
+      "title": "Plugins prioritarios",
+      "count": "{{count}}/{{max}}",
+      "description": "Mantén disponibles primero las herramientas de estos plugins cuando Beaver deba reducir una solicitud.",
+      "empty": "No hay plugins prioritarios. Beaver cargará los demás cuando sean necesarios.",
+      "add": "Añadir",
+      "dialogTitle": "Elegir plugins prioritarios",
+      "dialogDescription": "{{count}} de {{max}} plugin(s) seleccionado(s).",
+      "noEnabledPlugins": "No hay ningún plugin activado disponible.",
+      "validate": "Guardar"
     },
     "official": {
       "documents": {
@@ -1980,9 +1994,11 @@
       "cancel": "Cancelar",
       "back": "Volver",
       "openSource": "Abrir código fuente",
+      "update": "Actualizar",
       "reload": "Recargar",
       "remove": "Eliminar",
       "confirmRemove": "Confirmar",
+      "confirmUpdate": "Confirmar actualización",
       "restartHost": "Reiniciar host",
       "recovery": "Desactivar extensiones alojadas"
     },
@@ -1998,17 +2014,25 @@
       "local": "Extensión local",
       "external": "Aplicación externa"
     },
+    "origins": {
+      "local": "Archivo o carpeta local",
+      "git": "Repositorio Git",
+      "npm": "Paquete npm"
+    },
     "loading": "Cargando extensiones…",
     "showInChat": "Mostrar en el chat",
     "showInChatFor": "Mostrar {{name}} en el chat",
     "enableFor": "Activar {{name}}",
     "fullAccessWarning": "Beaver no audita esta extensión y puede acceder a los datos, secretos y funciones de tu cuenta.",
+    "updateTrustWarning": "La actualización desactivará la extensión. Revisa la nueva versión antes de volver a confiar en ella.",
     "detail": {
       "status": "Estado",
       "runtime": "Runtime",
       "api": "API de Beaver",
       "author": "Autor",
+      "installSource": "Origen de instalación",
       "source": "Fuente",
+      "revision": "Revisión Git",
       "unknown": "No indicado",
     "contributions": "Contribuciones registradas",
     "replacesCore": "Sustituye una herramienta integrada"
@@ -2025,7 +2049,17 @@
       "file": "Elegir un archivo",
       "fileDescription": "JavaScript, TypeScript o manifiesto JSON",
       "folder": "Elegir una carpeta",
-      "folderDescription": "Carpeta con un manifiesto de Beaver o package.json"
+      "folderDescription": "Carpeta con un manifiesto de Beaver o package.json",
+      "git": "Instalar desde Git",
+      "gitDescription": "Repositorio HTTPS o SSH con rama, etiqueta o commit opcional",
+      "npm": "Instalar desde npm",
+      "npmDescription": "Paquete publicado que contiene una extensión de Beaver",
+      "gitLabel": "URL del repositorio Git",
+      "gitPlaceholder": "https://github.com/ejemplo/extension.git",
+      "npmLabel": "Nombre del paquete npm",
+      "npmPlaceholder": "@ejemplo/extension o extension@latest",
+      "install": "Instalar",
+      "installing": "Instalando…"
     },
     "host": {
       "title": "Host y diagnósticos",
@@ -2071,7 +2105,27 @@
         "extensions_request_too_large": "La solicitud es demasiado grande para enviarse. Reduce la cantidad de texto.",
         "extensions_request_invalid": "La solicitud enviada a la extensión no es válida.",
         "extensions_tool_unavailable": "Esta herramienta de extensión no está disponible.",
-        "extensions_tool_arguments_invalid": "Los parámetros enviados a esta herramienta no son válidos."
+        "extensions_tool_arguments_invalid": "Los parámetros enviados a esta herramienta no son válidos.",
+        "extensions_install_failed": "No se pudo instalar la extensión.",
+        "extensions_update_failed": "No se pudo actualizar la extensión.",
+        "extensions_uninstall_failed": "No se pudo eliminar completamente la extensión.",
+        "extensions_source_invalid": "La dirección o referencia Git no es válida.",
+        "extensions_package_invalid": "El nombre, la versión o la etiqueta npm no es válida.",
+        "extensions_git_download_failed": "No se pudo descargar el repositorio Git.",
+        "extensions_git_timeout": "El repositorio Git no respondió a tiempo.",
+        "extensions_runtime_unavailable": "El entorno de instalación proporcionado por Beaver no está disponible.",
+        "extensions_environment_invalid": "El entorno de instalación no es válido o es demasiado grande.",
+        "extensions_dependency_install_failed": "No se pudieron instalar las dependencias de la extensión.",
+        "extensions_manifest_invalid": "El manifiesto o el punto de entrada de la extensión no es válido.",
+        "extensions_not_beaver_extension": "Este paquete no es una extensión de Beaver.",
+        "extensions_api_incompatible": "Esta extensión no es compatible con esta versión de Beaver.",
+        "extensions_symlink_unsupported": "Esta extensión contiene un enlace simbólico no compatible.",
+        "extensions_already_installed": "Ya hay una extensión instalada con este identificador.",
+        "extensions_limit_reached": "Se alcanzó el número máximo de extensiones.",
+        "extensions_storage_failed": "El almacenamiento local de extensiones no está disponible.",
+        "extensions_update_identity_changed": "La actualización cambió la identidad de la extensión y fue rechazada.",
+        "extensions_update_unavailable": "Beaver no puede actualizar esta extensión.",
+        "extensions_cleanup_failed": "No se pudieron limpiar algunos archivos antiguos de extensiones."
       }
     },
     "diagnostics": {

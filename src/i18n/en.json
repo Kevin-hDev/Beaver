@@ -298,9 +298,11 @@
       "parserCrash": "Fixing format...",
       "featureDropped": "Adjusting feature...",
       "server": "Retrying Ollama...",
+      "provider": "Retrying provider…",
       "connection": "Reconnecting...",
       "button": "Retry"
     },
+    "groqExtensionsUnavailable": "Plugins are not available with Groq.",
     "contextCompressed": "Context compressed",
     "searchBarPlaceholder": "Search...",
     "resultCount_one": "{{count}} result",
@@ -482,7 +484,7 @@
   },
   "permissionMode": {
     "chatLabel": "Chatbot",
-    "chatDescription": "Chat without access to tools, files, or the Internet",
+    "chatDescription": "Classic chat with web search, without file access or agentic tools",
     "autoLabel": "Full access",
     "autoDescription": "Unrestricted access to the Internet and files on your computer",
     "manualLabel": "Ask permission",
@@ -1037,6 +1039,7 @@
     "providerConnectionFailed": "Unable to connect to the provider.",
     "providerTemporarilyUnavailable": "The provider is temporarily unavailable. Try again shortly.",
     "providerRequestRejected": "The provider rejected the request.",
+    "providerPayloadTooLarge": "The request remains too large after the reduction attempt.",
     "providerConfigurationInvalid": "The request could not be prepared.",
     "oauthReauthenticationRequired": "The OAuth connection has expired. Reconnect the provider.",
     "toolFailed": "Tool failed",
@@ -1263,7 +1266,7 @@
       },
       "custom": {
         "title": "Custom Extensions",
-        "description": "Add JavaScript or TypeScript code that you choose.",
+        "description": "Add local code or install an extension from Git or npm.",
         "empty": "No custom extensions."
       },
       "external": {
@@ -1271,6 +1274,17 @@
         "description": "Independent programs connected through the Beaver extension protocol.",
         "empty": "No external applications connected."
       }
+    },
+    "discovery": {
+      "title": "Priority plugins",
+      "count": "{{count}}/{{max}}",
+      "description": "Keep these plugins’ tools available first when Beaver needs to reduce a request.",
+      "empty": "No priority plugin. Beaver will load other plugins on demand.",
+      "add": "Add",
+      "dialogTitle": "Choose priority plugins",
+      "dialogDescription": "{{count}} of {{max}} plugin(s) selected.",
+      "noEnabledPlugins": "No enabled plugin is available.",
+      "validate": "Save"
     },
     "official": {
       "documents": {
@@ -1313,9 +1327,11 @@
       "cancel": "Cancel",
       "back": "Back",
       "openSource": "Open source",
+      "update": "Update",
       "reload": "Reload",
       "remove": "Remove",
       "confirmRemove": "Confirm",
+      "confirmUpdate": "Confirm update",
       "restartHost": "Restart host",
       "recovery": "Disable hosted extensions"
     },
@@ -1331,17 +1347,25 @@
       "local": "Local extension",
       "external": "External application"
     },
+    "origins": {
+      "local": "Local file or folder",
+      "git": "Git repository",
+      "npm": "npm package"
+    },
     "loading": "Loading extensions…",
     "showInChat": "Show in chat",
     "showInChatFor": "Show {{name}} in chat",
     "enableFor": "Enable {{name}}",
     "fullAccessWarning": "This extension is not audited by Beaver and can access your account’s data, secrets, and features.",
+    "updateTrustWarning": "Updating will disable the extension. Review the new version before trusting it again.",
     "detail": {
       "status": "Status",
       "runtime": "Runtime",
       "api": "Beaver API",
       "author": "Author",
+      "installSource": "Installation source",
       "source": "Source",
+      "revision": "Git revision",
       "unknown": "Not provided",
     "contributions": "Registered contributions",
     "replacesCore": "Replaces a built-in tool"
@@ -1358,7 +1382,17 @@
       "file": "Choose a file",
       "fileDescription": "JavaScript, TypeScript, or JSON manifest",
       "folder": "Choose a folder",
-      "folderDescription": "Folder containing a Beaver manifest or package.json"
+      "folderDescription": "Folder containing a Beaver manifest or package.json",
+      "git": "Install from Git",
+      "gitDescription": "HTTPS or SSH repository with an optional branch, tag, or commit",
+      "npm": "Install from npm",
+      "npmDescription": "Published package containing a Beaver extension",
+      "gitLabel": "Git repository URL",
+      "gitPlaceholder": "https://github.com/example/extension.git",
+      "npmLabel": "npm package name",
+      "npmPlaceholder": "@example/extension or extension@latest",
+      "install": "Install",
+      "installing": "Installing…"
     },
     "host": {
       "title": "Host and Diagnostics",
@@ -1404,7 +1438,27 @@
         "extensions_request_too_large": "The request is too large to send. Reduce the amount of text.",
         "extensions_request_invalid": "The request sent to the extension is invalid.",
         "extensions_tool_unavailable": "This extension tool is unavailable.",
-        "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid."
+        "extensions_tool_arguments_invalid": "The parameters sent to this tool are invalid.",
+        "extensions_install_failed": "The extension could not be installed.",
+        "extensions_update_failed": "The extension could not be updated.",
+        "extensions_uninstall_failed": "The extension could not be removed completely.",
+        "extensions_source_invalid": "The Git address or reference is invalid.",
+        "extensions_package_invalid": "The npm name, version, or tag is invalid.",
+        "extensions_git_download_failed": "The Git repository could not be downloaded.",
+        "extensions_git_timeout": "The Git repository did not respond in time.",
+        "extensions_runtime_unavailable": "The installation runtime provided by Beaver is unavailable.",
+        "extensions_environment_invalid": "The installation environment is invalid or too large.",
+        "extensions_dependency_install_failed": "The extension dependencies could not be installed.",
+        "extensions_manifest_invalid": "The extension manifest or entry point is invalid.",
+        "extensions_not_beaver_extension": "This package is not a Beaver extension.",
+        "extensions_api_incompatible": "This extension is not compatible with this version of Beaver.",
+        "extensions_symlink_unsupported": "This extension contains an unsupported symbolic link.",
+        "extensions_already_installed": "An extension with this identifier is already installed.",
+        "extensions_limit_reached": "The maximum number of extensions has been reached.",
+        "extensions_storage_failed": "Local extension storage is unavailable.",
+        "extensions_update_identity_changed": "The update changed the extension identity and was rejected.",
+        "extensions_update_unavailable": "Beaver cannot update this extension.",
+        "extensions_cleanup_failed": "Some old extension files could not be cleaned up."
       }
     },
     "diagnostics": {

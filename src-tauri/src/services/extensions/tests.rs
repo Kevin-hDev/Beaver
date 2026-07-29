@@ -15,6 +15,7 @@ fn manifest(id: &str) -> ExtensionManifest {
         ui: None,
         access: "full".to_string(),
         api_level: ExtensionApiLevel::Stable,
+        essential: false,
         author: None,
         homepage: None,
         description: None,

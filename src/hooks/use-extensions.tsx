@@ -8,6 +8,8 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
+import { useExtensionInstall } from "@/hooks/use-extension-install";
+import { useExtensionPriorities } from "@/hooks/use-extension-priorities";
 import { ExtensionActivationDialog } from "@/components/extensions/extension-activation-dialog";
 import { extensionErrorKey } from "@/lib/extension-errors";
 import { parseExtensionRecords } from "@/lib/extension-records";
@@ -27,27 +29,37 @@ function useExtensionsState() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
+  const {
+    protectedPluginIds,
+    priorityBusy,
+    applyValue: applyPriorityValue,
+    reset: resetPriorities,
+    setPriorityPlugins,
+  } = useExtensionPriorities(setOperationError);
   const [busyIds, setBusyIds] = useState<Set<string>>(() => new Set());
   const [pendingActivation, setPendingActivation] =
     useState<ExtensionRecord | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      const [records, status] = await Promise.all([
+      const [records, status, preferences] = await Promise.all([
         invoke<unknown>("list_extensions"),
         invoke<ExtensionHostStatus>("get_extension_host_status"),
+        invoke<unknown>("get_extension_discovery_preferences"),
       ]);
       setExtensions(parseExtensionRecords(records));
       setHost(status);
+      applyPriorityValue(preferences);
       setLoadError(null);
     } catch (error) {
       setExtensions([]);
       setHost(EMPTY_HOST);
+      resetPriorities();
       setLoadError(extensionErrorKey(error, "extensions.errors.load"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyPriorityValue, resetPriorities]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- refresh synchronise le registre possédé par Rust
@@ -113,17 +125,7 @@ function useExtensionsState() {
     mutate(id, "set_extension_show_in_chat", { extensionId: id, showInChat },
       (record) => ({ ...record, showInChat })), [mutate]);
 
-  const addLocal = useCallback(async (path: string) => {
-    setOperationError(null);
-    try {
-      const added = await invoke<ExtensionRecord>("add_local_extension", { path });
-      await refresh();
-      return added;
-    } catch (error) {
-      setOperationError(extensionErrorKey(error, "extensions.errors.operation"));
-      return null;
-    }
-  }, [refresh]);
+  const install = useExtensionInstall(refresh, setOperationError);
 
   const run = useCallback(async (command: string, payload: Record<string, unknown> = {}) => {
     setOperationError(null);
@@ -143,13 +145,25 @@ function useExtensionsState() {
     loadError,
     operationError,
     busyIds,
+    protectedPluginIds,
+    priorityBusy,
     pendingActivation,
     refresh,
-    addLocal,
+    addLocal: (path: string) => install("add_local_extension", { path }),
+    installGit: (url: string) => install("install_git_extension", { url }),
+    installNpm: (packageSpec: string) =>
+      install("install_npm_extension", { packageSpec }),
     setEnabled,
     confirmActivation,
     cancelActivation: () => setPendingActivation(null),
     setShowInChat,
+    setPriorityPlugins,
+    update: (id: string) => mutate(
+      id,
+      "update_extension",
+      { extensionId: id },
+      (record) => record,
+    ),
     remove: (id: string) => run("remove_extension", { extensionId: id }),
     reload: () => run("reload_extension_host"),
     recover: () => run("recover_extension_host"),

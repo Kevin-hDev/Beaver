@@ -14,7 +14,29 @@ pub(crate) async fn run(
     let ctx = crate::services::compress::context_resolve::resolve_ollama(&params.model).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools = resolve_tools(&params, &mode, &settings);
-    let enabled_tool_names = tool_catalog::tool_names(&final_tools);
+    let extension_tools = if mode.is_chat {
+        crate::services::agent_local::extension_tool_set::ExtensionToolSet::passthrough(final_tools)
+    } else {
+        crate::services::agent_local::extension_tool_set::ExtensionToolSet::prepare(
+            final_tools,
+            crate::services::agent_local::extension_tool_set::PrepareContext {
+                session_id: &params.session_id,
+                provider: "ollama",
+                model: &params.model,
+                context_window: ctx.configured,
+                preserve_dynamic_tools: !params.tools.is_empty(),
+            },
+        )
+        .await?
+    };
+    let enabled_tool_names = tool_catalog::tool_names(extension_tools.active());
+    crate::services::agent_local::extension_tool_set::record_selection(
+        &extension_tools,
+        &params.session_id,
+        &params.request_id,
+        "extension_tools_selected",
+    )
+    .await;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
     common::update_working_dir(&params.session_id, &working_dir).await;
     let plan_mode_active =
@@ -83,7 +105,7 @@ pub(crate) async fn run(
         &params.on_event,
         &mut messages,
         &params.model,
-        final_tools,
+        extension_tools,
         ollama_think,
         working_dir,
         params.session_id.clone(),
@@ -111,14 +133,18 @@ fn resolve_tools(
     mode: &StreamMode,
     settings: &AgentSettings,
 ) -> Vec<serde_json::Value> {
-    let defs = if !params.tools.is_empty() {
-        params.tools.clone()
-    } else if mode.is_chat {
+    let defs = definitions_for_mode(mode.is_chat, &params.tools);
+    tool_catalog::filter_tool_definitions(defs, &settings.enabled_optional_tools)
+}
+
+fn definitions_for_mode(is_chat: bool, requested: &[serde_json::Value]) -> Vec<serde_json::Value> {
+    if is_chat {
         tool_dispatcher::get_chat_tool_definitions()
+    } else if !requested.is_empty() {
+        requested.to_vec()
     } else {
         tool_dispatcher::get_tool_definitions()
-    };
-    tool_catalog::filter_tool_definitions(defs, &settings.enabled_optional_tools)
+    }
 }
 
 fn todo_tools_enabled(enabled_tool_names: &[String]) -> bool {
@@ -155,3 +181,7 @@ fn resolve_ollama_think(params: &StreamTaskParams) -> OllamaThink {
     )
     .unwrap_or(OllamaThink::Bool(false))
 }
+
+#[cfg(test)]
+#[path = "ollama_tests.rs"]
+mod tests;

@@ -98,6 +98,37 @@ pub async fn record_retry(session_id: &str, request_id: &str, message: &str) {
     .await;
 }
 
+pub async fn record_extension_tools(
+    session_id: &str,
+    request_id: &str,
+    phase: &str,
+    names: &[String],
+) {
+    let total = names.len();
+    let max_items = super::provider_tool_limits::MAX_CAPACITY_DIAGNOSTIC_ITEMS;
+    let names = names
+        .iter()
+        .take(max_items)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(", ");
+    let suffix = if total > max_items {
+        format!(" (+{} more)", total - max_items)
+    } else {
+        String::new()
+    };
+    let label = if phase == "extension_plugins_omitted" {
+        "Extension plugins omitted by provider capacity"
+    } else {
+        "Extension tools selected"
+    };
+    let message = format!("{label}: {names}{suffix}");
+    let _ = support::update_run(session_id, request_id, |_session, run| {
+        support::push_event(run, phase, &message, None, None);
+    })
+    .await;
+}
+
 pub async fn record_completed(session_id: &str, request_id: &str) {
     let _ = support::update_run(session_id, request_id, |session, run| {
         run.status = "completed".to_string();

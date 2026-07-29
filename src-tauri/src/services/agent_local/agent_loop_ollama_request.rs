@@ -18,6 +18,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub cancel: CancellationToken,
     pub configured_context: u64,
     pub plan_mode_active: bool,
+    pub chat_mode: bool,
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
 }
@@ -37,8 +38,13 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         .await?;
     super::session_security::sanitize_chat_messages(params.messages);
     super::tool_result_budget::apply_budget(params.messages);
-    super::context_budget::prepare_for_request(params.messages, params.configured_context)?;
-    let realtime_budget = RealtimeBudget::from_messages(params.configured_context, params.messages);
+    super::context_budget::prepare_for_request(
+        params.messages,
+        params.configured_context,
+        params.tools,
+    )?;
+    let realtime_budget =
+        RealtimeBudget::from_request(params.configured_context, params.messages, params.tools);
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let request = super::agent_loop_support::build_request(
@@ -67,6 +73,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.working_dir.to_path_buf(),
         params.session_id.to_string(),
         params.request_id.to_string(),
+        params.chat_mode,
     ));
     super::stream_diagnostics::mark_phase(
         params.session_id,
@@ -105,6 +112,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
             request_id: params.request_id.to_string(),
             cancel: params.cancel.clone(),
             plan_active,
+            chat_mode: params.chat_mode,
             realtime_budget,
         })
         .await?;

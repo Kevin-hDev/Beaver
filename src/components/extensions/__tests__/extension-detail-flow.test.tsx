@@ -20,6 +20,7 @@ const record = parseExtensionRecords([{
     ui: null,
     access: "full",
     apiLevel: "stable",
+    essential: false,
     author: "Beaver",
     homepage: null,
     description: "Create documents.",
@@ -61,14 +62,18 @@ function SelectablePage() {
       loadError={null}
       operationError={null}
       busyIds={new Set()}
+      protectedPluginIds={[]}
+      priorityBusy={false}
       onSelect={(id) => setSelected(id ? record : null)}
       onAdd={vi.fn()}
       onEnabled={vi.fn()}
       onShowInChat={vi.fn()}
       onOpenSource={vi.fn()}
+      onUpdate={vi.fn()}
       onRemove={vi.fn()}
       onReload={vi.fn()}
       onRecover={vi.fn()}
+      onPrioritySave={vi.fn(() => Promise.resolve(true))}
     />
   );
 }

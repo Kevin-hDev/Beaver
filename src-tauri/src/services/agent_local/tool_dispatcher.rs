@@ -9,6 +9,7 @@ use std::path::Path;
 pub use crate::services::agent_local::tool_definitions::get_tool_definitions;
 pub use crate::services::agent_local::tool_definitions_chat::get_chat_tool_definitions;
 pub use super::tool_dispatcher_entry::dispatch;
+pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
 pub(crate) use super::tool_dispatcher_entry::enrich_error;
 
 pub(super) async fn dispatch_inner(
@@ -112,6 +113,9 @@ pub(super) async fn dispatch_inner(
                 Ok(content) => ToolResult::ok(content),
                 Err(e) => ToolResult::err(e),
             }
+        }
+        "search_extension_tools" => {
+            super::tool_extension_discovery::execute(args, session_id).await
         }
         "todo_write" => super::tool_todo::execute(args, session_id).await,
         "todo_history" => super::tool_todo::execute_history(args, session_id).await,

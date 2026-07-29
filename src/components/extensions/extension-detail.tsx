@@ -1,16 +1,13 @@
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
-  ArrowsClockwise,
   ChatCircleDots,
-  FolderOpen,
   ShieldWarning,
-  Trash,
 } from "@/components/ui/icons";
-import { ConfirmButton } from "@/components/settings/confirm-button";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
+import { ExtensionActions } from "./extension-actions";
 import {
   extensionDisplayName,
   extensionToolDescription,
@@ -24,6 +21,7 @@ interface ExtensionDetailProps {
   onEnabled: (enabled: boolean) => void;
   onShowInChat: (show: boolean) => void;
   onOpenSource: () => void;
+  onUpdate: () => void;
   onReload: () => void;
   onRemove: () => void;
 }
@@ -32,6 +30,8 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
   const { t } = useTranslation();
   const { extension } = props;
   const name = extensionDisplayName(t, extension);
+  const managed = extension.origin?.kind === "git" || extension.origin?.kind === "npm";
+  const displayedSource = extension.origin?.locator ?? extension.source;
   return (
     <div className="extp-content">
       <header className="extd-header">
@@ -63,7 +63,20 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
         <DetailLine label={t("extensions.detail.runtime")} value={extension.manifest.runtime} />
         <DetailLine label={t("extensions.detail.api")} value={extension.manifest.beaverApi} />
         <DetailLine label={t("extensions.detail.author")} value={extension.manifest.author ?? t("extensions.detail.unknown")} />
-        <DetailLine label={t("extensions.detail.source")} value={extension.source} mono />
+        {extension.origin && (
+          <DetailLine
+            label={t("extensions.detail.installSource")}
+            value={t(`extensions.origins.${extension.origin.kind}`)}
+          />
+        )}
+        <DetailLine label={t("extensions.detail.source")} value={displayedSource} mono />
+        {extension.origin?.revision && (
+          <DetailLine
+            label={t("extensions.detail.revision")}
+            value={extension.origin.revision}
+            mono
+          />
+        )}
         <div className="extp-info-line">
           <span className="extd-chat-label">
             <ChatCircleDots size="var(--icon-sm)" />
@@ -81,20 +94,14 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
       <Contributions extension={extension} />
 
       {extension.kind === "local" && (
-        <div className="extp-actions">
-          <button type="button" className="wk-btn-secondary" onClick={props.onOpenSource}>
-            <FolderOpen size="var(--icon-sm)" />{t("extensions.actions.openSource")}
-          </button>
-          <button type="button" className="wk-btn-secondary" onClick={props.onReload}>
-            <ArrowsClockwise size="var(--icon-sm)" />{t("extensions.actions.reload")}
-          </button>
-          <ConfirmButton
-            className="wk-btn-secondary extd-danger"
-            label={<><Trash size="var(--icon-sm)" />{t("extensions.actions.remove")}</>}
-            confirmLabel={t("extensions.actions.confirmRemove")}
-            onConfirm={props.onRemove}
-          />
-        </div>
+        <ExtensionActions
+          busy={props.busy}
+          managed={managed}
+          onOpenSource={props.onOpenSource}
+          onUpdate={props.onUpdate}
+          onReload={props.onReload}
+          onRemove={props.onRemove}
+        />
       )}
     </div>
   );

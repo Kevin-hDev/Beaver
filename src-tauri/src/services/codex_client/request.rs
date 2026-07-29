@@ -69,6 +69,7 @@ async fn send_request(
     let body = build_codex_request(model, messages, tools, reasoning_mode);
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
+    let request_bytes = body_json.len();
     let client = AuthenticatedClient::new(options.timeout)
         .map_err(|error| secure_http_error(error).to_string())?;
     let request = client
@@ -83,7 +84,7 @@ async fn send_request(
         .send(request)
         .await
         .map_err(|error| secure_http_error(error).to_string())?;
-    http_error::require_success(response).await
+    http_error::require_success(response, model, request_bytes, tools.len()).await
 }
 
 fn secure_http_error(error: SecureHttpError) -> &'static str {
@@ -104,7 +105,7 @@ fn build_codex_request(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
 ) -> CodexRequest {
-    let (instructions, input) = convert::convert_messages(messages);
+    let (instructions, input) = convert::convert_messages_with_tools(messages, tools);
     let converted_tools = convert::convert_tools_to_responses_api(tools);
     CodexRequest {
         model: model.to_string(),

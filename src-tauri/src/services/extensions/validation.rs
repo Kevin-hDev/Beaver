@@ -27,6 +27,7 @@ pub fn records(records: &[ExtensionRecord]) -> Result<(), String> {
                 return Err("Runtime d'extension incohérent.".to_string());
             }
         }
+        super::origin_validation::record(record)?;
         contributions(&record.contributions.tools, &record.contributions.events)?;
     }
     Ok(())

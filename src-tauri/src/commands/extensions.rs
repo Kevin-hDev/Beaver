@@ -1,4 +1,6 @@
-use crate::services::extensions::{self, ExtensionHostStatus, ExtensionKind, ExtensionView};
+use crate::services::extensions::{
+    self, DiscoveryPreferences, ExtensionHostStatus, ExtensionKind, ExtensionView,
+};
 use tauri::Emitter;
 
 const CHANGED_EVENT: &str = "fs:extensions-changed";
@@ -21,9 +23,57 @@ pub async fn add_local_extension(
 }
 
 #[tauri::command]
+pub async fn install_git_extension(
+    app: tauri::AppHandle,
+    url: String,
+) -> Result<ExtensionView, String> {
+    let record = extensions::install_git_source(&app, &url)
+        .await
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::InstallGit, error)
+        })?;
+    let view = ExtensionView::from(record);
+    emit_changed(&app);
+    Ok(view)
+}
+
+#[tauri::command]
+pub async fn install_npm_extension(
+    app: tauri::AppHandle,
+    package_spec: String,
+) -> Result<ExtensionView, String> {
+    let record = extensions::install_npm_source(&app, &package_spec)
+        .await
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::InstallNpm, error)
+        })?;
+    let view = ExtensionView::from(record);
+    emit_changed(&app);
+    Ok(view)
+}
+
+#[tauri::command]
+pub async fn update_extension(
+    app: tauri::AppHandle,
+    extension_id: String,
+) -> Result<ExtensionView, String> {
+    let record = extensions::update_managed_extension(&app, &extension_id)
+        .await
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::Update, error)
+        })?;
+    let view = ExtensionView::from(record);
+    emit_changed(&app);
+    Ok(view)
+}
+
+#[tauri::command]
 pub async fn remove_extension(app: tauri::AppHandle, extension_id: String) -> Result<(), String> {
-    extensions::remove(&extension_id)?;
-    let result = extensions::restart().await;
+    let result = extensions::uninstall_extension(&extension_id)
+        .await
+        .map_err(|error| {
+            extensions::report_operation_error(extensions::Operation::Uninstall, error)
+        });
     emit_changed(&app);
     result
 }
@@ -62,6 +112,18 @@ pub async fn reload_extension_host(app: tauri::AppHandle) -> Result<(), String> 
 #[tauri::command]
 pub async fn get_extension_host_status() -> Result<ExtensionHostStatus, String> {
     Ok(extensions::status())
+}
+
+#[tauri::command]
+pub async fn get_extension_discovery_preferences() -> Result<DiscoveryPreferences, String> {
+    extensions::discovery_preferences()
+}
+
+#[tauri::command]
+pub async fn set_extension_discovery_preferences(
+    protected_plugin_ids: Vec<String>,
+) -> Result<DiscoveryPreferences, String> {
+    extensions::set_discovery_preferences(protected_plugin_ids)
 }
 
 #[tauri::command]

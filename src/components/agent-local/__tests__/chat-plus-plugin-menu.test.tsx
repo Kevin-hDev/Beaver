@@ -20,6 +20,7 @@ function extension(index: number, showInChat = true): ExtensionRecord {
       runtime: "node",
       access: "full",
       apiLevel: "stable",
+      essential: false,
     },
     kind: "local",
     source: "/extension",

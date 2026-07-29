@@ -4,7 +4,13 @@ Beaver extensions are trusted local code. They run in a separate Node.js host wi
 
 `access` and `apiLevel` describe compatibility and intended use. They are not process-isolation or security boundaries. Beaver validates registered contributions again in Rust, but extension code remains fully trusted code.
 
-Approval is associated with the extension identity and source, not with a content hash. Updating files inside an approved extension does not request approval again. Users are responsible for auditing updates from that source.
+Approval is associated with the extension identity and source, not with a content hash. Editing a local extension does not request approval again. A Git or npm update managed by Beaver disables the extension and requests trust again before its next activation. Users remain responsible for auditing every source and update.
+
+## Installation sources
+
+Add a local file or folder directly, install a repository through HTTPS or SSH Git, or install a registry package by npm name. A Git locator can end with `#branch`, `#tag`, or a full commit hash. Keep the Beaver manifest at the repository root or in the published npm package.
+
+Beaver uses its bundled npm with the official HTTPS registry and strict TLS. It installs production dependencies without running npm lifecycle scripts or creating executable links. Repository-level npm configuration is ignored during installation. If your dependency requires an install-time build, prepare it yourself and add the resulting local folder instead.
 
 ## Minimal manifest
 
@@ -19,9 +25,14 @@ Create `beaver-extension.json` in the extension folder:
   "runtime": "node",
   "main": "./index.ts",
   "access": "full",
-  "apiLevel": "stable"
+  "apiLevel": "stable",
+  "essential": false
 }
 ```
+
+Set `essential` to `true` only when the plugin's schemas should be loaded first during
+progressive discovery. Beaver keeps at most 15 self-declared essential plugins, after
+the user's own priority list.
 
 ## Minimal extension
 

@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 import type { ExtensionsSettingsSection } from "@/types/navigation";
 import { ExtensionDetail } from "./extension-detail";
+import { ExtensionPrioritySection } from "./extension-priority-section";
 import { ExtensionRow } from "./extension-row";
 import { ExtensionsHostPanel } from "./extensions-host-panel";
 import "./extensions-page.css";
@@ -17,14 +18,18 @@ interface ExtensionsPageProps {
   loadError: string | null;
   operationError: string | null;
   busyIds: Set<string>;
+  protectedPluginIds: string[];
+  priorityBusy: boolean;
   onSelect: (id: string | null) => void;
   onAdd: () => void;
   onEnabled: (id: string, enabled: boolean) => void;
   onShowInChat: (id: string, show: boolean) => void;
   onOpenSource: (id: string) => void;
+  onUpdate: (id: string) => void;
   onRemove: (id: string) => void;
   onReload: () => void;
   onRecover: () => void;
+  onPrioritySave: (ids: string[]) => Promise<boolean>;
 }
 
 export function ExtensionsPage(props: ExtensionsPageProps) {
@@ -39,6 +44,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
         onEnabled={(enabled) => props.onEnabled(selected.manifest.id, enabled)}
         onShowInChat={(show) => props.onShowInChat(selected.manifest.id, show)}
         onOpenSource={() => props.onOpenSource(selected.manifest.id)}
+        onUpdate={() => props.onUpdate(selected.manifest.id)}
         onReload={props.onReload}
         onRemove={() => props.onRemove(selected.manifest.id)}
       />
@@ -99,6 +105,14 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
               : `extensions.pages.${props.section}.empty`)}
           action={props.section === "custom" && !props.loading ? t("extensions.actions.add") : undefined}
           onAction={props.section === "custom" ? props.onAdd : undefined}
+        />
+      )}
+      {props.section === "plugins" && !props.loading && !props.loadError && (
+        <ExtensionPrioritySection
+          records={props.records}
+          selectedIds={props.protectedPluginIds}
+          busy={props.priorityBusy}
+          onSave={props.onPrioritySave}
         />
       )}
     </div>

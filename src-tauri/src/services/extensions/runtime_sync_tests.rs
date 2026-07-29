@@ -18,6 +18,7 @@ fn stable_extensions_cannot_replace_core_tools() {
             ui: None,
             access: "full".to_string(),
             api_level: ExtensionApiLevel::Stable,
+            essential: false,
             author: None,
             homepage: None,
             description: None,

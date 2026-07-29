@@ -4,6 +4,7 @@ import {
   EXTENSION_VIEW_LIMITS,
   parseExtensionRecords,
 } from "./extension-records";
+import { EXTENSION_INSTALL_LIMITS } from "./extension-install";
 
 function backendRecord() {
   return {
@@ -17,6 +18,7 @@ function backendRecord() {
       ui: null,
       access: "full",
       apiLevel: "stable",
+      essential: false,
       author: "Beaver",
       homepage: null,
       description: "Create documents.",
@@ -70,6 +72,24 @@ describe("parseExtensionRecords", () => {
       .toThrow("invalid_extension_response");
   });
 
+  it("valide la provenance Git ou npm exposée par le registre", () => {
+    const input = {
+      ...backendRecord(),
+      kind: "local",
+      source: "/managed/extension",
+      origin: {
+        kind: "git",
+        locator: "https://github.com/example/extension.git",
+        revision: "a".repeat(40),
+      },
+    };
+
+    const [record] = parseExtensionRecords([input]);
+
+    expect(record.origin?.kind).toBe("git");
+    expect(record.origin?.revision).toHaveLength(40);
+  });
+
   it("reste aligné sur la source de vérité du contrat Rust et Node", () => {
     const contract = JSON.parse(readFileSync(
       "src-tauri/resources/extension-host/contract.json",
@@ -80,6 +100,10 @@ describe("parseExtensionRecords", () => {
       records: contract.limits.maxExtensions,
       toolsPerExtension: contract.limits.maxToolsPerExtension,
       eventsPerExtension: contract.limits.maxEventsPerExtension,
+    });
+    expect(EXTENSION_INSTALL_LIMITS).toEqual({
+      git: contract.limits.maxGitLocatorChars,
+      npm: contract.limits.maxNpmSpecChars,
     });
   });
 });

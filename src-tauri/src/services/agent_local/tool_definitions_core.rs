@@ -37,7 +37,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
             "read_file",
             "Read a UTF-8 text file from disk. Returns content with line numbers (1-based, tab-separated). \
              Limit: 20 MB max. Files larger than this return an error. \
-             Binary/non-UTF-8 files (images, PDFs, .docx, executables) cannot be read — use the dedicated Office tools (read_document, read_image, read_spreadsheet) when available. \
+             Binary/non-UTF-8 files (images, PDFs, .docx, executables) cannot be read — use a dedicated document, image, or spreadsheet extension tool when available. \
              Non-existent files return a generic error. \
              Use offset/limit to page through large files. Default limit 2000 lines; max 50000 lines. \
              Output format: each line is prefixed with `<line_number>\\t<content>`. If more lines remain, a hint with the next offset is appended. \

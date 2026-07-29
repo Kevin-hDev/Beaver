@@ -37,6 +37,7 @@ const LOCKED_TOOLS: &[ToolCatalogEntry] = &[
     locked("web_search", "web"),
     locked("web_fetch", "web"),
     locked("search_mcp_tools", "mcp"),
+    locked("search_extension_tools", "extensions"),
 ];
 
 const OPTIONAL_TOOLS: &[ToolCatalogEntry] = &[
@@ -150,10 +151,6 @@ pub fn is_locked_tool(tool_id: &str) -> bool {
 
 pub fn is_optional_tool(tool_id: &str) -> bool {
     OPTIONAL_TOOLS.iter().any(|tool| tool.id == tool_id)
-}
-
-pub fn is_subagent_tool(tool_id: &str) -> bool {
-    SUBAGENT_TOOLS.contains(&tool_id)
 }
 
 pub fn is_enabled(tool_id: &str, enabled_optional_tools: &[String]) -> bool {

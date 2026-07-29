@@ -10,13 +10,13 @@ import {
 export default defineExtension((api) => {
   api.registerTool({
     name: "create",
-    description: "Create an editable widescreen PPTX presentation.",
+    description: "Create an editable widescreen Microsoft PowerPoint PPTX presentation.",
     parameters: createPresentationSchema,
     execute: safeTool(createPresentation),
   });
   api.registerTool({
     name: "patch",
-    description: "Replace named placeholders in an existing PPTX template.",
+    description: "Replace named placeholders in an existing Microsoft PowerPoint PPTX template.",
     parameters: patchPresentationSchema,
     execute: safeTool(patchPresentation),
   });

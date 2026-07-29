@@ -14,6 +14,7 @@ pub mod tool_catalog_tests;
 pub mod tool_definitions;
 pub mod tool_definitions_chat;
 pub mod tool_definitions_core;
+pub mod tool_definitions_extensions;
 pub mod tool_definitions_forecast;
 pub mod tool_definitions_git;
 pub mod tool_definitions_interactive;
@@ -30,6 +31,7 @@ pub mod tool_delegate_child;
 mod tool_delegate_prompt;
 pub mod tool_dispatcher;
 mod tool_dispatcher_entry;
+pub mod tool_extension_discovery;
 pub mod tool_dispatcher_delegate;
 pub mod tool_dispatcher_forecast;
 pub mod tool_dispatcher_forecast_run;
@@ -77,6 +79,7 @@ pub mod tool_executor_read_only;
 pub mod tool_executor_results;
 pub mod tool_executor_sequential;
 pub mod tool_executor_write;
+pub mod extension_tool_set;
 pub mod tool_file_changes;
 pub mod tool_files;
 #[cfg(test)]
@@ -117,9 +120,6 @@ pub mod tool_result_budget;
 pub mod tool_result_budget_tests;
 pub mod tool_result_truncate;
 pub mod tool_scan_timeout;
-pub mod tool_short_desc;
-#[cfg(test)]
-pub mod tool_short_desc_tests;
 pub mod tool_skill_loader;
 pub mod tool_spreadsheet_calamine;
 #[cfg(test)]

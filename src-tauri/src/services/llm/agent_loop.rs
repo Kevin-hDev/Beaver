@@ -5,6 +5,7 @@ use crate::services::agent_local::agent_loop_finish;
 use crate::services::agent_local::agent_loop_limits::MAX_TURNS;
 use crate::services::agent_local::agent_loop_plan;
 use crate::services::agent_local::circuit_breaker;
+use crate::services::agent_local::extension_tool_set;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_orchestration;
 use crate::services::agent_local::tool_executor;
@@ -19,7 +20,7 @@ pub async fn run_agent_loop(
     provider_id: &str,
     model: &str,
     messages: &mut Vec<ChatMessage>,
-    tools: &[serde_json::Value],
+    mut tools: crate::services::agent_local::extension_tool_set::ExtensionToolSet,
     think: bool,
     reasoning_mode: Option<&str>,
     working_dir: PathBuf,
@@ -65,7 +66,7 @@ pub async fn run_agent_loop(
             messages,
             provider_id,
             model,
-            tools,
+            tools: tools.active(),
             think,
             reasoning_mode,
             session_id: &session_id,
@@ -172,6 +173,7 @@ pub async fn run_agent_loop(
             tool_compression.as_ref(),
         )
         .await;
+        extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())
             .await?;
