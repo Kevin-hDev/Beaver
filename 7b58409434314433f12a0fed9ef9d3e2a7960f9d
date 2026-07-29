@@ -1,0 +1,9 @@
+Review follow-up for session workspace deletion.
+
+Decision: deleting or archiving a Beaver conversation never removes its managed work directory, default outputs, or user-configured outputs. These files belong to the user and are cleaned up only through an explicit filesystem action outside this session lifecycle. The automatic workspace cleanup module was removed.
+
+Deletion no longer deserializes the session first, so a corrupt conversation file can still be removed. Failure to remove the conversation file itself remains blocking; unrelated workspace file state cannot block conversation deletion.
+
+Configured output roots are canonicalized before workspace-drift comparison, preventing false notices when the configured location is reached through a symbolic link or platform shortcut.
+
+Tests cover corrupt-session deletion, preservation of work and default deliverables, and canonical output-root comparison. Validation: 2495 Rust tests passed; cargo clippy --all-targets -- -D warnings, cargo fmt --check, git diff --check, and graphify update . passed.
