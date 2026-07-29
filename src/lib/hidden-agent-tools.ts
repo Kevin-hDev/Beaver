@@ -7,7 +7,6 @@ const HIDDEN_AGENT_TOOLS = new Set([
   "agent_diagnostics",
   "ask_user_choice",
   "planmode",
-  "exitplanmode",
 ]);
 
 export function isHiddenAgentTool(name: string) {

@@ -1519,7 +1519,12 @@
     "otherLabel": "Other",
     "other": "Other answer",
     "otherPlaceholder": "Write your answer",
-    "inputLocked": "Answer the question above"
+    "inputLocked": "Answer the question above",
+    "planQuestion": "Implement this plan?",
+    "planImplement": "Implement this plan",
+    "planAdjustments": "Request adjustments",
+    "ignore": "Ignore",
+    "send": "Send"
   },
   "forecast": {
     "chart": {

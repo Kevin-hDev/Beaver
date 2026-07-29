@@ -1209,7 +1209,12 @@
     "otherLabel": "その他",
     "other": "別の回答",
     "otherPlaceholder": "回答を入力",
-    "inputLocked": "上の質問に回答してください"
+    "inputLocked": "上の質問に回答してください",
+    "planQuestion": "このプランを実行しますか？",
+    "planImplement": "このプランを実行",
+    "planAdjustments": "調整を加える",
+    "ignore": "無視",
+    "send": "送信"
   },
   "connectors": {
     "main": {

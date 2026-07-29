@@ -9,8 +9,6 @@ export type AgentPlanWorkflowStatus =
   | "rejected"
   | "cancelled";
 
-export type AgentPlanApprovalDecision = "implement" | "continue_planning" | "quit_plan";
-
 export interface AgentPlanRun {
   id: string;
   title: string;

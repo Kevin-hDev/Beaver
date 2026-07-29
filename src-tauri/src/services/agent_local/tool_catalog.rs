@@ -13,7 +13,7 @@ pub struct ToolCatalogEntry {
     pub group: &'static str,
 }
 
-pub const MAX_OPTIONAL_TOOLS: usize = 34;
+pub const MAX_OPTIONAL_TOOLS: usize = 33;
 pub const SUBAGENT_TOOLS: &[&str] = &[
     "delegate_task",
     "list_subagents",
@@ -53,7 +53,6 @@ const OPTIONAL_TOOLS: &[ToolCatalogEntry] = &[
     optional_default("apply_subagent_changes", "subagents"),
     optional_default("discard_subagent_changes", "subagents"),
     optional_default("planmode", "workflow"),
-    optional_default("exitplanmode", "workflow"),
     optional_off("todo_write", "todo"),
     optional_off("todo_history", "todo"),
     optional_off("todo_pause", "todo"),
@@ -174,7 +173,7 @@ pub fn has_any_tool(names: &[String], tool_ids: &[&str]) -> bool {
 }
 
 pub fn has_plan_tools(names: &[String]) -> bool {
-    has_tool(names, "planmode") && has_tool(names, "exitplanmode")
+    has_tool(names, "planmode")
 }
 
 pub(super) fn tool_name(def: &Value) -> Option<String> {

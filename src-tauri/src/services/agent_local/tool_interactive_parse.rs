@@ -46,6 +46,11 @@ pub fn validate_answers(
         if !question.multi_select && selected_count(answer) > 1 {
             return Err("choix multiple non autorisé".into());
         }
+        let selected_other = answer.selected_labels.iter().any(|label| label == "other")
+            || answer.selected_ids.iter().any(|id| id == "other");
+        if selected_other != answer.custom_answer.is_some() {
+            return Err("réponse autre invalide".into());
+        }
         for label in &answer.selected_labels {
             if chars_len(label) > MAX_LABEL_CHARS {
                 return Err("choix trop long".into());

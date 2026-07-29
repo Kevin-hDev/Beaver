@@ -31,7 +31,7 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
         true,
         super::tool_catalog::SUBAGENT_TOOLS,
     ),
-    group("plan_mode", false, true, &["planmode", "exitplanmode"]),
+    group("plan_mode", false, true, &["planmode"]),
     group(
         "todo_list",
         false,
@@ -132,7 +132,7 @@ mod tests {
     fn optional_group_returns_all_real_tool_ids() {
         let plan_tools = optional_group_tool_ids("plan_mode").unwrap();
 
-        assert_eq!(plan_tools, ["planmode", "exitplanmode"]);
+        assert_eq!(plan_tools, ["planmode"]);
     }
 
     #[test]

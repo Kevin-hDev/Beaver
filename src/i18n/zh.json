@@ -1209,7 +1209,12 @@
     "otherLabel": "其他",
     "other": "其他回答",
     "otherPlaceholder": "输入你的回答",
-    "inputLocked": "请先回答上方问题"
+    "inputLocked": "请先回答上方问题",
+    "planQuestion": "实施此计划？",
+    "planImplement": "实施此计划",
+    "planAdjustments": "提出调整",
+    "ignore": "忽略",
+    "send": "发送"
   },
   "connectors": {
     "main": {

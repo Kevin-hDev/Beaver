@@ -16,6 +16,15 @@ export type { ChatState, ManagedStreamState, PermissionRequestState, StreamApply
 export { EMPTY_CHAT_STATE, createManagedStreamState, toChatState } from "./agent-chat-stream-types";
 export { finishPartialStream } from "./agent-chat-stream-finalize";
 
+export function clearInteractiveChoiceState(state: ChatState): ChatState {
+  const hidePlan = state.interactiveChoice?.kind === "plan_approval";
+  return {
+    ...state,
+    interactiveChoice: undefined,
+    planPreview: hidePlan ? null : state.planPreview,
+  };
+}
+
 export function applyStreamEvent(
   state: ManagedStreamState,
   event: StreamEvent,

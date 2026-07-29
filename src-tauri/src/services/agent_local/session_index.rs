@@ -177,6 +177,10 @@ async fn refresh_reconcile_fingerprint() {
 #[cfg(test)]
 mod tests;
 
+#[path = "session_index_test_support.rs"]
+#[cfg(test)]
+mod test_support;
+
 #[path = "session_index_reconcile_tests.rs"]
 #[cfg(test)]
 mod reconcile_tests;

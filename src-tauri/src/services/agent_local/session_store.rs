@@ -60,7 +60,6 @@ pub async fn create_full(
         plan_runs: Vec::new(),
         active_plan_id: None,
         plan_workflow_status: Default::default(),
-        plan_approval_decision: None,
         is_heartbeat,
         is_gateway: false,
         gateway_channel_key: None,

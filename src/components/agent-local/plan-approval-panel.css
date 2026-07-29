@@ -1,0 +1,124 @@
+.pap-panel {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+}
+
+.pap-question {
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.pap-implement {
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+  color: var(--ink);
+  padding: var(--space-xs) var(--space-sm);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pap-implement:hover:not(:disabled) {
+  border-color: var(--edge-strong);
+}
+
+.pap-implement:disabled,
+.pap-ignore:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.pap-number {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--ink);
+  color: var(--void);
+  font-size: var(--text-sm);
+}
+
+.pap-adjust-row {
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.pap-pencil {
+  width: var(--icon-md);
+  height: var(--icon-md);
+  color: var(--ink-faint);
+  justify-self: center;
+}
+
+.pap-input {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  outline: none;
+}
+
+.pap-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.pap-ignore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pap-ignore:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.pap-ignore kbd {
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-hover);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.pap-send {
+  min-width: 72px;
+}
+
+@media (max-width: 560px) {
+  .pap-adjust-row {
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+  }
+
+  .pap-ignore {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .pap-send {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}

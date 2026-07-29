@@ -1209,7 +1209,12 @@
     "otherLabel": "Otro",
     "other": "Otra respuesta",
     "otherPlaceholder": "Escribe tu respuesta",
-    "inputLocked": "Responde a la pregunta de arriba"
+    "inputLocked": "Responde a la pregunta de arriba",
+    "planQuestion": "¿Implementar este plan?",
+    "planImplement": "Implementar este plan",
+    "planAdjustments": "Solicitar ajustes",
+    "ignore": "Ignorar",
+    "send": "Enviar"
   },
   "connectors": {
     "main": {

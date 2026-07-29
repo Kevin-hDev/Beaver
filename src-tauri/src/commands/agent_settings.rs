@@ -61,3 +61,8 @@ pub async fn respond_to_interactive_choice(
 ) -> Result<(), String> {
     crate::services::agent_local::tool_interactive::respond(session_id, id, answers).await
 }
+
+#[tauri::command]
+pub async fn dismiss_interactive_choice(session_id: String, id: String) -> Result<(), String> {
+    crate::services::agent_local::tool_interactive::dismiss(session_id, id).await
+}

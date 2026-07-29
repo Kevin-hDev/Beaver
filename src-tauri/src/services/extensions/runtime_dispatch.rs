@@ -76,7 +76,7 @@ fn to_tool_result(result: Result<HostToolResult, String>) -> ToolResult {
                 ToolResult::ok(result.content)
             };
             tool_result.truncated = result.truncated;
-            tool_result.display_summary = result.display_summary;
+            tool_result.display_summary = result.display_summary.map(String::into_boxed_str);
             tool_result
         }
         Err(_) => ToolResult::err("L'extension n'a pas pu exécuter cet outil."),

@@ -83,8 +83,6 @@ mod tests {
     fn plan_tools_validate_args() {
         assert!(validate("planmode", &json!({"title": "Plan", "content": "Steps"})).is_ok());
         assert!(validate("planmode", &json!({"title": "Plan"})).is_err());
-        assert!(validate("exitplanmode", &json!({"status": "approved"})).is_ok());
-        assert!(validate("exitplanmode", &json!({})).is_err());
     }
 
     #[test]

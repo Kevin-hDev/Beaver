@@ -139,5 +139,8 @@ fn is_protected_base_branch(branch_name: &str) -> bool {
 }
 
 #[cfg(test)]
+#[path = "clone_git_cleanup_test_support.rs"]
+mod test_support;
+#[cfg(test)]
 #[path = "clone_git_cleanup_tests.rs"]
 mod tests;

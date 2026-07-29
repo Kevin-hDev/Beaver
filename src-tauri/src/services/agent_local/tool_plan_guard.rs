@@ -19,12 +19,11 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "agent_diagnostics",
     "ask_user_choice",
     "planmode",
-    "exitplanmode",
     "forecast_read",
     "forecast_models",
 ];
 
-pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, read_image, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, exitplanmode, forecast_read, forecast_models, read-only bash, and search_mcp_tools without MCP calls";
+pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, read_image, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, forecast_read, forecast_models, read-only bash, and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     match tool_name {
@@ -47,11 +46,17 @@ pub async fn ensure_allowed_for_session(
     session_id: &str,
     fallback_plan_mode_active: bool,
 ) -> Result<(), String> {
-    let plan_mode_active = super::session_store::get(session_id)
+    let session_plan_mode_active = super::session_store::get(session_id)
         .await
         .map(|session| session.plan_mode_enabled)
-        .unwrap_or(fallback_plan_mode_active);
+        .unwrap_or(false);
+    let plan_mode_active =
+        effective_plan_mode(fallback_plan_mode_active, session_plan_mode_active);
     ensure_allowed(tool_name, args, plan_mode_active)
+}
+
+fn effective_plan_mode(batch_started_in_plan_mode: bool, current_plan_mode: bool) -> bool {
+    batch_started_in_plan_mode || current_plan_mode
 }
 
 #[cfg(test)]
@@ -79,6 +84,13 @@ mod tests {
         assert!(super::ensure_allowed("grep", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("search_extension_tools", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("planmode", &json!({}), true).is_ok());
+    }
+
+    #[test]
+    fn current_batch_stays_guarded_after_plan_approval() {
+        assert!(super::effective_plan_mode(true, false));
+        assert!(super::effective_plan_mode(false, true));
+        assert!(!super::effective_plan_mode(false, false));
     }
 
     #[test]

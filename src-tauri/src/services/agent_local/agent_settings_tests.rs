@@ -31,7 +31,7 @@ fn permission_mode_change_preserves_enabled_tools() {
 fn grouped_toggle_updates_all_real_tools() {
     let settings = AgentSettings {
         permission_mode: "auto".to_string(),
-        enabled_optional_tools: vec!["planmode".to_string(), "exitplanmode".to_string()],
+        enabled_optional_tools: vec!["planmode".to_string()],
         tool_catalog_schema: TOOL_CATALOG_SCHEMA,
     };
 

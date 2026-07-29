@@ -49,6 +49,7 @@ pub async fn dispatch(
                     affected_paths: Vec::new(),
                     file_changes: Vec::new(),
                     start_line: None,
+                    follow_up: None,
                 },
                 Err(_) => unavailable(),
             }

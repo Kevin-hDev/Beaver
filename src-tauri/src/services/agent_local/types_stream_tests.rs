@@ -1,4 +1,5 @@
 use super::StreamEvent;
+use crate::services::agent_local::types_interactive::AgentInteractiveChoiceKind;
 
 #[test]
 fn tool_result_serializes_readable_display_summary() {
@@ -23,4 +24,23 @@ fn tool_result_serializes_readable_display_summary() {
         serde_json::json!("context7-docs")
     );
     assert!(serialized.to_string().contains("context7-docs"));
+}
+
+#[test]
+fn plan_approval_kind_reaches_the_frontend() {
+    let event = StreamEvent::InteractiveChoiceRequest {
+        session_id: "session-1".into(),
+        id: "choice-1".into(),
+        kind: AgentInteractiveChoiceKind::PlanApproval,
+        questions: vec![],
+        current_index: 0,
+        total: 1,
+    };
+
+    let serialized = serde_json::to_value(event).expect("stream event should serialize");
+
+    assert_eq!(
+        serialized["data"]["kind"],
+        serde_json::json!("plan_approval")
+    );
 }

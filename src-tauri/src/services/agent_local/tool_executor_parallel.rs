@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
 use super::tool_executor_compression::ToolCompression;
+use super::tool_execution_outcome::ToolExecutionOutcome;
 use super::tool_executor_helpers::{push_tool_message, push_tool_result, resolve_tool_path};
 use super::tool_executor_parallel_batch::{flush_read_batch, BatchEntry};
 
@@ -26,7 +27,8 @@ pub async fn run_with_parallel_reads(
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
     can_use_delegate_batch: bool,
-) -> bool {
+) -> ToolExecutionOutcome {
+    let tool_id = |idx| tool_call_ids.get(idx).map(String::as_str);
     let mut read_batch: Vec<BatchEntry> = Vec::new();
     let mut indexed_results: Vec<Option<(&str, ToolResult)>> = vec![None; tool_calls.len()];
     let mut emitted_results = vec![false; tool_calls.len()];
@@ -169,12 +171,12 @@ pub async fn run_with_parallel_reads(
         }
     }
 
-    let mut compressed = false;
+    let mut outcome = ToolExecutionOutcome::default();
     for (idx, slot) in indexed_results.into_iter().enumerate() {
         if let Some((name, tr)) = slot {
             let resolved_path = resolve_tool_path(name, &tool_calls[idx].1, working_dir);
-            if emitted_results[idx] {
-                push_tool_message(messages, name, tr, tool_id(tool_call_ids, idx));
+            let follow_up = if emitted_results[idx] {
+                push_tool_message(messages, name, tr, tool_id(idx))
             } else {
                 push_tool_result(
                     on_event,
@@ -182,18 +184,15 @@ pub async fn run_with_parallel_reads(
                     name,
                     tr,
                     idx,
-                    tool_id(tool_call_ids, idx),
+                    tool_id(idx),
                     resolved_path,
-                );
-            }
+                )
+            };
+            outcome.record(follow_up);
             if let Some(compression) = compression {
-                compressed |= compression.try_run(messages).await;
+                outcome.compressed |= compression.try_run(messages).await;
             }
         }
     }
-    compressed
-}
-
-fn tool_id(ids: &[String], idx: usize) -> Option<&str> {
-    ids.get(idx).map(String::as_str)
+    outcome
 }

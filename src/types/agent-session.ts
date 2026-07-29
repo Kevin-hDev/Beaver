@@ -1,5 +1,5 @@
 import type { AgentMessage } from "./agent-message";
-import type { AgentPlanApprovalDecision, AgentPlanRun, AgentPlanWorkflowStatus } from "./agent-plan";
+import type { AgentPlanRun, AgentPlanWorkflowStatus } from "./agent-plan";
 import type { AgentTodoItem, AgentTodoRun } from "./agent-todo";
 
 export type CloneMode = "cut" | "summary";
@@ -48,7 +48,6 @@ export interface AgentSession {
   plan_runs?: AgentPlanRun[];
   active_plan_id?: string;
   plan_workflow_status?: AgentPlanWorkflowStatus;
-  plan_approval_decision?: AgentPlanApprovalDecision;
   project_id?: string;
   working_dir?: string;
   parent_session_id?: string;

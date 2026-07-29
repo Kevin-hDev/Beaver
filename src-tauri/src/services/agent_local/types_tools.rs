@@ -25,13 +25,24 @@ pub struct ToolResult {
     #[serde(default)]
     pub truncated: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display_summary: Option<String>,
+    pub display_summary: Option<Box<str>>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub affected_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub file_changes: Vec<ToolFileChange>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start_line: Option<usize>,
+    #[serde(skip)]
+    pub follow_up: Option<Box<ToolFollowUp>>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum ToolFollowUp {
+    #[default]
+    None,
+    UserMessage(String),
+    SystemMessage(String),
+    Stop,
 }
 
 impl ToolResult {
@@ -44,6 +55,7 @@ impl ToolResult {
             affected_paths: Vec::new(),
             file_changes: Vec::new(),
             start_line: None,
+            follow_up: None,
         }
     }
 
@@ -56,6 +68,7 @@ impl ToolResult {
             affected_paths: Vec::new(),
             file_changes: Vec::new(),
             start_line: None,
+            follow_up: None,
         }
     }
 
@@ -65,7 +78,7 @@ impl ToolResult {
     }
 
     pub fn with_display_summary(mut self, summary: impl Into<String>) -> Self {
-        self.display_summary = Some(summary.into());
+        self.display_summary = Some(summary.into().into_boxed_str());
         self
     }
 
@@ -77,6 +90,28 @@ impl ToolResult {
     pub fn with_start_line(mut self, start_line: usize) -> Self {
         self.start_line = Some(start_line);
         self
+    }
+
+    pub fn with_user_message(mut self, content: impl Into<String>) -> Self {
+        self.follow_up = Some(Box::new(ToolFollowUp::UserMessage(content.into())));
+        self
+    }
+
+    pub fn with_system_message(mut self, content: impl Into<String>) -> Self {
+        self.follow_up = Some(Box::new(ToolFollowUp::SystemMessage(content.into())));
+        self
+    }
+
+    pub fn stopping(mut self) -> Self {
+        self.follow_up = Some(Box::new(ToolFollowUp::Stop));
+        self
+    }
+
+    pub fn take_follow_up(&mut self) -> ToolFollowUp {
+        self.follow_up
+            .take()
+            .map(|follow_up| *follow_up)
+            .unwrap_or_default()
     }
 }
 

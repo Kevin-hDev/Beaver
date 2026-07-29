@@ -16,8 +16,7 @@ fn defaults_match_product_choice() {
             "inspect_subagent_changes",
             "apply_subagent_changes",
             "discard_subagent_changes",
-            "planmode",
-            "exitplanmode"
+            "planmode"
         ]
     );
 }

@@ -88,7 +88,7 @@ export function ChatInput({
   }, [handleEnter, isStreaming, requestStop, slash]);
 
   useEffect(() => {
-    if (!isStreaming) return;
+    if (!isStreaming || interactivePending) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key !== K_ESC) return;
       e.preventDefault();
@@ -96,7 +96,7 @@ export function ChatInput({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isStreaming, requestStop]);
+  }, [interactivePending, isStreaming, requestStop]);
 
   useEffect(() => {
     if (!slash.showDropdown) return;

@@ -1567,7 +1567,12 @@
     "otherLabel": "Autre",
     "other": "Autre réponse",
     "otherPlaceholder": "Écrire votre réponse",
-    "inputLocked": "Répondez à la question ci-dessus"
+    "inputLocked": "Répondez à la question ci-dessus",
+    "planQuestion": "Mettre en œuvre ce plan ?",
+    "planImplement": "Mettre en œuvre ce plan",
+    "planAdjustments": "Apporter des ajustements",
+    "ignore": "Ignorer",
+    "send": "Envoyer"
   },
   "forecast": {
     "chart": {

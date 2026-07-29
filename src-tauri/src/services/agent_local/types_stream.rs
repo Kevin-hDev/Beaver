@@ -128,6 +128,7 @@ pub enum StreamEvent {
     InteractiveChoiceRequest {
         session_id: String,
         id: String,
+        kind: crate::services::agent_local::types_interactive::AgentInteractiveChoiceKind,
         questions: Vec<crate::services::agent_local::types_interactive::AgentInteractiveQuestion>,
         current_index: usize,
         total: usize,

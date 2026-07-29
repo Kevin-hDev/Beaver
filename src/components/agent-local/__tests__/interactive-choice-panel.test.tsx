@@ -116,4 +116,17 @@ describe("InteractiveChoicePanel", () => {
       }],
     }));
   });
+
+  it("annule proprement avec Échap", async () => {
+    const onResolved = vi.fn();
+    render(<InteractiveChoicePanel request={request} onResolved={onResolved} />);
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("dismiss_interactive_choice", {
+      sessionId: "session-1",
+      id: "choice-1",
+    }));
+    expect(onResolved).toHaveBeenCalledOnce();
+  });
 });

@@ -1,6 +1,6 @@
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::{ChatMessage, StreamEvent};
-use super::types_tools::ToolResult;
+use super::types_tools::{ToolFollowUp, ToolResult};
 
 pub fn push_tool_result(
     on_event: &AgentEventEmitter,
@@ -10,9 +10,9 @@ pub fn push_tool_result(
     tool_call_index: usize,
     tool_call_id: Option<&str>,
     resolved_path: Option<String>,
-) {
+) -> ToolFollowUp {
     emit_tool_result(on_event, name, &tr, tool_call_index, resolved_path);
-    push_tool_message(messages, name, tr, tool_call_id);
+    push_tool_message(messages, name, tr, tool_call_id)
 }
 
 pub fn emit_tool_result(
@@ -28,7 +28,7 @@ pub fn emit_tool_result(
         content: tr.content.clone(),
         is_error: tr.is_error,
         truncated: tr.truncated,
-        display_summary: tr.display_summary.clone(),
+        display_summary: tr.display_summary.as_deref().map(str::to_owned),
         tool_call_index,
         resolved_path,
         domain,
@@ -41,9 +41,10 @@ pub fn emit_tool_result(
 pub fn push_tool_message(
     messages: &mut Vec<ChatMessage>,
     name: &str,
-    tr: ToolResult,
+    mut tr: ToolResult,
     tool_call_id: Option<&str>,
-) {
+) -> ToolFollowUp {
+    let follow_up = tr.take_follow_up();
     messages.push(ChatMessage {
         role: "tool".to_string(),
         content: tr.content,
@@ -53,4 +54,30 @@ pub fn push_tool_message(
         tool_call_id: tool_call_id.map(str::to_string),
         reasoning_content: None,
     });
+    follow_up
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tool_receipt_stays_before_the_real_user_message() {
+        let mut messages = Vec::new();
+        let follow_up = push_tool_message(
+            &mut messages,
+            "ask_user_choice",
+            ToolResult::ok("Interactive answer received.").with_user_message("User answer"),
+            Some("call-1"),
+        );
+
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].role, "tool");
+        assert_eq!(messages[0].content, "Interactive answer received.");
+        assert_eq!(messages[0].tool_call_id.as_deref(), Some("call-1"));
+        assert_eq!(
+            follow_up,
+            ToolFollowUp::UserMessage("User answer".into())
+        );
+    }
 }

@@ -27,7 +27,6 @@ fn session(id: &str, parent: Option<&str>) -> AgentSession {
         plan_runs: vec![],
         active_plan_id: None,
         plan_workflow_status: Default::default(),
-        plan_approval_decision: None,
         is_heartbeat: false,
         is_gateway: false,
         gateway_channel_key: None,

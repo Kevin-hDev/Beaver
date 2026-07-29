@@ -11,6 +11,7 @@ import {
   OTHER_VALUE,
   withOtherOption,
 } from "./interactive-choice-option";
+import { PlanApprovalPanel } from "./plan-approval-panel";
 import "./interactive-choice-panel.css";
 
 interface InteractiveChoicePanelProps {
@@ -20,6 +21,9 @@ interface InteractiveChoicePanelProps {
 
 export function InteractiveChoicePanel({ request, onResolved }: InteractiveChoicePanelProps) {
   if (!request) return null;
+  if (request.kind === "plan_approval") {
+    return <PlanApprovalPanel key={request.id} request={request} onResolved={onResolved} />;
+  }
   return <InteractiveChoicePanelInner key={request.id} request={request} onResolved={onResolved} />;
 }
 
@@ -56,12 +60,16 @@ function InteractiveChoicePanelInner({
       return;
     }
     setSubmitting(true);
-    await invoke("respond_to_interactive_choice", {
-      sessionId: request.sessionId,
-      id: request.id,
-      answers: nextAnswers,
-    });
-    onResolved?.();
+    try {
+      await invoke("respond_to_interactive_choice", {
+        sessionId: request.sessionId,
+        id: request.id,
+        answers: nextAnswers,
+      });
+      onResolved?.();
+    } catch {
+      setSubmitting(false);
+    }
   }, [answers, onResolved, request, step, submitting]);
 
   const choose = useCallback((option: ReturnType<typeof withOtherOption>[number]) => {
@@ -89,12 +97,13 @@ function InteractiveChoicePanelInner({
   }, [otherText, step, submitAnswer]);
 
   const cancel = useCallback(() => {
-    void invoke("respond_to_interactive_choice", {
+    if (submitting) return;
+    setSubmitting(true);
+    void invoke("dismiss_interactive_choice", {
       sessionId: request.sessionId,
       id: request.id,
-      answers: [],
-    }).then(() => onResolved?.()).catch(() => undefined);
-  }, [onResolved, request]);
+    }).then(() => onResolved?.()).catch(() => setSubmitting(false));
+  }, [onResolved, request, submitting]);
 
   useEffect(() => {
     if (!question) return;

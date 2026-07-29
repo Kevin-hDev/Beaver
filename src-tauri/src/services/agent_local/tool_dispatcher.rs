@@ -123,7 +123,7 @@ pub(super) async fn dispatch_inner(
         "todo_resume" => super::tool_todo::execute_resume(args, session_id).await,
         "todo_delete" => super::tool_todo::execute_delete(args, session_id).await,
         "ask_user_choice" => ToolResult::err("Contexte interactif indisponible."),
-        "planmode" | "exitplanmode" => ToolResult::err("Contexte plan indisponible."),
+        "planmode" => ToolResult::err("Contexte plan indisponible."),
         "agent_diagnostics" => {
             let limit = args
                 .get("limit")

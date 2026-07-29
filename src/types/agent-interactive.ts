@@ -16,6 +16,7 @@ export interface AgentInteractiveQuestion {
 export interface AgentInteractiveChoiceRequest {
   sessionId: string;
   id: string;
+  kind?: "general" | "plan_approval";
   questions: AgentInteractiveQuestion[];
   currentIndex: number;
   total: number;

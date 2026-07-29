@@ -112,4 +112,16 @@ mod tests {
         assert!(!filtered.contains("pending change"));
         assert!(!filtered.contains("give at most one short progress update"));
     }
+
+    #[test]
+    fn plan_workflow_survives_when_interactive_tool_is_disabled() {
+        let filtered = filter_system_prompt(
+            &super::super::prompt_plan::plan_mode_prompt(),
+            &["planmode".to_string()],
+        );
+
+        assert!(filtered.contains("ask it clearly before planmode"));
+        assert!(filtered.contains("backend closes Plan Mode automatically"));
+        assert!(!filtered.contains("ask_user_choice"));
+    }
 }

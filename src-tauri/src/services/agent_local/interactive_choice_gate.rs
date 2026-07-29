@@ -5,14 +5,22 @@ use tokio::sync::{oneshot, Mutex};
 use tokio_util::sync::CancellationToken;
 
 use super::stream_events::AgentEventEmitter;
-use super::types_interactive::{AgentInteractiveAnswer, AgentInteractiveQuestion};
+use super::types_interactive::{
+    AgentInteractiveAnswer, AgentInteractiveChoiceKind, AgentInteractiveQuestion,
+};
 
 const MAX_PENDING: usize = 64;
 
 struct PendingChoice {
     session_id: String,
     questions: Vec<AgentInteractiveQuestion>,
-    tx: oneshot::Sender<Vec<AgentInteractiveAnswer>>,
+    tx: oneshot::Sender<InteractiveChoiceResponse>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum InteractiveChoiceResponse {
+    Answered(Vec<AgentInteractiveAnswer>),
+    Dismissed,
 }
 
 static PENDING: LazyLock<Mutex<HashMap<String, PendingChoice>>> =
@@ -21,9 +29,10 @@ static PENDING: LazyLock<Mutex<HashMap<String, PendingChoice>>> =
 pub async fn request(
     on_event: &AgentEventEmitter,
     session_id: &str,
+    kind: AgentInteractiveChoiceKind,
     questions: Vec<AgentInteractiveQuestion>,
     cancel: CancellationToken,
-) -> Result<Vec<AgentInteractiveAnswer>, String> {
+) -> Result<InteractiveChoiceResponse, String> {
     let id = uuid::Uuid::new_v4().to_string();
     let (tx, rx) = oneshot::channel();
     {
@@ -40,7 +49,13 @@ pub async fn request(
             },
         );
     }
-    super::tool_interactive::emit_request(on_event, session_id.to_string(), id.clone(), questions);
+    super::tool_interactive::emit_request(
+        on_event,
+        session_id.to_string(),
+        id.clone(),
+        kind,
+        questions,
+    );
 
     tokio::select! {
         res = rx => res.map_err(|_| "demande interactive annulée".to_string()),
@@ -57,18 +72,38 @@ pub async fn respond(
     answers: Vec<AgentInteractiveAnswer>,
 ) -> Result<(), String> {
     let mut pending_map = PENDING.lock().await;
-    let Some(pending) = pending_map.remove(id) else {
+    let Some(pending) = pending_map.get(id) else {
         return Err("demande interactive inconnue".into());
     };
     if pending.session_id != session_id {
-        pending_map.insert(id.to_string(), pending);
         return Err("demande interactive inconnue".into());
     }
-    drop(pending_map);
     let answers = super::tool_interactive_parse::validate_answers(&pending.questions, answers)?;
+    let pending = pending_map
+        .remove(id)
+        .ok_or_else(|| "demande interactive inconnue".to_string())?;
+    drop(pending_map);
     pending
         .tx
-        .send(answers)
+        .send(InteractiveChoiceResponse::Answered(answers))
+        .map_err(|_| "demande interactive expirée".to_string())
+}
+
+pub async fn dismiss(session_id: &str, id: &str) -> Result<(), String> {
+    let mut pending_map = PENDING.lock().await;
+    let Some(pending) = pending_map.get(id) else {
+        return Err("demande interactive inconnue".into());
+    };
+    if pending.session_id != session_id {
+        return Err("demande interactive inconnue".into());
+    }
+    let pending = pending_map
+        .remove(id)
+        .ok_or_else(|| "demande interactive inconnue".to_string())?;
+    drop(pending_map);
+    pending
+        .tx
+        .send(InteractiveChoiceResponse::Dismissed)
         .map_err(|_| "demande interactive expirée".to_string())
 }
 
@@ -108,6 +143,27 @@ pub async fn insert_pending_for_test(id: &str, session_id: &str) {
 }
 
 #[cfg(test)]
+pub async fn insert_pending_receiver_for_test(
+    id: &str,
+    session_id: &str,
+) -> oneshot::Receiver<InteractiveChoiceResponse> {
+    let (tx, rx) = oneshot::channel();
+    PENDING.lock().await.insert(
+        id.to_string(),
+        PendingChoice {
+            session_id: session_id.to_string(),
+            questions: vec![],
+            tx,
+        },
+    );
+    rx
+}
+
+#[cfg(test)]
 pub async fn clear_pending_for_test() {
     PENDING.lock().await.clear();
 }
+
+#[cfg(test)]
+#[path = "interactive_choice_gate_tests.rs"]
+mod tests;

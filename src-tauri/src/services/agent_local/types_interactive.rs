@@ -1,5 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AgentInteractiveChoiceKind {
+    #[default]
+    General,
+    PlanApproval,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentInteractiveOption {

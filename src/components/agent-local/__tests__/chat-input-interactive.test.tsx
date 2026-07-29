@@ -144,4 +144,25 @@ describe("ChatInput interactive mode", () => {
 
     await waitFor(() => expect(onResolved).toHaveBeenCalledOnce());
   });
+
+  it("réserve Échap au choix interactif pendant le stream", async () => {
+    const onStop = vi.fn();
+    render(
+      <ChatInput
+        {...baseProps}
+        isStreaming
+        onStop={onStop}
+        interactiveRequest={interactiveRequest}
+        onInteractiveResolved={vi.fn()}
+      />,
+    );
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("dismiss_interactive_choice", {
+      sessionId: "session-1",
+      id: "choice-1",
+    }));
+    expect(onStop).not.toHaveBeenCalled();
+  });
 });

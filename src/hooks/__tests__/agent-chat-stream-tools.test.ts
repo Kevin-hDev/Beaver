@@ -18,7 +18,7 @@ describe("toolCall", () => {
 
   it("ignore les tools internes", () => {
     let state = makeState();
-    const names = ["todo_history", "todo_pause", "todo_resume", "todo_delete", "agent_diagnostics", "ask_user_choice", "planmode", "exitplanmode"];
+    const names = ["todo_history", "todo_pause", "todo_resume", "todo_delete", "agent_diagnostics", "ask_user_choice", "planmode"];
     for (const name of names) {
       state = applyStreamEvent(state, { event: "toolCall", data: { name, arguments: {} } }).state;
     }

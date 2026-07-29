@@ -48,7 +48,7 @@ fn api_and_ollama_wait_after_control_batches() {
             .find(".wait_after_tool_batch(")
             .expect("shared control wait");
         let after_tools = source
-            .find(".after_tools(")
+            .find(".finish_tools(")
             .expect("post-tool compression");
         let pre_wait = &source[compression..wait];
 
@@ -57,7 +57,7 @@ fn api_and_ollama_wait_after_control_batches() {
         assert!(tools < wait);
         assert!(wait < after_tools);
         assert!(pre_wait.contains("(!control_only).then"));
-        assert!(!pre_wait.contains(".after_tools("));
+        assert!(!pre_wait.contains(".finish_tools("));
     }
 }
 

@@ -41,7 +41,7 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
             add_bool(&mut out, "active", args);
         }
         "todo_pause" => add_text(&mut out, "reason", args),
-        "todo_history" | "agent_diagnostics" | "ask_user_choice" | "planmode" | "exitplanmode" => {}
+        "todo_history" | "agent_diagnostics" | "ask_user_choice" | "planmode" => {}
         "mcp" => add_text(&mut out, "tool_id", args),
         _ => {}
     }

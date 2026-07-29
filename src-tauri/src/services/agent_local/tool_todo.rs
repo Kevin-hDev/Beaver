@@ -188,5 +188,11 @@ async fn load_session(session_id: &str) -> Result<super::types_session::AgentSes
 }
 
 #[cfg(test)]
+#[path = "tool_todo_history_tests.rs"]
+mod history_tests;
+#[cfg(test)]
+#[path = "tool_todo_test_support.rs"]
+mod test_support;
+#[cfg(test)]
 #[path = "tool_todo_tests.rs"]
 mod tests;

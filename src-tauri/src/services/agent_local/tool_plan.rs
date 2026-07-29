@@ -17,7 +17,6 @@ pub async fn set_enabled(session_id: &str, enabled: bool) -> Result<(), String> 
     let _guard = lock.lock().await;
     let mut session = super::session_store::get(session_id).await?;
     session.plan_mode_enabled = enabled;
-    session.plan_approval_decision = None;
     if enabled {
         session.plan_workflow_status = AgentPlanWorkflowStatus::NeedsContext;
     } else {
@@ -41,28 +40,9 @@ pub async fn execute(
     cancel: CancellationToken,
 ) -> ToolResult {
     match write_plan(args, on_event, session_id).await {
-        Ok(run) => {
-            super::tool_plan_approval_request::request_approval(
-                on_event, session_id, cancel, &run.title,
-            )
-            .await
+        Ok(_) => {
+            super::tool_plan_approval_request::request_approval(on_event, session_id, cancel).await
         }
-        Err(err) => ToolResult::err(err),
-    }
-}
-
-pub async fn execute_exit(
-    args: &Value,
-    on_event: &AgentEventEmitter,
-    session_id: &str,
-) -> ToolResult {
-    let status = match args.get("status").and_then(Value::as_str) {
-        Some("approved") => AgentPlanStatus::Approved,
-        Some("rejected") => AgentPlanStatus::Rejected,
-        _ => return ToolResult::err(super::tool_plan_messages::INVALID_STATUS),
-    };
-    match exit_plan(session_id, status, on_event).await {
-        Ok(()) => ToolResult::ok(super::tool_plan_messages::exited(status)),
         Err(err) => ToolResult::err(err),
     }
 }
@@ -108,7 +88,6 @@ async fn write_plan(
     };
     session.active_plan_id = Some(plan_id.clone());
     session.plan_workflow_status = AgentPlanWorkflowStatus::AwaitingApproval;
-    session.plan_approval_decision = None;
     super::tool_plan_storage::upsert_run(&mut session.plan_runs, run.clone());
     session.plan_runs.truncate(MAX_PLAN_RUNS);
     super::session_store::save(&session).await?;
@@ -122,38 +101,6 @@ async fn write_plan(
         }),
     });
     Ok(run)
-}
-
-async fn exit_plan(
-    session_id: &str,
-    status: AgentPlanStatus,
-    on_event: &AgentEventEmitter,
-) -> Result<(), String> {
-    let lock = super::session_store::lock_session(session_id).await;
-    let _guard = lock.lock().await;
-    let mut session = super::session_store::get(session_id).await?;
-    if !session.plan_mode_enabled {
-        return Err(super::tool_plan_messages::PLAN_INACTIVE.to_string());
-    }
-    super::tool_plan_approval::validate_exit(&session, status)?;
-    if let Some(active_id) = session.active_plan_id.clone() {
-        if let Some(run) = session.plan_runs.iter_mut().find(|run| run.id == active_id) {
-            run.status = status;
-            run.updated_at = Utc::now();
-        }
-    }
-    session.plan_workflow_status = match status {
-        AgentPlanStatus::Approved => AgentPlanWorkflowStatus::Approved,
-        AgentPlanStatus::Rejected => AgentPlanWorkflowStatus::Rejected,
-        _ => session.plan_workflow_status,
-    };
-    session.plan_mode_enabled = false;
-    session.active_plan_id = None;
-    session.plan_approval_decision = None;
-    super::session_store::save(&session).await?;
-    let _ = on_event.send(StreamEvent::PlanPreviewUpdated { plan: None });
-    let _ = on_event.send(StreamEvent::PlanModeUpdated { enabled: false });
-    Ok(())
 }
 
 fn required_str<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {

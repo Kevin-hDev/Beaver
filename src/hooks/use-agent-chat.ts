@@ -4,7 +4,7 @@ import { useAgentStream } from "./use-agent-stream";
 import { useAgentPlanMode } from "./use-agent-plan-mode";
 import { useAgentPermissionDelivery } from "./use-agent-permission-delivery";
 import { listenGatewaySessionUpdates } from "./use-gateway-session-updates";
-import { EMPTY_CHAT_STATE, type ChatState } from "./agent-chat-stream-callbacks";
+import { clearInteractiveChoiceState, EMPTY_CHAT_STATE, type ChatState } from "./agent-chat-stream-callbacks";
 import { resolveSessionTokenCount } from "./agent-token-estimate";
 import { createEditedUserMessage } from "./agent-message-builders";
 import { useAgentMissingDirectory } from "./use-agent-missing-directory";
@@ -185,7 +185,7 @@ export function useAgentChat(
     setState((s) => ({ ...s, isStreaming: false }));
   }, [sessionId, stopStream]);
 
-  const clearInteractiveChoice = useCallback(() => setState((s) => ({ ...s, interactiveChoice: undefined })), []);
+  const clearInteractiveChoice = useCallback(() => setState(clearInteractiveChoiceState), []);
   const ready = state.messages.length > 0 || !sessionId;
 
   return {

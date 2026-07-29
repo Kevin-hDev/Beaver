@@ -121,6 +121,25 @@ impl LoopCompression<'_> {
             .await
     }
 
+    pub async fn finish_tools(
+        &self,
+        messages: &mut Vec<ChatMessage>,
+        compressed_during_tools: bool,
+        counts: LastCounts<'_>,
+        cancel: CancellationToken,
+    ) {
+        let compressed = self
+            .after_tools(
+                messages,
+                compressed_during_tools,
+                counts.prompt,
+                counts.eval,
+                cancel,
+            )
+            .await;
+        super::agent_loop_finish::emit_turn_end(self.on_event, compressed);
+    }
+
     pub fn reset_counts(last_prompt: &mut Option<u32>, last_eval: &mut Option<u32>) {
         *last_prompt = None;
         *last_eval = None;

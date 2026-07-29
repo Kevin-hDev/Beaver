@@ -7,7 +7,7 @@ pub use super::types_message::{
     AgentMessage, FileAttachment, SavedSegment, ToolActivityRecord, ToolCallRequest,
     ToolCallRequestFunction,
 };
-use super::types_plan::{AgentPlanApprovalDecision, AgentPlanRun, AgentPlanWorkflowStatus};
+use super::types_plan::{AgentPlanRun, AgentPlanWorkflowStatus};
 use super::types_todo::{AgentTodoItem, AgentTodoRun};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -75,8 +75,6 @@ pub struct AgentSession {
     pub active_plan_id: Option<String>,
     #[serde(default)]
     pub plan_workflow_status: AgentPlanWorkflowStatus,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan_approval_decision: Option<AgentPlanApprovalDecision>,
     #[serde(default)]
     pub is_heartbeat: bool,
     #[serde(default)]

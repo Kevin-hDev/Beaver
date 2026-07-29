@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use tokio_util::sync::CancellationToken;
 
 use super::tool_executor_compression::ToolCompression;
+use super::tool_execution_outcome::ToolExecutionOutcome;
 use super::tool_executor_parallel::run_with_parallel_reads;
 use super::tool_executor_sequential::run_sequential;
 
@@ -22,7 +23,7 @@ pub async fn run_tools(
     plan_mode_active: bool,
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
-) -> bool {
+) -> ToolExecutionOutcome {
     run_tools_with_eager(
         on_event,
         messages,
@@ -55,7 +56,7 @@ pub async fn run_tools_with_eager(
     mut eager_results: Option<HashMap<usize, ToolResult>>,
     tool_call_ids: &[String],
     compression: Option<&ToolCompression<'_>>,
-) -> bool {
+) -> ToolExecutionOutcome {
     let can_use_delegate_batch = matches!(
         super::subagent_tool_guard::profile_for_session(session_id).await,
         Ok(None)
@@ -67,7 +68,7 @@ pub async fn run_tools_with_eager(
             .iter()
             .all(|(name, _)| name == super::tool_executor_delegate_batch::DELEGATE_TOOL)
     {
-        return super::tool_executor_delegate_batch::run_delegate_only_tools(
+        let compressed = super::tool_executor_delegate_batch::run_delegate_only_tools(
             on_event,
             messages,
             tool_calls,
@@ -80,6 +81,7 @@ pub async fn run_tools_with_eager(
             compression,
         )
         .await;
+        return ToolExecutionOutcome::with_compressed(compressed);
     }
 
     if mode == "manual" {

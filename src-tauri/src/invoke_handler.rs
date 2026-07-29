@@ -93,6 +93,7 @@ macro_rules! generate {
             crate::commands::set_agent_tool_group_enabled,
             crate::commands::respond_to_permission,
             crate::commands::respond_to_interactive_choice,
+            crate::commands::dismiss_interactive_choice,
             crate::commands::list_subagents,
             crate::commands::cancel_subagent,
             crate::commands::list_skills,

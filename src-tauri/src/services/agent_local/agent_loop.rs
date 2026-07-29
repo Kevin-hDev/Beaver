@@ -157,7 +157,7 @@ pub async fn run_agent_loop(
                 cancel.clone(),
             )
         });
-        let compressed_during_tools = tool_executor::run_tools_with_eager(
+        let tool_outcome = tool_executor::run_tools_with_eager(
             on_event,
             messages,
             &result.tool_calls,
@@ -173,20 +173,19 @@ pub async fn run_agent_loop(
             tool_compression.as_ref(),
         )
         .await;
+        let compressed_during_tools = tool_outcome.compressed;
+        let stop_after_tools = tool_outcome.apply_follow_ups(messages);
         super::extension_tool_set::refresh_and_record(&mut tools, &session_id, &request_id).await?;
         subagents
             .wait_after_tool_batch(control_only, messages, cancel.clone())
             .await?;
-        let compressed_after_tools = compression
-            .after_tools(
-                messages,
-                compressed_during_tools,
-                &mut last_prompt,
-                &mut last_eval,
-                cancel.clone(),
-            )
+        let counts = LastCounts::new(&mut last_prompt, &mut last_eval);
+        compression
+            .finish_tools(messages, compressed_during_tools, counts, cancel.clone())
             .await;
-        super::agent_loop_finish::emit_turn_end(on_event, compressed_after_tools);
+        if stop_after_tools {
+            break;
+        }
     }
     Ok(super::agent_loop_finish::finish(
         on_event,

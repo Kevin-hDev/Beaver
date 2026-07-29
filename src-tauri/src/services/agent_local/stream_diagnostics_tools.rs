@@ -37,7 +37,7 @@ fn recent_tools_matching(
 }
 
 fn is_internal_diagnostic_tool(name: &str) -> bool {
-    matches!(name, "agent_diagnostics" | "planmode" | "exitplanmode")
+    matches!(name, "agent_diagnostics" | "planmode")
 }
 
 fn is_work_tool(name: &str) -> bool {
@@ -50,7 +50,6 @@ fn is_work_tool(name: &str) -> bool {
             | "todo_resume"
             | "todo_delete"
             | "planmode"
-            | "exitplanmode"
     )
 }
 
@@ -160,7 +159,6 @@ mod tests {
             plan_runs: vec![],
             active_plan_id: None,
             plan_workflow_status: Default::default(),
-            plan_approval_decision: None,
             is_heartbeat: false,
             is_gateway: false,
             gateway_channel_key: None,

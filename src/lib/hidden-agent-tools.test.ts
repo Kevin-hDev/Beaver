@@ -18,9 +18,8 @@ describe("isHiddenAgentTool", () => {
     expect(isHiddenAgentTool("ask_user_choice")).toBe(true);
   });
 
-  it("retourne true pour planmode et exitplanmode", () => {
+  it("retourne true pour planmode", () => {
     expect(isHiddenAgentTool("planmode")).toBe(true);
-    expect(isHiddenAgentTool("exitplanmode")).toBe(true);
   });
 
   it("retourne false pour les outils visibles (bash, read_file)", () => {

@@ -1,11 +1,8 @@
 use serde_json::json;
-use std::sync::LazyLock;
-use tokio::sync::Mutex;
 
 use super::tool_interactive_parse::{parse_questions, validate_answers};
 use super::types_interactive::AgentInteractiveAnswer;
-
-static PENDING_TEST_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+use super::types_tools::ToolFollowUp;
 
 fn valid_args() -> serde_json::Value {
     json!({
@@ -113,30 +110,50 @@ fn validate_answers_rejects_unknown_id() {
     assert!(err.contains("inconnu"));
 }
 
-#[tokio::test]
-async fn pending_store_is_bounded_for_tests() {
-    let _guard = PENDING_TEST_LOCK.lock().await;
-    super::interactive_choice_gate::fill_pending_for_test(64).await;
+#[test]
+fn validate_answers_requires_text_for_other() {
+    let questions = parse_questions(&valid_args()).unwrap();
+    let answer = AgentInteractiveAnswer {
+        question_index: 0,
+        selected_ids: vec!["other".into()],
+        selected_labels: vec!["other".into()],
+        custom_answer: None,
+    };
 
-    assert_eq!(
-        super::interactive_choice_gate::pending_len_for_test().await,
-        64
-    );
-    super::interactive_choice_gate::clear_pending_for_test().await;
+    assert!(validate_answers(&questions, vec![answer]).is_err());
 }
 
-#[tokio::test]
-async fn respond_rejects_wrong_session() {
-    let _guard = PENDING_TEST_LOCK.lock().await;
-    super::interactive_choice_gate::clear_pending_for_test().await;
-    super::interactive_choice_gate::insert_pending_for_test("choice-1", "session-a").await;
+#[test]
+fn answered_choice_becomes_a_user_follow_up() {
+    let questions = parse_questions(&valid_args()).unwrap();
+    let answers = vec![AgentInteractiveAnswer {
+        question_index: 0,
+        selected_ids: vec!["complete".into()],
+        selected_labels: vec!["Complet".into()],
+        custom_answer: None,
+    }];
+    let mut result = super::tool_interactive::answered_result(&questions, &answers);
 
-    let result = super::interactive_choice_gate::respond("session-b", "choice-1", vec![]).await;
+    assert!(matches!(
+        result.take_follow_up(),
+        ToolFollowUp::UserMessage(content) if content.contains("Complet")
+    ));
+}
 
-    assert!(result.is_err());
-    assert_eq!(
-        super::interactive_choice_gate::pending_len_for_test().await,
-        1
-    );
-    super::interactive_choice_gate::clear_pending_for_test().await;
+#[test]
+fn user_follow_up_preserves_selected_and_custom_answers() {
+    let questions = parse_questions(&valid_args()).unwrap();
+    let answers = vec![AgentInteractiveAnswer {
+        question_index: 0,
+        selected_ids: vec!["complete".into(), "other".into()],
+        selected_labels: vec!["Complet".into(), "other".into()],
+        custom_answer: Some("Avec les tests".into()),
+    }];
+    let mut result = super::tool_interactive::answered_result(&questions, &answers);
+
+    assert!(matches!(
+        result.take_follow_up(),
+        ToolFollowUp::UserMessage(content)
+            if content.contains("Complet") && content.contains("Avec les tests")
+    ));
 }
