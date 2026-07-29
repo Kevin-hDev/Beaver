@@ -1,0 +1,5 @@
+Review follow-up for managed session workspaces.
+
+Decisions: memory path classification errors now propagate and fail closed; deleting a top-level session removes only its validated app-managed workspace, while archiving, deleting a child/clone, or using an explicit directory never triggers that cleanup; default outputs are removed with the managed workspace, while user-configured external deliverables are preserved; Unicode letters and digits remain readable in workspace names; unavailable absolute output locations stay configured and are validated only when used; the configured output root is authorized for file tools; the output setting is cached so workspace notices do not reread configuration for every successful file tool.
+
+Validation: 2496 Rust tests, 1645 frontend tests, 2 CEF tests, and 46 extension-host tests passed. cargo clippy --all-targets -- -D warnings, cargo fmt --check, npx tsc --noEmit, npm run lint, and git diff --check passed. graphify update . completed.
