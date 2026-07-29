@@ -1,0 +1,9 @@
+Context: UI testing after ee74d9c showed that interactive choices looked active on hover while arrow keys remained inactive, and keyboard focus disappeared after submitting one question in a multi-question request. The Plan approval panel also ignored Enter.
+
+Root cause: ee74d9c applied one defensive focus policy to two different interactions. Generic choices stored visual active state separately from DOM focus, focused an inert panel on mount, and never transferred focus when the step changed. Plan approval intentionally focused its panel but handled only Escape.
+
+Decision: keep the two policies separate. Generic interactive choices focus the first option on every question, synchronize focus and active state for keyboard and hover, and preserve focus in the custom-answer input. Plan approval keeps focus on the neutral panel: Enter implements, Escape dismisses, and Space remains unhandled for scrolling. Enter inside the adjustment field submits only the adjustment.
+
+Regression coverage: initial option focus without automatic selection; arrow and Enter flow; pointer return after outside focus; focus transfer between questions; custom-answer focus preservation; custom-answer Escape return; Plan Enter, Escape, Space, stable-ID submission, and single adjustment submission.
+
+Validation: 1639 frontend tests across 358 files; 2 CEF tests; 46 extension-host tests; 2460 Rust tests; TypeScript; frontend lint; cargo clippy -D warnings; cargo fmt --check; git diff --check. The four primary regression tests were observed failing before the implementation and passing afterward.
