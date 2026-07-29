@@ -1,26 +1,15 @@
-const TODO_SECTION: &str = "# Todo list";
+/// Only the chat prompts still carry a tool section that has to disappear wholesale. Agent
+/// prompts describe tool usage in the tool definitions, which are sent only when enabled.
 const INTERACTIVE_SECTION: &str = "# Interactive choices";
 
 pub fn filter_system_prompt(content: &str, enabled_tool_names: &[String]) -> String {
     let mut lines = Vec::new();
     let mut skip_section = false;
-    let has_todo = super::tool_catalog::has_any_tool(
-        enabled_tool_names,
-        &[
-            "todo_write",
-            "todo_history",
-            "todo_pause",
-            "todo_resume",
-            "todo_delete",
-            "agent_diagnostics",
-        ],
-    );
     let has_interactive = super::tool_catalog::has_tool(enabled_tool_names, "ask_user_choice");
 
     for line in content.lines() {
         if line.starts_with("# ") {
-            skip_section = (!has_todo && line == TODO_SECTION)
-                || (!has_interactive && line == INTERACTIVE_SECTION);
+            skip_section = !has_interactive && line == INTERACTIVE_SECTION;
         }
         if skip_section || should_drop_line(line, enabled_tool_names) {
             continue;
@@ -90,7 +79,7 @@ mod tests {
             "load_skill".to_string(),
         ];
         let filtered = filter_system_prompt(
-            "# Capabilities\n- **bash**: Run.\n- **todo_write**: Track.\n- **load_skill**: Load.\n\n# Todo list\nUse todo_write.\n\n# Interactive choices\nUse ask_user_choice.",
+            "# Capabilities\n- **bash**: Run.\n- **todo_write**: Track.\n- **load_skill**: Load.\n\n# Interactive choices\nUse ask_user_choice.",
             &enabled,
         );
 
@@ -98,6 +87,6 @@ mod tests {
         assert!(filtered.contains("**load_skill**"));
         assert!(!filtered.contains("todo_write"));
         assert!(!filtered.contains("ask_user_choice"));
-        assert!(!filtered.contains("# Todo list"));
+        assert!(!filtered.contains("# Interactive choices"));
     }
 }

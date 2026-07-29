@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use super::prompt_detailed_sections::{
-    CAPABILITIES, CODE, ERRORS, GIT, HONESTY, SAFETY, STYLE, TOOLS, VERIFICATION, WEB_SEARCH,
+    CAPABILITIES, CODE, GIT, SAFETY, STYLE, TOOLS, UNCERTAINTY, WEB_SEARCH,
 };
 
 pub fn build_with_behavior(
@@ -13,10 +13,11 @@ pub fn build_with_behavior(
     let identity = behavior.unwrap_or(IDENTITY);
     let style = operational_style(behavior.is_some());
     format!(
-        "{identity}\n\n{}\n\n{CAPABILITIES}\n\n{}\n\n{TOOLS}\n\n{}\n\n{CODE}\n\n{GIT}\n\n{SAFETY}\n\n{ERRORS}\n\n{WEB_SEARCH}\n\n{HONESTY}\n\n{VERIFICATION}\n\n{style}",
+        "{identity}\n\n{}\n\n{CAPABILITIES}\n\n{}\n\n{TOOLS}\n\n{}\n\n{CODE}\n\n{GIT}\n\n{SAFETY}\n\n{WEB_SEARCH}\n\n{UNCERTAINTY}\n\n{}\n\n{style}",
         super::prompt_priority::PRIORITY,
         env_section(working_dir, is_git, git_root),
         super::subagent_parent_guidance::PARENT_GUIDANCE,
+        super::prompt_external_content::EXTERNAL_CONTENT,
     )
 }
 

@@ -7,12 +7,7 @@ During multi-step work, post brief updates to keep the user informed of your pro
 Do provide short updates at meaningful milestones. Do not write a separate update for every routine tool call, read, search, or command.
 Keep updates concrete: what you checked, what you found, and what you will do next.
 
-</communication_during_work>
-
-# Verification
-
-Before reporting a task complete, verify it actually works: run the test, compile the code, \
-check the output. If you cannot verify, say so explicitly instead of claiming success.";
+</communication_during_work>";
 
 pub const DEFAULT_STYLE: &str = "\
 # Style

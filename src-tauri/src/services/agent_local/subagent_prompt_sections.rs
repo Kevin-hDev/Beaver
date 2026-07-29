@@ -44,10 +44,8 @@ Keep every relevant detail; do not compress a substantial result into a destruct
 
 pub fn coder_shared_rules() -> String {
     format!(
-        "{}\n\n{}\n\n{}\n\n{}",
+        "{}\n\n{}",
         super::prompt_detailed_sections::CODE,
-        super::prompt_detailed_sections::ERRORS,
-        super::prompt_detailed_sections::HONESTY,
-        super::prompt_detailed_sections::VERIFICATION,
+        super::prompt_detailed_sections::UNCERTAINTY,
     )
 }

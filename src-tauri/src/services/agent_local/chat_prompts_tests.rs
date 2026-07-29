@@ -321,13 +321,12 @@ fn large_model_gets_detailed_prompt() {
     );
     let sys = &msgs[0];
     assert!(sys.content.contains("Working with git"));
-    assert!(sys.content.contains("Error handling"));
     assert!(sys.content.contains("highly capable"));
     // Detailed-only rules.
-    assert!(sys.content.contains("# Verification"));
-    assert!(sys.content.contains("# Honesty"));
+    assert!(sys.content.contains("# Priority order"));
+    assert!(sys.content.contains("# When you are not sure"));
+    assert!(sys.content.contains("# External content"));
     assert!(sys.content.contains("does NOT extend to the next context"));
-    assert!(sys.content.contains("prompt injection"));
     assert!(sys.content.contains("file_path:line_number"));
 }
 
