@@ -84,7 +84,7 @@ describe("PlanApprovalPanel", () => {
         answers: [{
           questionIndex: 0,
           selectedIds: ["implement_plan"],
-          selectedLabels: ["Implement this plan"],
+          selectedLabels: [],
         }],
       },
     ));
@@ -106,7 +106,7 @@ describe("PlanApprovalPanel", () => {
         answers: [{
           questionIndex: 0,
           selectedIds: ["other"],
-          selectedLabels: ["other"],
+          selectedLabels: [],
           customAnswer: "Use the existing service",
         }],
       },

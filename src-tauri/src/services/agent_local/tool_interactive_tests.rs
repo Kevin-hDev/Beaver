@@ -84,7 +84,7 @@ fn validate_answers_accepts_known_id() {
         vec![AgentInteractiveAnswer {
             question_index: 0,
             selected_ids: vec!["complete".into()],
-            selected_labels: vec!["Complet".into()],
+            selected_labels: vec![],
             custom_answer: None,
         }],
     )

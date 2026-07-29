@@ -27,7 +27,6 @@ export function PlanApprovalPanel({
 
   const respond = useCallback(async (
     selectedId: string,
-    selectedLabel: string,
     customAnswer?: string,
   ) => {
     if (submitting) return;
@@ -39,7 +38,7 @@ export function PlanApprovalPanel({
         answers: [{
           questionIndex: 0,
           selectedIds: [selectedId],
-          selectedLabels: [selectedLabel],
+          selectedLabels: [],
           ...(customAnswer ? { customAnswer } : {}),
         }],
       });
@@ -51,13 +50,13 @@ export function PlanApprovalPanel({
   }, [onError, onResolved, request.id, request.sessionId, submitting]);
 
   const implement = useCallback(() => {
-    void respond(IMPLEMENT_ID, t("interactiveChoice.planImplement"));
-  }, [respond, t]);
+    void respond(IMPLEMENT_ID);
+  }, [respond]);
 
   const sendAdjustments = useCallback(() => {
     const text = adjustments.trim();
     if (!text) return;
-    void respond(ADJUSTMENTS_ID, ADJUSTMENTS_ID, text);
+    void respond(ADJUSTMENTS_ID, text);
   }, [adjustments, respond]);
 
   const dismiss = useCallback(async () => {
