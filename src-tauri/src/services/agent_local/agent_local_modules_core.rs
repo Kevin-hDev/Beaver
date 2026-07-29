@@ -47,6 +47,7 @@ pub mod memory_context_usage;
 pub mod memory_index;
 pub mod memory_io;
 pub mod memory_overview;
+pub mod memory_path_classification;
 pub mod memory_path_security;
 pub mod memory_paths;
 pub mod memory_project_id;

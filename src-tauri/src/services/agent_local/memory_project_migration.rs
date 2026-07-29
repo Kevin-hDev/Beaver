@@ -1,3 +1,4 @@
+use super::memory_path_classification::{classify_memory_path, MemoryArea};
 use super::memory_paths::{lexical_path, validate_in_scope, MemoryLayout, MemoryScope};
 use super::memory_project_id::project_identity;
 use std::io::ErrorKind;
@@ -26,25 +27,18 @@ pub async fn scope_for_tool_path(
     raw_path: &str,
     working_dir: &Path,
 ) -> Result<Option<MemoryScope>, String> {
-    let path = Path::new(raw_path);
-    let unresolved = if path.is_absolute() {
-        path.to_path_buf()
-    } else {
-        working_dir.join(path)
-    };
-    if !unresolved.starts_with(layout.root()) {
+    let Some(classification) =
+        classify_memory_path(raw_path, Some(working_dir), layout.root())?
+    else {
         return Ok(None);
-    }
-    let candidate = lexical_path(raw_path, working_dir)?;
+    };
+    lexical_path(raw_path, working_dir)?;
     let global = layout.global_scope();
-    if candidate.starts_with(&global.root) {
+    if classification.area == MemoryArea::Global {
         return Ok(Some(global));
     }
-    if !candidate.starts_with(layout.root().join("projects")) {
-        return Ok(None);
-    }
     let active = resolve(layout, working_dir).await?;
-    if candidate.starts_with(&active.root) {
+    if classification.belongs_exclusively_to(&active.root) {
         Ok(Some(active))
     } else {
         Err("Mémoire d'un autre projet inaccessible.".into())

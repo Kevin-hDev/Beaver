@@ -31,6 +31,40 @@ fn only_canonical_feature_roots_are_classified() {
 }
 
 #[test]
+fn traversal_into_memory_is_classified_for_authorization() {
+    let data = crate::services::paths::data_dir();
+    let working_dir = data.join("scratch");
+    let args = serde_json::json!({"path": "../memory/global/MEMORY.md"});
+
+    assert!(is_memory_operation(
+        "read_file",
+        &args,
+        Some(&working_dir)
+    ));
+}
+
+#[test]
+fn ordinary_relative_paths_are_not_classified_as_memory() {
+    let working_dir = tempfile::tempdir().unwrap();
+    for path in [".", "./src"] {
+        let args = serde_json::json!({"path": path});
+        assert!(!is_memory_operation(
+            "list_dir",
+            &args,
+            Some(working_dir.path())
+        ));
+    }
+}
+
+#[test]
+fn a_relative_path_without_a_working_directory_has_no_memory_domain() {
+    let args = serde_json::json!({"path": "src/main.rs"});
+
+    assert!(!is_memory_operation("read_file", &args, None));
+    assert!(event_domain("read_file", &args).is_none());
+}
+
+#[test]
 fn runtime_authorization_replaces_the_general_prompt_only_for_memory_writes() {
     let session = uuid::Uuid::new_v4().to_string();
     let _guard = memory_runtime::begin(&session, MemoryMode::Automatic, true, 3_000, 0);

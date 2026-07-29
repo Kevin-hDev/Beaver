@@ -47,10 +47,11 @@ async fn only_global_and_active_project_are_accessible() {
 async fn traversal_is_rejected() {
     let root = tempfile::tempdir().unwrap();
     let layout = MemoryLayout::at(root.path().join("memory"));
-    let path = layout.root().join("global/../global/MEMORY.md");
+    let project = root.path().join("project");
+    std::fs::create_dir_all(&project).unwrap();
 
     assert!(layout
-        .scope_for_tool_path(path.to_str().unwrap(), root.path())
+        .scope_for_tool_path("../memory/global/MEMORY.md", &project)
         .await
         .is_err());
 }
@@ -85,6 +86,46 @@ async fn a_scope_symlink_cannot_escape_the_memory_root() {
 
     assert!(layout.global_scope().ensure().await.is_err());
     assert!(!outside.path().join("topics").exists());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn an_external_symlink_into_memory_is_intercepted() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir().unwrap();
+    let project = root.path().join("project");
+    let layout = MemoryLayout::at(root.path().join("memory"));
+    layout.global_scope().ensure().await.unwrap();
+    std::fs::create_dir_all(&project).unwrap();
+    symlink(layout.global_scope().root, project.join("memory-alias")).unwrap();
+
+    let result = layout
+        .scope_for_tool_path("memory-alias/MEMORY.md", &project)
+        .await
+        .unwrap();
+
+    assert_eq!(result.unwrap().id, "global");
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn a_memory_symlink_to_the_outside_is_rejected() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    let layout = MemoryLayout::at(root.path().join("memory"));
+    let scope = layout.global_scope();
+    scope.ensure().await.unwrap();
+    symlink(outside.path(), scope.topics_dir().join("outside")).unwrap();
+    let path = scope.topics_dir().join("outside/file.md");
+
+    assert!(layout
+        .scope_for_tool_path(path.to_str().unwrap(), root.path())
+        .await
+        .is_ok());
+    assert!(validate_in_scope(&scope, &path).is_err());
 }
 
 #[tokio::test]

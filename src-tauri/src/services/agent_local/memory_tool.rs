@@ -1,4 +1,5 @@
 use super::memory_paths::{lexical_path, path_arg, validate_in_scope, MemoryLayout, MemoryScope};
+use super::memory_path_classification::classify_memory_path;
 use super::types_tools::ToolResult;
 use serde_json::Value;
 use std::path::Path;
@@ -71,16 +72,10 @@ pub fn is_memory_operation(
     let Some(raw_path) = path_arg(tool_name, args) else {
         return false;
     };
-    let path = Path::new(raw_path);
-    let candidate = if path.is_absolute() {
-        path.to_path_buf()
-    } else if let Some(working_dir) = working_dir {
-        working_dir.join(path)
-    } else {
-        return false;
-    };
     let root = crate::services::paths::data_dir().join("memory");
-    candidate.starts_with(root.join("global")) || candidate.starts_with(root.join("projects"))
+    classify_memory_path(raw_path, working_dir, &root)
+        .map(|classification| classification.is_some())
+        .unwrap_or(true)
 }
 
 pub fn write_authorization(
@@ -102,10 +97,11 @@ pub fn event_domain(tool_name: &str, args: &Value) -> Option<String> {
 }
 
 pub fn resolved_path_domain(path: Option<&str>) -> Option<String> {
-    let path = Path::new(path?);
     let root = crate::services::paths::data_dir().join("memory");
-    (path.starts_with(root.join("global")) || path.starts_with(root.join("projects")))
-        .then(|| "memory".to_string())
+    classify_memory_path(path?, None, &root)
+        .ok()
+        .flatten()
+        .map(|_| "memory".to_string())
 }
 
 async fn dispatch_memory_tool(
