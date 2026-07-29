@@ -1,0 +1,11 @@
+Context: UI validation of plan approval failed with the generic operation error in session a3a2ab3c-6d0b-4eca-9072-daa651c9ca19.
+
+Root cause: the specialized plan panel sent both the stable option ID and a localized display label. The French UI used “œuvre” while the backend option used “oeuvre”; answer validation rejected the label even though implement_plan was valid. Other locales were exposed to the same coupling.
+
+Decision: plan approval and adjustment transport now uses stable IDs plus the optional free-form adjustment only. Localized labels remain presentation data and are not submitted. Backend coverage explicitly proves that a known ID is valid without a label.
+
+Rejected fixes: aligning one French spelling or loosening unknown-label validation would preserve the locale/backend coupling and would not solve all languages.
+
+Validation: 2460 Rust tests; 1636 frontend tests across 357 files; 2 CEF tests; 46 extension-host tests; TypeScript; frontend lint; cargo clippy -D warnings; cargo fmt --check; git diff --check. Targeted test was observed failing before the implementation and passing afterward.
+
+Separate finding, not changed here: Plan mode currently reuses the permission prompt classifier as a read-only classifier. This blocks legitimate exploration such as rg while allowing build commands that can write artifacts. Removing the guard entirely would permit project mutations before approval; this needs a dedicated follow-up.
