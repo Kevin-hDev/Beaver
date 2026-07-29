@@ -1,0 +1,23 @@
+Decisions taken after the follow-up review of 2694f08.
+
+--- Authority follows real origin, not the tool message role ---
+
+A tool message is only a transport envelope. Files, fetched pages, command output, MCP output, and ordinary tool results remain untrusted data even when they address the model directly.
+
+load_skill remains an explicit exception: a skill deliberately loaded by the agent is specialised project instruction below the system prompt and the current user request.
+
+--- Direct user answers keep user authority ---
+
+ask_user_choice returns selected options and custom text through ToolResult, but that content came directly from the user. It is therefore treated as the user reply, below the system prompt and its safety rules.
+
+--- Plan Mode results are trusted application control state ---
+
+Only the exact Beaver built-ins planmode and exitplanmode receive this exception. Their returned decision and status must be followed according to their tool definitions.
+
+No generic exception lets a tool or connector declare its own output authoritative. Every other tool result stays data, which keeps the prompt-injection boundary closed by default.
+
+--- Local specification and validation ---
+
+docs/plans/agent-prompt-restructure-spec.md section 7.6 was updated locally to the same source-typing rule. docs/plans is gitignored, so this note is the versioned record of that documentation decision.
+
+cargo fmt --all -- --check, cargo clippy --all-targets -- -D warnings, git diff --check, five focused tests, and all 2455 Rust tests pass.
