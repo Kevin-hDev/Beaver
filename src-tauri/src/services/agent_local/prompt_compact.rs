@@ -137,4 +137,3 @@ When you search the web:
 - Prefer official sources: docs, repos, author blogs. Distrust aggregators and SEO content.
 - Read the full page (web_fetch) before citing — snippets can be misleading.
 - If sources contradict, report the disagreement instead of picking one silently.";
-

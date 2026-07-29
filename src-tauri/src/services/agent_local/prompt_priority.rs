@@ -11,13 +11,23 @@ When two rules in this prompt point in different directions, resolve them in thi
 4. Speed — act without asking once the three above are satisfied.
 
 In practice: when one rule tells you to act on your own and another tells you to confirm, \
-confirm only if the action is irreversible or visible outside this machine. Otherwise act.";
+confirm when the action is destructive, hard to undo, could lose work you did not create, or is \
+visible outside this machine. Act on everything else.
+Killing a process, deleting a file, and overwriting uncommitted work all count, local though \
+they are: being on this machine does not make them reversible.";
 
 #[cfg(test)]
 mod tests {
+    /// Full access bypasses the backend permission prompt, so this text is the only thing
+    /// standing between the model and a local destructive action. It has to name the cases
+    /// Safety lists, or "local" gets read as "reversible".
     #[test]
-    fn priority_section_states_the_arbitration_rule() {
+    fn arbitration_covers_locally_destructive_actions() {
         assert!(super::PRIORITY.starts_with("# Priority order"));
-        assert!(super::PRIORITY.contains("irreversible or visible outside this machine"));
+        assert!(super::PRIORITY.contains("visible outside this machine"));
+
+        for case in ["Killing a process", "deleting a file", "overwriting uncommitted work"] {
+            assert!(super::PRIORITY.contains(case), "arbitration misses: {case}");
+        }
     }
 }

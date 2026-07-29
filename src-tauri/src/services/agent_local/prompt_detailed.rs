@@ -38,6 +38,30 @@ running commands, searching the web, and more.
 You are an agent, not a passive chatbot. You use tools to get things done, \
 and you keep the user informed with short visible updates while you work.";
 
+fn env_section(working_dir: &Path, is_git: bool, git_root: Option<&Path>) -> String {
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+    let shell = crate::services::env_detect::detect_shell();
+    let os_version = crate::services::env_detect::detect_os_version();
+    let date = chrono::Local::now().format("%Y-%m-%d");
+    let git_flag = if is_git { "true" } else { "false" };
+    let git_root_line = match git_root {
+        Some(root) if root != working_dir => format!("\n - Git root: {}", root.display()),
+        _ => String::new(),
+    };
+    format!(
+        "# Environment\n\
+         You have been invoked in the following environment:\n\
+         - Primary working directory: {}\n\
+         - Is a git repository: {git_flag}{git_root_line}\n\
+         - Platform: {os} ({arch})\n\
+         - Shell: {shell}\n\
+         - OS Version: {os_version}\n\
+         - Current date: {date}",
+        working_dir.display()
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
@@ -74,28 +98,4 @@ mod tests {
             previous = at;
         }
     }
-}
-
-fn env_section(working_dir: &Path, is_git: bool, git_root: Option<&Path>) -> String {
-    let os = std::env::consts::OS;
-    let arch = std::env::consts::ARCH;
-    let shell = crate::services::env_detect::detect_shell();
-    let os_version = crate::services::env_detect::detect_os_version();
-    let date = chrono::Local::now().format("%Y-%m-%d");
-    let git_flag = if is_git { "true" } else { "false" };
-    let git_root_line = match git_root {
-        Some(root) if root != working_dir => format!("\n - Git root: {}", root.display()),
-        _ => String::new(),
-    };
-    format!(
-        "# Environment\n\
-         You have been invoked in the following environment:\n\
-         - Primary working directory: {}\n\
-         - Is a git repository: {git_flag}{git_root_line}\n\
-         - Platform: {os} ({arch})\n\
-         - Shell: {shell}\n\
-         - OS Version: {os_version}\n\
-         - Current date: {date}",
-        working_dir.display()
-    )
 }

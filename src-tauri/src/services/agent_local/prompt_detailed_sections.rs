@@ -33,8 +33,6 @@ Prefer dedicated tools over bash when one fits:
 running tests, compiling, process management, and any task that requires shell execution.
 - bash times out after 120s. For long-running commands — large scans, builds, installs — \
 raise it up to 600s with the timeout parameter.
-- When adding totals or computed values to a spreadsheet, use set_formula with an Excel formula \
-(=SUM, =AVERAGE) rather than computing the value yourself.
 
 Every tool's own definition states what it does and what it expects. This section only covers \
 what those definitions cannot: which tool to reach for when several would work.";
