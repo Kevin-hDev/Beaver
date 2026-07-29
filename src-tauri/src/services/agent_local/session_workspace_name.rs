@@ -9,14 +9,17 @@ pub(super) fn slugify(value: &str) -> String {
         if emitted >= SLUG_MAX_CHARS {
             break;
         }
-        if character.is_ascii_alphanumeric() {
+        if character.is_alphanumeric() {
             if separator && !slug.is_empty() && emitted < SLUG_MAX_CHARS {
                 slug.push('-');
                 emitted += 1;
             }
             separator = false;
-            if emitted < SLUG_MAX_CHARS {
-                slug.push(character.to_ascii_lowercase());
+            for lowercase in character.to_lowercase() {
+                if emitted >= SLUG_MAX_CHARS {
+                    break;
+                }
+                slug.push(lowercase);
                 emitted += 1;
             }
         } else {

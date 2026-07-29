@@ -8,7 +8,10 @@ pub(super) fn append(mut result: ToolResult, working_dir: &Path) -> ToolResult {
     let Some(root) = canonical(working_dir, working_dir) else {
         return result;
     };
-    let allowed = allowed_roots(&root);
+    let allowed = allowed_roots(
+        &root,
+        crate::services::config::session_outputs_directory(),
+    );
     let outside = result
         .affected_paths
         .iter()
@@ -31,7 +34,7 @@ pub(super) fn append(mut result: ToolResult, working_dir: &Path) -> ToolResult {
     result
 }
 
-fn allowed_roots(working_dir: &Path) -> Vec<PathBuf> {
+fn allowed_roots(working_dir: &Path, configured_outputs: Option<PathBuf>) -> Vec<PathBuf> {
     let mut roots = vec![working_dir.to_path_buf()];
     let app_workspaces = crate::services::paths::data_dir().join("session-workspaces");
     if working_dir.starts_with(&app_workspaces) && working_dir.file_name().is_some_and(|v| v == "work")
@@ -40,14 +43,8 @@ fn allowed_roots(working_dir: &Path) -> Vec<PathBuf> {
             roots.push(outputs);
         }
     }
-    if let Ok(config) = crate::services::config::read_config() {
-        if let Some(outputs) = crate::models::config::normalize_optional_directory(
-            &config.advanced.session_outputs_directory,
-        )
-        .filter(|value| !value.is_empty())
-        {
-            roots.push(PathBuf::from(outputs));
-        }
+    if let Some(outputs) = configured_outputs {
+        roots.push(outputs);
     }
     roots
 }

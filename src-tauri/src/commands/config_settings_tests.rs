@@ -55,13 +55,29 @@ fn normalize_clamps_compression_threshold() {
 }
 
 #[test]
-fn output_setting_rejects_a_missing_or_relative_directory() {
-    for directory in ["../outside", "/definitely/missing/beaver-outputs"] {
-        let mut settings = AdvancedSettings {
-            session_outputs_directory: directory.to_string(),
-            ..Default::default()
-        };
+fn output_setting_rejects_a_relative_directory() {
+    let mut settings = AdvancedSettings {
+        session_outputs_directory: "../outside".to_string(),
+        ..Default::default()
+    };
 
-        assert!(validate_outputs_directory(&mut settings).is_err());
-    }
+    assert!(validate_outputs_directory(&mut settings).is_err());
+}
+
+#[test]
+fn output_setting_keeps_an_unavailable_absolute_directory() {
+    let directory = std::env::temp_dir().join(format!(
+        "beaver-disconnected-output-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let mut settings = AdvancedSettings {
+        session_outputs_directory: directory.to_string_lossy().to_string(),
+        ..Default::default()
+    };
+
+    assert!(validate_outputs_directory(&mut settings).is_ok());
+    assert_eq!(
+        settings.session_outputs_directory,
+        directory.to_string_lossy()
+    );
 }

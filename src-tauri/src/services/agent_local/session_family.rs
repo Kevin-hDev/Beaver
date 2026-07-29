@@ -44,8 +44,13 @@ pub async fn delete_family(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
     let metas = super::session_index::read_index().await?;
     for session_id in delete_targets(&metas, id) {
-        let _ = super::session_tabs::remove_session_from_tabs(&session_id).await;
-        let _ = super::session_store::delete_one(&session_id).await;
+        if session_id == id {
+            super::session_store::delete_one(&session_id).await?;
+            let _ = super::session_tabs::remove_session_from_tabs(&session_id).await;
+        } else {
+            let _ = super::session_store::delete_one(&session_id).await;
+            let _ = super::session_tabs::remove_session_from_tabs(&session_id).await;
+        }
     }
     Ok(())
 }

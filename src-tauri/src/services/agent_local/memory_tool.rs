@@ -68,14 +68,13 @@ pub fn is_memory_operation(
     tool_name: &str,
     args: &Value,
     working_dir: Option<&Path>,
-) -> bool {
+) -> Result<bool, String> {
     let Some(raw_path) = path_arg(tool_name, args) else {
-        return false;
+        return Ok(false);
     };
     let root = crate::services::paths::data_dir().join("memory");
     classify_memory_path(raw_path, working_dir, &root)
         .map(|classification| classification.is_some())
-        .unwrap_or(true)
 }
 
 pub fn write_authorization(
@@ -83,17 +82,20 @@ pub fn write_authorization(
     args: &Value,
     working_dir: &Path,
     session_id: &str,
-) -> Option<bool> {
+) -> Result<Option<bool>, String> {
     if !matches!(tool_name, "write_file" | "edit_file")
-        || !is_memory_operation(tool_name, args, Some(working_dir))
+        || !is_memory_operation(tool_name, args, Some(working_dir))?
     {
-        return None;
+        return Ok(None);
     }
-    Some(super::memory_runtime::write_allowed(session_id))
+    Ok(Some(super::memory_runtime::write_allowed(session_id)))
 }
 
 pub fn event_domain(tool_name: &str, args: &Value) -> Option<String> {
-    is_memory_operation(tool_name, args, None).then(|| "memory".to_string())
+    is_memory_operation(tool_name, args, None)
+        .ok()
+        .filter(|is_memory| *is_memory)
+        .map(|_| "memory".to_string())
 }
 
 pub fn resolved_path_domain(path: Option<&str>) -> Option<String> {

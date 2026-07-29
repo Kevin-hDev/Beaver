@@ -45,7 +45,10 @@ pub(super) async fn execute_write(
     }
 
     let memory_write =
-        super::memory_tool::write_authorization(name, args, working_dir, session_id);
+        match super::memory_tool::write_authorization(name, args, working_dir, session_id) {
+            Ok(authorization) => authorization,
+            Err(message) => return ToolResult::err(message),
+        };
     if memory_write == Some(false) {
         return ToolResult::err("Cette écriture mémoire n'est pas autorisée pour ce tour.");
     }

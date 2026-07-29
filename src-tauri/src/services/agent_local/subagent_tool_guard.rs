@@ -40,7 +40,7 @@ pub fn validate_for_profile(
     if !profile.allows(tool_name, skills_enabled) {
         return Err("Outil indisponible pour ce sous-agent.".to_string());
     }
-    if super::memory_tool::is_memory_operation(tool_name, args, Some(working_dir)) {
+    if super::memory_tool::is_memory_operation(tool_name, args, Some(working_dir))? {
         return if tool_name == "read_file" {
             Ok(())
         } else {

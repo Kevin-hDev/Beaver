@@ -25,9 +25,9 @@ fn topic(id: &str) -> String {
 fn only_canonical_feature_roots_are_classified() {
     let data = crate::services::paths::data_dir();
     let args = serde_json::json!({"path": data.join("memory/global/MEMORY.md")});
-    assert!(is_memory_operation("read_file", &args, None));
+    assert_eq!(is_memory_operation("read_file", &args, None), Ok(true));
     let core = serde_json::json!({"path": data.join("memory/core/user.md")});
-    assert!(!is_memory_operation("read_file", &core, None));
+    assert_eq!(is_memory_operation("read_file", &core, None), Ok(false));
 }
 
 #[test]
@@ -36,11 +36,11 @@ fn traversal_into_memory_is_classified_for_authorization() {
     let working_dir = data.join("scratch");
     let args = serde_json::json!({"path": "../memory/global/MEMORY.md"});
 
-    assert!(is_memory_operation(
+    assert_eq!(is_memory_operation(
         "read_file",
         &args,
         Some(&working_dir)
-    ));
+    ), Ok(true));
 }
 
 #[test]
@@ -48,11 +48,11 @@ fn ordinary_relative_paths_are_not_classified_as_memory() {
     let working_dir = tempfile::tempdir().unwrap();
     for path in [".", "./src"] {
         let args = serde_json::json!({"path": path});
-        assert!(!is_memory_operation(
+        assert_eq!(is_memory_operation(
             "list_dir",
             &args,
             Some(working_dir.path())
-        ));
+        ), Ok(false));
     }
 }
 
@@ -60,8 +60,15 @@ fn ordinary_relative_paths_are_not_classified_as_memory() {
 fn a_relative_path_without_a_working_directory_has_no_memory_domain() {
     let args = serde_json::json!({"path": "src/main.rs"});
 
-    assert!(!is_memory_operation("read_file", &args, None));
+    assert_eq!(is_memory_operation("read_file", &args, None), Ok(false));
     assert!(event_domain("read_file", &args).is_none());
+}
+
+#[test]
+fn invalid_paths_propagate_a_classification_error() {
+    let args = serde_json::json!({"path": "\0"});
+
+    assert!(is_memory_operation("read_file", &args, Some(Path::new("/tmp"))).is_err());
 }
 
 #[test]
@@ -75,11 +82,11 @@ fn runtime_authorization_replaces_the_general_prompt_only_for_memory_writes() {
 
     assert_eq!(
         write_authorization("write_file", &memory_args, std::path::Path::new("/tmp"), &session),
-        Some(true)
+        Ok(Some(true))
     );
     assert_eq!(
         write_authorization("write_file", &project_args, std::path::Path::new("/tmp"), &session),
-        None
+        Ok(None)
     );
 }
 

@@ -77,13 +77,30 @@ pub(crate) fn normalize_optional_directory(value: &str) -> Option<String> {
         || path
             .components()
             .any(|component| matches!(component, std::path::Component::ParentDir))
-        || !path.is_dir()
     {
         return None;
     }
-    path.canonicalize()
-        .ok()
-        .and_then(|path| path.to_str().map(str::to_string))
+    let mut normalized = std::path::PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => return None,
+            _ => normalized.push(component.as_os_str()),
+        }
+    }
+    normalized.to_str().map(str::to_string)
+}
+
+pub(crate) fn existing_optional_directory(value: &str) -> Option<std::path::PathBuf> {
+    let value = normalize_optional_directory(value)?;
+    if value.is_empty() {
+        return None;
+    }
+    let path = std::path::PathBuf::from(value);
+    if !path.is_dir() {
+        return None;
+    }
+    path.canonicalize().ok()
 }
 
 #[cfg(test)]

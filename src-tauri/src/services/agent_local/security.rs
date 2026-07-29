@@ -76,12 +76,22 @@ pub fn allowed_read_roots() -> Vec<PathBuf> {
 
 fn base_allowed_roots() -> Vec<PathBuf> {
     let mut roots = config_allowed_paths();
+    append_configured_outputs_root(
+        &mut roots,
+        crate::services::config::session_outputs_directory(),
+    );
     roots.push(crate::services::paths::data_dir());
     roots.push(std::env::temp_dir());
     roots
         .into_iter()
         .map(|path| path.canonicalize().unwrap_or(path))
         .collect()
+}
+
+fn append_configured_outputs_root(roots: &mut Vec<PathBuf>, output_root: Option<PathBuf>) {
+    if let Some(output_root) = output_root {
+        roots.push(output_root);
+    }
 }
 
 pub fn validate_read_path(path: &Path, working_dir: &Path) -> Result<PathBuf, String> {
@@ -176,3 +186,7 @@ mod tests;
 #[path = "security_negative_tests.rs"]
 #[cfg(test)]
 mod negative_tests;
+
+#[path = "security_output_roots_tests.rs"]
+#[cfg(test)]
+mod output_roots_tests;

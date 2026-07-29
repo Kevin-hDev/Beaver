@@ -3,6 +3,9 @@ use crate::models::{
 };
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{OnceLock, RwLock};
+
+static SESSION_OUTPUTS_DIRECTORY: OnceLock<RwLock<Option<PathBuf>>> = OnceLock::new();
 
 fn config_path() -> PathBuf {
     crate::services::paths::data_dir().join("config.json")
@@ -13,7 +16,9 @@ fn config_path() -> PathBuf {
 /// - JSON corrompu → config par défaut + log
 /// - wakeups au format obsolète (CL-GO legacy) → ignorés un par un + log
 pub fn read_config() -> Result<ClgoConfig, String> {
-    read_config_from_path(&config_path(), &crate::services::paths::data_dir())
+    let config = read_config_from_path(&config_path(), &crate::services::paths::data_dir())?;
+    cache_session_outputs_directory(&config.advanced.session_outputs_directory);
+    Ok(config)
 }
 
 /// Variante testable : lit le config depuis `path` et écrit la sentinelle de
@@ -80,7 +85,42 @@ pub(crate) fn read_config_from_path(path: &Path, data_dir: &Path) -> Result<Clgo
 }
 
 pub fn write_config(config: &ClgoConfig) -> Result<(), String> {
-    write_config_to_path(&config_path(), config)
+    write_config_to_path(&config_path(), config)?;
+    cache_session_outputs_directory(&config.advanced.session_outputs_directory);
+    Ok(())
+}
+
+pub fn session_outputs_directory() -> Option<PathBuf> {
+    if let Some(cache) = SESSION_OUTPUTS_DIRECTORY.get() {
+        return read_cached_directory(cache);
+    }
+    read_config()
+        .ok()
+        .and_then(|config| {
+            crate::models::config::normalize_optional_directory(
+                &config.advanced.session_outputs_directory,
+            )
+        })
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+}
+
+fn cache_session_outputs_directory(value: &str) {
+    let value = crate::models::config::normalize_optional_directory(value)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from);
+    let cache = SESSION_OUTPUTS_DIRECTORY.get_or_init(|| RwLock::new(None));
+    match cache.write() {
+        Ok(mut cached) => *cached = value,
+        Err(poisoned) => *poisoned.into_inner() = value,
+    }
+}
+
+fn read_cached_directory(cache: &RwLock<Option<PathBuf>>) -> Option<PathBuf> {
+    match cache.read() {
+        Ok(cached) => cached.clone(),
+        Err(poisoned) => poisoned.into_inner().clone(),
+    }
 }
 
 /// Variante testable : écrit atomiquement (tmp + rename) le config vers `path`.

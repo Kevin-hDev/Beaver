@@ -41,7 +41,7 @@ fn compression_threshold_is_clamped() {
 }
 
 #[test]
-fn invalid_outputs_directory_is_cleared() {
+fn relative_outputs_directory_is_cleared() {
     let settings = AdvancedSettings {
         session_outputs_directory: "../outside".to_string(),
         ..Default::default()
@@ -52,16 +52,14 @@ fn invalid_outputs_directory_is_cleared() {
 }
 
 #[test]
-fn outputs_directory_is_canonicalized() {
-    let root = tempfile::tempdir().expect("tempdir");
-    let nested = root.path().join("nested");
-    std::fs::create_dir(&nested).expect("nested");
+fn missing_absolute_outputs_directory_is_preserved() {
+    let path = std::env::temp_dir().join(format!("beaver-offline-output-{}", uuid::Uuid::new_v4()));
+    let settings = AdvancedSettings {
+        session_outputs_directory: path.to_string_lossy().to_string(),
+        ..Default::default()
+    }
+    .normalized();
 
-    let normalized =
-        normalize_optional_directory(&nested.join(".").to_string_lossy()).expect("valid directory");
-
-    assert_eq!(
-        normalized,
-        nested.canonicalize().expect("canonical").to_string_lossy()
-    );
+    assert_eq!(settings.session_outputs_directory, path.to_string_lossy());
+    assert!(existing_optional_directory(&settings.session_outputs_directory).is_none());
 }

@@ -20,7 +20,7 @@ async fn creates_private_work_and_outputs_directories() {
     assert!(workspace
         .work
         .to_string_lossy()
-        .contains("cr-er-une-pr-sentation"));
+        .contains("créer-une-présentation"));
     assert!(workspace.work.ends_with("work"));
 }
 
@@ -46,6 +46,13 @@ fn reserved_and_unusable_names_have_a_safe_fallback() {
     assert_eq!(slugify("CON"), "session");
     assert_eq!(slugify("///"), "session");
     assert_eq!(slugify("Hello, World!"), "hello-world");
+}
+
+#[test]
+fn unicode_labels_remain_readable() {
+    assert_eq!(slugify("Créer une présentation"), "créer-une-présentation");
+    assert_eq!(slugify("プレゼンテーションを作成"), "プレゼンテーションを作成");
+    assert_eq!(slugify("创建演示文稿"), "创建演示文稿");
 }
 
 #[test]

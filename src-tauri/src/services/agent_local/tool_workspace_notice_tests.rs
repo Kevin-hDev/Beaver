@@ -41,3 +41,13 @@ fn a_failed_tool_is_not_reframed_as_workspace_drift() {
 
     assert_eq!(result.content, "failed");
 }
+
+#[test]
+fn configured_outputs_are_part_of_the_active_workspace() {
+    let workspace = tempfile::tempdir().expect("workspace");
+    let outputs = tempfile::tempdir().expect("outputs");
+
+    let roots = allowed_roots(workspace.path(), Some(outputs.path().to_path_buf()));
+
+    assert!(roots.contains(&outputs.path().to_path_buf()));
+}

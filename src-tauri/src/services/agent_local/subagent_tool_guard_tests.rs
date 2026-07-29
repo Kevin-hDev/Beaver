@@ -166,6 +166,20 @@ fn subagents_can_only_read_an_explicit_memory_file() {
     .is_err());
 }
 
+#[test]
+fn an_invalid_memory_path_is_refused_instead_of_bypassing_confinement() {
+    let root = tempfile::tempdir().expect("root");
+
+    assert!(subagent_tool_guard::validate_for_profile(
+        SubagentToolProfile::Explorer,
+        false,
+        "read_file",
+        &json!({"path": "\0"}),
+        root.path(),
+    )
+    .is_err());
+}
+
 #[cfg(unix)]
 #[test]
 fn outgoing_symlink_is_rejected() {

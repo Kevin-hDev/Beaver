@@ -1,4 +1,6 @@
 use super::types_session::AgentSession;
+#[path = "session_workspace_cleanup.rs"]
+mod cleanup;
 #[path = "session_workspace_name.rs"]
 mod name;
 use name::{session_suffix, slugify, valid_date};
@@ -25,6 +27,10 @@ pub async fn ensure(session: &AgentSession) -> Result<SessionWorkspace, String> 
     let label = first_user_label(session)?;
     let date = session.created_at.format("%Y-%m-%d").to_string();
     ensure_layout(&base, outputs_base.as_deref(), &date, label, &session.id).await
+}
+
+pub async fn remove_for_deleted_session(session: &AgentSession) -> Result<(), String> {
+    cleanup::remove_for_deleted_session(session).await
 }
 
 async fn ensure_layout(
@@ -90,13 +96,8 @@ fn normal_component(component: Option<std::path::Component<'_>>) -> Result<&std:
 }
 
 fn configured_outputs_base() -> Option<PathBuf> {
-    let value = crate::services::config::read_config()
-        .ok()?
-        .advanced
-        .session_outputs_directory;
-    crate::models::config::normalize_optional_directory(&value)
-        .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
+    let value = crate::services::config::session_outputs_directory()?;
+    crate::models::config::existing_optional_directory(value.to_string_lossy().as_ref())
 }
 
 fn first_user_label(session: &AgentSession) -> Result<&str, String> {
