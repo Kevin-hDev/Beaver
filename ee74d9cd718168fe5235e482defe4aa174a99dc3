@@ -1,0 +1,9 @@
+Decision record — keyboard-focus follow-up to 0197722.
+
+Safety decision: Plan approval and generic interactive panels now receive initial focus on a neutral container, never on an action button. Enter and Space therefore cannot approve a plan or select an answer immediately after the panel appears. Escape remains scoped to the focused panel, and keyboard navigation moves both the active state and the real DOM focus.
+
+Product decision retained: Escape from the always-visible Plan adjustments field dismisses the published plan, clears its preview, and discards the unsent draft. This matches the explicit Ignore ESC action and is now covered by a dedicated test. Generic Other remains a temporary sub-mode: Escape closes that field and restores focus to the currently active option.
+
+Code-quality decisions: the inline closeOther callback is stable, focus returns by activeIndex instead of always selecting the first button, and the generic panel implementation was split into a dedicated file so every modified source and test file remains below 200 lines.
+
+Validation: cargo test (2460 passed), cargo clippy --all-targets -- -D warnings, cargo fmt --all -- --check, npm test (1636 Vitest + 2 CEF + 46 extension-host passed), npm run lint, npx tsc --noEmit, targeted interactive tests (22 passed), git diff --check, and graphify update . all completed successfully.
