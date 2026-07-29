@@ -156,8 +156,6 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
-    let session = get(id).await?;
-    super::session_workspace::remove_for_deleted_session(&session).await?;
     let path = crate::services::paths::data_file_for_read(
         "agent-sessions",
         &format!("{id}.json"),

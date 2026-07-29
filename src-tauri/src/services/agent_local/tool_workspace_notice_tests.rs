@@ -49,5 +49,26 @@ fn configured_outputs_are_part_of_the_active_workspace() {
 
     let roots = allowed_roots(workspace.path(), Some(outputs.path().to_path_buf()));
 
-    assert!(roots.contains(&outputs.path().to_path_buf()));
+    assert!(roots.contains(&outputs.path().canonicalize().unwrap()));
+}
+
+#[cfg(unix)]
+#[test]
+fn configured_outputs_reached_through_a_symlink_do_not_add_a_notice() {
+    use std::os::unix::fs::symlink;
+
+    let workspace = tempfile::tempdir().expect("workspace");
+    let parent = tempfile::tempdir().expect("outputs parent");
+    let outputs = parent.path().join("real-outputs");
+    let shortcut = parent.path().join("outputs-shortcut");
+    std::fs::create_dir(&outputs).expect("create outputs");
+    symlink(&outputs, &shortcut).expect("create outputs shortcut");
+    let changed = outputs.join("report.md");
+    std::fs::write(&changed, "ok").expect("write report");
+    let result =
+        ToolResult::ok("created").with_affected_paths(vec![changed.to_string_lossy().to_string()]);
+
+    let result = append_with_outputs(result, workspace.path(), Some(shortcut));
+
+    assert_eq!(result.content, "created");
 }

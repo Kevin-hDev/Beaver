@@ -1,17 +1,26 @@
 use super::types_tools::ToolResult;
 use std::path::{Path, PathBuf};
 
-pub(super) fn append(mut result: ToolResult, working_dir: &Path) -> ToolResult {
+pub(super) fn append(result: ToolResult, working_dir: &Path) -> ToolResult {
+    append_with_outputs(
+        result,
+        working_dir,
+        crate::services::config::session_outputs_directory(),
+    )
+}
+
+fn append_with_outputs(
+    mut result: ToolResult,
+    working_dir: &Path,
+    configured_outputs: Option<PathBuf>,
+) -> ToolResult {
     if result.is_error || result.affected_paths.is_empty() {
         return result;
     }
     let Some(root) = canonical(working_dir, working_dir) else {
         return result;
     };
-    let allowed = allowed_roots(
-        &root,
-        crate::services::config::session_outputs_directory(),
-    );
+    let allowed = allowed_roots(&root, configured_outputs);
     let outside = result
         .affected_paths
         .iter()
@@ -44,7 +53,9 @@ fn allowed_roots(working_dir: &Path, configured_outputs: Option<PathBuf>) -> Vec
         }
     }
     if let Some(outputs) = configured_outputs {
-        roots.push(outputs);
+        if let Some(outputs) = canonical(&outputs, &outputs) {
+            roots.push(outputs);
+        }
     }
     roots
 }

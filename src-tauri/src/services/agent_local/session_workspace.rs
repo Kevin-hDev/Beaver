@@ -1,6 +1,4 @@
 use super::types_session::AgentSession;
-#[path = "session_workspace_cleanup.rs"]
-mod cleanup;
 #[path = "session_workspace_name.rs"]
 mod name;
 use name::{session_suffix, slugify, valid_date};
@@ -27,10 +25,6 @@ pub async fn ensure(session: &AgentSession) -> Result<SessionWorkspace, String> 
     let label = first_user_label(session)?;
     let date = session.created_at.format("%Y-%m-%d").to_string();
     ensure_layout(&base, outputs_base.as_deref(), &date, label, &session.id).await
-}
-
-pub async fn remove_for_deleted_session(session: &AgentSession) -> Result<(), String> {
-    cleanup::remove_for_deleted_session(session).await
 }
 
 async fn ensure_layout(
