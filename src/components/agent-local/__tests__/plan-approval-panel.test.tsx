@@ -106,12 +106,42 @@ describe("PlanApprovalPanel", () => {
     const onResolved = vi.fn();
     render(<InteractiveChoicePanel request={request} onResolved={onResolved} />);
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(
+      screen.getByRole("button", { name: "Implement this plan" }),
+      { key: "Escape" },
+    );
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith(
       "dismiss_interactive_choice",
       { sessionId: "session-1", id: "plan-approval-1" },
     ));
     expect(onResolved).toHaveBeenCalledOnce();
+  });
+
+  it("ne traite pas Échap quand le focus appartient à un autre panneau", () => {
+    render(
+      <>
+        <button type="button">Other panel</button>
+        <InteractiveChoicePanel request={request} />
+      </>,
+    );
+    const otherPanel = screen.getByRole("button", { name: "Other panel" });
+    otherPanel.focus();
+
+    fireEvent.keyDown(otherPanel, { key: "Escape" });
+
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("remonte les échecs de validation et d’annulation", async () => {
+    const onError = vi.fn();
+    vi.mocked(invoke).mockRejectedValue(new Error("unavailable"));
+    render(<InteractiveChoicePanel request={request} onError={onError} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Implement this plan" }));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole("button", { name: /Ignore/ }));
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
   });
 });

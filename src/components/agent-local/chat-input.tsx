@@ -2,7 +2,9 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChatInputActionsRow } from "./chat-input-actions-row";
 import { ChatInputEditor } from "./chat-input-editor";
+import { ErrorBubble } from "./error-bubble";
 import { InteractiveChoicePanel } from "./interactive-choice-panel";
+import { useInteractiveChoiceFeedback } from "./use-interactive-choice-feedback";
 import { useSlashCommands } from "@/hooks/use-slash-commands";
 import { useActiveSkills } from "@/hooks/use-active-skills";
 import { SlashAutocomplete } from "./slash-autocomplete";
@@ -35,6 +37,10 @@ export function ChatInput({
   const { isConfirmingStop, requestStop } = useStopConfirmation(isStreaming, onStop);
 
   const interactivePending = !!interactiveRequest;
+  const interactiveFeedback = useInteractiveChoiceFeedback(
+    interactiveRequest,
+    onInteractiveResolved,
+  );
   const hasText = text.trim().length > 0;
   const hasFiles = files != null && files.length > 0;
   const hasContent = hasText || hasFiles;
@@ -112,9 +118,15 @@ export function ChatInput({
     : "hidden" as const;
 
   return (
-    <div className={`chat-input-bubble${interactivePending ? " chat-input-bubble-interactive" : ""}`} ref={bubbleRef}>
+    <>
+      {interactiveFeedback.error && <ErrorBubble message={interactiveFeedback.error} />}
+      <div className={`chat-input-bubble${interactivePending ? " chat-input-bubble-interactive" : ""}`} ref={bubbleRef}>
       {interactivePending ? (
-        <InteractiveChoicePanel request={interactiveRequest ?? undefined} onResolved={onInteractiveResolved} />
+        <InteractiveChoicePanel
+          request={interactiveRequest ?? undefined}
+          onResolved={interactiveFeedback.resolve}
+          onError={interactiveFeedback.fail}
+        />
       ) : (
         <>
           {slash.showDropdown && (
@@ -169,6 +181,7 @@ export function ChatInput({
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }

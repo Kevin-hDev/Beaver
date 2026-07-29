@@ -1,4 +1,5 @@
 import { ChevronRight, PencilSimple } from "@/components/ui/icons";
+import type { KeyboardEventHandler } from "react";
 import type {
   AgentInteractiveOption,
   AgentInteractiveQuestion,
@@ -32,6 +33,8 @@ interface InteractiveChoiceOptionProps {
   recommendedLabel: string;
   onHover: () => void;
   onChoose: () => void;
+  onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
+  autoFocus?: boolean;
 }
 
 export function InteractiveChoiceOption({
@@ -43,6 +46,8 @@ export function InteractiveChoiceOption({
   recommendedLabel,
   onHover,
   onChoose,
+  onKeyDown,
+  autoFocus,
 }: InteractiveChoiceOptionProps) {
   const isOther = option.id === OTHER_VALUE;
   const label = isOther ? otherLabel : option.label;
@@ -53,6 +58,8 @@ export function InteractiveChoiceOption({
       className={`icp-option${active ? " icp-active" : ""}`}
       onMouseEnter={onHover}
       onClick={onChoose}
+      onKeyDown={onKeyDown}
+      autoFocus={autoFocus}
       disabled={disabled}
     >
       <span className="icp-option-marker" aria-hidden="true">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, type KeyboardEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { PencilSimple } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
@@ -12,9 +12,14 @@ const MAX_ADJUSTMENT_LENGTH = 1500;
 interface PlanApprovalPanelProps {
   request: AgentInteractiveChoiceRequest;
   onResolved?: () => void;
+  onError?: () => void;
 }
 
-export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProps) {
+export function PlanApprovalPanel({
+  request,
+  onResolved,
+  onError,
+}: PlanApprovalPanelProps) {
   const { t } = useTranslation();
   const [adjustments, setAdjustments] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,8 +45,9 @@ export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProp
       onResolved?.();
     } catch {
       setSubmitting(false);
+      onError?.();
     }
-  }, [onResolved, request.id, request.sessionId, submitting]);
+  }, [onError, onResolved, request.id, request.sessionId, submitting]);
 
   const implement = useCallback(() => {
     void respond(IMPLEMENT_ID, t("interactiveChoice.planImplement"));
@@ -64,17 +70,15 @@ export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProp
       onResolved?.();
     } catch {
       setSubmitting(false);
+      onError?.();
     }
-  }, [onResolved, request.id, request.sessionId, submitting]);
+  }, [onError, onResolved, request.id, request.sessionId, submitting]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      void dismiss();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    void dismiss();
   }, [dismiss]);
 
   return (
@@ -85,6 +89,8 @@ export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProp
         className="pap-implement"
         disabled={submitting}
         onClick={implement}
+        autoFocus
+        onKeyDown={handleKeyDown}
       >
         <span className="pap-number" aria-hidden="true">1</span>
         <span>{t("interactiveChoice.planImplement")}</span>
@@ -100,6 +106,10 @@ export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProp
           aria-label={t("interactiveChoice.planAdjustments")}
           onChange={(event) => setAdjustments(event.target.value)}
           onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              handleKeyDown(event);
+              return;
+            }
             if (event.key === "Enter") {
               event.preventDefault();
               sendAdjustments();
@@ -111,6 +121,7 @@ export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProp
           className="pap-ignore"
           disabled={submitting}
           onClick={() => void dismiss()}
+          onKeyDown={handleKeyDown}
         >
           {t("interactiveChoice.ignore")}
           <kbd>ESC</kbd>
@@ -120,6 +131,7 @@ export function PlanApprovalPanel({ request, onResolved }: PlanApprovalPanelProp
           className="btn btn-sm btn-primary pap-send"
           disabled={submitting || !adjustments.trim()}
           onClick={sendAdjustments}
+          onKeyDown={handleKeyDown}
         >
           {t("interactiveChoice.send")}
         </button>

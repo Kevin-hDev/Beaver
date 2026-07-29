@@ -157,12 +157,27 @@ describe("ChatInput interactive mode", () => {
       />,
     );
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("button", { name: /Fast/ }), { key: "Escape" });
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("dismiss_interactive_choice", {
       sessionId: "session-1",
       id: "choice-1",
     }));
     expect(onStop).not.toHaveBeenCalled();
+  });
+
+  it("affiche un échec interactif dans la bulle existante", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("unavailable"));
+    render(
+      <ChatInput
+        {...baseProps}
+        interactiveRequest={interactiveRequest}
+        onInteractiveResolved={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Complete"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("errors.operationFailed");
   });
 });

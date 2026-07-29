@@ -37,6 +37,7 @@ pub struct ToolResult {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[must_use = "tool follow-ups must be recorded or explicitly handled"]
 pub enum ToolFollowUp {
     #[default]
     None,

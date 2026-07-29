@@ -10,6 +10,9 @@ use super::types_interactive::{
 };
 
 const MAX_PENDING: usize = 64;
+const CHOICE_CANCELLED: &str = "Interactive choice was cancelled.";
+const CHOICE_EXPIRED: &str = "Interactive choice is no longer available.";
+const CHOICE_UNAVAILABLE: &str = "Interactive choice is unavailable.";
 
 struct PendingChoice {
     session_id: String,
@@ -38,7 +41,7 @@ pub async fn request(
     {
         let mut pending = PENDING.lock().await;
         if pending.len() >= MAX_PENDING {
-            return Err("demande interactive indisponible".into());
+            return Err(CHOICE_UNAVAILABLE.into());
         }
         pending.insert(
             id.clone(),
@@ -58,10 +61,10 @@ pub async fn request(
     );
 
     tokio::select! {
-        res = rx => res.map_err(|_| "demande interactive annulée".to_string()),
+        res = rx => res.map_err(|_| CHOICE_CANCELLED.to_string()),
         _ = cancel.cancelled() => {
             PENDING.lock().await.remove(&id);
-            Err("demande interactive annulée".into())
+            Err(CHOICE_CANCELLED.into())
         }
     }
 }
@@ -73,38 +76,38 @@ pub async fn respond(
 ) -> Result<(), String> {
     let mut pending_map = PENDING.lock().await;
     let Some(pending) = pending_map.get(id) else {
-        return Err("demande interactive inconnue".into());
+        return Err(CHOICE_EXPIRED.into());
     };
     if pending.session_id != session_id {
-        return Err("demande interactive inconnue".into());
+        return Err(CHOICE_EXPIRED.into());
     }
     let answers = super::tool_interactive_parse::validate_answers(&pending.questions, answers)?;
     let pending = pending_map
         .remove(id)
-        .ok_or_else(|| "demande interactive inconnue".to_string())?;
+        .ok_or_else(|| CHOICE_EXPIRED.to_string())?;
     drop(pending_map);
     pending
         .tx
         .send(InteractiveChoiceResponse::Answered(answers))
-        .map_err(|_| "demande interactive expirée".to_string())
+        .map_err(|_| CHOICE_EXPIRED.to_string())
 }
 
 pub async fn dismiss(session_id: &str, id: &str) -> Result<(), String> {
     let mut pending_map = PENDING.lock().await;
     let Some(pending) = pending_map.get(id) else {
-        return Err("demande interactive inconnue".into());
+        return Err(CHOICE_EXPIRED.into());
     };
     if pending.session_id != session_id {
-        return Err("demande interactive inconnue".into());
+        return Err(CHOICE_EXPIRED.into());
     }
     let pending = pending_map
         .remove(id)
-        .ok_or_else(|| "demande interactive inconnue".to_string())?;
+        .ok_or_else(|| CHOICE_EXPIRED.to_string())?;
     drop(pending_map);
     pending
         .tx
         .send(InteractiveChoiceResponse::Dismissed)
-        .map_err(|_| "demande interactive expirée".to_string())
+        .map_err(|_| CHOICE_EXPIRED.to_string())
 }
 
 #[cfg(test)]

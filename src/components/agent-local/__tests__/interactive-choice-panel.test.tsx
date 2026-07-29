@@ -85,9 +85,10 @@ describe("InteractiveChoicePanel", () => {
 
   it("navigue avec les flèches et valide avec Entrée", async () => {
     render(<InteractiveChoicePanel request={request} />);
+    const firstOption = screen.getByRole("button", { name: /Fast/ });
 
-    fireEvent.keyDown(window, { key: "ArrowDown" });
-    fireEvent.keyDown(window, { key: "Enter" });
+    fireEvent.keyDown(firstOption, { key: "ArrowDown" });
+    fireEvent.keyDown(firstOption, { key: "Enter" });
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("respond_to_interactive_choice", {
       sessionId: "session-1",
@@ -103,7 +104,7 @@ describe("InteractiveChoicePanel", () => {
     fireEvent.change(screen.getByPlaceholderText("Write your answer"), {
       target: { value: "Use a custom path" },
     });
-    fireEvent.keyDown(window, { key: "Enter" });
+    fireEvent.keyDown(screen.getByPlaceholderText("Write your answer"), { key: "Enter" });
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("respond_to_interactive_choice", {
       sessionId: "session-1",
@@ -117,16 +118,37 @@ describe("InteractiveChoicePanel", () => {
     }));
   });
 
+  it("rend le focus aux choix en fermant Autre avec Échap", () => {
+    render(<InteractiveChoicePanel request={request} />);
+
+    fireEvent.click(screen.getByText("Other"));
+    const input = screen.getByPlaceholderText("Write your answer");
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    expect(screen.queryByPlaceholderText("Write your answer")).toBeNull();
+    expect(screen.getByRole("button", { name: /Fast/ })).toHaveFocus();
+  });
+
   it("annule proprement avec Échap", async () => {
     const onResolved = vi.fn();
     render(<InteractiveChoicePanel request={request} onResolved={onResolved} />);
 
-    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("button", { name: /Fast/ }), { key: "Escape" });
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("dismiss_interactive_choice", {
       sessionId: "session-1",
       id: "choice-1",
     }));
     expect(onResolved).toHaveBeenCalledOnce();
+  });
+
+  it("remonte un échec au panneau parent", async () => {
+    const onError = vi.fn();
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("unavailable"));
+    render(<InteractiveChoicePanel request={request} onError={onError} />);
+
+    fireEvent.click(screen.getByText("Complete"));
+
+    await waitFor(() => expect(onError).toHaveBeenCalledOnce());
   });
 });

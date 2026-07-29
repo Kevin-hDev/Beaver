@@ -71,11 +71,11 @@ fn user_reply(
 ) -> String {
     let mut lines = vec!["Interactive answers from the user:".to_string()];
     for answer in answers {
-        let Some(question) = questions.get(answer.question_index) else {
+        if questions.get(answer.question_index).is_none() {
             continue;
-        };
+        }
         let value = answer_value(answer);
-        lines.push(format!("- {}: {value}", question.question));
+        lines.push(format!("- Question {}: {value}", answer.question_index + 1));
     }
     lines.join("\n")
 }

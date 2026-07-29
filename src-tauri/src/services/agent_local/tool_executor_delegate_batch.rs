@@ -1,4 +1,5 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
+use crate::services::agent_local::tool_execution_outcome::ToolExecutionOutcome;
 use crate::services::agent_local::tool_hooks::run_post_hooks;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_tools::ToolResult;
@@ -109,7 +110,7 @@ pub async fn run_delegate_only_tools(
     plan_mode_active: bool,
     tool_call_ids: &[String],
     compression: Option<&super::tool_executor_compression::ToolCompression<'_>>,
-) -> bool {
+) -> ToolExecutionOutcome {
     let items: Vec<_> = tool_calls
         .iter()
         .enumerate()
@@ -125,19 +126,20 @@ pub async fn run_delegate_only_tools(
         plan_mode_active,
     )
     .await;
-    let mut compressed = false;
+    let mut outcome = ToolExecutionOutcome::default();
     for output in outputs {
-        super::tool_executor_helpers::push_tool_message(
+        let follow_up = super::tool_executor_helpers::push_tool_message(
             messages,
             DELEGATE_TOOL,
             output.result,
             tool_call_ids.get(output.index).map(String::as_str),
         );
+        outcome.record(follow_up);
         if let Some(compression) = compression {
-            compressed |= compression.try_run(messages).await;
+            outcome.compressed |= compression.try_run(messages).await;
         }
     }
-    compressed
+    outcome
 }
 
 async fn finish_diagnostics(
@@ -161,33 +163,5 @@ fn emit_result(on_event: &AgentEventEmitter, index: usize, result: &ToolResult) 
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{sort_outputs_by_index, DelegateBatchOutput};
-    use crate::services::agent_local::types_tools::ToolResult;
-
-    #[test]
-    fn keeps_parent_tool_context_in_original_order() {
-        let mut outputs = vec![
-            DelegateBatchOutput {
-                index: 2,
-                result: ToolResult::ok("third"),
-            },
-            DelegateBatchOutput {
-                index: 0,
-                result: ToolResult::ok("first"),
-            },
-            DelegateBatchOutput {
-                index: 1,
-                result: ToolResult::ok("second"),
-            },
-        ];
-
-        sort_outputs_by_index(&mut outputs);
-
-        let contents = outputs
-            .into_iter()
-            .map(|output| output.result.content)
-            .collect::<Vec<_>>();
-        assert_eq!(contents, ["first", "second", "third"]);
-    }
-}
+#[path = "tool_executor_delegate_batch_tests.rs"]
+mod tests;

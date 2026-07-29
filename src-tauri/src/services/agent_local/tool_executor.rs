@@ -68,7 +68,7 @@ pub async fn run_tools_with_eager(
             .iter()
             .all(|(name, _)| name == super::tool_executor_delegate_batch::DELEGATE_TOOL)
     {
-        let compressed = super::tool_executor_delegate_batch::run_delegate_only_tools(
+        return super::tool_executor_delegate_batch::run_delegate_only_tools(
             on_event,
             messages,
             tool_calls,
@@ -81,7 +81,6 @@ pub async fn run_tools_with_eager(
             compression,
         )
         .await;
-        return ToolExecutionOutcome::with_compressed(compressed);
     }
 
     if mode == "manual" {

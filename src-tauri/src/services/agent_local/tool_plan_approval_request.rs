@@ -1,6 +1,5 @@
 use tokio_util::sync::CancellationToken;
 
-use super::interactive_choice_gate::InteractiveChoiceResponse;
 use super::stream_events::AgentEventEmitter;
 use super::tool_plan_approval::PlanApprovalOutcome;
 use super::types_interactive::{
@@ -29,7 +28,7 @@ pub async fn request_approval(
     .await;
     let response = match response {
         Ok(response) => response,
-        Err(_) => InteractiveChoiceResponse::Dismissed,
+        Err(err) => return ToolResult::err(err),
     };
 
     match super::tool_plan_approval::apply_response(session_id, response, on_event).await {

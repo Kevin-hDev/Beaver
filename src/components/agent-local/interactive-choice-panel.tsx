@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Check, HelpCircle } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
@@ -12,27 +12,49 @@ import {
   withOtherOption,
 } from "./interactive-choice-option";
 import { PlanApprovalPanel } from "./plan-approval-panel";
+import { useInteractiveChoiceKeyboard } from "./use-interactive-choice-keyboard";
 import "./interactive-choice-panel.css";
 
 interface InteractiveChoicePanelProps {
   request?: AgentInteractiveChoiceRequest;
   onResolved?: () => void;
+  onError?: () => void;
 }
 
-export function InteractiveChoicePanel({ request, onResolved }: InteractiveChoicePanelProps) {
+export function InteractiveChoicePanel({
+  request,
+  onResolved,
+  onError,
+}: InteractiveChoicePanelProps) {
   if (!request) return null;
   if (request.kind === "plan_approval") {
-    return <PlanApprovalPanel key={request.id} request={request} onResolved={onResolved} />;
+    return (
+      <PlanApprovalPanel
+        key={request.id}
+        request={request}
+        onResolved={onResolved}
+        onError={onError}
+      />
+    );
   }
-  return <InteractiveChoicePanelInner key={request.id} request={request} onResolved={onResolved} />;
+  return (
+    <InteractiveChoicePanelInner
+      key={request.id}
+      request={request}
+      onResolved={onResolved}
+      onError={onError}
+    />
+  );
 }
 
 function InteractiveChoicePanelInner({
   request,
   onResolved,
+  onError,
 }: {
   request: AgentInteractiveChoiceRequest;
   onResolved?: () => void;
+  onError?: () => void;
 }) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
@@ -69,8 +91,9 @@ function InteractiveChoicePanelInner({
       onResolved?.();
     } catch {
       setSubmitting(false);
+      onError?.();
     }
-  }, [answers, onResolved, request, step, submitting]);
+  }, [answers, onError, onResolved, request, step, submitting]);
 
   const choose = useCallback((option: ReturnType<typeof withOtherOption>[number]) => {
     if (!question) return;
@@ -102,34 +125,21 @@ function InteractiveChoicePanelInner({
     void invoke("dismiss_interactive_choice", {
       sessionId: request.sessionId,
       id: request.id,
-    }).then(() => onResolved?.()).catch(() => setSubmitting(false));
-  }, [onResolved, request, submitting]);
+    }).then(() => onResolved?.()).catch(() => {
+      setSubmitting(false);
+      onError?.();
+    });
+  }, [onError, onResolved, request, submitting]);
 
-  useEffect(() => {
-    if (!question) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        setActiveIndex((value) => (value - 1 + options.length) % options.length);
-      } else if (event.key === "ArrowDown") {
-        event.preventDefault();
-        setActiveIndex((value) => (value + 1) % options.length);
-      } else if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        if (otherMode) submitOther();
-        else {
-          const option = options[activeIndex];
-          if (option) choose(option);
-        }
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        if (otherMode) setOtherMode(false);
-        else cancel();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [activeIndex, cancel, choose, options, otherMode, question, request, submitOther]);
+  const { optionsRef, onChoiceKeyDown, onOtherKeyDown } = useInteractiveChoiceKeyboard({
+    options,
+    activeIndex,
+    setActiveIndex,
+    choose,
+    cancel,
+    submitOther,
+    closeOther: () => setOtherMode(false),
+  });
 
   if (!question) return null;
 
@@ -143,7 +153,7 @@ function InteractiveChoicePanelInner({
         <span className="icp-title">{question.header}</span>
       </div>
       <div className="icp-question">{question.question}</div>
-      <div className="icp-options">
+      <div className="icp-options" ref={optionsRef}>
         {options.map((option, index) => (
           <InteractiveChoiceOption
             key={`${option.id ?? option.label}-${index}`}
@@ -155,6 +165,8 @@ function InteractiveChoicePanelInner({
             recommendedLabel={t("interactiveChoice.recommended")}
             onHover={() => setActiveIndex(index)}
             onChoose={() => choose(option)}
+            onKeyDown={onChoiceKeyDown}
+            autoFocus={index === 0}
           />
         ))}
       </div>
@@ -166,8 +178,15 @@ function InteractiveChoicePanelInner({
             onChange={(event) => setOtherText(event.target.value)}
             placeholder={t("interactiveChoice.otherPlaceholder")}
             autoFocus
+            onKeyDown={onOtherKeyDown}
           />
-          <button className="icon-btn icp-submit" type="button" onClick={submitOther} disabled={!otherText.trim()}>
+          <button
+            className="icon-btn icp-submit"
+            type="button"
+            onClick={submitOther}
+            onKeyDown={onOtherKeyDown}
+            disabled={!otherText.trim()}
+          >
             <Check className="icp-submit-icon" aria-hidden="true" />
           </button>
         </div>
