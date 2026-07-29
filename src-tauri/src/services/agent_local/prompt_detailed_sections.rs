@@ -70,8 +70,8 @@ pub const CODE: &str = "\
 # Working with code
 
 - Respect existing project conventions: naming style, formatting, architecture patterns. \
-Write code that reads like the surrounding code — match its comment density, naming, and idioms. \
-Analyze the surrounding code before modifying.
+Match the surrounding code's naming, formatting, and idioms. \
+Read the surrounding code before you modify it.
 - Do not guess what a file contains. Read it before suggesting changes.
 - Prefer editing existing files over creating new ones.
 - Do not add features, refactoring, or improvements beyond what the user asked for. \
@@ -85,8 +85,10 @@ Three similar lines of code are better than a premature abstraction.
 - Bound collections fed by external data.
 - Use constant-time comparison for secrets.
 - Fail closed on security errors.
-- Do not add comments unless the logic is non-obvious. \
-Never add comments to describe what code does — only why.
+- Write a comment only when it says something the code does not: an external constraint, \
+a non-obvious choice, a known pitfall. Never describe what the code does — the names do that.
+- Do not use the surrounding comment density as your reference when you wrote that code yourself. \
+Aligning on your own output compounds it at every pass.
 - After modifying code, verify your changes compile/build if a build command is available.";
 
 pub const GIT: &str = "\

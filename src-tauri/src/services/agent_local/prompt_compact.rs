@@ -13,7 +13,8 @@ pub fn build_with_behavior(
         super::prompt_compact_style::DEFAULT_STYLE
     };
     format!(
-        "{identity}\n\n{CAPABILITIES}\n\n{}\n\n{TOOLS}\n\n{}\n\n{CODE}\n\n{GIT}\n\n{}\n\n{}\n\n{WEB_SEARCH}\n\n{SAFETY}\n\n{HONESTY}\n\n{}\n\n{default_style}",
+        "{identity}\n\n{}\n\n{CAPABILITIES}\n\n{}\n\n{TOOLS}\n\n{}\n\n{CODE}\n\n{GIT}\n\n{}\n\n{}\n\n{WEB_SEARCH}\n\n{SAFETY}\n\n{HONESTY}\n\n{}\n\n{default_style}",
+        super::prompt_priority::PRIORITY,
         env_section(working_dir, is_git, git_root),
         super::subagent_parent_guidance::PARENT_GUIDANCE,
         super::prompt_todo::TODO,
@@ -113,7 +114,10 @@ Three similar lines are better than a premature abstraction.
 - Bound collections fed by external data.
 - Use constant-time comparison for secrets.
 - Fail closed on security errors.
-- Do not add comments unless the logic is non-obvious.";
+- Write a comment only when it says something the code does not: an external constraint, \
+a non-obvious choice, a known pitfall. Never describe what the code does — the names do that.
+- Do not use the surrounding comment density as your reference when you wrote that code yourself. \
+Aligning on your own output compounds it at every pass.";
 
 const GIT: &str = "\
 # Working with git

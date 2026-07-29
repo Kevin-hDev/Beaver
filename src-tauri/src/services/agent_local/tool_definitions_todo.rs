@@ -15,7 +15,11 @@ pub fn todo_and_diagnostics_definitions() -> Vec<Value> {
 fn todo_write_definition() -> Value {
     super::tool_definitions::tool_def(
         "todo_write",
-        "Create or update the current task checklist. Use this for multi-step coding tasks. \
+        "Create or update the current task checklist. Use it for coding work that takes three or more distinct steps. \
+         When to use: the user gives several tasks at once; a task needs planning before it can start; you are beginning a multi-step implementation. \
+         When not to use: a single edit, a question, a one-step fix, or ordinary conversation. \
+         Call it again in the same turn a task becomes completed or the active task changes. \
+         A checklist that is not updated as you go is worse than no checklist. \
          Send the full list each time, with at most one task marked in_progress.",
         serde_json::json!({
             "type": "object",
@@ -66,7 +70,8 @@ fn todo_pause_definition() -> Value {
 fn todo_resume_definition() -> Value {
     super::tool_definitions::tool_def(
         "todo_resume",
-        "Resume a saved checklist by id and make it visible as the active todo.",
+        "Resume a saved checklist by id and make it visible as the active todo. \
+         Resume a paused checklist when its context becomes relevant again rather than starting a new one.",
         serde_json::json!({
             "type": "object",
             "properties": {
@@ -108,4 +113,32 @@ fn agent_diagnostics_definition() -> Value {
             }
         }),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    fn description(definition: &serde_json::Value) -> String {
+        definition["function"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string()
+    }
+
+    /// Usage rules live in the tool definition, not in the system prompt: the definition is
+    /// only sent when the tool is enabled, and it reaches the model at the point of decision.
+    #[test]
+    fn todo_write_definition_carries_cadence_and_negative_cases() {
+        let text = description(&super::todo_write_definition());
+
+        assert!(text.contains("in the same turn a task becomes completed"));
+        assert!(text.contains("When not to use"));
+        assert!(text.contains("at most one task marked in_progress"));
+    }
+
+    #[test]
+    fn todo_resume_definition_says_when_to_resume() {
+        let text = description(&super::todo_resume_definition());
+
+        assert!(text.contains("context becomes relevant again"));
+    }
 }
