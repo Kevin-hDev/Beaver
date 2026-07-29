@@ -24,7 +24,7 @@ describe("mascot sprite playback", () => {
     const held = getMascotAnimation("held", "circuit");
 
     expect(work).toMatchObject({ row: 0, frames: 6, columns: 6, rows: 6 });
-    expect(thinking).toMatchObject({ row: 2, frames: 6, loopPauseMs: 1200 });
+    expect(thinking).toMatchObject({ row: 2, frames: 6, loopPauseMs: 3000 });
     expect(held).toMatchObject({ row: 4, frames: 6, frameDurationMs: 120 });
   });
 
@@ -78,18 +78,19 @@ describe("mascot sprite playback", () => {
     expect(selectMascotAnimation("thinking", "grabbed")).toBe("grabbed");
   });
 
-  it("laisse une pause adaptée après chaque animation en boucle", () => {
-    const idle = getMascotAnimation("idle");
-    const waiting = getMascotAnimation("waiting");
-    const thinking = getMascotAnimation("thinking");
-    const exploration = getMascotAnimation("explore-book");
-    const work = getMascotAnimation("work-laptop");
+  it("applique les pauses communes à chaque mascotte", () => {
+    for (const mascotId of ["cl-go-beaver", "circuit", "kova", "nival"] as const) {
+      const idle = getMascotAnimation("idle", mascotId);
+      const waiting = getMascotAnimation("waiting", mascotId);
+      const thinking = getMascotAnimation("thinking", mascotId);
+      const exploration = getMascotAnimation("explore-book", mascotId);
+      const work = getMascotAnimation("work-laptop", mascotId);
 
-    expect(mascotFrameDuration(idle, 0)).toBe(260);
-    expect(mascotFrameDuration(idle, idle.frames - 1)).toBe(3500);
-    expect(mascotFrameDuration(waiting, waiting.frames - 1)).toBe(2500);
-    expect(mascotFrameDuration(thinking, thinking.frames - 1)).toBe(1500);
-    expect(mascotFrameDuration(exploration, exploration.frames - 1)).toBe(2000);
-    expect(mascotFrameDuration(work, work.frames - 1)).toBe(1500);
+      expect(mascotFrameDuration(idle, idle.frames - 1)).toBe(4500);
+      expect(mascotFrameDuration(waiting, waiting.frames - 1)).toBe(3500);
+      expect(mascotFrameDuration(thinking, thinking.frames - 1)).toBe(3000);
+      expect(mascotFrameDuration(exploration, exploration.frames - 1)).toBe(3000);
+      expect(mascotFrameDuration(work, work.frames - 1)).toBe(2500);
+    }
   });
 });

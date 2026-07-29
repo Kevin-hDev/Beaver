@@ -50,13 +50,28 @@ impl AgentEventEmitter {
         self
     }
 
+    pub fn start_mascot_session(&self) -> Option<crate::services::mascot::MascotSession> {
+        self.generation.map(|generation| {
+            crate::services::mascot::MascotSession::start(
+                &self.app,
+                self.session_id.clone(),
+                generation,
+            )
+        })
+    }
+
     pub fn send(&self, event: StreamEvent) -> Result<(), String> {
         if is_permission_request(&event) {
             if let Some(emitter) = self.permission_emitter.as_deref() {
                 return emitter.send(event);
             }
         }
-        crate::services::mascot::observe_stream_event(&self.app, &self.session_id, &event);
+        crate::services::mascot::observe_stream_event(
+            &self.app,
+            &self.session_id,
+            self.generation,
+            &event,
+        );
         self.app
             .emit(
                 AGENT_STREAM_EVENT,

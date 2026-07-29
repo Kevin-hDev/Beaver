@@ -8,24 +8,34 @@ pub async fn cancel_agent_request(
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<(), String> {
     let mut cancelled = false;
-    let mut map = streams.0.lock().await;
-    if let Some((token, gen, request_id, inbox)) = map.get(&session_id) {
-        if generation.is_none() || generation == Some(*gen) {
-            let token = token.clone();
-            let request_id = request_id.clone();
-            let inbox = inbox.clone();
-            map.remove(&session_id);
-            drop(map);
-            inbox.close().await;
-            crate::services::agent_local::session_locks::cancel_with_lock(&session_id, &token)
-                .await;
-            crate::services::agent_local::stream_diagnostics::record_cancelled(
-                &session_id,
-                &request_id,
-            )
-            .await;
-            cancelled = true;
+    let active_stream = {
+        let mut map = streams.0.lock().await;
+        match map.get(&session_id) {
+            Some((token, active_generation, request_id, inbox))
+                if generation.is_none() || generation == Some(*active_generation) =>
+            {
+                let stream = (
+                    token.clone(),
+                    *active_generation,
+                    request_id.clone(),
+                    inbox.clone(),
+                );
+                map.remove(&session_id);
+                Some(stream)
+            }
+            _ => None,
         }
+    };
+    if let Some((token, active_generation, request_id, inbox)) = active_stream {
+        crate::services::mascot::cancel_session(&app, &session_id, active_generation);
+        inbox.close().await;
+        crate::services::agent_local::session_locks::cancel_with_lock(&session_id, &token).await;
+        crate::services::agent_local::stream_diagnostics::record_cancelled(
+            &session_id,
+            &request_id,
+        )
+        .await;
+        cancelled = true;
     }
     if crate::services::agent_local::subagent_cancellation::cancel(&session_id)
         .await
@@ -34,7 +44,6 @@ pub async fn cancel_agent_request(
         cancelled = true;
     }
     if cancelled {
-        crate::services::mascot::end_session(&app, &session_id);
         crate::services::agent_local::subagent_registry::cancel_stopped_parent_stream_children(
             &session_id,
         )

@@ -13,6 +13,7 @@ mod workspace_prompt;
 pub(crate) use params::{StreamCapabilityHints, StreamTaskParams};
 
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::mascot::MascotSessionOutcome;
 
 pub(crate) use common::merge_personality;
 
@@ -30,9 +31,16 @@ fn chat_engine(provider: &str) -> ChatEngine {
     }
 }
 
-pub(crate) async fn run_stream_task(
-    mut params: StreamTaskParams,
-) -> Result<Vec<ChatMessage>, String> {
+pub(crate) async fn run_stream_task(params: StreamTaskParams) -> Result<Vec<ChatMessage>, String> {
+    let mascot_session = params.on_event.start_mascot_session();
+    let result = run_stream_task_inner(params).await;
+    if let Some(session) = mascot_session {
+        session.finish(mascot_outcome(&result));
+    }
+    result
+}
+
+async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatMessage>, String> {
     if let Some(permission_emitter) = params.permission_emitter.take() {
         params.on_event = params.on_event.with_permission_emitter(permission_emitter);
     }
@@ -64,6 +72,14 @@ pub(crate) async fn run_stream_task(
     }
 }
 
+fn mascot_outcome(result: &Result<Vec<ChatMessage>, String>) -> MascotSessionOutcome {
+    match result {
+        Ok(_) => MascotSessionOutcome::Success,
+        Err(message) if message == "Annulé" => MascotSessionOutcome::Cancelled,
+        Err(_) => MascotSessionOutcome::Failed,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -74,5 +90,21 @@ mod tests {
         assert_eq!(chat_engine("moonshot-oauth"), ChatEngine::NativeApi);
         assert_eq!(chat_engine("xai"), ChatEngine::NativeApi);
         assert_eq!(chat_engine("moonshot"), ChatEngine::NativeApi);
+    }
+
+    #[test]
+    fn mascot_outcome_covers_every_terminal_path() {
+        assert_eq!(
+            mascot_outcome(&Ok(Vec::new())),
+            MascotSessionOutcome::Success
+        );
+        assert_eq!(
+            mascot_outcome(&Err("Annulé".into())),
+            MascotSessionOutcome::Cancelled
+        );
+        assert_eq!(
+            mascot_outcome(&Err("indisponible".into())),
+            MascotSessionOutcome::Failed
+        );
     }
 }

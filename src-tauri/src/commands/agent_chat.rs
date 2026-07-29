@@ -45,8 +45,12 @@ pub async fn chat_stream(
         cancel.clone(),
         generation,
         parent_message_inbox.clone(),
-        move |(old_token, _, old_request_id, old_inbox)| async move {
-            crate::services::mascot::end_session(&replacement_app, &cancelled_session_id);
+        move |(old_token, old_generation, old_request_id, old_inbox)| async move {
+            crate::services::mascot::cancel_session(
+                &replacement_app,
+                &cancelled_session_id,
+                old_generation,
+            );
             old_inbox.close().await;
             crate::services::agent_local::session_locks::cancel_with_lock(
                 &cancelled_session_id,
@@ -88,7 +92,6 @@ pub async fn chat_stream(
         };
     let working_dir = resolved_working_dir.path;
     let outputs_dir = resolved_working_dir.outputs_dir;
-    crate::services::mascot::start_session(&app, &session_id);
     eprintln!("[stream] start session={session_id} gen={generation}");
     let stream_session = session_id.clone();
     let task_app = app.clone();

@@ -1,4 +1,6 @@
 mod activity;
+mod event_mapping;
+mod lifecycle;
 mod settings;
 mod window;
 
@@ -6,6 +8,7 @@ use crate::models::MascotSettings;
 use crate::services::agent_local::types_ollama::StreamEvent;
 use activity::ActivityArbiter;
 pub use activity::{MascotAnimation, MascotStatePayload};
+pub use lifecycle::{cancel_session, MascotSession, MascotSessionOutcome};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
@@ -51,29 +54,25 @@ pub fn start_activity_cleanup(app: AppHandle) {
     });
 }
 
-pub fn observe_stream_event(app: &AppHandle, session_id: &str, event: &StreamEvent) {
-    let Some((animation, ttl, resume_previous)) = animation_for_event(event) else {
+pub fn observe_stream_event(
+    app: &AppHandle,
+    session_id: &str,
+    generation: Option<u64>,
+    event: &StreamEvent,
+) {
+    let Some((animation, ttl, resume_previous)) = event_mapping::animation_for_event(event) else {
         return;
     };
     update_activity(app, |arbiter| {
-        arbiter.update(session_id, animation, ttl, resume_previous, Instant::now())
-    });
-}
-
-pub fn start_session(app: &AppHandle, session_id: &str) {
-    update_activity(app, |arbiter| {
         arbiter.update(
             session_id,
-            MascotAnimation::Thinking,
-            None,
-            false,
+            generation,
+            animation,
+            ttl,
+            resume_previous,
             Instant::now(),
         )
     });
-}
-
-pub fn end_session(app: &AppHandle, session_id: &str) {
-    update_activity(app, |arbiter| arbiter.remove(session_id, Instant::now()));
 }
 
 pub fn current_state(app: &AppHandle) -> Result<MascotStatePayload, String> {
@@ -125,7 +124,7 @@ fn refresh_activity(app: &AppHandle) {
     update_activity(app, |arbiter| arbiter.refresh(Instant::now()));
 }
 
-fn update_activity(
+pub(super) fn update_activity(
     app: &AppHandle,
     update: impl FnOnce(&mut ActivityArbiter) -> Option<MascotStatePayload>,
 ) {
@@ -140,52 +139,6 @@ fn update_activity(
     }
 }
 
-fn animation_for_event(event: &StreamEvent) -> Option<(MascotAnimation, Option<Duration>, bool)> {
-    let persistent = |animation| Some((animation, None, false));
-    match event {
-        StreamEvent::Thinking { .. }
-        | StreamEvent::Token { .. }
-        | StreamEvent::ContentPhase { .. } => persistent(MascotAnimation::Thinking),
-        StreamEvent::ToolCall { name, .. } | StreamEvent::ToolResult { name, .. } => {
-            persistent(tool_animation(name))
-        }
-        StreamEvent::Compressing { .. } | StreamEvent::SubagentSpawned { .. } => {
-            persistent(MascotAnimation::WorkLaptop)
-        }
-        StreamEvent::PermissionRequest { .. } | StreamEvent::InteractiveChoiceRequest { .. } => {
-            persistent(MascotAnimation::Waiting)
-        }
-        StreamEvent::Done { .. } => Some((
-            MascotAnimation::Success,
-            Some(Duration::from_millis(2200)),
-            false,
-        )),
-        StreamEvent::Error { .. } => Some((
-            MascotAnimation::Failed,
-            Some(Duration::from_millis(2600)),
-            false,
-        )),
-        StreamEvent::RetryIndicator { .. } | StreamEvent::Notice { .. } => Some((
-            MascotAnimation::Alert,
-            Some(Duration::from_millis(1800)),
-            true,
-        )),
-        _ => None,
-    }
-}
-
-fn tool_animation(name: &str) -> MascotAnimation {
-    match name {
-        "read_file" | "read_document" | "read_spreadsheet" | "read_image" | "list_dir" | "grep"
-        | "glob" | "web_search" | "web_fetch" => MascotAnimation::ExploreBook,
-        _ => MascotAnimation::WorkLaptop,
-    }
-}
-
 fn generic_error() -> String {
     "Mascotte indisponible".to_string()
 }
-
-#[cfg(test)]
-#[path = "mapping_tests.rs"]
-mod mapping_tests;

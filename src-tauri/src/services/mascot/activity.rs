@@ -26,6 +26,7 @@ pub struct MascotStatePayload {
 
 #[derive(Debug, Clone, Copy)]
 struct SessionActivity {
+    generation: u64,
     animation: MascotAnimation,
     updated_at: Instant,
     expires_at: Option<Instant>,
@@ -49,12 +50,10 @@ impl Default for ActivityArbiter {
 }
 
 impl ActivityArbiter {
-    pub fn update(
+    pub fn start(
         &mut self,
         session_id: &str,
-        animation: MascotAnimation,
-        ttl: Option<Duration>,
-        resume_previous: bool,
+        generation: u64,
         now: Instant,
     ) -> Option<MascotStatePayload> {
         if session_id.is_empty() || session_id.len() > 128 {
@@ -63,26 +62,57 @@ impl ActivityArbiter {
         if !self.sessions.contains_key(session_id) && self.sessions.len() >= MAX_ACTIVE_SESSIONS {
             self.evict_oldest();
         }
-        let fallback = if resume_previous {
-            self.sessions
-                .get(session_id)
-                .map(|activity| activity.animation)
-        } else {
-            None
-        };
         self.sessions.insert(
             session_id.to_string(),
             SessionActivity {
-                animation,
+                generation,
+                animation: MascotAnimation::Thinking,
                 updated_at: now,
-                expires_at: ttl.and_then(|duration| now.checked_add(duration)),
-                fallback,
+                expires_at: None,
+                fallback: None,
             },
         );
         self.recompute(now)
     }
 
-    pub fn remove(&mut self, session_id: &str, now: Instant) -> Option<MascotStatePayload> {
+    pub fn update(
+        &mut self,
+        session_id: &str,
+        generation: Option<u64>,
+        animation: MascotAnimation,
+        ttl: Option<Duration>,
+        resume_previous: bool,
+        now: Instant,
+    ) -> Option<MascotStatePayload> {
+        let activity = self.sessions.get_mut(session_id)?;
+        if generation.is_some_and(|candidate| candidate != activity.generation) {
+            return None;
+        }
+        let fallback = if resume_previous {
+            Some(activity.animation)
+        } else {
+            None
+        };
+        activity.animation = animation;
+        activity.updated_at = now;
+        activity.expires_at = ttl.and_then(|duration| now.checked_add(duration));
+        activity.fallback = fallback;
+        self.recompute(now)
+    }
+
+    pub fn remove(
+        &mut self,
+        session_id: &str,
+        generation: u64,
+        now: Instant,
+    ) -> Option<MascotStatePayload> {
+        if self
+            .sessions
+            .get(session_id)
+            .is_none_or(|activity| activity.generation != generation)
+        {
+            return None;
+        }
         self.sessions.remove(session_id);
         self.recompute(now)
     }

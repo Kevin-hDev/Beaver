@@ -14,6 +14,7 @@ import {
   isMascotId,
   type MascotId,
 } from "@/types/mascot";
+import { mascotLoopPauseMs } from "./mascot-timing";
 
 export const MASCOT_ANIMATION_IDS = [
   "idle", "move-right", "move-left", "wave", "jump", "failed", "waiting",
@@ -155,7 +156,7 @@ export function getMascotAnimation(
     loop: state.loop,
     frameRatio: bundle.manifest.cellWidth / bundle.manifest.cellHeight,
     frameDurationMs: state.frameDurationMs,
-    loopPauseMs: state.loopPauseMs,
+    loopPauseMs: mascotLoopPauseMs(state.id, state.loopPauseMs),
     durationsMs: state.durationsMs,
   };
 }

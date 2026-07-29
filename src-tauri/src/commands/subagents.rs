@@ -29,16 +29,10 @@ pub async fn list_subagents(
 }
 
 #[tauri::command]
-pub async fn cancel_subagent(
-    app: tauri::AppHandle,
-    subagent_session_id: String,
-) -> Result<(), String> {
+pub async fn cancel_subagent(subagent_session_id: String) -> Result<(), String> {
     validate_session_id(&subagent_session_id)?;
     match subagent_cancellation::cancel(&subagent_session_id).await {
-        Ok(true) => {
-            crate::services::mascot::end_session(&app, &subagent_session_id);
-            Ok(())
-        }
+        Ok(true) => Ok(()),
         Ok(false) => Err("Sous-agent introuvable ou déjà terminé".to_string()),
         Err(_) => Err("Sous-agent indisponible".to_string()),
     }
