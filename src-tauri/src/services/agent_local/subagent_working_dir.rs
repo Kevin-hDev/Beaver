@@ -28,11 +28,7 @@ pub async fn resolve(
     run_id: &str,
     execution_id: &str,
 ) -> Result<PreparedWorkingDir, String> {
-    let base = if is_explorer {
-        super::subagent_prompts::resolve_project_dir(project_id).await
-    } else {
-        super::subagent_coder_project::resolve(project_id, child_session_id).await?
-    };
+    let base = super::subagent_coder_project::resolve(project_id, child_session_id).await?;
     if !is_explorer {
         return create_coder_worktree(&base, child_session_id, run_id, execution_id).await;
     }

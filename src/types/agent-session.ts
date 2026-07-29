@@ -50,6 +50,7 @@ export interface AgentSession {
   plan_workflow_status?: AgentPlanWorkflowStatus;
   project_id?: string;
   working_dir?: string;
+  working_dir_managed?: boolean;
   parent_session_id?: string;
   subagent_type?: "explorer" | "coder";
   subagent_worktree?: string;

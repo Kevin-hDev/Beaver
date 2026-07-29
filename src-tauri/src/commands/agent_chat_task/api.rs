@@ -83,6 +83,7 @@ pub(crate) async fn run(
             &mut messages,
             common::PromptContext {
                 working_dir: &working_dir,
+                outputs_dir: params.outputs_dir.as_deref(),
                 snap: &snap,
                 has_tools,
                 agent_md_content: agent_md,

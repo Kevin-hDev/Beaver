@@ -1,0 +1,148 @@
+use super::types_session::AgentSession;
+#[path = "session_workspace_name.rs"]
+mod name;
+use name::{session_suffix, slugify, valid_date};
+#[cfg(test)]
+use name::SLUG_MAX_CHARS;
+use std::path::{Path, PathBuf};
+
+pub struct SessionWorkspace {
+    pub work: PathBuf,
+    pub outputs: PathBuf,
+}
+
+pub async fn ensure(session: &AgentSession) -> Result<SessionWorkspace, String> {
+    let base = crate::services::paths::data_dir().join("session-workspaces");
+    let outputs_base = configured_outputs_base();
+    if session.working_dir_managed && !session.working_dir.trim().is_empty() {
+        return ensure_work_path(
+            &base,
+            Path::new(&session.working_dir),
+            outputs_base.as_deref(),
+        )
+        .await;
+    }
+    let label = first_user_label(session)?;
+    let date = session.created_at.format("%Y-%m-%d").to_string();
+    ensure_layout(&base, outputs_base.as_deref(), &date, label, &session.id).await
+}
+
+async fn ensure_layout(
+    base: &Path,
+    outputs_base: Option<&Path>,
+    date: &str,
+    label: &str,
+    session_id: &str,
+) -> Result<SessionWorkspace, String> {
+    super::session_store::validate_session_id(session_id)?;
+    if !valid_date(date) {
+        return Err(workspace_error());
+    }
+    let name = format!("{}-{}", slugify(label), session_suffix(session_id)?);
+    let work = base.join(date).join(name).join("work");
+    ensure_work_path(base, &work, outputs_base).await
+}
+
+async fn ensure_work_path(
+    base: &Path,
+    work: &Path,
+    outputs_base: Option<&Path>,
+) -> Result<SessionWorkspace, String> {
+    let relative = work.strip_prefix(base).map_err(|_| workspace_error())?;
+    let mut components = relative.components();
+    let date = normal_component(components.next())?;
+    let name = normal_component(components.next())?;
+    let work_component = normal_component(components.next())?;
+    if work_component != "work" || components.next().is_some() {
+        return Err(workspace_error());
+    }
+    let root = work.parent().ok_or_else(workspace_error)?;
+    let outputs = match outputs_base {
+        Some(outputs_base) => outputs_base.join(date).join(name).join("outputs"),
+        None => root.join("outputs"),
+    };
+    let outputs_root = outputs_base.unwrap_or(base);
+    reject_symlinks(outputs_root, &outputs)?;
+    reject_symlinks(base, work)?;
+    crate::services::private_store::ensure_private_dir_async(work.to_path_buf())
+        .await
+        .map_err(|_| workspace_error())?;
+    crate::services::private_store::ensure_private_dir_async(outputs.clone())
+        .await
+        .map_err(|_| workspace_error())?;
+    validate_created_path(base, work)?;
+    validate_created_path(outputs_root, &outputs)?;
+    Ok(SessionWorkspace {
+        work: work.to_path_buf(),
+        outputs,
+    })
+}
+
+fn normal_component(component: Option<std::path::Component<'_>>) -> Result<&std::ffi::OsStr, String> {
+    match component {
+        Some(std::path::Component::Normal(value))
+            if !value.to_string_lossy().contains('\0') =>
+        {
+            Ok(value)
+        }
+        _ => Err(workspace_error()),
+    }
+}
+
+fn configured_outputs_base() -> Option<PathBuf> {
+    let value = crate::services::config::read_config()
+        .ok()?
+        .advanced
+        .session_outputs_directory;
+    crate::models::config::normalize_optional_directory(&value)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+}
+
+fn first_user_label(session: &AgentSession) -> Result<&str, String> {
+    let Some(message) = session.messages.iter().find(|message| message.role == "user") else {
+        return Err(workspace_error());
+    };
+    if !message.content.trim().is_empty() {
+        return Ok(&message.content);
+    }
+    Ok(message
+        .files
+        .first()
+        .map(|file| file.name.as_str())
+        .unwrap_or(&session.name))
+}
+
+fn reject_symlinks(base: &Path, target: &Path) -> Result<(), String> {
+    let mut current = target;
+    while current.starts_with(base) {
+        if std::fs::symlink_metadata(current)
+            .is_ok_and(|metadata| metadata.file_type().is_symlink())
+        {
+            return Err(workspace_error());
+        }
+        if current == base {
+            break;
+        }
+        current = current.parent().ok_or_else(workspace_error)?;
+    }
+    Ok(())
+}
+
+fn validate_created_path(base: &Path, path: &Path) -> Result<(), String> {
+    let base = base.canonicalize().map_err(|_| workspace_error())?;
+    let path = path.canonicalize().map_err(|_| workspace_error())?;
+    if path.starts_with(base) && path.is_dir() {
+        Ok(())
+    } else {
+        Err(workspace_error())
+    }
+}
+
+fn workspace_error() -> String {
+    "Espace de travail indisponible.".to_string()
+}
+
+#[cfg(test)]
+#[path = "session_workspace_tests.rs"]
+mod tests;

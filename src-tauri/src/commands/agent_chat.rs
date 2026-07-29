@@ -86,7 +86,8 @@ pub async fn chat_stream(
                 return Err(err);
             }
         };
-    let working_dir = Some(resolved_working_dir.path.to_string_lossy().to_string());
+    let working_dir = resolved_working_dir.path;
+    let outputs_dir = resolved_working_dir.outputs_dir;
     crate::services::mascot::start_session(&app, &session_id);
     eprintln!("[stream] start session={session_id} gen={generation}");
     let stream_session = session_id.clone();
@@ -109,6 +110,7 @@ pub async fn chat_stream(
             think,
             provider,
             working_dir,
+            outputs_dir,
             capability_hints: StreamCapabilityHints {
                 supports_tools,
                 supports_thinking,

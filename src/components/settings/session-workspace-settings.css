@@ -1,0 +1,23 @@
+.sws-title {
+  margin-top: 28px;
+  margin-bottom: 12px;
+  color: var(--ink);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.sws-output-control {
+  display: flex;
+  max-width: 320px;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.sws-path {
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

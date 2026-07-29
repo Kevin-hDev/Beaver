@@ -40,6 +40,7 @@ macro_rules! generate_tail {
             crate::commands::delete_project,
             crate::commands::reorder_projects,
             crate::commands::open_project_folder,
+            crate::commands::open_app_data_folder,
             crate::commands::read_agent_md,
             crate::commands::write_agent_md,
             crate::commands::pty_spawn,

@@ -102,6 +102,7 @@ mod tests {
             gateway_channel_key: None,
             project_id: None,
             working_dir: String::new(),
+            working_dir_managed: false,
             parent_session_id: None,
             subagent_type: None,
             subagent_worktree: None,

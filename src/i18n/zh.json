@@ -880,7 +880,16 @@
       "compressionEnabledTitle": "自动压缩",
       "compressionEnabledDesc": "当上下文接近上限时自动总结对话",
       "compressionThresholdTitle": "压缩阈值",
-      "compressionThresholdDesc": "触发压缩的上下文窗口使用百分比"
+      "compressionThresholdDesc": "触发压缩的上下文窗口使用百分比",
+      "sessionFilesTitle": "会话文件",
+      "outputsDirectoryTitle": "交付文件位置",
+      "outputsDirectoryDesc": "Beaver 会为每个会话的交付文件创建独立文件夹",
+      "outputsDirectoryDefault": "Beaver 默认文件夹",
+      "outputsDirectoryReset": "默认",
+      "outputsDirectoryChoose": "选择",
+      "dataFolderTitle": "Beaver 数据",
+      "dataFolderDesc": "打开包含会话、记忆和本地设置的文件夹",
+      "dataFolderOpen": "打开文件夹"
     },
     "llm": {
       "searchPlaceholder": "搜索模型…",

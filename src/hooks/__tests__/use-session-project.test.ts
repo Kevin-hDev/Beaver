@@ -62,4 +62,20 @@ describe("useSessionProject", () => {
     expect(result.current.selectedProject?.name).toBe("project");
     expect(result.current.hidden).toBe(false);
   });
+
+  it("n'affiche jamais le workspace automatique sous le champ de saisie", async () => {
+    const managed = session(undefined, "/private/app/session-workspaces/test/work");
+    managed.working_dir_managed = true;
+    vi.mocked(invoke).mockResolvedValueOnce(managed);
+
+    const { result } = renderHook(() =>
+      useSessionProject("session-1", [], vi.fn(), true),
+    );
+
+    await waitFor(() => expect(invoke).toHaveBeenCalled());
+    await act(async () => {});
+    expect(result.current.selectedProject).toBeUndefined();
+    expect(result.current.workingDir).toBe("");
+    expect(result.current.hidden).toBe(true);
+  });
 });

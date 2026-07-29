@@ -29,7 +29,11 @@ pub async fn prepare(
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
-        .or_else(|| non_empty_path(&session.working_dir));
+        .or_else(|| {
+            (!session.working_dir_managed)
+                .then(|| non_empty_path(&session.working_dir))
+                .flatten()
+        });
     let Some(expected) = expected else {
         return Ok(PrepareAgentSend::Ready);
     };

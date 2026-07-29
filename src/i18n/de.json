@@ -880,7 +880,16 @@
       "compressionEnabledTitle": "Automatische Komprimierung",
       "compressionEnabledDesc": "Fasst das Gespräch automatisch zusammen, wenn der Kontext sein Limit erreicht",
       "compressionThresholdTitle": "Komprimierungsschwelle",
-      "compressionThresholdDesc": "Prozentsatz des Kontextfensters, ab dem die Komprimierung ausgelöst wird"
+      "compressionThresholdDesc": "Prozentsatz des Kontextfensters, ab dem die Komprimierung ausgelöst wird",
+      "sessionFilesTitle": "Sitzungsdateien",
+      "outputsDirectoryTitle": "Speicherort der Ergebnisse",
+      "outputsDirectoryDesc": "Beaver erstellt dort für jede Sitzung einen eigenen Ergebnisordner",
+      "outputsDirectoryDefault": "Standardordner von Beaver",
+      "outputsDirectoryReset": "Standard",
+      "outputsDirectoryChoose": "Auswählen",
+      "dataFolderTitle": "Beaver-Daten",
+      "dataFolderDesc": "Ordner mit Sitzungen, Speicher und lokalen Einstellungen öffnen",
+      "dataFolderOpen": "Ordner öffnen"
     },
     "llm": {
       "searchPlaceholder": "Modell suchen…",

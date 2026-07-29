@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 pub(crate) struct ResolvedWorkingDir {
     pub path: PathBuf,
+    pub outputs_dir: Option<PathBuf>,
 }
 
 pub(crate) async fn resolve_for_session(
@@ -24,21 +25,62 @@ pub(crate) async fn resolve_for_session(
     } else {
         None
     };
-    let stored_dir = if project_dir.is_none() && incoming_dir.is_none() {
+    let stored_dir = if project_dir.is_none()
+        && incoming_dir.is_none()
+        && !session.working_dir_managed
+        && !is_home_directory(&session.working_dir)
+    {
         canonical_optional_dir(Some(&session.working_dir))?
     } else {
         None
     };
     if let Some(resolved) = choose_project_root(project_dir, incoming_dir, stored_dir) {
+        session_store::update_working_dir(session_id, resolved.path.to_string_lossy().as_ref())
+            .await
+            .map_err(|_| "Impossible d'enregistrer le dossier de travail.".to_string())?;
         return Ok(resolved);
     }
 
-    let path = dirs::home_dir()
-        .or_else(|| std::env::current_dir().ok())
-        .ok_or_else(|| "Répertoire de travail introuvable".to_string())?;
+    let workspace = crate::services::agent_local::session_workspace::ensure(&session).await?;
+    session_store::set_managed_working_dir(session_id, workspace.work.to_string_lossy().as_ref())
+        .await
+        .map_err(|_| "Impossible d'enregistrer le dossier de travail.".to_string())?;
     Ok(ResolvedWorkingDir {
-        path: path.canonicalize().unwrap_or(path),
+        path: workspace.work,
+        outputs_dir: Some(workspace.outputs),
     })
+}
+
+pub(crate) async fn resolve_existing_for_session(
+    session_id: &str,
+    incoming: Option<&str>,
+) -> Result<Option<ResolvedWorkingDir>, String> {
+    let session = session_store::get(session_id)
+        .await
+        .map_err(|_| "Session introuvable".to_string())?;
+    let project_dir = match session.project_id.as_deref() {
+        Some(project_id) => project_path_for_id(project_id)
+            .await
+            .map(|path| canonical_dir(&path))
+            .transpose()?,
+        None => None,
+    };
+    let incoming_dir = if project_dir.is_none() {
+        canonical_optional_dir(incoming)?
+    } else {
+        None
+    };
+    let stored_dir = if project_dir.is_none()
+        && incoming_dir.is_none()
+        && !is_home_directory(&session.working_dir)
+    {
+        canonical_optional_dir(Some(&session.working_dir))
+            .ok()
+            .flatten()
+    } else {
+        None
+    };
+    Ok(choose_project_root(project_dir, incoming_dir, stored_dir))
 }
 
 pub(crate) async fn project_path_for_id(project_id: &str) -> Option<String> {
@@ -58,7 +100,10 @@ fn canonical_dir(input: &str) -> Result<ResolvedWorkingDir, String> {
     let path = path
         .canonicalize()
         .map_err(|_| "Répertoire inaccessible".to_string())?;
-    Ok(ResolvedWorkingDir { path })
+    Ok(ResolvedWorkingDir {
+        path,
+        outputs_dir: None,
+    })
 }
 
 fn canonical_optional_dir(input: Option<&str>) -> Result<Option<ResolvedWorkingDir>, String> {
@@ -77,84 +122,20 @@ fn choose_project_root(
     project_dir.or(incoming_dir).or(stored_dir)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{canonical_dir, canonical_optional_dir, choose_project_root, ResolvedWorkingDir};
-
-    #[test]
-    fn canonicalizes_existing_dir() {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let nested = temp.path().join("nested");
-        std::fs::create_dir_all(&nested).expect("nested");
-
-        let resolved = canonical_dir(&nested.join(".").to_string_lossy()).expect("resolved");
-
-        assert_eq!(
-            resolved.path,
-            std::fs::canonicalize(&nested).expect("canonical")
-        );
+fn is_home_directory(input: &str) -> bool {
+    let input = input.trim();
+    if input.is_empty() {
+        return false;
     }
-
-    #[test]
-    fn rejects_a_missing_stored_root_instead_of_falling_back() {
-        let missing = "/definitely/missing/beaver-project-root";
-
-        assert!(canonical_optional_dir(Some(missing)).is_err());
-    }
-
-    #[test]
-    fn project_wins_over_incoming_and_stored_directories() {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let project = temp.path().join("project");
-        let incoming = temp.path().join("incoming");
-        let outside = temp.path().join("outside");
-        std::fs::create_dir_all(&project).expect("project");
-        std::fs::create_dir_all(&incoming).expect("incoming");
-        std::fs::create_dir_all(&outside).expect("outside");
-
-        let resolved = choose_project_root(
-            Some(ResolvedWorkingDir {
-                path: project.clone(),
-            }),
-            Some(ResolvedWorkingDir { path: incoming }),
-            Some(ResolvedWorkingDir { path: outside }),
-        )
-        .expect("resolved");
-
-        assert_eq!(resolved.path, project);
-    }
-
-    #[test]
-    fn project_root_wins_over_a_stored_subdirectory() {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let project = temp.path().join("project");
-        let nested = project.join("nested");
-        std::fs::create_dir_all(&nested).expect("nested");
-
-        let resolved = choose_project_root(
-            Some(ResolvedWorkingDir {
-                path: project.clone(),
-            }),
-            None,
-            Some(ResolvedWorkingDir { path: nested }),
-        )
-        .expect("resolved");
-
-        assert_eq!(resolved.path, project);
-    }
-
-    #[test]
-    fn projectless_session_prefers_incoming_then_stored_directory() {
-        let incoming = ResolvedWorkingDir {
-            path: std::path::PathBuf::from("/incoming"),
-        };
-        let stored = ResolvedWorkingDir {
-            path: std::path::PathBuf::from("/stored"),
-        };
-
-        let selected =
-            choose_project_root(None, Some(incoming), Some(stored)).expect("incoming directory");
-
-        assert_eq!(selected.path, std::path::PathBuf::from("/incoming"));
-    }
+    let Some(home) = dirs::home_dir() else {
+        return false;
+    };
+    canonical_dir(input)
+        .ok()
+        .and_then(|candidate| home.canonicalize().ok().map(|home| candidate.path == home))
+        .unwrap_or(false)
 }
+
+#[cfg(test)]
+#[path = "agent_working_dir_tests.rs"]
+mod tests;

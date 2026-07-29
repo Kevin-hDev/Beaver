@@ -122,6 +122,7 @@ fn child(status: &str) -> AgentSession {
         gateway_channel_key: None,
         project_id: None,
         working_dir: String::new(),
+        working_dir_managed: false,
         parent_session_id: Some("parent".into()),
         subagent_type: Some("explorer".into()),
         subagent_worktree: None,

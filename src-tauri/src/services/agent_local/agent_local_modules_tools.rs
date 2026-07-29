@@ -31,6 +31,7 @@ pub mod tool_delegate_child;
 mod tool_delegate_prompt;
 pub mod tool_dispatcher;
 mod tool_dispatcher_entry;
+mod tool_workspace_notice;
 pub mod tool_extension_discovery;
 pub mod tool_dispatcher_delegate;
 pub mod tool_dispatcher_forecast;

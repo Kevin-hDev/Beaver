@@ -95,6 +95,7 @@ pub async fn dispatch_for_mode(
         result.file_changes.push(change);
     }
     let result = super::tool_result_truncate::truncate_result(result, tool_name, session_id);
+    let result = super::tool_workspace_notice::append(result, working_dir);
     enrich_error(result, tool_name)
 }
 

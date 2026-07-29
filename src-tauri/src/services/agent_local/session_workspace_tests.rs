@@ -1,0 +1,100 @@
+use super::*;
+
+#[tokio::test]
+async fn creates_private_work_and_outputs_directories() {
+    let root = tempfile::tempdir().unwrap();
+    let id = uuid::Uuid::new_v4().to_string();
+
+    let workspace = ensure_layout(
+        &root.path().join("session-workspaces"),
+        None,
+        "2026-07-29",
+        "Créer une présentation / été",
+        &id,
+    )
+    .await
+    .unwrap();
+
+    assert!(workspace.work.is_dir());
+    assert!(workspace.outputs.is_dir());
+    assert!(workspace
+        .work
+        .to_string_lossy()
+        .contains("cr-er-une-pr-sentation"));
+    assert!(workspace.work.ends_with("work"));
+}
+
+#[tokio::test]
+async fn the_same_session_reuses_the_same_workspace() {
+    let root = tempfile::tempdir().unwrap();
+    let id = uuid::Uuid::new_v4().to_string();
+    let base = root.path().join("session-workspaces");
+
+    let first = ensure_layout(&base, None, "2026-07-29", "Analyse", &id)
+        .await
+        .unwrap();
+    let second = ensure_layout(&base, None, "2026-07-29", "Analyse", &id)
+        .await
+        .unwrap();
+
+    assert_eq!(first.work, second.work);
+    assert_eq!(first.outputs, second.outputs);
+}
+
+#[test]
+fn reserved_and_unusable_names_have_a_safe_fallback() {
+    assert_eq!(slugify("CON"), "session");
+    assert_eq!(slugify("///"), "session");
+    assert_eq!(slugify("Hello, World!"), "hello-world");
+}
+
+#[test]
+fn a_very_long_label_is_bounded() {
+    let label = "x".repeat(100_000);
+
+    assert_eq!(slugify(&label).len(), SLUG_MAX_CHARS);
+}
+
+#[tokio::test]
+async fn a_symlinked_workspace_component_is_rejected() {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+
+        let root = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let base = root.path().join("session-workspaces");
+        let date = base.join("2026-07-29");
+        std::fs::create_dir_all(&date).unwrap();
+        let id = uuid::Uuid::new_v4().to_string();
+        let name = format!("analyse-{}", session_suffix(&id).unwrap());
+        symlink(outside.path(), date.join(name)).unwrap();
+
+        assert!(ensure_layout(&base, None, "2026-07-29", "Analyse", &id)
+            .await
+            .is_err());
+        assert!(!outside.path().join("work").exists());
+    }
+}
+
+#[tokio::test]
+async fn custom_outputs_stay_separate_from_work() {
+    let root = tempfile::tempdir().unwrap();
+    let custom = tempfile::tempdir().unwrap();
+    let id = uuid::Uuid::new_v4().to_string();
+    let base = root.path().join("session-workspaces");
+
+    let workspace = ensure_layout(
+        &base,
+        Some(custom.path()),
+        "2026-07-29",
+        "Rapport final",
+        &id,
+    )
+    .await
+    .unwrap();
+
+    assert!(workspace.work.starts_with(&base));
+    assert!(workspace.outputs.starts_with(custom.path()));
+    assert!(workspace.outputs.ends_with("outputs"));
+}

@@ -128,6 +128,12 @@ impl GatewayAgentBridge {
         .await
         .map_err(BridgeError::SessionError)?;
         emit_session_updated(&app, &session_id);
+        let resolved_working_dir =
+            crate::commands::agent_working_dir::resolve_for_session(&session_id, None)
+                .await
+                .map_err(BridgeError::SessionError)?;
+        let working_dir = resolved_working_dir.path;
+        let outputs_dir = resolved_working_dir.outputs_dir;
 
         let generation = stream_events::next_generation();
         let emitter =
@@ -146,7 +152,8 @@ impl GatewayAgentBridge {
             tools: vec![],
             think: false,
             provider,
-            working_dir: None,
+            working_dir,
+            outputs_dir,
             capability_hints: StreamCapabilityHints::default(),
             reasoning_mode: None,
             permission_mode_override: Some("auto".to_string()),

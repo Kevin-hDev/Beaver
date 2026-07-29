@@ -65,6 +65,7 @@ pub async fn create_full(
         gateway_channel_key: None,
         project_id,
         working_dir: String::new(),
+        working_dir_managed: false,
         parent_session_id: None,
         subagent_type: None,
         subagent_worktree: None,
@@ -188,7 +189,8 @@ pub async fn restore(id: &str) -> Result<(), String> {
 pub use super::session_archive::list_archived;
 pub use super::session_ops::{clear_project_id, export_markdown, truncate_and_replace};
 pub use super::session_store_updates::{
-    switch_working_dir_to_project, update_model, update_reasoning, update_working_dir,
+    refresh_working_dir, set_managed_working_dir, switch_working_dir_to_project, update_model,
+    update_reasoning, update_working_dir,
 };
 
 #[path = "session_store_tests.rs"]

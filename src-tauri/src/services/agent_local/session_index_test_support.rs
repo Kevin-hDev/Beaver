@@ -30,6 +30,7 @@ pub(super) fn test_session(id: &str, name: &str, heartbeat: bool) -> AgentSessio
         gateway_channel_key: None,
         project_id: None,
         working_dir: String::new(),
+        working_dir_managed: false,
         parent_session_id: None,
         subagent_type: None,
         subagent_worktree: None,

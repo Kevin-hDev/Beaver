@@ -162,6 +162,7 @@ pub(super) async fn create_child(
     child.thinking_enabled = parent.thinking_enabled;
     child.reasoning_mode = parent.reasoning_mode.clone();
     child.working_dir = parent.working_dir.clone();
+    child.working_dir_managed = parent.working_dir_managed;
     session_store::save(&child)
         .await
         .map_err(|_| ToolResult::err("Erreur interne lors de la création du sous-agent"))?;
@@ -177,5 +178,6 @@ pub(super) async fn inherit_parent_context(
     child.thinking_enabled = parent.thinking_enabled;
     child.reasoning_mode = parent.reasoning_mode.clone();
     child.working_dir = parent.working_dir.clone();
+    child.working_dir_managed = parent.working_dir_managed;
     session_store::save(child).await
 }

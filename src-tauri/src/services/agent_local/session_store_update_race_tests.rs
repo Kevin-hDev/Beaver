@@ -56,3 +56,59 @@ async fn working_dir_update_cannot_overwrite_a_concurrent_correction() {
         .await
         .expect("delete session");
 }
+
+#[tokio::test]
+async fn runtime_refresh_keeps_an_automatic_workspace_hidden() {
+    let session = session_store::create_full("Managed", "llama3", "ollama", false, None)
+        .await
+        .expect("create session");
+    let root = tempfile::tempdir().expect("tempdir");
+
+    session_store_updates::set_managed_working_dir(
+        &session.id,
+        root.path().to_string_lossy().as_ref(),
+    )
+    .await
+    .expect("set managed directory");
+    session_store_updates::refresh_working_dir(
+        &session.id,
+        root.path().to_string_lossy().as_ref(),
+    )
+    .await
+    .expect("refresh managed directory");
+
+    let saved = session_store::get(&session.id).await.expect("load session");
+    assert!(saved.working_dir_managed);
+
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+}
+
+#[tokio::test]
+async fn selecting_a_directory_makes_it_visible_again() {
+    let session = session_store::create_full("Visible", "llama3", "ollama", false, None)
+        .await
+        .expect("create session");
+    let root = tempfile::tempdir().expect("tempdir");
+
+    session_store_updates::set_managed_working_dir(
+        &session.id,
+        root.path().to_string_lossy().as_ref(),
+    )
+    .await
+    .expect("set managed directory");
+    session_store_updates::update_working_dir(
+        &session.id,
+        root.path().to_string_lossy().as_ref(),
+    )
+    .await
+    .expect("select directory");
+
+    let saved = session_store::get(&session.id).await.expect("load session");
+    assert!(!saved.working_dir_managed);
+
+    session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+}

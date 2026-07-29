@@ -8,6 +8,7 @@ mod ollama;
 mod params;
 mod session_events;
 pub(crate) mod tool_policy;
+mod workspace_prompt;
 
 pub(crate) use params::{StreamCapabilityHints, StreamTaskParams};
 

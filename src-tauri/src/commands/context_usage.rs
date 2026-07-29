@@ -28,7 +28,13 @@ pub async fn estimate_context_hidden_usage(
     supports_tools: Option<bool>,
 ) -> Result<HiddenContextUsage, String> {
     let mode = common::resolve_permission_mode(permission_mode.as_deref()).await;
-    let working_dir = common::resolve_working_dir(&working_dir)?;
+    let Some(working_dir) =
+        super::agent_working_dir::resolve_existing_for_session(&session_id, working_dir.as_deref())
+            .await?
+            .map(|resolved| resolved.path)
+    else {
+        return Ok(empty_usage());
+    };
     let snap = common::collect_git_snapshot(&working_dir).await;
     let has_tools =
         mode.is_chat || provider.as_deref() == Some("ollama") || supports_tools.unwrap_or(false);
@@ -86,6 +92,17 @@ pub async fn estimate_context_hidden_usage(
         system_tool_definition_tokens,
         mcp_definition_tokens,
     })
+}
+
+fn empty_usage() -> HiddenContextUsage {
+    HiddenContextUsage {
+        system_prompt_tokens: 0,
+        meta_context_tokens: 0,
+        skill_context_tokens: 0,
+        memory_context_tokens: 0,
+        system_tool_definition_tokens: 0,
+        mcp_definition_tokens: 0,
+    }
 }
 
 fn base_prompt(

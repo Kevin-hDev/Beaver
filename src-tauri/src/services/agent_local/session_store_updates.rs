@@ -56,7 +56,36 @@ pub async fn update_reasoning(
 }
 
 pub async fn update_working_dir(id: &str, dir: &str) -> Result<(), String> {
-    update_working_dir_inner(id, dir, ProjectAssignment::Preserve, || async {}).await
+    update_working_dir_inner(
+        id,
+        dir,
+        ManagedAssignment::Set(false),
+        ProjectAssignment::Preserve,
+        || async {},
+    )
+    .await
+}
+
+pub async fn set_managed_working_dir(id: &str, dir: &str) -> Result<(), String> {
+    update_working_dir_inner(
+        id,
+        dir,
+        ManagedAssignment::Set(true),
+        ProjectAssignment::Preserve,
+        || async {},
+    )
+    .await
+}
+
+pub async fn refresh_working_dir(id: &str, dir: &str) -> Result<(), String> {
+    update_working_dir_inner(
+        id,
+        dir,
+        ManagedAssignment::Preserve,
+        ProjectAssignment::Preserve,
+        || async {},
+    )
+    .await
 }
 
 pub async fn switch_working_dir_to_project(
@@ -64,7 +93,14 @@ pub async fn switch_working_dir_to_project(
     dir: &str,
     project_id: &str,
 ) -> Result<(), String> {
-    update_working_dir_inner(id, dir, ProjectAssignment::Set(project_id), || async {}).await
+    update_working_dir_inner(
+        id,
+        dir,
+        ManagedAssignment::Set(false),
+        ProjectAssignment::Set(project_id),
+        || async {},
+    )
+    .await
 }
 
 enum ProjectAssignment<'a> {
@@ -72,9 +108,15 @@ enum ProjectAssignment<'a> {
     Set(&'a str),
 }
 
+enum ManagedAssignment {
+    Preserve,
+    Set(bool),
+}
+
 async fn update_working_dir_inner<F, Fut>(
     id: &str,
     dir: &str,
+    managed: ManagedAssignment,
     project: ProjectAssignment<'_>,
     after_load: F,
 ) -> Result<(), String>
@@ -95,6 +137,9 @@ where
     let mut session = get(id).await?;
     after_load().await;
     session.working_dir = canonical.to_string_lossy().to_string();
+    if let ManagedAssignment::Set(value) = managed {
+        session.working_dir_managed = value;
+    }
     match project {
         ProjectAssignment::Preserve => {}
         ProjectAssignment::Set(project_id) => session.project_id = Some(project_id.to_string()),
@@ -112,5 +157,12 @@ where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = ()>,
 {
-    update_working_dir_inner(id, dir, ProjectAssignment::Preserve, after_load).await
+    update_working_dir_inner(
+        id,
+        dir,
+        ManagedAssignment::Set(false),
+        ProjectAssignment::Preserve,
+        after_load,
+    )
+    .await
 }

@@ -32,7 +32,7 @@ export function useSessionProject(
     try {
       const session = await invoke<AgentSession>("get_agent_session", { id: sessionId });
       setSelectedProjectId(session.project_id ?? null);
-      setWorkingDir(session.working_dir ?? "");
+      setWorkingDir(session.working_dir_managed ? "" : (session.working_dir ?? ""));
     } catch {
       setSelectedProjectId(null);
       setWorkingDir("");

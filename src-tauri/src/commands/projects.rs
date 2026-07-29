@@ -36,6 +36,22 @@ pub async fn reorder_projects(ids: Vec<String>) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn open_project_folder(path: String) -> Result<(), String> {
+    open_folder(std::path::Path::new(&path))
+}
+
+#[tauri::command]
+pub async fn open_app_data_folder() -> Result<(), String> {
+    let path = crate::services::paths::data_dir();
+    crate::services::private_store::ensure_private_dir_async(path.clone())
+        .await
+        .map_err(|_| "Impossible d'ouvrir le dossier".to_string())?;
+    open_folder(&path)
+}
+
+fn open_folder(path: &std::path::Path) -> Result<(), String> {
+    if !path.is_dir() {
+        return Err("Impossible d'ouvrir le dossier".to_string());
+    }
     let cmd = if cfg!(target_os = "macos") {
         "open"
     } else if cfg!(target_os = "linux") {
@@ -44,7 +60,7 @@ pub async fn open_project_folder(path: String) -> Result<(), String> {
         "explorer"
     };
     std::process::Command::new(cmd)
-        .arg(&path)
+        .arg(path)
         .spawn()
         .map_err(|e| {
             eprintln!("[projects] open_folder: {e}");

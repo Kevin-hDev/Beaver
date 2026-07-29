@@ -1,3 +1,4 @@
+use super::workspace_prompt::append_outputs_directory;
 use crate::services::agent_local::agent_md;
 use crate::services::agent_local::agent_settings;
 use crate::services::agent_local::chat_prompts::prepare_messages_with_tools;
@@ -16,6 +17,7 @@ pub(crate) struct StreamMode {
 
 pub(crate) struct PromptContext<'a> {
     pub working_dir: &'a Path,
+    pub outputs_dir: Option<&'a Path>,
     pub snap: &'a GitSnapshot,
     pub has_tools: bool,
     pub agent_md_content: Option<String>,
@@ -54,22 +56,18 @@ pub(crate) fn response_language() -> String {
         .unwrap_or_default()
 }
 
-pub(crate) fn resolve_working_dir(working_dir: &Option<String>) -> Result<PathBuf, String> {
-    if let Some(dir) = working_dir.as_ref().filter(|s| !s.is_empty()) {
-        let path = PathBuf::from(dir);
-        if path.is_dir() {
-            return path.canonicalize().map_err(|err| {
-                eprintln!("[agent] canonicalize dir: {err}");
-                "Répertoire inaccessible".to_string()
-            });
-        }
-        return Err(format!("Répertoire introuvable : {dir}"));
+pub(crate) fn resolve_working_dir(working_dir: &Path) -> Result<PathBuf, String> {
+    if working_dir.is_dir() {
+        return working_dir.canonicalize().map_err(|err| {
+            eprintln!("[agent] canonicalize dir: {err}");
+            "Répertoire inaccessible".to_string()
+        });
     }
-    Ok(dirs::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap()))
+    Err("Répertoire de travail introuvable".to_string())
 }
 
 pub(crate) async fn update_working_dir(session_id: &str, working_dir: &Path) -> Result<(), String> {
-    session_store::update_working_dir(session_id, &working_dir.to_string_lossy())
+    session_store::refresh_working_dir(session_id, &working_dir.to_string_lossy())
         .await
         .map_err(|_| "Impossible d'enregistrer le dossier de travail.".to_string())
 }
@@ -142,6 +140,7 @@ pub(crate) fn prepare_with_context(messages: &mut Vec<ChatMessage>, ctx: PromptC
     );
     append_memory_context(messages, ctx.memory_context);
     append_git_section(messages, ctx.snap);
+    append_outputs_directory(messages, ctx.outputs_dir);
     if plan_mode_active {
         append_plan_mode(messages);
     }

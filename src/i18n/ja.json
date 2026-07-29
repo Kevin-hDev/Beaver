@@ -880,7 +880,16 @@
       "compressionEnabledTitle": "自動圧縮",
       "compressionEnabledDesc": "コンテキストが上限に近づくと自動的に会話を要約します",
       "compressionThresholdTitle": "圧縮しきい値",
-      "compressionThresholdDesc": "圧縮が発動するコンテキストウィンドウの使用率"
+      "compressionThresholdDesc": "圧縮が発動するコンテキストウィンドウの使用率",
+      "sessionFilesTitle": "セッションファイル",
+      "outputsDirectoryTitle": "成果物の保存先",
+      "outputsDirectoryDesc": "Beaver はセッションごとの成果物フォルダーをここに作成します",
+      "outputsDirectoryDefault": "Beaver の既定フォルダー",
+      "outputsDirectoryReset": "既定",
+      "outputsDirectoryChoose": "選択",
+      "dataFolderTitle": "Beaver データ",
+      "dataFolderDesc": "セッション、メモリ、ローカル設定を含むフォルダーを開きます",
+      "dataFolderOpen": "フォルダーを開く"
     },
     "llm": {
       "searchPlaceholder": "モデルを検索…",

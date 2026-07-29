@@ -68,11 +68,16 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
     userMessage,
   )) return;
   const llmMessages = [...options.messages, ...queuedLlmMessages];
-  await invoke("add_messages_to_session", {
-    id: options.sessionId,
-    messages: [userMessage],
-    tokens: 0,
-  }).catch(() => showToast(i18n.t("errors.sessionSaveFailed"), "error"));
+  try {
+    await invoke("add_messages_to_session", {
+      id: options.sessionId,
+      messages: [userMessage],
+      tokens: 0,
+    });
+  } catch {
+    showToast(i18n.t("errors.sessionSaveFailed"), "error");
+    return;
+  }
   await options.doStream(
     llmMessages,
     displayMessages,

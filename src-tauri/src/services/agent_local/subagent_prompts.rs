@@ -1,5 +1,5 @@
 use super::subagent_tool_profile::SubagentToolProfile;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub async fn system(
     profile: SubagentToolProfile,
@@ -120,18 +120,4 @@ pub fn compose_for_test(
         project_context,
         skills,
     )
-}
-
-pub async fn resolve_project_dir(project_id: Option<&str>) -> PathBuf {
-    if let Some(pid) = project_id {
-        if let Ok(projects) = super::project_store::list().await {
-            if let Some(project) = projects.iter().find(|project| project.id == pid) {
-                let path = PathBuf::from(&project.path);
-                if path.is_dir() {
-                    return path;
-                }
-            }
-        }
-    }
-    dirs::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
 }

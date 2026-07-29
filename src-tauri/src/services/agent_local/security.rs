@@ -115,7 +115,10 @@ pub(crate) fn validate_read_path_in_roots(
     }
 }
 
-fn canonicalize_candidate(path: &Path, resolution_base: &Path) -> Result<PathBuf, String> {
+pub(crate) fn canonicalize_candidate(
+    path: &Path,
+    resolution_base: &Path,
+) -> Result<PathBuf, String> {
     if path.exists() {
         return path.canonicalize().map_err(sanitize_error);
     }

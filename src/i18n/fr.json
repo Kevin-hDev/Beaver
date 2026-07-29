@@ -933,7 +933,16 @@
       "compressionEnabledTitle": "Compression automatique",
       "compressionEnabledDesc": "Résume automatiquement la conversation quand le contexte approche de sa limite",
       "compressionThresholdTitle": "Seuil de compression",
-      "compressionThresholdDesc": "Pourcentage de la fenêtre de contexte à partir duquel la compression se déclenche"
+      "compressionThresholdDesc": "Pourcentage de la fenêtre de contexte à partir duquel la compression se déclenche",
+      "sessionFilesTitle": "Fichiers des sessions",
+      "outputsDirectoryTitle": "Emplacement des livrables",
+      "outputsDirectoryDesc": "Beaver y crée un dossier séparé pour les livrables de chaque session",
+      "outputsDirectoryDefault": "Dossier Beaver par défaut",
+      "outputsDirectoryReset": "Par défaut",
+      "outputsDirectoryChoose": "Choisir",
+      "dataFolderTitle": "Données Beaver",
+      "dataFolderDesc": "Ouvrir le dossier qui contient les sessions, la mémoire et les réglages locaux",
+      "dataFolderOpen": "Ouvrir le dossier"
     },
     "llm": {
       "searchPlaceholder": "Rechercher un modèle…",

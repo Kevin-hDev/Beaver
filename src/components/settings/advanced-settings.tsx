@@ -10,54 +10,22 @@ import { SettingsSelect, type SelectGroup } from "./settings-select";
 import { PathListEditor } from "./path-list-editor";
 import { OllamaSettingsSection } from "./ollama-settings-section";
 import { AgentImportSettings } from "@/components/agent-import/agent-import-settings";
+import { SessionWorkspaceSettings } from "./session-workspace-settings";
 import { notifySettingsChanged } from "@/hooks/use-setting-value";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
+import { ADVANCED_SETTINGS_DEFAULTS, type AdvancedSettingsState } from "./advanced-settings-state";
 import "./compression-slider.css";
-
-interface AdvancedState {
-  autostart: boolean;
-  start_hidden: boolean;
-  show_tray: boolean;
-  default_model: string;
-  keep_alive: string;
-  allowed_paths: string[];
-  hardware_accel: string;
-  multi_model: boolean;
-  show_gpu_status: boolean;
-  compression_enabled: boolean;
-  compression_threshold: number;
-  response_language: string;
-  link_preview_enabled: boolean;
-  ollama_setup_skipped: boolean;
-}
-
-const DEFAULTS: AdvancedState = {
-  autostart: false,
-  start_hidden: false,
-  show_tray: true,
-  default_model: "",
-  keep_alive: "5m",
-  allowed_paths: ["/"],
-  hardware_accel: "gpu",
-  multi_model: false,
-  show_gpu_status: false,
-  compression_enabled: true,
-  compression_threshold: 85,
-  response_language: "",
-  link_preview_enabled: true,
-  ollama_setup_skipped: false,
-};
 
 export function AdvancedSettings() {
   const { t } = useTranslation();
   const { groups } = useAvailableModels();
-  const [state, setState] = useState<AdvancedState>(DEFAULTS);
+  const [state, setState] = useState<AdvancedSettingsState>(ADVANCED_SETTINGS_DEFAULTS);
 
   const loadSettings = useCallback(() => {
-    invoke<AdvancedState>("get_advanced_settings")
+    invoke<AdvancedSettingsState>("get_advanced_settings")
       .then(setState)
-      .catch(() => {});
+      .catch(() => showToast(i18n.t("errors.operationFailed"), "error"));
   }, []);
 
   useEffect(() => {
@@ -66,7 +34,7 @@ export function AdvancedSettings() {
 
   useFsEvent("fs:config-changed", loadSettings);
 
-  const save = useCallback((patch: Partial<AdvancedState>) => {
+  const save = useCallback((patch: Partial<AdvancedSettingsState>) => {
     setState((prev) => {
       const next = { ...prev, ...patch };
       invoke("set_advanced_settings", { settings: next }).catch(() => showToast(i18n.t("errors.saveFailed"), "error"));
@@ -187,6 +155,11 @@ export function AdvancedSettings() {
             />
           </div>
         </SettingsCard>
+
+        <SessionWorkspaceSettings
+          outputsDirectory={state.session_outputs_directory}
+          onOutputsDirectoryChange={(directory) => save({ session_outputs_directory: directory })}
+        />
 
       </div>
     </div>

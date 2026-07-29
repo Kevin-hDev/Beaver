@@ -27,4 +27,18 @@ describe("persistAgentMessage", () => {
     expect(doStream).not.toHaveBeenCalled();
     expect(invoke).not.toHaveBeenCalledWith("add_messages_to_session", expect.anything());
   });
+
+  it("ne démarre pas l'agent si le premier message n'a pas été enregistré", async () => {
+    invoke.mockRejectedValueOnce(new Error("save failed"));
+    const doStream = vi.fn();
+
+    await persistAgentMessage({
+      sessionId: "session-1",
+      messages: [],
+      text: "Crée un rapport",
+      doStream,
+    });
+
+    expect(doStream).not.toHaveBeenCalled();
+  });
 });

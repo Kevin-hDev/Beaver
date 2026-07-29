@@ -21,6 +21,7 @@ pub struct AdvancedSettings {
     pub default_model: String,
     pub keep_alive: String,
     pub allowed_paths: Vec<String>,
+    pub session_outputs_directory: String,
     pub hardware_accel: String,
     pub multi_model: bool,
     pub show_gpu_status: bool,
@@ -41,6 +42,7 @@ impl Default for AdvancedSettings {
             default_model: String::new(),
             keep_alive: "5m".to_string(),
             allowed_paths: default_allowed_paths(),
+            session_outputs_directory: String::new(),
             hardware_accel: "gpu".to_string(),
             multi_model: false,
             show_gpu_status: false,
@@ -57,54 +59,36 @@ impl Default for AdvancedSettings {
 impl AdvancedSettings {
     pub fn normalized(mut self) -> Self {
         self.compression_threshold = self.compression_threshold.min(100);
+        self.session_outputs_directory =
+            normalize_optional_directory(&self.session_outputs_directory).unwrap_or_default();
         self
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn default_compression_settings() {
-        let settings = AdvancedSettings::default();
-        assert!(settings.compression_enabled);
-        assert_eq!(settings.compression_threshold, 85);
+pub(crate) fn normalize_optional_directory(value: &str) -> Option<String> {
+    let value = value.trim();
+    let path = std::path::Path::new(value);
+    if value.is_empty() {
+        return Some(String::new());
     }
-
-    #[test]
-    fn ollama_setup_is_not_skipped_by_default() {
-        let settings = AdvancedSettings::default();
-        assert!(!settings.ollama_setup_skipped);
+    if value.len() > 4_096
+        || value.chars().any(char::is_control)
+        || !path.is_absolute()
+        || path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+        || !path.is_dir()
+    {
+        return None;
     }
-
-    #[test]
-    fn onboarding_is_not_completed_by_default() {
-        let settings = AdvancedSettings::default();
-        assert!(!settings.onboarding_completed);
-    }
-
-    #[test]
-    fn compression_threshold_bounds() {
-        let mut settings = AdvancedSettings {
-            compression_threshold: 0,
-            ..Default::default()
-        };
-        assert_eq!(settings.compression_threshold, 0);
-        settings.compression_threshold = 100;
-        assert_eq!(settings.compression_threshold, 100);
-    }
-
-    #[test]
-    fn compression_threshold_is_clamped() {
-        let settings = AdvancedSettings {
-            compression_threshold: 150,
-            ..Default::default()
-        }
-        .normalized();
-        assert_eq!(settings.compression_threshold, 100);
-    }
+    path.canonicalize()
+        .ok()
+        .and_then(|path| path.to_str().map(str::to_string))
 }
+
+#[cfg(test)]
+#[path = "config_tests.rs"]
+mod tests;
 
 fn default_allowed_paths() -> Vec<String> {
     #[cfg(target_os = "windows")]

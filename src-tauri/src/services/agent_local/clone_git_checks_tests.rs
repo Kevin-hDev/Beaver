@@ -33,6 +33,7 @@ fn clone_session(id: &str, parent_id: &str, root_id: Option<&str>) -> AgentSessi
         gateway_channel_key: None,
         project_id: None,
         working_dir: String::new(),
+        working_dir_managed: false,
         parent_session_id: None,
         subagent_type: None,
         subagent_worktree: None,

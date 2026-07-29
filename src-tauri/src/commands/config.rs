@@ -9,6 +9,7 @@ pub fn get_config() -> Result<ClgoConfig, String> {
 #[tauri::command]
 pub fn save_config(mut config: ClgoConfig) -> Result<(), String> {
     let current = config_service::read_config()?;
+    validate_outputs_directory(&mut config.advanced)?;
     config.advanced = protect_advanced_settings(config.advanced, &current);
     keep_current_mascot(&mut config, &current);
     config_service::write_config(&config)
@@ -29,6 +30,8 @@ pub fn set_advanced_settings(
     app: tauri::AppHandle,
     settings: AdvancedSettings,
 ) -> Result<(), String> {
+    let mut settings = settings;
+    validate_outputs_directory(&mut settings)?;
     let settings = normalize_advanced_settings(settings);
     let mut config = config_service::read_config()?;
     let autostart_changed = settings.autostart != config.advanced.autostart;
@@ -55,64 +58,16 @@ fn normalize_advanced_settings(mut settings: AdvancedSettings) -> AdvancedSettin
     settings
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn protect_advanced_settings_keeps_existing_allowed_paths() {
-        let mut current = ClgoConfig::default();
-        current.advanced.allowed_paths = vec!["/trusted".to_string()];
-
-        let incoming = AdvancedSettings {
-            allowed_paths: vec!["/attacker".to_string()],
-            ..Default::default()
-        };
-
-        let protected = protect_advanced_settings(incoming, &current);
-        assert_eq!(protected.allowed_paths, vec!["/trusted"]);
-    }
-
-    #[test]
-    fn normalize_clears_start_hidden_when_autostart_is_disabled() {
-        let settings = AdvancedSettings {
-            autostart: false,
-            start_hidden: true,
-            ..Default::default()
-        };
-
-        let normalized = normalize_advanced_settings(settings);
-
-        assert!(!normalized.autostart);
-        assert!(!normalized.start_hidden);
-    }
-
-    #[test]
-    fn normalize_keeps_start_hidden_when_autostart_is_enabled() {
-        let settings = AdvancedSettings {
-            autostart: true,
-            start_hidden: true,
-            ..Default::default()
-        };
-
-        let normalized = normalize_advanced_settings(settings);
-
-        assert!(normalized.autostart);
-        assert!(normalized.start_hidden);
-    }
-
-    #[test]
-    fn normalize_clamps_compression_threshold() {
-        let settings = AdvancedSettings {
-            compression_threshold: 150,
-            ..Default::default()
-        };
-
-        let normalized = normalize_advanced_settings(settings);
-
-        assert_eq!(normalized.compression_threshold, 100);
-    }
+fn validate_outputs_directory(settings: &mut AdvancedSettings) -> Result<(), String> {
+    settings.session_outputs_directory =
+        crate::models::config::normalize_optional_directory(&settings.session_outputs_directory)
+            .ok_or_else(|| "Dossier de sortie invalide.".to_string())?;
+    Ok(())
 }
+
+#[cfg(test)]
+#[path = "config_settings_tests.rs"]
+mod tests;
 
 const PATCH_BLOCKED_KEYS: &[&str] = &["allowed_paths"];
 
@@ -140,6 +95,8 @@ pub fn patch_advanced_settings(
         eprintln!("[config] deserialize: {e}");
         "Erreur de configuration".to_string()
     })?;
+    let mut merged = merged;
+    validate_outputs_directory(&mut merged)?;
     let merged = normalize_advanced_settings(merged);
     let autostart_requested = patch
         .as_object()
