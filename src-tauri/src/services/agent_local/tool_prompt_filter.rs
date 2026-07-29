@@ -1,15 +1,19 @@
-/// Only the chat prompts still carry a tool section that has to disappear wholesale. Agent
-/// prompts describe tool usage in the tool definitions, which are sent only when enabled.
+/// Sections removed as a whole when their tool group is disabled. Line-level filtering is not
+/// enough for these: their bullets do not all name a tool, so removing them one by one would
+/// leave orphans behind.
 const INTERACTIVE_SECTION: &str = "# Interactive choices";
+const SUBAGENT_SECTION: &str = "# Working with subagents";
 
 pub fn filter_system_prompt(content: &str, enabled_tool_names: &[String]) -> String {
     let mut lines = Vec::new();
     let mut skip_section = false;
     let has_interactive = super::tool_catalog::has_tool(enabled_tool_names, "ask_user_choice");
+    let has_subagents = super::tool_catalog::has_tool(enabled_tool_names, "delegate_task");
 
     for line in content.lines() {
         if line.starts_with("# ") {
-            skip_section = !has_interactive && line == INTERACTIVE_SECTION;
+            skip_section = (!has_interactive && line == INTERACTIVE_SECTION)
+                || (!has_subagents && line == SUBAGENT_SECTION);
         }
         if skip_section || should_drop_line(line, enabled_tool_names) {
             continue;
@@ -88,5 +92,24 @@ mod tests {
         assert!(!filtered.contains("todo_write"));
         assert!(!filtered.contains("ask_user_choice"));
         assert!(!filtered.contains("# Interactive choices"));
+    }
+
+    /// The subagent section has bullets that name no tool at all. Line-level filtering would
+    /// keep those and leave a section body without its heading.
+    #[test]
+    fn subagent_section_leaves_no_orphan_bullet_when_delegation_is_off() {
+        let filtered = filter_system_prompt(
+            &format!(
+                "# Rules\nStay careful.\n\n{}\n\n# Style\nBe brief.",
+                super::super::subagent_parent_guidance::PARENT_GUIDANCE
+            ),
+            &["bash".to_string()],
+        );
+
+        assert!(filtered.contains("Stay careful."));
+        assert!(filtered.contains("Be brief."));
+        assert!(!filtered.contains("# Working with subagents"));
+        assert!(!filtered.contains("pending change"));
+        assert!(!filtered.contains("give at most one short progress update"));
     }
 }

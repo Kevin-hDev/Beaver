@@ -1,8 +1,6 @@
 use std::path::Path;
 
-use super::prompt_detailed_sections::{
-    CAPABILITIES, CODE, GIT, SAFETY, STYLE, TOOLS, UNCERTAINTY, WEB_SEARCH,
-};
+use super::prompt_detailed_sections::{CODE, GIT, SAFETY, STYLE, TOOLS, UNCERTAINTY, WEB_SEARCH};
 
 pub fn build_with_behavior(
     working_dir: &Path,
@@ -13,11 +11,13 @@ pub fn build_with_behavior(
     let identity = behavior.unwrap_or(IDENTITY);
     let style = operational_style(behavior.is_some());
     format!(
-        "{identity}\n\n{}\n\n{CAPABILITIES}\n\n{}\n\n{TOOLS}\n\n{}\n\n{CODE}\n\n{GIT}\n\n{SAFETY}\n\n{WEB_SEARCH}\n\n{UNCERTAINTY}\n\n{}\n\n{style}",
+        "{identity}\n\n{}\n\n{}\n\n{SAFETY}\n\n{CODE}\n\n{GIT}\n\n{TOOLS}\n\n{WEB_SEARCH}\n\n{}\n\n{}\n\n{UNCERTAINTY}\n\n{}\n\n{}\n\n{style}",
+        super::prompt_objective::DONE,
         super::prompt_priority::PRIORITY,
-        env_section(working_dir, is_git, git_root),
         super::subagent_parent_guidance::PARENT_GUIDANCE,
+        super::prompt_objective::WORKFLOW,
         super::prompt_external_content::EXTERNAL_CONTENT,
+        env_section(working_dir, is_git, git_root),
     )
 }
 
@@ -36,26 +36,43 @@ You are an autonomous coding agent with full access to the user's system through
 You help users with software engineering tasks: writing code, debugging, managing files, \
 running commands, searching the web, and more.
 You are an agent, not a passive chatbot. You use tools to get things done, \
-and you keep the user informed with short visible updates while you work.
-You are highly capable and allow users to complete ambitious tasks that would otherwise be \
-too complex or take too long.";
+and you keep the user informed with short visible updates while you work.";
 
 #[cfg(test)]
 mod tests {
     use std::path::Path;
 
     /// Every `format!` argument here is a string, so a wrong argument order still compiles.
-    /// This pins the positions instead.
+    /// This pins the positions instead. `# Style` must stay last: `operational_style` truncates
+    /// the prompt at that heading when a custom behavior is set.
     #[test]
-    fn priority_precedes_the_rules_it_arbitrates() {
+    fn sections_follow_the_reference_structure() {
         let prompt = super::build_with_behavior(Path::new("."), false, None, None);
 
-        let priority = prompt.find("# Priority order").expect("priority section");
-        let capabilities = prompt.find("# Capabilities").expect("capabilities section");
-        let safety = prompt.find("# Acting autonomously").expect("safety section");
+        let expected = [
+            "# What done means",
+            "# Priority order",
+            "# Acting autonomously",
+            "# Working with code",
+            "# Working with git",
+            "# Using your tools",
+            "# Web search",
+            "# Working with subagents",
+            "# How you work",
+            "# When you are not sure",
+            "# External content",
+            "# Environment",
+            "# Style",
+        ];
 
-        assert!(priority < capabilities);
-        assert!(priority < safety);
+        let mut previous = 0;
+        for heading in expected {
+            let at = prompt
+                .find(heading)
+                .unwrap_or_else(|| panic!("missing section: {heading}"));
+            assert!(at > previous, "section out of order: {heading}");
+            previous = at;
+        }
     }
 }
 

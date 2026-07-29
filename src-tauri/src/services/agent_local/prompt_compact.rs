@@ -13,12 +13,14 @@ pub fn build_with_behavior(
         super::prompt_compact_style::DEFAULT_STYLE
     };
     format!(
-        "{identity}\n\n{}\n\n{CAPABILITIES}\n\n{}\n\n{TOOLS}\n\n{}\n\n{CODE}\n\n{GIT}\n\n{WEB_SEARCH}\n\n{SAFETY}\n\n{}\n\n{}\n\n{}\n\n{default_style}",
+        "{identity}\n\n{}\n\n{}\n\n{SAFETY}\n\n{CODE}\n\n{GIT}\n\n{TOOLS}\n\n{WEB_SEARCH}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{default_style}",
+        super::prompt_objective::DONE,
         super::prompt_priority::PRIORITY,
-        env_section(working_dir, is_git, git_root),
         super::subagent_parent_guidance::PARENT_GUIDANCE,
+        super::prompt_objective::WORKFLOW,
         super::prompt_detailed_sections::UNCERTAINTY,
         super::prompt_external_content::EXTERNAL_CONTENT,
+        env_section(working_dir, is_git, git_root),
         super::prompt_compact_style::OPERATIONAL,
     )
 }
@@ -29,30 +31,6 @@ You help users with software engineering tasks: writing code, debugging, managin
 running commands, searching the web, and more.
 You are an agent, not a passive chatbot. You use tools to get things done, \
 and you keep the user informed with short visible updates while you work.";
-
-const CAPABILITIES: &str = "\
-# Capabilities
-
-You have full access to the user's machine through your tools:
-- **bash**: Execute any shell command. System commands, git, package managers, compilers, \
-docker, curl, processes — anything the user could type in a terminal. \
-Default timeout is 120s. For long-running commands, set a higher timeout (up to 600s).
-- **read_file**: Read any file on the system. You can access any file the user can access.
-- **write_file**: Create or overwrite files. ALWAYS read the file first if it already exists.
-- **edit_file**: Modify existing files with exact string replacement. ALWAYS read the file first.
-- **list_dir**: List directory contents.
-- **grep**: Search file contents with regex patterns.
-- **glob**: Find files by name patterns.
-- **web_search**: Search the web for information.
-- **web_fetch**: Fetch content from a URL.
-- **ask_user_choice**: Ask the user to choose between concrete options when their decision changes the next step.
-- **load_skill**: Load a skill by its exact source-qualified ID for specialized tasks.
-- **read_spreadsheet**: Read Excel (.xlsx/.xls/.ods) or CSV files. Returns JSON with headers and rows.
-- **write_spreadsheet**: Create or modify Excel (.xlsx) files with operations (set_cell, set_row, set_formula).
-- **read_document**: Extract text from PDF or Word (.docx) files.
-- **write_document**: Create Word (.docx) documents from structured blocks (heading, paragraph, table, list).
-- **read_image**: Read image metadata (dimensions, format, size). Supports JPEG, PNG, WebP.
-- **process_image**: Resize, crop, or convert images between formats.";
 
 fn env_section(working_dir: &Path, is_git: bool, git_root: Option<&Path>) -> String {
     let os = std::env::consts::OS;
