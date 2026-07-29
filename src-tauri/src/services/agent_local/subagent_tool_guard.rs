@@ -119,6 +119,9 @@ fn validate_bash(
     args: &Value,
     working_dir: &Path,
 ) -> Result<(), String> {
+    if let Some(workdir) = args.get("workdir") {
+        validate_path_argument(Some(workdir), working_dir)?;
+    }
     let command = args
         .get("command")
         .and_then(Value::as_str)

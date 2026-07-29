@@ -1,7 +1,6 @@
 use crate::services::agent_local::security;
 use crate::services::agent_local::types_tools::ShellOutput;
-use rand::RngCore;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
@@ -21,7 +20,6 @@ pub async fn execute_shell(
             stderr: reason,
             exit_code: -1,
             timed_out: false,
-            new_cwd: None,
             affected_paths: Vec::new(),
             file_changes: Vec::new(),
         });
@@ -37,11 +35,10 @@ pub async fn execute_shell(
 
     let secs = timeout_secs.unwrap_or(DEFAULT_TIMEOUT).min(MAX_TIMEOUT);
     let (shell, flag) = detect_shell();
-    let marker = generate_cwd_marker();
-    let wrapped = wrap_command_with_cwd(command, &marker);
+    let prepared_command = prepare_command(command);
 
     let child = Command::new(&shell)
-        .args([&flag, &wrapped])
+        .args([&flag, &prepared_command])
         .current_dir(working_dir)
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -53,17 +50,13 @@ pub async fn execute_shell(
 
     match output {
         Ok(Ok(out)) => {
-            let raw_stdout = String::from_utf8_lossy(&out.stdout);
-            let (user_output, new_cwd) = extract_cwd(&raw_stdout, &marker);
-            let stdout = truncate_output(&user_output);
-            let raw_stderr = String::from_utf8_lossy(&out.stderr);
-            let stderr = truncate_output(&strip_marker(&raw_stderr, &marker));
+            let stdout = truncate_output(&String::from_utf8_lossy(&out.stdout));
+            let stderr = truncate_output(&String::from_utf8_lossy(&out.stderr));
             Ok(ShellOutput {
                 stdout,
                 stderr,
                 exit_code: out.status.code().unwrap_or(-1),
                 timed_out: false,
-                new_cwd,
                 affected_paths: Vec::new(),
                 file_changes: Vec::new(),
             })
@@ -75,7 +68,6 @@ pub async fn execute_shell(
             stderr: format!("Timeout après {secs}s"),
             exit_code: -1,
             timed_out: true,
-            new_cwd: None,
             affected_paths: Vec::new(),
             file_changes: Vec::new(),
         })
@@ -98,45 +90,35 @@ fn with_changed_paths(
     output
 }
 
-fn generate_cwd_marker() -> String {
-    let mut bytes = [0u8; 8];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
-    let hex: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
-    format!("<<CWD_MARKER_{hex}>>")
-}
-
-fn wrap_command_with_cwd(command: &str, marker: &str) -> String {
+fn prepare_command(command: &str) -> String {
     if cfg!(target_os = "windows") {
         format!(
-            "{command} ; $clgoStatus = if ($?) {{ 0 }} else {{ 1 }} ; Write-Output '{marker}' ; (Get-Location).Path ; exit $clgoStatus"
+            "{command} ; $clgoStatus = if ($?) {{ 0 }} else {{ 1 }} ; exit $clgoStatus"
         )
     } else {
-        format!("{command}\nclgo_status=$?\necho '{marker}'\npwd -P\nexit $clgo_status")
+        command.to_string()
     }
 }
 
-fn strip_marker(text: &str, marker: &str) -> String {
-    text.replace(marker, "")
-}
-
-fn extract_cwd(raw_stdout: &str, marker: &str) -> (String, Option<String>) {
-    if let Some(idx) = raw_stdout.find(marker) {
-        let user_output = raw_stdout[..idx].trim_end_matches('\n').to_string();
-        let after = raw_stdout[idx + marker.len()..].trim();
-        let new_cwd = if !after.is_empty() {
-            let p = Path::new(after);
-            if p.is_absolute() && p.is_dir() {
-                Some(after.to_string())
-            } else {
-                None
+pub(crate) fn resolve_workdir(
+    requested: Option<&str>,
+    project_root: &Path,
+) -> Result<PathBuf, String> {
+    let candidate = match requested.map(str::trim).filter(|path| !path.is_empty()) {
+        Some(path) => {
+            if path.len() > 4_096 || path.contains('\0') || !Path::new(path).is_absolute() {
+                return Err("Le workdir Bash doit être un chemin absolu valide.".to_string());
             }
-        } else {
-            None
-        };
-        (user_output, new_cwd)
-    } else {
-        (raw_stdout.to_string(), None)
+            PathBuf::from(path)
+        }
+        None => project_root.to_path_buf(),
+    };
+    if !candidate.is_dir() {
+        return Err("Le workdir Bash est inaccessible.".to_string());
     }
+    candidate
+        .canonicalize()
+        .map_err(|_| "Le workdir Bash est inaccessible.".to_string())
 }
 
 pub(super) fn detect_shell() -> (String, String) {

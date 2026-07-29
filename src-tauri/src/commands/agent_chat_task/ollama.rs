@@ -38,7 +38,7 @@ pub(crate) async fn run(
     )
     .await;
     let working_dir = common::resolve_working_dir(&params.working_dir)?;
-    common::update_working_dir(&params.session_id, &working_dir).await;
+    common::update_working_dir(&params.session_id, &working_dir).await?;
     let plan_mode_active =
         resolve_plan_mode(&params).await && tool_catalog::has_plan_tools(&enabled_tool_names);
 

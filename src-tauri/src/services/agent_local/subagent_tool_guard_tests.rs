@@ -60,6 +60,8 @@ fn explorer_bash_rejects_shell_network_mutations_and_escape() {
 #[test]
 fn file_tools_and_coder_bash_stay_in_worktree() {
     let root = tempfile::tempdir().expect("root");
+    let nested = root.path().join("nested");
+    std::fs::create_dir(&nested).expect("nested");
     let inside = root.path().join("inside.txt");
     std::fs::write(&inside, "ok").expect("inside");
     let outside = tempfile::NamedTempFile::new().expect("outside");
@@ -96,6 +98,22 @@ fn file_tools_and_coder_bash_stay_in_worktree() {
         root.path(),
     )
     .is_ok());
+    assert!(subagent_tool_guard::validate_for_profile(
+        SubagentToolProfile::Coder,
+        true,
+        "bash",
+        &json!({"command": "cargo test", "workdir": nested}),
+        root.path(),
+    )
+    .is_ok());
+    assert!(subagent_tool_guard::validate_for_profile(
+        SubagentToolProfile::Coder,
+        true,
+        "bash",
+        &json!({"command": "cargo test", "workdir": outside.path()}),
+        root.path(),
+    )
+    .is_err());
     assert!(subagent_tool_guard::validate_for_profile(
         SubagentToolProfile::Coder,
         true,

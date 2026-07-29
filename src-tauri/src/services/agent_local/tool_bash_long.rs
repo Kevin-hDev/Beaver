@@ -68,7 +68,6 @@ pub async fn execute_background_shell(
                 stderr: super::tool_bash::truncate_output(&stderr),
                 exit_code: status.code().unwrap_or(-1),
                 timed_out: false,
-                new_cwd: None,
                 affected_paths: Vec::new(),
                 file_changes: Vec::new(),
             });
@@ -179,7 +178,6 @@ fn background_started_output(child: Child, mut stdout: String, stderr: String) -
         stderr: super::tool_bash::truncate_output(&stderr),
         exit_code: 0,
         timed_out: false,
-        new_cwd: None,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
     }

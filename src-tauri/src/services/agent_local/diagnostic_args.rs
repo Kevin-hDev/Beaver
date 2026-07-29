@@ -17,6 +17,7 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
             if let Some(command) = args["command"].as_str() {
                 out.insert("command".to_string(), json!(safe_command(command)));
             }
+            add_path(&mut out, "workdir", args, working_dir);
         }
         "grep" => {
             add_text(&mut out, "pattern", args);

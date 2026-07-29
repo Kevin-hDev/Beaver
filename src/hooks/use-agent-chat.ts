@@ -55,7 +55,6 @@ export function useAgentChat(
   const permModeRef = useRef(permissionMode);
   // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable closures
   permModeRef.current = permissionMode;
-  const sessionWorkingDirRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset on session change + fetch→setState are intentional
     setSessionLoading(true);
@@ -80,7 +79,6 @@ export function useAgentChat(
     invoke<AgentSession>("get_agent_session", { id: sessionId })
       .then((session) => {
         if (!alive || sessionRef.current !== sessionId) return;
-        sessionWorkingDirRef.current = session.working_dir;
         applyPlanSession(session);
         const snapshot = getStreamSnapshot(sessionId);
         if (snapshot && snapshot.messages.length >= session.messages.length) {
@@ -151,7 +149,6 @@ export function useAgentChat(
     if (!sessionId) return state.sessionTokenCount;
     const session = await invoke<AgentSession>("get_agent_session", { id: sessionId }).catch(() => null);
     if (session) {
-      sessionWorkingDirRef.current = session.working_dir || sessionWorkingDirRef.current;
       const sessionTokenCount = resolveSessionTokenCount(session);
       setState((s) => ({ ...s, sessionTokenCount, sessionTokenCountEstimated: true }));
       return sessionTokenCount;
@@ -166,7 +163,7 @@ export function useAgentChat(
     await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: null }).catch(() => showToast(i18n.t("errors.sessionSaveFailed"), "error"));
     const freshTokenCount = await syncTokenCount();
     const msgs = state.messages.slice(0, idx + 1);
-    await doStream(msgs, msgs, sessionId, sessionWorkingDirRef.current, freshTokenCount, permModeRef.current);
+    await doStream(msgs, msgs, sessionId, undefined, freshTokenCount, permModeRef.current);
   }, [sessionId, state.messages, doStream, syncTokenCount]);
 
   const edit = useCallback(async (messageId: string, newContent: string) => {
@@ -177,7 +174,7 @@ export function useAgentChat(
     await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: newMsg }).catch(() => showToast(i18n.t("errors.sessionSaveFailed"), "error"));
     const freshTokenCount = await syncTokenCount();
     const msgs = [...state.messages.slice(0, idx), newMsg];
-    await doStream(msgs, msgs, sessionId, sessionWorkingDirRef.current, freshTokenCount, permModeRef.current);
+    await doStream(msgs, msgs, sessionId, undefined, freshTokenCount, permModeRef.current);
   }, [sessionId, state.messages, doStream, syncTokenCount]);
 
   const stop = useCallback(async () => {

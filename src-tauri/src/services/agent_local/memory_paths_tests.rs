@@ -47,11 +47,29 @@ async fn only_global_and_active_project_are_accessible() {
 async fn traversal_is_rejected() {
     let root = tempfile::tempdir().unwrap();
     let layout = MemoryLayout::at(root.path().join("memory"));
+    let path = layout.root().join("global/../global/MEMORY.md");
 
     assert!(layout
-        .scope_for_tool_path("../memory/global/MEMORY.md", root.path())
+        .scope_for_tool_path(path.to_str().unwrap(), root.path())
         .await
         .is_err());
+}
+
+#[tokio::test]
+async fn normal_project_paths_bypass_memory_validation() {
+    let root = tempfile::tempdir().unwrap();
+    let layout = MemoryLayout::at(root.path().join("memory"));
+
+    assert!(layout
+        .scope_for_tool_path(".", root.path())
+        .await
+        .unwrap()
+        .is_none());
+    assert!(layout
+        .scope_for_tool_path("./src", root.path())
+        .await
+        .unwrap()
+        .is_none());
 }
 
 #[cfg(unix)]

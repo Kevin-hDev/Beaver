@@ -68,8 +68,10 @@ pub(crate) fn resolve_working_dir(working_dir: &Option<String>) -> Result<PathBu
     Ok(dirs::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap()))
 }
 
-pub(crate) async fn update_working_dir(session_id: &str, working_dir: &Path) {
-    let _ = session_store::update_working_dir(session_id, &working_dir.to_string_lossy()).await;
+pub(crate) async fn update_working_dir(session_id: &str, working_dir: &Path) -> Result<(), String> {
+    session_store::update_working_dir(session_id, &working_dir.to_string_lossy())
+        .await
+        .map_err(|_| "Impossible d'enregistrer le dossier de travail.".to_string())
 }
 
 pub(crate) async fn collect_git_snapshot(working_dir: &Path) -> GitSnapshot {

@@ -77,6 +77,9 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
 }
 
 #[cfg(test)]
+#[path = "tool_validate_bash_tests.rs"]
+mod bash_tests;
+#[cfg(test)]
 #[path = "tool_validate_tests.rs"]
 mod tests;
 #[cfg(test)]

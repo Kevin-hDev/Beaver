@@ -10,7 +10,11 @@ pub(super) enum Ty {
 
 pub(super) type Schema = &'static [(&'static str, Ty, bool)];
 
-static BASH: Schema = &[("command", Ty::Str, true), ("timeout", Ty::Int, false)];
+static BASH: Schema = &[
+    ("command", Ty::Str, true),
+    ("timeout", Ty::Int, false),
+    ("workdir", Ty::Str, false),
+];
 static READ_FILE: Schema = &[
     ("path", Ty::Str, true),
     ("offset", Ty::Int, false),

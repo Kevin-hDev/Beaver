@@ -50,6 +50,21 @@ fn runtime_authorization_replaces_the_general_prompt_only_for_memory_writes() {
 }
 
 #[tokio::test]
+async fn list_current_project_directory_is_not_intercepted_as_memory() {
+    let dir = tempfile::tempdir().unwrap();
+    let layout = MemoryLayout::at(dir.path().join("memory"));
+    let session = uuid::Uuid::new_v4().to_string();
+
+    for tool_name in ["list_dir", "glob"] {
+        let args = serde_json::json!({"path": ".", "pattern": "**/*"});
+        let result =
+            dispatch_with_layout(tool_name, &args, dir.path(), &session, ".", &layout).await;
+
+        assert!(result.is_none(), "{tool_name} was intercepted");
+    }
+}
+
+#[tokio::test]
 async fn manual_mode_blocks_a_write_without_an_explicit_request() {
     let dir = tempfile::tempdir().unwrap();
     let layout = MemoryLayout::at(dir.path().join("memory"));

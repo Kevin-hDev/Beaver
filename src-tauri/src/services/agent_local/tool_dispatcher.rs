@@ -24,28 +24,19 @@ pub(super) async fn dispatch_inner(
         "bash" => {
             let cmd = args["command"].as_str().unwrap_or("");
             let timeout = args["timeout"].as_u64();
+            let execution_dir =
+                match tool_bash::resolve_workdir(args["workdir"].as_str(), working_dir) {
+                    Ok(path) => path,
+                    Err(error) => return ToolResult::err(error),
+                };
             let execution = match profile {
                 Some(super::subagent_tool_profile::SubagentToolProfile::Explorer) => {
-                    super::subagent_explorer_bash::execute(cmd, working_dir, timeout).await
+                    super::subagent_explorer_bash::execute(cmd, &execution_dir, timeout).await
                 }
-                _ => tool_bash::execute_shell(cmd, working_dir, timeout).await,
+                _ => tool_bash::execute_shell(cmd, &execution_dir, timeout).await,
             };
             match execution {
                 Ok(out) => {
-                    if let Some(ref cwd) = out.new_cwd {
-                        if crate::services::agent_local::session_store::update_working_dir(
-                            session_id, cwd,
-                        )
-                        .await
-                        .is_err()
-                        {
-                            return ToolResult::err(
-                                "Commande exécutée, mais changement de dossier impossible.",
-                            )
-                            .with_affected_paths(out.affected_paths)
-                            .with_file_changes(out.file_changes);
-                        }
-                    }
                     let content = format!("{}\n{}", out.stdout, out.stderr).trim().to_string();
                     let result = if out.exit_code != 0 {
                         ToolResult::err(content)

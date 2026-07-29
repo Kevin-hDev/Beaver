@@ -7,7 +7,8 @@ pub fn core_tool_definitions() -> Vec<Value> {
         tool_def(
             "bash",
             "Execute a shell command on the user's machine. \
-             Shell: $SHELL -c (Unix) or PowerShell (Windows). Commands run in the working directory. \
+             Shell: $SHELL -c (Unix) or PowerShell (Windows). Commands start in the project working directory. \
+             Set workdir to an absolute directory only when the command intentionally needs another location. \
              IMPORTANT — prefer dedicated tools, they give the user a better experience and are easier to approve: \
              find files with glob (not find); search contents with grep (not grep/rg); \
              read a file with read_file (not cat/head/tail); edit a file with edit_file (not sed/awk); \
@@ -22,13 +23,13 @@ pub fn core_tool_definitions() -> Vec<Value> {
              The tool returns once a 'ready' marker is seen (localhost:, listening, compiled successfully) or after up to 30s. The process keeps running; do not block on it. \
              Timeout: default 120s, max 600s. For long builds/tests pass an explicit timeout. \
              Output is truncated to 2000 lines / 50KB. \
-             Note: the working directory does NOT persist across bash calls — each call starts from the session working directory. \
-             Use absolute paths or `cd X && cmd` in a single call.",
+             Directory changes never persist across bash calls. Each call starts from the project working directory unless workdir is set for that call.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
                     "command": {"type": "string", "description": "Shell command to execute"},
-                    "timeout": {"type": "integer", "description": "Timeout in seconds (default: 120, max: 600)"}
+                    "timeout": {"type": "integer", "description": "Timeout in seconds (default: 120, max: 600)"},
+                    "workdir": {"type": "string", "description": "Optional absolute working directory for this call only"}
                 },
                 "required": ["command"]
             }),

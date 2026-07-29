@@ -122,8 +122,6 @@ pub struct ShellOutput {
     pub stderr: String,
     pub exit_code: i32,
     pub timed_out: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub new_cwd: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub affected_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

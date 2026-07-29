@@ -26,6 +26,15 @@ pub async fn scope_for_tool_path(
     raw_path: &str,
     working_dir: &Path,
 ) -> Result<Option<MemoryScope>, String> {
+    let path = Path::new(raw_path);
+    let unresolved = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        working_dir.join(path)
+    };
+    if !unresolved.starts_with(layout.root()) {
+        return Ok(None);
+    }
     let candidate = lexical_path(raw_path, working_dir)?;
     let global = layout.global_scope();
     if candidate.starts_with(&global.root) {
