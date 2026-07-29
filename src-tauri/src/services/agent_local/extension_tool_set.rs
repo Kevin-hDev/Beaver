@@ -1,11 +1,11 @@
 use serde_json::Value;
+use std::collections::HashSet;
 
 use super::extension_session_state::DiscoveryEpoch;
-use super::extension_tool_selection::{
-    decide, SelectionPolicy,
-};
+use super::extension_tool_selection::decide_for_catalog;
 use super::extension_tool_set_apply::{
-    active_definitions, append_capacity_notice, definition_name, plugin_descriptors,
+    active_definitions, append_capacity_notice, base_tool_count, definition_name,
+    plugin_descriptors,
 };
 
 pub struct PrepareContext<'a> {
@@ -23,7 +23,11 @@ pub struct ExtensionToolSet {
     masked: bool,
     provider_tool_limit: usize,
     plugin_tool_capacity: usize,
-    omitted_plugin_ids: Vec<String>,
+    plugin_descriptors: Vec<super::extension_tool_selection::PluginDescriptor>,
+    active_plugin_ids: Vec<String>,
+    pub(super) omitted_plugin_ids: Vec<String>,
+    pub(super) omitted_tool_names: Vec<String>,
+    pub(super) additional_omitted_tools: usize,
 }
 
 impl ExtensionToolSet {
@@ -35,26 +39,24 @@ impl ExtensionToolSet {
             masked: false,
             provider_tool_limit: usize::MAX,
             plugin_tool_capacity: 0,
+            plugin_descriptors: Vec::new(),
+            active_plugin_ids: Vec::new(),
             omitted_plugin_ids: Vec::new(),
+            omitted_tool_names: Vec::new(),
+            additional_omitted_tools: 0,
         }
     }
 
     pub async fn prepare(tools: Vec<Value>, context: PrepareContext<'_>) -> Result<Self, String> {
-        let plugin_definitions = tools
-            .iter()
-            .filter(|tool| {
-                definition_name(tool).is_some_and(crate::services::extensions::is_dynamic_tool)
-            })
-            .cloned()
-            .collect::<Vec<_>>();
+        let descriptors = plugin_descriptors(&tools);
         let computed_mask = super::extension_tool_mask::should_mask(
             &crate::services::extensions::extension_tool_definitions(),
             context.context_window,
         );
         let provider_limit =
             super::provider_tool_limits::for_request(context.provider, context.model);
-        let core_count = tools.len().saturating_sub(plugin_definitions.len());
-        let plugin_tool_capacity = provider_limit.saturating_sub(core_count.min(provider_limit));
+        let plugin_tool_capacity =
+            provider_limit.saturating_sub(base_tool_count(&tools).min(provider_limit));
         let catalog = crate::services::extensions::catalog_snapshot();
         let state = super::extension_session_state::configure(
             context.session_id,
@@ -67,6 +69,8 @@ impl ExtensionToolSet {
             },
             computed_mask,
             plugin_tool_capacity,
+            descriptors.clone(),
+            context.preserve_dynamic_tools,
         )
         .await?;
         let masked = state.epoch.as_ref().is_some_and(|epoch| epoch.masked)
@@ -78,7 +82,11 @@ impl ExtensionToolSet {
             masked,
             provider_tool_limit: provider_limit,
             plugin_tool_capacity,
+            plugin_descriptors: descriptors,
+            active_plugin_ids: Vec::new(),
             omitted_plugin_ids: Vec::new(),
+            omitted_tool_names: Vec::new(),
+            additional_omitted_tools: 0,
         };
         result.apply(&state.discovered_plugin_ids);
         Ok(result)
@@ -92,10 +100,18 @@ impl ExtensionToolSet {
         if !self.managed {
             return Vec::new();
         }
-        self.active
+        let active = self
+            .active_plugin_ids
+            .iter()
+            .map(String::as_str)
+            .collect::<HashSet<_>>();
+        self.all
             .iter()
             .filter_map(definition_name)
-            .filter(|name| crate::services::extensions::is_dynamic_tool(name))
+            .filter(|name| {
+                crate::services::extensions::plugin_id_for_tool(name)
+                    .is_some_and(|plugin_id| active.contains(plugin_id.as_str()))
+            })
             .map(str::to_string)
             .collect()
     }
@@ -114,55 +130,29 @@ impl ExtensionToolSet {
             return;
         }
         let catalog = crate::services::extensions::catalog_snapshot();
-        let plugins = plugin_descriptors(&self.all);
-        let decision = decide(
-            &plugins,
-            SelectionPolicy {
-                masked: self.masked,
-                tool_capacity: self.plugin_tool_capacity,
-                ordered_plugin_ids: &catalog.ordered_plugin_ids,
-                protected_plugin_ids: &catalog.protected_plugin_ids,
-                essential_plugin_ids: &catalog.essential_plugin_ids,
-                discovered_plugin_ids,
-            },
+        let decision = decide_for_catalog(
+            &self.plugin_descriptors,
+            &catalog,
+            self.masked,
+            self.plugin_tool_capacity,
+            discovered_plugin_ids,
         );
-        self.active = active_definitions(&self.all, &decision, self.provider_tool_limit);
+        self.active_plugin_ids = decision.active_plugin_ids.clone();
+        let active = active_definitions(&self.all, &decision, self.provider_tool_limit);
+        self.active = active.tools;
         self.omitted_plugin_ids = decision.omitted_plugin_ids;
-        append_capacity_notice(&mut self.active, &self.omitted_plugin_ids);
+        self.omitted_tool_names = active.omitted_tool_names;
+        self.additional_omitted_tools = active.additional_omitted_tools;
+        append_capacity_notice(
+            &mut self.active,
+            &self.omitted_plugin_ids,
+            &self.omitted_tool_names,
+            self.additional_omitted_tools,
+        );
     }
 }
 
-pub async fn record_selection(
-    tools: &ExtensionToolSet,
-    session_id: &str,
-    request_id: &str,
-    phase: &str,
-) {
-    let names = tools.selected_extension_names();
-    if !names.is_empty() {
-        super::stream_diagnostics::record_extension_tools(session_id, request_id, phase, &names)
-            .await;
-    }
-    if !tools.omitted_plugin_ids.is_empty() {
-        super::stream_diagnostics::record_extension_tools(
-            session_id,
-            request_id,
-            "extension_plugins_omitted",
-            &tools.omitted_plugin_ids,
-        )
-        .await;
-    }
-}
-
-pub async fn refresh_and_record(
-    tools: &mut ExtensionToolSet,
-    session_id: &str,
-    request_id: &str,
-) -> Result<(), String> {
-    tools.refresh_from_session(session_id).await?;
-    record_selection(tools, session_id, request_id, "extension_tools_refreshed").await;
-    Ok(())
-}
+pub use super::extension_tool_set_diagnostics::{record_selection, refresh_and_record};
 
 #[cfg(test)]
 #[path = "extension_tool_set_tests.rs"]

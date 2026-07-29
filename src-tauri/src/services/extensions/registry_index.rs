@@ -1,6 +1,6 @@
 use super::discovery_catalog::CatalogSnapshot;
 use super::types::{ExtensionKind, ExtensionRecord, ExtensionTool};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::sync::{LazyLock, RwLock};
 
 #[derive(Clone)]
@@ -63,20 +63,14 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         .filter(|indexed| indexed.tool.replaces_core)
         .map(|indexed| indexed.tool.name.clone())
         .collect();
-    let next_catalog = super::discovery_catalog::build(
-        &plugins,
-        &preferences.protected_plugin_ids,
-        &super::discovery_usage::scores()?,
-    );
+    let scores = usage_scores();
+    let next_catalog =
+        super::discovery_catalog::build(&plugins, &preferences.protected_plugin_ids, &scores);
     let previous_catalog = INDEX
         .read()
         .map(|index| index.catalog.clone())
         .unwrap_or_default();
-    let catalog = if previous_catalog.version == next_catalog.version {
-        previous_catalog
-    } else {
-        next_catalog
-    };
+    let catalog = stable_catalog(previous_catalog, next_catalog);
     let mut index = INDEX
         .write()
         .map_err(|_| "Index d'extensions indisponible.".to_string())?;
@@ -88,6 +82,27 @@ pub fn rebuild(records: &[ExtensionRecord]) -> Result<(), String> {
         catalog,
     };
     Ok(())
+}
+
+fn usage_scores() -> BTreeMap<String, f64> {
+    usage_scores_with(super::discovery_usage::scores)
+}
+
+fn usage_scores_with(
+    load: impl FnOnce() -> Result<BTreeMap<String, f64>, String>,
+) -> BTreeMap<String, f64> {
+    load().unwrap_or_else(|_| {
+        eprintln!("[extensions] usage scores unavailable");
+        BTreeMap::new()
+    })
+}
+
+fn stable_catalog(previous: CatalogSnapshot, next: CatalogSnapshot) -> CatalogSnapshot {
+    if previous.version == next.version {
+        previous
+    } else {
+        next
+    }
 }
 
 pub fn dynamic_tools() -> Vec<ExtensionTool> {
@@ -157,3 +172,7 @@ pub fn dynamic_tool(tool_name: &str) -> Option<ExtensionTool> {
             .map(|indexed| indexed.tool.clone())
     })
 }
+
+#[cfg(test)]
+#[path = "registry_index_tests.rs"]
+mod tests;

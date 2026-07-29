@@ -1,16 +1,18 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct PluginDescriptor {
     pub id: String,
     pub tool_count: usize,
-    pub replaces_core: bool,
+    pub definition_count: usize,
 }
 
 pub struct SelectionPolicy<'a> {
     pub masked: bool,
     pub tool_capacity: usize,
     pub ordered_plugin_ids: &'a [String],
+    pub capacity_plugin_ids: &'a [String],
     pub protected_plugin_ids: &'a [String],
     pub essential_plugin_ids: &'a [String],
     pub discovered_plugin_ids: &'a [String],
@@ -22,26 +24,50 @@ pub struct CapacityDecision {
     pub omitted_plugin_ids: Vec<String>,
 }
 
+pub fn decide_for_catalog(
+    plugins: &[PluginDescriptor],
+    catalog: &crate::services::extensions::CatalogSnapshot,
+    masked: bool,
+    tool_capacity: usize,
+    discovered_plugin_ids: &[String],
+) -> CapacityDecision {
+    decide(
+        plugins,
+        SelectionPolicy {
+            masked,
+            tool_capacity,
+            ordered_plugin_ids: &catalog.ordered_plugin_ids,
+            capacity_plugin_ids: &catalog.capacity_plugin_ids,
+            protected_plugin_ids: &catalog.protected_plugin_ids,
+            essential_plugin_ids: &catalog.essential_plugin_ids,
+            discovered_plugin_ids,
+        },
+    )
+}
+
 pub fn decide(plugins: &[PluginDescriptor], policy: SelectionPolicy<'_>) -> CapacityDecision {
-    let known = plugins.iter().map(|plugin| plugin.id.as_str()).collect::<HashSet<_>>();
-    let replacements = policy
-        .ordered_plugin_ids
+    let known = plugins
         .iter()
-        .filter(|id| {
-            plugins
-                .iter()
-                .any(|plugin| &plugin.id == *id && plugin.replaces_core)
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+        .map(|plugin| plugin.id.as_str())
+        .collect::<HashSet<_>>();
+    let capacity_overflow = plugins
+        .iter()
+        .map(|plugin| plugin.tool_count)
+        .sum::<usize>()
+        > policy.tool_capacity;
+    let remaining_order = if capacity_overflow {
+        policy.capacity_plugin_ids
+    } else {
+        policy.ordered_plugin_ids
+    };
     let mut desired = Vec::with_capacity(known.len());
     let mut seen = HashSet::with_capacity(known.len());
-    for id in replacements
+    for id in policy
+        .protected_plugin_ids
         .iter()
-        .chain(policy.protected_plugin_ids)
         .chain(policy.essential_plugin_ids)
         .chain(policy.discovered_plugin_ids)
-        .chain((!policy.masked).then_some(policy.ordered_plugin_ids).into_iter().flatten())
+        .chain((!policy.masked).then_some(remaining_order).into_iter().flatten())
     {
         if known.contains(id.as_str()) && seen.insert(id.as_str()) {
             desired.push(id.clone());

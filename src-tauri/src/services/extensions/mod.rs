@@ -69,6 +69,7 @@ pub use runtime::{restart, status, stop};
 pub use runtime_dispatch::{dispatch_tool, emit_event};
 pub use startup::initialize_on_startup;
 pub(crate) use tool_bridge::definitions as extension_tool_definitions;
+pub(crate) use tool_bridge::{core_fallback, without_core_fallback};
 pub use tool_bridge::{merge_definitions as merge_tool_definitions, validate_arguments};
 
 pub fn discovery_preferences() -> Result<DiscoveryPreferences, String> {
@@ -79,8 +80,8 @@ pub fn set_discovery_preferences(plugin_ids: Vec<String>) -> Result<DiscoveryPre
     discovery_preferences::set(plugin_ids)
 }
 
-pub(crate) fn record_tool_usage(tool_name: &str) -> Result<(), String> {
-    discovery_usage::record_tool(tool_name)
+pub(crate) fn record_tool_invocation(tool_name: &str) -> Result<(), String> {
+    discovery_usage::record_invocation(tool_name)
 }
 
 pub(crate) const MAX_DISCOVERED_PLUGINS: usize = types::MAX_EXTENSIONS;

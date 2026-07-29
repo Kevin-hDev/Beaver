@@ -43,7 +43,7 @@ pub fn scores() -> Result<BTreeMap<String, f64>, String> {
         .collect())
 }
 
-pub fn record_tool(tool_name: &str) -> Result<(), String> {
+pub fn record_invocation(tool_name: &str) -> Result<(), String> {
     let Some(plugin_id) = super::registry_index::plugin_id_for_tool(tool_name) else {
         return Ok(());
     };

@@ -35,14 +35,20 @@ fn apply_with(
             extensions_blocked,
         };
     }
-    tools.retain(|tool| {
-        tool.pointer("/function/name")
-            .and_then(Value::as_str)
-            .is_some_and(|name| {
-                name != crate::services::extensions::SEARCH_TOOL_NAME
-                    && keep_tool(provider_id, model, is_extension(name))
-            })
-    });
+    tools = tools
+        .into_iter()
+        .filter_map(|tool| {
+            let name = tool.pointer("/function/name").and_then(Value::as_str)?;
+            if name == crate::services::extensions::SEARCH_TOOL_NAME {
+                return None;
+            }
+            if keep_tool(provider_id, model, is_extension(name)) {
+                Some(tool)
+            } else {
+                crate::services::extensions::core_fallback(&tool).cloned()
+            }
+        })
+        .collect();
     ToolPolicy {
         extensions_blocked,
         tools,
@@ -119,5 +125,20 @@ mod tests {
         let policy = apply_with("groq", "groq/compound", tools, |_| false);
 
         assert!(policy.tools.is_empty());
+    }
+
+    #[test]
+    fn groq_restores_native_tools_hidden_by_plugin_replacements() {
+        let tools = vec![serde_json::json!({
+            "_beaverCoreFallback": {
+                "function": {"name": "read_file", "description": "native"}
+            },
+            "function": {"name": "read_file", "description": "plugin"}
+        })];
+
+        let policy = apply_with("groq", "llama-3.3-70b-versatile", tools, |_| true);
+
+        assert_eq!(policy.tools.len(), 1);
+        assert_eq!(policy.tools[0]["function"]["description"], "native");
     }
 }

@@ -28,6 +28,8 @@ fn sanitize_bounds_and_deduplicates_discoveries() {
         ],
         epoch: None,
         plugin_tool_capacity: usize::MAX,
+        plugin_descriptors: Vec::new(),
+        active_plugin_ids: Vec::new(),
     };
 
     sanitize(&mut state);
@@ -47,6 +49,8 @@ fn sanitize_never_tracks_more_than_the_extension_limit() {
             .collect(),
         epoch: None,
         plugin_tool_capacity: 0,
+        plugin_descriptors: Vec::new(),
+        active_plugin_ids: Vec::new(),
     };
 
     sanitize(&mut state);
@@ -68,4 +72,39 @@ fn invalid_epoch_metadata_is_rejected() {
     };
 
     assert!(invalid_epoch(&epoch));
+}
+
+#[test]
+fn sanitize_bounds_the_shared_plugin_descriptors() {
+    let mut state = ExtensionSessionState {
+        plugin_descriptors: vec![
+            PluginDescriptor {
+                id: "example.valid".to_string(),
+                tool_count: 2,
+                definition_count: 2,
+            },
+            PluginDescriptor {
+                id: "bad id".to_string(),
+                tool_count: 1,
+                definition_count: 1,
+            },
+            PluginDescriptor {
+                id: "example.valid".to_string(),
+                tool_count: 3,
+                definition_count: 3,
+            },
+        ],
+        ..ExtensionSessionState::default()
+    };
+
+    sanitize(&mut state);
+
+    assert_eq!(
+        state.plugin_descriptors,
+        vec![PluginDescriptor {
+            id: "example.valid".to_string(),
+            tool_count: 2,
+            definition_count: 2,
+        }]
+    );
 }

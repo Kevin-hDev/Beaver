@@ -1944,7 +1944,7 @@
     },
     "discovery": {
       "title": "Priorisierte Plugins",
-      "count": "{{count}}/15",
+      "count": "{{count}}/{{max}}",
       "description": "Halte die Werkzeuge dieser Plugins zuerst verfügbar, wenn Beaver eine Anfrage verkleinern muss.",
       "empty": "Keine priorisierten Plugins. Beaver lädt andere Plugins bei Bedarf.",
       "add": "Hinzufügen",

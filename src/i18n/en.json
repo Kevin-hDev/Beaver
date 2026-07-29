@@ -1277,7 +1277,7 @@
     },
     "discovery": {
       "title": "Priority plugins",
-      "count": "{{count}}/15",
+      "count": "{{count}}/{{max}}",
       "description": "Keep these plugins’ tools available first when Beaver needs to reduce a request.",
       "empty": "No priority plugin. Beaver will load other plugins on demand.",
       "add": "Add",

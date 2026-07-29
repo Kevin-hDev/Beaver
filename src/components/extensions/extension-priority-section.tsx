@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaretDown, CaretRight, Plus } from "@/components/ui/icons";
+import { MAX_PROTECTED_PLUGINS } from "@/lib/extension-discovery";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionPriorityDialog } from "./extension-priority-dialog";
@@ -44,7 +45,12 @@ export function ExtensionPrioritySection({
           ? <CaretDown size="var(--icon-xs)" />
           : <CaretRight size="var(--icon-xs)" />}
         <span>{t("extensions.discovery.title")}</span>
-        <small>{t("extensions.discovery.count", { count: selected.length })}</small>
+        <small>
+          {t("extensions.discovery.count", {
+            count: selected.length,
+            max: MAX_PROTECTED_PLUGINS,
+          })}
+        </small>
       </button>
       {open && (
         <div className="extpr-content">

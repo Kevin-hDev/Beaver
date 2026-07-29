@@ -1944,7 +1944,7 @@
     },
     "discovery": {
       "title": "优先插件",
-      "count": "{{count}}/15",
+      "count": "{{count}}/{{max}}",
       "description": "当 Beaver 需要缩减请求时，优先保留这些插件的工具。",
       "empty": "尚未设置优先插件。Beaver 会按需加载其他插件。",
       "add": "添加",

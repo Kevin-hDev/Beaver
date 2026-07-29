@@ -1325,7 +1325,7 @@
     },
     "discovery": {
       "title": "Plugins prioritaires",
-      "count": "{{count}}/15",
+      "count": "{{count}}/{{max}}",
       "description": "Gardez les outils de ces plugins disponibles en priorité lorsque Beaver doit alléger une requête.",
       "empty": "Aucun plugin prioritaire. Beaver chargera les autres plugins à la demande.",
       "add": "Ajouter",

@@ -2,7 +2,7 @@ use serde_json::Value;
 
 use super::extension_session_state::ExtensionSessionState;
 use super::extension_tool_selection::{
-    decide, PluginDescriptor, SelectionPolicy,
+    decide_for_catalog, PluginDescriptor,
 };
 use super::types_tools::ToolResult;
 
@@ -12,6 +12,8 @@ enum DiscoveryStatus {
     AlreadyAvailable,
     NoTools,
     ProviderLimit,
+    DiscoveryLimit,
+    Unavailable,
 }
 
 struct DiscoveryLine {
@@ -52,28 +54,45 @@ fn discover_matches(
         .as_ref()
         .ok_or_else(|| "État de découverte absent.".to_string())?
         .masked;
-    let plugins = descriptors();
+    let plugins = state.plugin_descriptors.clone();
     let catalog = crate::services::extensions::catalog_snapshot();
     let mut discovered = state.discovered_plugin_ids.clone();
     let mut lines = Vec::with_capacity(matches.len());
     for candidate in matches {
         let current = selection(&plugins, &catalog, masked, state.plugin_tool_capacity, &discovered);
-        let tool_count = plugins
+        let descriptor = plugins
             .iter()
-            .find(|plugin| plugin.id == candidate.extension_id)
-            .map(|plugin| plugin.tool_count)
-            .unwrap_or_default();
+            .find(|plugin| plugin.id == candidate.extension_id);
+        let Some(descriptor) = descriptor else {
+            lines.push(DiscoveryLine {
+                plugin_name: candidate.extension_name.clone(),
+                status: DiscoveryStatus::Unavailable,
+            });
+            continue;
+        };
         let status = if let Some(status) = existing_status(
-            tool_count,
+            descriptor.definition_count,
             current.active_plugin_ids.contains(&candidate.extension_id),
         ) {
-            if status == DiscoveryStatus::NoTools {
-                push_unique(&mut discovered, &candidate.extension_id);
+            if status == DiscoveryStatus::NoTools
+                && !push_unique(&mut discovered, &candidate.extension_id)
+            {
+                lines.push(DiscoveryLine {
+                    plugin_name: candidate.extension_name.clone(),
+                    status: DiscoveryStatus::DiscoveryLimit,
+                });
+                continue;
             }
             status
         } else {
             let mut proposed = discovered.clone();
-            push_unique(&mut proposed, &candidate.extension_id);
+            if !push_unique(&mut proposed, &candidate.extension_id) {
+                lines.push(DiscoveryLine {
+                    plugin_name: candidate.extension_name.clone(),
+                    status: DiscoveryStatus::DiscoveryLimit,
+                });
+                continue;
+            }
             let next = selection(
                 &plugins,
                 &catalog,
@@ -93,6 +112,14 @@ fn discover_matches(
             status,
         });
     }
+    state.active_plugin_ids = selection(
+        &plugins,
+        &catalog,
+        masked,
+        state.plugin_tool_capacity,
+        &discovered,
+    )
+    .active_plugin_ids;
     state.discovered_plugin_ids = discovered;
     Ok(lines)
 }
@@ -114,36 +141,24 @@ fn selection(
     tool_capacity: usize,
     discovered_plugin_ids: &[String],
 ) -> super::extension_tool_selection::CapacityDecision {
-    decide(
+    decide_for_catalog(
         plugins,
-        SelectionPolicy {
-            masked,
-            tool_capacity,
-            ordered_plugin_ids: &catalog.ordered_plugin_ids,
-            protected_plugin_ids: &catalog.protected_plugin_ids,
-            essential_plugin_ids: &catalog.essential_plugin_ids,
-            discovered_plugin_ids,
-        },
+        catalog,
+        masked,
+        tool_capacity,
+        discovered_plugin_ids,
     )
 }
 
-fn descriptors() -> Vec<PluginDescriptor> {
-    crate::services::extensions::indexed_plugins()
-        .into_iter()
-        .map(|plugin| PluginDescriptor {
-            id: plugin.id,
-            tool_count: plugin.tools.len(),
-            replaces_core: plugin.tools.iter().any(|tool| tool.replaces_core),
-        })
-        .collect()
-}
-
-fn push_unique(values: &mut Vec<String>, value: &str) {
-    if values.len() < crate::services::extensions::MAX_DISCOVERED_PLUGINS
-        && !values.iter().any(|current| current == value)
-    {
-        values.push(value.to_string());
+fn push_unique(values: &mut Vec<String>, value: &str) -> bool {
+    if values.iter().any(|current| current == value) {
+        return true;
     }
+    if values.len() >= crate::services::extensions::MAX_DISCOVERED_PLUGINS {
+        return false;
+    }
+    values.push(value.to_string());
+    true
 }
 
 fn render(lines: Vec<DiscoveryLine>) -> String {
@@ -162,6 +177,14 @@ fn render(lines: Vec<DiscoveryLine>) -> String {
             ),
             DiscoveryStatus::ProviderLimit => format!(
                 "- {} : non chargé, car le plafond d'outils du fournisseur serait dépassé.",
+                line.plugin_name
+            ),
+            DiscoveryStatus::DiscoveryLimit => format!(
+                "- {} : non chargé, car la limite de plugins découverts pour cette session est atteinte.",
+                line.plugin_name
+            ),
+            DiscoveryStatus::Unavailable => format!(
+                "- {} : outils indisponibles dans cette requête.",
                 line.plugin_name
             ),
         })

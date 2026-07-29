@@ -2,10 +2,14 @@ use serde_json::{json, Value};
 
 pub fn extension_discovery_definition() -> Value {
     let catalog = crate::services::extensions::catalog_snapshot();
-    let catalog_section = if catalog.text.is_empty() {
+    extension_discovery_definition_with(&catalog.text)
+}
+
+fn extension_discovery_definition_with(catalog: &str) -> Value {
+    let catalog_section = if catalog.is_empty() {
         String::new()
     } else {
-        format!("\n\nEnabled plugin catalog:\n{}", catalog.text)
+        format!("\n\nEnabled plugin catalog:\n{catalog}")
     };
     let description = format!(
         "Find a capability among enabled Beaver plugins when its typed tools are not currently \
@@ -39,15 +43,21 @@ mod tests {
 
     #[test]
     fn absent_catalog_keeps_the_locked_search_contract_without_phantom_entries() {
-        if crate::services::extensions::catalog_snapshot()
-            .ordered_plugin_ids
-            .is_empty()
-        {
-            let definition = extension_discovery_definition();
-            assert!(!definition["function"]["description"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("\n- "));
-        }
+        let definition = extension_discovery_definition_with("");
+
+        assert!(!definition["function"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("\n- "));
+    }
+
+    #[test]
+    fn supplied_catalog_is_always_embedded() {
+        let definition = extension_discovery_definition_with("- Documents : Create files");
+
+        assert!(definition["function"]["description"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("- Documents : Create files"));
     }
 }

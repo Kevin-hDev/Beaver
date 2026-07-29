@@ -99,3 +99,24 @@ fn fingerprint_changes_with_tool_selection_metadata() {
         build(&second, &[], &BTreeMap::new()).version
     );
 }
+
+#[test]
+fn scores_rank_capacity_without_changing_catalog_text_or_version() {
+    let plugins = vec![
+        plugin("example.alpha", "Alpha", None, false),
+        plugin("example.frequent", "Frequent", None, false),
+    ];
+    let stable = build(&plugins, &[], &BTreeMap::new());
+    let ranked = build(
+        &plugins,
+        &[],
+        &BTreeMap::from([("example.frequent".to_string(), 12.0)]),
+    );
+
+    assert_eq!(stable.text, ranked.text);
+    assert_eq!(stable.version, ranked.version);
+    assert_eq!(
+        ranked.capacity_plugin_ids,
+        vec!["example.frequent", "example.alpha"]
+    );
+}

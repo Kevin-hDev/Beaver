@@ -1,5 +1,7 @@
 use serde_json::{json, Value};
 
+const CORE_FALLBACK_KEY: &str = "_beaverCoreFallback";
+
 pub fn definitions() -> Vec<Value> {
     super::registry_index::dynamic_tools()
         .into_iter()
@@ -21,7 +23,7 @@ pub fn merge_definitions(core: Vec<Value>) -> Vec<Value> {
 }
 
 fn merge(mut core: Vec<Value>, extensions: Vec<Value>) -> Vec<Value> {
-    for extension in extensions {
+    for mut extension in extensions {
         let Some(name) = definition_name(&extension) else {
             continue;
         };
@@ -29,12 +31,24 @@ fn merge(mut core: Vec<Value>, extensions: Vec<Value>) -> Vec<Value> {
             .iter()
             .position(|definition| definition_name(definition) == Some(name))
         {
+            extension[CORE_FALLBACK_KEY] = core[index].clone();
             core[index] = extension;
         } else {
             core.push(extension);
         }
     }
     core
+}
+
+pub(crate) fn core_fallback(definition: &Value) -> Option<&Value> {
+    definition.get(CORE_FALLBACK_KEY)
+}
+
+pub(crate) fn without_core_fallback(mut definition: Value) -> Value {
+    if let Some(object) = definition.as_object_mut() {
+        object.remove(CORE_FALLBACK_KEY);
+    }
+    definition
 }
 
 pub fn validate_arguments(tool_name: &str, arguments: &Value) -> Result<Value, String> {
@@ -77,5 +91,14 @@ mod tests {
 
         assert_eq!(merged.len(), 1);
         assert_eq!(merged[0]["function"]["description"], "extension");
+        assert_eq!(
+            core_fallback(&merged[0]).and_then(|value| {
+                value
+                    .pointer("/function/description")
+                    .and_then(Value::as_str)
+            }),
+            Some("core")
+        );
+        assert!(core_fallback(&without_core_fallback(merged[0].clone())).is_none());
     }
 }

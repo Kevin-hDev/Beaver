@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::sync::LazyLock;
 use tokio::sync::Mutex;
 
+use super::extension_tool_selection::PluginDescriptor;
+
 const STORE_MAX_BYTES: u64 = 64 * 1024;
 const MAX_EPOCH_TEXT_CHARS: usize = 256;
 static STORE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
@@ -16,6 +18,10 @@ pub struct ExtensionSessionState {
     pub epoch: Option<DiscoveryEpoch>,
     #[serde(default)]
     pub plugin_tool_capacity: usize,
+    #[serde(default)]
+    pub plugin_descriptors: Vec<PluginDescriptor>,
+    #[serde(default)]
+    pub active_plugin_ids: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -32,6 +38,8 @@ pub async fn configure(
     epoch: DiscoveryEpoch,
     computed_mask: bool,
     plugin_tool_capacity: usize,
+    plugin_descriptors: Vec<PluginDescriptor>,
+    preserve_dynamic_tools: bool,
 ) -> Result<ExtensionSessionState, String> {
     if invalid_epoch(&epoch) {
         return Err("État d'extensions invalide.".to_string());
@@ -44,7 +52,9 @@ pub async fn configure(
             });
         }
         state.plugin_tool_capacity = plugin_tool_capacity;
+        state.plugin_descriptors = plugin_descriptors;
         sanitize(state);
+        super::extension_session_plugins::refresh_active(state, preserve_dynamic_tools);
         Ok(state.clone())
     })
     .await
@@ -100,6 +110,7 @@ fn sanitize(state: &mut ExtensionSessionState) {
     state.plugin_tool_capacity = state
         .plugin_tool_capacity
         .min(crate::services::extensions::MAX_EXTENSION_TOOLS);
+    super::extension_session_plugins::sanitize(state);
 }
 
 fn invalid_epoch(epoch: &DiscoveryEpoch) -> bool {

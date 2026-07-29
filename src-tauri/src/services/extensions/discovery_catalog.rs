@@ -1,10 +1,7 @@
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 
-use super::discovery_limits::{
-    CATALOG_USAGE_ORDER_THRESHOLD_BYTES, MAX_CATALOG_DESCRIPTION_CHARS,
-    MAX_SELF_DECLARED_ESSENTIAL_PLUGINS,
-};
+use super::discovery_limits::{MAX_CATALOG_DESCRIPTION_CHARS, MAX_SELF_DECLARED_ESSENTIAL_PLUGINS};
 use super::registry_index::IndexedPlugin;
 
 #[derive(Clone, Default)]
@@ -12,6 +9,7 @@ pub struct CatalogSnapshot {
     pub text: String,
     pub version: String,
     pub ordered_plugin_ids: Vec<String>,
+    pub capacity_plugin_ids: Vec<String>,
     pub protected_plugin_ids: Vec<String>,
     pub essential_plugin_ids: Vec<String>,
 }
@@ -49,19 +47,18 @@ pub fn build(
         .chain(&essential)
         .map(String::as_str)
         .collect::<HashSet<_>>();
-    let mut rest = stable
+    let rest = stable
         .iter()
         .filter(|plugin| !preferred.contains(plugin.id.as_str()))
         .cloned()
         .collect::<Vec<_>>();
-    if render(&stable).len() > CATALOG_USAGE_ORDER_THRESHOLD_BYTES {
-        rest.sort_by(|left, right| {
-            score(scores, &right.id)
-                .total_cmp(&score(scores, &left.id))
-                .then_with(|| left.name.to_lowercase().cmp(&right.name.to_lowercase()))
-                .then_with(|| left.id.cmp(&right.id))
-        });
-    }
+    let mut capacity_rest = rest.clone();
+    capacity_rest.sort_by(|left, right| {
+        score(scores, &right.id)
+            .total_cmp(&score(scores, &left.id))
+            .then_with(|| left.name.to_lowercase().cmp(&right.name.to_lowercase()))
+            .then_with(|| left.id.cmp(&right.id))
+    });
     let by_id = stable
         .into_iter()
         .map(|plugin| (plugin.id.clone(), plugin))
@@ -71,6 +68,12 @@ pub fn build(
         .chain(&essential)
         .cloned()
         .chain(rest.iter().map(|plugin| plugin.id.clone()))
+        .collect::<Vec<_>>();
+    let capacity_plugin_ids = protected
+        .iter()
+        .chain(&essential)
+        .cloned()
+        .chain(capacity_rest.iter().map(|plugin| plugin.id.clone()))
         .collect::<Vec<_>>();
     let ordered = ordered_plugin_ids
         .iter()
@@ -82,6 +85,7 @@ pub fn build(
         text,
         version,
         ordered_plugin_ids,
+        capacity_plugin_ids,
         protected_plugin_ids: protected,
         essential_plugin_ids: essential,
     }

@@ -24,14 +24,27 @@ pub async fn dispatch_for_mode(
     if chat_mode && !is_chat_tool(tool_name) {
         return ToolResult::err("Outil indisponible dans ce mode.");
     }
-    let dynamic_tool =
+    let registered_dynamic =
         !chat_mode && crate::services::extensions::is_dynamic_tool(tool_name);
+    let replacement = crate::services::extensions::is_replacement(tool_name);
+    let active_dynamic = if registered_dynamic {
+        match super::extension_session_plugins::is_tool_active(session_id, tool_name).await {
+            Ok(active) => active,
+            Err(_) => return ToolResult::err("Extension indisponible."),
+        }
+    } else {
+        false
+    };
+    let dynamic_tool = match dynamic_route(registered_dynamic, active_dynamic, replacement) {
+        Ok(dynamic) => dynamic,
+        Err(message) => return ToolResult::err(message),
+    };
     let enabled_by_settings = !super::tool_catalog::is_optional_tool(tool_name)
         || super::agent_settings::is_tool_enabled(tool_name).await;
     if !super::tool_availability::available(
         enabled_by_settings,
         dynamic_tool,
-        crate::services::extensions::is_replacement(tool_name),
+        replacement,
     ) {
         return ToolResult::err("Outil désactivé dans les paramètres.");
     }
@@ -52,7 +65,7 @@ pub async fn dispatch_for_mode(
     };
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
     let mut result = if dynamic_tool {
-        if crate::services::extensions::record_tool_usage(tool_name).is_err() {
+        if crate::services::extensions::record_tool_invocation(tool_name).is_err() {
             eprintln!("[extensions] usage counter unavailable");
         }
         crate::services::extensions::dispatch_tool(tool_name, &args, working_dir)
@@ -83,6 +96,20 @@ pub async fn dispatch_for_mode(
     }
     let result = super::tool_result_truncate::truncate_result(result, tool_name, session_id);
     enrich_error(result, tool_name)
+}
+
+fn dynamic_route(
+    registered_dynamic: bool,
+    active_dynamic: bool,
+    replacement: bool,
+) -> Result<bool, &'static str> {
+    if active_dynamic {
+        Ok(true)
+    } else if registered_dynamic && !replacement {
+        Err("Extension indisponible.")
+    } else {
+        Ok(false)
+    }
 }
 
 pub fn is_chat_tool(tool_name: &str) -> bool {
@@ -131,6 +158,16 @@ mod tests {
         assert!(is_chat_tool("web_fetch"));
         assert!(!is_chat_tool("bash"));
         assert!(!is_chat_tool("search_extension_tools"));
+    }
+
+    #[test]
+    fn inactive_replacements_fall_back_to_core_but_other_plugins_fail_closed() {
+        assert_eq!(dynamic_route(true, false, true), Ok(false));
+        assert_eq!(dynamic_route(true, true, true), Ok(true));
+        assert_eq!(
+            dynamic_route(true, false, false),
+            Err("Extension indisponible.")
+        );
     }
 
     #[tokio::test]
