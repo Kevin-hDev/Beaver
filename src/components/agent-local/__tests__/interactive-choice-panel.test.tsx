@@ -60,14 +60,11 @@ describe("InteractiveChoicePanel", () => {
     expect(container.querySelector(".icp-option-marker-icon")).toBeTruthy();
   });
 
-  it("focalise le panneau sans choisir automatiquement une option", () => {
+  it("focalise la première option sans la choisir automatiquement", () => {
     render(<InteractiveChoicePanel request={request} />);
-    const panel = screen.getByRole("group", { name: "interactiveChoice.title" });
+    const firstOption = screen.getByRole("button", { name: /Fast/ });
 
-    expect(panel).toHaveFocus();
-    fireEvent.keyDown(panel, { key: "Enter" });
-    fireEvent.keyDown(panel, { key: " " });
-
+    expect(firstOption).toHaveFocus();
     expect(invoke).not.toHaveBeenCalled();
   });
 
@@ -96,10 +93,10 @@ describe("InteractiveChoicePanel", () => {
 
   it("navigue avec les flèches et valide avec Entrée", async () => {
     render(<InteractiveChoicePanel request={request} />);
-    const panel = screen.getByRole("group", { name: "interactiveChoice.title" });
+    const firstOption = screen.getByRole("button", { name: /Fast/ });
     const completeOption = screen.getByRole("button", { name: /Complete/ });
 
-    fireEvent.keyDown(panel, { key: "ArrowDown" });
+    fireEvent.keyDown(firstOption, { key: "ArrowDown" });
     expect(completeOption).toHaveFocus();
     fireEvent.keyDown(completeOption, { key: "Enter" });
 
@@ -131,12 +128,22 @@ describe("InteractiveChoicePanel", () => {
     }));
   });
 
+  it("garde le focus dans le champ Autre pendant un survol", () => {
+    render(<InteractiveChoicePanel request={request} />);
+    fireEvent.click(screen.getByText("Other"));
+    const input = screen.getByPlaceholderText("Write your answer");
+
+    fireEvent.mouseEnter(screen.getByRole("button", { name: /Fast/ }));
+
+    expect(input).toHaveFocus();
+  });
+
   it("rend le focus aux choix en fermant Autre avec Échap", () => {
     render(<InteractiveChoicePanel request={request} />);
-    const panel = screen.getByRole("group", { name: "interactiveChoice.title" });
+    const firstOption = screen.getByRole("button", { name: /Fast/ });
     const otherOption = screen.getByRole("button", { name: /Other/ });
 
-    fireEvent.keyDown(panel, { key: "ArrowUp" });
+    fireEvent.keyDown(firstOption, { key: "ArrowUp" });
     fireEvent.keyDown(otherOption, { key: "Enter" });
     const input = screen.getByPlaceholderText("Write your answer");
     fireEvent.keyDown(input, { key: "Escape" });

@@ -1,15 +1,16 @@
 import {
   useCallback,
+  useLayoutEffect,
   useRef,
   type Dispatch,
   type KeyboardEvent as ReactKeyboardEvent,
   type SetStateAction,
 } from "react";
 import type { AgentInteractiveOption } from "@/types/agent";
-import { useFocusedPanel } from "./use-focused-panel";
 
 interface InteractiveChoiceKeyboardParams {
   options: AgentInteractiveOption[];
+  focusKey: number;
   activeIndex: number;
   setActiveIndex: Dispatch<SetStateAction<number>>;
   choose: (option: AgentInteractiveOption) => void;
@@ -20,6 +21,7 @@ interface InteractiveChoiceKeyboardParams {
 
 export function useInteractiveChoiceKeyboard({
   options,
+  focusKey,
   activeIndex,
   setActiveIndex,
   choose,
@@ -33,31 +35,23 @@ export function useInteractiveChoiceKeyboard({
     optionsRef.current
       ?.querySelectorAll<HTMLButtonElement>("button")
       .item(index)
-      .focus();
+      .focus({ preventScroll: true });
   }, []);
+
+  useLayoutEffect(() => {
+    setActiveIndex(0);
+    focusOption(0);
+  }, [focusKey, focusOption, setActiveIndex]);
+
+  const activateOption = useCallback((index: number) => {
+    setActiveIndex(index);
+    focusOption(index);
+  }, [focusOption, setActiveIndex]);
 
   const move = useCallback((offset: number) => {
     const nextIndex = (activeIndex + offset + options.length) % options.length;
-    setActiveIndex(nextIndex);
-    focusOption(nextIndex);
-  }, [activeIndex, focusOption, options.length, setActiveIndex]);
-
-  const onPanelKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.target !== event.currentTarget) return;
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      move(-1);
-    } else if (event.key === "ArrowDown") {
-      event.preventDefault();
-      move(1);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      cancel();
-    }
-  }, [cancel, move]);
-
-  const panelRef = useFocusedPanel(onPanelKeyDown);
+    activateOption(nextIndex);
+  }, [activeIndex, activateOption, options.length]);
 
   const onChoiceKeyDown = useCallback((event: ReactKeyboardEvent<HTMLElement>) => {
     if (event.key === "ArrowUp") {
@@ -93,5 +87,5 @@ export function useInteractiveChoiceKeyboard({
     }
   }, [activeIndex, closeOther, focusOption, submitOther]);
 
-  return { panelRef, optionsRef, onChoiceKeyDown, onOtherKeyDown };
+  return { activateOption, optionsRef, onChoiceKeyDown, onOtherKeyDown };
 }

@@ -102,12 +102,13 @@ export function InteractiveChoicePanelInner({
 
   const closeOther = useCallback(() => setOtherMode(false), []);
   const {
-    panelRef,
+    activateOption,
     optionsRef,
     onChoiceKeyDown,
     onOtherKeyDown,
   } = useInteractiveChoiceKeyboard({
     options,
+    focusKey: step,
     activeIndex,
     setActiveIndex,
     choose,
@@ -123,8 +124,6 @@ export function InteractiveChoicePanelInner({
       className="icp-panel"
       role="group"
       aria-label={t("interactiveChoice.title")}
-      tabIndex={-1}
-      ref={panelRef}
     >
       <div className="icp-header">
         <HelpCircle className="icp-icon" aria-hidden="true" />
@@ -144,7 +143,10 @@ export function InteractiveChoicePanelInner({
             disabled={submitting}
             otherLabel={t("interactiveChoice.otherLabel")}
             recommendedLabel={t("interactiveChoice.recommended")}
-            onHover={() => setActiveIndex(index)}
+            onHover={() => {
+              if (!otherMode) activateOption(index);
+            }}
+            onFocus={() => setActiveIndex(index)}
             onChoose={() => choose(option)}
             onKeyDown={onChoiceKeyDown}
           />

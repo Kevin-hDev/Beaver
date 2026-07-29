@@ -75,11 +75,17 @@ export function PlanApprovalPanel({
   }, [onError, onResolved, request.id, request.sessionId, submitting]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === "Enter" && event.target === event.currentTarget) {
+      event.preventDefault();
+      event.stopPropagation();
+      implement();
+      return;
+    }
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
     void dismiss();
-  }, [dismiss]);
+  }, [dismiss, implement]);
   const panelRef = useFocusedPanel(handleKeyDown);
 
   return (

@@ -32,6 +32,7 @@ interface InteractiveChoiceOptionProps {
   otherLabel: string;
   recommendedLabel: string;
   onHover: () => void;
+  onFocus: () => void;
   onChoose: () => void;
   onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
 }
@@ -44,6 +45,7 @@ export function InteractiveChoiceOption({
   otherLabel,
   recommendedLabel,
   onHover,
+  onFocus,
   onChoose,
   onKeyDown,
 }: InteractiveChoiceOptionProps) {
@@ -55,6 +57,7 @@ export function InteractiveChoiceOption({
       type="button"
       className={`icp-option${active ? " icp-active" : ""}`}
       onMouseEnter={onHover}
+      onFocus={onFocus}
       onClick={onChoose}
       onKeyDown={onKeyDown}
       disabled={disabled}
