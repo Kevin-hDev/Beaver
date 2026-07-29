@@ -1,8 +1,9 @@
-import { useCallback, useState, type KeyboardEvent } from "react";
+import { useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { PencilSimple } from "@/components/ui/icons";
 import { useTranslation } from "react-i18next";
 import type { AgentInteractiveChoiceRequest } from "@/types/agent";
+import { useFocusedPanel } from "./use-focused-panel";
 import "./plan-approval-panel.css";
 
 const IMPLEMENT_ID = "implement_plan";
@@ -74,23 +75,28 @@ export function PlanApprovalPanel({
     }
   }, [onError, onResolved, request.id, request.sessionId, submitting]);
 
-  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
     void dismiss();
   }, [dismiss]);
+  const panelRef = useFocusedPanel(handleKeyDown);
 
   return (
-    <div className="pap-panel" role="group" aria-label={t("interactiveChoice.planQuestion")}>
+    <div
+      className="pap-panel"
+      role="group"
+      aria-label={t("interactiveChoice.planQuestion")}
+      tabIndex={-1}
+      ref={panelRef}
+    >
       <p className="pap-question">{t("interactiveChoice.planQuestion")}</p>
       <button
         type="button"
         className="pap-implement"
         disabled={submitting}
         onClick={implement}
-        autoFocus
-        onKeyDown={handleKeyDown}
       >
         <span className="pap-number" aria-hidden="true">1</span>
         <span>{t("interactiveChoice.planImplement")}</span>
@@ -106,10 +112,6 @@ export function PlanApprovalPanel({
           aria-label={t("interactiveChoice.planAdjustments")}
           onChange={(event) => setAdjustments(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              handleKeyDown(event);
-              return;
-            }
             if (event.key === "Enter") {
               event.preventDefault();
               sendAdjustments();
@@ -121,7 +123,6 @@ export function PlanApprovalPanel({
           className="pap-ignore"
           disabled={submitting}
           onClick={() => void dismiss()}
-          onKeyDown={handleKeyDown}
         >
           {t("interactiveChoice.ignore")}
           <kbd>ESC</kbd>
@@ -131,7 +132,6 @@ export function PlanApprovalPanel({
           className="btn btn-sm btn-primary pap-send"
           disabled={submitting || !adjustments.trim()}
           onClick={sendAdjustments}
-          onKeyDown={handleKeyDown}
         >
           {t("interactiveChoice.send")}
         </button>

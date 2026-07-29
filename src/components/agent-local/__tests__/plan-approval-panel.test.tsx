@@ -60,6 +60,17 @@ describe("PlanApprovalPanel", () => {
     expect(screen.queryByText("Quit Plan Mode")).toBeNull();
   });
 
+  it("focalise le panneau sans armer l’approbation", () => {
+    render(<InteractiveChoicePanel request={request} />);
+    const panel = screen.getByRole("group", { name: "Implement this plan?" });
+
+    expect(panel).toHaveFocus();
+    fireEvent.keyDown(panel, { key: "Enter" });
+    fireEvent.keyDown(panel, { key: " " });
+
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it("valide le plan avec son identifiant stable", async () => {
     render(<InteractiveChoicePanel request={request} />);
 
@@ -116,6 +127,23 @@ describe("PlanApprovalPanel", () => {
       { sessionId: "session-1", id: "plan-approval-1" },
     ));
     expect(onResolved).toHaveBeenCalledOnce();
+  });
+
+  it("ignore aussi avec Échap depuis un ajustement rempli", async () => {
+    render(<InteractiveChoicePanel request={request} />);
+    const input = screen.getByPlaceholderText("Request adjustments");
+    fireEvent.change(input, { target: { value: "Keep this draft" } });
+
+    fireEvent.keyDown(input, { key: "Escape" });
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      "dismiss_interactive_choice",
+      { sessionId: "session-1", id: "plan-approval-1" },
+    ));
+    expect(invoke).not.toHaveBeenCalledWith(
+      "respond_to_interactive_choice",
+      expect.anything(),
+    );
   });
 
   it("ne traite pas Échap quand le focus appartient à un autre panneau", () => {

@@ -34,7 +34,6 @@ interface InteractiveChoiceOptionProps {
   onHover: () => void;
   onChoose: () => void;
   onKeyDown: KeyboardEventHandler<HTMLButtonElement>;
-  autoFocus?: boolean;
 }
 
 export function InteractiveChoiceOption({
@@ -47,7 +46,6 @@ export function InteractiveChoiceOption({
   onHover,
   onChoose,
   onKeyDown,
-  autoFocus,
 }: InteractiveChoiceOptionProps) {
   const isOther = option.id === OTHER_VALUE;
   const label = isOther ? otherLabel : option.label;
@@ -59,7 +57,6 @@ export function InteractiveChoiceOption({
       onMouseEnter={onHover}
       onClick={onChoose}
       onKeyDown={onKeyDown}
-      autoFocus={autoFocus}
       disabled={disabled}
     >
       <span className="icp-option-marker" aria-hidden="true">

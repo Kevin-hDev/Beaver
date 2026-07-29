@@ -60,6 +60,17 @@ describe("InteractiveChoicePanel", () => {
     expect(container.querySelector(".icp-option-marker-icon")).toBeTruthy();
   });
 
+  it("focalise le panneau sans choisir automatiquement une option", () => {
+    render(<InteractiveChoicePanel request={request} />);
+    const panel = screen.getByRole("group", { name: "interactiveChoice.title" });
+
+    expect(panel).toHaveFocus();
+    fireEvent.keyDown(panel, { key: "Enter" });
+    fireEvent.keyDown(panel, { key: " " });
+
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
   it("garde le titre et la recommandation complets avant de tronquer la description", () => {
     expect(optionCss).toMatch(
       /\.icp-option-label-host,\s*\.icp-recommended-host\s*\{[^}]*flex:\s*0 0 auto;/,
@@ -85,10 +96,12 @@ describe("InteractiveChoicePanel", () => {
 
   it("navigue avec les flèches et valide avec Entrée", async () => {
     render(<InteractiveChoicePanel request={request} />);
-    const firstOption = screen.getByRole("button", { name: /Fast/ });
+    const panel = screen.getByRole("group", { name: "interactiveChoice.title" });
+    const completeOption = screen.getByRole("button", { name: /Complete/ });
 
-    fireEvent.keyDown(firstOption, { key: "ArrowDown" });
-    fireEvent.keyDown(firstOption, { key: "Enter" });
+    fireEvent.keyDown(panel, { key: "ArrowDown" });
+    expect(completeOption).toHaveFocus();
+    fireEvent.keyDown(completeOption, { key: "Enter" });
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("respond_to_interactive_choice", {
       sessionId: "session-1",
@@ -120,13 +133,16 @@ describe("InteractiveChoicePanel", () => {
 
   it("rend le focus aux choix en fermant Autre avec Échap", () => {
     render(<InteractiveChoicePanel request={request} />);
+    const panel = screen.getByRole("group", { name: "interactiveChoice.title" });
+    const otherOption = screen.getByRole("button", { name: /Other/ });
 
-    fireEvent.click(screen.getByText("Other"));
+    fireEvent.keyDown(panel, { key: "ArrowUp" });
+    fireEvent.keyDown(otherOption, { key: "Enter" });
     const input = screen.getByPlaceholderText("Write your answer");
     fireEvent.keyDown(input, { key: "Escape" });
 
     expect(screen.queryByPlaceholderText("Write your answer")).toBeNull();
-    expect(screen.getByRole("button", { name: /Fast/ })).toHaveFocus();
+    expect(otherOption).toHaveFocus();
   });
 
   it("annule proprement avec Échap", async () => {
