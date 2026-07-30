@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Plus, Check, Key } from "@/components/ui/icons";
 import { ProviderIcon } from "@/lib/provider-icons";
-import { getProviderDescription, type ProviderSpec } from "@/types/api";
+import { providerDescription, providerFreeTier } from "@/lib/provider-copy";
+import type { ProviderSpec } from "@/types/api";
 
 interface ConnectorCardProps {
   provider: ProviderSpec;
@@ -14,7 +15,7 @@ export function ConnectorCard({
   configured,
   onAdd,
 }: ConnectorCardProps) {
-  const { i18n } = useTranslation();
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -29,13 +30,13 @@ export function ConnectorCard({
       />
       <div className="ak-connector-card-body">
         <div className="ak-connector-card-name">{provider.display_name}</div>
-        <div className="ak-connector-card-desc">{getProviderDescription(provider, i18n.language)}</div>
+        <div className="ak-connector-card-desc">{providerDescription(t, provider.id)}</div>
         <div className="ak-connector-card-meta">
           <span className="ak-connector-card-cat">
             {provider.category.toUpperCase()}
           </span>
           <span className="ak-connector-card-tier">
-            {provider.free_tier_label}
+            {providerFreeTier(t, provider.id)}
           </span>
           <Key size="var(--icon-xs)" className="ak-connector-card-keyicon" weight="fill" />
         </div>

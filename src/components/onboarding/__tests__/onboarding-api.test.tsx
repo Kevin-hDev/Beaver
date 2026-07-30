@@ -36,9 +36,6 @@ function provider(id: string, category: ProviderSpec["category"]): ProviderSpec 
     category,
     display_name: id,
     signup_url: "https://example.com",
-    free_tier_label: "",
-    short_description: `${id} fr`,
-    short_description_en: `${id} en`,
   };
 }
 

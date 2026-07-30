@@ -49,9 +49,6 @@ function provider(id: string): ProviderSpec {
     display_name: id,
     category: "llm",
     signup_url: "",
-    free_tier_label: "",
-    short_description: "",
-    short_description_en: "",
   };
 }
 

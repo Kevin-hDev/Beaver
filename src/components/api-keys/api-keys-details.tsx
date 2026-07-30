@@ -5,7 +5,8 @@ import { Pencil, Trash, ArrowSquareOut } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { ProviderIcon } from "@/lib/provider-icons";
-import { getProviderDescription, type ProviderSpec } from "@/types/api";
+import { providerDescription, providerFreeTier } from "@/lib/provider-copy";
+import type { ProviderSpec } from "@/types/api";
 import { ProviderUsageCard } from "@/components/providers/usage/provider-usage-card";
 import "./api-keys-details.css";
 
@@ -17,7 +18,7 @@ interface ApiKeysDetailsProps {
 }
 
 export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: ApiKeysDetailsProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: A
                 {provider.display_name}
               </h2>
               <div className="akd-provider-desc">
-                {getProviderDescription(provider, i18n.language)}
+                {providerDescription(t, provider.id)}
               </div>
             </div>
           </div>
@@ -82,7 +83,7 @@ export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: A
         )}
 
         <SettingsCard className={provider.category === "llm" ? "akd-connection-card" : undefined}>
-          <DetailRow label={t("apiKeys.details.freeTier")} value={provider.free_tier_label} />
+          <DetailRow label={t("apiKeys.details.freeTier")} value={providerFreeTier(t, provider.id)} />
           <DetailRow label={t("apiKeys.details.signupLink")}>
             <button type="button" className="ak-signup-link" onClick={() => void open(provider.signup_url)}>
               {t("apiKeys.details.openSite")} <ArrowSquareOut size="var(--icon-xs)" />

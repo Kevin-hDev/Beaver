@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-shell";
 import { X, ArrowSquareOut } from "@/components/ui/icons";
-import { getProviderDescription, type ProviderSpec } from "@/types/api";
+import { providerDescription } from "@/lib/provider-copy";
+import type { ProviderSpec } from "@/types/api";
 import { ApiKeySecretInput } from "./api-key-secret-input";
 
 interface ApiKeysConfigDialogProps {
@@ -29,7 +30,7 @@ export function ApiKeysConfigDialog({
   onTest,
   onClearKey,
 }: ApiKeysConfigDialogProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [apiKey, setApiKey] = useState("");
   const [testState, setTestState] = useState<TestState>({ kind: "idle" });
   const [submitting, setSubmitting] = useState(false);
@@ -116,7 +117,7 @@ export function ApiKeysConfigDialog({
           <div className="wk-form-field">
             <label className="wk-form-label">{t("apiKeys.dialog.description")}</label>
             <div className="wk-input" style={{ cursor: "default", opacity: 0.7 }}>
-              {getProviderDescription(provider, i18n.language)}
+              {providerDescription(t, provider.id)}
             </div>
           </div>
 

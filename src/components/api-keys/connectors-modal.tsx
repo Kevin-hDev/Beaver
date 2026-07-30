@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X, MagnifyingGlass } from "@/components/ui/icons";
+import { providerDescription } from "@/lib/provider-copy";
 import type { ProviderCategory, ProviderSpec } from "@/types/api";
 import { ConnectorCard } from "./connector-card";
 
@@ -47,14 +48,16 @@ export function ConnectorsModal({
     return catalog.filter((p) => {
       if (category !== "all" && p.category !== category) return false;
       if (!q) return true;
+      // On cherche aussi dans la description anglaise : un provider reste
+      // trouvable sur son libellé d'origine quelle que soit la langue active.
       return (
         p.display_name.toLowerCase().includes(q) ||
-        p.short_description.toLowerCase().includes(q) ||
-        p.short_description_en.toLowerCase().includes(q) ||
+        providerDescription(t, p.id).toLowerCase().includes(q) ||
+        providerDescription(t, p.id, "en").toLowerCase().includes(q) ||
         p.id.toLowerCase().includes(q)
       );
     });
-  }, [catalog, category, query]);
+  }, [catalog, category, query, t]);
 
   return (
     <div className="wk-dialog-overlay" role="button" tabIndex={-1} aria-label="Close dialog" onClick={onClose} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}>

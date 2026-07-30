@@ -29,6 +29,21 @@
     }
   },
   "apiKeys": {
+    "providers": {
+      "groq": { "description": "Ultraschnelle Llama-/GPT-OSS-Inferenz auf eigener LPU.", "freeTier": "14.400 req/Tag" },
+      "google": { "description": "Gemini 3.6 Flash — multimodal, Tools und Reasoning.", "freeTier": "1 Mio. Tokens/Min." },
+      "mistral": { "description": "Französische Open-Weight-Modelle — kostenloser Experiment-Plan.", "freeTier": "1 Mrd. Tokens/Monat" },
+      "cerebras": { "description": "Open-Weight-Modelle mit bis zu 3.000 Tok/s auf Wafer-Scale-Chip.", "freeTier": "1 Mio. Tokens/Tag" },
+      "openrouter": { "description": "Zugriff auf 300+ Modelle mit einem einzigen API-Schlüssel.", "freeTier": "30+ kostenlose Modelle" },
+      "openai": { "description": "GPT-5.6 Sol, Terra und Luna — Reasoning auf Spitzenniveau.", "freeTier": "5 $ Startguthaben" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — unschlagbares Preis-Leistungs-Verhältnis.", "freeTier": "Günstig (0,14 $/Mtok)" },
+      "xai": { "description": "Grok 4.5 — 500K Kontext, fortgeschrittenes Reasoning.", "freeTier": "Preiswert (0,20 $/Mtok)" },
+      "moonshot": { "description": "Kimi K3 — agentisches Coding, multimodal, 1M Kontext.", "freeTier": "Günstig (0,60 $/Mtok)" },
+      "zai": { "description": "GLM-5.2 — 1M Kontext, Long-Horizon-Coding und Reasoning.", "freeTier": "GLM-4.5-Flash kostenlos" },
+      "brave": { "description": "Eigener Index, ohne Google-/Bing-Abhängigkeit.", "freeTier": "2.000 req/Monat" },
+      "exa": { "description": "Neural Search — Suche über semantische Ähnlichkeit.", "freeTier": "1.000 req/Monat" },
+      "firecrawl": { "description": "LLM-fertige Markdown-Extraktion aus jeder URL.", "freeTier": "500 Credits" }
+    },
     "main": {
       "title": "API Keys",
       "connectorsBtn": "API Connectors"

@@ -4,9 +4,6 @@ export function provider(id: string, displayName: string, category: string) {
     display_name: displayName,
     category,
     signup_url: "",
-    free_tier_label: "",
-    short_description: displayName,
-    short_description_en: displayName,
   };
 }
 

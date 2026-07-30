@@ -7,7 +7,8 @@ import { ApiKeySecretInput } from "@/components/api-keys/api-key-secret-input";
 import { InlineToast } from "@/components/ui/toast";
 import { showToast } from "@/lib/toast-emitter";
 import { ProviderIcon } from "@/lib/provider-icons";
-import { getProviderDescription, type ProviderSpec } from "@/types/api";
+import { providerDescription } from "@/lib/provider-copy";
+import type { ProviderSpec } from "@/types/api";
 
 interface OnboardingApiProps {
   onComplete: () => void | Promise<void>;
@@ -17,7 +18,7 @@ interface OnboardingApiProps {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [providers, setProviders] = useState<ProviderSpec[]>([]);
   const [configuredIds, setConfiguredIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -107,7 +108,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
             />
             <span className="ob-provider-name">{provider.display_name}</span>
             <span className="ob-provider-desc">
-              {getProviderDescription(provider, i18n.language)}
+              {providerDescription(t, provider.id)}
             </span>
             {isConfigured && (
               <span className="ob-provider-status">
