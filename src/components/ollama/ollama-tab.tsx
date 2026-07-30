@@ -35,8 +35,8 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
   }, []);
 
   const tabs = useMemo(() => [
-    { id: "modelfile" as const, label: t("ollama.modelfileTab"), icon: <ModelfileIcon /> },
-    { id: "models" as const, label: t("ollama.modelsTab"), icon: <ModelsIcon /> },
+    { id: "modelfile" as const, label: t("ollama.modelfileTab"), icon: <ModelfileIcon size="var(--icon-md)" /> },
+    { id: "models" as const, label: t("ollama.modelsTab"), icon: <ModelsIcon size="var(--icon-md)" /> },
   ], [t]);
 
   const search = useMemo(() => ({

@@ -134,4 +134,8 @@ describe("Barre de sous-onglets des Réglages", () => {
   it("laisse la piste épouser ses onglets plutôt que la colonne", () => {
     expect(tabbarCss).toContain("width: fit-content;");
   });
+
+  it("fige la hauteur d'un onglet pour qu'elle ne suive pas son contenu", () => {
+    expect(tabbarCss).toContain("min-height: var(--settings-tabbar-item-height);");
+  });
 });
