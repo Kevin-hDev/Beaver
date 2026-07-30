@@ -7,6 +7,7 @@ async fn beaver_registry_wins_over_litellm_for_direct_models() {
         Some(ModelLimits {
             context_window: Some(1_000_000),
             max_output_tokens: None,
+            default_output_tokens: None,
         })
     );
     assert_eq!(
@@ -14,6 +15,7 @@ async fn beaver_registry_wins_over_litellm_for_direct_models() {
         Some(ModelLimits {
             context_window: Some(200_000),
             max_output_tokens: Some(100_000),
+            default_output_tokens: None,
         })
     );
 }
@@ -25,6 +27,7 @@ async fn an_unknown_local_output_does_not_reuse_litellms_copied_context() {
         Some(ModelLimits {
             context_window: Some(262_144),
             max_output_tokens: None,
+            default_output_tokens: None,
         })
     );
     assert_eq!(
@@ -32,6 +35,7 @@ async fn an_unknown_local_output_does_not_reuse_litellms_copied_context() {
         Some(ModelLimits {
             context_window: Some(8_192),
             max_output_tokens: None,
+            default_output_tokens: None,
         })
     );
 }
@@ -55,6 +59,7 @@ async fn openrouter_inherits_beavers_upstream_model_configuration() {
         Some(ModelLimits {
             context_window: Some(200_000),
             max_output_tokens: Some(100_000),
+            default_output_tokens: None,
         })
     );
     assert_eq!(
@@ -74,8 +79,21 @@ async fn litellm_remains_the_fallback_for_unknown_local_models() {
         Some(ModelLimits {
             context_window: Some(16_385),
             max_output_tokens: Some(4_096),
+            default_output_tokens: None,
         })
     );
     assert!(is_chat_model("openai", "gpt-3.5-turbo").await);
     assert_eq!(local_limits("openai", "foreign/o3"), None);
+}
+
+#[tokio::test]
+async fn kimi_k3_keeps_its_documented_default_separate_from_its_maximum() {
+    assert_eq!(
+        limits("moonshot", "kimi-k3").await,
+        Some(ModelLimits {
+            context_window: Some(1_048_576),
+            max_output_tokens: Some(1_048_576),
+            default_output_tokens: Some(131_072),
+        })
+    );
 }

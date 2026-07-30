@@ -2,6 +2,7 @@
 pub enum RequestError {
     Fatal(String),
     PayloadTooLarge,
+    InvalidConfiguration,
 }
 
 impl std::fmt::Display for RequestError {
@@ -9,6 +10,7 @@ impl std::fmt::Display for RequestError {
         match self {
             Self::Fatal(message) => f.write_str(message),
             Self::PayloadTooLarge => f.write_str("provider_payload_too_large"),
+            Self::InvalidConfiguration => f.write_str("provider_configuration_invalid"),
         }
     }
 }

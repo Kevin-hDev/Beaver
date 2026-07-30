@@ -4,10 +4,11 @@
   "verified_at": "2026-07-30",
   "source_urls": [
     "https://platform.kimi.com/docs/models.md",
+    "https://platform.kimi.com/docs/guide/kimi-k3-quickstart",
     "https://www.kimi.com/code/docs/en/kimi-code/models.html"
   ],
   "models": [
-    {"id":"kimi-k3","context_window":1048576,"max_output_tokens":1048576,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"kimi-k3","context_window":1048576,"max_output_tokens":1048576,"default_output_tokens":131072,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
     {"id":"k3","context_window":1048576,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
     {"id":"k3-256k","context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
     {"id":"kimi-for-coding","context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true},

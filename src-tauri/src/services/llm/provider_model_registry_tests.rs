@@ -80,6 +80,75 @@ fn rejects_duplicate_models_and_impossible_limits() {
 }
 
 #[test]
+fn accepts_an_official_maximum_equal_to_the_context() {
+    let source = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-07-30",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"valid",
+            "context_window":1048576,
+            "max_output_tokens":1048576,
+            "default_output_tokens":131072,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":false
+          }]
+        }"#,
+    );
+
+    assert!(parse_sources(&[source]).is_ok());
+}
+
+#[test]
+fn rejects_invalid_automatic_output_defaults() {
+    let above_maximum = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-07-30",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"bad",
+            "context_window":100,
+            "max_output_tokens":50,
+            "default_output_tokens":51,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":false
+          }]
+        }"#,
+    );
+    let zero = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-07-30",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"bad",
+            "context_window":100,
+            "default_output_tokens":0,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":false
+          }]
+        }"#,
+    );
+
+    assert_eq!(
+        parse_sources(&[above_maximum]).err(),
+        Some("output_default")
+    );
+    assert_eq!(parse_sources(&[zero]).err(), Some("output_default"));
+}
+
+#[test]
 fn rejects_duplicate_aliases() {
     let duplicate = source(
         "test",

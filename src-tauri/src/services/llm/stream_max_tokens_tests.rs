@@ -10,6 +10,7 @@ fn resolved(
     choose(
         requested,
         model_limit,
+        None,
         auto_max_tokens,
         provider_fallback,
         None,
@@ -35,10 +36,12 @@ fn local_registry_is_authoritative_over_runtime_and_fallback_data() {
     let local = ModelLimits {
         context_window: Some(262_144),
         max_output_tokens: None,
+        default_output_tokens: Some(32_000),
     };
     let fallback = ModelLimits {
         context_window: Some(8_192),
         max_output_tokens: Some(8_192),
+        default_output_tokens: None,
     };
 
     assert_eq!(
@@ -47,11 +50,39 @@ fn local_registry_is_authoritative_over_runtime_and_fallback_data() {
             Some((Some(16_384), Some(4_096))),
             Some(fallback)
         ),
-        (Some(262_144), None)
+        (Some(262_144), None, Some(32_000))
     );
     assert_eq!(
         select_sources(None, Some((Some(16_384), None)), Some(fallback)),
-        (Some(16_384), Some(8_192))
+        (Some(16_384), Some(8_192), None)
+    );
+}
+
+#[test]
+fn documented_model_default_is_distinct_from_its_maximum() {
+    assert_eq!(
+        choose(
+            None,
+            Some(1_048_576),
+            Some(131_072),
+            true,
+            Some(64_000),
+            Some(1_048_576),
+            1_000,
+        ),
+        Ok(Some(131_072))
+    );
+    assert_eq!(
+        choose(
+            Some(500_000),
+            Some(1_048_576),
+            Some(131_072),
+            true,
+            Some(64_000),
+            Some(1_048_576),
+            1_000,
+        ),
+        Ok(Some(500_000))
     );
 }
 
@@ -98,15 +129,23 @@ fn explicit_limits_remain_available_when_automatic_limits_are_disabled() {
 #[test]
 fn automatic_limit_never_exceeds_the_remaining_context() {
     assert_eq!(
-        choose(None, None, true, Some(64_000), Some(40_000), 34_000),
+        choose(None, None, None, true, Some(64_000), Some(40_000), 34_000),
         Ok(Some(6_000))
     );
     assert_eq!(
-        choose(None, None, true, Some(131_072), Some(8_192), 6_000),
+        choose(None, None, None, true, Some(131_072), Some(8_192), 6_000),
         Ok(Some(2_192))
     );
     assert_eq!(
-        choose(None, None, true, Some(64_000), Some(1_000_000), 950_000),
+        choose(
+            None,
+            None,
+            None,
+            true,
+            Some(64_000),
+            Some(1_000_000),
+            950_000
+        ),
         Ok(Some(50_000))
     );
 }
@@ -117,6 +156,7 @@ fn explicit_limit_is_also_clamped_to_the_remaining_context() {
         choose(
             Some(100_000),
             Some(128_000),
+            None,
             true,
             Some(128_000),
             Some(200_000),
@@ -129,11 +169,11 @@ fn explicit_limit_is_also_clamped_to_the_remaining_context() {
 #[test]
 fn exhausted_context_and_zero_requests_fail_closed() {
     assert_eq!(
-        choose(None, None, false, None, Some(8_192), 8_192),
+        choose(None, None, None, false, None, Some(8_192), 8_192),
         Err(ResolveError::ContextExhausted)
     );
     assert_eq!(
-        choose(Some(0), None, true, None, Some(8_192), 1_000),
+        choose(Some(0), None, None, true, None, Some(8_192), 1_000),
         Err(ResolveError::InvalidLimit)
     );
 }

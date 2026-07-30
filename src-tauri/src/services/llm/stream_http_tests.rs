@@ -193,6 +193,32 @@ async fn openrouter_uses_the_underlying_model_output_limit() {
 }
 
 #[tokio::test]
+async fn kimi_k3_requests_its_documented_default_not_its_maximum() {
+    let route = route::resolve("moonshot").unwrap();
+    let resolved = super::super::stream_max_tokens::resolve(
+        "moonshot",
+        "kimi-k3",
+        None,
+        route.auto_max_tokens,
+        route.fallback_max_tokens,
+        1_000,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(resolved, Some(131_072));
+}
+
+#[test]
+fn a_zero_limit_is_not_reported_as_oversized_content() {
+    let error =
+        request_error_for_limit(super::super::stream_max_tokens::ResolveError::InvalidLimit);
+
+    assert!(matches!(error, RequestError::InvalidConfiguration));
+    assert_eq!(error.to_string(), "provider_configuration_invalid");
+}
+
+#[tokio::test]
 async fn timeout_above_secure_limit_uses_a_stable_code() {
     let cfg = RequestConfig {
         provider_id: "openai",

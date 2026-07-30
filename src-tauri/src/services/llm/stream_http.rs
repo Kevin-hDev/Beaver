@@ -47,7 +47,7 @@ pub async fn post_chat_request_with_timeout(
         estimated_input_tokens,
     )
     .await
-    .map_err(|_| RequestError::PayloadTooLarge)?;
+    .map_err(request_error_for_limit)?;
     let payload = build_chat_payload(cfg, &route, max_tokens);
     let request_bytes = serde_json::to_vec(&payload)
         .map(zeroize::Zeroizing::new)
@@ -96,6 +96,13 @@ pub async fn post_chat_request_with_timeout(
         ));
     }
     Ok(resp)
+}
+
+fn request_error_for_limit(error: super::stream_max_tokens::ResolveError) -> RequestError {
+    match error {
+        super::stream_max_tokens::ResolveError::ContextExhausted => RequestError::PayloadTooLarge,
+        super::stream_max_tokens::ResolveError::InvalidLimit => RequestError::InvalidConfiguration,
+    }
 }
 
 fn build_chat_payload(

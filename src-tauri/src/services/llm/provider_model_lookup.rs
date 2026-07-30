@@ -11,6 +11,7 @@ pub struct ModelCapabilities {
 pub struct ModelLimits {
     pub context_window: Option<u32>,
     pub max_output_tokens: Option<u32>,
+    pub default_output_tokens: Option<u32>,
 }
 
 pub async fn capabilities(provider_id: &str, model_id: &str) -> Option<ModelCapabilities> {
@@ -35,6 +36,7 @@ pub async fn limits(provider_id: &str, model_id: &str) -> Option<ModelLimits> {
         .map(|limits| ModelLimits {
             context_window: limits.context_window,
             max_output_tokens: limits.max_output_tokens,
+            default_output_tokens: None,
         })
 }
 
@@ -43,6 +45,7 @@ pub fn local_limits(provider_id: &str, model_id: &str) -> Option<ModelLimits> {
     Some(ModelLimits {
         context_window: Some(model.context_window),
         max_output_tokens: model.max_output_tokens,
+        default_output_tokens: model.default_output_tokens,
     })
 }
 

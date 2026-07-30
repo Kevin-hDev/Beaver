@@ -19,6 +19,7 @@ pub struct ProviderModelConfig {
     pub aliases: Vec<String>,
     pub context_window: u32,
     pub max_output_tokens: Option<u32>,
+    pub default_output_tokens: Option<u32>,
     pub supports_tools: bool,
     pub supports_vision: bool,
     pub supports_thinking: bool,
@@ -172,6 +173,15 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
             .is_some_and(|limit| limit == 0 || limit > model.context_window)
         {
             return Err("output_limit");
+        }
+        if model.default_output_tokens.is_some_and(|default| {
+            default == 0
+                || default > model.context_window
+                || model
+                    .max_output_tokens
+                    .is_some_and(|maximum| default > maximum)
+        }) {
+            return Err("output_default");
         }
     }
     Ok(())

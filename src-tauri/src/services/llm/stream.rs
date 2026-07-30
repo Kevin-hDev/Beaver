@@ -56,6 +56,9 @@ pub async fn stream_chat_no_done(
             Ok(outcome)
         }
         Err(RequestError::PayloadTooLarge) => Err("provider_payload_too_large".to_string()),
+        Err(RequestError::InvalidConfiguration) => {
+            Err("provider_configuration_invalid".to_string())
+        }
         Err(RequestError::Fatal(msg)) => Err(msg),
     }
 }

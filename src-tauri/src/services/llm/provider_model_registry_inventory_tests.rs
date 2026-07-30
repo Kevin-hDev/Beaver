@@ -92,6 +92,7 @@ fn corrected_limits_and_capabilities_are_stable() {
     let kimi = lookup("moonshot", "kimi-k3").unwrap();
     assert_eq!(kimi.context_window, 1_048_576);
     assert_eq!(kimi.max_output_tokens, Some(1_048_576));
+    assert_eq!(kimi.default_output_tokens, Some(131_072));
 
     let glm_vision = lookup("zai", "glm-4.5v").unwrap();
     assert_eq!(glm_vision.context_window, 64_000);
