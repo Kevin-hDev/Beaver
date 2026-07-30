@@ -149,6 +149,10 @@
   --memory-preview-padding: 14px;
 
   --nav-item-height: 1.75rem;
+  /* Les Réglages ont leur propre densité : quinze entrées et cinq titres
+     remplissaient la hauteur d'une fenêtre à la densité de la barre latérale,
+     qui n'en accueille qu'une poignée. */
+  --settings-nav-item-height: 1.3333rem;
   --nav-item-gap: var(--space-xs);
   --nav-item-padding-x: var(--space-sm);
   --nav-item-radius: var(--radius-sm);

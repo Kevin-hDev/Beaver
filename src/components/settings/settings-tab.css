@@ -29,13 +29,16 @@
   user-select: none;
 }
 
+/* Trois valeurs se relaient pour fixer la hauteur d'une ligne : le plancher,
+   les marges internes et l'interligne du libellé. Les baisser séparément ne
+   donne rien — dès que l'une descend, la suivante reprend la main. */
 .settings-subtab {
   display: flex;
   align-items: center;
   gap: var(--nav-item-gap);
   min-width: 0;
-  min-height: var(--nav-item-height);
-  padding: 5px var(--nav-item-padding-x);
+  min-height: var(--settings-nav-item-height);
+  padding: var(--space-2xs) var(--nav-item-padding-x);
   border-radius: var(--nav-item-radius);
   cursor: pointer;
   font-size: var(--text-sm);
@@ -49,6 +52,7 @@
 .settings-subtab-label {
   min-width: 0;
   overflow: hidden;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
