@@ -91,8 +91,8 @@ export function McpConfigDialog({ connector, onClose, onValidated }: McpConfigDi
         {testState.kind === "error" && <div className="ak-test-result error">{testState.message}</div>}
 
         <div className="wk-dialog-footer">
-          <button type="button" className="wk-btn-secondary" onClick={handleClose}>{t("connectors.config.cancel")}</button>
-          <button type="button" className="wk-btn-primary" onClick={() => void handleSubmit()} disabled={!token.trim() || submitting}>
+          <button type="button" className="btn btn-sm btn-secondary" onClick={handleClose}>{t("connectors.config.cancel")}</button>
+          <button type="button" className="btn btn-sm btn-primary" onClick={() => void handleSubmit()} disabled={!token.trim() || submitting}>
             {t("connectors.config.addAndTest")}
           </button>
         </div>

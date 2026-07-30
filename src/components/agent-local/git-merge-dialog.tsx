@@ -119,11 +119,11 @@ export function GitMergeDialog({
         )}
         {error && <div className="bcd-error">{error}</div>}
         <div className="bcd-actions">
-          <button className="bcd-btn" type="button" onClick={onCancel} disabled={busy}>
+          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel} disabled={busy}>
             {t("agentLocal.sessionSummary.git.cancel")}
           </button>
           <button
-            className="bcd-btn bcd-btn-primary"
+            className="btn btn-sm btn-primary"
             type="button"
             onClick={() => onMerge(source, dirtyCount > 0, description || undefined)}
             disabled={busy || loading || !!previewError || !preview || alreadyMerged}

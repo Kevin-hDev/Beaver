@@ -43,31 +43,6 @@
   margin-top: var(--space-lg);
 }
 
-/* Dialog footer buttons — thin aliases of the shared .btn system
-   (src/styles/buttons.css) with the shared 28px geometry; only colors stay here. */
-.ib-dialog-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.ib-dialog-button:hover:not(:disabled) {
-  background: var(--surface-hover);
-}
-
 .ib-dialog-confirm {
   border-color: var(--pulse);
   background: var(--pulse);

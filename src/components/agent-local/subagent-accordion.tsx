@@ -101,7 +101,7 @@ export function SubagentAccordion({ subagents, onCancel, onOpen }: SubagentAccor
                 </>
               )}
               <button
-                className="sa-btn-open"
+                className="btn btn-sm btn-ghost sa-btn-open"
                 onClick={() => onOpen(agent.sessionId)}
                 type="button"
               >

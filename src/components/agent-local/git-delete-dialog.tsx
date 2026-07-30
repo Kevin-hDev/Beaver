@@ -80,14 +80,14 @@ export function GitDeleteDialog({
         )}
         {error && <div className="bcd-error">{error}</div>}
         <div className="bcd-actions gdd-actions">
-          <button className="bcd-btn" type="button" onClick={onCancel} disabled={busy}>{t("branches.deleteCancel")}</button>
+          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel} disabled={busy}>{t("branches.deleteCancel")}</button>
           {canPreserve && canDelete && (
-            <button className="bcd-btn" type="button" onClick={() => onPreserve(description || undefined)} disabled={busy}>
+            <button className="btn btn-sm btn-secondary" type="button" onClick={() => onPreserve(description || undefined)} disabled={busy}>
               {t(preserveLabel(risk.kind, hasDirty))}
             </button>
           )}
           {canDelete && (
-            <button className="bcd-btn gdd-danger" type="button" onClick={onDiscard} disabled={busy}>
+            <button className="btn btn-sm btn-destructive" type="button" onClick={onDiscard} disabled={busy}>
               {t(discardLabel(risk.kind, hasDirty, unmerged, isCurrent))}
             </button>
           )}

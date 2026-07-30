@@ -92,11 +92,11 @@ export function BranchConflictDialog({
         {error && <div className="bcd-error">{error}</div>}
 
         <div className="bcd-actions">
-          <button className="bcd-btn" onClick={onCancel} type="button" disabled={busy}>
+          <button className="btn btn-sm btn-secondary" onClick={onCancel} type="button" disabled={busy}>
             {t("branches.conflictCancel")}
           </button>
           <button
-            className="bcd-btn bcd-btn-primary"
+            className="btn btn-sm btn-primary"
             onClick={() => onCommitAndSwitch(targetBranch, description)}
             type="button"
             disabled={busy}

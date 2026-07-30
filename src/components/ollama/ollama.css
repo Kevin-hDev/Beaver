@@ -10,60 +10,6 @@
 }
 
 
-/* Buttons — thin aliases of the shared .btn system (src/styles/buttons.css)
-   with .btn-sm geometry. Only domain-specific colors stay here. */
-.ollama-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.ollama-btn:hover {
-  background: var(--select-bg);
-}
-
-.ollama-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.ollama-btn-primary {
-  border-color: transparent;
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-  box-shadow: none;
-}
-
-.ollama-btn-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--pulse) 90%, white);
-}
-
-/* Annulation d'un flux destructif — secondaire neutre au repos,
-   hover d'avertissement conservé (spec phase 2 §1.2). */
-.ollama-btn-cancel {
-  border-color: var(--edge-strong);
-  background: var(--btn-secondary-bg);
-  color: var(--ink);
-}
-
-.ollama-btn-cancel:hover:not(:disabled) {
-  background: var(--signal-error-bg);
-  color: var(--signal-error);
-}
-
 .ollama-profile-table {
   width: 100%;
   font-size: var(--text-sm);

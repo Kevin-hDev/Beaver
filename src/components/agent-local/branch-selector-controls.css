@@ -1,47 +1,17 @@
 /* Button blocks — split out of branch-selector.css to keep both files
    under 200 lines; imported after it to preserve cascade order. */
 
-/* Trigger — thin alias of the shared .btn system (src/styles/buttons.css)
-   with .btn-sm geometry; keeps its transparent/edge colors. */
-.bs-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--edge);
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-  white-space: nowrap;
-}
-
-.bs-btn:hover {
-  color: var(--ink);
-  border-color: var(--ink-faint);
-}
-
+/* Reste caché tant que la ligne n'est pas survolée : une liste de branches
+   couverte de croix de suppression invite à la fausse manœuvre. */
 .bs-delete-btn {
-  display: inline-flex;
-  min-width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
+  width: auto;
+  min-width: var(--btn-height);
   margin-right: 2px;
-  padding: 0 7px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-faint);
-  cursor: pointer;
-  font-size: 10px;
+  padding: 0 var(--space-sm);
+  font-size: var(--text-2xs);
   font-weight: 600;
   opacity: 0;
-  transition: opacity var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+  transition: opacity var(--ease-smooth), background var(--ease-smooth), color var(--ease-smooth);
 }
 
 .bs-item:hover .bs-delete-btn,
@@ -52,7 +22,7 @@
 
 .bs-delete-btn:hover,
 .bs-delete-btn[data-confirming="true"] {
-  border-color: var(--signal-error);
+  background: var(--signal-error-bg);
   color: var(--signal-error);
 }
 

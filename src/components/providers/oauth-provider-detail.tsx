@@ -81,7 +81,7 @@ export function OAuthProviderDetail({ provider, refresh }: Props) {
       {issue && (
         <div className="prv-oauth-issue" role="status">
           <span>{t(ISSUE_KEYS[issue])}</span>
-          <button type="button" className="ollama-btn" disabled={checking} onClick={() => void retry()}>
+          <button type="button" className="btn btn-sm btn-secondary" disabled={checking} onClick={() => void retry()}>
             {t("providers.oauth.retryCatalog")}
           </button>
         </div>
@@ -96,7 +96,7 @@ export function OAuthProviderDetail({ provider, refresh }: Props) {
         </div>
       </SettingsCard>
       <div className="prv-oauth-actions">
-        <button type="button" className="ollama-btn" disabled={disconnecting} onClick={() => void disconnect()}>
+        <button type="button" className="btn btn-sm btn-secondary" disabled={disconnecting} onClick={() => void disconnect()}>
           {t("providers.oauth.disconnect")}
         </button>
       </div>

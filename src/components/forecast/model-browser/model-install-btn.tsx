@@ -96,7 +96,7 @@ export function ModelInstallBtn({
             <span className="fmi-pct">{ownDownload.percent}%</span>
           </>
         )}
-        <button className="ollama-btn fmi-cancel" onClick={() => void handleCancel()}>
+        <button className="btn btn-sm btn-secondary fmi-cancel" onClick={() => void handleCancel()}>
           {t("forecast.models.cancel")}
         </button>
       </div>
@@ -106,7 +106,7 @@ export function ModelInstallBtn({
   const downloadAction = (
     <div className="fmi-action">
       <button
-        className="ollama-btn fmi-btn"
+        className="btn btn-sm btn-secondary fmi-btn"
         onClick={() => void handleInstall()}
       >
         {installed ? t("forecast.models.prepare") : t("forecast.models.install")}
@@ -127,7 +127,7 @@ export function ModelInstallBtn({
       <div className="fmi-actions">
         {!runtimeReady && downloadAction}
         <ConfirmButton
-          className="ollama-btn fmi-btn fmi-uninstall"
+          className="btn btn-sm btn-secondary fmi-btn fmi-uninstall"
           label={uninstalling ? t("forecast.models.uninstalling") : t("forecast.models.uninstall")}
           confirmLabel={t("forecast.models.confirmUninstall")}
           onConfirm={() => void handleUninstall()}

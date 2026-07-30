@@ -21,7 +21,7 @@ export function AgentImportSettings() {
         >
           <button
             type="button"
-            className="aim-btn aim-btn-secondary"
+            className="btn btn-sm btn-secondary"
             onClick={() => setOpen(true)}
           >
             {t("agentImport.settings.manage")}

@@ -47,7 +47,7 @@ export function ExtensionsHostPanel({
         </section>
       )}
       <div className="extp-actions">
-        <button type="button" className="wk-btn-secondary" onClick={onRestart}>
+        <button type="button" className="btn btn-sm btn-secondary" onClick={onRestart}>
           <ArrowsClockwise size="var(--icon-sm)" />
           {t("extensions.actions.restartHost")}
         </button>
@@ -58,7 +58,7 @@ export function ExtensionsHostPanel({
           <strong>{t("extensions.host.recoveryTitle")}</strong>
           <p>{t("extensions.host.recoveryDescription")}</p>
         </div>
-        <button type="button" className="wk-btn-secondary" onClick={onRecover}>
+        <button type="button" className="btn btn-sm btn-secondary" onClick={onRecover}>
           {t("extensions.actions.recovery")}
         </button>
       </div>

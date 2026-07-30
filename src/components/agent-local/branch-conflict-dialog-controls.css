@@ -1,45 +1,8 @@
-/* Dialog action buttons — thin aliases of the shared .btn system
-   (src/styles/buttons.css) with the shared 28px geometry. Split out of
-   branch-conflict-dialog.css to keep both files under 200 lines;
-   imported after it to preserve cascade order. */
+/* Séparé de branch-conflict-dialog.css pour garder les deux fichiers sous
+   200 lignes ; importé après lui pour conserver l'ordre de cascade. */
 
 .bcd-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-sm);
-}
-
-.bcd-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.bcd-btn:hover {
-  color: var(--ink);
-  border-color: var(--ink-faint);
-}
-
-.bcd-btn-primary {
-  background: var(--ink);
-  color: var(--void);
-  border-color: var(--ink);
-}
-
-.bcd-btn-primary:hover {
-  background: var(--ink);
-  color: var(--void);
-  opacity: 0.9;
 }

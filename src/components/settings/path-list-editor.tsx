@@ -56,10 +56,10 @@ export function PathListEditor({ paths, onChange }: PathListEditorProps) {
       })}
 
       <div className="ple-actions">
-        <button type="button" onClick={() => void handleAdd()} className="ple-add-btn">
+        <button type="button" onClick={() => void handleAdd()} className="btn btn-sm btn-secondary">
           + {t("settings.advanced.addPath")}
         </button>
-        <button type="button" onClick={handleReset} className="ple-reset-btn">
+        <button type="button" onClick={handleReset} className="btn btn-sm btn-secondary">
           {t("settings.advanced.resetPaths")}
         </button>
       </div>

@@ -42,7 +42,7 @@ export function PermissionDialog({ request, onDecide }: Props) {
       <div className="perm-card-actions">
         <button
           type="button"
-          className="perm-card-btn perm-card-btn-deny"
+          className="btn btn-sm btn-ghost"
           onClick={() => onDecide(request.id, "deny")}
         >
           {t("permissionDialog.deny")}
@@ -51,14 +51,14 @@ export function PermissionDialog({ request, onDecide }: Props) {
         <div className="perm-card-actions-spacer" />
         <button
           type="button"
-          className="perm-card-btn"
+          className="btn btn-sm btn-secondary"
           onClick={() => onDecide(request.id, "allow")}
         >
           {t("permissionDialog.allow")}
         </button>
         <button
           type="button"
-          className="perm-card-btn perm-card-btn-primary"
+          className="btn btn-sm btn-primary"
           onClick={() => onDecide(request.id, "allow_session")}
           autoFocus
         >

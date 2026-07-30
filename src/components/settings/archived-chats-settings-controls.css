@@ -1,27 +1,14 @@
-/* Delete-all action — alias of the shared .btn system (src/styles/buttons.css)
-   with the shared 28px geometry. Neutral by default (override below), danger
-   while confirming. */
+/* Suppression de tous les chats archivés : rouge dès le repos, contrairement
+   aux autres actions destructrices qui n'annoncent leur danger qu'au survol.
+   Elle vide la liste entière, sans sélection préalable. */
 .acs-delete-all {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid color-mix(in srgb, var(--danger) 26%, transparent);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--danger) 13%, transparent);
-  color: var(--danger);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
+  border-color: var(--signal-error-border);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
 }
 
-.acs-delete-all:disabled {
-  cursor: default;
-  opacity: 0.6;
+.acs-delete-all:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--signal-error-bg) 70%, var(--signal-error));
 }
 
 .acs-actions {
@@ -29,98 +16,4 @@
   align-items: center;
   gap: var(--space-xs);
   flex-shrink: 0;
-}
-
-.acs-icon-btn,
-.acs-restore-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-}
-
-/* Delete action — composes .icon-btn (src/styles/buttons.css);
-   keeps its danger hover. */
-.acs-icon-btn {
-  color: var(--ink-faint);
-}
-
-.acs-icon-btn:hover:not(:disabled) {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-}
-
-/* Restore action — alias of the shared .btn system with .btn-sm geometry. */
-.acs-restore-btn {
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  color: var(--ink);
-  background: color-mix(in srgb, var(--surface-hover) 70%, var(--void));
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth);
-}
-
-.acs-restore-btn:hover {
-  background: color-mix(in srgb, var(--surface-hover) 58%, var(--ink));
-}
-
-.acs-delete-all {
-  background: var(--surface-hover);
-  border-color: var(--edge);
-  color: var(--ink-muted);
-}
-
-.acs-delete-all:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--surface-hover) 72%, var(--ink));
-  color: var(--ink);
-}
-
-.acs-delete-all[data-confirming="true"],
-.acs-delete-confirm[data-confirming="true"] {
-  position: relative;
-  border-color: var(--signal-error) !important;
-  background: var(--signal-error-bg);
-  color: var(--signal-error) !important;
-}
-
-.acs-delete-all[data-confirming="true"]::after,
-.acs-delete-confirm[data-confirming="true"]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: 0 0 0 5px var(--signal-error-pulse);
-  animation: acs-confirm-pulse 1.2s ease-in-out infinite;
-}
-
-.acs-delete-confirm[data-confirming="true"] {
-  width: auto;
-  min-width: 92px;
-  padding: 0 var(--space-sm);
-  font-weight: 700;
-}
-
-.acs-filter .ss-wrap,
-.acs-filter .ss-trigger {
-  width: 100%;
-}
-
-.acs-filter .ss-trigger {
-  background: var(--surface-hover);
-  border-color: var(--edge);
-}
-
-.acs-filter .ss-trigger:hover {
-  background: color-mix(in srgb, var(--surface-hover) 72%, var(--ink));
-  border-color: var(--ink-faint);
-}
-
-@keyframes acs-confirm-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
 }

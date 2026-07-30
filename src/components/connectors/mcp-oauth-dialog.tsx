@@ -95,7 +95,7 @@ export function McpOauthDialog({ connector, onClose, onConnected }: McpOauthDial
         )}
 
         <div className="wk-dialog-footer mco-footer">
-          <button type="button" className="wk-btn-secondary" onClick={handleClose}>
+          <button type="button" className="btn btn-sm btn-secondary" onClick={handleClose}>
             {t("connectors.oauth.cancel")}
           </button>
         </div>

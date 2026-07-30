@@ -52,6 +52,7 @@ export function AgentImportListSection({
           <div className="aim-bulk-actions">
             <button
               type="button"
+              className="btn btn-sm btn-secondary"
               onClick={() => onChange(availableIds)}
               disabled={selectedIds.size === availableIds.size}
             >
@@ -59,6 +60,7 @@ export function AgentImportListSection({
             </button>
             <button
               type="button"
+              className="btn btn-sm btn-secondary"
               onClick={() => onChange(new Set())}
               disabled={selectedIds.size === 0}
             >

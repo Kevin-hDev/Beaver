@@ -76,7 +76,7 @@ export function useApiKeysTabContent({ navState, onNavChange, onNavReplace }: Ap
   }, [dialog]);
 
   const connectorsButton = useMemo(() => (
-    <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "connectors" })}>
+    <button type="button" className="btn btn-sm btn-primary ak-connectors-btn" onClick={() => setDialog({ kind: "connectors" })}>
       <Plus size="var(--icon-sm)" weight="bold" />
       {t("apiKeys.main.connectorsBtn")}
     </button>

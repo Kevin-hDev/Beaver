@@ -15,12 +15,3 @@
   flex-wrap: wrap;
 }
 
-.bcd-btn.gdd-danger {
-  border-color: var(--signal-error);
-  color: var(--signal-error);
-}
-
-.bcd-btn.gdd-danger:hover {
-  border-color: var(--signal-error);
-  color: var(--signal-error);
-}

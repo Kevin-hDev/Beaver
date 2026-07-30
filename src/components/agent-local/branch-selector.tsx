@@ -136,7 +136,7 @@ export function BranchSelector({
   const label = git.currentBranch || t("branches.detachedHead");
   return (
     <div className="bs-row" ref={dropRef}>
-      <button className="bs-btn" onClick={() => setOpen(!open)}>
+      <button className="btn btn-sm btn-secondary bs-btn" onClick={() => setOpen(!open)}>
         <GitBranch size="var(--icon-sm)" />
         <span>{label}</span>
         <CaretDown size="var(--icon-2xs)" />

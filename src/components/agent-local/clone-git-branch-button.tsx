@@ -13,7 +13,7 @@ export function CloneGitBranchButton({ state, label, disabled, onClick }: CloneG
   return (
     <button
       type="button"
-      className={`cgb-btn ${state === "loading" ? "cgb-loading" : ""}`}
+      className={`btn btn-sm btn-secondary cgb-btn ${state === "loading" ? "cgb-loading" : ""}`}
       onClick={onClick}
       disabled={disabled || state !== "idle"}
     >

@@ -64,17 +64,17 @@ export function ForecastNotesDetail(props: ForecastNotesDetailProps) {
             </button>
           )}
           <Tooltip label={props.t("forecast.notes.open")}>
-            <button type="button" className="icon-btn fcn-icon-btn" onClick={() => props.onOpen(props.note as ForecastNote)}>
+            <button type="button" className="icon-btn icon-btn-secondary" onClick={() => props.onOpen(props.note as ForecastNote)}>
               <ArrowSquareOut size="var(--icon-15)" />
             </button>
           </Tooltip>
           <Tooltip label={props.t("forecast.notes.edit")}>
-            <button type="button" className="icon-btn fcn-icon-btn" onClick={() => props.onEdit(props.note as ForecastNote)}>
+            <button type="button" className="icon-btn icon-btn-secondary" onClick={() => props.onEdit(props.note as ForecastNote)}>
               <Pencil size="var(--icon-15)" />
             </button>
           </Tooltip>
           <Tooltip label={props.t("forecast.notes.delete")}>
-            <button type="button" className="icon-btn fcn-icon-btn" onClick={() => setConfirmDelete((value) => !value)}>
+            <button type="button" className="icon-btn icon-btn-secondary" onClick={() => setConfirmDelete((value) => !value)}>
               <Trash size="var(--icon-15)" />
             </button>
           </Tooltip>
@@ -130,10 +130,10 @@ function ForecastNoteForm({
         onChange={(event) => onDraftChange({ ...draft, content: event.target.value })}
       />
       <div className="fcn-form-actions">
-        <button type="button" className="fcn-primary-btn" disabled={saving} onClick={onSave}>
+        <button type="button" className="btn btn-sm btn-primary" disabled={saving} onClick={onSave}>
           {saving ? t("forecast.notes.saving") : t("forecast.notes.save")}
         </button>
-        <button type="button" className="fcn-secondary-btn" onClick={onCancel}>
+        <button type="button" className="btn btn-sm btn-secondary" onClick={onCancel}>
           {t("forecast.notes.cancel")}
         </button>
       </div>

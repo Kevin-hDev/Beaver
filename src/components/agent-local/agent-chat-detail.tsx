@@ -79,7 +79,7 @@ export function AgentChatDetail(props: AgentChatDetailProps) {
     <div className="agent-detail-with-preview" ref={containerRef} style={layoutStyle}>
       {props.parentSessionId && (
         <button
-          className="sa-parent-btn"
+          className="btn btn-sm btn-secondary sa-parent-btn"
           onClick={props.onGoToParent}
           type="button"
         >

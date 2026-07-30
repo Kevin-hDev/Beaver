@@ -146,12 +146,12 @@ export function ChannelsConfigDialog({ channelId, onClose, onSaved }: ChannelsCo
           )}
 
           <footer className="wk-dialog-footer">
-            <button type="button" className="wk-btn-secondary" onClick={handleClose} disabled={submitting}>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={handleClose} disabled={submitting}>
               {t("channels.detail.cancel")}
             </button>
             <button
               type="submit"
-              className="wk-btn-primary"
+              className="btn btn-sm btn-primary"
               disabled={submitting || !canSubmit}
             >
               {t("channels.config.addAndTest")}

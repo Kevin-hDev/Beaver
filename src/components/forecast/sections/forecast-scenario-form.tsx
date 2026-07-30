@@ -48,14 +48,14 @@ export function ForecastScenarioForm(props: ForecastScenarioFormProps) {
       />
       <div className="fcs-mode">
         <button
-          className={`fcs-mode-btn ${props.mode === "percent_adjustment" ? "is-active" : ""}`}
+          className={`btn btn-sm btn-secondary fcs-mode-btn ${props.mode === "percent_adjustment" ? "is-active" : ""}`}
           type="button"
           onClick={() => props.onModeChange("percent_adjustment")}
         >
           {t("forecast.scenarios.percentType")}
         </button>
         <button
-          className={`fcs-mode-btn ${props.mode === "context_adjustment" ? "is-active" : ""}`}
+          className={`btn btn-sm btn-secondary fcs-mode-btn ${props.mode === "context_adjustment" ? "is-active" : ""}`}
           type="button"
           onClick={() => props.onModeChange("context_adjustment")}
           disabled={props.covariates.length === 0}
@@ -92,7 +92,7 @@ export function ForecastScenarioForm(props: ForecastScenarioFormProps) {
           />
         )}
         <button
-          className={`fcs-add-btn ${props.editing ? "is-primary" : ""}`}
+          className={`btn btn-sm btn-secondary fcs-add-btn ${props.editing ? "is-primary" : ""}`}
           type="submit"
           disabled={props.saving || !canSubmit(props)}
         >
@@ -105,7 +105,7 @@ export function ForecastScenarioForm(props: ForecastScenarioFormProps) {
               : t("forecast.scenarios.launch")}
         </button>
         {props.editing && (
-          <button className="fcs-add-btn" type="button" onClick={props.onCancel}>
+          <button className="btn btn-sm btn-secondary fcs-add-btn" type="button" onClick={props.onCancel}>
             {t("forecast.scenarios.cancel")}
           </button>
         )}

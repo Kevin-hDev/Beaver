@@ -96,7 +96,7 @@ export function AgentImportWizard({
         <div className="aim-heading-actions">
           <button
             type="button"
-            className="aim-icon-btn"
+            className="icon-btn icon-btn-secondary"
             onClick={() => void scan()}
             aria-label={t("agentImport.actions.rescan")}
             disabled={loading}
@@ -106,7 +106,7 @@ export function AgentImportWizard({
           {onClose && (
             <button
               type="button"
-              className="aim-icon-btn"
+              className="icon-btn icon-btn-secondary"
               onClick={onClose}
               aria-label={t("a11y.close")}
             >
@@ -121,7 +121,7 @@ export function AgentImportWizard({
         {failed && !loading && (
           <div className="aim-empty">
             <span>{t("agentImport.messages.scanFailed")}</span>
-            <button type="button" className="aim-btn aim-btn-secondary" onClick={() => void scan()}>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={() => void scan()}>
               {t("agentImport.actions.retry")}
             </button>
           </div>
@@ -135,11 +135,11 @@ export function AgentImportWizard({
         <div className="aim-footer">
           <div className="aim-footer-actions">
             {onBack && (
-              <button type="button" className="aim-btn aim-btn-secondary" onClick={onBack}>
+              <button type="button" className="btn btn-sm btn-secondary" onClick={onBack}>
                 {t("onboarding.common.back")}
               </button>
             )}
-            <button type="button" className="aim-btn aim-btn-primary" onClick={onContinue}>
+            <button type="button" className="btn btn-sm btn-primary" onClick={onContinue}>
               {t("onboarding.common.continue")}
             </button>
           </div>

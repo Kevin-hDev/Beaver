@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "@/components/ui/icons";
-import "./settings-back-button.css";
 
 interface SettingsBackButtonProps {
   onClick: () => void;
@@ -11,7 +10,7 @@ export function SettingsBackButton({ onClick }: SettingsBackButtonProps) {
   return (
     <button
       type="button"
-      className="settings-back-button"
+      className="icon-btn"
       aria-label={t("common.back")}
       onClick={onClick}
     >

@@ -135,7 +135,7 @@ export function ApiKeysConfigDialog({
             {alreadyConfigured && onClearKey && (
               <button
                 type="button"
-                className="ak-btn-danger-outline"
+                className="btn btn-sm btn-destructive ak-btn-danger-outline"
                 onClick={() => void handleClearKey()}
                 disabled={submitting}
               >
@@ -144,7 +144,7 @@ export function ApiKeysConfigDialog({
             )}
             <button
               type="button"
-              className="wk-btn-secondary"
+              className="btn btn-sm btn-secondary"
               onClick={onClose}
               disabled={submitting}
             >
@@ -152,7 +152,7 @@ export function ApiKeysConfigDialog({
             </button>
             <button
               type="submit"
-              className="wk-btn-primary"
+              className="btn btn-sm btn-primary"
               disabled={submitting || !apiKey.trim()}
             >
               {alreadyConfigured

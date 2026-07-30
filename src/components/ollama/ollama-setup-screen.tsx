@@ -122,7 +122,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
           </div>
           <span className="oss-status-text">{statusText}</span>
           <button
-            className="ollama-btn ollama-btn-primary oss-cancel-btn"
+            className="btn btn-sm btn-primary"
             onClick={() => void handleCancel()}
             disabled={cancelling}
           >
@@ -132,7 +132,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
       ) : (
         <div className="oss-actions">
           <button
-            className="ollama-btn ollama-btn-primary oss-download-btn"
+            className="btn btn-sm btn-primary oss-download-btn"
             onClick={() => void handleDownload()}
             disabled={skipping}
           >
@@ -140,7 +140,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
           </button>
           {onSkip && (
             <button
-              className="ollama-btn oss-skip-btn"
+              className="btn btn-sm btn-secondary"
               onClick={() => void handleSkip()}
               disabled={skipping}
             >

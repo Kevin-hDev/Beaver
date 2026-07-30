@@ -47,7 +47,7 @@ export function ForecastEmpty({ onLoadAnalysis, onImportFile, error }: ForecastE
       <p className="fc-empty-sub">{t("forecast.askAgent")}</p>
       {error && <p className="fc-empty-error">{error}</p>}
       <div className="fc-empty-actions">
-        <button className="fc-empty-btn fc-empty-btn-primary" onClick={() => void handleImport()}>
+        <button className="btn btn-sm btn-primary" onClick={() => void handleImport()}>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"
             strokeWidth="1.5" strokeLinecap="round">
             <circle cx="7" cy="7" r="5.5" />
@@ -56,12 +56,12 @@ export function ForecastEmpty({ onLoadAnalysis, onImportFile, error }: ForecastE
           {t("forecast.importFile")}
         </button>
         <Tooltip label={t("forecast.comingSoon")}>
-          <button className="fc-empty-btn" disabled>
+          <button className="btn btn-sm btn-secondary" disabled>
             {t("forecast.pasteData")}
           </button>
         </Tooltip>
         <Tooltip label={t("forecast.comingSoon")}>
-          <button className="fc-empty-btn" disabled>
+          <button className="btn btn-sm btn-secondary" disabled>
             {t("forecast.fromUrl")}
           </button>
         </Tooltip>

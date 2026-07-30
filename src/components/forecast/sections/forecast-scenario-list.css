@@ -61,19 +61,6 @@
 
 /* Panel actions — compose .icon-btn (src/styles/buttons.css);
    keep their border and hover. */
-.fcs-icon-btn {
-  border: 1px solid var(--edge);
-  color: var(--ink-muted);
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fcs-icon-btn:hover:not(:disabled),
-.fcs-icon-btn-danger:hover:not(:disabled) {
-  background: var(--fcs-hover-bg);
-  color: var(--ink);
-  border-color: var(--edge);
-}
-
 /* Inline delete confirm — alias of the shared .btn system with the shared
    28px geometry; keeps its danger colors, absolute position and pulse animation. */
 .fcs-confirm-delete {

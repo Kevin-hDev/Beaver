@@ -51,15 +51,6 @@
 
 /* Row actions — compose .icon-btn (src/styles/buttons.css); keep the
    danger hover. */
-.wk-icon-btn {
-  color: var(--ink-muted);
-}
-
-.wk-icon-btn-danger:hover:not(:disabled) {
-  color: var(--signal-error);
-  background: var(--signal-error-bg);
-}
-
 /* Inline delete confirm — alias of the shared .btn system with .btn-sm
    geometry; keeps its danger colors and pulse animation. */
 .wk-confirm-delete {

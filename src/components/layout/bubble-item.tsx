@@ -126,7 +126,7 @@ export function BubbleItem({
           </div>
         ) : (
           <div className="update-bubble-actions">
-            <button className="update-bubble-btn" onClick={handleClick}>
+            <button className="btn btn-sm btn-primary update-bubble-btn" onClick={handleClick}>
               {buttonLabel}
             </button>
             {canExpand && (

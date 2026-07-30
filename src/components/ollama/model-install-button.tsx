@@ -75,7 +75,7 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
           </span>
         </div>
         <button
-          className="ollama-btn ollama-btn-cancel"
+          className="btn btn-sm btn-destructive"
           style={{ width: BTN_WIDTH }}
           onClick={() => void handleCancel()}
         >
@@ -100,7 +100,7 @@ export function ModelInstallButton(props: ModelInstallButtonProps) {
   const showUpdateTooltip = isInstalled && hasUpdate;
   const button = (
     <button
-      className="ollama-btn ollama-btn-primary"
+      className="btn btn-sm btn-primary"
       style={{ width: BTN_WIDTH }}
       onClick={() => void handleInstall()}
     >

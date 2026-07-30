@@ -118,7 +118,7 @@ export function LlmExplorer({ navState, onNavChange }: LlmExplorerProps) {
               placeholder={t("settings.llm.searchPlaceholder")}
             />
             <button
-              className={`llm-family-btn ${showFamilies ? "active" : ""}`}
+              className={`btn btn-sm btn-secondary llm-family-btn ${showFamilies ? "active" : ""}`}
               onClick={toggleFamilies}
             >
               {t("settings.llm.families")}

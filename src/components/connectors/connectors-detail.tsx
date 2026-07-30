@@ -61,14 +61,14 @@ export function ConnectorsDetail({
         <div className="ctd-actions">
           <button
             type="button"
-            className={`ctd-status-btn ${isConnected ? "connected" : "disconnected"}`}
+            className={`btn btn-sm btn-secondary ctd-status-btn ${isConnected ? "connected" : ""}`}
             onClick={onToggleStatus}
           >
             <span className="ctd-status-dot" />
             {t(isConnected ? "connectors.detail.connected" : "connectors.detail.disconnected")}
           </button>
           <Tooltip label={t("connectors.detail.confirmDeleteBtn")} align="right">
-            <button type="button" className="ak-icon-btn danger" onClick={() => setConfirmDelete(true)}>
+            <button type="button" className="icon-btn icon-btn-secondary icon-btn-destructive" onClick={() => setConfirmDelete(true)}>
               <Trash size="var(--icon-md)" />
             </button>
           </Tooltip>

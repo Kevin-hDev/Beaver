@@ -106,7 +106,7 @@ export function OAuthProviderLoginDialog({ provider, onClose, onConnected }: OAu
           <div className="mco-device-code">
             <span>{t("providers.oauth.codeLabel")}</span>
             <strong>{userCode}</strong>
-            <button type="button" className="ollama-btn" onClick={() => void copyCode()}>{t("providers.oauth.copyCode")}</button>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={() => void copyCode()}>{t("providers.oauth.copyCode")}</button>
           </div>
         )}
         {verificationUrl && state === "waiting" && (
@@ -116,7 +116,7 @@ export function OAuthProviderLoginDialog({ provider, onClose, onConnected }: OAu
           <button type="button" className="mco-retry-link" onClick={() => void startFlow()}>{t("connectors.oauth.retry")}</button>
         )}
         <div className="wk-dialog-footer mco-footer">
-          <button type="button" className="wk-btn-secondary" onClick={handleClose}>{t("connectors.oauth.cancel")}</button>
+          <button type="button" className="btn btn-sm btn-secondary" onClick={handleClose}>{t("connectors.oauth.cancel")}</button>
         </div>
       </div>
     </div>

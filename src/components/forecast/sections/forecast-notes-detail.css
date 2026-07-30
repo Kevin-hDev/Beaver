@@ -26,18 +26,6 @@
 
 /* Panel actions — compose .icon-btn (src/styles/buttons.css);
    keep their border and chart background. */
-.fcn-icon-btn {
-  border: 1px solid var(--edge);
-  background: var(--fc-chart-bg);
-  color: var(--ink-muted);
-  transition: background var(--ease-smooth), color var(--ease-smooth);
-}
-
-.fcn-icon-btn:hover:not(:disabled) {
-  background: var(--fcs-hover-bg);
-  color: var(--ink);
-}
-
 /* Inline delete confirm — alias of the shared .btn system with the shared
    28px geometry; keeps its danger colors and pulse animation. */
 .fcn-confirm-delete {
@@ -134,42 +122,6 @@
 
 .fcn-form-actions {
   margin-top: 12px;
-}
-
-/* Form actions — thin aliases of the shared .btn system
-   (src/styles/buttons.css) with .btn-sm geometry; only colors stay here. */
-.fcn-primary-btn,
-.fcn-secondary-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fcn-primary-btn {
-  border: 1px solid var(--pulse);
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-}
-
-.fcn-secondary-btn {
-  border: 1px solid var(--edge);
-  background: var(--surface-glass);
-  color: var(--ink);
-}
-
-.fcn-secondary-btn:hover {
-  background: var(--fcs-hover-bg);
-  color: var(--ink);
 }
 
 @container (max-width: 48rem) {

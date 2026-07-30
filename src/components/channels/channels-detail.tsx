@@ -109,14 +109,14 @@ export function ChannelsDetail({
         <div className="ctd-actions">
           <button
             type="button"
-            className={`ctd-status-btn ${isRunning ? "connected" : "disconnected"}`}
+            className={`btn btn-sm btn-secondary ctd-status-btn ${isRunning ? "connected" : ""}`}
             onClick={() => void handleConnect()}
           >
             <span className="ctd-status-dot" />
             {t(isRunning ? "channels.detail.connected" : "channels.detail.disconnected")}
           </button>
           <Tooltip label={t("channels.detail.delete")} align="right">
-            <button type="button" className="ak-icon-btn danger" onClick={() => setConfirmDelete(true)}>
+            <button type="button" className="icon-btn icon-btn-secondary icon-btn-destructive" onClick={() => setConfirmDelete(true)}>
               <Trash size="var(--icon-md)" />
             </button>
           </Tooltip>

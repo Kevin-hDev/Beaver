@@ -79,12 +79,12 @@ export function SystemPromptWarningDialog({
         </label>
 
         <div className="spw-actions">
-          <button className="ollama-btn" type="button" onClick={onCancel}>
+          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel}>
             {t("ollama.cancel")}
           </button>
           <button
             ref={continueRef}
-            className="ollama-btn ollama-btn-primary"
+            className="btn btn-sm btn-primary"
             type="button"
             onClick={handleContinue}
           >

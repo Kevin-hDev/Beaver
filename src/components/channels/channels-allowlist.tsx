@@ -45,7 +45,7 @@ export function ChannelsAllowlist({ allowlist, onChange }: ChannelsAllowlistProp
         />
         <button
           type="button"
-          className="wk-btn-secondary"
+          className="btn btn-sm btn-secondary"
           onClick={handleAdd}
           disabled={!input.trim() || allowlist.length >= MAX_ALLOWLIST_USERS}
         >

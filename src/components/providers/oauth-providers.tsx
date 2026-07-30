@@ -84,7 +84,7 @@ export function useOAuthProviderContent({ navState, onNavChange, onNavReplace }:
   const catalogButton = (
     <button
       type="button"
-      className="ak-connectors-btn"
+      className="btn btn-sm btn-primary ak-connectors-btn"
       onClick={() => { void refresh(); setDialog({ kind: "catalog" }); }}
     >
       <Plus size="var(--icon-sm)" weight="bold" />

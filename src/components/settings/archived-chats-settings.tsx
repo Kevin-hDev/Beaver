@@ -73,7 +73,7 @@ export function ArchivedChatsSettings() {
         <div className="acs-heading">
           <h2 className="acs-title">{t("settings.archivedChats.title")}</h2>
           <ConfirmButton
-            className="acs-delete-all"
+            className="btn btn-sm acs-delete-all"
             disabled={sessions.length === 0}
             label={<><Trash size="var(--icon-sm)" /><span>{t("settings.archivedChats.deleteAll")}</span></>}
             confirmLabel={t("settings.archivedChats.confirmDeleteButton")}
@@ -160,14 +160,14 @@ function ArchiveBubble({
             </div>
             <div className="acs-actions">
               <ConfirmButton
-                className="icon-btn acs-icon-btn acs-delete-confirm"
+                className="icon-btn icon-btn-destructive"
                 title={deleteLabel}
                 ariaLabel={deleteLabel}
                 label={<Trash size="var(--icon-sm)" />}
                 confirmLabel={confirmDeleteLabel}
                 onConfirm={() => onDelete(session.id)}
               />
-              <button className="acs-restore-btn" onClick={() => onRestore(session.id)}>
+              <button className="btn btn-sm btn-secondary" onClick={() => onRestore(session.id)}>
                 <Archive size="var(--icon-sm)" />
                 <span>{restoreLabel}</span>
               </button>

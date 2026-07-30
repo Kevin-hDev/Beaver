@@ -5,11 +5,3 @@
   padding: 0 var(--space-lg);
 }
 
-.ct-btn-danger {
-  background: var(--signal-error) !important;
-  border-color: var(--signal-error) !important;
-}
-
-.ct-btn-danger:hover {
-  filter: brightness(1.1);
-}

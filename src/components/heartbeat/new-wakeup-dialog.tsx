@@ -169,10 +169,10 @@ export function NewWakeupDialog({
           {error && <div className="wk-form-error">{error}</div>}
 
           <footer className="wk-dialog-footer">
-            <button type="button" className="wk-btn-secondary" onClick={onClose}>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={onClose}>
               {t("heartbeat.form.cancel")}
             </button>
-            <button type="submit" className="wk-btn-primary" disabled={disabled}>
+            <button type="submit" className="btn btn-sm btn-primary" disabled={disabled}>
               {initial ? t("heartbeat.form.save") : t("heartbeat.form.create")}
             </button>
           </footer>

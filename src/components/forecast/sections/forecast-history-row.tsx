@@ -114,6 +114,7 @@ export function ForecastHistoryRow({
           <div className="fch-confirm-popover">
             <button
               type="button"
+              className="btn btn-sm btn-primary"
               onClick={(event) => {
                 event.stopPropagation();
                 void confirmDeleteAnalysis();
@@ -123,6 +124,7 @@ export function ForecastHistoryRow({
             </button>
             <button
               type="button"
+              className="btn btn-sm btn-secondary"
               onClick={(event) => {
                 event.stopPropagation();
                 setConfirmDelete(false);
@@ -135,7 +137,7 @@ export function ForecastHistoryRow({
         <Tooltip label={t("forecast.history.edit")}>
           <button
             type="button"
-            className="icon-btn fch-icon-btn"
+            className="icon-btn icon-btn-secondary"
             onClick={(event) => {
               event.stopPropagation();
               setConfirmDelete(false);
@@ -149,7 +151,7 @@ export function ForecastHistoryRow({
       <Tooltip label={t("forecast.history.delete")}>
         <button
           type="button"
-          className="icon-btn fch-icon-btn fch-icon-btn-danger"
+          className="icon-btn icon-btn-secondary icon-btn-destructive"
           onClick={(event) => {
             event.stopPropagation();
             setEditing(false);

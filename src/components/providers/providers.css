@@ -54,11 +54,11 @@
   font-size: var(--text-sm);
 }
 
-.prv-oauth-issue .ollama-btn {
+.prv-oauth-issue .btn {
   flex-shrink: 0;
 }
 
-.prv-oauth-detail .ollama-btn {
+.prv-oauth-detail .btn {
   align-self: flex-start;
 }
 

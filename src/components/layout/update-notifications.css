@@ -101,22 +101,6 @@
 
 .update-bubble-btn {
   flex-shrink: 0;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  font-family: var(--font-sans);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-  cursor: pointer;
-  transition: opacity var(--ease-smooth);
-  white-space: nowrap;
-}
-
-.update-bubble-btn:hover {
-  opacity: 0.85;
 }
 
 .update-bubble-actions {

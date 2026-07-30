@@ -47,7 +47,7 @@ export function OnboardingPreferences({
         </div>
       </div>
 
-      <button type="button" className="ob-primary-btn" onClick={onNext}>
+      <button type="button" className="btn btn-sm btn-primary" onClick={onNext}>
         {t("onboarding.common.continue")}
         <CaretRight size="var(--icon-sm)" weight="bold" />
       </button>

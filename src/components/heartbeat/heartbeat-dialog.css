@@ -181,6 +181,3 @@
   border-top: 1px solid var(--edge);
   margin-top: var(--space-sm);
 }
-
-/* Dialog footer buttons (.wk-btn-secondary, .wk-btn-primary) live in
-   heartbeat-dialog-controls.css, imported after this file. */

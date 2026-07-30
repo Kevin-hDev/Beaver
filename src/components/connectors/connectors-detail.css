@@ -11,42 +11,26 @@
 
 .ctd-actions { display: flex; gap: 4px; align-items: center; margin-left: auto; }
 
-.ctd-status-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid var(--edge-strong);
-  transition: all var(--ease-smooth);
-}
-
+/* Le bouton porte l'état de la connexion en plus de l'action : vert quand le
+   connecteur répond, neutre sinon. */
 .ctd-status-btn.connected {
   background: var(--signal-ok-bg);
   color: var(--signal-ok);
   border-color: var(--signal-ok-border);
 }
 
-.ctd-status-btn.disconnected {
-  background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink-muted);
+.ctd-status-btn.connected:hover {
+  background: color-mix(in srgb, var(--signal-ok-bg) 70%, var(--signal-ok));
 }
-
-.ctd-status-btn:hover { filter: brightness(1.1); }
 
 .ctd-status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  background: var(--ink-faint);
 }
 
 .ctd-status-btn.connected .ctd-status-dot { background: var(--signal-ok); }
-.ctd-status-btn.disconnected .ctd-status-dot { background: var(--ink-faint); }
 
 .ctd-section { padding: 12px 20px; }
 .ctd-section-label {

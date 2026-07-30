@@ -76,7 +76,7 @@ export function TranslationControls({
       )}
 
       {!loading && currentLang && (
-        <button className="ollama-btn" onClick={() => onChange(null, null)}>
+        <button className="btn btn-sm btn-secondary" onClick={() => onChange(null, null)}>
           {t("ollama.original")}
         </button>
       )}

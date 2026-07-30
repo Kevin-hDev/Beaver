@@ -107,6 +107,6 @@
   flex: 1 1 var(--dialog-compact-min-width);
 }
 
-.exta-source-row .wk-btn-primary {
+.exta-source-row .btn-primary {
   flex-shrink: 0;
 }

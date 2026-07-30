@@ -52,33 +52,10 @@ body.al-panel-resizing .agent-detail-chat {
   transition: none !important;
 }
 
-/* Back-to-parent — thin alias of the shared .btn system
-   (src/styles/buttons.css) with .btn-sm geometry; keeps its absolute
-   positioning and accent hover. */
+/* Retour au parent — posé en surimpression du fil de la session. */
 .sa-parent-btn {
   position: absolute;
   top: 8px;
   right: 12px;
   z-index: var(--z-sticky);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-secondary);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.sa-parent-btn:hover {
-  background: var(--surface-hover);
-  color: var(--accent);
-  border-color: var(--accent);
 }

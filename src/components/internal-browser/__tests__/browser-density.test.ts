@@ -9,7 +9,9 @@ const shell = readFileSync("src/components/internal-browser/browser-shell.css", 
 describe("browser toolbar density", () => {
   it("garde des barres compactes sans réduire leur largeur", () => {
     expect(tokens).toContain("--browser-toolbar-height: 2rem;");
-    expect(tokens).toContain("--browser-control-size: 1.75rem;");
+    // Les contrôles de la barre suivent la hauteur de bouton de l'application :
+    // une valeur propre au navigateur les désalignait des boutons voisins.
+    expect(tokens).toContain("--browser-control-size: var(--btn-height);");
     expect(tokens).toContain("--browser-toolbar-padding-y: 0.125rem;");
     expect(tokens).toContain("--browser-field-padding-y: var(--space-xs);");
 

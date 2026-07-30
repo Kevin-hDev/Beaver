@@ -74,7 +74,7 @@ export function CloneSessionDialog({
                 <CloneSummaryRunIndicator className="csp-running-indicator" />
               </div>
               <footer className="wk-dialog-footer">
-                <button type="button" className="wk-btn-secondary" onClick={onAbort}>
+                <button type="button" className="btn btn-sm btn-secondary" onClick={onAbort}>
                   {t("agentLocal.cancel")}
                 </button>
               </footer>
@@ -111,15 +111,15 @@ export function CloneSessionDialog({
               {error && <div className="csp-error">{t("agentLocal.clone.summaryFailed")}</div>}
 
               <footer className="wk-dialog-footer">
-                <button type="button" className="wk-btn-secondary" onClick={onCancel}>
+                <button type="button" className="btn btn-sm btn-secondary" onClick={onCancel}>
                   {t("agentLocal.cancel")}
                 </button>
                 {error && (
-                  <button type="button" className="wk-btn-secondary" onClick={() => submit("cut")}>
+                  <button type="button" className="btn btn-sm btn-secondary" onClick={() => submit("cut")}>
                     {t("agentLocal.clone.withoutSummary")}
                   </button>
                 )}
-                <button type="button" className="wk-btn-primary" disabled={busy} onClick={() => submit()}>
+                <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => submit()}>
                   {error ? t("agentLocal.retry.button") : t("agentLocal.clone.create")}
                 </button>
               </footer>

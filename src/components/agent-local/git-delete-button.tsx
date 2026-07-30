@@ -51,7 +51,7 @@ export function GitDeleteButton({
   const button = (
     <button
       type="button"
-      className="bs-delete-btn"
+      className="icon-btn bs-delete-btn"
       data-confirming={confirming ? "true" : undefined}
       aria-label={confirming ? confirmLabel : label}
       disabled={busy}

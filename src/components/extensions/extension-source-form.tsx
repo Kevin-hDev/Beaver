@@ -38,7 +38,7 @@ export function ExtensionSourceForm(props: ExtensionSourceFormProps) {
           spellCheck={false}
           onChange={(event) => props.onLocatorChange(event.target.value)}
         />
-        <button type="submit" className="wk-btn-primary" disabled={props.busy}>
+        <button type="submit" className="btn btn-sm btn-primary" disabled={props.busy}>
           {t(props.busy ? "extensions.add.installing" : "extensions.add.install")}
         </button>
       </div>

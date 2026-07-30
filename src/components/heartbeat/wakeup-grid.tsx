@@ -21,7 +21,7 @@ export function WakeupGrid({ wakeups, summaries, onSelect, onCreate }: WakeupGri
           <span>{t("heartbeat.title")}</span>
         </div>
         <div className="wk-header-subtitle">{t("heartbeat.subtitle")}</div>
-        <button className="wk-new-btn" onClick={onCreate} type="button">
+        <button className="btn btn-sm btn-secondary wk-new-btn" onClick={onCreate} type="button">
           <Plus size="var(--icon-sm)" weight="bold" />
           {t("heartbeat.newWakeup")}
         </button>

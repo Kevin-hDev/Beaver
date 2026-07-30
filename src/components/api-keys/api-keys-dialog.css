@@ -39,31 +39,10 @@
   50% { opacity: 0; }
 }
 
-/* Bouton "Effacer la clé" — même style que Annuler, alias du système .btn
-   partagé (src/styles/buttons.css) avec la géométrie partagée 28px. */
+/* Effacer la clé — poussé à gauche du pied de dialogue, à l'écart des actions
+   d'enregistrement pour ne pas être cliqué par réflexe. */
 .ak-btn-danger-outline {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
   margin-right: auto;
-  padding: 0 var(--chrome-3);
-  background: var(--btn-secondary-bg);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.ak-btn-danger-outline:hover {
-  background: var(--surface-hover);
-  color: var(--ink);
 }
 
 /* Message de résultat de test — succès ou erreur */

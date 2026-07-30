@@ -62,16 +62,16 @@ export function ApiKeysDetails({
         icon={<ProviderIcon providerId={provider.id} displayName={provider.display_name} size={36} />}
         actions={(
           <>
-            <button type="button" className="ak-connectors-btn" onClick={onAddConnector}>
+            <button type="button" className="btn btn-sm btn-primary ak-connectors-btn" onClick={onAddConnector}>
               {t("apiKeys.main.connectorsBtn")}
             </button>
             <Tooltip label={t("apiKeys.details.edit")} align="right">
-              <button type="button" className="ak-icon-btn" onClick={onEdit}>
+              <button type="button" className="icon-btn icon-btn-secondary" onClick={onEdit}>
                 <Pencil size="var(--icon-md)" />
               </button>
             </Tooltip>
             <Tooltip label={t("apiKeys.details.delete")} align="right">
-              <button type="button" className="ak-icon-btn danger" onClick={() => setConfirmDelete(true)}>
+              <button type="button" className="icon-btn icon-btn-secondary icon-btn-destructive" onClick={() => setConfirmDelete(true)}>
                 <Trash size="var(--icon-md)" />
               </button>
             </Tooltip>

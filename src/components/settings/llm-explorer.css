@@ -22,32 +22,11 @@
   border-color: var(--edge);
 }
 
-/* Family filter — alias of the shared .btn system (src/styles/buttons.css)
-   with .btn-sm geometry. */
-.llm-family-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  background: var(--surface);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth);
-}
-
-.llm-family-btn:hover {
-  background: var(--surface-hover);
-}
-
+/* La famille retenue garde le fond du survol : c'est le seul repère qui la
+   distingue des autres filtres, tous secondaires. */
 .llm-family-btn.active {
-  background: var(--surface-hover);
-  border-color: var(--ink-faint);
+  background: var(--select-bg);
+  color: var(--ink);
 }
 
 .llm-family-grid {

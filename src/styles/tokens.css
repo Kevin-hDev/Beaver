@@ -83,6 +83,10 @@
   --agent-import-card-logo-size: 2rem;
   --agent-import-detail-logo-height: 2.25rem;
   --control-height-sm: 1.75rem;
+  /* Hauteur d'un bouton, en px et non en rem : un bouton qui grandit avec le
+     réglage de taille de police déborde des barres d'outils et des lignes de
+     réglages qui l'accueillent. */
+  --btn-height: 28px;
   --summary-commit-row-height: 2rem;
   --summary-icon-column: 1.3333rem;
   --summary-panel-indent: 1.8889rem;
@@ -91,7 +95,7 @@
   --switch-unit: 10px;
 
   --browser-toolbar-height: 2rem;
-  --browser-control-size: 1.75rem;
+  --browser-control-size: var(--btn-height);
   --compact-control-height: 24px;
   --browser-toolbar-padding-y: 0.125rem;
   --browser-field-padding-y: var(--space-xs);

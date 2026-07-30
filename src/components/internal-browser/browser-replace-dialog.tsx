@@ -17,10 +17,10 @@ export function BrowserReplaceDialog(props: BrowserReplaceDialogProps) {
         <h2 id="ib-dialog-title">{t("browser.tabLimitTitle")}</h2>
         <p>{t("browser.tabLimitDescription", { title })}</p>
         <div className="ib-dialog-actions">
-          <button type="button" className="ib-dialog-button" disabled={props.busy} onClick={props.onCancel}>
+          <button type="button" className="btn btn-sm btn-secondary" disabled={props.busy} onClick={props.onCancel}>
             {t("common.cancel")}
           </button>
-          <button type="button" className="ib-dialog-button ib-dialog-confirm" disabled={props.busy} onClick={props.onConfirm}>
+          <button type="button" className="btn btn-sm btn-primary" disabled={props.busy} onClick={props.onConfirm}>
             {t("browser.replaceTab")}
           </button>
         </div>

@@ -69,7 +69,7 @@ export function ProjectSelector({
   return (
     <div className="project-selector-row" ref={dropRef}>
       <button
-        className="project-selector-btn"
+        className="btn btn-sm btn-secondary"
         onClick={() => setOpen(!open)}
       >
         <FolderSimple size="var(--icon-sm)" />

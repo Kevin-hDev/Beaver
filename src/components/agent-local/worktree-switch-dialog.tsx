@@ -53,10 +53,10 @@ export function WorktreeSwitchDialog({
           <p className="swd-target">{target}</p>
 
           <footer className="wk-dialog-footer">
-            <button type="button" className="wk-btn-secondary" onClick={onCancel}>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={onCancel}>
               {t("switchWorktree.cancel")}
             </button>
-            <button type="button" className="wk-btn-primary" onClick={onNewSession}>
+            <button type="button" className="btn btn-sm btn-primary" onClick={onNewSession}>
               {t("switchWorktree.newSession")}
             </button>
           </footer>

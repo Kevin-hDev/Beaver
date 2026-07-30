@@ -49,7 +49,7 @@ export function CustomParameterFields({
           <Tooltip label={t("ollama.remove")}>
             <button
               type="button"
-              className="ollama-btn pe-clear-btn"
+              className="btn btn-sm btn-secondary pe-clear-btn"
               aria-label={t("ollama.remove")}
               onClick={() => onRemove(index)}
             >
@@ -60,7 +60,7 @@ export function CustomParameterFields({
       ))}
       <button
         type="button"
-        className="ollama-btn pe-add-btn"
+        className="btn btn-sm btn-secondary pe-add-btn"
         onClick={onAdd}
         disabled={parameters.length >= MAX_CUSTOM_PARAMETERS}
       >

@@ -115,23 +115,6 @@
 
 /* Panel actions — compose .icon-btn (src/styles/buttons.css);
    keep their border and danger hover. */
-.fch-icon-btn {
-  border: 1px solid var(--edge);
-  color: var(--ink-muted);
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fch-icon-btn:hover:not(:disabled) {
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.fch-icon-btn-danger:hover:not(:disabled) {
-  background: var(--signal-error-bg);
-  color: var(--signal-error);
-  border-color: var(--signal-error-border);
-}
-
 .fch-confirm-popover {
   position: absolute;
   right: calc(100% + 8px);
@@ -146,43 +129,6 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
   transform: translateY(-50%);
   box-shadow: var(--shadow-lg);
-}
-
-/* Confirm popover buttons — thin aliases of the shared .btn system
-   (src/styles/buttons.css) with .btn-sm geometry; only colors stay here. */
-.fch-confirm-popover button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fch-confirm-popover button:hover {
-  background: var(--surface-hover);
-  color: var(--ink);
-}
-
-.fch-confirm-popover button:first-child {
-  border-color: var(--pulse);
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-}
-
-.fch-confirm-popover button:first-child:hover {
-  border-color: var(--pulse);
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
 }
 
 .fch-error {

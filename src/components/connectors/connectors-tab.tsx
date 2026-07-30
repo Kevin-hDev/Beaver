@@ -95,7 +95,7 @@ export function useConnectorsTabContent({ navState, onNavChange, onNavReplace }:
   }, [addConnector, confirmAddBusy, onNavChange]);
 
   const browseButton = useMemo(() => (
-    <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "browse" })}>
+    <button type="button" className="btn btn-sm btn-primary ak-connectors-btn" onClick={() => setDialog({ kind: "browse" })}>
       <Plus size="var(--icon-sm)" weight="bold" />
       {t("connectors.main.browseBtn")}
     </button>

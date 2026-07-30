@@ -24,20 +24,6 @@
 /* .sa-btn-stop composes .icon-btn (src/styles/buttons.css) — geometry
    comes from the base class added in the TSX. */
 
-/* Open action — thin alias of the shared .btn system
-   (src/styles/buttons.css) with .btn-sm geometry. */
-.sa-btn-open {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
 .sa-stop-all svg,
 .sa-btn-stop svg {
   width: 12px;

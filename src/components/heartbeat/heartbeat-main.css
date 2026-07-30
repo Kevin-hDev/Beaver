@@ -31,38 +31,8 @@
   max-width: 420px;
 }
 
-/* Main "+ new wakeup" action — alias of the shared .btn system with
-   the shared 28px geometry; keeps its glass look in dark theme. */
 .wk-new-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
   margin-top: var(--space-sm);
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.wk-new-btn:hover {
-  background: var(--select-bg);
-  color: var(--select-text);
-  border-color: var(--select-text);
-}
-
-[data-theme="dark"] .wk-new-btn {
-  background: var(--surface-glass);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-color: transparent;
 }
 
 .wk-empty {

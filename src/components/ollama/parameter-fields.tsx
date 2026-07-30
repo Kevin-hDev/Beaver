@@ -36,7 +36,7 @@ export function ParameterField({ definition, value, t, onChange }: ParameterFiel
         />
         {value && (
           <Tooltip label={t("ollama.useDefaultValue")}>
-            <button type="button" className="ollama-btn pe-clear-btn" onClick={() => onChange("")}>
+            <button type="button" className="btn btn-sm btn-secondary pe-clear-btn" onClick={() => onChange("")}>
               ×
             </button>
           </Tooltip>
@@ -85,7 +85,7 @@ export function StopParameterField({
             <Tooltip label={t("ollama.removeStopSequence")}>
               <button
                 type="button"
-                className="ollama-btn pe-clear-btn"
+                className="btn btn-sm btn-secondary pe-clear-btn"
                 aria-label={t("ollama.removeStopSequence")}
                 onClick={() => onRemove(index)}
               >
@@ -96,7 +96,7 @@ export function StopParameterField({
         ))}
         <button
           type="button"
-          className="ollama-btn pe-inline-add-btn"
+          className="btn btn-sm btn-secondary pe-inline-add-btn"
           onClick={onAdd}
           disabled={values.length >= MAX_STOP_SEQUENCES}
         >

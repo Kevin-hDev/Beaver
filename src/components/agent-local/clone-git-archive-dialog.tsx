@@ -37,14 +37,14 @@ export function CloneGitArchiveDialog({
           {t("agentLocal.clone.gitArchiveDescription", { branch: branchName })}
         </div>
         <div className="cga-actions">
-          <button className="cga-btn" type="button" onClick={onArchive} disabled={busy}>
+          <button className="btn btn-sm btn-secondary" type="button" onClick={onArchive} disabled={busy}>
             {t("agentLocal.clone.gitArchiveKeep")}
           </button>
-          <button className="cga-btn" type="button" onClick={onCancel} disabled={busy}>
+          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel} disabled={busy}>
             {t("agentLocal.clone.gitArchiveCancel")}
           </button>
           <button
-            className="cga-btn cga-btn-wide"
+            className="btn btn-sm btn-secondary btn btn-sm btn-secondary-wide"
             type="button"
             onClick={onCleanupArchive}
             disabled={busy}

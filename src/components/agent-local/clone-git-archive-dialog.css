@@ -53,36 +53,6 @@
   margin-top: var(--space-lg);
 }
 
-/* Dialog actions — thin aliases of the shared .btn system
-   (src/styles/buttons.css) with the shared 28px geometry. */
-.cga-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.cga-btn:hover:not(:disabled) {
-  background: var(--surface-hover);
-  color: var(--ink);
-}
-
-.cga-btn:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
 .cga-btn-wide {
   grid-column: 1 / -1;
 }

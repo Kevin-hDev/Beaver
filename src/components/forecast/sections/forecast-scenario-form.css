@@ -17,39 +17,11 @@
   gap: 6px;
 }
 
-/* Mode toggle + context add — thin aliases of the shared .btn system
-   (src/styles/buttons.css) with .btn-sm geometry; only colors stay here. */
-.fcs-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fcs-mode-btn:hover:not(:disabled),
+/* Le mode retenu garde le fond du survol en permanence : c'est le seul repère
+   qui distingue le mode actif des autres, tous secondaires. */
 .fcs-mode-btn.is-active {
-  border-color: var(--edge-strong);
+  background: var(--select-bg);
   color: var(--ink);
-  background: var(--fcs-hover-bg);
-}
-
-.fcs-mode-btn:disabled,
-.fcs-add-btn:disabled,
-.fcs-context-add:disabled {
-  cursor: default;
-  opacity: 0.6;
 }
 
 .fcs-context {
@@ -75,27 +47,6 @@
 
 .fcs-context-add {
   width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  background: var(--btn-secondary-bg);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.fcs-context-add:hover:not(:disabled) {
-  background: var(--fcs-hover-bg);
-  color: var(--ink);
 }
 
 .fcs-input {
@@ -128,10 +79,11 @@
   margin: 0;
 }
 
+/* Pendant l'édition d'un scénario, l'action d'enregistrement reste allumée
+   pour signaler qu'un changement attend d'être validé. */
 .fcs-add-btn.is-primary,
 .fcs-add-btn.is-primary:hover {
-  background: var(--fcs-hover-bg);
-  border-color: var(--edge);
+  background: var(--select-bg);
   color: var(--ink);
 }
 

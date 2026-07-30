@@ -41,8 +41,9 @@
 }
 
 /* Hero CTA: shared 28px height, wide padding as its unique feature. */
+/* Action principale de l'écran d'installation : seule à s'écarter du padding
+   standard, pour peser plus que le lien « passer » posé à côté. */
 .oss-download-btn {
-  height: 28px;
   padding: 0 var(--chrome-5);
 }
 
@@ -51,12 +52,6 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-}
-
-.oss-skip-btn,
-.oss-cancel-btn {
-  height: 28px;
-  padding: 0 var(--chrome-3);
 }
 
 .oss-error-block {

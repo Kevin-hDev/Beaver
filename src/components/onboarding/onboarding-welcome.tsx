@@ -15,7 +15,7 @@ export function OnboardingWelcome({ onNext }: OnboardingWelcomeProps) {
         <h1 className="ob-title">{t("onboarding.welcome.title")}</h1>
         <p className="ob-description">{t("onboarding.welcome.description")}</p>
       </div>
-      <button type="button" className="ob-primary-btn" onClick={onNext}>
+      <button type="button" className="btn btn-sm btn-primary" onClick={onNext}>
         {t("onboarding.welcome.getStarted")}
         <CaretRight size="var(--icon-sm)" weight="bold" />
       </button>

@@ -72,7 +72,7 @@ export function ExtensionPrioritySection({
           )}
           <button
             type="button"
-            className="wk-btn-secondary extpr-add"
+            className="btn btn-sm btn-secondary extpr-add"
             disabled={busy}
             onClick={() => setEditing(true)}
           >

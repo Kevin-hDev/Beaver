@@ -1,15 +1,16 @@
-/* Unified button system — Phase 1 spec §2.
-   One base, four variants, one size (28px — owner decision 2026-07-20,
-   Ollama buttons as the reference). Domain button classes are thin
-   aliases of this geometry (see ollama.css, heartbeat-dialog.css and the
-   settings components) and keep only their domain-specific colors. */
+/* Système de boutons — source unique pour toute l'application.
+   Une géométrie, cinq variantes. Les classes de domaine ne gardent que ce qui
+   leur est propre : position, largeur, couleur de signal. Forme, couleurs et
+   survol viennent d'ici — sinon chaque page redessine son bouton et ils
+   divergent, ce qui donne des boutons différents d'un onglet à l'autre.
+   Référence visuelle : les boutons de la fiche Ollama. */
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--chrome-2);
-  border: 1px solid transparent;
+  border: var(--line-thin) solid transparent;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-sm);
@@ -20,7 +21,7 @@
 }
 
 .btn-sm {
-  height: 28px;
+  height: var(--btn-height);
   padding: 0 var(--chrome-3);
 }
 
@@ -34,14 +35,17 @@
 }
 
 .btn-secondary {
-  background: var(--btn-secondary-bg);
   border-color: var(--edge-strong);
-  color: var(--ink);
+  background: var(--btn-secondary-bg);
   box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  color: var(--ink-muted);
 }
 
+/* Le survol assombrit le fond, il ne change pas le contour : un survol qui ne
+   fait qu'éclairer la bordure se lit comme un état de focus, pas comme un
+   bouton qu'on s'apprête à cliquer. */
 .btn-secondary:hover:not(:disabled) {
-  background: var(--surface-hover);
+  background: var(--select-bg);
 }
 
 .btn-danger {
@@ -51,6 +55,21 @@
 
 .btn-danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--signal-error) 88%, black);
+}
+
+/* Action destructrice annoncée au survol : neutre au repos pour ne pas crier
+   dans une barre d'actions, rouge dès qu'on la vise. */
+.btn-destructive {
+  border-color: var(--edge-strong);
+  background: var(--btn-secondary-bg);
+  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  color: var(--ink-muted);
+}
+
+.btn-destructive:hover:not(:disabled) {
+  border-color: var(--signal-error-border);
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
 }
 
 .btn-ghost {
@@ -68,18 +87,16 @@
   cursor: default;
 }
 
-/* Icon-only buttons — Phase 1 spec §3.
-   One size only: 28px everywhere (owner decision 2026-07-20).
-   Domain classes compose this base (added alongside in the TSX) and keep
-   only their colors, positioning, animations and disabled states. */
+/* Boutons à icône seule — même hauteur que les boutons texte pour qu'ils
+   s'alignent dans une même barre d'actions. */
 
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: var(--btn-height);
+  height: var(--btn-height);
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -92,6 +109,29 @@
 .icon-btn:hover:not(:disabled) {
   background: var(--surface-hover);
   color: var(--ink);
+}
+
+/* Variante encadrée, pour les icônes posées hors d'une carte où le bouton nu
+   n'a aucun contour qui le distingue du fond. */
+.icon-btn-secondary {
+  border: var(--line-thin) solid var(--edge-strong);
+  background: var(--btn-secondary-bg);
+  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
+  color: var(--ink-muted);
+}
+
+.icon-btn-secondary:hover:not(:disabled) {
+  background: var(--select-bg);
+  color: var(--ink);
+}
+
+.icon-btn-destructive:hover:not(:disabled) {
+  background: var(--signal-error-bg);
+  color: var(--signal-error);
+}
+
+.icon-btn-secondary.icon-btn-destructive:hover:not(:disabled) {
+  border-color: var(--signal-error-border);
 }
 
 .icon-btn:disabled {

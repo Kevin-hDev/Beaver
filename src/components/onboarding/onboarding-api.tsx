@@ -139,7 +139,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
       <div className="ob-actions">
         <button
           type="button"
-          className="ob-secondary-btn"
+          className="btn btn-sm btn-secondary"
           onClick={onBack}
           disabled={saveState === "saving"}
         >
@@ -147,7 +147,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
         </button>
         <button
           type="button"
-          className="ob-primary-btn"
+          className="btn btn-sm btn-primary"
           onClick={() => void handleSave()}
           disabled={!selected || !apiKey.trim() || saveState === "saving"}
         >
@@ -160,7 +160,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
         </button>
         <button
           type="button"
-          className="ob-secondary-btn"
+          className="btn btn-sm btn-secondary"
           onClick={() => void finish()}
           disabled={saveState === "saving"}
         >

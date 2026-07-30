@@ -36,8 +36,8 @@ export function ConnectorsConfirmDialogs({
           )}
           {confirmAddError && <div className="ak-test-result error">{t("connectors.config.testError")}</div>}
           <div className="wk-dialog-footer">
-            <button type="button" className="wk-btn-secondary" onClick={() => onCloseAdd(dialog.returnTo)}>{t("connectors.detail.cancel")}</button>
-            <button type="button" className="wk-btn-primary" disabled={confirmAddBusy} onClick={() => onConfirmAdd(dialog.connector)}>{t("connectors.config.confirmAddBtn")}</button>
+            <button type="button" className="btn btn-sm btn-secondary" onClick={() => onCloseAdd(dialog.returnTo)}>{t("connectors.detail.cancel")}</button>
+            <button type="button" className="btn btn-sm btn-primary" disabled={confirmAddBusy} onClick={() => onConfirmAdd(dialog.connector)}>{t("connectors.config.confirmAddBtn")}</button>
           </div>
         </div>
       </div>
@@ -53,8 +53,8 @@ export function ConnectorsConfirmDialogs({
         <h3>{t("connectors.detail.confirmDisconnectTitle", { name: connectorName })}</h3>
         <p className="ct-confirm-desc">{t("connectors.detail.confirmDisconnectDesc", { name: connectorName })}</p>
         <div className="wk-dialog-footer">
-          <button type="button" className="wk-btn-secondary" onClick={onCloseDisconnect}>{t("connectors.detail.cancel")}</button>
-          <button type="button" className="wk-btn-primary ct-btn-danger" onClick={onDisconnect}>{t("connectors.detail.confirmDisconnectBtn")}</button>
+          <button type="button" className="btn btn-sm btn-secondary" onClick={onCloseDisconnect}>{t("connectors.detail.cancel")}</button>
+          <button type="button" className="btn btn-sm btn-primary ct-btn-danger" onClick={onDisconnect}>{t("connectors.detail.confirmDisconnectBtn")}</button>
         </div>
       </div>
     </div>

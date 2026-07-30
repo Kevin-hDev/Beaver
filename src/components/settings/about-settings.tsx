@@ -49,7 +49,7 @@ export function AboutSettings() {
           <button
             type="button"
             onClick={() => void open(GITHUB_URL)}
-            className="as-github-btn"
+            className="btn btn-sm btn-secondary as-github-btn"
           >
             {t("about.viewOnGithub")} <ArrowSquareOut size="var(--icon-sm)" />
           </button>

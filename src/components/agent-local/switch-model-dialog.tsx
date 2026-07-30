@@ -82,14 +82,14 @@ export function SwitchModelDialog({
           <footer className="wk-dialog-footer">
             <button
               type="button"
-              className="wk-btn-secondary"
+              className="btn btn-sm btn-secondary"
               onClick={() => onNewSession(remember)}
             >
               {t("switchModel.newSession")}
             </button>
             <button
               type="button"
-              className="wk-btn-primary"
+              className="btn btn-sm btn-primary"
               onClick={() => onContinue(remember)}
             >
               {t("switchModel.continue")}

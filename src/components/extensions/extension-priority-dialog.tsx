@@ -88,7 +88,7 @@ export function ExtensionPriorityDialog({
         <div className="wk-dialog-footer">
           <button
             type="button"
-            className="wk-btn-secondary"
+            className="btn btn-sm btn-secondary"
             disabled={busy}
             onClick={onCancel}
           >
@@ -96,7 +96,7 @@ export function ExtensionPriorityDialog({
           </button>
           <button
             type="button"
-            className="wk-btn-primary"
+            className="btn btn-sm btn-primary"
             disabled={busy}
             onClick={() => void onSave(selected)}
           >

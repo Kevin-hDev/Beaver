@@ -44,31 +44,10 @@
   margin-top: 16px;
 }
 
-/* GitHub link — full-width alias of the shared .btn system
-   (src/styles/buttons.css) with the shared 28px geometry. */
+/* Seul bouton de la page à occuper toute la largeur de sa carte : c'est le
+   lien vers le dépôt, pas une action parmi d'autres dans une rangée. */
 .as-github-btn {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--chrome-2);
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  background: var(--btn-secondary-bg);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: inset 0 1px 0 var(--btn-inner-highlight);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 150ms ease, border-color 150ms ease;
-}
-
-.as-github-btn:hover {
-  border-color: var(--ink-faint);
-  background: var(--surface-hover);
 }
 
 .as-info-row {

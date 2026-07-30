@@ -27,7 +27,7 @@ export function ForecastNotesHeader({
           </span>
         )}
       </div>
-      <button className="fcn-new-btn" type="button" onClick={onCreate}>
+      <button className="btn btn-sm btn-secondary" type="button" onClick={onCreate}>
         <Plus size="var(--icon-sm)" />
         <span>{t("forecast.notes.new")}</span>
       </button>

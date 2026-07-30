@@ -81,7 +81,7 @@
   margin-top: var(--space-lg);
 }
 
-.spw-actions .ollama-btn:focus-visible,
+.spw-actions .btn:focus-visible,
 .spw-remember input:focus-visible {
   outline: 1px solid var(--ink-faint);
   outline-offset: 2px;

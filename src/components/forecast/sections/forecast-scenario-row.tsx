@@ -97,7 +97,7 @@ export function ForecastScenarioRow({
           )}
           <Tooltip label={t("forecast.scenarios.edit")}>
             <button
-              className="icon-btn fcs-icon-btn"
+              className="icon-btn icon-btn-secondary"
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
@@ -109,7 +109,7 @@ export function ForecastScenarioRow({
           </Tooltip>
           <Tooltip label={t("forecast.scenarios.delete")}>
             <button
-              className="icon-btn fcs-icon-btn fcs-icon-btn-danger"
+              className="icon-btn icon-btn-secondary icon-btn-destructive"
               type="button"
               onClick={(event) => {
                 event.stopPropagation();

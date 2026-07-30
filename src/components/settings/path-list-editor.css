@@ -45,33 +45,3 @@
   gap: 8px;
   margin-top: 4px;
 }
-
-/* Add/reset actions — aliases of the shared .btn system
-   (src/styles/buttons.css) with .btn-sm geometry. */
-.ple-add-btn {
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}
-
-.ple-reset-btn {
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--ink-muted);
-  background: none;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), color var(--ease-smooth), border-color var(--ease-smooth);
-}

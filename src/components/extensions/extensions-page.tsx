@@ -68,7 +68,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
 
   const addButton = section === "custom"
     ? (
-      <button type="button" className="wk-btn-primary" onClick={props.onAdd}>
+      <button type="button" className="btn btn-sm btn-primary" onClick={props.onAdd}>
         <Plus size="var(--icon-sm)" weight="bold" />
         {t("extensions.actions.add")}
       </button>

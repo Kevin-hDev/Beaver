@@ -74,7 +74,7 @@ export function WakeupDetails({
         <div className="wk-details-actions">
           <Tooltip label={t("heartbeat.edit")}>
             <button
-              className="icon-btn wk-icon-btn"
+              className="icon-btn"
               onClick={onEdit}
               type="button"
             >
@@ -93,7 +93,7 @@ export function WakeupDetails({
           ) : (
             <Tooltip label={t("heartbeat.delete")}>
               <button
-                className="icon-btn wk-icon-btn wk-icon-btn-danger"
+                className="icon-btn icon-btn-destructive"
                 onClick={handleDelete}
                 type="button"
               >

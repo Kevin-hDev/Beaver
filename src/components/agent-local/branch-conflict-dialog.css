@@ -159,6 +159,6 @@
   color: var(--signal-warning);
 }
 
-/* Action buttons (.bcd-actions, .bcd-btn and variants) live in
-   branch-conflict-dialog-controls.css, imported after this file. */
+/* La rangée d'actions (.bcd-actions) vit dans
+   branch-conflict-dialog-controls.css, importé après ce fichier. */
 

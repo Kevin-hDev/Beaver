@@ -20,10 +20,10 @@ export function MissingDirectoryPrompt({ directory, resolving, onResolve }: Prop
         </span>
       </span>
       <span className="mdp-actions">
-        <button type="button" disabled={resolving} onClick={() => onResolve("switch")}>
+        <button type="button" className="btn btn-sm btn-secondary" disabled={resolving} onClick={() => onResolve("switch")}>
           {t("missingDirectory.switch")}
         </button>
-        <button type="button" disabled={resolving} onClick={() => onResolve("create")}>
+        <button type="button" className="btn btn-sm btn-secondary" disabled={resolving} onClick={() => onResolve("create")}>
           {t("missingDirectory.create")}
         </button>
       </span>

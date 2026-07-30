@@ -29,10 +29,10 @@ export function BranchGithubAuthDialog({
         {state === "testing" && <div className="bcd-hint">{t("branches.githubAuthTesting")}</div>}
         {state === "error" && <div className="bcd-error">{t("branches.githubAuthError")}</div>}
         <div className="bcd-actions">
-          <button className="bcd-btn" onClick={onCancel} type="button" disabled={busy}>
+          <button className="btn btn-sm btn-secondary" onClick={onCancel} type="button" disabled={busy}>
             {t("branches.githubAuthCancel")}
           </button>
-          <button className="bcd-btn bcd-btn-primary" onClick={onConnect} type="button" disabled={busy}>
+          <button className="btn btn-sm btn-primary" onClick={onConnect} type="button" disabled={busy}>
             {t("branches.githubAuthConnect")}
           </button>
         </div>

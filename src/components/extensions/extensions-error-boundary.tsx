@@ -42,7 +42,7 @@ export class ExtensionsErrorBoundary extends Component<
     return (
       <div className="exeb-fallback" role="alert">
         <p>{i18n.t("extensions.errors.view")}</p>
-        <button type="button" className="wk-btn-secondary" onClick={this.reset}>
+        <button type="button" className="btn btn-sm btn-secondary" onClick={this.reset}>
           {i18n.t("extensions.actions.back")}
         </button>
       </div>

@@ -38,13 +38,13 @@ export function ModelfileView({
           </h2>
           <div className="mfv-actions">
             <ConfirmButton
-              className="ollama-btn"
+              className="btn btn-sm btn-secondary"
               label={t("ollama.remove")}
               confirmLabel={t("settings.confirm.deleteModel")}
               onConfirm={onDelete}
               disabled={deleting}
             />
-            <button className="ollama-btn" onClick={onEditModelfile}>
+            <button className="btn btn-sm btn-secondary" onClick={onEditModelfile}>
               {t("ollama.editModelfile")}
             </button>
           </div>
@@ -95,7 +95,7 @@ function ViewSection({
         <span className="mfv-section-title">
           {title}
         </span>
-        <button className="ollama-btn ollama-btn-primary" onClick={onEdit}>
+        <button className="btn btn-sm btn-primary" onClick={onEdit}>
           {editLabel}
         </button>
       </div>

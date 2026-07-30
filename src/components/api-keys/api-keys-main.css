@@ -1,24 +1,5 @@
-/* nowrap + flex-shrink comme le système .btn partagé : en concurrence
-   horizontale avec un titre, le libellé se coupait en deux lignes qui
-   débordaient d'un bouton bloqué à 28px de haut. Le bouton s'élargit. */
+/* En concurrence horizontale avec un titre, le libellé se coupait en deux
+   lignes qui débordaient d'un bouton à hauteur fixe. Le bouton s'élargit. */
 .ak-connectors-btn {
-  display: inline-flex;
-  align-items: center;
   flex-shrink: 0;
-  gap: 6px;
-  height: 28px;
-  padding: 0 var(--chrome-3);
-  white-space: nowrap;
-  background: var(--pulse);
-  border: 1px solid var(--pulse);
-  border-radius: var(--radius-sm);
-  color: var(--ink-on-pulse);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: filter var(--ease-smooth);
-}
-
-.ak-connectors-btn:hover {
-  filter: brightness(1.1);
 }

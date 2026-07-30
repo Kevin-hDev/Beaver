@@ -29,7 +29,7 @@ export function ExtensionActions(props: ExtensionActionsProps) {
       <div className="extp-actions">
         <button
           type="button"
-          className="wk-btn-secondary"
+          className="btn btn-sm btn-secondary"
           disabled={props.busy}
           onClick={props.onOpenSource}
         >
@@ -37,7 +37,7 @@ export function ExtensionActions(props: ExtensionActionsProps) {
         </button>
         {props.managed && (
           <ConfirmButton
-            className="wk-btn-secondary"
+            className="btn btn-sm btn-secondary"
             label={<><ArrowsClockwise size="var(--icon-sm)" />{t("extensions.actions.update")}</>}
             confirmLabel={t("extensions.actions.confirmUpdate")}
             onConfirm={props.onUpdate}
@@ -46,14 +46,14 @@ export function ExtensionActions(props: ExtensionActionsProps) {
         )}
         <button
           type="button"
-          className="wk-btn-secondary"
+          className="btn btn-sm btn-secondary"
           disabled={props.busy}
           onClick={props.onReload}
         >
           <ArrowsClockwise size="var(--icon-sm)" />{t("extensions.actions.reload")}
         </button>
         <ConfirmButton
-          className="wk-btn-secondary extd-danger"
+          className="btn btn-sm btn-secondary extd-danger"
           label={<><Trash size="var(--icon-sm)" />{t("extensions.actions.remove")}</>}
           confirmLabel={t("extensions.actions.confirmRemove")}
           onConfirm={props.onRemove}

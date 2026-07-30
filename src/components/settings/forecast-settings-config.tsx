@@ -109,12 +109,12 @@ export function ForecastConfigView({
           />
         )}
         {editing && (
-          <button className="ollama-btn" onClick={cancelEdit} disabled={saving}>
+          <button className="btn btn-sm btn-secondary" onClick={cancelEdit} disabled={saving}>
             {t("forecast.modelConfig.cancel")}
           </button>
         )}
         <button
-          className={`ollama-btn ${editing ? "ollama-btn-primary" : ""}`}
+          className={`btn btn-sm ${editing ? "btn-primary" : "btn-secondary"}`}
           onClick={() => (editing ? void handleSave() : setEditing(true))}
           disabled={saving || !config}
         >

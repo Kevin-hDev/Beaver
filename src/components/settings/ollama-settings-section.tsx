@@ -114,7 +114,7 @@ export function OllamaSettingsSection({
           description={t("settings.advanced.restartRequiredDesc")}
         >
           <button
-            className="ollama-btn ollama-btn-primary"
+            className="btn btn-sm btn-primary"
             onClick={() => void handleRestart()}
             disabled={restarting}
             style={{ whiteSpace: "nowrap" }}

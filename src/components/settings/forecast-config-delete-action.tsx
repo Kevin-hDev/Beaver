@@ -32,7 +32,7 @@ export function ForecastConfigDeleteAction({
 
   return (
     <ConfirmButton
-      className="ollama-btn fs-delete-model"
+      className="btn btn-sm btn-secondary fs-delete-model"
       label={deleting ? t("forecast.models.uninstalling") : t("forecast.models.uninstall")}
       confirmLabel={t("forecast.models.confirmUninstall")}
       onConfirm={() => void handleDelete()}

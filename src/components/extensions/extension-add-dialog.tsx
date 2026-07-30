@@ -165,7 +165,7 @@ export function ExtensionAddDialog({ onAdd, onInstall, onClose }: ExtensionAddDi
           />
         )}
         <div className="wk-dialog-footer">
-          <button type="button" className="wk-btn-secondary" disabled={busy} onClick={close}>
+          <button type="button" className="btn btn-sm btn-secondary" disabled={busy} onClick={close}>
             {t("extensions.actions.cancel")}
           </button>
         </div>

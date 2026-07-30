@@ -54,26 +54,6 @@
   gap: var(--space-xs);
 }
 
-.aim-bulk-actions button {
-  min-height: var(--control-height-sm);
-  padding: 0 var(--space-sm);
-  border: 1px solid var(--edge-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-  color: var(--ink-muted);
-  font-size: var(--text-xs);
-}
-
-.aim-bulk-actions button:hover:not(:disabled) {
-  border-color: var(--pulse);
-  color: var(--pulse);
-}
-
-.aim-bulk-actions button:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
 .aim-search {
   margin-top: var(--space-sm);
   padding: 0 var(--space-sm);

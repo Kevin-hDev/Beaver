@@ -71,7 +71,7 @@ export function ForecastScenarioContextFields({
           />
           <Tooltip label={t("forecast.scenarios.removeContext")}>
             <button
-              className="icon-btn fcs-icon-btn"
+              className="icon-btn icon-btn-secondary"
               type="button"
               onClick={() => removeAdjustment(index)}
             >
@@ -82,7 +82,7 @@ export function ForecastScenarioContextFields({
       ))}
 
       <button
-        className="fcs-context-add"
+        className="btn btn-sm btn-secondary fcs-context-add"
         type="button"
         disabled={!canAdd}
         onClick={addAdjustment}

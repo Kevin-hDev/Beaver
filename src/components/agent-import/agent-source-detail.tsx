@@ -137,7 +137,7 @@ export function AgentSourceDetail({
         {source.configured && source.enabled && (
           <button
             type="button"
-            className="aim-btn aim-btn-secondary"
+            className="btn btn-sm btn-secondary"
             onClick={() => onSave(buildSourceSelection(source, draft, false))}
             disabled={saving}
           >
@@ -147,7 +147,7 @@ export function AgentSourceDetail({
         {showPrimaryAction && (
           <button
             type="button"
-            className="aim-btn aim-btn-primary"
+            className="btn btn-sm btn-primary"
             onClick={() => onSave(buildSourceSelection(source, draft))}
             disabled={saving || source.status === "missing"}
           >

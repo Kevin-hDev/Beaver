@@ -40,10 +40,10 @@ export function GitCommitDialog({ files, busy, error, onCancel, onCommit }: GitC
         </label>
         {error && <div className="bcd-error">{error}</div>}
         <div className="bcd-actions">
-          <button className="bcd-btn" type="button" onClick={onCancel} disabled={busy}>
+          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel} disabled={busy}>
             {t("agentLocal.sessionSummary.git.cancel")}
           </button>
-          <button className="bcd-btn bcd-btn-primary" type="button" onClick={() => onCommit(description || undefined)} disabled={busy}>
+          <button className="btn btn-sm btn-primary" type="button" onClick={() => onCommit(description || undefined)} disabled={busy}>
             {t("agentLocal.sessionSummary.git.confirmCommit")}
           </button>
         </div>

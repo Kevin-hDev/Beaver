@@ -32,11 +32,11 @@ export function ModelEditorShell({
         <div className="mes-header">
           <h2 className="mes-title">{title}</h2>
           <div className="mes-actions">
-            <button className="ollama-btn" onClick={onCancel} disabled={saving}>
+            <button className="btn btn-sm btn-secondary" onClick={onCancel} disabled={saving}>
               {cancelLabel}
             </button>
             <button
-              className="ollama-btn ollama-btn-primary"
+              className="btn btn-sm btn-primary"
               onClick={onSave}
               disabled={saving}
             >

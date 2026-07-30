@@ -81,32 +81,6 @@
   flex-shrink: 0;
 }
 
-.ak-icon-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  color: var(--ink-muted);
-  cursor: pointer;
-  transition: all var(--ease-smooth);
-  display: flex;
-}
-
-.ak-icon-btn:hover {
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.ak-icon-btn.danger:hover {
-  background: var(--signal-error-bg);
-  color: var(--signal-error);
-  border-color: var(--signal-error-border);
-}
-
 .ak-detail-body {
   padding: 0 var(--space-lg) var(--space-lg);
   overflow-y: auto;
