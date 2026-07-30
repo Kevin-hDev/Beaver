@@ -10,6 +10,24 @@
     max(0px, calc(var(--space-sm) - 4px));
 }
 
+/* Le premier groupe colle au haut de la colonne ; les suivants respirent, sinon
+   les sections se lisent comme une seule liste continue. */
+.settings-subtab-group + .settings-subtab-group {
+  margin-top: var(--space-md);
+}
+
+/* Libellé de section, pas une destination : aligné sur le texte des onglets et
+   non sur leur icône, pour se lire comme un titre au-dessus d'eux. */
+.settings-subtab-heading {
+  padding: var(--space-2xs) var(--nav-item-padding-x) var(--space-xs);
+  color: var(--ink-faint);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
 .settings-subtab {
   display: flex;
   align-items: center;

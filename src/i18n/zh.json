@@ -743,6 +743,7 @@
       "types": { "preference": "偏好", "feedback": "反馈", "project": "项目", "reference": "参考" },
       "statuses": { "confirmed": "已确认", "inferred": "已推断", "stale": "待核实", "archived": "已归档" }
     },
+    "sections": { "preferences": "偏好设置", "agent": "智能体", "models": "模型", "integrations": "集成", "application": "应用" },
     "tabs": {
       "general": "通用",
       "ollama": "Ollama",

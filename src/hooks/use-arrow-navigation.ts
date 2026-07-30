@@ -32,7 +32,9 @@ export function shouldIgnoreKeyboardNavigation(target: EventTarget | null): bool
 }
 
 interface ArrowNavOptions<T> {
-  items: T[];
+  /* En lecture seule : le hook ne fait que parcourir la liste, et l'exiger
+     mutable interdisait de lui passer une constante figée. */
+  items: readonly T[];
   selectedId: T | null;
   onSelect: (id: T) => void;
   enabled?: boolean;

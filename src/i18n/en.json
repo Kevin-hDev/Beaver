@@ -748,6 +748,7 @@
       "types": { "preference": "Preference", "feedback": "Feedback", "project": "Project", "reference": "Reference" },
       "statuses": { "confirmed": "Confirmed", "inferred": "Inferred", "stale": "Needs review", "archived": "Archived" }
     },
+    "sections": { "preferences": "Preferences", "agent": "Agent", "models": "Models", "integrations": "Integrations", "application": "Application" },
     "tabs": {
       "general": "General",
       "ollama": "Ollama",

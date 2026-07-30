@@ -748,6 +748,7 @@
       "types": { "preference": "Préférence", "feedback": "Retour", "project": "Projet", "reference": "Référence" },
       "statuses": { "confirmed": "Confirmé", "inferred": "Déduit", "stale": "À vérifier", "archived": "Archivé" }
     },
+    "sections": { "preferences": "Préférences", "agent": "Agent", "models": "Modèles", "integrations": "Intégrations", "application": "Application" },
     "tabs": {
       "general": "Général",
       "ollama": "Ollama",
@@ -756,7 +757,7 @@
       "apiKeys": "Clés API",
       "providers": "Providers",
       "llm": "LLM",
-      "tools": "Tools",
+      "tools": "Outils",
       "memory": "Mémoire",
       "mascot": "Mascotte",
       "archivedChats": "Chats archivés",

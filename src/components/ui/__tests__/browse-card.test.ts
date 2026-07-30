@@ -14,8 +14,15 @@ function themeCss(name: string): string {
   return readFileSync(`src/styles/themes/${name}.css`, "utf8");
 }
 
-function alphaOf(css: string, token: string): number {
-  const value = new RegExp(`--${token}:\\s*([^;]+);`).exec(css)?.[1] ?? "";
+function cardBg(css: string): string {
+  return /--card-on-glass:\s*([^;]+);/.exec(css)?.[1] ?? "";
+}
+
+function chipBg(css: string): string {
+  return /--chip-bg:\s*([^;]+);/.exec(css)?.[1] ?? "";
+}
+
+function alphaOf(value: string): number {
   const rgba = /rgba\([^)]*,\s*([\d.]+)\s*\)/.exec(value);
   // Une couleur sans canal alpha (#rrggbb, rgb(...)) est pleinement opaque.
   return rgba ? Number.parseFloat(rgba[1]) : 1;
@@ -26,7 +33,7 @@ describe("card de catalogue", () => {
     // Ces cards sont posées sur un panneau en verre dépoli. Un fond opaque
     // masquerait le flou derrière chacune d'elles et l'effet disparaîtrait
     // là où il se voit le plus (demande du propriétaire, 2026-07-30).
-    const opaque = THEMES.filter((name) => alphaOf(themeCss(name), "card-on-glass") >= 1);
+    const opaque = THEMES.filter((name) => alphaOf(cardBg(themeCss(name))) >= 1);
 
     expect(opaque).toEqual([]);
   });
@@ -36,11 +43,10 @@ describe("card de catalogue", () => {
     // sombre : la pastille avait la couleur exacte de la card et disparaissait.
     for (const name of THEMES) {
       const css = themeCss(name);
-      const chip = new RegExp("--chip-bg:\\s*([^;]+);").exec(css)?.[1];
-      const card = new RegExp("--card-on-glass:\\s*([^;]+);").exec(css)?.[1];
 
-      expect(chip, `--chip-bg absent de ${name}`).toBeDefined();
-      expect(chip, `--chip-bg identique à la card dans ${name}`).not.toBe(card);
+      expect(chipBg(css), `--chip-bg absent de ${name}`).not.toBe("");
+      expect(chipBg(css), `--chip-bg identique à la card dans ${name}`)
+        .not.toBe(cardBg(css));
     }
   });
 

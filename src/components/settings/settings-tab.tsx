@@ -1,11 +1,8 @@
 "use no memo";
 import { useCallback, useState, useMemo, memo } from "react";
-import { useTranslation } from "react-i18next";
 import { useSettings } from "@/hooks/use-settings";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import type { ThemeChoice } from "@/hooks/use-theme";
-import { Archive, Brain, GearSix, Key, Sliders, Info, BookOpenText, Keyboard, Plugs, Broadcast, ChartLineUp, Wrench, PawPrint, PuzzlePiece } from "@/components/ui/icons";
-import { ThemedIcon } from "@/components/ui/themed-icon";
 import { GeneralSettings } from "./general-settings";
 import { AdvancedSettings } from "./advanced-settings";
 import { ToolsSettings } from "./tools-settings";
@@ -16,9 +13,8 @@ import { ShortcutsSettings } from "./shortcuts-settings";
 import { AboutSettings } from "./about-settings";
 import { MascotSettings } from "./mascot-settings";
 import { LlmExplorer } from "./llm-explorer";
-import ollamaDark from "@/assets/ollama.png";
-import ollamaLight from "@/assets/ollama-light.png";
-import type { Icon } from "@phosphor-icons/react";
+import { SETTINGS_TAB_IDS } from "./settings-sections";
+import { SettingsSubTabList } from "./settings-subtab-list";
 import { PanelSlot } from "@/components/layout/panel-slots";
 import type { DeepPartial, SettingsNavState, SettingsSubTab } from "@/types/navigation";
 import {
@@ -26,32 +22,6 @@ import {
   usesSettingsChildSlots,
 } from "./settings-child-slots";
 import "./settings-tab.css";
-
-interface SubTabDef {
-  id: SettingsSubTab;
-  i18n: string;
-  icon?: Icon;
-  imgDark?: string;
-  imgLight?: string;
-}
-
-const SUB_TABS: SubTabDef[] = [
-  { id: "general", i18n: "settings.tabs.general", icon: GearSix },
-  { id: "advanced", i18n: "settings.tabs.advanced", icon: Sliders },
-  { id: "memory", i18n: "settings.tabs.memory", icon: Brain },
-  { id: "tools", i18n: "settings.tabs.tools", icon: Wrench },
-  { id: "mascot", i18n: "settings.tabs.mascot", icon: PawPrint },
-  { id: "ollama", i18n: "settings.tabs.ollama", imgDark: ollamaDark, imgLight: ollamaLight },
-  { id: "providers", i18n: "settings.tabs.providers", icon: Key },
-  { id: "connectors", i18n: "settings.tabs.connectors", icon: Plugs },
-  { id: "extensions", i18n: "settings.tabs.extensions", icon: PuzzlePiece },
-  { id: "channels", i18n: "settings.tabs.channels", icon: Broadcast },
-  { id: "forecast", i18n: "forecast.title", icon: ChartLineUp },
-  { id: "llm", i18n: "settings.tabs.llm", icon: BookOpenText },
-  { id: "archived-chats", i18n: "settings.tabs.archivedChats", icon: Archive },
-  { id: "shortcuts", i18n: "settings.tabs.shortcuts", icon: Keyboard },
-  { id: "about", i18n: "settings.tabs.about", icon: Info },
-];
 
 interface SettingsTabProps {
   themeChoice: ThemeChoice;
@@ -78,9 +48,8 @@ export const SettingsTab = memo(function SettingsTab({
     onNavChange({ subTab: id });
   }, [onNavChange]);
   const subTab = navState.subTab;
-  const subTabIds = useMemo(() => SUB_TABS.map((t) => t.id), []);
   useArrowNavigation({
-    items: subTabIds,
+    items: SETTINGS_TAB_IDS,
     selectedId: subTab,
     onSelect: setSubTab,
     enabled: listFocused,
@@ -88,42 +57,11 @@ export const SettingsTab = memo(function SettingsTab({
   });
 
   const settings = useSettings();
-  const { t } = useTranslation();
 
-  const list = useMemo(() => (
-    <div className="settings-subtab-list">
-        {SUB_TABS.map((tab) => (
-          <div
-            key={tab.id}
-            role="button"
-            tabIndex={subTab === tab.id ? 0 : -1}
-            data-nav-active={subTab === tab.id ? "true" : undefined}
-            onClick={() => setSubTab(tab.id)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSubTab(tab.id); } }}
-            className={`settings-subtab${subTab === tab.id ? " active" : ""}`}
-          >
-            {tab.icon ? (
-              <tab.icon
-                size="var(--icon-md)"
-                weight={subTab === tab.id ? "fill" : "regular"}
-                style={{ flexShrink: 0 }}
-              />
-            ) : tab.imgDark && tab.imgLight ? (
-              <ThemedIcon
-                darkSrc={tab.imgDark}
-                lightSrc={tab.imgLight}
-                size="var(--icon-md)"
-                style={{
-                  flexShrink: 0,
-                  opacity: subTab === tab.id ? 1 : 0.6,
-                }}
-              />
-            ) : null}
-            <span className="settings-subtab-label">{t(tab.i18n)}</span>
-          </div>
-        ))}
-    </div>
-  ), [setSubTab, subTab, t]);
+  const list = useMemo(
+    () => <SettingsSubTabList active={subTab} onSelect={setSubTab} />,
+    [setSubTab, subTab],
+  );
 
   const detail = useMemo(() => {
     if (subTab === "general") {

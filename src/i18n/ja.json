@@ -743,6 +743,7 @@
       "types": { "preference": "設定", "feedback": "フィードバック", "project": "プロジェクト", "reference": "参照" },
       "statuses": { "confirmed": "確認済み", "inferred": "推定", "stale": "要確認", "archived": "アーカイブ済み" }
     },
+    "sections": { "preferences": "環境設定", "agent": "エージェント", "models": "モデル", "integrations": "連携", "application": "アプリケーション" },
     "tabs": {
       "general": "一般",
       "ollama": "Ollama",
