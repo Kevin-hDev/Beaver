@@ -87,11 +87,6 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               "transition-all duration-200 ease-out",
             )}
             style={{
-              paddingTop: "0.28rem",
-              paddingBottom: "0.28rem",
-              marginLeft: "0.5rem",
-              marginRight: "0.5rem",
-              borderRadius: "var(--nav-item-radius)",
               background: activeTab === item.id ? "var(--surface-hover)" : undefined,
             }}
           >
@@ -140,15 +135,10 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
           "flex items-center cursor-pointer",
           "whitespace-nowrap",
           "sb-nav-item",
+          "sb-nav-settings",
           "transition-all duration-200 ease-out",
         )}
         style={{
-          paddingTop: "0.28rem",
-          paddingBottom: "0.28rem",
-          marginLeft: "0.5rem",
-          marginRight: "0.5rem",
-          marginBottom: "0.67rem",
-          borderRadius: "var(--nav-item-radius)",
           background: activeTab === "settings" ? "var(--surface-hover)" : undefined,
         }}
       >

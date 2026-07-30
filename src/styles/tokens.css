@@ -148,11 +148,14 @@
   --memory-page-padding-compact: 18px;
   --memory-preview-padding: 14px;
 
-  --nav-item-height: 1.75rem;
-  /* Les Réglages ont leur propre densité : quinze entrées et cinq titres
-     remplissaient la hauteur d'une fenêtre à la densité de la barre latérale,
-     qui n'en accueille qu'une poignée. */
-  --settings-nav-item-height: 1.3333rem;
+  /* Hauteur d'une ligne de navigation — barre latérale, conversations,
+     Réglages, ateliers. Une seule valeur pour toutes : ces listes se voient
+     côte à côte, et deux densités différentes se remarquent immédiatement.
+     La régler suppose de baisser aussi les marges internes de chaque liste,
+     sans quoi c'est leur contenu qui reprend la main sur ce plancher. */
+  --nav-item-height: 1.3333rem;
+  /* Marge interne verticale des lignes de navigation, dans le même geste. */
+  --nav-item-padding-y: var(--space-2xs);
   --nav-item-gap: var(--space-xs);
   --nav-item-padding-x: var(--space-sm);
   --nav-item-radius: var(--radius-sm);

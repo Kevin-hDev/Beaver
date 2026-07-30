@@ -63,13 +63,24 @@ body.os-mac {
   overflow: hidden;
 }
 
-/* Sidebar nav items: centered when collapsed, left-aligned when expanded */
+/* Sidebar nav items: centered when collapsed, left-aligned when expanded.
+   Marges internes et latérales posées ici et non en style inline : la densité
+   des listes de navigation se règle par tokens, et une valeur écrite dans le
+   TSX échappe à ce réglage. */
 .sb-nav-item {
   gap: 0;
   justify-content: center;
   width: var(--nav-item-height);
   height: var(--nav-item-height);
+  margin: 0 var(--space-sm);
+  padding: var(--nav-item-padding-y) 0;
+  border-radius: var(--nav-item-radius);
   overflow: hidden;
+}
+
+/* Les Réglages ferment la barre : ils se détachent du groupe du dessus. */
+.sb-nav-settings {
+  margin-bottom: var(--space-md);
 }
 
 .sb-nav-item:hover {

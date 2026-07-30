@@ -15,6 +15,8 @@ import { idMatch } from "@/lib/utils";
 import type { ConversationListProps } from "./conversation-list-types";
 import { useConversationCollapseState } from "./use-conversation-collapse-state";
 import "./conversation.css";
+import "./conversation-projects.css";
+import "./conversation-drag.css";
 import "./conversation-collapse.css";
 
 export function ConversationList({

@@ -54,12 +54,16 @@
   align-items: center;
   gap: var(--space-xs);
   min-height: var(--nav-item-height);
-  padding: 5px 2px 5px calc(var(--space-sm) - 8px);
+  padding: var(--nav-item-padding-y) 2px var(--nav-item-padding-y)
+    calc(var(--space-sm) - 8px);
   border-radius: var(--nav-item-radius);
   cursor: pointer;
   transition: all var(--ease-smooth);
   margin-bottom: 2px;
   font-size: var(--text-sm);
+  /* Interligne resserré, sans quoi la hauteur du texte dépasse le plancher de
+     la ligne de navigation et la liste se réespace toute seule. */
+  line-height: 1.25;
   color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
@@ -198,180 +202,3 @@
   margin-left: 4px;
   letter-spacing: 0.5px;
 }
-
-/* Section labels (Projets / Discussions) */
-.conv-section-label {
-  padding: var(--space-sm) var(--space-sm) var(--space-xs);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.conv-section-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  cursor: pointer;
-  user-select: none;
-}
-
-.conv-section-toggle:hover {
-  color: var(--ink-muted);
-}
-
-/* Chevron plier/déplier */
-.conv-collapse-chevron {
-  flex-shrink: 0;
-  color: var(--ink-faint);
-  transition: transform 200ms ease;
-}
-
-.conv-collapse-chevron.conv-collapse-open {
-  transform: rotate(90deg);
-}
-
-/* Project header in sidebar */
-.conv-project-wrapper {
-  margin-bottom: var(--space-xs);
-}
-
-.conv-project-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  cursor: grab;
-  font-size: var(--text-sm);
-  color: var(--ink);
-  transition: background var(--ease-smooth);
-}
-
-.conv-project-header:hover {
-  background: var(--surface-hover);
-}
-
-.conv-project-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.conv-project-actions {
-  display: flex;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity var(--ease-smooth);
-}
-
-.conv-project-header:hover .conv-project-actions {
-  opacity: 1;
-}
-
-/* Project actions + session menu — INLINE list-row buttons: they must stay
-   compact and follow the row's text size, NOT the fixed .icon-btn sizes
-   (28px inflates sidebar rows). Do not add .icon-btn here. */
-.conv-project-action-btn {
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  color: var(--ink-muted);
-  border: none;
-  background: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-}
-
-.conv-project-action-btn:hover {
-  color: var(--ink);
-  background: var(--edge);
-}
-
-/* Session menu button (three dots) */
-.conv-session-menu-btn {
-  grid-area: 1 / 1;
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  color: var(--ink-faint);
-  border: none;
-  background: none;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--ease-smooth), background var(--ease-smooth), color var(--ease-smooth);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0;
-  pointer-events: none;
-  position: relative;
-  z-index: 1;
-}
-
-.conv-item:hover .conv-session-age {
-  opacity: 0;
-}
-
-.conv-item:hover .conv-session-menu-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.conv-session-menu-btn:hover {
-  color: var(--ink);
-  background: var(--edge);
-}
-
-/* Indented sessions under a project */
-.conv-session-indented {
-  padding-left: calc(var(--space-sm) + 14px + var(--space-xs) - 8px);
-}
-
-/* Drag-and-drop */
-.conv-project-wrapper {
-  transition: transform 200ms ease, opacity 200ms ease;
-}
-
-.conv-project-wrapper.conv-project-dragging {
-  opacity: 0.3;
-}
-
-.conv-list.is-dragging {
-  user-select: none;
-  cursor: grabbing;
-}
-
-.conv-drag-ghost {
-  position: fixed;
-  pointer-events: none;
-  z-index: var(--z-toast); /* transient drag preview, above all app layers */
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--surface);
-  border: 1px solid var(--pulse);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-card);
-  font-size: var(--text-sm);
-  color: var(--ink);
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0.9;
-}
-
-/* Rename input */
-.conv-rename {
-  width: 100%;
-  padding: 2px var(--space-xs);
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  background: var(--void);
-  border: 1px solid var(--pulse);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  outline: none;
-  box-shadow: 0 0 0 2px var(--pulse-muted);
-}
-
