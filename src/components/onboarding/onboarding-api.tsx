@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
-import { ArrowSquareOut, CaretRight, Check } from "@/components/ui/icons";
+import { ArrowSquareOut, CaretRight } from "@/components/ui/icons";
 import { ApiKeySecretInput } from "@/components/api-keys/api-key-secret-input";
 import { InlineToast } from "@/components/ui/toast";
 import { showToast } from "@/lib/toast-emitter";
-import { ProviderIcon } from "@/lib/provider-icons";
-import { providerDescription } from "@/lib/provider-copy";
 import type { ProviderSpec } from "@/types/api";
+import { OnboardingProviderGrid } from "./onboarding-provider-grid";
 
 interface OnboardingApiProps {
   onComplete: () => void | Promise<void>;
@@ -33,7 +32,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
       .then(([items, configured]) => {
         const llmProviders = items.filter((item) => item.category === "llm").slice(0, 32);
         setProviders(llmProviders);
-        setConfiguredIds(configured);
+        setConfiguredIds(configured.slice(0, 32));
         setSelectedId((current) => current || llmProviders[0]?.id || "");
       })
       .catch(() => {
@@ -85,41 +84,12 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
         <p className="ob-description">{t("onboarding.api.description")}</p>
       </div>
 
-      <div className="ob-provider-grid">
-        {providers.length === 0 ? (
-          <div className="ob-provider-empty">{t("onboarding.api.loading")}</div>
-        ) : providers.map((provider) => {
-          const isConfigured = configuredSet.has(provider.id);
-          return (
-          <button
-            key={provider.id}
-            type="button"
-            className={[
-              "ob-provider-card",
-              provider.id === selectedId ? "is-active" : "",
-              isConfigured ? "is-configured" : "",
-            ].filter(Boolean).join(" ")}
-            onClick={() => selectProvider(provider.id)}
-          >
-            <ProviderIcon
-              providerId={provider.id}
-              displayName={provider.display_name}
-              size={28}
-            />
-            <span className="ob-provider-name">{provider.display_name}</span>
-            <span className="ob-provider-desc">
-              {providerDescription(t, provider)}
-            </span>
-            {isConfigured && (
-              <span className="ob-provider-status">
-                <Check size="var(--icon-xs)" weight="bold" />
-                {t("apiKeys.details.connected")}
-              </span>
-            )}
-          </button>
-          );
-        })}
-      </div>
+      <OnboardingProviderGrid
+        providers={providers}
+        configuredIds={configuredSet}
+        selectedId={selectedId}
+        onSelect={selectProvider}
+      />
 
       <div className="ob-api-form">
         <div className="ob-api-heading">

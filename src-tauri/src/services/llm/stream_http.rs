@@ -2,7 +2,7 @@ use super::provider_error::ProviderErrorCode;
 pub(super) use super::stream_http_error::RequestError;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
-use crate::services::llm::route::{self, LlmRoute, RouteError};
+use crate::services::llm::route::{self, LlmRoute};
 use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
 pub struct RequestConfig<'a> {
     pub provider_id: &'a str,
@@ -13,34 +13,6 @@ pub struct RequestConfig<'a> {
     pub reasoning_mode: Option<&'a str>,
     pub max_tokens: Option<u32>,
     pub purpose: RequestPurpose,
-}
-
-async fn send_json_request(
-    client: &AuthenticatedClient,
-    route: &LlmRoute,
-    url: &str,
-    payload: &serde_json::Value,
-    purpose: RequestPurpose,
-) -> Result<reqwest::Response, RequestError> {
-    route
-        .send_authenticated(client, purpose, |token, headers| {
-            client
-                .post(url)
-                .headers(headers)
-                .bearer_auth(token)
-                .json(payload)
-        })
-        .await
-        .map_err(|error| match error {
-            RouteError::Unauthorized if route.is_oauth() => {
-                RequestError::Fatal("oauth_reauthentication_required".into())
-            }
-            RouteError::Unauthorized => RequestError::Fatal("auth_failed".into()),
-            RouteError::Forbidden => RequestError::Fatal("provider_access_unavailable".into()),
-            RouteError::Network => {
-                RequestError::Fatal(ProviderErrorCode::ProviderConnectionFailed.as_str().into())
-            }
-        })
 }
 
 async fn read_provider_error(response: reqwest::Response) -> zeroize::Zeroizing<String> {
@@ -64,7 +36,14 @@ pub async fn post_chat_request_with_timeout(
     let route = route::resolve(cfg.provider_id)
         .ok_or_else(|| RequestError::Fatal("Fournisseur inconnu".to_string()))?;
     let url = format!("{}/chat/completions", route.base_url);
-    let payload = build_chat_payload(cfg, &route);
+    let max_tokens = super::stream_max_tokens::resolve(
+        route.canonical_provider_id,
+        cfg.model,
+        cfg.max_tokens,
+        route.fallback_max_tokens,
+    )
+    .await;
+    let payload = build_chat_payload(cfg, &route, max_tokens);
     let request_bytes = serde_json::to_vec(&payload)
         .map(zeroize::Zeroizing::new)
         .map_or(0, |bytes| bytes.len());
@@ -78,7 +57,9 @@ pub async fn post_chat_request_with_timeout(
     })?;
     let usage_generation =
         crate::services::provider_usage::credential_generation(route.chat_provider_id);
-    let resp = send_json_request(&client, &route, &url, &payload, cfg.purpose).await?;
+    let resp =
+        super::stream_http_send::send_json_request(&client, &route, &url, &payload, cfg.purpose)
+            .await?;
 
     crate::services::provider_usage::capture_headers(
         route.chat_provider_id,
@@ -112,7 +93,11 @@ pub async fn post_chat_request_with_timeout(
     Ok(resp)
 }
 
-fn build_chat_payload(cfg: &RequestConfig<'_>, route: &LlmRoute) -> serde_json::Value {
+fn build_chat_payload(
+    cfg: &RequestConfig<'_>,
+    route: &LlmRoute,
+    max_tokens: Option<u32>,
+) -> serde_json::Value {
     let provider_id = route.canonical_provider_id;
     let mut payload = serde_json::json!({
         "model": cfg.model,
@@ -124,7 +109,7 @@ fn build_chat_payload(cfg: &RequestConfig<'_>, route: &LlmRoute) -> serde_json::
         "stream": true,
         "stream_options": { "include_usage": true },
     });
-    if let Some(max) = cfg.max_tokens.or(route.default_max_tokens) {
+    if let Some(max) = max_tokens {
         let field = if matches!(provider_id, "openai" | "openrouter")
             && super::providers::openai::is_gpt_56(cfg.model)
         {

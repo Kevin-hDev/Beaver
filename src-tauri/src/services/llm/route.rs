@@ -24,7 +24,7 @@ pub struct LlmRoute {
     pub base_url: &'static str,
     pub models_endpoint: &'static str,
     pub display_name: &'static str,
-    pub default_max_tokens: Option<u32>,
+    pub fallback_max_tokens: Option<u32>,
     pub usage_scope: UsageScope,
     auth_source: AuthSource,
 }
@@ -146,7 +146,7 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
             base_url: spec.base_url,
             models_endpoint: spec.models_endpoint,
             display_name: spec.display_name,
-            default_max_tokens: spec.default_max_tokens,
+            fallback_max_tokens: spec.fallback_max_tokens,
             usage_scope: UsageScope::Any,
             auth_source: AuthSource::ApiKey(spec.id),
         }),
@@ -179,7 +179,7 @@ fn oauth_route(
         base_url,
         models_endpoint,
         display_name,
-        default_max_tokens: Some(64_000),
+        fallback_max_tokens: Some(64_000),
         usage_scope: UsageScope::InteractiveOnly,
         auth_source: AuthSource::OAuth(provider),
     }

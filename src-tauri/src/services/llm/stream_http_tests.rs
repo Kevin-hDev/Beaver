@@ -75,7 +75,7 @@ fn gpt_56_uses_max_completion_tokens_in_chat_payload() {
     };
 
     let route = route::resolve("openai").unwrap();
-    let payload = build_chat_payload(&cfg, &route);
+    let payload = build_chat_payload(&cfg, &route, Some(32_000));
 
     assert_eq!(payload["max_completion_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
@@ -96,7 +96,7 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
     };
 
     let route = route::resolve("openrouter").unwrap();
-    let payload = build_chat_payload(&cfg, &route);
+    let payload = build_chat_payload(&cfg, &route, Some(32_000));
 
     assert_eq!(payload["max_completion_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
@@ -116,7 +116,7 @@ fn other_providers_keep_max_tokens() {
     };
 
     let route = route::resolve("xai").unwrap();
-    let payload = build_chat_payload(&cfg, &route);
+    let payload = build_chat_payload(&cfg, &route, Some(8_000));
 
     assert_eq!(payload["max_tokens"], 8_000);
     assert!(payload.get("max_completion_tokens").is_none());

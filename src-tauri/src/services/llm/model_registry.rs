@@ -40,10 +40,11 @@ pub struct ModelEntry {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct ModelCapabilities {
+pub struct ModelConfig {
     pub supports_tools: bool,
     pub supports_vision: bool,
     pub supports_thinking: bool,
+    pub max_output_tokens: Option<u32>,
 }
 
 pub(crate) fn parse_registry(json: &str) -> HashMap<String, ModelEntry> {
@@ -93,32 +94,59 @@ fn map_provider_prefix(provider_id: &str) -> &str {
     }
 }
 
-pub async fn lookup(provider_id: &str, model_id: &str) -> Option<ModelCapabilities> {
-    let reg = get_lock().read().await;
+pub(crate) fn find_entry<'a>(
+    registry: &'a HashMap<String, ModelEntry>,
+    provider_id: &str,
+    model_id: &str,
+) -> Option<&'a ModelEntry> {
     let prefix = map_provider_prefix(provider_id);
-
     let key_prefixed = format!("{prefix}/{model_id}");
-    let entry = reg
+    registry
         .get(&key_prefixed)
-        .or_else(|| reg.get(model_id))
+        .or_else(|| matching_bare_entry(registry, model_id, prefix))
         .or_else(|| {
             let stripped = model_id
                 .rsplit_once('/')
                 .map(|(_, n)| n)
                 .unwrap_or(model_id);
             let key2 = format!("{prefix}/{stripped}");
-            reg.get(&key2).or_else(|| reg.get(stripped))
-        })?;
+            registry
+                .get(&key2)
+                .or_else(|| matching_bare_entry(registry, stripped, prefix))
+        })
+}
 
+fn matching_bare_entry<'a>(
+    registry: &'a HashMap<String, ModelEntry>,
+    model_id: &str,
+    provider_prefix: &str,
+) -> Option<&'a ModelEntry> {
+    registry
+        .get(model_id)
+        .filter(|entry| entry.litellm_provider.as_deref() == Some(provider_prefix))
+}
+
+fn model_config(entry: &ModelEntry) -> Option<ModelConfig> {
     if !is_chat_mode(entry.mode.as_deref()) {
         return None;
     }
-
-    Some(ModelCapabilities {
+    Some(ModelConfig {
         supports_tools: entry.supports_function_calling,
         supports_vision: entry.supports_vision,
         supports_thinking: entry.supports_reasoning,
+        max_output_tokens: positive_u32(entry.max_output_tokens.or(entry.max_tokens)),
     })
+}
+
+fn positive_u32(value: Option<u64>) -> Option<u32> {
+    value
+        .and_then(|tokens| u32::try_from(tokens).ok())
+        .filter(|tokens| *tokens > 0)
+}
+
+pub async fn lookup(provider_id: &str, model_id: &str) -> Option<ModelConfig> {
+    let registry = get_lock().read().await;
+    find_entry(&registry, provider_id, model_id).and_then(model_config)
 }
 
 fn is_chat_mode(mode: Option<&str>) -> bool {
@@ -126,17 +154,8 @@ fn is_chat_mode(mode: Option<&str>) -> bool {
 }
 
 pub async fn is_chat_model(provider_id: &str, model_id: &str) -> bool {
-    let reg = get_lock().read().await;
-    let prefix = map_provider_prefix(provider_id);
-    let key = format!("{prefix}/{model_id}");
-    let entry = reg.get(&key).or_else(|| reg.get(model_id)).or_else(|| {
-        let stripped = model_id
-            .rsplit_once('/')
-            .map(|(_, n)| n)
-            .unwrap_or(model_id);
-        let key2 = format!("{prefix}/{stripped}");
-        reg.get(&key2).or_else(|| reg.get(stripped))
-    });
+    let registry = get_lock().read().await;
+    let entry = find_entry(&registry, provider_id, model_id);
     match entry {
         Some(e) => is_chat_mode(e.mode.as_deref()),
         None => !is_non_chat_name(model_id),
