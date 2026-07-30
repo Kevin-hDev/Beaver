@@ -1,3 +1,11 @@
+//! Catalogue statique des providers et modèles de prévision.
+//!
+//! Les textes affichés (description, palier gratuit) sont dans `src/i18n/*.json`
+//! sous `forecast.providers.<id>` — un texte traduisible ne vit pas dans du code
+//! compilé, où les sept langues seraient hors de portée des traducteurs. Section
+//! distincte de `apiKeys.providers` : l'id `google` désigne Gemini là-bas et
+//! TimesFM ici.
+
 use serde::Serialize;
 
 #[path = "catalog_specs/mod.rs"]
@@ -10,9 +18,6 @@ pub struct ForecastProviderSpec {
     pub category: &'static str,
     pub base_url: &'static str,
     pub signup_url: &'static str,
-    pub free_tier_label: &'static str,
-    pub short_description: &'static str,
-    pub short_description_en: &'static str,
     pub requires_api_key: bool,
 }
 

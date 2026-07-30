@@ -1607,6 +1607,18 @@
     "send": "Envoyer"
   },
   "forecast": {
+    "providers": {
+      "chronos": { "description": "Modèles Chronos locaux pour la prévision de séries temporelles.", "freeTier": "Local" },
+      "google": { "description": "TimesFM local, poids ouverts.", "freeTier": "Local" },
+      "nixtla": { "description": "Famille TimeGPT en cloud, accès par API.", "freeTier": "Aperçu / API" },
+      "datadog": { "description": "Modèles de fondation Toto, séries temporelles et observabilité.", "freeTier": "Local" },
+      "salesforce": { "description": "Famille MOIRAI pour la prévision probabiliste.", "freeTier": "Local" },
+      "ibm": { "description": "FlowState local pour séries temporelles.", "freeTier": "Local" },
+      "priorlabs": { "description": "Famille TabPFN-TS pour la prévision sans entraînement préalable.", "freeTier": "Local" },
+      "nxai": { "description": "TiRex pour la prévision par quantiles, en zero-shot.", "freeTier": "Local" },
+      "foundation-model-research": { "description": "Kairos pour les séries temporelles multi-régimes.", "freeTier": "Local" },
+      "thuml": { "description": "Sundial pour la prévision probabiliste en zero-shot.", "freeTier": "Local" }
+    },
     "chart": {
       "resetZoom": "Réinitialiser le zoom",
       "forecastStart": "Début prévision"

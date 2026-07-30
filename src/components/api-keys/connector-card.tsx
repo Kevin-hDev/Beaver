@@ -30,13 +30,13 @@ export function ConnectorCard({
       />
       <div className="ak-connector-card-body">
         <div className="ak-connector-card-name">{provider.display_name}</div>
-        <div className="ak-connector-card-desc">{providerDescription(t, provider.id)}</div>
+        <div className="ak-connector-card-desc">{providerDescription(t, provider)}</div>
         <div className="ak-connector-card-meta">
           <span className="ak-connector-card-cat">
             {provider.category.toUpperCase()}
           </span>
           <span className="ak-connector-card-tier">
-            {providerFreeTier(t, provider.id)}
+            {providerFreeTier(t, provider)}
           </span>
           <Key size="var(--icon-xs)" className="ak-connector-card-keyicon" weight="fill" />
         </div>

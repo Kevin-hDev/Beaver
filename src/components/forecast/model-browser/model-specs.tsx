@@ -7,6 +7,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { useTranslation } from "react-i18next";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { TranslationControls } from "@/components/ollama/translation-controls";
+import { providerDescription } from "@/lib/provider-copy";
 import { ModelInstallBtn } from "./model-install-btn";
 import type { ForecastModelDetails } from "./model-details-types";
 import {
@@ -59,6 +60,11 @@ export function ModelSpecs({ model, provider, onBack, onRefresh }: ModelSpecsPro
   const translated = translation?.modelId === model.id ? translation.text : null;
   const translatedLang = translation?.modelId === model.id ? translation.lang : null;
   const rows = useMemo(() => buildRows(t, model, provider, details), [t, model, provider, details]);
+  // Les modèles cloud n'ont ni dépôt HuggingFace ni dépôt GitHub à interroger :
+  // leur résumé vient de la description traduite du provider.
+  const description =
+    details?.description_short ||
+    (provider ? providerDescription(t, { id: provider.id, category: "forecast" }) : "");
 
   return (
     <div className="mp-root">
@@ -79,9 +85,7 @@ export function ModelSpecs({ model, provider, onBack, onRefresh }: ModelSpecsPro
           )}
         </div>
 
-        {details?.description_short && (
-          <div className="mp-description">{details.description_short}</div>
-        )}
+        {description && <div className="mp-description">{description}</div>}
 
         <SettingsCard>
           {rows.map((row, index) => (

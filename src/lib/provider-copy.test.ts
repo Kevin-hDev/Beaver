@@ -25,28 +25,39 @@ beforeAll(async () => {
 
 describe("provider-copy", () => {
   it("rend la description dans la langue active", () => {
-    expect(providerDescription(i18n.t, "groq")).toBe(
+    expect(providerDescription(i18n.t, { id: "groq", category: "llm" })).toBe(
       "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.",
     );
-    expect(providerFreeTier(i18n.t, "firecrawl")).toBe("500 crédits");
+    expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe("500 crédits");
+  });
+
+  it("sépare les catalogues qui partagent un id", () => {
+    // `google` désigne Gemini côté clés API et TimesFM côté prévision : une
+    // section commune afficherait le texte de l'un sous le nom de l'autre.
+    expect(providerDescription(i18n.t, { id: "google", category: "llm" })).toContain("Gemini");
+    expect(providerDescription(i18n.t, { id: "google", category: "forecast" })).toContain("TimesFM");
+    expect(providerFreeTier(i18n.t, { id: "nixtla", category: "forecast" })).toBe("Aperçu / API");
   });
 
   it("suit le changement de langue", async () => {
     await i18n.changeLanguage("ja");
-    expect(providerDescription(i18n.t, "moonshot")).toContain("Kimi K3");
-    expect(providerFreeTier(i18n.t, "firecrawl")).toBe("500 クレジット");
+    expect(providerDescription(i18n.t, { id: "moonshot", category: "llm" })).toContain("Kimi K3");
+    expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe(
+      "500 クレジット",
+    );
+    expect(providerFreeTier(i18n.t, { id: "chronos", category: "forecast" })).toBe("ローカル");
     await i18n.changeLanguage("fr");
   });
 
   it("force l'anglais quand la recherche le demande", () => {
-    expect(providerDescription(i18n.t, "exa", "en")).toBe(
+    expect(providerDescription(i18n.t, { id: "exa", category: "search" }, "en")).toBe(
       "Neural search — semantic similarity search.",
     );
   });
 
   it("rend une chaîne vide pour un provider sans traduction", () => {
     // Jamais la clé technique : elle exposerait la structure interne à l'écran.
-    expect(providerDescription(i18n.t, "provider-fantome")).toBe("");
-    expect(providerFreeTier(i18n.t, "provider-fantome")).toBe("");
+    expect(providerDescription(i18n.t, { id: "provider-fantome" })).toBe("");
+    expect(providerFreeTier(i18n.t, { id: "provider-fantome" })).toBe("");
   });
 });

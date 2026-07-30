@@ -1318,6 +1318,18 @@
     "unsupportedModel": "Dieses Modell unterstützt keine Vision"
   },
   "forecast": {
+    "providers": {
+      "chronos": { "description": "Lokale Chronos-Modelle für Zeitreihenprognosen.", "freeTier": "Lokal" },
+      "google": { "description": "Lokales TimesFM mit offenen Gewichten.", "freeTier": "Lokal" },
+      "nixtla": { "description": "TimeGPT-Familie in der Cloud, Zugang über API.", "freeTier": "Vorschau / API" },
+      "datadog": { "description": "Toto-Foundation-Modelle für Zeitreihen und Observability.", "freeTier": "Lokal" },
+      "salesforce": { "description": "MOIRAI-Familie für probabilistische Prognosen.", "freeTier": "Lokal" },
+      "ibm": { "description": "Lokales FlowState für Zeitreihen.", "freeTier": "Lokal" },
+      "priorlabs": { "description": "TabPFN-TS-Familie für Prognosen ohne Training.", "freeTier": "Lokal" },
+      "nxai": { "description": "TiRex für Quantilprognosen im Zero-Shot-Modus.", "freeTier": "Lokal" },
+      "foundation-model-research": { "description": "Kairos für Zeitreihen mit mehreren Regimen.", "freeTier": "Lokal" },
+      "thuml": { "description": "Sundial für probabilistische Zero-Shot-Prognosen.", "freeTier": "Lokal" }
+    },
     "chart": {
       "resetZoom": "Zoom zurücksetzen",
       "forecastStart": "Prognosebeginn"

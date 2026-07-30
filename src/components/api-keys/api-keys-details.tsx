@@ -57,7 +57,7 @@ export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: A
                 {provider.display_name}
               </h2>
               <div className="akd-provider-desc">
-                {providerDescription(t, provider.id)}
+                {providerDescription(t, provider)}
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: A
         )}
 
         <SettingsCard className={provider.category === "llm" ? "akd-connection-card" : undefined}>
-          <DetailRow label={t("apiKeys.details.freeTier")} value={providerFreeTier(t, provider.id)} />
+          <DetailRow label={t("apiKeys.details.freeTier")} value={providerFreeTier(t, provider)} />
           <DetailRow label={t("apiKeys.details.signupLink")}>
             <button type="button" className="ak-signup-link" onClick={() => void open(provider.signup_url)}>
               {t("apiKeys.details.openSite")} <ArrowSquareOut size="var(--icon-xs)" />

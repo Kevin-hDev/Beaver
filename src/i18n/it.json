@@ -1318,6 +1318,18 @@
     "unsupportedModel": "Questo modello non supporta la visione"
   },
   "forecast": {
+    "providers": {
+      "chronos": { "description": "Modelli Chronos locali per la previsione di serie temporali.", "freeTier": "Locale" },
+      "google": { "description": "TimesFM locale, pesi aperti.", "freeTier": "Locale" },
+      "nixtla": { "description": "Famiglia TimeGPT nel cloud, accesso via API.", "freeTier": "Anteprima / API" },
+      "datadog": { "description": "Modelli di base Toto per serie temporali e osservabilità.", "freeTier": "Locale" },
+      "salesforce": { "description": "Famiglia MOIRAI per previsioni probabilistiche.", "freeTier": "Locale" },
+      "ibm": { "description": "FlowState locale per serie temporali.", "freeTier": "Locale" },
+      "priorlabs": { "description": "Famiglia TabPFN-TS per previsioni senza addestramento.", "freeTier": "Locale" },
+      "nxai": { "description": "TiRex per previsioni per quantili in zero-shot.", "freeTier": "Locale" },
+      "foundation-model-research": { "description": "Kairos per serie temporali multi-regime.", "freeTier": "Locale" },
+      "thuml": { "description": "Sundial per previsioni probabilistiche zero-shot.", "freeTier": "Locale" }
+    },
     "chart": {
       "resetZoom": "Reimposta zoom",
       "forecastStart": "Inizio previsione"

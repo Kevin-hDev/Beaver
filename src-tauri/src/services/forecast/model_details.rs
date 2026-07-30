@@ -34,9 +34,9 @@ fn provider_fallback(
     provider: Option<&ForecastProviderSpec>,
 ) -> ForecastModelDetails {
     ForecastModelDetails {
-        description_short: provider
-            .map(|p| p.short_description.to_string())
-            .unwrap_or_else(|| model.display_name.to_string()),
+        // Vide et non le texte du provider : la description traduite vit dans
+        // l'i18n, et c'est l'interface qui la résout depuis `provider.id`.
+        description_short: String::new(),
         description_long_markdown: String::new(),
         source_url: provider
             .map(|p| p.signup_url.to_string())

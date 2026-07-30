@@ -1559,6 +1559,18 @@
     "send": "Send"
   },
   "forecast": {
+    "providers": {
+      "chronos": { "description": "Local Chronos models for time-series forecasting.", "freeTier": "Local" },
+      "google": { "description": "Local TimesFM, open weights.", "freeTier": "Local" },
+      "nixtla": { "description": "Cloud TimeGPT family, API access.", "freeTier": "Preview / API" },
+      "datadog": { "description": "Toto foundation models for time series and observability.", "freeTier": "Local" },
+      "salesforce": { "description": "MOIRAI family for probabilistic forecasting.", "freeTier": "Local" },
+      "ibm": { "description": "Local FlowState for time series.", "freeTier": "Local" },
+      "priorlabs": { "description": "TabPFN-TS family for training-free forecasting.", "freeTier": "Local" },
+      "nxai": { "description": "TiRex for zero-shot quantile forecasting.", "freeTier": "Local" },
+      "foundation-model-research": { "description": "Kairos for multi-regime time series.", "freeTier": "Local" },
+      "thuml": { "description": "Sundial for zero-shot probabilistic forecasting.", "freeTier": "Local" }
+    },
     "chart": {
       "resetZoom": "Reset zoom",
       "forecastStart": "Forecast start"

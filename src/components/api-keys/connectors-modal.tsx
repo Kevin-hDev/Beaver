@@ -52,8 +52,8 @@ export function ConnectorsModal({
       // trouvable sur son libellé d'origine quelle que soit la langue active.
       return (
         p.display_name.toLowerCase().includes(q) ||
-        providerDescription(t, p.id).toLowerCase().includes(q) ||
-        providerDescription(t, p.id, "en").toLowerCase().includes(q) ||
+        providerDescription(t, p).toLowerCase().includes(q) ||
+        providerDescription(t, p, "en").toLowerCase().includes(q) ||
         p.id.toLowerCase().includes(q)
       );
     });

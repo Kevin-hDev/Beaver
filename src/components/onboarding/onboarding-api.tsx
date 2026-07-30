@@ -108,7 +108,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
             />
             <span className="ob-provider-name">{provider.display_name}</span>
             <span className="ob-provider-desc">
-              {providerDescription(t, provider.id)}
+              {providerDescription(t, provider)}
             </span>
             {isConfigured && (
               <span className="ob-provider-status">

@@ -1318,6 +1318,18 @@
     "unsupportedModel": "此模型不支持视觉"
   },
   "forecast": {
+    "providers": {
+      "chronos": { "description": "本地 Chronos 模型，用于时间序列预测。", "freeTier": "本地" },
+      "google": { "description": "本地 TimesFM，开放权重。", "freeTier": "本地" },
+      "nixtla": { "description": "云端 TimeGPT 系列，通过 API 访问。", "freeTier": "预览 / API" },
+      "datadog": { "description": "Toto 基础模型，面向时间序列与可观测性。", "freeTier": "本地" },
+      "salesforce": { "description": "MOIRAI 系列，用于概率预测。", "freeTier": "本地" },
+      "ibm": { "description": "本地 FlowState，用于时间序列。", "freeTier": "本地" },
+      "priorlabs": { "description": "TabPFN-TS 系列，无需训练即可预测。", "freeTier": "本地" },
+      "nxai": { "description": "TiRex，零样本分位数预测。", "freeTier": "本地" },
+      "foundation-model-research": { "description": "Kairos，面向多机制时间序列。", "freeTier": "本地" },
+      "thuml": { "description": "Sundial，零样本概率预测。", "freeTier": "本地" }
+    },
     "chart": {
       "resetZoom": "重置缩放",
       "forecastStart": "预测开始"

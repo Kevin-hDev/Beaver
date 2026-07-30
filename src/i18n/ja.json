@@ -1318,6 +1318,18 @@
     "unsupportedModel": "このモデルはビジョンに対応していません"
   },
   "forecast": {
+    "providers": {
+      "chronos": { "description": "ローカル Chronos モデル。時系列予測向け。", "freeTier": "ローカル" },
+      "google": { "description": "ローカル TimesFM、オープンウェイト。", "freeTier": "ローカル" },
+      "nixtla": { "description": "クラウドの TimeGPT ファミリー。API 経由でアクセス。", "freeTier": "プレビュー / API" },
+      "datadog": { "description": "Toto 基盤モデル。時系列とオブザーバビリティ向け。", "freeTier": "ローカル" },
+      "salesforce": { "description": "MOIRAI ファミリー。確率的予測向け。", "freeTier": "ローカル" },
+      "ibm": { "description": "ローカル FlowState。時系列向け。", "freeTier": "ローカル" },
+      "priorlabs": { "description": "TabPFN-TS ファミリー。学習不要で予測。", "freeTier": "ローカル" },
+      "nxai": { "description": "TiRex。ゼロショットの分位点予測。", "freeTier": "ローカル" },
+      "foundation-model-research": { "description": "Kairos。マルチレジームの時系列向け。", "freeTier": "ローカル" },
+      "thuml": { "description": "Sundial。ゼロショットの確率的予測。", "freeTier": "ローカル" }
+    },
     "chart": {
       "resetZoom": "ズームをリセット",
       "forecastStart": "予測開始"
