@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { ArrowsClockwise, ShieldWarning } from "@/components/ui/icons";
+import { SettingsCard } from "@/components/settings/settings-card";
 import type { ExtensionHostStatus } from "@/types/extensions";
 import "./extensions-host-panel.css";
 
@@ -18,13 +19,13 @@ export function ExtensionsHostPanel({
   return (
     <>
       <p className="settings-panel-description">{t("extensions.host.description")}</p>
-      <div className="extp-lines">
+      <SettingsCard className="extp-lines">
         <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
         <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
         <InfoLine label={t("extensions.host.jiti")} value={host.jitiVersion || t("extensions.host.unavailable")} />
         <InfoLine label={t("extensions.host.api")} value={host.apiVersion} />
         <InfoLine label={t("extensions.host.active")} value={String(host.activeExtensions)} />
-      </div>
+      </SettingsCard>
       {host.lastError && (
         <div className="extp-message extp-message-error">{t("extensions.errors.host")}</div>
       )}

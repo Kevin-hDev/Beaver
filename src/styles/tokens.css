@@ -111,7 +111,13 @@
   --forecast-evaluation-table-min-width: 48rem;
   --forecast-predictions-table-max-height: 18.8889rem;
 
-  --settings-content-max-width: 37.5rem;
+  /* Colonne de contenu des pages de Réglages. En rem pour suivre le réglage de
+     taille de police (18px par défaut, réglable de 10 à 24) : une largeur en px
+     figée laisserait les lignes s'allonger quand le texte grossit. */
+  --settings-content-max-width: 33.3333rem; /* 600px à la taille par défaut */
+  /* Réservé aux pages dont le contenu ne tient pas dans la colonne standard :
+     Extensions et Mascotte, où chaque ligne porte une icône et des commandes. */
+  --settings-content-max-width-wide: 37.5rem;
   --settings-editor-min-height: 20rem;
   --settings-empty-min-height: 12.5rem;
   --settings-status-dot-size: 0.375rem;

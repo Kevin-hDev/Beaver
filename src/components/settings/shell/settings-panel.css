@@ -11,6 +11,10 @@
   margin: 0 auto;
 }
 
+.settings-panel-inner-wide {
+  max-width: var(--settings-content-max-width-wide);
+}
+
 .settings-panel-header {
   display: flex;
   align-items: center;

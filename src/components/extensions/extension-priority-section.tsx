@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CaretDown, CaretRight, Plus } from "@/components/ui/icons";
 import { MAX_PROTECTED_PLUGINS } from "@/lib/extension-discovery";
 import type { ExtensionRecord } from "@/types/extensions";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionPriorityDialog } from "./extension-priority-dialog";
 import { extensionDisplayName } from "./official-plugin-copy";
@@ -34,7 +35,7 @@ export function ExtensionPrioritySection({
   });
 
   return (
-    <section className="extpr-section">
+    <SettingsCard className="extpr-section">
       <button
         type="button"
         className="extpr-trigger"
@@ -92,6 +93,6 @@ export function ExtensionPrioritySection({
           }}
         />
       )}
-    </section>
+    </SettingsCard>
   );
 }

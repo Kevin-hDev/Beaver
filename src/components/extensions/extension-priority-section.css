@@ -1,7 +1,6 @@
 .extpr-section {
   margin-top: var(--space-lg);
-  border-top: var(--line-thin) solid var(--edge);
-  border-bottom: var(--line-thin) solid var(--edge);
+  overflow: hidden;
 }
 
 .extpr-trigger {

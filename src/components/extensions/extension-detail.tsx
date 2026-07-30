@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ChatCircleDots, ShieldWarning } from "@/components/ui/icons";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
@@ -53,7 +54,7 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
         </div>
       )}
 
-      <div className="extp-lines">
+      <SettingsCard className="extp-lines">
         <DetailLine label={t("extensions.detail.status")} value={t(`extensions.status.${extension.status}`)} />
         <DetailLine label={t("extensions.detail.runtime")} value={extension.manifest.runtime} />
         <DetailLine label={t("extensions.detail.api")} value={extension.manifest.beaverApi} />
@@ -84,7 +85,7 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
             onCheckedChange={props.onShowInChat}
           />
         </div>
-      </div>
+      </SettingsCard>
 
       <Contributions extension={extension} />
 
@@ -124,7 +125,7 @@ function Contributions({ extension }: { extension: ExtensionRecord }) {
     <section className="extd-contributions">
       <h3>{t("extensions.detail.contributions")}</h3>
       {tools.length > 0 && (
-        <div className="extd-tool-list">
+        <SettingsCard className="extd-tool-list">
           {tools.map((tool) => (
             <div className="extd-tool-row" key={tool.name}>
               <div className="extd-tool-heading">
@@ -145,7 +146,7 @@ function Contributions({ extension }: { extension: ExtensionRecord }) {
               </p>
             </div>
           ))}
-        </div>
+        </SettingsCard>
       )}
       {events.length > 0 && (
         <div className="extd-event-list">

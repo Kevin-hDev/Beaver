@@ -5,11 +5,15 @@
   flex-shrink: 0;
 }
 
+/* Les deux listes vivent dans une SettingsCard : le rognage garde les lignes
+   dans ses coins arrondis, et la dernière ne double pas sa bordure. */
 .extp-list,
 .extp-lines {
   overflow: hidden;
-  border-top: var(--line-thin) solid var(--edge);
-  border-bottom: var(--line-thin) solid var(--edge);
+}
+
+.extp-list .extr-row:last-child {
+  border-bottom: 0;
 }
 
 .extp-info-line {

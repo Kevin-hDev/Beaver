@@ -64,7 +64,7 @@ export function AdvancedSettings() {
 
   return (
     <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-      <div style={{ maxWidth: 600, width: "100%", margin: "0 auto" }}>
+      <div style={{ maxWidth: "var(--settings-content-max-width)", width: "100%", margin: "0 auto" }}>
         <h2 style={titleStyle}>{t("settings.tabs.advanced")}</h2>
 
         <AgentImportSettings />

@@ -50,7 +50,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
 
   if (selected) {
     return (
-      <SettingsPanel>
+      <SettingsPanel wide>
         <ExtensionDetail
           extension={selected}
           busy={props.busyIds.has(selected.manifest.id)}
@@ -76,7 +76,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
     : undefined;
 
   return (
-    <SettingsPanel title={t("extensions.title")} action={addButton}>
+    <SettingsPanel title={t("extensions.title")} action={addButton} wide>
       <SettingsTabbar
         items={tabs}
         active={section}

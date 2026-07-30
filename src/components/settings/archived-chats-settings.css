@@ -6,7 +6,7 @@
 }
 
 .acs-shell {
-  width: min(100%, 600px);
+  width: min(100%, var(--settings-content-max-width));
   margin: 0 auto;
 }
 

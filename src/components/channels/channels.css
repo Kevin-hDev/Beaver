@@ -11,7 +11,7 @@
 }
 
 .ch-error-bubble {
-  max-width: 600px;
+  max-width: var(--settings-content-max-width);
   border-radius: var(--radius-md);
   padding: 10px 14px;
   background: var(--void);

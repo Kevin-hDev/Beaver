@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SettingsCard } from "@/components/settings/settings-card";
 import type { ExtensionRecord } from "@/types/extensions";
 import type { ExtensionsSettingsSection } from "@/types/navigation";
 import { ExtensionPrioritySection } from "./extension-priority-section";
@@ -42,7 +43,7 @@ export function ExtensionsSectionView(props: ExtensionsSectionViewProps) {
       <p className="settings-panel-description">{t(`extensions.pages.${props.section}.description`)}</p>
 
       {visible.length > 0 ? (
-        <div className="extp-list">
+        <SettingsCard className="extp-list">
           {visible.map((extension) => (
             <ExtensionRow
               key={extension.manifest.id}
@@ -54,13 +55,9 @@ export function ExtensionsSectionView(props: ExtensionsSectionViewProps) {
               onShowInChat={(show) => props.onShowInChat(extension.manifest.id, show)}
             />
           ))}
-        </div>
+        </SettingsCard>
       ) : (
-        <EmptyState
-          message={t(emptyKey)}
-          action={props.section === "custom" && !props.loading ? t("extensions.actions.add") : undefined}
-          onAction={props.section === "custom" ? props.onAdd : undefined}
-        />
+        <EmptyState message={t(emptyKey)} />
       )}
 
       {props.section === "plugins" && !props.loading && !props.loadError && (

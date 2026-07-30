@@ -103,7 +103,7 @@ export function LlmExplorer({ navState, onNavChange }: LlmExplorerProps) {
 
   return (
     <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-      <div style={{ maxWidth: 700, width: "100%", margin: "0 auto" }}>
+      <div style={{ maxWidth: "var(--settings-content-max-width)", width: "100%", margin: "0 auto" }}>
         <h2 style={{ fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--ink)", marginBottom: 20 }}>
           LLM
         </h2>
