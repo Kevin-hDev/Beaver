@@ -39,6 +39,26 @@ const MASCOT_OPTIONS: Array<{
     nameKey: "settings.mascot.nivalName",
     descriptionKey: "settings.mascot.nivalDesc",
   },
+  {
+    id: "mokai",
+    nameKey: "settings.mascot.mokaiName",
+    descriptionKey: "settings.mascot.mokaiDesc",
+  },
+  {
+    id: "volt",
+    nameKey: "settings.mascot.voltName",
+    descriptionKey: "settings.mascot.voltDesc",
+  },
+  {
+    id: "raku",
+    nameKey: "settings.mascot.rakuName",
+    descriptionKey: "settings.mascot.rakuDesc",
+  },
+  {
+    id: "pico",
+    nameKey: "settings.mascot.picoName",
+    descriptionKey: "settings.mascot.picoDesc",
+  },
 ];
 
 export function MascotSettings() {

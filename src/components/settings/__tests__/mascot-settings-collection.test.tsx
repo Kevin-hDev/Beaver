@@ -17,6 +17,10 @@ describe("collection des mascottes", () => {
   it.each([
     ["Kova", "kova", "settings.mascot.kovaName"],
     ["Nival", "nival", "settings.mascot.nivalName"],
+    ["Mokai", "mokai", "settings.mascot.mokaiName"],
+    ["Volt", "volt", "settings.mascot.voltName"],
+    ["Raku", "raku", "settings.mascot.rakuName"],
+    ["Pico", "pico", "settings.mascot.picoName"],
   ])("sélectionne %s depuis une carte sans liste déroulante", async (
     _name,
     mascotId,

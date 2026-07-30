@@ -1,4 +1,13 @@
-export const MASCOT_IDS = ["cl-go-beaver", "circuit", "kova", "nival"] as const;
+export const MASCOT_IDS = [
+  "cl-go-beaver",
+  "circuit",
+  "kova",
+  "nival",
+  "mokai",
+  "volt",
+  "raku",
+  "pico",
+] as const;
 
 export type MascotId = typeof MASCOT_IDS[number];
 

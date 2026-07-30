@@ -1,4 +1,6 @@
-let selectedMascotId = "cl-go-beaver";
+import { isMascotId, type MascotId } from "@/types/mascot";
+
+let selectedMascotId: MascotId = "cl-go-beaver";
 
 export function mascotCommandResult(
   command: string,
@@ -9,12 +11,7 @@ export function mascotCommandResult(
     const mascotId = patch && typeof patch === "object"
       ? (patch as Record<string, unknown>).mascot_id
       : null;
-    if (
-      mascotId === "cl-go-beaver"
-      || mascotId === "circuit"
-      || mascotId === "kova"
-      || mascotId === "nival"
-    ) {
+    if (isMascotId(mascotId)) {
       selectedMascotId = mascotId;
     }
   } else if (command !== "get_mascot_settings") {

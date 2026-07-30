@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MASCOT_IDS } from "@/types/mascot";
 import { getMascotAnimation, spritePosition } from "./mascot-assets";
 import {
   mascotFrameDuration,
@@ -66,6 +67,28 @@ describe("mascot sprite playback", () => {
     expect(held).toMatchObject({ row: 1, startFrame: 6, frames: 1 });
   });
 
+  it("utilise les planches standard et avancées des nouvelles mascottes", () => {
+    for (const mascotId of ["mokai", "volt", "raku", "pico"] as const) {
+      expect(getMascotAnimation("idle", mascotId)).toMatchObject({
+        row: 0,
+        frames: 6,
+        columns: 8,
+        rows: 11,
+      });
+      expect(getMascotAnimation("work-laptop", mascotId)).toMatchObject({
+        row: 0,
+        frames: 3,
+        columns: 8,
+        rows: 3,
+      });
+      expect(getMascotAnimation("held", mascotId)).toMatchObject({
+        row: 1,
+        startFrame: 6,
+        frames: 1,
+      });
+    }
+  });
+
   it("positionne correctement les coins de la planche", () => {
     expect(spritePosition(0, 0)).toBe("0% 0%");
     expect(spritePosition(7, 18)).toBe("100% 100%");
@@ -79,7 +102,7 @@ describe("mascot sprite playback", () => {
   });
 
   it("applique les pauses communes à chaque mascotte", () => {
-    for (const mascotId of ["cl-go-beaver", "circuit", "kova", "nival"] as const) {
+    for (const mascotId of MASCOT_IDS) {
       const idle = getMascotAnimation("idle", mascotId);
       const waiting = getMascotAnimation("waiting", mascotId);
       const thinking = getMascotAnimation("thinking", mascotId);

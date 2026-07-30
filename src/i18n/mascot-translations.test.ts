@@ -19,6 +19,14 @@ describe("mascot translations", () => {
       expect(locale.settings.mascot.kovaDesc.trim()).not.toBe("");
       expect(locale.settings.mascot.nivalName.trim()).not.toBe("");
       expect(locale.settings.mascot.nivalDesc.trim()).not.toBe("");
+      expect(locale.settings.mascot.mokaiName.trim()).not.toBe("");
+      expect(locale.settings.mascot.mokaiDesc.trim()).not.toBe("");
+      expect(locale.settings.mascot.voltName.trim()).not.toBe("");
+      expect(locale.settings.mascot.voltDesc.trim()).not.toBe("");
+      expect(locale.settings.mascot.rakuName.trim()).not.toBe("");
+      expect(locale.settings.mascot.rakuDesc.trim()).not.toBe("");
+      expect(locale.settings.mascot.picoName.trim()).not.toBe("");
+      expect(locale.settings.mascot.picoDesc.trim()).not.toBe("");
       expect(locale.settings.mascot.selected.trim()).not.toBe("");
       expect(locale.settings.mascot.moveLabel.trim()).not.toBe("");
     }

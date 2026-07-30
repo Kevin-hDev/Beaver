@@ -135,4 +135,19 @@ describe("assets de marque", () => {
     expect(manifest.states.some((state) => state.id === "success")).toBe(true);
     expect(manifest.states.some((state) => state.id === "grabbed")).toBe(true);
   });
+
+  it("embarque les planches des quatre nouvelles mascottes", () => {
+    for (const mascotId of ["mokai", "volt", "raku", "pico"]) {
+      const directory = `src/assets/mascot/${mascotId}`;
+      const manifest = JSON.parse(
+        readText(`${directory}/manifest.json`),
+      ) as { id: string; sheets: { standard: unknown; actions: unknown } };
+
+      expect(fileExists(`${directory}/standard.webp`)).toBe(true);
+      expect(fileExists(`${directory}/actions.webp`)).toBe(true);
+      expect(manifest.id).toBe(mascotId);
+      expect(manifest.sheets.standard).toBeDefined();
+      expect(manifest.sheets.actions).toBeDefined();
+    }
+  });
 });

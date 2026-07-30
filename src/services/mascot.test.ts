@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MASCOT_IDS } from "@/types/mascot";
 import {
   MASCOT_SIZE_MAX,
   normalizeMascotSettings,
@@ -26,31 +27,15 @@ describe("mascot service validation", () => {
     expect(settings.position).toBeNull();
   });
 
-  it("accepte Circuit comme mascotte disponible", () => {
-    const settings = normalizeMascotSettings({
-      mascot_id: "circuit",
-      size_percent: 100,
-    });
+  it("accepte toutes les mascottes disponibles", () => {
+    for (const mascotId of MASCOT_IDS) {
+      const settings = normalizeMascotSettings({
+        mascot_id: mascotId,
+        size_percent: 100,
+      });
 
-    expect(settings.mascot_id).toBe("circuit");
-  });
-
-  it("accepte Kova comme mascotte disponible", () => {
-    const settings = normalizeMascotSettings({
-      mascot_id: "kova",
-      size_percent: 100,
-    });
-
-    expect(settings.mascot_id).toBe("kova");
-  });
-
-  it("accepte Nival comme mascotte disponible", () => {
-    const settings = normalizeMascotSettings({
-      mascot_id: "nival",
-      size_percent: 100,
-    });
-
-    expect(settings.mascot_id).toBe("nival");
+      expect(settings.mascot_id).toBe(mascotId);
+    }
   });
 
   it("retombe sur idle pour un état temps réel invalide", () => {
