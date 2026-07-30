@@ -5,6 +5,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import { X, Plus, ArrowSquareOut } from "@/components/ui/icons";
 import { ChannelIcon } from "./channel-icon";
 import type { ChannelType } from "@/types/channels";
+import "@/components/ui/browse-card.css";
 
 interface ChannelsBrowseModalProps {
   onPick: (channelId: ChannelType) => void;
@@ -65,7 +66,7 @@ export function ChannelsBrowseModal({ onPick, onClose }: ChannelsBrowseModalProp
             return (
               <div
                 key={spec.id}
-                className="ak-connector-card"
+                className="browse-card"
                 role="button"
                 tabIndex={0}
                 onClick={() => onPick(spec.id)}
@@ -74,17 +75,24 @@ export function ChannelsBrowseModal({ onPick, onClose }: ChannelsBrowseModalProp
                 <div className="ch-browse-icon">
                   <ChannelIcon channelId={spec.id} size={32} />
                 </div>
-                <div className="ak-connector-card-body">
-                  <div className="ak-connector-card-name">{spec.name}</div>
-                  <div className="ak-connector-card-desc">{t(spec.descKey)}</div>
-                  <div className="ak-connector-card-meta">
-                    <span className="mcbc-cat">{t(`channels.browse.${spec.category}`)}</span>
-                    <button type="button" className="mcbc-link" onClick={handleLinkClick} title={spec.url}>
+                <div className="browse-card-body">
+                  <div className="browse-card-name">{spec.name}</div>
+                  <div className="browse-card-desc">{t(spec.descKey)}</div>
+                  <div className="browse-card-meta">
+                    <span className="browse-chip browse-chip-cat">
+                      {t(`channels.browse.${spec.category}`)}
+                    </span>
+                    <button
+                      type="button"
+                      className="browse-card-link"
+                      onClick={handleLinkClick}
+                      title={spec.url}
+                    >
                       <ArrowSquareOut size="var(--icon-xs)" />
                     </button>
                   </div>
                 </div>
-                <div className="ak-connector-card-action">
+                <div className="icon-btn browse-card-action">
                   <Plus size="var(--icon-md)" weight="bold" />
                 </div>
               </div>

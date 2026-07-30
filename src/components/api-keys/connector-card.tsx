@@ -3,6 +3,7 @@ import { Plus, Check, Key } from "@/components/ui/icons";
 import { ProviderIcon } from "@/lib/provider-icons";
 import { providerDescription, providerFreeTier } from "@/lib/provider-copy";
 import type { ProviderSpec } from "@/types/api";
+import "@/components/ui/browse-card.css";
 
 interface ConnectorCardProps {
   provider: ProviderSpec;
@@ -19,7 +20,7 @@ export function ConnectorCard({
   return (
     <button
       type="button"
-      className={`ak-connector-card ${configured ? "configured" : ""}`}
+      className={`browse-card ${configured ? "is-configured" : ""}`}
       onClick={configured ? undefined : onAdd}
       disabled={configured}
     >
@@ -28,20 +29,20 @@ export function ConnectorCard({
         displayName={provider.display_name}
         size={40}
       />
-      <div className="ak-connector-card-body">
-        <div className="ak-connector-card-name">{provider.display_name}</div>
-        <div className="ak-connector-card-desc">{providerDescription(t, provider)}</div>
-        <div className="ak-connector-card-meta">
-          <span className="ak-connector-card-cat">
+      <div className="browse-card-body">
+        <div className="browse-card-name">{provider.display_name}</div>
+        <div className="browse-card-desc">{providerDescription(t, provider)}</div>
+        <div className="browse-card-meta">
+          <span className="browse-chip browse-chip-cat">
             {provider.category.toUpperCase()}
           </span>
-          <span className="ak-connector-card-tier">
+          <span className="browse-chip">
             {providerFreeTier(t, provider)}
           </span>
-          <Key size="var(--icon-xs)" className="ak-connector-card-keyicon" weight="fill" />
+          <Key size="var(--icon-xs)" className="browse-card-keyicon" weight="fill" />
         </div>
       </div>
-      <div className={`ak-connector-card-action ${configured ? "done" : ""}`}>
+      <div className={`icon-btn browse-card-action ${configured ? "done" : ""}`}>
         {configured ? <Check size="var(--icon-md)" weight="bold" /> : <Plus size="var(--icon-md)" weight="bold" />}
       </div>
     </button>

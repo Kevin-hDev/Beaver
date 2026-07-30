@@ -1,123 +1,21 @@
-/* === Grille des cards === */
+/* Grille du catalogue. L'habillage des cards vient de la card partagée
+   (src/components/ui/browse-card.css). */
+
 .ak-connectors-grid {
-  padding: var(--space-md) var(--space-lg) var(--space-lg);
   display: grid;
+  flex: 1;
   grid-template-columns: 1fr 1fr;
   grid-auto-rows: min-content;
   align-content: start;
   gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
   overflow-y: auto;
-  flex: 1;
 }
 
 .ak-connectors-empty {
   grid-column: span 2;
   padding: var(--space-lg);
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
   text-align: center;
-  color: var(--ink-muted);
-  font-size: var(--text-sm);
-}
-
-/* === Connector card === */
-.ak-connector-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-  transition: background var(--ease-smooth), border-color var(--ease-smooth);
-  position: relative;
-}
-
-[data-theme="dark"] .ak-connector-card {
-  background: var(--surface-overlay);
-  border-color: transparent;
-}
-
-.ak-connector-card:hover:not(:disabled) {
-  background: var(--select-bg);
-  border-color: var(--select-text);
-}
-
-.ak-connector-card.configured {
-  opacity: 0.7;
-  cursor: default;
-}
-
-.ak-connector-card-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.ak-connector-card-name {
-  font-weight: 600;
-  font-size: var(--text-sm);
-  margin-bottom: 2px;
-}
-
-.ak-connector-card-desc {
-  font-size: var(--text-xs);
-  color: var(--ink-muted);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.ak-connector-card-meta {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-
-.ak-connector-card-cat {
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  padding: 2px 6px;
-  background: var(--shell);
-  border-radius: var(--radius-xs);
-}
-
-.ak-connector-card-tier {
-  color: var(--ink-muted);
-  padding: 2px 6px;
-  background: var(--shell);
-  border-radius: var(--radius-xs);
-}
-
-.ak-connector-card-keyicon {
-  color: var(--signal-warning);
-}
-
-.ak-connector-card-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--shell);
-  color: var(--ink-muted);
-  flex-shrink: 0;
-  transition: all var(--ease-smooth);
-}
-
-.ak-connector-card:hover:not(:disabled) .ak-connector-card-action {
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-}
-
-.ak-connector-card-action.done {
-  background: var(--signal-ok-bg);
-  color: var(--signal-ok);
 }

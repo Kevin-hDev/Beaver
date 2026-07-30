@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X, Plus, Check } from "@/components/ui/icons";
 import { ProviderIcon } from "@/lib/provider-icons";
 import type { OAuthProviderStatus } from "@/types/oauth-provider";
+import "@/components/ui/browse-card.css";
 
 interface OAuthProviderModalProps {
   providers: OAuthProviderStatus[];
@@ -33,16 +34,16 @@ export function OAuthProviderModal({ providers, onPick, onClose }: OAuthProvider
         </header>
         <div className="ak-connectors-grid prv-modal-grid">
           {providers.map((provider) => (
-            <button key={provider.id} type="button" className="ak-connector-card" onClick={() => onPick(provider)}>
+            <button key={provider.id} type="button" className="browse-card" onClick={() => onPick(provider)}>
               <ProviderIcon providerId={provider.id} displayName={provider.display_name} size={40} />
-              <div className="ak-connector-card-body">
-                <div className="ak-connector-card-name">{provider.display_name}</div>
-                <div className="ak-connector-card-desc">
+              <div className="browse-card-body">
+                <div className="browse-card-name">{provider.display_name}</div>
+                <div className="browse-card-desc">
                   {t(`providers.oauth.descriptions.${provider.id}`)}
                   {provider.experimental ? ` · ${t("providers.oauth.experimental")}` : ""}
                 </div>
               </div>
-              <div className={`ak-connector-card-action ${provider.connected ? "done" : ""}`}>
+              <div className={`icon-btn browse-card-action ${provider.connected ? "done" : ""}`}>
                 {provider.connected ? <Check size="var(--icon-md)" weight="bold" /> : <Plus size="var(--icon-md)" weight="bold" />}
               </div>
             </button>

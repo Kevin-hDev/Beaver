@@ -4,6 +4,7 @@ import { Plus, Check, ArrowSquareOut } from "@/components/ui/icons";
 import { McpIcon } from "@/lib/mcp-icons";
 import { getMcpDescription } from "@/types/mcp";
 import type { McpConnectorSpec } from "@/types/mcp";
+import "@/components/ui/browse-card.css";
 import "./mcp-browse-card.css";
 
 interface McpBrowseCardProps {
@@ -22,25 +23,30 @@ export function McpBrowseCard({ connector, configured, onAdd }: McpBrowseCardPro
   };
 
   return (
-    <div className={`mcbc-card ${configured ? "configured" : ""} ${locked ? "locked" : ""}`}>
+    <div className={`browse-card ${configured ? "is-configured" : ""} ${locked ? "is-locked" : ""}`}>
       <McpIcon connectorId={connector.id} displayName={connector.display_name} size={40} />
-      <div className="mcbc-body">
-        <div className="mcbc-name">
+      <div className="browse-card-body">
+        <div className="browse-card-name">
           {connector.display_name}
-          {locked && <span className="mcbc-soon">{t("connectors.comingSoon")}</span>}
+          {locked && <span className="browse-chip mcbc-soon">{t("connectors.comingSoon")}</span>}
         </div>
-        <div className="mcbc-desc">{getMcpDescription(connector, i18n.language)}</div>
-        <div className="mcbc-meta">
-          <span className="mcbc-cat">{connector.category.toUpperCase()}</span>
-          <span className="mcbc-author">{connector.author}</span>
-          <button type="button" className="mcbc-link" onClick={handleLinkClick} title={connector.url}>
+        <div className="browse-card-desc">{getMcpDescription(connector, i18n.language)}</div>
+        <div className="browse-card-meta">
+          <span className="browse-chip browse-chip-cat">{connector.category.toUpperCase()}</span>
+          <span className="browse-chip">{connector.author}</span>
+          <button
+            type="button"
+            className="browse-card-link mcbc-link"
+            onClick={handleLinkClick}
+            title={connector.url}
+          >
             <ArrowSquareOut size="var(--icon-xs)" />
           </button>
         </div>
       </div>
       <button
         type="button"
-        className={`icon-btn mcbc-action ${configured ? "done" : ""}`}
+        className={`icon-btn browse-card-action ${configured ? "done" : ""}`}
         onClick={configured || locked ? undefined : onAdd}
         disabled={configured || locked}
       >

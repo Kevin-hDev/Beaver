@@ -87,18 +87,8 @@
   pointer-events: none;
 }
 
+/* Marge à gauche élargie pour dégager la loupe posée dans le champ. */
 .ak-connectors-search-input {
   width: 100%;
-  padding: 10px 12px 10px 36px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  outline: none;
-}
-
-.ak-connectors-search-input::placeholder {
-  color: var(--ink-faint);
+  padding-left: var(--space-xl);
 }

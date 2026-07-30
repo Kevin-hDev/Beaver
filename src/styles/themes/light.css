@@ -62,6 +62,8 @@
   /* Surface variants */
   --surface-glass: rgba(220, 218, 212, 0.55);
   --surface-overlay: rgba(220, 218, 212, 0.70);
+  --card-on-glass: rgba(255, 255, 255, 0.80);
+  --chip-bg: rgba(0, 0, 0, 0.08);
   --memory-topic-list-border: var(--edge);
   --memory-topic-list-bg: var(--shell);
   /* Le blanc est déjà le sommet de la hiérarchie — l'élévation est portée par l'ombre */
