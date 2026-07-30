@@ -10,16 +10,17 @@
     max(0px, calc(var(--space-sm) - 4px));
 }
 
-/* Le premier groupe colle au haut de la colonne ; les suivants respirent, sinon
-   les sections se lisent comme une seule liste continue. */
+/* Assez d'air pour séparer deux sections, pas plus : quinze onglets et cinq
+   titres remplissaient déjà la hauteur d'une fenêtre. */
 .settings-subtab-group + .settings-subtab-group {
-  margin-top: var(--space-md);
+  margin-top: var(--space-sm);
 }
 
-/* Libellé de section, pas une destination : aligné sur le texte des onglets et
-   non sur leur icône, pour se lire comme un titre au-dessus d'eux. */
+/* Libellé de section, pas une destination. Collé aux onglets qu'il annonce et
+   détaché de ceux qui précèdent : c'est cet écart asymétrique qui le rattache
+   à son groupe, pas la place qu'il prend. */
 .settings-subtab-heading {
-  padding: var(--space-2xs) var(--nav-item-padding-x) var(--space-xs);
+  padding: 0 var(--nav-item-padding-x) var(--space-2xs);
   color: var(--ink-faint);
   font-size: var(--text-2xs);
   font-weight: 600;
