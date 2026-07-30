@@ -56,8 +56,8 @@ describe("SettingsTab slots", () => {
     fireEvent.click(screen.getByText("providers.tabs.oauth"));
 
     await waitFor(() => expect(screen.getAllByText("OpenAI").length).toBeGreaterThan(0));
-    expect(screen.getByTestId("settings-detail").querySelector(".prv-subtabs")).toBeTruthy();
-    expect(screen.getByTestId("settings-detail").querySelector(".prv-oauth-inner")).toBeTruthy();
+    expect(screen.getByTestId("settings-detail").querySelector(".settings-tabbar")).toBeTruthy();
+    expect(screen.getByTestId("settings-list").querySelector(".settings-tabbar")).toBeNull();
     expect(screen.queryByText("Moonshot AI")).toBeNull();
 
     fireEvent.click(screen.getByText("providers.oauth.openCatalog"));

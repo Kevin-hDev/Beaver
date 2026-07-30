@@ -5,6 +5,7 @@ import { Trash } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { SettingsBackButton } from "@/components/settings/shell/settings-back-button";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { useAvailableModels, withoutInteractiveOnlyModels } from "@/hooks/use-available-models";
 import { ChannelsAllowlist } from "./channels-allowlist";
@@ -18,11 +19,20 @@ interface ChannelsDetailProps {
   account: ChannelAccountConfig;
   status: ChannelHealthEntry | undefined;
   config: GatewayConfig;
+  onBack: () => void;
   onSaveConfig: (cfg: GatewayConfig) => Promise<void>;
   onDelete: () => void;
 }
 
-export function ChannelsDetail({ channelId, account, status, config, onSaveConfig, onDelete }: ChannelsDetailProps) {
+export function ChannelsDetail({
+  channelId,
+  account,
+  status,
+  config,
+  onBack,
+  onSaveConfig,
+  onDelete,
+}: ChannelsDetailProps) {
   const { t } = useTranslation();
   const statusKey = status?.status ?? "off";
   const isRunning = statusKey === "running";
@@ -89,111 +99,110 @@ export function ChannelsDetail({ channelId, account, status, config, onSaveConfi
   const channelName = channelId.charAt(0).toUpperCase() + channelId.slice(1);
 
   return (
-    <div className="ctd-scroll">
-      <div className="ctd-inner">
-        <div className="ctd-header">
-          <div className="ctd-info">
-            <ChannelIcon channelId={channelId} size={36} />
-            <h2 className="ctd-name">{channelName} — {account.account_id}</h2>
-          </div>
-          <div className="ctd-actions">
-            <button
-              type="button"
-              className={`ctd-status-btn ${isRunning ? "connected" : "disconnected"}`}
-              onClick={() => void handleConnect()}
-            >
-              <span className="ctd-status-dot" />
-              {t(isRunning ? "channels.detail.connected" : "channels.detail.disconnected")}
-            </button>
-            <Tooltip label={t("channels.detail.delete")} align="right">
-              <button type="button" className="ak-icon-btn danger" onClick={() => setConfirmDelete(true)}>
-                <Trash size="var(--icon-md)" />
-              </button>
-            </Tooltip>
-          </div>
+    <>
+      <div className="ctd-header">
+        <SettingsBackButton onClick={onBack} />
+        <div className="ctd-info">
+          <ChannelIcon channelId={channelId} size={36} />
+          <h2 className="ctd-name">{channelName} — {account.account_id}</h2>
         </div>
+        <div className="ctd-actions">
+          <button
+            type="button"
+            className={`ctd-status-btn ${isRunning ? "connected" : "disconnected"}`}
+            onClick={() => void handleConnect()}
+          >
+            <span className="ctd-status-dot" />
+            {t(isRunning ? "channels.detail.connected" : "channels.detail.disconnected")}
+          </button>
+          <Tooltip label={t("channels.detail.delete")} align="right">
+            <button type="button" className="ak-icon-btn danger" onClick={() => setConfirmDelete(true)}>
+              <Trash size="var(--icon-md)" />
+            </button>
+          </Tooltip>
+        </div>
+      </div>
 
-        {status?.error && (
-          <div className="ch-error-bubble">
-            <span className="ch-error-text">{t(channelErrorKey(status.error))}</span>
-          </div>
-        )}
-        {operationFailed && (
-          <div className="ch-error-bubble"><span className="ch-error-text">{t("channels.errors.generic")}</span></div>
-        )}
+      {status?.error && (
+        <div className="ch-error-bubble">
+          <span className="ch-error-text">{t(channelErrorKey(status.error))}</span>
+        </div>
+      )}
+      {operationFailed && (
+        <div className="ch-error-bubble"><span className="ch-error-text">{t("channels.errors.generic")}</span></div>
+      )}
 
-        <SettingsCard>
-          <div className="ctd-section">
-            <div className="ctd-section-label">{t("channels.config.description")}</div>
-            <div className="ctd-section-value">{t(`channels.browse.${channelId}Desc`)}</div>
-          </div>
-        </SettingsCard>
+      <SettingsCard>
+        <div className="ctd-section">
+          <div className="ctd-section-label">{t("channels.config.description")}</div>
+          <div className="ctd-section-value">{t(`channels.browse.${channelId}Desc`)}</div>
+        </div>
+      </SettingsCard>
 
-        <SettingsCard>
+      <SettingsCard>
+        <div className="ctd-row ctd-row-border">
+          <span className="ctd-row-label">
+            {t(channelId === "slack" ? "channels.detail.botToken" : "channels.detail.token")}
+          </span>
+          <span className="ctd-row-value">••••••••</span>
+        </div>
+        {channelId === "slack" && (
           <div className="ctd-row ctd-row-border">
-            <span className="ctd-row-label">
-              {t(channelId === "slack" ? "channels.detail.botToken" : "channels.detail.token")}
-            </span>
+            <span className="ctd-row-label">{t("channels.detail.appToken")}</span>
             <span className="ctd-row-value">••••••••</span>
           </div>
-          {channelId === "slack" && (
-            <div className="ctd-row ctd-row-border">
-              <span className="ctd-row-label">{t("channels.detail.appToken")}</span>
-              <span className="ctd-row-value">••••••••</span>
-            </div>
-          )}
-          <div className="ctd-row ctd-row-border">
-            <span className="ctd-row-label">{t("channels.status.off")}</span>
-            <span className="ctd-row-value">{t(`channels.status.${statusKey}`)}</span>
-          </div>
-          <div className="ctd-row">
-            <span className="ctd-row-label">{t("channels.detail.requireMention")}</span>
-            <ToggleSwitch
-              checked={account.require_mention}
-              ariaLabel={t("channels.detail.requireMention")}
-              onCheckedChange={(checked) => void updateAccount({ require_mention: checked })}
-            />
-          </div>
-        </SettingsCard>
-
-        <SettingsCard>
-          <div className="ctd-section">
-            <div className="ctd-section-label">{t("channels.detail.provider")}</div>
-            <CustomSelect
-              options={providerOptions}
-              value={account.provider}
-              onChange={(v) => void updateAccount({ provider: v, model: "" })}
-              placeholder={t("channels.detail.provider")}
-            />
-          </div>
-          <div className="ctd-section">
-            <div className="ctd-section-label">{t("channels.detail.model")}</div>
-            <CustomSelect
-              options={modelOptions}
-              value={account.model}
-              onChange={(v) => void updateAccount({ model: v })}
-              placeholder={t("channels.detail.model")}
-              disabled={!account.provider}
-            />
-          </div>
-        </SettingsCard>
-
-        <SettingsCard>
-          <div className="ctd-section">
-            <div className="ctd-section-label">{t("channels.detail.allowlist")}</div>
-            <ChannelsAllowlist
-              allowlist={account.allowlist}
-              onChange={(list) => void updateAccount({ allowlist: list })}
-            />
-          </div>
-        </SettingsCard>
-
-        {confirmDelete && (
-          <button type="button" className="ak-confirm-delete" onClick={() => void handleDelete()}>
-            {t("channels.detail.confirmDelete")}
-          </button>
         )}
-      </div>
-    </div>
+        <div className="ctd-row ctd-row-border">
+          <span className="ctd-row-label">{t("channels.status.off")}</span>
+          <span className="ctd-row-value">{t(`channels.status.${statusKey}`)}</span>
+        </div>
+        <div className="ctd-row">
+          <span className="ctd-row-label">{t("channels.detail.requireMention")}</span>
+          <ToggleSwitch
+            checked={account.require_mention}
+            ariaLabel={t("channels.detail.requireMention")}
+            onCheckedChange={(checked) => void updateAccount({ require_mention: checked })}
+          />
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <div className="ctd-section">
+          <div className="ctd-section-label">{t("channels.detail.provider")}</div>
+          <CustomSelect
+            options={providerOptions}
+            value={account.provider}
+            onChange={(v) => void updateAccount({ provider: v, model: "" })}
+            placeholder={t("channels.detail.provider")}
+          />
+        </div>
+        <div className="ctd-section">
+          <div className="ctd-section-label">{t("channels.detail.model")}</div>
+          <CustomSelect
+            options={modelOptions}
+            value={account.model}
+            onChange={(v) => void updateAccount({ model: v })}
+            placeholder={t("channels.detail.model")}
+            disabled={!account.provider}
+          />
+        </div>
+      </SettingsCard>
+
+      <SettingsCard>
+        <div className="ctd-section">
+          <div className="ctd-section-label">{t("channels.detail.allowlist")}</div>
+          <ChannelsAllowlist
+            allowlist={account.allowlist}
+            onChange={(list) => void updateAccount({ allowlist: list })}
+          />
+        </div>
+      </SettingsCard>
+
+      {confirmDelete && (
+        <button type="button" className="ak-confirm-delete" onClick={() => void handleDelete()}>
+          {t("channels.detail.confirmDelete")}
+        </button>
+      )}
+    </>
   );
 }

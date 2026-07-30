@@ -6,15 +6,16 @@
     "agentLocal": "Sitzung"
   },
   "common": {
+    "back": "Zurück",
     "delete": "Löschen",
     "loading": "Wird geladen…"
   },
   "providers": {
     "tabs": { "apiKeys": "API-Schlüssel", "oauth": "OAuth" },
     "oauth": {
-      "title": "OAuth-Verbindungen", "openCatalog": "Anbieter", "catalogTitle": "OAuth-Anbieter",
-      "catalogSubtitle": "Native Web-Anmeldung, keine Installation erforderlich.", "connected": "Verbunden",
-      "emptySidebar": "Keine OAuth-Verbindung", "empty": "Kein OAuth-Anbieter ausgewählt",
+      "openCatalog": "Anbieter", "catalogTitle": "OAuth-Anbieter",
+      "catalogSubtitle": "Native Web-Anmeldung, keine Installation erforderlich.",
+      "empty": "Kein OAuth-Anbieter ausgewählt",
       "connectionLabel": "Verbindung", "nativeConnection": "Natives Web — keine Installation erforderlich", "experimental": "Experimentell / inoffiziell", "connect": "Verbinden", "disconnect": "Trennen", "cancel": "Abbrechen",
       "progress": { "waiting": "Anmeldung wird erwartet…", "verification": "Bestätigung erforderlich", "success": "Verbunden", "cancelled": "Anmeldung abgebrochen", "error": "Verbindung nicht möglich" },
       "successMessage": "Der Anbieter wurde erfolgreich verbunden.", "retryCatalog": "Erneut versuchen",
@@ -47,10 +48,6 @@
     "main": {
       "title": "API Keys",
       "connectorsBtn": "API Connectors"
-    },
-    "sidebar": {
-      "configured": "Konfiguriert",
-      "empty": "Kein Anbieter konfiguriert"
     },
     "empty": {
       "title": "Kein Anbieter konfiguriert",
@@ -101,8 +98,7 @@
   },
   "channels": {
     "sidebar": {
-      "empty": "Keine Kanäle konfiguriert",
-      "configured": "Konfiguriert"
+      "empty": "Keine Kanäle konfiguriert"
     },
     "detail": {
       "token": "Bot-Token",
@@ -538,7 +534,6 @@
     }
   },
   "ollama": {
-    "selectModel": "Modell auswählen",
     "edit": "Bearbeiten",
     "editing": "Wird bearbeitet",
     "save": "Speichern",
@@ -620,7 +615,9 @@
     "contextTokens": "K Tokens",
     "remove": "Entfernen",
     "modelfileTab": "Modelfile",
-    "modelsTab": "Modelle"
+    "modelsTab": "Modelle",
+    "noInstalledModels": "Kein Modell installiert",
+    "noVariants": "Keine Variante verfügbar"
   },
   "heartbeat": {
     "back": "Zurück",
@@ -1254,7 +1251,6 @@
       "browseBtn": "Connectors durchsuchen"
     },
     "sidebar": {
-      "configured": "Konfiguriert",
       "empty": "Kein Connector konfiguriert",
       "loadError": "Connectors konnten nicht geladen werden"
     },
@@ -1969,24 +1965,21 @@
   "extensions": {
     "title": "Erweiterungen",
     "sections": {
-      "plugins": "Beaver-Plugins",
-      "custom": "Eigene Erweiterungen",
+      "plugins": "Plugins",
+      "custom": "Erweiterungen",
       "external": "Externe Anwendungen",
-      "host": "Host und Diagnose"
+      "host": "Host"
     },
     "pages": {
       "plugins": {
-        "title": "Beaver-Plugins",
         "description": "Offizielle Beaver-Plugins, getrennt von den internen Tools.",
         "empty": "Die offizielle Plugin-Suite erscheint hier, sobald sie verfügbar ist."
       },
       "custom": {
-        "title": "Eigene Erweiterungen",
         "description": "Füge lokalen Code hinzu oder installiere eine Erweiterung von Git oder npm.",
         "empty": "Keine eigenen Erweiterungen."
       },
       "external": {
-        "title": "Externe Anwendungen",
         "description": "Unabhängige Programme, die über das Beaver-Erweiterungsprotokoll verbunden sind.",
         "empty": "Keine externen Anwendungen verbunden."
       }
@@ -2111,7 +2104,6 @@
       "installing": "Wird installiert…"
     },
     "host": {
-      "title": "Host und Diagnose",
       "description": "Status des separaten Prozesses, der offizielle Plugins und eigene Erweiterungen ausführt.",
       "state": "Status",
       "node": "Node.js",

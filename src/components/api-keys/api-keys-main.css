@@ -1,49 +1,5 @@
-/* === Main view — empty state === */
-.ak-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: var(--space-md);
-  padding: var(--space-lg);
-  text-align: center;
-}
-
-.ak-empty-icon {
-  color: var(--ink-faint);
-}
-
-.ak-empty-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.ak-empty-subtitle {
-  font-size: var(--text-sm);
-  color: var(--ink-muted);
-  max-width: 360px;
-  line-height: 1.5;
-}
-
-/* === Header avec bouton "Connecteurs API" === */
-.ak-main-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--edge);
-}
-
-.ak-main-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-
 /* nowrap + flex-shrink comme le système .btn partagé : en concurrence
-   horizontale (cf. .akd-header), le libellé se coupait en deux lignes qui
+   horizontale avec un titre, le libellé se coupait en deux lignes qui
    débordaient d'un bouton bloqué à 28px de haut. Le bouton s'élargit. */
 .ak-connectors-btn {
   display: inline-flex;

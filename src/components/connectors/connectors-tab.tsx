@@ -1,19 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
 import { useConnectors } from "@/hooks/use-connectors";
+import { McpIcon } from "@/lib/mcp-icons";
+import { SettingsPanel } from "@/components/settings/shell/settings-panel";
+import { SettingsEntryList } from "@/components/settings/shell/settings-entry-list";
 import type { McpConnectorSpec } from "@/types/mcp";
 import type { ConnectorsTabProps, DialogState } from "./connectors-tab-types";
-import { ConnectorsSidebar } from "./connectors-sidebar";
 import { ConnectorsDetail } from "./connectors-detail";
 import { ConnectorsConfirmDialogs } from "./connectors-confirm-dialogs";
 import { McpBrowseModal } from "./mcp-browse-modal";
 import { McpConfigDialog } from "./mcp-config-dialog";
 import { McpOauthDialog } from "./mcp-oauth-dialog";
-import { EmptyState } from "@/components/ui/empty-state";
 import "./connectors-tab.css";
 
-export function useConnectorsTabSlots({ navState, onNavChange, onNavReplace }: ConnectorsTabProps): { list: React.ReactNode; detail: React.ReactNode } {
+export function useConnectorsTabContent({ navState, onNavChange, onNavReplace }: ConnectorsTabProps): React.ReactNode {
   const { t } = useTranslation();
   const {
     catalog,
@@ -29,13 +30,27 @@ export function useConnectorsTabSlots({ navState, onNavChange, onNavReplace }: C
   const [confirmAddBusy, setConfirmAddBusy] = useState(false);
   const [confirmAddError, setConfirmAddError] = useState(false);
 
-  useEffect(() => {
-    if (selectedId === null && configured.length > 0) onNavReplace({ connectorId: configured[0].id });
-  }, [selectedId, configured, onNavReplace]);
-
   const selected = useMemo(
     () => selectedId ? configured.find((c) => c.id === selectedId) ?? null : null,
     [configured, selectedId],
+  );
+
+  const entries = useMemo(
+    () => configured.map((connector) => ({
+      id: connector.id,
+      label: connector.display_name,
+      icon: (
+        <McpIcon
+          connectorId={connector.id}
+          displayName={connector.display_name}
+          size="var(--icon-lg)"
+        />
+      ),
+      offlineLabel: connector.status === "disconnected"
+        ? t("connectors.detail.disconnected")
+        : undefined,
+    })),
+    [configured, t],
   );
 
   const handlePick = useCallback((spec: McpConnectorSpec) => {
@@ -79,32 +94,20 @@ export function useConnectorsTabSlots({ navState, onNavChange, onNavReplace }: C
     }
   }, [addConnector, confirmAddBusy, onNavChange]);
 
-  const list = useMemo(() => (
-    <ConnectorsSidebar
-      configured={configured}
-      selectedId={selectedId}
-      loadError={loadError}
-      onSelect={(id) => onNavChange({ connectorId: id })}
-    />
-  ), [configured, loadError, onNavChange, selectedId]);
-
-  const browseHeader = useMemo(() => (
-    <div className="ct-browse-header">
-      <p className="ct-subtitle">{t("connectors.main.subtitle")}</p>
-      <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "browse" })}>
-        <Plus size="var(--icon-sm)" weight="bold" />
-        {t("connectors.main.browseBtn")}
-      </button>
-    </div>
+  const browseButton = useMemo(() => (
+    <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "browse" })}>
+      <Plus size="var(--icon-sm)" weight="bold" />
+      {t("connectors.main.browseBtn")}
+    </button>
   ), [t]);
 
   const detail = useMemo(() => (
     <>
       {selected ? (
-        <div className="ct-detail-wrapper">
-          {browseHeader}
+        <SettingsPanel>
           <ConnectorsDetail
             connector={selected}
+            onBack={() => onNavReplace({ connectorId: null })}
             onToggleStatus={() => {
               if (selected.status === "connected") {
                 setDialog({ kind: "confirm-disconnect", connectorId: selected.id });
@@ -114,16 +117,16 @@ export function useConnectorsTabSlots({ navState, onNavChange, onNavReplace }: C
             }}
             onDelete={() => handleDelete(selected.id)}
           />
-        </div>
+        </SettingsPanel>
       ) : (
-        <div className="ct-empty-wrapper">
-          {browseHeader}
-          <div className="ct-empty-center">
-            <EmptyState
-              message={t(loadError ? "connectors.sidebar.loadError" : "connectors.sidebar.empty")}
-            />
-          </div>
-        </div>
+        <SettingsPanel title={t("settings.tabs.connectors")} action={browseButton}>
+          <p className="settings-panel-description">{t("connectors.main.subtitle")}</p>
+          <SettingsEntryList
+            entries={entries}
+            emptyMessage={t(loadError ? "connectors.sidebar.loadError" : "connectors.sidebar.empty")}
+            onSelect={(id) => onNavChange({ connectorId: id })}
+          />
+        </SettingsPanel>
       )}
 
       {dialog.kind === "browse" && (
@@ -166,7 +169,7 @@ export function useConnectorsTabSlots({ navState, onNavChange, onNavReplace }: C
       />
     </>
   ), [
-    browseHeader,
+    browseButton,
     catalog,
     configured,
     configuredIds,
@@ -174,16 +177,18 @@ export function useConnectorsTabSlots({ navState, onNavChange, onNavReplace }: C
     confirmAddError,
     closeToReturn,
     dialog,
+    entries,
     handleConfirmAdd,
     handleDelete,
     handleDisconnect,
     handlePick,
     loadError,
     onNavChange,
+    onNavReplace,
     selected,
     t,
     toggleStatus,
   ]);
 
-  return useMemo(() => ({ list, detail }), [list, detail]);
+  return detail;
 }

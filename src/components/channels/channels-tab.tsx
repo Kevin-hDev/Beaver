@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
 import { useChannels } from "@/hooks/use-channels";
+import { SettingsPanel } from "@/components/settings/shell/settings-panel";
+import { SettingsEntryList } from "@/components/settings/shell/settings-entry-list";
 import type { ChannelType } from "@/types/channels";
-import { ChannelsSidebar } from "./channels-sidebar";
+import { ChannelIcon } from "./channel-icon";
 import { ChannelsDetail } from "./channels-detail";
 import { ChannelsBrowseModal } from "./channels-browse-modal";
 import { ChannelsConfigDialog } from "./channels-config-dialog";
-import { EmptyState } from "@/components/ui/empty-state";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
 import "./channels.css";
 
@@ -22,7 +23,7 @@ interface ChannelsTabProps {
   onNavReplace: (partial: DeepPartial<SettingsNavState>) => void;
 }
 
-export function useChannelsTabSlots({ navState, onNavChange, onNavReplace }: ChannelsTabProps): { list: React.ReactNode; detail: React.ReactNode } {
+export function useChannelsTabContent({ navState, onNavChange, onNavReplace }: ChannelsTabProps): React.ReactNode {
   const { t } = useTranslation();
   const { health, config, saveConfig, refreshHealth } = useChannels();
   const selectedKey = navState.channelKey;
@@ -35,12 +36,6 @@ export function useChannelsTabSlots({ navState, onNavChange, onNavReplace }: Cha
     );
   }, [config]);
 
-  useEffect(() => {
-    if (selectedKey === null && configuredAccounts.length > 0) {
-      onNavReplace({ channelKey: `${configuredAccounts[0].channelId}:${configuredAccounts[0].accountId}` });
-    }
-  }, [selectedKey, configuredAccounts, onNavReplace]);
-
   const selected = useMemo(
     () => selectedKey
       ? configuredAccounts.find((a) => `${a.channelId}:${a.accountId}` === selectedKey) ?? null
@@ -48,9 +43,21 @@ export function useChannelsTabSlots({ navState, onNavChange, onNavReplace }: Cha
     [configuredAccounts, selectedKey],
   );
 
-  const handlePick = useCallback((channelId: ChannelType) => {
-    setDialog({ kind: "config", channelId, returnTo: "browse" });
-  }, []);
+  const entries = useMemo(
+    () => configuredAccounts.map((account) => {
+      const status = health.channels.find(
+        (entry) => entry.channel_id === account.channelId && entry.account_id === account.accountId,
+      )?.status ?? "off";
+      return {
+        id: `${account.channelId}:${account.accountId}`,
+        label: account.accountId,
+        description: t(`channels.browse.${account.channelId}`),
+        icon: <ChannelIcon channelId={account.channelId} size="var(--icon-lg)" />,
+        offlineLabel: status === "running" ? undefined : t(`channels.status.${status}`),
+      };
+    }),
+    [configuredAccounts, health.channels, t],
+  );
 
   const handleConfigSaved = useCallback(async (channelId: ChannelType, accountId: string) => {
     if (!config) return;
@@ -72,54 +79,44 @@ export function useChannelsTabSlots({ navState, onNavChange, onNavReplace }: Cha
     await refreshHealth();
   }, [config, onNavChange, refreshHealth, saveConfig]);
 
-  const list = useMemo(() => (
-    <ChannelsSidebar
-      accounts={configuredAccounts}
-      healthEntries={health.channels}
-      selectedKey={selectedKey}
-      onSelect={(key) => onNavChange({ channelKey: key })}
-    />
-  ), [configuredAccounts, health.channels, onNavChange, selectedKey]);
-
-  const browseHeader = useMemo(() => (
-    <div className="ct-browse-header">
-      <p className="ct-subtitle">{t("channels.main.subtitle")}</p>
-      <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "browse" })}>
-        <Plus size="var(--icon-sm)" weight="bold" />
-        {t("channels.main.browseBtn")}
-      </button>
-    </div>
+  const browseButton = useMemo(() => (
+    <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "browse" })}>
+      <Plus size="var(--icon-sm)" weight="bold" />
+      {t("channels.main.browseBtn")}
+    </button>
   ), [t]);
 
   const detail = useMemo(() => (
     <>
       {selected && config ? (
-        <div className="ct-detail-wrapper">
-          {browseHeader}
+        <SettingsPanel>
           <ChannelsDetail
             channelId={selected.channelId}
             account={selected.config}
             status={health.channels.find((c) => c.channel_id === selected.channelId && c.account_id === selected.accountId)}
             config={config}
+            onBack={() => onNavReplace({ channelKey: null })}
             onSaveConfig={saveConfig}
             onDelete={() => {
               onNavReplace({ channelKey: null });
               void refreshHealth();
             }}
           />
-        </div>
+        </SettingsPanel>
       ) : (
-        <div className="ct-empty-wrapper">
-          {browseHeader}
-          <div className="ct-empty-center">
-            <EmptyState message={t("channels.sidebar.empty")} />
-          </div>
-        </div>
+        <SettingsPanel title={t("settings.tabs.channels")} action={browseButton}>
+          <p className="settings-panel-description">{t("channels.main.subtitle")}</p>
+          <SettingsEntryList
+            entries={entries}
+            emptyMessage={t("channels.sidebar.empty")}
+            onSelect={(key) => onNavChange({ channelKey: key })}
+          />
+        </SettingsPanel>
       )}
 
       {dialog.kind === "browse" && (
         <ChannelsBrowseModal
-          onPick={handlePick}
+          onPick={(channelId) => setDialog({ kind: "config", channelId, returnTo: "browse" })}
           onClose={() => setDialog({ kind: "none" })}
         />
       )}
@@ -132,12 +129,13 @@ export function useChannelsTabSlots({ navState, onNavChange, onNavReplace }: Cha
       )}
     </>
   ), [
-    browseHeader,
+    browseButton,
     config,
     dialog,
+    entries,
     handleConfigSaved,
-    handlePick,
     health.channels,
+    onNavChange,
     onNavReplace,
     refreshHealth,
     saveConfig,
@@ -145,5 +143,5 @@ export function useChannelsTabSlots({ navState, onNavChange, onNavReplace }: Cha
     t,
   ]);
 
-  return useMemo(() => ({ list, detail }), [list, detail]);
+  return detail;
 }

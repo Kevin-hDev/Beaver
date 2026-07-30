@@ -6,15 +6,16 @@
     "agentLocal": "セッション"
   },
   "common": {
+    "back": "戻る",
     "delete": "削除",
     "loading": "読み込み中…"
   },
   "providers": {
     "tabs": { "apiKeys": "API キー", "oauth": "OAuth" },
     "oauth": {
-      "title": "OAuth 接続", "openCatalog": "プロバイダー", "catalogTitle": "OAuth プロバイダー",
-      "catalogSubtitle": "ネイティブなウェブログイン。インストールは不要です。", "connected": "接続済み",
-      "emptySidebar": "OAuth 接続なし", "empty": "OAuth プロバイダーが未選択です",
+      "openCatalog": "プロバイダー", "catalogTitle": "OAuth プロバイダー",
+      "catalogSubtitle": "ネイティブなウェブログイン。インストールは不要です。",
+      "empty": "OAuth プロバイダーが未選択です",
       "connectionLabel": "接続", "nativeConnection": "ネイティブウェブ — インストール不要", "experimental": "実験的 / 非公式", "connect": "接続", "disconnect": "切断", "cancel": "キャンセル",
       "progress": { "waiting": "ログイン待機中…", "verification": "確認が必要です", "success": "接続済み", "cancelled": "ログインをキャンセルしました", "error": "接続できません" },
       "successMessage": "プロバイダーに接続しました。", "retryCatalog": "再試行",
@@ -47,10 +48,6 @@
     "main": {
       "title": "API キー",
       "connectorsBtn": "API コネクター"
-    },
-    "sidebar": {
-      "configured": "設定済み",
-      "empty": "プロバイダーが設定されていません"
     },
     "empty": {
       "title": "プロバイダーが設定されていません",
@@ -101,8 +98,7 @@
   },
   "channels": {
     "sidebar": {
-      "empty": "チャンネルが設定されていません",
-      "configured": "設定済み"
+      "empty": "チャンネルが設定されていません"
     },
     "detail": {
       "token": "ボットトークン",
@@ -538,7 +534,6 @@
     }
   },
   "ollama": {
-    "selectModel": "モデルを選択",
     "edit": "編集",
     "editing": "編集中",
     "save": "保存",
@@ -620,7 +615,9 @@
     "contextTokens": "K トークン",
     "remove": "削除",
     "modelfileTab": "Modelfile",
-    "modelsTab": "モデル"
+    "modelsTab": "モデル",
+    "noInstalledModels": "インストール済みモデルがありません",
+    "noVariants": "利用可能なバリアントがありません"
   },
   "heartbeat": {
     "back": "戻る",
@@ -1254,7 +1251,6 @@
       "browseBtn": "コネクターを探す"
     },
     "sidebar": {
-      "configured": "設定済み",
       "empty": "設定済みのコネクターはありません",
       "loadError": "コネクターを読み込めませんでした"
     },
@@ -1969,24 +1965,21 @@
   "extensions": {
     "title": "拡張機能",
     "sections": {
-      "plugins": "Beaver プラグイン",
-      "custom": "カスタム拡張機能",
+      "plugins": "プラグイン",
+      "custom": "拡張機能",
       "external": "外部アプリケーション",
-      "host": "ホストと診断"
+      "host": "ホスト"
     },
     "pages": {
       "plugins": {
-        "title": "Beaver プラグイン",
         "description": "内部 Tools とは別の Beaver 公式プラグインです。",
         "empty": "公式プラグインスイートが利用可能になると、ここに表示されます。"
       },
       "custom": {
-        "title": "カスタム拡張機能",
         "description": "ローカルコードを追加するか、Git または npm から拡張機能をインストールします。",
         "empty": "カスタム拡張機能はありません。"
       },
       "external": {
-        "title": "外部アプリケーション",
         "description": "Beaver 拡張プロトコルで接続された独立プログラムです。",
         "empty": "接続された外部アプリケーションはありません。"
       }
@@ -2111,7 +2104,6 @@
       "installing": "インストール中…"
     },
     "host": {
-      "title": "ホストと診断",
       "description": "公式プラグインとカスタム拡張機能を実行する別プロセスの状態です。",
       "state": "状態",
       "node": "Node.js",

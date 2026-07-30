@@ -1,52 +1,5 @@
 /* Ollama tab styles */
 
-.ollama-subtabs {
-  display: flex;
-  gap: 2px;
-  padding: 4px;
-  margin: 0 var(--space-sm) 0;
-  background: var(--surface-hover);
-  border-radius: var(--radius-md);
-}
-
-.ollama-subtab {
-  flex: 1;
-  padding: 2px 0;
-  font-size: var(--text-xs);
-  font-weight: 500;
-  text-align: center;
-  color: var(--ink-muted);
-  cursor: pointer;
-  transition: all var(--ease-smooth);
-  background: none;
-  border: none;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  overflow: hidden;
-}
-
-.ollama-subtab:hover {
-  color: var(--ink);
-}
-
-.ollama-subtab.active {
-  color: var(--ink);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.ollama-subtab:first-child.active {
-  padding-right: 3px;
-}
-
-.ollama-setup-list-placeholder {
-  flex: 1;
-  min-height: 0;
-}
-
 .ollama-setup-detail {
   flex: 1;
   min-width: 0;
@@ -56,29 +9,6 @@
   justify-content: center;
 }
 
-.ollama-model-item {
-  padding: 5px var(--space-sm);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: var(--text-sm);
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  mask-image: linear-gradient(to right, black calc(100% - 20px), transparent);
-  -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent);
-  transition: all var(--ease-smooth);
-  margin-bottom: 2px;
-}
-
-.ollama-model-item:hover {
-  background: var(--surface-hover);
-  transform: translateX(2px);
-}
-
-.ollama-model-item.active {
-  color: var(--select-text);
-  background: var(--select-bg);
-}
 
 /* Buttons — thin aliases of the shared .btn system (src/styles/buttons.css)
    with .btn-sm geometry. Only domain-specific colors stay here. */

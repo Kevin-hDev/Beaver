@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
 import { useApiKeys } from "@/hooks/use-api-keys";
+import { ProviderIcon } from "@/lib/provider-icons";
+import { SettingsPanel } from "@/components/settings/shell/settings-panel";
+import { SettingsEntryList } from "@/components/settings/shell/settings-entry-list";
+import { ProvidersShell } from "@/components/providers/providers-shell";
 import type { ProviderSpec } from "@/types/api";
-import { ApiKeysSidebar } from "./api-keys-sidebar";
 import { ApiKeysDetails } from "./api-keys-details";
 import { ApiKeysConfigDialog } from "./api-keys-config-dialog";
 import { ConnectorsModal } from "./connectors-modal";
-import { EmptyState } from "@/components/ui/empty-state";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
-import "./api-keys.css";
 import "./api-keys-main.css";
 import "./api-keys-detail.css";
 import "./api-keys-dialog.css";
@@ -32,31 +33,32 @@ interface ApiKeysTabProps {
   onNavReplace: (partial: DeepPartial<SettingsNavState>) => void;
 }
 
-export function useApiKeysTabSlots({ navState, onNavChange, onNavReplace }: ApiKeysTabProps): { list: React.ReactNode; detail: React.ReactNode } {
+export function useApiKeysTabContent({ navState, onNavChange, onNavReplace }: ApiKeysTabProps): React.ReactNode {
   const { t } = useTranslation();
   const { catalog, configuredIds, configured, setKey, deleteKey, testKeyRaw } =
     useApiKeys();
   const selectedId = navState.apiKeyProviderId;
   const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
 
-  useEffect(() => {
-    if (selectedId === null && configured.length > 0) {
-      onNavReplace({ apiKeyProviderId: configured[0].id });
-    }
-  }, [selectedId, configured, onNavReplace]);
-
   const selected = useMemo(
     () => selectedId ? configured.find((p) => p.id === selectedId) ?? null : null,
     [configured, selectedId],
   );
 
-  const list = useMemo(() => (
-    <ApiKeysSidebar
-      configured={configured}
-      selectedId={selectedId}
-      onSelect={(id) => onNavChange({ apiKeyProviderId: id })}
-    />
-  ), [configured, onNavChange, selectedId]);
+  const entries = useMemo(
+    () => configured.map((provider) => ({
+      id: provider.id,
+      label: provider.display_name,
+      icon: (
+        <ProviderIcon
+          providerId={provider.id}
+          displayName={provider.display_name}
+          size="var(--icon-lg)"
+        />
+      ),
+    })),
+    [configured],
+  );
 
   const handleDelete = useCallback(async () => {
     if (!selected) return;
@@ -73,43 +75,45 @@ export function useApiKeysTabSlots({ navState, onNavChange, onNavReplace }: ApiK
     }
   }, [dialog]);
 
+  const connectorsButton = useMemo(() => (
+    <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "connectors" })}>
+      <Plus size="var(--icon-sm)" weight="bold" />
+      {t("apiKeys.main.connectorsBtn")}
+    </button>
+  ), [t]);
+
   const detail = useMemo(() => (
     <>
       {selected ? (
-        <ApiKeysDetails
-          key={selected.id}
-          provider={selected}
-          onEdit={() =>
-            setDialog({
-              kind: "config",
-              provider: selected,
-              alreadyConfigured: true,
-              returnTo: "none",
-            })
-          }
-          onDelete={handleDelete}
-          onAddConnector={() => setDialog({ kind: "connectors" })}
-        />
+        <SettingsPanel>
+          <ApiKeysDetails
+            key={selected.id}
+            provider={selected}
+            onBack={() => onNavReplace({ apiKeyProviderId: null })}
+            onEdit={() =>
+              setDialog({
+                kind: "config",
+                provider: selected,
+                alreadyConfigured: true,
+                returnTo: "none",
+              })
+            }
+            onDelete={handleDelete}
+            onAddConnector={() => setDialog({ kind: "connectors" })}
+          />
+        </SettingsPanel>
       ) : (
-        <div style={{ padding: 24, flex: 1, display: "flex", flexDirection: "column" }}>
-          <div style={{ maxWidth: 600, width: "100%", margin: "0 auto" }}>
-            <div style={{
-              display: "flex", alignItems: "center",
-              justifyContent: "space-between", marginBottom: 28,
-            }}>
-              <h2 style={{ fontSize: "var(--text-xl)", fontWeight: 700, color: "var(--ink)", margin: 0 }}>
-                {t("apiKeys.main.title")}
-              </h2>
-              <button type="button" className="ak-connectors-btn" onClick={() => setDialog({ kind: "connectors" })}>
-                <Plus size="var(--icon-sm)" weight="bold" />
-                {t("apiKeys.main.connectorsBtn")}
-              </button>
-            </div>
-          </div>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <EmptyState message={t("apiKeys.empty.title")} />
-          </div>
-        </div>
+        <ProvidersShell
+          active="api"
+          action={connectorsButton}
+          onChange={(providersSubTab) => onNavChange({ providersSubTab })}
+        >
+          <SettingsEntryList
+            entries={entries}
+            emptyMessage={t("apiKeys.empty.title")}
+            onSelect={(id) => onNavChange({ apiKeyProviderId: id })}
+          />
+        </ProvidersShell>
       )}
 
       {dialog.kind === "connectors" && (
@@ -153,10 +157,13 @@ export function useApiKeysTabSlots({ navState, onNavChange, onNavReplace }: ApiK
   ), [
     catalog,
     configuredIds,
+    connectorsButton,
     deleteKey,
     dialog,
+    entries,
     handleConfigClose,
     handleDelete,
+    onNavChange,
     onNavReplace,
     selected,
     setKey,
@@ -164,5 +171,5 @@ export function useApiKeysTabSlots({ navState, onNavChange, onNavReplace }: ApiK
     testKeyRaw,
   ]);
 
-  return useMemo(() => ({ list, detail }), [list, detail]);
+  return detail;
 }

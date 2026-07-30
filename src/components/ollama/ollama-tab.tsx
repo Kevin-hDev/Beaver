@@ -2,15 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { useOllamaModels } from "@/hooks/use-ollama-models";
-import { EmptyState } from "@/components/ui/empty-state";
 import { ModelfileIcon, ModelsIcon } from "@/components/ui/model-browser-icons";
+import { SettingsPanel } from "@/components/settings/shell/settings-panel";
+import { SettingsTabbar } from "@/components/settings/shell/settings-tabbar";
 import { ollamaSetupSkippedPatch } from "@/lib/ollama-setup-gate";
-import { ModelfileList } from "./modelfile-list";
-import { ModelfileViewer } from "./modelfile-viewer";
-import { ModelSearch } from "./model-search";
-import { ModelVariantsList } from "./model-variants-list";
-import { ModelProfile } from "./model-profile";
 import { OllamaSetupScreen } from "./ollama-setup-screen";
+import { OllamaModelfileView } from "./ollama-modelfile-view";
+import { OllamaModelsView } from "./ollama-models-view";
 import type { RegistryModel } from "@/types/agent";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
 import "./ollama.css";
@@ -21,12 +19,9 @@ interface OllamaTabProps {
   onNavReplace: (partial: DeepPartial<SettingsNavState>) => void;
 }
 
-export function useOllamaTabSlots({ navState, onNavChange, onNavReplace }: OllamaTabProps): { list: React.ReactNode; detail: React.ReactNode } {
+export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: OllamaTabProps): React.ReactNode {
   const { t } = useTranslation();
   const subTab = navState.ollamaSubTab;
-  const selectedInstalled = navState.ollamaInstalledModel;
-  const selectedFamily = navState.ollamaFamily;
-  const selectedVariant = navState.ollamaVariant;
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RegistryModel[]>([]);
   const [searching, setSearching] = useState(false);
@@ -39,112 +34,71 @@ export function useOllamaTabSlots({ navState, onNavChange, onNavReplace }: Ollam
       .catch(() => setOllamaInstalled(true));
   }, []);
 
-  useEffect(() => {
-    if (!selectedInstalled && ollamaModels.models.length > 0) {
-      onNavReplace({ ollamaInstalledModel: ollamaModels.models[0].name });
-    }
-  }, [ollamaModels.models, selectedInstalled, onNavReplace]);
+  const tabs = useMemo(() => [
+    { id: "modelfile" as const, label: t("ollama.modelfileTab"), icon: <ModelfileIcon /> },
+    { id: "models" as const, label: t("ollama.modelsTab"), icon: <ModelsIcon /> },
+  ], [t]);
 
-  const setupList = useMemo(() => (
-    <div className="ollama-setup-list-placeholder" />
-  ), []);
-
-  const setupDetail = useMemo(() => (
-    <div className="ollama-setup-detail">
-      <OllamaSetupScreen
-        onComplete={async () => {
-          await invoke("patch_advanced_settings", { patch: ollamaSetupSkippedPatch(false) });
-          setOllamaInstalled(true);
-        }}
-      />
-    </div>
-  ), []);
-
-  const list = useMemo(() => (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-      <div className="ollama-subtabs">
-        {(["modelfile", "models"] as const).map((tab) => (
-          <button
-            key={tab}
-            className={`ollama-subtab ${subTab === tab ? "active" : ""}`}
-            onClick={() => onNavChange({ ollamaSubTab: tab })}
-          >
-            {tab === "modelfile" ? (
-              <><ModelfileIcon /> {t("ollama.modelfileTab")}</>
-            ) : (
-              <><ModelsIcon /> {t("ollama.modelsTab")}</>
-            )}
-          </button>
-        ))}
-      </div>
-      {subTab === "modelfile" ? (
-          <ModelfileList
-            models={ollamaModels.models}
-            selectedModel={selectedInstalled}
-            onSelect={(model) => onNavChange({ ollamaInstalledModel: model })}
-          />
-      ) : selectedFamily ? (
-        <ModelVariantsList
-          familyName={selectedFamily}
-          selectedVariant={selectedVariant}
-          onSelectVariant={(variant) => onNavChange({ ollamaVariant: variant })}
-          onBack={() => onNavChange({ ollamaFamily: null, ollamaVariant: null })}
-        />
-      ) : (
-        <ModelSearch
-          query={searchQuery}
-          setQuery={setSearchQuery}
-          results={searchResults}
-          setResults={setSearchResults}
-          searching={searching}
-          setSearching={setSearching}
-          onSelectFamily={(f) => onNavChange({ ollamaFamily: f, ollamaVariant: null })}
-          selectedFamily={selectedFamily}
-        />
-      )}
-    </div>
-  ), [
-    ollamaModels.models,
-    onNavChange,
-    searchQuery,
-    searchResults,
+  const search = useMemo(() => ({
+    query: searchQuery,
+    setQuery: setSearchQuery,
+    results: searchResults,
+    setResults: setSearchResults,
     searching,
-    selectedFamily,
-    selectedInstalled,
-    selectedVariant,
-    subTab,
-    t,
-  ]);
+    setSearching,
+  }), [searchQuery, searchResults, searching]);
 
   const detail = useMemo(() => {
-    if (subTab === "modelfile" && selectedInstalled) {
+    if (ollamaInstalled === false) {
       return (
-        <ModelfileViewer
-          modelName={selectedInstalled}
-          onDeleted={() => onNavReplace({ ollamaInstalledModel: null })}
-        />
-      );
-    }
-    if (subTab === "models" && selectedFamily) {
-      return (
-        <ModelProfile
-          familyName={selectedFamily}
-          variantFullName={selectedVariant}
-        />
+        <div className="ollama-setup-detail">
+          <OllamaSetupScreen
+            onComplete={async () => {
+              await invoke("patch_advanced_settings", { patch: ollamaSetupSkippedPatch(false) });
+              setOllamaInstalled(true);
+            }}
+          />
+        </div>
       );
     }
     return (
-      <div style={{
-        flex: 1, display: "flex",
-        alignItems: "center", justifyContent: "center",
-      }}>
-        <EmptyState message={t("ollama.selectModel")} />
-      </div>
+      <SettingsPanel title={t("settings.tabs.ollama")}>
+        <SettingsTabbar
+          items={tabs}
+          active={subTab}
+          label={t("settings.tabs.ollama")}
+          onChange={(ollamaSubTab) => onNavChange({ ollamaSubTab })}
+        />
+        {subTab === "modelfile" ? (
+          <OllamaModelfileView
+            models={ollamaModels.models}
+            selected={navState.ollamaInstalledModel}
+            onSelect={(ollamaInstalledModel) => onNavReplace({ ollamaInstalledModel })}
+          />
+        ) : (
+          <OllamaModelsView
+            search={search}
+            family={navState.ollamaFamily}
+            variant={navState.ollamaVariant}
+            onSelectFamily={(ollamaFamily) => onNavReplace({ ollamaFamily, ollamaVariant: null })}
+            onSelectVariant={(ollamaVariant) => onNavReplace({ ollamaVariant })}
+          />
+        )}
+      </SettingsPanel>
     );
-  }, [onNavReplace, selectedFamily, selectedInstalled, selectedVariant, subTab, t]);
+  }, [
+    navState.ollamaFamily,
+    navState.ollamaInstalledModel,
+    navState.ollamaVariant,
+    ollamaInstalled,
+    ollamaModels.models,
+    onNavChange,
+    onNavReplace,
+    search,
+    subTab,
+    t,
+    tabs,
+  ]);
 
-  return useMemo(
-    () => (ollamaInstalled === false ? { list: setupList, detail: setupDetail } : { list, detail }),
-    [detail, list, ollamaInstalled, setupDetail, setupList],
-  );
+  return detail;
 }

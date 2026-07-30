@@ -72,7 +72,6 @@ export const SettingsTab = memo(function SettingsTab({
   listFocused = true,
   activeSessionId,
 }: SettingsTabProps) {
-  const [childListTarget, setChildListTarget] = useState<HTMLElement | null>(null);
   const [childDetailTarget, setChildDetailTarget] = useState<HTMLElement | null>(null);
 
   const setSubTab = useCallback((id: SettingsSubTab) => {
@@ -92,13 +91,7 @@ export const SettingsTab = memo(function SettingsTab({
   const { t } = useTranslation();
 
   const list = useMemo(() => (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}>
-      <div
-        style={{
-          padding: "var(--space-sm) var(--space-sm) var(--space-sm) max(0px, calc(var(--space-sm) - 4px))",
-          flexShrink: 0,
-        }}
-      >
+    <div className="settings-subtab-list">
         {SUB_TABS.map((tab) => (
           <div
             key={tab.id}
@@ -129,12 +122,6 @@ export const SettingsTab = memo(function SettingsTab({
             <span className="settings-subtab-label">{t(tab.i18n)}</span>
           </div>
         ))}
-      </div>
-      <div
-        ref={setChildListTarget}
-        style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflow: "hidden" }}
-      >
-      </div>
     </div>
   ), [setSubTab, subTab, t]);
 
@@ -187,8 +174,7 @@ export const SettingsTab = memo(function SettingsTab({
         navState={navState}
         onNavChange={onNavChange}
         onNavReplace={onNavReplace}
-        listTarget={childListTarget}
-        detailTarget={childDetailTarget}
+        target={childDetailTarget}
       />
     </>
   );

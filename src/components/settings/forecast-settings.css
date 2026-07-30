@@ -1,33 +1,8 @@
-.fs-page {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--chrome-5);
-}
-
-.fs-inner {
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.fs-title {
-  margin: 0 0 24px;
-  color: var(--ink);
-  font-size: var(--text-xl);
-  font-weight: 700;
-}
-
-.fs-subtabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
 .fs-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
+  min-height: var(--settings-empty-min-height);
 }
 
 .fs-edit-actions {
@@ -163,10 +138,6 @@
 }
 
 @media (max-width: 640px) {
-  .fs-page {
-    padding: 18px;
-  }
-
   .fs-input {
     width: 110px;
   }

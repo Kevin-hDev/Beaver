@@ -6,15 +6,16 @@
     "agentLocal": "会话"
   },
   "common": {
+    "back": "返回",
     "delete": "删除",
     "loading": "加载中…"
   },
   "providers": {
     "tabs": { "apiKeys": "API 密钥", "oauth": "OAuth" },
     "oauth": {
-      "title": "OAuth 连接", "openCatalog": "提供商", "catalogTitle": "OAuth 提供商",
-      "catalogSubtitle": "原生网页登录，无需安装。", "connected": "已连接",
-      "emptySidebar": "没有 OAuth 连接", "empty": "未选择 OAuth 提供商",
+      "openCatalog": "提供商", "catalogTitle": "OAuth 提供商",
+      "catalogSubtitle": "原生网页登录，无需安装。",
+      "empty": "未选择 OAuth 提供商",
       "connectionLabel": "连接", "nativeConnection": "原生网页 — 无需安装", "experimental": "实验性 / 非官方", "connect": "连接", "disconnect": "断开连接", "cancel": "取消",
       "progress": { "waiting": "等待登录…", "verification": "需要验证", "success": "已连接", "cancelled": "登录已取消", "error": "无法连接" },
       "successMessage": "提供商连接成功。", "retryCatalog": "重试",
@@ -47,10 +48,6 @@
     "main": {
       "title": "API 密钥",
       "connectorsBtn": "API 连接器"
-    },
-    "sidebar": {
-      "configured": "已配置",
-      "empty": "暂无已配置的提供商"
     },
     "empty": {
       "title": "暂无已配置的提供商",
@@ -101,8 +98,7 @@
   },
   "channels": {
     "sidebar": {
-      "empty": "未配置任何频道",
-      "configured": "已配置"
+      "empty": "未配置任何频道"
     },
     "detail": {
       "token": "机器人令牌",
@@ -538,7 +534,6 @@
     }
   },
   "ollama": {
-    "selectModel": "选择模型",
     "edit": "编辑",
     "editing": "编辑中",
     "save": "保存",
@@ -620,7 +615,9 @@
     "contextTokens": "K token",
     "remove": "移除",
     "modelfileTab": "Modelfile",
-    "modelsTab": "模型"
+    "modelsTab": "模型",
+    "noInstalledModels": "未安装模型",
+    "noVariants": "没有可用变体"
   },
   "heartbeat": {
     "back": "返回",
@@ -1254,7 +1251,6 @@
       "browseBtn": "浏览连接器"
     },
     "sidebar": {
-      "configured": "已配置",
       "empty": "没有已配置的连接器",
       "loadError": "无法加载连接器"
     },
@@ -1969,24 +1965,21 @@
   "extensions": {
     "title": "扩展",
     "sections": {
-      "plugins": "Beaver 插件",
-      "custom": "自定义扩展",
+      "plugins": "插件",
+      "custom": "扩展",
       "external": "外部应用",
-      "host": "宿主与诊断"
+      "host": "宿主"
     },
     "pages": {
       "plugins": {
-        "title": "Beaver 插件",
         "description": "Beaver 官方插件，与内部 Tools 完全分开。",
         "empty": "官方插件套件可用后会显示在这里。"
       },
       "custom": {
-        "title": "自定义扩展",
         "description": "添加本地代码，或从 Git 或 npm 安装扩展。",
         "empty": "没有自定义扩展。"
       },
       "external": {
-        "title": "外部应用",
         "description": "通过 Beaver 扩展协议连接的独立程序。",
         "empty": "没有已连接的外部应用。"
       }
@@ -2111,7 +2104,6 @@
       "installing": "正在安装…"
     },
     "host": {
-      "title": "宿主与诊断",
       "description": "运行官方插件和自定义扩展的独立进程状态。",
       "state": "状态",
       "node": "Node.js",

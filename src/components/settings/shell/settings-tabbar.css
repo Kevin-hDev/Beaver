@@ -1,0 +1,41 @@
+.settings-tabbar {
+  display: flex;
+  gap: var(--chrome-1);
+  margin-bottom: var(--space-lg);
+}
+
+.settings-tabbar-item {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2xs);
+  min-width: 0;
+  padding: var(--space-2xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: all var(--ease-smooth);
+}
+
+.settings-tabbar-item:hover {
+  color: var(--ink);
+}
+
+.settings-tabbar-item.active {
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+}
+
+/* Les libellés se partagent la largeur à parts égales : sans ellipse, le plus
+   long est coupé net au milieu d'un mot quand la fenêtre rétrécit. */
+.settings-tabbar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

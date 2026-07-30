@@ -1,8 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Check } from "@/components/ui/icons";
 import { useOllamaModels } from "@/hooks/use-ollama-models";
+import { SettingsEntryList } from "@/components/settings/shell/settings-entry-list";
 import type { RegistryModel } from "@/types/agent";
 import "./ollama.css";
 import "./ollama-details.css";
@@ -16,13 +17,11 @@ interface ModelSearchProps {
   searching: boolean;
   setSearching: (b: boolean) => void;
   onSelectFamily: (familyName: string) => void;
-  selectedFamily: string | null;
 }
 
 export function ModelSearch({
   query, setQuery, results, setResults,
-  searching, setSearching,
-  onSelectFamily, selectedFamily,
+  searching, setSearching, onSelectFamily,
 }: ModelSearchProps) {
   const { t } = useTranslation();
   const { models: localModels } = useOllamaModels();
@@ -41,12 +40,20 @@ export function ModelSearch({
     }
   }, [query, setSearching, setResults]);
 
-  const isFamilyInstalled = (familyName: string): boolean => {
-    return localModels.some((m) => m.name.startsWith(`${familyName}:`));
-  };
+  const entries = useMemo(
+    () => results.map((model) => ({
+      id: model.name,
+      label: model.name,
+      description: model.description ?? undefined,
+      trailing: localModels.some((local) => local.name.startsWith(`${model.name}:`))
+        ? <Check size="var(--icon-sm)" className="msearch-installed-icon" />
+        : undefined,
+    })),
+    [localModels, results],
+  );
 
   return (
-    <div className="msearch-root">
+    <>
       <div className="msearch-bar">
         <input
           className="ollama-search-input"
@@ -56,44 +63,15 @@ export function ModelSearch({
           placeholder={t("ollama.searchPlaceholder")}
         />
       </div>
-      <div className="msearch-results">
-        {searching && (
-          <div className="msearch-loading">
-            {t("history.loading")}
-          </div>
-        )}
-        {!searching && results.length === 0 && query.trim() === "" && (
-          <div className="msearch-hint">
-            {t("ollama.searchHint")}
-          </div>
-        )}
-        {results.map((m) => {
-          const installed = isFamilyInstalled(m.name);
-          const isActive = selectedFamily ? selectedFamily === m.name : false;
-          return (
-            <div
-              key={m.name}
-              className={`ollama-model-item msearch-item-row ${isActive ? "active" : ""}`}
-              role="button"
-              tabIndex={0}
-              onClick={() => onSelectFamily(m.name)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectFamily(m.name); }}
-            >
-              <div className="msearch-item-content">
-                <div className="msearch-item-name">
-                  {m.name}
-                </div>
-                {m.description && (
-                  <div className="msearch-item-desc">
-                    {m.description}
-                  </div>
-                )}
-              </div>
-              {installed && <Check size="var(--icon-sm)" className="msearch-installed-icon" />}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+      {searching ? (
+        <p className="settings-panel-description">{t("history.loading")}</p>
+      ) : (
+        <SettingsEntryList
+          entries={entries}
+          emptyMessage={t("ollama.searchHint")}
+          onSelect={onSelectFamily}
+        />
+      )}
+    </>
   );
 }

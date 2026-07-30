@@ -1,10 +1,7 @@
 import { useTranslation } from "react-i18next";
-import {
-  ArrowLeft,
-  ChatCircleDots,
-  ShieldWarning,
-} from "@/components/ui/icons";
+import { ChatCircleDots, ShieldWarning } from "@/components/ui/icons";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
+import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
 import type { ExtensionRecord } from "@/types/extensions";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionActions } from "./extension-actions";
@@ -33,23 +30,21 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
   const managed = extension.origin?.kind === "git" || extension.origin?.kind === "npm";
   const displayedSource = extension.origin?.locator ?? extension.source;
   return (
-    <div className="extp-content">
-      <header className="extd-header">
-        <button type="button" className="extp-icon-button" aria-label={t("extensions.actions.back")} onClick={props.onBack}>
-          <ArrowLeft size="var(--icon-md)" />
-        </button>
-        <span className="extr-icon"><ExtensionIcon extension={extension} /></span>
-        <div className="extd-title">
-          <h2>{name}</h2>
-          <p>{extension.manifest.version} · {t(`extensions.kinds.${extension.kind}`)}</p>
-        </div>
-        <ToggleSwitch
-          checked={extension.enabled}
-          disabled={props.busy}
-          ariaLabel={t("extensions.enableFor", { name })}
-          onCheckedChange={props.onEnabled}
-        />
-      </header>
+    <>
+      <SettingsDetailHeader
+        title={name}
+        subtitle={`${extension.manifest.version} · ${t(`extensions.kinds.${extension.kind}`)}`}
+        icon={<span className="extr-icon"><ExtensionIcon extension={extension} /></span>}
+        actions={(
+          <ToggleSwitch
+            checked={extension.enabled}
+            disabled={props.busy}
+            ariaLabel={t("extensions.enableFor", { name })}
+            onCheckedChange={props.onEnabled}
+          />
+        )}
+        onBack={props.onBack}
+      />
 
       {extension.kind !== "builtin" && (
         <div className="extp-message extp-message-warning">
@@ -103,7 +98,7 @@ export function ExtensionDetail(props: ExtensionDetailProps) {
           onRemove={props.onRemove}
         />
       )}
-    </div>
+    </>
   );
 }
 

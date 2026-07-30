@@ -1,12 +1,14 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
-import { EmptyState } from "@/components/ui/empty-state";
+import { SettingsPanel } from "@/components/settings/shell/settings-panel";
+import { SettingsTabbar } from "@/components/settings/shell/settings-tabbar";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 import type { ExtensionsSettingsSection } from "@/types/navigation";
+import { EXTENSION_SECTIONS } from "./extension-sections";
 import { ExtensionDetail } from "./extension-detail";
-import { ExtensionPrioritySection } from "./extension-priority-section";
-import { ExtensionRow } from "./extension-row";
 import { ExtensionsHostPanel } from "./extensions-host-panel";
+import { ExtensionsSectionView } from "./extensions-section-view";
 import "./extensions-page.css";
 
 interface ExtensionsPageProps {
@@ -20,6 +22,7 @@ interface ExtensionsPageProps {
   busyIds: Set<string>;
   protectedPluginIds: string[];
   priorityBusy: boolean;
+  onSelectSection: (section: ExtensionsSettingsSection) => void;
   onSelect: (id: string | null) => void;
   onAdd: () => void;
   onEnabled: (id: string, enabled: boolean) => void;
@@ -34,87 +37,75 @@ interface ExtensionsPageProps {
 
 export function ExtensionsPage(props: ExtensionsPageProps) {
   const { t } = useTranslation();
-  const selected = props.selected;
+  const { section, selected } = props;
+
+  const tabs = useMemo(
+    () => EXTENSION_SECTIONS.map(({ id, key, icon: SectionIcon }) => ({
+      id,
+      label: t(key),
+      icon: <SectionIcon size="var(--icon-md)" weight={section === id ? "fill" : "regular"} />,
+    })),
+    [section, t],
+  );
+
   if (selected) {
     return (
-      <ExtensionDetail
-        extension={selected}
-        busy={props.busyIds.has(selected.manifest.id)}
-        onBack={() => props.onSelect(null)}
-        onEnabled={(enabled) => props.onEnabled(selected.manifest.id, enabled)}
-        onShowInChat={(show) => props.onShowInChat(selected.manifest.id, show)}
-        onOpenSource={() => props.onOpenSource(selected.manifest.id)}
-        onUpdate={() => props.onUpdate(selected.manifest.id)}
-        onReload={props.onReload}
-        onRemove={() => props.onRemove(selected.manifest.id)}
-      />
+      <SettingsPanel>
+        <ExtensionDetail
+          extension={selected}
+          busy={props.busyIds.has(selected.manifest.id)}
+          onBack={() => props.onSelect(null)}
+          onEnabled={(enabled) => props.onEnabled(selected.manifest.id, enabled)}
+          onShowInChat={(show) => props.onShowInChat(selected.manifest.id, show)}
+          onOpenSource={() => props.onOpenSource(selected.manifest.id)}
+          onUpdate={() => props.onUpdate(selected.manifest.id)}
+          onReload={props.onReload}
+          onRemove={() => props.onRemove(selected.manifest.id)}
+        />
+      </SettingsPanel>
     );
   }
-  if (props.section === "host") {
-    return <ExtensionsHostPanel host={props.host} onRestart={props.onReload} onRecover={props.onRecover} />;
-  }
 
-  const visibleKind = props.section === "plugins"
-    ? "builtin"
-    : props.section === "custom"
-      ? "local"
-      : "external";
-  const visible = props.records.filter((record) => record.kind === visibleKind);
-  const title = t(`extensions.pages.${props.section}.title`);
-  const description = t(`extensions.pages.${props.section}.description`);
+  const addButton = section === "custom"
+    ? (
+      <button type="button" className="wk-btn-primary" onClick={props.onAdd}>
+        <Plus size="var(--icon-sm)" weight="bold" />
+        {t("extensions.actions.add")}
+      </button>
+    )
+    : undefined;
 
   return (
-    <div className="extp-content">
-      <header className="extp-header">
-        <div>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-        {props.section === "custom" && (
-          <button type="button" className="wk-btn-primary" onClick={props.onAdd}>
-            <Plus size="var(--icon-sm)" weight="bold" />
-            {t("extensions.actions.add")}
-          </button>
-        )}
-      </header>
+    <SettingsPanel title={t("extensions.title")} action={addButton}>
+      <SettingsTabbar
+        items={tabs}
+        active={section}
+        label={t("extensions.title")}
+        onChange={props.onSelectSection}
+      />
 
       {props.operationError && (
         <div className="extp-message extp-message-error">{t(props.operationError)}</div>
       )}
 
-      {visible.length > 0 ? (
-        <div className="extp-list">
-          {visible.map((extension) => (
-            <ExtensionRow
-              key={extension.manifest.id}
-              extension={extension}
-              busy={props.busyIds.has(extension.manifest.id)}
-              details
-              onSelect={() => props.onSelect(extension.manifest.id)}
-              onEnabled={(enabled) => props.onEnabled(extension.manifest.id, enabled)}
-              onShowInChat={(show) => props.onShowInChat(extension.manifest.id, show)}
-            />
-          ))}
-        </div>
+      {section === "host" ? (
+        <ExtensionsHostPanel host={props.host} onRestart={props.onReload} onRecover={props.onRecover} />
       ) : (
-        <EmptyState
-          message={t(props.loadError
-            ? props.loadError
-            : props.loading
-              ? "extensions.loading"
-              : `extensions.pages.${props.section}.empty`)}
-          action={props.section === "custom" && !props.loading ? t("extensions.actions.add") : undefined}
-          onAction={props.section === "custom" ? props.onAdd : undefined}
-        />
-      )}
-      {props.section === "plugins" && !props.loading && !props.loadError && (
-        <ExtensionPrioritySection
+        <ExtensionsSectionView
+          section={section}
           records={props.records}
-          selectedIds={props.protectedPluginIds}
-          busy={props.priorityBusy}
-          onSave={props.onPrioritySave}
+          loading={props.loading}
+          loadError={props.loadError}
+          busyIds={props.busyIds}
+          protectedPluginIds={props.protectedPluginIds}
+          priorityBusy={props.priorityBusy}
+          onSelect={props.onSelect}
+          onAdd={props.onAdd}
+          onEnabled={props.onEnabled}
+          onShowInChat={props.onShowInChat}
+          onPrioritySave={props.onPrioritySave}
         />
       )}
-    </div>
+    </SettingsPanel>
   );
 }

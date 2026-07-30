@@ -12,6 +12,8 @@ import {
 } from "../forecast/forecast-model-meta";
 import { ForecastConfigView } from "./forecast-settings-config";
 import { ForecastModelsView } from "./forecast-settings-models";
+import { SettingsPanel } from "./shell/settings-panel";
+import { SettingsTabbar } from "./shell/settings-tabbar";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
 import "./forecast-settings.css";
 
@@ -50,6 +52,10 @@ export function ForecastSettings({ navState, onNavChange, onNavReplace }: Foreca
     };
   }, [refresh]);
 
+  const tabs = useMemo(() => [
+    { id: "config" as const, label: t("forecast.modelConfig.sidebarTitle") },
+    { id: "models" as const, label: t("forecast.models.sidebarTitle") },
+  ], [t]);
   const families = useMemo(() => listForecastFamilies(models), [models]);
   const configModels = useMemo(() => models.filter(isForecastModelConfigurable), [models]);
   const selectedConfigModel = useMemo(
@@ -80,46 +86,34 @@ export function ForecastSettings({ navState, onNavChange, onNavReplace }: Foreca
   }, [configModels, navState.forecastConfigModelId, onNavReplace]);
 
   return (
-    <div className="fs-page">
-      <div className="fs-inner">
-        <h2 className="fs-title">{t("forecast.title")}</h2>
+    <SettingsPanel title={t("forecast.title")}>
+      <SettingsTabbar
+        items={tabs}
+        active={subTab}
+        label={t("forecast.title")}
+        onChange={(forecastSubTab) => onNavChange({ forecastSubTab })}
+      />
 
-        <div className="fs-subtabs">
-          <button
-            className={`ollama-subtab ${subTab === "config" ? "active" : ""}`}
-            onClick={() => onNavChange({ forecastSubTab: "config" })}
-          >
-            {t("forecast.modelConfig.sidebarTitle")}
-          </button>
-          <button
-            className={`ollama-subtab ${subTab === "models" ? "active" : ""}`}
-            onClick={() => onNavChange({ forecastSubTab: "models" })}
-          >
-            {t("forecast.models.sidebarTitle")}
-          </button>
-        </div>
-
-        {subTab === "config" ? (
-          <ForecastConfigView
-            models={configModels}
-            selectedModel={selectedConfigModel}
-            onSelectModel={(id) => onNavChange({ forecastConfigModelId: id })}
-            onModelsChanged={refresh}
-          />
-        ) : (
-          <ForecastModelsView
-            families={families}
-            providers={providers}
-            selectedFamily={selectedFamily}
-            selectedModel={selectedModel}
-            onSelectFamily={(id) => onNavChange({ forecastFamilyId: id, forecastModelId: null })}
-            onSelectModel={(id) => onNavChange({ forecastModelId: id })}
-            onBackToFamily={() => onNavChange({ forecastModelId: null })}
-            onBackToFamilies={() => onNavChange({ forecastFamilyId: null, forecastModelId: null })}
-            onRefresh={refresh}
-          />
-        )}
-      </div>
-    </div>
+      {subTab === "config" ? (
+        <ForecastConfigView
+          models={configModels}
+          selectedModel={selectedConfigModel}
+          onSelectModel={(id) => onNavChange({ forecastConfigModelId: id })}
+          onModelsChanged={refresh}
+        />
+      ) : (
+        <ForecastModelsView
+          families={families}
+          providers={providers}
+          selectedFamily={selectedFamily}
+          selectedModel={selectedModel}
+          onSelectFamily={(id) => onNavChange({ forecastFamilyId: id, forecastModelId: null })}
+          onSelectModel={(id) => onNavChange({ forecastModelId: id })}
+          onBackToFamily={() => onNavChange({ forecastModelId: null })}
+          onBackToFamilies={() => onNavChange({ forecastFamilyId: null, forecastModelId: null })}
+          onRefresh={refresh}
+        />
+      )}
+    </SettingsPanel>
   );
 }

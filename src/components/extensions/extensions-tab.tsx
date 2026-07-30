@@ -1,29 +1,20 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useExtensions } from "@/hooks/use-extensions";
 import { ExtensionAddDialog } from "./extension-add-dialog";
 import { ExtensionsErrorBoundary } from "./extensions-error-boundary";
 import { ExtensionsPage } from "./extensions-page";
-import { ExtensionsSidebar } from "./extensions-sidebar";
 import type { ExtensionsTabProps } from "./extensions-tab-types";
 
-export function useExtensionsTabSlots({
+export function useExtensionsTabContent({
   navState,
   onNavChange,
   onNavReplace,
-}: ExtensionsTabProps): { list: React.ReactNode; detail: React.ReactNode } {
+}: ExtensionsTabProps): React.ReactNode {
   const registry = useExtensions();
   const [adding, setAdding] = useState(false);
   const selected = registry.extensions.find(
     (extension) => extension.manifest.id === navState.extensionId,
   ) ?? null;
-
-  const list = useMemo(() => (
-    <ExtensionsSidebar
-      section={navState.extensionsSection}
-      onSelect={(extensionsSection) =>
-        onNavReplace({ extensionsSection, extensionId: null })}
-    />
-  ), [navState.extensionsSection, onNavReplace]);
 
   const detailResetKey = `${navState.extensionsSection}:${navState.extensionId ?? "list"}`;
   const detail = (
@@ -35,6 +26,8 @@ export function useExtensionsTabSlots({
         <ExtensionsPage
           section={navState.extensionsSection}
           selected={selected}
+          onSelectSection={(extensionsSection) =>
+            onNavReplace({ extensionsSection, extensionId: null })}
           records={registry.extensions}
           host={registry.host}
           loading={registry.loading}
@@ -80,5 +73,5 @@ export function useExtensionsTabSlots({
     </>
   );
 
-  return { list, detail };
+  return detail;
 }

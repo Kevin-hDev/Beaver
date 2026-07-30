@@ -50,6 +50,7 @@ function SelectablePage() {
     <ExtensionsPage
       section="plugins"
       selected={selected}
+      onSelectSection={vi.fn()}
       records={[record]}
       host={{
         state: "running",

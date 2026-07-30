@@ -1,3 +1,15 @@
+/* La colonne défile : quinze onglets ne tiennent pas dans une petite fenêtre,
+   et sans défilement les derniers deviennent inatteignables. */
+.settings-subtab-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-sm) var(--space-sm) var(--space-sm)
+    max(0px, calc(var(--space-sm) - 4px));
+}
+
 .settings-subtab {
   display: flex;
   align-items: center;

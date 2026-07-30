@@ -1,8 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionHostStatus, ExtensionRecord } from "@/types/extensions";
 import { ExtensionsPage } from "../extensions-page";
-import { ExtensionsSidebar } from "../extensions-sidebar";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -45,11 +44,16 @@ const records = [
   record("external", "com.example.external", "Application externe"),
 ];
 
-function renderPage(section: "plugins" | "custom" | "external", items = records) {
+function renderPage(
+  section: "plugins" | "custom" | "external",
+  items = records,
+  onSelectSection = vi.fn(),
+) {
   return render(
     <ExtensionsPage
       section={section}
       selected={null}
+      onSelectSection={onSelectSection}
       records={items}
       host={host}
       loading={false}
@@ -111,6 +115,7 @@ describe("ExtensionsPage", () => {
       <ExtensionsPage
         section="plugins"
         selected={null}
+        onSelectSection={vi.fn()}
         records={records}
         host={host}
         loading={false}
@@ -137,18 +142,26 @@ describe("ExtensionsPage", () => {
     )).toBeInTheDocument();
   });
 
-  it("ramène la section active dans la zone visible sans attendre un rendu", () => {
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-      configurable: true,
-      value: scrollIntoView,
-    });
-    const { rerender } = render(
-      <ExtensionsSidebar section="plugins" onSelect={vi.fn()} />,
-    );
+  it("expose les quatre sections comme onglets en haut de page", () => {
+    renderPage("plugins");
 
-    rerender(<ExtensionsSidebar section="host" onSelect={vi.fn()} />);
+    const tabs = screen.getAllByRole("tab");
 
-    expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest" });
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "extensions.sections.plugins",
+      "extensions.sections.custom",
+      "extensions.sections.external",
+      "extensions.sections.host",
+    ]);
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("change de section au clic sur un onglet", () => {
+    const onSelectSection = vi.fn();
+    renderPage("plugins", records, onSelectSection);
+
+    fireEvent.click(screen.getByText("extensions.sections.host"));
+
+    expect(onSelectSection).toHaveBeenCalledWith("host");
   });
 });

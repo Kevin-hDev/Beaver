@@ -3,14 +3,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { Plus } from "@/components/ui/icons";
-import { EmptyState } from "@/components/ui/empty-state";
 import { ProviderIcon } from "@/lib/provider-icons";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { SettingsPanel } from "@/components/settings/shell/settings-panel";
+import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
+import { SettingsEntryList } from "@/components/settings/shell/settings-entry-list";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
 import type { OAuthProviderId, OAuthProviderStatus } from "@/types/oauth-provider";
 import { OAuthProviderLoginDialog } from "./oauth-provider-login-dialog";
 import { OAuthProviderDetail } from "./oauth-provider-detail";
 import { OAuthProviderModal } from "./oauth-provider-modal";
+import { ProvidersShell } from "./providers-shell";
 
 interface OAuthProvidersProps {
   navState: SettingsNavState;
@@ -22,7 +25,7 @@ type DialogState = { kind: "none" } | { kind: "catalog" } | { kind: "login"; pro
 
 const STATUS_POLL_MS = 1500;
 
-export function useOAuthProviderSlots({ navState, onNavChange, onNavReplace }: OAuthProvidersProps) {
+export function useOAuthProviderContent({ navState, onNavChange, onNavReplace }: OAuthProvidersProps) {
   const { t } = useTranslation();
   const [providers, setProviders] = useState<OAuthProviderStatus[]>([]);
   const [dialog, setDialog] = useState<DialogState>({ kind: "none" });
@@ -57,36 +60,69 @@ export function useOAuthProviderSlots({ navState, onNavChange, onNavReplace }: O
     ? providers.find((provider) => provider.id === dialog.providerId) ?? null
     : null;
 
+  // Une déconnexion retire le compte de la liste : sans ce retour, la fiche
+  // resterait ouverte sur un fournisseur qui n'existe plus.
   useEffect(() => {
-    if (!selected && connected[0]) onNavReplace({ oauthProviderId: connected[0].id });
-    if (!selected && !connected[0] && selectedId !== null) onNavReplace({ oauthProviderId: null });
-  }, [connected, onNavReplace, selected, selectedId]);
+    if (selectedId !== null && !selected) onNavReplace({ oauthProviderId: null });
+  }, [onNavReplace, selected, selectedId]);
 
-  const list = (
-    <div className="ak-sidebar">
-      <div className="ak-sidebar-header">{t("providers.oauth.connected")}</div>
-      <div className="ak-sidebar-list">
-        {connected.length === 0 ? <div className="ak-sidebar-empty">{t("providers.oauth.emptySidebar")}</div> : connected.map((provider) => (
-          <button key={provider.id} type="button" className={`ak-sidebar-item ${selectedId === provider.id ? "active" : ""}`} onClick={() => onNavChange({ oauthProviderId: provider.id })}>
-            <ProviderIcon providerId={provider.id} displayName={provider.display_name} size="var(--icon-lg)" />
-            <span>{provider.display_name}</span>
-          </button>
-        ))}
-      </div>
-    </div>
+  const entries = useMemo(
+    () => connected.map((provider) => ({
+      id: provider.id,
+      label: provider.display_name,
+      icon: (
+        <ProviderIcon
+          providerId={provider.id}
+          displayName={provider.display_name}
+          size="var(--icon-lg)"
+        />
+      ),
+    })),
+    [connected],
+  );
+
+  const catalogButton = (
+    <button
+      type="button"
+      className="ak-connectors-btn"
+      onClick={() => { void refresh(); setDialog({ kind: "catalog" }); }}
+    >
+      <Plus size="var(--icon-sm)" weight="bold" />
+      {t("providers.oauth.openCatalog")}
+    </button>
   );
 
   const detail = (
     <>
-      <div className="prv-oauth-view">
-        <div className="prv-oauth-inner">
-          <div className="prv-oauth-header">
-            <h2>{selected?.display_name ?? t("providers.oauth.title")}</h2>
-            <button type="button" className="ak-connectors-btn" onClick={() => { void refresh(); setDialog({ kind: "catalog" }); }}><Plus size="var(--icon-sm)" weight="bold" />{t("providers.oauth.openCatalog")}</button>
-          </div>
-          {selected ? <OAuthProviderDetail key={selected.id} provider={selected} refresh={refresh} /> : <EmptyState message={t("providers.oauth.empty")} />}
-        </div>
-      </div>
+      {selected ? (
+        <SettingsPanel>
+          <SettingsDetailHeader
+            title={selected.display_name}
+            icon={(
+              <ProviderIcon
+                providerId={selected.id}
+                displayName={selected.display_name}
+                size={36}
+              />
+            )}
+            actions={catalogButton}
+            onBack={() => onNavReplace({ oauthProviderId: null })}
+          />
+          <OAuthProviderDetail key={selected.id} provider={selected} refresh={refresh} />
+        </SettingsPanel>
+      ) : (
+        <ProvidersShell
+          active="oauth"
+          action={catalogButton}
+          onChange={(providersSubTab) => onNavChange({ providersSubTab })}
+        >
+          <SettingsEntryList
+            entries={entries}
+            emptyMessage={t("providers.oauth.empty")}
+            onSelect={(id) => onNavChange({ oauthProviderId: id })}
+          />
+        </ProvidersShell>
+      )}
       {dialog.kind === "catalog" && (
         <OAuthProviderModal
           providers={providers}
@@ -117,5 +153,5 @@ export function useOAuthProviderSlots({ navState, onNavChange, onNavReplace }: O
       )}
     </>
   );
-  return { list, detail };
+  return detail;
 }

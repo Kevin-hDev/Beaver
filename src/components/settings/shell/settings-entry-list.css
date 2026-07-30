@@ -1,0 +1,86 @@
+.settings-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--chrome-3) var(--space-lg);
+  border: none;
+  border-bottom: var(--line-thin) solid var(--edge);
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--ease-smooth);
+}
+
+.settings-entry:first-child {
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
+}
+
+.settings-entry:last-child {
+  border-bottom: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.settings-entry:hover {
+  background: var(--surface-hover);
+}
+
+.settings-entry-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.settings-entry-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.settings-entry-label {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.settings-entry-description {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-entry-trailing {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.settings-entry-dot {
+  width: var(--settings-status-dot-size);
+  height: var(--settings-status-dot-size);
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--ink-faint);
+}
+
+.settings-entry-caret {
+  flex-shrink: 0;
+  color: var(--ink-faint);
+}
+
+.settings-entry-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--settings-empty-min-height);
+}

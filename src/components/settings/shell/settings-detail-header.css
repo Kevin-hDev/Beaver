@@ -1,0 +1,39 @@
+.settings-detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.settings-detail-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.settings-detail-title {
+  min-width: 0;
+}
+
+.settings-detail-title h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-detail-title p {
+  margin: var(--space-xs) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+.settings-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+}

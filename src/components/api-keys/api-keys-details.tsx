@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import { Pencil, Trash, ArrowSquareOut } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
 import { ProviderIcon } from "@/lib/provider-icons";
 import { providerDescription, providerFreeTier } from "@/lib/provider-copy";
 import type { ProviderSpec } from "@/types/api";
@@ -12,12 +13,19 @@ import "./api-keys-details.css";
 
 interface ApiKeysDetailsProps {
   provider: ProviderSpec;
+  onBack: () => void;
   onEdit: () => void;
   onDelete: () => Promise<void>;
   onAddConnector: () => void;
 }
 
-export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: ApiKeysDetailsProps) {
+export function ApiKeysDetails({
+  provider,
+  onBack,
+  onEdit,
+  onDelete,
+  onAddConnector,
+}: ApiKeysDetailsProps) {
   const { t } = useTranslation();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -47,21 +55,13 @@ export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: A
   };
 
   return (
-    <div className="akd-scroll">
-      <div className="akd-inner">
-        <div className="akd-header">
-          <div className="akd-provider-info">
-            <ProviderIcon providerId={provider.id} displayName={provider.display_name} size={36} />
-            <div>
-              <h2 className="akd-provider-name">
-                {provider.display_name}
-              </h2>
-              <div className="akd-provider-desc">
-                {providerDescription(t, provider)}
-              </div>
-            </div>
-          </div>
-          <div className="akd-header-actions">
+    <>
+      <SettingsDetailHeader
+        title={provider.display_name}
+        subtitle={providerDescription(t, provider)}
+        icon={<ProviderIcon providerId={provider.id} displayName={provider.display_name} size={36} />}
+        actions={(
+          <>
             <button type="button" className="ak-connectors-btn" onClick={onAddConnector}>
               {t("apiKeys.main.connectorsBtn")}
             </button>
@@ -75,30 +75,31 @@ export function ApiKeysDetails({ provider, onEdit, onDelete, onAddConnector }: A
                 <Trash size="var(--icon-md)" />
               </button>
             </Tooltip>
-          </div>
-        </div>
-
-        {provider.category === "llm" && (
-          <ProviderUsageCard connectionId={provider.id} siteUrl={provider.signup_url} />
+          </>
         )}
+        onBack={onBack}
+      />
 
-        <SettingsCard className={provider.category === "llm" ? "akd-connection-card" : undefined}>
-          <DetailRow label={t("apiKeys.details.freeTier")} value={providerFreeTier(t, provider)} />
-          <DetailRow label={t("apiKeys.details.signupLink")}>
-            <button type="button" className="ak-signup-link" onClick={() => void open(provider.signup_url)}>
-              {t("apiKeys.details.openSite")} <ArrowSquareOut size="var(--icon-xs)" />
-            </button>
-          </DetailRow>
-          <DetailRow label={t("apiKeys.details.apiKey")} value="••••••••" last />
-        </SettingsCard>
+      {provider.category === "llm" && (
+        <ProviderUsageCard connectionId={provider.id} siteUrl={provider.signup_url} />
+      )}
 
-        {confirmDelete && (
-          <button type="button" className="ak-confirm-delete" onClick={() => void handleDeleteClick()}>
-            {t("apiKeys.details.confirmDelete")}
+      <SettingsCard className={provider.category === "llm" ? "akd-connection-card" : undefined}>
+        <DetailRow label={t("apiKeys.details.freeTier")} value={providerFreeTier(t, provider)} />
+        <DetailRow label={t("apiKeys.details.signupLink")}>
+          <button type="button" className="ak-signup-link" onClick={() => void open(provider.signup_url)}>
+            {t("apiKeys.details.openSite")} <ArrowSquareOut size="var(--icon-xs)" />
           </button>
-        )}
-      </div>
-    </div>
+        </DetailRow>
+        <DetailRow label={t("apiKeys.details.apiKey")} value="••••••••" last />
+      </SettingsCard>
+
+      {confirmDelete && (
+        <button type="button" className="ak-confirm-delete" onClick={() => void handleDeleteClick()}>
+          {t("apiKeys.details.confirmDelete")}
+        </button>
+      )}
+    </>
   );
 }
 

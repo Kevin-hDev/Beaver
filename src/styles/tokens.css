@@ -113,6 +113,8 @@
 
   --settings-content-max-width: 37.5rem;
   --settings-editor-min-height: 20rem;
+  --settings-empty-min-height: 12.5rem;
+  --settings-status-dot-size: 0.375rem;
   --line-thin: 1px;
   --extensions-row-height: 3rem;
   --extensions-info-row-height: 2.5rem;

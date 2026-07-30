@@ -1,0 +1,18 @@
+.settings-back-button {
+  display: grid;
+  place-items: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  flex-shrink: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
+}
+
+.settings-back-button:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}

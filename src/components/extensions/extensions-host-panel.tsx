@@ -16,13 +16,8 @@ export function ExtensionsHostPanel({
 }: ExtensionsHostPanelProps) {
   const { t } = useTranslation();
   return (
-    <div className="extp-content">
-      <header className="extp-header">
-        <div>
-          <h2>{t("extensions.host.title")}</h2>
-          <p>{t("extensions.host.description")}</p>
-        </div>
-      </header>
+    <>
+      <p className="settings-panel-description">{t("extensions.host.description")}</p>
       <div className="extp-lines">
         <InfoLine label={t("extensions.host.state")} value={t(`extensions.host.states.${host.state}`)} />
         <InfoLine label={t("extensions.host.node")} value={host.nodeVersion ?? t("extensions.host.unavailable")} />
@@ -66,7 +61,7 @@ export function ExtensionsHostPanel({
           {t("extensions.actions.recovery")}
         </button>
       </div>
-    </div>
+    </>
   );
 }
 

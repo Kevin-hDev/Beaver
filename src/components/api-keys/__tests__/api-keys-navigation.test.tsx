@@ -1,6 +1,6 @@
 import { cleanup, render, fireEvent, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useApiKeysTabSlots } from "../api-keys-tab";
+import { useApiKeysTabContent } from "../api-keys-tab";
 import { DEFAULT_APP_NAV, type SettingsNavState } from "@/types/navigation";
 import type { ProviderSpec } from "@/types/api";
 
@@ -30,8 +30,11 @@ vi.mock("@/lib/provider-icons", () => ({
 }));
 
 vi.mock("../api-keys-details", () => ({
-  ApiKeysDetails: ({ provider }: { provider: ProviderSpec }) => (
-    <div data-testid="api-key-detail">{provider.id}</div>
+  ApiKeysDetails: ({ provider, onBack }: { provider: ProviderSpec; onBack: () => void }) => (
+    <div data-testid="api-key-detail">
+      {provider.id}
+      <button type="button" onClick={onBack}>retour</button>
+    </div>
   ),
 }));
 
@@ -53,12 +56,11 @@ function provider(id: string): ProviderSpec {
 }
 
 function ApiKeysHarness({ navState }: { navState: SettingsNavState }) {
-  const slots = useApiKeysTabSlots({
+  return <>{useApiKeysTabContent({
     navState,
     onNavChange: mocks.onNavChange,
     onNavReplace: mocks.onNavReplace,
-  });
-  return <>{slots.list}{slots.detail}</>;
+  })}</>;
 }
 
 function renderTab(navState: SettingsNavState) {
@@ -74,18 +76,36 @@ describe("ApiKeysTab navigation", () => {
     mocks.onNavReplace.mockClear();
   });
 
-  it("remplace la selection par defaut sans push", async () => {
-    renderTab({ ...DEFAULT_APP_NAV.settings, apiKeyProviderId: null });
+  it("ouvre la liste sans présélectionner un fournisseur", async () => {
+    const { getByText, queryByTestId } = renderTab({
+      ...DEFAULT_APP_NAV.settings,
+      apiKeyProviderId: null,
+    });
 
-    await waitFor(() => expect(mocks.onNavReplace).toHaveBeenCalledWith({ apiKeyProviderId: "openai" }));
+    await waitFor(() => expect(getByText("openai")).toBeTruthy());
+    expect(getByText("groq")).toBeTruthy();
+    expect(queryByTestId("api-key-detail")).toBeNull();
+    expect(mocks.onNavReplace).not.toHaveBeenCalled();
     expect(mocks.onNavChange).not.toHaveBeenCalled();
   });
 
   it("push la selection utilisateur", () => {
-    const { getByText } = renderTab({ ...DEFAULT_APP_NAV.settings, apiKeyProviderId: "openai" });
+    const { getByText } = renderTab({ ...DEFAULT_APP_NAV.settings, apiKeyProviderId: null });
 
     fireEvent.click(getByText("groq"));
 
     expect(mocks.onNavChange).toHaveBeenCalledWith({ apiKeyProviderId: "groq" });
+  });
+
+  it("remplace la fiche par la liste au retour", () => {
+    const { getByText, getByTestId } = renderTab({
+      ...DEFAULT_APP_NAV.settings,
+      apiKeyProviderId: "groq",
+    });
+
+    expect(getByTestId("api-key-detail")).toBeTruthy();
+    fireEvent.click(getByText("retour"));
+
+    expect(mocks.onNavReplace).toHaveBeenCalledWith({ apiKeyProviderId: null });
   });
 });

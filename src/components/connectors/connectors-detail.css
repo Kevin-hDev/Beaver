@@ -1,18 +1,15 @@
-.ctd-scroll { padding: 24px; overflow-y: auto; flex: 1; }
-.ctd-inner { max-width: 600px; width: 100%; margin: 0 auto; }
-
 .ctd-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
 }
 
 .ctd-info { display: flex; gap: 12px; align-items: center; }
 .ctd-name { font-size: var(--text-xl); font-weight: 700; color: var(--ink); margin: 0; }
 .ctd-author-small { font-size: var(--text-xs); color: var(--ink-muted); }
 
-.ctd-actions { display: flex; gap: 4px; align-items: center; }
+.ctd-actions { display: flex; gap: 4px; align-items: center; margin-left: auto; }
 
 .ctd-status-btn {
   display: inline-flex;
