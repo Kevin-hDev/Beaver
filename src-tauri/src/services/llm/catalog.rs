@@ -38,8 +38,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "/models",
         signup_url: "https://console.groq.com/keys",
         free_tier_label: "14 400 req/day",
-        short_description: "Inférence ultra-rapide Llama / Mixtral sur LPU custom.",
-        short_description_en: "Ultra-fast Llama / Mixtral inference on custom LPU.",
+        short_description: "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.",
+        short_description_en: "Ultra-fast Llama / GPT-OSS inference on custom LPU.",
         default_max_tokens: None,
     },
     ProviderSpec {
@@ -51,8 +51,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "/models",
         signup_url: "https://aistudio.google.com/app/apikey",
         free_tier_label: "1M tokens/min",
-        short_description: "Gemini 3.5 Flash — multimodal, tools et raisonnement.",
-        short_description_en: "Gemini 3.5 Flash — multimodal, tools and reasoning.",
+        short_description: "Gemini 3.6 Flash — multimodal, tools et raisonnement.",
+        short_description_en: "Gemini 3.6 Flash — multimodal, tools and reasoning.",
         default_max_tokens: None,
     },
     ProviderSpec {
@@ -75,8 +75,10 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "/models",
         signup_url: "https://cloud.cerebras.ai/",
         free_tier_label: "1M tokens/day",
-        short_description: "Llama 3.3 à 450 tok/s sur wafer-scale chip.",
-        short_description_en: "Llama 3.3 at 450 tok/s on wafer-scale chip.",
+        // Pas de nom de modèle ici : le catalogue public de Cerebras tourne trop
+        // vite (Llama 3.3 en est déjà sorti). L'argument stable est la vitesse.
+        short_description: "Modèles open-weight jusqu'à 3 000 tok/s sur puce wafer-scale.",
+        short_description_en: "Open-weight models up to 3,000 tok/s on wafer-scale chip.",
         default_max_tokens: None,
     },
     ProviderSpec {
@@ -99,8 +101,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "/models",
         signup_url: "https://platform.openai.com/api-keys",
         free_tier_label: "$5 signup credits",
-        short_description: "GPT-5.5, o-series reasoning models.",
-        short_description_en: "GPT-5.5, o-series reasoning models.",
+        short_description: "GPT-5.6 Sol, Terra et Luna — raisonnement de pointe.",
+        short_description_en: "GPT-5.6 Sol, Terra and Luna — frontier reasoning.",
         default_max_tokens: Some(64_000),
     },
     ProviderSpec {
@@ -123,8 +125,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "",
         signup_url: "https://console.x.ai",
         free_tier_label: "Budget ($0.20/Mtok)",
-        short_description: "Grok 4.x — contexte 2M, raisonnement avancé.",
-        short_description_en: "Grok 4.x — 2M context, advanced reasoning.",
+        short_description: "Grok 4.5 — contexte 500K, raisonnement avancé.",
+        short_description_en: "Grok 4.5 — 500K context, advanced reasoning.",
         default_max_tokens: Some(64_000),
     },
     ProviderSpec {
@@ -135,8 +137,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "/models",
         signup_url: "https://platform.kimi.ai/console/api-keys",
         free_tier_label: "Low-cost ($0.60/Mtok)",
-        short_description: "Kimi K2.7 Code — agentic coding, multimodal, contexte 256K.",
-        short_description_en: "Kimi K2.7 Code — agentic coding, multimodal, 256K context.",
+        short_description: "Kimi K3 — agentic coding, multimodal, contexte 1M.",
+        short_description_en: "Kimi K3 — agentic coding, multimodal, 1M context.",
         default_max_tokens: Some(64_000),
     },
     ProviderSpec {
