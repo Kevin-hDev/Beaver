@@ -144,7 +144,7 @@ export function ForecastModelSelector({
     <div className="fmsel-wrapper" ref={ref} data-keyboard-scope={open ? "local" : undefined}>
       <button
         ref={(node) => { anchorRef.current = node; }}
-        className={`exd-trigger fmsel-trigger${selectedModel ? "" : " fmsel-trigger-empty"}`}
+        className={`btn btn-sm btn-secondary btn-select fmsel-trigger${selectedModel ? "" : " fmsel-trigger-empty"}`}
         type="button"
         disabled={!selectionReady}
         aria-busy={!selectionReady}

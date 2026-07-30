@@ -5,17 +5,10 @@
 
 .fcs-menu-trigger {
   width: 100%;
-  box-sizing: border-box;
-  background: var(--fc-chart-bg);
-  color: var(--ink);
-  font-size: var(--text-xs);
-  justify-content: space-between;
 }
 
-.fcs-menu-trigger:hover,
 .fcs-menu-trigger.is-open {
-  border-color: var(--edge);
-  background: var(--fcs-hover-bg);
+  background: var(--select-bg);
 }
 
 .fcs-menu-label {

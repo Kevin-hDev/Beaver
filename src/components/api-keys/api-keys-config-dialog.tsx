@@ -116,7 +116,7 @@ export function ApiKeysConfigDialog({
 
           <div className="wk-form-field">
             <label className="wk-form-label">{t("apiKeys.dialog.description")}</label>
-            <div className="wk-input" style={{ cursor: "default", opacity: 0.7 }}>
+            <div className="field wk-input" style={{ cursor: "default", opacity: 0.7 }}>
               {providerDescription(t, provider)}
             </div>
           </div>

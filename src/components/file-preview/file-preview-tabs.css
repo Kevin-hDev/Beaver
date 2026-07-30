@@ -81,24 +81,15 @@
   justify-content: center;
 }
 
+/* Se rétrécit dans la barre d'onglets plutôt que de la faire déborder quand un
+   nom de fichier long occupe déjà la place. */
 .fps-trigger {
-  height: 28px;
   max-width: min(190px, 45%);
   min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 10px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--ink-muted);
-  cursor: pointer;
   flex-shrink: 1;
 }
 
-.fps-trigger.active,
-.fps-trigger:hover {
+.fps-trigger.active {
   background: var(--surface-hover);
   color: var(--ink);
 }

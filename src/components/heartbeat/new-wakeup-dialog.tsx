@@ -104,7 +104,7 @@ export function NewWakeupDialog({
             <label className="wk-form-label">{t("heartbeat.form.name")}</label>
             <input
               type="text"
-              className="wk-input"
+              className="field wk-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -145,7 +145,7 @@ export function NewWakeupDialog({
           <div className="wk-form-field">
             <label className="wk-form-label">{t("heartbeat.form.prompt")}</label>
             <textarea
-              className="wk-input wk-textarea"
+              className="field wk-input wk-textarea"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={4}
@@ -159,7 +159,7 @@ export function NewWakeupDialog({
             <label className="wk-form-label">{t("heartbeat.form.description")}</label>
             <input
               type="text"
-              className="wk-input"
+              className="field wk-input"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={200}

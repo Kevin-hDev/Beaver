@@ -28,7 +28,7 @@ export function ExtensionSourceForm(props: ExtensionSourceFormProps) {
       <div className="exta-source-row">
         <input
           id="exta-source-input"
-          className="form-input"
+          className="field field-wide"
           value={props.locator}
           disabled={props.busy}
           maxLength={EXTENSION_INSTALL_LIMITS[props.source]}

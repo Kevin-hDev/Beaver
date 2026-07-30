@@ -9,29 +9,19 @@
   opacity: 1;
 }
 
+/* Assez large pour loger deux chiffres et les chevrons posés par-dessus, sans
+   s'étirer sur toute la ligne de réglage. */
 .fsc-input {
   width: 82px;
-  height: 28px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-md);
-  background: var(--void);
-  color: var(--ink);
   font-size: var(--text-lg);
   text-align: center;
-  outline: none;
   appearance: textfield;
-  transition: border-color var(--ease-smooth);
 }
 
 .fsc-input::-webkit-outer-spin-button,
 .fsc-input::-webkit-inner-spin-button {
   appearance: none;
   margin: 0;
-}
-
-.fsc-input:hover,
-.fsc-input:focus {
-  border-color: var(--ink-faint);
 }
 
 .fsc-stepper {

@@ -57,6 +57,7 @@
   /* Boutons secondaires — recette « présence » (spec phase 2 §1.1) */
   --btn-secondary-bg: rgba(154, 181, 213, 0.07);
   --btn-inner-highlight: rgba(186, 205, 226, 0.05);
+  --field-bg: rgba(0, 2, 8, 0.35);
 
   /* Surface variants */
   --surface-glass: rgba(18, 33, 58, 0.58);

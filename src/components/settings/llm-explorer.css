@@ -7,20 +7,8 @@
 
 .llm-search-input {
   flex: 1;
-  height: 28px;
-  padding: 0 12px;
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  background: var(--surface);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  outline: none;
 }
 
-.llm-search-input:focus {
-  border-color: var(--edge);
-}
 
 /* La famille retenue garde le fond du survol : c'est le seul repère qui la
    distingue des autres filtres, tous secondaires. */

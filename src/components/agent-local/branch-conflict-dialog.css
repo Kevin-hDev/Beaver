@@ -132,19 +132,6 @@
   width: 100%;
   min-height: 76px;
   margin-top: var(--space-xs);
-  resize: vertical;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  padding: var(--space-xs);
-  font-size: var(--text-xs);
-  line-height: 1.4;
-}
-
-.bcd-description-input:focus {
-  outline: none;
-  border-color: var(--accent);
 }
 
 .bcd-hint {

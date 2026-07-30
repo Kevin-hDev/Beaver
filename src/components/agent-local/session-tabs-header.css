@@ -67,14 +67,12 @@
   background: var(--edge);
 }
 
+/* Renommage en place dans la barre d'onglets : plus court et plus bas que le
+   champ standard, qui déborderait d'onglets hauts de 24 px. */
 .sth-input {
   width: 112px;
   height: 22px;
   padding: 0 6px;
-  border: 1px solid var(--edge-strong);
   border-radius: var(--radius-xs);
-  background: var(--void);
-  color: var(--ink);
   font-size: var(--text-xs);
-  outline: none;
 }

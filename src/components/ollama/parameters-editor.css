@@ -84,20 +84,8 @@
 
 .pe-input {
   min-width: 0;
-  height: 28px;
-  padding: 0 var(--space-md);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  outline: none;
-  background: var(--void);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
 }
 
-.pe-input:focus-visible {
-  border-color: var(--ink-faint);
-}
 
 .pe-fixed-input,
 .pe-custom-value {

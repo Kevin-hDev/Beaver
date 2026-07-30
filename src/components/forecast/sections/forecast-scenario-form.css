@@ -51,21 +51,9 @@
 
 .fcs-input {
   width: 100%;
-  height: 28px;
   box-sizing: border-box;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--fc-chart-bg);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  padding: 0 10px;
-  outline: none;
 }
 
-.fcs-input:focus {
-  border-color: var(--edge);
-}
 
 .fcs-input-number {
   max-width: 96px;

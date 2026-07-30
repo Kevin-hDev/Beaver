@@ -4,23 +4,10 @@
 
 .fch-search-input {
   width: 100%;
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  outline: none;
-  transition: border-color 150ms ease;
 }
 
-.fch-search-input:focus {
-  border-color: var(--pulse);
-}
 
 .fch-list {
   padding: 0 12px 12px;

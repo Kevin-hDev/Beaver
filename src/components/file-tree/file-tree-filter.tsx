@@ -24,7 +24,7 @@ export function FileTreeFilter({ value, onChange }: FileTreeFilterProps) {
       <Search size="var(--icon-13)" style={{ position: "absolute", left: 10, color: "var(--ink-faint)" }} />
       <input
         ref={inputRef}
-        className="ft-filter-input"
+        className="field ft-filter-input"
         style={{ paddingLeft: 30 }}
         type="text"
         value={value}

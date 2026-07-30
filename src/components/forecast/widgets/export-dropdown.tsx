@@ -99,7 +99,7 @@ export function ExportDropdown({ analysisId, onExport }: ExportDropdownProps) {
     <div className="exd-wrapper" ref={ref} data-keyboard-scope="local">
       <button
         ref={(node) => { anchorRef.current = node; }}
-        className="exd-trigger"
+        className="btn btn-sm btn-secondary"
         onClick={() => setOpen(!open)}
         aria-haspopup="menu"
         aria-expanded={open}

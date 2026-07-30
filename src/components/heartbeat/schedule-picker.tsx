@@ -46,7 +46,7 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
       {value.kind === "once" && (
         <input
           type="datetime-local"
-          className="wk-input"
+          className="field wk-input"
           value={value.datetime}
           onChange={(e) => onChange({ kind: "once", datetime: e.target.value })}
           required
@@ -56,7 +56,7 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
       {value.kind === "daily" && (
         <input
           type="time"
-          className="wk-input"
+          className="field wk-input"
           value={value.time}
           onChange={(e) => onChange({ kind: "daily", time: e.target.value })}
           required
@@ -66,7 +66,7 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
       {value.kind === "weekly" && (
         <div className="wk-schedule-row">
           <select
-            className="wk-input"
+            className="field wk-input"
             value={value.weekday}
             onChange={(e) =>
               onChange({ kind: "weekly", weekday: Number(e.target.value), time: value.time })
@@ -80,7 +80,7 @@ export function SchedulePicker({ value, onChange }: SchedulePickerProps) {
           </select>
           <input
             type="time"
-            className="wk-input"
+            className="field wk-input"
             value={value.time}
             onChange={(e) =>
               onChange({ kind: "weekly", weekday: value.weekday, time: e.target.value })

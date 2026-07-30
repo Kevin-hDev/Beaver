@@ -32,7 +32,7 @@ export function ParameterField({ definition, value, t, onChange }: ParameterFiel
           aria-label={definition.key}
           aria-describedby={descriptionId}
           maxLength={MAX_PARAMETER_VALUE_LENGTH}
-          className="pe-input pe-fixed-input"
+          className="field pe-input pe-fixed-input"
         />
         {value && (
           <Tooltip label={t("ollama.useDefaultValue")}>
@@ -80,7 +80,7 @@ export function StopParameterField({
               aria-label={`${definition.key} ${index + 1}`}
               aria-describedby={descriptionId}
               maxLength={MAX_PARAMETER_VALUE_LENGTH}
-              className="pe-input pe-fixed-input"
+              className="field pe-input pe-fixed-input"
             />
             <Tooltip label={t("ollama.removeStopSequence")}>
               <button

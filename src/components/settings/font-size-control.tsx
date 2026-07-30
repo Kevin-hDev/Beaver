@@ -41,7 +41,7 @@ export function FontSizeControl({ value, onChange }: FontSizeControlProps) {
   return (
     <div className="fsc-control">
       <input
-        className="fsc-input"
+        className="field fsc-input"
         type="number"
         min={FONT_SIZE_MIN}
         max={FONT_SIZE_MAX}

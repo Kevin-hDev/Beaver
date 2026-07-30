@@ -91,7 +91,7 @@ export function ForecastHistoryRow({
         <span className="fch-name-row">
           {editing ? (
             <input
-              className="fch-rename-input"
+              className="field fch-rename-input"
               value={draftName}
               autoFocus
               onClick={(event) => event.stopPropagation()}

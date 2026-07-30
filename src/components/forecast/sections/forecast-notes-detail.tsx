@@ -105,13 +105,13 @@ function ForecastNoteForm({
     <section className="fcn-detail is-editing">
       <div className="fcn-form-grid">
         <input
-          className="fcn-input"
+          className="field fcn-input"
           value={draft.title}
           placeholder={t("forecast.notes.titlePlaceholder")}
           onChange={(event) => onDraftChange({ ...draft, title: event.target.value })}
         />
         <input
-          className="fcn-input"
+          className="field fcn-input"
           value={dateInputValue(draft.date)}
           placeholder={t("forecast.notes.datePlaceholder")}
           onChange={(event) => onDraftChange({ ...draft, date: event.target.value })}

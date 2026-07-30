@@ -21,7 +21,7 @@ export function FieldSelect({
   return (
     <div className="fcc-field">
       <label className="fcc-label" htmlFor={id}>{label}</label>
-      <select className="fcc-select" id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="field fcc-select" id={id} value={value} onChange={(e) => onChange(e.target.value)}>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </div>
@@ -39,7 +39,7 @@ export function OptionalFieldSelect({
   return (
     <div className="fcc-field">
       <label className="fcc-label" htmlFor={id}>{label}</label>
-      <select className="fcc-select" id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+      <select className="field fcc-select" id={id} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">{emptyLabel}</option>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>

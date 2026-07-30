@@ -155,7 +155,7 @@ export function InteractiveChoicePanelInner({
       {otherMode && (
         <div className="icp-other-row">
           <input
-            className="icp-other-input"
+            className="field icp-other-input"
             value={otherText}
             onChange={(event) => setOtherText(event.target.value)}
             placeholder={t("interactiveChoice.otherPlaceholder")}

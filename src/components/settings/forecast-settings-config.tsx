@@ -179,7 +179,7 @@ function ConfigParamRow({ param, value, editing, inherited, onChange }: ConfigPa
         />
       ) : (
         <input
-          className="pe-input pe-input-value fs-input"
+          className="field pe-input pe-input-value fs-input"
           value={value}
           disabled={!editing}
           placeholder={valueToText(param.default_value)}

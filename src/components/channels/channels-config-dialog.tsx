@@ -84,7 +84,7 @@ export function ChannelsConfigDialog({ channelId, onClose, onSaved }: ChannelsCo
             <label className="wk-form-label">{t("channels.detail.accountId")}</label>
             <input
               type="text"
-              className="wk-input"
+              className="field wk-input"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               placeholder="my-bot"
@@ -98,7 +98,7 @@ export function ChannelsConfigDialog({ channelId, onClose, onSaved }: ChannelsCo
                 <label className="wk-form-label">{t("channels.detail.botToken")}</label>
                 <input
                   type="password"
-                  className="wk-input"
+                  className="field wk-input"
                   value={botToken}
                   onChange={(e) => setBotToken(e.target.value)}
                   placeholder={t("channels.detail.tokenPlaceholder")}
@@ -108,7 +108,7 @@ export function ChannelsConfigDialog({ channelId, onClose, onSaved }: ChannelsCo
                 <label className="wk-form-label">{t("channels.detail.appToken")}</label>
                 <input
                   type="password"
-                  className="wk-input"
+                  className="field wk-input"
                   value={appToken}
                   onChange={(e) => setAppToken(e.target.value)}
                   placeholder={t("channels.detail.appTokenPlaceholder")}
@@ -120,7 +120,7 @@ export function ChannelsConfigDialog({ channelId, onClose, onSaved }: ChannelsCo
               <label className="wk-form-label">{t("channels.detail.token")}</label>
               <input
                 type="password"
-                className="wk-input"
+                className="field wk-input"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder={t("channels.detail.tokenPlaceholder")}
@@ -130,7 +130,7 @@ export function ChannelsConfigDialog({ channelId, onClose, onSaved }: ChannelsCo
 
           <div className="wk-form-field">
             <label className="wk-form-label">{t("channels.config.description")}</label>
-            <div className="wk-input ch-config-description">
+            <div className="field wk-input ch-config-description">
               {t(`channels.browse.${channelId}Desc`)}
             </div>
           </div>

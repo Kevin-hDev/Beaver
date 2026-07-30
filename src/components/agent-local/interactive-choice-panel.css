@@ -91,18 +91,8 @@
 
 .icp-other-input {
   min-width: 0;
-  height: 28px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-primary);
-  padding: 0 10px;
-  outline: none;
 }
 
-.icp-other-input:focus {
-  border-color: var(--accent);
-}
 
 /* Submit "other" — composes .icon-btn (src/styles/buttons.css);
    keeps its border, surface background and disabled dim. */

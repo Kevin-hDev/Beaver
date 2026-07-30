@@ -5,27 +5,14 @@
 }
 
 .fc-nav-trigger {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--shell);
-  color: var(--ink-muted);
-  font-size: var(--text-xs);
-  font-family: var(--font-sans);
-  cursor: pointer;
   flex-shrink: 0;
-  white-space: nowrap;
-  transition: background var(--ease-smooth), border-color var(--ease-smooth), color var(--ease-smooth);
 }
 
-.fc-nav-trigger:hover,
+/* Le menu ouvert garde le fond du survol, sinon rien ne dit d'où sort le
+   panneau posé juste en dessous. */
 .fc-nav-trigger.is-open {
-  border-color: var(--ink-faint);
+  background: var(--select-bg);
   color: var(--ink);
-  background: var(--surface-hover);
 }
 
 .fc-nav-chevron {

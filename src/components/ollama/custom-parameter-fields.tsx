@@ -36,7 +36,7 @@ export function CustomParameterFields({
             placeholder={t("ollama.customParameterName")}
             aria-label={`${t("ollama.customParameterName")} ${index + 1}`}
             maxLength={MAX_PARAMETER_KEY_LENGTH}
-            className="pe-input pe-custom-key"
+            className="field pe-input pe-custom-key"
           />
           <input
             value={parameter.value}
@@ -44,7 +44,7 @@ export function CustomParameterFields({
             placeholder={t("ollama.customParameterValue")}
             aria-label={`${t("ollama.customParameterValue")} ${index + 1}`}
             maxLength={MAX_PARAMETER_VALUE_LENGTH}
-            className="pe-input pe-custom-value"
+            className="field pe-input pe-custom-value"
           />
           <Tooltip label={t("ollama.remove")}>
             <button

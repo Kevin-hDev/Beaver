@@ -111,7 +111,7 @@ export function LlmExplorer({ navState, onNavChange }: LlmExplorerProps) {
         <SettingsCard>
           <div className="llm-search-bar">
             <input
-              className="llm-search-input"
+              className="field llm-search-input"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key.startsWith("Ent")) void handleSearch(); }}

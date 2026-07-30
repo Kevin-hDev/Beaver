@@ -72,6 +72,23 @@
   color: var(--signal-error);
 }
 
+/* Déclencheur de liste dépliante : un bouton secondaire dont le libellé reste
+   à gauche et le chevron à droite. Centrer le contenu ferait sauter le libellé
+   d'un cran à chaque changement de sélection. */
+.btn-select {
+  justify-content: space-between;
+  gap: var(--space-sm);
+  color: var(--ink);
+  text-align: left;
+}
+
+.btn-select > :first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--ink-muted);

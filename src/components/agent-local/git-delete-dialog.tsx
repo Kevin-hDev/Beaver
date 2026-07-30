@@ -73,7 +73,7 @@ export function GitDeleteDialog({
             </button>
             <div className={`bcd-description-panel ${descriptionOpen ? "is-open" : ""}`}>
               <div className="bcd-description-panel-inner">
-                <textarea className="bcd-description-input" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} />
+                <textarea className="field field-multiline bcd-description-input" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} />
               </div>
             </div>
           </div>

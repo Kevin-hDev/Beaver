@@ -1,0 +1,50 @@
+/* Champs de saisie — source unique pour toute l'application.
+   Même géométrie et même famille de couleurs que les boutons secondaires, mais
+   sans leur liseré de relief : c'est ce liseré qui annonce qu'on peut cliquer.
+   Un champ se creuse, un bouton ressort.
+
+   Ni le survol ni la mise au point ne touchent le contour : un contour qui
+   s'éclaire au passage de la souris se lit comme un état actif alors que rien
+   ne l'est, et le curseur clignotant dit déjà quel champ écoute le clavier. */
+
+.field {
+  height: var(--btn-height);
+  padding: 0 var(--chrome-3);
+  border: var(--line-thin) solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  background: var(--field-bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.field::placeholder {
+  color: var(--ink-faint);
+}
+
+.field:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Champ qui occupe la largeur de sa colonne, pour les formulaires empilés où
+   un champ à largeur naturelle laisserait un vide à droite. */
+.field-wide {
+  width: 100%;
+}
+
+/* Zone de texte multi-ligne : même habillage, hauteur libre. */
+.field-multiline {
+  height: auto;
+  padding: var(--space-sm) var(--chrome-3);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* Champ logé dans un panneau qui porte déjà son propre cadre — une seconde
+   bordure à quelques pixels de la première fait doublon. */
+.field-bare {
+  border-color: transparent;
+  background: transparent;
+}

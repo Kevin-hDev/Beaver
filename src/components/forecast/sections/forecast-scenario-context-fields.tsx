@@ -60,7 +60,7 @@ export function ForecastScenarioContextFields({
             ]}
           />
           <input
-            className="fcs-input fcs-context-value"
+            className="field fcs-input fcs-context-value"
             type="number"
             min="-95"
             max="500"

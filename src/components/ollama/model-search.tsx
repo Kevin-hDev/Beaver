@@ -56,7 +56,7 @@ export function ModelSearch({
     <>
       <div className="msearch-bar">
         <input
-          className="ollama-search-input"
+          className="field ollama-search-input"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => { if (e.code === "Enter") void handleSearch(); }}

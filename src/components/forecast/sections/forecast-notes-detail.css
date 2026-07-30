@@ -111,15 +111,6 @@
   line-height: 1.55;
 }
 
-.fcn-input:hover,
-.fcn-input:focus,
-.fcn-textarea:hover,
-.fcn-textarea:focus {
-  border-color: var(--edge);
-  background: var(--fc-chart-bg);
-  box-shadow: none;
-}
-
 .fcn-form-actions {
   margin-top: 12px;
 }

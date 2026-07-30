@@ -60,7 +60,7 @@ export function ForecastNav({ open, activeSection, onToggle, onSelect }: Forecas
   return (
     <div ref={rootRef} className="fc-nav-root" data-keyboard-scope="local">
       <button
-        className={`fc-nav-trigger ${open ? "is-open" : ""}`}
+        className={`btn btn-sm btn-secondary fc-nav-trigger ${open ? "is-open" : ""}`}
         onClick={onToggle}
         onKeyDown={(event) => {
           if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;

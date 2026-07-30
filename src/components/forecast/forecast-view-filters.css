@@ -4,16 +4,9 @@
   align-items: flex-start;
 }
 
-.fcf-trigger {
-  background: var(--shell);
-  color: var(--ink-muted);
-}
-
-.fcf-trigger:hover,
 .fcf-trigger.is-open {
-  border-color: var(--ink-faint);
+  background: var(--select-bg);
   color: var(--ink);
-  background: var(--surface-hover);
 }
 
 .fcf-chevron {
@@ -35,7 +28,6 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
 }
 
-[data-theme="dark"] .fcf-trigger,
 [data-theme="dark"] .fcf-panel {
   background: var(--popover-bg, var(--surface-glass));
   backdrop-filter: var(--popover-backdrop-filter, none);

@@ -41,7 +41,7 @@ export function ChannelsAllowlist({ allowlist, onChange }: ChannelsAllowlistProp
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("channels.detail.allowlistPlaceholder")}
-          className="wk-input ch-allowlist-input"
+          className="field wk-input ch-allowlist-input"
         />
         <button
           type="button"

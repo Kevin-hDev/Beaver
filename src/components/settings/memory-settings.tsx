@@ -140,7 +140,7 @@ export function MemorySettings({ activeSessionId }: { activeSessionId?: string |
         )}
         <div className="mems-filters">
           <input
-            className="form-input"
+            className="field field-wide"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("settings.memory.search")}

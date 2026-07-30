@@ -49,7 +49,7 @@ export function CustomSelect({
     <div ref={ref} className="cs-wrapper" data-keyboard-scope={open ? "local" : undefined}>
       <button
         type="button"
-        className="cs-trigger"
+        className="btn btn-sm btn-secondary btn-select cs-trigger"
         onClick={() => !disabled && setOpen(!open)}
         onKeyDown={(event) => {
           if (disabled) return;
@@ -62,7 +62,7 @@ export function CustomSelect({
         disabled={disabled}
         aria-label={ariaLabel}
       >
-        <span className={selected ? "cs-trigger-label" : "cs-trigger-label cs-placeholder"}>
+        <span className={selected ? undefined : "cs-placeholder"}>
           {selected?.label ?? placeholder ?? "—"}
         </span>
         <span className="cs-trigger-caret">▾</span>

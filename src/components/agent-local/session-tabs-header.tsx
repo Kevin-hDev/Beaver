@@ -50,7 +50,7 @@ export function SessionTabsHeader({
           >
             {editing === tab.tab_id ? (
               <input
-                className="sth-input"
+                className="field sth-input"
                 value={draft}
                 autoFocus
                 onChange={(event) => setDraft(event.target.value)}

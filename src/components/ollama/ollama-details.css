@@ -109,17 +109,5 @@
 /* Search results */
 .ollama-search-input {
   width: 100%;
-  height: 28px;
-  padding: 0 var(--space-md);
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  background: var(--void);
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  color: var(--ink);
-  outline: none;
 }
 
-.ollama-search-input:focus {
-  border-color: var(--edge);
-}

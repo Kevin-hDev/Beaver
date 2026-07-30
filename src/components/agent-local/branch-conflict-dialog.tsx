@@ -79,7 +79,7 @@ export function BranchConflictDialog({
           <div className={`bcd-description-panel ${descriptionOpen ? "is-open" : ""}`}>
             <div className="bcd-description-panel-inner">
               <textarea
-                className="bcd-description-input"
+                className="field field-multiline bcd-description-input"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}

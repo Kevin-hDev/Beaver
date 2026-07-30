@@ -146,7 +146,7 @@ export function ForecastConfig({
           </div>
           <div className="fcc-field fcc-half">
             <label className="fcc-label" htmlFor="fcc-freq">{t("forecast.config.frequency")}</label>
-            <select className="fcc-select" id="fcc-freq" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+            <select className="field fcc-select" id="fcc-freq" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
               {FORECAST_FREQUENCIES.map((f) => <option key={f} value={f}>{t(`forecast.frequency.${f}`)}</option>)}
             </select>
           </div>

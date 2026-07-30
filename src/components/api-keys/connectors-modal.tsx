@@ -102,7 +102,7 @@ export function ConnectorsModal({
           />
           <input
             type="text"
-            className="ak-connectors-search-input"
+            className="field ak-connectors-search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("apiKeys.connectors.search")}

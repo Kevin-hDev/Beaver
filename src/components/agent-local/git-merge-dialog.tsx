@@ -107,7 +107,7 @@ export function GitMergeDialog({
                 <label className="bcd-description">
                   {t("agentLocal.sessionSummary.git.commitDescription")}
                   <textarea
-                    className="bcd-description-input"
+                    className="field field-multiline bcd-description-input"
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
                     rows={3}

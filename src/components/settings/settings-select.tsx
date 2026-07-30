@@ -123,7 +123,7 @@ export function SettingsSelect({
       ref={ref}
     >
       <div
-        className="ss-trigger"
+        className="btn btn-sm btn-secondary btn-select ss-trigger"
         role="button"
         tabIndex={disabled ? -1 : 0}
         onClick={() => !disabled && setOpen(!open)}

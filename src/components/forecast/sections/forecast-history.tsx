@@ -97,7 +97,7 @@ export function ForecastHistory({ onLoadAnalysis }: ForecastHistoryProps) {
       <div className="fcs-content">
         <div className="fch-search">
           <input
-            className="fch-search-input"
+            className="field fch-search-input"
             placeholder={t("forecast.history.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}

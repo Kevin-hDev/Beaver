@@ -98,27 +98,12 @@
   font-weight: 500;
 }
 
-.wk-input {
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  transition: border-color var(--ease-smooth);
-}
 
 .wk-input option {
   background: var(--shell-opaque);
   color: var(--ink);
 }
 
-.wk-input:focus {
-  outline: none;
-  border-color: var(--edge);
-}
 
 .wk-input:disabled {
   opacity: 0.6;

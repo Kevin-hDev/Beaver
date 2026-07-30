@@ -78,7 +78,7 @@ export function McpConfigDialog({ connector, onClose, onValidated }: McpConfigDi
           <label className="wk-form-label">{t("connectors.config.token")}</label>
           <input
             type="password"
-            className="wk-input"
+            className="field wk-input"
             value={token}
             onChange={(e) => setToken(e.target.value)}
             placeholder={t("connectors.config.tokenPlaceholder")}

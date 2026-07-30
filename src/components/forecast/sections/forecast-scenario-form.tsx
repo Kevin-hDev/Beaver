@@ -33,14 +33,14 @@ export function ForecastScenarioForm(props: ForecastScenarioFormProps) {
   return (
     <form className="fcs-form" onSubmit={(event) => void props.onSubmit(event)}>
       <input
-        className="fcs-input"
+        className="field fcs-input"
         value={props.name}
         maxLength={80}
         onChange={(event) => props.onNameChange(event.target.value)}
         placeholder={t("forecast.scenarios.name")}
       />
       <input
-        className="fcs-input"
+        className="field fcs-input"
         value={props.description}
         maxLength={500}
         onChange={(event) => props.onDescriptionChange(event.target.value)}
@@ -81,7 +81,7 @@ export function ForecastScenarioForm(props: ForecastScenarioFormProps) {
       <div className="fcs-form-row">
         {props.mode === "percent_adjustment" && (
           <input
-            className="fcs-input fcs-input-number"
+            className="field fcs-input fcs-input-number"
             type="number"
             min="-95"
             max="500"

@@ -69,7 +69,7 @@ export function McpBrowseModal({ catalog, configuredIds, onPick, onClose }: McpB
 
         <div className="ak-connectors-search">
           <MagnifyingGlass size="var(--icon-md)" className="ak-connectors-search-icon" weight="regular" />
-          <input type="text" className="ak-connectors-search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("connectors.browse.search")} autoFocus />
+          <input type="text" className="field ak-connectors-search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("connectors.browse.search")} autoFocus />
         </div>
 
         <div className="ak-connectors-grid">

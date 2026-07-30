@@ -156,28 +156,11 @@
   letter-spacing: 0.04em;
 }
 
-.fcc-input,
-.fcc-select {
-  height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: var(--text-sm);
-  font-family: var(--font-sans);
-  outline: none;
-  transition: border-color 150ms ease;
-}
-
+/* Les options d'une liste native sont dessinées par le système, hors de la
+   portée du thème : leur fond se pose ici ou il reste blanc. */
 .fcc-select option {
   background: var(--shell-opaque);
   color: var(--ink);
-}
-
-.fcc-input:focus,
-.fcc-select:focus {
-  border-color: var(--pulse);
 }
 
 .fcc-range {

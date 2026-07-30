@@ -99,7 +99,7 @@ export function FilePreviewSummarySelector({
       <button
         ref={buttonRef}
         type="button"
-        className={`fps-trigger ${active ? "active" : ""}`}
+        className={`btn btn-sm btn-ghost fps-trigger ${active ? "active" : ""}`}
         onClick={() => {
           onSelect();
           setOpen((value) => !value);
