@@ -3,19 +3,23 @@
 .conv-header {
   display: flex;
   align-items: center;
-  padding: var(--space-sm) var(--space-sm) var(--space-sm) max(0px, calc(var(--space-sm) - 8px));
+  padding: var(--space-xs) var(--space-sm) var(--space-xs) max(0px, calc(var(--space-sm) - 8px));
 }
 
+/* Même densité que les lignes de la liste : c'est la première ligne de la
+   colonne, un fond plus haut que les suivantes s'y remarque tout de suite. */
 .conv-new-btn {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
   width: 100%;
   min-width: 0;
-  padding: 5px var(--space-sm);
+  min-height: var(--nav-item-height);
+  padding: var(--nav-item-padding-y) var(--space-sm);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: 500;
+  line-height: 1.25;
   color: var(--ink-muted);
   cursor: pointer;
   transition: all var(--ease-smooth);

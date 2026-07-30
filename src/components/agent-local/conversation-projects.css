@@ -2,9 +2,11 @@
    Séparé de conversation.css pour garder les fichiers sous 230 lignes ;
    importé après lui pour conserver l'ordre de cascade. */
 
-/* Section labels (Projets / Discussions) */
+/* Section labels (Projets / Discussions) — collés à la section qu'ils
+   annoncent, détachés de ce qui précède. Le même écart des deux côtés les
+   faisait flotter entre deux blocs une fois les lignes resserrées. */
 .conv-section-label {
-  padding: var(--space-sm) var(--space-sm) var(--space-xs);
+  padding: var(--space-xs) var(--space-sm) var(--space-2xs);
   font-size: var(--text-xs);
   color: var(--ink-faint);
   font-weight: 500;
@@ -40,14 +42,20 @@
   margin-bottom: var(--space-xs);
 }
 
+/* La marge basse reprend l'écart qui sépare deux sessions : sans elle, le fond
+   du projet survolé touche celui de la première session de son groupe et les
+   deux se lisent comme un seul bloc. */
 .conv-project-header {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
+  min-height: var(--nav-item-height);
+  margin-bottom: 2px;
+  padding: var(--nav-item-padding-y) var(--space-sm);
   border-radius: var(--radius-sm);
   cursor: grab;
   font-size: var(--text-sm);
+  line-height: 1.25;
   color: var(--ink);
   transition: background var(--ease-smooth);
 }
