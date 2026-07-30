@@ -84,6 +84,10 @@ fn endpoint() -> String {
     format!("{API_BASE}/v2/forecast")
 }
 
+/// Vérifié le 2026-07-30 : `timegpt-2` a disparu de la doc Nixtla, qui ne liste
+/// plus que `timegpt-2-pro`, `timegpt-2-lab`, `timegpt-2-mini` et `timegpt-2.1`.
+/// Soit l'ancien nom reste accepté, soit il est devenu `timegpt-2-lab` — non
+/// tranchable sans clé, l'accès à cette famille passant par leur support.
 pub(super) fn api_model_id(model: &str) -> &str {
     match model {
         "timegpt-2-standard" => "timegpt-2",

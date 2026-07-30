@@ -35,19 +35,19 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "Ultra-fast Llama / GPT-OSS inference on custom LPU.", "freeTier": "14,400 req/day" },
+      "groq": { "description": "Ultra-fast Llama / GPT-OSS inference on custom LPU.", "freeTier": "1,000 req/day" },
       "google": { "description": "Gemini 3.6 Flash — multimodal, tools and reasoning.", "freeTier": "1M tokens/min" },
       "mistral": { "description": "French open-weight models — free Experiment plan.", "freeTier": "1B tokens/month" },
       "cerebras": { "description": "Open-weight models up to 3,000 tok/s on wafer-scale chip.", "freeTier": "1M tokens/day" },
-      "openrouter": { "description": "Access 300+ models with a single API key.", "freeTier": "30+ free models" },
-      "openai": { "description": "GPT-5.6 Sol, Terra and Luna — frontier reasoning.", "freeTier": "$5 signup credits" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — unbeatable value for money.", "freeTier": "Low-cost ($0.14/Mtok)" },
-      "xai": { "description": "Grok 4.5 — 500K context, advanced reasoning.", "freeTier": "Budget ($0.20/Mtok)" },
-      "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, 1M context.", "freeTier": "Low-cost ($0.60/Mtok)" },
-      "zai": { "description": "GLM-5.2 — 1M context, long-horizon coding and reasoning.", "freeTier": "GLM-4.5-Flash free" },
-      "brave": { "description": "Independent index, no Google/Bing dependency.", "freeTier": "2,000 req/month" },
-      "exa": { "description": "Neural search — semantic similarity search.", "freeTier": "1,000 req/month" },
-      "firecrawl": { "description": "LLM-ready Markdown extraction from any URL.", "freeTier": "500 credits" }
+      "openrouter": { "description": "Access 300+ models with a single API key.", "freeTier": "17 free models" },
+      "openai": { "description": "GPT-5.6 Sol, Terra and Luna — frontier reasoning.", "freeTier": "$1–5/Mtok input" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — unbeatable value for money.", "freeTier": "$0.14/Mtok input" },
+      "xai": { "description": "Grok 4.5 — 500K context, advanced reasoning.", "freeTier": "$2/Mtok input" },
+      "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, 1M context.", "freeTier": "$3/Mtok input" },
+      "zai": { "description": "GLM-5.2 — 1M context, long-horizon coding and reasoning.", "freeTier": "GLM-4.7-Flash free" },
+      "brave": { "description": "Independent index, no Google/Bing dependency.", "freeTier": "$5 credits/month" },
+      "exa": { "description": "Neural search — semantic similarity search.", "freeTier": "$10 credits/month" },
+      "firecrawl": { "description": "LLM-ready Markdown extraction from any URL.", "freeTier": "1,000 credits/month" }
     },
     "main": {
       "title": "API Keys",

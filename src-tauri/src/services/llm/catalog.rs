@@ -44,6 +44,9 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         id: "google",
         display_name: "Google Gemini",
         category: "llm",
+        // Vérifié le 2026-07-30 : le palier gratuit affiché (i18n) n'est plus
+        // publiable — Google renvoie vers le tableau de bord AI Studio, visible
+        // seulement après connexion. Le chiffre repose sur des sources tierces.
         // Couche OpenAI-compat officielle de Google
         base_url: "https://generativelanguage.googleapis.com/v1beta/openai",
         models_endpoint: "/models",
@@ -54,6 +57,9 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         id: "mistral",
         display_name: "Mistral",
         category: "llm",
+        // Vérifié le 2026-07-30 : le palier gratuit affiché (i18n) a disparu de
+        // la page tarifaire publique, il n'est plus visible que dans la console
+        // après connexion. Le chiffre repose sur des sources tierces.
         base_url: "https://api.mistral.ai/v1",
         models_endpoint: "/models",
         signup_url: "https://console.mistral.ai/api-keys",
@@ -100,6 +106,10 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         display_name: "xAI",
         category: "llm",
         base_url: "https://api.x.ai/v1",
+        // xAI expose désormais `GET /v1/models` (vérifié le 2026-07-30), mais le
+        // remplir changerait aussi la façon de tester une clé (cf.
+        // api_keys_http::test_key_raw) sans qu'on puisse l'essayer sans clé xAI.
+        // La liste vient donc encore de XAI_MODELS.
         models_endpoint: "",
         signup_url: "https://console.x.ai",
         default_max_tokens: Some(64_000),

@@ -35,19 +35,19 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.", "freeTier": "14 400 req/jour" },
+      "groq": { "description": "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.", "freeTier": "1 000 req/jour" },
       "google": { "description": "Gemini 3.6 Flash — multimodal, tools et raisonnement.", "freeTier": "1 M tokens/min" },
       "mistral": { "description": "Modèles open-weight français — Experiment plan gratuit.", "freeTier": "1 Md tokens/mois" },
       "cerebras": { "description": "Modèles open-weight jusqu’à 3 000 tok/s sur puce wafer-scale.", "freeTier": "1 M tokens/jour" },
-      "openrouter": { "description": "Accès à 300+ modèles via une seule clé API.", "freeTier": "30+ modèles gratuits" },
-      "openai": { "description": "GPT-5.6 Sol, Terra et Luna — raisonnement de pointe.", "freeTier": "5 $ de crédits à l’inscription" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — rapport qualité/prix imbattable.", "freeTier": "Peu coûteux (0,14 $/Mtok)" },
-      "xai": { "description": "Grok 4.5 — contexte 500K, raisonnement avancé.", "freeTier": "Économique (0,20 $/Mtok)" },
-      "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, contexte 1M.", "freeTier": "Peu coûteux (0,60 $/Mtok)" },
-      "zai": { "description": "GLM-5.2 — contexte 1M, coding long-horizon et raisonnement.", "freeTier": "GLM-4.5-Flash gratuit" },
-      "brave": { "description": "Index propre, pas de dépendance Google/Bing.", "freeTier": "2 000 req/mois" },
-      "exa": { "description": "Neural search — recherche par similarité sémantique.", "freeTier": "1 000 req/mois" },
-      "firecrawl": { "description": "Extraction Markdown LLM-ready depuis une URL.", "freeTier": "500 crédits" }
+      "openrouter": { "description": "Accès à 300+ modèles via une seule clé API.", "freeTier": "17 modèles gratuits" },
+      "openai": { "description": "GPT-5.6 Sol, Terra et Luna — raisonnement de pointe.", "freeTier": "1 à 5 $/Mtok en entrée" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — rapport qualité/prix imbattable.", "freeTier": "0,14 $/Mtok en entrée" },
+      "xai": { "description": "Grok 4.5 — contexte 500K, raisonnement avancé.", "freeTier": "2 $/Mtok en entrée" },
+      "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, contexte 1M.", "freeTier": "3 $/Mtok en entrée" },
+      "zai": { "description": "GLM-5.2 — contexte 1M, coding long-horizon et raisonnement.", "freeTier": "GLM-4.7-Flash gratuit" },
+      "brave": { "description": "Index propre, pas de dépendance Google/Bing.", "freeTier": "5 $ de crédits/mois" },
+      "exa": { "description": "Neural search — recherche par similarité sémantique.", "freeTier": "10 $ de crédits/mois" },
+      "firecrawl": { "description": "Extraction Markdown LLM-ready depuis une URL.", "freeTier": "1 000 crédits/mois" }
     },
     "main": {
       "title": "Clés API",

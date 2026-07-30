@@ -28,7 +28,9 @@ describe("provider-copy", () => {
     expect(providerDescription(i18n.t, { id: "groq", category: "llm" })).toBe(
       "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.",
     );
-    expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe("500 crédits");
+    expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe(
+      "1 000 crédits/mois",
+    );
   });
 
   it("sépare les catalogues qui partagent un id", () => {
@@ -43,7 +45,7 @@ describe("provider-copy", () => {
     await i18n.changeLanguage("ja");
     expect(providerDescription(i18n.t, { id: "moonshot", category: "llm" })).toContain("Kimi K3");
     expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe(
-      "500 クレジット",
+      "毎月 1,000 クレジット",
     );
     expect(providerFreeTier(i18n.t, { id: "chronos", category: "forecast" })).toBe("ローカル");
     await i18n.changeLanguage("fr");

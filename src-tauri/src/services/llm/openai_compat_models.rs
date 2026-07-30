@@ -27,6 +27,14 @@ const ZAI_MODELS: &[StaticModel] = &[
         ctx: 200_000,
     },
     StaticModel {
+        id: "glm-4.7-flashx",
+        ctx: 200_000,
+    },
+    StaticModel {
+        id: "glm-4.7-flash",
+        ctx: 200_000,
+    },
+    StaticModel {
         id: "glm-4.6",
         ctx: 200_000,
     },
@@ -68,6 +76,10 @@ const XAI_MODELS: &[StaticModel] = &[
     StaticModel {
         id: "grok-build-0.1",
         ctx: 256_000,
+    },
+    StaticModel {
+        id: "grok-4.20-multi-agent-0309",
+        ctx: 1_000_000,
     },
 ];
 
@@ -141,11 +153,13 @@ mod tests {
                 "grok-4.20-0309-reasoning",
                 "grok-4.20-0309-non-reasoning",
                 "grok-build-0.1",
+                "grok-4.20-multi-agent-0309",
             ]
         );
         assert_eq!(models[0].context_length, Some(500_000));
         assert_eq!(models[1].context_length, Some(1_000_000));
         assert_eq!(models[4].context_length, Some(256_000));
+        assert_eq!(models[5].context_length, Some(1_000_000));
         assert_eq!(models[0].reasoning_modes, ["low", "medium", "high"]);
         assert_eq!(models[1].reasoning_modes, ["off", "low", "medium", "high"]);
         assert_eq!(models[2].reasoning_modes, ["auto"]);
@@ -162,7 +176,9 @@ mod tests {
         let glm_5 = models.iter().find(|m| m.id == "glm-5").unwrap();
         let glm_46 = models.iter().find(|m| m.id == "glm-4.6").unwrap();
         let glm_flash = models.iter().find(|m| m.id == "glm-4.5-flash").unwrap();
+        let glm_47_flash = models.iter().find(|m| m.id == "glm-4.7-flash").unwrap();
 
+        assert_eq!(glm_47_flash.context_length, Some(200_000));
         assert_eq!(glm_52.context_length, Some(1_000_000));
         assert!(glm_52.supports_thinking);
         assert!(glm_5.supports_thinking);

@@ -30,19 +30,19 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "自研 LPU 上的 Llama / GPT-OSS 超高速推理。", "freeTier": "14 400 次请求/天" },
+      "groq": { "description": "自研 LPU 上的 Llama / GPT-OSS 超高速推理。", "freeTier": "1 000 次请求/天" },
       "google": { "description": "Gemini 3.6 Flash — 多模态、工具调用与推理。", "freeTier": "100 万 tokens/分钟" },
       "mistral": { "description": "法国开源权重模型 — 免费 Experiment 套餐。", "freeTier": "10 亿 tokens/月" },
       "cerebras": { "description": "晶圆级芯片上运行开源权重模型，最高 3 000 tok/s。", "freeTier": "100 万 tokens/天" },
-      "openrouter": { "description": "一个 API 密钥访问 300+ 模型。", "freeTier": "30+ 免费模型" },
-      "openai": { "description": "GPT-5.6 Sol、Terra 与 Luna — 前沿推理能力。", "freeTier": "注册赠送 5 美元额度" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 极致性价比。", "freeTier": "低成本（0.14 美元/百万 tokens）" },
-      "xai": { "description": "Grok 4.5 — 50 万上下文，高级推理。", "freeTier": "经济型（0.20 美元/百万 tokens）" },
-      "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "低成本（0.60 美元/百万 tokens）" },
-      "zai": { "description": "GLM-5.2 — 100 万上下文，长跨度编程与推理。", "freeTier": "GLM-4.5-Flash 免费" },
-      "brave": { "description": "自建索引，不依赖 Google/Bing。", "freeTier": "2 000 次请求/月" },
-      "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "1 000 次请求/月" },
-      "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "500 额度" }
+      "openrouter": { "description": "一个 API 密钥访问 300+ 模型。", "freeTier": "17 个免费模型" },
+      "openai": { "description": "GPT-5.6 Sol、Terra 与 Luna — 前沿推理能力。", "freeTier": "输入 1–5 美元/百万 tokens" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 极致性价比。", "freeTier": "输入 0.14 美元/百万 tokens" },
+      "xai": { "description": "Grok 4.5 — 50 万上下文，高级推理。", "freeTier": "输入 2 美元/百万 tokens" },
+      "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "输入 3 美元/百万 tokens" },
+      "zai": { "description": "GLM-5.2 — 100 万上下文，长跨度编程与推理。", "freeTier": "GLM-4.7-Flash 免费" },
+      "brave": { "description": "自建索引，不依赖 Google/Bing。", "freeTier": "每月 5 美元额度" },
+      "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "每月 10 美元额度" },
+      "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "每月 1 000 额度" }
     },
     "main": {
       "title": "API 密钥",

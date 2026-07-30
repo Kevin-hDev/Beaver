@@ -30,19 +30,19 @@
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "独自 LPU による Llama / GPT-OSS の超高速推論。", "freeTier": "14,400 リクエスト/日" },
+      "groq": { "description": "独自 LPU による Llama / GPT-OSS の超高速推論。", "freeTier": "1,000 リクエスト/日" },
       "google": { "description": "Gemini 3.6 Flash — マルチモーダル、ツール、推論。", "freeTier": "100万トークン/分" },
       "mistral": { "description": "フランス発のオープンウェイトモデル — 無料の Experiment プラン。", "freeTier": "10億トークン/月" },
       "cerebras": { "description": "ウェハースケールチップで最大 3,000 tok/s のオープンウェイトモデル。", "freeTier": "100万トークン/日" },
-      "openrouter": { "description": "1 つの API キーで 300 以上のモデルにアクセス。", "freeTier": "30以上の無料モデル" },
-      "openai": { "description": "GPT-5.6 Sol、Terra、Luna — 最先端の推論。", "freeTier": "登録時に5ドル分のクレジット" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 圧倒的なコストパフォーマンス。", "freeTier": "低コスト（0.14ドル/100万トークン）" },
-      "xai": { "description": "Grok 4.5 — 500K コンテキスト、高度な推論。", "freeTier": "低価格（0.20ドル/100万トークン）" },
-      "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "低コスト（0.60ドル/100万トークン）" },
-      "zai": { "description": "GLM-5.2 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "GLM-4.5-Flash は無料" },
-      "brave": { "description": "独自インデックス。Google／Bing に依存しません。", "freeTier": "2,000 リクエスト/月" },
-      "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "1,000 リクエスト/月" },
-      "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "500 クレジット" }
+      "openrouter": { "description": "1 つの API キーで 300 以上のモデルにアクセス。", "freeTier": "17 の無料モデル" },
+      "openai": { "description": "GPT-5.6 Sol、Terra、Luna — 最先端の推論。", "freeTier": "入力 1〜5ドル/100万トークン" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 圧倒的なコストパフォーマンス。", "freeTier": "入力 0.14ドル/100万トークン" },
+      "xai": { "description": "Grok 4.5 — 500K コンテキスト、高度な推論。", "freeTier": "入力 2ドル/100万トークン" },
+      "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "入力 3ドル/100万トークン" },
+      "zai": { "description": "GLM-5.2 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "GLM-4.7-Flash は無料" },
+      "brave": { "description": "独自インデックス。Google／Bing に依存しません。", "freeTier": "毎月 5ドル分のクレジット" },
+      "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "毎月 10ドル分のクレジット" },
+      "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "毎月 1,000 クレジット" }
     },
     "main": {
       "title": "API キー",
