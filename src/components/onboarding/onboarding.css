@@ -34,7 +34,7 @@
 .ob-page {
   width: 100%;
   height: 100%;
-  padding: var(--space-2xl);
+  padding: var(--onboarding-pad-y) var(--onboarding-pad-x);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -47,11 +47,26 @@
 }
 
 .ob-page-api {
-  justify-content: flex-start;
-  gap: var(--space-lg);
+  gap: var(--onboarding-stack-gap);
+  overflow: hidden;
+}
+
+/* Title, key field and actions keep their size: only the provider grid gives way
+   when the window shrinks. Without this the actions fall below the fold and the
+   user has to scroll to reach them. */
+.ob-page-api > * {
+  flex: none;
+}
+
+.ob-page-api .ob-provider-grid {
+  flex: 0 1 auto;
+  min-height: 0;
   overflow-y: auto;
-  padding-top: var(--space-2xl);
-  padding-bottom: var(--space-xl);
+}
+
+.ob-page-api .ob-copy {
+  max-width: var(--onboarding-content-width);
+  gap: var(--space-sm);
 }
 
 .ob-brand-castor {
@@ -145,15 +160,10 @@
 
 .ob-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-}
-
-@media (max-width: 760px) {
-  .ob-page {
-    padding: var(--space-xl);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

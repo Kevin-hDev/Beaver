@@ -67,6 +67,19 @@
   --dialog-wide-max-width: 53.75rem;
   --dialog-tall-max-height: 45rem;
   --onboarding-panel-max-height: 43rem;
+  /* Onboarding: spacing driven by the viewport so a step keeps its actions
+     on screen when the window shrinks, instead of pushing them below the fold. */
+  --onboarding-pad-y: clamp(var(--space-md), 3.5vh, var(--space-2xl));
+  --onboarding-pad-x: clamp(var(--space-md), 4vw, var(--space-2xl));
+  --onboarding-stack-gap: clamp(var(--space-sm), 2vh, var(--space-lg));
+  --onboarding-content-width: 48rem;
+  /* The key field stays narrower than the card column: a full-width password
+     input reads as a page-wide bar rather than a field. */
+  --onboarding-field-width: 36rem;
+  --onboarding-card-padding: clamp(var(--space-sm), 1.6vh, var(--space-md));
+  --onboarding-provider-card-min: 8rem;
+  /* 14rem keeps three columns down to the minimum window width (900px). */
+  --agent-import-card-min: 14rem;
   --agent-import-card-logo-size: 2rem;
   --agent-import-detail-logo-height: 2.25rem;
   --control-height-sm: 1.75rem;

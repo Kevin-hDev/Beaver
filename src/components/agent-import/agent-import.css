@@ -8,9 +8,23 @@
   color: var(--ink);
 }
 
+/* 100% and not 86vh: the hosting page already has its own padding, so a panel
+   measured against the whole window overflowed it and clipped the footer on
+   short windows. */
 .aim-onboarding-shell {
-  width: min(var(--dialog-wide-max-width), 92vw);
-  height: min(var(--onboarding-panel-max-height), 86vh);
+  width: min(var(--dialog-wide-max-width), 100%);
+  height: min(var(--onboarding-panel-max-height), 100%);
+}
+
+/* The panel keeps a fixed height so the footer stays outside the scrolling area;
+   centering its content avoids a gap under the grid when every source fits. */
+.aim-onboarding-shell .aim-wizard {
+  justify-content: center;
+}
+
+.aim-wizard > *,
+.aim-detail > * {
+  flex: none;
 }
 
 .aim-heading,
@@ -69,6 +83,17 @@
 .aim-detail-scroll {
   min-height: 0;
   overflow-y: auto;
+}
+
+/* The grid keeps its natural height and only shrinks when it has to, so the block
+   stays grouped in the middle of the panel instead of being stretched. */
+.aim-grid-scroll {
+  flex: 0 1 auto;
+}
+
+/* The detail list, however, fills the panel to anchor its actions at the bottom. */
+.aim-detail-scroll {
+  flex: 1 1 auto;
 }
 
 .aim-item-copy {

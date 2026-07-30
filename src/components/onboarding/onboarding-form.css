@@ -2,10 +2,20 @@
 
 .ob-settings-panel,
 .ob-api-form {
-  width: min(100%, 36rem);
   display: flex;
   flex-direction: column;
+}
+
+.ob-settings-panel {
+  width: min(100%, 36rem);
   gap: var(--space-lg);
+}
+
+/* Narrower than the provider grid and centred under it: label, field and link
+   travel together as one block. */
+.ob-api-form {
+  width: min(100%, var(--onboarding-field-width));
+  gap: var(--space-sm);
 }
 
 .ob-field {
@@ -65,16 +75,23 @@
   color: var(--ink);
 }
 
+/* auto-fit: the column count drops from 5 to 4, 3 then 2 as the window narrows,
+   but a card never goes below its minimum width — its text stays whole and
+   readable instead of being squeezed. */
 .ob-provider-grid {
-  width: min(100%, 44rem);
+  width: min(100%, var(--onboarding-content-width));
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--onboarding-provider-card-min), 100%), 1fr)
+  );
+  align-content: start;
   gap: var(--space-sm);
 }
 
 .ob-provider-card {
   min-height: 7.25rem;
-  padding: var(--space-md);
+  padding: var(--onboarding-card-padding);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -149,10 +166,4 @@
 
 .ob-test-result.success {
   color: var(--toast-ok-text);
-}
-
-@media (max-width: 760px) {
-  .ob-provider-grid {
-    grid-template-columns: 1fr;
-  }
 }
