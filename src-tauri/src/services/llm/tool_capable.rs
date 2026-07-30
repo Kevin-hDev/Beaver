@@ -23,28 +23,28 @@ pub fn supports_tools(provider_id: &str, model_id: &str) -> bool {
                 || model.starts_with("gemma")
                 || model.starts_with("qwen")
                 || model.starts_with("mistral")
+                || model.starts_with("gpt-oss") && !model.contains("safeguard")
+                || model.starts_with("compound")
+                || model.starts_with("minimax")
         }
         "google" => {
             let has_gemini = model.contains("gemini");
             let is_pro = model.contains("pro");
-            let is_flash_full = model.contains("flash") && !model.contains("flash-lite");
-            is_gemma4_vision_model(&model) || (has_gemini && (is_pro || is_flash_full))
+            let is_flash = model.contains("flash");
+            is_gemma4_vision_model(&model) || (has_gemini && (is_pro || is_flash))
         }
         "mistral" => {
             model.starts_with("mistral-large")
                 || model.starts_with("mistral-medium")
                 || model.starts_with("mistral-small")
                 || model.starts_with("codestral")
-                || model.starts_with("devstral")
-                || model.starts_with("magistral")
-                || model.starts_with("open-mistral-nemo")
                 || model.starts_with("ministral")
-                || model.starts_with("pixtral")
+                || model.starts_with("labs-leanstral")
         }
         "cerebras" => {
-            model.starts_with("llama-3.1")
-                || model.starts_with("llama-3.3")
-                || model.starts_with("llama-4")
+            model.starts_with("zai-glm")
+                || model.starts_with("gemma-4")
+                || model.starts_with("gpt-oss")
         }
         // OpenRouter : permissif, l'UI filtrera via flag supports_tools de l'API /models
         "openrouter" => true,
@@ -77,6 +77,11 @@ pub fn supports_thinking(provider_id: &str, model_id: &str) -> bool {
         "xai" => super::providers::xai::supports_thinking(&model),
         "moonshot" => super::providers::moonshot::supports_thinking(&model),
         "zai" => super::providers::zai::supports_thinking(&model),
+        "cerebras" => {
+            model.starts_with("zai-glm")
+                || model.starts_with("gemma-4")
+                || model.starts_with("gpt-oss")
+        }
         _ => false,
     }
 }
@@ -94,7 +99,7 @@ pub fn supports_vision(provider_id: &str, model_id: &str) -> bool {
                 || model.starts_with("ministral")
                 || model.starts_with("pixtral")
         }
-        "cerebras" => false,
+        "cerebras" => model.starts_with("gemma-4"),
         "openrouter" => is_gemma4_vision_model(&model),
         "openai" => {
             model.starts_with("gpt-4o")

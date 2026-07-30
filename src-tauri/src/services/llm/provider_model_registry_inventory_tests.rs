@@ -1,0 +1,100 @@
+use super::*;
+
+fn ids(provider_id: &str) -> Vec<String> {
+    list(provider_id)
+        .iter()
+        .map(|model| model.id.clone())
+        .collect()
+}
+
+#[test]
+fn canonical_inventory_sizes_match_the_official_catalogs() {
+    for (provider, expected) in [
+        ("groq", 9),
+        ("google", 13),
+        ("mistral", 8),
+        ("cerebras", 3),
+        ("openrouter", 0),
+        ("openai", 19),
+        ("deepseek", 2),
+        ("xai", 6),
+        ("moonshot", 15),
+        ("zai", 19),
+    ] {
+        assert_eq!(list(provider).len(), expected, "{provider}");
+    }
+}
+
+#[test]
+fn inventories_keep_current_canonical_ids() {
+    assert_eq!(
+        ids("mistral"),
+        [
+            "mistral-medium-3-5",
+            "mistral-small-2603",
+            "mistral-large-2512",
+            "codestral-2508",
+            "labs-leanstral-1-5",
+            "ministral-14b-2512",
+            "ministral-8b-2512",
+            "ministral-3b-2512",
+        ]
+    );
+    assert_eq!(
+        ids("cerebras"),
+        ["zai-glm-4.7", "gemma-4-31b", "gpt-oss-120b"]
+    );
+    assert_eq!(
+        ids("xai"),
+        [
+            "grok-4.5",
+            "grok-build-0.1",
+            "grok-4.3",
+            "grok-4.20-multi-agent-0309",
+            "grok-4.20-0309-reasoning",
+            "grok-4.20-0309-non-reasoning",
+        ]
+    );
+}
+
+#[test]
+fn retired_or_invented_ids_are_not_local_models() {
+    for (provider, model) in [
+        ("mistral", "mistral-medium-3.5"),
+        ("mistral", "mistral-small-4"),
+        ("mistral", "devstral-small-latest"),
+        ("mistral", "magistral-medium-latest"),
+        ("openai", "gpt-5.6-terra-pro"),
+        ("cerebras", "qwen-3-235b-a22b-instruct-2507"),
+        ("cerebras", "llama3.1-8b"),
+        ("moonshot", "kimi-latest"),
+        ("moonshot", "kimi-k2-thinking"),
+        ("zai", "glm-5-code"),
+    ] {
+        assert!(lookup(provider, model).is_none(), "{provider}/{model}");
+    }
+}
+
+#[test]
+fn corrected_limits_and_capabilities_are_stable() {
+    let gemini = lookup("google", "gemini-2.5-flash-lite").unwrap();
+    assert_eq!(gemini.context_window, 1_048_576);
+    assert_eq!(gemini.max_output_tokens, Some(65_536));
+
+    let cerebras = lookup("cerebras", "gemma-4-31b").unwrap();
+    assert_eq!(cerebras.max_output_tokens, Some(40_960));
+    assert!(cerebras.supports_vision);
+
+    let openai_mini = lookup("openai", "gpt-5.4-mini").unwrap();
+    assert_eq!(openai_mini.context_window, 400_000);
+    assert_eq!(openai_mini.max_output_tokens, Some(128_000));
+
+    let kimi = lookup("moonshot", "kimi-k3").unwrap();
+    assert_eq!(kimi.context_window, 1_048_576);
+    assert_eq!(kimi.max_output_tokens, Some(1_048_576));
+
+    let glm_vision = lookup("zai", "glm-4.5v").unwrap();
+    assert_eq!(glm_vision.context_window, 64_000);
+    assert_eq!(glm_vision.max_output_tokens, Some(16_384));
+    assert!(glm_vision.supports_vision);
+}

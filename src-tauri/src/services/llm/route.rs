@@ -129,7 +129,7 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
             "xai-oauth",
             "xai",
             "https://api.x.ai/v1",
-            "",
+            "/models",
             "xAI",
             LlmOAuthProvider::Xai,
         )),

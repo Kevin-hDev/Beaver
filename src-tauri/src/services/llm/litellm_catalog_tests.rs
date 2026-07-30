@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::llm::model_registry::{
-        is_body_size_ok, is_trusted_host, parse_registry, MAX_BODY_BYTES, MAX_REGISTRY_ENTRIES,
+    use crate::services::llm::litellm_catalog::{
+        is_body_size_ok, is_trusted_host, parse_catalog, MAX_BODY_BYTES, MAX_CATALOG_ENTRIES,
     };
 
     fn fake_entry() -> String {
@@ -18,49 +18,49 @@ mod tests {
     #[test]
     fn parses_valid_json() {
         let json = build_json(10);
-        let map = parse_registry(&json);
+        let map = parse_catalog(&json);
         assert_eq!(map.len(), 10);
     }
 
     #[test]
     fn rejects_invalid_json() {
-        let map = parse_registry("not json at all");
+        let map = parse_catalog("not json at all");
         assert!(map.is_empty());
     }
 
     #[test]
     fn skips_malformed_entries() {
         let json = r#"{"good": {"litellm_provider":"x","mode":"chat"}, "bad": "not an object"}"#;
-        let map = parse_registry(json);
+        let map = parse_catalog(json);
         assert_eq!(map.len(), 1);
         assert!(map.contains_key("good"));
     }
 
     #[test]
     fn enforces_max_entries() {
-        let over_limit = MAX_REGISTRY_ENTRIES + 500;
+        let over_limit = MAX_CATALOG_ENTRIES + 500;
         let json = build_json(over_limit);
-        let map = parse_registry(&json);
-        assert_eq!(map.len(), MAX_REGISTRY_ENTRIES);
+        let map = parse_catalog(&json);
+        assert_eq!(map.len(), MAX_CATALOG_ENTRIES);
     }
 
     #[test]
     fn exact_limit_accepted() {
-        let json = build_json(MAX_REGISTRY_ENTRIES);
-        let map = parse_registry(&json);
-        assert_eq!(map.len(), MAX_REGISTRY_ENTRIES);
+        let json = build_json(MAX_CATALOG_ENTRIES);
+        let map = parse_catalog(&json);
+        assert_eq!(map.len(), MAX_CATALOG_ENTRIES);
     }
 
     #[test]
     fn under_limit_accepted() {
         let json = build_json(100);
-        let map = parse_registry(&json);
+        let map = parse_catalog(&json);
         assert_eq!(map.len(), 100);
     }
 
     #[test]
     fn embedded_registry_contains_recent_provider_models() {
-        let map = parse_registry(include_str!("../../../resources/litellm-models.json"));
+        let map = parse_catalog(include_str!("../../../resources/litellm-models.json"));
 
         let gemini = map.get("gemini/gemini-3.5-flash").unwrap();
         assert!(gemini.supports_function_calling);
@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn empty_json_object() {
-        let map = parse_registry("{}");
+        let map = parse_catalog("{}");
         assert!(map.is_empty());
     }
 

@@ -1,119 +1,14 @@
 use super::types::ModelInfo;
 
-struct StaticModel {
-    id: &'static str,
-    ctx: u32,
-}
-
-const ZAI_MODELS: &[StaticModel] = &[
-    StaticModel {
-        id: "glm-5.2",
-        ctx: 1_000_000,
-    },
-    StaticModel {
-        id: "glm-5.1",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-5",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-5-code",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-4.7",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-4.7-flashx",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-4.7-flash",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-4.6",
-        ctx: 200_000,
-    },
-    StaticModel {
-        id: "glm-4.5",
-        ctx: 128_000,
-    },
-    StaticModel {
-        id: "glm-4.5v",
-        ctx: 128_000,
-    },
-    StaticModel {
-        id: "glm-4.5-air",
-        ctx: 128_000,
-    },
-    StaticModel {
-        id: "glm-4.5-flash",
-        ctx: 128_000,
-    },
-];
-
-const XAI_MODELS: &[StaticModel] = &[
-    StaticModel {
-        id: "grok-4.5",
-        ctx: 500_000,
-    },
-    StaticModel {
-        id: "grok-4.3",
-        ctx: 1_000_000,
-    },
-    StaticModel {
-        id: "grok-4.20-0309-reasoning",
-        ctx: 1_000_000,
-    },
-    StaticModel {
-        id: "grok-4.20-0309-non-reasoning",
-        ctx: 1_000_000,
-    },
-    StaticModel {
-        id: "grok-build-0.1",
-        ctx: 256_000,
-    },
-    StaticModel {
-        id: "grok-4.20-multi-agent-0309",
-        ctx: 1_000_000,
-    },
-];
-
 pub(super) fn has_static_models(provider_id: &str) -> bool {
-    static_models(provider_id).is_some()
+    provider_id == "zai"
 }
 
 pub(super) fn static_model_infos(provider_id: &str) -> Option<Vec<ModelInfo>> {
-    static_models(provider_id).map(|models| {
-        models
-            .iter()
-            .map(|m| {
-                let supports_thinking = super::tool_capable::supports_thinking(provider_id, m.id);
-                ModelInfo {
-                    id: m.id.to_string(),
-                    display_name: None,
-                    owned_by: None,
-                    context_length: Some(m.ctx),
-                    max_output_tokens: None,
-                    supports_tools: super::tool_capable::supports_tools(provider_id, m.id),
-                    supports_vision: super::tool_capable::supports_vision(provider_id, m.id),
-                    supports_thinking,
-                    reasoning_modes: crate::services::reasoning::supported_modes(
-                        provider_id,
-                        m.id,
-                        supports_thinking,
-                    )
-                    .iter()
-                    .map(|mode| mode.to_string())
-                    .collect(),
-                    default_reasoning_mode: None,
-                    is_free: false,
-                }
-            })
+    has_static_models(provider_id).then(|| {
+        super::provider_model_registry::list(provider_id)
+            .into_iter()
+            .map(|model| to_model_info(provider_id, model))
             .collect()
     })
 }
@@ -121,16 +16,34 @@ pub(super) fn static_model_infos(provider_id: &str) -> Option<Vec<ModelInfo>> {
 pub(super) fn ping_model(provider_id: &str) -> &'static str {
     match provider_id {
         "zai" => "glm-4.5-flash",
-        "xai" => "grok-4.3",
         _ => "test",
     }
 }
 
-fn static_models(provider_id: &str) -> Option<&'static [StaticModel]> {
-    match provider_id {
-        "zai" => Some(ZAI_MODELS),
-        "xai" => Some(XAI_MODELS),
-        _ => None,
+fn to_model_info(
+    provider_id: &str,
+    model: super::provider_model_registry::ProviderModelConfig,
+) -> ModelInfo {
+    let reasoning_modes = crate::services::reasoning::supported_modes(
+        provider_id,
+        &model.id,
+        model.supports_thinking,
+    )
+    .iter()
+    .map(|mode| mode.to_string())
+    .collect();
+    ModelInfo {
+        id: model.id,
+        display_name: None,
+        owned_by: None,
+        context_length: Some(model.context_window),
+        max_output_tokens: model.max_output_tokens,
+        supports_tools: model.supports_tools,
+        supports_vision: model.supports_vision,
+        supports_thinking: model.supports_thinking,
+        reasoning_modes,
+        default_reasoning_mode: None,
+        is_free: false,
     }
 }
 
@@ -139,35 +52,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn xai_static_models_expose_reasoning_capabilities() {
-        let models = static_model_infos("xai").unwrap();
-        let ids = models
-            .iter()
-            .map(|model| model.id.as_str())
-            .collect::<Vec<_>>();
-
-        assert_eq!(
-            ids,
-            [
-                "grok-4.5",
-                "grok-4.3",
-                "grok-4.20-0309-reasoning",
-                "grok-4.20-0309-non-reasoning",
-                "grok-build-0.1",
-                "grok-4.20-multi-agent-0309",
-            ]
-        );
-        assert_eq!(models[0].context_length, Some(500_000));
-        assert_eq!(models[1].context_length, Some(1_000_000));
-        assert_eq!(models[4].context_length, Some(256_000));
-        assert_eq!(models[5].context_length, Some(1_000_000));
-        assert_eq!(models[0].reasoning_modes, ["low", "medium", "high"]);
-        assert_eq!(models[1].reasoning_modes, ["off", "low", "medium", "high"]);
-        assert_eq!(models[2].reasoning_modes, ["auto"]);
-        assert!(!models[3].supports_thinking);
-        assert!(models[3].reasoning_modes.is_empty());
-        assert_eq!(models[4].reasoning_modes, ["auto"]);
-        assert_eq!(ping_model("xai"), "grok-4.3");
+    fn xai_uses_its_official_dynamic_endpoint() {
+        assert!(!has_static_models("xai"));
+        assert!(static_model_infos("xai").is_none());
     }
 
     #[test]
@@ -179,6 +66,7 @@ mod tests {
         let glm_flash = models.iter().find(|m| m.id == "glm-4.5-flash").unwrap();
         let glm_47_flash = models.iter().find(|m| m.id == "glm-4.7-flash").unwrap();
 
+        assert_eq!(models.len(), 19);
         assert_eq!(glm_47_flash.context_length, Some(200_000));
         assert_eq!(glm_52.context_length, Some(1_000_000));
         assert!(glm_52.supports_thinking);

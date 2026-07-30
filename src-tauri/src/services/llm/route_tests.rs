@@ -11,6 +11,8 @@ fn api_and_oauth_routes_stay_separate() {
     assert_eq!(xai_oauth.base_url, "https://api.x.ai/v1");
     assert_eq!(xai_api.chat_provider_id, "xai");
     assert_eq!(xai_oauth.chat_provider_id, "xai-oauth");
+    assert_eq!(xai_api.models_endpoint, "/models");
+    assert_eq!(xai_oauth.models_endpoint, "/models");
     assert!(!xai_api.is_oauth());
     assert!(xai_oauth.is_oauth());
 

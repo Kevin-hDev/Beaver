@@ -78,37 +78,22 @@ async fn lookup_api_context(provider: &str, model: &str) -> u64 {
             .unwrap_or(128_000);
     }
 
-    if matches!(provider, "openai" | "openrouter") {
-        if let Some(context) = crate::services::llm::providers::openai::context_length(model) {
-            return context as u64;
-        }
+    let provider = crate::services::llm::route::canonical_provider_id(provider);
+    if let Some(context) =
+        crate::services::llm::provider_model_lookup::local_limits(provider, model)
+            .and_then(|limits| limits.context_window)
+    {
+        return context as u64;
     }
-    if provider == "xai" {
-        if let Some(context) = crate::services::llm::providers::xai::context_length(model) {
-            return context as u64;
-        }
+    if let Some(context) = crate::services::llm::runtime_models::lookup(provider, model)
+        .and_then(|model| model.context_length)
+    {
+        return context as u64;
     }
-    if let Some(model) = crate::services::llm::runtime_models::lookup(provider, model) {
-        return model.context_length.unwrap_or(0) as u64;
-    }
-    use crate::services::llm::model_registry;
-
-    let reg = model_registry::get_lock().read().await;
-    let prefix = match provider {
-        "google" => "gemini",
-        other => other,
-    };
-
-    let key = format!("{prefix}/{model}");
-    let entry = reg.get(&key).or_else(|| reg.get(model)).or_else(|| {
-        let stripped = model.rsplit_once('/').map(|(_, n)| n).unwrap_or(model);
-        let key2 = format!("{prefix}/{stripped}");
-        reg.get(&key2).or_else(|| reg.get(stripped))
-    });
-
-    entry
-        .and_then(|e| e.max_input_tokens.or(e.max_tokens))
-        .unwrap_or(0)
+    crate::services::llm::provider_model_lookup::limits(provider, model)
+        .await
+        .and_then(|limits| limits.context_window)
+        .unwrap_or(0) as u64
 }
 
 #[cfg(test)]
@@ -126,13 +111,21 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn official_api_contexts_override_registry() {
+    async fn provider_registry_supplies_verified_api_contexts() {
         assert_eq!(lookup_api_context("openai", "gpt-5.6-sol").await, 1_050_000);
         assert_eq!(
-            lookup_api_context("openrouter", "openai/gpt-5.6-terra-pro").await,
+            lookup_api_context("openrouter", "openai/gpt-5.6-terra").await,
             1_050_000
         );
         assert_eq!(lookup_api_context("xai", "grok-4.5").await, 500_000);
+        assert_eq!(
+            lookup_api_context("mistral", "mistral-small-latest").await,
+            262_144
+        );
+        assert_eq!(
+            lookup_api_context("moonshot-oauth", "k3-256k").await,
+            262_144
+        );
         assert_eq!(
             lookup_api_context("codex-oauth", "gpt-5.6-luna").await,
             372_000

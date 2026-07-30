@@ -1,5 +1,6 @@
-use super::model_registry::get_lock;
+use super::litellm_catalog::get_lock;
 use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct RegistryModelInfo {
@@ -33,10 +34,18 @@ fn is_spec_key(key: &str) -> bool {
 
 pub async fn search(query: &str, limit: usize) -> Vec<RegistryModelInfo> {
     let reg = get_lock().read().await;
+    search_in(&reg, query, limit)
+}
+
+fn search_in(
+    catalog: &HashMap<String, super::litellm_catalog::ModelEntry>,
+    query: &str,
+    limit: usize,
+) -> Vec<RegistryModelInfo> {
     let q = query.to_lowercase();
     let mut results = Vec::new();
 
-    for (key, entry) in reg.iter() {
+    for (key, entry) in catalog {
         if is_spec_key(key) || !key.to_lowercase().contains(&q) {
             continue;
         }
@@ -96,7 +105,7 @@ pub async fn list_family_models(family: &str) -> Vec<RegistryModelInfo> {
     results
 }
 
-fn to_info(key: &str, e: &super::model_registry::ModelEntry) -> RegistryModelInfo {
+fn to_info(key: &str, e: &super::litellm_catalog::ModelEntry) -> RegistryModelInfo {
     RegistryModelInfo {
         key: key.to_string(),
         provider: e.litellm_provider.clone().unwrap_or_default(),
@@ -166,3 +175,7 @@ fn extract_family(model_key: &str) -> String {
         None => "Other".to_string(),
     }
 }
+
+#[cfg(test)]
+#[path = "litellm_catalog_search_tests.rs"]
+mod tests;

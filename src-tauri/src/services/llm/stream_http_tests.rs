@@ -103,30 +103,42 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
 }
 
 #[test]
-fn other_providers_keep_max_tokens() {
-    let cfg = RequestConfig {
-        provider_id: "xai",
-        model: "grok-4.5",
-        messages: &[],
-        tools: &[],
-        think: true,
-        reasoning_mode: Some("medium"),
-        max_tokens: Some(8_000),
-        purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
-    };
+fn streaming_output_limit_field_matches_model_family() {
+    for (provider, model, expected, absent) in [
+        ("openai", "o3", "max_completion_tokens", "max_tokens"),
+        ("openai", "gpt-4o", "max_tokens", "max_completion_tokens"),
+        ("moonshot", "kimi-k3", "max_completion_tokens", "max_tokens"),
+        (
+            "moonshot",
+            "kimi-k2.7-code",
+            "max_tokens",
+            "max_completion_tokens",
+        ),
+        ("xai", "grok-4.5", "max_tokens", "max_completion_tokens"),
+    ] {
+        let cfg = RequestConfig {
+            provider_id: provider,
+            model,
+            messages: &[],
+            tools: &[],
+            think: false,
+            reasoning_mode: None,
+            max_tokens: Some(8_000),
+            purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        };
+        let route = route::resolve(provider).unwrap();
+        let payload = build_chat_payload(&cfg, &route, Some(8_000));
 
-    let route = route::resolve("xai").unwrap();
-    let payload = build_chat_payload(&cfg, &route, Some(8_000));
-
-    assert_eq!(payload["max_tokens"], 8_000);
-    assert!(payload.get("max_completion_tokens").is_none());
+        assert_eq!(payload[expected], 8_000, "{provider}/{model}");
+        assert!(payload.get(absent).is_none(), "{provider}/{model}");
+    }
 }
 
 #[tokio::test]
 async fn groq_and_cerebras_payloads_omit_automatic_limits() {
     for (provider, model) in [
         ("groq", "llama-3.3-70b-versatile"),
-        ("cerebras", "llama3.1-8b"),
+        ("cerebras", "gpt-oss-120b"),
     ] {
         let route = route::resolve(provider).unwrap();
         let resolved = super::super::stream_max_tokens::resolve(
@@ -135,8 +147,10 @@ async fn groq_and_cerebras_payloads_omit_automatic_limits() {
             None,
             route.auto_max_tokens,
             route.fallback_max_tokens,
+            0,
         )
-        .await;
+        .await
+        .unwrap();
         let cfg = RequestConfig {
             provider_id: provider,
             model,
@@ -158,7 +172,7 @@ async fn groq_and_cerebras_payloads_omit_automatic_limits() {
 #[tokio::test]
 async fn openrouter_uses_the_underlying_model_output_limit() {
     for (model, expected) in [
-        ("google/gemini-2.5-pro", 65_535),
+        ("google/gemini-2.5-pro", 65_536),
         ("openai/gpt-4o", 16_384),
         ("openai/o3-mini", 100_000),
     ] {
@@ -169,8 +183,10 @@ async fn openrouter_uses_the_underlying_model_output_limit() {
             None,
             route.auto_max_tokens,
             route.fallback_max_tokens,
+            0,
         )
-        .await;
+        .await
+        .unwrap();
 
         assert_eq!(resolved, Some(expected));
     }

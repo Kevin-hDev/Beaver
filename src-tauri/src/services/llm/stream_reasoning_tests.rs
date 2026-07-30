@@ -44,24 +44,25 @@ fn moonshot_switchable_can_disable_thinking() {
     let auto = payload("moonshot", "kimi-k2.5", Some("auto"));
     assert_eq!(auto["thinking"], json!({ "type": "enabled" }));
 
-    let forced = payload("moonshot", "kimi-k2-thinking", Some("auto"));
-    assert_eq!(forced["thinking"], json!({ "type": "enabled" }));
-
     let k27 = payload("moonshot", "kimi-k2.7-code", Some("auto"));
-    assert_eq!(k27["thinking"], json!({ "type": "enabled" }));
+    assert!(k27.get("thinking").is_none());
+    assert!(k27.get("reasoning_effort").is_none());
 }
 
 #[test]
-fn moonshot_k3_sends_mandatory_thinking_effort() {
+fn moonshot_k3_sends_top_level_reasoning_effort() {
     for effort in ["low", "high", "max"] {
         assert_eq!(
-            payload("moonshot", "k3", Some(effort))["thinking"],
-            json!({ "type": "enabled", "effort": effort })
+            payload("moonshot", "k3", Some(effort))["reasoning_effort"],
+            effort
         );
+        assert!(payload("moonshot", "k3", Some(effort))
+            .get("thinking")
+            .is_none());
     }
     assert_eq!(
-        payload("moonshot", "k3", Some("off"))["thinking"],
-        json!({ "type": "enabled", "effort": "max" })
+        payload("moonshot", "k3", Some("off"))["reasoning_effort"],
+        "max"
     );
 }
 
@@ -105,6 +106,10 @@ fn mistral_adjustable_uses_reasoning_effort() {
     );
     assert_eq!(
         payload("mistral", "mistral-small-latest", Some("high"))["reasoning_effort"],
+        "high"
+    );
+    assert_eq!(
+        payload("mistral", "mistral-medium-3", Some("high"))["reasoning_effort"],
         "high"
     );
 }

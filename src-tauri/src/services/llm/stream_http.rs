@@ -36,14 +36,18 @@ pub async fn post_chat_request_with_timeout(
     let route = route::resolve(cfg.provider_id)
         .ok_or_else(|| RequestError::Fatal("Fournisseur inconnu".to_string()))?;
     let url = format!("{}/chat/completions", route.base_url);
+    let estimated_input_tokens =
+        crate::services::compress::token_estimate::estimate_request_tokens(cfg.messages, cfg.tools);
     let max_tokens = super::stream_max_tokens::resolve(
         route.canonical_provider_id,
         cfg.model,
         cfg.max_tokens,
         route.auto_max_tokens,
         route.fallback_max_tokens,
+        estimated_input_tokens,
     )
-    .await;
+    .await
+    .map_err(|_| RequestError::PayloadTooLarge)?;
     let payload = build_chat_payload(cfg, &route, max_tokens);
     let request_bytes = serde_json::to_vec(&payload)
         .map(zeroize::Zeroizing::new)
@@ -111,13 +115,7 @@ fn build_chat_payload(
         "stream_options": { "include_usage": true },
     });
     if let Some(max) = max_tokens {
-        let field = if matches!(provider_id, "openai" | "openrouter")
-            && super::providers::openai::is_gpt_56(cfg.model)
-        {
-            "max_completion_tokens"
-        } else {
-            "max_tokens"
-        };
+        let field = super::model_metadata::request_output_limit_field(provider_id, cfg.model);
         payload[field] = max.into();
     }
     super::stream_reasoning::apply(

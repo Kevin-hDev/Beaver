@@ -178,7 +178,7 @@ pub fn run() {
             let scheduler = Scheduler::spawn(app.handle().clone());
             app.manage(scheduler);
             ollama_polling::start(app.handle().clone());
-            tauri::async_runtime::spawn(services::llm::model_registry::init());
+            tauri::async_runtime::spawn(services::llm::litellm_catalog::init());
             services::update_health::acknowledge_from_args(std::env::args_os())
                 .map_err(std::io::Error::other)?;
             Ok(())

@@ -21,7 +21,8 @@ mod tests {
     fn tools() {
         assert!(supports_tools("glm-5"));
         assert!(supports_tools("glm-5.2"));
-        assert!(supports_tools("glm-5-code"));
+        assert!(supports_tools("glm-5-turbo"));
+        assert!(supports_tools("glm-5v-turbo"));
         assert!(supports_tools("glm-4.7"));
         assert!(supports_tools("glm-4.5-flash"));
         assert!(supports_tools("glm-4-32b-0414-128k"));
@@ -32,7 +33,8 @@ mod tests {
     fn thinking() {
         assert!(supports_thinking("glm-5"));
         assert!(supports_thinking("glm-5.2"));
-        assert!(supports_thinking("glm-5-code"));
+        assert!(supports_thinking("glm-5-turbo"));
+        assert!(supports_thinking("glm-5v-turbo"));
         assert!(supports_thinking("glm-4.7"));
         assert!(supports_thinking("glm-4.6"));
         assert!(supports_thinking("glm-4.5"));
@@ -44,6 +46,7 @@ mod tests {
     #[test]
     fn vision() {
         assert!(supports_vision("glm-4.5v"));
+        assert!(supports_vision("glm-5v-turbo"));
         assert!(!supports_vision("glm-5"));
         assert!(!supports_vision("glm-4.5-flash"));
         assert!(!supports_vision("glm-4.7"));

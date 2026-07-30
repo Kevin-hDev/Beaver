@@ -101,15 +101,14 @@ fn apply_mistral(payload: &mut Value, think: bool, reasoning_mode: Option<&str>)
 
 fn apply_moonshot(payload: &mut Value, model: &str, think: bool, reasoning_mode: Option<&str>) {
     let model = model.to_lowercase();
+    if crate::services::llm::providers::moonshot::is_k3(&model) {
+        let effort = reasoning_mode
+            .filter(|effort| matches!(*effort, "low" | "high" | "max"))
+            .unwrap_or("max");
+        payload["reasoning_effort"] = effort.into();
+        return;
+    }
     if crate::services::llm::providers::moonshot::is_forced_thinking(&model) {
-        let mut thinking = serde_json::json!({ "type": "enabled" });
-        if crate::services::llm::providers::moonshot::is_k3(&model) {
-            let effort = reasoning_mode
-                .filter(|effort| matches!(*effort, "low" | "high" | "max"))
-                .unwrap_or("max");
-            thinking["effort"] = effort.into();
-        }
-        payload["thinking"] = thinking;
         return;
     }
     if reasoning_mode == Some("off") {

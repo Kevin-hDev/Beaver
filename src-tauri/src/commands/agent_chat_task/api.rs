@@ -3,13 +3,6 @@ use super::params::StreamTaskParams;
 use crate::services::agent_local::tool_catalog;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm;
-use crate::services::llm::{model_registry_lookup, tool_capable};
-
-struct ApiCapabilities {
-    tools: bool,
-    thinking: bool,
-    vision: bool,
-}
 
 pub(crate) async fn run(
     params: StreamTaskParams,
@@ -20,7 +13,7 @@ pub(crate) async fn run(
     let ctx =
         crate::services::compress::context_resolve::resolve_api(canonical_provider, &params.model)
             .await;
-    let caps = resolve_capabilities(&params, canonical_provider).await;
+    let caps = super::api_capabilities::resolve(&params, canonical_provider).await;
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools =
         super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider);
@@ -142,50 +135,5 @@ async fn resolve_plan_mode(params: &StreamTaskParams) -> bool {
     match params.plan_mode {
         Some(value) => value,
         None => crate::services::agent_local::tool_plan::is_enabled(&params.session_id).await,
-    }
-}
-
-async fn resolve_capabilities(
-    params: &StreamTaskParams,
-    canonical_provider: &str,
-) -> ApiCapabilities {
-    let registry_caps =
-        model_registry_lookup::capabilities(canonical_provider, &params.model).await;
-    let runtime_caps = llm::runtime_models::lookup(canonical_provider, &params.model);
-    ApiCapabilities {
-        tools: params.capability_hints.supports_tools.unwrap_or_else(|| {
-            registry_caps
-                .as_ref()
-                .is_some_and(|caps| caps.supports_tools)
-                || runtime_caps
-                    .as_ref()
-                    .is_some_and(|model| model.supports_tools)
-                || tool_capable::supports_tools(canonical_provider, &params.model)
-        }),
-        thinking: params
-            .capability_hints
-            .supports_thinking
-            .unwrap_or_else(|| {
-                params.provider == "codex-oauth"
-                    || registry_caps
-                        .as_ref()
-                        .map(|c| c.supports_thinking)
-                        .unwrap_or(false)
-                    || runtime_caps
-                        .as_ref()
-                        .is_some_and(|model| model.supports_thinking)
-                    || tool_capable::supports_thinking(canonical_provider, &params.model)
-            }),
-        vision: params.capability_hints.supports_vision.unwrap_or_else(|| {
-            registry_caps
-                .as_ref()
-                .map(|c| c.supports_vision)
-                .unwrap_or(false)
-                || runtime_caps
-                    .as_ref()
-                    .is_some_and(|model| model.supports_vision)
-                || params.provider == "codex-oauth"
-                || tool_capable::supports_vision(canonical_provider, &params.model)
-        }),
     }
 }

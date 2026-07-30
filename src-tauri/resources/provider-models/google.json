@@ -1,0 +1,21 @@
+{
+  "provider": "google",
+  "schema_version": 1,
+  "verified_at": "2026-07-30",
+  "source_urls": ["https://ai.google.dev/gemini-api/docs/models"],
+  "models": [
+    {"id":"gemini-3.6-flash","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-3.5-flash","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-3.5-flash-lite","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-3.1-flash-lite","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-3.1-pro-preview","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-3.1-pro-preview-customtools","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-3-flash-preview","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-2.5-pro","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-2.5-flash","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-2.5-flash-lite","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-flash-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-flash-lite-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"gemini-pro-latest","context_window":1048576,"max_output_tokens":65536,"supports_tools":true,"supports_vision":true,"supports_thinking":true}
+  ]
+}

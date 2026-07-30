@@ -21,8 +21,8 @@ pub struct ProviderSpec {
     /// Active l'ajout automatique d'un plafond quand l'appelant n'en fournit pas.
     /// Désactivé chez Groq/Cerebras : un plafond élevé réserve inutilement leur TPM.
     pub auto_max_tokens: bool,
-    /// Repli utilisé si l'ajout automatique est actif mais que LiteLLM et
-    /// l'endpoint `/models` ne connaissent pas encore le modèle.
+    /// Dernier repli si le registre Beaver, l'endpoint `/models` et LiteLLM
+    /// ne publient aucune limite fiable. Il sera borné au contexte restant.
     pub fallback_max_tokens: Option<u32>,
 }
 
@@ -67,7 +67,7 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         models_endpoint: "/models",
         signup_url: "https://console.mistral.ai/api-keys",
         // Mistral ne publie pas de plafond de sortie distinct du contexte du
-        // modèle (vérifié le 2026-07-30) : rien de mieux que cette valeur sûre.
+        // modèle (vérifié le 2026-07-30) : dernier repli, borné au contexte restant.
         auto_max_tokens: true,
         fallback_max_tokens: Some(64_000),
     },
@@ -88,7 +88,7 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://openrouter.ai/api/v1",
         models_endpoint: "/models",
         signup_url: "https://openrouter.ai/settings/keys",
-        // Repli conservateur pour un modèle absent du registre LiteLLM :
+        // Dernier repli pour un modèle absent du registre Beaver et de LiteLLM.
         // OpenRouter revend des centaines de modèles aux plafonds très différents.
         auto_max_tokens: true,
         fallback_max_tokens: Some(64_000),
@@ -120,14 +120,11 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         display_name: "xAI",
         category: "llm",
         base_url: "https://api.x.ai/v1",
-        // xAI expose désormais `GET /v1/models` (vérifié le 2026-07-30), mais le
-        // remplir changerait aussi la façon de tester une clé (cf.
-        // api_keys_http::test_key_raw) sans qu'on puisse l'essayer sans clé xAI.
-        // La liste vient donc encore de XAI_MODELS.
-        models_endpoint: "",
+        // Endpoint officiel : le registre local enrichit cette liste dynamique.
+        models_endpoint: "/models",
         signup_url: "https://console.x.ai",
         // xAI ne publie pas de plafond de sortie distinct du contexte
-        // (vérifié le 2026-07-30) : rien de mieux que cette valeur sûre.
+        // (vérifié le 2026-07-30) : dernier repli, borné au contexte restant.
         auto_max_tokens: true,
         fallback_max_tokens: Some(64_000),
     },
@@ -150,8 +147,7 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://api.z.ai/api/paas/v4",
         models_endpoint: "",
         signup_url: "https://z.ai/manage-apikey/apikey-list",
-        // 96k et non les 128k de GLM-5.2 : toute la famille GLM-4.5, encore au
-        // catalogue, s'arrête là (vérifié le 2026-07-30).
+        // Repli réservé aux modèles futurs absents du registre local.
         auto_max_tokens: true,
         fallback_max_tokens: Some(96_000),
     },

@@ -1,8 +1,7 @@
 use crate::services::llm::{
     catalog::{ProviderSpec, LLM_PROVIDERS},
-    model_registry_lookup,
     openai_compat::OpenAiCompatProvider,
-    tool_capable,
+    provider_model_lookup, tool_capable,
     types::ModelInfo,
 };
 
@@ -21,35 +20,55 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
     models.retain(|m| seen.insert(m.id.clone()));
     let mut chat_filtered = Vec::with_capacity(models.len());
     for m in models {
-        if model_registry_lookup::is_chat_model(canonical_provider, &m.id).await {
+        if provider_model_lookup::is_chat_model(canonical_provider, &m.id).await {
             chat_filtered.push(m);
         }
     }
     let mut models = chat_filtered;
     let all_free = is_provider_all_free(canonical_provider);
     for m in &mut models {
-        match model_registry_lookup::capabilities(canonical_provider, &m.id).await {
-            Some(caps) => {
-                m.supports_tools = m.supports_tools || caps.supports_tools;
-                m.supports_vision = m.supports_vision
-                    || caps.supports_vision
-                    || tool_capable::supports_vision(canonical_provider, &m.id);
-                m.supports_thinking = m.supports_thinking
-                    || caps.supports_thinking
-                    || tool_capable::supports_thinking(canonical_provider, &m.id);
+        let local_limits = provider_model_lookup::local_limits(canonical_provider, &m.id);
+        if let Some(limits) = local_limits {
+            m.context_length = limits.context_window;
+            m.max_output_tokens = limits.max_output_tokens;
+        }
+        if let Some(caps) = provider_model_lookup::local_capabilities(canonical_provider, &m.id) {
+            m.supports_tools = caps.supports_tools;
+            m.supports_vision = caps.supports_vision;
+            m.supports_thinking = caps.supports_thinking;
+            m.reasoning_modes = crate::services::reasoning::supported_modes(
+                canonical_provider,
+                &m.id,
+                m.supports_thinking,
+            )
+            .iter()
+            .map(|mode| mode.to_string())
+            .collect();
+        } else {
+            if let Some(caps) = provider_model_lookup::capabilities(canonical_provider, &m.id).await
+            {
+                m.supports_tools |= caps.supports_tools;
+                m.supports_vision |= caps.supports_vision;
+                m.supports_thinking |= caps.supports_thinking;
             }
-            None => {
-                if !m.supports_tools {
-                    m.supports_tools = tool_capable::supports_tools(canonical_provider, &m.id);
-                }
-                if !m.supports_vision {
-                    m.supports_vision = tool_capable::supports_vision(canonical_provider, &m.id);
-                }
-                if !m.supports_thinking {
-                    m.supports_thinking =
-                        tool_capable::supports_thinking(canonical_provider, &m.id);
-                }
+            m.supports_tools |= tool_capable::supports_tools(canonical_provider, &m.id);
+            m.supports_vision |= tool_capable::supports_vision(canonical_provider, &m.id);
+            m.supports_thinking |= tool_capable::supports_thinking(canonical_provider, &m.id);
+            if !m.supports_thinking {
+                m.reasoning_modes.clear();
+            } else if m.reasoning_modes.is_empty() {
+                m.reasoning_modes =
+                    crate::services::reasoning::supported_modes(canonical_provider, &m.id, true)
+                        .iter()
+                        .map(|mode| mode.to_string())
+                        .collect();
             }
+        }
+        if m.default_reasoning_mode
+            .as_ref()
+            .is_some_and(|mode| !m.reasoning_modes.contains(mode))
+        {
+            m.default_reasoning_mode = None;
         }
         if all_free {
             m.is_free = true;
@@ -72,7 +91,10 @@ pub async fn test_llm_connection(provider_id: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn supports_tool_use(provider_id: String, model_id: String) -> bool {
     let canonical_provider = crate::services::llm::route::canonical_provider_id(&provider_id);
-    model_registry_lookup::capabilities(canonical_provider, &model_id)
+    if let Some(caps) = provider_model_lookup::local_capabilities(canonical_provider, &model_id) {
+        return caps.supports_tools;
+    }
+    provider_model_lookup::capabilities(canonical_provider, &model_id)
         .await
         .is_some_and(|caps| caps.supports_tools)
         || crate::services::llm::runtime_models::lookup(canonical_provider, &model_id)

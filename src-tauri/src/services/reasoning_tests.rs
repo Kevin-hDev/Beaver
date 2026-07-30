@@ -49,8 +49,8 @@ fn provider_specific_modes_are_distinct() {
         &["off", "auto"]
     );
     assert_eq!(
-        supported_modes("mistral", "magistral-medium-latest", true),
-        &["auto"]
+        supported_modes("mistral", "mistral-medium-3", true),
+        &["off", "high"]
     );
     assert!(supported_modes("mistral", "mistral-small-2506", true).is_empty());
     assert_eq!(

@@ -63,6 +63,38 @@ fn invalid_runtime_output_limits_are_ignored() {
 }
 
 #[test]
+fn invalid_provider_model_ids_and_metadata_are_filtered() {
+    let body = json!({
+        "data": [
+            {"id": "../invalid"},
+            {"id": "valid-model", "owned_by": "bad\nowner"}
+        ]
+    });
+
+    let models = parse_models_list(&body, "openai").unwrap();
+
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, "valid-model");
+    assert!(models[0].owned_by.is_none());
+}
+
+#[test]
+fn local_limits_override_conflicting_runtime_metadata() {
+    let body = json!({
+        "data": [{
+            "id": "o3",
+            "context_length": 8_192,
+            "max_output_tokens": 4_096
+        }]
+    });
+
+    let model = parse_models_list(&body, "openai").unwrap().remove(0);
+
+    assert_eq!(model.context_length, Some(200_000));
+    assert_eq!(model.max_output_tokens, Some(100_000));
+}
+
+#[test]
 fn google_models_use_name_based_reasoning_modes() {
     let body = json!({
         "data": [
@@ -122,7 +154,7 @@ fn openrouter_new_models_use_provider_specific_reasoning_modes() {
                 "supported_parameters": ["tools", "reasoning"]
             },
             {
-                "id": "openai/gpt-5.6-terra-pro",
+                "id": "openai/gpt-5.6-terra",
                 "supported_parameters": ["tools", "reasoning"]
             },
             {
@@ -141,9 +173,9 @@ fn openrouter_new_models_use_provider_specific_reasoning_modes() {
         .iter()
         .find(|model| model.id == "x-ai/grok-4.5")
         .unwrap();
-    let terra_pro = models
+    let terra = models
         .iter()
-        .find(|model| model.id == "openai/gpt-5.6-terra-pro")
+        .find(|model| model.id == "openai/gpt-5.6-terra")
         .unwrap();
 
     assert_eq!(
@@ -151,19 +183,36 @@ fn openrouter_new_models_use_provider_specific_reasoning_modes() {
         ["off", "low", "medium", "high", "xhigh", "max"]
     );
     assert_eq!(grok.reasoning_modes, ["low", "medium", "high"]);
-    assert_eq!(terra_pro.reasoning_modes, sol.reasoning_modes);
+    assert_eq!(terra.reasoning_modes, sol.reasoning_modes);
 }
 
 #[test]
-fn non_streaming_gpt_56_uses_max_completion_tokens() {
-    let request = ChatRequest {
-        model: "gpt-5.6-sol".to_string(),
-        max_tokens: Some(4_096),
-        ..ChatRequest::default()
-    };
+fn non_streaming_output_limit_field_matches_each_api() {
+    for (provider, model, expected, absent) in [
+        (
+            "openai",
+            "gpt-5.6-sol",
+            "max_completion_tokens",
+            "max_tokens",
+        ),
+        ("openai", "o3", "max_completion_tokens", "max_tokens"),
+        ("openai", "gpt-4o", "max_tokens", "max_completion_tokens"),
+        ("moonshot", "kimi-k3", "max_completion_tokens", "max_tokens"),
+        (
+            "moonshot",
+            "kimi-k2.7-code",
+            "max_tokens",
+            "max_completion_tokens",
+        ),
+    ] {
+        let request = ChatRequest {
+            model: model.to_string(),
+            max_tokens: Some(4_096),
+            ..ChatRequest::default()
+        };
+        let payload = build_payload(&request, provider, false);
 
-    let payload = build_payload(&request, false);
-
-    assert_eq!(payload["max_completion_tokens"], 4_096);
-    assert!(payload.get("max_tokens").is_none());
+        assert_eq!(payload[expected], 4_096, "{provider}/{model}");
+        assert!(payload.get(absent).is_none(), "{provider}/{model}");
+    }
 }

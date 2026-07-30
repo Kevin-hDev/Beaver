@@ -1,4 +1,5 @@
 mod api;
+mod api_capabilities;
 mod api_images;
 mod api_tools;
 pub(crate) mod common;

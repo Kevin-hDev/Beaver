@@ -1,5 +1,5 @@
-use super::model_registry::get_lock;
-use super::model_registry_lookup::find_provider_entry;
+use super::litellm_catalog::get_lock;
+use super::litellm_catalog_lookup::find_provider_entry;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ModelPricing {
@@ -9,8 +9,8 @@ pub struct ModelPricing {
 }
 
 pub async fn lookup(provider_id: &str, model_id: &str) -> Option<ModelPricing> {
-    let registry = get_lock().read().await;
-    let entry = find_provider_entry(&registry, provider_id, model_id)?;
+    let catalog = get_lock().read().await;
+    let entry = find_provider_entry(&catalog, provider_id, model_id)?;
     Some(ModelPricing {
         input_cost_per_token: entry.input_cost_per_token,
         output_cost_per_token: entry.output_cost_per_token,
@@ -24,7 +24,7 @@ mod tests {
 
     #[test]
     fn bare_price_must_belong_to_the_requested_provider() {
-        let registry = super::super::model_registry::parse_registry(
+        let registry = super::super::litellm_catalog::parse_catalog(
             r#"{
                 "shared-model": {"litellm_provider":"openai","mode":"chat"},
                 "xai/shared-model": {"litellm_provider":"xai","mode":"chat"}
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn google_uses_the_gemini_registry_identity() {
-        let registry = super::super::model_registry::parse_registry(
+        let registry = super::super::litellm_catalog::parse_catalog(
             r#"{"flash":{"litellm_provider":"gemini","mode":"chat"}}"#,
         );
 

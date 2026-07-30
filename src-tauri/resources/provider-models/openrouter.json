@@ -1,0 +1,11 @@
+{
+  "provider": "openrouter",
+  "schema_version": 1,
+  "verified_at": "2026-07-30",
+  "source_urls": [
+    "https://openrouter.ai/models",
+    "https://openrouter.ai/docs/api-reference/list-available-models"
+  ],
+  "inherits_upstream": true,
+  "models": []
+}

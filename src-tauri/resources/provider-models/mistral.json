@@ -1,0 +1,26 @@
+{
+  "provider": "mistral",
+  "schema_version": 1,
+  "verified_at": "2026-07-30",
+  "source_urls": [
+    "https://docs.mistral.ai/models/overview",
+    "https://docs.mistral.ai/models/model-cards/mistral-medium-3-5-26-04",
+    "https://docs.mistral.ai/models/model-cards/mistral-small-4-0-26-03",
+    "https://docs.mistral.ai/models/model-cards/mistral-large-3-25-12",
+    "https://docs.mistral.ai/models/model-cards/codestral-25-08",
+    "https://docs.mistral.ai/models/model-cards/leanstral-1-5",
+    "https://docs.mistral.ai/models/model-cards/ministral-3-14b-25-12",
+    "https://docs.mistral.ai/models/model-cards/ministral-3-8b-25-12",
+    "https://docs.mistral.ai/models/model-cards/ministral-3-3b-25-12"
+  ],
+  "models": [
+    {"id":"mistral-medium-3-5","aliases":["mistral-medium-3","mistral-medium-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"mistral-small-2603","aliases":["mistral-small-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"mistral-large-2512","aliases":["mistral-large-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":false},
+    {"id":"codestral-2508","aliases":["codestral-latest"],"context_window":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":false},
+    {"id":"labs-leanstral-1-5","context_window":262144,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":false},
+    {"id":"ministral-14b-2512","aliases":["ministral-14b-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":false},
+    {"id":"ministral-8b-2512","aliases":["ministral-8b-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":false},
+    {"id":"ministral-3b-2512","aliases":["ministral-3b-latest"],"context_window":262144,"supports_tools":true,"supports_vision":true,"supports_thinking":false}
+  ]
+}

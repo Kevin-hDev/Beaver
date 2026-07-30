@@ -62,11 +62,6 @@ pub fn supported_modes(
         "groq" => &["auto"],
         "deepseek" => &["off", "high", "xhigh"],
         "mistral"
-            if crate::services::llm::providers::mistral::is_native_reasoning(&lower(model)) =>
-        {
-            &["auto"]
-        }
-        "mistral"
             if crate::services::llm::providers::mistral::is_adjustable_reasoning(&lower(model)) =>
         {
             &["off", "high"]

@@ -55,7 +55,7 @@ impl OpenAiCompatProvider {
         purpose: RequestPurpose,
     ) -> Result<ChatResponse, LlmError> {
         let url = format!("{}/chat/completions", self.route.base_url);
-        let payload = build_payload(&request, false);
+        let payload = build_payload(&request, self.route.canonical_provider_id, false);
         let usage_generation =
             crate::services::provider_usage::credential_generation(self.route.chat_provider_id);
         let response = self

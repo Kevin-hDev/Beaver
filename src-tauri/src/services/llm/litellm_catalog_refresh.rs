@@ -1,5 +1,5 @@
-use super::model_registry::{
-    get_lock, is_body_size_ok, is_trusted_host, parse_registry, MAX_BODY_BYTES,
+use super::litellm_catalog::{
+    get_lock, is_body_size_ok, is_trusted_host, parse_catalog, MAX_BODY_BYTES,
 };
 use futures_util::StreamExt;
 use std::io::Read;
@@ -54,8 +54,8 @@ pub async fn refresh() {
         Some(body) => body,
         None => return,
     };
-    let registry = parse_registry(&body);
-    if registry.len() < 100 {
+    let catalog = parse_catalog(&body);
+    if catalog.len() < 100 {
         return;
     }
     if let Some(parent) = cached.parent() {
@@ -66,7 +66,7 @@ pub async fn refresh() {
     if crate::services::private_store::atomic_write(&cached, body.as_bytes()).is_err() {
         return;
     }
-    *get_lock().write().await = registry;
+    *get_lock().write().await = catalog;
 }
 
 async fn read_body(response: reqwest::Response) -> Option<String> {
