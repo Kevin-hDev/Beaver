@@ -42,12 +42,17 @@
   color: var(--ink);
 }
 
+/* nowrap + flex-shrink comme le système .btn partagé : en concurrence
+   horizontale (cf. .akd-header), le libellé se coupait en deux lignes qui
+   débordaient d'un bouton bloqué à 28px de haut. Le bouton s'élargit. */
 .ak-connectors-btn {
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 6px;
   height: 28px;
   padding: 0 var(--chrome-3);
+  white-space: nowrap;
   background: var(--pulse);
   border: 1px solid var(--pulse);
   border-radius: var(--radius-sm);

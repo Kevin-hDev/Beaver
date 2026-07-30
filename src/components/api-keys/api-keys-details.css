@@ -16,10 +16,14 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: var(--space-md);
   margin-bottom: 28px;
 }
 
+/* C'est le nom et la description qui cèdent la place, jamais les actions :
+   sans min-width, un texte long pousse les boutons hors du cadre. */
 .akd-provider-info {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -39,6 +43,7 @@
 }
 
 .akd-header-actions {
+  flex: none;
   display: flex;
   gap: 4px;
   align-items: center;
