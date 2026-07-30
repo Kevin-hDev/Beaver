@@ -1,0 +1,11 @@
+Review follow-up (2026-07-30) — per-model LLM configuration
+
+Architecture decision: provider /models endpoints remain the source of models currently offered. The embedded and auto-refreshed LiteLLM registry only enriches each discovered model with its own configuration.
+
+Implementation: max_output_tokens is resolved per model through one centralized provider-aware lookup shared with pricing. Explicit user limits are clamped to the model limit. Unknown or newly released models retain the provider fallback. Bare LiteLLM entries are accepted only when their declared provider matches, preventing cross-provider collisions.
+
+Examples covered: OpenAI o3 = 100000, GPT-4o = 16384, and OpenRouter openai/o3-mini = 65536. An OpenRouter model without an OpenRouter-specific registry entry does not reuse OpenAI's bare entry.
+
+Splash follow-up: extracted the provider grid, bounded configured provider IDs to 32, and added regression tests for scrollable content, persistent actions, adaptive spacing, and import layouts.
+
+Validation: 2505 Rust tests, 1660 frontend tests, 2 CEF tests, and 46 extension-host tests passed. TypeScript, frontend lint, cargo check, cargo clippy with warnings denied, cargo fmt, diff checks, and Graphify update also passed.
