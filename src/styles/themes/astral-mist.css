@@ -10,6 +10,8 @@
   --surface: var(--surface-glass);
   --surface-hover: rgba(154, 181, 213, 0.10);
   --edge: rgba(186, 205, 226, 0.12);
+  --tabbar-track: rgba(0, 2, 8, 0.55);
+  --tabbar-active-bg: rgba(154, 181, 213, 0.14);
   --ink: #dce4ee;
   --ink-muted: #aab9cb;
   --ink-faint: #7487a1;

@@ -1,8 +1,16 @@
+/* Piste en retrait qui regroupe les onglets, l'actif posé en relief dessus.
+   `fit-content` la fait épouser les libellés : elle ne s'étend pas sur toute
+   la colonne, où deux onglets laisseraient une bande vide à droite. */
 .settings-tabbar {
   display: flex;
   flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
   gap: var(--chrome-1);
   margin-bottom: var(--space-lg);
+  padding: var(--chrome-1);
+  border-radius: var(--radius-md);
+  background: var(--tabbar-track);
 }
 
 /* Les pilules épousent leur libellé plutôt que de se partager la colonne :
@@ -15,7 +23,9 @@
   gap: var(--space-2xs);
   min-width: 0;
   padding: var(--space-xs) var(--space-md);
-  border: none;
+  /* Bordure transparente au repos : sans elle, l'onglet qui devient actif
+     grandit d'un pixel et décale ses voisins. */
+  border: var(--line-thin) solid transparent;
   border-radius: var(--radius-sm);
   background: none;
   color: var(--ink-muted);
@@ -30,7 +40,8 @@
 }
 
 .settings-tabbar-item.active {
-  background: var(--surface);
+  border-color: var(--edge);
+  background: var(--tabbar-active-bg);
   box-shadow: var(--shadow-sm);
   color: var(--ink);
 }
