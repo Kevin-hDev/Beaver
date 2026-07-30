@@ -91,7 +91,6 @@ body.os-mac {
   gap: var(--nav-item-gap);
   justify-content: flex-start;
   width: auto;
-  height: var(--nav-item-height);
   padding-left: var(--nav-item-padding-x);
 }
 
@@ -108,9 +107,16 @@ body.os-mac {
   text-overflow: ellipsis;
 }
 
+/* Dépliage au survol désactivé : la barre garde sa largeur, donc l'élément
+   aussi. Il manquait la largeur et le centrage — la règle de dépliage les
+   emportait, et le fond de l'élément actif s'élargissait puis se décalait
+   alors que rien d'autre ne bougeait. */
 .sb-locked:hover .sb-nav-item {
   gap: 0;
   justify-content: center;
+  width: var(--nav-item-height);
+  margin-left: auto;
+  margin-right: auto;
   padding-left: 0;
 }
 
