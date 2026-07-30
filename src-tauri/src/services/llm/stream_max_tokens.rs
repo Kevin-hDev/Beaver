@@ -51,7 +51,9 @@ fn select_sources(
     (
         runtime_context.or_else(|| registered.and_then(|limits| limits.context_window)),
         runtime_output.or_else(|| registered.and_then(|limits| limits.max_output_tokens)),
-        registered.and_then(|limits| limits.default_output_tokens),
+        // Seul le registre Beaver distingue le défaut du maximum : LiteLLM et les
+        // endpoints `/models` ne publient que la limite haute.
+        None,
     )
 }
 
