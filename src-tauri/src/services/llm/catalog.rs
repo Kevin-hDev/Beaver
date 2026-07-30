@@ -20,8 +20,13 @@ pub struct ProviderSpec {
     pub signup_url: &'static str,
     /// Certains providers plafonnent la sortie si `max_tokens` absent
     /// (OpenAI/DeepSeek = 4k, Gemini = 8k). On force un max raisonnable.
-    /// Groq/Mistral/Cerebras = unbounded → None (pas de plafond).
+    /// Groq/Cerebras = unbounded → None (pas de plafond).
     /// **Groq** : surtout ne PAS mettre car leur free tier compte max_tokens dans le TPM budget.
+    ///
+    /// La valeur part pour **tous** les modèles du provider (cf.
+    /// `stream_http::build_chat_payload`), donc on retient le plafond de sortie
+    /// le plus bas de son catalogue, pas celui de son meilleur modèle : au-delà,
+    /// l'API refuse la requête sur les modèles à contexte plus court.
     pub default_max_tokens: Option<u32>,
 }
 
@@ -63,6 +68,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://api.mistral.ai/v1",
         models_endpoint: "/models",
         signup_url: "https://console.mistral.ai/api-keys",
+        // Mistral ne publie pas de plafond de sortie distinct du contexte du
+        // modèle (vérifié le 2026-07-30) : rien de mieux que cette valeur sûre.
         default_max_tokens: Some(64_000),
     },
     ProviderSpec {
@@ -81,6 +88,9 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://openrouter.ai/api/v1",
         models_endpoint: "/models",
         signup_url: "https://openrouter.ai/settings/keys",
+        // Reste bas volontairement : OpenRouter revend ~315 modèles de plafonds
+        // très différents, et la valeur part pour tous. Le plus bas du lot est
+        // hors de portée, donc on ne peut pas la relever sans casser des modèles.
         default_max_tokens: Some(64_000),
     },
     ProviderSpec {
@@ -90,7 +100,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://api.openai.com/v1",
         models_endpoint: "/models",
         signup_url: "https://platform.openai.com/api-keys",
-        default_max_tokens: Some(64_000),
+        // GPT-5.6 Sol, Terra et Luna : 128k de sortie chacun (vérifié le 2026-07-30).
+        default_max_tokens: Some(128_000),
     },
     ProviderSpec {
         id: "deepseek",
@@ -99,7 +110,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://api.deepseek.com/v1",
         models_endpoint: "/models",
         signup_url: "https://platform.deepseek.com/api_keys",
-        default_max_tokens: Some(64_000),
+        // V4-Flash et V4-Pro : 384k de sortie chacun (vérifié le 2026-07-30).
+        default_max_tokens: Some(384_000),
     },
     ProviderSpec {
         id: "xai",
@@ -112,6 +124,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         // La liste vient donc encore de XAI_MODELS.
         models_endpoint: "",
         signup_url: "https://console.x.ai",
+        // xAI ne publie pas de plafond de sortie distinct du contexte
+        // (vérifié le 2026-07-30) : rien de mieux que cette valeur sûre.
         default_max_tokens: Some(64_000),
     },
     ProviderSpec {
@@ -121,7 +135,9 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://api.moonshot.ai/v1",
         models_endpoint: "/models",
         signup_url: "https://platform.kimi.ai/console/api-keys",
-        default_max_tokens: Some(64_000),
+        // Défaut documenté de Kimi K3, extensible à 1M (vérifié le 2026-07-30).
+        // Les générations K2 antérieures ne publient pas leur plafond.
+        default_max_tokens: Some(131_072),
     },
     ProviderSpec {
         id: "zai",
@@ -130,6 +146,8 @@ pub const LLM_PROVIDERS: &[ProviderSpec] = &[
         base_url: "https://api.z.ai/api/paas/v4",
         models_endpoint: "",
         signup_url: "https://z.ai/manage-apikey/apikey-list",
-        default_max_tokens: Some(64_000),
+        // 96k et non les 128k de GLM-5.2 : toute la famille GLM-4.5, encore au
+        // catalogue, s'arrête là (vérifié le 2026-07-30).
+        default_max_tokens: Some(96_000),
     },
 ];
