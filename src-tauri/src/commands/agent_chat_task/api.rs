@@ -3,7 +3,7 @@ use super::params::StreamTaskParams;
 use crate::services::agent_local::tool_catalog;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm;
-use crate::services::llm::{model_registry, tool_capable};
+use crate::services::llm::{model_registry_lookup, tool_capable};
 
 struct ApiCapabilities {
     tools: bool,
@@ -149,15 +149,17 @@ async fn resolve_capabilities(
     params: &StreamTaskParams,
     canonical_provider: &str,
 ) -> ApiCapabilities {
-    let registry_caps = model_registry::lookup(canonical_provider, &params.model).await;
+    let registry_caps =
+        model_registry_lookup::capabilities(canonical_provider, &params.model).await;
     let runtime_caps = llm::runtime_models::lookup(canonical_provider, &params.model);
     ApiCapabilities {
         tools: params.capability_hints.supports_tools.unwrap_or_else(|| {
             registry_caps
                 .as_ref()
-                .map(|c| c.supports_tools)
-                .or_else(|| runtime_caps.as_ref().map(|model| model.supports_tools))
-                .unwrap_or(false)
+                .is_some_and(|caps| caps.supports_tools)
+                || runtime_caps
+                    .as_ref()
+                    .is_some_and(|model| model.supports_tools)
                 || tool_capable::supports_tools(canonical_provider, &params.model)
         }),
         thinking: params

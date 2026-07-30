@@ -49,6 +49,7 @@ pub fn codex_models() -> Vec<ModelInfo> {
             display_name: None,
             owned_by: Some("openai".to_string()),
             context_length: Some(spec.context_length),
+            max_output_tokens: None,
             supports_tools: true,
             supports_vision: spec.supports_vision,
             supports_thinking: true,

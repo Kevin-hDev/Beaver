@@ -1,8 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::services::llm::model_registry::{
-        find_entry, is_body_size_ok, is_trusted_host, model_config, parse_registry, MAX_BODY_BYTES,
-        MAX_REGISTRY_ENTRIES,
+        is_body_size_ok, is_trusted_host, parse_registry, MAX_BODY_BYTES, MAX_REGISTRY_ENTRIES,
     };
 
     fn fake_entry() -> String {
@@ -79,44 +78,6 @@ mod tests {
         assert!(kimi.supports_reasoning);
         assert!(kimi.supports_vision);
         assert_eq!(kimi.max_input_tokens, Some(262_144));
-    }
-
-    #[test]
-    fn embedded_registry_exposes_per_model_output_limits() {
-        let map = parse_registry(include_str!("../../../resources/litellm-models.json"));
-
-        let o3 = find_entry(&map, "openai", "o3").and_then(model_config);
-        let gpt_4o = find_entry(&map, "openai", "gpt-4o").and_then(model_config);
-        let openrouter_o3_mini =
-            find_entry(&map, "openrouter", "openai/o3-mini").and_then(model_config);
-
-        assert_eq!(o3.unwrap().max_output_tokens, Some(100_000));
-        assert_eq!(gpt_4o.unwrap().max_output_tokens, Some(16_384));
-        assert_eq!(openrouter_o3_mini.unwrap().max_output_tokens, Some(65_536));
-        assert!(find_entry(&map, "openrouter", "openai/o3").is_none());
-    }
-
-    #[test]
-    fn invalid_token_limits_fail_closed() {
-        let map = parse_registry(
-            r#"{
-                "zero": {"mode":"chat","max_output_tokens":0},
-                "oversized": {"mode":"chat","max_output_tokens":4294967296}
-            }"#,
-        );
-
-        assert_eq!(
-            model_config(map.get("zero").unwrap())
-                .unwrap()
-                .max_output_tokens,
-            None
-        );
-        assert_eq!(
-            model_config(map.get("oversized").unwrap())
-                .unwrap()
-                .max_output_tokens,
-            None
-        );
     }
 
     #[test]

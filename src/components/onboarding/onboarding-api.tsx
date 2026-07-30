@@ -31,8 +31,9 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
     ])
       .then(([items, configured]) => {
         const llmProviders = items.filter((item) => item.category === "llm").slice(0, 32);
+        const displayedIds = new Set(llmProviders.map((provider) => provider.id));
         setProviders(llmProviders);
-        setConfiguredIds(configured.slice(0, 32));
+        setConfiguredIds(configured.filter((id) => displayedIds.has(id)));
         setSelectedId((current) => current || llmProviders[0]?.id || "");
       })
       .catch(() => {

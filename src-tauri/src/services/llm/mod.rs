@@ -14,8 +14,10 @@ pub mod compress_hook;
 mod kimi_models;
 #[cfg(test)]
 mod kimi_models_tests;
+mod model_metadata;
 pub mod model_pricing;
 pub mod model_registry;
+pub(crate) mod model_registry_lookup;
 mod model_registry_refresh;
 pub mod openai_compat;
 mod openai_compat_models;

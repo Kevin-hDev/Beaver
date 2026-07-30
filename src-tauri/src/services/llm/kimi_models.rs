@@ -21,7 +21,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
     if !super::runtime_models::valid_model_id(&id) {
         return None;
     }
-    let context_length = match positive_u32(&value["context_length"]) {
+    let context_length = match super::model_metadata::positive_u32(&value["context_length"]) {
         Some(length) => length,
         None => return Some(Err(LlmError::Parse("catalogue Kimi invalide".to_string()))),
     };
@@ -61,6 +61,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
             .or_else(|| known_display_name(&id).map(str::to_string)),
         owned_by: Some("moonshot".to_string()),
         context_length: Some(context_length),
+        max_output_tokens: super::model_metadata::positive_u32(&value["max_output_tokens"]),
         supports_tools: declared_bool(
             value,
             "supports_tool_use",
@@ -113,14 +114,6 @@ fn declared_bool(value: &Value, key: &str, fallback: bool) -> bool {
         None => fallback,
         Some(declared) => declared.as_bool().unwrap_or(false),
     }
-}
-
-fn positive_u32(value: &Value) -> Option<u32> {
-    let length = value.as_u64()?;
-    if length == 0 {
-        return None;
-    }
-    length.try_into().ok()
 }
 
 fn safe_display_name(value: &Value) -> Option<String> {

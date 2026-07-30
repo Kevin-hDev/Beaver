@@ -44,12 +44,15 @@ pub fn parse_models_list(
         .filter_map(|m| {
             let id = m["id"].as_str()?.to_string();
             let owned_by = m["owned_by"].as_str().map(|s| s.to_string());
-            let context_length = m["context_length"]
-                .as_u64()
-                .or_else(|| m["context_window"].as_u64())
-                .or_else(|| m["max_context_length"].as_u64())
-                .map(|v| v as u32)
-                .or_else(|| known_context_length(provider_id, &id));
+            let context_length = [
+                &m["context_length"],
+                &m["context_window"],
+                &m["max_context_length"],
+            ]
+            .into_iter()
+            .find_map(super::model_metadata::positive_u32)
+            .or_else(|| known_context_length(provider_id, &id));
+            let max_output_tokens = super::model_metadata::output_limit(m);
             let supported_parameters = supported_parameters(m);
             let has_param = |name: &str| supported_parameters.iter().any(|p| p == name);
             // OpenRouter: `supported_parameters` incluant "tools"
@@ -94,6 +97,7 @@ pub fn parse_models_list(
                 display_name: None,
                 owned_by,
                 context_length,
+                max_output_tokens,
                 supports_tools,
                 supports_vision,
                 supports_thinking,

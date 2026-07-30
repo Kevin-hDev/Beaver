@@ -64,6 +64,8 @@ pub struct ModelInfo {
     pub owned_by: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context_length: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_output_tokens: Option<u32>,
     #[serde(default)]
     pub supports_tools: bool,
     #[serde(default)]

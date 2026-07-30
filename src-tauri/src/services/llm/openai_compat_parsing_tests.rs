@@ -9,6 +9,7 @@ fn openrouter_models_use_supported_parameters_for_reasoning() {
             {
                 "id": "provider/reasoning-model",
                 "context_length": 128000,
+                "top_provider": { "max_completion_tokens": 65535 },
                 "pricing": { "prompt": "0", "completion": "0" },
                 "supported_parameters": ["tools", "reasoning", "include_reasoning"]
             },
@@ -32,12 +33,33 @@ fn openrouter_models_use_supported_parameters_for_reasoning() {
 
     assert!(reasoning.supports_tools);
     assert!(reasoning.supports_thinking);
+    assert_eq!(reasoning.max_output_tokens, Some(65_535));
     assert_eq!(
         reasoning.reasoning_modes,
         ["off", "auto", "low", "medium", "high", "xhigh"]
     );
     assert!(!plain.supports_thinking);
     assert!(plain.reasoning_modes.is_empty());
+}
+
+#[test]
+fn invalid_runtime_output_limits_are_ignored() {
+    let body = json!({
+        "data": [
+            {
+                "id": "provider/zero",
+                "top_provider": { "max_completion_tokens": 0 }
+            },
+            {
+                "id": "provider/oversized",
+                "top_provider": { "max_completion_tokens": 4294967296_u64 }
+            }
+        ]
+    });
+
+    let models = parse_models_list(&body, "openrouter").unwrap();
+
+    assert!(models.iter().all(|model| model.max_output_tokens.is_none()));
 }
 
 #[test]

@@ -91,9 +91,12 @@ async fn add_external_models(
         Ok(mut models) => {
             models.retain(|model| crate::services::llm::runtime_models::valid_model_id(&model.id));
             models.truncate(500);
-            if id == ProviderId::Moonshot {
-                crate::services::llm::runtime_models::replace_provider("moonshot", &models);
-            }
+            let canonical_provider = match id {
+                ProviderId::Xai => "xai",
+                ProviderId::Moonshot => "moonshot",
+                ProviderId::OpenAi => return,
+            };
+            crate::services::llm::runtime_models::replace_provider(canonical_provider, &models);
             response
                 .models
                 .extend(models.into_iter().map(|model| oauth_model(id, model)));

@@ -98,6 +98,7 @@ pub(super) fn static_model_infos(provider_id: &str) -> Option<Vec<ModelInfo>> {
                     display_name: None,
                     owned_by: None,
                     context_length: Some(m.ctx),
+                    max_output_tokens: None,
                     supports_tools: super::tool_capable::supports_tools(provider_id, m.id),
                     supports_vision: super::tool_capable::supports_vision(provider_id, m.id),
                     supports_thinking,

@@ -89,6 +89,26 @@ describe("OnboardingApi", () => {
     expect(screen.getByText("apiKeys.details.connected")).toBeTruthy();
   });
 
+  it("conserve le statut d'un provider affiche même après des identifiants sans rapport", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "list_llm_providers_catalog") {
+        return Promise.resolve([provider("mistral", "llm")]);
+      }
+      if (command === "list_configured_providers") {
+        return Promise.resolve([
+          ...Array.from({ length: 40 }, (_, index) => `legacy-${index}`),
+          "mistral",
+        ]);
+      }
+      return Promise.resolve();
+    });
+
+    render(<OnboardingApi onComplete={vi.fn()} onBack={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getAllByText("mistral").length).toBeGreaterThan(0));
+    expect(screen.getByText("apiKeys.details.connected")).toBeTruthy();
+  });
+
   it("teste puis enregistre la cle sans quitter la page", async () => {
     const onComplete = vi.fn();
     render(<OnboardingApi onComplete={onComplete} onBack={vi.fn()} />);

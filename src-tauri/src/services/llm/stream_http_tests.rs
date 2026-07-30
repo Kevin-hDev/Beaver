@@ -123,6 +123,60 @@ fn other_providers_keep_max_tokens() {
 }
 
 #[tokio::test]
+async fn groq_and_cerebras_payloads_omit_automatic_limits() {
+    for (provider, model) in [
+        ("groq", "llama-3.3-70b-versatile"),
+        ("cerebras", "llama3.1-8b"),
+    ] {
+        let route = route::resolve(provider).unwrap();
+        let resolved = super::super::stream_max_tokens::resolve(
+            provider,
+            model,
+            None,
+            route.auto_max_tokens,
+            route.fallback_max_tokens,
+        )
+        .await;
+        let cfg = RequestConfig {
+            provider_id: provider,
+            model,
+            messages: &[],
+            tools: &[],
+            think: false,
+            reasoning_mode: None,
+            max_tokens: None,
+            purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        };
+
+        let payload = build_chat_payload(&cfg, &route, resolved);
+
+        assert!(payload.get("max_tokens").is_none());
+        assert!(payload.get("max_completion_tokens").is_none());
+    }
+}
+
+#[tokio::test]
+async fn openrouter_uses_the_underlying_model_output_limit() {
+    for (model, expected) in [
+        ("google/gemini-2.5-pro", 65_535),
+        ("openai/gpt-4o", 16_384),
+        ("openai/o3-mini", 100_000),
+    ] {
+        let route = route::resolve("openrouter").unwrap();
+        let resolved = super::super::stream_max_tokens::resolve(
+            "openrouter",
+            model,
+            None,
+            route.auto_max_tokens,
+            route.fallback_max_tokens,
+        )
+        .await;
+
+        assert_eq!(resolved, Some(expected));
+    }
+}
+
+#[tokio::test]
 async fn timeout_above_secure_limit_uses_a_stable_code() {
     let cfg = RequestConfig {
         provider_id: "openai",

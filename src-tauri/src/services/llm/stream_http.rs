@@ -40,6 +40,7 @@ pub async fn post_chat_request_with_timeout(
         route.canonical_provider_id,
         cfg.model,
         cfg.max_tokens,
+        route.auto_max_tokens,
         route.fallback_max_tokens,
     )
     .await;
