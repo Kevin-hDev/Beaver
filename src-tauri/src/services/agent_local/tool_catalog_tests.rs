@@ -24,6 +24,7 @@ fn defaults_match_product_choice() {
 #[test]
 fn rejects_locked_and_unknown_tool_ids() {
     assert!(validate_optional_tool_id("bash").is_err());
+    assert!(validate_optional_tool_id("bash_write").is_err());
     assert!(validate_optional_tool_id("missing_tool").is_err());
     assert!(validate_optional_tool_id("load_skill").is_ok());
 }
@@ -35,6 +36,7 @@ fn filtered_definitions_keep_locked_and_enabled_optional_tools() {
     let names = tool_names(&filter_tool_definitions(defs, &enabled));
 
     assert!(has_tool(&names, "bash"));
+    assert!(has_tool(&names, "bash_write"));
     assert!(has_tool(&names, "search_mcp_tools"));
     assert!(has_tool(&names, "search_extension_tools"));
     assert!(has_tool(&names, "load_skill"));

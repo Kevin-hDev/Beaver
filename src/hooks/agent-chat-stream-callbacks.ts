@@ -12,19 +12,12 @@ import { applyToolResult } from "./agent-chat-tool-results";
 import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";
 import { finalizeStream, finishStream } from "./agent-chat-stream-finalize";
 import { applyContextUsage, applyGeneratedTokenCount } from "./agent-stream-context-usage";
+import { applyToolOutput } from "./agent-chat-stream-tool-output";
 
 export type { ChatState, ManagedStreamState, PermissionRequestState, StreamApplyResult };
 export { EMPTY_CHAT_STATE, createManagedStreamState, toChatState } from "./agent-chat-stream-types";
 export { finishPartialStream } from "./agent-chat-stream-finalize";
-
-export function clearInteractiveChoiceState(state: ChatState): ChatState {
-  const hidePlan = state.interactiveChoice?.kind === "plan_approval";
-  return {
-    ...state,
-    interactiveChoice: undefined,
-    planPreview: hidePlan ? null : state.planPreview,
-  };
-}
+export { clearInteractiveChoiceState } from "./agent-chat-interactive-state";
 
 export function applyStreamEvent(
   state: ManagedStreamState,
@@ -73,6 +66,9 @@ export function applyStreamEvent(
         name: event.data.name, args: event.data.arguments, domain: event.data.domain,
       }];
       next.activeStreamItem = toolItems(pendingToolIndices(next.currentTools));
+      break;
+    case "toolOutput":
+      applyToolOutput(next, event.data);
       break;
     case "toolResult": {
       if (isHiddenAgentTool(event.data.name)) {

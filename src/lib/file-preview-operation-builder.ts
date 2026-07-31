@@ -38,7 +38,7 @@ export function toolToFileOperations(
       }));
   }
   if (tool.is_error) return [];
-  if (tool.name === "bash" && tool.affected_paths?.length) {
+  if ((tool.name === "bash" || tool.name === "bash_write") && tool.affected_paths?.length) {
     return tool.affected_paths
       .filter((path) => path.trim())
       .map((path, pathIndex) => ({

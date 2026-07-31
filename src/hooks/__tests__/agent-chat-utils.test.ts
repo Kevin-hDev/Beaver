@@ -18,6 +18,16 @@ describe("toolsToRecords", () => {
     expect(r.summary).toBe("ls -la");
   });
 
+  it("conserve la dernière sortie live si le stream est interrompu", () => {
+    const [record] = toolsToRecords([{
+      name: "bash",
+      args: { command: "build" },
+      liveOutput: "compilation...",
+    }]);
+
+    expect(record.result).toBe("compilation...");
+  });
+
   it("read_file — summary = path", () => {
     const [r] = toolsToRecords([tool("read_file", { path: "/tmp/foo.txt" })]);
     expect(r.summary).toBe("/tmp/foo.txt");

@@ -62,6 +62,7 @@ const FILE_ICONS: Record<string, string> = {
   edit_file: "Pencil",
   process_image: "Pencil",
   bash: "TerminalWindow",
+  bash_write: "TerminalWindow",
   web_search: "Globe",
   web_fetch: "Link",
   list_dir: "FolderOpen",
@@ -88,8 +89,9 @@ export function toolDisplayInfo(
   projectPath: string | undefined,
   t: TFunction,
 ): ToolDisplayInfo {
-  if (tool.name === "bash") {
-    return { label: tool.name, summary: compactCommand(tool.summary), icon: iconFor(tool.name) };
+  if (tool.name === "bash" || tool.name === "bash_write") {
+    const summary = tool.name === "bash" ? compactCommand(tool.summary) : tool.summary;
+    return { label: "bash", summary, icon: iconFor(tool.name) };
   }
   if (tool.name === "web_search" || tool.name === "web_fetch") {
     return { label: tool.name, summary: tool.summary, icon: iconFor(tool.name) };

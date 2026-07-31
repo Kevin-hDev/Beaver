@@ -10,7 +10,7 @@ pub struct ToolGroupEntry {
 }
 
 const LOCKED_GROUPS: &[ToolGroupEntry] = &[
-    group("terminal", true, true, &["bash"]),
+    group("terminal", true, true, &["bash", "bash_write"]),
     group(
         "files",
         true,

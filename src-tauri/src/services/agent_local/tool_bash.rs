@@ -1,103 +1,121 @@
-use crate::services::agent_local::security;
-use crate::services::agent_local::types_tools::ShellOutput;
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
-use tokio::time::{timeout, Duration};
+use tokio_util::sync::CancellationToken;
 
-const MAX_LINES: usize = 2000;
+use super::tool_bash_progress::ShellProgress;
+use super::types_tools::ShellOutput;
+
+const MAX_COMMAND_BYTES: usize = 1024 * 1024;
+const MAX_INPUT_BYTES: usize = 64 * 1024;
+pub const DEFAULT_YIELD_MS: u64 = 10_000;
+const MIN_YIELD_MS: u64 = 250;
+const MAX_YIELD_MS: u64 = 30_000;
+const MAX_LINES: usize = 2_000;
 const MAX_BYTES: usize = 50 * 1024;
-const DEFAULT_TIMEOUT: u64 = 120;
-const MAX_TIMEOUT: u64 = 600;
 
+pub struct ShellExecutionContext<'a> {
+    pub owner_session_id: &'a str,
+    pub hard_timeout_secs: Option<u64>,
+    pub yield_time_ms: Option<u64>,
+    pub cancel: CancellationToken,
+    pub progress: Option<ShellProgress>,
+}
+
+pub async fn execute_shell_managed(
+    command: &str,
+    working_dir: &Path,
+    context: ShellExecutionContext<'_>,
+) -> Result<ShellOutput, String> {
+    validate_command(command)?;
+    if let Err(reason) = super::security::check_destructive_command(command) {
+        return Ok(super::tool_bash_result::blocked(reason));
+    }
+    if context.hard_timeout_secs == Some(0) {
+        return Err("Le timeout shell doit etre superieur a zero.".to_string());
+    }
+
+    let session = super::tool_bash_process::spawn(super::tool_bash_process::SpawnRequest {
+        command,
+        working_dir,
+        owner_session_id: context.owner_session_id,
+        hard_timeout_secs: context.hard_timeout_secs,
+        progress: context.progress,
+        agent_cancel: context.cancel.clone(),
+    })
+    .await?;
+    let snapshot = super::tool_bash_wait::wait(
+        &session,
+        yield_duration(context.yield_time_ms),
+        &context.cancel,
+        true,
+    )
+    .await;
+    session.set_progress(None);
+    let finished = !snapshot.running;
+    let output = super::tool_bash_result::from_snapshot(&session, snapshot);
+    if finished {
+        super::tool_bash_registry::remove(session.id());
+    }
+    Ok(output)
+}
+
+pub async fn control_shell_session(
+    process_id: &str,
+    input: Option<&str>,
+    stop: bool,
+    owner_session_id: &str,
+    yield_time_ms: Option<u64>,
+    cancel: CancellationToken,
+    progress: Option<ShellProgress>,
+) -> Result<ShellOutput, String> {
+    if input.is_some_and(|value| value.len() > MAX_INPUT_BYTES || value.contains('\0')) {
+        return Err("Entree shell invalide.".to_string());
+    }
+    let session = super::tool_bash_registry::get(process_id, owner_session_id)?;
+    session.set_progress(progress);
+    if stop || input.is_some_and(|value| value.contains('\u{3}')) {
+        session.cancel();
+    } else if let Some(input) = input {
+        if !input.is_empty() {
+            if let Err(error) = session.write_input(input.as_bytes()).await {
+                session.set_progress(None);
+                return Err(error);
+            }
+        }
+    }
+    let snapshot = super::tool_bash_wait::wait(
+        &session,
+        yield_duration(yield_time_ms),
+        &cancel,
+        true,
+    )
+    .await;
+    session.set_progress(None);
+    let output = super::tool_bash_result::from_snapshot(&session, snapshot);
+    if session.is_done() {
+        super::tool_bash_registry::remove(session.id());
+    }
+    Ok(output)
+}
+
+#[cfg(test)]
 pub async fn execute_shell(
     command: &str,
     working_dir: &Path,
     timeout_secs: Option<u64>,
 ) -> Result<ShellOutput, String> {
-    if let Err(reason) = security::check_destructive_command(command) {
-        return Ok(ShellOutput {
-            stdout: String::new(),
-            stderr: reason,
-            exit_code: -1,
-            timed_out: false,
-            affected_paths: Vec::new(),
-            file_changes: Vec::new(),
-        });
-    }
-
-    let before = super::tool_bash_changes::snapshot(working_dir);
-    if super::tool_bash_long::should_run_in_background(command) {
-        let output =
-            super::tool_bash_long::execute_background_shell(command, working_dir, timeout_secs)
-                .await?;
-        return Ok(with_changed_paths(output, working_dir, before));
-    }
-
-    let secs = timeout_secs.unwrap_or(DEFAULT_TIMEOUT).min(MAX_TIMEOUT);
-    let (shell, flag) = detect_shell();
-    let prepared_command = prepare_command(command);
-
-    let child = Command::new(&shell)
-        .args([&flag, &prepared_command])
-        .current_dir(working_dir)
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped())
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|e| format!("Erreur lancement shell: {e}"))?;
-
-    let output = timeout(Duration::from_secs(secs), child.wait_with_output()).await;
-
-    match output {
-        Ok(Ok(out)) => {
-            let stdout = truncate_output(&String::from_utf8_lossy(&out.stdout));
-            let stderr = truncate_output(&String::from_utf8_lossy(&out.stderr));
-            Ok(ShellOutput {
-                stdout,
-                stderr,
-                exit_code: out.status.code().unwrap_or(-1),
-                timed_out: false,
-                affected_paths: Vec::new(),
-                file_changes: Vec::new(),
-            })
-            .map(|output| with_changed_paths(output, working_dir, before))
-        }
-        Ok(Err(e)) => Err(format!("Erreur exécution: {e}")),
-        Err(_) => Ok(ShellOutput {
-            stdout: String::new(),
-            stderr: format!("Timeout après {secs}s"),
-            exit_code: -1,
-            timed_out: true,
-            affected_paths: Vec::new(),
-            file_changes: Vec::new(),
-        })
-        .map(|output| with_changed_paths(output, working_dir, before)),
-    }
-}
-
-fn with_changed_paths(
-    mut output: ShellOutput,
-    working_dir: &Path,
-    before: super::tool_bash_changes::FileSnapshot,
-) -> ShellOutput {
-    let after = super::tool_bash_changes::snapshot(working_dir);
-    output.file_changes = super::tool_bash_changes::changes(&before, &after);
-    output.affected_paths = output
-        .file_changes
-        .iter()
-        .map(|change| change.path.clone())
-        .collect();
-    output
-}
-
-fn prepare_command(command: &str) -> String {
-    if cfg!(target_os = "windows") {
-        format!(
-            "{command} ; $clgoStatus = if ($?) {{ 0 }} else {{ 1 }} ; exit $clgoStatus"
-        )
-    } else {
-        command.to_string()
-    }
+    let owner = uuid::Uuid::new_v4().to_string();
+    execute_shell_managed(
+        command,
+        working_dir,
+        ShellExecutionContext {
+            owner_session_id: &owner,
+            hard_timeout_secs: timeout_secs,
+            yield_time_ms: None,
+            cancel: CancellationToken::new(),
+            progress: None,
+        },
+    )
+    .await
 }
 
 pub(crate) fn resolve_workdir(
@@ -107,7 +125,7 @@ pub(crate) fn resolve_workdir(
     let candidate = match requested.map(str::trim).filter(|path| !path.is_empty()) {
         Some(path) => {
             if path.len() > 4_096 || path.contains('\0') || !Path::new(path).is_absolute() {
-                return Err("Le workdir Bash doit être un chemin absolu valide.".to_string());
+                return Err("Le workdir Bash doit etre un chemin absolu valide.".to_string());
             }
             PathBuf::from(path)
         }
@@ -121,20 +139,11 @@ pub(crate) fn resolve_workdir(
         .map_err(|_| "Le workdir Bash est inaccessible.".to_string())
 }
 
-pub(super) fn detect_shell() -> (String, String) {
-    if cfg!(target_os = "windows") {
-        ("powershell".to_string(), "-Command".to_string())
-    } else {
-        let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
-        (shell, "-c".to_string())
-    }
-}
-
 pub(super) fn truncate_output(output: &str) -> String {
     let mut result = String::new();
     for (line_count, line) in output.lines().enumerate() {
         if line_count >= MAX_LINES || result.len() + line.len() > MAX_BYTES {
-            result.push_str("\n... [tronqué]");
+            result.push_str("\n... [tronque]");
             break;
         }
         if line_count > 0 {
@@ -143,6 +152,21 @@ pub(super) fn truncate_output(output: &str) -> String {
         result.push_str(line);
     }
     result
+}
+
+fn validate_command(command: &str) -> Result<(), String> {
+    if command.trim().is_empty() || command.len() > MAX_COMMAND_BYTES || command.contains('\0') {
+        return Err("Commande shell invalide.".to_string());
+    }
+    Ok(())
+}
+
+fn yield_duration(value: Option<u64>) -> std::time::Duration {
+    std::time::Duration::from_millis(
+        value
+            .unwrap_or(DEFAULT_YIELD_MS)
+            .clamp(MIN_YIELD_MS, MAX_YIELD_MS),
+    )
 }
 
 #[cfg(test)]

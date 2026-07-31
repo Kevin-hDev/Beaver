@@ -111,7 +111,11 @@ function markPendingToolsCancelled(state: ManagedStreamState): ManagedStreamStat
     ...state,
     currentTools: state.currentTools.map((tool) => tool.result
       ? tool
-      : { ...tool, result: "Annulé.", isError: true }),
+      : {
+          ...tool,
+          result: tool.liveOutput ? `${tool.liveOutput}\n\nAnnulé.` : "Annulé.",
+          isError: true,
+        }),
     activeStreamItem: null,
   };
 }

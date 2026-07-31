@@ -13,7 +13,16 @@ pub(super) type Schema = &'static [(&'static str, Ty, bool)];
 static BASH: Schema = &[
     ("command", Ty::Str, true),
     ("timeout", Ty::Int, false),
+    ("yield_time_ms", Ty::Int, false),
+    ("yield-time-ms", Ty::Int, false),
     ("workdir", Ty::Str, false),
+];
+static BASH_WRITE: Schema = &[
+    ("session_id", Ty::Str, true),
+    ("chars", Ty::Str, false),
+    ("stop", Ty::Bool, false),
+    ("yield_time_ms", Ty::Int, false),
+    ("yield-time-ms", Ty::Int, false),
 ];
 static READ_FILE: Schema = &[
     ("path", Ty::Str, true),
@@ -110,6 +119,7 @@ static FORECAST_COMPARE_MODELS: Schema = &[("analysis_id", Ty::Str, true)];
 pub(super) fn schema(tool: &str) -> Option<Schema> {
     Some(match tool {
         "bash" => BASH,
+        "bash_write" => BASH_WRITE,
         "read_file" => READ_FILE,
         "write_file" => WRITE_FILE,
         "edit_file" => EDIT_FILE,

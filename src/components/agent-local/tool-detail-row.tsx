@@ -20,6 +20,8 @@ export interface RenderableTool {
   isActive?: boolean;
   args?: Record<string, unknown>;
   result?: string;
+  liveOutput?: string;
+  liveElapsedMs?: number;
   is_error?: boolean;
   content?: string;
   old_text?: string;
@@ -37,6 +39,7 @@ function toolSummary(t: ToolActivity): string {
   if (t.displaySummary !== undefined) return t.displaySummary;
   if (t.name === "load_skill") return "";
   if (t.name === "bash") return str(a.command);
+  if (t.name === "bash_write") return str(a.session_id);
   if (t.name === "grep" || t.name === "glob") return str(a.pattern);
   if (t.name === "read_file" || t.name === "write_file") return str(a.path);
   if (t.name === "edit_file") return str(a.path);
@@ -60,6 +63,8 @@ export function streamToolToRenderable(t: ToolActivity, isActive?: boolean): Ren
     isActive,
     args: t.args,
     result: t.result,
+    liveOutput: t.liveOutput,
+    liveElapsedMs: t.liveElapsedMs,
     is_error: t.isError,
     resolved_path: t.resolvedPath,
     content: t.name === "write_file" ? str(t.args.content) : undefined,
@@ -132,7 +137,8 @@ export function ToolDetailRow({
       isActive={isActive}
       isError={tool.is_error}
       errorMessage={errorMessage}
-      result={tool.is_error ? undefined : tool.result}
+      result={tool.is_error ? undefined : tool.result ?? tool.liveOutput}
+      elapsedMs={tool.result === undefined ? tool.liveElapsedMs : undefined}
       previewPath={tool.resolved_path}
       onFilePreview={onFilePreview}
     >

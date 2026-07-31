@@ -15,7 +15,13 @@ export function applyToolResult(
 ): ToolActivity[] {
   const next = [...tools];
   const apply = (i: number) => {
-    next[i] = { ...next[i], result: content, isError };
+    next[i] = {
+      ...next[i],
+      result: content,
+      isError,
+      liveOutput: undefined,
+      liveElapsedMs: undefined,
+    };
     if (resolvedPath) next[i].resolvedPath = resolvedPath;
     if (domain) next[i].domain = domain;
     if (affectedPaths?.length) next[i].affectedPaths = affectedPaths;

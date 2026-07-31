@@ -80,7 +80,7 @@ pub fn post_record_write(
     if tr.is_error {
         return;
     }
-    if name == "bash" && !tr.affected_paths.is_empty() {
+    if matches!(name, "bash" | "bash_write") && !tr.affected_paths.is_empty() {
         let paths = tr
             .affected_paths
             .iter()
@@ -141,6 +141,7 @@ pub async fn dispatch_or_interactive(
     working_dir: &std::path::Path,
     session_id: &str,
     cancel: CancellationToken,
+    tool_call_index: Option<usize>,
 ) -> ToolResult {
     if super::tool_catalog::is_optional_tool(name)
         && !super::agent_settings::is_tool_enabled(name).await
@@ -153,5 +154,17 @@ pub async fn dispatch_or_interactive(
     if name == "planmode" {
         return super::tool_plan::execute(args, on_event, session_id, cancel).await;
     }
-    super::tool_dispatcher::dispatch(name, args, working_dir, session_id, cancel).await
+    let progress = tool_call_index
+        .filter(|_| matches!(name, "bash" | "bash_write"))
+        .map(|index| super::tool_bash_progress::ShellProgress::new(on_event.clone(), index));
+    super::tool_dispatcher::dispatch_with_progress(
+        name,
+        args,
+        working_dir,
+        session_id,
+        cancel,
+        false,
+        progress,
+    )
+    .await
 }

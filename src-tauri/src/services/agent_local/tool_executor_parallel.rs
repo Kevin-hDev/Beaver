@@ -121,6 +121,7 @@ pub async fn run_with_parallel_reads(
                     request_id,
                     cancel: cancel.clone(),
                     plan_mode_active,
+                    tool_call_index: i,
                 },
             )
             .await;

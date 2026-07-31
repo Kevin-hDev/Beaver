@@ -42,6 +42,12 @@ pub enum StreamEvent {
         domain: Option<String>,
     },
     #[serde(rename_all = "camelCase")]
+    ToolOutput {
+        tool_call_index: usize,
+        content: String,
+        elapsed_ms: u64,
+    },
+    #[serde(rename_all = "camelCase")]
     ToolResult {
         name: String,
         content: String,

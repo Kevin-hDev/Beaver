@@ -55,6 +55,7 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
             _ => {}
         }
     }
+    validate_shell_numbers(tool, obj)?;
     if tool == "todo_delete" {
         let has_id = matches!(obj.get("id"), Some(value) if !value.is_null());
         let active = obj.get("active").and_then(Value::as_bool).unwrap_or(false);
@@ -74,6 +75,31 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
         }
     }
     Ok(Value::Object(cleaned))
+}
+
+fn validate_shell_numbers(
+    tool: &str,
+    args: &serde_json::Map<String, Value>,
+) -> Result<(), String> {
+    if tool == "bash" {
+        if let Some(timeout) = args.get("timeout").filter(|value| !value.is_null()) {
+            if timeout.as_u64().is_none_or(|seconds| seconds == 0) {
+                return Err("'timeout' doit être un entier positif".to_string());
+            }
+        }
+    }
+    if matches!(tool, "bash" | "bash_write") {
+        for name in ["yield-time_ms", "yield-time-ms"] {
+            if args
+                .get(name)
+                .filter(|value| !value.is_null())
+                .is_some_and(|value| value.as_u64().is_none())
+            {
+                return Err(format!("'{name}' doit être un entier positif ou nul"));
+            }
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

@@ -134,13 +134,6 @@ pub async fn run_agent_loop(
             }
             break;
         }
-        agent_loop_support::record_detected_tool_calls(
-            &session_id,
-            &request_id,
-            &result.tool_calls,
-            &working_dir,
-        )
-        .await;
         if turn == MAX_TURNS - 1 {
             eager_handle.abort();
             agent_loop_support::ensure_more_turns(turn, model).await?;

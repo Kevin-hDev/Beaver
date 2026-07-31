@@ -30,13 +30,18 @@ describe("toolCall", () => {
 
 describe("toolResult", () => {
   it("assigne le résultat par index valide", () => {
-    const currentTools = [{ name: "bash", args: {} }, { name: "grep", args: {} }];
+    const currentTools = [
+      { name: "bash", args: {} },
+      { name: "grep", args: {}, liveOutput: "en cours", liveElapsedMs: 500 },
+    ];
     const state = makeState({ currentTools });
     const result = applyStreamEvent(state, {
       event: "toolResult",
       data: { name: "grep", toolCallIndex: 1, content: "trouvé", isError: false },
     });
     expect(result.state.currentTools[1].result).toBe("trouvé");
+    expect(result.state.currentTools[1].liveOutput).toBeUndefined();
+    expect(result.state.currentTools[1].liveElapsedMs).toBeUndefined();
     expect(result.state.currentTools[0].result).toBeUndefined();
   });
 
@@ -150,5 +155,33 @@ describe("toolResult", () => {
       data: { name: "planmode", toolCallIndex: 0, content: "approved", isError: false },
     });
     expect(result.state.interactiveChoice).toBeUndefined();
+  });
+});
+
+describe("toolOutput", () => {
+  it("met à jour la sortie live sans terminer l'outil", () => {
+    const state = makeState({ currentTools: [{ name: "bash", args: { command: "build" } }] });
+    const result = applyStreamEvent(state, {
+      event: "toolOutput",
+      data: { toolCallIndex: 0, content: "compilation...", elapsedMs: 1_250 },
+    });
+
+    expect(result.state.currentTools[0].liveOutput).toBe("compilation...");
+    expect(result.state.currentTools[0].liveElapsedMs).toBe(1_250);
+    expect(result.state.currentTools[0].result).toBeUndefined();
+  });
+
+  it("retrouve le shell si un outil interne a décalé les index visibles", () => {
+    const state = makeState({ currentTools: [
+      { name: "bash", args: { command: "build" } },
+      { name: "grep", args: { pattern: "test" } },
+    ] });
+    const result = applyStreamEvent(state, {
+      event: "toolOutput",
+      data: { toolCallIndex: 1, content: "compilation...", elapsedMs: 500 },
+    });
+
+    expect(result.state.currentTools[0].liveOutput).toBe("compilation...");
+    expect(result.state.currentTools[1].liveOutput).toBeUndefined();
   });
 });

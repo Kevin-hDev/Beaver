@@ -202,6 +202,21 @@ describe("finishPartialStream", () => {
       result: "ok",
     });
   });
+
+  it("conserve la sortie live d'une commande interrompue", () => {
+    const result = finishPartialStream(makeState({
+      currentTools: [{
+        name: "bash",
+        args: { command: "build" },
+        liveOutput: "compilation...",
+      }],
+    }));
+
+    expect(result.assistantMessage?.tool_activities?.[0]).toMatchObject({
+      result: "compilation...\n\nAnnulé.",
+      is_error: true,
+    });
+  });
 });
 
 describe("done — limite messages assertion précise", () => {

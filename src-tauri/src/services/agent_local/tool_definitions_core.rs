@@ -7,7 +7,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
         tool_def(
             "bash",
             "Execute a shell command on the user's machine. \
-             Shell: $SHELL -c (Unix) or PowerShell (Windows). Commands start in the project working directory. \
+             Shell: the complete user environment with a cached user profile and $SHELL -c (Unix), or PowerShell (Windows). Commands start in the project working directory. \
              Set workdir to an absolute directory only when the command intentionally needs another location. \
              IMPORTANT — prefer dedicated tools, they give the user a better experience and are easier to approve: \
              find files with glob (not find); search contents with grep (not grep/rg); \
@@ -18,20 +18,34 @@ pub fn core_tool_definitions() -> Vec<Value> {
              Safety: system-level destructive commands are blocked (chmod 777, mkfs, dd, fork bombs, etc.). \
              Never skip git hooks (--no-verify), never force-push to main/master, never amend an existing commit unless the user explicitly asks. \
              Investigate hook failures instead of bypassing them. \
-             Never run interactive editors (vim, nano, less) — the shell is non-interactive. \
-             Long-running commands (npm run dev, vite, cargo tauri dev, flask run, tail -f, --watch, etc.) are auto-detected and run in the background. \
-             The tool returns once a 'ready' marker is seen (localhost:, listening, compiled successfully) or after up to 30s. The process keeps running; do not block on it. \
-             Timeout: default 120s, max 600s. For long builds/tests pass an explicit timeout. \
-             Output is truncated to 2000 lines / 50KB. \
+             Output streams live while the command runs. Short commands return immediately. \
+             If the command is still active after yield_time_ms (default 10000), the result contains a session_id; continue it with bash_write. \
+             There is no forced execution timeout. Set timeout only when a hard deadline is intentionally required. \
+             Full output is retained outside the model context when the preview is truncated. \
              Directory changes never persist across bash calls. Each call starts from the project working directory unless workdir is set for that call.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
                     "command": {"type": "string", "description": "Shell command to execute"},
-                    "timeout": {"type": "integer", "description": "Timeout in seconds (default: 120, max: 600)"},
+                    "timeout": {"type": "integer", "description": "Optional hard timeout in seconds; omitted means no forced timeout"},
+                    "yield_time_ms": {"type": "integer", "description": "Wait before returning a running session (250-30000 ms, default 10000)"},
                     "workdir": {"type": "string", "description": "Optional absolute working directory for this call only"}
                 },
                 "required": ["command"]
+            }),
+        ),
+        tool_def(
+            "bash_write",
+            "Continue or control a shell process returned by bash. Poll with only session_id, send input with chars, or set stop=true to terminate the process and all of its children. Output streams live while waiting. A completed session returns its final exit status and is then removed.",
+            serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "session_id": {"type": "string", "description": "Session identifier returned by bash"},
+                    "chars": {"type": "string", "description": "Optional input to write to the process"},
+                    "stop": {"type": "boolean", "description": "Stop the process and all of its children"},
+                    "yield_time_ms": {"type": "integer", "description": "Wait for output or completion (250-30000 ms, default 10000)"}
+                },
+                "required": ["session_id"]
             }),
         ),
         tool_def(

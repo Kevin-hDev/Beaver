@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
+#[cfg(test)]
 pub async fn dispatch(
     tool_name: &str,
     args: &Value,
@@ -10,7 +11,7 @@ pub async fn dispatch(
     session_id: &str,
     cancel: CancellationToken,
 ) -> ToolResult {
-    dispatch_for_mode(tool_name, args, working_dir, session_id, cancel, false).await
+    dispatch_with_progress(tool_name, args, working_dir, session_id, cancel, false, None).await
 }
 
 pub async fn dispatch_for_mode(
@@ -20,6 +21,18 @@ pub async fn dispatch_for_mode(
     session_id: &str,
     cancel: CancellationToken,
     chat_mode: bool,
+) -> ToolResult {
+    dispatch_with_progress(tool_name, args, working_dir, session_id, cancel, chat_mode, None).await
+}
+
+pub async fn dispatch_with_progress(
+    tool_name: &str,
+    args: &Value,
+    working_dir: &Path,
+    session_id: &str,
+    cancel: CancellationToken,
+    chat_mode: bool,
+    progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
     if chat_mode && !is_chat_tool(tool_name) {
         return ToolResult::err("Outil indisponible dans ce mode.");
@@ -83,6 +96,7 @@ pub async fn dispatch_for_mode(
                     session_id,
                     cancel,
                     profile,
+                    progress,
                 )
                 .await
             }
@@ -149,41 +163,5 @@ pub(crate) fn enrich_error(mut result: ToolResult, tool_name: &str) -> ToolResul
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn chat_policy_has_exactly_two_native_tools() {
-        assert!(is_chat_tool("web_search"));
-        assert!(is_chat_tool("web_fetch"));
-        assert!(!is_chat_tool("bash"));
-        assert!(!is_chat_tool("search_extension_tools"));
-    }
-
-    #[test]
-    fn inactive_replacements_fall_back_to_core_but_other_plugins_fail_closed() {
-        assert_eq!(dynamic_route(true, false, true), Ok(false));
-        assert_eq!(dynamic_route(true, true, true), Ok(true));
-        assert_eq!(
-            dynamic_route(true, false, false),
-            Err("Extension indisponible.")
-        );
-    }
-
-    #[tokio::test]
-    async fn chat_rejects_an_agentic_call_before_dispatch() {
-        let result = dispatch_for_mode(
-            "bash",
-            &json!({"command": "pwd"}),
-            std::path::Path::new("."),
-            "test-session",
-            CancellationToken::new(),
-            true,
-        )
-        .await;
-
-        assert!(result.is_error);
-        assert_eq!(result.content, "Outil indisponible dans ce mode.");
-    }
-}
+#[path = "tool_dispatcher_entry_tests.rs"]
+mod tests;

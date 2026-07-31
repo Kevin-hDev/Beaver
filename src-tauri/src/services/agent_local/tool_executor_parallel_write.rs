@@ -49,6 +49,7 @@ pub async fn execute_tracked_write(
         ctx.session_id,
         ctx.cancel,
         ctx.plan_mode_active,
+        Some(ctx.tool_call_index),
     )
     .await;
     super::tool_executor_diagnostics::completed(
@@ -70,4 +71,5 @@ pub struct WriteExecContext<'a> {
     pub request_id: &'a str,
     pub cancel: CancellationToken,
     pub plan_mode_active: bool,
+    pub tool_call_index: usize,
 }

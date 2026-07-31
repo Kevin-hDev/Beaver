@@ -39,6 +39,7 @@ export type StreamEvent =
   | { event: "contextUsage"; data: { inputTokens: number; outputTokens: number; contextLimit: number; estimated: boolean; breakdown?: StreamContextUsageBreakdown } }
   | { event: "generationStarted"; data: Record<string, never> }
   | { event: "toolCall"; data: { name: string; arguments: Record<string, unknown>; domain?: "memory" } }
+  | { event: "toolOutput"; data: { toolCallIndex: number; content: string; elapsedMs: number } }
   | { event: "toolResult"; data: { name: string; content: string; isError: boolean; truncated?: boolean; displaySummary?: string; toolCallIndex: number; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
   | { event: "turnEnd"; data: Record<string, never> }
   | { event: "permissionRequest"; data: { id: string; toolName: string; arguments: Record<string, unknown> } }

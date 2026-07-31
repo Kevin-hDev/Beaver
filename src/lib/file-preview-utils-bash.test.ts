@@ -21,6 +21,19 @@ describe("collectFileOperationGroups avec bash", () => {
     ]);
   });
 
+  it("inclut les fichiers touchés lors de la continuation d'un processus", () => {
+    const operations = collectFileOperations([], {
+      liveTools: [tool({
+        name: "bash_write",
+        summary: "session-1",
+        result: "ok",
+        affected_paths: ["/repo/generated.txt"],
+      })],
+    });
+
+    expect(operations.map((operation) => operation.path)).toEqual(["/repo/generated.txt"]);
+  });
+
   it("utilise le dernier bash avec fichiers touchés au lieu d'un ancien write_file", () => {
     const groups = collectFileOperationGroups([
       message("old", [

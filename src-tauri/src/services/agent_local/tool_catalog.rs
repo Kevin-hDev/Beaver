@@ -28,6 +28,7 @@ pub const SUBAGENT_TOOLS: &[&str] = &[
 
 const LOCKED_TOOLS: &[ToolCatalogEntry] = &[
     locked("bash", "core"),
+    locked("bash_write", "core"),
     locked("read_file", "core"),
     locked("write_file", "core"),
     locked("edit_file", "core"),

@@ -1,15 +1,15 @@
 use crate::services::agent_local::tool_skill_loader;
 use crate::services::agent_local::types_tools::ToolResult;
-use crate::services::agent_local::{
-    tool_bash, tool_files, tool_glob, tool_grep, tool_web_fetch, tool_web_search,
-};
+use crate::services::agent_local::{tool_files, tool_glob, tool_grep, tool_web_fetch, tool_web_search};
 use serde_json::Value;
 use std::path::Path;
 
 pub use crate::services::agent_local::tool_definitions::get_tool_definitions;
 pub use crate::services::agent_local::tool_definitions_chat::get_chat_tool_definitions;
+#[cfg(test)]
 pub use super::tool_dispatcher_entry::dispatch;
 pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
+pub(crate) use super::tool_dispatcher_entry::dispatch_with_progress;
 pub(crate) use super::tool_dispatcher_entry::enrich_error;
 
 pub(super) async fn dispatch_inner(
@@ -19,36 +19,14 @@ pub(super) async fn dispatch_inner(
     session_id: &str,
     cancel: tokio_util::sync::CancellationToken,
     profile: Option<super::subagent_tool_profile::SubagentToolProfile>,
+    progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
     match tool_name {
-        "bash" => {
-            let cmd = args["command"].as_str().unwrap_or("");
-            let timeout = args["timeout"].as_u64();
-            let execution_dir =
-                match tool_bash::resolve_workdir(args["workdir"].as_str(), working_dir) {
-                    Ok(path) => path,
-                    Err(error) => return ToolResult::err(error),
-                };
-            let execution = match profile {
-                Some(super::subagent_tool_profile::SubagentToolProfile::Explorer) => {
-                    super::subagent_explorer_bash::execute(cmd, &execution_dir, timeout).await
-                }
-                _ => tool_bash::execute_shell(cmd, &execution_dir, timeout).await,
-            };
-            match execution {
-                Ok(out) => {
-                    let content = format!("{}\n{}", out.stdout, out.stderr).trim().to_string();
-                    let result = if out.exit_code != 0 {
-                        ToolResult::err(content)
-                    } else {
-                        ToolResult::ok(content)
-                    };
-                    result
-                        .with_affected_paths(out.affected_paths)
-                        .with_file_changes(out.file_changes)
-                }
-                Err(e) => ToolResult::err(e),
-            }
+        "bash" | "bash_write" => {
+            super::tool_dispatcher_shell::dispatch(
+                tool_name, args, working_dir, session_id, cancel, profile, progress,
+            )
+            .await
         }
         "read_file" => {
             let path = args["path"].as_str().unwrap_or("");

@@ -101,6 +101,11 @@ describe("toolDisplayInfo", () => {
       summary: "npm test",
       icon: "TerminalWindow",
     });
+    expect(toolDisplayInfo({ name: "bash_write", summary: "session-1" }, undefined, t)).toEqual({
+      label: "bash",
+      summary: "session-1",
+      icon: "TerminalWindow",
+    });
   });
 
   it("affiche les tools spécialisés avec des noms explicites", () => {
@@ -154,6 +159,7 @@ describe("toolDisplayInfo", () => {
       ["edit_file", "Pencil"],
       ["process_image", "Pencil"],
       ["bash", "TerminalWindow"],
+      ["bash_write", "TerminalWindow"],
       ["web_search", "Globe"],
       ["web_fetch", "Link"],
       ["list_dir", "FolderOpen"],

@@ -20,6 +20,7 @@ fn explorer_profile_has_exact_capabilities() {
 fn coder_profile_only_adds_load_skill_when_enabled() {
     let expected = vec![
         "bash",
+        "bash_write",
         "read_file",
         "write_file",
         "edit_file",

@@ -138,6 +138,7 @@ pub async fn run_sequential(
                     working_dir,
                     session_id,
                     cancel.clone(),
+                    Some(idx),
                 )
                 .await
             }

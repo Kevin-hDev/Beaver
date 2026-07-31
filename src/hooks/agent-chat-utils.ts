@@ -5,6 +5,8 @@ export interface ToolActivity {
   args: Record<string, unknown>;
   domain?: "memory";
   result?: string;
+  liveOutput?: string;
+  liveElapsedMs?: number;
   isError?: boolean;
   /** Résumé lisible fourni par le backend, séparé des arguments techniques. */
   displaySummary?: string;
@@ -36,6 +38,7 @@ export function toolsToRecords(tools: ToolActivity[]): ToolActivityRecord[] {
     if (t.displaySummary !== undefined) summary = t.displaySummary;
     else if (t.name === "load_skill") summary = "";
     else if (t.name === "bash") summary = str(a.command);
+    else if (t.name === "bash_write") summary = str(a.session_id);
     else if (t.name === "read_file" || t.name === "write_file") summary = str(a.path);
     else if (t.name === "edit_file") summary = str(a.path);
     else if (t.name === "list_dir") summary = str(a.path, ".");
@@ -56,7 +59,7 @@ export function toolsToRecords(tools: ToolActivity[]): ToolActivityRecord[] {
       summary,
       domain: t.domain,
       args: a,
-      result: t.result,
+      result: t.result ?? t.liveOutput,
       is_error: t.isError,
       resolved_path: t.resolvedPath,
       affected_paths: t.affectedPaths,
@@ -119,6 +122,7 @@ function rebuildArgs(name: string, summary: string): Record<string, string> {
   if (name === "web_search") return { query: summary };
   if (name === "web_fetch") return { url: summary };
   if (name === "bash") return { command: summary };
+  if (name === "bash_write") return { session_id: summary };
   if (name === "grep" || name === "glob") return { pattern: summary };
   if (["read_file", "write_file", "edit_file", "list_dir"].includes(name)) return { path: summary };
   if (["read_spreadsheet", "read_document", "read_image", "write_spreadsheet", "write_document"].includes(name)) return { path: summary };

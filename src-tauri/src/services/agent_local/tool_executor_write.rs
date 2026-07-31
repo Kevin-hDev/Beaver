@@ -19,6 +19,7 @@ pub(super) async fn execute_write(
     session_id: &str,
     cancel: CancellationToken,
     plan_mode_active: bool,
+    tool_call_index: Option<usize>,
 ) -> ToolResult {
     if mode == "chat" {
         return tool_dispatcher::dispatch_for_mode(
@@ -102,6 +103,7 @@ pub(super) async fn execute_write(
                     working_dir,
                     session_id,
                     cancel.clone(),
+                    tool_call_index,
                 )
                 .await
             }

@@ -84,7 +84,7 @@ pub fn run_pre_hooks(tool_name: &str, args: &Value) -> PreHookDecision {
 pub fn run_post_hooks(tool_name: &str, _args: &Value, result: ToolResult) -> ToolResult {
     if matches!(
         tool_name,
-        "bash" | "read_file" | "grep" | "glob" | "list_dir"
+        "bash" | "bash_write" | "read_file" | "grep" | "glob" | "list_dir"
     ) {
         return ToolResult {
             content: crate::services::agent_local::sensitive_data::redact_text(&result.content),

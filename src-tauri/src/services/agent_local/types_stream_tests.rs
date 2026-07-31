@@ -27,6 +27,21 @@ fn tool_result_serializes_readable_display_summary() {
 }
 
 #[test]
+fn shell_output_serializes_live_progress_fields() {
+    let event = StreamEvent::ToolOutput {
+        tool_call_index: 3,
+        content: "compilation...".to_string(),
+        elapsed_ms: 1_250,
+    };
+
+    let serialized = serde_json::to_value(event).expect("serialize shell output");
+
+    assert_eq!(serialized["event"], "toolOutput");
+    assert_eq!(serialized["data"]["toolCallIndex"], 3);
+    assert_eq!(serialized["data"]["elapsedMs"], 1_250);
+}
+
+#[test]
 fn plan_approval_kind_reaches_the_frontend() {
     let event = StreamEvent::InteractiveChoiceRequest {
         session_id: "session-1".into(),

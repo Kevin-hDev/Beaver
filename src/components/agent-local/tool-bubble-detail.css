@@ -54,3 +54,10 @@
 .tb-command-preview {
   color: var(--ink);
 }
+
+.tb-elapsed {
+  color: var(--ink-faint);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.625rem;
+  white-space: nowrap;
+}

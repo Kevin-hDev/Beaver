@@ -9,7 +9,7 @@ import { ToolResultCode, ToolResultMarkdown } from "./tool-result-markdown";
 import { useCollapsiblePresence } from "./use-collapsible-presence";
 
 const RESULT_PREVIEW_TOOLS = new Set([
-  "bash", "grep", "glob", "read_file", "list_dir",
+  "bash", "bash_write", "grep", "glob", "read_file", "list_dir",
   "read_spreadsheet", "read_document", "read_image",
   "web_search", "web_fetch", "forecast_data_audit", "forecast", "forecast_read",
 ]);
@@ -17,7 +17,7 @@ const RESULT_PREVIEW_TOOLS = new Set([
 // Outils dont le résultat texte est rendu en Markdown (style bulle, sans
 // couleurs de code). Les autres gardent le rendu texte brut.
 const MARKDOWN_RESULT_TOOLS = new Set([
-  "bash", "grep", "glob", "list_dir", "web_search", "web_fetch",
+  "bash", "bash_write", "grep", "glob", "list_dir", "web_search", "web_fetch",
 ]);
 
 const TEXT_RESULT_TOOLS = new Set(["read_file"]);
@@ -31,12 +31,12 @@ function hasPreviewContent(children: ReactNode): boolean {
 export function ToolItem({
   name, summary, icon, displayName, displaySummary, dir, fileName,
   additions, deletions, done, isActive, isError, errorMessage, result,
-  previewPath, onFilePreview, children,
+  elapsedMs, previewPath, onFilePreview, children,
 }: {
   name: string; summary: string; icon?: string; displayName?: string; displaySummary?: string;
   dir?: string; fileName?: string;
   additions?: number; deletions?: number; done: boolean; isActive?: boolean; isError?: boolean; errorMessage?: string;
-  result?: string; previewPath?: string; onFilePreview?: (path: string) => void; children?: ReactNode;
+  result?: string; elapsedMs?: number; previewPath?: string; onFilePreview?: (path: string) => void; children?: ReactNode;
 }) {
   const hasPreview = hasPreviewContent(children);
   const hasResult = !!result && !isError && !hasPreview && RESULT_PREVIEW_TOOLS.has(name);
@@ -121,6 +121,7 @@ export function ToolItem({
         {labelButton}
         {fileContent}
         {summaryContent}
+        {elapsedMs !== undefined && <span className="tb-elapsed">{formatElapsed(elapsedMs)}</span>}
         {!done && <Spinner size="var(--icon-sm)" className="tb-spinner" />}
         {done && isError && (
           <ToolStatusIcon
@@ -150,4 +151,9 @@ export function ToolItem({
       )}
     </div>
   );
+}
+
+function formatElapsed(elapsedMs: number): string {
+  if (elapsedMs < 1_000) return `${elapsedMs} ms`;
+  return `${(elapsedMs / 1_000).toFixed(1)} s`;
 }

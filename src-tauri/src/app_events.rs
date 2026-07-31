@@ -50,6 +50,8 @@ fn should_hide_instead_of_quit() -> bool {
 
 fn cleanup(app_handle: &tauri::AppHandle) {
     tauri::async_runtime::block_on(services::oauth_providers::cancel_all());
+    tauri::async_runtime::block_on(services::agent_local::tool_bash_registry::stop_all());
+    services::agent_local::tool_bash_profile::clear();
     if let Some(gw) = app_handle.try_state::<GatewayService>() {
         let gw = gw.inner();
         tauri::async_runtime::block_on(async { gw.stop().await });

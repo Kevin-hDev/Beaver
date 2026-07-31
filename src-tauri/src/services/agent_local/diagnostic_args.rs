@@ -19,6 +19,7 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
             }
             add_path(&mut out, "workdir", args, working_dir);
         }
+        "bash_write" => add_text(&mut out, "session_id", args),
         "grep" => {
             add_text(&mut out, "pattern", args);
             add_text(&mut out, "glob", args);
