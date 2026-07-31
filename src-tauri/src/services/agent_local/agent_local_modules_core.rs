@@ -79,6 +79,7 @@ pub mod ollama_retry_indicator;
 pub mod ollama_runtime;
 pub mod ollama_stream;
 pub mod ollama_stream_process;
+mod ollama_stream_filter;
 #[cfg(test)]
 mod ollama_stream_process_tests;
 pub mod ollama_stream_request;

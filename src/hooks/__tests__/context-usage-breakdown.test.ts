@@ -48,12 +48,28 @@ describe("context-usage-breakdown", () => {
     expect(item(breakdown.items, "mcpConnectors")).toBeGreaterThan(0);
   });
 
-  it("classe les skills chargés dans Skills", () => {
+  it("garde uniquement le catalogue par défaut dans Skills", () => {
     const breakdown = buildContextUsageBreakdown([
       msg({ skill_names: ["frontend-skill"] }),
     ], { skillContextTokens: 12 });
 
-    expect(item(breakdown.items, "skills")).toBeGreaterThan(12);
+    expect(item(breakdown.items, "skills")).toBe(12);
+  });
+
+  it("classe le contenu d'un skill chargé dans Meta contexte", () => {
+    const breakdown = buildContextUsageBreakdown([
+      msg({
+        role: "assistant",
+        tool_activities: [{
+          name: "load_skill",
+          summary: "frontend-skill",
+          result: "Instructions détaillées du skill",
+        }],
+      }),
+    ], { skillContextTokens: 12 });
+
+    expect(item(breakdown.items, "skills")).toBe(12);
+    expect(item(breakdown.items, "metaContext")).toBeGreaterThan(0);
   });
 
   it("garde le system prompt isolé", () => {
@@ -157,6 +173,25 @@ describe("context-usage-breakdown", () => {
 
     expect(item(breakdown.items, "messages")).toBe(100);
     expect(item(breakdown.items, "metaContext")).toBe(80);
+  });
+
+  it("ajoute la réponse en cours dans Messages", () => {
+    const breakdown = buildContextUsageBreakdown([], { liveMessageTokens: 25 });
+
+    expect(item(breakdown.items, "messages")).toBe(25);
+  });
+
+  it("respecte un total provider exact même inférieur aux estimations", () => {
+    const breakdown = buildContextUsageBreakdown([
+      msg({ content: "a".repeat(400) }),
+    ], {
+      observedUsed: 80,
+      systemPromptTokens: 20,
+    });
+    const total = breakdown.items.reduce((sum, entry) => sum + entry.tokens, 0);
+
+    expect(breakdown.used).toBe(80);
+    expect(total).toBe(80);
   });
 
   it("garde un total cohérent avec les catégories", () => {

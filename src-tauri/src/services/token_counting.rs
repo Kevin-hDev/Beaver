@@ -10,6 +10,13 @@ pub fn estimate_chat_tokens(messages: &[ChatMessage]) -> usize {
     messages.iter().map(estimate_chat_message_tokens).sum()
 }
 
+pub fn estimate_chat_tokens_without_reasoning(messages: &[ChatMessage]) -> usize {
+    messages
+        .iter()
+        .map(|message| estimate_chat_message_tokens_with_reasoning(message, false))
+        .sum()
+}
+
 pub fn estimate_text_tokens(input: &str) -> usize {
     token_count_from_units(text_units(input))
 }
@@ -23,7 +30,21 @@ pub fn estimate_agent_messages_tokens(messages: &[AgentMessage]) -> u32 {
 }
 
 pub fn estimate_chat_message_tokens(message: &ChatMessage) -> usize {
+    estimate_chat_message_tokens_with_reasoning(message, true)
+}
+
+fn estimate_chat_message_tokens_with_reasoning(
+    message: &ChatMessage,
+    include_reasoning: bool,
+) -> usize {
     let mut units = text_units(&message.content);
+    if include_reasoning {
+        units += message
+            .reasoning_content
+            .as_deref()
+            .map(text_units)
+            .unwrap_or(0);
+    }
     if let Some(calls) = &message.tool_calls {
         for call in calls {
             units += text_units(&call.function.name);
@@ -83,7 +104,7 @@ pub fn text_units(input: &str) -> usize {
     input.chars().map(char_units).sum()
 }
 
-fn token_count_from_units(units: usize) -> usize {
+pub fn token_count_from_units(units: usize) -> usize {
     units.div_ceil(UNITS_PER_TOKEN)
 }
 

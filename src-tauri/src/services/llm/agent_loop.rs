@@ -1,16 +1,11 @@
 use super::agent_loop_compression::{LastCounts, LoopCompression};
 use super::agent_loop_request::ApiRequestParams;
 use super::agent_loop_tools;
-use crate::services::agent_local::agent_loop_finish;
-use crate::services::agent_local::agent_loop_limits::MAX_TURNS;
-use crate::services::agent_local::agent_loop_plan;
-use crate::services::agent_local::circuit_breaker;
-use crate::services::agent_local::extension_tool_set;
-use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::subagent_orchestration;
-use crate::services::agent_local::tool_executor;
-use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::write_guard_registry;
+use crate::services::agent_local::{
+    agent_loop_finish, agent_loop_limits::MAX_TURNS, agent_loop_plan, circuit_breaker,
+    context_usage_runtime, extension_tool_set, stream_events::AgentEventEmitter,
+    subagent_orchestration, tool_executor, types_ollama::ChatMessage, write_guard_registry,
+};
 use crate::services::token_counting;
 use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
@@ -80,6 +75,7 @@ pub async fn run_agent_loop(
         .await?;
         let interrupted = request_output.interrupted;
         let plan_active = request_output.plan_active;
+        let input_tokens = request_output.input_tokens;
         let result = request_output.result;
         if interrupted {
             crate::services::agent_local::stream_buffer::finalize_interrupted_content(
@@ -87,6 +83,7 @@ pub async fn run_agent_loop(
                 &result,
                 plan_active,
             );
+            context_usage_runtime::emit_result(on_event, input_tokens, &result);
             compression
                 .handle_interrupted(
                     messages,
@@ -122,6 +119,7 @@ pub async fn run_agent_loop(
         subagents
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
+        context_usage_runtime::emit_result(on_event, input_tokens, &result);
         messages.push(super::agent_loop_message::build_for_plan(
             &result,
             plan_active,

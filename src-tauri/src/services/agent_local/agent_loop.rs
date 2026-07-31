@@ -1,24 +1,22 @@
-use super::agent_loop_compression::{LastCounts, LoopCompression};
-use super::agent_loop_ollama_request::OllamaRequestParams;
-use super::types_ollama::{ChatMessage, OllamaThink};
 use super::{
-    agent_loop_limits::MAX_TURNS, agent_loop_plan, agent_loop_support, circuit_breaker,
-    stream_events::AgentEventEmitter, tool_executor, write_guard_registry,
+    agent_loop_compression::{LastCounts, LoopCompression},
+    agent_loop_limits::MAX_TURNS,
+    agent_loop_ollama_request::OllamaRequestParams,
+    agent_loop_plan, agent_loop_support, circuit_breaker, stream_events::AgentEventEmitter,
+    tool_executor, types_ollama::{ChatMessage, OllamaThink}, write_guard_registry,
 };
 use crate::services::token_counting;
-use std::path::PathBuf;
-use tokio_util::sync::CancellationToken;
 pub async fn run_agent_loop(
     on_event: &AgentEventEmitter,
     messages: &mut Vec<ChatMessage>,
     model: &str,
     mut tools: super::extension_tool_set::ExtensionToolSet,
     think: OllamaThink,
-    working_dir: PathBuf,
+    working_dir: std::path::PathBuf,
     session_id: String,
     request_id: String,
     parent_message_inbox: Option<std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>>,
-    cancel: CancellationToken,
+    cancel: tokio_util::sync::CancellationToken,
     native_context: u64,
     configured_context: u64,
     permission_mode: &str,
@@ -66,9 +64,11 @@ pub async fn run_agent_loop(
         let eager_handle = request_output.eager_handle;
         let interrupted = request_output.interrupted;
         let plan_active = request_output.plan_active;
+        let input_tokens = request_output.input_tokens;
         let result = request_output.result;
         if interrupted {
             super::stream_buffer::finalize_interrupted_content(on_event, &result, plan_active);
+            super::context_usage_runtime::emit_result(on_event, input_tokens, &result);
             eager_handle.abort();
             compression
                 .handle_interrupted(
@@ -110,6 +110,7 @@ pub async fn run_agent_loop(
         subagents
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
+        super::context_usage_runtime::emit_result(on_event, input_tokens, &result);
         let mut assistant_message = agent_loop_support::build_assistant_message(&result);
         if plan_active && !result.tool_calls.is_empty() {
             assistant_message.content.clear();

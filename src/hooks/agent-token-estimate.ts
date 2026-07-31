@@ -8,7 +8,7 @@ export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
 }
 
 export function resolveSessionTokenCount(session: AgentSession): number {
-  return estimateAgentMessagesTokens(session.messages);
+  return session.accumulated_tokens || estimateAgentMessagesTokens(session.messages);
 }
 
 function estimateMessage(message: AgentMessage): number {

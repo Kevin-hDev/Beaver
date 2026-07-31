@@ -1,7 +1,10 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamResult};
-use crate::services::stream_utils::{FilteredChunk, ThinkTagFilter};
+use crate::services::stream_utils::ThinkTagFilter;
+use super::ollama_stream_filter::emit_filtered;
 use tokio::sync::mpsc;
+
+pub(crate) use super::ollama_stream_filter::flush_filter;
 
 pub fn process_chunk(
     text: &str,
@@ -50,10 +53,13 @@ pub fn process_chunk(
     if let Some(thinking) = msg["thinking"].as_str() {
         if !thinking.is_empty() {
             chunk_has_payload = true;
-            result.thinking.push_str(thinking);
-            let _ = on_event.send(StreamEvent::Thinking {
-                content: thinking.to_string(),
-            });
+            super::stream_buffer::record_thinking(
+                on_event,
+                result,
+                thinking.to_string(),
+                token_count,
+                first_token,
+            );
         }
     }
 
@@ -81,6 +87,7 @@ pub fn process_chunk(
             let name = func["name"].as_str().unwrap_or("").to_string();
             let args = func["arguments"].clone();
             let idx = result.tool_calls.len();
+            result.record_generated_tool_call(&name, &args);
             result.tool_calls.push((name.clone(), args.clone()));
             let _ = on_event.send(StreamEvent::ToolCall {
                 name: name.clone(),
@@ -98,63 +105,6 @@ pub fn process_chunk(
     }
 
     Ok(())
-}
-
-fn emit_filtered(
-    filter: &mut ThinkTagFilter,
-    content: &str,
-    on_event: &AgentEventEmitter,
-    token_count: &mut u32,
-    first_token: &mut Option<std::time::Instant>,
-    result: &mut StreamResult,
-    buffer_content: bool,
-) {
-    for chunk in filter.feed(content) {
-        match chunk {
-            FilteredChunk::Thinking(t) => {
-                result.thinking.push_str(&t);
-                let _ = on_event.send(StreamEvent::Thinking { content: t });
-            }
-            FilteredChunk::Content(c) => {
-                super::stream_buffer::record_content(
-                    on_event,
-                    result,
-                    c,
-                    token_count,
-                    first_token,
-                    buffer_content,
-                );
-            }
-        }
-    }
-}
-
-pub(crate) fn flush_filter(
-    filter: &mut ThinkTagFilter,
-    on_event: &AgentEventEmitter,
-    token_count: &mut u32,
-    first_token: &mut Option<std::time::Instant>,
-    result: &mut StreamResult,
-    buffer_content: bool,
-) {
-    for chunk in filter.flush() {
-        match chunk {
-            FilteredChunk::Thinking(t) => {
-                result.thinking.push_str(&t);
-                let _ = on_event.send(StreamEvent::Thinking { content: t });
-            }
-            FilteredChunk::Content(c) => {
-                super::stream_buffer::record_content(
-                    on_event,
-                    result,
-                    c,
-                    token_count,
-                    first_token,
-                    buffer_content,
-                );
-            }
-        }
-    }
 }
 
 pub fn emit_done(on_event: &AgentEventEmitter, chunk: &serde_json::Value) -> Result<(), String> {

@@ -20,8 +20,17 @@ pub(super) fn recompute_accumulated_tokens(session: &mut AgentSession) {
 
 pub async fn add_messages(
     id: &str,
+    new_messages: Vec<AgentMessage>,
+    tokens: u32,
+) -> Result<(), String> {
+    add_messages_with_context(id, new_messages, tokens, None).await
+}
+
+pub async fn add_messages_with_context(
+    id: &str,
     mut new_messages: Vec<AgentMessage>,
     tokens: u32,
+    context_tokens: Option<u32>,
 ) -> Result<(), String> {
     super::session_store::validate_session_id(id)?;
     for message in &new_messages {
@@ -40,7 +49,10 @@ pub async fn add_messages(
     }
     append_bounded(&mut session, new_messages);
     session.updated_at = Some(chrono::Utc::now());
-    recompute_accumulated_tokens(&mut session);
+    match context_tokens.filter(|value| *value > 0) {
+        Some(value) => session.accumulated_tokens = value,
+        None => recompute_accumulated_tokens(&mut session),
+    }
     let result = super::session_store::save(&session).await;
     if result.is_ok() && todo_housekeeping.should_emit_empty_update {
         super::tool_todo::emit_update(id, Vec::new());

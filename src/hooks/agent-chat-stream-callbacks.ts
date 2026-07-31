@@ -11,6 +11,10 @@ import { activeItemAfterToolResult, pendingToolIndices, thinkingItem, toolItems 
 import { applyToolResult } from "./agent-chat-tool-results";
 import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";
 import { finalizeStream, finishStream } from "./agent-chat-stream-finalize";
+import {
+  applyContextUsage,
+  applyGeneratedTokenCount,
+} from "./agent-stream-context-usage";
 
 export type { ChatState, ManagedStreamState, PermissionRequestState, StreamApplyResult };
 export { EMPTY_CHAT_STATE, createManagedStreamState, toChatState } from "./agent-chat-stream-types";
@@ -43,7 +47,7 @@ export function applyStreamEvent(
       if (event.data.phase) prepareContentPhase(next, event.data.phase);
       next.currentContent += event.data.content;
       next.tps = event.data.tps;
-      next.liveTokenCount = event.data.tokenCount || next.liveTokenCount + 1;
+      applyGeneratedTokenCount(next, event.data.tokenCount);
       break;
     case "contentPhase":
       ensureTimers();
@@ -53,7 +57,10 @@ export function applyStreamEvent(
       ensureTimers();
       next.currentThinking += event.data.content;
       next.activeStreamItem = thinkingItem();
-      next.liveTokenCount += 1;
+      applyGeneratedTokenCount(next, event.data.tokenCount);
+      break;
+    case "contextUsage":
+      applyContextUsage(next, event.data);
       break;
     case "toolCall":
       ensureTimers();

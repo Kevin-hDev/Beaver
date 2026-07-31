@@ -50,8 +50,13 @@ pub(super) async fn consume_stream(
     for chunk in think_filter.flush() {
         match chunk {
             FilteredChunk::Thinking(t) => {
-                result.thinking.push_str(&t);
-                let _ = on_event.send(StreamEvent::Thinking { content: t });
+                crate::services::agent_local::stream_buffer::record_thinking(
+                    on_event,
+                    &mut result,
+                    t,
+                    &mut token_count,
+                    &mut first_token,
+                );
             }
             FilteredChunk::Content(c) => {
                 crate::services::agent_local::stream_buffer::record_content(
@@ -69,6 +74,7 @@ pub(super) async fn consume_stream(
     let (tool_calls, ids, extra_content) = acc.finalize();
     for (i, (wire_name, args)) in tool_calls.iter().enumerate() {
         let name = super::tool_schema::restore_tool_name(wire_name, tools);
+        result.record_generated_tool_call(&name, args);
         let _ = on_event.send(StreamEvent::ToolCall {
             name: name.clone(),
             arguments: args.clone(),
@@ -116,16 +122,25 @@ fn process_chunk(
     for chunk in stream_chunk::parse(data) {
         match chunk {
             ParsedChunk::Thinking(thinking) => {
-                result.thinking.push_str(&thinking);
-                *token_count += 1;
-                let _ = on_event.send(StreamEvent::Thinking { content: thinking });
+                crate::services::agent_local::stream_buffer::record_thinking(
+                    on_event,
+                    result,
+                    thinking,
+                    token_count,
+                    first_token,
+                );
             }
             ParsedChunk::Content(content) => {
                 for filtered in think_filter.feed(&content) {
                     match filtered {
                         FilteredChunk::Thinking(t) => {
-                            result.thinking.push_str(&t);
-                            let _ = on_event.send(StreamEvent::Thinking { content: t });
+                            crate::services::agent_local::stream_buffer::record_thinking(
+                                on_event,
+                                result,
+                                t,
+                                token_count,
+                                first_token,
+                            );
                         }
                         FilteredChunk::Content(c) => {
                             crate::services::agent_local::stream_buffer::record_content(

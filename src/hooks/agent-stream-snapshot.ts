@@ -3,14 +3,23 @@ import { markSubagentSnapshot } from "./agent-stream-persistence-owner";
 import type { StreamRecord } from "./agent-stream-cleanup";
 import type { AgentMessage } from "@/types/agent";
 
-export function applySessionSnapshot(record: StreamRecord, messages: AgentMessage[]) {
+export function applySessionSnapshot(
+  record: StreamRecord,
+  messages: AgentMessage[],
+  tokenCount: number,
+) {
   markSubagentSnapshot(record);
+  const resolvedTokenCount = tokenCount || estimateAgentMessagesTokens(messages);
   record.state = {
     ...record.state,
     messages,
     streamRunId: latestOpenStreamRunId(messages) ?? record.state.streamRunId,
-    sessionTokenCount: estimateAgentMessagesTokens(messages),
+    sessionTokenCount: resolvedTokenCount,
     sessionTokenCountEstimated: true,
+    contextInputTokens: resolvedTokenCount,
+    contextOutputTokens: 0,
+    streamedMessageTokens: 0,
+    hasContextUsageSnapshot: false,
     isStreaming: true,
     activeStreamItem: null,
     persisted: false,

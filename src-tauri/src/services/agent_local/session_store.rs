@@ -6,6 +6,7 @@ pub use super::session_id::validate_session_id;
 pub(crate) use super::session_locks::lock_session;
 pub use super::session_locks::remove_session_lock;
 pub use super::session_store_messages::add_messages;
+pub use super::session_store_messages::add_messages_with_context;
 
 pub async fn create_with_flags(
     name: &str,

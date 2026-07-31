@@ -137,7 +137,7 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
   }
 
   if (event.event === "sessionSnapshot") {
-    applySessionSnapshot(record, event.data.messages);
+    applySessionSnapshot(record, event.data.messages, event.data.tokenCount);
     flushFrameNotify(record, notify);
     notifyActivity(sessionId, record);
     return;

@@ -44,3 +44,19 @@ fn plan_approval_kind_reaches_the_frontend() {
         serde_json::json!("plan_approval")
     );
 }
+
+#[test]
+fn context_usage_serializes_for_the_live_ring() {
+    let event = StreamEvent::ContextUsage {
+        input_tokens: 120,
+        output_tokens: 8,
+        context_tokens: 128,
+        estimated: true,
+    };
+
+    let serialized = serde_json::to_value(event).expect("serialize context usage");
+
+    assert_eq!(serialized["event"], "contextUsage");
+    assert_eq!(serialized["data"]["contextTokens"], 128);
+    assert_eq!(serialized["data"]["estimated"], true);
+}

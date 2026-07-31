@@ -13,6 +13,7 @@ export function checkpointQueuedUserMessages(
     ? [assistantMessage, ...state.queuedUserMessages]
     : [...state.queuedUserMessages];
   const messages = trimMessages([...state.messages, ...persisted]);
+  const sessionTokenCount = estimateAgentMessagesTokens(messages);
   return {
     state: {
       ...state,
@@ -26,8 +27,12 @@ export function checkpointQueuedUserMessages(
       activeStreamItem: null,
       streamStartedAt: state.streamStartedAt,
       segmentStartedAt: Date.now(),
-      sessionTokenCount: estimateAgentMessagesTokens(messages),
+      sessionTokenCount,
       sessionTokenCountEstimated: true,
+      contextInputTokens: sessionTokenCount,
+      contextOutputTokens: 0,
+      streamedMessageTokens: 0,
+      hasContextUsageSnapshot: false,
       lastRequestTokens: assistantMessage?.tokens ?? 0,
     },
     assistantMessage,

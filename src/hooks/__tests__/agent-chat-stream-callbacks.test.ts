@@ -79,6 +79,62 @@ describe("thinking", () => {
   });
 });
 
+describe("contextUsage", () => {
+  it("met à jour le contexte en direct puis le recale sur le provider", () => {
+    let state = applyStreamEvent(makeState(), {
+      event: "contextUsage",
+      data: {
+        inputTokens: 100,
+        outputTokens: 0,
+        contextTokens: 100,
+        estimated: true,
+      },
+    }).state;
+    state = applyStreamEvent(state, {
+      event: "token",
+      data: { content: "réponse", tps: 5, tokenCount: 25 },
+    }).state;
+
+    expect(state.sessionTokenCount).toBe(125);
+    expect(state.streamedMessageTokens).toBe(25);
+    expect(state.sessionTokenCountEstimated).toBe(true);
+
+    state = applyStreamEvent(state, {
+      event: "contextUsage",
+      data: {
+        inputTokens: 102,
+        outputTokens: 20,
+        contextTokens: 122,
+        estimated: false,
+      },
+    }).state;
+
+    expect(state.sessionTokenCount).toBe(122);
+    expect(state.streamedMessageTokens).toBe(20);
+    expect(state.sessionTokenCountEstimated).toBe(false);
+  });
+
+  it("conserve les sorties précédentes au début d'un nouveau tour", () => {
+    const state = makeState({
+      contextOutputTokens: 20,
+      streamedMessageTokens: 35,
+    });
+    const { state: next } = applyStreamEvent(state, {
+      event: "contextUsage",
+      data: {
+        inputTokens: 240,
+        outputTokens: 0,
+        contextTokens: 240,
+        estimated: true,
+      },
+    });
+
+    expect(next.streamedMessageTokens).toBe(35);
+    expect(next.contextOutputTokens).toBe(0);
+    expect(next.sessionTokenCount).toBe(240);
+  });
+});
+
 describe("interactiveChoiceRequest", () => {
   it("stocke la demande interactive courante", () => {
     const request = {

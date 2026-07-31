@@ -62,4 +62,21 @@ describe("ContextProgress", () => {
 
     expect(container.firstChild).toBeNull();
   });
+
+  it("actualise aussi le panneau détaillé pendant le stream", () => {
+    const { getByText, rerender } = render(
+      <ContextProgress used={100} max={1000} breakdown={breakdown} />,
+    );
+    const liveBreakdown: ContextUsageBreakdown = {
+      used: 140,
+      items: breakdown.items.map((item) => item.key === "messages"
+        ? { ...item, tokens: 90, percentage: 64.3 }
+        : { ...item, percentage: (item.tokens / 140) * 100 }),
+    };
+
+    rerender(<ContextProgress used={140} max={1000} breakdown={liveBreakdown} />);
+
+    expect(getByText("140 / 1.0K (14.0%)")).toBeTruthy();
+    expect(getByText("90")).toBeTruthy();
+  });
 });

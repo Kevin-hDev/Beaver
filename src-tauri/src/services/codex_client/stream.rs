@@ -81,10 +81,13 @@ async fn consume_sse(
             "response.reasoning_summary_text.delta" => {
                 let delta = parsed["delta"].as_str().unwrap_or("");
                 if !delta.is_empty() {
-                    result.thinking.push_str(delta);
-                    let _ = on_event.send(StreamEvent::Thinking {
-                        content: delta.to_string(),
-                    });
+                    crate::services::agent_local::stream_buffer::record_thinking(
+                        on_event,
+                        &mut result,
+                        delta.to_string(),
+                        &mut token_count,
+                        &mut first_token,
+                    );
                 }
             }
             "response.output_text.delta" => {
@@ -133,6 +136,7 @@ async fn consume_sse(
                 if let (Some(id), Some(name)) = (cur_tool_id.take(), cur_tool_name.take()) {
                     let args_json: serde_json::Value =
                         serde_json::from_str(&cur_tool_args).unwrap_or_default();
+                    result.record_generated_tool_call(&name, &args_json);
                     let _ = on_event.send(StreamEvent::ToolCall {
                         name: name.clone(),
                         arguments: args_json.clone(),

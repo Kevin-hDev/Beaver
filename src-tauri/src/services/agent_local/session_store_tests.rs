@@ -100,4 +100,44 @@ mod tests {
             .await
             .expect("remove test workspace");
     }
+
+    #[tokio::test]
+    async fn persists_the_latest_context_snapshot() {
+        let session = super::super::create_full(
+            "context snapshot",
+            "model",
+            "provider",
+            false,
+            None,
+        )
+        .await
+        .expect("create session");
+        let message = crate::services::agent_local::types_session::AgentMessage {
+            id: uuid::Uuid::new_v4().to_string(),
+            role: "assistant".into(),
+            content: "answer".into(),
+            thinking: None,
+            tool_calls: None,
+            tool_name: None,
+            tool_activities: None,
+            segments: None,
+            files: vec![],
+            timestamp: chrono::Utc::now(),
+            tokens: 0,
+            work_duration_ms: None,
+            skill_names: None,
+            stream_run_id: None,
+            stream_part: None,
+        };
+
+        super::super::add_messages_with_context(&session.id, vec![message], 7, Some(4_321))
+            .await
+            .expect("save context snapshot");
+        let saved = super::super::get(&session.id).await.expect("reload session");
+
+        assert_eq!(saved.accumulated_tokens, 4_321);
+        super::super::delete_one(&session.id)
+            .await
+            .expect("delete session");
+    }
 }

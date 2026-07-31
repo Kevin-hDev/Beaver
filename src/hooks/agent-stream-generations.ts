@@ -6,6 +6,7 @@ const STREAM_CONTINUATION_EVENTS = new Set<StreamEvent["event"]>([
   "token",
   "contentPhase",
   "thinking",
+  "contextUsage",
   "toolCall",
   "toolResult",
   "turnEnd",

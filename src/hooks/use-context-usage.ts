@@ -9,6 +9,7 @@ interface UseContextUsageArgs {
   provider: string;
   messages: AgentMessage[];
   used: number;
+  liveMessageTokens: number;
   workingDir?: string;
   permissionMode?: string;
   planMode?: boolean;
@@ -21,6 +22,7 @@ export function useContextUsage({
   provider,
   messages,
   used,
+  liveMessageTokens,
   workingDir,
   permissionMode,
   planMode,
@@ -37,7 +39,11 @@ export function useContextUsage({
   });
 
   return useMemo(
-    () => buildContextUsageBreakdown(messages, { ...hiddenUsage, observedUsed: used }),
-    [messages, hiddenUsage, used],
+    () => buildContextUsageBreakdown(messages, {
+      ...hiddenUsage,
+      observedUsed: used,
+      liveMessageTokens,
+    }),
+    [messages, hiddenUsage, used, liveMessageTokens],
   );
 }

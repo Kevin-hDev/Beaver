@@ -23,6 +23,14 @@ pub enum StreamEvent {
     },
     Thinking {
         content: String,
+        token_count: u32,
+    },
+    #[serde(rename_all = "camelCase")]
+    ContextUsage {
+        input_tokens: u32,
+        output_tokens: u32,
+        context_tokens: u32,
+        estimated: bool,
     },
     ToolCall {
         name: String,
@@ -140,6 +148,7 @@ pub struct StreamResult {
     pub content: String,
     pub content_chunks: Vec<String>,
     pub thinking: String,
+    pub(crate) generated_units: usize,
     pub tool_calls: Vec<(String, serde_json::Value)>,
     /// IDs OpenAI-compat alignés avec `tool_calls` (vide pour Ollama).
     pub tool_call_ids: Vec<String>,

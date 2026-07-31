@@ -62,8 +62,9 @@ pub async fn add_messages_to_session(
     id: String,
     messages: Vec<AgentMessage>,
     tokens: u32,
+    context_tokens: Option<u32>,
 ) -> Result<(), String> {
-    session_store::add_messages(&id, messages, tokens).await
+    session_store::add_messages_with_context(&id, messages, tokens, context_tokens).await
 }
 
 #[tauri::command]

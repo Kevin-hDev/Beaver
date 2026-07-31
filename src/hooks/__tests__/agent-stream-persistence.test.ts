@@ -54,6 +54,9 @@ describe("subagent backend persistence ownership", () => {
     emit("gateway", doneEvent());
 
     expect(persistCalls()).toHaveLength(1);
+    expect(persistCalls()[0]?.[1]).toEqual(expect.objectContaining({
+      contextTokens: 2,
+    }));
   });
 });
 

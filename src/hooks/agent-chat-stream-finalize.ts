@@ -40,6 +40,9 @@ export function finalizeStream(
     : [...state.queuedUserMessages];
   const allMessages = trimMessages([...state.messages, ...persistedMessages]);
   const hasRealContextTokens = contextTokens !== null;
+  const hasStreamContextTokens = state.hasContextUsageSnapshot;
+  const resolvedContextTokens = contextTokens
+    ?? (hasStreamContextTokens ? state.sessionTokenCount : estimateAgentMessagesTokens(allMessages));
   const next: ManagedStreamState = {
     ...state,
     messages: allMessages,
@@ -47,8 +50,14 @@ export function finalizeStream(
     completedSegments: [], currentContent: "", currentThinking: "",
     currentContentPhase: undefined, currentTools: [], activeStreamItem: null,
     isStreaming: false, isCompressing: false, tps,
-    sessionTokenCount: contextTokens ?? estimateAgentMessagesTokens(allMessages),
-    sessionTokenCountEstimated: !hasRealContextTokens,
+    sessionTokenCount: resolvedContextTokens,
+    sessionTokenCountEstimated: hasRealContextTokens
+      ? false
+      : hasStreamContextTokens ? state.sessionTokenCountEstimated : true,
+    contextInputTokens: resolvedContextTokens,
+    contextOutputTokens: 0,
+    streamedMessageTokens: 0,
+    hasContextUsageSnapshot: false,
     lastRequestTokens: assistantMessage?.tokens ?? outputTokens ?? 0, liveTokenCount: 0,
     streamStartedAt: null, segmentStartedAt: null, totalElapsedMs: totalMs,
     pendingPermissions: [], interactiveChoice: undefined,

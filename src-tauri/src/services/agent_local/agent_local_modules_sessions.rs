@@ -18,6 +18,7 @@ pub mod session_tabs_git;
 pub mod session_tabs_state;
 pub mod skill_parser;
 pub mod skill_catalog;
+pub mod context_usage_runtime;
 pub mod stream_buffer;
 pub mod stream_diagnostics;
 pub mod stream_diagnostics_failure;

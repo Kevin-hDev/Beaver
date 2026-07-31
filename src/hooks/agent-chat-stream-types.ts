@@ -45,6 +45,10 @@ export interface ChatState {
   tps: number;
   sessionTokenCount: number;
   sessionTokenCountEstimated: boolean;
+  contextInputTokens: number;
+  contextOutputTokens: number;
+  streamedMessageTokens: number;
+  hasContextUsageSnapshot: boolean;
   lastRequestTokens: number;
   liveTokenCount: number;
   streamStartedAt: number | null;
@@ -74,6 +78,8 @@ export const EMPTY_CHAT_STATE: ChatState = {
   currentContentPhase: undefined, currentThinking: "", currentTools: [],
   activeStreamItem: null, isStreaming: false, isCompressing: false,
   tps: 0, sessionTokenCount: 0, sessionTokenCountEstimated: true, lastRequestTokens: 0,
+  contextInputTokens: 0, contextOutputTokens: 0, streamedMessageTokens: 0,
+  hasContextUsageSnapshot: false,
   liveTokenCount: 0, streamStartedAt: null, segmentStartedAt: null,
   totalElapsedMs: 0,
   streamRunId: "",
@@ -93,7 +99,8 @@ export function createManagedStreamState(
 ): ManagedStreamState {
   const now = Date.now();
   return {
-    ...EMPTY_CHAT_STATE, messages, sessionTokenCount, isStreaming: true,
+    ...EMPTY_CHAT_STATE, messages, sessionTokenCount, contextInputTokens: sessionTokenCount,
+    isStreaming: true,
     isCompressing: streamKind === "compression",
     streamRunId: crypto.randomUUID(),
     streamStartedAt: now, segmentStartedAt: now,
@@ -113,6 +120,10 @@ export function toChatState(state: ManagedStreamState): ChatState {
     isCompressing: state.isCompressing,
     tps: state.tps, sessionTokenCount: state.sessionTokenCount,
     sessionTokenCountEstimated: state.sessionTokenCountEstimated,
+    contextInputTokens: state.contextInputTokens,
+    contextOutputTokens: state.contextOutputTokens,
+    streamedMessageTokens: state.streamedMessageTokens,
+    hasContextUsageSnapshot: state.hasContextUsageSnapshot,
     lastRequestTokens: state.lastRequestTokens,
     liveTokenCount: state.liveTokenCount,
     streamStartedAt: state.streamStartedAt,

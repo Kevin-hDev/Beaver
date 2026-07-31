@@ -31,6 +31,15 @@ fn estimates_emoji_as_wide() {
 }
 
 #[test]
+fn chat_estimate_counts_replayed_reasoning() {
+    let mut message = msg("answer");
+    message.reasoning_content = Some("r".repeat(400));
+
+    assert_eq!(estimate_chat_tokens(&[message.clone()]), 102);
+    assert_eq!(estimate_chat_tokens_without_reasoning(&[message]), 2);
+}
+
+#[test]
 fn sums_real_counts_only_when_both_present() {
     assert_eq!(sum_real_counts(Some(3), Some(4)), Some(7));
     assert_eq!(sum_real_counts(Some(3), None), None);

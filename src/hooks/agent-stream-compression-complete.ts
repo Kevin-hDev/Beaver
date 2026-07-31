@@ -12,6 +12,8 @@ export function handleCompressionComplete(
   invoke<{ messages: AgentMessage[]; accumulated_tokens: number }>(
     "get_agent_session", { id: sessionId },
   ).then((session) => {
+    const sessionTokenCount = session.accumulated_tokens
+      || estimateAgentMessagesTokens(session.messages);
     record.state = {
       ...record.state,
       messages: session.messages,
@@ -25,8 +27,12 @@ export function handleCompressionComplete(
       segmentStartedAt: null,
       isStreaming: false,
       isCompressing: false,
-      sessionTokenCount: estimateAgentMessagesTokens(session.messages),
+      sessionTokenCount,
       sessionTokenCountEstimated: true,
+      contextInputTokens: sessionTokenCount,
+      contextOutputTokens: 0,
+      streamedMessageTokens: 0,
+      hasContextUsageSnapshot: false,
       persisted: true,
     };
     notify(record);

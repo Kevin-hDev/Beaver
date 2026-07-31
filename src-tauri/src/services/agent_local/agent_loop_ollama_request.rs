@@ -28,6 +28,7 @@ pub(super) struct OllamaRequestOutput {
     pub eager_handle: EagerHandle,
     pub plan_active: bool,
     pub interrupted: bool,
+    pub input_tokens: u32,
 }
 
 pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequestOutput, String> {
@@ -38,13 +39,15 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         .await?;
     super::session_security::sanitize_chat_messages(params.messages);
     super::tool_result_budget::apply_budget(params.messages);
-    super::context_budget::prepare_for_request(
+    let report = super::context_budget::prepare_for_request(
         params.messages,
         params.configured_context,
         params.tools,
     )?;
+    let input_tokens =
+        super::context_usage_runtime::emit_input(params.on_event, report.estimated_tokens);
     let realtime_budget =
-        RealtimeBudget::from_request(params.configured_context, params.messages, params.tools);
+        RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);
     let plan_active =
         super::agent_loop_plan::active(params.session_id, params.plan_mode_active).await;
     let request = super::agent_loop_support::build_request(
@@ -129,5 +132,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         eager_handle,
         plan_active,
         interrupted,
+        input_tokens,
     })
 }

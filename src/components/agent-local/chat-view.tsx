@@ -59,6 +59,7 @@ export function ChatView({
   const proj = useSessionProject(sessionId, projects, onAddProject, chat.messages.length > 0);
   const contextUsage = useContextUsage({
     sessionId, model, provider, messages: chat.messages, used: context.used,
+    liveMessageTokens: chat.streamedMessageTokens,
     workingDir: proj.selectedProject?.path, permissionMode: permMode.mode,
     planMode: chat.planModeEnabled, supportsTools: selectedModelCaps?.supports_tools,
   });

@@ -30,6 +30,7 @@ export interface ContextUsageBreakdown {
 
 export interface ContextUsageOptions {
   observedUsed?: number;
+  liveMessageTokens?: number;
   systemPromptTokens?: number;
   metaContextTokens?: number;
   skillContextTokens?: number;
@@ -45,7 +46,7 @@ export function buildContextUsageBreakdown(
   options: ContextUsageOptions = {},
 ): ContextUsageBreakdown {
   const buckets: TokenBuckets = {
-    messages: 0,
+    messages: options.liveMessageTokens ?? 0,
     systemTools: options.systemToolDefinitionTokens ?? 0,
     mcpConnectors: options.mcpDefinitionTokens ?? 0,
     skills: options.skillContextTokens ?? 0,
@@ -58,13 +59,15 @@ export function buildContextUsageBreakdown(
     addMessageTokens(buckets, message);
   }
 
-  const visibleTotal = sumBuckets(buckets);
-  const observed = options.observedUsed ?? visibleTotal;
-  if (observed > visibleTotal) {
-    buckets.metaContext += observed - visibleTotal;
+  const bucketTotal = sumBuckets(buckets);
+  const observed = options.observedUsed ?? bucketTotal;
+  const hasObservedTotal =
+    options.observedUsed !== undefined && (observed > 0 || bucketTotal === 0);
+  if (hasObservedTotal) {
+    fitBucketsToObserved(buckets, observed);
   }
 
-  const used = Math.max(observed, sumBuckets(buckets));
+  const used = hasObservedTotal ? observed : bucketTotal;
   return {
     used,
     items: CONTEXT_USAGE_KEYS.map((key) => ({
@@ -80,10 +83,6 @@ function addMessageTokens(buckets: TokenBuckets, message: AgentMessage) {
     + (message.thinking ? textUnits(message.thinking) : 0)
     + fileUnits(message);
   buckets.messages += unitsToTokens(baseUnits);
-
-  for (const name of message.skill_names ?? []) {
-    buckets.skills += unitsToTokens(textUnits(name));
-  }
 
   for (const call of message.tool_calls ?? []) {
     addToolCallTokens(buckets, call);
@@ -127,7 +126,8 @@ function fileUnits(message: AgentMessage): number {
   return units;
 }
 
-function toolBucket(name: string): "systemTools" | "mcpConnectors" {
+function toolBucket(name: string): "systemTools" | "mcpConnectors" | "metaContext" {
+  if (name === "load_skill") return "metaContext";
   return isMcpTool(name) ? "mcpConnectors" : "systemTools";
 }
 
@@ -146,4 +146,33 @@ function unitsToTokens(units: number): number {
 
 function sumBuckets(buckets: TokenBuckets): number {
   return CONTEXT_USAGE_KEYS.reduce((sum, key) => sum + buckets[key], 0);
+}
+
+function fitBucketsToObserved(buckets: TokenBuckets, observed: number) {
+  const total = sumBuckets(buckets);
+  if (total <= observed) {
+    buckets.metaContext += observed - total;
+    return;
+  }
+  if (observed <= 0) {
+    for (const key of CONTEXT_USAGE_KEYS) buckets[key] = 0;
+    return;
+  }
+
+  let excess = total - observed;
+  const reductionOrder: ContextUsageKey[] = [
+    "metaContext",
+    "messages",
+    "systemTools",
+    "mcpConnectors",
+    "memory",
+    "systemPrompt",
+    "skills",
+  ];
+  for (const key of reductionOrder) {
+    if (excess <= 0) break;
+    const removed = Math.min(buckets[key], excess);
+    buckets[key] -= removed;
+    excess -= removed;
+  }
 }
