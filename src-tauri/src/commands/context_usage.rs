@@ -153,11 +153,12 @@ async fn meta_context_tokens(
         total += estimate(&git_section);
     }
     let response_language = common::response_language();
-    if !response_language.is_empty() {
-        total += estimate(&format!(
-            "You MUST respond in {response_language}. All your answers, explanations and communications must be in {response_language}."
-        ));
-    }
+    total += crate::services::agent_local::chat_prompt_sections::response_language_instruction(
+        &response_language,
+    )
+    .as_deref()
+    .map(estimate)
+    .unwrap_or(0);
     if plan_active {
         total += estimate(&prompt_plan::plan_mode_prompt());
     }
@@ -169,14 +170,10 @@ async fn skill_context_tokens(mode: &common::StreamMode, has_tools: bool) -> usi
     if skills.is_empty() {
         return 0;
     }
-    let listing = skills
-        .iter()
-        .map(|(name, desc)| format!("- {name}: {desc}"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    estimate(&format!(
-        "## Available skills\nThe following skills are available. Use the `load_skill` tool to load one when relevant.\n{listing}"
-    ))
+    crate::services::agent_local::chat_prompt_sections::skills_listing_section(&skills)
+        .as_deref()
+        .map(estimate)
+        .unwrap_or(0)
 }
 
 fn estimate(input: &str) -> usize {

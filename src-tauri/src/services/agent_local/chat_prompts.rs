@@ -3,6 +3,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::{
     prompt_chat_compact, prompt_chat_detailed, prompt_compact, prompt_detailed,
 };
+use super::chat_prompt_sections::{response_language_instruction, skills_listing_section};
 use std::path::Path;
 
 fn build_system_message(content: String) -> ChatMessage {
@@ -146,12 +147,9 @@ fn prepend_chat_system_prompt(
 }
 
 fn append_response_language(messages: &mut [ChatMessage], lang: &str) {
-    if lang.is_empty() {
+    let Some(instruction) = response_language_instruction(lang) else {
         return;
-    }
-    let instruction = format!(
-        "\n\nYou MUST respond in {lang}. All your answers, explanations and communications must be in {lang}."
-    );
+    };
     if let Some(first) = messages.first_mut().filter(|m| m.role == "system") {
         first.content.push_str(&instruction);
     }
@@ -170,18 +168,9 @@ fn prepend_web_search_status(messages: &mut [ChatMessage]) {
 }
 
 fn prepend_skills_listing(messages: &mut [ChatMessage], skills: &[(String, String)]) {
-    let listing = skills
-        .iter()
-        .map(|(name, desc)| format!("- {name}: {desc}"))
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    let section = format!(
-        "\n\n## Available skills\n\
-         The following skills are available. Use the `load_skill` tool to load one when relevant.\n\
-         {listing}"
-    );
-
+    let Some(section) = skills_listing_section(skills) else {
+        return;
+    };
     if let Some(first) = messages.first_mut().filter(|m| m.role == "system") {
         first.content.push_str(&section);
     }

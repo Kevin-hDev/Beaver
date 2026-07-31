@@ -1,5 +1,6 @@
 import { buildSegmentedMessage, type StreamSegment } from "./agent-chat-utils";
 import { estimateAgentMessagesTokens } from "./agent-token-estimate";
+import { resolvePreparedContextBuckets } from "./context-usage-stream";
 import { MAX_MESSAGES_PER_SESSION, type ManagedStreamState, type StreamApplyResult } from "./agent-chat-stream-types";
 import type { AgentMessage } from "@/types/agent";
 
@@ -14,6 +15,10 @@ export function checkpointQueuedUserMessages(
     : [...state.queuedUserMessages];
   const messages = trimMessages([...state.messages, ...persisted]);
   const sessionTokenCount = estimateAgentMessagesTokens(messages);
+  const contextUsageBuckets = resolvePreparedContextBuckets(
+    state,
+    state.queuedUserMessages,
+  );
   return {
     state: {
       ...state,
@@ -31,7 +36,8 @@ export function checkpointQueuedUserMessages(
       contextInputTokens: sessionTokenCount,
       contextOutputTokens: 0,
       hasContextUsageSnapshot: false,
-      lastRequestTokens: assistantMessage?.tokens ?? 0,
+      contextUsageBuckets,
+      contextUsageBaseSegments: 0,
     },
     assistantMessage,
     assistantTokens: assistantMessage?.tokens ?? 0,

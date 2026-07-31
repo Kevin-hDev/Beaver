@@ -14,6 +14,7 @@ describe("toolCall", () => {
     const { state } = applyStreamEvent(makeState(), event);
     expect(state.currentTools).toHaveLength(1);
     expect(state.currentTools[0].name).toBe("bash");
+    expect(state.contextUsageVisible).toBe(true);
   });
 
   it("ignore les tools internes", () => {
@@ -23,6 +24,7 @@ describe("toolCall", () => {
       state = applyStreamEvent(state, { event: "toolCall", data: { name, arguments: {} } }).state;
     }
     expect(state.currentTools).toHaveLength(0);
+    expect(state.contextUsageVisible).toBe(true);
   });
 });
 

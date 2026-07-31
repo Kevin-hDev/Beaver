@@ -10,12 +10,14 @@ export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
 export function resolveSessionContext(session: AgentSession): {
   sessionTokenCount: number;
   hasContextUsageSnapshot: boolean;
+  contextUsageVisible: boolean;
 } {
   const contextTokens = session.context_tokens ?? 0;
   return {
     sessionTokenCount: contextTokens || session.accumulated_tokens
       || estimateAgentMessagesTokens(session.messages),
     hasContextUsageSnapshot: contextTokens > 0,
+    contextUsageVisible: session.messages.some((message) => message.role === "assistant"),
   };
 }
 

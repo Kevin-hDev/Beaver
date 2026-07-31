@@ -2,7 +2,8 @@ use super::{
     agent_loop_compression::{LastCounts, LoopCompression},
     agent_loop_ollama_request::OllamaRequestParams,
     agent_loop_limits::MAX_TURNS, agent_loop_plan, agent_loop_support, circuit_breaker,
-    context_usage_runtime, stream_events::AgentEventEmitter, tool_executor,
+    context_usage_buckets::ContextUsageSeed, context_usage_runtime,
+    stream_events::AgentEventEmitter, tool_executor,
     types_ollama::{ChatMessage, OllamaThink}, write_guard_registry,
 };
 use crate::services::token_counting;
@@ -21,6 +22,7 @@ pub async fn run_agent_loop(
     configured_context: u64,
     permission_mode: &str,
     plan_mode_active: bool,
+    context_usage_seed: ContextUsageSeed,
 ) -> Result<u32, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
     let (mut last_prompt, mut last_eval) = (None, None);
@@ -59,6 +61,7 @@ pub async fn run_agent_loop(
             chat_mode: permission_mode == "chat",
             turn,
             subagents: &mut subagents,
+            context_usage_seed,
         })
         .await?;
         let eager_handle = request_output.eager_handle;
@@ -111,11 +114,7 @@ pub async fn run_agent_loop(
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
         context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
-        let mut assistant_message = agent_loop_support::build_assistant_message(&result);
-        if plan_active && !result.tool_calls.is_empty() {
-            assistant_message.content.clear();
-        }
-        messages.push(assistant_message);
+        messages.push(agent_loop_support::build_for_plan(&result, plan_active));
         compression
             .try_run_and_reset(messages, &mut last_prompt, &mut last_eval, cancel.clone())
             .await;

@@ -12,6 +12,7 @@ interface HiddenContextUsage {
 }
 
 interface UseContextHiddenUsageArgs {
+  enabled?: boolean;
   sessionId: string;
   model: string;
   provider: string;
@@ -22,6 +23,7 @@ interface UseContextHiddenUsageArgs {
 }
 
 export function useContextHiddenUsage({
+  enabled = true,
   sessionId,
   model,
   provider,
@@ -34,7 +36,7 @@ export function useContextHiddenUsage({
 
   useEffect(() => {
     let alive = true;
-    if (!sessionId || !model) {
+    if (!enabled || !sessionId || !model) {
       queueMicrotask(() => {
         if (alive) setUsage({});
       });
@@ -66,7 +68,7 @@ export function useContextHiddenUsage({
     return () => {
       alive = false;
     };
-  }, [sessionId, model, provider, workingDir, permissionMode, planMode, supportsTools]);
+  }, [enabled, sessionId, model, provider, workingDir, permissionMode, planMode, supportsTools]);
 
   return usage;
 }

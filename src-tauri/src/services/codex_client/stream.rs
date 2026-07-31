@@ -115,6 +115,10 @@ async fn consume_sse(
             "response.output_item.added" => {
                 if let Some(item) = parsed.get("item") {
                     if item["type"].as_str() == Some("function_call") {
+                        crate::services::agent_local::stream_buffer::record_generation_started(
+                            on_event,
+                            &mut first_token,
+                        );
                         cur_tool_id = item["call_id"].as_str().map(String::from);
                         cur_tool_name = item["name"].as_str().map(|name| {
                             crate::services::llm::tool_schema::restore_tool_name(name, tools)
@@ -130,7 +134,7 @@ async fn consume_sse(
             "response.output_item.done" => {
                 if let Some(item) = parsed.get("item") {
                     let mut replay_item = item.clone();
-                    restore_replay_tool_name(&mut replay_item, tools);
+                    super::replay::restore_tool_name(&mut replay_item, tools);
                     replay.capture(&replay_item)?;
                 }
                 if let (Some(id), Some(name)) = (cur_tool_id.take(), cur_tool_name.take()) {
@@ -174,16 +178,6 @@ async fn consume_sse(
     } else {
         Ok(StreamOutcome::Completed(result))
     }
-}
-
-fn restore_replay_tool_name(item: &mut serde_json::Value, tools: &[serde_json::Value]) {
-    if item.get("type").and_then(serde_json::Value::as_str) != Some("function_call") {
-        return;
-    }
-    let Some(name) = item.get("name").and_then(serde_json::Value::as_str) else {
-        return;
-    };
-    item["name"] = crate::services::llm::tool_schema::restore_tool_name(name, tools).into();
 }
 
 fn should_interrupt(

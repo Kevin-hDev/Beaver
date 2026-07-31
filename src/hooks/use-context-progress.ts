@@ -5,7 +5,6 @@ import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { ModelInfo } from "@/types/agent";
 
 export interface ContextProgressState {
-  used: number;
   max: number;
 }
 
@@ -99,5 +98,5 @@ export function useContextProgress(
     }
   }, [provider, refresh, usedTokens]);
 
-  return { used: usedTokens, max };
+  return { max };
 }

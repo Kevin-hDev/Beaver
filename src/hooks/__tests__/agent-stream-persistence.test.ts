@@ -55,7 +55,6 @@ describe("subagent backend persistence ownership", () => {
       data: {
         inputTokens: 1,
         outputTokens: 0,
-        contextTokens: 1,
         contextLimit: 372_000,
         estimated: true,
       },

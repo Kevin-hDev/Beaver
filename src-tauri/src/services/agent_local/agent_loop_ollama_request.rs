@@ -1,4 +1,5 @@
 use super::agent_loop_thinking_retry::{EagerHandle, ThinkingRetryParams};
+use super::context_usage_buckets::{ContextUsageSeed, RequestContextUsage};
 use super::stream_events::AgentEventEmitter;
 use super::subagent_orchestration::ParentSubagentOrchestrator;
 use super::types_ollama::{ChatMessage, OllamaThink, StreamResult};
@@ -21,6 +22,7 @@ pub(super) struct OllamaRequestParams<'a> {
     pub chat_mode: bool,
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
+    pub context_usage_seed: ContextUsageSeed,
 }
 
 pub(super) struct OllamaRequestOutput {
@@ -49,6 +51,12 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.on_event,
         report.estimated_tokens,
         params.configured_context,
+        RequestContextUsage::from_request(
+            "ollama",
+            params.messages,
+            params.tools,
+            params.context_usage_seed,
+        ),
     );
     let realtime_budget =
         RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);

@@ -30,6 +30,9 @@ export function handleCompressionComplete(
       contextInputTokens: context.sessionTokenCount,
       contextOutputTokens: 0,
       contextLimitTokens: 0,
+      contextUsageBuckets: null,
+      contextUsageBaseSegments: 0,
+      contextUsageIncludesReasoning: true,
       persisted: true,
     };
     notify(record);

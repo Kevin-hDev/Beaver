@@ -7,6 +7,7 @@ import type {
   TokenPhase,
 } from "@/types/agent";
 import type { ActiveStreamItem } from "./active-stream-item";
+import type { ContextTokenBuckets } from "./context-usage-buckets";
 
 export const MAX_PENDING_PERMISSIONS = 32;
 export const MAX_MESSAGES_PER_SESSION = 2000;
@@ -48,7 +49,10 @@ export interface ChatState {
   contextOutputTokens: number;
   contextLimitTokens: number;
   hasContextUsageSnapshot: boolean;
-  lastRequestTokens: number;
+  contextUsageBuckets: ContextTokenBuckets | null;
+  contextUsageBaseSegments: number;
+  contextUsageIncludesReasoning: boolean;
+  contextUsageVisible: boolean;
   liveTokenCount: number;
   streamStartedAt: number | null;
   segmentStartedAt: number | null;
@@ -76,9 +80,11 @@ export const EMPTY_CHAT_STATE: ChatState = {
   messages: [], queuedUserMessages: [], completedSegments: [], currentContent: "",
   currentContentPhase: undefined, currentThinking: "", currentTools: [],
   activeStreamItem: null, isStreaming: false, isCompressing: false,
-  tps: 0, sessionTokenCount: 0, lastRequestTokens: 0,
+  tps: 0, sessionTokenCount: 0,
   contextInputTokens: 0, contextOutputTokens: 0, contextLimitTokens: 0,
   hasContextUsageSnapshot: false,
+  contextUsageBuckets: null, contextUsageBaseSegments: 0,
+  contextUsageIncludesReasoning: true, contextUsageVisible: false,
   liveTokenCount: 0, streamStartedAt: null, segmentStartedAt: null,
   totalElapsedMs: 0,
   streamRunId: "",
@@ -99,6 +105,7 @@ export function createManagedStreamState(
   const now = Date.now();
   return {
     ...EMPTY_CHAT_STATE, messages, sessionTokenCount, contextInputTokens: sessionTokenCount,
+    contextUsageVisible: messages.some((message) => message.role === "assistant"),
     isStreaming: true,
     isCompressing: streamKind === "compression",
     streamRunId: crypto.randomUUID(),
@@ -122,7 +129,10 @@ export function toChatState(state: ManagedStreamState): ChatState {
     contextOutputTokens: state.contextOutputTokens,
     contextLimitTokens: state.contextLimitTokens,
     hasContextUsageSnapshot: state.hasContextUsageSnapshot,
-    lastRequestTokens: state.lastRequestTokens,
+    contextUsageBuckets: state.contextUsageBuckets,
+    contextUsageBaseSegments: state.contextUsageBaseSegments,
+    contextUsageIncludesReasoning: state.contextUsageIncludesReasoning,
+    contextUsageVisible: state.contextUsageVisible,
     liveTokenCount: state.liveTokenCount,
     streamStartedAt: state.streamStartedAt,
     segmentStartedAt: state.segmentStartedAt,

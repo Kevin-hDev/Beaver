@@ -19,6 +19,7 @@ export type ContextUsageKey = typeof CONTEXT_USAGE_KEYS[number];
 export type ContextTokenBuckets = Record<ContextUsageKey, number>;
 
 export interface ContextBucketOptions {
+  includeThinking?: boolean;
   systemPromptTokens?: number;
   metaContextTokens?: number;
   skillContextTokens?: number;
@@ -32,7 +33,8 @@ export function buildContextTokenBuckets(
   options: ContextBucketOptions = {},
 ): ContextTokenBuckets {
   const buckets = emptyBuckets(options);
-  for (const message of messages) addMessageTokens(buckets, message);
+  const includeThinking = options.includeThinking ?? true;
+  for (const message of messages) addMessageTokens(buckets, message, includeThinking);
   return buckets;
 }
 
@@ -58,9 +60,14 @@ function emptyBuckets(options: ContextBucketOptions = {}): ContextTokenBuckets {
   };
 }
 
-function addMessageTokens(buckets: ContextTokenBuckets, message: AgentMessage) {
-  const baseUnits = textUnits(message.content)
-    + (message.thinking ? textUnits(message.thinking) : 0)
+function addMessageTokens(
+  buckets: ContextTokenBuckets,
+  message: AgentMessage,
+  includeThinking: boolean,
+) {
+  const namedTool = message.role === "tool" && !!message.tool_name;
+  const baseUnits = (namedTool ? 0 : textUnits(message.content))
+    + (includeThinking && message.thinking ? textUnits(message.thinking) : 0)
     + fileUnits(message);
   buckets.messages += unitsToTokens(baseUnits);
 
@@ -68,7 +75,7 @@ function addMessageTokens(buckets: ContextTokenBuckets, message: AgentMessage) {
   for (const activity of message.tool_activities ?? []) {
     addToolActivityTokens(buckets, activity);
   }
-  if (message.role === "tool" && message.tool_name) {
+  if (namedTool && message.tool_name) {
     addNamedToolPayload(buckets, message.tool_name, message.content);
   }
 }

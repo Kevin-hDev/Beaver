@@ -175,13 +175,14 @@ describe("context-usage-breakdown", () => {
     expect(item(breakdown.items, "memory")).toBeGreaterThan(106);
   });
 
-  it("range le delta observé dans Meta contexte", () => {
+  it("ne crée aucun résiduel artificiel dans Meta contexte", () => {
     const breakdown = buildContextUsageBreakdown([
       msg({ content: "a".repeat(400) }),
-    ], { observedUsed: 180 });
+    ]);
 
     expect(item(breakdown.items, "messages")).toBe(100);
-    expect(item(breakdown.items, "metaContext")).toBe(80);
+    expect(item(breakdown.items, "metaContext")).toBe(0);
+    expect(breakdown.used).toBe(100);
   });
 
   it("classe les outils de la réponse live comme après sa finalisation", () => {
@@ -231,30 +232,36 @@ describe("context-usage-breakdown", () => {
     expect(historyBuckets).toEqual(originalHistory);
   });
 
-  it("réduit les outils estimés avant les messages mieux mesurés", () => {
+  it("conserve chaque catégorie préparée sans rabotage final", () => {
     const breakdown = buildContextUsageBreakdown([
       msg({
         content: "m".repeat(400),
         role: "assistant",
         tool_activities: [{ name: "bash", summary: "x".repeat(400) }],
       }),
-    ], { observedUsed: 120 });
+    ]);
 
     expect(item(breakdown.items, "messages")).toBe(100);
-    expect(item(breakdown.items, "systemTools")).toBe(20);
+    expect(item(breakdown.items, "systemTools")).toBeGreaterThan(100);
   });
 
-  it("respecte un total provider exact même inférieur aux estimations", () => {
+  it("peut exclure le raisonnement non rejoué par le provider", () => {
     const breakdown = buildContextUsageBreakdown([
-      msg({ content: "a".repeat(400) }),
+      msg({ content: "a".repeat(400), thinking: "b".repeat(400) }),
     ], {
-      observedUsed: 80,
-      systemPromptTokens: 20,
+      includeThinking: false,
     });
-    const total = breakdown.items.reduce((sum, entry) => sum + entry.tokens, 0);
 
-    expect(breakdown.used).toBe(80);
-    expect(total).toBe(80);
+    expect(item(breakdown.items, "messages")).toBe(100);
+  });
+
+  it("ne double-compte pas le contenu d'un message outil", () => {
+    const breakdown = buildContextUsageBreakdown([
+      msg({ role: "tool", tool_name: "grep", content: "x".repeat(400) }),
+    ]);
+
+    expect(item(breakdown.items, "messages")).toBe(0);
+    expect(item(breakdown.items, "systemTools")).toBe(100);
   });
 
   it("garde un total cohérent avec les catégories", () => {

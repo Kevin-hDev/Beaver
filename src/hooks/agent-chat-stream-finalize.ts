@@ -1,6 +1,7 @@
 import { buildSegmentedMessage, type StreamSegment } from "./agent-chat-utils";
 import { markUnconfirmedContentAsWork } from "./agent-chat-stream-partial";
 import { estimateAgentMessagesTokens } from "./agent-token-estimate";
+import { resolvePreparedContextBuckets } from "./context-usage-stream";
 import {
   MAX_MESSAGES_PER_SESSION,
   type ManagedStreamState,
@@ -39,6 +40,10 @@ export function finalizeStream(
     ? [assistantMessage, ...state.queuedUserMessages]
     : [...state.queuedUserMessages];
   const allMessages = trimMessages([...state.messages, ...persistedMessages]);
+  const contextUsageBuckets = resolvePreparedContextBuckets(
+    state,
+    state.queuedUserMessages,
+  );
   const hasStreamContextTokens = state.hasContextUsageSnapshot;
   const resolvedContextTokens = contextTokens
     ?? (hasStreamContextTokens ? state.sessionTokenCount : estimateAgentMessagesTokens(allMessages));
@@ -53,7 +58,9 @@ export function finalizeStream(
     contextInputTokens: resolvedContextTokens,
     contextOutputTokens: 0,
     hasContextUsageSnapshot: contextTokens !== null || hasStreamContextTokens,
-    lastRequestTokens: assistantMessage?.tokens ?? outputTokens ?? 0, liveTokenCount: 0,
+    contextUsageBuckets,
+    contextUsageBaseSegments: 0,
+    liveTokenCount: 0,
     streamStartedAt: null, segmentStartedAt: null, totalElapsedMs: totalMs,
     pendingPermissions: [], interactiveChoice: undefined,
     completed: true, updatedAt: Date.now(),

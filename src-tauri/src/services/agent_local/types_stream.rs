@@ -29,10 +29,12 @@ pub enum StreamEvent {
     ContextUsage {
         input_tokens: u32,
         output_tokens: u32,
-        context_tokens: u32,
         context_limit: u32,
         estimated: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        breakdown: Option<super::context_usage_buckets::RequestContextUsage>,
     },
+    GenerationStarted {},
     ToolCall {
         name: String,
         arguments: serde_json::Value,

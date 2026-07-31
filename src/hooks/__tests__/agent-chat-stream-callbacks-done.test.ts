@@ -62,6 +62,28 @@ describe("done", () => {
     expect(result.assistantMessage?.tokens).toBe(5);
   });
 
+  it("conserve le découpage préparé quand le provider corrige son total", () => {
+    const result = applyStreamEvent(
+      makeState({
+        currentContent: "a".repeat(400),
+        contextUsageBuckets: {
+          messages: 100,
+          systemTools: 10,
+          mcpConnectors: 0,
+          skills: 5,
+          memory: 0,
+          metaContext: 20,
+          systemPrompt: 50,
+        },
+      }),
+      doneEvent({ contextTokens: 80 }),
+    );
+
+    expect(result.state.sessionTokenCount).toBe(80);
+    expect(result.state.contextUsageBuckets?.messages).toBe(200);
+    expect(result.state.contextUsageBuckets?.metaContext).toBe(20);
+  });
+
   it("retombe sur l'estimation si contextTokens est absent", () => {
     const result = applyStreamEvent(
       makeState({ sessionTokenCount: 100, currentContent: "你".repeat(1000) }),
@@ -198,6 +220,5 @@ describe("done — limite messages assertion précise", () => {
     );
     expect(result.assistantMessage?.tokens).toBe(50);
     expect(result.assistantTokens).toBe(result.assistantMessage?.tokens);
-    expect(result.state.lastRequestTokens).toBe(result.assistantMessage?.tokens);
   });
 });

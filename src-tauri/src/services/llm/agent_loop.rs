@@ -3,8 +3,9 @@ use super::agent_loop_request::ApiRequestParams;
 use super::agent_loop_tools;
 use crate::services::agent_local::{
     agent_loop_finish, agent_loop_limits::MAX_TURNS, agent_loop_plan, circuit_breaker,
-    context_usage_runtime, extension_tool_set, stream_events::AgentEventEmitter,
-    subagent_orchestration, tool_executor, types_ollama::ChatMessage, write_guard_registry,
+    context_usage_buckets::ContextUsageSeed, context_usage_runtime, extension_tool_set,
+    stream_events::AgentEventEmitter, subagent_orchestration, tool_executor,
+    types_ollama::ChatMessage, write_guard_registry,
 };
 use crate::services::token_counting;
 use std::path::PathBuf;
@@ -29,6 +30,7 @@ pub async fn run_agent_loop(
     configured_context: u64,
     permission_mode: &str,
     plan_mode_active: bool,
+    context_usage_seed: ContextUsageSeed,
 ) -> Result<u32, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
     let (mut last_prompt, mut last_eval) = (None, None);
@@ -71,6 +73,7 @@ pub async fn run_agent_loop(
             plan_mode_active,
             turn,
             subagents: &mut subagents,
+            context_usage_seed,
         })
         .await?;
         let interrupted = request_output.interrupted;

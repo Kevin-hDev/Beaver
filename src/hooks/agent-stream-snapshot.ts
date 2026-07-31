@@ -19,6 +19,11 @@ export function applySessionSnapshot(
     contextOutputTokens: 0,
     contextLimitTokens: 0,
     hasContextUsageSnapshot: false,
+    contextUsageBuckets: null,
+    contextUsageBaseSegments: 0,
+    contextUsageIncludesReasoning: true,
+    contextUsageVisible: record.state.contextUsageVisible
+      || messages.some((message) => message.role === "assistant"),
     isStreaming: true,
     activeStreamItem: null,
     persisted: false,

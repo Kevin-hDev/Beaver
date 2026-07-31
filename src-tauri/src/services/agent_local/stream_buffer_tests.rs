@@ -70,6 +70,13 @@ fn content_phase_serializes_when_present() {
 }
 
 #[test]
+fn generation_started_serializes_before_visible_content() {
+    let value = serde_json::to_value(StreamEvent::GenerationStarted {})
+        .expect("serialize generation start");
+    assert_eq!(value["event"], "generationStarted");
+}
+
+#[test]
 fn classifies_interrupted_text_as_work() {
     let result = StreamResult {
         content_chunks: vec!["partial".into()],

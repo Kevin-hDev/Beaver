@@ -10,7 +10,6 @@ import type { StreamRecord } from "@/hooks/agent-stream-cleanup";
 function makeRecord(): StreamRecord {
   return {
     state: createManagedStreamState([], 0),
-    history: [],
     subscribers: new Map(),
     nextSubscriberId: 1,
     cleanupTimer: null,
@@ -31,7 +30,8 @@ afterEach(() => {
 });
 
 describe("shouldDeferStreamEvent", () => {
-  it("diffère seulement les fragments texte et thinking", () => {
+  it("synchronise le début de génération avec les fragments de la frame", () => {
+    expect(shouldDeferStreamEvent({ event: "generationStarted", data: {} })).toBe(true);
     expect(shouldDeferStreamEvent({ event: "token", data: { content: "a", tokenCount: 1, tps: 0 } })).toBe(true);
     expect(shouldDeferStreamEvent({ event: "thinking", data: { content: "a" } })).toBe(true);
     expect(shouldDeferStreamEvent({ event: "done", data: { evalCount: 0, evalDurationNs: 0, finalTps: 0, promptTokens: 0, contextTokens: 0 } })).toBe(false);

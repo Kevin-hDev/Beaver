@@ -30,7 +30,6 @@ export function getOrCreateRecord(sessionId: string): StreamRecord {
   if (record) return record;
   record = {
     state: { ...createManagedStreamState([], 0), isStreaming: false },
-    history: [],
     subscribers: new Map(),
     nextSubscriberId: 1,
     cleanupTimer: null,
@@ -64,7 +63,6 @@ export function startStreamRecord(
   const record = getOrCreateRecord(sessionId);
   clearCleanup(record);
   record.state = createManagedStreamState(messages, sessionTokenCount, streamKind);
-  record.history = [];
   record.started = true;
   startUiPersistence(record);
   record.activeGeneration = null;

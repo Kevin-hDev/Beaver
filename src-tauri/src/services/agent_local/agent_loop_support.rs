@@ -82,6 +82,14 @@ pub fn build_assistant_message(result: &StreamResult) -> ChatMessage {
     }
 }
 
+pub fn build_for_plan(result: &StreamResult, plan_active: bool) -> ChatMessage {
+    let mut message = build_assistant_message(result);
+    if plan_active && !result.tool_calls.is_empty() {
+        message.content.clear();
+    }
+    message
+}
+
 pub async fn decharge_gpu(model: &str) {
     let keep_alive = crate::services::config::read_config()
         .map(|c| c.advanced.keep_alive)

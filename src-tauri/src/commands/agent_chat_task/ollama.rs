@@ -64,9 +64,11 @@ pub(crate) async fn run(
         });
     }
 
-    if params.subagent_profile.is_some() {
+    let context_usage_seed = if params.subagent_profile.is_some() {
+        let seed = super::context_usage_seed::for_subagent(memory_context.as_deref(), &snap);
         common::append_memory_context(&mut messages, memory_context);
         common::append_git_section(&mut messages, &snap);
+        seed
     } else {
         let agent_md = common::agent_md_content(&mode, &working_dir).await;
         let skills = common::skills_tuples(
@@ -75,25 +77,25 @@ pub(crate) async fn run(
                 && tool_catalog::has_tool(&enabled_tool_names, "load_skill"),
         )
         .await;
-        common::prepare_with_context(
-            &mut messages,
-            common::PromptContext {
-                working_dir: &working_dir,
-                outputs_dir: params.outputs_dir.as_deref(),
-                snap: &snap,
-                has_tools: true,
-                agent_md_content: agent_md,
-                skills: &skills,
-                model: &params.model,
-                mode: &mode.mode,
-                response_language: &response_language,
-                plan_mode_active,
-                enabled_tool_names: &enabled_tool_names,
-                behavior: behavior.as_deref(),
-                memory_context,
-            },
-        );
-    }
+        let prompt_context = common::PromptContext {
+            working_dir: &working_dir,
+            outputs_dir: params.outputs_dir.as_deref(),
+            snap: &snap,
+            has_tools: true,
+            agent_md_content: agent_md,
+            skills: &skills,
+            model: &params.model,
+            mode: &mode.mode,
+            response_language: &response_language,
+            plan_mode_active,
+            enabled_tool_names: &enabled_tool_names,
+            behavior: behavior.as_deref(),
+            memory_context,
+        };
+        let seed = super::context_usage_seed::for_prompt(&prompt_context);
+        common::prepare_with_context(&mut messages, prompt_context);
+        seed
+    };
     if todo_tools_enabled(&enabled_tool_names) {
         crate::services::agent_local::tool_todo::append_session_reminder(
             &mut messages,
@@ -117,6 +119,7 @@ pub(crate) async fn run(
         ctx.configured,
         &mode.mode,
         plan_mode_active,
+        context_usage_seed,
     )
     .await?;
     Ok(messages)

@@ -62,12 +62,23 @@ describe("agent-token-estimate", () => {
     expect(resolveSessionContext(session)).toEqual({
       sessionTokenCount: 900,
       hasContextUsageSnapshot: true,
+      contextUsageVisible: false,
     });
 
     delete session.context_tokens;
     expect(resolveSessionContext(session)).toEqual({
       sessionTokenCount: 100,
       hasContextUsageSnapshot: false,
+      contextUsageVisible: false,
     });
+  });
+
+  it("affiche le contexte d'une session seulement après une réponse assistant", () => {
+    const session = {
+      accumulated_tokens: 100,
+      messages: [msg("question"), { ...msg("réponse"), role: "assistant" }],
+    } as AgentSession;
+
+    expect(resolveSessionContext(session).contextUsageVisible).toBe(true);
   });
 });

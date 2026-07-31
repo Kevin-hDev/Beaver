@@ -1,3 +1,4 @@
+use crate::services::agent_local::context_usage_buckets::{ContextUsageSeed, RequestContextUsage};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_orchestration::ParentSubagentOrchestrator;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
@@ -19,6 +20,7 @@ pub(super) struct ApiRequestParams<'a> {
     pub plan_mode_active: bool,
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
+    pub context_usage_seed: ContextUsageSeed,
 }
 
 pub(super) struct ApiRequestOutput {
@@ -46,6 +48,12 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.on_event,
         input_estimate,
         params.configured_context,
+        RequestContextUsage::from_request(
+            params.provider_id,
+            params.messages,
+            params.tools,
+            params.context_usage_seed,
+        ),
     );
     let realtime_budget = RealtimeBudget::from_estimate(params.configured_context, input_estimate);
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
@@ -117,6 +125,12 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.on_event,
                 input_estimate,
                 params.configured_context,
+                RequestContextUsage::from_request(
+                    params.provider_id,
+                    params.messages,
+                    params.tools,
+                    params.context_usage_seed,
+                ),
             );
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,

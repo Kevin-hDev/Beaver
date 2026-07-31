@@ -13,9 +13,7 @@ pub fn record_content(
     result.content.push_str(&content);
     result.content_chunks.push(content.clone());
     *token_count = result.record_generated_text(&content);
-    if first_token.is_none() {
-        *first_token = Some(std::time::Instant::now());
-    }
+    record_generation_started(on_event, first_token);
     if !buffer_content {
         emit_token(on_event, content, *token_count, *first_token, None);
     }
@@ -30,13 +28,22 @@ pub fn record_thinking(
 ) {
     result.thinking.push_str(&content);
     *token_count = result.record_generated_text(&content);
-    if first_token.is_none() {
-        *first_token = Some(std::time::Instant::now());
-    }
+    record_generation_started(on_event, first_token);
     let _ = on_event.send(StreamEvent::Thinking {
         content,
         token_count: *token_count,
     });
+}
+
+pub fn record_generation_started(
+    on_event: &AgentEventEmitter,
+    first_token: &mut Option<std::time::Instant>,
+) {
+    if first_token.is_some() {
+        return;
+    }
+    *first_token = Some(std::time::Instant::now());
+    let _ = on_event.send(StreamEvent::GenerationStarted {});
 }
 
 pub fn emit_buffered_content(

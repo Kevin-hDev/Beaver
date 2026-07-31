@@ -55,11 +55,12 @@ export function ChatView({
   const knownSubagents = [...subagents.active, ...subagents.completed];
   const fileDrop = useFileDrop();
   const context = useContextProgress(model, chat.sessionTokenCount, provider);
+  const contextMax = chat.contextLimitTokens || context.max;
   const [preview, setPreview] = useState<DroppedFile | null>(null);
   const proj = useSessionProject(sessionId, projects, onAddProject, chat.messages.length > 0);
   const contextUsage = useContextUsage({
     sessionId, model, provider, messages: chat.messages,
-    used: chat.hasContextUsageSnapshot ? context.used : undefined, stream: chat,
+    stream: chat,
     workingDir: proj.selectedProject?.path, permissionMode: permMode.mode,
     planMode: chat.planModeEnabled, supportsTools: selectedModelCaps?.supports_tools,
   });
@@ -141,7 +142,8 @@ export function ChatView({
             )}
             <ChatInput
               modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
-              files={fileDrop.files} contextUsed={contextUsage.used} contextMax={context.max} contextBreakdown={contextUsage}
+              files={fileDrop.files} contextUsed={contextUsage.used}
+              contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
               retryIndicator={runtime.retryIndicator}
               interactiveRequest={chat.interactiveChoice}
               onInteractiveResolved={chat.clearInteractiveChoice}

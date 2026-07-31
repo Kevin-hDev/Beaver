@@ -50,15 +50,24 @@ fn context_usage_serializes_for_the_live_ring() {
     let event = StreamEvent::ContextUsage {
         input_tokens: 120,
         output_tokens: 8,
-        context_tokens: 128,
         context_limit: 372_000,
         estimated: true,
+        breakdown: Some(super::super::context_usage_buckets::RequestContextUsage {
+            messages: 40,
+            system_prompt: 80,
+            reasoning_included: false,
+            ..Default::default()
+        }),
     };
 
     let serialized = serde_json::to_value(event).expect("serialize context usage");
 
     assert_eq!(serialized["event"], "contextUsage");
-    assert_eq!(serialized["data"]["contextTokens"], 128);
+    assert_eq!(serialized["data"]["inputTokens"], 120);
+    assert_eq!(serialized["data"]["outputTokens"], 8);
     assert_eq!(serialized["data"]["contextLimit"], 372_000);
     assert_eq!(serialized["data"]["estimated"], true);
+    assert_eq!(serialized["data"]["breakdown"]["messages"], 40);
+    assert_eq!(serialized["data"]["breakdown"]["systemPrompt"], 80);
+    assert_eq!(serialized["data"]["breakdown"]["reasoningIncluded"], false);
 }

@@ -131,6 +131,10 @@ fn process_chunk(
                 );
             }
             ParsedChunk::Content(content) => {
+                crate::services::agent_local::stream_buffer::record_generation_started(
+                    on_event,
+                    first_token,
+                );
                 for filtered in think_filter.feed(&content) {
                     match filtered {
                         FilteredChunk::Thinking(t) => {
@@ -155,7 +159,15 @@ fn process_chunk(
                     }
                 }
             }
-            ParsedChunk::ToolCalls(tool_calls) => acc.ingest(&tool_calls),
+            ParsedChunk::ToolCalls(tool_calls) => {
+                if !tool_calls.is_empty() {
+                    crate::services::agent_local::stream_buffer::record_generation_started(
+                        on_event,
+                        first_token,
+                    );
+                }
+                acc.ingest(&tool_calls);
+            }
             ParsedChunk::Usage(usage) => {
                 result.eval_count = usage.output_tokens.and_then(|value| value.try_into().ok());
                 result.prompt_tokens = usage.input_tokens.and_then(|value| value.try_into().ok());

@@ -8,11 +8,39 @@ function makeState(overrides: Partial<ManagedStreamState> = {}): ManagedStreamSt
   return { ...createManagedStreamState([], 0), streamStartedAt: null, segmentStartedAt: null, ...overrides };
 }
 
+describe("visibilité du contexte", () => {
+  it("reste masqué après le premier message utilisateur", () => {
+    const state = createManagedStreamState([{
+      id: "user-1", role: "user", content: "Question", files: [], timestamp: "",
+    }], 10);
+
+    expect(state.contextUsageVisible).toBe(false);
+  });
+
+  it("reste visible pour une conversation ayant déjà une réponse", () => {
+    const state = createManagedStreamState([{
+      id: "assistant-1", role: "assistant", content: "Réponse", files: [], timestamp: "",
+    }], 10);
+
+    expect(state.contextUsageVisible).toBe(true);
+  });
+
+  it("devient visible dès le signal du premier token modèle", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "generationStarted",
+      data: {},
+    });
+
+    expect(result.state.contextUsageVisible).toBe(true);
+  });
+});
+
 describe("token", () => {
   it("accumule le contenu", () => {
     const { state: s } = applyStreamEvent(makeState(), { event: "token", data: { content: "bonjour", tps: 5, tokenCount: 1 } });
     expect(s.currentContent).toBe("bonjour");
     expect(s.currentContentPhase).toBeUndefined();
+    expect(s.contextUsageVisible).toBe(true);
   });
   it("stocke la phase de travail envoyée par le backend", () => {
     const { state: s } = applyStreamEvent(makeState(), {
@@ -72,6 +100,7 @@ describe("thinking", () => {
   it("accumule le thinking", () => {
     const { state: s } = applyStreamEvent(makeState(), { event: "thinking", data: { content: "réflexion" } });
     expect(s.currentThinking).toBe("réflexion");
+    expect(s.contextUsageVisible).toBe(true);
   });
   it("incrémente liveTokenCount de 1", () => {
     const { state: s } = applyStreamEvent(makeState({ liveTokenCount: 3 }), { event: "thinking", data: { content: "hmm" } });
@@ -86,11 +115,22 @@ describe("contextUsage", () => {
       data: {
         inputTokens: 100,
         outputTokens: 0,
-        contextTokens: 100,
         contextLimit: 372_000,
         estimated: true,
+        breakdown: {
+          messages: 60,
+          systemTools: 10,
+          mcpConnectors: 5,
+          skills: 5,
+          memory: 5,
+          metaContext: 5,
+          systemPrompt: 10,
+          reasoningIncluded: false,
+        },
       },
     }).state;
+    expect(state.contextUsageVisible).toBe(false);
+    expect(state.contextUsageBuckets?.messages).toBe(60);
     state = applyStreamEvent(state, {
       event: "token",
       data: { content: "réponse", tps: 5, tokenCount: 25 },
@@ -98,13 +138,13 @@ describe("contextUsage", () => {
 
     expect(state.sessionTokenCount).toBe(125);
     expect(state.contextLimitTokens).toBe(372_000);
+    expect(state.contextUsageVisible).toBe(true);
 
     state = applyStreamEvent(state, {
       event: "contextUsage",
       data: {
         inputTokens: 102,
         outputTokens: 20,
-        contextTokens: 122,
         contextLimit: 372_000,
         estimated: false,
       },
@@ -113,6 +153,7 @@ describe("contextUsage", () => {
     expect(state.sessionTokenCount).toBe(122);
     expect(state.contextOutputTokens).toBe(20);
     expect(state.liveTokenCount).toBe(20);
+    expect(state.contextUsageBuckets?.messages).toBe(60);
   });
 
   it("repart de l'entrée préparée au début d'un nouveau tour", () => {
@@ -122,7 +163,6 @@ describe("contextUsage", () => {
       data: {
         inputTokens: 240,
         outputTokens: 0,
-        contextTokens: 240,
         contextLimit: 372_000,
         estimated: true,
       },
@@ -254,7 +294,6 @@ describe("accumulation tokens", () => {
       data: {
         inputTokens: 100,
         outputTokens: 0,
-        contextTokens: 100,
         contextLimit: 372_000,
         estimated: true,
       },

@@ -4,10 +4,7 @@ import {
   applyStreamEvent,
   finishPartialStream,
 } from "./agent-chat-stream-callbacks";
-import {
-  MAX_EVENTS_PER_SESSION,
-  scheduleCleanup, clearCleanup, trimSubscribers,
-} from "./agent-stream-cleanup";
+import { scheduleCleanup, clearCleanup, trimSubscribers } from "./agent-stream-cleanup";
 import {
   flushFrameNotify,
   scheduleFrameNotify,
@@ -150,10 +147,6 @@ function handleStreamEvent(sessionId: string, event: StreamEvent, generation: nu
 
   if (!record.state.isStreaming && event.event !== "done" && event.event !== "error") {
     record.state = { ...record.state, isStreaming: true, persisted: false, completed: false };
-  }
-  record.history.push(event);
-  if (record.history.length > MAX_EVENTS_PER_SESSION) {
-    record.history.splice(0, record.history.length - MAX_EVENTS_PER_SESSION);
   }
 
   const toastMessage = webToolErrorToastMessage(sessionId, event);

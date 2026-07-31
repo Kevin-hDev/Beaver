@@ -1,4 +1,5 @@
 pub mod chat_prompts;
+pub(crate) mod chat_prompt_sections;
 #[cfg(test)]
 mod chat_prompts_behavior_tests;
 #[cfg(test)]

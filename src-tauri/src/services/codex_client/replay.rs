@@ -47,6 +47,16 @@ impl ReplayCollector {
     }
 }
 
+pub fn restore_tool_name(item: &mut serde_json::Value, tools: &[serde_json::Value]) {
+    if item.get("type").and_then(serde_json::Value::as_str) != Some("function_call") {
+        return;
+    }
+    let Some(name) = item.get("name").and_then(serde_json::Value::as_str) else {
+        return;
+    };
+    item["name"] = crate::services::llm::tool_schema::restore_tool_name(name, tools).into();
+}
+
 pub fn items_from_message(message: &ChatMessage) -> Option<Vec<serde_json::Value>> {
     let calls = message.tool_calls.as_ref()?;
     let items = calls

@@ -15,24 +15,6 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("useContextProgress — used", () => {
-  it("retourne la valeur usedTokens passée en paramètre", async () => {
-    vi.mocked(invoke).mockImplementation((cmd: string) => {
-      if (cmd === "show_ollama_model") return Promise.resolve({ modelfile: "", context_length: 0 });
-      if (cmd === "get_effective_context_length") return Promise.resolve(0);
-      return Promise.resolve([]);
-    });
-
-    const { result } = renderHook(() =>
-      useContextProgress("llama3", 42, "ollama"),
-    );
-
-    await waitFor(() => {
-      expect(result.current.used).toBe(42);
-    });
-  });
-});
-
 describe("useContextProgress — provider ollama", () => {
   it("max vient en priorité du contexte réellement chargé par Ollama", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string) => {

@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import { finalizeContextUsage, type ContextUsageBreakdown } from "./context-usage-breakdown";
-import { buildContextTokenBuckets, mergeContextTokenBuckets } from "./context-usage-buckets";
+import {
+  buildContextTokenBuckets,
+  mergeContextTokenBuckets,
+  type ContextTokenBuckets,
+} from "./context-usage-buckets";
 import { buildLiveContextMessage, type LiveContextState } from "./context-usage-live-message";
+import { resolvePreparedContextBuckets } from "./context-usage-stream";
 import { useContextHiddenUsage } from "./use-context-hidden-usage";
 import type { AgentMessage } from "@/types/agent";
 
@@ -10,8 +15,11 @@ interface UseContextUsageArgs {
   model: string;
   provider: string;
   messages: AgentMessage[];
-  used?: number;
-  stream: LiveContextState;
+  stream: LiveContextState & {
+    contextUsageBuckets: ContextTokenBuckets | null;
+    contextUsageBaseSegments: number;
+    contextUsageIncludesReasoning: boolean;
+  };
   workingDir?: string;
   permissionMode?: string;
   planMode?: boolean;
@@ -23,7 +31,6 @@ export function useContextUsage({
   model,
   provider,
   messages,
-  used,
   stream,
   workingDir,
   permissionMode,
@@ -31,6 +38,7 @@ export function useContextUsage({
   supportsTools,
 }: UseContextUsageArgs): ContextUsageBreakdown {
   const hiddenUsage = useContextHiddenUsage({
+    enabled: !stream.contextUsageBuckets,
     sessionId,
     model,
     provider,
@@ -45,10 +53,36 @@ export function useContextUsage({
     currentContentPhase,
     currentThinking,
     currentTools,
+    contextUsageBuckets,
+    contextUsageBaseSegments,
+    contextUsageIncludesReasoning,
   } = stream;
+  const includeThinking = provider !== "codex-oauth";
+  const preparedBuckets = useMemo(
+    () => resolvePreparedContextBuckets({
+      completedSegments,
+      currentContent,
+      currentContentPhase,
+      currentThinking,
+      currentTools,
+      contextUsageBuckets,
+      contextUsageBaseSegments,
+      contextUsageIncludesReasoning,
+    }),
+    [
+      contextUsageBuckets,
+      contextUsageBaseSegments,
+      contextUsageIncludesReasoning,
+      completedSegments,
+      currentContent,
+      currentContentPhase,
+      currentThinking,
+      currentTools,
+    ],
+  );
   const persistedBuckets = useMemo(
-    () => buildContextTokenBuckets(messages),
-    [messages],
+    () => buildContextTokenBuckets(messages, { includeThinking }),
+    [messages, includeThinking],
   );
   const hiddenBuckets = useMemo(
     () => buildContextTokenBuckets([], hiddenUsage),
@@ -68,16 +102,14 @@ export function useContextUsage({
     currentTools,
   ]);
   const liveBuckets = useMemo(
-    () => buildContextTokenBuckets(liveMessage ? [liveMessage] : []),
-    [liveMessage],
+    () => buildContextTokenBuckets(liveMessage ? [liveMessage] : [], { includeThinking }),
+    [liveMessage, includeThinking],
   );
 
   return useMemo(
-    () => finalizeContextUsage(mergeContextTokenBuckets(
-      persistedBuckets,
-      hiddenBuckets,
-      liveBuckets,
-    ), used),
-    [persistedBuckets, hiddenBuckets, liveBuckets, used],
+    () => finalizeContextUsage(preparedBuckets ?? mergeContextTokenBuckets(
+      persistedBuckets, hiddenBuckets, liveBuckets,
+    )),
+    [preparedBuckets, persistedBuckets, hiddenBuckets, liveBuckets],
   );
 }

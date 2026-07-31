@@ -1,4 +1,5 @@
 import type { ManagedStreamState } from "./agent-chat-stream-types";
+import type { ContextTokenBuckets } from "./context-usage-buckets";
 import type { StreamEvent } from "@/types/agent";
 
 type ContextUsageData = Extract<
@@ -26,6 +27,11 @@ export function applyContextUsage(
   state.contextLimitTokens = boundedTokens(usage.contextLimit);
   state.hasContextUsageSnapshot = true;
   state.sessionTokenCount = boundedSum(inputTokens, outputTokens);
+  if (usage.breakdown) {
+    state.contextUsageBuckets = boundedBuckets(usage.breakdown);
+    state.contextUsageBaseSegments = state.completedSegments.length;
+    state.contextUsageIncludesReasoning = usage.breakdown.reasoningIncluded === true;
+  }
 }
 
 export function applyGeneratedTokenCount(
@@ -59,4 +65,18 @@ function boundedSum(left: number, right: number): number {
 function adjustedTokens(value: number, delta: number): number {
   if (!Number.isFinite(delta)) return boundedTokens(value);
   return Math.max(0, Math.min(boundedTokens(value) + delta, MAX_TOKEN_COUNT));
+}
+
+function boundedBuckets(
+  source: NonNullable<ContextUsageData["breakdown"]>,
+): ContextTokenBuckets {
+  return {
+    messages: boundedTokens(source.messages),
+    systemTools: boundedTokens(source.systemTools),
+    mcpConnectors: boundedTokens(source.mcpConnectors),
+    skills: boundedTokens(source.skills),
+    memory: boundedTokens(source.memory),
+    metaContext: boundedTokens(source.metaContext),
+    systemPrompt: boundedTokens(source.systemPrompt),
+  };
 }

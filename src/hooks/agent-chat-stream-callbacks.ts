@@ -42,6 +42,7 @@ export function applyStreamEvent(
   switch (event.event) {
     case "token":
       ensureTimers();
+      next.contextUsageVisible = true;
       next.retryIndicator = null;
       next.activeStreamItem = null;
       if (event.data.phase) prepareContentPhase(next, event.data.phase);
@@ -55,6 +56,7 @@ export function applyStreamEvent(
       break;
     case "thinking":
       ensureTimers();
+      next.contextUsageVisible = true;
       next.currentThinking += event.data.content;
       next.activeStreamItem = thinkingItem();
       applyGeneratedTokenCount(next, event.data.tokenCount);
@@ -62,8 +64,12 @@ export function applyStreamEvent(
     case "contextUsage":
       applyContextUsage(next, event.data);
       break;
+    case "generationStarted":
+      next.contextUsageVisible = true;
+      break;
     case "toolCall":
       ensureTimers();
+      next.contextUsageVisible = true;
       if (isHiddenAgentTool(event.data.name)) break;
       next.currentTools = [...next.currentTools, {
         name: event.data.name, args: event.data.arguments, domain: event.data.domain,

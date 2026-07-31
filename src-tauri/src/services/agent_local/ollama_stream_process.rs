@@ -66,6 +66,7 @@ pub fn process_chunk(
     if let Some(content) = msg["content"].as_str() {
         if !content.is_empty() {
             chunk_has_payload = true;
+            super::stream_buffer::record_generation_started(on_event, first_token);
             emit_filtered(
                 think_filter,
                 content,
@@ -81,6 +82,7 @@ pub fn process_chunk(
     if let Some(tool_calls) = msg["tool_calls"].as_array() {
         if !tool_calls.is_empty() {
             chunk_has_payload = true;
+            super::stream_buffer::record_generation_started(on_event, first_token);
         }
         for tc in tool_calls {
             let func = &tc["function"];
