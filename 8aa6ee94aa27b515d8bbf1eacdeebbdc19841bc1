@@ -1,0 +1,21 @@
+Shell runtime follow-up decisions
+
+- This commit addresses every confirmed finding from the review of a26fc2d. Finding 13 was reclassified: types_stream.rs has 202 lines and the governing limit is 230. Every touched production source file is at or below 230 lines.
+
+- No new permission mode, sandbox, or general Full Access restriction was introduced. Manual mode now treats non-empty bash_write input like bash input. Plan mode allows bash_write only for polling or stopping and uses a dedicated conservative read-only shell classifier.
+
+- The cached shell-profile snapshot is capped at 128 KiB, passed through BEAVER_INTERNAL_PROFILE_SNAPSHOT instead of argv, and unset before the user command. It is never persisted. This follows the project rule that secrets belong in the process environment rather than command-line arguments. Same-user processes may still inspect another process environment where the OS permits it; that is the remaining, narrower exposure.
+
+- Unix command arguments contain the fixed wrapper and the user command separately. The wrapper preserves the foreground exit status and waits for ordinary background jobs, so `command &` remains managed. A deliberately detached double-fork daemon is outside that contract.
+
+- stdout and stderr are retained separately for model results. The optional full transcript file preserves arrival order and remains a combined byte stream. Per-poll previews are bounded and report truncation only when that specific poll lost bytes.
+
+- File-change tracking combines bounded filesystem events with a Git baseline captured immediately before execution. Final diffs compare against the exact dirty worktree state, not HEAD alone. Live progress carries metadata only; expensive content diffs are built once on completion. Non-Git watcher gaps are explicitly reported as incomplete.
+
+- Linux uses bounded non-recursive watches for existing, non-ignored directories. A new directory marks tracking incomplete; the final Git status scan recovers repository changes without recursively watching node_modules, target, or other generated trees.
+
+- Windows uses absolute System32 paths for Windows PowerShell and taskkill and preserves native exit codes. Cross-target checking from macOS was blocked before Beaver compilation by missing Windows C headers in aws-lc-sys/zstd-sys; native Windows CI remains the authoritative platform check.
+
+- Additional review changes: canonical yield_time_ms validation, early shell/session input validation, cancellable bounded stdin writes, runtime watcher-error propagation, supported-POSIX-shell filtering, one-second negative subagent-cache expiry, and dead-parameter removal.
+
+Validation: cargo fmt --check; cargo check; cargo clippy --all-targets -- -D warnings; cargo test (2612 passed); npm run lint; npx tsc --noEmit; npm test (1746 Vitest + 2 CEF + 46 extension-host tests); cold mkdir integration test (~0.7 s); git diff --check; graphify update .
