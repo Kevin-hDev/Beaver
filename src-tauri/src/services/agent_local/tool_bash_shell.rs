@@ -56,10 +56,12 @@ fn user_shell() -> Result<String, String> {
 #[cfg(unix)]
 pub(super) fn shell_arguments(command: &str) -> Vec<String> {
     let wrapper = format!(
-        "if [ \"${{{}+x}}\" = x ]; then eval \"${{{}}}\"; unset {}; fi; set +e; eval \"$1\"; beaver_status=$?; wait; exit \"$beaver_status\"",
-        super::tool_bash_profile::SNAPSHOT_ENV,
-        super::tool_bash_profile::SNAPSHOT_ENV,
-        super::tool_bash_profile::SNAPSHOT_ENV,
+        "if [ \"${{{}+x}}\" = x ]; then eval \"${{{}-}}${{{}-}}\"; unset {} {}; fi; set +e; eval \"$1\"; beaver_status=$?; wait; exit \"$beaver_status\"",
+        super::tool_bash_profile::SNAPSHOT_ENVS[0],
+        super::tool_bash_profile::SNAPSHOT_ENVS[0],
+        super::tool_bash_profile::SNAPSHOT_ENVS[1],
+        super::tool_bash_profile::SNAPSHOT_ENVS[0],
+        super::tool_bash_profile::SNAPSHOT_ENVS[1],
     );
     vec![
         "-c".to_string(),

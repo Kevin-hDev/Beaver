@@ -12,9 +12,10 @@ fn baseline_uses_the_exact_dirty_worktree_content() {
     let (baseline, incomplete) = GitBaseline::capture(directory.path());
     assert!(!incomplete);
     let baseline = baseline.expect("baseline");
+    let repository = baseline.open_repository().expect("open repository");
     std::fs::write(&file, "after command").expect("after");
     let before = baseline
-        .before_state(&file)
+        .before_state(Some(&repository), &file)
         .expect("known path")
         .expect("existing file");
     let mut remaining = super::MAX_FILE_CHANGE_DIFF_BYTES;

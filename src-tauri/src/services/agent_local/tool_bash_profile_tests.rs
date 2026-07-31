@@ -15,23 +15,40 @@ fn known_posix_shells_have_a_snapshot_script() {
 #[test]
 fn profile_is_kept_out_of_arguments_and_replayed_from_environment() {
     let profile = ShellProfile {
-        script: Zeroizing::new(
-            "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export BEAVER_PROFILE_TEST=env"
-                .to_string(),
+        scripts: split_snapshot(
+            "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export BEAVER_PROFILE_TEST=env",
         ),
     };
-    let command = "hi; myfn; printf '%s:%s' \"$BEAVER_PROFILE_TEST\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT-unset}\"";
+    let command = "hi; myfn; printf '%s:%s:%s' \"$BEAVER_PROFILE_TEST\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_0-unset}\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_1-unset}\"";
     let arguments = super::super::tool_bash_shell::shell_arguments(command);
 
     assert!(arguments
         .iter()
         .all(|argument| !argument.contains("BEAVER_PROFILE_TEST=env")));
-    let output = std::process::Command::new("/bin/bash")
-        .args(arguments)
-        .env(SNAPSHOT_ENV, profile.script.as_str())
-        .output()
-        .expect("bash");
+    let mut process = std::process::Command::new("/bin/bash");
+    process.args(arguments);
+    for (name, script) in SNAPSHOT_ENVS.iter().zip(&profile.scripts) {
+        process.env(name, script.as_str());
+    }
+    let output = process.output().expect("bash");
 
     assert!(output.status.success());
-    assert_eq!(String::from_utf8_lossy(&output.stdout), "aliasfunctionenv:unset");
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "aliasfunctionenv:unset:unset"
+    );
+}
+
+#[test]
+fn large_utf8_profiles_are_split_below_linux_environment_limits() {
+    let snapshot = "é".repeat(60_000);
+    let chunks = split_snapshot(&snapshot);
+
+    assert!(chunks
+        .iter()
+        .all(|chunk| chunk.len() <= MAX_SNAPSHOT_CHUNK_BYTES));
+    assert_eq!(
+        format!("{}{}", chunks[0].as_str(), chunks[1].as_str()),
+        snapshot
+    );
 }

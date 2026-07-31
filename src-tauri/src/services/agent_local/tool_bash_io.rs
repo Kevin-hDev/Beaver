@@ -15,6 +15,12 @@ pub enum OutputEvent {
     Failed,
 }
 
+pub enum DrainOutcome {
+    Complete,
+    TimedOut,
+    Failed,
+}
+
 pub async fn read_bounded<R: AsyncRead + Unpin>(
     mut reader: R,
     limit: usize,
@@ -79,25 +85,26 @@ pub async fn drain(
     session: &ShellSession,
     store: &mut ShellOutputStore,
     receiver: &mut mpsc::Receiver<OutputEvent>,
-) -> bool {
+) -> DrainOutcome {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(DRAIN_MAX_TIMEOUT_SECS);
     loop {
         let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
         if remaining.is_zero() {
-            return false;
+            return DrainOutcome::TimedOut;
         }
         match tokio::time::timeout(remaining, receiver.recv()).await {
             Ok(Some(OutputEvent::Data(stream, mut bytes))) => {
                 use zeroize::Zeroize;
                 if store.append(&bytes).await.is_err() {
                     bytes.zeroize();
-                    return false;
+                    return DrainOutcome::Failed;
                 }
                 session.append_output(stream, &bytes);
                 bytes.zeroize();
             }
-            Ok(Some(OutputEvent::Failed)) | Err(_) => return false,
-            Ok(None) => return true,
+            Ok(Some(OutputEvent::Failed)) => return DrainOutcome::Failed,
+            Err(_) => return DrainOutcome::TimedOut,
+            Ok(None) => return DrainOutcome::Complete,
         }
     }
 }

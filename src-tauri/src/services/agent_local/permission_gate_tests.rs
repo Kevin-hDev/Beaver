@@ -87,6 +87,12 @@ fn safe_bash_npm_run() {
 }
 
 #[test]
+fn safe_bash_npm_test() {
+    let args = json!({ "command": "npm test" });
+    assert!(!requires_permission("bash", &args));
+}
+
+#[test]
 fn safe_bash_cargo_check() {
     let args = json!({ "command": "cargo check" });
     assert!(!requires_permission("bash", &args));

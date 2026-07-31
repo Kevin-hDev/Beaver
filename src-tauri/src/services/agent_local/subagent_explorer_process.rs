@@ -68,6 +68,8 @@ pub async fn run(
             exit_code: status.code().unwrap_or(-1),
             running: false,
             timed_out: false,
+            tracking_incomplete: false,
+            output_incomplete: false,
             affected_paths: Vec::new(),
             file_changes: Vec::new(),
         }),
@@ -123,6 +125,8 @@ fn interrupted(message: &str, timed_out: bool) -> ShellOutput {
         exit_code: -1,
         running: false,
         timed_out,
+        tracking_incomplete: false,
+        output_incomplete: false,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
     }

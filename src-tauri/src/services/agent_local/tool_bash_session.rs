@@ -26,6 +26,7 @@ pub struct ShellSessionSnapshot {
     pub output_truncated: bool,
     pub changes: Vec<ToolFileChange>,
     pub tracking_incomplete: bool,
+    pub output_incomplete: bool,
 }
 
 pub struct ShellSession {
@@ -45,6 +46,7 @@ struct SessionState {
     output_path: Option<String>,
     changes: Vec<ToolFileChange>,
     tracking_incomplete: bool,
+    output_incomplete: bool,
     progress: Option<ShellProgress>,
     last_progress_bytes: usize,
     last_progress_elapsed_ms: u64,
@@ -70,6 +72,7 @@ impl ShellSession {
                 output_path: Some(output_path),
                 changes: Vec::new(),
                 tracking_incomplete: false,
+                output_incomplete: false,
                 progress,
                 last_progress_bytes: 0,
                 last_progress_elapsed_ms: 0,
@@ -114,6 +117,10 @@ impl ShellSession {
         state.tracking_incomplete = incomplete;
     }
 
+    pub fn mark_output_incomplete(&self) {
+        self.lock_state().output_incomplete = true;
+    }
+
     pub fn complete(&self, completion: CompletionKind, output_path: Option<String>) {
         let mut state = self.lock_state();
         state.completion = Some(completion);
@@ -137,6 +144,7 @@ impl ShellSession {
             output_truncated: pending.truncated,
             changes: state.changes.clone(),
             tracking_incomplete: state.tracking_incomplete,
+            output_incomplete: state.output_incomplete,
         }
     }
 

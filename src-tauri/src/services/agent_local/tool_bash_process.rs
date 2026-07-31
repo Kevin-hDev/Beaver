@@ -159,7 +159,10 @@ async fn run_process(
         super::tool_bash_platform::terminate_process_tree(session.pid()).await;
         let _ = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
     }
-    let fully_drained = super::tool_bash_io::drain(session, &mut store, &mut receiver).await;
+    let drain = super::tool_bash_io::drain(session, &mut store, &mut receiver).await;
+    if matches!(drain, super::tool_bash_io::DrainOutcome::TimedOut) {
+        session.mark_output_incomplete();
+    }
     for reader in readers {
         reader.abort();
         let _ = reader.await;
@@ -173,13 +176,15 @@ async fn run_process(
     if settle_ms > 0 {
         tokio::time::sleep(Duration::from_millis(settle_ms)).await;
     }
-    finish_changes(session, tracker.as_mut());
+    finish_changes(session, &mut tracker).await;
     session.emit_progress();
     session.close_stdin().await;
 
     let keep_output = session.total_output_bytes() > KEEP_OUTPUT_AFTER_BYTES;
     let output_path = store.finalize(keep_output).await.ok().flatten();
-    let completion = if !fully_drained || (output_path.is_none() && keep_output) {
+    let completion = if matches!(drain, super::tool_bash_io::DrainOutcome::Failed)
+        || (output_path.is_none() && keep_output)
+    {
         CompletionKind::Failed
     } else {
         completion
@@ -187,10 +192,13 @@ async fn run_process(
     session.complete(completion, output_path);
 }
 
-fn finish_changes(session: &ShellSession, tracker: Option<&mut ChangeTracker>) {
-    if let Some(tracker) = tracker {
-        let (changes, incomplete) = tracker.finish_changes();
-        session.update_changes(changes, incomplete);
+async fn finish_changes(session: &ShellSession, tracker: &mut Option<ChangeTracker>) {
+    let Some(mut tracker) = tracker.take() else {
+        return;
+    };
+    match tokio::task::spawn_blocking(move || tracker.finish_changes()).await {
+        Ok((changes, incomplete)) => session.update_changes(changes, incomplete),
+        Err(_) => session.update_changes(Vec::new(), true),
     }
 }
 

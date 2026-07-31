@@ -6,6 +6,7 @@ pub mod subagent_explorer_process;
 pub mod tool_bash;
 pub mod tool_bash_change_hub;
 pub mod tool_bash_changes;
+pub mod tool_bash_directory_baseline;
 pub mod tool_bash_git;
 pub mod tool_bash_io;
 pub mod tool_bash_output;

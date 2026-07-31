@@ -7,7 +7,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
         tool_def(
             "bash",
             "Execute a shell command on the user's machine. \
-             Shell: the complete user environment with a cached user profile and $SHELL -c (Unix), or PowerShell (Windows). Commands start in the project working directory. \
+             Shell: the complete user environment with a cached user profile. Unix uses $SHELL when it is compatible with POSIX commands, otherwise zsh, bash, or sh; Windows uses PowerShell. Commands start in the project working directory. \
              Set workdir to an absolute directory only when the command intentionally needs another location. \
              IMPORTANT — prefer dedicated tools, they give the user a better experience and are easier to approve: \
              find files with glob (not find); search contents with grep (not grep/rg); \

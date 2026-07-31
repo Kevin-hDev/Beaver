@@ -110,6 +110,10 @@ pub fn build_change(
     })
 }
 
+pub fn states_differ(before: Option<&FileState>, after: Option<&FileState>) -> bool {
+    !states_equal(before, after)
+}
+
 fn capture_content(path: &Path, len: u64, remaining_bytes: &mut usize) -> Option<Vec<u8>> {
     if len > MAX_DIFF_FILE_BYTES
         || len as usize > *remaining_bytes

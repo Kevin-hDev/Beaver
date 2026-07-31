@@ -1,11 +1,11 @@
-use notify::{EventKind, RecommendedWatcher};
+use notify::EventKind;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 
 use super::types_tools::ToolFileChangeStatus;
 
-const MAX_WORKSPACE_WATCHERS: usize = 16;
+const MAX_WORKSPACE_WATCHERS: usize = super::tool_bash_watch_roots::MAX_WATCH_ROOTS;
 const MAX_BUFFERED_EVENTS: usize = 4_096;
 const MAX_PATHS_PER_EVENT: usize = 128;
 const SKIPPED_DIRECTORIES: &[&str] = &[
@@ -22,12 +22,11 @@ const SKIPPED_DIRECTORIES: &[&str] = &[
 
 static HUBS: LazyLock<Mutex<VecDeque<Arc<WorkspaceEventHub>>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));
+static CREATE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 pub struct WorkspaceEventHub {
     root: PathBuf,
-    events: Arc<Mutex<EventRing>>,
-    incomplete: bool,
-    _watcher: RecommendedWatcher,
+    events: Mutex<EventRing>,
 }
 
 #[derive(Clone)]
@@ -46,80 +45,19 @@ struct EventRing {
 
 impl WorkspaceEventHub {
     fn create(root: PathBuf) -> Result<Arc<Self>, String> {
-        let events = Arc::new(Mutex::new(EventRing::default()));
-        let callback_events = Arc::clone(&events);
-        let callback_root = root.clone();
-        let mut watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
-            let event = match result {
-                Ok(event) => event,
-                Err(_) => {
-                    callback_events
-                        .lock()
-                        .unwrap_or_else(|error| error.into_inner())
-                        .mark_overflow();
-                    return;
-                }
-            };
-            let Some(status) = status_for_kind(&event.kind) else {
-                return;
-            };
-            let created_directory = cfg!(target_os = "linux")
-                && matches!(event.kind, EventKind::Create(_))
-                && event
-                    .paths
-                    .iter()
-                    .any(|path| path.is_dir() && is_trackable(&callback_root, path));
-            let mut paths = event
-                .paths
-                .into_iter()
-                .filter(|path| is_trackable(&callback_root, path));
-            let Some(first_path) = paths.next() else {
-                return;
-            };
-            let mut ring = callback_events
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
-            ring.push(first_path, status);
-            for path in paths.by_ref().take(MAX_PATHS_PER_EVENT - 1) {
-                ring.push(path, status);
-            }
-            if paths.next().is_some() {
-                ring.mark_overflow();
-            }
-            if created_directory {
-                ring.mark_overflow();
-            }
-        })
-        .map_err(|_| "Suivi des fichiers indisponible.".to_string())?;
-        let incomplete = super::tool_bash_watch_roots::attach(&mut watcher, &root)?;
+        super::tool_bash_watch_roots::attach(&root)?;
         Ok(Arc::new(Self {
             root,
-            events,
-            incomplete,
-            _watcher: watcher,
+            events: Mutex::new(EventRing::default()),
         }))
     }
 
-    pub fn root(&self) -> &Path {
-        &self.root
-    }
-
     pub fn sequence(&self) -> u64 {
-        self.events
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-            .next_sequence
-    }
-
-    pub fn is_incomplete(&self) -> bool {
-        self.incomplete
+        self.lock_events().next_sequence
     }
 
     pub fn events_after(&self, sequence: u64) -> (Vec<RecordedEvent>, bool) {
-        let ring = self
-            .events
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
+        let ring = self.lock_events();
         let oldest = ring
             .events
             .front()
@@ -132,6 +70,43 @@ impl WorkspaceEventHub {
             .cloned()
             .collect();
         (events, gap)
+    }
+
+    fn record(&self, event: &notify::Event) {
+        let Some(status) = status_for_kind(&event.kind) else {
+            return;
+        };
+        let created_directory = cfg!(target_os = "linux")
+            && matches!(event.kind, EventKind::Create(_))
+            && event
+                .paths
+                .iter()
+                .any(|path| path.is_dir() && is_trackable(&self.root, path));
+        let mut paths = event
+            .paths
+            .iter()
+            .filter(|path| is_trackable(&self.root, path));
+        let Some(first_path) = paths.next() else {
+            return;
+        };
+        let mut ring = self.lock_events();
+        ring.push(first_path.clone(), status);
+        for path in paths.by_ref().take(MAX_PATHS_PER_EVENT - 1) {
+            ring.push(path.clone(), status);
+        }
+        if paths.next().is_some() || created_directory {
+            ring.mark_overflow();
+        }
+    }
+
+    fn mark_overflow(&self) {
+        self.lock_events().mark_overflow();
+    }
+
+    fn lock_events(&self) -> std::sync::MutexGuard<'_, EventRing> {
+        self.events
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
     }
 }
 
@@ -155,32 +130,66 @@ impl EventRing {
 }
 
 pub fn workspace_hub(root: PathBuf) -> Result<Arc<WorkspaceEventHub>, String> {
-    {
-        let mut hubs = HUBS.lock().unwrap_or_else(|error| error.into_inner());
-        if let Some(hub) = take_existing(&mut hubs, &root) {
-            return Ok(hub);
-        }
-    }
-    let created = WorkspaceEventHub::create(root.clone())?;
-    let mut hubs = HUBS.lock().unwrap_or_else(|error| error.into_inner());
-    if let Some(hub) = take_existing(&mut hubs, &root) {
+    if let Some(hub) = existing_hub(&root) {
         return Ok(hub);
     }
-    if hubs.len() >= MAX_WORKSPACE_WATCHERS {
-        hubs.pop_front();
+    let _create_guard = CREATE_LOCK
+        .try_lock()
+        .map_err(|_| "Initialisation du suivi deja en cours.".to_string())?;
+    if let Some(hub) = existing_hub(&root) {
+        return Ok(hub);
     }
-    hubs.push_back(Arc::clone(&created));
+    evict_inactive_hub()?;
+    let created = WorkspaceEventHub::create(root)?;
+    lock_hubs().push_back(Arc::clone(&created));
     Ok(created)
 }
 
-fn take_existing(
-    hubs: &mut VecDeque<Arc<WorkspaceEventHub>>,
-    root: &Path,
-) -> Option<Arc<WorkspaceEventHub>> {
+pub fn handle_notify_event(result: notify::Result<notify::Event>) {
+    let hubs = lock_hubs();
+    match result {
+        Ok(event) => {
+            for hub in hubs.iter() {
+                hub.record(&event);
+            }
+        }
+        Err(_) => {
+            for hub in hubs.iter() {
+                hub.mark_overflow();
+            }
+        }
+    }
+}
+
+fn existing_hub(root: &Path) -> Option<Arc<WorkspaceEventHub>> {
+    let mut hubs = lock_hubs();
     let position = hubs.iter().position(|hub| hub.root == root)?;
     let hub = hubs.remove(position)?;
     hubs.push_back(Arc::clone(&hub));
     Some(hub)
+}
+
+fn evict_inactive_hub() -> Result<(), String> {
+    let candidate = {
+        let mut hubs = lock_hubs();
+        if hubs.len() < MAX_WORKSPACE_WATCHERS {
+            return Ok(());
+        }
+        let position = hubs
+            .iter()
+            .position(|hub| Arc::strong_count(hub) == 1)
+            .ok_or_else(|| "Trop de suivis de fichiers actifs.".to_string())?;
+        hubs
+            .remove(position)
+            .map(|hub| hub.root.clone())
+            .ok_or_else(|| "Suivi des fichiers indisponible.".to_string())?
+    };
+    super::tool_bash_watch_roots::detach(&candidate)?;
+    Ok(())
+}
+
+fn lock_hubs() -> std::sync::MutexGuard<'static, VecDeque<Arc<WorkspaceEventHub>>> {
+    HUBS.lock().unwrap_or_else(|error| error.into_inner())
 }
 
 fn status_for_kind(kind: &EventKind) -> Option<ToolFileChangeStatus> {

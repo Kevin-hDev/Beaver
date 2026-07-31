@@ -210,5 +210,5 @@ fn yield_duration(value: Option<u64>) -> std::time::Duration {
 }
 
 #[cfg(test)]
-#[path = "tool_bash_tests.rs"]
+#[path = "tool_bash_test_modules.rs"]
 mod tests;

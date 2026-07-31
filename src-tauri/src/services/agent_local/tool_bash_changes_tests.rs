@@ -2,7 +2,7 @@ use super::ChangeTracker;
 use std::time::{Duration, Instant};
 
 fn wait_for_change(tracker: &mut ChangeTracker) -> Vec<super::ToolFileChange> {
-    let deadline = Instant::now() + Duration::from_secs(2);
+    let deadline = Instant::now() + Duration::from_secs(5);
     loop {
         let changes = tracker.changes();
         if !changes.is_empty() || Instant::now() >= deadline {
@@ -16,7 +16,9 @@ async fn start_tracker(path: &std::path::Path) -> ChangeTracker {
     let deadline = Instant::now() + Duration::from_secs(4);
     loop {
         if let Ok(tracker) = ChangeTracker::start(path).await {
-            return tracker;
+            if tracker.hub.is_some() {
+                return tracker;
+            }
         }
         assert!(Instant::now() < deadline, "watcher did not initialize");
         tokio::time::sleep(Duration::from_millis(25)).await;
@@ -70,5 +72,33 @@ async fn reuses_one_watcher_for_parallel_commands_in_the_same_workspace() {
     let first = start_tracker(directory.path()).await;
     let second = start_tracker(directory.path()).await;
 
-    assert!(std::sync::Arc::ptr_eq(&first.hub, &second.hub));
+    assert!(std::sync::Arc::ptr_eq(
+        first.hub.as_ref().expect("first hub"),
+        second.hub.as_ref().expect("second hub"),
+    ));
+}
+
+#[tokio::test]
+async fn parallel_workspaces_keep_complete_final_changes_when_watchers_are_busy() {
+    let directories = (0..20)
+        .map(|_| tempfile::tempdir().expect("tempdir"))
+        .collect::<Vec<_>>();
+    let starts = directories
+        .iter()
+        .map(|directory| ChangeTracker::start(directory.path()));
+    let trackers = futures_util::future::join_all(starts).await;
+
+    for (index, (directory, tracker)) in directories.iter().zip(trackers).enumerate() {
+        let mut tracker = tracker.expect("tracker");
+        let created = directory.path().join(format!("created-{index}.txt"));
+        std::fs::write(&created, "content").expect("created file");
+        let expected = created.canonicalize().expect("canonical file");
+
+        let (changes, incomplete) = tracker.finish_changes();
+
+        assert!(!incomplete);
+        assert!(changes
+            .iter()
+            .any(|change| change.path == expected.to_string_lossy()));
+    }
 }

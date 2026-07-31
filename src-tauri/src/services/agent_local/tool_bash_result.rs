@@ -8,6 +8,8 @@ pub fn blocked(reason: String) -> ShellOutput {
         exit_code: -1,
         running: false,
         timed_out: false,
+        tracking_incomplete: false,
+        output_incomplete: false,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
     }
@@ -61,9 +63,6 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
             );
         }
     }
-    if snapshot.tracking_incomplete {
-        append_note(&mut stdout, "[Liste des fichiers modifies tronquee]");
-    }
     let affected_paths = snapshot
         .changes
         .iter()
@@ -75,6 +74,8 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
         exit_code,
         running: snapshot.running,
         timed_out: matches!(snapshot.completion, Some(CompletionKind::TimedOut)),
+        tracking_incomplete: snapshot.tracking_incomplete,
+        output_incomplete: snapshot.output_incomplete,
         affected_paths,
         file_changes: snapshot.changes,
     }

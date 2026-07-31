@@ -78,7 +78,21 @@ fn yield_time_ms(args: &Value) -> Option<u64> {
 }
 
 fn to_tool_result(output: ShellOutput) -> ToolResult {
-    let content = render_streams(&output.stdout, &output.stderr);
+    let mut content = render_streams(&output.stdout, &output.stderr);
+    if output.tracking_incomplete {
+        append_warning(
+            &mut content,
+            "Le suivi des fichiers modifiés est incomplet.",
+        );
+    }
+    if output.output_incomplete {
+        let warning = if output.exit_code == 0 {
+            "La commande a réussi, mais un processus détaché conserve les sorties ouvertes."
+        } else {
+            "La commande est terminée, mais un processus détaché conserve les sorties ouvertes."
+        };
+        append_warning(&mut content, warning);
+    }
     let result = if output.running || output.exit_code == 0 {
         ToolResult::ok(content)
     } else {
@@ -87,6 +101,14 @@ fn to_tool_result(output: ShellOutput) -> ToolResult {
     result
         .with_affected_paths(output.affected_paths)
         .with_file_changes(output.file_changes)
+}
+
+fn append_warning(content: &mut String, warning: &str) {
+    if !content.is_empty() {
+        content.push_str("\n\n");
+    }
+    content.push_str("[Avertissement Beaver] ");
+    content.push_str(warning);
 }
 
 fn render_streams(stdout: &str, stderr: &str) -> String {

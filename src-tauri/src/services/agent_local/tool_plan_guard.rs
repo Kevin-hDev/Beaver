@@ -24,17 +24,11 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "forecast_models",
 ];
 
-pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, read_image, bash_write, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, forecast_read, forecast_models, read-only bash, and search_mcp_tools without MCP calls";
+pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, read_image, bash_write, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     match tool_name {
-        "bash" => args["command"]
-            .as_str()
-            .is_some_and(super::permission_gate::is_read_only_bash),
-        "bash_write" => {
-            args["chars"].as_str().is_none_or(str::is_empty)
-                && args["eof"].as_bool() != Some(true)
-        }
+        "bash" => !super::permission_gate::requires_permission("bash", args),
         "search_mcp_tools" => args.get("mode").and_then(Value::as_str) != Some("call"),
         _ => PLAN_MODE_ALLOWED_TOOL_NAMES.contains(&tool_name),
     }
@@ -113,40 +107,29 @@ mod tests {
     }
 
     #[test]
-    fn blocks_non_read_only_bash_in_plan_mode() {
+    fn allows_safe_validation_commands_in_plan_mode() {
         assert!(super::ensure_allowed("bash", &json!({"command": "rm file"}), true).is_err());
         assert!(super::ensure_allowed("bash", &json!({"command": "git status"}), true).is_ok());
-        assert!(super::ensure_allowed("bash", &json!({"command": "cargo test"}), true).is_err());
-        assert!(super::ensure_allowed("bash", &json!({"command": "npm run build"}), true).is_err());
-        assert!(super::ensure_allowed(
-            "bash",
-            &json!({"command": "git remote add origin example"}),
-            true
-        )
-        .is_err());
-        assert!(super::ensure_allowed(
-            "bash",
-            &json!({"command": "git remote -v"}),
-            true
-        )
-        .is_ok());
-        assert!(super::ensure_allowed("bash", &json!({"command": "git tag v1"}), true).is_err());
-        assert!(super::ensure_allowed("bash", &json!({"command": "git tag --list v*"}), true).is_ok());
+        assert!(super::ensure_allowed("bash", &json!({"command": "cargo test"}), true).is_ok());
+        assert!(super::ensure_allowed("bash", &json!({"command": "cargo check"}), true).is_ok());
+        assert!(super::ensure_allowed("bash", &json!({"command": "npm run build"}), true).is_ok());
+        assert!(super::ensure_allowed("bash", &json!({"command": "npm test"}), true).is_ok());
+        assert!(super::ensure_allowed("bash", &json!({"command": "npx tsc --noEmit"}), true).is_ok());
     }
 
     #[test]
-    fn plan_mode_blocks_shell_input_and_eof_but_keeps_poll_and_stop() {
+    fn plan_mode_keeps_existing_shell_sessions_usable() {
         assert!(super::ensure_allowed(
             "bash_write",
-            &json!({"session_id": "session", "chars": "rm file\n"}),
+            &json!({"session_id": "session", "chars": "test input\n"}),
             true
         )
-        .is_err());
+        .is_ok());
         assert!(super::ensure_allowed(
             "bash_write",
             &json!({"session_id": "session", "eof": true}),
             true
         )
-        .is_err());
+        .is_ok());
     }
 }

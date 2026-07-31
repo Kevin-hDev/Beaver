@@ -9,8 +9,12 @@ use zeroize::{Zeroize, Zeroizing};
 
 const MAX_CACHED_PROFILES: usize = 64;
 const MAX_SNAPSHOT_BYTES: usize = 128 * 1024;
+const MAX_SNAPSHOT_CHUNK_BYTES: usize = 64 * 1024;
 const SNAPSHOT_TIMEOUT_SECS: u64 = 5;
-pub(super) const SNAPSHOT_ENV: &str = "BEAVER_INTERNAL_PROFILE_SNAPSHOT";
+pub(super) const SNAPSHOT_ENVS: [&str; 2] = [
+    "BEAVER_INTERNAL_PROFILE_SNAPSHOT_0",
+    "BEAVER_INTERNAL_PROFILE_SNAPSHOT_1",
+];
 
 type CachedProfile = Option<Arc<ShellProfile>>;
 type ProfileCell = Arc<OnceCell<CachedProfile>>;
@@ -19,12 +23,14 @@ static CACHE: LazyLock<Mutex<VecDeque<(String, ProfileCell)>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));
 
 pub struct ShellProfile {
-    script: Zeroizing<String>,
+    scripts: [Zeroizing<String>; 2],
 }
 
 impl ShellProfile {
     pub fn apply(&self, command: &mut Command) {
-        command.env(SNAPSHOT_ENV, self.script.as_str());
+        for (name, script) in SNAPSHOT_ENVS.iter().zip(&self.scripts) {
+            command.env(name, script.as_str());
+        }
     }
 }
 
@@ -128,7 +134,20 @@ async fn capture(shell: &str, working_dir: &Path) -> Option<ShellProfile> {
     if snapshot.is_empty() || snapshot.contains('\0') {
         return None;
     }
-    Some(ShellProfile { script: snapshot })
+    Some(ShellProfile {
+        scripts: split_snapshot(&snapshot),
+    })
+}
+
+fn split_snapshot(snapshot: &str) -> [Zeroizing<String>; 2] {
+    let mut split_at = snapshot.len().min(MAX_SNAPSHOT_CHUNK_BYTES);
+    while !snapshot.is_char_boundary(split_at) {
+        split_at = split_at.saturating_sub(1);
+    }
+    [
+        Zeroizing::new(snapshot[..split_at].to_string()),
+        Zeroizing::new(snapshot[split_at..].to_string()),
+    ]
 }
 
 fn log_unavailable(reason: &str) {

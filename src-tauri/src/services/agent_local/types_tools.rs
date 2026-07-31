@@ -124,6 +124,10 @@ pub struct ShellOutput {
     #[serde(default)]
     pub running: bool,
     pub timed_out: bool,
+    #[serde(default)]
+    pub tracking_incomplete: bool,
+    #[serde(default)]
+    pub output_incomplete: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub affected_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

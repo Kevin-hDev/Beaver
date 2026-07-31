@@ -30,10 +30,6 @@ const GATED_TOOLS: &[&str] = &[
     "forecast_backtest",
 ];
 
-pub(crate) fn is_read_only_bash(command: &str) -> bool {
-    super::permission_bash::is_read_only(command)
-}
-
 pub fn requires_permission(tool_name: &str, args: &serde_json::Value) -> bool {
     match tool_name {
         "bash" => {

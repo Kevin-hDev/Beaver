@@ -61,7 +61,15 @@ impl GitBaseline {
         self.incomplete
     }
 
-    pub fn before_state(&self, path: &Path) -> Option<Option<FileState>> {
+    pub fn open_repository(&self) -> Option<Repository> {
+        Repository::open(&self.repository).ok()
+    }
+
+    pub fn before_state(
+        &self,
+        repository: Option<&Repository>,
+        path: &Path,
+    ) -> Option<Option<FileState>> {
         let normalized;
         let path = match path.canonicalize() {
             Ok(canonical) => {
@@ -78,7 +86,7 @@ impl GitBaseline {
             Some(tree_id) => tree_id,
             None => return Some(None),
         };
-        let repository = Repository::open(&self.repository).ok()?;
+        let repository = repository?;
         let tree = repository.find_tree(tree_id).ok()?;
         let entry = match tree.get_path(relative) {
             Ok(entry) => entry,
@@ -92,11 +100,12 @@ impl GitBaseline {
         )))
     }
 
-    pub fn current_paths(&self, root: &Path) -> (Vec<(PathBuf, ToolFileChangeStatus)>, bool) {
-        let Ok(repository) = Repository::open(&self.repository) else {
-            return (Vec::new(), true);
-        };
-        status_paths(&repository, root)
+    pub fn current_paths(
+        &self,
+        repository: &Repository,
+        root: &Path,
+    ) -> (Vec<(PathBuf, ToolFileChangeStatus)>, bool) {
+        status_paths(repository, root)
     }
 }
 
