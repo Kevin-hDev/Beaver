@@ -154,9 +154,7 @@ fn process_chunk_silent(
                 result.prompt_tokens = usage.input_tokens.and_then(|value| value.try_into().ok());
                 result.usage = Some(usage);
             }
-            ParsedChunk::GenerationDuration(duration_ns) => {
-                result.generation.record_native_duration(duration_ns);
-            }
+            ParsedChunk::GenerationDuration(_) => {}
         }
     }
 }

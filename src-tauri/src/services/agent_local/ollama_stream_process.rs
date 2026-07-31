@@ -11,7 +11,6 @@ pub fn process_chunk(
     on_event: &AgentEventEmitter,
     token_count: &mut u32,
     result: &mut StreamResult,
-    should_emit_done: bool,
     tool_tx: Option<&mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
     think_filter: &mut ThinkTagFilter,
     buffer_content: bool,
@@ -45,9 +44,6 @@ pub fn process_chunk(
             result,
             buffer_content,
         );
-        if should_emit_done {
-            return emit_done(on_event, &chunk);
-        }
         return Ok(());
     }
 
@@ -118,53 +114,8 @@ pub fn process_chunk(
     Ok(())
 }
 
-pub fn emit_done(on_event: &AgentEventEmitter, chunk: &serde_json::Value) -> Result<(), String> {
-    let counts = done_counts(chunk);
-    let duration_ns = done_generation_duration(chunk);
-    let final_tps = match (counts.eval_count, duration_ns) {
-        (Some(tokens), Some(duration)) => tokens as f64 / (duration as f64 / 1e9),
-        _ => 0.0,
-    };
-
-    let _ = on_event.send(StreamEvent::Done {
-        eval_count: counts.eval_count,
-        eval_duration_ns: duration_ns.unwrap_or(0),
-        final_tps,
-        tps_estimated: counts.eval_count.is_none() || duration_ns.is_none(),
-        prompt_tokens: counts.prompt_tokens,
-        context_tokens: counts.context_tokens,
-    });
-    Ok(())
-}
-
 pub(crate) fn done_generation_duration(chunk: &serde_json::Value) -> Option<u64> {
     chunk["eval_duration"]
         .as_u64()
         .filter(|duration| super::generation_metrics::valid_duration_ns(*duration))
-}
-
-#[derive(Debug, PartialEq)]
-pub(crate) struct DoneCounts {
-    pub(crate) eval_count: Option<u32>,
-    pub(crate) prompt_tokens: Option<u32>,
-    pub(crate) context_tokens: Option<u32>,
-}
-
-pub(crate) fn done_counts(chunk: &serde_json::Value) -> DoneCounts {
-    let eval_count: Option<u32> = chunk["eval_count"]
-        .as_u64()
-        .and_then(|value| value.try_into().ok());
-    let prompt_tokens: Option<u32> = chunk["prompt_eval_count"]
-        .as_u64()
-        .and_then(|value| value.try_into().ok());
-    let context_tokens = match (prompt_tokens, eval_count) {
-        (Some(prompt), Some(eval)) => Some(prompt.saturating_add(eval)),
-        _ => None,
-    };
-
-    DoneCounts {
-        eval_count,
-        prompt_tokens,
-        context_tokens,
-    }
 }

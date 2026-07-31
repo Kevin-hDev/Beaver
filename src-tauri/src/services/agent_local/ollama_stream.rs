@@ -34,7 +34,6 @@ pub async fn stream_chat_with_tool_notify(
         on_event,
         request,
         cancel,
-        false,
         Some(tool_tx),
         buffer_content,
         realtime_budget,
@@ -50,7 +49,6 @@ async fn stream_chat_inner(
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
     cancel: CancellationToken,
-    emit_done: bool,
     tool_tx: Option<mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
     buffer_content: bool,
     mut realtime_budget: Option<RealtimeBudget>,
@@ -65,7 +63,6 @@ async fn stream_chat_inner(
                 on_event,
                 &request,
                 cancel,
-                emit_done,
                 tool_tx,
                 buffer_content,
                 realtime_budget,
@@ -110,7 +107,7 @@ async fn stream_chat_inner(
                     Ok(Some(text)) => {
                         if let Err(e) = process_chunk(
                             &text, on_event, &mut token_count,
-                            &mut result, emit_done, tool_tx.as_ref(), &mut think_filter,
+                            &mut result, tool_tx.as_ref(), &mut think_filter,
                             buffer_content,
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein
@@ -137,7 +134,6 @@ async fn stream_chat_inner(
                                     on_event,
                                     request,
                                     cancel,
-                                    emit_done,
                                     tool_tx,
                                     buffer_content,
                                     realtime_budget,
@@ -179,7 +175,11 @@ async fn stream_chat_inner(
             buffer_content,
         );
     }
-    Ok(super::ollama_stream_finish::into_outcome(result, interrupted))
+    Ok(if interrupted {
+        StreamOutcome::InterruptedForCompression(result)
+    } else {
+        StreamOutcome::Completed(result)
+    })
 }
 
 fn should_interrupt(

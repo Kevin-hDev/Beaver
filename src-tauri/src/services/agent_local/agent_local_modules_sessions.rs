@@ -32,4 +32,3 @@ mod stream_diagnostics_support_tests;
 pub mod stream_diagnostics_tests;
 pub mod stream_diagnostics_tools;
 pub mod stream_events;
-mod ollama_stream_finish;
