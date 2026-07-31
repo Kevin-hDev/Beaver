@@ -1,15 +1,26 @@
 use super::ChangeTracker;
 use std::time::{Duration, Instant};
 
-fn wait_for_change(tracker: &mut ChangeTracker) -> Vec<super::ToolFileChange> {
-    let deadline = Instant::now() + Duration::from_secs(5);
-    loop {
-        let changes = tracker.changes();
-        if !changes.is_empty() || Instant::now() >= deadline {
-            return changes;
+const EVENT_TIMEOUT: Duration = Duration::from_secs(5);
+const EVENT_RETRY_INTERVAL: Duration = Duration::from_millis(50);
+
+fn write_until_path_is_tracked(tracker: &mut ChangeTracker, path: &std::path::Path) -> bool {
+    let deadline = Instant::now() + EVENT_TIMEOUT;
+    let mut attempt = 0_u64;
+    while Instant::now() < deadline {
+        std::fs::write(path, attempt.to_string()).expect("write tracked file");
+        let expected = path.canonicalize().expect("canonical tracked file");
+        if tracker
+            .changes()
+            .iter()
+            .any(|change| change.path == expected.to_string_lossy())
+        {
+            return true;
         }
-        std::thread::sleep(Duration::from_millis(10));
+        attempt = attempt.saturating_add(1);
+        std::thread::sleep(EVENT_RETRY_INTERVAL);
     }
+    false
 }
 
 async fn start_tracker(path: &std::path::Path) -> ChangeTracker {
@@ -45,11 +56,7 @@ async fn records_created_files_without_scanning_the_workspace() {
     let mut tracker = start_tracker(directory.path()).await;
     let created = directory.path().join("created.txt");
 
-    std::fs::write(&created, "hello").expect("write");
-    let changes = wait_for_change(&mut tracker);
-    let expected = created.canonicalize().expect("canonicalize");
-
-    assert!(changes.iter().any(|change| change.path == expected.to_string_lossy()));
+    assert!(write_until_path_is_tracked(&mut tracker, &created));
 }
 
 #[tokio::test]

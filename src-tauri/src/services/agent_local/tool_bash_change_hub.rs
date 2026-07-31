@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 
 use super::types_tools::ToolFileChangeStatus;
-use super::tool_bash_change_event::PreparedEvent;
+use super::tool_bash_change_event::{PreparedEvent, MAX_RECORDED_PATHS};
 
 const MAX_WORKSPACE_WATCHERS: usize = super::tool_bash_watch_roots::MAX_WATCH_ROOTS;
 const MAX_BUFFERED_EVENTS: usize = 4_096;
@@ -72,26 +72,32 @@ impl WorkspaceEventHub {
     }
 
     fn record(&self, event: &PreparedEvent) {
+        if event.rescan {
+            self.mark_overflow();
+        }
+        let Some(status) = event.status else {
+            return;
+        };
         let created_directory = event
             .paths
             .iter()
-            .any(|entry| entry.is_directory && is_trackable(&self.root, &entry.path));
+            .any(|entry| is_trackable(&self.root, &entry.path) && entry.is_directory());
         let mut paths = event
             .paths
             .iter()
             .filter(|entry| is_trackable(&self.root, &entry.path));
         let Some(first) = paths.next() else {
-            if event.truncated {
+            if event.input_truncated {
                 self.mark_overflow();
             }
             return;
         };
         let mut ring = self.lock_events();
-        ring.push(first.path.clone(), event.status);
-        for entry in paths {
-            ring.push(entry.path.clone(), event.status);
+        ring.push(first.path.clone(), status);
+        for entry in paths.by_ref().take(MAX_RECORDED_PATHS - 1) {
+            ring.push(entry.path.clone(), status);
         }
-        if event.truncated || created_directory {
+        if paths.next().is_some() || event.input_truncated || created_directory {
             ring.mark_overflow();
         }
     }
@@ -143,10 +149,7 @@ pub fn workspace_hub(root: PathBuf) -> Result<Arc<WorkspaceEventHub>, String> {
 }
 
 pub fn handle_notify_event(result: notify::Result<notify::Event>) {
-    let hubs = {
-        let hubs = lock_hubs();
-        hubs.iter().cloned().collect::<Vec<_>>()
-    };
+    let hubs = hubs_snapshot();
     if hubs.is_empty() {
         return;
     }
@@ -164,6 +167,12 @@ pub fn handle_notify_event(result: notify::Result<notify::Event>) {
                 hub.mark_overflow();
             }
         }
+    }
+}
+
+pub(super) fn mark_all_overflow() {
+    for hub in hubs_snapshot() {
+        hub.mark_overflow();
     }
 }
 
@@ -198,6 +207,10 @@ fn lock_hubs() -> std::sync::MutexGuard<'static, VecDeque<Arc<WorkspaceEventHub>
     HUBS.lock().unwrap_or_else(|error| error.into_inner())
 }
 
+fn hubs_snapshot() -> Vec<Arc<WorkspaceEventHub>> {
+    lock_hubs().iter().cloned().collect()
+}
+
 pub(super) fn is_trackable(root: &Path, path: &Path) -> bool {
     let Ok(relative) = path.strip_prefix(root) else {
         return false;
@@ -211,3 +224,7 @@ pub(super) fn is_trackable(root: &Path, path: &Path) -> bool {
             .any(|skipped| name == std::ffi::OsStr::new(skipped))
     })
 }
+
+#[cfg(test)]
+#[path = "tool_bash_change_hub_tests.rs"]
+mod tests;
