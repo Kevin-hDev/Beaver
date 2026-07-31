@@ -6,6 +6,7 @@ pub fn blocked(reason: String) -> ShellOutput {
         stdout: String::new(),
         stderr: reason,
         exit_code: -1,
+        running: false,
         timed_out: false,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
@@ -13,8 +14,8 @@ pub fn blocked(reason: String) -> ShellOutput {
 }
 
 pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> ShellOutput {
-    let mut stdout = snapshot.output;
-    let mut stderr = String::new();
+    let mut stdout = snapshot.stdout;
+    let mut stderr = snapshot.stderr;
     let exit_code = match snapshot.completion {
         Some(CompletionKind::Exited(code)) => code,
         Some(CompletionKind::Cancelled) => {
@@ -29,7 +30,7 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
             stderr = "Execution shell interrompue.".to_string();
             -1
         }
-        None => 0,
+        None => -1,
     };
 
     if snapshot.running {
@@ -72,6 +73,7 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
         stdout,
         stderr,
         exit_code,
+        running: snapshot.running,
         timed_out: matches!(snapshot.completion, Some(CompletionKind::TimedOut)),
         affected_paths,
         file_changes: snapshot.changes,

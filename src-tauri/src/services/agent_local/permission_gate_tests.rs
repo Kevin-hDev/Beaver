@@ -189,6 +189,26 @@ fn unsafe_bash_input_redirect() {
 }
 
 #[test]
+fn bash_write_only_prompts_when_it_sends_input() {
+    assert!(!requires_permission(
+        "bash_write",
+        &json!({"session_id": "session"})
+    ));
+    assert!(!requires_permission(
+        "bash_write",
+        &json!({"session_id": "session", "chars": ""})
+    ));
+    assert!(!requires_permission(
+        "bash_write",
+        &json!({"session_id": "session", "stop": true})
+    ));
+    assert!(requires_permission(
+        "bash_write",
+        &json!({"session_id": "session", "chars": "hello\n"})
+    ));
+}
+
+#[test]
 fn diagnostic_entry_omits_arguments() {
     let entry = diagnostic_entry("request", Some("bash"), Some("permission_prompt_sent"));
     assert_eq!(entry["event"], "request");

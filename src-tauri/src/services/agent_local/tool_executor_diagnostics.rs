@@ -3,7 +3,6 @@ use std::path::Path;
 
 pub async fn started(
     session_id: &str,
-    _request_id: &str,
     name: &str,
     args: &Value,
     working_dir: &Path,

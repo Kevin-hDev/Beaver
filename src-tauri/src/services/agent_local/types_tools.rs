@@ -121,6 +121,8 @@ pub struct ShellOutput {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: i32,
+    #[serde(default)]
+    pub running: bool,
     pub timed_out: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub affected_paths: Vec<String>,

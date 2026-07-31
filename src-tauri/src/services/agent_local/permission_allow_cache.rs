@@ -6,7 +6,7 @@ use tokio::sync::Mutex;
 const SESSION_ALLOW_TTL: Duration = Duration::from_secs(3600);
 const MAX_ALLOWED_SESSIONS: usize = 64;
 const MAX_ALLOWED_TOOLS_PER_SESSION: usize = 16;
-const NO_SESSION_ALLOW: &[&str] = &["bash", "search_mcp_tools"];
+const NO_SESSION_ALLOW: &[&str] = &["bash", "bash_write", "search_mcp_tools"];
 
 static ALLOWED: LazyLock<Mutex<HashMap<String, HashMap<String, Instant>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));

@@ -36,12 +36,13 @@ pub fn core_tool_definitions() -> Vec<Value> {
         ),
         tool_def(
             "bash_write",
-            "Continue or control a shell process returned by bash. Poll with only session_id, send input with chars, or set stop=true to terminate the process and all of its children. Output streams live while waiting. A completed session returns its final exit status and is then removed.",
+            "Continue or control a shell process returned by bash. Poll with only session_id, send input with chars, set eof=true to close its input after any chars, or set stop=true to terminate the process and all of its children. Commands started with & remain managed by the session until their background jobs finish or the session is stopped. Output streams live while waiting. A completed session returns its final exit status and is then removed.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
                     "session_id": {"type": "string", "description": "Session identifier returned by bash"},
                     "chars": {"type": "string", "description": "Optional input to write to the process"},
+                    "eof": {"type": "boolean", "description": "Close process input after writing optional chars"},
                     "stop": {"type": "boolean", "description": "Stop the process and all of its children"},
                     "yield_time_ms": {"type": "integer", "description": "Wait for output or completion (250-30000 ms, default 10000)"}
                 },

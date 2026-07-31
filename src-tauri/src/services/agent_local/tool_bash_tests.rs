@@ -44,7 +44,6 @@ fn invalid_workdirs_are_rejected() {
 #[tokio::test]
 async fn mkdir_is_fast_and_reports_the_changed_path() {
     let dir = tempfile::tempdir().expect("tempdir");
-    warm_file_watcher(dir.path()).await;
     let started = Instant::now();
 
     let output = execute_shell("mkdir created", dir.path(), None)
@@ -93,10 +92,13 @@ async fn long_process_yields_then_can_be_stopped_with_its_children() {
 
     assert!(started.elapsed() < Duration::from_secs(2));
     assert!(output.stdout.contains("Processus actif"));
+    assert!(output.running);
+    assert_eq!(output.exit_code, -1);
 
     let stopped = control_shell_session(
         process_id,
         None,
+        false,
         true,
         &owner,
         Some(1_000),
@@ -117,16 +119,40 @@ async fn long_process_yields_then_can_be_stopped_with_its_children() {
 
 #[cfg(not(target_os = "windows"))]
 #[tokio::test]
-async fn inherited_background_pipe_does_not_delay_shell_completion() {
+async fn background_jobs_remain_managed_until_stopped() {
     let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
     let started = Instant::now();
 
-    let output = execute_shell("sleep 30 &", dir.path(), None)
+    let output = managed(
+        "sleep 30 &",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
         .await
         .expect("background shell");
+    let process_id = process_id(&output.stdout);
 
-    assert_eq!(output.exit_code, 0);
+    assert!(output.running);
+    assert_eq!(output.exit_code, -1);
     assert!(started.elapsed() < Duration::from_secs(2));
+
+    let stopped = control_shell_session(
+        process_id,
+        None,
+        false,
+        true,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("stop background shell");
+    assert!(!stopped.running);
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -150,6 +176,7 @@ async fn running_process_accepts_input_through_bash_write() {
         process_id,
         Some("hello\n"),
         false,
+        false,
         &owner,
         Some(1_000),
         CancellationToken::new(),
@@ -160,6 +187,148 @@ async fn running_process_accepts_input_through_bash_write() {
 
     assert_eq!(completed.exit_code, 0);
     assert!(completed.stdout.contains("received:hello"));
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn bash_write_blocks_destructive_input_before_it_reaches_the_process() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
+    let started = managed(
+        "cat",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("start process");
+    let process_id = process_id(&started.stdout);
+
+    let blocked = control_shell_session(
+        process_id,
+        Some("sudo rm harmless\n"),
+        false,
+        false,
+        &owner,
+        Some(250),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("blocked input");
+
+    assert_eq!(blocked.exit_code, -1);
+    assert!(blocked.stderr.contains("bloquée"));
+    let _ = control_shell_session(
+        process_id,
+        None,
+        false,
+        true,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await;
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn bash_write_can_send_input_then_close_stdin() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let owner = uuid::Uuid::new_v4().to_string();
+    let started = managed(
+        "cat",
+        dir.path(),
+        &owner,
+        None,
+        Some(250),
+        CancellationToken::new(),
+    )
+    .await
+    .expect("start process");
+    let process_id = process_id(&started.stdout);
+
+    let completed = control_shell_session(
+        process_id,
+        Some("payload"),
+        true,
+        false,
+        &owner,
+        Some(1_000),
+        CancellationToken::new(),
+        None,
+    )
+    .await
+    .expect("send eof");
+
+    assert!(!completed.running);
+    assert_eq!(completed.exit_code, 0);
+    assert_eq!(completed.stdout, "payload");
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn stdout_and_stderr_remain_distinct() {
+    let dir = tempfile::tempdir().expect("tempdir");
+
+    let output = execute_shell(
+        "printf out; printf error >&2; printf tail",
+        dir.path(),
+        None,
+    )
+    .await
+    .expect("shell output");
+
+    assert_eq!(output.stdout, "outtail");
+    assert_eq!(output.stderr, "error");
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn shell_diff_starts_from_the_dirty_pre_command_content() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let repository = git2::Repository::init(dir.path()).expect("repository");
+    let file = dir.path().join("tracked.txt");
+    std::fs::write(&file, "committed\n").expect("initial file");
+    commit_all(&repository);
+    std::fs::write(&file, "dirty before command\n").expect("dirty file");
+
+    let output = execute_shell("printf 'after command\\n' > tracked.txt", dir.path(), None)
+        .await
+        .expect("shell edit");
+    let change = output
+        .file_changes
+        .iter()
+        .find(|change| change.path.ends_with("tracked.txt"))
+        .expect("tracked change");
+    let diff = change.diff.as_ref().expect("content diff");
+    let content = diff
+        .hunks
+        .iter()
+        .flat_map(|hunk| &hunk.lines)
+        .map(|line| line.content.as_str())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert!(content.contains("dirty before command"));
+    assert!(content.contains("after command"));
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tokio::test]
+async fn closed_output_pipes_do_not_block_process_completion() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let started = Instant::now();
+
+    let output = execute_shell("exec >/dev/null 2>&1; sleep 1", dir.path(), None)
+        .await
+        .expect("silent process");
+
+    assert_eq!(output.exit_code, 0);
+    assert!(started.elapsed() < Duration::from_secs(3));
 }
 
 #[cfg(not(target_os = "windows"))]
@@ -184,6 +353,7 @@ async fn running_process_rejects_other_sessions_and_invalid_input() {
         process_id,
         Some("intrusion\n"),
         false,
+        false,
         &other_owner,
         Some(250),
         CancellationToken::new(),
@@ -194,6 +364,7 @@ async fn running_process_rejects_other_sessions_and_invalid_input() {
     assert!(control_shell_session(
         process_id,
         Some("invalid\0input"),
+        false,
         false,
         &owner,
         Some(250),
@@ -206,6 +377,7 @@ async fn running_process_rejects_other_sessions_and_invalid_input() {
     let completed = control_shell_session(
         process_id,
         Some("valid\n"),
+        false,
         false,
         &owner,
         Some(1_000),
@@ -337,18 +509,18 @@ fn canonical(path: &Path) -> String {
         .to_string()
 }
 
-async fn warm_file_watcher(path: &Path) {
-    let deadline = Instant::now() + Duration::from_secs(4);
-    loop {
-        if super::super::tool_bash_changes::ChangeTracker::start(path)
-            .await
-            .is_ok()
-        {
-            return;
-        }
-        assert!(Instant::now() < deadline, "watcher did not initialize");
-        tokio::time::sleep(Duration::from_millis(25)).await;
-    }
+fn commit_all(repository: &git2::Repository) {
+    let mut index = repository.index().expect("index");
+    index
+        .add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)
+        .expect("add");
+    index.write().expect("write index");
+    let tree_id = index.write_tree().expect("tree id");
+    let tree = repository.find_tree(tree_id).expect("tree");
+    let signature = git2::Signature::now("Beaver", "beaver@example.test").expect("signature");
+    repository
+        .commit(Some("HEAD"), &signature, &signature, "initial", &tree, &[])
+        .expect("commit");
 }
 
 #[cfg(unix)]

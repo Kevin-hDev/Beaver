@@ -1,4 +1,4 @@
-use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{EventKind, RecommendedWatcher};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
@@ -26,6 +26,7 @@ static HUBS: LazyLock<Mutex<VecDeque<Arc<WorkspaceEventHub>>>> =
 pub struct WorkspaceEventHub {
     root: PathBuf,
     events: Arc<Mutex<EventRing>>,
+    incomplete: bool,
     _watcher: RecommendedWatcher,
 }
 
@@ -49,10 +50,25 @@ impl WorkspaceEventHub {
         let callback_events = Arc::clone(&events);
         let callback_root = root.clone();
         let mut watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
-            let Ok(event) = result else { return };
+            let event = match result {
+                Ok(event) => event,
+                Err(_) => {
+                    callback_events
+                        .lock()
+                        .unwrap_or_else(|error| error.into_inner())
+                        .mark_overflow();
+                    return;
+                }
+            };
             let Some(status) = status_for_kind(&event.kind) else {
                 return;
             };
+            let created_directory = cfg!(target_os = "linux")
+                && matches!(event.kind, EventKind::Create(_))
+                && event
+                    .paths
+                    .iter()
+                    .any(|path| path.is_dir() && is_trackable(&callback_root, path));
             let mut paths = event
                 .paths
                 .into_iter()
@@ -70,14 +86,16 @@ impl WorkspaceEventHub {
             if paths.next().is_some() {
                 ring.mark_overflow();
             }
+            if created_directory {
+                ring.mark_overflow();
+            }
         })
         .map_err(|_| "Suivi des fichiers indisponible.".to_string())?;
-        watcher
-            .watch(&root, RecursiveMode::Recursive)
-            .map_err(|_| "Suivi des fichiers indisponible.".to_string())?;
+        let incomplete = super::tool_bash_watch_roots::attach(&mut watcher, &root)?;
         Ok(Arc::new(Self {
             root,
             events,
+            incomplete,
             _watcher: watcher,
         }))
     }
@@ -91,6 +109,10 @@ impl WorkspaceEventHub {
             .lock()
             .unwrap_or_else(|error| error.into_inner())
             .next_sequence
+    }
+
+    pub fn is_incomplete(&self) -> bool {
+        self.incomplete
     }
 
     pub fn events_after(&self, sequence: u64) -> (Vec<RecordedEvent>, bool) {

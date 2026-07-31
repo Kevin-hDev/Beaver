@@ -61,6 +61,7 @@ async fn control_process(
     super::tool_bash::control_shell_session(
         args["session_id"].as_str().unwrap_or(""),
         args["chars"].as_str(),
+        args["eof"].as_bool().unwrap_or(false),
         args["stop"].as_bool().unwrap_or(false),
         session_id,
         yield_time_ms(args),
@@ -77,10 +78,8 @@ fn yield_time_ms(args: &Value) -> Option<u64> {
 }
 
 fn to_tool_result(output: ShellOutput) -> ToolResult {
-    let content = format!("{}\n{}", output.stdout, output.stderr)
-        .trim()
-        .to_string();
-    let result = if output.exit_code == 0 {
+    let content = render_streams(&output.stdout, &output.stderr);
+    let result = if output.running || output.exit_code == 0 {
         ToolResult::ok(content)
     } else {
         ToolResult::err(content)
@@ -89,3 +88,16 @@ fn to_tool_result(output: ShellOutput) -> ToolResult {
         .with_affected_paths(output.affected_paths)
         .with_file_changes(output.file_changes)
 }
+
+fn render_streams(stdout: &str, stderr: &str) -> String {
+    match (stdout.trim(), stderr.trim()) {
+        ("", "") => String::new(),
+        (stdout, "") => stdout.to_string(),
+        ("", stderr) => stderr.to_string(),
+        (stdout, stderr) => format!("{stdout}\n\n[stderr]\n{stderr}"),
+    }
+}
+
+#[cfg(test)]
+#[path = "tool_dispatcher_shell_tests.rs"]
+mod tests;

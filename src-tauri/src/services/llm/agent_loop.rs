@@ -144,15 +144,8 @@ pub async fn run_agent_loop(
             }
             break;
         }
-        let control_only = agent_loop_tools::prepare_tool_batch(
-            &session_id,
-            &request_id,
-            &result.tool_calls,
-            &working_dir,
-            turn,
-            &mut breaker,
-        )
-        .await?;
+        let control_only =
+            agent_loop_tools::prepare_tool_batch(&result.tool_calls, turn, &mut breaker).await?;
         let tool_compression = (!control_only).then(|| {
             compression.tool_compression(
                 token_counting::sum_real_counts(last_prompt, last_eval),

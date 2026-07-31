@@ -7,8 +7,15 @@ use std::sync::{LazyLock, Mutex};
 const MAX_LABEL_CHARS: usize = 80;
 const MAX_DETAIL_CHARS: usize = 220;
 const MAX_SESSION_CACHE: usize = 64;
+const NEGATIVE_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(1);
 
-static SUBAGENT_CACHE: LazyLock<Mutex<VecDeque<(String, bool)>>> =
+struct CachedSession {
+    id: String,
+    is_subagent: bool,
+    checked_at: std::time::Instant,
+}
+
+static SUBAGENT_CACHE: LazyLock<Mutex<VecDeque<CachedSession>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));
 
 pub async fn record_status(session_id: &str, label: &str, detail: Option<&str>) {
@@ -62,28 +69,45 @@ async fn is_subagent(session_id: &str) -> bool {
     if super::session_store::validate_session_id(session_id).is_err() {
         return false;
     }
-    {
-        let mut cache = SUBAGENT_CACHE
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        if let Some(position) = cache.iter().position(|(id, _)| id == session_id) {
-            let entry = cache.remove(position).unwrap_or_default();
-            let result = entry.1;
-            cache.push_back(entry);
-            return result;
-        }
+    if let Some(result) = cached_subagent(session_id) {
+        return result;
     }
     let result = super::session_store::get(session_id)
         .await
         .is_ok_and(|session| session.parent_session_id.is_some());
+    remember_subagent(session_id, result);
+    result
+}
+
+fn cached_subagent(session_id: &str) -> Option<bool> {
     let mut cache = SUBAGENT_CACHE
         .lock()
         .unwrap_or_else(|error| error.into_inner());
+    let position = cache.iter().position(|entry| entry.id == session_id)?;
+    let entry = cache.remove(position)?;
+    if !entry.is_subagent && entry.checked_at.elapsed() >= NEGATIVE_CACHE_TTL {
+        return None;
+    }
+    let result = entry.is_subagent;
+    cache.push_back(entry);
+    Some(result)
+}
+
+fn remember_subagent(session_id: &str, is_subagent: bool) {
+    let mut cache = SUBAGENT_CACHE
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    if let Some(position) = cache.iter().position(|entry| entry.id == session_id) {
+        cache.remove(position);
+    }
     if cache.len() >= MAX_SESSION_CACHE {
         cache.pop_front();
     }
-    cache.push_back((session_id.to_string(), result));
-    result
+    cache.push_back(CachedSession {
+        id: session_id.to_string(),
+        is_subagent,
+        checked_at: std::time::Instant::now(),
+    });
 }
 
 fn value_detail(value: Option<&Value>) -> Option<String> {
@@ -107,10 +131,22 @@ fn bounded(value: &str, max_chars: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::bounded;
+    use super::{bounded, cached_subagent, remember_subagent};
 
     #[test]
     fn bounded_collapses_whitespace_and_limits_chars() {
         assert_eq!(bounded("  a   b  c  ", 4), "a b ");
+    }
+
+    #[test]
+    fn only_confirmed_subagents_are_cached() {
+        let ordinary = uuid::Uuid::new_v4().to_string();
+        let subagent = uuid::Uuid::new_v4().to_string();
+
+        remember_subagent(&ordinary, false);
+        remember_subagent(&subagent, true);
+
+        assert_eq!(cached_subagent(&ordinary), Some(false));
+        assert_eq!(cached_subagent(&subagent), Some(true));
     }
 }

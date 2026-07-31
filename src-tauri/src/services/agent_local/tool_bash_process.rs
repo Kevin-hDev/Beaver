@@ -7,12 +7,14 @@ use tokio_util::sync::CancellationToken;
 
 use super::tool_bash_changes::ChangeTracker;
 use super::tool_bash_io::OutputEvent;
+use super::tool_bash_output::ShellStream;
 use super::tool_bash_progress::ShellProgress;
 use super::tool_bash_session::{CompletionKind, ShellSession};
 use super::tool_bash_storage::ShellOutputStore;
 
 const PROGRESS_INTERVAL_MS: u64 = 250;
 const FINAL_CHANGE_SETTLE_MS: u64 = 200;
+const FINAL_GIT_CHANGE_SETTLE_MS: u64 = 25;
 const KEEP_OUTPUT_AFTER_BYTES: usize = 28 * 1024;
 
 pub struct SpawnRequest<'a> {
@@ -39,6 +41,7 @@ pub async fn spawn(request: SpawnRequest<'_>) -> Result<Arc<ShellSession>, Strin
     );
     let mut command = command?;
     let tracker = tracker.ok();
+    let tracking_unavailable = tracker.is_none();
     if request.agent_cancel.is_cancelled() {
         return Err("Commande annulee.".to_string());
     }
@@ -70,6 +73,9 @@ pub async fn spawn(request: SpawnRequest<'_>) -> Result<Arc<ShellSession>, Strin
         store.relative_path().to_string(),
         request.progress,
     );
+    if tracking_unavailable {
+        session.update_changes(Vec::new(), true);
+    }
     if let Err(error) = super::tool_bash_registry::insert(Arc::clone(&session)) {
         super::tool_bash_platform::terminate_process_tree(pid).await;
         let _ = child.wait().await;
@@ -106,14 +112,15 @@ async fn run_process(
 ) {
     let (sender, mut receiver) = mpsc::channel(super::tool_bash_io::OUTPUT_CHANNEL_SIZE);
     let readers = [
-        super::tool_bash_io::spawn_reader(stdout, sender.clone()),
-        super::tool_bash_io::spawn_reader(stderr, sender),
+        super::tool_bash_io::spawn_reader(stdout, ShellStream::Stdout, sender.clone()),
+        super::tool_bash_io::spawn_reader(stderr, ShellStream::Stderr, sender),
     ];
     let session_cancel = session.cancellation();
     let timeout_wait = wait_for_timeout(hard_timeout_secs);
     tokio::pin!(timeout_wait);
     let mut tick = tokio::time::interval(Duration::from_millis(PROGRESS_INTERVAL_MS));
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut output_open = true;
 
     let completion = loop {
         tokio::select! {
@@ -126,19 +133,19 @@ async fn run_process(
                     .map(|status| CompletionKind::Exited(status.code().unwrap_or(-1)))
                     .unwrap_or(CompletionKind::Failed);
             }
-            event = receiver.recv() => {
+            event = receiver.recv(), if output_open => {
                 match event {
-                    Some(OutputEvent::Data(mut bytes)) => {
+                    Some(OutputEvent::Data(stream, mut bytes)) => {
                         use zeroize::Zeroize;
                         if store.append(&bytes).await.is_err() {
                             bytes.zeroize();
                             break CompletionKind::Failed;
                         }
-                        session.append_output(&bytes);
+                        session.append_output(stream, &bytes);
                         bytes.zeroize();
                     }
                     Some(OutputEvent::Failed) => break CompletionKind::Failed,
-                    None => {}
+                    None => output_open = false,
                 }
             }
             _ = tick.tick() => {
@@ -153,27 +160,38 @@ async fn run_process(
         let _ = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
     }
     let fully_drained = super::tool_bash_io::drain(session, &mut store, &mut receiver).await;
-    if !fully_drained && matches!(completion, CompletionKind::Exited(_)) {
-        super::tool_bash_platform::terminate_process_tree(session.pid()).await;
-    }
     for reader in readers {
         reader.abort();
         let _ = reader.await;
     }
     super::tool_bash_io::clear_pending(&mut receiver);
-    tokio::time::sleep(Duration::from_millis(FINAL_CHANGE_SETTLE_MS)).await;
-    refresh_changes(session, tracker.as_mut());
+    let settle_ms = match tracker.as_ref() {
+        Some(tracker) if tracker.requires_event_settle() => FINAL_CHANGE_SETTLE_MS,
+        Some(_) => FINAL_GIT_CHANGE_SETTLE_MS,
+        None => 0,
+    };
+    if settle_ms > 0 {
+        tokio::time::sleep(Duration::from_millis(settle_ms)).await;
+    }
+    finish_changes(session, tracker.as_mut());
     session.emit_progress();
     session.close_stdin().await;
 
     let keep_output = session.total_output_bytes() > KEEP_OUTPUT_AFTER_BYTES;
     let output_path = store.finalize(keep_output).await.ok().flatten();
-    let completion = if output_path.is_none() && keep_output {
+    let completion = if !fully_drained || (output_path.is_none() && keep_output) {
         CompletionKind::Failed
     } else {
         completion
     };
     session.complete(completion, output_path);
+}
+
+fn finish_changes(session: &ShellSession, tracker: Option<&mut ChangeTracker>) {
+    if let Some(tracker) = tracker {
+        let (changes, incomplete) = tracker.finish_changes();
+        session.update_changes(changes, incomplete);
+    }
 }
 
 fn refresh_changes(session: &ShellSession, tracker: Option<&mut ChangeTracker>) {

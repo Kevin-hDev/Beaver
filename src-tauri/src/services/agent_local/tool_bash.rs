@@ -4,8 +4,12 @@ use tokio_util::sync::CancellationToken;
 use super::tool_bash_progress::ShellProgress;
 use super::types_tools::ShellOutput;
 
-const MAX_COMMAND_BYTES: usize = 1024 * 1024;
+#[cfg(not(windows))]
+const MAX_COMMAND_BYTES: usize = 512 * 1024;
+#[cfg(windows)]
+const MAX_COMMAND_BYTES: usize = 24 * 1024;
 const MAX_INPUT_BYTES: usize = 64 * 1024;
+const INPUT_WRITE_TIMEOUT_SECS: u64 = 5;
 pub const DEFAULT_YIELD_MS: u64 = 10_000;
 const MIN_YIELD_MS: u64 = 250;
 const MAX_YIELD_MS: u64 = 30_000;
@@ -61,14 +65,22 @@ pub async fn execute_shell_managed(
 pub async fn control_shell_session(
     process_id: &str,
     input: Option<&str>,
+    eof: bool,
     stop: bool,
     owner_session_id: &str,
     yield_time_ms: Option<u64>,
     cancel: CancellationToken,
     progress: Option<ShellProgress>,
 ) -> Result<ShellOutput, String> {
-    if input.is_some_and(|value| value.len() > MAX_INPUT_BYTES || value.contains('\0')) {
-        return Err("Entree shell invalide.".to_string());
+    if let Some(input) = input {
+        validate_input(input)?;
+    }
+    if !stop {
+        if let Some(input) = input.filter(|value| !value.is_empty()) {
+            if let Err(reason) = super::security::check_destructive_command(input) {
+                return Ok(super::tool_bash_result::blocked(reason));
+            }
+        }
     }
     let session = super::tool_bash_registry::get(process_id, owner_session_id)?;
     session.set_progress(progress);
@@ -76,11 +88,14 @@ pub async fn control_shell_session(
         session.cancel();
     } else if let Some(input) = input {
         if !input.is_empty() {
-            if let Err(error) = session.write_input(input.as_bytes()).await {
+            if let Err(error) = write_session_input(&session, input, &cancel).await {
                 session.set_progress(None);
                 return Err(error);
             }
         }
+    }
+    if eof {
+        session.close_stdin().await;
     }
     let snapshot = super::tool_bash_wait::wait(
         &session,
@@ -95,6 +110,24 @@ pub async fn control_shell_session(
         super::tool_bash_registry::remove(session.id());
     }
     Ok(output)
+}
+
+async fn write_session_input(
+    session: &super::tool_bash_session::ShellSession,
+    input: &str,
+    caller_cancel: &CancellationToken,
+) -> Result<(), String> {
+    tokio::select! {
+        result = session.write_input(input.as_bytes()) => result,
+        _ = caller_cancel.cancelled() => {
+            session.cancel();
+            Err("Ecriture vers le shell annulee.".to_string())
+        }
+        _ = tokio::time::sleep(std::time::Duration::from_secs(INPUT_WRITE_TIMEOUT_SECS)) => {
+            session.cancel();
+            Err("Ecriture vers le shell interrompue.".to_string())
+        }
+    }
 }
 
 #[cfg(test)]
@@ -154,9 +187,16 @@ pub(super) fn truncate_output(output: &str) -> String {
     result
 }
 
-fn validate_command(command: &str) -> Result<(), String> {
+pub(crate) fn validate_command(command: &str) -> Result<(), String> {
     if command.trim().is_empty() || command.len() > MAX_COMMAND_BYTES || command.contains('\0') {
         return Err("Commande shell invalide.".to_string());
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_input(input: &str) -> Result<(), String> {
+    if input.len() > MAX_INPUT_BYTES || input.contains('\0') {
+        return Err("Entree shell invalide.".to_string());
     }
     Ok(())
 }

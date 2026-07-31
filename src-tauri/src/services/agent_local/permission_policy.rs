@@ -9,11 +9,15 @@ pub fn requires_sensitive_bash_prompt(
     tool_name: &str,
     args: &Value,
 ) -> bool {
-    if uses_auto_bypass(mode) || tool_name != "bash" {
+    if uses_auto_bypass(mode) {
         return false;
     }
-    args["command"]
-        .as_str()
+    let input = match tool_name {
+        "bash" => args["command"].as_str(),
+        "bash_write" => args["chars"].as_str(),
+        _ => None,
+    };
+    input
         .map(super::sensitive_data::bash_touches_sensitive_data)
         .unwrap_or(false)
 }

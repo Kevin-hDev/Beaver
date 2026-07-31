@@ -20,6 +20,7 @@ static BASH: Schema = &[
 static BASH_WRITE: Schema = &[
     ("session_id", Ty::Str, true),
     ("chars", Ty::Str, false),
+    ("eof", Ty::Bool, false),
     ("stop", Ty::Bool, false),
     ("yield_time_ms", Ty::Int, false),
     ("yield-time-ms", Ty::Int, false),

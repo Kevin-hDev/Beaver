@@ -14,7 +14,6 @@ pub async fn execute_tracked_write(
 ) -> ToolResult {
     let summary = super::tool_executor_diagnostics::started(
         ctx.session_id,
-        ctx.request_id,
         name,
         args,
         ctx.working_dir,

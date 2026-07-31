@@ -4,7 +4,7 @@ use tokio::process::ChildStdin;
 use tokio::sync::{Mutex as AsyncMutex, Notify};
 use tokio_util::sync::CancellationToken;
 
-use super::tool_bash_output::ShellOutputBuffer;
+use super::tool_bash_output::{ShellOutputBuffer, ShellStream};
 use super::tool_bash_progress::ShellProgress;
 use super::types_tools::ToolFileChange;
 
@@ -17,7 +17,8 @@ pub enum CompletionKind {
 }
 
 pub struct ShellSessionSnapshot {
-    pub output: String,
+    pub stdout: String,
+    pub stderr: String,
     pub running: bool,
     pub completion: Option<CompletionKind>,
     pub elapsed_ms: u64,
@@ -103,8 +104,8 @@ impl ShellSession {
         self.lock_state().completion.is_some()
     }
 
-    pub fn append_output(&self, bytes: &[u8]) {
-        self.lock_state().output.append(bytes);
+    pub fn append_output(&self, stream: ShellStream, bytes: &[u8]) {
+        self.lock_state().output.append(stream, bytes);
     }
 
     pub fn update_changes(&self, changes: Vec<ToolFileChange>, incomplete: bool) {
@@ -125,13 +126,15 @@ impl ShellSession {
 
     pub fn snapshot(&self) -> ShellSessionSnapshot {
         let mut state = self.lock_state();
+        let pending = state.output.take_pending();
         ShellSessionSnapshot {
-            output: state.output.take_pending(),
+            stdout: pending.stdout,
+            stderr: pending.stderr,
             running: state.completion.is_none(),
             completion: state.completion,
             elapsed_ms: self.started.elapsed().as_millis().min(u128::from(u64::MAX)) as u64,
             output_path: state.output_path.clone(),
-            output_truncated: state.output.is_truncated(),
+            output_truncated: pending.truncated,
             changes: state.changes.clone(),
             tracking_incomplete: state.tracking_incomplete,
         }

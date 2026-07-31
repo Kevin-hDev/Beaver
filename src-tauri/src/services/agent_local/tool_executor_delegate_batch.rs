@@ -41,7 +41,6 @@ pub async fn run_delegate_batch(
     for item in items {
         let summary = super::tool_executor_diagnostics::started(
             session_id,
-            request_id,
             DELEGATE_TOOL,
             item.args,
             working_dir,

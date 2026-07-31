@@ -8,14 +8,8 @@ pub async fn build_command(
     owner_session_id: &str,
 ) -> Result<Command, String> {
     let shell = user_shell()?;
-    let prepared = super::tool_bash_profile::prepare(
-        owner_session_id,
-        &shell,
-        working_dir,
-        command,
-    )
-    .await;
-    let arguments = shell_arguments(&prepared);
+    let profile = super::tool_bash_profile::prepare(owner_session_id, &shell, working_dir).await;
+    let arguments = shell_arguments(command);
     let mut process = Command::new(shell);
     process
         .args(arguments)
@@ -24,6 +18,9 @@ pub async fn build_command(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
+    if let Some(profile) = profile {
+        profile.apply(&mut process);
+    }
     super::tool_bash_platform::configure_process_group(&mut process);
     Ok(process)
 }
@@ -41,6 +38,7 @@ fn user_shell() -> Result<String, String> {
             && !shell.contains('\0')
             && path.is_absolute()
             && path.is_file()
+            && super::tool_bash_profile::supports_shell(&shell)
         {
             return Ok(shell);
         }
@@ -50,18 +48,45 @@ fn user_shell() -> Result<String, String> {
 
 #[cfg(windows)]
 fn user_shell() -> Result<String, String> {
-    Ok("powershell".to_string())
+    Ok(super::tool_bash_platform::powershell_executable()?
+        .to_string_lossy()
+        .to_string())
 }
 
 #[cfg(unix)]
-fn shell_arguments(command: &str) -> Vec<String> {
-    vec!["-c".to_string(), command.to_string()]
+pub(super) fn shell_arguments(command: &str) -> Vec<String> {
+    let wrapper = format!(
+        "if [ \"${{{}+x}}\" = x ]; then eval \"${{{}}}\"; unset {}; fi; set +e; eval \"$1\"; beaver_status=$?; wait; exit \"$beaver_status\"",
+        super::tool_bash_profile::SNAPSHOT_ENV,
+        super::tool_bash_profile::SNAPSHOT_ENV,
+        super::tool_bash_profile::SNAPSHOT_ENV,
+    );
+    vec![
+        "-c".to_string(),
+        wrapper,
+        "beaver-shell".to_string(),
+        command.to_string(),
+    ]
 }
 
 #[cfg(windows)]
-fn shell_arguments(command: &str) -> Vec<String> {
-    let prepared = format!(
-        "{command}\n$beaverStatus = if ($?) {{ 0 }} else {{ 1 }} ; exit $beaverStatus"
-    );
-    vec!["-Command".to_string(), prepared]
+pub(super) fn shell_arguments(command: &str) -> Vec<String> {
+    vec![
+        "-NoLogo".to_string(),
+        "-NoProfile".to_string(),
+        "-NonInteractive".to_string(),
+        "-Command".to_string(),
+        powershell_script(command),
+    ]
 }
+
+#[cfg(any(windows, test))]
+fn powershell_script(command: &str) -> String {
+    format!(
+        "$global:LASTEXITCODE = $null\n{command}\n$beaverSucceeded = $?; $beaverStatus = $global:LASTEXITCODE; if ($beaverSucceeded) {{ exit 0 }}; if ($null -ne $beaverStatus -and [int]$beaverStatus -ne 0) {{ exit [int]$beaverStatus }}; exit 1"
+    )
+}
+
+#[cfg(test)]
+#[path = "tool_bash_shell_tests.rs"]
+mod tests;

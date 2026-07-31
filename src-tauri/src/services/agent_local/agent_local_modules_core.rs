@@ -92,6 +92,7 @@ pub mod ollama_tool_role;
 mod ollama_tool_role_tests;
 pub mod ollama_wire;
 pub mod permission_gate;
+pub mod permission_bash;
 mod permission_allow_cache;
 #[cfg(test)]
 pub mod permission_gate_tests;

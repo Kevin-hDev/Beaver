@@ -12,9 +12,7 @@ pub async fn dispatch_read(
     request_id: &str,
     chat_mode: bool,
 ) -> ToolResult {
-    let summary =
-        super::tool_executor_diagnostics::started(session_id, request_id, name, args, working_dir)
-            .await;
+    let summary = super::tool_executor_diagnostics::started(session_id, name, args, working_dir).await;
     let result = tool_dispatcher::dispatch_for_mode(
         name,
         args,

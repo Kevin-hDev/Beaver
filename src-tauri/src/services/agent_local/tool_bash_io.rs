@@ -2,16 +2,16 @@ use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::sync::mpsc;
 
+use super::tool_bash_output::ShellStream;
 use super::tool_bash_session::ShellSession;
 use super::tool_bash_storage::ShellOutputStore;
 
 pub const OUTPUT_CHANNEL_SIZE: usize = 64;
 const READ_CHUNK_SIZE: usize = 8 * 1024;
-const DRAIN_IDLE_TIMEOUT_MS: u64 = 100;
 const DRAIN_MAX_TIMEOUT_SECS: u64 = 2;
 
 pub enum OutputEvent {
-    Data(Vec<u8>),
+    Data(ShellStream, Vec<u8>),
     Failed,
 }
 
@@ -46,6 +46,7 @@ pub async fn read_bounded<R: AsyncRead + Unpin>(
 
 pub fn spawn_reader<R>(
     mut reader: R,
+    stream: ShellStream,
     sender: mpsc::Sender<OutputEvent>,
 ) -> tokio::task::JoinHandle<()>
 where
@@ -58,7 +59,7 @@ where
                 Ok(0) => break,
                 Ok(count) => {
                     if sender
-                        .send(OutputEvent::Data(buffer[..count].to_vec()))
+                        .send(OutputEvent::Data(stream, buffer[..count].to_vec()))
                         .await
                         .is_err()
                     {
@@ -85,15 +86,14 @@ pub async fn drain(
         if remaining.is_zero() {
             return false;
         }
-        let wait = remaining.min(Duration::from_millis(DRAIN_IDLE_TIMEOUT_MS));
-        match tokio::time::timeout(wait, receiver.recv()).await {
-            Ok(Some(OutputEvent::Data(mut bytes))) => {
+        match tokio::time::timeout(remaining, receiver.recv()).await {
+            Ok(Some(OutputEvent::Data(stream, mut bytes))) => {
                 use zeroize::Zeroize;
                 if store.append(&bytes).await.is_err() {
                     bytes.zeroize();
                     return false;
                 }
-                session.append_output(&bytes);
+                session.append_output(stream, &bytes);
                 bytes.zeroize();
             }
             Ok(Some(OutputEvent::Failed)) | Err(_) => return false,
@@ -105,7 +105,7 @@ pub async fn drain(
 pub fn clear_pending(receiver: &mut mpsc::Receiver<OutputEvent>) {
     use zeroize::Zeroize;
     while let Ok(event) = receiver.try_recv() {
-        if let OutputEvent::Data(mut bytes) = event {
+        if let OutputEvent::Data(_, mut bytes) = event {
             bytes.zeroize();
         }
     }

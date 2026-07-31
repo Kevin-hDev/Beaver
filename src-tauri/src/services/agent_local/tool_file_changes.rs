@@ -19,6 +19,23 @@ pub struct FileState {
     content: Option<Vec<u8>>,
 }
 
+pub(crate) fn baseline_state(path: &Path, bytes: &[u8]) -> FileState {
+    let content = if bytes.len() as u64 <= MAX_DIFF_FILE_BYTES
+        && !super::sensitive_data::is_sensitive_path(path)
+    {
+        Some(bytes.to_vec())
+    } else {
+        None
+    };
+    FileState {
+        signature: FileSignature {
+            len: bytes.len() as u64,
+            modified_ms: 0,
+        },
+        content,
+    }
+}
+
 pub fn capture(path: &Path, remaining_bytes: &mut usize) -> Option<FileState> {
     let metadata = std::fs::symlink_metadata(path).ok()?;
     if !metadata.file_type().is_file() {

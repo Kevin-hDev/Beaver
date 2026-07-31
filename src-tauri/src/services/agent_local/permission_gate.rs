@@ -1,6 +1,5 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::StreamEvent;
-use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::LazyLock;
@@ -31,66 +30,19 @@ const GATED_TOOLS: &[&str] = &[
     "forecast_backtest",
 ];
 
-static SAFE_BASH_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
-    [
-        r"^ls\b",
-        r"^cat\b",
-        r"^head\b",
-        r"^tail\b",
-        r"^wc\b",
-        r"^grep\b",
-        r"^find\b",
-        r"^git\s+(status|log|diff|show|remote|tag)\b",
-        r"^git\s+branch\s*$",
-        r"^pwd$",
-        r"^echo\b",
-        r"^which\b",
-        r"^cargo\s+(check|test|clippy|build)\b",
-        r"^npx\s+tsc\b",
-        r"^npm\s+run\b",
-        r"^tree\b",
-        r"^file\b",
-        r"^stat\b",
-        r"^du\b",
-        r"^df\b",
-    ]
-    .into_iter()
-    .filter_map(|p| Regex::new(p).ok())
-    .collect()
-});
-
-fn is_safe_bash(command: &str) -> bool {
-    let trimmed = command.trim();
-    if crate::services::agent_local::sensitive_data::bash_touches_sensitive_data(trimmed) {
-        return false;
-    }
-    if trimmed.contains(';')
-        || trimmed.contains("&&")
-        || trimmed.contains("||")
-        || trimmed.contains('|')
-        || trimmed.contains('`')
-        || trimmed.contains("$(")
-        || trimmed.contains('\n')
-        || trimmed.contains('\r')
-        || trimmed.contains("<(")
-        || trimmed.contains(">(")
-        || trimmed.contains("<<")
-        || trimmed.contains('>')
-        || trimmed.contains("$'")
-        || trimmed.contains('&')
-        || trimmed.contains('<')
-    {
-        return false;
-    }
-    SAFE_BASH_PATTERNS.iter().any(|re| re.is_match(trimmed))
+pub(crate) fn is_read_only_bash(command: &str) -> bool {
+    super::permission_bash::is_read_only(command)
 }
 
 pub fn requires_permission(tool_name: &str, args: &serde_json::Value) -> bool {
     match tool_name {
         "bash" => {
             let cmd = args["command"].as_str().unwrap_or("");
-            !is_safe_bash(cmd)
+            !super::permission_bash::is_safe(cmd)
         }
+        "bash_write" => args["chars"]
+            .as_str()
+            .is_some_and(|input| !input.is_empty()),
         "search_mcp_tools" => args["mode"].as_str() == Some("call"),
         _ => GATED_TOOLS.contains(&tool_name),
     }

@@ -56,6 +56,8 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
         }
     }
     validate_shell_numbers(tool, obj)?;
+    validate_shell_text(tool, obj)?;
+    validate_shell_control(tool, obj)?;
     if tool == "todo_delete" {
         let has_id = matches!(obj.get("id"), Some(value) if !value.is_null());
         let active = obj.get("active").and_then(Value::as_bool).unwrap_or(false);
@@ -77,6 +79,54 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
     Ok(Value::Object(cleaned))
 }
 
+fn validate_shell_control(
+    tool: &str,
+    args: &serde_json::Map<String, Value>,
+) -> Result<(), String> {
+    if tool != "bash_write" {
+        return Ok(());
+    }
+    let session_id = args
+        .get("session_id")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if uuid::Uuid::parse_str(session_id).is_err() {
+        return Err("'session_id' invalide".to_string());
+    }
+    if args.get("stop").and_then(Value::as_bool) != Some(true) {
+        return Ok(());
+    }
+    let has_input = args
+        .get("chars")
+        .and_then(Value::as_str)
+        .is_some_and(|value| !value.is_empty());
+    let has_eof = args.get("eof").and_then(Value::as_bool) == Some(true);
+    if has_input || has_eof {
+        return Err("'stop' ne peut pas être combiné avec 'chars' ou 'eof'".to_string());
+    }
+    Ok(())
+}
+
+fn validate_shell_text(
+    tool: &str,
+    args: &serde_json::Map<String, Value>,
+) -> Result<(), String> {
+    match tool {
+        "bash" => super::tool_bash::validate_command(
+            args.get("command")
+                .and_then(Value::as_str)
+                .unwrap_or_default(),
+        ),
+        "bash_write" => args
+            .get("chars")
+            .and_then(Value::as_str)
+            .map(super::tool_bash::validate_input)
+            .transpose()
+            .map(|_| ()),
+        _ => Ok(()),
+    }
+}
+
 fn validate_shell_numbers(
     tool: &str,
     args: &serde_json::Map<String, Value>,
@@ -89,7 +139,7 @@ fn validate_shell_numbers(
         }
     }
     if matches!(tool, "bash" | "bash_write") {
-        for name in ["yield-time_ms", "yield-time-ms"] {
+        for name in ["yield_time_ms", "yield-time-ms"] {
             if args
                 .get(name)
                 .filter(|value| !value.is_null())

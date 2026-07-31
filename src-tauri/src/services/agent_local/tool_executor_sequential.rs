@@ -32,7 +32,6 @@ pub async fn run_sequential(
     for (idx, (name, args)) in tool_calls.iter().enumerate() {
         let arg_summary = super::tool_executor_diagnostics::started(
             session_id,
-            request_id,
             name,
             args,
             working_dir,
