@@ -1,4 +1,5 @@
 use super::agent_loop_compression::{LastCounts, LoopCompression};
+use super::{agent_loop_request::ApiRequestParams, agent_loop_tools};
 use crate::services::agent_local::{
     agent_loop_finish, agent_loop_limits::MAX_TURNS, agent_loop_plan, circuit_breaker,
     context_usage_buckets::ContextUsageSeed, context_usage_runtime, extension_tool_set,
@@ -56,25 +57,24 @@ pub async fn run_agent_loop(
         if cancel.is_cancelled() {
             return Err("Annulé".to_string());
         }
-        let request_output =
-            super::agent_loop_request::run(super::agent_loop_request::ApiRequestParams {
-                on_event,
-                messages,
-                provider_id,
-                model,
-                tools: tools.active(),
-                think,
-                reasoning_mode,
-                session_id: &session_id,
-                request_id: &request_id,
-                cancel: cancel.clone(),
-                configured_context,
-                plan_mode_active,
-                turn,
-                subagents: &mut subagents,
-                context_usage_seed,
-            })
-            .await?;
+        let request_output = super::agent_loop_request::run(ApiRequestParams {
+            on_event,
+            messages,
+            provider_id,
+            model,
+            tools: tools.active(),
+            think,
+            reasoning_mode,
+            session_id: &session_id,
+            request_id: &request_id,
+            cancel: cancel.clone(),
+            configured_context,
+            plan_mode_active,
+            turn,
+            subagents: &mut subagents,
+            context_usage_seed,
+        })
+        .await?;
         generation.merge(request_output.generation);
         let interrupted = request_output.interrupted;
         let plan_active = request_output.plan_active;
@@ -144,7 +144,7 @@ pub async fn run_agent_loop(
             }
             break;
         }
-        let control_only = super::agent_loop_tools::prepare_tool_batch(
+        let control_only = agent_loop_tools::prepare_tool_batch(
             &session_id,
             &request_id,
             &result.tool_calls,
