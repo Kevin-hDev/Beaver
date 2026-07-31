@@ -1,13 +1,12 @@
-use notify::EventKind;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 
 use super::types_tools::ToolFileChangeStatus;
+use super::tool_bash_change_event::PreparedEvent;
 
 const MAX_WORKSPACE_WATCHERS: usize = super::tool_bash_watch_roots::MAX_WATCH_ROOTS;
 const MAX_BUFFERED_EVENTS: usize = 4_096;
-const MAX_PATHS_PER_EVENT: usize = 128;
 const SKIPPED_DIRECTORIES: &[&str] = &[
     ".git",
     "node_modules",
@@ -72,29 +71,27 @@ impl WorkspaceEventHub {
         (events, gap)
     }
 
-    fn record(&self, event: &notify::Event) {
-        let Some(status) = status_for_kind(&event.kind) else {
-            return;
-        };
-        let created_directory = cfg!(target_os = "linux")
-            && matches!(event.kind, EventKind::Create(_))
-            && event
-                .paths
-                .iter()
-                .any(|path| path.is_dir() && is_trackable(&self.root, path));
+    fn record(&self, event: &PreparedEvent) {
+        let created_directory = event
+            .paths
+            .iter()
+            .any(|entry| entry.is_directory && is_trackable(&self.root, &entry.path));
         let mut paths = event
             .paths
             .iter()
-            .filter(|path| is_trackable(&self.root, path));
-        let Some(first_path) = paths.next() else {
+            .filter(|entry| is_trackable(&self.root, &entry.path));
+        let Some(first) = paths.next() else {
+            if event.truncated {
+                self.mark_overflow();
+            }
             return;
         };
         let mut ring = self.lock_events();
-        ring.push(first_path.clone(), status);
-        for path in paths.by_ref().take(MAX_PATHS_PER_EVENT - 1) {
-            ring.push(path.clone(), status);
+        ring.push(first.path.clone(), event.status);
+        for entry in paths {
+            ring.push(entry.path.clone(), event.status);
         }
-        if paths.next().is_some() || created_directory {
+        if event.truncated || created_directory {
             ring.mark_overflow();
         }
     }
@@ -146,15 +143,24 @@ pub fn workspace_hub(root: PathBuf) -> Result<Arc<WorkspaceEventHub>, String> {
 }
 
 pub fn handle_notify_event(result: notify::Result<notify::Event>) {
-    let hubs = lock_hubs();
+    let hubs = {
+        let hubs = lock_hubs();
+        hubs.iter().cloned().collect::<Vec<_>>()
+    };
+    if hubs.is_empty() {
+        return;
+    }
     match result {
         Ok(event) => {
-            for hub in hubs.iter() {
+            let Some(event) = PreparedEvent::capture(event) else {
+                return;
+            };
+            for hub in &hubs {
                 hub.record(&event);
             }
         }
         Err(_) => {
-            for hub in hubs.iter() {
+            for hub in &hubs {
                 hub.mark_overflow();
             }
         }
@@ -190,15 +196,6 @@ fn evict_inactive_hub() -> Result<(), String> {
 
 fn lock_hubs() -> std::sync::MutexGuard<'static, VecDeque<Arc<WorkspaceEventHub>>> {
     HUBS.lock().unwrap_or_else(|error| error.into_inner())
-}
-
-fn status_for_kind(kind: &EventKind) -> Option<ToolFileChangeStatus> {
-    match kind {
-        EventKind::Create(_) => Some(ToolFileChangeStatus::Added),
-        EventKind::Modify(_) => Some(ToolFileChangeStatus::Modified),
-        EventKind::Remove(_) => Some(ToolFileChangeStatus::Deleted),
-        _ => None,
-    }
 }
 
 pub(super) fn is_trackable(root: &Path, path: &Path) -> bool {

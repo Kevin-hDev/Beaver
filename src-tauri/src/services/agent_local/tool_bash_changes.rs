@@ -42,9 +42,8 @@ impl ChangeTracker {
         .ok()
         .and_then(Result::ok)
         .and_then(Result::ok);
-        if hub.is_none() {
-            watcher_setup.abort();
-        }
+        // Blocking tasks cannot be cancelled; dropping only detaches their handles.
+        drop(watcher_setup);
         let (baseline, directory_baseline, baseline_incomplete) = match tokio::time::timeout(
             std::time::Duration::from_millis(BASELINE_TIMEOUT_MS),
             &mut baseline_setup,
@@ -53,11 +52,9 @@ impl ChangeTracker {
         {
             Ok(Ok(result)) => result,
             Ok(Err(_)) => (None, None, true),
-            Err(_) => {
-                baseline_setup.abort();
-                (None, None, true)
-            }
+            Err(_) => (None, None, true),
         };
+        drop(baseline_setup);
         let cursor = hub.as_ref().map_or(0, |hub| hub.sequence());
         let overflowed = baseline_incomplete;
         Ok(Self {
@@ -87,7 +84,7 @@ impl ChangeTracker {
     }
 
     pub fn requires_event_settle(&self) -> bool {
-        self.hub.is_some() && self.baseline.is_none()
+        self.hub.is_some() && self.baseline.is_none() && self.directory_baseline.is_none()
     }
 
     pub fn finish_changes(&mut self) -> (Vec<ToolFileChange>, bool) {

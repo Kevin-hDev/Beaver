@@ -1,11 +1,10 @@
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 #[cfg(any(target_os = "linux", test))]
 use std::collections::VecDeque;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
-#[cfg(any(target_os = "linux", test))]
 const MAX_WATCH_DIRECTORIES: usize = 4_096;
 pub(super) const MAX_WATCH_ROOTS: usize = 64;
 
@@ -14,7 +13,7 @@ static SHARED_WATCHER: LazyLock<Mutex<Option<SharedWatcher>>> =
 
 struct SharedWatcher {
     watcher: RecommendedWatcher,
-    roots: BTreeMap<PathBuf, Vec<PathBuf>>,
+    roots: BTreeMap<PathBuf, BTreeSet<PathBuf>>,
 }
 
 pub fn attach(root: &Path) -> Result<bool, String> {
@@ -53,44 +52,67 @@ impl SharedWatcher {
     }
 
     fn attach(&mut self, root: &Path) -> Result<bool, String> {
-        if self.roots.contains_key(root) {
-            return Ok(false);
-        }
-        if self.roots.len() >= MAX_WATCH_ROOTS {
+        let previous = self.roots.get(root).cloned();
+        if previous.is_none() && self.roots.len() >= MAX_WATCH_ROOTS {
             return Err(tracking_unavailable());
         }
         let (paths, mode, incomplete) = watch_paths(root);
-        let mut attached = Vec::with_capacity(paths.len());
+        let previous = previous.unwrap_or_default();
+        let mut attached = previous.clone();
+        let mut added = BTreeSet::new();
         for path in paths {
-            if self.watcher.watch(&path, mode).is_err() {
-                self.rollback(&attached);
-                return Err(tracking_unavailable());
+            if attached.contains(&path) {
+                continue;
             }
-            attached.push(path);
+            if attached.len() >= MAX_WATCH_DIRECTORIES {
+                return self.rollback_attach(root, previous, added);
+            }
+            if self.watcher.watch(&path, mode).is_err() {
+                return self.rollback_attach(root, previous, added);
+            }
+            added.insert(path.clone());
+            attached.insert(path);
         }
         self.roots.insert(root.to_path_buf(), attached);
         Ok(incomplete)
     }
 
-    fn detach(&mut self, root: &Path) -> Result<(), String> {
-        let Some(paths) = self.roots.remove(root) else {
-            return Ok(());
-        };
-        let mut failed = false;
-        for path in paths {
-            failed |= self.watcher.unwatch(&path).is_err();
+    fn rollback_attach(
+        &mut self,
+        root: &Path,
+        mut retained: BTreeSet<PathBuf>,
+        added: BTreeSet<PathBuf>,
+    ) -> Result<bool, String> {
+        retained.extend(retain_failed_unwatches(added, |path| {
+            self.watcher.unwatch(path).is_err()
+        }));
+        if retained.is_empty() {
+            self.roots.remove(root);
+        } else {
+            self.roots.insert(root.to_path_buf(), retained);
         }
-        if failed {
-            return Err(tracking_unavailable());
-        }
-        Ok(())
+        Err(tracking_unavailable())
     }
 
-    fn rollback(&mut self, paths: &[PathBuf]) {
-        for path in paths {
-            let _ = self.watcher.unwatch(path);
+    fn detach(&mut self, root: &Path) -> Result<(), String> {
+        let Some(paths) = self.roots.get(root).cloned() else {
+            return Ok(());
+        };
+        let failed = retain_failed_unwatches(paths, |path| self.watcher.unwatch(path).is_err());
+        if failed.is_empty() {
+            self.roots.remove(root);
+            return Ok(());
         }
+        self.roots.insert(root.to_path_buf(), failed);
+        Err(tracking_unavailable())
     }
+}
+
+fn retain_failed_unwatches(
+    paths: BTreeSet<PathBuf>,
+    mut failed: impl FnMut(&Path) -> bool,
+) -> BTreeSet<PathBuf> {
+    paths.into_iter().filter(|path| failed(path)).collect()
 }
 
 #[cfg(target_os = "linux")]
@@ -145,6 +167,8 @@ fn collect_directories(root: &Path) -> (Vec<PathBuf>, bool) {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeSet;
+
     #[test]
     fn skipped_dependency_directories_are_never_selected_for_watching() {
         let root = tempfile::tempdir().expect("tempdir");
@@ -158,5 +182,17 @@ mod tests {
         assert!(directories
             .iter()
             .all(|path| !path.to_string_lossy().contains("node_modules")));
+    }
+
+    #[test]
+    fn failed_unwatches_remain_registered_for_a_retry() {
+        let paths = ["removed", "still-watched"]
+            .into_iter()
+            .map(std::path::PathBuf::from)
+            .collect::<BTreeSet<_>>();
+
+        let failed = super::retain_failed_unwatches(paths, |path| path.ends_with("still-watched"));
+
+        assert_eq!(failed, BTreeSet::from(["still-watched".into()]));
     }
 }

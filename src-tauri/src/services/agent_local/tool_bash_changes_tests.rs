@@ -79,6 +79,15 @@ async fn reuses_one_watcher_for_parallel_commands_in_the_same_workspace() {
 }
 
 #[tokio::test]
+async fn directory_baseline_avoids_the_event_settle_delay() {
+    let directory = tempfile::tempdir().expect("tempdir");
+    let tracker = start_tracker(directory.path()).await;
+
+    assert!(tracker.directory_baseline.is_some());
+    assert!(!tracker.requires_event_settle());
+}
+
+#[tokio::test]
 async fn parallel_workspaces_keep_complete_final_changes_when_watchers_are_busy() {
     let directories = (0..20)
         .map(|_| tempfile::tempdir().expect("tempdir"))

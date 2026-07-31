@@ -4,6 +4,7 @@ pub mod subagent_directory_workspace;
 pub mod subagent_coder_project;
 pub mod subagent_explorer_process;
 pub mod tool_bash;
+mod tool_bash_change_event;
 pub mod tool_bash_change_hub;
 pub mod tool_bash_changes;
 pub mod tool_bash_directory_baseline;

@@ -43,7 +43,8 @@ impl DirectoryBaseline {
     }
 
     pub fn current_paths(&self) -> (Vec<(PathBuf, ToolFileChangeStatus)>, bool) {
-        let (current, mut incomplete) = scan(&self.root);
+        let (current, current_incomplete) = scan(&self.root);
+        let mut incomplete = self.incomplete || current_incomplete;
         let paths = self
             .initial
             .keys()
@@ -52,7 +53,12 @@ impl DirectoryBaseline {
             .collect::<BTreeSet<_>>();
         let mut changes = Vec::new();
         for path in paths {
-            let status = status_for_change(self.initial.get(&path), current.get(&path));
+            let status = status_for_change(
+                self.initial.get(&path),
+                current.get(&path),
+                !self.incomplete,
+                !current_incomplete,
+            );
             let Some(status) = status else {
                 continue;
             };
@@ -129,22 +135,24 @@ fn scan(root: &Path) -> (BTreeMap<PathBuf, EntryState>, bool) {
 fn status_for_change(
     before: Option<&EntryState>,
     after: Option<&EntryState>,
+    initial_complete: bool,
+    current_complete: bool,
 ) -> Option<ToolFileChangeStatus> {
     match (before, after) {
-        (None, Some(_)) => Some(ToolFileChangeStatus::Added),
-        (Some(_), None) => Some(ToolFileChangeStatus::Deleted),
+        (None, Some(_)) if initial_complete => Some(ToolFileChangeStatus::Added),
+        (Some(_), None) if current_complete => Some(ToolFileChangeStatus::Deleted),
         (Some(EntryState::Directory), Some(EntryState::Directory)) => None,
         (Some(EntryState::File(before)), Some(EntryState::File(after))) => {
             states_differ(Some(before), Some(after)).then_some(ToolFileChangeStatus::Modified)
         }
         (Some(_), Some(_)) => Some(ToolFileChangeStatus::Modified),
-        (None, None) => None,
+        _ => None,
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::DirectoryBaseline;
+    use super::{status_for_change, DirectoryBaseline, EntryState};
 
     #[test]
     fn detects_net_file_and_directory_changes() {
@@ -158,5 +166,13 @@ mod tests {
 
         assert!(!incomplete);
         assert_eq!(changes.len(), 2);
+    }
+
+    #[test]
+    fn incomplete_scans_never_invent_additions_or_deletions() {
+        let entry = EntryState::Directory;
+
+        assert!(status_for_change(Some(&entry), None, true, false).is_none());
+        assert!(status_for_change(None, Some(&entry), false, true).is_none());
     }
 }
