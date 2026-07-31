@@ -24,4 +24,12 @@ describe("AssistantMessage streaming", () => {
 
     expect(container.querySelector(".msg-assistant-trace")).toBeTruthy();
   });
+
+  it("signale visuellement un TPS estimé", () => {
+    const { getByText } = render(
+      <AssistantMessage content="réponse" tokens={20} tps={12.3} tpsEstimated />,
+    );
+
+    expect(getByText("≈ 12.3 agentLocal.tps")).toBeTruthy();
+  });
 });

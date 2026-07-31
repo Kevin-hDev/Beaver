@@ -1,21 +1,25 @@
 use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult, TokenPhase};
-use crate::services::stream_utils::compute_tps;
 
 pub fn record_content(
     on_event: &AgentEventEmitter,
     result: &mut StreamResult,
     content: String,
     token_count: &mut u32,
-    first_token: &mut Option<std::time::Instant>,
     buffer_content: bool,
 ) {
     result.content.push_str(&content);
     result.content_chunks.push(content.clone());
     *token_count = result.record_generated_text(&content);
-    record_generation_started(on_event, first_token);
+    record_counted_activity(on_event, result, *token_count);
     if !buffer_content {
-        emit_token(on_event, content, *token_count, *first_token, None);
+        emit_token(
+            on_event,
+            content,
+            *token_count,
+            result.generation.live_tps(*token_count),
+            None,
+        );
     }
 }
 
@@ -24,11 +28,10 @@ pub fn record_thinking(
     result: &mut StreamResult,
     content: String,
     token_count: &mut u32,
-    first_token: &mut Option<std::time::Instant>,
 ) {
     result.thinking.push_str(&content);
     *token_count = result.record_generated_text(&content);
-    record_generation_started(on_event, first_token);
+    record_counted_activity(on_event, result, *token_count);
     let _ = on_event.send(StreamEvent::Thinking {
         content,
         token_count: *token_count,
@@ -37,13 +40,23 @@ pub fn record_thinking(
 
 pub fn record_generation_started(
     on_event: &AgentEventEmitter,
-    first_token: &mut Option<std::time::Instant>,
+    result: &mut StreamResult,
 ) {
-    if first_token.is_some() {
-        return;
+    if result.generation.start_activity() {
+        let _ = on_event.send(StreamEvent::GenerationStarted {});
     }
-    *first_token = Some(std::time::Instant::now());
-    let _ = on_event.send(StreamEvent::GenerationStarted {});
+}
+
+pub fn record_tool_call_generation(
+    on_event: &AgentEventEmitter,
+    result: &mut StreamResult,
+    name: &str,
+    arguments: &serde_json::Value,
+    token_count: &mut u32,
+) {
+    result.record_generated_tool_call(name, arguments);
+    *token_count = result.estimated_output_tokens();
+    record_counted_activity(on_event, result, *token_count);
 }
 
 pub fn emit_buffered_content(
@@ -52,18 +65,14 @@ pub fn emit_buffered_content(
     phase: TokenPhase,
 ) {
     let mut units = crate::services::token_counting::text_units(&result.thinking);
-    let first_token = Some(std::time::Instant::now());
+    let mut aggregate = super::generation_metrics::GenerationAggregate::default();
+    aggregate.add_result(result);
+    let tps = aggregate.summary().tps;
     for chunk in &result.content_chunks {
         units = units.saturating_add(crate::services::token_counting::text_units(chunk));
         let token_count = crate::services::token_counting::token_count_from_units(units)
             .min(u32::MAX as usize) as u32;
-        emit_token(
-            on_event,
-            chunk.clone(),
-            token_count,
-            first_token,
-            Some(phase.clone()),
-        );
+        emit_token(on_event, chunk.clone(), token_count, tps, Some(phase.clone()));
     }
 }
 
@@ -131,16 +140,25 @@ fn emit_token(
     on_event: &AgentEventEmitter,
     content: String,
     token_count: u32,
-    first_token: Option<std::time::Instant>,
+    tps: f64,
     phase: Option<TokenPhase>,
 ) {
-    let tps = compute_tps(token_count, first_token);
     let _ = on_event.send(StreamEvent::Token {
         content,
         token_count,
         tps,
         phase,
     });
+}
+
+fn record_counted_activity(
+    on_event: &AgentEventEmitter,
+    result: &mut StreamResult,
+    token_count: u32,
+) {
+    if result.generation.record_activity(token_count) {
+        let _ = on_event.send(StreamEvent::GenerationStarted {});
+    }
 }
 
 #[cfg(test)]

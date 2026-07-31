@@ -11,10 +11,7 @@ import { activeItemAfterToolResult, pendingToolIndices, thinkingItem, toolItems 
 import { applyToolResult } from "./agent-chat-tool-results";
 import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";
 import { finalizeStream, finishStream } from "./agent-chat-stream-finalize";
-import {
-  applyContextUsage,
-  applyGeneratedTokenCount,
-} from "./agent-stream-context-usage";
+import { applyContextUsage, applyGeneratedTokenCount } from "./agent-stream-context-usage";
 
 export type { ChatState, ManagedStreamState, PermissionRequestState, StreamApplyResult };
 export { EMPTY_CHAT_STATE, createManagedStreamState, toChatState } from "./agent-chat-stream-types";
@@ -48,6 +45,7 @@ export function applyStreamEvent(
       if (event.data.phase) prepareContentPhase(next, event.data.phase);
       next.currentContent += event.data.content;
       next.tps = event.data.tps;
+      next.tpsEstimated = true;
       applyGeneratedTokenCount(next, event.data.tokenCount);
       break;
     case "contentPhase":
@@ -153,7 +151,7 @@ export function applyStreamEvent(
       next.error = errorKey ? i18n.t(errorKey) : i18n.t("errors.streamInterrupted");
       next.isConnectionError = (event.data as Record<string, unknown>).isConnection === true;
       next.diagnosticSummary = event.data.diagnostic?.safeSummary;
-      const partial = finalizeStream(next, null, 0, null, false);
+      const partial = finalizeStream(next, null, 0, true, null, false);
       partial.state.error = next.error;
       partial.state.isConnectionError = next.isConnectionError;
       partial.state.diagnosticSummary = next.diagnosticSummary;

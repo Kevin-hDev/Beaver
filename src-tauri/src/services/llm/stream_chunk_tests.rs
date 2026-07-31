@@ -147,3 +147,43 @@ fn missing_usage_emits_no_usage_chunk() {
     let chunks = parse(json!({ "choices": [{ "delta": { "content": "answer" } }] }));
     assert_eq!(chunks, vec![ParsedChunk::Content("answer".into())]);
 }
+
+#[test]
+fn parses_groq_native_completion_time() {
+    let chunks = parse(json!({
+        "usage": {
+            "prompt_tokens": 2,
+            "completion_tokens": 20,
+            "completion_time": 2.5
+        }
+    }));
+
+    assert_eq!(
+        chunks.last(),
+        Some(&ParsedChunk::GenerationDuration(2_500_000_000))
+    );
+}
+
+#[test]
+fn parses_cerebras_native_completion_time() {
+    let chunks = parse(json!({
+        "usage": { "prompt_tokens": 2, "completion_tokens": 20 },
+        "time_info": { "completion_time": 0.25 }
+    }));
+
+    assert_eq!(
+        chunks.last(),
+        Some(&ParsedChunk::GenerationDuration(250_000_000))
+    );
+}
+
+#[test]
+fn rejects_invalid_native_completion_time() {
+    let chunks = parse(json!({
+        "usage": { "completion_tokens": 20, "completion_time": -3.0 }
+    }));
+
+    assert!(chunks
+        .iter()
+        .all(|chunk| !matches!(chunk, ParsedChunk::GenerationDuration(_))));
+}

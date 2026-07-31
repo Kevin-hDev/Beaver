@@ -42,7 +42,7 @@ export type StreamEvent =
   | { event: "toolResult"; data: { name: string; content: string; isError: boolean; truncated?: boolean; displaySummary?: string; toolCallIndex: number; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
   | { event: "turnEnd"; data: Record<string, never> }
   | { event: "permissionRequest"; data: { id: string; toolName: string; arguments: Record<string, unknown> } }
-  | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; promptTokens: number | null; contextTokens: number | null } }
+  | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; tpsEstimated?: boolean; promptTokens: number | null; contextTokens: number | null } }
   | { event: "error"; data: { message: string; isConnection?: boolean; diagnostic?: AgentErrorDiagnosticSummary } }
   | { event: "notice"; data: { messageKey: string } }
   | { event: "retryIndicator"; data: RetryIndicatorState }

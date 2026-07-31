@@ -151,6 +151,7 @@ fn send_compression_done(on_event: &AgentEventEmitter) {
         eval_count: None,
         eval_duration_ns: 0,
         final_tps: 0.0,
+        tps_estimated: true,
         prompt_tokens: None,
         context_tokens: None,
     });

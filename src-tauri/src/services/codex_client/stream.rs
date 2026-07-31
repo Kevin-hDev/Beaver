@@ -47,14 +47,11 @@ async fn consume_sse(
     let mut sse = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
     let mut token_count: u32 = 0;
-    let mut first_token: Option<std::time::Instant> = None;
-
     let mut cur_tool_id: Option<String> = None;
     let mut cur_tool_name: Option<String> = None;
     let mut cur_tool_args = String::new();
     let mut interrupted = false;
     let mut replay = ReplayCollector::default();
-
     loop {
         let event = tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
@@ -86,7 +83,6 @@ async fn consume_sse(
                         &mut result,
                         delta.to_string(),
                         &mut token_count,
-                        &mut first_token,
                     );
                 }
             }
@@ -100,7 +96,6 @@ async fn consume_sse(
                     &mut result,
                     delta.to_string(),
                     &mut token_count,
-                    &mut first_token,
                     buffer_content,
                 );
                 if should_interrupt(
@@ -117,7 +112,7 @@ async fn consume_sse(
                     if item["type"].as_str() == Some("function_call") {
                         crate::services::agent_local::stream_buffer::record_generation_started(
                             on_event,
-                            &mut first_token,
+                            &mut result,
                         );
                         cur_tool_id = item["call_id"].as_str().map(String::from);
                         cur_tool_name = item["name"].as_str().map(|name| {
@@ -129,6 +124,12 @@ async fn consume_sse(
             }
             "response.function_call_arguments.delta" => {
                 let delta = parsed["delta"].as_str().unwrap_or("");
+                if !delta.is_empty() {
+                    crate::services::agent_local::stream_buffer::record_generation_started(
+                        on_event,
+                        &mut result,
+                    );
+                }
                 cur_tool_args.push_str(delta);
             }
             "response.output_item.done" => {
@@ -140,7 +141,13 @@ async fn consume_sse(
                 if let (Some(id), Some(name)) = (cur_tool_id.take(), cur_tool_name.take()) {
                     let args_json: serde_json::Value =
                         serde_json::from_str(&cur_tool_args).unwrap_or_default();
-                    result.record_generated_tool_call(&name, &args_json);
+                    crate::services::agent_local::stream_buffer::record_tool_call_generation(
+                        on_event,
+                        &mut result,
+                        &name,
+                        &args_json,
+                        &mut token_count,
+                    );
                     let _ = on_event.send(StreamEvent::ToolCall {
                         name: name.clone(),
                         arguments: args_json.clone(),

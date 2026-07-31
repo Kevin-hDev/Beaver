@@ -38,6 +38,7 @@ export function ChatMessagePanel({
       isStreaming={chat.isStreaming}
       isCompressing={chat.isCompressing}
       tps={chat.tps}
+      tpsEstimated={chat.tpsEstimated}
       totalElapsedMs={chat.totalElapsedMs}
       segmentStartedAt={chat.streamStartedAt}
       liveTokenCount={chat.liveTokenCount}

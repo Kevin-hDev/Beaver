@@ -1,5 +1,6 @@
 use super::agent_loop_thinking_retry::{EagerHandle, ThinkingRetryParams};
 use super::context_usage_buckets::{ContextUsageSeed, RequestContextUsage};
+use super::generation_metrics::GenerationAggregate;
 use super::stream_events::AgentEventEmitter;
 use super::subagent_orchestration::ParentSubagentOrchestrator;
 use super::types_ollama::{ChatMessage, OllamaThink, StreamResult};
@@ -31,6 +32,7 @@ pub(super) struct OllamaRequestOutput {
     pub plan_active: bool,
     pub interrupted: bool,
     pub input_tokens: u32,
+    pub generation: GenerationAggregate,
 }
 
 pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequestOutput, String> {
@@ -108,6 +110,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
     .await?;
     let mut interrupted = outcome.is_interrupted();
     let mut result = outcome.into_result();
+    let mut generation = GenerationAggregate::default();
     super::stream_diagnostics_model::record_model_result(
         params.session_id,
         params.request_id,
@@ -134,6 +137,9 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         result = retry.result;
         eager_handle = retry.eager_handle;
         interrupted = retry.interrupted;
+        generation = retry.generation;
+    } else {
+        generation.add_result(&result);
     }
     params
         .subagents
@@ -145,5 +151,6 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         plan_active,
         interrupted,
         input_tokens,
+        generation,
     })
 }

@@ -17,6 +17,7 @@ interface SavedToolTimelineProps {
   segments: SavedSegment[];
   tokens?: number;
   tps: number;
+  tpsEstimated?: boolean;
   totalElapsedMs: number;
   onFilePreview?: (path: string) => void;
   onClone?: () => void;
@@ -25,7 +26,7 @@ interface SavedToolTimelineProps {
 }
 
 export function SavedToolTimeline({
-  messageId, segments, tokens, tps, totalElapsedMs, onFilePreview, onClone,
+  messageId, segments, tokens, tps, tpsEstimated, totalElapsedMs, onFilePreview, onClone,
   projectPath, liveCheckpoint = false,
 }: SavedToolTimelineProps) {
   const blocks = buildToolTimelineBlocks(segments);
@@ -69,7 +70,13 @@ export function SavedToolTimeline({
               />
             ))}
           </WorkStreamSummary>
-          <AssistantMessage content={finalBlock.content ?? ""} tokens={tokens} tps={tps} onClone={onClone} />
+          <AssistantMessage
+            content={finalBlock.content ?? ""}
+            tokens={tokens}
+            tps={tps}
+            tpsEstimated={tpsEstimated}
+            onClone={onClone}
+          />
         </>
       );
     }
@@ -78,6 +85,7 @@ export function SavedToolTimeline({
         content={finalBlock.content ?? ""}
         tokens={tokens}
         tps={tps}
+        tpsEstimated={tpsEstimated}
         totalElapsedMs={totalElapsedMs}
         onClone={onClone}
       />
@@ -107,6 +115,7 @@ export function SavedToolTimeline({
           showStats={index === lastTextIndex}
           tokens={tokens}
           tps={tps}
+          tpsEstimated={tpsEstimated}
           totalElapsedMs={totalElapsedMs}
           onClone={onClone}
           onFilePreview={onFilePreview}
@@ -118,12 +127,13 @@ export function SavedToolTimeline({
 }
 
 function SavedBlock({
-  block, showStats, tokens, tps, totalElapsedMs, onClone, onFilePreview, projectPath,
+  block, showStats, tokens, tps, tpsEstimated, totalElapsedMs, onClone, onFilePreview, projectPath,
 }: {
   block: ReturnType<typeof buildToolTimelineBlocks<SavedSegment["tools"][number]>>[number];
   showStats: boolean;
   tokens?: number;
   tps: number;
+  tpsEstimated?: boolean;
   totalElapsedMs: number;
   onClone?: () => void;
   onFilePreview?: (path: string) => void;
@@ -138,6 +148,7 @@ function SavedBlock({
           content={block.content}
           tokens={showStats ? tokens : undefined}
           tps={showStats ? tps : undefined}
+          tpsEstimated={showStats ? tpsEstimated : undefined}
           totalElapsedMs={showStats ? totalElapsedMs : undefined}
           onClone={showStats ? onClone : undefined}
         />

@@ -29,6 +29,7 @@ interface MessageListProps {
   isStreaming: boolean;
   isCompressing: boolean;
   tps: number;
+  tpsEstimated?: boolean;
   totalElapsedMs: number;
   segmentStartedAt: number | null;
   liveTokenCount: number;
@@ -53,7 +54,7 @@ interface MessageListProps {
 export function MessageList({
   messages, queuedUserMessages = [], completedSegments, currentContent,
   currentContentPhase, currentThinking,
-  currentTools, activeStreamItem = null, isStreaming, tps, totalElapsedMs, segmentStartedAt,
+  currentTools, activeStreamItem = null, isStreaming, tps, tpsEstimated = false, totalElapsedMs, segmentStartedAt,
   isCompressing, liveTokenCount, onReload, onEdit, onCloneMessage, onFileClick, onFilePreview, onFileReview,
   projectPath, knownSubagents = [], onOpenSubagent, planPreview, streamRunId = "",
 }: MessageListProps) {
@@ -106,6 +107,7 @@ export function MessageList({
                 onFilePreview={onFilePreview}
                 projectPath={projectPath}
                 tps={isLast ? tps : 0}
+                tpsEstimated={isLast && tpsEstimated}
                 totalElapsedMs={isLast ? totalElapsedMs : 0}
                 workDurationMs={msg.work_duration_ms}
                 liveCheckpoint={isStreaming && (
@@ -154,42 +156,40 @@ export function MessageList({
 }
 
 export const SegmentedAssistantMessage = memo(function SegmentedAssistantMessage({
-  msg, onReload, onClone, onFilePreview, tps, totalElapsedMs, workDurationMs, projectPath,
+  msg, onReload, onClone, onFilePreview, tps, tpsEstimated, totalElapsedMs, workDurationMs, projectPath,
   liveCheckpoint = false,
 }: {
   msg: AgentMessage; onReload?: (id: string) => void; onFilePreview?: (path: string) => void;
-  onClone?: (id: string) => void; tps: number; totalElapsedMs: number;
+  onClone?: (id: string) => void; tps: number; tpsEstimated?: boolean; totalElapsedMs: number;
   workDurationMs?: number; projectPath?: string;
   liveCheckpoint?: boolean;
 }) {
   if (msg.segments && msg.segments.length > 0) {
     return (
-      <>
-        <SavedToolTimeline
-          messageId={msg.id}
-          segments={msg.segments}
-          tokens={msg.tokens}
-          tps={tps}
-          totalElapsedMs={workDurationMs ?? totalElapsedMs}
-          onFilePreview={onFilePreview}
-          projectPath={projectPath}
-          liveCheckpoint={liveCheckpoint}
-          onClone={() => onClone?.(msg.id)}
-        />
-      </>
+      <SavedToolTimeline
+        messageId={msg.id}
+        segments={msg.segments}
+        tokens={msg.tokens}
+        tps={tps}
+        tpsEstimated={tpsEstimated}
+        totalElapsedMs={workDurationMs ?? totalElapsedMs}
+        onFilePreview={onFilePreview}
+        projectPath={projectPath}
+        liveCheckpoint={liveCheckpoint}
+        onClone={() => onClone?.(msg.id)}
+      />
     );
   }
   return (
-    <>
-      <AssistantMessage
-        content={msg.content} thinking={msg.thinking}
-        toolActivities={msg.tool_activities}
-        projectPath={projectPath}
-        onReload={onReload ? () => onReload(msg.id) : undefined}
-        onClone={onClone ? () => onClone(msg.id) : undefined}
-        tokens={msg.tokens}
-        tps={tps}
-      />
-    </>
+    <AssistantMessage
+      content={msg.content} thinking={msg.thinking}
+      toolActivities={msg.tool_activities}
+      projectPath={projectPath}
+      onReload={onReload ? () => onReload(msg.id) : undefined}
+      onClone={onClone ? () => onClone(msg.id) : undefined}
+      tokens={msg.tokens}
+      tps={tps}
+      tpsEstimated={tpsEstimated}
+    />
   );
 });

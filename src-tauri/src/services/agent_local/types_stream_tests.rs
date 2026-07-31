@@ -71,3 +71,20 @@ fn context_usage_serializes_for_the_live_ring() {
     assert_eq!(serialized["data"]["breakdown"]["systemPrompt"], 80);
     assert_eq!(serialized["data"]["breakdown"]["reasoningIncluded"], false);
 }
+
+#[test]
+fn done_exposes_whether_tps_is_estimated() {
+    let event = StreamEvent::Done {
+        eval_count: Some(20),
+        eval_duration_ns: 2_000_000_000,
+        final_tps: 10.0,
+        tps_estimated: true,
+        prompt_tokens: Some(5),
+        context_tokens: Some(25),
+    };
+
+    let serialized = serde_json::to_value(event).expect("serialize done");
+
+    assert_eq!(serialized["data"]["tpsEstimated"], true);
+    assert_eq!(serialized["data"]["evalDurationNs"], 2_000_000_000_u64);
+}

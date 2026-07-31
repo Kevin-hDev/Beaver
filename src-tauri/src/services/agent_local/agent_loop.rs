@@ -26,7 +26,7 @@ pub async fn run_agent_loop(
 ) -> Result<u32, String> {
     let (mut total_eval, mut total_prompt) = (Some(0), Some(0));
     let (mut last_prompt, mut last_eval) = (None, None);
-    let start = std::time::Instant::now();
+    let mut generation = super::generation_metrics::GenerationAggregate::default();
     let mut breaker = circuit_breaker::CircuitBreaker::new();
     let write_guard_arc = write_guard_registry::lock(&session_id).await;
     let mut write_guard = write_guard_arc.lock().await;
@@ -64,6 +64,7 @@ pub async fn run_agent_loop(
             context_usage_seed,
         })
         .await?;
+        generation.merge(request_output.generation);
         let eager_handle = request_output.eager_handle;
         let interrupted = request_output.interrupted;
         let plan_active = request_output.plan_active;
@@ -190,7 +191,7 @@ pub async fn run_agent_loop(
     Ok(super::agent_loop_finish::finish(
         on_event,
         (total_eval, total_prompt, last_prompt, last_eval),
-        start,
+        generation,
         (&session_id, &request_id),
         Some(model),
     )

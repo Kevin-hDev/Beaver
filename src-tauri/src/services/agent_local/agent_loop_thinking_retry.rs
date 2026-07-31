@@ -1,4 +1,5 @@
 use super::eager_dispatch;
+use super::generation_metrics::GenerationAggregate;
 use super::ollama_retry_indicator::{send_retry_indicator, REASON_THINKING_ONLY};
 use super::ollama_thinking_retry::{build_thinking_disabled_retry, is_thinking_only_dead_end};
 use super::stream_diagnostics_model as model_diag;
@@ -33,16 +34,21 @@ pub struct ThinkingRetryOutput {
     pub result: StreamResult,
     pub eager_handle: EagerHandle,
     pub interrupted: bool,
+    pub generation: GenerationAggregate,
 }
 
 pub async fn retry_if_needed(
     params: ThinkingRetryParams<'_>,
 ) -> Result<ThinkingRetryOutput, String> {
-    let Some(retry_req) = retry_request(params.request, &params.result) else {
+    let retry_request = retry_request(params.request, &params.result);
+    let mut generation = GenerationAggregate::default();
+    generation.add_result(&params.result);
+    let Some(retry_req) = retry_request else {
         return Ok(ThinkingRetryOutput {
             result: params.result,
             eager_handle: params.eager_handle,
             interrupted: false,
+            generation,
         });
     };
 
@@ -80,6 +86,7 @@ pub async fn retry_if_needed(
     )
     .await?;
     let (result, interrupted) = split_retry_outcome(retry_outcome);
+    generation.add_result(&result);
     model_diag::record_model_result(&params.session_id, &params.request_id, params.turn, &result)
         .await;
 
@@ -87,6 +94,7 @@ pub async fn retry_if_needed(
         result,
         eager_handle,
         interrupted,
+        generation,
     })
 }
 

@@ -91,7 +91,6 @@ async fn stream_chat_inner(
     );
 
     let mut token_count: u32 = 0;
-    let mut first_token: Option<std::time::Instant> = None;
     let mut result = StreamResult::default();
     let mut think_filter = ThinkTagFilter::new();
     let mut interrupted = false;
@@ -110,7 +109,7 @@ async fn stream_chat_inner(
                 match line {
                     Ok(Some(text)) => {
                         if let Err(e) = process_chunk(
-                            &text, on_event, &mut token_count, &mut first_token,
+                            &text, on_event, &mut token_count,
                             &mut result, emit_done, tool_tx.as_ref(), &mut think_filter,
                             buffer_content,
                         ) {
@@ -176,32 +175,11 @@ async fn stream_chat_inner(
             &mut think_filter,
             on_event,
             &mut token_count,
-            &mut first_token,
             &mut result,
             buffer_content,
         );
-        eprintln!(
-            "[ollama-stream] fin=interrupted content_chars={} thinking_chars={} tool_calls={} done_reason={} chunks={} empty_chunks={}",
-            result.content.chars().count(),
-            result.thinking.chars().count(),
-            result.tool_calls.len(),
-            result.done_reason.as_deref().unwrap_or("none"),
-            result.total_chunks,
-            result.empty_chunks
-        );
-        Ok(StreamOutcome::InterruptedForCompression(result))
-    } else {
-        eprintln!(
-            "[ollama-stream] fin=eof content_chars={} thinking_chars={} tool_calls={} done_reason={} chunks={} empty_chunks={}",
-            result.content.chars().count(),
-            result.thinking.chars().count(),
-            result.tool_calls.len(),
-            result.done_reason.as_deref().unwrap_or("none"),
-            result.total_chunks,
-            result.empty_chunks
-        );
-        Ok(StreamOutcome::Completed(result))
     }
+    Ok(super::ollama_stream_finish::into_outcome(result, interrupted))
 }
 
 fn should_interrupt(

@@ -1,4 +1,5 @@
 use crate::services::agent_local::context_usage_buckets::{ContextUsageSeed, RequestContextUsage};
+use crate::services::agent_local::generation_metrics::GenerationAggregate;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_orchestration::ParentSubagentOrchestrator;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
@@ -28,6 +29,7 @@ pub(super) struct ApiRequestOutput {
     pub plan_active: bool,
     pub interrupted: bool,
     pub input_tokens: u32,
+    pub generation: GenerationAggregate,
 }
 
 pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput, String> {
@@ -161,6 +163,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     };
     let interrupted = outcome.is_interrupted();
     let result = outcome.into_result();
+    let mut generation = GenerationAggregate::default();
+    generation.add_result(&result);
     crate::services::provider_usage::record_for_session(
         params.provider_id,
         params.model,
@@ -185,5 +189,6 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         plan_active,
         interrupted,
         input_tokens,
+        generation,
     })
 }

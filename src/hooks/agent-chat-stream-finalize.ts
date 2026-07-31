@@ -11,7 +11,8 @@ import type { AgentMessage, StreamEvent } from "@/types/agent";
 
 export function finishPartialStream(state: ManagedStreamState): StreamApplyResult {
   return finalizeStream(
-    markPendingToolsCancelled(markUnconfirmedContentAsWork(state)), null, state.tps, null, false,
+    markPendingToolsCancelled(markUnconfirmedContentAsWork(state)),
+    null, state.tps, true, null, false,
   );
 }
 
@@ -20,7 +21,8 @@ export function finishStream(
   event: Extract<StreamEvent, { event: "done" }>,
 ) {
   return finalizeStream(
-    state, event.data.evalCount, event.data.finalTps, event.data.contextTokens, true,
+    state, event.data.evalCount, event.data.finalTps, event.data.tpsEstimated ?? true,
+    event.data.contextTokens, true,
   );
 }
 
@@ -28,6 +30,7 @@ export function finalizeStream(
   state: ManagedStreamState,
   outputTokens: number | null,
   tps: number,
+  tpsEstimated: boolean,
   contextTokens: number | null,
   terminalResponse: boolean,
 ): StreamApplyResult {
@@ -53,7 +56,7 @@ export function finalizeStream(
     queuedUserMessages: [],
     completedSegments: [], currentContent: "", currentThinking: "",
     currentContentPhase: undefined, currentTools: [], activeStreamItem: null,
-    isStreaming: false, isCompressing: false, tps,
+    isStreaming: false, isCompressing: false, tps, tpsEstimated,
     sessionTokenCount: resolvedContextTokens,
     contextInputTokens: resolvedContextTokens,
     contextOutputTokens: 0,

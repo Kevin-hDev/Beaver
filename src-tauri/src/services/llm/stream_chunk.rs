@@ -7,6 +7,7 @@ pub enum ParsedChunk {
     Content(String),
     ToolCalls(Vec<Value>),
     Usage(RequestUsage),
+    GenerationDuration(u64),
 }
 
 pub fn parse(data: &str) -> Vec<ParsedChunk> {
@@ -21,6 +22,15 @@ pub fn parse(data: &str) -> Vec<ParsedChunk> {
     let usage_value = chunk.get("usage").or_else(|| chunk.get("usageMetadata"));
     if let Some(usage) = usage_value.and_then(RequestUsage::from_json) {
         out.push(ParsedChunk::Usage(usage));
+    }
+    let completion_seconds = chunk
+        .pointer("/usage/completion_time")
+        .or_else(|| chunk.pointer("/time_info/completion_time"))
+        .and_then(Value::as_f64);
+    if let Some(duration_ns) = completion_seconds
+        .and_then(crate::services::agent_local::generation_metrics::seconds_to_duration_ns)
+    {
+        out.push(ParsedChunk::GenerationDuration(duration_ns));
     }
     out
 }

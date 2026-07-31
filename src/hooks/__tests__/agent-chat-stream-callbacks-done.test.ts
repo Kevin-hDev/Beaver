@@ -10,7 +10,7 @@ function makeState(overrides: Partial<ManagedStreamState> = {}): ManagedStreamSt
 }
 
 function doneEvent(overrides: Partial<StreamEvent & { event: "done" } extends { data: infer D } ? D : never> = {}): StreamEvent {
-  return { event: "done", data: { evalCount: null, evalDurationNs: 0, finalTps: 5, promptTokens: null, contextTokens: null, ...overrides } };
+  return { event: "done", data: { evalCount: null, evalDurationNs: 0, finalTps: 5, tpsEstimated: false, promptTokens: null, contextTokens: null, ...overrides } };
 }
 
 describe("done", () => {
@@ -29,6 +29,14 @@ describe("done", () => {
     const { state: s } = applyStreamEvent(makeState(), doneEvent({ finalTps: 12 }));
     expect(s.isStreaming).toBe(false);
     expect(s.completed).toBe(true);
+  });
+
+  it("conserve si le TPS final est exact ou estimé", () => {
+    const exact = applyStreamEvent(makeState(), doneEvent({ tpsEstimated: false })).state;
+    const estimated = applyStreamEvent(makeState(), doneEvent({ tpsEstimated: true })).state;
+
+    expect(exact.tpsEstimated).toBe(false);
+    expect(estimated.tpsEstimated).toBe(true);
   });
 
   it("crée un assistantMessage si du contenu existe", () => {

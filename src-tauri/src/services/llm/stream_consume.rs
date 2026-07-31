@@ -6,8 +6,7 @@ use super::{
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
-use crate::services::stream_utils::FilteredChunk;
-use crate::services::stream_utils::ThinkTagFilter;
+use crate::services::stream_utils::{FilteredChunk, ThinkTagFilter};
 use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
@@ -19,11 +18,10 @@ pub(super) async fn consume_stream(
     buffer_content: bool,
     mut realtime_budget: Option<RealtimeBudget>,
     tools: &[serde_json::Value],
-) -> Result<(StreamOutcome, u32, std::time::Instant), String> {
+) -> Result<StreamOutcome, String> {
     let mut stream = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
-    let mut token_count: u32 = 0;
-    let mut first_token: Option<std::time::Instant> = None;
+    let mut token_count = 0;
     let mut acc = ToolCallAccumulator::new();
     let mut think_filter = ThinkTagFilter::new();
     let mut interrupted = false;
@@ -38,7 +36,10 @@ pub(super) async fn consume_stream(
                 let Some(event) = event else { break; };
                 let event = event.map_err(|_| "provider_connection_failed".to_string())?;
                 if is_done_marker(&event.data) { break; }
-                process_chunk(&event.data, on_event, &mut token_count, &mut first_token, &mut result, &mut acc, &mut think_filter, buffer_content);
+                process_chunk(
+                    &event.data, on_event, &mut token_count, &mut result,
+                    &mut acc, &mut think_filter, buffer_content,
+                );
                 if should_interrupt(&mut realtime_budget, token_count, acc.has_pending()) {
                     interrupted = true;
                     break;
@@ -48,54 +49,44 @@ pub(super) async fn consume_stream(
     }
 
     for chunk in think_filter.flush() {
-        match chunk {
-            FilteredChunk::Thinking(t) => {
-                crate::services::agent_local::stream_buffer::record_thinking(
-                    on_event,
-                    &mut result,
-                    t,
-                    &mut token_count,
-                    &mut first_token,
-                );
-            }
-            FilteredChunk::Content(c) => {
-                crate::services::agent_local::stream_buffer::record_content(
-                    on_event,
-                    &mut result,
-                    c,
-                    &mut token_count,
-                    &mut first_token,
-                    buffer_content,
-                );
-            }
-        }
+        record_filtered(
+            chunk,
+            on_event,
+            &mut result,
+            &mut token_count,
+            buffer_content,
+        );
     }
 
     let (tool_calls, ids, extra_content) = acc.finalize();
-    for (i, (wire_name, args)) in tool_calls.iter().enumerate() {
+    for (index, (wire_name, arguments)) in tool_calls.iter().enumerate() {
         let name = super::tool_schema::restore_tool_name(wire_name, tools);
-        result.record_generated_tool_call(&name, args);
+        crate::services::agent_local::stream_buffer::record_tool_call_generation(
+            on_event,
+            &mut result,
+            &name,
+            arguments,
+            &mut token_count,
+        );
         let _ = on_event.send(StreamEvent::ToolCall {
             name: name.clone(),
-            arguments: args.clone(),
-            domain: crate::services::agent_local::memory_tool::event_domain(&name, args),
+            arguments: arguments.clone(),
+            domain: crate::services::agent_local::memory_tool::event_domain(&name, arguments),
         });
-        result.tool_calls.push((name, args.clone()));
-        if let Some(id) = ids.get(i) {
+        result.tool_calls.push((name, arguments.clone()));
+        if let Some(id) = ids.get(index) {
             result.tool_call_ids.push(id.clone());
         }
         result
             .tool_call_extra_content
-            .push(extra_content.get(i).cloned().flatten());
+            .push(extra_content.get(index).cloned().flatten());
     }
 
-    let first = first_token.unwrap_or_else(std::time::Instant::now);
-    let outcome = if interrupted {
+    Ok(if interrupted {
         StreamOutcome::InterruptedForCompression(result)
     } else {
         StreamOutcome::Completed(result)
-    };
-    Ok((outcome, token_count, first))
+    })
 }
 
 fn should_interrupt(
@@ -113,7 +104,6 @@ fn process_chunk(
     data: &str,
     on_event: &AgentEventEmitter,
     token_count: &mut u32,
-    first_token: &mut Option<std::time::Instant>,
     result: &mut StreamResult,
     acc: &mut ToolCallAccumulator,
     think_filter: &mut ThinkTagFilter,
@@ -127,43 +117,20 @@ fn process_chunk(
                     result,
                     thinking,
                     token_count,
-                    first_token,
                 );
             }
             ParsedChunk::Content(content) => {
                 crate::services::agent_local::stream_buffer::record_generation_started(
-                    on_event,
-                    first_token,
+                    on_event, result,
                 );
                 for filtered in think_filter.feed(&content) {
-                    match filtered {
-                        FilteredChunk::Thinking(t) => {
-                            crate::services::agent_local::stream_buffer::record_thinking(
-                                on_event,
-                                result,
-                                t,
-                                token_count,
-                                first_token,
-                            );
-                        }
-                        FilteredChunk::Content(c) => {
-                            crate::services::agent_local::stream_buffer::record_content(
-                                on_event,
-                                result,
-                                c,
-                                token_count,
-                                first_token,
-                                buffer_content,
-                            );
-                        }
-                    }
+                    record_filtered(filtered, on_event, result, token_count, buffer_content);
                 }
             }
             ParsedChunk::ToolCalls(tool_calls) => {
                 if !tool_calls.is_empty() {
                     crate::services::agent_local::stream_buffer::record_generation_started(
-                        on_event,
-                        first_token,
+                        on_event, result,
                     );
                 }
                 acc.ingest(&tool_calls);
@@ -173,6 +140,37 @@ fn process_chunk(
                 result.prompt_tokens = usage.input_tokens.and_then(|value| value.try_into().ok());
                 result.usage = Some(usage);
             }
+            ParsedChunk::GenerationDuration(duration_ns) => {
+                result.generation.record_native_duration(duration_ns);
+            }
+        }
+    }
+}
+
+fn record_filtered(
+    chunk: FilteredChunk,
+    on_event: &AgentEventEmitter,
+    result: &mut StreamResult,
+    token_count: &mut u32,
+    buffer_content: bool,
+) {
+    match chunk {
+        FilteredChunk::Thinking(content) => {
+            crate::services::agent_local::stream_buffer::record_thinking(
+                on_event,
+                result,
+                content,
+                token_count,
+            );
+        }
+        FilteredChunk::Content(content) => {
+            crate::services::agent_local::stream_buffer::record_content(
+                on_event,
+                result,
+                content,
+                token_count,
+                buffer_content,
+            );
         }
     }
 }

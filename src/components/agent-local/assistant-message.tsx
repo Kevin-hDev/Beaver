@@ -20,6 +20,7 @@ interface AssistantMessageProps {
   onClone?: () => void;
   tokens?: number;
   tps?: number;
+  tpsEstimated?: boolean;
   totalElapsedMs?: number;
   showActions?: boolean;
   variant?: "default" | "trace";
@@ -37,7 +38,7 @@ function formatTotalElapsed(ms: number): string {
 
 export const AssistantMessage = memo(function AssistantMessage({
   content, thinking, thinkingActive, toolActivities, projectPath, isStreaming, onReload, onClone,
-  tokens, tps, totalElapsedMs,
+  tokens, tps, tpsEstimated, totalElapsedMs,
   showActions = true,
   variant = "default",
 }: AssistantMessageProps) {
@@ -63,7 +64,9 @@ export const AssistantMessage = memo(function AssistantMessage({
               {totalTime && <><span>{totalTime}</span><span>&middot;</span></>}
               {hasTokens && <span>{formatTokens(tokens)} {t("agentLocal.tokens")}</span>}
               {hasTokens && hasTps && <span>&middot;</span>}
-              {hasTps && <span>{tps.toFixed(1)} {t("agentLocal.tps")}</span>}
+              {hasTps && (
+                <span>{tpsEstimated ? "≈ " : ""}{tps.toFixed(1)} {t("agentLocal.tps")}</span>
+              )}
             </span>
           )}
         </MessageActions>

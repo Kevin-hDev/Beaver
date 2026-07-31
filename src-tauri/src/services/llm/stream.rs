@@ -44,7 +44,7 @@ pub async fn stream_chat_no_done(
     };
     match post_chat_request(&cfg).await {
         Ok(resp) => {
-            let (outcome, _, _) = consume_stream(
+            consume_stream(
                 on_event,
                 resp,
                 cancel,
@@ -52,8 +52,7 @@ pub async fn stream_chat_no_done(
                 realtime_budget,
                 tools,
             )
-            .await?;
-            Ok(outcome)
+            .await
         }
         Err(RequestError::PayloadTooLarge) => Err("provider_payload_too_large".to_string()),
         Err(RequestError::InvalidConfiguration) => {
