@@ -1,0 +1,15 @@
+Shell watcher review follow-up
+
+Reviewer assessment: the intermittent records_created_files_without_scanning_the_workspace failure predated 7321bfe, while the retained-root retry logic introduced by 7321bfe was a real state-registry regression. notify 7.0.0 removes its Linux path entry before the kernel removal can fail, so retrying that path can remain impossible forever.
+
+Recovery design: detach removes the root slot before every unwatch attempt. If any unwatch fails, Beaver builds a replacement watcher from all remaining registered roots and swaps it in only after every watch succeeds. A successful swap drops inconsistent OS state and marks every hub overflowed. A failed rebuild leaves the remaining root registry unchanged while the evicted slot stays free. Partial attach rollback uses the same recovery path.
+
+Event design: Event::need_rescan is preserved even for EventKind::Other and marks hubs overflowed. Raw notify input is capped at 4096 paths. The functional 128-path cap is applied per hub after ignored paths are filtered. Linux directory checks are lazy and cached per path, so ignored paths perform no metadata syscall and overlapping hubs perform at most one.
+
+Test design: a readiness-probe attempt still lost the following single macOS event during a full suite and was rejected. The final event test repeatedly updates the same target at 50 ms intervals for at most 5 seconds. It still exercises only the event path and fails if the watcher is unavailable, but no longer treats delivery of one specific FSEvents notification as deterministic.
+
+Validation: cargo fmt --check; cargo check; cargo clippy --all-targets with warnings denied; strict dead-code, unused-import, and unused-variable lints; focused slot, rebuild atomicity, rescan, raw-bound, post-filter-bound tests; 20 final event-test repetitions with four concurrent CPU loads; six complete 2625-test suites under the same load before the final lazy metadata optimization; one complete 2625-test loaded suite after it; one final complete 2626-test suite after the rebuild-atomicity regression; npm run lint; npx tsc --noEmit; npm test with 1746 Vitest, 2 CEF, and 46 extension-host tests; git diff --check; graphify update.
+
+Validation honesty: the single loaded pass claimed by the note on 7321bfe was observed but was not reproducible evidence and is superseded here. Windows cross-checks were attempted but stopped before Beaver code in native dependencies: cef-dll-sys rejects the GNU triplet and the MSVC build lacks Windows C libraries on this Mac. No native Linux build was available. Platform CI remains authoritative.
+
+Scope: no Plan mode, shell permission, command policy, or source-write behavior changed. A detailed ignored review artifact is stored at .codex/reviews/BEAVER_DIFFERENTIAL_REVIEW_2026-08-01.md.
