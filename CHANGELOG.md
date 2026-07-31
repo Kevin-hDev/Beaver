@@ -4,6 +4,16 @@
 
 ---
 
+## v1.1.1
+
+### Agent chat performance
+
+- **Accurate provider throughput** — fixed token-per-second reporting by using native generation timings from Ollama, Groq, and Cerebras when available, while keeping a measured streaming fallback for other providers.
+- **Generation-only measurement** — excluded tool execution, compression, retries, and provider waiting time from the displayed generation speed, and combined multi-turn results using their actual generation durations.
+- **Clear estimated rates** — marked stream-derived throughput with an approximation symbol and avoided overstating rates when the first token batch cannot be measured reliably.
+
+---
+
 ## v1.1.0
 
 ### Beaver identity
