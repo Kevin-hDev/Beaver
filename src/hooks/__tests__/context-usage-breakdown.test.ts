@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildContextUsageBreakdown, CONTEXT_USAGE_KEYS } from "../context-usage-breakdown";
+import {
+  buildContextUsageBreakdown,
+  CONTEXT_USAGE_KEYS,
+  finalizeContextUsage,
+} from "../context-usage-breakdown";
+import {
+  buildContextTokenBuckets,
+  mergeContextTokenBuckets,
+} from "../context-usage-buckets";
 import { buildLiveContextMessage } from "../context-usage-live-message";
 import type { AgentMessage } from "@/types/agent";
 
@@ -200,6 +208,27 @@ describe("context-usage-breakdown", () => {
     expect(item(during.items, "messages")).toBe(item(finished.items, "messages"));
     expect(item(during.items, "systemTools")).toBe(item(finished.items, "systemTools"));
     expect(item(during.items, "systemTools")).toBeGreaterThan(0);
+  });
+
+  it("fusionne historique, contexte caché et stream sans changer le résultat", () => {
+    const history = [msg({ content: "a".repeat(400) })];
+    const live = msg({
+      role: "assistant",
+      content: "b".repeat(80),
+      tool_activities: [{ name: "bash", summary: "pwd", result: "ok" }],
+    });
+    const hidden = { systemPromptTokens: 42, skillContextTokens: 12 };
+    const historyBuckets = buildContextTokenBuckets(history);
+    const originalHistory = { ...historyBuckets };
+    const merged = finalizeContextUsage(mergeContextTokenBuckets(
+      historyBuckets,
+      buildContextTokenBuckets([], hidden),
+      buildContextTokenBuckets([live]),
+    ));
+    const combined = buildContextUsageBreakdown([...history, live], hidden);
+
+    expect(merged).toEqual(combined);
+    expect(historyBuckets).toEqual(originalHistory);
   });
 
   it("réduit les outils estimés avant les messages mieux mesurés", () => {

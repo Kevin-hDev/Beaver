@@ -62,8 +62,7 @@ pub async fn add_messages_with_context(
 
 fn validated_context_tokens(value: Option<u32>, limit: Option<u32>) -> Option<u32> {
     let limit = limit
-        .filter(|limit| *limit > 0)
-        .unwrap_or(super::session_security::MAX_CONTEXT_SNAPSHOT_TOKENS)
+        .filter(|limit| *limit > 0)?
         .min(super::session_security::MAX_CONTEXT_SNAPSHOT_TOKENS);
     value.filter(|tokens| *tokens > 0).map(|tokens| tokens.min(limit))
 }

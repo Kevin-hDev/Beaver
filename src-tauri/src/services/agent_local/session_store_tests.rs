@@ -145,6 +145,18 @@ mod tests {
         assert_eq!(saved.accumulated_tokens, 2);
         assert_eq!(saved.context_tokens, Some(4_000));
 
+        super::super::add_messages_with_context(
+            &session.id,
+            vec![],
+            0,
+            Some(3_000),
+            None,
+        )
+        .await
+        .expect("ignore snapshot without limit");
+        let unbounded = super::super::get(&session.id).await.expect("reload unbounded");
+        assert_eq!(unbounded.context_tokens, None);
+
         crate::services::agent_local::session_ops::truncate_and_replace(
             &session.id,
             &message_id,

@@ -53,9 +53,9 @@ describe("token", () => {
     const { state: s } = applyStreamEvent(makeState(), { event: "token", data: { content: "x", tps: 42, tokenCount: 1 } });
     expect(s.tps).toBe(42);
   });
-  it("met à jour liveTokenCount depuis tokenCount fourni", () => {
+  it("ajoute le compteur de la requête au total visible", () => {
     const { state: s } = applyStreamEvent(makeState({ liveTokenCount: 10 }), { event: "token", data: { content: "x", tps: 5, tokenCount: 99 } });
-    expect(s.liveTokenCount).toBe(99);
+    expect(s.liveTokenCount).toBe(109);
   });
   it("incrémente liveTokenCount de 1 si tokenCount absent", () => {
     const { state: s } = applyStreamEvent(makeState({ liveTokenCount: 7 }), { event: "token", data: { content: "x", tps: 5, tokenCount: 0 } });
@@ -112,10 +112,11 @@ describe("contextUsage", () => {
 
     expect(state.sessionTokenCount).toBe(122);
     expect(state.contextOutputTokens).toBe(20);
+    expect(state.liveTokenCount).toBe(20);
   });
 
   it("repart de l'entrée préparée au début d'un nouveau tour", () => {
-    const state = makeState({ contextOutputTokens: 20 });
+    const state = makeState({ contextOutputTokens: 20, liveTokenCount: 20 });
     const { state: next } = applyStreamEvent(state, {
       event: "contextUsage",
       data: {
@@ -128,6 +129,7 @@ describe("contextUsage", () => {
     });
 
     expect(next.contextOutputTokens).toBe(0);
+    expect(next.liveTokenCount).toBe(20);
     expect(next.sessionTokenCount).toBe(240);
     expect(next.hasContextUsageSnapshot).toBe(true);
   });
@@ -242,5 +244,35 @@ describe("accumulation tokens", () => {
     s = applyStreamEvent(s, { event: "token", data: { content: " monde", tps: 5, tokenCount: 2 } }).state;
     s = applyStreamEvent(s, { event: "token", data: { content: "!", tps: 5, tokenCount: 3 } }).state;
     expect(s.currentContent).toBe("bonjour monde!");
+  });
+
+  it("cumule plusieurs requêtes modèle séparées par un outil", () => {
+    let s = makeState();
+    s = applyStreamEvent(s, { event: "token", data: { content: "a", tps: 5, tokenCount: 3 } }).state;
+    s = applyStreamEvent(s, {
+      event: "contextUsage",
+      data: {
+        inputTokens: 100,
+        outputTokens: 0,
+        contextTokens: 100,
+        contextLimit: 372_000,
+        estimated: true,
+      },
+    }).state;
+    s = applyStreamEvent(s, { event: "token", data: { content: "b", tps: 5, tokenCount: 2 } }).state;
+
+    expect(s.contextOutputTokens).toBe(2);
+    expect(s.liveTokenCount).toBe(5);
+  });
+
+  it("ignore un compteur provider qui recule au lieu de le doubler", () => {
+    const state = makeState({ contextOutputTokens: 5, liveTokenCount: 8 });
+    const { state: next } = applyStreamEvent(state, {
+      event: "token",
+      data: { content: "x", tps: 5, tokenCount: 2 },
+    });
+
+    expect(next.contextOutputTokens).toBe(5);
+    expect(next.liveTokenCount).toBe(8);
   });
 });
