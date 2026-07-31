@@ -44,7 +44,7 @@ export function CloneGitArchiveDialog({
             {t("agentLocal.clone.gitArchiveCancel")}
           </button>
           <button
-            className="btn btn-sm btn-secondary btn btn-sm btn-secondary-wide"
+            className="btn btn-sm btn-secondary cga-btn-wide"
             type="button"
             onClick={onCleanupArchive}
             disabled={busy}

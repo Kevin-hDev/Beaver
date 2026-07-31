@@ -141,7 +141,7 @@ export function ForecastConfig({
         <div className="fcc-row">
           <div className="fcc-field fcc-half">
             <label className="fcc-label" htmlFor="fcc-horizon">{t("forecast.config.horizon")}</label>
-            <input className="fcc-input" id="fcc-horizon" type="number" min={1} max={horizonMax}
+            <input className="field" id="fcc-horizon" type="number" min={1} max={horizonMax}
               value={horizon} onChange={(e) => setHorizon(Number(e.target.value))} />
           </div>
           <div className="fcc-field fcc-half">

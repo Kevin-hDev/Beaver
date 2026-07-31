@@ -4,7 +4,7 @@
   align-items: center;
 }
 
-/* Button blocks (.bs-btn, .bs-delete-btn, .bs-create-submit) live in
+/* Button blocks (.bs-delete-btn, .bs-create-submit) live in
    branch-selector-controls.css, imported after this file. */
 
 .bs-indicator {

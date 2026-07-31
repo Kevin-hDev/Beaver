@@ -34,7 +34,10 @@ export function ApiKeySecretInput({
       <input
         id={id}
         type={visible ? "text" : "password"}
-        className={inputClassName}
+        /* L'habillage vient d'ici : la classe reçue ne sert qu'à la largeur, et
+           ses deux appelants ont perdu bordure et fond quand les champs ont été
+           unifiés — la migration ne voyait que les className écrits sur place. */
+        className={["field", inputClassName].filter(Boolean).join(" ")}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

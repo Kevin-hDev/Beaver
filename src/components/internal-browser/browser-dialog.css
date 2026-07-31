@@ -42,14 +42,3 @@
   gap: var(--space-sm);
   margin-top: var(--space-lg);
 }
-
-.ib-dialog-confirm {
-  border-color: var(--pulse);
-  background: var(--pulse);
-  color: var(--ink-on-pulse);
-  box-shadow: none;
-}
-
-.ib-dialog-confirm:hover:not(:disabled) {
-  background: var(--pulse);
-}

@@ -41,10 +41,3 @@
   line-height: 1.5;
   resize: vertical;
 }
-
-/* Champ logé dans un panneau qui porte déjà son propre cadre — une seconde
-   bordure à quelques pixels de la première fait doublon. */
-.field-bare {
-  border-color: transparent;
-  background: transparent;
-}

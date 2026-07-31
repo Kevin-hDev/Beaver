@@ -157,4 +157,16 @@ describe("contrôles, toutes familles", () => {
 
     expect(report(offenders)).toEqual([]);
   });
+
+  it("laisse un bouton à icône s'élargir pour sa demande de confirmation", () => {
+    // ConfirmButton remplace l'icône par un mot. Sans cette règle, le mot doit
+    // tenir dans le carré de --btn-height : la page des chats archivés a perdu
+    // cet élargissement pendant l'unification, et le texte s'y écrasait.
+    const rule = buttonsCss.match(
+      /\.icon-btn\[data-confirming="true"\]\s*\{([^}]*)\}/,
+    );
+
+    expect(rule).not.toBeNull();
+    expect(rule?.[1]).toMatch(/width:\s*auto/);
+  });
 });

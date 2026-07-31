@@ -136,6 +136,8 @@ export function BranchSelector({
   const label = git.currentBranch || t("branches.detachedHead");
   return (
     <div className="bs-row" ref={dropRef}>
+      {/* bs-btn ne porte plus de style : c'est le point d'accroche des tests
+          sur ce bouton. La retirer casse branch-selector*.test.tsx. */}
       <button className="btn btn-sm btn-secondary bs-btn" onClick={() => setOpen(!open)}>
         <GitBranch size="var(--icon-sm)" />
         <span>{label}</span>

@@ -47,7 +47,6 @@
   --danger: var(--signal-error);
   --red: var(--signal-error);
   --border-subtle: var(--edge);
-  --surface-secondary: var(--surface);
   --text-primary: var(--ink);
   --text-secondary: var(--ink-muted);
   --text-tertiary: var(--ink-faint);

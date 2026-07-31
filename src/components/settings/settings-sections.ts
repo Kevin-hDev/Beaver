@@ -15,7 +15,7 @@ export interface SubTabDef {
   imgLight?: string;
 }
 
-export interface SettingsSection {
+interface SettingsSection {
   i18n: string;
   tabs: SubTabDef[];
 }

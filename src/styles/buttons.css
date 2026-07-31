@@ -78,6 +78,10 @@
 .btn-select {
   justify-content: space-between;
   gap: var(--space-sm);
+  /* Autorise le déclencheur à rétrécir dans une rangée souple : sans ce
+     plancher à zéro, il garde la largeur de son libellé et pousse ses voisins
+     au lieu de tronquer. */
+  min-width: 0;
   color: var(--ink);
   text-align: left;
 }
@@ -126,6 +130,17 @@
 .icon-btn:hover:not(:disabled) {
   background: var(--surface-hover);
   color: var(--ink);
+}
+
+/* Demande de confirmation : le bouton troque son icône contre un mot, et sa
+   largeur carrée l'écraserait. La règle vit ici et non dans la page qui
+   l'emploie — c'est ce système qui impose la largeur fixe, à lui de dire ce
+   qui se passe quand le bouton doit porter du texte. */
+.icon-btn[data-confirming="true"] {
+  width: auto;
+  min-width: var(--btn-height);
+  padding: 0 var(--space-sm);
+  font-size: var(--text-2xs);
 }
 
 /* Variante encadrée, pour les icônes posées hors d'une carte où le bouton nu
