@@ -14,6 +14,24 @@
   overflow-x: hidden;
   min-height: 0;
   scroll-behavior: auto;
+  /* Le contenu s'efface contre l'en-tête et le champ de saisie au lieu d'y
+     être tranché net. Un masque plutôt qu'un dégradé de couleur posé
+     par-dessus : les surfaces de l'application sont translucides, et une
+     couleur opaque s'y verrait — en six thèmes de surcroît. */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--chat-fade-height),
+    black calc(100% - var(--chat-fade-height)),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--chat-fade-height),
+    black calc(100% - var(--chat-fade-height)),
+    transparent 100%
+  );
 }
 
 .chat-messages > * {

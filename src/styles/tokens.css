@@ -62,6 +62,10 @@
   --chrome-icon-lg: 18px;
   --chat-column-width: 720px;
   --chat-column-gutter: 18px;
+  /* Hauteur du fondu qui efface les messages contre l'en-tête et le champ de
+     saisie. Trop court, la coupure reste franche ; trop long, une ligne
+     entière devient illisible avant de sortir de l'écran. */
+  --chat-fade-height: 40px;
   --dialog-compact-min-width: 18.75rem;
   --dialog-compact-max-width: 27.5rem;
   --dialog-wide-max-width: 53.75rem;
