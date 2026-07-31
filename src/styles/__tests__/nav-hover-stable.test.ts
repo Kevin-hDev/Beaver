@@ -63,6 +63,15 @@ function targetsRow(selector: string): boolean {
 }
 
 const rowRules = rules.filter((rule) => targetsRow(rule.selector));
+const conversationCss = readFileSync("src/components/agent-local/conversation.css", "utf8");
+const conversationProjectsCss = readFileSync(
+  "src/components/agent-local/conversation-projects.css",
+  "utf8",
+);
+const conversationCollapseCss = readFileSync(
+  "src/components/agent-local/conversation-collapse.css",
+  "utf8",
+);
 
 function report(offenders: Rule[]): string[] {
   return offenders.map((rule) => `${rule.file}: ${rule.selector}`);
@@ -87,5 +96,44 @@ describe("lignes de navigation", () => {
     const offenders = rowRules.filter((rule) => /transition:\s*all\b/.test(rule.body));
 
     expect(report(offenders)).toEqual([]);
+  });
+
+  it("échange l'âge et le menu sans animation d'opacité WebKit", () => {
+    expect(conversationCss).toMatch(
+      /\.conv-session-age\s*\{[^}]*visibility:\s*visible;/s,
+    );
+    expect(conversationCss).toMatch(
+      /\.conv-session-age\s*\{[^}]*transition:\s*none;/s,
+    );
+    expect(conversationProjectsCss).toMatch(
+      /\.conv-session-menu-btn\s*\{[^}]*visibility:\s*hidden;/s,
+    );
+    expect(conversationProjectsCss).toMatch(
+      /\.conv-item:hover .conv-session-age\s*\{[^}]*visibility:\s*hidden;/s,
+    );
+    expect(conversationProjectsCss).toMatch(
+      /\.conv-item:hover .conv-session-menu-btn\s*\{[^}]*visibility:\s*visible;/s,
+    );
+    expect(conversationProjectsCss).not.toMatch(
+      /\.conv-session-menu-btn\s*\{[^}]*transition:[^;}]*opacity/s,
+    );
+  });
+
+  it("affiche les actions de projet sans recomposer les icônes de dossier", () => {
+    expect(conversationProjectsCss).toMatch(
+      /\.conv-project-actions\s*\{[^}]*visibility:\s*hidden;/s,
+    );
+    expect(conversationProjectsCss).toMatch(
+      /\.conv-project-header:hover .conv-project-actions\s*\{[^}]*visibility:\s*visible;/s,
+    );
+    expect(conversationProjectsCss).not.toMatch(
+      /\.conv-project-actions\s*\{[^}]*transition:/s,
+    );
+    expect(conversationCollapseCss).toMatch(
+      /\.conv-folder-icon\s*\{\s*transition:\s*color 400ms ease;\s*\}/s,
+    );
+    expect(conversationCollapseCss).not.toMatch(
+      /\.conv-folder-icon\s*\{[^}]*\b(?:opacity|transform)\b/s,
+    );
   });
 });

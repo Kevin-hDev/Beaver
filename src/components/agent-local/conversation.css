@@ -193,7 +193,8 @@
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
-  transition: opacity var(--ease-smooth);
+  visibility: visible;
+  transition: none;
   z-index: 0;
 }
 

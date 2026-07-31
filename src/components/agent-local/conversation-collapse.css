@@ -33,9 +33,7 @@
 }
 
 .conv-project-header,
-.conv-project-wrapper,
-.conv-project-actions,
-.conv-folder-icon {
+.conv-project-wrapper {
   transition-duration: 400ms;
 }
 
@@ -46,8 +44,5 @@
 }
 
 .conv-folder-icon {
-  transition:
-    color 400ms ease,
-    opacity 400ms ease,
-    transform 400ms ease;
+  transition: color 400ms ease;
 }

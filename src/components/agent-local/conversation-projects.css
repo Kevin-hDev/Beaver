@@ -76,12 +76,11 @@
 .conv-project-actions {
   display: flex;
   gap: 2px;
-  opacity: 0;
-  transition: opacity var(--ease-smooth);
+  visibility: hidden;
 }
 
 .conv-project-header:hover .conv-project-actions {
-  opacity: 1;
+  visibility: visible;
 }
 
 /* Project actions + session menu — INLINE list-row buttons: they must stay
@@ -112,8 +111,8 @@
   border: none;
   background: none;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity var(--ease-smooth), background var(--ease-smooth), color var(--ease-smooth);
+  visibility: hidden;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,12 +122,15 @@
   z-index: 1;
 }
 
+/* WebKit antérieur au correctif 307471 décale les SVG lorsqu'un élément voisin
+   démarre une animation d'opacité. visibility conserve ici exactement la même
+   grille sans déclencher ce changement de chemin de composition. */
 .conv-item:hover .conv-session-age {
-  opacity: 0;
+  visibility: hidden;
 }
 
 .conv-item:hover .conv-session-menu-btn {
-  opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 
