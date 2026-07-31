@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildContextUsageBreakdown, CONTEXT_USAGE_KEYS } from "../context-usage-breakdown";
+import { buildLiveContextMessage } from "../context-usage-live-message";
 import type { AgentMessage } from "@/types/agent";
 
 function msg(overrides: Partial<AgentMessage>): AgentMessage {
@@ -175,10 +176,43 @@ describe("context-usage-breakdown", () => {
     expect(item(breakdown.items, "metaContext")).toBe(80);
   });
 
-  it("ajoute la réponse en cours dans Messages", () => {
-    const breakdown = buildContextUsageBreakdown([], { liveMessageTokens: 25 });
+  it("classe les outils de la réponse live comme après sa finalisation", () => {
+    const liveMessage = buildLiveContextMessage({
+      completedSegments: [],
+      currentContent: "réponse",
+      currentThinking: "",
+      currentTools: [{
+        name: "bash",
+        args: { command: "pwd" },
+        result: "résultat détaillé",
+      }],
+    });
+    expect(liveMessage).not.toBeNull();
 
-    expect(item(breakdown.items, "messages")).toBe(25);
+    const during = buildContextUsageBreakdown([liveMessage!]);
+    const finished = buildContextUsageBreakdown([msg({
+      role: "assistant",
+      content: liveMessage!.content,
+      thinking: liveMessage!.thinking,
+      tool_activities: liveMessage!.tool_activities,
+    })]);
+
+    expect(item(during.items, "messages")).toBe(item(finished.items, "messages"));
+    expect(item(during.items, "systemTools")).toBe(item(finished.items, "systemTools"));
+    expect(item(during.items, "systemTools")).toBeGreaterThan(0);
+  });
+
+  it("réduit les outils estimés avant les messages mieux mesurés", () => {
+    const breakdown = buildContextUsageBreakdown([
+      msg({
+        content: "m".repeat(400),
+        role: "assistant",
+        tool_activities: [{ name: "bash", summary: "x".repeat(400) }],
+      }),
+    ], { observedUsed: 120 });
+
+    expect(item(breakdown.items, "messages")).toBe(100);
+    expect(item(breakdown.items, "systemTools")).toBe(20);
   });
 
   it("respecte un total provider exact même inférieur aux estimations", () => {

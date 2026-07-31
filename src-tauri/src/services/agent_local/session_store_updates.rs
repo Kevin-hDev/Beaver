@@ -23,6 +23,7 @@ pub async fn update_model(
     );
     session.thinking_enabled =
         crate::services::reasoning::enabled(session.reasoning_mode.as_deref(), false);
+    session.context_tokens = None;
     save(&session).await
 }
 
@@ -52,6 +53,7 @@ pub async fn update_reasoning(
     );
     session.thinking_enabled = !matches!(mode.as_deref(), None | Some("off"));
     session.reasoning_mode = mode;
+    session.context_tokens = None;
     save(&session).await
 }
 
@@ -137,6 +139,7 @@ where
     let mut session = get(id).await?;
     after_load().await;
     session.working_dir = canonical.to_string_lossy().to_string();
+    session.context_tokens = None;
     if let ManagedAssignment::Set(value) = managed {
         session.working_dir_managed = value;
     }

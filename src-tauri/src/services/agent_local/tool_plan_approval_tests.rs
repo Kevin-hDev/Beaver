@@ -90,6 +90,7 @@ fn session() -> AgentSession {
         thinking_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
+        context_tokens: None,
         messages: Vec::<AgentMessage>::new(),
         todos: vec![],
         todo_neglect_count: 0,

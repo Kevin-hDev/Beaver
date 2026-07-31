@@ -47,8 +47,9 @@ pub async fn apply_and_save(
         runtime_recent,
     );
     session.messages = build_session_messages(summary, suppress_follow_up, context, session_recent);
-    session.accumulated_tokens =
-        crate::services::token_counting::estimate_agent_messages_tokens(&session.messages);
+    crate::services::agent_local::session_store_messages::recompute_accumulated_tokens(
+        &mut session,
+    );
     session_store::save(&session).await?;
 
     Ok(token_estimate::estimate_tokens(runtime_messages) as u32)

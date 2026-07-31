@@ -93,7 +93,10 @@ export function persistMessages(
   if (final) record.state = { ...record.state, persisted: true };
   const run = () => Promise.resolve(invoke("add_messages_to_session", {
     id: sessionId, messages, tokens,
-    contextTokens: final ? record.state.sessionTokenCount : null,
+    contextTokens: final && record.state.hasContextUsageSnapshot
+      ? record.state.sessionTokenCount
+      : null,
+    contextLimit: record.state.contextLimitTokens || null,
   })).then(() => undefined).catch(() => {
     console.warn("Session persistence failed.");
     if (final) record.state = { ...record.state, persisted: false };

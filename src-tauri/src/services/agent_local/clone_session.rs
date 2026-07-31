@@ -125,8 +125,7 @@ async fn complete_summary(
     clone.clone_read_files = read_files;
     clone.clone_modified_files = modified_files;
     clone.messages.push(hidden_context_message(&summary));
-    clone.accumulated_tokens =
-        crate::services::token_counting::estimate_agent_messages_tokens(&clone.messages);
+    super::session_store_messages::recompute_accumulated_tokens(clone);
     clone.updated_at = Some(Utc::now());
     Ok(())
 }

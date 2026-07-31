@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { StreamRecord } from "./agent-stream-cleanup";
-import { estimateAgentMessagesTokens } from "./agent-token-estimate";
-import type { AgentMessage } from "@/types/agent";
+import { resolveSessionContext } from "./agent-token-estimate";
+import type { AgentSession } from "@/types/agent";
 
 export function handleCompressionComplete(
   sessionId: string,
@@ -9,11 +9,10 @@ export function handleCompressionComplete(
   notify: (record: StreamRecord) => void,
   notifyActivity: (sessionId: string, record: StreamRecord) => void,
 ) {
-  invoke<{ messages: AgentMessage[]; accumulated_tokens: number }>(
+  invoke<AgentSession>(
     "get_agent_session", { id: sessionId },
   ).then((session) => {
-    const sessionTokenCount = session.accumulated_tokens
-      || estimateAgentMessagesTokens(session.messages);
+    const context = resolveSessionContext(session);
     record.state = {
       ...record.state,
       messages: session.messages,
@@ -27,12 +26,10 @@ export function handleCompressionComplete(
       segmentStartedAt: null,
       isStreaming: false,
       isCompressing: false,
-      sessionTokenCount,
-      sessionTokenCountEstimated: true,
-      contextInputTokens: sessionTokenCount,
+      ...context,
+      contextInputTokens: context.sessionTokenCount,
       contextOutputTokens: 0,
-      streamedMessageTokens: 0,
-      hasContextUsageSnapshot: false,
+      contextLimitTokens: 0,
       persisted: true,
     };
     notify(record);

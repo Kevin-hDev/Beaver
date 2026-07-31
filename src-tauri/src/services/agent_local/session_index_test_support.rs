@@ -14,6 +14,7 @@ pub(super) fn test_session(id: &str, name: &str, heartbeat: bool) -> AgentSessio
         thinking_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
+        context_tokens: None,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

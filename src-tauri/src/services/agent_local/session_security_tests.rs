@@ -79,3 +79,12 @@ fn sanitizes_serialized_sessions_without_dropping_fields() {
     );
     assert_eq!(value["messages"][1]["content"], "token=[REDACTED]");
 }
+
+#[test]
+fn bounds_serialized_context_snapshots() {
+    let mut value = json!({ "context_tokens": u32::MAX });
+
+    sanitize_session_value(&mut value);
+
+    assert_eq!(value["context_tokens"], MAX_CONTEXT_SNAPSHOT_TOKENS);
+}

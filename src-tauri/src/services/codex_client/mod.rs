@@ -5,3 +5,5 @@ pub mod request;
 pub mod stream;
 pub mod stream_silent;
 pub mod types;
+
+pub const PROVIDER_ID: &str = "codex-oauth";

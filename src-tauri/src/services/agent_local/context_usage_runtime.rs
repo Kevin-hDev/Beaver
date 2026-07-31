@@ -2,22 +2,13 @@ use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult};
 use crate::services::token_counting;
 
-pub fn prepared_input_tokens(
-    provider_id: &str,
-    estimated_tokens: usize,
-    messages: &[super::types_ollama::ChatMessage],
-    tools: &[serde_json::Value],
-) -> usize {
-    if provider_id != "codex-oauth" {
-        return estimated_tokens;
-    }
-    token_counting::estimate_chat_tokens_without_reasoning(messages)
-        .saturating_add(crate::services::compress::token_estimate::estimate_tool_tokens(tools))
-}
-
-pub fn emit_input(on_event: &AgentEventEmitter, input_tokens: usize) -> u32 {
+pub fn emit_input(
+    on_event: &AgentEventEmitter,
+    input_tokens: usize,
+    context_limit: u64,
+) -> u32 {
     let input_tokens = bounded_tokens(input_tokens);
-    emit(on_event, input_tokens, 0, true);
+    emit(on_event, input_tokens, 0, context_limit, true);
     input_tokens
 }
 
@@ -25,16 +16,10 @@ pub fn emit_result(
     on_event: &AgentEventEmitter,
     estimated_input_tokens: u32,
     result: &StreamResult,
+    context_limit: u64,
 ) {
-    match (result.prompt_tokens, result.eval_count) {
-        (Some(input), Some(output)) => emit(on_event, input, output, false),
-        _ => emit(
-            on_event,
-            estimated_input_tokens,
-            result.estimated_output_tokens(),
-            true,
-        ),
-    }
+    let (input, output, estimated) = resolved_usage(estimated_input_tokens, result);
+    emit(on_event, input, output, context_limit, estimated);
 }
 
 impl StreamResult {
@@ -59,11 +44,27 @@ impl StreamResult {
     }
 }
 
-fn emit(on_event: &AgentEventEmitter, input_tokens: u32, output_tokens: u32, estimated: bool) {
+fn resolved_usage(estimated_input_tokens: u32, result: &StreamResult) -> (u32, u32, bool) {
+    let input = result.prompt_tokens.unwrap_or(estimated_input_tokens);
+    let output = result
+        .eval_count
+        .unwrap_or_else(|| result.estimated_output_tokens());
+    let estimated = result.prompt_tokens.is_none() || result.eval_count.is_none();
+    (input, output, estimated)
+}
+
+fn emit(
+    on_event: &AgentEventEmitter,
+    input_tokens: u32,
+    output_tokens: u32,
+    context_limit: u64,
+    estimated: bool,
+) {
     let _ = on_event.send(StreamEvent::ContextUsage {
         input_tokens,
         output_tokens,
         context_tokens: input_tokens.saturating_add(output_tokens),
+        context_limit: context_limit.min(u32::MAX as u64) as u32,
         estimated,
     });
 }

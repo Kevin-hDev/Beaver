@@ -22,7 +22,7 @@ pub async fn try_auto_compress(
         Ok(c) => c.advanced,
         Err(_) => return None,
     };
-    let estimated = token_estimate::estimate_tokens(messages);
+    let estimated = token_estimate::estimate_tokens_for_provider(provider_id, messages);
     let used = state::context_used_for_compression(last_context_tokens, estimated);
     if !state::is_safe_to_compress(messages) {
         return None;

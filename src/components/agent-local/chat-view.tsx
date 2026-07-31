@@ -58,8 +58,8 @@ export function ChatView({
   const [preview, setPreview] = useState<DroppedFile | null>(null);
   const proj = useSessionProject(sessionId, projects, onAddProject, chat.messages.length > 0);
   const contextUsage = useContextUsage({
-    sessionId, model, provider, messages: chat.messages, used: context.used,
-    liveMessageTokens: chat.streamedMessageTokens,
+    sessionId, model, provider, messages: chat.messages,
+    used: chat.hasContextUsageSnapshot ? context.used : undefined, stream: chat,
     workingDir: proj.selectedProject?.path, permissionMode: permMode.mode,
     planMode: chat.planModeEnabled, supportsTools: selectedModelCaps?.supports_tools,
   });

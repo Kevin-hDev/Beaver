@@ -19,6 +19,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         thinking_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
+        context_tokens: None,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

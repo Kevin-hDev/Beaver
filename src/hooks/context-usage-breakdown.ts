@@ -30,7 +30,6 @@ export interface ContextUsageBreakdown {
 
 export interface ContextUsageOptions {
   observedUsed?: number;
-  liveMessageTokens?: number;
   systemPromptTokens?: number;
   metaContextTokens?: number;
   skillContextTokens?: number;
@@ -46,7 +45,7 @@ export function buildContextUsageBreakdown(
   options: ContextUsageOptions = {},
 ): ContextUsageBreakdown {
   const buckets: TokenBuckets = {
-    messages: options.liveMessageTokens ?? 0,
+    messages: 0,
     systemTools: options.systemToolDefinitionTokens ?? 0,
     mcpConnectors: options.mcpDefinitionTokens ?? 0,
     skills: options.skillContextTokens ?? 0,
@@ -162,12 +161,12 @@ function fitBucketsToObserved(buckets: TokenBuckets, observed: number) {
   let excess = total - observed;
   const reductionOrder: ContextUsageKey[] = [
     "metaContext",
-    "messages",
     "systemTools",
     "mcpConnectors",
     "memory",
     "systemPrompt",
     "skills",
+    "messages",
   ];
   for (const key of reductionOrder) {
     if (excess <= 0) break;

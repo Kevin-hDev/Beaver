@@ -39,17 +39,13 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.messages,
         params.configured_context,
         params.tools,
+        params.provider_id,
     )?;
-    let mut input_estimate =
-        crate::services::agent_local::context_usage_runtime::prepared_input_tokens(
-            params.provider_id,
-            report.estimated_tokens,
-            params.messages,
-            params.tools,
-        );
+    let mut input_estimate = report.estimated_tokens;
     let mut input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
         params.on_event,
         input_estimate,
+        params.configured_context,
     );
     let realtime_budget = RealtimeBudget::from_estimate(params.configured_context, input_estimate);
     let plan_active = crate::services::agent_local::agent_loop_plan::active(
@@ -105,6 +101,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                     params.messages,
                     params.configured_context,
                     params.tools,
+                    params.provider_id,
                 )?;
             if !changed {
                 return Err(error);
@@ -113,17 +110,13 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.messages,
                 params.configured_context,
                 params.tools,
+                params.provider_id,
             )?;
-            input_estimate =
-                crate::services::agent_local::context_usage_runtime::prepared_input_tokens(
-                    params.provider_id,
-                    reduced_report.estimated_tokens,
-                    params.messages,
-                    params.tools,
-                );
+            input_estimate = reduced_report.estimated_tokens;
             input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
                 params.on_event,
                 input_estimate,
+                params.configured_context,
             );
             crate::services::agent_local::stream_diagnostics::record_retry(
                 params.session_id,

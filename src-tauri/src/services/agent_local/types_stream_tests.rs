@@ -51,6 +51,7 @@ fn context_usage_serializes_for_the_live_ring() {
         input_tokens: 120,
         output_tokens: 8,
         context_tokens: 128,
+        context_limit: 372_000,
         estimated: true,
     };
 
@@ -58,5 +59,6 @@ fn context_usage_serializes_for_the_live_ring() {
 
     assert_eq!(serialized["event"], "contextUsage");
     assert_eq!(serialized["data"]["contextTokens"], 128);
+    assert_eq!(serialized["data"]["contextLimit"], 372_000);
     assert_eq!(serialized["data"]["estimated"], true);
 }

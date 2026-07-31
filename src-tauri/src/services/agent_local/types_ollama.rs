@@ -1,6 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-pub use super::types_stream::{PullProgress, StreamEvent, StreamOutcome, StreamResult};
+pub use super::types_stream::{StreamEvent, StreamOutcome, StreamResult};
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PullProgress {
+    pub status: String,
+    pub completed: Option<u64>,
+    pub total: Option<u64>,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OllamaModel {

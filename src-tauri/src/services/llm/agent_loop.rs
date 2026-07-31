@@ -83,7 +83,7 @@ pub async fn run_agent_loop(
                 &result,
                 plan_active,
             );
-            context_usage_runtime::emit_result(on_event, input_tokens, &result);
+            context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
             compression
                 .handle_interrupted(
                     messages,
@@ -119,7 +119,7 @@ pub async fn run_agent_loop(
         subagents
             .finalize_content_phase(on_event, &result, plan_active)
             .await;
-        context_usage_runtime::emit_result(on_event, input_tokens, &result);
+        context_usage_runtime::emit_result(on_event, input_tokens, &result, configured_context);
         messages.push(super::agent_loop_message::build_for_plan(
             &result,
             plan_active,

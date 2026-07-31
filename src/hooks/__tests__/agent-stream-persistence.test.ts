@@ -50,12 +50,23 @@ describe("subagent backend persistence ownership", () => {
     expect(persistCalls()).toHaveLength(0);
 
     await agentStreamManager.startSession("gateway", [message("u2", "user", "question")], 0);
+    emit("gateway", {
+      event: "contextUsage",
+      data: {
+        inputTokens: 1,
+        outputTokens: 0,
+        contextTokens: 1,
+        contextLimit: 372_000,
+        estimated: true,
+      },
+    });
     emit("gateway", tokenEvent("frontend"));
     emit("gateway", doneEvent());
 
     expect(persistCalls()).toHaveLength(1);
     expect(persistCalls()[0]?.[1]).toEqual(expect.objectContaining({
       contextTokens: 2,
+      contextLimit: 372_000,
     }));
   });
 });

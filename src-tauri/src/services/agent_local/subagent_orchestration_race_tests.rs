@@ -154,7 +154,7 @@ async fn report_policy_and_body_match_api_and_ollama_payloads() {
         .prepare_for_model_request(&mut messages)
         .await
         .expect("prepare payload");
-    super::context_budget::prepare_for_request(&mut messages, 12_000, &[])
+    super::context_budget::prepare_for_request(&mut messages, 12_000, &[], "ollama")
         .expect("payload budget");
     let ollama = super::agent_loop_support::build_request(
         "llama3",

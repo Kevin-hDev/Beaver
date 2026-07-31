@@ -25,7 +25,7 @@ export type StreamEvent =
   | { event: "token"; data: { content: string; tokenCount: number; tps: number; phase?: TokenPhase } }
   | { event: "contentPhase"; data: { phase: TokenPhase } }
   | { event: "thinking"; data: { content: string; tokenCount?: number } }
-  | { event: "contextUsage"; data: { inputTokens: number; outputTokens: number; contextTokens: number; estimated: boolean } }
+  | { event: "contextUsage"; data: { inputTokens: number; outputTokens: number; contextTokens: number; contextLimit: number; estimated: boolean } }
   | { event: "toolCall"; data: { name: string; arguments: Record<string, unknown>; domain?: "memory" } }
   | { event: "toolResult"; data: { name: string; content: string; isError: boolean; truncated?: boolean; displaySummary?: string; toolCallIndex: number; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
   | { event: "turnEnd"; data: Record<string, never> }

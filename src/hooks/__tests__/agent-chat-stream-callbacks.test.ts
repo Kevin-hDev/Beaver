@@ -87,6 +87,7 @@ describe("contextUsage", () => {
         inputTokens: 100,
         outputTokens: 0,
         contextTokens: 100,
+        contextLimit: 372_000,
         estimated: true,
       },
     }).state;
@@ -96,8 +97,7 @@ describe("contextUsage", () => {
     }).state;
 
     expect(state.sessionTokenCount).toBe(125);
-    expect(state.streamedMessageTokens).toBe(25);
-    expect(state.sessionTokenCountEstimated).toBe(true);
+    expect(state.contextLimitTokens).toBe(372_000);
 
     state = applyStreamEvent(state, {
       event: "contextUsage",
@@ -105,33 +105,31 @@ describe("contextUsage", () => {
         inputTokens: 102,
         outputTokens: 20,
         contextTokens: 122,
+        contextLimit: 372_000,
         estimated: false,
       },
     }).state;
 
     expect(state.sessionTokenCount).toBe(122);
-    expect(state.streamedMessageTokens).toBe(20);
-    expect(state.sessionTokenCountEstimated).toBe(false);
+    expect(state.contextOutputTokens).toBe(20);
   });
 
-  it("conserve les sorties précédentes au début d'un nouveau tour", () => {
-    const state = makeState({
-      contextOutputTokens: 20,
-      streamedMessageTokens: 35,
-    });
+  it("repart de l'entrée préparée au début d'un nouveau tour", () => {
+    const state = makeState({ contextOutputTokens: 20 });
     const { state: next } = applyStreamEvent(state, {
       event: "contextUsage",
       data: {
         inputTokens: 240,
         outputTokens: 0,
         contextTokens: 240,
+        contextLimit: 372_000,
         estimated: true,
       },
     });
 
-    expect(next.streamedMessageTokens).toBe(35);
     expect(next.contextOutputTokens).toBe(0);
     expect(next.sessionTokenCount).toBe(240);
+    expect(next.hasContextUsageSnapshot).toBe(true);
   });
 });
 

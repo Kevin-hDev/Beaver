@@ -23,17 +23,16 @@ fn generated_output_saturates_at_u32_max() {
 }
 
 #[test]
-fn codex_input_excludes_reasoning_that_is_not_replayed() {
-    let message = super::super::types_ollama::ChatMessage {
-        role: "assistant".into(),
-        content: "answer".into(),
-        reasoning_content: Some("hidden reasoning".repeat(100)),
+fn preserves_real_prompt_count_when_output_count_is_missing() {
+    let mut result = StreamResult {
+        prompt_tokens: Some(321),
         ..Default::default()
     };
-    let full = crate::services::compress::token_estimate::estimate_request_tokens(
-        std::slice::from_ref(&message),
-        &[],
-    );
+    result.record_generated_text("estimated output");
 
-    assert!(prepared_input_tokens("codex-oauth", full, &[message], &[]) < full);
+    let (input, output, estimated) = resolved_usage(999, &result);
+
+    assert_eq!(input, 321);
+    assert_eq!(output, result.estimated_output_tokens());
+    assert!(estimated);
 }

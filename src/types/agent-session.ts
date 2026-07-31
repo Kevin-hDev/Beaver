@@ -39,6 +39,7 @@ export interface AgentSession {
   thinking_enabled: boolean;
   reasoning_mode?: string;
   accumulated_tokens: number;
+  context_tokens?: number;
   messages: AgentMessage[];
   todos?: AgentTodoItem[];
   todo_runs?: AgentTodoRun[];

@@ -17,6 +17,7 @@ fn clone_session(id: &str, parent_id: &str, root_id: Option<&str>) -> AgentSessi
         thinking_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
+        context_tokens: None,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

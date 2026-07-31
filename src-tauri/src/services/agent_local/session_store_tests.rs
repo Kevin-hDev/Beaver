@@ -112,8 +112,9 @@ mod tests {
         )
         .await
         .expect("create session");
+        let message_id = uuid::Uuid::new_v4().to_string();
         let message = crate::services::agent_local::types_session::AgentMessage {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: message_id.clone(),
             role: "assistant".into(),
             content: "answer".into(),
             thinking: None,
@@ -130,12 +131,30 @@ mod tests {
             stream_part: None,
         };
 
-        super::super::add_messages_with_context(&session.id, vec![message], 7, Some(4_321))
-            .await
-            .expect("save context snapshot");
+        super::super::add_messages_with_context(
+            &session.id,
+            vec![message],
+            7,
+            Some(4_321),
+            Some(4_000),
+        )
+        .await
+        .expect("save context snapshot");
         let saved = super::super::get(&session.id).await.expect("reload session");
 
-        assert_eq!(saved.accumulated_tokens, 4_321);
+        assert_eq!(saved.accumulated_tokens, 2);
+        assert_eq!(saved.context_tokens, Some(4_000));
+
+        crate::services::agent_local::session_ops::truncate_and_replace(
+            &session.id,
+            &message_id,
+            None,
+        )
+            .await
+            .expect("edit session history");
+        let edited = super::super::get(&session.id).await.expect("reload edit");
+        assert_eq!(edited.accumulated_tokens, 2);
+        assert_eq!(edited.context_tokens, None);
         super::super::delete_one(&session.id)
             .await
             .expect("delete session");

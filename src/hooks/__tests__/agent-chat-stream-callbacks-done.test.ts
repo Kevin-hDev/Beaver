@@ -58,7 +58,7 @@ describe("done", () => {
       doneEvent({ evalCount: 5, promptTokens: 10, contextTokens: 999 }),
     );
     expect(result.state.sessionTokenCount).toBe(999);
-    expect(result.state.sessionTokenCountEstimated).toBe(false);
+    expect(result.state.hasContextUsageSnapshot).toBe(true);
     expect(result.assistantMessage?.tokens).toBe(5);
   });
 
@@ -68,7 +68,7 @@ describe("done", () => {
       doneEvent({ evalCount: null, promptTokens: null, contextTokens: null }),
     );
     expect(result.state.sessionTokenCount).toBe(1250);
-    expect(result.state.sessionTokenCountEstimated).toBe(true);
+    expect(result.state.hasContextUsageSnapshot).toBe(false);
   });
 });
 

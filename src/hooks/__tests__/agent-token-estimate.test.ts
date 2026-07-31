@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { estimateAgentMessagesTokens, textUnits } from "../agent-token-estimate";
-import type { AgentMessage } from "@/types/agent";
+import { estimateAgentMessagesTokens, resolveSessionContext, textUnits } from "../agent-token-estimate";
+import type { AgentMessage, AgentSession } from "@/types/agent";
 
 function msg(content: string): AgentMessage {
   return {
@@ -50,5 +50,24 @@ describe("agent-token-estimate", () => {
       + 2;
 
     expect(estimateAgentMessagesTokens([message])).toBe(Math.ceil(expectedUnits / 4));
+  });
+
+  it("distingue le total complet du simple compteur de messages", () => {
+    const session = {
+      accumulated_tokens: 100,
+      context_tokens: 900,
+      messages: [msg("a".repeat(400))],
+    } as AgentSession;
+
+    expect(resolveSessionContext(session)).toEqual({
+      sessionTokenCount: 900,
+      hasContextUsageSnapshot: true,
+    });
+
+    delete session.context_tokens;
+    expect(resolveSessionContext(session)).toEqual({
+      sessionTokenCount: 100,
+      hasContextUsageSnapshot: false,
+    });
   });
 });

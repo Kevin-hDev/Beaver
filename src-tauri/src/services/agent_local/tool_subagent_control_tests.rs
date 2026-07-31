@@ -106,6 +106,7 @@ fn child(status: &str) -> AgentSession {
         thinking_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
+        context_tokens: None,
         messages: Vec::new(),
         todos: Vec::new(),
         todo_neglect_count: 0,

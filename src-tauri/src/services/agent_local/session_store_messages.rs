@@ -13,9 +13,10 @@ pub(super) fn append_bounded(
     }
 }
 
-pub(super) fn recompute_accumulated_tokens(session: &mut AgentSession) {
+pub(crate) fn recompute_accumulated_tokens(session: &mut AgentSession) {
     session.accumulated_tokens =
         crate::services::token_counting::estimate_agent_messages_tokens(&session.messages);
+    session.context_tokens = None;
 }
 
 pub async fn add_messages(
@@ -23,7 +24,7 @@ pub async fn add_messages(
     new_messages: Vec<AgentMessage>,
     tokens: u32,
 ) -> Result<(), String> {
-    add_messages_with_context(id, new_messages, tokens, None).await
+    add_messages_with_context(id, new_messages, tokens, None, None).await
 }
 
 pub async fn add_messages_with_context(
@@ -31,6 +32,7 @@ pub async fn add_messages_with_context(
     mut new_messages: Vec<AgentMessage>,
     tokens: u32,
     context_tokens: Option<u32>,
+    context_limit: Option<u32>,
 ) -> Result<(), String> {
     super::session_store::validate_session_id(id)?;
     for message in &new_messages {
@@ -49,15 +51,21 @@ pub async fn add_messages_with_context(
     }
     append_bounded(&mut session, new_messages);
     session.updated_at = Some(chrono::Utc::now());
-    match context_tokens.filter(|value| *value > 0) {
-        Some(value) => session.accumulated_tokens = value,
-        None => recompute_accumulated_tokens(&mut session),
-    }
+    recompute_accumulated_tokens(&mut session);
+    session.context_tokens = validated_context_tokens(context_tokens, context_limit);
     let result = super::session_store::save(&session).await;
     if result.is_ok() && todo_housekeeping.should_emit_empty_update {
         super::tool_todo::emit_update(id, Vec::new());
     }
     result
+}
+
+fn validated_context_tokens(value: Option<u32>, limit: Option<u32>) -> Option<u32> {
+    let limit = limit
+        .filter(|limit| *limit > 0)
+        .unwrap_or(super::session_security::MAX_CONTEXT_SNAPSHOT_TOKENS)
+        .min(super::session_security::MAX_CONTEXT_SNAPSHOT_TOKENS);
+    value.filter(|tokens| *tokens > 0).map(|tokens| tokens.min(limit))
 }
 
 #[cfg(test)]

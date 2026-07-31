@@ -5,7 +5,7 @@ import { useAgentPlanMode } from "./use-agent-plan-mode";
 import { useAgentPermissionDelivery } from "./use-agent-permission-delivery";
 import { listenGatewaySessionUpdates } from "./use-gateway-session-updates";
 import { clearInteractiveChoiceState, EMPTY_CHAT_STATE, type ChatState } from "./agent-chat-stream-callbacks";
-import { resolveSessionTokenCount } from "./agent-token-estimate";
+import { resolveSessionContext } from "./agent-token-estimate";
 import { createEditedUserMessage } from "./agent-message-builders";
 import { useAgentMissingDirectory } from "./use-agent-missing-directory";
 import { useAgentMessageSend } from "./use-agent-message-send";
@@ -88,8 +88,7 @@ export function useAgentChat(
         setState((s) => ({
           ...s,
           messages: session.messages,
-          sessionTokenCount: resolveSessionTokenCount(session),
-          sessionTokenCountEstimated: true,
+          ...resolveSessionContext(session),
         }));
         setSessionLoading(false);
       })
@@ -98,8 +97,7 @@ export function useAgentChat(
       setState((s) => ({
         ...s,
         messages: session.messages,
-        sessionTokenCount: resolveSessionTokenCount(session),
-        sessionTokenCountEstimated: true,
+        ...resolveSessionContext(session),
       }));
     });
     return () => {
@@ -149,9 +147,9 @@ export function useAgentChat(
     if (!sessionId) return state.sessionTokenCount;
     const session = await invoke<AgentSession>("get_agent_session", { id: sessionId }).catch(() => null);
     if (session) {
-      const sessionTokenCount = resolveSessionTokenCount(session);
-      setState((s) => ({ ...s, sessionTokenCount, sessionTokenCountEstimated: true }));
-      return sessionTokenCount;
+      const context = resolveSessionContext(session);
+      setState((s) => ({ ...s, ...context }));
+      return context.sessionTokenCount;
     }
     return state.sessionTokenCount;
   }, [sessionId, state.sessionTokenCount]);

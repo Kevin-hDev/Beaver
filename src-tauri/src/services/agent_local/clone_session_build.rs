@@ -18,8 +18,7 @@ pub(super) fn build_clone(
     clone.updated_at = Some(now);
     clone.archived_at = None;
     clone.messages = source.messages[..=message_index].to_vec();
-    clone.accumulated_tokens =
-        crate::services::token_counting::estimate_agent_messages_tokens(&clone.messages);
+    super::session_store_messages::recompute_accumulated_tokens(&mut clone);
     clone.stream_failures.clear();
     clone.diagnostic_runs.clear();
     clone.clone_parent_session_id = Some(source.id.clone());

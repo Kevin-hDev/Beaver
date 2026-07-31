@@ -54,6 +54,8 @@ pub struct AgentSession {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reasoning_mode: Option<String>,
     pub accumulated_tokens: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_tokens: Option<u32>,
     pub messages: Vec<AgentMessage>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub todos: Vec<AgentTodoItem>,

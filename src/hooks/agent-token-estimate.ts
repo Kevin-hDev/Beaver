@@ -7,8 +7,16 @@ export function estimateAgentMessagesTokens(messages: AgentMessage[]): number {
   return messages.reduce((sum, message) => sum + estimateMessage(message), 0);
 }
 
-export function resolveSessionTokenCount(session: AgentSession): number {
-  return session.accumulated_tokens || estimateAgentMessagesTokens(session.messages);
+export function resolveSessionContext(session: AgentSession): {
+  sessionTokenCount: number;
+  hasContextUsageSnapshot: boolean;
+} {
+  const contextTokens = session.context_tokens ?? 0;
+  return {
+    sessionTokenCount: contextTokens || session.accumulated_tokens
+      || estimateAgentMessagesTokens(session.messages),
+    hasContextUsageSnapshot: contextTokens > 0,
+  };
 }
 
 function estimateMessage(message: AgentMessage): number {

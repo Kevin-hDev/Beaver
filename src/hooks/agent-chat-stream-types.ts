@@ -44,10 +44,9 @@ export interface ChatState {
   isCompressing: boolean;
   tps: number;
   sessionTokenCount: number;
-  sessionTokenCountEstimated: boolean;
   contextInputTokens: number;
   contextOutputTokens: number;
-  streamedMessageTokens: number;
+  contextLimitTokens: number;
   hasContextUsageSnapshot: boolean;
   lastRequestTokens: number;
   liveTokenCount: number;
@@ -77,8 +76,8 @@ export const EMPTY_CHAT_STATE: ChatState = {
   messages: [], queuedUserMessages: [], completedSegments: [], currentContent: "",
   currentContentPhase: undefined, currentThinking: "", currentTools: [],
   activeStreamItem: null, isStreaming: false, isCompressing: false,
-  tps: 0, sessionTokenCount: 0, sessionTokenCountEstimated: true, lastRequestTokens: 0,
-  contextInputTokens: 0, contextOutputTokens: 0, streamedMessageTokens: 0,
+  tps: 0, sessionTokenCount: 0, lastRequestTokens: 0,
+  contextInputTokens: 0, contextOutputTokens: 0, contextLimitTokens: 0,
   hasContextUsageSnapshot: false,
   liveTokenCount: 0, streamStartedAt: null, segmentStartedAt: null,
   totalElapsedMs: 0,
@@ -119,10 +118,9 @@ export function toChatState(state: ManagedStreamState): ChatState {
     isStreaming: state.isStreaming,
     isCompressing: state.isCompressing,
     tps: state.tps, sessionTokenCount: state.sessionTokenCount,
-    sessionTokenCountEstimated: state.sessionTokenCountEstimated,
     contextInputTokens: state.contextInputTokens,
     contextOutputTokens: state.contextOutputTokens,
-    streamedMessageTokens: state.streamedMessageTokens,
+    contextLimitTokens: state.contextLimitTokens,
     hasContextUsageSnapshot: state.hasContextUsageSnapshot,
     lastRequestTokens: state.lastRequestTokens,
     liveTokenCount: state.liveTokenCount,

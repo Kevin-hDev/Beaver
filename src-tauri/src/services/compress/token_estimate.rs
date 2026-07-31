@@ -4,6 +4,13 @@ pub fn estimate_tokens(messages: &[ChatMessage]) -> usize {
     crate::services::token_counting::estimate_chat_tokens(messages)
 }
 
+pub fn estimate_tokens_for_provider(provider_id: &str, messages: &[ChatMessage]) -> usize {
+    if provider_id == crate::services::codex_client::PROVIDER_ID {
+        return crate::services::token_counting::estimate_chat_tokens_without_reasoning(messages);
+    }
+    estimate_tokens(messages)
+}
+
 pub fn estimate_tool_tokens(tools: &[serde_json::Value]) -> usize {
     tools.iter().fold(0usize, |total, tool| {
         total.saturating_add(crate::services::token_counting::estimate_text_tokens(
@@ -14,6 +21,14 @@ pub fn estimate_tool_tokens(tools: &[serde_json::Value]) -> usize {
 
 pub fn estimate_request_tokens(messages: &[ChatMessage], tools: &[serde_json::Value]) -> usize {
     estimate_tokens(messages).saturating_add(estimate_tool_tokens(tools))
+}
+
+pub fn estimate_request_tokens_for_provider(
+    provider_id: &str,
+    messages: &[ChatMessage],
+    tools: &[serde_json::Value],
+) -> usize {
+    estimate_tokens_for_provider(provider_id, messages).saturating_add(estimate_tool_tokens(tools))
 }
 
 pub fn should_compress(used_tokens: usize, context_window: u64, threshold_pct: u8) -> bool {
@@ -105,5 +120,20 @@ mod tests {
         })];
 
         assert!(estimate_request_tokens(&messages, &tools) > estimate_tokens(&messages));
+    }
+
+    #[test]
+    fn codex_request_excludes_reasoning_that_is_not_replayed() {
+        let mut message = msg("assistant", "answer");
+        message.reasoning_content = Some("hidden reasoning".repeat(100));
+        let messages = [message];
+
+        assert!(
+            estimate_request_tokens_for_provider(
+                crate::services::codex_client::PROVIDER_ID,
+                &messages,
+                &[],
+            ) < estimate_request_tokens(&messages, &[])
+        );
     }
 }

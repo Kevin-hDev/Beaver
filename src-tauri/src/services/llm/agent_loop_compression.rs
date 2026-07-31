@@ -78,7 +78,7 @@ impl LoopCompression<'_> {
         cancel: CancellationToken,
     ) -> Result<(), String> {
         messages.push(agent_loop_message::build_assistant_message(result));
-        let context = token_estimate::estimate_tokens(messages)
+        let context = token_estimate::estimate_tokens_for_provider(self.provider_id, messages)
             .saturating_add(result.content_chunks.len())
             .min(u32::MAX as usize) as u32;
         if self

@@ -8,7 +8,7 @@ pub mod session_ops;
 pub mod session_security;
 pub mod session_store;
 pub mod session_workspace;
-mod session_store_messages;
+pub(crate) mod session_store_messages;
 pub mod session_store_todos;
 pub mod session_store_updates;
 pub mod session_subagents;

@@ -30,6 +30,7 @@ pub enum StreamEvent {
         input_tokens: u32,
         output_tokens: u32,
         context_tokens: u32,
+        context_limit: u32,
         estimated: bool,
     },
     ToolCall {
@@ -184,14 +185,6 @@ impl StreamOutcome {
     pub fn is_interrupted(&self) -> bool {
         matches!(self, Self::InterruptedForCompression(_))
     }
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PullProgress {
-    pub status: String,
-    pub completed: Option<u64>,
-    pub total: Option<u64>,
 }
 
 #[cfg(test)]

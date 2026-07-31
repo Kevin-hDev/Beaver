@@ -43,9 +43,13 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.messages,
         params.configured_context,
         params.tools,
+        "ollama",
     )?;
-    let input_tokens =
-        super::context_usage_runtime::emit_input(params.on_event, report.estimated_tokens);
+    let input_tokens = super::context_usage_runtime::emit_input(
+        params.on_event,
+        report.estimated_tokens,
+        params.configured_context,
+    );
     let realtime_budget =
         RealtimeBudget::from_estimate(params.configured_context, report.estimated_tokens);
     let plan_active =

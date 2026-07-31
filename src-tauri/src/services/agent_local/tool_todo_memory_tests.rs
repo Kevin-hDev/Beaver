@@ -143,6 +143,7 @@ fn test_session() -> AgentSession {
         thinking_enabled: false,
         reasoning_mode: None,
         accumulated_tokens: 0,
+        context_tokens: None,
         messages: vec![],
         todos: vec![],
         todo_neglect_count: 0,

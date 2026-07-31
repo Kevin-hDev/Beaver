@@ -18,9 +18,11 @@ pub fn prepare_for_request(
     messages: &mut Vec<ChatMessage>,
     context_window: u64,
     tools: &[serde_json::Value],
+    provider_id: &str,
 ) -> Result<ContextBudgetReport, String> {
     let tool_tokens = token_estimate::estimate_tool_tokens(tools);
-    let estimated = token_estimate::estimate_tokens(messages).saturating_add(tool_tokens);
+    let estimated =
+        token_estimate::estimate_request_tokens_for_provider(provider_id, messages, tools);
     let Some(max_input) = max_input_tokens(context_window) else {
         return Ok(ContextBudgetReport {
             estimated_tokens: estimated,
@@ -28,23 +30,31 @@ pub fn prepare_for_request(
             pruned_messages: 0,
         });
     };
-    prepare_with_limit(messages, max_input, tool_tokens, context_window)
+    prepare_with_limit(
+        messages,
+        max_input,
+        tool_tokens,
+        context_window,
+        provider_id,
+    )
 }
 
 pub fn reduce_after_payload_too_large(
     messages: &mut Vec<ChatMessage>,
     context_window: u64,
     tools: &[serde_json::Value],
+    provider_id: &str,
 ) -> Result<bool, String> {
     let tool_tokens = token_estimate::estimate_tool_tokens(tools);
-    let before = token_estimate::estimate_tokens(messages).saturating_add(tool_tokens);
+    let before =
+        token_estimate::estimate_request_tokens_for_provider(provider_id, messages, tools);
     let configured_limit = max_input_tokens(context_window).unwrap_or(before);
     let reduced_limit = before.saturating_mul(3).saturating_div(4);
     let target = configured_limit.min(reduced_limit);
     if target <= tool_tokens {
         return Ok(false);
     }
-    let report = prepare_with_limit(messages, target, tool_tokens, target as u64)?;
+    let report = prepare_with_limit(messages, target, tool_tokens, target as u64, provider_id)?;
     Ok(report.estimated_tokens < before)
 }
 
@@ -53,8 +63,9 @@ fn prepare_with_limit(
     max_input: usize,
     tool_tokens: usize,
     capsule_context: u64,
+    provider_id: &str,
 ) -> Result<ContextBudgetReport, String> {
-    let estimated = token_estimate::estimate_tokens(messages).saturating_add(tool_tokens);
+    let estimated = estimate_messages(provider_id, messages).saturating_add(tool_tokens);
     if estimated <= max_input {
         return Ok(ContextBudgetReport {
             estimated_tokens: estimated,
@@ -75,23 +86,24 @@ fn prepare_with_limit(
         .filter(|message| is_required_report(message))
         .cloned()
         .collect::<Vec<_>>();
-    let required_tokens = token_estimate::estimate_tokens(&next)
-        .saturating_add(token_estimate::estimate_tokens(&required_reports));
+    let required_tokens = estimate_messages(provider_id, &next)
+        .saturating_add(estimate_messages(provider_id, &required_reports));
     if required_tokens > message_limit {
         return Err(REQUIRED_CONTEXT_ERROR.to_string());
     }
 
     let capsule = context_capsules::recent_file_context_message(messages, capsule_context)
         .filter(|message| {
-            required_tokens.saturating_add(token_estimate::estimate_tokens(
+            required_tokens.saturating_add(estimate_messages(
+                provider_id,
                 std::slice::from_ref(message),
             )) <= message_limit
         });
     context_capsules::insert_after_system(&mut next, capsule);
 
     let mut remaining_budget = message_limit
-        .saturating_sub(token_estimate::estimate_tokens(&next))
-        .saturating_sub(token_estimate::estimate_tokens(&required_reports));
+        .saturating_sub(estimate_messages(provider_id, &next))
+        .saturating_sub(estimate_messages(provider_id, &required_reports));
     let mut tail = Vec::new();
     for msg in messages
         .iter()
@@ -101,7 +113,7 @@ fn prepare_with_limit(
         if remaining_budget == 0 {
             break;
         }
-        let msg_tokens = token_estimate::estimate_tokens(std::slice::from_ref(msg));
+        let msg_tokens = estimate_messages(provider_id, std::slice::from_ref(msg));
         if msg_tokens <= remaining_budget {
             tail.push(msg.clone());
             remaining_budget -= msg_tokens;
@@ -116,10 +128,14 @@ fn prepare_with_limit(
     *messages = next;
 
     Ok(ContextBudgetReport {
-        estimated_tokens: token_estimate::estimate_tokens(messages).saturating_add(tool_tokens),
+        estimated_tokens: estimate_messages(provider_id, messages).saturating_add(tool_tokens),
         max_input_tokens: Some(max_input),
         pruned_messages: original_len.saturating_sub(messages.len()),
     })
+}
+
+fn estimate_messages(provider_id: &str, messages: &[ChatMessage]) -> usize {
+    token_estimate::estimate_tokens_for_provider(provider_id, messages)
 }
 
 fn is_required_report(message: &ChatMessage) -> bool {

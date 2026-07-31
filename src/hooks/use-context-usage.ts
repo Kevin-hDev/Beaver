@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { buildContextUsageBreakdown, type ContextUsageBreakdown } from "./context-usage-breakdown";
+import { buildLiveContextMessage, type LiveContextState } from "./context-usage-live-message";
 import { useContextHiddenUsage } from "./use-context-hidden-usage";
 import type { AgentMessage } from "@/types/agent";
 
@@ -8,8 +9,8 @@ interface UseContextUsageArgs {
   model: string;
   provider: string;
   messages: AgentMessage[];
-  used: number;
-  liveMessageTokens: number;
+  used?: number;
+  stream: LiveContextState;
   workingDir?: string;
   permissionMode?: string;
   planMode?: boolean;
@@ -22,7 +23,7 @@ export function useContextUsage({
   provider,
   messages,
   used,
-  liveMessageTokens,
+  stream,
   workingDir,
   permissionMode,
   planMode,
@@ -37,13 +38,13 @@ export function useContextUsage({
     planMode,
     supportsTools,
   });
+  const liveMessage = useMemo(() => buildLiveContextMessage(stream), [stream]);
 
   return useMemo(
-    () => buildContextUsageBreakdown(messages, {
+    () => buildContextUsageBreakdown(liveMessage ? [...messages, liveMessage] : messages, {
       ...hiddenUsage,
       observedUsed: used,
-      liveMessageTokens,
     }),
-    [messages, hiddenUsage, used, liveMessageTokens],
+    [messages, liveMessage, hiddenUsage, used],
   );
 }
