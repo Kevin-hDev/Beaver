@@ -30,13 +30,12 @@
   padding: 5px var(--space-sm);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--ease-smooth);
+  transition: background var(--ease-smooth), color var(--ease-smooth);
   margin-bottom: 2px;
 }
 
 .pers-item:hover {
   background: var(--surface-hover);
-  transform: translateX(2px);
 }
 
 .pers-item.active {

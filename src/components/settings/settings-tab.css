@@ -43,7 +43,7 @@
   background: transparent;
   font-weight: 400;
   margin-bottom: 2px;
-  transition: all 200ms ease;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
 }
 
 .settings-subtab-label {

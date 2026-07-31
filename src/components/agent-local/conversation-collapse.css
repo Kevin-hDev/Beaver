@@ -20,7 +20,18 @@
   overflow: hidden;
 }
 
-.conv-section-toggle,
+/* Ces éléments accompagnent le repli du panneau, d'où la durée allongée.
+
+   Le libellé de section est le seul à ne déclarer sa transition nulle part
+   ailleurs : une durée posée seule laisse « transition-property » à sa valeur
+   par défaut, « all », et ce sont alors sa position et sa hauteur qui
+   s'animent. Comme il ouvre la section, tout ce qui le suit glissait avec lui.
+   Les autres reçoivent leur propriété dans conversation-projects.css et
+   conversation-drag.css, chargés avant celui-ci. */
+.conv-section-toggle {
+  transition: color 400ms ease;
+}
+
 .conv-project-header,
 .conv-project-wrapper,
 .conv-project-actions,
