@@ -424,6 +424,7 @@
     "toolActivity": {
       "inProgress": "进行中",
       "completed": "已完成",
+      "processStoppedResult": "进程已停止。",
       "toggleDetails": "显示工具详情",
       "groups": {
         "exploration": "探索",
@@ -465,6 +466,7 @@
         "run": "已执行",
         "createBranch": "已创建分支",
         "switchBranch": "已切换分支",
+        "stopProcess": "进程已停止",
         "skill": "已加载 Skill",
         "agent": "已委派",
         "forecast": "已分析",

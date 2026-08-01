@@ -45,8 +45,10 @@ async fn long_process_yields_then_can_be_stopped_with_its_children() {
     .await
     .expect("stop process");
 
+    assert!(stopped.stopped);
     assert_ne!(stopped.exit_code, 0);
-    assert!(stopped.stderr.contains("annulee"));
+    assert!(stopped.stderr.is_empty());
+    assert!(stopped.stdout.contains("Processus arrêté."));
     let deadline = Instant::now() + Duration::from_secs(1);
     while process_exists(child_pid) && Instant::now() < deadline {
         tokio::time::sleep(Duration::from_millis(10)).await;

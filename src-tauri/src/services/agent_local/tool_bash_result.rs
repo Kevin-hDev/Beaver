@@ -7,6 +7,7 @@ pub fn blocked(reason: String) -> ShellOutput {
         stderr: reason,
         exit_code: -1,
         running: false,
+        stopped: false,
         timed_out: false,
         tracking_incomplete: false,
         output_incomplete: false,
@@ -20,6 +21,10 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
     let mut stderr = snapshot.stderr;
     let exit_code = match snapshot.completion {
         Some(CompletionKind::Exited(code)) => code,
+        Some(CompletionKind::Stopped) => {
+            append_note(&mut stdout, "Processus arrêté.");
+            -1
+        }
         Some(CompletionKind::Cancelled) => {
             stderr = "Commande annulee.".to_string();
             -1
@@ -73,6 +78,7 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
         stderr,
         exit_code,
         running: snapshot.running,
+        stopped: matches!(snapshot.completion, Some(CompletionKind::Stopped)),
         timed_out: matches!(snapshot.completion, Some(CompletionKind::TimedOut)),
         tracking_incomplete: snapshot.tracking_incomplete,
         output_incomplete: snapshot.output_incomplete,

@@ -85,7 +85,7 @@ pub async fn control_shell_session(
     let session = super::tool_bash_registry::get(process_id, owner_session_id)?;
     session.set_progress(progress);
     if stop || input.is_some_and(|value| value.contains('\u{3}')) {
-        session.cancel();
+        session.stop();
     } else if let Some(input) = input {
         if !input.is_empty() {
             if let Err(error) = write_session_input(&session, input, &cancel).await {

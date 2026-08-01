@@ -76,7 +76,9 @@ pub async fn spawn(request: SpawnRequest<'_>) -> Result<Arc<ShellSession>, Strin
     if tracking_unavailable {
         session.update_changes(Vec::new(), true);
     }
-    if let Err(error) = super::tool_bash_registry::insert(Arc::clone(&session)) {
+    if let Err(error) =
+        super::tool_bash_registry::insert(Arc::clone(&session), request.command)
+    {
         super::tool_bash_platform::terminate_process_tree(pid).await;
         let _ = child.wait().await;
         let _ = store.finalize(false).await;
@@ -115,6 +117,7 @@ async fn run_process(
         super::tool_bash_io::spawn_reader(stdout, ShellStream::Stdout, sender.clone()),
         super::tool_bash_io::spawn_reader(stderr, ShellStream::Stderr, sender),
     ];
+    let session_stop = session.stop_token();
     let session_cancel = session.cancellation();
     let timeout_wait = wait_for_timeout(hard_timeout_secs);
     tokio::pin!(timeout_wait);
@@ -122,10 +125,11 @@ async fn run_process(
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut output_open = true;
 
-    let completion = loop {
+    let mut completion = loop {
         tokio::select! {
             _ = agent_cancel.cancelled() => break CompletionKind::Cancelled,
             _ = session_cancel.cancelled() => break CompletionKind::Cancelled,
+            _ = session_stop.cancelled() => break CompletionKind::Stopped,
             _ = &mut timeout_wait => break CompletionKind::TimedOut,
             status = child.wait() => {
                 break status
@@ -157,7 +161,10 @@ async fn run_process(
 
     if !matches!(completion, CompletionKind::Exited(_)) {
         super::tool_bash_platform::terminate_process_tree(session.pid()).await;
-        let _ = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
+        let terminated = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
+        if !matches!(terminated, Ok(Ok(_))) {
+            completion = CompletionKind::Failed;
+        }
     }
     let drain = super::tool_bash_io::drain(session, &mut store, &mut receiver).await;
     if matches!(drain, super::tool_bash_io::DrainOutcome::TimedOut) {

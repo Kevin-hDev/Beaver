@@ -429,6 +429,7 @@
     "toolActivity": {
       "inProgress": "in progress",
       "completed": "completed",
+      "processStoppedResult": "Process stopped.",
       "toggleDetails": "Show tool details",
       "groups": {
         "exploration": "Exploration",
@@ -470,6 +471,7 @@
         "run": "Ran",
         "createBranch": "Branch created",
         "switchBranch": "Branch switched",
+        "stopProcess": "Process stopped",
         "skill": "Skill loaded",
         "agent": "Delegated",
         "forecast": "Analyzed",

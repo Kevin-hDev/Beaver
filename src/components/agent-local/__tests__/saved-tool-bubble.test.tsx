@@ -45,6 +45,8 @@ vi.mock("react-i18next", () => ({
       if (key === "agentLocal.toolActivity.actions.list") return "List";
       if (key === "agentLocal.toolActivity.actions.search") return "Search";
       if (key === "agentLocal.toolActivity.actions.run") return "Run";
+      if (key === "agentLocal.toolActivity.actions.stopProcess") return "Process stopped";
+      if (key === "agentLocal.toolActivity.processStoppedResult") return "Process stopped.";
       if (key === "agentLocal.toolActivity.actions.createBranch") return "Create branch";
       if (key === "agentLocal.toolActivity.actions.switchBranch") return "Switch branch";
       if (key === "agentLocal.toolActivity.actions.tool") return "Tool";
@@ -112,6 +114,33 @@ describe("SavedToolBubble", () => {
     expect(queryByTestId("content-preview")).toBeNull();
     openTool(container);
     expect(getByTestId("content-preview")).toBeTruthy();
+  });
+
+  it("répare l'affichage d'un ancien arrêt Bash sauvegardé", () => {
+    const sessionId = "6a719eeb-1665-49cd-a5e2-23427e80543b";
+    const { container, queryByTestId } = render(
+      <SavedToolBubble tools={[
+        {
+          name: "bash",
+          summary: "npm start",
+          result: `[Processus actif: session_id=${sessionId}, pid=91661, 1001 ms]`,
+        },
+        {
+          name: "bash_write",
+          summary: sessionId,
+          args: { session_id: sessionId, chars: "\u0003" },
+          result: "Commande annulee.",
+          is_error: true,
+        },
+      ]} />,
+    );
+
+    expect(queryByTestId("status-icon-error")).toBeNull();
+    openGroup(container);
+    expect(container.textContent).toContain("Process stopped");
+    openTool(container, 1);
+    expect(container.querySelector(".tb-command-preview")?.textContent).toBe("npm start");
+    expect(container.textContent).toContain("Process stopped.");
   });
 
   it("affiche DiffPreview quand old_text et new_text sont présents", () => {
