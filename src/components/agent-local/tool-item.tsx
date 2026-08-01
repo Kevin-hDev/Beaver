@@ -126,7 +126,7 @@ export function ToolItem({
         {!done && <Spinner size="var(--icon-sm)" className="tb-spinner" />}
         {done && isError && (
           <ToolStatusIcon
-            size="var(--icon-sm)"
+            size="var(--icon-xs)"
             message={errorMessage}
           />
         )}

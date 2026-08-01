@@ -91,7 +91,7 @@ function ToolActivityGroupRow({
           {group.isPending && <Spinner size="var(--icon-sm)" className="tb-spinner" />}
           {!group.isPending && group.hasError && (
             <ToolStatusIcon
-              size="var(--icon-sm)"
+              size="var(--icon-xs)"
               message={t("agentLocal.toolActivity.groupError")}
             />
           )}
