@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, fireEvent } from "@testing-library/react";
 import { ToolBubble } from "../tool-bubble";
 
 afterEach(cleanup);
@@ -52,8 +52,8 @@ vi.mock("../tool-bubble.css", () => ({}));
 vi.mock("@/lib/tool-file-path", () => ({ isFileTool: () => false }));
 
 describe("ToolBubble error details", () => {
-  it("masque le détail brut des erreurs web_fetch", () => {
-    const { container, queryByTestId } = render(
+  it("rend le détail nettoyé des erreurs web_fetch dépliable", () => {
+    const { container, getByRole, queryByTestId } = render(
       <ToolBubble
         tools={[{
           name: "web_fetch",
@@ -67,13 +67,14 @@ describe("ToolBubble error details", () => {
     expect(container.querySelector('[data-testid="status-icon-error"]')).toBeTruthy();
     expect(container.textContent).not.toContain("HTTP 403");
     expect(container.textContent).not.toContain("secret_key");
-    expect(container.querySelector(".tb-toggle")).toBeNull();
-    expect(container.querySelector(".tb-tool-arrow-spacer")).toBeNull();
+    fireEvent.click(getByRole("button", { name: "web_fetch" }));
+    expect(container.textContent).toContain("HTTP 403");
+    expect(container.textContent).not.toContain("abc123456");
     expect(queryByTestId("web-preview")).toBeNull();
   });
 
   it("nettoie le détail affichable des erreurs web_search", () => {
-    const { container } = render(
+    const { container, getByRole } = render(
       <ToolBubble
         tools={[{
           name: "web_search",
@@ -84,6 +85,8 @@ describe("ToolBubble error details", () => {
       />,
     );
 
+    fireEvent.click(getByRole("button", { name: "web_search" }));
+    expect(container.textContent).toContain("SearXNG");
     expect(container.innerHTML).not.toContain("abc123456");
     expect(container.innerHTML).not.toContain("/Users/me/file");
   });

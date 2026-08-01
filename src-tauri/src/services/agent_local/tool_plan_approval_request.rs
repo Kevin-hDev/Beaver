@@ -1,6 +1,7 @@
 use tokio_util::sync::CancellationToken;
 
 use super::stream_events::AgentEventEmitter;
+use super::interactive_choice_gate::InteractiveChoiceRequestError;
 use super::tool_plan_approval::PlanApprovalOutcome;
 use super::types_interactive::{
     AgentInteractiveChoiceKind, AgentInteractiveOption, AgentInteractiveQuestion,
@@ -28,12 +29,26 @@ pub async fn request_approval(
     .await;
     let response = match response {
         Ok(response) => response,
-        Err(err) => return ToolResult::err(err),
+        Err(InteractiveChoiceRequestError::Cancelled) => {
+            return ToolResult::cancelled(InteractiveChoiceRequestError::Cancelled.message())
+        }
+        Err(InteractiveChoiceRequestError::Unavailable) => {
+            return ToolResult::unavailable(
+                "plan_approval_unavailable",
+                InteractiveChoiceRequestError::Unavailable.message(),
+                true,
+            )
+        }
     };
 
     match super::tool_plan_approval::apply_response(session_id, response, on_event).await {
         Ok(outcome) => result_for_outcome(outcome),
-        Err(err) => ToolResult::err(err),
+        Err(error) => ToolResult::internal(
+            "plan_approval_save_failed",
+            error,
+            false,
+        )
+        .with_error_hint("Vérifier si le plan a déjà été validé avant de recommencer."),
     }
 }
 

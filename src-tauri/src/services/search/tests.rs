@@ -25,7 +25,7 @@ fn failure_message_keeps_causes() {
 #[tokio::test]
 async fn configured_providers_fallback_until_success() {
     let mut calls = Vec::new();
-    let (configured, failures, result) = try_configured_providers(
+    let (configured, succeeded, failures, result) = try_configured_providers(
         "query",
         |_| true,
         |provider, _| {
@@ -46,6 +46,7 @@ async fn configured_providers_fallback_until_success() {
     .await;
 
     assert!(configured);
+    assert!(succeeded);
     assert_eq!(calls, PROVIDER_ORDER);
     assert!(failures
         .iter()
@@ -58,10 +59,11 @@ async fn configured_providers_fallback_until_success() {
 
 #[tokio::test]
 async fn no_configured_provider_skips_provider_calls() {
-    let (configured, failures, result) =
+    let (configured, succeeded, failures, result) =
         try_configured_providers("query", |_| false, |_, _| async { Ok(Vec::new()) }).await;
 
     assert!(!configured);
+    assert!(!succeeded);
     assert!(failures.is_empty());
     assert!(result.is_none());
 }

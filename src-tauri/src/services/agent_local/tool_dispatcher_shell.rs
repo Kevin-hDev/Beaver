@@ -4,6 +4,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::subagent_tool_profile::SubagentToolProfile;
 use super::tool_bash_progress::ShellProgress;
+use super::tool_result_contract::ToolErrorCategory;
 use super::types_tools::{ShellOutput, ToolResult};
 
 pub async fn dispatch(
@@ -24,9 +25,16 @@ pub async fn dispatch(
             .map(|(output, command)| {
                 to_tool_result(output).with_display_summary(command.as_str())
             }),
-        _ => return ToolResult::err("Outil shell inconnu."),
+        _ => {
+            return ToolResult::error(
+                "Outil shell inconnu.",
+                "unknown_shell_tool",
+                ToolErrorCategory::Validation,
+                false,
+            )
+        }
     };
-    execution.unwrap_or_else(ToolResult::err)
+    execution.unwrap_or_else(super::tool_dispatcher_shell_error::from_message)
 }
 
 async fn execute_command(
@@ -86,11 +94,54 @@ fn yield_time_ms(args: &Value) -> Option<u64> {
 
 fn to_tool_result(output: ShellOutput) -> ToolResult {
     let mut content = render_streams(&output.stdout, &output.stderr);
+    if !output.running && !output.stopped && output.exit_code > 0 {
+        append_note(&mut content, &format!("[Code de sortie: {}]", output.exit_code));
+    }
+    let mut result = if output.running {
+        ToolResult::running(content)
+    } else if output.stopped {
+        ToolResult::stopped(content)
+    } else if output.cancelled {
+        ToolResult::cancelled(content)
+    } else if output.blocked {
+        ToolResult::error(
+            content,
+            "shell_command_blocked",
+            ToolErrorCategory::Permission,
+            false,
+        )
+    } else if output.timed_out {
+        ToolResult::error(
+            content,
+            "shell_timeout",
+            ToolErrorCategory::Timeout,
+            false,
+        )
+        .with_error_hint(
+            "Vérifier l'état du projet avant de relancer : la commande a pu effectuer une partie de son travail.",
+        )
+    } else if output.exit_code == 0 {
+        ToolResult::ok(content)
+    } else if output.exit_code > 0 {
+        ToolResult::error(
+            content,
+            "shell_exit_nonzero",
+            ToolErrorCategory::Execution,
+            false,
+        )
+    } else {
+        ToolResult::error(
+            content,
+            "shell_execution_failed",
+            ToolErrorCategory::Execution,
+            false,
+        )
+        .with_error_hint(
+            "Vérifier l'état du projet avant de relancer : la commande a pu modifier des fichiers.",
+        )
+    };
     if output.tracking_incomplete {
-        append_warning(
-            &mut content,
-            "Le suivi des fichiers modifiés est incomplet.",
-        );
+        result = result.with_warning("Le suivi des fichiers modifiés est incomplet.");
     }
     if output.output_incomplete {
         let warning = if output.exit_code == 0 {
@@ -98,24 +149,19 @@ fn to_tool_result(output: ShellOutput) -> ToolResult {
         } else {
             "La commande est terminée, mais un processus détaché conserve les sorties ouvertes."
         };
-        append_warning(&mut content, warning);
+        result = result.with_warning(warning);
     }
-    let result = if output.running || output.stopped || output.exit_code == 0 {
-        ToolResult::ok(content)
-    } else {
-        ToolResult::err(content)
-    };
+    result.mark_truncated(output.output_truncated);
     result
         .with_affected_paths(output.affected_paths)
         .with_file_changes(output.file_changes)
 }
 
-fn append_warning(content: &mut String, warning: &str) {
+fn append_note(content: &mut String, note: &str) {
     if !content.is_empty() {
         content.push_str("\n\n");
     }
-    content.push_str("[Avertissement Beaver] ");
-    content.push_str(warning);
+    content.push_str(note);
 }
 
 fn render_streams(stdout: &str, stderr: &str) -> String {

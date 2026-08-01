@@ -15,17 +15,20 @@ pub(super) async fn run_with_cancel(
     cancel: CancellationToken,
 ) -> ToolResult {
     let Some(prompt) = valid_prompt(args) else {
-        return ToolResult::err("Instruction sous-agent invalide.");
+        return ToolResult::validation(
+            "subagent_instruction_invalid",
+            "Instruction sous-agent invalide.",
+        );
     };
     let Some(child_id) = valid_child_id(args) else {
-        return ToolResult::err("Sous-agent introuvable.");
+        return ToolResult::validation("subagent_id_invalid", "Sous-agent introuvable.");
     };
     let payload = {
         let lock = super::session_store::lock_session(child_id).await;
         let _guard = lock.lock().await;
         let Ok(mut child) = super::tool_subagent_control::owned_child_by_id(child_id, parent_id).await
         else {
-            return ToolResult::err("Sous-agent introuvable.");
+            return ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.");
         };
         let active_run = super::subagent_registry::active_run_for_child(&child.id).await;
         if let Some(active) = active_run.as_ref().filter(|run| {
@@ -76,7 +79,14 @@ async fn enqueue_live(child: &mut AgentSession, prompt: &str, execution_id: &str
                 Ok(()) => {
                     ToolResult::ok("Instruction ajoutée à la file du sous-agent.".to_string())
                 }
-                Err(_) => ToolResult::err("Sous-agent indisponible ou limite atteinte."),
+                Err(_) => ToolResult::internal(
+                    "subagent_instruction_save_failed",
+                    "Sous-agent indisponible ou limite atteinte.",
+                    false,
+                )
+                .with_error_hint(
+                    "Relire l'état du sous-agent avant d'ajouter une nouvelle instruction.",
+                ),
             }
         }
         Err(result) => result,
@@ -88,7 +98,8 @@ fn duplicate_result() -> ToolResult {
 }
 
 fn redeploy_required() -> ToolResult {
-    ToolResult::err(
+    ToolResult::conflict(
+        "subagent_redeploy_required",
         "Sous-agent terminé. Utilisez delegate_task avec subagent_id pour le redéployer.",
     )
 }

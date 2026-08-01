@@ -1,8 +1,6 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::tool_dispatcher;
 use crate::services::agent_local::tool_hooks::{run_post_hooks, run_pre_hooks, PreHookDecision};
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::write_guard::WriteGuard;
 use tokio_util::sync::CancellationToken;
 
@@ -67,13 +65,13 @@ pub async fn run_sequential(
         };
         match run_pre_hooks(name, args) {
             PreHookDecision::Deny(msg) => {
-                let tr = tool_dispatcher::enrich_error(ToolResult::err(msg), name);
+                let tr = super::tool_executor_errors::permission(msg, "tool_hook_denied");
                 super::tool_executor_diagnostics::completed(
                     session_id,
                     request_id,
                     name,
                     arg_summary,
-                    true,
+                    &tr,
                 )
                 .await;
                 outcome.merge(push_and_compress(
@@ -94,13 +92,13 @@ pub async fn run_sequential(
         }
 
         if let Err(msg) = check_write_guard(name, args, working_dir, write_guard) {
-            let tr = tool_dispatcher::enrich_error(ToolResult::err(msg), name);
+            let tr = super::tool_executor_errors::permission(msg, "write_guard_rejected");
             super::tool_executor_diagnostics::completed(
                 session_id,
                 request_id,
                 name,
                 arg_summary,
-                true,
+                &tr,
             )
             .await;
             outcome.merge(push_and_compress(
@@ -128,7 +126,7 @@ pub async fn run_sequential(
             )
             .await
             {
-                tool_dispatcher::enrich_error(ToolResult::err(msg), name)
+                super::tool_executor_errors::permission(msg, "tool_not_allowed_in_plan")
             } else {
                 dispatch_or_interactive(
                     on_event,
@@ -142,7 +140,7 @@ pub async fn run_sequential(
                 .await
             }
         } else {
-            ToolResult::err("L'utilisateur a refusé cette action.")
+            super::tool_executor_errors::denied_or_cancelled(&cancel)
         };
 
         let tr = run_post_hooks(name, args, tr);
@@ -153,7 +151,7 @@ pub async fn run_sequential(
             request_id,
             name,
             arg_summary,
-            tr.is_error,
+            &tr,
         )
         .await;
         outcome.merge(push_and_compress(

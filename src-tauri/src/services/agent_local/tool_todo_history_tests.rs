@@ -68,6 +68,26 @@ fn pause_and_resume_restore_active_todos() {
 }
 
 #[test]
+fn missing_resume_does_not_pause_the_current_run() {
+    let mut session = test_session();
+    let todos = parse_todos(&json!({
+        "todos": [{"content": "Conserver le travail actif", "status": "in_progress"}]
+    }))
+    .unwrap();
+    super::super::tool_todo_state::apply_todos_to_session(&mut session, todos);
+    let active_id = session.active_todo_run_id.clone().unwrap();
+
+    let result = super::super::tool_todo_state::resume_run(
+        &mut session,
+        &uuid::Uuid::new_v4().to_string(),
+    );
+
+    assert!(result.is_err());
+    assert_eq!(session.active_todo_run_id.as_deref(), Some(active_id.as_str()));
+    assert_eq!(session.todo_runs[0].status, AgentTodoRunStatus::Active);
+}
+
+#[test]
 fn delete_paused_run_removes_it_from_history() {
     let mut session = test_session();
     let first = parse_todos(&json!({
@@ -144,8 +164,9 @@ fn delete_active_arg_guides_when_only_paused_runs_exist() {
 
     let err = super::delete_run_for_args(&mut session, &json!({"active": true})).unwrap_err();
 
-    assert!(err.contains("aucune todo active"));
-    assert!(err.contains("todo list(s) en pause"));
-    assert!(err.contains(&paused_id));
-    assert!(err.contains("todo_history"));
+    assert!(err.content.contains("aucune todo active"));
+    assert!(err.content.contains("todo list(s) en pause"));
+    assert!(err.content.contains(&paused_id));
+    assert!(err.content.contains("todo_history"));
+    assert_eq!(err.error.unwrap().code.as_ref(), "todo_active_missing");
 }

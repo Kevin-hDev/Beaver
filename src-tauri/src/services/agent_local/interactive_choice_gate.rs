@@ -26,6 +26,21 @@ pub enum InteractiveChoiceResponse {
     Dismissed,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InteractiveChoiceRequestError {
+    Cancelled,
+    Unavailable,
+}
+
+impl InteractiveChoiceRequestError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::Cancelled => CHOICE_CANCELLED,
+            Self::Unavailable => CHOICE_UNAVAILABLE,
+        }
+    }
+}
+
 static PENDING: LazyLock<Mutex<HashMap<String, PendingChoice>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
@@ -35,13 +50,13 @@ pub async fn request(
     kind: AgentInteractiveChoiceKind,
     questions: Vec<AgentInteractiveQuestion>,
     cancel: CancellationToken,
-) -> Result<InteractiveChoiceResponse, String> {
+) -> Result<InteractiveChoiceResponse, InteractiveChoiceRequestError> {
     let id = uuid::Uuid::new_v4().to_string();
     let (tx, rx) = oneshot::channel();
     {
         let mut pending = PENDING.lock().await;
         if pending.len() >= MAX_PENDING {
-            return Err(CHOICE_UNAVAILABLE.into());
+            return Err(InteractiveChoiceRequestError::Unavailable);
         }
         pending.insert(
             id.clone(),
@@ -61,10 +76,10 @@ pub async fn request(
     );
 
     tokio::select! {
-        res = rx => res.map_err(|_| CHOICE_CANCELLED.to_string()),
+        res = rx => res.map_err(|_| InteractiveChoiceRequestError::Cancelled),
         _ = cancel.cancelled() => {
             PENDING.lock().await.remove(&id);
-            Err(CHOICE_CANCELLED.into())
+            Err(InteractiveChoiceRequestError::Cancelled)
         }
     }
 }

@@ -129,7 +129,10 @@ async fn call_mcp_tool(params: &Value) -> Result<CoreResponse, ()> {
     .await
     .map_err(|_| ())?
     .map_err(|_| ())?;
-    Ok(CoreResponse::Json(Value::String(result)))
+    if result.is_error {
+        return Err(());
+    }
+    Ok(CoreResponse::Json(Value::String(result.content)))
 }
 
 fn string_param<'a>(params: &'a Value, key: &str) -> Result<&'a str, ()> {

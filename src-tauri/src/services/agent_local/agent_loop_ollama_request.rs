@@ -49,6 +49,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.tools,
         "ollama",
     )?;
+    super::context_budget::record_repairs(&report, params.session_id, params.request_id).await;
     let input_tokens = super::context_usage_runtime::emit_input(
         params.on_event,
         report.estimated_tokens,

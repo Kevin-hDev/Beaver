@@ -1,4 +1,5 @@
 use super::types_tools::ToolResult;
+use super::tool_result_contract::ToolErrorCategory;
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -36,22 +37,21 @@ pub async fn dispatch(
             )
             .await
             {
-                Ok((change, patch, truncated)) => ToolResult {
-                    content: json!({
+                Ok((change, patch, truncated)) => {
+                    let mut result = ToolResult::ok(json!({
                         "change": change,
                         "patch": patch,
                         "patch_truncated": truncated
                     })
-                    .to_string(),
-                    is_error: false,
-                    truncated,
-                    display_summary: None,
-                    affected_paths: Vec::new(),
-                    file_changes: Vec::new(),
-                    start_line: None,
-                    follow_up: None,
-                },
-                Err(_) => unavailable(),
+                    .to_string());
+                    result.mark_truncated(truncated);
+                    result
+                }
+                Err(error) => change_failure(
+                    error,
+                    "Inspection du changement sous-agent impossible.",
+                    true,
+                ),
             }
         }
         "apply_subagent_changes" => action_result(
@@ -80,34 +80,111 @@ fn action_result(
                 .collect();
             ToolResult::ok(json!({ "change": change }).to_string()).with_affected_paths(paths)
         }
-        Err(_) => ToolResult::err(error),
+        Err(cause) => change_failure(cause, error, false),
     }
 }
 
 fn id_arg<'a>(args: &'a Value, key: &str) -> Result<&'a str, ToolResult> {
-    let value = args[key].as_str().ok_or_else(unavailable)?;
-    super::types_subagent_change::validate_uuid(value).map_err(|_| unavailable())?;
+    let value = args[key].as_str().ok_or_else(invalid_id)?;
+    super::types_subagent_change::validate_uuid(value).map_err(|_| invalid_id())?;
     Ok(value)
 }
 
 fn unavailable() -> ToolResult {
-    ToolResult::err("Changement sous-agent indisponible.")
+    ToolResult::error(
+        "Changement sous-agent indisponible.",
+        "subagent_change_unavailable",
+        ToolErrorCategory::NotFound,
+        false,
+    )
+}
+
+fn invalid_id() -> ToolResult {
+    ToolResult::error(
+        "Identifiant de changement sous-agent invalide.",
+        "invalid_subagent_change_id",
+        ToolErrorCategory::Validation,
+        false,
+    )
+}
+
+fn change_failure(cause: String, fallback: &str, read_only: bool) -> ToolResult {
+    let lower = cause.to_lowercase();
+    if lower.contains("conflit") {
+        return ToolResult::error(
+            fallback,
+            "subagent_change_conflict",
+            ToolErrorCategory::Conflict,
+            false,
+        )
+        .with_error_hint("Inspecter le changement et résoudre le conflit avant de poursuivre.");
+    }
+    if lower.contains("branche cible incompatible") {
+        return ToolResult::error(
+            fallback,
+            "subagent_target_branch_changed",
+            ToolErrorCategory::Conflict,
+            false,
+        )
+        .with_error_hint("Revenir sur la branche cible du changement ou recréer celui-ci.");
+    }
+    if lower.contains("non prêt") || lower.contains("non abandonnable") {
+        return ToolResult::error(
+            fallback,
+            "subagent_change_state_conflict",
+            ToolErrorCategory::Conflict,
+            false,
+        )
+        .with_error_hint("Inspecter l'état du dépôt parent et du changement avant de réessayer.");
+    }
+    if lower.contains("changement sous-agent indisponible")
+        || lower.contains("projet sous-agent indisponible")
+    {
+        return unavailable();
+    }
+    if lower.contains("restauration") || lower.contains("persistance") {
+        return ToolResult::error(
+            fallback,
+            "subagent_change_recovery_failed",
+            ToolErrorCategory::Internal,
+            false,
+        )
+        .with_error_hint("Inspecter manuellement le dépôt parent avant toute nouvelle opération Git.");
+    }
+    if lower.contains("indisponible") {
+        let result = ToolResult::error(
+            fallback,
+            "subagent_change_dependency_unavailable",
+            ToolErrorCategory::Unavailable,
+            read_only,
+        );
+        return if read_only {
+            result
+        } else {
+            result.with_error_hint(
+                "Inspecter le dépôt parent avant de relancer : l'opération Git a pu être partiellement appliquée.",
+            )
+        };
+    }
+    if lower.contains("trop de projets") || lower.contains("limite") {
+        return ToolResult::error(
+            fallback,
+            "subagent_change_capacity_reached",
+            ToolErrorCategory::Conflict,
+            true,
+        );
+    }
+    ToolResult::error(
+        fallback,
+        "subagent_change_action_failed",
+        ToolErrorCategory::Execution,
+        false,
+    )
+    .with_error_hint(
+        "Inspecter le dépôt parent et le changement avant toute nouvelle opération Git.",
+    )
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{action_result, APPLY_ERROR};
-    use crate::services::agent_local::types_subagent_change::SubagentChangeMeta;
-
-    #[test]
-    fn apply_failure_explains_that_manual_resolution_requires_cleanup() {
-        let result = action_result(
-            Err::<SubagentChangeMeta, _>("conflit".to_string()),
-            APPLY_ERROR,
-        );
-
-        assert!(result.is_error);
-        assert!(result.content.contains("reste non résolu"));
-        assert!(result.content.contains("discard_subagent_changes"));
-    }
-}
+#[path = "tool_subagent_changes_tests.rs"]
+mod tests;

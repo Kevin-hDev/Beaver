@@ -125,7 +125,7 @@ async fn write_session_input(
         }
         _ = tokio::time::sleep(std::time::Duration::from_secs(INPUT_WRITE_TIMEOUT_SECS)) => {
             session.cancel();
-            Err("Ecriture vers le shell interrompue.".to_string())
+            Err("Délai d'écriture vers le shell dépassé.".to_string())
         }
     }
 }
@@ -172,19 +172,19 @@ pub(crate) fn resolve_workdir(
         .map_err(|_| "Le workdir Bash est inaccessible.".to_string())
 }
 
-pub(super) fn truncate_output(output: &str) -> String {
+pub(super) fn truncate_output(output: &str) -> (String, bool) {
     let mut result = String::new();
     for (line_count, line) in output.lines().enumerate() {
         if line_count >= MAX_LINES || result.len() + line.len() > MAX_BYTES {
-            result.push_str("\n... [tronque]");
-            break;
+            result.push_str("\n... [sortie tronquée]");
+            return (result, true);
         }
         if line_count > 0 {
             result.push('\n');
         }
         result.push_str(line);
     }
-    result
+    (result, false)
 }
 
 pub(crate) fn validate_command(command: &str) -> Result<(), String> {

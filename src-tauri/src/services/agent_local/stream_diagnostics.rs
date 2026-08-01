@@ -2,14 +2,13 @@ use chrono::Utc;
 use serde_json::json;
 use uuid::Uuid;
 
-use super::diagnostic_redaction;
 use super::stream_diagnostics_failure as failure;
 use super::stream_diagnostics_support as support;
 use super::stream_diagnostics_tools as diagnostic_tools;
-use super::types_diagnostics::{
-    AgentDiagnosticRun, AgentDiagnosticTool, AgentErrorDiagnosticSummary,
-};
+use super::types_diagnostics::{AgentDiagnosticRun, AgentErrorDiagnosticSummary};
 use super::types_session::AgentSession;
+
+pub use super::stream_diagnostics_tool_record::record_tool;
 
 pub async fn start_request(session_id: &str, generation: u64) -> String {
     let request_id = Uuid::new_v4().to_string();
@@ -48,42 +47,6 @@ pub async fn mark_phase(session_id: &str, request_id: &str, phase: &str, message
         run.safe_summary = Some(support::clip(message));
         run.active_todo = support::active_todo(session);
         support::push_event(run, phase, message, None, None);
-    })
-    .await;
-}
-
-pub async fn record_tool(
-    session_id: &str,
-    request_id: &str,
-    name: &str,
-    status: &str,
-    args: Option<serde_json::Value>,
-    is_error: bool,
-) {
-    let message = format!("Tool {name} {status}");
-    let _ = support::update_run(session_id, request_id, |session, run| {
-        let phase = if status == "completed" {
-            "tool_result"
-        } else {
-            "tool_execution"
-        };
-        run.phase = phase.to_string();
-        run.severity = if is_error { "warning" } else { "info" }.to_string();
-        let tool = AgentDiagnosticTool {
-            name: support::clip(name),
-            status: status.to_string(),
-            args: args.clone().map(diagnostic_redaction::redact_value),
-            is_error,
-        };
-        run.last_tool = Some(tool.clone());
-        run.recent_tools.push(tool);
-        support::trim(
-            &mut run.recent_tools,
-            diagnostic_tools::MAX_DIAGNOSTIC_TOOLS,
-        );
-        run.active_todo = support::active_todo(session);
-        run.safe_summary = Some(support::clip(&message));
-        support::push_event(run, phase, &message, Some(name), None);
     })
     .await;
 }

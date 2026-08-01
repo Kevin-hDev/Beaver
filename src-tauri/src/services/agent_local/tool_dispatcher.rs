@@ -1,5 +1,6 @@
 use crate::services::agent_local::tool_skill_loader;
 use crate::services::agent_local::types_tools::ToolResult;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::{tool_files, tool_glob, tool_grep, tool_web_fetch, tool_web_search};
 use serde_json::Value;
 use std::path::Path;
@@ -10,7 +11,8 @@ pub use crate::services::agent_local::tool_definitions_chat::get_chat_tool_defin
 pub use super::tool_dispatcher_entry::dispatch;
 pub(crate) use super::tool_dispatcher_entry::dispatch_for_mode;
 pub(crate) use super::tool_dispatcher_entry::dispatch_with_progress;
-pub(crate) use super::tool_dispatcher_entry::enrich_error;
+#[cfg(test)]
+pub(crate) use super::tool_dispatcher_error::enrich as enrich_error;
 
 pub(super) async fn dispatch_inner(
     tool_name: &str,
@@ -73,14 +75,14 @@ pub(super) async fn dispatch_inner(
                         .join("\n\n");
                     ToolResult::ok(text)
                 }
-                Err(e) => ToolResult::err(e),
+                Err(error) => super::tool_web_error::search(error),
             }
         }
         "web_fetch" => {
             let url = args["url"].as_str().unwrap_or("");
             match tool_web_fetch::fetch_url(url).await {
                 Ok(content) => ToolResult::ok(content),
-                Err(e) => ToolResult::err(e),
+                Err(error) => super::tool_web_error::fetch(error),
             }
         }
         "search_extension_tools" => {
@@ -91,8 +93,18 @@ pub(super) async fn dispatch_inner(
         "todo_pause" => super::tool_todo::execute_pause(args, session_id).await,
         "todo_resume" => super::tool_todo::execute_resume(args, session_id).await,
         "todo_delete" => super::tool_todo::execute_delete(args, session_id).await,
-        "ask_user_choice" => ToolResult::err("Contexte interactif indisponible."),
-        "planmode" => ToolResult::err("Contexte plan indisponible."),
+        "ask_user_choice" => ToolResult::error(
+            "Contexte interactif indisponible.",
+            "interactive_context_unavailable",
+            ToolErrorCategory::Unavailable,
+            false,
+        ),
+        "planmode" => ToolResult::error(
+            "Contexte plan indisponible.",
+            "plan_context_unavailable",
+            ToolErrorCategory::Unavailable,
+            false,
+        ),
         "agent_diagnostics" => {
             let limit = args
                 .get("limit")
@@ -101,7 +113,12 @@ pub(super) async fn dispatch_inner(
                 .unwrap_or(super::stream_diagnostics_tools::DEFAULT_TOOL_LIMIT);
             match super::stream_diagnostics::diagnostics_text(session_id, limit).await {
                 Ok(text) => ToolResult::ok(text),
-                Err(_) => ToolResult::err("Diagnostics indisponibles."),
+                Err(_) => ToolResult::error(
+                    "Diagnostics indisponibles.",
+                    "diagnostics_unavailable",
+                    ToolErrorCategory::Internal,
+                    true,
+                ),
             }
         }
         "load_skill" => {
@@ -112,13 +129,16 @@ pub(super) async fn dispatch_inner(
                     content = skill.content
                 ))
                 .with_display_summary(skill.name),
-                Err(e) => ToolResult::err(e),
+                Err(error) => super::tool_dispatcher_error::skill_load(error),
             }
         }
         "create_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {
-                return ToolResult::err("Paramètre branch_name requis");
+                return ToolResult::validation(
+                    "branch_name_required",
+                    "Paramètre branch_name requis",
+                );
             }
             match crate::services::git::branch::create_branch(working_dir, branch_name) {
                 Ok(()) => ToolResult::ok(format!(
@@ -126,17 +146,20 @@ pub(super) async fn dispatch_inner(
                     branch_name,
                     working_dir.display()
                 )),
-                Err(e) => ToolResult::err(e.to_string()),
+                Err(error) => super::tool_git_error::create_branch(error),
             }
         }
         "checkout_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {
-                return ToolResult::err("Paramètre branch_name requis");
+                return ToolResult::validation(
+                    "branch_name_required",
+                    "Paramètre branch_name requis",
+                );
             }
             match crate::services::git::branch::checkout_branch(working_dir, branch_name) {
                 Ok(()) => ToolResult::ok(format!("Basculé sur la branche '{}'", branch_name)),
-                Err(e) => ToolResult::err(e.to_string()),
+                Err(error) => super::tool_git_error::checkout_branch(error),
             }
         }
         "delegate_task" => {

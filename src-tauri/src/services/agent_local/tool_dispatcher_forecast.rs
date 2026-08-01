@@ -36,25 +36,57 @@ pub async fn dispatch_forecast(
 
 async fn handle_read(args: &Value) -> ToolResult {
     match args["analysis_id"].as_str() {
-        Some(id) if !id.trim().is_empty() => match storage::load(id.trim()).await {
+        Some(id) if !id.trim().is_empty() => match super::tool_dispatcher_forecast_load::load(id.trim()).await {
             Ok(analysis) => {
                 let offset = args["offset"].as_u64().unwrap_or(0) as usize;
                 let limit = args["limit"].as_u64().unwrap_or(100) as usize;
-                match super::tool_dispatcher_forecast_output::analysis_payload(
+                let truncated =
+                    super::tool_dispatcher_forecast_output::analysis_is_truncated(&analysis);
+                payload_result(super::tool_dispatcher_forecast_output::analysis_payload(
                     &analysis, offset, limit,
-                ) {
-                    Ok(json) => ToolResult::ok(json),
-                    Err(error) => ToolResult::err(error),
-                }
+                ), truncated)
             }
-            Err(error) => ToolResult::err(error),
+            Err(error) => error,
         },
         _ => match storage::list().await {
-            Ok(list) => match super::tool_dispatcher_forecast_output::list_payload(&list) {
-                Ok(json) => ToolResult::ok(json),
-                Err(error) => ToolResult::err(error),
-            },
-            Err(error) => ToolResult::err(error),
+            Ok(list) => payload_result(
+                super::tool_dispatcher_forecast_output::list_payload(&list),
+                super::tool_dispatcher_forecast_output::list_is_truncated(list.len()),
+            ),
+            Err(error) => ToolResult::internal(
+                "forecast_analysis_list_failed",
+                error,
+                true,
+            ),
         },
+    }
+}
+
+fn payload_result(payload: Result<String, String>, truncated: bool) -> ToolResult {
+    match payload {
+        Ok(json) => {
+            let mut result = ToolResult::ok(json);
+            result.mark_truncated(truncated);
+            result
+        }
+        Err(error) => ToolResult::internal(
+            "forecast_result_serialization_failed",
+            error,
+            false,
+        ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::services::agent_local::tool_result_contract::ToolResultStatus;
+
+    #[test]
+    fn compact_payload_is_reported_as_partial() {
+        let result = payload_result(Ok("{}".to_string()), true);
+
+        assert_eq!(result.status, ToolResultStatus::Partial);
+        assert!(result.truncated);
     }
 }

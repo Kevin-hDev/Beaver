@@ -6,14 +6,21 @@ const SUPPORTED_FORMATS: &[&str] = &["jpeg", "jpg", "png", "webp", "gif", "bmp"]
 
 pub async fn read_image(path: &str, working_dir: &Path) -> ToolResult {
     if path.is_empty() {
-        return ToolResult::err("Le paramètre 'path' est requis");
+        return ToolResult::validation("image_path_required", "Le paramètre 'path' est requis");
     }
 
     let resolved = super::tool_office_utils::resolve_path(path, working_dir);
 
     let validated = match validate_read_path(&resolved, working_dir) {
         Ok(p) => p,
-        Err(e) => return ToolResult::err(e),
+        Err(error) => {
+            return super::tool_file_error::path_failure(
+                error,
+                "image_not_found",
+                "image_read_denied",
+                "invalid_image_path",
+            )
+        }
     };
 
     let ext = validated
@@ -23,19 +30,23 @@ pub async fn read_image(path: &str, working_dir: &Path) -> ToolResult {
         .unwrap_or_default();
 
     if !SUPPORTED_FORMATS.contains(&ext.as_str()) {
-        return ToolResult::err(
+        return ToolResult::validation(
+            "image_format_unsupported",
             "Format non supporté. Formats acceptés : jpeg, jpg, png, webp, gif, bmp",
         );
     }
 
     let file_size = match std::fs::metadata(&validated) {
         Ok(m) => m.len(),
-        Err(_) => return ToolResult::err("Impossible de lire le fichier"),
+        Err(error) => return super::tool_file_error::io_failure(error, "image_metadata_failed"),
     };
 
     let (width, height) = match image::image_dimensions(&validated) {
         Ok(dims) => dims,
-        Err(_) => return ToolResult::err("Impossible de lire les dimensions de l'image"),
+        Err(_) => return ToolResult::validation(
+            "image_dimensions_unreadable",
+            "Impossible de lire les dimensions de l'image",
+        ),
     };
 
     let format = normalize_format(&ext);

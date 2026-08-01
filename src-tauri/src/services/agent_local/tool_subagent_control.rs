@@ -17,7 +17,8 @@ pub async fn dispatch(
     stream_cancel: CancellationToken,
 ) -> Option<ToolResult> {
     if is_child_session(parent_id).await {
-        return Some(ToolResult::err(
+        return Some(ToolResult::permission(
+            "nested_subagent_control_forbidden",
             "Les sous-agents ne peuvent pas piloter d'autres sous-agents.",
         ));
     }
@@ -51,7 +52,11 @@ async fn list(parent_id: &str) -> ToolResult {
                 rows.join("\n")
             })
         }
-        Err(_) => ToolResult::err("Sous-agents indisponibles."),
+        Err(_) => ToolResult::unavailable(
+            "subagent_list_unavailable",
+            "Sous-agents indisponibles.",
+            true,
+        ),
     }
 }
 
@@ -66,44 +71,60 @@ async fn get(args: &Value, parent_id: &str) -> ToolResult {
 
 async fn cancel(args: &Value, parent_id: &str) -> ToolResult {
     let Some(child_id) = args["subagent_id"].as_str() else {
-        return ToolResult::err("Sous-agent introuvable.");
+        return ToolResult::validation("subagent_id_required", "Sous-agent introuvable.");
     };
     match super::subagent_cancellation::cancel_owned(child_id, parent_id).await {
         Ok(true) => ToolResult::ok("Sous-agent annulé.".to_string()),
         Ok(false) => ToolResult::ok("Sous-agent déjà terminé.".to_string()),
-        Err(_) => ToolResult::err("Sous-agent indisponible."),
+        Err(_) => ToolResult::internal(
+            "subagent_cancel_failed",
+            "Sous-agent indisponible.",
+            false,
+        )
+        .with_error_hint("Vérifier l'état du sous-agent avant de demander une nouvelle annulation."),
     }
 }
 
 async fn archive(args: &Value, parent_id: &str) -> ToolResult {
     let Some(child_id) = args["subagent_id"].as_str() else {
-        return ToolResult::err("Sous-agent introuvable.");
+        return ToolResult::validation("subagent_id_required", "Sous-agent introuvable.");
     };
     match super::subagent_archive::archive_owned(child_id, parent_id).await {
         Ok(super::subagent_archive::ArchiveOutcome::Archived) => {
             ToolResult::ok("Sous-agent archivé.".to_string())
         }
         Ok(super::subagent_archive::ArchiveOutcome::Active) => {
-            ToolResult::err("Sous-agent encore actif.")
+            ToolResult::conflict("subagent_still_active", "Sous-agent encore actif.")
         }
         Ok(super::subagent_archive::ArchiveOutcome::NotFound) => {
-            ToolResult::err("Sous-agent introuvable.")
+            ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.")
         }
-        Err(_) => ToolResult::err("Sous-agent indisponible."),
+        Err(_) => ToolResult::internal(
+            "subagent_archive_failed",
+            "Sous-agent indisponible.",
+            false,
+        )
+        .with_error_hint("Vérifier l'état du sous-agent avant de demander un nouvel archivage."),
     }
 }
 
 #[cfg(test)]
 fn can_archive_child(has_pending_work: bool) -> Result<(), ToolResult> {
     if has_pending_work {
-        return Err(ToolResult::err("Sous-agent encore actif."));
+        return Err(ToolResult::conflict(
+            "subagent_still_active",
+            "Sous-agent encore actif.",
+        ));
     }
     Ok(())
 }
 
 async fn owned_child(args: &Value, parent_id: &str) -> Result<AgentSession, ToolResult> {
     let Some(id) = args["subagent_id"].as_str() else {
-        return Err(ToolResult::err("Sous-agent introuvable."));
+        return Err(ToolResult::validation(
+            "subagent_id_required",
+            "Sous-agent introuvable.",
+        ));
     };
     owned_child_by_id(id, parent_id).await
 }
@@ -114,9 +135,12 @@ pub(super) async fn owned_child_by_id(
 ) -> Result<AgentSession, ToolResult> {
     let child = super::session_store::get(id)
         .await
-        .map_err(|_| ToolResult::err("Sous-agent introuvable."))?;
+        .map_err(|_| ToolResult::not_found("subagent_not_found", "Sous-agent introuvable."))?;
     if !is_owned_by_parent(&child, parent_id) {
-        return Err(ToolResult::err("Sous-agent introuvable."));
+        return Err(ToolResult::not_found(
+            "subagent_not_found",
+            "Sous-agent introuvable.",
+        ));
     }
     Ok(child)
 }

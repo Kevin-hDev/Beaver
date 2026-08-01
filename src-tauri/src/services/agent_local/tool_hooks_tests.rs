@@ -98,11 +98,34 @@ mod tests {
 
     #[test]
     fn post_hook_passes_through_error() {
-        let result = ToolResult::err("quelque chose a échoué");
+        let result = ToolResult::execution("test_failure", "quelque chose a échoué", false);
         let args = json!({});
         let after = run_post_hooks("bash", &args, result.clone());
         assert!(after.is_error);
         assert_eq!(after.content, result.content);
+    }
+
+    #[test]
+    fn post_hook_normalizes_errors_that_bypassed_the_dispatcher() {
+        let cancelled = run_post_hooks(
+            "ask_user_choice",
+            &json!({}),
+            ToolResult::cancelled("Interaction annulée"),
+        );
+        let invalid = run_post_hooks(
+            "planmode",
+            &json!({}),
+            ToolResult::validation("test_input_invalid", "Paramètre title requis"),
+        );
+
+        assert_eq!(
+            cancelled.status,
+            crate::services::agent_local::tool_result_contract::ToolResultStatus::Cancelled
+        );
+        assert_eq!(
+            invalid.error.unwrap().category,
+            crate::services::agent_local::tool_result_contract::ToolErrorCategory::Validation
+        );
     }
 
     #[test]

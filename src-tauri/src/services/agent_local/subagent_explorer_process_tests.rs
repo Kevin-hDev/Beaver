@@ -21,6 +21,7 @@ async fn cancellation_interrupts_the_direct_process() {
 
     assert_ne!(output.exit_code, 0);
     assert!(!output.timed_out);
+    assert!(output.cancelled);
 }
 
 #[cfg(unix)]
@@ -42,4 +43,5 @@ async fn direct_output_is_bounded() {
     assert_eq!(output.exit_code, 0);
     assert!(output.stdout.len() < MAX_OUTPUT_BYTES);
     assert!(output.stdout.contains("sortie tronquée"));
+    assert!(output.output_truncated);
 }

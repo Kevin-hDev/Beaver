@@ -425,6 +425,22 @@
       "inProgress": "進行中",
       "completed": "完了",
       "processStoppedResult": "プロセスを停止しました。",
+      "resultCancelled": "キャンセルされました。",
+      "resultTruncated": "結果は省略されています。",
+      "resultMissing": "ストリーム終了後のツール結果がありません。",
+      "verifyBeforeRetry": "操作がすでに実行されている可能性があるため、再試行する前に現在の状態を確認してください。",
+      "errorCategories": {
+        "validation": "ツールに送信されたリクエストが無効です。",
+        "permission": "この操作は許可されていません。",
+        "notFound": "要求されたリソースが見つかりませんでした。",
+        "conflict": "現在の状態ではこの操作を実行できません。",
+        "timeout": "ツールが時間内に応答しませんでした。",
+        "cancelled": "操作はキャンセルされました。",
+        "unavailable": "ツールは一時的に利用できません。",
+        "external": "外部サービスにより操作を完了できませんでした。",
+        "execution": "ツールは操作を完了できませんでした。",
+        "internal": "内部エラーにより操作を完了できませんでした。"
+      },
       "toggleDetails": "ツール詳細を表示",
       "groups": {
         "exploration": "探索",

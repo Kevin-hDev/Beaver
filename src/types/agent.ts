@@ -22,6 +22,12 @@ export type {
   ToolCallRequest,
 } from "./agent-message";
 export type {
+  PersistedToolResultMeta,
+  ToolErrorCategory,
+  ToolErrorInfo,
+  ToolResultStatus,
+} from "./agent-tool-result";
+export type {
   AgentPlanPreview,
   AgentPlanRun,
 } from "./agent-plan";

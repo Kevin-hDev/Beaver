@@ -23,18 +23,18 @@ pub fn validate(tool: &str, args: &Value, definition: &Value) -> Result<Value, S
         }
     }
 
-    let mut cleaned = serde_json::Map::with_capacity(properties.len());
     for (name, value) in object {
         let Some(property) = properties.get(name) else {
-            eprintln!("[tool-validate] argument inconnu ignoré : {tool}.{name}");
-            continue;
+            let accepted = properties.keys().cloned().collect::<Vec<_>>().join(", ");
+            return Err(format!(
+                "paramètre '{name}' inconnu pour {tool}; paramètres acceptés: {accepted}"
+            ));
         };
         if !value.is_null() {
             validate_value(name, value, property)?;
         }
-        cleaned.insert(name.clone(), value.clone());
     }
-    Ok(Value::Object(cleaned))
+    Ok(args.clone())
 }
 
 fn validate_value(name: &str, value: &Value, property: &Value) -> Result<(), String> {
@@ -125,9 +125,13 @@ fn validate_children(name: &str, value: &Value, property: &Value) -> Result<(), 
         return Ok(());
     };
     for (child_name, child_value) in object {
-        if let Some(child_schema) = properties.get(child_name) {
-            validate_value(child_name, child_value, child_schema)?;
-        }
+        let Some(child_schema) = properties.get(child_name) else {
+            let accepted = properties.keys().cloned().collect::<Vec<_>>().join(", ");
+            return Err(format!(
+                "paramètre '{name}.{child_name}' inconnu; paramètres acceptés: {accepted}"
+            ));
+        };
+        validate_value(&format!("{name}.{child_name}"), child_value, child_schema)?;
     }
     Ok(())
 }

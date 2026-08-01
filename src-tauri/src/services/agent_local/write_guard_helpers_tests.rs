@@ -144,7 +144,7 @@ fn post_record_write_error_does_not_register() {
     let path = tmp.path();
 
     let args = json!({ "path": path.to_str().unwrap() });
-    let tr = ToolResult::err("échec écriture");
+    let tr = ToolResult::execution("test_write_failure", "échec écriture", false);
     post_record_write(
         "write_file",
         &args,

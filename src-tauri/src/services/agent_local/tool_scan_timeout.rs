@@ -1,4 +1,5 @@
 use crate::services::agent_local::types_tools::ToolResult;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -31,12 +32,22 @@ where
     tokio::select! {
         result = &mut handle => match result {
             Ok(result) => result,
-            Err(err) => ToolResult::err(format!("Erreur interne: {err}")),
+            Err(_) => ToolResult::error(
+                "Le moteur de recherche interne s'est interrompu.",
+                "scan_worker_failed",
+                ToolErrorCategory::Internal,
+                true,
+            ),
         },
         _ = tokio::time::sleep(duration) => {
             cancelled.store(true, Ordering::Relaxed);
             handle.abort();
-            ToolResult::err(format!("Timeout après {}s", duration.as_secs()))
+            ToolResult::error(
+                format!("Timeout après {}s", duration.as_secs()),
+                "scan_timeout",
+                ToolErrorCategory::Timeout,
+                true,
+            )
         }
     }
 }

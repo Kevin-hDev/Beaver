@@ -1,13 +1,26 @@
-import type { ToolActivityRecord, ToolFileChangeRecord, TokenPhase } from "@/types/agent";
+import type {
+  ToolActivityRecord,
+  ToolErrorInfo,
+  ToolFileChangeRecord,
+  ToolResultStatus,
+  TokenPhase,
+} from "@/types/agent";
+import { toolResultForModel } from "@/lib/tool-result-model";
 
 export interface ToolActivity {
   name: string;
   args: Record<string, unknown>;
   domain?: "memory";
+  callIndex?: number;
+  callId?: string;
   result?: string;
   liveOutput?: string;
   liveElapsedMs?: number;
   isError?: boolean;
+  status?: ToolResultStatus;
+  error?: ToolErrorInfo;
+  warnings?: string[];
+  truncated?: boolean;
   /** Résumé lisible fourni par le backend, séparé des arguments techniques. */
   displaySummary?: string;
   /** Chemin absolu résolu côté backend (working_dir + path). Utilisé pour l'affichage. */
@@ -61,6 +74,12 @@ export function toolsToRecords(tools: ToolActivity[]): ToolActivityRecord[] {
       args: a,
       result: t.result ?? t.liveOutput,
       is_error: t.isError,
+      result_meta: t.status ? {
+        status: t.status,
+        error: t.error,
+        warnings: t.warnings,
+        truncated: t.truncated,
+      } : undefined,
       resolved_path: t.resolvedPath,
       affected_paths: t.affectedPaths,
       file_changes: t.fileChanges,
@@ -156,7 +175,7 @@ export function expandSegmentsToChat(
       msgs.push({ role: "assistant", content: seg.content || "", tool_calls: toolCalls });
       for (const tc of toolCalls) {
         const tool = seg.tools[toolCalls.indexOf(tc)];
-        msgs.push({ role: "tool", content: tool.result ?? "", tool_name: tool.name, tool_call_id: tc.id });
+        msgs.push({ role: "tool", content: toolResultForModel(tool), tool_name: tool.name, tool_call_id: tc.id });
       }
     } else if (seg.content) {
       msgs.push({ role: "assistant", content: seg.content });
@@ -178,7 +197,7 @@ function expandTurnFlat(activities: ToolActivityRecord[], content: string): Chat
   for (let i = 0; i < activities.length; i++) {
     const t = activities[i];
     msgs.push({
-      role: "tool", content: t.result ?? "",
+      role: "tool", content: toolResultForModel(t),
       tool_name: t.name, tool_call_id: `restored-${i}`,
     });
   }

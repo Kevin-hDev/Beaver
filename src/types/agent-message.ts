@@ -1,3 +1,5 @@
+import type { PersistedToolResultMeta } from "./agent-tool-result";
+
 export interface AgentMessage {
   id: string;
   role: "user" | "assistant" | "tool";
@@ -34,6 +36,7 @@ export interface ToolActivityRecord {
   args?: Record<string, unknown>;
   result?: string;
   is_error?: boolean;
+  result_meta?: PersistedToolResultMeta;
   content?: string;
   old_text?: string;
   new_text?: string;

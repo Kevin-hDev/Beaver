@@ -8,11 +8,23 @@ import {
   type StreamApplyResult,
 } from "./agent-chat-stream-types";
 import type { AgentMessage, StreamEvent } from "@/types/agent";
+import { cancelledToolError } from "@/lib/tool-result-model";
+import type { ToolErrorInfo, ToolResultStatus } from "@/types/agent";
+import i18n from "@/i18n";
+
+type PendingToolOutcome = "cancelled" | "interrupted" | "missing";
 
 export function finishPartialStream(state: ManagedStreamState): StreamApplyResult {
   return finalizeStream(
-    markPendingToolsCancelled(markUnconfirmedContentAsWork(state)),
+    resolvePendingTools(markUnconfirmedContentAsWork(state), "cancelled"),
     null, state.tps, true, null, false,
+  );
+}
+
+export function finishInterruptedStream(state: ManagedStreamState): StreamApplyResult {
+  return finalizeStream(
+    resolvePendingTools(state, "interrupted"),
+    null, 0, true, null, false,
   );
 }
 
@@ -21,7 +33,8 @@ export function finishStream(
   event: Extract<StreamEvent, { event: "done" }>,
 ) {
   return finalizeStream(
-    state, event.data.evalCount, event.data.finalTps, event.data.tpsEstimated ?? true,
+    resolvePendingTools(state, "missing"),
+    event.data.evalCount, event.data.finalTps, event.data.tpsEstimated ?? true,
     event.data.contextTokens, true,
   );
 }
@@ -105,18 +118,64 @@ function buildAssistant(
   return message;
 }
 
-function markPendingToolsCancelled(state: ManagedStreamState): ManagedStreamState {
-  if (state.currentTools.every((tool) => tool.result)) return state;
+function resolvePendingTools(
+  state: ManagedStreamState,
+  outcome: PendingToolOutcome,
+): ManagedStreamState {
+  const isComplete = (tool: StreamSegment["tools"][number]) =>
+    tool.result !== undefined || tool.isError !== undefined;
+  const resolve = (tools: StreamSegment["tools"]) => tools.map((tool) => {
+    if (isComplete(tool)) return tool;
+    const failure = pendingFailure(outcome);
+    return {
+      ...tool,
+      result: tool.liveOutput ? `${tool.liveOutput}\n\n${failure.message}` : failure.message,
+      isError: true,
+      status: failure.status,
+      error: failure.error,
+      liveOutput: undefined,
+      liveElapsedMs: undefined,
+    };
+  });
+  const completedPending = state.completedSegments.some((segment) =>
+    segment.tools.some((tool) => !isComplete(tool)));
+  const currentPending = state.currentTools.some((tool) => !isComplete(tool));
+  if (!completedPending && !currentPending) return state;
   return {
     ...state,
-    currentTools: state.currentTools.map((tool) => tool.result
-      ? tool
-      : {
-          ...tool,
-          result: tool.liveOutput ? `${tool.liveOutput}\n\nAnnulé.` : "Annulé.",
-          isError: true,
-        }),
+    completedSegments: state.completedSegments.map((segment) => ({
+      ...segment,
+      tools: resolve(segment.tools),
+    })),
+    currentTools: resolve(state.currentTools),
     activeStreamItem: null,
+  };
+}
+
+function pendingFailure(outcome: PendingToolOutcome): {
+  message: string;
+  status: ToolResultStatus;
+  error: ToolErrorInfo;
+} {
+  if (outcome === "cancelled") {
+    return {
+      message: i18n.t("agentLocal.toolActivity.resultCancelled"),
+      status: "cancelled",
+      error: cancelledToolError(),
+    };
+  }
+  const missing = outcome === "missing";
+  return {
+    message: i18n.t(missing
+      ? "agentLocal.toolActivity.resultMissing"
+      : "errors.streamInterrupted"),
+    status: "error",
+    error: {
+      code: missing ? "tool_result_missing" : "tool_result_unavailable",
+      category: missing ? "internal" : "unavailable",
+      retryable: false,
+      hint: i18n.t("agentLocal.toolActivity.verifyBeforeRetry"),
+    },
   };
 }
 

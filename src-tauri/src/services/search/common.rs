@@ -37,12 +37,23 @@ pub async fn ensure_success(
     if resp.status().is_success() {
         return Ok(resp);
     }
+    let status = resp.status();
     let _ = crate::services::secure_http::read_bounded(
         resp,
         crate::services::secure_http::PROVIDER_ERROR_LIMIT,
     )
     .await;
-    Err(format!("{provider}: requête refusée"))
+    Err(rejected_message(provider, status.as_u16()))
+}
+
+fn rejected_message(provider: &str, status: u16) -> String {
+    match status {
+        401 | 403 => format!("{provider}: authentification refusée (HTTP {status})"),
+        408 => format!("{provider}: délai dépassé (HTTP 408)"),
+        429 => format!("{provider}: limite de requêtes atteinte (HTTP 429)"),
+        500..=599 => format!("{provider}: service indisponible (HTTP {status})"),
+        _ => format!("{provider}: requête refusée (HTTP {status})"),
+    }
 }
 
 pub fn make_result(title: &str, url: &str, snippet: &str) -> Option<SearchResult> {
@@ -76,4 +87,16 @@ pub fn truncate(input: &str, max_chars: usize) -> String {
         out.push(c);
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rejected_message;
+
+    #[test]
+    fn rejected_requests_keep_the_actionable_http_class() {
+        assert!(rejected_message("Brave", 401).contains("authentification"));
+        assert!(rejected_message("Brave", 429).contains("limite"));
+        assert!(rejected_message("Brave", 503).contains("indisponible"));
+    }
 }

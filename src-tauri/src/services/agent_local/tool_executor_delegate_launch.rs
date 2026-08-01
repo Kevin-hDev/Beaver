@@ -1,4 +1,5 @@
 use super::tool_hooks::{run_post_hooks, run_pre_hooks, PreHookDecision};
+use super::tool_result_contract::ToolErrorCategory;
 use super::types_tools::ToolResult;
 use serde_json::Value;
 use tokio_util::sync::CancellationToken;
@@ -18,20 +19,29 @@ pub(super) async fn launch(
     )
     .await
     {
-        return Err(super::tool_dispatcher::enrich_error(
-            ToolResult::err(msg),
-            tool,
+        return Err(ToolResult::error(
+            msg,
+            "tool_not_allowed_in_plan",
+            ToolErrorCategory::Permission,
+            false,
         ));
     }
     if super::tool_catalog::is_optional_tool(tool)
         && !super::agent_settings::is_tool_enabled(tool).await
     {
-        return Err(ToolResult::err("Outil désactivé dans les paramètres."));
+        return Err(ToolResult::error(
+            "Outil désactivé dans les paramètres.",
+            "tool_disabled",
+            ToolErrorCategory::Permission,
+            false,
+        ));
     }
     match run_pre_hooks(tool, args) {
-        PreHookDecision::Deny(msg) => Err(super::tool_dispatcher::enrich_error(
-            ToolResult::err(msg),
-            tool,
+        PreHookDecision::Deny(msg) => Err(ToolResult::error(
+            msg,
+            "tool_hook_denied",
+            ToolErrorCategory::Permission,
+            false,
         )),
         PreHookDecision::Allow => {
             super::tool_dispatcher_delegate::spawn_delegate(args, session_id, cancel)

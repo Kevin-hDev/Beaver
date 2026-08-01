@@ -11,14 +11,21 @@ const MAX_EXTRACTED_DOC_CHARS: usize = 1_000_000;
 
 pub async fn read_document(path: &str, _pages: Option<&str>, working_dir: &Path) -> ToolResult {
     if path.is_empty() {
-        return ToolResult::err("Le paramètre 'path' est requis");
+        return ToolResult::validation("document_path_required", "Le paramètre 'path' est requis");
     }
 
     let resolved = super::tool_office_utils::resolve_path(path, working_dir);
 
     let validated = match validate_read_path(&resolved, working_dir) {
         Ok(p) => p,
-        Err(e) => return ToolResult::err(e),
+        Err(error) => {
+            return super::tool_file_error::path_failure(
+                error,
+                "document_not_found",
+                "document_read_denied",
+                "invalid_document_path",
+            )
+        }
     };
 
     let ext = validated
@@ -30,19 +37,25 @@ pub async fn read_document(path: &str, _pages: Option<&str>, working_dir: &Path)
     match ext.as_str() {
         "pdf" => read_pdf(&validated),
         "docx" => read_docx(&validated),
-        _ => ToolResult::err("Format non supporté. Formats acceptés : pdf, docx"),
+        _ => ToolResult::validation(
+            "document_format_unsupported",
+            "Format non supporté. Formats acceptés : pdf, docx",
+        ),
     }
 }
 
 fn read_pdf(path: &Path) -> ToolResult {
     let path_str = match path.to_str() {
         Some(s) => s,
-        None => return ToolResult::err("Chemin invalide"),
+        None => return ToolResult::validation("invalid_document_path", "Chemin invalide"),
     };
 
     let text = match pdf_extract::extract_text(path_str) {
         Ok(t) => t,
-        Err(_) => return ToolResult::err("Impossible de lire le fichier PDF"),
+        Err(_) => return ToolResult::validation(
+            "pdf_content_unreadable",
+            "Impossible de lire le fichier PDF",
+        ),
     };
 
     let char_count = text.chars().count();
@@ -56,26 +69,29 @@ fn read_pdf(path: &Path) -> ToolResult {
 
 fn read_docx(path: &Path) -> ToolResult {
     if let Err(e) = ensure_source_size(path, MAX_DOCX_SOURCE_BYTES, "Document DOCX") {
-        return ToolResult::err(e);
+        return ToolResult::validation("docx_source_invalid", e);
     }
     if let Err(e) = validate_zip_archive(path, "Document DOCX") {
-        return ToolResult::err(e);
+        return ToolResult::validation("docx_archive_invalid", e);
     }
 
     let file = match std::fs::File::open(path) {
         Ok(f) => f,
-        Err(_) => return ToolResult::err("Impossible d'ouvrir le fichier"),
+        Err(error) => return super::tool_file_error::io_failure(error, "document_open_failed"),
     };
 
     let mut archive = match zip::ZipArchive::new(file) {
         Ok(a) => a,
-        Err(_) => return ToolResult::err("Fichier DOCX invalide ou corrompu"),
+        Err(_) => return ToolResult::validation(
+            "docx_archive_invalid",
+            "Fichier DOCX invalide ou corrompu",
+        ),
     };
 
     let xml_content = match archive.by_name("word/document.xml") {
         Ok(mut entry) => {
             if let Err(e) = ensure_zip_entry_safe(&entry, MAX_DOCX_XML_BYTES, "XML DOCX") {
-                return ToolResult::err(e);
+                return ToolResult::validation("docx_xml_invalid", e);
             }
             let mut buf = String::new();
             if entry
@@ -84,19 +100,25 @@ fn read_docx(path: &Path) -> ToolResult {
                 .read_to_string(&mut buf)
                 .is_err()
             {
-                return ToolResult::err("Impossible de lire le contenu du document");
+                return ToolResult::validation(
+                    "docx_content_unreadable",
+                    "Impossible de lire le contenu du document",
+                );
             }
             if buf.len() as u64 > MAX_DOCX_XML_BYTES {
-                return ToolResult::err("XML DOCX trop volumineux");
+                return ToolResult::validation(
+                    "docx_xml_too_large",
+                    "XML DOCX trop volumineux",
+                );
             }
             buf
         }
-        Err(_) => return ToolResult::err("Structure DOCX invalide"),
+        Err(_) => return ToolResult::validation("docx_structure_invalid", "Structure DOCX invalide"),
     };
 
     let text = match extract_text_from_ooxml(&xml_content) {
         Ok(text) => text,
-        Err(e) => return ToolResult::err(e),
+        Err(error) => return ToolResult::validation("docx_xml_invalid", error),
     };
     let char_count = text.chars().count();
     let json = serde_json::json!({

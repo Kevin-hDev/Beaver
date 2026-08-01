@@ -73,12 +73,21 @@ pub(super) fn apply_set_border(
     let sheet = book
         .sheet_by_name_mut(&sheet_name)
         .map_err(|_| "Feuille introuvable")?;
-    let sides = border_sides(op);
+    let sides = super::tool_spreadsheet_border::parse(&op["border_sides"])?
+        .unwrap_or_else(super::tool_spreadsheet_border::BorderSides::all);
     let borders = sheet.style_mut((col, row)).borders_mut();
-    for side in sides {
+    for (enabled, side) in [
+        (sides.top, "top"),
+        (sides.bottom, "bottom"),
+        (sides.left, "left"),
+        (sides.right, "right"),
+    ] {
+        if !enabled {
+            continue;
+        }
         let mut border = umya_spreadsheet::Border::default();
         border.set_border_style(style_name);
-        match side.as_str() {
+        match side {
             "top" => borders.set_top_border(border),
             "bottom" => borders.set_bottom_border(border),
             "left" => borders.set_left_border(border),
@@ -118,17 +127,4 @@ pub(super) fn apply_set_row_height(
         .row_dimension_mut(row)
         .set_height(height);
     Ok(())
-}
-
-fn border_sides(op: &Value) -> Vec<String> {
-    op["border_sides"]
-        .as_array()
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(|value| value.as_str().map(str::to_ascii_lowercase))
-                .take(4)
-                .collect()
-        })
-        .unwrap_or_else(|| vec!["top".into(), "bottom".into(), "left".into(), "right".into()])
 }

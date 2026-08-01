@@ -114,3 +114,55 @@ fn agent_message_validates_memory_tool_metadata() {
         .validate_stream_metadata()
         .is_err());
 }
+
+#[test]
+fn agent_message_validates_structured_tool_results() {
+    let make_message = |status: &str, is_error: bool, code: &str| {
+        serde_json::from_value::<AgentMessage>(serde_json::json!({
+            "id": "m-tool", "role": "assistant", "content": "",
+            "files": [], "timestamp": "2026-07-01T12:00:00Z",
+            "tool_activities": [{
+                "name": "bash", "summary": "false", "result": "failed",
+                "is_error": is_error,
+                "result_meta": {
+                    "status": status,
+                    "error": {
+                        "code": code, "category": "execution", "retryable": false
+                    },
+                    "warnings": [], "truncated": false
+                }
+            }]
+        }))
+        .unwrap()
+    };
+
+    assert!(make_message("error", true, "shell_exit_nonzero")
+        .validate_stream_metadata()
+        .is_ok());
+    assert!(make_message("error", false, "shell_exit_nonzero")
+        .validate_stream_metadata()
+        .is_err());
+    assert!(make_message("error", true, "INVALID CODE")
+        .validate_stream_metadata()
+        .is_err());
+}
+
+#[test]
+fn agent_message_rejects_unsafe_tool_metadata_text() {
+    let message = serde_json::from_value::<AgentMessage>(serde_json::json!({
+        "id": "m-tool", "role": "assistant", "content": "",
+        "files": [], "timestamp": "2026-07-01T12:00:00Z",
+        "tool_activities": [{
+            "name": "grep", "summary": "search", "result": "partial",
+            "is_error": false,
+            "result_meta": {
+                "status": "partial",
+                "warnings": ["safe\u{202e}text"],
+                "truncated": false
+            }
+        }]
+    }))
+    .unwrap();
+
+    assert!(message.validate_stream_metadata().is_err());
+}

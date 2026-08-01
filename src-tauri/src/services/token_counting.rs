@@ -17,6 +17,10 @@ pub fn estimate_chat_tokens_without_reasoning(messages: &[ChatMessage]) -> usize
         .sum()
 }
 
+pub fn estimate_chat_message_tokens_without_reasoning(message: &ChatMessage) -> usize {
+    estimate_chat_message_tokens_with_reasoning(message, false)
+}
+
 pub fn estimate_text_tokens(input: &str) -> usize {
     token_count_from_units(text_units(input))
 }
@@ -106,6 +110,10 @@ pub fn text_units(input: &str) -> usize {
 
 pub fn token_count_from_units(units: usize) -> usize {
     units.div_ceil(UNITS_PER_TOKEN)
+}
+
+pub fn max_text_units(tokens: usize) -> usize {
+    tokens.saturating_mul(UNITS_PER_TOKEN)
 }
 
 fn image_tokens(count: usize) -> usize {

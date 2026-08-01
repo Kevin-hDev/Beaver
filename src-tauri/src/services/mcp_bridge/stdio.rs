@@ -7,7 +7,7 @@ use zeroize::Zeroizing;
 
 use super::identity;
 use super::process_manager::{self, ProcessHandle};
-use super::transport::{next_id, validate_tools, McpToolDef, McpTransport};
+use super::transport::{next_id, validate_tools, McpCallError, McpToolDef, McpTransport};
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(360);
 const MAX_LINE_BYTES: usize = 1_048_576;
@@ -148,8 +148,15 @@ impl McpTransport for StdioTransport {
         validate_tools(tools)
     }
 
-    async fn call_tool(&self, name: &str, args: Value) -> Result<String, String> {
-        let handle = self.ensure_running().await?;
+    async fn call_tool(
+        &self,
+        name: &str,
+        args: Value,
+    ) -> Result<super::transport::McpToolResult, McpCallError> {
+        let handle = self
+            .ensure_running()
+            .await
+            .map_err(|_| McpCallError::Unavailable)?;
         let id = next_id();
 
         let body = serde_json::json!({
@@ -157,7 +164,10 @@ impl McpTransport for StdioTransport {
             "params": { "name": name, "arguments": args }
         });
 
-        let resp = self.send_with_id(&handle, &body, id).await?;
+        let resp = self
+            .send_with_id(&handle, &body, id)
+            .await
+            .map_err(|_| McpCallError::Transport)?;
         super::transport::extract_tool_result(&resp)
     }
 }

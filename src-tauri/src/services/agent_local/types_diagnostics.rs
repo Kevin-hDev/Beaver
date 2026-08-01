@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use super::tool_result_contract::{ToolErrorCategory, ToolResultStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentDiagnosticRun {
@@ -34,6 +35,18 @@ pub struct AgentDiagnosticTool {
     pub args: Option<serde_json::Value>,
     #[serde(default)]
     pub is_error: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result_status: Option<ToolResultStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_category: Option<ToolErrorCategory>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retryable: Option<bool>,
+    #[serde(default)]
+    pub truncated: bool,
+    #[serde(default)]
+    pub warning_count: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

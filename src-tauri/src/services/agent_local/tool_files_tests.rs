@@ -1,4 +1,5 @@
 use crate::services::agent_local::tool_files::{edit_file, read_file, DEFAULT_LIMIT};
+use crate::services::agent_local::tool_result_contract::ToolResultStatus;
 #[cfg(unix)]
 use crate::services::agent_local::tool_files::write_file;
 // MAX_LIMIT est 50_000 — on le réimporte pour les tests de borne
@@ -68,6 +69,8 @@ async fn read_file_offset_limit() {
         result.content.contains("10 ligne(s) restante(s)"),
         "doit indiquer 10 lignes restantes"
     );
+    assert_eq!(result.status, ToolResultStatus::Partial);
+    assert!(result.truncated);
 }
 
 #[tokio::test]
@@ -112,6 +115,8 @@ async fn read_file_default_limit() {
         result.content.contains("offset=2000"),
         "doit indiquer offset=2000 pour la suite"
     );
+    assert_eq!(result.status, ToolResultStatus::Partial);
+    assert!(result.truncated);
 }
 
 #[tokio::test]
@@ -175,7 +180,18 @@ async fn edit_file_returns_a_structured_start_line() {
     let result = edit_file(path.to_str().unwrap(), "seconde", "modifiée", dir.path()).await;
 
     assert!(!result.is_error);
-    assert_eq!(result.start_line, Some(2));
+    assert_eq!(result.start_line(), Some(2));
+}
+
+#[tokio::test]
+async fn read_file_reports_non_utf8_content_as_unsupported_input() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("binary.bin");
+    std::fs::write(&path, [0xff, 0xfe]).unwrap();
+
+    let result = read_file(path.to_str().unwrap(), directory.path(), 0, DEFAULT_LIMIT).await;
+
+    assert_eq!(result.error.unwrap().code.as_ref(), "file_not_utf8");
 }
 
 #[cfg(unix)]

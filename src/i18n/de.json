@@ -425,6 +425,22 @@
       "inProgress": "läuft",
       "completed": "abgeschlossen",
       "processStoppedResult": "Prozess beendet.",
+      "resultCancelled": "Abgebrochen.",
+      "resultTruncated": "Ergebnis gekürzt.",
+      "resultMissing": "Das Werkzeugergebnis fehlt nach dem Ende des Streams.",
+      "verifyBeforeRetry": "Prüfen Sie vor einem erneuten Versuch den Zustand, da die Aktion bereits ausgeführt worden sein könnte.",
+      "errorCategories": {
+        "validation": "Die an das Werkzeug gesendete Anfrage ist ungültig.",
+        "permission": "Dieser Vorgang ist nicht erlaubt.",
+        "notFound": "Die angeforderte Ressource wurde nicht gefunden.",
+        "conflict": "Der aktuelle Zustand verhindert diesen Vorgang.",
+        "timeout": "Das Werkzeug hat nicht rechtzeitig geantwortet.",
+        "cancelled": "Der Vorgang wurde abgebrochen.",
+        "unavailable": "Das Werkzeug ist vorübergehend nicht verfügbar.",
+        "external": "Ein externer Dienst hat den Vorgang verhindert.",
+        "execution": "Das Werkzeug konnte den Vorgang nicht abschließen.",
+        "internal": "Ein interner Fehler hat den Vorgang verhindert."
+      },
       "toggleDetails": "Tool-Details anzeigen",
       "groups": {
         "exploration": "Erkundung",

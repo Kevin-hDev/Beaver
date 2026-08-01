@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn report_distinguishes_loaded_and_omitted_plugins() {
-    let output = render(vec![
+    let result = discovery_result(vec![
         DiscoveryLine {
             plugin_name: "Documents".to_string(),
             status: DiscoveryStatus::Loaded,
@@ -21,10 +21,30 @@ fn report_distinguishes_loaded_and_omitted_plugins() {
         },
     ]);
 
+    let output = &result.content;
     assert!(output.contains("Documents : outils chargés"));
     assert!(output.contains("Large : non chargé"));
     assert!(output.contains("limite de plugins découverts"));
     assert!(output.contains("outils indisponibles dans cette requête"));
+    assert_eq!(
+        result.status,
+        super::super::tool_result_contract::ToolResultStatus::Partial
+    );
+    assert_eq!(result.warnings.len(), 1);
+}
+
+#[test]
+fn fully_loaded_discovery_is_a_clean_success() {
+    let result = discovery_result(vec![DiscoveryLine {
+        plugin_name: "Documents".to_string(),
+        status: DiscoveryStatus::Loaded,
+    }]);
+
+    assert_eq!(
+        result.status,
+        super::super::tool_result_contract::ToolResultStatus::Success
+    );
+    assert!(result.warnings.is_empty());
 }
 
 #[test]

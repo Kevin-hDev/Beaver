@@ -108,6 +108,8 @@ impl<'a> StreamTool<'a> {
             name: name.clone(),
             domain: crate::services::agent_local::memory_tool::event_domain(&name, &arguments),
             arguments: arguments.clone(),
+            tool_call_index: result.tool_calls.len(),
+            tool_call_id: Some(id.clone()),
         });
         result.tool_calls.push((name, arguments));
         result.tool_call_ids.push(id);

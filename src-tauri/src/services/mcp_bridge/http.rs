@@ -5,7 +5,9 @@ use serde_json::Value;
 
 use super::identity;
 use super::response;
-use super::transport::{next_id, validate_tools, McpToolDef, McpTransport};
+use super::transport::{
+    next_id, validate_tools, McpCallError, McpToolDef, McpToolResult, McpTransport,
+};
 use crate::services::secure_http::AuthenticatedClient;
 
 const TIMEOUT: Duration = Duration::from_secs(30);
@@ -40,22 +42,29 @@ impl McpTransport for HttpTransport {
         validate_tools(tools)
     }
 
-    async fn call_tool(&self, name: &str, args: Value) -> Result<String, String> {
-        let token = self.resolve_token().await?;
-        let session_id = initialize(&self.endpoint, token.as_str()).await?;
+    async fn call_tool(&self, name: &str, args: Value) -> Result<McpToolResult, McpCallError> {
+        let token = self
+            .resolve_token()
+            .await
+            .map_err(|_| McpCallError::Unavailable)?;
+        let session_id = initialize(&self.endpoint, token.as_str())
+            .await
+            .map_err(|_| McpCallError::Unavailable)?;
 
         let body = serde_json::json!({
             "jsonrpc": "2.0", "method": "tools/call", "id": next_id(),
             "params": { "name": name, "arguments": args }
         });
 
-        let resp = mcp_post(&self.endpoint, token.as_str(), session_id.as_deref(), &body).await?;
+        let resp = mcp_post(&self.endpoint, token.as_str(), session_id.as_deref(), &body)
+            .await
+            .map_err(|_| McpCallError::Transport)?;
 
         if resp.error.is_some() {
-            return Err("erreur MCP retournée par le connecteur".to_string());
+            return Err(McpCallError::Server);
         }
 
-        let result = resp.result.ok_or("réponse vide du serveur MCP")?;
+        let result = resp.result.ok_or(McpCallError::InvalidResponse)?;
         super::transport::extract_tool_result(&serde_json::json!({ "result": result }))
     }
 }

@@ -31,16 +31,18 @@ function hasPreviewContent(children: ReactNode): boolean {
 export function ToolItem({
   name, summary, icon, displayName, displaySummary, dir, fileName,
   additions, deletions, done, isActive, isError, errorMessage, result,
-  commandPreview, elapsedMs, previewPath, onFilePreview, children,
+  forceResultPreview, commandPreview, elapsedMs, previewPath, onFilePreview, children,
 }: {
   name: string; summary: string; icon?: string; displayName?: string; displaySummary?: string;
   dir?: string; fileName?: string;
   additions?: number; deletions?: number; done: boolean; isActive?: boolean; isError?: boolean; errorMessage?: string;
-  result?: string; commandPreview?: string; elapsedMs?: number; previewPath?: string;
+  result?: string; forceResultPreview?: boolean; commandPreview?: string;
+  elapsedMs?: number; previewPath?: string;
   onFilePreview?: (path: string) => void; children?: ReactNode;
 }) {
   const hasPreview = hasPreviewContent(children);
-  const hasResult = !!result && !isError && !hasPreview && RESULT_PREVIEW_TOOLS.has(name);
+  const hasResult = result !== undefined && result.length > 0
+    && (isError || forceResultPreview || (!hasPreview && RESULT_PREVIEW_TOOLS.has(name)));
   const canToggle = hasPreview || hasResult;
   const showCommandPreview = !!commandPreview && hasResult;
   const { open: isOpen, mounted, toggle, onTransitionEnd } = useCollapsiblePresence();
@@ -135,7 +137,9 @@ export function ToolItem({
               )}
               {hasPreview && children}
               {hasResult && (
-                MARKDOWN_RESULT_TOOLS.has(name) ? (
+                isError ? (
+                  <div className="chat-column-surface tb-result-preview">{result}</div>
+                ) : MARKDOWN_RESULT_TOOLS.has(name) ? (
                   <ToolResultMarkdown content={result} />
                 ) : TEXT_RESULT_TOOLS.has(name) ? (
                   <ToolResultCode content={result} path={summary} />

@@ -1,4 +1,5 @@
 use super::types_tools::ToolResult;
+use super::tool_result_contract::ToolErrorCategory;
 use serde_json::Value;
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
@@ -35,7 +36,18 @@ pub async fn dispatch_with_progress(
     progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
     if chat_mode && !is_chat_tool(tool_name) {
-        return ToolResult::err("Outil indisponible dans ce mode.");
+        return finalize_result(
+            ToolResult::error(
+                "Outil indisponible dans ce mode.",
+                "tool_unavailable_in_mode",
+                ToolErrorCategory::Unavailable,
+                false,
+            ),
+            tool_name,
+            session_id,
+            working_dir,
+        )
+        .await;
     }
     let registered_dynamic =
         !chat_mode && crate::services::extensions::is_dynamic_tool(tool_name);
@@ -43,14 +55,30 @@ pub async fn dispatch_with_progress(
     let active_dynamic = if registered_dynamic {
         match super::extension_session_plugins::is_tool_active(session_id, tool_name).await {
             Ok(active) => active,
-            Err(_) => return ToolResult::err("Extension indisponible."),
+            Err(_) => {
+                return finalize_result(
+                    crate::services::extensions::unavailable_tool_result(),
+                    tool_name,
+                    session_id,
+                    working_dir,
+                )
+                .await
+            }
         }
     } else {
         false
     };
     let dynamic_tool = match dynamic_route(registered_dynamic, active_dynamic, replacement) {
         Ok(dynamic) => dynamic,
-        Err(message) => return ToolResult::err(message),
+        Err(_) => {
+            return finalize_result(
+                crate::services::extensions::unavailable_tool_result(),
+                tool_name,
+                session_id,
+                working_dir,
+            )
+            .await
+        }
     };
     let enabled_by_settings = !super::tool_catalog::is_optional_tool(tool_name)
         || super::agent_settings::is_tool_enabled(tool_name).await;
@@ -59,7 +87,18 @@ pub async fn dispatch_with_progress(
         dynamic_tool,
         replacement,
     ) {
-        return ToolResult::err("Outil désactivé dans les paramètres.");
+        return finalize_result(
+            ToolResult::error(
+                "Outil désactivé dans les paramètres.",
+                "tool_disabled",
+                ToolErrorCategory::Permission,
+                false,
+            ),
+            tool_name,
+            session_id,
+            working_dir,
+        )
+        .await;
     }
     let profile = match super::subagent_tool_guard::validate_for_session(
         session_id,
@@ -70,11 +109,37 @@ pub async fn dispatch_with_progress(
     .await
     {
         Ok(profile) => profile,
-        Err(msg) => return ToolResult::err(msg),
+        Err(msg) => {
+            return finalize_result(
+                ToolResult::error(
+                    msg,
+                    "tool_not_allowed_for_session",
+                    ToolErrorCategory::Permission,
+                    false,
+                ),
+                tool_name,
+                session_id,
+                working_dir,
+            )
+            .await
+        }
     };
     let args = match validate_arguments(dynamic_tool, tool_name, args) {
         Ok(cleaned) => cleaned,
-        Err(msg) => return ToolResult::err(format!("[{tool_name}] {msg}")),
+        Err(msg) => {
+            return finalize_result(
+                ToolResult::error(
+                    format!("[{tool_name}] {msg}"),
+                    "invalid_tool_arguments",
+                    ToolErrorCategory::Validation,
+                    false,
+                ),
+                tool_name,
+                session_id,
+                working_dir,
+            )
+            .await
+        }
     };
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
     let mut result = if dynamic_tool {
@@ -83,7 +148,7 @@ pub async fn dispatch_with_progress(
         }
         crate::services::extensions::dispatch_tool(tool_name, &args, working_dir)
             .await
-            .unwrap_or_else(|| ToolResult::err("Extension indisponible."))
+            .unwrap_or_else(crate::services::extensions::unavailable_tool_result)
     } else {
         match super::memory_tool::dispatch_if_memory(tool_name, &args, working_dir, session_id).await
         {
@@ -103,14 +168,23 @@ pub async fn dispatch_with_progress(
         }
     };
     if let Some(change) = before.and_then(super::tool_file_changes::direct_change) {
-        if result.affected_paths.is_empty() {
-            result.affected_paths.push(change.path.clone());
+        if result.affected_paths().is_empty() {
+            result.affected_paths_mut().push(change.path.clone());
         }
-        result.file_changes.push(change);
+        result.file_changes_mut().push(change);
     }
-    let result = super::tool_result_truncate::truncate_result(result, tool_name, session_id);
-    let result = super::tool_workspace_notice::append(result, working_dir);
-    enrich_error(result, tool_name)
+    finalize_result(result, tool_name, session_id, working_dir).await
+}
+
+pub(super) async fn finalize_result(
+    result: ToolResult,
+    tool_name: &str,
+    session_id: &str,
+    working_dir: &Path,
+) -> ToolResult {
+    let result = super::tool_dispatcher_error::enrich(result, tool_name);
+    let result = super::tool_result_truncate::truncate_result(result, tool_name, session_id).await;
+    super::tool_workspace_notice::append(result, working_dir)
 }
 
 fn dynamic_route(
@@ -137,29 +211,6 @@ fn validate_arguments(dynamic_tool: bool, tool_name: &str, args: &Value) -> Resu
     } else {
         super::tool_validate::validate(tool_name, args)
     }
-}
-
-pub(crate) fn enrich_error(mut result: ToolResult, tool_name: &str) -> ToolResult {
-    if !result.is_error {
-        return result;
-    }
-    let hint = match tool_name {
-        "edit_file" if result.content.contains("non trouvée") => "",
-        "edit_file" if result.content.contains("fois") => {
-            "\n\n[HINT: old_string apparaît plusieurs fois. Ajouter plus de contexte (lignes avant/après) pour rendre la correspondance unique]"
-        }
-        "bash" if result.content.contains("command not found") => {
-            "\n\n[HINT: Commande introuvable. Vérifier l'orthographe ou installer le paquet nécessaire]"
-        }
-        "bash" if result.content.contains("Timeout") => {
-            "\n\n[HINT: Timeout dépassé. Augmenter le paramètre timeout ou utiliser une approche plus efficace]"
-        }
-        _ => "",
-    };
-    if !hint.is_empty() {
-        result.content.push_str(hint);
-    }
-    result
 }
 
 #[cfg(test)]

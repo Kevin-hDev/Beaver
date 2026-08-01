@@ -10,11 +10,11 @@ pub(super) fn append(result: ToolResult, working_dir: &Path) -> ToolResult {
 }
 
 fn append_with_outputs(
-    mut result: ToolResult,
+    result: ToolResult,
     working_dir: &Path,
     configured_outputs: Option<PathBuf>,
 ) -> ToolResult {
-    if result.is_error || result.affected_paths.is_empty() {
+    if result.affected_paths().is_empty() {
         return result;
     }
     let Some(root) = canonical(working_dir, working_dir) else {
@@ -22,7 +22,7 @@ fn append_with_outputs(
     };
     let allowed = allowed_roots(&root, configured_outputs);
     let outside = result
-        .affected_paths
+        .affected_paths()
         .iter()
         .take(super::tool_file_changes::MAX_FILE_CHANGES)
         .filter_map(|path| canonical(Path::new(path), &root))
@@ -33,14 +33,11 @@ fn append_with_outputs(
     let Some(root) = safe_path(&root) else {
         return result;
     };
-    result.content.push_str(
-        "\n\n[WORKSPACE NOTICE: This operation changed files outside the active workspace. \
+    result.with_warning(format!(
+        "WORKSPACE NOTICE: This operation changed files outside the active workspace. \
          Return to the active workspace unless the user explicitly requested another location. \
-         Active workspace: ",
-    );
-    result.content.push_str(root);
-    result.content.push(']');
-    result
+         Active workspace: {root}"
+    ))
 }
 
 fn allowed_roots(working_dir: &Path, configured_outputs: Option<PathBuf>) -> Vec<PathBuf> {

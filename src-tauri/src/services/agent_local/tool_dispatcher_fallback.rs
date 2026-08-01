@@ -43,6 +43,9 @@ pub async fn dispatch(
     .await
     {
         Some(result) => result,
-        None => ToolResult::err(format!("Outil inconnu: {tool_name}")),
+        None => ToolResult::validation(
+            "unknown_tool",
+            format!("Outil inconnu: {tool_name}"),
+        ),
     }
 }

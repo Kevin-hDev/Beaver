@@ -133,6 +133,12 @@ mod tests {
             status: status.to_string(),
             args: None,
             is_error: false,
+            result_status: None,
+            error_code: None,
+            error_category: None,
+            retryable: None,
+            truncated: false,
+            warning_count: 0,
         }
     }
 

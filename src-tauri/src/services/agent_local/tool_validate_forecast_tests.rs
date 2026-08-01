@@ -29,3 +29,28 @@ fn comparison_requires_a_bounded_analysis_id() {
     )
     .is_err());
 }
+
+#[test]
+fn analyze_rejects_unknown_nested_parameters() {
+    let typo = validate(
+        "forecast_analyze",
+        &json!({
+            "analysis_id": "analysis",
+            "action": "scenario_delete",
+            "params": {"scenaro_id": "scenario"}
+        }),
+    )
+    .unwrap_err();
+    assert!(typo.contains("params.scenaro_id"));
+
+    let nested = validate(
+        "forecast_analyze",
+        &json!({
+            "analysis_id": "analysis",
+            "action": "scenario",
+            "params": {"covariate_adjustments": [{"column": "price", "unknown": 1}]}
+        }),
+    )
+    .unwrap_err();
+    assert!(nested.contains("params.covariate_adjustments[0].unknown"));
+}

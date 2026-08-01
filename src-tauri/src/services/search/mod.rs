@@ -48,7 +48,7 @@ const PROVIDER_ORDER: [SearchProvider; 3] = [
 /// Orchestrateur de recherche web — essaie chaque provider dans l'ordre.
 pub async fn run_search(query: &str) -> Result<Vec<SearchResult>, String> {
     let query = common::validate_query(query)?;
-    let (configured, mut failures, provider_result) = try_configured_providers(
+    let (configured, provider_succeeded, mut failures, provider_result) = try_configured_providers(
         &query,
         |provider| api_keys::has_key(provider.id()),
         |provider, query| async move { search_with_provider(provider, &query).await },
@@ -60,8 +60,12 @@ pub async fn run_search(query: &str) -> Result<Vec<SearchResult>, String> {
 
     match crate::services::searxng::search(&query).await {
         Ok(results) if !results.is_empty() => return Ok(results),
-        Ok(_) => failures.push("SearXNG: résultat vide".to_string()),
+        Ok(_) => return Ok(Vec::new()),
         Err(e) => failures.push(common::sanitize_error(&e)),
+    }
+
+    if provider_succeeded {
+        return Ok(Vec::new());
     }
 
     if configured {
@@ -78,7 +82,7 @@ async fn try_configured_providers<HasKey, SearchFn, SearchFut>(
     query: &str,
     has_key: HasKey,
     mut search_fn: SearchFn,
-) -> (bool, Vec<String>, Option<Vec<SearchResult>>)
+) -> (bool, bool, Vec<String>, Option<Vec<SearchResult>>)
 where
     HasKey: Fn(SearchProvider) -> bool,
     SearchFn: FnMut(SearchProvider, String) -> SearchFut,
@@ -86,6 +90,7 @@ where
 {
     let mut failures = Vec::new();
     let mut configured = false;
+    let mut succeeded = false;
 
     for provider in PROVIDER_ORDER {
         if !has_key(provider) {
@@ -93,13 +98,18 @@ where
         }
         configured = true;
         match search_fn(provider, query.to_string()).await {
-            Ok(results) if !results.is_empty() => return (configured, failures, Some(results)),
-            Ok(_) => failures.push(format!("{}: résultat vide", provider.label())),
+            Ok(results) if !results.is_empty() => {
+                return (configured, true, failures, Some(results))
+            }
+            Ok(_) => {
+                succeeded = true;
+                failures.push(format!("{}: résultat vide", provider.label()));
+            }
             Err(e) => failures.push(common::sanitize_error(&e)),
         }
     }
 
-    (configured, failures, None)
+    (configured, succeeded, failures, None)
 }
 
 async fn search_with_provider(

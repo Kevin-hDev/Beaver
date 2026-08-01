@@ -10,7 +10,7 @@ import {
 import { activeItemAfterToolResult, pendingToolIndices, thinkingItem, toolItems } from "./active-stream-item";
 import { applyToolResult } from "./agent-chat-tool-results";
 import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";
-import { finalizeStream, finishStream } from "./agent-chat-stream-finalize";
+import { finishInterruptedStream, finishStream } from "./agent-chat-stream-finalize";
 import { applyContextUsage, applyGeneratedTokenCount } from "./agent-stream-context-usage";
 import { applyToolOutput } from "./agent-chat-stream-tool-output";
 import { applyRetryIndicator } from "./agent-chat-stream-retry";
@@ -65,6 +65,8 @@ export function applyStreamEvent(
       if (isHiddenAgentTool(event.data.name)) break;
       next.currentTools = [...next.currentTools, {
         name: event.data.name, args: event.data.arguments, domain: event.data.domain,
+        callIndex: event.data.toolCallIndex,
+        callId: event.data.toolCallId,
       }];
       next.activeStreamItem = toolItems(pendingToolIndices(next.currentTools));
       break;
@@ -79,20 +81,28 @@ export function applyStreamEvent(
         }
         break;
       }
-      const toolCallIndex = event.data.toolCallIndex ?? -1;
-      next.currentTools = applyToolResult(
+      const applied = applyToolResult(next.currentTools, {
+        name: event.data.name,
+        callIndex: event.data.toolCallIndex ?? -1,
+        callId: event.data.toolCallId,
+        content: event.data.content,
+        isError: event.data.isError,
+        status: event.data.status,
+        error: event.data.error,
+        warnings: event.data.warnings,
+        truncated: event.data.truncated,
+        resolvedPath: event.data.resolvedPath,
+        domain: event.data.domain,
+        affectedPaths: event.data.affectedPaths,
+        fileChanges: event.data.fileChanges,
+        startLine: event.data.startLine,
+        displaySummary: event.data.displaySummary,
+      });
+      next.currentTools = applied.tools;
+      next.activeStreamItem = activeItemAfterToolResult(
         next.currentTools,
-        toolCallIndex,
-        event.data.content,
-        event.data.isError,
-        event.data.resolvedPath,
-        event.data.domain,
-        event.data.affectedPaths,
-        event.data.fileChanges,
-        event.data.startLine,
-        event.data.displaySummary,
+        applied.appliedIndex,
       );
-      next.activeStreamItem = activeItemAfterToolResult(next.currentTools, toolCallIndex);
       next.pendingPermissions = [];
       break;
     }
@@ -148,7 +158,7 @@ export function applyStreamEvent(
       next.error = errorKey ? i18n.t(errorKey) : i18n.t("errors.streamInterrupted");
       next.isConnectionError = (event.data as Record<string, unknown>).isConnection === true;
       next.diagnosticSummary = event.data.diagnostic?.safeSummary;
-      const partial = finalizeStream(next, null, 0, true, null, false);
+      const partial = finishInterruptedStream(next);
       partial.state.error = next.error;
       partial.state.isConnectionError = next.isConnectionError;
       partial.state.diagnosticSummary = next.diagnosticSummary;

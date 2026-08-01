@@ -67,6 +67,10 @@ static DELEGATE_TASK: Schema = &[
 ];
 static SUBAGENT_ID: Schema = &[("subagent_id", Ty::Str, true)];
 static MESSAGE_SUBAGENT: Schema = &[("subagent_id", Ty::Str, true), ("prompt", Ty::Str, true)];
+static SUBAGENT_CHANGE: Schema = &[
+    ("subagent_id", Ty::Str, true),
+    ("change_id", Ty::Str, true),
+];
 static READ_SPREADSHEET: Schema = &[
     ("path", Ty::Str, true),
     ("sheet", Ty::Str, false),
@@ -145,6 +149,9 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "list_subagents" => &[],
         "get_subagent" | "cancel_subagent" | "archive_subagent" => SUBAGENT_ID,
         "message_subagent" => MESSAGE_SUBAGENT,
+        "inspect_subagent_changes" | "apply_subagent_changes" | "discard_subagent_changes" => {
+            SUBAGENT_CHANGE
+        }
         "read_spreadsheet" => READ_SPREADSHEET,
         "read_document" => READ_DOCUMENT,
         "read_image" => READ_IMAGE,

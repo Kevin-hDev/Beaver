@@ -1,5 +1,4 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::tool_dispatcher;
 use crate::services::agent_local::tool_hooks::{run_pre_hooks, PreHookDecision};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_tools::ToolResult;
@@ -76,6 +75,7 @@ pub async fn run_with_parallel_reads(
                     working_dir,
                     cancel.clone(),
                     plan_mode_active,
+                    tool_call_ids,
                 )
                 .await;
                 for output in results {
@@ -152,10 +152,10 @@ pub async fn run_with_parallel_reads(
             }
             match run_pre_hooks(name, args) {
                 PreHookDecision::Deny(msg) => {
-                    let tr = tool_dispatcher::enrich_error(ToolResult::err(msg), name);
+                    let tr = super::tool_executor_errors::permission(msg, "tool_hook_denied");
                     let summary = super::diagnostic_args::summarize(name, args, working_dir);
                     super::tool_executor_diagnostics::completed(
-                        session_id, request_id, name, summary, true,
+                        session_id, request_id, name, summary, &tr,
                     )
                     .await;
                     indexed_results[i] = Some((name.as_str(), tr));

@@ -56,19 +56,20 @@ pub fn resume_run(session: &mut AgentSession, run_id: &str) -> Result<Vec<AgentT
     validate_run_id(run_id)?;
     migrate_legacy_todos(session);
     session.todo_neglect_count = 0;
+    let target_index = session
+        .todo_runs
+        .iter()
+        .position(|run| run.id == run_id)
+        .ok_or_else(|| "todo introuvable".to_string())?;
     let now = Utc::now();
-    if let Some(index) = active_run_index(session) {
+    if let Some(index) = active_run_index(session).filter(|index| *index != target_index) {
         pause_run(
             &mut session.todo_runs[index],
             Some("Todo remplacée".to_string()),
             now,
         );
     }
-    let run = session
-        .todo_runs
-        .iter_mut()
-        .find(|run| run.id == run_id)
-        .ok_or_else(|| "todo introuvable".to_string())?;
+    let run = &mut session.todo_runs[target_index];
     run.status = status_for_todos(&run.todos);
     run.paused_reason = None;
     run.updated_at = now;

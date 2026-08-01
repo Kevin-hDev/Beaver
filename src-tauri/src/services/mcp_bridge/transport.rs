@@ -23,6 +23,31 @@ pub struct McpToolDef {
     pub input_schema: Option<Value>,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct McpToolResult {
+    pub content: String,
+    pub is_error: bool,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum McpCallError {
+    Unavailable,
+    Server,
+    InvalidResponse,
+    Transport,
+}
+
+impl McpCallError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::Unavailable => "service MCP indisponible avant l'appel de l'outil",
+            Self::Server => "erreur MCP retournée par le connecteur",
+            Self::InvalidResponse => "réponse MCP invalide",
+            Self::Transport => "résultat MCP non confirmé après l'appel",
+        }
+    }
+}
+
 fn validate_tool_def(tool: &mut McpToolDef) -> Result<(), String> {
     if tool.name.is_empty()
         || tool.name.len() > MAX_NAME_CHARS
@@ -62,13 +87,18 @@ pub fn validate_tools(mut tools: Vec<McpToolDef>) -> Result<Vec<McpToolDef>, Str
     Ok(tools)
 }
 
-pub fn extract_tool_result(resp: &Value) -> Result<String, String> {
+pub fn extract_tool_result(resp: &Value) -> Result<McpToolResult, McpCallError> {
     if resp.get("error").is_some() {
-        return Err("erreur MCP retournée par le connecteur".to_string());
+        return Err(McpCallError::Server);
     }
 
-    let result = resp.get("result").ok_or("réponse vide du serveur MCP")?;
-    super::schema_limits::validate(result).map_err(|_| "réponse MCP invalide".to_string())?;
+    let result = resp.get("result").ok_or(McpCallError::InvalidResponse)?;
+    super::schema_limits::validate(result).map_err(|_| McpCallError::InvalidResponse)?;
+    let is_error = match result.get("isError") {
+        None => false,
+        Some(Value::Bool(value)) => *value,
+        Some(_) => return Err(McpCallError::InvalidResponse),
+    };
 
     if let Some(content) = result.get("content").and_then(|c| c.as_array()) {
         let texts: Vec<&str> = content
@@ -76,15 +106,21 @@ pub fn extract_tool_result(resp: &Value) -> Result<String, String> {
             .filter_map(|item| item.get("text").and_then(|t| t.as_str()))
             .collect();
         if !texts.is_empty() {
-            return Ok(texts.join("\n"));
+            return Ok(McpToolResult {
+                content: texts.join("\n"),
+                is_error,
+            });
         }
     }
 
-    Ok(serde_json::to_string_pretty(result).unwrap_or_default())
+    Ok(McpToolResult {
+        content: serde_json::to_string_pretty(result).unwrap_or_default(),
+        is_error,
+    })
 }
 
 #[async_trait]
 pub trait McpTransport: Send + Sync {
     async fn list_tools(&self) -> Result<Vec<McpToolDef>, String>;
-    async fn call_tool(&self, name: &str, args: Value) -> Result<String, String>;
+    async fn call_tool(&self, name: &str, args: Value) -> Result<McpToolResult, McpCallError>;
 }

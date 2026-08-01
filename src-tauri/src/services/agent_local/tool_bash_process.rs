@@ -48,9 +48,9 @@ pub async fn spawn(request: SpawnRequest<'_>) -> Result<Arc<ShellSession>, Strin
     let store = ShellOutputStore::prepare(request.owner_session_id)?;
     let mut child = match command.spawn() {
         Ok(child) => child,
-        Err(_) => {
+        Err(error) => {
             let _ = store.finalize(false).await;
-            return Err("Lancement du shell impossible.".to_string());
+            return Err(super::tool_bash_spawn_error::message(error));
         }
     };
     let Some(pid) = child.id() else {

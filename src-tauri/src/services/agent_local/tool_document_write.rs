@@ -36,14 +36,21 @@ const DOCUMENT_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8" standalo
 
 pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> ToolResult {
     if path.is_empty() {
-        return ToolResult::err("Le paramètre 'path' est requis");
+        return ToolResult::validation("document_path_required", "Le paramètre 'path' est requis");
     }
 
     let resolved = super::tool_office_utils::resolve_path(path, working_dir);
 
     let validated = match validate_write_path(&resolved) {
         Ok(p) => p,
-        Err(e) => return ToolResult::err(e),
+        Err(error) => {
+            return super::tool_file_error::path_failure(
+                error,
+                "document_parent_not_found",
+                "document_write_denied",
+                "invalid_document_path",
+            )
+        }
     };
 
     let ext = validated
@@ -53,19 +60,40 @@ pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> 
         .unwrap_or_default();
 
     if ext != "docx" {
-        return ToolResult::err("Seul le format .docx est supporté");
+        return ToolResult::validation(
+            "document_format_unsupported",
+            "Seul le format .docx est supporté",
+        );
     }
 
-    let blocks = match super::tool_spreadsheet_write::coerce_to_array(content) {
-        Some(arr) => arr,
-        None => return ToolResult::err("Le paramètre 'content' doit être un tableau de blocs"),
+    let blocks = match super::tool_office_array::coerce(
+        content,
+        super::tool_office_limits::MAX_DOCUMENT_BLOCKS,
+    ) {
+        Ok(blocks) => blocks,
+        Err(super::tool_office_array::ArrayInputError::Invalid) => return ToolResult::validation(
+            "document_content_invalid",
+            "Le paramètre 'content' doit être un tableau de blocs",
+        ),
+        Err(super::tool_office_array::ArrayInputError::TooMany) => {
+            return ToolResult::validation(
+                "document_block_limit_exceeded",
+                format!(
+                    "Trop de blocs (maximum {})",
+                    super::tool_office_limits::MAX_DOCUMENT_BLOCKS
+                ),
+            )
+        }
     };
 
     let block_count = blocks.len();
 
     let document_xml = match super::tool_document_write_xml::build_document_xml(&blocks) {
         Ok(xml) => xml,
-        Err(e) => return ToolResult::err(format!("Erreur génération XML: {e}")),
+        Err(error) => return ToolResult::validation(
+            "document_content_invalid",
+            format!("Erreur génération XML: {error}"),
+        ),
     };
 
     match write_docx_zip(&validated, &document_xml) {
@@ -74,7 +102,10 @@ pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> 
             validated.display(),
             block_count
         )),
-        Err(e) => ToolResult::err(e),
+        Err(error) => ToolResult::execution("document_write_failed", error, false)
+            .with_error_hint(
+                "Vérifier le fichier cible avant toute nouvelle écriture : il peut être partiel.",
+            ),
     }
 }
 

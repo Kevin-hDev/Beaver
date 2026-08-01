@@ -37,7 +37,7 @@ pub async fn collect_eager_results(
                 &name,
                 "started",
                 arg_summary.clone(),
-                false,
+                None,
             )
             .await;
             let result = tool_dispatcher::dispatch_for_mode(
@@ -55,7 +55,7 @@ pub async fn collect_eager_results(
                 &name,
                 "completed",
                 arg_summary,
-                result.is_error,
+                Some(&result),
             )
             .await;
             (idx, result)

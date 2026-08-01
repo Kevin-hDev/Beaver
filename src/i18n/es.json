@@ -425,6 +425,22 @@
       "inProgress": "en curso",
       "completed": "completado",
       "processStoppedResult": "Proceso detenido.",
+      "resultCancelled": "Cancelado.",
+      "resultTruncated": "Resultado truncado.",
+      "resultMissing": "Falta el resultado de la herramienta tras finalizar el flujo.",
+      "verifyBeforeRetry": "Comprueba el estado resultante antes de reintentar, ya que la acción podría haberse ejecutado.",
+      "errorCategories": {
+        "validation": "La solicitud enviada a la herramienta no es válida.",
+        "permission": "Esta operación no está permitida.",
+        "notFound": "No se encontró el recurso solicitado.",
+        "conflict": "El estado actual impide esta operación.",
+        "timeout": "La herramienta no respondió a tiempo.",
+        "cancelled": "La operación fue cancelada.",
+        "unavailable": "La herramienta no está disponible temporalmente.",
+        "external": "Un servicio externo impidió la operación.",
+        "execution": "La herramienta no pudo completar la operación.",
+        "internal": "Un error interno impidió la operación."
+      },
       "toggleDetails": "Mostrar detalles de herramientas",
       "groups": {
         "exploration": "Exploración",

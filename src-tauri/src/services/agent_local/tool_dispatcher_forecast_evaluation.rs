@@ -1,17 +1,23 @@
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::forecast::evaluation::BacktestRequest;
 use crate::services::forecast::sidecar::ChronosSidecar;
-use crate::services::forecast::storage;
 use serde_json::Value;
 use tauri::Manager;
 
 pub async fn backtest(args: &Value) -> ToolResult {
     let request: BacktestRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
-        Err(_) => return ToolResult::err("Paramètres de backtest invalides"),
+        Err(_) => return ToolResult::validation(
+            "forecast_backtest_request_invalid",
+            "Paramètres de backtest invalides",
+        ),
     };
     let Some(app) = super::app_handle_global::get() else {
-        return ToolResult::err("Service de backtest indisponible");
+        return ToolResult::unavailable(
+            "forecast_backtest_unavailable",
+            "Service de backtest indisponible",
+            true,
+        );
     };
     let chronos = app.state::<ChronosSidecar>();
     match crate::services::forecast::evaluation::run(request, chronos.inner()).await {
@@ -19,23 +25,36 @@ pub async fn backtest(args: &Value) -> ToolResult {
             crate::services::forecast::events::emit_updated(app, &analysis);
             comparison_payload(&analysis)
         }
-        Err(error) => ToolResult::err(error),
+        Err(error) => ToolResult::external(
+            "forecast_backtest_failed",
+            error,
+            false,
+        )
+        .with_error_hint(
+            "Relire l'analyse avant de relancer : le backtest peut avoir été enregistré.",
+        ),
     }
 }
 
 pub async fn compare(args: &Value) -> ToolResult {
     let Some(id) = args["analysis_id"].as_str().filter(|id| !id.trim().is_empty()) else {
-        return ToolResult::err("Identifiant d'analyse requis");
+        return ToolResult::validation(
+            "forecast_analysis_id_required",
+            "Identifiant d'analyse requis",
+        );
     };
-    match storage::load(id.trim()).await {
+    match super::tool_dispatcher_forecast_load::load(id.trim()).await {
         Ok(analysis) => comparison_payload(&analysis),
-        Err(error) => ToolResult::err(error),
+        Err(error) => error,
     }
 }
 
 fn comparison_payload(analysis: &crate::services::forecast::types::ForecastResult) -> ToolResult {
     let Some(evaluation) = &analysis.evaluation else {
-        return ToolResult::err("Aucun backtest comparable pour cette analyse");
+        return ToolResult::conflict(
+            "forecast_backtest_missing",
+            "Aucun backtest comparable pour cette analyse",
+        );
     };
     let mut results: Vec<_> = evaluation.results.iter().collect();
     results.sort_by_key(|result| result.rank.unwrap_or(usize::MAX));
@@ -99,7 +118,11 @@ fn comparison_payload(analysis: &crate::services::forecast::types::ForecastResul
     });
     match serde_json::to_string(&payload) {
         Ok(json) => ToolResult::ok(json),
-        Err(_) => ToolResult::err("Résultat de comparaison indisponible"),
+        Err(_) => ToolResult::internal(
+            "forecast_comparison_serialization_failed",
+            "Résultat de comparaison indisponible",
+            false,
+        ),
     }
 }
 

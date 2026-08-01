@@ -20,7 +20,10 @@ pub(super) fn enqueue(
         || prompt.trim().is_empty()
         || prompt.chars().count() > MAX_PROMPT_SIZE
     {
-        return Err(ToolResult::err("File de consignes sous-agent invalide."));
+        return Err(ToolResult::validation(
+            "subagent_instruction_queue_invalid",
+            "File de consignes sous-agent invalide.",
+        ));
     }
     let normalized = normalized_prompt(prompt);
     let already_queued = child
@@ -31,7 +34,10 @@ pub(super) fn enqueue(
         return Ok(EnqueueOutcome::Duplicate);
     }
     if child.subagent_queued_prompts.len() >= MAX_QUEUED_PROMPTS {
-        return Err(ToolResult::err("File de consignes sous-agent pleine."));
+        return Err(ToolResult::conflict(
+            "subagent_instruction_queue_full",
+            "File de consignes sous-agent pleine.",
+        ));
     }
     child.subagent_queued_prompts.push(prompt.to_string());
     child.subagent_status = Some(super::subagent_status::RUNNING.to_string());

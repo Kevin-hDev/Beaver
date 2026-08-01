@@ -9,6 +9,23 @@ pub struct LoadedSkill {
     pub content: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SkillLoadError {
+    InvalidId,
+    NotFound,
+    Unavailable,
+}
+
+impl SkillLoadError {
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::InvalidId => "Identifiant de skill invalide",
+            Self::NotFound => "Skill introuvable",
+            Self::Unavailable => "Skill indisponible",
+        }
+    }
+}
+
 pub async fn list_skills() -> Result<Vec<SkillInfo>, String> {
     tokio::task::spawn_blocking(|| {
         skill_catalog::entries().map(|entries| {
@@ -26,9 +43,10 @@ pub async fn load_skill(skill_id: &str) -> Result<String, String> {
     load_skill_with_metadata(skill_id)
         .await
         .map(|loaded| loaded.content)
+        .map_err(|error| error.message().to_string())
 }
 
-pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, String> {
+pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, SkillLoadError> {
     if skill_id.is_empty()
         || skill_id.len() > MAX_SKILL_ID_BYTES
         || skill_id.contains("..")
@@ -36,21 +54,22 @@ pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, Str
             .chars()
             .any(|value| matches!(value, '/' | '\\' | '\0'))
     {
-        return Err("Identifiant de skill invalide".into());
+        return Err(SkillLoadError::InvalidId);
     }
     let requested = skill_id.to_string();
     tokio::task::spawn_blocking(move || {
-        let entry = skill_catalog::entries()?
+        let entry = skill_catalog::entries()
+            .map_err(|_| SkillLoadError::Unavailable)?
             .into_iter()
             .find(|entry| entry.info.id == requested)
-            .ok_or_else(|| "Skill indisponible".to_string())?;
+            .ok_or(SkillLoadError::NotFound)?;
         let metadata =
-            std::fs::metadata(&entry.manifest).map_err(|_| "Skill indisponible")?;
+            std::fs::metadata(&entry.manifest).map_err(|_| SkillLoadError::Unavailable)?;
         if !metadata.is_file() || metadata.len() > 256 * 1024 {
-            return Err("Skill indisponible".to_string());
+            return Err(SkillLoadError::Unavailable);
         }
         let content =
-            std::fs::read_to_string(&entry.manifest).map_err(|_| "Skill indisponible")?;
+            std::fs::read_to_string(&entry.manifest).map_err(|_| SkillLoadError::Unavailable)?;
         let (_, _, body) = crate::services::agent_local::skill_parser::parse_skill_content(
             &content,
             &entry.info.name,
@@ -66,7 +85,7 @@ pub async fn load_skill_with_metadata(skill_id: &str) -> Result<LoadedSkill, Str
         })
     })
     .await
-    .map_err(|_| "Skill indisponible".to_string())?
+    .map_err(|_| SkillLoadError::Unavailable)?
 }
 
 fn display_name(name: &str) -> String {
