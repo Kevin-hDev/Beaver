@@ -7,7 +7,7 @@
 ## Décisions
 
 - L’accordéon ne concatène plus `error.code`; il conserve uniquement la commande, la sortie réelle nettoyée et les avis de résultat déjà existants.
-- Le popup privilégie les traductions précises Office et extensions, puis une traduction générique fondée sur les dix catégories structurées.
+- Le popup privilégie les traductions précises Office, puis une traduction générique fondée sur les dix catégories structurées. Les erreurs d’outils d’extension suivent cette traduction par catégorie.
 - Les anciens résultats sans métadonnées utilisent en repli la première ligne de l’erreur réelle après filtrage des secrets, chemins et contrôles dangereux; un message générique est utilisé si elle est vide.
 - Les dix catégories sont traduites dans les sept langues de Beaver.
 - Le canal LLM est volontairement inchangé : code, catégorie, retryable, hint et sortie brute continuent d’être rendus par `tool_result_model`. Le protocole `raw_following` n’est pas modifié.
@@ -16,7 +16,7 @@
 ## Validation
 
 - tests ciblés : 9 réussis, 0 échec
-- suite frontend : 1 789 Vitest, 2 CEF, 46 extension-host, 0 échec
+- suite frontend : 1 790 Vitest, 2 CEF, 46 extension-host, 0 échec
 - contrat modèle Rust ciblé : 7 réussis, 0 échec
 - `npx tsc --noEmit`
 - `npm run lint`
@@ -27,3 +27,7 @@
 ## Revue de non-régression
 
 Aucun changement du backend, des permissions, du statut d’erreur, de la logique de relance ou de la charge envoyée au modèle. La modification est limitée à la présentation frontend et à ses traductions.
+
+## Rectification après revue
+
+La première version de cette note mentionnait à tort des traductions précises pour les extensions et 1 789 tests Vitest. Le commit de suivi `a38ec4f` retire la branche inatteignable, teste un code réellement émis (`extension_unavailable`) et confirme le total de 1 790 tests.
