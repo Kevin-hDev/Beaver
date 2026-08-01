@@ -4,6 +4,7 @@ use zeroize::{Zeroize, Zeroizing};
 use crate::services::api_keys;
 
 const VAULT_KEY: &str = "_codex_oauth";
+const REFRESH_WINDOW_SECS: i64 = 5 * 60;
 
 #[derive(Serialize, Deserialize)]
 struct Stored {
@@ -31,8 +32,12 @@ pub struct CodexTokens {
 }
 
 impl CodexTokens {
+    pub fn needs_refresh(&self) -> bool {
+        chrono::Utc::now().timestamp() >= self.expires_at - REFRESH_WINDOW_SECS
+    }
+
     pub fn is_expired(&self) -> bool {
-        chrono::Utc::now().timestamp() >= self.expires_at - 30
+        chrono::Utc::now().timestamp() >= self.expires_at
     }
 }
 
@@ -43,27 +48,31 @@ pub fn save(tokens: &CodexTokens) -> Result<(), String> {
         expires_at: tokens.expires_at,
         account_hint: tokens.account_hint.as_str().to_string(),
     };
-    let mut json = serde_json::to_string(&raw).map_err(|e| format!("json: {e}"))?;
+    let mut json = serde_json::to_string(&raw).map_err(|_| unavailable())?;
     let result = api_keys::set_raw(VAULT_KEY, &json);
     json.zeroize();
     result
 }
 
 pub fn load() -> Result<Option<CodexTokens>, String> {
-    match api_keys::get_raw(VAULT_KEY) {
-        Ok(json) => {
-            let mut raw: Stored =
-                serde_json::from_str(&json).map_err(|e| format!("parse codex tokens: {e}"))?;
-            let tokens = CodexTokens {
-                access: Zeroizing::new(std::mem::take(&mut raw.access)),
-                refresh: Zeroizing::new(std::mem::take(&mut raw.refresh)),
-                expires_at: raw.expires_at,
-                account_hint: Zeroizing::new(std::mem::take(&mut raw.account_hint)),
-            };
-            Ok(Some(tokens))
-        }
-        Err(_) => Ok(None),
+    if !api_keys::has_raw(VAULT_KEY).map_err(|_| unavailable())? {
+        return Ok(None);
     }
+    let json = api_keys::get_raw(VAULT_KEY).map_err(|_| unavailable())?;
+    let mut raw: Stored = serde_json::from_str(&json).map_err(|_| unavailable())?;
+    if raw.access.is_empty()
+        || raw.refresh.is_empty()
+        || raw.account_hint.is_empty()
+        || raw.expires_at <= 0
+    {
+        return Err(unavailable());
+    }
+    Ok(Some(CodexTokens {
+        access: Zeroizing::new(std::mem::take(&mut raw.access)),
+        refresh: Zeroizing::new(std::mem::take(&mut raw.refresh)),
+        expires_at: raw.expires_at,
+        account_hint: Zeroizing::new(std::mem::take(&mut raw.account_hint)),
+    }))
 }
 
 pub fn clear() -> Result<(), String> {
@@ -72,6 +81,10 @@ pub fn clear() -> Result<(), String> {
 
 pub fn is_logged_in() -> bool {
     load().ok().flatten().is_some()
+}
+
+fn unavailable() -> String {
+    "Connexion Codex indisponible".to_string()
 }
 
 #[cfg(test)]

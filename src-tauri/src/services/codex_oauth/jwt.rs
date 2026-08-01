@@ -10,6 +10,7 @@ const MAX_EMAIL: usize = 320;
 pub struct JwtDisplayClaims {
     pub account_hint: String,
     pub email: Option<String>,
+    pub expires_at: Option<i64>,
 }
 
 pub fn extract_display_claims(jwt: &str) -> Result<JwtDisplayClaims, String> {
@@ -47,9 +48,11 @@ pub fn extract_display_claims(jwt: &str) -> Result<JwtDisplayClaims, String> {
         .as_str()
         .filter(|value| !value.is_empty() && value.len() <= MAX_EMAIL)
         .map(String::from);
+    let expires_at = json["exp"].as_i64().filter(|value| *value > 0);
     Ok(JwtDisplayClaims {
         account_hint,
         email,
+        expires_at,
     })
 }
 

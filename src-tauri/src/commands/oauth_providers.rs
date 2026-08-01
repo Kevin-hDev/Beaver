@@ -51,7 +51,7 @@ pub async fn disconnect_oauth_provider(
 ) -> Result<(), String> {
     let provider = ProviderId::parse(&provider_id)?;
     match provider {
-        ProviderId::OpenAi => crate::commands::codex_logout(app.clone())?,
+        ProviderId::OpenAi => crate::commands::codex_logout(app.clone()).await?,
         ProviderId::Moonshot | ProviderId::Xai => {
             oauth_providers::logout_external(provider).await?;
         }

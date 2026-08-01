@@ -32,21 +32,41 @@ pub struct AuthenticatedClient {
 
 impl AuthenticatedClient {
     pub fn new(timeout: Duration) -> Result<Self, SecureHttpError> {
-        Self::build(timeout, UrlPolicy::HttpsOnly)
+        Self::build(timeout, UrlPolicy::HttpsOnly, true)
+    }
+
+    pub fn new_streaming(connect_timeout: Duration) -> Result<Self, SecureHttpError> {
+        Self::build(connect_timeout, UrlPolicy::HttpsOnly, false)
     }
 
     pub(crate) fn new_loopback(timeout: Duration) -> Result<Self, SecureHttpError> {
-        Self::build(timeout, UrlPolicy::LoopbackHttp)
+        Self::build(timeout, UrlPolicy::LoopbackHttp, true)
     }
 
-    fn build(timeout: Duration, url_policy: UrlPolicy) -> Result<Self, SecureHttpError> {
+    #[cfg(test)]
+    pub(crate) fn new_loopback_streaming(
+        connect_timeout: Duration,
+    ) -> Result<Self, SecureHttpError> {
+        Self::build(connect_timeout, UrlPolicy::LoopbackHttp, false)
+    }
+
+    fn build(
+        timeout: Duration,
+        url_policy: UrlPolicy,
+        total_timeout: bool,
+    ) -> Result<Self, SecureHttpError> {
         if timeout.is_zero() || timeout > MAX_AUTHENTICATED_TIMEOUT {
             return Err(SecureHttpError::Configuration);
         }
-        let client = reqwest::Client::builder()
+        let builder = reqwest::Client::builder()
             .redirect(Policy::none())
-            .connect_timeout(timeout.min(Duration::from_secs(10)))
-            .timeout(timeout)
+            .connect_timeout(timeout.min(Duration::from_secs(10)));
+        let builder = if total_timeout {
+            builder.timeout(timeout)
+        } else {
+            builder
+        };
+        let client = builder
             .build()
             .map_err(|_| SecureHttpError::Configuration)?;
         Ok(Self { client, url_policy })

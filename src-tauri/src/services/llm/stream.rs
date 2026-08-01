@@ -7,6 +7,8 @@ use crate::services::llm::request_purpose::RequestPurpose;
 use tokio_util::sync::CancellationToken;
 pub async fn stream_chat_no_done(
     on_event: &AgentEventEmitter,
+    session_id: &str,
+    request_id: &str,
     provider_id: &str,
     purpose: RequestPurpose,
     model: &str,
@@ -21,6 +23,8 @@ pub async fn stream_chat_no_done(
     if provider_id == "codex-oauth" {
         return crate::services::codex_client::stream::stream_chat_with_budget(
             on_event,
+            session_id,
+            request_id,
             model,
             messages,
             tools,

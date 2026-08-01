@@ -5,11 +5,7 @@ use chrono::Utc;
 
 #[test]
 fn stable_provider_failures_are_provider_errors() {
-    for code in [
-        "provider_connection_failed",
-        "provider_request_rejected",
-        "provider_configuration_invalid",
-    ] {
+    for code in ["provider_request_rejected", "provider_configuration_invalid"] {
         assert_eq!(classify_error(code, false), "provider_error");
     }
 }

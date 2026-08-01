@@ -73,6 +73,38 @@ async fn chunked_response_without_length_is_stopped_at_the_limit() {
     server.await.unwrap();
 }
 
+async fn delayed_body_server(delay: Duration) -> std::net::SocketAddr {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = [0u8; 1024];
+        let _ = socket.read(&mut request).await;
+        socket
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\na")
+            .await
+            .unwrap();
+        tokio::time::sleep(delay).await;
+        socket.write_all(b"b").await.unwrap();
+    });
+    address
+}
+
+#[tokio::test]
+async fn streaming_client_has_no_total_response_deadline() {
+    let delay = Duration::from_millis(80);
+    let address = delayed_body_server(delay).await;
+    let client = AuthenticatedClient::new_loopback_streaming(Duration::from_millis(40)).unwrap();
+    let response = client
+        .send(client.get(format!("http://{address}/stream")))
+        .await
+        .unwrap();
+
+    let body = read_bounded(response, 2).await.unwrap();
+
+    assert_eq!(body.as_slice(), b"ab");
+}
+
 #[tokio::test]
 async fn errors_never_echo_request_details() {
     let client = AuthenticatedClient::new(Duration::from_millis(100)).unwrap();

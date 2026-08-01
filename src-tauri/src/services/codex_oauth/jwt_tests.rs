@@ -12,10 +12,12 @@ fn extracts_only_bounded_display_claims() {
     let jwt = make_jwt(&serde_json::json!({
         "https://api.openai.com/auth": {"chatgpt_account_id": "acct_abc123"},
         "https://api.openai.com/profile": {"email": "test@example.com"},
+        "exp": 1_900_000_000,
     }));
     let claims = extract_display_claims(&jwt).unwrap();
     assert_eq!(claims.account_hint, "acct_abc123");
     assert_eq!(claims.email.as_deref(), Some("test@example.com"));
+    assert_eq!(claims.expires_at, Some(1_900_000_000));
 }
 
 #[test]

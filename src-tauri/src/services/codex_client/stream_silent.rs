@@ -3,7 +3,9 @@ use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
-use super::{http_error, request, stream::CODEX_IDLE_TIMEOUT_SECS};
+use super::{request, stream::CODEX_IDLE_TIMEOUT_SECS, stream_protocol};
+
+const MAX_STREAM_TEXT_BYTES: usize = 32 * 1024 * 1024;
 
 pub async fn collect_chat_silent(
     model: &str,
@@ -14,19 +16,7 @@ pub async fn collect_chat_silent(
     max_output_tokens: Option<u32>,
     cancel: CancellationToken,
 ) -> Result<StreamResult, String> {
-    let resp = if max_output_tokens.is_some() {
-        request::post_codex_stream_with_timeout(
-            model,
-            messages,
-            tools,
-            think,
-            reasoning_mode,
-            std::time::Duration::from_secs(CODEX_IDLE_TIMEOUT_SECS),
-        )
-        .await?
-    } else {
-        request::post_codex_stream(model, messages, tools, think, reasoning_mode).await?
-    };
+    let resp = request::post_codex_stream(model, messages, tools, think, reasoning_mode).await?;
     consume_sse_silent(
         resp,
         cancel,
@@ -67,39 +57,42 @@ async fn consume_sse_silent(
 ) -> Result<StreamResult, String> {
     let mut sse = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
+    let mut text_bytes = 0_usize;
 
     loop {
         let event = tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
             _ = tokio::time::sleep(idle_timeout) => {
-                return Err(format!("Timeout Codex : {}s sans réponse", idle_timeout.as_secs()));
+                return Err("provider_temporarily_unavailable".to_string());
             }
             ev = sse.next() => match ev {
                 Some(Ok(e)) => e,
-                Some(Err(e)) => return Err(format!("SSE: {e}")),
-                None => break,
+                Some(Err(_)) => return Err("provider_connection_failed".to_string()),
+                None => return Err(stream_protocol::closed_before_completed()),
             },
         };
 
         if event.data.trim() == "[DONE]" {
             break;
         }
-        let parsed: serde_json::Value = match serde_json::from_str(&event.data) {
-            Ok(v) => v,
-            Err(_) => continue,
-        };
+        let parsed: serde_json::Value = serde_json::from_str(&event.data)
+            .map_err(|_| "provider_connection_failed".to_string())?;
         match parsed["type"].as_str().unwrap_or("") {
             "response.reasoning_summary_text.delta" => {
-                result
-                    .thinking
-                    .push_str(parsed["delta"].as_str().unwrap_or(""));
+                append_bounded(
+                    &mut result.thinking,
+                    parsed["delta"].as_str().unwrap_or(""),
+                    &mut text_bytes,
+                )?;
             }
             "response.output_text.delta" => {
-                result
-                    .content
-                    .push_str(parsed["delta"].as_str().unwrap_or(""));
+                append_bounded(
+                    &mut result.content,
+                    parsed["delta"].as_str().unwrap_or(""),
+                    &mut text_bytes,
+                )?;
                 if output_is_over_local_limit(&result, max_output_tokens) {
-                    break;
+                    return Ok(result);
                 }
             }
             "response.done" | "response.completed" => {
@@ -112,14 +105,24 @@ async fn consume_sse_silent(
                             usage.output_tokens.and_then(|value| value.try_into().ok());
                     }
                 }
-                break;
+                return Ok(result);
             }
-            "response.failed" => return Err(http_error::stream_failure(&parsed)),
+            "response.incomplete" => return Err(stream_protocol::incomplete_response()),
+            "response.failed" => return Err(stream_protocol::failed_response(&parsed)),
             _ => {}
         }
     }
 
-    Ok(result)
+    Err(stream_protocol::closed_before_completed())
+}
+
+fn append_bounded(target: &mut String, delta: &str, total: &mut usize) -> Result<(), String> {
+    *total = total.saturating_add(delta.len());
+    if *total > MAX_STREAM_TEXT_BYTES {
+        return Err("provider_payload_too_large".to_string());
+    }
+    target.push_str(delta);
+    Ok(())
 }
 
 fn output_is_over_local_limit(result: &StreamResult, max_output_tokens: Option<u32>) -> bool {
