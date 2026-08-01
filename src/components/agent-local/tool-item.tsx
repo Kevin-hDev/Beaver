@@ -124,12 +124,7 @@ export function ToolItem({
         {summaryContent}
         {elapsedMs !== undefined && <span className="tb-elapsed">{formatElapsed(elapsedMs)}</span>}
         {!done && <Spinner size="var(--icon-sm)" className="tb-spinner" />}
-        {done && isError && (
-          <ToolStatusIcon
-            size="var(--icon-xs)"
-            message={errorMessage}
-          />
-        )}
+        {done && isError && <ToolStatusIcon message={errorMessage} />}
       </div>
       {canToggle && (
         <div className={`tb-accordion${isOpen ? " tb-open" : ""}`} onTransitionEnd={onTransitionEnd}>

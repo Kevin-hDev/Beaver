@@ -12,10 +12,10 @@ interface TooltipPosition {
 
 export function ToolStatusIcon({
   message,
-  size = 14,
+  size = "var(--icon-xs)",
 }: {
   message?: string;
-  size?: number | string;
+  size?: string;
 }) {
   const anchorRef = useRef<HTMLSpanElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);

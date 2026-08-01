@@ -131,22 +131,6 @@
   animation: thinking-shimmer 2s ease-in-out infinite;
 }
 
-.conv-name.thinking-active:hover > span {
-  background: linear-gradient(
-    90deg,
-    var(--ink-faint) 0%,
-    var(--ink-faint) 40%,
-    var(--ink) 50%,
-    var(--ink-faint) 60%,
-    var(--ink-faint) 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: thinking-shimmer 2s ease-in-out infinite;
-}
-
 .conv-running-icon {
   animation: conv-running-icon-shimmer 2s ease-in-out infinite;
 }
