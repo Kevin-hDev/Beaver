@@ -1,5 +1,7 @@
 import type { SavedSegment } from "@/types/agent";
 
+const SHELL_SESSION_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 interface ShellDisplayTool {
   name: string;
   summary: string;
@@ -18,7 +20,7 @@ export function isLegacyShellStopError(
   isError: boolean | undefined,
 ): boolean {
   return isError === true
-    && isShellStopAction(tool)
+    && legacyStopSessionId(tool) !== undefined
     && tool.result?.trim() === "Commande annulee.";
 }
 
@@ -29,9 +31,8 @@ export function shellCommandPreview(
   if (tool.name === "bash") return tool.summary;
   if (!isShellStopAction(tool)) return undefined;
 
-  const sessionId = typeof tool.args?.session_id === "string" ? tool.args.session_id : "";
-  if (tool.summary && tool.summary !== sessionId) return tool.summary;
-  if (!sessionId) return undefined;
+  const sessionId = legacyStopSessionId(tool);
+  if (!sessionId) return tool.summary || undefined;
 
   return findShellCommand(previousTools, sessionId);
 }
@@ -59,7 +60,7 @@ export function recoverLegacyShellStopSummaries(
 function legacyStopSessionId(tool: ShellDisplayTool): string | undefined {
   if (!isShellStopAction(tool)) return undefined;
   const sessionId = typeof tool.args?.session_id === "string" ? tool.args.session_id : "";
-  if (!/^[a-zA-Z0-9-]{1,128}$/.test(sessionId)) return undefined;
+  if (!SHELL_SESSION_ID_PATTERN.test(sessionId)) return undefined;
   return tool.summary === sessionId ? sessionId : undefined;
 }
 

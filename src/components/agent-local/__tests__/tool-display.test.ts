@@ -122,10 +122,11 @@ describe("toolDisplayInfo", () => {
   });
 
   it("reclasse l'ancien résultat d'arrêt sans masquer les autres erreurs", () => {
+    const sessionId = "6a719eeb-1665-49cd-a5e2-23427e80543b";
     const tool = savedToolToRenderable({
       name: "bash_write",
-      summary: "session-1",
-      args: { session_id: "session-1", stop: true },
+      summary: sessionId,
+      args: { session_id: sessionId, stop: true },
       result: "Commande annulee.",
       is_error: true,
     });

@@ -7,6 +7,7 @@ pub mod tool_bash;
 mod tool_bash_change_event;
 pub mod tool_bash_change_hub;
 pub mod tool_bash_changes;
+mod tool_bash_completion;
 pub mod tool_bash_directory_baseline;
 pub mod tool_bash_git;
 pub mod tool_bash_io;

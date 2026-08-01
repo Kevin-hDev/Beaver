@@ -19,7 +19,7 @@ async fn running_process_accepts_input_through_bash_write() {
     .expect("start process");
     let process_id = process_id(&started.stdout);
 
-    let completed = control_shell_session(
+    let (completed, _) = control_shell_session(
         process_id,
         Some("hello\n"),
         false,
@@ -53,7 +53,7 @@ async fn bash_write_blocks_destructive_input_before_it_reaches_the_process() {
     .expect("start process");
     let process_id = process_id(&started.stdout);
 
-    let blocked = control_shell_session(
+    let (blocked, _) = control_shell_session(
         process_id,
         Some("sudo rm harmless\n"),
         false,
@@ -98,7 +98,7 @@ async fn bash_write_can_send_input_then_close_stdin() {
     .expect("start process");
     let process_id = process_id(&started.stdout);
 
-    let completed = control_shell_session(
+    let (completed, _) = control_shell_session(
         process_id,
         Some("payload"),
         true,
@@ -159,7 +159,7 @@ async fn running_process_rejects_other_sessions_and_invalid_input() {
     .await
     .is_err());
 
-    let completed = control_shell_session(
+    let (completed, _) = control_shell_session(
         process_id,
         Some("valid\n"),
         false,

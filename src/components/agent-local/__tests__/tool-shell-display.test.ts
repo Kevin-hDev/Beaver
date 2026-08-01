@@ -34,15 +34,17 @@ describe("tool shell display", () => {
   });
 
   it("reclasse seulement l'ancien faux échec d'un arrêt volontaire", () => {
+    const sessionId = "6a719eeb-1665-49cd-a5e2-23427e80543b";
     const stop = {
       name: "bash_write",
-      summary: "session-1",
-      args: { session_id: "session-1", stop: true },
+      summary: sessionId,
+      args: { session_id: sessionId, stop: true },
       result: "Commande annulee.",
     };
     expect(isLegacyShellStopError(stop, true)).toBe(true);
     expect(isLegacyShellStopError({ ...stop, result: "Session shell introuvable." }, true)).toBe(false);
     expect(isLegacyShellStopError(stop, false)).toBe(false);
+    expect(isLegacyShellStopError({ ...stop, summary: "npm start" }, true)).toBe(false);
   });
 
   it("retrouve la commande des anciennes sessions à partir de leur identifiant", () => {

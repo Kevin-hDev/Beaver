@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, LazyLock, Mutex};
+use zeroize::Zeroizing;
 
 use super::tool_bash_session::ShellSession;
 
@@ -7,8 +8,10 @@ const MAX_SESSIONS: usize = 64;
 
 struct RegisteredSession {
     session: Arc<ShellSession>,
-    command: Arc<str>,
+    command: RegisteredCommand,
 }
+
+pub type RegisteredCommand = Arc<Zeroizing<String>>;
 
 static SESSIONS: LazyLock<Mutex<VecDeque<RegisteredSession>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));
@@ -26,12 +29,15 @@ pub fn insert(session: Arc<ShellSession>, command: &str) -> Result<(), String> {
     }
     sessions.push_back(RegisteredSession {
         session,
-        command: Arc::from(command),
+        command: Arc::new(Zeroizing::new(command.to_owned())),
     });
     Ok(())
 }
 
-pub fn get(process_id: &str, owner_session_id: &str) -> Result<Arc<ShellSession>, String> {
+pub fn get(
+    process_id: &str,
+    owner_session_id: &str,
+) -> Result<(Arc<ShellSession>, RegisteredCommand), String> {
     let parsed = uuid::Uuid::parse_str(process_id)
         .map_err(|_| "Session shell introuvable.".to_string())?;
     let process_id = parsed.to_string();
@@ -45,23 +51,9 @@ pub fn get(process_id: &str, owner_session_id: &str) -> Result<Arc<ShellSession>
         .remove(position)
         .ok_or_else(|| "Session shell introuvable.".to_string())?;
     let session = Arc::clone(&entry.session);
+    let command = Arc::clone(&entry.command);
     sessions.push_back(entry);
-    Ok(session)
-}
-
-pub fn command(process_id: &str, owner_session_id: &str) -> Result<Arc<str>, String> {
-    let parsed = uuid::Uuid::parse_str(process_id)
-        .map_err(|_| "Session shell introuvable.".to_string())?;
-    let process_id = parsed.to_string();
-    let sessions = lock_sessions();
-    sessions
-        .iter()
-        .find(|entry| {
-            entry.session.id() == process_id
-                && entry.session.owner_session_id() == owner_session_id
-        })
-        .map(|entry| Arc::clone(&entry.command))
-        .ok_or_else(|| "Session shell introuvable.".to_string())
+    Ok((session, command))
 }
 
 pub fn remove(process_id: &str) {
@@ -78,7 +70,8 @@ pub async fn stop_all() {
             .collect::<Vec<_>>()
     };
     for session in &sessions {
-        session.stop();
+        // La fermeture de Beaver est une annulation externe, pas un arrêt demandé par le modèle.
+        session.cancel();
     }
     let finished = async {
         while sessions.iter().any(|session| !session.is_done()) {

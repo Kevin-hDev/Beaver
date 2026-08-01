@@ -162,9 +162,10 @@ async fn run_process(
     if !matches!(completion, CompletionKind::Exited(_)) {
         super::tool_bash_platform::terminate_process_tree(session.pid()).await;
         let terminated = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
-        if !matches!(terminated, Ok(Ok(_))) {
-            completion = CompletionKind::Failed;
-        }
+        completion = super::tool_bash_completion::after_termination_attempt(
+            completion,
+            matches!(terminated, Ok(Ok(_))),
+        );
     }
     let drain = super::tool_bash_io::drain(session, &mut store, &mut receiver).await;
     if matches!(drain, super::tool_bash_io::DrainOutcome::TimedOut) {

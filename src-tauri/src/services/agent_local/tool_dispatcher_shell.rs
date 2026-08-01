@@ -22,7 +22,7 @@ pub async fn dispatch(
         "bash_write" => control_process(args, session_id, cancel, progress)
             .await
             .map(|(output, command)| {
-                to_tool_result(output).with_display_summary(command.to_string())
+                to_tool_result(output).with_display_summary(command.as_str())
             }),
         _ => return ToolResult::err("Outil shell inconnu."),
     };
@@ -63,10 +63,9 @@ async fn control_process(
     session_id: &str,
     cancel: CancellationToken,
     progress: Option<ShellProgress>,
-) -> Result<(ShellOutput, std::sync::Arc<str>), String> {
+) -> Result<(ShellOutput, super::tool_bash_registry::RegisteredCommand), String> {
     let process_id = args["session_id"].as_str().unwrap_or("");
-    let command = super::tool_bash_registry::command(process_id, session_id)?;
-    let output = super::tool_bash::control_shell_session(
+    super::tool_bash::control_shell_session(
         process_id,
         args["chars"].as_str(),
         args["eof"].as_bool().unwrap_or(false),
@@ -76,8 +75,7 @@ async fn control_process(
         cancel,
         progress,
     )
-    .await?;
-    Ok((output, command))
+    .await
 }
 
 fn yield_time_ms(args: &Value) -> Option<u64> {
