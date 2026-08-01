@@ -1,6 +1,8 @@
 //! Builds the "Web search status" section injected into the system prompt so
 //! the LLM knows which search providers are currently usable.
 
+pub const SECTION_START: &str = "\n\n## Web search status\n";
+
 /// Build the web-search status section from raw provider booleans.
 ///
 /// Extracted as a pure function so it can be unit-tested without touching the
@@ -23,15 +25,14 @@ pub fn format_web_search_status(brave: bool, exa: bool, firecrawl: bool, searxng
     }
 
     if active.is_empty() {
-        "\n\n## Web search status\n\
-         No web search provider is configured. The web_search tool WILL FAIL. \
-         Tell the user they can configure Brave, Exa, or Firecrawl in Settings → API keys, \
-         or wait for the local SearXNG fallback to become available."
-            .to_string()
+        format!(
+            "{SECTION_START}No web search provider is configured. The web_search tool WILL FAIL. \
+             Tell the user they can configure Brave, Exa, or Firecrawl in Settings → API keys, \
+             or wait for the local SearXNG fallback to become available."
+        )
     } else {
         format!(
-            "\n\n## Web search status\n\
-             Active providers: {}. Provider is selected automatically — you cannot pick one.",
+            "{SECTION_START}Active providers: {}. Provider is selected automatically — you cannot pick one.",
             active.join(", ")
         )
     }

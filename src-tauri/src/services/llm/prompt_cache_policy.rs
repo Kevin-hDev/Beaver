@@ -2,11 +2,15 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
+use super::request_purpose::RequestPurpose;
 use super::route::LlmRoute;
 
 const CACHE_KEY_PREFIX: &str = "bv1_";
 const CACHE_KEY_BYTES: usize = 16;
 const MAX_SESSION_ID_BYTES: usize = 128;
+// The local tokenizer is approximate, so keep a 25% margin above OpenAI's
+// 1,024-token minimum before disabling the safer automatic cache mode.
+const MIN_EXPLICIT_PREFIX_ESTIMATED_TOKENS: usize = 1_280;
 
 pub(super) fn apply_payload(
     payload: &mut Value,
@@ -22,10 +26,7 @@ pub(super) fn apply_payload(
             apply_gpt_56(payload, key);
         }
         "openrouter" => {
-            payload["session_id"] = key.clone().into();
-            if openrouter_gpt_56(model) {
-                apply_gpt_56(payload, key);
-            }
+            payload["session_id"] = key.into();
         }
         "mistral" | "moonshot" | "moonshot-oauth" => {
             payload["prompt_cache_key"] = key.into();
@@ -36,8 +37,9 @@ pub(super) fn apply_payload(
 
 pub(super) fn request_headers(
     route: &LlmRoute,
-    model: &str,
+    model: Option<&str>,
     session_id: Option<&str>,
+    purpose: RequestPurpose,
 ) -> Result<HeaderMap, String> {
     let mut headers = HeaderMap::new();
     if route.chat_provider_id == "google" {
@@ -46,13 +48,16 @@ pub(super) fn request_headers(
             HeaderValue::from_static(concat!("beaver-desktop/", env!("CARGO_PKG_VERSION"))),
         );
     }
-    if route.chat_provider_id == "openrouter" && model != "metadata" {
+    if route.chat_provider_id == "openrouter"
+        && model.is_some()
+        && purpose != RequestPurpose::AccountMetadata
+    {
         headers.insert("x-openrouter-metadata", HeaderValue::from_static("enabled"));
     }
     if route.chat_provider_id != "xai" {
         return Ok(headers);
     }
-    if let Some(key) = cache_key(route, model, session_id) {
+    if let Some(key) = model.and_then(|model| cache_key(route, model, session_id)) {
         let value = HeaderValue::from_str(&key).map_err(|_| "provider_configuration_invalid")?;
         headers.insert("x-grok-conv-id", value);
     }
@@ -112,21 +117,35 @@ fn mark_stable_prefix(payload: &mut Value) -> bool {
     else {
         return false;
     };
-    let Some(text) = message["content"].as_str().map(str::to_string) else {
+    let Some(text) = message["content"].as_str() else {
         return false;
     };
-    message["content"] = json!([{
+    let (stable, dynamic) = split_stable_system_content(text);
+    if crate::services::token_counting::estimate_text_tokens(stable)
+        < MIN_EXPLICIT_PREFIX_ESTIMATED_TOKENS
+    {
+        return false;
+    }
+    let mut blocks = vec![json!({
         "type": "text",
-        "text": text,
+        "text": stable,
         "prompt_cache_breakpoint": { "mode": "explicit" },
-    }]);
+    })];
+    if let Some(dynamic) = dynamic {
+        blocks.push(json!({
+            "type": "text",
+            "text": dynamic,
+        }));
+    }
+    message["content"] = Value::Array(blocks);
     true
 }
 
-fn openrouter_gpt_56(model: &str) -> bool {
-    model
-        .strip_prefix("openai/")
-        .is_some_and(super::providers::openai::is_gpt_56)
+fn split_stable_system_content(content: &str) -> (&str, Option<&str>) {
+    content
+        .find(crate::services::agent_local::web_search_status::SECTION_START)
+        .map(|index| (&content[..index], Some(&content[index..])))
+        .unwrap_or((content, None))
 }
 
 fn cache_key(route: &LlmRoute, model: &str, session_id: Option<&str>) -> Option<String> {

@@ -14,8 +14,9 @@ pub async fn send_json_request(
     model: &str,
     session_id: Option<&str>,
 ) -> Result<Response, RequestError> {
-    let cache_headers = super::prompt_cache_policy::request_headers(route, model, session_id)
-        .map_err(|_| RequestError::InvalidConfiguration)?;
+    let cache_headers =
+        super::prompt_cache_policy::request_headers(route, Some(model), session_id, purpose)
+            .map_err(|_| RequestError::InvalidConfiguration)?;
     route
         .send_authenticated(client, purpose, |token, headers| {
             let mut headers = headers;

@@ -31,13 +31,17 @@ pub(super) async fn chat_completion(
         &request.model,
         session_id,
     );
-    let policy_headers =
-        super::prompt_cache_policy::request_headers(&provider.route, &request.model, session_id)
-            .map_err(|_| {
-                LlmError::KnownProvider(
-                    super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
-                )
-            })?;
+    let policy_headers = super::prompt_cache_policy::request_headers(
+        &provider.route,
+        Some(&request.model),
+        session_id,
+        purpose,
+    )
+    .map_err(|_| {
+        LlmError::KnownProvider(
+            super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
+        )
+    })?;
     let usage_generation =
         crate::services::provider_usage::credential_generation(provider.route.chat_provider_id);
     let response = match provider

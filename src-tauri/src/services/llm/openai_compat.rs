@@ -103,7 +103,7 @@ impl OpenAiCompatProvider {
         F: Fn(&str, reqwest::header::HeaderMap) -> reqwest::RequestBuilder,
     {
         let policy_headers =
-            super::prompt_cache_policy::request_headers(&self.route, "metadata", None).map_err(
+            super::prompt_cache_policy::request_headers(&self.route, None, None, purpose).map_err(
                 |_| {
                     LlmError::KnownProvider(
                         super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,

@@ -1,4 +1,5 @@
 use super::prompt_cache_policy::{apply_payload, include_usage, request_headers, routing_key};
+use super::request_purpose::RequestPurpose;
 use super::route;
 use serde_json::json;
 
@@ -11,10 +12,19 @@ fn payload() -> serde_json::Value {
     })
 }
 
+fn long_stable_payload() -> serde_json::Value {
+    json!({
+        "messages": [
+            { "role": "system", "content": "abcd".repeat(1_280) },
+            { "role": "user", "content": "variable" }
+        ]
+    })
+}
+
 #[test]
 fn openai_gpt_56_gets_only_its_explicit_contract() {
     let route = route::resolve("openai").unwrap();
-    let mut value = payload();
+    let mut value = long_stable_payload();
     apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
 
     assert!(value["prompt_cache_key"].as_str().is_some());
@@ -25,6 +35,63 @@ fn openai_gpt_56_gets_only_its_explicit_contract() {
         "explicit"
     );
     assert!(value.get("session_id").is_none());
+}
+
+#[test]
+fn short_openai_prefix_keeps_implicit_cache_enabled() {
+    let route = route::resolve("openai").unwrap();
+    let mut value = payload();
+    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+
+    assert!(value["prompt_cache_key"].as_str().is_some());
+    assert!(value.get("prompt_cache_options").is_none());
+    assert!(value["messages"][0]["content"].is_string());
+}
+
+#[test]
+fn explicit_breakpoint_excludes_dynamic_system_sections() {
+    let route = route::resolve("openai").unwrap();
+    let stable = "abcd".repeat(1_280);
+    let dynamic = format!(
+        "{}Active providers: Brave.\n\n## Available skills\n- audit",
+        crate::services::agent_local::web_search_status::SECTION_START
+    );
+    let mut value = json!({
+        "messages": [
+            { "role": "system", "content": format!("{stable}{dynamic}") },
+            { "role": "user", "content": "variable" }
+        ]
+    });
+
+    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+
+    let blocks = value["messages"][0]["content"].as_array().unwrap();
+    assert_eq!(blocks[0]["text"], stable);
+    assert_eq!(blocks[0]["prompt_cache_breakpoint"]["mode"], "explicit");
+    assert_eq!(blocks[1]["text"], dynamic);
+    assert!(blocks[1].get("prompt_cache_breakpoint").is_none());
+}
+
+#[test]
+fn large_dynamic_tail_does_not_make_a_short_prefix_explicit() {
+    let route = route::resolve("openai").unwrap();
+    let stable = "abcd".repeat(1_279);
+    let content = format!(
+        "{stable}{}{}",
+        crate::services::agent_local::web_search_status::SECTION_START,
+        "dynamic".repeat(2_000)
+    );
+    let mut value = json!({
+        "messages": [
+            { "role": "system", "content": content },
+            { "role": "user", "content": "variable" }
+        ]
+    });
+
+    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+
+    assert!(value.get("prompt_cache_options").is_none());
+    assert!(value["messages"][0]["content"].is_string());
 }
 
 #[test]
@@ -39,7 +106,7 @@ fn older_openai_models_never_receive_gpt_56_fields() {
 }
 
 #[test]
-fn openrouter_keeps_affinity_and_scopes_explicit_cache_to_openai_56() {
+fn openrouter_keeps_affinity_without_optional_explicit_cache_fields() {
     let route = route::resolve("openrouter").unwrap();
     let mut compatible = payload();
     apply_payload(
@@ -49,7 +116,9 @@ fn openrouter_keeps_affinity_and_scopes_explicit_cache_to_openai_56() {
         Some("session-1"),
     );
     assert!(compatible["session_id"].as_str().is_some());
-    assert!(compatible["prompt_cache_options"].is_object());
+    assert!(compatible.get("prompt_cache_key").is_none());
+    assert!(compatible.get("prompt_cache_options").is_none());
+    assert!(compatible["messages"][0]["content"].is_string());
 
     let mut other = payload();
     apply_payload(
@@ -61,11 +130,22 @@ fn openrouter_keeps_affinity_and_scopes_explicit_cache_to_openai_56() {
     assert!(other["session_id"].as_str().is_some());
     assert!(other.get("prompt_cache_key").is_none());
 
-    let headers = request_headers(&route, "openai/gpt-5.6-luna", Some("session-1")).unwrap();
+    let headers = request_headers(
+        &route,
+        Some("openai/gpt-5.6-luna"),
+        Some("session-1"),
+        RequestPurpose::ManualChat,
+    )
+    .unwrap();
     assert_eq!(headers["x-openrouter-metadata"], "enabled");
-    assert!(request_headers(&route, "metadata", None)
-        .unwrap()
-        .is_empty());
+    assert!(request_headers(
+        &route,
+        Some("openai/gpt-5.6-luna"),
+        None,
+        RequestPurpose::AccountMetadata,
+    )
+    .unwrap()
+    .is_empty());
 }
 
 #[test]
@@ -132,21 +212,38 @@ fn automatic_providers_receive_no_cache_controls() {
 #[test]
 fn xai_header_is_api_key_only_and_never_leaks_the_session_id() {
     let route = route::resolve("xai").unwrap();
-    let headers = request_headers(&route, "grok-4.5", Some("private-session")).unwrap();
+    let headers = request_headers(
+        &route,
+        Some("grok-4.5"),
+        Some("private-session"),
+        RequestPurpose::ManualChat,
+    )
+    .unwrap();
     let value = headers["x-grok-conv-id"].to_str().unwrap();
     assert!(value.starts_with("bv1_"));
     assert!(!value.contains("private-session"));
 
     let oauth = route::resolve("xai-oauth").unwrap();
-    assert!(request_headers(&oauth, "grok-4.5", Some("private-session"))
-        .unwrap()
-        .is_empty());
+    assert!(request_headers(
+        &oauth,
+        Some("grok-4.5"),
+        Some("private-session"),
+        RequestPurpose::ManualChat,
+    )
+    .unwrap()
+    .is_empty());
 }
 
 #[test]
 fn google_requests_identify_beaver_without_a_session_identifier() {
     let route = route::resolve("google").unwrap();
-    let headers = request_headers(&route, "gemini-3.5-flash", Some("private-session")).unwrap();
+    let headers = request_headers(
+        &route,
+        Some("gemini-3.5-flash"),
+        Some("private-session"),
+        RequestPurpose::ManualChat,
+    )
+    .unwrap();
 
     assert_eq!(
         headers["x-goog-api-client"].to_str().unwrap(),
