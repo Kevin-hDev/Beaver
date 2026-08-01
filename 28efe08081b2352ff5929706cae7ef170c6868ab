@@ -1,0 +1,7 @@
+Purpose: make an intentional bash_write stop a successful control operation without weakening real cancellation or failure reporting.
+
+Design: ShellSession now has separate stop and cancellation tokens. CompletionKind::Stopped is emitted only for an explicit stop or Ctrl+C control request. The process must be confirmed terminated; otherwise completion is downgraded to Failed. The bounded 64-entry shell registry retains the exact original command and exposes it as display_summary for bash_write.
+
+UI: stop actions render as the localized 'Arrêt du processus' label. The existing ToolItem accordion, animation, surfaces, icons, and CSS tokens are reused unchanged. Expanding shows the exact original command and result. Legacy saved stops are reclassified only when tool= bash_write, the arguments request a stop, and the historical result exactly equals 'Commande annulee.'; all other errors remain errors. Legacy command lookup correlates the session id with the preceding bash result.
+
+Validation: npm run lint; npx tsc --noEmit; npm test (1755 Vitest, 2 CEF, 46 extension-host tests); cargo check; cargo clippy --all-targets -- -D warnings; cargo test (2676 passed); graphify update .; targeted shell and UI tests. All touched source and test files remain at or below 230 lines.
