@@ -425,6 +425,9 @@
       "inProgress": "进行中",
       "completed": "已完成",
       "processStoppedResult": "进程已停止。",
+      "resultTruncated": "结果已截断。",
+      "resultMissing": "数据流结束后缺少工具结果。",
+      "verifyBeforeRetry": "重试前请检查当前状态，因为操作可能已经执行。",
       "toggleDetails": "显示工具详情",
       "groups": {
         "exploration": "探索",

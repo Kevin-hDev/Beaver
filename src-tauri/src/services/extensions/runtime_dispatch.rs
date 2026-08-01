@@ -1,6 +1,7 @@
 use super::host_process::HostProcess;
 use super::protocol::HostToolResult;
 use super::types::{HostState, MAX_WORKING_DIRECTORY_CHARS};
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::{json, Value};
 use std::path::Path;
@@ -16,13 +17,13 @@ pub async fn dispatch_tool(
     }
     let host = match super::runtime::ensure_running().await {
         Ok(host) => host,
-        Err(_) => return Some(ToolResult::err("Extension indisponible.")),
+        Err(_) => return Some(extension_unavailable()),
     };
     let Some(working_directory) = working_directory.to_str() else {
-        return Some(ToolResult::err("Contexte d'extension indisponible."));
+        return Some(extension_context_unavailable());
     };
     if working_directory.encode_utf16().count() > MAX_WORKING_DIRECTORY_CHARS {
-        return Some(ToolResult::err("Contexte d'extension indisponible."));
+        return Some(extension_context_unavailable());
     }
     let response = host
         .request(
@@ -71,16 +72,49 @@ fn to_tool_result(result: Result<HostToolResult, String>) -> ToolResult {
     match result {
         Ok(result) => {
             let mut tool_result = if result.is_error {
-                ToolResult::err(result.content)
+                ToolResult::error(
+                    result.content,
+                    "extension_tool_error",
+                    ToolErrorCategory::External,
+                    false,
+                )
             } else {
                 ToolResult::ok(result.content)
             };
-            tool_result.truncated = result.truncated;
-            tool_result.display_summary = result.display_summary.map(String::into_boxed_str);
+            tool_result.mark_truncated(result.truncated);
+            if let Some(summary) = result.display_summary {
+                tool_result = tool_result.with_display_summary(summary);
+            }
             tool_result
         }
-        Err(_) => ToolResult::err("L'extension n'a pas pu exécuter cet outil."),
+        Err(_) => ToolResult::error(
+            "L'extension n'a pas pu confirmer le résultat de cet outil.",
+            "extension_host_failed",
+            ToolErrorCategory::External,
+            false,
+        )
+        .with_error_hint(
+            "Vérifier l'état du projet ou du service avant de relancer : l'action a pu être exécutée.",
+        ),
     }
+}
+
+fn extension_unavailable() -> ToolResult {
+    ToolResult::error(
+        "Extension indisponible.",
+        "extension_unavailable",
+        ToolErrorCategory::Unavailable,
+        true,
+    )
+}
+
+fn extension_context_unavailable() -> ToolResult {
+    ToolResult::error(
+        "Contexte d'extension indisponible.",
+        "extension_context_unavailable",
+        ToolErrorCategory::Unavailable,
+        false,
+    )
 }
 
 async fn invalidate(failed: &Arc<HostProcess>) {
@@ -106,5 +140,33 @@ async fn invalidate(failed: &Arc<HostProcess>) {
             0,
         );
         super::runtime::mark_enabled_extensions_error();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uncertain_host_failure_never_recommends_a_blind_retry() {
+        let result = to_tool_result(Err("host disconnected".to_string()));
+        let error = result.error.expect("structured extension error");
+
+        assert_eq!(error.code.as_ref(), "extension_host_failed");
+        assert!(!error.retryable);
+        assert!(error.hint.is_some());
+    }
+
+    #[test]
+    fn extension_reported_error_stays_an_error() {
+        let result = to_tool_result(Ok(HostToolResult {
+            content: "invalid input".to_string(),
+            is_error: true,
+            truncated: false,
+            display_summary: None,
+        }));
+
+        assert!(result.is_error);
+        assert_eq!(result.error.unwrap().code.as_ref(), "extension_tool_error");
     }
 }

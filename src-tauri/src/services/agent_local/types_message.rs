@@ -2,6 +2,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use super::types_stream::TokenPhase;
+use super::{
+    tool_result_contract::{ToolErrorInfo, ToolResultStatus},
+    types_tools::ToolFileChange,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentMessage {
@@ -71,6 +75,22 @@ fn validate_file_changes(message: &AgentMessage) -> Result<(), String> {
         if record.file_changes.len() > super::tool_file_changes::MAX_FILE_CHANGES {
             return Err("Historique de fichiers invalide.".to_string());
         }
+        if record.result_meta.as_ref().is_some_and(|meta| {
+            meta.warnings.len() > 16
+                || meta.status.is_error() != record.is_error.unwrap_or(false)
+                || meta.status.is_error() != meta.error.is_some()
+                || meta.warnings.iter().any(|warning| !valid_meta_text(warning))
+                || meta.error.as_ref().is_some_and(|error| {
+                    error.code.is_empty()
+                        || error.code.len() > 100
+                        || !error.code.bytes().all(|byte| {
+                            byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_'
+                        })
+                        || error.hint.as_ref().is_some_and(|hint| !valid_meta_text(hint))
+                })
+        }) {
+            return Err("Historique de résultat d'outil invalide.".to_string());
+        }
         let mut total_diff_bytes = 0usize;
         for change in &record.file_changes {
             if let Some(diff) = &change.diff {
@@ -95,6 +115,10 @@ fn validate_file_changes(message: &AgentMessage) -> Result<(), String> {
     Ok(())
 }
 
+fn valid_meta_text(text: &str) -> bool {
+    super::tool_result_contract::is_safe_metadata_text(text, 1_000)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolActivityRecord {
     pub name: String,
@@ -109,6 +133,8 @@ pub struct ToolActivityRecord {
     pub result: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_error: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result_meta: Option<PersistedToolResultMeta>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -120,7 +146,18 @@ pub struct ToolActivityRecord {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub affected_paths: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub file_changes: Vec<super::types_tools::ToolFileChange>,
+    pub file_changes: Vec<ToolFileChange>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PersistedToolResultMeta {
+    pub status: ToolResultStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ToolErrorInfo>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
+    #[serde(default)]
+    pub truncated: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

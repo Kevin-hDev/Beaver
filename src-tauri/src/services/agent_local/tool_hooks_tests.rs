@@ -106,6 +106,29 @@ mod tests {
     }
 
     #[test]
+    fn post_hook_normalizes_errors_that_bypassed_the_dispatcher() {
+        let cancelled = run_post_hooks(
+            "ask_user_choice",
+            &json!({}),
+            ToolResult::err("Interaction annulée"),
+        );
+        let invalid = run_post_hooks(
+            "planmode",
+            &json!({}),
+            ToolResult::err("Paramètre title requis"),
+        );
+
+        assert_eq!(
+            cancelled.status,
+            crate::services::agent_local::tool_result_contract::ToolResultStatus::Cancelled
+        );
+        assert_eq!(
+            invalid.error.unwrap().category,
+            crate::services::agent_local::tool_result_contract::ToolErrorCategory::Validation
+        );
+    }
+
+    #[test]
     fn post_hook_redacts_sensitive_bash_output() {
         let result = ToolResult::ok("API_KEY=abcd1234");
         let args = json!({ "command": "cat .env" });

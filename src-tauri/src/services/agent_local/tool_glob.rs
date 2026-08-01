@@ -1,5 +1,6 @@
 use crate::services::agent_local::security;
 use crate::services::agent_local::tool_scan_timeout::{run_scan, scan_cancelled};
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
 use globset::Glob;
 use ignore::WalkBuilder;
@@ -12,8 +13,21 @@ pub async fn glob_files(pattern: &str, path: Option<&str>, working_dir: &Path) -
     let pattern = pattern.to_string();
     let root = resolve_root(path, working_dir);
 
-    if let Err(e) = security::validate_read_path(&root, working_dir) {
-        return ToolResult::err(e);
+    if let Err(error) = security::validate_read_path(&root, working_dir) {
+        return super::tool_file_error::path_failure(
+            error,
+            "search_root_not_found",
+            "search_path_denied",
+            "invalid_search_path",
+        );
+    }
+    if let Err(error) = tokio::fs::metadata(&root).await {
+        return super::tool_file_error::path_failure(
+            security::sanitize_error(error),
+            "search_root_not_found",
+            "search_path_denied",
+            "invalid_search_path",
+        );
     }
 
     run_scan(move |cancelled| glob_blocking(&pattern, &root, &cancelled)).await
@@ -36,7 +50,14 @@ fn resolve_root(path: Option<&str>, working_dir: &Path) -> PathBuf {
 fn glob_blocking(pattern: &str, root: &Path, cancelled: &AtomicBool) -> ToolResult {
     let matcher = match Glob::new(pattern) {
         Ok(g) => g.compile_matcher(),
-        Err(e) => return ToolResult::err(format!("Pattern glob invalide : {e}")),
+        Err(e) => {
+            return ToolResult::error(
+                format!("Pattern glob invalide : {e}"),
+                "invalid_glob_pattern",
+                ToolErrorCategory::Validation,
+                false,
+            )
+        }
     };
 
     let walk = WalkBuilder::new(root)
@@ -50,15 +71,17 @@ fn glob_blocking(pattern: &str, root: &Path, cancelled: &AtomicBool) -> ToolResu
 
     let mut results: Vec<String> = Vec::new();
     let mut skipped_errors = 0usize;
+    let mut scanned_files = 0usize;
     let mut truncated = false;
 
     for dent in walk {
         if scan_cancelled(cancelled) {
-            return ToolResult::err("Timeout après 600s");
-        }
-        if results.len() >= MAX_RESULTS {
-            truncated = true;
-            break;
+            return ToolResult::error(
+                "Timeout après 600s",
+                "glob_timeout",
+                ToolErrorCategory::Timeout,
+                true,
+            );
         }
         let entry = match dent {
             Ok(e) => e,
@@ -70,10 +93,16 @@ fn glob_blocking(pattern: &str, root: &Path, cancelled: &AtomicBool) -> ToolResu
         if !entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
             continue;
         }
+        scanned_files = scanned_files.saturating_add(1);
         let path = entry.path();
         let rel = path.strip_prefix(root).unwrap_or(path);
         if matcher.is_match(rel) {
             results.push(path.display().to_string());
+            if results.len() > MAX_RESULTS {
+                results.truncate(MAX_RESULTS);
+                truncated = true;
+                break;
+            }
         }
     }
 
@@ -81,13 +110,25 @@ fn glob_blocking(pattern: &str, root: &Path, cancelled: &AtomicBool) -> ToolResu
     if truncated {
         output.push_str(&format!("\n... [tronqué à {MAX_RESULTS} résultats]"));
     }
-    if skipped_errors > 0 {
-        output.push_str(&format!(
-            "\n... [{skipped_errors} erreur(s) de lecture ignorée(s)]"
-        ));
-    }
     if output.is_empty() {
         output = "(aucun résultat)".into();
     }
-    ToolResult::ok(output)
+    if skipped_errors > 0 && scanned_files == 0 {
+        return ToolResult::error(
+            format!("Aucun fichier lisible; {skipped_errors} erreur(s) de lecture."),
+            "glob_scan_failed",
+            ToolErrorCategory::Execution,
+            true,
+        );
+    }
+    let mut result = if skipped_errors > 0 {
+        ToolResult::partial(
+            output,
+            [format!("{skipped_errors} fichier(s) ou dossier(s) n'ont pas pu être lus.")],
+        )
+    } else {
+        ToolResult::ok(output)
+    };
+    result.mark_truncated(truncated);
+    result
 }

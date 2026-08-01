@@ -35,9 +35,13 @@ pub enum StreamEvent {
         breakdown: Option<super::context_usage_buckets::RequestContextUsage>,
     },
     GenerationStarted {},
+    #[serde(rename_all = "camelCase")]
     ToolCall {
         name: String,
         arguments: serde_json::Value,
+        tool_call_index: usize,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tool_call_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         domain: Option<String>,
     },
@@ -52,11 +56,18 @@ pub enum StreamEvent {
         name: String,
         content: String,
         is_error: bool,
+        status: super::tool_result_contract::ToolResultStatus,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        error: Option<super::tool_result_contract::ToolErrorInfo>,
+        #[serde(skip_serializing_if = "Vec::is_empty", default)]
+        warnings: Vec<String>,
         #[serde(default)]
         truncated: bool,
         #[serde(skip_serializing_if = "Option::is_none", default)]
         display_summary: Option<String>,
         tool_call_index: usize,
+        #[serde(skip_serializing_if = "Option::is_none", default)]
+        tool_call_id: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none", default)]
         resolved_path: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none", default)]

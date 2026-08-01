@@ -8,7 +8,6 @@ use std::net::SocketAddr;
 use std::time::Duration;
 use url::Url;
 
-const MAX_OUTPUT_CHARS: usize = 50_000;
 const MAX_BODY_BYTES: usize = 5 * 1024 * 1024;
 const MAX_REDIRECTS: usize = 3;
 const TIMEOUT: Duration = Duration::from_secs(15);
@@ -67,7 +66,7 @@ async fn finish_response(resp: reqwest::Response, url: &Url) -> Result<String, S
     let body = read_body_bounded(resp).await?;
     let decoded = String::from_utf8_lossy(&body);
     let content = render_content(&decoded, content_type.as_deref(), url);
-    Ok(truncate_chars(&content, MAX_OUTPUT_CHARS))
+    Ok(content)
 }
 
 fn redirect_target(base: &Url, headers: &reqwest::header::HeaderMap) -> Result<String, String> {
@@ -162,15 +161,6 @@ fn clean_reqwest_error(error: &reqwest::Error) -> String {
         return "connexion impossible".to_string();
     }
     "requête échouée".to_string()
-}
-
-fn truncate_chars(input: &str, max_chars: usize) -> String {
-    if input.chars().count() <= max_chars {
-        return input.to_string();
-    }
-    let mut out: String = input.chars().take(max_chars).collect();
-    out.push_str("... [tronqué]");
-    out
 }
 
 #[cfg_attr(not(test), allow(dead_code))]

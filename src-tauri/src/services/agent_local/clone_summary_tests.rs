@@ -22,44 +22,40 @@ fn message_with_tool(tool: ToolActivityRecord) -> AgentMessage {
     }
 }
 
-#[test]
-fn serialize_limits_tool_result() {
-    let tool = ToolActivityRecord {
-        name: "read_file".into(),
-        summary: "read".into(),
+fn tool_record(name: &str, path: &str, result: Option<String>) -> ToolActivityRecord {
+    ToolActivityRecord {
+        name: name.into(),
+        summary: if name == "edit_file" { "edit" } else { "read" }.into(),
         domain: None,
         resolved_path: None,
-        args: Some(json!({"path": "src/main.rs"})),
-        result: Some("a".repeat(MAX_TOOL_RESULT_CHARS + 50)),
+        args: Some(json!({"path": path})),
+        result,
         is_error: None,
+        result_meta: None,
         content: None,
         old_text: None,
         new_text: None,
         start_line: None,
         affected_paths: vec![],
         file_changes: vec![],
-    };
+    }
+}
+
+#[test]
+fn serialize_limits_tool_result() {
+    let tool = tool_record(
+        "read_file",
+        "src/main.rs",
+        Some("a".repeat(MAX_TOOL_RESULT_CHARS + 50)),
+    );
     let serialized = serialize_messages(&[message_with_tool(tool)]);
     assert!(serialized.len() < MAX_TOOL_RESULT_CHARS + 500);
 }
 
 #[test]
 fn extract_files_uses_tool_traces() {
-    let tool = ToolActivityRecord {
-        name: "edit_file".into(),
-        summary: "edit".into(),
-        domain: None,
-        resolved_path: None,
-        args: Some(json!({"path": "src/lib.rs"})),
-        result: None,
-        is_error: None,
-        content: None,
-        old_text: None,
-        new_text: None,
-        start_line: None,
-        affected_paths: vec!["src/lib.rs".into()],
-        file_changes: vec![],
-    };
+    let mut tool = tool_record("edit_file", "src/lib.rs", None);
+    tool.affected_paths.push("src/lib.rs".into());
     let (read, modified) = extract_traced_files(&[message_with_tool(tool)]);
     assert!(read.is_empty());
     assert_eq!(modified, vec!["src/lib.rs"]);
@@ -67,21 +63,11 @@ fn extract_files_uses_tool_traces() {
 
 #[test]
 fn serialize_adds_truncated_marker_at_limit() {
-    let mut msg = message_with_tool(ToolActivityRecord {
-        name: "read_file".into(),
-        summary: "read".into(),
-        domain: None,
-        resolved_path: None,
-        args: Some(json!({"path": "src/main.rs"})),
-        result: Some("ok".into()),
-        is_error: None,
-        content: None,
-        old_text: None,
-        new_text: None,
-        start_line: None,
-        affected_paths: vec![],
-        file_changes: vec![],
-    });
+    let mut msg = message_with_tool(tool_record(
+        "read_file",
+        "src/main.rs",
+        Some("ok".into()),
+    ));
     msg.content = "a".repeat(MAX_SUMMARY_INPUT_CHARS);
     let serialized = serialize_messages(&[msg]);
     assert!(serialized.ends_with("[Truncated]"));

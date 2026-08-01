@@ -20,6 +20,7 @@ pub mod tool_bash_registry;
 pub mod tool_bash_result;
 pub mod tool_bash_session;
 pub mod tool_bash_shell;
+mod tool_bash_spawn_error;
 pub mod tool_bash_storage;
 pub mod tool_bash_wait;
 pub mod tool_bash_watch_roots;
@@ -47,9 +48,11 @@ pub mod tool_delegate;
 pub mod tool_delegate_child;
 mod tool_delegate_prompt;
 pub mod tool_dispatcher;
+mod tool_dispatcher_error;
 mod tool_dispatcher_entry;
 mod tool_workspace_notice;
 pub mod tool_extension_discovery;
+mod tool_web_error;
 pub mod tool_dispatcher_delegate;
 pub mod tool_dispatcher_forecast;
 pub mod tool_dispatcher_forecast_run;
@@ -67,6 +70,7 @@ pub mod tool_dispatcher_forecast_scenario_params;
 pub mod tool_dispatcher_mcp;
 pub mod tool_dispatcher_office;
 pub mod tool_dispatcher_shell;
+mod tool_dispatcher_shell_error;
 #[cfg(test)]
 pub mod tool_dispatcher_tests;
 #[cfg(test)]
@@ -86,6 +90,7 @@ pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;
 mod tool_executor_delegate_launch;
 pub mod tool_executor_diagnostics;
+mod tool_executor_errors;
 pub mod tool_executor_helpers;
 pub mod tool_executor_parallel;
 pub mod tool_executor_parallel_batch;
@@ -102,11 +107,16 @@ pub mod tool_executor_write;
 pub mod tool_execution_outcome;
 pub mod extension_tool_set;
 pub mod tool_file_changes;
+mod tool_file_error;
 pub mod tool_files;
 #[cfg(test)]
 pub mod tool_files_tests;
 pub mod tool_glob;
 pub mod tool_grep;
+mod tool_git_error;
+pub mod tool_list_dir;
+#[cfg(test)]
+mod tool_list_dir_tests;
 pub mod tool_group_catalog;
 pub mod tool_hooks;
 #[cfg(test)]
@@ -139,8 +149,12 @@ pub mod tool_prompt_filter;
 pub mod tool_result_budget;
 #[cfg(test)]
 pub mod tool_result_budget_tests;
+pub mod tool_result_contract;
+pub mod tool_result_model;
 pub mod tool_result_truncate;
 pub mod tool_scan_timeout;
+#[cfg(test)]
+mod tool_search_result_tests;
 pub mod tool_skill_loader;
 pub mod tool_spreadsheet_calamine;
 #[cfg(test)]
@@ -182,6 +196,8 @@ pub mod types_plan;
 pub mod types_session;
 pub mod types_stream;
 pub mod types_todo;
+mod types_tool_result;
+mod types_tool_result_details;
 pub mod types_tools;
 pub mod web_search_status;
 pub mod write_guard;

@@ -186,7 +186,7 @@ fn bound_result(session_id: &str, mut result: ToolResult) -> ToolResult {
     let (content, truncated) =
         super::memory_runtime::consume_result(session_id, &result.content);
     result.content = content;
-    result.truncated |= truncated;
+    result.mark_truncated(truncated);
     result
 }
 

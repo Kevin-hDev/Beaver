@@ -62,6 +62,7 @@ fn agent_estimate_counts_tool_payload_once() {
         args: Some(args.clone()),
         result: Some("ok".into()),
         is_error: None,
+        result_meta: None,
         content: Some(content),
         old_text: None,
         new_text: None,

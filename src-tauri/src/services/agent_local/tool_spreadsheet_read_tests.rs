@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::agent_local::tool_spreadsheet_read::read_spreadsheet;
+    use crate::services::agent_local::tool_spreadsheet_read::{build_result, read_spreadsheet};
+    use crate::services::agent_local::tool_result_contract::ToolResultStatus;
     use tempfile::TempDir;
 
     fn working_dir() -> TempDir {
@@ -49,6 +50,8 @@ mod tests {
         let rows = json["rows"].as_array().unwrap();
         assert_eq!(rows.len(), 10);
         assert_eq!(json["truncated"], true);
+        assert_eq!(result.status, ToolResultStatus::Partial);
+        assert!(result.truncated);
     }
 
     #[tokio::test]
@@ -100,5 +103,30 @@ mod tests {
         let result = read_spreadsheet(path.to_str().unwrap(), None, None, None, tmp.path()).await;
         assert!(result.is_error);
         assert!(result.content.contains("Format non supporté"));
+    }
+
+    #[test]
+    fn structured_result_reports_column_truncation() {
+        let row = vec![serde_json::Value::Null; 1001];
+        let result = build_result(vec![row.clone(), row], 10, "Sheet1", &[]).unwrap();
+
+        assert_eq!(result["headers"].as_array().unwrap().len(), 1000);
+        assert_eq!(result["rows"][0].as_array().unwrap().len(), 1000);
+        assert_eq!(result["truncated"], true);
+    }
+
+    #[tokio::test]
+    async fn csv_reports_and_applies_column_truncation() {
+        let tmp = working_dir();
+        let csv_path = tmp.path().join("wide.csv");
+        let line = (0..1001).map(|index| index.to_string()).collect::<Vec<_>>().join(",");
+        std::fs::write(&csv_path, format!("{line}\n{line}\n")).unwrap();
+
+        let result = read_spreadsheet(csv_path.to_str().unwrap(), None, None, None, tmp.path()).await;
+        let json: serde_json::Value = serde_json::from_str(&result.content).unwrap();
+        assert_eq!(json["headers"].as_array().unwrap().len(), 1000);
+        assert_eq!(json["rows"][0].as_array().unwrap().len(), 1000);
+        assert_eq!(result.status, ToolResultStatus::Partial);
+        assert!(result.truncated);
     }
 }

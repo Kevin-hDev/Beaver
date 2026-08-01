@@ -425,6 +425,9 @@
       "inProgress": "進行中",
       "completed": "完了",
       "processStoppedResult": "プロセスを停止しました。",
+      "resultTruncated": "結果は省略されています。",
+      "resultMissing": "ストリーム終了後のツール結果がありません。",
+      "verifyBeforeRetry": "操作がすでに実行されている可能性があるため、再試行する前に現在の状態を確認してください。",
       "toggleDetails": "ツール詳細を表示",
       "groups": {
         "exploration": "探索",

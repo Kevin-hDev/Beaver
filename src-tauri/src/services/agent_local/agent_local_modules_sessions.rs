@@ -26,6 +26,7 @@ pub mod stream_diagnostics_failure;
 pub mod stream_diagnostics_model;
 pub mod stream_diagnostics_payload;
 pub mod stream_diagnostics_support;
+mod stream_diagnostics_tool_record;
 #[cfg(test)]
 mod stream_diagnostics_support_tests;
 #[cfg(test)]

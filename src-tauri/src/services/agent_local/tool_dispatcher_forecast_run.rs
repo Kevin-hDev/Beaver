@@ -17,7 +17,7 @@ pub async fn handle(
     cancel: CancellationToken,
 ) -> ToolResult {
     if cancel.is_cancelled() {
-        return ToolResult::err("Annulé.");
+        return ToolResult::cancelled("Annulé.");
     }
     let started_at = Instant::now();
     let mut request: ForecastRequest = match serde_json::from_value(args.clone()) {

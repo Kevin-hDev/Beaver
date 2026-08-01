@@ -1,5 +1,6 @@
 pub use super::tool_executor_results::{emit_tool_result, push_tool_message, push_tool_result};
 use crate::services::agent_local::stream_events::AgentEventEmitter;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::write_guard::WriteGuard;
 use tokio_util::sync::CancellationToken;
@@ -80,9 +81,9 @@ pub fn post_record_write(
     if tr.is_error {
         return;
     }
-    if matches!(name, "bash" | "bash_write") && !tr.affected_paths.is_empty() {
+    if matches!(name, "bash" | "bash_write") && !tr.affected_paths().is_empty() {
         let paths = tr
-            .affected_paths
+            .affected_paths()
             .iter()
             .map(std::path::PathBuf::from)
             .collect::<Vec<_>>();
@@ -146,7 +147,12 @@ pub async fn dispatch_or_interactive(
     if super::tool_catalog::is_optional_tool(name)
         && !super::agent_settings::is_tool_enabled(name).await
     {
-        return ToolResult::err("Outil désactivé dans les paramètres.");
+        return ToolResult::error(
+            "Outil désactivé dans les paramètres.",
+            "tool_disabled",
+            ToolErrorCategory::Permission,
+            false,
+        );
     }
     if name == "ask_user_choice" {
         return super::tool_interactive::execute(args, on_event, cancel, Some(session_id)).await;

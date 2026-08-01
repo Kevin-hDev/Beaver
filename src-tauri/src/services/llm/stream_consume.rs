@@ -71,6 +71,8 @@ pub(super) async fn consume_stream(
         let _ = on_event.send(StreamEvent::ToolCall {
             name: name.clone(),
             arguments: arguments.clone(),
+            tool_call_index: index,
+            tool_call_id: ids.get(index).cloned(),
             domain: crate::services::agent_local::memory_tool::event_domain(&name, arguments),
         });
         result.tool_calls.push((name, arguments.clone()));

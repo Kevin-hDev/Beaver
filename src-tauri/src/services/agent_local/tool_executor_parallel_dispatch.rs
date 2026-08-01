@@ -27,7 +27,7 @@ pub async fn dispatch_read(
         request_id,
         name,
         summary,
-        result.is_error,
+        &result,
     )
     .await;
     result

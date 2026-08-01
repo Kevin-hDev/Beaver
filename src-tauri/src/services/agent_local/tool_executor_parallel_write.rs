@@ -27,13 +27,16 @@ pub async fn execute_tracked_write(
     )
     .await
     {
-        let result = super::tool_dispatcher::enrich_error(ToolResult::err(msg), name);
+        let result = super::tool_executor_errors::permission(
+            msg,
+            "tool_not_allowed_in_plan",
+        );
         super::tool_executor_diagnostics::completed(
             ctx.session_id,
             ctx.request_id,
             name,
             summary,
-            true,
+            &result,
         )
         .await;
         return result;
@@ -56,7 +59,7 @@ pub async fn execute_tracked_write(
         ctx.request_id,
         name,
         summary,
-        result.is_error,
+        &result,
     )
     .await;
     result

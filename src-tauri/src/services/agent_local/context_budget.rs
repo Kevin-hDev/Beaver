@@ -104,26 +104,35 @@ fn prepare_with_limit(
     let mut remaining_budget = message_limit
         .saturating_sub(estimate_messages(provider_id, &next))
         .saturating_sub(estimate_messages(provider_id, &required_reports));
-    let mut tail = Vec::new();
-    for msg in messages
+    let candidates = messages
         .iter()
-        .rev()
         .filter(|m| m.role != "system" && !is_required_report(m))
+        .cloned()
+        .collect();
+    let mut tail_units = Vec::new();
+    for unit in super::context_budget_history::atomic_units(candidates)
+        .into_iter()
+        .rev()
     {
+        if !unit.valid {
+            continue;
+        }
         if remaining_budget == 0 {
             break;
         }
-        let msg_tokens = estimate_messages(provider_id, std::slice::from_ref(msg));
-        if msg_tokens <= remaining_budget {
-            tail.push(msg.clone());
-            remaining_budget -= msg_tokens;
-        } else if tail.is_empty() {
-            tail.push(trim_message(msg, remaining_budget));
+        let unit_tokens = estimate_messages(provider_id, &unit.messages);
+        if unit_tokens <= remaining_budget {
+            tail_units.push(unit.messages);
+            remaining_budget -= unit_tokens;
+        } else if tail_units.is_empty() && !unit.is_tool_chain {
+            tail_units.push(vec![trim_message(&unit.messages[0], remaining_budget)]);
             remaining_budget = 0;
+        } else {
+            break;
         }
     }
-    tail.reverse();
-    next.extend(tail);
+    tail_units.reverse();
+    next.extend(tail_units.into_iter().flatten());
     next.extend(required_reports);
     *messages = next;
 

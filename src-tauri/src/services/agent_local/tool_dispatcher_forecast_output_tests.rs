@@ -24,13 +24,15 @@ fn analysis(count: usize) -> ForecastResult {
 
 #[test]
 fn analysis_payload_caps_and_pages_predictions() {
-    let json = analysis_payload(&analysis(250), 25, 500).unwrap();
+    let analysis = analysis(250);
+    let json = analysis_payload(&analysis, 25, 500).unwrap();
     let payload: Value = serde_json::from_str(&json).unwrap();
 
     assert_eq!(payload["predictions"].as_array().unwrap().len(), 200);
     assert_eq!(payload["quantiles"]["q10"].as_array().unwrap().len(), 200);
     assert_eq!(payload["pagination"]["offset"], 25);
     assert_eq!(payload["pagination"]["has_more"], true);
+    assert!(!analysis_is_truncated(&analysis));
 }
 
 #[test]
@@ -43,6 +45,7 @@ fn list_payload_keeps_a_bounded_latest_slice() {
 
     assert_eq!(payload["analyses"].as_array().unwrap().len(), 100);
     assert_eq!(payload["truncated"], true);
+    assert!(list_is_truncated(entries.len()));
 }
 
 #[test]

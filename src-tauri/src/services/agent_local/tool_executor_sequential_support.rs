@@ -20,10 +20,12 @@ pub(super) async fn initial_validation(
     if let Err(message) =
         super::subagent_tool_guard::validate_for_session(session_id, name, args, working_dir).await
     {
-        let result =
-            super::tool_dispatcher::enrich_error(ToolResult::err(message), name);
+        let result = super::tool_executor_errors::permission(
+            message,
+            "tool_not_allowed_for_session",
+        );
         super::tool_executor_diagnostics::completed(
-            session_id, request_id, name, summary, true,
+            session_id, request_id, name, summary, &result,
         )
         .await;
         return Err(result);

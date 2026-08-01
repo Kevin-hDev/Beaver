@@ -1,8 +1,12 @@
 import { useTranslation } from "react-i18next";
 import type { ToolActivity } from "@/hooks/agent-chat-utils";
 import { officeToolErrorMessage } from "@/lib/office-tool-errors";
-import { sanitizeToolError } from "@/lib/tool-error-sanitize";
-import type { ToolActivityRecord } from "@/types/agent";
+import { sanitizeToolError, sanitizeToolErrorDetails } from "@/lib/tool-error-sanitize";
+import type {
+  ToolActivityRecord,
+  ToolErrorInfo,
+  ToolResultStatus,
+} from "@/types/agent";
 import { ContentPreview, DiffPreview, WebResultsPreview } from "./tool-previews";
 import {
   DocumentResultPreview,
@@ -24,6 +28,10 @@ export interface RenderableTool {
   liveOutput?: string;
   liveElapsedMs?: number;
   is_error?: boolean;
+  status?: ToolResultStatus;
+  error?: ToolErrorInfo;
+  warnings?: string[];
+  truncated?: boolean;
   content?: string;
   old_text?: string;
   new_text?: string;
@@ -69,6 +77,10 @@ export function streamToolToRenderable(t: ToolActivity, isActive?: boolean): Ren
     liveOutput: t.liveOutput,
     liveElapsedMs: t.liveElapsedMs,
     is_error: legacySuccessfulStop ? false : t.isError,
+    status: t.status,
+    error: t.error,
+    warnings: t.warnings,
+    truncated: t.truncated,
     legacySuccessfulStop,
     resolved_path: t.resolvedPath,
     content: t.name === "write_file" ? str(t.args.content) : undefined,
@@ -89,6 +101,10 @@ export function savedToolToRenderable(t: ToolActivityRecord): RenderableTool {
     args: t.args,
     result: t.result,
     is_error: legacySuccessfulStop ? false : t.is_error,
+    status: t.result_meta?.status,
+    error: t.result_meta?.error,
+    warnings: t.result_meta?.warnings,
+    truncated: t.result_meta?.truncated,
     legacySuccessfulStop,
     resolved_path: t.resolved_path,
     content: t.content,
@@ -118,15 +134,28 @@ export function ToolDetailRow({
   const operations = tool.content ?? tool.args?.operations;
   const documentContent = tool.content ?? tool.args?.content;
   const display = toolDisplayInfo(tool, projectPath, t);
-  const result = tool.legacySuccessfulStop
+  const rawResult = tool.legacySuccessfulStop
     ? t("agentLocal.toolActivity.processStoppedResult")
     : tool.result ?? tool.liveOutput;
   const localizedOfficeError = tool.name.startsWith("beaver.office.")
     ? officeToolErrorMessage(tool.result ?? "", t)
     : undefined;
-  const errorMessage = tool.is_error && tool.name !== "web_fetch"
-    ? localizedOfficeError ?? sanitizeToolError(tool.result ?? "")
+  const errorSource = tool.result || tool.error?.hint || tool.error?.code || "";
+  const errorMessage = tool.is_error
+    ? localizedOfficeError ?? sanitizeToolError(errorSource)
     : undefined;
+  const notices = [
+    ...(tool.warnings ?? []),
+    ...(tool.truncated ? [t("agentLocal.toolActivity.resultTruncated")] : []),
+  ].map(sanitizeToolErrorDetails);
+  const resultDetails = tool.is_error
+    ? sanitizeToolErrorDetails([
+        tool.result,
+        tool.error?.hint,
+        tool.error?.code,
+      ].filter(Boolean).join("\n\n"))
+    : rawResult;
+  const result = [resultDetails, ...notices].filter(Boolean).join("\n\n");
   const showWebPreview = (tool.name === "web_search" || tool.name === "web_fetch")
     && tool.result
     && !tool.is_error;
@@ -146,7 +175,8 @@ export function ToolDetailRow({
       isActive={isActive}
       isError={tool.is_error}
       errorMessage={errorMessage}
-      result={tool.is_error ? undefined : result}
+      result={result || undefined}
+      forceResultPreview={notices.length > 0}
       commandPreview={shellCommandPreview(tool, previousTools)}
       elapsedMs={tool.result === undefined ? tool.liveElapsedMs : undefined}
       previewPath={tool.resolved_path}

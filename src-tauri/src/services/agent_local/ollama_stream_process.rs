@@ -99,6 +99,8 @@ pub fn process_chunk(
             let _ = on_event.send(StreamEvent::ToolCall {
                 name: name.clone(),
                 arguments: args.clone(),
+                tool_call_index: idx,
+                tool_call_id: None,
                 domain: super::memory_tool::event_domain(&name, &args),
             });
             if let Some(tx) = tool_tx {

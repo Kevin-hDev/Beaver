@@ -29,6 +29,12 @@ fn failure_summary_uses_last_tool_without_raw_error() {
         status: "started".to_string(),
         args: None,
         is_error: false,
+        result_status: None,
+        error_code: None,
+        error_category: None,
+        retryable: None,
+        truncated: false,
+        warning_count: 0,
     });
     apply_failure(&mut session, 0, "/Users/kevinh/secret stack trace", false);
     let run = &session.diagnostic_runs[0];
@@ -72,6 +78,12 @@ fn max_turns_summary_does_not_blame_last_tool() {
         status: "detected".to_string(),
         args: None,
         is_error: false,
+        result_status: None,
+        error_code: None,
+        error_category: None,
+        retryable: None,
+        truncated: false,
+        warning_count: 0,
     });
 
     apply_failure(

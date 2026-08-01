@@ -425,6 +425,9 @@
       "inProgress": "en curso",
       "completed": "completado",
       "processStoppedResult": "Proceso detenido.",
+      "resultTruncated": "Resultado truncado.",
+      "resultMissing": "Falta el resultado de la herramienta tras finalizar el flujo.",
+      "verifyBeforeRetry": "Comprueba el estado resultante antes de reintentar, ya que la acción podría haberse ejecutado.",
       "toggleDetails": "Mostrar detalles de herramientas",
       "groups": {
         "exploration": "Exploración",

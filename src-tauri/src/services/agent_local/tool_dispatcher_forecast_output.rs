@@ -4,6 +4,8 @@ use crate::services::forecast::limits::{
 };
 use serde_json::{json, Value};
 
+const MAX_TOOL_ANOMALIES: usize = 10;
+
 pub fn created_payload(forecast: &ForecastResult) -> Result<String, String> {
     to_pretty(json!({
         "status": "created",
@@ -122,7 +124,7 @@ pub fn list_payload(
     to_pretty(json!({
         "count": list.len(),
         "analyses": analyses,
-        "truncated": list.len() > MAX_TOOL_ANALYSES,
+        "truncated": list_is_truncated(list.len()),
         "usage": "Call forecast_read with one analysis_id from this list to read an analysis."
     }))
 }
@@ -149,13 +151,25 @@ fn advanced_summary(analysis: &ForecastResult) -> Value {
         })).collect::<Vec<_>>(),
         "residual_anomalies": {
             "count": advanced.anomalies.len(),
-            "top": advanced.anomalies.iter().take(10).collect::<Vec<_>>(),
-            "truncated": advanced.anomalies.len() > 10,
+            "top": advanced.anomalies.iter().take(MAX_TOOL_ANOMALIES).collect::<Vec<_>>(),
+            "truncated": advanced.anomalies.len() > MAX_TOOL_ANOMALIES,
         },
         "variable_importance": advanced.variable_importance,
         "drift": advanced.drift,
         "interpretation": "Anomalies are robust residual anomalies, not global z-scores. Variable importance is chronological permutation importance and must be reported with its reliability. Drift compares bounded reference and recent windows."
     })
+}
+
+pub fn analysis_is_truncated(analysis: &ForecastResult) -> bool {
+    analysis.annotations.len() > MAX_TOOL_ANNOTATIONS
+        || analysis
+            .advanced_analytics
+            .as_ref()
+            .is_some_and(|advanced| advanced.anomalies.len() > MAX_TOOL_ANOMALIES)
+}
+
+pub fn list_is_truncated(total: usize) -> bool {
+    total > MAX_TOOL_ANALYSES
 }
 
 fn ensemble_summary(analysis: &ForecastResult) -> Value {

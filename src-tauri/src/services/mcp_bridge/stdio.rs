@@ -148,7 +148,11 @@ impl McpTransport for StdioTransport {
         validate_tools(tools)
     }
 
-    async fn call_tool(&self, name: &str, args: Value) -> Result<String, String> {
+    async fn call_tool(
+        &self,
+        name: &str,
+        args: Value,
+    ) -> Result<super::transport::McpToolResult, String> {
         let handle = self.ensure_running().await?;
         let id = next_id();
 

@@ -11,7 +11,7 @@ pub(crate) use definition::validate as validate_definition;
 fn type_ok(val: &Value, ty: Ty) -> bool {
     match ty {
         Ty::Str => val.is_string(),
-        Ty::Int => val.is_u64() || val.is_i64(),
+        Ty::Int => val.is_u64(),
         Ty::Float => val.is_f64() || val.is_u64() || val.is_i64(),
         Ty::Arr => val.is_array(),
         Ty::Obj => val.is_object(),
@@ -22,7 +22,7 @@ fn type_ok(val: &Value, ty: Ty) -> bool {
 fn ty_label(ty: Ty) -> &'static str {
     match ty {
         Ty::Str => "string",
-        Ty::Int => "integer",
+        Ty::Int => "entier positif ou nul",
         Ty::Float => "number",
         Ty::Arr => "array",
         Ty::Obj => "object",
@@ -68,15 +68,20 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
         }
     }
 
-    let mut cleaned = serde_json::Map::with_capacity(specs.len());
-    for (key, val) in obj {
-        if specs.iter().any(|(n, _, _)| *n == key.as_str()) {
-            cleaned.insert(key.clone(), val.clone());
-        } else {
-            eprintln!("[tool-validate] argument inconnu ignoré : {tool}.{key}");
-        }
+    if let Some(key) = obj
+        .keys()
+        .find(|key| !specs.iter().any(|(name, _, _)| *name == key.as_str()))
+    {
+        let accepted = specs
+            .iter()
+            .map(|(name, _, _)| *name)
+            .collect::<Vec<_>>()
+            .join(", ");
+        return Err(format!(
+            "paramètre '{key}' inconnu; paramètres acceptés: {accepted}"
+        ));
     }
-    Ok(Value::Object(cleaned))
+    Ok(args.clone())
 }
 
 fn validate_shell_control(

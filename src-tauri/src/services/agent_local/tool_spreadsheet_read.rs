@@ -46,6 +46,8 @@ pub fn build_result(
         }));
     }
 
+    let columns_truncated = all_rows.iter().any(|row| row.len() > HARD_MAX_COLS);
+
     let headers: Vec<String> = all_rows[0]
         .iter()
         .take(HARD_MAX_COLS)
@@ -62,7 +64,7 @@ pub fn build_result(
         .map(|row| row.into_iter().take(HARD_MAX_COLS).collect())
         .collect();
     let total = data_rows.len();
-    let truncated = total > max_rows;
+    let truncated = total > max_rows || columns_truncated;
     let rows: Vec<Vec<Value>> = data_rows.into_iter().take(max_rows).collect();
 
     Ok(serde_json::json!({
@@ -103,16 +105,19 @@ pub fn read_csv(resolved: &Path, max_rows: usize) -> Result<Value, String> {
         .from_path(resolved)
         .map_err(|_| "Impossible de lire le CSV".to_string())?;
 
-    let headers: Vec<String> = rdr
-        .headers()
-        .map_err(|_| "Impossible de lire les en-têtes".to_string())?
-        .iter()
-        .take(HARD_MAX_COLS)
-        .map(|s| s.to_string())
-        .collect();
+    let (headers, mut truncated) = {
+        let source_headers = rdr
+            .headers()
+            .map_err(|_| "Impossible de lire les en-têtes".to_string())?;
+        let headers: Vec<String> = source_headers
+            .iter()
+            .take(HARD_MAX_COLS)
+            .map(str::to_string)
+            .collect();
+        (headers, source_headers.len() > HARD_MAX_COLS)
+    };
 
     let mut rows: Vec<Vec<Value>> = Vec::new();
-    let mut truncated = false;
 
     for record in rdr.records() {
         if rows.len() >= max_rows {
@@ -120,7 +125,12 @@ pub fn read_csv(resolved: &Path, max_rows: usize) -> Result<Value, String> {
             break;
         }
         let rec = record.map_err(|_| "Erreur de lecture d'une ligne CSV".to_string())?;
-        let row: Vec<Value> = rec.iter().map(|s| Value::String(s.to_string())).collect();
+        truncated |= rec.len() > HARD_MAX_COLS;
+        let row = rec
+            .iter()
+            .take(HARD_MAX_COLS)
+            .map(|value| Value::String(value.to_string()))
+            .collect();
         rows.push(row);
     }
 
@@ -174,7 +184,12 @@ pub async fn read_spreadsheet(
     };
 
     match result {
-        Ok(json) => ToolResult::ok(json.to_string()),
+        Ok(json) => {
+            let truncated = json["truncated"].as_bool().unwrap_or(false);
+            let mut result = ToolResult::ok(json.to_string());
+            result.mark_truncated(truncated);
+            result
+        }
         Err(e) => ToolResult::err(e),
     }
 }

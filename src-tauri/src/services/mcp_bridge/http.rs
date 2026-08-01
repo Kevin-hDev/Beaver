@@ -5,7 +5,7 @@ use serde_json::Value;
 
 use super::identity;
 use super::response;
-use super::transport::{next_id, validate_tools, McpToolDef, McpTransport};
+use super::transport::{next_id, validate_tools, McpToolDef, McpToolResult, McpTransport};
 use crate::services::secure_http::AuthenticatedClient;
 
 const TIMEOUT: Duration = Duration::from_secs(30);
@@ -40,7 +40,7 @@ impl McpTransport for HttpTransport {
         validate_tools(tools)
     }
 
-    async fn call_tool(&self, name: &str, args: Value) -> Result<String, String> {
+    async fn call_tool(&self, name: &str, args: Value) -> Result<McpToolResult, String> {
         let token = self.resolve_token().await?;
         let session_id = initialize(&self.endpoint, token.as_str()).await?;
 

@@ -1,6 +1,7 @@
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_execution_outcome::ToolExecutionOutcome;
 use crate::services::agent_local::tool_hooks::run_post_hooks;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::Value;
@@ -34,6 +35,7 @@ pub async fn run_delegate_batch(
     working_dir: &std::path::Path,
     cancel: CancellationToken,
     plan_mode_active: bool,
+    tool_call_ids: &[String],
 ) -> Vec<DelegateBatchOutput> {
     let mut outputs = Vec::new();
     let mut pending = Vec::new();
@@ -61,8 +63,15 @@ pub async fn run_delegate_batch(
                 pending: delegate,
             }),
             Err(result) => {
-                finish_diagnostics(session_id, request_id, summary, result.is_error).await;
-                emit_result(on_event, item.index, &result);
+                let result = super::tool_dispatcher_entry::finalize_result(
+                    result,
+                    DELEGATE_TOOL,
+                    session_id,
+                    working_dir,
+                )
+                .await;
+                finish_diagnostics(session_id, request_id, summary, &result).await;
+                emit_result(on_event, item.index, &result, tool_call_ids);
                 outputs.push(DelegateBatchOutput {
                     index: item.index,
                     result,
@@ -82,12 +91,44 @@ pub async fn run_delegate_batch(
     drop(tx);
 
     while let Some((index, summary, result)) = rx.recv().await {
-        finish_diagnostics(session_id, request_id, summary, result.is_error).await;
-        emit_result(on_event, index, &result);
+        let result = super::tool_dispatcher_entry::finalize_result(
+            result,
+            DELEGATE_TOOL,
+            session_id,
+            working_dir,
+        )
+        .await;
+        finish_diagnostics(session_id, request_id, summary, &result).await;
+        emit_result(on_event, index, &result, tool_call_ids);
         outputs.push(DelegateBatchOutput { index, result });
-        if cancel.is_cancelled() {
-            break;
+    }
+
+    for item in items {
+        if outputs.iter().any(|output| output.index == item.index) {
+            continue;
         }
+        let result = ToolResult::error(
+            "Résultat du lancement du sous-agent indisponible.",
+            "delegate_result_missing",
+            ToolErrorCategory::Internal,
+            false,
+        )
+        .with_error_hint(
+            "Vérifier la liste des sous-agents avant de relancer : le lancement a pu réussir.",
+        );
+        let result = super::tool_dispatcher_entry::finalize_result(
+            result,
+            DELEGATE_TOOL,
+            session_id,
+            working_dir,
+        )
+        .await;
+        finish_diagnostics(session_id, request_id, None, &result).await;
+        emit_result(on_event, item.index, &result, tool_call_ids);
+        outputs.push(DelegateBatchOutput {
+            index: item.index,
+            result,
+        });
     }
 
     sort_outputs_by_index(&mut outputs);
@@ -123,6 +164,7 @@ pub async fn run_delegate_only_tools(
         working_dir,
         cancel,
         plan_mode_active,
+        tool_call_ids,
     )
     .await;
     let mut outcome = ToolExecutionOutcome::default();
@@ -145,20 +187,32 @@ async fn finish_diagnostics(
     session_id: &str,
     request_id: &str,
     summary: Option<Value>,
-    is_error: bool,
+    result: &ToolResult,
 ) {
     super::tool_executor_diagnostics::completed(
         session_id,
         request_id,
         DELEGATE_TOOL,
         summary,
-        is_error,
+        result,
     )
     .await;
 }
 
-fn emit_result(on_event: &AgentEventEmitter, index: usize, result: &ToolResult) {
-    super::tool_executor_helpers::emit_tool_result(on_event, DELEGATE_TOOL, result, index, None);
+fn emit_result(
+    on_event: &AgentEventEmitter,
+    index: usize,
+    result: &ToolResult,
+    tool_call_ids: &[String],
+) {
+    super::tool_executor_helpers::emit_tool_result(
+        on_event,
+        DELEGATE_TOOL,
+        result,
+        index,
+        tool_call_ids.get(index).map(String::as_str),
+        None,
+    );
 }
 
 #[cfg(test)]

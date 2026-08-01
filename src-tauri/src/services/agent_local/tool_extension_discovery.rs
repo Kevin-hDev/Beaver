@@ -40,8 +40,28 @@ pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
     })
     .await;
     match result {
-        Ok(lines) => ToolResult::ok(render(lines)),
+        Ok(lines) => discovery_result(lines),
         Err(_) => ToolResult::err("Recherche de plugins indisponible."),
+    }
+}
+
+fn discovery_result(lines: Vec<DiscoveryLine>) -> ToolResult {
+    let incomplete = lines.iter().any(|line| {
+        matches!(
+            line.status,
+            DiscoveryStatus::ProviderLimit
+                | DiscoveryStatus::DiscoveryLimit
+                | DiscoveryStatus::Unavailable
+        )
+    });
+    let output = render(lines);
+    if incomplete {
+        ToolResult::partial(
+            output,
+            ["Certains outils correspondants n'ont pas pu être chargés."],
+        )
+    } else {
+        ToolResult::ok(output)
     }
 }
 

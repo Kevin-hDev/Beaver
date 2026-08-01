@@ -8,8 +8,11 @@ pub fn blocked(reason: String) -> ShellOutput {
         exit_code: -1,
         running: false,
         stopped: false,
+        cancelled: false,
+        blocked: true,
         timed_out: false,
         tracking_incomplete: false,
+        output_truncated: false,
         output_incomplete: false,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
@@ -19,26 +22,7 @@ pub fn blocked(reason: String) -> ShellOutput {
 pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> ShellOutput {
     let mut stdout = snapshot.stdout;
     let mut stderr = snapshot.stderr;
-    let exit_code = match snapshot.completion {
-        Some(CompletionKind::Exited(code)) => code,
-        Some(CompletionKind::Stopped) => {
-            append_note(&mut stdout, "Processus arrêté.");
-            -1
-        }
-        Some(CompletionKind::Cancelled) => {
-            stderr = "Commande annulee.".to_string();
-            -1
-        }
-        Some(CompletionKind::TimedOut) => {
-            stderr = "Timeout de la commande atteint.".to_string();
-            -1
-        }
-        Some(CompletionKind::Failed) => {
-            stderr = "Execution shell interrompue.".to_string();
-            -1
-        }
-        None => -1,
-    };
+    let exit_code = completion_exit_code(snapshot.completion, &mut stdout, &mut stderr);
 
     if snapshot.running {
         append_note(
@@ -79,11 +63,41 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
         exit_code,
         running: snapshot.running,
         stopped: matches!(snapshot.completion, Some(CompletionKind::Stopped)),
+        cancelled: matches!(snapshot.completion, Some(CompletionKind::Cancelled)),
+        blocked: false,
         timed_out: matches!(snapshot.completion, Some(CompletionKind::TimedOut)),
         tracking_incomplete: snapshot.tracking_incomplete,
+        output_truncated: snapshot.output_truncated,
         output_incomplete: snapshot.output_incomplete,
         affected_paths,
         file_changes: snapshot.changes,
+    }
+}
+
+fn completion_exit_code(
+    completion: Option<CompletionKind>,
+    stdout: &mut String,
+    stderr: &mut String,
+) -> i32 {
+    match completion {
+        Some(CompletionKind::Exited(code)) => code,
+        Some(CompletionKind::Stopped) => {
+            append_note(stdout, "Processus arrêté.");
+            -1
+        }
+        Some(CompletionKind::Cancelled) => {
+            append_note(stderr, "Commande annulee.");
+            -1
+        }
+        Some(CompletionKind::TimedOut) => {
+            append_note(stderr, "Timeout de la commande atteint.");
+            -1
+        }
+        Some(CompletionKind::Failed) => {
+            append_note(stderr, "Execution shell interrompue.");
+            -1
+        }
+        None => -1,
     }
 }
 
@@ -93,3 +107,7 @@ fn append_note(output: &mut String, note: &str) {
     }
     output.push_str(note);
 }
+
+#[cfg(test)]
+#[path = "tool_bash_result_tests.rs"]
+mod tests;

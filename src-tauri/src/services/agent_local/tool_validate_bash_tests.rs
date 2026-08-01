@@ -91,11 +91,12 @@ fn bash_write_rejects_invalid_session_ids_before_dispatch() {
 }
 
 #[test]
-fn strips_unknown_args() {
+fn rejects_unknown_args_with_the_accepted_names() {
     let args = json!({"command": "ls", "inject": "evil"});
-    let cleaned = validate("bash", &args).unwrap();
-    assert!(cleaned.get("inject").is_none());
-    assert!(cleaned.get("command").is_some());
+    let error = validate("bash", &args).expect_err("unknown argument");
+
+    assert!(error.contains("inject"));
+    assert!(error.contains("command"));
 }
 
 #[test]

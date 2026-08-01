@@ -12,9 +12,11 @@ fn successful_external_write_adds_a_non_blocking_notice() {
     let result = append(result, workspace.path());
 
     assert!(!result.is_error);
-    assert!(result.content.contains("WORKSPACE NOTICE"));
+    assert_eq!(result.content, "created");
     assert!(result
-        .content
+        .warnings
+        .first()
+        .expect("workspace warning")
         .contains(workspace.path().canonicalize().unwrap().to_string_lossy().as_ref()));
 }
 
@@ -29,17 +31,23 @@ fn write_inside_workspace_does_not_add_a_notice() {
     let result = append(result, workspace.path());
 
     assert_eq!(result.content, "created");
+    assert!(result.warnings.is_empty());
 }
 
 #[test]
-fn a_failed_tool_is_not_reframed_as_workspace_drift() {
+fn a_failed_tool_keeps_its_error_and_reports_external_changes_separately() {
     let workspace = tempfile::tempdir().expect("workspace");
+    let external = tempfile::tempdir().expect("external");
+    let changed = external.path().join("partial.txt");
+    std::fs::write(&changed, "partial").expect("write partial result");
     let result = ToolResult::err("failed")
-        .with_affected_paths(vec!["/outside/failed.txt".to_string()]);
+        .with_affected_paths(vec![changed.to_string_lossy().to_string()]);
 
     let result = append(result, workspace.path());
 
     assert_eq!(result.content, "failed");
+    assert!(result.is_error);
+    assert!(result.warnings[0].contains("WORKSPACE NOTICE"));
 }
 
 #[test]

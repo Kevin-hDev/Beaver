@@ -4,6 +4,7 @@ import type { ToolFileChangeRecord } from "./agent-message";
 import type { AgentPlanPreview } from "./agent-plan";
 import type { SubagentStatus } from "./agent-session";
 import type { AgentTodoItem } from "./agent-todo";
+import type { ToolErrorInfo, ToolResultStatus } from "./agent-tool-result";
 
 interface AgentErrorDiagnosticSummary {
   requestId: string;
@@ -38,9 +39,9 @@ export type StreamEvent =
   | { event: "thinking"; data: { content: string; tokenCount?: number } }
   | { event: "contextUsage"; data: { inputTokens: number; outputTokens: number; contextLimit: number; estimated: boolean; breakdown?: StreamContextUsageBreakdown } }
   | { event: "generationStarted"; data: Record<string, never> }
-  | { event: "toolCall"; data: { name: string; arguments: Record<string, unknown>; domain?: "memory" } }
+  | { event: "toolCall"; data: { name: string; arguments: Record<string, unknown>; toolCallIndex?: number; toolCallId?: string; domain?: "memory" } }
   | { event: "toolOutput"; data: { toolCallIndex: number; content: string; elapsedMs: number } }
-  | { event: "toolResult"; data: { name: string; content: string; isError: boolean; truncated?: boolean; displaySummary?: string; toolCallIndex: number; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
+  | { event: "toolResult"; data: { name: string; content: string; isError: boolean; status?: ToolResultStatus; error?: ToolErrorInfo; warnings?: string[]; truncated?: boolean; displaySummary?: string; toolCallIndex: number; toolCallId?: string; resolvedPath?: string; domain?: "memory"; affectedPaths?: string[]; fileChanges?: ToolFileChangeRecord[]; startLine?: number } }
   | { event: "turnEnd"; data: Record<string, never> }
   | { event: "permissionRequest"; data: { id: string; toolName: string; arguments: Record<string, unknown> } }
   | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; tpsEstimated?: boolean; promptTokens: number | null; contextTokens: number | null } }

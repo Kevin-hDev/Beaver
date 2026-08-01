@@ -22,6 +22,7 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
         .filter_map(|model| compact_model(model, forced_model))
         .collect();
     compact.sort_by_key(model_sort_key);
+    let compact_truncated = compact.len() > limits::MAX_TOOL_MODELS;
     compact.truncate(limits::MAX_TOOL_MODELS);
     let forced_model_state = forced_model
         .and_then(|id| models.iter().find(|model| model["id"].as_str() == Some(id)))
@@ -45,7 +46,9 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
             },
             "summary": {
                 "installed_model_ids": installed_model_ids,
-                "runnable_model_ids": runnable_model_ids
+                "runnable_model_ids": runnable_model_ids,
+                "total_models": models.len(),
+                "truncated": compact_truncated
             },
             "models": compact,
             "usage": "Compare the audited confidence_level with forced_model_state.interval_capability. Use the forced model only when it supports the exact level. Never round an explicit request; ask the user to change the level or selected model if they are incompatible."
@@ -133,8 +136,14 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
             })
         }
     };
+    let result_truncated = policy.mode == selection_policy::ForecastSelectionMode::Manual
+        && compact_truncated;
     match serde_json::to_string_pretty(&payload) {
-        Ok(json) => ToolResult::ok(json),
+        Ok(json) => {
+            let mut result = ToolResult::ok(json);
+            result.mark_truncated(result_truncated);
+            result
+        }
         Err(_) => ToolResult::err("Catalogue Forecast indisponible"),
     }
 }

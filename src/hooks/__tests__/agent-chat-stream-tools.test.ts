@@ -184,4 +184,17 @@ describe("toolOutput", () => {
     expect(result.state.currentTools[0].liveOutput).toBe("compilation...");
     expect(result.state.currentTools[1].liveOutput).toBeUndefined();
   });
+
+  it("ignore une sortie live dont l'index stable est inconnu", () => {
+    const state = makeState({ currentTools: [
+      { name: "bash", args: { command: "first" }, callIndex: 2 },
+      { name: "bash", args: { command: "second" }, callIndex: 3 },
+    ] });
+    const result = applyStreamEvent(state, {
+      event: "toolOutput",
+      data: { toolCallIndex: 99, content: "wrong", elapsedMs: 500 },
+    });
+
+    expect(result.state.currentTools.every((tool) => tool.liveOutput === undefined)).toBe(true);
+  });
 });

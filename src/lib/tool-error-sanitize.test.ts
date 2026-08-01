@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeToolError } from "./tool-error-sanitize";
+import { sanitizeToolError, sanitizeToolErrorDetails } from "./tool-error-sanitize";
 
 // --- Rédaction des secrets -------------------------------------------------
 
@@ -30,6 +30,47 @@ describe("sanitizeToolError - secrets", () => {
     const result = sanitizeToolError("secret_key=mykey12345678");
     expect(result).not.toContain("mykey12345678");
   });
+
+  it("rédige une valeur JSON contenant des espaces", () => {
+    const field = ["to", "ken"].join("");
+    const value = ["private", "value", "with", "spaces"].join(" ");
+    const result = sanitizeToolErrorDetails(JSON.stringify({ [field]: value }));
+
+    expect(result).not.toContain(value);
+    expect(result).toContain("[redacted]");
+  });
+
+  it("rédige une clé fournisseur même sans libellé", () => {
+    const credential = ["sk", "abcdefghijklmnopqrstuvwxyz123456"].join("-");
+    const result = sanitizeToolError(`Provider rejected ${credential}`);
+
+    expect(result).not.toContain(credential);
+  });
+
+  it("rédige les autorisations, cookies et identifiants intégrés aux URL", () => {
+    const basic = ["dXNlcj", "pwYXNzd29yZA=="].join("");
+    const session = ["private", "session", "value"].join("-");
+    const userInfo = ["user", "password"].join(":");
+    const details = [
+      `Authorization: Basic ${basic}`,
+      `Set-Cookie: session=${session}`,
+      `Request: https://${userInfo}@example.test/resource`,
+    ].join("\n");
+    const result = sanitizeToolErrorDetails(details);
+
+    expect(result).not.toContain(basic);
+    expect(result).not.toContain(session);
+    expect(result).not.toContain(userInfo);
+  });
+
+  it("rédige les JWT et identifiants AWS sans libellé", () => {
+    const jwt = ["eyJhbGciOiJIUzI1NiJ9", "eyJzdWIiOiJ1c2VyIn0", "signature123"].join(".");
+    const aws = ["AKIA", "IOSFODNN7EXAMPLE"].join("");
+    const result = sanitizeToolErrorDetails(`Rejected ${jwt} and ${aws}`);
+
+    expect(result).not.toContain(jwt);
+    expect(result).not.toContain(aws);
+  });
 });
 
 // --- Rédaction des chemins -------------------------------------------------
@@ -47,10 +88,53 @@ describe("sanitizeToolError - paths", () => {
     expect(result).toContain("[path]");
   });
 
-  it("ne rédactionne pas un chemin relatif sans /Users/", () => {
-    // Les chemins relatifs (./src/main) ne sont pas rédactionnés.
+  it("rédige aussi les chemins relatifs", () => {
     const result = sanitizeToolError("Error in ./src/main.ts");
-    expect(result).toContain("./src/main.ts");
+    expect(result).not.toContain("./src/main.ts");
+    expect(result).toContain("[path]");
+  });
+
+  it("rédige les chemins accolés à un séparateur", () => {
+    const result = sanitizeToolError("File:/Users/dev/private.txt source:=./src/main.ts");
+    expect(result).not.toContain("/Users/dev/private.txt");
+    expect(result).not.toContain("./src/main.ts");
+  });
+
+  it("rédige les chemins fichier, home, UNC et relatifs sans point", () => {
+    for (const path of [
+      "file:///Users/dev/private.txt",
+      "~/private/config.json",
+      "\\\\server\\share\\secret.txt",
+      "src/private/config.ts",
+    ]) {
+      const result = sanitizeToolError(`Cannot open ${path}`);
+      expect(result).not.toContain(path);
+      expect(result).toContain("[path]");
+    }
+  });
+});
+
+describe("sanitizeToolErrorDetails", () => {
+  it("conserve plusieurs lignes utiles après rédaction", () => {
+    const result = sanitizeToolErrorDetails(
+      "Build failed\n/path/to/source.ts:3\ntoken=very-secret-value\nExpected 1, got 2",
+    );
+
+    expect(result).toContain("Build failed");
+    expect(result).toContain("Expected 1, got 2");
+    expect(result).not.toContain("/path/to/source.ts");
+    expect(result).not.toContain("very-secret-value");
+  });
+
+  it("borne les anciens résultats d'erreur très volumineux", () => {
+    const result = sanitizeToolErrorDetails("x".repeat(25_000));
+    expect([...result].length).toBeLessThanOrEqual(20_003);
+    expect(result.endsWith("...")).toBe(true);
+  });
+
+  it("retire les contrôles bidirectionnels du résumé et des détails", () => {
+    expect(sanitizeToolError("safe\u202etext")).toBe("safetext");
+    expect(sanitizeToolErrorDetails("safe\u2066text")).toBe("safetext");
   });
 });
 
@@ -77,10 +161,8 @@ describe("sanitizeToolError - truncation", () => {
     expect(result).not.toContain("stack trace");
   });
 
-  it("ignore les lignes vides strictes en tête", () => {
-    // find(Boolean) skip les "" mais conserve "  " (string non vide = truthy).
-    // On teste donc avec des lignes vides strictes.
-    const input = "\n\n\nError: real message";
+  it("ignore les lignes vides ou composées d'espaces en tête", () => {
+    const input = "\n  \n\t\nError: real message";
     const result = sanitizeToolError(input);
     expect(result).toBe("Error: real message");
   });

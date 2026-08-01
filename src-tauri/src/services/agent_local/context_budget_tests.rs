@@ -127,3 +127,68 @@ fn codex_does_not_prune_reasoning_that_is_not_sent() {
     assert_eq!(messages.len(), original_len);
     assert_eq!(messages[1].content, original_content);
 }
+
+#[test]
+fn pruning_keeps_a_tool_call_and_all_results_together() {
+    let mut messages = vec![
+        msg("system", "rules"),
+        msg("user", &"old".repeat(20_000)),
+        assistant_with_calls(&["call-1", "call-2"]),
+        tool_message("call-1", "grep", "first"),
+        tool_message("call-2", "glob", "second"),
+        msg("assistant", "recent answer"),
+    ];
+
+    prepare_for_request(&mut messages, 12_000, &[], "openai").unwrap();
+
+    let call_index = messages
+        .iter()
+        .position(|message| message.tool_calls.is_some())
+        .expect("complete tool chain retained");
+    assert_eq!(messages[call_index + 1].tool_call_id.as_deref(), Some("call-1"));
+    assert_eq!(messages[call_index + 2].tool_call_id.as_deref(), Some("call-2"));
+}
+
+#[test]
+fn oversized_tool_chain_is_omitted_as_a_whole() {
+    let mut messages = vec![
+        msg("system", "rules"),
+        assistant_with_calls(&["call-1"]),
+        tool_message("call-1", "grep", &"huge".repeat(20_000)),
+        msg("assistant", "recent answer"),
+    ];
+
+    prepare_for_request(&mut messages, 8_000, &[], "openai").unwrap();
+
+    assert!(messages.iter().all(|message| message.tool_calls.is_none()));
+    assert!(messages.iter().all(|message| message.role != "tool"));
+    assert!(messages.iter().any(|message| message.content.contains("recent answer")));
+}
+
+fn assistant_with_calls(ids: &[&str]) -> ChatMessage {
+    ChatMessage {
+        role: "assistant".into(),
+        content: String::new(),
+        tool_calls: Some(ids.iter().enumerate().map(|(index, id)| {
+            super::super::types_ollama::ToolCallOllama {
+                id: Some((*id).into()),
+                extra_content: None,
+                function: super::super::types_ollama::ToolCallFunction {
+                    name: if index == 0 { "grep" } else { "glob" }.into(),
+                    arguments: serde_json::json!({}),
+                },
+            }
+        }).collect()),
+        ..Default::default()
+    }
+}
+
+fn tool_message(id: &str, name: &str, content: &str) -> ChatMessage {
+    ChatMessage {
+        role: "tool".into(),
+        content: content.into(),
+        tool_name: Some(name.into()),
+        tool_call_id: Some(id.into()),
+        ..Default::default()
+    }
+}

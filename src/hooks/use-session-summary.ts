@@ -5,6 +5,7 @@ import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { AGENT_SESSIONS_CHANGED } from "@/hooks/agent-session-events";
 import { isHiddenAgentTool } from "@/lib/hidden-agent-tools";
 import { toolsToRecords, type ToolActivity } from "./agent-chat-utils";
+import { applyToolResult } from "./agent-chat-tool-results";
 import {
   addChangeSummaries,
   childSubagents,
@@ -99,21 +100,35 @@ export function useSessionSummary(sessionId: string | null) {
           payload.event.data.name,
           payload.event.data.arguments,
           payload.event.data.domain,
+          payload.event.data.toolCallIndex,
+          payload.event.data.toolCallId,
         );
         return;
       }
       if (payload.event.event === "toolResult") {
-        const next = applyLiveToolResult(
-          liveToolsRef.current,
-          payload.event.data.toolCallIndex ?? -1,
-          payload.event.data.content,
-          payload.event.data.isError,
-          payload.event.data.resolvedPath,
-          payload.event.data.domain,
-          payload.event.data.startLine,
-        );
+        if (isHiddenAgentTool(payload.event.data.name)) return;
+        const next = applyToolResult(liveToolsRef.current, {
+          name: payload.event.data.name,
+          callIndex: payload.event.data.toolCallIndex ?? -1,
+          callId: payload.event.data.toolCallId,
+          content: payload.event.data.content,
+          isError: payload.event.data.isError,
+          status: payload.event.data.status,
+          error: payload.event.data.error,
+          warnings: payload.event.data.warnings,
+          truncated: payload.event.data.truncated,
+          resolvedPath: payload.event.data.resolvedPath,
+          domain: payload.event.data.domain,
+          affectedPaths: payload.event.data.affectedPaths,
+          fileChanges: payload.event.data.fileChanges,
+          startLine: payload.event.data.startLine,
+          displaySummary: payload.event.data.displaySummary,
+        });
         liveToolsRef.current = next.tools;
-        const summary = next.completedTool ? summarizeToolChange(toolsToRecords([next.completedTool])[0]) : EMPTY_CHANGE_SUMMARY;
+        const completed = next.tools[next.appliedIndex];
+        const summary = completed
+          ? summarizeToolChange(toolsToRecords([completed])[0])
+          : EMPTY_CHANGE_SUMMARY;
         if (hasChangeSummary(summary)) {
           liveRequestChangesRef.current = addChangeSummaries(liveRequestChangesRef.current, summary);
           setLiveChanges({ sessionId, summary: liveRequestChangesRef.current });
@@ -161,33 +176,9 @@ function trackLiveToolCall(
   name: string,
   args: Record<string, unknown>,
   domain?: "memory",
+  callIndex?: number,
+  callId?: string,
 ) {
   if (isHiddenAgentTool(name)) return;
-  tools.push({ name, args, domain });
-}
-
-function applyLiveToolResult(
-  tools: ToolActivity[],
-  index: number,
-  content: string,
-  isError: boolean,
-  resolvedPath?: string,
-  domain?: "memory",
-  startLine?: number,
-): { tools: ToolActivity[]; completedTool?: ToolActivity } {
-  const next = [...tools];
-  const apply = (i: number) => {
-    next[i] = { ...next[i], result: content, isError };
-    if (resolvedPath) next[i].resolvedPath = resolvedPath;
-    if (domain) next[i].domain = domain;
-    if (startLine !== undefined) next[i].startLine = startLine;
-    return next[i];
-  };
-  if (index >= 0 && index < next.length && !next[index].result) {
-    return { tools: next, completedTool: apply(index) };
-  }
-  for (let i = 0; i < next.length; i += 1) {
-    if (!next[i].result) return { tools: next, completedTool: apply(i) };
-  }
-  return { tools: next };
+  tools.push({ name, args, domain, callIndex, callId });
 }

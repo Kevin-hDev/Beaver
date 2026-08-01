@@ -2,6 +2,7 @@ use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::tool_dispatcher;
 use crate::services::agent_local::tool_hooks::{run_post_hooks, run_pre_hooks, PreHookDecision};
 use crate::services::agent_local::types_tools::ToolResult;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::write_guard::WriteGuard;
 use crate::services::agent_local::{permission_gate, permission_policy, sensitive_data};
 use serde_json::Value;
@@ -36,11 +37,21 @@ pub(super) async fn execute_write(
         super::tool_plan_guard::ensure_allowed_for_session(name, args, session_id, plan_mode_active)
             .await
     {
-        return tool_dispatcher::enrich_error(ToolResult::err(msg), name);
+        return ToolResult::error(
+            msg,
+            "tool_not_allowed_in_plan",
+            ToolErrorCategory::Permission,
+            false,
+        );
     }
     match run_pre_hooks(name, args) {
         PreHookDecision::Deny(msg) => {
-            return tool_dispatcher::enrich_error(ToolResult::err(msg), name);
+            return ToolResult::error(
+                msg,
+                "tool_hook_denied",
+                ToolErrorCategory::Permission,
+                false,
+            );
         }
         PreHookDecision::Allow => {}
     }
@@ -48,10 +59,22 @@ pub(super) async fn execute_write(
     let memory_write =
         match super::memory_tool::write_authorization(name, args, working_dir, session_id) {
             Ok(authorization) => authorization,
-            Err(message) => return ToolResult::err(message),
+            Err(message) => {
+                return ToolResult::error(
+                    message,
+                    "memory_write_policy_failed",
+                    ToolErrorCategory::Permission,
+                    false,
+                )
+            }
         };
     if memory_write == Some(false) {
-        return ToolResult::err("Cette écriture mémoire n'est pas autorisée pour ce tour.");
+        return ToolResult::error(
+            "Cette écriture mémoire n'est pas autorisée pour ce tour.",
+            "memory_write_not_authorized",
+            ToolErrorCategory::Permission,
+            false,
+        );
     }
 
     if memory_write == Some(true) {
@@ -65,7 +88,7 @@ pub(super) async fn execute_write(
     } else if permission_policy::requires_sensitive_bash_prompt(mode, name, args) {
         let safe_args = sensitive_data::redact_json(args);
         if !request_once(on_event, name, &safe_args, cancel.clone()).await {
-            return ToolResult::err("L'utilisateur a refusé cette action.");
+            return super::tool_executor_errors::denied_or_cancelled(&cancel);
         }
     } else if permission_gate::requires_permission(name, args)
         && !permission_gate::is_allowed(session_id, name).await
@@ -76,16 +99,21 @@ pub(super) async fn execute_write(
                 permission_gate::mark_allowed(session_id, name).await;
             }
             permission_gate::PermissionDecision::Deny => {
-                return ToolResult::err("L'utilisateur a refusé cette action.");
+                return super::tool_executor_errors::denied_or_cancelled(&cancel);
             }
         }
     }
 
     let tr = match check_write_guard(name, args, working_dir, write_guard) {
-        Err(msg) => tool_dispatcher::enrich_error(ToolResult::err(msg), name),
+        Err(msg) => ToolResult::error(
+            msg,
+            "write_guard_rejected",
+            ToolErrorCategory::Permission,
+            false,
+        ),
         Ok(()) => {
             if cancel.is_cancelled() {
-                ToolResult::err("Annulé.")
+                ToolResult::cancelled("Annulé.")
             } else if let Err(msg) = super::tool_plan_guard::ensure_allowed_for_session(
                 name,
                 args,
@@ -94,7 +122,12 @@ pub(super) async fn execute_write(
             )
             .await
             {
-                tool_dispatcher::enrich_error(ToolResult::err(msg), name)
+                ToolResult::error(
+                    msg,
+                    "tool_not_allowed_in_plan",
+                    ToolErrorCategory::Permission,
+                    false,
+                )
             } else {
                 dispatch_or_interactive(
                     on_event,

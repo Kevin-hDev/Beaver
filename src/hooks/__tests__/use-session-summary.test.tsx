@@ -130,6 +130,33 @@ describe("useSessionSummary", () => {
 
     await waitFor(() => expect(result.current.subagents).toHaveLength(0));
   });
+
+  it("n'associe pas un résultat interne à la modification visible suivante", async () => {
+    invokeMock.mockImplementation((command: string) => command === "list_subagents"
+      ? Promise.resolve([])
+      : Promise.resolve(session([], "s1")));
+    const { result } = renderHook(() => useSessionSummary("s1"));
+    await waitFor(() => expect(result.current.session?.id).toBe("s1"));
+
+    act(() => {
+      emit("s1", { event: "toolCall", data: {
+        name: "todo_history", arguments: {}, toolCallIndex: 0,
+      } });
+      emit("s1", { event: "toolCall", data: {
+        name: "edit_file",
+        arguments: { path: "a.ts", old_string: "old", new_string: "new" },
+        toolCallIndex: 1,
+      } });
+      emit("s1", { event: "toolResult", data: {
+        name: "todo_history", content: "hidden", isError: false, toolCallIndex: 0,
+      } });
+      emit("s1", { event: "toolResult", data: {
+        name: "edit_file", content: "ok", isError: false, toolCallIndex: 1,
+      } });
+    });
+
+    expect(result.current.changes).toEqual({ additions: 1, deletions: 1, files: 1 });
+  });
 });
 
 function emit(sessionId: string, event: StreamEvent) {

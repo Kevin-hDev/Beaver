@@ -1,5 +1,6 @@
 use crate::services::agent_local::tool_hooks::run_post_hooks;
 use crate::services::agent_local::types_tools::ToolResult;
+use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use crate::services::agent_local::write_guard::WriteGuard;
 use futures_util::future::join_all;
 use serde_json::Value;
@@ -32,7 +33,8 @@ pub(super) async fn flush_read_batch<'a>(
     for chunk in batch.chunks(MAX_PARALLEL) {
         if cancel.is_cancelled() {
             for entry in chunk {
-                indexed_results[entry.global_idx] = Some((entry.name, ToolResult::err("Annulé.")));
+                indexed_results[entry.global_idx] =
+                    Some((entry.name, ToolResult::cancelled("Annulé.")));
             }
             continue;
         }
@@ -90,13 +92,17 @@ pub(super) async fn flush_read_batch<'a>(
                     chunk_results[*pos] = Some(tr);
                 }
             } else {
-                let msg = if cancel.is_cancelled() {
-                    "Annulé."
-                } else {
-                    "Timeout du batch de lectures."
-                };
                 for pos in &pending_indices {
-                    chunk_results[*pos] = Some(ToolResult::err(msg));
+                    chunk_results[*pos] = Some(if cancel.is_cancelled() {
+                        ToolResult::cancelled("Annulé.")
+                    } else {
+                        ToolResult::error(
+                            "Timeout du batch de lectures.",
+                            "read_batch_timeout",
+                            ToolErrorCategory::Timeout,
+                            true,
+                        )
+                    });
                 }
             }
         }
@@ -104,7 +110,18 @@ pub(super) async fn flush_read_batch<'a>(
         for (pos, entry) in chunk.iter().enumerate() {
             let tr = chunk_results[pos]
                 .take()
-                .unwrap_or_else(|| ToolResult::err("Annulé."));
+                .unwrap_or_else(|| {
+                    if cancel.is_cancelled() {
+                        ToolResult::cancelled("Annulé.")
+                    } else {
+                        ToolResult::error(
+                            "Résultat de lecture indisponible.",
+                            "read_batch_result_missing",
+                            ToolErrorCategory::Internal,
+                            true,
+                        )
+                    }
+                });
             indexed_results[entry.global_idx] = Some((entry.name, tr));
         }
     }

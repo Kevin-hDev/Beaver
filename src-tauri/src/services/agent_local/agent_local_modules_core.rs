@@ -26,6 +26,7 @@ pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
 pub mod compress_hook;
 pub mod context_budget;
+mod context_budget_history;
 pub mod context_usage_buckets;
 pub mod diagnostic_args;
 #[cfg(test)]

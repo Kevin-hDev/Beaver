@@ -7,6 +7,7 @@ mod tests {
     fn read_file_valid() {
         let args = json!({"path": "foo.rs", "offset": 0, "limit": 100});
         assert!(validate("read_file", &args).is_ok());
+        assert!(validate("read_file", &json!({"path": "foo.rs", "offset": -1})).is_err());
     }
 
     #[test]
@@ -53,7 +54,7 @@ mod tests {
 
     #[test]
     fn subagent_tools_validate_new_args() {
-        let cleaned = validate(
+        let error = validate(
             "delegate_task",
             &json!({
                 "prompt": "Analyse",
@@ -64,8 +65,8 @@ mod tests {
                 "subagent_id": "child"
             }),
         )
-        .unwrap();
-        assert!(cleaned.get("mode").is_none());
+        .expect_err("obsolete mode must be reported");
+        assert!(error.contains("mode"));
         assert!(validate(
             "message_subagent",
             &json!({"subagent_id": "a", "prompt": "Suite"})
@@ -73,6 +74,21 @@ mod tests {
         .is_ok());
         assert!(validate("archive_subagent", &json!({"subagent_id": "a"})).is_ok());
         assert!(validate("archive_subagent", &json!({})).is_err());
+        assert!(validate(
+            "inspect_subagent_changes",
+            &json!({"subagent_id": "a", "change_id": "b"})
+        )
+        .is_ok());
+        assert!(validate(
+            "apply_subagent_changes",
+            &json!({"subagent_id": "a", "change_id": "b", "force": true})
+        )
+        .is_err());
+        assert!(validate(
+            "discard_subagent_changes",
+            &json!({"subagent_id": "a"})
+        )
+        .is_err());
     }
 
     #[test]
@@ -138,7 +154,7 @@ mod tests {
 
     #[test]
     fn forecast_audit_rejects_existing_profile_ids() {
-        let cleaned = validate(
+        let error = validate(
             "forecast_data_audit",
             &json!({
                 "data": "[]",
@@ -150,9 +166,9 @@ mod tests {
                 "confidence_level": 0.8
             }),
         )
-        .unwrap();
+        .expect_err("data_profile_id is not accepted by the audit tool");
 
-        assert!(cleaned.get("data_profile_id").is_none());
+        assert!(error.contains("data_profile_id"));
     }
 
     #[test]

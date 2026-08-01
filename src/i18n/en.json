@@ -430,6 +430,9 @@
       "inProgress": "in progress",
       "completed": "completed",
       "processStoppedResult": "Process stopped.",
+      "resultTruncated": "Result truncated.",
+      "resultMissing": "The tool result is missing after the stream ended.",
+      "verifyBeforeRetry": "Check the resulting state before retrying because the action may already have run.",
       "toggleDetails": "Show tool details",
       "groups": {
         "exploration": "Exploration",

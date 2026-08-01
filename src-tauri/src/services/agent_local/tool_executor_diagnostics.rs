@@ -1,5 +1,6 @@
 use serde_json::Value;
 use std::path::Path;
+use super::types_tools::ToolResult;
 
 pub async fn started(
     session_id: &str,
@@ -17,7 +18,7 @@ pub async fn completed(
     request_id: &str,
     name: &str,
     summary: Option<Value>,
-    is_error: bool,
+    result: &ToolResult,
 ) {
     super::stream_diagnostics::record_tool(
         session_id,
@@ -25,9 +26,14 @@ pub async fn completed(
         name,
         "completed",
         summary.clone(),
-        is_error,
+        Some(result),
     )
     .await;
-    super::subagent_activity::record_tool_completed(session_id, name, summary.as_ref(), is_error)
+    super::subagent_activity::record_tool_completed(
+        session_id,
+        name,
+        summary.as_ref(),
+        result.is_error,
+    )
         .await;
 }

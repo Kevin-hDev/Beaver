@@ -62,18 +62,25 @@ pub async fn run(
         }
     };
     match outcome {
-        ProcessOutcome::Finished((Ok(stdout), Ok(stderr), Ok(status))) => Ok(ShellOutput {
-            stdout: render(stdout),
-            stderr: render(stderr),
-            exit_code: status.code().unwrap_or(-1),
-            running: false,
-            stopped: false,
-            timed_out: false,
-            tracking_incomplete: false,
-            output_incomplete: false,
-            affected_paths: Vec::new(),
-            file_changes: Vec::new(),
-        }),
+        ProcessOutcome::Finished((Ok(stdout), Ok(stderr), Ok(status))) => {
+            let (stdout, stdout_truncated) = render(stdout);
+            let (stderr, stderr_truncated) = render(stderr);
+            Ok(ShellOutput {
+                stdout,
+                stderr,
+                exit_code: status.code().unwrap_or(-1),
+                running: false,
+                stopped: false,
+                cancelled: false,
+                blocked: false,
+                timed_out: false,
+                tracking_incomplete: false,
+                output_truncated: stdout_truncated || stderr_truncated,
+                output_incomplete: false,
+                affected_paths: Vec::new(),
+                file_changes: Vec::new(),
+            })
+        }
         ProcessOutcome::Finished((mut stdout, mut stderr, _)) => {
             clear_capture(&mut stdout);
             clear_capture(&mut stderr);
@@ -81,11 +88,11 @@ pub async fn run(
         }
         ProcessOutcome::Cancelled => {
             terminate(&mut child, pid).await;
-            Ok(interrupted("Commande d'exploration annulée.", false))
+            Ok(interrupted("Commande d'exploration annulée.", false, true))
         }
         ProcessOutcome::TimedOut => {
             terminate(&mut child, pid).await;
-            Ok(interrupted("Délai d'exploration dépassé.", true))
+            Ok(interrupted("Délai d'exploration dépassé.", true, false))
         }
     }
 }
@@ -98,14 +105,14 @@ enum ProcessOutcome {
     TimedOut,
 }
 
-fn render((mut bytes, exceeded): (Vec<u8>, bool)) -> String {
-    let mut text = String::from_utf8_lossy(&bytes).into_owned();
+fn render((mut bytes, read_truncated): (Vec<u8>, bool)) -> (String, bool) {
+    let text = String::from_utf8_lossy(&bytes).into_owned();
     bytes.zeroize();
-    text = super::tool_bash::truncate_output(&text);
-    if exceeded {
+    let (mut text, display_truncated) = super::tool_bash::truncate_output(&text);
+    if read_truncated && !display_truncated {
         text.push_str("\n... [sortie tronquée]");
     }
-    text
+    (text, read_truncated || display_truncated)
 }
 
 fn clear_capture(captured: &mut Captured) {
@@ -119,15 +126,18 @@ async fn terminate(child: &mut tokio::process::Child, pid: u32) {
     let _ = tokio::time::timeout(Duration::from_secs(2), child.wait()).await;
 }
 
-fn interrupted(message: &str, timed_out: bool) -> ShellOutput {
+fn interrupted(message: &str, timed_out: bool, cancelled: bool) -> ShellOutput {
     ShellOutput {
         stdout: String::new(),
         stderr: message.to_string(),
         exit_code: -1,
         running: false,
         stopped: false,
+        cancelled,
+        blocked: false,
         timed_out,
         tracking_incomplete: false,
+        output_truncated: false,
         output_incomplete: false,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),

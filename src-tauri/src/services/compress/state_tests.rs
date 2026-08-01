@@ -111,6 +111,7 @@ fn keeps_rich_fields_from_persisted_recent_messages() {
         args: Some(serde_json::json!({ "cmd": "cargo test" })),
         result: Some("ok".to_string()),
         is_error: Some(false),
+        result_meta: None,
         content: None,
         old_text: None,
         new_text: None,
