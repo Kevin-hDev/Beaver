@@ -13,7 +13,7 @@ fn truncation_turns_a_success_into_a_partial_result() {
 
 #[test]
 fn truncation_preserves_an_error_status() {
-    let mut result = ToolResult::err("preview");
+    let mut result = ToolResult::execution("test_failure", "preview", false);
 
     result.mark_truncated(true);
 
@@ -23,10 +23,9 @@ fn truncation_preserves_an_error_status() {
 }
 
 #[test]
-fn cancellation_conversion_preserves_result_context() {
-    let result = ToolResult::err("cancelled after a partial write")
-        .with_affected_paths(vec!["changed.txt".to_string()])
-        .into_cancelled();
+fn cancellation_preserves_result_context() {
+    let result = ToolResult::cancelled("cancelled after a partial write")
+        .with_affected_paths(vec!["changed.txt".to_string()]);
 
     assert_eq!(result.status, ToolResultStatus::Cancelled);
     assert_eq!(result.content, "cancelled after a partial write");

@@ -425,6 +425,7 @@
       "inProgress": "läuft",
       "completed": "abgeschlossen",
       "processStoppedResult": "Prozess beendet.",
+      "resultCancelled": "Abgebrochen.",
       "resultTruncated": "Ergebnis gekürzt.",
       "resultMissing": "Das Werkzeugergebnis fehlt nach dem Ende des Streams.",
       "verifyBeforeRetry": "Prüfen Sie vor einem erneuten Versuch den Zustand, da die Aktion bereits ausgeführt worden sein könnte.",

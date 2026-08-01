@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn post_hook_passes_through_error() {
-        let result = ToolResult::err("quelque chose a échoué");
+        let result = ToolResult::execution("test_failure", "quelque chose a échoué", false);
         let args = json!({});
         let after = run_post_hooks("bash", &args, result.clone());
         assert!(after.is_error);
@@ -110,12 +110,12 @@ mod tests {
         let cancelled = run_post_hooks(
             "ask_user_choice",
             &json!({}),
-            ToolResult::err("Interaction annulée"),
+            ToolResult::cancelled("Interaction annulée"),
         );
         let invalid = run_post_hooks(
             "planmode",
             &json!({}),
-            ToolResult::err("Paramètre title requis"),
+            ToolResult::validation("test_input_invalid", "Paramètre title requis"),
         );
 
         assert_eq!(

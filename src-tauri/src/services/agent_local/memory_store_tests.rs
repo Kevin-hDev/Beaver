@@ -56,7 +56,7 @@ async fn edit_detects_a_stale_source() {
         .await
         .unwrap_err();
 
-    assert!(error.contains("Relisez"));
+    assert_eq!(error, MemoryEditError::Stale);
 }
 
 #[tokio::test]

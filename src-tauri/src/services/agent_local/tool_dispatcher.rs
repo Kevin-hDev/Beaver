@@ -135,7 +135,10 @@ pub(super) async fn dispatch_inner(
         "create_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {
-                return ToolResult::err("Paramètre branch_name requis");
+                return ToolResult::validation(
+                    "branch_name_required",
+                    "Paramètre branch_name requis",
+                );
             }
             match crate::services::git::branch::create_branch(working_dir, branch_name) {
                 Ok(()) => ToolResult::ok(format!(
@@ -149,7 +152,10 @@ pub(super) async fn dispatch_inner(
         "checkout_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {
-                return ToolResult::err("Paramètre branch_name requis");
+                return ToolResult::validation(
+                    "branch_name_required",
+                    "Paramètre branch_name requis",
+                );
             }
             match crate::services::git::branch::checkout_branch(working_dir, branch_name) {
                 Ok(()) => ToolResult::ok(format!("Basculé sur la branche '{}'", branch_name)),

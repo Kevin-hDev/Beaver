@@ -1,11 +1,20 @@
 #[cfg(test)]
 mod tests {
     use crate::services::agent_local::tool_spreadsheet_read::{build_result, read_spreadsheet};
+    use crate::services::agent_local::tool_spreadsheet_range::parse as parse_range;
     use crate::services::agent_local::tool_result_contract::ToolResultStatus;
     use tempfile::TempDir;
 
     fn working_dir() -> TempDir {
         tempfile::tempdir().unwrap()
+    }
+
+    #[test]
+    fn reversed_ranges_are_rejected() {
+        assert!(parse_range("B2:A1").is_none());
+        assert!(parse_range("A2:A1").is_none());
+        assert!(parse_range("A0:B1").is_none());
+        assert!(parse_range("XFE1:XFE2").is_none());
     }
 
     #[tokio::test]

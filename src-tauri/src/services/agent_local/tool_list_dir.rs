@@ -1,9 +1,14 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::types_tools::ToolResult;
 
 const MAX_LIST_ENTRIES: usize = 500;
 const MAX_DEPTH: u32 = 3;
+
+enum Work {
+    ReadDirectory(PathBuf, u32),
+    Entry(tokio::fs::DirEntry, u32),
+}
 
 pub async fn list_dir(path: &str, working_dir: &Path) -> ToolResult {
     let resolved = match super::tool_files::resolve_read_path(path, working_dir) {
@@ -18,72 +23,96 @@ pub async fn list_dir(path: &str, working_dir: &Path) -> ToolResult {
         }
     };
     let mut entries = Vec::new();
-    let mut stack = vec![(resolved, 0u32)];
+    let mut stack = vec![Work::ReadDirectory(resolved, 0)];
+    let mut pending_entries = 0usize;
     let mut read_failures = 0usize;
     let mut metadata_failures = 0usize;
     let mut truncated = false;
     let mut visited_root = false;
 
-    while let Some((dir, depth)) = stack.pop() {
-        let mut read_dir = match tokio::fs::read_dir(&dir).await {
-            Ok(read_dir) => read_dir,
-            Err(error) if !visited_root => {
-                return super::tool_file_error::directory_failure(error)
-            }
-            Err(_) => {
-                read_failures = read_failures.saturating_add(1);
-                continue;
-            }
-        };
-        visited_root = true;
-        let mut children = Vec::new();
-        let remaining = MAX_LIST_ENTRIES.saturating_sub(entries.len());
-        loop {
-            match read_dir.next_entry().await {
-                Ok(Some(entry)) => {
-                    let name = entry.file_name();
-                    let name = name.to_string_lossy();
-                    if !name.starts_with('.') && name != "node_modules" && name != "target" {
-                        if children.len() >= remaining {
-                            truncated = true;
-                            break;
-                        }
-                        children.push(entry);
-                    }
-                }
-                Ok(None) => break,
-                Err(_) => {
-                    read_failures = read_failures.saturating_add(1);
-                    break;
-                }
-            }
-        }
-        children.sort_by_key(tokio::fs::DirEntry::file_name);
-        for entry in children {
-            let name = entry.file_name().to_string_lossy().to_string();
-            let file_type = match entry.file_type().await {
-                Ok(file_type) => file_type,
-                Err(_) => {
-                    metadata_failures = metadata_failures.saturating_add(1);
-                    entries.push(format!("{}{name}", "  ".repeat(depth as usize)));
+    while let Some(work) = stack.pop() {
+        match work {
+            Work::ReadDirectory(dir, depth) => {
+                if truncated {
                     continue;
                 }
-            };
-            let is_dir = file_type.is_dir();
-            entries.push(format!(
-                "{}{name}{}",
-                "  ".repeat(depth as usize),
-                if is_dir { "/" } else { "" }
-            ));
-            if is_dir && depth < MAX_DEPTH {
-                stack.push((entry.path(), depth + 1));
+                let mut read_dir = match tokio::fs::read_dir(&dir).await {
+                    Ok(read_dir) => read_dir,
+                    Err(error) if !visited_root => {
+                        return super::tool_file_error::directory_failure(error)
+                    }
+                    Err(_) => {
+                        read_failures = read_failures.saturating_add(1);
+                        continue;
+                    }
+                };
+                visited_root = true;
+                let remaining = MAX_LIST_ENTRIES
+                    .saturating_sub(entries.len())
+                    .saturating_sub(pending_entries);
+                let mut children = Vec::new();
+                loop {
+                    match read_dir.next_entry().await {
+                        Ok(Some(entry)) if visible(&entry) => {
+                            if children.len() >= remaining {
+                                truncated = true;
+                                break;
+                            }
+                            children.push(entry);
+                        }
+                        Ok(Some(_)) => {}
+                        Ok(None) => break,
+                        Err(_) => {
+                            read_failures = read_failures.saturating_add(1);
+                            break;
+                        }
+                    }
+                }
+                children.sort_by_key(tokio::fs::DirEntry::file_name);
+                pending_entries = pending_entries.saturating_add(children.len());
+                for entry in children.into_iter().rev() {
+                    stack.push(Work::Entry(entry, depth));
+                }
             }
-        }
-        if truncated {
-            break;
+            Work::Entry(entry, depth) => {
+                pending_entries = pending_entries.saturating_sub(1);
+                let name = entry.file_name().to_string_lossy().to_string();
+                let file_type = match entry.file_type().await {
+                    Ok(file_type) => file_type,
+                    Err(_) => {
+                        metadata_failures = metadata_failures.saturating_add(1);
+                        entries.push(format!("{}{name}", "  ".repeat(depth as usize)));
+                        continue;
+                    }
+                };
+                let is_dir = file_type.is_dir();
+                entries.push(format!(
+                    "{}{name}{}",
+                    "  ".repeat(depth as usize),
+                    if is_dir { "/" } else { "" }
+                ));
+                if is_dir && depth < MAX_DEPTH {
+                    stack.push(Work::ReadDirectory(entry.path(), depth + 1));
+                }
+            }
         }
     }
 
+    render(entries, read_failures, metadata_failures, truncated)
+}
+
+fn visible(entry: &tokio::fs::DirEntry) -> bool {
+    let name = entry.file_name();
+    let name = name.to_string_lossy();
+    !name.starts_with('.') && name != "node_modules" && name != "target"
+}
+
+fn render(
+    entries: Vec<String>,
+    read_failures: usize,
+    metadata_failures: usize,
+    truncated: bool,
+) -> ToolResult {
     let content = if entries.is_empty() {
         "(dossier vide)".to_string()
     } else {

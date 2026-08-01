@@ -36,7 +36,7 @@ pub async fn dispatch_forecast(
 
 async fn handle_read(args: &Value) -> ToolResult {
     match args["analysis_id"].as_str() {
-        Some(id) if !id.trim().is_empty() => match storage::load(id.trim()).await {
+        Some(id) if !id.trim().is_empty() => match super::tool_dispatcher_forecast_load::load(id.trim()).await {
             Ok(analysis) => {
                 let offset = args["offset"].as_u64().unwrap_or(0) as usize;
                 let limit = args["limit"].as_u64().unwrap_or(100) as usize;
@@ -46,14 +46,18 @@ async fn handle_read(args: &Value) -> ToolResult {
                     &analysis, offset, limit,
                 ), truncated)
             }
-            Err(error) => ToolResult::err(error),
+            Err(error) => error,
         },
         _ => match storage::list().await {
             Ok(list) => payload_result(
                 super::tool_dispatcher_forecast_output::list_payload(&list),
                 super::tool_dispatcher_forecast_output::list_is_truncated(list.len()),
             ),
-            Err(error) => ToolResult::err(error),
+            Err(error) => ToolResult::internal(
+                "forecast_analysis_list_failed",
+                error,
+                true,
+            ),
         },
     }
 }
@@ -65,7 +69,11 @@ fn payload_result(payload: Result<String, String>, truncated: bool) -> ToolResul
             result.mark_truncated(truncated);
             result
         }
-        Err(error) => ToolResult::err(error),
+        Err(error) => ToolResult::internal(
+            "forecast_result_serialization_failed",
+            error,
+            false,
+        ),
     }
 }
 

@@ -22,8 +22,14 @@ pub async fn prepare_delegate(
     let subagent_type = match args["subagent_type"].as_str() {
         Some("explorer") => "explorer",
         Some("coder") => "coder",
-        Some(_) => return Err(ToolResult::err("Type de sous-agent invalide.")),
-        None => return Err(ToolResult::err("Paramètre 'subagent_type' manquant")),
+        Some(_) => return Err(ToolResult::validation(
+            "subagent_type_invalid",
+            "Type de sous-agent invalide.",
+        )),
+        None => return Err(ToolResult::validation(
+            "subagent_type_required",
+            "Paramètre 'subagent_type' manquant",
+        )),
     };
     let name = super::subagent_profile::clean_name(
         args["display_name"]
@@ -50,18 +56,22 @@ pub async fn prepare_delegate(
     let parent = match session_store::get(&parent_session_id).await {
         Ok(s) => s,
         Err(_) => {
-            return Err(ToolResult::err(
+            return Err(ToolResult::internal(
+                "parent_session_unavailable",
                 "Erreur interne lors de la création du sous-agent",
+                true,
             ))
         }
     };
     if parent.parent_session_id.is_some() {
-        return Err(ToolResult::err(
+        return Err(ToolResult::permission(
+            "nested_subagent_delegation_forbidden",
             "Les sous-agents ne peuvent pas lancer d'autres sous-agents.",
         ));
     }
     if subagent_type == "coder" && !super::tool_delegate_child::has_coder_workspace(&parent) {
-        return Err(ToolResult::err(
+        return Err(ToolResult::validation(
+            "subagent_workspace_required",
             "Un sous-agent code doit être lancé depuis un dossier valide.",
         ));
     }
@@ -120,9 +130,12 @@ pub async fn prepare_delegate(
         .is_err()
     {
         subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
-        return Err(ToolResult::err(
+        return Err(ToolResult::internal(
+            "subagent_context_save_failed",
             "Erreur interne lors de la préparation du sous-agent",
-        ));
+            false,
+        )
+        .with_error_hint("Inspecter le sous-agent avant de relancer sa préparation."));
     }
 
     let child_id = child.id.clone();
@@ -160,7 +173,12 @@ pub async fn prepare_delegate(
             )
             .await;
             subagent_registry::release_run_claim(&parent_session_id, &run_id).await;
-            return Err(ToolResult::err(error));
+            return Err(ToolResult::internal(
+                "subagent_registration_failed",
+                error,
+                false,
+            )
+            .with_error_hint("Inspecter le sous-agent créé avant de relancer la délégation."));
         }
     };
     let run_id = registered.run_id;

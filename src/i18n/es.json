@@ -425,6 +425,7 @@
       "inProgress": "en curso",
       "completed": "completado",
       "processStoppedResult": "Proceso detenido.",
+      "resultCancelled": "Cancelado.",
       "resultTruncated": "Resultado truncado.",
       "resultMissing": "Falta el resultado de la herramienta tras finalizar el flujo.",
       "verifyBeforeRetry": "Comprueba el estado resultante antes de reintentar, ya que la acción podría haberse ejecutado.",

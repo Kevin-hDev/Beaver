@@ -43,7 +43,10 @@ pub async fn execute(
         Ok(_) => {
             super::tool_plan_approval_request::request_approval(on_event, session_id, cancel).await
         }
-        Err(err) => ToolResult::err(err),
+        Err(error) => ToolResult::execution("plan_write_failed", error, false)
+            .with_error_hint(
+                "Vérifier le plan actif avant une nouvelle écriture : il peut avoir été enregistré.",
+            ),
     }
 }
 

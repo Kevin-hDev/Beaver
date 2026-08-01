@@ -17,7 +17,7 @@ pub async fn dispatch_tool(
     }
     let host = match super::runtime::ensure_running().await {
         Ok(host) => host,
-        Err(_) => return Some(extension_unavailable()),
+        Err(_) => return Some(super::tool_result::unavailable()),
     };
     let Some(working_directory) = working_directory.to_str() else {
         return Some(extension_context_unavailable());
@@ -97,15 +97,6 @@ fn to_tool_result(result: Result<HostToolResult, String>) -> ToolResult {
             "Vérifier l'état du projet ou du service avant de relancer : l'action a pu être exécutée.",
         ),
     }
-}
-
-fn extension_unavailable() -> ToolResult {
-    ToolResult::error(
-        "Extension indisponible.",
-        "extension_unavailable",
-        ToolErrorCategory::Unavailable,
-        true,
-    )
 }
 
 fn extension_context_unavailable() -> ToolResult {

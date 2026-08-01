@@ -34,11 +34,11 @@ export function toolResultForModel(tool: SavedToolResult): string {
     kind: "tool_result",
     tool: tool.name,
     status,
-    output,
+    outputFormat: "raw_following",
     ...(error ? { error } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
     ...(truncated ? { truncated: true } : {}),
-  });
+  }) + `\n${output}`;
 }
 
 function legacyStatus(isError?: boolean): ToolResultStatus {

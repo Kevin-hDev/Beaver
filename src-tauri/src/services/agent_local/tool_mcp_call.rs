@@ -48,10 +48,9 @@ pub(super) async fn call(args: &Value) -> ToolResult {
     {
         Ok(Ok(result)) => to_tool_result(result),
         Ok(Err(error)) => transport_failure(error),
-        Err(_) => ToolResult::error(
-            "appel MCP expiré",
+        Err(_) => ToolResult::timeout(
             "mcp_call_timeout",
-            ToolErrorCategory::Timeout,
+            "appel MCP expiré",
             false,
         )
         .with_error_hint(
@@ -60,23 +59,31 @@ pub(super) async fn call(args: &Value) -> ToolResult {
     }
 }
 
-fn transport_failure(message: String) -> ToolResult {
-    let lower = message.to_lowercase();
-    let (code, category) = if lower.contains("retournée par le connecteur") {
-        ("mcp_server_error", ToolErrorCategory::External)
-    } else if lower.contains("réponse") || lower.contains("response") {
-        ("mcp_invalid_response", ToolErrorCategory::External)
-    } else if lower.contains("interne") || lower.contains("internal") {
-        ("mcp_internal_error", ToolErrorCategory::Internal)
-    } else {
-        ("mcp_transport_failed", ToolErrorCategory::External)
+fn transport_failure(error: crate::services::mcp_bridge::transport::McpCallError) -> ToolResult {
+    use crate::services::mcp_bridge::transport::McpCallError;
+
+    let (code, category, retryable) = match error {
+        McpCallError::Unavailable => (
+            "mcp_service_unavailable",
+            ToolErrorCategory::Unavailable,
+            true,
+        ),
+        McpCallError::Server => ("mcp_server_error", ToolErrorCategory::External, false),
+        McpCallError::InvalidResponse => {
+            ("mcp_invalid_response", ToolErrorCategory::External, false)
+        }
+        McpCallError::Transport => ("mcp_transport_failed", ToolErrorCategory::External, false),
     };
-    let (content, truncated) = sanitize_output(&message);
-    let mut result = ToolResult::error(content, code, category, false).with_error_hint(
-        "Vérifier l'état du service avant de relancer : l'action a pu être exécutée.",
-    );
-    result.mark_truncated(truncated);
-    result
+    let result = ToolResult::error(error.message(), code, category, retryable);
+    if retryable {
+        result.with_error_hint(
+            "Aucun appel d'outil n'a été envoyé ; une nouvelle tentative est sûre.",
+        )
+    } else {
+        result.with_error_hint(
+            "Vérifier l'état du service avant de relancer : l'action a pu être exécutée.",
+        )
+    }
 }
 
 fn valid_tool_name(name: &str) -> bool {
@@ -133,7 +140,7 @@ fn sanitize_output(output: &str) -> (String, bool) {
 mod tests {
     use super::*;
     use crate::services::agent_local::tool_result_contract::ToolResultStatus;
-    use crate::services::mcp_bridge::transport::McpToolResult;
+    use crate::services::mcp_bridge::transport::{McpCallError, McpToolResult};
 
     #[test]
     fn server_tool_errors_are_not_promoted_to_success() {
@@ -171,8 +178,9 @@ mod tests {
 
     #[test]
     fn connector_and_protocol_failures_have_distinct_codes() {
-        let server = transport_failure("erreur MCP retournée par le connecteur".to_string());
-        let protocol = transport_failure("réponse MCP invalide".to_string());
+        let server = transport_failure(McpCallError::Server);
+        let protocol = transport_failure(McpCallError::InvalidResponse);
+        let unavailable = transport_failure(McpCallError::Unavailable);
 
         let server_error = server.error.unwrap();
         let protocol_error = protocol.error.unwrap();
@@ -180,6 +188,7 @@ mod tests {
         assert_eq!(protocol_error.code.as_ref(), "mcp_invalid_response");
         assert!(!server_error.retryable);
         assert!(!protocol_error.retryable);
+        assert!(unavailable.error.unwrap().retryable);
         assert!(protocol_error.hint.is_some());
     }
 }

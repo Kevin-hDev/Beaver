@@ -75,10 +75,10 @@ async fn persist_result(content: String, session_id: &str) -> Option<String> {
     let dir = data_dir().join("tool-results").join(session_id);
     let file_name = format!("{}.txt", uuid::Uuid::new_v4());
     let path = dir.join(&file_name);
-    crate::services::private_store::atomic_write_async(path, content.into_bytes())
+    crate::services::private_store::atomic_write_async(path.clone(), content.into_bytes())
         .await
         .ok()?;
-    Some(format!("tool-results/{session_id}/{file_name}"))
+    Some(path.to_string_lossy().into_owned())
 }
 
 #[cfg(test)]
@@ -97,8 +97,12 @@ mod tests {
     async fn large_errors_are_bounded_and_the_full_result_is_retained() {
         let session_id = uuid::Uuid::new_v4().to_string();
         let full = "é".repeat(MAX_CHARS_ERROR + 1);
-        let result =
-            truncate_result(ToolResult::err(full.clone()), "extension", &session_id).await;
+        let result = truncate_result(
+            ToolResult::external("test_extension_failure", full.clone(), false),
+            "extension",
+            &session_id,
+        )
+        .await;
 
         assert!(result.is_error);
         assert!(result.truncated);
@@ -141,7 +145,7 @@ mod tests {
     #[test]
     fn persistence_failure_is_explicit_and_does_not_change_an_error_to_success() {
         let result = apply_truncation(
-            ToolResult::err(""),
+            ToolResult::execution("test_failure", "", false),
             "x".repeat(PREVIEW_SIZE),
             None,
             PREVIEW_SIZE + 1,
@@ -155,5 +159,21 @@ mod tests {
     #[tokio::test]
     async fn result_storage_rejects_an_invalid_session_path() {
         assert!(persist_result("secret".into(), "../outside").await.is_none());
+    }
+
+    #[tokio::test]
+    async fn persisted_result_path_is_directly_readable_by_the_file_tool() {
+        let session_id = uuid::Uuid::new_v4().to_string();
+        let path = persist_result("complete result".into(), &session_id)
+            .await
+            .expect("persisted result path");
+        assert!(std::path::Path::new(&path).is_absolute());
+
+        let working_dir = tempfile::tempdir().unwrap();
+        let result = super::super::tool_files::read_file(&path, working_dir.path(), 0, 10).await;
+        assert!(!result.is_error);
+        assert!(result.content.contains("complete result"));
+
+        let _ = std::fs::remove_dir_all(data_dir().join("tool-results").join(session_id));
     }
 }

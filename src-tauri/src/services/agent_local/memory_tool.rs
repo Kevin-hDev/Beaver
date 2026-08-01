@@ -34,14 +34,18 @@ async fn dispatch_with_layout(
     let scope = match layout.scope_for_tool_path(raw_path, working_dir).await {
         Ok(Some(scope)) => scope,
         Ok(None) => return None,
-        Err(error) => return Some(ToolResult::err(error)),
+        Err(error) => return Some(ToolResult::validation("memory_scope_invalid", error)),
     };
     if !super::memory_runtime::read_allowed(session_id) {
-        return Some(ToolResult::err("La mémoire est désactivée pour cette requête."));
+        return Some(ToolResult::permission(
+            "memory_read_disabled",
+            "La mémoire est désactivée pour cette requête.",
+        ));
     }
     let write = matches!(tool_name, "write_file" | "edit_file");
     if write && !super::memory_runtime::write_allowed(session_id) {
-        return Some(ToolResult::err(
+        return Some(ToolResult::permission(
+            "memory_write_not_authorized",
             "Une demande explicite est nécessaire pour modifier la mémoire.",
         ));
     }
@@ -52,13 +56,17 @@ async fn dispatch_with_layout(
         ));
     }
     if write && scope.ensure().await.is_err() {
-        return Some(ToolResult::err("Mémoire indisponible."));
+        return Some(ToolResult::internal(
+            "memory_scope_create_failed",
+            "Mémoire indisponible.",
+            false,
+        ));
     }
     let candidate = match lexical_path(raw_path, working_dir)
         .and_then(|path| validate_in_scope(&scope, &path))
     {
         Ok(path) => path,
-        Err(error) => return Some(ToolResult::err(error)),
+        Err(error) => return Some(ToolResult::permission("memory_path_denied", error)),
     };
     let result = dispatch_memory_tool(tool_name, args, working_dir, &scope, &candidate).await;
     Some(bound_result(session_id, result))
@@ -144,7 +152,10 @@ async fn dispatch_memory_tool(
         }
         "write_file" => write(scope, path, args).await,
         "edit_file" => edit(scope, path, args).await,
-        _ => ToolResult::err("Opération mémoire non autorisée."),
+        _ => ToolResult::permission(
+            "memory_operation_forbidden",
+            "Opération mémoire non autorisée.",
+        ),
     }
 }
 
@@ -152,7 +163,7 @@ async fn write(scope: &MemoryScope, path: &Path, args: &Value) -> ToolResult {
     let content = args["content"].as_str().unwrap_or("");
     match super::memory_store::write_topic(scope, path, content).await {
         Ok(_) => ToolResult::ok("Mémoire mise à jour."),
-        Err(error) => ToolResult::err(error),
+        Err(error) => super::memory_tool_error::mutation_error(error),
     }
 }
 
@@ -161,7 +172,7 @@ async fn edit(scope: &MemoryScope, path: &Path, args: &Value) -> ToolResult {
     let new = args["new_string"].as_str().unwrap_or("");
     match super::memory_store::edit_topic(scope, path, old, new).await {
         Ok(_) => ToolResult::ok("Mémoire mise à jour."),
-        Err(error) => ToolResult::err(error),
+        Err(error) => super::memory_tool_error::edit_error(error),
     }
 }
 

@@ -188,12 +188,12 @@ pub fn office_tool_definitions() -> Vec<Value> {
                             "type": "object",
                             "properties": {
                                 "type": {"type": "string", "enum": ["resize", "crop", "quality"]},
-                                "width": {"type": "integer"},
-                                "height": {"type": "integer"},
+                                "width": {"type": "integer", "minimum": 1, "maximum": super::tool_image_process_geometry::MAX_DIMENSION},
+                                "height": {"type": "integer", "minimum": 1, "maximum": super::tool_image_process_geometry::MAX_DIMENSION},
                                 "mode": {"type": "string", "enum": ["fit", "fill", "exact"]},
-                                "x": {"type": "integer"},
-                                "y": {"type": "integer"},
-                                "value": {"type": "integer"}
+                                "x": {"type": "integer", "minimum": 0, "maximum": super::tool_image_process_geometry::MAX_DIMENSION},
+                                "y": {"type": "integer", "minimum": 0, "maximum": super::tool_image_process_geometry::MAX_DIMENSION},
+                                "value": {"type": "integer", "minimum": super::tool_image_process_geometry::MIN_QUALITY, "maximum": super::tool_image_process_geometry::MAX_QUALITY}
                             },
                             "required": ["type"]
                         }

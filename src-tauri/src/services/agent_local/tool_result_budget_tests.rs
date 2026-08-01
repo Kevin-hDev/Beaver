@@ -99,4 +99,64 @@ mod tests {
         assert_eq!(msgs[1].content, big);
         assert_eq!(msgs[2].content, big);
     }
+
+    #[test]
+    fn structured_error_keeps_its_status_and_code_when_compacted() {
+        let error = super::super::types_tools::ToolResult::internal(
+            "forecast_save_failed",
+            "x".repeat(60_000),
+            false,
+        );
+        let rendered = super::super::tool_result_model::render("forecast", &error);
+        let big = "x".repeat(60_000);
+        let mut messages = vec![tool_msg(&rendered), tool_msg(&big), tool_msg(&big)];
+
+        apply_budget(&mut messages);
+
+        let (metadata, output) = messages[0].content.split_once('\n').unwrap();
+        let metadata: serde_json::Value = serde_json::from_str(metadata).unwrap();
+        assert_eq!(metadata["status"], "error");
+        assert_eq!(metadata["error"]["code"], "forecast_save_failed");
+        assert!(output.starts_with(CLEARED_PLACEHOLDER));
+        assert!(!output.contains("relancer"));
+    }
+
+    #[test]
+    fn complete_result_path_survives_without_suggesting_a_retry() {
+        let path = "/tmp/tool-results/result.txt";
+        let first = format!(
+            "{}\n[Résultat complet disponible : {path}]",
+            "x".repeat(60_000)
+        );
+        let big = "x".repeat(60_000);
+        let mut messages = vec![tool_msg(&first), tool_msg(&big), tool_msg(&big)];
+
+        apply_budget(&mut messages);
+
+        assert!(messages[0].content.contains(path));
+        assert!(messages[0].content.contains("read_file"));
+        assert!(!messages[0].content.contains("relancer"));
+    }
+
+    #[test]
+    fn replacement_size_is_counted_before_stopping_compaction() {
+        let old = "x".repeat(1_000);
+        let recent = "y".repeat(49_500);
+        let mut messages = vec![
+            tool_msg(&old),
+            tool_msg(&old),
+            tool_msg(&recent),
+            tool_msg(&recent),
+        ];
+
+        apply_budget(&mut messages);
+
+        let total = messages
+            .iter()
+            .map(|message| message.content.chars().count())
+            .sum::<usize>();
+        assert!(total <= 100_000);
+        assert!(messages[0].content.starts_with(CLEARED_PLACEHOLDER));
+        assert!(messages[1].content.starts_with(CLEARED_PLACEHOLDER));
+    }
 }

@@ -1,35 +1,17 @@
 use super::data_quality::DataProfile;
 use super::limits::{MAX_DATA_PROFILES, MAX_INLINE_DATA_BYTES};
 use super::types::ForecastRequest;
-use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use tokio::io::AsyncReadExt;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
+pub use super::data_profiles_load::{
+    hydrate_request, hydrate_request_classified, load_profile_classified, DataProfileHydrateError,
+    DataProfileLoadError,
+};
+
 const MAX_DIRECTORY_SCAN: usize = 1_000;
 static PROFILE_LOCK: Mutex<()> = Mutex::const_new(());
-
-#[derive(Serialize, Deserialize)]
-struct StoredDataProfile {
-    profile: DataProfile,
-    data: String,
-}
-
-pub async fn hydrate_request(request: &mut ForecastRequest) -> Result<(), String> {
-    let Some(id) = request.data_profile_id.as_deref() else {
-        return Ok(());
-    };
-    if request.data.is_some() || request.file_path.is_some() {
-        return Err("Référence de profil ambiguë".into());
-    }
-    let stored = load(id).await?;
-    if !matches_request(&stored.profile, request) {
-        return Err("Profil de données incompatible".into());
-    }
-    request.data = Some(stored.data);
-    Ok(())
-}
 
 pub async fn save(profile: &DataProfile, request: &ForecastRequest) -> Result<(), String> {
     validate_id(&profile.id)?;
@@ -40,7 +22,7 @@ pub async fn save(profile: &DataProfile, request: &ForecastRequest) -> Result<()
     if data.len() > MAX_INLINE_DATA_BYTES {
         return Err("Données trop volumineuses".into());
     }
-    let stored = StoredDataProfile {
+    let stored = super::data_profiles_load::StoredDataProfile {
         profile: profile.clone(),
         data: data.to_string(),
     };
@@ -64,38 +46,6 @@ pub async fn save(profile: &DataProfile, request: &ForecastRequest) -> Result<()
     crate::services::private_store::atomic_write_async(target, json)
         .await
         .map_err(|_| "Sauvegarde du profil impossible".to_string())
-}
-
-async fn load(id: &str) -> Result<StoredDataProfile, String> {
-    validate_id(id)?;
-    let max_bytes = MAX_INLINE_DATA_BYTES.saturating_add(64 * 1024);
-    let path =
-        crate::services::paths::data_file_for_read("forecast-data-profiles", &format!("{id}.json"))
-            .await
-            .map_err(|_| "Profil de données introuvable".to_string())?;
-    let file = tokio::fs::File::open(path)
-        .await
-        .map_err(|_| "Profil de données introuvable".to_string())?;
-    let mut data = Vec::with_capacity(max_bytes.min(64 * 1024));
-    file.take((max_bytes + 1) as u64)
-        .read_to_end(&mut data)
-        .await
-        .map_err(|_| "Profil de données invalide".to_string())?;
-    if data.len() > max_bytes {
-        return Err("Profil de données invalide".into());
-    }
-    let mut stored: StoredDataProfile =
-        serde_json::from_slice(&data).map_err(|_| "Profil de données invalide".to_string())?;
-    if stored.profile.id != id || !stored.profile.valid || stored.data.len() > MAX_INLINE_DATA_BYTES
-    {
-        return Err("Profil de données invalide".into());
-    }
-    super::data_profile_migration::ensure_fingerprint(&mut stored.profile, &stored.data);
-    Ok(stored)
-}
-
-pub async fn load_profile(id: &str) -> Result<DataProfile, String> {
-    load(id).await.map(|stored| stored.profile)
 }
 
 async fn cleanup(dir: &Path, keep: usize) -> Result<(), String> {
@@ -141,18 +91,6 @@ async fn cleanup(dir: &Path, keep: usize) -> Result<(), String> {
             .map_err(|_| "Nettoyage du profil impossible".to_string())?;
     }
     Ok(())
-}
-
-fn matches_request(profile: &DataProfile, request: &ForecastRequest) -> bool {
-    profile.target_column == request.target_column
-        && profile.date_column == request.date_column
-        && profile.series_column == request.series_column
-        && profile.covariate_columns == request.covariate_columns
-        && profile.frequency == request.frequency
-        && profile.horizon == request.horizon
-        && profile
-            .confidence_level
-            .is_some_and(|confidence| (confidence - request.confidence_level).abs() < 0.000_001)
 }
 
 async fn profile_path_for_write(id: &str) -> Result<PathBuf, String> {

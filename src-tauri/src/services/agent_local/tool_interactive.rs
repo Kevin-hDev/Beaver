@@ -1,6 +1,8 @@
 use tokio_util::sync::CancellationToken;
 
-use super::interactive_choice_gate::InteractiveChoiceResponse;
+use super::interactive_choice_gate::{
+    InteractiveChoiceRequestError, InteractiveChoiceResponse,
+};
 use super::stream_events::AgentEventEmitter;
 use super::types_interactive::{
     AgentInteractiveAnswer, AgentInteractiveChoiceKind, AgentInteractiveQuestion,
@@ -16,17 +18,28 @@ pub async fn execute(
 ) -> ToolResult {
     let questions = match super::tool_interactive_parse::parse_questions(args) {
         Ok(questions) => questions,
-        Err(err) => return ToolResult::err(err),
+        Err(error) => return ToolResult::validation("interactive_questions_invalid", error),
     };
     let Some(session_id) = session_id else {
-        return ToolResult::err("Contexte interactif indisponible.");
+        return ToolResult::unavailable(
+            "interactive_context_unavailable",
+            "Contexte interactif indisponible.",
+            false,
+        );
     };
     match request(on_event, session_id, questions.clone(), cancel).await {
         Ok(InteractiveChoiceResponse::Answered(answers)) => answered_result(&questions, &answers),
         Ok(InteractiveChoiceResponse::Dismissed) => {
             ToolResult::ok("Interactive choice dismissed.").stopping()
         }
-        Err(err) => ToolResult::err(err),
+        Err(InteractiveChoiceRequestError::Cancelled) => {
+            ToolResult::cancelled(InteractiveChoiceRequestError::Cancelled.message())
+        }
+        Err(InteractiveChoiceRequestError::Unavailable) => ToolResult::unavailable(
+            "interactive_choice_unavailable",
+            InteractiveChoiceRequestError::Unavailable.message(),
+            true,
+        ),
     }
 }
 
@@ -47,7 +60,7 @@ async fn request(
     session_id: &str,
     questions: Vec<AgentInteractiveQuestion>,
     cancel: CancellationToken,
-) -> Result<InteractiveChoiceResponse, String> {
+) -> Result<InteractiveChoiceResponse, InteractiveChoiceRequestError> {
     super::interactive_choice_gate::request(
         on_event,
         session_id,

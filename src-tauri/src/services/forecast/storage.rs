@@ -7,6 +7,8 @@ use super::storage_paths::{
     analysis_path_for_read, analysis_path_for_write, validate_analysis_id, validate_analysis_name,
 };
 
+pub use super::storage_load::{load, load_classified, ForecastLoadError};
+
 static SAVE_LOCK: Mutex<()> = Mutex::const_new(());
 
 pub async fn save(result: &mut ForecastResult) -> Result<(), String> {
@@ -57,17 +59,6 @@ pub async fn save(result: &mut ForecastResult) -> Result<(), String> {
     };
     cleanup_evicted(evicted).await;
     Ok(())
-}
-
-pub async fn load(id: &str) -> Result<ForecastResult, String> {
-    validate_analysis_id(id)?;
-    let path = analysis_path_for_read(id)
-        .await
-        .map_err(|_| "Analyse introuvable".to_string())?;
-    let data = super::storage_io::read_bounded(&path, MAX_STORED_ANALYSIS_BYTES)
-        .await
-        .map_err(|_| "Analyse introuvable".to_string())?;
-    serde_json::from_slice(&data).map_err(|_| "Données d'analyse corrompues".to_string())
 }
 
 pub async fn exists(id: &str) -> Result<bool, String> {

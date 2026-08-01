@@ -1,4 +1,4 @@
-use super::transport::extract_tool_result;
+use super::transport::{extract_tool_result, McpCallError};
 use serde_json::json;
 
 #[test]
@@ -9,7 +9,7 @@ fn connector_errors_are_generic() {
     ] {
         assert_eq!(
             extract_tool_result(&response).unwrap_err(),
-            "erreur MCP retournée par le connecteur"
+            McpCallError::Server
         );
     }
 }

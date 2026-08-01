@@ -1,7 +1,9 @@
 #[path = "tool_dispatcher_forecast_error.rs"]
 mod forecast_error;
+#[path = "tool_dispatcher_forecast_profile.rs"]
+mod forecast_profile;
 
-use self::forecast_error::model_error;
+use self::forecast_error::{model_error, ForecastErrorKind as ErrorKind};
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::forecast::types::ForecastRequest;
 use crate::services::forecast::{data_profiles, registry, selected_model, selection_policy, validation};
@@ -22,13 +24,22 @@ pub async fn handle(
     let started_at = Instant::now();
     let mut request: ForecastRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
-        Err(_) => return ToolResult::err("Paramètres Forecast invalides"),
+        Err(_) => return ToolResult::validation(
+            "forecast_request_invalid",
+            "Paramètres Forecast invalides",
+        ),
     };
     let requested_model = request.model.clone();
     crate::services::forecast::request_normalize::normalize_request(&mut request);
     let policy = match selection_policy::get() {
         Ok(policy) => policy,
-        Err(error) => return model_error(None, "", requested_model.as_deref(), &error),
+        Err(error) => return model_error(
+            ErrorKind::Internal("forecast_policy_unavailable", true),
+            None,
+            "",
+            requested_model.as_deref(),
+            &error,
+        ),
     };
     let selection_mode = policy.mode;
     let policy_model = policy.manual_model_id.clone().unwrap_or_default();
@@ -36,6 +47,7 @@ pub async fn handle(
         Ok(model) => model,
         Err(error) => {
             return model_error(
+                ErrorKind::Validation("forecast_model_selection_invalid"),
                 Some(selection_mode),
                 &policy_model,
                 requested_model.as_deref(),
@@ -43,16 +55,19 @@ pub async fn handle(
             )
         }
     };
-    if let Err(error) = data_profiles::hydrate_request(&mut request).await {
+    if let Err(error) = data_profiles::hydrate_request_classified(&mut request).await {
+        let (kind, message) = forecast_profile::classify(error);
         return model_error(
+            kind,
             Some(selection_mode),
             &selected,
             requested_model.as_deref(),
-            &error,
+            message,
         );
     }
     if request.data.is_none() && request.file_path.is_none() {
         return model_error(
+            ErrorKind::Validation("forecast_data_required"),
             Some(selection_mode),
             &selected,
             requested_model.as_deref(),
@@ -64,6 +79,7 @@ pub async fn handle(
             .await
     {
         return model_error(
+            ErrorKind::Validation("forecast_file_input_invalid"),
             Some(selection_mode),
             &selected,
             requested_model.as_deref(),
@@ -72,6 +88,7 @@ pub async fn handle(
     }
     if let Err(error) = validation::validate_request(&request) {
         return model_error(
+            ErrorKind::Validation("forecast_request_invalid"),
             Some(selection_mode),
             &selected,
             requested_model.as_deref(),
@@ -83,6 +100,7 @@ pub async fn handle(
             Ok(profile) => profile,
             Err(error) => {
                 return model_error(
+                    ErrorKind::Validation("forecast_data_quality_invalid"),
                     Some(selection_mode),
                     &selected,
                     requested_model.as_deref(),
@@ -101,6 +119,7 @@ pub async fn handle(
         Ok(proof) => proof,
         Err(error) => {
             return model_error(
+                ErrorKind::Validation("forecast_selection_proof_invalid"),
                 Some(selection_mode),
                 &selected,
                 requested_model.as_deref(),
@@ -115,6 +134,7 @@ pub async fn handle(
         Ok(runtime) => runtime,
         Err(error) => {
             return model_error(
+                ErrorKind::Unavailable("forecast_runtime_unavailable", true),
                 Some(selection_mode),
                 &selected,
                 requested_model.as_deref(),
@@ -140,6 +160,7 @@ pub async fn handle(
         Ok(forecast) => forecast,
         Err(error) => {
             return model_error(
+                ErrorKind::External("forecast_execution_failed", false),
                 Some(selection_mode),
                 &selected,
                 requested_model.as_deref(),
@@ -156,6 +177,7 @@ pub async fn handle(
         duration_ms,
     ) {
         return model_error(
+            ErrorKind::Internal("forecast_provenance_failed", false),
             Some(selection_mode),
             &selected,
             requested_model.as_deref(),
@@ -171,6 +193,7 @@ pub async fn handle(
     {
         Ok(json) => ToolResult::ok(json),
         Err(error) => model_error(
+            ErrorKind::Internal("forecast_save_failed", false),
             Some(selection_mode),
             &selected,
             requested_model.as_deref(),

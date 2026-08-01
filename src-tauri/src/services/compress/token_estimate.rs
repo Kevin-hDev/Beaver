@@ -11,6 +11,15 @@ pub fn estimate_tokens_for_provider(provider_id: &str, messages: &[ChatMessage])
     estimate_tokens(messages)
 }
 
+pub fn estimate_message_tokens_for_provider(provider_id: &str, message: &ChatMessage) -> usize {
+    if provider_id == crate::services::codex_client::PROVIDER_ID {
+        return crate::services::token_counting::estimate_chat_message_tokens_without_reasoning(
+            message,
+        );
+    }
+    crate::services::token_counting::estimate_chat_message_tokens(message)
+}
+
 pub fn estimate_tool_tokens(tools: &[serde_json::Value]) -> usize {
     tools.iter().fold(0usize, |total, tool| {
         total.saturating_add(crate::services::token_counting::estimate_text_tokens(

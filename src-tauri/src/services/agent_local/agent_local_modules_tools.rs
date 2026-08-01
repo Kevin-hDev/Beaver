@@ -60,10 +60,13 @@ pub mod tool_dispatcher_forecast_runtime;
 pub mod tool_dispatcher_forecast_selection;
 pub mod tool_dispatcher_fallback;
 pub mod tool_dispatcher_forecast_analyze;
+mod tool_dispatcher_forecast_annotation;
 pub mod tool_dispatcher_forecast_data_audit;
 pub mod tool_dispatcher_forecast_evaluation;
 pub mod tool_dispatcher_forecast_execute;
 pub mod tool_dispatcher_forecast_models;
+mod tool_dispatcher_forecast_models_support;
+mod tool_dispatcher_forecast_load;
 pub mod tool_dispatcher_forecast_output;
 pub mod tool_dispatcher_forecast_persist;
 pub mod tool_dispatcher_forecast_scenario_params;
@@ -123,6 +126,9 @@ pub mod tool_hooks;
 pub mod tool_hooks_tests;
 pub mod tool_image_process;
 #[cfg(test)]
+mod tool_image_process_contract_tests;
+mod tool_image_process_geometry;
+#[cfg(test)]
 pub mod tool_image_process_limits_tests;
 #[cfg(test)]
 pub mod tool_image_process_tests;
@@ -137,6 +143,9 @@ pub mod tool_interactive_recommendation_tests;
 pub mod tool_interactive_tests;
 pub mod tool_mcp;
 mod tool_mcp_call;
+mod tool_office_array;
+#[cfg(test)]
+mod tool_office_array_tests;
 pub mod tool_office_limits;
 pub mod tool_office_utils;
 pub mod tool_plan;
@@ -151,27 +160,33 @@ pub mod tool_result_budget;
 pub mod tool_result_budget_tests;
 pub mod tool_result_contract;
 pub mod tool_result_model;
+mod tool_result_model_compact;
 pub mod tool_result_truncate;
 pub mod tool_scan_timeout;
 #[cfg(test)]
 mod tool_search_result_tests;
 pub mod tool_skill_loader;
 pub mod tool_spreadsheet_calamine;
+mod tool_spreadsheet_border;
+mod tool_spreadsheet_error;
 #[cfg(test)]
 pub mod tool_spreadsheet_format_tests;
 pub mod tool_spreadsheet_read;
 #[cfg(test)]
 pub mod tool_spreadsheet_read_tests;
+mod tool_spreadsheet_range;
 pub mod tool_spreadsheet_write;
 pub mod tool_spreadsheet_write_edit;
 mod tool_spreadsheet_write_format;
 pub mod tool_spreadsheet_write_new;
+mod tool_spreadsheet_write_new_format;
 #[cfg(test)]
 pub mod tool_spreadsheet_write_tests;
 pub mod tool_subagent_control;
 pub mod tool_subagent_format;
 mod tool_subagent_message;
 pub mod tool_todo;
+mod tool_todo_delete;
 #[cfg(test)]
 mod tool_todo_memory_tests;
 pub mod tool_todo_neglect;
@@ -198,6 +213,7 @@ pub mod types_stream;
 pub mod types_todo;
 mod types_tool_result;
 mod types_tool_result_details;
+mod types_tool_result_errors;
 pub mod types_tools;
 pub mod web_search_status;
 pub mod write_guard;

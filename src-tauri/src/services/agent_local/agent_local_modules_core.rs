@@ -27,6 +27,7 @@ pub mod clone_summary_prompt;
 pub mod compress_hook;
 pub mod context_budget;
 mod context_budget_history;
+mod context_budget_prune;
 pub mod context_usage_buckets;
 pub mod diagnostic_args;
 #[cfg(test)]
@@ -60,6 +61,7 @@ pub mod memory_runtime;
 pub mod memory_settings;
 pub mod memory_store;
 pub mod memory_tool;
+mod memory_tool_error;
 pub mod memory_types;
 pub mod model_customizations;
 pub mod model_size;

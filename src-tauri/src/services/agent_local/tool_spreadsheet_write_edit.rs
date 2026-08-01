@@ -9,10 +9,18 @@ use crate::services::agent_local::tool_spreadsheet_write_format::{
 use serde_json::Value;
 use std::path::Path;
 
-pub fn edit_xlsx(path: &Path, ops: &[Value]) -> Result<(), String> {
-    super::tool_spreadsheet_write::validate_spreadsheet_input(path)?;
+pub(super) fn edit_xlsx(
+    path: &Path,
+    ops: &[Value],
+) -> Result<(), super::tool_spreadsheet_error::SpreadsheetWriteError> {
+    super::tool_spreadsheet_write::validate_spreadsheet_input(path)
+        .map_err(super::tool_spreadsheet_error::SpreadsheetWriteError::source)?;
     let mut book = umya_spreadsheet::reader::xlsx::read(path)
-        .map_err(|_| "Impossible d'ouvrir le fichier xlsx".to_string())?;
+        .map_err(|_| {
+            super::tool_spreadsheet_error::SpreadsheetWriteError::source(
+                "Impossible d'ouvrir le fichier xlsx",
+            )
+        })?;
 
     for op in ops {
         let op_type = op["type"].as_str().unwrap_or("");
@@ -31,12 +39,16 @@ pub fn edit_xlsx(path: &Path, ops: &[Value]) -> Result<(), String> {
             "set_border" => apply_set_border(&mut book, op)?,
             "merge_cells" => apply_merge_cells(&mut book, op)?,
             "set_row_height" => apply_set_row_height(&mut book, op)?,
-            _ => return Err(format!("Opération inconnue: {op_type}")),
+            _ => return Err(format!("Opération inconnue: {op_type}").into()),
         }
     }
 
     umya_spreadsheet::writer::xlsx::write(&book, path)
-        .map_err(|_| "Impossible de sauvegarder le fichier xlsx".to_string())
+        .map_err(|_| {
+            super::tool_spreadsheet_error::SpreadsheetWriteError::write(
+                "Impossible de sauvegarder le fichier xlsx",
+            )
+        })
 }
 
 pub(super) fn resolve_sheet_name(book: &umya_spreadsheet::Workbook, op: &Value) -> String {

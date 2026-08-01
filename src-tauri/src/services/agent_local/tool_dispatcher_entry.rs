@@ -57,7 +57,7 @@ pub async fn dispatch_with_progress(
             Ok(active) => active,
             Err(_) => {
                 return finalize_result(
-                    super::tool_dispatcher_error::extension_unavailable(),
+                    crate::services::extensions::unavailable_tool_result(),
                     tool_name,
                     session_id,
                     working_dir,
@@ -72,7 +72,7 @@ pub async fn dispatch_with_progress(
         Ok(dynamic) => dynamic,
         Err(_) => {
             return finalize_result(
-                super::tool_dispatcher_error::extension_unavailable(),
+                crate::services::extensions::unavailable_tool_result(),
                 tool_name,
                 session_id,
                 working_dir,
@@ -148,7 +148,7 @@ pub async fn dispatch_with_progress(
         }
         crate::services::extensions::dispatch_tool(tool_name, &args, working_dir)
             .await
-            .unwrap_or_else(super::tool_dispatcher_error::extension_unavailable)
+            .unwrap_or_else(crate::services::extensions::unavailable_tool_result)
     } else {
         match super::memory_tool::dispatch_if_memory(tool_name, &args, working_dir, session_id).await
         {

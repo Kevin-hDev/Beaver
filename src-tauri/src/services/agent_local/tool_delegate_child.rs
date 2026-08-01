@@ -58,9 +58,12 @@ pub(super) async fn persist_delegate_prompt(
     }
     eprintln!("[subagent] persistance prompt enfant {child_id}");
     let _ = super::session_subagents::mark_status(child_id, super::subagent_status::FAILED).await;
-    Err(ToolResult::err(
+    Err(ToolResult::internal(
+        "subagent_prompt_save_failed",
         "Erreur interne lors de la création du sous-agent",
-    ))
+        false,
+    )
+    .with_error_hint("Inspecter le sous-agent avant de relancer la délégation."))
 }
 
 async fn persist_redeployment_prompt(
@@ -102,22 +105,28 @@ pub(super) async fn prepare_existing_child(
     run_id: &str,
 ) -> Result<AgentSession, ToolResult> {
     if session_store::validate_session_id(child_id).is_err() {
-        return Err(ToolResult::err("Sous-agent introuvable."));
+        return Err(ToolResult::validation(
+            "subagent_id_invalid",
+            "Sous-agent introuvable.",
+        ));
     }
     let lock = session_store::lock_session(child_id).await;
     let _guard = lock.lock().await;
     let mut child = match session_store::get(child_id).await {
         Ok(session) => session,
-        Err(_) => return Err(ToolResult::err("Sous-agent introuvable.")),
+        Err(_) => return Err(ToolResult::not_found("subagent_not_found", "Sous-agent introuvable.")),
     };
     if child.parent_session_id.as_deref() != Some(parent_session_id) {
-        return Err(ToolResult::err("Sous-agent introuvable."));
+        return Err(ToolResult::not_found("subagent_not_found", "Sous-agent introuvable."));
     }
     if child.archived_at.is_some() {
-        return Err(ToolResult::err("Sous-agent archivé."));
+        return Err(ToolResult::conflict("subagent_archived", "Sous-agent archivé."));
     }
     if super::subagent_live_state::has_pending_work(&child).await {
-        return Err(ToolResult::err("Ce sous-agent est déjà en cours."));
+        return Err(ToolResult::conflict(
+            "subagent_already_running",
+            "Ce sous-agent est déjà en cours.",
+        ));
     }
     child.name = name.to_string();
     child.subagent_type = Some(subagent_type.to_string());
@@ -129,7 +138,14 @@ pub(super) async fn prepare_existing_child(
     child.subagent_summary = None;
     session_store::save(&child)
         .await
-        .map_err(|_| ToolResult::err("Erreur interne lors de la préparation du sous-agent"))?;
+        .map_err(|_| {
+            ToolResult::internal(
+                "subagent_prepare_save_failed",
+                "Erreur interne lors de la préparation du sous-agent",
+                false,
+            )
+            .with_error_hint("Inspecter le sous-agent avant de reprendre sa préparation.")
+        })?;
     Ok(child)
 }
 
@@ -151,7 +167,13 @@ pub(super) async fn create_child(
         parent.project_id.clone(),
     )
     .await
-    .map_err(|_| ToolResult::err("Erreur interne lors de la création du sous-agent"))?;
+    .map_err(|_| {
+        ToolResult::internal(
+            "subagent_create_failed",
+            "Erreur interne lors de la création du sous-agent",
+            false,
+        )
+    })?;
     child.parent_session_id = Some(parent_session_id.to_string());
     child.subagent_type = Some(subagent_type.to_string());
     child.subagent_prompt = Some(prompt.to_string());
@@ -165,7 +187,14 @@ pub(super) async fn create_child(
     child.working_dir_managed = parent.working_dir_managed;
     session_store::save(&child)
         .await
-        .map_err(|_| ToolResult::err("Erreur interne lors de la création du sous-agent"))?;
+        .map_err(|_| {
+            ToolResult::internal(
+                "subagent_create_save_failed",
+                "Erreur interne lors de la création du sous-agent",
+                false,
+            )
+            .with_error_hint("Inspecter les sous-agents existants avant de relancer la création.")
+        })?;
     Ok(child)
 }
 

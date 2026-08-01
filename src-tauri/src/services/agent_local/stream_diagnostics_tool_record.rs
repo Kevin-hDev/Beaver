@@ -96,7 +96,7 @@ mod tests {
     fn partial_and_error_results_raise_diagnostic_severity() {
         let success = ToolResult::ok("ok");
         let partial = ToolResult::partial("partial", ["warning"]);
-        let error = ToolResult::err("failed");
+        let error = ToolResult::execution("test_failure", "failed", false);
 
         assert_eq!(severity(Some(&success)), "info");
         assert_eq!(severity(Some(&partial)), "warning");

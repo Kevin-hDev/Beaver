@@ -34,6 +34,7 @@ describe("détails des erreurs d'outil", () => {
             code: "web_fetch_failed",
             category: "external",
             retryable: true,
+            hint: "Instruction réservée au modèle.",
           },
           warnings: ["La réponse distante était incomplète."],
           truncated: true,
@@ -52,6 +53,7 @@ describe("détails des erreurs d'outil", () => {
     expect(container.textContent).toContain("Résultat tronqué.");
     expect(container.textContent).not.toContain("/Users/dev/private.txt");
     expect(container.textContent).not.toContain("very-secret-token");
+    expect(container.textContent).not.toContain("Instruction réservée au modèle.");
   });
 
   it("affiche les avertissements et la troncature dans le même accordéon", () => {

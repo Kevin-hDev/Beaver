@@ -40,7 +40,7 @@ fn a_failed_tool_keeps_its_error_and_reports_external_changes_separately() {
     let external = tempfile::tempdir().expect("external");
     let changed = external.path().join("partial.txt");
     std::fs::write(&changed, "partial").expect("write partial result");
-    let result = ToolResult::err("failed")
+    let result = ToolResult::execution("test_failure", "failed", false)
         .with_affected_paths(vec![changed.to_string_lossy().to_string()]);
 
     let result = append(result, workspace.path());

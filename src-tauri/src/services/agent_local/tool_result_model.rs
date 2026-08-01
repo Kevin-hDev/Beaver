@@ -9,7 +9,7 @@ struct ModelToolResult<'a> {
     kind: &'static str,
     tool: &'a str,
     status: ToolResultStatus,
-    output: &'a str,
+    output_format: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     error: Option<&'a ToolErrorInfo>,
     #[serde(skip_serializing_if = "slice_is_empty")]
@@ -28,22 +28,17 @@ pub fn render(tool_name: &str, result: &ToolResult) -> String {
         return result.content.clone();
     }
 
-    serde_json::to_string(&ModelToolResult {
+    let metadata = serde_json::to_string(&ModelToolResult {
         kind: "tool_result",
         tool: tool_name,
         status: result.status,
-        output: &result.content,
+        output_format: "raw_following",
         error: result.error.as_ref(),
         warnings: &result.warnings,
         truncated: result.truncated,
     })
-    .unwrap_or_else(|_| {
-        format!(
-            "[tool_result status={}] {}",
-            result.status.as_str(),
-            result.content
-        )
-    })
+    .unwrap_or_else(|_| format!("[tool_result status={}]", result.status.as_str()));
+    format!("{metadata}\n{}", result.content)
 }
 
 fn slice_is_empty<T>(slice: &&[T]) -> bool {
@@ -68,31 +63,38 @@ mod tests {
             ToolErrorCategory::Execution,
             false,
         );
+        let content = render("bash", &result);
+        let (metadata, output) = content.split_once('\n').expect("metadata and output");
         let rendered: serde_json::Value =
-            serde_json::from_str(&render("bash", &result)).expect("model envelope");
+            serde_json::from_str(metadata).expect("model envelope");
 
         assert_eq!(rendered["status"], "error");
         assert_eq!(rendered["error"]["code"], "shell_exit_nonzero");
-        assert_eq!(rendered["output"], "command output");
+        assert_eq!(rendered["outputFormat"], "raw_following");
+        assert_eq!(output, "command output");
     }
 
     #[test]
     fn partial_result_exposes_warnings() {
         let result = ToolResult::partial("some files", ["one file was unreadable"]);
+        let content = render("grep", &result);
+        let (metadata, output) = content.split_once('\n').expect("metadata and output");
         let rendered: serde_json::Value =
-            serde_json::from_str(&render("grep", &result)).expect("model envelope");
+            serde_json::from_str(metadata).expect("model envelope");
 
         assert_eq!(rendered["status"], "partial");
         assert_eq!(rendered["warnings"][0], "one file was unreadable");
+        assert_eq!(output, "some files");
     }
 
     #[test]
     fn running_process_is_not_serialized_as_a_completed_success() {
+        let content = render("bash", &ToolResult::running("session=123"));
+        let (metadata, output) = content.split_once('\n').expect("metadata and output");
         let rendered: serde_json::Value =
-            serde_json::from_str(&render("bash", &ToolResult::running("session=123")))
-                .expect("model envelope");
+            serde_json::from_str(metadata).expect("model envelope");
 
         assert_eq!(rendered["status"], "running");
-        assert_eq!(rendered["output"], "session=123");
+        assert_eq!(output, "session=123");
     }
 }

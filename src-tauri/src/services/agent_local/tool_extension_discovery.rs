@@ -23,10 +23,16 @@ struct DiscoveryLine {
 
 pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
     let Some(query) = args.get("query").and_then(Value::as_str) else {
-        return ToolResult::err("Recherche de plugins invalide.");
+        return ToolResult::validation(
+            "plugin_search_query_invalid",
+            "Recherche de plugins invalide.",
+        );
     };
     if query.chars().count() > crate::services::extensions::MAX_SEARCH_QUERY_CHARS {
-        return ToolResult::err("Recherche de plugins invalide.");
+        return ToolResult::validation(
+            "plugin_search_query_invalid",
+            "Recherche de plugins invalide.",
+        );
     }
     let matches = crate::services::extensions::search_plugins(
         query,
@@ -41,7 +47,11 @@ pub async fn execute(args: &Value, session_id: &str) -> ToolResult {
     .await;
     match result {
         Ok(lines) => discovery_result(lines),
-        Err(_) => ToolResult::err("Recherche de plugins indisponible."),
+        Err(_) => ToolResult::unavailable(
+            "plugin_search_unavailable",
+            "Recherche de plugins indisponible.",
+            true,
+        ),
     }
 }
 

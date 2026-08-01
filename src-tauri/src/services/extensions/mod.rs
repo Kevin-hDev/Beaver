@@ -47,6 +47,7 @@ mod source_validation;
 mod startup;
 mod storage;
 mod tool_bridge;
+mod tool_result;
 mod types;
 mod validation;
 mod view;
@@ -71,6 +72,7 @@ pub use startup::initialize_on_startup;
 pub(crate) use tool_bridge::definitions as extension_tool_definitions;
 pub(crate) use tool_bridge::{core_fallback, without_core_fallback};
 pub use tool_bridge::{merge_definitions as merge_tool_definitions, validate_arguments};
+pub(crate) use tool_result::unavailable as unavailable_tool_result;
 
 pub fn discovery_preferences() -> Result<DiscoveryPreferences, String> {
     discovery_preferences::get()

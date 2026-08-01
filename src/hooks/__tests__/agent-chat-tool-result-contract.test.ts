@@ -8,7 +8,10 @@ import { expandToolActivities, toolsToRecords } from "@/hooks/agent-chat-utils";
 import type { ManagedStreamState } from "@/hooks/agent-chat-stream-callbacks";
 import type { ToolActivityRecord } from "@/types/agent";
 
-vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
+vi.mock("@/i18n", () => ({
+  default: { t: (key: string) =>
+    key === "agentLocal.toolActivity.resultCancelled" ? "Annulé." : key },
+}));
 
 function state(): ManagedStreamState {
   return createManagedStreamState([], 0);

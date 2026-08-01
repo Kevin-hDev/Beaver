@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
     use crate::services::agent_local::tool_spreadsheet_write::{parse_cell_ref, write_spreadsheet};
     use calamine::{open_workbook_auto, Reader, Sheets};
     use serde_json::json;
@@ -44,6 +45,7 @@ mod tests {
     #[test]
     fn parse_row_zero_invalid() {
         assert_eq!(parse_cell_ref("A0"), None);
+        assert_eq!(parse_cell_ref("A1048577"), None);
     }
 
     #[test]
@@ -139,6 +141,9 @@ mod tests {
         let ops = json!([{ "type": "surprise" }]);
         let result = write_spreadsheet(path.to_str().unwrap(), &ops, dir.path()).await;
         assert!(result.is_error);
+        let error = result.error.expect("structured write error");
+        assert_eq!(error.code.as_ref(), "spreadsheet_operation_invalid");
+        assert_eq!(error.category, ToolErrorCategory::Validation);
     }
 
     #[tokio::test]

@@ -430,6 +430,7 @@
       "inProgress": "in progress",
       "completed": "completed",
       "processStoppedResult": "Process stopped.",
+      "resultCancelled": "Cancelled.",
       "resultTruncated": "Result truncated.",
       "resultMissing": "The tool result is missing after the stream ended.",
       "verifyBeforeRetry": "Check the resulting state before retrying because the action may already have run.",

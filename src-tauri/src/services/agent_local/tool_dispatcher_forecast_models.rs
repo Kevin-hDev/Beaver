@@ -1,18 +1,28 @@
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::forecast::{
-    data_profiles, hardware_profile, limits, model_listing, selection_policy, selection_tickets,
-    storage, validation,
+    hardware_profile, limits, model_listing, selection_policy, selection_tickets, storage,
 };
 use serde_json::Value;
+use super::tool_dispatcher_forecast_models_support::{
+    compact_model, model_sort_key, requested_model_id,
+};
 
 pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
     let listing = model_listing::list_models();
     let Some(models) = listing["models"].as_array() else {
-        return ToolResult::err("Catalogue Forecast indisponible");
+        return ToolResult::internal(
+            "forecast_model_catalog_invalid",
+            "Catalogue Forecast indisponible",
+            false,
+        );
     };
     let policy = match selection_policy::get() {
         Ok(policy) => policy,
-        Err(error) => return ToolResult::err(error),
+        Err(error) => return ToolResult::internal(
+            "forecast_selection_policy_unavailable",
+            error,
+            true,
+        ),
     };
     let forced_model = (policy.mode == selection_policy::ForecastSelectionMode::Manual)
         .then_some(policy.manual_model_id.as_deref())
@@ -55,25 +65,36 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
         }),
         selection_policy::ForecastSelectionMode::Auto => {
             let Some(profile_id) = args["data_profile_id"].as_str() else {
-                return ToolResult::err("Profil de données requis pour le mode Auto");
+                return ToolResult::validation(
+                    "forecast_data_profile_required",
+                    "Profil de données requis pour le mode Auto",
+                );
             };
-            let profile = match data_profiles::load_profile(profile_id).await {
+            let profile = match super::tool_dispatcher_forecast_load::load_profile(profile_id).await {
                 Ok(profile) => profile,
-                Err(error) => return ToolResult::err(error),
+                Err(error) => return error,
             };
             if profile.confidence_level.is_none() {
-                return ToolResult::err(
+                return ToolResult::conflict(
+                    "forecast_data_profile_stale",
                     "Profil Forecast obsolète : relancer forecast_data_audit",
                 );
             }
             let hardware = hardware_profile::detect();
             let evidence = match storage::comparable_backtests(&profile).await {
                 Ok(evidence) => evidence,
-                Err(error) => return ToolResult::err(error),
+                Err(error) => return ToolResult::internal(
+                    "forecast_backtest_evidence_unavailable",
+                    error,
+                    true,
+                ),
             };
             let requested_model_id = match requested_model_id(args) {
                 Ok(requested) => requested,
-                Err(error) => return ToolResult::err(error),
+                Err(error) => return ToolResult::validation(
+                    "forecast_requested_model_invalid",
+                    error,
+                ),
             };
             let selection =
                 crate::services::forecast::auto_selection::select_with_requested_model(
@@ -91,7 +112,14 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
                 &selection,
             ) {
                 Ok(id) => id,
-                Err(error) => return ToolResult::err(error),
+                Err(error) => return ToolResult::internal(
+                    "forecast_selection_ticket_failed",
+                    error,
+                    false,
+                )
+                .with_error_hint(
+                    "Relancer forecast_data_audit puis forecast_models pour reconstruire la sélection.",
+                ),
             };
             let usage = if selection
                 .requested_model
@@ -144,51 +172,12 @@ pub async fn handle(args: &Value, session_id: &str) -> ToolResult {
             result.mark_truncated(result_truncated);
             result
         }
-        Err(_) => ToolResult::err("Catalogue Forecast indisponible"),
+        Err(_) => ToolResult::internal(
+            "forecast_model_catalog_serialization_failed",
+            "Catalogue Forecast indisponible",
+            false,
+        ),
     }
-}
-
-fn requested_model_id(args: &Value) -> Result<Option<&str>, String> {
-    match args.get("requested_model_id") {
-        None | Some(Value::Null) => Ok(None),
-        Some(Value::String(id)) => {
-            let id = id.trim();
-            if id.is_empty() {
-                return Ok(None);
-            }
-            validation::validate_model_id_format(id)?;
-            Ok(Some(id))
-        }
-        Some(_) => Err("Modèle demandé invalide".to_string()),
-    }
-}
-
-fn compact_model(model: &Value, forced_model: Option<&str>) -> Option<Value> {
-    let id = model["id"].as_str()?;
-    Some(serde_json::json!({
-        "id": id,
-        "selected": forced_model == Some(id),
-        "name": model["display_name"].as_str().unwrap_or(""),
-        "provider": model["provider_id"].as_str().unwrap_or(""),
-        "family": model["family_id"].as_str().unwrap_or(""),
-        "installed": model["installed"].as_bool().unwrap_or(false),
-        "runnable": model["runnable"].as_bool().unwrap_or(false),
-        "runtime_ready": model["runtime_ready"].as_bool().unwrap_or(false),
-        "provider_configured": model["provider_configured"].as_bool().unwrap_or(false),
-        "is_cloud": model["is_cloud"].as_bool().unwrap_or(false),
-        "interval_support": crate::services::forecast::validation::interval_support(id),
-        "interval_capability": crate::services::forecast::interval_capability::for_model(id),
-        "capabilities": model["capabilities"].clone()
-    }))
-}
-
-fn model_sort_key(model: &Value) -> (bool, bool, bool, String) {
-    (
-        !model["selected"].as_bool().unwrap_or(false),
-        !model["runnable"].as_bool().unwrap_or(false),
-        !model["installed"].as_bool().unwrap_or(false),
-        model["id"].as_str().unwrap_or_default().to_string(),
-    )
 }
 
 #[cfg(test)]

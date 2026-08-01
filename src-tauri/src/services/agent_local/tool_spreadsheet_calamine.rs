@@ -2,6 +2,8 @@ use calamine::{Data, Reader};
 use serde_json::Value;
 use std::path::Path;
 
+use super::tool_spreadsheet_error::SpreadsheetReadError;
+
 const EXTRA_ROW_FOR_TRUNCATION: usize = 1;
 const HARD_MAX_COLS: usize = 1000;
 
@@ -41,13 +43,27 @@ pub fn read_excel(
     range_str: Option<&str>,
     max_rows: usize,
 ) -> Result<Value, String> {
-    super::tool_spreadsheet_write::validate_spreadsheet_input(resolved)?;
+    read_excel_classified(resolved, sheet, range_str, max_rows)
+        .map_err(|error| error.message().to_string())
+}
+
+pub(super) fn read_excel_classified(
+    resolved: &Path,
+    sheet: Option<&str>,
+    range_str: Option<&str>,
+    max_rows: usize,
+) -> Result<Value, SpreadsheetReadError> {
+    super::tool_spreadsheet_write::validate_spreadsheet_input(resolved)
+        .map_err(SpreadsheetReadError::source)?;
     let mut workbook: calamine::Sheets<_> = calamine::open_workbook_auto(resolved)
-        .map_err(|_| "Impossible d'ouvrir le fichier".to_string())?;
+        .map_err(|_| SpreadsheetReadError::source("Impossible d'ouvrir le fichier"))?;
 
     let sheet_names = workbook.sheet_names().to_owned();
     if sheet_names.is_empty() {
-        return Err("Le fichier ne contient aucune feuille".into());
+        return Err(SpreadsheetReadError::invalid(
+            "spreadsheet_content_invalid",
+            "Le fichier ne contient aucune feuille",
+        ));
     }
 
     let effective_sheet = match sheet {
@@ -60,7 +76,10 @@ pub fn read_excel(
             if sheet_names.contains(&name.to_string()) {
                 name.to_string()
             } else {
-                return Err(format!("Feuille '{}' introuvable", name));
+                return Err(SpreadsheetReadError::NotFound(format!(
+                    "Feuille '{}' introuvable",
+                    name
+                )));
             }
         }
         None => sheet_names[0].clone(),
@@ -68,7 +87,12 @@ pub fn read_excel(
 
     let range = workbook
         .worksheet_range(&sheet_name)
-        .map_err(|_| "Impossible de lire la feuille".to_string())?;
+        .map_err(|_| {
+            SpreadsheetReadError::invalid(
+                "spreadsheet_content_invalid",
+                "Impossible de lire la feuille",
+            )
+        })?;
 
     // Calamine matérialise la feuille entière en RAM sous forme de `Range<Data>`
     // dense. Une feuille malveillante peut déclarer une dimension énorme
@@ -77,12 +101,25 @@ pub fn read_excel(
     // résultat JSON, pas la structure interne chargée ici.
     let height = range.height();
     let width = range.width();
-    super::tool_office_limits::ensure_cell_budget(height as u64, width as u64, "Feuille")?;
+    super::tool_office_limits::ensure_cell_budget(height as u64, width as u64, "Feuille")
+        .map_err(SpreadsheetReadError::source)?;
 
     let formulas = workbook.worksheet_formula(&sheet_name).ok();
     let (start_row, start_col) = range.start().unwrap_or((0, 0));
 
-    let bounds = super::tool_spreadsheet_read::parse_range(range_str.unwrap_or(""));
+    let requested_range = range_str.unwrap_or("").trim();
+    let bounds = if requested_range.is_empty() {
+        None
+    } else {
+        Some(
+            super::tool_spreadsheet_range::parse(requested_range).ok_or_else(|| {
+                SpreadsheetReadError::invalid(
+                    "spreadsheet_range_invalid",
+                    "Plage de cellules invalide",
+                )
+            })?,
+        )
+    };
     let all_rows: Vec<Vec<Value>> = range
         .rows()
         .enumerate()
@@ -125,4 +162,7 @@ pub fn read_excel(
         .collect();
 
     super::tool_spreadsheet_read::build_result(all_rows, max_rows, &sheet_name, &sheet_names)
+        .map_err(|error| {
+            SpreadsheetReadError::invalid("spreadsheet_result_invalid", error)
+        })
 }

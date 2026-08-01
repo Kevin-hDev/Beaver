@@ -39,15 +39,6 @@ impl ToolResult {
         Self::build(content, ToolResultStatus::Success, None)
     }
 
-    pub fn err(content: impl Into<String>) -> Self {
-        Self::error(
-            content,
-            "tool_execution_failed",
-            ToolErrorCategory::Execution,
-            false,
-        )
-    }
-
     pub fn error(
         content: impl Into<String>,
         code: &'static str,
@@ -91,17 +82,6 @@ impl ToolResult {
 
     pub fn stopped(content: impl Into<String>) -> Self {
         Self::build(content, ToolResultStatus::Stopped, None)
-    }
-
-    pub fn into_cancelled(mut self) -> Self {
-        self.status = ToolResultStatus::Cancelled;
-        self.is_error = true;
-        self.error = Some(ToolErrorInfo::new(
-            "tool_cancelled",
-            ToolErrorCategory::Cancelled,
-            false,
-        ));
-        self
     }
 
     fn build(

@@ -10,6 +10,9 @@ pub const MAX_DOCX_XML_BYTES: u64 = 10 * 1024 * 1024;
 pub const MAX_SPREADSHEET_SOURCE_BYTES: u64 = 50 * 1024 * 1024;
 pub const MAX_CSV_SOURCE_BYTES: u64 = 50 * 1024 * 1024;
 pub const MAX_IMAGE_SOURCE_BYTES: u64 = 50 * 1024 * 1024;
+pub const MAX_DOCUMENT_BLOCKS: usize = 5_000;
+pub const MAX_IMAGE_OPERATIONS: usize = 128;
+pub const MAX_SPREADSHEET_OPERATIONS: usize = 10_000;
 
 /// Nombre maximal de cellules d'une feuille chargée par calamine.
 /// Calamine matérialise un `Range<Data>` dense ; une feuille déclarant

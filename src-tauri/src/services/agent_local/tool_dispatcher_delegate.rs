@@ -22,7 +22,11 @@ pub async fn spawn_delegate(
     cancel: tokio_util::sync::CancellationToken,
 ) -> Result<PendingDelegate, ToolResult> {
     let Some(app) = super::app_handle_global::get() else {
-        return Err(ToolResult::err("AppHandle non initialisé"));
+        return Err(ToolResult::internal(
+            "application_context_unavailable",
+            "AppHandle non initialisé",
+            true,
+        ));
     };
     let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::new(
         app.clone(),
@@ -70,7 +74,12 @@ pub async fn spawn_delegate(
                 {
                     eprintln!("[delegate] mark_status failed {child_id}: {mark_err}");
                 }
-                return Err(ToolResult::err(e));
+                return Err(ToolResult::internal(
+                    "subagent_spawn_dispatch_failed",
+                    e,
+                    false,
+                )
+                .with_error_hint("Inspecter le sous-agent créé avant de relancer la délégation."));
             }
             Ok(PendingDelegate { child_id })
         }

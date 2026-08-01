@@ -1,49 +1,12 @@
 use crate::services::agent_local::security::validate_write_path;
+use crate::services::agent_local::tool_office_array::{coerce, ArrayInputError};
 use crate::services::agent_local::tool_office_limits::{
-    ensure_source_size, validate_zip_archive, MAX_SPREADSHEET_SOURCE_BYTES,
+    ensure_source_size, validate_zip_archive, MAX_SPREADSHEET_OPERATIONS,
+    MAX_SPREADSHEET_SOURCE_BYTES,
 };
 use crate::services::agent_local::types_tools::ToolResult;
 use serde_json::Value;
 use std::path::Path;
-
-pub fn coerce_to_array(value: &Value) -> Option<Vec<Value>> {
-    if let Some(arr) = value.as_array() {
-        return Some(arr.clone());
-    }
-    if value.is_object() {
-        return Some(vec![value.clone()]);
-    }
-    if let Some(s) = value.as_str() {
-        if let Some(result) = try_parse_json_array(s) {
-            return Some(result);
-        }
-        let unescaped = s.replace("\\\"", "\"").replace("\\\\", "\\");
-        if unescaped != s {
-            if let Some(result) = try_parse_json_array(&unescaped) {
-                return Some(result);
-            }
-        }
-    }
-    None
-}
-
-fn try_parse_json_array(s: &str) -> Option<Vec<Value>> {
-    let trimmed = s.trim();
-    if let Ok(parsed) = serde_json::from_str::<Value>(trimmed) {
-        return coerce_parsed(parsed);
-    }
-    None
-}
-
-fn coerce_parsed(val: Value) -> Option<Vec<Value>> {
-    if let Some(arr) = val.as_array() {
-        return Some(arr.clone());
-    }
-    if val.is_object() {
-        return Some(vec![val]);
-    }
-    None
-}
 
 pub fn validate_spreadsheet_input(path: &Path) -> Result<(), String> {
     ensure_source_size(path, MAX_SPREADSHEET_SOURCE_BYTES, "Spreadsheet")?;
@@ -63,35 +26,62 @@ pub fn describe_value_type(value: &Value) -> String {
         Value::Null => "null".into(),
         Value::Bool(_) => "bool".into(),
         Value::Number(_) => "number".into(),
-        Value::String(s) => format!("string(len={}): {}...", s.len(), &s[..s.len().min(120)]),
+        Value::String(value) => {
+            let preview: String = value.chars().take(120).collect();
+            format!("string(len={}): {preview}...", value.chars().count())
+        }
         Value::Array(a) => format!("array(len={})", a.len()),
         Value::Object(o) => {
-            let keys: Vec<&str> = o.keys().map(|k| k.as_str()).collect();
-            format!("object(keys={})", keys.join(","))
+            const MAX_DESCRIBED_KEYS: usize = 12;
+            let keys = o
+                .keys()
+                .take(MAX_DESCRIBED_KEYS)
+                .map(String::as_str)
+                .collect::<Vec<_>>();
+            let suffix = if o.len() > MAX_DESCRIBED_KEYS {
+                ",…"
+            } else {
+                ""
+            };
+            format!("object(keys={}{suffix})", keys.join(","))
         }
     }
 }
 
 pub async fn write_spreadsheet(path: &str, operations: &Value, working_dir: &Path) -> ToolResult {
     if path.is_empty() {
-        return ToolResult::err("Le paramètre 'path' est requis");
+        return ToolResult::validation(
+            "spreadsheet_path_required",
+            "Le paramètre 'path' est requis",
+        );
     }
 
     let resolved = super::tool_office_utils::resolve_path(path, working_dir);
 
     let validated = match validate_write_path(&resolved) {
         Ok(p) => p,
-        Err(e) => return ToolResult::err(e),
+        Err(error) => {
+            return super::tool_file_error::path_failure(
+                error,
+                "spreadsheet_parent_not_found",
+                "spreadsheet_write_denied",
+                "invalid_spreadsheet_path",
+            )
+        }
     };
 
-    let ops = match coerce_to_array(operations) {
-        Some(arr) => arr,
-        None => {
-            return ToolResult::err(format!(
+    let ops = match coerce(operations, MAX_SPREADSHEET_OPERATIONS) {
+        Ok(operations) => operations,
+        Err(ArrayInputError::Invalid) => {
+            return ToolResult::validation("spreadsheet_operations_invalid", format!(
                 "Le paramètre 'operations' doit être un tableau d'opérations. Reçu: {}",
                 describe_value_type(operations)
             ))
         }
+        Err(ArrayInputError::TooMany) => return ToolResult::validation(
+            "spreadsheet_operation_limit_exceeded",
+            format!("Trop d'opérations (maximum {MAX_SPREADSHEET_OPERATIONS})"),
+        ),
     };
 
     let count = ops.len();
@@ -103,7 +93,10 @@ pub async fn write_spreadsheet(path: &str, operations: &Value, working_dir: &Pat
         .unwrap_or_default();
 
     if ext != "xlsx" {
-        return ToolResult::err("Seul le format .xlsx est supporté pour l'écriture");
+        return ToolResult::validation(
+            "spreadsheet_format_unsupported",
+            "Seul le format .xlsx est supporté pour l'écriture",
+        );
     }
 
     let result = if validated.exists() {
@@ -118,7 +111,7 @@ pub async fn write_spreadsheet(path: &str, operations: &Value, working_dir: &Pat
             validated.display(),
             count
         )),
-        Err(e) => ToolResult::err(e),
+        Err(error) => error.into_tool_result(),
     }
 }
 
@@ -134,12 +127,9 @@ pub fn parse_cell_ref(cell: &str) -> Option<(u32, u16)> {
         return None;
     }
 
-    let col_idx = super::tool_spreadsheet_read::col_letters_to_index(col_str);
-    let row_num: u32 = row_str.parse().ok()?;
-    if row_num == 0 {
-        return None;
-    }
-
+    let col_idx = super::tool_spreadsheet_range::column_index(col_str)?;
+    let row_idx = super::tool_spreadsheet_range::row_index(row_str)?;
     let col = u16::try_from(col_idx).ok()?;
-    Some((row_num - 1, col))
+    let row = u32::try_from(row_idx).ok()?;
+    Some((row, col))
 }

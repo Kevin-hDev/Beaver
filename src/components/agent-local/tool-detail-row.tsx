@@ -140,7 +140,7 @@ export function ToolDetailRow({
   const localizedOfficeError = tool.name.startsWith("beaver.office.")
     ? officeToolErrorMessage(tool.result ?? "", t)
     : undefined;
-  const errorSource = tool.result || tool.error?.hint || tool.error?.code || "";
+  const errorSource = tool.result || tool.error?.code || "";
   const errorMessage = tool.is_error
     ? localizedOfficeError ?? sanitizeToolError(errorSource)
     : undefined;
@@ -151,7 +151,6 @@ export function ToolDetailRow({
   const resultDetails = tool.is_error
     ? sanitizeToolErrorDetails([
         tool.result,
-        tool.error?.hint,
         tool.error?.code,
       ].filter(Boolean).join("\n\n"))
     : rawResult;

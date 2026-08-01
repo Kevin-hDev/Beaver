@@ -109,10 +109,13 @@ mod tests {
             Some("call-1"),
         );
 
-        let value: serde_json::Value =
-            serde_json::from_str(&messages[0].content).expect("structured result");
+        let (metadata, output) = messages[0]
+            .content
+            .split_once('\n')
+            .expect("structured result and raw output");
+        let value: serde_json::Value = serde_json::from_str(metadata).expect("metadata");
         assert_eq!(value["status"], "error");
         assert_eq!(value["error"]["code"], "shell_exit_nonzero");
-        assert_eq!(value["output"], "done");
+        assert_eq!(output, "done");
     }
 }

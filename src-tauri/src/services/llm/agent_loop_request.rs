@@ -45,6 +45,12 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         params.tools,
         params.provider_id,
     )?;
+    crate::services::agent_local::context_budget::record_repairs(
+        &report,
+        params.session_id,
+        params.request_id,
+    )
+    .await;
     let mut input_estimate = report.estimated_tokens;
     let mut input_tokens = crate::services::agent_local::context_usage_runtime::emit_input(
         params.on_event,

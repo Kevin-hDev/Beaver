@@ -64,3 +64,37 @@ async fn large_directories_report_a_bounded_partial_result() {
     assert!(result.warnings.iter().any(|warning| warning.contains("500")));
     assert!(result.content.lines().count() <= 500);
 }
+
+#[tokio::test]
+async fn nested_directories_are_sorted_with_each_subtree_kept_together() {
+    let directory = tempfile::tempdir().unwrap();
+    let alpha = directory.path().join("alpha");
+    let nested = alpha.join("nested");
+    std::fs::create_dir_all(&nested).unwrap();
+    std::fs::write(alpha.join("first.txt"), "").unwrap();
+    std::fs::write(nested.join("deep.txt"), "").unwrap();
+    std::fs::write(directory.path().join("z-last.txt"), "").unwrap();
+
+    let result = list_dir(".", directory.path()).await;
+
+    assert_eq!(
+        result.content,
+        "alpha/\n  first.txt\n  nested/\n    deep.txt\nz-last.txt"
+    );
+}
+
+#[tokio::test]
+async fn full_root_with_a_nonempty_directory_reports_omitted_descendants() {
+    let directory = tempfile::tempdir().unwrap();
+    let nested = directory.path().join("000-dir");
+    std::fs::create_dir(&nested).unwrap();
+    std::fs::write(nested.join("child.txt"), "").unwrap();
+    for index in 1..500 {
+        std::fs::write(directory.path().join(format!("{index:03}.txt")), "").unwrap();
+    }
+
+    let result = list_dir(".", directory.path()).await;
+
+    assert!(result.truncated);
+    assert_eq!(result.content.lines().count(), 500);
+}

@@ -158,7 +158,11 @@ function pendingFailure(outcome: PendingToolOutcome): {
   error: ToolErrorInfo;
 } {
   if (outcome === "cancelled") {
-    return { message: "Annulé.", status: "cancelled", error: cancelledToolError() };
+    return {
+      message: i18n.t("agentLocal.toolActivity.resultCancelled"),
+      status: "cancelled",
+      error: cancelledToolError(),
+    };
   }
   const missing = outcome === "missing";
   return {
