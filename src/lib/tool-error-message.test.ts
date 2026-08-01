@@ -4,8 +4,8 @@ import { toolErrorMessage } from "./tool-error-message";
 
 const translations: Record<string, string> = {
   "agentLocal.toolActivity.errorCategories.conflict": "L’état actuel empêche cette opération.",
+  "agentLocal.toolActivity.errorCategories.unavailable": "L’outil est temporairement indisponible.",
   "errors.toolFailed": "L’outil a échoué",
-  "extensions.errors.codes.extensions_host_unavailable": "L’hôte d’extensions est indisponible.",
 };
 const t = ((key: string) => translations[key] ?? key) as TFunction;
 
@@ -21,12 +21,15 @@ describe("toolErrorMessage", () => {
     expect(message).not.toContain("memory_edit_stale");
   });
 
-  it("réutilise la traduction précise d'une extension connue", () => {
-    expect(toolErrorMessage("extension", "host failed", {
-      code: "extensions_host_unavailable",
+  it("traduit un vrai code d'outil d'extension par sa catégorie", () => {
+    const message = toolErrorMessage("extension", "Extension indisponible.", {
+      code: "extension_unavailable",
       category: "unavailable",
       retryable: true,
-    }, t)).toBe("L’hôte d’extensions est indisponible.");
+    }, t);
+
+    expect(message).toBe("L’outil est temporairement indisponible.");
+    expect(message).not.toContain("extension_unavailable");
   });
 
   it("se replie sur l'erreur réelle nettoyée sans métadonnée", () => {

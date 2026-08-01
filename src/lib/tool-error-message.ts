@@ -1,6 +1,5 @@
 import type { TFunction } from "i18next";
 import type { ToolErrorCategory, ToolErrorInfo } from "@/types/agent";
-import { extensionErrorKey } from "./extension-errors";
 import { officeToolErrorMessage } from "./office-tool-errors";
 import { sanitizeToolError } from "./tool-error-sanitize";
 
@@ -27,9 +26,6 @@ export function toolErrorMessage(
     const officeMessage = officeToolErrorMessage(result, t);
     if (officeMessage) return officeMessage;
   }
-
-  const extensionKey = extensionErrorKey(error?.code ?? "", "");
-  if (extensionKey) return t(extensionKey);
 
   const categoryKey = error ? CATEGORY_KEYS[error.category] : undefined;
   if (categoryKey) return t(categoryKey);
