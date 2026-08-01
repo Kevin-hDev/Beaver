@@ -159,10 +159,7 @@
   -webkit-mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
 }
 
-@keyframes thinking-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
+/* thinking-shimmer vit dans global.css : partagé avec les libellés d'outils. */
 
 @keyframes conv-running-icon-shimmer {
   0%, 100% {

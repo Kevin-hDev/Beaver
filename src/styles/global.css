@@ -103,6 +103,14 @@ body {
   }
 }
 
+/* Partagé par les libellés d'outils en cours et les noms de session actifs.
+   Les keyframes CSS vivent dans un espace de noms global : une seconde
+   déclaration du même nom ailleurs écraserait celle-ci pour tout le monde. */
+@keyframes thinking-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;

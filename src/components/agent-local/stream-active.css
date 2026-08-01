@@ -1,18 +1,21 @@
+/* Reflet qui traverse, comme le shimmer des sessions actives (conversation.css),
+   mais avec un plateau de couleur pleine au centre : un stop unique ne colore
+   qu'un point et le reste n'est que du fondu, invisible en lecture. */
 .stream-active-label {
   background: linear-gradient(
     90deg,
     var(--agent-trace-text) 0%,
-    var(--pulse) 28%,
-    var(--pulse) 50%,
-    var(--pulse) 72%,
+    var(--agent-trace-text) 30%,
+    var(--pulse) 42%,
+    var(--pulse) 58%,
+    var(--agent-trace-text) 70%,
     var(--agent-trace-text) 100%
   );
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--pulse) 32%, transparent));
-  animation: thinking-shimmer 1.1s ease-in-out infinite;
+  animation: thinking-shimmer 1.5s ease-in-out infinite;
 }
 
 .stream-active-label:hover,
@@ -20,11 +23,5 @@
   -webkit-text-fill-color: unset;
   background: none;
   color: var(--pulse);
-  filter: none;
   animation: none;
-}
-
-@keyframes thinking-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
 }
