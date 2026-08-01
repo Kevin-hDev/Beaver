@@ -11,6 +11,7 @@ use super::types_tools::ToolFileChange;
 #[derive(Clone, Copy)]
 pub enum CompletionKind {
     Exited(i32),
+    Stopped,
     Cancelled,
     TimedOut,
     Failed,
@@ -37,6 +38,7 @@ pub struct ShellSession {
     state: Mutex<SessionState>,
     stdin: AsyncMutex<Option<ChildStdin>>,
     notify: Notify,
+    stop: CancellationToken,
     cancel: CancellationToken,
 }
 
@@ -79,6 +81,7 @@ impl ShellSession {
             }),
             stdin: AsyncMutex::new(Some(stdin)),
             notify: Notify::new(),
+            stop: CancellationToken::new(),
             cancel: CancellationToken::new(),
         })
     }
@@ -97,6 +100,14 @@ impl ShellSession {
 
     pub fn cancellation(&self) -> CancellationToken {
         self.cancel.clone()
+    }
+
+    pub fn stop_token(&self) -> CancellationToken {
+        self.stop.clone()
+    }
+
+    pub fn stop(&self) {
+        self.stop.cancel();
     }
 
     pub fn cancel(&self) {

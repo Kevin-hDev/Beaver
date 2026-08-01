@@ -12,6 +12,7 @@ import {
 } from "./tool-office-previews";
 import { ToolItem } from "./tool-item";
 import { toolDisplayInfo } from "./tool-display";
+import { isLegacyShellStopError, shellCommandPreview } from "./tool-shell-display";
 
 export interface RenderableTool {
   name: string;
@@ -27,6 +28,7 @@ export interface RenderableTool {
   old_text?: string;
   new_text?: string;
   start_line?: number;
+  legacySuccessfulStop?: boolean;
   resolved_path?: string;
 }
 
@@ -56,6 +58,7 @@ function toolSummary(t: ToolActivity): string {
 
 export function streamToolToRenderable(t: ToolActivity, isActive?: boolean): RenderableTool {
   const summary = toolSummary(t);
+  const legacySuccessfulStop = isLegacyShellStopError({ ...t, summary }, t.isError);
   return {
     name: t.name,
     summary,
@@ -65,7 +68,8 @@ export function streamToolToRenderable(t: ToolActivity, isActive?: boolean): Ren
     result: t.result,
     liveOutput: t.liveOutput,
     liveElapsedMs: t.liveElapsedMs,
-    is_error: t.isError,
+    is_error: legacySuccessfulStop ? false : t.isError,
+    legacySuccessfulStop,
     resolved_path: t.resolvedPath,
     content: t.name === "write_file" ? str(t.args.content) : undefined,
     old_text: t.name === "edit_file" ? str(t.args.old_string) : undefined,
@@ -77,13 +81,15 @@ export function streamToolToRenderable(t: ToolActivity, isActive?: boolean): Ren
 export function savedToolToRenderable(t: ToolActivityRecord): RenderableTool {
   const isLegacySkillId = t.name === "load_skill"
     && t.summary.trimStart().startsWith('{"skill_id":');
+  const legacySuccessfulStop = isLegacyShellStopError(t, t.is_error);
   return {
     name: t.name,
     summary: isLegacySkillId ? "" : t.summary,
     domain: t.domain,
     args: t.args,
     result: t.result,
-    is_error: t.is_error,
+    is_error: legacySuccessfulStop ? false : t.is_error,
+    legacySuccessfulStop,
     resolved_path: t.resolved_path,
     content: t.content,
     old_text: t.old_text,
@@ -112,6 +118,9 @@ export function ToolDetailRow({
   const operations = tool.content ?? tool.args?.operations;
   const documentContent = tool.content ?? tool.args?.content;
   const display = toolDisplayInfo(tool, projectPath, t);
+  const result = tool.legacySuccessfulStop
+    ? t("agentLocal.toolActivity.processStoppedResult")
+    : tool.result ?? tool.liveOutput;
   const localizedOfficeError = tool.name.startsWith("beaver.office.")
     ? officeToolErrorMessage(tool.result ?? "", t)
     : undefined;
@@ -137,7 +146,8 @@ export function ToolDetailRow({
       isActive={isActive}
       isError={tool.is_error}
       errorMessage={errorMessage}
-      result={tool.is_error ? undefined : tool.result ?? tool.liveOutput}
+      result={tool.is_error ? undefined : result}
+      commandPreview={shellCommandPreview(tool, previousTools)}
       elapsedMs={tool.result === undefined ? tool.liveElapsedMs : undefined}
       previewPath={tool.resolved_path}
       onFilePreview={onFilePreview}

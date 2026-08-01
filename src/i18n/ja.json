@@ -424,6 +424,7 @@
     "toolActivity": {
       "inProgress": "進行中",
       "completed": "完了",
+      "processStoppedResult": "プロセスを停止しました。",
       "toggleDetails": "ツール詳細を表示",
       "groups": {
         "exploration": "探索",
@@ -465,6 +466,7 @@
         "run": "実行",
         "createBranch": "ブランチ作成",
         "switchBranch": "ブランチ切替",
+        "stopProcess": "プロセス停止",
         "skill": "Skill 読込",
         "agent": "委任",
         "forecast": "分析",

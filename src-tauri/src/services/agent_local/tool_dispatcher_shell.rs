@@ -16,11 +16,17 @@ pub async fn dispatch(
     progress: Option<ShellProgress>,
 ) -> ToolResult {
     let execution = match tool_name {
-        "bash" => execute_command(args, working_dir, session_id, cancel, profile, progress).await,
-        "bash_write" => control_process(args, session_id, cancel, progress).await,
+        "bash" => execute_command(args, working_dir, session_id, cancel, profile, progress)
+            .await
+            .map(to_tool_result),
+        "bash_write" => control_process(args, session_id, cancel, progress)
+            .await
+            .map(|(output, command)| {
+                to_tool_result(output).with_display_summary(command.as_str())
+            }),
         _ => return ToolResult::err("Outil shell inconnu."),
     };
-    execution.map(to_tool_result).unwrap_or_else(ToolResult::err)
+    execution.unwrap_or_else(ToolResult::err)
 }
 
 async fn execute_command(
@@ -57,9 +63,10 @@ async fn control_process(
     session_id: &str,
     cancel: CancellationToken,
     progress: Option<ShellProgress>,
-) -> Result<ShellOutput, String> {
+) -> Result<(ShellOutput, super::tool_bash_registry::RegisteredCommand), String> {
+    let process_id = args["session_id"].as_str().unwrap_or("");
     super::tool_bash::control_shell_session(
-        args["session_id"].as_str().unwrap_or(""),
+        process_id,
         args["chars"].as_str(),
         args["eof"].as_bool().unwrap_or(false),
         args["stop"].as_bool().unwrap_or(false),
@@ -93,7 +100,7 @@ fn to_tool_result(output: ShellOutput) -> ToolResult {
         };
         append_warning(&mut content, warning);
     }
-    let result = if output.running || output.exit_code == 0 {
+    let result = if output.running || output.stopped || output.exit_code == 0 {
         ToolResult::ok(content)
     } else {
         ToolResult::err(content)

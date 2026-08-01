@@ -15,6 +15,7 @@ const t = ((key: string) => ({
   "agentLocal.toolActivity.actions.list": "List",
   "agentLocal.toolActivity.actions.search": "Search",
   "agentLocal.toolActivity.actions.run": "Run",
+  "agentLocal.toolActivity.actions.stopProcess": "Process stopped",
 }[key] ?? key)) as TFunction;
 
 describe("toolDisplayInfo", () => {
@@ -106,6 +107,32 @@ describe("toolDisplayInfo", () => {
       summary: "session-1",
       icon: "TerminalWindow",
     });
+  });
+
+  it("affiche un arrêt volontaire comme une action dédiée", () => {
+    expect(toolDisplayInfo({
+      name: "bash_write",
+      summary: "npm start",
+      args: { session_id: "session-1", stop: true },
+    }, undefined, t)).toEqual({
+      label: "Process stopped",
+      summary: "",
+      icon: "TerminalWindow",
+    });
+  });
+
+  it("reclasse l'ancien résultat d'arrêt sans masquer les autres erreurs", () => {
+    const sessionId = "6a719eeb-1665-49cd-a5e2-23427e80543b";
+    const tool = savedToolToRenderable({
+      name: "bash_write",
+      summary: sessionId,
+      args: { session_id: sessionId, stop: true },
+      result: "Commande annulee.",
+      is_error: true,
+    });
+
+    expect(tool.is_error).toBe(false);
+    expect(tool.legacySuccessfulStop).toBe(true);
   });
 
   it("affiche les tools spécialisés avec des noms explicites", () => {

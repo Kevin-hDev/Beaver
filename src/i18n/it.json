@@ -424,6 +424,7 @@
     "toolActivity": {
       "inProgress": "in corso",
       "completed": "completato",
+      "processStoppedResult": "Processo arrestato.",
       "toggleDetails": "Mostra dettagli degli strumenti",
       "groups": {
         "exploration": "Esplorazione",
@@ -465,6 +466,7 @@
         "run": "Eseguito",
         "createBranch": "Branch creato",
         "switchBranch": "Branch cambiato",
+        "stopProcess": "Processo arrestato",
         "skill": "Skill caricato",
         "agent": "Delegato",
         "forecast": "Analizzato",

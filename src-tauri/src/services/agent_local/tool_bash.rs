@@ -71,21 +71,21 @@ pub async fn control_shell_session(
     yield_time_ms: Option<u64>,
     cancel: CancellationToken,
     progress: Option<ShellProgress>,
-) -> Result<ShellOutput, String> {
+) -> Result<(ShellOutput, super::tool_bash_registry::RegisteredCommand), String> {
     if let Some(input) = input {
         validate_input(input)?;
     }
+    let (session, command) = super::tool_bash_registry::get(process_id, owner_session_id)?;
     if !stop {
         if let Some(input) = input.filter(|value| !value.is_empty()) {
             if let Err(reason) = super::security::check_destructive_command(input) {
-                return Ok(super::tool_bash_result::blocked(reason));
+                return Ok((super::tool_bash_result::blocked(reason), command));
             }
         }
     }
-    let session = super::tool_bash_registry::get(process_id, owner_session_id)?;
     session.set_progress(progress);
     if stop || input.is_some_and(|value| value.contains('\u{3}')) {
-        session.cancel();
+        session.stop();
     } else if let Some(input) = input {
         if !input.is_empty() {
             if let Err(error) = write_session_input(&session, input, &cancel).await {
@@ -109,7 +109,7 @@ pub async fn control_shell_session(
     if session.is_done() {
         super::tool_bash_registry::remove(session.id());
     }
-    Ok(output)
+    Ok((output, command))
 }
 
 async fn write_session_input(

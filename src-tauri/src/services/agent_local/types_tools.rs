@@ -123,6 +123,8 @@ pub struct ShellOutput {
     pub exit_code: i32,
     #[serde(default)]
     pub running: bool,
+    #[serde(default)]
+    pub stopped: bool,
     pub timed_out: bool,
     #[serde(default)]
     pub tracking_incomplete: bool,

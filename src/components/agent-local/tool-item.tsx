@@ -31,17 +31,18 @@ function hasPreviewContent(children: ReactNode): boolean {
 export function ToolItem({
   name, summary, icon, displayName, displaySummary, dir, fileName,
   additions, deletions, done, isActive, isError, errorMessage, result,
-  elapsedMs, previewPath, onFilePreview, children,
+  commandPreview, elapsedMs, previewPath, onFilePreview, children,
 }: {
   name: string; summary: string; icon?: string; displayName?: string; displaySummary?: string;
   dir?: string; fileName?: string;
   additions?: number; deletions?: number; done: boolean; isActive?: boolean; isError?: boolean; errorMessage?: string;
-  result?: string; elapsedMs?: number; previewPath?: string; onFilePreview?: (path: string) => void; children?: ReactNode;
+  result?: string; commandPreview?: string; elapsedMs?: number; previewPath?: string;
+  onFilePreview?: (path: string) => void; children?: ReactNode;
 }) {
   const hasPreview = hasPreviewContent(children);
   const hasResult = !!result && !isError && !hasPreview && RESULT_PREVIEW_TOOLS.has(name);
   const canToggle = hasPreview || hasResult;
-  const showCommandPreview = name === "bash" && hasResult;
+  const showCommandPreview = !!commandPreview && hasResult;
   const { open: isOpen, mounted, toggle, onTransitionEnd } = useCollapsiblePresence();
   const targetPath = previewPath?.trim() || summary.trim();
   const clickablePath = isFileTool(name) && targetPath.length > 0 && !!onFilePreview;
@@ -67,7 +68,7 @@ export function ToolItem({
   };
 
   const labelButton = canToggle ? (
-    <button type="button" className="tb-toggle" onClick={toggle}>
+    <button type="button" className="tb-toggle" aria-expanded={isOpen} onClick={toggle}>
       {icon && <ToolIcon name={icon} size="var(--icon-sm)" className="tb-tool-icon" aria-hidden="true" />}
       <span className={`tb-tool-verb${activeClass}`}>{shownName}</span>
       <span className="tb-arrow tb-tool-arrow" aria-hidden="true">
@@ -105,7 +106,7 @@ export function ToolItem({
   ) : null;
 
   // Cas non-fichier : résumé simple tronquable
-  const summaryContent = !hasFilePath ? (
+  const summaryContent = !hasFilePath && shownSummary ? (
     <span
       className={`tb-item-summary${activeClass}`}
       role={clickablePath ? "button" : undefined}
@@ -134,7 +135,9 @@ export function ToolItem({
         <div className={`tb-accordion${isOpen ? " tb-open" : ""}`} onTransitionEnd={onTransitionEnd}>
           {mounted && (
             <div className="tb-accordion-inner">
-              {showCommandPreview && <div className="chat-column-surface tb-command-preview">{summary}</div>}
+              {showCommandPreview && (
+                <div className="chat-column-surface tb-command-preview">{commandPreview}</div>
+              )}
               {hasPreview && children}
               {hasResult && (
                 MARKDOWN_RESULT_TOOLS.has(name) ? (

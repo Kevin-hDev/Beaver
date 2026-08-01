@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import type { RenderableTool } from "./tool-detail-row";
+import { isShellStopAction } from "./tool-shell-display";
 
 export interface ToolDisplayInfo {
   label: string;
@@ -89,6 +90,13 @@ export function toolDisplayInfo(
   projectPath: string | undefined,
   t: TFunction,
 ): ToolDisplayInfo {
+  if (isShellStopAction(tool)) {
+    return {
+      label: t("agentLocal.toolActivity.actions.stopProcess"),
+      summary: "",
+      icon: iconFor(tool.name),
+    };
+  }
   if (tool.name === "bash" || tool.name === "bash_write") {
     const summary = tool.name === "bash" ? compactCommand(tool.summary) : tool.summary;
     return { label: "bash", summary, icon: iconFor(tool.name) };
