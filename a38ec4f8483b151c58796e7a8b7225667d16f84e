@@ -1,0 +1,25 @@
+# Correction de revue — codes d’erreur d’extension
+
+## Cause
+
+`tool-error-message.ts` réutilisait la table des erreurs du domaine de gestion des extensions (`extensions_*`), alors que les `ToolResult` émettent uniquement quatre codes au singulier (`extension_*`). Cette branche était donc inatteignable et son test utilisait une valeur impossible dans ce flux.
+
+## Correction
+
+- suppression de l’import et de la branche morts ;
+- remplacement du test artificiel par `extension_unavailable`, réellement produit par `extensions/tool_result.rs` ;
+- vérification que ce code utilise sa catégorie structurée `unavailable` et n’est jamais affiché ;
+- rectification de la note de `3d11790` concernant les extensions et le total de tests.
+
+## Choix conservé
+
+Les messages précis par code ne sont ajoutés que lorsqu’une traduction fiable et réellement alimentée existe, comme pour Office. Les autres outils utilisent leur catégorie traduite, puis le résultat réel nettoyé en l’absence de métadonnées.
+
+## Validation
+
+- test ciblé : 4 réussis ;
+- `npx tsc --noEmit` ;
+- `npm run lint` ;
+- suite complète : 1 790 Vitest, 2 CEF, 46 extension-host, 0 échec ;
+- `git diff --check` ;
+- `graphify update .`.
