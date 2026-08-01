@@ -429,6 +429,18 @@
       "resultTruncated": "Risultato troncato.",
       "resultMissing": "Il risultato dello strumento manca dopo la fine del flusso.",
       "verifyBeforeRetry": "Verifica lo stato risultante prima di riprovare, perché l’azione potrebbe essere già stata eseguita.",
+      "errorCategories": {
+        "validation": "La richiesta inviata allo strumento non è valida.",
+        "permission": "Questa operazione non è consentita.",
+        "notFound": "La risorsa richiesta non è stata trovata.",
+        "conflict": "Lo stato attuale impedisce questa operazione.",
+        "timeout": "Lo strumento non ha risposto in tempo.",
+        "cancelled": "L’operazione è stata annullata.",
+        "unavailable": "Lo strumento non è temporaneamente disponibile.",
+        "external": "Un servizio esterno ha impedito l’operazione.",
+        "execution": "Lo strumento non ha potuto completare l’operazione.",
+        "internal": "Un errore interno ha impedito l’operazione."
+      },
       "toggleDetails": "Mostra dettagli degli strumenti",
       "groups": {
         "exploration": "Esplorazione",

@@ -14,6 +14,19 @@ describe("tool result translations", () => {
       expect(locale.agentLocal.toolActivity.resultCancelled).toBeTruthy();
       expect(locale.agentLocal.toolActivity.resultMissing).toBeTruthy();
       expect(locale.agentLocal.toolActivity.verifyBeforeRetry).toBeTruthy();
+      const categories = locale.agentLocal.toolActivity.errorCategories;
+      expect([
+        categories.validation,
+        categories.permission,
+        categories.notFound,
+        categories.conflict,
+        categories.timeout,
+        categories.cancelled,
+        categories.unavailable,
+        categories.external,
+        categories.execution,
+        categories.internal,
+      ].every(Boolean)).toBe(true);
     }
   });
 });

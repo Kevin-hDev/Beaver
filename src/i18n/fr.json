@@ -434,6 +434,18 @@
       "resultTruncated": "Résultat tronqué.",
       "resultMissing": "Le résultat de l’outil manque après la fin du flux.",
       "verifyBeforeRetry": "Vérifiez l’état obtenu avant de relancer : l’action a peut-être déjà été exécutée.",
+      "errorCategories": {
+        "validation": "La demande transmise à l’outil est invalide.",
+        "permission": "Cette opération n’est pas autorisée.",
+        "notFound": "La ressource demandée est introuvable.",
+        "conflict": "L’état actuel empêche cette opération.",
+        "timeout": "L’outil n’a pas répondu à temps.",
+        "cancelled": "L’opération a été annulée.",
+        "unavailable": "L’outil est temporairement indisponible.",
+        "external": "Un service externe a empêché l’opération.",
+        "execution": "L’outil n’a pas pu terminer l’opération.",
+        "internal": "Une erreur interne a empêché l’opération."
+      },
       "toggleDetails": "Afficher les détails des outils",
       "groups": {
         "exploration": "Exploration",

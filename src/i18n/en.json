@@ -434,6 +434,18 @@
       "resultTruncated": "Result truncated.",
       "resultMissing": "The tool result is missing after the stream ended.",
       "verifyBeforeRetry": "Check the resulting state before retrying because the action may already have run.",
+      "errorCategories": {
+        "validation": "The request sent to the tool is invalid.",
+        "permission": "This operation is not permitted.",
+        "notFound": "The requested resource could not be found.",
+        "conflict": "The current state prevents this operation.",
+        "timeout": "The tool did not respond in time.",
+        "cancelled": "The operation was cancelled.",
+        "unavailable": "The tool is temporarily unavailable.",
+        "external": "An external service prevented the operation.",
+        "execution": "The tool could not complete the operation.",
+        "internal": "An internal error prevented the operation."
+      },
       "toggleDetails": "Show tool details",
       "groups": {
         "exploration": "Exploration",

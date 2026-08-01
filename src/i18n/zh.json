@@ -429,6 +429,18 @@
       "resultTruncated": "结果已截断。",
       "resultMissing": "数据流结束后缺少工具结果。",
       "verifyBeforeRetry": "重试前请检查当前状态，因为操作可能已经执行。",
+      "errorCategories": {
+        "validation": "发送给工具的请求无效。",
+        "permission": "不允许执行此操作。",
+        "notFound": "未找到请求的资源。",
+        "conflict": "当前状态阻止了此操作。",
+        "timeout": "工具未能及时响应。",
+        "cancelled": "操作已取消。",
+        "unavailable": "工具暂时不可用。",
+        "external": "外部服务阻止了此操作。",
+        "execution": "工具未能完成此操作。",
+        "internal": "内部错误阻止了此操作。"
+      },
       "toggleDetails": "显示工具详情",
       "groups": {
         "exploration": "探索",

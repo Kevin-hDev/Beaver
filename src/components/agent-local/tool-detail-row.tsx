@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { ToolActivity } from "@/hooks/agent-chat-utils";
-import { officeToolErrorMessage } from "@/lib/office-tool-errors";
-import { sanitizeToolError, sanitizeToolErrorDetails } from "@/lib/tool-error-sanitize";
+import { toolErrorMessage } from "@/lib/tool-error-message";
+import { sanitizeToolErrorDetails } from "@/lib/tool-error-sanitize";
 import type {
   ToolActivityRecord,
   ToolErrorInfo,
@@ -137,22 +137,15 @@ export function ToolDetailRow({
   const rawResult = tool.legacySuccessfulStop
     ? t("agentLocal.toolActivity.processStoppedResult")
     : tool.result ?? tool.liveOutput;
-  const localizedOfficeError = tool.name.startsWith("beaver.office.")
-    ? officeToolErrorMessage(tool.result ?? "", t)
-    : undefined;
-  const errorSource = tool.result || tool.error?.code || "";
   const errorMessage = tool.is_error
-    ? localizedOfficeError ?? sanitizeToolError(errorSource)
+    ? toolErrorMessage(tool.name, tool.result ?? "", tool.error, t)
     : undefined;
   const notices = [
     ...(tool.warnings ?? []),
     ...(tool.truncated ? [t("agentLocal.toolActivity.resultTruncated")] : []),
   ].map(sanitizeToolErrorDetails);
   const resultDetails = tool.is_error
-    ? sanitizeToolErrorDetails([
-        tool.result,
-        tool.error?.code,
-      ].filter(Boolean).join("\n\n"))
+    ? sanitizeToolErrorDetails(tool.result ?? "")
     : rawResult;
   const result = [resultDetails, ...notices].filter(Boolean).join("\n\n");
   const showWebPreview = (tool.name === "web_search" || tool.name === "web_fetch")
