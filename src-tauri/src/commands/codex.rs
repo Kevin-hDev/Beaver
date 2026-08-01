@@ -13,8 +13,8 @@ pub async fn codex_login(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn codex_logout(app: tauri::AppHandle) -> Result<(), String> {
-    let result = login::logout();
+pub async fn codex_logout(app: tauri::AppHandle) -> Result<(), String> {
+    let result = login::logout().await;
     if result.is_ok() {
         let _ = app.emit("codex-auth-changed", ());
     }

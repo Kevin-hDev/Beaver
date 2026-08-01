@@ -69,14 +69,12 @@ pub struct CodexRequest {
     pub input: Vec<serde_json::Value>,
     pub stream: bool,
     pub store: bool,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tools: Vec<serde_json::Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tool_choice: Option<String>,
+    pub tool_choice: String,
+    pub parallel_tool_calls: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<ReasoningConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub include: Option<Vec<String>>,
+    pub include: Vec<String>,
 }
 
 #[derive(Serialize, Clone)]

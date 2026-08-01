@@ -1,37 +1,26 @@
+use std::future::Future;
 use std::time::Duration;
+use tokio_util::sync::CancellationToken;
 
-use super::types::{CodexRequest, ReasoningConfig, CODEX_API_BASE};
-use super::{convert, http_error};
+use super::types::{CodexRequest, ReasoningConfig};
+use super::{convert, request_http};
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::codex_oauth::store::CodexTokens;
-use crate::services::codex_oauth::token;
 use crate::services::llm::provider_error::ProviderErrorCode;
-use crate::services::secure_http::{AuthenticatedClient, SecureHttpError};
-
-const REQUEST_TIMEOUT: Duration = Duration::from_secs(180);
-
-struct RequestOptions {
-    timeout: Duration,
-}
 
 pub async fn post_codex_stream(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
-    think: bool,
     reasoning_mode: Option<&str>,
+    cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
-    let creds = token::ensure_valid().await?;
     send_request(
-        &creds,
         model,
         messages,
         tools,
-        think,
         reasoning_mode,
-        RequestOptions {
-            timeout: REQUEST_TIMEOUT,
-        },
+        request_http::RequestDeadline::Streaming,
+        cancel,
     )
     .await
 }
@@ -40,58 +29,47 @@ pub async fn post_codex_stream_with_timeout(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
-    think: bool,
     reasoning_mode: Option<&str>,
     timeout: Duration,
+    cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
-    let creds = token::ensure_valid().await?;
     send_request(
-        &creds,
         model,
         messages,
         tools,
-        think,
         reasoning_mode,
-        RequestOptions { timeout },
+        request_http::RequestDeadline::Total(timeout),
+        cancel,
     )
     .await
 }
 
 async fn send_request(
-    creds: &CodexTokens,
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
-    _think: bool,
     reasoning_mode: Option<&str>,
-    options: RequestOptions,
+    deadline: request_http::RequestDeadline,
+    cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
     let body = build_codex_request(model, messages, tools, reasoning_mode);
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
-    let request_bytes = body_json.len();
-    let client = AuthenticatedClient::new(options.timeout)
-        .map_err(|error| secure_http_error(error).to_string())?;
-    let request = client
-        .post(format!("{CODEX_API_BASE}/responses"))
-        .bearer_auth(creds.access.as_str())
-        .header("chatgpt-account-id", creds.account_hint.as_str())
-        .header("OpenAI-Beta", "responses=experimental")
-        .header("Content-Type", "application/json")
-        .header("Accept", "text/event-stream")
-        .body(body_json);
-    let response = client
-        .send(request)
-        .await
-        .map_err(|error| secure_http_error(error).to_string())?;
-    http_error::require_success(response, model, request_bytes, tools.len()).await
+    cancel_aware(
+        cancel,
+        request_http::post(&body_json, model, tools.len(), deadline),
+    )
+    .await
 }
 
-fn secure_http_error(error: SecureHttpError) -> &'static str {
-    match error {
-        SecureHttpError::Configuration => ProviderErrorCode::ProviderConfigurationInvalid.as_str(),
-        SecureHttpError::Status => ProviderErrorCode::ProviderRequestRejected.as_str(),
-        _ => ProviderErrorCode::ProviderConnectionFailed.as_str(),
+async fn cancel_aware<T, F>(cancel: &CancellationToken, future: F) -> Result<T, String>
+where
+    F: Future<Output = Result<T, String>>,
+{
+    tokio::select! {
+        biased;
+        _ = cancel.cancelled() => Err("Annulé".to_string()),
+        result = future => result,
     }
 }
 
@@ -99,7 +77,7 @@ fn provider_error(code: ProviderErrorCode) -> String {
     code.as_str().to_string()
 }
 
-fn build_codex_request(
+pub(super) fn build_codex_request(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
@@ -114,16 +92,13 @@ fn build_codex_request(
         stream: true,
         store: false,
         tools: converted_tools,
-        tool_choice: if tools.is_empty() {
-            None
-        } else {
-            Some("auto".to_string())
-        },
+        tool_choice: "auto".to_string(),
+        parallel_tool_calls: false,
         reasoning: Some(ReasoningConfig {
             effort: crate::services::reasoning::codex_effort(model, reasoning_mode),
             summary: "auto".to_string(),
         }),
-        include: Some(vec!["reasoning.encrypted_content".to_string()]),
+        include: vec!["reasoning.encrypted_content".to_string()],
     }
 }
 
@@ -141,18 +116,21 @@ mod tests {
     }
 
     #[test]
-    fn codex_transport_errors_use_stable_codes() {
-        assert_eq!(
-            secure_http_error(SecureHttpError::Configuration),
-            "provider_configuration_invalid"
-        );
-        assert_eq!(
-            secure_http_error(SecureHttpError::Status),
-            "provider_request_rejected"
-        );
-        assert_eq!(
-            secure_http_error(SecureHttpError::Request),
-            "provider_connection_failed"
-        );
+    fn request_keeps_the_official_empty_tools_contract() {
+        let request = build_codex_request("gpt-5.6-sol", &[], &[], None);
+        let json = serde_json::to_value(request).unwrap();
+
+        assert_eq!(json["tools"], serde_json::json!([]));
+        assert_eq!(json["tool_choice"], "auto");
+    }
+
+    #[tokio::test]
+    async fn cancellation_is_observed_before_response_headers() {
+        let cancel = CancellationToken::new();
+        cancel.cancel();
+
+        let result = cancel_aware(&cancel, std::future::pending::<Result<(), String>>()).await;
+
+        assert_eq!(result.unwrap_err(), "Annulé");
     }
 }

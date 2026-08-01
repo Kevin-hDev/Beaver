@@ -52,7 +52,7 @@ fn validate_raw_batch(entries: &[(&str, &str)]) -> Result<(), String> {
 }
 
 pub fn get_raw(key: &str) -> Result<Zeroizing<String>, String> {
-    let prefixed = format!("{RAW_PREFIX}{key}");
+    let prefixed = prefixed_raw_key(key)?;
     let state = STATE.lock().map_err(|_| "erreur de stockage".to_string())?;
     let current = state
         .as_ref()
@@ -62,6 +62,22 @@ pub fn get_raw(key: &str) -> Result<Zeroizing<String>, String> {
         .get(&prefixed)
         .cloned()
         .ok_or_else(|| "clé non trouvée".to_string())
+}
+
+pub fn has_raw(key: &str) -> Result<bool, String> {
+    let prefixed = prefixed_raw_key(key)?;
+    let state = STATE.lock().map_err(|_| "coffre indisponible".to_string())?;
+    let current = state
+        .as_ref()
+        .ok_or_else(|| "coffre indisponible".to_string())?;
+    Ok(current.keys.contains_key(&prefixed))
+}
+
+fn prefixed_raw_key(key: &str) -> Result<String, String> {
+    if key.is_empty() || key.len() > MAX_RAW_KEY_LEN {
+        return Err("clé du coffre invalide".to_string());
+    }
+    Ok(format!("{RAW_PREFIX}{key}"))
 }
 
 pub fn get_or_create_random_raw(key: &str, byte_len: usize) -> Result<Zeroizing<Vec<u8>>, String> {

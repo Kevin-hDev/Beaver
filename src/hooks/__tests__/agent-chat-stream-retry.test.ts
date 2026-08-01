@@ -42,4 +42,43 @@ describe("retryIndicator", () => {
     });
     expect(next.retryIndicator).toBeNull();
   });
+
+  it("efface seulement la tentative provider incomplète avant de rejouer", () => {
+    const completedSegments = [
+      { thinking: "", tools: [], content: "segment terminé" },
+      { thinking: "travail partiel", tools: [], content: "" },
+    ];
+    const state = makeState({
+      completedSegments,
+      hasContextUsageSnapshot: true,
+      contextUsageBaseSegments: 1,
+      currentContent: "réponse partielle",
+      currentContentPhase: "work",
+      currentThinking: "raisonnement partiel",
+      currentTools: [{ name: "read_file", args: { path: "test" } }],
+      activeStreamItem: { kind: "thinking" },
+      tps: 12,
+      tpsEstimated: true,
+      contextInputTokens: 100,
+      contextOutputTokens: 20,
+      liveTokenCount: 35,
+      sessionTokenCount: 120,
+    });
+
+    const { state: next } = applyStreamEvent(state, {
+      event: "retryIndicator",
+      data: { reasonKey: "agentLocal.retry.provider", attempt: 1, maxAttempts: 3 },
+    });
+
+    expect(next.completedSegments).toEqual([completedSegments[0]]);
+    expect(next.currentContent).toBe("");
+    expect(next.currentContentPhase).toBeUndefined();
+    expect(next.currentThinking).toBe("");
+    expect(next.currentTools).toEqual([]);
+    expect(next.activeStreamItem).toBeNull();
+    expect(next.tps).toBe(0);
+    expect(next.contextOutputTokens).toBe(0);
+    expect(next.liveTokenCount).toBe(15);
+    expect(next.sessionTokenCount).toBe(100);
+  });
 });

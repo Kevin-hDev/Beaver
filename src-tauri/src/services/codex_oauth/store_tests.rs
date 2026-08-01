@@ -8,11 +8,12 @@ fn tokens_with_expiry(expires_at: i64) -> CodexTokens {
         access: Zeroizing::new("access-token".to_string()),
         refresh: Zeroizing::new("refresh-token".to_string()),
         expires_at,
+        refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_123".to_string()),
     }
 }
 
-// --- is_expired : marge de 30s ----------------------------------------------
+// --- renouvellement anticipé et expiration réelle --------------------------
 
 #[test]
 fn is_expired_true_when_past_expiry() {
@@ -20,6 +21,7 @@ fn is_expired_true_when_past_expiry() {
     // Expiré il y a 1h.
     let t = tokens_with_expiry(now - 3600);
     assert!(t.is_expired());
+    assert!(t.needs_refresh());
 }
 
 #[test]
@@ -28,35 +30,64 @@ fn is_expired_false_when_well_before_expiry() {
     // Expire dans 1h.
     let t = tokens_with_expiry(now + 3600);
     assert!(!t.is_expired());
+    assert!(!t.needs_refresh());
 }
 
 #[test]
-fn is_expired_true_within_30s_refresh_margin() {
-    // La marge de 30s évite d'utiliser un token qui va expirer pendant un
-    // appel réseau en cours. expires_at - 30s doit déjà être considéré
-    // expiré. On place expires_at 10s dans le futur : is_expired compare à
-    // expires_at - 30 = -20s dans le passé → expiré.
+fn is_expired_true_within_refresh_margin() {
     let now = Utc::now().timestamp();
-    let t = tokens_with_expiry(now + 10);
+    let t = tokens_with_expiry(now + 120);
     assert!(
-        t.is_expired(),
-        "un token qui expire dans <30s doit déjà être marqué expiré (refresh margin)"
+        t.needs_refresh(),
+        "un token qui expire dans moins de cinq minutes doit être renouvelé"
     );
+    assert!(!t.is_expired());
 }
 
 #[test]
 fn is_expired_false_just_outside_refresh_margin() {
-    // expires_at = now + 35s → expires_at - 30 = now + 5s → dans le futur →
-    // pas expiré. Frontière exacte de la marge.
     let now = Utc::now().timestamp();
-    let t = tokens_with_expiry(now + 35);
+    let t = tokens_with_expiry(now + 305);
+    assert!(!t.needs_refresh());
     assert!(!t.is_expired());
 }
 
 #[test]
 fn is_expired_boundary_at_exact_expiry() {
     let now = Utc::now().timestamp();
-    // expires_at = now → now >= expires_at - 30 → expiré.
     let t = tokens_with_expiry(now);
     assert!(t.is_expired());
+}
+
+#[test]
+fn refresh_cooldown_prevents_a_network_refresh_storm() {
+    let now = Utc::now().timestamp();
+    let mut tokens = tokens_with_expiry(now + 120);
+    tokens.refresh_not_before = now + 60;
+
+    assert!(!tokens.needs_refresh());
+}
+
+#[test]
+fn an_expired_token_ignores_the_refresh_cooldown() {
+    let now = Utc::now().timestamp();
+    let mut tokens = tokens_with_expiry(now - 1);
+    tokens.refresh_not_before = now + 60;
+
+    assert!(tokens.needs_refresh());
+}
+
+#[test]
+fn legacy_storage_defaults_the_refresh_cooldown_to_zero() {
+    let stored: super::Stored = serde_json::from_str(
+        r#"{"access":"a","refresh":"r","expires_at":1,"account_id":"acct_1"}"#,
+    )
+    .unwrap();
+
+    assert_eq!(stored.refresh_not_before, 0);
+}
+
+#[test]
+fn storage_failures_use_a_stable_public_error_code() {
+    assert_eq!(super::unavailable(), "oauth_reauthentication_required");
 }

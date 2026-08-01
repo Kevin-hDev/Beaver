@@ -1,96 +1,162 @@
-use serde::Deserialize;
+use std::sync::LazyLock;
 use std::time::Duration;
+
+use reqwest::StatusCode;
+use serde::Serialize;
+use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
+use tokio::sync::Semaphore;
 use zeroize::{Zeroize, Zeroizing};
 
-use super::jwt;
 use super::store::CodexTokens;
+use super::token_response::{self, CodexTokenResponse};
+use super::{store, CLIENT_ID};
 use crate::services::secure_http::{read_json_bounded, AuthenticatedClient, OAUTH_BODY_LIMIT};
 
 const TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
+static TOKEN_LOCK: LazyLock<Semaphore> = LazyLock::new(|| Semaphore::new(1));
 
-use super::{CLIENT_ID, REDIRECT_URI};
-
-pub async fn exchange_code(code: &str, code_verifier: &str) -> Result<CodexTokens, String> {
-    let mut body = format!(
+pub async fn exchange_code(
+    code: &str,
+    code_verifier: &str,
+    redirect_uri: &str,
+) -> Result<CodexTokens, String> {
+    let body = Zeroizing::new(format!(
         "grant_type=authorization_code&client_id={CLIENT_ID}&code={}&code_verifier={}&redirect_uri={}",
         urlencoding::encode(code),
         urlencoding::encode(code_verifier),
-        urlencoding::encode(REDIRECT_URI),
-    );
-    let result = post_form(&body).await;
-    body.zeroize();
-    parse_response(result?).await
-}
-
-pub async fn refresh(refresh_val: &str) -> Result<CodexTokens, String> {
-    let mut body = format!(
-        "grant_type=refresh_token&refresh_token={}&client_id={CLIENT_ID}",
-        urlencoding::encode(refresh_val),
-    );
-    let result = post_form(&body).await;
-    body.zeroize();
-    parse_response(result?).await
-}
-
-async fn post_form(body: &str) -> Result<reqwest::Response, String> {
-    let client = build_client()?;
-    let request = client
-        .post(TOKEN_URL)
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(body.to_string());
-    client
-        .send_success(request)
-        .await
-        .map_err(|_| "échange OAuth refusé".to_string())
+        urlencoding::encode(redirect_uri),
+    ));
+    token_response::from_exchange(post_body(&body, "application/x-www-form-urlencoded").await?)
+        .map_err(|_| invalid_response())
 }
 
 pub async fn ensure_valid() -> Result<CodexTokens, String> {
-    let creds = super::store::load()?.ok_or("non connecté à Codex")?;
-    if !creds.is_expired() {
-        return Ok(creds);
+    let observed = store::load()?.ok_or_else(not_connected)?;
+    if !observed.needs_refresh() {
+        return Ok(observed);
     }
-    eprintln!("[codex] session expirée, renouvellement...");
-    let new_creds = refresh(&creds.refresh).await?;
-    super::store::save(&new_creds)?;
-    Ok(new_creds)
+    match refresh_due(&observed).await {
+        Ok(refreshed) => Ok(refreshed),
+        Err(error) if can_use_still_valid_token(&error, &observed) => Ok(observed),
+        Err(error) => Err(error),
+    }
 }
 
-fn build_client() -> Result<AuthenticatedClient, String> {
-    AuthenticatedClient::new(Duration::from_secs(15)).map_err(|_| "erreur interne".to_string())
+pub async fn recover_after_unauthorized(rejected_access: &str) -> Result<CodexTokens, String> {
+    let _guard = acquire_token_lock().await?;
+    let current = store::load()?.ok_or_else(not_connected)?;
+    if !constant_time_secret_eq(current.access.as_bytes(), rejected_access.as_bytes()) {
+        return Ok(current);
+    }
+    refresh_and_save(&current).await
 }
 
-async fn parse_response(resp: reqwest::Response) -> Result<CodexTokens, String> {
-    let mut raw: CodexTokenResponse = read_json_bounded(resp, OAUTH_BODY_LIMIT)
-        .await
-        .map_err(|_| "réponse OAuth invalide".to_string())?;
-    if raw.access_token.is_empty() || raw.refresh_token.is_empty() {
-        return Err("réponse OAuth invalide".to_string());
+async fn refresh_due(observed: &CodexTokens) -> Result<CodexTokens, String> {
+    let _guard = acquire_token_lock().await?;
+    let current = store::load()?.ok_or_else(not_connected)?;
+    if !constant_time_secret_eq(current.access.as_bytes(), observed.access.as_bytes())
+        || !current.needs_refresh()
+    {
+        return Ok(current);
     }
-    let access = Zeroizing::new(std::mem::take(&mut raw.access_token));
-    let refresh_val = Zeroizing::new(std::mem::take(&mut raw.refresh_token));
-    let expires_in = raw.expires_in.unwrap_or(3600).clamp(1, 86_400);
-    let expires_at = chrono::Utc::now().timestamp() + expires_in;
+    refresh_and_save(&current).await
+}
 
-    let claims = jwt::extract_display_claims(&access)?;
+pub async fn save_login(tokens: &CodexTokens) -> Result<(), String> {
+    let _guard = acquire_token_lock().await?;
+    store::save(tokens)
+}
 
-    Ok(CodexTokens {
-        access,
-        refresh: refresh_val,
-        expires_at,
-        account_hint: Zeroizing::new(claims.account_hint),
+pub async fn clear_login() -> Result<(), String> {
+    let _guard = acquire_token_lock().await?;
+    store::clear()
+}
+
+async fn refresh_and_save(current: &CodexTokens) -> Result<CodexTokens, String> {
+    let body = refresh_body(current.refresh.as_str())?;
+    let response = post_body(&body, "application/json").await;
+    let refreshed =
+        token_response::from_refresh(response?, current).map_err(|_| invalid_response())?;
+    store::save(&refreshed)?;
+    Ok(refreshed)
+}
+
+fn refresh_body(refresh_token: &str) -> Result<Zeroizing<String>, String> {
+    #[derive(Serialize)]
+    struct RefreshRequest<'a> {
+        client_id: &'a str,
+        grant_type: &'static str,
+        refresh_token: &'a str,
+    }
+    serde_json::to_string(&RefreshRequest {
+        client_id: CLIENT_ID,
+        grant_type: "refresh_token",
+        refresh_token,
     })
+    .map(Zeroizing::new)
+    .map_err(|_| invalid_response())
 }
 
-#[derive(Deserialize)]
-struct CodexTokenResponse {
-    access_token: String,
-    refresh_token: String,
-    expires_in: Option<i64>,
-}
-
-impl Drop for CodexTokenResponse {
-    fn drop(&mut self) {
-        self.access_token.zeroize();
-        self.refresh_token.zeroize();
+async fn post_body(body: &str, content_type: &'static str) -> Result<CodexTokenResponse, String> {
+    let client = AuthenticatedClient::new(Duration::from_secs(15))
+        .map_err(|_| "provider_configuration_invalid".to_string())?;
+    let request = client
+        .post(TOKEN_URL)
+        .header("Content-Type", content_type)
+        .body(body.to_string());
+    let response = client
+        .send(request)
+        .await
+        .map_err(|_| "provider_connection_failed".to_string())?;
+    if response.status().is_server_error()
+        || matches!(
+            response.status(),
+            StatusCode::REQUEST_TIMEOUT | StatusCode::TOO_MANY_REQUESTS
+        )
+    {
+        return Err("provider_temporarily_unavailable".to_string());
     }
+    if !response.status().is_success() {
+        return Err("oauth_reauthentication_required".to_string());
+    }
+    read_json_bounded(response, OAUTH_BODY_LIMIT)
+        .await
+        .map_err(|_| invalid_response())
 }
+
+fn can_use_still_valid_token(error: &str, current: &CodexTokens) -> bool {
+    !current.is_expired()
+        && matches!(
+            error,
+            "provider_connection_failed" | "provider_temporarily_unavailable"
+        )
+}
+
+async fn acquire_token_lock() -> Result<tokio::sync::SemaphorePermit<'static>, String> {
+    TOKEN_LOCK
+        .acquire()
+        .await
+        .map_err(|_| "oauth_reauthentication_required".to_string())
+}
+
+pub(crate) fn constant_time_secret_eq(left: &[u8], right: &[u8]) -> bool {
+    let mut left_digest: [u8; 32] = Sha256::digest(left).into();
+    let mut right_digest: [u8; 32] = Sha256::digest(right).into();
+    let equal = bool::from(left_digest.ct_eq(&right_digest));
+    left_digest.zeroize();
+    right_digest.zeroize();
+    equal
+}
+
+fn invalid_response() -> String {
+    "oauth_reauthentication_required".to_string()
+}
+
+fn not_connected() -> String {
+    "oauth_reauthentication_required".to_string()
+}
+
+#[cfg(test)]
+#[path = "token_tests.rs"]
+mod tests;

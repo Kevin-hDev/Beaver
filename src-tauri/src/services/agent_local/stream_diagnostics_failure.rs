@@ -88,7 +88,7 @@ fn safe_summary(run: &AgentDiagnosticRun, error_type: &str, message: &str) -> St
 }
 
 fn safe_code(message: &str) -> String {
-    let code = classify_error(message, message.contains("ollama_connection_lost"));
+    let code = classify_error(message, is_connection_error(message));
     if code == "unknown" {
         "stream_error".to_string()
     } else {
@@ -98,7 +98,7 @@ fn safe_code(message: &str) -> String {
 
 pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     let lower = message.to_ascii_lowercase();
-    if is_connection || message.contains("ollama_connection_lost") {
+    if is_connection || is_connection_error(message) {
         return "connection_lost".to_string();
     }
     if lower.contains("timeout") {
@@ -138,6 +138,12 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
         return "tool_error".to_string();
     }
     "unknown".to_string()
+}
+
+pub(crate) fn is_connection_error(message: &str) -> bool {
+    message
+        .split(|character: char| !character.is_ascii_alphanumeric() && character != '_')
+        .any(|part| matches!(part, "ollama_connection_lost" | "provider_connection_failed"))
 }
 
 #[cfg(test)]

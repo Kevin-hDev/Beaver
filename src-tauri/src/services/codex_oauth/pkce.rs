@@ -30,7 +30,10 @@ mod tests {
         let p = generate();
         assert_eq!(p.verifier.len(), 43);
         assert_eq!(p.challenge.len(), 43);
-        assert_ne!(p.verifier.as_str(), p.challenge.as_str());
+        assert!(!super::super::token::constant_time_secret_eq(
+            p.verifier.as_bytes(),
+            p.challenge.as_bytes()
+        ));
         assert!(p
             .verifier
             .chars()

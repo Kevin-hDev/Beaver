@@ -53,3 +53,10 @@ fn successful_persistence_replaces_memory_after_write() {
         Some("new-secret")
     );
 }
+
+#[test]
+fn raw_presence_lookup_uses_the_vault_namespace() {
+    assert_eq!(prefixed_raw_key("oauth").unwrap(), "raw:oauth");
+    assert!(prefixed_raw_key("").is_err());
+    assert!(prefixed_raw_key(&"x".repeat(MAX_RAW_KEY_LEN + 1)).is_err());
+}

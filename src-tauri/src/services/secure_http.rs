@@ -32,21 +32,61 @@ pub struct AuthenticatedClient {
 
 impl AuthenticatedClient {
     pub fn new(timeout: Duration) -> Result<Self, SecureHttpError> {
-        Self::build(timeout, UrlPolicy::HttpsOnly)
+        Self::build(timeout, None, UrlPolicy::HttpsOnly, true)
+    }
+
+    pub fn new_streaming(
+        connect_timeout: Duration,
+        read_timeout: Duration,
+    ) -> Result<Self, SecureHttpError> {
+        Self::build(
+            connect_timeout,
+            Some(read_timeout),
+            UrlPolicy::HttpsOnly,
+            false,
+        )
     }
 
     pub(crate) fn new_loopback(timeout: Duration) -> Result<Self, SecureHttpError> {
-        Self::build(timeout, UrlPolicy::LoopbackHttp)
+        Self::build(timeout, None, UrlPolicy::LoopbackHttp, true)
     }
 
-    fn build(timeout: Duration, url_policy: UrlPolicy) -> Result<Self, SecureHttpError> {
-        if timeout.is_zero() || timeout > MAX_AUTHENTICATED_TIMEOUT {
+    #[cfg(test)]
+    pub(crate) fn new_loopback_streaming(
+        connect_timeout: Duration,
+        read_timeout: Duration,
+    ) -> Result<Self, SecureHttpError> {
+        Self::build(
+            connect_timeout,
+            Some(read_timeout),
+            UrlPolicy::LoopbackHttp,
+            false,
+        )
+    }
+
+    fn build(
+        timeout: Duration,
+        read_timeout: Option<Duration>,
+        url_policy: UrlPolicy,
+        total_timeout: bool,
+    ) -> Result<Self, SecureHttpError> {
+        if timeout.is_zero()
+            || timeout > MAX_AUTHENTICATED_TIMEOUT
+            || read_timeout
+                .is_some_and(|value| value.is_zero() || value > MAX_AUTHENTICATED_TIMEOUT)
+        {
             return Err(SecureHttpError::Configuration);
         }
-        let client = reqwest::Client::builder()
+        let mut builder = reqwest::Client::builder()
             .redirect(Policy::none())
-            .connect_timeout(timeout.min(Duration::from_secs(10)))
-            .timeout(timeout)
+            .connect_timeout(timeout.min(Duration::from_secs(10)));
+        if let Some(read_timeout) = read_timeout {
+            builder = builder.read_timeout(read_timeout);
+        }
+        if total_timeout {
+            builder = builder.timeout(timeout);
+        }
+        let client = builder
             .build()
             .map_err(|_| SecureHttpError::Configuration)?;
         Ok(Self { client, url_policy })

@@ -48,3 +48,25 @@ fn running_tool_failure_keeps_during_wording() {
         "Interruption pendant le tool list_dir (tool_error)."
     );
 }
+
+#[test]
+fn provider_transport_failure_is_classified_as_a_connection_loss() {
+    assert!(is_connection_error("provider_connection_failed"));
+    assert!(is_connection_error(
+        "Compression Ollama : ollama_connection_lost"
+    ));
+    assert_eq!(
+        classify_error("provider_connection_failed", false),
+        "connection_lost"
+    );
+    assert_eq!(safe_code("provider_connection_failed"), "connection_lost");
+}
+
+#[test]
+fn provider_rejection_is_not_classified_as_a_connection_loss() {
+    assert!(!is_connection_error("provider_request_rejected"));
+    assert_eq!(
+        classify_error("provider_request_rejected", false),
+        "provider_error"
+    );
+}

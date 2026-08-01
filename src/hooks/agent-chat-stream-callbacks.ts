@@ -13,6 +13,7 @@ import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";
 import { finalizeStream, finishStream } from "./agent-chat-stream-finalize";
 import { applyContextUsage, applyGeneratedTokenCount } from "./agent-stream-context-usage";
 import { applyToolOutput } from "./agent-chat-stream-tool-output";
+import { applyRetryIndicator } from "./agent-chat-stream-retry";
 
 export type { ChatState, ManagedStreamState, PermissionRequestState, StreamApplyResult };
 export { EMPTY_CHAT_STATE, createManagedStreamState, toChatState } from "./agent-chat-stream-types";
@@ -130,7 +131,7 @@ export function applyStreamEvent(
       next.interactiveChoice = event.data;
       break;
     case "retryIndicator":
-      next.retryIndicator = event.data;
+      applyRetryIndicator(next, event.data, now);
       break;
     case "compressing":
       next.isCompressing = event.data.status === "start";
