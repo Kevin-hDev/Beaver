@@ -63,6 +63,8 @@ pub async fn try_auto_compress(
         &compress_msgs,
         output_limit,
         purpose,
+        session_id,
+        Some(request_id),
         cancel.clone(),
     )
     .await

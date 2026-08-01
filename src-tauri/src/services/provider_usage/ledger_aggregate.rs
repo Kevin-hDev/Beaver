@@ -41,6 +41,15 @@ fn add_total(target: &mut UsageAggregate, usage: &RequestUsage, cost: ResolvedCo
     if !usage.is_empty() {
         target.usage_request_count = target.usage_request_count.saturating_add(1);
     }
+    if usage.cached_input_tokens.is_some() {
+        target.cache_read_request_count = target.cache_read_request_count.saturating_add(1);
+    }
+    if usage.cache_write_input_tokens.is_some() {
+        target.cache_write_request_count = target.cache_write_request_count.saturating_add(1);
+    }
+    if usage.cache_miss_input_tokens.is_some() {
+        target.cache_miss_request_count = target.cache_miss_request_count.saturating_add(1);
+    }
     target.tokens.input_tokens = target
         .tokens
         .input_tokens
@@ -53,6 +62,14 @@ fn add_total(target: &mut UsageAggregate, usage: &RequestUsage, cost: ResolvedCo
         .tokens
         .cached_input_tokens
         .saturating_add(usage.cached_input_tokens.unwrap_or(0));
+    target.tokens.cache_write_input_tokens = target
+        .tokens
+        .cache_write_input_tokens
+        .saturating_add(usage.cache_write_input_tokens.unwrap_or(0));
+    target.tokens.cache_miss_input_tokens = target
+        .tokens
+        .cache_miss_input_tokens
+        .saturating_add(usage.cache_miss_input_tokens.unwrap_or(0));
     target.tokens.reasoning_output_tokens = target
         .tokens
         .reasoning_output_tokens
@@ -99,6 +116,14 @@ fn merge_total(target: &mut UsageAggregate, source: &UsageAggregate) {
         .tokens
         .cached_input_tokens
         .saturating_add(source.tokens.cached_input_tokens);
+    target.tokens.cache_write_input_tokens = target
+        .tokens
+        .cache_write_input_tokens
+        .saturating_add(source.tokens.cache_write_input_tokens);
+    target.tokens.cache_miss_input_tokens = target
+        .tokens
+        .cache_miss_input_tokens
+        .saturating_add(source.tokens.cache_miss_input_tokens);
     target.tokens.reasoning_output_tokens = target
         .tokens
         .reasoning_output_tokens
@@ -111,6 +136,15 @@ fn merge_total(target: &mut UsageAggregate, source: &UsageAggregate) {
     target.usage_request_count = target
         .usage_request_count
         .saturating_add(source.usage_request_count);
+    target.cache_read_request_count = target
+        .cache_read_request_count
+        .saturating_add(source.cache_read_request_count);
+    target.cache_write_request_count = target
+        .cache_write_request_count
+        .saturating_add(source.cache_write_request_count);
+    target.cache_miss_request_count = target
+        .cache_miss_request_count
+        .saturating_add(source.cache_miss_request_count);
     target.cost_usd_micros = target
         .cost_usd_micros
         .saturating_add(source.cost_usd_micros);

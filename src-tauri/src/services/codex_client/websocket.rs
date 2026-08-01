@@ -33,7 +33,8 @@ pub(super) async fn stream_chat(
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
 ) -> Result<StreamOutcome, WebSocketFailure> {
-    let request = request::build_codex_request(model, messages, tools, reasoning_mode);
+    let request =
+        request::build_codex_request(model, messages, tools, reasoning_mode, Some(session_id));
     let payload = build_payload(&request)?;
     let mut socket = websocket_connect::connect(session_id)
         .await
@@ -42,6 +43,7 @@ pub(super) async fn stream_chat(
     receive_response(
         &mut socket,
         on_event,
+        model,
         tools,
         cancel,
         buffer_content,
@@ -94,6 +96,7 @@ async fn send_payload(
 async fn receive_response(
     socket: &mut websocket_connect::CodexSocket,
     on_event: &AgentEventEmitter,
+    model: &str,
     tools: &[serde_json::Value],
     cancel: CancellationToken,
     buffer_content: bool,
@@ -101,7 +104,7 @@ async fn receive_response(
 ) -> Result<StreamOutcome, WebSocketFailure> {
     let idle = STREAM_STALL_TIMEOUT;
     let mut deadline = tokio::time::Instant::now() + idle;
-    let mut accumulator = StreamAccumulator::new(tools, buffer_content, realtime_budget);
+    let mut accumulator = StreamAccumulator::new(model, tools, buffer_content, realtime_budget);
     let mut partial = false;
     loop {
         let message = tokio::select! {

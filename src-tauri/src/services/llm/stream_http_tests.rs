@@ -72,6 +72,7 @@ fn gpt_56_uses_max_completion_tokens_in_chat_payload() {
         reasoning_mode: Some("medium"),
         max_tokens: Some(32_000),
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
     };
 
     let route = route::resolve("openai").unwrap();
@@ -93,6 +94,7 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
         reasoning_mode: Some("medium"),
         max_tokens: Some(32_000),
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
     };
 
     let route = route::resolve("openrouter").unwrap();
@@ -100,6 +102,57 @@ fn openrouter_gpt_56_uses_max_completion_tokens() {
 
     assert_eq!(payload["max_completion_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
+}
+
+#[test]
+fn chat_payload_respects_each_route_cache_and_usage_contract() {
+    for (provider, model, usage, cache_field) in [
+        ("groq", "openai/gpt-oss-120b", true, None),
+        ("google", "gemini-2.5-pro", true, None),
+        ("cerebras", "gpt-oss-120b", true, None),
+        ("deepseek", "deepseek-v4-flash", true, None),
+        ("zai", "glm-4.7", false, None),
+        ("mistral", "mistral-large", false, Some("prompt_cache_key")),
+        ("moonshot", "kimi-k3", true, Some("prompt_cache_key")),
+        (
+            "moonshot-oauth",
+            "kimi-k2.7",
+            true,
+            Some("prompt_cache_key"),
+        ),
+        (
+            "openrouter",
+            "google/gemini-2.5-pro",
+            false,
+            Some("session_id"),
+        ),
+    ] {
+        let route = route::resolve(provider).unwrap();
+        let cfg = RequestConfig {
+            provider_id: provider,
+            model,
+            messages: &[],
+            tools: &[],
+            think: false,
+            reasoning_mode: None,
+            max_tokens: None,
+            purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+            session_id: Some("session-1"),
+        };
+
+        let payload = build_chat_payload(&cfg, &route, None);
+
+        assert_eq!(payload.get("stream_options").is_some(), usage, "{provider}");
+        if let Some(field) = cache_field {
+            assert!(payload.get(field).is_some(), "{provider}/{field}");
+        } else {
+            assert!(payload.get("prompt_cache_key").is_none(), "{provider}");
+            assert!(payload.get("session_id").is_none(), "{provider}");
+        }
+        for foreign in ["prompt_cache_options", "cached_content", "cache_control"] {
+            assert!(payload.get(foreign).is_none(), "{provider}/{foreign}");
+        }
+    }
 }
 
 #[test]
@@ -125,6 +178,7 @@ fn streaming_output_limit_field_matches_model_family() {
             reasoning_mode: None,
             max_tokens: Some(8_000),
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+            session_id: None,
         };
         let route = route::resolve(provider).unwrap();
         let payload = build_chat_payload(&cfg, &route, Some(8_000));
@@ -160,6 +214,7 @@ async fn groq_and_cerebras_payloads_omit_automatic_limits() {
             reasoning_mode: None,
             max_tokens: None,
             purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+            session_id: None,
         };
 
         let payload = build_chat_payload(&cfg, &route, resolved);
@@ -229,6 +284,7 @@ async fn timeout_above_secure_limit_uses_a_stable_code() {
         reasoning_mode: None,
         max_tokens: None,
         purpose: crate::services::llm::request_purpose::RequestPurpose::ManualChat,
+        session_id: None,
     };
     let timeout = crate::services::secure_http::MAX_AUTHENTICATED_TIMEOUT + Duration::from_secs(1);
 

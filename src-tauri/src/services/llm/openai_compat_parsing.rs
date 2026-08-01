@@ -28,7 +28,14 @@ pub fn build_payload(req: &ChatRequest, provider_id: &str, stream: bool) -> serd
 }
 
 /// Parse la réponse de `POST /chat/completions` (non-streaming).
-pub fn parse_chat_response(body: &serde_json::Value) -> Result<ChatResponse, LlmError> {
+pub fn parse_chat_response(
+    body: &serde_json::Value,
+    provider_id: &str,
+    model: &str,
+) -> Result<ChatResponse, LlmError> {
+    if let Some(error) = embedded_provider_error(body) {
+        return Err(error);
+    }
     let content = body["choices"][0]["message"]["content"]
         .as_str()
         .unwrap_or("")
@@ -36,10 +43,38 @@ pub fn parse_chat_response(body: &serde_json::Value) -> Result<ChatResponse, Llm
 
     let usage_value = body.get("usage").or_else(|| body.get("usageMetadata"));
     let usage = usage_value
-        .and_then(crate::services::provider_usage::RequestUsage::from_json)
+        .and_then(|value| {
+            crate::services::provider_usage::RequestUsage::from_json_with_context(
+                value,
+                crate::services::provider_usage::UsageContext::chat(provider_id, model),
+            )
+        })
         .unwrap_or_default();
 
     Ok(ChatResponse { content, usage })
+}
+
+fn embedded_provider_error(body: &serde_json::Value) -> Option<LlmError> {
+    let has_error = body.get("error").is_some()
+        || body
+            .pointer("/choices/0/finish_reason")
+            .and_then(serde_json::Value::as_str)
+            == Some("error");
+    if !has_error {
+        return None;
+    }
+    let status = body
+        .pointer("/error/code")
+        .and_then(serde_json::Value::as_u64)
+        .and_then(|value| u16::try_from(value).ok());
+    let code = match status {
+        Some(429) => super::provider_error::ProviderErrorCode::RateLimited,
+        Some(408 | 500 | 502 | 503 | 504) => {
+            super::provider_error::ProviderErrorCode::ProviderTemporarilyUnavailable
+        }
+        _ => super::provider_error::ProviderErrorCode::ProviderRequestRejected,
+    };
+    Some(LlmError::KnownProvider(code))
 }
 
 /// Mappe un statut HTTP d'erreur vers un `LlmError` approprié.

@@ -6,6 +6,7 @@ pub struct ModelPricing {
     pub input_cost_per_token: Option<f64>,
     pub output_cost_per_token: Option<f64>,
     pub cache_read_input_token_cost: Option<f64>,
+    pub cache_creation_input_token_cost: Option<f64>,
 }
 
 pub async fn lookup(provider_id: &str, model_id: &str) -> Option<ModelPricing> {
@@ -15,6 +16,7 @@ pub async fn lookup(provider_id: &str, model_id: &str) -> Option<ModelPricing> {
         input_cost_per_token: entry.input_cost_per_token,
         output_cost_per_token: entry.output_cost_per_token,
         cache_read_input_token_cost: entry.cache_read_input_token_cost,
+        cache_creation_input_token_cost: entry.cache_creation_input_token_cost,
     })
 }
 

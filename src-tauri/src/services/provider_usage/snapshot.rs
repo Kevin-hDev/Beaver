@@ -21,6 +21,7 @@ pub struct ProviderUsageSnapshot {
     pub windows: Vec<ProviderWindow>,
     pub balances: Vec<ProviderBalance>,
     pub local_periods: Vec<UsagePeriod>,
+    pub request_metrics: super::request_journal::RequestMetricsSnapshot,
     pub notice_code: Option<String>,
     pub refreshed_at: i64,
     pub stale: bool,
@@ -30,6 +31,7 @@ pub fn build_snapshot(
     connection_id: &str,
     local: LocalSnapshot,
     remote: RemoteData,
+    request_metrics: super::request_journal::RequestMetricsSnapshot,
 ) -> ProviderUsageSnapshot {
     let has_local_usage = local.all_time.totals.request_count > 0;
     let availability = if remote.notice_code.as_deref() == Some("usage_fetch_failed")
@@ -55,6 +57,7 @@ pub fn build_snapshot(
         windows: remote.windows,
         balances: remote.balances,
         local_periods: periods(local),
+        request_metrics,
         notice_code: remote.notice_code,
         refreshed_at: if remote.fetched_at > 0 {
             remote.fetched_at

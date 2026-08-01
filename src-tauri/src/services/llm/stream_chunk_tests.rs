@@ -149,6 +149,18 @@ fn missing_usage_emits_no_usage_chunk() {
 }
 
 #[test]
+fn embedded_provider_errors_keep_only_a_safe_status() {
+    assert_eq!(
+        parse(json!({ "error": { "code": 429, "message": "private detail" } })),
+        vec![ParsedChunk::ProviderError(Some(429))],
+    );
+    assert_eq!(
+        parse(json!({ "choices": [{ "finish_reason": "error", "delta": {} }] })),
+        vec![ParsedChunk::ProviderError(None)],
+    );
+}
+
+#[test]
 fn parses_groq_native_completion_time() {
     let chunks = parse(json!({
         "usage": {
@@ -175,6 +187,54 @@ fn parses_cerebras_native_completion_time() {
         chunks.last(),
         Some(&ParsedChunk::GenerationDuration(250_000_000))
     );
+}
+
+#[test]
+fn parses_kimi_usage_nested_in_the_last_choice() {
+    let context = crate::services::provider_usage::UsageContext::chat("moonshot", "kimi-k3");
+    let chunks = stream_chunk::parse_with_context(
+        &json!({
+            "usage": null,
+            "choices": [{
+                "delta": {},
+                "usage": {
+                    "prompt_tokens": 300,
+                    "completion_tokens": 20,
+                    "cached_tokens": 256
+                }
+            }]
+        })
+        .to_string(),
+        context,
+    );
+
+    assert!(chunks.iter().any(|chunk| matches!(
+        chunk,
+        ParsedChunk::Usage(usage) if usage.cached_input_tokens == Some(256)
+    )));
+}
+
+#[test]
+fn parses_groq_native_usage_fallback() {
+    let context =
+        crate::services::provider_usage::UsageContext::chat("groq", "openai/gpt-oss-120b");
+    let chunks = stream_chunk::parse_with_context(
+        &json!({
+            "usage": null,
+            "x_groq": { "usage": {
+                "prompt_tokens": 200,
+                "completion_tokens": 10,
+                "prompt_tokens_details": { "cached_tokens": 128 }
+            }}
+        })
+        .to_string(),
+        context,
+    );
+
+    assert!(chunks.iter().any(|chunk| matches!(
+        chunk,
+        ParsedChunk::Usage(usage) if usage.cached_input_tokens == Some(128)
+    )));
 }
 
 #[test]

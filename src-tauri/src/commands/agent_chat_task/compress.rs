@@ -121,6 +121,8 @@ async fn collect_summary(
         &messages,
         output_limit,
         purpose,
+        session_id,
+        None,
         cancel,
     )
     .await?;

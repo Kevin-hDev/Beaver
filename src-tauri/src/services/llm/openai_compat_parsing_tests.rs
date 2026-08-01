@@ -1,6 +1,16 @@
-use super::openai_compat_parsing::{build_payload, parse_models_list};
+use super::openai_compat_parsing::{build_payload, parse_chat_response, parse_models_list};
 use super::types::ChatRequest;
 use serde_json::json;
+
+#[test]
+fn embedded_openrouter_errors_never_become_empty_successes() {
+    for body in [
+        json!({ "error": { "code": 429, "message": "private" } }),
+        json!({ "choices": [{ "finish_reason": "error", "message": {} }] }),
+    ] {
+        assert!(parse_chat_response(&body, "openrouter", "openai/gpt-5.6").is_err());
+    }
+}
 
 #[test]
 fn openrouter_models_use_supported_parameters_for_reasoning() {

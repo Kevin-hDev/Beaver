@@ -1,4 +1,4 @@
-use crate::services::provider_usage::RequestUsage;
+use crate::services::provider_usage::{RequestUsage, UsageContext};
 use serde_json::Value;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -8,23 +8,42 @@ pub enum ParsedChunk {
     ToolCalls(Vec<Value>),
     Usage(RequestUsage),
     GenerationDuration(u64),
+    ProviderError(Option<u16>),
 }
 
+#[cfg(test)]
 pub fn parse(data: &str) -> Vec<ParsedChunk> {
+    parse_with_context(data, UsageContext::chat("unknown", "unknown"))
+}
+
+pub fn parse_with_context(data: &str, context: UsageContext<'_>) -> Vec<ParsedChunk> {
     let chunk: Value = match serde_json::from_str(data) {
         Ok(v) => v,
         Err(_) => return Vec::new(),
     };
+    if chunk.get("error").is_some()
+        || chunk
+            .pointer("/choices/0/finish_reason")
+            .and_then(Value::as_str)
+            == Some("error")
+    {
+        return vec![ParsedChunk::ProviderError(
+            chunk
+                .pointer("/error/code")
+                .and_then(Value::as_u64)
+                .and_then(|code| code.try_into().ok()),
+        )];
+    }
     let mut out = Vec::new();
     if let Some(choice) = chunk["choices"].as_array().and_then(|a| a.first()) {
         parse_delta(&choice["delta"], &mut out);
     }
-    let usage_value = chunk.get("usage").or_else(|| chunk.get("usageMetadata"));
-    if let Some(usage) = usage_value.and_then(RequestUsage::from_json) {
+    if let Some(usage) = parse_usage(&chunk, context) {
         out.push(ParsedChunk::Usage(usage));
     }
     let completion_seconds = chunk
         .pointer("/usage/completion_time")
+        .or_else(|| chunk.pointer("/x_groq/usage/completion_time"))
         .or_else(|| chunk.pointer("/time_info/completion_time"))
         .and_then(Value::as_f64);
     if let Some(duration_ns) = completion_seconds
@@ -33,6 +52,33 @@ pub fn parse(data: &str) -> Vec<ParsedChunk> {
         out.push(ParsedChunk::GenerationDuration(duration_ns));
     }
     out
+}
+
+pub(super) fn provider_error_code(status: Option<u16>) -> &'static str {
+    match status {
+        Some(429) => "rate_limit",
+        Some(408 | 500 | 502 | 503 | 504) => "provider_temporarily_unavailable",
+        _ => "provider_request_rejected",
+    }
+}
+
+fn parse_usage(chunk: &Value, context: UsageContext<'_>) -> Option<RequestUsage> {
+    let choice_usage = (context.canonical_provider_id == "moonshot")
+        .then(|| chunk.pointer("/choices/0/usage"))
+        .flatten();
+    let groq_usage = (context.canonical_provider_id == "groq")
+        .then(|| chunk.pointer("/x_groq/usage"))
+        .flatten();
+    [
+        chunk.get("usage"),
+        chunk.get("usageMetadata"),
+        choice_usage,
+        groq_usage,
+    ]
+    .into_iter()
+    .flatten()
+    .filter(|value| !value.is_null())
+    .find_map(|value| RequestUsage::from_json_with_context(value, context))
 }
 
 fn parse_delta(delta: &Value, out: &mut Vec<ParsedChunk>) {

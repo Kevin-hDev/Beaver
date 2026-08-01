@@ -10,6 +10,46 @@ fn invalid_file_recovers_to_empty_ledger() {
 }
 
 #[test]
+fn legacy_usage_without_cache_observation_fields_is_preserved() {
+    let mut ledger = Ledger::default();
+    let mut connection = ConnectionLedger::default();
+    connection.all_time.totals.request_count = 2;
+    connection.all_time.totals.tokens.cached_input_tokens = 64;
+    ledger.connections.insert("openai".into(), connection);
+    let mut value = serde_json::to_value(&ledger).unwrap();
+    remove_new_cache_fields(&mut value);
+    let bytes = serde_json::to_vec(&value).unwrap();
+
+    let decoded = decode(&bytes);
+    let totals = &decoded.connections["openai"].all_time.totals;
+
+    assert_eq!(totals.request_count, 2);
+    assert_eq!(totals.tokens.cached_input_tokens, 64);
+    assert_eq!(totals.cache_read_request_count, 0);
+}
+
+fn remove_new_cache_fields(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(fields) => {
+            fields.remove("cache_write_input_tokens");
+            fields.remove("cache_miss_input_tokens");
+            fields.remove("cache_read_request_count");
+            fields.remove("cache_write_request_count");
+            fields.remove("cache_miss_request_count");
+            for child in fields.values_mut() {
+                remove_new_cache_fields(child);
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for child in values {
+                remove_new_cache_fields(child);
+            }
+        }
+        _ => {}
+    }
+}
+
+#[test]
 fn stale_or_future_remote_data_is_rejected() {
     let now = 2_000_000;
     assert!(is_recent_timestamp(now - 86_400, now));

@@ -1,0 +1,37 @@
+.pur-empty,
+.pur-notice {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.pur-summary strong,
+.pur-session strong {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  max-width: 65%;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.pur-summary small,
+.pur-session small {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: normal;
+}
+
+.pur-row strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pur-notice span {
+  color: var(--signal-warning);
+}
+
+.pur-session {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}

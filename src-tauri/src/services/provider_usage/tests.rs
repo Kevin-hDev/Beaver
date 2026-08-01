@@ -1,6 +1,7 @@
-use super::request_usage::RequestUsage;
+use super::request_usage::{CacheMissSource, CacheUsageStatus, RequestUsage};
 use super::snapshot::build_snapshot;
 use super::types::{LocalSnapshot, RemoteData};
+use super::usage_context::UsageContext;
 use serde_json::json;
 
 #[test]
@@ -34,12 +35,45 @@ fn gemini_thoughts_are_included_in_output_total() {
 
 #[test]
 fn exact_cost_accepts_a_bounded_decimal_string() {
-    let usage = RequestUsage::from_json(&json!({
-        "prompt_tokens": 2,
-        "completion_tokens": 1,
-        "cost": "0.000123"
-    }))
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 2,
+            "completion_tokens": 1,
+            "cost": "0.000123"
+        }),
+        UsageContext::chat("openrouter", "openai/gpt-5.6"),
+    )
     .unwrap();
+    assert_eq!(usage.exact_cost_usd_micros, Some(123));
+}
+
+#[test]
+fn undocumented_generic_cost_is_ignored() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 2,
+            "completion_tokens": 1,
+            "cost": "12.50"
+        }),
+        UsageContext::chat("moonshot", "kimi-k2.7-code"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.exact_cost_usd_micros, None);
+}
+
+#[test]
+fn xai_integer_ticks_are_converted_without_floating_point() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 2,
+            "completion_tokens": 1,
+            "cost_in_usd_ticks": 1_234_560
+        }),
+        UsageContext::chat("xai", "grok-4.5"),
+    )
+    .unwrap();
+
     assert_eq!(usage.exact_cost_usd_micros, Some(123));
 }
 
@@ -54,6 +88,226 @@ fn cache_or_reasoning_data_alone_is_real_usage() {
 }
 
 #[test]
+fn aggregate_counts_cache_observations_separately() {
+    let mut breakdown = super::types::UsageBreakdown::default();
+    let usage = RequestUsage {
+        input_tokens: Some(100),
+        output_tokens: Some(10),
+        cached_input_tokens: Some(0),
+        ..Default::default()
+    };
+
+    super::ledger_aggregate::add(
+        &mut breakdown,
+        super::UsageOrigin::ManualChat,
+        super::UsageWorkload::Primary,
+        &usage,
+        Default::default(),
+    );
+
+    assert_eq!(breakdown.totals.cache_read_request_count, 1);
+    assert_eq!(breakdown.totals.cache_write_request_count, 0);
+    assert_eq!(breakdown.totals.cache_miss_request_count, 0);
+}
+
+#[test]
+fn deepseek_keeps_reported_hits_and_misses_when_coherent() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 100,
+            "prompt_cache_hit_tokens": 64,
+            "prompt_cache_miss_tokens": 36
+        }),
+        UsageContext::chat("deepseek", "deepseek-v4-pro"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(64));
+    assert_eq!(usage.cache_miss_input_tokens, Some(36));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn deepseek_rejects_incoherent_cache_counts_without_clamping() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 100,
+            "prompt_cache_hit_tokens": 90,
+            "prompt_cache_miss_tokens": 20
+        }),
+        UsageContext::chat("deepseek", "deepseek-v4-pro"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, None);
+    assert_eq!(usage.cache_miss_input_tokens, None);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+}
+
+#[test]
+fn gpt_56_reads_both_cache_directions() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 1200,
+            "prompt_tokens_details": {
+                "cached_tokens": 800,
+                "cache_write_tokens": 400
+            }
+        }),
+        UsageContext::chat("openai", "gpt-5.6-sol"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(800));
+    assert_eq!(usage.cache_write_input_tokens, Some(400));
+    assert_eq!(usage.cache_miss_input_tokens, Some(400));
+    assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn gpt_56_responses_uses_input_token_details() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "input_tokens": 2048,
+            "input_tokens_details": {
+                "cached_tokens": 1024,
+                "cache_write_tokens": 512
+            }
+        }),
+        UsageContext::responses("openai", "gpt-5.6-terra"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(1024));
+    assert_eq!(usage.cache_write_input_tokens, Some(512));
+    assert_eq!(usage.cache_miss_input_tokens, Some(1024));
+    assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
+}
+
+#[test]
+fn older_openai_models_ignore_gpt_56_only_write_counts() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 1200,
+            "prompt_tokens_details": { "cache_write_tokens": 400 }
+        }),
+        UsageContext::chat("openai", "gpt-4o"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cache_write_input_tokens, None);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Unknown);
+}
+
+#[test]
+fn moonshot_flat_cache_count_is_route_specific() {
+    let body = json!({ "prompt_tokens": 100, "cached_tokens": 80 });
+    let moonshot =
+        RequestUsage::from_json_with_context(&body, UsageContext::chat("moonshot", "kimi-k2.5"))
+            .unwrap();
+    let unknown = RequestUsage::from_json(&body).unwrap();
+
+    assert_eq!(moonshot.cached_input_tokens, Some(80));
+    assert_eq!(unknown.cached_input_tokens, None);
+}
+
+#[test]
+fn standard_chat_cache_paths_are_provider_aware_and_bounded() {
+    for provider in ["groq", "cerebras", "zai"] {
+        let usage = RequestUsage::from_json_with_context(
+            &json!({
+                "prompt_tokens": 128,
+                "prompt_tokens_details": { "cached_tokens": 64 }
+            }),
+            UsageContext::chat(provider, "model"),
+        )
+        .unwrap();
+        assert_eq!(usage.cached_input_tokens, Some(64), "{provider}");
+        assert_eq!(usage.cache_miss_input_tokens, Some(64), "{provider}");
+        assert_eq!(usage.cache_status, CacheUsageStatus::Reported, "{provider}");
+    }
+
+    let zero = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 128,
+            "prompt_tokens_details": { "cached_tokens": 0 }
+        }),
+        UsageContext::chat("groq", "openai/gpt-oss-120b"),
+    )
+    .unwrap();
+    assert_eq!(zero.cached_input_tokens, Some(0));
+    assert_eq!(zero.cache_status, CacheUsageStatus::Reported);
+
+    let absent = RequestUsage::from_json_with_context(
+        &json!({ "prompt_tokens": 128 }),
+        UsageContext::chat("groq", "openai/gpt-oss-120b"),
+    )
+    .unwrap();
+    assert_eq!(absent.cached_input_tokens, None);
+    assert_eq!(absent.cache_status, CacheUsageStatus::Unknown);
+
+    for cached in [json!(null), json!("64"), json!(10_000_000_001_u64)] {
+        let usage = RequestUsage::from_json_with_context(
+            &json!({
+                "prompt_tokens": 128,
+                "prompt_tokens_details": { "cached_tokens": cached }
+            }),
+            UsageContext::chat("groq", "openai/gpt-oss-120b"),
+        )
+        .unwrap();
+        assert_eq!(usage.cached_input_tokens, None);
+        assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+    }
+}
+
+#[test]
+fn mistral_documented_absence_means_a_zero_cache_hit() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({ "prompt_tokens": 96, "completion_tokens": 4 }),
+        UsageContext::chat("mistral", "mistral-large"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(0));
+    assert_eq!(usage.cache_miss_input_tokens, Some(96));
+    assert_eq!(usage.cache_miss_source, CacheMissSource::Calculated);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn mistral_nullable_cache_count_means_no_hit() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 96,
+            "completion_tokens": 4,
+            "num_cached_tokens": null
+        }),
+        UsageContext::chat("mistral", "mistral-large"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, Some(0));
+    assert_eq!(usage.cache_miss_input_tokens, Some(96));
+    assert_eq!(usage.cache_status, CacheUsageStatus::Reported);
+}
+
+#[test]
+fn mistral_rejects_non_block_aligned_cache_hits() {
+    let usage = RequestUsage::from_json_with_context(
+        &json!({
+            "prompt_tokens": 100,
+            "prompt_tokens_details": { "cached_tokens": 65 }
+        }),
+        UsageContext::chat("mistral", "mistral-large"),
+    )
+    .unwrap();
+
+    assert_eq!(usage.cached_input_tokens, None);
+    assert_eq!(usage.cache_status, CacheUsageStatus::Invalid);
+}
+
+#[test]
 fn invalid_connection_is_rejected() {
     assert!(super::types::validate_connection_id("../secret").is_err());
     assert!(super::types::validate_connection_id("openai").is_ok());
@@ -65,7 +319,12 @@ fn snapshot_keeps_remote_timestamp() {
         fetched_at: 123,
         ..Default::default()
     };
-    let snapshot = build_snapshot("xai-oauth", LocalSnapshot::default(), remote);
+    let snapshot = build_snapshot(
+        "xai-oauth",
+        LocalSnapshot::default(),
+        remote,
+        Default::default(),
+    );
 
     assert_eq!(snapshot.canonical_provider_id, "xai");
     assert_eq!(snapshot.auth_source, "oauth");
@@ -105,5 +364,41 @@ async fn catalog_price_produces_an_estimate_only_with_real_tokens() {
             .await
             .micros,
         None
+    );
+}
+
+#[tokio::test]
+async fn oauth_routes_never_inherit_public_api_prices() {
+    let usage = RequestUsage {
+        input_tokens: Some(1_000),
+        output_tokens: Some(500),
+        ..Default::default()
+    };
+
+    for connection_id in ["codex-oauth", "xai-oauth", "moonshot-oauth"] {
+        assert_eq!(
+            super::pricing::resolve(connection_id, "kimi-k2.7-code", &usage)
+                .await
+                .micros,
+            None,
+            "{connection_id}",
+        );
+    }
+}
+
+#[tokio::test]
+async fn gpt_56_never_uses_an_unverified_catalog_price() {
+    let usage = RequestUsage {
+        input_tokens: Some(300_000),
+        output_tokens: Some(10_000),
+        cache_write_input_tokens: Some(20_000),
+        ..Default::default()
+    };
+
+    assert_eq!(
+        super::pricing::resolve("openai", "gpt-5.6-terra", &usage)
+            .await
+            .micros,
+        None,
     );
 }

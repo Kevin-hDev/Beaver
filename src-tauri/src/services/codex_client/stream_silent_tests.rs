@@ -51,6 +51,7 @@ async fn silent_stream_rejects_the_generic_error_event_immediately() {
         CancellationToken::new(),
         Duration::from_secs(1),
         None,
+        "gpt-5.6-sol",
     )
     .await
     .unwrap_err();

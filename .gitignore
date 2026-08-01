@@ -20,6 +20,12 @@ docs/
 !/docs/
 /docs/*
 !/docs/BEAVER-RENAME-PLAN.md
+!/docs/feature/
+/docs/feature/*
+!/docs/feature/tools/
+/docs/feature/tools/*
+!/docs/feature/tools/audit-catalogue-outils.md
+!/docs/feature/tools/investigation-cache-fournisseurs.md
 CLAUDE.md
 AGENTS.md
 .worktrees/

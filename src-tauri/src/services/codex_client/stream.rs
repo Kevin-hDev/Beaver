@@ -61,13 +61,22 @@ pub async fn stream_chat_with_budget(
             }
         }
     }
-    let resp = request::post_codex_stream(model, messages, tools, reasoning_mode, &cancel).await?;
+    let resp = request::post_codex_stream(
+        model,
+        messages,
+        tools,
+        reasoning_mode,
+        Some(session_id),
+        &cancel,
+    )
+    .await?;
     consume_sse(
         on_event,
         resp,
         cancel,
         buffer_content,
         realtime_budget,
+        model,
         tools,
     )
     .await
@@ -79,6 +88,7 @@ async fn consume_sse(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    model: &str,
     tools: &[serde_json::Value],
 ) -> Result<StreamOutcome, String> {
     consume_sse_with_timeout(
@@ -87,6 +97,7 @@ async fn consume_sse(
         cancel,
         buffer_content,
         realtime_budget,
+        model,
         tools,
         STREAM_STALL_TIMEOUT,
     )
@@ -99,11 +110,12 @@ async fn consume_sse_with_timeout(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    model: &str,
     tools: &[serde_json::Value],
     idle_timeout: std::time::Duration,
 ) -> Result<StreamOutcome, String> {
     let mut sse = resp.bytes_stream().eventsource();
-    let mut accumulator = StreamAccumulator::new(tools, buffer_content, realtime_budget);
+    let mut accumulator = StreamAccumulator::new(model, tools, buffer_content, realtime_budget);
     loop {
         let event = tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
@@ -120,8 +132,7 @@ async fn consume_sse_with_timeout(
         if event.data.trim() == "[DONE]" {
             break;
         }
-        let parsed: serde_json::Value = serde_json::from_str(&event.data)
-            .map_err(|_| "provider_connection_failed".to_string())?;
+        let parsed = crate::services::llm::stream_sse::parse_json(&event.data)?;
         if let Some(outcome) = accumulator.apply(on_event, &parsed)? {
             return Ok(outcome);
         }

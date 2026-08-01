@@ -36,6 +36,8 @@ pub async fn retry_stream(
     on_event: &AgentEventEmitter,
     session_id: &str,
     request_id: &str,
+    turn: u32,
+    next_attempt: &mut u32,
     provider_id: &str,
     purpose: RequestPurpose,
     model: &str,
@@ -68,10 +70,13 @@ pub async fn retry_stream(
             );
             wait_for_retry(&cancel, retry_delay(policy, attempt)).await?;
         }
+        let outbound_attempt = take_attempt(next_attempt);
         match stream::stream_chat_no_done(
             on_event,
             session_id,
             request_id,
+            turn,
+            outbound_attempt,
             provider_id,
             purpose,
             model,
@@ -93,6 +98,12 @@ pub async fn retry_stream(
             Err(e) => return Err(e),
         }
     }
+}
+
+fn take_attempt(next_attempt: &mut u32) -> u32 {
+    let current = *next_attempt;
+    *next_attempt = next_attempt.saturating_add(1);
+    current
 }
 
 fn retry_policy(provider_id: &str) -> RetryPolicy {
@@ -123,7 +134,9 @@ async fn wait_for_retry(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_retryable_error, retry_delay, retry_policy, wait_for_retry, CODEX_POLICY};
+    use super::{
+        is_retryable_error, retry_delay, retry_policy, take_attempt, wait_for_retry, CODEX_POLICY,
+    };
     use tokio_util::sync::CancellationToken;
 
     #[test]
@@ -159,5 +172,13 @@ mod tests {
         let result = wait_for_retry(&cancel, tokio::time::Duration::from_secs(30)).await;
 
         assert_eq!(result.unwrap_err(), "Annulé");
+    }
+
+    #[test]
+    fn attempt_sequence_survives_a_second_retry_phase() {
+        let mut next = 1;
+        assert_eq!(take_attempt(&mut next), 1);
+        assert_eq!(take_attempt(&mut next), 2);
+        assert_eq!(next, 3);
     }
 }

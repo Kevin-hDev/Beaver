@@ -12,6 +12,7 @@ pub async fn post_codex_stream(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    session_id: Option<&str>,
     cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
     send_request(
@@ -19,6 +20,7 @@ pub async fn post_codex_stream(
         messages,
         tools,
         reasoning_mode,
+        session_id,
         request_http::RequestDeadline::Streaming,
         cancel,
     )
@@ -30,6 +32,7 @@ pub async fn post_codex_stream_with_timeout(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    session_id: Option<&str>,
     timeout: Duration,
     cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
@@ -38,6 +41,7 @@ pub async fn post_codex_stream_with_timeout(
         messages,
         tools,
         reasoning_mode,
+        session_id,
         request_http::RequestDeadline::Total(timeout),
         cancel,
     )
@@ -49,10 +53,11 @@ async fn send_request(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    session_id: Option<&str>,
     deadline: request_http::RequestDeadline,
     cancel: &CancellationToken,
 ) -> Result<reqwest::Response, String> {
-    let body = build_codex_request(model, messages, tools, reasoning_mode);
+    let body = build_codex_request(model, messages, tools, reasoning_mode, session_id);
     let body_json = serde_json::to_string(&body)
         .map_err(|_| provider_error(ProviderErrorCode::ProviderConfigurationInvalid))?;
     cancel_aware(
@@ -82,6 +87,7 @@ pub(super) fn build_codex_request(
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
+    session_id: Option<&str>,
 ) -> CodexRequest {
     let (instructions, input) = convert::convert_messages_with_tools(messages, tools);
     let converted_tools = convert::convert_tools_to_responses_api(tools);
@@ -94,6 +100,11 @@ pub(super) fn build_codex_request(
         tools: converted_tools,
         tool_choice: "auto".to_string(),
         parallel_tool_calls: false,
+        prompt_cache_key: crate::services::llm::prompt_cache_policy::routing_key(
+            super::PROVIDER_ID,
+            model,
+            session_id,
+        ),
         reasoning: Some(ReasoningConfig {
             effort: crate::services::reasoning::codex_effort(model, reasoning_mode),
             summary: "auto".to_string(),
@@ -108,8 +119,8 @@ mod tests {
 
     #[test]
     fn codex_request_keeps_only_model_supported_effort() {
-        let sol = build_codex_request("gpt-5.6-sol", &[], &[], Some("ultra"));
-        let luna = build_codex_request("gpt-5.6-luna", &[], &[], Some("ultra"));
+        let sol = build_codex_request("gpt-5.6-sol", &[], &[], Some("ultra"), None);
+        let luna = build_codex_request("gpt-5.6-luna", &[], &[], Some("ultra"), None);
 
         assert_eq!(sol.reasoning.unwrap().effort, "ultra");
         assert_eq!(luna.reasoning.unwrap().effort, "medium");
@@ -117,11 +128,14 @@ mod tests {
 
     #[test]
     fn request_keeps_the_official_empty_tools_contract() {
-        let request = build_codex_request("gpt-5.6-sol", &[], &[], None);
+        let request = build_codex_request("gpt-5.6-sol", &[], &[], None, Some("session-1"));
         let json = serde_json::to_value(request).unwrap();
 
         assert_eq!(json["tools"], serde_json::json!([]));
         assert_eq!(json["tool_choice"], "auto");
+        assert!(json["prompt_cache_key"]
+            .as_str()
+            .is_some_and(|value| value.starts_with("bv1_")));
     }
 
     #[tokio::test]

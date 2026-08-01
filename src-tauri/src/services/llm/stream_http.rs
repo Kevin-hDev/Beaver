@@ -2,7 +2,7 @@ use super::provider_error::ProviderErrorCode;
 pub(super) use super::stream_http_error::RequestError;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm::request_purpose::RequestPurpose;
-use crate::services::llm::route::{self, LlmRoute};
+use crate::services::llm::route;
 use crate::services::secure_http::{read_bounded, AuthenticatedClient, PROVIDER_ERROR_LIMIT};
 pub struct RequestConfig<'a> {
     pub provider_id: &'a str,
@@ -13,7 +13,10 @@ pub struct RequestConfig<'a> {
     pub reasoning_mode: Option<&'a str>,
     pub max_tokens: Option<u32>,
     pub purpose: RequestPurpose,
+    pub session_id: Option<&'a str>,
 }
+
+use super::stream_http_payload::build_chat_payload;
 
 async fn read_provider_error(response: reqwest::Response) -> zeroize::Zeroizing<String> {
     match read_bounded(response, PROVIDER_ERROR_LIMIT).await {
@@ -22,13 +25,30 @@ async fn read_provider_error(response: reqwest::Response) -> zeroize::Zeroizing<
     }
 }
 
-pub async fn post_chat_request(cfg: &RequestConfig<'_>) -> Result<reqwest::Response, RequestError> {
-    post_chat_request_with_timeout(cfg, super::timeouts::request_timeout()).await
+pub(super) async fn post_chat_request_measured(
+    cfg: &RequestConfig<'_>,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<reqwest::Response, RequestError> {
+    post_chat_request_with_timeout_measured(
+        cfg,
+        super::timeouts::request_timeout_for(cfg.provider_id),
+        measurement,
+    )
+    .await
 }
 
+#[cfg(test)]
 pub async fn post_chat_request_with_timeout(
     cfg: &RequestConfig<'_>,
     timeout: std::time::Duration,
+) -> Result<reqwest::Response, RequestError> {
+    post_chat_request_with_timeout_measured(cfg, timeout, None).await
+}
+
+pub(super) async fn post_chat_request_with_timeout_measured(
+    cfg: &RequestConfig<'_>,
+    timeout: std::time::Duration,
+    mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<reqwest::Response, RequestError> {
     if cfg.model.len() > 128 {
         return Err(RequestError::Fatal("nom de modèle trop long".into()));
@@ -62,9 +82,19 @@ pub async fn post_chat_request_with_timeout(
     })?;
     let usage_generation =
         crate::services::provider_usage::credential_generation(route.chat_provider_id);
-    let resp =
-        super::stream_http_send::send_json_request(&client, &route, &url, &payload, cfg.purpose)
-            .await?;
+    let resp = super::stream_http_send::send_json_request(
+        &client,
+        &route,
+        &url,
+        &payload,
+        cfg.purpose,
+        cfg.model,
+        cfg.session_id,
+    )
+    .await?;
+    if let Some(measurement) = measurement.as_mut() {
+        measurement.mark_headers();
+    }
 
     crate::services::provider_usage::capture_headers(
         route.chat_provider_id,
@@ -103,50 +133,6 @@ fn request_error_for_limit(error: super::stream_max_tokens::ResolveError) -> Req
         super::stream_max_tokens::ResolveError::ContextExhausted => RequestError::PayloadTooLarge,
         super::stream_max_tokens::ResolveError::InvalidLimit => RequestError::InvalidConfiguration,
     }
-}
-
-fn build_chat_payload(
-    cfg: &RequestConfig<'_>,
-    route: &LlmRoute,
-    max_tokens: Option<u32>,
-) -> serde_json::Value {
-    let provider_id = route.canonical_provider_id;
-    let mut payload = serde_json::json!({
-        "model": cfg.model,
-        "messages": super::stream_convert::messages_to_openai_with_tools(
-            cfg.messages,
-            provider_id,
-            cfg.tools,
-        ),
-        "stream": true,
-        "stream_options": { "include_usage": true },
-    });
-    if let Some(max) = max_tokens {
-        let field = super::model_metadata::request_output_limit_field(provider_id, cfg.model);
-        payload[field] = max.into();
-    }
-    super::stream_reasoning::apply(
-        &mut payload,
-        provider_id,
-        cfg.model,
-        cfg.think,
-        cfg.reasoning_mode,
-    );
-    if !cfg.tools.is_empty() {
-        let tools = super::tool_schema::tools_for_provider(provider_id, cfg.model, cfg.tools);
-        payload["tools"] = serde_json::Value::Array(tools);
-        payload["tool_choice"] = "auto".into();
-        if provider_id == "zai" {
-            payload["tool_stream"] = true.into();
-        }
-    }
-    if provider_id == "openrouter" {
-        payload["provider"] = serde_json::json!({
-            "require_parameters": true,
-            "allow_fallbacks": true,
-        });
-    }
-    payload
 }
 
 fn classify_error(

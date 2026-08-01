@@ -156,6 +156,8 @@ async fn collect_summary(
         &messages,
         SUMMARY_MAX_TOKENS,
         purpose,
+        session_id,
+        None,
         cancel,
     )
     .await?;

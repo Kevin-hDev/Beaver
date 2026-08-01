@@ -8,6 +8,7 @@ pub mod agent_loop;
 mod agent_loop_compression;
 mod agent_loop_message;
 mod agent_loop_request;
+mod agent_loop_request_types;
 pub(crate) mod agent_loop_tools;
 pub mod catalog;
 pub mod compress_hook;
@@ -21,11 +22,15 @@ pub mod litellm_catalog_search;
 mod model_metadata;
 pub mod model_pricing;
 pub mod openai_compat;
+mod openai_compat_chat;
 mod openai_compat_model_parser;
 mod openai_compat_models;
 mod openai_compat_parsing;
 #[cfg(test)]
 mod openai_compat_parsing_tests;
+pub(crate) mod prompt_cache_policy;
+#[cfg(test)]
+mod prompt_cache_policy_tests;
 pub(crate) mod provider_diagnostics;
 pub mod provider_error;
 pub(crate) mod provider_model_lookup;
@@ -42,16 +47,20 @@ mod stream_chunk;
 #[cfg(test)]
 mod stream_chunk_tests;
 mod stream_consume;
+mod stream_consume_budget;
 pub mod stream_convert;
 mod stream_http;
 mod stream_http_error;
+mod stream_http_payload;
 mod stream_http_send;
 mod stream_max_tokens;
+mod stream_metrics;
 mod stream_reasoning;
 #[cfg(test)]
 mod stream_reasoning_tests;
 mod stream_silent;
-mod stream_sse;
+mod stream_silent_consume;
+pub(crate) mod stream_sse;
 mod stream_tools;
 mod timeouts;
 pub mod tool_capable;
@@ -80,6 +89,7 @@ pub async fn collect_chat(
     provider_id: &str,
     model: &str,
     prompt: &str,
+    session_id: Option<&str>,
 ) -> Result<(String, u32), String> {
     if provider_id == "codex-oauth" {
         let msg = crate::services::agent_local::types_ollama::ChatMessage {
@@ -96,15 +106,11 @@ pub async fn collect_chat(
             model,
             &[msg],
             request_purpose::RequestPurpose::Automation,
+            session_id,
             tokio_util::sync::CancellationToken::new(),
         )
         .await?;
-        crate::services::provider_usage::record_automation(
-            provider_id,
-            model,
-            result.usage.as_ref(),
-        )
-        .await;
+        record_collected_usage(provider_id, model, session_id, result.usage.as_ref()).await;
         let total = crate::services::token_counting::sum_real_counts(
             result.prompt_tokens,
             result.eval_count,
@@ -124,10 +130,10 @@ pub async fn collect_chat(
         ..Default::default()
     };
     let resp = provider
-        .chat_completion(req, request_purpose::RequestPurpose::Automation)
+        .chat_completion_for_session(req, request_purpose::RequestPurpose::Automation, session_id)
         .await
         .map_err(String::from)?;
-    crate::services::provider_usage::record_automation(provider_id, model, Some(&resp.usage)).await;
+    record_collected_usage(provider_id, model, session_id, Some(&resp.usage)).await;
     let total = resp
         .usage
         .total_tokens
@@ -140,4 +146,24 @@ pub async fn collect_chat(
         .and_then(|value| value.try_into().ok())
         .unwrap_or(0);
     Ok((resp.content, total))
+}
+
+async fn record_collected_usage(
+    provider_id: &str,
+    model: &str,
+    session_id: Option<&str>,
+    usage: Option<&crate::services::provider_usage::RequestUsage>,
+) {
+    if let Some(session_id) = session_id {
+        crate::services::provider_usage::record_for_session(
+            provider_id,
+            model,
+            session_id,
+            crate::services::provider_usage::UsageWorkload::Primary,
+            usage,
+        )
+        .await;
+    } else {
+        crate::services::provider_usage::record_automation(provider_id, model, usage).await;
+    }
 }
