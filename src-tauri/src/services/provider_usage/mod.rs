@@ -10,14 +10,25 @@ mod remote_gate;
 mod remote_kimi_wallet;
 mod remote_oauth;
 mod remote_parse;
+mod request_journal;
+mod request_journal_store;
+mod request_journal_summary;
+mod request_journal_validation;
+mod request_measurement;
 mod request_usage;
+mod request_usage_cache;
+mod request_usage_validation;
 mod snapshot;
 mod types;
+mod usage_context;
 
+pub(crate) use request_journal::RequestMetricStatus;
+pub(crate) use request_measurement::{RequestMeasurement, RequestMeasurementContext};
 pub use request_usage::RequestUsage;
 pub use snapshot::ProviderUsageSnapshot;
 pub use types::UsageWorkload;
 pub(crate) use types::{origin_for_session, UsageOrigin};
+pub use usage_context::{UsageApiFormat, UsageContext};
 
 use reqwest::header::HeaderMap;
 use tauri::Emitter;
@@ -27,9 +38,17 @@ pub async fn snapshot(
     force_refresh: bool,
 ) -> Result<ProviderUsageSnapshot, String> {
     types::validate_connection_id(connection_id)?;
-    let local = ledger::local_snapshot(connection_id).await;
+    let (local, requests) = tokio::join!(
+        ledger::local_snapshot(connection_id),
+        request_journal::snapshot(connection_id)
+    );
     let remote = remote::resolve(connection_id, force_refresh).await;
-    Ok(snapshot::build_snapshot(connection_id, local, remote))
+    Ok(snapshot::build_snapshot(
+        connection_id,
+        local,
+        remote,
+        requests,
+    ))
 }
 
 pub fn credential_generation(connection_id: &str) -> Option<u64> {
@@ -125,3 +144,9 @@ mod remote_adapter_tests;
 
 #[cfg(test)]
 mod remote_kimi_tests;
+
+#[cfg(test)]
+mod request_journal_tests;
+
+#[cfg(test)]
+mod request_measurement_tests;

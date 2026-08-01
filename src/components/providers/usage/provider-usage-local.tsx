@@ -35,7 +35,9 @@ export function ProviderUsageLocal({ periods, loading }: Props) {
           <Metric label={t("providers.usage.requests")} value={formatCount(period.totals.request_count, i18n.language)} />
           <Metric label={t("providers.usage.inputTokens")} value={tokenValue(period, period.totals.tokens.input_tokens, i18n.language)} badge={tokenBadge(period, t)} />
           <Metric label={t("providers.usage.outputTokens")} value={tokenValue(period, period.totals.tokens.output_tokens, i18n.language)} badge={tokenBadge(period, t)} />
-          <Metric label={t("providers.usage.cachedTokens")} value={tokenValue(period, period.totals.tokens.cached_input_tokens, i18n.language)} badge={tokenBadge(period, t)} />
+          <Metric label={t("providers.usage.cachedTokens")} value={observedTokenValue(period.totals.tokens.cached_input_tokens, period.totals.cache_read_request_count, i18n.language)} badge={observationBadge(period, period.totals.tokens.cached_input_tokens, period.totals.cache_read_request_count, t)} />
+          <Metric label={t("providers.usage.cacheWriteTokens")} value={observedTokenValue(period.totals.tokens.cache_write_input_tokens, period.totals.cache_write_request_count, i18n.language)} badge={observationBadge(period, period.totals.tokens.cache_write_input_tokens, period.totals.cache_write_request_count, t)} />
+          <Metric label={t("providers.usage.cacheMissTokens")} value={observedTokenValue(period.totals.tokens.cache_miss_input_tokens, period.totals.cache_miss_request_count, i18n.language)} badge={observationBadge(period, period.totals.tokens.cache_miss_input_tokens, period.totals.cache_miss_request_count, t)} />
           <Metric label={t("providers.usage.reasoningTokens")} value={tokenValue(period, period.totals.tokens.reasoning_output_tokens, i18n.language)} badge={tokenBadge(period, t)} />
           <Metric label={t("providers.usage.totalTokens")} value={tokenValue(period, period.totals.tokens.total_tokens, i18n.language)} badge={tokenBadge(period, t)} />
           <Metric label={t("providers.usage.cost")} value={period.totals.priced_request_count > 0 ? formatUsdMicros(period.totals.cost_usd_micros, i18n.language) : "—"} badge={t(`providers.usage.quality.${period.cost_quality}`)} />
@@ -68,6 +70,17 @@ function Breakdown({ title, values }: { title: string; values: Array<[string, Us
 
 function tokenValue(period: UsagePeriod, value: number, locale: string): string {
   return period.totals.usage_request_count > 0 ? formatCount(value, locale) : "—";
+}
+
+function observedTokenValue(value: number, observations: number, locale: string): string {
+  return observations > 0 || value > 0 ? formatCount(value, locale) : "—";
+}
+
+function observationBadge(period: UsagePeriod, value: number, observations: number, t: (key: string) => string): string | undefined {
+  if (observations === 0 && value > 0) return t("providers.usage.quality.partial");
+  if (observations === 0) return t("providers.usage.quality.unavailable");
+  if (observations < period.totals.request_count) return t("providers.usage.quality.partial");
+  return undefined;
 }
 
 function tokenBadge(period: UsagePeriod, t: (key: string) => string): string | undefined {

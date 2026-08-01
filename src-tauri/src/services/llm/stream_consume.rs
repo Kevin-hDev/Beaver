@@ -5,7 +5,6 @@ use super::{
 };
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome, StreamResult};
-use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::stream_utils::{FilteredChunk, ThinkTagFilter};
 use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
@@ -16,8 +15,10 @@ pub(super) async fn consume_stream(
     resp: reqwest::Response,
     cancel: CancellationToken,
     buffer_content: bool,
-    mut realtime_budget: Option<RealtimeBudget>,
+    mut realtime_budget: Option<crate::services::compress::realtime_budget::RealtimeBudget>,
     tools: &[serde_json::Value],
+    usage_context: crate::services::provider_usage::UsageContext<'_>,
+    mut measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
     let mut stream = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
@@ -29,18 +30,36 @@ pub(super) async fn consume_stream(
     loop {
         tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
-            _ = tokio::time::sleep(super::timeouts::idle_timeout()) => {
+            _ = tokio::time::sleep(super::timeouts::idle_timeout_for(
+                usage_context.canonical_provider_id,
+            )) => {
                 return Err("provider_temporarily_unavailable".to_string());
             }
             event = stream.next() => {
-                let Some(event) = event else { break; };
+                let Some(event) = event else {
+                    return Err("provider_connection_failed".to_string());
+                };
                 let event = event.map_err(|_| "provider_connection_failed".to_string())?;
                 if is_done_marker(&event.data) { break; }
-                process_chunk(
+                let value = super::stream_sse::parse_json(&event.data)?;
+                if let Some(measurement) = measurement.as_mut() {
+                    measurement.mark_first_event();
+                    measurement.observe_response_metadata(&value);
+                }
+                let useful = process_chunk(
                     &event.data, on_event, &mut token_count, &mut result,
-                    &mut acc, &mut think_filter, buffer_content,
-                );
-                if should_interrupt(&mut realtime_budget, token_count, acc.has_pending()) {
+                    &mut acc, &mut think_filter, buffer_content, usage_context,
+                )?;
+                if useful {
+                    if let Some(measurement) = measurement.as_mut() {
+                        measurement.mark_first_useful();
+                    }
+                }
+                if super::stream_consume_budget::should_interrupt(
+                    &mut realtime_budget,
+                    token_count,
+                    acc.has_pending(),
+                ) {
                     interrupted = true;
                     break;
                 }
@@ -91,17 +110,6 @@ pub(super) async fn consume_stream(
     })
 }
 
-fn should_interrupt(
-    budget: &mut Option<RealtimeBudget>,
-    token_count: u32,
-    has_pending_tool_call: bool,
-) -> bool {
-    !has_pending_tool_call
-        && budget
-            .as_mut()
-            .is_some_and(|budget| budget.should_interrupt(token_count))
-}
-
 fn process_chunk(
     data: &str,
     on_event: &AgentEventEmitter,
@@ -110,10 +118,13 @@ fn process_chunk(
     acc: &mut ToolCallAccumulator,
     think_filter: &mut ThinkTagFilter,
     buffer_content: bool,
-) {
-    for chunk in stream_chunk::parse(data) {
+    usage_context: crate::services::provider_usage::UsageContext<'_>,
+) -> Result<bool, String> {
+    let mut useful = false;
+    for chunk in stream_chunk::parse_with_context(data, usage_context) {
         match chunk {
             ParsedChunk::Thinking(thinking) => {
+                useful = true;
                 crate::services::agent_local::stream_buffer::record_thinking(
                     on_event,
                     result,
@@ -122,6 +133,7 @@ fn process_chunk(
                 );
             }
             ParsedChunk::Content(content) => {
+                useful = true;
                 crate::services::agent_local::stream_buffer::record_generation_started(
                     on_event, result,
                 );
@@ -131,6 +143,7 @@ fn process_chunk(
             }
             ParsedChunk::ToolCalls(tool_calls) => {
                 if !tool_calls.is_empty() {
+                    useful = true;
                     crate::services::agent_local::stream_buffer::record_generation_started(
                         on_event, result,
                     );
@@ -145,8 +158,12 @@ fn process_chunk(
             ParsedChunk::GenerationDuration(duration_ns) => {
                 result.generation.record_native_duration(duration_ns);
             }
+            ParsedChunk::ProviderError(status) => {
+                return Err(stream_chunk::provider_error_code(status).to_string());
+            }
         }
     }
+    Ok(useful)
 }
 
 fn record_filtered(

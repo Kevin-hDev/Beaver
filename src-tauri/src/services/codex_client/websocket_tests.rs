@@ -11,6 +11,7 @@ fn request() -> CodexRequest {
         tools: Vec::new(),
         tool_choice: "auto".to_string(),
         parallel_tool_calls: false,
+        prompt_cache_key: Some("bv1_fixture".to_string()),
         reasoning: Some(ReasoningConfig {
             effort: "medium".to_string(),
             summary: "auto".to_string(),
@@ -30,6 +31,7 @@ fn websocket_payload_uses_the_current_response_create_envelope() {
     assert_eq!(value["tools"], serde_json::json!([]));
     assert_eq!(value["tool_choice"], "auto");
     assert_eq!(value["parallel_tool_calls"], false);
+    assert_eq!(value["prompt_cache_key"], "bv1_fixture");
 }
 
 #[test]

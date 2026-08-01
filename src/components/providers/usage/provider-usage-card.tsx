@@ -4,6 +4,7 @@ import { useProviderUsage } from "@/hooks/use-provider-usage";
 import { useTranslation } from "react-i18next";
 import { ProviderUsageLimits } from "./provider-usage-limits";
 import { ProviderUsageLocal } from "./provider-usage-local";
+import { ProviderUsageRequests } from "./provider-usage-requests";
 import "./provider-usage-card.css";
 
 interface Props {
@@ -43,6 +44,12 @@ export function ProviderUsageCard({ connectionId, siteUrl }: Props) {
           <h3 id="puc-local-title">{t("providers.usage.localTitle")}</h3>
         </div>
         <ProviderUsageLocal periods={current?.local_periods ?? []} loading={loading} />
+      </section>
+      <section className="puc-section" aria-labelledby="puc-requests-title">
+        <div className="puc-heading">
+          <h3 id="puc-requests-title">{t("providers.usage.requestMetrics.title")}</h3>
+        </div>
+        <ProviderUsageRequests metrics={current?.request_metrics ?? null} loading={loading} />
       </section>
     </div>
   );

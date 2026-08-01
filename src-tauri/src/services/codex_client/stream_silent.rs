@@ -12,10 +12,13 @@ pub async fn collect_chat_silent(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
     max_output_tokens: Option<u32>,
+    session_id: Option<&str>,
     cancel: CancellationToken,
 ) -> Result<StreamResult, String> {
-    let resp = request::post_codex_stream(model, messages, tools, reasoning_mode, &cancel).await?;
-    consume_sse_silent(resp, cancel, STREAM_STALL_TIMEOUT, max_output_tokens).await
+    let resp =
+        request::post_codex_stream(model, messages, tools, reasoning_mode, session_id, &cancel)
+            .await?;
+    consume_sse_silent(resp, cancel, STREAM_STALL_TIMEOUT, max_output_tokens, model).await
 }
 
 pub async fn collect_chat_silent_for_compression(
@@ -24,6 +27,7 @@ pub async fn collect_chat_silent_for_compression(
     tools: &[serde_json::Value],
     reasoning_mode: Option<&str>,
     max_output_tokens: Option<u32>,
+    session_id: Option<&str>,
     cancel: CancellationToken,
 ) -> Result<StreamResult, String> {
     let request_timeout = crate::services::compress::timeouts::compression_request_timeout();
@@ -33,11 +37,12 @@ pub async fn collect_chat_silent_for_compression(
         messages,
         tools,
         reasoning_mode,
+        session_id,
         request_timeout,
         &cancel,
     )
     .await?;
-    consume_sse_silent(resp, cancel, idle_timeout, max_output_tokens).await
+    consume_sse_silent(resp, cancel, idle_timeout, max_output_tokens, model).await
 }
 
 async fn consume_sse_silent(
@@ -45,6 +50,7 @@ async fn consume_sse_silent(
     cancel: CancellationToken,
     idle_timeout: std::time::Duration,
     max_output_tokens: Option<u32>,
+    model: &str,
 ) -> Result<StreamResult, String> {
     let mut sse = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
@@ -66,8 +72,7 @@ async fn consume_sse_silent(
         if event.data.trim() == "[DONE]" {
             break;
         }
-        let parsed: serde_json::Value = serde_json::from_str(&event.data)
-            .map_err(|_| "provider_connection_failed".to_string())?;
+        let parsed = crate::services::llm::stream_sse::parse_json(&event.data)?;
         match parsed["type"].as_str().unwrap_or("") {
             "response.reasoning_summary_text.delta" => {
                 append_bounded(
@@ -88,7 +93,13 @@ async fn consume_sse_silent(
             }
             "response.done" | "response.completed" => {
                 if let Some(usage) = parsed.pointer("/response/usage") {
-                    result.usage = crate::services::provider_usage::RequestUsage::from_json(usage);
+                    result.usage =
+                        crate::services::provider_usage::RequestUsage::from_json_with_context(
+                            usage,
+                            crate::services::provider_usage::UsageContext::responses(
+                                "openai", model,
+                            ),
+                        );
                     if let Some(usage) = &result.usage {
                         result.prompt_tokens =
                             usage.input_tokens.and_then(|value| value.try_into().ok());

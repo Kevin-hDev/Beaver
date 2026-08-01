@@ -57,6 +57,7 @@ async fn completed_sse_returns_the_accumulated_result() {
         CancellationToken::new(),
         false,
         None,
+        "gpt-5.6-sol",
         &[],
         Duration::from_secs(1),
     )
@@ -77,6 +78,7 @@ async fn closed_or_done_before_completion_is_rejected() {
             CancellationToken::new(),
             false,
             None,
+            "gpt-5.6-sol",
             &[],
             Duration::from_secs(1),
         )
@@ -99,6 +101,7 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
         cancel,
         false,
         None,
+        "gpt-5.6-sol",
         &[],
         Duration::from_secs(1),
     )
@@ -113,6 +116,7 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
         CancellationToken::new(),
         false,
         None,
+        "gpt-5.6-sol",
         &[],
         Duration::from_millis(20),
     )

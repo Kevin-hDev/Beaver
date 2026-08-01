@@ -1,8 +1,9 @@
+use super::agent_loop_request_types::ApiRequestOutput;
 use crate::services::agent_local::context_usage_buckets::{ContextUsageSeed, RequestContextUsage};
 use crate::services::agent_local::generation_metrics::GenerationAggregate;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_orchestration::ParentSubagentOrchestrator;
-use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
+use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use tokio_util::sync::CancellationToken;
 
@@ -22,14 +23,6 @@ pub(super) struct ApiRequestParams<'a> {
     pub turn: usize,
     pub subagents: &'a mut ParentSubagentOrchestrator,
     pub context_usage_seed: ContextUsageSeed,
-}
-
-pub(super) struct ApiRequestOutput {
-    pub result: StreamResult,
-    pub plan_active: bool,
-    pub interrupted: bool,
-    pub input_tokens: u32,
-    pub generation: GenerationAggregate,
 }
 
 pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput, String> {
@@ -93,10 +86,14 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     .await;
     let purpose =
         crate::services::llm::request_purpose::RequestPurpose::for_session(params.session_id).await;
+    let mut next_attempt = 1_u32;
+    let turn = params.turn.try_into().unwrap_or(u32::MAX);
     let first_attempt = super::retry::retry_stream(
         params.on_event,
         params.session_id,
         params.request_id,
+        turn,
+        &mut next_attempt,
         params.provider_id,
         purpose,
         params.model,
@@ -152,6 +149,8 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
                 params.on_event,
                 params.session_id,
                 params.request_id,
+                turn,
+                &mut next_attempt,
                 params.provider_id,
                 purpose,
                 params.model,

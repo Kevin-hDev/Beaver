@@ -48,6 +48,8 @@ pub struct TokenTotals {
     pub input_tokens: u64,
     pub output_tokens: u64,
     pub cached_input_tokens: u64,
+    pub cache_write_input_tokens: u64,
+    pub cache_miss_input_tokens: u64,
     pub reasoning_output_tokens: u64,
     pub total_tokens: u64,
 }
@@ -58,6 +60,9 @@ pub struct UsageAggregate {
     pub tokens: TokenTotals,
     pub request_count: u64,
     pub usage_request_count: u64,
+    pub cache_read_request_count: u64,
+    pub cache_write_request_count: u64,
+    pub cache_miss_request_count: u64,
     pub cost_usd_micros: u64,
     pub priced_request_count: u64,
     pub exact_cost_request_count: u64,

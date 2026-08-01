@@ -12,7 +12,7 @@ impl StreamEventSink for NoopSink {
 
 #[test]
 fn protocol_metadata_is_not_reported_as_partial_output() {
-    let mut accumulator = StreamAccumulator::new(&[], false, None);
+    let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, None);
 
     let outcome = accumulator
         .apply(&NoopSink, &serde_json::json!({"type": "response.created"}))
@@ -24,7 +24,7 @@ fn protocol_metadata_is_not_reported_as_partial_output() {
 
 #[test]
 fn content_and_usage_are_accumulated_until_completion() {
-    let mut accumulator = StreamAccumulator::new(&[], false, None);
+    let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, None);
     accumulator
         .apply(
             &NoopSink,
@@ -58,14 +58,14 @@ fn incomplete_failed_and_error_events_are_rejected() {
         serde_json::json!({"type": "response.failed"}),
         serde_json::json!({"type": "error"}),
     ] {
-        let mut accumulator = StreamAccumulator::new(&[], false, None);
+        let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, None);
         assert!(accumulator.apply(&NoopSink, &event).is_err());
     }
 }
 
 #[test]
 fn accumulated_text_is_bounded() {
-    let mut accumulator = StreamAccumulator::new(&[], false, None);
+    let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, None);
     accumulator.text_bytes = MAX_STREAM_TEXT_BYTES - 1;
 
     assert!(accumulator.record_text_size("x").is_ok());
@@ -78,7 +78,7 @@ fn accumulated_text_is_bounded() {
 #[test]
 fn realtime_budget_interrupts_content_for_compression() {
     let budget = RealtimeBudget::new(true, 100, 1, 0).unwrap();
-    let mut accumulator = StreamAccumulator::new(&[], false, Some(budget));
+    let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, Some(budget));
     let content = "x".repeat(256);
 
     let outcome = accumulator
@@ -97,7 +97,7 @@ fn realtime_budget_interrupts_content_for_compression() {
 
 #[test]
 fn completed_tool_call_counts_as_partial_output() {
-    let mut accumulator = StreamAccumulator::new(&[], false, None);
+    let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, None);
     accumulator
         .apply(
             &NoopSink,

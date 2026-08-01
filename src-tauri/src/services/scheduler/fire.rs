@@ -51,8 +51,12 @@ async fn dispatch(_app: &AppHandle, wakeup: &ScheduledWakeup) -> Result<(String,
     if llm::route::is_interactive_only(&wakeup.provider) {
         return Err("Provider réservé aux conversations manuelles".to_string());
     }
-    // 1. Appel LLM EN PREMIER : si fail, on ne crée aucune session vide.
-    //    Route selon provider : Ollama (local) ou LLM API (via catalog).
+    let api_session_id = if wakeup.provider == "ollama" {
+        None
+    } else {
+        Some(find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?)
+    };
+    // Route selon provider : Ollama (local) ou LLM API (via catalog).
     let (reply, tokens) = if wakeup.provider == "ollama" {
         ollama_stream::collect_chat(
             &wakeup.model,
@@ -68,11 +72,19 @@ async fn dispatch(_app: &AppHandle, wakeup: &ScheduledWakeup) -> Result<(String,
         )
         .await?
     } else {
-        llm::collect_chat(&wakeup.provider, &wakeup.model, &wakeup.prompt).await?
+        llm::collect_chat(
+            &wakeup.provider,
+            &wakeup.model,
+            &wakeup.prompt,
+            api_session_id.as_deref(),
+        )
+        .await?
     };
 
-    // 2. Ollama a répondu → on peut créer/trouver la session et append les messages.
-    let session_id = find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?;
+    let session_id = match api_session_id {
+        Some(id) => id,
+        None => find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?,
+    };
 
     let user_msg = AgentMessage {
         id: Uuid::new_v4().to_string(),
@@ -124,6 +136,8 @@ async fn find_or_create_heartbeat_session(provider: &str, model: &str) -> Result
         format!("Heartbeat • {} • {}", provider, model)
     };
     let session = session_store::create_with_flags(&name, model, provider, true).await?;
+    // La conserver même après un échec évite de supprimer une session déjà
+    // utilisée par un autre réveil concurrent et stabilise la clé de cache.
     Ok(session.id)
 }
 

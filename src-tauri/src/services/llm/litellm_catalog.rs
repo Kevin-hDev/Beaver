@@ -36,6 +36,7 @@ pub struct ModelEntry {
     pub input_cost_per_token: Option<f64>,
     pub output_cost_per_token: Option<f64>,
     pub cache_read_input_token_cost: Option<f64>,
+    pub cache_creation_input_token_cost: Option<f64>,
     pub mode: Option<String>,
 }
 

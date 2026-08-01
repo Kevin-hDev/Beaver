@@ -14,10 +14,12 @@ pub(super) struct StreamAccumulator<'a> {
     tools: &'a [serde_json::Value],
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    usage_context: crate::services::provider_usage::UsageContext<'a>,
 }
 
 impl<'a> StreamAccumulator<'a> {
     pub(super) fn new(
+        model: &'a str,
         tools: &'a [serde_json::Value],
         buffer_content: bool,
         realtime_budget: Option<RealtimeBudget>,
@@ -31,6 +33,9 @@ impl<'a> StreamAccumulator<'a> {
             tools,
             buffer_content,
             realtime_budget,
+            usage_context: crate::services::provider_usage::UsageContext::responses(
+                "openai", model,
+            ),
         }
     }
 
@@ -134,7 +139,11 @@ impl<'a> StreamAccumulator<'a> {
             return Err("provider_request_rejected".to_string());
         }
         if let Some(usage) = event.pointer("/response/usage") {
-            self.result.usage = crate::services::provider_usage::RequestUsage::from_json(usage);
+            self.result.usage =
+                crate::services::provider_usage::RequestUsage::from_json_with_context(
+                    usage,
+                    self.usage_context,
+                );
             if let Some(usage) = &self.result.usage {
                 self.result.prompt_tokens =
                     usage.input_tokens.and_then(|value| value.try_into().ok());
