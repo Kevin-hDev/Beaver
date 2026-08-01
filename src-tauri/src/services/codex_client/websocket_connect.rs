@@ -9,7 +9,10 @@ use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token;
 use crate::services::secure_http::LLM_BODY_LIMIT;
 
-const CODEX_WEBSOCKET_URL: &str = "wss://chatgpt.com/backend-api/codex/responses";
+use super::websocket_url::{
+    allowed as websocket_url_allowed, WebSocketUrlPolicy, CODEX_WEBSOCKET_URL,
+};
+
 const WEBSOCKET_CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
 const WEBSOCKET_BETA: &str = "responses_websockets=2026-02-06";
 const MAX_METADATA_HEADER_BYTES: usize = 256;
@@ -21,23 +24,55 @@ pub(super) async fn connect(session_id: &str) -> Result<CodexSocket, ConnectErro
     let credentials = token::ensure_valid()
         .await
         .map_err(|_| ConnectError::Unavailable)?;
-    match connect_once_at(CODEX_WEBSOCKET_URL, &credentials, Some(session_id)).await {
+    match connect_once(&credentials, Some(session_id)).await {
         Ok(socket) => Ok(socket),
         Err(ConnectError::Unauthorized) => {
             let refreshed = token::recover_after_unauthorized(credentials.access.as_str())
                 .await
                 .map_err(|_| ConnectError::Unavailable)?;
-            connect_once_at(CODEX_WEBSOCKET_URL, &refreshed, Some(session_id)).await
+            connect_once(&refreshed, Some(session_id)).await
         }
         Err(error) => Err(error),
     }
 }
 
-pub(super) async fn connect_once_at(
+async fn connect_once(
+    credentials: &CodexTokens,
+    session_id: Option<&str>,
+) -> Result<CodexSocket, ConnectError> {
+    connect_at(
+        CODEX_WEBSOCKET_URL,
+        WebSocketUrlPolicy::CodexProduction,
+        credentials,
+        session_id,
+    )
+    .await
+}
+
+#[cfg(test)]
+async fn connect_loopback_at(
     url: &str,
     credentials: &CodexTokens,
     session_id: Option<&str>,
 ) -> Result<CodexSocket, ConnectError> {
+    connect_at(
+        url,
+        WebSocketUrlPolicy::LoopbackTest,
+        credentials,
+        session_id,
+    )
+    .await
+}
+
+async fn connect_at(
+    url: &str,
+    policy: WebSocketUrlPolicy,
+    credentials: &CodexTokens,
+    session_id: Option<&str>,
+) -> Result<CodexSocket, ConnectError> {
+    if !websocket_url_allowed(url, policy) {
+        return Err(ConnectError::Unavailable);
+    }
     let mut request = url
         .into_client_request()
         .map_err(|_| ConnectError::Unavailable)?;

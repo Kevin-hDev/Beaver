@@ -87,10 +87,7 @@ async fn login_registered(cancel: &CancellationToken) -> Result<String, String> 
     let url = build_auth_url(&pair.challenge, &state, &redirect_uri)?;
 
     open::that(url.as_str()).map_err(|_| "impossible d'ouvrir le navigateur".to_string())?;
-    eprintln!("[codex] navigateur ouvert, attente du callback...");
-
     let cb = server.wait(&state, cancel).await?;
-    eprintln!("[codex] code reçu, échange en cours...");
 
     let creds =
         token::exchange_code(cb.code.as_str(), pair.verifier.as_str(), &redirect_uri).await?;
@@ -100,8 +97,6 @@ async fn login_registered(cancel: &CancellationToken) -> Result<String, String> 
         .unwrap_or_else(|| "inconnu".to_string());
 
     token::save_login(&creds).await?;
-    eprintln!("[codex] connecté");
-
     Ok(email)
 }
 

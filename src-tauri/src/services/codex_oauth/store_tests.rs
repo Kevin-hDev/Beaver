@@ -8,6 +8,7 @@ fn tokens_with_expiry(expires_at: i64) -> CodexTokens {
         access: Zeroizing::new("access-token".to_string()),
         refresh: Zeroizing::new("refresh-token".to_string()),
         expires_at,
+        refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_123".to_string()),
     }
 }
@@ -56,4 +57,37 @@ fn is_expired_boundary_at_exact_expiry() {
     let now = Utc::now().timestamp();
     let t = tokens_with_expiry(now);
     assert!(t.is_expired());
+}
+
+#[test]
+fn refresh_cooldown_prevents_a_network_refresh_storm() {
+    let now = Utc::now().timestamp();
+    let mut tokens = tokens_with_expiry(now + 120);
+    tokens.refresh_not_before = now + 60;
+
+    assert!(!tokens.needs_refresh());
+}
+
+#[test]
+fn an_expired_token_ignores_the_refresh_cooldown() {
+    let now = Utc::now().timestamp();
+    let mut tokens = tokens_with_expiry(now - 1);
+    tokens.refresh_not_before = now + 60;
+
+    assert!(tokens.needs_refresh());
+}
+
+#[test]
+fn legacy_storage_defaults_the_refresh_cooldown_to_zero() {
+    let stored: super::Stored = serde_json::from_str(
+        r#"{"access":"a","refresh":"r","expires_at":1,"account_id":"acct_1"}"#,
+    )
+    .unwrap();
+
+    assert_eq!(stored.refresh_not_before, 0);
+}
+
+#[test]
+fn storage_failures_use_a_stable_public_error_code() {
+    assert_eq!(super::unavailable(), "oauth_reauthentication_required");
 }

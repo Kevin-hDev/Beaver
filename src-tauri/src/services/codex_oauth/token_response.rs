@@ -6,6 +6,7 @@ use super::store::CodexTokens;
 
 const DEFAULT_EXPIRES_IN_SECS: i64 = 3_600;
 const MAX_EXPIRES_IN_SECS: i64 = 86_400;
+const REFRESH_RETRY_DELAY_SECS: i64 = 60;
 
 #[derive(Deserialize)]
 pub(super) struct CodexTokenResponse {
@@ -36,6 +37,7 @@ pub(super) fn from_exchange(mut raw: CodexTokenResponse) -> Result<CodexTokens, 
         access,
         refresh,
         expires_at,
+        refresh_not_before: 0,
         account_hint: Zeroizing::new(claims.account_hint),
     })
 }
@@ -46,17 +48,20 @@ pub(super) fn from_refresh(
 ) -> Result<CodexTokens, String> {
     let access = take_optional(&mut raw.access_token)?;
     let refresh = take_optional(&mut raw.refresh_token)?;
-    let (access, expires_at, account_hint) = match access {
+    let (access, expires_at, refresh_not_before, account_hint) = match access {
         Some(access) => {
             let claims = jwt::extract_display_claims(&access)?;
             let expires_at = claims
                 .expires_at
                 .unwrap_or_else(|| fallback_expiry(raw.expires_in));
-            (access, expires_at, Zeroizing::new(claims.account_hint))
+            (access, expires_at, 0, Zeroizing::new(claims.account_hint))
         }
         None => (
             current.access.clone(),
             current.expires_at,
+            chrono::Utc::now()
+                .timestamp()
+                .saturating_add(REFRESH_RETRY_DELAY_SECS),
             current.account_hint.clone(),
         ),
     };
@@ -64,6 +69,7 @@ pub(super) fn from_refresh(
         access,
         refresh: refresh.unwrap_or_else(|| current.refresh.clone()),
         expires_at,
+        refresh_not_before,
         account_hint,
     })
 }

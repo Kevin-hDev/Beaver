@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
 
@@ -46,7 +47,7 @@ impl CallbackServer {
 }
 
 async fn bind_first_available(ports: &[u16]) -> Result<TcpListener, String> {
-    for port in ports.iter().copied().take(2) {
+    for port in ports.iter().copied() {
         if let Ok(listener) = TcpListener::bind(("127.0.0.1", port)).await {
             return Ok(listener);
         }
@@ -58,22 +59,38 @@ async fn accept_until_valid(
     listener: &TcpListener,
     expected_state: &str,
 ) -> Result<CallbackResult, String> {
-    for _ in 0..MAX_CALLBACK_ATTEMPTS {
-        let (mut stream, _) = listener.accept().await.map_err(|_| unavailable())?;
-        let handled = tokio::time::timeout(
-            CONNECTION_TIMEOUT,
-            handle_connection(&mut stream, expected_state),
-        )
-        .await;
-        match handled {
-            Ok(Ok(result)) => return Ok(result),
-            Ok(Err(CallbackError::Refused)) => {
-                return Err("callback OAuth refusé".to_string());
+    let mut handlers = JoinSet::new();
+    let mut accepted = 0_usize;
+    loop {
+        if accepted >= MAX_CALLBACK_ATTEMPTS && handlers.is_empty() {
+            return Err(unavailable());
+        }
+        tokio::select! {
+            accepted_stream = listener.accept(), if accepted < MAX_CALLBACK_ATTEMPTS => {
+                let (mut stream, _) = accepted_stream.map_err(|_| unavailable())?;
+                let state = Zeroizing::new(expected_state.to_string());
+                accepted += 1;
+                handlers.spawn(async move {
+                    tokio::time::timeout(
+                        CONNECTION_TIMEOUT,
+                        handle_connection(&mut stream, state.as_str()),
+                    )
+                    .await
+                    .unwrap_or(Err(CallbackError::Invalid))
+                });
             }
-            Ok(Err(CallbackError::Invalid)) | Err(_) => continue,
+            handled = handlers.join_next(), if !handlers.is_empty() => {
+                match handled {
+                    Some(Ok(Ok(result))) => return Ok(result),
+                    Some(Ok(Err(CallbackError::Refused))) => {
+                        return Err("callback OAuth refusé".to_string());
+                    }
+                    Some(Ok(Err(CallbackError::Invalid)) | Err(_)) => {}
+                    None => {}
+                }
+            }
         }
     }
-    Err(unavailable())
 }
 
 async fn handle_connection(

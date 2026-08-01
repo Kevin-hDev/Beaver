@@ -20,6 +20,7 @@ fn current() -> CodexTokens {
         access: Zeroizing::new(access_token(1_900_000_000)),
         refresh: Zeroizing::new("old-refresh".to_string()),
         expires_at: 1_900_000_000,
+        refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_test".to_string()),
     }
 }
@@ -35,6 +36,7 @@ fn exchange_prefers_the_jwt_expiration() {
     let tokens = from_exchange(response).unwrap();
 
     assert_eq!(tokens.expires_at, 1_900_000_000);
+    assert_eq!(tokens.refresh_not_before, 0);
 }
 
 #[test]
@@ -56,6 +58,7 @@ fn refresh_preserves_fields_omitted_by_the_server() {
         b"old-refresh"
     ));
     assert_eq!(tokens.expires_at, 1_900_000_000);
+    assert!(tokens.refresh_not_before > chrono::Utc::now().timestamp());
 }
 
 #[test]

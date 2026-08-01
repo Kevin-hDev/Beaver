@@ -3,9 +3,8 @@ use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
-use super::{request, stream::CODEX_IDLE_TIMEOUT_SECS, stream_protocol};
-
-const MAX_STREAM_TEXT_BYTES: usize = 32 * 1024 * 1024;
+use super::limits::{MAX_STREAM_TEXT_BYTES, STREAM_STALL_TIMEOUT};
+use super::{request, stream_protocol};
 
 pub async fn collect_chat_silent(
     model: &str,
@@ -16,14 +15,9 @@ pub async fn collect_chat_silent(
     max_output_tokens: Option<u32>,
     cancel: CancellationToken,
 ) -> Result<StreamResult, String> {
-    let resp = request::post_codex_stream(model, messages, tools, think, reasoning_mode).await?;
-    consume_sse_silent(
-        resp,
-        cancel,
-        std::time::Duration::from_secs(CODEX_IDLE_TIMEOUT_SECS),
-        max_output_tokens,
-    )
-    .await
+    let resp =
+        request::post_codex_stream(model, messages, tools, think, reasoning_mode, &cancel).await?;
+    consume_sse_silent(resp, cancel, STREAM_STALL_TIMEOUT, max_output_tokens).await
 }
 
 pub async fn collect_chat_silent_for_compression(
@@ -44,6 +38,7 @@ pub async fn collect_chat_silent_for_compression(
         think,
         reasoning_mode,
         request_timeout,
+        &cancel,
     )
     .await?;
     consume_sse_silent(resp, cancel, idle_timeout, max_output_tokens).await
@@ -108,7 +103,9 @@ async fn consume_sse_silent(
                 return Ok(result);
             }
             "response.incomplete" => return Err(stream_protocol::incomplete_response()),
-            "response.failed" => return Err(stream_protocol::failed_response(&parsed)),
+            "response.failed" | "error" => {
+                return Err(stream_protocol::failed_response(&parsed));
+            }
             _ => {}
         }
     }
@@ -133,24 +130,5 @@ fn output_is_over_local_limit(result: &StreamResult, max_output_tokens: Option<u
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn local_output_limit_is_optional() {
-        let result = StreamResult {
-            content: "x".repeat(100),
-            ..Default::default()
-        };
-        assert!(!output_is_over_local_limit(&result, None));
-    }
-
-    #[test]
-    fn local_output_limit_uses_safe_char_estimate() {
-        let result = StreamResult {
-            content: "x".repeat(60),
-            ..Default::default()
-        };
-        assert!(output_is_over_local_limit(&result, Some(10)));
-    }
-}
+#[path = "stream_silent_tests.rs"]
+mod tests;

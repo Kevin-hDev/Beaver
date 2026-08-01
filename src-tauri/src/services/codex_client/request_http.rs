@@ -3,13 +3,12 @@ use std::time::Duration;
 use reqwest::{Response, StatusCode};
 
 use super::http_error;
+use super::limits::{CONNECT_TIMEOUT, STREAM_STALL_TIMEOUT};
 use super::types::CODEX_API_BASE;
 use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token;
 use crate::services::llm::provider_error::ProviderErrorCode;
 use crate::services::secure_http::{AuthenticatedClient, SecureHttpError};
-
-const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Clone, Copy)]
 pub(super) enum RequestDeadline {
@@ -37,7 +36,9 @@ pub(super) async fn post(
 
 fn build_client(deadline: RequestDeadline) -> Result<AuthenticatedClient, String> {
     let result = match deadline {
-        RequestDeadline::Streaming => AuthenticatedClient::new_streaming(CONNECT_TIMEOUT),
+        RequestDeadline::Streaming => {
+            AuthenticatedClient::new_streaming(CONNECT_TIMEOUT, STREAM_STALL_TIMEOUT)
+        }
         RequestDeadline::Total(timeout) => AuthenticatedClient::new(timeout),
     };
     result.map_err(|error| secure_http_error(error).to_string())

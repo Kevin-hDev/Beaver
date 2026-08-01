@@ -1,10 +1,9 @@
-use crate::services::agent_local::stream_events::AgentEventEmitter;
+use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use crate::services::compress::realtime_budget::RealtimeBudget;
 
+use super::limits::MAX_STREAM_TEXT_BYTES;
 use super::{replay::ReplayCollector, stream_protocol, stream_tool::StreamTool};
-
-const MAX_STREAM_TEXT_BYTES: usize = 32 * 1024 * 1024;
 
 pub(super) struct StreamAccumulator<'a> {
     result: StreamResult,
@@ -37,7 +36,7 @@ impl<'a> StreamAccumulator<'a> {
 
     pub(super) fn apply(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         event: &serde_json::Value,
     ) -> Result<Option<StreamOutcome>, String> {
         match event["type"].as_str().unwrap_or_default() {
@@ -56,9 +55,15 @@ impl<'a> StreamAccumulator<'a> {
         Ok(None)
     }
 
+    pub(super) fn has_partial_output(&self) -> bool {
+        !self.result.content.is_empty()
+            || !self.result.thinking.is_empty()
+            || !self.result.tool_calls.is_empty()
+    }
+
     fn record_thinking(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         event: &serde_json::Value,
     ) -> Result<(), String> {
         let delta = event["delta"].as_str().unwrap_or_default();
@@ -76,7 +81,7 @@ impl<'a> StreamAccumulator<'a> {
 
     fn record_content(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         event: &serde_json::Value,
     ) -> Result<Option<StreamOutcome>, String> {
         let delta = event["delta"].as_str().unwrap_or_default();
@@ -106,7 +111,7 @@ impl<'a> StreamAccumulator<'a> {
 
     fn finish_item(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         event: &serde_json::Value,
     ) -> Result<(), String> {
         let item = event
@@ -153,3 +158,7 @@ impl<'a> StreamAccumulator<'a> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "stream_accumulator_tests.rs"]
+mod tests;

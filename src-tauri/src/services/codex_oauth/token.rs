@@ -3,8 +3,10 @@ use std::time::Duration;
 
 use reqwest::StatusCode;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
 use tokio::sync::Semaphore;
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 use super::store::CodexTokens;
 use super::token_response::{self, CodexTokenResponse};
@@ -139,13 +141,12 @@ async fn acquire_token_lock() -> Result<tokio::sync::SemaphorePermit<'static>, S
 }
 
 pub(crate) fn constant_time_secret_eq(left: &[u8], right: &[u8]) -> bool {
-    let mut difference = left.len() ^ right.len();
-    for index in 0..left.len().max(right.len()) {
-        let left_byte = left.get(index).copied().unwrap_or_default();
-        let right_byte = right.get(index).copied().unwrap_or_default();
-        difference |= usize::from(left_byte ^ right_byte);
-    }
-    difference == 0
+    let mut left_digest: [u8; 32] = Sha256::digest(left).into();
+    let mut right_digest: [u8; 32] = Sha256::digest(right).into();
+    let equal = bool::from(left_digest.ct_eq(&right_digest));
+    left_digest.zeroize();
+    right_digest.zeroize();
+    equal
 }
 
 fn invalid_response() -> String {

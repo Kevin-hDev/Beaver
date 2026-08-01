@@ -1,4 +1,4 @@
-use crate::services::agent_local::stream_events::AgentEventEmitter;
+use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamResult};
 
 const MAX_TOOL_ARGUMENT_BYTES: usize = 4 * 1024 * 1024;
@@ -29,7 +29,7 @@ impl<'a> StreamTool<'a> {
 
     pub(super) fn start(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         result: &mut StreamResult,
         event: &serde_json::Value,
     ) -> Result<(), String> {
@@ -54,7 +54,7 @@ impl<'a> StreamTool<'a> {
 
     pub(super) fn append(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         result: &mut StreamResult,
         event: &serde_json::Value,
     ) -> Result<(), String> {
@@ -74,7 +74,7 @@ impl<'a> StreamTool<'a> {
 
     pub(super) fn finish(
         &mut self,
-        on_event: &AgentEventEmitter,
+        on_event: &impl StreamEventSink,
         result: &mut StreamResult,
         token_count: &mut u32,
         event: &serde_json::Value,
@@ -104,7 +104,7 @@ impl<'a> StreamTool<'a> {
             &arguments,
             token_count,
         );
-        let _ = on_event.send(StreamEvent::ToolCall {
+        let _ = on_event.send_event(StreamEvent::ToolCall {
             name: name.clone(),
             domain: crate::services::agent_local::memory_tool::event_domain(&name, &arguments),
             arguments: arguments.clone(),

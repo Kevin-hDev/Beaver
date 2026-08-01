@@ -48,6 +48,30 @@ async fn authenticated_refusal_ends_the_callback_wait() {
     assert_eq!(task.await.unwrap().unwrap_err(), "callback OAuth refusé");
 }
 
+#[tokio::test]
+async fn silent_connection_does_not_delay_the_valid_callback() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let task = tokio::spawn(async move { accept_until_valid(&listener, STATE).await });
+    let _silent = TcpStream::connect(address).await.unwrap();
+
+    let started = std::time::Instant::now();
+    send(address, &request("good", STATE)).await;
+    let result = tokio::time::timeout(Duration::from_secs(1), task)
+        .await
+        .unwrap()
+        .unwrap()
+        .unwrap();
+
+    assert!(started.elapsed() < Duration::from_secs(1));
+    assert!(
+        crate::services::codex_oauth::token::constant_time_secret_eq(
+            result.code.as_bytes(),
+            b"good"
+        )
+    );
+}
+
 async fn send(address: std::net::SocketAddr, request: &str) {
     let mut stream = TcpStream::connect(address).await.unwrap();
     stream.write_all(request.as_bytes()).await.unwrap();

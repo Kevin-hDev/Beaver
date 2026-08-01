@@ -1,3 +1,4 @@
+use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamOutcome};
 use crate::services::compress::realtime_budget::RealtimeBudget;
@@ -5,9 +6,8 @@ use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
+use super::limits::STREAM_STALL_TIMEOUT;
 use super::{request, stream_accumulator::StreamAccumulator, stream_protocol, websocket};
-
-pub const CODEX_IDLE_TIMEOUT_SECS: u64 = 300;
 
 pub use super::stream_silent::{collect_chat_silent, collect_chat_silent_for_compression};
 
@@ -62,7 +62,8 @@ pub async fn stream_chat_with_budget(
             }
         }
     }
-    let resp = request::post_codex_stream(model, messages, tools, think, reasoning_mode).await?;
+    let resp =
+        request::post_codex_stream(model, messages, tools, think, reasoning_mode, &cancel).await?;
     consume_sse(
         on_event,
         resp,
@@ -75,19 +76,40 @@ pub async fn stream_chat_with_budget(
 }
 
 async fn consume_sse(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     resp: reqwest::Response,
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
     tools: &[serde_json::Value],
 ) -> Result<StreamOutcome, String> {
+    consume_sse_with_timeout(
+        on_event,
+        resp,
+        cancel,
+        buffer_content,
+        realtime_budget,
+        tools,
+        STREAM_STALL_TIMEOUT,
+    )
+    .await
+}
+
+async fn consume_sse_with_timeout(
+    on_event: &impl StreamEventSink,
+    resp: reqwest::Response,
+    cancel: CancellationToken,
+    buffer_content: bool,
+    realtime_budget: Option<RealtimeBudget>,
+    tools: &[serde_json::Value],
+    idle_timeout: std::time::Duration,
+) -> Result<StreamOutcome, String> {
     let mut sse = resp.bytes_stream().eventsource();
     let mut accumulator = StreamAccumulator::new(tools, buffer_content, realtime_budget);
     loop {
         let event = tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),
-            _ = tokio::time::sleep(std::time::Duration::from_secs(CODEX_IDLE_TIMEOUT_SECS)) => {
+            _ = tokio::time::sleep(idle_timeout) => {
                 return Err("provider_temporarily_unavailable".to_string());
             }
             ev = sse.next() => match ev {
@@ -108,3 +130,7 @@ async fn consume_sse(
     }
     Err(stream_protocol::closed_before_completed())
 }
+
+#[cfg(test)]
+#[path = "stream_tests.rs"]
+mod tests;

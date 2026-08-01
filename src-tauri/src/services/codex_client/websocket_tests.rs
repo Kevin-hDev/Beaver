@@ -27,6 +27,8 @@ fn websocket_payload_uses_the_current_response_create_envelope() {
     assert_eq!(value["type"], "response.create");
     assert_eq!(value["model"], "gpt-test");
     assert_eq!(value["stream"], true);
+    assert_eq!(value["tools"], serde_json::json!([]));
+    assert_eq!(value["tool_choice"], "auto");
     assert_eq!(value["parallel_tool_calls"], false);
 }
 

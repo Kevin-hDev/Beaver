@@ -11,7 +11,7 @@ use crate::services::agent_local::types_ollama::{ChatMessage, StreamOutcome};
 use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::secure_http::LLM_BODY_LIMIT;
 
-use super::stream::CODEX_IDLE_TIMEOUT_SECS;
+use super::limits::STREAM_STALL_TIMEOUT;
 use super::stream_accumulator::StreamAccumulator;
 use super::types::CodexRequest;
 use super::{request, websocket_connect};
@@ -99,7 +99,7 @@ async fn receive_response(
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
 ) -> Result<StreamOutcome, WebSocketFailure> {
-    let idle = Duration::from_secs(CODEX_IDLE_TIMEOUT_SECS);
+    let idle = STREAM_STALL_TIMEOUT;
     let mut deadline = tokio::time::Instant::now() + idle;
     let mut accumulator = StreamAccumulator::new(tools, buffer_content, realtime_budget);
     let mut partial = false;
@@ -113,21 +113,22 @@ async fn receive_response(
         };
         match message {
             Some(Ok(WsMessage::Text(text))) => {
-                partial = true;
                 if text.trim() == "[DONE]" {
                     return Err(WebSocketFailure::Unavailable { partial });
                 }
                 let parsed = serde_json::from_str(&text)
                     .map_err(|_| WebSocketFailure::Unavailable { partial })?;
-                let outcome = accumulator
-                    .apply(on_event, &parsed)
-                    .map_err(|_| WebSocketFailure::Unavailable { partial })?;
+                let applied = accumulator.apply(on_event, &parsed);
+                partial = accumulator.has_partial_output();
+                let outcome = applied.map_err(|_| WebSocketFailure::Unavailable { partial })?;
                 deadline = tokio::time::Instant::now() + idle;
                 if let Some(outcome) = outcome {
                     return Ok(outcome);
                 }
             }
             Some(Ok(WsMessage::Ping(payload))) => {
+                // Un ping confirme le transport, pas l'avancement du modèle :
+                // il ne réarme donc pas le délai d'inactivité sémantique.
                 send_pong(socket, payload, &cancel, partial).await?;
             }
             Some(Ok(WsMessage::Pong(_) | WsMessage::Frame(_))) => {}

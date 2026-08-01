@@ -48,13 +48,12 @@ pub async fn retry_stream(
     realtime_budget: Option<RealtimeBudget>,
 ) -> Result<StreamOutcome, String> {
     let policy = retry_policy(provider_id);
-    let mut last_error = String::new();
-    for attempt in 0..=policy.max_retries {
+    let mut attempt = 0_usize;
+    loop {
         if cancel.is_cancelled() {
             return Err("Annulé".to_string());
         }
         if attempt > 0 {
-            eprintln!("[llm retry] attempt={attempt}/{}", policy.max_retries);
             crate::services::agent_local::stream_diagnostics::record_retry(
                 session_id,
                 request_id,
@@ -88,13 +87,12 @@ pub async fn retry_stream(
         {
             Ok(result) => return Ok(result),
             Err(e) if is_retryable_error(&e) && attempt < policy.max_retries => {
-                last_error = e;
+                attempt += 1;
                 continue;
             }
             Err(e) => return Err(e),
         }
     }
-    Err(last_error)
 }
 
 fn retry_policy(provider_id: &str) -> RetryPolicy {

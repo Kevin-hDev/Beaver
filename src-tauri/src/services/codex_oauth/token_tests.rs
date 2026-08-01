@@ -58,6 +58,7 @@ fn tokens_expiring_at(expires_at: i64) -> CodexTokens {
         access: Zeroizing::new("access".to_string()),
         refresh: Zeroizing::new("refresh".to_string()),
         expires_at,
+        refresh_not_before: 0,
         account_hint: Zeroizing::new("account".to_string()),
     }
 }

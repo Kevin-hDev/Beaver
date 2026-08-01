@@ -1,8 +1,18 @@
 use super::stream_events::AgentEventEmitter;
 use super::types_stream::{StreamEvent, StreamResult, TokenPhase};
 
+pub trait StreamEventSink {
+    fn send_event(&self, event: StreamEvent) -> Result<(), String>;
+}
+
+impl StreamEventSink for AgentEventEmitter {
+    fn send_event(&self, event: StreamEvent) -> Result<(), String> {
+        self.send(event)
+    }
+}
+
 pub fn record_content(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &mut StreamResult,
     content: String,
     token_count: &mut u32,
@@ -24,7 +34,7 @@ pub fn record_content(
 }
 
 pub fn record_thinking(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &mut StreamResult,
     content: String,
     token_count: &mut u32,
@@ -32,23 +42,23 @@ pub fn record_thinking(
     result.thinking.push_str(&content);
     *token_count = result.record_generated_text(&content);
     record_counted_activity(on_event, result, *token_count);
-    let _ = on_event.send(StreamEvent::Thinking {
+    let _ = on_event.send_event(StreamEvent::Thinking {
         content,
         token_count: *token_count,
     });
 }
 
 pub fn record_generation_started(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &mut StreamResult,
 ) {
     if result.generation.start_activity() {
-        let _ = on_event.send(StreamEvent::GenerationStarted {});
+        let _ = on_event.send_event(StreamEvent::GenerationStarted {});
     }
 }
 
 pub fn record_tool_call_generation(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &mut StreamResult,
     name: &str,
     arguments: &serde_json::Value,
@@ -60,7 +70,7 @@ pub fn record_tool_call_generation(
 }
 
 pub fn emit_buffered_content(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &StreamResult,
     phase: TokenPhase,
 ) {
@@ -77,7 +87,7 @@ pub fn emit_buffered_content(
 }
 
 pub fn finalize_content_phase(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &StreamResult,
     plan_active: bool,
     force_work_phase: bool,
@@ -86,13 +96,13 @@ pub fn finalize_content_phase(
         if plan_active {
             emit_buffered_content(on_event, result, phase);
         } else {
-            let _ = on_event.send(StreamEvent::ContentPhase { phase });
+            let _ = on_event.send_event(StreamEvent::ContentPhase { phase });
         }
     }
 }
 
 pub fn finalize_interrupted_content(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &StreamResult,
     plan_active: bool,
 ) {
@@ -102,7 +112,7 @@ pub fn finalize_interrupted_content(
     if plan_active {
         emit_buffered_content(on_event, result, TokenPhase::Work);
     } else {
-        let _ = on_event.send(StreamEvent::ContentPhase {
+        let _ = on_event.send_event(StreamEvent::ContentPhase {
             phase: TokenPhase::Work,
         });
     }
@@ -137,13 +147,13 @@ pub fn interrupted_phase_for_result(result: &StreamResult) -> Option<TokenPhase>
 }
 
 fn emit_token(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     content: String,
     token_count: u32,
     tps: f64,
     phase: Option<TokenPhase>,
 ) {
-    let _ = on_event.send(StreamEvent::Token {
+    let _ = on_event.send_event(StreamEvent::Token {
         content,
         token_count,
         tps,
@@ -152,12 +162,12 @@ fn emit_token(
 }
 
 fn record_counted_activity(
-    on_event: &AgentEventEmitter,
+    on_event: &impl StreamEventSink,
     result: &mut StreamResult,
     token_count: u32,
 ) {
     if result.generation.record_activity(token_count) {
-        let _ = on_event.send(StreamEvent::GenerationStarted {});
+        let _ = on_event.send_event(StreamEvent::GenerationStarted {});
     }
 }
 

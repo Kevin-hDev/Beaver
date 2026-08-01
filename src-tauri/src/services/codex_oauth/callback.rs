@@ -1,8 +1,9 @@
+use subtle::{Choice, ConstantTimeEq};
 use zeroize::{Zeroize, Zeroizing};
 
 pub(super) const MAX_REQUEST_BYTES: usize = 8 * 1024;
 const MAX_CODE_BYTES: usize = 4 * 1024;
-const STATE_BYTES: usize = 32;
+const STATE_HEX_CHARS: usize = 32;
 const MAX_QUERY_PAIRS: usize = 8;
 
 #[derive(Debug)]
@@ -80,7 +81,7 @@ fn parse_target(target: &str, expected_state: &str) -> Result<CallbackResult, Ca
 }
 
 pub(super) fn validate_state(state: &str) -> Result<(), String> {
-    if state.len() == STATE_BYTES && state.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+    if state.len() == STATE_HEX_CHARS && state.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         Ok(())
     } else {
         Err("état OAuth invalide".to_string())
@@ -88,25 +89,23 @@ pub(super) fn validate_state(state: &str) -> Result<(), String> {
 }
 
 fn constant_time_state_eq(actual: &str, expected: &str) -> bool {
-    let mut actual_fixed = [0_u8; STATE_BYTES];
-    let mut expected_fixed = [0_u8; STATE_BYTES];
+    let mut actual_fixed = [0_u8; STATE_HEX_CHARS];
+    let mut expected_fixed = [0_u8; STATE_HEX_CHARS];
     let actual_valid = copy_state(actual, &mut actual_fixed);
     let expected_valid = copy_state(expected, &mut expected_fixed);
-    let mut diff = actual_valid | expected_valid;
-    for index in 0..STATE_BYTES {
-        diff |= actual_fixed[index] ^ expected_fixed[index];
-    }
-    let equal = diff == 0;
+    let validity = Choice::from((actual_valid | expected_valid) ^ 1);
+    let equal = bool::from(actual_fixed.ct_eq(&expected_fixed) & validity);
     actual_fixed.zeroize();
     expected_fixed.zeroize();
     equal
 }
 
-fn copy_state(input: &str, output: &mut [u8; STATE_BYTES]) -> u8 {
+fn copy_state(input: &str, output: &mut [u8; STATE_HEX_CHARS]) -> u8 {
     let bytes = input.as_bytes();
-    let valid =
-        u8::from(bytes.len() == STATE_BYTES && bytes.iter().all(|byte| byte.is_ascii_hexdigit()));
-    for (index, byte) in bytes.iter().take(STATE_BYTES).enumerate() {
+    let valid = u8::from(
+        bytes.len() == STATE_HEX_CHARS && bytes.iter().all(|byte| byte.is_ascii_hexdigit()),
+    );
+    for (index, byte) in bytes.iter().take(STATE_HEX_CHARS).enumerate() {
         output[index] = *byte;
     }
     valid ^ 1

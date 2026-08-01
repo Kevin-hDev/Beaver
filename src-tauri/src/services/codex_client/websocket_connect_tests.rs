@@ -12,6 +12,7 @@ fn credentials() -> CodexTokens {
         access: Zeroizing::new("access-test".to_string()),
         refresh: Zeroizing::new("refresh-test".to_string()),
         expires_at: i64::MAX,
+        refresh_not_before: 0,
         account_hint: Zeroizing::new("acct_test".to_string()),
     }
 }
@@ -70,11 +71,47 @@ async fn handshake_carries_current_codex_headers_without_logging_secrets() {
     });
 
     let url = format!("ws://{address}");
-    let mut socket = connect_once_at(&url, &credentials(), Some("session-test"))
+    let mut socket = connect_loopback_at(&url, &credentials(), Some("session-test"))
         .await
         .unwrap();
     let headers = header_rx.await.unwrap();
     assert_eq!(headers, (true, true, true, true));
     socket.close(None).await.unwrap();
     server.await.unwrap();
+}
+
+#[test]
+fn production_websocket_policy_rejects_every_other_target() {
+    assert!(websocket_url_allowed(
+        CODEX_WEBSOCKET_URL,
+        WebSocketUrlPolicy::CodexProduction
+    ));
+    assert!(!websocket_url_allowed(
+        "ws://chatgpt.com/backend-api/codex/responses",
+        WebSocketUrlPolicy::CodexProduction
+    ));
+    assert!(!websocket_url_allowed(
+        "wss://example.com/backend-api/codex/responses",
+        WebSocketUrlPolicy::CodexProduction
+    ));
+}
+
+#[test]
+fn test_websocket_policy_only_accepts_plain_loopback() {
+    assert!(websocket_url_allowed(
+        "ws://127.0.0.1:1455/test",
+        WebSocketUrlPolicy::LoopbackTest
+    ));
+    assert!(websocket_url_allowed(
+        "ws://[::1]:1455/test",
+        WebSocketUrlPolicy::LoopbackTest
+    ));
+    assert!(!websocket_url_allowed(
+        "ws://example.com/test",
+        WebSocketUrlPolicy::LoopbackTest
+    ));
+    assert!(!websocket_url_allowed(
+        "ws://127.0.0.1:1455/test?token=secret",
+        WebSocketUrlPolicy::LoopbackTest
+    ));
 }
