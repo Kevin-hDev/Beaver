@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AssistantMessage } from "./assistant-message";
 import { BranchBubble } from "./branch-bubble";
 import { ThinkingSection } from "./thinking-section";
@@ -10,6 +11,7 @@ import {
   TimelineWorkBlock,
 } from "./message-tool-timeline-render";
 import { WorkStreamSummary } from "./work-stream-summary";
+import { recoverLegacyShellStopSummaries } from "./tool-shell-display";
 import type { SavedSegment } from "@/types/agent";
 
 interface SavedToolTimelineProps {
@@ -29,7 +31,11 @@ export function SavedToolTimeline({
   messageId, segments, tokens, tps, tpsEstimated, totalElapsedMs, onFilePreview, onClone,
   projectPath, liveCheckpoint = false,
 }: SavedToolTimelineProps) {
-  const blocks = buildToolTimelineBlocks(segments);
+  const displaySegments = useMemo(
+    () => recoverLegacyShellStopSummaries(segments),
+    [segments],
+  );
+  const blocks = buildToolTimelineBlocks(displaySegments);
   if (liveCheckpoint) {
     return (
       <>
