@@ -28,7 +28,6 @@ pub async fn stream_chat_no_done(
             model,
             messages,
             tools,
-            think,
             reasoning_mode,
             cancel,
             buffer_content,

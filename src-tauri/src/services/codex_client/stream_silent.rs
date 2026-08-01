@@ -10,13 +10,11 @@ pub async fn collect_chat_silent(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
-    think: bool,
     reasoning_mode: Option<&str>,
     max_output_tokens: Option<u32>,
     cancel: CancellationToken,
 ) -> Result<StreamResult, String> {
-    let resp =
-        request::post_codex_stream(model, messages, tools, think, reasoning_mode, &cancel).await?;
+    let resp = request::post_codex_stream(model, messages, tools, reasoning_mode, &cancel).await?;
     consume_sse_silent(resp, cancel, STREAM_STALL_TIMEOUT, max_output_tokens).await
 }
 
@@ -24,7 +22,6 @@ pub async fn collect_chat_silent_for_compression(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
-    think: bool,
     reasoning_mode: Option<&str>,
     max_output_tokens: Option<u32>,
     cancel: CancellationToken,
@@ -35,7 +32,6 @@ pub async fn collect_chat_silent_for_compression(
         model,
         messages,
         tools,
-        think,
         reasoning_mode,
         request_timeout,
         &cancel,

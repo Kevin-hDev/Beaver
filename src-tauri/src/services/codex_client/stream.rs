@@ -18,7 +18,6 @@ pub async fn stream_chat_with_budget(
     model: &str,
     messages: &[ChatMessage],
     tools: &[serde_json::Value],
-    think: bool,
     reasoning_mode: Option<&str>,
     cancel: CancellationToken,
     buffer_content: bool,
@@ -62,8 +61,7 @@ pub async fn stream_chat_with_budget(
             }
         }
     }
-    let resp =
-        request::post_codex_stream(model, messages, tools, think, reasoning_mode, &cancel).await?;
+    let resp = request::post_codex_stream(model, messages, tools, reasoning_mode, &cancel).await?;
     consume_sse(
         on_event,
         resp,
