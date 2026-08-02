@@ -924,7 +924,7 @@
       "vramTableSize": "Size",
       "vramFormula": "model size + (context/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "File Access",
-      "fileAccessDesc": "Folders where sessions and their tools can work",
+      "fileAccessDesc": "Session working folders. Required tool components and network access remain available",
       "addPath": "Add folder",
       "resetPaths": "Reset",
       "fullDisk": "Full disk",

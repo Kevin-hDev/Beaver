@@ -919,7 +919,7 @@
       "vramTableSize": "Größe",
       "vramFormula": "Modellgröße + (Kontext/1000 × 0,5 GB) + 0,5 GB",
       "fileAccessTitle": "Dateizugriff",
-      "fileAccessDesc": "Ordner, in denen Sitzungen und ihre Werkzeuge arbeiten können",
+      "fileAccessDesc": "Arbeitsordner der Sitzungen. Erforderliche Werkzeugkomponenten und der Netzwerkzugriff bleiben verfügbar",
       "addPath": "Ordner hinzufügen",
       "resetPaths": "Zurücksetzen",
       "fullDisk": "Gesamte Festplatte",

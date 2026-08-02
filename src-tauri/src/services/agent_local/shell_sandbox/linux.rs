@@ -1,10 +1,21 @@
-use landlock::{AccessFs, ABI, Access, CompatLevel, Compatible, Ruleset, RulesetAttr};
 use landlock::RulesetCreatedAttr;
+use landlock::{Access, AccessFs, ABI, CompatLevel, Compatible, Ruleset, RulesetAttr};
 use std::ffi::OsString;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 
-const MAX_READ_ROOTS: usize = 64;
+const PLATFORM_READ_DIRS: [&str; 8] = [
+    "/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev", "/proc",
+];
+const PACKAGE_PREFIXES: [&str; 2] = ["/usr/local", "/home/linuxbrew/.linuxbrew"];
+const WRITABLE_DEVICES: [&str; 6] = [
+    "/dev/null",
+    "/dev/zero",
+    "/dev/full",
+    "/dev/random",
+    "/dev/urandom",
+    "/dev/tty",
+];
 
 pub(super) fn run(
     executable: &Path,
@@ -23,20 +34,47 @@ fn apply(writable_roots: &[PathBuf], temp_dir: &Path) -> Result<(), String> {
     let abi = ABI::V3;
     let access_all = AccessFs::from_all(abi);
     let access_read = AccessFs::from_read(abi);
-    let read_roots = read_roots(writable_roots);
-    let write_roots = writable_roots
+    let file_read_write = AccessFs::ReadFile | AccessFs::WriteFile | AccessFs::Truncate;
+    let device_read_write = AccessFs::ReadFile | AccessFs::WriteFile | AccessFs::Truncate;
+    let device_dir_read_write = device_read_write | AccessFs::ReadDir;
+    let tools = super::tool_roots::collect(
+        writable_roots,
+        &PLATFORM_READ_DIRS,
+        &PACKAGE_PREFIXES,
+        None,
+    );
+    let write_dirs = writable_roots
         .iter()
         .map(PathBuf::as_path)
-        .chain(std::iter::once(temp_dir));
+        .chain(std::iter::once(temp_dir))
+        .chain(tools.write_dirs.iter().map(PathBuf::as_path));
+    let writable_devices = WRITABLE_DEVICES
+        .iter()
+        .map(Path::new)
+        .filter(|path| path.exists());
+    let writable_device_dirs = [Path::new("/dev/pts")]
+        .into_iter()
+        .filter(|path| path.is_dir());
     let ruleset = Ruleset::default()
         .set_compatibility(CompatLevel::HardRequirement)
         .handle_access(access_all)
         .map_err(|_| sandbox_error())?
         .create()
         .map_err(|_| sandbox_error())?
-        .add_rules(landlock::path_beneath_rules(read_roots, access_read))
+        .add_rules(landlock::path_beneath_rules(&tools.read_dirs, access_read))
         .map_err(|_| sandbox_error())?
-        .add_rules(landlock::path_beneath_rules(write_roots, access_all))
+        .add_rules(landlock::path_beneath_rules(&tools.read_files, AccessFs::ReadFile))
+        .map_err(|_| sandbox_error())?
+        .add_rules(landlock::path_beneath_rules(write_dirs, access_all))
+        .map_err(|_| sandbox_error())?
+        .add_rules(landlock::path_beneath_rules(&tools.write_files, file_read_write))
+        .map_err(|_| sandbox_error())?
+        .add_rules(landlock::path_beneath_rules(writable_devices, device_read_write))
+        .map_err(|_| sandbox_error())?
+        .add_rules(landlock::path_beneath_rules(
+            writable_device_dirs,
+            device_dir_read_write,
+        ))
         .map_err(|_| sandbox_error())?
         .no_new_privs(true);
     let status = ruleset.restrict_self().map_err(|_| sandbox_error())?;
@@ -44,34 +82,6 @@ fn apply(writable_roots: &[PathBuf], temp_dir: &Path) -> Result<(), String> {
         return Err(sandbox_error());
     }
     Ok(())
-}
-
-fn read_roots(writable_roots: &[PathBuf]) -> Vec<PathBuf> {
-    let mut roots = ["/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev"]
-        .into_iter()
-        .map(PathBuf::from)
-        .filter(|path| path.exists())
-        .collect::<Vec<_>>();
-    for path in std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()) {
-        if roots.len() >= MAX_READ_ROOTS {
-            break;
-        }
-        let Some(path) = path
-            .is_absolute()
-            .then(|| dunce::canonicalize(path).ok())
-            .flatten()
-            .filter(|path| path.is_dir())
-        else {
-            continue;
-        };
-        let overlaps_writable = writable_roots
-            .iter()
-            .any(|root| path.starts_with(root) || root.starts_with(&path));
-        if !overlaps_writable && !roots.contains(&path) {
-            roots.push(path);
-        }
-    }
-    roots
 }
 
 fn sandbox_error() -> String {

@@ -919,7 +919,7 @@
       "vramTableSize": "Tamaño",
       "vramFormula": "tamaño del modelo + (contexto/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "Acceso a archivos",
-      "fileAccessDesc": "Carpetas en las que pueden trabajar las sesiones y sus herramientas",
+      "fileAccessDesc": "Carpetas de trabajo de las sesiones. Los componentes necesarios para las herramientas y el acceso a la red siguen disponibles",
       "addPath": "Añadir carpeta",
       "resetPaths": "Restablecer",
       "fullDisk": "Disco completo",

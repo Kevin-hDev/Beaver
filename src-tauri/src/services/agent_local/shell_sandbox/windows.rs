@@ -11,8 +11,10 @@ use std::path::{Component, Path, PathBuf};
 
 const RECORD_SUFFIX: &str = "cleanup.json";
 const MAX_RECORD_BYTES: u64 = 512 * 1024;
-const MAX_TOOL_ROOTS: usize = 64;
-const MAX_ROOTS: usize = super::super::directory_access::MAX_ALLOWED_PATHS + 1 + MAX_TOOL_ROOTS;
+const MAX_ROOTS: usize = super::super::directory_access::MAX_ALLOWED_PATHS
+    + 1
+    + super::tool_roots::MAX_READ_ROOTS
+    + super::tool_roots::MAX_WRITE_ROOTS;
 
 #[derive(Serialize, Deserialize)]
 struct CleanupRecord {
@@ -29,20 +31,37 @@ pub(super) fn run(
     if writable_roots.len() > super::super::directory_access::MAX_ALLOWED_PATHS {
         return Err(error());
     }
-    let profile = windows_profile::Profile::create()?;
+    let tools = super::tool_roots::collect(writable_roots, &[], &[], Some(executable));
     let writable = writable_roots
         .iter()
         .cloned()
         .chain(std::iter::once(temp_dir.to_path_buf()))
+        .chain(tools.write_dirs)
+        .chain(tools.write_files)
         .collect::<Vec<_>>();
-    let readable = readable_tool_roots(&writable, executable);
-    let roots = writable.iter().chain(&readable).cloned().collect::<Vec<_>>();
-    write_record(temp_dir, profile.name(), &roots)?;
+    let readable = tools
+        .read_dirs
+        .into_iter()
+        .chain(tools.read_files)
+        .collect::<Vec<_>>();
+    let profile = windows_profile::Profile::create()?;
+    let mut recorded = writable.clone();
+    write_record(temp_dir, profile.name(), &recorded)?;
     for root in &writable {
         windows_acl::grant(root, profile.sid(), true)?;
     }
     for root in &readable {
-        windows_acl::grant(root, profile.sid(), false)?;
+        // Les dossiers système sont déjà lisibles par les AppContainers et leur
+        // DACL n'est généralement pas modifiable par un utilisateur standard.
+        recorded.push(root.clone());
+        if write_record(temp_dir, profile.name(), &recorded).is_err() {
+            recorded.pop();
+            continue;
+        }
+        if windows_acl::grant(root, profile.sid(), false).is_err() {
+            recorded.pop();
+            let _ = write_record(temp_dir, profile.name(), &recorded);
+        }
     }
     windows_process::run(executable, arguments, profile.sid())
 }
@@ -100,36 +119,6 @@ fn valid_root(path: &Path) -> bool {
         && path.as_os_str().to_string_lossy().chars().count()
             <= super::super::directory_access::MAX_PATH_CHARS
         && !path.components().any(|part| matches!(part, Component::ParentDir))
-}
-
-fn readable_tool_roots(writable: &[PathBuf], executable: &Path) -> Vec<PathBuf> {
-    let path_env = std::env::var_os("PATH").unwrap_or_default();
-    let candidates = executable
-        .parent()
-        .map(Path::to_path_buf)
-        .into_iter()
-        .chain(std::env::split_paths(&path_env));
-    let mut roots = Vec::with_capacity(MAX_TOOL_ROOTS);
-    for path in candidates {
-        if roots.len() >= MAX_TOOL_ROOTS {
-            break;
-        }
-        let Some(path) = path
-            .is_absolute()
-            .then(|| dunce::canonicalize(path).ok())
-            .flatten()
-            .filter(|path| path.is_dir())
-        else {
-            continue;
-        };
-        let overlaps_writable = writable
-            .iter()
-            .any(|root| path.starts_with(root) || root.starts_with(&path));
-        if !overlaps_writable && !roots.contains(&path) {
-            roots.push(path);
-        }
-    }
-    roots
 }
 
 fn error() -> String {

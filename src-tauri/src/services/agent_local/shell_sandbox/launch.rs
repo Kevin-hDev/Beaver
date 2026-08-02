@@ -85,7 +85,9 @@ pub async fn cleanup_temp(path: Option<PathBuf>) {
 pub fn cleanup_stale() {
     let root = sandbox_temp_root();
     let Ok(entries) = std::fs::read_dir(&root) else { return };
-    for entry in entries.flatten().take(256) {
+    let mut entries = entries.flatten();
+    for _ in 0..256 {
+        let Some(entry) = entries.next() else { return };
         let path = entry.path();
         if entry.file_type().is_ok_and(|kind| kind.is_dir() && !kind.is_symlink()) {
             cleanup_one(&path);
@@ -94,6 +96,9 @@ pub fn cleanup_stale() {
         if entry.file_type().is_ok_and(|kind| kind.is_file() && !kind.is_symlink()) {
             super::windows::cleanup_record_file(&path);
         }
+    }
+    if entries.next().is_some() {
+        eprintln!("[shell-sandbox] stale cleanup incomplete");
     }
 }
 

@@ -969,7 +969,7 @@
       "vramTableSize": "Taille",
       "vramFormula": "taille modèle + (contexte/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "Accès fichiers",
-      "fileAccessDesc": "Dossiers dans lesquels les sessions et leurs outils peuvent travailler",
+      "fileAccessDesc": "Dossiers de travail des sessions. Les composants nécessaires aux outils et l’accès réseau restent disponibles",
       "addPath": "Ajouter un dossier",
       "resetPaths": "Réinitialiser",
       "fullDisk": "Tout le disque",

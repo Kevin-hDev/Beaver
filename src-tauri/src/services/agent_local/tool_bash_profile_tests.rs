@@ -52,3 +52,21 @@ fn large_utf8_profiles_are_split_below_linux_environment_limits() {
         snapshot
     );
 }
+
+#[test]
+fn sandbox_temp_variables_are_not_replayed_from_the_profile() {
+    let snapshot = concat!(
+        "export TMPDIR=/deleted/sandbox\n",
+        "declare -x TMP=\"/deleted/sandbox\"\n",
+        " export TEMP='/deleted/sandbox'\n",
+        "export TEMPORARY=kept\n",
+        "export BEAVER_PROFILE_TEST=kept\n",
+    );
+    let sanitized = sanitize_snapshot(snapshot);
+
+    assert!(!sanitized.contains("TMPDIR="));
+    assert!(!sanitized.contains(" TMP="));
+    assert!(!sanitized.contains(" TEMP="));
+    assert!(sanitized.contains("TEMPORARY=kept"));
+    assert!(sanitized.contains("BEAVER_PROFILE_TEST=kept"));
+}

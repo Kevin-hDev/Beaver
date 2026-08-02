@@ -1,7 +1,9 @@
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
+use sha2::{Digest, Sha256};
 use windows_sys::Win32::Foundation::{
-    GENERIC_ALL, GENERIC_EXECUTE, GENERIC_READ, LocalFree,
+    CloseHandle, GENERIC_ALL, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE, HANDLE, LocalFree,
+    WAIT_ABANDONED, WAIT_OBJECT_0,
 };
 use windows_sys::Win32::Security::Authorization::{
     EXPLICIT_ACCESS_W, GetNamedSecurityInfoW, REVOKE_ACCESS, SE_FILE_OBJECT,
@@ -11,6 +13,13 @@ use windows_sys::Win32::Security::Authorization::{
 use windows_sys::Win32::Security::{
     ACL, CONTAINER_INHERIT_ACE, DACL_SECURITY_INFORMATION, OBJECT_INHERIT_ACE, PSID,
 };
+use windows_sys::Win32::System::Threading::{CreateMutexW, ReleaseMutex, WaitForSingleObject};
+
+const ACL_MUTEX_TIMEOUT_MS: u32 = 30_000;
+
+struct AclMutexGuard {
+    handle: HANDLE,
+}
 
 pub(super) fn grant(path: &Path, sid: PSID, writable: bool) -> Result<(), String> {
     update(path, sid, Some(writable))
@@ -24,6 +33,7 @@ fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> 
     if !path.exists() && writable.is_none() {
         return Ok(());
     }
+    let _guard = lock_acl_updates()?;
     let wide = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect::<Vec<_>>();
     let mut old_acl: *mut ACL = std::ptr::null_mut();
     let mut descriptor = std::ptr::null_mut();
@@ -46,13 +56,15 @@ fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> 
         ptstrName: sid.cast(),
     };
     let entry = EXPLICIT_ACCESS_W {
-        grfAccessPermissions: match writable {
-            Some(true) => GENERIC_ALL,
-            Some(false) => GENERIC_READ | GENERIC_EXECUTE,
-            None => 0,
+        grfAccessPermissions: match (writable, path.is_dir()) {
+            (Some(true), true) => GENERIC_ALL,
+            (Some(true), false) => GENERIC_READ | GENERIC_WRITE,
+            (Some(false), true) => GENERIC_READ | GENERIC_EXECUTE,
+            (Some(false), false) => GENERIC_READ,
+            (None, _) => 0,
         },
         grfAccessMode: if writable.is_some() { SET_ACCESS } else { REVOKE_ACCESS },
-        grfInheritance: if writable.is_some() {
+        grfInheritance: if writable.is_some() && path.is_dir() {
             CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE
         } else {
             0
@@ -78,4 +90,42 @@ fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> 
         if !descriptor.is_null() { LocalFree(descriptor); }
     }
     (applied == 0).then_some(()).ok_or_else(super::error)
+}
+
+fn lock_acl_updates() -> Result<AclMutexGuard, String> {
+    let digest = Sha256::digest(
+        crate::services::paths::data_dir()
+            .to_string_lossy()
+            .as_bytes(),
+    );
+    let suffix = digest[..16]
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    let name = format!("Global\\Beaver.Shell.Acl.{suffix}")
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect::<Vec<_>>();
+    // SAFETY: le nom est NUL-terminé et le handle reste possédé par le garde.
+    let handle = unsafe { CreateMutexW(std::ptr::null(), 0, name.as_ptr()) };
+    if handle.is_null() {
+        return Err(super::error());
+    }
+    // Un mutex abandonné transfère aussi sa propriété au processus courant.
+    let wait = unsafe { WaitForSingleObject(handle, ACL_MUTEX_TIMEOUT_MS) };
+    if wait != WAIT_OBJECT_0 && wait != WAIT_ABANDONED {
+        unsafe { CloseHandle(handle) };
+        return Err(super::error());
+    }
+    Ok(AclMutexGuard { handle })
+}
+
+impl Drop for AclMutexGuard {
+    fn drop(&mut self) {
+        // SAFETY: le garde possède le mutex et ferme exactement une fois son handle.
+        unsafe {
+            ReleaseMutex(self.handle);
+            CloseHandle(self.handle);
+        }
+    }
 }

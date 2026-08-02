@@ -11,6 +11,7 @@ const MAX_CACHED_PROFILES: usize = 64;
 const MAX_SNAPSHOT_BYTES: usize = 128 * 1024;
 const MAX_SNAPSHOT_CHUNK_BYTES: usize = 64 * 1024;
 const SNAPSHOT_TIMEOUT_SECS: u64 = 5;
+const SANDBOX_TEMP_ENVS: [&str; 3] = ["TMPDIR", "TMP", "TEMP"];
 pub(super) const SNAPSHOT_ENVS: [&str; 2] = [
     "BEAVER_INTERNAL_PROFILE_SNAPSHOT_0",
     "BEAVER_INTERNAL_PROFILE_SNAPSHOT_1",
@@ -146,12 +147,37 @@ async fn capture_process(
     let raw = Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned());
     bytes.zeroize();
     let start = raw.find(marker)? + marker.len();
-    let snapshot = Zeroizing::new(raw[start..].trim_start_matches(['\r', '\n']).to_string());
+    let snapshot = Zeroizing::new(sanitize_snapshot(
+        raw[start..].trim_start_matches(['\r', '\n']),
+    ));
     if snapshot.is_empty() || snapshot.contains('\0') {
         return None;
     }
     Some(ShellProfile {
         scripts: split_snapshot(&snapshot),
+    })
+}
+
+fn sanitize_snapshot(snapshot: &str) -> String {
+    let mut sanitized = String::with_capacity(snapshot.len());
+    for line in snapshot.lines() {
+        if overrides_sandbox_temp(line) {
+            continue;
+        }
+        sanitized.push_str(line);
+        sanitized.push('\n');
+    }
+    sanitized
+}
+
+fn overrides_sandbox_temp(line: &str) -> bool {
+    let line = line.trim_start();
+    SANDBOX_TEMP_ENVS.iter().any(|name| {
+        ["export ", "declare -x "].iter().any(|prefix| {
+            line.strip_prefix(prefix)
+                .and_then(|value| value.strip_prefix(name))
+                .is_some_and(|value| value.starts_with('='))
+        })
     })
 }
 

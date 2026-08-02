@@ -919,7 +919,7 @@
       "vramTableSize": "大小",
       "vramFormula": "模型大小 + (上下文/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "文件访问",
-      "fileAccessDesc": "会话及其工具可以工作的文件夹",
+      "fileAccessDesc": "会话的工作文件夹。工具所需的组件和网络访问仍然可用",
       "addPath": "添加文件夹",
       "resetPaths": "重置",
       "fullDisk": "完整磁盘",

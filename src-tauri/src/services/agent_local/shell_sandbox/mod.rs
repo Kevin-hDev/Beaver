@@ -1,5 +1,6 @@
 mod helper;
 mod launch;
+mod tool_roots;
 
 #[cfg(target_os = "linux")]
 mod linux;

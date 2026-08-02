@@ -919,7 +919,7 @@
       "vramTableSize": "サイズ",
       "vramFormula": "モデルサイズ + （コンテキスト÷1000 × 0.5 GB）+ 0.5 GB",
       "fileAccessTitle": "ファイルアクセス",
-      "fileAccessDesc": "セッションとそのツールが作業できるフォルダー",
+      "fileAccessDesc": "セッションの作業フォルダー。ツールに必要なコンポーネントとネットワークアクセスは引き続き利用できます",
       "addPath": "フォルダーを追加",
       "resetPaths": "リセット",
       "fullDisk": "フルディスク",

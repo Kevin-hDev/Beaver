@@ -5,7 +5,8 @@ fn main() {
     if let Some(code) = cl_go_dash_lib::run_shell_sandbox_helper() {
         std::process::exit(code);
     }
-    // SAFETY: premier appel du processus, avant CEF, Tauri et tout thread.
+    // SAFETY: le helper éventuel ne crée aucun thread et remplace le processus
+    // avec exec ; cet appel reste donc antérieur à CEF, Tauri et tout thread.
     if !unsafe { cl_go_dash_lib::configure_git_network_policy() } {
         eprintln!("[git] network policy unavailable");
         return;
