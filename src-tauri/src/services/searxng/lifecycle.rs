@@ -1,31 +1,16 @@
 use crate::services::agent_local::{app_handle_global, types_tools::SearchResult};
 use std::process::Child;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex as StdMutex;
+use std::sync::{Arc, Mutex as StdMutex};
 use std::time::{Duration, Instant};
 use tauri::Manager;
 use tokio::sync::Mutex;
 
 const START_FAILURE_COOLDOWN: Duration = Duration::from_secs(30);
+const PROCESS_TASK_ERROR: &str = "SearXNG: nettoyage processus interrompu";
 
 static LAST_START_FAILURE: StdMutex<Option<StartFailure>> = StdMutex::new(None);
 
-/// Best-effort flag set when a SearXNG sidecar has successfully started and not
-/// yet been detected as dead. Read synchronously by the prompt assembler.
-static SEARXNG_READY: AtomicBool = AtomicBool::new(false);
-
-/// Synchronous, non-blocking read of the last known SearXNG runtime state.
-/// True means a sidecar started successfully and has not been observed dead.
-#[cfg(test)]
-fn is_ready() -> bool {
-    SEARXNG_READY.load(Ordering::Relaxed)
-}
-
-fn set_ready(value: bool) {
-    SEARXNG_READY.store(value, Ordering::Relaxed);
-}
-
-pub struct SearxngSidecar(pub Mutex<Option<SearxngHandle>>);
+pub struct SearxngSidecar(pub Arc<Mutex<Option<SearxngHandle>>>);
 
 pub struct SearxngHandle {
     child: Child,
@@ -39,7 +24,7 @@ struct StartFailure {
 
 impl SearxngSidecar {
     pub fn new() -> Self {
-        Self(Mutex::new(None))
+        Self(Arc::new(Mutex::new(None)))
     }
 }
 
@@ -59,12 +44,11 @@ pub fn prepare_on_startup(app: tauri::AppHandle) {
 
 async fn ensure_running(app: &tauri::AppHandle) -> Result<String, String> {
     let state = app.state::<SearxngSidecar>();
-    let mut guard = state.0.lock().await;
+    let mut guard = state.0.clone().lock_owned().await;
     if let Some(handle) = guard.as_mut() {
         match handle.child.try_wait() {
             Ok(None) => return Ok(base_url(handle.port)),
             Ok(Some(_)) => {
-                set_ready(false);
                 *guard = None;
             }
             Err(_) => return Err("SearXNG: état processus illisible".to_string()),
@@ -75,7 +59,11 @@ async fn ensure_running(app: &tauri::AppHandle) -> Result<String, String> {
         return Err(error);
     }
 
-    super::process::kill_orphan_sidecar();
+    let mut guard = run_blocking_process_operation(move || {
+        super::process::kill_orphan_sidecar();
+        guard
+    })
+    .await?;
     let source = super::paths::source_dir(app)?;
     let python = super::runtime::ensure_runtime(&source).await?;
     let port = super::settings::find_free_port()?;
@@ -86,27 +74,44 @@ async fn ensure_running(app: &tauri::AppHandle) -> Result<String, String> {
     let url = base_url(port);
     if let Err(e) = wait_until_ready(&url, &mut child).await {
         remember_start_failure(&e);
-        super::process::kill_child_process(child);
+        run_blocking_process_operation(move || {
+            super::process::kill_child_process(child);
+            drop(guard);
+        })
+        .await?;
         return Err(e);
     }
     eprintln!("[searxng] sidecar démarré pid={pid} port={port}");
     clear_start_failure();
-    set_ready(true);
     *guard = Some(SearxngHandle { child, port });
     Ok(url)
 }
 
 pub async fn stop(sidecar: &SearxngSidecar) {
-    // Keep the guard until PID cleanup completes so ensure_running cannot replace its PID.
-    let mut guard = sidecar.0.lock().await;
+    let mut guard = sidecar.0.clone().lock_owned().await;
     if let Some(handle) = guard.take() {
-        let _ = tokio::task::spawn_blocking(move || {
+        // The task owns the guard so cancellation cannot expose a stale PID cleanup race.
+        if let Err(error) = run_blocking_process_operation(move || {
             super::process::kill_child_process(handle.child);
+            drop(guard);
         })
-        .await;
+        .await
+        {
+            eprintln!("[searxng] {}", safe_log_error(&error));
+            return;
+        }
     }
-    set_ready(false);
     super::process::clear_pid_file();
+}
+
+async fn run_blocking_process_operation<T, F>(operation: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
+{
+    tokio::task::spawn_blocking(operation)
+        .await
+        .map_err(|_| PROCESS_TASK_ERROR.to_string())
 }
 
 async fn wait_until_ready(base_url: &str, child: &mut Child) -> Result<(), String> {
@@ -151,7 +156,6 @@ fn remember_start_failure(error: &str) {
             message: error.to_string(),
         });
     }
-    set_ready(false);
 }
 
 fn clear_start_failure() {
@@ -173,11 +177,6 @@ fn safe_log_error(error: &str) -> String {
 mod tests {
     use super::*;
 
-    /// Mutex serializing tests that mutate the process-global
-    /// `LAST_START_FAILURE` and `SEARXNG_READY` flags. Without it, the
-    /// default parallel test runner races on these globals.
-    static GLOBAL_STATE_LOCK: StdMutex<()> = StdMutex::new(());
-
     #[test]
     fn safe_log_error_removes_control_chars_and_truncates() {
         let input = format!("SearXNG: timeout\n{}", "x".repeat(400));
@@ -188,7 +187,6 @@ mod tests {
 
     #[test]
     fn start_failure_cache_expires() {
-        let _guard = GLOBAL_STATE_LOCK.lock().unwrap();
         clear_start_failure();
         remember_start_failure("SearXNG: arrêt au démarrage");
         assert_eq!(
@@ -199,22 +197,13 @@ mod tests {
         assert_eq!(recent_start_failure(), None);
     }
 
-    /// `is_ready` reads the global flag and `remember_start_failure` clears
-    /// it. Serialized against `start_failure_cache_expires` to avoid races.
-    #[test]
-    fn is_ready_reads_flag_and_failure_clears_it() {
-        let _guard = GLOBAL_STATE_LOCK.lock().unwrap();
-        clear_start_failure();
-        set_ready(false);
+    #[tokio::test(flavor = "current_thread")]
+    async fn process_operation_runs_off_async_thread() {
+        let async_thread = std::thread::current().id();
+        let blocking_thread = run_blocking_process_operation(|| std::thread::current().id())
+            .await
+            .unwrap();
 
-        set_ready(true);
-        assert!(is_ready());
-
-        remember_start_failure("SearXNG: timeout au démarrage");
-        assert!(!is_ready());
-
-        // Restore baseline for any test reading the flag afterwards.
-        clear_start_failure();
-        set_ready(false);
+        assert_ne!(blocking_thread, async_thread);
     }
 }
