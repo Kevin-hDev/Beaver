@@ -13,7 +13,9 @@ mod invoke_handler;
 mod invoke_handler_tail;
 mod models;
 mod ollama_polling;
+mod runtime_state;
 mod services;
+mod startup;
 mod storage_default_skills;
 mod storage_migration;
 mod storage_migration_files;
@@ -26,38 +28,17 @@ use services::agent_local::ollama_client::OllamaClient;
 use services::gateway::GatewayService;
 use services::ollama_lifecycle::{self, OllamaSidecar};
 use services::scheduler::Scheduler;
-use std::collections::HashMap;
 use tauri::{Emitter, Manager};
-use tokio::sync::Mutex;
 
-pub struct ActiveStreams(
-    pub(crate) Mutex<HashMap<String, commands::agent_chat_streams::StreamEntry>>,
-);
+pub use runtime_state::ActiveStreams;
+#[cfg(target_os = "windows")]
+pub use startup::launch_windows_browser_host;
+pub use startup::{
+    configure_git_network_policy, initialize_shell_environment, prepare_browser_native_application,
+    run_shell_sandbox_helper,
+};
 
 static STREAM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-
-pub fn prepare_browser_native_application() -> bool {
-    services::browser::prepare_native_application()
-}
-
-/// Exécute le lanceur shell isolé avant l'initialisation de Tauri ou de CEF.
-pub fn run_shell_sandbox_helper() -> Option<i32> {
-    services::agent_local::shell_sandbox::run_helper_if_requested()
-}
-
-/// Configure les délais globaux libgit2 avant le démarrage de l'application.
-///
-/// # Safety
-///
-/// Doit être appelée avant toute création de thread.
-pub unsafe fn configure_git_network_policy() -> bool {
-    unsafe { services::git::network_policy::configure_before_threads().is_ok() }
-}
-
-#[cfg(target_os = "windows")]
-pub fn launch_windows_browser_host() -> i32 {
-    windows_entry::launch_development_bootstrap()
-}
 
 pub fn run() {
     let app = tauri::Builder::default()
@@ -74,7 +55,7 @@ pub fn run() {
         }))
         .manage(OllamaClient::new())
         .manage(app_exit::AppExitCoordinator::default())
-        .manage(ActiveStreams(Mutex::new(HashMap::new())))
+        .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
         .manage(services::model_downloads::ModelDownloadManager::new())

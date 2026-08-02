@@ -3,7 +3,6 @@ use super::tool_roots_path::{canonical_dir, is_tool_directory};
 use std::path::{Path, PathBuf};
 
 pub(super) const MAX_READ_ROOTS: usize = 64;
-const MAX_PATH_INPUTS: usize = 256;
 pub(super) const MAX_WRITE_ROOTS: usize = super::tool_cache_roots::MAX_WRITE_DIRS + 1;
 
 #[derive(Default)]
@@ -22,23 +21,25 @@ pub(super) fn collect(
     package_prefixes: &[&str],
     executable: Option<&Path>,
 ) -> ToolRoots {
-    let mut path_inputs = Vec::with_capacity(MAX_PATH_INPUTS + 1);
+    let (configured_path, configured_overflow) = super::super::shell_environment::entries();
+    let max_paths = super::super::shell_environment::MAX_PATH_INPUTS;
+    let mut path_inputs = Vec::with_capacity(max_paths + 1);
     if let Some(parent) = executable.and_then(Path::parent) {
         path_inputs.push(parent.to_path_buf());
     }
-    let path_env = std::env::var_os("PATH").unwrap_or_default();
     path_inputs.extend(
-        std::env::split_paths(&path_env)
-            .take(MAX_PATH_INPUTS + 1 - path_inputs.len()),
+        configured_path
+            .into_iter()
+            .take(max_paths + 1 - path_inputs.len()),
     );
-    let path_overflow = path_inputs.len() > MAX_PATH_INPUTS;
-    path_inputs.truncate(MAX_PATH_INPUTS);
+    let path_overflow = configured_overflow || path_inputs.len() > max_paths;
+    path_inputs.truncate(max_paths);
     let platform = platform_read_dirs.iter().map(PathBuf::from).collect::<Vec<_>>();
     let packages = package_prefixes.iter().map(PathBuf::from).collect::<Vec<_>>();
     let home = dirs::home_dir().and_then(|path| canonical_dir(&path));
     let writable_cache_dirs = home
         .as_deref()
-        .map(super::tool_cache_roots::collect)
+        .map(|home| super::tool_cache_roots::collect(home, &path_inputs, path_overflow))
         .unwrap_or_default();
     let roots = collect_from(
         workspace_roots,

@@ -1,5 +1,6 @@
 use std::ffi::{OsStr, OsString};
 use std::os::unix::process::CommandExt;
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
 // API Apple dépréciée : son absence doit continuer à bloquer le shell restreint.
@@ -17,6 +18,7 @@ const PLATFORM_READ_DIRS: [&str; 10] = [
     "/dev",
 ];
 const PACKAGE_PREFIXES: [&str; 2] = ["/opt/homebrew", "/usr/local"];
+const MAX_DARWIN_TEMP_BYTES: usize = 4_096;
 
 struct SandboxRoots {
     write_dirs: Vec<PathBuf>,
@@ -83,11 +85,53 @@ fn policy(roots: &SandboxRoots) -> String {
     let mut policy = include_str!("macos_seatbelt_base.sbpl").to_string();
     policy.push_str(include_str!("macos_platform.sbpl"));
     policy.push_str(include_str!("macos_base.sbpl"));
+    if let Some(rule) = xcrun_cache_rule() {
+        policy.push_str(&rule);
+    }
     append_rules(&mut policy, "BEAVER_RW_DIR", roots.write_dirs.len(), true, false);
     append_rules(&mut policy, "BEAVER_RW_FILE", roots.write_files.len(), true, true);
     append_rules(&mut policy, "BEAVER_RO_DIR", roots.read_dirs.len(), false, false);
     append_rules(&mut policy, "BEAVER_RO_FILE", roots.read_files.len(), false, true);
     policy
+}
+
+fn xcrun_cache_rule() -> Option<String> {
+    let path = darwin_user_temp_dir()?;
+    let text = path.to_str()?.trim_end_matches('/');
+    if text.is_empty()
+        || !text
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'/' | b'_' | b'-' | b'.'))
+    {
+        return None;
+    }
+    let escaped = text.replace('.', "\\.");
+    Some(format!(
+        "(allow file-read* file-write*\n  (regex #\"^{escaped}/xcrun_db[^/]*$\"))\n"
+    ))
+}
+
+fn darwin_user_temp_dir() -> Option<PathBuf> {
+    // SAFETY: le premier appel demande uniquement la taille du buffer à libc.
+    let length = unsafe { libc::confstr(libc::_CS_DARWIN_USER_TEMP_DIR, std::ptr::null_mut(), 0) };
+    if length == 0 || length > MAX_DARWIN_TEMP_BYTES {
+        return None;
+    }
+    let mut buffer = vec![0_u8; length];
+    // SAFETY: le buffer alloué utilise exactement la taille bornée annoncée par libc.
+    let written = unsafe {
+        libc::confstr(
+            libc::_CS_DARWIN_USER_TEMP_DIR,
+            buffer.as_mut_ptr().cast(),
+            buffer.len(),
+        )
+    };
+    if written == 0 || written > buffer.len() {
+        return None;
+    }
+    let value = std::ffi::CStr::from_bytes_until_nul(&buffer).ok()?;
+    let path = PathBuf::from(OsStr::from_bytes(value.to_bytes()));
+    dunce::canonicalize(path).ok().filter(|path| path.is_dir())
 }
 
 fn append_rules(policy: &mut String, prefix: &str, count: usize, writable: bool, literal: bool) {

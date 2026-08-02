@@ -11,6 +11,9 @@ fn main() {
         eprintln!("[git] network policy unavailable");
         return;
     }
+    if !cl_go_dash_lib::initialize_shell_environment() {
+        eprintln!("[shell] login environment unavailable; using fallback PATH");
+    }
     if !cl_go_dash_lib::prepare_browser_native_application() {
         eprintln!("[browser] native integration unavailable");
     }

@@ -1,4 +1,5 @@
 pub mod tool_bash;
+pub mod shell_environment;
 pub mod shell_sandbox;
 mod tool_bash_change_event;
 pub mod tool_bash_change_hub;

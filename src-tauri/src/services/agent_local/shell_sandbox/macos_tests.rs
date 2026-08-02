@@ -2,11 +2,25 @@ use super::{add_parameters, policy, sandbox_roots, SANDBOX_EXEC};
 use std::process::{Command, Output};
 
 #[test]
+fn xcrun_cache_rule_is_scoped_to_the_current_user_temp() {
+    let rule = super::xcrun_cache_rule().expect("xcrun cache rule");
+    let temp = super::darwin_user_temp_dir().expect("Darwin temp");
+
+    assert!(rule.contains(temp.to_string_lossy().trim_end_matches('/')));
+    assert!(rule.contains("/xcrun_db[^/]*$"));
+    assert!(!rule.contains("folders/[^/]+"));
+}
+
+#[test]
 fn seatbelt_allows_work_and_temp_inside_the_root_and_blocks_outside_data() {
     let temp = tempfile::tempdir().expect("temp");
     let allowed = temp.path().join("allowed");
     let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
+    let darwin_temp_probe = std::env::temp_dir().join(format!(
+        "beaver-sandbox-probe-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
     std::fs::create_dir_all(&allowed).expect("allowed");
     std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     std::fs::write(&outside, "outside-data").expect("outside");
@@ -23,12 +37,22 @@ line-one
 line-two
 BEAVER_EOF
 diff <(printf same) <(printf same)
+printf 'int main(void) {{ return 0; }}\n' > '{}/native.c'
+/usr/bin/cc '{}/native.c' -o '{}/native'
+'{}/native'
+if printf pwn > '{}'; then /bin/rm -f '{}'; exit 89; fi
 printf ok > '{}/inside.txt'
 /bin/cat '{}' >/dev/null 2>&1 && exit 91
 /bin/sh -c 'printf child'"#,
         sandbox_temp.display(),
         sandbox_temp.display(),
         allowed.display(),
+        allowed.display(),
+        allowed.display(),
+        allowed.display(),
+        allowed.display(),
+        darwin_temp_probe.display(),
+        darwin_temp_probe.display(),
         allowed.display(),
         outside.display(),
     );
@@ -41,6 +65,7 @@ printf ok > '{}/inside.txt'
         "line-one\nline-two\n"
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "child");
+    assert!(!darwin_temp_probe.exists());
 }
 
 #[test]
@@ -50,6 +75,10 @@ fn seatbelt_supports_complete_local_development() {
     let allowed = temp.path().join("allowed");
     let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
+    let darwin_temp_probe = std::env::temp_dir().join(format!(
+        "beaver-sandbox-probe-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
     std::fs::create_dir_all(&allowed).expect("allowed");
     std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     let allowed = dunce::canonicalize(allowed).expect("canonical allowed");
@@ -91,17 +120,27 @@ BEAVER_GO_EOF
 test "$(go run .)" = "Don't communicate by sharing memory, share memory by communicating."
 cd ..
 diff <(printf same) <(printf same)
+mkdir native-project
+cd native-project
+printf '#include <stdio.h>\nint main(void) {{ puts("native-ok"); return 0; }}\n' > native.c
+/usr/bin/cc native.c -o native
+test "$(./native)" = native-ok
+cd ..
+if printf pwn > '{}'; then /bin/rm -f '{}'; exit 89; fi
 if printf pwn > '{}'; then exit 90; fi
 printf verified
 "#,
+        darwin_temp_probe.display(),
+        darwin_temp_probe.display(),
         outside.display(),
     );
     let output = run_sandboxed(&allowed, &sandbox_temp, &script);
 
     assert_success(&output);
     assert!(!outside.exists());
+    assert!(!darwin_temp_probe.exists());
     assert_eq!(String::from_utf8_lossy(&output.stdout), "verified");
-    println!("git=ok\nnpm=ok\ncargo=ok\ngo=ok\nheredoc=ok\ndiff=ok\noutside-write=blocked");
+    println!("git=ok\nnpm=ok\ncargo=ok\ngo=ok\nheredoc=ok\ndiff=ok\nnative=ok\ndarwin-temp=blocked\noutside-write=blocked");
 }
 
 fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, script: &str) -> Output {

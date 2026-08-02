@@ -2,7 +2,6 @@ use super::tool_cache_roots::CacheKind;
 use super::tool_roots_path::has_symlink_below;
 use std::path::{Component, Path, PathBuf};
 
-const MAX_PATH_INPUTS: usize = 256;
 const EXECUTABLE_SUFFIXES: [&str; 4] = ["", ".exe", ".cmd", ".bat"];
 
 pub(super) fn ensure_defaults(
@@ -10,18 +9,16 @@ pub(super) fn ensure_defaults(
     selected: &[PathBuf],
     defaults: &[PathBuf],
     home: &Path,
+    path_dirs: &[PathBuf],
+    path_overflow: bool,
 ) {
-    let path_dirs = std::env::var_os("PATH")
-        .map(|value| {
-            std::env::split_paths(&value)
-                .take(MAX_PATH_INPUTS)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
+    if path_overflow {
+        return;
+    }
     let mut failed = false;
     for ((kind, selected), default) in kinds.iter().zip(selected).zip(defaults) {
         if selected == default
-            && tool_available(*kind, &path_dirs)
+            && tool_available(*kind, path_dirs)
             && !ensure_dir(home, selected)
         {
             failed = true;

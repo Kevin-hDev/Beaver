@@ -17,9 +17,10 @@ pub fn prepare_command(
 ) -> Result<PreparedShellCommand, String> {
     let roots = super::super::directory_access::configured_roots()?;
     super::super::directory_access::ensure_allowed_in_roots(working_dir, &roots)?;
+    let shell_path = super::super::shell_environment::value();
     if roots.iter().any(|root| root.parent().is_none()) {
         let mut command = Command::new(shell);
-        command.args(arguments);
+        command.args(arguments).env("PATH", &shell_path);
         return Ok(PreparedShellCommand {
             command,
             cleanup_dir: None,
@@ -51,7 +52,8 @@ pub fn prepare_command(
         .env("TMPDIR", &temp_dir)
         .env("TMP", &temp_dir)
         .env("TEMP", &temp_dir)
-        .env("TMPPREFIX", temp_dir.join("zsh"));
+        .env("TMPPREFIX", temp_dir.join("zsh"))
+        .env("PATH", shell_path);
     Ok(PreparedShellCommand {
         command,
         cleanup_dir: Some(temp_dir),
