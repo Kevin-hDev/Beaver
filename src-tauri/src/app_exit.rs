@@ -107,12 +107,15 @@ async fn cleanup_services(app: &tauri::AppHandle) {
             services::searxng::stop(sidecar.inner()).await;
         }
     };
-    let blocking_handle = app.clone();
-    let owned_processes = tokio::task::spawn_blocking(move || {
-        if let Some(pty) = blocking_handle.try_state::<services::terminal::PtyManager>() {
+    let terminal_handle = app.clone();
+    let terminals = tokio::task::spawn_blocking(move || {
+        if let Some(pty) = terminal_handle.try_state::<services::terminal::PtyManager>() {
             pty.kill_all();
         }
-        services::ollama_lifecycle::stop_sidecar(&blocking_handle);
+    });
+    let ollama_handle = app.clone();
+    let ollama = tokio::task::spawn_blocking(move || {
+        services::ollama_lifecycle::stop_sidecar(&ollama_handle);
     });
 
     let _ = tokio::join!(
@@ -125,7 +128,8 @@ async fn cleanup_services(app: &tauri::AppHandle) {
         gateway,
         chronos,
         searxng,
-        owned_processes,
+        terminals,
+        ollama,
     );
 }
 

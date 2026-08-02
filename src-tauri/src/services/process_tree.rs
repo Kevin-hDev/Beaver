@@ -60,7 +60,7 @@ pub fn terminate(child: &mut Child, kind: ProcessKind) {
         eprintln!("[{}] arbre pid={pid} arrêté", kind.label());
         return;
     }
-    signal_tree(pid, true);
+    force_tree(pid);
     let _ = child.kill();
     let _ = child.wait();
     eprintln!("[{}] arrêt forcé arbre pid={pid}", kind.label());
@@ -82,7 +82,7 @@ pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKin
         }
         tokio::time::sleep(POLL_INTERVAL).await;
     }
-    signal_tree(pid, true);
+    force_tree(pid);
     let _ = child.start_kill();
     let _ = child.wait().await;
     eprintln!("[{}] arrêt forcé arbre pid={pid}", kind.label());
@@ -93,10 +93,21 @@ pub fn kill(pid: u32, kind: ProcessKind) {
         return;
     }
     signal_tree(pid, false);
-    std::thread::sleep(Duration::from_millis(100));
-    signal_tree(pid, true);
+    #[cfg(unix)]
+    {
+        std::thread::sleep(Duration::from_millis(100));
+        force_tree(pid);
+    }
     eprintln!("[{}] arrêt arbre orphelin pid={pid}", kind.label());
 }
+
+#[cfg(unix)]
+fn force_tree(pid: u32) {
+    signal_tree(pid, true);
+}
+
+#[cfg(windows)]
+fn force_tree(_pid: u32) {}
 
 fn wait_for_child(child: &mut Child, timeout: Duration) -> bool {
     let deadline = std::time::Instant::now() + timeout;
@@ -176,20 +187,5 @@ fn collect_children_inner(system: &System, parent: Pid, result: &mut Vec<Pid>, d
 }
 
 #[cfg(all(test, unix))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn terminate_reaps_child_without_three_second_delay() {
-        let mut command = Command::new("/bin/sleep");
-        command.arg("30");
-        configure(&mut command);
-        let mut child = command.spawn().unwrap();
-        let started = std::time::Instant::now();
-
-        terminate(&mut child, ProcessKind::ForecastRuntime);
-
-        assert!(started.elapsed() < Duration::from_secs(2));
-        assert!(child.try_wait().unwrap().is_some());
-    }
-}
+#[path = "process_tree_tests.rs"]
+mod tests;

@@ -97,9 +97,12 @@ async fn ensure_running(app: &tauri::AppHandle) -> Result<String, String> {
 }
 
 pub async fn stop(sidecar: &SearxngSidecar) {
-    let mut guard = sidecar.0.lock().await;
-    if let Some(handle) = guard.take() {
-        super::process::kill_child_process(handle.child);
+    let handle = sidecar.0.lock().await.take();
+    if let Some(handle) = handle {
+        let _ = tokio::task::spawn_blocking(move || {
+            super::process::kill_child_process(handle.child);
+        })
+        .await;
     }
     set_ready(false);
     super::process::clear_pid_file();
@@ -166,51 +169,5 @@ fn safe_log_error(error: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Mutex serializing tests that mutate the process-global
-    /// `LAST_START_FAILURE` and `SEARXNG_READY` flags. Without it, the
-    /// default parallel test runner races on these globals.
-    static GLOBAL_STATE_LOCK: StdMutex<()> = StdMutex::new(());
-
-    #[test]
-    fn safe_log_error_removes_control_chars_and_truncates() {
-        let input = format!("SearXNG: timeout\n{}", "x".repeat(400));
-        let output = safe_log_error(&input);
-        assert!(!output.contains('\n'));
-        assert!(output.chars().count() <= 240);
-    }
-
-    #[test]
-    fn start_failure_cache_expires() {
-        let _guard = GLOBAL_STATE_LOCK.lock().unwrap();
-        clear_start_failure();
-        remember_start_failure("SearXNG: arrêt au démarrage");
-        assert_eq!(
-            recent_start_failure(),
-            Some("SearXNG: arrêt au démarrage".to_string())
-        );
-        clear_start_failure();
-        assert_eq!(recent_start_failure(), None);
-    }
-
-    /// `is_ready` reads the global flag and `remember_start_failure` clears
-    /// it. Serialized against `start_failure_cache_expires` to avoid races.
-    #[test]
-    fn is_ready_reads_flag_and_failure_clears_it() {
-        let _guard = GLOBAL_STATE_LOCK.lock().unwrap();
-        clear_start_failure();
-        set_ready(false);
-
-        set_ready(true);
-        assert!(is_ready());
-
-        remember_start_failure("SearXNG: timeout au démarrage");
-        assert!(!is_ready());
-
-        // Restore baseline for any test reading the flag afterwards.
-        clear_start_failure();
-        set_ready(false);
-    }
-}
+#[path = "lifecycle_tests.rs"]
+mod tests;
