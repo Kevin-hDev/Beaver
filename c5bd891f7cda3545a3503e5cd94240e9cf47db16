@@ -1,0 +1,7 @@
+Objectif : empêcher stop de rendre introuvable un processus SearXNG lancé mais pas encore enregistré dans le handle lorsque la recherche propriétaire est annulée.
+
+Décision : suppression de clear_pid_file à la fin de stop. Quand un handle existe, kill_child_process supprime déjà le fichier PID après la terminaison. Quand aucun handle n'existe, le PID est conservé afin que kill_orphan_sidecar puisse retrouver et terminer le processus au lancement suivant.
+
+Test : stop_without_handle_preserves_tracked_pid crée un PID suivi dans le répertoire de test isolé, appelle stop avec un handle vide et vérifie que le PID reste présent. Le test aurait échoué avec le comportement précédent.
+
+Validation : cargo fmt --all -- --check ; cargo clippy --all-targets -- -D warnings ; 4 tests SearXNG ciblés ; cargo test --quiet (2844 réussis, 0 échec) ; graphify update .
