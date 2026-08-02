@@ -6,6 +6,8 @@ use std::time::UNIX_EPOCH;
 pub const MAX_FILE_CHANGES: usize = 500;
 pub const MAX_DIFF_FILE_BYTES: u64 = 1024 * 1024;
 pub const MAX_FILE_CHANGE_DIFF_BYTES: usize = 8 * 1024 * 1024;
+pub const MAX_STORED_FILE_CHANGES: usize = 128;
+pub const MAX_STORED_FILE_CHANGES_BYTES: usize = 512 * 1024;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct FileSignature {
@@ -83,6 +85,51 @@ pub fn direct_change(snapshot: (PathBuf, Option<FileState>)) -> Option<ToolFileC
     let mut remaining = MAX_DIFF_FILE_BYTES as usize;
     let after = capture(&path, &mut remaining);
     build_change(&path, before.as_ref(), after.as_ref())
+}
+
+pub fn bounded_sample(changes: Vec<ToolFileChange>) -> (Vec<ToolFileChange>, bool) {
+    let total = changes.len();
+    let mut stored = Vec::with_capacity(total.min(MAX_STORED_FILE_CHANGES));
+    let mut serialized_bytes = 2_usize;
+    let mut incomplete = false;
+    for mut change in changes {
+        if stored.len() >= MAX_STORED_FILE_CHANGES {
+            incomplete = true;
+            break;
+        }
+        let separator = usize::from(!stored.is_empty());
+        if let Some(full_bytes) = serialized_len(&change) {
+            if serialized_bytes
+                .saturating_add(separator)
+                .saturating_add(full_bytes)
+                <= MAX_STORED_FILE_CHANGES_BYTES
+            {
+                serialized_bytes += separator + full_bytes;
+                stored.push(change);
+                continue;
+            }
+        }
+        incomplete = true;
+        change.diff = None;
+        let Some(metadata_bytes) = serialized_len(&change) else {
+            continue;
+        };
+        if serialized_bytes
+            .saturating_add(separator)
+            .saturating_add(metadata_bytes)
+            > MAX_STORED_FILE_CHANGES_BYTES
+        {
+            break;
+        }
+        serialized_bytes += separator + metadata_bytes;
+        stored.push(change);
+    }
+    incomplete |= stored.len() < total;
+    (stored, incomplete)
+}
+
+fn serialized_len(change: &ToolFileChange) -> Option<usize> {
+    serde_json::to_vec(change).ok().map(|bytes| bytes.len())
 }
 
 pub fn build_change(

@@ -141,6 +141,7 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     let mut value = serde_json::to_value(session).map_err(|e| e.to_string())?;
     super::session_permission_state::merge_into_serialized(&session.id, &mut value).await;
     super::session_security::sanitize_session_value(&mut value);
+    super::session_store_compaction::compact_tool_history(&mut value);
     let data = serde_json::to_string_pretty(&value).map_err(|e| e.to_string())?;
     crate::services::private_store::atomic_write_async(path, data.into_bytes()).await?;
     let meta = crate::services::agent_local::session_index::meta_from_session(session);

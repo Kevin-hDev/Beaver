@@ -1,5 +1,6 @@
 import type { AgentMessage, AgentSession } from "@/types/agent";
 import { restoredToolArguments } from "./agent-chat-utils";
+import { toolsFromMessage } from "@/lib/message-tools";
 
 const CHARS_PER_TOKEN = 4;
 
@@ -30,12 +31,10 @@ function estimateMessage(message: AgentMessage): number {
       units += textUnits(JSON.stringify(call.function.arguments));
     }
   }
-  if (message.tool_activities) {
-    for (const activity of message.tool_activities) {
-      units += textUnits(activity.name);
-      units += textUnits(JSON.stringify(restoredToolArguments(activity)));
-      units += activity.result ? textUnits(activity.result) : 0;
-    }
+  for (const activity of toolsFromMessage(message)) {
+    units += textUnits(activity.name);
+    units += textUnits(JSON.stringify(restoredToolArguments(activity)));
+    units += activity.result ? textUnits(activity.result) : 0;
   }
   return Math.ceil(units / CHARS_PER_TOKEN);
 }

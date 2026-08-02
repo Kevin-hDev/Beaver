@@ -52,3 +52,24 @@ fn records_deleted_file_with_its_previous_content() {
         .flat_map(|h| &h.lines)
         .all(|line| line.kind == "deleted"));
 }
+
+#[test]
+fn stored_change_sample_has_a_strict_serialized_size_limit() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let changes = (0..200)
+        .map(|index| {
+            let path = dir.path().join(format!("file-{index}.txt"));
+            let content = format!("{}\n", "x".repeat(8_000));
+            std::fs::write(&path, content).expect("file");
+            let after = capture_path(&path);
+            build_change(&path, None, after.as_ref()).expect("change")
+        })
+        .collect();
+
+    let (sample, incomplete) = bounded_sample(changes);
+    let serialized = serde_json::to_vec(&sample).expect("serialized sample");
+
+    assert!(incomplete);
+    assert!(sample.len() <= MAX_STORED_FILE_CHANGES);
+    assert!(serialized.len() <= MAX_STORED_FILE_CHANGES_BYTES);
+}

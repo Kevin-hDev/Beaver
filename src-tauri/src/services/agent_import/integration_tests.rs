@@ -111,3 +111,87 @@ fn runtime_scans_only_enabled_sources() {
     assert_eq!(sources.len(), 1);
     assert_eq!(sources[0].summary.id, "agents");
 }
+
+#[test]
+fn writable_resource_paths_include_only_enabled_sources() {
+    let temp = TempDir::new().unwrap();
+    let home = temp.path();
+    write(&home.join(".agents/AGENTS.md"), "# Enabled");
+    write(&home.join(".agents/rules/style.md"), "Enabled rule");
+    write(
+        &home.join(".agents/skills/review/SKILL.md"),
+        "# Enabled skill",
+    );
+    write(&home.join(".claude/CLAUDE.md"), "# Disabled");
+    write(&home.join(".claude/rules/private.md"), "Disabled rule");
+    write(
+        &home.join(".claude/skills/private/SKILL.md"),
+        "# Disabled skill",
+    );
+    let registry = registry::AgentImportRegistry {
+        version: 1,
+        sources: vec![
+            SourceSelection {
+                source_id: "agents".into(),
+                enabled: true,
+                skill_mode: SelectionMode::All,
+                selected_skill_ids: Vec::new(),
+                selected_rule_ids: Vec::new(),
+                selected_document_ids: Vec::new(),
+            },
+            SourceSelection {
+                source_id: "claude".into(),
+                enabled: false,
+                skill_mode: SelectionMode::All,
+                selected_skill_ids: Vec::new(),
+                selected_rule_ids: Vec::new(),
+                selected_document_ids: Vec::new(),
+            },
+        ],
+        documents: Vec::new(),
+    };
+
+    let access = enabled_resource_paths_from(home, &registry);
+    let agents = dunce::canonicalize(home.join(".agents")).unwrap();
+    let claude = dunce::canonicalize(home.join(".claude")).unwrap();
+
+    assert!(access
+        .directories
+        .iter()
+        .all(|path| path.starts_with(&agents)));
+    assert!(access.files.iter().all(|path| path.starts_with(&agents)));
+    assert!(access
+        .directories
+        .iter()
+        .all(|path| !path.starts_with(&claude)));
+    assert!(access.files.iter().all(|path| !path.starts_with(&claude)));
+}
+
+#[cfg(unix)]
+#[test]
+fn writable_resource_paths_reject_redirected_source_roots() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempDir::new().unwrap();
+    let home = temp.path();
+    let outside = home.join("outside");
+    std::fs::create_dir_all(outside.join("rules")).unwrap();
+    symlink(&outside, home.join(".agents")).unwrap();
+    let registry = registry::AgentImportRegistry {
+        version: 1,
+        sources: vec![SourceSelection {
+            source_id: "agents".into(),
+            enabled: true,
+            skill_mode: SelectionMode::All,
+            selected_skill_ids: Vec::new(),
+            selected_rule_ids: Vec::new(),
+            selected_document_ids: Vec::new(),
+        }],
+        documents: Vec::new(),
+    };
+
+    let access = enabled_resource_paths_from(home, &registry);
+
+    assert!(access.directories.is_empty());
+    assert!(access.files.is_empty());
+}

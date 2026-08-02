@@ -75,6 +75,13 @@ fn validate_file_changes(message: &AgentMessage) -> Result<(), String> {
         if record.file_changes.len() > super::tool_file_changes::MAX_FILE_CHANGES {
             return Err("Historique de fichiers invalide.".to_string());
         }
+        if record.affected_paths.len() > super::types_tool_result_details::MAX_AFFECTED_PATHS
+            || record.affected_paths.iter().any(|path| {
+                path.is_empty() || path.len() > 4_096 || path.contains('\0')
+            })
+        {
+            return Err("Historique de fichiers invalide.".to_string());
+        }
         if record.result_meta.as_ref().is_some_and(|meta| {
             meta.warnings.len() > 16
                 || meta.status.is_error() != record.is_error.unwrap_or(false)

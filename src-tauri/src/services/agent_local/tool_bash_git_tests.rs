@@ -1,6 +1,34 @@
 use super::GitBaseline;
 
 #[test]
+fn git_status_ignores_generated_dependency_directories() {
+    let directory = tempfile::tempdir().expect("tempdir");
+    let repository = git2::Repository::init(directory.path()).expect("repo");
+    let source = directory.path().join("src/main.rs");
+    let dependency = directory.path().join("node_modules/pkg/index.js");
+    std::fs::create_dir_all(source.parent().expect("source parent")).expect("source directory");
+    std::fs::create_dir_all(dependency.parent().expect("dependency parent"))
+        .expect("dependency directory");
+    std::fs::write(&source, "fn main() {}\n").expect("source file");
+    std::fs::write(&dependency, "module.exports = true;\n").expect("dependency file");
+
+    let root = dunce::canonicalize(directory.path()).expect("canonical root");
+    let (paths, incomplete) = super::status_paths(&repository, &root);
+    let source = dunce::canonicalize(source).expect("canonical source");
+    let dependency_root = dunce::canonicalize(directory.path().join("node_modules"))
+        .expect("canonical dependency root");
+
+    assert!(!incomplete);
+    assert!(
+        paths.iter().any(|(path, _)| path == &source),
+        "tracked paths: {paths:?}"
+    );
+    assert!(paths
+        .iter()
+        .all(|(path, _)| !path.starts_with(&dependency_root)));
+}
+
+#[test]
 fn baseline_uses_the_exact_dirty_worktree_content() {
     let directory = tempfile::tempdir().expect("tempdir");
     let repository = git2::Repository::init(directory.path()).expect("repo");

@@ -1,4 +1,5 @@
 import { countLines } from "./file-preview-utils";
+import { toolsFromMessage } from "./message-tools";
 import type {
   AgentMessage,
   AgentSession,
@@ -85,11 +86,4 @@ export function childSubagents(parentSessionId: string, sessions: AgentSessionMe
       lastActivity: session.subagent_last_activity,
       runId: session.subagent_run_id,
     }));
-}
-
-function toolsFromMessage(message: AgentMessage): ToolActivityRecord[] {
-  if (message.segments && message.segments.length > 0) {
-    return message.segments.flatMap((segment) => segment.tools);
-  }
-  return message.tool_activities ?? [];
 }

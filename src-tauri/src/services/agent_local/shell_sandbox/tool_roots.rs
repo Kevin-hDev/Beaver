@@ -1,9 +1,15 @@
-use super::tool_roots_entries::{push_read_dir, push_read_file, push_write_dir, push_write_file};
+use super::tool_roots_entries::{
+    push_read_dir, push_read_file, push_resource_write_dir, push_resource_write_file,
+    push_write_dir, push_write_file,
+};
 use super::tool_roots_path::{canonical_dir, contains_executable, is_tool_directory};
 use std::path::{Path, PathBuf};
 
 pub(super) const MAX_READ_ROOTS: usize = 64;
-pub(super) const MAX_WRITE_ROOTS: usize = super::tool_cache_roots::MAX_WRITE_DIRS + 1;
+pub(super) const MAX_WRITE_ROOTS: usize = super::tool_cache_roots::MAX_WRITE_DIRS
+    + 1
+    + super::super::agent_resource_access::MAX_RESOURCE_DIRS
+    + super::super::agent_resource_access::MAX_RESOURCE_FILES;
 
 #[derive(Default)]
 pub(super) struct ToolRoots {
@@ -75,7 +81,7 @@ fn collect_with_access(
     } else {
         Vec::new()
     };
-    let roots = collect_from(
+    let mut roots = collect_from(
         workspace_roots,
         &platform,
         &packages,
@@ -84,6 +90,9 @@ fn collect_with_access(
         path_overflow || !allow_writes,
         &writable_cache_dirs,
     );
+    if allow_writes {
+        append_agent_resources(&mut roots, workspace_roots, &path_inputs);
+    }
     if path_overflow {
         eprintln!("[shell-sandbox] writable tool caches disabled: PATH entry limit exceeded");
     }
@@ -94,6 +103,34 @@ fn collect_with_access(
         eprintln!("[shell-sandbox] writable tool root limit reached");
     }
     roots
+}
+
+fn append_agent_resources(
+    roots: &mut ToolRoots,
+    workspace_roots: &[PathBuf],
+    path_inputs: &[PathBuf],
+) {
+    let resources = super::super::agent_resource_access::current();
+    append_resource_access(roots, workspace_roots, path_inputs, resources);
+}
+
+fn append_resource_access(
+    roots: &mut ToolRoots,
+    workspace_roots: &[PathBuf],
+    path_inputs: &[PathBuf],
+    resources: super::super::agent_resource_access::AgentResourceAccess,
+) {
+    let path_dirs = path_inputs
+        .iter()
+        .filter_map(|path| canonical_dir(path))
+        .filter(|path| contains_executable(path))
+        .collect::<Vec<_>>();
+    for path in resources.directories {
+        push_resource_write_dir(roots, &path, workspace_roots, &path_dirs);
+    }
+    for path in resources.files {
+        push_resource_write_file(roots, &path, workspace_roots, &path_dirs);
+    }
 }
 
 fn collect_from(

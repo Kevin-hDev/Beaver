@@ -1,6 +1,7 @@
 import type { AgentMessage, ToolActivityRecord, ToolCallRequest } from "@/types/agent";
 import { restoredToolArguments } from "./agent-chat-utils";
 import { textUnits } from "./agent-token-estimate";
+import { toolsFromMessage } from "@/lib/message-tools";
 
 const CHARS_PER_TOKEN = 4;
 const IMAGE_TOKEN_ESTIMATE = 1_100;
@@ -72,7 +73,7 @@ function addMessageTokens(
   buckets.messages += unitsToTokens(baseUnits);
 
   for (const call of message.tool_calls ?? []) addToolCallTokens(buckets, call);
-  for (const activity of message.tool_activities ?? []) {
+  for (const activity of toolsFromMessage(message)) {
     addToolActivityTokens(buckets, activity);
   }
   if (namedTool && message.tool_name) {

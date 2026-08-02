@@ -37,6 +37,12 @@ pub(super) fn overlaps_workspace(path: &Path, workspace_roots: &[PathBuf]) -> bo
 pub(super) fn forbidden_broad_root(path: &Path, home: Option<&Path>) -> bool {
     path.parent().is_none()
         || home.is_some_and(|home| path == home || home.starts_with(path))
+        || private_store().is_some_and(|private| private.starts_with(path))
+}
+
+fn private_store() -> Option<PathBuf> {
+    let path = crate::services::paths::data_dir();
+    dunce::canonicalize(&path).ok().or_else(|| path.is_absolute().then_some(path))
 }
 
 pub(super) fn has_symlink_below(root: &Path, path: &Path) -> bool {

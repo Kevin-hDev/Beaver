@@ -106,6 +106,49 @@ pub(super) fn push_write_file(
     roots.write_files.push(path);
 }
 
+pub(super) fn push_resource_write_dir(
+    roots: &mut ToolRoots,
+    path: &Path,
+    workspace_roots: &[PathBuf],
+    path_dirs: &[PathBuf],
+) {
+    let Some(path) = canonical_write_dir(path) else { return };
+    if forbidden_broad_root(&path, None)
+        || overlaps_workspace(&path, workspace_roots)
+        || path_dirs.iter().any(|bin| bin.starts_with(&path))
+        || roots.write_dirs.contains(&path)
+    {
+        return;
+    }
+    if write_len(roots) >= MAX_WRITE_ROOTS {
+        roots.write_limit_reached = true;
+        return;
+    }
+    roots.write_dirs.push(path);
+}
+
+pub(super) fn push_resource_write_file(
+    roots: &mut ToolRoots,
+    path: &Path,
+    workspace_roots: &[PathBuf],
+    path_dirs: &[PathBuf],
+) {
+    let Some(path) = canonical_write_file(path) else { return };
+    if overlaps_workspace(&path, workspace_roots)
+        || path_dirs
+            .iter()
+            .any(|bin| bin.starts_with(&path) || path.starts_with(bin))
+        || roots.write_files.contains(&path)
+    {
+        return;
+    }
+    if write_len(roots) >= MAX_WRITE_ROOTS {
+        roots.write_limit_reached = true;
+        return;
+    }
+    roots.write_files.push(path);
+}
+
 fn read_len(roots: &ToolRoots) -> usize {
     roots.read_dirs.len() + roots.read_files.len()
 }

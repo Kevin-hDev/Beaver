@@ -9,6 +9,7 @@ pub mod agent_loop_plan;
 pub mod agent_loop_support;
 pub mod agent_loop_thinking_retry;
 pub mod agent_md;
+pub mod agent_resource_access;
 pub mod agent_settings;
 pub mod app_handle_global;
 pub mod circuit_breaker;

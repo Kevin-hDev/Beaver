@@ -17,7 +17,17 @@ pub(crate) use rule_content::{selected_rule_contents, ExternalRuleContent};
 
 pub use models::{AgentSourceSummary, SaveSelectionResult, SourceSelection};
 
-use std::path::Path;
+use std::collections::BTreeSet;
+use std::path::{Path, PathBuf};
+
+pub const MAX_ENABLED_RESOURCE_DIRS: usize = limits::MAX_SOURCES * limits::MAX_ROOTS_PER_SOURCE * 2;
+pub const MAX_ENABLED_RESOURCE_FILES: usize = limits::MAX_SOURCES * 3;
+
+#[derive(Default)]
+pub struct EnabledResourcePaths {
+    pub directories: Vec<PathBuf>,
+    pub files: Vec<PathBuf>,
+}
 
 pub fn scan_from(home: &Path) -> Vec<DiscoveredSource> {
     let registry = registry::read();
@@ -86,6 +96,88 @@ pub fn enabled_hidden_documents(data_dir: &Path) -> Vec<String> {
         })
         .map(|document| document.name)
         .collect()
+}
+
+pub fn enabled_resource_paths(home: &Path) -> EnabledResourcePaths {
+    enabled_resource_paths_from(home, &registry::read())
+}
+
+fn enabled_resource_paths_from(
+    home: &Path,
+    registry: &registry::AgentImportRegistry,
+) -> EnabledResourcePaths {
+    let private_store = crate::services::paths::data_dir();
+    let private_store = dunce::canonicalize(&private_store).unwrap_or(private_store);
+    let mut directories = BTreeSet::new();
+    let mut files = BTreeSet::new();
+    for spec in source_specs::source_specs(home).into_iter().filter(|spec| {
+        registry
+            .sources
+            .iter()
+            .any(|source| source.source_id == spec.id && source.enabled)
+    }) {
+        let detection_roots = spec
+            .detection_roots
+            .iter()
+            .filter(|root| !is_symlink(root))
+            .filter_map(|root| dunce::canonicalize(root).ok())
+            .collect::<Vec<_>>();
+        for path in spec.rule_roots.iter().chain(&spec.skill_roots) {
+            let Some(path) = canonical_resource(path, true, &detection_roots, &private_store)
+            else {
+                continue;
+            };
+            if directories.len() < MAX_ENABLED_RESOURCE_DIRS {
+                directories.insert(path);
+            }
+        }
+        for document in &spec.documents {
+            let Some(path) =
+                canonical_resource(&document.path, false, &detection_roots, &private_store)
+            else {
+                continue;
+            };
+            if files.len() < MAX_ENABLED_RESOURCE_FILES {
+                files.insert(path);
+            }
+        }
+    }
+    EnabledResourcePaths {
+        directories: directories.into_iter().collect(),
+        files: files.into_iter().collect(),
+    }
+}
+
+fn canonical_resource(
+    path: &Path,
+    directory: bool,
+    detection_roots: &[PathBuf],
+    private_store: &Path,
+) -> Option<PathBuf> {
+    if is_symlink(path) {
+        return None;
+    }
+    let canonical = dunce::canonicalize(path).ok()?;
+    if is_symlink(path) || dunce::canonicalize(path).ok().as_ref() != Some(&canonical) {
+        return None;
+    }
+    let expected_kind = if directory {
+        canonical.is_dir()
+    } else {
+        canonical.is_file()
+    };
+    (expected_kind
+        && detection_roots
+            .iter()
+            .any(|root| canonical.starts_with(root))
+        && !canonical.starts_with(private_store)
+        && !private_store.starts_with(&canonical))
+    .then_some(canonical)
+}
+
+fn is_symlink(path: &Path) -> bool {
+    path.symlink_metadata()
+        .is_ok_and(|metadata| metadata.file_type().is_symlink())
 }
 
 #[cfg(test)]

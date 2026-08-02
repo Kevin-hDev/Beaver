@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::agent_local::types_tools::{ToolFileChange, ToolFileChangeStatus};
 
 #[test]
 fn truncation_turns_a_success_into_a_partial_result() {
@@ -65,4 +66,35 @@ fn result_metadata_stays_flat_and_the_error_variant_stays_small() {
         std::mem::size_of::<ToolResult>() <= 128,
         "ToolResult must remain small enough for Result error variants"
     );
+}
+
+#[test]
+fn file_change_details_keep_a_bounded_sample_and_report_counts() {
+    let changes = (0..200)
+        .map(|index| ToolFileChange {
+            path: format!("/repo/{index}.txt"),
+            status: ToolFileChangeStatus::Added,
+            additions: 1,
+            deletions: 0,
+            diff: None,
+        })
+        .collect();
+    let mut result = ToolResult::ok("done").with_file_changes(changes);
+
+    let counts = result.bound_file_changes();
+
+    assert_eq!(counts, Some((200, 128)));
+    assert_eq!(result.file_changes().len(), 128);
+}
+
+#[test]
+fn affected_paths_keep_a_bounded_sample_and_report_counts() {
+    let paths = (0..200).map(|index| format!("src/file-{index}.rs")).collect();
+    let mut result = ToolResult::ok("done").with_affected_paths(paths);
+
+    let counts = result.bound_affected_paths();
+
+    assert_eq!(counts, Some((200, 128)));
+    assert_eq!(result.affected_paths().len(), 128);
+    assert_eq!(result.affected_paths()[0], "src/file-0.rs");
 }

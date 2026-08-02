@@ -91,6 +91,23 @@ fn agent_message_rejects_unbounded_file_change_history() {
 }
 
 #[test]
+fn agent_message_rejects_unbounded_affected_path_history() {
+    let message: AgentMessage = serde_json::from_value(serde_json::json!({
+        "id": "m1", "role": "assistant", "content": "ok",
+        "files": [], "timestamp": "2026-07-01T12:00:00Z",
+        "tool_activities": [{
+            "name": "bash", "summary": "test",
+            "affected_paths": (0..501)
+                .map(|index| format!("/repo/{index}.txt"))
+                .collect::<Vec<_>>()
+        }]
+    }))
+    .unwrap();
+
+    assert!(message.validate_stream_metadata().is_err());
+}
+
+#[test]
 fn agent_message_validates_memory_tool_metadata() {
     let make_message = |domain: &str, resolved_path: &str| {
         serde_json::from_value::<AgentMessage>(serde_json::json!({

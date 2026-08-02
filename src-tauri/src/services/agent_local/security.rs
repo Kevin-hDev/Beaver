@@ -29,7 +29,9 @@ static DD_DEVICE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\bdd\b.*\bof=/dev/").unwrap());
 
 pub fn allowed_write_roots() -> Vec<PathBuf> {
-    base_allowed_roots()
+    let mut roots = base_allowed_roots();
+    append_agent_resources(&mut roots);
+    roots
 }
 
 pub fn check_destructive_command(cmd: &str) -> Result<(), String> {
@@ -62,6 +64,7 @@ pub fn allowed_read_roots() -> Vec<PathBuf> {
             }
         }
     }
+    append_agent_resources(&mut roots);
     roots
 }
 
@@ -77,6 +80,15 @@ fn base_allowed_roots() -> Vec<PathBuf> {
         .into_iter()
         .map(|path| path.canonicalize().unwrap_or(path))
         .collect()
+}
+
+fn append_agent_resources(roots: &mut Vec<PathBuf>) {
+    let resources = super::agent_resource_access::current();
+    for path in resources.directories.into_iter().chain(resources.files) {
+        if !roots.contains(&path) {
+            roots.push(path);
+        }
+    }
 }
 
 fn append_configured_outputs_root(roots: &mut Vec<PathBuf>, output_root: Option<PathBuf>) {

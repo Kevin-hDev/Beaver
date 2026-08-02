@@ -133,7 +133,9 @@ fn status_paths(
             continue;
         };
         let path = workdir.join(relative);
-        if !path.starts_with(root) {
+        if !path.starts_with(root)
+            || !super::tool_bash_change_hub::is_trackable(root, &path)
+        {
             continue;
         }
         if paths.len() >= MAX_FILE_CHANGES {

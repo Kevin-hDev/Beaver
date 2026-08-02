@@ -3,6 +3,10 @@ use serde::{Deserialize, Serialize};
 use super::types_tool_result::ToolResult;
 use super::types_tools::ToolFileChange;
 
+pub const MAX_AFFECTED_PATHS: usize = super::tool_file_changes::MAX_FILE_CHANGES;
+pub(crate) const MAX_STORED_AFFECTED_PATHS: usize = 128;
+pub(crate) const MAX_STORED_AFFECTED_PATH_BYTES: usize = 64 * 1024;
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(super) struct ToolResultDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -56,7 +60,51 @@ impl ToolResult {
         &mut self.details.file_changes
     }
 
+    pub fn bound_file_changes(&mut self) -> Option<(usize, usize)> {
+        let total = self.details.file_changes.len();
+        let changes = std::mem::take(&mut self.details.file_changes);
+        let (sample, incomplete) = super::tool_file_changes::bounded_sample(changes);
+        let stored = sample.len();
+        self.details.file_changes = sample;
+        incomplete.then_some((total, stored))
+    }
+
+    pub fn bound_affected_paths(&mut self) -> Option<(usize, usize)> {
+        let paths = std::mem::take(&mut self.details.affected_paths);
+        let total = paths.len();
+        let (stored, incomplete) = bounded_affected_paths(paths);
+        let stored_count = stored.len();
+        self.details.affected_paths = stored;
+        incomplete.then_some((total, stored_count))
+    }
+
     pub fn start_line(&self) -> Option<usize> {
         self.details.start_line
     }
+}
+
+pub(crate) fn bounded_affected_paths(paths: Vec<String>) -> (Vec<String>, bool) {
+    let total = paths.len();
+    let mut stored = Vec::with_capacity(total.min(MAX_STORED_AFFECTED_PATHS));
+    let mut serialized_bytes = 2_usize;
+    for path in paths {
+        if stored.len() >= MAX_STORED_AFFECTED_PATHS {
+            break;
+        }
+        let Ok(encoded) = serde_json::to_vec(&path) else {
+            break;
+        };
+        let separator = usize::from(!stored.is_empty());
+        if serialized_bytes
+            .saturating_add(separator)
+            .saturating_add(encoded.len())
+            > MAX_STORED_AFFECTED_PATH_BYTES
+        {
+            break;
+        }
+        serialized_bytes += separator + encoded.len();
+        stored.push(path);
+    }
+    let incomplete = stored.len() < total;
+    (stored, incomplete)
 }

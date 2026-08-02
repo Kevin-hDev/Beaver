@@ -92,7 +92,13 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
     assert!(!roots.write_dirs.contains(&executable_cache));
     assert_eq!(roots.write_dirs.len(), 9);
     assert_eq!(roots.write_files.len(), 1);
-    assert_eq!(MAX_WRITE_ROOTS, 10);
+    assert_eq!(
+        MAX_WRITE_ROOTS,
+        super::super::tool_cache_roots::MAX_WRITE_DIRS
+            + 1
+            + super::super::super::agent_resource_access::MAX_RESOURCE_DIRS
+            + super::super::super::agent_resource_access::MAX_RESOURCE_FILES
+    );
 }
 
 #[test]
@@ -347,6 +353,46 @@ fn path_directory_without_an_executable_is_not_granted() {
     assert!(!roots
         .read_dirs
         .contains(&dunce::canonicalize(sensitive).expect("sensitive")));
+}
+
+#[test]
+fn path_parent_never_exposes_the_private_application_store() {
+    let private_store = crate::services::paths::data_dir();
+    let private_store = dunce::canonicalize(private_store).expect("private store");
+
+    for ancestor in private_store.ancestors().skip(1) {
+        assert!(super::super::tool_roots_path::forbidden_broad_root(ancestor, None));
+    }
+}
+
+#[test]
+fn enabled_agent_resources_are_writable_without_opening_their_parent() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let workspace = temp.path().join("workspace");
+    let source = temp.path().join("source");
+    let rules = source.join("rules");
+    let document = source.join("AGENTS.md");
+    std::fs::create_dir_all(&workspace).expect("workspace");
+    std::fs::create_dir_all(&rules).expect("rules");
+    std::fs::write(&document, "rules").expect("document");
+    let mut roots = ToolRoots::default();
+
+    append_resource_access(
+        &mut roots,
+        std::slice::from_ref(&workspace),
+        &[],
+        super::super::super::agent_resource_access::AgentResourceAccess {
+            directories: vec![rules.clone()],
+            files: vec![document.clone()],
+        },
+    );
+    let rules = dunce::canonicalize(rules).expect("canonical rules");
+    let document = dunce::canonicalize(document).expect("canonical document");
+    let source = dunce::canonicalize(source).expect("canonical source");
+
+    assert!(roots.write_dirs.contains(&rules));
+    assert!(roots.write_files.contains(&document));
+    assert!(!roots.write_dirs.contains(&source));
 }
 
 #[cfg(unix)]
