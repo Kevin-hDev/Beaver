@@ -51,6 +51,19 @@ fn accepts_a_bounded_absolute_command() {
 
 #[test]
 #[cfg(not(windows))]
+fn accepts_a_command_without_arguments() {
+    let parsed = parse(vec![
+        OsString::from("/tmp/sandbox"),
+        OsString::from("--"),
+        OsString::from("/bin/sh"),
+    ])
+    .expect("command without arguments");
+
+    assert!(parsed.3.is_empty());
+}
+
+#[test]
+#[cfg(not(windows))]
 fn accepts_the_explicit_profile_capture_mode() {
     let parsed = parse(vec![
         OsString::from(super::super::launch::profile_capture_arg()),

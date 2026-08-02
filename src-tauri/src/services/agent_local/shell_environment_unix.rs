@@ -1,13 +1,11 @@
 use std::ffi::{OsStr, OsString};
-use std::io::Read;
-use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::time::Instant;
 
-const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(25);
-const READER_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(250);
 const MAX_SHELL_CANDIDATES: usize = 4;
+
+#[path = "shell_environment_capture.rs"]
+mod capture;
 
 pub(super) fn discover() -> Option<OsString> {
     let base_path = super::process_path()
@@ -61,6 +59,34 @@ fn valid_shell(shell: &Path) -> Option<PathBuf> {
 }
 
 fn capture_sandboxed(shell: &Path, base_path: &OsStr, timeout: std::time::Duration) -> Option<OsString> {
+    capture_refined(base_path, timeout, |path, remaining| {
+        capture_sandboxed_once(shell, path, remaining)
+    })
+}
+
+fn capture_refined(
+    base_path: &OsStr,
+    timeout: std::time::Duration,
+    mut capture: impl FnMut(&OsStr, std::time::Duration) -> Option<OsString>,
+) -> Option<OsString> {
+    let started = Instant::now();
+    let first = super::normalize(capture(base_path, timeout)?, true)?.value;
+    if first == base_path {
+        return Some(first);
+    }
+    let Some(remaining) = timeout.checked_sub(started.elapsed()) else {
+        return Some(first);
+    };
+    capture(&first, remaining)
+        .and_then(|path| super::normalize(path, true).map(|path| path.value))
+        .or(Some(first))
+}
+
+fn capture_sandboxed_once(
+    shell: &Path,
+    base_path: &OsStr,
+    timeout: std::time::Duration,
+) -> Option<OsString> {
     let marker = format!("__BEAVER_PATH_{}__", uuid::Uuid::new_v4().simple());
     let script = format!(
         "printf '%s' '{marker}'; printf '%s' \"$PATH\"; printf '%s' '{marker}'"
@@ -75,7 +101,7 @@ fn capture_sandboxed(shell: &Path, base_path: &OsStr, timeout: std::time::Durati
         base_path,
     )
     .ok()?;
-    capture_command(prepared.command_mut(), marker.as_bytes(), timeout)
+    capture::run(prepared.command_mut(), marker.as_bytes(), timeout)
 }
 
 #[cfg(test)]
@@ -84,113 +110,26 @@ fn capture_direct(shell: &Path, base_path: &OsStr) -> Option<OsString> {
     let script = format!(
         "printf '%s' '{marker}'; printf '%s' \"$PATH\"; printf '%s' '{marker}'"
     );
-    let mut command = Command::new(shell);
+    let mut command = std::process::Command::new(shell);
     command
         .args(["-l", "-i", "-c", &script])
         .env("PATH", base_path);
-    capture_command(
+    capture::run(
         &mut command,
         marker.as_bytes(),
         super::CAPTURE_TIMEOUT,
     )
 }
 
-fn capture_command(
-    command: &mut Command,
-    marker: &[u8],
-    timeout: std::time::Duration,
-) -> Option<OsString> {
-    command
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .process_group(0);
-    let mut child = command.spawn().ok()?;
-    let pid = child.id();
-    let Some(stdout) = child.stdout.take() else {
-        terminate_group(pid);
-        let _ = child.kill();
-        let _ = child.wait();
-        return None;
-    };
-    let (sender, receiver) = std::sync::mpsc::sync_channel(1);
-    std::thread::spawn(move || {
-        let mut bytes = Vec::with_capacity(8_192);
-        let result = stdout
-            .take((super::MAX_CAPTURE_BYTES + 1) as u64)
-            .read_to_end(&mut bytes)
-            .map(|_| bytes);
-        let _ = sender.send(result);
-    });
-    let status = wait(&mut child, timeout);
-    terminate_descendants(pid);
-    let bytes = receiver.recv_timeout(READER_TIMEOUT).ok()?.ok()?;
-    if !status.is_some_and(|status| status.success()) {
-        return None;
-    }
-    if bytes.len() > super::MAX_CAPTURE_BYTES {
-        return None;
-    }
-    extract(&bytes, marker)
-}
-
-fn wait(
-    child: &mut std::process::Child,
-    timeout: std::time::Duration,
-) -> Option<std::process::ExitStatus> {
-    let started = Instant::now();
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => return Some(status),
-            Ok(None) => {}
-            Err(_) => {
-                terminate_group(child.id());
-                let _ = child.kill();
-                let _ = child.wait();
-                return None;
-            }
-        }
-        if started.elapsed() >= timeout {
-            terminate_group(child.id());
-            let _ = child.kill();
-            let _ = child.wait();
-            return None;
-        }
-        std::thread::sleep(POLL_INTERVAL);
-    }
-}
-
-fn terminate_descendants(pid: u32) {
-    let Ok(pid) = i32::try_from(pid) else { return };
-    // SAFETY: le shell de découverte a été placé dans son propre groupe.
-    let exists = unsafe { libc::kill(-pid, 0) == 0 };
-    if exists {
-        terminate_group(pid as u32);
-    }
-}
-
-fn terminate_group(pid: u32) {
-    let Ok(pid) = i32::try_from(pid) else { return };
-    // SAFETY: seul le groupe dédié au processus enfant validé est ciblé.
-    unsafe {
-        libc::kill(-pid, libc::SIGTERM);
-        libc::kill(-pid, libc::SIGKILL);
-    }
-}
-
-fn extract(output: &[u8], marker: &[u8]) -> Option<OsString> {
-    use std::os::unix::ffi::OsStringExt;
-
-    let start = find(output, marker)? + marker.len();
-    let end = find(&output[start..], marker)? + start;
-    (end > start).then(|| OsString::from_vec(output[start..end].to_vec()))
-}
-
-fn find(input: &[u8], needle: &[u8]) -> Option<usize> {
-    input.windows(needle.len()).position(|window| window == needle)
-}
-
 #[cfg(test)]
 pub(super) fn capture_for_test(shell: &Path, base_path: &OsStr) -> Option<OsString> {
     capture_direct(shell, base_path)
+}
+
+#[cfg(test)]
+pub(super) fn refine_for_test(
+    base_path: &OsStr,
+    capture: impl FnMut(&OsStr, std::time::Duration) -> Option<OsString>,
+) -> Option<OsString> {
+    capture_refined(base_path, super::CAPTURE_TIMEOUT, capture)
 }

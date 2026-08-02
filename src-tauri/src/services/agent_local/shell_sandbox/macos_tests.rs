@@ -178,6 +178,7 @@ printf ok > '{}/inside'"#,
     let scope = Scope {
         mode: Mode::ProfileCapture,
         roots: vec![allowed.clone()],
+        read_dirs: Vec::new(),
         read_files: Vec::new(),
     };
     let output = run_sandboxed_scope(&scope, &sandbox_temp, &script);
@@ -195,22 +196,41 @@ fn interactive_profile_capture_keeps_path_but_cannot_escape() {
     let allowed = temp.path().join("allowed");
     let profile_home = temp.path().join("profile-home");
     let sandbox_temp = temp.path().join("sandbox-temp");
-    for path in [&allowed, &profile_home, &sandbox_temp] {
+    let nvm = profile_home.join(".nvm");
+    let nvm_bin = nvm.join("versions/node/current/bin");
+    let local_bin = profile_home.join(".local/bin");
+    for path in [&allowed, &profile_home, &sandbox_temp, &nvm_bin, &local_bin] {
         std::fs::create_dir_all(path).expect("directory");
+    }
+    std::fs::write(
+        nvm.join("nvm.sh"),
+        "export PATH=\"$HOME/.nvm/versions/node/current/bin:$PATH\"\n",
+    )
+    .expect("nvm startup");
+    let local_tool = local_bin.join("beaver-profile-tool");
+    std::fs::write(&local_tool, "#!/bin/sh\nexit 0\n").expect("local tool");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&local_tool, std::fs::Permissions::from_mode(0o700))
+            .expect("tool permissions");
     }
     let escape = allowed.join("blocked");
     let profile = profile_home.join(".zshrc");
     std::fs::write(
         &profile,
-        "export PATH=/profile/tool/bin:$PATH\nprintf pwn > \"$BEAVER_ESCAPE\" 2>/dev/null || true\n",
+        "source \"$HOME/.nvm/nvm.sh\"\n\"$HOME/.local/bin/beaver-profile-tool\"\nexport PATH=\"$HOME/.local/bin:$PATH\"\nprintf pwn > \"$BEAVER_ESCAPE\" 2>/dev/null || true\n",
     )
     .expect("profile");
     let allowed = dunce::canonicalize(allowed).expect("allowed");
+    let nvm = dunce::canonicalize(nvm).expect("nvm");
+    let local_bin = dunce::canonicalize(local_bin).expect("local bin");
     let profile = dunce::canonicalize(profile).expect("profile");
     let sandbox_temp = dunce::canonicalize(sandbox_temp).expect("sandbox temp");
     let scope = Scope {
         mode: Mode::ProfileCapture,
         roots: vec![allowed.clone()],
+        read_dirs: vec![nvm, local_bin],
         read_files: vec![profile],
     };
     let roots = sandbox_roots(&scope, &sandbox_temp);
@@ -245,7 +265,9 @@ fn interactive_profile_capture_keeps_path_but_cannot_escape() {
         .expect("sandbox-exec");
 
     assert_success(&output);
-    assert!(String::from_utf8_lossy(&output.stdout).contains("/profile/tool/bin"));
+    let captured = String::from_utf8_lossy(&output.stdout);
+    assert!(captured.contains("/.nvm/versions/node/current/bin"));
+    assert!(captured.contains("/.local/bin"));
     assert!(!escape.exists());
 }
 

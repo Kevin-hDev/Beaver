@@ -82,7 +82,13 @@ fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
         return SandboxRoots {
             write_dirs: vec![temp_dir.to_path_buf()],
             write_files: Vec::new(),
-            read_dirs: scope.roots.iter().cloned().chain(tools.read_dirs).collect(),
+            read_dirs: scope
+                .roots
+                .iter()
+                .cloned()
+                .chain(scope.read_dirs.iter().cloned())
+                .chain(tools.read_dirs)
+                .collect(),
             read_files: scope
                 .read_files
                 .iter()

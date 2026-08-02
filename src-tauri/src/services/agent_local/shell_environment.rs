@@ -68,7 +68,7 @@ fn normalize(value: OsString, discovered: bool) -> Option<ShellPath> {
     let mut entries = Vec::with_capacity(MAX_PATH_INPUTS);
     let mut overflow = false;
     for entry in std::env::split_paths(&value) {
-        if !valid_entry(&entry) || entries.contains(&entry) {
+        if !valid_entry(&entry) || (discovered && !entry.is_dir()) || entries.contains(&entry) {
             continue;
         }
         if entries.len() >= MAX_PATH_INPUTS {

@@ -145,6 +145,8 @@ fn collect_from(
         push_read_dir(&mut roots, path, workspace_roots, home.as_deref());
         if is_tool_directory(path) {
             if let Some(parent) = path.parent() {
+                // Le filtre d'exécutable porte sur le dossier PATH ; son parent
+                // fournit les bibliothèques et ressources de la même toolchain.
                 push_read_dir(&mut roots, parent, workspace_roots, home.as_deref());
             }
         }

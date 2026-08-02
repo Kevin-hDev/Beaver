@@ -60,7 +60,7 @@ fn parse(
     } else {
         (super::scope::Mode::Workspace, 0)
     };
-    if arguments.len() < offset + 4 || arguments.len() > MAX_ARGUMENTS + offset + 3 {
+    if arguments.len() < offset + 3 || arguments.len() > MAX_ARGUMENTS + offset + 3 {
         return Err(super::launch::sandbox_error());
     }
     let mut total = 0_usize;

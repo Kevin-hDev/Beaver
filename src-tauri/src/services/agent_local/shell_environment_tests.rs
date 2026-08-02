@@ -9,7 +9,7 @@ fn path_entries_are_absolute_deduplicated_and_bounded() {
     entries.push("relative/bin".to_string());
     entries.push("/opt/control\n/bin".to_string());
     entries.push("/opt/tool-0/bin".to_string());
-    let resolved = normalize(OsString::from(entries.join(":")), true).expect("PATH");
+    let resolved = normalize(OsString::from(entries.join(":")), false).expect("PATH");
 
     assert_eq!(resolved.entries.len(), MAX_PATH_INPUTS);
     assert!(resolved.overflow);
@@ -27,9 +27,14 @@ fn login_shell_replaces_a_minimal_gui_path() {
 
     let temp = tempfile::tempdir().expect("tempdir");
     let shell = temp.path().join("zsh");
+    let user_bin = temp.path().join("beaver-user/bin");
+    std::fs::create_dir_all(&user_bin).expect("user bin");
     std::fs::write(
         &shell,
-        "#!/bin/sh\nPATH=/opt/beaver-user/bin:/usr/bin:/bin\nexport PATH\nexec /bin/sh -c \"$4\"\n",
+        format!(
+            "#!/bin/sh\nPATH={}:$PATH\nexport PATH\nexec /bin/sh -c \"$4\"\n",
+            user_bin.display()
+        ),
     )
     .expect("shell");
     std::fs::set_permissions(&shell, std::fs::Permissions::from_mode(0o700))
@@ -42,7 +47,20 @@ fn login_shell_replaces_a_minimal_gui_path() {
     assert!(resolved.discovered);
     assert!(resolved
         .entries
-        .contains(&PathBuf::from("/opt/beaver-user/bin")));
+        .contains(&user_bin));
+}
+
+#[test]
+fn discovered_path_drops_entries_that_cannot_provide_tools() {
+    let missing = format!("/beaver-missing-{}", uuid::Uuid::new_v4().simple());
+    let resolved = normalize(
+        OsString::from(format!("{missing}:/usr/bin:/bin")),
+        true,
+    )
+    .expect("PATH");
+
+    assert!(!resolved.entries.contains(&PathBuf::from(missing)));
+    assert!(resolved.entries.contains(&PathBuf::from("/usr/bin")));
 }
 
 #[cfg(unix)]
@@ -61,4 +79,60 @@ fn oversized_login_output_is_rejected() {
         .expect("permissions");
 
     assert!(unix::capture_for_test(&shell, OsStr::new("/usr/bin:/bin")).is_none());
+}
+
+#[cfg(unix)]
+#[test]
+fn login_path_is_refined_with_the_first_captured_entries() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let local_bin = temp.path().join("home/.local/bin");
+    let nvm_bin = temp.path().join("home/.nvm/current/bin");
+    std::fs::create_dir_all(&local_bin).expect("local bin");
+    std::fs::create_dir_all(&nvm_bin).expect("nvm bin");
+    let first_path = std::env::join_paths([local_bin.as_path(), Path::new("/usr/bin"), Path::new("/bin")])
+        .expect("first PATH");
+    let refined_path = std::env::join_paths([
+        nvm_bin.as_path(),
+        local_bin.as_path(),
+        Path::new("/usr/bin"),
+        Path::new("/bin"),
+    ])
+    .expect("refined PATH");
+    let mut inputs = Vec::new();
+    let captured = unix::refine_for_test(OsStr::new("/usr/bin:/bin"), |path, _| {
+        inputs.push(path.to_os_string());
+        if inputs.len() == 1 {
+            Some(first_path.clone())
+        } else {
+            Some(refined_path.clone())
+        }
+    })
+    .expect("refined PATH");
+
+    assert_eq!(inputs.len(), 2);
+    assert_eq!(inputs[1], first_path);
+    assert_eq!(captured, refined_path);
+}
+
+#[cfg(unix)]
+#[test]
+fn first_captured_path_survives_a_failed_refinement() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let custom_bin = temp.path().join("custom/bin");
+    std::fs::create_dir_all(&custom_bin).expect("custom bin");
+    let first_path = std::env::join_paths([
+        custom_bin.as_path(),
+        Path::new("/usr/bin"),
+        Path::new("/bin"),
+    ])
+    .expect("first PATH");
+    let mut calls = 0;
+    let captured = unix::refine_for_test(OsStr::new("/usr/bin:/bin"), |_, _| {
+        calls += 1;
+        (calls == 1).then(|| first_path.clone())
+    })
+    .expect("first PATH");
+
+    assert_eq!(calls, 2);
+    assert_eq!(captured, first_path);
 }

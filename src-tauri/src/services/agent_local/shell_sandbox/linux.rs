@@ -71,6 +71,7 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
         .iter()
         .map(PathBuf::as_path)
         .filter(|_| !workspace_mode)
+        .chain(scope.read_dirs.iter().map(PathBuf::as_path))
         .chain(tools.read_dirs.iter().map(PathBuf::as_path));
     let read_files = scope
         .read_files
