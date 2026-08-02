@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useTabHistory } from "../use-tab-history";
-import { DEFAULT_APP_NAV } from "@/types/navigation";
+import { DEFAULT_APP_NAV, FILE_ACCESS_SETTINGS_NAV } from "@/types/navigation";
 
 describe("useTabHistory", () => {
   it("migre l'ancien onglet api-keys vers Providers", () => {
@@ -50,6 +50,16 @@ describe("useTabHistory", () => {
     act(() => result.current.goForward());
     expect(result.current.current.tab).toBe("settings");
     expect(result.current.current.settings.subTab).toBe("providers");
+  });
+
+  it("ouvre directement le réglage d’accès aux fichiers", () => {
+    const { result } = renderHook(() => useTabHistory(DEFAULT_APP_NAV));
+
+    act(() => result.current.pushNav(FILE_ACCESS_SETTINGS_NAV));
+
+    expect(result.current.current.tab).toBe("settings");
+    expect(result.current.current.settings.subTab).toBe("advanced");
+    expect(result.current.current.settings.advancedTarget).toBe("file-access");
   });
 
   it("replaceNav ne cree pas d'entree historique", () => {

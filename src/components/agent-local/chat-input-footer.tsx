@@ -2,6 +2,7 @@ import { ChatProjectControls } from "./chat-project-controls";
 import { ScrollBottomButton } from "./scroll-bottom-button";
 import type { useGitBranch } from "@/hooks/use-git-branch";
 import type { useSessionProject } from "@/hooks/use-session-project";
+import type { DirectoryAccessPromptProps } from "./directory-access-prompt";
 import type { Project } from "@/types/agent";
 
 interface ChatInputFooterProps {
@@ -12,6 +13,7 @@ interface ChatInputFooterProps {
   centerSlot?: React.ReactNode;
   onScrollBottom: () => void;
   onWorktreeSelect: (path: string, branch: string) => void;
+  directoryAccessPrompt?: DirectoryAccessPromptProps;
   onBranchReady?: (branchName: string) => Promise<void> | void;
   cloneGitBranch?: {
     visible: boolean;
@@ -30,6 +32,7 @@ export function ChatInputFooter({
   centerSlot,
   onScrollBottom,
   onWorktreeSelect,
+  directoryAccessPrompt,
   onBranchReady,
   cloneGitBranch,
 }: ChatInputFooterProps) {
@@ -41,6 +44,7 @@ export function ChatInputFooter({
           projectState={projectState}
           git={git}
           onWorktreeSelect={onWorktreeSelect}
+          directoryAccessPrompt={directoryAccessPrompt}
           onBranchReady={onBranchReady}
           cloneGitBranch={cloneGitBranch}
         />

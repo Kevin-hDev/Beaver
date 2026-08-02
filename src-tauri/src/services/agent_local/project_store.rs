@@ -51,6 +51,7 @@ pub async fn list() -> Result<Vec<Project>, String> {
 
 pub async fn add(path: &str) -> Result<Project, String> {
     let canonical = canonical_existing_dir(Path::new(path))?;
+    super::directory_access::ensure_allowed(&canonical)?;
     let canonical_path = canonical.to_string_lossy().to_string();
     let mut projects = read_all().await;
     if let Some(existing) = projects

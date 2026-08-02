@@ -1,0 +1,13 @@
+.veb-root {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--z-toast);
+  width: 100%;
+  padding: var(--space-sm) var(--space-lg);
+  color: var(--ink-on-danger);
+  background: var(--signal-error);
+  border: 0;
+  font-size: var(--text-xs);
+  text-align: center;
+  cursor: pointer;
+}

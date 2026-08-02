@@ -16,6 +16,14 @@ pub async fn dispatch(
     profile: Option<SubagentToolProfile>,
     progress: Option<ShellProgress>,
 ) -> ToolResult {
+    if !super::directory_access::shell_access_allowed() {
+        return ToolResult::error(
+            "Le shell est indisponible lorsque l’accès aux dossiers est limité.",
+            "shell_disabled_for_restricted_directory_access",
+            ToolErrorCategory::Permission,
+            false,
+        );
+    }
     let execution = match tool_name {
         "bash" => execute_command(args, working_dir, session_id, cancel, profile, progress)
             .await

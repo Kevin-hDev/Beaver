@@ -7,7 +7,7 @@ import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
 import { SettingsSelect, type SelectGroup } from "./settings-select";
-import { PathListEditor } from "./path-list-editor";
+import { FileAccessSettings } from "./file-access-settings";
 import { OllamaSettingsSection } from "./ollama-settings-section";
 import { AgentImportSettings } from "@/components/agent-import/agent-import-settings";
 import { SessionWorkspaceSettings } from "./session-workspace-settings";
@@ -17,7 +17,12 @@ import i18n from "@/i18n";
 import { ADVANCED_SETTINGS_DEFAULTS, type AdvancedSettingsState } from "./advanced-settings-state";
 import "./compression-slider.css";
 
-export function AdvancedSettings() {
+interface AdvancedSettingsProps {
+  focusTarget?: "file-access" | null;
+  onFocusTargetHandled?: () => void;
+}
+
+export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: AdvancedSettingsProps) {
   const { t } = useTranslation();
   const { groups } = useAvailableModels();
   const [state, setState] = useState<AdvancedSettingsState>(ADVANCED_SETTINGS_DEFAULTS);
@@ -41,6 +46,16 @@ export function AdvancedSettings() {
       notifySettingsChanged();
       return next;
     });
+  }, []);
+
+  const saveAllowedPaths = useCallback(async (paths: string[]) => {
+    try {
+      const normalized = await invoke<string[]>("set_allowed_paths", { paths });
+      setState((current) => ({ ...current, allowed_paths: normalized }));
+      notifySettingsChanged();
+    } catch {
+      showToast(i18n.t("errors.saveFailed"), "error");
+    }
   }, []);
 
   const modelGroups = useMemo((): SelectGroup[] => {
@@ -142,19 +157,12 @@ export function AdvancedSettings() {
           </SettingsRow>
         </SettingsCard>
 
-        <h3 style={subStyle}>{t("settings.advanced.fileAccessTitle")}</h3>
-
-        <SettingsCard>
-          <div style={{ padding: "14px 20px" }}>
-            <div style={{ fontSize: "var(--text-xs)", color: "var(--ink-muted)", marginBottom: 12 }}>
-              {t("settings.advanced.fileAccessDesc")}
-            </div>
-            <PathListEditor
-              paths={state.allowed_paths}
-              onChange={(paths) => save({ allowed_paths: paths })}
-            />
-          </div>
-        </SettingsCard>
+        <FileAccessSettings
+          paths={state.allowed_paths}
+          focusRequested={focusTarget === "file-access"}
+          onPathsChange={saveAllowedPaths}
+          onFocusHandled={onFocusTargetHandled}
+        />
 
         <SessionWorkspaceSettings
           outputsDirectory={state.session_outputs_directory}

@@ -1,12 +1,20 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { AGENT_SESSIONS_CHANGED } from "../agent-session-events";
 import { useSessionProject } from "../use-session-project";
 import type { AgentSession, Project } from "@/types/agent";
+import { AppNavigationActionsProvider } from "../use-app-navigation-actions";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
+
+function wrapper({ children }: { children: ReactNode }) {
+  return createElement(AppNavigationActionsProvider, {
+    openFileAccessSettings: vi.fn(),
+  }, children);
+}
 
 const project: Project = {
   id: "project-1",
@@ -35,8 +43,9 @@ describe("useSessionProject", () => {
   it("affiche immédiatement le dossier de secours quand le projet référencé manque", async () => {
     vi.mocked(invoke).mockResolvedValueOnce(session("missing-project", "/project"));
 
-    const { result } = renderHook(() =>
-      useSessionProject("session-1", [], vi.fn(), true),
+    const { result } = renderHook(
+      () => useSessionProject("session-1", [], vi.fn(), true),
+      { wrapper },
     );
 
     await waitFor(() => expect(invoke).toHaveBeenCalled());
@@ -49,8 +58,9 @@ describe("useSessionProject", () => {
     vi.mocked(invoke)
       .mockResolvedValueOnce(session(project.id, project.path))
       .mockResolvedValueOnce(session(undefined, "/project"));
-    const { result } = renderHook(() =>
-      useSessionProject("session-1", [project], vi.fn(), true),
+    const { result } = renderHook(
+      () => useSessionProject("session-1", [project], vi.fn(), true),
+      { wrapper },
     );
     await waitFor(() => expect(result.current.selectedProject?.id).toBe(project.id));
 
@@ -68,8 +78,9 @@ describe("useSessionProject", () => {
     managed.working_dir_managed = true;
     vi.mocked(invoke).mockResolvedValueOnce(managed);
 
-    const { result } = renderHook(() =>
-      useSessionProject("session-1", [], vi.fn(), true),
+    const { result } = renderHook(
+      () => useSessionProject("session-1", [], vi.fn(), true),
+      { wrapper },
     );
 
     await waitFor(() => expect(invoke).toHaveBeenCalled());

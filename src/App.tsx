@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/components/layout/app-layout";
+import { VaultErrorBanner } from "@/components/layout/vault-error-banner";
 import { OllamaSetupScreen } from "@/components/ollama/ollama-setup-screen";
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen";
 import { useTheme } from "@/hooks/use-theme";
@@ -18,10 +18,12 @@ import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { useStartupGate } from "@/hooks/use-startup-gate";
 import { ExtensionsProvider } from "@/hooks/use-extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
+import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
 import type { TabId } from "@/components/layout/sidebar";
 import "./App.css";
 import {
   DEFAULT_APP_NAV,
+  FILE_ACCESS_SETTINGS_NAV,
   type AgentLocalNavState,
   type DeepPartial,
   type SettingsNavState,
@@ -52,8 +54,6 @@ function MainApp() {
     useTabHistory(DEFAULT_APP_NAV);
 
   const { choice, setTheme } = useTheme();
-  const { t } = useTranslation();
-
   const [vaultError, setVaultError] = useState<string | null>(null);
   const { focusedPanel } = usePanelFocus();
   const startupGate = useStartupGate();
@@ -80,6 +80,9 @@ function MainApp() {
   const handleSettingsNavReplace = useCallback((partial: DeepPartial<SettingsNavState>) => {
     replaceNav({ settings: partial });
   }, [replaceNav]);
+  const openFileAccessSettings = useCallback(() => {
+    pushNav(FILE_ACCESS_SETTINGS_NAV);
+  }, [pushNav]);
 
   const ALL_TABS: TabId[] = ["agent-local", "heartbeat", "personality", "settings"];
   useArrowNavigation({
@@ -138,60 +141,54 @@ function MainApp() {
 
   return (
     <ExtensionsProvider>
-      {vaultError && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
-          padding: "8px 16px", background: "var(--signal-error)", color: "var(--ink-on-danger)",
-          fontSize: "var(--text-xs)", textAlign: "center", cursor: "pointer",
-        }} role="button" tabIndex={0} onClick={() => setVaultError(null)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVaultError(null); }}>
-          {t("errors.keyringFailed")}
-        </div>
-      )}
-      <AppLayout
-        activeTab={activeTab}
-        onTabChange={(t) => pushNav({ tab: t })}
-        onShowWelcome={handleShowWelcome}
-        onBack={goBack}
-        onForward={goForward}
-        canGoBack={canGoBack}
-        canGoForward={canGoForward}
-        onSearchSelect={handleSearchSelect}
-        onNewSession={handleShowWelcome}
-      >
-        {activeTab === "heartbeat" && (
-          <HeartbeatTab
-            activeWakeupId={nav.heartbeat.wakeupId}
-            onWakeupChange={handleWakeupChange}
-            listFocused={listActive("heartbeat")}
-          />
-        )}
-        {activeTab === "personality" && (
-          <PersonalityTab
-            activePath={nav.personality.path}
-            onPathChange={handlePathChange}
-            listFocused={listActive("personality")}
-          />
-        )}
-        {activeTab === "agent-local" && (
-          <AgentLocalTab
-            navState={nav.agentLocal}
-            onSessionChange={handleSessionChange}
-            onNavChange={handleAgentNavChange}
-            listFocused={listActive("agent-local")}
-          />
-        )}
-        {activeTab === "settings" && (
-          <SettingsTab
-            themeChoice={choice}
-            onThemeChange={setTheme}
-            navState={nav.settings}
-            onNavChange={handleSettingsNavChange}
-            onNavReplace={handleSettingsNavReplace}
-            listFocused={listActive("settings")}
-            activeSessionId={nav.agentLocal.sessionId}
-          />
-        )}
-      </AppLayout>
+      {vaultError && <VaultErrorBanner onDismiss={() => setVaultError(null)} />}
+      <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
+        <AppLayout
+          activeTab={activeTab}
+          onTabChange={(t) => pushNav({ tab: t })}
+          onShowWelcome={handleShowWelcome}
+          onBack={goBack}
+          onForward={goForward}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+          onSearchSelect={handleSearchSelect}
+          onNewSession={handleShowWelcome}
+        >
+          {activeTab === "heartbeat" && (
+            <HeartbeatTab
+              activeWakeupId={nav.heartbeat.wakeupId}
+              onWakeupChange={handleWakeupChange}
+              listFocused={listActive("heartbeat")}
+            />
+          )}
+          {activeTab === "personality" && (
+            <PersonalityTab
+              activePath={nav.personality.path}
+              onPathChange={handlePathChange}
+              listFocused={listActive("personality")}
+            />
+          )}
+          {activeTab === "agent-local" && (
+            <AgentLocalTab
+              navState={nav.agentLocal}
+              onSessionChange={handleSessionChange}
+              onNavChange={handleAgentNavChange}
+              listFocused={listActive("agent-local")}
+            />
+          )}
+          {activeTab === "settings" && (
+            <SettingsTab
+              themeChoice={choice}
+              onThemeChange={setTheme}
+              navState={nav.settings}
+              onNavChange={handleSettingsNavChange}
+              onNavReplace={handleSettingsNavReplace}
+              listFocused={listActive("settings")}
+              activeSessionId={nav.agentLocal.sessionId}
+            />
+          )}
+        </AppLayout>
+      </AppNavigationActionsProvider>
     </ExtensionsProvider>
   );
 }

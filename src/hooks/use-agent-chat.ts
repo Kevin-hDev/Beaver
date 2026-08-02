@@ -32,6 +32,8 @@ export function useAgentChat(
     resolving: missingDirectoryResolving,
     runOrDefer,
     resolve: resolveMissingDirectory,
+    forbiddenAllowedPaths,
+    dismissForbidden,
   } = missingDirectory;
   const {
     enabled: planModeEnabled,
@@ -189,6 +191,8 @@ export function useAgentChat(
     missingDirectory: missingDirectoryState,
     missingDirectoryResolving,
     resolveMissingDirectory,
+    forbiddenAllowedPaths,
+    dismissForbiddenDirectory: dismissForbidden,
     sendMessage, reload, edit, stop, clearInteractiveChoice,
   };
 }

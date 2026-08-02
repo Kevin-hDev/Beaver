@@ -138,6 +138,13 @@ where
     let _guard = lock.lock().await;
     let mut session = get(id).await?;
     after_load().await;
+    let managed_after_update = match managed {
+        ManagedAssignment::Set(value) => value,
+        ManagedAssignment::Preserve => session.working_dir_managed,
+    };
+    if !managed_after_update {
+        super::directory_access::ensure_allowed(&canonical)?;
+    }
     session.working_dir = canonical.to_string_lossy().to_string();
     session.context_tokens = None;
     if let ManagedAssignment::Set(value) = managed {

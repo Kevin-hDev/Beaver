@@ -26,6 +26,7 @@ import { useChatClone } from "@/hooks/use-chat-clone";
 import { useCloneGitBranchAction } from "@/hooks/use-clone-git-branch-action";
 import { useSelectedModelCapabilities } from "@/hooks/use-selected-model-capabilities";
 import { useChatViewRuntime } from "@/hooks/use-chat-view-runtime";
+import { usePreflightDirectoryAccessPrompt } from "@/hooks/use-preflight-directory-access-prompt";
 import { PermissionDialog } from "./permission-dialog";
 import type { ChatViewProps } from "./chat-view-types";
 import "./chat.css";
@@ -104,6 +105,7 @@ export function ChatView({
   const worktreeSwitch = useWorktreeSessionSwitch({
     projects, model, provider, onAddProject, onNewSessionInProject,
   });
+  const preflightAccessPrompt = usePreflightDirectoryAccessPrompt(chat.forbiddenAllowedPaths, chat.dismissForbiddenDirectory);
   return (
     <FileDropZone dragging={fileDrop.dragging} onDragChange={fileDrop.setDragging} onDropPaths={(paths) => void fileDrop.addByPaths(paths)}>
       <div className="chat-zone" style={{ opacity: chat.sessionLoading ? 0 : 1 }}>
@@ -169,6 +171,7 @@ export function ChatView({
                 : null}
               onScrollBottom={scrollToBottom}
               onWorktreeSelect={worktreeSwitch.request}
+              directoryAccessPrompt={proj.directoryAccessPrompt ?? worktreeSwitch.directoryAccessPrompt ?? preflightAccessPrompt}
               onBranchReady={runtime.handleBranchReady}
               cloneGitBranch={cloneGitBranch}
             />

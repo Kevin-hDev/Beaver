@@ -523,6 +523,13 @@
     "create": "Crea",
     "error": "Impossibile preparare la cartella della sessione."
   },
+  "directoryAccess": {
+    "title": "Cartella non autorizzata",
+    "description": "Le sessioni sono limitate alle seguenti cartelle:",
+    "help": "Per usare un’altra cartella, modifica Impostazioni > Avanzate > Accesso ai file.",
+    "settings": "Impostazioni",
+    "error": "Impossibile verificare l’accesso a questa cartella."
+  },
   "permissionDialog": {
     "title": "Autorizzare {{action}}?",
     "allow": "Consenti una volta",

@@ -528,6 +528,13 @@
     "create": "Create",
     "error": "Could not prepare this session folder."
   },
+  "directoryAccess": {
+    "title": "Folder not allowed",
+    "description": "Sessions are limited to the following folders:",
+    "help": "To use another folder, change Settings > Advanced > File Access.",
+    "settings": "Settings",
+    "error": "Could not verify access to this folder."
+  },
   "permissionDialog": {
     "title": "Allow {{action}}?",
     "allow": "Allow once",

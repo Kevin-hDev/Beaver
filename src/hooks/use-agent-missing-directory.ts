@@ -9,12 +9,16 @@ export interface MissingSessionDirectory {
   nearest_parent: string;
 }
 
-type PrepareResult = { status: "ready" } | ({ status: "missing" } & MissingSessionDirectory);
+type PrepareResult =
+  | { status: "ready" }
+  | { status: "forbidden"; allowed_paths: string[] }
+  | ({ status: "missing" } & MissingSessionDirectory);
 type MissingDirectoryAction = "switch" | "create";
 
 export function useAgentMissingDirectory(sessionId: string | null) {
   const [missingDirectory, setMissingDirectory] = useState<MissingSessionDirectory | null>(null);
   const [resolving, setResolving] = useState(false);
+  const [forbiddenAllowedPaths, setForbiddenAllowedPaths] = useState<string[] | null>(null);
   const pendingRef = useRef<((workingDir?: string) => Promise<void>) | null>(null);
 
   const runOrDefer = useCallback(async (
@@ -38,6 +42,15 @@ export function useAgentMissingDirectory(sessionId: string | null) {
         missing_path: result.missing_path,
         nearest_parent: result.nearest_parent,
       });
+      return;
+    }
+    if (result.status === "forbidden") {
+      const paths = result.allowed_paths;
+      if (paths.length > 0 && paths.length <= 32 && paths.every((path) => typeof path === "string" && path.length > 0 && path.length <= 4_096)) {
+        setForbiddenAllowedPaths(paths);
+      } else {
+        showToast(i18n.t("directoryAccess.error"), "error");
+      }
       return;
     }
     await run(workingDir);
@@ -64,5 +77,14 @@ export function useAgentMissingDirectory(sessionId: string | null) {
     }
   }, [missingDirectory, resolving, sessionId]);
 
-  return { missingDirectory, resolving, runOrDefer, resolve };
+  const dismissForbidden = useCallback(() => setForbiddenAllowedPaths(null), []);
+
+  return {
+    missingDirectory,
+    resolving,
+    forbiddenAllowedPaths,
+    dismissForbidden,
+    runOrDefer,
+    resolve,
+  };
 }

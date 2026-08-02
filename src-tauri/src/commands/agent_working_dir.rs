@@ -100,6 +100,7 @@ fn canonical_dir(input: &str) -> Result<ResolvedWorkingDir, String> {
     let path = path
         .canonicalize()
         .map_err(|_| "Répertoire inaccessible".to_string())?;
+    let path = crate::services::agent_local::directory_access::ensure_allowed(&path)?;
     Ok(ResolvedWorkingDir {
         path,
         outputs_dir: None,

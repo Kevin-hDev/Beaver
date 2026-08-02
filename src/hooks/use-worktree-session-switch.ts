@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type { Project } from "@/types/agent";
+import { useDirectoryAccessGuard } from "./use-directory-access-guard";
 
 export interface WorktreeSwitchTarget {
   path: string;
@@ -39,10 +40,16 @@ export function useWorktreeSessionSwitch({
   onNewSessionInProject,
 }: UseWorktreeSessionSwitchDeps) {
   const [pending, setPending] = useState<WorktreeSwitchTarget | null>(null);
+  const {
+    blocked: blockedDirectoryAccess,
+    request: requestDirectoryAccess,
+    cancel: cancelDirectoryAccess,
+    openSettings: openDirectoryAccessSettings,
+  } = useDirectoryAccessGuard();
 
   const request = useCallback((path: string, branch: string) => {
-    setPending({ path, branch });
-  }, []);
+    void requestDirectoryAccess(path, () => setPending({ path, branch }));
+  }, [requestDirectoryAccess]);
 
   const cancel = useCallback(() => {
     setPending(null);
@@ -50,14 +57,22 @@ export function useWorktreeSessionSwitch({
 
   const createSession = useCallback(async () => {
     if (!pending || !onNewSessionInProject) return;
-    try {
+    await requestDirectoryAccess(pending.path, async () => {
       const project = findProjectByPath(projects, pending.path) ?? await onAddProject(pending.path);
       onNewSessionInProject(model, provider, project.id);
       setPending(null);
-    } catch (e) {
-      console.error("worktree session switch:", e);
-    }
-  }, [model, onAddProject, onNewSessionInProject, pending, projects, provider]);
+    });
+  }, [model, onAddProject, onNewSessionInProject, pending, projects, provider, requestDirectoryAccess]);
 
-  return { pending, request, cancel, createSession };
+  return {
+    pending,
+    request,
+    cancel,
+    createSession,
+    directoryAccessPrompt: blockedDirectoryAccess ? {
+      allowedPaths: blockedDirectoryAccess.allowedPaths,
+      onCancel: cancelDirectoryAccess,
+      onSettings: openDirectoryAccessSettings,
+    } : undefined,
+  };
 }

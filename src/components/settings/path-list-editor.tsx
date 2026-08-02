@@ -7,6 +7,7 @@ import "./path-list-editor.css";
 interface PathListEditorProps {
   paths: string[];
   onChange: (paths: string[]) => void;
+  disabled?: boolean;
 }
 
 const DEFAULT_PATH = IS_WINDOWS ? "C:\\" : "/";
@@ -16,7 +17,7 @@ function formatLabel(path: string, t: (key: string) => string): string {
   return path;
 }
 
-export function PathListEditor({ paths, onChange }: PathListEditorProps) {
+export function PathListEditor({ paths, onChange, disabled = false }: PathListEditorProps) {
   const { t } = useTranslation();
 
   const handleAdd = async () => {
@@ -45,6 +46,7 @@ export function PathListEditor({ paths, onChange }: PathListEditorProps) {
             <Tooltip label={t("common.delete")}>
               <button
                 type="button"
+                disabled={disabled || paths.length <= 1}
                 onClick={() => handleRemove(index)}
                 className="icon-btn ple-remove-btn"
               >
@@ -56,10 +58,10 @@ export function PathListEditor({ paths, onChange }: PathListEditorProps) {
       })}
 
       <div className="ple-actions">
-        <button type="button" onClick={() => void handleAdd()} className="btn btn-sm btn-secondary">
+        <button type="button" disabled={disabled} onClick={() => void handleAdd()} className="btn btn-sm btn-secondary">
           + {t("settings.advanced.addPath")}
         </button>
-        <button type="button" onClick={handleReset} className="btn btn-sm btn-secondary">
+        <button type="button" disabled={disabled} onClick={handleReset} className="btn btn-sm btn-secondary">
           {t("settings.advanced.resetPaths")}
         </button>
       </div>

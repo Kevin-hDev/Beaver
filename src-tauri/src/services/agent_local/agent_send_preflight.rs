@@ -5,6 +5,7 @@ use std::path::{Component, Path, PathBuf};
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum PrepareAgentSend {
     Ready,
+    Forbidden { allowed_paths: Vec<String> },
     Missing {
         missing_path: String,
         nearest_parent: String,
@@ -25,7 +26,16 @@ pub async fn prepare(
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| generic_error())?;
-    let expected = incoming
+    let project_path = match session.project_id.as_deref() {
+        Some(project_id) => super::project_store::list()
+            .await
+            .map_err(|_| generic_error())?
+            .into_iter()
+            .find(|project| project.id == project_id)
+            .map(|project| PathBuf::from(project.path)),
+        None => None,
+    };
+    let expected = project_path.or_else(|| incoming
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
@@ -33,11 +43,17 @@ pub async fn prepare(
             (!session.working_dir_managed)
                 .then(|| non_empty_path(&session.working_dir))
                 .flatten()
-        });
+        }));
     let Some(expected) = expected else {
         return Ok(PrepareAgentSend::Ready);
     };
     validate_path(&expected)?;
+    let access = super::directory_access::decision(&expected).map_err(|_| generic_error())?;
+    if !access.allowed {
+        return Ok(PrepareAgentSend::Forbidden {
+            allowed_paths: access.allowed_paths,
+        });
+    }
     if expected.is_dir() {
         return Ok(PrepareAgentSend::Ready);
     }
@@ -55,6 +71,12 @@ pub async fn resolve(
 ) -> Result<String, String> {
     let target = PathBuf::from(missing_path);
     validate_path(&target)?;
+    if !super::directory_access::decision(&target)
+        .map_err(|_| generic_error())?
+        .allowed
+    {
+        return Err(generic_error());
+    }
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| generic_error())?;

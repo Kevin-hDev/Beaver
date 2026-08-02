@@ -523,6 +523,13 @@
     "create": "Erstellen",
     "error": "Der Sitzungsordner konnte nicht vorbereitet werden."
   },
+  "directoryAccess": {
+    "title": "Ordner nicht erlaubt",
+    "description": "Sitzungen sind auf die folgenden Ordner beschränkt:",
+    "help": "Um einen anderen Ordner zu verwenden, ändern Sie Einstellungen > Erweitert > Dateizugriff.",
+    "settings": "Einstellungen",
+    "error": "Der Zugriff auf diesen Ordner konnte nicht geprüft werden."
+  },
   "permissionDialog": {
     "title": "{{action}} erlauben?",
     "allow": "Einmal erlauben",

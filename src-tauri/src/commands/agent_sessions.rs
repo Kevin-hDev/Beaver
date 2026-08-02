@@ -17,7 +17,11 @@ pub async fn get_agent_session(id: String) -> Result<AgentSession, String> {
 }
 
 #[tauri::command]
-pub async fn save_agent_session(session: AgentSession) -> Result<(), String> {
+pub async fn save_agent_session(mut session: AgentSession) -> Result<(), String> {
+    let current = session_store::get(&session.id).await?;
+    session.working_dir = current.working_dir;
+    session.working_dir_managed = current.working_dir_managed;
+    crate::services::agent_local::directory_access::ensure_session_allowed(&session).await?;
     session_store::save(&session).await
 }
 
@@ -80,6 +84,9 @@ pub async fn create_agent_session(
 ) -> Result<AgentSession, String> {
     let provider = provider.unwrap_or_else(|| "ollama".to_string());
     let requested_project_id = project_id.clone();
+    if let Some(project_id) = requested_project_id.as_deref() {
+        crate::services::agent_local::directory_access::project_path(project_id).await?;
+    }
     let mut session =
         session_store::create_full(&name, &model, &provider, false, project_id).await?;
     if let Some(pid) = requested_project_id.as_deref() {

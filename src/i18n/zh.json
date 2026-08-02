@@ -523,6 +523,13 @@
     "create": "创建",
     "error": "无法准备此会话的文件夹。"
   },
+  "directoryAccess": {
+    "title": "不允许使用此文件夹",
+    "description": "会话仅限于以下文件夹：",
+    "help": "如需使用其他文件夹，请前往“设置 > 高级 > 文件访问”进行修改。",
+    "settings": "设置",
+    "error": "无法验证对此文件夹的访问权限。"
+  },
   "permissionDialog": {
     "title": "允许 {{action}}？",
     "allow": "允许一次",

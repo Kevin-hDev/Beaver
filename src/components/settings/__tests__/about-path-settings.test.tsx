@@ -44,15 +44,16 @@ describe("settings CSS wiring", () => {
   it("keeps path add, remove and reset actions connected", async () => {
     mocks.openDirectory.mockResolvedValue("/tmp/project");
     const onChange = vi.fn();
-    const { getByText } = render(<PathListEditor paths={["/"]} onChange={onChange} />);
+    const view = render(<PathListEditor paths={["/"]} onChange={onChange} />);
 
-    fireEvent.click(getByText("+ settings.advanced.addPath"));
+    fireEvent.click(view.getByText("+ settings.advanced.addPath"));
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(["/", "/tmp/project"]));
 
-    fireEvent.click(getByText("×"));
-    expect(onChange).toHaveBeenCalledWith([]);
+    view.rerender(<PathListEditor paths={["/", "/tmp/project"]} onChange={onChange} />);
+    fireEvent.click(view.getAllByText("×")[0]);
+    expect(onChange).toHaveBeenCalledWith(["/tmp/project"]);
 
-    fireEvent.click(getByText("settings.advanced.resetPaths"));
+    fireEvent.click(view.getByText("settings.advanced.resetPaths"));
     expect(onChange).toHaveBeenCalledWith([expect.any(String)]);
   });
 });

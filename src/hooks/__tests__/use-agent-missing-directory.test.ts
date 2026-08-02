@@ -36,4 +36,22 @@ describe("useAgentMissingDirectory", () => {
     expect(run).toHaveBeenCalledOnce();
     expect(run).toHaveBeenCalledWith("/project");
   });
+
+  it("bloque l’envoi quand le dossier sort des racines autorisées", async () => {
+    vi.mocked(invoke).mockResolvedValue({
+      status: "forbidden",
+      allowed_paths: ["/project/allowed"],
+    });
+    const run = vi.fn(async (_workingDir?: string) => {});
+    const { result } = renderHook(() => useAgentMissingDirectory("session-1"));
+
+    await act(async () => {
+      await result.current.runOrDefer("/project", run);
+    });
+
+    expect(run).not.toHaveBeenCalled();
+    expect(result.current.forbiddenAllowedPaths).toEqual(["/project/allowed"]);
+    act(() => result.current.dismissForbidden());
+    expect(result.current.forbiddenAllowedPaths).toBeNull();
+  });
 });

@@ -12,6 +12,7 @@ import type { useGitBranch } from "@/hooks/use-git-branch";
 import type { useSessionProject } from "@/hooks/use-session-project";
 import { appErrorMessage } from "@/lib/app-error";
 import type { Project } from "@/types/agent";
+import type { DirectoryAccessPromptProps } from "./directory-access-prompt";
 
 interface ChatProjectControlsProps {
   projects: Project[];
@@ -19,6 +20,7 @@ interface ChatProjectControlsProps {
   git: ReturnType<typeof useGitBranch>;
   onWorktreeSelect: (path: string, branch: string) => void;
   onBranchReady?: (branchName: string) => Promise<void> | void;
+  directoryAccessPrompt?: DirectoryAccessPromptProps;
   cloneGitBranch?: {
     visible: boolean;
     state: "idle" | "loading" | "success";
@@ -35,6 +37,7 @@ export function ChatProjectControls({
   onWorktreeSelect,
   onBranchReady,
   cloneGitBranch,
+  directoryAccessPrompt,
 }: ChatProjectControlsProps) {
   const { t } = useTranslation();
   const githubAuth = useGithubBranchAuth(() => void git.refresh());
@@ -53,8 +56,9 @@ export function ChatProjectControls({
           selectedProjectId={projectState.selectedProjectId}
           locked={projectState.locked}
           hidden={projectState.hidden}
-          onSelect={projectState.setSelectedProjectId}
+          onSelect={projectState.handleSelectProject}
           onAddProject={() => void projectState.handleAddProject()}
+          directoryAccessPrompt={directoryAccessPrompt ?? projectState.directoryAccessPrompt}
         />
         <BranchSelector
           git={git}

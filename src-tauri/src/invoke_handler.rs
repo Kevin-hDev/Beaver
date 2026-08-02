@@ -15,6 +15,8 @@ macro_rules! generate {
             crate::commands::get_advanced_settings,
             crate::commands::set_advanced_settings,
             crate::commands::patch_advanced_settings,
+            crate::commands::set_allowed_paths,
+            crate::commands::validate_session_directory_access,
             crate::commands::get_effective_context_length,
             crate::commands::get_mascot_settings,
             crate::commands::patch_mascot_settings,

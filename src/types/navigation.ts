@@ -14,6 +14,7 @@ type OllamaSettingsSubTab = "modelfile" | "models";
 type ForecastSettingsSubTab = "config" | "models";
 export type ProvidersSettingsSubTab = "api" | "oauth";
 export type ExtensionsSettingsSection = "plugins" | "custom" | "external" | "host";
+export type AdvancedSettingsTarget = "file-access" | null;
 
 export interface AgentLocalNavState {
   sessionId: string | null;
@@ -30,6 +31,7 @@ export interface AgentLocalNavState {
 
 export interface SettingsNavState {
   subTab: SettingsSubTab;
+  advancedTarget: AdvancedSettingsTarget;
   apiKeyProviderId: string | null;
   oauthProviderId: string | null;
   providersSubTab: ProvidersSettingsSubTab;
@@ -68,6 +70,11 @@ export type DeepPartial<T> = {
 
 export type AppNavPatch = DeepPartial<AppNavState>;
 
+export const FILE_ACCESS_SETTINGS_NAV: AppNavPatch = {
+  tab: "settings",
+  settings: { subTab: "advanced", advancedTarget: "file-access" },
+};
+
 export const DEFAULT_APP_NAV: AppNavState = {
   tab: "agent-local",
   agentLocal: {
@@ -86,6 +93,7 @@ export const DEFAULT_APP_NAV: AppNavState = {
   personality: { path: null },
   settings: {
     subTab: "general",
+    advancedTarget: null,
     apiKeyProviderId: null,
     oauthProviderId: null,
     providersSubTab: "api",
@@ -112,6 +120,7 @@ export function migrateAppNav(input: AppNavState): AppNavState {
     oauthProviderId?: string | null;
     extensionsSection?: ExtensionsSettingsSection;
     extensionId?: string | null;
+    advancedTarget?: AdvancedSettingsTarget;
   };
   const subTab: SettingsSubTab = settings.subTab === "api-keys" ? "providers" : settings.subTab;
   return {
@@ -123,6 +132,7 @@ export function migrateAppNav(input: AppNavState): AppNavState {
     settings: {
       ...settings,
       subTab,
+      advancedTarget: settings.advancedTarget ?? null,
       providersSubTab: settings.providersSubTab ?? "api",
       oauthProviderId: settings.oauthProviderId ?? null,
       extensionsSection: settings.extensionsSection ?? "plugins",

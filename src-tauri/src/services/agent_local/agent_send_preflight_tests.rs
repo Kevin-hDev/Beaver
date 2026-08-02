@@ -1,5 +1,16 @@
 use super::agent_send_preflight::{MissingDirectoryAction, PrepareAgentSend};
 
+#[test]
+fn forbidden_response_keeps_the_frontend_contract() {
+    let value = serde_json::to_value(PrepareAgentSend::Forbidden {
+        allowed_paths: vec!["/project/allowed".to_string()],
+    })
+    .expect("serialize");
+
+    assert_eq!(value["status"], "forbidden");
+    assert_eq!(value["allowed_paths"][0], "/project/allowed");
+}
+
 #[tokio::test]
 async fn missing_directory_returns_nearest_existing_parent() {
     let root = tempfile::tempdir().expect("root");

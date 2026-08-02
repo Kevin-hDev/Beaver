@@ -47,6 +47,9 @@ export const SettingsTab = memo(function SettingsTab({
   const setSubTab = useCallback((id: SettingsSubTab) => {
     onNavChange({ subTab: id });
   }, [onNavChange]);
+  const handleAdvancedFocusTarget = useCallback(() => {
+    onNavReplace({ advancedTarget: null });
+  }, [onNavReplace]);
   const subTab = navState.subTab;
   useArrowNavigation({
     items: SETTINGS_TAB_IDS,
@@ -97,11 +100,18 @@ export const SettingsTab = memo(function SettingsTab({
       );
     }
     if (subTab === "archived-chats") return <ArchivedChatsSettings />;
-    if (subTab === "advanced") return <AdvancedSettings />;
+    if (subTab === "advanced") {
+      return (
+        <AdvancedSettings
+          focusTarget={navState.advancedTarget}
+          onFocusTargetHandled={handleAdvancedFocusTarget}
+        />
+      );
+    }
     if (subTab === "shortcuts") return <ShortcutsSettings />;
     if (subTab === "about") return <AboutSettings />;
     return null;
-  }, [activeSessionId, navState, onNavChange, onNavReplace, onThemeChange, settings, subTab, themeChoice]);
+  }, [activeSessionId, handleAdvancedFocusTarget, navState, onNavChange, onNavReplace, onThemeChange, settings, subTab, themeChoice]);
 
   return (
     <>

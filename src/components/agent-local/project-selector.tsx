@@ -4,6 +4,7 @@ import { FolderSimple, FolderSimplePlus, Check, CaretDown } from "@/components/u
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import type { Project } from "@/types/agent";
+import { DirectoryAccessPrompt, type DirectoryAccessPromptProps } from "./directory-access-prompt";
 import "./project-selector.css";
 
 interface ProjectSelectorProps {
@@ -13,10 +14,11 @@ interface ProjectSelectorProps {
   hidden: boolean;
   onSelect: (id: string | null) => void;
   onAddProject: () => void;
+  directoryAccessPrompt?: DirectoryAccessPromptProps;
 }
 
 export function ProjectSelector({
-  projects, selectedProjectId, locked, hidden, onSelect, onAddProject,
+  projects, selectedProjectId, locked, hidden, onSelect, onAddProject, directoryAccessPrompt,
 }: ProjectSelectorProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -58,6 +60,7 @@ export function ProjectSelector({
           <FolderSimple size="var(--icon-sm)" />
           <span>{selected.name}</span>
         </div>
+        {directoryAccessPrompt && <DirectoryAccessPrompt {...directoryAccessPrompt} />}
       </div>
     );
   }
@@ -124,6 +127,7 @@ export function ProjectSelector({
           </div>
         </div>
       )}
+      {directoryAccessPrompt && <DirectoryAccessPrompt {...directoryAccessPrompt} />}
     </div>
   );
 }

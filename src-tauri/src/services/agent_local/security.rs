@@ -28,15 +28,6 @@ static RSYNC_DELETE_REGEX: LazyLock<Regex> =
 static DD_DEVICE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\bdd\b.*\bof=/dev/").unwrap());
 
-fn config_allowed_paths() -> Vec<PathBuf> {
-    crate::services::config::read_config()
-        .map(|c| c.advanced.allowed_paths)
-        .unwrap_or_default()
-        .into_iter()
-        .map(PathBuf::from)
-        .collect()
-}
-
 pub fn allowed_write_roots() -> Vec<PathBuf> {
     base_allowed_roots()
 }
@@ -75,7 +66,7 @@ pub fn allowed_read_roots() -> Vec<PathBuf> {
 }
 
 fn base_allowed_roots() -> Vec<PathBuf> {
-    let mut roots = config_allowed_paths();
+    let mut roots = super::directory_access::configured_roots().unwrap_or_default();
     append_configured_outputs_root(
         &mut roots,
         crate::services::config::session_outputs_directory(),
@@ -100,7 +91,9 @@ pub fn validate_read_path(path: &Path, working_dir: &Path) -> Result<PathBuf, St
     let working_canonical = working_dir
         .canonicalize()
         .unwrap_or_else(|_| working_dir.to_path_buf());
-    if canonical.starts_with(&working_canonical) {
+    if super::directory_access::ensure_allowed(&working_canonical).is_ok()
+        && canonical.starts_with(&working_canonical)
+    {
         return Ok(canonical);
     }
 

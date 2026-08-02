@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import type { AgentSession, Project } from "@/types/agent";
 import { AGENT_SESSIONS_CHANGED } from "./agent-session-events";
+import { useDirectoryAccessGuard } from "./use-directory-access-guard";
 
 const SESSION_DIRECTORY_ID = "session-working-directory";
 
@@ -26,6 +27,12 @@ export function useSessionProject(
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [workingDir, setWorkingDir] = useState("");
   const [loading, setLoading] = useState(true);
+  const {
+    blocked: blockedDirectoryAccess,
+    request: requestDirectoryAccess,
+    cancel: cancelDirectoryAccess,
+    openSettings: openDirectoryAccessSettings,
+  } = useDirectoryAccessGuard();
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -58,17 +65,35 @@ export function useSessionProject(
     const result = await openFileDialog({ directory: true });
     if (!result) return;
     const path = typeof result === "string" ? result : String(result);
-    const project = await onAddProject(path);
-    setSelectedProjectId(project.id);
-  }, [onAddProject]);
+    await requestDirectoryAccess(path, async () => {
+      const project = await onAddProject(path);
+      setSelectedProjectId(project.id);
+    });
+  }, [onAddProject, requestDirectoryAccess]);
+
+  const handleSelectProject = useCallback((id: string | null) => {
+    if (!id) {
+      setSelectedProjectId(null);
+      return;
+    }
+    const project = projects.find((candidate) => candidate.id === id);
+    if (project) {
+      void requestDirectoryAccess(project.path, () => setSelectedProjectId(id));
+    }
+  }, [projects, requestDirectoryAccess]);
 
   return {
     selectedProjectId,
-    setSelectedProjectId,
+    handleSelectProject,
     selectedProject,
     workingDir,
     locked,
     hidden,
     handleAddProject,
+    directoryAccessPrompt: blockedDirectoryAccess ? {
+      allowedPaths: blockedDirectoryAccess.allowedPaths,
+      onCancel: cancelDirectoryAccess,
+      onSettings: openDirectoryAccessSettings,
+    } : undefined,
   };
 }

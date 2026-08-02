@@ -33,6 +33,7 @@ pub mod diagnostic_args;
 #[cfg(test)]
 mod diagnostic_args_tests;
 pub mod diagnostic_redaction;
+pub mod directory_access;
 pub mod extension_discovery_prompt;
 mod extension_session_plugins;
 pub mod extension_session_state;

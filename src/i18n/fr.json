@@ -528,6 +528,13 @@
     "create": "Créer",
     "error": "Impossible de préparer le dossier de cette session."
   },
+  "directoryAccess": {
+    "title": "Dossier non autorisé",
+    "description": "Les sessions sont limitées aux dossiers suivants :",
+    "help": "Pour utiliser un autre dossier, modifiez Réglages > Avancé > Accès fichiers.",
+    "settings": "Réglages",
+    "error": "Impossible de vérifier l’accès à ce dossier."
+  },
   "permissionDialog": {
     "title": "Autoriser à {{action}} ?",
     "allow": "Autoriser une fois",

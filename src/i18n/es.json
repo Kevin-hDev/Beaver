@@ -523,6 +523,13 @@
     "create": "Crear",
     "error": "No se pudo preparar la carpeta de esta sesión."
   },
+  "directoryAccess": {
+    "title": "Carpeta no autorizada",
+    "description": "Las sesiones están limitadas a las siguientes carpetas:",
+    "help": "Para usar otra carpeta, cambia Ajustes > Avanzado > Acceso a archivos.",
+    "settings": "Ajustes",
+    "error": "No se pudo verificar el acceso a esta carpeta."
+  },
   "permissionDialog": {
     "title": "¿Permitir {{action}}?",
     "allow": "Permitir una vez",

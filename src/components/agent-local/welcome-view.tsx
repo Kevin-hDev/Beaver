@@ -8,6 +8,7 @@ import { usePermissionMode } from "@/hooks/use-permission-mode";
 import { useFileDrop, type DroppedFile } from "@/hooks/use-file-drop";
 import type { Project } from "@/types/agent";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
+import { useDirectoryAccessGuard } from "@/hooks/use-directory-access-guard";
 import "./welcome-view.css";
 
 interface WelcomeViewProps {
@@ -27,6 +28,12 @@ export function WelcomeView({
   const { t } = useTranslation();
   const permMode = usePermissionMode();
   const fileDrop = useFileDrop();
+  const {
+    blocked: blockedDirectoryAccess,
+    request: requestDirectoryAccess,
+    cancel: cancelDirectoryAccess,
+    openSettings: openDirectoryAccessSettings,
+  } = useDirectoryAccessGuard();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
 
@@ -34,9 +41,22 @@ export function WelcomeView({
     const result = await openFileDialog({ directory: true });
     if (!result) return;
     const path = typeof result === "string" ? result : String(result);
-    const project = await onAddProject(path);
-    setSelectedProjectId(project.id);
-  }, [onAddProject]);
+    await requestDirectoryAccess(path, async () => {
+      const project = await onAddProject(path);
+      setSelectedProjectId(project.id);
+    });
+  }, [onAddProject, requestDirectoryAccess]);
+
+  const handleSelectProject = useCallback((id: string | null) => {
+    if (!id) {
+      setSelectedProjectId(null);
+      return;
+    }
+    const project = projects.find((candidate) => candidate.id === id);
+    if (project) {
+      void requestDirectoryAccess(project.path, () => setSelectedProjectId(id));
+    }
+  }, [projects, requestDirectoryAccess]);
 
   const handleSend = useCallback((text: string, files?: DroppedFile[], skills?: { name: string; content: string }[]) => {
     const hasFiles = files && files.length > 0;
@@ -87,8 +107,13 @@ export function WelcomeView({
               selectedProjectId={selectedProjectId}
               locked={false}
               hidden={false}
-              onSelect={setSelectedProjectId}
+              onSelect={handleSelectProject}
               onAddProject={() => void handleAddProject()}
+              directoryAccessPrompt={blockedDirectoryAccess ? {
+                allowedPaths: blockedDirectoryAccess.allowedPaths,
+                onCancel: cancelDirectoryAccess,
+                onSettings: openDirectoryAccessSettings,
+              } : undefined}
             />
           </div>
         </div>
