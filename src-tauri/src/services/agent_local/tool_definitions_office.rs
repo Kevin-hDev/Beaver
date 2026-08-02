@@ -151,6 +151,7 @@ pub fn office_tool_definitions() -> Vec<serde_json::Value> {
             "Inspect, resize, crop, or convert an image. Relative paths resolve from the working directory. \
              Pass an empty operations list without output_path to inspect dimensions, format, and file size without writing a file. \
              To convert format, omit operations and change the output extension. \
+             An empty operations list combined with output_path is invalid because the intent is ambiguous. \
              Always pass a relative path with its subdirectory (not a bare filename). \
              Example inspect: {\"input_path\": \"assets/photo.png\", \"operations\": []} \
              Example convert: {\"input_path\": \"assets/photo.png\", \"output_path\": \"output/photo.webp\"} \

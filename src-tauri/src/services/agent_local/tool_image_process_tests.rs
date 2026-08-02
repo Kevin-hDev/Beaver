@@ -131,11 +131,10 @@ mod tests {
     async fn empty_operations_inspect_without_writing() {
         let tmp = working_dir();
         let input = create_test_image(tmp.path(), "input.png", 80, 60);
-        let output = tmp.path().join("output.png");
         let ops = serde_json::json!([]);
         let result = transform_image(
             input.to_str().unwrap(),
-            output.to_str().unwrap(),
+            "",
             &ops,
             tmp.path(),
         )
@@ -146,6 +145,28 @@ mod tests {
         assert_eq!(json["height"], 60);
         assert_eq!(json["format"], "png");
         assert!(json["file_size_bytes"].as_u64().unwrap_or(0) > 0);
+    }
+
+    #[tokio::test]
+    async fn empty_operations_with_output_path_rejects_ambiguous_intent() {
+        let tmp = working_dir();
+        let input = create_test_image(tmp.path(), "input.png", 80, 60);
+        let output = tmp.path().join("output.webp");
+        let result = transform_image(
+            input.to_str().unwrap(),
+            output.to_str().unwrap(),
+            &serde_json::json!([]),
+            tmp.path(),
+        )
+        .await;
+
+        assert!(result.is_error);
+        assert_eq!(
+            result.error.as_ref().map(|error| error.code.as_ref()),
+            Some("image_intent_ambiguous")
+        );
+        assert!(result.content.contains("pour inspecter"));
+        assert!(result.content.contains("pour convertir"));
         assert!(!output.exists());
     }
 

@@ -19,6 +19,12 @@ pub async fn transform_image(
             "Le paramètre 'input_path' est requis",
         );
     }
+    if operations.as_array().is_some_and(Vec::is_empty) && !output_path.is_empty() {
+        return ToolResult::validation(
+            "image_intent_ambiguous",
+            "Demande ambiguë : pour inspecter, utilisez 'operations': [] sans 'output_path' ; pour convertir, fournissez 'output_path' et omettez 'operations'",
+        );
+    }
     let resolved_in = super::tool_office_utils::resolve_path(input_path, working_dir);
 
     let validated_in = match validate_read_path(&resolved_in, working_dir) {
