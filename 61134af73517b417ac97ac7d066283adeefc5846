@@ -1,0 +1,22 @@
+Objectif
+Faire de la liste des dossiers autorisés une vraie frontière de sécurité pour les sessions, tout en conservant par défaut l'accès à tout le disque.
+
+Décisions backend
+- Le backend reste la source de vérité et refuse toute session ou tout changement de projet hors des racines autorisées.
+- Les chemins sont validés puis résolus de manière canonique afin de bloquer les parents, voisins, traversées et liens symboliques contournant la limite.
+- Une modification restrictive annule les agents et shells actifs.
+- Le shell agentique général reste disponible uniquement lorsque la racine du disque est autorisée, car il ne peut pas être confiné de façon fiable à un sous-dossier.
+- La configuration générique ne peut pas écraser silencieusement allowed_paths; une commande dédiée applique la validation et la mutation.
+
+Décisions interface
+- Chaque sélection de dossier est validée avant utilisation et revalidée après une éventuelle modification concurrente des réglages.
+- Une sélection interdite ouvre un dialogue bloquant affichant les racines autorisées.
+- Annuler abandonne la sélection; Réglages ouvre directement Réglages > Avancé > Accès aux fichiers et met la section en évidence.
+- Les composants existants, tokens CSS et boutons partagés sont réutilisés.
+- Tous les textes sont disponibles dans les sept langues et les thèmes clair et sombre sont couverts.
+
+Validation
+- Frontend: 1806 tests Vitest, 2 tests CEF et 46 tests hôte extensions.
+- Backend: 2856 tests Rust.
+- TypeScript, lint, cargo check, Clippy strict et git diff check passent.
+- Graphify a été mis à jour.
