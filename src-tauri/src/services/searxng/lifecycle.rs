@@ -16,7 +16,8 @@ static SEARXNG_READY: AtomicBool = AtomicBool::new(false);
 
 /// Synchronous, non-blocking read of the last known SearXNG runtime state.
 /// True means a sidecar started successfully and has not been observed dead.
-pub fn is_ready() -> bool {
+#[cfg(test)]
+fn is_ready() -> bool {
     SEARXNG_READY.load(Ordering::Relaxed)
 }
 

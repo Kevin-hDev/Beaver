@@ -1,5 +1,5 @@
 use super::tool_document_write::write_document;
-use super::tool_image_process::process_image;
+use super::tool_image_process::transform_image;
 use super::tool_office_limits::{
     MAX_DOCUMENT_BLOCKS, MAX_IMAGE_OPERATIONS, MAX_SPREADSHEET_OPERATIONS,
 };
@@ -46,7 +46,7 @@ async fn image_operation_limit_has_a_specific_error() {
     image::RgbImage::new(1, 1).save(&input).unwrap();
     let operations = Value::Array(vec![json!({}); MAX_IMAGE_OPERATIONS + 1]);
 
-    let result = process_image(
+    let result = transform_image(
         input.to_str().unwrap(),
         output.to_str().unwrap(),
         &operations,

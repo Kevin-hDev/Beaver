@@ -24,7 +24,7 @@ pub(super) async fn dispatch_inner(
     progress: Option<super::tool_bash_progress::ShellProgress>,
 ) -> ToolResult {
     match tool_name {
-        "bash" | "bash_write" => {
+        "bash" | "bash_control" => {
             super::tool_dispatcher_shell::dispatch(
                 tool_name, args, working_dir, session_id, cancel, profile, progress,
             )
@@ -99,28 +99,12 @@ pub(super) async fn dispatch_inner(
             ToolErrorCategory::Unavailable,
             false,
         ),
-        "planmode" => ToolResult::error(
+        "plan_mode" => ToolResult::error(
             "Contexte plan indisponible.",
             "plan_context_unavailable",
             ToolErrorCategory::Unavailable,
             false,
         ),
-        "agent_diagnostics" => {
-            let limit = args
-                .get("limit")
-                .and_then(|value| value.as_u64())
-                .and_then(|value| usize::try_from(value).ok())
-                .unwrap_or(super::stream_diagnostics_tools::DEFAULT_TOOL_LIMIT);
-            match super::stream_diagnostics::diagnostics_text(session_id, limit).await {
-                Ok(text) => ToolResult::ok(text),
-                Err(_) => ToolResult::error(
-                    "Diagnostics indisponibles.",
-                    "diagnostics_unavailable",
-                    ToolErrorCategory::Internal,
-                    true,
-                ),
-            }
-        }
         "load_skill" => {
             let skill_id = args["skill_id"].as_str().unwrap_or("");
             match tool_skill_loader::load_skill_with_metadata(skill_id).await {

@@ -20,7 +20,7 @@ pub async fn dispatch(
         "bash" => execute_command(args, working_dir, session_id, cancel, profile, progress)
             .await
             .map(to_tool_result),
-        "bash_write" => control_process(args, session_id, cancel, progress)
+        "bash_control" => control_process(args, session_id, cancel, progress)
             .await
             .map(|(output, command)| {
                 to_tool_result(output).with_display_summary(command.as_str())

@@ -869,7 +869,6 @@
         "subagents": { "title": "Subagents", "description": "Lets the agent delegate a subtask to a secondary agent, then pick up the result. Turn off if you want to keep everything in a single conversation." },
         "plan_mode": { "title": "Plan mode", "description": "Lets the agent propose an action plan and wait for your approval before acting. Turn off if you'd rather it jump straight to action." },
         "todo_list": { "title": "Todo list", "description": "Lets the agent keep a checklist during a long task, so nothing gets forgotten. Turn off if checklists aren't useful to you." },
-        "agent_diagnostics": { "title": "Agent diagnostics", "description": "Lets the agent review its recent errors to self-correct after a failure. Turn off if you don't want it spending time analyzing its failures." },
         "git_branches": { "title": "Git branches", "description": "Lets the agent create or switch Git branches to isolate its work. Turn off if you prefer to manage branches yourself." },
         "forecast": { "title": "Forecast", "description": "Lets the agent use the Forecast module: run forecasts, read the results, add scenarios. Turn off if you don't use Forecast." },
         "spreadsheet": { "title": "Spreadsheet / Excel", "description": "Lets the agent read or create spreadsheets (Excel, ODS, CSV, TSV). Turn off if you don't work with this kind of file." },

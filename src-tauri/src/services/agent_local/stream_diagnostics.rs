@@ -1,10 +1,8 @@
 use chrono::Utc;
-use serde_json::json;
 use uuid::Uuid;
 
 use super::stream_diagnostics_failure as failure;
 use super::stream_diagnostics_support as support;
-use super::stream_diagnostics_tools as diagnostic_tools;
 use super::types_diagnostics::{AgentDiagnosticRun, AgentErrorDiagnosticSummary};
 use super::types_session::AgentSession;
 
@@ -136,27 +134,6 @@ pub async fn record_failure(
     })
     .await;
     summary
-}
-
-pub async fn diagnostics_text(session_id: &str, limit: usize) -> Result<String, String> {
-    super::session_store::validate_session_id(session_id)?;
-    let session = super::session_store::get(session_id).await?;
-    let limit = diagnostic_tools::bounded_tool_limit(limit);
-    let recent_tools = diagnostic_tools::recent_relevant_tools(&session, limit);
-    let recent_work_tools = diagnostic_tools::recent_work_tools(&session, limit);
-    let global_tool_metrics = super::tool_metrics::summary(limit).await.ok();
-    serde_json::to_string_pretty(&json!({
-        "latest": session.diagnostic_runs.last(),
-        "current_tool": session.diagnostic_runs.last().and_then(|run| run.last_tool.as_ref()),
-        "last_relevant_tool": recent_tools.first(),
-        "last_work_tool": recent_work_tools.first(),
-        "recent_tools": recent_tools,
-        "recent_work_tools": recent_work_tools,
-        "global_tool_metrics": global_tool_metrics,
-        "recent": session.diagnostic_runs.iter().rev().take(5).collect::<Vec<_>>(),
-        "legacy_stream_failures": session.stream_failures.iter().rev().take(5).collect::<Vec<_>>(),
-    }))
-    .map_err(|_| "Diagnostics indisponibles.".to_string())
 }
 
 pub(crate) fn push_failure(session: &mut AgentSession, message: &str, is_connection: bool) {

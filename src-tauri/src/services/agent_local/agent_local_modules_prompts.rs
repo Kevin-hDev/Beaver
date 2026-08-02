@@ -6,8 +6,6 @@ mod chat_prompts_behavior_tests;
 pub mod chat_prompts_chat_tests;
 #[cfg(test)]
 pub mod chat_prompts_tests;
-#[cfg(test)]
-pub mod chat_prompts_web_status_tests;
 pub mod prompt_chat_compact;
 pub mod prompt_chat_detailed;
 pub mod prompt_compact;

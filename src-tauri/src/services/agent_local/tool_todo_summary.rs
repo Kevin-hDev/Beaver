@@ -54,10 +54,7 @@ pub fn reminder(session: &AgentSession) -> Option<String> {
         );
     }
     if let Some(err) = failure {
-        lines.push(format!(
-            "Last stream diagnostic: {}. Use agent_diagnostics if you need details.",
-            err.code
-        ));
+        lines.push(format!("Last stream diagnostic: {}.", err.code));
     }
     Some(lines.join("\n"))
 }

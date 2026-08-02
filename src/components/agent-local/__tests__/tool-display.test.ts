@@ -102,7 +102,7 @@ describe("toolDisplayInfo", () => {
       summary: "npm test",
       icon: "TerminalWindow",
     });
-    expect(toolDisplayInfo({ name: "bash_write", summary: "session-1" }, undefined, t)).toEqual({
+    expect(toolDisplayInfo({ name: "bash_control", summary: "session-1" }, undefined, t)).toEqual({
       label: "bash",
       summary: "session-1",
       icon: "TerminalWindow",
@@ -111,7 +111,7 @@ describe("toolDisplayInfo", () => {
 
   it("affiche un arrêt volontaire comme une action dédiée", () => {
     expect(toolDisplayInfo({
-      name: "bash_write",
+      name: "bash_control",
       summary: "npm start",
       args: { session_id: "session-1", stop: true },
     }, undefined, t)).toEqual({
@@ -124,7 +124,7 @@ describe("toolDisplayInfo", () => {
   it("reclasse l'ancien résultat d'arrêt sans masquer les autres erreurs", () => {
     const sessionId = "6a719eeb-1665-49cd-a5e2-23427e80543b";
     const tool = savedToolToRenderable({
-      name: "bash_write",
+      name: "bash_control",
       summary: sessionId,
       args: { session_id: sessionId, stop: true },
       result: "Commande annulee.",
@@ -139,7 +139,7 @@ describe("toolDisplayInfo", () => {
     expect(toolDisplayInfo({ name: "load_skill", summary: "context7-docs" }, undefined, t).label).toBe("Skill");
     expect(toolDisplayInfo({ name: "delegate_task", summary: "audit" }, undefined, t).label).toBe("Agent");
     expect(toolDisplayInfo({ name: "forecast_data_audit", summary: "sales" }, undefined, t).label).toBe("Forecast");
-    expect(toolDisplayInfo({ name: "forecast", summary: "sales" }, undefined, t).label).toBe("Read");
+    expect(toolDisplayInfo({ name: "forecast_run", summary: "sales" }, undefined, t).label).toBe("Read");
     expect(toolDisplayInfo({ name: "forecast_models", summary: "models" }, undefined, t).label).toBe("Read");
     expect(toolDisplayInfo({ name: "forecast_read", summary: "analysis" }, undefined, t).label).toBe("Read");
     expect(toolDisplayInfo({ name: "forecast_analyze", summary: "scenario" }, undefined, t).label).toBe("Forecast");
@@ -179,14 +179,13 @@ describe("toolDisplayInfo", () => {
       ["read_file", "BookOpenText"],
       ["read_spreadsheet", "FileText"],
       ["read_document", "FileText"],
-      ["read_image", "Image"],
       ["write_file", "FilePlus"],
       ["write_spreadsheet", "FilePlus"],
       ["write_document", "FilePlus"],
       ["edit_file", "Pencil"],
-      ["process_image", "Pencil"],
+      ["transform_image", "Pencil"],
       ["bash", "TerminalWindow"],
-      ["bash_write", "TerminalWindow"],
+      ["bash_control", "TerminalWindow"],
       ["web_search", "Globe"],
       ["web_fetch", "Link"],
       ["list_dir", "FolderOpen"],
@@ -197,7 +196,7 @@ describe("toolDisplayInfo", () => {
       ["load_skill", "Sparkle"],
       ["delegate_task", "Users"],
       ["forecast_data_audit", "ChartLineUp"],
-      ["forecast", "ChartLineUp"],
+      ["forecast_run", "ChartLineUp"],
       ["forecast_analyze", "ChartLineUp"],
       ["search_mcp_tools", "Plugs"],
     ];

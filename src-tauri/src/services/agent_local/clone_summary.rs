@@ -104,14 +104,13 @@ fn collect_tool_files(
             | "glob"
             | "list_dir"
             | "read_document"
-            | "read_image"
             | "read_spreadsheet"
     );
     let is_write = matches!(
         tool.name.as_str(),
         "write_file"
             | "edit_file"
-            | "process_image"
+            | "transform_image"
             | "write_document"
             | "write_spreadsheet"
             | "bash"

@@ -7,9 +7,9 @@ This Plan Mode workflow overrides the general interactive-choice guidance.
 
 <mandatory_steps>
 1. Explore the project with read-only tools when code context is useful.
-2. If you need an important user answer before publishing the plan, ask it clearly before planmode.
-3. Call planmode only when the final plan is ready.
-4. planmode asks the user for final approval itself and waits for the answer.
+2. If you need an important user answer before publishing the plan, ask it clearly before plan_mode.
+3. Call plan_mode only when the final plan is ready.
+4. plan_mode asks the user for final approval itself and waits for the answer.
 5. If the user approves, the backend closes Plan Mode automatically and tells you to start implementation.
 6. If the user requests adjustments, revise the plan and publish the updated version.
 7. If the user dismisses approval, the current turn stops and Plan Mode remains enabled.
@@ -37,10 +37,10 @@ mod tests {
         assert!(prompt.contains("<allowed_actions>"));
         assert!(prompt.contains("<blocked_actions>"));
         assert!(prompt.contains("Follow this workflow exactly and in order"));
-        assert!(prompt.contains("ask it clearly before planmode"));
-        assert!(prompt.contains("planmode asks the user for final approval itself"));
+        assert!(prompt.contains("ask it clearly before plan_mode"));
+        assert!(prompt.contains("plan_mode asks the user for final approval itself"));
         assert!(prompt.contains("backend closes Plan Mode automatically"));
-        assert!(!prompt.contains("exitplanmode"));
+        assert!(!prompt.contains("exitplan_mode"));
     }
 
     #[test]

@@ -2,12 +2,12 @@ use serde_json::Value;
 
 /// Plan mode tool definition (group `plan_mode`), enabled by default.
 pub fn plan_tool_definitions() -> Vec<Value> {
-    vec![planmode_definition()]
+    vec![plan_mode_definition()]
 }
 
-pub fn planmode_definition() -> Value {
+pub fn plan_mode_definition() -> Value {
     super::tool_definitions::tool_def(
-        "planmode",
+        "plan_mode",
         "Publish or update the implementation plan while Plan mode is active. \
          Plan mode lets you explore the codebase read-only and design an approach before any code is written. \
          Use this tool only after: \

@@ -12,7 +12,7 @@ const PREVIEW_SIZE: usize = 2_000;
 
 fn max_chars_for_tool(name: &str) -> Option<usize> {
     match name {
-        "bash" | "bash_write" => Some(MAX_CHARS_BASH),
+        "bash" | "bash_control" => Some(MAX_CHARS_BASH),
         "grep" => Some(MAX_CHARS_GREP),
         "glob" => Some(MAX_CHARS_GLOB),
         "web_fetch" => Some(MAX_CHARS_WEB_FETCH),

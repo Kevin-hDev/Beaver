@@ -1,9 +1,10 @@
 use super::diagnostic_redaction;
 use super::stream_diagnostics_support as support;
-use super::stream_diagnostics_tools as diagnostic_tools;
 use super::tool_result_contract::ToolResultStatus;
 use super::types_diagnostics::AgentDiagnosticTool;
 use super::types_tools::ToolResult;
+
+const MAX_DIAGNOSTIC_TOOLS: usize = 20;
 
 pub async fn record_tool(
     session_id: &str,
@@ -46,10 +47,7 @@ pub async fn record_tool(
         };
         run.last_tool = Some(tool.clone());
         run.recent_tools.push(tool);
-        support::trim(
-            &mut run.recent_tools,
-            diagnostic_tools::MAX_DIAGNOSTIC_TOOLS,
-        );
+        support::trim(&mut run.recent_tools, MAX_DIAGNOSTIC_TOOLS);
         run.active_todo = support::active_todo(session);
         run.safe_summary = Some(support::clip(&message));
         support::push_event(run, phase, &message, Some(name), error_code.as_deref());

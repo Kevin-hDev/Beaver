@@ -157,9 +157,9 @@ fn post_record_write_error_does_not_register() {
     assert!(guard.check_write(path).is_err());
 }
 
-/// process_image doit enregistrer output_path après write.
+/// transform_image doit enregistrer output_path après write.
 #[test]
-fn post_record_write_process_image_registers_output() {
+fn post_record_write_transform_image_registers_output() {
     let mut guard = WriteGuard::new();
     let dir = tempfile::tempdir().unwrap();
     let out = dir.path().join("out.png");
@@ -168,7 +168,7 @@ fn post_record_write_process_image_registers_output() {
     let args = json!({ "output_path": out.to_str().unwrap() });
     let tr = ToolResult::ok("done".to_string());
     post_record_write(
-        "process_image",
+        "transform_image",
         &args,
         std::path::Path::new("."),
         &tr,

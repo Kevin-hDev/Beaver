@@ -160,7 +160,6 @@ fn todo_tools_enabled(enabled_tool_names: &[String]) -> bool {
             "todo_pause",
             "todo_resume",
             "todo_delete",
-            "agent_diagnostics",
         ],
     )
 }

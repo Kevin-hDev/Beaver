@@ -69,7 +69,7 @@ vi.mock("../tool-bubble.css", () => ({}));
 vi.mock("@/lib/tool-file-path", () => ({
   isFileTool: (name: string) =>
     ["read_file", "write_file", "edit_file", "read_spreadsheet", "read_document",
-      "read_image", "write_spreadsheet", "write_document", "process_image"].includes(name),
+      "write_spreadsheet", "write_document", "transform_image"].includes(name),
 }));
 
 beforeEach(() => vi.clearAllMocks());
@@ -126,7 +126,7 @@ describe("SavedToolBubble", () => {
           result: `[Processus actif: session_id=${sessionId}, pid=91661, 1001 ms]`,
         },
         {
-          name: "bash_write",
+          name: "bash_control",
           summary: sessionId,
           args: { session_id: sessionId, chars: "\u0003" },
           result: "Commande annulee.",

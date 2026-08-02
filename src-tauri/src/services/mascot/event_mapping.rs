@@ -34,8 +34,8 @@ pub(super) fn animation_for_event(
 
 fn tool_animation(name: &str) -> MascotAnimation {
     match name {
-        "read_file" | "read_document" | "read_spreadsheet" | "read_image" | "list_dir" | "grep"
-        | "glob" | "web_search" | "web_fetch" => MascotAnimation::ExploreBook,
+        "read_file" | "read_document" | "read_spreadsheet" | "list_dir" | "grep" | "glob"
+        | "web_search" | "web_fetch" => MascotAnimation::ExploreBook,
         _ => MascotAnimation::WorkLaptop,
     }
 }

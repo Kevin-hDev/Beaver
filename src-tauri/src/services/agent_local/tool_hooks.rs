@@ -44,7 +44,6 @@ pub fn run_pre_hooks(tool_name: &str, args: &Value) -> PreHookDecision {
             | "grep"
             | "read_spreadsheet"
             | "read_document"
-            | "read_image"
     ) {
         if let Some(path) = args["path"].as_str() {
             if path.contains("..") {
@@ -53,7 +52,7 @@ pub fn run_pre_hooks(tool_name: &str, args: &Value) -> PreHookDecision {
         }
     }
 
-    if tool_name == "process_image" {
+    if tool_name == "transform_image" {
         for key in &["input_path", "output_path"] {
             if let Some(path) = args[*key].as_str() {
                 if path.contains("..") {
@@ -84,7 +83,7 @@ pub fn run_pre_hooks(tool_name: &str, args: &Value) -> PreHookDecision {
 pub fn run_post_hooks(tool_name: &str, _args: &Value, mut result: ToolResult) -> ToolResult {
     if matches!(
         tool_name,
-        "bash" | "bash_write" | "read_file" | "grep" | "glob" | "list_dir"
+        "bash" | "bash_control" | "read_file" | "grep" | "glob" | "list_dir"
     ) {
         result.content =
             crate::services::agent_local::sensitive_data::redact_text(&result.content);

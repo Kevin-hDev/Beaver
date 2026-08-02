@@ -9,7 +9,7 @@ mod settings;
 mod source_filter;
 mod wheels;
 
-pub use lifecycle::{is_ready, SearxngSidecar};
+pub use lifecycle::SearxngSidecar;
 
 use crate::services::agent_local::types_tools::SearchResult;
 

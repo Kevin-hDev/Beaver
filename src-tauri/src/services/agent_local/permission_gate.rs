@@ -21,12 +21,11 @@ const GATED_TOOLS: &[&str] = &[
     "web_fetch",
     "write_spreadsheet",
     "write_document",
-    "process_image",
     "create_branch",
     "checkout_branch",
     "apply_subagent_changes",
     "forecast_data_audit",
-    "forecast",
+    "forecast_run",
     "forecast_backtest",
 ];
 
@@ -36,9 +35,10 @@ pub fn requires_permission(tool_name: &str, args: &serde_json::Value) -> bool {
             let cmd = args["command"].as_str().unwrap_or("");
             !super::permission_bash::is_safe(cmd)
         }
-        "bash_write" => args["chars"]
+        "bash_control" => args["chars"]
             .as_str()
             .is_some_and(|input| !input.is_empty()),
+        "transform_image" => !args["operations"].as_array().is_some_and(Vec::is_empty),
         "search_mcp_tools" => args["mode"].as_str() == Some("call"),
         _ => GATED_TOOLS.contains(&tool_name),
     }

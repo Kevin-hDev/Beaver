@@ -117,10 +117,10 @@ mod tests {
     fn plan_workflow_survives_when_interactive_tool_is_disabled() {
         let filtered = filter_system_prompt(
             &super::super::prompt_plan::plan_mode_prompt(),
-            &["planmode".to_string()],
+            &["plan_mode".to_string()],
         );
 
-        assert!(filtered.contains("ask it clearly before planmode"));
+        assert!(filtered.contains("ask it clearly before plan_mode"));
         assert!(filtered.contains("backend closes Plan Mode automatically"));
         assert!(!filtered.contains("ask_user_choice"));
     }

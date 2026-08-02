@@ -2,7 +2,7 @@ use super::tool_result_contract::ToolErrorCategory;
 use super::types_tools::ToolResult;
 
 pub(crate) fn enrich(result: ToolResult, tool_name: &str) -> ToolResult {
-    if !result.is_error || !matches!(tool_name, "bash" | "bash_write") {
+    if !result.is_error || !matches!(tool_name, "bash" | "bash_control") {
         return result;
     }
     let shell_exit = result

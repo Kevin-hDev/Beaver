@@ -158,7 +158,7 @@ async fn stopped_session_returns_its_exact_command_as_display_summary() {
         .expect("process id");
 
     let result = super::dispatch(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": process_id, "stop": true, "yield_time_ms": 1_000}),
         dir.path(),
         &owner,

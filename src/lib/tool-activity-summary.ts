@@ -51,11 +51,11 @@ export interface ToolActivityGroup<T extends ToolActivitySummaryInput> {
 }
 
 const READ_TOOLS = new Set([
-  "read_file", "read_spreadsheet", "read_document", "read_image",
+  "read_file", "read_spreadsheet", "read_document",
 ]);
 const SEARCH_TOOLS = new Set(["grep", "glob"]);
 const WRITE_TOOLS = new Set([
-  "write_file", "write_spreadsheet", "write_document", "process_image",
+  "write_file", "write_spreadsheet", "write_document", "transform_image",
 ]);
 const EDIT_TOOLS = new Set(["edit_file"]);
 const WEB_TOOLS = new Set(["web_search", "web_fetch"]);
@@ -82,7 +82,7 @@ function getToolActivityKind(name: string, domain?: "memory"): ToolActivityGroup
     return "exploration";
   }
   if (WRITE_TOOLS.has(name) || EDIT_TOOLS.has(name)) return "modification";
-  if (name === "bash" || name === "bash_write") return "command";
+  if (name === "bash" || name === "bash_control") return "command";
   if (WEB_TOOLS.has(name)) return "web";
   if (GIT_TOOLS.has(name)) return "git";
   return "other";
@@ -127,7 +127,7 @@ function incrementCounts(counts: ToolActivityCounts, name: string) {
   else if (name === "list_dir") counts.lists += 1;
   else if (WRITE_TOOLS.has(name)) counts.writes += 1;
   else if (EDIT_TOOLS.has(name)) counts.edits += 1;
-  else if (name === "bash" || name === "bash_write") counts.commands += 1;
+  else if (name === "bash" || name === "bash_control") counts.commands += 1;
   else if (name === "web_search") counts.webSearches += 1;
   else if (name === "web_fetch") counts.webFetches += 1;
   else if (GIT_TOOLS.has(name)) counts.gitActions += 1;

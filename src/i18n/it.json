@@ -864,7 +864,6 @@
         "subagents": { "title": "Sotto-agenti", "description": "Permette all'agente di delegare una sotto-attività a un agente secondario, poi di riprendere il risultato. Disattiva se vuoi tenere tutto in una sola conversazione." },
         "plan_mode": { "title": "Plan mode", "description": "Permette all'agente di proporti un piano d'azione e aspettare il tuo accordo prima di agire. Disattiva se preferisci che passi direttamente all'azione." },
         "todo_list": { "title": "Lista todo", "description": "Permette all'agente di tenere una checklist durante un lavoro lungo, per non dimenticare nulla. Disattiva se le checklist non ti servono." },
-        "agent_diagnostics": { "title": "Diagnostica agente", "description": "Permette all'agente di rileggere i suoi errori recenti per correggersi dopo un fallimento. Disattiva se non vuoi che perda tempo a analizzare i suoi insuccessi." },
         "git_branches": { "title": "Branch Git", "description": "Permette all'agente di creare o cambiare branch Git per isolare il suo lavoro. Disattiva se preferisci gestire i branch da solo." },
         "forecast": { "title": "Forecast", "description": "Permette all'agente di usare il modulo Forecast: lanciare previsioni, leggere i risultati, aggiungere scenari. Disattiva se non usi Forecast." },
         "spreadsheet": { "title": "Foglio di calcolo / Excel", "description": "Permette all'agente di leggere o creare fogli di calcolo (Excel, ODS, CSV, TSV). Disattiva se non lavori con questo tipo di file." },

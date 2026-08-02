@@ -38,8 +38,8 @@ describe("groupToolActivities", () => {
     expect(groups[0].counts.webFetches).toBe(1);
   });
 
-  it("groupe bash et bash_write en commandes", () => {
-    const groups = groupToolActivities([tool("bash"), tool("bash_write")]);
+  it("groupe bash et bash_control en commandes", () => {
+    const groups = groupToolActivities([tool("bash"), tool("bash_control")]);
 
     expect(groups).toHaveLength(1);
     expect(groups[0].kind).toBe("command");

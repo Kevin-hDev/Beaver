@@ -7,11 +7,9 @@ pub fn web_tool_definitions() -> Vec<Value> {
         tool_def(
             "web_search",
             "Search the web for current information, documentation, or solutions. \
-             Provider is selected automatically: configured Brave, Exa, then Firecrawl, followed by the local SearXNG fallback when it is ready. SearXNG does not require an API key. \
-             You cannot select a provider or filter by domain. \
+             The source is selected automatically; you cannot select one or filter by domain. \
              Returns a list of results (title, url, snippet). Result count depends on the provider. \
-             Keep queries concise and specific. Use the current year for time-sensitive topics. \
-             A configured search API or the local SearXNG fallback must be available.",
+             Keep queries concise and specific. Use the current year for time-sensitive topics.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -45,14 +43,15 @@ pub fn web_tool_definitions() -> Vec<Value> {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn search_description_includes_the_keyless_local_fallback() {
+    fn search_description_exposes_only_actionable_model_guidance() {
         let definitions = super::web_tool_definitions();
         let description = definitions[0]["function"]["description"]
             .as_str()
             .expect("web search description");
 
-        assert!(description.contains("SearXNG does not require an API key"));
-        assert!(description.contains("configured Brave, Exa, then Firecrawl"));
-        assert!(!description.contains("At least one search provider must be configured"));
+        assert!(description.contains("selected automatically"));
+        for internal_detail in ["Brave", "Exa", "Firecrawl", "SearXNG", "API key"] {
+            assert!(!description.contains(internal_detail));
+        }
     }
 }

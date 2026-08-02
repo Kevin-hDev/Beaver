@@ -1,14 +1,13 @@
 use serde_json::Value;
 
-/// All todo + diagnostics tool definitions (groups `todo_list` and `agent_diagnostics`).
-pub fn todo_and_diagnostics_definitions() -> Vec<Value> {
+/// Todo-list tool definitions.
+pub fn todo_definitions() -> Vec<Value> {
     vec![
         todo_write_definition(),
         todo_history_definition(),
         todo_pause_definition(),
         todo_resume_definition(),
         todo_delete_definition(),
-        agent_diagnostics_definition(),
     ]
 }
 
@@ -93,24 +92,6 @@ fn todo_delete_definition() -> Value {
             "properties": {
                 "id": {"type": "string", "description": "Todo checklist id from Todo memory or todo_history. Required for paused checklists."},
                 "active": {"type": "boolean", "description": "Set true only to delete the current active checklist, never paused checklists."}
-            }
-        }),
-    )
-}
-
-fn agent_diagnostics_definition() -> Value {
-    super::tool_definitions::tool_def(
-        "agent_diagnostics",
-        "Read recent safe stream diagnostics for this session plus bounded durable outcome totals by tool. The global totals distinguish execution failures, user refusals, policy blocks, and cancellations without exposing arguments. Hidden from the user UI.",
-        serde_json::json!({
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 20,
-                    "description": "How many recent non-diagnostic tool calls to include. Defaults to 1."
-                }
             }
         }),
     )

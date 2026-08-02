@@ -1,4 +1,4 @@
-use super::tool_image_process::process_image;
+use super::tool_image_process::transform_image;
 use super::tool_result_contract::ToolResultStatus;
 use super::types_tools::ToolResult;
 
@@ -18,7 +18,7 @@ async fn unsupported_output_format_is_a_validation_error() {
     let input = source(directory.path());
     let output = directory.path().join("output.txt");
 
-    let result = process_image(
+    let result = transform_image(
         input.to_str().unwrap(),
         output.to_str().unwrap(),
         &serde_json::Value::Null,
@@ -39,7 +39,7 @@ async fn invalid_resize_mode_is_not_silently_treated_as_fit() {
         {"type": "resize", "width": 2, "height": 2, "mode": "unknown"}
     ]);
 
-    let result = process_image(
+    let result = transform_image(
         input.to_str().unwrap(),
         output.to_str().unwrap(),
         &operations,
@@ -58,7 +58,7 @@ async fn missing_quality_value_has_a_specific_error() {
     let output = directory.path().join("output.jpg");
     let operations = serde_json::json!([{"type": "quality"}]);
 
-    let result = process_image(
+    let result = transform_image(
         input.to_str().unwrap(),
         output.to_str().unwrap(),
         &operations,
@@ -77,7 +77,7 @@ async fn ignored_quality_is_reported_as_a_partial_result() {
     let output = directory.path().join("output.png");
     let operations = serde_json::json!([{"type": "quality", "value": 80}]);
 
-    let result = process_image(
+    let result = transform_image(
         input.to_str().unwrap(),
         output.to_str().unwrap(),
         &operations,

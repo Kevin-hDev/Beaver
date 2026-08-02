@@ -29,7 +29,7 @@ describe("ToolItem shell stop", () => {
     const command = "npm run dev -- --host 127.0.0.1";
     const { container, getByRole } = render(
       <ToolItem
-        name="bash_write"
+        name="bash_control"
         summary={command}
         displayName="Arrêt du processus"
         displaySummary=""

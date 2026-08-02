@@ -14,7 +14,7 @@ pub fn requires_sensitive_bash_prompt(
     }
     let input = match tool_name {
         "bash" => args["command"].as_str(),
-        "bash_write" => args["chars"].as_str(),
+        "bash_control" => args["chars"].as_str(),
         _ => None,
     };
     input

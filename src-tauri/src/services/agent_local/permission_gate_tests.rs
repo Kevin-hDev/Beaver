@@ -50,6 +50,18 @@ fn gated_tool_edit_file() {
 }
 
 #[test]
+fn image_inspection_does_not_request_write_permission() {
+    assert!(!requires_permission(
+        "transform_image",
+        &json!({"input_path": "image.png", "operations": []}),
+    ));
+    assert!(requires_permission(
+        "transform_image",
+        &json!({"input_path": "image.png", "output_path": "out.png"}),
+    ));
+}
+
+#[test]
 fn safe_bash_git_log() {
     let args = json!({ "command": "git log --oneline -10" });
     assert!(!requires_permission("bash", &args));
@@ -195,21 +207,21 @@ fn unsafe_bash_input_redirect() {
 }
 
 #[test]
-fn bash_write_only_prompts_when_it_sends_input() {
+fn bash_control_only_prompts_when_it_sends_input() {
     assert!(!requires_permission(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": "session"})
     ));
     assert!(!requires_permission(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": "session", "chars": ""})
     ));
     assert!(!requires_permission(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": "session", "stop": true})
     ));
     assert!(requires_permission(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": "session", "chars": "hello\n"})
     ));
 }

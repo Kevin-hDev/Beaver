@@ -12,13 +12,12 @@ mod tests {
         assert!(is_read_only("search_extension_tools"));
         assert!(is_read_only("read_spreadsheet"));
         assert!(is_read_only("read_document"));
-        assert!(is_read_only("read_image"));
         assert!(!is_read_only("bash"));
         assert!(!is_read_only("write_file"));
         assert!(!is_read_only("edit_file"));
         assert!(!is_read_only("web_fetch"));
         assert!(!is_read_only("write_spreadsheet"));
         assert!(!is_read_only("write_document"));
-        assert!(!is_read_only("process_image"));
+        assert!(!is_read_only("transform_image"));
     }
 }

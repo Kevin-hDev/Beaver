@@ -29,10 +29,12 @@ fn search_configuration_rate_limit_and_timeout_are_distinct() {
     let limited = search("Brave: limite de requêtes atteinte (HTTP 429)".to_string());
     let timeout = search("SearXNG: timeout".to_string());
 
-    assert_eq!(
-        config.error.unwrap().code.as_ref(),
-        "web_search_not_configured"
-    );
+    let config_error = config.error.unwrap();
+    assert_eq!(config_error.code.as_ref(), "web_search_not_configured");
+    assert!(config_error
+        .hint
+        .as_deref()
+        .is_some_and(|hint| hint.contains("Configurer")));
     assert_eq!(
         limited.error.unwrap().code.as_ref(),
         "web_search_rate_limited"

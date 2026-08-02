@@ -3,12 +3,12 @@ use std::path::PathBuf;
 
 const LEGACY_FORECAST_TOOLS: &[&str] = &[
     "forecast_data_audit",
-    "forecast",
+    "forecast_run",
     "forecast_models",
     "forecast_analyze",
     "forecast_read",
 ];
-const TOOL_CATALOG_SCHEMA: u32 = 2;
+const TOOL_CATALOG_SCHEMA: u32 = 3;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentSettings {

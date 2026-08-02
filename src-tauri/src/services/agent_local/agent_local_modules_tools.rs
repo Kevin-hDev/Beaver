@@ -100,13 +100,12 @@ mod tool_git_error;
 pub mod tool_list_dir;
 #[cfg(test)]
 mod tool_list_dir_tests;
-pub mod tool_metrics;
-mod tool_metrics_store;
 pub mod tool_group_catalog;
 pub mod tool_hooks;
 #[cfg(test)]
 pub mod tool_hooks_tests;
 pub mod tool_image_process;
+mod tool_image_inspect;
 #[cfg(test)]
 mod tool_image_process_contract_tests;
 mod tool_image_process_geometry;
@@ -114,9 +113,6 @@ mod tool_image_process_geometry;
 pub mod tool_image_process_limits_tests;
 #[cfg(test)]
 pub mod tool_image_process_tests;
-pub mod tool_image_read;
-#[cfg(test)]
-pub mod tool_image_read_tests;
 pub mod tool_interactive;
 pub mod tool_interactive_parse;
 #[cfg(test)]
@@ -186,7 +182,6 @@ pub mod tool_web_search;
 pub mod translation_cache;
 pub mod translator;
 include!("agent_local_modules_tool_types.rs");
-pub mod web_search_status;
 pub mod write_guard;
 pub mod write_guard_extract;
 #[cfg(test)]

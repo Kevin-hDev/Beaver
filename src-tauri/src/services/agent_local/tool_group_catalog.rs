@@ -10,7 +10,7 @@ pub struct ToolGroupEntry {
 }
 
 const LOCKED_GROUPS: &[ToolGroupEntry] = &[
-    group("terminal", true, true, &["bash", "bash_write"]),
+    group("terminal", true, true, &["bash", "bash_control"]),
     group(
         "files",
         true,
@@ -31,7 +31,7 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
         true,
         super::tool_catalog::SUBAGENT_TOOLS,
     ),
-    group("plan_mode", false, true, &["planmode"]),
+    group("plan_mode", false, true, &["plan_mode"]),
     group(
         "todo_list",
         false,
@@ -44,7 +44,6 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
             "todo_delete",
         ],
     ),
-    group("agent_diagnostics", false, false, &["agent_diagnostics"]),
     group(
         "git_branches",
         false,
@@ -57,7 +56,7 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
         false,
         &[
             "forecast_data_audit",
-            "forecast",
+            "forecast_run",
             "forecast_models",
             "forecast_analyze",
             "forecast_read",
@@ -77,7 +76,7 @@ const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
         false,
         &["read_document", "write_document"],
     ),
-    group("images", false, false, &["read_image", "process_image"]),
+    group("images", false, false, &["transform_image"]),
 ];
 
 const fn group(
@@ -132,7 +131,7 @@ mod tests {
     fn optional_group_returns_all_real_tool_ids() {
         let plan_tools = optional_group_tool_ids("plan_mode").unwrap();
 
-        assert_eq!(plan_tools, ["planmode"]);
+        assert_eq!(plan_tools, ["plan_mode"]);
     }
 
     #[test]
@@ -163,7 +162,7 @@ mod tests {
         );
         assert_eq!(
             optional_group_tool_ids("images").unwrap(),
-            ["read_image", "process_image"]
+            ["transform_image"]
         );
     }
 

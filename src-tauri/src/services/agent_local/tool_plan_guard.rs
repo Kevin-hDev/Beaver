@@ -10,25 +10,24 @@ pub const PLAN_MODE_ALLOWED_TOOL_NAMES: &[&str] = &[
     "search_extension_tools",
     "read_spreadsheet",
     "read_document",
-    "read_image",
-    "bash_write",
+    "bash_control",
     "load_skill",
     "todo_history",
     "todo_pause",
     "todo_resume",
     "todo_delete",
-    "agent_diagnostics",
     "ask_user_choice",
-    "planmode",
+    "plan_mode",
     "forecast_read",
     "forecast_models",
 ];
 
-pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, read_image, bash_write, load_skill, todo_history, todo_pause, todo_resume, todo_delete, agent_diagnostics, ask_user_choice, planmode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
+pub const PLAN_MODE_ALLOWED_ACTIONS_TEXT: &str = "read_file, list_dir, grep, glob, web_search, web_fetch, search_extension_tools, read_spreadsheet, read_document, bash_control, load_skill, todo_history, todo_pause, todo_resume, todo_delete, ask_user_choice, plan_mode, forecast_read, forecast_models, safe bash exploration and validation commands (including tests and builds), and search_mcp_tools without MCP calls";
 
 pub fn is_allowed_in_plan_mode(tool_name: &str, args: &Value) -> bool {
     match tool_name {
         "bash" => !super::permission_gate::requires_permission("bash", args),
+        "transform_image" => args["operations"].as_array().is_some_and(Vec::is_empty),
         "search_mcp_tools" => args.get("mode").and_then(Value::as_str) != Some("call"),
         _ => PLAN_MODE_ALLOWED_TOOL_NAMES.contains(&tool_name),
     }
@@ -84,15 +83,27 @@ mod tests {
         assert!(super::ensure_allowed("read_file", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("grep", &json!({}), true).is_ok());
         assert!(super::ensure_allowed("search_extension_tools", &json!({}), true).is_ok());
-        assert!(super::ensure_allowed("planmode", &json!({}), true).is_ok());
+        assert!(super::ensure_allowed("plan_mode", &json!({}), true).is_ok());
         assert!(super::ensure_allowed(
-            "bash_write",
+            "transform_image",
+            &json!({"input_path": "image.png", "operations": []}),
+            true
+        )
+        .is_ok());
+        assert!(super::ensure_allowed(
+            "transform_image",
+            &json!({"input_path": "image.png", "output_path": "out.png"}),
+            true
+        )
+        .is_err());
+        assert!(super::ensure_allowed(
+            "bash_control",
             &json!({"session_id": "session"}),
             true
         )
         .is_ok());
         assert!(super::ensure_allowed(
-            "bash_write",
+            "bash_control",
             &json!({"session_id": "session", "stop": true}),
             true
         )
@@ -120,13 +131,13 @@ mod tests {
     #[test]
     fn plan_mode_keeps_existing_shell_sessions_usable() {
         assert!(super::ensure_allowed(
-            "bash_write",
+            "bash_control",
             &json!({"session_id": "session", "chars": "test input\n"}),
             true
         )
         .is_ok());
         assert!(super::ensure_allowed(
-            "bash_write",
+            "bash_control",
             &json!({"session_id": "session", "eof": true}),
             true
         )

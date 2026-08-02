@@ -6,23 +6,12 @@ pub fn core_tool_definitions() -> Vec<Value> {
     vec![
         tool_def(
             "bash",
-            "Execute a shell command on the user's machine. \
-             Shell: the complete user environment with a cached user profile. Unix uses $SHELL when it is compatible with POSIX commands, otherwise zsh, bash, or sh; Windows uses PowerShell. Commands start in the project working directory. \
-             Set workdir to an absolute directory only when the command intentionally needs another location. \
-             IMPORTANT — prefer dedicated tools, they give the user a better experience and are easier to approve: \
-             find files with glob (not find); search contents with grep (not grep/rg); \
-             read a file with read_file (not cat/head/tail); edit a file with edit_file (not sed/awk); \
-             create a file with write_file (not echo/cat <<EOF). \
-             Permissions: in Ask for approval mode, read-only commands (ls, cat, git status/log/diff, pwd, etc.) run without confirmation, \
-             while mutating commands require explicit user approval. In Full access mode, bash commands run without approval prompts. \
-             Safety: system-level destructive commands are blocked (chmod 777, mkfs, dd, fork bombs, etc.). \
-             Never skip git hooks (--no-verify), never force-push to main/master, never amend an existing commit unless the user explicitly asks. \
-             Investigate hook failures instead of bypassing them. \
-             Output streams live while the command runs. Short commands return immediately. \
-             If the command is still active after yield_time_ms (default 10000), the result contains a session_id; continue it with bash_write. \
-             There is no forced execution timeout. Set timeout only when a hard deadline is intentionally required. \
-             Full output is retained outside the model context when the preview is truncated. \
-             Directory changes never persist across bash calls. Each call starts from the project working directory unless workdir is set for that call.",
+            "Execute a shell command on the user's machine.\n\n\
+             Role and shell: use bash for system commands and shell operations. The complete user environment is loaded from a cached profile. Unix uses a POSIX-compatible $SHELL when available, otherwise zsh, bash, or sh; Windows uses PowerShell.\n\n\
+             Working directory: commands start in the project directory. Set workdir to an absolute directory only when this call intentionally needs another location. A cd never persists to later calls.\n\n\
+             Permissions: in Ask for approval mode, read-only commands run directly while mutating commands require explicit approval. In Full access mode, commands run without approval prompts.\n\n\
+             Safety: system-level destructive commands such as chmod 777, mkfs, dd, and fork bombs are blocked.\n\n\
+             Output and sessions: output streams live. Short commands return immediately. If a command remains active after yield_time_ms (default 10000), the result contains a session_id; continue it with bash_control. There is no forced execution timeout unless timeout is explicitly set. Full output remains available outside the model context when its preview is truncated.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -35,7 +24,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
             }),
         ),
         tool_def(
-            "bash_write",
+            "bash_control",
             "Continue or control a shell process returned by bash. Poll with only session_id, send input with chars, set eof=true to close its input after any chars, or set stop=true to terminate the process and all of its children. Commands started with & remain managed by the session until their background jobs finish or the session is stopped. Output streams live while waiting. A completed session returns its final exit status and is then removed.",
             serde_json::json!({
                 "type": "object",

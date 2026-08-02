@@ -32,9 +32,6 @@ mod tests {
     #[test]
     fn hidden_todo_tools_validate_args() {
         assert!(validate("todo_history", &json!({})).is_ok());
-        assert!(validate("agent_diagnostics", &json!({})).is_ok());
-        assert!(validate("agent_diagnostics", &json!({"limit": 10})).is_ok());
-        assert!(validate("agent_diagnostics", &json!({"limit": "10"})).is_err());
         assert!(validate("todo_pause", &json!({"reason": "debug"})).is_ok());
         assert!(validate("todo_resume", &json!({"id": "abc"})).is_ok());
         assert!(validate("todo_resume", &json!({})).is_err());
@@ -48,8 +45,8 @@ mod tests {
 
     #[test]
     fn plan_tools_validate_args() {
-        assert!(validate("planmode", &json!({"title": "Plan", "content": "Steps"})).is_ok());
-        assert!(validate("planmode", &json!({"title": "Plan"})).is_err());
+        assert!(validate("plan_mode", &json!({"title": "Plan", "content": "Steps"})).is_ok());
+        assert!(validate("plan_mode", &json!({"title": "Plan"})).is_err());
     }
 
     #[test]
@@ -139,7 +136,7 @@ mod tests {
     #[test]
     fn forecast_keeps_reusable_profile_and_read_pagination() {
         let cleaned = validate(
-            "forecast",
+            "forecast_run",
             &json!({
                 "data_profile_id": "profile-1",
                 "target_column": "sales",

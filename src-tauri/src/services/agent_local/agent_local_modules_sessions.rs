@@ -31,5 +31,4 @@ mod stream_diagnostics_tool_record;
 mod stream_diagnostics_support_tests;
 #[cfg(test)]
 pub mod stream_diagnostics_tests;
-pub mod stream_diagnostics_tools;
 pub mod stream_events;

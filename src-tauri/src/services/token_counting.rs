@@ -88,9 +88,9 @@ fn restored_tool_arguments(
         "web_fetch" => "url",
         "bash" => "command",
         "grep" | "glob" => "pattern",
-        "process_image" => "input_path",
+        "transform_image" => "input_path",
         "read_file" | "write_file" | "edit_file" | "list_dir" | "read_spreadsheet"
-        | "read_document" | "read_image" | "write_spreadsheet" | "write_document" => "path",
+        | "read_document" | "write_spreadsheet" | "write_document" => "path",
         _ => "input",
     };
     serde_json::json!({ key: activity.summary }).to_string()

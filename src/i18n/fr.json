@@ -899,10 +899,6 @@
           "title": "Todo list",
           "description": "Permet à l'agent de tenir une checklist pendant un long travail, pour ne rien oublier. Désactive si les checklists ne te servent pas."
         },
-        "agent_diagnostics": {
-          "title": "Diagnostics agent",
-          "description": "Permet à l'agent de relire ses erreurs récentes pour se corriger après un échec. Désactive si tu ne veux pas qu'il perde du temps à analyser ses échecs."
-        },
         "git_branches": {
           "title": "Branches Git",
           "description": "Permet à l'agent de créer ou changer de branche Git pour isoler son travail. Désactive si tu préfères gérer les branches toi-même."

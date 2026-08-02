@@ -12,7 +12,7 @@ pub async fn dispatch_forecast(
     cancel: CancellationToken,
 ) -> Option<ToolResult> {
     match tool_name {
-        "forecast" => Some(
+        "forecast_run" => Some(
             super::tool_dispatcher_forecast_run::handle(args, working_dir, session_id, cancel)
                 .await,
         ),

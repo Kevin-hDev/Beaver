@@ -113,7 +113,7 @@ mod tests {
             ToolResult::cancelled("Interaction annulée"),
         );
         let invalid = run_post_hooks(
-            "planmode",
+            "plan_mode",
             &json!({}),
             ToolResult::validation("test_input_invalid", "Paramètre title requis"),
         );

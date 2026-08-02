@@ -5,7 +5,7 @@ pub fn ask_user_choice_definition() -> Value {
         "ask_user_choice",
         "Ask the user to choose between concrete options when their answer changes the next step. \
          When to use: multiple valid implementation approaches and the choice is the user's to make; ambiguous requirement where the next action depends on their preference; in Plan mode, before publishing a plan, to resolve open design questions. \
-         When NOT to use: the choice has a sensible default — pick it, mention it, and proceed; you only need plan approval — use planmode, not this tool; simple clarification that you can resolve by reading the code or docs. \
+         When NOT to use: the choice has a sensible default — pick it, mention it, and proceed; you only need plan approval — use plan_mode, not this tool; simple clarification that you can resolve by reading the code or docs. \
          Keep it short: 1-5 questions, 2-4 options each, very short headers (max 30 chars). Every question must mark exactly one option as recommended with recommended: true — never zero or more than one. Never add recommendation wording to an option label; the UI renders the badge. The user can always pick 'Other' to type a custom answer.",
         serde_json::json!({
             "type": "object",

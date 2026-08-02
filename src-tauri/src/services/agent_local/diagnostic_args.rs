@@ -8,7 +8,8 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
     let mut out = Map::new();
     match tool_name {
         "read_file" | "write_file" | "edit_file" | "list_dir" | "read_document"
-        | "write_document" | "read_spreadsheet" | "write_spreadsheet" | "read_image" => {
+        | "write_document" | "read_spreadsheet" | "write_spreadsheet"
+        | "transform_image" => {
             add_path(&mut out, "path", args, working_dir);
             add_path(&mut out, "input_path", args, working_dir);
             add_path(&mut out, "output_path", args, working_dir);
@@ -19,7 +20,7 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
             }
             add_path(&mut out, "workdir", args, working_dir);
         }
-        "bash_write" => add_text(&mut out, "session_id", args),
+        "bash_control" => add_text(&mut out, "session_id", args),
         "grep" => {
             add_text(&mut out, "pattern", args);
             add_text(&mut out, "glob", args);
@@ -43,7 +44,7 @@ pub fn summarize(tool_name: &str, args: &Value, working_dir: &Path) -> Option<Va
             add_bool(&mut out, "active", args);
         }
         "todo_pause" => add_text(&mut out, "reason", args),
-        "todo_history" | "agent_diagnostics" | "ask_user_choice" | "planmode" => {}
+        "todo_history" | "ask_user_choice" | "plan_mode" => {}
         "mcp" => add_text(&mut out, "tool_id", args),
         _ => {}
     }

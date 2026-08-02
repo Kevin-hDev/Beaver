@@ -49,37 +49,11 @@ fn short_openai_prefix_keeps_implicit_cache_enabled() {
 }
 
 #[test]
-fn explicit_breakpoint_excludes_dynamic_system_sections() {
+fn explicit_breakpoint_covers_the_entire_system_prompt() {
     let route = route::resolve("openai").unwrap();
-    let stable = "abcd".repeat(1_280);
-    let dynamic = format!(
-        "{}Active providers: Brave.\n\n## Available skills\n- audit",
-        crate::services::agent_local::web_search_status::SECTION_START
-    );
-    let mut value = json!({
-        "messages": [
-            { "role": "system", "content": format!("{stable}{dynamic}") },
-            { "role": "user", "content": "variable" }
-        ]
-    });
-
-    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
-
-    let blocks = value["messages"][0]["content"].as_array().unwrap();
-    assert_eq!(blocks[0]["text"], stable);
-    assert_eq!(blocks[0]["prompt_cache_breakpoint"]["mode"], "explicit");
-    assert_eq!(blocks[1]["text"], dynamic);
-    assert!(blocks[1].get("prompt_cache_breakpoint").is_none());
-}
-
-#[test]
-fn large_dynamic_tail_does_not_make_a_short_prefix_explicit() {
-    let route = route::resolve("openai").unwrap();
-    let stable = "abcd".repeat(1_279);
     let content = format!(
-        "{stable}{}{}",
-        crate::services::agent_local::web_search_status::SECTION_START,
-        "dynamic".repeat(2_000)
+        "{}\n\n## Available skills\n- audit\n\nRespond in French.",
+        "abcd".repeat(1_280)
     );
     let mut value = json!({
         "messages": [
@@ -90,8 +64,29 @@ fn large_dynamic_tail_does_not_make_a_short_prefix_explicit() {
 
     apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
 
-    assert!(value.get("prompt_cache_options").is_none());
-    assert!(value["messages"][0]["content"].is_string());
+    let blocks = value["messages"][0]["content"].as_array().unwrap();
+    assert_eq!(blocks.len(), 1);
+    assert_eq!(blocks[0]["text"], content);
+    assert_eq!(blocks[0]["prompt_cache_breakpoint"]["mode"], "explicit");
+}
+
+#[test]
+fn the_entire_system_prompt_counts_toward_the_explicit_cache_threshold() {
+    let route = route::resolve("openai").unwrap();
+    let content = format!("short instructions\n\n{}", "stable context ".repeat(2_000));
+    let mut value = json!({
+        "messages": [
+            { "role": "system", "content": content },
+            { "role": "user", "content": "variable" }
+        ]
+    });
+
+    apply_payload(&mut value, &route, "gpt-5.6-sol", Some("session-1"));
+
+    assert_eq!(value["prompt_cache_options"]["mode"], "explicit");
+    let blocks = value["messages"][0]["content"].as_array().unwrap();
+    assert_eq!(blocks.len(), 1);
+    assert_eq!(blocks[0]["text"], content);
 }
 
 #[test]

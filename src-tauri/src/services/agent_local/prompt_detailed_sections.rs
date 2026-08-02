@@ -27,8 +27,7 @@ Prefer dedicated tools over bash when one fits:
 - To find files: use glob (not find/ls via bash)
 - To read/write spreadsheets: use read_spreadsheet/write_spreadsheet (not edit_file, not Python/pandas via bash)
 - To read PDF/Word files: use read_document/write_document (not edit_file, not Python via bash). For .txt/.md use read_file/write_file.
-- To inspect image metadata: use read_image. It reports dimensions, format, and file size; it does not show visual content.
-- To resize, crop, or convert images: use process_image (not Python/ImageMagick via bash)
+- To inspect metadata, resize, crop, or convert images: use transform_image (not Python/ImageMagick via bash)
 - Use search_mcp_tools for external MCP services.
 - Use search_extension_tools for enabled Beaver plugins whose typed tools are not currently loaded.
 - Use load_skill for project instructions and procedures, not external services or plugin discovery.
@@ -36,7 +35,7 @@ Prefer dedicated tools over bash when one fits:
 - Reserve bash for: system commands, git operations, package management, \
 running tests, compiling, process management, and any task that requires shell execution.
 - bash has no forced timeout by default. Set timeout only when a hard deadline is intentionally required. \
-For long-running commands, keep the returned session active and continue it with bash_write.
+For long-running commands, keep the returned session active and continue it with bash_control.
 
 Every tool's own definition states what it does and what it expects. This section only covers \
 what those definitions cannot: which tool to reach for when several would work.";
@@ -72,6 +71,7 @@ pub const GIT: &str = "\
 - Before committing: check status, review the diff, \
 and look at recent commit messages to match the project's style.
 - Prefer creating new commits over amending existing ones.
+- Never bypass git hooks with --no-verify. Investigate hook failures instead of bypassing them.
 - Never force-push or run destructive git operations without asking the user first.
 - Never push to a remote unless the user explicitly asks.";
 

@@ -36,20 +36,6 @@ pub fn office_tool_definitions() -> Vec<serde_json::Value> {
             }),
         ),
         tool_def(
-            "read_image",
-            "Read image metadata (dimensions, format, size). Relative paths resolve from the working directory. \
-             Supports JPEG, PNG, WebP, GIF, BMP. \
-             Always pass a relative path with its subdirectory (not a bare filename). \
-             Example: {\"path\": \"assets/photo.jpg\"}",
-            serde_json::json!({
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Path to the image file"}
-                },
-                "required": ["path"]
-            }),
-        ),
-        tool_def(
             "write_spreadsheet",
             "Create or modify an Excel file (.xlsx). Relative paths resolve from the working directory. \
              Use operations array to set cells, formulas, rows, and formatting. \
@@ -161,10 +147,12 @@ pub fn office_tool_definitions() -> Vec<serde_json::Value> {
             }),
         ),
         tool_def(
-            "process_image",
-            "Resize, crop, or convert an image. Relative paths resolve from the working directory. \
-             To convert format, just change the extension. \
+            "transform_image",
+            "Inspect, resize, crop, or convert an image. Relative paths resolve from the working directory. \
+             Pass an empty operations list without output_path to inspect dimensions, format, and file size without writing a file. \
+             To convert format, omit operations and change the output extension. \
              Always pass a relative path with its subdirectory (not a bare filename). \
+             Example inspect: {\"input_path\": \"assets/photo.png\", \"operations\": []} \
              Example convert: {\"input_path\": \"assets/photo.png\", \"output_path\": \"output/photo.webp\"} \
              Example resize: {\"input_path\": \"assets/photo.png\", \"output_path\": \"output/thumb.jpg\", \"operations\": [\
              {\"type\": \"resize\", \"width\": 200, \"height\": 200, \"mode\": \"fit\"}, \
@@ -173,10 +161,10 @@ pub fn office_tool_definitions() -> Vec<serde_json::Value> {
                 "type": "object",
                 "properties": {
                     "input_path": {"type": "string", "description": "Source image path"},
-                    "output_path": {"type": "string", "description": "Output path (extension determines format: jpg, png, webp, gif, bmp)"},
+                    "output_path": {"type": "string", "description": "Output path required for conversion or transformation; omit only for inspection. The extension determines the output format: jpg, png, webp, gif, or bmp."},
                     "operations": {
                         "type": "array",
-                        "description": "Optional. Operations: resize ({type,width,height,mode:'fit'|'fill'|'exact'}), crop ({type,x,y,width,height}), quality ({type,value:1-100}). Omit for simple format conversion.",
+                        "description": "Pass an empty list to inspect the input without writing. Otherwise use resize ({type,width,height,mode:'fit'|'fill'|'exact'}), crop ({type,x,y,width,height}), or quality ({type,value:1-100}). Omit for simple format conversion.",
                         "items": {
                             "type": "object",
                             "properties": {
@@ -192,7 +180,7 @@ pub fn office_tool_definitions() -> Vec<serde_json::Value> {
                         }
                     }
                 },
-                "required": ["input_path", "output_path"]
+                "required": ["input_path"]
             }),
         ),
     ]

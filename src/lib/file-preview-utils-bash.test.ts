@@ -24,7 +24,7 @@ describe("collectFileOperationGroups avec bash", () => {
   it("inclut les fichiers touchés lors de la continuation d'un processus", () => {
     const operations = collectFileOperations([], {
       liveTools: [tool({
-        name: "bash_write",
+        name: "bash_control",
         summary: "session-1",
         result: "ok",
         affected_paths: ["/repo/generated.txt"],

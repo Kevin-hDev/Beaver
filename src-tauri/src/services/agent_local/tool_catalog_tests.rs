@@ -17,7 +17,7 @@ fn defaults_match_product_choice() {
             "inspect_subagent_changes",
             "apply_subagent_changes",
             "discard_subagent_changes",
-            "planmode"
+            "plan_mode"
         ]
     );
 }
@@ -25,7 +25,7 @@ fn defaults_match_product_choice() {
 #[test]
 fn rejects_locked_and_unknown_tool_ids() {
     assert!(validate_optional_tool_id("bash").is_err());
-    assert!(validate_optional_tool_id("bash_write").is_err());
+    assert!(validate_optional_tool_id("bash_control").is_err());
     assert!(validate_optional_tool_id("missing_tool").is_err());
     assert!(validate_optional_tool_id("load_skill").is_ok());
 }
@@ -37,12 +37,12 @@ fn filtered_definitions_keep_locked_and_enabled_optional_tools() {
     let names = tool_names(&filter_tool_definitions(defs, &enabled));
 
     assert!(has_tool(&names, "bash"));
-    assert!(has_tool(&names, "bash_write"));
+    assert!(has_tool(&names, "bash_control"));
     assert!(has_tool(&names, "search_mcp_tools"));
     assert!(has_tool(&names, "search_extension_tools"));
     assert!(has_tool(&names, "load_skill"));
     assert!(!has_tool(&names, "todo_write"));
-    assert!(!has_tool(&names, "forecast"));
+    assert!(!has_tool(&names, "forecast_run"));
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn forecast_audit_can_be_enabled_without_enabling_forecast_runs() {
     let names = tool_names(&filter_tool_definitions(defs, &enabled));
 
     assert!(has_tool(&names, "forecast_data_audit"));
-    assert!(!has_tool(&names, "forecast"));
+    assert!(!has_tool(&names, "forecast_run"));
 }
 
 #[test]
@@ -81,9 +81,9 @@ fn enabled_subagent_bundle_exposes_change_lifecycle_tools() {
 #[test]
 fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     let entries = catalog();
-    assert_eq!(entries.len(), 45);
+    assert_eq!(entries.len(), 43);
     assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 12);
-    assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 33);
+    assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 31);
     assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 24);
     let entry_by_id = entries
         .iter()
@@ -102,9 +102,9 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     );
 
     let groups = super::tool_group_catalog::groups();
-    assert_eq!(groups.len(), 16);
+    assert_eq!(groups.len(), 15);
     assert_eq!(groups.iter().filter(|group| group.locked).count(), 5);
-    assert_eq!(groups.iter().filter(|group| !group.locked).count(), 11);
+    assert_eq!(groups.iter().filter(|group| !group.locked).count(), 10);
     let mut group_ids = BTreeSet::new();
     let mut grouped_tools = BTreeSet::new();
     for group in groups {
@@ -193,7 +193,7 @@ fn default_native_catalog_measurement_is_reproducible() {
     let estimated_tokens =
         crate::services::compress::token_estimate::estimate_tool_tokens(&active);
 
-    assert_eq!(all.len(), 45);
+    assert_eq!(all.len(), 43);
     assert_eq!(active.len(), 24);
     println!(
         "TOOL_CATALOG_MEASUREMENT={}",

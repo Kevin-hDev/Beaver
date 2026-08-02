@@ -78,7 +78,7 @@ fn asks_user_question(content: &str) -> bool {
 
 const NEXT_ACTION_REPAIR: &str = "\
 <plan_mode_backend_correction>
-Plan Mode is active. You can ask important clarification questions in normal assistant text, call planmode if the plan is ready, or use read-only tools if more context is needed.
+Plan Mode is active. You can ask important clarification questions in normal assistant text, call plan_mode if the plan is ready, or use read-only tools if more context is needed.
 </plan_mode_backend_correction>";
 
 #[cfg(test)]

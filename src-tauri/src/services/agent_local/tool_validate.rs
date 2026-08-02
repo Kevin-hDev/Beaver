@@ -113,7 +113,7 @@ fn validate_shell_control(
     tool: &str,
     args: &serde_json::Map<String, Value>,
 ) -> Result<(), String> {
-    if tool != "bash_write" {
+    if tool != "bash_control" {
         return Ok(());
     }
     let session_id = args
@@ -147,7 +147,7 @@ fn validate_shell_text(
                 .and_then(Value::as_str)
                 .unwrap_or_default(),
         ),
-        "bash_write" => args
+        "bash_control" => args
             .get("chars")
             .and_then(Value::as_str)
             .map(super::tool_bash::validate_input)
@@ -168,7 +168,7 @@ fn validate_shell_numbers(
             }
         }
     }
-    if matches!(tool, "bash" | "bash_write") {
+    if matches!(tool, "bash" | "bash_control") {
         for name in ["yield_time_ms", "yield-time-ms"] {
             if args
                 .get(name)

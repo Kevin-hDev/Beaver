@@ -67,7 +67,7 @@ fn auto_schema_requires_a_candidate_model() {
         "selection_reason_codes": ["resource_fit"]
     });
     let cleaned = crate::services::agent_local::tool_validate::validate_definition(
-        "forecast",
+        "forecast_run",
         &args,
         &definition,
     )

@@ -31,7 +31,7 @@ fn permission_mode_change_preserves_enabled_tools() {
 fn grouped_toggle_updates_all_real_tools() {
     let settings = AgentSettings {
         permission_mode: "auto".to_string(),
-        enabled_optional_tools: vec!["planmode".to_string()],
+        enabled_optional_tools: vec!["plan_mode".to_string()],
         tool_catalog_schema: TOOL_CATALOG_SCHEMA,
     };
 
@@ -86,6 +86,26 @@ fn grouped_toggle_rejects_locked_group() {
     let settings = AgentSettings::default();
 
     assert!(with_tool_group_enabled(settings, "web", false).is_err());
+}
+
+#[test]
+fn saved_unknown_tool_identifiers_are_ignored() {
+    let settings = AgentSettings {
+        permission_mode: "auto".into(),
+        enabled_optional_tools: vec![
+            ["plan", "mode"].concat(),
+            ["bash", "_write"].concat(),
+            ["process", "_image"].concat(),
+            ["read", "_image"].concat(),
+            ["agent", "_diagnostics"].concat(),
+            ["fore", "cast"].concat(),
+            "load_skill".into(),
+        ],
+        tool_catalog_schema: TOOL_CATALOG_SCHEMA,
+    }
+    .normalized();
+
+    assert_eq!(settings.enabled_optional_tools, ["load_skill"]);
 }
 
 #[test]

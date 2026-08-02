@@ -8,11 +8,10 @@ fn prompts() -> [String; 2] {
 }
 
 #[test]
-fn image_guidance_never_claims_that_metadata_provides_vision() {
+fn image_guidance_uses_the_single_image_tool() {
     for prompt in prompts() {
-        assert!(prompt.contains("read_image. It reports dimensions, format, and file size"));
-        assert!(prompt.contains("it does not show visual content"));
-        assert!(prompt.contains("resize, crop, or convert images: use process_image"));
+        assert!(prompt
+            .contains("inspect metadata, resize, crop, or convert images: use transform_image"));
         assert!(!prompt.contains("To read/process images"));
     }
 }
@@ -45,6 +44,6 @@ fn bash_guidance_matches_the_optional_timeout_contract() {
     let detailed = super::prompt_detailed::build_with_behavior(Path::new("."), false, None, None);
 
     assert!(detailed.contains("bash has no forced timeout by default"));
-    assert!(detailed.contains("continue it with bash_write"));
+    assert!(detailed.contains("continue it with bash_control"));
     assert!(!detailed.contains("bash times out after 120s"));
 }

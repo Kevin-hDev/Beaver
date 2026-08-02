@@ -58,10 +58,6 @@ pub async fn dispatch_office(
             let pages = args["pages"].as_str();
             super::tool_document_read::read_document(path, pages, working_dir).await
         }
-        "read_image" => {
-            let path = args["path"].as_str().unwrap_or("");
-            super::tool_image_read::read_image(path, working_dir).await
-        }
         "write_spreadsheet" => {
             let path = args["path"].as_str().unwrap_or("");
             let operations = &args["operations"];
@@ -72,11 +68,11 @@ pub async fn dispatch_office(
             let content = &args["content"];
             super::tool_document_write::write_document(path, content, working_dir).await
         }
-        "process_image" => {
+        "transform_image" => {
             let input_path = args["input_path"].as_str().unwrap_or("");
             let output_path = args["output_path"].as_str().unwrap_or("");
             let operations = &args["operations"];
-            super::tool_image_process::process_image(
+            super::tool_image_process::transform_image(
                 input_path,
                 output_path,
                 operations,

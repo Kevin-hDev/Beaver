@@ -13,7 +13,7 @@ pub struct ToolCatalogEntry {
     pub group: &'static str,
 }
 
-pub const MAX_OPTIONAL_TOOLS: usize = 33;
+pub const MAX_OPTIONAL_TOOLS: usize = 31;
 pub const SUBAGENT_TOOLS: &[&str] = &[
     "delegate_task",
     "list_subagents",
@@ -28,7 +28,7 @@ pub const SUBAGENT_TOOLS: &[&str] = &[
 
 const LOCKED_TOOLS: &[ToolCatalogEntry] = &[
     locked("bash", "core"),
-    locked("bash_write", "core"),
+    locked("bash_control", "core"),
     locked("read_file", "core"),
     locked("write_file", "core"),
     locked("edit_file", "core"),
@@ -53,17 +53,16 @@ const OPTIONAL_TOOLS: &[ToolCatalogEntry] = &[
     optional_default("inspect_subagent_changes", "subagents"),
     optional_default("apply_subagent_changes", "subagents"),
     optional_default("discard_subagent_changes", "subagents"),
-    optional_default("planmode", "workflow"),
+    optional_default("plan_mode", "workflow"),
     optional_off("todo_write", "todo"),
     optional_off("todo_history", "todo"),
     optional_off("todo_pause", "todo"),
     optional_off("todo_resume", "todo"),
     optional_off("todo_delete", "todo"),
-    optional_off("agent_diagnostics", "todo"),
     optional_off("create_branch", "git"),
     optional_off("checkout_branch", "git"),
     optional_off("forecast_data_audit", "forecast"),
-    optional_off("forecast", "forecast"),
+    optional_off("forecast_run", "forecast"),
     optional_off("forecast_models", "forecast"),
     optional_off("forecast_analyze", "forecast"),
     optional_off("forecast_read", "forecast"),
@@ -73,8 +72,7 @@ const OPTIONAL_TOOLS: &[ToolCatalogEntry] = &[
     optional_off("write_spreadsheet", "office"),
     optional_off("read_document", "office"),
     optional_off("write_document", "office"),
-    optional_off("read_image", "office"),
-    optional_off("process_image", "office"),
+    optional_off("transform_image", "office"),
 ];
 
 const fn locked(id: &'static str, group: &'static str) -> ToolCatalogEntry {
@@ -174,7 +172,7 @@ pub fn has_any_tool(names: &[String], tool_ids: &[&str]) -> bool {
 }
 
 pub fn has_plan_tools(names: &[String]) -> bool {
-    has_tool(names, "planmode")
+    has_tool(names, "plan_mode")
 }
 
 pub(super) fn tool_name(def: &Value) -> Option<String> {

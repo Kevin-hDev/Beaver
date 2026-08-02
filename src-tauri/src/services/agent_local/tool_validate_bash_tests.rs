@@ -13,7 +13,7 @@ fn valid_bash() {
 }
 
 #[test]
-fn valid_bash_write() {
+fn valid_bash_control() {
     let args = json!({
         "session_id": "2a8a08dc-660d-477a-9a44-32c24ba814cb",
         "chars": "yes\n",
@@ -21,35 +21,35 @@ fn valid_bash_write() {
         "yield_time_ms": 500
     });
 
-    assert!(validate("bash_write", &args).is_ok());
-    assert!(validate("bash_write", &json!({})).is_err());
-    assert!(validate("bash_write", &json!({"session_id": 4})).is_err());
+    assert!(validate("bash_control", &args).is_ok());
+    assert!(validate("bash_control", &json!({})).is_err());
+    assert!(validate("bash_control", &json!({"session_id": 4})).is_err());
 }
 
 #[test]
-fn bash_write_accepts_chars_followed_by_eof() {
+fn bash_control_accepts_chars_followed_by_eof() {
     let args = json!({
         "session_id": "2a8a08dc-660d-477a-9a44-32c24ba814cb",
         "chars": "payload",
         "eof": true
     });
 
-    let cleaned = validate("bash_write", &args).expect("valid bash_write");
+    let cleaned = validate("bash_control", &args).expect("valid bash_control");
 
     assert_eq!(cleaned["chars"], "payload");
     assert_eq!(cleaned["eof"], true);
 }
 
 #[test]
-fn bash_write_rejects_stop_combined_with_input_controls() {
+fn bash_control_rejects_stop_combined_with_input_controls() {
     let session_id = "2a8a08dc-660d-477a-9a44-32c24ba814cb";
     assert!(validate(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": session_id, "stop": true, "chars": "x"})
     )
     .is_err());
     assert!(validate(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": session_id, "stop": true, "eof": true})
     )
     .is_err());
@@ -66,7 +66,7 @@ fn bash_missing_command() {
 fn bash_rejects_negative_timing_values() {
     assert!(validate("bash", &json!({"command": "pwd", "timeout": -1})).is_err());
     assert!(validate(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": "2a8a08dc-660d-477a-9a44-32c24ba814cb", "yield_time_ms": -1}),
     )
     .is_err());
@@ -80,9 +80,9 @@ fn bash_wrong_type() {
 }
 
 #[test]
-fn bash_write_rejects_invalid_session_ids_before_dispatch() {
+fn bash_control_rejects_invalid_session_ids_before_dispatch() {
     let error = validate(
-        "bash_write",
+        "bash_control",
         &json!({"session_id": "not-a-session", "chars": "hello"}),
     )
     .expect_err("invalid session");

@@ -120,32 +120,18 @@ fn mark_stable_prefix(payload: &mut Value) -> bool {
     let Some(text) = message["content"].as_str() else {
         return false;
     };
-    let (stable, dynamic) = split_stable_system_content(text);
-    if crate::services::token_counting::estimate_text_tokens(stable)
+    if crate::services::token_counting::estimate_text_tokens(text)
         < MIN_EXPLICIT_PREFIX_ESTIMATED_TOKENS
     {
         return false;
     }
-    let mut blocks = vec![json!({
+    let blocks = vec![json!({
         "type": "text",
-        "text": stable,
+        "text": text,
         "prompt_cache_breakpoint": { "mode": "explicit" },
     })];
-    if let Some(dynamic) = dynamic {
-        blocks.push(json!({
-            "type": "text",
-            "text": dynamic,
-        }));
-    }
     message["content"] = Value::Array(blocks);
     true
-}
-
-fn split_stable_system_content(content: &str) -> (&str, Option<&str>) {
-    content
-        .find(crate::services::agent_local::web_search_status::SECTION_START)
-        .map(|index| (&content[..index], Some(&content[index..])))
-        .unwrap_or((content, None))
 }
 
 fn cache_key(route: &LlmRoute, model: &str, session_id: Option<&str>) -> Option<String> {

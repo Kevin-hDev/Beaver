@@ -107,7 +107,7 @@ mod tests {
             "x".repeat(60_000),
             false,
         );
-        let rendered = super::super::tool_result_model::render("forecast", &error);
+        let rendered = super::super::tool_result_model::render("forecast_run", &error);
         let big = "x".repeat(60_000);
         let mut messages = vec![tool_msg(&rendered), tool_msg(&big), tool_msg(&big)];
 

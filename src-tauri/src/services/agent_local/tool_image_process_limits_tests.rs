@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::agent_local::tool_image_process::process_image;
+    use crate::services::agent_local::tool_image_process::transform_image;
     use tempfile::TempDir;
 
     fn working_dir() -> TempDir {
@@ -21,7 +21,7 @@ mod tests {
         let output = tmp.path().join("output.png");
         let ops =
             serde_json::json!([{ "type": "resize", "width": 9000, "height": 50, "mode": "exact" }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -38,7 +38,7 @@ mod tests {
         let output = tmp.path().join("output.png");
         let ops =
             serde_json::json!([{ "type": "crop", "x": 40, "y": 40, "width": 20, "height": 20 }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -54,7 +54,7 @@ mod tests {
         let input = create_test_image(tmp.path(), "input.png");
         let output = tmp.path().join("output.webp");
         let ops = serde_json::json!([{ "type": "quality", "value": 50 }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,

@@ -51,7 +51,7 @@ export function toolsToRecords(tools: ToolActivity[]): ToolActivityRecord[] {
     if (t.displaySummary !== undefined) summary = t.displaySummary;
     else if (t.name === "load_skill") summary = "";
     else if (t.name === "bash") summary = str(a.command);
-    else if (t.name === "bash_write") summary = str(a.session_id);
+    else if (t.name === "bash_control") summary = str(a.session_id);
     else if (t.name === "read_file" || t.name === "write_file") summary = str(a.path);
     else if (t.name === "edit_file") summary = str(a.path);
     else if (t.name === "list_dir") summary = str(a.path, ".");
@@ -61,10 +61,9 @@ export function toolsToRecords(tools: ToolActivity[]): ToolActivityRecord[] {
     else if (t.name === "web_fetch") summary = str(a.url);
     else if (t.name === "read_spreadsheet") summary = str(a.path);
     else if (t.name === "read_document") summary = str(a.path);
-    else if (t.name === "read_image") summary = str(a.path);
     else if (t.name === "write_spreadsheet") summary = str(a.path);
     else if (t.name === "write_document") summary = str(a.path);
-    else if (t.name === "process_image") summary = str(a.input_path);
+    else if (t.name === "transform_image") summary = str(a.input_path);
     else summary = JSON.stringify(a).slice(0, 80);
 
     return {
@@ -141,11 +140,11 @@ function rebuildArgs(name: string, summary: string): Record<string, string> {
   if (name === "web_search") return { query: summary };
   if (name === "web_fetch") return { url: summary };
   if (name === "bash") return { command: summary };
-  if (name === "bash_write") return { session_id: summary };
+  if (name === "bash_control") return { session_id: summary };
   if (name === "grep" || name === "glob") return { pattern: summary };
   if (["read_file", "write_file", "edit_file", "list_dir"].includes(name)) return { path: summary };
-  if (["read_spreadsheet", "read_document", "read_image", "write_spreadsheet", "write_document"].includes(name)) return { path: summary };
-  if (name === "process_image") return { input_path: summary };
+  if (["read_spreadsheet", "read_document", "write_spreadsheet", "write_document"].includes(name)) return { path: summary };
+  if (name === "transform_image") return { input_path: summary };
   return { input: summary };
 }
 

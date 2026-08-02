@@ -10,7 +10,7 @@ interface ShellDisplayTool {
 }
 
 export function isShellStopAction(tool: ShellDisplayTool): boolean {
-  if (tool.name !== "bash_write") return false;
+  if (tool.name !== "bash_control") return false;
   if (tool.args?.stop === true) return true;
   return typeof tool.args?.chars === "string" && tool.args.chars.includes("\u0003");
 }

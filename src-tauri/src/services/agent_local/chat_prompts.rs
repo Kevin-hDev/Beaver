@@ -107,11 +107,9 @@ pub fn prepare_messages_with_tools(
     if mode == "chat" {
         prepend_chat_system_prompt(messages, working_dir, model, behavior);
         filter_tool_prompt(messages, enabled_tool_names);
-        prepend_web_search_status(messages);
     } else {
         prepend_tool_system_prompt(messages, working_dir, is_git, git_root, model, behavior);
         filter_tool_prompt(messages, enabled_tool_names);
-        prepend_web_search_status(messages);
         super::extension_discovery_prompt::append(messages, enabled_tool_names);
         if has_tools && !skills.is_empty() {
             prepend_skills_listing(messages, skills);
@@ -152,18 +150,6 @@ fn append_response_language(messages: &mut [ChatMessage], lang: &str) {
     };
     if let Some(first) = messages.first_mut().filter(|m| m.role == "system") {
         first.content.push_str(&instruction);
-    }
-}
-
-fn prepend_web_search_status(messages: &mut [ChatMessage]) {
-    let section = super::web_search_status::format_web_search_status(
-        crate::services::api_keys::has_key("brave"),
-        crate::services::api_keys::has_key("exa"),
-        crate::services::api_keys::has_key("firecrawl"),
-        crate::services::searxng::is_ready(),
-    );
-    if let Some(first) = messages.first_mut().filter(|m| m.role == "system") {
-        first.content.push_str(&section);
     }
 }
 

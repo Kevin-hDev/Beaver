@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::agent_local::tool_image_process::process_image;
+    use crate::services::agent_local::tool_image_process::transform_image;
     use tempfile::TempDir;
 
     fn working_dir() -> TempDir {
@@ -21,7 +21,7 @@ mod tests {
         let output = tmp.path().join("output.png");
         let ops =
             serde_json::json!([{ "type": "resize", "width": 50, "height": 50, "mode": "fit" }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -42,7 +42,7 @@ mod tests {
         let output = tmp.path().join("output.png");
         let ops =
             serde_json::json!([{ "type": "resize", "width": 50, "height": 50, "mode": "exact" }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -62,7 +62,7 @@ mod tests {
         let output = tmp.path().join("output.png");
         let ops =
             serde_json::json!([{ "type": "resize", "width": 50, "height": 50, "mode": "fill" }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -82,7 +82,7 @@ mod tests {
         let output = tmp.path().join("output.png");
         let ops =
             serde_json::json!([{ "type": "crop", "x": 10, "y": 10, "width": 50, "height": 30 }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -100,8 +100,8 @@ mod tests {
         let tmp = working_dir();
         let input = create_test_image(tmp.path(), "input.png", 50, 50);
         let output = tmp.path().join("output.jpg");
-        let ops = serde_json::json!([]);
-        let result = process_image(
+        let ops = serde_json::Value::Null;
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -117,7 +117,7 @@ mod tests {
         let tmp = working_dir();
         let output = tmp.path().join("output.png");
         let ops = serde_json::json!([]);
-        let result = process_image(
+        let result = transform_image(
             "/nonexistent/image.png",
             output.to_str().unwrap(),
             &ops,
@@ -128,12 +128,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn no_operations_preserves_dimensions() {
+    async fn empty_operations_inspect_without_writing() {
         let tmp = working_dir();
         let input = create_test_image(tmp.path(), "input.png", 80, 60);
         let output = tmp.path().join("output.png");
         let ops = serde_json::json!([]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,
@@ -144,17 +144,19 @@ mod tests {
         let json: serde_json::Value = serde_json::from_str(&result.content).unwrap();
         assert_eq!(json["width"], 80);
         assert_eq!(json["height"], 60);
+        assert_eq!(json["format"], "png");
+        assert!(json["file_size_bytes"].as_u64().unwrap_or(0) > 0);
+        assert!(!output.exists());
     }
 
     #[tokio::test]
     async fn result_contains_file_size() {
         let tmp = working_dir();
         let input = create_test_image(tmp.path(), "input.png", 50, 50);
-        let output = tmp.path().join("output.png");
         let ops = serde_json::json!([]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
-            output.to_str().unwrap(),
+            "",
             &ops,
             tmp.path(),
         )
@@ -170,7 +172,7 @@ mod tests {
         let input = create_test_image(tmp.path(), "input.png", 50, 50);
         let output = tmp.path().join("output.png");
         let ops = serde_json::json!([{ "type": "unknown_op" }]);
-        let result = process_image(
+        let result = transform_image(
             input.to_str().unwrap(),
             output.to_str().unwrap(),
             &ops,

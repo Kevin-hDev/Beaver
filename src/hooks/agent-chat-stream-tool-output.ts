@@ -11,7 +11,7 @@ export function applyToolOutput(state: ManagedStreamState, data: ToolOutputData)
   const directIndex = data.toolCallIndex;
   const isShell = (index: number) => {
     const name = state.currentTools[index]?.name;
-    return name === "bash" || name === "bash_write";
+    return name === "bash" || name === "bash_control";
   };
   const originalIndex = state.currentTools.findIndex((tool, index) =>
     tool.callIndex === directIndex && isShell(index));
@@ -26,7 +26,7 @@ export function applyToolOutput(state: ManagedStreamState, data: ToolOutputData)
       : hasStableIndices
         ? -1
         : state.currentTools.findIndex((tool) =>
-            (tool.name === "bash" || tool.name === "bash_write")
+            (tool.name === "bash" || tool.name === "bash_control")
             && tool.result === undefined && tool.isError === undefined);
   if (index < 0) return;
   const tools = [...state.currentTools];

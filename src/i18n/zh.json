@@ -864,7 +864,6 @@
         "subagents": { "title": "子代理", "description": "让代理把子任务交给一个次级代理处理，再收回结果。如果你想把所有内容保留在同一个对话里，可以关闭它。" },
         "plan_mode": { "title": "Plan mode", "description": "让代理先提出行动计划，并等待你同意后再执行。如果你希望它直接开始行动，可以关闭它。" },
         "todo_list": { "title": "待办清单", "description": "让代理在处理长任务时维护一份清单，避免遗漏。如果你用不上清单，可以关闭它。" },
-        "agent_diagnostics": { "title": "代理诊断", "description": "让代理在失败后回顾自己最近的错误，从而自我修正。如果你不希望它花时间分析失败，可以关闭它。" },
         "git_branches": { "title": "Git 分支", "description": "让代理创建或切换 Git 分支，以隔离它的工作。如果你希望自己管理分支，可以关闭它。" },
         "forecast": { "title": "Forecast", "description": "让代理使用 Forecast 模块：运行预测、读取结果、添加场景。如果你不使用 Forecast，可以关闭它。" },
         "spreadsheet": { "title": "表格 / Excel", "description": "让代理读取或创建表格文件（Excel、ODS、CSV、TSV）。如果你不处理这类文件，可以关闭它。" },

@@ -28,7 +28,7 @@ impl SubagentToolProfile {
             ],
             Self::Coder => vec![
                 "bash",
-                "bash_write",
+                "bash_control",
                 "read_file",
                 "write_file",
                 "edit_file",
@@ -102,7 +102,7 @@ impl SubagentToolProfile {
         match (self, tool_name) {
             (Self::Explorer, "bash") => Some("Run one approved informational command without a shell. Pipes, redirections, mutations, network commands, find, and paths outside the project are refused."),
             (Self::Coder, "bash") => Some("Run build, test, Git, and development commands inside the assigned worktree. Explicit attempts to leave the worktree are refused."),
-            (Self::Coder, "bash_write") => Some("Continue, interact with, or stop a shell process previously started with bash."),
+            (Self::Coder, "bash_control") => Some("Continue, interact with, or stop a shell process previously started with bash."),
             (_, "read_file") => Some("Read a UTF-8 text file inside the assigned directory with line numbers."),
             (Self::Coder, "write_file") => Some("Create or replace a file inside the assigned worktree. Read existing files first."),
             (Self::Coder, "edit_file") => Some("Replace one exact string in a previously read file inside the assigned worktree."),

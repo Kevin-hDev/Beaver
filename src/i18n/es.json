@@ -864,7 +864,6 @@
         "subagents": { "title": "Subagentes", "description": "Permite al agente delegar una subtarea a un agente secundario y luego retomar el resultado. Desactívalo si quieres mantenerlo todo en una sola conversación." },
         "plan_mode": { "title": "Plan mode", "description": "Permite al agente proponerte un plan de acción y esperar tu visto bueno antes de actuar. Desactívalo si prefieres que pase directamente a la acción." },
         "todo_list": { "title": "Lista de tareas", "description": "Permite al agente mantener una checklist durante un trabajo largo, para no olvidar nada. Desactívalo si las checklists no te sirven." },
-        "agent_diagnostics": { "title": "Diagnósticos del agente", "description": "Permite al agente repasar sus errores recientes para corregirse tras un fallo. Desactívalo si no quieres que pierda tiempo analizando sus fallos." },
         "git_branches": { "title": "Ramas Git", "description": "Permite al agente crear o cambiar de rama Git para aislar su trabajo. Desactívalo si prefieres gestionar las ramas tú mismo." },
         "forecast": { "title": "Forecast", "description": "Permite al agente usar el módulo Forecast: lanzar previsiones, leer los resultados, añadir escenarios. Desactívalo si no usas Forecast." },
         "spreadsheet": { "title": "Hoja de cálculo / Excel", "description": "Permite al agente leer o crear hojas de cálculo (Excel, ODS, CSV, TSV). Desactívalo si no trabajas con este tipo de archivos." },

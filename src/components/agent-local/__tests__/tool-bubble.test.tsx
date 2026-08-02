@@ -68,7 +68,7 @@ vi.mock("../tool-bubble.css", () => ({}));
 vi.mock("@/lib/tool-file-path", () => ({
   isFileTool: (name: string) =>
     ["read_file", "write_file", "edit_file", "read_spreadsheet", "read_document",
-      "read_image", "write_spreadsheet", "write_document", "process_image"].includes(name),
+      "write_spreadsheet", "write_document", "transform_image"].includes(name),
 }));
 
 beforeEach(() => vi.clearAllMocks());

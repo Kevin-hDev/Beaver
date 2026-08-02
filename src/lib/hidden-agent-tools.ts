@@ -4,9 +4,8 @@ const HIDDEN_AGENT_TOOLS = new Set([
   "todo_pause",
   "todo_resume",
   "todo_delete",
-  "agent_diagnostics",
   "ask_user_choice",
-  "planmode",
+  "plan_mode",
 ]);
 
 export function isHiddenAgentTool(name: string) {

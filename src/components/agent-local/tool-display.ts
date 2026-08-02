@@ -16,7 +16,7 @@ export interface ToolDisplayInfo {
 
 const FILE_TOOLS = new Set([
   "read_file", "write_file", "edit_file", "read_spreadsheet", "read_document",
-  "read_image", "write_spreadsheet", "write_document", "process_image",
+  "write_spreadsheet", "write_document", "transform_image",
 ]);
 
 /** Nombre maximum de dossiers parents affichés avant le nom du fichier. */
@@ -56,14 +56,13 @@ const FILE_ICONS: Record<string, string> = {
   read_file: "BookOpenText",
   read_spreadsheet: "FileText",
   read_document: "FileText",
-  read_image: "Image",
   write_file: "FilePlus",
   write_spreadsheet: "FilePlus",
   write_document: "FilePlus",
   edit_file: "Pencil",
-  process_image: "Pencil",
+  transform_image: "Pencil",
   bash: "TerminalWindow",
-  bash_write: "TerminalWindow",
+  bash_control: "TerminalWindow",
   web_search: "Globe",
   web_fetch: "Link",
   list_dir: "FolderOpen",
@@ -74,7 +73,7 @@ const FILE_ICONS: Record<string, string> = {
   load_skill: "Sparkle",
   delegate_task: "Users",
   forecast_data_audit: "ChartLineUp",
-  forecast: "ChartLineUp",
+  forecast_run: "ChartLineUp",
   forecast_models: "ChartLineUp",
   forecast_read: "ChartLineUp",
   forecast_analyze: "ChartLineUp",
@@ -97,7 +96,7 @@ export function toolDisplayInfo(
       icon: iconFor(tool.name),
     };
   }
-  if (tool.name === "bash" || tool.name === "bash_write") {
+  if (tool.name === "bash" || tool.name === "bash_control") {
     const summary = tool.name === "bash" ? compactCommand(tool.summary) : tool.summary;
     return { label: "bash", summary, icon: iconFor(tool.name) };
   }
@@ -123,14 +122,14 @@ export function toolDisplayInfo(
 function actionKey(name: string): string {
   if (name === "load_skill") return "skill";
   if (name === "delegate_task") return "agent";
-  if (name === "forecast" || name === "forecast_models" || name === "forecast_read") return "read";
+  if (name === "forecast_run" || name === "forecast_models" || name === "forecast_read") return "read";
   if (name === "forecast_data_audit" || name === "forecast_analyze") return "forecast";
   if (name === "search_mcp_tools") return "mcp";
   if (name === "list_dir") return "list";
   if (name === "grep" || name === "glob") return "search";
   if (name.startsWith("read_")) return "read";
   if (name.startsWith("write_")) return "create";
-  if (name === "edit_file" || name === "process_image") return "edit";
+  if (name === "edit_file" || name === "transform_image") return "edit";
   if (name === "create_branch") return "createBranch";
   if (name === "checkout_branch") return "switchBranch";
   return "tool";

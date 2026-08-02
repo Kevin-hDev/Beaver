@@ -81,7 +81,7 @@ fn definition_for(policy: selection_policy::ForecastSelectionPolicy) -> Value {
         "Run a validated time series forecast. For every new dataset, you must call forecast_data_audit first and then pass its reusable data_profile_id plus the exact same confidence_level instead of resending raw data. Direct data or file_path remains available for application compatibility. The tool returns a saved analysis_id; you call forecast_read with it for paginated predictions and quantiles. {policy_text} You use series_column for multi-series data and covariate_columns only when the selected model supports them."
     );
     tool_definitions::tool_def(
-        "forecast",
+        "forecast_run",
         &description,
         serde_json::json!({
             "type": "object",

@@ -7,7 +7,7 @@ use image::DynamicImage;
 use serde_json::Value;
 use std::path::Path;
 
-pub async fn process_image(
+pub async fn transform_image(
     input_path: &str,
     output_path: &str,
     operations: &Value,
@@ -19,13 +19,6 @@ pub async fn process_image(
             "Le paramètre 'input_path' est requis",
         );
     }
-    if output_path.is_empty() {
-        return ToolResult::validation(
-            "image_output_path_required",
-            "Le paramètre 'output_path' est requis",
-        );
-    }
-
     let resolved_in = super::tool_office_utils::resolve_path(input_path, working_dir);
 
     let validated_in = match validate_read_path(&resolved_in, working_dir) {
@@ -40,8 +33,30 @@ pub async fn process_image(
         }
     };
 
-    let resolved_out = super::tool_office_utils::resolve_path(output_path, working_dir);
+    if let Err(e) = ensure_source_size(&validated_in, MAX_IMAGE_SOURCE_BYTES, "Image") {
+        return ToolResult::validation("image_source_invalid", e);
+    }
+    if let Err(e) = super::tool_image_process_geometry::validate_dimensions(&validated_in) {
+        return ToolResult::validation("image_dimensions_invalid", e);
+    }
 
+    let mut img = match image::open(&validated_in) {
+        Ok(i) => i,
+        Err(_) => return ToolResult::validation("image_content_invalid", "Impossible d'ouvrir l'image"),
+    };
+
+    if operations.as_array().is_some_and(Vec::is_empty) {
+        return super::tool_image_inspect::inspect(&validated_in, &img);
+    }
+
+    if output_path.is_empty() {
+        return ToolResult::validation(
+            "image_output_path_required",
+            "Le paramètre 'output_path' est requis pour transformer ou convertir une image",
+        );
+    }
+
+    let resolved_out = super::tool_office_utils::resolve_path(output_path, working_dir);
     let validated_out = match validate_write_path(&resolved_out) {
         Ok(p) => p,
         Err(error) => {
@@ -58,18 +73,6 @@ pub async fn process_image(
     {
         return error;
     }
-
-    if let Err(e) = ensure_source_size(&validated_in, MAX_IMAGE_SOURCE_BYTES, "Image") {
-        return ToolResult::validation("image_source_invalid", e);
-    }
-    if let Err(e) = super::tool_image_process_geometry::validate_dimensions(&validated_in) {
-        return ToolResult::validation("image_dimensions_invalid", e);
-    }
-
-    let mut img = match image::open(&validated_in) {
-        Ok(i) => i,
-        Err(_) => return ToolResult::validation("image_content_invalid", "Impossible d'ouvrir l'image"),
-    };
 
     let ops = if operations.is_null() {
         vec![]

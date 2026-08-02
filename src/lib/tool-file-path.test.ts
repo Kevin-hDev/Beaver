@@ -10,7 +10,7 @@ describe("isFileTool", () => {
   it("retourne true pour chaque outil fichier connu", () => {
     const FILE_TOOLS = [
       "read_file", "write_file", "edit_file", "read_spreadsheet",
-      "read_document", "read_image", "write_spreadsheet", "write_document", "process_image",
+      "read_document", "write_spreadsheet", "write_document", "transform_image",
     ];
     for (const tool of FILE_TOOLS) {
       expect(isFileTool(tool), `attendu true pour "${tool}"`).toBe(true);

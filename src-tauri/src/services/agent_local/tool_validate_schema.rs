@@ -17,7 +17,7 @@ static BASH: Schema = &[
     ("yield-time-ms", Ty::Int, false),
     ("workdir", Ty::Str, false),
 ];
-static BASH_WRITE: Schema = &[
+static BASH_CONTROL: Schema = &[
     ("session_id", Ty::Str, true),
     ("chars", Ty::Str, false),
     ("eof", Ty::Bool, false),
@@ -51,9 +51,8 @@ static TODO_HISTORY: Schema = &[];
 static TODO_PAUSE: Schema = &[("reason", Ty::Str, false)];
 static TODO_RESUME: Schema = &[("id", Ty::Str, true)];
 static TODO_DELETE: Schema = &[("id", Ty::Str, false), ("active", Ty::Bool, false)];
-static AGENT_DIAGNOSTICS: Schema = &[("limit", Ty::Int, false)];
 static ASK_USER_CHOICE: Schema = &[("questions", Ty::Arr, true)];
-static PLANMODE: Schema = &[("title", Ty::Str, true), ("content", Ty::Str, true)];
+static PLAN_MODE: Schema = &[("title", Ty::Str, true), ("content", Ty::Str, true)];
 static LOAD_SKILL: Schema = &[("skill_id", Ty::Str, true)];
 static CREATE_BRANCH: Schema = &[("branch_name", Ty::Str, true)];
 static CHECKOUT_BRANCH: Schema = &[("branch_name", Ty::Str, true)];
@@ -78,12 +77,11 @@ static READ_SPREADSHEET: Schema = &[
     ("max_rows", Ty::Int, false),
 ];
 static READ_DOCUMENT: Schema = &[("path", Ty::Str, true), ("pages", Ty::Str, false)];
-static READ_IMAGE: Schema = &[("path", Ty::Str, true)];
 static WRITE_SPREADSHEET: Schema = &[("path", Ty::Str, true), ("operations", Ty::Arr, true)];
 static WRITE_DOCUMENT: Schema = &[("path", Ty::Str, true), ("content", Ty::Arr, true)];
-static PROCESS_IMAGE: Schema = &[
+static TRANSFORM_IMAGE: Schema = &[
     ("input_path", Ty::Str, true),
-    ("output_path", Ty::Str, true),
+    ("output_path", Ty::Str, false),
     ("operations", Ty::Arr, false),
 ];
 static SEARCH_MCP: Schema = &[
@@ -124,7 +122,7 @@ static FORECAST_COMPARE_MODELS: Schema = &[("analysis_id", Ty::Str, true)];
 pub(super) fn schema(tool: &str) -> Option<Schema> {
     Some(match tool {
         "bash" => BASH,
-        "bash_write" => BASH_WRITE,
+        "bash_control" => BASH_CONTROL,
         "read_file" => READ_FILE,
         "write_file" => WRITE_FILE,
         "edit_file" => EDIT_FILE,
@@ -139,9 +137,8 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "todo_pause" => TODO_PAUSE,
         "todo_resume" => TODO_RESUME,
         "todo_delete" => TODO_DELETE,
-        "agent_diagnostics" => AGENT_DIAGNOSTICS,
         "ask_user_choice" => ASK_USER_CHOICE,
-        "planmode" => PLANMODE,
+        "plan_mode" => PLAN_MODE,
         "load_skill" => LOAD_SKILL,
         "create_branch" => CREATE_BRANCH,
         "checkout_branch" => CHECKOUT_BRANCH,
@@ -154,10 +151,9 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         }
         "read_spreadsheet" => READ_SPREADSHEET,
         "read_document" => READ_DOCUMENT,
-        "read_image" => READ_IMAGE,
         "write_spreadsheet" => WRITE_SPREADSHEET,
         "write_document" => WRITE_DOCUMENT,
-        "process_image" => PROCESS_IMAGE,
+        "transform_image" => TRANSFORM_IMAGE,
         "search_mcp_tools" => SEARCH_MCP,
         "forecast_data_audit" => FORECAST_DATA_AUDIT,
         "forecast_analyze" => FORECAST_ANALYZE,

@@ -15,7 +15,7 @@ pub fn check_write_guard(
         "write_file" | "edit_file" | "write_spreadsheet" | "write_document" => {
             args["path"].as_str().unwrap_or("")
         }
-        "process_image" => args["output_path"].as_str().unwrap_or(""),
+        "transform_image" => args["output_path"].as_str().unwrap_or(""),
         _ => "",
     };
     if !path_str.is_empty() {
@@ -31,7 +31,7 @@ pub fn check_write_guard(
 }
 
 /// Enregistre les fichiers "vus" après un tool read-only réussi.
-/// - read_file/read_document/read_spreadsheet/read_image/process_image → le chemin lu.
+/// - read_file/read_document/read_spreadsheet/transform_image → le chemin lu.
 /// - grep/glob/list_dir → tous les fichiers retournés dans le résultat.
 pub fn post_record_read(
     name: &str,
@@ -44,12 +44,12 @@ pub fn post_record_read(
         return;
     }
     match name {
-        "read_file" | "read_document" | "read_spreadsheet" | "read_image" => {
+        "read_file" | "read_document" | "read_spreadsheet" => {
             if let Some(path_str) = args["path"].as_str() {
                 record_path(write_guard, path_str, working_dir);
             }
         }
-        "process_image" => {
+        "transform_image" => {
             if let Some(path_str) = args["input_path"].as_str() {
                 record_path(write_guard, path_str, working_dir);
             }
@@ -81,7 +81,7 @@ pub fn post_record_write(
     if tr.is_error {
         return;
     }
-    if matches!(name, "bash" | "bash_write") && !tr.affected_paths().is_empty() {
+    if matches!(name, "bash" | "bash_control") && !tr.affected_paths().is_empty() {
         let paths = tr
             .affected_paths()
             .iter()
@@ -94,7 +94,7 @@ pub fn post_record_write(
         "write_file" | "edit_file" | "write_spreadsheet" | "write_document" => {
             args["path"].as_str()
         }
-        "process_image" => args["output_path"].as_str(),
+        "transform_image" => args["output_path"].as_str(),
         _ => return,
     };
     if let Some(path_str) = path_str {
@@ -122,8 +122,8 @@ pub fn resolve_tool_path(
 ) -> Option<String> {
     let path_str = match name {
         "read_file" | "write_file" | "edit_file" | "read_spreadsheet" | "read_document"
-        | "read_image" | "write_spreadsheet" | "write_document" => args["path"].as_str(),
-        "process_image" => args["input_path"].as_str(),
+        | "write_spreadsheet" | "write_document" => args["path"].as_str(),
+        "transform_image" => args["input_path"].as_str(),
         _ => return None,
     }?;
     let p = std::path::Path::new(path_str);
@@ -157,11 +157,11 @@ pub async fn dispatch_or_interactive(
     if name == "ask_user_choice" {
         return super::tool_interactive::execute(args, on_event, cancel, Some(session_id)).await;
     }
-    if name == "planmode" {
+    if name == "plan_mode" {
         return super::tool_plan::execute(args, on_event, session_id, cancel).await;
     }
     let progress = tool_call_index
-        .filter(|_| matches!(name, "bash" | "bash_write"))
+        .filter(|_| matches!(name, "bash" | "bash_control"))
         .map(|index| super::tool_bash_progress::ShellProgress::new(on_event.clone(), index));
     super::tool_dispatcher::dispatch_with_progress(
         name,

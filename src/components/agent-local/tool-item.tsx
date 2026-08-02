@@ -9,15 +9,15 @@ import { ToolResultCode, ToolResultMarkdown } from "./tool-result-markdown";
 import { useCollapsiblePresence } from "./use-collapsible-presence";
 
 const RESULT_PREVIEW_TOOLS = new Set([
-  "bash", "bash_write", "grep", "glob", "read_file", "list_dir",
-  "read_spreadsheet", "read_document", "read_image",
-  "web_search", "web_fetch", "forecast_data_audit", "forecast", "forecast_read",
+  "bash", "bash_control", "grep", "glob", "read_file", "list_dir",
+  "read_spreadsheet", "read_document",
+  "web_search", "web_fetch", "forecast_data_audit", "forecast_run", "forecast_read",
 ]);
 
 // Outils dont le résultat texte est rendu en Markdown (style bulle, sans
 // couleurs de code). Les autres gardent le rendu texte brut.
 const MARKDOWN_RESULT_TOOLS = new Set([
-  "bash", "bash_write", "grep", "glob", "list_dir", "web_search", "web_fetch",
+  "bash", "bash_control", "grep", "glob", "list_dir", "web_search", "web_fetch",
 ]);
 
 const TEXT_RESULT_TOOLS = new Set(["read_file"]);

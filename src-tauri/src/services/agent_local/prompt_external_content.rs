@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn interactive_and_plan_authority_no_longer_need_tool_result_exceptions() {
         assert!(!super::EXTERNAL_CONTENT.contains("ask_user_choice"));
-        assert!(!super::EXTERNAL_CONTENT.contains("planmode"));
+        assert!(!super::EXTERNAL_CONTENT.contains("plan_mode"));
     }
 
     #[test]

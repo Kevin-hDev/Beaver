@@ -10,16 +10,12 @@ describe("isHiddenAgentTool", () => {
     expect(isHiddenAgentTool("todo_delete")).toBe(true);
   });
 
-  it("retourne true pour agent_diagnostics", () => {
-    expect(isHiddenAgentTool("agent_diagnostics")).toBe(true);
-  });
-
   it("retourne true pour ask_user_choice", () => {
     expect(isHiddenAgentTool("ask_user_choice")).toBe(true);
   });
 
-  it("retourne true pour planmode", () => {
-    expect(isHiddenAgentTool("planmode")).toBe(true);
+  it("retourne true pour plan_mode", () => {
+    expect(isHiddenAgentTool("plan_mode")).toBe(true);
   });
 
   it("retourne false pour les outils visibles (bash, read_file)", () => {

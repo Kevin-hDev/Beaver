@@ -1,6 +1,6 @@
 import type { ToolActivityRecord } from "@/types/agent";
 
-const FILE_TOOLS = new Set(["read_file", "write_file", "edit_file", "read_spreadsheet", "read_document", "read_image", "write_spreadsheet", "write_document", "process_image"]);
+const FILE_TOOLS = new Set(["read_file", "write_file", "edit_file", "read_spreadsheet", "read_document", "write_spreadsheet", "write_document", "transform_image"]);
 const PATH_KEYS = ["path", "file_path", "filepath", "target_path"];
 
 export function isFileTool(name: string): boolean {

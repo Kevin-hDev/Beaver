@@ -49,7 +49,7 @@ function toolSummary(t: ToolActivity): string {
   if (t.displaySummary !== undefined) return t.displaySummary;
   if (t.name === "load_skill") return "";
   if (t.name === "bash") return str(a.command);
-  if (t.name === "bash_write") return str(a.session_id);
+  if (t.name === "bash_control") return str(a.session_id);
   if (t.name === "grep" || t.name === "glob") return str(a.pattern);
   if (t.name === "read_file" || t.name === "write_file") return str(a.path);
   if (t.name === "edit_file") return str(a.path);
@@ -57,10 +57,10 @@ function toolSummary(t: ToolActivity): string {
   if (t.name === "web_search") return str(a.query);
   if (t.name === "web_fetch") return str(a.url);
   if (t.name === "create_branch" || t.name === "checkout_branch") return str(a.branch_name);
-  if (["read_spreadsheet", "read_document", "read_image", "write_spreadsheet", "write_document"].includes(t.name)) {
+  if (["read_spreadsheet", "read_document", "write_spreadsheet", "write_document"].includes(t.name)) {
     return str(a.path);
   }
-  if (t.name === "process_image") return str(a.input_path);
+  if (t.name === "transform_image") return str(a.input_path);
   return JSON.stringify(a).slice(0, 80);
 }
 

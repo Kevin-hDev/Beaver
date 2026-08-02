@@ -4,7 +4,7 @@ use tokio_util::sync::CancellationToken;
 
 #[cfg(not(target_os = "windows"))]
 #[tokio::test]
-async fn running_process_accepts_input_through_bash_write() {
+async fn running_process_accepts_input_through_bash_control() {
     let dir = tempfile::tempdir().expect("tempdir");
     let owner = uuid::Uuid::new_v4().to_string();
     let started = managed(
@@ -38,7 +38,7 @@ async fn running_process_accepts_input_through_bash_write() {
 
 #[cfg(not(target_os = "windows"))]
 #[tokio::test]
-async fn bash_write_blocks_destructive_input_before_it_reaches_the_process() {
+async fn bash_control_blocks_destructive_input_before_it_reaches_the_process() {
     let dir = tempfile::tempdir().expect("tempdir");
     let owner = uuid::Uuid::new_v4().to_string();
     let started = managed(
@@ -83,7 +83,7 @@ async fn bash_write_blocks_destructive_input_before_it_reaches_the_process() {
 
 #[cfg(not(target_os = "windows"))]
 #[tokio::test]
-async fn bash_write_can_send_input_then_close_stdin() {
+async fn bash_control_can_send_input_then_close_stdin() {
     let dir = tempfile::tempdir().expect("tempdir");
     let owner = uuid::Uuid::new_v4().to_string();
     let started = managed(

@@ -34,17 +34,17 @@ fn manual_mode_does_not_apply_the_sensitive_bash_rule_to_other_tools() {
 }
 
 #[test]
-fn sensitive_bash_write_input_is_redacted_before_manual_approval() {
+fn sensitive_bash_control_input_is_redacted_before_manual_approval() {
     let args = json!({"session_id": "session", "chars": "cat ~/.ssh/id_ed25519\n"});
 
     assert!(requires_sensitive_bash_prompt(
         "manual",
-        "bash_write",
+        "bash_control",
         &args
     ));
     assert!(!requires_sensitive_bash_prompt(
         "auto",
-        "bash_write",
+        "bash_control",
         &args
     ));
 }

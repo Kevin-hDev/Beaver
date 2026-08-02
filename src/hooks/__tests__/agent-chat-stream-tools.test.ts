@@ -19,7 +19,7 @@ describe("toolCall", () => {
 
   it("ignore les tools internes", () => {
     let state = makeState();
-    const names = ["todo_history", "todo_pause", "todo_resume", "todo_delete", "agent_diagnostics", "ask_user_choice", "planmode"];
+    const names = ["todo_history", "todo_pause", "todo_resume", "todo_delete", "ask_user_choice", "plan_mode"];
     for (const name of names) {
       state = applyStreamEvent(state, { event: "toolCall", data: { name, arguments: {} } }).state;
     }
@@ -142,7 +142,7 @@ describe("toolResult", () => {
     expect(result.state.interactiveChoice).toBeUndefined();
   });
 
-  it("vide le choix interactif quand planmode retourne sa validation backend", () => {
+  it("vide le choix interactif quand plan_mode retourne sa validation backend", () => {
     const state = makeState({ interactiveChoice: {
       sessionId: "session-1",
       id: "choice-1",
@@ -152,7 +152,7 @@ describe("toolResult", () => {
     } });
     const result = applyStreamEvent(state, {
       event: "toolResult",
-      data: { name: "planmode", toolCallIndex: 0, content: "approved", isError: false },
+      data: { name: "plan_mode", toolCallIndex: 0, content: "approved", isError: false },
     });
     expect(result.state.interactiveChoice).toBeUndefined();
   });
