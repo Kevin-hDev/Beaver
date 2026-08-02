@@ -1,0 +1,28 @@
+Objectif
+Fermer les cinq points de la review e4ea68a sans réintroduire la désactivation de bash/bash_control : exécuter le profil de connexion sans possibilité de sortir du périmètre disque, conserver un PATH unique, fiabiliser les sondes Darwin et rendre les replis persistants et diagnostiquables.
+
+Décisions de confinement
+- Le helper accepte un mode explicite profile-capture, validé et borné. Son répertoire courant doit être exactement son temp privé.
+- Les racines configurées deviennent uniquement lisibles pendant la capture. Les seuls fichiers ajoutés hors de ces racines sont neuf profils shell connus et ~/.cargo/env, uniquement comme fichiers réguliers directs, canonicalisés et sans lien symbolique.
+- La préparation des racines possède désormais une variante réellement lecture seule : elle ne calcule ni ne crée aucun cache et ne retourne aucune permission d’écriture.
+- macOS omet dans ce mode la politique de compatibilité du shell : pas de réseau général, pas de /private/tmp et pas de xcrun_db. Seul le temp privé est inscriptible.
+- Linux applique Landlock avec les racines et profils en lecture, le temp privé en écriture, sans /tmp ni caches. Windows refuse ce mode, qui n’y est jamais demandé.
+- Le helper normal de travail conserve son comportement et toutes ses capacités.
+
+PATH et diagnostics
+- Le PATH capturé au démarrage est la seule source du shell final. Le snapshot de profil filtre désormais PATH en plus de TMPDIR, TMP, TEMP et TMPPREFIX, dans les formats export, declare -x et typeset -x.
+- Le délai devient une enveloppe globale de 8 secondes pour tous les shells candidats, au lieu de 3 secondes par candidat.
+- Le résultat de la capture est écrit atomiquement dans un diagnostic privé borné sans chemin ni donnée utilisateur. Une règle xcrun indisponible produit aussi un diagnostic persistant générique ; un succès retire ce diagnostic obsolète.
+- Durcissement issu de la revue des corrections : un dossier injecté dans PATH ne devient une racine lisible que s’il contient réellement un exécutable. Le scan est borné à 4096 entrées, ce qui bloque un profil modifiable tentant d’ajouter un dossier de secrets arbitraire.
+
+Tests et preuves exécutés
+- cargo test : 2891 passés, 0 échec, 1 ignoré.
+- Test macOS ignoré relancé : git=ok, npm=ok, cargo=ok, go=ok, heredoc=ok, diff=ok, native=ok, darwin-temp=blocked, outside-write=blocked.
+- Tests Seatbelt dédiés : profil interactif lu, PATH restauré, projet autorisé non inscriptible, /private/tmp bloqué, xcrun_db bloqué et temp privé inscriptible.
+- Test réel du binaire de production avec PATH=/usr/bin:/bin:/usr/sbin:/sbin : capture réussie en environ 0,3 s, avec ~/.cargo/bin retrouvé.
+- cargo clippy --all-targets -- -D warnings : succès.
+- cargo fmt --all -- --check : succès.
+- graphify update . : succès.
+
+Limites de validation
+Les clippy croisés ont été retentés. Linux s’arrête avant Beaver faute de sysroot/pkg-config GTK ; Windows faute de CEF et des en-têtes SDK/MSVC. Landlock et AppContainer restent donc à exécuter en CI native. Landlock confine ici le système de fichiers mais ne change pas la politique réseau Linux, conformément au périmètre existant.
