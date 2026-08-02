@@ -27,8 +27,7 @@ pub fn web_tool_definitions() -> Vec<Value> {
              Limits: response body max 5 MB; output max 50,000 chars (truncated). \
              No HTTP->HTTPS upgrade — both schemes are accepted. \
              Redirects followed up to 3 times, each re-validated against SSRF rules (private IPs blocked). \
-             No caching. \
-             Requires user confirmation unless session-allowed.",
+             No caching.",
             serde_json::json!({
                 "type": "object",
                 "properties": {

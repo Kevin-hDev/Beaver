@@ -9,7 +9,6 @@ pub fn core_tool_definitions() -> Vec<Value> {
             "Execute a shell command on the user's machine.\n\n\
              Role and shell: use bash for system commands and shell operations. The complete user environment is loaded from a cached profile. Unix uses a POSIX-compatible $SHELL when available, otherwise zsh, bash, or sh; Windows uses PowerShell.\n\n\
              Working directory: commands start in the project directory. Set workdir to an absolute directory only when this call intentionally needs another location. A cd never persists to later calls.\n\n\
-             Permissions: in Ask for approval mode, read-only commands run directly while mutating commands require explicit approval. In Full access mode, commands run without approval prompts.\n\n\
              Safety: system-level destructive commands such as chmod 777, mkfs, dd, and fork bombs are blocked.\n\n\
              Output and sessions: output streams live. Short commands return immediately. If a command remains active after yield_time_ms (default 10000), the result contains a session_id; continue it with bash_control. There is no forced execution timeout unless timeout is explicitly set. Full output remains available outside the model context when its preview is truncated.",
             serde_json::json!({
@@ -63,8 +62,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
              Read-before-write rule: if the target file already exists, you MUST have called read_file on it earlier in this session. The call fails otherwise. New files can be written without a prior read. \
              Writes are restricted to allowed write roots (working directory and configured paths under advanced.allowed_paths). Writing outside (e.g. ~/.bashrc, ~/.ssh) is refused. \
              Symlinks are not followed on write. \
-             Prefer edit_file for modifying an existing file — it only sends the diff and keeps edits surgical. Use write_file only to create new files or do complete rewrites. \
-             Requires user confirmation unless session-allowed.",
+             Prefer edit_file for modifying an existing file — it only sends the diff and keeps edits surgical. Use write_file only to create new files or do complete rewrites.",
             serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -82,8 +80,7 @@ pub fn core_tool_definitions() -> Vec<Value> {
              - `old_string` must be unique in the file. If multiple matches are found, the call fails with the match count — include more surrounding context (usually 2-4 adjacent lines) to make it unique. \
              - The match is exact: whitespace, tabs, and newlines must match the file content byte-for-byte. \
              Does not support replace_all. To rename a symbol across a file, call edit_file once per occurrence, or use write_file with the full new content. \
-             Returns the edited line number. \
-             Requires user confirmation unless session-allowed.",
+             Returns the edited line number.",
             serde_json::json!({
                 "type": "object",
                 "properties": {

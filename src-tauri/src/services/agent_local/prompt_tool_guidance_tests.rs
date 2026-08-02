@@ -47,3 +47,36 @@ fn bash_guidance_matches_the_optional_timeout_contract() {
     assert!(detailed.contains("continue it with bash_control"));
     assert!(!detailed.contains("bash times out after 120s"));
 }
+
+#[test]
+fn agent_tools_hide_backend_permission_modes() {
+    let forbidden = [
+        "session-allowed",
+        "Ask for approval mode",
+        "Full access mode",
+        "Requires user confirmation",
+    ];
+
+    for definition in super::tool_definitions::native_tool_definitions() {
+        let name = definition["function"]["name"].as_str().unwrap_or_default();
+        let description = definition["function"]["description"]
+            .as_str()
+            .unwrap_or_default();
+        for phrase in forbidden {
+            assert!(
+                !description.contains(phrase),
+                "{name} exposes backend permission detail: {phrase}"
+            );
+        }
+    }
+}
+
+#[test]
+fn agent_prompts_do_not_claim_an_active_permission_mode() {
+    for prompt in prompts() {
+        assert!(!prompt.contains("full access to the user's system"));
+        assert!(!prompt.contains("session-allowed"));
+        assert!(!prompt.contains("Ask for approval mode"));
+        assert!(!prompt.contains("Full access mode"));
+    }
+}
