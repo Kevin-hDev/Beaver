@@ -15,7 +15,7 @@ fn known_posix_shells_have_a_snapshot_script() {
 #[test]
 fn profile_is_kept_out_of_arguments_and_replayed_from_environment() {
     let profile = ShellProfile {
-        scripts: split_snapshot(
+        scripts: sanitize::chunks(
             "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export BEAVER_PROFILE_TEST=env",
         ),
     };
@@ -42,11 +42,11 @@ fn profile_is_kept_out_of_arguments_and_replayed_from_environment() {
 #[test]
 fn large_utf8_profiles_are_split_below_linux_environment_limits() {
     let snapshot = "é".repeat(60_000);
-    let chunks = split_snapshot(&snapshot);
+    let chunks = sanitize::chunks(&snapshot);
 
     assert!(chunks
         .iter()
-        .all(|chunk| chunk.len() <= MAX_SNAPSHOT_CHUNK_BYTES));
+        .all(|chunk| chunk.len() <= sanitize::MAX_SNAPSHOT_CHUNK_BYTES));
     assert_eq!(
         format!("{}{}", chunks[0].as_str(), chunks[1].as_str()),
         snapshot
@@ -59,14 +59,16 @@ fn sandbox_temp_variables_are_not_replayed_from_the_profile() {
         "export TMPDIR=/deleted/sandbox\n",
         "declare -x TMP=\"/deleted/sandbox\"\n",
         " typeset -x TEMP='/deleted/sandbox'\n",
+        "export TMPPREFIX=/tmp/zsh\n",
         "export TEMPORARY=kept\n",
         "export BEAVER_PROFILE_TEST=kept\n",
     );
-    let sanitized = sanitize_snapshot(snapshot);
+    let sanitized = sanitize::snapshot(snapshot);
 
     assert!(!sanitized.contains("TMPDIR="));
     assert!(!sanitized.contains(" TMP="));
     assert!(!sanitized.contains(" TEMP="));
+    assert!(!sanitized.contains("TMPPREFIX="));
     assert!(sanitized.contains("TEMPORARY=kept"));
     assert!(sanitized.contains("BEAVER_PROFILE_TEST=kept"));
 }

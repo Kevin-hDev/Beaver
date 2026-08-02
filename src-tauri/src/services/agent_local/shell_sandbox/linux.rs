@@ -8,6 +8,7 @@ const PLATFORM_READ_DIRS: [&str; 8] = [
     "/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev", "/proc",
 ];
 const PACKAGE_PREFIXES: [&str; 2] = ["/usr/local", "/home/linuxbrew/.linuxbrew"];
+const SYSTEM_TEMP_DIR: &str = "/tmp";
 const WRITABLE_DEVICES: [&str; 7] = [
     "/dev/null",
     "/dev/zero",
@@ -48,7 +49,10 @@ fn apply(writable_roots: &[PathBuf], temp_dir: &Path) -> Result<(), String> {
         .iter()
         .map(PathBuf::as_path)
         .chain(std::iter::once(temp_dir))
-        .chain(tools.write_dirs.iter().map(PathBuf::as_path));
+        .chain(tools.write_dirs.iter().map(PathBuf::as_path))
+        .chain(
+            std::iter::once(Path::new(SYSTEM_TEMP_DIR)).filter(|path| path.is_dir()),
+        );
     let writable_devices = WRITABLE_DEVICES
         .iter()
         .map(Path::new)

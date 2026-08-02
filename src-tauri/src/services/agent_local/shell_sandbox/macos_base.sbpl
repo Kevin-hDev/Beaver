@@ -1,6 +1,9 @@
 ; Beaver additions to the Apache-2.0 Codex Seatbelt base policy.
 (allow network*)
 
+; Certains outils BSD utilisent /private/tmp en dur et ignorent TMPDIR.
+(allow file-read* file-write* (subpath "/private/tmp"))
+
 (allow file-read* file-write* file-ioctl
   (subpath "/dev/fd")
   (literal "/dev/null")

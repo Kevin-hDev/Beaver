@@ -50,7 +50,8 @@ pub fn prepare_command(
         .args(arguments)
         .env("TMPDIR", &temp_dir)
         .env("TMP", &temp_dir)
-        .env("TEMP", &temp_dir);
+        .env("TEMP", &temp_dir)
+        .env("TMPPREFIX", temp_dir.join("zsh"));
     Ok(PreparedShellCommand {
         command,
         cleanup_dir: Some(temp_dir),

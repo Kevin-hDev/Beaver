@@ -7,11 +7,12 @@ use tokio::process::Command;
 use tokio::sync::OnceCell;
 use zeroize::{Zeroize, Zeroizing};
 
+#[path = "tool_bash_profile_sanitize.rs"]
+mod sanitize;
+
 const MAX_CACHED_PROFILES: usize = 64;
 const MAX_SNAPSHOT_BYTES: usize = 128 * 1024;
-const MAX_SNAPSHOT_CHUNK_BYTES: usize = 64 * 1024;
 const SNAPSHOT_TIMEOUT_SECS: u64 = 5;
-const SANDBOX_TEMP_ENVS: [&str; 3] = ["TMPDIR", "TMP", "TEMP"];
 pub(super) const SNAPSHOT_ENVS: [&str; 2] = [
     "BEAVER_INTERNAL_PROFILE_SNAPSHOT_0",
     "BEAVER_INTERNAL_PROFILE_SNAPSHOT_1",
@@ -147,55 +148,15 @@ async fn capture_process(
     let raw = Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned());
     bytes.zeroize();
     let start = raw.find(marker)? + marker.len();
-    let snapshot = Zeroizing::new(sanitize_snapshot(
+    let snapshot = Zeroizing::new(sanitize::snapshot(
         raw[start..].trim_start_matches(['\r', '\n']),
     ));
     if snapshot.is_empty() || snapshot.contains('\0') {
         return None;
     }
     Some(ShellProfile {
-        scripts: split_snapshot(&snapshot),
+        scripts: sanitize::chunks(&snapshot),
     })
-}
-
-fn sanitize_snapshot(snapshot: &str) -> String {
-    let mut sanitized = String::with_capacity(snapshot.len());
-    for line in snapshot.lines() {
-        if overrides_sandbox_temp(line) {
-            continue;
-        }
-        sanitized.push_str(line);
-        sanitized.push('\n');
-    }
-    sanitized
-}
-
-fn overrides_sandbox_temp(line: &str) -> bool {
-    let line = line.trim_start();
-    for prefix in ["export ", "declare -x ", "typeset -x "] {
-        let Some(value) = line.strip_prefix(prefix) else {
-            continue;
-        };
-        if SANDBOX_TEMP_ENVS.iter().any(|name| {
-            value
-                .strip_prefix(name)
-                .is_some_and(|value| value.starts_with('='))
-        }) {
-            return true;
-        }
-    }
-    false
-}
-
-fn split_snapshot(snapshot: &str) -> [Zeroizing<String>; 2] {
-    let mut split_at = snapshot.len().min(MAX_SNAPSHOT_CHUNK_BYTES);
-    while !snapshot.is_char_boundary(split_at) {
-        split_at = split_at.saturating_sub(1);
-    }
-    [
-        Zeroizing::new(snapshot[..split_at].to_string()),
-        Zeroizing::new(snapshot[split_at..].to_string()),
-    ]
 }
 
 fn log_unavailable(reason: &str) {

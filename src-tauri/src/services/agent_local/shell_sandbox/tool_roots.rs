@@ -4,17 +4,7 @@ use std::path::{Path, PathBuf};
 
 pub(super) const MAX_READ_ROOTS: usize = 64;
 const MAX_PATH_INPUTS: usize = 256;
-const WRITABLE_CACHE_DIRS: [&str; 7] = [
-    ".cargo/registry",
-    ".cargo/git",
-    ".npm/_cacache",
-    ".cache/pip",
-    ".cache/uv",
-    ".cache/go-build",
-    ".cache/yarn",
-];
-// La borne suit la liste blanche ci-dessus, plus le fichier rustup autorisé.
-pub(super) const MAX_WRITE_ROOTS: usize = WRITABLE_CACHE_DIRS.len() + 1;
+pub(super) const MAX_WRITE_ROOTS: usize = super::tool_cache_roots::MAX_WRITE_DIRS + 1;
 
 #[derive(Default)]
 pub(super) struct ToolRoots {
@@ -45,13 +35,19 @@ pub(super) fn collect(
     path_inputs.truncate(MAX_PATH_INPUTS);
     let platform = platform_read_dirs.iter().map(PathBuf::from).collect::<Vec<_>>();
     let packages = package_prefixes.iter().map(PathBuf::from).collect::<Vec<_>>();
+    let home = dirs::home_dir().and_then(|path| canonical_dir(&path));
+    let writable_cache_dirs = home
+        .as_deref()
+        .map(super::tool_cache_roots::collect)
+        .unwrap_or_default();
     let roots = collect_from(
         workspace_roots,
         &platform,
         &packages,
-        dirs::home_dir().as_deref(),
+        home.as_deref(),
         &path_inputs,
         path_overflow,
+        &writable_cache_dirs,
     );
     if path_overflow {
         eprintln!("[shell-sandbox] writable tool caches disabled: PATH entry limit exceeded");
@@ -72,7 +68,9 @@ fn collect_from(
     home: Option<&Path>,
     path_inputs: &[PathBuf],
     path_overflow: bool,
+    writable_cache_dirs: &[PathBuf],
 ) -> ToolRoots {
+    let input_home = home;
     let home = home.and_then(canonical_dir);
     let mut roots = ToolRoots::default();
 
@@ -117,10 +115,14 @@ fn collect_from(
     }
 
     if let Some(home) = home.as_deref().filter(|_| !path_overflow) {
-        for relative in WRITABLE_CACHE_DIRS {
+        for path in writable_cache_dirs {
+            let path = input_home
+                .and_then(|input| path.strip_prefix(input).ok())
+                .map(|relative| home.join(relative))
+                .unwrap_or_else(|| path.clone());
             push_write_dir(
                 &mut roots,
-                &home.join(relative),
+                &path,
                 workspace_roots,
                 &canonical_path_dirs,
                 home,

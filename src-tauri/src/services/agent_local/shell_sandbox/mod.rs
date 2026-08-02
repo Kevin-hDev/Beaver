@@ -1,5 +1,9 @@
 mod helper;
 mod launch;
+mod tool_cache_env;
+mod tool_cache_platform;
+mod tool_cache_prepare;
+mod tool_cache_roots;
 mod tool_roots;
 mod tool_roots_entries;
 mod tool_roots_path;

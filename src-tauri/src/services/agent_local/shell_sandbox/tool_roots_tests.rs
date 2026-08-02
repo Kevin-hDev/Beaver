@@ -21,6 +21,8 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
         &home.join(".cache/uv"),
         &home.join(".cache/go-build"),
         &home.join(".cache/yarn"),
+        &home.join("go/pkg/mod"),
+        &home.join("go/pkg/sumdb"),
         &home.join(".cache/ms-playwright"),
         &home.join(".rustup/toolchains"),
     ] {
@@ -34,6 +36,17 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
     ] {
         std::fs::write(path, "test").expect("create file");
     }
+    let writable_cache_dirs = [
+        home.join(".cargo/registry"),
+        home.join(".cargo/git"),
+        home.join(".npm/_cacache"),
+        home.join(".cache/pip"),
+        home.join(".cache/uv"),
+        home.join(".cache/go-build"),
+        home.join(".cache/yarn"),
+        home.join("go/pkg/mod"),
+        home.join("go/pkg/sumdb"),
+    ];
 
     let roots = collect_from(
         std::slice::from_ref(&workspace),
@@ -42,6 +55,7 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
         Some(&home),
         &[tool.join("bin"), home.join("bin")],
         false,
+        &writable_cache_dirs,
     );
     let canonical_home = dunce::canonicalize(&home).expect("home");
     let canonical_tool = dunce::canonicalize(&tool).expect("tool");
@@ -74,9 +88,9 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
         .expect("executable cache");
     assert!(!roots.write_dirs.contains(&broad_cache));
     assert!(!roots.write_dirs.contains(&executable_cache));
-    assert_eq!(roots.write_dirs.len(), 7);
+    assert_eq!(roots.write_dirs.len(), 9);
     assert_eq!(roots.write_files.len(), 1);
-    assert_eq!(MAX_WRITE_ROOTS, 8);
+    assert_eq!(MAX_WRITE_ROOTS, 10);
 }
 
 #[test]
@@ -95,12 +109,54 @@ fn executable_cache_is_not_granted_by_narrow_cache_allowlist() {
         Some(&home),
         std::slice::from_ref(&cached_bin),
         false,
+        &[home.join(".cache/pip")],
     );
     let broad_cache = dunce::canonicalize(home.join(".cache")).expect("cache");
     let safe_cache = dunce::canonicalize(home.join(".cache/pip")).expect("pip cache");
 
     assert!(!roots.write_dirs.contains(&broad_cache));
     assert!(roots.write_dirs.contains(&safe_cache));
+}
+
+#[test]
+fn configured_cache_paths_stay_inside_home_and_never_cover_path_tools() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let home = temp.path().join("home");
+    let workspace = temp.path().join("workspace");
+    let safe_cache = home.join("custom/safe-cache");
+    let executable_cache = home.join("custom/executable-cache");
+    let executable_dir = executable_cache.join("bin");
+    let external_cache = temp.path().join("external-cache");
+    for path in [
+        &home,
+        &workspace,
+        &safe_cache,
+        &executable_dir,
+        &external_cache,
+    ] {
+        std::fs::create_dir_all(path).expect("directory");
+    }
+
+    let roots = collect_from(
+        std::slice::from_ref(&workspace),
+        &[],
+        &[],
+        Some(&home),
+        std::slice::from_ref(&executable_dir),
+        false,
+        &[
+            safe_cache.clone(),
+            executable_cache.clone(),
+            external_cache.clone(),
+        ],
+    );
+    let safe_cache = dunce::canonicalize(safe_cache).expect("safe cache");
+    let executable_cache = dunce::canonicalize(executable_cache).expect("executable cache");
+    let external_cache = dunce::canonicalize(external_cache).expect("external cache");
+
+    assert!(roots.write_dirs.contains(&safe_cache));
+    assert!(!roots.write_dirs.contains(&executable_cache));
+    assert!(!roots.write_dirs.contains(&external_cache));
 }
 
 #[test]
@@ -118,6 +174,7 @@ fn excessive_path_entries_disable_extra_writable_roots() {
         Some(&home),
         &[],
         true,
+        &[home.join(".cache/pip")],
     );
 
     assert!(roots.write_dirs.is_empty());
@@ -158,6 +215,7 @@ fn writable_tool_exceptions_reject_redirecting_symlinks() {
         Some(&home),
         std::slice::from_ref(&path_dir),
         false,
+        &[home.join(".cache/pip")],
     );
 
     assert!(!roots.write_dirs.contains(
@@ -185,6 +243,7 @@ fn read_root_saturation_is_reported_without_exceeding_the_bound() {
         None,
         &[],
         false,
+        &[],
     );
 
     assert_eq!(roots.read_dirs.len(), MAX_READ_ROOTS);
@@ -215,6 +274,7 @@ fn readable_tool_configuration_rejects_symlink_redirection() {
         Some(&home),
         &[],
         false,
+        &[],
     );
     let private = dunce::canonicalize(private).expect("private directory");
     let private_file = dunce::canonicalize(private_file).expect("private file");
