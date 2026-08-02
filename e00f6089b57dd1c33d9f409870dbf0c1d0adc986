@@ -1,0 +1,25 @@
+Objectif
+
+Rendre les sessions restreintes pleinement utilisables sans exposer le stockage privé de Beaver, et empêcher les historiques de fichiers de faire grossir démesurément les sessions.
+
+Décisions
+
+Les sessions restreintes reçoivent un accès lecture-écriture ciblé à memory, skills et aux fichiers d'instructions actifs dans le stockage Beaver. Les sources externes ne sont accessibles que si leur migration est activée, uniquement sur leurs dossiers rules/skills et leurs documents déclarés. Les racines, fichiers ou sources redirigés par lien symbolique sont refusés. Le dossier source complet, le home et le stockage privé complet ne sont jamais ouverts.
+
+La remontée depuis un dossier PATH est bloquée dès qu'elle engloberait data_dir. Ainsi ~/.local/bin ne peut plus ouvrir ~/.local ni exposer les sessions, le vault ou la configuration Beaver.
+
+La configuration observée contient seulement la source Claude désactivée et aucune source Agents activée : ~/.claude et ~/.agents ne reçoivent donc aucun accès spécial. La recherche de ~/.agents par le modèle reste volontairement hors de ce commit et sera investiguée séparément.
+
+Le suivi Git et le watcher partagent désormais le même filtre des dossiers générés. file_changes est limité à 128 entrées et 512 Kio sérialisés, affected_paths à 128 entrées et 64 Kio. Les activités dupliquées entre tool_activities et segments ne sont persistées qu'une fois. Les anciennes sessions sont compactées à leur prochaine sauvegarde, tout en conservant les formats historiques non équivalents.
+
+Mesure sur be6c9111-a5a2-414b-8547-74b7da34693c
+
+Taille actuelle 34089624 octets. Simulation en lecture seule du chemin de sauvegarde corrigé : 2322425 octets en JSON formaté, sans modifier le fichier existant.
+
+Validation
+
+cargo test : 2911 passés, 0 échec, 1 ignoré. cargo clippy --all-targets -- -D warnings : vert. cargo fmt --check : vert. npm test : 1811 Vitest, 2 CEF et 46 hôte d'extensions, tous verts. npx tsc --noEmit et npm run lint : verts.
+
+Test macOS réel ignoré relancé : git, npm, cargo, go, heredoc, diff et compilation native fonctionnent ; darwin-temp et l'écriture hors périmètre restent bloqués.
+
+Les clippy cross-target Linux et Windows ont été tentés mais arrêtés avant le code Beaver par les dépendances natives absentes de cette machine : sysroot GTK/cairo côté Linux et en-têtes SDK/vcpkg côté Windows. La validation native de Landlock et AppContainer reste à faire en CI.
