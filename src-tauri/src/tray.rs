@@ -71,12 +71,7 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
                 });
             }
             "quit" => {
-                let handle = app.clone();
-                tauri::async_runtime::spawn(async move {
-                    let gw = handle.state::<GatewayService>();
-                    gw.stop().await;
-                    handle.exit(0);
-                });
+                crate::app_exit::request(app, 0);
             }
             _ => {}
         })

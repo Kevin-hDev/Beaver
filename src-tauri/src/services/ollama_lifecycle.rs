@@ -144,6 +144,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000);
     }
+    crate::services::process_tree::configure(&mut cmd);
 
     let child = cmd.spawn().map_err(|e| {
         eprintln!("[ollama] spawn: {e}");

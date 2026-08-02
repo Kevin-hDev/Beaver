@@ -140,4 +140,26 @@ mod tests {
             .await;
         assert!(manager.activate_next().await.is_none());
     }
+
+    #[tokio::test]
+    async fn app_exit_cancels_running_and_queued_downloads() {
+        let manager = ModelDownloadManager::new();
+        let (_, running_cancel) = manager
+            .start(ModelDownloadKind::Ollama, "first".into(), false)
+            .await
+            .unwrap();
+        let (_, queued_cancel) = manager
+            .start(ModelDownloadKind::Forecast, "second".into(), false)
+            .await
+            .unwrap();
+
+        manager.cancel_all().await;
+
+        assert!(running_cancel.unwrap().is_cancelled());
+        assert!(queued_cancel.is_none());
+        assert_eq!(
+            manager.list().await[1].status,
+            ModelDownloadStatus::Cancelled
+        );
+    }
 }

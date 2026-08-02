@@ -7,6 +7,7 @@
 #![allow(clippy::module_inception)]
 
 mod app_events;
+mod app_exit;
 mod commands;
 mod invoke_handler;
 mod invoke_handler_tail;
@@ -67,6 +68,7 @@ pub fn run() {
             }
         }))
         .manage(OllamaClient::new())
+        .manage(app_exit::AppExitCoordinator::default())
         .manage(ActiveStreams(Mutex::new(HashMap::new())))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
@@ -200,9 +202,10 @@ pub fn run() {
         .expect("error while building tauri application");
 
     let app_handle = app.handle().clone();
-    app.run(|app_handle, event| {
+    let exit_code = app.run_return(|app_handle, event| {
         services::browser::setup_on_run_event(app_handle, &event);
         app_events::handle_run_event(app_handle, event);
     });
     services::browser::shutdown(&app_handle);
+    std::process::exit(exit_code);
 }

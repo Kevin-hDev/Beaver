@@ -62,6 +62,7 @@ pub fn run(
         }
         command.env("SystemRoot", system_root);
     }
+    crate::services::process_tree::configure(&mut command);
     let mut child = command.spawn().map_err(|_| ProcessFailure::Unavailable)?;
     let deadline = Instant::now() + timeout;
     loop {
@@ -70,19 +71,17 @@ pub fn run(
             Ok(Some(_)) => return Err(ProcessFailure::Failed),
             Ok(None) if Instant::now() < deadline => std::thread::sleep(POLL_INTERVAL),
             Ok(None) => {
-                crate::services::process_tree::kill(
-                    child.id(),
+                crate::services::process_tree::terminate(
+                    &mut child,
                     crate::services::process_tree::ProcessKind::ExtensionInstaller,
                 );
-                let _ = child.wait();
                 return Err(ProcessFailure::Timeout);
             }
             Err(_) => {
-                crate::services::process_tree::kill(
-                    child.id(),
+                crate::services::process_tree::terminate(
+                    &mut child,
                     crate::services::process_tree::ProcessKind::ExtensionInstaller,
                 );
-                let _ = child.wait();
                 return Err(ProcessFailure::Interrupted);
             }
         }

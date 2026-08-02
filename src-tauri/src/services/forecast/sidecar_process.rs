@@ -1,7 +1,6 @@
 use crate::services::{paths::data_dir, process_tree};
 use std::path::PathBuf;
 use std::process::{Child, Command};
-use std::time::{Duration, Instant};
 
 fn pid_path() -> PathBuf {
     data_dir().join("chronos-sidecar.pid")
@@ -40,17 +39,7 @@ pub fn kill_orphan_sidecar() {
 pub fn kill_child_process(mut child: Child) {
     let pid = child.id();
     eprintln!("[forecast] kill sidecar pid={pid}");
-    process_tree::kill(pid, process_tree::ProcessKind::Forecast);
-    let start = Instant::now();
-    while start.elapsed() < Duration::from_secs(3) {
-        if let Ok(Some(_)) = child.try_wait() {
-            eprintln!("[forecast] sidecar arrêté");
-            return;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
-    let _ = child.kill();
-    let _ = child.wait();
+    process_tree::terminate(&mut child, process_tree::ProcessKind::Forecast);
 }
 
 fn read_saved_pid() -> Option<u32> {

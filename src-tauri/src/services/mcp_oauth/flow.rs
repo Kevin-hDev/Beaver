@@ -153,6 +153,14 @@ pub fn cancel(connector_id: &str) {
     }
 }
 
+pub fn cancel_all() {
+    if let Ok(map) = PENDING.lock() {
+        for token in map.values() {
+            token.cancel();
+        }
+    }
+}
+
 fn generate_state() -> Zeroizing<String> {
     let mut bytes = [0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut bytes);

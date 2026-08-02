@@ -5,6 +5,7 @@ use zeroize::Zeroizing;
 use super::tool_bash_session::ShellSession;
 
 const MAX_SESSIONS: usize = 64;
+const STOP_ALL_GRACE: std::time::Duration = std::time::Duration::from_millis(300);
 
 struct RegisteredSession {
     session: Arc<ShellSession>,
@@ -78,7 +79,7 @@ pub async fn stop_all() {
             tokio::time::sleep(std::time::Duration::from_millis(10)).await;
         }
     };
-    if tokio::time::timeout(std::time::Duration::from_secs(3), finished)
+    if tokio::time::timeout(STOP_ALL_GRACE, finished)
         .await
         .is_err()
     {

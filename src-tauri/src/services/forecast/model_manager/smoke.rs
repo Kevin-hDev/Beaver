@@ -50,7 +50,8 @@ fn run_smoke(
     if !script.is_file() || !python.is_file() {
         return Err("Validation du modèle Forecast impossible".into());
     }
-    let mut child = Command::new(python)
+    let mut command = Command::new(python);
+    command
         .arg(script)
         .current_dir(script.parent().unwrap_or(sidecar_fallback()))
         .env("FORECAST_SMOKE", "1")
@@ -62,14 +63,15 @@ fn run_smoke(
         .env("TRANSFORMERS_OFFLINE", "1")
         .env("TABPFN_DISABLE_TELEMETRY", "1")
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+    process_tree::configure(&mut command);
+    let mut child = command
         .spawn()
         .map_err(|_| "Validation du modèle Forecast impossible".to_string())?;
     let started = Instant::now();
     loop {
         if cancel.is_cancelled() || started.elapsed() >= SMOKE_TIMEOUT {
-            process_tree::kill(child.id(), process_tree::ProcessKind::ForecastRuntime);
-            let _ = child.wait();
+            process_tree::terminate(&mut child, process_tree::ProcessKind::ForecastRuntime);
             return Err(if cancel.is_cancelled() {
                 "cancelled".into()
             } else {

@@ -10,7 +10,7 @@ use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ModelDownloadManager {
     inner: Arc<Mutex<DownloadStore>>,
 }
@@ -160,6 +160,16 @@ impl ModelDownloadManager {
         }
         Ok(list_locked(&store))
     }
+
+    pub async fn cancel_all(&self) {
+        let mut store = self.inner.lock().await;
+        for entry in store.entries.values_mut() {
+            entry.cancel.cancel();
+            if entry.state.status == ModelDownloadStatus::Queued {
+                entry.state.status = ModelDownloadStatus::Cancelled;
+            }
+        }
+    }
 }
 
 fn is_pending(status: ModelDownloadStatus) -> bool {
@@ -182,10 +192,4 @@ fn list_locked(store: &DownloadStore) -> Vec<ModelDownloadState> {
         .iter()
         .filter_map(|id| store.entries.get(id).map(|entry| entry.state.clone()))
         .collect()
-}
-
-impl Default for ModelDownloadManager {
-    fn default() -> Self {
-        Self::new()
-    }
 }

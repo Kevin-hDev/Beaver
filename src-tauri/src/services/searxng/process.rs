@@ -1,7 +1,6 @@
 use crate::services::paths::data_dir;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::time::{Duration, Instant};
 
 fn pid_path() -> PathBuf {
     data_dir().join("searxng-sidecar.pid")
@@ -58,6 +57,7 @@ pub fn spawn(python: &Path, source: &Path, settings: &Path, port: u16) -> Result
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000);
     }
+    crate::services::process_tree::configure(&mut cmd);
 
     cmd.spawn()
         .map_err(|_| "SearXNG: démarrage impossible".to_string())
@@ -70,17 +70,10 @@ pub fn kill_child_process(mut child: Child) {
         return;
     }
     eprintln!("[searxng] kill sidecar pid={pid}");
-    crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Searxng);
-    let start = Instant::now();
-    while start.elapsed() < Duration::from_secs(3) {
-        if let Ok(Some(_)) = child.try_wait() {
-            clear_pid_file();
-            return;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
-    let _ = child.kill();
-    let _ = child.wait();
+    crate::services::process_tree::terminate(
+        &mut child,
+        crate::services::process_tree::ProcessKind::Searxng,
+    );
     clear_pid_file();
 }
 

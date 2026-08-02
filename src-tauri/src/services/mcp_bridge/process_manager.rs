@@ -67,6 +67,7 @@ pub fn spawn(
     for (key, value) in env_tokens {
         command.env(key, value.as_str());
     }
+    crate::services::process_tree::configure_tokio(&mut command);
 
     let mut child = command
         .kill_on_drop(true)
@@ -159,15 +160,22 @@ pub fn shutdown_one(connector_id: &str) {
     }
 }
 
-pub fn shutdown_all() {
-    if let Ok(mut pool) = POOL.lock() {
-        for (_, mut entry) in pool.drain() {
-            let _ = entry.child.start_kill();
-        }
-    }
+pub async fn shutdown_all() {
+    let entries = POOL
+        .lock()
+        .map(|mut pool| pool.drain().map(|(_, entry)| entry).collect::<Vec<_>>())
+        .unwrap_or_default();
     if let Ok(mut handles) = HANDLES.lock() {
         handles.clear();
     }
+    futures_util::future::join_all(entries.into_iter().map(|mut entry| async move {
+        crate::services::process_tree::terminate_tokio(
+            &mut entry.child,
+            crate::services::process_tree::ProcessKind::Mcp,
+        )
+        .await;
+    }))
+    .await;
 }
 
 fn evict_expired_inner(pool: &mut HashMap<String, PoolEntry>) -> Vec<String> {

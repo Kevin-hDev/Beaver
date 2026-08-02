@@ -77,40 +77,22 @@ fn is_ollama_process(pid: u32) -> bool {
 pub fn kill_process(child: &mut Child) {
     let pid = child.id();
     eprintln!("[ollama] kill sidecar pid={pid}");
-    crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Ollama);
-
-    let start = std::time::Instant::now();
-    while start.elapsed() < Duration::from_secs(3) {
-        if let Ok(Some(_)) = child.try_wait() {
-            eprintln!("[ollama] sidecar arrêté proprement");
-            return;
-        }
-        std::thread::sleep(Duration::from_millis(100));
-    }
-
-    let _ = child.kill();
-    let _ = child.wait();
+    crate::services::process_tree::terminate(
+        child,
+        crate::services::process_tree::ProcessKind::Ollama,
+    );
 }
 
-pub fn release_vram_blocking() {
+pub async fn release_vram() {
     let base_url = crate::services::ollama_port::base_url();
     let url = format!("{base_url}/api/generate");
     let body = serde_json::json!({ "model": "", "keep_alive": "0" });
-    let _ = std::thread::Builder::new()
-        .name("vram-release".into())
-        .spawn(move || {
-            let rt = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build();
-            if let Ok(rt) = rt {
-                let _ = rt.block_on(async {
-                    let client = reqwest::Client::builder()
-                        .timeout(Duration::from_secs(3))
-                        .build()?;
-                    client.post(&url).json(&body).send().await
-                });
-            }
-            eprintln!("[ollama] VRAM release demandée");
-        });
-    std::thread::sleep(Duration::from_millis(500));
+    let Ok(client) = reqwest::Client::builder()
+        .timeout(Duration::from_millis(300))
+        .build()
+    else {
+        return;
+    };
+    let _ = client.post(&url).json(&body).send().await;
+    eprintln!("[ollama] VRAM release demandée");
 }

@@ -50,11 +50,11 @@ pub(super) fn run_cancellable(
     message: &str,
 ) -> Result<(), String> {
     command.stdout(Stdio::null()).stderr(Stdio::null());
+    process_tree::configure(command);
     let mut child = command.spawn().map_err(|_| message.to_string())?;
     loop {
         if cancel.is_cancelled() {
-            process_tree::kill(child.id(), process_tree::ProcessKind::ForecastRuntime);
-            let _ = child.wait();
+            process_tree::terminate(&mut child, process_tree::ProcessKind::ForecastRuntime);
             return Err("cancelled".to_string());
         }
         match child.try_wait() {

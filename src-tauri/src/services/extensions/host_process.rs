@@ -14,7 +14,6 @@ use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
-const KILL_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct HostProcess {
     child: Mutex<Child>,
@@ -34,6 +33,7 @@ impl HostProcess {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .kill_on_drop(true);
+        crate::services::process_tree::configure_tokio(&mut command);
         let mut child = command
             .spawn()
             .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())?;
@@ -103,8 +103,11 @@ impl HostProcess {
     pub async fn kill(&self) {
         self.alive.store(false, Ordering::Release);
         let mut child = self.child.lock().await;
-        let _ = child.start_kill();
-        let _ = tokio::time::timeout(KILL_TIMEOUT, child.wait()).await;
+        crate::services::process_tree::terminate_tokio(
+            &mut child,
+            crate::services::process_tree::ProcessKind::ExtensionHost,
+        )
+        .await;
         drop(child);
         if let Some(reader) = self.reader.lock().await.take() {
             reader.abort();

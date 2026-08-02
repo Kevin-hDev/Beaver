@@ -1,6 +1,6 @@
-use crate::services::gateway::GatewayService;
-use crate::services::{ollama_kill, ollama_lifecycle};
-use crate::{models::ClgoConfig, services};
+use crate::models::ClgoConfig;
+#[cfg(not(target_os = "macos"))]
+use crate::services;
 use std::ffi::OsStr;
 use tauri::{Manager, RunEvent, WindowEvent};
 
@@ -10,24 +10,27 @@ pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
     match event {
         RunEvent::WindowEvent {
             label,
-            event: WindowEvent::CloseRequested { .. },
+            event: WindowEvent::CloseRequested { api, .. },
             ..
         } => {
             if label == "main" {
+                #[cfg(target_os = "macos")]
+                let _ = api;
                 #[cfg(not(target_os = "macos"))]
                 {
+                    api.prevent_close();
                     if should_hide_instead_of_quit() {
                         if let Some(win) = app_handle.get_webview_window("main") {
                             let _ = win.hide();
                         }
                     } else {
-                        cleanup(app_handle);
+                        crate::app_exit::request(app_handle, 0);
                     }
                 }
             }
         }
-        RunEvent::ExitRequested { .. } | RunEvent::Exit => {
-            cleanup(app_handle);
+        RunEvent::ExitRequested { code, api, .. } => {
+            crate::app_exit::handle_requested(app_handle, code, &api);
         }
         #[cfg(target_os = "macos")]
         RunEvent::Reopen { .. } => {
@@ -46,33 +49,6 @@ fn should_hide_instead_of_quit() -> bool {
     let gateway_active = config.gateway.enabled && config.gateway.run_when_window_closed;
     let tray_visible = config.advanced.show_tray;
     gateway_active && tray_visible
-}
-
-fn cleanup(app_handle: &tauri::AppHandle) {
-    tauri::async_runtime::block_on(services::oauth_providers::cancel_all());
-    tauri::async_runtime::block_on(services::agent_local::tool_bash_registry::stop_all());
-    services::agent_local::tool_bash_profile::clear();
-    if let Some(gw) = app_handle.try_state::<GatewayService>() {
-        let gw = gw.inner();
-        tauri::async_runtime::block_on(async { gw.stop().await });
-    }
-    services::mcp_bridge::process_manager::shutdown_all();
-    tauri::async_runtime::block_on(services::extensions::stop());
-    if let Some(pty) = app_handle.try_state::<services::terminal::PtyManager>() {
-        pty.kill_all();
-    }
-    if let Some(chronos) = app_handle.try_state::<services::forecast::sidecar::ChronosSidecar>() {
-        tauri::async_runtime::block_on(async {
-            services::forecast::sidecar::stop(chronos.inner()).await;
-        });
-    }
-    if let Some(searxng) = app_handle.try_state::<services::searxng::SearxngSidecar>() {
-        tauri::async_runtime::block_on(async {
-            services::searxng::stop(searxng.inner()).await;
-        });
-    }
-    ollama_kill::release_vram_blocking();
-    ollama_lifecycle::stop_sidecar(app_handle);
 }
 
 pub fn should_start_hidden(config: &ClgoConfig) -> bool {
