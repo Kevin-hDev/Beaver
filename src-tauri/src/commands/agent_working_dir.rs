@@ -84,27 +84,26 @@ pub(crate) async fn resolve_existing_for_session(
 }
 
 pub(crate) async fn project_path_for_id(project_id: &str) -> Option<String> {
-    project_store::list()
+    project_store::find(project_id)
         .await
-        .ok()?
-        .into_iter()
-        .find(|project| project.id == project_id)
         .map(|project| project.path)
 }
 
 fn canonical_dir(input: &str) -> Result<ResolvedWorkingDir, String> {
-    let path = Path::new(input);
-    if !path.is_dir() {
-        return Err("Répertoire introuvable".to_string());
-    }
-    let path = path
-        .canonicalize()
-        .map_err(|_| "Répertoire inaccessible".to_string())?;
+    let path = canonical_existing_dir(input)?;
     let path = crate::services::agent_local::directory_access::ensure_allowed(&path)?;
     Ok(ResolvedWorkingDir {
         path,
         outputs_dir: None,
     })
+}
+
+fn canonical_existing_dir(input: &str) -> Result<PathBuf, String> {
+    let path = Path::new(input);
+    if !path.is_dir() {
+        return Err("Répertoire introuvable".to_string());
+    }
+    dunce::canonicalize(path).map_err(|_| "Répertoire inaccessible".to_string())
 }
 
 fn canonical_optional_dir(input: Option<&str>) -> Result<Option<ResolvedWorkingDir>, String> {
@@ -131,9 +130,9 @@ fn is_home_directory(input: &str) -> bool {
     let Some(home) = dirs::home_dir() else {
         return false;
     };
-    canonical_dir(input)
+    canonical_existing_dir(input)
         .ok()
-        .and_then(|candidate| home.canonicalize().ok().map(|home| candidate.path == home))
+        .and_then(|candidate| dunce::canonicalize(home).ok().map(|home| candidate == home))
         .unwrap_or(false)
 }
 

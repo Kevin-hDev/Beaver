@@ -2,17 +2,26 @@ use std::path::Path;
 use std::process::Stdio;
 use tokio::process::Command;
 
+pub struct BuiltShellCommand {
+    pub command: Command,
+    pub cleanup_dir: Option<std::path::PathBuf>,
+}
+
 pub async fn build_command(
     command: &str,
     working_dir: &Path,
     owner_session_id: &str,
-) -> Result<Command, String> {
+) -> Result<BuiltShellCommand, String> {
     let shell = user_shell()?;
     let profile = super::tool_bash_profile::prepare(owner_session_id, &shell, working_dir).await;
     let arguments = shell_arguments(command);
-    let mut process = Command::new(shell);
+    let prepared = super::shell_sandbox::prepare_command(
+        std::ffi::OsStr::new(&shell),
+        &arguments,
+        working_dir,
+    )?;
+    let mut process = prepared.command;
     process
-        .args(arguments)
         .current_dir(working_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -22,7 +31,10 @@ pub async fn build_command(
         profile.apply(&mut process);
     }
     super::tool_bash_platform::configure_process_group(&mut process);
-    Ok(process)
+    Ok(BuiltShellCommand {
+        command: process,
+        cleanup_dir: prepared.cleanup_dir,
+    })
 }
 
 #[cfg(unix)]
@@ -34,7 +46,7 @@ fn user_shell() -> Result<String, String> {
     candidates.push("/bin/sh".to_string());
     for shell in candidates {
         let path = Path::new(&shell);
-        if shell.len() <= 4_096
+        if shell.chars().count() <= super::directory_access::MAX_PATH_CHARS
             && !shell.contains('\0')
             && path.is_absolute()
             && path.is_file()

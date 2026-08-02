@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import { notifyAgentSessionsChanged } from "./agent-session-events";
+import { parseAllowedPaths } from "./directory-access-decision";
 
 export interface MissingSessionDirectory {
   missing_path: string;
@@ -45,10 +46,9 @@ export function useAgentMissingDirectory(sessionId: string | null) {
       return;
     }
     if (result.status === "forbidden") {
-      const paths = result.allowed_paths;
-      if (paths.length > 0 && paths.length <= 32 && paths.every((path) => typeof path === "string" && path.length > 0 && path.length <= 4_096)) {
-        setForbiddenAllowedPaths(paths);
-      } else {
+      try {
+        setForbiddenAllowedPaths(parseAllowedPaths(result.allowed_paths));
+      } catch {
         showToast(i18n.t("directoryAccess.error"), "error");
       }
       return;

@@ -1,0 +1,42 @@
+; Beaver additions to the Apache-2.0 Codex Seatbelt base policy.
+(allow network*)
+
+(allow file-read* file-write* file-ioctl
+  (subpath "/dev/fd")
+  (literal "/dev/null")
+  (literal "/dev/zero")
+  (literal "/dev/random")
+  (literal "/dev/urandom")
+  (literal "/dev/ptmx")
+  (regex #"^/dev/ttys[0-9]+"))
+
+(allow file-read-metadata file-test-existence
+  (literal "/")
+  (literal "/etc")
+  (literal "/tmp")
+  (literal "/var")
+  (literal "/System/Volumes")
+  (literal "/System/Volumes/Data")
+  (literal "/System/Volumes/Data/Users"))
+
+(allow system-mac-syscall (mac-policy-name "vnguard"))
+(allow system-mac-syscall
+  (require-all (mac-policy-name "Sandbox") (mac-syscall-number 67)))
+(allow system-fsctl (fsctl-command FSIOC_CAS_BSDFLAGS))
+
+(allow mach-lookup
+  (global-name "com.apple.analyticsd")
+  (global-name "com.apple.bsd.dirhelper")
+  (global-name "com.apple.diagnosticd")
+  (global-name "com.apple.logd")
+  (global-name "com.apple.logd.events")
+  (global-name "com.apple.runningboard")
+  (global-name "com.apple.secinitd")
+  (global-name "com.apple.system.DirectoryService.libinfo_v1")
+  (global-name "com.apple.system.logger")
+  (global-name "com.apple.system.opendirectoryd.membership")
+  (global-name "com.apple.trustd")
+  (global-name "com.apple.trustd.agent")
+  (local-name "com.apple.cfprefsd.agent"))
+
+(allow ipc-posix-shm-read* (ipc-posix-name "apple.shm.notification_center"))

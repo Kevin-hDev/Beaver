@@ -40,12 +40,7 @@ export function useWorktreeSessionSwitch({
   onNewSessionInProject,
 }: UseWorktreeSessionSwitchDeps) {
   const [pending, setPending] = useState<WorktreeSwitchTarget | null>(null);
-  const {
-    blocked: blockedDirectoryAccess,
-    request: requestDirectoryAccess,
-    cancel: cancelDirectoryAccess,
-    openSettings: openDirectoryAccessSettings,
-  } = useDirectoryAccessGuard();
+  const { prompt: directoryAccessPrompt, request: requestDirectoryAccess } = useDirectoryAccessGuard();
 
   const request = useCallback((path: string, branch: string) => {
     void requestDirectoryAccess(path, () => setPending({ path, branch }));
@@ -69,10 +64,6 @@ export function useWorktreeSessionSwitch({
     request,
     cancel,
     createSession,
-    directoryAccessPrompt: blockedDirectoryAccess ? {
-      allowedPaths: blockedDirectoryAccess.allowedPaths,
-      onCancel: cancelDirectoryAccess,
-      onSettings: openDirectoryAccessSettings,
-    } : undefined,
+    directoryAccessPrompt,
   };
 }

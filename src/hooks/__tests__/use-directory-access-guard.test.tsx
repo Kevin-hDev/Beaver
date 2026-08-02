@@ -28,10 +28,10 @@ describe("useDirectoryAccessGuard", () => {
     });
 
     expect(onAllowed).not.toHaveBeenCalled();
-    expect(result.current.blocked?.allowedPaths).toEqual(["/project/allowed"]);
-    act(() => result.current.openSettings());
+    expect(result.current.prompt?.allowedPaths).toEqual(["/project/allowed"]);
+    act(() => result.current.prompt?.onSettings());
     expect(openSettings).toHaveBeenCalledOnce();
-    expect(result.current.blocked).toBeNull();
+    expect(result.current.prompt).toBeUndefined();
   });
 
   it("valide la sélection uniquement après l’accord du backend", async () => {
@@ -64,6 +64,6 @@ describe("useDirectoryAccessGuard", () => {
       await result.current.request("/project", () => Promise.reject(new Error("changed")));
     });
 
-    expect(result.current.blocked?.allowedPaths).toEqual(["/project/allowed"]);
+    expect(result.current.prompt?.allowedPaths).toEqual(["/project/allowed"]);
   });
 });

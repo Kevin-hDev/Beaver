@@ -49,6 +49,10 @@ pub async fn list() -> Result<Vec<Project>, String> {
     Ok(projects)
 }
 
+pub async fn find(id: &str) -> Option<Project> {
+    read_all().await.into_iter().find(|project| project.id == id)
+}
+
 pub async fn add(path: &str) -> Result<Project, String> {
     let canonical = canonical_existing_dir(Path::new(path))?;
     super::directory_access::ensure_allowed(&canonical)?;

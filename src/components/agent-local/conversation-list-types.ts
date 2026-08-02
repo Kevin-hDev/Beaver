@@ -1,4 +1,5 @@
 import type { AgentSessionMeta, Project } from "@/types/agent";
+import type { DirectoryAccessPromptProps } from "./directory-access-prompt";
 
 export interface ConversationListProps {
   sessions: AgentSessionMeta[];
@@ -13,4 +14,5 @@ export interface ConversationListProps {
   onDeleteProject: (id: string) => void;
   onOpenFolder: (path: string) => void;
   onReorderProjects: (ids: string[]) => void;
+  directoryAccessPrompt?: DirectoryAccessPromptProps;
 }

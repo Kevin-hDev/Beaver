@@ -7,6 +7,7 @@
   },
   "common": {
     "back": "Zurück",
+    "cancel": "Abbrechen",
     "delete": "Löschen",
     "loading": "Wird geladen…"
   },
@@ -918,7 +919,7 @@
       "vramTableSize": "Größe",
       "vramFormula": "Modellgröße + (Kontext/1000 × 0,5 GB) + 0,5 GB",
       "fileAccessTitle": "Dateizugriff",
-      "fileAccessDesc": "Ordner, auf die das LLM lesen und schreiben kann",
+      "fileAccessDesc": "Ordner, in denen Sitzungen und ihre Werkzeuge arbeiten können",
       "addPath": "Ordner hinzufügen",
       "resetPaths": "Zurücksetzen",
       "fullDisk": "Gesamte Festplatte",

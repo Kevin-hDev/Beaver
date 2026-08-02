@@ -18,6 +18,7 @@ export function useAgentLocalConversationList(
   const {
     handleCreate,
     handleCreateInProject,
+    directoryAccessPrompt,
   } = sessionActions;
 
   return useMemo(() => (
@@ -34,9 +35,11 @@ export function useAgentLocalConversationList(
       onDeleteProject={handleDeleteProject}
       onOpenFolder={(path) => void projectsHook.openFolder(path)}
       onReorderProjects={(ids) => void projectsHook.reorder(ids)}
+      directoryAccessPrompt={directoryAccessPrompt}
     />
   ), [
     activeSessionId, handleCreate, handleCreateInProject, handleDeleteProject,
     handleDeleteSession, handleSelectById, projectsHook, rename, sessions,
+    directoryAccessPrompt,
   ]);
 }

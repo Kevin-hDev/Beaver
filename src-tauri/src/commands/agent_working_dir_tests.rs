@@ -1,4 +1,7 @@
-use super::{canonical_dir, canonical_optional_dir, choose_project_root, ResolvedWorkingDir};
+use super::{
+    canonical_dir, canonical_optional_dir, choose_project_root, is_home_directory,
+    ResolvedWorkingDir,
+};
 
 #[test]
 fn canonicalizes_existing_dir() {
@@ -19,6 +22,13 @@ fn rejects_a_missing_stored_root_instead_of_falling_back() {
     let missing = "/definitely/missing/beaver-project-root";
 
     assert!(canonical_optional_dir(Some(missing)).is_err());
+}
+
+#[test]
+fn home_detection_only_answers_the_geographic_question() {
+    let home = dirs::home_dir().expect("home");
+
+    assert!(is_home_directory(home.to_string_lossy().as_ref()));
 }
 
 #[test]

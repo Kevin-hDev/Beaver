@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 interface AppNavigationActions {
   openFileAccessSettings: () => void;
@@ -14,8 +14,9 @@ export function AppNavigationActionsProvider({
   children,
   openFileAccessSettings,
 }: ProviderProps) {
+  const value = useMemo(() => ({ openFileAccessSettings }), [openFileAccessSettings]);
   return (
-    <Context.Provider value={{ openFileAccessSettings }}>
+    <Context.Provider value={value}>
       {children}
     </Context.Provider>
   );

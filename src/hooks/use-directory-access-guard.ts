@@ -1,36 +1,16 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { showToast } from "@/lib/toast-emitter";
 import { useAppNavigationActions } from "./use-app-navigation-actions";
 import i18n from "@/i18n";
-
-const MAX_ALLOWED_PATHS = 32;
-const MAX_PATH_CHARS = 4_096;
-
-interface DirectoryAccessDecision {
-  allowed: boolean;
-  allowed_paths: string[];
-}
+import {
+  MAX_PATH_CHARS,
+  parseDirectoryAccessDecision,
+  type DirectoryAccessDecision,
+} from "./directory-access-decision";
 
 export interface BlockedDirectoryAccess {
   allowedPaths: string[];
-}
-
-function parseDecision(value: unknown): DirectoryAccessDecision {
-  if (!value || typeof value !== "object") throw new Error("Invalid access decision");
-  const decision = value as Record<string, unknown>;
-  if (typeof decision.allowed !== "boolean" || !Array.isArray(decision.allowed_paths)) {
-    throw new Error("Invalid access decision");
-  }
-  const allowedPaths = decision.allowed_paths;
-  if (
-    allowedPaths.length < 1
-    || allowedPaths.length > MAX_ALLOWED_PATHS
-    || allowedPaths.some((path) => typeof path !== "string" || path.length < 1 || path.length > MAX_PATH_CHARS)
-  ) {
-    throw new Error("Invalid access decision");
-  }
-  return { allowed: decision.allowed, allowed_paths: allowedPaths as string[] };
 }
 
 export function useDirectoryAccessGuard() {
@@ -48,7 +28,7 @@ export function useDirectoryAccessGuard() {
     let decision: DirectoryAccessDecision;
     try {
       const raw = await invoke<unknown>("validate_session_directory_access", { path });
-      decision = parseDecision(raw);
+      decision = parseDirectoryAccessDecision(raw);
     } catch {
       showToast(i18n.t("directoryAccess.error"), "error");
       return;
@@ -62,7 +42,7 @@ export function useDirectoryAccessGuard() {
       await onAllowed();
     } catch {
       try {
-        const retry = parseDecision(
+        const retry = parseDirectoryAccessDecision(
           await invoke<unknown>("validate_session_directory_access", { path }),
         );
         if (!retry.allowed) {
@@ -82,5 +62,11 @@ export function useDirectoryAccessGuard() {
     openFileAccessSettings();
   }, [openFileAccessSettings]);
 
-  return { blocked, request, cancel, openSettings };
+  const prompt = useMemo(() => blocked ? {
+    allowedPaths: blocked.allowedPaths,
+    onCancel: cancel,
+    onSettings: openSettings,
+  } : undefined, [blocked, cancel, openSettings]);
+
+  return { prompt, request };
 }

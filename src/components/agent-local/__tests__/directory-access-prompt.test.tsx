@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { DirectoryAccessPrompt } from "../directory-access-prompt";
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string) => (key === "common.cancel" ? "Annuler" : key),
+  }),
 }));
 
 describe("DirectoryAccessPrompt", () => {
@@ -18,9 +20,9 @@ describe("DirectoryAccessPrompt", () => {
       />,
     );
 
-    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("/project/allowed")).toBeInTheDocument();
-    const cancel = screen.getByRole("button", { name: "common.cancel" });
+    const cancel = screen.getByRole("button", { name: "Annuler" });
     await waitFor(() => expect(cancel).toHaveFocus());
     fireEvent.click(cancel);
     fireEvent.click(screen.getByRole("button", { name: "directoryAccess.settings" }));

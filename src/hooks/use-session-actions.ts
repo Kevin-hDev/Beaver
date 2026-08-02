@@ -2,6 +2,8 @@ import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { AgentSessionMeta, Project } from "@/types/agent";
 import type { DroppedFile } from "@/hooks/use-file-drop";
+import { showToast } from "@/lib/toast-emitter";
+import { useDirectoryAccessGuard } from "./use-directory-access-guard";
 
 interface ProjectsHookRef {
   projects: Project[];
@@ -30,6 +32,7 @@ export interface SessionActionsDeps {
 
 export function useSessionActions(deps: SessionActionsDeps) {
   const { t } = useTranslation();
+  const { prompt: directoryAccessPrompt, request: requestDirectoryAccess } = useDirectoryAccessGuard();
   const {
     create,
     rename,
@@ -93,20 +96,34 @@ export function useSessionActions(deps: SessionActionsDeps) {
 
   const handleCreateInProject = useCallback(
     async (projectId: string) => {
-      const name = t("agentLocal.newSession");
-      const session = await create(name, defaultModel, defaultProvider, projectId);
-      onSessionChange?.(session.id);
+      const project = projectsHook.projects.find((candidate) => candidate.id === projectId);
+      if (!project) {
+        showToast(t("errors.operationFailed"), "error");
+        return;
+      }
+      await requestDirectoryAccess(project.path, async () => {
+        const name = t("agentLocal.newSession");
+        const session = await create(name, defaultModel, defaultProvider, projectId);
+        onSessionChange?.(session.id);
+      });
     },
-    [create, defaultModel, defaultProvider, t, onSessionChange],
+    [create, defaultModel, defaultProvider, onSessionChange, projectsHook.projects, requestDirectoryAccess, t],
   );
 
   const handleCreateInProjectWithModel = useCallback(
     async (newModel: string, newProvider: string, projectId: string) => {
-      const name = t("agentLocal.newSession");
-      const session = await create(name, newModel, newProvider, projectId);
-      onSessionChange?.(session.id);
+      const project = projectsHook.projects.find((candidate) => candidate.id === projectId);
+      if (!project) {
+        showToast(t("errors.operationFailed"), "error");
+        return;
+      }
+      await requestDirectoryAccess(project.path, async () => {
+        const name = t("agentLocal.newSession");
+        const session = await create(name, newModel, newProvider, projectId);
+        onSessionChange?.(session.id);
+      });
     },
-    [create, t, onSessionChange],
+    [create, onSessionChange, projectsHook.projects, requestDirectoryAccess, t],
   );
 
   return {
@@ -124,5 +141,6 @@ export function useSessionActions(deps: SessionActionsDeps) {
     handleAutoRename,
     handleCreateInProject,
     handleCreateInProjectWithModel,
+    directoryAccessPrompt,
   };
 }

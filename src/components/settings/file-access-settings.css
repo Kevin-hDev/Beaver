@@ -19,8 +19,6 @@
   box-shadow: var(--shadow-card);
 }
 
-[data-theme="dark"] .fas-targeted .fas-card { border-color: var(--accent); }
-
 .fas-content { padding: var(--space-md) var(--space-xl); }
 
 .fas-description {

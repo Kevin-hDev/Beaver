@@ -27,11 +27,8 @@ pub async fn prepare(
         .await
         .map_err(|_| generic_error())?;
     let project_path = match session.project_id.as_deref() {
-        Some(project_id) => super::project_store::list()
+        Some(project_id) => super::project_store::find(project_id)
             .await
-            .map_err(|_| generic_error())?
-            .into_iter()
-            .find(|project| project.id == project_id)
             .map(|project| PathBuf::from(project.path)),
         None => None,
     };
@@ -116,11 +113,8 @@ async fn is_session_path(session: &super::types_session::AgentSession, target: &
     let Some(project_id) = session.project_id.as_deref() else {
         return false;
     };
-    super::project_store::list()
+    super::project_store::find(project_id)
         .await
-        .unwrap_or_default()
-        .into_iter()
-        .find(|project| project.id == project_id)
         .is_some_and(|project| Path::new(&project.path) == target)
 }
 

@@ -7,6 +7,7 @@
   },
   "common": {
     "back": "Volver",
+    "cancel": "Cancelar",
     "delete": "Eliminar",
     "loading": "Cargando…"
   },
@@ -918,7 +919,7 @@
       "vramTableSize": "Tamaño",
       "vramFormula": "tamaño del modelo + (contexto/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "Acceso a archivos",
-      "fileAccessDesc": "Carpetas que el LLM puede leer y escribir",
+      "fileAccessDesc": "Carpetas en las que pueden trabajar las sesiones y sus herramientas",
       "addPath": "Añadir carpeta",
       "resetPaths": "Restablecer",
       "fullDisk": "Disco completo",

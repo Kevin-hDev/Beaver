@@ -2,8 +2,8 @@ use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 
-const MAX_ALLOWED_PATHS: usize = 32;
-const MAX_PATH_CHARS: usize = 4_096;
+pub(crate) const MAX_ALLOWED_PATHS: usize = 32;
+pub(crate) const MAX_PATH_CHARS: usize = 4_096;
 const ACCESS_ERROR: &str = "Accès au dossier refusé par les réglages.";
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -20,16 +20,8 @@ pub fn normalize_allowed_paths(paths: Vec<String>) -> Result<Vec<String>, String
     let mut normalized = Vec::with_capacity(paths.len());
     for value in paths {
         validate_shape(&value)?;
-        let canonical = Path::new(value.trim())
-            .canonicalize()
-            .map_err(|_| ACCESS_ERROR.to_string())?;
-        if !canonical.is_dir() {
-            return Err(ACCESS_ERROR.to_string());
-        }
-        let text = canonical
-            .to_str()
-            .ok_or_else(|| ACCESS_ERROR.to_string())?
-            .to_string();
+        let canonical = canonical_existing_directory(Path::new(value.trim()))?;
+        let text = path_text(&canonical).ok_or_else(|| ACCESS_ERROR.to_string())?;
         if seen.insert(text.clone()) {
             normalized.push(text);
         }
@@ -45,44 +37,45 @@ pub fn configured_roots() -> Result<Vec<PathBuf>, String> {
         .map_err(|_| ACCESS_ERROR.to_string())?
         .advanced
         .allowed_paths;
-    normalize_allowed_paths(paths).map(|paths| paths.into_iter().map(PathBuf::from).collect())
+    configured_roots_from_paths(paths)
 }
 
 pub fn decision(path: &Path) -> Result<DirectoryAccessDecision, String> {
-    let candidate = canonical_access_path(path)?;
     let roots = configured_roots()?;
+    decision_in_roots(path, &roots)
+}
+
+pub(crate) fn decision_in_roots(
+    path: &Path,
+    roots: &[PathBuf],
+) -> Result<DirectoryAccessDecision, String> {
+    let candidate = canonical_access_path(path)?;
     Ok(DirectoryAccessDecision {
-        allowed: is_path_in_roots(&candidate, &roots),
+        allowed: is_path_in_roots(&candidate, roots),
         allowed_paths: roots.iter().filter_map(|root| path_text(root)).collect(),
     })
 }
 
 pub fn ensure_allowed(path: &Path) -> Result<PathBuf, String> {
-    let candidate = canonical_access_path(path)?;
     let roots = configured_roots()?;
-    if is_path_in_roots(&candidate, &roots) {
+    ensure_allowed_in_roots(path, &roots)
+}
+
+pub(crate) fn ensure_allowed_in_roots(
+    path: &Path,
+    roots: &[PathBuf],
+) -> Result<PathBuf, String> {
+    let candidate = canonical_access_path(path)?;
+    if is_path_in_roots(&candidate, roots) {
         Ok(candidate)
     } else {
         Err(ACCESS_ERROR.to_string())
     }
 }
 
-pub fn shell_access_allowed() -> bool {
-    configured_roots()
-        .map(|roots| roots_allow_shell(&roots))
-        .unwrap_or(false)
-}
-
-pub(crate) fn roots_allow_shell(roots: &[PathBuf]) -> bool {
-    roots.iter().any(|root| root.parent().is_none())
-}
-
 pub async fn project_path(project_id: &str) -> Result<PathBuf, String> {
-    let project = super::project_store::list()
+    let project = super::project_store::find(project_id)
         .await
-        .map_err(|_| ACCESS_ERROR.to_string())?
-        .into_iter()
-        .find(|project| project.id == project_id)
         .ok_or_else(|| ACCESS_ERROR.to_string())?;
     ensure_allowed(Path::new(&project.path))
 }
@@ -105,7 +98,7 @@ pub(crate) fn is_path_in_roots(path: &Path, roots: &[PathBuf]) -> bool {
 fn canonical_access_path(path: &Path) -> Result<PathBuf, String> {
     validate_shape(path.to_str().ok_or_else(|| ACCESS_ERROR.to_string())?)?;
     if path.exists() {
-        return path.canonicalize().map_err(|_| ACCESS_ERROR.to_string());
+        return dunce::canonicalize(path).map_err(|_| ACCESS_ERROR.to_string());
     }
     let mut existing = path;
     let mut suffix = Vec::new();
@@ -118,13 +111,39 @@ fn canonical_access_path(path: &Path) -> Result<PathBuf, String> {
             .parent()
             .ok_or_else(|| ACCESS_ERROR.to_string())?;
     }
-    let mut canonical = existing
-        .canonicalize()
-        .map_err(|_| ACCESS_ERROR.to_string())?;
+    let mut canonical = dunce::canonicalize(existing).map_err(|_| ACCESS_ERROR.to_string())?;
     for part in suffix.into_iter().rev() {
         canonical.push(part);
     }
     Ok(canonical)
+}
+
+pub(crate) fn configured_roots_from_paths(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
+    if paths.is_empty() || paths.len() > MAX_ALLOWED_PATHS {
+        return Err(ACCESS_ERROR.to_string());
+    }
+    let mut seen = HashSet::with_capacity(paths.len());
+    let roots = paths
+        .into_iter()
+        .filter_map(|value| {
+            validate_shape(&value).ok()?;
+            let path = canonical_existing_directory(Path::new(value.trim())).ok()?;
+            seen.insert(path.clone()).then_some(path)
+        })
+        .collect::<Vec<_>>();
+    if roots.is_empty() {
+        Err(ACCESS_ERROR.to_string())
+    } else {
+        Ok(roots)
+    }
+}
+
+fn canonical_existing_directory(path: &Path) -> Result<PathBuf, String> {
+    let canonical = dunce::canonicalize(path).map_err(|_| ACCESS_ERROR.to_string())?;
+    canonical
+        .is_dir()
+        .then_some(canonical)
+        .ok_or_else(|| ACCESS_ERROR.to_string())
 }
 
 fn validate_shape(value: &str) -> Result<(), String> {

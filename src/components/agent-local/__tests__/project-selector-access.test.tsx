@@ -30,7 +30,7 @@ describe("ProjectSelector directory access", () => {
       />,
     );
 
-    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("/project/allowed")).toBeInTheDocument();
   });
 });

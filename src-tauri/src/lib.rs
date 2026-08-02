@@ -40,6 +40,11 @@ pub fn prepare_browser_native_application() -> bool {
     services::browser::prepare_native_application()
 }
 
+/// Exécute le lanceur shell isolé avant l'initialisation de Tauri ou de CEF.
+pub fn run_shell_sandbox_helper() -> Option<i32> {
+    services::agent_local::shell_sandbox::run_helper_if_requested()
+}
+
 /// Configure les délais globaux libgit2 avant le démarrage de l'application.
 ///
 /// # Safety
@@ -90,6 +95,7 @@ pub fn run() {
         })
         .setup(|app| {
             let startup_cutoff = chrono::Utc::now();
+            services::agent_local::shell_sandbox::cleanup_stale();
             services::agent_local::app_handle_global::init(app.handle().clone());
             services::agent_local::subagent_spawn_channel::init();
             storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;

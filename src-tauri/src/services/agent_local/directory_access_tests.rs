@@ -1,5 +1,6 @@
 use super::{
-    canonical_access_path, is_path_in_roots, normalize_allowed_paths, roots_allow_shell,
+    canonical_access_path, configured_roots_from_paths, decision_in_roots,
+    ensure_allowed_in_roots, is_path_in_roots, normalize_allowed_paths,
 };
 
 #[test]
@@ -43,14 +44,39 @@ fn normalizes_deduplicates_and_bounds_configured_roots() {
 }
 
 #[test]
-fn arbitrary_shell_requires_a_filesystem_root() {
+fn unavailable_configured_root_does_not_hide_a_valid_root() {
     let temp = tempfile::tempdir().expect("temp");
+    let valid = temp.path().join("valid");
+    std::fs::create_dir(&valid).expect("valid");
+    let missing = temp.path().join("missing");
 
-    assert!(!roots_allow_shell(&[temp.path().to_path_buf()]));
-    #[cfg(not(windows))]
-    assert!(roots_allow_shell(&[std::path::PathBuf::from("/")]));
-    #[cfg(windows)]
-    assert!(roots_allow_shell(&[std::path::PathBuf::from("C:\\")]));
+    let roots = configured_roots_from_paths(vec![
+        missing.to_string_lossy().to_string(),
+        valid.to_string_lossy().to_string(),
+    ])
+    .expect("one root remains");
+
+    assert_eq!(roots, vec![dunce::canonicalize(valid).expect("canonical")]);
+    assert!(configured_roots_from_paths(vec![missing.to_string_lossy().to_string()]).is_err());
+}
+
+#[test]
+fn decision_and_enforcement_share_the_same_canonical_policy() {
+    let temp = tempfile::tempdir().expect("temp");
+    let allowed = temp.path().join("allowed");
+    let outside = temp.path().join("outside");
+    std::fs::create_dir_all(allowed.join("child")).expect("allowed");
+    std::fs::create_dir_all(&outside).expect("outside");
+    let roots = vec![dunce::canonicalize(&allowed).expect("root")];
+
+    let accepted = decision_in_roots(&allowed.join("child"), &roots).expect("decision");
+    let rejected = decision_in_roots(&outside, &roots).expect("decision");
+
+    assert!(accepted.allowed);
+    assert_eq!(accepted.allowed_paths, vec![roots[0].to_string_lossy()]);
+    assert!(!rejected.allowed);
+    assert!(ensure_allowed_in_roots(&allowed.join("child"), &roots).is_ok());
+    assert!(ensure_allowed_in_roots(&outside, &roots).is_err());
 }
 
 #[cfg(unix)]

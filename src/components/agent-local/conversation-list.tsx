@@ -14,7 +14,9 @@ import { useSessionActivityIndicators } from "@/hooks/use-session-activity-indic
 import { idMatch } from "@/lib/utils";
 import type { ConversationListProps } from "./conversation-list-types";
 import { useConversationCollapseState } from "./use-conversation-collapse-state";
+import { DirectoryAccessPrompt } from "./directory-access-prompt";
 import "./conversation.css";
+import "./conversation-directory-access.css";
 import "./conversation-projects.css";
 import "./conversation-drag.css";
 import "./conversation-collapse.css";
@@ -24,6 +26,7 @@ export function ConversationList({
   onSelect, onCreate, onRename, onDelete,
   onNewSessionInProject, onRenameProject, onDeleteProject,
   onOpenFolder, onReorderProjects,
+  directoryAccessPrompt,
 }: ConversationListProps) {
   const { t } = useTranslation();
   const [ctx, setCtx] = useState<{ x: number; y: number; id: string } | null>(null);
@@ -110,6 +113,7 @@ export function ConversationList({
           <span className="conv-new-label">{t("agentLocal.newSession")}</span>
         </button>
       </div>
+      {directoryAccessPrompt && <div className="conv-dap-anchor"><DirectoryAccessPrompt {...directoryAccessPrompt} /></div>}
       <div className={`conv-list ${drag.draggingId ? "is-dragging" : ""}`}>
         {projects.length > 0 && (
           <>

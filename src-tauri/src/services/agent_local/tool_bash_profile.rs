@@ -75,9 +75,16 @@ fn profile_cell(owner_session_id: &str) -> Option<ProfileCell> {
 async fn capture(shell: &str, working_dir: &Path) -> Option<ShellProfile> {
     let marker = format!("__BEAVER_PROFILE_{}__", uuid::Uuid::new_v4().simple());
     let script = snapshot_script(shell, &marker)?;
-    let mut command = Command::new(shell);
+    let arguments = vec!["-l".to_string(), "-c".to_string(), script];
+    let prepared = super::shell_sandbox::prepare_command(
+        std::ffi::OsStr::new(shell),
+        &arguments,
+        working_dir,
+    )
+    .ok()?;
+    let cleanup_dir = prepared.cleanup_dir;
+    let mut command = prepared.command;
     command
-        .args(["-l", "-c", script.as_str()])
         .current_dir(working_dir)
         .env("SHELL", shell)
         .stdin(Stdio::null())
@@ -85,6 +92,15 @@ async fn capture(shell: &str, working_dir: &Path) -> Option<ShellProfile> {
         .stderr(Stdio::null())
         .kill_on_drop(true);
     super::tool_bash_platform::configure_process_group(&mut command);
+    let result = capture_process(command, &marker).await;
+    super::shell_sandbox::cleanup_temp(cleanup_dir).await;
+    result
+}
+
+async fn capture_process(
+    mut command: tokio::process::Command,
+    marker: &str,
+) -> Option<ShellProfile> {
     let mut child = command.spawn().ok()?;
     let Some(pid) = child.id() else {
         let _ = child.kill().await;
@@ -129,7 +145,7 @@ async fn capture(shell: &str, working_dir: &Path) -> Option<ShellProfile> {
     }
     let raw = Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned());
     bytes.zeroize();
-    let start = raw.find(&marker)? + marker.len();
+    let start = raw.find(marker)? + marker.len();
     let snapshot = Zeroizing::new(raw[start..].trim_start_matches(['\r', '\n']).to_string());
     if snapshot.is_empty() || snapshot.contains('\0') {
         return None;

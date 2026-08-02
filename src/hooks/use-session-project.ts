@@ -4,6 +4,7 @@ import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import type { AgentSession, Project } from "@/types/agent";
 import { AGENT_SESSIONS_CHANGED } from "./agent-session-events";
 import { useDirectoryAccessGuard } from "./use-directory-access-guard";
+import { selectProjectDirectory } from "./project-directory-selection";
 
 const SESSION_DIRECTORY_ID = "session-working-directory";
 
@@ -27,12 +28,7 @@ export function useSessionProject(
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [workingDir, setWorkingDir] = useState("");
   const [loading, setLoading] = useState(true);
-  const {
-    blocked: blockedDirectoryAccess,
-    request: requestDirectoryAccess,
-    cancel: cancelDirectoryAccess,
-    openSettings: openDirectoryAccessSettings,
-  } = useDirectoryAccessGuard();
+  const { prompt: directoryAccessPrompt, request: requestDirectoryAccess } = useDirectoryAccessGuard();
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -72,14 +68,7 @@ export function useSessionProject(
   }, [onAddProject, requestDirectoryAccess]);
 
   const handleSelectProject = useCallback((id: string | null) => {
-    if (!id) {
-      setSelectedProjectId(null);
-      return;
-    }
-    const project = projects.find((candidate) => candidate.id === id);
-    if (project) {
-      void requestDirectoryAccess(project.path, () => setSelectedProjectId(id));
-    }
+    selectProjectDirectory(id, projects, requestDirectoryAccess, setSelectedProjectId);
   }, [projects, requestDirectoryAccess]);
 
   return {
@@ -90,10 +79,6 @@ export function useSessionProject(
     locked,
     hidden,
     handleAddProject,
-    directoryAccessPrompt: blockedDirectoryAccess ? {
-      allowedPaths: blockedDirectoryAccess.allowedPaths,
-      onCancel: cancelDirectoryAccess,
-      onSettings: openDirectoryAccessSettings,
-    } : undefined,
+    directoryAccessPrompt,
   };
 }

@@ -63,3 +63,14 @@ fn missing_absolute_outputs_directory_is_preserved() {
     assert_eq!(settings.session_outputs_directory, path.to_string_lossy());
     assert!(existing_optional_directory(&settings.session_outputs_directory).is_none());
 }
+
+#[test]
+fn legacy_empty_allowed_paths_are_migrated_to_the_safe_default() {
+    let settings = AdvancedSettings {
+        allowed_paths: Vec::new(),
+        ..Default::default()
+    }
+    .normalized();
+
+    assert_eq!(settings.allowed_paths, default_allowed_paths());
+}

@@ -7,6 +7,7 @@
   },
   "common": {
     "back": "Retour",
+    "cancel": "Annuler",
     "delete": "Supprimer",
     "loading": "Chargement…"
   },
@@ -968,7 +969,7 @@
       "vramTableSize": "Taille",
       "vramFormula": "taille modèle + (contexte/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "Accès fichiers",
-      "fileAccessDesc": "Dossiers accessibles par le LLM pour la lecture et l'écriture de fichiers",
+      "fileAccessDesc": "Dossiers dans lesquels les sessions et leurs outils peuvent travailler",
       "addPath": "Ajouter un dossier",
       "resetPaths": "Réinitialiser",
       "fullDisk": "Tout le disque",

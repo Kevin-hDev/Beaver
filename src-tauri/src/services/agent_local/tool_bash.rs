@@ -167,9 +167,9 @@ pub(crate) fn resolve_workdir(
     if !candidate.is_dir() {
         return Err("Le workdir Bash est inaccessible.".to_string());
     }
-    candidate
-        .canonicalize()
-        .map_err(|_| "Le workdir Bash est inaccessible.".to_string())
+    let candidate = dunce::canonicalize(candidate)
+        .map_err(|_| "Le workdir Bash est inaccessible.".to_string())?;
+    super::directory_access::ensure_allowed(&candidate)
 }
 
 pub(super) fn truncate_output(output: &str) -> (String, bool) {

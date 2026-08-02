@@ -61,6 +61,11 @@ impl AdvancedSettings {
         self.compression_threshold = self.compression_threshold.min(100);
         self.session_outputs_directory =
             normalize_optional_directory(&self.session_outputs_directory).unwrap_or_default();
+        // Les versions antérieures autorisaient l'enregistrement d'une liste vide.
+        // La migrer vers le défaut évite de bloquer une installation existante.
+        if self.allowed_paths.is_empty() {
+            self.allowed_paths = default_allowed_paths();
+        }
         self
     }
 }

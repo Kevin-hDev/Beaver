@@ -9,6 +9,8 @@ import { useFileDrop, type DroppedFile } from "@/hooks/use-file-drop";
 import type { Project } from "@/types/agent";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import { useDirectoryAccessGuard } from "@/hooks/use-directory-access-guard";
+import { selectProjectDirectory } from "@/hooks/project-directory-selection";
+import { showToast } from "@/lib/toast-emitter";
 import "./welcome-view.css";
 
 interface WelcomeViewProps {
@@ -16,7 +18,7 @@ interface WelcomeViewProps {
   provider: string;
   projects: Project[];
   onAddProject: (path: string) => Promise<Project>;
-  onSend: (text: string, files?: DroppedFile[], projectId?: string, skills?: { name: string; content: string }[]) => void;
+  onSend: (text: string, files?: DroppedFile[], projectId?: string, skills?: { name: string; content: string }[]) => void | Promise<void>;
   onModelChange: (model: string, provider: string) => void;
   reasoningMode?: string | null;
   onReasoningModeChange: (mode: ReasoningMode) => void;
@@ -28,12 +30,7 @@ export function WelcomeView({
   const { t } = useTranslation();
   const permMode = usePermissionMode();
   const fileDrop = useFileDrop();
-  const {
-    blocked: blockedDirectoryAccess,
-    request: requestDirectoryAccess,
-    cancel: cancelDirectoryAccess,
-    openSettings: openDirectoryAccessSettings,
-  } = useDirectoryAccessGuard();
+  const { prompt: directoryAccessPrompt, request: requestDirectoryAccess } = useDirectoryAccessGuard();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
 
@@ -48,24 +45,33 @@ export function WelcomeView({
   }, [onAddProject, requestDirectoryAccess]);
 
   const handleSelectProject = useCallback((id: string | null) => {
-    if (!id) {
-      setSelectedProjectId(null);
-      return;
-    }
-    const project = projects.find((candidate) => candidate.id === id);
-    if (project) {
-      void requestDirectoryAccess(project.path, () => setSelectedProjectId(id));
-    }
+    selectProjectDirectory(id, projects, requestDirectoryAccess, setSelectedProjectId);
   }, [projects, requestDirectoryAccess]);
 
   const handleSend = useCallback((text: string, files?: DroppedFile[], skills?: { name: string; content: string }[]) => {
     const hasFiles = files && files.length > 0;
     if (!text.trim() && !hasFiles && (!skills || skills.length < 1)) return;
-    setLeaving(true);
-    setTimeout(() => {
-      onSend(text, files, selectedProjectId ?? undefined, skills);
-    }, 350);
-  }, [onSend, selectedProjectId]);
+    const send = async () => {
+      setLeaving(true);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      try {
+        await onSend(text, files, selectedProjectId ?? undefined, skills);
+      } catch (error) {
+        setLeaving(false);
+        throw error;
+      }
+    };
+    const project = projects.find((candidate) => candidate.id === selectedProjectId);
+    if (selectedProjectId && !project) {
+      showToast(t("errors.operationFailed"), "error");
+      return;
+    }
+    if (project) {
+      void requestDirectoryAccess(project.path, send);
+    } else {
+      void send().catch(() => showToast(t("errors.operationFailed"), "error"));
+    }
+  }, [onSend, projects, requestDirectoryAccess, selectedProjectId, t]);
 
   return (
     <FileDropZone
@@ -109,11 +115,7 @@ export function WelcomeView({
               hidden={false}
               onSelect={handleSelectProject}
               onAddProject={() => void handleAddProject()}
-              directoryAccessPrompt={blockedDirectoryAccess ? {
-                allowedPaths: blockedDirectoryAccess.allowedPaths,
-                onCancel: cancelDirectoryAccess,
-                onSettings: openDirectoryAccessSettings,
-              } : undefined}
+              directoryAccessPrompt={directoryAccessPrompt}
             />
           </div>
         </div>

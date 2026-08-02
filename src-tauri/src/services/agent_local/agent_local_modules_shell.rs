@@ -1,4 +1,5 @@
 pub mod tool_bash;
+pub mod shell_sandbox;
 mod tool_bash_change_event;
 pub mod tool_bash_change_hub;
 pub mod tool_bash_changes;
@@ -10,6 +11,7 @@ pub mod tool_bash_output;
 pub mod tool_bash_platform;
 pub mod tool_bash_profile;
 pub mod tool_bash_process;
+mod tool_bash_process_run;
 pub mod tool_bash_progress;
 pub mod tool_bash_registry;
 pub mod tool_bash_result;

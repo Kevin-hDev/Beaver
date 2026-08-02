@@ -1,0 +1,13 @@
+.conv-dap-anchor {
+  position: relative;
+  z-index: var(--z-dropdown);
+  height: 0;
+}
+
+.conv-dap-anchor .dap-root {
+  top: var(--space-xs);
+  right: var(--space-sm);
+  bottom: auto;
+  left: var(--space-sm);
+  width: auto;
+}

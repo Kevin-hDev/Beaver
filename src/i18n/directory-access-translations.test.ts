@@ -8,6 +8,7 @@ import ja from "./ja.json";
 import zh from "./zh.json";
 
 interface DirectoryAccessLocale {
+  common: { cancel: string };
   directoryAccess: {
     title: string;
     description: string;
@@ -22,7 +23,10 @@ describe("directory access translations", () => {
     const locales = [fr, en, es, de, itJson, zh, ja] as DirectoryAccessLocale[];
 
     for (const locale of locales) {
-      expect(Object.values(locale.directoryAccess).every((value) => value.trim())).toBe(true);
+      for (const key of ["title", "description", "help", "settings", "error"] as const) {
+        expect(locale.directoryAccess?.[key]?.trim()).toBeTruthy();
+      }
+      expect(locale.common?.cancel?.trim()).toBeTruthy();
     }
   });
 });

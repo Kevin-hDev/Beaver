@@ -1,0 +1,137 @@
+#[path = "windows/windows_acl.rs"]
+mod windows_acl;
+#[path = "windows/windows_process.rs"]
+mod windows_process;
+#[path = "windows/windows_profile.rs"]
+mod windows_profile;
+
+use serde::{Deserialize, Serialize};
+use std::ffi::OsString;
+use std::path::{Component, Path, PathBuf};
+
+const RECORD_SUFFIX: &str = "cleanup.json";
+const MAX_RECORD_BYTES: u64 = 512 * 1024;
+const MAX_TOOL_ROOTS: usize = 64;
+const MAX_ROOTS: usize = super::super::directory_access::MAX_ALLOWED_PATHS + 1 + MAX_TOOL_ROOTS;
+
+#[derive(Serialize, Deserialize)]
+struct CleanupRecord {
+    profile_name: String,
+    roots: Vec<PathBuf>,
+}
+
+pub(super) fn run(
+    executable: &Path,
+    arguments: &[OsString],
+    writable_roots: &[PathBuf],
+    temp_dir: &Path,
+) -> Result<i32, String> {
+    if writable_roots.len() > super::super::directory_access::MAX_ALLOWED_PATHS {
+        return Err(error());
+    }
+    let profile = windows_profile::Profile::create()?;
+    let writable = writable_roots
+        .iter()
+        .cloned()
+        .chain(std::iter::once(temp_dir.to_path_buf()))
+        .collect::<Vec<_>>();
+    let readable = readable_tool_roots(&writable, executable);
+    let roots = writable.iter().chain(&readable).cloned().collect::<Vec<_>>();
+    write_record(temp_dir, profile.name(), &roots)?;
+    for root in &writable {
+        windows_acl::grant(root, profile.sid(), true)?;
+    }
+    for root in &readable {
+        windows_acl::grant(root, profile.sid(), false)?;
+    }
+    windows_process::run(executable, arguments, profile.sid())
+}
+
+pub(super) fn cleanup(temp_dir: &Path) {
+    let path = record_path(temp_dir);
+    cleanup_record_file(&path);
+}
+
+pub(super) fn cleanup_record_file(path: &Path) {
+    let Some(record) = read_record(path) else {
+        let _ = std::fs::remove_file(path);
+        return;
+    };
+    if let Ok(profile) = windows_profile::Profile::derive(&record.profile_name) {
+        for root in &record.roots {
+            let _ = windows_acl::revoke(root, profile.sid());
+        }
+    }
+    windows_profile::delete(&record.profile_name);
+    let _ = std::fs::remove_file(path);
+}
+
+fn write_record(temp_dir: &Path, profile_name: &str, roots: &[PathBuf]) -> Result<(), String> {
+    let record = CleanupRecord {
+        profile_name: profile_name.to_string(),
+        roots: roots.to_vec(),
+    };
+    let bytes = serde_json::to_vec(&record).map_err(|_| error())?;
+    super::super::super::private_store::atomic_write(&record_path(temp_dir), &bytes)
+}
+
+fn read_record(path: &Path) -> Option<CleanupRecord> {
+    let metadata = path.symlink_metadata().ok()?;
+    if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_RECORD_BYTES {
+        return None;
+    }
+    let record: CleanupRecord = serde_json::from_slice(&std::fs::read(path).ok()?).ok()?;
+    if !windows_profile::valid_name(&record.profile_name)
+        || record.roots.is_empty()
+        || record.roots.len() > MAX_ROOTS
+        || record.roots.iter().any(|root| !valid_root(root))
+    {
+        return None;
+    }
+    Some(record)
+}
+
+fn record_path(temp_dir: &Path) -> PathBuf {
+    temp_dir.with_extension(RECORD_SUFFIX)
+}
+
+fn valid_root(path: &Path) -> bool {
+    path.is_absolute()
+        && path.as_os_str().to_string_lossy().chars().count()
+            <= super::super::directory_access::MAX_PATH_CHARS
+        && !path.components().any(|part| matches!(part, Component::ParentDir))
+}
+
+fn readable_tool_roots(writable: &[PathBuf], executable: &Path) -> Vec<PathBuf> {
+    let path_env = std::env::var_os("PATH").unwrap_or_default();
+    let candidates = executable
+        .parent()
+        .map(Path::to_path_buf)
+        .into_iter()
+        .chain(std::env::split_paths(&path_env));
+    let mut roots = Vec::with_capacity(MAX_TOOL_ROOTS);
+    for path in candidates {
+        if roots.len() >= MAX_TOOL_ROOTS {
+            break;
+        }
+        let Some(path) = path
+            .is_absolute()
+            .then(|| dunce::canonicalize(path).ok())
+            .flatten()
+            .filter(|path| path.is_dir())
+        else {
+            continue;
+        };
+        let overlaps_writable = writable
+            .iter()
+            .any(|root| path.starts_with(root) || root.starts_with(&path));
+        if !overlaps_writable && !roots.contains(&path) {
+            roots.push(path);
+        }
+    }
+    roots
+}
+
+fn error() -> String {
+    super::launch::sandbox_error()
+}

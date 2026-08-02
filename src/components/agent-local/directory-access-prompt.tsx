@@ -27,7 +27,7 @@ export function DirectoryAccessPrompt({
   return (
     <div
       className="dap-root"
-      role="alertdialog"
+      role="dialog"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >

@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroize;
 
@@ -20,25 +19,41 @@ pub async fn run(
     let (program, arguments) = tokens
         .split_first()
         .ok_or_else(|| "Commande d'exploration indisponible.".to_string())?;
-    let mut command = Command::new(program);
+    let executable = which::which(program)
+        .ok()
+        .and_then(|path| dunce::canonicalize(path).ok())
+        .filter(|path| path.is_file())
+        .ok_or_else(|| "Commande d'exploration indisponible.".to_string())?;
+    let prepared = super::shell_sandbox::prepare_command(
+        executable.as_os_str(),
+        arguments,
+        working_dir,
+    )?;
+    let cleanup_dir = prepared.cleanup_dir;
+    let mut command = prepared.command;
     command
-        .args(arguments)
         .current_dir(working_dir)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
     super::tool_bash_platform::configure_process_group(&mut command);
-    let mut child = command
-        .spawn()
-        .map_err(|_| "Commande d'exploration indisponible.".to_string())?;
+    let mut child = match command.spawn() {
+        Ok(child) => child,
+        Err(_) => {
+            super::shell_sandbox::cleanup_temp(cleanup_dir).await;
+            return Err("Commande d'exploration indisponible.".to_string());
+        }
+    };
     let Some(pid) = child.id() else {
         let _ = child.kill().await;
+        super::shell_sandbox::cleanup_temp(cleanup_dir).await;
         return Err("Commande d'exploration indisponible.".to_string());
     };
     let pipes = (child.stdout.take(), child.stderr.take());
     let (Some(stdout), Some(stderr)) = pipes else {
         terminate(&mut child, pid).await;
+        super::shell_sandbox::cleanup_temp(cleanup_dir).await;
         return Err("Commande d'exploration indisponible.".to_string());
     };
     let timeout = Duration::from_secs(
@@ -61,7 +76,7 @@ pub async fn run(
             result = &mut execution => ProcessOutcome::Finished(result),
         }
     };
-    match outcome {
+    let result = match outcome {
         ProcessOutcome::Finished((Ok(stdout), Ok(stderr), Ok(status))) => {
             let (stdout, stdout_truncated) = render(stdout);
             let (stderr, stderr_truncated) = render(stderr);
@@ -94,7 +109,9 @@ pub async fn run(
             terminate(&mut child, pid).await;
             Ok(interrupted("Délai d'exploration dépassé.", true, false))
         }
-    }
+    };
+    super::shell_sandbox::cleanup_temp(cleanup_dir).await;
+    result
 }
 
 type Captured = std::io::Result<(Vec<u8>, bool)>;

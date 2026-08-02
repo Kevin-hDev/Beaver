@@ -7,6 +7,7 @@
   },
   "common": {
     "back": "Back",
+    "cancel": "Cancel",
     "delete": "Delete",
     "loading": "Loading…"
   },
@@ -923,7 +924,7 @@
       "vramTableSize": "Size",
       "vramFormula": "model size + (context/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "File Access",
-      "fileAccessDesc": "Folders the LLM can read and write to",
+      "fileAccessDesc": "Folders where sessions and their tools can work",
       "addPath": "Add folder",
       "resetPaths": "Reset",
       "fullDisk": "Full disk",

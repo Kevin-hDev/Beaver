@@ -7,6 +7,7 @@
   },
   "common": {
     "back": "返回",
+    "cancel": "取消",
     "delete": "删除",
     "loading": "加载中…"
   },
@@ -918,7 +919,7 @@
       "vramTableSize": "大小",
       "vramFormula": "模型大小 + (上下文/1000 × 0.5 GB) + 0.5 GB",
       "fileAccessTitle": "文件访问",
-      "fileAccessDesc": "LLM 可读写的文件夹",
+      "fileAccessDesc": "会话及其工具可以工作的文件夹",
       "addPath": "添加文件夹",
       "resetPaths": "重置",
       "fullDisk": "完整磁盘",
