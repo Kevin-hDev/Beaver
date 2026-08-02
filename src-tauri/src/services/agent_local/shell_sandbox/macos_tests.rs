@@ -5,9 +5,10 @@ use std::process::{Command, Output};
 fn seatbelt_allows_work_and_temp_inside_the_root_and_blocks_outside_data() {
     let temp = tempfile::tempdir().expect("temp");
     let allowed = temp.path().join("allowed");
-    let sandbox_temp = allowed.join(".tmp");
+    let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
-    std::fs::create_dir_all(&sandbox_temp).expect("allowed");
+    std::fs::create_dir_all(&allowed).expect("allowed");
+    std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     std::fs::write(&outside, "outside-data").expect("outside");
     let allowed = dunce::canonicalize(allowed).expect("canonical allowed");
     let sandbox_temp = dunce::canonicalize(sandbox_temp).expect("canonical temp");
@@ -30,9 +31,10 @@ fn seatbelt_allows_work_and_temp_inside_the_root_and_blocks_outside_data() {
 fn seatbelt_supports_complete_local_development() {
     let temp = tempfile::tempdir().expect("temp");
     let allowed = temp.path().join("allowed");
-    let sandbox_temp = allowed.join(".tmp");
+    let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
-    std::fs::create_dir_all(&sandbox_temp).expect("allowed");
+    std::fs::create_dir_all(&allowed).expect("allowed");
+    std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     let allowed = dunce::canonicalize(allowed).expect("canonical allowed");
     let sandbox_temp = dunce::canonicalize(sandbox_temp).expect("canonical temp");
     let script = format!(
@@ -85,5 +87,16 @@ fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, scri
 }
 
 fn assert_success(output: &Output) {
-    assert!(output.status.success(), "sandbox command failed");
+    assert!(
+        output.status.success(),
+        "sandbox command failed ({:?})\nstdout:\n{}\nstderr:\n{}",
+        output.status.code(),
+        bounded_output(&output.stdout),
+        bounded_output(&output.stderr),
+    );
+}
+
+fn bounded_output(bytes: &[u8]) -> String {
+    const MAX_DIAGNOSTIC_BYTES: usize = 4_096;
+    String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_DIAGNOSTIC_BYTES)]).into_owned()
 }

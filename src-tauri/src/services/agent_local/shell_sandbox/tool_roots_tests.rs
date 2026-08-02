@@ -17,7 +17,11 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
         &home.join(".cargo/registry"),
         &home.join(".cargo/git"),
         &home.join(".npm/_cacache"),
-        &home.join(".cache"),
+        &home.join(".cache/pip"),
+        &home.join(".cache/uv"),
+        &home.join(".cache/go-build"),
+        &home.join(".cache/yarn"),
+        &home.join(".cache/ms-playwright"),
         &home.join(".rustup/toolchains"),
     ] {
         std::fs::create_dir_all(path).expect("create directory");
@@ -65,17 +69,23 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
             .iter()
             .all(|path_dir| !root.starts_with(path_dir))
     }));
-    assert_eq!(roots.write_dirs.len(), 4);
+    let broad_cache = dunce::canonicalize(home.join(".cache")).expect("cache");
+    let executable_cache = dunce::canonicalize(home.join(".cache/ms-playwright"))
+        .expect("executable cache");
+    assert!(!roots.write_dirs.contains(&broad_cache));
+    assert!(!roots.write_dirs.contains(&executable_cache));
+    assert_eq!(roots.write_dirs.len(), 7);
     assert_eq!(roots.write_files.len(), 1);
+    assert_eq!(MAX_WRITE_ROOTS, 8);
 }
 
 #[test]
-fn executable_path_under_cache_blocks_writable_cache_root() {
+fn executable_cache_is_not_granted_by_narrow_cache_allowlist() {
     let temp = tempfile::tempdir().expect("tempdir");
     let home = temp.path().join("home");
     let workspace = temp.path().join("workspace");
     let cached_bin = home.join(".cache/tool/bin");
-    for path in [&home, &workspace, &cached_bin, &home.join(".cache")] {
+    for path in [&home, &workspace, &cached_bin, &home.join(".cache/pip")] {
         std::fs::create_dir_all(path).expect("create directory");
     }
     let roots = collect_from(
@@ -86,9 +96,11 @@ fn executable_path_under_cache_blocks_writable_cache_root() {
         std::slice::from_ref(&cached_bin),
         false,
     );
-    let cache = dunce::canonicalize(home.join(".cache")).expect("cache");
+    let broad_cache = dunce::canonicalize(home.join(".cache")).expect("cache");
+    let safe_cache = dunce::canonicalize(home.join(".cache/pip")).expect("pip cache");
 
-    assert!(!roots.write_dirs.contains(&cache));
+    assert!(!roots.write_dirs.contains(&broad_cache));
+    assert!(roots.write_dirs.contains(&safe_cache));
 }
 
 #[test]
@@ -96,7 +108,7 @@ fn excessive_path_entries_disable_extra_writable_roots() {
     let temp = tempfile::tempdir().expect("tempdir");
     let home = temp.path().join("home");
     let workspace = temp.path().join("workspace");
-    std::fs::create_dir_all(home.join(".cache")).expect("cache");
+    std::fs::create_dir_all(home.join(".cache/pip")).expect("cache");
     std::fs::create_dir_all(&workspace).expect("workspace");
 
     let roots = collect_from(
@@ -122,7 +134,13 @@ fn writable_tool_exceptions_reject_redirecting_symlinks() {
     let workspace = temp.path().join("workspace");
     let redirected = temp.path().join("redirected");
     let path_dir = redirected.join("bin");
-    for path in [&home, &workspace, &path_dir, &home.join(".rustup")] {
+    for path in [
+        &home,
+        &workspace,
+        &path_dir,
+        &home.join(".rustup"),
+        &redirected.join("pip"),
+    ] {
         std::fs::create_dir_all(path).expect("directory");
     }
     std::fs::write(path_dir.join("tool"), "binary").expect("tool");
@@ -142,10 +160,67 @@ fn writable_tool_exceptions_reject_redirecting_symlinks() {
         false,
     );
 
-    assert!(!roots
-        .write_dirs
-        .contains(&dunce::canonicalize(&redirected).unwrap()));
+    assert!(!roots.write_dirs.contains(
+        &dunce::canonicalize(redirected.join("pip")).expect("redirected cache")
+    ));
     assert!(roots.write_files.is_empty());
+}
+
+#[test]
+fn read_root_saturation_is_reported_without_exceeding_the_bound() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let workspace = temp.path().join("workspace");
+    std::fs::create_dir(&workspace).expect("workspace");
+    let platform = (0..=MAX_READ_ROOTS)
+        .map(|index| temp.path().join(format!("read-{index}")))
+        .collect::<Vec<_>>();
+    for path in &platform {
+        std::fs::create_dir(path).expect("read directory");
+    }
+
+    let roots = collect_from(
+        std::slice::from_ref(&workspace),
+        &platform,
+        &[],
+        None,
+        &[],
+        false,
+    );
+
+    assert_eq!(roots.read_dirs.len(), MAX_READ_ROOTS);
+    assert!(roots.read_limit_reached);
+}
+
+#[cfg(unix)]
+#[test]
+fn readable_tool_configuration_rejects_symlink_redirection() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempfile::tempdir().expect("tempdir");
+    let home = temp.path().join("home");
+    let workspace = temp.path().join("workspace");
+    let private = home.join(".private");
+    for path in [&home.join(".config"), &workspace, &private] {
+        std::fs::create_dir_all(path).expect("directory");
+    }
+    let private_file = private.join("credentials");
+    std::fs::write(&private_file, "private").expect("private file");
+    symlink(&private_file, home.join(".gitconfig")).expect("config link");
+    symlink(&private, home.join(".config/git")).expect("config directory link");
+
+    let roots = collect_from(
+        std::slice::from_ref(&workspace),
+        &[],
+        &[],
+        Some(&home),
+        &[],
+        false,
+    );
+    let private = dunce::canonicalize(private).expect("private directory");
+    let private_file = dunce::canonicalize(private_file).expect("private file");
+
+    assert!(!roots.read_dirs.contains(&private));
+    assert!(!roots.read_files.contains(&private_file));
 }
 
 #[cfg(unix)]

@@ -45,24 +45,25 @@ pub(super) fn run(
         .chain(tools.read_files)
         .collect::<Vec<_>>();
     let profile = windows_profile::Profile::create()?;
-    let mut recorded = writable.clone();
-    write_record(temp_dir, profile.name(), &recorded)?;
+    let candidates = writable
+        .iter()
+        .chain(&readable)
+        .cloned()
+        .collect::<Vec<_>>();
+    write_record(temp_dir, profile.name(), &candidates)?;
     for root in &writable {
         windows_acl::grant(root, profile.sid(), true)?;
     }
+    let mut recorded = writable.clone();
     for root in &readable {
         // Les dossiers système sont déjà lisibles par les AppContainers et leur
         // DACL n'est généralement pas modifiable par un utilisateur standard.
-        recorded.push(root.clone());
-        if write_record(temp_dir, profile.name(), &recorded).is_err() {
-            recorded.pop();
-            continue;
-        }
-        if windows_acl::grant(root, profile.sid(), false).is_err() {
-            recorded.pop();
-            let _ = write_record(temp_dir, profile.name(), &recorded);
+        if windows_acl::grant(root, profile.sid(), false).is_ok() {
+            recorded.push(root.clone());
         }
     }
+    // En cas d'échec, le journal initial, plus large, reste sûr à rejouer.
+    let _ = write_record(temp_dir, profile.name(), &recorded);
     windows_process::run(executable, arguments, profile.sid())
 }
 

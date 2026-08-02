@@ -8,13 +8,14 @@ const PLATFORM_READ_DIRS: [&str; 8] = [
     "/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev", "/proc",
 ];
 const PACKAGE_PREFIXES: [&str; 2] = ["/usr/local", "/home/linuxbrew/.linuxbrew"];
-const WRITABLE_DEVICES: [&str; 6] = [
+const WRITABLE_DEVICES: [&str; 7] = [
     "/dev/null",
     "/dev/zero",
     "/dev/full",
     "/dev/random",
     "/dev/urandom",
     "/dev/tty",
+    "/dev/ptmx",
 ];
 
 pub(super) fn run(

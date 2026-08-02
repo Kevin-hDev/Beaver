@@ -172,13 +172,19 @@ fn sanitize_snapshot(snapshot: &str) -> String {
 
 fn overrides_sandbox_temp(line: &str) -> bool {
     let line = line.trim_start();
-    SANDBOX_TEMP_ENVS.iter().any(|name| {
-        ["export ", "declare -x "].iter().any(|prefix| {
-            line.strip_prefix(prefix)
-                .and_then(|value| value.strip_prefix(name))
+    for prefix in ["export ", "declare -x ", "typeset -x "] {
+        let Some(value) = line.strip_prefix(prefix) else {
+            continue;
+        };
+        if SANDBOX_TEMP_ENVS.iter().any(|name| {
+            value
+                .strip_prefix(name)
                 .is_some_and(|value| value.starts_with('='))
-        })
-    })
+        }) {
+            return true;
+        }
+    }
+    false
 }
 
 fn split_snapshot(snapshot: &str) -> [Zeroizing<String>; 2] {

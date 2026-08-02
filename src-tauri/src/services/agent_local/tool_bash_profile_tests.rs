@@ -58,7 +58,7 @@ fn sandbox_temp_variables_are_not_replayed_from_the_profile() {
     let snapshot = concat!(
         "export TMPDIR=/deleted/sandbox\n",
         "declare -x TMP=\"/deleted/sandbox\"\n",
-        " export TEMP='/deleted/sandbox'\n",
+        " typeset -x TEMP='/deleted/sandbox'\n",
         "export TEMPORARY=kept\n",
         "export BEAVER_PROFILE_TEST=kept\n",
     );

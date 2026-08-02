@@ -13,6 +13,7 @@ use windows_sys::Win32::Security::Authorization::{
 use windows_sys::Win32::Security::{
     ACL, CONTAINER_INHERIT_ACE, DACL_SECURITY_INFORMATION, OBJECT_INHERIT_ACE, PSID,
 };
+use windows_sys::Win32::Storage::FileSystem::DELETE;
 use windows_sys::Win32::System::Threading::{CreateMutexW, ReleaseMutex, WaitForSingleObject};
 
 const ACL_MUTEX_TIMEOUT_MS: u32 = 30_000;
@@ -58,7 +59,7 @@ fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> 
     let entry = EXPLICIT_ACCESS_W {
         grfAccessPermissions: match (writable, path.is_dir()) {
             (Some(true), true) => GENERIC_ALL,
-            (Some(true), false) => GENERIC_READ | GENERIC_WRITE,
+            (Some(true), false) => GENERIC_READ | GENERIC_WRITE | DELETE,
             (Some(false), true) => GENERIC_READ | GENERIC_EXECUTE,
             (Some(false), false) => GENERIC_READ,
             (None, _) => 0,
@@ -102,7 +103,7 @@ fn lock_acl_updates() -> Result<AclMutexGuard, String> {
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect::<String>();
-    let name = format!("Global\\Beaver.Shell.Acl.{suffix}")
+    let name = format!("Local\\Beaver.Shell.Acl.{suffix}")
         .encode_utf16()
         .chain(std::iter::once(0))
         .collect::<Vec<_>>();
