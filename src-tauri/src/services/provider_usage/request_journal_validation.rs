@@ -27,7 +27,7 @@ impl ProviderRequestMetric {
                 "manual_chat" | "external_channel" | "automation"
             )
             && (1..=MAX_ATTEMPT).contains(&self.attempt)
-            && self.turn.is_none_or(|turn| turn <= 1_000_000)
+            && self.turn.is_none_or(|turn| (1..=1_000_000).contains(&turn))
             && valid_started_at(self.started_at_ms)
             && valid_timing(&self.timing)
             && (!self.usage_complete

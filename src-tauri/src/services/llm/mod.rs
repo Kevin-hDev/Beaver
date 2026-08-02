@@ -10,6 +10,7 @@ mod agent_loop_message;
 mod agent_loop_request;
 mod agent_loop_request_types;
 pub(crate) mod agent_loop_tools;
+mod agent_loop_turn;
 pub mod catalog;
 pub mod compress_hook;
 mod kimi_models;

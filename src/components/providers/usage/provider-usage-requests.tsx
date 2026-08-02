@@ -27,7 +27,7 @@ export function ProviderUsageRequests({ metrics, loading }: Props) {
         <>
           <div className="settings-row pur-summary">
             <span>{t("providers.usage.requestMetrics.latestRequest")}</span>
-            <strong>{latest.model}<small>{t(`providers.usage.requestMetrics.statuses.${latest.status}`)} · {t("providers.usage.requestMetrics.attempt", { value: latest.attempt })}</small></strong>
+            <strong>{latest.model}<small>{t(`providers.usage.requestMetrics.statuses.${latest.status}`)} · {latest.turn !== null && <>{t("providers.usage.requestMetrics.turn", { value: latest.turn })} · </>}{t("providers.usage.requestMetrics.attempt", { value: latest.attempt })}</small></strong>
           </div>
           {latest.routed_provider && latest.routed_model && (
             <div className="settings-row pur-row">
@@ -36,6 +36,7 @@ export function ProviderUsageRequests({ metrics, loading }: Props) {
             </div>
           )}
           <Timing label={t("providers.usage.requestMetrics.headers")} value={latest.timing.headers_ms} locale={i18n.language} />
+          <Timing label={t("providers.usage.requestMetrics.firstEvent")} value={latest.timing.first_event_ms} locale={i18n.language} />
           <Timing label={t("providers.usage.requestMetrics.firstUseful")} value={latest.timing.first_useful_ms} locale={i18n.language} />
           <Timing label={t("providers.usage.requestMetrics.totalDuration")} value={latest.timing.total_ms} locale={i18n.language} />
           <Token label={t("providers.usage.cachedTokens")} value={latest.usage?.cached_input_tokens} locale={i18n.language} />

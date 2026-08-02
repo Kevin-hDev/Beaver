@@ -112,7 +112,7 @@ fn routed_endpoint_is_allowed_only_as_a_complete_openrouter_pair() {
 #[test]
 fn deserializer_rejects_more_than_the_hard_request_limit() {
     let entries: Vec<_> = (0..=REQUEST_LIMIT).map(|_| serde_json::json!({})).collect();
-    let encoded = serde_json::json!({ "version": 1, "entries": entries });
+    let encoded = serde_json::json!({ "version": 2, "entries": entries });
     let decoded: Result<super::request_journal_store::RequestStore, _> =
         serde_json::from_value(encoded);
 

@@ -13,6 +13,7 @@ use crate::services::secure_http::LLM_BODY_LIMIT;
 
 use super::limits::STREAM_STALL_TIMEOUT;
 use super::stream_accumulator::StreamAccumulator;
+use super::stream_measurement::StreamMeasurement;
 use super::types::CodexRequest;
 use super::{request, websocket_connect};
 
@@ -32,6 +33,7 @@ pub(super) async fn stream_chat(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, WebSocketFailure> {
     let request =
         request::build_codex_request(model, messages, tools, reasoning_mode, Some(session_id));
@@ -39,6 +41,7 @@ pub(super) async fn stream_chat(
     let mut socket = websocket_connect::connect(session_id)
         .await
         .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
+    measurement.mark_headers();
     send_payload(&mut socket, payload, &cancel).await?;
     receive_response(
         &mut socket,
@@ -48,6 +51,7 @@ pub(super) async fn stream_chat(
         cancel,
         buffer_content,
         realtime_budget,
+        measurement,
     )
     .await
 }
@@ -101,6 +105,7 @@ async fn receive_response(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, WebSocketFailure> {
     let idle = STREAM_STALL_TIMEOUT;
     let mut deadline = tokio::time::Instant::now() + idle;
@@ -121,7 +126,7 @@ async fn receive_response(
                 }
                 let parsed = serde_json::from_str(&text)
                     .map_err(|_| WebSocketFailure::Unavailable { partial })?;
-                let applied = accumulator.apply(on_event, &parsed);
+                let applied = measurement.apply(&mut accumulator, on_event, &parsed);
                 partial = accumulator.has_partial_output();
                 let outcome = applied.map_err(|_| WebSocketFailure::Unavailable { partial })?;
                 deadline = tokio::time::Instant::now() + idle;

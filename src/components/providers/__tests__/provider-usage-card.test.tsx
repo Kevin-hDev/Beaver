@@ -7,7 +7,10 @@ import { ProviderUsageCard } from "../usage/provider-usage-card";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, values?: Record<string, string>) => values?.name ? `${key}:${values.name}` : key,
+    t: (key: string, values?: Record<string, string | number>) => {
+      if (values?.name) return `${key}:${values.name}`;
+      return values?.value === undefined ? key : `${key}:${values.value}`;
+    },
     i18n: { language: "fr" },
   }),
 }));
@@ -136,7 +139,7 @@ describe("ProviderUsageCard", () => {
       windows: [{ ...snapshot.windows[0], used: 4, remaining: 96, used_percent: 4 }],
     });
     render(<ProviderUsageCard connectionId="codex-oauth" siteUrl="https://chatgpt.com" />);
-    expect(await screen.findByText("providers.usage.remainingPercent")).toBeInTheDocument();
+    expect(await screen.findByText("providers.usage.remainingPercent:96")).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "96");
   });
 
@@ -193,6 +196,8 @@ describe("ProviderUsageCard", () => {
     render(<ProviderUsageCard connectionId="openrouter" siteUrl="https://openrouter.ai" />);
 
     expect(await screen.findByText("openai/gpt-5.6-sol")).toBeInTheDocument();
+    expect(screen.getByText(/providers\.usage\.requestMetrics\.turn:1/)).toBeInTheDocument();
+    expect(screen.getByText("180 ms")).toBeInTheDocument();
     expect(screen.getByText("220 ms")).toBeInTheDocument();
     expect(screen.getByText("400 ms")).toBeInTheDocument();
     expect(screen.getAllByText("80")).toHaveLength(2);

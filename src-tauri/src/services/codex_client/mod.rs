@@ -6,6 +6,7 @@ pub mod request;
 mod request_http;
 pub mod stream;
 mod stream_accumulator;
+mod stream_measurement;
 mod stream_protocol;
 pub mod stream_silent;
 mod stream_tool;

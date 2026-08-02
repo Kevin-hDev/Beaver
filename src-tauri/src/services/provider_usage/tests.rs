@@ -209,7 +209,37 @@ fn moonshot_flat_cache_count_is_route_specific() {
     let unknown = RequestUsage::from_json(&body).unwrap();
 
     assert_eq!(moonshot.cached_input_tokens, Some(80));
+    assert_eq!(moonshot.cache_miss_input_tokens, Some(20));
+    assert_eq!(moonshot.cache_miss_source, CacheMissSource::Calculated);
     assert_eq!(unknown.cached_input_tokens, None);
+}
+
+#[test]
+fn moonshot_calculates_misses_only_from_an_explicit_valid_cache_count() {
+    let zero = RequestUsage::from_json_with_context(
+        &json!({ "prompt_tokens": 100, "cached_tokens": 0 }),
+        UsageContext::chat("moonshot", "kimi-k3"),
+    )
+    .unwrap();
+    assert_eq!(zero.cache_miss_input_tokens, Some(100));
+    assert_eq!(zero.cache_miss_source, CacheMissSource::Calculated);
+
+    let absent = RequestUsage::from_json_with_context(
+        &json!({ "prompt_tokens": 100 }),
+        UsageContext::chat("moonshot", "kimi-k3"),
+    )
+    .unwrap();
+    assert_eq!(absent.cache_miss_input_tokens, None);
+    assert_eq!(absent.cache_miss_source, CacheMissSource::Unknown);
+
+    let invalid = RequestUsage::from_json_with_context(
+        &json!({ "prompt_tokens": 100, "cached_tokens": 101 }),
+        UsageContext::chat("moonshot", "kimi-k3"),
+    )
+    .unwrap();
+    assert_eq!(invalid.cached_input_tokens, None);
+    assert_eq!(invalid.cache_miss_input_tokens, None);
+    assert_eq!(invalid.cache_status, CacheUsageStatus::Invalid);
 }
 
 #[test]

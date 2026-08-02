@@ -31,6 +31,22 @@ fn monotonic_timing_keeps_each_available_phase_separate() {
 }
 
 #[test]
+fn transport_fallback_never_overwrites_an_observed_milestone() {
+    let mut measurement = RequestMeasurement::start(context(Some("session-1"))).unwrap();
+    measurement.mark_headers();
+    measurement.mark_first_event();
+    measurement.mark_first_useful();
+    let first = measurement.timing().clone();
+
+    std::thread::sleep(std::time::Duration::from_millis(2));
+    measurement.mark_headers();
+    measurement.mark_first_event();
+    measurement.mark_first_useful();
+
+    assert_eq!(measurement.timing(), &first);
+}
+
+#[test]
 fn invalid_local_identity_disables_measurement_without_persisting_it() {
     assert!(RequestMeasurement::start(context(Some("../session"))).is_none());
 }

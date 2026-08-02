@@ -43,6 +43,7 @@ pub async fn stream_chat_no_done(
             cancel,
             buffer_content,
             realtime_budget,
+            measurement.as_mut(),
         )
         .await
     } else {

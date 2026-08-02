@@ -33,6 +33,7 @@ pub async fn collect_chat_silent(
             None,
             session_id,
             cancel,
+            measurement.as_mut(),
         )
         .await
     } else {
@@ -90,6 +91,7 @@ pub async fn collect_chat_silent_for_compression(
             Some(max_tokens),
             Some(session_id),
             cancel,
+            measurement.as_mut(),
         )
         .await
     } else {

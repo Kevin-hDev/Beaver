@@ -6,6 +6,9 @@ use tokio::net::TcpListener;
 use super::*;
 use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome};
+use crate::services::provider_usage::{
+    RequestMeasurement, RequestMeasurementContext, UsageApiFormat, UsageWorkload,
+};
 use crate::services::secure_http::AuthenticatedClient;
 
 struct NoopSink;
@@ -14,6 +17,21 @@ impl StreamEventSink for NoopSink {
     fn send_event(&self, _event: StreamEvent) -> Result<(), String> {
         Ok(())
     }
+}
+
+fn request_measurement() -> RequestMeasurement {
+    RequestMeasurement::start(RequestMeasurementContext {
+        connection_id: "codex-oauth",
+        canonical_provider_id: "openai",
+        api_format: UsageApiFormat::Responses,
+        model: "gpt-5.6-sol",
+        session_id: Some("session-1"),
+        request_id: "request-1",
+        turn: Some(1),
+        attempt: 1,
+        workload: UsageWorkload::Primary,
+    })
+    .unwrap()
 }
 
 async fn sse_response(
@@ -50,21 +68,28 @@ async fn sse_response(
 async fn completed_sse_returns_the_accumulated_result() {
     let body = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\ndata: {\"type\":\"response.completed\"}\n\n";
     let (response, server) = sse_response(body, Duration::ZERO).await;
-
-    let outcome = consume_sse_with_timeout(
-        &NoopSink,
-        response,
-        CancellationToken::new(),
-        false,
-        None,
-        "gpt-5.6-sol",
-        &[],
-        Duration::from_secs(1),
-    )
-    .await
-    .unwrap();
+    let mut request_measurement = request_measurement();
+    request_measurement.mark_headers();
+    let outcome = {
+        let mut measurement = StreamMeasurement::new(Some(&mut request_measurement));
+        consume_sse_with_timeout(
+            &NoopSink,
+            response,
+            CancellationToken::new(),
+            false,
+            None,
+            "gpt-5.6-sol",
+            &[],
+            Duration::from_secs(1),
+            &mut measurement,
+        )
+        .await
+        .unwrap()
+    };
 
     assert_eq!(outcome.into_result().content, "ok");
+    assert!(request_measurement.timing().first_event_ms.is_some());
+    assert!(request_measurement.timing().first_useful_ms.is_some());
     server.await.unwrap();
 }
 
@@ -72,6 +97,7 @@ async fn completed_sse_returns_the_accumulated_result() {
 async fn closed_or_done_before_completion_is_rejected() {
     for body in ["", "data: [DONE]\n\n"] {
         let (response, server) = sse_response(body, Duration::ZERO).await;
+        let mut measurement = StreamMeasurement::new(None);
         let error = consume_sse_with_timeout(
             &NoopSink,
             response,
@@ -81,6 +107,7 @@ async fn closed_or_done_before_completion_is_rejected() {
             "gpt-5.6-sol",
             &[],
             Duration::from_secs(1),
+            &mut measurement,
         )
         .await
         .unwrap_err();
@@ -95,6 +122,7 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
     let (response, server) = sse_response("", Duration::from_secs(2)).await;
     let cancel = CancellationToken::new();
     cancel.cancel();
+    let mut measurement = StreamMeasurement::new(None);
     let cancelled = consume_sse_with_timeout(
         &NoopSink,
         response,
@@ -104,12 +132,14 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
         "gpt-5.6-sol",
         &[],
         Duration::from_secs(1),
+        &mut measurement,
     )
     .await;
     assert_eq!(cancelled.unwrap_err(), "Annulé");
     server.abort();
 
     let (response, server) = sse_response("", Duration::from_secs(2)).await;
+    let mut measurement = StreamMeasurement::new(None);
     let timed_out = consume_sse_with_timeout(
         &NoopSink,
         response,
@@ -119,6 +149,7 @@ async fn stalled_sse_is_cancelled_by_user_or_idle_deadline() {
         "gpt-5.6-sol",
         &[],
         Duration::from_millis(20),
+        &mut measurement,
     )
     .await;
     assert_eq!(timed_out.unwrap_err(), "provider_temporarily_unavailable");

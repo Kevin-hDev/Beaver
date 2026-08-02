@@ -96,7 +96,7 @@ fn realtime_budget_interrupts_content_for_compression() {
 }
 
 #[test]
-fn completed_tool_call_counts_as_partial_output() {
+fn started_tool_call_is_useful_but_only_completion_is_partial_output() {
     let mut accumulator = StreamAccumulator::new("gpt-5.6-sol", &[], false, None);
     accumulator
         .apply(
@@ -108,6 +108,7 @@ fn completed_tool_call_counts_as_partial_output() {
         )
         .unwrap();
     assert!(!accumulator.has_partial_output());
+    assert!(accumulator.has_useful_output());
 
     accumulator
         .apply(
@@ -125,4 +126,5 @@ fn completed_tool_call_counts_as_partial_output() {
         .unwrap();
 
     assert!(accumulator.has_partial_output());
+    assert!(accumulator.has_useful_output());
 }

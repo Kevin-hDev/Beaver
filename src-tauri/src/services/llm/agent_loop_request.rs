@@ -87,7 +87,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
     let purpose =
         crate::services::llm::request_purpose::RequestPurpose::for_session(params.session_id).await;
     let mut next_attempt = 1_u32;
-    let turn = params.turn.try_into().unwrap_or(u32::MAX);
+    let turn = super::agent_loop_turn::metric_turn(params.turn);
     let first_attempt = super::retry::retry_stream(
         params.on_event,
         params.session_id,

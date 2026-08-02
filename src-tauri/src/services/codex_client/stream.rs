@@ -7,7 +7,10 @@ use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
 use super::limits::STREAM_STALL_TIMEOUT;
-use super::{request, stream_accumulator::StreamAccumulator, stream_protocol, websocket};
+use super::{
+    request, stream_accumulator::StreamAccumulator, stream_measurement::StreamMeasurement,
+    stream_protocol, websocket,
+};
 
 pub use super::stream_silent::{collect_chat_silent, collect_chat_silent_for_compression};
 
@@ -22,7 +25,9 @@ pub async fn stream_chat_with_budget(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamOutcome, String> {
+    let mut measurement = StreamMeasurement::new(measurement);
     if websocket::should_attempt() {
         match websocket::stream_chat(
             on_event,
@@ -34,6 +39,7 @@ pub async fn stream_chat_with_budget(
             cancel.clone(),
             buffer_content,
             realtime_budget.clone(),
+            &mut measurement,
         )
         .await
         {
@@ -70,6 +76,7 @@ pub async fn stream_chat_with_budget(
         &cancel,
     )
     .await?;
+    measurement.mark_headers();
     consume_sse(
         on_event,
         resp,
@@ -78,6 +85,7 @@ pub async fn stream_chat_with_budget(
         realtime_budget,
         model,
         tools,
+        &mut measurement,
     )
     .await
 }
@@ -90,6 +98,7 @@ async fn consume_sse(
     realtime_budget: Option<RealtimeBudget>,
     model: &str,
     tools: &[serde_json::Value],
+    measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {
     consume_sse_with_timeout(
         on_event,
@@ -100,6 +109,7 @@ async fn consume_sse(
         model,
         tools,
         STREAM_STALL_TIMEOUT,
+        measurement,
     )
     .await
 }
@@ -113,6 +123,7 @@ async fn consume_sse_with_timeout(
     model: &str,
     tools: &[serde_json::Value],
     idle_timeout: std::time::Duration,
+    measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {
     let mut sse = resp.bytes_stream().eventsource();
     let mut accumulator = StreamAccumulator::new(model, tools, buffer_content, realtime_budget);
@@ -133,7 +144,7 @@ async fn consume_sse_with_timeout(
             break;
         }
         let parsed = crate::services::llm::stream_sse::parse_json(&event.data)?;
-        if let Some(outcome) = accumulator.apply(on_event, &parsed)? {
+        if let Some(outcome) = measurement.apply(&mut accumulator, on_event, &parsed)? {
             return Ok(outcome);
         }
     }

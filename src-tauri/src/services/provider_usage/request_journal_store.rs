@@ -4,7 +4,8 @@ use std::path::PathBuf;
 
 use super::request_journal::{ProviderRequestMetric, REQUEST_LIMIT};
 
-const STORE_VERSION: u8 = 1;
+const STORE_VERSION: u8 = 2;
+const ZERO_BASED_STORE_VERSION: u8 = 1;
 const STORE_SIZE_LIMIT: u64 = 8 * 1024 * 1024;
 
 #[derive(Default, Serialize, Deserialize)]
@@ -47,11 +48,26 @@ fn decode_bounded(file: std::fs::File) -> Result<RequestStore, String> {
     if bytes.len() as u64 > STORE_SIZE_LIMIT {
         return Err(unavailable());
     }
-    let store: RequestStore = serde_json::from_slice(&bytes).map_err(|_| unavailable())?;
-    if store.version != STORE_VERSION {
-        return Err(unavailable());
-    }
+    let mut store: RequestStore = serde_json::from_slice(&bytes).map_err(|_| unavailable())?;
+    migrate_version(&mut store)?;
     Ok(store)
+}
+
+fn migrate_version(store: &mut RequestStore) -> Result<(), String> {
+    match store.version {
+        STORE_VERSION => Ok(()),
+        ZERO_BASED_STORE_VERSION => {
+            for metric in &mut store.entries {
+                metric.turn = metric
+                    .turn
+                    .map(|turn| turn.checked_add(1).ok_or_else(unavailable))
+                    .transpose()?;
+            }
+            store.version = STORE_VERSION;
+            Ok(())
+        }
+        _ => Err(unavailable()),
+    }
 }
 
 fn deserialize_entries<'de, D>(deserializer: D) -> Result<Vec<ProviderRequestMetric>, D::Error>
@@ -85,4 +101,46 @@ where
 
 fn unavailable() -> String {
     "Mesures provider indisponibles".to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_one_turns_are_migrated_without_touching_missing_values() {
+        let mut store = RequestStore {
+            version: ZERO_BASED_STORE_VERSION,
+            entries: vec![
+                ProviderRequestMetric {
+                    turn: Some(0),
+                    ..Default::default()
+                },
+                ProviderRequestMetric {
+                    turn: Some(4),
+                    ..Default::default()
+                },
+                ProviderRequestMetric::default(),
+            ],
+        };
+
+        migrate_version(&mut store).unwrap();
+
+        assert_eq!(store.version, STORE_VERSION);
+        assert_eq!(store.entries[0].turn, Some(1));
+        assert_eq!(store.entries[1].turn, Some(5));
+        assert_eq!(store.entries[2].turn, None);
+    }
+
+    #[test]
+    fn current_and_unknown_versions_are_not_silently_rewritten() {
+        let mut current = RequestStore {
+            version: STORE_VERSION,
+            entries: Vec::new(),
+        };
+        assert!(migrate_version(&mut current).is_ok());
+
+        current.version = 99;
+        assert!(migrate_version(&mut current).is_err());
+    }
 }

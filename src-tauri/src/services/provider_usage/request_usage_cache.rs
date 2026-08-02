@@ -145,7 +145,7 @@ fn parse_deepseek(value: &serde_json::Value, input: Option<u64>) -> ParsedCacheU
 fn should_calculate_miss(context: UsageContext<'_>) -> bool {
     matches!(
         context.canonical_provider_id,
-        "openai" | "openrouter" | "xai" | "mistral" | "groq" | "cerebras" | "zai"
+        "openai" | "openrouter" | "xai" | "mistral" | "groq" | "cerebras" | "zai" | "moonshot"
     ) || context.api_format == UsageApiFormat::GeminiNative
         || (context.canonical_provider_id == "deepseek"
             && context.api_format == UsageApiFormat::Responses)

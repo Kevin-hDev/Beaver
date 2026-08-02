@@ -45,6 +45,8 @@ async fn silent_stream_rejects_the_generic_error_event_immediately() {
         .send(client.get(format!("http://{address}/stream")))
         .await
         .unwrap();
+    let mut measurement =
+        crate::services::codex_client::stream_measurement::StreamMeasurement::new(None);
 
     let error = consume_sse_silent(
         response,
@@ -52,6 +54,7 @@ async fn silent_stream_rejects_the_generic_error_event_immediately() {
         Duration::from_secs(1),
         None,
         "gpt-5.6-sol",
+        &mut measurement,
     )
     .await
     .unwrap_err();

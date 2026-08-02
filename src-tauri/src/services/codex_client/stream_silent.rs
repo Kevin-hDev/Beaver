@@ -4,7 +4,7 @@ use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
 use super::limits::{MAX_STREAM_TEXT_BYTES, STREAM_STALL_TIMEOUT};
-use super::{request, stream_protocol};
+use super::{request, stream_measurement::StreamMeasurement, stream_protocol};
 
 pub async fn collect_chat_silent(
     model: &str,
@@ -14,11 +14,22 @@ pub async fn collect_chat_silent(
     max_output_tokens: Option<u32>,
     session_id: Option<&str>,
     cancel: CancellationToken,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
+    let mut measurement = StreamMeasurement::new(measurement);
     let resp =
         request::post_codex_stream(model, messages, tools, reasoning_mode, session_id, &cancel)
             .await?;
-    consume_sse_silent(resp, cancel, STREAM_STALL_TIMEOUT, max_output_tokens, model).await
+    measurement.mark_headers();
+    consume_sse_silent(
+        resp,
+        cancel,
+        STREAM_STALL_TIMEOUT,
+        max_output_tokens,
+        model,
+        &mut measurement,
+    )
+    .await
 }
 
 pub async fn collect_chat_silent_for_compression(
@@ -29,7 +40,9 @@ pub async fn collect_chat_silent_for_compression(
     max_output_tokens: Option<u32>,
     session_id: Option<&str>,
     cancel: CancellationToken,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
 ) -> Result<StreamResult, String> {
+    let mut measurement = StreamMeasurement::new(measurement);
     let request_timeout = crate::services::compress::timeouts::compression_request_timeout();
     let idle_timeout = crate::services::compress::timeouts::compression_idle_timeout();
     let resp = request::post_codex_stream_with_timeout(
@@ -42,7 +55,16 @@ pub async fn collect_chat_silent_for_compression(
         &cancel,
     )
     .await?;
-    consume_sse_silent(resp, cancel, idle_timeout, max_output_tokens, model).await
+    measurement.mark_headers();
+    consume_sse_silent(
+        resp,
+        cancel,
+        idle_timeout,
+        max_output_tokens,
+        model,
+        &mut measurement,
+    )
+    .await
 }
 
 async fn consume_sse_silent(
@@ -51,6 +73,7 @@ async fn consume_sse_silent(
     idle_timeout: std::time::Duration,
     max_output_tokens: Option<u32>,
     model: &str,
+    measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamResult, String> {
     let mut sse = resp.bytes_stream().eventsource();
     let mut result = StreamResult::default();
@@ -73,8 +96,15 @@ async fn consume_sse_silent(
             break;
         }
         let parsed = crate::services::llm::stream_sse::parse_json(&event.data)?;
+        measurement.mark_first_event();
         match parsed["type"].as_str().unwrap_or("") {
             "response.reasoning_summary_text.delta" => {
+                if parsed["delta"]
+                    .as_str()
+                    .is_some_and(|delta| !delta.is_empty())
+                {
+                    measurement.mark_first_useful();
+                }
                 append_bounded(
                     &mut result.thinking,
                     parsed["delta"].as_str().unwrap_or(""),
@@ -82,6 +112,12 @@ async fn consume_sse_silent(
                 )?;
             }
             "response.output_text.delta" => {
+                if parsed["delta"]
+                    .as_str()
+                    .is_some_and(|delta| !delta.is_empty())
+                {
+                    measurement.mark_first_useful();
+                }
                 append_bounded(
                     &mut result.content,
                     parsed["delta"].as_str().unwrap_or(""),

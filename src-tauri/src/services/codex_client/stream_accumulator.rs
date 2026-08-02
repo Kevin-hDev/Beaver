@@ -66,6 +66,10 @@ impl<'a> StreamAccumulator<'a> {
             || !self.result.tool_calls.is_empty()
     }
 
+    pub(super) fn has_useful_output(&self) -> bool {
+        self.has_partial_output() || self.tool.is_pending()
+    }
+
     fn record_thinking(
         &mut self,
         on_event: &impl StreamEventSink,
