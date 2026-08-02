@@ -1,10 +1,10 @@
-const SANDBOX_TEMP_ENVS: [&str; 4] = ["TMPDIR", "TMP", "TEMP", "TMPPREFIX"];
+const SANDBOX_OWNED_ENVS: [&str; 5] = ["PATH", "TMPDIR", "TMP", "TEMP", "TMPPREFIX"];
 pub(super) const MAX_SNAPSHOT_CHUNK_BYTES: usize = 64 * 1024;
 
 pub(super) fn snapshot(snapshot: &str) -> String {
     let mut sanitized = String::with_capacity(snapshot.len());
     for line in snapshot.lines() {
-        if overrides_sandbox_temp(line) {
+        if overrides_sandbox_environment(line) {
             continue;
         }
         sanitized.push_str(line);
@@ -24,13 +24,13 @@ pub(super) fn chunks(snapshot: &str) -> [zeroize::Zeroizing<String>; 2] {
     ]
 }
 
-fn overrides_sandbox_temp(line: &str) -> bool {
+fn overrides_sandbox_environment(line: &str) -> bool {
     let line = line.trim_start();
     for prefix in ["export ", "declare -x ", "typeset -x "] {
         let Some(value) = line.strip_prefix(prefix) else {
             continue;
         };
-        if SANDBOX_TEMP_ENVS.iter().any(|name| {
+        if SANDBOX_OWNED_ENVS.iter().any(|name| {
             value
                 .strip_prefix(name)
                 .is_some_and(|value| value.starts_with('='))

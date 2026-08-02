@@ -1,4 +1,5 @@
 use super::{add_parameters, policy, sandbox_roots, SANDBOX_EXEC};
+use super::super::scope::{Mode, Scope};
 use std::process::{Command, Output};
 
 #[test]
@@ -17,7 +18,7 @@ fn seatbelt_allows_work_and_temp_inside_the_root_and_blocks_outside_data() {
     let allowed = temp.path().join("allowed");
     let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
-    let darwin_temp_probe = std::env::temp_dir().join(format!(
+    let darwin_temp_probe = super::darwin_user_temp_dir().expect("Darwin temp").join(format!(
         "beaver-sandbox-probe-{}",
         uuid::Uuid::new_v4().simple()
     ));
@@ -75,7 +76,7 @@ fn seatbelt_supports_complete_local_development() {
     let allowed = temp.path().join("allowed");
     let sandbox_temp = temp.path().join("sandbox-temp");
     let outside = temp.path().join("outside.txt");
-    let darwin_temp_probe = std::env::temp_dir().join(format!(
+    let darwin_temp_probe = super::darwin_user_temp_dir().expect("Darwin temp").join(format!(
         "beaver-sandbox-probe-{}",
         uuid::Uuid::new_v4().simple()
     ));
@@ -143,11 +144,126 @@ printf verified
     println!("git=ok\nnpm=ok\ncargo=ok\ngo=ok\nheredoc=ok\ndiff=ok\nnative=ok\ndarwin-temp=blocked\noutside-write=blocked");
 }
 
-fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, script: &str) -> Output {
-    let roots = sandbox_roots(std::slice::from_ref(&allowed.to_path_buf()), sandbox_temp);
+#[test]
+fn profile_capture_can_only_write_to_its_private_temp() {
+    let temp = tempfile::tempdir().expect("temp");
+    let allowed = temp.path().join("allowed");
+    let sandbox_temp = temp.path().join("sandbox-temp");
+    let shared_temp_probe = std::path::Path::new("/private/tmp").join(format!(
+        "beaver-profile-probe-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
+    let xcrun_probe = super::darwin_user_temp_dir()
+        .expect("Darwin temp")
+        .join(format!("xcrun_db-beaver-{}", uuid::Uuid::new_v4().simple()));
+    std::fs::create_dir_all(&allowed).expect("allowed");
+    std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
+    std::fs::write(allowed.join("profile.txt"), "readable").expect("profile");
+    let allowed = dunce::canonicalize(allowed).expect("canonical allowed");
+    let sandbox_temp = dunce::canonicalize(sandbox_temp).expect("canonical temp");
+    let script = format!(
+        r#"test "$(/bin/cat '{}/profile.txt')" = readable
+if printf pwn > '{}/blocked'; then exit 80; fi
+if printf pwn > '{}'; then /bin/rm -f '{}'; exit 81; fi
+if printf pwn > '{}'; then /bin/rm -f '{}'; exit 82; fi
+printf ok > '{}/inside'"#,
+        allowed.display(),
+        allowed.display(),
+        shared_temp_probe.display(),
+        shared_temp_probe.display(),
+        xcrun_probe.display(),
+        xcrun_probe.display(),
+        sandbox_temp.display(),
+    );
+    let scope = Scope {
+        mode: Mode::ProfileCapture,
+        roots: vec![allowed.clone()],
+        read_files: Vec::new(),
+    };
+    let output = run_sandboxed_scope(&scope, &sandbox_temp, &script);
+
+    assert_success(&output);
+    assert_eq!(std::fs::read_to_string(sandbox_temp.join("inside")).unwrap(), "ok");
+    assert!(!allowed.join("blocked").exists());
+    assert!(!shared_temp_probe.exists());
+    assert!(!xcrun_probe.exists());
+}
+
+#[test]
+fn interactive_profile_capture_keeps_path_but_cannot_escape() {
+    let temp = tempfile::tempdir().expect("temp");
+    let allowed = temp.path().join("allowed");
+    let profile_home = temp.path().join("profile-home");
+    let sandbox_temp = temp.path().join("sandbox-temp");
+    for path in [&allowed, &profile_home, &sandbox_temp] {
+        std::fs::create_dir_all(path).expect("directory");
+    }
+    let escape = allowed.join("blocked");
+    let profile = profile_home.join(".zshrc");
+    std::fs::write(
+        &profile,
+        "export PATH=/profile/tool/bin:$PATH\nprintf pwn > \"$BEAVER_ESCAPE\" 2>/dev/null || true\n",
+    )
+    .expect("profile");
+    let allowed = dunce::canonicalize(allowed).expect("allowed");
+    let profile = dunce::canonicalize(profile).expect("profile");
+    let sandbox_temp = dunce::canonicalize(sandbox_temp).expect("sandbox temp");
+    let scope = Scope {
+        mode: Mode::ProfileCapture,
+        roots: vec![allowed.clone()],
+        read_files: vec![profile],
+    };
+    let roots = sandbox_roots(&scope, &sandbox_temp);
+    let sandbox_policy = policy(&roots, scope.mode, None);
+    assert!(!sandbox_policy.contains("(allow network*)"));
+    assert!(!sandbox_policy.contains("subpath \"/private/tmp\""));
+    assert!(!sandbox_policy.contains("xcrun_db"));
     let mut command = Command::new(SANDBOX_EXEC);
     command
-        .current_dir(allowed)
+        .current_dir(&sandbox_temp)
+        .env("HOME", &profile_home)
+        .env("ZDOTDIR", &profile_home)
+        .env("BEAVER_ESCAPE", &escape)
+        .env("PATH", "/usr/bin:/bin")
+        .env("TMPDIR", &sandbox_temp)
+        .env("TMPPREFIX", sandbox_temp.join("zsh"));
+    add_parameters(&mut command, "BEAVER_RW_DIR", &roots.write_dirs);
+    add_parameters(&mut command, "BEAVER_RW_FILE", &roots.write_files);
+    add_parameters(&mut command, "BEAVER_RO_DIR", &roots.read_dirs);
+    add_parameters(&mut command, "BEAVER_RO_FILE", &roots.read_files);
+    let output = command
+        .args([
+            "-p",
+            &sandbox_policy,
+            "/bin/zsh",
+            "-l",
+            "-i",
+            "-c",
+            "printf '%s' \"$PATH\"",
+        ])
+        .output()
+        .expect("sandbox-exec");
+
+    assert_success(&output);
+    assert!(String::from_utf8_lossy(&output.stdout).contains("/profile/tool/bin"));
+    assert!(!escape.exists());
+}
+
+fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, script: &str) -> Output {
+    let scope = Scope::workspace(vec![allowed.to_path_buf()]);
+    run_sandboxed_scope(&scope, sandbox_temp, script)
+}
+
+fn run_sandboxed_scope(scope: &Scope, sandbox_temp: &std::path::Path, script: &str) -> Output {
+    let roots = sandbox_roots(scope, sandbox_temp);
+    let working_dir = if scope.mode == Mode::Workspace {
+        scope.roots.first().map(std::path::PathBuf::as_path).unwrap_or(sandbox_temp)
+    } else {
+        sandbox_temp
+    };
+    let mut command = Command::new(SANDBOX_EXEC);
+    command
+        .current_dir(working_dir)
         .env("TMPDIR", sandbox_temp)
         .env("TMPPREFIX", sandbox_temp.join("zsh"));
     add_parameters(&mut command, "BEAVER_RW_DIR", &roots.write_dirs);
@@ -155,7 +271,13 @@ fn run_sandboxed(allowed: &std::path::Path, sandbox_temp: &std::path::Path, scri
     add_parameters(&mut command, "BEAVER_RO_DIR", &roots.read_dirs);
     add_parameters(&mut command, "BEAVER_RO_FILE", &roots.read_files);
     command
-        .args(["-p", &policy(&roots), "/bin/zsh", "-c", script])
+        .args([
+            "-p",
+            &policy(&roots, scope.mode, super::xcrun_cache_rule().as_deref()),
+            "/bin/zsh",
+            "-c",
+            script,
+        ])
         .output()
         .expect("sandbox-exec")
 }

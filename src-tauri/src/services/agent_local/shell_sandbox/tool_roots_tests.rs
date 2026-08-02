@@ -28,6 +28,8 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
     ] {
         std::fs::create_dir_all(path).expect("create directory");
     }
+    make_executable(&tool.join("bin/tool"));
+    make_executable(&home.join("bin/tool"));
     for path in [
         home.join(".gitconfig"),
         home.join(".gitignore_global"),
@@ -136,6 +138,7 @@ fn configured_cache_paths_stay_inside_home_and_never_cover_path_tools() {
     ] {
         std::fs::create_dir_all(path).expect("directory");
     }
+    make_executable(&executable_dir.join("tool"));
 
     let roots = collect_from(
         std::slice::from_ref(&workspace),
@@ -181,6 +184,18 @@ fn excessive_path_entries_disable_extra_writable_roots() {
     assert!(roots.write_files.is_empty());
 }
 
+#[test]
+fn read_only_collection_never_returns_cache_writes() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let workspace = temp.path().join("workspace");
+    std::fs::create_dir(&workspace).expect("workspace");
+
+    let roots = collect_read_only(std::slice::from_ref(&workspace), &[], &[], None);
+
+    assert!(roots.write_dirs.is_empty());
+    assert!(roots.write_files.is_empty());
+}
+
 #[cfg(unix)]
 #[test]
 fn writable_tool_exceptions_reject_redirecting_symlinks() {
@@ -200,7 +215,7 @@ fn writable_tool_exceptions_reject_redirecting_symlinks() {
     ] {
         std::fs::create_dir_all(path).expect("directory");
     }
-    std::fs::write(path_dir.join("tool"), "binary").expect("tool");
+    make_executable(&path_dir.join("tool"));
     symlink(&redirected, home.join(".cache")).expect("cache link");
     symlink(
         path_dir.join("tool"),
@@ -307,4 +322,43 @@ fn current_machine_package_prefixes_are_included_when_present() {
     if let Some(home) = dirs::home_dir().and_then(|path| canonical_dir(&path)) {
         assert!(!roots.read_dirs.contains(&home));
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn path_directory_without_an_executable_is_not_granted() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let workspace = temp.path().join("workspace");
+    let sensitive = temp.path().join("sensitive");
+    std::fs::create_dir(&workspace).expect("workspace");
+    std::fs::create_dir(&sensitive).expect("sensitive");
+    std::fs::write(sensitive.join("credentials"), "secret").expect("credentials");
+
+    let roots = collect_from(
+        std::slice::from_ref(&workspace),
+        &[],
+        &[],
+        None,
+        std::slice::from_ref(&sensitive),
+        false,
+        &[],
+    );
+
+    assert!(!roots
+        .read_dirs
+        .contains(&dunce::canonicalize(sensitive).expect("sensitive")));
+}
+
+#[cfg(unix)]
+fn make_executable(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+
+    std::fs::write(path, "#!/bin/sh\n").expect("executable");
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))
+        .expect("permissions");
+}
+
+#[cfg(windows)]
+fn make_executable(path: &Path) {
+    std::fs::write(path.with_extension("exe"), "executable").expect("executable");
 }

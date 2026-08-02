@@ -48,3 +48,18 @@ fn accepts_a_bounded_absolute_command() {
         assert!(parsed.is_ok());
     }
 }
+
+#[test]
+#[cfg(not(windows))]
+fn accepts_the_explicit_profile_capture_mode() {
+    let parsed = parse(vec![
+        OsString::from(super::super::launch::profile_capture_arg()),
+        OsString::from("/tmp/sandbox"),
+        OsString::from("--"),
+        OsString::from("/bin/sh"),
+        OsString::from("-c"),
+    ])
+    .expect("profile capture");
+
+    assert_eq!(parsed.0, super::super::scope::Mode::ProfileCapture);
+}

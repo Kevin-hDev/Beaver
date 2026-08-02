@@ -22,15 +22,15 @@ const WRITABLE_DEVICES: [&str; 7] = [
 pub(super) fn run(
     executable: &Path,
     arguments: &[OsString],
-    writable_roots: &[PathBuf],
+    scope: &super::scope::Scope,
     temp_dir: &Path,
 ) -> Result<i32, String> {
-    apply(writable_roots, temp_dir)?;
+    apply(scope, temp_dir)?;
     let error = std::process::Command::new(executable).args(arguments).exec();
     Err(error.to_string())
 }
 
-fn apply(writable_roots: &[PathBuf], temp_dir: &Path) -> Result<(), String> {
+fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
     // ABI V3 protège aussi les troncatures tout en restant compatible avec
     // davantage de noyaux que les versions Landlock plus récentes.
     let abi = ABI::V3;
@@ -39,20 +39,44 @@ fn apply(writable_roots: &[PathBuf], temp_dir: &Path) -> Result<(), String> {
     let file_read_write = AccessFs::ReadFile | AccessFs::WriteFile | AccessFs::Truncate;
     let device_read_write = AccessFs::ReadFile | AccessFs::WriteFile | AccessFs::Truncate;
     let device_dir_read_write = device_read_write | AccessFs::ReadDir;
-    let tools = super::tool_roots::collect(
-        writable_roots,
-        &PLATFORM_READ_DIRS,
-        &PACKAGE_PREFIXES,
-        None,
-    );
-    let write_dirs = writable_roots
+    let tools = if scope.mode == super::scope::Mode::ProfileCapture {
+        super::tool_roots::collect_read_only(
+            &scope.roots,
+            &PLATFORM_READ_DIRS,
+            &PACKAGE_PREFIXES,
+            None,
+        )
+    } else {
+        super::tool_roots::collect(
+            &scope.roots,
+            &PLATFORM_READ_DIRS,
+            &PACKAGE_PREFIXES,
+            None,
+        )
+    };
+    let workspace_mode = scope.mode == super::scope::Mode::Workspace;
+    let write_dirs = scope
+        .roots
         .iter()
         .map(PathBuf::as_path)
+        .filter(|_| workspace_mode)
         .chain(std::iter::once(temp_dir))
-        .chain(tools.write_dirs.iter().map(PathBuf::as_path))
+        .chain(tools.write_dirs.iter().map(PathBuf::as_path).filter(|_| workspace_mode))
         .chain(
-            std::iter::once(Path::new(SYSTEM_TEMP_DIR)).filter(|path| path.is_dir()),
+            std::iter::once(Path::new(SYSTEM_TEMP_DIR))
+                .filter(|path| workspace_mode && path.is_dir()),
         );
+    let read_dirs = scope
+        .roots
+        .iter()
+        .map(PathBuf::as_path)
+        .filter(|_| !workspace_mode)
+        .chain(tools.read_dirs.iter().map(PathBuf::as_path));
+    let read_files = scope
+        .read_files
+        .iter()
+        .map(PathBuf::as_path)
+        .chain(tools.read_files.iter().map(PathBuf::as_path));
     let writable_devices = WRITABLE_DEVICES
         .iter()
         .map(Path::new)
@@ -66,13 +90,16 @@ fn apply(writable_roots: &[PathBuf], temp_dir: &Path) -> Result<(), String> {
         .map_err(|_| sandbox_error())?
         .create()
         .map_err(|_| sandbox_error())?
-        .add_rules(landlock::path_beneath_rules(&tools.read_dirs, access_read))
+        .add_rules(landlock::path_beneath_rules(read_dirs, access_read))
         .map_err(|_| sandbox_error())?
-        .add_rules(landlock::path_beneath_rules(&tools.read_files, AccessFs::ReadFile))
+        .add_rules(landlock::path_beneath_rules(read_files, AccessFs::ReadFile))
         .map_err(|_| sandbox_error())?
         .add_rules(landlock::path_beneath_rules(write_dirs, access_all))
         .map_err(|_| sandbox_error())?
-        .add_rules(landlock::path_beneath_rules(&tools.write_files, file_read_write))
+        .add_rules(landlock::path_beneath_rules(
+            tools.write_files.iter().filter(|_| workspace_mode),
+            file_read_write,
+        ))
         .map_err(|_| sandbox_error())?
         .add_rules(landlock::path_beneath_rules(writable_devices, device_read_write))
         .map_err(|_| sandbox_error())?

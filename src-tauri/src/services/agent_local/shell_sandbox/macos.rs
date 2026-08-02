@@ -30,32 +30,70 @@ struct SandboxRoots {
 pub(super) fn run(
     executable: &Path,
     arguments: &[OsString],
-    writable_roots: &[PathBuf],
+    scope: &super::scope::Scope,
     temp_dir: &Path,
 ) -> Result<i32, String> {
     if !Path::new(SANDBOX_EXEC).is_file() {
         return Err(super::launch::sandbox_error());
     }
-    let roots = sandbox_roots(writable_roots, temp_dir);
+    let roots = sandbox_roots(scope, temp_dir);
+    let xcrun_rule = if scope.mode == super::scope::Mode::Workspace {
+        let rule = xcrun_cache_rule();
+        if rule.is_some() {
+            super::super::shell_diagnostics::clear_xcrun_failure();
+        } else {
+            super::super::shell_diagnostics::record_xcrun_failure();
+        }
+        rule
+    } else {
+        None
+    };
     let mut command = std::process::Command::new(SANDBOX_EXEC);
     add_parameters(&mut command, "BEAVER_RW_DIR", &roots.write_dirs);
     add_parameters(&mut command, "BEAVER_RW_FILE", &roots.write_files);
     add_parameters(&mut command, "BEAVER_RO_DIR", &roots.read_dirs);
     add_parameters(&mut command, "BEAVER_RO_FILE", &roots.read_files);
-    command.arg("-p").arg(policy(&roots)).arg(executable).args(arguments);
+    command
+        .arg("-p")
+        .arg(policy(&roots, scope.mode, xcrun_rule.as_deref()))
+        .arg(executable)
+        .args(arguments);
     let error = command.exec();
     Err(error.to_string())
 }
 
-fn sandbox_roots(writable_roots: &[PathBuf], temp_dir: &Path) -> SandboxRoots {
-    let tools = super::tool_roots::collect(
-        writable_roots,
-        &PLATFORM_READ_DIRS,
-        &PACKAGE_PREFIXES,
-        None,
-    );
+fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
+    let tools = if scope.mode == super::scope::Mode::ProfileCapture {
+        super::tool_roots::collect_read_only(
+            &scope.roots,
+            &PLATFORM_READ_DIRS,
+            &PACKAGE_PREFIXES,
+            None,
+        )
+    } else {
+        super::tool_roots::collect(
+            &scope.roots,
+            &PLATFORM_READ_DIRS,
+            &PACKAGE_PREFIXES,
+            None,
+        )
+    };
+    if scope.mode == super::scope::Mode::ProfileCapture {
+        return SandboxRoots {
+            write_dirs: vec![temp_dir.to_path_buf()],
+            write_files: Vec::new(),
+            read_dirs: scope.roots.iter().cloned().chain(tools.read_dirs).collect(),
+            read_files: scope
+                .read_files
+                .iter()
+                .cloned()
+                .chain(tools.read_files)
+                .collect(),
+        };
+    }
     SandboxRoots {
-        write_dirs: writable_roots
+        write_dirs: scope
+            .roots
             .iter()
             .cloned()
             .chain(std::iter::once(temp_dir.to_path_buf()))
@@ -81,12 +119,18 @@ fn add_parameter(command: &mut std::process::Command, prefix: &str, index: usize
     command.arg("-D").arg(format!("{prefix}_{index}={}", value.to_string_lossy()));
 }
 
-fn policy(roots: &SandboxRoots) -> String {
+fn policy(
+    roots: &SandboxRoots,
+    mode: super::scope::Mode,
+    xcrun_rule: Option<&str>,
+) -> String {
     let mut policy = include_str!("macos_seatbelt_base.sbpl").to_string();
     policy.push_str(include_str!("macos_platform.sbpl"));
-    policy.push_str(include_str!("macos_base.sbpl"));
-    if let Some(rule) = xcrun_cache_rule() {
-        policy.push_str(&rule);
+    if mode == super::scope::Mode::Workspace {
+        policy.push_str(include_str!("macos_base.sbpl"));
+        if let Some(rule) = xcrun_rule {
+            policy.push_str(rule);
+        }
     }
     append_rules(&mut policy, "BEAVER_RW_DIR", roots.write_dirs.len(), true, false);
     append_rules(&mut policy, "BEAVER_RW_FILE", roots.write_files.len(), true, true);

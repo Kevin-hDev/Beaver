@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 
 pub(crate) const MAX_PATH_INPUTS: usize = 256;
 const MAX_CAPTURE_BYTES: usize = 128 * 1024;
-const CAPTURE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+const CAPTURE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(8);
 
 #[derive(Clone)]
 struct ShellPath {
@@ -24,7 +24,9 @@ pub(crate) fn initialize() -> bool {
         .or_else(process_path)
         .unwrap_or_else(system_path);
     let _ = SHELL_PATH.set(resolved);
-    SHELL_PATH.get().is_some_and(|path| path.discovered)
+    let discovered = SHELL_PATH.get().is_some_and(|path| path.discovered);
+    super::shell_diagnostics::record_path_capture(discovered);
+    discovered
 }
 
 pub(crate) fn value() -> OsString {

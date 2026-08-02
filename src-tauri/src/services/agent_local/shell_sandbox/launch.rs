@@ -3,11 +3,32 @@ use std::path::{Path, PathBuf};
 use tokio::process::Command;
 
 const HELPER_ARG: &str = "--beaver-shell-sandbox";
+const PROFILE_CAPTURE_ARG: &str = "--profile-capture";
 const TEMP_DIRECTORY: &str = "shell-sandboxes";
 
 pub struct PreparedShellCommand {
     pub command: Command,
     pub cleanup_dir: Option<PathBuf>,
+}
+
+#[cfg(unix)]
+pub(crate) struct PreparedProfileCapture {
+    command: std::process::Command,
+    cleanup_dir: PathBuf,
+}
+
+#[cfg(unix)]
+impl PreparedProfileCapture {
+    pub fn command_mut(&mut self) -> &mut std::process::Command {
+        &mut self.command
+    }
+}
+
+#[cfg(unix)]
+impl Drop for PreparedProfileCapture {
+    fn drop(&mut self) {
+        cleanup_one(&self.cleanup_dir);
+    }
 }
 
 pub fn prepare_command(
@@ -28,10 +49,7 @@ pub fn prepare_command(
     }
 
     let temp_dir = create_sandbox_temp()?;
-    let executable = match std::env::current_exe()
-        .map_err(|_| sandbox_error())
-        .and_then(|path| dunce::canonicalize(path).map_err(|_| sandbox_error()))
-    {
+    let executable = match helper_executable() {
         Ok(executable) => executable,
         Err(error) => {
             cleanup_one(&temp_dir);
@@ -60,6 +78,47 @@ pub fn prepare_command(
     })
 }
 
+#[cfg(unix)]
+pub(crate) fn prepare_profile_capture(
+    shell: &Path,
+    arguments: &[OsString],
+    base_path: &OsStr,
+) -> Result<PreparedProfileCapture, String> {
+    let temp_dir = create_sandbox_temp()?;
+    let executable = match helper_executable() {
+        Ok(executable) => executable,
+        Err(error) => {
+            cleanup_one(&temp_dir);
+            return Err(error);
+        }
+    };
+    let mut command = std::process::Command::new(executable);
+    command
+        .arg(HELPER_ARG)
+        .arg(PROFILE_CAPTURE_ARG)
+        .arg(&temp_dir)
+        .arg("--")
+        .arg(shell)
+        .args(arguments)
+        .current_dir(&temp_dir)
+        .env("TMPDIR", &temp_dir)
+        .env("TMP", &temp_dir)
+        .env("TEMP", &temp_dir)
+        .env("TMPPREFIX", temp_dir.join("zsh"))
+        .env("PATH", base_path);
+    Ok(PreparedProfileCapture {
+        command,
+        cleanup_dir: temp_dir,
+    })
+}
+
+fn helper_executable() -> Result<PathBuf, String> {
+    let executable = std::env::current_exe()
+        .map_err(|_| sandbox_error())
+        .and_then(|path| dunce::canonicalize(path).map_err(|_| sandbox_error()))?;
+    executable.is_file().then_some(executable).ok_or_else(sandbox_error)
+}
+
 fn create_sandbox_temp() -> Result<PathBuf, String> {
     let root = sandbox_temp_root();
     super::super::super::private_store::ensure_private_dir(&root)?;
@@ -74,6 +133,10 @@ pub(super) fn sandbox_temp_root() -> PathBuf {
 
 pub(super) fn helper_arg() -> &'static str {
     HELPER_ARG
+}
+
+pub(super) fn profile_capture_arg() -> &'static str {
+    PROFILE_CAPTURE_ARG
 }
 
 pub(super) fn sandbox_error() -> String {

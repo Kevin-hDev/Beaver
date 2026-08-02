@@ -15,18 +15,18 @@ fn known_posix_shells_have_a_snapshot_script() {
 #[test]
 fn profile_is_kept_out_of_arguments_and_replayed_from_environment() {
     let profile = ShellProfile {
-        scripts: sanitize::chunks(
-            "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export BEAVER_PROFILE_TEST=env",
-        ),
+        scripts: sanitize::chunks(&sanitize::snapshot(
+            "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export BEAVER_PROFILE_TEST=env\nexport PATH=/short/profile/path",
+        )),
     };
-    let command = "hi; myfn; printf '%s:%s:%s' \"$BEAVER_PROFILE_TEST\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_0-unset}\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_1-unset}\"";
+    let command = "hi; myfn; printf '%s:%s:%s:%s' \"$BEAVER_PROFILE_TEST\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_0-unset}\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_1-unset}\" \"$PATH\"";
     let arguments = super::super::tool_bash_shell::shell_arguments(command);
 
     assert!(arguments
         .iter()
         .all(|argument| !argument.contains("BEAVER_PROFILE_TEST=env")));
     let mut process = std::process::Command::new("/bin/bash");
-    process.args(arguments);
+    process.args(arguments).env("PATH", "/validated/shell/path");
     for (name, script) in SNAPSHOT_ENVS.iter().zip(&profile.scripts) {
         process.env(name, script.as_str());
     }
@@ -35,7 +35,7 @@ fn profile_is_kept_out_of_arguments_and_replayed_from_environment() {
     assert!(output.status.success());
     assert_eq!(
         String::from_utf8_lossy(&output.stdout),
-        "aliasfunctionenv:unset:unset"
+        "aliasfunctionenv:unset:unset:/validated/shell/path"
     );
 }
 
@@ -54,12 +54,13 @@ fn large_utf8_profiles_are_split_below_linux_environment_limits() {
 }
 
 #[test]
-fn sandbox_temp_variables_are_not_replayed_from_the_profile() {
+fn sandbox_owned_variables_are_not_replayed_from_the_profile() {
     let snapshot = concat!(
         "export TMPDIR=/deleted/sandbox\n",
         "declare -x TMP=\"/deleted/sandbox\"\n",
         " typeset -x TEMP='/deleted/sandbox'\n",
         "export TMPPREFIX=/tmp/zsh\n",
+        "export PATH=/short/profile/path\n",
         "export TEMPORARY=kept\n",
         "export BEAVER_PROFILE_TEST=kept\n",
     );
@@ -69,6 +70,7 @@ fn sandbox_temp_variables_are_not_replayed_from_the_profile() {
     assert!(!sanitized.contains(" TMP="));
     assert!(!sanitized.contains(" TEMP="));
     assert!(!sanitized.contains("TMPPREFIX="));
+    assert!(!sanitized.contains("PATH="));
     assert!(sanitized.contains("TEMPORARY=kept"));
     assert!(sanitized.contains("BEAVER_PROFILE_TEST=kept"));
 }

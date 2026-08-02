@@ -1,5 +1,7 @@
 use std::path::{Component, Path, PathBuf};
 
+const MAX_EXECUTABLE_SCAN: usize = 4_096;
+
 pub(super) fn canonical_dir(path: &Path) -> Option<PathBuf> {
     valid_input(path)
         .then(|| dunce::canonicalize(path).ok())
@@ -56,6 +58,38 @@ pub(super) fn is_tool_directory(path: &Path) -> bool {
         name.eq_ignore_ascii_case("bin")
             || name.eq_ignore_ascii_case("sbin")
             || name.eq_ignore_ascii_case("shims")
+    })
+}
+
+pub(super) fn contains_executable(path: &Path) -> bool {
+    let Ok(entries) = std::fs::read_dir(path) else {
+        return false;
+    };
+    entries.take(MAX_EXECUTABLE_SCAN).flatten().any(|entry| {
+        let Ok(metadata) = entry.metadata() else {
+            return false;
+        };
+        if !metadata.is_file() {
+            return false;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            metadata.permissions().mode() & 0o111 != 0
+        }
+        #[cfg(windows)]
+        {
+            entry.path().extension().is_some_and(|extension| {
+                matches!(
+                    extension.to_string_lossy().to_ascii_lowercase().as_str(),
+                    "exe" | "cmd" | "bat" | "com"
+                )
+            })
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            false
+        }
     })
 }
 

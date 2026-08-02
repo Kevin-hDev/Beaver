@@ -1,5 +1,5 @@
 use super::tool_roots_entries::{push_read_dir, push_read_file, push_write_dir, push_write_file};
-use super::tool_roots_path::{canonical_dir, is_tool_directory};
+use super::tool_roots_path::{canonical_dir, contains_executable, is_tool_directory};
 use std::path::{Path, PathBuf};
 
 pub(super) const MAX_READ_ROOTS: usize = 64;
@@ -21,6 +21,37 @@ pub(super) fn collect(
     package_prefixes: &[&str],
     executable: Option<&Path>,
 ) -> ToolRoots {
+    collect_with_access(
+        workspace_roots,
+        platform_read_dirs,
+        package_prefixes,
+        executable,
+        true,
+    )
+}
+
+pub(super) fn collect_read_only(
+    workspace_roots: &[PathBuf],
+    platform_read_dirs: &[&str],
+    package_prefixes: &[&str],
+    executable: Option<&Path>,
+) -> ToolRoots {
+    collect_with_access(
+        workspace_roots,
+        platform_read_dirs,
+        package_prefixes,
+        executable,
+        false,
+    )
+}
+
+fn collect_with_access(
+    workspace_roots: &[PathBuf],
+    platform_read_dirs: &[&str],
+    package_prefixes: &[&str],
+    executable: Option<&Path>,
+    allow_writes: bool,
+) -> ToolRoots {
     let (configured_path, configured_overflow) = super::super::shell_environment::entries();
     let max_paths = super::super::shell_environment::MAX_PATH_INPUTS;
     let mut path_inputs = Vec::with_capacity(max_paths + 1);
@@ -37,17 +68,20 @@ pub(super) fn collect(
     let platform = platform_read_dirs.iter().map(PathBuf::from).collect::<Vec<_>>();
     let packages = package_prefixes.iter().map(PathBuf::from).collect::<Vec<_>>();
     let home = dirs::home_dir().and_then(|path| canonical_dir(&path));
-    let writable_cache_dirs = home
-        .as_deref()
-        .map(|home| super::tool_cache_roots::collect(home, &path_inputs, path_overflow))
-        .unwrap_or_default();
+    let writable_cache_dirs = if allow_writes {
+        home.as_deref()
+            .map(|home| super::tool_cache_roots::collect(home, &path_inputs, path_overflow))
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
     let roots = collect_from(
         workspace_roots,
         &platform,
         &packages,
         home.as_deref(),
         &path_inputs,
-        path_overflow,
+        path_overflow || !allow_writes,
         &writable_cache_dirs,
     );
     if path_overflow {
@@ -105,6 +139,7 @@ fn collect_from(
     let canonical_path_dirs = path_inputs
         .iter()
         .filter_map(|path| canonical_dir(path))
+        .filter(|path| contains_executable(path))
         .collect::<Vec<_>>();
     for path in &canonical_path_dirs {
         push_read_dir(&mut roots, path, workspace_roots, home.as_deref());

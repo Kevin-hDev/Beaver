@@ -25,9 +25,13 @@ struct CleanupRecord {
 pub(super) fn run(
     executable: &Path,
     arguments: &[OsString],
-    writable_roots: &[PathBuf],
+    scope: &super::scope::Scope,
     temp_dir: &Path,
 ) -> Result<i32, String> {
+    if scope.mode != super::scope::Mode::Workspace {
+        return Err(error());
+    }
+    let writable_roots = &scope.roots;
     if writable_roots.len() > super::super::directory_access::MAX_ALLOWED_PATHS {
         return Err(error());
     }

@@ -20,27 +20,47 @@ pub(super) fn run_if_requested() -> Option<i32> {
 }
 
 fn run(arguments: Vec<OsString>) -> Result<i32, String> {
-    let (temp_dir, executable, command_arguments) = parse(arguments)?;
+    let (mode, temp_dir, executable, command_arguments) = parse(arguments)?;
     let roots = super::super::directory_access::configured_roots()?;
+    validate_temp_dir(&temp_dir)?;
     let working_dir = dunce::canonicalize(
         std::env::current_dir().map_err(|_| super::launch::sandbox_error())?,
     )
     .map_err(|_| super::launch::sandbox_error())?;
-    super::super::directory_access::ensure_allowed_in_roots(&working_dir, &roots)?;
-    validate_temp_dir(&temp_dir)?;
+    let scope = match mode {
+        super::scope::Mode::Workspace => {
+            super::super::directory_access::ensure_allowed_in_roots(&working_dir, &roots)?;
+            super::scope::Scope::workspace(roots)
+        }
+        super::scope::Mode::ProfileCapture => {
+            if working_dir != temp_dir {
+                return Err(super::launch::sandbox_error());
+            }
+            super::scope::Scope::profile_capture(roots)
+        }
+    };
 
     #[cfg(target_os = "macos")]
-    return super::macos::run(&executable, &command_arguments, &roots, &temp_dir);
+    return super::macos::run(&executable, &command_arguments, &scope, &temp_dir);
     #[cfg(target_os = "linux")]
-    return super::linux::run(&executable, &command_arguments, &roots, &temp_dir);
+    return super::linux::run(&executable, &command_arguments, &scope, &temp_dir);
     #[cfg(windows)]
-    return super::windows::run(&executable, &command_arguments, &roots, &temp_dir);
+    return super::windows::run(&executable, &command_arguments, &scope, &temp_dir);
     #[allow(unreachable_code)]
     Err(super::launch::sandbox_error())
 }
 
-fn parse(arguments: Vec<OsString>) -> Result<(PathBuf, PathBuf, Vec<OsString>), String> {
-    if arguments.len() < 4 || arguments.len() > MAX_ARGUMENTS + 3 {
+fn parse(
+    arguments: Vec<OsString>,
+) -> Result<(super::scope::Mode, PathBuf, PathBuf, Vec<OsString>), String> {
+    let (mode, offset) = if arguments.first().and_then(|value| value.to_str())
+        == Some(super::launch::profile_capture_arg())
+    {
+        (super::scope::Mode::ProfileCapture, 1)
+    } else {
+        (super::scope::Mode::Workspace, 0)
+    };
+    if arguments.len() < offset + 4 || arguments.len() > MAX_ARGUMENTS + offset + 3 {
         return Err(super::launch::sandbox_error());
     }
     let mut total = 0_usize;
@@ -52,11 +72,11 @@ fn parse(arguments: Vec<OsString>) -> Result<(PathBuf, PathBuf, Vec<OsString>), 
             return Err(super::launch::sandbox_error());
         }
     }
-    if arguments.get(1).and_then(|value| value.to_str()) != Some("--") {
+    if arguments.get(offset + 1).and_then(|value| value.to_str()) != Some("--") {
         return Err(super::launch::sandbox_error());
     }
-    let temp_dir = PathBuf::from(super::launch::os_text(&arguments[0])?);
-    let executable = PathBuf::from(super::launch::os_text(&arguments[2])?);
+    let temp_dir = PathBuf::from(super::launch::os_text(&arguments[offset])?);
+    let executable = PathBuf::from(super::launch::os_text(&arguments[offset + 2])?);
     if !valid_path_shape(&temp_dir) || !valid_path_shape(&executable) {
         return Err(super::launch::sandbox_error());
     }
@@ -64,11 +84,11 @@ fn parse(arguments: Vec<OsString>) -> Result<(PathBuf, PathBuf, Vec<OsString>), 
     if !executable.is_file() {
         return Err(super::launch::sandbox_error());
     }
-    let command_arguments = arguments[3..]
+    let command_arguments = arguments[offset + 3..]
         .iter()
         .map(|value| super::launch::os_text(value))
         .collect::<Result<Vec<_>, _>>()?;
-    Ok((temp_dir, executable, command_arguments))
+    Ok((mode, temp_dir, executable, command_arguments))
 }
 
 fn valid_path_shape(path: &Path) -> bool {
