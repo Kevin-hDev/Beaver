@@ -98,10 +98,8 @@ pub async fn stop(sidecar: &SearxngSidecar) {
         .await
         {
             eprintln!("[searxng] {}", safe_log_error(&error));
-            return;
         }
     }
-    super::process::clear_pid_file();
 }
 
 async fn run_blocking_process_operation<T, F>(operation: F) -> Result<T, String>
@@ -205,5 +203,16 @@ mod tests {
             .unwrap();
 
         assert_ne!(blocking_thread, async_thread);
+    }
+
+    #[tokio::test]
+    async fn stop_without_handle_preserves_tracked_pid() {
+        let pid_path = crate::services::paths::data_dir().join("searxng-sidecar.pid");
+        std::fs::write(&pid_path, "424242").unwrap();
+
+        stop(&SearxngSidecar::new()).await;
+
+        assert_eq!(std::fs::read_to_string(&pid_path).unwrap(), "424242");
+        std::fs::remove_file(pid_path).unwrap();
     }
 }
