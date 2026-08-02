@@ -1,0 +1,21 @@
+Objectif
+Retirer des instructions destinées au backend qui perturbaient l’autonomie du modèle et rendaient le comportement ambigu selon le mode choisi par l’utilisateur.
+
+Décisions
+- Le modèle appelle directement l’outil adapté. Il ne prédit pas si le backend affichera une demande d’approbation.
+- Suppression du paragraphe Ask for approval / Full access de bash et des mentions session-allowed de write_file, edit_file et web_fetch.
+- Suppression de la promesse trompeuse full access dans les prompts agent.
+- Conservation des confirmations sémantiques pour les actions destructrices, difficiles à annuler ou visibles sur un système partagé.
+- Conservation de l’approbation du Plan mode et des indications de changement de mode en Chatbot mode, car elles demandent réellement une action au modèle ou à l’utilisateur.
+- Ajout de tests empêchant le retour de ces détails internes dans les descriptions et prompts agent.
+- Mise à jour des mesures du catalogue et de sa documentation.
+
+Validation
+- cargo fmt --all -- --check
+- cargo test : 2840 tests réussis
+- cargo check
+- cargo clippy --all-targets -- -D warnings
+- npm test : 1793 tests Vitest, 2 CEF et 46 extension-host réussis
+- npx tsc --noEmit
+- npm run lint
+- Graphe Graphify mis à jour : 22835 nœuds, 49439 liens, aucun lien cassé ou effondré. Les compteurs de tokens sémantiques restent à 0 car l’interface de sous-agent ne fournit pas une mesure vérifiable ; aucune valeur n’a été inventée.
