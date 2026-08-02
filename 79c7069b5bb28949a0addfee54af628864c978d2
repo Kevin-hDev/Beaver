@@ -26,3 +26,6 @@ Tests et preuves exécutés
 
 Limites de validation
 Les clippy croisés ont été retentés. Linux s’arrête avant Beaver faute de sysroot/pkg-config GTK ; Windows faute de CEF et des en-têtes SDK/MSVC. Landlock et AppContainer restent donc à exécuter en CI native. Landlock confine ici le système de fichiers mais ne change pas la politique réseau Linux, conformément au périmètre existant.
+
+Précision sur la liste blanche
+Les neuf profils shell sont des fichiers directs du home. ~/.cargo/env est la seule entrée imbriquée ; chacun est un chemin fixe, régulier, canonicalisé et rejeté si un composant est un lien symbolique.
