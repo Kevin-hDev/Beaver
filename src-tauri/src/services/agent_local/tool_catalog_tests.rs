@@ -1,4 +1,5 @@
 use super::tool_catalog::*;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[test]
 fn defaults_match_product_choice() {
@@ -75,4 +76,135 @@ fn enabled_subagent_bundle_exposes_change_lifecycle_tools() {
     ] {
         assert!(has_tool(&names, tool_id), "missing tool: {tool_id}");
     }
+}
+
+#[test]
+fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
+    let entries = catalog();
+    assert_eq!(entries.len(), 45);
+    assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 12);
+    assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 33);
+    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 24);
+    let entry_by_id = entries
+        .iter()
+        .map(|entry| (entry.id, entry))
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(entry_by_id.len(), entries.len(), "duplicate catalog id");
+
+    let definitions = super::tool_definitions::native_tool_definitions();
+    let definition_names = tool_names(&definitions);
+    let definition_ids = definition_names.iter().map(String::as_str).collect::<BTreeSet<_>>();
+    assert_eq!(definition_ids.len(), definition_names.len(), "duplicate definition");
+    assert_eq!(
+        definition_ids,
+        entry_by_id.keys().copied().collect(),
+        "native definitions and flat catalog diverged"
+    );
+
+    let groups = super::tool_group_catalog::groups();
+    assert_eq!(groups.len(), 16);
+    assert_eq!(groups.iter().filter(|group| group.locked).count(), 5);
+    assert_eq!(groups.iter().filter(|group| !group.locked).count(), 11);
+    let mut group_ids = BTreeSet::new();
+    let mut grouped_tools = BTreeSet::new();
+    for group in groups {
+        assert!(group_ids.insert(group.id), "duplicate group: {}", group.id);
+        for tool_id in group.tool_ids {
+            let entry = entry_by_id
+                .get(tool_id)
+                .unwrap_or_else(|| panic!("unknown grouped tool: {tool_id}"));
+            assert_eq!(entry.locked, group.locked, "locked mismatch: {tool_id}");
+            assert_eq!(
+                entry.default_enabled, group.default_enabled,
+                "default mismatch: {tool_id}"
+            );
+            assert!(grouped_tools.insert(*tool_id), "tool in two groups: {tool_id}");
+        }
+    }
+
+    let ungrouped = entry_by_id
+        .keys()
+        .filter(|tool_id| !grouped_tools.contains(**tool_id))
+        .copied()
+        .collect::<Vec<_>>();
+    assert_eq!(ungrouped, ["search_extension_tools"]);
+    assert!(entry_by_id["search_extension_tools"].locked);
+}
+
+#[test]
+fn required_native_parameters_always_explain_their_contract() {
+    let mut missing = Vec::new();
+    for definition in super::tool_definitions::native_tool_definitions() {
+        let name = definition["function"]["name"].as_str().unwrap_or_default();
+        let parameters = &definition["function"]["parameters"];
+        collect_undocumented_required(parameters, name, &mut missing);
+    }
+    assert!(
+        missing.is_empty(),
+        "required parameters without description: {}",
+        missing.join(", ")
+    );
+}
+
+fn collect_undocumented_required(
+    schema: &serde_json::Value,
+    path: &str,
+    missing: &mut Vec<String>,
+) {
+    if let Some(required) = schema["required"].as_array() {
+        for property in required.iter().filter_map(|value| value.as_str()) {
+            let child = &schema["properties"][property];
+            if child["description"]
+                .as_str()
+                .is_none_or(|description| description.trim().is_empty())
+            {
+                missing.push(format!("{path}.{property}"));
+            }
+        }
+    }
+    if let Some(properties) = schema["properties"].as_object() {
+        for (name, child) in properties {
+            collect_undocumented_required(child, &format!("{path}.{name}"), missing);
+        }
+    }
+    if let Some(items) = schema.get("items") {
+        collect_undocumented_required(items, &format!("{path}[]"), missing);
+    }
+}
+
+#[test]
+fn default_native_catalog_measurement_is_reproducible() {
+    let all = super::tool_definitions::native_tool_definitions();
+    let enabled = default_enabled_optional_tools();
+    let active = filter_tool_definitions(all.clone(), &enabled);
+    let description_chars = all
+        .iter()
+        .filter_map(|definition| definition["function"]["description"].as_str())
+        .map(|description| description.chars().count())
+        .sum::<usize>();
+    let schema_chars = all
+        .iter()
+        .map(|definition| definition["function"]["parameters"].to_string().chars().count())
+        .sum::<usize>();
+    let serialized_chars = active
+        .iter()
+        .map(|definition| definition.to_string().chars().count())
+        .sum::<usize>();
+    let estimated_tokens =
+        crate::services::compress::token_estimate::estimate_tool_tokens(&active);
+
+    assert_eq!(all.len(), 45);
+    assert_eq!(active.len(), 24);
+    println!(
+        "TOOL_CATALOG_MEASUREMENT={}",
+        serde_json::json!({
+            "method": "unicode_chars_and_beaver_token_estimator",
+            "nativeTools": all.len(),
+            "defaultActiveTools": active.len(),
+            "allDescriptionChars": description_chars,
+            "allSchemaChars": schema_chars,
+            "defaultSerializedChars": serialized_chars,
+            "defaultEstimatedTokens": estimated_tokens,
+        })
+    );
 }

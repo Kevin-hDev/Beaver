@@ -1,6 +1,10 @@
 use serde_json::Value;
 
 pub fn get_tool_definitions() -> Vec<Value> {
+    crate::services::extensions::merge_tool_definitions(native_tool_definitions())
+}
+
+pub(super) fn native_tool_definitions() -> Vec<Value> {
     let mut defs = Vec::new();
     defs.extend(super::tool_definitions_core::core_tool_definitions());
     defs.extend(super::tool_definitions_search::search_tool_definitions());
@@ -17,7 +21,7 @@ pub fn get_tool_definitions() -> Vec<Value> {
     defs.extend(super::tool_definitions_office::office_tool_definitions());
     defs.extend(super::tool_definitions_mcp::mcp_tool_definitions());
     defs.push(super::tool_definitions_extensions::extension_discovery_definition());
-    crate::services::extensions::merge_tool_definitions(defs)
+    defs
 }
 
 /// Build a single OpenAI-style function tool definition.

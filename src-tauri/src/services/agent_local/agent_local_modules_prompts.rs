@@ -19,3 +19,5 @@ pub mod prompt_interactive;
 pub mod prompt_objective;
 pub mod prompt_plan;
 pub mod prompt_priority;
+#[cfg(test)]
+mod prompt_tool_guidance_tests;

@@ -12,6 +12,7 @@ pub fn ask_user_choice_definition() -> Value {
             "properties": {
                 "questions": {
                     "type": "array",
+                    "description": "Questions to show in one interaction, each with one recommended option.",
                     "minItems": 1,
                     "maxItems": 5,
                     "items": {
@@ -22,14 +23,15 @@ pub fn ask_user_choice_definition() -> Value {
                             "multi_select": {"type": "boolean", "description": "Allow multiple options"},
                             "options": {
                                 "type": "array",
+                                "description": "Concrete mutually exclusive or multi-select choices shown for this question.",
                                 "minItems": 2,
                                 "maxItems": 4,
                                 "items": {
                                     "type": "object",
                                     "properties": {
                                         "id": {"type": "string", "description": "Stable option id for machine-readable answers"},
-                                        "label": {"type": "string"},
-                                        "description": {"type": "string"},
+                                        "label": {"type": "string", "description": "Short visible option label without recommendation wording."},
+                                        "description": {"type": "string", "description": "One short sentence explaining the option's impact or trade-off."},
                                         "recommended": {
                                             "type": "boolean",
                                             "description": "Exactly one option in every question must set this to true. Use false or omit it for all other options. Never write recommendation text into the label."

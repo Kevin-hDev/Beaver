@@ -1,13 +1,6 @@
-use serde_json::Value;
+use super::tool_definitions::tool_def;
 
-fn tool_def(name: &str, description: &str, parameters: Value) -> Value {
-    serde_json::json!({
-        "type": "function",
-        "function": { "name": name, "description": description, "parameters": parameters }
-    })
-}
-
-pub fn office_tool_definitions() -> Vec<Value> {
+pub fn office_tool_definitions() -> Vec<serde_json::Value> {
     vec![
         tool_def(
             "read_spreadsheet",
@@ -81,7 +74,7 @@ pub fn office_tool_definitions() -> Vec<Value> {
                         "items": {
                             "type": "object",
                             "properties": {
-                                "type": {"type": "string", "enum": ["set_cell", "set_formula", "set_row", "add_sheet", "set_column_width", "set_format", "set_number_format", "set_border", "merge_cells", "set_row_height"]},
+                                "type": {"type": "string", "enum": ["set_cell", "set_formula", "set_row", "add_sheet", "set_column_width", "set_format", "set_number_format", "set_border", "merge_cells", "set_row_height"], "description": "Spreadsheet operation to perform."},
                                 "sheet": {"type": "string", "description": "Target sheet name (default: first sheet)"},
                                 "cell": {"type": "string"},
                                 "row": {"type": "integer"},
@@ -134,7 +127,7 @@ pub fn office_tool_definitions() -> Vec<Value> {
                         "items": {
                             "type": "object",
                             "properties": {
-                                "type": {"type": "string", "enum": ["heading", "paragraph", "table", "list"]},
+                                "type": {"type": "string", "enum": ["heading", "paragraph", "table", "list"], "description": "Document block type."},
                                 "text": {"type": "string", "description": "For heading/paragraph only"},
                                 "level": {"type": "integer", "description": "For heading only (1-6)"},
                                 "bold": {"type": "boolean", "description": "For paragraph only (when not using runs)"},
@@ -146,7 +139,7 @@ pub fn office_tool_definitions() -> Vec<Value> {
                                     "items": {
                                         "type": "object",
                                         "properties": {
-                                            "text": {"type": "string"},
+                                            "text": {"type": "string", "description": "Text for this styled paragraph segment."},
                                             "bold": {"type": "boolean"},
                                             "italic": {"type": "boolean"},
                                             "underline": {"type": "boolean"},
@@ -187,7 +180,7 @@ pub fn office_tool_definitions() -> Vec<Value> {
                         "items": {
                             "type": "object",
                             "properties": {
-                                "type": {"type": "string", "enum": ["resize", "crop", "quality"]},
+                                "type": {"type": "string", "enum": ["resize", "crop", "quality"], "description": "Image transformation to perform."},
                                 "width": {"type": "integer", "minimum": 1, "maximum": super::tool_image_process_geometry::MAX_DIMENSION},
                                 "height": {"type": "integer", "minimum": 1, "maximum": super::tool_image_process_geometry::MAX_DIMENSION},
                                 "mode": {"type": "string", "enum": ["fit", "fill", "exact"]},

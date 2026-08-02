@@ -55,6 +55,7 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
             _ => {}
         }
     }
+    validate_subagent_change_ids(tool, obj)?;
     validate_shell_numbers(tool, obj)?;
     validate_shell_text(tool, obj)?;
     validate_shell_control(tool, obj)?;
@@ -82,6 +83,30 @@ pub fn validate(tool: &str, args: &Value) -> Result<Value, String> {
         ));
     }
     Ok(args.clone())
+}
+
+fn validate_subagent_change_ids(
+    tool: &str,
+    args: &serde_json::Map<String, Value>,
+) -> Result<(), String> {
+    if !matches!(
+        tool,
+        "inspect_subagent_changes" | "apply_subagent_changes" | "discard_subagent_changes"
+    ) {
+        return Ok(());
+    }
+    for (name, source) in [
+        ("subagent_id", "subagent_id/child_session_id"),
+        ("change_id", "change_id/id"),
+    ] {
+        let value = args
+            .get(name)
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("paramètre '{name}' requis"))?;
+        super::types_subagent_change::validate_uuid(value)
+            .map_err(|_| format!("'{name}' doit être le UUID v4 '{source}' des métadonnées"))?;
+    }
+    Ok(())
 }
 
 fn validate_shell_control(

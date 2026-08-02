@@ -105,11 +105,17 @@ pub fn subagent_control_definitions() -> Vec<Value> {
 pub fn subagent_change_definitions() -> Vec<Value> {
     use super::tool_definitions::tool_def;
     [
-        ("inspect_subagent_changes", "Inspect a coder subagent change before deciding what to do."),
-        ("apply_subagent_changes", "Apply a coder subagent change to the current parent branch."),
+        (
+            "inspect_subagent_changes",
+            "Inspect a pending coder subagent change before deciding whether to apply or discard it. Use the exact subagent_id and change_id fields emitted in <subagent_change_metadata>; do not rename or swap them.",
+        ),
+        (
+            "apply_subagent_changes",
+            "Apply a pending coder subagent change to the current parent branch. Inspect it first when its contents have not already been reviewed. Use the exact subagent_id and change_id fields emitted in <subagent_change_metadata>.",
+        ),
         (
             "discard_subagent_changes",
-            "Discard a rejected or manually reproduced coder change and delete its temporary branch.",
+            "Discard a rejected or manually reproduced coder change and delete its temporary branch. Use the exact subagent_id and change_id fields emitted in <subagent_change_metadata>.",
         ),
     ]
     .into_iter()
@@ -120,12 +126,40 @@ pub fn subagent_change_definitions() -> Vec<Value> {
             serde_json::json!({
                 "type": "object",
                 "properties": {
-                    "subagent_id": { "type": "string" },
-                    "change_id": { "type": "string" }
+                    "subagent_id": {
+                        "type": "string",
+                        "description": "Exact subagent_id from <subagent_change_metadata>. It identifies the coder child session and has the same value as child_session_id. Must be a UUID v4."
+                    },
+                    "change_id": {
+                        "type": "string",
+                        "description": "Exact change_id from <subagent_change_metadata>. It identifies the pending change and has the same value as id. Must be a UUID v4."
+                    }
                 },
                 "required": ["subagent_id", "change_id"]
             }),
         )
     })
     .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn change_tools_explain_the_metadata_to_argument_mapping() {
+        for definition in super::subagent_change_definitions() {
+            let function = &definition["function"];
+            let description = function["description"].as_str().unwrap_or_default();
+            let properties = &function["parameters"]["properties"];
+
+            assert!(description.contains("subagent_id and change_id fields"));
+            assert!(properties["subagent_id"]["description"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("same value as child_session_id"));
+            assert!(properties["change_id"]["description"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("same value as id"));
+        }
+    }
 }

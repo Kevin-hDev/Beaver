@@ -74,21 +74,48 @@ mod tests {
         .is_ok());
         assert!(validate("archive_subagent", &json!({"subagent_id": "a"})).is_ok());
         assert!(validate("archive_subagent", &json!({})).is_err());
+        let subagent_id = uuid::Uuid::new_v4().to_string();
+        let change_id = uuid::Uuid::new_v4().to_string();
         assert!(validate(
             "inspect_subagent_changes",
-            &json!({"subagent_id": "a", "change_id": "b"})
+            &json!({"subagent_id": subagent_id, "change_id": change_id})
         )
         .is_ok());
         assert!(validate(
             "apply_subagent_changes",
-            &json!({"subagent_id": "a", "change_id": "b", "force": true})
+            &json!({
+                "subagent_id": uuid::Uuid::new_v4().to_string(),
+                "change_id": uuid::Uuid::new_v4().to_string(),
+                "force": true
+            })
         )
         .is_err());
         assert!(validate(
             "discard_subagent_changes",
-            &json!({"subagent_id": "a"})
+            &json!({"subagent_id": uuid::Uuid::new_v4().to_string()})
         )
         .is_err());
+    }
+
+    #[test]
+    fn subagent_change_ids_must_be_uuid_v4_metadata_values() {
+        let change_id = uuid::Uuid::new_v4().to_string();
+        let invalid_subagent = validate(
+            "inspect_subagent_changes",
+            &json!({"subagent_id": "child", "change_id": change_id}),
+        )
+        .unwrap_err();
+        assert!(invalid_subagent.contains("subagent_id/child_session_id"));
+
+        let missing_alias = validate(
+            "apply_subagent_changes",
+            &json!({
+                "subagent_id": uuid::Uuid::new_v4().to_string(),
+                "id": uuid::Uuid::new_v4().to_string()
+            }),
+        )
+        .unwrap_err();
+        assert!(missing_alias.contains("change_id"));
     }
 
     #[test]

@@ -1,5 +1,13 @@
 use std::path::Path;
 
+#[derive(serde::Serialize)]
+struct PromptChangeMetadata<'a> {
+    subagent_id: &'a str,
+    change_id: &'a str,
+    #[serde(flatten)]
+    change: &'a super::types_subagent_change::SubagentChangeMeta,
+}
+
 pub async fn capture(
     project_path: &Path,
     child_id: &str,
@@ -16,11 +24,21 @@ pub async fn capture(
     else {
         return Ok(None);
     };
-    let metadata = serde_json::to_string(&meta)
-        .map_err(|_| "Métadonnées de changement indisponibles".to_string())?;
+    let metadata = serialize_prompt_metadata(&meta)?;
     Ok(Some(format!(
         "\n\n<subagent_change_metadata>\n{metadata}\n</subagent_change_metadata>"
     )))
+}
+
+fn serialize_prompt_metadata(
+    change: &super::types_subagent_change::SubagentChangeMeta,
+) -> Result<String, String> {
+    serde_json::to_string(&PromptChangeMetadata {
+        subagent_id: &change.child_session_id,
+        change_id: &change.id,
+        change,
+    })
+    .map_err(|_| "Métadonnées de changement indisponibles".to_string())
 }
 
 pub async fn delete_empty_workspace(project_path: &Path, child_id: &str, execution_id: &str) {
@@ -97,3 +115,7 @@ pub async fn recover_and_remove_orphan(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "subagent_task_change_tests.rs"]
+mod tests;

@@ -26,13 +26,14 @@ fn todo_write_definition() -> Value {
             "properties": {
                 "todos": {
                     "type": "array",
+                    "description": "Complete replacement checklist for this update, ordered as it should be shown.",
                     "maxItems": 50,
                     "items": {
                         "type": "object",
                         "properties": {
                             "content": {"type": "string", "description": "Short task name"},
                             "active_form": {"type": "string", "description": "Short present-tense label for an in-progress task"},
-                            "status": {"type": "string", "enum": ["pending", "in_progress", "completed"]}
+                            "status": {"type": "string", "enum": ["pending", "in_progress", "completed"], "description": "Current checklist state for this item."}
                         },
                         "required": ["content", "status"]
                     }
@@ -100,7 +101,7 @@ fn todo_delete_definition() -> Value {
 fn agent_diagnostics_definition() -> Value {
     super::tool_definitions::tool_def(
         "agent_diagnostics",
-        "Read recent safe stream diagnostics for this session. Hidden from the user UI.",
+        "Read recent safe stream diagnostics for this session plus bounded durable outcome totals by tool. The global totals distinguish execution failures, user refusals, policy blocks, and cancellations without exposing arguments. Hidden from the user UI.",
         serde_json::json!({
             "type": "object",
             "properties": {

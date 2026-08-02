@@ -27,12 +27,16 @@ Prefer dedicated tools over bash when one fits:
 - To find files: use glob (not find/ls via bash)
 - To read/write spreadsheets: use read_spreadsheet/write_spreadsheet (not edit_file, not Python/pandas via bash)
 - To read PDF/Word files: use read_document/write_document (not edit_file, not Python via bash). For .txt/.md use read_file/write_file.
-- To read/process images: use read_image/process_image (not Python/ImageMagick via bash)
+- To inspect image metadata: use read_image. It reports dimensions, format, and file size; it does not show visual content.
+- To resize, crop, or convert images: use process_image (not Python/ImageMagick via bash)
+- Use search_mcp_tools for external MCP services.
+- Use search_extension_tools for enabled Beaver plugins whose typed tools are not currently loaded.
+- Use load_skill for project instructions and procedures, not external services or plugin discovery.
 - When adding totals or computed values to spreadsheets, use set_formula with Excel formulas (=SUM, =AVERAGE) instead of computing values yourself.
 - Reserve bash for: system commands, git operations, package management, \
 running tests, compiling, process management, and any task that requires shell execution.
-- bash times out after 120s. For long-running commands — large scans, builds, installs — \
-raise it up to 600s with the timeout parameter.
+- bash has no forced timeout by default. Set timeout only when a hard deadline is intentionally required. \
+For long-running commands, keep the returned session active and continue it with bash_write.
 
 Every tool's own definition states what it does and what it expects. This section only covers \
 what those definitions cannot: which tool to reach for when several would work.";

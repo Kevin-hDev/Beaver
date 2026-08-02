@@ -67,7 +67,11 @@ Prefer dedicated tools over bash when one fits:
 - To find files: use glob, not find/ls via bash
 - To read/write spreadsheets: use read_spreadsheet/write_spreadsheet (not edit_file, not Python/pandas via bash)
 - To read PDF/Word files: use read_document/write_document (not edit_file, not Python via bash). For .txt/.md use read_file/write_file.
-- To read/process images: use read_image/process_image (not Python/ImageMagick via bash)
+- To inspect image metadata: use read_image. It reports dimensions, format, and file size; it does not show visual content.
+- To resize, crop, or convert images: use process_image (not Python/ImageMagick via bash)
+- Use search_mcp_tools for external MCP services.
+- Use search_extension_tools for enabled Beaver plugins whose typed tools are not currently loaded.
+- Use load_skill for project instructions and procedures, not external services or plugin discovery.
 - When adding totals or computed values to spreadsheets, use set_formula with Excel formulas (=SUM, =AVERAGE) instead of computing values yourself.
 - Reserve bash for system commands and shell operations that dedicated tools cannot handle.
 Call multiple independent tools in parallel when possible.
