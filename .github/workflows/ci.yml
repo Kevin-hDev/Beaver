@@ -46,7 +46,7 @@ jobs:
         run: cargo test --all
 
   backend-windows:
-    name: Windows private storage (Rust)
+    name: Backend Windows (Rust)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
@@ -58,6 +58,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+
+      - name: Check Windows backend
+        working-directory: src-tauri
+        run: cargo check --all-targets
 
       - name: Windows private storage tests
         working-directory: src-tauri
