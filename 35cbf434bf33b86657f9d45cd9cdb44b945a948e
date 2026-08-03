@@ -77,3 +77,13 @@ Validation réellement exécutée
 Validation native restante
 
 Les chemins Linux et Windows ne peuvent pas être exécutés nativement depuis ce Mac. Leurs tests réels et leurs vérifications clippy sont obligatoires dans les runners CI correspondants. La politique réseau demeure volontairement inchangée : cette fonctionnalité limite le disque, pas Internet.
+
+Compléments après la dernière revue
+
+• LD_AUDIT rejoint LD_PRELOAD et DYLD_INSERT_LIBRARIES dans l’unique liste centralisée des variables d’injection. La variable est retirée avant le helper et ne peut pas être réintroduite par le snapshot du profil shell. Les variables de travail ordinaires restent héritées.
+
+• Sous Linux, la règle Landlock ReadDir appliquée à la racine privée a été supprimée : Landlock la propageait récursivement et révélait les noms contenus dans shell-sandboxes. Le premier niveau de cl-go-dash reste découvrable par l’outil list_dir de Beaver, puis les entrées privées autorisées restent lisibles directement. secrets.enc et les sandboxes des autres sessions ne sont pas rendus lisibles. Une autorisation explicite de cl-go-dash conserve naturellement l’accès complet demandé.
+
+• Tests ajoutés pour reconnaître et retirer LD_AUDIT dans les deux chemins. cargo test --all : 2932 réussis, 0 échec, 1 ignoré. cargo fmt --check, clippy strict avec dead_code/unused et Semgrep sur les fichiers touchés : réussis. graphify update . exécuté.
+
+• Les tentatives de clippy croisé Linux et Windows depuis macOS s’arrêtent avant le code applicatif faute de sysroots et bibliothèques natives (GTK/pkg-config côté Linux, SDK C/CEF côté Windows). La compilation et le test Landlock réels restent confiés aux runners CI natifs obligatoires.
