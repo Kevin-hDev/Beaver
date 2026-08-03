@@ -1,0 +1,17 @@
+Mascotte — suivi multiplateforme (2026-08-03)
+
+Problèmes observés : sous Linux la taille restait au maximum et le glisser-déposer ne déplaçait pas la fenêtre ; sous Windows et parfois macOS, le curseur de taille rejouait toutes les valeurs intermédiaires ; sous Windows les pieds pouvaient être tronqués au premier affichage.
+
+Causes : le curseur envoyait une écriture asynchrone pour chaque valeur et les réponses étaient rejouées dans l'ordre ; le déplacement calculait des coordonnées globales avec setPosition, opération non prise en charge sous Wayland ; la hauteur native de la fenêtre était fractionnaire et pouvait être arrondie sous la hauteur du sprite selon le facteur DPI.
+
+Corrections : aperçu de taille immédiat avec sauvegarde regroupée après 180 ms et conservation de la dernière intention pendant les réponses asynchrones ; déplacement Linux confié à startDragging avec permission Tauri dédiée, tandis que macOS et Windows conservent le déplacement directionnel existant ; hauteur arrondie vers le haut avec un pixel logique transparent de sécurité sous le sprite.
+
+Cas de fermeture Windows : aucune modification. Le diagnostic a confirmé que Beaver restait volontairement actif en arrière-plan via la zone de notification ; une véritable sortie ferme déjà la mascotte.
+
+Tests ajoutés : rafale de changements de taille réduite à une seule écriture finale, déplacement Linux sans coordonnées globales, permission startDragging présente, marge de hauteur native vérifiée pour 70, 100, 125 et 140 %.
+
+Validations passées sur macOS : npm test (400 fichiers, 1825 tests), tests CEF, tests du serveur d'extensions, npm run build, npm run lint sans erreur, npx tsc --noEmit, cargo fmt --check, cargo check, cargo clippy --all-targets -- -D warnings, cargo test (2950 réussis, 1 ignoré), graphify update .
+
+À vérifier manuellement sous Linux : session Wayland puis X11 si disponible, déplacement immédiat, tailles 70/100/125/140 %, changement rapide du curseur, comportement après redémarrage. Wayland ne permet toujours pas de restaurer une position globale imposée ni de garantir always-on-top avec une fenêtre Tauri standard.
+
+À vérifier manuellement sous Windows : facteurs d'échelle écran 100/125/150 %, premier affichage sans pieds tronqués, changements rapides 70→140→100 sans animation du curseur ni redimensionnements en retard, déplacement toujours fonctionnel.
