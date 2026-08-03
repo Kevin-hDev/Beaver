@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "@/components/ui/icons";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { DialogPortal } from "@/components/ui/dialog-portal";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import type { BranchInfo, BranchMergePreview } from "@/hooks/git-types";
 import { appErrorMessage } from "@/lib/app-error";
@@ -63,80 +64,83 @@ export function GitMergeDialog({
   const title = t("agentLocal.sessionSummary.git.mergeTitle", { branch: targetBranch });
 
   return (
-    <div className="bcd-overlay" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget && !busy) onCancel();
-    }}>
-      <div className="bcd-dialog gmd-dialog" role="dialog" aria-label={title}>
-        <button className="icon-btn bcd-close" type="button" onClick={onCancel} disabled={busy}>
-          <X size="var(--icon-md)" />
-        </button>
-        <div className="bcd-title">{title}</div>
-        <div className="bcd-description">
-          {t("agentLocal.sessionSummary.git.mergeDescription", { branch: targetBranch })}
-        </div>
-        <div className="gmd-field">
-          <CustomSelect
-            options={candidates.map((branch) => ({ value: branch.name, label: branch.name }))}
-            value={source}
-            onChange={setSource}
-            disabled={busy}
-            ariaLabel={t("agentLocal.sessionSummary.git.mergeSource")}
-          />
-        </div>
-        {loading && <div className="gmd-note">{t("common.loading")}</div>}
-        {previewError && <div className="bcd-error">{previewError}</div>}
-        {preview && alreadyMerged && (
-          <div className="gmd-note">
-            {t("agentLocal.sessionSummary.git.mergeAlready", { branch: targetBranch })}
+    <DialogPortal>
+      <div className="bcd-overlay" role="presentation" onMouseDown={(event) => {
+        event.stopPropagation();
+        if (event.target === event.currentTarget && !busy) onCancel();
+      }}>
+        <div className="bcd-dialog gmd-dialog" role="dialog" aria-label={title}>
+          <button className="icon-btn bcd-close" type="button" onClick={onCancel} disabled={busy}>
+            <X size="var(--icon-md)" />
+          </button>
+          <div className="bcd-title">{title}</div>
+          <div className="bcd-description">
+            {t("agentLocal.sessionSummary.git.mergeDescription", { branch: targetBranch })}
           </div>
-        )}
-        {preview && !alreadyMerged && (
-          <>
+          <div className="gmd-field">
+            <CustomSelect
+              options={candidates.map((branch) => ({ value: branch.name, label: branch.name }))}
+              value={source}
+              onChange={setSource}
+              disabled={busy}
+              ariaLabel={t("agentLocal.sessionSummary.git.mergeSource")}
+            />
+          </div>
+          {loading && <div className="gmd-note">{t("common.loading")}</div>}
+          {previewError && <div className="bcd-error">{previewError}</div>}
+          {preview && alreadyMerged && (
             <div className="gmd-note">
-              {t("agentLocal.sessionSummary.git.mergeSummary", {
-                count: preview.commits,
-                branch: targetBranch,
-              })}
+              {t("agentLocal.sessionSummary.git.mergeAlready", { branch: targetBranch })}
             </div>
-            {dirtyCount > 0 && (
-              <>
-                <div className="gmd-warning">
-                  {t("agentLocal.sessionSummary.git.mergeDirty", { count: dirtyCount })}
-                </div>
-                <GitDirtyFileList files={preview.dirty_files} />
-                <label className="bcd-description">
-                  {t("agentLocal.sessionSummary.git.commitDescription")}
-                  <textarea
-                    className="field field-multiline bcd-description-input"
-                    value={description}
-                    onChange={(event) => setDescription(event.target.value)}
-                    rows={3}
-                  />
-                </label>
-              </>
-            )}
-          </>
-        )}
-        {error && <div className="bcd-error">{error}</div>}
-        <div className="bcd-actions">
-          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel} disabled={busy}>
-            {t("agentLocal.sessionSummary.git.cancel")}
-          </button>
-          <button
-            className="btn btn-sm btn-primary"
-            type="button"
-            onClick={() => onMerge(source, dirtyCount > 0, description || undefined)}
-            disabled={busy || loading || !!previewError || !preview || alreadyMerged}
-          >
-            {t(
-              dirtyCount > 0
-                ? "agentLocal.sessionSummary.git.commitAndMerge"
-                : "agentLocal.sessionSummary.git.confirmMerge",
-              { branch: targetBranch },
-            )}
-          </button>
+          )}
+          {preview && !alreadyMerged && (
+            <>
+              <div className="gmd-note">
+                {t("agentLocal.sessionSummary.git.mergeSummary", {
+                  count: preview.commits,
+                  branch: targetBranch,
+                })}
+              </div>
+              {dirtyCount > 0 && (
+                <>
+                  <div className="gmd-warning">
+                    {t("agentLocal.sessionSummary.git.mergeDirty", { count: dirtyCount })}
+                  </div>
+                  <GitDirtyFileList files={preview.dirty_files} />
+                  <label className="bcd-description">
+                    {t("agentLocal.sessionSummary.git.commitDescription")}
+                    <textarea
+                      className="field field-multiline bcd-description-input"
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                      rows={3}
+                    />
+                  </label>
+                </>
+              )}
+            </>
+          )}
+          {error && <div className="bcd-error">{error}</div>}
+          <div className="bcd-actions">
+            <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel} disabled={busy}>
+              {t("agentLocal.sessionSummary.git.cancel")}
+            </button>
+            <button
+              className="btn btn-sm btn-primary"
+              type="button"
+              onClick={() => onMerge(source, dirtyCount > 0, description || undefined)}
+              disabled={busy || loading || !!previewError || !preview || alreadyMerged}
+            >
+              {t(
+                dirtyCount > 0
+                  ? "agentLocal.sessionSummary.git.commitAndMerge"
+                  : "agentLocal.sessionSummary.git.confirmMerge",
+                { branch: targetBranch },
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </DialogPortal>
   );
 }

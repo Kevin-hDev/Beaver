@@ -13,6 +13,11 @@ vi.mock("react-i18next", () => ({
         "agentLocal.sessionSummary.modifications": "Changes",
         "agentLocal.sessionSummary.branch": "Branch",
         "agentLocal.sessionSummary.noGit": "No Git repository",
+        "agentLocal.sessionSummary.git.commit": "Commit",
+        "agentLocal.sessionSummary.git.commitTitle": "Commit changes",
+        "agentLocal.sessionSummary.git.commitDescription": "Commit message",
+        "agentLocal.sessionSummary.git.cancel": "Cancel",
+        "agentLocal.sessionSummary.git.confirmCommit": "Commit",
         "agentLocal.sessionSummary.sections.todos": "Todo list",
         "agentLocal.sessionSummary.sections.plans": "Plan",
         "agentLocal.sessionSummary.sections.subagents": "Subagents",
@@ -158,6 +163,25 @@ describe("SessionSummaryBubble", () => {
     expect(event.defaultPrevented).toBe(true);
     expect(globalShortcut).not.toHaveBeenCalled();
     expect(queryByRole("dialog", { name: "Session summary" })).toBeNull();
+  });
+
+  it("affiche la fenêtre de commit au-dessus de la bulle sans la fermer", async () => {
+    const { getByRole } = render(
+      <SessionSummaryBubble summary={summary()} git={{ ...git, dirtyCount: 1 }} />,
+    );
+    fireEvent.click(getByRole("button", { name: "Toggle summary" }));
+    fireEvent.click(getByRole("button", { name: "agentLocal.sessionSummary.git.toggle" }));
+    fireEvent.click(getByRole("button", { name: "Commit" }));
+    await act(async () => {});
+
+    const summaryDialog = getByRole("dialog", { name: "Session summary" });
+    const commitDialog = getByRole("dialog", { name: "Commit changes" });
+    expect(commitDialog.closest(".ssb-popover")).toBeNull();
+
+    fireEvent.mouseDown(commitDialog);
+
+    expect(summaryDialog).toBeInTheDocument();
+    expect(commitDialog).toBeInTheDocument();
   });
 });
 

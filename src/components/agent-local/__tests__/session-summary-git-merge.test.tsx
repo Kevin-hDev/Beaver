@@ -1,5 +1,5 @@
 import { act, fireEvent, render, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { GitMergeDialog } from "../git-merge-dialog";
 import { SessionSummaryGitSection, type SessionSummaryGitState } from "../session-summary-git-section";
 
@@ -39,28 +39,32 @@ vi.mock("@/hooks/use-github-branch-auth", () => ({
   useGithubBranchAuth: () => ({ open: false, state: "idle", request: vi.fn() }),
 }));
 
+afterEach(() => {
+  document.documentElement.removeAttribute("data-theme");
+});
+
 describe("SessionSummaryGitSection Merge", () => {
   it.each(["dark", "light"])("rend la fenêtre compacte avec le thème %s", async (theme) => {
+    document.documentElement.setAttribute("data-theme", theme);
     const { container, findByRole } = render(
-      <div data-theme={theme}>
-        <GitMergeDialog
-          branches={baseGit.branches}
-          targetBranch="main"
-          busy={false}
-          onCancel={vi.fn()}
-          onPreview={() => Promise.resolve({
-            source_branch: "feature",
-            target_branch: "main",
-            commits: 1,
-            dirty_files: [],
-          })}
-          onMerge={vi.fn()}
-        />
-      </div>,
+      <GitMergeDialog
+        branches={baseGit.branches}
+        targetBranch="main"
+        busy={false}
+        onCancel={vi.fn()}
+        onPreview={() => Promise.resolve({
+          source_branch: "feature",
+          target_branch: "main",
+          commits: 1,
+          dirty_files: [],
+        })}
+        onMerge={vi.fn()}
+      />,
     );
 
-    expect(await findByRole("dialog", { name: "Merge into main" })).toBeTruthy();
-    expect(container.querySelector(`[data-theme="${theme}"] .gmd-dialog`)).toBeTruthy();
+    const dialog = await findByRole("dialog", { name: "Merge into main" });
+    expect(container.querySelector(".gmd-dialog")).toBeNull();
+    expect(dialog.closest(`[data-theme="${theme}"]`)).toBe(document.documentElement);
   });
 
   it("permet de choisir la branche source puis lance le Merge dans la branche active", async () => {
