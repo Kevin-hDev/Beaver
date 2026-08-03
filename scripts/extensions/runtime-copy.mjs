@@ -1,13 +1,12 @@
 import { copyFile, mkdir, opendir, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { DEPENDENCY_COPY_LIMITS } from "./runtime-copy-limits.mjs";
 
-const DEFAULT_LIMITS = Object.freeze({
-  maxEntries: 20_000,
-  maxBytes: 128 * 1024 * 1024,
-  maxDepth: 32,
-});
-
-export async function copyDirectoryBounded(source, destination, limits = DEFAULT_LIMITS) {
+export async function copyDirectoryBounded(
+  source,
+  destination,
+  limits = DEPENDENCY_COPY_LIMITS,
+) {
   validateLimits(limits);
   const state = { entries: 0, bytes: 0 };
   await copyLevel(source, destination, limits, state, 0);

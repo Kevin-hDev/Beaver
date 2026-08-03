@@ -11,6 +11,7 @@ import {
 } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { copyDirectoryBounded } from "./runtime-copy.mjs";
+import { COMPLETE_RUNTIME_COPY_LIMITS } from "./runtime-copy-limits.mjs";
 
 const MANIFEST_NAME = "runtime-manifest.json";
 const MAX_MANIFEST_BYTES = 4 * 1024;
@@ -55,7 +56,7 @@ export async function materializeRuntime(cached, destination, descriptor) {
   await mkdir(dirname(destination), { recursive: true, mode: 0o700 });
   const staged = await mkdtemp(resolve(dirname(destination), ".runtime-"));
   try {
-    await copyDirectoryBounded(cached, staged);
+    await copyDirectoryBounded(cached, staged, COMPLETE_RUNTIME_COPY_LIMITS);
     if (!(await runtimeIsValid(staged, descriptor))) {
       throw new Error("Cached Node.js runtime is invalid");
     }
