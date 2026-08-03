@@ -10,6 +10,14 @@
 
 - **Expanded built-in skill bundle** — added 40 new programming skills covering planning, implementation, debugging, testing, review, documentation, collaboration, releases, reusable agents, and automations.
 
+### Agent tools
+
+- **Clearer tool contracts** — tightened tool descriptions, required parameter guidance, catalog consistency checks, and argument validation so agents make fewer malformed or incompatible calls.
+- **Reliable subagent changes** — made change and subagent identifiers explicit from discovery through inspection, application, or discard, with strict validation before any action is executed.
+- **Focused and lighter catalog** — removed redundant tools, renamed ambiguous actions, and reduced unnecessary tool context while preserving session diagnostics and existing saved conversations.
+- **Safe image inspection and conversion** — separated read-only image inspection from file conversion and now rejects ambiguous requests instead of silently ignoring an output path.
+- **More autonomous and responsive execution** — removed backend approval modes from model-facing guidance and eliminated per-call tool metric writes that could serialize otherwise parallel tools; Beaver still enforces the user's permission policy automatically.
+
 ### Agent behavior and reliability
 
 - **Clearer system guidance** — restructured both agent tiers' system prompts, removed duplicated or conflicting instructions, consolidated uncertainty rules, and moved tool-specific requirements into the relevant tool definitions.
