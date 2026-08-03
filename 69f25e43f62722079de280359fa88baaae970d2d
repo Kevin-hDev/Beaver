@@ -1,23 +1,73 @@
 Objectif
 
-Garantir que les restrictions de dossiers déjà fonctionnelles sur macOS conservent le même comportement et le même niveau de sécurité sur Linux et Windows, sans désactiver bash ni bash_control. Le mode par défaut reste l’accès à tout le disque. En mode limité, l’union des dossiers choisis par l’utilisateur reste la source de vérité.
+Garantir que les restrictions de dossiers déjà fonctionnelles sur macOS gardent le même comportement et le même niveau de sécurité sur Linux et Windows, sans désactiver bash ni bash_control. Le défaut reste Tout le disque ; en mode limité, l’union des dossiers choisis est la source de vérité.
 
-Décisions et corrections communes
+Décisions communes
 
-- Politique d’accès stricte et fail-closed, mise en cache, signée par un condensat SHA-256 stocké dans le trousseau système et comparé en temps constant. Une configuration corrompue ou altérée bloque au lieu d’élargir les droits.\n- Transmission au helper d’un instantané privé, borné et vérifié de la politique ; le helper ne relit plus directement une configuration mutable.\n- Sérialisation de toutes les écritures de configuration afin d’éviter les pertes de mise à jour concurrentes.\n- Conservation des dossiers exacts de travail et de sortie propres à chaque session, sans ouvrir tous les espaces de sessions.\n- En mode limité, les données Beaver nécessaires sont lisibles individuellement, sauf secrets.enc et les données internes des sandboxes. Si l’utilisateur autorise explicitement le dossier de données Beaver, il retrouve les droits normaux demandés.\n- Environnement des shells reconstruit depuis une liste sûre : aucune clé API, aucun agent SSH et aucun bus de session ne sont hérités par défaut. Les variables utiles aux outils, caches et compilateurs restent disponibles.\n- Racines d’outils et caches précis, sans ouverture large de ~/.local ; diagnostics de saturation privés, bornés et associés à la commande courante.\n- Suppression du code mort et alignement des outils de lecture/écriture, des sous-agents et des shells sur la même politique.
+• Politique fail-closed mise en cache, protégée par un SHA-256 stocké dans le trousseau système et comparé en temps constant. Une configuration corrompue ou altérée bloque au lieu d’élargir les droits.
+
+• Instantané privé, borné et vérifié transmis au helper ; celui-ci ne relit plus une configuration mutable.
+
+• Toutes les écritures de configuration sont sérialisées pour éviter les pertes de mises à jour concurrentes.
+
+• Les seuls espaces gérés ajoutés sont les dossiers exacts de travail et de sortie de la session courante.
+
+• En mode limité, les données Beaver utiles sont lisibles individuellement, sauf secrets.enc et les données internes des sandboxes. Une autorisation explicite du dossier Beaver redonne volontairement les droits normaux.
+
+• Environnement shell reconstruit depuis une liste sûre : pas de clé API, agent SSH ou bus de session hérité ; variables d’outils, caches et compilateurs conservées.
+
+• Racines d’outils et caches précises, sans ouverture large de ~/.local ; diagnostics bornés, privés et rattachés à la commande.
+
+• Code mort supprimé et outils de fichiers, shells et sous-agents alignés sur la même politique.
 
 Linux
 
-- Suppression de l’accès au /proc de l’hôte. Le helper tente un espace de noms utilisateur/montage/PID avec un /proc privé, puis retire toutes ses capacités avant Landlock et avant l’exécution du shell.\n- Si les espaces de noms ne sont pas disponibles, repli sur Landlock sans exposer /proc.\n- Landlock ABI 3 minimum imposé pour protéger correctement les troncatures : les noyaux trop anciens échouent explicitement et de façon fermée, sans affaiblissement silencieux.\n- Périphériques et caches précisément autorisés ; variables DBus non transmises.\n- Ajout d’un test natif ignoré qui vérifie l’écriture autorisée, l’écriture extérieure bloquée et l’impossibilité d’une évasion par montage. La CI Linux exécute désormais ce test réel.
+• Le /proc de l’hôte n’est plus exposé. Le helper tente des espaces de noms utilisateur, montage et PID avec un /proc privé, puis retire toutes ses capacités avant Landlock et avant le shell.
+
+• Si ces espaces de noms sont indisponibles, repli sur Landlock sans /proc.
+
+• Landlock ABI 3 minimum : un noyau trop ancien échoue explicitement et de façon fermée, sans protection affaiblie silencieusement.
+
+• Périphériques et caches autorisés précisément ; variables DBus exclues.
+
+• Test natif ajouté pour vérifier écriture interne, blocage externe et impossibilité d’évasion par montage ; la CI Linux l’exécute.
 
 Windows
 
-- Seule la racine système par défaut C:\ représente le choix Tout le disque ; autoriser uniquement D:\ ou un autre volume conserve le confinement.\n- Canonicalisation homogène des chemins Windows avec dunce.\n- Droits AppContainer réduits : aucun GENERIC_ALL ni WRITE_DAC. Les autorisations système en lecture seule sont non bloquantes, tandis que les racines privées et inscriptibles restent fail-closed.\n- La racine de données Beaver utilisée uniquement pour l’énumération ne transmet plus ses ACL aux enfants : secrets.enc ne reçoit donc aucune permission héritée.\n- Mutations d’ACL sérialisées par mutex nommé Local. Journal et profil sont conservés tant que toute révocation ou suppression n’a pas réellement réussi ; un journal invalide n’est plus supprimé silencieusement.\n- Ajout de tests Windows unitaires et d’un test AppContainer natif ignoré. La CI Windows exécute maintenant clippy, les tests Rust complets et le test de confinement réel.
+• Seule C:\, la racine système par défaut, représente Tout le disque. D:\ seul ou un autre volume reste confiné.
+
+• Canonicalisation Windows homogène via dunce.
+
+• Droits AppContainer réduits : aucun GENERIC_ALL ni WRITE_DAC. Les autorisations système de lecture sont non bloquantes ; les racines privées et inscriptibles restent fail-closed.
+
+• La racine Beaver utilisée seulement pour l’énumération ne transmet plus ses ACL aux enfants : secrets.enc ne reçoit aucune permission héritée.
+
+• Mutations ACL sérialisées par mutex Local. Journal et profil sont conservés tant que toute révocation ou suppression n’a pas réussi ; un journal invalide n’est plus supprimé silencieusement.
+
+• Tests Windows unitaires et test AppContainer natif ajoutés ; la CI Windows exécute clippy, les tests Rust complets et le confinement réel.
 
 Validation exécutée
 
-- cargo fmt --check : réussi.\n- cargo clippy --all-targets -- -D warnings : réussi.\n- cargo test --all : 2930 réussis, 0 échec, 1 ignoré.\n- Scénario macOS natif : git, npm, cargo, Go, heredoc, diff et binaire natif fonctionnent ; les écritures temporaires Darwin et hors dossier restent bloquées.\n- npx tsc --noEmit, npm run lint et npm test : réussis ; 1815 tests Vitest, 2 tests CEF et 46 tests hôte d’extensions.\n- graphify update . et git diff --check : réussis.\n- Les clippy cross-target locaux sont bloqués par l’absence des bibliothèques/sysroots Linux et Windows sur ce Mac ; la validation native correspondante est désormais imposée par la CI.
+• cargo fmt --check : réussi.
 
-Compromis et limites assumés
+• cargo clippy --all-targets -- -D warnings : réussi.
 
-- Sur Linux, un noyau sans Landlock ABI 3 est refusé en mode restreint plutôt que de laisser passer une écriture par troncature.\n- La politique réseau ne change pas : ce chantier limite le disque.\n- Autoriser explicitement le dossier de données Beaver donne volontairement les mêmes droits que toute autre racine choisie, y compris sur le vault chiffré, conformément à la décision produit.\n- Les comportements natifs Linux et Windows doivent être confirmés par leurs runners CI ; les tests nécessaires sont inclus dans ce commit.
+• cargo test --all : 2930 réussis, 0 échec, 1 ignoré.
+
+• Test macOS réel : git, npm, cargo, Go, heredoc, diff et binaire natif fonctionnent ; écritures temporaires Darwin et hors dossier bloquées.
+
+• npx tsc --noEmit, npm run lint et npm test réussis : 1815 tests Vitest, 2 CEF et 46 hôte d’extensions.
+
+• graphify update . et git diff --check : réussis.
+
+• Les clippy cross-target locaux sont bloqués par les sysroots et bibliothèques Linux/Windows absents de ce Mac ; les validations natives sont maintenant obligatoires dans la CI.
+
+Compromis assumés
+
+• Linux sans Landlock ABI 3 est refusé en mode restreint plutôt que d’autoriser une troncature non protégée.
+
+• La politique réseau est inchangée : ce chantier limite le disque.
+
+• Autoriser explicitement le dossier Beaver donne les mêmes droits que toute autre racine choisie, y compris sur le vault chiffré, conformément à la décision produit.
+
+• Le comportement natif Linux et Windows reste à confirmer par leurs runners CI ; tous les tests requis sont inclus.
