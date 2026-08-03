@@ -4,6 +4,7 @@ import { CheckCircle2 } from "@/components/ui/icons";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { MascotSprite } from "@/components/mascot/mascot-sprite";
 import { useMascotPreviewActive } from "@/hooks/use-mascot-preview-active";
+import { useMascotSizeControl } from "@/hooks/use-mascot-size-control";
 import { useMascotSettings } from "@/hooks/use-mascot-settings";
 import { showToast } from "@/lib/toast-emitter";
 import { cn } from "@/lib/utils";
@@ -65,13 +66,26 @@ export function MascotSettings() {
   const { t } = useTranslation();
   const { settings, loading, update } = useMascotSettings();
   const previewActive = useMascotPreviewActive();
-  const previewWidth = Math.round(92 * settings.size_percent / 100);
   const selectedMascot = MASCOT_OPTIONS.find(({ id }) => id === settings.mascot_id)
     ?? MASCOT_OPTIONS[0];
 
   const save = useCallback((patch: MascotSettingsPatch) => {
     void update(patch).catch(() => showToast(t("errors.saveFailed"), "error"));
   }, [t, update]);
+
+  const persistSize = useCallback(async (sizePercent: number) => {
+    try {
+      await update({ size_percent: sizePercent });
+    } catch (error) {
+      showToast(t("errors.saveFailed"), "error");
+      throw error;
+    }
+  }, [t, update]);
+  const { sizePercent, changeSize } = useMascotSizeControl(
+    settings.size_percent,
+    persistSize,
+  );
+  const previewWidth = Math.round(92 * sizePercent / 100);
 
   return (
     <div className="msp-page">
@@ -120,11 +134,11 @@ export function MascotSettings() {
                 type="range"
                 min={MASCOT_SIZE_MIN}
                 max={MASCOT_SIZE_MAX}
-                value={settings.size_percent}
+                value={sizePercent}
                 aria-label={t("settings.mascot.sizeTitle")}
-                onChange={(event) => save({ size_percent: Number(event.target.value) })}
+                onChange={(event) => changeSize(Number(event.target.value))}
               />
-              <span>{settings.size_percent}%</span>
+              <span>{sizePercent}%</span>
             </div>
           </SettingsRow>
         </SettingsCard>

@@ -10,6 +10,7 @@ const WINDOW_LABEL: &str = "mascot";
 const WINDOW_ENTRY: &str = "mascot.html";
 const BASE_WIDTH: f64 = 112.0;
 const FRAME_RATIO: f64 = 208.0 / 192.0;
+const WINDOW_HEIGHT_PADDING: f64 = 1.0;
 const SCREEN_MARGIN: f64 = 28.0;
 const MIN_VISIBLE_PIXELS: i64 = 24;
 
@@ -83,7 +84,8 @@ fn configure_existing(window: &WebviewWindow, settings: &MascotSettings) -> Resu
 
 fn logical_dimensions(size_percent: u16) -> (f64, f64) {
     let width = BASE_WIDTH * f64::from(size_percent) / 100.0;
-    (width, width * FRAME_RATIO)
+    let height = (width * FRAME_RATIO).ceil() + WINDOW_HEIGHT_PADDING;
+    (width, height)
 }
 
 fn position_new_window(
@@ -137,4 +139,18 @@ fn position_is_visible(
 
 fn clamp_i64(value: i64) -> i32 {
     value.clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{logical_dimensions, FRAME_RATIO};
+
+    #[test]
+    fn window_height_keeps_a_safe_pixel_below_the_sprite() {
+        for percent in [70, 100, 125, 140] {
+            let (width, height) = logical_dimensions(percent);
+            assert_eq!(height.fract(), 0.0);
+            assert!(height >= (width * FRAME_RATIO).ceil() + 1.0);
+        }
+    }
 }

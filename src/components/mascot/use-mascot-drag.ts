@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { LogicalPosition } from "@tauri-apps/api/dpi";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { IS_LINUX } from "@/lib/platform";
 import type { MascotAnimationId } from "./mascot-assets";
 
 const HELD_DELAY_MS = 180;
@@ -56,7 +57,7 @@ export function useMascotDrag() {
     if (event.button !== 0 || drag.current !== null) return;
     event.preventDefault();
     if (droppedTimer.current !== null) window.clearTimeout(droppedTimer.current);
-    capturePointer(event.currentTarget, event.pointerId);
+    if (!IS_LINUX) capturePointer(event.currentTarget, event.pointerId);
     drag.current = {
       pointerId: event.pointerId,
       anchorX: event.clientX,
@@ -66,7 +67,17 @@ export function useMascotDrag() {
       moved: false,
     };
     setAnimation("grabbed");
-    void getCurrentWindow().setCursorIcon("grabbing").catch(() => {});
+    const currentWindow = getCurrentWindow();
+    void currentWindow.setCursorIcon("grabbing").catch(() => {});
+    if (IS_LINUX) {
+      void currentWindow.startDragging().catch(() => {
+        if (drag.current?.pointerId !== event.pointerId) return;
+        drag.current = null;
+        if (heldTimer.current !== null) window.clearTimeout(heldTimer.current);
+        setAnimation(null);
+        void currentWindow.setCursorIcon("grab").catch(() => {});
+      });
+    }
     heldTimer.current = window.setTimeout(() => {
       if (drag.current !== null && !drag.current.moved) setAnimation("held");
     }, HELD_DELAY_MS);
@@ -86,7 +97,9 @@ export function useMascotDrag() {
       if (heldTimer.current !== null) window.clearTimeout(heldTimer.current);
       setAnimation(nextAnimation);
     }
-    queuePosition(mascotPosition(event.screenX, event.screenY, current.anchorX, current.anchorY));
+    if (!IS_LINUX) {
+      queuePosition(mascotPosition(event.screenX, event.screenY, current.anchorX, current.anchorY));
+    }
   }, [queuePosition]);
 
   const finishDrag = useCallback((
@@ -98,10 +111,10 @@ export function useMascotDrag() {
     event.preventDefault();
     drag.current = null;
     if (heldTimer.current !== null) window.clearTimeout(heldTimer.current);
-    if (updatePosition) {
+    if (updatePosition && !IS_LINUX) {
       queuePosition(mascotPosition(event.screenX, event.screenY, current.anchorX, current.anchorY));
     }
-    releasePointer(event.currentTarget, event.pointerId);
+    if (!IS_LINUX) releasePointer(event.currentTarget, event.pointerId);
     void getCurrentWindow().setCursorIcon("grab").catch(() => {});
     setAnimation("dropped");
     droppedTimer.current = window.setTimeout(() => setAnimation(null), DROPPED_DURATION_MS);

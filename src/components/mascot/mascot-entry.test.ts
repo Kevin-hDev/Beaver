@@ -9,4 +9,12 @@ describe("entrée de la mascotte", () => {
     expect(html).not.toContain('id="splash"');
     expect(html).not.toContain("castor.svg");
   });
+
+  it("autorise le déplacement natif de la fenêtre sous Linux", () => {
+    const capability = JSON.parse(
+      readFileSync("src-tauri/capabilities/mascot.json", "utf8"),
+    ) as { permissions?: string[] };
+
+    expect(capability.permissions).toContain("core:window:allow-start-dragging");
+  });
 });

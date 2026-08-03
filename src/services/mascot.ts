@@ -7,6 +7,7 @@ import {
 
 export const MASCOT_SIZE_MIN = 70;
 export const MASCOT_SIZE_MAX = 140;
+export const MASCOT_SIZE_SAVE_DELAY_MS = 180;
 export const DEFAULT_MASCOT_SETTINGS: MascotSettings = {
   enabled: false,
   mascot_id: DEFAULT_MASCOT_ID,
@@ -55,7 +56,7 @@ export async function patchMascotSettings(
   if (typeof patch.enabled === "boolean") safePatch.enabled = patch.enabled;
   if (isMascotId(patch.mascot_id)) safePatch.mascot_id = patch.mascot_id;
   if (typeof patch.size_percent === "number") {
-    safePatch.size_percent = clampSize(patch.size_percent);
+    safePatch.size_percent = normalizeMascotSize(patch.size_percent);
   }
   return normalizeMascotSettings(
     await invoke<unknown>("patch_mascot_settings", { patch: safePatch }),
@@ -81,7 +82,7 @@ export function normalizeMascotSettings(value: unknown): MascotSettings {
   return {
     enabled: record.enabled === true,
     mascot_id: isMascotId(record.mascot_id) ? record.mascot_id : DEFAULT_MASCOT_ID,
-    size_percent: clampSize(Number(record.size_percent)),
+    size_percent: normalizeMascotSize(Number(record.size_percent)),
     position,
   };
 }
@@ -98,7 +99,7 @@ export function normalizeMascotState(value: unknown): MascotState {
   return { animation, revision };
 }
 
-function clampSize(value: number): number {
+export function normalizeMascotSize(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_MASCOT_SETTINGS.size_percent;
   return Math.round(Math.min(MASCOT_SIZE_MAX, Math.max(MASCOT_SIZE_MIN, value)));
 }
