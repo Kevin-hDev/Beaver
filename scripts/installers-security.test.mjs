@@ -87,6 +87,6 @@ test("PowerShell désactive les redirections implicites et vérifie le SHA", () 
   assert.doesNotMatch(powershell, /Invoke-(?:WebRequest|RestMethod)/);
 });
 
-test("le script PowerShell reste compatible avec Windows PowerShell 5.1", () => {
-  assert.deepEqual([...powershellBytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
+test("le script PowerShell reste compatible avec Windows PowerShell 5.1 et irm", () => {
+  assert.ok(powershellBytes.every((byte) => byte <= 0x7f));
 });

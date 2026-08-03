@@ -1,11 +1,11 @@
-﻿$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $Repository = "Kevin-hDev/Beaver"
 $ApiUrl = "https://api.github.com/repos/$Repository/releases/latest"
 $MaxApiBytes = 524288L; $MaxManifestBytes = 65536L; $MaxAssetBytes = 2147483648L
 $TempDirectory = $null; $HttpClient = $null
-function Write-Info([string]$Message) { Write-Host "→ $Message" -ForegroundColor Blue }
-function Write-Ok([string]$Message) { Write-Host "✓ $Message" -ForegroundColor Green }
+function Write-Info([string]$Message) { Write-Host "-> $Message" -ForegroundColor Blue }
+function Write-Ok([string]$Message) { Write-Host "OK $Message" -ForegroundColor Green }
 function Stop-Install { throw [InvalidOperationException]::new("installation failed") }
 function Test-Version([string]$Value) {
     return $Value.Length -le 32 -and $Value -match "^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$"
@@ -167,8 +167,8 @@ function Invoke-Main {
     $defaultDirectory = [Environment]::GetFolderPath("LocalApplicationData")
     $defaultDirectory = [IO.Path]::Combine($defaultDirectory, "Beaver")
     Write-Host ""
-    Write-Host "📁 Répertoire d'installation : $defaultDirectory" -ForegroundColor Yellow
-    $customDirectory = Read-Host "   Appuie sur Entrée pour accepter, ou tape un autre chemin"
+    Write-Host "Repertoire d'installation : $defaultDirectory" -ForegroundColor Yellow
+    $customDirectory = Read-Host "   Appuie sur Entree pour accepter, ou tape un autre chemin"
     $installDirectory = $customDirectory
     if ([string]::IsNullOrWhiteSpace($installDirectory)) { $installDirectory = $defaultDirectory }
     if (-not (Test-InstallPath $installDirectory)) { Stop-Install }
@@ -177,12 +177,12 @@ function Invoke-Main {
     if ($process.ExitCode -ne 0) { Stop-Install }
     $binary = [IO.Path]::Combine($installDirectory, "cl-go-dash.exe")
     if (-not [IO.File]::Exists($binary) -or ([IO.File]::GetAttributes($binary) -band [IO.FileAttributes]::ReparsePoint)) { Stop-Install }
-    Write-Ok "Beaver v$($release.Version) est installé."
+    Write-Ok "Beaver v$($release.Version) est installe."
 }
 try {
     Invoke-Main
 } catch {
-    Write-Host "✗ Installation impossible." -ForegroundColor Red
+    Write-Host "ERREUR Installation impossible." -ForegroundColor Red
     exit 1
 } finally {
     if ($null -ne $HttpClient) { $HttpClient.Dispose() }
