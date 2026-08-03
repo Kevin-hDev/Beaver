@@ -29,7 +29,7 @@ static DD_DEVICE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\bdd\b.*\bof=/dev/").unwrap());
 
 pub fn allowed_write_roots() -> Vec<PathBuf> {
-    let mut roots = base_allowed_roots();
+    let mut roots = base_allowed_roots(false);
     append_agent_resources(&mut roots);
     roots
 }
@@ -56,7 +56,7 @@ pub fn check_destructive_command(cmd: &str) -> Result<(), String> {
 }
 
 pub fn allowed_read_roots() -> Vec<PathBuf> {
-    let mut roots = base_allowed_roots();
+    let mut roots = base_allowed_roots(true);
     if let Some(home) = dirs::home_dir() {
         for root in crate::services::agent_import::selected_skill_roots(&home) {
             if !roots.contains(&root) {
@@ -68,18 +68,34 @@ pub fn allowed_read_roots() -> Vec<PathBuf> {
     roots
 }
 
-fn base_allowed_roots() -> Vec<PathBuf> {
+fn base_allowed_roots(include_data_dir: bool) -> Vec<PathBuf> {
     let mut roots = super::directory_access::configured_roots().unwrap_or_default();
     append_configured_outputs_root(
         &mut roots,
         crate::services::config::session_outputs_directory(),
     );
-    roots.push(crate::services::paths::data_dir());
-    roots.push(std::env::temp_dir());
+    append_implicit_roots(
+        &mut roots,
+        include_data_dir,
+        crate::services::paths::data_dir(),
+        std::env::temp_dir(),
+    );
     roots
         .into_iter()
         .map(|path| path.canonicalize().unwrap_or(path))
         .collect()
+}
+
+fn append_implicit_roots(
+    roots: &mut Vec<PathBuf>,
+    include_data_dir: bool,
+    data_dir: PathBuf,
+    temp_dir: PathBuf,
+) {
+    if include_data_dir {
+        roots.push(data_dir);
+    }
+    roots.push(temp_dir);
 }
 
 fn append_agent_resources(roots: &mut Vec<PathBuf>) {

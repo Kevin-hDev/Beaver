@@ -1,8 +1,10 @@
 use super::tool_roots_entries::{
-    push_read_dir, push_read_file, push_resource_write_dir, push_resource_write_file,
-    push_write_dir, push_write_file,
+    push_private_read_dir, push_resource_write_dir, push_resource_write_file,
 };
-use super::tool_roots_path::{canonical_dir, contains_executable, is_tool_directory};
+use super::tool_roots_collect::collect_into;
+#[cfg(test)]
+use super::tool_roots_collect::collect_from;
+use super::tool_roots_path::{canonical_dir, contains_executable};
 use std::path::{Path, PathBuf};
 
 pub(super) const MAX_READ_ROOTS: usize = 160;
@@ -78,7 +80,16 @@ fn collect_with_access(
     } else {
         Vec::new()
     };
-    let mut roots = collect_from(
+    let mut roots = ToolRoots::default();
+    if allow_writes {
+        push_private_read_dir(
+            &mut roots,
+            &crate::services::paths::data_dir(),
+            workspace_roots,
+        );
+    }
+    collect_into(
+        &mut roots,
         workspace_roots,
         &platform,
         &packages,
@@ -124,87 +135,6 @@ fn append_resource_access(
     for path in resources.files {
         push_resource_write_file(roots, &path, workspace_roots, &path_dirs);
     }
-}
-
-fn collect_from(
-    workspace_roots: &[PathBuf],
-    platform_read_dirs: &[PathBuf],
-    package_prefixes: &[PathBuf],
-    home: Option<&Path>,
-    path_inputs: &[PathBuf],
-    path_overflow: bool,
-    writable_cache_dirs: &[PathBuf],
-) -> ToolRoots {
-    let input_home = home;
-    let home = home.and_then(canonical_dir);
-    let mut roots = ToolRoots::default();
-
-    for path in platform_read_dirs.iter().chain(package_prefixes) {
-        push_read_dir(&mut roots, path, workspace_roots, home.as_deref());
-    }
-    if let Some(home) = home.as_deref() {
-        // Les proxies rustup du PATH chargent les compilateurs depuis ce dossier.
-        push_read_dir(
-            &mut roots,
-            &home.join(".rustup/toolchains"),
-            workspace_roots,
-            Some(home),
-        );
-        push_read_file(
-            &mut roots,
-            &home.join(".gitconfig"),
-            workspace_roots,
-            home,
-        );
-        push_read_dir(&mut roots, &home.join(".config/git"), workspace_roots, Some(home));
-        push_read_file(
-            &mut roots,
-            &home.join(".gitignore_global"),
-            workspace_roots,
-            home,
-        );
-        push_read_file(&mut roots, &home.join(".npmrc"), workspace_roots, home);
-    }
-
-    let canonical_path_dirs = path_inputs
-        .iter()
-        .filter_map(|path| canonical_dir(path))
-        .filter(|path| contains_executable(path))
-        .collect::<Vec<_>>();
-    for path in &canonical_path_dirs {
-        push_read_dir(&mut roots, path, workspace_roots, home.as_deref());
-        if is_tool_directory(path) {
-            if let Some(parent) = path.parent() {
-                // Le filtre d'exécutable porte sur le dossier PATH ; son parent
-                // fournit les bibliothèques et ressources de la même toolchain.
-                push_read_dir(&mut roots, parent, workspace_roots, home.as_deref());
-            }
-        }
-    }
-
-    if let Some(home) = home.as_deref().filter(|_| !path_overflow) {
-        for path in writable_cache_dirs {
-            let path = input_home
-                .and_then(|input| path.strip_prefix(input).ok())
-                .map(|relative| home.join(relative))
-                .unwrap_or_else(|| path.clone());
-            push_write_dir(
-                &mut roots,
-                &path,
-                workspace_roots,
-                &canonical_path_dirs,
-                home,
-            );
-        }
-        push_write_file(
-            &mut roots,
-            &home.join(".rustup/settings.toml"),
-            workspace_roots,
-            &canonical_path_dirs,
-            home,
-        );
-    }
-    roots
 }
 
 #[cfg(test)]

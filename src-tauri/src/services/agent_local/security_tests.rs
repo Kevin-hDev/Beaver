@@ -104,17 +104,28 @@ mod tests {
     }
 
     #[test]
-    fn write_path_allows_data_dir() {
-        let p = crate::services::paths::data_dir().join("test.json");
-        assert!(validate_write_path(&p).is_ok());
-    }
+    fn implicit_data_root_is_read_only_until_explicitly_configured() {
+        let data = PathBuf::from("/private/data");
+        let temp = PathBuf::from("/private/temp");
+        let mut reads = Vec::new();
+        let mut writes = Vec::new();
 
-    #[test]
-    fn write_path_allows_app_data_dir() {
-        let data = crate::services::paths::data_dir();
-        let _ = std::fs::create_dir_all(&data);
-        let p = data.join("write-test.json");
-        assert!(validate_write_path(&p).is_ok());
+        append_implicit_roots(&mut reads, true, data.clone(), temp.clone());
+        append_implicit_roots(&mut writes, false, data.clone(), temp.clone());
+
+        assert!(reads.contains(&data));
+        assert!(reads.contains(&temp));
+        assert!(!writes.contains(&data));
+        assert!(writes.contains(&temp));
+
+        let mut explicit_writes = vec![data.clone()];
+        append_implicit_roots(
+            &mut explicit_writes,
+            false,
+            data.clone(),
+            temp.clone(),
+        );
+        assert!(explicit_writes.contains(&data));
     }
 
     // --- sanitize_error ---
@@ -165,15 +176,6 @@ mod tests {
     }
 
     // --- implicit paths always allowed ---
-
-    #[test]
-    fn data_dir_always_allowed() {
-        let data = crate::services::paths::data_dir();
-        let _ = std::fs::create_dir_all(&data);
-        let p = data.join("test-security-check.json");
-        assert!(validate_read_path(&p, &std::env::temp_dir()).is_ok());
-        assert!(validate_write_path(&p).is_ok());
-    }
 
     #[test]
     fn temp_dir_always_allowed() {

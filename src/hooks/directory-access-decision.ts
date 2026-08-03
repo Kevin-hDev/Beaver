@@ -1,4 +1,4 @@
-export const MAX_ALLOWED_PATHS = 32;
+export const MAX_ALLOWED_PATHS = 70;
 export const MAX_PATH_CHARS = 4_096;
 
 export interface DirectoryAccessDecision {

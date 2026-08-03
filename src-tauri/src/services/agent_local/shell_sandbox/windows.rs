@@ -10,11 +10,12 @@ use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
 
 const RECORD_SUFFIX: &str = "cleanup.json";
-const MAX_RECORD_BYTES: u64 = 512 * 1024;
 const MAX_ROOTS: usize = super::super::directory_access::MAX_ALLOWED_PATHS
     + 1
     + super::tool_roots::MAX_READ_ROOTS
     + super::tool_roots::MAX_WRITE_ROOTS;
+const MAX_RECORD_BYTES: u64 =
+    (MAX_ROOTS * (super::super::directory_access::MAX_PATH_CHARS * 6 + 4) + 512) as u64;
 
 #[derive(Serialize, Deserialize)]
 struct CleanupRecord {
@@ -59,7 +60,13 @@ pub(super) fn run(
         windows_acl::grant(root, profile.sid(), true)?;
     }
     let mut recorded = writable.clone();
+    let private_store = dunce::canonicalize(crate::services::paths::data_dir()).ok();
     for root in &readable {
+        if private_store.as_ref() == Some(root) {
+            windows_acl::grant(root, profile.sid(), false)?;
+            recorded.push(root.clone());
+            continue;
+        }
         // Les dossiers système sont déjà lisibles par les AppContainers et leur
         // DACL n'est généralement pas modifiable par un utilisateur standard.
         if windows_acl::grant(root, profile.sid(), false).is_ok() {
@@ -96,6 +103,9 @@ fn write_record(temp_dir: &Path, profile_name: &str, roots: &[PathBuf]) -> Resul
         roots: roots.to_vec(),
     };
     let bytes = serde_json::to_vec(&record).map_err(|_| error())?;
+    if bytes.len() as u64 > MAX_RECORD_BYTES {
+        return Err(error());
+    }
     super::super::super::private_store::atomic_write(&record_path(temp_dir), &bytes)
 }
 

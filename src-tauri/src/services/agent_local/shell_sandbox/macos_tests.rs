@@ -25,6 +25,12 @@ fn seatbelt_allows_work_and_temp_inside_the_root_and_blocks_outside_data() {
     std::fs::create_dir_all(&allowed).expect("allowed");
     std::fs::create_dir_all(&sandbox_temp).expect("sandbox temp");
     std::fs::write(&outside, "outside-data").expect("outside");
+    std::fs::create_dir_all(crate::services::paths::data_dir()).expect("private store");
+    let mut private_probe =
+        tempfile::NamedTempFile::new_in(crate::services::paths::data_dir()).expect("private probe");
+    std::io::Write::write_all(&mut private_probe, b"private-data").expect("private data");
+    let private_probe_path =
+        dunce::canonicalize(private_probe.path()).expect("canonical private probe");
     let allowed = dunce::canonicalize(allowed).expect("canonical allowed");
     let sandbox_temp = dunce::canonicalize(sandbox_temp).expect("canonical temp");
     let outside = dunce::canonicalize(outside).expect("canonical outside");
@@ -44,6 +50,8 @@ printf 'int main(void) {{ return 0; }}\n' > '{}/native.c'
 if printf pwn > '{}'; then /bin/rm -f '{}'; exit 89; fi
 printf ok > '{}/inside.txt'
 /bin/cat '{}' >/dev/null 2>&1 && exit 91
+test "$(/bin/cat '{}')" = private-data
+if printf changed > '{}'; then exit 92; fi
 /bin/sh -c 'printf child'"#,
         sandbox_temp.display(),
         sandbox_temp.display(),
@@ -56,6 +64,8 @@ printf ok > '{}/inside.txt'
         darwin_temp_probe.display(),
         allowed.display(),
         outside.display(),
+        private_probe_path.display(),
+        private_probe_path.display(),
     );
     let output = run_sandboxed(&allowed, &sandbox_temp, &script);
 
@@ -66,6 +76,7 @@ printf ok > '{}/inside.txt'
         "line-one\nline-two\n"
     );
     assert_eq!(String::from_utf8_lossy(&output.stdout), "child");
+    assert_eq!(std::fs::read_to_string(private_probe.path()).unwrap(), "private-data");
     assert!(!darwin_temp_probe.exists());
 }
 

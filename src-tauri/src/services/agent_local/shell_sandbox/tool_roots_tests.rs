@@ -373,6 +373,65 @@ fn path_parent_never_exposes_the_private_application_store() {
 }
 
 #[test]
+fn private_store_is_read_only_unless_a_configured_root_covers_it() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let private = temp.path().join("private");
+    let workspace = temp.path().join("workspace");
+    std::fs::create_dir_all(&private).expect("private");
+    std::fs::create_dir_all(&workspace).expect("workspace");
+    let private = dunce::canonicalize(private).expect("private");
+    let workspace = dunce::canonicalize(workspace).expect("workspace");
+    let mut restricted = ToolRoots::default();
+
+    push_private_read_dir(
+        &mut restricted,
+        &private,
+        std::slice::from_ref(&workspace),
+    );
+
+    assert!(restricted.read_dirs.contains(&private));
+    assert!(!restricted.write_dirs.contains(&private));
+
+    let mut explicitly_allowed = ToolRoots::default();
+    push_private_read_dir(
+        &mut explicitly_allowed,
+        &private,
+        std::slice::from_ref(&private),
+    );
+    assert!(!explicitly_allowed.read_dirs.contains(&private));
+}
+
+#[cfg(unix)]
+#[test]
+fn private_store_read_root_rejects_a_symbolic_link() {
+    use std::os::unix::fs::symlink;
+
+    let temp = tempfile::tempdir().expect("tempdir");
+    let target = temp.path().join("target");
+    let redirected = temp.path().join("private");
+    std::fs::create_dir(&target).expect("target");
+    symlink(&target, &redirected).expect("symlink");
+    let mut roots = ToolRoots::default();
+
+    push_private_read_dir(&mut roots, &redirected, &[]);
+
+    assert!(roots.read_dirs.is_empty());
+}
+
+#[test]
+fn workspace_collection_always_reads_the_private_store() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let workspace = temp.path().join("workspace");
+    std::fs::create_dir(&workspace).expect("workspace");
+
+    let roots = collect(std::slice::from_ref(&workspace), &[], &[], None);
+    let private = dunce::canonicalize(crate::services::paths::data_dir()).expect("private");
+
+    assert!(roots.read_dirs.contains(&private));
+    assert!(!roots.write_dirs.contains(&private));
+}
+
+#[test]
 fn enabled_agent_resources_are_writable_without_opening_their_parent() {
     let temp = tempfile::tempdir().expect("tempdir");
     let workspace = temp.path().join("workspace");

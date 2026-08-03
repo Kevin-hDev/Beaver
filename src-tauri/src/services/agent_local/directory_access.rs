@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 
-pub(crate) const MAX_ALLOWED_PATHS: usize = 32;
+pub(crate) const MAX_ALLOWED_PATHS: usize = 70;
 pub(crate) const MAX_PATH_CHARS: usize = 4_096;
 const ACCESS_ERROR: &str = "Accès au dossier refusé par les réglages.";
 

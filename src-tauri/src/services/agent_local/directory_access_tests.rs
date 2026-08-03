@@ -20,6 +20,26 @@ fn allows_exact_root_and_children_but_rejects_parent_and_sibling() {
 }
 
 #[test]
+fn every_configured_root_grants_the_same_access() {
+    let temp = tempfile::tempdir().expect("temp");
+    let first = temp.path().join("first");
+    let second = temp.path().join("second");
+    let outside = temp.path().join("outside");
+    for path in [&first, &second, &outside] {
+        std::fs::create_dir_all(path.join("child")).expect("directory");
+    }
+    let roots = vec![
+        dunce::canonicalize(&first).expect("first"),
+        dunce::canonicalize(&second).expect("second"),
+    ];
+
+    for allowed in [&first, &second] {
+        assert!(ensure_allowed_in_roots(&allowed.join("child"), &roots).is_ok());
+    }
+    assert!(ensure_allowed_in_roots(&outside.join("child"), &roots).is_err());
+}
+
+#[test]
 fn canonicalizes_missing_descendants_from_the_nearest_existing_parent() {
     let temp = tempfile::tempdir().expect("temp");
     let allowed = temp.path().join("allowed");
@@ -40,7 +60,19 @@ fn normalizes_deduplicates_and_bounds_configured_roots() {
 
     assert_eq!(normalized.len(), 1);
     assert!(normalize_allowed_paths(Vec::new()).is_err());
-    assert!(normalize_allowed_paths(vec!["/".to_string(); 33]).is_err());
+    let roots = (0..super::MAX_ALLOWED_PATHS)
+        .map(|index| {
+            let path = temp.path().join(format!("root-{index}"));
+            std::fs::create_dir(&path).expect("root");
+            path.to_string_lossy().to_string()
+        })
+        .collect::<Vec<_>>();
+    assert!(normalize_allowed_paths(roots).is_ok());
+    assert!(normalize_allowed_paths(vec![
+        "/".to_string();
+        super::MAX_ALLOWED_PATHS + 1
+    ])
+    .is_err());
 }
 
 #[test]
