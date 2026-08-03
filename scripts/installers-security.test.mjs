@@ -4,6 +4,7 @@ import test from "node:test";
 
 const shell = fs.readFileSync("install.sh", "utf8");
 const powershell = fs.readFileSync("install.ps1", "utf8");
+const powershellBytes = fs.readFileSync("install.ps1");
 
 function lines(source) {
   return source.split(/\r?\n/).length - 1;
@@ -84,4 +85,8 @@ test("PowerShell désactive les redirections implicites et vérifie le SHA", () 
   assert.match(powershell, /Beaver_\$\{version\}_x64-setup\.exe/);
   assert.match(powershell, /-ArgumentList @\("\/S", "\/D=\$installDirectory"\)/);
   assert.doesNotMatch(powershell, /Invoke-(?:WebRequest|RestMethod)/);
+});
+
+test("le script PowerShell reste compatible avec Windows PowerShell 5.1", () => {
+  assert.deepEqual([...powershellBytes.subarray(0, 3)], [0xef, 0xbb, 0xbf]);
 });

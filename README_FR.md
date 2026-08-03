@@ -72,17 +72,10 @@ Beaver inclut un espace Forecast dédié à l'analyse des séries temporelles :
 
 ## Installation
 
-### macOS / Linux
+### macOS / Linux (une commande)
 
 ```bash
-(
-  installer="$(mktemp /tmp/beaver-bootstrap.XXXXXXXX)" &&
-  trap 'rm -f "$installer"' EXIT &&
-  curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
-    --output "$installer" \
-    https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh &&
-  bash "$installer"
-)
+curl -fsSL https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.sh | bash
 ```
 
 Télécharge la dernière release, installe l'app et la lance automatiquement.
@@ -94,13 +87,7 @@ L'installateur Linux utilise le fichier `.deb` de la release pour rendre l'app v
 ### Windows (PowerShell)
 
 ```powershell
-$installer = Join-Path ([IO.Path]::GetTempPath()) "beaver-install-$([Guid]::NewGuid().ToString('N')).ps1"
-try {
-  Invoke-WebRequest https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.ps1 -OutFile $installer -ErrorAction Stop
-  & $installer
-} finally {
-  Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
-}
+irm https://raw.githubusercontent.com/Kevin-hDev/Beaver/main/install.ps1 | iex
 ```
 
 Télécharge la dernière release et lance l'installeur Windows NSIS `-setup.exe` automatiquement.

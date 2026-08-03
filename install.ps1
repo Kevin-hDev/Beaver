@@ -1,4 +1,4 @@
-$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 $Repository = "Kevin-hDev/Beaver"
 $ApiUrl = "https://api.github.com/repos/$Repository/releases/latest"
