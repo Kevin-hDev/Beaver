@@ -14,6 +14,7 @@ pub const SLACK_BODY_LIMIT: usize = 512 * 1024;
 pub const DISCORD_BODY_LIMIT: usize = 512 * 1024;
 pub const MCP_BODY_LIMIT: usize = 10 * 1024 * 1024;
 pub const LLM_BODY_LIMIT: usize = 10 * 1024 * 1024;
+pub const CODEX_MODELS_BODY_LIMIT: usize = 2 * 1024 * 1024;
 pub const PROVIDER_ERROR_LIMIT: usize = 16 * 1024;
 pub const MAX_AUTHENTICATED_BODY_LIMIT: usize = 32 * 1024 * 1024;
 pub const MAX_AUTHENTICATED_TIMEOUT: Duration = Duration::from_secs(600);

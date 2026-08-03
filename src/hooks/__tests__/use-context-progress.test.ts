@@ -123,7 +123,7 @@ describe("useContextProgress — provider codex-oauth", () => {
     });
   });
 
-  it("max = 258000 par défaut si le modèle n'est pas trouvé", async () => {
+  it("max reste inconnu si le modèle n'est pas trouvé", async () => {
     vi.mocked(invoke).mockImplementation((cmd: string) => {
       if (cmd === "codex_models")
         return Promise.resolve([{ id: "autre-model", context_length: 4096 }]);
@@ -135,7 +135,7 @@ describe("useContextProgress — provider codex-oauth", () => {
     );
 
     await waitFor(() => {
-      expect(result.current.max).toBe(258000);
+      expect(result.current.max).toBe(0);
     });
   });
 });

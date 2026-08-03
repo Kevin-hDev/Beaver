@@ -59,10 +59,10 @@ export function useContextProgress(
       try {
         const models = await invoke<LlmModelInfo[]>("codex_models");
         const found = models.find((m) => m.id === model);
-        setMax(found?.context_length ?? 258_000);
+        setMax(found?.context_length ?? 0);
       } catch (e) {
         console.warn("Context progress (codex):", e);
-        setMax(258_000);
+        setMax(0);
       }
     } else {
       try {

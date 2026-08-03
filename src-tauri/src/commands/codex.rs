@@ -1,4 +1,3 @@
-use crate::services::codex_client::types::CODEX_MODELS;
 use crate::services::codex_oauth::{jwt, login, store};
 use crate::services::llm::types::ModelInfo;
 use tauri::Emitter;
@@ -7,6 +6,7 @@ use tauri::Emitter;
 pub async fn codex_login(app: tauri::AppHandle) -> Result<String, String> {
     let result = login::login().await;
     if result.is_ok() {
+        crate::services::codex_client::model_catalog::invalidate().await;
         let _ = app.emit("codex-auth-changed", ());
     }
     result
@@ -16,6 +16,7 @@ pub async fn codex_login(app: tauri::AppHandle) -> Result<String, String> {
 pub async fn codex_logout(app: tauri::AppHandle) -> Result<(), String> {
     let result = login::logout().await;
     if result.is_ok() {
+        crate::services::codex_client::model_catalog::invalidate().await;
         let _ = app.emit("codex-auth-changed", ());
     }
     result
@@ -40,37 +41,22 @@ pub struct CodexStatus {
     pub email: Option<String>,
 }
 
+pub(crate) async fn resolved_codex_models() -> Result<Vec<ModelInfo>, String> {
+    crate::services::codex_client::model_catalog::available_models().await
+}
+
 #[tauri::command]
-pub fn codex_models() -> Vec<ModelInfo> {
-    CODEX_MODELS
-        .iter()
-        .map(|spec| ModelInfo {
-            id: spec.id.to_string(),
-            display_name: None,
-            owned_by: Some("openai".to_string()),
-            context_length: Some(spec.context_length),
-            max_output_tokens: None,
-            supports_tools: true,
-            supports_vision: spec.supports_vision,
-            supports_thinking: true,
-            reasoning_modes: spec
-                .reasoning_modes
-                .iter()
-                .map(|mode| mode.to_string())
-                .collect(),
-            default_reasoning_mode: None,
-            is_free: true,
-        })
-        .collect()
+pub async fn codex_models() -> Vec<ModelInfo> {
+    resolved_codex_models()
+        .await
+        .unwrap_or_else(|_| crate::services::codex_client::model_catalog::fallback_models())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
-    fn codex_models_include_gpt_56_with_exact_modes() {
-        let models = codex_models();
+    fn fallback_codex_models_include_gpt_56_with_exact_modes() {
+        let models = crate::services::codex_client::model_catalog::fallback_models();
         let sol = models
             .iter()
             .find(|model| model.id == "gpt-5.6-sol")
@@ -84,9 +70,9 @@ mod tests {
             .find(|model| model.id == "gpt-5.6-luna")
             .unwrap();
 
-        assert_eq!(sol.context_length, Some(372_000));
-        assert_eq!(terra.context_length, Some(372_000));
-        assert_eq!(luna.context_length, Some(372_000));
+        assert_eq!(sol.context_length, Some(258_400));
+        assert_eq!(terra.context_length, Some(258_400));
+        assert_eq!(luna.context_length, Some(258_400));
         assert_eq!(
             sol.reasoning_modes,
             ["low", "medium", "high", "xhigh", "max", "ultra"]
@@ -99,8 +85,8 @@ mod tests {
     }
 
     #[test]
-    fn codex_models_include_text_only_spark() {
-        let models = codex_models();
+    fn fallback_codex_models_include_text_only_spark() {
+        let models = crate::services::codex_client::model_catalog::fallback_models();
         let spark = models
             .iter()
             .find(|model| model.id == "gpt-5.3-codex-spark")

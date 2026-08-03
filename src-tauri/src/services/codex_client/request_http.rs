@@ -3,7 +3,7 @@ use std::time::Duration;
 use reqwest::{Response, StatusCode};
 
 use super::http_error;
-use super::limits::{CONNECT_TIMEOUT, STREAM_STALL_TIMEOUT};
+use super::limits::{CONNECT_TIMEOUT, MODELS_TIMEOUT, STREAM_STALL_TIMEOUT};
 use super::types::CODEX_API_BASE;
 use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token;
@@ -34,6 +34,23 @@ pub(super) async fn post(
     http_error::require_success(response, model, body.len(), tool_count).await
 }
 
+pub(super) async fn get_models() -> Result<Response, String> {
+    let client = build_client(RequestDeadline::Total(MODELS_TIMEOUT))?;
+    let credentials = token::ensure_valid().await?;
+    let mut response = send_models_once(&client, &credentials).await?;
+    if response.status() == StatusCode::UNAUTHORIZED {
+        let refreshed = token::recover_after_unauthorized(credentials.access.as_str()).await?;
+        drop(response);
+        drop(credentials);
+        response = send_models_once(&client, &refreshed).await?;
+    }
+    if response.status().is_success() {
+        Ok(response)
+    } else {
+        Err("model_catalog_unavailable".to_string())
+    }
+}
+
 fn build_client(deadline: RequestDeadline) -> Result<AuthenticatedClient, String> {
     let result = match deadline {
         RequestDeadline::Streaming => {
@@ -58,6 +75,27 @@ async fn send_once(
         .header("Content-Type", "application/json")
         .header("Accept", "text/event-stream")
         .body(body.to_string());
+    client
+        .send(request)
+        .await
+        .map_err(|error| secure_http_error(error).to_string())
+}
+
+async fn send_models_once(
+    client: &AuthenticatedClient,
+    credentials: &CodexTokens,
+) -> Result<Response, String> {
+    let mut url = reqwest::Url::parse(&format!("{CODEX_API_BASE}/models"))
+        .map_err(|_| "provider_configuration_invalid".to_string())?;
+    url.query_pairs_mut()
+        .append_pair("client_version", env!("CARGO_PKG_VERSION"));
+    let request = client
+        .get(url)
+        .bearer_auth(credentials.access.as_str())
+        .header("chatgpt-account-id", credentials.account_hint.as_str())
+        .header("originator", crate::services::codex_oauth::ORIGINATOR)
+        .header("User-Agent", crate::services::brand::user_agent())
+        .header("Accept", "application/json");
     client
         .send(request)
         .await

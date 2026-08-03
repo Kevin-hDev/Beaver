@@ -36,7 +36,7 @@ pub struct OAuthProviderModelsResponse {
 pub async fn list_oauth_provider_models() -> OAuthProviderModelsResponse {
     let statuses = oauth_providers::list_statuses();
     let mut response = OAuthProviderModelsResponse::default();
-    add_codex_models(&statuses, &mut response.models);
+    add_codex_models(&statuses, &mut response).await;
     add_external_models(&statuses, ProviderId::Xai, &mut response).await;
     add_external_models(&statuses, ProviderId::Moonshot, &mut response).await;
     response.models.truncate(MAX_OAUTH_MODELS);
@@ -44,29 +44,46 @@ pub async fn list_oauth_provider_models() -> OAuthProviderModelsResponse {
     response
 }
 
-fn add_codex_models(
+async fn add_codex_models(
     statuses: &[oauth_providers::OAuthProviderStatus],
-    models: &mut Vec<OAuthProviderModel>,
+    response: &mut OAuthProviderModelsResponse,
 ) {
     if !connected(statuses, ProviderId::OpenAi) {
         return;
     }
-    models.extend(
-        crate::commands::codex_models()
-            .into_iter()
-            .map(|model| OAuthProviderModel {
-                display_name: model.id.clone(),
-                id: model.id,
+    let models = match crate::commands::codex::resolved_codex_models().await {
+        Ok(models) => models,
+        Err(error) => {
+            let code = if error == ProviderErrorCode::OAuthReauthenticationRequired.as_str() {
+                ProviderErrorCode::OAuthReauthenticationRequired
+            } else {
+                ProviderErrorCode::ModelCatalogUnavailable
+            };
+            response.issues.push(OAuthProviderModelIssue {
                 provider_id: ProviderId::OpenAi,
-                context_length: model.context_length,
-                supports_tools: model.supports_tools,
-                supports_vision: model.supports_vision,
-                supports_thinking: model.supports_thinking,
-                reasoning_modes: model.reasoning_modes,
-                default_reasoning_mode: model.default_reasoning_mode,
-                interactive_only: false,
-            }),
-    );
+                code,
+            });
+            crate::services::codex_client::model_catalog::fallback_models()
+        }
+    };
+    response.models.extend(models.into_iter().map(|model| {
+        let display_name = model
+            .display_name
+            .clone()
+            .unwrap_or_else(|| model.id.clone());
+        OAuthProviderModel {
+            display_name,
+            id: model.id,
+            provider_id: ProviderId::OpenAi,
+            context_length: model.context_length,
+            supports_tools: model.supports_tools,
+            supports_vision: model.supports_vision,
+            supports_thinking: model.supports_thinking,
+            reasoning_modes: model.reasoning_modes,
+            default_reasoning_mode: model.default_reasoning_mode,
+            interactive_only: false,
+        }
+    }));
 }
 
 async fn add_external_models(

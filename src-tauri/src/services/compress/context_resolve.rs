@@ -71,11 +71,7 @@ async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
 
 async fn lookup_api_context(provider: &str, model: &str) -> u64 {
     if provider == "codex-oauth" {
-        return crate::services::codex_client::types::CODEX_MODELS
-            .iter()
-            .find(|spec| spec.id == model)
-            .map(|spec| spec.context_length as u64)
-            .unwrap_or(128_000);
+        return crate::services::codex_client::model_catalog::context_length(model).await;
     }
 
     let provider = crate::services::llm::route::canonical_provider_id(provider);
@@ -128,7 +124,7 @@ mod tests {
         );
         assert_eq!(
             lookup_api_context("codex-oauth", "gpt-5.6-luna").await,
-            372_000
+            258_400
         );
     }
 }
