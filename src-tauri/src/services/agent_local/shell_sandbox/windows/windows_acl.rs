@@ -2,7 +2,7 @@ use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 use sha2::{Digest, Sha256};
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GENERIC_ALL, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE, HANDLE, LocalFree,
+    CloseHandle, GENERIC_EXECUTE, GENERIC_READ, GENERIC_WRITE, HANDLE, LocalFree,
     WAIT_ABANDONED, WAIT_OBJECT_0,
 };
 use windows_sys::Win32::Security::Authorization::{
@@ -22,17 +22,31 @@ struct AclMutexGuard {
     handle: HANDLE,
 }
 
-pub(super) fn grant(path: &Path, sid: PSID, writable: bool) -> Result<(), String> {
-    update(path, sid, Some(writable))
+pub(super) fn grant(
+    path: &Path,
+    sid: PSID,
+    writable: bool,
+    recursive: bool,
+) -> Result<(), String> {
+    update(path, sid, Some(writable), recursive)
 }
 
 pub(super) fn revoke(path: &Path, sid: PSID) -> Result<(), String> {
-    update(path, sid, None)
+    update(path, sid, None, false)
 }
 
-fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> {
-    if !path.exists() && writable.is_none() {
-        return Ok(());
+fn update(
+    path: &Path,
+    sid: PSID,
+    writable: Option<bool>,
+    recursive: bool,
+) -> Result<(), String> {
+    if writable.is_none() {
+        match path.symlink_metadata() {
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+            Err(_) => return Err(super::error()),
+        }
     }
     let _guard = lock_acl_updates()?;
     let wide = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect::<Vec<_>>();
@@ -58,18 +72,14 @@ fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> 
     };
     let entry = EXPLICIT_ACCESS_W {
         grfAccessPermissions: match (writable, path.is_dir()) {
-            (Some(true), true) => GENERIC_ALL,
+            (Some(true), true) => GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE | DELETE,
             (Some(true), false) => GENERIC_READ | GENERIC_WRITE | DELETE,
             (Some(false), true) => GENERIC_READ | GENERIC_EXECUTE,
             (Some(false), false) => GENERIC_READ,
             (None, _) => 0,
         },
         grfAccessMode: if writable.is_some() { SET_ACCESS } else { REVOKE_ACCESS },
-        grfInheritance: if writable.is_some() && path.is_dir() {
-            CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE
-        } else {
-            0
-        },
+        grfInheritance: inheritance_flags(path.is_dir(), recursive),
         Trustee: trustee,
     };
     let mut new_acl = std::ptr::null_mut();
@@ -91,6 +101,14 @@ fn update(path: &Path, sid: PSID, writable: Option<bool>) -> Result<(), String> 
         if !descriptor.is_null() { LocalFree(descriptor); }
     }
     (applied == 0).then_some(()).ok_or_else(super::error)
+}
+
+fn inheritance_flags(is_directory: bool, recursive: bool) -> u32 {
+    if is_directory && recursive {
+        CONTAINER_INHERIT_ACE | OBJECT_INHERIT_ACE
+    } else {
+        0
+    }
 }
 
 fn lock_acl_updates() -> Result<AclMutexGuard, String> {
@@ -128,5 +146,17 @@ impl Drop for AclMutexGuard {
             ReleaseMutex(self.handle);
             CloseHandle(self.handle);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn list_only_directory_access_never_inherits_to_children() {
+        assert_eq!(inheritance_flags(true, false), 0);
+        assert_ne!(inheritance_flags(true, true), 0);
+        assert_eq!(inheritance_flags(false, true), 0);
     }
 }

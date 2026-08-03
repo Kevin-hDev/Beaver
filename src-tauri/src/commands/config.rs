@@ -8,11 +8,13 @@ pub fn get_config() -> Result<ClgoConfig, String> {
 
 #[tauri::command]
 pub fn save_config(mut config: ClgoConfig) -> Result<(), String> {
-    let current = config_service::read_config()?;
     validate_outputs_directory(&mut config.advanced)?;
-    config.advanced = protect_advanced_settings(config.advanced, &current);
-    keep_current_mascot(&mut config, &current);
-    config_service::write_config(&config)
+    config_service::update_config(move |current| {
+        config.advanced = protect_advanced_settings(config.advanced, current);
+        keep_current_mascot(&mut config, current);
+        *current = config;
+        Ok(())
+    })
 }
 
 pub(crate) fn keep_current_mascot(config: &mut ClgoConfig, current: &ClgoConfig) {
@@ -33,13 +35,14 @@ pub fn set_advanced_settings(
     let mut settings = settings;
     validate_outputs_directory(&mut settings)?;
     let settings = normalize_advanced_settings(settings);
-    let mut config = config_service::read_config()?;
-    let autostart_changed = settings.autostart != config.advanced.autostart;
-    if autostart_changed {
-        autostart_migration::synchronize_for_settings(&app, settings.autostart)?;
-    }
-    config.advanced = protect_advanced_settings(settings, &config);
-    config_service::write_config(&config)
+    config_service::update_config(move |config| {
+        let autostart_changed = settings.autostart != config.advanced.autostart;
+        if autostart_changed {
+            autostart_migration::synchronize_for_settings(&app, settings.autostart)?;
+        }
+        config.advanced = protect_advanced_settings(settings, config);
+        Ok(())
+    })
 }
 
 fn protect_advanced_settings(
@@ -76,40 +79,34 @@ pub fn patch_advanced_settings(
     app: tauri::AppHandle,
     patch: serde_json::Value,
 ) -> Result<(), String> {
-    let mut config = config_service::read_config()?;
-    let mut current = serde_json::to_value(&config.advanced).map_err(|e| {
-        eprintln!("[config] serialize: {e}");
-        "Erreur de configuration".to_string()
-    })?;
-
-    if let (Some(base), Some(updates)) = (current.as_object_mut(), patch.as_object()) {
-        for (k, v) in updates {
-            if PATCH_BLOCKED_KEYS.contains(&k.as_str()) {
-                continue;
+    config_service::update_config(move |config| {
+        let mut current = serde_json::to_value(&config.advanced).map_err(|e| {
+            eprintln!("[config] serialize: {e}");
+            "Erreur de configuration".to_string()
+        })?;
+        if let (Some(base), Some(updates)) = (current.as_object_mut(), patch.as_object()) {
+            for (key, value) in updates {
+                if !PATCH_BLOCKED_KEYS.contains(&key.as_str()) {
+                    base.insert(key.clone(), value.clone());
+                }
             }
-            base.insert(k.clone(), v.clone());
         }
-    }
-
-    let merged: AdvancedSettings = serde_json::from_value(current).map_err(|e| {
-        eprintln!("[config] deserialize: {e}");
-        "Erreur de configuration".to_string()
-    })?;
-    let mut merged = merged;
-    validate_outputs_directory(&mut merged)?;
-    let merged = normalize_advanced_settings(merged);
-    let autostart_requested = patch
-        .as_object()
-        .map(|updates| updates.contains_key("autostart"))
-        .unwrap_or(false);
-    let autostart_changed = merged.autostart != config.advanced.autostart;
-
-    if autostart_requested || autostart_changed {
-        autostart_migration::synchronize_for_settings(&app, merged.autostart)?;
-    }
-
-    config.advanced = merged;
-    config_service::write_config(&config)
+        let mut merged: AdvancedSettings = serde_json::from_value(current).map_err(|e| {
+            eprintln!("[config] deserialize: {e}");
+            "Erreur de configuration".to_string()
+        })?;
+        validate_outputs_directory(&mut merged)?;
+        let merged = normalize_advanced_settings(merged);
+        let autostart_requested = patch
+            .as_object()
+            .is_some_and(|updates| updates.contains_key("autostart"));
+        let autostart_changed = merged.autostart != config.advanced.autostart;
+        if autostart_requested || autostart_changed {
+            autostart_migration::synchronize_for_settings(&app, merged.autostart)?;
+        }
+        config.advanced = merged;
+        Ok(())
+    })
 }
 
 #[tauri::command]

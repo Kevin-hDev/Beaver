@@ -105,3 +105,22 @@ async fn custom_outputs_stay_separate_from_work() {
     assert!(workspace.outputs.starts_with(custom.path()));
     assert!(workspace.outputs.ends_with("outputs"));
 }
+
+#[test]
+fn managed_access_is_limited_to_one_session_workspace() {
+    let unique = uuid::Uuid::new_v4().simple().to_string();
+    let base = crate::services::paths::data_dir().join("session-workspaces");
+    let session = base.join("2026-08-03").join(unique);
+    let work = session.join("work");
+    let nested = work.join("src");
+    let outputs = session.join("outputs");
+    std::fs::create_dir_all(&nested).expect("work");
+    std::fs::create_dir_all(&outputs).expect("outputs");
+
+    let roots = access_roots_for(&nested);
+
+    assert!(roots.contains(&dunce::canonicalize(&work).expect("canonical work")));
+    assert!(roots.contains(&dunce::canonicalize(&outputs).expect("canonical outputs")));
+    assert!(!roots.iter().any(|root| root == &base));
+    let _ = std::fs::remove_dir_all(session);
+}

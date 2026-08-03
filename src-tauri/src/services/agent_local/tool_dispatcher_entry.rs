@@ -143,8 +143,6 @@ pub async fn dispatch_with_progress(
         }
     };
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
-    let root_limit_marker = (!dynamic_tool && tool_name == "bash")
-        .then(super::shell_diagnostics::root_limit_marker);
     let mut result = if dynamic_tool {
         if crate::services::extensions::record_tool_invocation(tool_name).is_err() {
             eprintln!("[extensions] usage counter unavailable");
@@ -176,14 +174,7 @@ pub async fn dispatch_with_progress(
         }
         result.file_changes_mut().push(change);
     }
-    super::tool_dispatcher_finalize::finalize(
-        result,
-        tool_name,
-        session_id,
-        working_dir,
-        root_limit_marker.as_ref(),
-    )
-    .await
+    super::tool_dispatcher_finalize::finalize(result, tool_name, session_id, working_dir).await
 }
 
 pub(super) async fn finalize_result(
@@ -192,14 +183,7 @@ pub(super) async fn finalize_result(
     session_id: &str,
     working_dir: &Path,
 ) -> ToolResult {
-    super::tool_dispatcher_finalize::finalize(
-        result,
-        tool_name,
-        session_id,
-        working_dir,
-        None,
-    )
-    .await
+    super::tool_dispatcher_finalize::finalize(result, tool_name, session_id, working_dir).await
 }
 
 fn validate_arguments(dynamic_tool: bool, tool_name: &str, args: &Value) -> Result<Value, String> {

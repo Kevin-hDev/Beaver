@@ -22,6 +22,11 @@ pub async fn list_dir(path: &str, working_dir: &Path) -> ToolResult {
             )
         }
     };
+    let max_depth = listing_depth(&resolved);
+    list_resolved(resolved, max_depth).await
+}
+
+pub(super) async fn list_resolved(resolved: PathBuf, max_depth: u32) -> ToolResult {
     let mut entries = Vec::new();
     let mut stack = vec![Work::ReadDirectory(resolved, 0)];
     let mut pending_entries = 0usize;
@@ -91,7 +96,7 @@ pub async fn list_dir(path: &str, working_dir: &Path) -> ToolResult {
                     "  ".repeat(depth as usize),
                     if is_dir { "/" } else { "" }
                 ));
-                if is_dir && depth < MAX_DEPTH {
+                if is_dir && depth < max_depth {
                     stack.push(Work::ReadDirectory(entry.path(), depth + 1));
                 }
             }
@@ -99,6 +104,32 @@ pub async fn list_dir(path: &str, working_dir: &Path) -> ToolResult {
     }
 
     render(entries, read_failures, metadata_failures, truncated)
+}
+
+fn listing_depth(resolved: &Path) -> u32 {
+    let private_root = canonical_or_original(crate::services::paths::data_dir());
+    if private_root != resolved {
+        return MAX_DEPTH;
+    }
+    let roots = super::directory_access::configured_roots().ok();
+    listing_depth_in_roots(resolved, &private_root, roots.as_deref())
+}
+
+pub(super) fn listing_depth_in_roots(
+    resolved: &Path,
+    private_root: &Path,
+    roots: Option<&[PathBuf]>,
+) -> u32 {
+    if private_root != resolved {
+        return MAX_DEPTH;
+    }
+    roots
+        .and_then(|roots| super::directory_access::ensure_allowed_in_roots(resolved, roots).ok())
+        .map_or(0, |_| MAX_DEPTH)
+}
+
+pub(super) fn canonical_or_original(path: PathBuf) -> PathBuf {
+    dunce::canonicalize(&path).unwrap_or(path)
 }
 
 fn visible(entry: &tokio::fs::DirEntry) -> bool {

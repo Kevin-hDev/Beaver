@@ -105,14 +105,14 @@ pub(crate) fn existing_optional_directory(value: &str) -> Option<std::path::Path
     if !path.is_dir() {
         return None;
     }
-    path.canonicalize().ok()
+    dunce::canonicalize(path).ok()
 }
 
 #[cfg(test)]
 #[path = "config_tests.rs"]
 mod tests;
 
-fn default_allowed_paths() -> Vec<String> {
+pub(crate) fn default_allowed_paths() -> Vec<String> {
     #[cfg(target_os = "windows")]
     {
         vec!["C:\\".to_string()]

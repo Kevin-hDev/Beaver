@@ -142,10 +142,14 @@ async fn find_or_create_heartbeat_session(provider: &str, model: &str) -> Result
 }
 
 pub(crate) fn deactivate_once(id: &str) -> Result<(), String> {
-    let mut config = cfg::read_config()?;
-    if let Some(w) = config.scheduled_wakeups.iter_mut().find(|w| w.id == id) {
-        w.active = false;
-        cfg::write_config(&config)?;
-    }
-    Ok(())
+    cfg::update_config(|config| {
+        if let Some(wakeup) = config
+            .scheduled_wakeups
+            .iter_mut()
+            .find(|wakeup| wakeup.id == id)
+        {
+            wakeup.active = false;
+        }
+        Ok(())
+    })
 }

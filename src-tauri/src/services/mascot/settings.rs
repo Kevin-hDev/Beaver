@@ -1,5 +1,5 @@
 use super::{generic_error, window, MascotRuntime, SETTINGS_EVENT};
-use crate::models::{ClgoConfig, MascotPosition, MascotSettings, MascotSettingsPatch};
+use crate::models::{MascotPosition, MascotSettings, MascotSettingsPatch};
 use crate::services::config;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -10,11 +10,13 @@ pub async fn get() -> Result<MascotSettings, String> {
 pub async fn patch(app: &AppHandle, patch: MascotSettingsPatch) -> Result<MascotSettings, String> {
     let runtime = app.state::<MascotRuntime>();
     let _mutation = runtime.mutation_gate.lock().await;
-    let mut config = read_config().await?;
-    let previous = config.mascot.clone().normalized();
-    let next = patch.apply(previous.clone());
-    config.mascot = next.clone();
-    write_config(config).await?;
+    let (previous, next) = update_config(move |config| {
+        let previous = config.mascot.clone().normalized();
+        let next = patch.apply(previous.clone());
+        config.mascot = next.clone();
+        Ok((previous, next))
+    })
+    .await?;
 
     if window::apply(app, &runtime, &next).is_err() {
         rollback(app, &runtime, previous).await;
@@ -31,10 +33,11 @@ pub async fn save_position(app: &AppHandle, x: i32, y: i32) -> Result<(), String
         .ok_or_else(generic_error)?;
     let runtime = app.state::<MascotRuntime>();
     let _mutation = runtime.mutation_gate.lock().await;
-    let mut config = read_config().await?;
-    config.mascot.position = Some(position);
-    let saved = config.mascot.clone();
-    write_config(config).await?;
+    let saved = update_config(move |config| {
+        config.mascot.position = Some(position);
+        Ok(config.mascot.clone())
+    })
+    .await?;
     store_current(&runtime, saved)
 }
 
@@ -68,23 +71,29 @@ fn current(runtime: &MascotRuntime) -> Result<MascotSettings, String> {
 }
 
 async fn rollback(app: &AppHandle, runtime: &MascotRuntime, previous: MascotSettings) {
-    if let Ok(mut config) = read_config().await {
-        config.mascot = previous.clone();
-        let _ = write_config(config).await;
-    }
+    let stored = previous.clone();
+    let _ = update_config(move |config| {
+        config.mascot = stored;
+        Ok(())
+    })
+    .await;
     let _ = window::apply(app, runtime, &previous);
     let _ = store_current(runtime, previous);
 }
 
-async fn read_config() -> Result<ClgoConfig, String> {
+async fn read_config() -> Result<crate::models::ClgoConfig, String> {
     tokio::task::spawn_blocking(config::read_config)
         .await
         .map_err(|_| generic_error())?
         .map_err(|_| generic_error())
 }
 
-async fn write_config(config_value: ClgoConfig) -> Result<(), String> {
-    tokio::task::spawn_blocking(move || config::write_config(&config_value))
+async fn update_config<T, F>(update: F) -> Result<T, String>
+where
+    T: Send + 'static,
+    F: FnOnce(&mut crate::models::ClgoConfig) -> Result<T, String> + Send + 'static,
+{
+    tokio::task::spawn_blocking(move || config::update_config(update))
         .await
         .map_err(|_| generic_error())?
         .map_err(|_| generic_error())

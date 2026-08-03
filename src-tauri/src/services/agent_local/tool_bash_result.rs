@@ -14,6 +14,7 @@ pub fn blocked(reason: String) -> ShellOutput {
         tracking_incomplete: false,
         output_truncated: false,
         output_incomplete: false,
+        sandbox_warning: None,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
     }
@@ -69,6 +70,7 @@ pub fn from_snapshot(session: &ShellSession, snapshot: ShellSessionSnapshot) -> 
         tracking_incomplete: snapshot.tracking_incomplete,
         output_truncated: snapshot.output_truncated,
         output_incomplete: snapshot.output_incomplete,
+        sandbox_warning: snapshot.sandbox_warning,
         affected_paths,
         file_changes: snapshot.changes,
     }

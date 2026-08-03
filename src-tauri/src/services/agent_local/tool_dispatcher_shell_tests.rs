@@ -16,6 +16,7 @@ fn output(stdout: &str, stderr: &str, exit_code: i32, running: bool) -> ShellOut
         tracking_incomplete: false,
         output_truncated: false,
         output_incomplete: false,
+        sandbox_warning: None,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
     }

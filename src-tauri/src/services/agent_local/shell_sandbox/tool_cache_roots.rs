@@ -29,7 +29,11 @@ const CACHE_KINDS: [CacheKind; 9] = [
 
 pub(super) const MAX_WRITE_DIRS: usize = CACHE_KINDS.len();
 
-pub(super) fn collect(home: &Path, path_dirs: &[PathBuf], path_overflow: bool) -> Vec<PathBuf> {
+pub(super) fn collect(
+    home: &Path,
+    path_dirs: &[PathBuf],
+    path_overflow: bool,
+) -> (Vec<PathBuf>, bool) {
     let platform = tool_cache_platform::current();
     let platform_cache = dirs::cache_dir();
     let selected = collect_for(
@@ -55,7 +59,7 @@ pub(super) fn collect(home: &Path, path_dirs: &[PathBuf], path_overflow: bool) -
         Some(&default_cache),
         &CacheOverrides::default(),
     );
-    super::tool_cache_prepare::ensure_defaults(
+    let unavailable = super::tool_cache_prepare::ensure_defaults(
         &CACHE_KINDS,
         &selected,
         &defaults,
@@ -63,7 +67,7 @@ pub(super) fn collect(home: &Path, path_dirs: &[PathBuf], path_overflow: bool) -
         path_dirs,
         path_overflow,
     );
-    selected
+    (selected, unavailable)
 }
 
 fn collect_for(

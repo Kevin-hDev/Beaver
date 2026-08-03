@@ -9,6 +9,7 @@ const PREFIX: &str = "Beaver.Shell.";
 pub(super) struct Profile {
     name: String,
     sid: PSID,
+    delete_on_drop: bool,
 }
 
 impl Profile {
@@ -30,7 +31,11 @@ impl Profile {
         if result < 0 || sid.is_null() {
             return Err(super::error());
         }
-        Ok(Self { name, sid })
+        Ok(Self {
+            name,
+            sid,
+            delete_on_drop: true,
+        })
     }
 
     pub fn derive(name: &str) -> Result<Self, String> {
@@ -44,26 +49,35 @@ impl Profile {
         if result < 0 || sid.is_null() {
             return Err(super::error());
         }
-        Ok(Self { name: name.to_string(), sid })
+        Ok(Self {
+            name: name.to_string(),
+            sid,
+            delete_on_drop: false,
+        })
     }
 
     pub fn name(&self) -> &str { &self.name }
     pub fn sid(&self) -> PSID { self.sid }
+    pub fn persist_for_cleanup(&mut self) { self.delete_on_drop = false; }
 }
 
 impl Drop for Profile {
     fn drop(&mut self) {
-        delete(&self.name);
+        if self.delete_on_drop {
+            let _ = delete(&self.name);
+        }
         // SAFETY: le SID est alloué par l'API AppContainer.
         unsafe { FreeSid(self.sid) };
     }
 }
 
-pub(super) fn delete(name: &str) {
-    if valid_name(name) {
-        // SAFETY: nom validé et chaîne terminée par NUL.
-        let _ = unsafe { DeleteAppContainerProfile(wide(name).as_ptr()) };
+pub(super) fn delete(name: &str) -> Result<(), String> {
+    if !valid_name(name) {
+        return Err(super::error());
     }
+    // SAFETY: nom validé et chaîne terminée par NUL.
+    let result = unsafe { DeleteAppContainerProfile(wide(name).as_ptr()) };
+    (result >= 0).then_some(()).ok_or_else(super::error)
 }
 
 pub(super) fn valid_name(name: &str) -> bool {

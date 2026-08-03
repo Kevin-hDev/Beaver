@@ -262,6 +262,7 @@ fn interactive_profile_capture_keeps_path_but_cannot_escape() {
     add_parameters(&mut command, "BEAVER_RW_FILE", &roots.write_files);
     add_parameters(&mut command, "BEAVER_RO_DIR", &roots.read_dirs);
     add_parameters(&mut command, "BEAVER_RO_FILE", &roots.read_files);
+    add_parameters(&mut command, "BEAVER_LIST_DIR", &roots.list_dirs);
     let output = command
         .args([
             "-p",
@@ -303,6 +304,7 @@ fn run_sandboxed_scope(scope: &Scope, sandbox_temp: &std::path::Path, script: &s
     add_parameters(&mut command, "BEAVER_RW_FILE", &roots.write_files);
     add_parameters(&mut command, "BEAVER_RO_DIR", &roots.read_dirs);
     add_parameters(&mut command, "BEAVER_RO_FILE", &roots.read_files);
+    add_parameters(&mut command, "BEAVER_LIST_DIR", &roots.list_dirs);
     command
         .args([
             "-p",

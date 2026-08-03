@@ -83,6 +83,61 @@ async fn nested_directories_are_sorted_with_each_subtree_kept_together() {
     );
 }
 
+#[test]
+fn private_root_depth_uses_injected_access_roots() {
+    let directory = tempfile::tempdir().unwrap();
+    let private_input = directory.path().join("private");
+    let project_input = directory.path().join("project");
+    std::fs::create_dir(&private_input).unwrap();
+    std::fs::create_dir(&project_input).unwrap();
+    let private = dunce::canonicalize(private_input).unwrap();
+    let project = dunce::canonicalize(project_input).unwrap();
+
+    assert_eq!(
+        super::tool_list_dir::listing_depth_in_roots(&private, &private, None),
+        0
+    );
+    assert_eq!(
+        super::tool_list_dir::listing_depth_in_roots(&private, &private, Some(&[])),
+        0
+    );
+    assert_eq!(
+        super::tool_list_dir::listing_depth_in_roots(
+            &private,
+            &private,
+            Some(std::slice::from_ref(&private)),
+        ),
+        3
+    );
+    assert_eq!(
+        super::tool_list_dir::listing_depth_in_roots(&project, &private, None),
+        3
+    );
+}
+
+#[test]
+fn unavailable_private_root_keeps_its_original_path() {
+    let directory = tempfile::tempdir().unwrap();
+    let missing = directory.path().join("missing");
+
+    assert_eq!(
+        super::tool_list_dir::canonical_or_original(missing.clone()),
+        missing
+    );
+}
+
+#[tokio::test]
+async fn zero_depth_lists_only_the_requested_directory() {
+    let directory = tempfile::tempdir().unwrap();
+    let nested = directory.path().join("nested");
+    std::fs::create_dir(&nested).unwrap();
+    std::fs::write(nested.join("hidden.txt"), "").unwrap();
+
+    let result = super::tool_list_dir::list_resolved(directory.path().to_path_buf(), 0).await;
+
+    assert_eq!(result.content, "nested/");
+}
+
 #[tokio::test]
 async fn full_root_with_a_nonempty_directory_reports_omitted_descendants() {
     let directory = tempfile::tempdir().unwrap();

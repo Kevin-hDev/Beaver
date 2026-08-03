@@ -11,7 +11,7 @@ use std::path::{Component, Path, PathBuf};
 
 const RECORD_SUFFIX: &str = "cleanup.json";
 const MAX_ROOTS: usize = super::super::directory_access::MAX_ALLOWED_PATHS
-    + 1
+    + 4
     + super::tool_roots::MAX_READ_ROOTS
     + super::tool_roots::MAX_WRITE_ROOTS;
 const MAX_RECORD_BYTES: u64 =
@@ -33,10 +33,19 @@ pub(super) fn run(
         return Err(error());
     }
     let writable_roots = &scope.roots;
-    if writable_roots.len() > super::super::directory_access::MAX_ALLOWED_PATHS {
+    if writable_roots.len() > super::super::directory_access::MAX_WORKSPACE_ROOTS {
         return Err(error());
     }
     let tools = super::tool_roots::collect(writable_roots, &[], &[], Some(executable));
+    super::super::shell_sandbox_diagnostics::record(
+        temp_dir,
+        tools.path_limit_reached,
+        tools.read_limit_reached,
+        tools.write_limit_reached,
+        tools.cache_unavailable,
+        false,
+    );
+    let list_only = tools.list_dirs.clone();
     let writable = writable_roots
         .iter()
         .cloned()
@@ -48,28 +57,33 @@ pub(super) fn run(
         .read_dirs
         .into_iter()
         .chain(tools.read_files)
+        .chain(tools.list_dirs)
         .collect::<Vec<_>>();
-    let profile = windows_profile::Profile::create()?;
+    let mut profile = windows_profile::Profile::create()?;
     let candidates = writable
         .iter()
         .chain(&readable)
         .cloned()
         .collect::<Vec<_>>();
     write_record(temp_dir, profile.name(), &candidates)?;
+    profile.persist_for_cleanup();
     for root in &writable {
-        windows_acl::grant(root, profile.sid(), true)?;
+        windows_acl::grant(root, profile.sid(), true, true)?;
     }
     let mut recorded = writable.clone();
-    let private_store = dunce::canonicalize(crate::services::paths::data_dir()).ok();
+    let private = super::super::private_data_access::current();
     for root in &readable {
-        if private_store.as_ref() == Some(root) {
-            windows_acl::grant(root, profile.sid(), false)?;
+        if private.root.as_ref() == Some(root)
+            || private.directories.iter().any(|path| path == root)
+            || private.files.iter().any(|path| path == root)
+        {
+            windows_acl::grant(root, profile.sid(), false, !list_only.contains(root))?;
             recorded.push(root.clone());
             continue;
         }
         // Les dossiers système sont déjà lisibles par les AppContainers et leur
         // DACL n'est généralement pas modifiable par un utilisateur standard.
-        if windows_acl::grant(root, profile.sid(), false).is_ok() {
+        if windows_acl::grant(root, profile.sid(), false, true).is_ok() {
             recorded.push(root.clone());
         }
     }
@@ -85,15 +99,21 @@ pub(super) fn cleanup(temp_dir: &Path) {
 
 pub(super) fn cleanup_record_file(path: &Path) {
     let Some(record) = read_record(path) else {
-        let _ = std::fs::remove_file(path);
         return;
     };
-    if let Ok(profile) = windows_profile::Profile::derive(&record.profile_name) {
-        for root in &record.roots {
-            let _ = windows_acl::revoke(root, profile.sid());
-        }
+    let Ok(profile) = windows_profile::Profile::derive(&record.profile_name) else {
+        return;
+    };
+    if record
+        .roots
+        .iter()
+        .any(|root| windows_acl::revoke(root, profile.sid()).is_err())
+    {
+        return;
     }
-    windows_profile::delete(&record.profile_name);
+    if windows_profile::delete(&record.profile_name).is_err() {
+        return;
+    }
     let _ = std::fs::remove_file(path);
 }
 
@@ -139,3 +159,7 @@ fn valid_root(path: &Path) -> bool {
 fn error() -> String {
     super::launch::sandbox_error()
 }
+
+#[cfg(test)]
+#[path = "windows_tests.rs"]
+mod tests;

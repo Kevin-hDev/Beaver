@@ -71,6 +71,24 @@ pub(super) fn push_private_read_dir(
     roots.read_dirs.push(path);
 }
 
+pub(super) fn push_private_read_file(
+    roots: &mut ToolRoots,
+    path: &Path,
+    writable_roots: &[PathBuf],
+) {
+    let Some(path) = canonical_write_file(path) else { return };
+    if writable_roots.iter().any(|root| path.starts_with(root))
+        || roots.read_files.contains(&path)
+    {
+        return;
+    }
+    if read_len(roots) >= MAX_READ_ROOTS {
+        roots.read_limit_reached = true;
+        return;
+    }
+    roots.read_files.push(path);
+}
+
 pub(super) fn push_write_dir(
     roots: &mut ToolRoots,
     path: &Path,

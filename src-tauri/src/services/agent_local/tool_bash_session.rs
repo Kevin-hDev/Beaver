@@ -28,6 +28,7 @@ pub struct ShellSessionSnapshot {
     pub changes: Vec<ToolFileChange>,
     pub tracking_incomplete: bool,
     pub output_incomplete: bool,
+    pub sandbox_warning: Option<String>,
 }
 
 pub struct ShellSession {
@@ -49,6 +50,7 @@ struct SessionState {
     changes: Vec<ToolFileChange>,
     tracking_incomplete: bool,
     output_incomplete: bool,
+    sandbox_warning: Option<String>,
     progress: Option<ShellProgress>,
     last_progress_bytes: usize,
     last_progress_elapsed_ms: u64,
@@ -75,6 +77,7 @@ impl ShellSession {
                 changes: Vec::new(),
                 tracking_incomplete: false,
                 output_incomplete: false,
+                sandbox_warning: None,
                 progress,
                 last_progress_bytes: 0,
                 last_progress_elapsed_ms: 0,
@@ -132,6 +135,10 @@ impl ShellSession {
         self.lock_state().output_incomplete = true;
     }
 
+    pub fn set_sandbox_warning(&self, warning: Option<String>) {
+        self.lock_state().sandbox_warning = warning;
+    }
+
     pub fn complete(&self, completion: CompletionKind, output_path: Option<String>) {
         let mut state = self.lock_state();
         state.completion = Some(completion);
@@ -156,6 +163,7 @@ impl ShellSession {
             changes: state.changes.clone(),
             tracking_incomplete: state.tracking_incomplete,
             output_incomplete: state.output_incomplete,
+            sandbox_warning: state.sandbox_warning.clone(),
         }
     }
 

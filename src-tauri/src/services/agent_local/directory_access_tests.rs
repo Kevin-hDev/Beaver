@@ -128,3 +128,17 @@ fn symlink_is_checked_against_its_real_target() {
 
     assert!(!is_path_in_roots(&candidate, &roots));
 }
+
+#[cfg(not(windows))]
+#[test]
+fn only_the_filesystem_root_disables_the_unix_sandbox() {
+    assert!(super::roots_allow_full_disk(&[std::path::PathBuf::from("/")]));
+    assert!(!super::roots_allow_full_disk(&[std::path::PathBuf::from("/work")]));
+}
+
+#[cfg(windows)]
+#[test]
+fn secondary_volume_roots_never_disable_the_windows_sandbox() {
+    assert!(super::roots_allow_full_disk(&[std::path::PathBuf::from("C:\\")]));
+    assert!(!super::roots_allow_full_disk(&[std::path::PathBuf::from("D:\\")]));
+}

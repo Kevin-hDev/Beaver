@@ -362,6 +362,41 @@ fn path_directory_without_an_executable_is_not_granted() {
         .contains(&dunce::canonicalize(sensitive).expect("sensitive")));
 }
 
+#[cfg(unix)]
+#[test]
+fn local_user_tools_keep_their_precise_runtime_directories() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp = tempfile::tempdir().expect("tempdir");
+    let home = temp.path().join("home");
+    let workspace = temp.path().join("workspace");
+    let bin = home.join(".local/bin");
+    let pipx = home.join(".local/share/pipx");
+    std::fs::create_dir_all(&bin).expect("bin");
+    std::fs::create_dir_all(&pipx).expect("pipx");
+    std::fs::create_dir(&workspace).expect("workspace");
+    let executable = bin.join("tool");
+    std::fs::write(&executable, "#!/bin/sh\n").expect("tool");
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700))
+        .expect("permissions");
+
+    let roots = collect_from(
+        &[workspace],
+        &[],
+        &[],
+        Some(&home),
+        std::slice::from_ref(&bin),
+        false,
+        &[],
+    );
+
+    assert!(roots.read_dirs.contains(&dunce::canonicalize(bin).expect("bin")));
+    assert!(roots
+        .read_dirs
+        .contains(&dunce::canonicalize(pipx).expect("pipx")));
+    assert!(!roots.read_dirs.iter().any(|path| path == &home.join(".local")));
+}
+
 #[test]
 fn path_parent_never_exposes_the_private_application_store() {
     let private_store = crate::services::paths::data_dir();
@@ -419,16 +454,27 @@ fn private_store_read_root_rejects_a_symbolic_link() {
 }
 
 #[test]
-fn workspace_collection_always_reads_the_private_store() {
+fn workspace_collection_reads_private_entries_without_the_vault() {
     let temp = tempfile::tempdir().expect("tempdir");
     let workspace = temp.path().join("workspace");
     std::fs::create_dir(&workspace).expect("workspace");
+    let private = crate::services::paths::data_dir();
+    let readable = private.join(format!("readable-{}", uuid::Uuid::new_v4().simple()));
+    std::fs::create_dir(&readable).expect("readable private entry");
 
     let roots = collect(std::slice::from_ref(&workspace), &[], &[], None);
-    let private = dunce::canonicalize(crate::services::paths::data_dir()).expect("private");
+    let private = dunce::canonicalize(private).expect("private");
+    let readable = dunce::canonicalize(&readable).expect("readable");
 
-    assert!(roots.read_dirs.contains(&private));
+    assert!(roots.list_dirs.contains(&private));
+    assert!(roots.read_dirs.contains(&readable));
+    assert!(!roots.read_dirs.contains(&private));
+    assert!(!roots
+        .read_files
+        .iter()
+        .any(|path| path.ends_with("secrets.enc")));
     assert!(!roots.write_dirs.contains(&private));
+    let _ = std::fs::remove_dir_all(readable);
 }
 
 #[test]
@@ -459,59 +505,6 @@ fn enabled_agent_resources_are_writable_without_opening_their_parent() {
     assert!(roots.write_dirs.contains(&rules));
     assert!(roots.write_files.contains(&document));
     assert!(!roots.write_dirs.contains(&source));
-}
-
-#[test]
-fn saturated_root_limit_is_silent_and_persists_a_bounded_diagnostic() {
-    const CHILD_PATH: &str = "BEAVER_ROOT_LIMIT_TEST_PATH";
-    if let Some(path) = std::env::var_os(CHILD_PATH) {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let workspace = temp.path().join("workspace");
-        std::fs::create_dir_all(&workspace).expect("workspace");
-        let platform = (0..=MAX_READ_ROOTS)
-            .map(|index| temp.path().join(format!("tool-{index}")))
-            .collect::<Vec<_>>();
-        for path in &platform {
-            std::fs::create_dir_all(path).expect("tool root");
-        }
-        let roots = collect_from(
-            std::slice::from_ref(&workspace),
-            &platform,
-            &[],
-            None,
-            &[],
-            false,
-            &[],
-        );
-        assert!(roots.read_limit_reached);
-        super::super::super::shell_diagnostics::record_root_limits_for_test(
-            false,
-            roots.read_limit_reached,
-            roots.write_limit_reached,
-            Path::new(&path),
-        );
-        return;
-    }
-
-    let temp = tempfile::tempdir().expect("tempdir");
-    let diagnostic = temp.path().join("root-limit.json");
-    let test_name = concat!(
-        "services::agent_local::shell_sandbox::tool_roots::tests::",
-        "saturated_root_limit_is_silent_and_persists_a_bounded_diagnostic"
-    );
-    let output = std::process::Command::new(std::env::current_exe().expect("test executable"))
-        .args(["--exact", test_name, "--nocapture"])
-        .env(CHILD_PATH, &diagnostic)
-        .output()
-        .expect("child test");
-
-    assert!(output.status.success());
-    assert!(output.stderr.is_empty(), "stderr: {:?}", output.stderr);
-    let bytes = std::fs::read(diagnostic).expect("diagnostic");
-    assert!(bytes.len() < 256);
-    let text = String::from_utf8(bytes).expect("utf8");
-    assert!(text.contains("root_read_limit"));
-    assert!(!text.contains(&temp.path().to_string_lossy().to_string()));
 }
 
 #[cfg(unix)]

@@ -16,10 +16,10 @@ fn known_posix_shells_have_a_snapshot_script() {
 fn profile_is_kept_out_of_arguments_and_replayed_from_environment() {
     let profile = ShellProfile {
         scripts: sanitize::chunks(&sanitize::snapshot(
-            "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export BEAVER_PROFILE_TEST=env\nexport PATH=/short/profile/path",
+            "shopt -s expand_aliases; alias hi='printf alias'; myfn() { printf function; }; export PAGER=env\nexport PATH=/short/profile/path",
         )),
     };
-    let command = "hi; myfn; printf '%s:%s:%s:%s' \"$BEAVER_PROFILE_TEST\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_0-unset}\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_1-unset}\" \"$PATH\"";
+    let command = "hi; myfn; printf '%s:%s:%s:%s' \"$PAGER\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_0-unset}\" \"${BEAVER_INTERNAL_PROFILE_SNAPSHOT_1-unset}\" \"$PATH\"";
     let arguments = super::super::tool_bash_shell::shell_arguments(command);
 
     assert!(arguments
@@ -62,7 +62,19 @@ fn sandbox_owned_variables_are_not_replayed_from_the_profile() {
         "export TMPPREFIX=/tmp/zsh\n",
         "export PATH=/short/profile/path\n",
         "export TEMPORARY=kept\n",
-        "export BEAVER_PROFILE_TEST=kept\n",
+        "export PAGER=kept\n",
+        "export XDG_CACHE_HOME=/safe/cache\n",
+        "export npm_config_cache=/safe/npm\n",
+        "export HTTPS_PROXY=http://proxy.example\n",
+        "export SSL_CERT_FILE=/corporate/ca.pem\n",
+        "export SSH_AUTH_SOCK=/private/ssh-agent.sock\n",
+        "export JAVA_HOME=/opt/java\n",
+        "export XDG_CONFIG_HOME=/home/user/.config\n",
+        "export OPENAI_API_KEY=removed\n",
+        "export LD_PRELOAD=/unsafe/injection.so\n",
+        "export LD_AUDIT=/unsafe/audit.so\n",
+        "export DYLD_INSERT_LIBRARIES=/unsafe/injection.dylib\n",
+        "export BEAVER_INTERNAL_SANDBOX_POLICY=removed\n",
     );
     let sanitized = sanitize::snapshot(snapshot);
 
@@ -72,5 +84,17 @@ fn sandbox_owned_variables_are_not_replayed_from_the_profile() {
     assert!(!sanitized.contains("TMPPREFIX="));
     assert!(!sanitized.contains("PATH="));
     assert!(sanitized.contains("TEMPORARY=kept"));
-    assert!(sanitized.contains("BEAVER_PROFILE_TEST=kept"));
+    assert!(sanitized.contains("PAGER=kept"));
+    assert!(sanitized.contains("XDG_CACHE_HOME=/safe/cache"));
+    assert!(sanitized.contains("npm_config_cache=/safe/npm"));
+    assert!(sanitized.contains("HTTPS_PROXY=http://proxy.example"));
+    assert!(sanitized.contains("SSL_CERT_FILE=/corporate/ca.pem"));
+    assert!(sanitized.contains("SSH_AUTH_SOCK=/private/ssh-agent.sock"));
+    assert!(sanitized.contains("JAVA_HOME=/opt/java"));
+    assert!(sanitized.contains("XDG_CONFIG_HOME=/home/user/.config"));
+    assert!(sanitized.contains("OPENAI_API_KEY=removed"));
+    assert!(!sanitized.contains("LD_PRELOAD="));
+    assert!(!sanitized.contains("LD_AUDIT="));
+    assert!(!sanitized.contains("DYLD_INSERT_LIBRARIES="));
+    assert!(!sanitized.contains("BEAVER_INTERNAL_SANDBOX_POLICY="));
 }

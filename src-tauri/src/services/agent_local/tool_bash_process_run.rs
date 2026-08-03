@@ -98,6 +98,10 @@ pub(super) async fn run(
     {
         completion = CompletionKind::Failed;
     }
+    let sandbox_warning = sandbox_cleanup
+        .as_deref()
+        .and_then(super::shell_sandbox_diagnostics::warning);
+    session.set_sandbox_warning(sandbox_warning);
     session.complete(completion, output_path);
     super::shell_sandbox::cleanup_temp(sandbox_cleanup).await;
 }

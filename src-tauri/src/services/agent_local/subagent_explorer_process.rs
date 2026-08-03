@@ -76,7 +76,10 @@ pub async fn run(
             result = &mut execution => ProcessOutcome::Finished(result),
         }
     };
-    let result = match outcome {
+    let sandbox_warning = cleanup_dir
+        .as_deref()
+        .and_then(super::shell_sandbox_diagnostics::warning);
+    let mut result = match outcome {
         ProcessOutcome::Finished((Ok(stdout), Ok(stderr), Ok(status))) => {
             let (stdout, stdout_truncated) = render(stdout);
             let (stderr, stderr_truncated) = render(stderr);
@@ -92,6 +95,7 @@ pub async fn run(
                 tracking_incomplete: false,
                 output_truncated: stdout_truncated || stderr_truncated,
                 output_incomplete: false,
+                sandbox_warning: None,
                 affected_paths: Vec::new(),
                 file_changes: Vec::new(),
             })
@@ -110,6 +114,9 @@ pub async fn run(
             Ok(interrupted("Délai d'exploration dépassé.", true, false))
         }
     };
+    if let Ok(output) = &mut result {
+        output.sandbox_warning = sandbox_warning;
+    }
     super::shell_sandbox::cleanup_temp(cleanup_dir).await;
     result
 }
@@ -156,6 +163,7 @@ fn interrupted(message: &str, timed_out: bool, cancelled: bool) -> ShellOutput {
         tracking_incomplete: false,
         output_truncated: false,
         output_incomplete: false,
+        sandbox_warning: None,
         affected_paths: Vec::new(),
         file_changes: Vec::new(),
     }

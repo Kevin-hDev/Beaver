@@ -11,9 +11,9 @@ pub(super) fn ensure_defaults(
     home: &Path,
     path_dirs: &[PathBuf],
     path_overflow: bool,
-) {
+) -> bool {
     if path_overflow {
-        return;
+        return false;
     }
     let mut failed = false;
     for ((kind, selected), default) in kinds.iter().zip(selected).zip(defaults) {
@@ -24,9 +24,7 @@ pub(super) fn ensure_defaults(
             failed = true;
         }
     }
-    if failed {
-        eprintln!("[shell-sandbox] one or more tool caches are unavailable");
-    }
+    failed
 }
 
 fn tool_available(kind: CacheKind, path_dirs: &[PathBuf]) -> bool {

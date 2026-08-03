@@ -3,7 +3,7 @@ use std::os::unix::process::CommandExt;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
-// API Apple dépréciée : son absence doit continuer à bloquer le shell restreint.
+// API Apple dépréciée : son absence doit continuer à bloquer la limite de dossiers du shell.
 const SANDBOX_EXEC: &str = "/usr/bin/sandbox-exec";
 const PLATFORM_READ_DIRS: [&str; 10] = [
     "/System",
@@ -25,6 +25,7 @@ struct SandboxRoots {
     write_files: Vec<PathBuf>,
     read_dirs: Vec<PathBuf>,
     read_files: Vec<PathBuf>,
+    list_dirs: Vec<PathBuf>,
 }
 
 pub(super) fn run(
@@ -53,6 +54,7 @@ pub(super) fn run(
     add_parameters(&mut command, "BEAVER_RW_FILE", &roots.write_files);
     add_parameters(&mut command, "BEAVER_RO_DIR", &roots.read_dirs);
     add_parameters(&mut command, "BEAVER_RO_FILE", &roots.read_files);
+    add_parameters(&mut command, "BEAVER_LIST_DIR", &roots.list_dirs);
     command
         .arg("-p")
         .arg(policy(&roots, scope.mode, xcrun_rule.as_deref()))
@@ -78,6 +80,14 @@ fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
             None,
         )
     };
+    super::super::shell_sandbox_diagnostics::record(
+        temp_dir,
+        tools.path_limit_reached,
+        tools.read_limit_reached,
+        tools.write_limit_reached,
+        tools.cache_unavailable,
+        false,
+    );
     if scope.mode == super::scope::Mode::ProfileCapture {
         return SandboxRoots {
             write_dirs: vec![temp_dir.to_path_buf()],
@@ -95,6 +105,7 @@ fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
                 .cloned()
                 .chain(tools.read_files)
                 .collect(),
+            list_dirs: tools.list_dirs,
         };
     }
     SandboxRoots {
@@ -108,6 +119,7 @@ fn sandbox_roots(scope: &super::scope::Scope, temp_dir: &Path) -> SandboxRoots {
         write_files: tools.write_files,
         read_dirs: tools.read_dirs,
         read_files: tools.read_files,
+        list_dirs: tools.list_dirs,
     }
 }
 
@@ -142,7 +154,16 @@ fn policy(
     append_rules(&mut policy, "BEAVER_RW_FILE", roots.write_files.len(), true, true);
     append_rules(&mut policy, "BEAVER_RO_DIR", roots.read_dirs.len(), false, false);
     append_rules(&mut policy, "BEAVER_RO_FILE", roots.read_files.len(), false, true);
+    append_list_rules(&mut policy, roots.list_dirs.len());
     policy
+}
+
+fn append_list_rules(policy: &mut String, count: usize) {
+    for index in 0..count {
+        policy.push_str(&format!(
+            "(allow file-read-data file-read-metadata file-test-existence (literal (param \"BEAVER_LIST_DIR_{index}\")))\n"
+        ));
+    }
 }
 
 fn xcrun_cache_rule() -> Option<String> {

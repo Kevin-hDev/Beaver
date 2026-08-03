@@ -41,7 +41,7 @@ pub async fn write_document(path: &str, content: &Value, working_dir: &Path) -> 
 
     let resolved = super::tool_office_utils::resolve_path(path, working_dir);
 
-    let validated = match validate_write_path(&resolved) {
+    let validated = match validate_write_path(&resolved, working_dir) {
         Ok(p) => p,
         Err(error) => {
             return super::tool_file_error::path_failure(

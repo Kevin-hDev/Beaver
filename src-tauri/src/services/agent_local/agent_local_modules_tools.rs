@@ -93,6 +93,7 @@ pub mod tool_execution_outcome;
 pub mod extension_tool_set;
 pub mod tool_file_changes;
 mod tool_file_error;
+mod tool_file_write;
 pub mod tool_files;
 #[cfg(test)]
 pub mod tool_files_tests;

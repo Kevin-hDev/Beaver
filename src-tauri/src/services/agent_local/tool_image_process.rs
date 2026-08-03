@@ -63,7 +63,7 @@ pub async fn transform_image(
     }
 
     let resolved_out = super::tool_office_utils::resolve_path(output_path, working_dir);
-    let validated_out = match validate_write_path(&resolved_out) {
+    let validated_out = match validate_write_path(&resolved_out, working_dir) {
         Ok(p) => p,
         Err(error) => {
             return super::tool_file_error::path_failure(

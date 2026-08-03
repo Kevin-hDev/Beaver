@@ -40,24 +40,24 @@ pub fn create_wakeup(
         true,
     )?;
 
-    let mut config = cfg::read_config()?;
-    validation::validate_capacity(config.scheduled_wakeups.len())?;
-    let globally_paused = config.heartbeat.global_paused;
-    let wakeup = ScheduledWakeup {
-        id: Uuid::new_v4().to_string(),
-        name: input.name,
-        model: input.model,
-        provider: input.provider,
-        prompt: input.prompt,
-        schedule: input.schedule,
-        description: input.description,
-        active: !globally_paused,
-        paused_by_global: globally_paused,
-        created_at: chrono::Utc::now().to_rfc3339(),
-    };
-
-    config.scheduled_wakeups.push(wakeup.clone());
-    cfg::write_config(&config)?;
+    let wakeup = cfg::update_config(move |config| {
+        validation::validate_capacity(config.scheduled_wakeups.len())?;
+        let globally_paused = config.heartbeat.global_paused;
+        let wakeup = ScheduledWakeup {
+            id: Uuid::new_v4().to_string(),
+            name: input.name,
+            model: input.model,
+            provider: input.provider,
+            prompt: input.prompt,
+            schedule: input.schedule,
+            description: input.description,
+            active: !globally_paused,
+            paused_by_global: globally_paused,
+            created_at: chrono::Utc::now().to_rfc3339(),
+        };
+        config.scheduled_wakeups.push(wakeup.clone());
+        Ok(wakeup)
+    })?;
     scheduler.notify_config_changed();
     Ok(wakeup)
 }
@@ -67,30 +67,30 @@ pub fn update_wakeup(
     mut wakeup: ScheduledWakeup,
     scheduler: State<'_, Scheduler>,
 ) -> Result<(), String> {
-    let mut config = cfg::read_config()?;
-    if config.heartbeat.global_paused && wakeup.active {
-        wakeup.active = false;
-        wakeup.paused_by_global = true;
-    }
-    validation::validate_wakeup(&wakeup)?;
-
-    let idx = config
-        .scheduled_wakeups
-        .iter()
-        .position(|w| w.id == wakeup.id)
-        .ok_or_else(|| "Réveil introuvable".to_string())?;
-
-    config.scheduled_wakeups[idx] = wakeup;
-    cfg::write_config(&config)?;
+    cfg::update_config(move |config| {
+        if config.heartbeat.global_paused && wakeup.active {
+            wakeup.active = false;
+            wakeup.paused_by_global = true;
+        }
+        validation::validate_wakeup(&wakeup)?;
+        let index = config
+            .scheduled_wakeups
+            .iter()
+            .position(|item| item.id == wakeup.id)
+            .ok_or_else(|| "Réveil introuvable".to_string())?;
+        config.scheduled_wakeups[index] = wakeup;
+        Ok(())
+    })?;
     scheduler.notify_config_changed();
     Ok(())
 }
 
 #[tauri::command]
 pub fn delete_wakeup(id: String, scheduler: State<'_, Scheduler>) -> Result<(), String> {
-    let mut config = cfg::read_config()?;
-    config.scheduled_wakeups.retain(|w| w.id != id);
-    cfg::write_config(&config)?;
+    cfg::update_config(move |config| {
+        config.scheduled_wakeups.retain(|wakeup| wakeup.id != id);
+        Ok(())
+    })?;
     scheduler.notify_config_changed();
     Ok(())
 }
@@ -101,40 +101,38 @@ pub fn set_wakeup_active(
     active: bool,
     scheduler: State<'_, Scheduler>,
 ) -> Result<(), String> {
-    let mut config = cfg::read_config()?;
-    if config.heartbeat.global_paused {
-        return Err("Réveils en veille".into());
-    }
-
-    let w = config
-        .scheduled_wakeups
-        .iter_mut()
-        .find(|w| w.id == id)
-        .ok_or_else(|| "Réveil introuvable".to_string())?;
-    w.active = active;
-    w.paused_by_global = false;
-    validation::validate_wakeup(w)?;
-
-    cfg::write_config(&config)?;
+    cfg::update_config(move |config| {
+        if config.heartbeat.global_paused {
+            return Err("Réveils en veille".into());
+        }
+        let wakeup = config
+            .scheduled_wakeups
+            .iter_mut()
+            .find(|wakeup| wakeup.id == id)
+            .ok_or_else(|| "Réveil introuvable".to_string())?;
+        wakeup.active = active;
+        wakeup.paused_by_global = false;
+        validation::validate_wakeup(wakeup)
+    })?;
     scheduler.notify_config_changed();
     Ok(())
 }
 
 #[tauri::command]
 pub fn set_global_paused(paused: bool, scheduler: State<'_, Scheduler>) -> Result<(), String> {
-    let mut config = cfg::read_config()?;
-    for w in &mut config.scheduled_wakeups {
-        if paused && w.active {
-            w.paused_by_global = true;
-            w.active = false;
-        } else if !paused && w.paused_by_global {
-            w.active = true;
-            w.paused_by_global = false;
+    cfg::update_config(move |config| {
+        for wakeup in &mut config.scheduled_wakeups {
+            if paused && wakeup.active {
+                wakeup.paused_by_global = true;
+                wakeup.active = false;
+            } else if !paused && wakeup.paused_by_global {
+                wakeup.active = true;
+                wakeup.paused_by_global = false;
+            }
         }
-    }
-
-    config.heartbeat.global_paused = paused;
-    cfg::write_config(&config)?;
+        config.heartbeat.global_paused = paused;
+        Ok(())
+    })?;
     scheduler.notify_config_changed();
     Ok(())
 }

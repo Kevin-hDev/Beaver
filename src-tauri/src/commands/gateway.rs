@@ -111,9 +111,10 @@ pub async fn gateway_set_config(
             .channels
             .iter()
             .any(|c| matches!(c.status, ChannelStatus::Starting | ChannelStatus::Running));
-    let mut full = crate::services::config::read_config().unwrap_or_default();
-    full.gateway = config.clone();
-    crate::services::config::write_config(&full)?;
+    crate::services::config::update_config(|full| {
+        full.gateway = config.clone();
+        Ok(())
+    })?;
     state.update_config(config.clone()).await;
 
     if should_restart && config.enabled {

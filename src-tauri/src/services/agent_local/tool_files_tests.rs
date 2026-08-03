@@ -1,7 +1,7 @@
-use crate::services::agent_local::tool_files::{edit_file, read_file, DEFAULT_LIMIT};
+use crate::services::agent_local::tool_files::{
+    edit_file, read_file, write_file, write_file_in_roots, DEFAULT_LIMIT,
+};
 use crate::services::agent_local::tool_result_contract::ToolResultStatus;
-#[cfg(unix)]
-use crate::services::agent_local::tool_files::write_file;
 // MAX_LIMIT est 50_000 — on le réimporte pour les tests de borne
 const MAX_LIMIT: usize = 50_000;
 use std::io::Write;
@@ -192,6 +192,33 @@ async fn read_file_reports_non_utf8_content_as_unsupported_input() {
     let result = read_file(path.to_str().unwrap(), directory.path(), 0, DEFAULT_LIMIT).await;
 
     assert_eq!(result.error.unwrap().code.as_ref(), "file_not_utf8");
+}
+
+#[tokio::test]
+async fn write_file_uses_the_same_effective_roots_for_both_checks() {
+    let workspace_root = tempfile::tempdir().expect("workspace");
+    let working_dir = workspace_root.path().join("work");
+    std::fs::create_dir_all(&working_dir).expect("work");
+    let canonical_working = dunce::canonicalize(&working_dir).expect("work root");
+    let roots = vec![canonical_working.clone()];
+
+    let result = write_file_in_roots("created.txt", "managed", &working_dir, &roots).await;
+
+    assert!(roots.iter().any(|root| canonical_working.starts_with(root)));
+    assert!(!result.is_error, "{}", result.content);
+    assert_eq!(std::fs::read_to_string(working_dir.join("created.txt")).unwrap(), "managed");
+}
+
+#[tokio::test]
+async fn write_file_rejects_a_path_outside_the_effective_roots() {
+    let allowed = tempfile::tempdir().expect("allowed");
+    let outside = tempfile::tempdir().expect("outside");
+    let roots = vec![dunce::canonicalize(allowed.path()).expect("allowed root")];
+
+    let result = write_file_in_roots("blocked.txt", "blocked", outside.path(), &roots).await;
+
+    assert!(result.is_error);
+    assert!(!outside.path().join("blocked.txt").exists());
 }
 
 #[cfg(unix)]
