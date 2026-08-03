@@ -36,6 +36,13 @@
 - **Stable token breakdown** — calculates context categories from the request actually sent to the provider and preserves them across tool calls and stream completion, preventing messages, tools, or meta context from being redistributed when final usage arrives.
 - **More accurate context accounting** — counts streamed output as estimated tokens instead of network fragments, applies provider-aware reasoning rules, and separates skill catalog descriptions from skill content loaded later in the conversation.
 
+### Application shutdown
+
+- **Immediate close response** — hides Beaver and its dock icon as soon as quit is requested, so the application disappears without a prolonged loading state.
+- **Fast, bounded cleanup** — stops active conversations, downloads, local runtimes, connectors, terminals, extensions, and model processes concurrently, with a strict two-second shutdown deadline.
+- **Reliable cross-platform process cleanup** — safely terminates owned process trees on macOS, Linux, and Windows, while preserving SearXNG process tracking when startup or searches are cancelled.
+- **Earlier Windows validation** — compiles the main Windows backend during pull-request checks so platform-specific process lifecycle regressions are caught before release.
+
 ---
 
 ## v1.1.0
