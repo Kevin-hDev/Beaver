@@ -3,7 +3,9 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::OnceLock;
 
 pub(crate) const MAX_PATH_INPUTS: usize = 256;
+#[cfg(unix)]
 const MAX_CAPTURE_BYTES: usize = 128 * 1024;
+#[cfg(unix)]
 const CAPTURE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(8);
 
 #[derive(Clone)]
@@ -90,7 +92,9 @@ fn normalize(value: OsString, discovered: bool) -> Option<ShellPath> {
 }
 
 fn valid_entry(path: &Path) -> bool {
-    let Some(text) = path.to_str() else { return false };
+    let Some(text) = path.to_str() else {
+        return false;
+    };
     path.is_absolute()
         && text.chars().take(4_097).count() <= 4_096
         && !text.chars().any(char::is_control)

@@ -78,12 +78,9 @@ async fn capture(shell: &str, working_dir: &Path) -> Option<ShellProfile> {
     let marker = format!("__BEAVER_PROFILE_{}__", uuid::Uuid::new_v4().simple());
     let script = snapshot_script(shell, &marker)?;
     let arguments = vec!["-l".to_string(), "-c".to_string(), script];
-    let prepared = super::shell_sandbox::prepare_command(
-        std::ffi::OsStr::new(shell),
-        &arguments,
-        working_dir,
-    )
-    .ok()?;
+    let prepared =
+        super::shell_sandbox::prepare_command(std::ffi::OsStr::new(shell), &arguments, working_dir)
+            .ok()?;
     let cleanup_dir = prepared.cleanup_dir;
     let mut command = prepared.command;
     command
@@ -114,15 +111,12 @@ async fn capture_process(
         let _ = child.wait().await;
         return None;
     };
-    let capture = tokio::time::timeout(
-        Duration::from_secs(SNAPSHOT_TIMEOUT_SECS),
-        async {
-            tokio::join!(
-                super::tool_bash_io::read_bounded(stdout, MAX_SNAPSHOT_BYTES),
-                child.wait()
-            )
-        },
-    )
+    let capture = tokio::time::timeout(Duration::from_secs(SNAPSHOT_TIMEOUT_SECS), async {
+        tokio::join!(
+            super::tool_bash_io::read_bounded(stdout, MAX_SNAPSHOT_BYTES),
+            child.wait()
+        )
+    })
     .await;
     let (mut bytes, exceeded, status) = match capture {
         Ok((Ok((bytes, exceeded)), Ok(status))) => (bytes, exceeded, status),
@@ -142,7 +136,11 @@ async fn capture_process(
     };
     if exceeded || !status.success() {
         bytes.zeroize();
-        log_unavailable(if exceeded { "too_large" } else { "capture_failed" });
+        log_unavailable(if exceeded {
+            "too_large"
+        } else {
+            "capture_failed"
+        });
         return None;
     }
     let raw = Zeroizing::new(String::from_utf8_lossy(&bytes).into_owned());
@@ -182,6 +180,7 @@ fn snapshot_script(shell: &str, marker: &str) -> Option<String> {
     }
 }
 
+#[cfg(any(unix, test))]
 pub(super) fn supports_shell(shell: &str) -> bool {
     snapshot_script(shell, "supported").is_some()
 }

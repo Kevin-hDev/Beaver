@@ -1,5 +1,6 @@
 use tokio::process::Command;
 
+#[cfg(unix)]
 const TERMINATION_GRACE_MS: u64 = 50;
 
 pub fn configure_process_group(command: &mut Command) {

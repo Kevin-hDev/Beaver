@@ -1,10 +1,10 @@
+#[cfg(test)]
+use super::tool_roots_collect::collect_from;
+use super::tool_roots_collect::collect_into;
 use super::tool_roots_entries::{
     push_private_read_dir, push_private_read_file, push_resource_write_dir,
     push_resource_write_file,
 };
-use super::tool_roots_collect::collect_into;
-#[cfg(test)]
-use super::tool_roots_collect::collect_from;
 use super::tool_roots_path::{canonical_dir, contains_executable};
 use std::path::{Path, PathBuf};
 
@@ -39,6 +39,7 @@ pub(super) fn collect(
     )
 }
 
+#[cfg(any(unix, test))]
 pub(super) fn collect_read_only(
     workspace_roots: &[PathBuf],
     platform_read_dirs: &[&str],
@@ -74,8 +75,14 @@ fn collect_with_access(
     );
     let path_overflow = configured_overflow || path_inputs.len() > max_paths;
     path_inputs.truncate(max_paths);
-    let platform = platform_read_dirs.iter().map(PathBuf::from).collect::<Vec<_>>();
-    let packages = package_prefixes.iter().map(PathBuf::from).collect::<Vec<_>>();
+    let platform = platform_read_dirs
+        .iter()
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
+    let packages = package_prefixes
+        .iter()
+        .map(PathBuf::from)
+        .collect::<Vec<_>>();
     let home = dirs::home_dir().and_then(|path| canonical_dir(&path));
     let (writable_cache_dirs, cache_unavailable) = if allow_writes {
         home.as_deref()

@@ -50,3 +50,81 @@ test("an old Windows CEF layout marker is invalidated", async (context) => {
     false,
   );
 });
+
+test("Windows CEF extraction retries one transient failure", async () => {
+  const { extractCefWithRetry } = await import("./cef-prepare-retry.mjs");
+  let attempts = 0;
+  const extract = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("transient failure");
+    return "ready";
+  };
+
+  const result = await extractCefWithRetry("archive", {}, {
+    extract,
+    platform: "win32",
+    wait: async () => {},
+  });
+
+  assert.equal(result, "ready");
+  assert.equal(attempts, 2);
+});
+
+test("CEF extraction remains fail closed after its Windows retry", async () => {
+  const { extractCefWithRetry } = await import("./cef-prepare-retry.mjs");
+  let attempts = 0;
+  const extract = async () => {
+    attempts += 1;
+    throw new Error("persistent failure");
+  };
+
+  await assert.rejects(
+    extractCefWithRetry("archive", {}, {
+      extract,
+      platform: "win32",
+      wait: async () => {},
+    }),
+    /persistent failure/,
+  );
+  assert.equal(attempts, 2);
+});
+
+test("the Tauri launcher exposes the verified Ninja directory first", async () => {
+  const { repoRoot } = await import("./cef-artifacts.mjs");
+  const { createTauriLaunch } = await import("./tauri-launch.mjs");
+  const launch = createTauriLaunch({
+    args: ["dev"],
+    cliPath: join("project", "node_modules", "@tauri-apps", "cli", "tauri.js"),
+    currentPath: join("Windows", "System32"),
+    executablePath: join("node", "node.exe"),
+    toolPath: join("project", "src-tauri", ".cef-tools", "ninja.exe"),
+  });
+
+  assert.equal(launch.command, join("node", "node.exe"));
+  assert.deepEqual(launch.args, [
+    join("project", "node_modules", "@tauri-apps", "cli", "tauri.js"),
+    "dev",
+  ]);
+  assert.equal(
+    launch.path,
+    `${join("project", "src-tauri", ".cef-tools")};${join("Windows", "System32")}`,
+  );
+  const packageJson = JSON.parse(await read(join(repoRoot, "package.json")));
+  assert.equal(packageJson.scripts.tauri, "node scripts/cef/run-tauri.mjs");
+});
+
+test("the Tauri launcher rejects an unbounded argument list", async () => {
+  const { createTauriLaunch } = await import("./tauri-launch.mjs");
+
+  assert.throws(
+    () =>
+      createTauriLaunch({
+        args: Array.from({ length: 65 }, () => "dev"),
+        cliPath: "tauri.js",
+        currentPath: "system",
+        executablePath: "node.exe",
+        toolPath: "ninja.exe",
+      }),
+    /Tauri launch configuration is invalid/,
+  );
+});

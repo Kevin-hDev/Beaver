@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/check-react-component-calls.mjs && tsc && vite build",
-    "tauri": "tauri",
+    "tauri": "node scripts/cef/run-tauri.mjs",
     "lint": "node scripts/check-react-component-calls.mjs && eslint src/",
     "lint:react-boundaries": "node scripts/check-react-component-calls.mjs",
     "test": "vitest run && npm run test:cef && npm run test:extensions-host",

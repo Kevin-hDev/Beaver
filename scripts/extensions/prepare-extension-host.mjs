@@ -3,6 +3,7 @@ import { copyFile, mkdir, readdir, rm } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { prepareNodeRuntime } from "./node-runtime.mjs";
+import { createNpmInvocation } from "./npm-command.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const sourceDirectory = resolve(root, "src-tauri/resources/extension-host");
@@ -51,7 +52,7 @@ async function resetDevelopmentHost() {
 }
 
 async function installProductionDependencies(directory) {
-  await run(process.platform === "win32" ? "npm.cmd" : "npm", [
+  const invocation = await createNpmInvocation([
     "ci",
     "--ignore-scripts",
     "--omit=dev",
@@ -59,6 +60,7 @@ async function installProductionDependencies(directory) {
     "--prefix",
     directory,
   ]);
+  await run(invocation.program, invocation.args);
 }
 
 async function copyHostSources(source, destination) {

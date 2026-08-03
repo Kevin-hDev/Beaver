@@ -1,7 +1,10 @@
+#[cfg(unix)]
 use super::test_support::canonical;
 use super::*;
+#[cfg(unix)]
 use std::time::{Duration, Instant};
 
+#[cfg(unix)]
 #[tokio::test]
 async fn short_commands_complete_without_changing_the_next_workdir() {
     let project = tempfile::tempdir().expect("project");
@@ -19,6 +22,7 @@ async fn short_commands_complete_without_changing_the_next_workdir() {
     assert_eq!(next.stdout.trim(), canonical(project.path()));
 }
 
+#[cfg(unix)]
 #[tokio::test]
 async fn explicit_external_workdir_is_allowed_for_one_call() {
     let project = tempfile::tempdir().expect("project");
@@ -61,5 +65,8 @@ async fn mkdir_is_fast_and_reports_the_changed_path() {
         .to_string_lossy()
         .to_string();
     assert!(output.affected_paths.iter().any(|path| path == &created));
-    assert!(output.file_changes.iter().all(|change| change.diff.is_none()));
+    assert!(output
+        .file_changes
+        .iter()
+        .all(|change| change.diff.is_none()));
 }

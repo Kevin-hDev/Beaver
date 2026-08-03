@@ -12,7 +12,10 @@ import { describe, expect, it } from "vitest";
 
 const buttonsCss = readFileSync("src/styles/buttons.css", "utf8");
 const fieldsCss = readFileSync("src/styles/fields.css", "utf8");
-const SHARED = ["src/styles/buttons.css", "src/styles/fields.css"];
+const SHARED = new Set([
+  join("src", "styles", "buttons.css"),
+  join("src", "styles", "fields.css"),
+]);
 
 /* Les seuls contrôles qui posent leur propre hauteur, parce qu'ils ne sont pas
    des contrôles d'interface au sens du système : les pastilles de fenêtre
@@ -35,7 +38,7 @@ function cssFiles(dir: string): string[] {
     const path = join(dir, entry);
     // eslint-disable-next-line security/detect-non-literal-fs-filename
     if (statSync(path).isDirectory()) return cssFiles(path);
-    return path.endsWith(".css") && !SHARED.includes(path) ? [path] : [];
+    return path.endsWith(".css") && !SHARED.has(path) ? [path] : [];
   });
 }
 

@@ -1,5 +1,8 @@
-use std::path::{Path, PathBuf};
+#[cfg(any(unix, test))]
+use std::path::Path;
+use std::path::PathBuf;
 
+#[cfg(any(unix, test))]
 const PROFILE_FILES: [&str; 10] = [
     ".zshenv",
     ".zprofile",
@@ -15,6 +18,7 @@ const PROFILE_FILES: [&str; 10] = [
 
 // Les parents larges restent exclus : ces dossiers servent uniquement à
 // initialiser les gestionnaires d'outils et les configurations shell usuelles.
+#[cfg(any(unix, test))]
 const PROFILE_READ_DIRS: [&str; 12] = [
     ".nvm",
     ".local/bin",
@@ -39,7 +43,9 @@ pub(super) enum Mode {
 pub(super) struct Scope {
     pub mode: Mode,
     pub roots: Vec<PathBuf>,
+    #[cfg(unix)]
     pub read_dirs: Vec<PathBuf>,
+    #[cfg(unix)]
     pub read_files: Vec<PathBuf>,
 }
 
@@ -48,22 +54,28 @@ impl Scope {
         Self {
             mode: Mode::Workspace,
             roots,
+            #[cfg(unix)]
             read_dirs: Vec::new(),
+            #[cfg(unix)]
             read_files: Vec::new(),
         }
     }
 
     pub fn profile_capture(roots: Vec<PathBuf>) -> Self {
+        #[cfg(unix)]
         let (read_dirs, read_files) = profile_roots();
         Self {
             mode: Mode::ProfileCapture,
             roots,
+            #[cfg(unix)]
             read_dirs,
+            #[cfg(unix)]
             read_files,
         }
     }
 }
 
+#[cfg(unix)]
 fn profile_roots() -> (Vec<PathBuf>, Vec<PathBuf>) {
     dirs::home_dir()
         .and_then(|home| dunce::canonicalize(home).ok())
@@ -72,6 +84,7 @@ fn profile_roots() -> (Vec<PathBuf>, Vec<PathBuf>) {
         .unwrap_or_default()
 }
 
+#[cfg(any(unix, test))]
 fn profile_dirs_in(home: &Path) -> Vec<PathBuf> {
     PROFILE_READ_DIRS
         .iter()
@@ -79,15 +92,14 @@ fn profile_dirs_in(home: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+#[cfg(any(unix, test))]
 fn profile_files_in(home: &Path) -> Vec<PathBuf> {
     PROFILE_FILES
         .iter()
         .filter_map(|name| {
             let candidate = home.join(name);
             let metadata = candidate.symlink_metadata().ok()?;
-            if !metadata.is_file()
-                || super::tool_roots_path::has_symlink_below(home, &candidate)
-            {
+            if !metadata.is_file() || super::tool_roots_path::has_symlink_below(home, &candidate) {
                 return None;
             }
             let canonical = dunce::canonicalize(candidate).ok()?;
@@ -96,6 +108,7 @@ fn profile_files_in(home: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+#[cfg(any(unix, test))]
 fn safe_profile_dir(home: &Path, candidate: &Path) -> Option<PathBuf> {
     if super::tool_roots_path::has_symlink_below(home, candidate) {
         return None;

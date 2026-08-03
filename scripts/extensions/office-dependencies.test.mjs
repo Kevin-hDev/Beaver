@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { access, readFile, readdir } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 import { hostDirectory, root } from "./office-test-helpers.mjs";
@@ -41,7 +41,7 @@ test("the production Office tree is exact, pinned, and omits optional canvas", a
 test("format libraries are isolated behind Beaver adapters", async () => {
   const pluginRoot = join(hostDirectory, "builtin-plugins");
   const files = await sourceFiles(pluginRoot, 128);
-  const adapters = `${join("common", "formats")}/`;
+  const adapters = `${join("common", "formats")}${sep}`;
   const packageImports = [
     "@cantoo/pdf-lib",
     "@xlsx/xlsx-populate",
@@ -52,7 +52,7 @@ test("format libraries are isolated behind Beaver adapters", async () => {
     "pptxgenjs",
   ];
   for (const file of files) {
-    if (relative(pluginRoot, file).includes(adapters)) continue;
+    if (relative(pluginRoot, file).startsWith(adapters)) continue;
     const source = await readFile(file, "utf8");
     for (const packageName of packageImports) {
       assert.equal(source.includes(`from "${packageName}`), false, file);

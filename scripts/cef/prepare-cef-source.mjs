@@ -1,6 +1,6 @@
 import { selectedArtifact, selectedBuildTool } from "./cef-artifacts.mjs";
 import { verifiedArchive } from "./cef-download.mjs";
-import { extractVerifiedArchive } from "./cef-extract.mjs";
+import { extractCefWithRetry } from "./cef-prepare-retry.mjs";
 import { prepareBuildTool } from "./cef-tool.mjs";
 
 async function main() {
@@ -9,7 +9,7 @@ async function main() {
   const tool = selectedBuildTool();
   await prepareBuildTool(tool);
   const archive = await verifiedArchive(artifact);
-  await extractVerifiedArchive(archive, artifact);
+  await extractCefWithRetry(archive, artifact);
   process.stdout.write("CEF source verified with SHA-256\n");
 }
 
