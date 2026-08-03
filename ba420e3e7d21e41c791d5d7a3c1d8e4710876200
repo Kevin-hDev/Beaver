@@ -103,3 +103,67 @@ Couverture finale de list_dir
 • Si la canonicalisation de la racine Beaver échoue, son chemin brut sert uniquement à la comparaison. Les autres projets conservent leur profondeur normale. La configuration n’est lue qu’après avoir confirmé que le chemin demandé est la racine Beaver.
 
 • Validation réellement exécutée : cargo test --all = 2935 réussis, 0 échec, 1 ignoré ; cargo fmt --check, cargo clippy --all-targets -- -D warnings, Clippy strict dead_code/unused, Semgrep et graphify update . réussis.
+
+Checklist native Linux / Windows avant validation finale
+
+Préconditions communes
+
+• Partir du commit ba420e3 et vérifier que la git note est présente avec git notes show ba420e3.
+• Lancer cargo test --all, cargo fmt --check et cargo clippy --all-targets -- -D warnings.
+• Dans l’application, vérifier le défaut Tout le disque, puis configurer deux dossiers autorisés distincts. Les deux doivent fonctionner et un troisième dossier doit être bloqué avec le dialogue Annuler / Réglages.
+• Vérifier une session avec projet, une session sans projet utilisant son workspace géré, un changement de worktree et une reprise de session existante.
+• Dans Tout le disque, confirmer que shell, bash_control, lecture, écriture, réseau et environnement fonctionnent exactement comme avant.
+
+Linux — validation automatique obligatoire
+
+• Utiliser un noyau 6.2 ou plus récent et relever uname -r.
+• Vérifier que le test existe dans cargo test --lib -- --list :
+  services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root
+• Exécuter :
+  cargo test --lib services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root -- --ignored --exact --nocapture
+• Le test doit créer et modifier un fichier dans le projet, refuser une écriture extérieure et refuser l’évasion par bind mount.
+• Refaire un essai sur un noyau 5.15 ou 6.1 si disponible : une session limitée doit refuser le shell avec le message indiquant qu’un noyau Linux 6.2+ est requis. Ne jamais accepter un démarrage sans Landlock.
+
+Linux — validation fonctionnelle dans une session limitée
+
+• Tester git init, git add, git commit et git log.
+• Tester npm install avec téléchargement réel puis exécuter le module installé.
+• Tester cargo build/cargo run et un projet Go avec dépendance.
+• Tester un heredoc, mktemp, redirections vers /dev/null, substitution de processus et allocation PTY.
+• Vérifier que HTTP_PROXY, HTTPS_PROXY, NO_PROXY, certificats internes, SSH_AUTH_SOCK, JAVA_HOME, variables Android/Conda/pnpm/XDG et autres variables utilisateur restent disponibles.
+• Vérifier que LD_PRELOAD, LD_AUDIT, DYLD_INSERT_LIBRARIES et les variables internes Beaver ne sont pas injectées dans le helper.
+• Vérifier que /proc visible appartient au namespace privé quand celui-ci est disponible et que les capacités Linux ne permettent ni mount ni élargissement des droits.
+• Écrire, tronquer, renommer et supprimer dans le projet : autorisé. Répéter hors des racines : refusé.
+• Tester traversées avec .., liens symboliques vers un dossier extérieur et destination remplacée pendant la commande : refusés.
+• Le dossier Beaver reste découvrable au premier niveau via list_dir, mais le shell ne doit pas pouvoir énumérer récursivement sa racine automatique. Un fichier interne autorisé connu reste lisible. secrets.enc et shell-sandboxes restent illisibles. Si Beaver ou un parent est explicitement ajouté aux réglages, les droits normaux de cette racine doivent revenir.
+• Tester plusieurs shells et sous-agents en parallèle, annulation, bash_control et nettoyage des dossiers temporaires après succès, erreur et annulation.
+
+Windows — validation automatique obligatoire
+
+• Vérifier que le test existe dans cargo test --lib -- --list :
+  services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root
+• Exécuter dans PowerShell :
+  cargo test --lib services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root -- --ignored --exact --nocapture
+• Le test doit autoriser le projet, refuser le dossier extérieur et conserver le réseau AppContainer.
+
+Windows — validation fonctionnelle dans une session limitée
+
+• Tester git, npm avec téléchargement réel, cargo, Go, PowerShell et les outils présents dans PATH.
+• Vérifier Internet et réseau privé ainsi que proxies, certificats internes, SSH_AUTH_SOCK et le reste de l’environnement utilisateur.
+• Tester une racine sur C: et une racine sur un second volume. Seule la racine exacte C:\ représente Tout le disque ; D:\ seul doit rester limité à D:\ et ne jamais ouvrir C:\.
+• Vérifier écriture, troncature, renommage et suppression dans les racines choisies, puis refus des mêmes opérations ailleurs.
+• Vérifier que le profil AppContainer ne peut pas modifier sa propre DACL avec icacls et ne reçoit jamais WRITE_DAC ou GENERIC_ALL.
+• Vérifier que secrets.enc ne devient pas lisible par héritage ACL quand Beaver est seulement accessible automatiquement. Une autorisation explicite de Beaver doit appliquer les droits demandés par l’utilisateur.
+• Lancer plusieurs shells et sous-agents simultanément sur la même racine. Aucun shell ne doit perdre ses ACL. Après fin, annulation et fermeture forcée, redémarrer Beaver et confirmer que les journaux de nettoyage révoquent les ACE et suppriment les profils AppContainer temporaires sans laisser de permissions orphelines.
+• Tester les chemins avec espaces, Unicode, chemins UNC pris en charge, second volume et formes verbatim Windows ; aucun préfixe technique ne doit apparaître dans l’interface.
+• Tester la limite multi-dossiers, les liens/reparse points vers une destination extérieure et les changements de cible pendant une commande : refusés.
+• Confirmer que le vault, les sessions, la configuration et les dossiers temporaires des autres commandes ne sont pas exposés par une simple permission de liste.
+
+Points transverses à observer
+
+• bash et bash_control ne doivent jamais être désactivés à cause de la sélection de dossiers.
+• La limitation porte uniquement sur le disque : réseau, outils et capacités de développement restent disponibles.
+• Les résultats file_changes et affected_paths restent bornés lors de npm install, cargo build et projets générant beaucoup de fichiers ; la session ne doit plus grossir de plusieurs dizaines de mégaoctets.
+• Une erreur de configuration, de canonicalisation, Landlock ou AppContainer doit bloquer l’accès concerné avec un message générique côté utilisateur, jamais ouvrir silencieusement.
+• Vérifier que le dialogue de dossier interdit utilise les traductions réelles, Annuler ferme sans sélectionner et Réglages ouvre directement Accès fichiers.
+• Noter séparément toute divergence Linux/Windows, avec commande exacte, sortie, version OS/noyau et chemin de test anonymisé.
