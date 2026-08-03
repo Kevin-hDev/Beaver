@@ -7,18 +7,6 @@ use super::tool_bash_change_event::{PreparedEvent, MAX_RECORDED_PATHS};
 
 const MAX_WORKSPACE_WATCHERS: usize = super::tool_bash_watch_roots::MAX_WATCH_ROOTS;
 const MAX_BUFFERED_EVENTS: usize = 4_096;
-const SKIPPED_DIRECTORIES: &[&str] = &[
-    ".git",
-    "node_modules",
-    "target",
-    "dist",
-    "build",
-    ".next",
-    ".nuxt",
-    ".turbo",
-    ".cache",
-];
-
 static HUBS: LazyLock<Mutex<VecDeque<Arc<WorkspaceEventHub>>>> =
     LazyLock::new(|| Mutex::new(VecDeque::new()));
 static CREATE_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
@@ -219,9 +207,7 @@ pub(super) fn is_trackable(root: &Path, path: &Path) -> bool {
         let std::path::Component::Normal(name) = component else {
             return false;
         };
-        SKIPPED_DIRECTORIES
-            .iter()
-            .any(|skipped| name == std::ffi::OsStr::new(skipped))
+        super::tool_bash_generated_paths::is_generated_component(name)
     })
 }
 

@@ -92,13 +92,20 @@ fn tool_roots_add_dependencies_without_broadening_to_home() {
     assert!(!roots.write_dirs.contains(&executable_cache));
     assert_eq!(roots.write_dirs.len(), 9);
     assert_eq!(roots.write_files.len(), 1);
-    assert_eq!(
-        MAX_WRITE_ROOTS,
-        super::super::tool_cache_roots::MAX_WRITE_DIRS
-            + 1
-            + super::super::super::agent_resource_access::MAX_RESOURCE_DIRS
-            + super::super::super::agent_resource_access::MAX_RESOURCE_FILES
-    );
+    let source_home = temp.path().join("source-home");
+    std::fs::create_dir_all(source_home.join(".openclaw/workspace-one"))
+        .expect("openclaw workspace one");
+    std::fs::create_dir_all(source_home.join(".openclaw/workspace-two"))
+        .expect("openclaw workspace two");
+    let (source_dirs, source_files) =
+        crate::services::agent_import::declared_resource_counts(&source_home);
+    let worst_case = source_dirs
+        + source_files
+        + super::super::super::agent_resource_access::LOCAL_RESOURCE_DIRS
+        + super::super::super::agent_resource_access::LOCAL_RESOURCE_FILES
+        + super::super::tool_cache_roots::MAX_WRITE_DIRS
+        + 1;
+    assert!(MAX_WRITE_ROOTS >= worst_case, "required: {worst_case}");
 }
 
 #[test]
@@ -393,6 +400,59 @@ fn enabled_agent_resources_are_writable_without_opening_their_parent() {
     assert!(roots.write_dirs.contains(&rules));
     assert!(roots.write_files.contains(&document));
     assert!(!roots.write_dirs.contains(&source));
+}
+
+#[test]
+fn saturated_root_limit_is_silent_and_persists_a_bounded_diagnostic() {
+    const CHILD_PATH: &str = "BEAVER_ROOT_LIMIT_TEST_PATH";
+    if let Some(path) = std::env::var_os(CHILD_PATH) {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let workspace = temp.path().join("workspace");
+        std::fs::create_dir_all(&workspace).expect("workspace");
+        let platform = (0..=MAX_READ_ROOTS)
+            .map(|index| temp.path().join(format!("tool-{index}")))
+            .collect::<Vec<_>>();
+        for path in &platform {
+            std::fs::create_dir_all(path).expect("tool root");
+        }
+        let roots = collect_from(
+            std::slice::from_ref(&workspace),
+            &platform,
+            &[],
+            None,
+            &[],
+            false,
+            &[],
+        );
+        assert!(roots.read_limit_reached);
+        super::super::super::shell_diagnostics::record_root_limits_for_test(
+            false,
+            roots.read_limit_reached,
+            roots.write_limit_reached,
+            Path::new(&path),
+        );
+        return;
+    }
+
+    let temp = tempfile::tempdir().expect("tempdir");
+    let diagnostic = temp.path().join("root-limit.json");
+    let test_name = concat!(
+        "services::agent_local::shell_sandbox::tool_roots::tests::",
+        "saturated_root_limit_is_silent_and_persists_a_bounded_diagnostic"
+    );
+    let output = std::process::Command::new(std::env::current_exe().expect("test executable"))
+        .args(["--exact", test_name, "--nocapture"])
+        .env(CHILD_PATH, &diagnostic)
+        .output()
+        .expect("child test");
+
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty(), "stderr: {:?}", output.stderr);
+    let bytes = std::fs::read(diagnostic).expect("diagnostic");
+    assert!(bytes.len() < 256);
+    let text = String::from_utf8(bytes).expect("utf8");
+    assert!(text.contains("root_read_limit"));
+    assert!(!text.contains(&temp.path().to_string_lossy().to_string()));
 }
 
 #[cfg(unix)]

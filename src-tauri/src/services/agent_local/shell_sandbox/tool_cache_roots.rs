@@ -38,6 +38,7 @@ pub(super) fn collect(home: &Path, path_dirs: &[PathBuf], path_overflow: bool) -
         platform_cache.as_deref(),
         &CacheOverrides::from_env(),
     );
+    debug_assert!(selected.len() <= MAX_WRITE_DIRS);
     let default_cache = match platform {
         #[cfg(any(test, target_os = "linux"))]
         Platform::Linux => tool_cache_platform::default_cache_base(platform, home),

@@ -39,3 +39,33 @@ fn path_limit_applies_after_ignored_paths_are_filtered() {
     assert_eq!(events.len(), 1);
     assert!(events[0].path.ends_with("src/kept.rs"));
 }
+
+#[test]
+fn generated_ecosystem_directories_are_not_tracked() {
+    let root = std::path::Path::new("/workspace");
+    for directory in [
+        ".git",
+        "node_modules",
+        "target",
+        "dist",
+        "build",
+        ".next",
+        ".nuxt",
+        ".turbo",
+        ".cache",
+        ".venv",
+        "venv",
+        "__pycache__",
+        "vendor",
+        "Pods",
+        ".gradle",
+        "out",
+        "coverage",
+    ] {
+        assert!(!super::is_trackable(
+            root,
+            &root.join(directory).join("generated.file")
+        ));
+    }
+    assert!(super::is_trackable(root, &root.join("src/main.py")));
+}

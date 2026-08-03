@@ -3,6 +3,7 @@ pub mod shell_environment;
 pub mod shell_diagnostics;
 pub mod shell_sandbox;
 mod tool_bash_change_event;
+mod tool_bash_generated_paths;
 pub mod tool_bash_change_hub;
 pub mod tool_bash_changes;
 mod tool_bash_completion;

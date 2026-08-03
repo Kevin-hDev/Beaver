@@ -5,11 +5,8 @@ use super::tool_roots_entries::{
 use super::tool_roots_path::{canonical_dir, contains_executable, is_tool_directory};
 use std::path::{Path, PathBuf};
 
-pub(super) const MAX_READ_ROOTS: usize = 64;
-pub(super) const MAX_WRITE_ROOTS: usize = super::tool_cache_roots::MAX_WRITE_DIRS
-    + 1
-    + super::super::agent_resource_access::MAX_RESOURCE_DIRS
-    + super::super::agent_resource_access::MAX_RESOURCE_FILES;
+pub(super) const MAX_READ_ROOTS: usize = 160;
+pub(super) const MAX_WRITE_ROOTS: usize = 100;
 
 #[derive(Default)]
 pub(super) struct ToolRoots {
@@ -93,15 +90,11 @@ fn collect_with_access(
     if allow_writes {
         append_agent_resources(&mut roots, workspace_roots, &path_inputs);
     }
-    if path_overflow {
-        eprintln!("[shell-sandbox] writable tool caches disabled: PATH entry limit exceeded");
-    }
-    if roots.read_limit_reached {
-        eprintln!("[shell-sandbox] read-only tool root limit reached");
-    }
-    if roots.write_limit_reached {
-        eprintln!("[shell-sandbox] writable tool root limit reached");
-    }
+    super::super::shell_diagnostics::record_root_limits(
+        path_overflow,
+        roots.read_limit_reached,
+        roots.write_limit_reached,
+    );
     roots
 }
 

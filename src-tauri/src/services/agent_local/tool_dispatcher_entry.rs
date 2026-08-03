@@ -1,4 +1,5 @@
 use super::types_tools::ToolResult;
+use super::tool_dispatcher_route::{dynamic_route, is_chat_tool};
 use super::tool_result_contract::ToolErrorCategory;
 use serde_json::Value;
 use std::path::Path;
@@ -142,6 +143,8 @@ pub async fn dispatch_with_progress(
         }
     };
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
+    let root_limit_marker = (!dynamic_tool && tool_name == "bash")
+        .then(super::shell_diagnostics::root_limit_marker);
     let mut result = if dynamic_tool {
         if crate::services::extensions::record_tool_invocation(tool_name).is_err() {
             eprintln!("[extensions] usage counter unavailable");
@@ -173,7 +176,14 @@ pub async fn dispatch_with_progress(
         }
         result.file_changes_mut().push(change);
     }
-    finalize_result(result, tool_name, session_id, working_dir).await
+    super::tool_dispatcher_finalize::finalize(
+        result,
+        tool_name,
+        session_id,
+        working_dir,
+        root_limit_marker.as_ref(),
+    )
+    .await
 }
 
 pub(super) async fn finalize_result(
@@ -182,37 +192,14 @@ pub(super) async fn finalize_result(
     session_id: &str,
     working_dir: &Path,
 ) -> ToolResult {
-    let mut result = super::tool_dispatcher_error::enrich(result, tool_name);
-    if let Some((total, stored)) = result.bound_file_changes() {
-        result = result.with_warning(format!(
-            "Le détail des fichiers modifiés a été réduit à un échantillon : {stored} sur {total}."
-        ));
-    }
-    if let Some((total, stored)) = result.bound_affected_paths() {
-        result = result.with_warning(format!(
-            "La liste des chemins modifiés a été réduite à un échantillon : {stored} sur {total}."
-        ));
-    }
-    let result = super::tool_result_truncate::truncate_result(result, tool_name, session_id).await;
-    super::tool_workspace_notice::append(result, working_dir)
-}
-
-fn dynamic_route(
-    registered_dynamic: bool,
-    active_dynamic: bool,
-    replacement: bool,
-) -> Result<bool, &'static str> {
-    if active_dynamic {
-        Ok(true)
-    } else if registered_dynamic && !replacement {
-        Err("Extension indisponible.")
-    } else {
-        Ok(false)
-    }
-}
-
-pub fn is_chat_tool(tool_name: &str) -> bool {
-    matches!(tool_name, "web_search" | "web_fetch")
+    super::tool_dispatcher_finalize::finalize(
+        result,
+        tool_name,
+        session_id,
+        working_dir,
+        None,
+    )
+    .await
 }
 
 fn validate_arguments(dynamic_tool: bool, tool_name: &str, args: &Value) -> Result<Value, String> {

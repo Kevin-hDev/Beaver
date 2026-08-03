@@ -30,6 +30,8 @@ mod tool_delegate_prompt;
 pub mod tool_dispatcher;
 mod tool_dispatcher_error;
 mod tool_dispatcher_entry;
+mod tool_dispatcher_finalize;
+mod tool_dispatcher_route;
 mod tool_workspace_notice;
 pub mod tool_extension_discovery;
 mod tool_web_error;

@@ -181,5 +181,21 @@ fn is_symlink(path: &Path) -> bool {
 }
 
 #[cfg(test)]
+pub(crate) fn declared_resource_counts(home: &Path) -> (usize, usize) {
+    let specs = source_specs::source_specs(home);
+    let directories = specs
+        .iter()
+        .flat_map(|spec| spec.rule_roots.iter().chain(&spec.skill_roots))
+        .collect::<BTreeSet<_>>()
+        .len();
+    let files = specs
+        .iter()
+        .flat_map(|spec| spec.documents.iter().map(|document| &document.path))
+        .collect::<BTreeSet<_>>()
+        .len();
+    (directories, files)
+}
+
+#[cfg(test)]
 #[path = "integration_tests.rs"]
 mod integration_tests;
