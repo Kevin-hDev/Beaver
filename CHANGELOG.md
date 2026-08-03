@@ -22,6 +22,12 @@
 - **Generation-only measurement** — excluded tool execution, compression, retries, and provider waiting time from the displayed generation speed, and combined multi-turn results using their actual generation durations.
 - **Clear estimated rates** — marked stream-derived throughput with an approximation symbol and avoided overstating rates when the first token batch cannot be measured reliably.
 
+### Context usage
+
+- **Live context ring** — displays the context ring and its hover breakdown from the model's first generated thought, message, or tool call, then updates them continuously throughout streaming without appearing early after the initial user message.
+- **Stable token breakdown** — calculates context categories from the request actually sent to the provider and preserves them across tool calls and stream completion, preventing messages, tools, or meta context from being redistributed when final usage arrives.
+- **More accurate context accounting** — counts streamed output as estimated tokens instead of network fragments, applies provider-aware reasoning rules, and separates skill catalog descriptions from skill content loaded later in the conversation.
+
 ---
 
 ## v1.1.0
