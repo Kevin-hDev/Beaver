@@ -868,6 +868,7 @@
         "web": { "title": "Web", "description": "Permette all'agente di cercare informazioni online e aprire pagine web quando ha bisogno di dati aggiornati." },
         "mcp": { "title": "Connettori esterni", "description": "Permette all'agente di usare i connettori esterni che hai configurato nella scheda Connettori." },
         "skills": { "title": "Skills", "description": "Permette all'agente di seguire guide specializzate (skills) per certe attività. Disattiva se non le usi." },
+        "automations": { "title": "Automazioni", "description": "Permette all'agente di creare e gestire attività pianificate con gli strumenti e le skill selezionati." },
         "user_choice": { "title": "Scelta utente", "description": "Permette all'agente di chiederti un parere quando esita tra diverse opzioni. Disattiva se preferisci che decida da solo." },
         "subagents": { "title": "Sotto-agenti", "description": "Permette all'agente di delegare una sotto-attività a un agente secondario, poi di riprendere il risultato. Disattiva se vuoi tenere tutto in una sola conversazione." },
         "plan_mode": { "title": "Plan mode", "description": "Permette all'agente di proporti un piano d'azione e aspettare il tuo accordo prima di agire. Disattiva se preferisci che passi direttamente all'azione." },

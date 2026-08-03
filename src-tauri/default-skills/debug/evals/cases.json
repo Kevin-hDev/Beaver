@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "skill": "debug",
+  "cases": [
+    {
+      "id": "fix-reproducible-validation-bug",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "This form reliably accepts a 101-character value although the limit is 100. Reproduce it, add a regression test, fix it, and keep the result uncommitted." }
+      ],
+      "expect": { "writes_files": true },
+      "judge": "The response must prove the focused regression test fails for the reported reason before one minimal production fix, then show the same test, original trigger, and affected checks passing without committing.",
+      "must_not": ["skip the pre-fix failure", "refactor unrelated form code", "commit changes"]
+    },
+    {
+      "id": "full-ticket-to-pull-request-lifecycle",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Fix this reproducible bug end to end: create the tracker issue, use a dedicated branch, commit the failing test before the fix, commit the minimal fix, run the full suite, push, and open a pull request with Fixes linkage." }
+      ],
+      "expect": { "contains": ["issue", "branch", "pull request"], "writes_files": true },
+      "judge": "The response must validate providers and repository state, create exactly one issue and one dedicated branch, commit the failing test before the fix, commit the minimal fix second, require the full suite to pass, then push and open one linked pull request with verified identifiers and URL.",
+      "must_not": ["open the pull request before tests pass", "mix unrelated changes", "omit the Fixes linkage"]
+    },
+    {
+      "id": "investigate-unknown-root-cause",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Requests fail consistently, but we do not know why. Map the action path, validate hypotheses, and confirm the root cause before changing production behavior." }
+      ],
+      "expect": { "contains": ["mermaid", "hypothesis", "confidence", "root cause"], "writes_files": false },
+      "judge": "The response must produce an evidence-based action-path diagram, a three-to-five-level why chain, and a batch of three to five hypotheses with confidence and status, validate them sequentially, and wait for user confirmation of a supported cause before any fix.",
+      "must_not": ["apply a speculative fix", "route to another skill", "claim a cause without validated evidence"]
+    },
+    {
+      "id": "reflect-after-failed-fixes",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Earlier fixes failed and all original hypotheses were invalidated. Reopen the investigation with fresh sources and temporary diagnostics, but do not implement another fix." }
+      ],
+      "expect": { "contains": ["fresh", "confidence", "instrumentation"], "writes_files": true },
+      "judge": "The response must generate five to seven genuinely fresh sources, distill one or two, add bounded sanitized diagnostics tied to confirmation checks, observe them, remove every temporary diagnostic, and continue another batch if needed.",
+      "must_not": ["repeat invalidated hypotheses", "leave temporary logs", "apply a production fix", "route to another skill"]
+    },
+    {
+      "id": "inconclusive-reproduction-enters-investigation",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The reported bug stayed inconsistent through the first three safe reproduction attempts and its cause is unclear. Continue without guessing." }
+      ],
+      "expect": { "contains": ["hypothesis", "evidence"], "writes_files": false },
+      "judge": "The response must preserve the reproduction batch, enter the internal hypothesis investigation path, and continue with evidence-ranked candidates rather than stopping or delegating.",
+      "must_not": ["apply a guessed fix", "discard reproduction evidence", "route to another skill"]
+    },
+    {
+      "id": "disproved-fix-resumes-reflection",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The evidence-backed fix did not resolve the original trigger and earlier candidate causes are exhausted. Continue the investigation." }
+      ],
+      "expect": { "contains": ["fresh", "journal"], "writes_files": true },
+      "judge": "The response must preserve the disproved fix evidence, avoid a second production patch, and continue through fresh-source reflection and removable instrumentation inside this skill.",
+      "must_not": ["apply another production fix", "report success", "route to another skill"]
+    },
+    {
+      "id": "already-fixed-no-change",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Reproduce this reported regression, but the focused test and original trigger now pass on the current code." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The response must report that the defect is not reproduced, preserve the observed evidence, and avoid an unnecessary patch.",
+      "must_not": ["invent a failure", "make cosmetic edits"]
+    },
+    {
+      "id": "missing-issue-description",
+      "judge": "Pass only if debugging pauses to obtain a concrete symptom or issue description instead of guessing a defect and changing code.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Debug it, but no symptom, expected behavior, error, or affected area is available." }
+      ],
+      "expect": { "contains": ["?"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["guess an issue", "edit arbitrary code", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-feature-build",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Build the approved offline export feature from its implementation plan." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The debug skill must not treat planned feature implementation as a defect workflow or route the request elsewhere.",
+      "must_not": ["invent a bug", "implement the feature", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-diff-review",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Review this pull request diff for defects without modifying it." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The debug skill must not replace a read-only change review with reproduction or repair work and must not route the request elsewhere.",
+      "must_not": ["modify code", "start reproduction", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-codebase-audit",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Audit the complete repository across security, dependencies, performance, tests, architecture, UI, and code quality." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The debug skill must not turn a multi-pillar health assessment into a single-issue investigation and must not route it elsewhere.",
+      "must_not": ["run a seven-pillar audit", "invent a symptom", "route to another skill"]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "skill": "capture-learning",
+  "cases": [
+    {
+      "id": "conversation-awaits-approval",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Capture the durable decision and pitfall from this conversation for the project. Propose where each belongs, but do not write until I approve." }
+      ],
+      "expect": { "contains": ["score", "reconciliation", "destination"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must select the current conversation, extract only durable evidence, score each candidate from 0 to 10, reconcile existing coverage, propose the smallest project-local destination, disclose delivery and synchronization effects, and wait for explicit packet approval before any write or handoff.",
+      "must_not": ["write before approval", "treat silence as approval", "record temporary progress"]
+    },
+    {
+      "id": "file-source-continuation",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Learn the reusable conventions and costly pitfalls from this large project file. Read every necessary bounded slice and continue until the file is covered." }
+      ],
+      "expect": { "contains": ["source", "evidence", "continuation"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must validate the project-local file, use ordered bounded slices rather than truncating the source, extract evidence-backed durable candidates only, and reach assessment without treating a per-slice limit as a total cap.",
+      "must_not": ["stop after the first slice", "read outside the project", "persist routine details"]
+    },
+    {
+      "id": "diff-source-learning",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Capture the durable architectural decision and reusable migration lesson demonstrated by this diff. Keep the result project-local." }
+      ],
+      "expect": { "contains": ["diff", "decision", "lesson"], "waits_for_user": true, "writes_files": false },
+      "judge": "The diff must be treated as a first-class bounded source. The response must distinguish a durable decision or workflow from changed-line noise and must not choose or write a destination before reconciliation and approval.",
+      "must_not": ["review the entire repository", "write personal memory", "apply an unapproved packet"]
+    },
+    {
+      "id": "review-source-learning",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Formalize the recurring project lesson from this completed review finding so future changes avoid the same failure." }
+      ],
+      "expect": { "contains": ["review", "durable", "score"], "waits_for_user": true, "writes_files": false },
+      "judge": "The completed review must be accepted as the selected source, while only the generalizable lesson is retained. The original finding alone must not be mistaken for authority to create a rule or write context.",
+      "must_not": ["copy the whole review", "create a rule automatically", "skip user approval"]
+    },
+    {
+      "id": "approved-memory-write-and-sync",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Capture this established project convention and propose the existing memory entry plus the marked context references that should be refreshed." },
+        { "role": "assistant", "content": "I propose one approved-ready learning packet: score 8, destination the existing project memory entry, reconciliation updates, followed by deterministic refresh of the listed marked context blocks." },
+        { "role": "user", "content": "I approve that exact packet, destination update, and listed synchronization." }
+      ],
+      "expect": { "contains": ["updated", "independent review", "synchronized", "staged state"], "writes_files": true },
+      "judge": "Only after the explicit final approval may the existing project-local memory entry be updated. The change must be the smallest convention-respecting atomic write, pass an independent review, then deterministically refresh only approved existing marked blocks, verify current references, preserve outside text, and prove staged state is unchanged.",
+      "must_not": ["create a memory bank", "write global memory", "stage files", "rewrite the whole context file"]
+    },
+    {
+      "id": "adr-bidirectional-supersession",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Record this approved decision as a project ADR that supersedes ADR-004. I approve the new ADR and both supersession links after you reconcile the existing records." }
+      ],
+      "expect": { "contains": ["Supersedes", "Superseded by", "independent review"], "writes_files": true },
+      "judge": "The response must resolve the existing project ADR convention, confirm rather than infer supersession, create or update the approved new record, add a forward Supersedes link to ADR-004 and a reverse Superseded by link in ADR-004, validate both prepared records together, and synchronize approved marked context references after a passing independent review.",
+      "must_not": ["update only one ADR", "invent an ADR directory", "omit the reverse link", "stage files"]
+    },
+    {
+      "id": "covered-learning-no-op",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Remember this project convention, but first reconcile it with current project memory." }
+      ],
+      "expect": { "contains": ["covered", "existing"], "writes_files": false },
+      "judge": "When current project content already conveys the same lesson accurately, the candidate must be classified covered with exact evidence. The result must be a visible no-op with no approval pressure, duplicate entry, handoff, or synchronization.",
+      "must_not": ["create a duplicate", "rewrite covered content", "run synchronization"]
+    },
+    {
+      "id": "reconcile-update-smallest-destination",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Capture this refined retry convention. The current project memory mentions retries but lacks the confirmed boundary. Propose the smallest update and wait." }
+      ],
+      "expect": { "contains": ["updates", "score", "smallest"], "waits_for_user": true, "writes_files": false },
+      "judge": "The existing narrow memory entry must be classified as updates rather than new. The proposed packet must preserve unrelated text, add only the evidence-backed boundary, and wait for explicit approval instead of creating a broader rule or new memory file.",
+      "must_not": ["classify as new without checking", "create a broad destination", "write before approval"]
+    },
+    {
+      "id": "unavailable-rule-handoff",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I approve this learning as an enforceable project rule. No specialized rule generator is available in this environment." }
+      ],
+      "expect": { "contains": ["approved packet", "unavailable", "rule"], "writes_files": false },
+      "judge": "The complete approved rule packet must be returned with an unavailable handoff status. The skill must not write a rule directly, invoke an unrelated capability, or pretend the rule was applied when no specialized generator is actually callable.",
+      "must_not": ["write the rule directly", "claim the rule was applied", "invent a generator"]
+    },
+    {
+      "id": "available-skill-handoff",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I approve this reusable workflow for a project-local skill. Hand the complete packet to the specialized skill generator only if it is actually available." }
+      ],
+      "expect": { "contains": ["approved packet", "generator", "review verdict"], "writes_files": false },
+      "judge": "The capture workflow must independently review the complete approved packet and confirm actual specialized-generator availability before handoff. It must not author the skill directly; if availability cannot be confirmed, it must return the packet as unavailable instead of claiming delivery.",
+      "must_not": ["write a skill directly", "assume generator availability", "drop packet evidence"]
+    },
+    {
+      "id": "missing-memory-bank",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Save this lesson to project memory, but this project has no memory bank or memory convention yet." }
+      ],
+      "expect": { "contains": ["missing", "memory", "ask"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must identify the missing project-local memory bank or convention, stop, and ask how the project wants it established. It must not invent a path, scaffold a bank, write personal memory, or silently redirect the lesson.",
+      "must_not": ["create the memory bank", "invent a memory path", "write global memory"]
+    },
+    {
+      "id": "source-read-failure",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Capture learnings from project file docs/decision.md, but the file read fails before any content is returned." }
+      ],
+      "expect": { "contains": ["unreadable", "docs/decision.md"], "writes_files": false },
+      "judge": "The failed source must be named generically and the workflow must stop before extraction. It must not infer the file contents, fall back to unrelated sources, create a packet, or write any destination.",
+      "must_not": ["invent file content", "continue to approval", "write a destination"]
+    },
+    {
+      "id": "do-not-trigger-temporary-note",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Keep a temporary note that the local test server is running on port 4321 for the next hour." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["persist temporary state"]
+    },
+    {
+      "id": "do-not-trigger-personal-preference",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Remember that I personally prefer short variable names and blue themes." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["write personal preference into project context"]
+    },
+    {
+      "id": "do-not-trigger-general-summary",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Summarize this meeting for me without recording or formalizing anything." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["propose persistent destinations"]
+    },
+    {
+      "id": "do-not-trigger-implementation",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Implement the retry workflow in the application and run its tests." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["replace implementation with a learning packet"]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "skill": "<skill-name>",
+  "cases": [
+    {
+      "id": "<unique-kebab-case-id>",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "<realistic request>" }
+      ],
+      "expect": { "contains": ["<observable result>"], "writes_files": false },
+      "judge": "<What the response must demonstrate beyond keywords.>",
+      "must_not": ["<forbidden outcome>"]
+    }
+  ]
+}

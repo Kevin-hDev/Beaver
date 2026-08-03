@@ -13,6 +13,7 @@ pub mod tool_definitions;
 pub mod tool_definitions_chat;
 pub mod tool_definitions_core;
 pub mod tool_definitions_extensions;
+pub mod tool_definitions_automation;
 pub mod tool_definitions_forecast;
 pub mod tool_definitions_git;
 pub mod tool_definitions_interactive;
@@ -26,6 +27,7 @@ pub mod tool_definitions_todo;
 pub mod tool_definitions_web;
 pub mod tool_delegate;
 pub mod tool_delegate_child;
+mod tool_delegate_identity;
 mod tool_delegate_prompt;
 pub mod tool_dispatcher;
 mod tool_dispatcher_error;
@@ -147,6 +149,10 @@ pub mod tool_scan_timeout;
 #[cfg(test)]
 mod tool_search_result_tests;
 pub mod tool_skill_loader;
+pub mod tool_automation;
+#[cfg(test)]
+mod tool_automation_tests;
+mod tool_automation_validation;
 pub mod tool_spreadsheet_calamine;
 mod tool_spreadsheet_border;
 mod tool_spreadsheet_error;

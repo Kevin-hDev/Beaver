@@ -2,6 +2,7 @@ use std::io::Read;
 use std::path::Path;
 
 const MAX_METADATA_BYTES: u64 = 32 * 1024;
+pub const MAX_SKILL_DESCRIPTION_CHARS: usize = 250;
 
 pub fn read_skill_metadata(
     path: &Path,

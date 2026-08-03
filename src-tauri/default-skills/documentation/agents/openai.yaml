@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documentation"
+  short_description: "Create and maintain project documentation"
+  default_prompt: "Use $documentation to create or update the requested documentation from verified project evidence."

@@ -1,0 +1,76 @@
+{
+  "version": "__SCHEMA_VERSION__",
+  "execution": "__EXECUTION_PATH__",
+  "adapters": {
+    "tracker": "__TRACKER_ADAPTER_ID__",
+    "version_control": "__VERSION_CONTROL_ADAPTER_ID__",
+    "change_request": "__CHANGE_REQUEST_ADAPTER_ID__",
+    "integration": "__INTEGRATION_ADAPTER_ID_OR_NULL__",
+    "scheduler": "__SCHEDULER_ADAPTER_ID_OR_NULL__",
+    "development_workflow": "__DEVELOPMENT_WORKFLOW_ID__"
+  },
+  "states": {
+    "ready": {
+      "name": "__READY_STATE__",
+      "color": "__READY_COLOR_OR_NULL__",
+      "description": "__READY_DESCRIPTION__"
+    },
+    "review": {
+      "name": "__REVIEW_STATE__",
+      "color": "__REVIEW_COLOR_OR_NULL__",
+      "description": "__REVIEW_DESCRIPTION__"
+    },
+    "working": {
+      "name": "__WORKING_STATE__",
+      "color": "__WORKING_COLOR_OR_NULL__",
+      "description": "__WORKING_DESCRIPTION__"
+    },
+    "awaiting_review": {
+      "name": "__AWAITING_REVIEW_STATE__",
+      "color": "__AWAITING_REVIEW_COLOR_OR_NULL__",
+      "description": "__AWAITING_REVIEW_DESCRIPTION__"
+    },
+    "blocked": {
+      "name": "__BLOCKED_STATE__",
+      "color": "__BLOCKED_COLOR_OR_NULL__",
+      "description": "__BLOCKED_DESCRIPTION__"
+    }
+  },
+  "triggers": {
+    "run": "__RUN_TRIGGER__",
+    "review": "__REVIEW_TRIGGER__"
+  },
+  "limits": {
+    "items_per_cycle": 1,
+    "page_size": "__PAGE_SIZE__",
+    "max_pages": "__MAX_PAGES__",
+    "max_review_iterations": "__MAX_REVIEW_ITERATIONS__"
+  },
+  "schedule": {
+    "enabled": false,
+    "cadence": null,
+    "overlap_policy": "forbid"
+  },
+  "credentials": [],
+  "effects": {
+    "write_project_files": {"allowed": false, "target": null, "authority": null},
+    "write_project_audit": {"allowed": false, "target": null, "authority": null},
+    "install_capabilities": {"allowed": false, "target": null, "authority": null},
+    "create_or_change_states": {"allowed": false, "target": null, "authority": null},
+    "post_ticket_comments": {"allowed": false, "target": null, "authority": null},
+    "react_to_comments": {"allowed": false, "target": null, "authority": null},
+    "reply_to_feedback": {"allowed": false, "target": null, "authority": null},
+    "resolve_review_threads": {"allowed": false, "target": null, "authority": null},
+    "commit_generated_files": {"allowed": false, "target": null, "authority": null},
+    "push_branch": {"allowed": false, "target": null, "authority": null},
+    "create_change_request": {"allowed": false, "target": null, "authority": null},
+    "edit_change_request": {"allowed": false, "target": null, "authority": null},
+    "create_or_change_schedule": {"allowed": false, "target": null, "authority": null},
+    "run_smoke_test": {"allowed": false, "target": null, "authority": null},
+    "cleanup_smoke_test": {"allowed": false, "target": null, "authority": null},
+    "publish_external_audit": {"allowed": false, "target": null, "authority": null}
+  },
+  "audit": {
+    "directory": ".async-development/runs"
+  }
+}

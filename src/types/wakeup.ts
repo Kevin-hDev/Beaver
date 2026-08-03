@@ -14,6 +14,10 @@ export interface ScheduledWakeup {
   active: boolean;
   paused_by_global: boolean;
   created_at: string;
+  agentic?: boolean;
+  working_dir?: string;
+  skill_ids?: string[];
+  tool_names?: string[];
 }
 
 export interface CreateWakeupInput {

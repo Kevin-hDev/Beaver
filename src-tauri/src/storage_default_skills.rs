@@ -12,6 +12,9 @@ const LEGACY_FORECASTING_STUB_SHA256: &str =
 const LEGACY_FORECAST_MODEL_ROUTER_STUB_SHA256: &str =
     "2f29a1e024e644d6e27c9637e0776f28f906f3bcae4ed8c0844d3d0f4200e54a";
 
+#[path = "storage_default_skills_migration.rs"]
+mod migration;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ManagedSkillUpgradeKind {
     ManifestOnly,
@@ -63,6 +66,7 @@ pub(crate) fn sync_default_skills_from(
     skills_dir: &Path,
     upgrades: &[ManagedSkillUpgrade<'_>],
 ) -> Result<(), String> {
+    migration::migrate_untouched_legacy_hk_debug(resource_base, skills_dir)?;
     let entries = std::fs::read_dir(resource_base).map_err(|_| "Skills intégrés indisponibles")?;
     let mut count = 0_usize;
     for entry in entries {

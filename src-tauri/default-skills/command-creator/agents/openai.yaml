@@ -1,0 +1,4 @@
+interface:
+  display_name: "Command Creator"
+  short_description: "Create concise one-shot slash operations"
+  default_prompt: "Use $command-creator to create a concise one-shot slash operation."

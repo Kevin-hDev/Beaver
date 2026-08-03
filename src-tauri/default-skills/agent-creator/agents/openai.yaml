@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Creator"
+  short_description: "Create reusable specialist agents"
+  default_prompt: "Use $agent-creator to create a focused reusable agent for this project."

@@ -1,0 +1,15 @@
+{
+  "schema_version": "__SCHEMA_VERSION__",
+  "kind": "__RUN_OR_REVIEW__",
+  "run_id": "__RUN_ID__",
+  "idempotency_key": "__IDEMPOTENCY_KEY__",
+  "started_at": "__STARTED_AT__",
+  "ended_at": "__ENDED_AT__",
+  "item_id": "__ITEM_ID__",
+  "change_request_id": "__CHANGE_REQUEST_ID_OR_NULL__",
+  "outcome": "__OUTCOME__",
+  "effects": [],
+  "observations": [],
+  "continuation": null,
+  "error": null
+}

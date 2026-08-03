@@ -13,7 +13,7 @@ pub struct ToolCatalogEntry {
     pub group: &'static str,
 }
 
-pub const MAX_OPTIONAL_TOOLS: usize = 31;
+pub const MAX_OPTIONAL_TOOLS: usize = 32;
 pub const SUBAGENT_TOOLS: &[&str] = &[
     "delegate_task",
     "list_subagents",
@@ -43,6 +43,7 @@ const LOCKED_TOOLS: &[ToolCatalogEntry] = &[
 
 const OPTIONAL_TOOLS: &[ToolCatalogEntry] = &[
     optional_default("load_skill", "workflow"),
+    optional_default("manage_automation", "automation"),
     optional_default("ask_user_choice", "workflow"),
     optional_default("delegate_task", "subagents"),
     optional_default("list_subagents", "subagents"),

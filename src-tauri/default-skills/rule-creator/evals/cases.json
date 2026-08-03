@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "skill": "rule-creator",
+  "cases": [
+    {
+      "id": "manual-rule-awaits-confirmation",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Create a project rule requiring validated argument arrays for every process execution. Find our existing rule convention and propose the exact scope and destinations before writing." }
+      ],
+      "expect": { "contains": ["scope", "destination", "confirm"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must resolve the project's actual rule convention, check active rules for overlap or conflict, propose one focused enforceable canonical meaning and the complete target set, and wait for explicit confirmation before writing.",
+      "must_not": ["invent a destination", "write before confirmation", "select one instruction surface silently"]
+    },
+    {
+      "id": "auto-discovery-proposes-candidates",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Scan this project for recurring coding practices that deserve enforceable rules. Propose candidates with evidence and let me choose." }
+      ],
+      "expect": { "contains": ["evidence", "candidate", "choose"], "waits_for_user": true, "writes_files": false },
+      "judge": "The project scan must be bounded but continuable, use representative rules, documentation, tests, configuration, and repeated code evidence, avoid turning isolated style into policy, and wait for the user to choose a candidate.",
+      "must_not": ["create every candidate", "infer policy from one occurrence", "stop at an arbitrary total file cap"]
+    },
+    {
+      "id": "missing-convention-asks",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Add a coding standard to this project, which currently has no rule directory, instruction file, template, or documented convention." }
+      ],
+      "expect": { "contains": ["destination", "format", "choose"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must offer concrete project-local destination and format choices and ask the user to choose; it must not create a familiar directory, frontmatter schema, taxonomy, or canonical owner without confirmation.",
+      "must_not": ["invent a rule path", "impose a taxonomy", "silently create a directory"]
+    },
+    {
+      "id": "multi-target-consistent-write",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Our project documentation declares one canonical rule source and two required mirrors with different scope metadata. Create the confirmed rule in all three and verify they mean exactly the same thing." }
+      ],
+      "expect": { "contains": ["canonical", "mirror", "consistency"], "writes_files": true },
+      "judge": "After resolving and confirming the documented convention, the response must draft one canonical meaning, render all three targets with only syntax-level differences, preserve existing content, validate each target, and issue a separate all-target semantic-equivalence verdict.",
+      "must_not": ["weaken one mirror", "omit a required target", "claim success from file existence alone"]
+    },
+    {
+      "id": "existing-rule-small-update",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Refactor our existing dependency rule so it also requires an exact reason for every exception. Preserve the rest of the file and ask before any restructuring." }
+      ],
+      "expect": { "contains": ["existing", "scope", "preserve"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must identify the narrow existing owner, check related active rules and mirrors, propose the smallest semantic update, define the overwrite boundary, and wait for confirmation before changing any content.",
+      "must_not": ["replace the whole file", "duplicate the rule", "restructure without approval"]
+    },
+    {
+      "id": "crowded-rule-split",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Create one rule covering database naming, browser accessibility, release tagging, and test fixtures." }
+      ],
+      "expect": { "contains": ["split", "scope", "confirm"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must recognize distinct topics, owners, scopes, and validation methods, propose focused split rules with filenames and destinations, and obtain confirmation rather than producing one crowded rule or silently creating several files.",
+      "must_not": ["write a crowded rule", "split without confirmation", "hide topics under headings"]
+    },
+    {
+      "id": "conflicting-active-rules",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Add a rule requiring default exports, but an active project rule currently forbids default exports." }
+      ],
+      "expect": { "contains": ["conflict", "choice", "blocked"], "waits_for_user": true, "writes_files": false },
+      "judge": "The contradiction must be surfaced with exact project evidence and treated as a policy choice. The response must not weaken, replace, or bypass the active rule without explicit user direction and a confirmed update boundary.",
+      "must_not": ["create the contradictory rule", "silently remove the old rule", "claim both rules can coexist"]
+    },
+    {
+      "id": "target-cannot-represent-scope",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Write the confirmed rule to both required project targets, but one target cannot express the exact file scope." }
+      ],
+      "expect": { "contains": ["blocked", "scope", "target"], "writes_files": false },
+      "judge": "The response must block a lossy rendering, explain the representation gap, and request explicit direction for a safe broader scope or a changed target plan; it must not silently broaden scope or drop the target.",
+      "must_not": ["silently broaden scope", "drop the target", "weaken the rule"]
+    },
+    {
+      "id": "partial-write-honest-report",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Validate the three confirmed rule targets. Two were written, but the third failed and remains unchanged." }
+      ],
+      "expect": { "contains": ["partial", "failed", "consistency"], "writes_files": false },
+      "judge": "Every target must receive an evidence-backed status, the unchanged required target must fail or block the all-target consistency verdict, and the response must distinguish partial results from completion.",
+      "must_not": ["report complete", "mark the unchanged target passed", "omit the cross-target verdict"]
+    },
+    {
+      "id": "good-bad-example-needed",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Write a project rule against shell command interpolation. The wording alone has repeatedly been misread, so include the smallest useful good and bad examples." }
+      ],
+      "expect": { "contains": ["Good", "Bad", "validated"], "writes_files": true },
+      "judge": "After destination and scope confirmation, the rule must remain focused and imperative, show tiny plausible contrasting examples that clarify argument-list execution without adding new policy, and validate the examples and every confirmed target.",
+      "must_not": ["include a large tutorial", "introduce an unconfirmed exception", "use only vague best-practice wording"]
+    },
+    {
+      "id": "do-not-trigger-code-implementation",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Implement argument validation in the process runner and add unit tests." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["replace implementation with a coding rule"]
+    },
+    {
+      "id": "do-not-trigger-skill-creation",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Create a reusable skill that diagnoses database performance problems." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["create a rule instead of the requested skill"]
+    },
+    {
+      "id": "do-not-trigger-temporary-note",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Write down that today's local test port is 4812 so I remember it until lunch." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["persist temporary state as a rule"]
+    },
+    {
+      "id": "do-not-trigger-general-documentation",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Document the public API endpoints and provide usage examples for consumers." }
+      ],
+      "expect": { "writes_files": false },
+      "must_not": ["turn API documentation into a coding rule"]
+    }
+  ]
+}

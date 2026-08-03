@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "skill": "project-bootstrap",
+  "cases": [
+    {
+      "id": "bootstrap-hosted-product",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Help me choose and document the architecture for a new multi-tenant hosted product. I need web and mobile clients, regulated customer data, 20,000 active users in six months, and a monthly infrastructure ceiling." }
+      ],
+      "expect": { "contains": ["Project type", "Six-month scale", "Budget"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if the response begins the complete needs workflow, retains hosted-product front end, back end, database, authentication, tenancy, hosting, cost, security, integration, deployment, and performance questions, and does not choose technology early.",
+      "must_not": ["scaffold code", "create an account", "choose a winner before audit"]
+    },
+    {
+      "id": "bootstrap-cli-project",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Design the architecture for a new cross-platform backup CLI. Compare realistic runtime, packaging, credential, storage, and distribution choices." }
+      ],
+      "expect": { "contains": ["CLI", "Performance target", "Deployment or distribution"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if the workflow adapts every checklist concern to a CLI, permits justified not-applicable answers, and still asks concrete scale, security, integration, budget, team, distribution, and performance questions without forcing hosted-product components.",
+      "must_not": ["assume a web front end", "install a runtime", "create directories"]
+    },
+    {
+      "id": "propose-distinct-current-candidates",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The full project checklist is approved. Propose the architecture candidates now, using current official support and pricing evidence." }
+      ],
+      "expect": { "contains": ["Candidate", "Cost", "Risks", "Evidence"], "waits_for_user": false, "writes_files": false },
+      "judge": "Pass only if two or three candidates differ on a high-impact technical or operational dimension, every candidate has honest risks, unstable claims use dated official primary evidence, costs expose assumptions, and no winner is selected.",
+      "must_not": ["present near-identical candidates", "cite unsupported pricing", "pick a winner"]
+    },
+    {
+      "id": "audit-candidates-independently",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit these three candidates before I choose. Keep each review independent and run them in parallel." }
+      ],
+      "expect": { "contains": ["pass", "warning", "broken"], "waits_for_user": false, "writes_files": false },
+      "judge": "Pass only if one isolated parallel reviewer handles each candidate without receiving a preferred winner or other reviews, checks current evidence and all project constraints, and returns exactly three evidence-backed rationale bullets per candidate.",
+      "must_not": ["replace independent reviews with one self-review", "rank candidates without user selection"]
+    },
+    {
+      "id": "all-candidates-broken-loop",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Every proposed candidate failed its audit because the required offline platform is unsupported. Continue the architecture workflow." }
+      ],
+      "expect": { "contains": ["common blocker", "needs", "candidates"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if the response refuses to advance, identifies whether needs or candidate generation must change, and begins another bounded round instead of terminating because a fixed candidate limit was reached.",
+      "must_not": ["continue to selection", "soften a broken verdict", "silently drop the offline requirement"]
+    },
+    {
+      "id": "warning-choice-needs-mitigation",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I choose the candidate marked warning even though its audit found an operational scaling risk." }
+      ],
+      "expect": { "contains": ["mitigation", "owner", "verification"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if every warning is restated and the user must supply a credible owner, action, trigger, and verification before the design advances; simple preference or acknowledgment is insufficient.",
+      "must_not": ["accept the warning without mitigation", "generate the final design immediately"]
+    },
+    {
+      "id": "broken-choice-refused",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Use the candidate marked broken anyway. I prefer its database even though it violates the confirmed residency requirement." }
+      ],
+      "expect": { "contains": ["refuse", "blocking evidence"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if the response refuses the broken choice, explains the hard conflict without appeasing the preference, and offers another audited choice or a return through needs and audit.",
+      "must_not": ["proceed with the broken stack", "ignore residency"]
+    },
+    {
+      "id": "design-tree-and-validated-diagram",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I explicitly select Candidate B. Its warnings have accepted mitigations. Produce the conceptual folder tree and validate the Mermaid architecture diagram." }
+      ],
+      "expect": { "contains": ["Folder", "mermaid", "validated"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if the folder tree represents all selected components, the exact Mermaid block is parsed or rendered successfully, large trees continue across bounded batches, and nothing represented by the design is created.",
+      "must_not": ["claim validation without a parser or renderer", "create folders", "scaffold files"]
+    },
+    {
+      "id": "write-install-style-to-chosen-path",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The audited design is approved. Write the complete INSTALL-style technical vision to docs/architecture/INSTALL.md; that existing directory is our project convention." }
+      ],
+      "expect": { "contains": ["Vision", "Decisions", "Stack summary", "Architecture", "Folder structure", "Install steps", "Audit summary"], "writes_files": true },
+      "judge": "Pass only if exactly one approved Markdown document is written to the validated existing destination, includes the complete technical vision with validated diagram and tree, and performs none of the documented setup steps.",
+      "must_not": ["write to a fixed default directory", "create the parent directory", "run install steps"]
+    },
+    {
+      "id": "conversation-only-no-file",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Return the approved technical vision here. Do not save any file." }
+      ],
+      "expect": { "contains": ["Vision", "Decisions", "Audit summary"], "writes_files": false },
+      "judge": "Pass only if the complete artifact is returned in conversation with no filesystem or external mutation.",
+      "must_not": ["choose a destination", "write a file", "create directories"]
+    },
+    {
+      "id": "official-evidence-unavailable",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The official pricing and platform-support pages for Candidate C are inaccessible. Finish its cost and compatibility audit anyway." }
+      ],
+      "expect": { "contains": ["unavailable", "unready"], "writes_files": false },
+      "judge": "Pass only if the response refuses to invent unstable compatibility or pricing facts, marks the candidate unready or blocked, and continues only through a later evidence batch or alternative candidate.",
+      "must_not": ["guess a price", "use stale memory as current evidence", "mark the candidate pass"]
+    },
+    {
+      "id": "missing-project-intent",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Bootstrap it." }
+      ],
+      "expect": { "contains": ["project", "need"], "waits_for_user": true, "writes_files": false },
+      "judge": "Pass only if the response requests the missing new-project intent and does not infer a product, stack, destination, or implementation.",
+      "must_not": ["invent requirements", "select technology", "write files"]
+    },
+    {
+      "id": "do-not-trigger-code-scaffolding",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Generate a working desktop application repository, install its dependencies, and run it." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "Pass only if project-bootstrap does not trigger for an implementation and scaffolding request.",
+      "must_not": ["invoke project-bootstrap", "pretend documentation is implementation"]
+    },
+    {
+      "id": "do-not-trigger-existing-stack-migration",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Migrate this existing production service from its current database to another engine and update the code." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "Pass only if project-bootstrap does not trigger for changing an existing implemented stack.",
+      "must_not": ["redesign it as a new project", "modify code"]
+    },
+    {
+      "id": "do-not-trigger-architecture-audit",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Audit the security and maintainability of our existing architecture without proposing a new stack." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "Pass only if project-bootstrap does not trigger for a read-only audit of an existing architecture.",
+      "must_not": ["start the bootstrap checklist", "propose replacement candidates"]
+    },
+    {
+      "id": "do-not-trigger-document-edit",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Copyedit the wording in our existing technical vision without changing any decision." }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "Pass only if project-bootstrap does not trigger for a pure edit of existing documentation.",
+      "must_not": ["rerun architecture selection", "change technical decisions"]
+    }
+  ]
+}

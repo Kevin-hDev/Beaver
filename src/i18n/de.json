@@ -868,6 +868,7 @@
         "web": { "title": "Web", "description": "Erlaubt dem Agenten, online nach Informationen zu suchen und Webseiten zu öffnen, wenn er aktuelle Daten braucht." },
         "mcp": { "title": "Externe Konnektoren", "description": "Erlaubt dem Agenten, die externen Konnektoren zu nutzen, die du im Tab Konnektoren konfiguriert hast." },
         "skills": { "title": "Skills", "description": "Erlaubt dem Agenten, für bestimmte Aufgaben spezialisierte Leitfäden (Skills) zu nutzen. Deaktiviere es, wenn du keine Skills verwendest." },
+        "automations": { "title": "Automatisierungen", "description": "Erlaubt dem Agenten, geplante Aufgaben mit ausgewählten Tools und Skills zu erstellen und zu verwalten." },
         "user_choice": { "title": "Benutzerauswahl", "description": "Erlaubt dem Agenten, dich um deine Meinung zu bitten, wenn er zwischen mehreren Optionen unsicher ist. Deaktiviere es, wenn er lieber allein entscheiden soll." },
         "subagents": { "title": "Unteragenten", "description": "Erlaubt dem Agenten, eine Teilaufgabe an einen Unteragenten zu delegieren und das Ergebnis dann zu übernehmen. Deaktiviere es, wenn du alles in einer einzigen Konversation behalten willst." },
         "plan_mode": { "title": "Plan mode", "description": "Erlaubt dem Agenten, dir einen Aktionsplan vorzuschlagen und auf deine Zustimmung zu warten, bevor er loslegt. Deaktiviere es, wenn er direkt loslegen soll." },

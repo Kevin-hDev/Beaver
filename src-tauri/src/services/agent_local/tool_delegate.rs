@@ -18,7 +18,7 @@ pub async fn prepare_delegate(
     parent_emitter: AgentEventEmitter,
     parent_cancel: CancellationToken,
 ) -> Result<SpawnedSubagent, ToolResult> {
-    let prompt = super::tool_delegate_prompt::from_args(&args)?;
+    let mission_prompt = super::tool_delegate_prompt::from_args(&args)?;
     let subagent_type = match args["subagent_type"].as_str() {
         Some("explorer") => "explorer",
         Some("coder") => "coder",
@@ -31,28 +31,6 @@ pub async fn prepare_delegate(
             "Paramètre 'subagent_type' manquant",
         )),
     };
-    let name = super::subagent_profile::clean_name(
-        args["display_name"]
-            .as_str()
-            .or_else(|| args["name"].as_str()),
-        subagent_type,
-    );
-    let legacy_label = super::subagent_profile::legacy_mission_label(
-        args["display_name"]
-            .as_str()
-            .or_else(|| args["name"].as_str()),
-        subagent_type,
-    );
-    let description_owned = args["description"]
-        .as_str()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-        .or(legacy_label);
-    let description =
-        super::subagent_profile::clean_description(description_owned.as_deref(), &prompt);
-    let color_key = super::subagent_profile::default_color_key(subagent_type).to_string();
-
     let parent = match session_store::get(&parent_session_id).await {
         Ok(s) => s,
         Err(_) => {
@@ -63,6 +41,17 @@ pub async fn prepare_delegate(
             ))
         }
     };
+    let identity = super::tool_delegate_identity::resolve(
+        &args,
+        std::path::Path::new(&parent.working_dir),
+        subagent_type,
+        mission_prompt,
+    )?;
+    let prompt = identity.prompt;
+    let name = identity.name;
+    let description = identity.description;
+    let color_key = super::subagent_profile::default_color_key(subagent_type).to_string();
+
     if parent.parent_session_id.is_some() {
         return Err(ToolResult::permission(
             "nested_subagent_delegation_forbidden",

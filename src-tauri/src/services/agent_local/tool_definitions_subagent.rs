@@ -6,6 +6,7 @@ pub fn delegate_task_definition() -> Value {
         "Spawn an autonomous subagent to handle a subtask in isolation. Results come back to you; they are NOT shown to the user, so you must relay a summary. \
          Types: 'explorer' (read-only: read_file, list_dir, grep, glob, web_search, web_fetch) for research, file investigation, web lookups; \
          or 'coder' (file creation/modification in an isolated git worktree) for parallel implementation work. \
+         For a reusable specialist, pass agent_path to a validated project-relative Markdown definition and keep subagent_type equal to its profile. \
          The subagent keeps working in its visible child session while you continue. The parent stream stays active until subagents from the current turn finish. \
          When NOT to use: reading a specific known file — use read_file directly; searching for a single class/function — use grep or glob directly; a 1-2 step task — do it yourself. \
          IMPORTANT: once you delegate a task, do NOT do the same work yourself and do NOT write a final answer before the required subagent reports arrive. \
@@ -43,6 +44,10 @@ pub fn delegate_task_definition() -> Value {
                 "subagent_id": {
                     "type": "string",
                     "description": "Existing child session id to reuse instead of creating a fresh subagent."
+                },
+                "agent_path": {
+                    "type": "string",
+                    "description": "Optional project-relative path to a persistent agent definition, normally .beaver/agents/<name>.md. Absolute paths and parent traversal are refused."
                 }
             },
             "required": ["prompt", "subagent_type"]

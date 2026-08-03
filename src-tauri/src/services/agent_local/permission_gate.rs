@@ -24,6 +24,7 @@ const GATED_TOOLS: &[&str] = &[
     "create_branch",
     "checkout_branch",
     "apply_subagent_changes",
+    "manage_automation",
     "forecast_data_audit",
     "forecast_run",
     "forecast_backtest",

@@ -116,6 +116,9 @@ pub(super) async fn dispatch_inner(
                 Err(error) => super::tool_dispatcher_error::skill_load(error),
             }
         }
+        "manage_automation" => {
+            super::tool_automation::execute(args, working_dir, session_id).await
+        }
         "create_branch" => {
             let branch_name = args["branch_name"].as_str().unwrap_or("");
             if branch_name.is_empty() {

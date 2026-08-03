@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Memory"
+  short_description: "Build and synchronize durable project context"
+  default_prompt: "Use $project-memory to set up, refresh, or rewire this project's evidence-based memory bank."

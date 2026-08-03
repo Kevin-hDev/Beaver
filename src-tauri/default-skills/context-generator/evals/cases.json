@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "skill": "context-generator",
+  "cases": [
+    {
+      "id": "infer-automation",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create something that runs the project's focused checks whenever an implementation task finishes. The automation creator is available in this session."
+        }
+      ],
+      "expect": {
+        "selected_kind": "automation",
+        "invokes": "automation-creator",
+        "preserves_request": true
+      },
+      "must_not": [
+        "design the event configuration itself",
+        "invoke another generator"
+      ],
+      "judge": "The selector must infer lifecycle-triggered automation, confirm automation-creator is actually available, and hand off the unchanged intent without designing the automation itself."
+    },
+    {
+      "id": "clarify-rule-or-skill",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Make reusable guidance that ensures every database change includes a rollback strategy."
+        }
+      ],
+      "expect": {
+        "asks_one_question": true,
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "select rule without clarification",
+        "select skill without clarification",
+        "draft the artifact"
+      ],
+      "judge": "The response must ask one minimal question that distinguishes a continuously enforced rule from an on-demand skill, then stop without invoking a generator."
+    },
+    {
+      "id": "infer-agent",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I need a reusable delegated specialist whose only job is to examine schema migrations and return a risk report. The agent creator is available."
+        }
+      ],
+      "expect": {
+        "selected_kind": "agent",
+        "invokes": "agent-creator"
+      },
+      "must_not": [
+        "write the specialist prompt",
+        "route to workflow-skill-creator"
+      ],
+      "judge": "The bounded delegated specialist is an agent; the selector must verify and invoke agent-creator while leaving role-prompt construction to that generator."
+    },
+    {
+      "id": "infer-command",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Give the team an explicitly invoked shortcut that gathers release evidence and formats a release summary. The command creator is available."
+        }
+      ],
+      "expect": {
+        "selected_kind": "command",
+        "invokes": "command-creator"
+      },
+      "must_not": [
+        "invent command syntax",
+        "generate files directly"
+      ],
+      "judge": "The selector must recognize an explicitly invoked repeatable operation as a command and transfer the requirements to the confirmed command generator."
+    },
+    {
+      "id": "unavailable-generator",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a reusable workflow for diagnosing flaky tests. Only the rule creator and command creator are available in this session."
+        }
+      ],
+      "expect": {
+        "selected_kind": "skill",
+        "reports_unavailable": "skill generator",
+        "returns_handoff_packet": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "claim workflow-skill-creator ran",
+        "substitute rule-creator",
+        "substitute command-creator"
+      ],
+      "judge": "The request clearly describes an on-demand reusable skill, but its generator is unavailable; the selector must preserve a handoff packet and must neither substitute nor fabricate execution."
+    },
+    {
+      "id": "separate-multiple-artifacts",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I need reusable context for reviewing releases, plus something that automatically starts it after a release candidate is built. Help me determine what to create."
+        }
+      ],
+      "expect": {
+        "identifies_distinct_requests": true,
+        "waits_for_missing_details": true
+      },
+      "must_not": [
+        "collapse both behaviors into one artifact",
+        "invent a trigger"
+      ],
+      "judge": "The selector must treat the on-demand review capability and lifecycle-triggered behavior as separate artifact needs, clarifying only unresolved distinctions and checking each generator independently."
+    },
+    {
+      "id": "not-explicit-rule",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a project rule that forbids destructive database migrations without a reviewed rollback plan."
+        }
+      ],
+      "expect": {
+        "direct_generator": "rule-creator"
+      },
+      "must_not": [
+        "trigger context-generator",
+        "ask which artifact kind"
+      ],
+      "judge": "Because the user explicitly names a rule, the request must go directly to rule-creator without invoking this selector."
+    },
+    {
+      "id": "not-explicit-skill",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a skill for investigating intermittent integration-test failures."
+        }
+      ],
+      "expect": {
+        "direct_generator": "workflow-skill-creator"
+      },
+      "must_not": [
+        "trigger context-generator",
+        "ask whether this is a rule"
+      ],
+      "judge": "An explicitly named skill must use its specialized generator directly, preserving the source selector's bypass behavior."
+    },
+    {
+      "id": "not-explicit-automation",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create an automation that refreshes generated documentation after the API schema changes."
+        }
+      ],
+      "expect": {
+        "direct_generator": "automation-creator"
+      },
+      "must_not": [
+        "trigger context-generator",
+        "ask which artifact kind"
+      ],
+      "judge": "The explicit automation category bypasses the selector and goes directly to the automation generator."
+    },
+    {
+      "id": "not-inventory",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "List every existing project skill, rule, agent, command, and automation, including where each one is stored."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "select an artifact generator",
+        "create an artifact"
+      ],
+      "judge": "An inventory request belongs to exploration, not generation selection, so this skill must not trigger."
+    },
+    {
+      "id": "not-edit-existing",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Update the existing release-review rule to include dependency provenance checks."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "trigger context-generator",
+        "treat the edit as an unnamed artifact"
+      ],
+      "judge": "Editing an existing named artifact is outside this selector's creation-only purpose and must not trigger it."
+    }
+  ]
+}

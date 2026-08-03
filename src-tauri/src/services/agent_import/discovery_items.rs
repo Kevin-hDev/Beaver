@@ -1,7 +1,9 @@
 use super::limits::{MAX_INSTRUCTION_BYTES, MAX_MANIFEST_BYTES};
 use super::models::{DiscoveredItem, ImportItem, ImportItemKind};
 use super::source_specs::SourceSpec;
-use crate::services::agent_local::skill_parser::read_skill_metadata;
+use crate::services::agent_local::skill_parser::{
+    read_skill_metadata, MAX_SKILL_DESCRIPTION_CHARS,
+};
 use sha2::{Digest, Sha256};
 use std::io::ErrorKind;
 use std::path::Path;
@@ -91,7 +93,10 @@ fn import_item(
     ImportItem {
         id: item_id(spec.id, kind, path),
         name,
-        description: description.chars().take(160).collect(),
+        description: description
+            .chars()
+            .take(MAX_SKILL_DESCRIPTION_CHARS)
+            .collect(),
         source_id: spec.id.to_string(),
         source_name: spec.display_name.to_string(),
         kind,
@@ -114,3 +119,7 @@ fn item_id(source_id: &str, kind: ImportItemKind, path: &Path) -> String {
 pub fn public_items(items: &[DiscoveredItem]) -> Vec<ImportItem> {
     items.iter().map(|item| item.public.clone()).collect()
 }
+
+#[cfg(test)]
+#[path = "discovery_items_tests.rs"]
+mod tests;

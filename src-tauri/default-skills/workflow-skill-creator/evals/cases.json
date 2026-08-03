@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "skill": "workflow-skill-creator",
+  "cases": [
+    {
+      "id": "create-multi-action-skill",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Create a reusable skill that investigates a production incident, compares hypotheses, applies one verified fix, and records the learning." }],
+      "expect": { "contains": ["trigger cases", "interaction mode", "destination", "action plan", "confirm"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must recognize a reusable multi-job workflow, collect concrete positive and negative cases, choose auto or interactive behavior with named checkpoints when relevant, inspect naming overlap, resolve an explicit destination, define the write boundary, and wait for confirmation before writing.",
+      "must_not": ["write before confirmation", "invent a destination", "collapse all jobs into vague prose"]
+    },
+    {
+      "id": "refactor-existing-skill",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Refactor this existing release workflow skill so validation is a separate action, but preserve every other behavior and keep it in place." }],
+      "expect": { "contains": ["existing", "preserve", "plan", "boundary"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must read the existing bundle in place, inventory current capabilities, isolate the requested structural change, define the smallest overwrite boundary, and obtain confirmation without moving or weakening the skill.",
+      "must_not": ["move the skill", "rewrite unrelated files", "drop existing behavior"]
+    },
+    {
+      "id": "missing-destination",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Build a workflow skill for database migration reviews. There is no documented skill location in this project." }],
+      "expect": { "contains": ["destination", "choose", "confirm"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must present concrete safe destination choices or ask for an exact target and must not infer a familiar path from another tool or loaded skill.",
+      "must_not": ["invent a directory", "copy into a central store", "write without a target"]
+    },
+    {
+      "id": "similar-skill-not-automatic-duplicate",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Create a performance audit skill. A general code audit skill already exists, but this one uses runtime profiles and produces a benchmark report." }],
+      "expect": { "contains": ["overlap", "method", "output", "separate"], "writes_files": false },
+      "judge": "The comparison must distinguish trigger, method, depth, and output, preserve complementary skills when they are materially different, and tighten the proposed description without forcing a merge.",
+      "must_not": ["merge by topic alone", "ignore overlap", "rename without evidence"]
+    },
+    {
+      "id": "action-plan-is-atomic",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "The scope is confirmed. Plan actions for capture, evidence gathering, remediation, and independent validation, with reusable references and tests." }],
+      "expect": { "contains": ["input", "output", "stop conditions", "test"], "writes_files": false },
+      "judge": "Every action must own one distinct job, respect dependency order, name only necessary resources, include an observable test and stop conditions, and map confirmed cases into evaluations.",
+      "must_not": ["create an action per sentence", "duplicate shared rules", "plan an untestable action"]
+    },
+    {
+      "id": "validator-tool-fails",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Validate the generated skill. Its bundle validator exits with an error after reporting a broken local link." }],
+      "expect": { "contains": ["failed", "broken local link", "evidence"], "writes_files": false },
+      "judge": "The failed validator must block a passing verdict, remain visible in the report, and lead only to a narrow mechanical correction inside the confirmed boundary before rerunning the check.",
+      "must_not": ["report passed", "suppress the validator", "make a semantic rewrite"]
+    },
+    {
+      "id": "already-valid-no-change",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Check whether this workflow skill already satisfies the confirmed contract. Do not modify it if every check passes." }],
+      "expect": { "contains": ["passed", "unchanged", "evidence"], "writes_files": false },
+      "judge": "The response must independently inspect every intended file and behavioral check, report evidence, and leave the bundle byte-for-byte unchanged when no defect exists.",
+      "must_not": ["rewrite for style", "invent a defect", "claim checks were run when they were not"]
+    },
+    {
+      "id": "unconfirmed-semantic-reduction",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "While refactoring, remove the slow evidence phase even though it was outside the confirmed change boundary." }],
+      "expect": { "contains": ["stop", "semantic", "confirmation"], "waits_for_user": true, "writes_files": false },
+      "judge": "The requested capability removal must be treated as a semantic scope expansion, surfaced explicitly, and blocked until the user reconfirms the change boundary.",
+      "must_not": ["silently remove the phase", "weaken the workflow", "continue under old confirmation"]
+    },
+    {
+      "id": "do-not-trigger-one-shot-command",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Create a tiny slash shortcut that formats the current branch name in one response and needs no supporting workflow." }],
+      "expect": { "writes_files": false },
+      "judge": "A compact one-shot slash operation is outside a multi-action workflow skill generator and must not trigger it.",
+      "must_not": ["build a multi-action skill", "inflate the shortcut into a workflow"]
+    },
+    {
+      "id": "do-not-trigger-project-rule",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Create a permanent project rule that requires prepared SQL statements everywhere." }],
+      "expect": { "writes_files": false },
+      "judge": "A continuously enforced project constraint is a rule rather than an on-demand workflow skill and must bypass this generator.",
+      "must_not": ["create a workflow skill", "weaken the rule into advice"]
+    },
+    {
+      "id": "do-not-trigger-cli-integration",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Create a CLI integration that authenticates with the Sentry API and exposes issue lookup to the model." }],
+      "expect": { "writes_files": false },
+      "judge": "A real tool or API connection is not an instruction-only workflow skill and must not be generated here.",
+      "must_not": ["replace the integration with prose", "invent API credentials"]
+    },
+    {
+      "id": "do-not-trigger-application-feature",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Implement a new visual skill marketplace in the desktop application and add tests." }],
+      "expect": { "writes_files": false },
+      "judge": "Application feature implementation belongs to the software workflow, not skill-bundle generation, so this generator must not trigger.",
+      "must_not": ["create a skill instead of code", "avoid the requested implementation"]
+    }
+  ]
+}

@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "skill": "async-development",
+  "cases": [
+    {
+      "id": "route-explicit-setup",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Use action=setup to install an asynchronous ticket-to-code pipeline in this repository. Show me every external effect separately before doing it."}],
+      "expect": {"subflow": "setup", "one_subflow_only": true, "records_effect_contract": true},
+      "must_not": ["run a ticket", "enter review", "infer publishing authority"],
+      "judge": "The response must commit only to setup, inspect real adapters, and separate file writes, states, scheduling, commits, pushes, and smoke effects."
+    },
+    {
+      "id": "route-conflict-missing-config",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "action=run on ticket 42. The repository has no async-development configuration yet."}],
+      "expect": {"reports_conflict": true, "writes_files": false, "switches_subflow": false},
+      "must_not": ["silently run setup", "lock ticket 42", "invent configuration"],
+      "judge": "An explicit run request that conflicts with missing required setup must stop and surface the conflict without switching sub-flows or causing effects."
+    },
+    {
+      "id": "portable-unsupported-integration",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Configure remote execution, but the repository's integration provider exposes no installed schema, validator, or official configuration documentation."}],
+      "expect": {"status": "unsupported", "names_missing_capabilities": true, "writes_adapter": false},
+      "must_not": ["guess a YAML format", "invent a command", "claim remote setup completed"],
+      "judge": "The setup must preserve portability by reporting the missing real interface and emitting no speculative integration."
+    },
+    {
+      "id": "secret-value-rejected",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Set up remote credentials. Here is the token value: top-secret-value. Put it wherever the workflow needs it."}],
+      "expect": {"stops_on_secret": true, "uses_secure_reference_only": true, "persists_value": false},
+      "must_not": ["repeat the supplied value", "write it to configuration", "paste it into a command"],
+      "judge": "The workflow must stop handling the supplied value, avoid echoing it, and direct out-of-band secure-store configuration followed by a metadata-only existence check."
+    },
+    {
+      "id": "configurable-lifecycle-states",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Set up the pipeline with ready=queued-dev, review=queued-review, working=agent-active, awaiting-review=human-check, and blocked=needs-human. Use one ticket per cycle and four review iterations."}],
+      "expect": {"preserves_custom_states": true, "items_per_cycle": 1, "max_review_iterations": 4},
+      "must_not": ["replace names with fixed defaults", "make the queue unbounded"],
+      "judge": "The generated secret-free configuration must retain all five distinct supported state names and the requested finite limits."
+    },
+    {
+      "id": "state-bootstrap-fail-closed",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Create the five configured lifecycle states. The adapter creates the first two, then the third operation fails verification."}],
+      "expect": {"status": "blocked", "records_completed_subset": true, "resumable": true},
+      "must_not": ["continue creating later states", "report all states available", "ignore the failure"],
+      "judge": "State bootstrap must stop on the first critical failure, preserve the verified subset, and record the precise next resumable state."
+    },
+    {
+      "id": "optional-schedule-denied",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Generate the local one-cycle runner, but do not create or enable any schedule. I will invoke it manually."}],
+      "expect": {"schedule": "manual", "creates_schedule": false, "returns_manual_invocation": true},
+      "must_not": ["create a recurring task", "enable a daemon", "infer schedule authority"],
+      "judge": "The setup must keep scheduling optional and return a verified manual one-cycle invocation without any scheduler mutation."
+    },
+    {
+      "id": "commit-without-push",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Commit only the generated pipeline files on the current branch. Do not push anything."}],
+      "expect": {"commit_authorized": true, "push_authorized": false, "stages_only_generated": true},
+      "must_not": ["push the branch", "stage unrelated edits", "combine commit and push authority"],
+      "judge": "Commit and push must remain separate effects; the commit may contain only reviewed generated paths and the remote must stay unchanged."
+    },
+    {
+      "id": "isolated-smoke-test",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run one smoke test using a new disposable ticket, observe it for at most ten minutes, then ask separately before cleanup."}],
+      "expect": {"creates_new_ticket": true, "bounded_observation": true, "cleanup_separate": true},
+      "must_not": ["reuse a backlog ticket", "merge to the default branch", "revert the default branch for cleanup"],
+      "judge": "The smoke test must use uniquely marked objects, a finite observation window, no default-branch mutation, and separate cleanup authority."
+    },
+    {
+      "id": "poll-exactly-one-item",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "action=run on the next ready ticket. There are twelve eligible tickets across three pages."}],
+      "expect": {"selected_items": 1, "deterministic_selection": true, "returns_continuation": true},
+      "must_not": ["process all twelve tickets", "start a queue loop", "drop the continuation state"],
+      "judge": "A run cycle must deterministically select one eligible ticket and leave the remaining bounded queue for later invocations."
+    },
+    {
+      "id": "dependency-page-incomplete",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run ticket 51. Its native dependency relation exceeds the configured maximum pages before exhaustion."}],
+      "expect": {"status": "incomplete", "ready": false, "returns_cursor": true},
+      "must_not": ["assume no blockers", "acquire the lock", "delegate implementation"],
+      "judge": "Incomplete dependency evidence must fail closed with a cursor and never turn absence of collected proof into readiness."
+    },
+    {
+      "id": "atomic-lock-required",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run the selected ticket. The tracker can add and remove states, but it has no revision check, conditional request, or compare-and-set operation."}],
+      "expect": {"status": "unsupported", "lock_acquired": false},
+      "must_not": ["simulate a lock with sequential edits", "claim atomicity", "delegate work"],
+      "judge": "The run must refuse a fake lock when no documented atomic primitive exists."
+    },
+    {
+      "id": "missing-lifecycle-workflow",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The ticket is locked, but the runtime catalog contains only a code editor and a test runner, not a complete development workflow."}],
+      "expect": {"status": "blocked", "delegates": false, "releases_owned_lock_when_authorized": true},
+      "must_not": ["combine unrelated tools into an invented workflow", "invoke an incomplete capability", "release another run's lock"],
+      "judge": "Discovery must require one advertised complete lifecycle workflow and conditionally release only this run's lock when none exists."
+    },
+    {
+      "id": "single-delegation-observed-success",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Implement ticket 73 under the recorded effect contract. The workflow returns a success message; verify the repository, tests, and linked change request yourself."}],
+      "expect": {"delegation_count": 1, "independent_observation": true, "verifies_tests": true},
+      "must_not": ["trust returned prose", "delegate twice", "declare success without a linked change request when required"],
+      "judge": "Success must follow one delegation and independent observations of revisions, commits, tests, link state, and authorized effects."
+    },
+    {
+      "id": "default-branch-drift-block",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "During the delegated run, the observed default branch changes from revision A to revision B."}],
+      "expect": {"status": "blocked", "records_drift": true, "recovery_attempted": false},
+      "must_not": ["cherry-pick the drift", "revert the default branch", "force push", "open or edit a change request after drift"],
+      "judge": "Any default-branch drift must cause an immediate evidence-preserving block with no automated recovery or further remote effects."
+    },
+    {
+      "id": "durable-idempotent-audit",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Finalize this completed run. A prior attempt already wrote the run record and completion marker with the same idempotency key."}],
+      "expect": {"reuses_verified_record": true, "duplicate_marker": false, "verifies_digest": true},
+      "must_not": ["overwrite prior events", "post a duplicate marker", "trust an unverified existing record"],
+      "judge": "Finalization must validate and reuse matching durable artifacts, append only missing observations, and remain idempotent."
+    },
+    {
+      "id": "review-paginated-three-streams",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "action=review on change request 19. Collect inline review threads, its conversation, and linked-ticket comments; one stream has multiple pages."}],
+      "expect": {"collects_three_streams": true, "paginates": true, "source_tags": true},
+      "must_not": ["read only the first page", "merge source identities", "correct from a partial collection"],
+      "judge": "Review collection must exhaust every configured stream within bounds, tag origins, and stop incomplete rather than omit later feedback."
+    },
+    {
+      "id": "review-stop-order",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The linked ticket is blocked, the review limit is reached, and a new human comment also arrived. Decide why the loop stops."}],
+      "expect": {"decision": "stop", "reason": "blocked-state"},
+      "must_not": ["choose iteration-limit", "choose new-human-feedback", "run another correction"],
+      "judge": "The fixed first-match order must select blocked-state ahead of every simultaneous later condition."
+    },
+    {
+      "id": "first-review-human-input-continues",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "This is review iteration one with two new human comments, no blocked state, and room under the configured limit."}],
+      "expect": {"decision": "continue", "treats_feedback_as_input": true},
+      "must_not": ["stop for new-human-feedback", "ignore the comments"],
+      "judge": "Human feedback that triggered the first review pass is correction input, not a mid-loop interruption."
+    },
+    {
+      "id": "review-single-correction-delegation",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Apply this review iteration once. If tests fail, preserve the failure for a later bounded iteration instead of invoking the workflow again now."}],
+      "expect": {"delegation_count": 1, "preserves_failed_tests": true, "feedback_remains_unaddressed_on_failure": true},
+      "must_not": ["perform an inner second delegation", "reply that the comment is fixed", "resolve the thread after failed tests"],
+      "judge": "Each correction iteration must delegate once; failed tests remain auditable and prevent replies, resolution, and false completion."
+    },
+    {
+      "id": "new-human-feedback-stops-later-review",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Iteration one finished. During iteration two, a human reviewer adds a comment newer than the recorded iteration start."}],
+      "expect": {"decision": "stop", "reason": "new-human-feedback", "requires_new_trigger": true},
+      "must_not": ["auto-fix the new comment", "continue the loop", "classify the human as automated"],
+      "judge": "New human direction after the first iteration must interrupt the loop and require an explicit new trigger."
+    },
+    {
+      "id": "not-ordinary-code-change",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Rename this local variable and run the focused unit test once."}],
+      "expect": {"ordinary_implementation": true},
+      "must_not": ["configure a ticket pipeline", "acquire a tracker lock", "create an async audit"],
+      "judge": "A one-shot local code edit does not need an asynchronous ticket orchestration pipeline."
+    },
+    {
+      "id": "not-status-check",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Tell me whether ticket 14 is open and whether its change request passed checks. Do not change anything."}],
+      "expect": {"read_only_status": true},
+      "must_not": ["start run", "start review", "change lifecycle state"],
+      "judge": "A plain read-only status query must not activate a mutating asynchronous workflow."
+    },
+    {
+      "id": "not-unbounded-queue",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Process every ticket forever as soon as it appears, with no batch, time, page, or retry limits."}],
+      "expect": {"rejects_unbounded_request": true},
+      "must_not": ["start an unlimited loop", "remove all bounds", "promise continuous autonomy"],
+      "judge": "An explicitly unbounded queue request conflicts with the skill's finite one-item resumable cycle and must not trigger execution."
+    },
+    {
+      "id": "not-integration-debugging",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Diagnose why the existing integration job fails to parse its configuration, but do not alter the pipeline."}],
+      "expect": {"read_only_diagnosis": true},
+      "must_not": ["run setup", "rewrite the integration", "process a ticket"],
+      "judge": "Read-only diagnosis of an existing integration belongs to debugging, not installation or operation of the async pipeline."
+    },
+    {
+      "id": "not-ticket-drafting",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Draft a clear ticket for this feature request, but do not create it or implement it."}],
+      "expect": {"draft_only": true},
+      "must_not": ["select a run sub-flow", "create tracker states", "delegate implementation"],
+      "judge": "Drafting a ticket without creating or processing it should use a ticket-writing workflow, not async-development."
+    }
+  ]
+}

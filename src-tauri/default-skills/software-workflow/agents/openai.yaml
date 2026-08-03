@@ -1,0 +1,4 @@
+interface:
+  display_name: "Software Workflow"
+  short_description: "Orchestrate verified software delivery"
+  default_prompt: "Use $software-workflow to take this software request through specification, planning, implementation, review, and only the delivery I explicitly request."

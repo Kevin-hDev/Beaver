@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "skill": "documentation",
+  "cases": [
+    {
+      "id": "update-stale-readme-setup",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Update the README setup section from the current repository. Verify every command and preserve the rest of the README."}],
+      "expect": {"contains": ["README", "verified", "commands"], "writes_files": true},
+      "judge": "The response must resolve the existing README convention, trace setup prerequisites and commands to current project evidence, preserve unrelated prose, run safe applicable checks, and report any command that could not be verified instead of inventing output.",
+      "must_not": ["rewrite the entire README", "change application code", "claim unchecked commands passed"]
+    },
+    {
+      "id": "create-feature-user-guide",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Create a user guide for the new bulk import feature using its implementation and tests as the source of truth."}],
+      "expect": {"contains": ["prerequisites", "visible result", "errors"], "writes_files": true},
+      "judge": "The guide must cover the user's complete task, supported inputs, observable outcomes, confirmed failures and recovery without exposing internal implementation details as user instructions.",
+      "must_not": ["invent unimplemented behavior", "omit failure recovery", "write outside the documentation convention"]
+    },
+    {
+      "id": "generate-api-reference",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Document the public inventory API from the current routes, schemas, authentication checks, and tests."}],
+      "expect": {"contains": ["authentication", "inputs", "errors", "examples"], "writes_files": true},
+      "judge": "Every endpoint, field, status, authentication rule, limit, and example must trace to the current public contract or tests, with unresolved mismatches blocking completion.",
+      "must_not": ["publish internal endpoints", "invent response fields", "copy secrets"]
+    },
+    {
+      "id": "write-migration-guide",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Write the upgrade guide from version 2 to version 3, including backup, breaking configuration changes, verification, and rollback."}],
+      "expect": {"contains": ["backup", "verification", "rollback"], "writes_files": true},
+      "judge": "The migration guide must prove the supported start and end states, order steps safely, separate destructive operations, and include evidence-backed verification and rollback without executing the migration on live state.",
+      "must_not": ["run a production migration", "omit breaking changes", "present an untested rollback as guaranteed"]
+    },
+    {
+      "id": "document-current-architecture",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Create an architecture document for the current service boundaries and data flow. Document what exists, not a redesign."}],
+      "expect": {"contains": ["boundaries", "data flow", "current"], "writes_files": true},
+      "judge": "The document must trace current entry points, responsibilities, data and trust boundaries, dependencies and constraints, and must report mismatches instead of redesigning the system.",
+      "must_not": ["propose a new architecture as current", "create an ADR", "change code"]
+    },
+    {
+      "id": "repair-stale-cli-reference",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The CLI reference still shows removed flags. Update it from the current command parser and help output, then check every example."}],
+      "expect": {"contains": ["flags", "examples", "validation"], "writes_files": true},
+      "judge": "The response must inventory current commands and flags, remove or label obsolete material, preserve still-valid explanations, execute safe help and example checks, and leave no unsupported flag claim.",
+      "must_not": ["restore removed flags in code", "keep stale examples", "guess help output"]
+    },
+    {
+      "id": "validate-and-repair-doc-links",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Validate the links and anchors in the developer documentation and repair only broken documentation references."}],
+      "expect": {"contains": ["links", "anchors", "changed files"], "writes_files": true},
+      "judge": "The response must cover the complete requested documentation set in continuable batches, distinguish broken targets from unavailable external checks, change only documentation references, and rerun the link validation.",
+      "must_not": ["stop after the first batch", "create missing product files", "change unrelated prose"]
+    },
+    {
+      "id": "optional-renderer-unavailable",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Update this guide and validate it. The optional visual renderer is unavailable, but lint, links, examples, and the required docs build all pass."}],
+      "expect": {"contains": ["partial", "renderer", "passed"], "writes_files": true},
+      "judge": "The result may be partial only if the renderer is genuinely optional and every required check passes; it must name the missing visual inspection without claiming it ran.",
+      "must_not": ["claim rendering passed", "mark complete without the contracted optional limitation"]
+    },
+    {
+      "id": "already-accurate-no-change",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Check whether the authentication guide matches the current implementation and tests. Update it only if necessary."}],
+      "expect": {"contains": ["evidence", "no change"], "writes_files": false},
+      "judge": "When every material guide claim matches current code and tests, the response must report the checked evidence and make no cosmetic or unrelated edits.",
+      "must_not": ["rewrite for style", "invent a missing section", "change authentication code"]
+    },
+    {
+      "id": "ambiguous-audience-and-destination",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Document the sync system, but this project has no documentation convention and I have not said whether this is for users or maintainers."}],
+      "expect": {"contains": ["audience", "destination", "?"], "waits_for_user": true, "writes_files": false},
+      "judge": "The response must ask one focused set of questions because audience and ownership materially change the content and destination; it must not invent a docs directory or combine incompatible audiences silently.",
+      "must_not": ["create a documentation directory", "assume an audience", "write before clarification"]
+    },
+    {
+      "id": "product-mismatch-blocks-docs",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Document passwordless login as available, but the current public interface and tests show only password login."}],
+      "expect": {"contains": ["blocked", "mismatch"], "writes_files": false},
+      "judge": "The response must identify the requested claim as a product mismatch, refuse to document it as current, and avoid implementing or specifying passwordless login within this skill.",
+      "must_not": ["document unimplemented behavior as current", "implement passwordless login", "hide the mismatch"]
+    },
+    {
+      "id": "do-not-trigger-product-specification",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Write acceptance criteria and non-goals for a notification feature that has not been implemented yet."}],
+      "expect": {"writes_files": false},
+      "must_not": ["present future requirements as current documentation"]
+    },
+    {
+      "id": "do-not-trigger-architecture-decision",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Record why we chose PostgreSQL over SQLite as a formal architecture decision."}],
+      "expect": {"writes_files": false},
+      "must_not": ["create an ADR through general documentation"]
+    },
+    {
+      "id": "do-not-trigger-project-memory",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Build a durable project memory bank from this repository and synchronize it into the instruction file."}],
+      "expect": {"writes_files": false},
+      "must_not": ["replace project memory with public documentation"]
+    },
+    {
+      "id": "do-not-trigger-code-comments-only",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Add a short inline comment above this tricky loop and change nothing else."}],
+      "expect": {"writes_files": false},
+      "must_not": ["create a documentation page for one code comment"]
+    }
+  ]
+}

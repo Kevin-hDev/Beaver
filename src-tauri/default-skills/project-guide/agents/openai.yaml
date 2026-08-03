@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Guide"
+  short_description: "Assess project state and guide the next step"
+  default_prompt: "Assess this project and guide me to the next useful action."

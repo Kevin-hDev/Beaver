@@ -1,0 +1,148 @@
+{
+  "version": 1,
+  "skill": "concise-mode",
+  "cases": [
+    {
+      "id": "enable-default-full",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Turn concise mode on for this conversation."}],
+      "expect": {"contains": ["Concise mode: ON (full)."], "writes_files": false},
+      "judge": "The response must enable the session-local preference at the default full level and emit only the stable confirmation line without claiming persistence outside this conversation.",
+      "must_not": ["claim a global setting", "choose lite", "describe hidden state"]
+    },
+    {
+      "id": "enable-lite",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Use concise mode at lite intensity."}],
+      "expect": {"contains": ["Concise mode: ON (lite)."], "writes_files": false},
+      "judge": "The explicit lite level must override the full default and establish a visible state marker for later replies.",
+      "must_not": ["drop required grammar at lite", "enable full", "write configuration files"]
+    },
+    {
+      "id": "change-full-to-ultra",
+      "should_trigger": true,
+      "messages": [
+        {"role": "user", "content": "Turn concise mode on."},
+        {"role": "assistant", "content": "Concise mode: ON (full)."},
+        {"role": "user", "content": "Switch it to ultra."}
+      ],
+      "expect": {"contains": ["Concise mode: ON (ultra)."], "writes_files": false},
+      "judge": "The latest explicit level change must replace the active full level without toggling the mode off.",
+      "must_not": ["Concise mode: OFF.", "retain full", "abbreviate the state marker"]
+    },
+    {
+      "id": "toggle-active-off",
+      "should_trigger": true,
+      "messages": [
+        {"role": "user", "content": "Enable concise mode at ultra."},
+        {"role": "assistant", "content": "Concise mode: ON (ultra)."},
+        {"role": "user", "content": "Toggle concise mode."}
+      ],
+      "expect": {"contains": ["Concise mode: OFF."], "writes_files": false},
+      "judge": "A toggle with a visible active state must disable the preference regardless of its current intensity.",
+      "must_not": ["enable full", "keep ultra active", "ask for the current state"]
+    },
+    {
+      "id": "toggle-missing-state-on",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Toggle concise mode."}],
+      "expect": {"contains": ["Concise mode: ON (full)."], "writes_files": false},
+      "judge": "With no visible prior state, the mode must safely resolve as off and the toggle must enable the documented full default.",
+      "must_not": ["invent prior state", "claim state was loaded", "choose ultra"]
+    },
+    {
+      "id": "inspect-latest-state",
+      "should_trigger": true,
+      "messages": [
+        {"role": "assistant", "content": "Concise mode: ON (lite)."},
+        {"role": "assistant", "content": "Concise mode: ON (full)."},
+        {"role": "user", "content": "What concise level is active right now? Do not change it."}
+      ],
+      "expect": {"contains": ["ON (full)", "latest"], "writes_files": false},
+      "judge": "Inspection must select the newest valid state confirmation, cite visible conversation evidence, and leave the mode unchanged.",
+      "must_not": ["toggle", "report lite", "infer state from writing style"]
+    },
+    {
+      "id": "inspect-missing-state",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Is concise mode active in this conversation?"}],
+      "expect": {"contains": ["OFF", "No active setting found"], "writes_files": false},
+      "judge": "The response must report off when no valid state marker is visible and must not pretend to inspect hidden or persisted settings.",
+      "must_not": ["guess a level", "claim global state", "enable the mode"]
+    },
+    {
+      "id": "stats-without-token-counter",
+      "should_trigger": true,
+      "messages": [
+        {"role": "assistant", "content": "Concise mode: ON (full)."},
+        {"role": "assistant", "content": "Validation passed. Two tests ran."},
+        {"role": "user", "content": "Show concise-mode usage and token savings. You do not have a tokenizer or baseline."}
+      ],
+      "expect": {"contains": ["active replies", "counting method", "Savings: unavailable (no comparable baseline)."], "writes_files": false},
+      "judge": "The report must count visible replies reproducibly, exclude the state confirmation from active volume, label any token approximation, and refuse to fabricate savings without a comparable baseline.",
+      "must_not": ["exact tokens", "assumed compression percentage", "claim measured savings"]
+    },
+    {
+      "id": "stats-with-real-counter-and-baseline",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Report concise-mode savings for this paired test. The same tokenizer counted the content-equivalent baseline at 120 tokens and the concise reply at 75 tokens. State the method and scope."}],
+      "expect": {"contains": ["120", "75", "45", "counting method"], "writes_files": false},
+      "judge": "Because a content-equivalent paired baseline and one counting method are supplied, the response may calculate 45 saved tokens while keeping the stated scope explicit.",
+      "must_not": ["extrapolate to the session", "replace supplied counts with estimates", "claim a generic rate"]
+    },
+    {
+      "id": "ultra-security-incident",
+      "should_trigger": true,
+      "messages": [
+        {"role": "assistant", "content": "Concise mode: ON (ultra)."},
+        {"role": "user", "content": "We have an active credential leak. Give the immediate containment steps, warnings, evidence to preserve, and validation checks. Keep ultra mode active."}
+      ],
+      "expect": {"contains": ["warning", "evidence", "validation"], "writes_files": false},
+      "judge": "Maximum concision must not remove ordered containment steps, complete security warnings, evidence-preservation requirements, rollback considerations, or validation checks; the active preference may resume after clear passages.",
+      "must_not": ["one-word response", "omit safety consequences", "remove required evidence"]
+    },
+    {
+      "id": "detailed-tutorial-overrides-concision",
+      "should_trigger": true,
+      "messages": [
+        {"role": "assistant", "content": "Concise mode: ON (ultra)."},
+        {"role": "user", "content": "Give me a detailed beginner tutorial on database transactions with definitions, a worked example, common mistakes, and exercises. Keep concise mode active afterward."}
+      ],
+      "expect": {"contains": ["definitions", "example", "mistakes", "exercises"], "writes_files": false},
+      "judge": "The explicit detailed-tutorial contract must override brevity for this reply while the ultra state remains active for later replies; no requested teaching component may be omitted.",
+      "must_not": ["refuse detail because ultra is active", "collapse the tutorial to a summary", "disable the mode"]
+    },
+    {
+      "id": "preserve-code-errors-and-validation",
+      "should_trigger": true,
+      "messages": [
+        {"role": "assistant", "content": "Concise mode: ON (full)."},
+        {"role": "user", "content": "Explain the fix briefly, but reproduce this error exactly, keep the code unchanged, and include every failed validation result: TypeError: Cannot read properties of undefined\n```js\nconst value = config.user.name;\n```"}
+      ],
+      "expect": {"contains": ["TypeError: Cannot read properties of undefined", "const value = config.user.name;", "validation"], "writes_files": false},
+      "judge": "Concision may shorten surrounding explanation but must preserve the quoted error, code block, and all validation failures exactly and completely.",
+      "must_not": ["abbreviate the error", "rewrite the code", "omit failed checks"]
+    },
+    {
+      "id": "do-not-trigger-one-off-prose-edit",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Shorten this paragraph to 50 words for the newsletter."}],
+      "expect": {"writes_files": false},
+      "must_not": ["enable a session mode", "emit a state confirmation"]
+    },
+    {
+      "id": "do-not-trigger-code-minification",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Minify this JavaScript bundle and remove dead code."}],
+      "expect": {"writes_files": false},
+      "must_not": ["treat code compression as response concision", "change a conversation preference"]
+    },
+    {
+      "id": "do-not-trigger-document-summary",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Summarize this design document in five bullets, only for this answer."}],
+      "expect": {"writes_files": false},
+      "must_not": ["persist a concise level", "claim future replies are affected"]
+    }
+  ]
+}

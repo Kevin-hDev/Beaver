@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "skill": "brainstorm",
+  "cases": [
+    {
+      "id": "clarify-vague-product-idea",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "I have a vague idea for an app that helps freelancers avoid losing track of client decisions. Help me brainstorm it."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The response must ask a focused intent-level question that could materially change the product definition, preserve the user's wording, and avoid implementation choices.",
+      "must_not": [
+        "write code",
+        "choose a framework",
+        "create a project plan"
+      ]
+    },
+    {
+      "id": "clarify-technical-idea-at-same-level",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Help me refine an idea for isolating coding agents with one worktree per task."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The next question must follow the parent-approval thread opened by the latest answer rather than restart a generic discovery checklist.",
+      "must_not": [
+        "generate implementation files",
+        "silently select a library"
+      ]
+    },
+    {
+      "id": "follow-answer-thread",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Brainstorm a shared family calendar."
+        },
+        {
+          "role": "assistant",
+          "content": "Who must be able to add or approve an event?"
+        },
+        {
+          "role": "user",
+          "content": "Children can suggest events, but a parent must approve them."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "approval"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "repeat who can add events",
+        "switch to an unrelated checklist"
+      ]
+    },
+    {
+      "id": "continue-long-input-batches",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "My idea description contains 75 explicitly stated constraints. Clarify it without dropping anything after the first 50 items, and keep the discussion in this conversation."
+        }
+      ],
+      "expect": {
+        "contains": ["batch", "coverage"],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The response must preserve a continuation cursor or equivalent accounting and make clear that later items will be processed rather than silently truncated.",
+      "must_not": ["claim complete coverage after only 50 items", "write a file"]
+    },
+    {
+      "id": "do-not-trigger-document-gap-scan",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read this completed PRD and list every missing failure mode."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "start an interactive brainstorm"
+      ]
+    },
+    {
+      "id": "do-not-trigger-direct-plan",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The product definition is approved. Produce the implementation phases, file list, and exact test commands."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The brainstorm workflow must not replace an explicit request for an implementation plan with more ideation questions.",
+      "must_not": ["restart clarification", "change the approved product definition"]
+    },
+    {
+      "id": "do-not-trigger-direct-implementation",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The idea is approved. Implement it now, modify the repository, and run the tests."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "An implementation request must not trigger further brainstorming or persistence of a brainstorm artifact.",
+      "must_not": ["ask more ideation questions", "replace implementation with a brainstorm"]
+    },
+    {
+      "id": "missing-idea",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Let's brainstorm."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "invent an idea"
+      ]
+    },
+    {
+      "id": "user-stops-early",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Help clarify an offline notes app, but stop after summarizing what is already known."
+        }
+      ],
+      "expect": {
+        "waits_for_user": false,
+        "writes_files": false
+      },
+      "must_not": [
+        "continue asking questions",
+        "write a file"
+      ]
+    },
+    {
+      "id": "keep-approved-result-in-session",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The refined idea is correct. Keep it only in this conversation."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "create a ticket",
+        "create a file",
+        "start implementation"
+      ]
+    },
+    {
+      "id": "save-approved-result",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The brainstorm result is approved. Save it to ./notes/idea.md and make no other change."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "write outside the requested file",
+        "start planning"
+      ]
+    }
+  ]
+}

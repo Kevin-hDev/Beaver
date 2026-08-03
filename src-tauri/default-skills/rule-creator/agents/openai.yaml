@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rule Creator"
+  short_description: "Create consistent project coding rules"
+  default_prompt: "Use $rule-creator to create or refactor a focused project coding rule and validate every confirmed local target."

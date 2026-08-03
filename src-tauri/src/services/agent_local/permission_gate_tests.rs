@@ -44,6 +44,14 @@ fn gated_tool_write_file() {
 }
 
 #[test]
+fn automation_management_is_gated() {
+    assert!(requires_permission(
+        "manage_automation",
+        &serde_json::json!({"action":"list"})
+    ));
+}
+
+#[test]
 fn gated_tool_edit_file() {
     let args = json!({});
     assert!(requires_permission("edit_file", &args));

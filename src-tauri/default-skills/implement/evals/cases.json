@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "skill": "implement",
+  "cases": [
+    {
+      "id": "implement-approved-phase",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement phase 1 of the approved plan, add focused tests, and stop before committing."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "The response must implement only phase 1, add or update focused tests for its behavior, run those tests, and report their real result.",
+      "must_not": [
+        "commit changes",
+        "push a branch",
+        "implement later phases"
+      ]
+    },
+    {
+      "id": "implement-precise-bounded-task",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Add the already specified maximum-length validation to the existing profile form and test that behavior."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "The response must reuse the existing validation path, implement the maximum-length behavior, and report a focused passing test.",
+      "must_not": [
+        "redesign the form",
+        "create a duplicate validator"
+      ]
+    },
+    {
+      "id": "implement-multiple-phases-in-order",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Execute the approved three-phase plan in order. Verify each phase before starting the next one."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "The response must show that every phase was handled in order and that each phase's focused checks passed before the next began.",
+      "must_not": [
+        "skip phase checks",
+        "mix unrelated cleanup into a phase"
+      ]
+    },
+    {
+      "id": "do-not-trigger-unknown-bug",
+      "judge": "Pass only if implementation does not trigger for an unknown-cause defect that requires diagnosis first.",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Users intermittently lose websocket messages and we do not know why. Find the root cause."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "guess and implement an unconfirmed fix"
+      ]
+    },
+    {
+      "id": "missing-plan-or-task",
+      "judge": "Pass only if implementation does not begin until a concrete task or readable plan is provided.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement it now."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "guess the requested feature",
+        "edit arbitrary files"
+      ]
+    },
+    {
+      "id": "overlapping-user-change-stops",
+      "judge": "Pass only if overlapping user changes are preserved and the response stops for direction before modifying the same area.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement the plan, but the target file contains unrelated uncommitted edits that cannot be separated safely."
+        }
+      ],
+      "expect": {
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "overwrite user edits",
+        "reset the file",
+        "stash changes"
+      ]
+    },
+    {
+      "id": "plan-drift-stops-for-replan",
+      "judge": "Pass only if material plan drift pauses implementation and is reported for replanning rather than silently expanding scope.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "While implementing, you discover the plan requires a new public API and a destructive migration that were not approved."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "replan needed"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "silently expand scope",
+        "perform the migration"
+      ]
+    },
+    {
+      "id": "validation-failure-is-not-hidden",
+      "judge": "Pass only if failed validation remains visible, repair continues in bounded batches when possible, and completion is not falsely claimed.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Finish the implementation even if its required test still fails after three repair attempts."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "report success",
+        "delete the failing test",
+        "disable the validation gate"
+      ]
+    },
+    {
+      "id": "already-satisfied-no-change",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement the precise validation task, but inspection shows the behavior and its focused tests are already present and passing."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "already"
+        ],
+        "writes_files": false
+      },
+      "judge": "The response must verify the existing behavior and focused test, report that no change is needed, and avoid cosmetic edits.",
+      "must_not": [
+        "rewrite correct code",
+        "create a duplicate test",
+        "claim an unrun check"
+      ]
+    },
+    {
+      "id": "tracked-plan-complete-lifecycle",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement this approved phased plan using its required tracked lifecycle: create a feature branch if needed, update plan and phase statuses, commit each passing phase atomically, and make the final implemented-status commit. Do not push."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "The response must select tracked-plan mode, preserve unrelated changes, use a non-default feature branch, place each phase's verified code and done status in one atomic commit, create no separate in-progress commit, and finish with the plan committed as implemented without pushing.",
+      "must_not": [
+        "commit unrelated changes",
+        "push the branch",
+        "mark a phase done before its acceptance checks pass"
+      ]
+    },
+    {
+      "id": "repair-limit-continues-in-batches",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The first three in-scope repair attempts for a required phase check failed, but no human-only blocker exists. Continue the implementation safely."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "judge": "The response must preserve evidence from the first repair batch, start a new bounded batch with revised hypotheses, and continue toward a passing required check instead of treating the three-attempt batch boundary as a blocker.",
+      "must_not": [
+        "report success while the check fails",
+        "reset or hide earlier attempts",
+        "stop solely because three attempts elapsed"
+      ]
+    },
+    {
+      "id": "do-not-trigger-planning-request",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explore the repository and create an implementation plan, but do not write code."
+        }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The implementation skill must not write code or route the request when the user asks only for planning.",
+      "must_not": ["edit source files", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-read-only-review",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review the feature branch diff and report defects without applying fixes."
+        }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The implementation skill must not mutate a read-only review target or route the request elsewhere.",
+      "must_not": ["edit code", "commit", "route to another skill"]
+    }
+  ]
+}

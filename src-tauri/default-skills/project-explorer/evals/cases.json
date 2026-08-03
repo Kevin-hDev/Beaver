@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "skill": "project-explorer",
+  "cases": [
+    {
+      "id": "survey-three-axes",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Survey this project: available tooling, retained context, stack, entry points, and major modules." }],
+      "expect": { "contains": ["Tooling", "Context", "Codebase", "evidence"], "writes_files": false },
+      "judge": "The response must map only present capabilities and context sources, describe the codebase with evidence, and avoid executing or recommending any discovered target item.",
+      "must_not": ["execute a discovered skill", "invent an unavailable connector"]
+    },
+    {
+      "id": "combined-survey-and-execution-trace",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Map this project's Tooling, Context, and Codebase axes, then trace how a local skill is discovered, parsed, and exposed to the agent." }],
+      "expect": { "contains": ["Tooling", "Context", "Codebase", "ordered path", "evidence"], "writes_files": false },
+      "judge": "The response must complete the bounded three-axis survey and the requested skill execution-path trace sequentially, support both with project evidence, use read-only exploration tools when useful, and never execute the discovered skill itself.",
+      "must_not": ["choose only the survey", "choose only the trace", "execute the discovered skill"]
+    },
+    {
+      "id": "drill-tooling-level",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "List the installed skills in this project, then wait before opening any one skill." }],
+      "expect": { "contains": ["skills", "location", "purpose"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["auto-expand every skill", "run a skill"]
+    },
+    {
+      "id": "drill-complete-across-batches",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Enumerate all 73 modules at this codebase level. Keep each batch within the exploration ceilings and do not stop after the first batch." }],
+      "expect": { "contains": ["batch", "continuation", "complete", "73"], "writes_files": false },
+      "judge": "The response must enumerate the requested single level completely across bounded same-level batches, identify a stable continuation position after each non-final batch, and stop early only for an explicit evidence or access blocker.",
+      "must_not": ["stop silently at 20 items", "offer only a child-level continuation", "scan unrelated personal plugin directories"]
+    },
+    {
+      "id": "match-goal-without-running",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Among the available capabilities, which single item best matches creating a release? Point to it but do not run it." }],
+      "expect": { "contains": ["best match", "invocation"], "writes_files": false },
+      "must_not": ["publish a release", "give a generalized workflow"]
+    },
+    {
+      "id": "drill-context-level",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Show the project's present memory, specifications, plans, and instruction sources one level deep." }],
+      "expect": { "contains": ["Context", "scope", "present"], "writes_files": false },
+      "must_not": ["dump unrelated document contents", "open secrets"]
+    },
+    {
+      "id": "map-unfamiliar-repository",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Explore this unfamiliar repository and explain its stack, entry points, and major modules without changing anything." }],
+      "expect": { "contains": ["stack", "entry points", "modules", "evidence"], "writes_files": false },
+      "must_not": ["modify files", "recommend a rewrite"]
+    },
+    {
+      "id": "trace-ui-to-storage",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Trace how saving a profile moves from the public form through validation to storage." }],
+      "expect": { "contains": ["ordered path", "validation", "storage", "tests"], "writes_files": false },
+      "must_not": ["execute the save flow", "invent a missing edge"]
+    },
+    {
+      "id": "ambiguous-symbol",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Show me how save works." }],
+      "expect": { "contains": ["ambiguous", "scope"], "writes_files": false },
+      "must_not": ["silently choose one unrelated save function"]
+    },
+    {
+      "id": "large-project-continuation",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Explore this large monorepo and let me continue into one selected area afterward." }],
+      "expect": { "contains": ["bounded", "available depth", "scope"], "writes_files": false },
+      "must_not": ["inspect more than 50 relevant files in one pass", "refuse all continuation"]
+    },
+    {
+      "id": "audit-not-exploration",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Audit the repository for security defects and rank remediation priorities." }],
+      "expect": { "contains": ["audit"], "writes_files": false },
+      "must_not": ["return only a descriptive map"]
+    },
+    {
+      "id": "implement-not-exploration",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Implement the approved export feature and run its tests." }],
+      "expect": { "contains": ["implementation"], "writes_files": false },
+      "must_not": ["substitute read-only exploration"]
+    }
+  ]
+}

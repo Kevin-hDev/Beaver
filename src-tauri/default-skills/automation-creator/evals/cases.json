@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "skill": "automation-creator",
+  "cases": [
+    {"id":"weekly-audit","should_trigger":true,"messages":[{"role":"user","content":"Every Monday at 09:00, run the dependency audit skill with read-only project tools."}],"expect":{"contains":["weekly","skill_ids","tool_names","automation ID"],"writes_files":false},"judge":"The response must confirm the exact schedule and capabilities, register through manage_automation, reload the returned ID, and avoid private config edits.","must_not":[]},
+    {"id":"one-time-report","should_trigger":true,"messages":[{"role":"user","content":"Create a one-time automation tomorrow at 14:30 that generates a project status report."}],"expect":{"contains":["once","active","validate"],"writes_files":false},"judge":"The response must resolve a valid future local datetime, confirm the instruction and capabilities, and distinguish registration from observed firing.","must_not":[]},
+    {"id":"pre-tool-hook","should_trigger":true,"messages":[{"role":"user","content":"Add a project hook that checks write_file paths before that tool runs in Claude Code and Cursor."}],"expect":{"contains":["before tool","matcher","merge","handler"],"writes_files":true},"judge":"The response must map the lifecycle event per confirmed runtime, use a precise matcher, preserve sibling hooks, and validate the bounded handler.","must_not":[]},
+    {"id":"update-existing","should_trigger":true,"messages":[{"role":"user","content":"Update automation 123 so it runs daily at 08:00 and remains inactive until Friday."}],"expect":{"contains":["list","daily","active"],"writes_files":false},"must_not":["create duplicate"]},
+    {"id":"delete-confirmation","should_trigger":true,"messages":[{"role":"user","content":"Delete the nightly automation."}],"expect":{"contains":["exact ID","confirm"],"writes_files":false},"must_not":["delete without confirmation"]},
+    {"id":"unsupported-cron","should_trigger":true,"messages":[{"role":"user","content":"Run this native automation every 17 minutes using a cron expression."}],"expect":{"contains":["unsupported","once","daily","weekly"],"writes_files":false},"must_not":["silently approximate"]},
+    {"id":"unknown-skill","should_trigger":true,"messages":[{"role":"user","content":"Schedule an audit using skill id maybe-security."}],"expect":{"contains":["exact skill ID","blocked"],"writes_files":false},"must_not":["guess skill ID"]},
+    {"id":"malformed-hook-config","should_trigger":true,"messages":[{"role":"user","content":"Add a post-tool hook, but the existing shared hook JSON is malformed."}],"expect":{"contains":["failed","preserve"],"writes_files":false},"must_not":["overwrite malformed config"]},
+    {"id":"no-change-validation","should_trigger":true,"messages":[{"role":"user","content":"Validate automation 456 and change nothing if its stored contract is correct."}],"expect":{"contains":["reloaded","unchanged","verdict"],"writes_files":false},"must_not":["rewrite"]},
+    {"id":"manual-workflow","should_trigger":false,"messages":[{"role":"user","content":"Create a workflow skill I can invoke manually for releases."}],"expect":{"contains":["workflow skill"],"writes_files":false},"must_not":["schedule"]},
+    {"id":"ci-pipeline","should_trigger":false,"messages":[{"role":"user","content":"Create a GitHub Actions CI pipeline for every push."}],"expect":{"contains":["CI pipeline"],"writes_files":false},"must_not":["lifecycle hook"]},
+    {"id":"background-service","should_trigger":false,"messages":[{"role":"user","content":"Implement a daemon that watches Redis continuously."}],"expect":{"contains":["background service"],"writes_files":false},"must_not":["automation artifact"]}
+  ]
+}

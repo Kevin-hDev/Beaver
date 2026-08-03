@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "skill": "parallel-work",
+  "cases": [
+    {
+      "id": "three-independent-features",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: implement the isolated CSV exporter, add the unrelated settings translation keys, and write tests for the existing date parser. Fan them out in parallel and show me the results."}],
+      "expect": {"builds_graph": true, "dedicated_executor_per_task": true, "parallel_launch": true, "final_table_only": true},
+      "must_not": ["merge all work into one executor", "skip refinement", "trust executor summaries without inspection"],
+      "judge": "The workflow must preserve all three categories, refine each task, assign disjoint ownership, launch independent executors concurrently, independently verify results, and finish with exactly one table."
+    },
+    {
+      "id": "six-task-single-wave",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Split these six independent package updates into one parallel todo wave. Each package has its own directory and focused test command."}],
+      "expect": {"wave_size": 6, "parallel_launch": true, "all_tasks_represented": true},
+      "must_not": ["launch seven executors", "invent a total task ceiling", "omit integration verification"],
+      "judge": "Exactly six independently owned tasks may launch together, each with its own refined contract and direct verification, followed by integrated checks."
+    },
+    {
+      "id": "eight-tasks-continuable-waves",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: carry out these eight independent component fixes. Use parallel workers and do not leave the last two undone just because only six can run at once."}],
+      "expect": {"first_wave_max": 6, "later_wave_continues": true, "total_tasks": 8},
+      "must_not": ["treat six as a total limit", "drop queued rows", "mark unlaunched work complete"],
+      "judge": "The first wave must contain no more than six executors, while stable ledger entries preserve and execute the remaining two in a later wave."
+    },
+    {
+      "id": "dependency-chain-serialization",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: define the new API schema, generate its client, and then update the consumer. Also update an unrelated help page. Parallelize whatever is safe."}],
+      "expect": {"dependency_graph": ["schema", "client", "consumer"], "unrelated_work_parallel": true},
+      "must_not": ["launch client before schema is verified", "launch consumer before client is verified"],
+      "judge": "The schema, client, and consumer must execute in verified dependency order while the unrelated help task may run concurrently with a safe wave."
+    },
+    {
+      "id": "shared-file-write-conflict",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: add two independent commands, but both registrations must edit src/commands/index.ts. Use parallel work where possible."}],
+      "expect": {"detects_shared_file": true, "serializes_conflict": true},
+      "must_not": ["allow concurrent writes to src/commands/index.ts", "lose either registration"],
+      "judge": "The workflow must detect the shared registration file, adjust task boundaries or serialize the conflicting portion, and preserve both results."
+    },
+    {
+      "id": "generated-lockfile-conflict",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: upgrade dependencies in three workspaces. Each command may rewrite the shared root lockfile."}],
+      "expect": {"models_possible_writes": true, "serializes_lockfile_updates": true},
+      "must_not": ["parallelize based only on package directories", "overwrite a newer lockfile"],
+      "judge": "Possible generated writes count as ownership, so shared lockfile mutations must be serialized and reconciled even though source directories differ."
+    },
+    {
+      "id": "runtime-refinement-available",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: fan out the four independent fixes. A non-interactive task-refinement capability is available in this session; use it before each implementation."}],
+      "expect": {"discovers_refinement": true, "refines_every_task": true},
+      "must_not": ["hardcode a plugin name", "refine only the first task"],
+      "judge": "Every executor contract must invoke the runtime-discovered non-interactive refinement step before implementation without coupling the skill to a named plugin."
+    },
+    {
+      "id": "refinement-fallback",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: split and implement these separate test fixture repairs. There is no refinement tool available."}],
+      "expect": {"inline_refinement": true, "continues_without_plugin": true},
+      "must_not": ["skip refinement", "claim a missing plugin blocks all work"],
+      "judge": "When no refinement capability exists, each todo must still be restated precisely from project evidence before implementation."
+    },
+    {
+      "id": "executor-summary-is-not-proof",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run these independent todos in parallel. One worker says its tests passed, but the changed file is missing from the shared workspace; verify everything yourself."}],
+      "expect": {"inspects_actual_state": true, "downgrades_false_success": true},
+      "must_not": ["copy the worker's success claim into the table", "mark missing work verified"],
+      "judge": "The orchestrator must inspect the real shared state and focused checks, classifying the missing result as incomplete or failed regardless of the executor summary."
+    },
+    {
+      "id": "one-task-blocked-others-continue",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: implement five independent adapters. If one needs an undocumented product choice, leave that row blocked and complete the other four."}],
+      "expect": {"isolates_blocker": true, "continues_independent_tasks": true, "reports_all_rows": true},
+      "must_not": ["guess product intent", "cancel unrelated ready work", "hide the blocked task"],
+      "judge": "A material ambiguity must block only its task while independent adapters continue; the final table must expose all five outcomes."
+    },
+    {
+      "id": "integration-regression-repair-wave",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Parallelize the independent module changes, then run the combined typecheck. If their interfaces disagree, create a safely owned repair task and verify again."}],
+      "expect": {"task_checks": true, "combined_check": true, "repair_wave_when_needed": true},
+      "must_not": ["claim success from focused checks alone", "repair conflicting files concurrently"],
+      "judge": "The workflow must perform task-level proof, catch the cross-module mismatch with a combined check, then schedule an exclusive repair and repeat verification."
+    },
+    {
+      "id": "no-unrequested-external-effects",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: implement and test these independent fixes locally. Do not commit, push, open tickets, or deploy anything."}],
+      "expect": {"local_implementation": true, "forbidden_effects_in_contracts": true},
+      "must_not": ["create a commit", "push a branch", "open a ticket", "deploy"],
+      "judge": "Every executor contract and the orchestrator must stay within local implementation and verification, with no external or version-control side effect."
+    },
+    {
+      "id": "large-task-set-no-silent-drop",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Todo: process this long checklist of independent migrations in safe waves. Keep stable records so every item is eventually handled; there is no requested total cap."}],
+      "expect": {"continuable_ledger": true, "bounded_active_window": true, "no_total_cap": true},
+      "must_not": ["load an unbounded active collection", "set an arbitrary total maximum", "truncate the checklist"],
+      "judge": "The workflow must bound each active wave and working window while preserving every stable ledger row across as many continuable waves as needed."
+    },
+    {
+      "id": "not-single-task",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Fix the typo in src/banner.ts and run its focused unit test."}],
+      "expect": {"one_shot_work": true},
+      "must_not": ["build a parallel task graph", "launch multiple executors"],
+      "judge": "One small coherent task has no useful fan-out and should use a direct implementation workflow."
+    },
+    {
+      "id": "not-list-only-todos",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Read this proposal and give me a todo checklist. Do not implement anything."}],
+      "expect": {"planning_only": true, "writes_files": false},
+      "must_not": ["launch implementation executors", "change project files"],
+      "judge": "A request to draft a checklist without execution belongs to planning, not the parallel implementation workflow."
+    },
+    {
+      "id": "not-fully-sequential-work",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Apply these database migrations strictly one at a time in their numbered order; each depends on the previous result."}],
+      "expect": {"sequential_workflow": true},
+      "must_not": ["launch concurrent migration executors", "invent independence"],
+      "judge": "A wholly dependent sequence offers no safe parallelism and must not trigger parallel-work merely because it contains multiple steps."
+    },
+    {
+      "id": "not-parallel-research-only",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Ask several agents to independently research this question and compare their opinions; there is no implementation task."}],
+      "expect": {"research_synthesis": true, "writes_files": false},
+      "must_not": ["assign implementation write scopes", "report a coding task table"],
+      "judge": "Parallel opinion gathering is a research or analysis workflow, not dependency-aware parallel implementation."
+    }
+  ]
+}

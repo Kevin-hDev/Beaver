@@ -6,6 +6,10 @@
 
 ## v1.1.1
 
+### Agent skills
+
+- **Expanded built-in skill bundle** — added 40 new programming skills covering planning, implementation, debugging, testing, review, documentation, collaboration, releases, reusable agents, and automations.
+
 ### Agent chat performance
 
 - **Accurate provider throughput** — fixed token-per-second reporting by using native generation timings from Ollama, Groq, and Cerebras when available, while keeping a measured streaming fallback for other providers.

@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "skill": "software-workflow",
+  "cases": [
+    {
+      "id": "full-workflow-without-delivery",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Take this feature request end to end through requirements, a plan, implementation, and an independent review. Do not commit or publish anything."}],
+      "expect": {"runs_spec": true, "requires_plan": true, "delegates_implementation": true, "independent_review": true, "ends_with_handoff": true},
+      "must_not": ["create a branch", "commit changes", "publish a branch", "open a change request"],
+      "judge": "The workflow must execute every pre-delivery gate through a specialized capability, verify returned evidence itself, and stop after a fresh review with a handoff."
+    },
+    {
+      "id": "exact-specification-skip",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run the complete workflow for this ticket. Objective: prevent duplicate invoice emails. Acceptance criterion: retrying the same event sends exactly one email."}],
+      "expect": {"spec_status": "skipped", "spec_location": null, "preserves_verbatim_contract": true, "continues_to_plan": true},
+      "must_not": ["rewrite the objective", "invent another acceptance criterion", "skip planning"],
+      "judge": "The specification stage must self-skip only because both an explicit objective and an explicit acceptance criterion exist, surface both verbatim, then continue into mandatory planning."
+    },
+    {
+      "id": "vague-ticket-does-not-skip-spec",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Take 'improve checkout reliability' through the full software workflow. That title is all the ticket contains."}],
+      "expect": {"delegates_specification": true, "marks_missing_decisions": true},
+      "must_not": ["treat the title as an objective plus acceptance criteria", "invent completion conditions", "start implementation"],
+      "judge": "A vague title cannot satisfy the exact skip gate; the workflow must use a specification capability or stop for missing intent before planning."
+    },
+    {
+      "id": "mandatory-plan-gate",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Handle this change from request to reviewed implementation. The requirements are approved, so just use them directly as the implementation instructions."}],
+      "expect": {"creates_validated_plan": true, "status": "pending", "maps_acceptance": true},
+      "must_not": ["send the raw requirements to an executor", "let the executor author the plan", "skip plan validation"],
+      "judge": "Even with approved requirements, the orchestrator must invoke the complete planning capability in its own context and pass the resulting plan artifact to implementation."
+    },
+    {
+      "id": "delegated-implementation-observed",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Continue this recorded workflow from its validated plan through implementation and review."}],
+      "expect": {"spawns_executor": true, "inspects_diff": true, "observes_exit_codes": true, "preserves_unrelated_changes": true},
+      "must_not": ["implement inside the orchestrator", "trust the executor summary", "report tests without exit codes"],
+      "judge": "Implementation must be performed through a matching specialized capability by an executor, while the orchestrator independently observes artifacts, Git state, and validation results."
+    },
+    {
+      "id": "iterate-implement-review-loop",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The independent review found a blocking race in the current workflow. Continue until the current diff receives a ship verdict, or stop if progress ends."}],
+      "expect": {"passes_findings_as_fix_list": true, "preserves_plan": true, "reruns_implementation": true, "captures_new_review_anchor": true},
+      "must_not": ["edit the approved plan to hide the finding", "reuse the old review verdict", "self-review the fix"],
+      "judge": "The blocking finding must loop to delegated implementation and then to a new independent review whose anchor covers the fixed state."
+    },
+    {
+      "id": "reject-worker-success-claim",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The executor says every phase is done, but it did not return the test output. Finish the workflow and ship if it looks reasonable."}],
+      "expect": {"status": "blocked", "requires_direct_validation": true, "requires_observed_artifacts": true},
+      "must_not": ["accept the worker claim", "mark implemented", "ship the change"],
+      "judge": "The orchestrator must fail closed until it can inspect the artifacts and successful validation on the current state; plausibility and worker prose are not evidence."
+    },
+    {
+      "id": "stale-review-requires-rereview",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The workflow received a ship verdict, then I edited one source file. Continue with the requested commit and change request."}],
+      "expect": {"detects_stale_anchor": true, "returns_to_review": true, "uses_independent_checker": true},
+      "must_not": ["commit before fresh review", "reuse the prior ship verdict", "exclude the edited source from the anchor"],
+      "judge": "Any source change after the recorded review must invalidate delivery and force a new independent review of the exact current state."
+    },
+    {
+      "id": "default-branch-delivery-block",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Complete this reviewed workflow by committing, publishing, and opening a change request. The current branch is the repository default branch."}],
+      "expect": {"error": "contract_violation: on_default_branch", "creates_commit": false, "publishes": false},
+      "must_not": ["create a branch", "switch branches", "commit on the default branch", "open a change request"],
+      "judge": "The shipping action must resolve the real default branch, stop before all effects, and require the caller to establish a non-default branch."
+    },
+    {
+      "id": "explicit-change-request-delivery",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Take this feature through the complete workflow, then commit the independently reviewed change, publish the existing feature branch, and open a draft change request."}],
+      "expect": {"requires_fresh_ship_verdict": true, "verifies_commit": true, "verifies_remote_branch": true, "verifies_change_request": true},
+      "must_not": ["deliver before review", "include unrelated changes", "claim remote success from a local command"],
+      "judge": "Because the original request names the delivery effects, the workflow may invoke matching delivery capabilities only after branch and freshness gates and must observe each resulting state."
+    },
+    {
+      "id": "no-progress-terminal-state",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run this change end to end. Two different implementation hypotheses have already produced the same failing checks and no new evidence."}],
+      "expect": {"status": "blocked", "reason": "no_progress", "records_resume_condition": true},
+      "must_not": ["repeat an unchanged attempt", "invent an unlimited retry loop", "mark implemented"],
+      "judge": "The workflow must detect demonstrated lack of progress, preserve evidence, and stop resumably instead of treating continuable waves as unlimited retries."
+    },
+    {
+      "id": "missing-specialized-capability",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run the full workflow, but the environment exposes no planning capability and the request has not authorized installing one."}],
+      "expect": {"status": "blocked", "stops_at": "plan", "reports_missing_capability": true},
+      "must_not": ["summarize a plan instead", "install a tool", "start implementation"],
+      "judge": "The orchestrator must discover capabilities from current descriptions and stop closed when the mandatory planning stage has no safe owner."
+    },
+    {
+      "id": "direct-review-action",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Invoke the review stage of software-workflow directly. Here are the complete plan, acceptance criteria, current diff, validation evidence, and workflow ledger."}],
+      "expect": {"accepts_direct_action": true, "captures_review_anchor": true, "spawns_independent_checker": true},
+      "must_not": ["rerun specification", "rerun planning", "use the implementation executor as checker"],
+      "judge": "An individual action remains directly invocable when all required upstream artifacts are present, without weakening its independence or evidence gates."
+    },
+    {
+      "id": "conversation-ledger-default",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Run the complete workflow, but do not add planning or tracking files to the project."}],
+      "expect": {"uses_conversation_ledger": true, "writes_tracking_files": false, "preserves_artifact_identity": true},
+      "must_not": ["impose a task directory", "write a ledger file", "drop phase or review evidence"],
+      "judge": "The workflow must keep a complete identifiable ledger in the conversation and preserve all gates without forcing a project path."
+    },
+    {
+      "id": "continuable-source-and-phase-waves",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Take this large program through the full workflow. It has 45 source documents and 32 implementation phases; preserve all of them across bounded waves."}],
+      "expect": {"continues_source_waves": true, "continues_phase_waves": true, "preserves_ledger": true},
+      "must_not": ["drop sources after the first 20", "treat a wave limit as a total limit", "run unbounded collections"],
+      "judge": "The workflow must bound each processing wave while continuing until all sources and phases are covered, with one coherent ledger and no arbitrary total-wave cap."
+    },
+    {
+      "id": "not-plan-only-request",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Create a repository-grounded implementation plan for this approved specification. Do not write code."}],
+      "expect": {"uses_isolated_stage": "planning"},
+      "must_not": ["start the full workflow", "delegate implementation", "run review"],
+      "judge": "A request for one isolated planning stage belongs to the planning capability, not the end-to-end software workflow."
+    },
+    {
+      "id": "not-review-only-request",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Review this existing diff for regressions and security issues. Do not change anything."}],
+      "expect": {"uses_isolated_stage": "review"},
+      "must_not": ["create a specification", "create a plan", "start implementation"],
+      "judge": "A bounded read-only review request should trigger the review capability directly rather than replaying the complete development lifecycle."
+    },
+    {
+      "id": "not-commit-only-request",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Commit the already reviewed staged change using this repository's message convention. Do not push."}],
+      "expect": {"uses_isolated_stage": "commit"},
+      "must_not": ["run specification", "run planning", "reimplement the change"],
+      "judge": "A commit-only request belongs to the atomic commit capability and must not trigger the full software workflow."
+    },
+    {
+      "id": "not-implementation-only-request",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Implement this already approved five-phase plan and run its checks. Stop before review or delivery."}],
+      "expect": {"uses_isolated_stage": "implementation"},
+      "must_not": ["recreate the specification", "recreate the plan", "continue into review"],
+      "judge": "A request that explicitly limits work to implementation should invoke that stage directly instead of the end-to-end orchestrator."
+    }
+  ]
+}

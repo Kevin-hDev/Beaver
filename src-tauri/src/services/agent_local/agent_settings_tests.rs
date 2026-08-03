@@ -144,3 +144,31 @@ fn current_catalog_keeps_a_phase_three_tool_disabled() {
         .enabled_optional_tools
         .contains(&"forecast_backtest".into()));
 }
+
+#[test]
+fn previous_catalog_gains_default_automation_tool() {
+    let settings = AgentSettings {
+        permission_mode: "auto".into(),
+        enabled_optional_tools: vec!["load_skill".into()],
+        tool_catalog_schema: 3,
+    }
+    .normalized();
+
+    assert!(settings
+        .enabled_optional_tools
+        .contains(&"manage_automation".into()));
+}
+
+#[test]
+fn current_catalog_respects_disabled_automation_tool() {
+    let settings = AgentSettings {
+        permission_mode: "auto".into(),
+        enabled_optional_tools: vec!["load_skill".into()],
+        tool_catalog_schema: TOOL_CATALOG_SCHEMA,
+    }
+    .normalized();
+
+    assert!(!settings
+        .enabled_optional_tools
+        .contains(&"manage_automation".into()));
+}

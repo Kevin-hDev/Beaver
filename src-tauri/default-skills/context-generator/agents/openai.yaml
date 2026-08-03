@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Generator"
+  short_description: "Select an unnamed context artifact generator"
+  default_prompt: "Identify the unnamed context artifact, verify its specialized generator is available, and hand off the intact request without creating the artifact yourself."

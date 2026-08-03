@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "skill": "fact-check",
+  "cases": [
+    {
+      "id": "verify-external-claims",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Fact-check these current software version claims and add official citations." }],
+      "expect": { "contains": ["official", "citations", "current"], "writes_files": false },
+      "judge": "Every factual version claim must be checked against current directly supporting official evidence with version and date applicability preserved.",
+      "must_not": ["use cached knowledge only", "skip a factual claim as unimportant"]
+    },
+    {
+      "id": "verify-project-facts",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Verify the claims in this architecture summary against the current repository." }],
+      "expect": { "contains": ["project evidence", "corrected prose"], "writes_files": false },
+      "must_not": ["use web sources to override code"]
+    },
+    {
+      "id": "mixed-opinion-fact",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Check: React 19 was released in 2024 and its naming is elegant." }],
+      "expect": { "contains": ["React 19", "source"], "writes_files": false },
+      "judge": "The release assertion must be verified and cited while the aesthetic opinion remains outside factual verification.",
+      "must_not": ["fact-check aesthetic opinion"]
+    },
+    {
+      "id": "source-conflict",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Two equally applicable official sources disagree on this date. Verify the claim." }],
+      "expect": { "contains": ["both sides", "conflict"], "writes_files": false },
+      "must_not": ["silently pick one"]
+    },
+    {
+      "id": "unresolved-claim",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Verify this claim, but no applicable source exists." }],
+      "expect": { "contains": ["unresolved", "missing evidence"], "writes_files": false },
+      "must_not": ["delete the claim", "present it as true"]
+    },
+    {
+      "id": "verify-all-one-hundred-claims",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Fact-check all 100 factual claims in this report. Use bounded continuation batches and give me one complete corrected result." }],
+      "expect": { "contains": ["Batch 1", "Batch 2", "Batch 3", "Batch 4", "100"], "writes_files": false },
+      "judge": "The extraction and verification ledgers must account for all 100 factual claims exactly once across four or more batches, and the final report must not claim completeness before every batch has a result.",
+      "must_not": ["stop after 30 claims", "discard low-priority factual claims"]
+    },
+    {
+      "id": "include-secondary-factual-claim",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Verify every factual statement, including the small background fact that the project README has three top-level sections." }],
+      "expect": { "contains": ["README", "three", "evidence"], "writes_files": false },
+      "judge": "The background repository fact must be verified even if it is not central to the argument because the requested scope includes every factual statement.",
+      "must_not": ["skip the claim as inconsequential"]
+    },
+    {
+      "id": "skip-trivial-preserve-uncertain",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Fact-check this passage with the normal default scope, not exhaustively: Title: Q2 Update. The title of this passage is Q2 Update. An unavailable 2026 survey says adoption doubled, and that claim is used to conclude the launch succeeded." }],
+      "expect": { "contains": ["Skipped verification", "self-evident", "unresolved", "missing evidence"], "writes_files": false },
+      "judge": "The title statement may be skipped as directly self-evident from the supplied passage, with that reason visible. The adoption claim is uncertain and conclusion-bearing, so it must remain selected, be checked, and stay unresolved when no source supports it; difficulty or missing evidence must never make it trivial.",
+      "must_not": ["skip the adoption claim as trivial", "present the adoption claim as true", "hide the skip reason"]
+    },
+    {
+      "id": "optional-memory-suggestion",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Verify this stable project-path fact and, if it is reusable, suggest whether it is worth remembering. Do not save anything." }],
+      "expect": { "contains": ["Optional memory suggestion", "Persisted: no"], "writes_files": false },
+      "judge": "The response may suggest the verified stable fact and its durable source, but it must not persist, cache, hand off, or imply that memory changed.",
+      "must_not": ["write memory", "persist the fact", "invoke another capability"]
+    },
+    {
+      "id": "do-not-trigger-opinion-only",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Tell me whether this color palette feels elegant and friendly." }],
+      "expect": { "writes_files": false },
+      "judge": "A pure aesthetic opinion with no factual assertion must not trigger fact verification.",
+      "must_not": ["invent a factual claim"]
+    },
+    {
+      "id": "do-not-trigger-critical-review",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Challenge whether this proposal's assumptions and solution are sound." }],
+      "expect": { "writes_files": false },
+      "must_not": ["verify facts only"]
+    },
+    {
+      "id": "do-not-trigger-gap-scan",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Find missing actors, failures, and acceptance criteria in this specification." }],
+      "expect": { "writes_files": false },
+      "must_not": ["treat omissions as false claims"]
+    },
+    {
+      "id": "do-not-trigger-code-review",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Review this diff for defects introduced by the patch." }],
+      "expect": { "writes_files": false },
+      "must_not": ["rewrite the diff with citations"]
+    },
+    {
+      "id": "do-not-trigger-general-research",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Research possible database options for a local app." }],
+      "expect": { "writes_files": false },
+      "must_not": ["invent claims to fact-check"]
+    }
+  ]
+}

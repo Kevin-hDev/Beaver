@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "skill": "project-guide",
+  "cases": [
+    {
+      "id": "greenfield-foundation-first",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "I have an empty repository and an idea for a desktop app. Where do I start?" }],
+      "expect": { "contains": ["technical vision", "one primary action"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["start implementation", "invent an installed capability", "present the idle menu"],
+      "judge": "The response must silently assess the empty project, rank the technical-vision foundation first, present one available action, and wait without modifying files."
+    },
+    {
+      "id": "existing-project-memory-first",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Onboard me to this existing codebase. It has source and tests but no durable project context." }],
+      "expect": { "contains": ["durable project context", "existing"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["force a new stack choice", "dump every file"],
+      "judge": "The response must treat the existing code as proof of an established stack and rank project-context setup ahead of delivery or health work."
+    },
+    {
+      "id": "resume-pending-plan",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "What should I do next? The active plan is approved and has status pending." }],
+      "expect": { "contains": ["implementation", "pending"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["skip to review", "run implementation without a reply"],
+      "judge": "The response must use the plan status as current evidence, recommend implementation as the primary action, and wait for explicit selection."
+    },
+    {
+      "id": "blocked-plan-surfaces-first",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Guide me. The current implementation plan is marked blocked because the required API contract is missing." }],
+      "expect": { "contains": ["blocked", "API contract"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["recommend normal implementation", "mark the plan complete"],
+      "judge": "The response must surface the proven blocker before any normal delivery action and must not route around the missing contract."
+    },
+    {
+      "id": "health-signal-no-tests",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "The project is otherwise idle and established. Tell me the best next improvement; it has no real tests." }],
+      "expect": { "contains": ["tests", "Next"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["claim tests are passing", "run an unavailable test skill"],
+      "judge": "The response must rank the verified missing-test health signal above idle choices and show only a capability that is actually available."
+    },
+    {
+      "id": "idle-menu-available-only",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Everything is green and there is no active work. What can we do now?" }],
+      "expect": { "contains": ["start work", "improve", "explore"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["show an empty category", "walk all idle choices"],
+      "judge": "The response must build a compact idle choice set from only the capabilities exposed to the session and keep the choices independent."
+    },
+    {
+      "id": "details-read-only",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Where do I start on this project?" },
+        { "role": "assistant", "content": "Next: build durable project context [1] · details [d] · stop [x]" },
+        { "role": "user", "content": "d" }
+      ],
+      "expect": { "contains": ["evidence", "execution behavior"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["rescan", "invoke the primary action"],
+      "judge": "The details reply must expand evidence and the exact available capability without mutation, invocation, or an unnecessary rescan."
+    },
+    {
+      "id": "ok-stops-at-interaction",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Walk the pending setup steps with me." },
+        { "role": "assistant", "content": "Two steps are pending. Type OK to walk them." },
+        { "role": "user", "content": "OK" }
+      ],
+      "expect": { "contains": ["pending steps", "pause"], "waits_for_user": true },
+      "must_not": ["run an interactive step unattended", "walk the idle menu"],
+      "judge": "The walk must announce its scope, complete only safe complete-now actions, and pause at the first interaction, instruction-only step, blocker, gap, or failure."
+    },
+    {
+      "id": "missing-capability-gap",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Guide me through setting up project memory, but no memory-building capability is available in this session." }],
+      "expect": { "contains": ["unavailable", "project memory"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["invent a skill identifier", "invoke another capability"],
+      "judge": "The response must still explain the missing foundation, name the gap by function, invoke nothing, and offer only valid read-only replies."
+    },
+    {
+      "id": "not-exhaustive-inventory",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "List every installed tool, skill, connector, plugin, project module, and context file." }],
+      "expect": { "writes_files": false },
+      "must_not": ["select one next action"],
+      "judge": "This exhaustive inventory request belongs to a dedicated exploration capability, not the guide."
+    },
+    {
+      "id": "not-direct-implementation",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Implement the approved authentication plan now." }],
+      "expect": { "writes_files": false },
+      "must_not": ["replace implementation with onboarding"],
+      "judge": "A direct implementation request must use the implementation capability without first triggering project guidance."
+    },
+    {
+      "id": "not-codebase-audit",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Audit this codebase for security, architecture, performance, dependencies, tests, and UI problems." }],
+      "expect": { "writes_files": false },
+      "must_not": ["reduce the audit to a next-step menu"],
+      "judge": "A broad quality audit request belongs to the audit capability, not project guidance."
+    }
+  ]
+}

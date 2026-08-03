@@ -868,6 +868,7 @@
         "web": { "title": "网络", "description": "让代理在线搜索信息、打开网页，以获取最新的数据。" },
         "mcp": { "title": "外部连接器", "description": "让代理使用你在「连接器」标签页中配置的外部连接器。" },
         "skills": { "title": "Skills", "description": "让代理在执行某些任务时调用专门的指南（skills）。如果你不使用 skills，可以关闭它。" },
+        "automations": { "title": "自动化", "description": "让代理使用选定的工具和技能创建并管理定时任务。" },
         "user_choice": { "title": "用户选择", "description": "让代理在多个选项之间犹豫时，主动询问你的意见。如果你希望它自己决定，可以关闭它。" },
         "subagents": { "title": "子代理", "description": "让代理把子任务交给一个次级代理处理，再收回结果。如果你想把所有内容保留在同一个对话里，可以关闭它。" },
         "plan_mode": { "title": "Plan mode", "description": "让代理先提出行动计划，并等待你同意后再执行。如果你希望它直接开始行动，可以关闭它。" },

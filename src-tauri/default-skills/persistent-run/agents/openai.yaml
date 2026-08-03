@@ -1,0 +1,4 @@
+interface:
+  display_name: "Persistent Run"
+  short_description: "Retry toward a measurable success condition"
+  default_prompt: "Use $persistent-run to pursue the requested measurable condition through bounded verified attempts."

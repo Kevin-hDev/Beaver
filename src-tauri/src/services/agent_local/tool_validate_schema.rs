@@ -54,6 +54,18 @@ static TODO_DELETE: Schema = &[("id", Ty::Str, false), ("active", Ty::Bool, fals
 static ASK_USER_CHOICE: Schema = &[("questions", Ty::Arr, true)];
 static PLAN_MODE: Schema = &[("title", Ty::Str, true), ("content", Ty::Str, true)];
 static LOAD_SKILL: Schema = &[("skill_id", Ty::Str, true)];
+static MANAGE_AUTOMATION: Schema = &[
+    ("action", Ty::Str, true),
+    ("id", Ty::Str, false),
+    ("name", Ty::Str, false),
+    ("description", Ty::Str, false),
+    ("prompt", Ty::Str, false),
+    ("schedule", Ty::Obj, false),
+    ("skill_ids", Ty::Arr, false),
+    ("tool_names", Ty::Arr, false),
+    ("active", Ty::Bool, false),
+    ("confirm", Ty::Bool, false),
+];
 static CREATE_BRANCH: Schema = &[("branch_name", Ty::Str, true)];
 static CHECKOUT_BRANCH: Schema = &[("branch_name", Ty::Str, true)];
 static DELEGATE_TASK: Schema = &[
@@ -63,6 +75,7 @@ static DELEGATE_TASK: Schema = &[
     ("display_name", Ty::Str, false),
     ("description", Ty::Str, false),
     ("subagent_id", Ty::Str, false),
+    ("agent_path", Ty::Str, false),
 ];
 static SUBAGENT_ID: Schema = &[("subagent_id", Ty::Str, true)];
 static MESSAGE_SUBAGENT: Schema = &[("subagent_id", Ty::Str, true), ("prompt", Ty::Str, true)];
@@ -140,6 +153,7 @@ pub(super) fn schema(tool: &str) -> Option<Schema> {
         "ask_user_choice" => ASK_USER_CHOICE,
         "plan_mode" => PLAN_MODE,
         "load_skill" => LOAD_SKILL,
+        "manage_automation" => MANAGE_AUTOMATION,
         "create_branch" => CREATE_BRANCH,
         "checkout_branch" => CHECKOUT_BRANCH,
         "delegate_task" => DELEGATE_TASK,

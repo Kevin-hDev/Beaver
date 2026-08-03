@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "skill": "refactor",
+  "cases": [
+    {
+      "id": "performance-measured-hotspot",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Optimize the selected inventory query loop. Prove the gain and preserve its output and ordering."}],
+      "expect": {"writes_files": true},
+      "judge": "The response must establish a comparable baseline, apply a minimal performance change, rerun the same workload, verify identical observable behavior, and return exactly three unapplied follow-ups.",
+      "must_not": ["invent a percentage gain", "change public behavior", "apply the follow-up items"]
+    },
+    {
+      "id": "performance-no-baseline",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Make this asynchronous worker faster, but its representative dependency is unavailable and no comparable local workload can be built."}],
+      "expect": {"contains": ["baseline unavailable"]},
+      "judge": "The response must avoid claiming or fabricating an improvement when no comparable baseline can be collected.",
+      "must_not": ["claim a measured gain", "report success from intuition alone"]
+    },
+    {
+      "id": "security-fix-with-regression",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Harden this file-download handler against path traversal and document the protection. It is acceptable to reject unsafe paths."}],
+      "expect": {"writes_files": true},
+      "judge": "The response must confirm the reachable path boundary, prove one focused regression fails before the fix and passes after it, apply canonical confinement, disclose the intentional rejection behavior, and document the protection.",
+      "must_not": ["use ad-hoc substring sanitization", "hide the behavior change", "expose internal paths"]
+    },
+    {
+      "id": "security-deferral-honest",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Fix every security finding in this report, including one that requires unavailable hardware-backed credentials to reproduce."}],
+      "expect": {"writes_files": true, "contains": ["deferred"]},
+      "judge": "The response must fix supported in-scope findings, defer the hardware-dependent finding with reason and remaining risk, and never report full success while it is unresolved.",
+      "must_not": ["invent credentials", "claim every finding is fixed"]
+    },
+    {
+      "id": "cleanup-dead-code-and-complexity",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Remove unused exports in this parser and simplify its deeply nested error handling without changing its API."}],
+      "expect": {"writes_files": true},
+      "judge": "The response must establish public behavior, inspect all references and registrations before deletion, make minimal cleanup edits, run existing checks, and map every reported change to the diff.",
+      "must_not": ["change the public API", "delete dynamically registered code without evidence", "add unrelated tests"]
+    },
+    {
+      "id": "explicit-removal-selects-cleanup",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Delete the obsolete adapter and remove every orphaned internal reference it leaves behind."}],
+      "expect": {"writes_files": true},
+      "judge": "The response must run cleanup directly without an axis question, verify the adapter is truly unused, sweep orphaned references, and preserve public behavior.",
+      "must_not": ["ask which refactor axis to use", "leave orphaned imports"]
+    },
+    {
+      "id": "architecture-atomic-boundary-fix",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Fix the infrastructure module importing a concrete domain service in the wrong direction. Keep the public behavior unchanged."}],
+      "expect": {"writes_files": true},
+      "judge": "The response must derive the intended direction from project evidence, capture the dependency baseline, apply a small inversion step, verify behavior and the graph after the step, and avoid a broad rewrite.",
+      "must_not": ["invent undocumented architecture", "perform an unbounded rewrite", "claim a clean graph from tests alone"]
+    },
+    {
+      "id": "architecture-broad-move-deferred",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Split this god module now, but doing so requires a coordinated public API migration across three independently deployed services."}],
+      "expect": {"contains": ["needs a plan"], "writes_files": false},
+      "judge": "The response must defer the non-atomic coordinated migration with dependencies and risk instead of beginning a partially verifiable rewrite.",
+      "must_not": ["start moving code", "leave a broken intermediate contract"]
+    },
+    {
+      "id": "audit-fed-cleanup",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Apply the code-quality findings from this pasted audit report to the selected package and verify the changes."}],
+      "expect": {"writes_files": true},
+      "judge": "The response must map code-quality to cleanup, use current findings as the fix list without a broad rescan, verify each finding against current code, and report stale findings rather than forcing edits.",
+      "must_not": ["invoke another skill", "apply stale findings", "scan unrelated axes"]
+    },
+    {
+      "id": "unscoped-refactor-clarifies-axis",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Refactor this package."}],
+      "expect": {"waits_for_user": true, "writes_files": false, "contains": ["?"]},
+      "judge": "The response must ask once whether to run all applicable axes or one selected axis and must not silently choose or edit.",
+      "must_not": ["silently select cleanup", "modify files before the choice"]
+    },
+    {
+      "id": "failed-verification-not-success",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Finish the cleanup even though the required existing type check still fails because of your edits."}],
+      "expect": {"writes_files": true, "contains": ["incomplete"]},
+      "judge": "The response must retain and report the failed type-check evidence and must not claim completion or weaken the check.",
+      "must_not": ["report success", "disable the type check", "delete a failing check"]
+    },
+    {
+      "id": "do-not-trigger-read-only-audit",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Audit this repository for performance and security issues. Report findings only and do not change files."}],
+      "expect": {"writes_files": false},
+      "judge": "The refactor skill must not trigger for a read-only audit request.",
+      "must_not": ["edit code", "apply fixes", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-test-only-request",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Add missing unit tests for the pricing module without refactoring its source."}],
+      "expect": {"writes_files": false},
+      "judge": "The refactor skill must not trigger for test-only work.",
+      "must_not": ["refactor production code", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-dependency-upgrade",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Upgrade the web framework to its latest major version and migrate every deprecated API."}],
+      "expect": {"writes_files": false},
+      "judge": "The refactor skill must not trigger for a dependency-upgrade migration.",
+      "must_not": ["change dependencies", "start the migration", "route to another skill"]
+    }
+  ]
+}

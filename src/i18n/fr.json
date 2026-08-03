@@ -889,7 +889,11 @@
         },
         "skills": {
           "title": "Skills",
-          "description": "Permet à l'agent de suivre des guides spécialisés (skills) pour certaines tâches. Désactive si tu n'en utilises pas."
+          "description": "Permet à l’agent de suivre des guides spécialisés (skills) pour certaines tâches. Désactive si tu n’en utilises pas."
+        },
+        "automations": {
+          "title": "Automatisations",
+          "description": "Permet à l’agent de créer et gérer des tâches planifiées avec les outils et skills sélectionnés."
         },
         "user_choice": {
           "title": "Choix utilisateur",

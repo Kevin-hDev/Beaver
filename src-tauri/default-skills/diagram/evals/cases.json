@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "skill": "diagram",
+  "cases": [
+    {
+      "id": "architecture-plan-before-generation",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Turn this architecture into Mermaid: the desktop client sends changes to the sync API, which writes PostgreSQL and publishes an event to the worker."}],
+      "expect": {"contains": ["plan", "components", "relationships"], "waits_for_user": true, "writes_files": false},
+      "judge": "The first response must choose an appropriate diagram type, enumerate only the four stated components and three directed relationships with evidence, show the workflow steps, and wait for plan confirmation without generating Mermaid yet.",
+      "must_not": ["generate before confirmation", "add authentication", "add a cache"]
+    },
+    {
+      "id": "confirmed-plan-generates-and-validates",
+      "should_trigger": true,
+      "messages": [
+        {"role": "user", "content": "Diagram this flow: Upload validates the file; valid files enter Import; invalid files enter Rejected."},
+        {"role": "assistant", "content": "Plan: flowchart LR with Upload, Validate, Import, and Rejected; Upload to Validate; Validate valid to Import; Validate invalid to Rejected. Confirm?"},
+        {"role": "user", "content": "Confirmed. Generate it and validate the exact block."}
+      ],
+      "expect": {"contains": ["```mermaid", "flowchart LR", "Import", "Rejected"], "writes_files": false},
+      "judge": "The response must generate only the confirmed nodes and labeled relationships, validate the exact final source with an available compatible parser, and return the fenced block without explanatory diagram prose.",
+      "must_not": ["add a retry path", "claim validation without a parser result", "write a file"]
+    },
+    {
+      "id": "sequence-message-order",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Plan a Mermaid sequence diagram: Client requests Login from API, API asks Auth Store to verify, Auth Store returns valid, then API returns a session to Client."}],
+      "expect": {"contains": ["sequence", "Client", "API", "Auth Store"], "waits_for_user": true, "writes_files": false},
+      "judge": "The plan must preserve all three participants and the four messages in exact source order, without adding errors, tokens, databases, or activation spans.",
+      "must_not": ["reorder messages", "invent an error response", "generate before confirmation"]
+    },
+    {
+      "id": "state-parallel-and-choice",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Create a state diagram plan: Draft goes to Review; approval moves to Publishing, where Upload and Index run in parallel and join before Published; rejection returns to Draft."}],
+      "expect": {"contains": ["state", "choice", "fork", "join"], "waits_for_user": true, "writes_files": false},
+      "judge": "The plan must represent the approval/rejection condition plus the explicitly parallel Upload and Index paths with fork and join, and it must wait before generation.",
+      "must_not": ["serialize Upload and Index", "omit rejection", "invent an Archived state"]
+    },
+    {
+      "id": "entity-cardinality-preserved",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Turn this data relationship into a Mermaid plan: one Shop has many Users; each User belongs to exactly one Shop; a Shop may have zero or many Parts."}],
+      "expect": {"contains": ["erDiagram", "Shop", "User", "Part", "cardinality"], "waits_for_user": true, "writes_files": false},
+      "judge": "The plan must select an entity-relationship diagram and preserve exact one-to-many and zero-to-many cardinalities without inventing attributes or join entities.",
+      "must_not": ["invent IDs", "add foreign keys", "generate before confirmation"]
+    },
+    {
+      "id": "ambiguous-direction-blocks",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Diagram Service A and Service B. They are connected, but the source does not say who calls whom."}],
+      "expect": {"contains": ["direction", "?"], "waits_for_user": true, "writes_files": false},
+      "judge": "Because relationship direction is material and absent, the response must ask for it rather than guess, use a bidirectional arrow, or generate a diagram.",
+      "must_not": ["guess A calls B", "use bidirectional as a default", "generate Mermaid"]
+    },
+    {
+      "id": "missing-source-asks",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "Create a Mermaid diagram for me."}],
+      "expect": {"contains": ["source", "?"], "waits_for_user": true, "writes_files": false},
+      "judge": "The response must ask for the written architecture, lifecycle, process, state, sequence, or relationship source and must not invent a subject.",
+      "must_not": ["invent an architecture", "return an empty diagram"]
+    },
+    {
+      "id": "rejected-plan-revises",
+      "should_trigger": true,
+      "messages": [
+        {"role": "user", "content": "Diagram: Queue sends a job to Worker."},
+        {"role": "assistant", "content": "Plan: Queue, Worker, and a Queue-to-Worker job relationship. Confirm?"},
+        {"role": "user", "content": "No. The Worker pulls from the Queue; revise the direction."}
+      ],
+      "expect": {"contains": ["Worker", "Queue", "revised plan"], "waits_for_user": true, "writes_files": false},
+      "judge": "The response must revise the semantic direction in the plan and request confirmation again; it must not generate until the revised plan is confirmed.",
+      "must_not": ["keep the old direction", "generate Mermaid immediately"]
+    },
+    {
+      "id": "parser-unavailable-unverified",
+      "should_trigger": true,
+      "messages": [
+        {"role": "user", "content": "Flow source: Start leads to Finish."},
+        {"role": "assistant", "content": "Plan: flowchart LR with Start leading to Finish. Confirm?"},
+        {"role": "user", "content": "Confirmed, but no Mermaid parser or renderer is available."}
+      ],
+      "expect": {"contains": ["unverified"], "writes_files": false},
+      "judge": "The response may generate a candidate block but must explicitly report unverified and must not call it valid when no compatible parser or renderer can examine the exact source.",
+      "must_not": ["claim valid", "invent parser output"]
+    },
+    {
+      "id": "syntax-repair-preserves-semantics",
+      "should_trigger": true,
+      "messages": [{"role": "user", "content": "The confirmed Mermaid plan is generated, but the validator rejects one label delimiter. Repair and validate without changing any node or relationship."}],
+      "expect": {"contains": ["validator", "```mermaid"], "writes_files": false},
+      "judge": "The repair must change syntax only, retain the exact confirmed semantic inventory, validate the exact repaired source, and return to planning if any semantic change becomes necessary.",
+      "must_not": ["drop a node", "rename meaning", "add a relationship"]
+    },
+    {
+      "id": "do-not-trigger-image-rendering",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Render this existing Mermaid block as a PNG image at 2x resolution."}],
+      "expect": {"writes_files": false},
+      "must_not": ["replace image rendering with Mermaid generation"]
+    },
+    {
+      "id": "do-not-trigger-other-format",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Create a PlantUML class diagram from these Java classes."}],
+      "expect": {"writes_files": false},
+      "must_not": ["return Mermaid instead of PlantUML"]
+    },
+    {
+      "id": "do-not-trigger-prose-summary",
+      "should_trigger": false,
+      "messages": [{"role": "user", "content": "Summarize this architecture in two paragraphs without creating a diagram."}],
+      "expect": {"writes_files": false},
+      "must_not": ["create Mermaid"]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workflow Skill Creator"
+  short_description: "Create or refactor reusable workflow skills"
+  default_prompt: "Use $workflow-skill-creator to create a reusable workflow skill from this process."

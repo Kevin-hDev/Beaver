@@ -64,3 +64,20 @@ fn duplicate_commands_receive_stable_id_suffixes() {
     assert_eq!(entries[0].info.command, "claude:review:11111111");
     assert_eq!(entries[1].info.command, "claude:review:22222222");
 }
+
+#[test]
+fn metadata_keeps_up_to_250_unicode_characters() {
+    let temp = tempfile::TempDir::new().unwrap();
+    let manifest = temp.path().join("SKILL.md");
+    let description = "é".repeat(MAX_SKILL_DESCRIPTION_CHARS + 20);
+    std::fs::write(
+        &manifest,
+        format!("---\nname: bounded\ndescription: {description}\n---\nBody"),
+    )
+    .unwrap();
+
+    let (_, bounded) = metadata(&manifest, "fallback").unwrap();
+
+    assert_eq!(bounded.chars().count(), MAX_SKILL_DESCRIPTION_CHARS);
+    assert_eq!(bounded, "é".repeat(MAX_SKILL_DESCRIPTION_CHARS));
+}

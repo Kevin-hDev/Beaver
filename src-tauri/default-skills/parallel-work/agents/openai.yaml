@@ -1,0 +1,4 @@
+interface:
+  display_name: "Parallel Work"
+  short_description: "Split independent coding work safely"
+  default_prompt: "Use $parallel-work to split this request into independent tasks and execute them safely in parallel."

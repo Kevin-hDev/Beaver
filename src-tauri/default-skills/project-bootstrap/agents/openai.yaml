@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Bootstrap"
+  short_description: "Compare and design a new project architecture"
+  default_prompt: "Use $project-bootstrap to compare and validate architecture candidates for my new project."

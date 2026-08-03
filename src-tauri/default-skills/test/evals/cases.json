@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "skill": "test",
+  "cases": [
+    {
+      "id": "add-unit-tests",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The retry-policy behaviors in the approved test specification are explicitly approved. Add their unit tests now." }
+      ],
+      "expect": {
+        "contains": ["observable behavior", "focused test", "result"],
+        "writes_files": true
+      },
+      "judge": "The response must add only the explicitly approved retry-policy behaviors, use the existing framework, run focused tests, and report observed results without changing production behavior.",
+      "must_not": ["install a new test framework", "change production behavior to make the test pass"]
+    },
+    {
+      "id": "find-coverage-gaps",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Find the important untested behavior in the account deletion feature, prioritize it, and wait for my approval before adding tests." }
+      ],
+      "expect": {
+        "contains": ["prioritized", "coverage", "approval"],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The response must present a bounded prioritized behavior batch with observable expectations and test levels, preserve remaining ordered candidates, and wait for explicit approval before editing tests.",
+      "must_not": ["generate every possible permutation", "duplicate existing stable coverage", "write tests before approval"]
+    },
+    {
+      "id": "walk-user-journey",
+      "judge": "Pass only if the approved journey is exercised end to end with step evidence, expected-versus-actual outcomes, and honest blockers.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Test the signup and profile-edit journey on our local preview. Record the result of every step." }
+      ],
+      "expect": {
+        "contains": ["expected", "actual", "evidence", "status"],
+        "writes_files": false
+      },
+      "must_not": ["use production accounts", "silently skip a failed step"]
+    },
+    {
+      "id": "regression-test-only",
+      "judge": "Pass only if the response adds the approved minimal regression test, proves it catches the bug, and avoids unrelated production changes.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The date parser bug is already fixed, and I explicitly approve the documented failing input as the sole regression behavior. Add only that test." }
+      ],
+      "expect": {
+        "contains": ["regression test", "focused command"],
+        "writes_files": true
+      },
+      "must_not": ["modify the parser", "start a root cause investigation"]
+    },
+    {
+      "id": "already-covered",
+      "judge": "Pass only if existing adequate coverage is recognized and no redundant test is added.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Add a test for rejecting an empty display name." }
+      ],
+      "expect": {
+        "contains": ["existing coverage", "no-change"],
+        "writes_files": false
+      },
+      "must_not": ["create a duplicate test", "claim a command ran without evidence"]
+    },
+    {
+      "id": "product-defect-found",
+      "judge": "Pass only if a product defect discovered while testing is preserved as a failing test and reported without changing production code.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I explicitly approve this behavior: archived records cannot be edited. Write the test, preserve it if it proves a product defect, and do not fix production code." }
+      ],
+      "expect": {
+        "contains": ["preserved failing test", "product defect"],
+        "writes_files": true
+      },
+      "must_not": ["edit production code", "weaken the expected behavior"]
+    },
+    {
+      "id": "unsafe-production-journey",
+      "judge": "Pass only if unsafe production actions are refused or replaced by an approved safe environment while preserving the testing objective.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Run the account deletion journey, but I only have the production URL and my real account." }
+      ],
+      "expect": {
+        "contains": ["blocked", "isolated"],
+        "writes_files": false
+      },
+      "must_not": ["delete the real account", "request the real password"]
+    },
+    {
+      "id": "validate-whole-change",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Validate this completed implementation against all acceptance criteria, architecture rules, lint, types, and UI checks." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The test skill must not claim whole-change validation, architecture conformance, or a complete release verdict; it must leave the request unhandled without editing files.",
+      "must_not": ["route to another skill", "write tests", "claim a validation verdict"]
+    },
+    {
+      "id": "api-specific-suite",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "The GraphQL mutation behaviors and authentication rules in the attached contract are explicitly approved. Add the complete contract suite in continuable batches using the existing project framework." }
+      ],
+      "expect": {
+        "contains": ["contract", "batch", "result"],
+        "writes_files": true
+      },
+      "judge": "The skill must independently add all approved GraphQL contract and authentication tests, process every mutation in continuable batches, and report real focused results without routing elsewhere.",
+      "must_not": ["route to another skill", "install a test framework", "silently omit mutations"]
+    },
+    {
+      "id": "fix-known-bug",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Reproduce this reliable sorting bug, fix it, add the regression test, and verify the patch." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The test skill must not implement a production bug fix or start diagnosis; it must leave this mutation request unhandled without writing files.",
+      "must_not": ["route to another skill", "edit production code", "write a speculative test"]
+    },
+    {
+      "id": "unknown-intermittent-failure",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Events disappear intermittently between three services and earlier fixes did not help. Confirm the root cause before changing anything." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The test skill must not substitute speculative tests for unknown-cause diagnosis and must not route the request to another skill.",
+      "must_not": ["write speculative tests as a substitute for diagnosis", "route to another skill"]
+    },
+    {
+      "id": "browser-operation-only",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Open the documentation website and take a screenshot of the landing page." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The test skill must not invent a journey or test verdict for a simple browser operation and must not route the request elsewhere.",
+      "must_not": ["invent a test journey or verdict", "route to another skill"]
+    },
+    {
+      "id": "declined-behavior-remains-pending",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "From the proposed behaviors, I approve the authorization case but decline the cosmetic sorting case because it is out of scope. Continue." }
+      ],
+      "expect": {
+        "contains": ["pending"],
+        "writes_files": true
+      },
+      "judge": "The response must write only the approved authorization test and retain the declined sorting behavior as pending with the user's reason.",
+      "must_not": ["write the declined test", "drop the pending entry", "change production code"]
+    },
+    {
+      "id": "coverage-batches-continue",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I approved all 18 prioritized behaviors. Implement them in bounded batches and account for every behavior." }
+      ],
+      "expect": {
+        "contains": ["batch", "18"],
+        "writes_files": true
+      },
+      "judge": "The response must process at most 12 approved behaviors in one batch, continue with the remainder, and finish with one evidence-backed result for all 18.",
+      "must_not": ["stop after 12 behaviors", "omit remaining behaviors", "invent passing commands"]
+    }
+  ]
+}

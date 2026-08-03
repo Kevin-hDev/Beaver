@@ -1,0 +1,4 @@
+interface:
+  display_name: "Automation Creator"
+  short_description: "Create scheduled agentic automations"
+  default_prompt: "Use $automation-creator to create a scheduled automation with selected tools and skills."

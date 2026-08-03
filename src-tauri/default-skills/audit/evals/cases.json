@@ -1,0 +1,218 @@
+{
+  "version": 1,
+  "skill": "audit",
+  "cases": [
+    {
+      "id": "full-codebase-audit",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit this repository across code quality, architecture, security, dependencies, performance, tests, and UI. Do not modify anything." }
+      ],
+      "expect": {
+        "contains": ["confirmed findings", "coverage", "severity", "evidence"],
+        "writes_files": false
+      },
+      "judge": "The response must inspect all seven pillars, separate confirmed findings from unverified candidates, rank only evidence-backed findings, and account honestly for every skipped or unavailable check without modifying files.",
+      "must_not": ["edit code", "invent results for an unavailable pillar"]
+    },
+    {
+      "id": "security-pillar",
+      "judge": "Pass only if the security audit reports evidence-backed exploitable findings, including insecure defaults where relevant, without modifying code.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Perform a read-only security audit of the authentication and file upload boundaries." }
+      ],
+      "expect": {
+        "contains": ["attacker-controlled input", "control", "sink", "impact"],
+        "writes_files": false
+      },
+      "must_not": ["print secret values", "attempt exploitation against production"]
+    },
+    {
+      "id": "architecture-pillar",
+      "judge": "Pass only if the architecture pillar evaluates boundaries, coupling, responsibilities, and dependency direction using repository evidence.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit whether these packages respect the documented dependency boundaries." }
+      ],
+      "expect": {
+        "contains": ["architecture", "both sides", "rule", "evidence"],
+        "writes_files": false
+      },
+      "must_not": ["invent undocumented boundaries", "change imports"]
+    },
+    {
+      "id": "dependency-pillar",
+      "judge": "Pass only if dependency findings cover declared and resolved packages, including outdated versions, and distinguish verified facts from uncertainty.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit dependencies for known vulnerabilities, lockfile integrity, and license problems." }
+      ],
+      "expect": {
+        "contains": ["installed version", "advisory", "lockfile", "coverage"],
+        "writes_files": false
+      },
+      "must_not": ["update packages", "guess vulnerabilities"]
+    },
+    {
+      "id": "performance-static-only",
+      "judge": "Pass only if performance findings remain evidence-based, cover expensive computations or bundle risks where applicable, and do not invent runtime measurements.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit performance, but no profiler or running environment is available." }
+      ],
+      "expect": {
+        "contains": ["unverified", "static", "coverage"],
+        "writes_files": false
+      },
+      "must_not": ["claim a runtime bottleneck without measurement", "start a service"]
+    },
+    {
+      "id": "tests-pillar",
+      "judge": "Pass only if the test pillar assesses meaningful coverage, weak assertions, critical gaps, and test reliability without authoring tests.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit the test suite for critical coverage gaps, flakes, and tests coupled to implementation details." }
+      ],
+      "expect": {
+        "contains": ["critical behavior", "evidence", "coverage"],
+        "writes_files": false
+      },
+      "must_not": ["fabricate coverage percentages", "write new tests"]
+    },
+    {
+      "id": "ui-pillar-static",
+      "judge": "Pass only if the UI pillar evaluates accessibility and usability with available static or runtime evidence and labels unverified claims.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Audit the UI statically for missing states, token drift, responsiveness, and accessibility. There is no running URL." }
+      ],
+      "expect": {
+        "contains": ["static", "runtime unavailable", "user-visible effect"],
+        "writes_files": false
+      },
+      "must_not": ["claim confirmed visual breakage", "start the frontend"]
+    },
+    {
+      "id": "no-confirmed-findings",
+      "judge": "Pass only if the audit explicitly reports no confirmed findings when evidence does not support any, without inventing issues.",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Run a code-quality audit of this small module and report honestly if nothing is wrong." }
+      ],
+      "expect": {
+        "contains": ["no confirmed findings", "checks", "limits"],
+        "writes_files": false
+      },
+      "must_not": ["invent a minor issue to fill the report"]
+    },
+    {
+      "id": "audit-and-fix",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Assess the project's health, propose correction batches, then apply the fixes after I choose them." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The read-only audit skill must not accept responsibility for applying fixes or route the mutation request to another skill.",
+      "must_not": ["apply fixes", "route to another skill", "use read-only audit as the complete mutation workflow"]
+    },
+    {
+      "id": "review-specific-diff",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Review this pull request diff and report only defects introduced by the change." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The audit skill must not replace a change-set defect review with a whole-codebase health assessment and must not route the request elsewhere.",
+      "must_not": ["expand into a whole-codebase audit", "route to another skill"]
+    },
+    {
+      "id": "validate-feature",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Validate that the completed feature passes acceptance criteria, lint, types, tests, architecture, and UI checks." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The audit skill must not replace implementation validation gates with an audit report and must not route the request elsewhere.",
+      "must_not": ["replace validation gates with an audit report", "route to another skill"]
+    },
+    {
+      "id": "diagnose-one-failure",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Find why this intermittent cross-service failure survives earlier fixes." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The audit skill must not turn one resistant failure into a multi-pillar audit and must not route the request elsewhere.",
+      "must_not": ["run seven unrelated pillars", "route to another skill"]
+    },
+    {
+      "id": "implement-refactor",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Refactor this module to remove duplication and simplify its responsibilities, then run tests." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The read-only audit skill must not perform or route an implementation refactor request.",
+      "must_not": ["edit the module", "route to another skill", "pretend a read-only report completed the refactor"]
+    },
+    {
+      "id": "finding-overflow-continues-in-batches",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "This complete audit has 67 supported findings. Return every finding in bounded report batches without omitting lower-severity evidence." }
+      ],
+      "expect": {
+        "contains": ["batch", "67", "coverage"],
+        "writes_files": false
+      },
+      "judge": "The response must emit no more than 50 findings in one report batch, continue with the remaining findings in stable severity order, and account for all 67 exactly once.",
+      "must_not": ["truncate after 50 findings", "hide overflow", "duplicate findings"]
+    },
+    {
+      "id": "unscoped-audit-asks-pillar-choice",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Run a health check on this repository." }
+      ],
+      "expect": {
+        "contains": ["?"],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The response must ask once whether to run all seven pillars or one named pillar and must not begin scanning before the scope choice is supplied.",
+      "must_not": ["silently select one pillar", "blind-run all seven pillars", "modify files"]
+    },
+    {
+      "id": "requested-pillar-and-merged-artifacts",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Run the complete audit, continue every pillar batch, and write separate reports for each selected pillar plus one merged report under ./docs/audit/."
+        }
+      ],
+      "expect": {
+        "contains": ["Finding ID", "report.md", "coverage"],
+        "writes_files": true
+      },
+      "judge": "The response must finish every numbered pillar batch, assign each confirmed finding one deterministic stable identity, write exactly one file for each selected pillar plus report.md, preserve every identity in the merged report exactly once, and stage and atomically replace validated artifacts only after the set is complete.",
+      "must_not": [
+        "write a partial report set",
+        "change a finding identity between reports",
+        "truncate overflow",
+        "overwrite unrelated files"
+      ]
+    }
+  ]
+}

@@ -24,6 +24,7 @@ const LOCKED_GROUPS: &[ToolGroupEntry] = &[
 
 const OPTIONAL_GROUPS: &[ToolGroupEntry] = &[
     group("skills", false, true, &["load_skill"]),
+    group("automations", false, true, &["manage_automation"]),
     group("user_choice", false, true, &["ask_user_choice"]),
     group(
         "subagents",

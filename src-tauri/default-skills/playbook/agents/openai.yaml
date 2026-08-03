@@ -1,0 +1,4 @@
+interface:
+  display_name: "Playbook"
+  short_description: "Manage verified reusable project playbooks"
+  default_prompt: "Use $playbook to list, research, create, update, or safely apply a reusable project playbook."

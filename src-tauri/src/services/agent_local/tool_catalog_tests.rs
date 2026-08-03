@@ -7,6 +7,7 @@ fn defaults_match_product_choice() {
         default_enabled_optional_tools(),
         vec![
             "load_skill",
+            "manage_automation",
             "ask_user_choice",
             "delegate_task",
             "list_subagents",
@@ -81,10 +82,10 @@ fn enabled_subagent_bundle_exposes_change_lifecycle_tools() {
 #[test]
 fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     let entries = catalog();
-    assert_eq!(entries.len(), 43);
+    assert_eq!(entries.len(), 44);
     assert_eq!(entries.iter().filter(|entry| entry.locked).count(), 12);
-    assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 31);
-    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 24);
+    assert_eq!(entries.iter().filter(|entry| !entry.locked).count(), 32);
+    assert_eq!(entries.iter().filter(|entry| entry.default_enabled).count(), 25);
     let entry_by_id = entries
         .iter()
         .map(|entry| (entry.id, entry))
@@ -102,9 +103,9 @@ fn native_definitions_catalog_and_groups_are_exhaustively_consistent() {
     );
 
     let groups = super::tool_group_catalog::groups();
-    assert_eq!(groups.len(), 15);
+    assert_eq!(groups.len(), 16);
     assert_eq!(groups.iter().filter(|group| group.locked).count(), 5);
-    assert_eq!(groups.iter().filter(|group| !group.locked).count(), 10);
+    assert_eq!(groups.iter().filter(|group| !group.locked).count(), 11);
     let mut group_ids = BTreeSet::new();
     let mut grouped_tools = BTreeSet::new();
     for group in groups {
@@ -193,8 +194,8 @@ fn default_native_catalog_measurement_is_reproducible() {
     let estimated_tokens =
         crate::services::compress::token_estimate::estimate_tool_tokens(&active);
 
-    assert_eq!(all.len(), 43);
-    assert_eq!(active.len(), 24);
+    assert_eq!(all.len(), 44);
+    assert_eq!(active.len(), 25);
     println!(
         "TOOL_CATALOG_MEASUREMENT={}",
         serde_json::json!({

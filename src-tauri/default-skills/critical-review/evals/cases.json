@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "skill": "critical-review",
+  "cases": [
+    {
+      "id": "challenge-architecture-proposal",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Critically review this proposal to split our desktop app into six services. Challenge the assumptions and look for a simpler approach." }
+      ],
+      "expect": {
+        "contains": ["intended outcome", "blockers", "strengths", "alternatives", "confidence"],
+        "writes_files": false
+      },
+      "judge": "The review must judge the proposed services against the stated outcome, preserve supported strengths, and compare at least one genuinely simpler viable alternative using consistent criteria.",
+      "must_not": ["implement the split", "prefer services merely because they are modern"]
+    },
+    {
+      "id": "challenge-plan",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Rethink this implementation plan before we start. Find weak assumptions, unnecessary work, and anything that makes success unverifiable." }
+      ],
+      "expect": {
+        "contains": ["assumptions", "necessity", "feasibility", "verdict"],
+        "writes_files": false
+      },
+      "must_not": ["rewrite the entire plan", "turn every suggestion into a blocker"]
+    },
+    {
+      "id": "challenge-specification",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Challenge this approved specification against the product outcome and operational constraints." }
+      ],
+      "expect": {
+        "contains": ["outcome", "constraints", "blockers", "unresolved"],
+        "writes_files": false
+      },
+      "must_not": ["silently modify the specification", "judge only writing style"]
+    },
+    {
+      "id": "challenge-own-answer",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Critically review the answer you just gave me. Preserve what is correct and identify any unsupported conclusion." }
+      ],
+      "expect": {
+        "contains": ["confirmed strengths", "unsupported", "verdict"],
+        "writes_files": false
+      },
+      "must_not": ["invent criticism", "defend the earlier answer without examination"]
+    },
+    {
+      "id": "challenge-user-decision",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "I decided every feature needs its own database. Challenge that decision against isolation, operations, cost, and reversibility." }
+      ],
+      "expect": {
+        "contains": ["mandatory constraints", "tradeoffs", "alternatives"],
+        "writes_files": false
+      },
+      "must_not": ["accept the user's assumption as a requirement", "be contrarian without evidence"]
+    },
+    {
+      "id": "report-all-finding-batches",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Critically review this proposal. The evidence supports 18 distinct blockers and 9 distinct improvements. Report every supported finding in bounded batches and do not stop after the first 15." }
+      ],
+      "expect": {
+        "contains": ["Batch 1", "Batch 2", "blockers", "improvements", "verdict"],
+        "writes_files": false
+      },
+      "judge": "The union of reported batches must account for all 27 distinct supported findings exactly once, preserve blocker versus improvement classification, and assign the verdict only after every batch is processed.",
+      "must_not": ["truncate at 15 findings", "merge unrelated findings only to satisfy the limit"]
+    },
+    {
+      "id": "compare-all-alternative-batches",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Challenge this decision against five materially different viable alternatives. Compare all five in bounded batches before recommending one." }
+      ],
+      "expect": {
+        "contains": ["alternatives", "Batch 1", "Batch 2"],
+        "writes_files": false
+      },
+      "judge": "The response must compare every materially distinct viable alternative using the same outcome, risk, complexity, reversibility, evidence, and cost criteria without silently dropping alternatives after three.",
+      "must_not": ["compare only three alternatives", "prefer novelty without evidence"]
+    },
+    {
+      "id": "insufficient-intent",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Tell me whether this design is correct." }
+      ],
+      "expect": {
+        "contains": ["intended outcome", "inconclusive"],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": ["invent the product goal"]
+    },
+    {
+      "id": "sound-work",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Challenge this small proposal honestly, even if no blocker exists." }
+      ],
+      "expect": {
+        "contains": ["sound", "strengths", "confidence"],
+        "writes_files": false
+      },
+      "must_not": ["manufacture a blocker to fill the report"]
+    },
+    {
+      "id": "review-code-diff",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Review this diff line by line and report defects introduced by the patch with file and line evidence." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "This request is for line-level changed-code defects and must not trigger a high-level critical review workflow.",
+      "must_not": ["replace diff review with a high-level challenge"]
+    },
+    {
+      "id": "audit-codebase",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Audit the repository for architecture, security, dependency, performance, test, and UI problems." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "This broad repository assessment must remain outside the critical-review trigger boundary.",
+      "must_not": ["route to critical-review as the primary skill"]
+    },
+    {
+      "id": "fact-check-claims",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Verify every factual claim in this article and add authoritative citations." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "A request whose primary output is claim verification and citations must not trigger general critical challenge.",
+      "must_not": ["substitute general criticism for source verification"]
+    },
+    {
+      "id": "author-plan",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Create an implementation plan with phases, files, risks, and validation criteria." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The skill must not trigger when the user asks to author new work and provides nothing to challenge.",
+      "must_not": ["challenge work that does not exist"]
+    },
+    {
+      "id": "implement-recommendation",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Apply the selected simplification to the code and run the tests." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The read-only challenge workflow must not trigger for a direct implementation request.",
+      "must_not": ["remain read-only when implementation was requested"]
+    },
+    {
+      "id": "find-document-gaps",
+      "should_trigger": false,
+      "messages": [
+        { "role": "user", "content": "Scan this requirements document for missing actors, states, edge cases, and acceptance criteria." }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "A structured completeness scan must not be replaced by a broad first-principles challenge.",
+      "must_not": ["replace the structured gap scan with a broad challenge"]
+    }
+  ]
+}

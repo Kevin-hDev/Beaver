@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "skill": "root-cause-debugging",
+  "cases": [
+    {
+      "id": "full-root-cause-workflow",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Diagnose and fix this reproducible integration failure systematically, then record the learning." }],
+      "expect": { "contains": ["root cause", "3 hypotheses", "failing test", "learning"], "writes_files": true },
+      "judge": "The response must follow investigation, pattern analysis, exactly three hypotheses, differential testing, one root-cause fix, verification, defense in depth, and learning documentation in that order.",
+      "must_not": ["fix before investigation", "skip the failing test", "stop after diagnosis"]
+    },
+    {
+      "id": "simple-bug-still-triggers",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "This parser failure looks simple. Find the root cause and implement the verified fix." }],
+      "expect": { "contains": ["investigation", "3 hypotheses", "implementation"], "writes_files": true },
+      "must_not": ["route to another debug workflow", "apply a symptom patch"]
+    },
+    {
+      "id": "all-hypotheses-inconclusive",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "All three hypotheses are inconclusive. Continue the prescribed debugging process." }],
+      "expect": { "contains": ["3 NEW hypotheses"], "writes_files": false },
+      "must_not": ["apply an inconclusive fix", "stop because one round ended"]
+    },
+    {
+      "id": "three-failed-fixes",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Three root-cause fixes failed and each exposed new shared-state coupling." }],
+      "expect": { "contains": ["architecture", "discuss with user"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["apply a fourth fix", "ignore the pattern"]
+    },
+    {
+      "id": "quick-fix-request",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Skip diagnosis and make a quick speculative fix now." }],
+      "expect": { "contains": ["root cause investigation"], "writes_files": false },
+      "must_not": ["make a speculative change"]
+    },
+    {
+      "id": "multiple-fixes-at-once",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Apply all three possible fixes together and see whether the tests pass." }],
+      "expect": { "contains": ["test all hypotheses", "single fix"], "writes_files": false },
+      "must_not": ["change multiple variables"]
+    },
+    {
+      "id": "skip-regression-test",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "The cause is confirmed. Implement it without a failing regression test." }],
+      "expect": { "contains": ["failing test case"], "writes_files": false },
+      "must_not": ["implement before the test"]
+    },
+    {
+      "id": "general-concept-question",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Explain what differential diagnosis means in general." }],
+      "expect": { "contains": ["explanation"], "writes_files": false },
+      "must_not": ["modify a project"]
+    },
+    {
+      "id": "review-without-failure",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Review this clean refactor for maintainability; no failure is reported." }],
+      "expect": { "contains": ["review"], "writes_files": false },
+      "must_not": ["invent a bug"]
+    },
+    {
+      "id": "implement-new-feature",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Implement a new export feature; there is no defect or unexpected behavior." }],
+      "expect": { "contains": ["implementation"], "writes_files": false },
+      "must_not": ["invent a root cause"]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refactor"
+  short_description: "Improve code with verifiable evidence"
+  default_prompt: "Use $refactor to improve the selected code through one explicit axis and verify every change."

@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "skill": "issue-create",
+  "cases": [
+    { "id": "create-approved-bug", "should_trigger": true, "messages": [{ "role": "user", "content": "Draft a bug issue for this reproducible crash, show all fields, and create it after I approve." }], "expect": { "contains": ["reproduction", "expected behavior", "approval"], "waits_for_user": true, "writes_files": false }, "judge": "The response must preserve factual reproduction and source fields, sanitize evidence, and wait for approval before creating any tracker record.", "must_not": ["invent logs", "create before approval"] },
+    { "id": "feature-with-selected-solution", "should_trigger": true, "messages": [{ "role": "user", "content": "Create a feature issue with this already selected proposed solution, constraints, references, and QA steps." }], "expect": { "contains": ["Proposed solution", "Technical constraints", "References", "QA"], "waits_for_user": true, "writes_files": false }, "must_not": ["drop source fields", "change the solution"] },
+    { "id": "provider-cli", "should_trigger": true, "messages": [{ "role": "user", "content": "Use the available authenticated tracker CLI because no connector is configured." }], "expect": { "contains": ["CLI", "tracker", "approval"], "writes_files": false }, "must_not": ["require a connector", "ask for credentials"] },
+    { "id": "explicit-metadata", "should_trigger": true, "messages": [{ "role": "user", "content": "Create this approved issue with the existing accessibility label, milestone 2.0, project, priority, and safe attachment." }], "expect": { "contains": ["verified metadata", "attachment", "milestone"], "writes_files": false }, "must_not": ["add other labels", "attach an unsafe file"] },
+    { "id": "exact-duplicate", "should_trigger": true, "messages": [{ "role": "user", "content": "File this crash, but an open issue already covers the same reproduction and result." }], "expect": { "contains": ["duplicate", "existing URL"], "writes_files": false }, "must_not": ["create another issue"] },
+    { "id": "close-overlap", "should_trigger": true, "messages": [{ "role": "user", "content": "Create this issue even though a related ticket overlaps part of the scope." }], "expect": { "contains": ["scope difference"], "waits_for_user": true, "writes_files": false }, "must_not": ["silently create a duplicate"] },
+    { "id": "missing-problem", "should_trigger": true, "messages": [{ "role": "user", "content": "Create an issue." }], "expect": { "contains": ["problem or desired outcome"], "waits_for_user": true, "writes_files": false }, "must_not": ["invent content"] },
+    { "id": "read-ticket", "should_trigger": false, "messages": [{ "role": "user", "content": "Show me issue 142 and its status." }], "expect": { "contains": ["read"], "writes_files": false }, "must_not": ["create an issue"] },
+    { "id": "comment-existing", "should_trigger": false, "messages": [{ "role": "user", "content": "Add this result as a comment on issue 142." }], "expect": { "contains": ["comment"], "writes_files": false }, "must_not": ["create a new issue"] },
+    { "id": "bulk-create", "should_trigger": false, "messages": [{ "role": "user", "content": "Create 50 tracker issues from this spreadsheet." }], "expect": { "contains": ["bulk"], "writes_files": false }, "must_not": ["create 50 issues"] }
+  ]
+}

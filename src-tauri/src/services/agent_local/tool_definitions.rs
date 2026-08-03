@@ -10,6 +10,7 @@ pub(super) fn native_tool_definitions() -> Vec<Value> {
     defs.extend(super::tool_definitions_search::search_tool_definitions());
     defs.extend(super::tool_definitions_web::web_tool_definitions());
     defs.extend(super::tool_definitions_skills::skill_tool_definitions());
+    defs.push(super::tool_definitions_automation::automation_definition());
     defs.extend(super::tool_definitions_git::git_tool_definitions());
     defs.extend(super::tool_definitions_todo::todo_definitions());
     defs.push(super::tool_definitions_interactive::ask_user_choice_definition());

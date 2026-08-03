@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "skill": "gap-analysis",
+  "cases": [
+    {
+      "id": "scan-prd",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Find consequential gaps in this PRD before we write stories." }],
+      "expect": { "contains": ["missing information", "consequence", "question", "stable key"], "writes_files": false },
+      "judge": "Every reported gap must identify missing information, its downstream consequence, one direct question, a source anchor, severity, and a stable identity without rewriting the PRD.",
+      "must_not": ["rewrite the PRD", "invent missing decisions"]
+    },
+    {
+      "id": "scan-plan",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Check this plan for missing states, dependencies, failures, and verification." }],
+      "expect": { "contains": ["states", "dependencies", "verification"], "writes_files": false },
+      "judge": "The scan must report only omissions that can change implementation, verification, or interpretation and must not criticize preferences as gaps.",
+      "must_not": ["implement the plan"]
+    },
+    {
+      "id": "scan-stories",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Identify missing actors, boundary cases, and acceptance criteria in these stories." }],
+      "expect": { "contains": ["actors", "boundaries", "questions"], "writes_files": false },
+      "must_not": ["estimate stories"]
+    },
+    {
+      "id": "diff-reworded-question-stays-open",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Compare the current requirements with this prior gap report. Prior key: failures | Payment | timeout behavior. Prior question: What happens on timeout? The same timeout decision remains missing, but phrase the current question more precisely." }
+      ],
+      "expect": { "contains": ["Closed", "Still Open", "Newly Introduced", "failures | Payment | timeout behavior"], "writes_files": false },
+      "judge": "The timeout gap must remain Still Open under the same stable key even though its question wording changes; it must not appear as both Closed and Newly Introduced.",
+      "must_not": ["match by question wording", "modify the source"]
+    },
+    {
+      "id": "diff-closed-and-new",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Compare reports. The prior report has key data | Retention | deletion policy, which the current artifact now resolves. The current artifact newly lacks actors | Approval | approver identity." }
+      ],
+      "expect": { "contains": ["Closed", "Still Open", "Newly Introduced"], "writes_files": false },
+      "judge": "The deletion-policy key must appear exactly once under Closed, the approver-identity key exactly once under Newly Introduced, and neither may be guessed into Still Open.",
+      "must_not": ["drop a status section", "count closed gaps as current"]
+    },
+    {
+      "id": "compare-two-artifact-versions",
+      "should_trigger": true,
+      "messages": [
+        { "role": "user", "content": "Compare these requirement versions for consequential gaps. Previous: Users can export reports. Exports contain a title and creation date. Administrators can delete exports. Current: Users can export reports as PDF or CSV. Exports contain a title. Team owners can permanently delete any export. Export jobs retry automatically." }
+      ],
+      "expect": { "contains": ["Closed", "Still Open", "Newly Introduced", "stable key", "intent uncertain"], "writes_files": false },
+      "judge": "The response must scan both versions independently with the same rubric, derive stable identities from semantic decisions rather than exact sentences, recognize genuinely resolved format information, and keep the missing creation date and changed deletion actor intent uncertain unless the user or an authoritative source confirms the change was deliberate.",
+      "must_not": ["treat the previous artifact as a gap report", "claim the removals were intentional", "match only by wording"]
+    },
+    {
+      "id": "continue-more-than-thirty-gaps",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "This artifact has 47 distinct consequential gaps. Analyze and report all of them in bounded batches without stopping after 30." }],
+      "expect": { "contains": ["Batch 1", "Batch 2", "47", "coverage"], "writes_files": false },
+      "judge": "The report must account for all 47 distinct gaps across continuation batches, preserve one stable key per gap, and avoid silently truncating or merging unrelated gaps.",
+      "must_not": ["report only 30 gaps", "claim complete with overflow pending"]
+    },
+    {
+      "id": "resolved-companion-source",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Scan this spec, but its referenced policy already defines retention." }],
+      "expect": { "contains": ["companion source"], "writes_files": false },
+      "must_not": ["report retention as missing"]
+    },
+    {
+      "id": "no-consequential-gaps",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Scan this complete small requirement honestly." }],
+      "expect": { "contains": ["status: clean", "coverage"], "writes_files": false },
+      "judge": "When no blocker or major remains, the report must state clean status without manufacturing a minor gap.",
+      "must_not": ["invent a minor gap"]
+    },
+    {
+      "id": "missing-artifact",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Analyze the gaps in the document I forgot to provide." }],
+      "expect": { "contains": ["artifact unavailable"], "waits_for_user": true, "writes_files": false },
+      "must_not": ["invent document content"]
+    },
+    {
+      "id": "do-not-trigger-critical-challenge",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Challenge whether this architecture proposal is necessary or sound and compare simpler alternatives." }],
+      "expect": { "writes_files": false },
+      "judge": "A first-principles challenge of an approach must not trigger the structured completeness scan.",
+      "must_not": ["run only a completeness checklist"]
+    },
+    {
+      "id": "do-not-trigger-fact-check",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Verify every factual claim and add authoritative citations." }],
+      "expect": { "writes_files": false },
+      "judge": "Claim verification must not be treated as missing-information analysis.",
+      "must_not": ["treat false facts as missing requirements"]
+    },
+    {
+      "id": "do-not-trigger-rewrite",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Rewrite this PRD with a clearer structure and corrected requirements." }],
+      "expect": { "writes_files": false },
+      "judge": "An authoring request must not trigger a diagnostic-only gap report.",
+      "must_not": ["return only a gap report"]
+    }
+  ]
+}

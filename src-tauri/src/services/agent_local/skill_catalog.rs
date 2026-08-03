@@ -1,4 +1,4 @@
-use super::skill_parser::read_skill_metadata;
+use super::skill_parser::{read_skill_metadata, MAX_SKILL_DESCRIPTION_CHARS};
 use super::types_tools::SkillInfo;
 use crate::services::agent_import;
 use sha2::{Digest, Sha256};
@@ -104,7 +104,13 @@ fn external_entries(home: &Path) -> Vec<SkillCatalogEntry> {
 
 fn metadata(manifest: &Path, fallback: &str) -> Option<(String, String)> {
     let (name, description) = read_skill_metadata(manifest, fallback, MAX_SKILL_BYTES)?;
-    Some((name, description.chars().take(160).collect()))
+    Some((
+        name,
+        description
+            .chars()
+            .take(MAX_SKILL_DESCRIPTION_CHARS)
+            .collect(),
+    ))
 }
 
 fn find_skill_file(directory: &Path) -> Option<PathBuf> {

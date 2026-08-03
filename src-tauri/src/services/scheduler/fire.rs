@@ -47,17 +47,15 @@ pub async fn fire_wakeup(app: AppHandle, wakeup: ScheduledWakeup, scheduled_for:
     }
 }
 
-async fn dispatch(_app: &AppHandle, wakeup: &ScheduledWakeup) -> Result<(String, u32), String> {
+async fn dispatch(app: &AppHandle, wakeup: &ScheduledWakeup) -> Result<(String, u32), String> {
     if llm::route::is_interactive_only(&wakeup.provider) {
         return Err("Provider réservé aux conversations manuelles".to_string());
     }
-    let api_session_id = if wakeup.provider == "ollama" {
-        None
-    } else {
-        Some(find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?)
-    };
+    let session_id = find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?;
     // Route selon provider : Ollama (local) ou LLM API (via catalog).
-    let (reply, tokens) = if wakeup.provider == "ollama" {
+    let (reply, tokens) = if wakeup.agentic {
+        super::agentic::run(app, wakeup, &session_id).await?
+    } else if wakeup.provider == "ollama" {
         ollama_stream::collect_chat(
             &wakeup.model,
             vec![ChatMessage {
@@ -76,14 +74,9 @@ async fn dispatch(_app: &AppHandle, wakeup: &ScheduledWakeup) -> Result<(String,
             &wakeup.provider,
             &wakeup.model,
             &wakeup.prompt,
-            api_session_id.as_deref(),
+            Some(&session_id),
         )
         .await?
-    };
-
-    let session_id = match api_session_id {
-        Some(id) => id,
-        None => find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?,
     };
 
     let user_msg = AgentMessage {

@@ -1,0 +1,13 @@
+{
+  "<EventName>": [
+    {
+      "matcher": "<precise-pattern-or-remove-field>",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "<confirmed-handler-path>"
+        }
+      ]
+    }
+  ]
+}

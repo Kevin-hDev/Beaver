@@ -873,6 +873,7 @@
         "web": { "title": "Web", "description": "Lets the agent search for information online and open web pages when it needs current data." },
         "mcp": { "title": "External connectors", "description": "Lets the agent use the external connectors you configured in the Connectors tab." },
         "skills": { "title": "Skills", "description": "Lets the agent follow specialized guides (skills) for certain tasks. Turn off if you don't use them." },
+        "automations": { "title": "Automations", "description": "Lets the agent create and manage scheduled tasks that use selected tools and skills." },
         "user_choice": { "title": "User choices", "description": "Lets the agent ask for your input when it hesitates between several options. Turn off if you'd rather it decide on its own." },
         "subagents": { "title": "Subagents", "description": "Lets the agent delegate a subtask to a secondary agent, then pick up the result. Turn off if you want to keep everything in a single conversation." },
         "plan_mode": { "title": "Plan mode", "description": "Lets the agent propose an action plan and wait for your approval before acting. Turn off if you'd rather it jump straight to action." },

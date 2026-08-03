@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagram"
+  short_description: "Create verified Mermaid diagrams"
+  default_prompt: "Use $diagram to turn the supplied source into a clear, confirmed, and parser-validated Mermaid diagram."

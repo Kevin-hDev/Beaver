@@ -54,6 +54,10 @@ pub fn create_wakeup(
             active: !globally_paused,
             paused_by_global: globally_paused,
             created_at: chrono::Utc::now().to_rfc3339(),
+            agentic: false,
+            working_dir: String::new(),
+            skill_ids: Vec::new(),
+            tool_names: Vec::new(),
         };
         config.scheduled_wakeups.push(wakeup.clone());
         Ok(wakeup)

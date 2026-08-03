@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "skill": "review",
+  "cases": [
+    {
+      "id": "review-working-tree",
+      "judge": "Pass only if the review inspects staged and unstaged changes across the selected axes and reports only actionable evidence-backed findings.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review the current working-tree diff for bugs, security issues, and regressions. Do not modify anything."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "patch code",
+        "stage files",
+        "report style-only preferences"
+      ]
+    },
+    {
+      "id": "review-against-plan",
+      "judge": "Pass only if functional review compares the change with the supplied plan and separates correctness findings from style preferences.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review this change against its approved plan and trace every acceptance condition to evidence in the diff."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Functional",
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "mark runtime behavior verified from static code alone",
+        "fix unmet criteria"
+      ]
+    },
+    {
+      "id": "review-explicit-revision-range",
+      "judge": "Pass only if the review uses exactly the requested revision range plus explicitly included overlays and does not widen scope silently.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review the revision range main...feature/export and prioritize only actionable findings introduced by that range."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "audit the entire unchanged repository",
+        "include pre-existing defects as findings"
+      ]
+    },
+    {
+      "id": "do-not-trigger-validation",
+      "judge": "Pass only if review does not trigger for a request to execute gates, repair failures, and issue a validation verdict.",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Run every required test and browser journey, fix failures, and give me a validation verdict."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "replace validation with a read-only review"
+      ]
+    },
+    {
+      "id": "missing-review-target",
+      "judge": "Pass only if the response asks for or resolves a concrete diff target before claiming review results.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review the changes, but there is no repository, diff, revision, or changed file available."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "invent a diff",
+        "review unrelated files"
+      ]
+    },
+    {
+      "id": "truncated-diff-is-incomplete",
+      "judge": "Pass only if truncated evidence is identified as incomplete and the review continues in batches or reports the limitation honestly.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The diff tool truncated the change and the remaining content cannot be retrieved. Finish the review."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "incomplete"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "claim full coverage",
+        "return approve"
+      ]
+    },
+    {
+      "id": "clean-diff-no-invented-findings",
+      "judge": "Pass only if a clean reviewed diff yields an explicit no-findings result rather than speculative criticism.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review this small correct diff. If evidence supports no actionable issue, say so plainly."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "No actionable findings"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "invent a nitpick",
+        "demand an unrelated refactor"
+      ]
+    },
+    {
+      "id": "large-diff-reviewed-in-batches",
+      "judge": "Pass only if the entire large diff is covered through continuable batches and findings remain tied to inspected lines.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review this 120-file diff completely without loading it all at once."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "silently omit files",
+        "load more than 50 changed files in one batch"
+      ]
+    },
+    {
+      "id": "save-report-only-when-requested",
+      "judge": "Pass only if the report is saved solely because the user requested it and the saved content matches the completed review.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review the diff read-only and save the final report to ./docs/review.md."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "modify reviewed code",
+        "leave placeholders",
+        "post comments externally"
+      ]
+    },
+    {
+      "id": "default-clean-feature-branch-uses-merge-base",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review the current clean feature branch. I did not provide a range, and all changes are already committed."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Verdict",
+          "merge base"
+        ],
+        "writes_files": false
+      },
+      "judge": "The response must resolve the repository's actual default branch, compute its merge base with HEAD, and review the complete committed branch diff even though the working tree is clean.",
+      "must_not": [
+        "review an empty working-tree diff",
+        "assume the default branch is main",
+        "fetch or check out a branch"
+      ]
+    },
+    {
+      "id": "review-code-axis-only",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Run only the code axis on this explicit revision range. Do not perform functional or relevancy review."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "code",
+          "Axes not run"
+        ],
+        "writes_files": false
+      },
+      "judge": "The response must inspect only the code axis, preserve the exact revision range, and mark functional and relevancy as not run without silently executing them.",
+      "must_not": [
+        "run functional review",
+        "run relevancy review",
+        "modify files"
+      ]
+    },
+    {
+      "id": "do-not-trigger-codebase-audit",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Assess the complete repository across code quality, architecture, security, dependencies, performance, tests, and UI."
+        }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The review skill must not replace a seven-pillar codebase health assessment with a change-set review and must not route the request elsewhere.",
+      "must_not": ["invent a diff", "run a partial audit", "route to another skill"]
+    },
+    {
+      "id": "closed-report-objective-verification",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review this diff against two planned phases. Of four acceptance conditions, evidence shows two met, one partial, and one not applicable. The diff also adds an unrelated permission change. Return the final report only after validating its closed schema."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Phase checklist",
+          "Objective acceptance verification",
+          "67%",
+          "Unplanned changes"
+        ],
+        "writes_files": false
+      },
+      "judge": "The report must include every phase and criterion exactly once, calculate the objective percentage as 2 met divided by 3 eligible conditions rounded to 67%, explicitly classify the unrelated permission change, keep qualitative finding confidence separate, validate the closed report contract before assigning and after inserting the final verdict, and include no undeclared section or field.",
+      "must_not": [
+        "report 50%",
+        "count not-applicable in the denominator",
+        "use 67% as finding confidence",
+        "omit the unplanned permission change",
+        "issue a verdict before schema validation"
+      ]
+    }
+  ]
+}

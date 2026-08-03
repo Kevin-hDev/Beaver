@@ -8,7 +8,7 @@ const LEGACY_FORECAST_TOOLS: &[&str] = &[
     "forecast_analyze",
     "forecast_read",
 ];
-const TOOL_CATALOG_SCHEMA: u32 = 3;
+const TOOL_CATALOG_SCHEMA: u32 = 4;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentSettings {
@@ -45,6 +45,14 @@ impl AgentSettings {
             self.enabled_optional_tools.push("forecast_backtest".into());
             self.enabled_optional_tools
                 .push("forecast_compare_models".into());
+        }
+        if self.tool_catalog_schema < 4
+            && !self
+                .enabled_optional_tools
+                .iter()
+                .any(|tool| tool == "manage_automation")
+        {
+            self.enabled_optional_tools.push("manage_automation".into());
         }
         self.enabled_optional_tools =
             super::tool_catalog::normalize_enabled_optional_tools(&self.enabled_optional_tools);

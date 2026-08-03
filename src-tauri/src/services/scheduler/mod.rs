@@ -1,3 +1,4 @@
+mod agentic;
 pub mod due;
 pub mod fire;
 pub mod log;
@@ -10,10 +11,12 @@ use crate::services::config::read_config;
 use chrono::{DateTime, Duration as ChronoDuration, Local};
 use due::{due_wakeups_at, is_late, is_once, missed_occurrences};
 use next_fire::next_fire_at;
+use std::sync::{Mutex, OnceLock};
 use tauri::AppHandle;
 use tokio::sync::watch;
 
 const MAX_SLEEP_MIN: i64 = 60;
+static RELOAD_SENDER: OnceLock<Mutex<Option<watch::Sender<u64>>>> = OnceLock::new();
 
 pub struct Scheduler {
     reload_tx: watch::Sender<u64>,
@@ -22,6 +25,8 @@ pub struct Scheduler {
 impl Scheduler {
     pub fn spawn(app: AppHandle) -> Self {
         let (reload_tx, reload_rx) = watch::channel(0u64);
+        let sender = RELOAD_SENDER.get_or_init(|| Mutex::new(None));
+        *sender.lock().unwrap_or_else(|error| error.into_inner()) = Some(reload_tx.clone());
         tauri::async_runtime::spawn(run_loop(app, reload_rx));
         Scheduler { reload_tx }
     }
@@ -29,6 +34,20 @@ impl Scheduler {
     pub fn notify_config_changed(&self) {
         let next = self.reload_tx.borrow().wrapping_add(1);
         let _ = self.reload_tx.send(next);
+    }
+}
+
+pub fn notify_config_changed() {
+    let Some(sender) = RELOAD_SENDER.get() else {
+        return;
+    };
+    if let Some(sender) = sender
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .as_ref()
+    {
+        let next = sender.borrow().wrapping_add(1);
+        let _ = sender.send(next);
     }
 }
 

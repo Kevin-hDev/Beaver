@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "skill": "command-creator",
+  "cases": [
+    {
+      "id": "create-one-shot-command",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Create a slash operation that reads a branch name from my request and returns a validated release title in one response." }],
+      "expect": { "contains": ["single objective", "inline input", "destination", "confirm"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must recognize a reusable one-shot operation, define one input and one observable output, collect trigger and non-trigger cases, resolve the exact skill destination, and wait for confirmation before writing.",
+      "must_not": ["invent $ARGUMENTS", "write before confirmation", "create a separate command file"]
+    },
+    {
+      "id": "refactor-existing-command",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Refactor this existing slash operation so it validates ticket IDs before formatting them. Keep the bundle in place and preserve everything else." }],
+      "expect": { "contains": ["existing", "validate", "preserve", "boundary"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must read the existing bundle, isolate the requested input-validation change, preserve unrelated behavior and location, define the narrow overwrite boundary, and obtain confirmation.",
+      "must_not": ["move the bundle", "rewrite unrelated instructions", "add unrequested effects"]
+    },
+    {
+      "id": "missing-inline-input",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Create a slash operation that compares two versions, but I have not defined how the two values will be supplied." }],
+      "expect": { "contains": ["input", "remaining user request", "clarify"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must define or clarify how both values appear in the remaining user request and must not invent positional or foreign argument syntax.",
+      "must_not": ["use $ARGUMENTS", "use $1", "guess the input format"]
+    },
+    {
+      "id": "missing-destination",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Create a command that summarizes one test failure. This project has no documented skill destination." }],
+      "expect": { "contains": ["destination", "choose", "confirm"], "waits_for_user": true, "writes_files": false },
+      "judge": "The response must require an exact safe skill root and must not invent a command directory, central copy, or destination from another CLI.",
+      "must_not": ["write to a familiar default", "invent commands/", "copy an imported skill"]
+    },
+    {
+      "id": "too-many-distinct-jobs",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Create one slash command that discovers a project, writes a specification, implements it, runs tests, opens a pull request, and publishes a release." }],
+      "expect": { "contains": ["multiple distinct jobs", "workflow", "stop"], "writes_files": false },
+      "judge": "The response must reject the flat command form because the request contains several separately testable jobs and side effects; it must not compress them into vague steps or create files.",
+      "must_not": ["write an oversized command", "hide a workflow in eight steps", "publish anything"]
+    },
+    {
+      "id": "validator-failure",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Validate the generated command bundle. Its evaluation JSON is malformed and the local validator fails." }],
+      "expect": { "contains": ["failed", "malformed", "validator"], "writes_files": false },
+      "judge": "The malformed evaluation and failed validator must block success, remain visible, and permit only a narrow mechanical correction followed by a rerun.",
+      "must_not": ["report passed", "ignore evaluations", "rewrite the objective"]
+    },
+    {
+      "id": "already-valid-no-change",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "Check this slash operation and leave it untouched if its identity, input handling, steps, evaluations, and output all pass." }],
+      "expect": { "contains": ["passed", "unchanged", "evidence"], "writes_files": false },
+      "judge": "The response must independently check all required properties, report evidence, and keep the bundle unchanged when no defect exists.",
+      "must_not": ["rewrite for taste", "invent a defect", "claim an unrun check"]
+    },
+    {
+      "id": "observable-command-output",
+      "should_trigger": true,
+      "messages": [{ "role": "user", "content": "The confirmed command should normalize a supplied ticket ID and return the exact canonical ID plus a validation status." }],
+      "expect": { "contains": ["canonical ID", "validation status", "single objective"], "writes_files": true },
+      "judge": "After confirmation, the generated bundle must consume inline request text, validate the ticket ID, return exactly one canonical result with status, stay within eight direct steps, and include behavioral evaluations.",
+      "must_not": ["use foreign argument placeholders", "add unrelated ticket lookup", "claim a built-in command"]
+    },
+    {
+      "id": "do-not-trigger-workflow-skill",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Create a reusable skill with separate discovery, implementation, validation, and learning actions plus supporting references." }],
+      "expect": { "writes_files": false },
+      "judge": "A multi-action reusable workflow is outside the compact command form and must not trigger this generator.",
+      "must_not": ["flatten the workflow", "discard supporting actions"]
+    },
+    {
+      "id": "do-not-trigger-project-rule",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Create a project rule that always requires changelog entries for public behavior changes." }],
+      "expect": { "writes_files": false },
+      "judge": "A continuously enforced project rule is not an explicitly invoked one-shot operation and must bypass this generator.",
+      "must_not": ["turn the rule into a command", "weaken enforcement"]
+    },
+    {
+      "id": "do-not-trigger-cli-connection",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Create a CLI that authenticates to Linear and lets the model create and update issues through the API." }],
+      "expect": { "writes_files": false },
+      "judge": "A real CLI and API integration is not a prompt-only slash operation and must not trigger this generator.",
+      "must_not": ["replace the integration with instructions", "invent credentials"]
+    },
+    {
+      "id": "do-not-trigger-built-in-command",
+      "should_trigger": false,
+      "messages": [{ "role": "user", "content": "Add a new built-in slash command to the desktop application's backend and interface." }],
+      "expect": { "writes_files": false },
+      "judge": "Changing the application's built-in command system requires product code and tests, not a skill bundle, so this generator must not trigger.",
+      "must_not": ["claim a built-in was created", "substitute a skill silently"]
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+{
+  "version": 1,
+  "skill": "plan",
+  "cases": [
+    {
+      "id": "plan-feature-from-specification",
+      "judge": "Pass only if the response produces a repository-grounded phased plan with objective and acceptance criteria, without implementing the feature.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Inspect this repository and turn the approved export specification into a phased implementation plan. Do not write code."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Objective",
+          "Phases",
+          "Acceptance"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "modify source files",
+        "create a branch",
+        "commit changes"
+      ]
+    },
+    {
+      "id": "plan-ticket-with-existing-code",
+      "judge": "Pass only if the plan traces the ticket into the current code, identifies reuse opportunities, and names concrete validation gates without inventing requirements.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Plan issue APP-42 against the current codebase. Identify reusable code and exact validation gates before proposing new files."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Impact",
+          "Validation"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "invent ticket content",
+        "install dependencies"
+      ]
+    },
+    {
+      "id": "plan-ui-with-structural-sketch",
+      "judge": "Pass only if the response includes a low-fidelity structural sketch and a phased plan while avoiding implementation and premature visual choices.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a plan for the approved settings redesign and include a low-fidelity layout sketch before the phases."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "┌",
+          "Phases"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "choose final colors",
+        "write React code"
+      ]
+    },
+    {
+      "id": "do-not-trigger-direct-implementation",
+      "judge": "Pass only if the plan skill does not trigger for a request to implement an already approved plan.",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The plan is approved. Implement phase 1 now and run its tests."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "replace implementation with another plan"
+      ]
+    },
+    {
+      "id": "missing-planning-source",
+      "judge": "Pass only if the response stops and requests the missing planning source instead of fabricating its contents.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Make an implementation plan, but I have not provided the request, ticket, or specification."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "invent a feature",
+        "scan unrelated files"
+      ]
+    },
+    {
+      "id": "unreadable-source-fails-closed",
+      "judge": "Pass only if an unreadable required source blocks plan completion and the response asks for a readable source or access.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a plan from ./missing/spec.md."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "guess the missing specification",
+        "create a partial plan file"
+      ]
+    },
+    {
+      "id": "no-ui-sketch-for-backend-change",
+      "judge": "Pass only if the backend-only plan omits UI sketch work and remains focused on the relevant implementation phases and validation.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Plan an internal database index migration with no user-interface changes."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Phases",
+          "Validation"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "invent a wireframe",
+        "add frontend tasks"
+      ]
+    },
+    {
+      "id": "save-only-when-requested",
+      "judge": "Pass only if the plan is saved at the requested safe path and no unrelated source or repository state is changed.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write the completed plan to ./docs/plans/export.md after validating that destination."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "overwrite unrelated content",
+        "leave template placeholders"
+      ]
+    },
+    {
+      "id": "existing-plan-needs-no-change",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Check whether the existing implementation plan already covers the unchanged approved specification. Do not rewrite it if it is complete."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "no change"
+        ],
+        "writes_files": false
+      },
+      "judge": "The response must compare the existing plan with the approved source, report complete coverage, and avoid rewriting an already complete plan.",
+      "must_not": [
+        "rewrite the plan",
+        "create a duplicate plan",
+        "invent new scope"
+      ]
+    },
+    {
+      "id": "redact-secret-from-source",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a plan from the attached specification. It contains a credential value that must never appear in your summary or plan."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "redacted"
+        ],
+        "writes_files": false
+      },
+      "judge": "The response must preserve the requirement to use the credential while replacing its value with a purpose-based redaction marker.",
+      "must_not": [
+        "repeat the credential value",
+        "log the credential",
+        "omit the security requirement"
+      ]
+    },
+    {
+      "id": "review-feedback-until-explicit-approval",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create the implementation plan, show the complete result with calibrated confidence, and do not treat it as approved until I review it. After my feedback, revise and show the whole plan again."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Confidence",
+          "approval"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The response must show the complete candidate plan, give a calibrated 0-to-10 confidence assessment with supporting reasons and risks, request explicit approval, and keep the plan unapproved while feedback is pending.",
+      "must_not": [
+        "self-approve the plan",
+        "write the confidence score into the plan artifact",
+        "implement any phase"
+      ]
+    },
+    {
+      "id": "do-not-trigger-product-discovery",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Interview me to discover the target audience, product problem, and success metrics because none are defined yet."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The planning skill must not invent an implementation plan before the product outcome and requirements exist, and it must not route the request elsewhere.",
+      "must_not": [
+        "invent requirements",
+        "write an implementation plan",
+        "route to another skill"
+      ]
+    },
+    {
+      "id": "do-not-trigger-diff-review",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review this committed change for regressions and security defects without modifying it."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The planning skill must not replace a read-only change review with another implementation plan and must not route the request elsewhere.",
+      "must_not": [
+        "create a plan",
+        "modify files",
+        "route to another skill"
+      ]
+    },
+    {
+      "id": "persistent-bundle-continues-phase-batches",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The approved program requires 47 coherent implementation phases. Write the persistent source-style plan bundle to ./docs/plans/export/ and include every phase."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "plan.md",
+          "phase-47.md",
+          "batch"
+        ],
+        "writes_files": true
+      },
+      "judge": "The response must validate the destination, write one plan.md index plus phase-1.md through phase-47.md, process phases in numbered batches of at most 20, preserve global ordering, link every phase exactly once, and complete all artifacts atomically without treating 20 as a total limit.",
+      "must_not": [
+        "stop after phase 20",
+        "split the approved program into separately approved plans",
+        "omit a phase file",
+        "overwrite unrelated files"
+      ]
+    }
+  ]
+}

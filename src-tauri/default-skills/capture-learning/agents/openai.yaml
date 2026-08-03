@@ -1,0 +1,4 @@
+interface:
+  display_name: "Capture Learning"
+  short_description: "Preserve durable project decisions and lessons"
+  default_prompt: "Use $capture-learning to capture durable lessons from this work and propose the smallest project-local destination."

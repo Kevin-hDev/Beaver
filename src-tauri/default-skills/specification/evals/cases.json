@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "skill": "specification",
+  "cases": [
+    {
+      "id": "build-from-feature-request",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write a specification for allowing account owners to export their data. Keep it in the conversation."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "## Target",
+          "## Hard constraints",
+          "## Non-goals",
+          "## Done-when"
+        ],
+        "waits_for_user": false,
+        "writes_files": false
+      },
+      "judge": "The result must define one verifiable target, preserve sourced hard constraints, state explicit non-goals and observable done-when outcomes, and introduce no implementation choice.",
+      "must_not": [
+        "choose a library",
+        "invent a file layout",
+        "write code"
+      ]
+    },
+    {
+      "id": "build-from-prd",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Turn the attached PRD into a concise feature specification. Preserve mandatory platform constraints and mark missing decisions as TBD questions."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "TBD:"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "invent missing requirements",
+        "discard a mandatory platform constraint"
+      ]
+    },
+    {
+      "id": "refine-targeted-findings",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refine this draft specification using these findings: the target combines export and account deletion; the export completion condition is not observable."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Target",
+          "Done-when"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "rewrite unrelated sections",
+        "implement the feature"
+      ]
+    },
+    {
+      "id": "validate-read-only",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate this specification and report its verdict without changing it."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "modify the specification"
+      ]
+    },
+    {
+      "id": "build-large-source-in-batches",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Build one specification from this large but authorized source. It contains 140 ordered requirements and exceeds 256 KiB. Read and process it in bounded continuation batches without dropping later requirements."
+        }
+      ],
+      "expect": {
+        "contains": ["Batch 1", "Batch 2", "140", "coverage"],
+        "writes_files": false
+      },
+      "judge": "The action must read the complete source in bounded chunks, process all 140 items across requirement batches, and preserve ordering and traceability without rejecting the source only for exceeding one chunk.",
+      "must_not": ["reject solely because the file exceeds 256 KiB", "stop after 100 requirements"]
+    },
+    {
+      "id": "refine-many-findings-in-batches",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refine this unlocked draft against 135 non-duplicate review findings. Process all findings in bounded batches and return a resolution mapping for every finding."
+        }
+      ],
+      "expect": {
+        "contains": ["Batch 1", "Batch 2", "135", "resolution"],
+        "writes_files": false
+      },
+      "judge": "Every one of the 135 findings must map exactly once to a targeted change, explicit rejection, or precise TBD question, while unaffected sections remain unchanged.",
+      "must_not": ["reject more than 100 findings", "silently drop overflow"]
+    },
+    {
+      "id": "do-not-trigger-full-prd",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write a full product requirements document with personas, market analysis, roadmap, and business metrics."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "A full product requirements request must not trigger the narrower feature-contract workflow.",
+      "must_not": [
+        "replace the PRD workflow with a feature specification"
+      ]
+    },
+    {
+      "id": "do-not-trigger-implementation-plan",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create the implementation phases, file changes, dependencies, and test commands for this approved specification."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "An implementation planning request must not trigger specification authoring or refinement.",
+      "must_not": ["rewrite the approved specification"]
+    },
+    {
+      "id": "do-not-trigger-code-implementation",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement the locked specification now and run all required tests."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "A direct code implementation request must not trigger the read/write specification workflow.",
+      "must_not": ["modify the specification", "replace implementation with a new draft"]
+    },
+    {
+      "id": "missing-target",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a spec, but I have not decided what the feature should achieve."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "invent a target"
+      ]
+    },
+    {
+      "id": "refuse-locked-specification",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Change the target in this specification even though its frontmatter says status: locked."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "modify locked content",
+        "silently remove the lock"
+      ]
+    },
+    {
+      "id": "unreadable-source-fails-closed",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Build a specification from ./missing-prd.md."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "must_not": [
+        "guess the missing source",
+        "create a partial file"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+{
+  "version": 1,
+  "skill": "validate",
+  "cases": [
+    {
+      "id": "validate-changed-backend-code",
+      "judge": "Pass only if validation discovers and runs the relevant backend gates, reports evidence, and gives an honest verdict.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate the current backend changes with every applicable repository gate and give me an evidence-based verdict."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Verdict",
+          "Evidence"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "claim checks were run without output",
+        "start a broad refactor"
+      ]
+    },
+    {
+      "id": "validate-ui-journey",
+      "judge": "Pass only if validation exercises the requested UI journey, records runtime evidence, and reports unresolved failures without hiding them.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The local app is already running. Validate the changed settings journey in the browser and rerun its code checks."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "claim visual evidence without inspecting the UI",
+        "use production data"
+      ]
+    },
+    {
+      "id": "validate-architecture-conformance",
+      "judge": "Pass only if the response checks applicable architecture rules against evidence and reports conformance without mutating the project.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate this module change against the repository's documented layer boundaries and required tests."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "architecture",
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "invent architecture constraints",
+        "ignore a required violation"
+      ]
+    },
+    {
+      "id": "do-not-trigger-test-authoring",
+      "judge": "Pass only if validation does not trigger for a request whose primary goal is designing and authoring a new test suite.",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Design a comprehensive property-based test suite for this parser even though no implementation has changed."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "replace test design with a validation sweep"
+      ]
+    },
+    {
+      "id": "missing-validation-target",
+      "judge": "Pass only if the response requests a concrete validation target instead of guessing what should be checked.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate it, but no repository or changed work is available."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "?"
+        ],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "must_not": [
+        "invent command results",
+        "report pass"
+      ]
+    },
+    {
+      "id": "required-tool-unavailable",
+      "judge": "Pass only if unavailable required tooling is reported as a blocker or limitation and no passing verdict is fabricated.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "A required compiler is unavailable. Continue the validation without installing it."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "incomplete"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "report pass",
+        "install the compiler",
+        "skip without explanation"
+      ]
+    },
+    {
+      "id": "no-ui-facet-for-non-ui-change",
+      "judge": "Pass only if a non-UI change skips runtime UI validation while still running every relevant code and architecture gate.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate a pure database index change that has no visible or interactive behavior."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "not applicable"
+        ],
+        "writes_files": false
+      },
+      "must_not": [
+        "invent a browser journey",
+        "start a frontend server"
+      ]
+    },
+    {
+      "id": "repair-batch-remains-continuable",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "The same required check still fails after the first three in-scope repair attempts, but no safety, authorization, or evidence blocker exists. Continue validation."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "batch",
+          "evidence"
+        ]
+      },
+      "judge": "The response must preserve the first batch's evidence and continue with a new bounded batch of revised hypotheses; it must not treat three attempts alone as a terminal validation failure.",
+      "must_not": [
+        "disable the test",
+        "report pass while the check fails",
+        "discard the first batch"
+      ]
+    },
+    {
+      "id": "save-report-when-requested",
+      "judge": "Pass only if the validation report is written to the requested safe path and accurately preserves gate evidence and verdicts.",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate the current work and save the sanitized report to ./docs/validation.md."
+        }
+      ],
+      "expect": {
+        "writes_files": true
+      },
+      "must_not": [
+        "leave placeholders",
+        "include secrets",
+        "overwrite unrelated content"
+      ]
+    },
+    {
+      "id": "global-architecture-report-only",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate whole-project architecture conformance against the documented tree, boundaries, and layer directions. Report only and do not modify files."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "macro",
+          "micro",
+          "Verdict"
+        ],
+        "writes_files": false
+      },
+      "judge": "The response must inspect the complete repository in continuable batches, report macro and micro conformance with exact rule evidence, and never repair a violation in global-report-only mode.",
+      "must_not": [
+        "limit the review to changed files",
+        "edit an architecture violation",
+        "turn the request into a seven-pillar audit"
+      ]
+    },
+    {
+      "id": "ui-hypothesis-journal-continues",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Validate the already running settings UI. The first three candidate causes were invalidated; preserve the journal and continue with fresh hypotheses until the journey passes or a real blocker is proven."
+        }
+      ],
+      "expect": {
+        "contains": [
+          "hypothesis",
+          "evidence"
+        ]
+      },
+      "judge": "The response must retain the previous three candidates and attempts, add a new batch of three evidence-based candidates with calibrated confidence, and continue rather than restarting or returning a terminal result solely because one batch ended.",
+      "must_not": [
+        "erase earlier attempts",
+        "apply a fix before validating its cause",
+        "claim a screenshot that was not captured"
+      ]
+    },
+    {
+      "id": "do-not-trigger-change-review",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Review this diff statically for introduced defects and do not run or fix anything."
+        }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The validation skill must not replace a read-only diff review with executable gates or repairs and must not route the request elsewhere.",
+      "must_not": ["run validation gates", "repair code", "route to another skill"]
+    },
+    {
+      "id": "do-not-trigger-seven-pillar-audit",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Audit the entire codebase across quality, architecture, security, dependencies, performance, tests, and UI."
+        }
+      ],
+      "expect": { "writes_files": false },
+      "judge": "The validation skill must not turn a seven-pillar health audit into changed-work validation and must not route the request elsewhere.",
+      "must_not": ["run seven audit pillars", "modify files", "route to another skill"]
+    }
+  ]
+}

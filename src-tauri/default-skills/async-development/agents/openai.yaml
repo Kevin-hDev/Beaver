@@ -1,0 +1,4 @@
+interface:
+  display_name: "Async Development"
+  short_description: "Operate a safe asynchronous ticket pipeline"
+  default_prompt: "Use $async-development to set up or run one bounded ticket implementation or review cycle."

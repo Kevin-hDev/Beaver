@@ -1,0 +1,65 @@
+version: 1
+closed: true
+
+title:
+  pattern: '^# Review: .+$'
+
+metadata:
+  exact_order:
+    - Verdict
+    - Target
+    - Axes run
+    - Axes not run
+  verdict:
+    draft_allowed: [pending]
+    final_allowed: [approve, approve-with-notes, changes-requested, blocked, incomplete]
+
+sections:
+  exact_order:
+    - Phase checklist
+    - Verification
+    - Unplanned changes
+    - Findings
+    - Residual uncertainty
+
+phase_checklist:
+  required: true
+  exact_columns: [Phase, Criterion ID, Acceptance criterion, Status, Evidence]
+  criterion_id_pattern: '^P[1-9][0-9]*-AC[1-9][0-9]*$'
+  unique_key: Criterion ID
+  status_allowed: [met, unmet, partial, not-applicable, unverified]
+  require_every_authoritative_phase: true
+  empty_literal: Functional axis not run.
+
+verification:
+  exact_fields: [Met, Eligible, Not applicable, Objective acceptance verification]
+  eligible_statuses: [met, unmet, partial, unverified]
+  numerator_statuses: [met]
+  excluded_statuses: [not-applicable]
+  percentage_rounding: nearest-whole
+  zero_denominator: N/A
+
+unplanned_changes:
+  exact_columns: [Change ID, Location, Observed change, Requirement link, Classification, Evidence]
+  change_id_pattern: '^UP-[1-9][0-9]*$'
+  unique_key: Change ID
+  classification_allowed: [planned, unplanned, unclear]
+  empty_literal: No material changes to classify.
+  require_every_material_change: true
+
+findings:
+  heading_pattern: '^### \[(critical|high|medium|low)\] .+$'
+  exact_fields: [Confidence, Location, Scenario, Impact, Direction]
+  confidence_allowed: [high, medium]
+  empty_literal: No actionable findings.
+
+residual_uncertainty:
+  required: true
+  empty_literal: None.
+
+validation_order:
+  - validate_structure_with_pending_verdict
+  - reconcile_phase_and_change_coverage
+  - recalculate_objective_percentage
+  - assign_final_verdict
+  - validate_complete_final_report

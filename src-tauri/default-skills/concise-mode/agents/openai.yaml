@@ -1,0 +1,4 @@
+interface:
+  display_name: "Concise Mode"
+  short_description: "Control session-local response concision"
+  default_prompt: "Use $concise-mode to enable full concision for this conversation without omitting required evidence or detail."

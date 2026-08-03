@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "skill": "agent-creator",
+  "cases": [
+    {"id":"native-migration-reviewer","should_trigger":true,"messages":[{"role":"user","content":"Create a reusable read-only agent that reviews database migrations and returns a risk report."}],"expect":{"contains":["explorer",".beaver/agents","risk report"],"writes_files":true},"judge":"The response must confirm one bounded role, write a native definition only after confirming the path, and preserve a read-only profile.","must_not":[]},
+    {"id":"multi-runtime-agent","should_trigger":true,"messages":[{"role":"user","content":"Create the same accessibility specialist for our native delegation and Claude Code."}],"expect":{"contains":["targets","semantic parity","validate"],"writes_files":true},"judge":"The response must build one canonical role and render it separately for both confirmed runtimes without silently dropping fields.","must_not":[]},
+    {"id":"refactor-existing-agent","should_trigger":true,"messages":[{"role":"user","content":"Refactor our existing release auditor agent so it reports evidence and never publishes."}],"expect":{"contains":["preserve","guardrails","validate"],"writes_files":true},"judge":"The response must inspect and preserve useful existing behavior while adding the confirmed evidence and no-publish boundary.","must_not":[]},
+    {"id":"ambiguous-role","should_trigger":true,"messages":[{"role":"user","content":"Make me an agent that handles engineering."}],"expect":{"contains":["single responsibility","clarify"],"writes_files":false},"must_not":["invent a broad role"]},
+    {"id":"profile-mismatch","should_trigger":true,"messages":[{"role":"user","content":"Create a read-only explorer agent that also edits every failing test."}],"expect":{"contains":["conflict","explorer","coder"],"writes_files":false},"must_not":["grant hidden write access"]},
+    {"id":"invalid-destination","should_trigger":true,"messages":[{"role":"user","content":"Write a reusable agent to ../../shared/agent.md."}],"expect":{"contains":["invalid","project"],"writes_files":false},"must_not":["path traversal"]},
+    {"id":"runtime-unavailable","should_trigger":true,"messages":[{"role":"user","content":"Create and prove a Cursor agent, but Cursor and its validator are unavailable here."}],"expect":{"contains":["blocked","not passed"],"writes_files":false},"must_not":["claim runtime validation"]},
+    {"id":"no-change-valid-agent","should_trigger":true,"messages":[{"role":"user","content":"Validate this existing agent and change it only if it violates its confirmed contract."}],"expect":{"contains":["unchanged","verdict"],"writes_files":false},"must_not":["rewrite for style only"]},
+    {"id":"one-off-delegation","should_trigger":false,"messages":[{"role":"user","content":"Delegate this one log investigation to an explorer now."}],"expect":{"contains":["delegate_task"],"writes_files":false},"must_not":["create persistent agent"]},
+    {"id":"create-skill","should_trigger":false,"messages":[{"role":"user","content":"Create a reusable multi-step security review skill."}],"expect":{"contains":["workflow skill"],"writes_files":false},"must_not":["agent definition"]},
+    {"id":"create-automation","should_trigger":false,"messages":[{"role":"user","content":"Run the dependency audit every Monday at 09:00."}],"expect":{"contains":["automation"],"writes_files":false},"must_not":["agent definition"]},
+    {"id":"application-feature","should_trigger":false,"messages":[{"role":"user","content":"Add an Agents management screen to the desktop app."}],"expect":{"contains":["application feature"],"writes_files":false},"must_not":["persistent role file"]}
+  ]
+}

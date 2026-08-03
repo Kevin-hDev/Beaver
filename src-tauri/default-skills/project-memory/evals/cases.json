@@ -1,0 +1,307 @@
+{
+  "version": 1,
+  "skill": "project-memory",
+  "cases": [
+    {
+      "id": "setup-from-existing-project-convention",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Set up the project memory. The repository instructions already define the memory directory and two instruction files that should reference it."
+        }
+      ],
+      "expect": {
+        "contains": ["Project Memory Report", "Memory files", "Synchronization"],
+        "writes_files": true
+      },
+      "judge": "The response must resolve the documented project-local convention before asking, scan and confirm evidence-backed capabilities, create the README and all six core files plus supported capability files at exact mapped destinations, review every file independently, synchronize both documented instruction files, and report complete coverage.",
+      "must_not": [
+        "invent a different memory directory",
+        "skip capability confirmation",
+        "stage files",
+        "write outside the project"
+      ]
+    },
+    {
+      "id": "setup-without-convention-asks-both-path-choices",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a structured memory bank for this repository. It has no existing memory convention."
+        }
+      ],
+      "expect": {
+        "contains": ["memory-bank destination", "project instruction files", "?"],
+        "waits_for_user": true,
+        "writes_files": false
+      },
+      "judge": "The response must inspect for an existing repository convention first, then ask one focused question for both the project-relative memory-bank destination and the exact project instruction files, without silently choosing either path.",
+      "must_not": [
+        "choose a default memory folder",
+        "choose an instruction filename",
+        "create files before the answer"
+      ]
+    },
+    {
+      "id": "refresh-preserves-user-edits-exactly",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refresh the existing project memory from current code. I manually added the exact line 'Keep this sentence exactly, including punctuation!' and removed a section I do not want restored."
+        }
+      ],
+      "expect": {
+        "contains": ["User text preserved", "Review", "Synchronization"],
+        "writes_files": true
+      },
+      "judge": "The refresh must preserve the manual line byte-for-byte, avoid recreating the removed heading, update only evidence-backed content in existing sections, review each file independently, reconcile duplicates safely, and synchronize the complete current file list.",
+      "must_not": [
+        "rewrite the manual sentence",
+        "restore the removed section",
+        "replace an entire existing file",
+        "silently delete conflicting user text"
+      ]
+    },
+    {
+      "id": "refresh-flags-obsolete-before-pruning",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refresh the memory after the realtime capability was removed. Show obsolete memory files, but do not delete anything."
+        }
+      ],
+      "expect": {
+        "contains": ["Obsolete files", "realtime.md", "flagged"],
+        "writes_files": true
+      },
+      "judge": "The response must use current evidence to remove realtime from the confirmed capability set, flag the exact known realtime destination as obsolete, preserve that file and all unknown files, and request explicit deletion approval rather than pruning automatically.",
+      "must_not": [
+        "delete realtime.md",
+        "delete unknown files",
+        "infer that silence means approval"
+      ]
+    },
+    {
+      "id": "delete-only-explicit-obsolete-file",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refresh the bank, then delete only the obsolete project-local memory file realtime.md after you verify it is the flagged mapped file."
+        }
+      ],
+      "expect": {
+        "contains": ["realtime.md", "deleted", "Project Memory Report"],
+        "writes_files": true
+      },
+      "judge": "The response must revalidate the exact flagged mapped path, delete only realtime.md because the user explicitly named it, preserve every other bank file, refresh the index and synchronized references, and report the deletion.",
+      "must_not": [
+        "delete another obsolete file",
+        "delete an unknown file",
+        "leave a stale realtime.md reference"
+      ]
+    },
+    {
+      "id": "sync-only-reconciles-marked-sections",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Rewire the existing memory bank into the project instruction files. One target has two old complete project-memory marked sections. Preserve all unrelated text."
+        }
+      ],
+      "expect": {
+        "contains": ["Synchronization", "Unrelated text preserved", "Staged files changed"],
+        "writes_files": true
+      },
+      "judge": "The response must run synchronization alone, reconcile duplicate complete owned sections into one section at the first position, reference every current Markdown memory file exactly once in sorted bounded subsections, remove stale references, preserve all unrelated bytes, write atomically, and stage nothing.",
+      "must_not": [
+        "rescan capabilities",
+        "regenerate memory files",
+        "change unrelated instructions",
+        "stage files"
+      ]
+    },
+    {
+      "id": "sync-already-current-is-no-op",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Synchronize the project memory references. The single marked section already lists every current file exactly once and has no stale entry."
+        }
+      ],
+      "expect": {
+        "contains": ["unchanged", "Project Memory Report"],
+        "writes_files": false
+      },
+      "judge": "The response must verify exact inventory equality and unrelated-text preservation, perform no write because the target is already current, leave the staged snapshot unchanged, and report a no-op.",
+      "must_not": [
+        "rewrite an identical section",
+        "touch memory files",
+        "stage files"
+      ]
+    },
+    {
+      "id": "empty-project-stops-before-setup",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Set up project memory in this empty repository. It contains no source, manifest, tests, or project description."
+        }
+      ],
+      "expect": {
+        "contains": ["no project evidence"],
+        "writes_files": false
+      },
+      "judge": "The response must stop at the grounding step, explain that no project evidence exists, create no memory or instruction file, and hand nothing to generation or synchronization.",
+      "must_not": [
+        "invent a project purpose",
+        "create core memory files",
+        "choose a destination"
+      ]
+    },
+    {
+      "id": "unreadable-required-source-fails-closed",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refresh project memory, but the project instruction file that defines its destination cannot be read."
+        }
+      ],
+      "expect": {
+        "contains": ["unreadable"],
+        "writes_files": false
+      },
+      "judge": "The response must stop before scanning dependent scope or writing, identify the required unreadable source generically, and request readable access without guessing its paths or contents.",
+      "must_not": [
+        "guess the convention",
+        "fall back to a default folder",
+        "partially refresh files"
+      ]
+    },
+    {
+      "id": "all-supported-capability-categories",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Set up memory for this repository. It contains verified UI, API, database, auth, realtime, messaging, deployment, infrastructure, mobile, desktop, reusable package, command-line, and data-model pipeline evidence."
+        }
+      ],
+      "expect": {
+        "contains": ["design.md", "api.md", "database.md", "auth.md", "realtime.md", "messaging.md", "deployment.md", "infra.md", "mobile.md", "desktop.md", "package.md", "cli.md", "data.md"],
+        "writes_files": true
+      },
+      "judge": "The response must confirm every listed capability from concrete evidence and produce all six core files plus every exact capability destination using its category-specific template, with no category reduced to generic prose.",
+      "must_not": [
+        "merge unrelated categories into one file",
+        "omit a supported category",
+        "use a generic empty template"
+      ]
+    },
+    {
+      "id": "large-bank-continues-all-batches",
+      "should_trigger": true,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Refresh and synchronize this established memory bank with 235 current Markdown files. Cover every file without loading all paths at once."
+        }
+      ],
+      "expect": {
+        "contains": ["235/235", "Files 201-235", "Project Memory Report"],
+        "writes_files": true
+      },
+      "judge": "The response must process continuable bounded batches, independently review every current file, include all 235 sorted references inside one marker pair using numbered subsections of at most 100 entries, and never treat a batch size as a terminal total cap.",
+      "must_not": [
+        "stop after 20 files",
+        "stop after 100 references",
+        "omit overflow",
+        "duplicate a reference"
+      ]
+    },
+    {
+      "id": "do-not-trigger-single-note-edit",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Edit one sentence in the existing architecture memory note and make no other change."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The skill must not turn a narrow edit to one known note into a bank-wide scan, refresh, review, or synchronization workflow.",
+      "must_not": [
+        "scan the whole project",
+        "refresh the bank",
+        "rewire instruction files"
+      ]
+    },
+    {
+      "id": "do-not-trigger-personal-memory",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Organize my personal notes and global preferences stored outside this repository."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The skill must decline responsibility for personal or global memory and must not inspect or write outside the project root.",
+      "must_not": [
+        "read personal notes",
+        "write global preferences",
+        "create a project bank"
+      ]
+    },
+    {
+      "id": "do-not-trigger-general-documentation",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Write a public getting-started guide and API tutorial for new customers."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The skill must not replace public documentation authoring with an internal project-memory workflow.",
+      "must_not": [
+        "create a memory bank",
+        "scan capabilities",
+        "modify project instructions"
+      ]
+    },
+    {
+      "id": "do-not-trigger-feature-implementation",
+      "should_trigger": false,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Implement the new export feature, update its tests, and run the build."
+        }
+      ],
+      "expect": {
+        "writes_files": false
+      },
+      "judge": "The skill must not replace product implementation with memory generation or synchronization.",
+      "must_not": [
+        "create memory files",
+        "edit source code",
+        "run a memory workflow"
+      ]
+    }
+  ]
+}
