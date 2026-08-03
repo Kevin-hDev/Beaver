@@ -10,7 +10,7 @@ Correction de la régression d’environnement
 
 • Les exports du profil shell ne sont plus réduits à 33 noms. PATH et les variables temporaires restent pilotés par Beaver pour garder des chemins valides.
 
-• Seules LD_PRELOAD, DYLD_INSERT_LIBRARIES et les variables internes Beaver sont neutralisées afin d’éviter une injection dans le helper avant l’application de la limite de fichiers.
+• Seules LD_PRELOAD, LD_AUDIT, DYLD_INSERT_LIBRARIES et les variables internes Beaver sont neutralisées afin d’éviter une injection dans le helper avant l’application de la limite de fichiers.
 
 Correction des sessions sans projet
 
