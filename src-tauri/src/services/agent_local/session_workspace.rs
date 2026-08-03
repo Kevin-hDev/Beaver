@@ -94,6 +94,49 @@ fn configured_outputs_base() -> Option<PathBuf> {
     crate::models::config::existing_optional_directory(value.to_string_lossy().as_ref())
 }
 
+pub(crate) fn access_roots_for(candidate: &Path) -> Vec<PathBuf> {
+    let base = crate::services::paths::data_dir().join("session-workspaces");
+    let Some(base) = dunce::canonicalize(base).ok().filter(|path| path.is_dir()) else {
+        return Vec::new();
+    };
+    let Some(candidate) = dunce::canonicalize(candidate).ok().filter(|path| path.is_dir()) else {
+        return Vec::new();
+    };
+    let Ok(relative) = candidate.strip_prefix(&base) else {
+        return Vec::new();
+    };
+    let components = relative.components().collect::<Vec<_>>();
+    if components.len() < 3
+        || normal_component(components.first().copied()).is_err()
+        || normal_component(components.get(1).copied()).is_err()
+        || normal_component(components.get(2).copied()).ok() != Some(std::ffi::OsStr::new("work"))
+    {
+        return Vec::new();
+    }
+    let work = base
+        .join(components[0].as_os_str())
+        .join(components[1].as_os_str())
+        .join("work");
+    let Some(work) = dunce::canonicalize(work).ok().filter(|path| candidate.starts_with(path)) else {
+        return Vec::new();
+    };
+    let outputs = configured_outputs_base()
+        .map(|root| {
+            root.join(components[0].as_os_str())
+                .join(components[1].as_os_str())
+                .join("outputs")
+        })
+        .or_else(|| work.parent().map(|root| root.join("outputs")));
+    let mut roots = vec![work];
+    if let Some(output) = outputs
+        .and_then(|path| dunce::canonicalize(path).ok())
+        .filter(|path| path.is_dir())
+    {
+        roots.push(output);
+    }
+    roots
+}
+
 fn first_user_label(session: &AgentSession) -> Result<&str, String> {
     let Some(message) = session.messages.iter().find(|message| message.role == "user") else {
         return Err(workspace_error());
@@ -125,8 +168,8 @@ fn reject_symlinks(base: &Path, target: &Path) -> Result<(), String> {
 }
 
 fn validate_created_path(base: &Path, path: &Path) -> Result<(), String> {
-    let base = base.canonicalize().map_err(|_| workspace_error())?;
-    let path = path.canonicalize().map_err(|_| workspace_error())?;
+    let base = dunce::canonicalize(base).map_err(|_| workspace_error())?;
+    let path = dunce::canonicalize(path).map_err(|_| workspace_error())?;
     if path.starts_with(base) && path.is_dir() {
         Ok(())
     } else {

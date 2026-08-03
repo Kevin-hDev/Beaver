@@ -13,7 +13,12 @@ use crate::services::config::read_config;
 /// contexte permissif). Dans ce cas, les tests négatifs sont skippés.
 fn config_is_permissive() -> bool {
     match read_config() {
-        Ok(c) => c.advanced.allowed_paths.iter().any(|p| p == "/"),
+        Ok(config) => crate::services::agent_local::directory_access::configured_roots_from_paths(
+            config.advanced.allowed_paths,
+        )
+        .is_ok_and(|roots| {
+            crate::services::agent_local::directory_access::roots_allow_full_disk(&roots)
+        }),
         Err(_) => false,
     }
 }
@@ -42,7 +47,7 @@ fn write_rejects_path_outside_allowed_zones() {
     let Some(target) = file_in_home(".cl-go-deny-write-test") else {
         return;
     };
-    let result = validate_write_path(&target);
+    let result = validate_write_path(&target, &std::env::temp_dir());
     cleanup(&target);
     assert!(
         result.is_err(),
@@ -58,7 +63,7 @@ fn write_rejects_system_directory() {
     }
     // /usr/local : hors data_dir et temp_dir sur la plupart des OS.
     let target = std::path::PathBuf::from("/usr/local/.cl-go-deny-write-test");
-    let result = validate_write_path(&target);
+    let result = validate_write_path(&target, &std::env::temp_dir());
     assert!(
         result.is_err(),
         "l'écriture dans /usr/local doit être rejetée hors zones autorisées"
@@ -74,7 +79,7 @@ fn write_rejects_dotdot_escape() {
     let tmp = std::env::temp_dir();
     // ../ depuis temp pour sortir de la zone temp.
     let escape = tmp.join("../../../.cl-go-dotdot-escape-test");
-    let result = validate_write_path(&escape);
+    let result = validate_write_path(&escape, &std::env::temp_dir());
     cleanup(&std::path::Path::new("/").join(".cl-go-dotdot-escape-test"));
     assert!(
         result.is_err(),

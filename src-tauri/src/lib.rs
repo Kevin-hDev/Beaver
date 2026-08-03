@@ -80,6 +80,9 @@ pub fn run() {
             services::agent_local::app_handle_global::init(app.handle().clone());
             services::agent_local::subagent_spawn_channel::init();
             storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
+            if services::agent_local::directory_access::initialize_policy().is_err() {
+                eprintln!("[directory-access] policy unavailable");
+            }
             tauri::async_runtime::spawn(async {
                 if services::forecast::notes_cleanup::recover_pending_deletions()
                     .await

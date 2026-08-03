@@ -4,7 +4,7 @@ pub(super) const MAX_SNAPSHOT_CHUNK_BYTES: usize = 64 * 1024;
 pub(super) fn snapshot(snapshot: &str) -> String {
     let mut sanitized = String::with_capacity(snapshot.len());
     for line in snapshot.lines() {
-        if overrides_sandbox_environment(line) {
+        if rejected_export(line) {
             continue;
         }
         sanitized.push_str(line);
@@ -24,19 +24,17 @@ pub(super) fn chunks(snapshot: &str) -> [zeroize::Zeroizing<String>; 2] {
     ]
 }
 
-fn overrides_sandbox_environment(line: &str) -> bool {
+fn rejected_export(line: &str) -> bool {
     let line = line.trim_start();
     for prefix in ["export ", "declare -x ", "typeset -x "] {
         let Some(value) = line.strip_prefix(prefix) else {
             continue;
         };
-        if SANDBOX_OWNED_ENVS.iter().any(|name| {
-            value
-                .strip_prefix(name)
-                .is_some_and(|value| value.starts_with('='))
-        }) {
-            return true;
-        }
+        let Some((name, _)) = value.split_once('=') else { return true };
+        let name = name.trim();
+        return SANDBOX_OWNED_ENVS.contains(&name)
+            || super::super::shell_sandbox::is_process_injection_env(name)
+            || name.starts_with("BEAVER_INTERNAL_");
     }
     false
 }

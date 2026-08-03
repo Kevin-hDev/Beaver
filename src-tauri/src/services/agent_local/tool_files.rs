@@ -2,8 +2,11 @@ use crate::services::agent_local::security;
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;
 use std::path::{Path, PathBuf};
-use tokio::io::AsyncWriteExt;
 use super::tool_file_error::io_failure;
+
+pub use super::tool_file_write::write_file;
+#[cfg(test)]
+pub(crate) use super::tool_file_write::write_file_in_roots;
 
 const MAX_READ_SIZE: u64 = 20 * 1024 * 1024;
 pub const DEFAULT_LIMIT: usize = 2000;
@@ -26,7 +29,7 @@ fn resolve_write_path(path: &str, working_dir: &Path) -> Result<PathBuf, String>
     } else {
         working_dir.join(p)
     };
-    security::validate_write_path(&raw)
+    security::validate_write_path(&raw, working_dir)
 }
 
 pub async fn read_file(path: &str, working_dir: &Path, offset: usize, limit: usize) -> ToolResult {
@@ -77,82 +80,6 @@ pub async fn read_file(path: &str, working_dir: &Path, offset: usize, limit: usi
     let mut result = ToolResult::ok(output);
     result.mark_truncated(remaining > 0);
     result
-}
-
-pub async fn write_file(path: &str, content: &str, working_dir: &Path) -> ToolResult {
-    let raw = if Path::new(path).is_absolute() {
-        PathBuf::from(path)
-    } else {
-        working_dir.join(path)
-    };
-    if matches!(
-        tokio::fs::symlink_metadata(&raw).await,
-        Ok(meta) if meta.file_type().is_symlink()
-    ) {
-        return ToolResult::error(
-            "Écriture sur symlink interdite",
-            "symlink_write_denied",
-            ToolErrorCategory::Permission,
-            false,
-        );
-    }
-    let resolved = match resolve_write_path(path, working_dir) {
-        Ok(p) => p,
-        Err(error) => {
-            return super::tool_file_error::path_failure(
-                error,
-                "parent_directory_not_found",
-                "write_path_denied",
-                "invalid_write_path",
-            )
-        }
-    };
-    if let Some(parent) = resolved.parent() {
-        if let Ok(real_parent) = parent.canonicalize() {
-            let roots = security::allowed_write_roots();
-            if !roots.iter().any(|r| real_parent.starts_with(r)) {
-                return ToolResult::error(
-                    "Écriture interdite hors des zones autorisées",
-                    "write_path_denied",
-                    ToolErrorCategory::Permission,
-                    false,
-                );
-            }
-        }
-        if let Err(e) = tokio::fs::create_dir_all(parent).await {
-            return io_failure(e, "directory_create_failed");
-        }
-    }
-    if resolved.is_symlink() {
-        return ToolResult::error(
-            "Écriture sur symlink interdite",
-            "symlink_write_denied",
-            ToolErrorCategory::Permission,
-            false,
-        );
-    }
-    match write_no_follow(&resolved, content).await {
-        Ok(()) => ToolResult::ok(format!("Écrit: {}", resolved.display())),
-        Err(e) => io_failure(e, "file_write_failed"),
-    }
-}
-
-async fn write_no_follow(path: &Path, content: &str) -> std::io::Result<()> {
-    let metadata = tokio::fs::symlink_metadata(path).await;
-    if matches!(metadata, Ok(meta) if meta.file_type().is_symlink()) {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::PermissionDenied,
-            "symlink",
-        ));
-    }
-    let mut options = tokio::fs::OpenOptions::new();
-    options.write(true).create(true).truncate(true);
-    #[cfg(unix)]
-    {
-        options.custom_flags(libc::O_NOFOLLOW);
-    }
-    let mut file = options.open(path).await?;
-    file.write_all(content.as_bytes()).await
 }
 
 pub async fn edit_file(

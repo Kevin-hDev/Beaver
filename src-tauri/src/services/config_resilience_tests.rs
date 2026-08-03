@@ -9,7 +9,9 @@
 //!   - écriture atomique (pas de .tmp résiduel)
 
 use crate::models::{ClgoConfig, ScheduledWakeup, WakeupSchedule};
-use crate::services::config::{read_config_from_path, write_config_to_path};
+use crate::services::config::{
+    read_allowed_paths_strict_from_path, read_config_from_path, write_config_to_path,
+};
 use serde_json::json;
 
 /// Wakeup valide minimal (Daily).
@@ -65,6 +67,24 @@ fn corrupted_json_returns_default_and_writes_sentinel() {
         sentinel.exists(),
         "la sentinelle de corruption doit être écrite pour audit"
     );
+}
+
+#[test]
+fn corrupted_json_is_rejected_by_the_directory_policy_reader() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.json");
+    std::fs::write(&path, b"{ invalid }").unwrap();
+
+    assert!(read_allowed_paths_strict_from_path(&path).is_err());
+}
+
+#[test]
+fn invalid_advanced_section_is_rejected_by_the_directory_policy_reader() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("config.json");
+    std::fs::write(&path, br#"{"advanced":"invalid"}"#).unwrap();
+
+    assert!(read_allowed_paths_strict_from_path(&path).is_err());
 }
 
 #[test]

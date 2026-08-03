@@ -28,8 +28,14 @@ static RSYNC_DELETE_REGEX: LazyLock<Regex> =
 static DD_DEVICE_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)\bdd\b.*\bof=/dev/").unwrap());
 
-pub fn allowed_write_roots() -> Vec<PathBuf> {
-    let mut roots = base_allowed_roots(false);
+pub(crate) fn allowed_write_roots_for(working_dir: Option<&Path>) -> Vec<PathBuf> {
+    let mut roots = base_allowed_roots();
+    if let Some(working_dir) = working_dir {
+        append_unique(
+            &mut roots,
+            super::session_workspace::access_roots_for(working_dir),
+        );
+    }
     append_agent_resources(&mut roots);
     roots
 }
@@ -56,46 +62,38 @@ pub fn check_destructive_command(cmd: &str) -> Result<(), String> {
 }
 
 pub fn allowed_read_roots() -> Vec<PathBuf> {
-    let mut roots = base_allowed_roots(true);
-    if let Some(home) = dirs::home_dir() {
-        for root in crate::services::agent_import::selected_skill_roots(&home) {
-            if !roots.contains(&root) {
-                roots.push(root);
-            }
-        }
-    }
+    allowed_read_roots_with_private(super::private_data_access::current())
+}
+
+fn allowed_read_roots_with_private(
+    private: super::private_data_access::PrivateDataAccess,
+) -> Vec<PathBuf> {
+    let mut roots = base_allowed_roots();
+    append_unique(&mut roots, private.directories);
+    append_unique(&mut roots, private.files);
     append_agent_resources(&mut roots);
     roots
 }
 
-fn base_allowed_roots(include_data_dir: bool) -> Vec<PathBuf> {
+fn base_allowed_roots() -> Vec<PathBuf> {
     let mut roots = super::directory_access::configured_roots().unwrap_or_default();
     append_configured_outputs_root(
         &mut roots,
         crate::services::config::session_outputs_directory(),
     );
-    append_implicit_roots(
-        &mut roots,
-        include_data_dir,
-        crate::services::paths::data_dir(),
-        std::env::temp_dir(),
-    );
+    roots.push(std::env::temp_dir());
     roots
         .into_iter()
-        .map(|path| path.canonicalize().unwrap_or(path))
+        .map(|path| dunce::canonicalize(&path).unwrap_or(path))
         .collect()
 }
 
-fn append_implicit_roots(
-    roots: &mut Vec<PathBuf>,
-    include_data_dir: bool,
-    data_dir: PathBuf,
-    temp_dir: PathBuf,
-) {
-    if include_data_dir {
-        roots.push(data_dir);
+fn append_unique(roots: &mut Vec<PathBuf>, paths: impl IntoIterator<Item = PathBuf>) {
+    for path in paths {
+        if !roots.contains(&path) {
+            roots.push(path);
+        }
     }
-    roots.push(temp_dir);
 }
 
 fn append_agent_resources(roots: &mut Vec<PathBuf>) {
@@ -116,8 +114,7 @@ fn append_configured_outputs_root(roots: &mut Vec<PathBuf>, output_root: Option<
 pub fn validate_read_path(path: &Path, working_dir: &Path) -> Result<PathBuf, String> {
     let canonical = canonicalize_candidate(path, working_dir)?;
 
-    let working_canonical = working_dir
-        .canonicalize()
+    let working_canonical = dunce::canonicalize(working_dir)
         .unwrap_or_else(|_| working_dir.to_path_buf());
     if super::directory_access::ensure_allowed(&working_canonical).is_ok()
         && canonical.starts_with(&working_canonical)
@@ -125,8 +122,12 @@ pub fn validate_read_path(path: &Path, working_dir: &Path) -> Result<PathBuf, St
         return Ok(canonical);
     }
 
-    let roots = allowed_read_roots();
-    if roots.iter().any(|r| canonical.starts_with(r)) {
+    let private = super::private_data_access::current();
+    let private_root = private.root.clone();
+    let roots = allowed_read_roots_with_private(private);
+    if private_root.as_ref() == Some(&canonical)
+        || roots.iter().any(|r| canonical.starts_with(r))
+    {
         Ok(canonical)
     } else {
         Err("Lecture interdite hors des zones autorisées".into())
@@ -151,37 +152,44 @@ pub(crate) fn canonicalize_candidate(
     resolution_base: &Path,
 ) -> Result<PathBuf, String> {
     if path.exists() {
-        return path.canonicalize().map_err(sanitize_error);
+        return dunce::canonicalize(path).map_err(sanitize_error);
     }
     let parent = path.parent().ok_or("Chemin invalide")?;
     let filename = path.file_name().ok_or("Chemin sans nom de fichier")?;
     let canonical_parent = if parent.as_os_str().is_empty() {
-        resolution_base.canonicalize().map_err(sanitize_error)?
+        dunce::canonicalize(resolution_base).map_err(sanitize_error)?
     } else {
-        parent.canonicalize().map_err(sanitize_error)?
+        dunce::canonicalize(parent).map_err(sanitize_error)?
     };
     Ok(canonical_parent.join(filename))
 }
 
-pub fn validate_write_path(path: &Path) -> Result<PathBuf, String> {
+pub fn validate_write_path(path: &Path, working_dir: &Path) -> Result<PathBuf, String> {
+    let roots = allowed_write_roots_for(Some(working_dir));
+    validate_write_path_in_roots(path, &roots)
+}
+
+pub(crate) fn validate_write_path_in_roots(
+    path: &Path,
+    roots: &[PathBuf],
+) -> Result<PathBuf, String> {
     let canonical = if path.exists() {
-        path.canonicalize().map_err(sanitize_error)?
+        dunce::canonicalize(path).map_err(sanitize_error)?
     } else {
         let parent = path.parent().ok_or("Chemin invalide")?;
         let filename = path.file_name().ok_or("Chemin sans nom de fichier")?;
         let canonical_parent = if parent.as_os_str().is_empty() {
             std::env::current_dir().map_err(sanitize_error)?
         } else {
-            parent.canonicalize().map_err(sanitize_error)?
+            dunce::canonicalize(parent).map_err(sanitize_error)?
         };
         canonical_parent.join(filename)
     };
 
-    let roots = allowed_write_roots();
     if roots.iter().any(|r| canonical.starts_with(r)) {
         Ok(canonical)
     } else {
-        Err("Écriture interdite hors des zones autorisées (data, .ollama, temp, Projects)".into())
+        Err("Écriture interdite hors des zones autorisées".into())
     }
 }
 

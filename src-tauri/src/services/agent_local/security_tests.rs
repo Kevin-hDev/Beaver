@@ -100,32 +100,18 @@ mod tests {
         let tmp = std::env::temp_dir();
         let p = tmp.join("test-cl-go-security.txt");
         let _ = std::fs::remove_file(&p);
-        assert!(validate_write_path(&p).is_ok());
+        assert!(validate_write_path(&p, &std::env::temp_dir()).is_ok());
     }
 
     #[test]
-    fn implicit_data_root_is_read_only_until_explicitly_configured() {
-        let data = PathBuf::from("/private/data");
-        let temp = PathBuf::from("/private/temp");
-        let mut reads = Vec::new();
-        let mut writes = Vec::new();
+    fn appending_implicit_read_entries_is_deduplicated() {
+        let data = PathBuf::from("/private/data/config.json");
+        let mut roots = vec![data.clone()];
 
-        append_implicit_roots(&mut reads, true, data.clone(), temp.clone());
-        append_implicit_roots(&mut writes, false, data.clone(), temp.clone());
+        append_unique(&mut roots, [data.clone(), PathBuf::from("/private/data/projects.json")]);
 
-        assert!(reads.contains(&data));
-        assert!(reads.contains(&temp));
-        assert!(!writes.contains(&data));
-        assert!(writes.contains(&temp));
-
-        let mut explicit_writes = vec![data.clone()];
-        append_implicit_roots(
-            &mut explicit_writes,
-            false,
-            data.clone(),
-            temp.clone(),
-        );
-        assert!(explicit_writes.contains(&data));
+        assert_eq!(roots.iter().filter(|path| *path == &data).count(), 1);
+        assert_eq!(roots.len(), 2);
     }
 
     // --- sanitize_error ---
@@ -182,6 +168,6 @@ mod tests {
         let tmp = std::env::temp_dir();
         let p = tmp.join("cl-go-test-file.txt");
         assert!(validate_read_path(&p, &tmp).is_ok());
-        assert!(validate_write_path(&p).is_ok());
+        assert!(validate_write_path(&p, &tmp).is_ok());
     }
 }

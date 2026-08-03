@@ -3,11 +3,12 @@ use crate::models::{
 };
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{OnceLock, RwLock};
+use std::sync::{Mutex, OnceLock, RwLock};
 
 static SESSION_OUTPUTS_DIRECTORY: OnceLock<RwLock<Option<PathBuf>>> = OnceLock::new();
+static CONFIG_UPDATE_LOCK: Mutex<()> = Mutex::new(());
 
-fn config_path() -> PathBuf {
+pub(crate) fn config_path() -> PathBuf {
     crate::services::paths::data_dir().join("config.json")
 }
 
@@ -16,7 +17,12 @@ fn config_path() -> PathBuf {
 /// - JSON corrompu → config par défaut + log
 /// - wakeups au format obsolète (CL-GO legacy) → ignorés un par un + log
 pub fn read_config() -> Result<ClgoConfig, String> {
-    let config = read_config_from_path(&config_path(), &crate::services::paths::data_dir())?;
+    read_config_unlocked()
+}
+
+fn read_config_unlocked() -> Result<ClgoConfig, String> {
+    let mut config = read_config_from_path(&config_path(), &crate::services::paths::data_dir())?;
+    crate::services::agent_local::directory_access::apply_cached_policy(&mut config);
     cache_session_outputs_directory(&config.advanced.session_outputs_directory);
     Ok(config)
 }
@@ -84,10 +90,48 @@ pub(crate) fn read_config_from_path(path: &Path, data_dir: &Path) -> Result<Clgo
     Ok(config)
 }
 
-pub fn write_config(config: &ClgoConfig) -> Result<(), String> {
+pub fn update_config<T>(
+    update: impl FnOnce(&mut ClgoConfig) -> Result<T, String>,
+) -> Result<T, String> {
+    let _guard = CONFIG_UPDATE_LOCK
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let mut config = read_config_unlocked()?;
+    let result = update(&mut config)?;
+    write_config_unlocked(&config)?;
+    Ok(result)
+}
+
+fn write_config_unlocked(config: &ClgoConfig) -> Result<(), String> {
     write_config_to_path(&config_path(), config)?;
     cache_session_outputs_directory(&config.advanced.session_outputs_directory);
     Ok(())
+}
+
+pub(crate) fn read_allowed_paths_strict() -> Result<Vec<String>, String> {
+    read_allowed_paths_strict_from_path(&config_path())
+}
+
+pub(crate) fn read_allowed_paths_strict_from_path(path: &Path) -> Result<Vec<String>, String> {
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(crate::models::config::default_allowed_paths());
+        }
+        Err(_) => return Err("Politique d’accès indisponible.".to_string()),
+    };
+    let value: serde_json::Value = serde_json::from_str(&content)
+        .map_err(|_| "Politique d’accès indisponible.".to_string())?;
+    let object = value
+        .as_object()
+        .ok_or_else(|| "Politique d’accès indisponible.".to_string())?;
+    let Some(advanced) = object.get("advanced") else {
+        return Ok(crate::models::config::default_allowed_paths());
+    };
+    let settings = serde_json::from_value::<AdvancedSettings>(advanced.clone())
+        .map_err(|_| "Politique d’accès indisponible.".to_string())?
+        .normalized();
+    Ok(settings.allowed_paths)
 }
 
 pub fn session_outputs_directory() -> Option<PathBuf> {

@@ -78,14 +78,6 @@ fn selected_sources_from(
         .collect()
 }
 
-pub fn selected_skill_roots(home: &Path) -> Vec<std::path::PathBuf> {
-    selected_skills(home)
-        .into_iter()
-        .filter_map(|item| item.bundle_root)
-        .filter_map(|path| path.canonicalize().ok())
-        .collect()
-}
-
 pub fn enabled_hidden_documents(data_dir: &Path) -> Vec<String> {
     let registry = registry::read_from(&data_dir.join("external-agent-sources.json"));
     registry

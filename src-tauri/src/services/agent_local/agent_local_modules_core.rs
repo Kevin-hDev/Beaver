@@ -35,6 +35,8 @@ pub mod diagnostic_args;
 mod diagnostic_args_tests;
 pub mod diagnostic_redaction;
 pub mod directory_access;
+mod directory_access_scope;
+mod directory_policy;
 pub mod extension_discovery_prompt;
 mod extension_session_plugins;
 pub mod extension_session_state;
@@ -102,6 +104,8 @@ mod permission_allow_cache;
 #[cfg(test)]
 pub mod permission_gate_tests;
 pub mod permission_policy;
+pub mod private_data_access;
+mod shell_sandbox_diagnostics;
 pub mod provider_tool_limits;
 pub mod plan_mode_controller;
 pub mod plan_mode_debug;

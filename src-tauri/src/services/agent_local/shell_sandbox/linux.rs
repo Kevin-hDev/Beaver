@@ -1,11 +1,13 @@
 use landlock::RulesetCreatedAttr;
-use landlock::{Access, AccessFs, ABI, CompatLevel, Compatible, Ruleset, RulesetAttr};
+use landlock::{
+    Access, AccessFs, ABI, CompatLevel, Compatible, LandlockStatus, Ruleset, RulesetAttr,
+};
 use std::ffi::OsString;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 
-const PLATFORM_READ_DIRS: [&str; 8] = [
-    "/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev", "/proc",
+const PLATFORM_READ_DIRS: [&str; 7] = [
+    "/bin", "/sbin", "/usr", "/lib", "/lib64", "/etc", "/dev",
 ];
 const PACKAGE_PREFIXES: [&str; 2] = ["/usr/local", "/home/linuxbrew/.linuxbrew"];
 const SYSTEM_TEMP_DIR: &str = "/tmp";
@@ -25,12 +27,28 @@ pub(super) fn run(
     scope: &super::scope::Scope,
     temp_dir: &Path,
 ) -> Result<i32, String> {
-    apply(scope, temp_dir)?;
+    match super::linux_namespace::enter()? {
+        super::linux_namespace::Entered::Parent(code) => Ok(code),
+        super::linux_namespace::Entered::Child => execute(executable, arguments, scope, temp_dir, true),
+        super::linux_namespace::Entered::Unavailable => {
+            execute(executable, arguments, scope, temp_dir, false)
+        }
+    }
+}
+
+fn execute(
+    executable: &Path,
+    arguments: &[OsString],
+    scope: &super::scope::Scope,
+    temp_dir: &Path,
+    private_proc: bool,
+) -> Result<i32, String> {
+    apply(scope, temp_dir, private_proc)?;
     let error = std::process::Command::new(executable).args(arguments).exec();
     Err(error.to_string())
 }
 
-fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
+fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Result<(), String> {
     // ABI V3 protège aussi les troncatures tout en restant compatible avec
     // davantage de noyaux que les versions Landlock plus récentes.
     let abi = ABI::V3;
@@ -54,6 +72,19 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
             None,
         )
     };
+    let available_abi: ABI = LandlockStatus::current().into();
+    let isolation_unavailable = available_abi < abi;
+    super::super::shell_sandbox_diagnostics::record(
+        temp_dir,
+        tools.path_limit_reached,
+        tools.read_limit_reached,
+        tools.write_limit_reached,
+        tools.cache_unavailable,
+        isolation_unavailable,
+    );
+    if isolation_unavailable {
+        return Err(sandbox_error());
+    }
     let workspace_mode = scope.mode == super::scope::Mode::Workspace;
     let write_dirs = scope
         .roots
@@ -72,7 +103,8 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
         .map(PathBuf::as_path)
         .filter(|_| !workspace_mode)
         .chain(scope.read_dirs.iter().map(PathBuf::as_path))
-        .chain(tools.read_dirs.iter().map(PathBuf::as_path));
+        .chain(tools.read_dirs.iter().map(PathBuf::as_path))
+        .chain(std::iter::once(Path::new("/proc")).filter(|_| private_proc));
     let read_files = scope
         .read_files
         .iter()
@@ -85,6 +117,9 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
     let writable_device_dirs = [Path::new("/dev/pts")]
         .into_iter()
         .filter(|path| path.is_dir());
+    // Landlock étend ReadDir à toute la hiérarchie. Les racines prévues pour une
+    // liste de premier niveau restent donc sans règle plutôt que d'exposer les
+    // noms contenus dans les dossiers privés exclus.
     let ruleset = Ruleset::default()
         .set_compatibility(CompatLevel::HardRequirement)
         .handle_access(access_all)
@@ -120,3 +155,7 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path) -> Result<(), String> {
 fn sandbox_error() -> String {
     super::launch::sandbox_error()
 }
+
+#[cfg(test)]
+#[path = "linux_tests.rs"]
+mod tests;

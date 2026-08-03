@@ -1,5 +1,6 @@
 use super::tool_roots_entries::{
-    push_private_read_dir, push_resource_write_dir, push_resource_write_file,
+    push_private_read_dir, push_private_read_file, push_resource_write_dir,
+    push_resource_write_file,
 };
 use super::tool_roots_collect::collect_into;
 #[cfg(test)]
@@ -7,17 +8,20 @@ use super::tool_roots_collect::collect_from;
 use super::tool_roots_path::{canonical_dir, contains_executable};
 use std::path::{Path, PathBuf};
 
-pub(super) const MAX_READ_ROOTS: usize = 160;
+pub(super) const MAX_READ_ROOTS: usize = 160 + super::super::private_data_access::MAX_ENTRIES;
 pub(super) const MAX_WRITE_ROOTS: usize = 100;
 
 #[derive(Default)]
 pub(super) struct ToolRoots {
+    pub list_dirs: Vec<PathBuf>,
     pub read_dirs: Vec<PathBuf>,
     pub read_files: Vec<PathBuf>,
     pub write_dirs: Vec<PathBuf>,
     pub write_files: Vec<PathBuf>,
     pub read_limit_reached: bool,
     pub write_limit_reached: bool,
+    pub path_limit_reached: bool,
+    pub cache_unavailable: bool,
 }
 
 pub(super) fn collect(
@@ -73,21 +77,17 @@ fn collect_with_access(
     let platform = platform_read_dirs.iter().map(PathBuf::from).collect::<Vec<_>>();
     let packages = package_prefixes.iter().map(PathBuf::from).collect::<Vec<_>>();
     let home = dirs::home_dir().and_then(|path| canonical_dir(&path));
-    let writable_cache_dirs = if allow_writes {
+    let (writable_cache_dirs, cache_unavailable) = if allow_writes {
         home.as_deref()
             .map(|home| super::tool_cache_roots::collect(home, &path_inputs, path_overflow))
             .unwrap_or_default()
     } else {
-        Vec::new()
+        (Vec::new(), false)
     };
-    let mut roots = ToolRoots::default();
-    if allow_writes {
-        push_private_read_dir(
-            &mut roots,
-            &crate::services::paths::data_dir(),
-            workspace_roots,
-        );
-    }
+    let mut roots = ToolRoots {
+        cache_unavailable,
+        ..ToolRoots::default()
+    };
     collect_into(
         &mut roots,
         workspace_roots,
@@ -99,13 +99,24 @@ fn collect_with_access(
         &writable_cache_dirs,
     );
     if allow_writes {
+        let private = super::super::private_data_access::current();
+        roots.read_limit_reached |= private.limit_reached;
+        if let Some(root) = private.root.filter(|root| {
+            !workspace_roots
+                .iter()
+                .any(|writable| root.starts_with(writable) || writable.starts_with(root))
+        }) {
+            roots.list_dirs.push(root);
+        }
+        for path in private.directories {
+            push_private_read_dir(&mut roots, &path, workspace_roots);
+        }
+        for path in private.files {
+            push_private_read_file(&mut roots, &path, workspace_roots);
+        }
         append_agent_resources(&mut roots, workspace_roots, &path_inputs);
     }
-    super::super::shell_diagnostics::record_root_limits(
-        path_overflow,
-        roots.read_limit_reached,
-        roots.write_limit_reached,
-    );
+    roots.path_limit_reached = path_overflow;
     roots
 }
 

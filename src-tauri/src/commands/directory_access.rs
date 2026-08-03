@@ -1,5 +1,4 @@
 use crate::services::agent_local::directory_access::{self, DirectoryAccessDecision};
-use crate::services::config as config_service;
 use std::path::Path;
 
 #[tauri::command]
@@ -13,14 +12,11 @@ pub async fn set_allowed_paths(
         .iter()
         .map(std::path::PathBuf::from)
         .collect::<Vec<_>>();
-    let mut config = config_service::read_config()?;
-    let old_roots =
-        directory_access::configured_roots_from_paths(config.advanced.allowed_paths.clone()).ok();
+    let old_roots = directory_access::configured_roots().ok();
     let access_narrowed = old_roots
         .as_deref()
         .is_none_or(|old| access_is_narrower(old, &new_roots));
-    config.advanced.allowed_paths = normalized.clone();
-    config_service::write_config(&config)?;
+    directory_access::replace_policy(normalized.clone())?;
     if access_narrowed {
         super::agent_chat_cancel::cancel_all_agent_requests(&app, &streams).await;
         crate::services::agent_local::tool_bash_registry::stop_all().await;
@@ -29,6 +25,9 @@ pub async fn set_allowed_paths(
 }
 
 fn access_is_narrower(old_roots: &[std::path::PathBuf], new_roots: &[std::path::PathBuf]) -> bool {
+    if directory_access::roots_allow_full_disk(new_roots) {
+        return false;
+    }
     old_roots
         .iter()
         .any(|old| !new_roots.iter().any(|new| old.starts_with(new)))

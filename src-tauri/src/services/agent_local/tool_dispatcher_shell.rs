@@ -151,6 +151,9 @@ fn to_tool_result(output: ShellOutput) -> ToolResult {
         };
         result = result.with_warning(warning);
     }
+    if let Some(warning) = output.sandbox_warning {
+        result = result.with_warning(warning);
+    }
     result.mark_truncated(output.output_truncated);
     result
         .with_affected_paths(output.affected_paths)

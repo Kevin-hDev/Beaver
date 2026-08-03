@@ -5,6 +5,15 @@ use super::tool_roots_entries::{
 use super::tool_roots_path::{canonical_dir, contains_executable, is_tool_directory};
 use std::path::{Path, PathBuf};
 
+const USER_TOOL_READ_DIRS: [&str; 6] = [
+    ".local/lib",
+    ".local/share/pipx",
+    ".local/share/uv",
+    ".local/share/mise",
+    ".local/share/pnpm",
+    ".local/share/virtualenvs",
+];
+
 #[cfg(test)]
 pub(super) fn collect_from(
     workspace_roots: &[PathBuf],
@@ -68,6 +77,14 @@ pub(super) fn collect_into(
             home,
         );
         push_read_file(roots, &home.join(".npmrc"), workspace_roots, home);
+        for relative in USER_TOOL_READ_DIRS {
+            push_read_dir(
+                roots,
+                &home.join(relative),
+                workspace_roots,
+                Some(home),
+            );
+        }
     }
 
     let canonical_path_dirs = path_inputs

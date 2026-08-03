@@ -74,7 +74,7 @@ pub fn direct_snapshot(
     } else {
         working_dir.join(raw)
     };
-    let validated = super::security::validate_write_path(&candidate).ok()?;
+    let validated = super::security::validate_write_path(&candidate, working_dir).ok()?;
     let mut remaining = MAX_DIFF_FILE_BYTES as usize;
     let state = capture(&validated, &mut remaining);
     Some((validated, state))

@@ -2,7 +2,10 @@ use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Component, Path, PathBuf};
 
+pub(crate) use super::directory_access_scope::{roots_allow_full_disk, workspace_roots};
+
 pub(crate) const MAX_ALLOWED_PATHS: usize = 70;
+pub(crate) const MAX_WORKSPACE_ROOTS: usize = MAX_ALLOWED_PATHS + 3;
 pub(crate) const MAX_PATH_CHARS: usize = 4_096;
 const ACCESS_ERROR: &str = "Accès au dossier refusé par les réglages.";
 
@@ -33,11 +36,21 @@ pub fn normalize_allowed_paths(paths: Vec<String>) -> Result<Vec<String>, String
 }
 
 pub fn configured_roots() -> Result<Vec<PathBuf>, String> {
-    let paths = crate::services::config::read_config()
-        .map_err(|_| ACCESS_ERROR.to_string())?
-        .advanced
-        .allowed_paths;
-    configured_roots_from_paths(paths)
+    super::directory_policy::roots().map_err(|_| ACCESS_ERROR.to_string())
+}
+
+pub fn initialize_policy() -> Result<(), String> {
+    super::directory_policy::initialize().map_err(|_| ACCESS_ERROR.to_string())
+}
+
+pub(crate) fn replace_policy(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
+    super::directory_policy::replace(paths).map_err(|_| ACCESS_ERROR.to_string())
+}
+
+pub(crate) fn apply_cached_policy(config: &mut crate::models::ClgoConfig) {
+    if let Some(paths) = super::directory_policy::cached_paths() {
+        config.advanced.allowed_paths = paths;
+    }
 }
 
 pub fn decision(path: &Path) -> Result<DirectoryAccessDecision, String> {
@@ -92,10 +105,11 @@ pub async fn ensure_session_allowed(
 }
 
 pub(crate) fn is_path_in_roots(path: &Path, roots: &[PathBuf]) -> bool {
-    roots.iter().any(|root| path.starts_with(root))
+    super::directory_access_scope::roots_allow_full_disk(roots)
+        || roots.iter().any(|root| path.starts_with(root))
 }
 
-fn canonical_access_path(path: &Path) -> Result<PathBuf, String> {
+pub(crate) fn canonical_access_path(path: &Path) -> Result<PathBuf, String> {
     validate_shape(path.to_str().ok_or_else(|| ACCESS_ERROR.to_string())?)?;
     if path.exists() {
         return dunce::canonicalize(path).map_err(|_| ACCESS_ERROR.to_string());
@@ -119,7 +133,15 @@ fn canonical_access_path(path: &Path) -> Result<PathBuf, String> {
 }
 
 pub(crate) fn configured_roots_from_paths(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
-    if paths.is_empty() || paths.len() > MAX_ALLOWED_PATHS {
+    canonical_roots_from_paths(paths, MAX_ALLOWED_PATHS)
+}
+
+pub(crate) fn transported_roots_from_paths(paths: Vec<String>) -> Result<Vec<PathBuf>, String> {
+    canonical_roots_from_paths(paths, MAX_WORKSPACE_ROOTS)
+}
+
+fn canonical_roots_from_paths(paths: Vec<String>, limit: usize) -> Result<Vec<PathBuf>, String> {
+    if paths.is_empty() || paths.len() > limit {
         return Err(ACCESS_ERROR.to_string());
     }
     let mut seen = HashSet::with_capacity(paths.len());

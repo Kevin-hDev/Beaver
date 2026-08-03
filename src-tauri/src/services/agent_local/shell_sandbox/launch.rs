@@ -36,10 +36,10 @@ pub fn prepare_command(
     arguments: &[String],
     working_dir: &Path,
 ) -> Result<PreparedShellCommand, String> {
-    let roots = super::super::directory_access::configured_roots()?;
-    super::super::directory_access::ensure_allowed_in_roots(working_dir, &roots)?;
+    let configured = super::super::directory_access::configured_roots()?;
+    let roots = super::super::directory_access::workspace_roots(working_dir)?;
     let shell_path = super::super::shell_environment::value();
-    if roots.iter().any(|root| root.parent().is_none()) {
+    if super::super::directory_access::roots_allow_full_disk(&configured) {
         let mut command = Command::new(shell);
         command.args(arguments).env("PATH", &shell_path);
         return Ok(PreparedShellCommand {
@@ -61,6 +61,7 @@ pub fn prepare_command(
         return Err(sandbox_error());
     }
     let mut command = Command::new(executable);
+    super::environment::protect_helper(&mut command);
     command
         .arg(HELPER_ARG)
         .arg(&temp_dir)
@@ -72,6 +73,10 @@ pub fn prepare_command(
         .env("TEMP", &temp_dir)
         .env("TMPPREFIX", temp_dir.join("zsh"))
         .env("PATH", shell_path);
+    if let Err(error) = super::policy_transport::write(&mut command, &temp_dir, &roots) {
+        cleanup_one(&temp_dir);
+        return Err(error);
+    }
     Ok(PreparedShellCommand {
         command,
         cleanup_dir: Some(temp_dir),
@@ -84,6 +89,7 @@ pub(crate) fn prepare_profile_capture(
     arguments: &[OsString],
     base_path: &OsStr,
 ) -> Result<PreparedProfileCapture, String> {
+    let roots = super::super::directory_access::configured_roots()?;
     let temp_dir = create_sandbox_temp()?;
     let executable = match helper_executable() {
         Ok(executable) => executable,
@@ -93,6 +99,7 @@ pub(crate) fn prepare_profile_capture(
         }
     };
     let mut command = std::process::Command::new(executable);
+    super::environment::protect_helper_std(&mut command);
     command
         .arg(HELPER_ARG)
         .arg(PROFILE_CAPTURE_ARG)
@@ -106,6 +113,10 @@ pub(crate) fn prepare_profile_capture(
         .env("TEMP", &temp_dir)
         .env("TMPPREFIX", temp_dir.join("zsh"))
         .env("PATH", base_path);
+    if let Err(error) = super::policy_transport::write_std(&mut command, &temp_dir, &roots) {
+        cleanup_one(&temp_dir);
+        return Err(error);
+    }
     Ok(PreparedProfileCapture {
         command,
         cleanup_dir: temp_dir,
@@ -181,3 +192,7 @@ pub(super) fn os_text(value: &OsStr) -> Result<OsString, String> {
     }
     Ok(value.to_os_string())
 }
+
+#[cfg(test)]
+#[path = "launch_tests.rs"]
+mod tests;
