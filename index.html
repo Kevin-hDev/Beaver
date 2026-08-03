@@ -6,16 +6,27 @@
     <title>Beaver</title>
     <script>
       (function() {
+        var themeSchemes = Object.freeze({
+          "light": "light",
+          "dark": "dark",
+          "emerald-night": "dark",
+          "cobalt-frost": "light",
+          "astral-mist": "dark",
+          "crimson-eclipse": "dark"
+        });
         var choice = "system";
         try {
           choice = localStorage.getItem("clgo-theme") || "system";
         } catch (_error) {
           choice = "system";
         }
-        if (choice !== "light" && choice !== "dark" && choice !== "emerald-night") {
+        var colorScheme = Object.prototype.hasOwnProperty.call(themeSchemes, choice)
+          ? themeSchemes[choice]
+          : null;
+        if (!colorScheme) {
           choice = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          colorScheme = choice;
         }
-        var colorScheme = choice === "light" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", colorScheme);
         document.documentElement.setAttribute("data-palette", choice);
       })();
@@ -34,13 +45,25 @@
         background: #121212;
         --splash-mark: #c8c8ce;
       }
+      [data-theme="light"] #splash {
+        background: #f7f6f3;
+        --splash-mark: #1a1a1a;
+      }
       [data-palette="emerald-night"] #splash {
         background: #031f1c;
         --splash-mark: #f1e2c3;
       }
-      [data-theme="light"] #splash {
-        background: #f7f7f9;
-        --splash-mark: #1a1a1a;
+      [data-palette="cobalt-frost"] #splash {
+        background: #f7f9fd;
+        --splash-mark: #101828;
+      }
+      [data-palette="astral-mist"] #splash {
+        background: #030817;
+        --splash-mark: #dce4ee;
+      }
+      [data-palette="crimson-eclipse"] #splash {
+        background: #070709;
+        --splash-mark: #e4e4e7;
       }
       #splash .splash-icon {
         width: 170px;
