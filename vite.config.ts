@@ -11,13 +11,13 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: { "@": path.resolve(import.meta.dirname, "./src") },
   },
   build: {
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, "index.html"),
-        mascot: path.resolve(__dirname, "mascot.html"),
+        main: path.resolve(import.meta.dirname, "index.html"),
+        mascot: path.resolve(import.meta.dirname, "mascot.html"),
       },
     },
   },
