@@ -95,3 +95,11 @@ Derniers ajustements avant merge
 • list_dir limite la racine Beaver à son premier niveau uniquement lorsque cet accès provient de l’exception automatique en lecture. Si l’utilisateur autorise explicitement cl-go-dash, un de ses parents ou Tout le disque, la profondeur normale reste disponible. En cas d’échec de canonicalisation, le chemin brut Beaver sert de repli afin de ne pas dégrader les autres dossiers.
 
 • Deux tests couvrent la décision automatique/explicite et vérifient qu’une profondeur zéro n’énumère aucun descendant. Validation finale : cargo test --all = 2934 réussis, 0 échec, 1 ignoré ; cargo fmt --check, clippy strict avec dead_code/unused, Semgrep et graphify update . réussis.
+
+Couverture finale de list_dir
+
+• La profondeur dépend maintenant d’une fonction injectable prenant la racine privée et les racines autorisées. Les tests exécutent le câblage réel avec ensure_allowed_in_roots : racine Beaver automatique et configuration indisponible à profondeur zéro, racine explicitement autorisée à profondeur normale, autre projet inchangé.
+
+• Si la canonicalisation de la racine Beaver échoue, son chemin brut sert uniquement à la comparaison. Les autres projets conservent leur profondeur normale. La configuration n’est lue qu’après avoir confirmé que le chemin demandé est la racine Beaver.
+
+• Validation réellement exécutée : cargo test --all = 2935 réussis, 0 échec, 1 ignoré ; cargo fmt --check, cargo clippy --all-targets -- -D warnings, Clippy strict dead_code/unused, Semgrep et graphify update . réussis.
