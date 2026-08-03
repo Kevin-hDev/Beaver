@@ -3,6 +3,15 @@ use super::*;
 const CHILD_ENV: &str = "BEAVER_LINUX_SANDBOX_CHILD";
 
 #[test]
+fn landlock_enforcement_status_fails_closed() {
+    assert!(!isolation_is_unavailable(&RulesetStatus::FullyEnforced));
+    assert!(isolation_is_unavailable(
+        &RulesetStatus::PartiallyEnforced
+    ));
+    assert!(isolation_is_unavailable(&RulesetStatus::NotEnforced));
+}
+
+#[test]
 #[ignore = "requires a native Linux Landlock runtime"]
 fn landlock_writes_only_inside_the_selected_root() {
     if let Some(specification) = std::env::var_os(CHILD_ENV) {
@@ -32,11 +41,16 @@ fn landlock_writes_only_inside_the_selected_root() {
         std::process::exit(code);
     }
 
-    let project = tempfile::tempdir().expect("project");
-    let outside = tempfile::tempdir().expect("outside");
-    let sandbox = tempfile::tempdir().expect("sandbox");
-    let specification = std::env::join_paths([project.path(), outside.path(), sandbox.path()])
-        .expect("path list");
+    let test_root = tempfile::tempdir_in(std::env::current_dir().expect("current directory"))
+        .expect("test root");
+    let project = test_root.path().join("project");
+    let outside = test_root.path().join("outside");
+    let sandbox = test_root.path().join("sandbox");
+    std::fs::create_dir(&project).expect("project");
+    std::fs::create_dir(&outside).expect("outside");
+    std::fs::create_dir(&sandbox).expect("sandbox");
+    let specification =
+        std::env::join_paths([&project, &outside, &sandbox]).expect("path list");
     let test_name = concat!(
         "services::agent_local::shell_sandbox::linux::tests::",
         "landlock_writes_only_inside_the_selected_root"
@@ -48,6 +62,6 @@ fn landlock_writes_only_inside_the_selected_root() {
         .expect("child test");
 
     assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
-    assert!(project.path().join("allowed.txt").is_file());
-    assert!(!outside.path().join("blocked.txt").exists());
+    assert!(project.join("allowed.txt").is_file());
+    assert!(!outside.join("blocked.txt").exists());
 }

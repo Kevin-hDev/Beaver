@@ -1,6 +1,6 @@
 use landlock::RulesetCreatedAttr;
 use landlock::{
-    Access, AccessFs, ABI, CompatLevel, Compatible, LandlockStatus, Ruleset, RulesetAttr,
+    Access, AccessFs, ABI, CompatLevel, Compatible, Ruleset, RulesetAttr, RulesetStatus,
 };
 use std::ffi::OsString;
 use std::os::unix::process::CommandExt;
@@ -72,19 +72,6 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Re
             None,
         )
     };
-    let available_abi: ABI = LandlockStatus::current().into();
-    let isolation_unavailable = available_abi < abi;
-    super::super::shell_sandbox_diagnostics::record(
-        temp_dir,
-        tools.path_limit_reached,
-        tools.read_limit_reached,
-        tools.write_limit_reached,
-        tools.cache_unavailable,
-        isolation_unavailable,
-    );
-    if isolation_unavailable {
-        return Err(sandbox_error());
-    }
     let workspace_mode = scope.mode == super::scope::Mode::Workspace;
     let write_dirs = scope
         .roots
@@ -120,10 +107,18 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Re
     // Landlock étend ReadDir à toute la hiérarchie. Les racines prévues pour une
     // liste de premier niveau restent donc sans règle plutôt que d'exposer les
     // noms contenus dans les dossiers privés exclus.
-    let ruleset = Ruleset::default()
-        .set_compatibility(CompatLevel::HardRequirement)
-        .handle_access(access_all)
-        .map_err(|_| sandbox_error())?
+    let ruleset = Ruleset::default().set_compatibility(CompatLevel::HardRequirement);
+    let ruleset = match ruleset.handle_access(access_all) {
+        Ok(ruleset) => {
+            record_diagnostics(temp_dir, &tools, false);
+            ruleset
+        }
+        Err(_) => {
+            record_diagnostics(temp_dir, &tools, true);
+            return Err(sandbox_error());
+        }
+    };
+    let ruleset = ruleset
         .create()
         .map_err(|_| sandbox_error())?
         .add_rules(landlock::path_beneath_rules(read_dirs, access_read))
@@ -146,10 +141,30 @@ fn apply(scope: &super::scope::Scope, temp_dir: &Path, private_proc: bool) -> Re
         .map_err(|_| sandbox_error())?
         .no_new_privs(true);
     let status = ruleset.restrict_self().map_err(|_| sandbox_error())?;
-    if status.ruleset == landlock::RulesetStatus::NotEnforced {
+    if isolation_is_unavailable(&status.ruleset) {
+        record_diagnostics(temp_dir, &tools, true);
         return Err(sandbox_error());
     }
     Ok(())
+}
+
+fn record_diagnostics(
+    temp_dir: &Path,
+    tools: &super::tool_roots::ToolRoots,
+    isolation_unavailable: bool,
+) {
+    super::super::shell_sandbox_diagnostics::record(
+        temp_dir,
+        tools.path_limit_reached,
+        tools.read_limit_reached,
+        tools.write_limit_reached,
+        tools.cache_unavailable,
+        isolation_unavailable,
+    );
+}
+
+fn isolation_is_unavailable(status: &RulesetStatus) -> bool {
+    !matches!(status, RulesetStatus::FullyEnforced)
 }
 
 fn sandbox_error() -> String {
