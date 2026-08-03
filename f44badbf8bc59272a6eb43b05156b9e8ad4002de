@@ -87,3 +87,11 @@ Compléments après la dernière revue
 • Tests ajoutés pour reconnaître et retirer LD_AUDIT dans les deux chemins. cargo test --all : 2932 réussis, 0 échec, 1 ignoré. cargo fmt --check, clippy strict avec dead_code/unused et Semgrep sur les fichiers touchés : réussis. graphify update . exécuté.
 
 • Les tentatives de clippy croisé Linux et Windows depuis macOS s’arrêtent avant le code applicatif faute de sysroots et bibliothèques natives (GTK/pkg-config côté Linux, SDK C/CEF côté Windows). La compilation et le test Landlock réels restent confiés aux runners CI natifs obligatoires.
+
+Derniers ajustements avant merge
+
+• validate_read_path collecte désormais les données privées Beaver une seule fois et réutilise le même instantané pour la racine et les entrées autorisées. Le double parcours du dossier de données est supprimé sans modifier les droits.
+
+• list_dir limite la racine Beaver à son premier niveau uniquement lorsque cet accès provient de l’exception automatique en lecture. Si l’utilisateur autorise explicitement cl-go-dash, un de ses parents ou Tout le disque, la profondeur normale reste disponible. Une erreur de canonicalisation réduit la profondeur au lieu de laisser passer.
+
+• Deux tests couvrent la décision automatique/explicite et vérifient qu’une profondeur zéro n’énumère aucun descendant. Validation finale : cargo test --all = 2934 réussis, 0 échec, 1 ignoré ; cargo fmt --check, clippy strict avec dead_code/unused, Semgrep et graphify update . réussis.
