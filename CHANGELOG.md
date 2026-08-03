@@ -10,6 +10,12 @@
 
 - **Expanded built-in skill bundle** — added 40 new programming skills covering planning, implementation, debugging, testing, review, documentation, collaboration, releases, reusable agents, and automations.
 
+### Agent behavior and reliability
+
+- **Clearer system guidance** — restructured both agent tiers' system prompts, removed duplicated or conflicting instructions, consolidated uncertainty rules, and moved tool-specific requirements into the relevant tool definitions.
+- **Reliable Plan and interactive decisions** — handled plan approval, adjustments, dismissal, and interactive answers as explicit backend decisions, removing unnecessary model round trips and preventing accidental keyboard approvals.
+- **Stable workspace anchoring** — kept each session tied to its selected project or private session workspace, prevented shell directory changes from silently moving the agent's root, and preserved generated files when conversations are deleted.
+
 ### Agent chat performance
 
 - **Accurate provider throughput** — fixed token-per-second reporting by using native generation timings from Ollama, Groq, and Cerebras when available, while keeping a measured streaming fallback for other providers.
