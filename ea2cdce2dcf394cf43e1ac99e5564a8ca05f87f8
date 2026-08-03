@@ -167,3 +167,7 @@ Points transverses à observer
 • Une erreur de configuration, de canonicalisation, Landlock ou AppContainer doit bloquer l’accès concerné avec un message générique côté utilisateur, jamais ouvrir silencieusement.
 • Vérifier que le dialogue de dossier interdit utilise les traductions réelles, Annuler ferme sans sélectionner et Réglages ouvre directement Accès fichiers.
 • Noter séparément toute divergence Linux/Windows, avec commande exacte, sortie, version OS/noyau et chemin de test anonymisé.
+
+Intégration
+
+Cette note est copiée sur le commit de fusion ea2cdce afin que git notes show HEAD affiche directement l’objectif, les décisions, les validations macOS et la checklist native Linux/Windows. Le commit fonctionnel d’origine reste ba420e3.
