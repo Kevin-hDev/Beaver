@@ -15,8 +15,8 @@ export const UPDATE_COMPATIBILITY_CONTRACTS = Object.freeze([
   contract("structure historique de l’application macOS", "src-tauri/src/updater_worker/verify.rs", [
     'Some("CL-GO.app" | "Beaver.app")',
   ]),
-  contract("préparation du helper de mise à jour", "src-tauri/scripts/prepare-updater-helper.sh", [
-    "cl-go-dash-updater",
+  contract("préparation du helper de mise à jour", "scripts/build/prepare-updater-helper.mjs", [
+    "createUpdaterBuildPlan",
   ]),
   contract("métadonnées de la version-pont historique", "scripts/release/check-bridge-metadata.mjs", [
     'const INTERNAL_NAME = "cl-go-dash";',
