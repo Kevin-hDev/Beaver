@@ -44,6 +44,7 @@ pub use startup::{
 static STREAM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 pub fn run() {
+    std::hint::black_box(tauri::utils::platform::bundle_type());
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
