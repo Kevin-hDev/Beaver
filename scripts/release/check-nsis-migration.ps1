@@ -153,7 +153,10 @@ function Test-InstalledState {
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
         Stop-Validation
     }
-    Test-AssociatedIcon $binary
+    $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
+    if (-not (Test-BeaverExecutableBrand $binary $expectedVersion)) {
+        Stop-Validation
+    }
 
     $helperPath = Join-ValidatedWindowsPath $installDir "target\updater-helper\cl-go-dash-updater.exe"
     if ([string]::IsNullOrWhiteSpace($helperPath)) {

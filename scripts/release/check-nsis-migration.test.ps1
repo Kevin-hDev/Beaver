@@ -64,6 +64,7 @@ try {
     [IO.File]::WriteAllBytes($emptyHelper, [byte[]]@())
     Assert-True (Test-UpdaterHelper $validHelper 67108864)
     Assert-False (Test-UpdaterHelper $emptyHelper 67108864)
+    Assert-False (Test-BeaverExecutableBrand $validHelper "1.1.1")
 } finally {
     if (Test-Path -LiteralPath $temporaryRoot) {
         if (

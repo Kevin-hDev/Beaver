@@ -50,6 +50,21 @@ fn windows_bundle_hook_pins_and_verifies_the_cef_bootstrap() {
         .find("$ApplicationDll")
         .expect("Windows application DLL staging");
     assert!(library_build < library_staging);
+    let application_source = script
+        .find("$ApplicationExecutable")
+        .expect("branded Tauri executable source");
+    let temporary_bootstrap = script
+        .find("$BrandedBootstrap")
+        .expect("temporary branded CEF bootstrap");
+    let branding = script
+        .find("copy-windows-brand-resources.ps1")
+        .expect("bounded Windows resource copier");
+    let atomic_replace = script
+        .find("[IO.File]::Replace")
+        .expect("atomic executable replacement");
+    assert!(application_source < temporary_bootstrap);
+    assert!(temporary_bootstrap < branding);
+    assert!(branding < atomic_replace);
 }
 
 #[test]
