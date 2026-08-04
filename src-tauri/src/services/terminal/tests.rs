@@ -18,11 +18,16 @@ mod tests {
             .unwrap_or_else(|error| error.into_inner())
     }
 
+    fn kill_session(mut session: PtySession, reader: Box<dyn Read + Send>) {
+        drop(reader);
+        session.kill().expect("kill failed");
+    }
+
     #[test]
     fn test_pty_spawn() {
         let _guard = pty_test_guard();
-        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn failed");
-        drop(session);
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn failed");
+        kill_session(session, reader);
     }
 
     #[test]
@@ -30,31 +35,31 @@ mod tests {
         let _guard = pty_test_guard();
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().to_str().unwrap();
-        let (session, _reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
-        drop(session);
+        let (session, reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
+        kill_session(session, reader);
     }
 
     #[test]
     fn test_pty_write() {
         let _guard = pty_test_guard();
-        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo hello\n").expect("write failed");
-        drop(session);
+        kill_session(session, reader);
     }
 
     #[test]
     fn test_pty_resize() {
         let _guard = pty_test_guard();
-        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.resize(40, 10).expect("resize failed");
-        drop(session);
+        kill_session(session, reader);
     }
 
     #[test]
     fn test_pty_kill() {
         let _guard = pty_test_guard();
-        let (mut session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
-        session.kill().expect("kill failed");
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        kill_session(session, reader);
     }
 
     #[test]
@@ -80,12 +85,11 @@ mod tests {
         });
 
         session.write(MARKER_COMMAND).expect("write");
-        let output = receiver.recv_timeout(Duration::from_secs(5));
-        let _ = session.kill();
-        if output.is_ok() {
-            reader_thread.join().expect("reader thread");
-        }
-        let output = output.expect("PTY output timed out");
+        let output = receiver
+            .recv_timeout(Duration::from_secs(5))
+            .expect("PTY output timed out");
+        reader_thread.join().expect("reader thread");
+        session.kill().expect("kill failed");
 
         assert!(
             output.contains("pty_test_marker"),
@@ -97,12 +101,12 @@ mod tests {
     #[test]
     fn test_multiple_independent_sessions() {
         let _guard = pty_test_guard();
-        let (mut s1, r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
-        let (mut s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
-        let (mut s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+        let (s1, r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
+        let (s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
+        let (s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
 
-        let results = [s1.kill(), s2.kill(), s3.kill()];
-        drop((r1, r2, r3));
-        assert!(results.iter().all(Result::is_ok));
+        kill_session(s1, r1);
+        kill_session(s2, r2);
+        kill_session(s3, r3);
     }
 }
