@@ -43,6 +43,11 @@
 - **Reliable cross-platform process cleanup** — safely terminates owned process trees on macOS, Linux, and Windows, while preserving SearXNG process tracking when startup or searches are cancelled.
 - **Earlier Windows validation** — compiles the main Windows backend during pull-request checks so platform-specific process lifecycle regressions are caught before release.
 
+### Dependencies and security
+
+- **Updated application stack** — refreshed compatible frontend and Rust dependencies, including React, Vite, CodeMirror, type definitions, and locked Rust packages, improving compatibility, stability, and long-term maintainability.
+- **Safer development toolchain** — upgraded the transitive `brace-expansion` package used by lint tooling to fix a high-severity denial-of-service vulnerability; the npm dependency audit now reports no known vulnerabilities.
+
 ---
 
 ## v1.1.0
