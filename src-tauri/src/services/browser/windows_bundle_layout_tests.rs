@@ -95,6 +95,8 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     assert!(preparation < clippy);
     assert!(clippy < tests);
     assert_eq!(windows_job.matches("--features windows-tests").count(), 3);
+    assert!(windows_job.contains("Microsoft.VC*.CRT\\vcruntime140.dll"));
+    assert!(windows_job.contains("Copy-Item $runtime.FullName $binary.DirectoryName -Force"));
     assert!(!windows_job.contains("/DELAYLOAD:libcef.dll"));
     assert!(!windows_job.contains("delayimp.lib"));
 }

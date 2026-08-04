@@ -98,11 +98,16 @@ jobs:
           $binary = Get-ChildItem target/debug/deps/cl_go_dash_lib-*.exe |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $runtime = Get-ChildItem "$install\VC\Redist\MSVC\*\x64\Microsoft.VC*.CRT\vcruntime140.dll" |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $runtime) { throw 'Matching Visual C++ runtime is missing' }
+          Copy-Item $runtime.FullName $binary.DirectoryName -Force
           & $binary.FullName
           $testExit = $LASTEXITCODE
           if ($testExit -eq 0) { exit 0 }
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $install = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           $dumpbin = Get-ChildItem "$install\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" |
             Sort-Object FullName -Descending |
             Select-Object -First 1
