@@ -2,7 +2,15 @@ use super::*;
 use crate::commands::app_update_assets::{expected_asset_name, UpdateArchitecture, UpdatePlatform};
 use crate::commands::app_update_source::UPDATE_SOURCE;
 
-const NEXT_VERSION: &str = "1.1.1";
+fn next_version() -> String {
+    let major = env!("CARGO_PKG_VERSION")
+        .split('.')
+        .next()
+        .and_then(|part| part.parse::<u64>().ok())
+        .and_then(|value| value.checked_add(1))
+        .expect("package version must have an incrementable major component");
+    format!("{major}.0.0")
+}
 
 fn asset_url(version: &str, platform: UpdatePlatform, architecture: UpdateArchitecture) -> String {
     let name = expected_asset_name(&UPDATE_SOURCE, version, platform, architecture).unwrap();
@@ -11,6 +19,7 @@ fn asset_url(version: &str, platform: UpdatePlatform, architecture: UpdateArchit
 
 #[test]
 fn accepts_exact_assets_for_every_supported_target() {
+    let next = next_version();
     for (platform, architecture) in [
         (UpdatePlatform::Macos, UpdateArchitecture::Aarch64),
         (UpdatePlatform::Macos, UpdateArchitecture::X86_64),
@@ -19,22 +28,19 @@ fn accepts_exact_assets_for_every_supported_target() {
         (UpdatePlatform::Linux, UpdateArchitecture::Aarch64),
         (UpdatePlatform::Linux, UpdateArchitecture::X86_64),
     ] {
-        let raw = asset_url(NEXT_VERSION, platform, architecture);
+        let raw = asset_url(&next, platform, architecture);
         assert!(validate_update_url_for(&raw, platform, architecture).is_ok());
     }
 }
 
 #[test]
 fn rejects_old_repository_wrong_target_and_mismatched_version() {
-    let valid = asset_url(
-        NEXT_VERSION,
-        UpdatePlatform::Linux,
-        UpdateArchitecture::X86_64,
-    );
+    let next = next_version();
+    let valid = asset_url(&next, UpdatePlatform::Linux, UpdateArchitecture::X86_64);
     let invalid = [
         valid.replace("Kevin-hDev/Beaver", "Kevin-hDev/CL-GO-DASH"),
         valid.replace("_amd64.deb", "_arm64.deb"),
-        valid.replace("Beaver_1.1.1", "Beaver_1.1.2"),
+        valid.replace(&format!("Beaver_{next}"), "Beaver_999.0.0"),
         format!("{valid}.sha256"),
         asset_url(
             env!("CARGO_PKG_VERSION"),
