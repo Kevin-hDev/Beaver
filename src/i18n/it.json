@@ -1079,6 +1079,8 @@
     "sessionSaveFailed": "Impossibile salvare la sessione",
     "downloadFailed": "Download non riuscito",
     "updateFailed": "Aggiornamento non riuscito",
+    "updatePrepareFailed": "Non è stato possibile preparare l'aggiornamento",
+    "updateInstallFailed": "Il download è stato completato, ma non è stato possibile avviare l'installazione",
     "apiKeyFailed": "Impossibile salvare la chiave",
     "apiKeyDeleteFailed": "Impossibile eliminare la chiave",
     "readError": "Impossibile leggere il file",

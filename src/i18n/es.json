@@ -1079,6 +1079,8 @@
     "sessionSaveFailed": "No se pudo guardar la sesión",
     "downloadFailed": "La descarga falló",
     "updateFailed": "La actualización falló",
+    "updatePrepareFailed": "No se pudo preparar la actualización",
+    "updateInstallFailed": "La descarga se completó, pero no se pudo iniciar la instalación",
     "apiKeyFailed": "No se pudo guardar la clave",
     "apiKeyDeleteFailed": "No se pudo eliminar la clave",
     "readError": "No se pudo leer el archivo",

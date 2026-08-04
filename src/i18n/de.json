@@ -1079,6 +1079,8 @@
     "sessionSaveFailed": "Sitzung konnte nicht gespeichert werden",
     "downloadFailed": "Download fehlgeschlagen",
     "updateFailed": "Aktualisierung fehlgeschlagen",
+    "updatePrepareFailed": "Das Update konnte nicht vorbereitet werden",
+    "updateInstallFailed": "Der Download wurde abgeschlossen, aber die Installation konnte nicht gestartet werden",
     "apiKeyFailed": "Schlüssel konnte nicht gespeichert werden",
     "apiKeyDeleteFailed": "Schlüssel konnte nicht gelöscht werden",
     "readError": "Datei konnte nicht gelesen werden",

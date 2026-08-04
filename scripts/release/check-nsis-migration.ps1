@@ -9,6 +9,7 @@ $ErrorActionPreference = "Stop"
 $MaxSourceBytes = 65536
 $MaxInstallerBytes = 2147483648
 $MaxIconBytes = 8388608
+$MaxUpdaterHelperBytes = 67108864
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../.."))
 $RootPrefix = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 
@@ -32,10 +33,16 @@ function Read-BoundedText([string]$RelativePath) {
 
 function Test-SourceContracts {
     $config = Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json
+    $windowsConfig = Read-BoundedText "src-tauri/tauri.windows.conf.json" | ConvertFrom-Json
+    $helperResource = "target/updater-helper/cl-go-dash-updater.exe"
     if ($config.productName -ne "Beaver" -or $config.identifier -ne "com.clgo.dash") {
         Stop-Validation
     }
     if ($config.bundle.windows.nsis.installerHooks -ne "windows/nsis-hooks.nsh") {
+        Stop-Validation
+    }
+    $helperProperty = $windowsConfig.bundle.resources.PSObject.Properties[$helperResource]
+    if ($null -eq $helperProperty -or $helperProperty.Value -cne $helperResource) {
         Stop-Validation
     }
     $expectedIcons = @(
@@ -142,6 +149,17 @@ function Test-InstalledState {
         Stop-Validation
     }
     Test-AssociatedIcon $binary
+
+    $helperPath = Join-Path $installDir "target\updater-helper\cl-go-dash-updater.exe"
+    if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
+        Stop-Validation
+    }
+    $helper = Get-Item -LiteralPath $helperPath -Force
+    $helperIsLink = ($helper.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
+    if ($helper.PSIsContainer -or $helperIsLink -or
+        $helper.Length -le 0 -or $helper.Length -gt $MaxUpdaterHelperBytes) {
+        Stop-Validation
+    }
 
     $legacyShortcuts = @(
         (Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\CL-GO.lnk"),

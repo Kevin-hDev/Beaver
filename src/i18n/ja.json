@@ -1079,6 +1079,8 @@
     "sessionSaveFailed": "セッションを保存できませんでした",
     "downloadFailed": "ダウンロードに失敗しました",
     "updateFailed": "更新に失敗しました",
+    "updatePrepareFailed": "アップデートを準備できませんでした",
+    "updateInstallFailed": "ダウンロードは完了しましたが、インストールを開始できませんでした",
     "apiKeyFailed": "キーを保存できませんでした",
     "apiKeyDeleteFailed": "キーを削除できませんでした",
     "readError": "ファイルを読み取れませんでした",

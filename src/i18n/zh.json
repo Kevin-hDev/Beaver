@@ -1079,6 +1079,8 @@
     "sessionSaveFailed": "会话无法保存",
     "downloadFailed": "下载失败",
     "updateFailed": "更新失败",
+    "updatePrepareFailed": "无法准备更新",
+    "updateInstallFailed": "下载已完成，但无法启动安装",
     "apiKeyFailed": "无法保存密钥",
     "apiKeyDeleteFailed": "无法删除密钥",
     "readError": "无法读取文件",

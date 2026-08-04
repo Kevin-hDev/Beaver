@@ -7,6 +7,7 @@
       "default-skills/": "default-skills/",
       "resources/forecast-sidecar/": "resources/forecast-sidecar/",
       "resources/searxng-sidecar/": "resources/searxng-sidecar/",
+      "target/updater-helper/cl-go-dash-updater.exe": "target/updater-helper/cl-go-dash-updater.exe",
       "target/cef-runtime/windows/": ""
     }
   }

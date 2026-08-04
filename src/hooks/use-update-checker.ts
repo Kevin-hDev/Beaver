@@ -6,6 +6,7 @@ import { cleanupTauriListener } from "@/lib/tauri-listen";
 import i18n from "@/i18n";
 import { useModelDownloads } from "@/hooks/use-model-downloads";
 import { useForecastDevUpdates } from "@/hooks/use-forecast-dev-updates";
+import { updateErrorKey } from "@/hooks/update-error";
 
 const CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -106,8 +107,8 @@ export function useUpdateChecker() {
     try {
       await invoke("download_app_update", { assetUrl, onProgress: channel });
       setAppUpdate(null);
-    } catch {
-      showToast(i18n.t("errors.downloadFailed"), "error");
+    } catch (error) {
+      showToast(i18n.t(updateErrorKey(error)), "error");
     } finally {
       setAppDownloading(false);
     }

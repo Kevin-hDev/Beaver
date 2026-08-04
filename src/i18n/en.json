@@ -1084,6 +1084,8 @@
     "sessionSaveFailed": "Session could not be saved",
     "downloadFailed": "Download failed",
     "updateFailed": "Update failed",
+    "updatePrepareFailed": "The update could not be prepared",
+    "updateInstallFailed": "The download completed, but the installation could not start",
     "apiKeyFailed": "Could not save key",
     "apiKeyDeleteFailed": "Could not delete key",
     "readError": "Could not read file",

@@ -1132,6 +1132,8 @@
     "sessionSaveFailed": "La session n'a pas pu être sauvegardée",
     "downloadFailed": "Le téléchargement a échoué",
     "updateFailed": "La mise à jour a échoué",
+    "updatePrepareFailed": "La mise à jour n'a pas pu être préparée",
+    "updateInstallFailed": "Le téléchargement est terminé, mais l'installation n'a pas pu démarrer",
     "apiKeyFailed": "Impossible de sauvegarder la clé",
     "apiKeyDeleteFailed": "Impossible de supprimer la clé",
     "readError": "Impossible de lire le fichier",

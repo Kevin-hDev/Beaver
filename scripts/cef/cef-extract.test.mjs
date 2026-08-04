@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import test from "node:test";
 import * as cefExtract from "./cef-extract.mjs";
 
@@ -107,7 +107,7 @@ test("the Tauri launcher exposes the verified Ninja directory first", async () =
   ]);
   assert.equal(
     launch.path,
-    `${join("project", "src-tauri", ".cef-tools")};${join("Windows", "System32")}`,
+    `${join("project", "src-tauri", ".cef-tools")}${delimiter}${join("Windows", "System32")}`,
   );
   const packageJson = JSON.parse(await read(join(repoRoot, "package.json")));
   assert.equal(packageJson.scripts.tauri, "node scripts/cef/run-tauri.mjs");

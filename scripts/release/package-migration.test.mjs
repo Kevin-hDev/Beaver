@@ -37,6 +37,13 @@ test("le bundle Windows utilise le hook de migration dédié", () => {
   );
 });
 
+test("le bundle Windows conserve le helper au chemin attendu par l'application", () => {
+  const config = JSON.parse(readBounded("src-tauri/tauri.windows.conf.json"));
+  const helper = "target/updater-helper/cl-go-dash-updater.exe";
+
+  assert.equal(config.bundle.resources[helper], helper);
+});
+
 test("le hook Windows valide avant de nettoyer les anciennes métadonnées", () => {
   const hook = readBounded("src-tauri/windows/nsis-hooks.nsh");
   const oldUninstall =
@@ -89,6 +96,8 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(deb, /usr\/bin\/cl-go-dash/);
   assert.match(nsis, /Get-ItemProperty/);
   assert.match(nsis, /cl-go-dash\.exe/);
+  assert.match(nsis, /target\\updater-helper\\cl-go-dash-updater\.exe/);
+  assert.match(nsis, /MaxUpdaterHelperBytes/);
   assert.match(nsis, /windows-artifact-helpers\.ps1/);
   for (const variable of [
     "oldUninstall",
