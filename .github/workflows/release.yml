@@ -196,15 +196,12 @@ jobs:
 
       - name: Resolve exact artifact paths
         id: paths
-        shell: bash
-        run: |
-          VERSION="${RELEASE_TAG#v}"
-          BASE="src-tauri/target/${{ matrix.target }}/release/bundle"
-          ASSET="$BASE/${{ matrix.bundle_dir }}/Beaver_${VERSION}${{ matrix.asset_suffix }}"
-          printf 'asset=%s\n' "$ASSET" >> "$GITHUB_OUTPUT"
-          if [ "$RUNNER_OS" = "macOS" ]; then
-            printf 'app=%s\n' "$BASE/macos/Beaver.app" >> "$GITHUB_OUTPUT"
-          fi
+        env:
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          BUNDLE_TARGET: ${{ matrix.target }}
+          BUNDLE_DIR: ${{ matrix.bundle_dir }}
+          ASSET_SUFFIX: ${{ matrix.asset_suffix }}
+        run: node scripts/release/resolve-artifact-path.mjs
 
       - name: Inspect macOS bundle
         if: runner.os == 'macOS'
@@ -218,6 +215,16 @@ jobs:
           ASSET="$(realpath "${{ steps.paths.outputs.asset }}")"
           node scripts/release/check-brand-artifacts.mjs linux "$RELEASE_TAG" "$ASSET"
           bash scripts/release/check-deb-migration.sh "$ASSET"
+
+      - name: Test Windows validator with PowerShell 7
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/release/check-nsis-migration.test.ps1
+
+      - name: Test Windows validator with PowerShell 5.1
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: .\scripts\release\check-nsis-migration.test.ps1
 
       - name: Inspect and install Windows package
         if: runner.os == 'Windows'
@@ -235,6 +242,8 @@ jobs:
             throw "Windows package validation failed."
           }
           & scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
+            -File scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
 
       - name: Upload verified native artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

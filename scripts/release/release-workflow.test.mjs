@@ -103,6 +103,35 @@ test("inspecte chaque bundle avec son outil natif", () => {
   assert.match(workflow, /if-no-files-found: error/g);
 });
 
+test("le parcours Windows résout et valide sans Bash", () => {
+  assert.match(
+    workflow,
+    /Resolve exact artifact paths[\s\S]*?run: node scripts\/release\/resolve-artifact-path\.mjs/,
+  );
+  for (const variable of ["RELEASE_TAG", "BUNDLE_TARGET", "BUNDLE_DIR", "ASSET_SUFFIX"]) {
+    assert.match(workflow, new RegExp(`${variable}:`));
+  }
+  const resolverStep = workflow
+    .split(/\n      - name:/u)
+    .find((step) => step.startsWith(" Resolve exact artifact paths"));
+  assert.ok(resolverStep);
+  assert.doesNotMatch(resolverStep, /shell: bash/);
+  assert.equal(workflow.match(/check-nsis-migration\.test\.ps1/g)?.length, 2);
+  assert.match(workflow, /shell: pwsh[\s\S]*?check-nsis-migration\.test\.ps1/);
+  assert.match(workflow, /shell: powershell[\s\S]*?check-nsis-migration\.test\.ps1/);
+  assert.match(
+    workflow,
+    /powershell\.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass[\s\S]*?-Mode Installed -InstallerPath \$installer/,
+  );
+
+  const bashSteps = workflow
+    .split(/\n      - name:/u)
+    .filter((step) => step.includes("shell: bash"));
+  for (const step of bashSteps) {
+    assert.match(step, /if: runner\.os (?:!= 'Windows'|== '(?:Linux|macOS)')/);
+  }
+});
+
 test("assemble les trois assets puis revérifie le manifeste séparément", () => {
   assert.match(workflow, /\n  manifest:\n    needs: build\n/);
   assert.match(workflow, /\n  verify_release:\n    needs: manifest\n/);
