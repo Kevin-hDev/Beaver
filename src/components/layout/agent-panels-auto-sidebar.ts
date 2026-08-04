@@ -14,25 +14,13 @@ export function projectedDetailWidthWithSidebarOpen(
   return Math.max(0, safeDetailWidth - safeSidebarWidth);
 }
 
-function cssLengthToPx(value: string, remBase: number): number {
-  const trimmed = value.trim();
-  const amount = Number.parseFloat(trimmed);
-  if (!Number.isFinite(amount)) return 0;
-  if (trimmed.endsWith("rem")) return amount * remBase;
-  return amount;
-}
-
-export function sidebarProjectionWidth(sidebar: Element | null, sidebarOpen: boolean): number {
+/* Largeur que la colonne occupe, ou reprendrait si on la rouvrait : masquée,
+   elle garde sa largeur et c'est sa marge qui la sort de l'écran. Le rail de
+   navigation se dépliait au survol, et il fallait ajouter ici la largeur qu'il
+   aurait prise ; il n'existe plus, la largeur mesurée suffit. */
+export function sidebarProjectionWidth(sidebar: Element | null): number {
   if (!(sidebar instanceof HTMLElement)) return 0;
-  const width = sidebar.getBoundingClientRect().width;
-  if (sidebarOpen) return width;
-
-  const style = getComputedStyle(sidebar);
-  const rootStyle = getComputedStyle(document.documentElement);
-  const remBase = cssLengthToPx(rootStyle.fontSize, 16) || 16;
-  const collapsed = cssLengthToPx(style.getPropertyValue("--sidebar-collapsed"), remBase);
-  const expanded = cssLengthToPx(style.getPropertyValue("--sidebar-expanded"), remBase);
-  return width + Math.max(0, expanded - collapsed);
+  return sidebar.getBoundingClientRect().width;
 }
 
 export function useAgentPanelsAutoSidebar(
@@ -59,7 +47,7 @@ export function useAgentPanelsAutoSidebar(
       const agentDetail = detail.querySelector(".agent-detail-with-preview");
       const previewOpen = !!agentDetail?.querySelector(".asp-panel.open");
       const fileTreeOpen = !!agentDetail?.querySelector(".ft-panel.open");
-      const sidebarWidth = sidebarProjectionWidth(sidebar, sidebarOpenRef.current);
+      const sidebarWidth = sidebarProjectionWidth(sidebar);
       const projectedDetailWidth = projectedDetailWidthWithSidebarOpen(
         detail.getBoundingClientRect().width,
         sidebarWidth,

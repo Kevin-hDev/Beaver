@@ -856,8 +856,6 @@
       "languageDesc": "Interface language",
       "responseLangTitle": "LLM response language",
       "responseLangDesc": "Language the AI model will respond in",
-      "sidebarExpandTitle": "Expand sidebar on hover",
-      "sidebarExpandDesc": "Sidebar expands when you hover over it",
       "linkPreviewTitle": "Link previews",
       "linkPreviewDesc": "Show a preview card for URLs in chat"
     },

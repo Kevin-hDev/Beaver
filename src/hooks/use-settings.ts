@@ -70,11 +70,6 @@ function loadCodeTheme(): CodeThemeId {
   return "default";
 }
 
-function loadSidebarExpand(): boolean {
-  const saved = localStorage.getItem("clgo-sidebar-expand");
-  return saved === null ? true : saved === "true";
-}
-
 function applyFontSize(fontSize: FontSize) {
   const next = clampFontSizePx(fontSize);
   document.documentElement.style.fontSize = `${next}px`;
@@ -102,7 +97,6 @@ export function useSettings() {
   const [fontSize, setFontSizeState] = useState<FontSize>(loadFontSize);
   const [fontFamilyId, setFontFamilyIdState] = useState<FontFamilyId>(loadFontFamily);
   const [codeThemeId, setCodeThemeIdState] = useState<CodeThemeId>(loadCodeTheme);
-  const [sidebarExpand, setSidebarExpandState] = useState(loadSidebarExpand);
 
   const fontFamily = FONT_FAMILIES.find((f) => f.id === fontFamilyId)!;
 
@@ -121,11 +115,6 @@ export function useSettings() {
   const setFontSize = useCallback((size: FontSize) => setFontSizeState(clampFontSizePx(size)), []);
   const setFontFamily = useCallback((id: FontFamilyId) => setFontFamilyIdState(id), []);
   const setCodeTheme = useCallback((id: CodeThemeId) => setCodeThemeIdState(id), []);
-  const setSidebarExpand = useCallback((v: boolean) => {
-    setSidebarExpandState(v);
-    localStorage.setItem("clgo-sidebar-expand", String(v));
-    window.dispatchEvent(new CustomEvent("clgo-sidebar-expand", { detail: v }));
-  }, []);
 
   const decreaseFont = useCallback(() => {
     setFontSizeState((cur) => clampFontSizePx(cur - 1));
@@ -139,7 +128,6 @@ export function useSettings() {
     fontSize, setFontSize, decreaseFont, increaseFont,
     fontFamilyId, fontFamily, setFontFamily,
     codeThemeId, setCodeTheme,
-    sidebarExpand, setSidebarExpand,
   }) as const, [
     fontSize,
     setFontSize,
@@ -150,7 +138,5 @@ export function useSettings() {
     setFontFamily,
     codeThemeId,
     setCodeTheme,
-    sidebarExpand,
-    setSidebarExpand,
   ]);
 }

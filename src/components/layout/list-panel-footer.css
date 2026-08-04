@@ -1,0 +1,27 @@
+/* Rangée ancrée en bas du panneau liste : navigation à gauche, état machine à
+   droite. Le filet la détache du contenu, qui défile derrière elle. */
+.lpf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border-top: 1px solid var(--edge);
+}
+
+.lpf-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.lpf-btn {
+  color: var(--ink-muted);
+}
+
+.lpf-btn[data-nav-active="true"] {
+  background: var(--surface-hover);
+  color: var(--ink);
+}

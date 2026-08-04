@@ -19,7 +19,7 @@ import { useStartupGate } from "@/hooks/use-startup-gate";
 import { ExtensionsProvider } from "@/hooks/use-extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
-import type { TabId } from "@/components/layout/sidebar";
+import type { TabId } from "@/components/layout/nav-items";
 import "./App.css";
 import {
   DEFAULT_APP_NAV,

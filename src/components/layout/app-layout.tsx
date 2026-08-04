@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef, type CSSProperties, type ReactNode } from "react";
-import { Sidebar, type TabId } from "./sidebar";
+import { ListPanelFooter } from "./list-panel-footer";
+import type { TabId } from "./nav-items";
 import { DragRegion } from "./drag-region";
 import { WindowToolbar } from "./window-toolbar";
 import { useUpdateChecker } from "@/hooks/use-update-checker";
 import { CHAT_MIN_WIDTH } from "@/hooks/file-preview-storage";
 import { CHAT_COMPACT_MIN_WIDTH } from "@/hooks/agent-panel-layout-solver";
 import { IS_MAC } from "@/lib/platform";
-import { GpuStatusBadge } from "@/components/agent-local/gpu-status-badge";
 import { WindowControls } from "./window-controls";
 import { PanelSlotProvider, PanelSlotTarget } from "./panel-slots";
 import { useAgentPanelsAutoSidebar } from "./agent-panels-auto-sidebar";
@@ -23,7 +23,6 @@ import {
 } from "./sidebar-compact-state";
 import "./app-layout.css";
 
-const GPU_BADGE_OFFSET = 12;
 interface AppLayoutProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
@@ -122,7 +121,6 @@ export function AppLayout({
           canGoForward={canGoForward}
         />
         <div className={`app-sidebar-block ${agentSidebar.sidebarOpen ? "" : "app-sidebar-hidden"}`}>
-          <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
           <div
             className="app-list-panel" data-nav-zone="list" tabIndex={-1}
             style={{
@@ -132,13 +130,7 @@ export function AppLayout({
           >
             <DragRegion />
             <PanelSlotTarget name="list" />
-            <div style={{
-              position: "absolute",
-              bottom: GPU_BADGE_OFFSET,
-              right: GPU_BADGE_OFFSET,
-            }}>
-              <GpuStatusBadge />
-            </div>
+            <ListPanelFooter activeTab={activeTab} onTabChange={onTabChange} />
           </div>
           <div className="sidebar-resize-handle" onPointerDown={handleResizeStart} />
         </div>

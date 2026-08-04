@@ -9,7 +9,7 @@ body.os-mac {
 }
 
 .app-root {
-  --app-sidebar-hidden-offset: calc(var(--sidebar-collapsed) + var(--list-width) + 20px);
+  --app-sidebar-hidden-offset: calc(var(--list-width) + 20px);
   display: flex;
   height: 100vh;
   padding: 1px;
@@ -61,67 +61,6 @@ body.os-mac {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-}
-
-/* Sidebar nav items: centered when collapsed, left-aligned when expanded.
-   Marges internes et latérales posées ici et non en style inline : la densité
-   des listes de navigation se règle par tokens, et une valeur écrite dans le
-   TSX échappe à ce réglage. */
-.sb-nav-item {
-  gap: 0;
-  justify-content: center;
-  width: var(--nav-item-height);
-  height: var(--nav-item-height);
-  margin: 0 var(--space-sm);
-  padding: var(--nav-item-padding-y) 0;
-  border-radius: var(--nav-item-radius);
-  overflow: hidden;
-}
-
-/* Les Réglages ferment la barre : ils se détachent du groupe du dessus. */
-.sb-nav-settings {
-  margin-bottom: var(--space-md);
-}
-
-.sb-nav-item:hover {
-  background: var(--surface-hover);
-}
-
-.group\/sb:hover .sb-nav-item {
-  gap: var(--nav-item-gap);
-  justify-content: flex-start;
-  width: auto;
-  padding-left: var(--nav-item-padding-x);
-}
-
-.group\/sb:not(:hover) .sb-nav-item {
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-.group\/sb:hover .sb-nav-label {
-  flex: 1;
-  min-width: 0;
-  width: auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Dépliage au survol désactivé : la barre garde sa largeur, donc l'élément
-   aussi. Il manquait la largeur et le centrage — la règle de dépliage les
-   emportait, et le fond de l'élément actif s'élargissait puis se décalait
-   alors que rien d'autre ne bougeait. */
-.sb-locked:hover .sb-nav-item {
-  gap: 0;
-  justify-content: center;
-  width: var(--nav-item-height);
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 0;
-}
-
-.sb-locked span {
-  display: none;
 }
 
 .sidebar-resize-handle {

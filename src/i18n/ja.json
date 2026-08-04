@@ -851,8 +851,6 @@
       "languageDesc": "インターフェース言語",
       "responseLangTitle": "LLM 応答言語",
       "responseLangDesc": "AI モデルが応答する言語",
-      "sidebarExpandTitle": "ホバーでサイドバーを展開",
-      "sidebarExpandDesc": "マウスを重ねるとサイドバーが展開されます",
       "linkPreviewTitle": "リンクプレビュー",
       "linkPreviewDesc": "チャット内の URL にプレビューカードを表示"
     },

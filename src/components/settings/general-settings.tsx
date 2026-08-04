@@ -156,17 +156,6 @@ export function GeneralSettings({ themeChoice, onThemeChange, settings }: Genera
           </SettingsRow>
 
           <SettingsRow
-            title={t("settings.general.sidebarExpandTitle")}
-            description={t("settings.general.sidebarExpandDesc")}
-          >
-            <ToggleSwitch
-              checked={settings.sidebarExpand}
-              ariaLabel={t("settings.general.sidebarExpandTitle")}
-              onCheckedChange={settings.setSidebarExpand}
-            />
-          </SettingsRow>
-
-          <SettingsRow
             title={t("settings.general.linkPreviewTitle")}
             description={t("settings.general.linkPreviewDesc")}
           >

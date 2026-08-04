@@ -856,8 +856,6 @@
       "languageDesc": "Langue de l'interface",
       "responseLangTitle": "Langue de réponse du LLM",
       "responseLangDesc": "Langue dans laquelle le modèle IA répondra",
-      "sidebarExpandTitle": "Déplier la barre latérale au survol",
-      "sidebarExpandDesc": "La barre latérale se déplie quand vous la survolez",
       "linkPreviewTitle": "Aperçu des liens",
       "linkPreviewDesc": "Afficher une carte d'aperçu pour les URL dans le chat"
     },

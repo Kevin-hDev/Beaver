@@ -851,8 +851,6 @@
       "languageDesc": "Idioma de la interfaz",
       "responseLangTitle": "Idioma de respuesta del LLM",
       "responseLangDesc": "Idioma en el que responderá el modelo de IA",
-      "sidebarExpandTitle": "Expandir barra lateral al pasar",
-      "sidebarExpandDesc": "La barra lateral se expande al pasar el cursor",
       "linkPreviewTitle": "Vista previa de enlaces",
       "linkPreviewDesc": "Mostrar una tarjeta de vista previa para las URL en el chat"
     },

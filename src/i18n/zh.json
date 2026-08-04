@@ -851,8 +851,6 @@
       "languageDesc": "界面语言",
       "responseLangTitle": "LLM 回复语言",
       "responseLangDesc": "AI 模型回复使用的语言",
-      "sidebarExpandTitle": "悬停时展开侧边栏",
-      "sidebarExpandDesc": "鼠标悬停时侧边栏自动展开",
       "linkPreviewTitle": "链接预览",
       "linkPreviewDesc": "在聊天中显示 URL 的预览卡片"
     },

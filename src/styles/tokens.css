@@ -163,8 +163,9 @@
   --nav-item-gap: var(--space-xs);
   --nav-item-padding-x: var(--space-sm);
   --nav-item-radius: var(--radius-sm);
-  --sidebar-collapsed: 2.75rem;
-  --sidebar-expanded: 8.25rem;
-  /* 10.5rem at the default 18px root font size, kept stable across font-size settings. */
-  --list-width: 189px;
+  /* 189px de liste plus les 49.5px du rail de navigation supprimé : la colonne
+     garde la largeur qu'elle avait à deux panneaux, et le gain va au texte des
+     conversations, qui se tronquait trop tôt. En px et non en rem : la largeur
+     reste stable quel que soit le réglage de taille de police. */
+  --list-width: 238px;
 }
