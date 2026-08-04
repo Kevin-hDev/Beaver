@@ -2,7 +2,13 @@
 mod tests {
     use crate::services::terminal::pty_session::PtySession;
     use std::io::Read;
+    use std::sync::mpsc;
     use std::time::Duration;
+
+    #[cfg(windows)]
+    const MARKER_COMMAND: &[u8] = b"Write-Output pty_test_marker; exit\r\n";
+    #[cfg(not(windows))]
+    const MARKER_COMMAND: &[u8] = b"printf 'pty_test_marker\\n'; exit\n";
 
     #[test]
     fn test_pty_spawn() {
@@ -40,38 +46,48 @@ mod tests {
 
     #[test]
     fn test_pty_read_output() {
-        let (session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
-        session.write(b"echo pty_test_marker\n").expect("write");
-
-        let mut output = String::new();
-        let mut buf = [0u8; 1024];
-        let deadline = std::time::Instant::now() + Duration::from_secs(3);
-
-        while std::time::Instant::now() < deadline {
-            match reader.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => {
-                    output.push_str(&String::from_utf8_lossy(&buf[..n]));
-                    if output.contains("pty_test_marker") {
-                        break;
+        let (mut session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let reader_thread = std::thread::spawn(move || {
+            let mut output = String::new();
+            let mut buf = [0u8; 1024];
+            loop {
+                match reader.read(&mut buf) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => {
+                        output.push_str(&String::from_utf8_lossy(&buf[..n]));
+                        if output.contains("pty_test_marker") {
+                            break;
+                        }
                     }
                 }
-                Err(_) => break,
             }
+            let _ = sender.send(output);
+        });
+
+        session.write(MARKER_COMMAND).expect("write");
+        let output = receiver.recv_timeout(Duration::from_secs(5));
+        let _ = session.kill();
+        if output.is_ok() {
+            reader_thread.join().expect("reader thread");
         }
+        let output = output.expect("PTY output timed out");
 
         assert!(
             output.contains("pty_test_marker"),
             "expected marker in output, got: {}",
             output
         );
-        drop(session);
     }
 
     #[test]
     fn test_multiple_independent_sessions() {
-        let (_s1, _r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
-        let (_s2, _r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
-        let (_s3, _r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+        let (mut s1, r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
+        let (mut s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
+        let (mut s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+
+        let results = [s1.kill(), s2.kill(), s3.kill()];
+        drop((r1, r2, r3));
+        assert!(results.iter().all(Result::is_ok));
     }
 }
