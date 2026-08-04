@@ -1,0 +1,15 @@
+Validation Windows du correctif de mise à jour
+
+1. Construire depuis un clone propre de main au commit aacbbe9. Exécuter npm ci, npm run test:package-migration, npm run test:release-workflow, puis npm run tauri build -- --bundles nsis.
+
+2. Sur l'installateur Beaver généré, exécuter scripts/release/check-nsis-migration.ps1 en mode Source avec le chemin de l'installateur. Installer ensuite le paquet sur une machine ou VM Windows x64, puis exécuter le même script en mode Installed.
+
+3. Vérifier dans le dossier d'installation la présence d'un fichier normal et non vide à l'emplacement target\updater-helper\cl-go-dash-updater.exe. Le job Windows doit échouer si ce fichier manque, est une redirection ou dépasse 64 Mio.
+
+4. Cas de récupération 1.0.2 ou 1.1.0 : l'ancienne application ne peut pas se réparer par sa propre mise à jour, car son helper local est déjà au mauvais endroit. Installer manuellement une version corrigée une seule fois et vérifier que les réglages, sessions et données sont conservés.
+
+5. Test automatique complet : installer une première version corrigée N, rendre disponible une version stable supérieure N+1 via la source GitHub exacte utilisée par l'updater, puis lancer la mise à jour depuis N. Vérifier que la progression atteint 100 %, que l'application se ferme, que NSIS installe N+1 silencieusement, que Beaver redémarre, répond au contrôle de santé et affiche la nouvelle version sans perte de données.
+
+6. Test des erreurs sur une installation jetable : rendre temporairement le helper indisponible et confirmer qu'après 100 % le message indique que le téléchargement est terminé mais que l'installation n'a pas pu démarrer. Restaurer ensuite l'installation avec l'installateur.
+
+Critères d'acceptation : paquet Windows validé, helper présent au chemin exact, migration manuelle depuis une version cassée réussie, mise à jour automatique entre deux versions corrigées réussie, redémarrage et données utilisateur validés.
