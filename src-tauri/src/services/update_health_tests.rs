@@ -54,6 +54,45 @@ fn refuses_an_unbounded_argument_list() {
     assert!(acknowledge_in(args, root.path()).is_err());
 }
 
+#[test]
+fn rejects_ambiguous_health_arguments_without_writing_an_ack() {
+    let valid = token(10);
+    let second = token(11);
+    let uppercase = valid.to_ascii_uppercase();
+    let mut oversized = vec!["app".to_string()];
+    oversized.extend((0..32).map(|index| format!("--arg-{index}")));
+    let cases = [
+        vec![
+            "app".to_string(),
+            UPDATE_HEALTH_ARG.to_string(),
+            valid.clone(),
+            UPDATE_HEALTH_ARG.to_string(),
+            second,
+        ],
+        vec![
+            "app".to_string(),
+            UPDATE_HEALTH_ARG.to_string(),
+            valid,
+            UPDATE_HEALTH_ARG.to_string(),
+        ],
+        vec!["app".to_string(), UPDATE_HEALTH_ARG.to_string(), uppercase],
+        oversized,
+    ];
+    let mut expected_error = None;
+
+    for args in cases {
+        let root = tempfile::tempdir().unwrap();
+        let error = acknowledge_in(args, root.path()).unwrap_err();
+        assert!(!error.is_empty() && error.len() <= 128);
+        if let Some(expected) = &expected_error {
+            assert_eq!(&error, expected);
+        } else {
+            expected_error = Some(error);
+        }
+        assert!(!root.path().join("update-health").exists());
+    }
+}
+
 #[cfg(unix)]
 #[test]
 fn refuses_a_symlinked_health_directory() {

@@ -35,3 +35,21 @@ fn rejects_invalid_ack_and_matches_token_argument_exactly() {
     assert!(token_in_arguments(&arguments, token.value()));
     assert!(!token_in_arguments(&arguments, &"00".repeat(32)));
 }
+
+#[test]
+fn rejects_ack_with_newline_directory_or_oversized_content() {
+    for content in [b"ok\n".as_slice(), b"not-ok".as_slice()] {
+        let root = tempfile::tempdir().unwrap();
+        let token = HealthToken::generate(root.path().to_path_buf()).unwrap();
+        let path = token.ack_path();
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, content).unwrap();
+        assert!(token.wait_for(Duration::from_millis(10)).is_err());
+    }
+
+    let root = tempfile::tempdir().unwrap();
+    let token = HealthToken::generate(root.path().to_path_buf()).unwrap();
+    let path = token.ack_path();
+    fs::create_dir_all(&path).unwrap();
+    assert!(token.wait_for(Duration::from_millis(10)).is_err());
+}
