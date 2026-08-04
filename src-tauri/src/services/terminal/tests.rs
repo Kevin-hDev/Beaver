@@ -11,6 +11,7 @@ mod tests {
     const MARKER_COMMAND: &[u8] = b"Write-Output pty_test_marker; exit\r\n";
     #[cfg(not(windows))]
     const MARKER_COMMAND: &[u8] = b"printf 'pty_test_marker\\n'; exit\n";
+    const MAX_TEST_OUTPUT_BYTES: usize = 65_536;
 
     fn pty_test_guard() -> MutexGuard<'static, ()> {
         PTY_TEST_LOCK
@@ -18,16 +19,21 @@ mod tests {
             .unwrap_or_else(|error| error.into_inner())
     }
 
-    fn kill_session(mut session: PtySession, reader: Box<dyn Read + Send>) {
-        drop(reader);
+    fn close_session(mut session: PtySession, mut reader: Box<dyn Read + Send>) {
+        let reader_thread = std::thread::spawn(move || {
+            let mut buf = [0u8; 1024];
+            while matches!(reader.read(&mut buf), Ok(1..)) {}
+        });
         session.kill().expect("kill failed");
+        drop(session);
+        reader_thread.join().expect("reader thread");
     }
 
     #[test]
     fn test_pty_spawn() {
         let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn failed");
-        kill_session(session, reader);
+        close_session(session, reader);
     }
 
     #[test]
@@ -36,7 +42,7 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().to_str().unwrap();
         let (session, reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
-        kill_session(session, reader);
+        close_session(session, reader);
     }
 
     #[test]
@@ -44,7 +50,7 @@ mod tests {
         let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo hello\n").expect("write failed");
-        kill_session(session, reader);
+        close_session(session, reader);
     }
 
     #[test]
@@ -52,14 +58,14 @@ mod tests {
         let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.resize(40, 10).expect("resize failed");
-        kill_session(session, reader);
+        close_session(session, reader);
     }
 
     #[test]
     fn test_pty_kill() {
         let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
-        kill_session(session, reader);
+        close_session(session, reader);
     }
 
     #[test]
@@ -70,26 +76,34 @@ mod tests {
         let reader_thread = std::thread::spawn(move || {
             let mut output = String::new();
             let mut buf = [0u8; 1024];
+            let mut marker_sent = false;
             loop {
                 match reader.read(&mut buf) {
                     Ok(0) | Err(_) => break,
                     Ok(n) => {
-                        output.push_str(&String::from_utf8_lossy(&buf[..n]));
-                        if output.contains("pty_test_marker") {
-                            break;
+                        if output.len() < MAX_TEST_OUTPUT_BYTES {
+                            let remaining = MAX_TEST_OUTPUT_BYTES - output.len();
+                            output.push_str(&String::from_utf8_lossy(&buf[..n.min(remaining)]));
+                        }
+                        if !marker_sent && output.contains("pty_test_marker") {
+                            let _ = sender.send(output.clone());
+                            marker_sent = true;
                         }
                     }
                 }
             }
-            let _ = sender.send(output);
+            if !marker_sent {
+                let _ = sender.send(output);
+            }
         });
 
         session.write(MARKER_COMMAND).expect("write");
         let output = receiver
             .recv_timeout(Duration::from_secs(5))
             .expect("PTY output timed out");
-        reader_thread.join().expect("reader thread");
         session.kill().expect("kill failed");
+        drop(session);
+        reader_thread.join().expect("reader thread");
 
         assert!(
             output.contains("pty_test_marker"),
@@ -105,8 +119,8 @@ mod tests {
         let (s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
         let (s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
 
-        kill_session(s1, r1);
-        kill_session(s2, r2);
-        kill_session(s3, r3);
+        close_session(s1, r1);
+        close_session(s2, r2);
+        close_session(s3, r3);
     }
 }
