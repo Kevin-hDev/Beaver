@@ -6,6 +6,14 @@
 
 ## v1.1.1
 
+### Plugins and extensions — in development
+
+- **New extension platform foundation** — added a shared extension registry, a dedicated Settings center, independent activation and chat shortcut controls, structured diagnostics, recovery controls, and a separate Node.js/Jiti host so third-party code does not run inside Beaver's main process.
+- **Official Office plugin suite** — added distinct Documents, PDF, Spreadsheets, and Presentations plugins without moving, renaming, or coupling Beaver's existing built-in Tools.
+- **Custom extension support** — added installation and lifecycle management for local JavaScript and TypeScript extensions, Git repositories, and npm packages, including source details, explicit full-access confirmation, manual updates, clean removal, and isolated failure handling.
+- **Scalable agent discovery** — agents now receive a focused set of relevant extension tools and can discover additional typed tools during the same request, avoiding a permanently inflated system prompt while keeping enabled plugins available without manual per-request selection.
+- **Work in progress** — the extension ecosystem is still under active development. External application connections, interface extensions, broader Beaver APIs, richer extension resources, and deeper Office capabilities are planned for later iterations.
+
 ### Agent skills
 
 - **Expanded built-in skill bundle** — added 40 new programming skills covering planning, implementation, debugging, testing, review, documentation, collaboration, releases, reusable agents, and automations.
