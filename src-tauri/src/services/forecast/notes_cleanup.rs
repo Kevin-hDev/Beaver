@@ -132,6 +132,7 @@ mod tests {
 
     #[tokio::test]
     async fn staged_notes_can_be_restored() {
+        let _guard = notes_transaction::lock().await;
         let analysis_id = uuid::Uuid::new_v4().to_string();
         let live = notes_paths::directory_for_write(&analysis_id)
             .await

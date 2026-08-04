@@ -53,9 +53,9 @@ jobs:
           grep -Fq 'services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root: test' <<<"$tests"
           cargo test --lib services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root -- --ignored --exact --nocapture
 
-  backend-windows:
-    name: Backend Windows (Rust)
-    runs-on: windows-2022
+  backend-windows-native:
+    name: Backend Windows CEF (Rust)
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -88,6 +88,20 @@ jobs:
       - name: Clippy Windows backend
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
+
+  backend-windows:
+    name: Backend Windows tests (Rust)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
 
       - name: Windows unit tests
         working-directory: src-tauri

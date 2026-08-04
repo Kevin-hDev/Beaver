@@ -59,8 +59,7 @@ fn windows_release_exposes_the_explicit_cargo_target_to_the_bundle_hook() {
         .expect("release workflow");
 
     assert!(workflow.contains("CARGO_BUILD_TARGET: ${{ matrix.target }}"));
-    assert!(workflow.contains("- os: windows-2022"));
-    assert!(!workflow.contains("- os: windows-latest"));
+    assert!(workflow.contains("- os: windows-latest"));
 }
 
 #[test]
@@ -78,27 +77,31 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let workflow =
         std::fs::read_to_string(root.join("../.github/workflows/ci.yml")).expect("CI workflow");
-    let windows_job = workflow
+    let native_job = workflow
+        .split_once("backend-windows-native:")
+        .map(|(_, job)| job)
+        .and_then(|job| job.split_once("backend-windows:").map(|(job, _)| job))
+        .expect("Windows native backend job");
+    let test_job = workflow
         .split_once("backend-windows:")
         .map(|(_, job)| job)
-        .expect("Windows backend job");
+        .and_then(|job| job.split_once("frontend:").map(|(job, _)| job))
+        .expect("Windows test backend job");
 
-    let preparation = windows_job
+    let preparation = native_job
         .find("node scripts/cef/prepare-cef-source.mjs")
         .expect("verified CEF preparation");
-    let clippy = windows_job
+    let clippy = native_job
         .find("cargo clippy --all-targets -- -D warnings")
         .expect("Windows Clippy check");
-    let tests = windows_job
-        .find("cargo test --lib")
-        .expect("Windows unit tests");
-    assert!(windows_job.contains("src-tauri/.cef-cache"));
-    assert!(windows_job.contains("src-tauri/.cef-tool-cache"));
+    assert!(native_job.contains("runs-on: windows-latest"));
+    assert!(native_job.contains("src-tauri/.cef-cache"));
+    assert!(native_job.contains("src-tauri/.cef-tool-cache"));
     assert!(preparation < clippy);
-    assert!(clippy < tests);
-    assert_eq!(windows_job.matches("--features windows-tests").count(), 3);
-    assert!(windows_job.contains("runs-on: windows-2022"));
-    assert!(!windows_job.contains("runs-on: windows-latest"));
-    assert!(!windows_job.contains("/DELAYLOAD:libcef.dll"));
-    assert!(!windows_job.contains("delayimp.lib"));
+    assert!(test_job.contains("runs-on: windows-2022"));
+    assert_eq!(test_job.matches("--features windows-tests").count(), 3);
+    assert!(!test_job.contains("prepare-cef-source.mjs"));
+    assert!(!test_job.contains(".cef-cache"));
+    assert!(!workflow.contains("/DELAYLOAD:libcef.dll"));
+    assert!(!workflow.contains("delayimp.lib"));
 }

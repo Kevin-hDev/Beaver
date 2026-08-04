@@ -16,7 +16,6 @@ import { tauriDir } from "./cef-artifacts.mjs";
 const MAX_ARCHIVE_ENTRIES = 20_000;
 const MAX_LIST_BYTES = 16 * 1024 * 1024;
 const MAX_LAYOUT_DEPTH = 16;
-export const CEF_TAR_TIMEOUT_MS = 10 * 60 * 1000;
 const LAYOUT_VERSION = Object.freeze({
   darwin: "source-v1",
   win32: "windows-flat-v1",
@@ -27,7 +26,7 @@ function runTar(args) {
     encoding: "utf8",
     maxBuffer: MAX_LIST_BYTES,
     shell: false,
-    timeout: CEF_TAR_TIMEOUT_MS,
+    timeout: 180_000,
     windowsHide: true,
   });
   if (result.status !== 0 || result.error)
