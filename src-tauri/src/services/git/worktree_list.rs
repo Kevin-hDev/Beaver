@@ -14,8 +14,11 @@ pub struct WorktreeInfo {
 pub async fn list_worktrees(repo_path: &Path) -> Result<Vec<WorktreeInfo>, String> {
     let current_root = current_worktree_root(repo_path);
     let internal_root = crate::services::paths::data_dir().join("subagent-worktrees");
-    let output = Command::new("git")
-        .args(["-C"])
+    let mut command = Command::new("git");
+    #[cfg(windows)]
+    crate::services::process_tree::configure_tokio(&mut command);
+    let output = command
+        .arg("-C")
         .arg(repo_path)
         .args(["worktree", "list", "--porcelain"])
         .kill_on_drop(true)

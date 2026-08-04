@@ -63,9 +63,9 @@ fn is_forecast_process(pid: u32) -> bool {
     {
         let query =
             format!("(Get-CimInstance Win32_Process -Filter \"ProcessId = {pid}\").CommandLine");
-        let output = Command::new("powershell")
-            .args(["-NoProfile", "-Command", &query])
-            .output();
+        let mut command = Command::new("powershell");
+        process_tree::configure(&mut command);
+        let output = command.args(["-NoProfile", "-Command", &query]).output();
         output
             .ok()
             .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))
