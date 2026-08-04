@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { mkdtemp, mkdir, rm, symlink } from "node:fs/promises";
+import { join, sep } from "node:path";
 import { test } from "node:test";
+import { tmpdir } from "node:os";
 
 import { runCommand, validateCommandSpec } from "./command-runner.mjs";
 
@@ -17,6 +20,39 @@ function createChild() {
     },
     kill() {},
   };
+}
+
+function createInstrumentedChild() {
+  const listeners = new Map();
+  const added = [];
+  const removed = [];
+  return {
+    added,
+    removed,
+    once(name, handler) {
+      added.push({ name, handler });
+      listeners.set(name, handler);
+      return this;
+    },
+    off(name, handler) {
+      removed.push({ name, handler });
+      if (listeners.get(name) === handler) listeners.delete(name);
+      return this;
+    },
+    emit(name, ...values) {
+      listeners.get(name)?.(...values);
+    },
+    listenerCount() {
+      return listeners.size;
+    },
+    kill() {},
+  };
+}
+
+function assertListenersRemoved(child) {
+  assert.deepEqual(child.added.map((entry) => entry.name), ["error", "exit"]);
+  assert.deepEqual(child.removed.map((entry) => entry.name).sort(), ["error", "exit"]);
+  assert.equal(child.listenerCount(), 0);
 }
 
 function validSpec(overrides = {}) {
@@ -69,6 +105,32 @@ test("refuse un cwd relatif et un PATH non borné", () => {
   );
 });
 
+test("refuse un cwd absolu contenant un segment de traversée", () => {
+  const cwdWithTraversal = `${process.cwd()}${sep}..`;
+  assert.throws(() => validateCommandSpec(validSpec({ cwd: cwdWithTraversal })), GENERIC_ERROR);
+});
+
+test("refuse un cwd lien symbolique ou jonction", async (t) => {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "beaver-runner-"));
+  const target = join(temporaryRoot, "target");
+  const linked = join(temporaryRoot, "linked");
+  try {
+    await mkdir(target);
+    try {
+      await symlink(target, linked, process.platform === "win32" ? "junction" : "dir");
+    } catch (error) {
+      if (error?.code === "EPERM" || error?.code === "EACCES") {
+        t.skip("La création de lien n'est pas autorisée sur cet environnement.");
+        return;
+      }
+      throw error;
+    }
+    assert.throws(() => validateCommandSpec(validSpec({ cwd: linked })), GENERIC_ERROR);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
 test("accepte les valeurs exactes aux limites", () => {
   assert.doesNotThrow(() =>
     validateCommandSpec(
@@ -103,7 +165,7 @@ test("échoue fermée lorsqu'un signal termine le processus", async () => {
 });
 
 test("tue le processus et échoue fermée au délai", async () => {
-  const child = createChild();
+  const child = createInstrumentedChild();
   let killed = false;
   child.kill = () => {
     killed = true;
@@ -114,6 +176,25 @@ test("tue le processus et échoue fermée au délai", async () => {
     GENERIC_ERROR,
   );
   assert.equal(killed, true);
+  assertListenersRemoved(child);
+});
+
+test("nettoie les listeners après error puis exit", async () => {
+  const child = createInstrumentedChild();
+  const pending = runCommand(validSpec(), () => child);
+  child.emit("error", new Error("private detail"));
+  await assert.rejects(() => pending, GENERIC_ERROR);
+  child.emit("exit", 0, null);
+  assertListenersRemoved(child);
+});
+
+test("nettoie les listeners après exit puis error", async () => {
+  const child = createInstrumentedChild();
+  const pending = runCommand(validSpec(), () => child);
+  child.emit("exit", 0, null);
+  await pending;
+  child.emit("error", new Error("private detail"));
+  assertListenersRemoved(child);
 });
 
 test("ne modifie pas l'environnement fourni", async () => {

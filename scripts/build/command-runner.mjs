@@ -1,4 +1,5 @@
-import { isAbsolute } from "node:path";
+import { lstatSync, realpathSync } from "node:fs";
+import { isAbsolute, join, parse, relative, sep } from "node:path";
 import { spawn } from "node:child_process";
 
 const MAX_ARGUMENTS = 64;
@@ -27,6 +28,37 @@ function isSafeString(value, maximumLength, allowEmpty = false) {
     value.length <= maximumLength &&
     !hasControlCharacters(value)
   );
+}
+
+function hasTraversalSegment(value) {
+  return value.split(/[\\/]+/).includes("..");
+}
+
+function comparablePath(value) {
+  if (process.platform !== "win32") return value;
+  return value
+    .replace(/^\\\\\?\\UNC\\/i, "\\\\")
+    .replace(/^\\\\\?\\/i, "")
+    .toLowerCase();
+}
+
+function containsLink(cwd) {
+  const root = parse(cwd).root;
+  const segments = relative(root, cwd).split(sep).filter(Boolean);
+  let current = root;
+  for (const segment of segments) {
+    current = join(current, segment);
+    if (lstatSync(current).isSymbolicLink()) return true;
+  }
+  return false;
+}
+
+function validateCwd(cwd) {
+  if (!isSafeString(cwd, MAX_CWD_LENGTH) || !isAbsolute(cwd) || hasTraversalSegment(cwd)) {
+    invalidSpec();
+  }
+  const canonical = realpathSync.native(cwd);
+  if (comparablePath(cwd) !== comparablePath(canonical) || containsLink(cwd)) invalidSpec();
 }
 
 function validateEnvironment(env) {
@@ -85,7 +117,7 @@ export function validateCommandSpec(spec) {
     if (typeof spec !== "object" || spec === null || Array.isArray(spec)) invalidSpec();
     if (!isSafeString(spec.command, MAX_COMMAND_LENGTH)) invalidSpec();
     if (!Array.isArray(spec.args) || spec.args.length > MAX_ARGUMENTS) invalidSpec();
-    if (!isSafeString(spec.cwd, MAX_CWD_LENGTH) || !isAbsolute(spec.cwd)) invalidSpec();
+    validateCwd(spec.cwd);
     if (!spec.args.every((argument) => isSafeString(argument, MAX_ARGUMENT_LENGTH, true))) invalidSpec();
     if (spec.stdio !== undefined && spec.stdio !== "inherit" && spec.stdio !== "ignore") invalidSpec();
     if (spec.timeoutMs !== undefined && (!Number.isSafeInteger(spec.timeoutMs) || spec.timeoutMs < 1 || spec.timeoutMs > MAX_TIMEOUT_MS)) {
@@ -108,25 +140,38 @@ export function runCommand(spec, spawnProcess = spawn) {
   return new Promise((resolve, reject) => {
     let settled = false;
     let timeout;
+    let child;
+    const onError = () => settle(true);
+    const onExit = (code, signal) => settle(signal !== null || code !== 0);
+    const removeListener = (name, handler) => {
+      if (typeof child?.off === "function") child.off(name, handler);
+      else if (typeof child?.removeListener === "function") child.removeListener(name, handler);
+    };
+    const cleanup = () => {
+      if (timeout !== undefined) clearTimeout(timeout);
+      timeout = undefined;
+      removeListener("error", onError);
+      removeListener("exit", onExit);
+    };
     const settle = (error) => {
       if (settled) return;
       settled = true;
-      if (timeout) clearTimeout(timeout);
+      cleanup();
       if (error) reject(new Error(BUILD_COMMAND_FAILED));
       else resolve();
     };
 
     try {
-      const child = spawnProcess(safeSpec.command, safeSpec.args, {
+      child = spawnProcess(safeSpec.command, safeSpec.args, {
         cwd: safeSpec.cwd,
         env: safeSpec.env === undefined ? process.env : safeSpec.env,
         shell: false,
         stdio: safeSpec.stdio ?? "inherit",
         windowsHide: true,
       });
-      child.once("error", () => settle(true));
-      child.once("exit", (code, signal) => settle(signal !== null || code !== 0));
-      if (safeSpec.timeoutMs !== undefined) {
+      child.once("error", onError);
+      child.once("exit", onExit);
+      if (!settled && safeSpec.timeoutMs !== undefined) {
         timeout = setTimeout(() => {
           try {
             child.kill();
