@@ -19,13 +19,13 @@ fn configure_windows_test_manifest() {
     if !is_windows || !is_windows_test_build {
         return;
     }
-    const COMMON_CONTROLS_V6: &str = concat!(
-        "/MANIFESTDEPENDENCY:\"",
-        "type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' ",
-        "processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"",
-    );
+    let manifest = std::path::Path::new(
+        &std::env::var("CARGO_MANIFEST_DIR").expect("Cargo manifest directory"),
+    )
+    .join("windows-test.manifest");
+    println!("cargo:rerun-if-changed={}", manifest.display());
     println!("cargo:rustc-link-arg=/MANIFEST:EMBED");
-    println!("cargo:rustc-link-arg={COMMON_CONTROLS_V6}");
+    println!("cargo:rustc-link-arg=/MANIFESTINPUT:{}", manifest.display());
 }
 
 fn configure_browser_runtime_cfg() {

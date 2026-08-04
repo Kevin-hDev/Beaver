@@ -110,10 +110,13 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
 fn windows_unit_tests_link_the_common_controls_v6_manifest() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let build_script = std::fs::read_to_string(root.join("build.rs")).expect("build script");
+    let manifest =
+        std::fs::read_to_string(root.join("windows-test.manifest")).expect("test manifest");
 
     assert!(build_script.contains("CARGO_FEATURE_WINDOWS_TESTS"));
     assert!(build_script.contains("cargo:rustc-link-arg="));
     assert!(build_script.contains("/MANIFEST:EMBED"));
-    assert!(build_script.contains("Microsoft.Windows.Common-Controls"));
-    assert!(build_script.contains("version='6.0.0.0'"));
+    assert!(build_script.contains("/MANIFESTINPUT:"));
+    assert!(manifest.contains("Microsoft.Windows.Common-Controls"));
+    assert!(manifest.contains("version=\"6.0.0.0\""));
 }
