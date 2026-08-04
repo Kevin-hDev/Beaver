@@ -2,10 +2,9 @@
 mod tests {
     use crate::services::terminal::pty_session::PtySession;
     use std::io::Read;
-    use std::sync::{mpsc, Mutex, MutexGuard};
+    use std::sync::mpsc;
+    use std::thread::JoinHandle;
     use std::time::Duration;
-
-    static PTY_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[cfg(windows)]
     const MARKER_COMMAND: &[u8] = b"Write-Output pty_test_marker; exit\r\n";
@@ -13,17 +12,15 @@ mod tests {
     const MARKER_COMMAND: &[u8] = b"printf 'pty_test_marker\\n'; exit\n";
     const MAX_TEST_OUTPUT_BYTES: usize = 65_536;
 
-    fn pty_test_guard() -> MutexGuard<'static, ()> {
-        PTY_TEST_LOCK
-            .lock()
-            .unwrap_or_else(|error| error.into_inner())
-    }
-
-    fn close_session(mut session: PtySession, mut reader: Box<dyn Read + Send>) {
-        let reader_thread = std::thread::spawn(move || {
+    fn drain_reader(mut reader: Box<dyn Read + Send>) -> JoinHandle<()> {
+        std::thread::spawn(move || {
             let mut buf = [0u8; 1024];
             while matches!(reader.read(&mut buf), Ok(1..)) {}
-        });
+        })
+    }
+
+    fn close_session(mut session: PtySession, reader: Box<dyn Read + Send>) {
+        let reader_thread = drain_reader(reader);
         session.kill().expect("kill failed");
         drop(session);
         reader_thread.join().expect("reader thread");
@@ -31,14 +28,12 @@ mod tests {
 
     #[test]
     fn test_pty_spawn() {
-        let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn failed");
         close_session(session, reader);
     }
 
     #[test]
     fn test_pty_spawn_with_cwd() {
-        let _guard = pty_test_guard();
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().to_str().unwrap();
         let (session, reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
@@ -47,7 +42,6 @@ mod tests {
 
     #[test]
     fn test_pty_write() {
-        let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo hello\n").expect("write failed");
         close_session(session, reader);
@@ -55,7 +49,6 @@ mod tests {
 
     #[test]
     fn test_pty_resize() {
-        let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.resize(40, 10).expect("resize failed");
         close_session(session, reader);
@@ -63,14 +56,12 @@ mod tests {
 
     #[test]
     fn test_pty_kill() {
-        let _guard = pty_test_guard();
         let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         close_session(session, reader);
     }
 
     #[test]
     fn test_pty_read_output() {
-        let _guard = pty_test_guard();
         let (mut session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         let (sender, receiver) = mpsc::sync_channel(1);
         let reader_thread = std::thread::spawn(move || {
@@ -114,13 +105,17 @@ mod tests {
 
     #[test]
     fn test_multiple_independent_sessions() {
-        let _guard = pty_test_guard();
-        let (s1, r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
-        let (s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
-        let (s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+        let (mut s1, r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
+        let (mut s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
+        let (mut s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+        let readers = [drain_reader(r1), drain_reader(r2), drain_reader(r3)];
 
-        close_session(s1, r1);
-        close_session(s2, r2);
-        close_session(s3, r3);
+        s1.kill().expect("kill 1");
+        s2.kill().expect("kill 2");
+        s3.kill().expect("kill 3");
+        drop((s1, s2, s3));
+        for reader in readers {
+            reader.join().expect("reader thread");
+        }
     }
 }
