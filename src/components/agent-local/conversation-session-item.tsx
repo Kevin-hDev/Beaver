@@ -79,7 +79,7 @@ export function ConversationSessionItem({
               <span>{displaySessionName(session.name, t)}</span>
             </span>
             {session.is_gateway && channelId && (
-              <ChannelIcon channelId={channelId} size="var(--icon-lg)" className="conv-gateway-icon" />
+              <ChannelIcon channelId={channelId} size="var(--icon-xs)" className="conv-gateway-icon" />
             )}
           </span>
           <span className="conv-session-tail">
