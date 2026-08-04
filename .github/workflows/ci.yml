@@ -64,6 +64,22 @@ jobs:
         with:
           components: clippy
 
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Cache verified CEF archives
+        uses: actions/cache@v4
+        with:
+          path: |
+            src-tauri/.cef-cache
+            src-tauri/.cef-tool-cache
+          key: cef-windows-${{ runner.arch }}-${{ hashFiles('src-tauri/cef-artifacts.json', 'src-tauri/cef-build-tools.json', 'scripts/cef/**') }}
+
+      - name: Prepare verified CEF source
+        run: node scripts/cef/prepare-cef-source.mjs
+
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:

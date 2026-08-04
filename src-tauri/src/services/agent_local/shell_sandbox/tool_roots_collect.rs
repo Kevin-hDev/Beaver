@@ -97,7 +97,12 @@ pub(super) fn collect_into(
         if is_tool_directory(path) {
             if let Some(parent) = path.parent() {
                 // Le dossier parent contient les bibliothèques de la même toolchain.
-                push_read_dir(roots, parent, workspace_roots, home.as_deref());
+                let is_local_root = home
+                    .as_deref()
+                    .is_some_and(|home| parent == home.join(".local"));
+                if !is_local_root {
+                    push_read_dir(roots, parent, workspace_roots, home.as_deref());
+                }
             }
         }
     }

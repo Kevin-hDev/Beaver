@@ -70,3 +70,24 @@ fn windows_private_storage_ci_does_not_load_the_cef_runtime() {
     assert!(workflow.contains("cargo test --manifest-path tests/windows-private-store/Cargo.toml"));
     assert!(!workflow.contains("prepare-cef-windows-test-runtime.ps1"));
 }
+
+#[test]
+fn windows_backend_ci_prepares_verified_cef_before_rust_checks() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let workflow =
+        std::fs::read_to_string(root.join("../.github/workflows/ci.yml")).expect("CI workflow");
+    let windows_job = workflow
+        .split_once("backend-windows:")
+        .map(|(_, job)| job)
+        .expect("Windows backend job");
+
+    let preparation = windows_job
+        .find("node scripts/cef/prepare-cef-source.mjs")
+        .expect("verified CEF preparation");
+    let clippy = windows_job
+        .find("cargo clippy --all-targets -- -D warnings")
+        .expect("Windows Clippy check");
+    assert!(windows_job.contains("src-tauri/.cef-cache"));
+    assert!(windows_job.contains("src-tauri/.cef-tool-cache"));
+    assert!(preparation < clippy);
+}

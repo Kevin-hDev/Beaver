@@ -394,7 +394,8 @@ fn local_user_tools_keep_their_precise_runtime_directories() {
     assert!(roots
         .read_dirs
         .contains(&dunce::canonicalize(pipx).expect("pipx")));
-    assert!(!roots.read_dirs.iter().any(|path| path == &home.join(".local")));
+    let local = dunce::canonicalize(home.join(".local")).expect("local");
+    assert!(!roots.read_dirs.contains(&local));
 }
 
 #[test]
