@@ -10,10 +10,25 @@ MAX_ARCHIVE_ENTRIES = 4096
 MAX_MEMBER_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_TOTAL_BYTES = 150 * 1024 * 1024
 BLOCK_BYTES = 512
+MAX_DECOMPRESSED_BYTES = MAX_ARCHIVE_TOTAL_BYTES + MAX_ARCHIVE_ENTRIES * (2 * BLOCK_BYTES) + 2 * BLOCK_BYTES
 
 
 def is_metadata(path: PurePosixPath) -> bool:
     return any(part.startswith("._") or part in {".DS_Store", ".AppleDouble", "__MACOSX", ".py"} for part in path.parts)
+
+
+class BoundedReader:
+    def __init__(self, source):
+        self.source, self.total = source, 0
+
+    def read(self, length: int) -> bytes:
+        if not isinstance(length, int) or length < 0 or length > COPY_CHUNK_BYTES:
+            fail()
+        chunk = self.source.read(length)
+        self.total += len(chunk)
+        if self.total > MAX_DECOMPRESSED_BYTES:
+            fail()
+        return chunk
 
 
 def _read_exact(stream, length: int) -> bytes:
@@ -53,7 +68,8 @@ def preflight_tar(archive: Path) -> None:
     try:
         regular_info(archive, MAX_ARCHIVE_TOTAL_BYTES)
         entries = total = 0
-        with gzip.open(archive, "rb") as source:
+        with gzip.open(archive, "rb") as compressed:
+            source = BoundedReader(compressed)
             while True:
                 header = _read_exact(source, BLOCK_BYTES)
                 if header == b"\0" * BLOCK_BYTES:
@@ -88,7 +104,12 @@ def _safe_child(directory: Path, parts: tuple[str, ...]) -> Path:
         except OSError:
             fail()
         info = current.lstat()
-        if not stat.S_ISDIR(info.st_mode) or is_link(current):
+        canonical = current.resolve(strict=True)
+        if (
+            not stat.S_ISDIR(info.st_mode)
+            or is_link(current)
+            or os.path.normcase(str(current)) != os.path.normcase(str(canonical))
+        ):
             fail()
     return current
 
@@ -127,9 +148,9 @@ def safe_extract(archive: Path, destination: Path) -> None:
         with tarfile.open(archive, "r:gz") as source:
             for member in source:
                 path = PurePosixPath(member.name)
+                relative = validate_archive_path(member.name, seen)
                 if is_metadata(path):
                     continue
-                relative = validate_archive_path(member.name, seen)
                 if not (member.isdir() or member.isfile()) or member.size < 0 or member.size > MAX_MEMBER_BYTES:
                     fail()
                 extracted += 1

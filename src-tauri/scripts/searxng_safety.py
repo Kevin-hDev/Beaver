@@ -87,7 +87,7 @@ def _same_identity(before, after) -> bool:
 
 def hash_regular_file(path: Path, maximum: int, after_open=None) -> bytes:
     before = regular_info(path, maximum)
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     try:
         descriptor = os.open(path, flags)
     except OSError:
@@ -121,7 +121,7 @@ def hash_regular_file(path: Path, maximum: int, after_open=None) -> bytes:
 
 def read_regular_file(path: Path, maximum: int) -> bytes:
     before = regular_info(path, maximum)
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
     try:
         descriptor = os.open(path, flags)
     except OSError:

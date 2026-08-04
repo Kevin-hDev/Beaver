@@ -1,12 +1,12 @@
-import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from searxng_archive import copy_member, is_metadata, safe_extract
-from searxng_bundle import BundleLock, bundle_valid, publish_bundle, recover_bundle, requirements_hash, temporary_directory, validate_source
+from searxng_bundle import bundle_valid, requirements_hash, temporary_directory, validate_source
 from searxng_safety import ERROR_MESSAGE, PreparationError, fail, safe_directory
+from searxng_transaction import BundleLock, cleanup_orphans, publish_bundle, recover_bundle
 
 MAX_ARCHIVE_ENTRIES = 4096
 MAX_MEMBER_BYTES = 64 * 1024 * 1024
@@ -41,7 +41,9 @@ def prepare(root: Path, run_process=subprocess.run) -> None:
     temporary_source = temporary_wheels = None
     try:
         sidecar = safe_directory(safe_directory(root) / "resources" / "searxng-sidecar")
-        with BundleLock(sidecar):
+        with BundleLock(sidecar) as bundle_lock:
+            recover_bundle(sidecar)
+            cleanup_orphans(sidecar, bundle_lock)
             source = sidecar / "source"
             if not source.exists():
                 temporary_source = temporary_directory(sidecar, "source-")
@@ -49,7 +51,6 @@ def prepare(root: Path, run_process=subprocess.run) -> None:
                 source = temporary_source / "source"
             requirements, setup = validate_source(source)
             stamp = requirements_hash(requirements, setup)
-            recover_bundle(sidecar, stamp)
             if bundle_valid(sidecar / "wheels", stamp):
                 return
             temporary_wheels = temporary_directory(sidecar, "wheels-new-")

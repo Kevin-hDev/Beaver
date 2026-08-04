@@ -8,6 +8,7 @@ import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 SCRIPTS = Path(__file__).parent
 sys.path.insert(0, str(SCRIPTS))
@@ -21,9 +22,10 @@ from prepare_searxng import (
     safe_extract,
     main,
 )
-from searxng_archive import MAX_ARCHIVE_TOTAL_BYTES, preflight_tar
-from searxng_bundle import BundleLock, bundle_valid, publish_bundle, recover_bundle, temporary_directory
+from searxng_archive import preflight_tar
+from searxng_bundle import bundle_valid, temporary_directory
 from searxng_safety import PathValidationError, hash_regular_file, validate_archive_path
+from searxng_transaction import BundleLock, cleanup_orphans, publish_bundle, recover_bundle
 
 
 class ZeroStream:
@@ -122,10 +124,10 @@ class PrepareSearxngTests(unittest.TestCase):
         compact_tar(many, [(str(index), 0, b"0", False) for index in range(MAX_ARCHIVE_ENTRIES + 1)])
         with self.assertRaises(PreparationError):
             preflight_tar(many)
-        total = self.temp / "total.tar.gz"
-        compact_tar(total, [("one", MAX_ARCHIVE_TOTAL_BYTES // 2 + 1, b"0", False), ("two", MAX_ARCHIVE_TOTAL_BYTES // 2 + 1, b"0", False)])
-        with self.assertRaises(PreparationError):
-            preflight_tar(total)
+        cumulative = self.archive({"one": b"123456", "two": b"123456"})
+        with patch("searxng_archive.MAX_ARCHIVE_TOTAL_BYTES", 10):
+            with self.assertRaises(PreparationError):
+                preflight_tar(cumulative)
 
     def test_rejects_windows_aliases_ads_and_nonportable_segments(self):
         for name in ("source/file:stream", "source/C:evil", "source/CON.txt", "source/name. ", "source/a//b", "source/é.txt"):
@@ -137,6 +139,44 @@ class PrepareSearxngTests(unittest.TestCase):
         with self.assertRaises(PathValidationError):
             validate_archive_path("source/file.TXT", seen)
 
+    def test_validates_metadata_paths_before_ignoring_them(self):
+        for name in ("../._ignored", "__MACOSX/CON.txt", "__MACOSX/file:stream"):
+            with self.subTest(name=name), self.assertRaises(PreparationError):
+                safe_extract(self.archive({name: b"x"}), self.destination)
+
+    def test_recovery_uses_the_transaction_stamp_before_current_requirements(self):
+        root = self.source_root()
+        sidecar = root / "resources" / "searxng-sidecar"
+        transaction_stamp, current_stamp = "a" * 64, "b" * 64
+        destination = sidecar / "wheels"
+        destination.mkdir()
+        (destination / "old.whl").write_bytes(b"old")
+        (destination / ".requirements.sha256").write_text(current_stamp, encoding="ascii")
+        temporary = sidecar / ("wheels-new-" + "1" * 32)
+        temporary.mkdir()
+        (temporary / "new.whl").write_bytes(b"new")
+        (temporary / ".requirements.sha256").write_text(transaction_stamp, encoding="ascii")
+        journal = f"wheels-backup-{'2' * 32}\n{temporary.name}\n{transaction_stamp}\n"
+        (sidecar / ".prepare.transaction").write_bytes(journal.encode("ascii"))
+        recover_bundle(sidecar)
+        self.assertEqual((destination / "old.whl").read_bytes(), b"old")
+        self.assertFalse(temporary.exists())
+        self.assertFalse((sidecar / ".prepare.transaction").exists())
+
+    def test_cleanup_orphans_is_bounded_and_never_touches_unrelated_paths(self):
+        root = self.source_root()
+        sidecar = root / "resources" / "searxng-sidecar"
+        orphan = sidecar / ("wheels-new-" + "3" * 32)
+        orphan.mkdir()
+        journal_temp = sidecar / (".transaction-" + "4" * 32 + ".tmp")
+        journal_temp.write_bytes(b"partial")
+        keep = sidecar / "source"
+        with BundleLock(sidecar) as bundle_lock:
+            cleanup_orphans(sidecar, bundle_lock)
+        self.assertFalse(orphan.exists())
+        self.assertFalse(journal_temp.exists())
+        self.assertTrue(keep.exists())
+
     def test_hash_rejects_growth_after_the_verified_open(self):
         path = self.temp / "requirements.txt"
         path.write_bytes(b"x")
@@ -145,6 +185,12 @@ class PrepareSearxngTests(unittest.TestCase):
                 output.write(b"changed")
         with self.assertRaises(PreparationError):
             hash_regular_file(path, MAX_MEMBER_BYTES, after_open=grow)
+
+    def test_hash_reads_windows_crlf_as_binary(self):
+        path = self.temp / "requirements-crlf.txt"
+        content = b"first\r\nsecond\r\n"
+        path.write_bytes(content)
+        self.assertEqual(hash_regular_file(path, MAX_MEMBER_BYTES), hashlib.sha256(content).digest())
 
     def test_rejects_links_special_members_and_oversized_file(self):
         for kind in (tarfile.SYMTYPE, tarfile.LNKTYPE, tarfile.FIFOTYPE):
@@ -183,8 +229,16 @@ class PrepareSearxngTests(unittest.TestCase):
         linked = self.temp / "linked"
         linked.mkdir()
         if os.name == "nt":
+            node = shutil.which("node")
+            self.assertIsNotNone(node)
             subprocess.run(
-                ["cmd.exe", "/d", "/c", "mklink", "/J", str(self.destination / "source"), str(linked)],
+                [
+                    node,
+                    "-e",
+                    "require('node:fs').symlinkSync(process.argv[1], process.argv[2], 'junction')",
+                    str(linked),
+                    str(self.destination / "source"),
+                ],
                 check=True,
                 shell=False,
                 stdout=subprocess.DEVNULL,
@@ -262,7 +316,7 @@ class PrepareSearxngTests(unittest.TestCase):
         with self.assertRaisesRegex(PreparationError, "^SearXNG preparation failed$"):
             prepare(root, fail_download)
         self.assertEqual((wheels / "old.whl").read_bytes(), b"old")
-        self.assertFalse(any(wheels.parent.glob("wheels-new-*.tmp")))
+        self.assertFalse(any(wheels.parent.glob("wheels-new-*")))
 
     def test_rejects_excessive_downloaded_wheels_before_replacing_existing_bundle(self):
         root = self.source_root()
@@ -278,7 +332,7 @@ class PrepareSearxngTests(unittest.TestCase):
         with self.assertRaises(PreparationError):
             prepare(root, download_many)
         self.assertEqual((wheels / "old.whl").read_bytes(), b"old")
-        self.assertFalse(any(wheels.parent.glob("wheels-new-*.tmp")))
+        self.assertFalse(any(wheels.parent.glob("wheels-new-*")))
         def download_large(args, **_kwargs):
             directory = Path(args[args.index("--dest") + 1])
             if args[-1] == "wheel":
@@ -303,10 +357,11 @@ class PrepareSearxngTests(unittest.TestCase):
         sidecar = root / "resources" / "searxng-sidecar"
         source = sidecar / "source"
         stamp = self.source_hash(source)
+        old_stamp = "0" * 64
         wheels = sidecar / "wheels"
         wheels.mkdir()
         (wheels / "old.whl").write_bytes(b"old")
-        (wheels / ".requirements.sha256").write_text(stamp, encoding="ascii")
+        (wheels / ".requirements.sha256").write_text(old_stamp, encoding="ascii")
         (sidecar / ("wheels-new-" + "a" * 32)).mkdir()
         tokens = iter(["a" * 32, "b" * 32])
         temporary = temporary_directory(sidecar, "wheels-new-", lambda _size: next(tokens))
@@ -322,8 +377,8 @@ class PrepareSearxngTests(unittest.TestCase):
             publish_bundle(sidecar, temporary, stamp, replace=interrupted)
         self.assertFalse(wheels.exists())
         self.assertTrue(any(sidecar.glob("wheels-backup-*")))
-        recover_bundle(sidecar, stamp)
-        self.assertEqual((wheels / "old.whl").read_bytes(), b"old")
+        recover_bundle(sidecar)
+        self.assertEqual((wheels / "new.whl").read_bytes(), b"new")
         self.assertFalse((sidecar / ".prepare.transaction").exists())
         with BundleLock(sidecar):
             with self.assertRaises(PreparationError):
