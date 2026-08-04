@@ -91,7 +91,8 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   );
 
   assert.match(deb, /dpkg-deb/);
-  assert.match(deb, /NR > 4096/);
+  assert.match(deb, /MAX_CONTENT_ENTRIES=20000/);
+  assert.match(deb, /NR > max_entries/);
   assert.match(deb, /Package.*beaver/);
   assert.match(deb, /usr\/bin\/cl-go-dash/);
   assert.match(nsis, /Get-ItemProperty/);

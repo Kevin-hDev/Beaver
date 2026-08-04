@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -57,6 +57,31 @@ test("conserve la préparation CEF Unix après les étapes communes", async () =
     "searxng",
     "unix-cef",
   ]);
+});
+
+test("lance la préparation CEF Unix depuis le dossier Tauri", async () => {
+  const root = await realpath(await mkdtemp(join(tmpdir(), "beaver-release-")));
+  const tauriDir = join(root, "src-tauri");
+  const script = join(tauriDir, "scripts", "prepare-cef.sh");
+  const commands = [];
+  const skip = async () => {};
+  try {
+    await mkdir(join(tauriDir, "scripts"), { recursive: true });
+    await writeFile(script, "#!/usr/bin/env bash\n", "utf8");
+    await prepareRelease({
+      repoRoot: root,
+      platform: "linux",
+      prepareExtensions: skip,
+      prepareCefSource: skip,
+      buildFrontend: skip,
+      prepareUpdater: skip,
+      prepareSearxng: skip,
+      run: async (command) => commands.push(command),
+    });
+    assert.deepEqual(commands, [{ command: "bash", args: [script], cwd: tauriDir }]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("échoue fermée pour une plateforme ou des étapes invalides", async () => {

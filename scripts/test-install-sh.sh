@@ -101,6 +101,26 @@ for prefix in "" "./"; do
   fi
 done
 
+if ! {
+  awk 'BEGIN { for (i = 0; i < 5000; i += 1) print "-rw-r--r-- root/root usr/share/beaver/file-" i }'
+  printf '%s\n' \
+    "-rwxr-xr-x root/root usr/bin/cl-go-dash" \
+    "-rw-r--r-- root/root usr/share/applications/Beaver.desktop"
+} | validate_content_listing; then
+  printf "FAIL bounded large Debian content listing was rejected\n" >&2
+  exit 1
+fi
+
+if {
+  awk 'BEGIN { for (i = 0; i < 20001; i += 1) print "-rw-r--r-- root/root usr/share/beaver/file-" i }'
+  printf '%s\n' \
+    "-rwxr-xr-x root/root usr/bin/cl-go-dash" \
+    "-rw-r--r-- root/root usr/share/applications/Beaver.desktop"
+} | validate_content_listing; then
+  printf "FAIL oversized Debian content listing was accepted\n" >&2
+  exit 1
+fi
+
 if printf '%s\n' \
   "-rwxr-xr-x root/root usr/bin/cl-go-dash" \
   "-rwxr-xr-x root/root usr/bin/cl-go-dash" \

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 readonly MAX_PACKAGE_BYTES=2147483648
+readonly MAX_CONTENT_ENTRIES=20000
 
 fail() {
   printf 'Debian package validation failed.\n' >&2
@@ -25,8 +26,8 @@ read_control_field() {
 }
 
 validate_content_listing() {
-  awk '
-    NR > 4096 { overflow = 1; exit }
+  awk -v max_entries="${MAX_CONTENT_ENTRIES}" '
+    NR > max_entries { overflow = 1; next }
     {
       path = $NF
       sub(/^\.\//, "", path)

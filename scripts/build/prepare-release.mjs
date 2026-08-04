@@ -54,7 +54,8 @@ function defaultPreparations(run) {
     },
     async prepareUnixCef({ repoRoot }) {
       const script = await canonicalFile(repoRoot, "src-tauri", "scripts", "prepare-cef.sh");
-      await run({ command: "bash", args: [script], cwd: repoRoot });
+      const tauriDir = await canonicalDirectory(join(repoRoot, "src-tauri"));
+      await run({ command: "bash", args: [script], cwd: tauriDir });
     },
   };
 }
