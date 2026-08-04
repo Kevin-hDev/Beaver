@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { normalizeNewlines } from "./text-contracts.mjs";
 
-const workflow = readFileSync(".github/workflows/release.yml", "utf8");
+const workflow = normalizeNewlines(
+  readFileSync(".github/workflows/release.yml", "utf8"),
+);
 
 test("valide tout le projet et les métadonnées Beaver avant les builds", () => {
   assert.match(workflow, /\n  gate:\n/);
