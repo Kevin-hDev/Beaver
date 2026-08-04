@@ -5,8 +5,8 @@ param(
     [string]$BackupDirectory = "",
     [ValidateRange(1, 20000)]
     [int]$MaxFiles = 20000,
-    [ValidateRange(1, 1073741824)]
-    [long]$MaxBytes = 1073741824
+    [ValidateRange(1L, 8589934592L)]
+    [long]$MaxBytes = 4294967296L
 )
 
 $ErrorActionPreference = "Stop"

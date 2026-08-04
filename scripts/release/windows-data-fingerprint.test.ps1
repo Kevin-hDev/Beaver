@@ -28,6 +28,7 @@ try {
     $random.Dispose()
 }
 $name = -join @($randomBytes | ForEach-Object { $_.ToString("x2") })
+[Array]::Clear($randomBytes, 0, $randomBytes.Length)
 $temporaryBase = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd("\")
 $temporaryRoot = [IO.Path]::GetFullPath((Join-Path $temporaryBase $name))
 $source = Join-Path $temporaryRoot "source"
@@ -43,6 +44,7 @@ try {
     $first = & $script -Source $source -BackupDirectory $backup
     $second = & $script -Source $source
     Assert-Equal $first $second
+    Assert-Equal $first (& $script -Source $source -MaxBytes 4294967296)
     Assert-True ($first -match "^[A-F0-9]{64}$")
     Assert-True (Test-Path -LiteralPath (Join-Path $backup "a\one.txt") -PathType Leaf)
     Assert-Equal "one" ([IO.File]::ReadAllText((Join-Path $backup "a\one.txt")))
