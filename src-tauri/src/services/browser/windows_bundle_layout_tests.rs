@@ -87,7 +87,17 @@ fn windows_backend_ci_prepares_verified_cef_before_rust_checks() {
     let clippy = windows_job
         .find("cargo clippy --all-targets -- -D warnings")
         .expect("Windows Clippy check");
+    let runtime = windows_job
+        .find("Expose verified CEF test runtime")
+        .expect("CEF test runtime exposure");
+    let tests = windows_job
+        .find("cargo test --lib")
+        .expect("Windows unit tests");
     assert!(windows_job.contains("src-tauri/.cef-cache"));
     assert!(windows_job.contains("src-tauri/.cef-tool-cache"));
     assert!(preparation < clippy);
+    assert!(clippy < runtime);
+    assert!(runtime < tests);
+    assert!(windows_job.contains("target\\debug"));
+    assert!(windows_job.contains("libcef.dll"));
 }

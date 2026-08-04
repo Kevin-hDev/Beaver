@@ -89,6 +89,17 @@ jobs:
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
 
+      - name: Expose verified CEF test runtime
+        working-directory: src-tauri
+        shell: pwsh
+        run: |
+          $runtime = (Resolve-Path -LiteralPath "target\debug").Path
+          $library = Join-Path $runtime "libcef.dll"
+          if (-not (Test-Path -LiteralPath $library -PathType Leaf)) {
+            throw "CEF test runtime is unavailable"
+          }
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value $runtime -Encoding utf8
+
       - name: Windows unit tests
         working-directory: src-tauri
         run: cargo test --lib
