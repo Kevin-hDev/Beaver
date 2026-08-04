@@ -2,6 +2,7 @@ mod extension_contract_build;
 
 fn main() {
     configure_browser_runtime_cfg();
+    configure_windows_test_manifest();
     extension_contract_build::generate();
     prepare_cef_bundle_placeholders();
     prepare_updater_helper_placeholder();
@@ -10,6 +11,19 @@ fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
         println!("cargo:rustc-link-lib=framework=CoreServices");
     }
+}
+
+fn configure_windows_test_manifest() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+        return;
+    }
+    const COMMON_CONTROLS_V6: &str = concat!(
+        "/MANIFESTDEPENDENCY:\"",
+        "type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' ",
+        "processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"",
+    );
+    println!("cargo:rustc-link-arg-tests=/MANIFEST:EMBED");
+    println!("cargo:rustc-link-arg-tests={COMMON_CONTROLS_V6}");
 }
 
 fn configure_browser_runtime_cfg() {
