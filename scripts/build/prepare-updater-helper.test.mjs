@@ -35,7 +35,7 @@ test("construit le helper Windows ciblé et sa destination", () => {
   const plan = createUpdaterBuildPlan({
     platform: "win32",
     target: "x86_64-pc-windows-msvc",
-    tauriDir: "C:\\repo\\src-tauri",
+    tauriDir: process.cwd(),
   });
 
   assert.deepEqual(plan.cargoArgs, [

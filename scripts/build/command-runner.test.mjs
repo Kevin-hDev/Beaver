@@ -143,6 +143,24 @@ test("accepte les valeurs exactes aux limites", () => {
   );
 });
 
+test("accepte un environnement CI borné et refuse au-delà", () => {
+  const acceptedEnvironment = Object.fromEntries(
+    Array.from({ length: 256 }, (_, index) => [`CI_VALUE_${index}`, "x"]),
+  );
+  const oversizedEnvironment = {
+    ...acceptedEnvironment,
+    CI_VALUE_256: "x",
+  };
+
+  assert.doesNotThrow(() =>
+    validateCommandSpec(validSpec({ env: acceptedEnvironment })),
+  );
+  assert.throws(
+    () => validateCommandSpec(validSpec({ env: oversizedEnvironment })),
+    GENERIC_ERROR,
+  );
+});
+
 test("échoue fermée lors d'une erreur de lancement", async () => {
   const child = createChild();
   const pending = runCommand(validSpec(), () => child);
