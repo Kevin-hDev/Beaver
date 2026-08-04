@@ -36,6 +36,15 @@
 - **Stable token breakdown** — calculates context categories from the request actually sent to the provider and preserves them across tool calls and stream completion, preventing messages, tools, or meta context from being redistributed when final usage arrives.
 - **More accurate context accounting** — counts streamed output as estimated tokens instead of network fragments, applies provider-aware reasoning rules, and separates skill catalog descriptions from skill content loaded later in the conversation.
 
+### Directory access and isolation
+
+- **Reliable directory limits** — made the folders selected in Advanced settings the backend-enforced source of truth for sessions, projects, worktrees, file tools, and shell commands, with canonical path and symbolic-link checks that block access outside the approved roots.
+- **Flexible multi-folder access** — keeps full-disk access as the default while allowing users to authorize up to 70 separate folders, each with the same capabilities it would have under unrestricted access.
+- **Guided blocked-folder handling** — prevents sessions from silently accepting an unauthorized working directory and now offers a clear choice to cancel or open the exact setting required to change the permitted folders.
+- **Full development capabilities** — keeps Bash, controlled shell sessions, Git, package managers, dependency installation, compilation, tests, project-local tools, networking, and the user's development environment available inside authorized folders.
+- **Cross-platform process isolation** — confines shell file access with native protections on macOS, Linux, and Windows, including private temporary storage, bounded cleanup, fail-closed policy checks, and protections against traversal, symlink redirection, permission bypasses, and process injection.
+- **Protected application data** — lets agents read the Beaver configuration and resources needed to understand their environment while keeping the encrypted vault and internal shell data inaccessible, and bounds generated-file tracking so dependency installations no longer inflate session files excessively.
+
 ### Application shutdown
 
 - **Immediate close response** — hides Beaver and its dock icon as soon as quit is requested, so the application disappears without a prolonged loading state.
