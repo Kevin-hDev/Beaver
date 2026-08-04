@@ -5,6 +5,10 @@ import { delimiter, join } from "node:path";
 import test from "node:test";
 import * as cefExtract from "./cef-extract.mjs";
 
+test("large verified CEF archives keep a bounded extraction window", () => {
+  assert.equal(cefExtract.CEF_TAR_TIMEOUT_MS, 10 * 60 * 1000);
+});
+
 test("Windows CEF layout is flattened for cef-dll-sys", async (context) => {
   assert.equal(typeof cefExtract.normalizeWindowsCefLayout, "function");
   if (typeof cefExtract.normalizeWindowsCefLayout !== "function") return;
