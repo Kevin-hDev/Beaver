@@ -1,50 +1,50 @@
 mod browser_api_types;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod browser_events;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod browser_slot;
 mod browser_surface_api;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod browser_view_key;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_app;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_blocked_feature;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_client;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_cookie_gate;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_cookie_gate_cleanup;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod cef_cookie_gate_policy;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_diagnostics;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_display_handler;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_download_handler;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_engine;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_engine_config;
 #[cfg(target_os = "macos")]
 mod cef_library;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_life_span_handler;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_load_handler;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_permission_handler;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_request_handler;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_state_bridge;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_surface;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_surface_view;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod cef_text;
 #[cfg(any(test, target_os = "macos"))]
 mod cookie_store_probe;
@@ -68,7 +68,7 @@ mod native_paths;
 mod native_pump;
 #[cfg(target_os = "macos")]
 mod native_pump_wake;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod native_surface;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod navigation_target;
@@ -76,7 +76,7 @@ mod navigation_target;
 mod process_role;
 #[cfg(target_os = "macos")]
 mod pump_gate;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 mod pump_scheduler;
 mod runtime_handle;
 mod runtime_integration;
@@ -102,7 +102,7 @@ mod view_state;
 #[cfg(target_os = "windows")]
 pub(crate) mod windows_sandbox;
 
-#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
+#[cfg(all(test, native_browser))]
 mod browser_slot_tests;
 #[cfg(test)]
 mod build_policy_tests;
@@ -110,7 +110,7 @@ mod build_policy_tests;
 mod bundle_layout_tests;
 #[cfg(test)]
 mod cef_cookie_gate_policy_tests;
-#[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
+#[cfg(all(test, native_browser))]
 mod cef_diagnostics_tests;
 #[cfg(test)]
 mod cookie_store_probe_tests;

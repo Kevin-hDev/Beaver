@@ -17,6 +17,9 @@ cef-test-profile = []
 # Permet de vérifier le code Windows depuis un autre OS sans télécharger ni
 # lier le runtime natif. Les installateurs n'activent jamais cette option.
 cef-cross-check = ["cef/dox"]
+# Le binaire de tests Windows ne suit pas le bootstrap CEF de l'application.
+# Ce profil garde les tests Rust exécutables sans charger libcef.dll au démarrage.
+windows-tests = ["cef/dox"]
 
 [[bin]]
 name = "cl-go-dash"

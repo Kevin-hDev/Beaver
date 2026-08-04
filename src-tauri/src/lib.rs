@@ -21,8 +21,11 @@ mod storage_migration;
 mod storage_migration_files;
 mod tray;
 pub mod updater_worker;
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
 mod windows_entry;
+#[cfg(all(test, target_os = "windows", feature = "windows-tests"))]
+#[path = "windows_entry_plan.rs"]
+mod windows_entry_plan;
 
 use services::agent_local::ollama_client::OllamaClient;
 use services::gateway::GatewayService;
@@ -31,7 +34,7 @@ use services::scheduler::Scheduler;
 use tauri::{Emitter, Manager};
 
 pub use runtime_state::ActiveStreams;
-#[cfg(target_os = "windows")]
+#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
 pub use startup::launch_windows_browser_host;
 pub use startup::{
     configure_git_network_policy, initialize_shell_environment, prepare_browser_native_application,

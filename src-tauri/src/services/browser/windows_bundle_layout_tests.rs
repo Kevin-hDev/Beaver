@@ -72,7 +72,7 @@ fn windows_private_storage_ci_does_not_load_the_cef_runtime() {
 }
 
 #[test]
-fn windows_backend_ci_checks_native_cef_but_delays_loading_it_for_tests() {
+fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let workflow =
         std::fs::read_to_string(root.join("../.github/workflows/ci.yml")).expect("CI workflow");
@@ -94,7 +94,7 @@ fn windows_backend_ci_checks_native_cef_but_delays_loading_it_for_tests() {
     assert!(windows_job.contains("src-tauri/.cef-tool-cache"));
     assert!(preparation < clippy);
     assert!(clippy < tests);
-    assert_eq!(windows_job.matches("/DELAYLOAD:libcef.dll").count(), 2);
-    assert_eq!(windows_job.matches("delayimp.lib").count(), 2);
-    assert!(!windows_job.contains("cef-cross-check"));
+    assert_eq!(windows_job.matches("--features windows-tests").count(), 3);
+    assert!(!windows_job.contains("/DELAYLOAD:libcef.dll"));
+    assert!(!windows_job.contains("delayimp.lib"));
 }

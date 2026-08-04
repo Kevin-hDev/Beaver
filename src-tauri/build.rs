@@ -1,6 +1,7 @@
 mod extension_contract_build;
 
 fn main() {
+    configure_browser_runtime_cfg();
     extension_contract_build::generate();
     prepare_cef_bundle_placeholders();
     prepare_updater_helper_placeholder();
@@ -8,6 +9,16 @@ fn main() {
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
         println!("cargo:rustc-link-lib=framework=CoreServices");
+    }
+}
+
+fn configure_browser_runtime_cfg() {
+    println!("cargo:rustc-check-cfg=cfg(native_browser)");
+    println!("cargo:rerun-if-env-changed=CARGO_FEATURE_WINDOWS_TESTS");
+    let target = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    let windows_tests = std::env::var_os("CARGO_FEATURE_WINDOWS_TESTS").is_some();
+    if target == "macos" || (target == "windows" && !windows_tests) {
+        println!("cargo:rustc-cfg=native_browser");
     }
 }
 

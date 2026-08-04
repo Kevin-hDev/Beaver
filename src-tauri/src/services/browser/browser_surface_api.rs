@@ -1,10 +1,10 @@
 use super::browser_api_types::{
     BrowserCommandError, BrowserNavigationAction, BrowserSurfaceRequest,
 };
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 use super::{browser_view_key::BrowserViewKey, runtime_handle::BrowserCapability};
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 pub async fn apply_surface(
     app: tauri::AppHandle,
     request: BrowserSurfaceRequest,
@@ -24,7 +24,7 @@ pub async fn apply_surface(
     .await
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(native_browser))]
 pub async fn apply_surface(
     _app: tauri::AppHandle,
     request: BrowserSurfaceRequest,
@@ -39,7 +39,7 @@ pub async fn apply_surface(
     Err(BrowserCommandError::Unavailable)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 pub async fn run_navigation_action(
     app: tauri::AppHandle,
     conversation_id: String,
@@ -54,7 +54,7 @@ pub async fn run_navigation_action(
     .await
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 pub async fn navigate_native_view(
     app: tauri::AppHandle,
     conversation_id: String,
@@ -67,7 +67,7 @@ pub async fn navigate_native_view(
     run_on_main(app, move |_| super::cef_engine::navigate(&key, &url)).await
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(native_browser))]
 pub async fn navigate_native_view(
     _app: tauri::AppHandle,
     _conversation_id: String,
@@ -77,7 +77,7 @@ pub async fn navigate_native_view(
     Err(BrowserCommandError::Unavailable)
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(native_browser))]
 pub async fn run_navigation_action(
     _app: tauri::AppHandle,
     _conversation_id: String,
@@ -87,7 +87,7 @@ pub async fn run_navigation_action(
     Err(BrowserCommandError::Unavailable)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 pub async fn close_native_view(
     app: tauri::AppHandle,
     conversation_id: String,
@@ -100,7 +100,7 @@ pub async fn close_native_view(
     .await
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+#[cfg(not(native_browser))]
 pub async fn close_native_view(
     _app: tauri::AppHandle,
     _conversation_id: String,
@@ -109,7 +109,7 @@ pub async fn close_native_view(
     Err(BrowserCommandError::Unavailable)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 async fn run_on_main(
     app: tauri::AppHandle,
     operation: impl FnOnce(&tauri::AppHandle) -> Result<(), ()> + Send + 'static,
@@ -126,14 +126,14 @@ async fn run_on_main(
         .map_err(|_| BrowserCommandError::Unavailable)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 fn ensure_ready(app: &tauri::AppHandle) -> Result<(), BrowserCommandError> {
     matches!(super::capability(app), BrowserCapability::Ready { .. })
         .then_some(())
         .ok_or(BrowserCommandError::Unavailable)
 }
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[cfg(native_browser)]
 fn invalid(_: ()) -> BrowserCommandError {
     BrowserCommandError::InvalidInput
 }
