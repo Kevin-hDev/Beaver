@@ -34,12 +34,12 @@ name = "cl-go-dash-updater"
 path = "src/bin/cl-go-dash-updater.rs"
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "=2.6.3", features = [] }
 serde_json = "1"
 
 [dependencies]
 # Framework
-tauri = { version = "2", features = ["macos-private-api", "tray-icon", "image-png"] }
+tauri = { version = "=2.11.4", features = ["macos-private-api", "tray-icon", "image-png"] }
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"

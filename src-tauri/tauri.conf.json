@@ -5,7 +5,7 @@
   "identifier": "com.clgo.dash",
   "build": {
     "beforeDevCommand": "node scripts/extensions/prepare-extension-host.mjs --dev && node scripts/cef/prepare-cef-source.mjs && npm run dev",
-    "beforeBuildCommand": "node scripts/extensions/prepare-extension-host.mjs && node scripts/cef/prepare-cef-source.mjs && npm run build && cd src-tauri && bash scripts/prepare-updater-helper.sh && bash scripts/prepare-searxng.sh && bash scripts/prepare-cef.sh",
+    "beforeBuildCommand": "node scripts/build/prepare-release.mjs",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },

@@ -99,13 +99,17 @@ fn development_command_verifies_cef_before_starting_vite() {
         .pointer("/build/beforeBuildCommand")
         .and_then(|value| value.as_str())
         .expect("beforeBuildCommand");
-    assert!(release_command.contains("prepare-updater-helper.sh"));
+    assert_eq!(release_command, "node scripts/build/prepare-release.mjs");
+    assert!(!release_command.contains("prepare-updater-helper.sh"));
+    assert!(!release_command.contains("prepare-searxng.sh"));
 
-    let helper_script = std::fs::read_to_string(
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/prepare-updater-helper.sh"),
-    )
-    .expect("updater helper preparation");
-    assert!(helper_script.contains("cmp -s \"$source_path\" \"$destination\""));
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("repository root");
+    let preparation = std::fs::read_to_string(repository.join("scripts/build/prepare-release.mjs"))
+        .expect("native release preparation");
+    assert!(preparation.contains("prepare-updater-helper.mjs"));
+    assert!(preparation.contains("prepare-searxng.mjs"));
 }
 
 #[test]
