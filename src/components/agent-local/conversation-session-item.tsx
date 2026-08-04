@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { RefObject, MouseEvent } from "react";
-import { ChatsCircle, DotsThreeVertical } from "@/components/ui/icons";
+import { DotsThreeVertical } from "@/components/ui/icons";
 import { ChannelIcon } from "@/components/channels/channel-icon";
 import type { AgentSessionMeta } from "@/types/agent";
 import type { ChannelType } from "@/types/channels";
@@ -70,11 +70,6 @@ export function ConversationSessionItem({
         <>
           {showUnread && <span className="conv-unread-dot" aria-hidden="true" />}
           <span className="conv-session-main">
-            <ChatsCircle
-              size="var(--icon-sm)"
-              weight={active ? "fill" : "regular"}
-              className={`conv-icon ${isRunning ? "conv-running-icon" : ""}`}
-            />
             <span className={`conv-name ${isRunning ? "thinking-active" : ""}`}>
               <span>{displaySessionName(session.name, t)}</span>
             </span>

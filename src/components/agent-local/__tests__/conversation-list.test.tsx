@@ -28,9 +28,6 @@ vi.mock("@/components/ui/icons", () => ({
   Pencil: () => <span />,
   CaretRight: () => <span data-testid="section-chevron" />,
   DotsThreeVertical: () => <span data-testid="dots" />,
-	  ChatsCircle: (props: { weight?: string; className?: string }) => (
-	    <span data-testid="chat-icon" data-weight={props.weight} className={props.className} />
-	  ),
   FolderOpen: () => <span />,
   FolderSimple: () => <span />,
   PencilSimple: () => <span />,
@@ -193,26 +190,21 @@ describe("ConversationList", () => {
     expect(getByTestId("context-menu")).not.toBeNull();
   });
 
-  it("affiche l'icône chat avec weight=fill pour la session active", () => {
-    const session = makeSession({ id: "s1" });
-    const { container } = render(
-      <ConversationList {...defaultProps} sessions={[session]} selectedId="s1" />,
-    );
-    // L'icône de la session active doit avoir weight=fill
-    const activeItem = container.querySelector(".conv-session-indented.active");
-    const icon = activeItem?.querySelector("[data-testid='chat-icon']");
-    expect(icon?.getAttribute("data-weight")).toBe("fill");
-  });
-
-  it("affiche l'icône chat avec weight=regular pour les sessions inactives", () => {
+  /* L'icône de session marquait l'état actif par son remplissage et a été
+     retirée de la ligne. La distinction tient maintenant à la seule classe
+     active, que le CSS traduit en fond et en couleur d'encre. */
+  it("distingue la session active des autres", () => {
     const s1 = makeSession({ id: "s1" });
     const s2 = makeSession({ id: "s2", name: "Autre" });
-    const { getAllByTestId } = render(
+    const { container } = render(
       <ConversationList {...defaultProps} sessions={[s1, s2]} selectedId="s1" />,
     );
-    const weights = getAllByTestId("chat-icon").map((el) => el.getAttribute("data-weight"));
-    expect(weights).toContain("fill");
-    expect(weights).toContain("regular");
+
+    const actives = container.querySelectorAll(".conv-session-indented.active");
+
+    expect(container.querySelectorAll(".conv-session-indented")).toHaveLength(2);
+    expect(actives).toHaveLength(1);
+    expect(actives[0].getAttribute("data-nav-active")).toBe("true");
   });
 
   it("n'affiche pas les sous-agents (parent_session_id défini) même sans project_id", () => {

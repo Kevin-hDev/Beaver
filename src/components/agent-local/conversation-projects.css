@@ -139,7 +139,11 @@
   background: var(--edge);
 }
 
-/* Indented sessions under a project */
+/* Le nom de session s'aligne sur le nom de projet, pas sur son icône : la somme
+   reprend terme pour terme le retrait de .conv-project-header — sa marge
+   interne, la largeur de l'icône de dossier, puis l'écart qui la sépare du
+   texte. En tokens et non en pixels, pour que l'alignement tienne à toutes les
+   tailles de police. */
 .conv-session-indented {
-  padding-left: calc(var(--space-sm) + 14px + var(--space-xs) - 8px);
+  padding-left: calc(var(--space-sm) + var(--icon-sm) + var(--space-xs));
 }

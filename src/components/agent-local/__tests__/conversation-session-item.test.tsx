@@ -52,13 +52,14 @@ function renderItem(overrides: Partial<Parameters<typeof ConversationSessionItem
 }
 
 describe("ConversationSessionItem", () => {
-  it("anime l'icône et le nom quand la session est en cours", () => {
+  /* L'icône de session portait le second signal d'exécution et a été retirée de
+     la ligne : le nom scintillant reste seul à dire qu'une session tourne. */
+  it("anime le nom quand la session est en cours", () => {
     const { container } = renderItem({ isRunning: true });
     const item = container.querySelector(".conv-session-indented");
 
     expect(item?.classList.contains("is-running")).toBe(true);
     expect(item?.querySelector(".conv-name.thinking-active")).not.toBeNull();
-    expect(item?.querySelector(".conv-running-icon")).not.toBeNull();
   });
 
   it("affiche le point terminé pour une session non active", () => {

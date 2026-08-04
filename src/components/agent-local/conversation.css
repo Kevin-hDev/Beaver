@@ -131,10 +131,6 @@
   animation: thinking-shimmer 2s ease-in-out infinite;
 }
 
-.conv-running-icon {
-  animation: conv-running-icon-shimmer 2s ease-in-out infinite;
-}
-
 .conv-name {
   flex: 1;
   min-width: 0;
@@ -144,17 +140,6 @@
 }
 
 /* thinking-shimmer vit dans global.css : partagé avec les libellés d'outils. */
-
-@keyframes conv-running-icon-shimmer {
-  0%, 100% {
-    color: var(--ink-faint);
-    opacity: 0.7;
-  }
-  50% {
-    color: var(--ink);
-    opacity: 1;
-  }
-}
 
 .conv-session-tail {
   display: inline-grid;
