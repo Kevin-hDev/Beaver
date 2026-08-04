@@ -9,6 +9,7 @@ fn claude_spec(home: &Path) -> SourceSpec {
         .unwrap()
 }
 
+#[cfg(unix)]
 fn write_skill(path: &Path, name: &str) {
     std::fs::create_dir_all(path).unwrap();
     std::fs::write(

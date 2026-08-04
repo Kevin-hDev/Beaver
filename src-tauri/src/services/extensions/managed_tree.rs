@@ -63,7 +63,9 @@ fn inspect_entry(
 
 #[cfg(test)]
 mod tests {
-    use super::{validate, OperationFailure};
+    use super::validate;
+    #[cfg(unix)]
+    use super::OperationFailure;
 
     #[test]
     fn accepts_a_small_regular_tree() {

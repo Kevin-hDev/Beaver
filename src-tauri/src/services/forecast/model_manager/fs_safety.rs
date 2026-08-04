@@ -68,7 +68,9 @@ pub(super) fn bounded_directory_size(root: &Path) -> Option<u64> {
 
 #[cfg(test)]
 mod tests {
-    use super::{bounded_directory_size, remove_path};
+    use super::bounded_directory_size;
+    #[cfg(unix)]
+    use super::remove_path;
 
     #[test]
     fn directory_size_counts_only_regular_files() {

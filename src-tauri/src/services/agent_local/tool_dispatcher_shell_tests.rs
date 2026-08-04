@@ -1,6 +1,8 @@
 use super::super::types_tools::ShellOutput;
 use super::super::tool_result_contract::ToolResultStatus;
+#[cfg(not(target_os = "windows"))]
 use serde_json::json;
+#[cfg(not(target_os = "windows"))]
 use tokio_util::sync::CancellationToken;
 
 fn output(stdout: &str, stderr: &str, exit_code: i32, running: bool) -> ShellOutput {

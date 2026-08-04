@@ -1,6 +1,8 @@
 use crate::services::agent_local::tool_files::{
-    edit_file, read_file, write_file, write_file_in_roots, DEFAULT_LIMIT,
+    edit_file, read_file, write_file_in_roots, DEFAULT_LIMIT,
 };
+#[cfg(unix)]
+use crate::services::agent_local::tool_files::write_file;
 use crate::services::agent_local::tool_result_contract::ToolResultStatus;
 // MAX_LIMIT est 50_000 — on le réimporte pour les tests de borne
 const MAX_LIMIT: usize = 50_000;

@@ -130,7 +130,7 @@ async fn write_session_input(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub async fn execute_shell(
     command: &str,
     working_dir: &Path,

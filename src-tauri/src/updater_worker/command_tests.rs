@@ -1,6 +1,9 @@
+#[cfg(unix)]
 use std::ffi::OsString;
+#[cfg(unix)]
 use std::time::Duration;
 
+#[cfg(unix)]
 use super::{run_bounded_output, run_status, CommandSpec};
 
 #[cfg(unix)]
