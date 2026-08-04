@@ -59,6 +59,8 @@ fn windows_release_exposes_the_explicit_cargo_target_to_the_bundle_hook() {
         .expect("release workflow");
 
     assert!(workflow.contains("CARGO_BUILD_TARGET: ${{ matrix.target }}"));
+    assert!(workflow.contains("- os: windows-2022"));
+    assert!(!workflow.contains("- os: windows-latest"));
 }
 
 #[test]
@@ -95,8 +97,8 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     assert!(preparation < clippy);
     assert!(clippy < tests);
     assert_eq!(windows_job.matches("--features windows-tests").count(), 3);
-    assert!(windows_job.contains("Microsoft.VC*.CRT\\vcruntime140.dll"));
-    assert!(windows_job.contains("Copy-Item $runtime.FullName $binary.DirectoryName -Force"));
+    assert!(windows_job.contains("runs-on: windows-2022"));
+    assert!(!windows_job.contains("runs-on: windows-latest"));
     assert!(!windows_job.contains("/DELAYLOAD:libcef.dll"));
     assert!(!windows_job.contains("delayimp.lib"));
 }

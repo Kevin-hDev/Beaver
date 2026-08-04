@@ -143,7 +143,7 @@ jobs:
             bundles: deb
             bundle_dir: deb
             asset_suffix: _amd64.deb
-          - os: windows-latest
+          - os: windows-2022
             target: x86_64-pc-windows-msvc
             label: beaver-windows-x64
             bundles: nsis
