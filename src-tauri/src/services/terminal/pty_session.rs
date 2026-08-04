@@ -3,9 +3,11 @@ use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 
 pub struct PtySession {
-    master: Box<dyn portable_pty::MasterPty + Send>,
-    child: Box<dyn portable_pty::Child + Send + Sync>,
+    // Rust drops fields in declaration order. ConPTY requires its input and
+    // child handles to close before ClosePseudoConsole runs for the master.
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
+    child: Box<dyn portable_pty::Child + Send + Sync>,
+    master: Box<dyn portable_pty::MasterPty + Send>,
 }
 
 impl PtySession {
@@ -65,9 +67,9 @@ impl PtySession {
             .map_err(|e| format!("take writer: {}", e))?;
 
         let session = Self {
-            master: pair.master,
-            child,
             writer: Arc::new(Mutex::new(writer)),
+            child,
+            master: pair.master,
         };
 
         Ok((session, reader))
