@@ -10,6 +10,8 @@ $MaxSourceBytes = 65536
 $MaxInstallerBytes = 2147483648
 $MaxIconBytes = 8388608
 $MaxUpdaterHelperBytes = 67108864
+$MaxExtensionHostBytes = 4194304
+$MaxNodeRuntimeBytes = 268435456
 $Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "../.."))
 $RootPrefix = $Root.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 
@@ -144,14 +146,29 @@ function Test-InstalledState {
     if (-not (Test-FullyQualifiedWindowsPath $installDir)) {
         Stop-Validation
     }
-    $binary = Join-Path $installDir "cl-go-dash.exe"
+    $binary = Join-ValidatedWindowsPath $installDir "cl-go-dash.exe"
+    if ([string]::IsNullOrWhiteSpace($binary)) {
+        Stop-Validation
+    }
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
         Stop-Validation
     }
     Test-AssociatedIcon $binary
 
-    $helperPath = Join-Path $installDir "target\updater-helper\cl-go-dash-updater.exe"
+    $helperPath = Join-ValidatedWindowsPath $installDir "target\updater-helper\cl-go-dash-updater.exe"
+    if ([string]::IsNullOrWhiteSpace($helperPath)) {
+        Stop-Validation
+    }
     if (-not (Test-UpdaterHelper $helperPath $MaxUpdaterHelperBytes)) {
+        Stop-Validation
+    }
+
+    $extensionHost = Join-ValidatedWindowsPath $installDir "resources\extension-host\host.mjs"
+    $nodeRuntime = Join-ValidatedWindowsPath $installDir "resources\extension-host\runtime\node.exe"
+    if (
+        -not (Test-UpdaterHelper $extensionHost $MaxExtensionHostBytes) -or
+        -not (Test-UpdaterHelper $nodeRuntime $MaxNodeRuntimeBytes)
+    ) {
         Stop-Validation
     }
 

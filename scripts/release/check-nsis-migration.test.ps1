@@ -46,6 +46,13 @@ try {
     Assert-True (Test-FullyQualifiedWindowsPath "C:\Apps\Beaver")
     Assert-False (Test-FullyQualifiedWindowsPath "C:Beaver")
     Assert-False (Test-FullyQualifiedWindowsPath "C:\Apps\..\Beaver")
+    Assert-True ($null -ne (Get-Command Join-ValidatedWindowsPath -ErrorAction SilentlyContinue))
+    $extendedBinary = Join-ValidatedWindowsPath "\\?\C:\Apps\Beaver" "cl-go-dash.exe"
+    Assert-True ($extendedBinary -ceq "C:\Apps\Beaver\cl-go-dash.exe")
+    Assert-True ($null -eq (Join-ValidatedWindowsPath "C:\Apps\Beaver" "..\outside.exe"))
+    Assert-True ($null -eq (Join-ValidatedWindowsPath "C:\Apps\Beaver" "sub\..\inside.exe"))
+    Assert-True ($null -eq (Join-ValidatedWindowsPath "C:\Apps\Beaver" "sub/../inside.exe"))
+    Assert-True ($null -eq (Join-ValidatedWindowsPath "C:\Apps\Beaver" "D:\outside.exe"))
     Assert-True (Test-BeaverShortcutState @($startLink) @() $binary)
     Assert-True (Test-BeaverShortcutState @($startLink) @($desktopLink) $binary)
     Assert-False (Test-BeaverShortcutState @($startLink) @($desktopLink, $secondDesktop) $binary)

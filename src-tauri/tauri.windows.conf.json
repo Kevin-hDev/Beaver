@@ -5,6 +5,7 @@
   "bundle": {
     "resources": {
       "default-skills/": "default-skills/",
+      "resources/extension-host/": "resources/extension-host/",
       "resources/forecast-sidecar/": "resources/forecast-sidecar/",
       "resources/searxng-sidecar/": "resources/searxng-sidecar/",
       "target/updater-helper/cl-go-dash-updater.exe": "target/updater-helper/cl-go-dash-updater.exe",

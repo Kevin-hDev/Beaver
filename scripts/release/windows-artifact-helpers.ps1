@@ -36,6 +36,40 @@ function Test-FullyQualifiedWindowsPath([string]$Path) {
     return -not [string]::IsNullOrEmpty($root) -and $root.EndsWith("\")
 }
 
+function Join-ValidatedWindowsPath([string]$BasePath, [string]$ChildPath) {
+    if (
+        -not (Test-FullyQualifiedWindowsPath $BasePath) -or
+        [string]::IsNullOrWhiteSpace($ChildPath) -or
+        [IO.Path]::IsPathRooted($ChildPath) -or
+        $ChildPath -match "(^|[\\/])\.\.([\\/]|$)"
+    ) {
+        return $null
+    }
+
+    if ($BasePath.StartsWith("\\?\UNC\", [StringComparison]::OrdinalIgnoreCase)) {
+        $normalizedBase = "\\" + $BasePath.Substring(8)
+    } elseif ($BasePath.StartsWith("\\?\", [StringComparison]::Ordinal)) {
+        $normalizedBase = $BasePath.Substring(4)
+        if ($normalizedBase -notmatch "^[A-Za-z]:\\") {
+            return $null
+        }
+    } else {
+        $normalizedBase = $BasePath
+    }
+
+    try {
+        $base = [IO.Path]::GetFullPath($normalizedBase).TrimEnd("\")
+        $joined = [IO.Path]::GetFullPath([IO.Path]::Combine($base, $ChildPath))
+        $prefix = $base + "\"
+        if (-not $joined.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+            return $null
+        }
+        return $joined
+    } catch {
+        return $null
+    }
+}
+
 function Test-BeaverShortcutState(
     [object[]]$StartMenuShortcuts,
     [object[]]$DesktopShortcuts,
