@@ -66,17 +66,26 @@ async function ensureDestinationParent(destination) {
 }
 
 function sameIdentity(first, second) {
-  return first.dev === second.dev && first.ino === second.ino && first.size === second.size;
+  return (
+    first.dev === second.dev &&
+    first.ino === second.ino &&
+    first.size === second.size &&
+    first.nlink === second.nlink &&
+    first.mode === second.mode &&
+    first.ctimeMs === second.ctimeMs &&
+    first.mtimeMs === second.mtimeMs
+  );
 }
 
-async function checkedFile(path, maxBytes) {
+async function checkedFile(path, maxBytes, maxLinks = 1) {
   try {
     const info = await lstat(path);
     const canonical = await realpath(path);
     if (
       !info.isFile() ||
       info.isSymbolicLink() ||
-      info.nlink > 1 ||
+      info.nlink < 1 ||
+      info.nlink > maxLinks ||
       info.size < 1 ||
       info.size > maxBytes ||
       comparablePath(path) !== comparablePath(canonical)
@@ -117,7 +126,7 @@ async function digestFile(path, maxBytes) {
 }
 
 async function copyToTemporary(source, temporary, maxBytes) {
-  const before = await checkedFile(source, maxBytes);
+  const before = await checkedFile(source, maxBytes, 2);
   let input;
   let output;
   try {
@@ -155,7 +164,7 @@ export async function copyVerifiedAtomic(source, destination, maxBytes = MAX_HEL
     validateAbsolutePath(source);
     validateAbsolutePath(destination);
     if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > MAX_HELPER_BYTES || comparablePath(source) === comparablePath(destination)) fail();
-    await checkedFile(source, maxBytes);
+    await checkedFile(source, maxBytes, 2);
     const parent = await ensureDestinationParent(destination);
     try {
       const existing = await lstat(destination);

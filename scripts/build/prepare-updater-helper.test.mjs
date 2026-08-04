@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   lstat,
+  link,
   mkdtemp,
   mkdir,
   readFile,
@@ -80,6 +81,35 @@ test("copie le helper et vérifie son contenu", async () => {
 
     assert.deepEqual(await readFile(destination), Buffer.from("verified helper"));
     assert.equal((await lstat(destination)).isFile(), true);
+  });
+});
+
+test("remplace le placeholder Windows existant", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const source = join(directory, "source.exe");
+    const destination = join(directory, "target", "updater-helper", "helper.exe");
+    await mkdir(dirname(destination), { recursive: true });
+    await writeFile(source, Buffer.from("compiled helper"));
+    await writeFile(destination, Buffer.alloc(0));
+
+    await copyVerifiedAtomic(source, destination, 64 * 1024 * 1024);
+
+    assert.deepEqual(await readFile(destination), Buffer.from("compiled helper"));
+  });
+});
+
+test("accepte le lien physique borné produit par Cargo", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const source = join(directory, "release", "helper.exe");
+    const cargoCopy = join(directory, "release", "deps", "helper.exe");
+    const destination = join(directory, "updater-helper", "helper.exe");
+    await mkdir(dirname(cargoCopy), { recursive: true });
+    await writeFile(source, Buffer.from("cargo helper"));
+    await link(source, cargoCopy);
+
+    await copyVerifiedAtomic(source, destination, 64 * 1024 * 1024);
+
+    assert.deepEqual(await readFile(destination), Buffer.from("cargo helper"));
   });
 });
 
