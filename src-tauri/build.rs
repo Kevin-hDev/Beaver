@@ -14,7 +14,9 @@ fn main() {
 }
 
 fn configure_windows_test_manifest() {
-    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
+    let is_windows = std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows");
+    let is_windows_test_build = std::env::var_os("CARGO_FEATURE_WINDOWS_TESTS").is_some();
+    if !is_windows || !is_windows_test_build {
         return;
     }
     const COMMON_CONTROLS_V6: &str = concat!(
@@ -22,8 +24,8 @@ fn configure_windows_test_manifest() {
         "type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' ",
         "processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"",
     );
-    println!("cargo:rustc-link-arg-tests=/MANIFEST:EMBED");
-    println!("cargo:rustc-link-arg-tests={COMMON_CONTROLS_V6}");
+    println!("cargo:rustc-link-arg=/MANIFEST:EMBED");
+    println!("cargo:rustc-link-arg={COMMON_CONTROLS_V6}");
 }
 
 fn configure_browser_runtime_cfg() {
