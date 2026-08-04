@@ -7,10 +7,10 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 38,
   CLGO: 18,
-  "cl-go-dash": 184,
-  clgo: 114,
-  "cl-go": 95,
-  cl_go_dash: 8,
+  "cl-go-dash": 197,
+  clgo: 105,
+  "cl-go": 92,
+  cl_go_dash: 18,
 });
 
 export const COMPATIBILITY_CONTRACTS = Object.freeze([
@@ -65,7 +65,6 @@ export const COMPATIBILITY_CONTRACTS = Object.freeze([
     "clgo-font-size",
     "clgo-font-family",
     "clgo-code-theme",
-    "clgo-sidebar-expand",
   ]),
   contract("aperçus persistants", "src/hooks/file-preview-storage.ts", [
     "clgo-file-preview-tabs:",
@@ -121,7 +120,7 @@ export const COMPATIBILITY_CONTRACTS = Object.freeze([
     ['".cl-go-transaction-{transaction_id}"', '".cl-go-{}.tmp"'],
   ),
   contract("mascotte Rust", "src-tauri/src/models/mascot.rs", ['"cl-go-beaver"']),
-  contract("mascotte frontend", "src/services/mascot.ts", ['"cl-go-beaver"']),
+  contract("mascotte frontend", "src/types/mascot.ts", ['"cl-go-beaver"']),
   contract("manifest de mascotte", "src/assets/mascot/cl-go-beaver/manifest.json", [
     '"id": "cl-go-beaver"',
   ]),

@@ -100,7 +100,9 @@
       "profilePaths": [
         "agent-sessions/index.json",
         "agent-sessions/550e8400-e29b-41d4-a716-446655440000.json",
+        "extension-session-state/550e8400-e29b-41d4-a716-446655440000.json",
         "plans/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440001.md",
+        "session-workspaces/550e8400-e29b-41d4-a716-446655440000",
         "tool-results/550e8400-e29b-41d4-a716-446655440000/result.txt"
       ],
       "contracts": [
@@ -119,6 +121,16 @@
         {
           "file": "src-tauri/src/services/agent_local/tool_result_budget.rs",
           "snippets": [".join(\"tool-results\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/extension_session_state.rs",
+          "snippets": [".join(\"extension-session-state\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/tool_workspace_notice.rs",
+          "snippets": [".join(\"session-workspaces\")"]
         }
       ],
       "evidence": [
@@ -438,8 +450,11 @@
       "id": "providers",
       "profilePaths": [
         "provider-usage.json",
+        "provider-request-metrics.json",
         "favorite-models.json",
         "litellm-models.json",
+        "extension-discovery-preferences.json",
+        "extension-tool-usage.json",
         "searxng-sidecar/.venv/bin/python",
         "searxng-sidecar/.source-archive.sha256",
         "searxng-sidecar/settings.yml"
@@ -454,8 +469,24 @@
           "snippets": [".join(\"favorite-models.json\")"]
         },
         {
-          "file": "src-tauri/src/services/llm/model_registry_refresh.rs",
+          "scope": "migration",
+          "file": "src-tauri/src/services/llm/litellm_catalog_refresh.rs",
           "snippets": [".join(\"litellm-models.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/provider_usage/request_journal_store.rs",
+          "snippets": [".join(\"provider-request-metrics.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/extensions/discovery_preferences.rs",
+          "snippets": [".join(\"extension-discovery-preferences.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/extensions/discovery_usage.rs",
+          "snippets": [".join(\"extension-tool-usage.json\")"]
         },
         {
           "file": "src-tauri/src/services/searxng/paths.rs",
@@ -560,8 +591,7 @@
           "snippets": [
             "\"clgo-font-size\"",
             "\"clgo-font-family\"",
-            "\"clgo-code-theme\"",
-            "\"clgo-sidebar-expand\""
+            "\"clgo-code-theme\""
           ]
         },
         {
