@@ -88,8 +88,8 @@ fn windows_backend_ci_prepares_verified_cef_before_rust_checks() {
         .find("cargo clippy --all-targets -- -D warnings")
         .expect("Windows Clippy check");
     let runtime = windows_job
-        .find("Expose verified CEF test runtime")
-        .expect("CEF test runtime exposure");
+        .find("Stage verified CEF beside Windows test binaries")
+        .expect("CEF test runtime staging");
     let tests = windows_job
         .find("cargo test --lib")
         .expect("Windows unit tests");
@@ -98,6 +98,8 @@ fn windows_backend_ci_prepares_verified_cef_before_rust_checks() {
     assert!(preparation < clippy);
     assert!(clippy < runtime);
     assert!(runtime < tests);
-    assert!(windows_job.contains("target\\debug"));
+    assert!(windows_job.contains("target\\debug\\deps"));
     assert!(windows_job.contains("libcef.dll"));
+    assert!(windows_job.contains("dxcompiler.dll"));
+    assert!(windows_job.contains("dxil.dll"));
 }

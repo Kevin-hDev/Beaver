@@ -89,16 +89,37 @@ jobs:
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
 
-      - name: Expose verified CEF test runtime
+      - name: Stage verified CEF beside Windows test binaries
         working-directory: src-tauri
         shell: pwsh
         run: |
-          $runtime = (Resolve-Path -LiteralPath "target\debug").Path
-          $library = Join-Path $runtime "libcef.dll"
-          if (-not (Test-Path -LiteralPath $library -PathType Leaf)) {
-            throw "CEF test runtime is unavailable"
+          $source = (Resolve-Path -LiteralPath ".cef-verified\current").Path
+          $destination = (Resolve-Path -LiteralPath "target\debug\deps").Path
+          $runtimeFiles = @(
+            "chrome_elf.dll",
+            "d3dcompiler_47.dll",
+            "dxcompiler.dll",
+            "dxil.dll",
+            "libEGL.dll",
+            "libGLESv2.dll",
+            "libcef.dll",
+            "vk_swiftshader.dll",
+            "vulkan-1.dll"
+          )
+          foreach ($name in $runtimeFiles) {
+            $inputPath = Join-Path $source $name
+            $item = Get-Item -LiteralPath $inputPath -Force
+            if ($item.PSIsContainer -or
+                ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+                $item.Length -lt 1 -or $item.Length -gt 536870912) {
+              throw "CEF test runtime is invalid"
+            }
+            $outputPath = Join-Path $destination $name
+            Copy-Item -LiteralPath $inputPath -Destination $outputPath -Force
+            if ((Get-Item -LiteralPath $outputPath -Force).Length -ne $item.Length) {
+              throw "CEF test runtime staging failed"
+            }
           }
-          Add-Content -LiteralPath $env:GITHUB_PATH -Value $runtime -Encoding utf8
 
       - name: Windows unit tests
         working-directory: src-tauri
