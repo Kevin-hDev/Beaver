@@ -78,4 +78,47 @@ describe("Tooltip", () => {
 
     expect(container.querySelector(".tooltip-right")).toBeTruthy();
   });
+
+  /* Une bulle placée au-dessus sert un élément posé au bas d'un panneau, et ce
+     panneau rogne son débordement : rendue dans le flux, elle serait coupée.
+     Elle doit donc sortir de son parent pour se poser sur le document. */
+  it("pose la bulle du dessus sur le document et non dans son parent", () => {
+    const { container } = render(
+      <Tooltip label="Mon aide" placement="top">
+        <button>action</button>
+      </Tooltip>,
+    );
+
+    act(() => {
+      fireEvent.mouseEnter(container.querySelector(".tooltip-wrapper")!);
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    const bubble = document.querySelector(".tooltip-above");
+
+    expect(bubble).toBeTruthy();
+    expect(bubble?.textContent).toBe("Mon aide");
+    expect(bubble?.parentElement).toBe(document.body);
+    expect(container.querySelector(".tooltip-above")).toBeNull();
+  });
+
+  it("garde la bulle dans le flux quand elle s'ouvre vers le bas", () => {
+    const { container } = render(
+      <Tooltip label="Mon aide">
+        <button>action</button>
+      </Tooltip>,
+    );
+
+    act(() => {
+      fireEvent.mouseEnter(container.querySelector(".tooltip-wrapper")!);
+    });
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(container.querySelector(".tooltip-bubble")).toBeTruthy();
+    expect(document.querySelector(".tooltip-above")).toBeNull();
+  });
 });

@@ -30,6 +30,22 @@
   animation: tooltip-in-right 100ms ease-out;
 }
 
+/* Posée sur le document et non dans le flux de son élément : au bas d'un panneau
+   qui rogne son débordement, une bulle placée au-dessus serait coupée. Son bord
+   gauche s'aligne sur l'élément plutôt que de se centrer dessus, sans quoi une
+   bulle plus large que l'élément sort de l'écran en bord de fenêtre. */
+.tooltip-above {
+  position: fixed;
+  top: auto;
+  transform: none;
+  animation: tooltip-in-above 100ms ease-out;
+}
+
+@keyframes tooltip-in-above {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes tooltip-in {
   from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }

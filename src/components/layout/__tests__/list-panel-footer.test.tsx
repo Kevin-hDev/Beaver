@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ListPanelFooter } from "../list-panel-footer";
 import { NAV_ITEMS } from "../nav-items";
@@ -53,6 +53,31 @@ describe("rangée de navigation du panneau liste", () => {
     fireEvent.click(screen.getByLabelText("nav.personality"));
 
     expect(onTabChange).toHaveBeenCalledWith("personality");
+  });
+
+  /* La rangée est au ras du bord inférieur de la fenêtre, dans deux panneaux qui
+     rognent leur débordement : une bulle ouverte vers le bas s'y perd sans
+     laisser de trace visible. Retirer le placement casserait les quatre
+     infobulles en silence. */
+  it("ouvre les infobulles vers le haut", () => {
+    vi.useFakeTimers();
+    try {
+      render(<ListPanelFooter activeTab="agent-local" onTabChange={() => {}} />);
+
+      act(() => {
+        fireEvent.mouseEnter(document.querySelectorAll(".tooltip-wrapper")[1]);
+      });
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      const bubble = document.querySelector(".tooltip-above");
+
+      expect(bubble?.textContent).toBe("nav.heartbeat");
+      expect(bubble?.parentElement).toBe(document.body);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("garde le badge GPU sur la rangée", () => {

@@ -23,7 +23,7 @@ export function ListPanelFooter({ activeTab, onTabChange }: ListPanelFooterProps
           const active = activeTab === item.id;
           const label = t(item.i18nKey);
           return (
-            <Tooltip key={item.id} label={label}>
+            <Tooltip key={item.id} label={label} placement="top">
               <button
                 type="button"
                 className="icon-btn lpf-btn"
