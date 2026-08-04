@@ -11,10 +11,36 @@ MAX_MEMBER_BYTES = 64 * 1024 * 1024
 MAX_ARCHIVE_TOTAL_BYTES = 150 * 1024 * 1024
 BLOCK_BYTES = 512
 MAX_DECOMPRESSED_BYTES = MAX_ARCHIVE_TOTAL_BYTES + MAX_ARCHIVE_ENTRIES * (2 * BLOCK_BYTES) + 2 * BLOCK_BYTES
+IGNORED_NONPORTABLE_LINKS = {
+    "source/utils/templates/etc/apache2": "httpd",
+}
+IGNORED_NONPORTABLE_FILES = frozenset({
+    "source/utils/templates/etc/httpd/sites-available/searxng.conf:socket",
+    "source/utils/templates/etc/nginx/default.apps-available/searxng.conf:socket",
+    "source/utils/templates/etc/uwsgi/apps-archlinux/searxng.ini:socket",
+    "source/utils/templates/etc/uwsgi/apps-available/searxng.ini:socket",
+})
 
 
 def is_metadata(path: PurePosixPath) -> bool:
     return any(part.startswith("._") or part in {".DS_Store", ".AppleDouble", "__MACOSX", ".py"} for part in path.parts)
+
+
+def _ignore_exact_nonportable_member(member: tarfile.TarInfo, seen: set[str]) -> bool:
+    expected_link = IGNORED_NONPORTABLE_LINKS.get(member.name)
+    ignored_file = member.name in IGNORED_NONPORTABLE_FILES
+    if expected_link is None and not ignored_file:
+        return False
+    key = member.name.casefold()
+    if key in seen:
+        fail()
+    if ignored_file:
+        if not member.isfile() or member.size < 0 or member.size > MAX_MEMBER_BYTES:
+            fail()
+    elif not member.issym() or member.linkname != expected_link or member.size != 0:
+        fail()
+    seen.add(key)
+    return True
 
 
 class BoundedReader:
@@ -148,6 +174,8 @@ def safe_extract(archive: Path, destination: Path) -> None:
         with tarfile.open(archive, "r:gz") as source:
             for member in source:
                 path = PurePosixPath(member.name)
+                if _ignore_exact_nonportable_member(member, seen):
+                    continue
                 relative = validate_archive_path(member.name, seen)
                 if is_metadata(path):
                     continue

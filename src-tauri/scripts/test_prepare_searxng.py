@@ -204,6 +204,33 @@ class PrepareSearxngTests(unittest.TestCase):
         with self.assertRaises(PreparationError):
             safe_extract(self.archive({"ignored": info}), self.destination)
 
+    def test_ignores_exact_nonportable_upstream_templates(self):
+        apache = tarfile.TarInfo("source/utils/templates/etc/apache2")
+        apache.type = tarfile.SYMTYPE
+        apache.linkname = "httpd"
+        socket = "source/utils/templates/etc/httpd/sites-available/searxng.conf:socket"
+        archive = self.archive({
+            "source/requirements.txt": b"requirement\n",
+            apache.name: apache,
+            socket: b"socket template",
+        })
+
+        safe_extract(archive, self.destination)
+
+        self.assertEqual(
+            (self.destination / "source" / "requirements.txt").read_bytes(),
+            b"requirement\n",
+        )
+        self.assertFalse((self.destination / apache.name).exists())
+
+        malicious = tarfile.TarInfo(apache.name)
+        malicious.type = tarfile.SYMTYPE
+        malicious.linkname = "../../escape"
+        rejected = self.temp / "rejected"
+        rejected.mkdir()
+        with self.assertRaises(PreparationError):
+            safe_extract(self.archive({malicious.name: malicious}), rejected)
+
     def test_rejects_unreadable_archive_content(self):
         archive = self.archive({"source/file": b"valid content"})
         archive.write_bytes(b"not a readable archive")
