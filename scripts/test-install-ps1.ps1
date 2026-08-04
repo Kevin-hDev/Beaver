@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $paths = @(
     "..\install.ps1",
     "release\check-nsis-migration.ps1",
+    "release\check-nsis-migration.test.ps1",
     "release\windows-artifact-helpers.ps1"
 )
 foreach ($relativePath in $paths) {

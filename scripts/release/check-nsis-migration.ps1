@@ -91,7 +91,7 @@ function Test-SourceContracts {
         ("ns" + "Exec")
     )
     foreach ($value in $forbidden) {
-        if ($hook.Contains($value, [StringComparison]::OrdinalIgnoreCase)) {
+        if ($hook.IndexOf($value, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
             Stop-Validation
         }
     }
@@ -141,7 +141,7 @@ function Test-InstalledState {
     $metadata = Get-ItemProperty -LiteralPath $newUninstall[0]
     $installDir = [string]$metadata.InstallLocation
     $installDir = $installDir.Trim('"')
-    if (-not [IO.Path]::IsPathFullyQualified($installDir) -or $installDir.Contains("..")) {
+    if (-not (Test-FullyQualifiedWindowsPath $installDir)) {
         Stop-Validation
     }
     $binary = Join-Path $installDir "cl-go-dash.exe"
@@ -151,13 +151,7 @@ function Test-InstalledState {
     Test-AssociatedIcon $binary
 
     $helperPath = Join-Path $installDir "target\updater-helper\cl-go-dash-updater.exe"
-    if (-not (Test-Path -LiteralPath $helperPath -PathType Leaf)) {
-        Stop-Validation
-    }
-    $helper = Get-Item -LiteralPath $helperPath -Force
-    $helperIsLink = ($helper.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0
-    if ($helper.PSIsContainer -or $helperIsLink -or
-        $helper.Length -le 0 -or $helper.Length -gt $MaxUpdaterHelperBytes) {
+    if (-not (Test-UpdaterHelper $helperPath $MaxUpdaterHelperBytes)) {
         Stop-Validation
     }
 
@@ -182,12 +176,7 @@ function Test-InstalledState {
         (Join-Path $env:USERPROFILE "Desktop\Beaver.lnk"),
         (Join-Path $env:PUBLIC "Desktop\Beaver.lnk")
     ).Where({ Test-Path -LiteralPath $_ })
-    if (
-        $startMenuShortcuts.Count -ne 1 -or
-        $desktopShortcuts.Count -ne 1 -or
-        -not (Test-ShortcutTarget $startMenuShortcuts[0] $binary) -or
-        -not (Test-ShortcutTarget $desktopShortcuts[0] $binary)
-    ) {
+    if (-not (Test-BeaverShortcutState $startMenuShortcuts $desktopShortcuts $binary)) {
         Stop-Validation
     }
 }

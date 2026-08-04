@@ -99,6 +99,19 @@ test("les validateurs natifs de paquets sont présents et bornés", () => {
   assert.match(nsis, /target\\updater-helper\\cl-go-dash-updater\.exe/);
   assert.match(nsis, /MaxUpdaterHelperBytes/);
   assert.match(nsis, /windows-artifact-helpers\.ps1/);
+  assert.match(nsis, /Test-FullyQualifiedWindowsPath/);
+  assert.match(nsis, /Test-BeaverShortcutState/);
+  assert.match(nsis, /Test-UpdaterHelper/);
+  assert.match(windowsHelpers, /function Test-FullyQualifiedWindowsPath/);
+  assert.match(windowsHelpers, /function Test-BeaverShortcutState/);
+  assert.match(windowsHelpers, /function Test-UpdaterHelper/);
+  assert.match(nsis, /\.IndexOf\(\$value, \[StringComparison\]::OrdinalIgnoreCase\) -ge 0/);
+  assert.doesNotMatch(nsis, /\.Contains\(\$value, \[StringComparison\]/);
+  assert.doesNotMatch(nsis, /IsPathFullyQualified/);
+  assert.match(
+    readBounded("scripts/test-install-ps1.ps1"),
+    /check-nsis-migration\.test\.ps1/,
+  );
   for (const variable of [
     "oldUninstall",
     "newUninstall",
