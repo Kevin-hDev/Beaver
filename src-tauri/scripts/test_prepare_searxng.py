@@ -2,6 +2,7 @@ import hashlib
 import io
 import os
 import shutil
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -18,7 +19,11 @@ from prepare_searxng import (
     PreparationError,
     prepare,
     safe_extract,
+    main,
 )
+from searxng_archive import MAX_ARCHIVE_TOTAL_BYTES, preflight_tar
+from searxng_bundle import BundleLock, bundle_valid, publish_bundle, recover_bundle, temporary_directory
+from searxng_safety import PathValidationError, hash_regular_file, validate_archive_path
 
 
 class ZeroStream:
@@ -29,6 +34,30 @@ class ZeroStream:
         chunk = min(size, self.remaining)
         self.remaining -= chunk
         return b"\0" * chunk
+
+
+def tar_header(name, size, typeflag=b"0", base256=False):
+    header = bytearray(512)
+    name_bytes = name.encode("ascii")
+    header[:len(name_bytes)] = name_bytes
+    if base256:
+        encoded = size.to_bytes(12, "big")
+        header[124:136] = bytes([encoded[0] | 0x80]) + encoded[1:]
+    else:
+        header[124:136] = f"{size:011o}\0".encode("ascii")
+    header[136:148] = b"00000000000\0"
+    header[148:156] = b"        "
+    header[156:157] = typeflag
+    header[257:263] = b"ustar\0"
+    header[263:265] = b"00"
+    header[148:156] = f"{sum(header):06o}\0 ".encode("ascii")
+    return bytes(header)
+
+
+def compact_tar(path, records):
+    raw = b"".join(tar_header(*record) for record in records) + b"\0" * 1024
+    import gzip
+    path.write_bytes(gzip.compress(raw))
 
 
 class PrepareSearxngTests(unittest.TestCase):
@@ -80,6 +109,43 @@ class PrepareSearxngTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(PreparationError):
                 safe_extract(self.archive({name: b"blocked"}), self.destination)
 
+    def test_preflight_rejects_compact_pax_gnu_and_cumulative_tar_bombs(self):
+        pax = self.temp / "pax.tar.gz"
+        compact_tar(pax, [("pax", MAX_MEMBER_BYTES + 1, b"x", False)])
+        with self.assertRaises(PreparationError):
+            preflight_tar(pax)
+        gnu = self.temp / "gnu.tar.gz"
+        compact_tar(gnu, [("long", MAX_MEMBER_BYTES + 1, b"L", True)])
+        with self.assertRaises(PreparationError):
+            preflight_tar(gnu)
+        many = self.temp / "many-raw.tar.gz"
+        compact_tar(many, [(str(index), 0, b"0", False) for index in range(MAX_ARCHIVE_ENTRIES + 1)])
+        with self.assertRaises(PreparationError):
+            preflight_tar(many)
+        total = self.temp / "total.tar.gz"
+        compact_tar(total, [("one", MAX_ARCHIVE_TOTAL_BYTES // 2 + 1, b"0", False), ("two", MAX_ARCHIVE_TOTAL_BYTES // 2 + 1, b"0", False)])
+        with self.assertRaises(PreparationError):
+            preflight_tar(total)
+
+    def test_rejects_windows_aliases_ads_and_nonportable_segments(self):
+        for name in ("source/file:stream", "source/C:evil", "source/CON.txt", "source/name. ", "source/a//b", "source/é.txt"):
+            with self.subTest(name=name):
+                with self.assertRaises(PathValidationError):
+                    validate_archive_path(name, set())
+        seen = set()
+        validate_archive_path("source/File.txt", seen)
+        with self.assertRaises(PathValidationError):
+            validate_archive_path("source/file.TXT", seen)
+
+    def test_hash_rejects_growth_after_the_verified_open(self):
+        path = self.temp / "requirements.txt"
+        path.write_bytes(b"x")
+        def grow(_fd):
+            with path.open("ab") as output:
+                output.write(b"changed")
+        with self.assertRaises(PreparationError):
+            hash_regular_file(path, MAX_MEMBER_BYTES, after_open=grow)
+
     def test_rejects_links_special_members_and_oversized_file(self):
         for kind in (tarfile.SYMTYPE, tarfile.LNKTYPE, tarfile.FIFOTYPE):
             info = tarfile.TarInfo("source/unsafe")
@@ -108,18 +174,24 @@ class PrepareSearxngTests(unittest.TestCase):
         self.assertEqual((self.destination / "source" / "requirements.txt").read_bytes(), b"x")
         self.assertFalse((self.destination / "__MACOSX").exists())
         many = {f"source/{index}": b"" for index in range(MAX_ARCHIVE_ENTRIES + 1)}
+        many_destination = self.temp / "many"
+        many_destination.mkdir()
         with self.assertRaises(PreparationError):
-            safe_extract(self.archive(many), self.temp / "many")
+            safe_extract(self.archive(many), many_destination)
 
     def test_refuses_a_symlink_parent_in_destination(self):
         linked = self.temp / "linked"
         linked.mkdir()
-        try:
+        if os.name == "nt":
+            subprocess.run(
+                ["cmd.exe", "/d", "/c", "mklink", "/J", str(self.destination / "source"), str(linked)],
+                check=True,
+                shell=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        else:
             os.symlink(linked, self.destination / "source", target_is_directory=True)
-        except OSError as error:
-            if os.name == "nt" and error.winerror in {5, 1314}:
-                self.skipTest("symbolic links are unavailable")
-            raise
         with self.assertRaises(PreparationError):
             safe_extract(self.archive({"source/file": b"x"}), self.destination)
 
@@ -215,6 +287,68 @@ class PrepareSearxngTests(unittest.TestCase):
         with self.assertRaises(PreparationError):
             prepare(root, download_large)
         self.assertEqual((wheels / "old.whl").read_bytes(), b"old")
+
+    def test_rejects_duplicate_archive_members_from_an_ordered_input(self):
+        archive = self.temp / "duplicates.tar.gz"
+        with tarfile.open(archive, "w:gz") as output:
+            for content in (b"first", b"second"):
+                info = tarfile.TarInfo("source/file")
+                info.size = len(content)
+                output.addfile(info, io.BytesIO(content))
+        with self.assertRaises(PreparationError):
+            safe_extract(archive, self.destination)
+
+    def test_temp_collision_lock_and_recovery_preserve_the_old_bundle(self):
+        root = self.source_root()
+        sidecar = root / "resources" / "searxng-sidecar"
+        source = sidecar / "source"
+        stamp = self.source_hash(source)
+        wheels = sidecar / "wheels"
+        wheels.mkdir()
+        (wheels / "old.whl").write_bytes(b"old")
+        (wheels / ".requirements.sha256").write_text(stamp, encoding="ascii")
+        (sidecar / ("wheels-new-" + "a" * 32)).mkdir()
+        tokens = iter(["a" * 32, "b" * 32])
+        temporary = temporary_directory(sidecar, "wheels-new-", lambda _size: next(tokens))
+        (temporary / "new.whl").write_bytes(b"new")
+        (temporary / ".requirements.sha256").write_text(stamp, encoding="ascii")
+        calls = []
+        def interrupted(source_path, destination_path):
+            calls.append((source_path, destination_path))
+            if len(calls) == 2:
+                raise OSError("interrupted")
+            os.replace(source_path, destination_path)
+        with self.assertRaises(PreparationError):
+            publish_bundle(sidecar, temporary, stamp, replace=interrupted)
+        self.assertFalse(wheels.exists())
+        self.assertTrue(any(sidecar.glob("wheels-backup-*")))
+        recover_bundle(sidecar, stamp)
+        self.assertEqual((wheels / "old.whl").read_bytes(), b"old")
+        self.assertFalse((sidecar / ".prepare.transaction").exists())
+        with BundleLock(sidecar):
+            with self.assertRaises(PreparationError):
+                with BundleLock(sidecar):
+                    pass
+
+    def test_rejects_invalid_cli_roots_generically(self):
+        for root in ("", "relative", "C:\\repo\\..\\escape", "bad\nroot", "x" * 4097):
+            with self.subTest(root=root[:8]):
+                self.assertEqual(main(["--root", root]), 1)
+
+    def test_rejects_non_wheel_and_hardlinked_wheel_bundles(self):
+        root = self.source_root()
+        source = root / "resources" / "searxng-sidecar" / "source"
+        stamp = self.source_hash(source)
+        wheels = source.parent / "wheels"
+        wheels.mkdir()
+        (wheels / "note.txt").write_bytes(b"not a wheel")
+        (wheels / ".requirements.sha256").write_text(stamp, encoding="ascii")
+        self.assertFalse(bundle_valid(wheels, stamp))
+        (wheels / "note.txt").unlink()
+        wheel = wheels / "one.whl"
+        wheel.write_bytes(b"wheel")
+        os.link(wheel, wheels / "two.whl")
+        self.assertFalse(bundle_valid(wheels, stamp))
 
 
 if __name__ == "__main__":
