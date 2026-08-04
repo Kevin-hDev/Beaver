@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { ChatInput } from "./chat-input";
+import { WelcomeWordmark } from "./welcome-wordmark";
 import { ProjectSelector } from "./project-selector";
 import { FileDropZone } from "./file-drop-zone";
 import { usePermissionMode } from "@/hooks/use-permission-mode";
@@ -81,9 +82,7 @@ export function WelcomeView({
     >
       <div className={`welcome-zone ${leaving ? "welcome-leaving" : ""}`}>
         <div className="welcome-content">
-          <h1 className={`welcome-title ${leaving ? "welcome-title-leave" : ""}`}>
-            {t("welcome.title")}
-          </h1>
+          <WelcomeWordmark leaving={leaving} />
           <div className={`welcome-input-wrap ${leaving ? "welcome-input-leave" : ""}`}>
             <ChatInput
               modelName={model}
