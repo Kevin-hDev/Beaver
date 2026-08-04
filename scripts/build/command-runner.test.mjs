@@ -119,7 +119,7 @@ test("refuse un cwd lien symbolique ou jonction", async (t) => {
     try {
       await symlink(target, linked, process.platform === "win32" ? "junction" : "dir");
     } catch (error) {
-      if (error?.code === "EPERM" || error?.code === "EACCES") {
+      if (process.platform === "win32" && (error?.code === "EPERM" || error?.code === "EACCES")) {
         t.skip("La création de lien n'est pas autorisée sur cet environnement.");
         return;
       }
