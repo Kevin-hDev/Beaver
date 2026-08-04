@@ -6,6 +6,13 @@
 
 ## v1.1.1
 
+### Windows update reliability
+
+- **Native Windows release path** — replaced Bash-dependent updater and SearXNG preparation with validated native scripts and pinned the compatible Tauri toolchain.
+- **PowerShell-compatible validation** — made package checks work with Windows PowerShell 5.1 and PowerShell 7 while allowing installations without a desktop shortcut.
+- **Bounded data protection** — added a size- and file-limited backup fingerprint that rejects links and verifies every copied file before migration.
+- **Stricter restart health checks** — reject malformed acknowledgements and ambiguous health arguments while verifying the exact Beaver relaunch command.
+
 ### Plugins and extensions — in development
 
 - **New extension platform foundation** — added a shared extension registry, a dedicated Settings center, independent activation and chat shortcut controls, structured diagnostics, recovery controls, and a separate Node.js/Jiti host so third-party code does not run inside Beaver's main process.
@@ -63,7 +70,7 @@
 ### Dependencies and security
 
 - **Updated application stack** — refreshed compatible frontend and Rust dependencies, including React, Vite, CodeMirror, type definitions, and locked Rust packages, improving compatibility, stability, and long-term maintainability.
-- **Safer development toolchain** — upgraded the transitive `brace-expansion` package used by lint tooling to fix a high-severity denial-of-service vulnerability; the npm dependency audit now reports no known vulnerabilities.
+- **Safer development toolchain** — upgraded the transitive `brace-expansion` package used by lint tooling to fix a high-severity denial-of-service vulnerability and kept dependency audits in the release gate.
 
 ---
 

@@ -1,4 +1,48 @@
 {
+  "1.1.1": {
+    "de": [
+      "Windows-Updates verwenden jetzt einen zuverlässigeren nativen Ablauf ohne Bash-Abhängigkeit.",
+      "Die Installation wird mit Windows PowerShell 5.1 und PowerShell 7 geprüft, während die Desktop-Verknüpfung optional bleibt.",
+      "Eine begrenzte Sicherung mit Prüfsumme schützt die Daten vor der Migration.",
+      "Die Startprüfung lehnt ungültige Bestätigungen ab und kontrolliert den Neustart von Beaver genauer."
+    ],
+    "en": [
+      "Windows updates now use a more reliable native process without a Bash dependency.",
+      "Installation is checked with Windows PowerShell 5.1 and PowerShell 7, while the desktop shortcut remains optional.",
+      "A bounded backup with a fingerprint protects data before migration.",
+      "The health check rejects invalid confirmations and verifies Beaver's restart more precisely."
+    ],
+    "es": [
+      "Las actualizaciones de Windows utilizan ahora un proceso nativo más fiable sin depender de Bash.",
+      "La instalación se comprueba con Windows PowerShell 5.1 y PowerShell 7, mientras que el acceso directo del escritorio sigue siendo opcional.",
+      "Una copia de seguridad limitada con huella digital protege los datos antes de la migración.",
+      "La comprobación de estado rechaza confirmaciones no válidas y verifica con más precisión el reinicio de Beaver."
+    ],
+    "fr": [
+      "Les mises à jour Windows utilisent désormais un parcours natif plus fiable, sans dépendre de Bash.",
+      "L'installation est vérifiée avec Windows PowerShell 5.1 et PowerShell 7, tandis que le raccourci Bureau reste facultatif.",
+      "Une sauvegarde bornée avec empreinte protège les données avant la migration.",
+      "Le contrôle de santé refuse les confirmations invalides et vérifie plus précisément le redémarrage de Beaver."
+    ],
+    "it": [
+      "Gli aggiornamenti di Windows usano ora un processo nativo più affidabile senza dipendere da Bash.",
+      "L'installazione viene controllata con Windows PowerShell 5.1 e PowerShell 7, mentre il collegamento sul desktop resta facoltativo.",
+      "Un backup limitato con impronta protegge i dati prima della migrazione.",
+      "Il controllo di integrità rifiuta le conferme non valide e verifica con maggiore precisione il riavvio di Beaver."
+    ],
+    "ja": [
+      "Windows の更新は、Bash に依存しない、より信頼性の高いネイティブ処理を使用するようになりました。",
+      "インストールは Windows PowerShell 5.1 と PowerShell 7 で検証され、デスクトップのショートカットは任意のままです。",
+      "上限付きのバックアップとフィンガープリントにより、移行前のデータを保護します。",
+      "正常性チェックは無効な確認を拒否し、Beaver の再起動をより厳密に検証します。"
+    ],
+    "zh": [
+      "Windows 更新现在使用更可靠的原生流程，不再依赖 Bash。",
+      "安装会通过 Windows PowerShell 5.1 和 PowerShell 7 进行验证，同时桌面快捷方式仍为可选项。",
+      "带有指纹校验的有界备份会在迁移前保护数据。",
+      "健康检查会拒绝无效确认，并更准确地验证 Beaver 是否成功重启。"
+    ]
+  },
   "1.1.0": {
     "de": [
       "CL-GO heißt jetzt Beaver und erhält einen neuen Namen, ein neues Maskottchen, neue Symbole und aktualisierte Oberflächentexte.",
