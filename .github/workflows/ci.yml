@@ -91,16 +91,20 @@ jobs:
 
       - name: Windows unit tests
         working-directory: src-tauri
-        run: cargo test --lib --features cef-cross-check
+        env:
+          RUSTFLAGS: -C link-arg=/DELAYLOAD:libcef.dll -C link-arg=delayimp.lib
+        run: cargo test --lib
 
       - name: Windows AppContainer confinement
         working-directory: src-tauri
         shell: pwsh
+        env:
+          RUSTFLAGS: -C link-arg=/DELAYLOAD:libcef.dll -C link-arg=delayimp.lib
         run: |
-          $tests = cargo test --lib --features cef-cross-check -- --ignored --list | Out-String
+          $tests = cargo test --lib -- --ignored --list | Out-String
           $expected = 'services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root: test'
           if (-not $tests.Contains($expected)) { throw 'Windows AppContainer confinement test is missing' }
-          cargo test --lib --features cef-cross-check services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root -- --ignored --exact
+          cargo test --lib services::agent_local::shell_sandbox::windows::tests::appcontainer_writes_only_inside_the_selected_root -- --ignored --exact
 
       - name: Windows private storage tests
         working-directory: src-tauri
