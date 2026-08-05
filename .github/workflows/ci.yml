@@ -119,6 +119,12 @@ jobs:
         with:
           workspaces: src-tauri
 
+      - name: Windows extension installer preflight
+        working-directory: src-tauri
+        run: |
+          cargo test --lib --features windows-tests services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc -- --exact --nocapture --test-threads=1
+          cargo test --lib --features windows-tests services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script -- --exact --nocapture --test-threads=1
+
       # CEF is replaced by its compile-only profile so the complete backend
       # suite can run without loading libcef.dll in the test process.
       - name: Complete Windows backend tests

@@ -45,6 +45,10 @@ pub fn run(
         .ok_or(ProcessFailure::EnvironmentInvalid)?;
     let mut command = Command::new(program);
     #[cfg(test)]
+    let stdout = Stdio::inherit();
+    #[cfg(not(test))]
+    let stdout = Stdio::null();
+    #[cfg(test)]
     let stderr = Stdio::inherit();
     #[cfg(not(test))]
     let stderr = Stdio::null();
@@ -52,7 +56,7 @@ pub fn run(
         .args(arguments)
         .current_dir(working_directory)
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
+        .stdout(stdout)
         .stderr(stderr);
     configure_environment(&mut command, path, temporary_directory)?;
     crate::services::process_tree::configure(&mut command);
