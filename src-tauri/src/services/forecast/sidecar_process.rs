@@ -1,6 +1,8 @@
 use crate::services::{paths::data_dir, process_tree};
 use std::path::PathBuf;
 use std::process::Child;
+#[cfg(unix)]
+use std::process::Command;
 
 fn pid_path() -> PathBuf {
     data_dir().join("chronos-sidecar.pid")
