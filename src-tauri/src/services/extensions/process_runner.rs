@@ -44,20 +44,12 @@ pub fn run(
         .filter(|value| valid_environment_value(value, MAX_PATH_CHARS))
         .ok_or(ProcessFailure::EnvironmentInvalid)?;
     let mut command = Command::new(program);
-    #[cfg(test)]
-    let stdout = Stdio::inherit();
-    #[cfg(not(test))]
-    let stdout = Stdio::null();
-    #[cfg(test)]
-    let stderr = Stdio::inherit();
-    #[cfg(not(test))]
-    let stderr = Stdio::null();
     command
         .args(arguments)
         .current_dir(working_directory)
         .stdin(Stdio::null())
-        .stdout(stdout)
-        .stderr(stderr);
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
     configure_environment(&mut command, path, temporary_directory)?;
     crate::services::process_tree::configure(&mut command);
     let mut child = command.spawn().map_err(|_| ProcessFailure::Unavailable)?;

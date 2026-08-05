@@ -98,10 +98,20 @@ fn npm_resolution_prefers_the_bundled_runtime_cli() {
     std::fs::write(&node, "").unwrap();
     std::fs::write(&cli, "").unwrap();
 
-    assert_eq!(
-        resolve_cli(temporary.path(), &node).unwrap(),
-        cli.canonicalize().unwrap()
+    assert_eq!(resolve_cli(temporary.path(), &node).unwrap(), cli);
+}
+
+#[cfg(windows)]
+#[test]
+fn npm_runner_removes_verbatim_prefixes_before_launching_node() {
+    let runner = NpmRunner::for_test(
+        PathBuf::from(r"\\?\C:\runtime\node.exe"),
+        PathBuf::from(r"\\?\C:\runtime\npm\bin\npm-cli.js"),
     );
+    let (node, cli) = runner.paths_for_test();
+
+    assert_eq!(node, PathBuf::from(r"C:\runtime\node.exe"));
+    assert_eq!(cli, PathBuf::from(r"C:\runtime\npm\bin\npm-cli.js"));
 }
 
 #[test]

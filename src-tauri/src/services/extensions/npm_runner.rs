@@ -23,7 +23,7 @@ impl NpmRunner {
             .map_err(|_| OperationFailure::RuntimeUnavailable)?;
         let cli = resolve_cli(&paths.directory, &node)
             .map_err(|_| OperationFailure::RuntimeUnavailable)?;
-        Ok(Self { node, cli })
+        Ok(Self::new(node, cli))
     }
 
     pub fn install_package(
@@ -107,46 +107,31 @@ impl NpmRunner {
         workspace: &Path,
         arguments: Vec<OsString>,
     ) -> Result<(), OperationFailure> {
-        let result = super::process_runner::run(
+        super::process_runner::run(
             &self.node,
             &arguments,
             root,
             &workspace.join("tmp"),
             INSTALL_TIMEOUT,
-        );
-        #[cfg(test)]
-        if let Err(failure) = &result {
-            eprintln!("[npm-test] process failure: {failure:?}");
-            report_test_log(workspace);
-        }
-        result.map_err(OperationFailure::from)
+        )
+        .map_err(OperationFailure::from)
     }
 
     #[cfg(test)]
     pub(super) fn for_test(node: PathBuf, cli: PathBuf) -> Self {
-        Self { node, cli }
+        Self::new(node, cli)
     }
-}
 
-#[cfg(test)]
-fn report_test_log(workspace: &Path) {
-    use std::io::Read;
+    #[cfg(test)]
+    pub(super) fn paths_for_test(&self) -> (&Path, &Path) {
+        (&self.node, &self.cli)
+    }
 
-    let Ok(entries) = std::fs::read_dir(workspace.join("cache/_logs")) else {
-        return;
-    };
-    let latest = entries
-        .filter_map(Result::ok)
-        .take(32)
-        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_file()))
-        .max_by_key(|entry| entry.metadata().and_then(|value| value.modified()).ok());
-    let Some(latest) = latest else { return };
-    let Ok(file) = std::fs::File::open(latest.path()) else {
-        return;
-    };
-    let mut content = String::new();
-    if file.take(8_192).read_to_string(&mut content).is_ok() {
-        eprintln!("[npm-test] bounded npm log:\n{content}");
+    fn new(node: PathBuf, cli: PathBuf) -> Self {
+        Self {
+            node: super::host_paths::node_compatible_path(node),
+            cli: super::host_paths::node_compatible_path(cli),
+        }
     }
 }
 
@@ -155,6 +140,7 @@ pub(super) fn resolve_cli(host_directory: &Path, _node: &Path) -> Result<PathBuf
     if bundled.is_file() {
         return bundled
             .canonicalize()
+            .map(super::host_paths::node_compatible_path)
             .map_err(|_| "Gestionnaire npm indisponible.".to_string());
     }
     #[cfg(test)]
@@ -172,7 +158,7 @@ pub(super) fn resolve_cli(host_directory: &Path, _node: &Path) -> Result<PathBuf
         if candidate.is_file()
             && candidate.file_name().and_then(|name| name.to_str()) == Some("npm-cli.js")
         {
-            return Ok(candidate);
+            return Ok(super::host_paths::node_compatible_path(candidate));
         }
     }
     Err("Gestionnaire npm indisponible.".to_string())
