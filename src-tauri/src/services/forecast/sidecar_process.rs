@@ -1,6 +1,6 @@
 use crate::services::{paths::data_dir, process_tree};
 use std::path::PathBuf;
-use std::process::{Child, Command};
+use std::process::Child;
 
 fn pid_path() -> PathBuf {
     data_dir().join("chronos-sidecar.pid")
@@ -63,9 +63,8 @@ fn is_forecast_process(pid: u32) -> bool {
     {
         let query =
             format!("(Get-CimInstance Win32_Process -Filter \"ProcessId = {pid}\").CommandLine");
-        let output = Command::new("powershell")
-            .args(["-NoProfile", "-Command", &query])
-            .output();
+        let mut command = crate::services::background_command::new("powershell");
+        let output = command.args(["-NoProfile", "-Command", &query]).output();
         output
             .ok()
             .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))

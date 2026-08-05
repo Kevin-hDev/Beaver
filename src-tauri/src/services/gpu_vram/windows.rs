@@ -1,5 +1,3 @@
-use std::process::Command;
-
 pub(super) fn detect_total() -> Option<u64> {
     if let Some(v) = nvidia_smi_vram() {
         return Some(v);
@@ -87,12 +85,8 @@ if ($sum -eq 0) {
 }
 
 fn run_powershell_u64(script: &str) -> Option<u64> {
-    let mut cmd = Command::new("powershell");
+    let mut cmd = crate::services::background_command::new("powershell");
     cmd.args(["-NoProfile", "-Command", script]);
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
     let output = cmd.output().ok()?;
     if !output.status.success() {
         return None;
@@ -102,7 +96,7 @@ fn run_powershell_u64(script: &str) -> Option<u64> {
 }
 
 fn nvidia_smi_field(field: &str) -> Option<u64> {
-    let output = Command::new("nvidia-smi")
+    let output = crate::services::background_command::new("nvidia-smi")
         .args([
             &format!("--query-gpu={field}"),
             "--format=csv,noheader,nounits",

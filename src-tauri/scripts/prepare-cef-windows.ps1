@@ -109,5 +109,33 @@ Copy-Item -LiteralPath $License -Destination (Join-Path $LicensesDir "LICENSE.tx
 
 $ApplicationDll = Join-Path $TargetDir "cl_go_dash_lib.dll"
 Copy-CheckedFile $ApplicationDll (Join-Path $StageDir "cl-go-dash.dll")
-Copy-Item -LiteralPath $Bootstrap -Destination (Join-Path $TargetDir "cl-go-dash.exe") -Force
+$ApplicationExecutable = Join-Path $TargetDir "cl-go-dash.exe"
+$BrandedBootstrap = Join-Path $TargetDir "cl-go-dash.exe.branded.tmp"
+$ExecutableBackup = Join-Path $TargetDir "cl-go-dash.exe.branding.bak"
+$BrandingScript = Join-Path $PSScriptRoot "copy-windows-brand-resources.ps1"
+$TauriConfig = Get-Content -LiteralPath (Join-Path $TauriDir "tauri.conf.json") -Raw | ConvertFrom-Json
+Assert-RegularFile $ApplicationExecutable
+Assert-RegularFile $BrandingScript
+if (
+  $TauriConfig.productName -cne "Beaver" -or
+  $TauriConfig.version -notmatch "^[0-9]+\.[0-9]+\.[0-9]+$" -or
+  (Get-Item -LiteralPath $ApplicationExecutable).VersionInfo.ProductName -cne $TauriConfig.productName
+) {
+  throw "CEF runtime validation failed"
+}
+
+Remove-Item -LiteralPath $BrandedBootstrap -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $ExecutableBackup -Force -ErrorAction SilentlyContinue
+try {
+  Copy-Item -LiteralPath $Bootstrap -Destination $BrandedBootstrap
+  & $BrandingScript `
+    -SourceExecutable $ApplicationExecutable `
+    -DestinationExecutable $BrandedBootstrap `
+    -ExpectedProductName $TauriConfig.productName `
+    -ExpectedVersion $TauriConfig.version
+  [IO.File]::Replace($BrandedBootstrap, $ApplicationExecutable, $ExecutableBackup, $true)
+} finally {
+  Remove-Item -LiteralPath $BrandedBootstrap -Force -ErrorAction SilentlyContinue
+  Remove-Item -LiteralPath $ExecutableBackup -Force -ErrorAction SilentlyContinue
+}
 Write-Host "CEF 150 Windows runtime prepared"

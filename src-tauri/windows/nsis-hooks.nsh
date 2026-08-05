@@ -136,4 +136,6 @@ Var BeaverLegacyDir
   StrCpy $BeaverLegacyMigration 2
 
   beaver_legacy_postinstall_done:
+  ; Demande à Explorer de relire les icônes après chaque installation/mise à jour.
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, p 0, p 0)'
 !macroend

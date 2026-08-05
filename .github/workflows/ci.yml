@@ -103,16 +103,11 @@ jobs:
         with:
           workspaces: src-tauri
 
-      # The complete portable suite runs in the Linux backend job, while the
-      # Windows Clippy job compiles every target. Execute only native Windows
-      # behavior here so Unix-specific path and symlink tests stay on Unix.
-      - name: Windows updater and native tests
+      # CEF is replaced by its compile-only profile so the complete backend
+      # suite can run without loading libcef.dll in the test process.
+      - name: Complete Windows backend tests
         working-directory: src-tauri
-        run: |
-          cargo test --lib --features windows-tests commands::app_update
-          cargo test --lib --features windows-tests updater_worker
-          cargo test --lib --features windows-tests windows_entry_plan
-          cargo test --lib --features windows-tests services::browser::windows_bundle_layout_tests
+        run: cargo test --lib --features windows-tests -- --test-threads=1
 
       - name: Windows AppContainer test inventory
         working-directory: src-tauri

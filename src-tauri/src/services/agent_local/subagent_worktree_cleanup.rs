@@ -2,7 +2,6 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::process::Stdio;
-use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
 pub(super) const GIT_REMOVE_TIMEOUT: Duration = Duration::from_secs(3);
@@ -24,7 +23,7 @@ impl GitRemoveRunner for CommandGitRemoveRunner {
         retry_locked: bool,
     ) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         Box::pin(async move {
-            let mut command = Command::new("git");
+            let mut command = crate::services::background_command::new_tokio("git");
             command
                 .arg("-C")
                 .arg(path)

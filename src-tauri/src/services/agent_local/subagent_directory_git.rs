@@ -1,7 +1,16 @@
 use std::path::Path;
 
+const GIT_LONG_PATHS: &str = "core.longpaths=true";
+const GIT_EXACT_LINE_ENDINGS: &str = "core.autocrlf=false";
+
+pub fn command() -> tokio::process::Command {
+    let mut command = crate::services::background_command::new_tokio("git");
+    command.args(["-c", GIT_LONG_PATHS, "-c", GIT_EXACT_LINE_ENDINGS]);
+    command
+}
+
 pub async fn output(repo: &Path, args: &[&str]) -> Result<std::process::Output, String> {
-    crate::services::background_command::new_tokio("git")
+    command()
         .args(["-C"])
         .arg(repo)
         .args(args)
@@ -26,7 +35,7 @@ pub async fn success(repo: &Path, args: &[&str]) -> Result<bool, String> {
 }
 
 pub async fn cherry_pick(repo: &Path, commit: &str) -> Result<bool, String> {
-    let result = crate::services::background_command::new_tokio("git")
+    let result = command()
         .args(["-C"])
         .arg(repo)
         .args([
@@ -42,16 +51,4 @@ pub async fn cherry_pick(repo: &Path, commit: &str) -> Result<bool, String> {
         .await
         .map_err(|_| "Git indisponible".to_string())?;
     Ok(result.status.success())
-}
-
-pub async fn delete_branch(repo: &Path, branch: &str) -> Result<(), String> {
-    let reference = format!("refs/heads/{branch}");
-    if !success(repo, &["show-ref", "--verify", "--quiet", &reference]).await? {
-        return Ok(());
-    }
-    if success(repo, &["branch", "-D", branch]).await? {
-        Ok(())
-    } else {
-        Err("Suppression de branche impossible".into())
-    }
 }

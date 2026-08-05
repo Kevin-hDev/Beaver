@@ -17,7 +17,7 @@ fn successful_external_write_adds_a_non_blocking_notice() {
         .warnings
         .first()
         .expect("workspace warning")
-        .contains(workspace.path().canonicalize().unwrap().to_string_lossy().as_ref()));
+        .contains(dunce::canonicalize(workspace.path()).unwrap().to_string_lossy().as_ref()));
 }
 
 #[test]
@@ -57,7 +57,7 @@ fn configured_outputs_are_part_of_the_active_workspace() {
 
     let roots = allowed_roots(workspace.path(), Some(outputs.path().to_path_buf()));
 
-    assert!(roots.contains(&outputs.path().canonicalize().unwrap()));
+    assert!(roots.contains(&dunce::canonicalize(outputs.path()).unwrap()));
 }
 
 #[cfg(unix)]

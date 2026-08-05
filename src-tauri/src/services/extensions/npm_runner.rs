@@ -32,7 +32,7 @@ impl NpmRunner {
         source: &NpmSource,
     ) -> Result<PathBuf, OperationFailure> {
         let workspace = prepare_workspace(prefix).map_err(|_| OperationFailure::StorageFailed)?;
-        let mut arguments = self.common_arguments("install", prefix, &workspace);
+        let mut arguments = self.common_arguments("install", &workspace);
         arguments.extend([
             OsString::from("--package-lock=false"),
             OsString::from("--save=false"),
@@ -62,7 +62,7 @@ impl NpmRunner {
         } else {
             "install"
         };
-        let mut arguments = self.common_arguments(command, root, &workspace);
+        let mut arguments = self.common_arguments(command, &workspace);
         if command == "install" {
             arguments.extend([
                 OsString::from("--package-lock=false"),
@@ -77,12 +77,7 @@ impl NpmRunner {
         result
     }
 
-    pub(super) fn common_arguments(
-        &self,
-        command: &str,
-        prefix: &Path,
-        workspace: &Path,
-    ) -> Vec<OsString> {
+    pub(super) fn common_arguments(&self, command: &str, workspace: &Path) -> Vec<OsString> {
         vec![
             self.cli.as_os_str().to_owned(),
             OsString::from(command),
@@ -93,8 +88,6 @@ impl NpmRunner {
             OsString::from("--no-bin-links"),
             OsString::from("--workspaces=false"),
             OsString::from("--progress=false"),
-            OsString::from("--prefix"),
-            prefix.as_os_str().to_owned(),
             OsString::from("--cache"),
             workspace.join("cache").into_os_string(),
             OsString::from("--registry"),

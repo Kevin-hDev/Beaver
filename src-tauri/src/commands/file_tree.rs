@@ -48,7 +48,7 @@ pub async fn list_directory(
 ) -> Result<Vec<FileEntry>, String> {
     validate_path(&path)?;
 
-    let canonical = std::fs::canonicalize(&path).map_err(|_| "Dossier introuvable".to_string())?;
+    let canonical = dunce::canonicalize(&path).map_err(|_| "Dossier introuvable".to_string())?;
 
     if !canonical.is_dir() {
         return Err("Dossier introuvable".into());
@@ -56,7 +56,7 @@ pub async fn list_directory(
 
     if let Some(ref root) = project_root {
         let canonical_root =
-            std::fs::canonicalize(root).map_err(|_| "Dossier introuvable".to_string())?;
+            dunce::canonicalize(root).map_err(|_| "Dossier introuvable".to_string())?;
         if !canonical.starts_with(&canonical_root) {
             return Err("Chemin invalide".into());
         }

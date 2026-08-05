@@ -137,7 +137,7 @@ fn run_merge(repo_path: &Path, source: &str, original_head: Oid) -> Result<(), M
 fn git_command(repo_path: &Path, hooks_path: &Path) -> Command {
     let mut hook_config = OsString::from("core.hooksPath=");
     hook_config.push(hooks_path);
-    let mut command = Command::new("git");
+    let mut command = crate::services::background_command::new("git");
     command
         .arg("-c")
         .arg(hook_config)

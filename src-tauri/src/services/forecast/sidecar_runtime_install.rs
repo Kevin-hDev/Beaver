@@ -139,7 +139,7 @@ fn find_python() -> Result<PathBuf, String> {
 }
 
 fn python_version_supported(path: &Path) -> bool {
-    Command::new(path)
+    crate::services::background_command::new(path)
         .args([
             "-c",
             "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')",

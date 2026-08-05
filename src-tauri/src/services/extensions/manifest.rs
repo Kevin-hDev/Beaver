@@ -39,8 +39,7 @@ pub fn load_managed(input: &str) -> Result<LocalExtension, super::OperationFailu
 
 fn load(input: &str) -> ManifestResult<LocalExtension> {
     super::validation::source_input(input).map_err(invalid)?;
-    let selected = PathBuf::from(input)
-        .canonicalize()
+    let selected = dunce::canonicalize(PathBuf::from(input))
         .map_err(|_| invalid("Extension locale introuvable."))?;
     let (root, mut manifest) = if selected.is_dir() {
         from_directory(&selected)?
@@ -87,8 +86,7 @@ fn load(input: &str) -> ManifestResult<LocalExtension> {
 }
 
 pub fn resolve_record_entry(record: &ExtensionRecord) -> Result<PathBuf, String> {
-    let root = PathBuf::from(&record.source)
-        .canonicalize()
+    let root = dunce::canonicalize(PathBuf::from(&record.source))
         .map_err(|_| "Source d'extension introuvable.".to_string())?;
     resolve_entry(&root, record.manifest.main.as_deref()).map_err(|error| error.detail)
 }
@@ -97,8 +95,7 @@ fn from_directory(root: &Path) -> ManifestResult<(PathBuf, ExtensionManifest)> {
     for file_name in MANIFEST_FILES {
         let path = root.join(file_name);
         if path.is_file() {
-            let manifest_path = path
-                .canonicalize()
+            let manifest_path = dunce::canonicalize(path)
                 .map_err(|_| invalid("Manifeste d'extension invalide."))?;
             if !manifest_path.starts_with(root) {
                 return Err(invalid("Manifeste d'extension invalide."));
@@ -110,11 +107,11 @@ fn from_directory(root: &Path) -> ManifestResult<(PathBuf, ExtensionManifest)> {
 }
 
 fn from_manifest_file(path: &Path) -> ManifestResult<(PathBuf, ExtensionManifest)> {
-    let root = path
-        .parent()
-        .ok_or_else(|| invalid("Manifeste d'extension invalide."))?
-        .canonicalize()
-        .map_err(|_| invalid("Source d'extension introuvable."))?;
+    let root = dunce::canonicalize(
+        path.parent()
+            .ok_or_else(|| invalid("Manifeste d'extension invalide."))?,
+    )
+    .map_err(|_| invalid("Source d'extension introuvable."))?;
     let value = read_json(path)?;
     let is_package = path.file_name().and_then(|name| name.to_str()) == Some("package.json");
     let manifest_value = if is_package {
@@ -160,9 +157,7 @@ fn copy_package_field(package: &Map<String, Value>, manifest: &mut Map<String, V
 
 fn resolve_entry(root: &Path, main: Option<&str>) -> ManifestResult<PathBuf> {
     let main = main.ok_or_else(|| invalid("Point d'entrée d'extension manquant."))?;
-    let resolved = root
-        .join(main)
-        .canonicalize()
+    let resolved = dunce::canonicalize(root.join(main))
         .map_err(|_| invalid("Point d'entrée d'extension introuvable."))?;
     if !resolved.starts_with(root)
         || !resolved.is_file()

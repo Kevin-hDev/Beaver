@@ -128,9 +128,8 @@ fn is_searxng_process(pid: u32) -> bool {
     {
         let query =
             format!("(Get-CimInstance Win32_Process -Filter \"ProcessId = {pid}\").CommandLine");
-        let output = Command::new("powershell")
-            .args(["-NoProfile", "-Command", &query])
-            .output();
+        let mut command = crate::services::background_command::new("powershell");
+        let output = command.args(["-NoProfile", "-Command", &query]).output();
         output
             .ok()
             .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))

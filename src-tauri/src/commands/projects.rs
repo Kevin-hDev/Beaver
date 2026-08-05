@@ -59,7 +59,7 @@ fn open_folder(path: &std::path::Path) -> Result<(), String> {
     } else {
         "explorer"
     };
-    std::process::Command::new(cmd)
+    crate::services::background_command::new(cmd)
         .arg(path)
         .spawn()
         .map_err(|e| {

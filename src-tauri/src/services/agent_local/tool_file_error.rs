@@ -82,6 +82,27 @@ pub(super) fn directory_failure(error: std::io::Error) -> ToolResult {
     ToolResult::error(security::sanitize_error(error), code, category, retryable)
 }
 
+pub(super) fn search_root_failure(error: std::io::Error) -> ToolResult {
+    let (message, code, category) = match error.kind() {
+        std::io::ErrorKind::NotFound => (
+            "Fichier introuvable",
+            "search_root_not_found",
+            ToolErrorCategory::NotFound,
+        ),
+        std::io::ErrorKind::PermissionDenied => (
+            "Permission refusée",
+            "search_path_denied",
+            ToolErrorCategory::Permission,
+        ),
+        _ => (
+            "Chemin de recherche invalide",
+            "invalid_search_path",
+            ToolErrorCategory::Validation,
+        ),
+    };
+    ToolResult::error(message, code, category, false)
+}
+
 pub(super) fn path_failure(
     message: String,
     not_found_code: &'static str,

@@ -2,7 +2,7 @@ use super::cef_cookie_gate_policy::cef_cookie_gate_policy_for_platform;
 
 #[test]
 fn runtime_policy_helper_is_only_compiled_with_the_cef_runtime() {
-    let policy = include_str!("cef_cookie_gate_policy.rs");
+    let policy = include_str!("cef_cookie_gate_policy.rs").replace("\r\n", "\n");
 
     assert!(policy.contains(
         "#[cfg(any(target_os = \"macos\", target_os = \"windows\"))]\n\
@@ -12,15 +12,15 @@ fn runtime_policy_helper_is_only_compiled_with_the_cef_runtime() {
 
 #[test]
 fn security_gate_allows_time_for_system_approval() {
-    let source = include_str!("cef_cookie_gate.rs");
+    let source = include_str!("cef_cookie_gate.rs").replace("\r\n", "\n");
 
     assert!(source.contains("Duration::from_secs(60)"));
 }
 
 #[test]
 fn windows_cookie_gate_never_opens_chromiums_locked_cookie_store() {
-    let cleanup = include_str!("cef_cookie_gate_cleanup.rs");
-    let modules = include_str!("mod.rs");
+    let cleanup = include_str!("cef_cookie_gate_cleanup.rs").replace("\r\n", "\n");
+    let modules = include_str!("mod.rs").replace("\r\n", "\n");
 
     assert!(cleanup.contains("cef_cookie_gate_policy().verify_store_on_disk"));
     assert!(cleanup.contains("#[cfg(target_os = \"macos\")]"));

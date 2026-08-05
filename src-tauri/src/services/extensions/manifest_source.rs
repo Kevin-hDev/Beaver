@@ -6,11 +6,11 @@ const SOURCE_EXTENSIONS: &[&str] = &[
 ];
 
 pub fn from_source_file(path: &Path) -> Result<(PathBuf, ExtensionManifest), String> {
-    let root = path
-        .parent()
-        .ok_or_else(|| "Source d'extension invalide.".to_string())?
-        .canonicalize()
-        .map_err(|_| "Source d'extension introuvable.".to_string())?;
+    let root = dunce::canonicalize(
+        path.parent()
+            .ok_or_else(|| "Source d'extension invalide.".to_string())?,
+    )
+    .map_err(|_| "Source d'extension introuvable.".to_string())?;
     let stem = path
         .file_stem()
         .and_then(|value| value.to_str())

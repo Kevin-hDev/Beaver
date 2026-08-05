@@ -4,7 +4,6 @@ use super::types_subagent_change::{
 use chrono::Utc;
 use std::path::Path;
 use std::process::Stdio;
-use tokio::process::Command;
 
 const DIRECTORY_TARGET: &str = "cl-go/directory";
 pub const DIRECTORY_PROJECT: &str = "session-directory";
@@ -19,7 +18,9 @@ pub async fn capture(
     let child = validate_child(child_id).await?;
     let project_id = child.project_id.unwrap_or_else(|| DIRECTORY_PROJECT.into());
     let branch = super::subagent_worktree::branch_for_execution(execution_id)?;
-    if super::subagent_git_command::text(worktree, &["branch", "--show-current"]).await? != branch {
+    if super::subagent_directory_git::text(worktree, &["branch", "--show-current"]).await?
+        != branch
+    {
         return Err(generic_error());
     }
     let existing = super::subagent_change_store::load_optional(child_id).await?;
@@ -28,29 +29,36 @@ pub async fn capture(
     }) {
         return Err(generic_error());
     }
-    let current_head = super::subagent_git_command::text(worktree, &["rev-parse", "HEAD"]).await?;
+    let current_head =
+        super::subagent_directory_git::text(worktree, &["rev-parse", "HEAD"]).await?;
     let base_commit = existing
         .as_ref()
         .map(|meta| meta.base_commit.clone())
         .unwrap_or(current_head);
-    if !super::subagent_git_command::success(worktree, &["add", "-A"]).await? {
+    if !super::subagent_directory_git::success(worktree, &["add", "-A"]).await? {
         return Err(generic_error());
     }
-    if super::subagent_git_command::success(worktree, &["diff", "--cached", "--quiet"]).await? {
+    if super::subagent_directory_git::success(worktree, &["diff", "--cached", "--quiet"])
+        .await?
+    {
         return Ok(existing);
     }
     if existing.is_some()
-        && !super::subagent_git_command::success(worktree, &["reset", "--soft", &base_commit]).await?
+        && !super::subagent_directory_git::success(
+            worktree,
+            &["reset", "--soft", &base_commit],
+        )
+        .await?
     {
         return Err(generic_error());
     }
-    let changed = super::subagent_git_run::changed_paths(worktree).await?;
+    let changed = changed_paths(worktree).await?;
     let id = existing
         .as_ref()
         .map(|meta| meta.id.clone())
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     commit_snapshot(worktree, &id).await?;
-    let commit = super::subagent_git_command::text(worktree, &["rev-parse", "HEAD"]).await?;
+    let commit = super::subagent_directory_git::text(worktree, &["rev-parse", "HEAD"]).await?;
     let now = Utc::now();
     let meta = SubagentChangeMeta {
         id,
@@ -74,7 +82,7 @@ pub async fn capture(
 
 pub async fn patch(meta: &SubagentChangeMeta) -> Result<String, String> {
     let repository = repository(meta)?;
-    let output = Command::new("git")
+    let output = super::subagent_directory_git::command()
         .arg("--git-dir")
         .arg(repository)
         .args(["show", "--format=", "--binary", &meta.commit])
@@ -114,7 +122,7 @@ async fn validate_child(child_id: &str) -> Result<super::types_session::AgentSes
 
 async fn commit_snapshot(worktree: &Path, id: &str) -> Result<(), String> {
     let message = crate::services::brand::directory_change_commit_message(id);
-    let status = Command::new("git")
+    let status = super::subagent_directory_git::command()
         .args(["-C"])
         .arg(worktree)
         .args([
@@ -136,4 +144,15 @@ async fn commit_snapshot(worktree: &Path, id: &str) -> Result<(), String> {
 
 fn generic_error() -> String {
     "Capture du changement impossible".to_string()
+}
+
+async fn changed_paths(
+    worktree: &Path,
+) -> Result<(Vec<super::types_subagent_change::SubagentChangedPath>, bool), String> {
+    let output = super::subagent_directory_git::output(
+        worktree,
+        &["diff", "--cached", "--name-status", "--no-renames", "-z"],
+    )
+    .await?;
+    super::subagent_git_run::parse_changed_paths(&output)
 }

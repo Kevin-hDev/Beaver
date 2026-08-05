@@ -111,7 +111,7 @@ pub async fn capture(
         .map(|meta| meta.id.clone())
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let message = crate::services::brand::subagent_change_commit_message(&id);
-    let committed = tokio::process::Command::new("git")
+    let committed = crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(worktree)
         .args([
@@ -159,6 +159,12 @@ pub(super) async fn changed_paths(worktree: &Path) -> Result<(Vec<SubagentChange
         &["diff", "--cached", "--name-status", "--no-renames", "-z"],
     )
     .await?;
+    parse_changed_paths(&output)
+}
+
+pub(super) fn parse_changed_paths(
+    output: &std::process::Output,
+) -> Result<(Vec<SubagentChangedPath>, bool), String> {
     if !output.status.success() {
         return Err("Liste des changements indisponible".into());
     }

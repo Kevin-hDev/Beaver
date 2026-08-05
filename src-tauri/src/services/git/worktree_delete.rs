@@ -1,7 +1,6 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
 use super::{action_error::GitActionError, branch_commit, status, worktree_list};
@@ -94,7 +93,7 @@ async fn validate_target(
 }
 
 async fn remove(repo_path: &Path, target_path: &Path, force: bool) -> Result<(), GitActionError> {
-    let mut command = Command::new("git");
+    let mut command = crate::services::background_command::new_tokio("git");
     command
         .arg("-C")
         .arg(repo_path)

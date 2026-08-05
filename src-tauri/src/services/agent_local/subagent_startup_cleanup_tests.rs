@@ -162,3 +162,13 @@ async fn cleanup_uses_rebuilt_index_when_sidecar_is_stale() {
         Some(subagent_status::INTERRUPTED)
     );
 }
+
+#[cfg(windows)]
+#[test]
+fn startup_git_prune_uses_the_background_command_boundary() {
+    let source = include_str!("subagent_startup_cleanup.rs");
+    assert!(
+        source.contains("background_command::new_tokio(\"git\")"),
+        "startup Git prune must not create a Windows console"
+    );
+}

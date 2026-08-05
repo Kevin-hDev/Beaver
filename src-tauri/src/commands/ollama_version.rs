@@ -149,21 +149,19 @@ mod tests {
 
     #[test]
     fn find_ollama_asset_extracts_url() {
+        let archive = ollama_archive_name();
+        let expected_url =
+            format!("https://github.com/ollama/ollama/releases/download/v0.23.1/{archive}");
         let json = serde_json::json!({
             "assets": [
                 {
-                    "name": "ollama-darwin.tgz",
-                    "browser_download_url": "https://github.com/ollama/ollama/releases/download/v0.23.1/ollama-darwin.tgz"
-                },
-                {
-                    "name": "ollama-linux-amd64.tar.zst",
-                    "browser_download_url": "https://github.com/ollama/ollama/releases/download/v0.23.1/ollama-linux-amd64.tar.zst"
+                    "name": archive,
+                    "browser_download_url": expected_url
                 }
             ]
         });
         let url = find_ollama_asset(&json);
-        assert!(url.is_some());
-        assert!(url.unwrap().contains("ollama"));
+        assert_eq!(url.as_deref(), Some(expected_url.as_str()));
     }
 
     #[test]

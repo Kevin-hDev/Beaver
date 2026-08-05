@@ -4,6 +4,22 @@ use super::{
 };
 use tokio_util::sync::CancellationToken;
 
+#[cfg(windows)]
+#[test]
+fn windows_directory_repository_path_stays_short() {
+    let child_id = uuid::Uuid::new_v4().to_string();
+    let execution_id = uuid::Uuid::new_v4().to_string();
+
+    let repository = super::subagent_directory_workspace::repository_path(
+        &child_id,
+        &execution_id,
+    )
+    .expect("repository path");
+
+    assert_eq!(repository.parent().unwrap().file_name().unwrap(), "sdr");
+    assert_eq!(repository.file_name().unwrap().to_string_lossy().len(), 32);
+}
+
 #[tokio::test]
 async fn coder_gets_an_isolated_workspace_for_a_directory_without_git() {
     let project = tempfile::tempdir().expect("project");

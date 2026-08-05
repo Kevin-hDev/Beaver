@@ -137,12 +137,13 @@ async fn prune_project_worktrees() -> usize {
 }
 
 async fn prune_one_project(path: &std::path::Path) -> bool {
-    let fut = tokio::process::Command::new("git")
+    let mut command = crate::services::background_command::new_tokio("git");
+    command
         .args(["-C"])
         .arg(path)
         .args(["worktree", "prune"])
-        .kill_on_drop(true)
-        .output();
+        .kill_on_drop(true);
+    let fut = command.output();
 
     match tokio::time::timeout(Duration::from_secs(PRUNE_TIMEOUT_SECS), fut).await {
         Ok(Ok(output)) if output.status.success() => true,

@@ -78,7 +78,9 @@ function Test-SourceContracts {
         "Software\clgo\Beaver",
         "IsShortcutTarget",
         "cl-go-dash.exe",
-        "SetOutPath `$INSTDIR"
+        "SetOutPath `$INSTDIR",
+        "SHChangeNotify",
+        "0x08000000"
     )
     foreach ($value in $required) {
         if (-not $hook.Contains($value)) {
@@ -153,7 +155,10 @@ function Test-InstalledState {
     if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
         Stop-Validation
     }
-    Test-AssociatedIcon $binary
+    $expectedVersion = [string](Read-BoundedText "src-tauri/tauri.conf.json" | ConvertFrom-Json).version
+    if (-not (Test-BeaverExecutableBrand $binary $expectedVersion)) {
+        Stop-Validation
+    }
 
     $helperPath = Join-ValidatedWindowsPath $installDir "target\updater-helper\cl-go-dash-updater.exe"
     if ([string]::IsNullOrWhiteSpace($helperPath)) {

@@ -1,6 +1,5 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
 
 const MAX_WORKTREES: usize = 100;
 
@@ -14,8 +13,9 @@ pub struct WorktreeInfo {
 pub async fn list_worktrees(repo_path: &Path) -> Result<Vec<WorktreeInfo>, String> {
     let current_root = current_worktree_root(repo_path);
     let internal_root = crate::services::paths::data_dir().join("subagent-worktrees");
-    let output = Command::new("git")
-        .args(["-C"])
+    let mut command = crate::services::background_command::new_tokio("git");
+    let output = command
+        .arg("-C")
         .arg(repo_path)
         .args(["worktree", "list", "--porcelain"])
         .kill_on_drop(true)

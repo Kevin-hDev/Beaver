@@ -1,6 +1,7 @@
+#[cfg(windows)]
+use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use tokio::process::Command;
 
 pub async fn is_git_repository(path: &Path) -> bool {
     super::subagent_git_command::success(path, &["rev-parse", "--is-inside-work-tree"])
@@ -25,7 +26,7 @@ pub async fn create(
         .await
         .map_err(|_| generic_error())?;
 
-    let initialized = Command::new("git")
+    let initialized = super::subagent_directory_git::command()
         .args(["init", "--bare"])
         .arg(&repository)
         .stdout(Stdio::null())
@@ -65,7 +66,7 @@ pub async fn create(
         return Err(generic_error());
     }
     let branch = super::subagent_worktree::branch_for_execution(execution_id)?;
-    let checked_out = Command::new("git")
+    let checked_out = super::subagent_directory_git::command()
         .arg("--git-dir")
         .arg(&repository)
         .args(["worktree", "add", "-b", &branch])
@@ -92,10 +93,27 @@ pub async fn create(
 pub fn repository_path(child_id: &str, execution_id: &str) -> Result<PathBuf, String> {
     super::types_subagent_change::validate_uuid(child_id)?;
     super::types_subagent_change::validate_uuid(execution_id)?;
-    Ok(crate::services::paths::data_dir()
+    Ok(repository_storage_path(child_id, execution_id))
+}
+
+#[cfg(windows)]
+fn repository_storage_path(child_id: &str, execution_id: &str) -> PathBuf {
+    let digest = Sha256::digest(format!("{child_id}:{execution_id}").as_bytes());
+    let repository_id = digest[..16]
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    crate::services::paths::data_dir()
+        .join("sdr")
+        .join(repository_id)
+}
+
+#[cfg(not(windows))]
+fn repository_storage_path(child_id: &str, execution_id: &str) -> PathBuf {
+    crate::services::paths::data_dir()
         .join("subagent-directory-repos")
         .join(child_id)
-        .join(execution_id))
+        .join(execution_id)
 }
 
 pub async fn remove_repository(child_id: &str, execution_id: &str) -> Result<(), String> {
@@ -115,7 +133,7 @@ async fn run(
     work_tree: Option<(&Path, &Path)>,
     git_dir: Option<&Path>,
 ) -> Result<bool, String> {
-    let mut command = Command::new("git");
+    let mut command = super::subagent_directory_git::command();
     if let Some((work_tree, repository)) = work_tree {
         command.arg("--git-dir").arg(repository).arg("--work-tree").arg(work_tree);
     } else if let Some(repository) = git_dir {

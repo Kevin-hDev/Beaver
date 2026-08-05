@@ -15,11 +15,7 @@ fn scoped_package_names_map_to_bounded_relative_paths() {
 #[test]
 fn every_npm_install_disables_lifecycle_scripts_and_side_effects() {
     let runner = NpmRunner::for_test(PathBuf::from("/node"), PathBuf::from("/npm-cli.js"));
-    let arguments = runner.common_arguments(
-        "install",
-        PathBuf::from("/extension").as_path(),
-        PathBuf::from("/cache").as_path(),
-    );
+    let arguments = runner.common_arguments("install", PathBuf::from("/cache").as_path());
 
     for required in [
         "--ignore-scripts",
@@ -34,6 +30,7 @@ fn every_npm_install_disables_lifecycle_scripts_and_side_effects() {
     ] {
         assert!(arguments.contains(&OsString::from(required)));
     }
+    assert!(!arguments.contains(&OsString::from("--prefix")));
 }
 
 #[test]

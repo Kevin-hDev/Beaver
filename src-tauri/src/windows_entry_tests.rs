@@ -23,17 +23,27 @@ fn development_module_is_refreshed_from_cargo_dependencies() {
 }
 
 #[test]
-fn bootstrap_arguments_select_the_application_module_before_forwarded_values() {
+fn development_bootstrap_is_staged_with_the_module_basename() {
+    let root = tempfile::tempdir().expect("temporary directory");
+    let root = root.path().canonicalize().expect("canonical directory");
+    let source = root.join("bootstrap.exe");
+    std::fs::write(&source, b"verified bootstrap").expect("bootstrap source");
+
+    let executable = stage_bootstrap_executable(&root, &source).expect("staged bootstrap");
+
+    assert_eq!(executable, root.join("cl_go_dash_lib.exe"));
+    assert_eq!(
+        std::fs::read(executable).expect("bootstrap bytes"),
+        b"verified bootstrap"
+    );
+}
+
+#[test]
+fn bootstrap_arguments_only_forward_validated_values() {
     let arguments =
         bootstrap_arguments(vec![OsString::from("--inspect")]).expect("bootstrap arguments");
 
-    assert_eq!(
-        arguments,
-        vec![
-            OsString::from("--module=cl_go_dash_lib"),
-            OsString::from("--inspect"),
-        ]
-    );
+    assert_eq!(arguments, vec![OsString::from("--inspect")]);
 }
 
 #[test]

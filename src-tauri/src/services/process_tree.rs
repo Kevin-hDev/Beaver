@@ -22,6 +22,10 @@ pub enum ProcessKind {
     Searxng,
 }
 
+#[cfg(all(test, windows))]
+#[path = "process_tree_windows_tests.rs"]
+mod windows_tests;
+
 impl ProcessKind {
     fn label(self) -> &'static str {
         match self {
@@ -40,14 +44,14 @@ pub fn configure(command: &mut Command) {
     #[cfg(unix)]
     command.process_group(0);
     #[cfg(windows)]
-    let _ = command;
+    crate::services::background_command::configure(command);
 }
 
 pub fn configure_tokio(command: &mut tokio::process::Command) {
     #[cfg(unix)]
     command.process_group(0);
     #[cfg(windows)]
-    let _ = command;
+    crate::services::background_command::configure_tokio(command);
 }
 
 pub fn terminate(child: &mut Child, kind: ProcessKind) {
@@ -148,7 +152,7 @@ fn signal_tree(pid: u32, _force: bool) {
     if !executable.is_absolute() || !executable.is_file() {
         return;
     }
-    let _ = Command::new(executable)
+    let _ = crate::services::background_command::new(executable)
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())

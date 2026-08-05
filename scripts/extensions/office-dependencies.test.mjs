@@ -7,6 +7,7 @@ import { pathToFileURL } from "node:url";
 import { hostDirectory, root } from "./office-test-helpers.mjs";
 
 const expectedDependencies = {
+  "@napi-rs/canvas": "1.0.2",
   "@cantoo/pdf-lib": "2.7.4",
   "@xlsx/xlsx-populate": "0.2.0",
   docx: "9.7.1",
@@ -17,7 +18,7 @@ const expectedDependencies = {
   pptxgenjs: "4.0.1",
 };
 
-test("the production Office tree is exact, pinned, and omits optional canvas", async () => {
+test("the production Office tree is exact and pinned", async () => {
   const [hostManifest, rootManifest] = await Promise.all([
     jsonFile(join(hostDirectory, "package.json")),
     jsonFile(join(root, "package.json")),
@@ -28,14 +29,24 @@ test("the production Office tree is exact, pinned, and omits optional canvas", a
     assert.equal(rootManifest.devDependencies[name], version);
     assert.equal(rootManifest.dependencies[name], undefined);
   }
-  await assert.rejects(
-    access(join(hostDirectory, "node_modules/@napi-rs/canvas")),
-  );
+  await access(join(hostDirectory, "node_modules/@napi-rs/canvas"));
   const httpsManifest = await jsonFile(
     join(hostDirectory, "node_modules/pptxgenjs/node_modules/https/package.json"),
   );
   assert.equal(httpsManifest.name, "https-browserify");
   assert.equal(httpsManifest.version, "1.0.0");
+});
+
+test("the prepared PDF runtime provides native DOM geometry", async () => {
+  const canvasPath = join(
+    hostDirectory,
+    "node_modules/@napi-rs/canvas/index.js",
+  );
+  const canvas = await import(pathToFileURL(canvasPath).href);
+
+  assert.equal(typeof canvas.DOMMatrix, "function");
+  assert.equal(typeof canvas.Path2D, "function");
+  assert.equal(typeof canvas.ImageData, "function");
 });
 
 test("format libraries are isolated behind Beaver adapters", async () => {

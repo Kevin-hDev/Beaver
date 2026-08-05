@@ -57,6 +57,7 @@ mod subagent_git_lock;
 #[cfg(test)]
 mod subagent_git_lock_tests;
 mod subagent_git_run;
+mod subagent_directory_git;
 mod subagent_directory_change;
 mod subagent_directory_apply;
 mod subagent_directory_replay;

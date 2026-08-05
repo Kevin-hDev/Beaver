@@ -33,11 +33,10 @@ async fn backend_rejects_removed_tools_for_child_sessions() {
 
     assert!(denied.is_error);
     assert!(!root.path().join("blocked.txt").exists());
-    assert!(!pwd.is_error);
+    assert!(!pwd.is_error, "{}", pwd.content);
     assert_eq!(
         pwd.content.trim(),
-        root.path()
-            .canonicalize()
+        dunce::canonicalize(root.path())
             .expect("canonical root")
             .to_string_lossy()
     );
