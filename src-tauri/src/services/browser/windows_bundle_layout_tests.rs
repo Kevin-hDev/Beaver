@@ -114,11 +114,8 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     assert!(native_job.contains("src-tauri/.cef-tool-cache"));
     assert!(preparation < clippy);
     assert!(test_job.contains("runs-on: windows-2022"));
-    assert_eq!(test_job.matches("--features windows-tests").count(), 5);
-    assert!(test_job.contains("windows-tests commands::app_update"));
-    assert!(test_job.contains("windows-tests updater_worker"));
-    assert!(test_job.contains("windows-tests windows_entry_plan"));
-    assert!(test_job.contains("windows-tests services::browser::windows_bundle_layout_tests"));
+    assert_eq!(test_job.matches("--features windows-tests").count(), 2);
+    assert!(test_job.contains("cargo test --lib --features windows-tests -- --test-threads=1"));
     assert!(test_job.contains("Windows AppContainer test inventory"));
     assert!(!test_job.contains("prepare-cef-source.mjs"));
     assert!(!test_job.contains(".cef-cache"));

@@ -48,7 +48,12 @@ fn canonicalizes_missing_descendants_from_the_nearest_existing_parent() {
     let candidate = canonical_access_path(&allowed.join("new").join("nested"))
         .expect("candidate");
 
-    assert_eq!(candidate, allowed.canonicalize().expect("root").join("new/nested"));
+    assert_eq!(
+        candidate,
+        dunce::canonicalize(allowed)
+            .expect("root")
+            .join("new/nested")
+    );
 }
 
 #[test]

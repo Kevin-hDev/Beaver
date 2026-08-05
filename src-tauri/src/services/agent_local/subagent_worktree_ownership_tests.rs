@@ -170,6 +170,10 @@ async fn delete_sessions(ids: &[&str]) {
 pub(super) fn init_repo_with_commit() -> tempfile::TempDir {
     let tmp = tempfile::tempdir().expect("temp repo");
     let repo = git2::Repository::init(tmp.path()).expect("init repo");
+    repo.config()
+        .expect("repo config")
+        .set_bool("core.autocrlf", false)
+        .expect("disable automatic line ending conversion");
     std::fs::write(tmp.path().join("README.md"), "init").expect("write file");
     let mut index = repo.index().expect("index");
     index.add_path(std::path::Path::new("README.md")).expect("add file");

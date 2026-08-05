@@ -80,7 +80,7 @@ async fn baseline_oid(
     commit: &str,
     path: &str,
 ) -> Result<Option<String>, String> {
-    let output = crate::services::background_command::new_tokio("git")
+    let output = super::subagent_directory_git::command()
         .arg("--git-dir")
         .arg(repository)
         .args(["ls-tree", "-z", commit, "--", path])
@@ -116,7 +116,7 @@ async fn current_oid(path: &Path) -> Result<Option<String>, String> {
     if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_CURRENT_FILE_BYTES {
         return Err(generic_error());
     }
-    let output = crate::services::background_command::new_tokio("git")
+    let output = super::subagent_directory_git::command()
         .arg("hash-object")
         .arg(path)
         .stderr(Stdio::null())
@@ -133,7 +133,7 @@ async fn current_oid(path: &Path) -> Result<Option<String>, String> {
 }
 
 async fn checkout(repository: &Path, commit: &str, stage: &Path) -> Result<(), String> {
-    let status = crate::services::background_command::new_tokio("git")
+    let status = super::subagent_directory_git::command()
         .arg("--git-dir")
         .arg(repository)
         .args(["worktree", "add", "--detach"])

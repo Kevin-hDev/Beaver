@@ -16,6 +16,9 @@ pub async fn run(
     timeout_secs: Option<u64>,
     cancel: CancellationToken,
 ) -> Result<ShellOutput, String> {
+    if tokens.len() == 1 && tokens[0] == "pwd" {
+        return current_directory(working_dir);
+    }
     let (program, arguments) = tokens
         .split_first()
         .ok_or_else(|| "Commande d'exploration indisponible.".to_string())?;
@@ -119,6 +122,27 @@ pub async fn run(
     }
     super::shell_sandbox::cleanup_temp(cleanup_dir).await;
     result
+}
+
+fn current_directory(working_dir: &Path) -> Result<ShellOutput, String> {
+    let path = dunce::canonicalize(working_dir)
+        .map_err(|_| "Commande d'exploration indisponible.".to_string())?;
+    Ok(ShellOutput {
+        stdout: path.to_string_lossy().into_owned(),
+        stderr: String::new(),
+        exit_code: 0,
+        running: false,
+        stopped: false,
+        cancelled: false,
+        blocked: false,
+        timed_out: false,
+        tracking_incomplete: false,
+        output_truncated: false,
+        output_incomplete: false,
+        sandbox_warning: None,
+        affected_paths: Vec::new(),
+        file_changes: Vec::new(),
+    })
 }
 
 type Captured = std::io::Result<(Vec<u8>, bool)>;

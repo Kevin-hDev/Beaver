@@ -4,13 +4,15 @@ use std::ffi::OsStr;
 
 #[test]
 fn path_entries_are_absolute_deduplicated_and_bounded() {
+    let temp = tempfile::tempdir().expect("tempdir");
     let mut entries = (0..MAX_PATH_INPUTS + 3)
-        .map(|index| format!("/opt/tool-{index}/bin"))
+        .map(|index| temp.path().join(format!("tool-{index}/bin")))
         .collect::<Vec<_>>();
-    entries.push("relative/bin".to_string());
-    entries.push("/opt/control\n/bin".to_string());
-    entries.push("/opt/tool-0/bin".to_string());
-    let resolved = normalize(OsString::from(entries.join(":")), false).expect("PATH");
+    entries.push(PathBuf::from("relative/bin"));
+    entries.push(temp.path().join("control\n/bin"));
+    entries.push(temp.path().join("tool-0/bin"));
+    let value = std::env::join_paths(&entries).expect("join PATH");
+    let resolved = normalize(value, false).expect("PATH");
 
     assert_eq!(resolved.entries.len(), MAX_PATH_INPUTS);
     assert!(resolved.overflow);
@@ -53,15 +55,15 @@ fn login_shell_replaces_a_minimal_gui_path() {
 
 #[test]
 fn discovered_path_drops_entries_that_cannot_provide_tools() {
-    let missing = format!("/beaver-missing-{}", uuid::Uuid::new_v4().simple());
-    let resolved = normalize(
-        OsString::from(format!("{missing}:/usr/bin:/bin")),
-        true,
-    )
-    .expect("PATH");
+    let temp = tempfile::tempdir().expect("tempdir");
+    let missing = temp.path().join("missing");
+    let available = temp.path().join("available");
+    std::fs::create_dir(&available).expect("available PATH entry");
+    let value = std::env::join_paths([missing.as_path(), available.as_path()]).expect("join PATH");
+    let resolved = normalize(value, true).expect("PATH");
 
-    assert!(!resolved.entries.contains(&PathBuf::from(missing)));
-    assert!(resolved.entries.contains(&PathBuf::from("/usr/bin")));
+    assert!(!resolved.entries.contains(&missing));
+    assert!(resolved.entries.contains(&available));
 }
 
 #[cfg(unix)]

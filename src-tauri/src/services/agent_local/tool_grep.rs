@@ -29,12 +29,7 @@ pub async fn grep(
         );
     }
     if let Err(error) = tokio::fs::metadata(&root).await {
-        return super::tool_file_error::path_failure(
-            security::sanitize_error(error),
-            "search_root_not_found",
-            "search_path_denied",
-            "invalid_search_path",
-        );
+        return super::tool_file_error::search_root_failure(error);
     }
 
     run_scan(move |cancelled| grep_blocking(&pattern, &root, glob_filter.as_deref(), &cancelled))

@@ -7,7 +7,6 @@ use std::path::Path;
 mod plan;
 
 const BOOTSTRAP_SHA256: &str = "eab5d939293a666b210b8f5faec191324a017d6105485cfc45150863607bd367";
-const MAX_BOOTSTRAP_BYTES: u64 = 32 * 1024 * 1024;
 
 #[no_mangle]
 #[allow(non_snake_case)]
@@ -59,13 +58,14 @@ fn launch_development_bootstrap_inner() -> Result<i32, ()> {
         .ok_or(())?
         .canonicalize()
         .map_err(|_| ())?;
-    let bootstrap = plan::checked_file(&root, "bootstrap.exe", MAX_BOOTSTRAP_BYTES)?;
-    if file_sha256(&bootstrap, MAX_BOOTSTRAP_BYTES)? != BOOTSTRAP_SHA256 {
+    let bootstrap = plan::checked_file(&root, "bootstrap.exe", plan::MAX_BOOTSTRAP_BYTES)?;
+    if file_sha256(&bootstrap, plan::MAX_BOOTSTRAP_BYTES)? != BOOTSTRAP_SHA256 {
         return Err(());
     }
     plan::stage_application_module(&root)?;
+    let development_bootstrap = plan::stage_bootstrap_executable(&root, &bootstrap)?;
     let args = plan::bootstrap_arguments(std::env::args_os().skip(1))?;
-    let status = std::process::Command::new(bootstrap)
+    let status = std::process::Command::new(development_bootstrap)
         .args(args)
         .status()
         .map_err(|_| ())?;

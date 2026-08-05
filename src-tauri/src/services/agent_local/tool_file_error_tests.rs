@@ -34,3 +34,15 @@ fn interrupted_write_requires_verification_before_retry() {
     assert!(!error.retryable);
     assert!(error.hint.unwrap().contains("Vérifier le fichier"));
 }
+
+#[test]
+fn missing_search_root_uses_the_platform_independent_not_found_code() {
+    let result = search_root_failure(std::io::Error::new(
+        std::io::ErrorKind::NotFound,
+        "platform-specific message",
+    ));
+    let error = result.error.unwrap();
+
+    assert_eq!(error.code.as_ref(), "search_root_not_found");
+    assert_eq!(error.category, ToolErrorCategory::NotFound);
+}

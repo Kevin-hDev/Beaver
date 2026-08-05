@@ -159,6 +159,12 @@ pub(super) async fn changed_paths(worktree: &Path) -> Result<(Vec<SubagentChange
         &["diff", "--cached", "--name-status", "--no-renames", "-z"],
     )
     .await?;
+    parse_changed_paths(&output)
+}
+
+pub(super) fn parse_changed_paths(
+    output: &std::process::Output,
+) -> Result<(Vec<SubagentChangedPath>, bool), String> {
     if !output.status.success() {
         return Err("Liste des changements indisponible".into());
     }

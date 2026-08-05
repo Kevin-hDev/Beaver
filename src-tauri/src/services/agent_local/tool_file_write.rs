@@ -35,7 +35,7 @@ pub(crate) async fn write_file_in_roots(
         }
     };
     if let Some(parent) = resolved.parent() {
-        if let Ok(real_parent) = parent.canonicalize() {
+        if let Ok(real_parent) = dunce::canonicalize(parent) {
             if !roots.iter().any(|root| real_parent.starts_with(root)) {
                 return ToolResult::error(
                     "Écriture interdite hors des zones autorisées",

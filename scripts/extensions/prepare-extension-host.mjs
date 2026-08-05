@@ -56,7 +56,6 @@ async function installProductionDependencies(directory) {
     "ci",
     "--ignore-scripts",
     "--omit=dev",
-    "--omit=optional",
     "--prefix",
     directory,
   ]);

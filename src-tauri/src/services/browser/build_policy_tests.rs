@@ -1,8 +1,12 @@
+fn normalized_source(path: &str) -> String {
+    std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path))
+        .expect("Rust source")
+        .replace("\r\n", "\n")
+}
+
 #[test]
 fn build_script_never_embeds_dotenv_values_in_the_binary() {
-    let build =
-        std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("build.rs"))
-            .expect("Rust build script");
+    let build = normalized_source("build.rs");
 
     assert!(!build.contains("load_env"));
     assert!(!build.contains("cargo:rustc-env"));
@@ -10,10 +14,7 @@ fn build_script_never_embeds_dotenv_values_in_the_binary() {
 
 #[test]
 fn native_runtime_modules_are_not_built_in_linux_library() {
-    let module = std::fs::read_to_string(
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/services/browser/mod.rs"),
-    )
-    .expect("browser module");
+    let module = normalized_source("src/services/browser/mod.rs");
 
     for runtime_module in [
         "browser_view_key",
@@ -39,10 +40,8 @@ fn native_runtime_modules_are_not_built_in_linux_library() {
 
 #[test]
 fn native_runtime_entrypoints_stay_out_of_linux_tests() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/services/browser");
-    let runtime = std::fs::read_to_string(root.join("runtime_handle.rs")).expect("runtime handle");
-    let sessions =
-        std::fs::read_to_string(root.join("session_service.rs")).expect("session service");
+    let runtime = normalized_source("src/services/browser/runtime_handle.rs");
+    let sessions = normalized_source("src/services/browser/session_service.rs");
     let native = "#[cfg(any(target_os = \"macos\", target_os = \"windows\"))]";
 
     for signature in [

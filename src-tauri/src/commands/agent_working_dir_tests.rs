@@ -13,7 +13,7 @@ fn canonicalizes_existing_dir() {
 
     assert_eq!(
         resolved.path,
-        std::fs::canonicalize(&nested).expect("canonical")
+        dunce::canonicalize(&nested).expect("canonical")
     );
 }
 
@@ -149,7 +149,7 @@ async fn user_selected_directory_is_never_marked_as_managed() {
 
     assert_eq!(
         resolved.path,
-        selected.path().canonicalize().expect("canonical")
+        dunce::canonicalize(selected.path()).expect("canonical")
     );
     assert!(!saved.working_dir_managed);
 

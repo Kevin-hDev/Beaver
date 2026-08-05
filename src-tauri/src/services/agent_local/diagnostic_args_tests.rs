@@ -16,10 +16,13 @@ fn file_args_keep_relative_path_only() {
 
 #[test]
 fn absolute_external_path_is_masked() {
+    let root = tempfile::tempdir().expect("root");
+    let working_dir = root.path().join("project");
+    let external = root.path().join("external/private.txt");
     let out = summarize(
         "read_file",
-        &json!({"path": "/Users/kevinh/private.txt"}),
-        Path::new("/tmp/project"),
+        &json!({"path": external.to_string_lossy()}),
+        &working_dir,
     )
     .unwrap();
     assert_eq!(out["path"], "[external]/private.txt");

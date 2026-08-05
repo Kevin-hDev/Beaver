@@ -112,7 +112,7 @@ fn document_json(name: &str, source_id: &str, hash: &str) -> serde_json::Value {
     serde_json::json!({
         "name": name,
         "source_id": source_id,
-        "source_path": format!("/tmp/{name}"),
+        "source_path": std::env::temp_dir().join(name),
         "source_hash": hash.repeat(64),
         "enabled": true
     })

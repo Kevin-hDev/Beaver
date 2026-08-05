@@ -105,13 +105,11 @@ pub(super) fn install_root(record: &ExtensionRecord) -> Result<PathBuf, String> 
     }) {
         return Err("Extension non gérée.".to_string());
     }
-    let root = root()
-        .canonicalize()
+    let root = dunce::canonicalize(root())
         .map_err(|_| "Stockage des extensions indisponible.".to_string())?;
     let requested = PathBuf::from(&record.source);
     let source = if requested.exists() {
-        requested
-            .canonicalize()
+        dunce::canonicalize(requested)
             .map_err(|_| "Source d'extension gérée invalide.".to_string())?
     } else {
         requested

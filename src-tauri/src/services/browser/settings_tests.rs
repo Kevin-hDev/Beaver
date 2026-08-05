@@ -1,4 +1,4 @@
-use super::settings::{cef_settings_policy, cef_settings_policy_for_platform};
+use super::settings::cef_settings_policy_for_platform;
 use std::path::Path;
 
 #[test]
@@ -8,7 +8,7 @@ fn cef_settings_keep_the_sandbox_and_disable_remote_debugging() {
         "/Applications/Beaver.app/Contents/Frameworks/Beaver Helper.app/Contents/MacOS/Beaver Helper",
     );
 
-    let settings = cef_settings_policy(profile, helper);
+    let settings = cef_settings_policy_for_platform(profile, helper, false);
 
     assert!(!settings.no_sandbox);
     assert!(settings.external_message_pump);

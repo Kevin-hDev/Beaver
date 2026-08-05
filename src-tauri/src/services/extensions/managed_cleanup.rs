@@ -11,8 +11,7 @@ pub fn unreferenced(records: &[ExtensionRecord]) -> Result<(), String> {
     if !root.exists() {
         return Ok(());
     }
-    let root = root
-        .canonicalize()
+    let root = dunce::canonicalize(root)
         .map_err(|_| "Stockage des extensions indisponible.".to_string())?;
     unreferenced_at(
         &root,
@@ -131,8 +130,7 @@ fn cleanup_version(version: &Path, referenced: &HashSet<PathBuf>) -> Result<(), 
     if !metadata.file_type().is_dir() || !valid_token(name) {
         return Ok(());
     }
-    let canonical = version
-        .canonicalize()
+    let canonical = dunce::canonicalize(version)
         .map_err(|_| "Stockage des extensions indisponible.".to_string())?;
     if !referenced.contains(&canonical) {
         std::fs::remove_dir_all(&canonical)

@@ -50,6 +50,7 @@ fn safe_unpack_rejects_parent_dir() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+#[cfg(unix)]
 #[test]
 fn safe_unpack_accepts_safe_relative_symlink() {
     let dir = std::env::temp_dir().join("cl-go-test-tar-safe-symlink");

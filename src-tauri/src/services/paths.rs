@@ -78,11 +78,11 @@ pub fn data_dir() -> PathBuf {
 fn resolve_cef_test_data_dir() -> Result<PathBuf, ()> {
     let raw = std::env::var_os("CL_GO_CEF_TEST_DATA_DIR").ok_or(())?;
     let requested = PathBuf::from(raw);
-    let temp = std::env::temp_dir().canonicalize().map_err(|_| ())?;
+    let temp = dunce::canonicalize(std::env::temp_dir()).map_err(|_| ())?;
     if !clean_cef_test_path(&requested) {
         return Err(());
     }
-    let resolved = requested.canonicalize().map_err(|_| ())?;
+    let resolved = dunce::canonicalize(requested).map_err(|_| ())?;
     allowed_cef_test_path(&resolved, &temp)
         .then_some(resolved)
         .ok_or(())
@@ -117,16 +117,13 @@ pub fn data_dir() -> PathBuf {
                 uuid::Uuid::new_v4()
             ));
             std::fs::create_dir_all(&path).expect("create isolated test data directory");
-            path.canonicalize()
-                .expect("canonicalize isolated test data directory")
+            dunce::canonicalize(path).expect("canonicalize isolated test data directory")
         })
         .clone()
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-
     #[test]
     fn test_data_dir_never_targets_user_data() {
         let actual = super::data_dir();
@@ -135,28 +132,25 @@ mod tests {
             .join(".local/share/cl-go-dash");
 
         assert_ne!(actual, production);
-        let temp = std::env::temp_dir()
-            .canonicalize()
-            .expect("canonicalize system temp directory");
+        let temp =
+            dunce::canonicalize(std::env::temp_dir()).expect("canonicalize system temp directory");
         assert!(actual.starts_with(temp));
     }
 
     #[test]
     fn cef_test_profile_accepts_only_clean_absolute_temp_paths() {
-        let temp = Path::new("/private/tmp");
+        let temp = tempfile::tempdir().expect("tempdir");
+        let accepted = temp.path().join("cl-go-cef-test");
+        let traversal = temp.path().join("nested/../outside");
+        let outside = temp
+            .path()
+            .parent()
+            .expect("temp parent")
+            .join(format!("outside-{}", uuid::Uuid::new_v4()));
 
-        assert!(super::allowed_cef_test_path(
-            Path::new("/private/tmp/cl-go-cef-test"),
-            temp,
-        ));
-        assert!(!super::allowed_cef_test_path(
-            Path::new("/private/tmp/../Users/kevinh"),
-            temp,
-        ));
-        assert!(!super::allowed_cef_test_path(
-            Path::new("/Users/kevinh/.local/share/cl-go-dash"),
-            temp,
-        ));
+        assert!(super::allowed_cef_test_path(&accepted, temp.path()));
+        assert!(!super::allowed_cef_test_path(&traversal, temp.path()));
+        assert!(!super::allowed_cef_test_path(&outside, temp.path()));
     }
 
     #[test]

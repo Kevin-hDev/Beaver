@@ -17,7 +17,7 @@ pub struct GitBaseline {
 
 impl GitBaseline {
     pub fn capture(root: &Path) -> (Option<Self>, bool) {
-        let Ok(root) = root.canonicalize() else {
+        let Ok(root) = dunce::canonicalize(root) else {
             return (None, true);
         };
         let repository = match Repository::discover(&root) {
@@ -27,7 +27,7 @@ impl GitBaseline {
         };
         let Some(workdir) = repository
             .workdir()
-            .and_then(|workdir| workdir.canonicalize().ok())
+            .and_then(|workdir| dunce::canonicalize(workdir).ok())
         else {
             return (None, true);
         };
@@ -71,7 +71,7 @@ impl GitBaseline {
         path: &Path,
     ) -> Option<Option<FileState>> {
         let normalized;
-        let path = match path.canonicalize() {
+        let path = match dunce::canonicalize(path) {
             Ok(canonical) => {
                 normalized = canonical;
                 normalized.as_path()

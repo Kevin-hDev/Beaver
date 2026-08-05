@@ -4,8 +4,9 @@ use git2::{Repository, Signature};
 use std::path::Path;
 
 fn dependency_archive(root: &Path) {
-    let archive = std::fs::File::create(root.join("fixture-dependency.tar")).unwrap();
-    let mut builder = tar::Builder::new(archive);
+    let archive = std::fs::File::create(root.join("fixture-dependency.tgz")).unwrap();
+    let encoder = flate2::write::GzEncoder::new(archive, flate2::Compression::default());
+    let mut builder = tar::Builder::new(encoder);
     let package = serde_json::json!({
         "name": "fixture-dependency",
         "version": "1.0.0",
@@ -24,6 +25,7 @@ fn dependency_archive(root: &Path) {
         builder.append_data(&mut header, path, bytes).unwrap();
     }
     builder.finish().unwrap();
+    builder.into_inner().unwrap().finish().unwrap();
 }
 
 fn write_fixture(root: &Path) {
@@ -49,7 +51,7 @@ fn write_fixture(root: &Path) {
             "name": "git-dependency-fixture",
             "version": "1.0.0",
             "scripts": { "postinstall": "node unsafe.js" },
-            "dependencies": { "fixture-dependency": "file:./fixture-dependency.tar" }
+            "dependencies": { "fixture-dependency": "file:./fixture-dependency.tgz" }
         })
         .to_string(),
     )
