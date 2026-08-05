@@ -47,12 +47,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Fetch pinned bridge baseline
-        run: |
-          git fetch --no-tags --depth=2 \
-            https://github.com/Kevin-hDev/cl-go-dash.git \
-            refs/tags/v1.0.2:refs/tags/cl-go-v1.0.2-baseline
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
         with:
