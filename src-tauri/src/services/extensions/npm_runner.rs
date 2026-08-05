@@ -107,19 +107,46 @@ impl NpmRunner {
         workspace: &Path,
         arguments: Vec<OsString>,
     ) -> Result<(), OperationFailure> {
-        super::process_runner::run(
+        let result = super::process_runner::run(
             &self.node,
             &arguments,
             root,
             &workspace.join("tmp"),
             INSTALL_TIMEOUT,
-        )
-        .map_err(OperationFailure::from)
+        );
+        #[cfg(test)]
+        if let Err(failure) = &result {
+            eprintln!("[npm-test] process failure: {failure:?}");
+            report_test_log(workspace);
+        }
+        result.map_err(OperationFailure::from)
     }
 
     #[cfg(test)]
     pub(super) fn for_test(node: PathBuf, cli: PathBuf) -> Self {
         Self { node, cli }
+    }
+}
+
+#[cfg(test)]
+fn report_test_log(workspace: &Path) {
+    use std::io::Read;
+
+    let Ok(entries) = std::fs::read_dir(workspace.join("cache/_logs")) else {
+        return;
+    };
+    let latest = entries
+        .filter_map(Result::ok)
+        .take(32)
+        .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_file()))
+        .max_by_key(|entry| entry.metadata().and_then(|value| value.modified()).ok());
+    let Some(latest) = latest else { return };
+    let Ok(file) = std::fs::File::open(latest.path()) else {
+        return;
+    };
+    let mut content = String::new();
+    if file.take(8_192).read_to_string(&mut content).is_ok() {
+        eprintln!("[npm-test] bounded npm log:\n{content}");
     }
 }
 
