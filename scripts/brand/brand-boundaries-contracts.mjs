@@ -7,10 +7,10 @@ export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 38,
   CLGO: 18,
-  "cl-go-dash": 199,
+  "cl-go-dash": 210,
   clgo: 104,
-  "cl-go": 92,
-  cl_go_dash: 18,
+  "cl-go": 91,
+  cl_go_dash: 20,
 });
 
 export const COMPATIBILITY_CONTRACTS = Object.freeze([
