@@ -1,4 +1,48 @@
 {
+  "1.1.2": {
+    "de": [
+      "Unter Windows blitzen beim Starten, Navigieren oder Beenden von Beaver keine PowerShell- oder Befehlsfenster mehr auf.",
+      "Windows-Verknüpfungen und paketierte Starts behalten jetzt durchgängig das Beaver-Symbol und die Produktidentität.",
+      "Hintergrundlaufzeiten starten und stoppen jetzt sauberer, ohne das Prozessmodell unter Linux oder macOS zu verändern.",
+      "Die Installation von Erweiterungen verarbeitet Windows-Pfade für Node und npm jetzt zuverlässig und verwendet einen isolierten temporären Arbeitsbereich."
+    ],
+    "en": [
+      "Beaver no longer flashes PowerShell or command windows during startup, navigation, or shutdown on Windows.",
+      "Windows shortcuts and packaged launches now keep Beaver's icon and product identity consistently.",
+      "Background runtimes now start and stop more cleanly without changing the Linux or macOS process model.",
+      "Extension installation now handles Windows Node and npm paths reliably and uses an isolated temporary workspace."
+    ],
+    "es": [
+      "Beaver ya no muestra brevemente ventanas de PowerShell o de comandos al iniciarse, navegar o cerrarse en Windows.",
+      "Los accesos directos y los inicios empaquetados de Windows conservan ahora de forma coherente el icono y la identidad de Beaver.",
+      "Los procesos en segundo plano se inician y se detienen de forma más limpia sin cambiar el modelo de procesos de Linux o macOS.",
+      "La instalación de extensiones gestiona ahora de forma fiable las rutas de Node y npm en Windows y utiliza un espacio temporal aislado."
+    ],
+    "fr": [
+      "Beaver n'affiche plus brièvement de fenêtre PowerShell ou de commande au démarrage, pendant la navigation ou à la fermeture sous Windows.",
+      "Les raccourcis et lancements installés sous Windows conservent maintenant l'icône et l'identité de Beaver de façon cohérente.",
+      "Les processus en arrière-plan démarrent et s'arrêtent plus proprement sans modifier le modèle de processus de Linux ou macOS.",
+      "L'installation des extensions gère maintenant fiablement les chemins Node et npm sous Windows et utilise un espace temporaire isolé."
+    ],
+    "it": [
+      "Beaver non mostra più brevemente finestre di PowerShell o del prompt durante l'avvio, la navigazione o la chiusura in Windows.",
+      "I collegamenti e gli avvii dei pacchetti Windows mantengono ora in modo coerente l'icona e l'identità di Beaver.",
+      "I processi in background si avviano e si arrestano in modo più pulito senza modificare il modello dei processi di Linux o macOS.",
+      "L'installazione delle estensioni gestisce ora in modo affidabile i percorsi di Node e npm su Windows e usa uno spazio temporaneo isolato."
+    ],
+    "ja": [
+      "Windows で Beaver を起動、操作、終了するときに、PowerShell やコマンドウィンドウが一瞬表示されなくなりました。",
+      "Windows のショートカットとパッケージ版の起動で、Beaver のアイコンと製品表示が一貫して維持されるようになりました。",
+      "Linux や macOS のプロセス方式を変更せずに、バックグラウンド処理がより確実に起動・終了するようになりました。",
+      "拡張機能のインストールで Windows の Node と npm のパスを確実に処理し、分離された一時作業領域を使用するようになりました。"
+    ],
+    "zh": [
+      "在 Windows 上启动、操作或关闭 Beaver 时，不再闪现 PowerShell 或命令行窗口。",
+      "Windows 快捷方式和打包版启动现在会一致保留 Beaver 图标和产品标识。",
+      "后台运行时现在可以更干净地启动和停止，同时不改变 Linux 或 macOS 的进程模型。",
+      "扩展安装现在能够可靠处理 Windows 的 Node 和 npm 路径，并使用隔离的临时工作区。"
+    ]
+  },
   "1.1.1": {
     "de": [
       "Windows-Updates verwenden jetzt einen zuverlässigeren nativen Ablauf ohne Bash-Abhängigkeit.",

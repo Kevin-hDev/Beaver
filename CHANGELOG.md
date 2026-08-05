@@ -4,6 +4,24 @@
 
 ---
 
+## v1.1.2
+
+### Windows presentation
+
+- **Invisible background helpers** — prevent PowerShell and command windows from flashing while Beaver starts, switches tabs or sessions, runs helpers, or shuts down.
+- **Consistent Beaver branding** — preserve Beaver's icon and product identity through the Windows bootstrap and packaged launch paths.
+
+### Runtime reliability
+
+- **Reliable application lifecycle** — harden startup and shutdown process-tree handling so Ollama, CEF, Forecast, SearXNG, and extension processes stop cleanly without visible consoles.
+- **Reliable extension installation** — normalize Windows runtime paths before invoking Node and npm, and isolate npm's home and cache in a private temporary workspace to prevent drive-root path failures.
+
+### Cross-platform validation
+
+- **Expanded release coverage** — exercise Windows npm extension installation and background-process behavior in CI while keeping the established Linux and macOS process model unchanged.
+
+---
+
 ## v1.1.1
 
 ### Windows update reliability
