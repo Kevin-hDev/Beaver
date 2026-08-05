@@ -18,6 +18,14 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Install Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install extension host dependencies
+        run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host
+
       - name: Install Linux dependencies (Tauri)
         run: |
           sudo apt-get update -qq
