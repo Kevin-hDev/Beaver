@@ -49,19 +49,8 @@ pub fn run(
         .current_dir(working_directory)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .env_clear()
-        .env("PATH", path)
-        .env("TMPDIR", temporary_directory)
-        .env("TMP", temporary_directory)
-        .env("TEMP", temporary_directory);
-    #[cfg(windows)]
-    if let Some(system_root) = std::env::var_os("SystemRoot") {
-        if !valid_environment_value(&system_root, MAX_SYSTEM_ROOT_CHARS) {
-            return Err(ProcessFailure::EnvironmentInvalid);
-        }
-        command.env("SystemRoot", system_root);
-    }
+        .stderr(Stdio::null());
+    configure_environment(&mut command, path, temporary_directory)?;
     crate::services::process_tree::configure(&mut command);
     let mut child = command.spawn().map_err(|_| ProcessFailure::Unavailable)?;
     let deadline = Instant::now() + timeout;
@@ -86,6 +75,31 @@ pub fn run(
             }
         }
     }
+}
+
+fn configure_environment(
+    command: &mut Command,
+    path: OsString,
+    temporary_directory: &Path,
+) -> Result<(), ProcessFailure> {
+    command
+        .env_clear()
+        .env("PATH", path)
+        .env("HOME", temporary_directory)
+        .env("TMPDIR", temporary_directory)
+        .env("TMP", temporary_directory)
+        .env("TEMP", temporary_directory);
+    #[cfg(windows)]
+    {
+        command.env("USERPROFILE", temporary_directory);
+        if let Some(system_root) = std::env::var_os("SystemRoot") {
+            if !valid_environment_value(&system_root, MAX_SYSTEM_ROOT_CHARS) {
+                return Err(ProcessFailure::EnvironmentInvalid);
+            }
+            command.env("SystemRoot", system_root);
+        }
+    }
+    Ok(())
 }
 
 fn valid_environment_value(value: &std::ffi::OsStr, maximum: usize) -> bool {
@@ -125,5 +139,32 @@ mod tests {
             std::ffi::OsStr::new(&path),
             MAX_PATH_CHARS
         ));
+    }
+
+    #[test]
+    fn child_home_is_isolated_inside_the_temporary_workspace() {
+        let temporary = tempfile::tempdir().unwrap();
+        let mut command = Command::new("unused");
+
+        configure_environment(
+            &mut command,
+            OsString::from("isolated-path"),
+            temporary.path(),
+        )
+        .unwrap();
+
+        let environment = command
+            .get_envs()
+            .map(|(key, value)| (key.to_owned(), value.map(std::ffi::OsStr::to_owned)))
+            .collect::<std::collections::HashMap<_, _>>();
+        assert_eq!(
+            environment.get(std::ffi::OsStr::new("HOME")),
+            Some(&Some(temporary.path().as_os_str().to_owned()))
+        );
+        #[cfg(windows)]
+        assert_eq!(
+            environment.get(std::ffi::OsStr::new("USERPROFILE")),
+            Some(&Some(temporary.path().as_os_str().to_owned()))
+        );
     }
 }
