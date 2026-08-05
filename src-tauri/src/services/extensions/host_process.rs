@@ -161,9 +161,8 @@ lines.on("line", (line) => {
         let directory = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("resources")
             .join("extension-host");
-        let node_name = if cfg!(windows) { "node.exe" } else { "node" };
         let paths = HostPaths {
-            node: directory.join("runtime").join(node_name),
+            node: which::which("node").unwrap().canonicalize().unwrap(),
             script: directory.join("host.mjs"),
             directory,
         };

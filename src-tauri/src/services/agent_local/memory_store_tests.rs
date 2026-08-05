@@ -39,7 +39,8 @@ async fn topic_write_rebuilds_registry_and_summary() {
         .unwrap();
     assert!(registry.contains(&format!("topics/{id}.md")));
     assert!(summary.contains("Interface compacte"));
-    assert!(summary.contains(path.to_str().unwrap()));
+    let canonical_path = path.canonicalize().unwrap();
+    assert!(summary.contains(canonical_path.to_str().unwrap()));
 }
 
 #[tokio::test]

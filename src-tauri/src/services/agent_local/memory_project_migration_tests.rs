@@ -45,6 +45,13 @@ fn current_scope(layout: &MemoryLayout, project: &Path) -> MemoryScope {
     }
 }
 
+fn canonical_path(path: &Path) -> String {
+    path.canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned()
+}
+
 #[tokio::test]
 async fn legacy_folder_is_renamed_and_indexes_are_rebuilt() {
     let (_root, layout, project) = setup();
@@ -62,7 +69,7 @@ async fn legacy_folder_is_renamed_and_indexes_are_rebuilt() {
         tokio::fs::read_to_string(legacy.summary_path())
             .await
             .unwrap()
-            .contains(&legacy.root.to_string_lossy().into_owned())
+            .contains(&canonical_path(&legacy.root))
     );
 
     let resolved = resolve(&layout, &project).await.unwrap();
@@ -72,7 +79,7 @@ async fn legacy_folder_is_renamed_and_indexes_are_rebuilt() {
 
     assert!(!legacy.root.exists());
     assert!(resolved.root.exists());
-    assert!(summary.contains(&resolved.root.to_string_lossy().into_owned()));
+    assert!(summary.contains(&canonical_path(&resolved.root)));
     assert!(!resolved.root.join(PENDING_MARKER).exists());
 }
 
@@ -121,7 +128,7 @@ async fn pending_migration_is_resumed_after_an_interruption() {
         .await
         .unwrap();
 
-    assert!(summary.contains(&resolved.root.to_string_lossy().into_owned()));
+    assert!(summary.contains(&canonical_path(&resolved.root)));
     assert!(!resolved.root.join(PENDING_MARKER).exists());
 }
 
