@@ -98,7 +98,9 @@ fn npm_resolution_prefers_the_bundled_runtime_cli() {
     std::fs::write(&node, "").unwrap();
     std::fs::write(&cli, "").unwrap();
 
-    assert_eq!(resolve_cli(temporary.path(), &node).unwrap(), cli);
+    let expected = super::host_paths::node_compatible_path(cli.canonicalize().unwrap());
+
+    assert_eq!(resolve_cli(temporary.path(), &node).unwrap(), expected);
 }
 
 #[cfg(windows)]

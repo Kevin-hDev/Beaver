@@ -122,7 +122,7 @@ impl NpmRunner {
         Self::new(node, cli)
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, windows))]
     pub(super) fn paths_for_test(&self) -> (&Path, &Path) {
         (&self.node, &self.cli)
     }
