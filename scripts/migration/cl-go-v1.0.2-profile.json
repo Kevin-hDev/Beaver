@@ -258,7 +258,8 @@
       "profilePaths": [
         "subagent-worktrees/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD",
         "subagent-changes/550e8400-e29b-41d4-a716-446655440004.json",
-        "subagent-directory-repos/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD"
+        "subagent-directory-repos/550e8400-e29b-41d4-a716-446655440004/550e8400-e29b-41d4-a716-446655440005/.git/HEAD",
+        "sdr/550e8400e29b41d4a716446655440004/.git/HEAD"
       ],
       "contracts": [
         {
@@ -272,6 +273,11 @@
         {
           "file": "src-tauri/src/services/agent_local/subagent_directory_workspace.rs",
           "snippets": [".join(\"subagent-directory-repos\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/subagent_directory_workspace.rs",
+          "snippets": [".join(\"sdr\")"]
         }
       ],
       "evidence": [

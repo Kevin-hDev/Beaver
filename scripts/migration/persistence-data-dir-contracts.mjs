@@ -28,7 +28,7 @@ export const EXPECTED_DATA_DIR_REFERENCES = Object.freeze([
   ["src-tauri/src/services/agent_local/shell_sandbox/windows/windows_acl.rs", 1],
   ["src-tauri/src/services/agent_local/skill_catalog.rs", 1],
   ["src-tauri/src/services/agent_local/subagent_change_store.rs", 2],
-  ["src-tauri/src/services/agent_local/subagent_directory_workspace.rs", 1],
+  ["src-tauri/src/services/agent_local/subagent_directory_workspace.rs", 2],
   ["src-tauri/src/services/agent_local/subagent_startup_cleanup.rs", 1],
   ["src-tauri/src/services/agent_local/subagent_worktree_identity.rs", 1],
   ["src-tauri/src/services/agent_local/tool_bash_storage.rs", 1],
