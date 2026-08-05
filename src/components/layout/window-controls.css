@@ -11,8 +11,10 @@
   -webkit-user-select: none;
 }
 
+/* Windows/Linux : centre les pastilles sur la ligne des icônes de la barre
+   (window-toolbar à top 6px, boutons de --btn-height 28px → centre à 20px). */
 .os-other .window-controls {
-  top: 12px;
+  top: 14px;
 }
 
 .wc-btn {
@@ -37,15 +39,19 @@
 .wc-btn--minimize { background: #febc2e; }
 .wc-btn--maximize { background: #28c840; }
 
+/* Le glyphe reste en place et se révèle en fondu : bascule display, il
+   apparaîtrait d'un coup et sauterait d'un pixel au premier rendu. */
 .wc-icon {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 90ms ease;
   pointer-events: none;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.62);
   line-height: 1;
 }
 
 .window-controls:hover .wc-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  opacity: 1;
 }

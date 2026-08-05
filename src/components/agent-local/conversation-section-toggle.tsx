@@ -1,5 +1,4 @@
 import type { KeyboardEvent, ReactNode } from "react";
-import { CaretRight } from "@/components/ui/icons";
 
 interface ConversationSectionToggleProps {
   open: boolean;
@@ -20,13 +19,10 @@ export function ConversationSectionToggle({ open, onToggle, children }: Conversa
       className="conv-section-label conv-section-toggle"
       role="button"
       tabIndex={0}
+      aria-expanded={open}
       onClick={onToggle}
       onKeyDown={handleKeyDown}
     >
-      <CaretRight
-        size="var(--icon-xs)"
-        className={`conv-collapse-chevron${open ? " conv-collapse-open" : ""}`}
-      />
       {children}
     </div>
   );

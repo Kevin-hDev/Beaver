@@ -37,12 +37,6 @@
   transition-duration: 400ms;
 }
 
-.conv-collapse-chevron {
-  transition:
-    transform 400ms ease,
-    color 400ms ease;
-}
-
 .conv-folder-icon {
   transition: color 400ms ease;
 }

@@ -26,17 +26,6 @@
   color: var(--ink-muted);
 }
 
-/* Chevron plier/déplier */
-.conv-collapse-chevron {
-  flex-shrink: 0;
-  color: var(--ink-faint);
-  transition: transform 200ms ease;
-}
-
-.conv-collapse-chevron.conv-collapse-open {
-  transform: rotate(90deg);
-}
-
 /* Project header in sidebar */
 .conv-project-wrapper {
   margin-bottom: var(--space-xs);
