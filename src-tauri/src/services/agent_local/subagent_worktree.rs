@@ -2,7 +2,6 @@ use crate::services::paths::data_dir;
 #[cfg(test)]
 use std::path::Component;
 use std::path::{Path, PathBuf};
-use tokio::process::Command;
 
 #[cfg(test)]
 pub async fn remove(worktree_path: &str) -> Result<(), String> {
@@ -71,7 +70,7 @@ pub async fn create_for_execution(
         Err(_) => return Err("Création du worktree impossible".to_string()),
     }
 
-    let output = Command::new("git")
+    let output = crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(project_path)
         .args(["worktree", "add", "-b"])

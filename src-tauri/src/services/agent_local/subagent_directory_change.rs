@@ -4,7 +4,6 @@ use super::types_subagent_change::{
 use chrono::Utc;
 use std::path::Path;
 use std::process::Stdio;
-use tokio::process::Command;
 
 const DIRECTORY_TARGET: &str = "cl-go/directory";
 pub const DIRECTORY_PROJECT: &str = "session-directory";
@@ -74,7 +73,7 @@ pub async fn capture(
 
 pub async fn patch(meta: &SubagentChangeMeta) -> Result<String, String> {
     let repository = repository(meta)?;
-    let output = Command::new("git")
+    let output = crate::services::background_command::new_tokio("git")
         .arg("--git-dir")
         .arg(repository)
         .args(["show", "--format=", "--binary", &meta.commit])
@@ -114,7 +113,7 @@ async fn validate_child(child_id: &str) -> Result<super::types_session::AgentSes
 
 async fn commit_snapshot(worktree: &Path, id: &str) -> Result<(), String> {
     let message = crate::services::brand::directory_change_commit_message(id);
-    let status = Command::new("git")
+    let status = crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(worktree)
         .args([

@@ -1,6 +1,5 @@
 use crate::services::agent_local::security;
 use std::path::{Component, Path, PathBuf};
-use std::process::Command;
 
 use super::file_preview_editors::{detect_editors_for_extension, DetectedEditor};
 
@@ -179,7 +178,7 @@ fn validate_path_text(path: &str) -> Result<(), String> {
 }
 
 fn spawn_cmd(command: &str, args: &[&std::ffi::OsStr]) -> Result<(), String> {
-    Command::new(command)
+    crate::services::background_command::new(command)
         .args(args)
         .spawn()
         .map(|_| ())

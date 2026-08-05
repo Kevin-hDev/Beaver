@@ -155,4 +155,24 @@ lines.on("line", (line) => {
         host.kill().await;
         assert!(host.request("test", json!({})).await.is_err());
     }
+
+    #[tokio::test]
+    async fn bundled_extension_host_answers_hello() {
+        let directory = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("extension-host");
+        let node_name = if cfg!(windows) { "node.exe" } else { "node" };
+        let paths = HostPaths {
+            node: directory.join("runtime").join(node_name),
+            script: directory.join("host.mjs"),
+            directory,
+        };
+        let host = HostProcess::spawn(&paths).unwrap();
+
+        let hello = host.request("host.hello", json!({})).await.unwrap();
+
+        assert_eq!(hello["apiVersion"], "1");
+        assert!(hello["nodeVersion"].as_str().is_some());
+        host.kill().await;
+    }
 }

@@ -6,7 +6,6 @@ use super::notes_types::{NoteListResult, NoteMutation};
 use super::{notes_annotations, notes_transaction, notes_validation, storage};
 use crate::services::forecast::types::{ForecastResult, MAX_ANNOTATIONS};
 use std::ffi::OsStr;
-use std::process::Command;
 
 pub use super::notes_types::{ForecastNote, ForecastNoteCreateRequest, ForecastNoteUpdateRequest};
 
@@ -134,7 +133,7 @@ fn mutation<T>(value: T, analysis: &ForecastResult) -> NoteMutation<T> {
 }
 
 fn spawn_cmd(command: &str, args: &[&OsStr]) -> Result<(), String> {
-    Command::new(command)
+    crate::services::background_command::new(command)
         .args(args)
         .spawn()
         .map(|_| ())

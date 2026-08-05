@@ -128,6 +128,7 @@ fn venv_python(venv: &Path) -> PathBuf {
 }
 
 fn run(command: &mut Command, step: &str) -> Result<(), String> {
+    crate::services::background_command::configure(command);
     command.env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
     command.env("PIP_NO_INPUT", "1");
     command.env("PYTHONUNBUFFERED", "1");

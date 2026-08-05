@@ -1,7 +1,6 @@
 use std::io::Write;
 use std::process::Stdio;
 use std::time::Duration;
-use tokio::process::Command;
 
 const MAX_MODELFILE_BYTES: usize = 2 * 1024 * 1024;
 const CREATE_TIMEOUT: Duration = Duration::from_secs(10 * 60);
@@ -25,7 +24,7 @@ pub async fn create_from_modelfile(name: &str, content: &str) -> Result<(), Stri
 
     let binary = crate::services::ollama_lifecycle::ollama_binary_path()
         .map_err(|_| "ollama-create-error".to_string())?;
-    let mut command = Command::new(binary);
+    let mut command = crate::services::background_command::new_tokio(binary);
     command
         .arg("create")
         .arg(name)
@@ -36,12 +35,6 @@ pub async fn create_from_modelfile(name: &str, content: &str) -> Result<(), Stri
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .kill_on_drop(true);
-
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        command.as_std_mut().creation_flags(0x08000000);
-    }
 
     let status = tokio::time::timeout(CREATE_TIMEOUT, command.status())
         .await

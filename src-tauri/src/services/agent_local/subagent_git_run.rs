@@ -111,7 +111,7 @@ pub async fn capture(
         .map(|meta| meta.id.clone())
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let message = crate::services::brand::subagent_change_commit_message(&id);
-    let committed = tokio::process::Command::new("git")
+    let committed = crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(worktree)
         .args([

@@ -69,20 +69,12 @@ fn detect_linux() -> GpuVendor {
 
 #[cfg(target_os = "windows")]
 fn detect_windows() -> GpuVendor {
-    use std::process::Command;
-
-    let mut cmd = Command::new("powershell");
+    let mut cmd = crate::services::background_command::new("powershell");
     cmd.args([
         "-NoProfile",
         "-Command",
         "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name",
     ]);
-
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
 
     let output = match cmd.output() {
         Ok(o) => o,

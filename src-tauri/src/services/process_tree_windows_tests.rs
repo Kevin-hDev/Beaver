@@ -49,3 +49,12 @@ fn console_is_visible(title: &str) -> bool {
     }
     false
 }
+
+#[test]
+fn tree_termination_uses_the_background_command_boundary() {
+    let source = include_str!("process_tree.rs");
+    assert!(
+        source.contains("background_command::new(executable)"),
+        "taskkill must use the shared invisible command builder"
+    );
+}

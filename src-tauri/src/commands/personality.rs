@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+#[cfg(not(target_os = "windows"))]
 use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
@@ -92,7 +93,9 @@ pub fn open_in_editor(path: String) -> Result<(), String> {
     let result = Command::new("xdg-open").arg(&path).spawn();
 
     #[cfg(target_os = "windows")]
-    let result = Command::new("cmd").args(["/c", "start", "", &path]).spawn();
+    let result = crate::services::background_command::new("cmd")
+        .args(["/c", "start", "", &path])
+        .spawn();
 
     result.map_err(|e| {
         eprintln!("[personality] open_in_editor: {e}");

@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use tokio::process::Command;
 
 pub async fn is_git_repository(path: &Path) -> bool {
     super::subagent_git_command::success(path, &["rev-parse", "--is-inside-work-tree"])
@@ -25,7 +24,7 @@ pub async fn create(
         .await
         .map_err(|_| generic_error())?;
 
-    let initialized = Command::new("git")
+    let initialized = crate::services::background_command::new_tokio("git")
         .args(["init", "--bare"])
         .arg(&repository)
         .stdout(Stdio::null())
@@ -65,7 +64,7 @@ pub async fn create(
         return Err(generic_error());
     }
     let branch = super::subagent_worktree::branch_for_execution(execution_id)?;
-    let checked_out = Command::new("git")
+    let checked_out = crate::services::background_command::new_tokio("git")
         .arg("--git-dir")
         .arg(&repository)
         .args(["worktree", "add", "-b", &branch])
@@ -115,7 +114,7 @@ async fn run(
     work_tree: Option<(&Path, &Path)>,
     git_dir: Option<&Path>,
 ) -> Result<bool, String> {
-    let mut command = Command::new("git");
+    let mut command = crate::services::background_command::new_tokio("git");
     if let Some((work_tree, repository)) = work_tree {
         command.arg("--git-dir").arg(repository).arg("--work-tree").arg(work_tree);
     } else if let Some(repository) = git_dir {

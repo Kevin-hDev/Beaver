@@ -1,5 +1,9 @@
 use tokio::process::Command;
 
+#[cfg(all(test, windows))]
+#[path = "tool_bash_platform_windows_tests.rs"]
+mod windows_tests;
+
 #[cfg(unix)]
 const TERMINATION_GRACE_MS: u64 = 50;
 
@@ -10,8 +14,10 @@ pub fn configure_process_group(command: &mut Command) {
     }
     #[cfg(windows)]
     {
-        use windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP;
-        command.creation_flags(CREATE_NEW_PROCESS_GROUP);
+        use windows_sys::Win32::System::Threading::{
+            CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW,
+        };
+        command.creation_flags(CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW);
     }
 }
 
@@ -64,7 +70,7 @@ pub async fn terminate_process_tree(pid: u32) {
         let Some(taskkill) = system32_file(&["taskkill.exe"]) else {
             return;
         };
-        let _ = Command::new(taskkill)
+        let _ = crate::services::background_command::new_tokio(taskkill)
             .args(["/PID", &pid, "/T", "/F"])
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())

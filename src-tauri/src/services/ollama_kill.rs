@@ -1,5 +1,7 @@
 use std::path::PathBuf;
-use std::process::{Child, Command};
+use std::process::Child;
+#[cfg(unix)]
+use std::process::Command;
 use std::time::Duration;
 
 fn pid_file_path() -> PathBuf {
@@ -62,7 +64,7 @@ fn is_ollama_process(pid: u32) -> bool {
     }
     #[cfg(windows)]
     {
-        let output = Command::new("tasklist")
+        let output = crate::services::background_command::new("tasklist")
             .args(["/FI", &format!("PID eq {pid}"), "/NH", "/FO", "CSV"])
             .output();
         match output {

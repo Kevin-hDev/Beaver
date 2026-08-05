@@ -1,6 +1,5 @@
 use super::DetectedEditor;
 use std::path::Path;
-use std::process::Command;
 
 fn safe_extension(file_path: &Path) -> Option<String> {
     let ext = file_path.extension()?.to_str()?;
@@ -18,7 +17,10 @@ pub fn detect(file_path: &Path) -> Vec<DetectedEditor> {
 
     let mut editors = Vec::new();
 
-    let assoc_out = Command::new("cmd").args(["/C", "assoc"]).arg(&ext).output();
+    let assoc_out = crate::services::background_command::new("cmd")
+        .args(["/C", "assoc"])
+        .arg(&ext)
+        .output();
 
     if let Ok(out) = assoc_out {
         let text = String::from_utf8_lossy(&out.stdout);

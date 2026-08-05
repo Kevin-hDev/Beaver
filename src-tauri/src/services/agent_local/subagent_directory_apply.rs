@@ -2,7 +2,6 @@ use super::types_subagent_change::{SubagentChangeMeta, SubagentChangeStatus};
 use chrono::Utc;
 use std::path::Path;
 use std::process::Stdio;
-use tokio::process::Command;
 
 const MAX_CURRENT_FILE_BYTES: u64 = 64 * 1024 * 1024;
 
@@ -81,7 +80,7 @@ async fn baseline_oid(
     commit: &str,
     path: &str,
 ) -> Result<Option<String>, String> {
-    let output = Command::new("git")
+    let output = crate::services::background_command::new_tokio("git")
         .arg("--git-dir")
         .arg(repository)
         .args(["ls-tree", "-z", commit, "--", path])
@@ -117,7 +116,7 @@ async fn current_oid(path: &Path) -> Result<Option<String>, String> {
     if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > MAX_CURRENT_FILE_BYTES {
         return Err(generic_error());
     }
-    let output = Command::new("git")
+    let output = crate::services::background_command::new_tokio("git")
         .arg("hash-object")
         .arg(path)
         .stderr(Stdio::null())
@@ -134,7 +133,7 @@ async fn current_oid(path: &Path) -> Result<Option<String>, String> {
 }
 
 async fn checkout(repository: &Path, commit: &str, stage: &Path) -> Result<(), String> {
-    let status = Command::new("git")
+    let status = crate::services::background_command::new_tokio("git")
         .arg("--git-dir")
         .arg(repository)
         .args(["worktree", "add", "--detach"])

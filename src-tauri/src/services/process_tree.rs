@@ -4,13 +4,9 @@ use std::time::Duration;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 #[cfg(windows)]
-use std::os::windows::process::CommandExt;
-#[cfg(windows)]
 use std::process::Stdio;
 #[cfg(unix)]
 use sysinfo::{Pid, System};
-#[cfg(windows)]
-use windows_sys::Win32::System::Threading::CREATE_NO_WINDOW;
 
 const GRACEFUL_STOP_TIMEOUT: Duration = Duration::from_millis(500);
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
@@ -48,14 +44,14 @@ pub fn configure(command: &mut Command) {
     #[cfg(unix)]
     command.process_group(0);
     #[cfg(windows)]
-    command.creation_flags(CREATE_NO_WINDOW);
+    crate::services::background_command::configure(command);
 }
 
 pub fn configure_tokio(command: &mut tokio::process::Command) {
     #[cfg(unix)]
     command.process_group(0);
     #[cfg(windows)]
-    command.as_std_mut().creation_flags(CREATE_NO_WINDOW);
+    crate::services::background_command::configure_tokio(command);
 }
 
 pub fn terminate(child: &mut Child, kind: ProcessKind) {
@@ -156,7 +152,7 @@ fn signal_tree(pid: u32, _force: bool) {
     if !executable.is_absolute() || !executable.is_file() {
         return;
     }
-    let _ = Command::new(executable)
+    let _ = crate::services::background_command::new(executable)
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())

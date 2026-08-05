@@ -1,6 +1,5 @@
 use git2::{BranchType, IndexAddOption, Repository, Signature};
 use std::path::Path;
-use std::process::Command;
 
 use super::{action_error::GitActionError, branch, branch_index_backup::IndexBackup, repo};
 use crate::services::brand::DISPLAY_NAME;
@@ -142,7 +141,7 @@ fn commit_signature(
 }
 
 fn signature_from_git_var(workdir: &Path) -> Option<Signature<'static>> {
-    let output = Command::new("git")
+    let output = crate::services::background_command::new("git")
         .args(["-C"])
         .arg(workdir)
         .args(["var", "GIT_AUTHOR_IDENT"])

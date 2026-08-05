@@ -2,7 +2,6 @@ use super::types_subagent_change::{SubagentChangeStatus, SubagentWorkspaceKind};
 use chrono::Utc;
 use std::path::Path;
 use std::process::Stdio;
-use tokio::process::Command;
 
 pub async fn seed_pending(
     child_id: &str,
@@ -24,7 +23,7 @@ pub async fn seed_pending(
     }
     let old_repository = super::subagent_directory_change::repository(&meta)?;
     let base_commit = super::subagent_git_command::text(worktree, &["rev-parse", "HEAD"]).await?;
-    let fetched = Command::new("git")
+    let fetched = crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(worktree)
         .args(["fetch"])

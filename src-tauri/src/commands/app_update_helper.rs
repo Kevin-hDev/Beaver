@@ -2,7 +2,7 @@ use rand::RngCore;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 use tauri::Manager;
 
 const MAX_HELPER_SIZE: u64 = 64 * 1024 * 1024;
@@ -15,7 +15,7 @@ pub(crate) fn spawn_update_helper(app: &tauri::AppHandle, asset: &Path) -> Resul
         .join(helper_resource_name());
     let helper = copy_helper(&source, &resource_root, &std::env::temp_dir())?;
     let working_directory = current_install_directory()?;
-    let mut command = Command::new(helper.path());
+    let mut command = crate::services::background_command::new(helper.path());
     command
         .arg("--apply-update")
         .arg(asset)
@@ -25,11 +25,6 @@ pub(crate) fn spawn_update_helper(app: &tauri::AppHandle, asset: &Path) -> Resul
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x0800_0000);
-    }
     command.spawn().map_err(|_| install_error())?;
     helper.persist();
     Ok(())

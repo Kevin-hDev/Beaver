@@ -78,7 +78,9 @@ function Test-SourceContracts {
         "Software\clgo\Beaver",
         "IsShortcutTarget",
         "cl-go-dash.exe",
-        "SetOutPath `$INSTDIR"
+        "SetOutPath `$INSTDIR",
+        "SHChangeNotify",
+        "0x08000000"
     )
     foreach ($value in $required) {
         if (-not $hook.Contains($value)) {

@@ -1,6 +1,5 @@
 use ignore::WalkBuilder;
 use std::path::Path;
-use tokio::process::Command;
 
 const MAX_SNAPSHOT_FILES: usize = 20_000;
 const MAX_SNAPSHOT_BYTES: u64 = 512 * 1024 * 1024;
@@ -33,7 +32,7 @@ pub async fn validate_source(project: &Path) -> Result<(), String> {
 }
 
 pub async fn repository_is_bounded(repository: &Path) -> bool {
-    let output = Command::new("git")
+    let output = crate::services::background_command::new_tokio("git")
         .arg("--git-dir")
         .arg(repository)
         .args(["count-objects", "-v"])

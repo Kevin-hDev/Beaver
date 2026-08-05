@@ -1,8 +1,7 @@
 use std::path::Path;
-use tokio::process::Command;
 
 pub async fn output(repo: &Path, args: &[&str]) -> Result<std::process::Output, String> {
-    Command::new("git")
+    crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(repo)
         .args(args)
@@ -27,7 +26,7 @@ pub async fn success(repo: &Path, args: &[&str]) -> Result<bool, String> {
 }
 
 pub async fn cherry_pick(repo: &Path, commit: &str) -> Result<bool, String> {
-    let result = Command::new("git")
+    let result = crate::services::background_command::new_tokio("git")
         .args(["-C"])
         .arg(repo)
         .args([

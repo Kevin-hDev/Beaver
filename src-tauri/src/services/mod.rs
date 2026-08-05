@@ -5,6 +5,7 @@ pub mod attachment_access;
 #[cfg(test)]
 mod attachment_access_tests;
 pub mod autostart_migration;
+pub mod background_command;
 pub mod brand;
 #[cfg(test)]
 mod brand_tests;
