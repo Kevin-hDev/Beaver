@@ -1,0 +1,21 @@
+Objectif
+Traiter les nouveaux constats de review après e8cac42 sans modifier les règles produit des prompts système.
+
+Décisions
+- Le catalogue ollama-custom-models.json est chargé une seule fois par processus dans un OnceLock et protégé par un Mutex. Beaver étant déjà mono-instance, ce verrou couvre toutes les mutations applicatives utiles.
+- Chaque mutation clone l’état verrouillé, écrit le candidat puis ne publie le nouvel état en mémoire qu’après une écriture réussie. Deux commandes simultanées ne peuvent plus s’écraser.
+- Une erreur de lecture du verrou est traitée comme CustomizationKind::Unknown, pas comme un modèle non personnalisé : Beaver reste fail-closed et ne risque pas de capturer un prompt Custom comme natif.
+- L’ancien format en tableau est migré vers Unknown puis réécrit au premier chargement. Si l’écriture échoue, le cache reste utilisable et la migration sera retentée au prochain lancement.
+- Toutes les écritures passent par private_store::atomic_write afin de bénéficier du fichier temporaire aléatoire, des permissions privées, du fsync et du remplacement cross-platform.
+- La limite du fichier passe à 256 Kio : elle reste bornée et permet réellement les 512 modèles avec des noms à la longueur maximale autorisée. Cette incohérence a été trouvée pendant la seconde review des corrections et un test couvre la capacité maximale.
+- L’ordre capture du prompt natif puis restauration du Modelfile utilisateur dans model_downloads.rs est documenté explicitement. L’inverser enregistrerait le prompt Custom comme natif. Aucun échafaudage artificiel n’a été ajouté uniquement pour tester trois lignes séquentielles.
+- L’adaptateur resolve_ollama réservé aux tests reste inchangé : il appelle la fonction de production et le cas Unknown possède déjà son test dédié ; le supprimer aurait créé beaucoup de churn sans corriger de défaut fonctionnel.
+- La décision produit reste inchangée : aucun bouton de retour vers un prompt Custom/global ; Restaurer applique Beaver et Utiliser Ollama applique uniquement un prompt natif connu.
+
+Validation
+- cargo clippy --all-targets -- -D warnings
+- cargo test : 2977 réussis, 1 ignoré
+- npm test : 1836 tests Vitest, plus les suites build, CEF et extensions
+- npx tsc --noEmit
+- npm run lint
+- graphify update .
