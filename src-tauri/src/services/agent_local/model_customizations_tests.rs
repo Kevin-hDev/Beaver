@@ -1,5 +1,6 @@
 use super::model_customizations::{
-    CustomizationKind, ModelCustomizationCatalog, ModelCustomizationStore,
+    customization_kind_from, CustomizationKind, ModelCustomizationCatalog,
+    ModelCustomizationStore,
 };
 use std::sync::{Arc, Barrier};
 
@@ -159,4 +160,72 @@ fn maximum_customization_catalog_can_be_read_back() {
         loaded.kind(&format!("model-511-{suffix}")),
         Some(CustomizationKind::ParametersOnly)
     );
+}
+
+#[test]
+fn missing_customization_store_is_empty_and_can_be_created() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    let store = ModelCustomizationStore::open(path.clone());
+
+    assert_eq!(customization_kind_from(&store, "new:latest"), None);
+    store.mark_parameters("new:latest").unwrap();
+
+    assert_eq!(
+        customization_kind_from(&store, "new:latest"),
+        Some(CustomizationKind::ParametersOnly)
+    );
+    assert!(path.exists());
+}
+
+#[test]
+fn corrupt_customization_store_is_unknown_and_never_overwritten() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    let corrupt = b"{not valid json";
+    std::fs::write(&path, corrupt).unwrap();
+    let store = ModelCustomizationStore::open(path.clone());
+
+    assert_eq!(
+        customization_kind_from(&store, "legacy:latest"),
+        Some(CustomizationKind::Unknown)
+    );
+    assert_eq!(
+        store.mark_parameters("legacy:latest"),
+        Err("ollama-custom-store-write".to_string())
+    );
+    assert_eq!(std::fs::read(path).unwrap(), corrupt);
+}
+
+#[test]
+fn invalid_model_name_is_not_reported_as_customized() {
+    let directory = tempfile::tempdir().unwrap();
+    let store = ModelCustomizationStore::open(
+        directory.path().join("ollama-custom-models.json"),
+    );
+
+    assert_eq!(customization_kind_from(&store, ""), None);
+    assert_eq!(customization_kind_from(&store, "modèle:latest"), None);
+    assert_eq!(customization_kind_from(&store, "bad..name"), None);
+}
+
+#[cfg(unix)]
+#[test]
+fn broken_store_symlink_is_unknown_and_never_replaced() {
+    use std::os::unix::fs::symlink;
+
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    symlink(directory.path().join("missing-target.json"), &path).unwrap();
+    let store = ModelCustomizationStore::open(path.clone());
+
+    assert_eq!(
+        customization_kind_from(&store, "legacy:latest"),
+        Some(CustomizationKind::Unknown)
+    );
+    assert!(store.mark_parameters("legacy:latest").is_err());
+    assert!(std::fs::symlink_metadata(path)
+        .unwrap()
+        .file_type()
+        .is_symlink());
 }

@@ -20,9 +20,17 @@ pub enum CustomizationKind {
 }
 
 pub fn customization_kind(name: &str) -> Option<CustomizationKind> {
-    runtime_store()
-        .kind(name)
-        .unwrap_or(Some(CustomizationKind::Unknown))
+    customization_kind_from(runtime_store(), name)
+}
+
+pub(crate) fn customization_kind_from(
+    store: &ModelCustomizationStore,
+    name: &str,
+) -> Option<CustomizationKind> {
+    if validate_model_name(name).is_err() {
+        return None;
+    }
+    store.kind(name).unwrap_or(Some(CustomizationKind::Unknown))
 }
 
 pub fn is_model_customized(name: &str) -> bool {

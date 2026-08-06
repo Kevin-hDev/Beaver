@@ -19,15 +19,28 @@ struct LegacyCustomModelStore {
 
 pub(crate) struct ModelCustomizationStore {
     path: PathBuf,
-    catalog: Mutex<ModelCustomizationCatalog>,
+    catalog: Mutex<Option<ModelCustomizationCatalog>>,
+}
+
+enum CatalogLoad {
+    Ready {
+        catalog: ModelCustomizationCatalog,
+        migrated: bool,
+    },
+    Unavailable,
 }
 
 impl ModelCustomizationStore {
     pub(crate) fn open(path: PathBuf) -> Self {
-        let (catalog, migrated) = ModelCustomizationCatalog::read_with_format(&path);
-        if migrated {
-            let _ = catalog.write_to_path(&path);
-        }
+        let catalog = match ModelCustomizationCatalog::read_with_format(&path) {
+            CatalogLoad::Ready { catalog, migrated } => {
+                if migrated {
+                    let _ = catalog.write_to_path(&path);
+                }
+                Some(catalog)
+            }
+            CatalogLoad::Unavailable => None,
+        };
         Self {
             path,
             catalog: Mutex::new(catalog),
@@ -38,8 +51,10 @@ impl ModelCustomizationStore {
         validate_model_name(name)?;
         self.catalog
             .lock()
+            .map_err(|_| "ollama-custom-store-read".to_string())?
+            .as_ref()
             .map(|catalog| catalog.kind(name))
-            .map_err(|_| "ollama-custom-store-read".to_string())
+            .ok_or_else(|| "ollama-custom-store-read".to_string())
     }
 
     pub(crate) fn mark_parameters(&self, name: &str) -> Result<(), String> {
@@ -66,10 +81,13 @@ impl ModelCustomizationStore {
             .catalog
             .lock()
             .map_err(|_| "ollama-custom-store-write".to_string())?;
-        let mut candidate = current.clone();
+        let mut candidate = current
+            .as_ref()
+            .ok_or_else(|| "ollama-custom-store-write".to_string())?
+            .clone();
         update(&mut candidate)?;
         candidate.write_to_path(&self.path)?;
-        *current = candidate;
+        *current = Some(candidate);
         Ok(())
     }
 }
@@ -108,7 +126,10 @@ impl ModelCustomizationCatalog {
 
     #[cfg(test)]
     pub(crate) fn read_from_path(path: &Path) -> Self {
-        Self::read_with_format(path).0
+        match Self::read_with_format(path) {
+            CatalogLoad::Ready { catalog, .. } => catalog,
+            CatalogLoad::Unavailable => Self::default(),
+        }
     }
 
     pub(crate) fn write_to_path(&self, path: &Path) -> Result<(), String> {
@@ -121,22 +142,35 @@ impl ModelCustomizationCatalog {
             .map_err(|_| "ollama-custom-store-write".to_string())
     }
 
-    fn read_with_format(path: &Path) -> (Self, bool) {
-        if std::fs::metadata(path)
-            .map(|metadata| metadata.len() > MAX_STORE_BYTES)
-            .unwrap_or(false)
-        {
-            return (Self::default(), false);
+    fn read_with_format(path: &Path) -> CatalogLoad {
+        let metadata = match std::fs::symlink_metadata(path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return CatalogLoad::Ready {
+                    catalog: Self::default(),
+                    migrated: false,
+                };
+            }
+            Err(_) => return CatalogLoad::Unavailable,
+        };
+        if !metadata.is_file() || metadata.len() > MAX_STORE_BYTES {
+            return CatalogLoad::Unavailable;
         }
         let Ok(content) = std::fs::read_to_string(path) else {
-            return (Self::default(), false);
+            return CatalogLoad::Unavailable;
         };
         if let Ok(catalog) = serde_json::from_str::<Self>(&content) {
-            return (catalog.validated(), false);
+            return CatalogLoad::Ready {
+                catalog: catalog.validated(),
+                migrated: false,
+            };
         }
         serde_json::from_str::<LegacyCustomModelStore>(&content)
-            .map(|legacy| (Self::from_legacy(legacy), true))
-            .unwrap_or_default()
+            .map(|legacy| CatalogLoad::Ready {
+                catalog: Self::from_legacy(legacy),
+                migrated: true,
+            })
+            .unwrap_or(CatalogLoad::Unavailable)
     }
 
     fn insert(&mut self, name: &str, kind: CustomizationKind) -> Result<(), String> {
