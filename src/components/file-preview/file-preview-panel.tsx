@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Maximize2, Minimize2, FolderTree } from "@/components/ui/icons";
+import { Minimize2, FolderTree } from "@/components/ui/icons";
+import { FullscreenIcon } from "@/components/ui/panel-action-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { openPreviewFile, openPreviewWithEditor } from "@/services/file-preview";
 import type { FileOperation, FilePreviewActiveTab, FilePreviewListMode } from "@/types/file-preview";
@@ -81,7 +82,7 @@ export function FilePreviewPanel(props: FilePreviewPanelProps) {
                 className="icon-btn fp-icon-btn"
                 onClick={() => props.onFullscreenChange(!props.fullscreen)}
               >
-                {props.fullscreen ? <Minimize2 size="var(--icon-md)" /> : <Maximize2 size="var(--icon-md)" />}
+                {props.fullscreen ? <Minimize2 size="var(--icon-md)" /> : <FullscreenIcon />}
               </button>
             </Tooltip>
           </div>

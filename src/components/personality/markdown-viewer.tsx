@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import { ArrowSquareOut } from "@/components/ui/icons";
+import { OpenExternalIcon } from "@/components/ui/panel-action-icons";
 import "github-markdown-css/github-markdown.css";
 import "./markdown-viewer.css";
 
@@ -32,8 +32,10 @@ export function MarkdownViewer({
     <>
       <div className="md-header">
         <div className="md-title">{fileName}</div>
-        <button className="btn" onClick={onOpenEditor}>
-          <ArrowSquareOut size="var(--icon-sm)" /> {t("personality.open")}
+        {/* Le bouton n'avait que la géométrie commune, sans variante : ni fond,
+            ni hauteur, ni survol — rien ne signalait qu'on pouvait le cliquer. */}
+        <button className="btn btn-sm btn-secondary" onClick={onOpenEditor}>
+          <OpenExternalIcon size="var(--personality-open-icon-size)" /> {t("personality.open")}
         </button>
       </div>
       <div className="md-scroll">

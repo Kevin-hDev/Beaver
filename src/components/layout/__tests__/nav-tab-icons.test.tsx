@@ -23,13 +23,18 @@ describe("dessins de la rangée de navigation", () => {
     expect(new Set(marks).size).toBe(NAV_ITEMS.length);
   });
 
-  it("pose chaque dessin à la taille des entrées de navigation", () => {
+  /* Le battement de cœur fait exception : son tracé remplit moins son cadre que
+     les trois autres, et à cadre égal il paraissait le petit de la rangée. */
+  it("pose chaque dessin à la taille des entrées, le cœur au-dessus", () => {
     for (const item of NAV_ITEMS) {
       const svg = drawing(<item.icon />);
+      const attendu = item.id === "heartbeat"
+        ? "var(--nav-heartbeat-icon-size)"
+        : "var(--nav-icon-size)";
 
       expect(svg.getAttribute("viewBox")).toBe("0 0 24 24");
-      expect(svg.style.width).toBe("var(--nav-icon-size)");
-      expect(svg.style.height).toBe("var(--nav-icon-size)");
+      expect(svg.style.width).toBe(attendu);
+      expect(svg.style.height).toBe(attendu);
     }
   });
 

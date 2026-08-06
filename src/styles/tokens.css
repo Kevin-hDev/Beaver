@@ -148,6 +148,13 @@
      colonne : un cinquième de plus tient jusqu'au réglage de police 20 sans
      rogner le plus long des cinq noms. */
   --personality-file-icon-size: calc(var(--icon-md) * 1.2);
+  /* Bouton « Ouvrir » de /beaver, posé au-dessus des icônes de bouton : il est
+     seul dans son en-tête, face à un titre au corps le plus grand de l'app. */
+  --personality-open-icon-size: calc(var(--icon-sm) * 1.25);
+  /* Croix de fermeture d'un panneau. Au-dessus de l'icône de sa rangée : deux
+     traits croisés ne couvrent que 42 % de leur cadre, contre 67 à 100 % pour
+     les autres actions posées à côté, et à cadre égal la croix rapetisse. */
+  --panel-close-icon-size: calc(var(--icon-md) * 1.2);
   --system-prompt-tier-min-width: 5.1111rem;
   --system-prompt-card-header-min-height: 3.2222rem;
   --system-prompt-preview-min-height: 6.6667rem;
@@ -191,6 +198,10 @@
      Exprimé en proportion et non en valeur figée, pour que la réduction suive
      l'échelle d'icônes si elle bouge. */
   --nav-icon-size: calc(var(--icon-md) * 0.8);
+  /* Le battement de cœur, posé plus grand que ses trois voisins de la rangée :
+     son tracé n'occupe que 60 % de la hauteur de son cadre, contre 75 à 92 %
+     pour eux, et à cadre égal il se lisait comme le petit de la rangée. */
+  --nav-heartbeat-icon-size: calc(var(--nav-icon-size) * 1.2);
   /* 189px de liste plus les 49.5px du rail de navigation supprimé : la colonne
      garde la largeur qu'elle avait à deux panneaux, et le gain va au texte des
      conversations, qui se tronquait trop tôt. En px et non en rem : la largeur
