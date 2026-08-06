@@ -574,10 +574,6 @@
     "vramWarning": "Questo modello potrebbe superare la VRAM disponibile",
     "editModelfile": "Modifica Modelfile",
     "systemPrompt": "System prompt",
-    "systemPromptWarningTitle": "Attenzione",
-    "systemPromptWarningBody": "Questo prompt personalizzato sostituirà le istruzioni di comportamento predefinite dell’applicazione solo per questo modello. Le istruzioni tecniche necessarie agli strumenti e alle modalità Agente resteranno attive. Anche i file di contesto attivati continueranno a essere inseriti. Cancellando questo prompt verranno ripristinate automaticamente le istruzioni predefinite dell’applicazione.",
-    "systemPromptWarningRemember": "Non mostrare più questo avviso",
-    "systemPromptWarningContinue": "Continua",
     "parameters": "Parametri",
     "noSystemPrompt": "(nessun System prompt definito)",
     "noParameters": "(nessun parametro — Ollama usa i valori predefiniti)",
@@ -770,6 +766,22 @@
       "types": { "preference": "Preferenza", "feedback": "Feedback", "project": "Progetto", "reference": "Riferimento" },
       "statuses": { "confirmed": "Confermato", "inferred": "Dedotto", "stale": "Da verificare", "archived": "Archiviato" }
     },
+    "systemPrompt": {
+      "title": "Istruzioni di sistema", "instructions": "Istruzioni di sistema",
+      "modes": { "chatbot": "Chatbot", "agentic": "Agentico" },
+      "tiers": { "compact": "Compatto", "detailed": "Dettagliato" },
+      "modeLabel": "Modalità del modello", "tierLabel": "Formato delle istruzioni",
+      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
+      "edit": "Modifica", "restore": "Ripristina", "save": "Salva", "cancel": "Annulla",
+      "empty": "Nessuna istruzione di sistema", "editorLabel": "Istruzioni di sistema personalizzate",
+      "placeholder": "Lascia vuoto per non inviare istruzioni di sistema.",
+      "warning": {
+        "title": "Attenzione",
+        "global": { "body": "Questa modifica sostituisce le istruzioni di sistema di Beaver per tutte le IA, tranne i modelli Ollama con istruzioni personalizzate proprie." },
+        "ollama": { "body": "Questa modifica sostituisce le istruzioni di sistema usate solo da questo modello Ollama. Ha priorità sulle impostazioni generali e sulle istruzioni fornite con il modello." },
+        "remember": "Non mostrare più questo avviso", "continue": "Continua"
+      }
+    },
     "sections": { "preferences": "Preferenze", "agent": "Agente", "models": "Modelli", "integrations": "Integrazioni", "application": "Applicazione" },
     "tabs": {
       "general": "Generale",
@@ -781,6 +793,7 @@
       "llm": "LLM",
       "tools": "Tools",
       "memory": "Memoria",
+      "systemPrompt": "System prompt",
       "mascot": "Mascotte",
       "archivedChats": "Chat archiviate",
       "advanced": "Avanzate",

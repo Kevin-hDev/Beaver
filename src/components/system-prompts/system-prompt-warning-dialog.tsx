@@ -2,22 +2,24 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./system-prompt-warning-dialog.css";
 
-const DISMISSAL_KEY = "ollama-system-prompt-warning-dismissed-v1";
+export type SystemPromptWarningKind = "global" | "ollama";
 
 interface SystemPromptWarningDialogProps {
+  kind: SystemPromptWarningKind;
   onCancel: () => void;
   onContinue: () => void;
 }
 
-export function shouldShowSystemPromptWarning(): boolean {
+export function shouldShowSystemPromptWarning(kind: SystemPromptWarningKind): boolean {
   try {
-    return localStorage.getItem(DISMISSAL_KEY) !== "1";
+    return localStorage.getItem(storageKey(kind)) !== "1";
   } catch {
     return true;
   }
 }
 
 export function SystemPromptWarningDialog({
+  kind,
   onCancel,
   onContinue,
 }: SystemPromptWarningDialogProps) {
@@ -29,58 +31,53 @@ export function SystemPromptWarningDialog({
 
   useEffect(() => {
     continueRef.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onCancel();
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onCancel]);
 
   const handleContinue = () => {
     if (remember) {
       try {
-        localStorage.setItem(DISMISSAL_KEY, "1");
+        localStorage.setItem(storageKey(kind), "1");
       } catch {
-        // The warning will simply appear again if storage is unavailable.
+        // L'avertissement sera simplement réaffiché si le stockage est indisponible.
       }
     }
     onContinue();
   };
 
   return (
-    <div className="spw-overlay">
+    <div className="spp-warning-overlay">
       <section
-        className="spw-dialog"
+        className="spp-warning-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
       >
-        <div className="spw-heading">
-          <span className="spw-icon" aria-hidden="true">
-            !
-          </span>
-          <h3 id={titleId} className="spw-title">
-            {t("ollama.systemPromptWarningTitle")}
+        <div className="spp-warning-heading">
+          <span className="spp-warning-icon" aria-hidden="true">!</span>
+          <h3 id={titleId} className="spp-warning-title">
+            {t("settings.systemPrompt.warning.title")}
           </h3>
         </div>
-
-        <p id={descriptionId} className="spw-description">
-          {t("ollama.systemPromptWarningBody")}
+        <p id={descriptionId} className="spp-warning-description">
+          {t(`settings.systemPrompt.warning.${kind}.body`)}
         </p>
-
-        <label className="spw-remember">
+        <label className="spp-warning-remember">
           <input
             type="checkbox"
             checked={remember}
             onChange={(event) => setRemember(event.target.checked)}
           />
-          <span>{t("ollama.systemPromptWarningRemember")}</span>
+          <span>{t("settings.systemPrompt.warning.remember")}</span>
         </label>
-
-        <div className="spw-actions">
+        <div className="spp-warning-actions">
           <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel}>
-            {t("ollama.cancel")}
+            {t("settings.systemPrompt.cancel")}
           </button>
           <button
             ref={continueRef}
@@ -88,10 +85,14 @@ export function SystemPromptWarningDialog({
             type="button"
             onClick={handleContinue}
           >
-            {t("ollama.systemPromptWarningContinue")}
+            {t("settings.systemPrompt.warning.continue")}
           </button>
         </div>
       </section>
     </div>
   );
+}
+
+function storageKey(kind: SystemPromptWarningKind): string {
+  return `system-prompt-warning-${kind}-v1`;
 }

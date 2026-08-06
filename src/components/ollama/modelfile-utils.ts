@@ -15,18 +15,3 @@ export function extractParameters(modelfile: string): ModelParameter[] {
   }
   return result;
 }
-
-export function extractSystemPrompt(modelfile: string): string {
-  if (!modelfile) return "";
-
-  const tripleMatch = modelfile.match(/^SYSTEM\s+"""([\s\S]*?)"""/m);
-  if (tripleMatch) return tripleMatch[1].trim();
-
-  const singleMatch = modelfile.match(/^SYSTEM\s+"([^"\n]*)"/m);
-  if (singleMatch) return singleMatch[1];
-
-  const bareMatch = modelfile.match(/^SYSTEM\s+(.+)$/m);
-  if (bareMatch) return bareMatch[1].trim();
-
-  return "";
-}

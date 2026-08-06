@@ -1,29 +1,27 @@
 import { useTranslation } from "react-i18next";
 import { ConfirmButton } from "@/components/settings/confirm-button";
 import { SettingsCard } from "@/components/settings/settings-card";
+import { SystemPromptSettingsPanel } from "@/components/system-prompts/system-prompt-settings-panel";
+import { systemPromptTierForModel } from "@/lib/system-prompt-tiers";
 import "./ollama.css";
 import "./modelfile-view.css";
 
 interface ModelfileViewProps {
   modelName: string;
-  systemPrompt: string;
   parameters: { key: string; value: string }[];
   modelfile: string;
   deleting: boolean;
   onDelete: () => void;
-  onEditSystem: () => void;
   onEditParameters: () => void;
   onEditModelfile: () => void;
 }
 
 export function ModelfileView({
   modelName,
-  systemPrompt,
   parameters,
   modelfile,
   deleting,
   onDelete,
-  onEditSystem,
   onEditParameters,
   onEditModelfile,
 }: ModelfileViewProps) {
@@ -32,31 +30,30 @@ export function ModelfileView({
   return (
     <div className="mfv-scroll">
       <div className="mfv-inner">
-        <div className="mfv-header">
-          <h2 className="mfv-title">
-            {modelName}
-          </h2>
-          <div className="mfv-actions">
-            <ConfirmButton
-              className="btn btn-sm btn-secondary"
-              label={t("ollama.remove")}
-              confirmLabel={t("settings.confirm.deleteModel")}
-              onConfirm={onDelete}
-              disabled={deleting}
-            />
-            <button className="btn btn-sm btn-secondary" onClick={onEditModelfile}>
-              {t("ollama.editModelfile")}
-            </button>
-          </div>
-        </div>
-
-        <SettingsCard>
-          <ViewSection title={t("ollama.systemPrompt")} editLabel={t("ollama.edit")} onEdit={onEditSystem}>
-            <div className={`mfv-system-prompt ${systemPrompt ? "mfv-system-prompt-filled" : "mfv-system-prompt-empty"}`}>
-              {systemPrompt || t("ollama.noSystemPrompt")}
+        <SystemPromptSettingsPanel
+          key={modelName}
+          target={{ scope: "ollama", model: modelName }}
+          warningKind="ollama"
+          initialMode="agentic"
+          initialTier={systemPromptTierForModel(modelName)}
+          selectorHeader={<h2 className="mfv-title">{modelName}</h2>}
+          selectorActions={(
+            <div className="mfv-actions">
+              <ConfirmButton
+                className="btn btn-sm btn-secondary"
+                label={t("ollama.remove")}
+                confirmLabel={t("settings.confirm.deleteModel")}
+                onConfirm={onDelete}
+                disabled={deleting}
+              />
+              <button className="btn btn-sm btn-secondary" onClick={onEditModelfile}>
+                {t("ollama.editModelfile")}
+              </button>
             </div>
-          </ViewSection>
+          )}
+        />
 
+        <SettingsCard className="mfv-parameters-card">
           <ViewSection title={t("ollama.parameters")} editLabel={t("ollama.edit")} onEdit={onEditParameters} last>
             {parameters.length === 0 ? (
               <div className="mfv-no-params">

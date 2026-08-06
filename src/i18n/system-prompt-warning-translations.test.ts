@@ -8,24 +8,34 @@ import ja from "./ja.json";
 import zh from "./zh.json";
 
 interface WarningLocale {
-  ollama: {
-    systemPromptWarningTitle: string;
-    systemPromptWarningBody: string;
-    systemPromptWarningRemember: string;
-    systemPromptWarningContinue: string;
+  settings: {
+    tabs: { systemPrompt: string };
+    systemPrompt: {
+      title: string;
+      warning: {
+        title: string;
+        global: { body: string };
+        ollama: { body: string };
+        remember: string;
+        continue: string;
+      };
+    };
   };
 }
 
 describe("system prompt warning translations", () => {
-  it("contient le message complet dans les sept langues sans nom de produit", () => {
+  it("contient les deux avertissements distincts dans les sept langues", () => {
     const locales = [fr, en, es, de, itJson, zh, ja] as WarningLocale[];
     for (const locale of locales) {
-      const warning = locale.ollama;
-      expect(warning.systemPromptWarningTitle).toBeTruthy();
-      expect(warning.systemPromptWarningBody).toBeTruthy();
-      expect(warning.systemPromptWarningRemember).toBeTruthy();
-      expect(warning.systemPromptWarningContinue).toBeTruthy();
-      expect(warning.systemPromptWarningBody).not.toMatch(/CL-GO/i);
+      const { warning } = locale.settings.systemPrompt;
+      expect(locale.settings.tabs.systemPrompt).toBeTruthy();
+      expect(locale.settings.systemPrompt.title).toBeTruthy();
+      expect(warning.title).toBeTruthy();
+      expect(warning.global.body).toBeTruthy();
+      expect(warning.ollama.body).toBeTruthy();
+      expect(warning.global.body).not.toBe(warning.ollama.body);
+      expect(warning.remember).toBeTruthy();
+      expect(warning.continue).toBeTruthy();
     }
   });
 });

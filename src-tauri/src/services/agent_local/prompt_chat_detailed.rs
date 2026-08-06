@@ -1,14 +1,14 @@
 use crate::services::brand::DISPLAY_NAME;
 use std::path::Path;
 
-pub fn build_with_behavior(working_dir: &Path, behavior: Option<&str>) -> String {
+pub fn build_with_behavior(_working_dir: &Path, behavior: Option<&str>) -> String {
+    if let Some(custom) = behavior {
+        return custom.to_string();
+    }
     let default_identity = default_identity();
-    let identity = behavior.unwrap_or(&default_identity);
-    let style = if behavior.is_some() { "" } else { STYLE };
     format!(
-        "{identity}\n\n{CAPABILITIES}\n\n{}\n\n{WEB_SEARCH}\n\n{MODES}\n\n{}\n\n{style}",
+        "{default_identity}\n\n{CAPABILITIES}\n\n{}\n\n{WEB_SEARCH}\n\n{MODES}\n\n{STYLE}",
         super::prompt_interactive::INTERACTIVE,
-        env_section(working_dir),
     )
 }
 
@@ -48,19 +48,6 @@ If the user asks you to perform a system action (run a command, edit a file, rea
 manage git, install a package), tell them to switch to Ask for approval or Full access mode \
 to give you access. Do not say you are incapable — explain that the capability exists \
 but requires a mode switch.";
-
-fn env_section(working_dir: &Path) -> String {
-    let os = std::env::consts::OS;
-    let arch = std::env::consts::ARCH;
-    let date = chrono::Local::now().format("%Y-%m-%d");
-    format!(
-        "# Environment\n\
-         - Current date: {date}\n\
-         - Platform: {os} ({arch})\n\
-         - Working directory: {}",
-        working_dir.display()
-    )
-}
 
 const WEB_SEARCH: &str = "\
 # Web search

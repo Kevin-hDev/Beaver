@@ -1,4 +1,5 @@
 use super::chat_prompts::prepare_messages_with_tools;
+use super::system_prompt_types::{PromptSource, SystemPromptView};
 use super::tool_catalog;
 use super::types_ollama::ChatMessage;
 use std::path::Path;
@@ -11,7 +12,7 @@ fn enabled_tool_names() -> Vec<String> {
 }
 
 #[test]
-fn custom_behavior_replaces_defaults_but_keeps_tools_and_context_files() {
+fn custom_prompt_replaces_beaver_instructions_but_keeps_dynamic_context() {
     let mut messages = vec![ChatMessage {
         role: "user".into(),
         content: "hello".into(),
@@ -27,6 +28,12 @@ fn custom_behavior_replaces_defaults_but_keeps_tools_and_context_files() {
     .join("\n");
     let enabled = enabled_tool_names();
 
+    let instructions = SystemPromptView {
+        content: "CUSTOM MODEL BEHAVIOR".into(),
+        source: PromptSource::Custom,
+        customized: true,
+        disabled: false,
+    };
     prepare_messages_with_tools(
         &mut messages,
         Path::new("/tmp/project"),
@@ -39,15 +46,16 @@ fn custom_behavior_replaces_defaults_but_keeps_tools_and_context_files() {
         "auto",
         "French",
         &enabled,
-        Some("CUSTOM MODEL BEHAVIOR"),
+        &instructions,
     );
 
     let system = &messages[0].content;
     assert!(system.contains("CUSTOM MODEL BEHAVIOR"));
     assert!(!system.contains("You are an autonomous coding agent"));
     assert!(!system.contains("# Style"));
-    assert!(system.contains("# Using your tools"));
-    assert!(system.contains("<communication_during_work>"));
+    assert!(!system.contains("# Using your tools"));
+    assert!(!system.contains("<communication_during_work>"));
+    assert!(system.contains("# Environment"));
     assert!(system.contains("Test skill"));
     assert!(system.contains("You MUST respond in French"));
     for file_context in [
@@ -62,7 +70,7 @@ fn custom_behavior_replaces_defaults_but_keeps_tools_and_context_files() {
 }
 
 #[test]
-fn custom_chat_behavior_keeps_chat_tools_and_mode_boundaries() {
+fn custom_chat_prompt_replaces_static_chatbot_instructions() {
     let mut messages = vec![ChatMessage {
         role: "user".into(),
         content: "hello".into(),
@@ -70,6 +78,12 @@ fn custom_chat_behavior_keeps_chat_tools_and_mode_boundaries() {
     }];
     let enabled = enabled_tool_names();
 
+    let instructions = SystemPromptView {
+        content: "CUSTOM CHAT BEHAVIOR".into(),
+        source: PromptSource::Custom,
+        customized: true,
+        disabled: false,
+    };
     prepare_messages_with_tools(
         &mut messages,
         Path::new("/tmp/project"),
@@ -82,12 +96,51 @@ fn custom_chat_behavior_keeps_chat_tools_and_mode_boundaries() {
         "chat",
         "",
         &enabled,
-        Some("CUSTOM CHAT BEHAVIOR"),
+        &instructions,
     );
 
     let system = &messages[0].content;
     assert!(system.contains("CUSTOM CHAT BEHAVIOR"));
     assert!(!system.contains("conversational assistant"));
-    assert!(system.contains("web_search"));
-    assert!(system.contains("Chatbot"));
+    assert!(!system.contains("# Capabilities"));
+    assert!(!system.contains("# Modes"));
+    assert!(system.contains("# Environment"));
+}
+
+#[test]
+fn empty_custom_prompt_keeps_only_dynamic_system_context() {
+    let mut messages = vec![ChatMessage {
+        role: "user".into(),
+        content: "hello".into(),
+        ..Default::default()
+    }];
+    let enabled = enabled_tool_names();
+    let instructions = SystemPromptView {
+        content: String::new(),
+        source: PromptSource::Custom,
+        customized: true,
+        disabled: true,
+    };
+
+    prepare_messages_with_tools(
+        &mut messages,
+        Path::new("/tmp/project"),
+        true,
+        Some(Path::new("/tmp/project")),
+        true,
+        Some("AGENTS.md context".into()),
+        &[("Test skill".into(), "Test description".into())],
+        "qwen3-32b",
+        "auto",
+        "French",
+        &enabled,
+        &instructions,
+    );
+
+    let system = &messages[0].content;
+    assert!(!system.contains("autonomous coding agent"));
+    assert!(system.contains("# Environment"));
+    assert!(system.contains("AGENTS.md context"));
+    assert!(system.contains("Test skill"));
+    assert!(system.contains("You MUST respond in French"));
 }

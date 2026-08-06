@@ -574,10 +574,6 @@
     "vramWarning": "このモデルは利用可能な VRAM を超える可能性があります",
     "editModelfile": "Modelfile を編集",
     "systemPrompt": "System prompt",
-    "systemPromptWarningTitle": "注意",
-    "systemPromptWarningBody": "このカスタムプロンプトは、このモデルに限りアプリケーションの既定の動作指示を置き換えます。ツールとエージェントモードに必要な技術的指示は引き続き有効です。有効化されたコンテキストファイルも引き続き挿入されます。このプロンプトを消去すると、アプリケーションの既定の指示が自動的に復元されます。",
-    "systemPromptWarningRemember": "この警告を今後表示しない",
-    "systemPromptWarningContinue": "続ける",
     "parameters": "パラメーター",
     "noSystemPrompt": "（System prompt が定義されていません）",
     "noParameters": "（パラメーターなし — Ollama のデフォルト設定を使用）",
@@ -770,6 +766,38 @@
       "types": { "preference": "設定", "feedback": "フィードバック", "project": "プロジェクト", "reference": "参照" },
       "statuses": { "confirmed": "確認済み", "inferred": "推定", "stale": "要確認", "archived": "アーカイブ済み" }
     },
+    "systemPrompt": {
+      "title": "システム指示", "instructions": "システム指示",
+      "modes": { "chatbot": "チャットボット", "agentic": "エージェント" },
+      "tiers": { "compact": "コンパクト", "detailed": "詳細" },
+      "modeLabel": "モデルモード", "tierLabel": "指示形式",
+      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
+      "edit": "編集", "restore": "復元", "save": "保存", "cancel": "キャンセル",
+      "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
+      "placeholder": "空のままにすると、システム指示は送信されません。",
+      "warning": {
+        "title": "注意",
+        "global": { "body": "この変更は、独自のカスタム指示を持つ Ollama モデルを除き、すべての AI の Beaver システム指示を置き換えます。" },
+        "ollama": { "body": "この変更は、この Ollama モデルだけが使用するシステム指示を置き換えます。一般設定やモデル付属の指示より優先されます。" },
+        "remember": "この警告を今後表示しない", "continue": "続ける"
+      }
+    },
+    "systemPrompt": {
+      "title": "システム指示", "instructions": "システム指示",
+      "modes": { "chatbot": "チャットボット", "agentic": "エージェント" },
+      "tiers": { "compact": "コンパクト", "detailed": "詳細" },
+      "modeLabel": "モデルモード", "tierLabel": "指示形式",
+      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
+      "edit": "編集", "restore": "復元", "save": "保存", "cancel": "キャンセル",
+      "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
+      "placeholder": "空のままにすると、システム指示は送信されません。",
+      "warning": {
+        "title": "注意",
+        "global": { "body": "この変更は、独自のカスタム指示を持つ Ollama モデルを除き、すべての AI の Beaver システム指示を置き換えます。" },
+        "ollama": { "body": "この変更は、この Ollama モデルだけが使用するシステム指示を置き換えます。一般設定やモデル付属の指示より優先されます。" },
+        "remember": "この警告を今後表示しない", "continue": "続ける"
+      }
+    },
     "sections": { "preferences": "環境設定", "agent": "エージェント", "models": "モデル", "integrations": "連携", "application": "アプリケーション" },
     "tabs": {
       "general": "一般",
@@ -781,6 +809,8 @@
       "llm": "LLM",
       "tools": "Tools",
       "memory": "メモリ",
+      "systemPrompt": "System prompt",
+      "systemPrompt": "System prompt",
       "mascot": "マスコット",
       "archivedChats": "アーカイブ済みチャット",
       "advanced": "詳細設定",

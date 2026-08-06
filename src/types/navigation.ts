@@ -8,7 +8,7 @@ import {
 type MainTabId = "heartbeat" | "personality" | "agent-local" | "settings";
 export type SettingsSubTab =
   | "general" | "ollama" | "connectors" | "channels" | "providers"
-  | "extensions" | "forecast" | "llm" | "tools" | "memory" | "mascot" | "archived-chats" | "advanced" | "shortcuts" | "about";
+  | "extensions" | "forecast" | "llm" | "tools" | "memory" | "system-prompt" | "mascot" | "archived-chats" | "advanced" | "shortcuts" | "about";
 
 type OllamaSettingsSubTab = "modelfile" | "models";
 type ForecastSettingsSubTab = "config" | "models";

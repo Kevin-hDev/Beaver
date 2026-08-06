@@ -46,6 +46,21 @@ pub(crate) async fn run(
         resolve_plan_mode(&params).await && tool_catalog::has_plan_tools(&enabled_tool_names);
 
     let snap = common::collect_git_snapshot(&working_dir).await;
+    let prompt_mode =
+        crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
+    let prompt_tier =
+        crate::services::agent_local::system_prompt_defaults::tier_for_model(&params.model);
+    let beaver_prompt = crate::services::agent_local::system_prompt_defaults::beaver_prompt(
+        prompt_mode,
+        prompt_tier,
+    );
+    let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot()?;
+    let instructions = crate::services::agent_local::system_prompt_resolver::resolve_global(
+        &prompt_settings,
+        prompt_mode,
+        prompt_tier,
+        &beaver_prompt,
+    );
     let has_tools = !extension_tools.active().is_empty();
     let mut messages = params.messages;
     let prepared_memory = crate::services::agent_local::memory_context::prepare(
@@ -86,7 +101,7 @@ pub(crate) async fn run(
             response_language: &response_language,
             plan_mode_active,
             enabled_tool_names: &enabled_tool_names,
-            behavior: None,
+            instructions: &instructions,
             memory_context,
         };
         let seed = super::context_usage_seed::for_prompt(&prompt_context);

@@ -91,14 +91,16 @@ impl OllamaClient {
         Ok(info.modelfile)
     }
 
-    pub async fn update_modelfile(&self, name: &str, content: &str) -> Result<(), String> {
-        super::ollama_modelfile_create::create_from_modelfile(name, content).await
+    pub async fn get_native_system_prompt(&self, name: &str) -> Result<Option<String>, String> {
+        let modelfile = self.get_modelfile(name).await?;
+        Ok(parse_modelfile(&modelfile)
+            .system
+            .map(|prompt| prompt.trim().to_string())
+            .filter(|prompt| !prompt.is_empty()))
     }
 
-    pub async fn update_system_prompt(&self, name: &str, system: &str) -> Result<(), String> {
-        let current = self.get_modelfile(name).await?;
-        let payload = super::ollama_create_payload::system_prompt(name, &current, system)?;
-        self.post_create(&payload).await
+    pub async fn update_modelfile(&self, name: &str, content: &str) -> Result<(), String> {
+        super::ollama_modelfile_create::create_from_modelfile(name, content).await
     }
 
     pub async fn update_parameters(

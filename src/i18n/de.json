@@ -574,10 +574,6 @@
     "vramWarning": "Dieses Modell könnte das verfügbare VRAM überschreiten",
     "editModelfile": "Modelfile bearbeiten",
     "systemPrompt": "System prompt",
-    "systemPromptWarningTitle": "Achtung",
-    "systemPromptWarningBody": "Dieser benutzerdefinierte Prompt ersetzt die standardmäßigen Verhaltensanweisungen der Anwendung nur für dieses Modell. Die technischen Anweisungen für Werkzeuge und Agentenmodi bleiben aktiv. Aktivierte Kontextdateien werden ebenfalls weiterhin eingefügt. Wenn dieser Prompt gelöscht wird, werden die Standardanweisungen der Anwendung automatisch wiederhergestellt.",
-    "systemPromptWarningRemember": "Diese Warnung nicht mehr anzeigen",
-    "systemPromptWarningContinue": "Fortfahren",
     "parameters": "Parameter",
     "noSystemPrompt": "(kein System prompt definiert)",
     "noParameters": "(kein Parameter — Ollama verwendet seine Standardwerte)",
@@ -770,6 +766,22 @@
       "types": { "preference": "Präferenz", "feedback": "Feedback", "project": "Projekt", "reference": "Referenz" },
       "statuses": { "confirmed": "Bestätigt", "inferred": "Abgeleitet", "stale": "Zu prüfen", "archived": "Archiviert" }
     },
+    "systemPrompt": {
+      "title": "Systemanweisungen", "instructions": "Systemanweisungen",
+      "modes": { "chatbot": "Chatbot", "agentic": "Agentisch" },
+      "tiers": { "compact": "Kompakt", "detailed": "Detailliert" },
+      "modeLabel": "Modellmodus", "tierLabel": "Anweisungsformat",
+      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
+      "edit": "Bearbeiten", "restore": "Wiederherstellen", "save": "Speichern", "cancel": "Abbrechen",
+      "empty": "Keine Systemanweisungen", "editorLabel": "Benutzerdefinierte Systemanweisungen",
+      "placeholder": "Leer lassen, um keine Systemanweisungen zu senden.",
+      "warning": {
+        "title": "Achtung",
+        "global": { "body": "Diese Änderung ersetzt Beavers Systemanweisungen für alle KI-Modelle, außer für Ollama-Modelle mit eigenen benutzerdefinierten Anweisungen." },
+        "ollama": { "body": "Diese Änderung ersetzt die Systemanweisungen nur für dieses Ollama-Modell. Sie hat Vorrang vor allgemeinen Einstellungen und den mitgelieferten Modellanweisungen." },
+        "remember": "Diese Warnung nicht mehr anzeigen", "continue": "Fortfahren"
+      }
+    },
     "sections": { "preferences": "Einstellungen", "agent": "Agent", "models": "Modelle", "integrations": "Integrationen", "application": "Anwendung" },
     "tabs": {
       "general": "Allgemein",
@@ -781,6 +793,7 @@
       "llm": "LLM",
       "tools": "Tools",
       "memory": "Erinnerungen",
+      "systemPrompt": "System prompt",
       "mascot": "Maskottchen",
       "archivedChats": "Archivierte Chats",
       "advanced": "Erweitert",

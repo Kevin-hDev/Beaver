@@ -4,7 +4,7 @@ pub enum PromptTier {
     Detailed,
 }
 
-const THRESHOLD_B: u64 = 25;
+const THRESHOLD_B: f64 = 25.0;
 
 pub fn detect_tier(model: &str) -> PromptTier {
     match extract_param_billions(model) {
@@ -14,15 +14,14 @@ pub fn detect_tier(model: &str) -> PromptTier {
     }
 }
 
-fn extract_param_billions(model: &str) -> Option<u64> {
+fn extract_param_billions(model: &str) -> Option<f64> {
     let lower = model.to_lowercase();
-    for part in lower.split(|c: char| !c.is_alphanumeric()) {
+    for part in lower.split(|c: char| !c.is_alphanumeric() && c != '.') {
         if let Some(num_str) = part.strip_suffix('b') {
-            if let Ok(n) = num_str.parse::<u64>() {
-                return Some(n);
-            }
-            if let Ok(f) = num_str.parse::<f64>() {
-                return Some(f as u64);
+            if let Ok(size) = num_str.parse::<f64>() {
+                if size.is_finite() && size >= 0.0 {
+                    return Some(size);
+                }
             }
         }
     }
@@ -51,6 +50,10 @@ mod tests {
         assert_eq!(detect_tier("gemma-4-e4b"), PromptTier::Compact);
         assert_eq!(detect_tier("qwen3-7b"), PromptTier::Compact);
         assert_eq!(detect_tier("llama-3.3-8b"), PromptTier::Compact);
+        assert_eq!(detect_tier("model-24b"), PromptTier::Compact);
+        assert_eq!(detect_tier("model-25b"), PromptTier::Detailed);
+        assert_eq!(detect_tier("model-24.5b"), PromptTier::Compact);
+        assert_eq!(detect_tier("model-25.5b"), PromptTier::Detailed);
         assert_eq!(detect_tier("qwen3-32b"), PromptTier::Detailed);
         assert_eq!(detect_tier("llama-3.3-70b"), PromptTier::Detailed);
         assert_eq!(detect_tier("mistral-small-3"), PromptTier::Compact);

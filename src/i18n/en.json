@@ -579,10 +579,6 @@
     "vramWarning": "This model may exceed your available VRAM",
     "editModelfile": "Edit modelfile",
     "systemPrompt": "System prompt",
-    "systemPromptWarningTitle": "Warning",
-    "systemPromptWarningBody": "This custom prompt will replace the application’s default behavior instructions for this model only. The technical instructions required for tools and Agent modes will remain active. Enabled context files will also continue to be injected. Clearing this prompt will automatically restore the application’s default instructions.",
-    "systemPromptWarningRemember": "Do not show this warning again",
-    "systemPromptWarningContinue": "Continue",
     "parameters": "Parameters",
     "noSystemPrompt": "(no system prompt defined)",
     "noParameters": "(no parameter — Ollama uses its defaults)",
@@ -775,6 +771,22 @@
       "types": { "preference": "Preference", "feedback": "Feedback", "project": "Project", "reference": "Reference" },
       "statuses": { "confirmed": "Confirmed", "inferred": "Inferred", "stale": "Needs review", "archived": "Archived" }
     },
+    "systemPrompt": {
+      "title": "System instructions", "instructions": "System instructions",
+      "modes": { "chatbot": "Chatbot", "agentic": "Agentic" },
+      "tiers": { "compact": "Compact", "detailed": "Detailed" },
+      "modeLabel": "Model mode", "tierLabel": "Instruction format",
+      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
+      "edit": "Edit", "restore": "Restore", "save": "Save", "cancel": "Cancel",
+      "empty": "No system instructions", "editorLabel": "Custom system instructions",
+      "placeholder": "Leave empty to send no system instructions.",
+      "warning": {
+        "title": "Warning",
+        "global": { "body": "This change replaces Beaver's system instructions for every AI, except Ollama models that have their own custom instructions." },
+        "ollama": { "body": "This change replaces the system instructions used only by this Ollama model. It takes priority over general settings and instructions supplied with the model." },
+        "remember": "Do not show this warning again", "continue": "Continue"
+      }
+    },
     "sections": { "preferences": "Preferences", "agent": "Agent", "models": "Models", "integrations": "Integrations", "application": "Application" },
     "tabs": {
       "general": "General",
@@ -786,6 +798,7 @@
       "llm": "LLM",
       "tools": "Tools",
       "memory": "Memory",
+      "systemPrompt": "System prompt",
       "mascot": "Mascot",
       "archivedChats": "Archived chats",
       "advanced": "Advanced",

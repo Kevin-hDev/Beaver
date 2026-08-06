@@ -1,9 +1,5 @@
 use super::agent_chat_task::common;
-use crate::services::agent_local::{
-    model_size::{self, PromptTier},
-    prompt_chat_compact, prompt_chat_detailed, prompt_compact, prompt_detailed, prompt_plan,
-    tool_catalog,
-};
+use crate::services::agent_local::{prompt_plan, tool_catalog};
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -57,21 +53,45 @@ pub async fn estimate_context_hidden_usage(
         Some(value) => value,
         None => crate::services::agent_local::tool_plan::is_enabled(&session_id).await,
     } && tool_catalog::has_plan_tools(&enabled_tool_names);
-    let behavior = if provider.as_deref() == Some("ollama") {
-        crate::services::agent_local::ollama_behavior_overrides::get(&model)
+    let prompt_mode =
+        crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
+    let prompt_tier = crate::services::agent_local::system_prompt_defaults::tier_for_model(&model);
+    let beaver_prompt = crate::services::agent_local::system_prompt_defaults::beaver_prompt(
+        prompt_mode,
+        prompt_tier,
+    );
+    let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot()?;
+    let instructions = if provider.as_deref() == Some("ollama") {
+        let native_prompt = crate::services::agent_local::ollama_client::OllamaClient::new()
+            .get_native_system_prompt(&model)
+            .await
+            .ok()
+            .flatten();
+        crate::services::agent_local::system_prompt_resolver::resolve_ollama(
+            &prompt_settings,
+            &model,
+            prompt_mode,
+            prompt_tier,
+            native_prompt.as_deref(),
+            &beaver_prompt,
+        )
     } else {
-        None
+        crate::services::agent_local::system_prompt_resolver::resolve_global(
+            &prompt_settings,
+            prompt_mode,
+            prompt_tier,
+            &beaver_prompt,
+        )
     };
 
     let memory_usage =
         super::context_usage_memory::usage(provider.as_deref(), &model, &working_dir).await;
     let system_prompt_tokens = estimate(&base_prompt(
         &mode.mode,
-        &model,
         &working_dir,
         &snap,
         &enabled_tool_names,
-        behavior.as_deref(),
+        &instructions,
     ))
     .saturating_add(memory_usage.prompt_tokens);
     let meta_context_tokens = meta_context_tokens(&mode, &working_dir, &snap, plan_active).await;
@@ -107,34 +127,17 @@ fn empty_usage() -> HiddenContextUsage {
 
 fn base_prompt(
     mode: &str,
-    model: &str,
     working_dir: &std::path::Path,
     snap: &crate::services::git_context::GitSnapshot,
     enabled_tool_names: &[String],
-    behavior: Option<&str>,
+    instructions: &crate::services::agent_local::system_prompt_types::SystemPromptView,
 ) -> String {
-    let prompt = match (mode == "chat", model_size::detect_tier(model)) {
-        (true, PromptTier::Compact) => {
-            prompt_chat_compact::build_with_behavior(working_dir, behavior)
-        }
-        (true, PromptTier::Detailed) => {
-            prompt_chat_detailed::build_with_behavior(working_dir, behavior)
-        }
-        (false, PromptTier::Compact) => prompt_compact::build_with_behavior(
-            working_dir,
-            snap.is_git,
-            snap.git_root.as_deref(),
-            behavior,
-        ),
-        (false, PromptTier::Detailed) => prompt_detailed::build_with_behavior(
-            working_dir,
-            snap.is_git,
-            snap.git_root.as_deref(),
-            behavior,
-        ),
-    };
-    crate::services::agent_local::tool_prompt_filter::filter_system_prompt(
-        &prompt,
+    crate::services::agent_local::chat_prompts::compose_instructions_with_runtime(
+        mode,
+        working_dir,
+        snap.is_git,
+        snap.git_root.as_deref(),
+        instructions,
         enabled_tool_names,
     )
 }

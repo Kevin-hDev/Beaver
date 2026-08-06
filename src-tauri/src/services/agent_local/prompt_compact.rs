@@ -1,27 +1,24 @@
 use std::path::Path;
 
 pub fn build_with_behavior(
-    working_dir: &Path,
-    is_git: bool,
-    git_root: Option<&Path>,
+    _working_dir: &Path,
+    _is_git: bool,
+    _git_root: Option<&Path>,
     behavior: Option<&str>,
 ) -> String {
-    let identity = behavior.unwrap_or(IDENTITY);
-    let default_style = if behavior.is_some() {
-        ""
-    } else {
-        super::prompt_compact_style::DEFAULT_STYLE
-    };
+    if let Some(custom) = behavior {
+        return custom.to_string();
+    }
     format!(
-        "{identity}\n\n{}\n\n{}\n\n{SAFETY}\n\n{CODE}\n\n{GIT}\n\n{TOOLS}\n\n{WEB_SEARCH}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{default_style}",
+        "{IDENTITY}\n\n{}\n\n{}\n\n{SAFETY}\n\n{CODE}\n\n{GIT}\n\n{TOOLS}\n\n{WEB_SEARCH}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}\n\n{}",
         super::prompt_objective::DONE,
         super::prompt_priority::PRIORITY,
         super::subagent_parent_guidance::PARENT_GUIDANCE,
         super::prompt_objective::WORKFLOW,
         super::prompt_detailed_sections::UNCERTAINTY,
         super::prompt_external_content::EXTERNAL_CONTENT,
-        env_section(working_dir, is_git, git_root),
         super::prompt_compact_style::OPERATIONAL,
+        super::prompt_compact_style::DEFAULT_STYLE,
     )
 }
 
@@ -31,29 +28,6 @@ You help users with software engineering tasks: writing code, debugging, managin
 running commands, searching the web, and more.
 You are an agent, not a passive chatbot. You use tools to get things done, \
 and you keep the user informed with short visible updates while you work.";
-
-fn env_section(working_dir: &Path, is_git: bool, git_root: Option<&Path>) -> String {
-    let os = std::env::consts::OS;
-    let arch = std::env::consts::ARCH;
-    let shell = crate::services::env_detect::detect_shell();
-    let os_version = crate::services::env_detect::detect_os_version();
-    let date = chrono::Local::now().format("%Y-%m-%d");
-    let git_flag = if is_git { "true" } else { "false" };
-    let git_root_line = match git_root {
-        Some(root) if root != working_dir => format!("\n - Git root: {}", root.display()),
-        _ => String::new(),
-    };
-    format!(
-        "# Environment\n\
-         - Primary working directory: {}\n\
-         - Is a git repository: {git_flag}{git_root_line}\n\
-         - Platform: {os} ({arch})\n\
-         - Shell: {shell}\n\
-         - OS Version: {os_version}\n\
-         - Current date: {date}",
-        working_dir.display()
-    )
-}
 
 const TOOLS: &str = "\
 # Using your tools

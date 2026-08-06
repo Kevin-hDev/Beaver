@@ -17,6 +17,7 @@ export const CHILD_COMMANDS = new Set([
   "list_configured_providers",
   "list_forecast_models",
   "get_memory_overview",
+  "get_system_prompt_setting",
 ]);
 const FAILED_COMMANDS = new Set<string>();
 
@@ -37,6 +38,12 @@ vi.mock("@tauri-apps/api/core", async () => {
       });
       if (cmd === "get_agent_settings") return Promise.resolve(data.agentSettings());
       if (cmd === "get_memory_overview") return Promise.resolve(data.memoryOverview());
+      if (cmd === "get_system_prompt_setting") return Promise.resolve({
+        content: "Beaver instructions",
+        source: "beaver",
+        customized: false,
+        disabled: false,
+      });
       if (FAILED_COMMANDS.has(cmd)) return Promise.reject(new Error("test failure"));
       if (cmd === "get_memory_project_topics") {
         const overview = data.memoryOverview();

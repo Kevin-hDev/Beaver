@@ -1,9 +1,10 @@
-use crate::services::agent_local::model_size::{self, PromptTier};
 use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::{
-    prompt_chat_compact, prompt_chat_detailed, prompt_compact, prompt_detailed,
-};
 use super::chat_prompt_sections::{response_language_instruction, skills_listing_section};
+use super::system_prompt_types::{PromptSource, SystemPromptView};
+#[cfg(test)]
+use super::system_prompt_types::{PromptMode, PromptTier};
+#[cfg(test)]
+use crate::services::agent_local::model_size;
 use std::path::Path;
 
 fn build_system_message(content: String) -> ChatMessage {
@@ -18,34 +19,25 @@ fn build_system_message(content: String) -> ChatMessage {
     }
 }
 
-fn prepend_tool_system_prompt(
-    messages: &mut Vec<ChatMessage>,
+pub(crate) fn compose_instructions_with_runtime(
+    mode: &str,
     working_dir: &Path,
     is_git: bool,
     git_root: Option<&Path>,
-    model: &str,
-    behavior: Option<&str>,
-) {
-    if messages.first().is_some_and(|m| m.role == "system") {
-        return;
+    instructions: &SystemPromptView,
+    enabled_tool_names: &[String],
+) -> String {
+    let mut prompt = instructions.content.clone();
+    if instructions.source == PromptSource::Beaver {
+        prompt = super::tool_prompt_filter::filter_system_prompt(&prompt, enabled_tool_names);
     }
-    let tier = model_size::detect_tier(model);
-    let prompt = match tier {
-        PromptTier::Compact => {
-            prompt_compact::build_with_behavior(working_dir, is_git, git_root, behavior)
-        }
-        PromptTier::Detailed => {
-            prompt_detailed::build_with_behavior(working_dir, is_git, git_root, behavior)
-        }
+    let runtime = if mode == "chat" {
+        super::system_prompt_runtime_context::chatbot_environment(working_dir)
+    } else {
+        super::system_prompt_runtime_context::agentic_environment(working_dir, is_git, git_root)
     };
-    messages.insert(0, build_system_message(prompt));
-}
-
-fn filter_tool_prompt(messages: &mut [ChatMessage], enabled_tool_names: &[String]) {
-    if let Some(first) = messages.first_mut().filter(|m| m.role == "system") {
-        first.content =
-            super::tool_prompt_filter::filter_system_prompt(&first.content, enabled_tool_names);
-    }
+    append_section(&mut prompt, &runtime);
+    prompt
 }
 
 pub fn prepend_agent_md_context(messages: &mut Vec<ChatMessage>, agent_md: Option<String>) {
@@ -74,6 +66,21 @@ pub fn prepare_messages(
     response_language: &str,
 ) {
     let enabled_tool_names = default_prompt_tool_names();
+    let prompt_mode = if mode == "chat" {
+        PromptMode::Chatbot
+    } else {
+        PromptMode::Agentic
+    };
+    let prompt_tier = match model_size::detect_tier(model) {
+        model_size::PromptTier::Compact => PromptTier::Compact,
+        model_size::PromptTier::Detailed => PromptTier::Detailed,
+    };
+    let instructions = SystemPromptView {
+        content: super::system_prompt_defaults::beaver_prompt(prompt_mode, prompt_tier),
+        source: PromptSource::Beaver,
+        customized: false,
+        disabled: false,
+    };
     prepare_messages_with_tools(
         messages,
         working_dir,
@@ -86,7 +93,7 @@ pub fn prepare_messages(
         mode,
         response_language,
         &enabled_tool_names,
-        None,
+        &instructions,
     );
 }
 
@@ -98,18 +105,26 @@ pub fn prepare_messages_with_tools(
     has_tools: bool,
     agent_md: Option<String>,
     skills: &[(String, String)],
-    model: &str,
+    _model: &str,
     mode: &str,
     response_language: &str,
     enabled_tool_names: &[String],
-    behavior: Option<&str>,
+    instructions: &SystemPromptView,
 ) {
     if mode == "chat" {
-        prepend_chat_system_prompt(messages, working_dir, model, behavior);
-        filter_tool_prompt(messages, enabled_tool_names);
+        prepend_chat_system_prompt(messages, working_dir, instructions, enabled_tool_names);
     } else {
-        prepend_tool_system_prompt(messages, working_dir, is_git, git_root, model, behavior);
-        filter_tool_prompt(messages, enabled_tool_names);
+        let prompt = compose_instructions_with_runtime(
+            mode,
+            working_dir,
+            is_git,
+            git_root,
+            instructions,
+            enabled_tool_names,
+        );
+        if !messages.first().is_some_and(|message| message.role == "system") {
+            messages.insert(0, build_system_message(prompt));
+        }
         super::extension_discovery_prompt::append(messages, enabled_tool_names);
         if has_tools && !skills.is_empty() {
             prepend_skills_listing(messages, skills);
@@ -130,18 +145,28 @@ fn default_prompt_tool_names() -> Vec<String> {
 fn prepend_chat_system_prompt(
     messages: &mut Vec<ChatMessage>,
     working_dir: &Path,
-    model: &str,
-    behavior: Option<&str>,
+    instructions: &SystemPromptView,
+    enabled_tool_names: &[String],
 ) {
     if messages.first().is_some_and(|m| m.role == "system") {
         return;
     }
-    let tier = model_size::detect_tier(model);
-    let prompt = match tier {
-        PromptTier::Compact => prompt_chat_compact::build_with_behavior(working_dir, behavior),
-        PromptTier::Detailed => prompt_chat_detailed::build_with_behavior(working_dir, behavior),
-    };
+    let prompt = compose_instructions_with_runtime(
+        "chat",
+        working_dir,
+        false,
+        None,
+        instructions,
+        enabled_tool_names,
+    );
     messages.insert(0, build_system_message(prompt));
+}
+
+fn append_section(prompt: &mut String, section: &str) {
+    if !prompt.is_empty() {
+        prompt.push_str("\n\n");
+    }
+    prompt.push_str(section);
 }
 
 fn append_response_language(messages: &mut [ChatMessage], lang: &str) {

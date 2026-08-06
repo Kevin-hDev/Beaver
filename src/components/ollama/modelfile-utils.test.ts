@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractParameters, extractSystemPrompt } from "./modelfile-utils";
+import { extractParameters } from "./modelfile-utils";
 
 // --- extractParameters -----------------------------------------------------
 
@@ -63,61 +63,5 @@ describe("extractParameters", () => {
     ).join("\n");
 
     expect(extractParameters(modelfile)).toHaveLength(128);
-  });
-});
-
-// --- extractSystemPrompt ---------------------------------------------------
-
-describe("extractSystemPrompt", () => {
-  it("retourne une chaîne vide pour un modelfile vide", () => {
-    expect(extractSystemPrompt("")).toBe("");
-  });
-
-  it("retourne une chaîne vide si pas de SYSTEM", () => {
-    expect(extractSystemPrompt("FROM llama3\nPARAMETER temperature 0.7")).toBe("");
-  });
-
-  it("extrait un SYSTEM en triple quotes", () => {
-    const modelfile = 'FROM llama3\nSYSTEM """\nYou are a helpful assistant.\nStay concise.\n"""';
-    const prompt = extractSystemPrompt(modelfile);
-
-    expect(prompt).toContain("You are a helpful assistant.");
-    expect(prompt).toContain("Stay concise.");
-  });
-
-  it("extrait un SYSTEM en simple quote", () => {
-    const modelfile = 'FROM llama3\nSYSTEM "You are helpful"';
-    const prompt = extractSystemPrompt(modelfile);
-
-    expect(prompt).toBe("You are helpful");
-  });
-
-  it("extrait un SYSTEM sans quote (bare)", () => {
-    const modelfile = "FROM llama3\nSYSTEM You are helpful";
-    const prompt = extractSystemPrompt(modelfile);
-
-    expect(prompt).toBe("You are helpful");
-  });
-
-  it("priorise les triple quotes sur les autres formats", () => {
-    const modelfile = 'SYSTEM """\nTriple quote content\n"""';
-    const prompt = extractSystemPrompt(modelfile);
-
-    expect(prompt).toBe("Triple quote content");
-  });
-
-  it("trim le contenu des triple quotes", () => {
-    const modelfile = 'SYSTEM """\n\n  Content with spaces  \n\n"""';
-    const prompt = extractSystemPrompt(modelfile);
-
-    expect(prompt).toBe("Content with spaces");
-  });
-
-  it("gère un SYSTEM sur une seule ligne en simple quote sans \n interne", () => {
-    // La regex simple quote exclut les \n dans le match.
-    const modelfile = 'SYSTEM "Line one"';
-    const prompt = extractSystemPrompt(modelfile);
-
-    expect(prompt).toBe("Line one");
   });
 });

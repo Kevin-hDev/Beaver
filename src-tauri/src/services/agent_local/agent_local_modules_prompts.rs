@@ -17,5 +17,9 @@ pub mod prompt_interactive;
 pub mod prompt_objective;
 pub mod prompt_plan;
 pub mod prompt_priority;
+pub mod system_prompt_defaults;
+pub mod system_prompt_runtime_context;
+#[cfg(test)]
+mod system_prompt_defaults_tests;
 #[cfg(test)]
 mod prompt_tool_guidance_tests;

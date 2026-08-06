@@ -27,7 +27,7 @@ pub(crate) struct PromptContext<'a> {
     pub response_language: &'a str,
     pub plan_mode_active: bool,
     pub enabled_tool_names: &'a [String],
-    pub behavior: Option<&'a str>,
+    pub instructions: &'a crate::services::agent_local::system_prompt_types::SystemPromptView,
     pub memory_context: Option<String>,
 }
 
@@ -136,7 +136,7 @@ pub(crate) fn prepare_with_context(messages: &mut Vec<ChatMessage>, ctx: PromptC
         ctx.mode,
         ctx.response_language,
         ctx.enabled_tool_names,
-        ctx.behavior,
+        ctx.instructions,
     );
     append_memory_context(messages, ctx.memory_context);
     append_git_section(messages, ctx.snap);

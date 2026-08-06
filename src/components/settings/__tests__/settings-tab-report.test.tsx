@@ -34,6 +34,7 @@ describe("SettingsTab slots", () => {
     ["channels", "settings.tabs.channels", "test-telegram"],
     ["providers", "settings.tabs.providers", "Groq"],
     ["forecast", "forecast.title", "Chronos Bolt Small"],
+    ["system-prompt", "settings.tabs.systemPrompt", "Beaver instructions"],
   ] as Array<[SettingsSubTab, string, string]>)("ouvre %s sans crash ni boucle", async (_subTab, label, expectedContent) => {
     render(<StrictMode><SettingsHarness /></StrictMode>);
     const [item] = await screen.findAllByText(label);

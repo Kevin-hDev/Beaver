@@ -7,6 +7,7 @@ import { GeneralSettings } from "./general-settings";
 import { AdvancedSettings } from "./advanced-settings";
 import { ToolsSettings } from "./tools-settings";
 import { MemorySettings } from "./memory-settings";
+import { SystemPromptSettings } from "./system-prompt-settings";
 import { ForecastSettings } from "./forecast-settings";
 import { ArchivedChatsSettings } from "./archived-chats-settings";
 import { ShortcutsSettings } from "./shortcuts-settings";
@@ -89,6 +90,7 @@ export const SettingsTab = memo(function SettingsTab({
     }
     if (subTab === "tools") return <ToolsSettings />;
     if (subTab === "memory") return <MemorySettings activeSessionId={activeSessionId} />;
+    if (subTab === "system-prompt") return <SystemPromptSettings />;
     if (subTab === "mascot") return <MascotSettings />;
     if (subTab === "forecast") {
       return (

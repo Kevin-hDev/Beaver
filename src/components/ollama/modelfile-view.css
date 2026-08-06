@@ -12,13 +12,6 @@
   margin: 0 auto;
 }
 
-.mfv-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 28px;
-}
-
 .mfv-title {
   font-size: var(--text-xl);
   font-weight: 700;
@@ -29,6 +22,10 @@
 .mfv-actions {
   display: flex;
   gap: 8px;
+}
+
+.mfv-parameters-card {
+  margin-top: var(--space-lg);
 }
 
 .mfv-section {
@@ -50,24 +47,6 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--ink);
-}
-
-.mfv-system-prompt {
-  font-size: var(--text-sm);
-  white-space: pre-wrap;
-  line-height: 1.5;
-  max-height: 200px;
-  overflow: auto;
-}
-
-.mfv-system-prompt-filled {
-  color: var(--ink);
-  font-style: normal;
-}
-
-.mfv-system-prompt-empty {
-  color: var(--ink-faint);
-  font-style: italic;
 }
 
 .mfv-no-params {

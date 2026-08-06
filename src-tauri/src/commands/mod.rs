@@ -95,6 +95,7 @@ pub mod subagents;
 #[cfg(test)]
 pub mod subagents_tests;
 pub(crate) mod subagents_validation;
+pub mod system_prompts;
 pub mod terminal;
 
 pub use agent_chat::*;
@@ -153,4 +154,5 @@ pub use projects::*;
 pub use registry::*;
 pub use search::*;
 pub use subagents::*;
+pub use system_prompts::*;
 pub use terminal::*;

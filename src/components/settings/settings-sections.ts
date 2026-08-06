@@ -1,5 +1,5 @@
 import {
-  Archive, Brain, GearSix, Key, Sliders, Info, BookOpenText, Keyboard,
+  Archive, Brain, GearSix, Key, Sliders, Info, BookOpenText, Keyboard, FileText,
   Plugs, Broadcast, ChartLineUp, Wrench, PawPrint, PuzzlePiece,
 } from "@/components/ui/icons";
 import ollamaDark from "@/assets/ollama.png";
@@ -38,6 +38,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     i18n: "settings.sections.agent",
     tabs: [
       { id: "memory", i18n: "settings.tabs.memory", icon: Brain },
+      { id: "system-prompt", i18n: "settings.tabs.systemPrompt", icon: FileText },
       { id: "tools", i18n: "settings.tabs.tools", icon: Wrench },
       { id: "advanced", i18n: "settings.tabs.advanced", icon: Sliders },
     ],

@@ -44,7 +44,26 @@ pub(crate) async fn run(
 
     let snap = common::collect_git_snapshot(&working_dir).await;
     let ollama_think = resolve_ollama_think(&params);
-    let behavior = crate::services::agent_local::ollama_behavior_overrides::get(&params.model);
+    let prompt_mode =
+        crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
+    let prompt_tier =
+        crate::services::agent_local::system_prompt_defaults::tier_for_model(&params.model);
+    let beaver_prompt = crate::services::agent_local::system_prompt_defaults::beaver_prompt(
+        prompt_mode,
+        prompt_tier,
+    );
+    let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot()?;
+    let native_prompt = crate::services::agent_local::ollama_client::OllamaClient::new()
+        .get_native_system_prompt(&params.model)
+        .await?;
+    let instructions = crate::services::agent_local::system_prompt_resolver::resolve_ollama(
+        &prompt_settings,
+        &params.model,
+        prompt_mode,
+        prompt_tier,
+        native_prompt.as_deref(),
+        &beaver_prompt,
+    );
     let mut messages = params.messages;
     let prepared_memory = crate::services::agent_local::memory_context::prepare(
         &params.session_id,
@@ -89,7 +108,7 @@ pub(crate) async fn run(
             response_language: &response_language,
             plan_mode_active,
             enabled_tool_names: &enabled_tool_names,
-            behavior: behavior.as_deref(),
+            instructions: &instructions,
             memory_context,
         };
         let seed = super::context_usage_seed::for_prompt(&prompt_context);

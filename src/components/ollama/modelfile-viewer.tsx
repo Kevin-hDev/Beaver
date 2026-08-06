@@ -3,17 +3,12 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { ModelfileEditor } from "./modelfile-editor";
-import { SystemPromptEditor } from "./system-prompt-editor";
 import { ParametersEditor } from "./parameters-editor";
 import { ModelfileView } from "./modelfile-view";
-import { extractSystemPrompt, extractParameters } from "./modelfile-utils";
+import { extractParameters } from "./modelfile-utils";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
-import {
-  shouldShowSystemPromptWarning,
-  SystemPromptWarningDialog,
-} from "./system-prompt-warning-dialog";
 
-type Mode = "view" | "edit-system" | "edit-parameters" | "edit-modelfile";
+type Mode = "view" | "edit-parameters" | "edit-modelfile";
 
 interface ModelfileViewerProps {
   modelName: string;
@@ -26,7 +21,6 @@ export function ModelfileViewer({ modelName, onDeleted }: ModelfileViewerProps) 
   const [mode, setMode] = useState<Mode>("view");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  const [showSystemWarning, setShowSystemWarning] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -40,7 +34,6 @@ export function ModelfileViewer({ modelName, onDeleted }: ModelfileViewerProps) 
     }
   };
 
-  const systemPrompt = useMemo(() => extractSystemPrompt(modelfile), [modelfile]);
   const parameters = useMemo(() => extractParameters(modelfile), [modelfile]);
 
   const loadModelfile = useCallback(() => {
@@ -53,7 +46,6 @@ export function ModelfileViewer({ modelName, onDeleted }: ModelfileViewerProps) 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- model switch resets local editor state before async reload
     setLoading(true);
     setMode("view");
-    setShowSystemWarning(false);
     void loadModelfile().finally(() => setLoading(false));
   }, [loadModelfile]);
 
@@ -67,17 +59,6 @@ export function ModelfileViewer({ modelName, onDeleted }: ModelfileViewerProps) 
       <div style={{ padding: "var(--space-md)", fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>
         {t("history.loading")}
       </div>
-    );
-  }
-
-  if (mode === "edit-system") {
-    return (
-      <SystemPromptEditor
-        modelName={modelName}
-        initialSystem={systemPrompt}
-        onSave={() => { setMode("view"); void loadModelfile(); }}
-        onCancel={() => setMode("view")}
-      />
     );
   }
 
@@ -103,36 +84,15 @@ export function ModelfileViewer({ modelName, onDeleted }: ModelfileViewerProps) 
     );
   }
 
-  const handleEditSystem = () => {
-    if (shouldShowSystemPromptWarning()) {
-      setShowSystemWarning(true);
-      return;
-    }
-    setMode("edit-system");
-  };
-
   return (
-    <>
-      <ModelfileView
-        modelName={modelName}
-        systemPrompt={systemPrompt}
-        parameters={parameters}
-        modelfile={modelfile}
-        deleting={deleting}
-        onDelete={() => void handleDelete()}
-        onEditSystem={handleEditSystem}
-        onEditParameters={() => setMode("edit-parameters")}
-        onEditModelfile={() => setMode("edit-modelfile")}
-      />
-      {showSystemWarning && (
-        <SystemPromptWarningDialog
-          onCancel={() => setShowSystemWarning(false)}
-          onContinue={() => {
-            setShowSystemWarning(false);
-            setMode("edit-system");
-          }}
-        />
-      )}
-    </>
+    <ModelfileView
+      modelName={modelName}
+      parameters={parameters}
+      modelfile={modelfile}
+      deleting={deleting}
+      onDelete={() => void handleDelete()}
+      onEditParameters={() => setMode("edit-parameters")}
+      onEditModelfile={() => setMode("edit-modelfile")}
+    />
   );
 }
