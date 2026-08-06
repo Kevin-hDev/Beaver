@@ -142,4 +142,4 @@ See the main README for the full file inventory.
 
 ## License
 
-Beaver is licensed under the [Apache License 2.0](LICENSE). This security policy is part of the project documentation.
+Beaver is licensed under the [GNU Affero General Public License v3.0](LICENSE). This security policy is part of the project documentation.

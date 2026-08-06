@@ -169,7 +169,7 @@ Bloc terminal à onglets : `macOS / Linux` | `Windows` — la commande curl rée
 Bouton copier. Rien d'autre.
 
 ### 6.6 Stack & chiffres
-Bandeau mono : `Rust · Tauri 2 · React 19 · 3 OS · Apache-2.0`.
+Bandeau mono : `Rust · Tauri 2 · React 19 · 3 OS · AGPL-3.0`.
 Éventuellement stars GitHub plus tard.
 
 ### 6.7 Footer

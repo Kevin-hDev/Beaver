@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Licensing
+
+- **Beaver is now licensed under the GNU Affero General Public License v3.0**, replacing the Apache License 2.0. Everyone remains free to use, study, modify and redistribute Beaver — but any distributed or network-hosted version must now be released under the AGPL v3 with its complete source code. Releases up to and including v1.1.2 stay available under the Apache 2.0 terms they were published with.
+- **Contributor License Agreement added** — contributors keep ownership of their work and grant the project the rights needed to keep publishing Beaver and to offer commercial licenses alongside the AGPL. See `CLA.md` and `CONTRIBUTING.md`.
+- **Contribution guide added** — setup, required checks, and code conventions in `CONTRIBUTING.md`.
+
 ---
 
 ## v1.1.2

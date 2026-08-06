@@ -236,4 +236,22 @@ For the complete release history, see **[CHANGELOG.md](CHANGELOG.md)**.
 
 ## License
 
-[Apache License 2.0](LICENSE)
+Beaver is licensed under the **[GNU Affero General Public License v3.0](LICENSE)**.
+
+Copyright © 2026 Kevin Huynh
+
+You are free to use, study, modify and redistribute Beaver. In return, any
+distributed or network-hosted version — modified or not — must be released
+under the AGPL v3 and ship its complete source code.
+
+Contributions are welcome and require signing the CLA described in
+**[CONTRIBUTING.md](CONTRIBUTING.md)**.
+
+For a commercial license exempting you from the AGPL obligations, contact
+huynh.kevin7@outlook.fr.
+
+Third-party components keep their own licenses — see
+**[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)**.
+
+> Releases up to and including v1.1.2 were published under the Apache License
+> 2.0 and remain available under those terms.
