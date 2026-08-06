@@ -58,5 +58,6 @@ describe("dessins des onglets de Réglages", () => {
   it("réduit les deux tailles d'un cinquième sous l'icône de référence", () => {
     expect(TOKENS).toContain("--settings-tab-icon-size: calc(var(--icon-md) * 0.8);");
     expect(TOKENS).toContain("--session-icon-size: calc(var(--icon-sm) * 0.8);");
+    expect(TOKENS).toContain("--project-folder-icon-size: calc(var(--session-icon-size) * 1.2);");
   });
 });

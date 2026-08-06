@@ -143,6 +143,11 @@
      état d'un dossier, renommer, archiver. Un cinquième sous l'icône courante
      de ces lignes, pour la même raison que ceux de la colonne de Réglages. */
   --session-icon-size: calc(var(--icon-sm) * 0.8);
+  /* Le dossier d'un projet, posé plus grand que ses voisins de la même ligne :
+     son tracé n'occupe que 60 % de la hauteur de son cadre — un dossier est
+     plat — contre 70 à 75 % pour les autres, et à cadre égal il se lit plus
+     petit qu'eux. Exprimé par rapport à eux, pour que l'écart tienne. */
+  --project-folder-icon-size: calc(var(--session-icon-size) * 1.2);
   --system-prompt-tier-min-width: 5.1111rem;
   --system-prompt-card-header-min-height: 3.2222rem;
   --system-prompt-preview-min-height: 6.6667rem;

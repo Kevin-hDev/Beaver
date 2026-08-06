@@ -17,12 +17,14 @@ describe("dessin de l'état d'un dossier de projet", () => {
     expect(tracing(true).path).not.toBe(tracing(false).path);
   });
 
-  it("se pose à la taille des lignes de la barre latérale", () => {
+  /* Le dossier est posé plus grand que les autres dessins de sa ligne : son
+     tracé occupe moins de son cadre, et à cadre égal il paraît plus petit. */
+  it("se pose au-dessus des autres dessins de sa ligne", () => {
     for (const open of [true, false]) {
       const { svg } = tracing(open);
 
-      expect(svg.style.width).toBe("var(--session-icon-size)");
-      expect(svg.style.height).toBe("var(--session-icon-size)");
+      expect(svg.style.width).toBe("var(--project-folder-icon-size)");
+      expect(svg.style.height).toBe("var(--project-folder-icon-size)");
     }
   });
 
