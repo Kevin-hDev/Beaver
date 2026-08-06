@@ -8,8 +8,11 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("../modelfile-viewer", () => ({
-  ModelfileViewer: ({ modelName }: { modelName: string }) => (
-    <div data-testid="modelfile-viewer">{modelName}</div>
+  ModelfileViewer: ({ modelName, onBack }: { modelName: string; onBack: () => void }) => (
+    <div data-testid="modelfile-viewer">
+      {modelName}
+      <button type="button" aria-label="common.back" onClick={onBack} />
+    </div>
   ),
 }));
 

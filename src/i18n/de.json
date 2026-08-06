@@ -780,7 +780,7 @@
       },
       "loss": {
         "title": "Der benutzerdefinierte Prompt wird gelöscht",
-        "body": "Wenn Sie mit {{destination}} fortfahren, wird der benutzerdefinierte Prompt für diesen Modus und dieses Format dauerhaft gelöscht. Kopieren Sie ihn vorher, wenn Sie ihn behalten möchten.",
+        "body": "Wenn du mit {{destination}} fortfährst, wird der benutzerdefinierte Prompt für diesen Modus und dieses Format dauerhaft gelöscht. Kopiere ihn vorher, wenn du ihn behalten möchtest.",
         "copy": "Prompt kopieren", "copied": "Prompt kopiert", "copyError": "Der Prompt konnte nicht kopiert werden.", "continue": "Fortfahren"
       }
     },

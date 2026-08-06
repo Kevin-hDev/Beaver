@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -32,8 +32,6 @@ interface SystemPromptSettingsPanelProps {
   warningKind: SystemPromptWarningKind;
   initialMode: SystemPromptMode;
   initialTier: SystemPromptTier;
-  selectorHeader?: ReactNode;
-  selectorActions?: ReactNode;
 }
 
 export function SystemPromptSettingsPanel({
@@ -41,8 +39,6 @@ export function SystemPromptSettingsPanel({
   warningKind,
   initialMode,
   initialTier,
-  selectorHeader,
-  selectorActions,
 }: SystemPromptSettingsPanelProps) {
   const { t } = useTranslation();
   const [mode, setMode] = useState(initialMode);
@@ -171,8 +167,6 @@ export function SystemPromptSettingsPanel({
         tier={tier}
         onModeChange={selectMode}
         onTierChange={selectTier}
-        header={selectorHeader}
-        actions={selectorActions}
       />
       {editing && view ? (
         <SystemPromptEditorCard

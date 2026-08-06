@@ -5,6 +5,9 @@ export interface SettingsTabbarItem<Id extends string> {
   id: Id;
   label: string;
   icon?: ReactNode;
+  /* Précision secondaire — affichée au survol et jointe au nom accessible.
+     Elle reste hors du libellé visible, qui doit tenir sur une seule ligne. */
+  hint?: string;
 }
 
 interface SettingsTabbarProps<Id extends string> {
@@ -28,6 +31,8 @@ export function SettingsTabbar<Id extends string>({
           type="button"
           role="tab"
           aria-selected={item.id === active}
+          aria-label={item.hint ? `${item.label} ${item.hint}` : undefined}
+          title={item.hint}
           className={`settings-tabbar-item${item.id === active ? " active" : ""}`}
           onClick={() => onChange(item.id)}
         >
