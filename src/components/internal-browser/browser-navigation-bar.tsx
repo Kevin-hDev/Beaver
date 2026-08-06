@@ -3,11 +3,11 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  Maximize2,
   Minimize2,
   RotateCw,
   Square,
 } from "@/components/ui/icons";
+import { FullscreenIcon } from "@/components/ui/panel-action-icons";
 import { MAX_BROWSER_URL_LENGTH, type BrowserTabState } from "./browser-types";
 
 interface BrowserNavigationBarProps {
@@ -87,7 +87,7 @@ export function BrowserNavigationBar(props: BrowserNavigationBarProps) {
       >
         {props.fullscreen
           ? <Minimize2 size="var(--icon-md)" />
-          : <Maximize2 size="var(--icon-md)" />}
+          : <FullscreenIcon />}
       </button>
     </div>
   );

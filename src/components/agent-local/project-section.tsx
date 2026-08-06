@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Archive, FolderOpen, DotsThreeVertical, PencilSimple,
-  X,
-} from "@/components/ui/icons";
+import { FolderOpen, DotsThreeVertical, X } from "@/components/ui/icons";
+import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
+import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
 import { FolderStateIcon } from "@/components/ui/folder-state-icon";
 import { CollapsePanel } from "./collapse-panel";
@@ -56,7 +55,7 @@ export function ProjectSection({
 
   const projectMenuItems: ContextMenuItem[] = [
     { label: t("projects.openFolder", "Ouvrir le dossier"), icon: <FolderOpen size="var(--icon-sm)" />, onClick: () => onOpenFolder(project.path) },
-    { label: t("projects.rename", "Renommer"), icon: <PencilSimple size="var(--icon-sm)" />, onClick: () => { setRenaming(true); setTimeout(() => inputRef.current?.focus(), 0); } },
+    { label: t("projects.rename", "Renommer"), icon: <RenameIcon />, onClick: () => { setRenaming(true); setTimeout(() => inputRef.current?.focus(), 0); } },
     { label: t("projects.delete", "Supprimer"), icon: <X size="var(--icon-sm)" />, onClick: () => onDeleteProject(project.id) },
   ];
 
@@ -67,8 +66,8 @@ export function ProjectSection({
   }, []);
 
   const sessionMenuItems: ContextMenuItem[] = sessionCtx ? [
-    { label: t("history.rename"), icon: <PencilSimple size="var(--icon-sm)" />, onClick: () => { setRenamingSessionId(sessionCtx.id); setTimeout(() => sessionInputRef.current?.focus(), 0); } },
-    { label: t("history.archive"), icon: <Archive size="var(--icon-sm)" />, onClick: () => onDeleteSession(sessionCtx.id) },
+    { label: t("history.rename"), icon: <RenameIcon />, onClick: () => { setRenamingSessionId(sessionCtx.id); setTimeout(() => sessionInputRef.current?.focus(), 0); } },
+    { label: t("history.archive"), icon: <ArchiveBoxIcon />, onClick: () => onDeleteSession(sessionCtx.id) },
   ] : [];
 
   const handleRename = useCallback((value: string) => {
@@ -114,7 +113,7 @@ export function ProjectSection({
           />
         ) : (
           <>
-            <FolderStateIcon open={!collapsed} size="var(--icon-sm)" className="conv-icon conv-folder-icon" />
+            <FolderStateIcon open={!collapsed} className="conv-icon conv-folder-icon" />
             <span className="conv-project-name">{project.name}</span>
             <div className="conv-project-actions">
               <button className="conv-project-action-btn" onClick={(e) => { e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY }); }}>

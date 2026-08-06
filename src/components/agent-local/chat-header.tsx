@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { BookOpen } from "@/components/ui/icons";
+import { DocumentationIcon } from "@/components/ui/panel-action-icons";
 import { PanelToggleIcon, TerminalIcon } from "@/components/ui/chat-header-icons";
 import { DragRegion } from "@/components/layout/drag-region";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -93,7 +93,7 @@ export function ChatHeader({
                   onOpenForecastDocs();
                 }}
               >
-                <BookOpen size="var(--chrome-icon-docs)" />
+                <DocumentationIcon />
               </button>
             </Tooltip>
           )}

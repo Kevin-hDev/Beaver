@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowSquareOut } from "@/components/ui/icons";
+import { CloseIcon, OpenExternalIcon } from "@/components/ui/panel-action-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { ForecastSection } from "@/hooks/use-forecast-panel";
 import { ForecastNav } from "./forecast-nav";
@@ -54,16 +54,13 @@ export function ForecastHeader({
             aria-label={t("forecast.workbench.open")}
             onClick={onOpenWorkbench}
           >
-            <ArrowSquareOut size="var(--icon-md)" />
+            <OpenExternalIcon />
           </button>
         </Tooltip>
         {hasAnalysis && (
           <Tooltip label={t("a11y.close")} align="right">
             <button className="icon-btn fp-icon-btn" onClick={onCloseAnalysis}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
-                stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M3 3l8 8M11 3l-8 8" />
-              </svg>
+              <CloseIcon />
             </button>
           </Tooltip>
         )}

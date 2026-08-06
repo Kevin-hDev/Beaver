@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { ThemedIcon } from "@/components/ui/themed-icon";
 import { SETTINGS_SECTIONS } from "./settings-sections";
 import type { SubTabDef } from "./settings-sections";
 import type { SettingsSubTab } from "@/types/navigation";
@@ -55,20 +54,7 @@ function SubTabItem({ tab, active, onSelect }: SubTabItemProps) {
       }}
       className={`settings-subtab${active ? " active" : ""}`}
     >
-      {tab.icon ? (
-        <tab.icon
-          size="var(--icon-md)"
-          weight={active ? "fill" : "regular"}
-          style={{ flexShrink: 0 }}
-        />
-      ) : tab.imgDark && tab.imgLight ? (
-        <ThemedIcon
-          darkSrc={tab.imgDark}
-          lightSrc={tab.imgLight}
-          size="var(--icon-md)"
-          style={{ flexShrink: 0, opacity: active ? 1 : 0.6 }}
-        />
-      ) : null}
+      <tab.icon className="settings-subtab-icon" />
       <span className="settings-subtab-label">{t(tab.i18n)}</span>
     </div>
   );

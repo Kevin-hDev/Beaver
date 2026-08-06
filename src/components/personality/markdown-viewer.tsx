@@ -3,7 +3,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import { ArrowSquareOut } from "@/components/ui/icons";
+import { OpenExternalIcon } from "@/components/ui/panel-action-icons";
+import { Tooltip } from "@/components/ui/tooltip";
 import "github-markdown-css/github-markdown.css";
 import "./markdown-viewer.css";
 
@@ -32,9 +33,20 @@ export function MarkdownViewer({
     <>
       <div className="md-header">
         <div className="md-title">{fileName}</div>
-        <button className="btn" onClick={onOpenEditor}>
-          <ArrowSquareOut size="var(--icon-sm)" /> {t("personality.open")}
-        </button>
+        {/* Le libellé est parti : sans lui, l'infobulle et le nom accessible
+            sont les deux seuls endroits qui disent encore ce que fait ce
+            bouton. Le contour reste — posé sur un en-tête et non dans une
+            carte, un bouton nu ne se distinguerait pas du fond. */}
+        <Tooltip label={t("personality.open")} align="right">
+          <button
+            className="icon-btn icon-btn-secondary"
+            type="button"
+            aria-label={t("personality.open")}
+            onClick={onOpenEditor}
+          >
+            <OpenExternalIcon size="var(--personality-open-icon-size)" />
+          </button>
+        </Tooltip>
       </div>
       <div className="md-scroll">
         <div className="markdown-body">

@@ -4,8 +4,6 @@ import { GpuStatusBadge } from "@/components/agent-local/gpu-status-badge";
 import { NAV_ITEMS, type TabId } from "./nav-items";
 import "./list-panel-footer.css";
 
-const ICON_SIZE = "var(--icon-md)";
-
 interface ListPanelFooterProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
@@ -32,11 +30,7 @@ export function ListPanelFooter({ activeTab, onTabChange }: ListPanelFooterProps
                 data-nav-active={active ? "true" : undefined}
                 onClick={() => onTabChange(item.id)}
               >
-                {item.icon ? (
-                  <item.icon size={ICON_SIZE} weight={active ? "fill" : "regular"} />
-                ) : item.customIcon ? (
-                  <item.customIcon size={ICON_SIZE} />
-                ) : null}
+                <item.icon />
               </button>
             </Tooltip>
           );

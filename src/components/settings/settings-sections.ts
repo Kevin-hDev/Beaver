@@ -1,18 +1,16 @@
 import {
-  Archive, Brain, GearSix, Key, Sliders, Info, BookOpenText, Keyboard, FileText,
-  Plugs, Broadcast, ChartLineUp, Wrench, PawPrint, PuzzlePiece,
-} from "@/components/ui/icons";
-import ollamaDark from "@/assets/ollama.png";
-import ollamaLight from "@/assets/ollama-light.png";
-import type { Icon } from "@phosphor-icons/react";
+  AboutIcon, AdvancedIcon, ArchivedChatsIcon, ChannelsIcon, ConnectorsIcon,
+  ExtensionsIcon, ForecastIcon, GeneralIcon, LlmIcon, MascotIcon, MemoryIcon,
+  OllamaIcon, ProvidersIcon, ShortcutsIcon, SystemPromptIcon, ToolsIcon,
+} from "./settings-tab-icons";
+import type { SettingsTabIconProps } from "./settings-tab-icons";
+import type { ComponentType } from "react";
 import type { SettingsSubTab } from "@/types/navigation";
 
 export interface SubTabDef {
   id: SettingsSubTab;
   i18n: string;
-  icon?: Icon;
-  imgDark?: string;
-  imgLight?: string;
+  icon: ComponentType<SettingsTabIconProps>;
 }
 
 interface SettingsSection {
@@ -29,42 +27,42 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
   {
     i18n: "settings.sections.preferences",
     tabs: [
-      { id: "general", i18n: "settings.tabs.general", icon: GearSix },
-      { id: "mascot", i18n: "settings.tabs.mascot", icon: PawPrint },
-      { id: "shortcuts", i18n: "settings.tabs.shortcuts", icon: Keyboard },
+      { id: "general", i18n: "settings.tabs.general", icon: GeneralIcon },
+      { id: "mascot", i18n: "settings.tabs.mascot", icon: MascotIcon },
+      { id: "shortcuts", i18n: "settings.tabs.shortcuts", icon: ShortcutsIcon },
     ],
   },
   {
     i18n: "settings.sections.agent",
     tabs: [
-      { id: "memory", i18n: "settings.tabs.memory", icon: Brain },
-      { id: "system-prompt", i18n: "settings.tabs.systemPrompt", icon: FileText },
-      { id: "tools", i18n: "settings.tabs.tools", icon: Wrench },
-      { id: "advanced", i18n: "settings.tabs.advanced", icon: Sliders },
+      { id: "memory", i18n: "settings.tabs.memory", icon: MemoryIcon },
+      { id: "system-prompt", i18n: "settings.tabs.systemPrompt", icon: SystemPromptIcon },
+      { id: "tools", i18n: "settings.tabs.tools", icon: ToolsIcon },
+      { id: "advanced", i18n: "settings.tabs.advanced", icon: AdvancedIcon },
     ],
   },
   {
     i18n: "settings.sections.models",
     tabs: [
-      { id: "ollama", i18n: "settings.tabs.ollama", imgDark: ollamaDark, imgLight: ollamaLight },
-      { id: "forecast", i18n: "forecast.title", icon: ChartLineUp },
-      { id: "llm", i18n: "settings.tabs.llm", icon: BookOpenText },
+      { id: "ollama", i18n: "settings.tabs.ollama", icon: OllamaIcon },
+      { id: "forecast", i18n: "forecast.title", icon: ForecastIcon },
+      { id: "llm", i18n: "settings.tabs.llm", icon: LlmIcon },
     ],
   },
   {
     i18n: "settings.sections.integrations",
     tabs: [
-      { id: "providers", i18n: "settings.tabs.providers", icon: Key },
-      { id: "connectors", i18n: "settings.tabs.connectors", icon: Plugs },
-      { id: "channels", i18n: "settings.tabs.channels", icon: Broadcast },
-      { id: "extensions", i18n: "settings.tabs.extensions", icon: PuzzlePiece },
+      { id: "providers", i18n: "settings.tabs.providers", icon: ProvidersIcon },
+      { id: "connectors", i18n: "settings.tabs.connectors", icon: ConnectorsIcon },
+      { id: "channels", i18n: "settings.tabs.channels", icon: ChannelsIcon },
+      { id: "extensions", i18n: "settings.tabs.extensions", icon: ExtensionsIcon },
     ],
   },
   {
     i18n: "settings.sections.application",
     tabs: [
-      { id: "archived-chats", i18n: "settings.tabs.archivedChats", icon: Archive },
-      { id: "about", i18n: "settings.tabs.about", icon: Info },
+      { id: "archived-chats", i18n: "settings.tabs.archivedChats", icon: ArchivedChatsIcon },
+      { id: "about", i18n: "settings.tabs.about", icon: AboutIcon },
     ],
   },
 ];

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, Pencil } from "@/components/ui/icons";
+import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
+import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
 import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { ProjectSection } from "./project-section";
@@ -80,8 +81,8 @@ export function ConversationList({
     setCtx({ x: rect.right, y: rect.bottom, id });
   }, []);
   const ctxItems: ContextMenuItem[] = ctx ? [
-    { label: t("history.rename"), icon: <Pencil size="var(--icon-sm)" />, onClick: () => { setRenamingId(ctx.id); setTimeout(() => inputRef.current?.focus(), 0); } },
-    { label: t("history.archive"), icon: <Archive size="var(--icon-sm)" />, onClick: () => onDelete(ctx.id) },
+    { label: t("history.rename"), icon: <RenameIcon />, onClick: () => { setRenamingId(ctx.id); setTimeout(() => inputRef.current?.focus(), 0); } },
+    { label: t("history.archive"), icon: <ArchiveBoxIcon />, onClick: () => onDelete(ctx.id) },
   ] : [];
   const handleRenameSubmit = (id: string, value: string) => {
     if (value.trim()) onRename(id, value.trim());
@@ -109,7 +110,7 @@ export function ConversationList({
     <>
       <div className="conv-header">
         <button className="conv-new-btn" onClick={onCreate}>
-          <ComposeIcon size="var(--icon-sm)" />
+          <ComposeIcon size="var(--session-icon-size)" />
           <span className="conv-new-label">{t("agentLocal.newSession")}</span>
         </button>
       </div>

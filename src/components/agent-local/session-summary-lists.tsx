@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Archive,
   CheckCircle2,
   ChevronDown,
   Circle,
@@ -9,6 +8,7 @@ import {
   FileText,
   PauseCircle,
 } from "@/components/ui/icons";
+import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
 import { subagentDisplayName, subagentSecondaryText } from "@/lib/subagent-display";
 import type { AgentPlanRun, AgentTodoItem, AgentTodoRun, SubagentInfo } from "@/types/agent";
 import { SubagentIcon } from "./subagent-icon";
@@ -145,7 +145,7 @@ export function SessionSummarySubagentList({
                 onArchive?.(agent.sessionId);
               }}
             >
-              <Archive aria-hidden="true" size="var(--icon-sm)" />
+              <ArchiveBoxIcon />
             </button>
           )}
         </span>
