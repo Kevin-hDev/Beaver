@@ -10,6 +10,17 @@
 
 ---
 
+## v1.1.3
+
+### System prompt customization
+
+- **Global system prompt controls** — review, edit, replace, disable, or restore Beaver's Chatbot and Agentic instructions, with separate Compact and Detailed prompt variants.
+- **Per-model Ollama controls** — customize each installed model independently, preserve native Ollama prompts when available, and switch explicitly between Beaver and Ollama behavior. Per-model choices take priority over the global setting.
+- **Safer prompt replacement** — warn before replacing a custom prompt, offer one-click clipboard copying before it is lost, and keep empty custom prompts intentionally disabled instead of restoring stale text.
+- **Reliable prompt storage** — migrate previous Ollama prompt settings safely, preserve native prompts before model customization, and recover cleanly from unavailable local settings without blocking chat.
+
+---
+
 ## v1.1.2
 
 ### Windows presentation
