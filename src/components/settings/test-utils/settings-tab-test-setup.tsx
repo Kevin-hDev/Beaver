@@ -41,7 +41,7 @@ vi.mock("@tauri-apps/api/core", async () => {
       if (cmd === "get_system_prompt_setting") return Promise.resolve({
         content: "Beaver instructions",
         source: "beaver",
-        customized: false,
+        selection: "default",
         disabled: false,
       });
       if (FAILED_COMMANDS.has(cmd)) return Promise.reject(new Error("test failure"));

@@ -84,6 +84,12 @@ fn migrate_legacy(path: &Path) -> SystemPromptSettings {
 fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix) {
     for mode in [PromptMode::Chatbot, PromptMode::Agentic] {
         for tier in [PromptTier::Compact, PromptTier::Detailed] {
+            if source.beaver(mode, tier)
+                || matches!(source.get(mode, tier), Some(PromptOverride::Beaver))
+            {
+                target.set_beaver(mode, tier, true);
+                continue;
+            }
             let Some(value) = source.get(mode, tier).and_then(sanitize_override) else {
                 continue;
             };
@@ -95,7 +101,7 @@ fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix) {
 fn sanitize_override(value: &PromptOverride) -> Option<PromptOverride> {
     match value {
         PromptOverride::Disabled => Some(PromptOverride::Disabled),
-        PromptOverride::Beaver => Some(PromptOverride::Beaver),
+        PromptOverride::Beaver => None,
         PromptOverride::Custom(content)
             if !content.contains('\0') && content.len() <= MAX_PROMPT_BYTES =>
         {

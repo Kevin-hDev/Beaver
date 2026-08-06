@@ -772,7 +772,7 @@
       "tiers": { "compact": "Compacto", "detailed": "Detallado" },
       "modeLabel": "Modo del modelo", "tierLabel": "Formato de instrucciones",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "Editar", "restore": "Restaurar", "save": "Guardar", "cancel": "Cancelar",
+      "edit": "Editar", "restore": "Restaurar", "useBeaver": "Usar Beaver", "restoreOllama": "Restaurar Ollama", "restoreDefault": "Restaurar el comportamiento predeterminado", "save": "Guardar", "cancel": "Cancelar",
       "empty": "Sin instrucciones del sistema", "editorLabel": "Instrucciones del sistema personalizadas",
       "placeholder": "Déjalo vacío para no enviar instrucciones del sistema.",
       "warning": {

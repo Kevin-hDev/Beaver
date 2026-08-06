@@ -22,6 +22,10 @@ struct PromptMatrix {
 struct PromptPair {
     compact: Option<PromptOverride>,
     detailed: Option<PromptOverride>,
+    #[serde(default)]
+    compact_beaver: bool,
+    #[serde(default)]
+    detailed_beaver: bool,
 }
 
 impl SystemPromptSettings {
@@ -60,21 +64,15 @@ impl SystemPromptSettings {
         prompt: &str,
     ) -> Result<(), String> {
         super::model_customizations::validate_model_name(model)?;
-        if self.ollama.len() >= MAX_MODELS && !self.ollama.contains_key(model) {
-            return Err("system-prompt-model-limit".into());
-        }
+        self.ensure_model_capacity(model)?;
         let matrix = self.ollama.entry(model.to_string()).or_default();
         *matrix.get_mut(mode, tier) = Some(normalize_override(prompt)?);
+        matrix.set_beaver(mode, tier, false);
         Ok(())
     }
 
     pub fn restore_global(&mut self, mode: PromptMode, tier: PromptTier) {
         *self.global.get_mut(mode, tier) = None;
-    }
-
-    pub fn restore_ollama(&mut self, model: &str, mode: PromptMode, tier: PromptTier) {
-        let matrix = self.ollama.entry(model.to_string()).or_default();
-        *matrix.get_mut(mode, tier) = Some(PromptOverride::Beaver);
     }
 
     pub fn remove_ollama_model(&mut self, model: &str) {
@@ -126,7 +124,10 @@ impl PromptPair {
     }
 
     fn is_empty(&self) -> bool {
-        self.compact.is_none() && self.detailed.is_none()
+        self.compact.is_none()
+            && self.detailed.is_none()
+            && !self.compact_beaver
+            && !self.detailed_beaver
     }
 }
 
@@ -170,11 +171,15 @@ pub fn restore_global(mode: PromptMode, tier: PromptTier) -> Result<(), String> 
 }
 
 pub fn restore_ollama(model: &str, mode: PromptMode, tier: PromptTier) -> Result<(), String> {
-    super::model_customizations::validate_model_name(model)?;
-    mutate(|settings| {
-        settings.restore_ollama(model, mode, tier);
-        Ok(())
-    })
+    mutate(|settings| settings.select_ollama_beaver(model, mode, tier))
+}
+
+pub fn restore_ollama_default(
+    model: &str,
+    mode: PromptMode,
+    tier: PromptTier,
+) -> Result<(), String> {
+    mutate(|settings| settings.restore_ollama_default(model, mode, tier))
 }
 
 pub fn remove_ollama_model(model: &str) -> Result<(), String> {
@@ -218,3 +223,6 @@ fn legacy_store_path() -> std::path::PathBuf {
 
 #[path = "system_prompt_persistence.rs"]
 mod persistence;
+
+#[path = "system_prompt_store_selection.rs"]
+mod selection;

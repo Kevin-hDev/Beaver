@@ -1,5 +1,5 @@
 use super::chat_prompts::prepare_messages_with_tools;
-use super::system_prompt_types::{PromptSource, SystemPromptView};
+use super::system_prompt_types::{PromptSelection, PromptSource, SystemPromptView};
 use super::tool_catalog;
 use super::types_ollama::ChatMessage;
 use std::path::Path;
@@ -31,7 +31,7 @@ fn custom_prompt_replaces_beaver_instructions_but_keeps_dynamic_context() {
     let instructions = SystemPromptView {
         content: "CUSTOM MODEL BEHAVIOR".into(),
         source: PromptSource::Custom,
-        customized: true,
+        selection: PromptSelection::Custom,
         disabled: false,
     };
     prepare_messages_with_tools(
@@ -81,7 +81,7 @@ fn custom_chat_prompt_replaces_static_chatbot_instructions() {
     let instructions = SystemPromptView {
         content: "CUSTOM CHAT BEHAVIOR".into(),
         source: PromptSource::Custom,
-        customized: true,
+        selection: PromptSelection::Custom,
         disabled: false,
     };
     prepare_messages_with_tools(
@@ -118,7 +118,7 @@ fn empty_custom_prompt_keeps_only_dynamic_system_context() {
     let instructions = SystemPromptView {
         content: String::new(),
         source: PromptSource::Custom,
-        customized: true,
+        selection: PromptSelection::Disabled,
         disabled: true,
     };
 

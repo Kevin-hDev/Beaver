@@ -51,6 +51,7 @@ macro_rules! generate {
             crate::commands::get_system_prompt_setting,
             crate::commands::save_system_prompt_setting,
             crate::commands::restore_system_prompt_setting,
+            crate::commands::restore_default_system_prompt_setting,
             crate::commands::chat_stream,
             crate::commands::queue_agent_message,
             crate::commands::estimate_context_hidden_usage,

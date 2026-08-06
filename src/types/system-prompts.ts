@@ -1,6 +1,7 @@
 export type SystemPromptMode = "chatbot" | "agentic";
 export type SystemPromptTier = "compact" | "detailed";
 export type SystemPromptSource = "beaver" | "ollama" | "custom";
+export type SystemPromptSelection = "default" | "beaver" | "custom" | "disabled";
 
 export type SystemPromptTarget =
   | { scope: "global" }
@@ -9,6 +10,6 @@ export type SystemPromptTarget =
 export interface SystemPromptView {
   content: string;
   source: SystemPromptSource;
-  customized: boolean;
+  selection: SystemPromptSelection;
   disabled: boolean;
 }

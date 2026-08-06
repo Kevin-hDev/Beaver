@@ -12,6 +12,7 @@ import type {
   SystemPromptView,
 } from "@/types/system-prompts";
 import { SystemPromptEditorCard } from "./system-prompt-editor-card";
+import { SystemPromptActions } from "./system-prompt-actions";
 import { SystemPromptSelectors } from "./system-prompt-selectors";
 import {
   shouldShowSystemPromptWarning,
@@ -25,6 +26,7 @@ interface SystemPromptSettingsPanelProps {
   warningKind: SystemPromptWarningKind;
   initialMode: SystemPromptMode;
   initialTier: SystemPromptTier;
+  nativePromptAvailable?: boolean;
   selectorHeader?: ReactNode;
   selectorActions?: ReactNode;
 }
@@ -34,6 +36,7 @@ export function SystemPromptSettingsPanel({
   warningKind,
   initialMode,
   initialTier,
+  nativePromptAvailable = false,
   selectorHeader,
   selectorActions,
 }: SystemPromptSettingsPanelProps) {
@@ -146,6 +149,23 @@ export function SystemPromptSettingsPanel({
     }
   };
 
+  const restoreDefault = async () => {
+    setSaving(true);
+    setError(false);
+    try {
+      const restored = await invoke<SystemPromptView>("restore_default_system_prompt_setting", {
+        target: commandTarget,
+        mode,
+        tier,
+      });
+      setView(restored);
+    } catch {
+      setError(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="spp-root">
       <SystemPromptSelectors
@@ -176,16 +196,15 @@ export function SystemPromptSettingsPanel({
                 </span>
               )}
             </div>
-            <div className="spp-actions">
-              {view?.customized && (
-                <button className="btn btn-sm btn-secondary" onClick={() => { void restore(); }} disabled={saving}>
-                  {t("settings.systemPrompt.restore")}
-                </button>
-              )}
-              <button className="btn btn-sm btn-primary" onClick={startEditing} disabled={!view || saving}>
-                {t("settings.systemPrompt.edit")}
-              </button>
-            </div>
+            <SystemPromptActions
+              view={view}
+              isOllama={targetModel !== null}
+              nativePromptAvailable={nativePromptAvailable}
+              saving={saving}
+              onUseBeaver={() => { void restore(); }}
+              onRestoreDefault={() => { void restoreDefault(); }}
+              onEdit={startEditing}
+            />
           </div>
           {error && <div className="spp-error" role="alert">{t("errors.operationFailed")}</div>}
           <PromptPreview view={view} emptyLabel={t("settings.systemPrompt.empty")} />

@@ -1,7 +1,9 @@
-use super::system_prompt_resolver::{resolve_global, resolve_ollama};
+use super::system_prompt_resolver::{
+    resolve_global, resolve_ollama, resolve_ollama_without_native,
+};
 use super::system_prompt_store::SystemPromptSettings;
 use super::system_prompt_types::{
-    PromptMode, PromptOverride, PromptSource, PromptTier,
+    PromptMode, PromptOverride, PromptSelection, PromptSource, PromptTier,
 };
 
 #[test]
@@ -86,12 +88,12 @@ fn ollama_custom_prompt_has_priority_over_native_and_global_prompts() {
 
     assert_eq!(view.content, "local");
     assert_eq!(view.source, PromptSource::Custom);
-    assert!(view.customized);
+    assert_eq!(view.selection, PromptSelection::Custom);
     assert!(!view.disabled);
 }
 
 #[test]
-fn restoring_an_ollama_prompt_explicitly_returns_to_beaver() {
+fn ollama_can_switch_from_native_to_beaver_and_back_to_default() {
     let mut settings = SystemPromptSettings::default();
     settings
         .set_global(PromptMode::Chatbot, PromptTier::Compact, "global")
@@ -105,8 +107,10 @@ fn restoring_an_ollama_prompt_explicitly_returns_to_beaver() {
         )
         .unwrap();
 
-    settings.restore_ollama("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact);
-    let view = resolve_ollama(
+    settings
+        .select_ollama_beaver("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact)
+        .unwrap();
+    let beaver_view = resolve_ollama(
         &settings,
         "gemma4:e2b",
         PromptMode::Chatbot,
@@ -115,9 +119,79 @@ fn restoring_an_ollama_prompt_explicitly_returns_to_beaver() {
         "beaver",
     );
 
+    assert_eq!(beaver_view.content, "beaver");
+    assert_eq!(beaver_view.source, PromptSource::Beaver);
+    assert_eq!(beaver_view.selection, PromptSelection::Beaver);
+
+    settings.restore_ollama_default(
+        "gemma4:e2b",
+        PromptMode::Chatbot,
+        PromptTier::Compact,
+    )
+    .unwrap();
+    let native_view = resolve_ollama(
+        &settings,
+        "gemma4:e2b",
+        PromptMode::Chatbot,
+        PromptTier::Compact,
+        Some("native"),
+        "beaver",
+    );
+
+    assert_eq!(native_view.content, "native");
+    assert_eq!(native_view.source, PromptSource::Ollama);
+    assert_eq!(native_view.selection, PromptSelection::Default);
+}
+
+#[test]
+fn explicit_ollama_settings_resolve_without_reading_the_native_prompt() {
+    let mut settings = SystemPromptSettings::default();
+    settings
+        .select_ollama_beaver("gemma4:e2b", PromptMode::Agentic, PromptTier::Compact)
+        .unwrap();
+
+    let view = resolve_ollama_without_native(
+        &settings,
+        "gemma4:e2b",
+        PromptMode::Agentic,
+        PromptTier::Compact,
+        "beaver",
+    )
+    .expect("an explicit Beaver selection must resolve locally");
+
     assert_eq!(view.content, "beaver");
-    assert_eq!(view.source, PromptSource::Beaver);
-    assert!(!view.customized);
+    assert_eq!(view.selection, PromptSelection::Beaver);
+    assert!(resolve_ollama_without_native(
+        &SystemPromptSettings::default(),
+        "gemma4:e2b",
+        PromptMode::Agentic,
+        PromptTier::Compact,
+        "beaver",
+    )
+    .is_none());
+}
+
+#[test]
+fn selecting_beaver_respects_the_model_collection_limit() {
+    let mut settings = SystemPromptSettings::default();
+    for index in 0..512 {
+        settings
+            .set_ollama(
+                &format!("model-{index}"),
+                PromptMode::Chatbot,
+                PromptTier::Compact,
+                "custom",
+            )
+            .unwrap();
+    }
+
+    assert!(settings
+        .select_ollama_beaver(
+            "model-over-limit",
+            PromptMode::Chatbot,
+            PromptTier::Compact,
+        )
+        .is_err());
 }
 
 #[test]
@@ -138,7 +212,7 @@ fn native_ollama_prompt_has_priority_over_the_global_prompt() {
 
     assert_eq!(view.content, "native");
     assert_eq!(view.source, PromptSource::Ollama);
-    assert!(!view.customized);
+    assert_eq!(view.selection, PromptSelection::Default);
 }
 
 #[test]
@@ -159,7 +233,7 @@ fn global_custom_prompt_is_used_when_ollama_has_no_own_prompt() {
 
     assert_eq!(view.content, "global");
     assert_eq!(view.source, PromptSource::Custom);
-    assert!(!view.customized);
+    assert_eq!(view.selection, PromptSelection::Default);
 }
 
 #[test]
@@ -188,7 +262,7 @@ fn explicit_empty_ollama_prompt_blocks_every_inherited_prompt() {
 
     assert_eq!(view.content, "");
     assert_eq!(view.source, PromptSource::Custom);
-    assert!(view.customized);
+    assert_eq!(view.selection, PromptSelection::Disabled);
     assert!(view.disabled);
 }
 
@@ -207,7 +281,7 @@ fn global_empty_prompt_is_custom_and_can_be_restored_to_beaver() {
     );
     assert_eq!(disabled.content, "");
     assert_eq!(disabled.source, PromptSource::Custom);
-    assert!(disabled.customized);
+    assert_eq!(disabled.selection, PromptSelection::Disabled);
     assert!(disabled.disabled);
 
     settings.restore_global(PromptMode::Chatbot, PromptTier::Compact);
@@ -219,7 +293,7 @@ fn global_empty_prompt_is_custom_and_can_be_restored_to_beaver() {
     );
     assert_eq!(restored.content, "beaver");
     assert_eq!(restored.source, PromptSource::Beaver);
-    assert!(!restored.customized);
+    assert_eq!(restored.selection, PromptSelection::Default);
 }
 
 #[test]
@@ -246,7 +320,9 @@ fn settings_round_trip_keeps_disabled_and_custom_variants() {
             "custom",
         )
         .unwrap();
-    settings.restore_ollama("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact);
+    settings
+        .select_ollama_beaver("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact)
+        .unwrap();
 
     settings.write_to_path(&path).unwrap();
     let loaded = SystemPromptSettings::read_from_path(&path);
@@ -261,8 +337,21 @@ fn settings_round_trip_keeps_disabled_and_custom_variants() {
     );
     assert_eq!(
         loaded.ollama_override("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact),
-        Some(&PromptOverride::Beaver)
+        None
     );
+    let restored = resolve_ollama(
+        &loaded,
+        "gemma4:e2b",
+        PromptMode::Chatbot,
+        PromptTier::Compact,
+        Some("native"),
+        "beaver",
+    );
+    assert_eq!(restored.selection, PromptSelection::Beaver);
+    assert_eq!(restored.content, "beaver");
+
+    let serialized = std::fs::read_to_string(&path).unwrap();
+    assert!(!serialized.contains(r#""state": "beaver""#));
 }
 
 #[test]
@@ -288,4 +377,46 @@ fn legacy_model_prompt_is_migrated_to_every_mode_and_tier() {
             );
         }
     }
+}
+
+#[test]
+fn legacy_beaver_state_is_migrated_without_discarding_other_settings() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    std::fs::write(
+        &path,
+        r#"{
+          "global": {
+            "chatbot": {
+              "compact": { "state": "custom", "content": "global custom" },
+              "detailed": null
+            },
+            "agentic": { "compact": null, "detailed": null }
+          },
+          "ollama": {
+            "gemma4:e2b": {
+              "chatbot": { "compact": { "state": "beaver" }, "detailed": null },
+              "agentic": { "compact": null, "detailed": null }
+            }
+          }
+        }"#,
+    )
+    .unwrap();
+
+    let settings = SystemPromptSettings::read_from_path(&path);
+
+    assert_eq!(
+        settings.global_override(PromptMode::Chatbot, PromptTier::Compact),
+        Some(&PromptOverride::Custom("global custom".into()))
+    );
+    let restored = resolve_ollama(
+        &settings,
+        "gemma4:e2b",
+        PromptMode::Chatbot,
+        PromptTier::Compact,
+        Some("native"),
+        "beaver",
+    );
+    assert_eq!(restored.selection, PromptSelection::Beaver);
+    assert_eq!(restored.content, "beaver");
 }

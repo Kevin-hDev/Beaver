@@ -62,19 +62,31 @@ pub async fn estimate_context_hidden_usage(
     );
     let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot()?;
     let instructions = if provider.as_deref() == Some("ollama") {
-        let native_prompt = crate::services::agent_local::ollama_client::OllamaClient::new()
-            .get_native_system_prompt(&model)
-            .await
-            .ok()
-            .flatten();
-        crate::services::agent_local::system_prompt_resolver::resolve_ollama(
+        match crate::services::agent_local::system_prompt_resolver::resolve_ollama_without_native(
             &prompt_settings,
             &model,
             prompt_mode,
             prompt_tier,
-            native_prompt.as_deref(),
             &beaver_prompt,
-        )
+        ) {
+            Some(view) => view,
+            None => {
+                let native_prompt =
+                    crate::services::agent_local::ollama_client::OllamaClient::new()
+                        .get_native_system_prompt(&model)
+                        .await
+                        .ok()
+                        .flatten();
+                crate::services::agent_local::system_prompt_resolver::resolve_ollama(
+                    &prompt_settings,
+                    &model,
+                    prompt_mode,
+                    prompt_tier,
+                    native_prompt.as_deref(),
+                    &beaver_prompt,
+                )
+            }
+        }
     } else {
         crate::services::agent_local::system_prompt_resolver::resolve_global(
             &prompt_settings,

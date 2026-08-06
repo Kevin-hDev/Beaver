@@ -772,7 +772,7 @@
       "tiers": { "compact": "精简", "detailed": "详细" },
       "modeLabel": "模型模式", "tierLabel": "指令格式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "编辑", "restore": "恢复", "save": "保存", "cancel": "取消",
+      "edit": "编辑", "restore": "恢复", "useBeaver": "使用 Beaver", "restoreOllama": "恢复 Ollama", "restoreDefault": "恢复默认行为", "save": "保存", "cancel": "取消",
       "empty": "无系统指令", "editorLabel": "自定义系统指令",
       "placeholder": "留空则不发送任何系统指令。",
       "warning": {
@@ -788,7 +788,7 @@
       "tiers": { "compact": "精简", "detailed": "详细" },
       "modeLabel": "模型模式", "tierLabel": "指令格式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "编辑", "restore": "恢复", "save": "保存", "cancel": "取消",
+      "edit": "编辑", "restore": "恢复", "useBeaver": "使用 Beaver", "restoreOllama": "恢复 Ollama", "restoreDefault": "恢复默认行为", "save": "保存", "cancel": "取消",
       "empty": "无系统指令", "editorLabel": "自定义系统指令",
       "placeholder": "留空则不发送任何系统指令。",
       "warning": {

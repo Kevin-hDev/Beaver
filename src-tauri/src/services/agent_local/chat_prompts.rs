@@ -2,7 +2,7 @@ use crate::services::agent_local::types_ollama::ChatMessage;
 use super::chat_prompt_sections::{response_language_instruction, skills_listing_section};
 use super::system_prompt_types::{PromptSource, SystemPromptView};
 #[cfg(test)]
-use super::system_prompt_types::{PromptMode, PromptTier};
+use super::system_prompt_types::{PromptMode, PromptSelection, PromptTier};
 #[cfg(test)]
 use crate::services::agent_local::model_size;
 use std::path::Path;
@@ -78,7 +78,7 @@ pub fn prepare_messages(
     let instructions = SystemPromptView {
         content: super::system_prompt_defaults::beaver_prompt(prompt_mode, prompt_tier),
         source: PromptSource::Beaver,
-        customized: false,
+        selection: PromptSelection::Default,
         disabled: false,
     };
     prepare_messages_with_tools(

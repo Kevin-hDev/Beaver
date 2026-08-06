@@ -772,7 +772,7 @@
       "tiers": { "compact": "コンパクト", "detailed": "詳細" },
       "modeLabel": "モデルモード", "tierLabel": "指示形式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "編集", "restore": "復元", "save": "保存", "cancel": "キャンセル",
+      "edit": "編集", "restore": "復元", "useBeaver": "Beaver を使用", "restoreOllama": "Ollama を復元", "restoreDefault": "既定の動作に戻す", "save": "保存", "cancel": "キャンセル",
       "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
       "placeholder": "空のままにすると、システム指示は送信されません。",
       "warning": {
@@ -788,7 +788,7 @@
       "tiers": { "compact": "コンパクト", "detailed": "詳細" },
       "modeLabel": "モデルモード", "tierLabel": "指示形式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "編集", "restore": "復元", "save": "保存", "cancel": "キャンセル",
+      "edit": "編集", "restore": "復元", "useBeaver": "Beaver を使用", "restoreOllama": "Ollama を復元", "restoreDefault": "既定の動作に戻す", "save": "保存", "cancel": "キャンセル",
       "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
       "placeholder": "空のままにすると、システム指示は送信されません。",
       "warning": {

@@ -16,7 +16,7 @@ vi.mock("@tauri-apps/api/event", () => ({
 const beaverView: SystemPromptView = {
   content: "Beaver instructions",
   source: "beaver",
-  customized: false,
+  selection: "default",
   disabled: false,
 };
 
@@ -98,7 +98,7 @@ describe("SystemPromptSettingsPanel", () => {
     const disabledView: SystemPromptView = {
       content: "",
       source: "custom",
-      customized: true,
+      selection: "disabled",
       disabled: true,
     };
     vi.mocked(invoke).mockImplementation((command) => {
@@ -173,7 +173,7 @@ describe("SystemPromptSettingsPanel", () => {
     const customView: SystemPromptView = {
       content: "Custom instructions",
       source: "custom",
-      customized: true,
+      selection: "custom",
       disabled: false,
     };
     vi.mocked(invoke).mockImplementation((command) => {
@@ -200,5 +200,79 @@ describe("SystemPromptSettingsPanel", () => {
       });
       expect(screen.queryByRole("button", { name: "settings.systemPrompt.restore" })).toBeNull();
     });
+  });
+
+  it("permet de choisir Beaver directement puis de restaurer le prompt Ollama", async () => {
+    const nativeView: SystemPromptView = {
+      content: "Native instructions",
+      source: "ollama",
+      selection: "default",
+      disabled: false,
+    };
+    const forcedBeaverView: SystemPromptView = {
+      ...beaverView,
+      selection: "beaver",
+    };
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "restore_system_prompt_setting") return Promise.resolve(forcedBeaverView);
+      if (command === "restore_default_system_prompt_setting") return Promise.resolve(nativeView);
+      return Promise.resolve(nativeView);
+    });
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "ollama", model: "phi4:latest" }}
+        warningKind="ollama"
+        initialMode="chatbot"
+        initialTier="compact"
+        nativePromptAvailable
+      />,
+    );
+    await screen.findByText("Native instructions");
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useBeaver" }));
+    await screen.findByText("Beaver instructions");
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.restoreOllama" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.restoreOllama" }));
+    await screen.findByText("Native instructions");
+    expect(invoke).toHaveBeenCalledWith("restore_default_system_prompt_setting", {
+      target: { scope: "ollama", model: "phi4:latest" },
+      mode: "chatbot",
+      tier: "compact",
+    });
+  });
+
+  it("peut restaurer Ollama directement depuis un prompt personnalisé", async () => {
+    const customView: SystemPromptView = {
+      content: "Custom instructions",
+      source: "custom",
+      selection: "custom",
+      disabled: false,
+    };
+    const nativeView: SystemPromptView = {
+      content: "Native instructions",
+      source: "ollama",
+      selection: "default",
+      disabled: false,
+    };
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "restore_default_system_prompt_setting") return Promise.resolve(nativeView);
+      return Promise.resolve(customView);
+    });
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "ollama", model: "phi4:latest" }}
+        warningKind="ollama"
+        initialMode="agentic"
+        initialTier="detailed"
+        nativePromptAvailable
+      />,
+    );
+    await screen.findByText("Custom instructions");
+
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.restore" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.restoreOllama" }));
+
+    await screen.findByText("Native instructions");
   });
 });

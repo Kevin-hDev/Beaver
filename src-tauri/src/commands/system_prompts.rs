@@ -1,5 +1,7 @@
 use crate::services::agent_local::ollama_client::OllamaClient;
-use crate::services::agent_local::system_prompt_resolver::{resolve_global, resolve_ollama};
+use crate::services::agent_local::system_prompt_resolver::{
+    resolve_global, resolve_ollama, resolve_ollama_without_native,
+};
 use crate::services::agent_local::system_prompt_store;
 use crate::services::agent_local::system_prompt_types::{PromptMode, PromptTier, SystemPromptView};
 use serde::Deserialize;
@@ -61,6 +63,41 @@ pub async fn restore_system_prompt_setting(
     Ok(view)
 }
 
+#[tauri::command]
+pub async fn restore_default_system_prompt_setting(
+    app: tauri::AppHandle,
+    target: SystemPromptTarget,
+    mode: PromptMode,
+    tier: PromptTier,
+    ollama: tauri::State<'_, OllamaClient>,
+) -> Result<SystemPromptView, String> {
+    match &target {
+        SystemPromptTarget::Global => {
+            system_prompt_store::restore_global(mode, tier)?;
+            resolve_view(&target, mode, tier, &ollama).await
+        }
+        SystemPromptTarget::Ollama { model } => {
+            crate::services::agent_local::model_customizations::validate_model_name(model)?;
+            let native_prompt = ollama.get_native_system_prompt(model).await?;
+            system_prompt_store::restore_ollama_default(model, mode, tier)?;
+            let settings = system_prompt_store::snapshot()?;
+            let beaver_prompt =
+                crate::services::agent_local::system_prompt_defaults::beaver_prompt(mode, tier);
+            Ok(resolve_ollama(
+                &settings,
+                model,
+                mode,
+                tier,
+                native_prompt.as_deref(),
+                &beaver_prompt,
+            ))
+        }
+    }
+    .inspect(|_| {
+        let _ = app.emit("system-prompts-changed", ());
+    })
+}
+
 async fn resolve_view(
     target: &SystemPromptTarget,
     mode: PromptMode,
@@ -74,6 +111,11 @@ async fn resolve_view(
         SystemPromptTarget::Global => Ok(resolve_global(&settings, mode, tier, &beaver_prompt)),
         SystemPromptTarget::Ollama { model } => {
             crate::services::agent_local::model_customizations::validate_model_name(model)?;
+            if let Some(view) =
+                resolve_ollama_without_native(&settings, model, mode, tier, &beaver_prompt)
+            {
+                return Ok(view);
+            }
             let native_prompt = ollama.get_native_system_prompt(model).await?;
             Ok(resolve_ollama(
                 &settings,

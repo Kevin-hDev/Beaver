@@ -53,17 +53,30 @@ pub(crate) async fn run(
         prompt_tier,
     );
     let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot()?;
-    let native_prompt = crate::services::agent_local::ollama_client::OllamaClient::new()
-        .get_native_system_prompt(&params.model)
-        .await?;
-    let instructions = crate::services::agent_local::system_prompt_resolver::resolve_ollama(
-        &prompt_settings,
-        &params.model,
-        prompt_mode,
-        prompt_tier,
-        native_prompt.as_deref(),
-        &beaver_prompt,
-    );
+    let instructions =
+        match crate::services::agent_local::system_prompt_resolver::resolve_ollama_without_native(
+            &prompt_settings,
+            &params.model,
+            prompt_mode,
+            prompt_tier,
+            &beaver_prompt,
+        ) {
+            Some(view) => view,
+            None => {
+                let native_prompt =
+                    crate::services::agent_local::ollama_client::OllamaClient::new()
+                        .get_native_system_prompt(&params.model)
+                        .await?;
+                crate::services::agent_local::system_prompt_resolver::resolve_ollama(
+                    &prompt_settings,
+                    &params.model,
+                    prompt_mode,
+                    prompt_tier,
+                    native_prompt.as_deref(),
+                    &beaver_prompt,
+                )
+            }
+        };
     let mut messages = params.messages;
     let prepared_memory = crate::services::agent_local::memory_context::prepare(
         &params.session_id,
