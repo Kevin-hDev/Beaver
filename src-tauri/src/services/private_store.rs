@@ -1,7 +1,42 @@
 use rand::RngCore;
 use std::fs::{File, OpenOptions};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+
+pub(crate) use cache::{CachedStore, StoreLoad};
+
+#[path = "private_store/cache.rs"]
+mod cache;
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum BoundedFile {
+    Missing,
+    Content(Vec<u8>),
+}
+
+pub(crate) fn read_bounded_regular(path: &Path, max_bytes: u64) -> Result<BoundedFile, String> {
+    let metadata = match std::fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(BoundedFile::Missing);
+        }
+        Err(_) => return Err("stockage privé indisponible".to_string()),
+    };
+    if !metadata.is_file() || metadata.len() > max_bytes {
+        return Err("stockage privé indisponible".to_string());
+    }
+    let read_limit = max_bytes
+        .checked_add(1)
+        .ok_or_else(|| "stockage privé indisponible".to_string())?;
+    let mut content = Vec::new();
+    File::open(path)
+        .and_then(|file| file.take(read_limit).read_to_end(&mut content))
+        .map_err(|_| "stockage privé indisponible".to_string())?;
+    if content.len() as u64 > max_bytes {
+        return Err("stockage privé indisponible".to_string());
+    }
+    Ok(BoundedFile::Content(content))
+}
 
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
     let parent = path

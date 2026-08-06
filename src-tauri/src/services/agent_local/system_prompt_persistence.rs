@@ -13,23 +13,26 @@ struct LegacyStore {
     prompts: BTreeMap<String, String>,
 }
 
+pub(super) type SettingsLoad =
+    crate::services::private_store::StoreLoad<SystemPromptSettings>;
+
 impl SystemPromptSettings {
-    pub fn read_from_path(path: &Path) -> Self {
-        read_bounded(path)
-            .and_then(|content| serde_json::from_str::<Self>(&content).ok())
-            .map(Self::sanitized)
-            .unwrap_or_default()
+    #[cfg(test)]
+    pub fn read_from_path(path: &Path) -> Result<Self, String> {
+        match Self::load_from_path(path) {
+            SettingsLoad::Missing => Ok(Self::default()),
+            SettingsLoad::Ready(settings) => Ok(settings),
+            SettingsLoad::Unavailable => Err(store_unavailable()),
+        }
     }
 
-    pub fn read_with_legacy(path: &Path, legacy_path: &Path) -> Self {
-        if path.exists() {
-            return Self::read_from_path(path);
+    #[cfg(test)]
+    pub fn read_with_legacy(path: &Path, legacy_path: &Path) -> Result<Self, String> {
+        match Self::load_with_legacy(path, legacy_path) {
+            SettingsLoad::Missing => Ok(Self::default()),
+            SettingsLoad::Ready(settings) => Ok(settings),
+            SettingsLoad::Unavailable => Err(store_unavailable()),
         }
-        let migrated = migrate_legacy(legacy_path);
-        if !migrated.is_empty() {
-            let _ = migrated.write_to_path(path);
-        }
-        migrated
     }
 
     pub fn write_to_path(&self, path: &Path) -> Result<(), String> {
@@ -58,17 +61,50 @@ impl SystemPromptSettings {
         clean
     }
 
-    fn is_empty(&self) -> bool {
-        self.global.is_empty() && self.ollama.is_empty()
+    pub(super) fn load_with_legacy(path: &Path, legacy_path: &Path) -> SettingsLoad {
+        match Self::load_from_path(path) {
+            SettingsLoad::Ready(settings) => SettingsLoad::Ready(settings),
+            SettingsLoad::Unavailable => SettingsLoad::Unavailable,
+            SettingsLoad::Missing => match migrate_legacy(legacy_path) {
+                SettingsLoad::Ready(settings) => {
+                    if settings.write_to_path(path).is_err() {
+                        return SettingsLoad::Unavailable;
+                    }
+                    SettingsLoad::Ready(settings)
+                }
+                other => other,
+            },
+        }
+    }
+
+    pub(super) fn load_from_path(path: &Path) -> SettingsLoad {
+        let content = match crate::services::private_store::read_bounded_regular(
+            path,
+            MAX_STORE_BYTES,
+        ) {
+            Ok(crate::services::private_store::BoundedFile::Missing) => {
+                return SettingsLoad::Missing;
+            }
+            Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
+            Err(_) => return SettingsLoad::Unavailable,
+        };
+        serde_json::from_slice::<Self>(&content)
+            .map(Self::sanitized)
+            .map(SettingsLoad::Ready)
+            .unwrap_or(SettingsLoad::Unavailable)
     }
 }
 
-fn migrate_legacy(path: &Path) -> SystemPromptSettings {
-    let Some(content) = read_bounded(path) else {
-        return SystemPromptSettings::default();
+fn migrate_legacy(path: &Path) -> SettingsLoad {
+    let content = match crate::services::private_store::read_bounded_regular(path, MAX_STORE_BYTES) {
+        Ok(crate::services::private_store::BoundedFile::Missing) => {
+            return SettingsLoad::Missing;
+        }
+        Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
+        Err(_) => return SettingsLoad::Unavailable,
     };
-    let Ok(legacy) = serde_json::from_str::<LegacyStore>(&content) else {
-        return SystemPromptSettings::default();
+    let Ok(legacy) = serde_json::from_slice::<LegacyStore>(&content) else {
+        return SettingsLoad::Unavailable;
     };
     let mut settings = SystemPromptSettings::default();
     for (model, prompt) in legacy.prompts.into_iter().take(MAX_MODELS) {
@@ -78,7 +114,7 @@ fn migrate_legacy(path: &Path) -> SystemPromptSettings {
             }
         }
     }
-    settings
+    SettingsLoad::Ready(settings)
 }
 
 fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix, keep_beaver: bool) {
@@ -109,9 +145,7 @@ fn sanitize_override(value: &PromptOverride) -> Option<PromptOverride> {
     }
 }
 
-fn read_bounded(path: &Path) -> Option<String> {
-    if std::fs::metadata(path).ok()?.len() > MAX_STORE_BYTES {
-        return None;
-    }
-    std::fs::read_to_string(path).ok()
+#[cfg(test)]
+fn store_unavailable() -> String {
+    "system-prompt-store-unavailable".to_string()
 }

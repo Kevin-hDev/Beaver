@@ -146,6 +146,8 @@ pub use runtime::{
     remove_ollama_model, restore_global, restore_ollama, restore_ollama_default, save_global,
     save_ollama, snapshot,
 };
+#[cfg(test)]
+pub(crate) use runtime::SystemPromptSettingsStore;
 
 #[path = "system_prompt_persistence.rs"]
 mod persistence;

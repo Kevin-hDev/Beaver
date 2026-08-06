@@ -1072,6 +1072,11 @@
   "errors": {
     "crashMessage": "Ein Fehler ist aufgetreten. Bitte starte die Anwendung neu.",
     "operationFailed": "Vorgang fehlgeschlagen. Bitte erneut versuchen.",
+    "localStore": {
+      "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her und versuche es erneut.",
+      "ollamaNativePrompts": "Die Datei mit den nativen Ollama-Anweisungen ist nicht lesbar. Stelle „ollama-native-system-prompts.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her und versuche es erneut.",
+      "systemPrompts": "Die Datei mit den System-Prompt-Einstellungen ist nicht lesbar. Stelle „system-prompt-settings.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her und versuche es erneut."
+    },
     "streamStartFailed": "Stream konnte nicht gestartet werden.",
     "streamInterrupted": "Stream wurde unterbrochen.",
     "ollamaConnectionLost": "Verbindung zu Ollama verloren",

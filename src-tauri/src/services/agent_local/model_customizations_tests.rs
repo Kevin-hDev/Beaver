@@ -10,7 +10,7 @@ fn legacy_model_names_are_migrated_as_unknown_customizations() {
     let path = directory.path().join("ollama-custom-models.json");
     std::fs::write(&path, r#"{"models":["gemma4:e2b"]}"#).unwrap();
 
-    let catalog = ModelCustomizationCatalog::read_from_path(&path);
+    let catalog = ModelCustomizationCatalog::read_from_path(&path).unwrap();
 
     assert_eq!(
         catalog.kind("gemma4:e2b"),
@@ -36,7 +36,7 @@ fn parameter_update_does_not_make_legacy_or_modelfile_prompts_trustworthy() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("ollama-custom-models.json");
     std::fs::write(&path, r#"{"models":["legacy:latest"]}"#).unwrap();
-    let mut catalog = ModelCustomizationCatalog::read_from_path(&path);
+    let mut catalog = ModelCustomizationCatalog::read_from_path(&path).unwrap();
     catalog.mark_modelfile("edited:latest").unwrap();
 
     catalog.mark_parameters("legacy:latest").unwrap();
@@ -61,7 +61,7 @@ fn customization_kinds_round_trip_without_losing_their_meaning() {
     catalog.mark_modelfile("modelfile:latest").unwrap();
 
     catalog.write_to_path(&path).unwrap();
-    let loaded = ModelCustomizationCatalog::read_from_path(&path);
+    let loaded = ModelCustomizationCatalog::read_from_path(&path).unwrap();
 
     assert_eq!(
         loaded.kind("parameters:latest"),
@@ -113,7 +113,7 @@ fn concurrent_customization_updates_do_not_overwrite_each_other() {
         worker.join().unwrap();
     }
 
-    let persisted = ModelCustomizationCatalog::read_from_path(&path);
+    let persisted = ModelCustomizationCatalog::read_from_path(&path).unwrap();
     for index in 0..16 {
         assert_eq!(
             persisted.kind(&format!("concurrent-{index}:latest")),
@@ -151,7 +151,7 @@ fn maximum_customization_catalog_can_be_read_back() {
     }
 
     catalog.write_to_path(&path).unwrap();
-    let loaded = ModelCustomizationCatalog::read_from_path(&path);
+    let loaded = ModelCustomizationCatalog::read_from_path(&path).unwrap();
     assert_eq!(
         loaded.kind(&format!("model-0-{suffix}")),
         Some(CustomizationKind::ParametersOnly)
@@ -192,7 +192,56 @@ fn corrupt_customization_store_is_unknown_and_never_overwritten() {
     );
     assert_eq!(
         store.mark_parameters("legacy:latest"),
-        Err("ollama-custom-store-write".to_string())
+        Err("ollama-custom-store-unavailable".to_string())
+    );
+    assert_eq!(std::fs::read(path).unwrap(), corrupt);
+}
+
+#[test]
+fn corrupt_catalog_helper_reports_unavailable_instead_of_returning_empty() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    std::fs::write(&path, b"{not valid json").unwrap();
+
+    assert_eq!(
+        ModelCustomizationCatalog::read_from_path(&path).err(),
+        Some("ollama-custom-store-unavailable".to_string())
+    );
+}
+
+#[test]
+fn unavailable_customization_store_recovers_after_a_valid_file_is_restored() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    std::fs::write(&path, b"{not valid json").unwrap();
+    let store = ModelCustomizationStore::open(path.clone());
+    let mut restored = ModelCustomizationCatalog::default();
+    restored.mark_modelfile("legacy:latest").unwrap();
+    restored.write_to_path(&path).unwrap();
+
+    assert_eq!(
+        store.kind("legacy:latest").unwrap(),
+        Some(CustomizationKind::Modelfile)
+    );
+    store.mark_parameters("new:latest").unwrap();
+    assert_eq!(
+        store.kind("new:latest").unwrap(),
+        Some(CustomizationKind::ParametersOnly)
+    );
+}
+
+#[test]
+fn customization_store_does_not_overwrite_corruption_that_happens_after_open() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    let store = ModelCustomizationStore::open(path.clone());
+    store.mark_parameters("first:latest").unwrap();
+    let corrupt = b"{corrupted while Beaver is running";
+    std::fs::write(&path, corrupt).unwrap();
+
+    assert_eq!(
+        store.mark_parameters("second:latest"),
+        Err("ollama-custom-store-unavailable".to_string())
     );
     assert_eq!(std::fs::read(path).unwrap(), corrupt);
 }

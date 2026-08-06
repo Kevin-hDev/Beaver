@@ -27,6 +27,22 @@ describe("SystemPromptSettingsPanel", () => {
     vi.mocked(invoke).mockReset().mockResolvedValue(beaverView);
   });
 
+  it("explique comment récupérer des réglages de prompts illisibles", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce("system-prompt-store-unavailable");
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "global" }}
+        warningKind="global"
+        initialMode="agentic"
+        initialTier="detailed"
+      />,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "errors.localStore.systemPrompts",
+    );
+  });
+
   it.each(["dark", "light"])("conserve sa carte avec le thème %s", async (theme) => {
     const { container } = render(
       <div data-theme={theme}>

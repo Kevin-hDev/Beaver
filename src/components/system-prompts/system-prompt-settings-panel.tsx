@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { localStoreErrorMessage } from "@/lib/local-store-error";
 import type {
   SystemPromptMode,
   SystemPromptTarget,
@@ -12,6 +13,7 @@ import type {
   SystemPromptView,
 } from "@/types/system-prompts";
 import { SystemPromptEditorCard } from "./system-prompt-editor-card";
+import { SystemPromptPreview } from "./system-prompt-preview";
 import { SystemPromptActions } from "./system-prompt-actions";
 import { SystemPromptSelectors } from "./system-prompt-selectors";
 import {
@@ -45,7 +47,7 @@ export function SystemPromptSettingsPanel({
   const [editing, setEditing] = useState(false);
   const [warning, setWarning] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   const loadSequence = useRef(0);
   const targetModel = target.scope === "ollama" ? target.model : null;
   const commandTarget = useMemo<SystemPromptTarget>(
@@ -64,10 +66,10 @@ export function SystemPromptSettingsPanel({
       });
       if (sequence !== loadSequence.current) return;
       setView(result);
-      setError(false);
-    } catch {
+      setError(null);
+    } catch (cause) {
       if (sequence !== loadSequence.current) return;
-      setError(true);
+      setError(cause);
     }
   }, [commandTarget, mode, tier]);
 
@@ -98,7 +100,7 @@ export function SystemPromptSettingsPanel({
     loadSequence.current += 1;
     setEditing(false);
     setView(null);
-    setError(false);
+    setError(null);
     setMode(nextMode);
   };
 
@@ -107,13 +109,13 @@ export function SystemPromptSettingsPanel({
     loadSequence.current += 1;
     setEditing(false);
     setView(null);
-    setError(false);
+    setError(null);
     setTier(nextTier);
   };
 
   const save = async (content: string) => {
     setSaving(true);
-    setError(false);
+    setError(null);
     try {
       const saved = await invoke<SystemPromptView>("save_system_prompt_setting", {
         target: commandTarget,
@@ -123,8 +125,8 @@ export function SystemPromptSettingsPanel({
       });
       setView(saved);
       setEditing(false);
-    } catch {
-      setError(true);
+    } catch (cause) {
+      setError(cause);
     } finally {
       setSaving(false);
     }
@@ -132,7 +134,7 @@ export function SystemPromptSettingsPanel({
 
   const restore = async () => {
     setSaving(true);
-    setError(false);
+    setError(null);
     try {
       const restored = await invoke<SystemPromptView>("restore_system_prompt_setting", {
         target: commandTarget,
@@ -140,8 +142,8 @@ export function SystemPromptSettingsPanel({
         tier,
       });
       setView(restored);
-    } catch {
-      setError(true);
+    } catch (cause) {
+      setError(cause);
     } finally {
       setSaving(false);
     }
@@ -149,7 +151,7 @@ export function SystemPromptSettingsPanel({
 
   const selectOllama = async () => {
     setSaving(true);
-    setError(false);
+    setError(null);
     try {
       const restored = await invoke<SystemPromptView>("restore_default_system_prompt_setting", {
         target: commandTarget,
@@ -157,8 +159,8 @@ export function SystemPromptSettingsPanel({
         tier,
       });
       setView(restored);
-    } catch {
-      setError(true);
+    } catch (cause) {
+      setError(cause);
     } finally {
       setSaving(false);
     }
@@ -179,8 +181,8 @@ export function SystemPromptSettingsPanel({
           key={`${targetKey}:${mode}:${tier}`}
           initialContent={view.content}
           saving={saving}
-          error={error}
-          onCancel={() => { setEditing(false); setError(false); }}
+          error={error !== null ? localStoreErrorMessage(error, t) : null}
+          onCancel={() => { setEditing(false); setError(null); }}
           onSave={(content) => { void save(content); }}
         />
       ) : (
@@ -203,8 +205,10 @@ export function SystemPromptSettingsPanel({
               onEdit={startEditing}
             />
           </div>
-          {error && <div className="spp-error" role="alert">{t("errors.operationFailed")}</div>}
-          <PromptPreview view={view} emptyLabel={t("settings.systemPrompt.empty")} />
+          {error !== null && (
+            <div className="spp-error" role="alert">{localStoreErrorMessage(error, t)}</div>
+          )}
+          <SystemPromptPreview view={view} emptyLabel={t("settings.systemPrompt.empty")} />
         </SettingsCard>
       )}
       {warning && (
@@ -216,12 +220,4 @@ export function SystemPromptSettingsPanel({
       )}
     </div>
   );
-}
-
-function PromptPreview({ view, emptyLabel }: { view: SystemPromptView | null; emptyLabel: string }) {
-  if (!view) return <div className="spp-preview spp-preview-empty">…</div>;
-  if (!view.content) return <div className="spp-preview spp-preview-empty">{emptyLabel}</div>;
-  const lines = view.content.split("\n");
-  const preview = lines.slice(0, 22).join("\n");
-  return <div className="spp-preview">{preview}{lines.length > 22 ? "\n…" : ""}</div>;
 }

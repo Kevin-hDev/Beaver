@@ -1,6 +1,6 @@
-use super::atomic_write;
 #[cfg(any(unix, windows))]
 use super::repair_path;
+use super::{atomic_write, read_bounded_regular, BoundedFile};
 use rand::RngCore;
 
 fn test_dir() -> std::path::PathBuf {
@@ -82,6 +82,51 @@ fn atomic_write_leaves_no_temporary_file() {
     atomic_write(&path, b"two").unwrap();
     assert_eq!(std::fs::read(&path).unwrap(), b"two");
     assert_eq!(std::fs::read_dir(&root).unwrap().count(), 1);
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn bounded_read_distinguishes_a_missing_file_from_valid_content() {
+    let root = test_dir();
+    let path = root.join("private.json");
+
+    assert_eq!(
+        read_bounded_regular(&path, 8).unwrap(),
+        BoundedFile::Missing
+    );
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(&path, b"content").unwrap();
+    assert_eq!(
+        read_bounded_regular(&path, 8).unwrap(),
+        BoundedFile::Content(b"content".to_vec())
+    );
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn bounded_read_rejects_content_larger_than_the_limit() {
+    let root = test_dir();
+    let path = root.join("private.json");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(&path, b"too large").unwrap();
+
+    assert!(read_bounded_regular(&path, 4).is_err());
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[cfg(unix)]
+#[test]
+fn bounded_read_rejects_symbolic_links() {
+    use std::os::unix::fs::symlink;
+
+    let root = test_dir();
+    let target = root.join("target.json");
+    let path = root.join("private.json");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(&target, b"content").unwrap();
+    symlink(target, &path).unwrap();
+
+    assert!(read_bounded_regular(&path, 8).is_err());
     let _ = std::fs::remove_dir_all(root);
 }
 

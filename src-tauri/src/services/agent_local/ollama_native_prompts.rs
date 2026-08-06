@@ -1,9 +1,11 @@
 use super::model_customizations;
 use super::modelfile_parser::parse_modelfile;
 use super::ollama_client::OllamaClient;
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
+#[cfg(test)]
 pub(crate) use store::NativePromptCatalog;
+pub(crate) use store::NativePromptStore;
 pub use store::NativePromptState;
 
 #[path = "ollama_native_prompt_store.rs"]
@@ -85,10 +87,7 @@ pub async fn capture_current(ollama: &OllamaClient, model: &str) -> Result<(), S
 
 pub fn remove(model: &str) -> Result<(), String> {
     model_customizations::validate_model_name(model)?;
-    mutate_catalog(|catalog| {
-        catalog.remove(model);
-        Ok(())
-    })
+    store().remove(model)
 }
 
 async fn current_state(ollama: &OllamaClient, model: &str) -> Result<NativePromptState, String> {
@@ -113,29 +112,16 @@ fn lookup_from_state(state: &NativePromptState) -> NativePromptLookup {
 }
 
 fn cached(model: &str) -> Option<NativePromptState> {
-    catalog().lock().ok()?.get(model).cloned()
+    store().cached(model).ok().flatten()
 }
 
 fn record(model: &str, state: NativePromptState) -> Result<(), String> {
-    mutate_catalog(|catalog| catalog.record(model, state))
+    store().record(model, state)
 }
 
-fn mutate_catalog(
-    update: impl FnOnce(&mut NativePromptCatalog) -> Result<(), String>,
-) -> Result<(), String> {
-    let mut current = catalog()
-        .lock()
-        .map_err(|_| "ollama-native-prompt-write".to_string())?;
-    let mut candidate = current.clone();
-    update(&mut candidate)?;
-    candidate.write_to_path(&store_path())?;
-    *current = candidate;
-    Ok(())
-}
-
-fn catalog() -> &'static Mutex<NativePromptCatalog> {
-    static CATALOG: OnceLock<Mutex<NativePromptCatalog>> = OnceLock::new();
-    CATALOG.get_or_init(|| Mutex::new(NativePromptCatalog::read_from_path(&store_path())))
+fn store() -> &'static NativePromptStore {
+    static STORE: OnceLock<NativePromptStore> = OnceLock::new();
+    STORE.get_or_init(|| NativePromptStore::open(store_path()))
 }
 
 fn store_path() -> std::path::PathBuf {

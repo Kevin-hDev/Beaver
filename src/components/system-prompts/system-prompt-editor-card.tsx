@@ -5,7 +5,7 @@ import { SettingsCard } from "@/components/settings/settings-card";
 interface SystemPromptEditorCardProps {
   initialContent: string;
   saving: boolean;
-  error: boolean;
+  error: string | null;
   onCancel: () => void;
   onSave: (content: string) => void;
 }
@@ -37,7 +37,7 @@ export function SystemPromptEditorCard({
           </button>
         </div>
       </div>
-      {error && <div className="spp-error" role="alert">{t("errors.operationFailed")}</div>}
+      {error && <div className="spp-error" role="alert">{error}</div>}
       <textarea
         className="spp-textarea"
         value={content}

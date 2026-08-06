@@ -1072,6 +1072,11 @@
   "errors": {
     "crashMessage": "Se produjo un error. Por favor, reinicia la aplicación.",
     "operationFailed": "La operación falló. Por favor, inténtalo de nuevo.",
+    "localStore": {
+      "ollamaCustomization": "El archivo de personalización de Ollama no se puede leer. Restaura «ollama-custom-models.json» desde una copia de seguridad en Ajustes > Avanzado > Datos de Beaver y vuelve a intentarlo.",
+      "ollamaNativePrompts": "El archivo de instrucciones nativas de Ollama no se puede leer. Restaura «ollama-native-system-prompts.json» desde una copia de seguridad en Ajustes > Avanzado > Datos de Beaver y vuelve a intentarlo.",
+      "systemPrompts": "El archivo de ajustes del system prompt no se puede leer. Restaura «system-prompt-settings.json» desde una copia de seguridad en Ajustes > Avanzado > Datos de Beaver y vuelve a intentarlo."
+    },
     "streamStartFailed": "No se pudo iniciar el stream.",
     "streamInterrupted": "El stream fue interrumpido.",
     "ollamaConnectionLost": "Se perdió la conexión con Ollama",

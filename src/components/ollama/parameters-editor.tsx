@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { localStoreErrorMessage } from "@/lib/local-store-error";
 import { CustomParameterFields } from "./custom-parameter-fields";
 import { ModelEditorShell } from "./model-editor-shell";
 import {
@@ -97,8 +98,8 @@ export function ParametersEditor({
       const payload = buildParameterPayload(editorState);
       await invoke("update_parameters", { name: modelName, parameters: payload });
       onSave();
-    } catch {
-      setError(t("errors.operationFailed"));
+    } catch (cause) {
+      setError(localStoreErrorMessage(cause, t));
     } finally {
       setSaving(false);
     }

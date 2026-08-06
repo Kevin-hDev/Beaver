@@ -2,7 +2,7 @@ use super::system_prompt_resolver::{
     resolve_global, resolve_ollama, resolve_ollama_native, resolve_ollama_without_native,
 };
 use super::ollama_native_prompts::NativePromptLookup;
-use super::system_prompt_store::SystemPromptSettings;
+use super::system_prompt_store::{SystemPromptSettings, SystemPromptSettingsStore};
 use super::system_prompt_types::{
     PromptMode, PromptOverride, PromptSelection, PromptSource, PromptTier,
 };
@@ -353,7 +353,7 @@ fn settings_round_trip_keeps_disabled_and_custom_variants() {
         .unwrap();
 
     settings.write_to_path(&path).unwrap();
-    let loaded = SystemPromptSettings::read_from_path(&path);
+    let loaded = SystemPromptSettings::read_from_path(&path).unwrap();
 
     assert_eq!(
         loaded.global_override(PromptMode::Chatbot, PromptTier::Compact),
@@ -395,7 +395,8 @@ fn legacy_model_prompt_is_migrated_to_every_mode_and_tier() {
     let settings = SystemPromptSettings::read_with_legacy(
         &directory.path().join("system-prompt-settings.json"),
         &legacy_path,
-    );
+    )
+    .unwrap();
 
     for mode in [PromptMode::Chatbot, PromptMode::Agentic] {
         for tier in [PromptTier::Compact, PromptTier::Detailed] {
@@ -431,7 +432,7 @@ fn legacy_beaver_state_is_migrated_without_discarding_other_settings() {
     )
     .unwrap();
 
-    let settings = SystemPromptSettings::read_from_path(&path);
+    let settings = SystemPromptSettings::read_from_path(&path).unwrap();
 
     assert_eq!(
         settings.global_override(PromptMode::Chatbot, PromptTier::Compact),
@@ -465,9 +466,107 @@ fn legacy_global_beaver_marker_is_discarded_because_global_already_defaults_to_b
     )
     .unwrap();
 
-    let settings = SystemPromptSettings::read_from_path(&path);
+    let settings = SystemPromptSettings::read_from_path(&path).unwrap();
     settings.write_to_path(&path).unwrap();
 
     let serialized = std::fs::read_to_string(path).unwrap();
     assert!(!serialized.contains(r#""compact_beaver": true"#));
+}
+
+#[test]
+fn corrupt_system_prompt_settings_are_unavailable_and_never_overwritten() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    let corrupt = b"{not valid json";
+    std::fs::write(&path, corrupt).unwrap();
+    let store = SystemPromptSettingsStore::open(path.clone(), legacy_path);
+
+    assert_eq!(
+        store.snapshot().err(),
+        Some("system-prompt-store-unavailable".to_string())
+    );
+    assert_eq!(
+        store.save_global(PromptMode::Chatbot, PromptTier::Compact, "replacement"),
+        Err("system-prompt-store-unavailable".to_string())
+    );
+    assert_eq!(std::fs::read(path).unwrap(), corrupt);
+}
+
+#[test]
+fn unavailable_system_prompt_store_recovers_after_valid_settings_are_restored() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    std::fs::write(&path, b"{not valid json").unwrap();
+    let store = SystemPromptSettingsStore::open(path.clone(), legacy_path);
+    let mut restored = SystemPromptSettings::default();
+    restored
+        .set_global(PromptMode::Chatbot, PromptTier::Compact, "restored")
+        .unwrap();
+    restored.write_to_path(&path).unwrap();
+
+    assert_eq!(
+        store
+            .snapshot()
+            .unwrap()
+            .global_override(PromptMode::Chatbot, PromptTier::Compact),
+        Some(&PromptOverride::Custom("restored".to_string()))
+    );
+}
+
+#[test]
+fn system_prompt_store_does_not_overwrite_corruption_that_happens_after_open() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    let store = SystemPromptSettingsStore::open(path.clone(), legacy_path);
+    store
+        .save_global(PromptMode::Chatbot, PromptTier::Compact, "first")
+        .unwrap();
+    let corrupt = b"{corrupted while Beaver is running";
+    std::fs::write(&path, corrupt).unwrap();
+
+    assert_eq!(
+        store.save_global(PromptMode::Chatbot, PromptTier::Detailed, "second"),
+        Err("system-prompt-store-unavailable".to_string())
+    );
+    assert_eq!(std::fs::read(path).unwrap(), corrupt);
+}
+
+#[test]
+fn deleted_current_settings_do_not_resurrect_stale_legacy_prompts() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    std::fs::write(
+        &legacy_path,
+        br#"{"prompts":{"gemma4:e2b":"stale legacy"}}"#,
+    )
+    .unwrap();
+    let store = SystemPromptSettingsStore::open(path.clone(), legacy_path);
+    store
+        .save_global(PromptMode::Chatbot, PromptTier::Compact, "current")
+        .unwrap();
+    std::fs::remove_file(&path).unwrap();
+
+    assert_eq!(
+        store.save_global(PromptMode::Chatbot, PromptTier::Detailed, "new"),
+        Err("system-prompt-store-unavailable".to_string())
+    );
+    assert!(!path.exists());
+}
+
+#[test]
+fn corrupt_legacy_system_prompt_settings_are_not_silently_discarded() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    std::fs::write(&legacy_path, b"{not valid json").unwrap();
+
+    assert_eq!(
+        SystemPromptSettings::read_with_legacy(&path, &legacy_path).err(),
+        Some("system-prompt-store-unavailable".to_string())
+    );
+    assert!(!path.exists());
 }

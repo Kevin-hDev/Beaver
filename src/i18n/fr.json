@@ -1125,6 +1125,11 @@
   "errors": {
     "crashMessage": "Une erreur est survenue. Relance l'application.",
     "operationFailed": "L'opération a échoué. Réessaye.",
+    "localStore": {
+      "ollamaCustomization": "Le fichier de personnalisation Ollama est illisible. Restaure « ollama-custom-models.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver, puis réessaye.",
+      "ollamaNativePrompts": "Le fichier des instructions natives Ollama est illisible. Restaure « ollama-native-system-prompts.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver, puis réessaye.",
+      "systemPrompts": "Le fichier des réglages de system prompt est illisible. Restaure « system-prompt-settings.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver, puis réessaye."
+    },
     "streamStartFailed": "Le flux n'a pas pu démarrer.",
     "streamInterrupted": "Le flux s'est interrompu.",
     "ollamaConnectionLost": "Connexion à Ollama perdue",

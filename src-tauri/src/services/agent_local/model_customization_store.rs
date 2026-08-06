@@ -19,10 +19,11 @@ struct LegacyCustomModelStore {
 
 pub(crate) struct ModelCustomizationStore {
     path: PathBuf,
-    catalog: Mutex<Option<ModelCustomizationCatalog>>,
+    catalog: Mutex<crate::services::private_store::CachedStore<ModelCustomizationCatalog>>,
 }
 
 enum CatalogLoad {
+    Missing,
     Ready {
         catalog: ModelCustomizationCatalog,
         migrated: bool,
@@ -32,15 +33,7 @@ enum CatalogLoad {
 
 impl ModelCustomizationStore {
     pub(crate) fn open(path: PathBuf) -> Self {
-        let catalog = match ModelCustomizationCatalog::read_with_format(&path) {
-            CatalogLoad::Ready { catalog, migrated } => {
-                if migrated {
-                    let _ = catalog.write_to_path(&path);
-                }
-                Some(catalog)
-            }
-            CatalogLoad::Unavailable => None,
-        };
+        let catalog = crate::services::private_store::CachedStore::new(load_catalog(&path));
         Self {
             path,
             catalog: Mutex::new(catalog),
@@ -49,12 +42,13 @@ impl ModelCustomizationStore {
 
     pub(crate) fn kind(&self, name: &str) -> Result<Option<CustomizationKind>, String> {
         validate_model_name(name)?;
-        self.catalog
+        let mut current = self
+            .catalog
             .lock()
-            .map_err(|_| "ollama-custom-store-read".to_string())?
-            .as_ref()
-            .map(|catalog| catalog.kind(name))
-            .ok_or_else(|| "ollama-custom-store-read".to_string())
+            .map_err(|_| "ollama-custom-store-read".to_string())?;
+        Ok(current
+            .value_or_reload(|| load_catalog(&self.path), store_unavailable())?
+            .kind(name))
     }
 
     pub(crate) fn mark_parameters(&self, name: &str) -> Result<(), String> {
@@ -81,13 +75,13 @@ impl ModelCustomizationStore {
             .catalog
             .lock()
             .map_err(|_| "ollama-custom-store-write".to_string())?;
-        let mut candidate = current
-            .as_ref()
-            .ok_or_else(|| "ollama-custom-store-write".to_string())?
-            .clone();
+        let mut candidate = current.candidate_for_write(
+            || load_catalog(&self.path),
+            store_unavailable(),
+        )?;
         update(&mut candidate)?;
         candidate.write_to_path(&self.path)?;
-        *current = Some(candidate);
+        current.commit(candidate);
         Ok(())
     }
 }
@@ -125,10 +119,13 @@ impl ModelCustomizationCatalog {
     }
 
     #[cfg(test)]
-    pub(crate) fn read_from_path(path: &Path) -> Self {
-        match Self::read_with_format(path) {
-            CatalogLoad::Ready { catalog, .. } => catalog,
-            CatalogLoad::Unavailable => Self::default(),
+    pub(crate) fn read_from_path(path: &Path) -> Result<Self, String> {
+        match load_catalog(path) {
+            crate::services::private_store::StoreLoad::Missing => Ok(Self::default()),
+            crate::services::private_store::StoreLoad::Ready(catalog) => Ok(catalog),
+            crate::services::private_store::StoreLoad::Unavailable => {
+                Err(store_unavailable().to_string())
+            }
         }
     }
 
@@ -143,29 +140,23 @@ impl ModelCustomizationCatalog {
     }
 
     fn read_with_format(path: &Path) -> CatalogLoad {
-        let metadata = match std::fs::symlink_metadata(path) {
-            Ok(metadata) => metadata,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-                return CatalogLoad::Ready {
-                    catalog: Self::default(),
-                    migrated: false,
-                };
+        let content = match crate::services::private_store::read_bounded_regular(
+            path,
+            MAX_STORE_BYTES,
+        ) {
+            Ok(crate::services::private_store::BoundedFile::Missing) => {
+                return CatalogLoad::Missing;
             }
+            Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
             Err(_) => return CatalogLoad::Unavailable,
         };
-        if !metadata.is_file() || metadata.len() > MAX_STORE_BYTES {
-            return CatalogLoad::Unavailable;
-        }
-        let Ok(content) = std::fs::read_to_string(path) else {
-            return CatalogLoad::Unavailable;
-        };
-        if let Ok(catalog) = serde_json::from_str::<Self>(&content) {
+        if let Ok(catalog) = serde_json::from_slice::<Self>(&content) {
             return CatalogLoad::Ready {
                 catalog: catalog.validated(),
                 migrated: false,
             };
         }
-        serde_json::from_str::<LegacyCustomModelStore>(&content)
+        serde_json::from_slice::<LegacyCustomModelStore>(&content)
             .map(|legacy| CatalogLoad::Ready {
                 catalog: Self::from_legacy(legacy),
                 migrated: true,
@@ -200,4 +191,23 @@ impl ModelCustomizationCatalog {
                 .collect(),
         }
     }
+}
+
+fn load_catalog(
+    path: &Path,
+) -> crate::services::private_store::StoreLoad<ModelCustomizationCatalog> {
+    match ModelCustomizationCatalog::read_with_format(path) {
+        CatalogLoad::Missing => crate::services::private_store::StoreLoad::Missing,
+        CatalogLoad::Ready { catalog, migrated } => {
+            if migrated && catalog.write_to_path(path).is_err() {
+                return crate::services::private_store::StoreLoad::Unavailable;
+            }
+            crate::services::private_store::StoreLoad::Ready(catalog)
+        }
+        CatalogLoad::Unavailable => crate::services::private_store::StoreLoad::Unavailable,
+    }
+}
+
+fn store_unavailable() -> &'static str {
+    "ollama-custom-store-unavailable"
 }

@@ -1072,6 +1072,11 @@
   "errors": {
     "crashMessage": "エラーが発生しました。アプリケーションを再起動してください。",
     "operationFailed": "操作に失敗しました。もう一度お試しください。",
+    "localStore": {
+      "ollamaCustomization": "Ollama のカスタマイズファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-custom-models.json」を復元して、もう一度お試しください。",
+      "ollamaNativePrompts": "Ollama のネイティブ指示ファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-native-system-prompts.json」を復元して、もう一度お試しください。",
+      "systemPrompts": "システムプロンプト設定ファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「system-prompt-settings.json」を復元して、もう一度お試しください。"
+    },
     "streamStartFailed": "ストリームを開始できませんでした。",
     "streamInterrupted": "ストリームが中断されました。",
     "ollamaConnectionLost": "Ollama への接続が失われました",

@@ -71,6 +71,24 @@ describe("Ollama model editors", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("errors.operationFailed");
   });
 
+  it("explique comment récupérer les données de personnalisation Ollama", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce("ollama-custom-store-unavailable");
+    render(
+      <ModelfileEditor
+        modelName={modelName}
+        initialContent="FROM llama3.2"
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("ollama.save"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "errors.localStore.ollamaCustomization",
+    );
+  });
+
   it("sauvegarde les paramètres depuis la carte", async () => {
     const onSave = vi.fn();
     render(
@@ -91,6 +109,24 @@ describe("Ollama model editors", () => {
       });
       expect(onSave).toHaveBeenCalledOnce();
     });
+  });
+
+  it("explique comment récupérer le catalogue des prompts Ollama natifs", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce("ollama-native-prompt-store-unavailable");
+    render(
+      <ParametersEditor
+        modelName={modelName}
+        initialParameters={[]}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("ollama.save"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "errors.localStore.ollamaNativePrompts",
+    );
   });
 });
 

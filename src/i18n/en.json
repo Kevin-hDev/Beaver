@@ -1077,6 +1077,11 @@
   "errors": {
     "crashMessage": "An error occurred. Please restart the application.",
     "operationFailed": "Operation failed. Please try again.",
+    "localStore": {
+      "ollamaCustomization": "The Ollama customization file is unreadable. Restore “ollama-custom-models.json” from a backup in Settings > Advanced > Beaver data, then try again.",
+      "ollamaNativePrompts": "The native Ollama instructions file is unreadable. Restore “ollama-native-system-prompts.json” from a backup in Settings > Advanced > Beaver data, then try again.",
+      "systemPrompts": "The system prompt settings file is unreadable. Restore “system-prompt-settings.json” from a backup in Settings > Advanced > Beaver data, then try again."
+    },
     "streamStartFailed": "Stream could not start.",
     "streamInterrupted": "Stream was interrupted.",
     "ollamaConnectionLost": "Connection to Ollama lost",

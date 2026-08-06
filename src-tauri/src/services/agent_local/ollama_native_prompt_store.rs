@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 const MAX_MODELS: usize = 512;
 const MAX_PROMPT_BYTES: usize = 64 * 1024;
@@ -16,6 +17,66 @@ pub enum NativePromptState {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NativePromptCatalog {
     models: BTreeMap<String, NativePromptState>,
+}
+
+pub(crate) struct NativePromptStore {
+    path: PathBuf,
+    catalog: Mutex<crate::services::private_store::CachedStore<NativePromptCatalog>>,
+}
+
+impl NativePromptStore {
+    pub(crate) fn open(path: PathBuf) -> Self {
+        let catalog = crate::services::private_store::CachedStore::new(
+            NativePromptCatalog::load_from_path(&path),
+        );
+        Self {
+            path,
+            catalog: Mutex::new(catalog),
+        }
+    }
+
+    pub(crate) fn cached(&self, model: &str) -> Result<Option<NativePromptState>, String> {
+        let mut current = self
+            .catalog
+            .lock()
+            .map_err(|_| "ollama-native-prompt-store-unavailable".to_string())?;
+        Ok(current
+            .value_or_reload(
+                || NativePromptCatalog::load_from_path(&self.path),
+                store_unavailable(),
+            )?
+            .get(model)
+            .cloned())
+    }
+
+    pub(crate) fn record(&self, model: &str, state: NativePromptState) -> Result<(), String> {
+        self.mutate(|catalog| catalog.record(model, state))
+    }
+
+    pub(crate) fn remove(&self, model: &str) -> Result<(), String> {
+        self.mutate(|catalog| {
+            catalog.remove(model);
+            Ok(())
+        })
+    }
+
+    fn mutate(
+        &self,
+        update: impl FnOnce(&mut NativePromptCatalog) -> Result<(), String>,
+    ) -> Result<(), String> {
+        let mut current = self
+            .catalog
+            .lock()
+            .map_err(|_| "ollama-native-prompt-store-unavailable".to_string())?;
+        let mut candidate = current.candidate_for_write(
+            || NativePromptCatalog::load_from_path(&self.path),
+            store_unavailable(),
+        )?;
+        update(&mut candidate)?;
+        candidate.write_to_path(&self.path)?;
+        current.commit(candidate);
+        Ok(())
+    }
 }
 
 impl NativePromptCatalog {
@@ -37,20 +98,15 @@ impl NativePromptCatalog {
         self.models.remove(model);
     }
 
-    pub fn read_from_path(path: &Path) -> Self {
-        if std::fs::metadata(path)
-            .map(|metadata| metadata.len() > MAX_STORE_BYTES)
-            .unwrap_or(false)
-        {
-            return Self::default();
+    #[cfg(test)]
+    pub fn read_from_path(path: &Path) -> Result<Self, String> {
+        match Self::load_from_path(path) {
+            crate::services::private_store::StoreLoad::Missing => Ok(Self::default()),
+            crate::services::private_store::StoreLoad::Ready(catalog) => Ok(catalog),
+            crate::services::private_store::StoreLoad::Unavailable => {
+                Err(store_unavailable().to_string())
+            }
         }
-        let Ok(content) = std::fs::read_to_string(path) else {
-            return Self::default();
-        };
-        let Ok(catalog) = serde_json::from_str::<Self>(&content) else {
-            return Self::default();
-        };
-        catalog.sanitized()
     }
 
     pub fn write_to_path(&self, path: &Path) -> Result<(), String> {
@@ -75,6 +131,29 @@ impl NativePromptCatalog {
         }
         clean
     }
+
+    fn load_from_path(
+        path: &Path,
+    ) -> crate::services::private_store::StoreLoad<NativePromptCatalog> {
+        let content = match crate::services::private_store::read_bounded_regular(
+            path,
+            MAX_STORE_BYTES,
+        ) {
+            Ok(crate::services::private_store::BoundedFile::Missing) => {
+                return crate::services::private_store::StoreLoad::Missing;
+            }
+            Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
+            Err(_) => return crate::services::private_store::StoreLoad::Unavailable,
+        };
+        serde_json::from_slice::<Self>(&content)
+            .map(Self::sanitized)
+            .map(crate::services::private_store::StoreLoad::Ready)
+            .unwrap_or(crate::services::private_store::StoreLoad::Unavailable)
+    }
+}
+
+fn store_unavailable() -> &'static str {
+    "ollama-native-prompt-store-unavailable"
 }
 
 fn sanitize_state(state: NativePromptState) -> Option<NativePromptState> {

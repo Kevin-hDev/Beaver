@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { localStoreErrorMessage } from "@/lib/local-store-error";
 import { ModelEditorShell } from "./model-editor-shell";
 import "./ollama.css";
 
@@ -25,8 +26,8 @@ export function ModelfileEditor({
     try {
       await invoke("update_modelfile", { name: modelName, content });
       onSave(content);
-    } catch {
-      setError(t("errors.operationFailed"));
+    } catch (cause) {
+      setError(localStoreErrorMessage(cause, t));
     } finally {
       setSaving(false);
     }

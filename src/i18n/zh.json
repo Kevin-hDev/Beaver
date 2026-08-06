@@ -1072,6 +1072,11 @@
   "errors": {
     "crashMessage": "发生错误，请重启应用。",
     "operationFailed": "操作失败，请重试。",
+    "localStore": {
+      "ollamaCustomization": "Ollama 自定义文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“ollama-custom-models.json”，然后重试。",
+      "ollamaNativePrompts": "Ollama 原生指令文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“ollama-native-system-prompts.json”，然后重试。",
+      "systemPrompts": "系统提示词设置文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“system-prompt-settings.json”，然后重试。"
+    },
     "streamStartFailed": "流无法启动。",
     "streamInterrupted": "流传输被中断。",
     "ollamaConnectionLost": "与 Ollama 的连接已断开",
