@@ -8,7 +8,6 @@ use crate::services::agent_local::types_ollama::{
     ModelInfo, OllamaModel, RegistryModel, RegistryModelDetails, RegistryTag,
 };
 use crate::services::ollama_lifecycle;
-use std::future::Future;
 use tauri::Emitter;
 
 #[tauri::command]
@@ -98,16 +97,16 @@ pub async fn update_modelfile(
     content: String,
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<(), String> {
-    let was_customized = model_customizations::is_model_customized(&name);
-    if !was_customized {
+    let previous_kind = model_customizations::customization_kind(&name);
+    // A full Modelfile edit can replace SYSTEM, so preserve a trustworthy
+    // native prompt before the destructive operation and block on failure.
+    if model_customizations::can_capture_current(previous_kind) {
         crate::services::agent_local::ollama_native_prompts::capture_current(&ollama, &name)
             .await?;
     }
-    model_customizations::mark_model_customized(&name)?;
+    model_customizations::mark_modelfile_customized(&name)?;
     if let Err(e) = ollama.update_modelfile(&name, &content).await {
-        if !was_customized {
-            let _ = model_customizations::clear_model_customized(&name);
-        }
+        let _ = model_customizations::restore_customization_kind(&name, previous_kind);
         return Err(e);
     }
     let _ = app.emit("modelfile-updated", &name);
@@ -121,48 +120,19 @@ pub async fn update_parameters(
     parameters: Vec<(String, String)>,
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<(), String> {
-    let was_customized = model_customizations::is_model_customized(&name);
-    model_customizations::mark_model_customized(&name)?;
-    let update = ollama.update_parameters(&name, parameters);
-    let capture = async {
-        if was_customized {
-            Ok(())
-        } else {
+    let previous_kind = model_customizations::customization_kind(&name);
+    // Parameter updates preserve SYSTEM. Capture is therefore best effort:
+    // a ParametersOnly marker lets future reads retry safely if this fails.
+    if model_customizations::can_capture_current(previous_kind) {
+        let _ =
             crate::services::agent_local::ollama_native_prompts::capture_current(&ollama, &name)
-                .await
-        }
-    };
-    if let Err(e) = run_parameter_update(update, capture).await {
-        if !was_customized {
-            let _ = model_customizations::clear_model_customized(&name);
-        }
+                .await;
+    }
+    model_customizations::mark_parameters_customized(&name)?;
+    if let Err(e) = ollama.update_parameters(&name, parameters).await {
+        let _ = model_customizations::restore_customization_kind(&name, previous_kind);
         return Err(e);
     }
     let _ = app.emit("modelfile-updated", &name);
     Ok(())
-}
-
-async fn run_parameter_update<U, C>(update: U, capture: C) -> Result<(), String>
-where
-    U: Future<Output = Result<(), String>>,
-    C: Future<Output = Result<(), String>>,
-{
-    update.await?;
-    let _ = capture.await;
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::run_parameter_update;
-
-    #[tokio::test]
-    async fn parameter_update_does_not_fail_when_native_prompt_capture_fails() {
-        let result = run_parameter_update(async { Ok(()) }, async {
-            Err("native-prompt-store-error".to_string())
-        })
-        .await;
-
-        assert_eq!(result, Ok(()));
-    }
 }

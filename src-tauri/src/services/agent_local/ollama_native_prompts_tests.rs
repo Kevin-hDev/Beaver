@@ -1,6 +1,7 @@
 use super::ollama_native_prompts::{
     lookup_origin, NativePromptCatalog, NativePromptOrigin, NativePromptState,
 };
+use super::model_customizations::CustomizationKind;
 
 #[test]
 fn native_prompt_catalog_distinguishes_unknown_absent_and_present_models() {
@@ -30,8 +31,22 @@ fn native_prompt_catalog_distinguishes_unknown_absent_and_present_models() {
 }
 
 #[test]
-fn customized_legacy_model_without_capture_stays_unavailable_offline() {
-    assert_eq!(lookup_origin(true, false), NativePromptOrigin::Unavailable);
-    assert_eq!(lookup_origin(false, false), NativePromptOrigin::CurrentModel);
-    assert_eq!(lookup_origin(true, true), NativePromptOrigin::Catalog);
+fn native_prompt_origin_only_trusts_safe_local_sources() {
+    assert_eq!(
+        lookup_origin(Some(CustomizationKind::Unknown), false),
+        NativePromptOrigin::Unknown
+    );
+    assert_eq!(
+        lookup_origin(Some(CustomizationKind::Modelfile), false),
+        NativePromptOrigin::Unknown
+    );
+    assert_eq!(
+        lookup_origin(Some(CustomizationKind::ParametersOnly), false),
+        NativePromptOrigin::CurrentModel
+    );
+    assert_eq!(lookup_origin(None, false), NativePromptOrigin::CurrentModel);
+    assert_eq!(
+        lookup_origin(Some(CustomizationKind::Unknown), true),
+        NativePromptOrigin::Catalog
+    );
 }

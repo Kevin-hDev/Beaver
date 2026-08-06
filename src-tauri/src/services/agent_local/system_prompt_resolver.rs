@@ -1,4 +1,5 @@
 use super::system_prompt_store::SystemPromptSettings;
+use super::ollama_native_prompts::NativePromptLookup;
 use super::system_prompt_types::{
     PromptMode, PromptOverride, PromptSelection, PromptSource, PromptTier, SystemPromptView,
 };
@@ -15,6 +16,7 @@ pub fn resolve_global(
     }
 }
 
+#[cfg(test)]
 pub fn resolve_ollama(
     settings: &SystemPromptSettings,
     model: &str,
@@ -23,37 +25,52 @@ pub fn resolve_ollama(
     native_prompt: Option<&str>,
     beaver_prompt: &str,
 ) -> SystemPromptView {
-    let native_prompt = native_prompt.map(str::trim).filter(|value| !value.is_empty());
-    let native_available = native_prompt.is_some();
+    let native = native_prompt
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(|value| NativePromptLookup::Present(value.to_string()))
+        .unwrap_or(NativePromptLookup::Absent);
+    resolve_ollama_native(settings, model, mode, tier, &native, beaver_prompt)
+}
+
+pub fn resolve_ollama_native(
+    settings: &SystemPromptSettings,
+    model: &str,
+    mode: PromptMode,
+    tier: PromptTier,
+    native: &NativePromptLookup,
+    beaver_prompt: &str,
+) -> SystemPromptView {
+    let native_available = native.availability();
     if let Some(value) = settings.ollama_override(model, mode, tier) {
-        return from_override(value, Some(native_available));
+        return from_override(value, native_available);
     }
     if settings.ollama_uses_beaver(model, mode, tier) {
         return view(
             beaver_prompt,
             PromptSource::Beaver,
             PromptSelection::Beaver,
-            Some(native_available),
+            native_available,
         );
     }
-    if let Some(native) = native_prompt {
-        return view(native, PromptSource::Ollama, PromptSelection::Default, Some(true));
+    if let Some(content) = native.prompt() {
+        return view(content, PromptSource::Ollama, PromptSelection::Default, Some(true));
     }
     match settings.global_override(mode, tier) {
         Some(PromptOverride::Custom(content)) => view(
             content,
             PromptSource::Custom,
             PromptSelection::Default,
-            Some(false),
+            native_available,
         ),
         Some(PromptOverride::Disabled) => {
-            view("", PromptSource::Custom, PromptSelection::Default, Some(false))
+            view("", PromptSource::Custom, PromptSelection::Default, native_available)
         }
         None => view(
             beaver_prompt,
             PromptSource::Beaver,
             PromptSelection::Default,
-            Some(false),
+            native_available,
         ),
     }
 }

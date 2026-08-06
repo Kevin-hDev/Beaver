@@ -1,5 +1,5 @@
 use crate::services::agent_local::ollama_client::OllamaClient;
-use crate::services::agent_local::system_prompt_resolver::{resolve_global, resolve_ollama};
+use crate::services::agent_local::system_prompt_resolver::{resolve_global, resolve_ollama_native};
 use crate::services::agent_local::system_prompt_store;
 use crate::services::agent_local::system_prompt_types::{PromptMode, PromptTier, SystemPromptView};
 use serde::Deserialize;
@@ -82,12 +82,12 @@ pub async fn restore_default_system_prompt_setting(
             let settings = system_prompt_store::snapshot()?;
             let beaver_prompt =
                 crate::services::agent_local::system_prompt_defaults::beaver_prompt(mode, tier);
-            Ok(resolve_ollama(
+            Ok(resolve_ollama_native(
                 &settings,
                 model,
                 mode,
                 tier,
-                native_prompt.as_deref(),
+                &native_prompt,
                 &beaver_prompt,
             ))
         }
@@ -112,12 +112,12 @@ async fn resolve_view(
             crate::services::agent_local::model_customizations::validate_model_name(model)?;
             let native_prompt =
                 crate::services::agent_local::ollama_native_prompts::get(ollama, model).await;
-            Ok(resolve_ollama(
+            Ok(resolve_ollama_native(
                 &settings,
                 model,
                 mode,
                 tier,
-                native_prompt.as_deref(),
+                &native_prompt,
                 &beaver_prompt,
             ))
         }

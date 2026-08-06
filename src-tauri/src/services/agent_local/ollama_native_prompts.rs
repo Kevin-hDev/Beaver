@@ -13,35 +13,67 @@ mod store;
 pub enum NativePromptOrigin {
     Catalog,
     CurrentModel,
-    Unavailable,
+    Unknown,
 }
 
-pub fn lookup_origin(customized: bool, cached: bool) -> NativePromptOrigin {
-    if cached {
-        NativePromptOrigin::Catalog
-    } else if customized {
-        NativePromptOrigin::Unavailable
-    } else {
-        NativePromptOrigin::CurrentModel
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NativePromptLookup {
+    Unknown,
+    Absent,
+    Present(String),
+}
+
+impl NativePromptLookup {
+    pub fn prompt(&self) -> Option<&str> {
+        match self {
+            Self::Present(content) => Some(content),
+            Self::Unknown | Self::Absent => None,
+        }
+    }
+
+    pub fn availability(&self) -> Option<bool> {
+        match self {
+            Self::Unknown => None,
+            Self::Absent => Some(false),
+            Self::Present(_) => Some(true),
+        }
     }
 }
 
-pub async fn get(ollama: &OllamaClient, model: &str) -> Option<String> {
+pub fn lookup_origin(
+    customization: Option<model_customizations::CustomizationKind>,
+    cached: bool,
+) -> NativePromptOrigin {
+    if cached {
+        NativePromptOrigin::Catalog
+    } else if model_customizations::can_capture_current(customization) {
+        NativePromptOrigin::CurrentModel
+    } else {
+        NativePromptOrigin::Unknown
+    }
+}
+
+pub async fn get(ollama: &OllamaClient, model: &str) -> NativePromptLookup {
     if model_customizations::validate_model_name(model).is_err() {
-        return None;
+        return NativePromptLookup::Unknown;
     }
     let cached_state = cached(model);
     match lookup_origin(
-        model_customizations::is_model_customized(model),
+        model_customizations::customization_kind(model),
         cached_state.is_some(),
     ) {
-        NativePromptOrigin::Catalog => prompt_from_state(&cached_state?),
-        NativePromptOrigin::Unavailable => None,
+        NativePromptOrigin::Catalog => cached_state
+            .as_ref()
+            .map(lookup_from_state)
+            .unwrap_or(NativePromptLookup::Unknown),
+        NativePromptOrigin::Unknown => NativePromptLookup::Unknown,
         NativePromptOrigin::CurrentModel => {
-            let state = current_state(ollama, model).await.ok()?;
-            let prompt = prompt_from_state(&state);
+            let Ok(state) = current_state(ollama, model).await else {
+                return NativePromptLookup::Unknown;
+            };
+            let lookup = lookup_from_state(&state);
             let _ = record(model, state);
-            prompt
+            lookup
         }
     }
 }
@@ -73,10 +105,10 @@ fn state_from_modelfile(modelfile: &str) -> NativePromptState {
         .unwrap_or(NativePromptState::Absent)
 }
 
-fn prompt_from_state(state: &NativePromptState) -> Option<String> {
+fn lookup_from_state(state: &NativePromptState) -> NativePromptLookup {
     match state {
-        NativePromptState::Absent => None,
-        NativePromptState::Present(content) => Some(content.clone()),
+        NativePromptState::Absent => NativePromptLookup::Absent,
+        NativePromptState::Present(content) => NativePromptLookup::Present(content.clone()),
     }
 }
 

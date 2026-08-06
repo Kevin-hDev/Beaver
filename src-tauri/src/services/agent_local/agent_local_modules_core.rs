@@ -69,6 +69,8 @@ pub mod memory_tool;
 mod memory_tool_error;
 pub mod memory_types;
 pub mod model_customizations;
+#[cfg(test)]
+mod model_customizations_tests;
 pub mod model_size;
 pub mod modelfile_parser;
 pub mod system_prompt_resolver;

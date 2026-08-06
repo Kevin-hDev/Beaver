@@ -1,6 +1,7 @@
 use super::system_prompt_resolver::{
-    resolve_global, resolve_ollama, resolve_ollama_without_native,
+    resolve_global, resolve_ollama, resolve_ollama_native, resolve_ollama_without_native,
 };
+use super::ollama_native_prompts::NativePromptLookup;
 use super::system_prompt_store::SystemPromptSettings;
 use super::system_prompt_types::{
     PromptMode, PromptOverride, PromptSelection, PromptSource, PromptTier,
@@ -240,6 +241,27 @@ fn global_custom_prompt_is_used_when_ollama_has_no_own_prompt() {
     assert_eq!(view.source, PromptSource::Custom);
     assert_eq!(view.selection, PromptSelection::Default);
     assert_eq!(view.native_prompt_available, Some(false));
+}
+
+#[test]
+fn unknown_native_prompt_availability_is_not_reported_as_absent() {
+    let settings = SystemPromptSettings::default();
+
+    let view = resolve_ollama_native(
+        &settings,
+        "legacy:latest",
+        PromptMode::Agentic,
+        PromptTier::Compact,
+        &NativePromptLookup::Unknown,
+        "beaver",
+    );
+
+    assert_eq!(view.content, "beaver");
+    assert_eq!(view.native_prompt_available, None);
+    assert!(serde_json::to_value(&view)
+        .unwrap()
+        .get("nativePromptAvailable")
+        .is_none());
 }
 
 #[test]

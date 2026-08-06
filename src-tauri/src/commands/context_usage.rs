@@ -74,12 +74,12 @@ pub async fn estimate_context_hidden_usage(
                 let client = crate::services::agent_local::ollama_client::OllamaClient::new();
                 let native_prompt =
                     crate::services::agent_local::ollama_native_prompts::get(&client, &model).await;
-                crate::services::agent_local::system_prompt_resolver::resolve_ollama(
+                crate::services::agent_local::system_prompt_resolver::resolve_ollama_native(
                     &prompt_settings,
                     &model,
                     prompt_mode,
                     prompt_tier,
-                    native_prompt.as_deref(),
+                    &native_prompt,
                     &beaver_prompt,
                 )
             }
