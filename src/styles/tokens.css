@@ -148,9 +148,10 @@
      colonne : un cinquième de plus tient jusqu'au réglage de police 20 sans
      rogner le plus long des cinq noms. */
   --personality-file-icon-size: calc(var(--icon-md) * 1.2);
-  /* Bouton « Ouvrir » de /beaver, posé au-dessus des icônes de bouton : il est
-     seul dans son en-tête, face à un titre au corps le plus grand de l'app. */
-  --personality-open-icon-size: calc(var(--icon-sm) * 1.25);
+  /* Bouton « Ouvrir » de /beaver, la moitié au-dessus des icônes de bouton :
+     il est seul dans son en-tête, sans libellé pour le désigner, face à un
+     titre au corps le plus grand de l'application. */
+  --personality-open-icon-size: calc(var(--icon-sm) * 1.5);
   /* Croix de fermeture d'un panneau. Au-dessus de l'icône de sa rangée : deux
      traits croisés ne couvrent que 42 % de leur cadre, contre 67 à 100 % pour
      les autres actions posées à côté, et à cadre égal la croix rapetisse. */
