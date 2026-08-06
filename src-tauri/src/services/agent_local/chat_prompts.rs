@@ -80,7 +80,7 @@ pub fn prepare_messages(
         source: PromptSource::Beaver,
         selection: PromptSelection::Default,
         disabled: false,
-        native_prompt_available: false,
+        native_prompt_available: None,
     };
     prepare_messages_with_tools(
         messages,

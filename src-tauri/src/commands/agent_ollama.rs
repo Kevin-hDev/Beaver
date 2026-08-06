@@ -8,6 +8,7 @@ use crate::services::agent_local::types_ollama::{
     ModelInfo, OllamaModel, RegistryModel, RegistryModelDetails, RegistryTag,
 };
 use crate::services::ollama_lifecycle;
+use std::future::Future;
 use tauri::Emitter;
 
 #[tauri::command]
@@ -121,12 +122,17 @@ pub async fn update_parameters(
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<(), String> {
     let was_customized = model_customizations::is_model_customized(&name);
-    if !was_customized {
-        crate::services::agent_local::ollama_native_prompts::capture_current(&ollama, &name)
-            .await?;
-    }
     model_customizations::mark_model_customized(&name)?;
-    if let Err(e) = ollama.update_parameters(&name, parameters).await {
+    let update = ollama.update_parameters(&name, parameters);
+    let capture = async {
+        if was_customized {
+            Ok(())
+        } else {
+            crate::services::agent_local::ollama_native_prompts::capture_current(&ollama, &name)
+                .await
+        }
+    };
+    if let Err(e) = run_parameter_update(update, capture).await {
         if !was_customized {
             let _ = model_customizations::clear_model_customized(&name);
         }
@@ -134,4 +140,29 @@ pub async fn update_parameters(
     }
     let _ = app.emit("modelfile-updated", &name);
     Ok(())
+}
+
+async fn run_parameter_update<U, C>(update: U, capture: C) -> Result<(), String>
+where
+    U: Future<Output = Result<(), String>>,
+    C: Future<Output = Result<(), String>>,
+{
+    update.await?;
+    let _ = capture.await;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::run_parameter_update;
+
+    #[tokio::test]
+    async fn parameter_update_does_not_fail_when_native_prompt_capture_fails() {
+        let result = run_parameter_update(async { Ok(()) }, async {
+            Err("native-prompt-store-error".to_string())
+        })
+        .await;
+
+        assert_eq!(result, Ok(()));
+    }
 }

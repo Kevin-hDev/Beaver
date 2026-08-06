@@ -161,6 +161,10 @@ fn explicit_ollama_settings_resolve_without_reading_the_native_prompt() {
 
     assert_eq!(view.content, "beaver");
     assert_eq!(view.selection, PromptSelection::Beaver);
+    assert!(serde_json::to_value(&view)
+        .unwrap()
+        .get("nativePromptAvailable")
+        .is_none());
     assert!(resolve_ollama_without_native(
         &SystemPromptSettings::default(),
         "gemma4:e2b",
@@ -213,7 +217,7 @@ fn native_ollama_prompt_has_priority_over_the_global_prompt() {
     assert_eq!(view.content, "native");
     assert_eq!(view.source, PromptSource::Ollama);
     assert_eq!(view.selection, PromptSelection::Default);
-    assert!(view.native_prompt_available);
+    assert_eq!(view.native_prompt_available, Some(true));
 }
 
 #[test]
@@ -235,7 +239,7 @@ fn global_custom_prompt_is_used_when_ollama_has_no_own_prompt() {
     assert_eq!(view.content, "global");
     assert_eq!(view.source, PromptSource::Custom);
     assert_eq!(view.selection, PromptSelection::Default);
-    assert!(!view.native_prompt_available);
+    assert_eq!(view.native_prompt_available, Some(false));
 }
 
 #[test]

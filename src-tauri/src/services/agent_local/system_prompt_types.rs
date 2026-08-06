@@ -45,5 +45,6 @@ pub struct SystemPromptView {
     pub source: PromptSource,
     pub selection: PromptSelection,
     pub disabled: bool,
-    pub native_prompt_available: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub native_prompt_available: Option<bool>,
 }

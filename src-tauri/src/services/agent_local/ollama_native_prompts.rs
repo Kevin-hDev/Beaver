@@ -1,33 +1,26 @@
 use super::model_customizations;
-use super::ollama_client::OllamaClient;
 use super::modelfile_parser::parse_modelfile;
-use std::collections::BTreeSet;
+use super::ollama_client::OllamaClient;
 use std::sync::{Mutex, OnceLock};
 
-#[cfg(test)]
-pub use registry::{parse_native_layer, registry_model_path, NativeLayer};
 pub(crate) use store::NativePromptCatalog;
 pub use store::NativePromptState;
 
-#[path = "ollama_native_prompt_registry.rs"]
-mod registry;
 #[path = "ollama_native_prompt_store.rs"]
 mod store;
-
-const MAX_ATTEMPTED_MODELS: usize = 512;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NativePromptOrigin {
     Catalog,
     CurrentModel,
-    Registry,
+    Unavailable,
 }
 
 pub fn lookup_origin(customized: bool, cached: bool) -> NativePromptOrigin {
     if cached {
         NativePromptOrigin::Catalog
     } else if customized {
-        NativePromptOrigin::Registry
+        NativePromptOrigin::Unavailable
     } else {
         NativePromptOrigin::CurrentModel
     }
@@ -43,15 +36,7 @@ pub async fn get(ollama: &OllamaClient, model: &str) -> Option<String> {
         cached_state.is_some(),
     ) {
         NativePromptOrigin::Catalog => prompt_from_state(&cached_state?),
-        NativePromptOrigin::Registry => {
-            if !mark_registry_attempt(model) {
-                return None;
-            }
-            let state = registry::fetch(model).await.ok()?;
-            let prompt = prompt_from_state(&state);
-            let _ = record(model, state);
-            prompt
-        }
+        NativePromptOrigin::Unavailable => None,
         NativePromptOrigin::CurrentModel => {
             let state = current_state(ollama, model).await.ok()?;
             let prompt = prompt_from_state(&state);
@@ -119,21 +104,6 @@ fn mutate_catalog(
 fn catalog() -> &'static Mutex<NativePromptCatalog> {
     static CATALOG: OnceLock<Mutex<NativePromptCatalog>> = OnceLock::new();
     CATALOG.get_or_init(|| Mutex::new(NativePromptCatalog::read_from_path(&store_path())))
-}
-
-fn mark_registry_attempt(model: &str) -> bool {
-    static ATTEMPTED: OnceLock<Mutex<BTreeSet<String>>> = OnceLock::new();
-    let Ok(mut attempted) = ATTEMPTED
-        .get_or_init(|| Mutex::new(BTreeSet::new()))
-        .lock()
-    else {
-        return false;
-    };
-    if attempted.contains(model) || attempted.len() >= MAX_ATTEMPTED_MODELS {
-        return false;
-    }
-    attempted.insert(model.to_string());
-    true
 }
 
 fn store_path() -> std::path::PathBuf {
