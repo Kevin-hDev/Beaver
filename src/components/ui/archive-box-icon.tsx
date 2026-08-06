@@ -7,7 +7,7 @@ import type { InlineIconProps } from "./inline-icon";
    La taille par défaut est celle des menus de la barre latérale, d'où l'action
    est lancée ; les Réglages, qui affichent leurs dessins plus grands, passent
    la leur. */
-export function ArchiveBoxIcon({ size = "var(--session-action-icon-size)", className }: InlineIconProps) {
+export function ArchiveBoxIcon({ size = "var(--session-icon-size)", className }: InlineIconProps) {
   return (
     <InlineIcon size={size} className={className} viewBox="0 0 24 25">
       <path fill="currentColor" d="M10 11.565a.75.75 0 1 0 0 1.5h4a.75.75 0 0 0 0-1.5z" />

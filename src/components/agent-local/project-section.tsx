@@ -113,7 +113,7 @@ export function ProjectSection({
           />
         ) : (
           <>
-            <FolderStateIcon open={!collapsed} size="var(--icon-sm)" className="conv-icon conv-folder-icon" />
+            <FolderStateIcon open={!collapsed} className="conv-icon conv-folder-icon" />
             <span className="conv-project-name">{project.name}</span>
             <div className="conv-project-actions">
               <button className="conv-project-action-btn" onClick={(e) => { e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY }); }}>

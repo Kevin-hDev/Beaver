@@ -17,8 +17,8 @@ describe("dessins des actions sur une session", () => {
     for (const node of [<ArchiveBoxIcon key="archive" />, <RenameIcon key="rename" />]) {
       const svg = drawing(node);
 
-      expect(svg.style.width).toBe("var(--session-action-icon-size)");
-      expect(svg.style.height).toBe("var(--session-action-icon-size)");
+      expect(svg.style.width).toBe("var(--session-icon-size)");
+      expect(svg.style.height).toBe("var(--session-icon-size)");
     }
   });
 

@@ -139,10 +139,10 @@
      l'échelle d'icônes si elle bouge. */
   --settings-tab-icon-size: calc(var(--icon-md) * 0.8);
   --settings-status-dot-size: 0.375rem;
-  /* Dessins des actions portées par une session — renommer, archiver — dans
-     les menus de la barre latérale. Un cinquième sous l'icône courante de ces
-     menus, pour la même raison que ceux de la colonne de Réglages. */
-  --session-action-icon-size: calc(var(--icon-sm) * 0.8);
+  /* Dessins qui accompagnent une session ou un projet dans la barre latérale :
+     état d'un dossier, renommer, archiver. Un cinquième sous l'icône courante
+     de ces lignes, pour la même raison que ceux de la colonne de Réglages. */
+  --session-icon-size: calc(var(--icon-sm) * 0.8);
   --system-prompt-tier-min-width: 5.1111rem;
   --system-prompt-card-header-min-height: 3.2222rem;
   --system-prompt-preview-min-height: 6.6667rem;
