@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { PersonalityFile } from "@/types/personality";
-import { FileText } from "@/components/ui/icons";
+import { PersonalityFileIcon } from "./personality-file-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import "./personality-list.css";
@@ -54,7 +54,7 @@ export function PersonalityList({
               onClick={() => onSelect(f.path)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(f.path); } }}
             >
-              <div className="pers-icon"><FileText size="var(--icon-md)" weight="duotone" /></div>
+              <div className="pers-icon"><PersonalityFileIcon /></div>
               <div className="pers-item-body">
                 <div className="pers-item-name">{f.name}</div>
                 <div className="pers-item-desc">{f.description}</div>

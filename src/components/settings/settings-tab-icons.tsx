@@ -5,7 +5,7 @@ import type { InlineIconProps } from "@/components/ui/inline-icon";
 
 export type SettingsTabIconProps = InlineIconProps;
 
-const TAB_ICON_SIZE = "var(--settings-tab-icon-size)";
+const TAB_ICON_SIZE = "var(--nav-icon-size)";
 
 function TabIcon({ size = TAB_ICON_SIZE, className, viewBox, children }: SettingsTabIconProps & { viewBox: string; children: ReactNode }) {
   return <InlineIcon size={size} className={className} viewBox={viewBox}>{children}</InlineIcon>;

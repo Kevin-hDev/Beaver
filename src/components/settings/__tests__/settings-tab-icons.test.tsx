@@ -30,8 +30,8 @@ describe("dessins des onglets de Réglages", () => {
       const svg = drawing(<tab.icon />);
 
       expect(svg.getAttribute("viewBox")).toMatch(/^0 0 \d+ \d+$/);
-      expect(svg.style.width).toBe("var(--settings-tab-icon-size)");
-      expect(svg.style.height).toBe("var(--settings-tab-icon-size)");
+      expect(svg.style.width).toBe("var(--nav-icon-size)");
+      expect(svg.style.height).toBe("var(--nav-icon-size)");
     }
   });
 
@@ -56,7 +56,7 @@ describe("dessins des onglets de Réglages", () => {
   });
 
   it("réduit les deux tailles d'un cinquième sous l'icône de référence", () => {
-    expect(TOKENS).toContain("--settings-tab-icon-size: calc(var(--icon-md) * 0.8);");
+    expect(TOKENS).toContain("--nav-icon-size: calc(var(--icon-md) * 0.8);");
     expect(TOKENS).toContain("--session-icon-size: calc(var(--icon-sm) * 0.8);");
     expect(TOKENS).toContain("--project-folder-icon-size: calc(var(--session-icon-size) * 1.2);");
   });

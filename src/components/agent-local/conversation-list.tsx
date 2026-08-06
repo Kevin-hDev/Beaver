@@ -110,7 +110,7 @@ export function ConversationList({
     <>
       <div className="conv-header">
         <button className="conv-new-btn" onClick={onCreate}>
-          <ComposeIcon size="var(--icon-sm)" />
+          <ComposeIcon size="var(--session-icon-size)" />
           <span className="conv-new-label">{t("agentLocal.newSession")}</span>
         </button>
       </div>
