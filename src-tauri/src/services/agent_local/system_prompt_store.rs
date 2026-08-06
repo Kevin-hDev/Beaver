@@ -144,7 +144,7 @@ fn normalize_override(prompt: &str) -> Result<PromptOverride, String> {
 
 pub use runtime::{
     remove_ollama_model, restore_global, restore_ollama, restore_ollama_default, save_global,
-    save_ollama, snapshot,
+    save_ollama, snapshot, snapshot_for_runtime,
 };
 #[cfg(test)]
 pub(crate) use runtime::SystemPromptSettingsStore;

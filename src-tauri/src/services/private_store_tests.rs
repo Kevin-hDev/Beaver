@@ -1,6 +1,7 @@
 #[cfg(any(unix, windows))]
 use super::repair_path;
 use super::{atomic_write, read_bounded_regular, BoundedFile};
+use super::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
 use rand::RngCore;
 
 fn test_dir() -> std::path::PathBuf {
@@ -110,8 +111,22 @@ fn bounded_read_rejects_content_larger_than_the_limit() {
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(&path, b"too large").unwrap();
 
-    assert!(read_bounded_regular(&path, 4).is_err());
+    assert_eq!(
+        read_bounded_regular(&path, 4),
+        Err("private-store-unavailable".to_string())
+    );
     let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn failed_initial_write_is_not_misreported_as_a_missing_file() {
+    let errors = StoreErrorCodes::new("missing", "read", "write");
+    let mut store = CachedStore::<usize>::new(StoreLoad::Unavailable(StoreFailure::Write));
+
+    assert_eq!(
+        store.candidate_for_write(|| StoreLoad::Missing, &errors),
+        Err("write".to_string())
+    );
 }
 
 #[cfg(unix)]

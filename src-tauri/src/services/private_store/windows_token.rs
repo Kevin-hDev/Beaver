@@ -1,3 +1,4 @@
+use super::private_store_error;
 use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_INSUFFICIENT_BUFFER, HANDLE,
 };
@@ -7,7 +8,6 @@ use windows_sys::Win32::Security::{
 use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 const MAX_TOKEN_INFO: usize = 65_536;
-const ERROR: &str = "stockage privé indisponible";
 
 pub struct CurrentUser {
     _storage: Vec<usize>,
@@ -26,12 +26,12 @@ pub fn current_user() -> Result<CurrentUser, String> {
     let first =
         unsafe { GetTokenInformation(token.0, TokenUser, std::ptr::null_mut(), 0, &mut required) };
     if first != 0 || unsafe { GetLastError() } != ERROR_INSUFFICIENT_BUFFER {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
 
-    let size = usize::try_from(required).map_err(|_| ERROR.to_string())?;
+    let size = usize::try_from(required).map_err(|_| private_store_error())?;
     if !(std::mem::size_of::<TOKEN_USER>()..=MAX_TOKEN_INFO).contains(&size) {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
     let words = size.div_ceil(std::mem::size_of::<usize>());
     let mut storage = vec![0_usize; words];
@@ -45,12 +45,12 @@ pub fn current_user() -> Result<CurrentUser, String> {
         )
     };
     if success == 0 {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
 
     let user = unsafe { &*storage.as_ptr().cast::<TOKEN_USER>() };
     if user.User.Sid.is_null() || unsafe { IsValidSid(user.User.Sid) } == 0 {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
     Ok(CurrentUser {
         sid: user.User.Sid,
@@ -72,7 +72,7 @@ fn open_process_token() -> Result<Token, String> {
     let mut token = std::ptr::null_mut();
     let success = unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) };
     if success == 0 || token.is_null() {
-        Err(ERROR.to_string())
+        Err(private_store_error())
     } else {
         Ok(Token(token))
     }

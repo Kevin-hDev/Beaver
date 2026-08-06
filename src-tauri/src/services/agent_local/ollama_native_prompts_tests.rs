@@ -92,6 +92,24 @@ fn unavailable_native_prompt_store_recovers_after_a_valid_file_is_restored() {
 }
 
 #[test]
+fn deleted_native_prompt_store_reports_that_the_file_is_missing() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory
+        .path()
+        .join("ollama-native-system-prompts.json");
+    let store = NativePromptStore::open(path.clone());
+    store
+        .record("first:latest", NativePromptState::Absent)
+        .unwrap();
+    std::fs::remove_file(path).unwrap();
+
+    assert_eq!(
+        store.record("second:latest", NativePromptState::Absent),
+        Err("ollama-native-prompt-store-missing".to_string())
+    );
+}
+
+#[test]
 fn native_prompt_store_does_not_overwrite_corruption_that_happens_after_open() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("ollama-native-system-prompts.json");

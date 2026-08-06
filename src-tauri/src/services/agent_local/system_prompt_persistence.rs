@@ -22,7 +22,7 @@ impl SystemPromptSettings {
         match Self::load_from_path(path) {
             SettingsLoad::Missing => Ok(Self::default()),
             SettingsLoad::Ready(settings) => Ok(settings),
-            SettingsLoad::Unavailable => Err(store_unavailable()),
+            SettingsLoad::Unavailable(failure) => Err(store_failure(failure)),
         }
     }
 
@@ -31,7 +31,7 @@ impl SystemPromptSettings {
         match Self::load_with_legacy(path, legacy_path) {
             SettingsLoad::Missing => Ok(Self::default()),
             SettingsLoad::Ready(settings) => Ok(settings),
-            SettingsLoad::Unavailable => Err(store_unavailable()),
+            SettingsLoad::Unavailable(failure) => Err(store_failure(failure)),
         }
     }
 
@@ -63,12 +63,26 @@ impl SystemPromptSettings {
 
     pub(super) fn load_with_legacy(path: &Path, legacy_path: &Path) -> SettingsLoad {
         match Self::load_from_path(path) {
-            SettingsLoad::Ready(settings) => SettingsLoad::Ready(settings),
-            SettingsLoad::Unavailable => SettingsLoad::Unavailable,
+            SettingsLoad::Ready(settings) => {
+                if retire_legacy(legacy_path).is_err() {
+                    return SettingsLoad::Unavailable(
+                        crate::services::private_store::StoreFailure::Write,
+                    );
+                }
+                SettingsLoad::Ready(settings)
+            }
+            SettingsLoad::Unavailable(failure) => SettingsLoad::Unavailable(failure),
             SettingsLoad::Missing => match migrate_legacy(legacy_path) {
                 SettingsLoad::Ready(settings) => {
                     if settings.write_to_path(path).is_err() {
-                        return SettingsLoad::Unavailable;
+                        return SettingsLoad::Unavailable(
+                            crate::services::private_store::StoreFailure::Write,
+                        );
+                    }
+                    if retire_legacy(legacy_path).is_err() {
+                        return SettingsLoad::Unavailable(
+                            crate::services::private_store::StoreFailure::Write,
+                        );
                     }
                     SettingsLoad::Ready(settings)
                 }
@@ -86,12 +100,18 @@ impl SystemPromptSettings {
                 return SettingsLoad::Missing;
             }
             Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
-            Err(_) => return SettingsLoad::Unavailable,
+            Err(_) => {
+                return SettingsLoad::Unavailable(
+                    crate::services::private_store::StoreFailure::Read,
+                );
+            }
         };
         serde_json::from_slice::<Self>(&content)
             .map(Self::sanitized)
             .map(SettingsLoad::Ready)
-            .unwrap_or(SettingsLoad::Unavailable)
+            .unwrap_or(SettingsLoad::Unavailable(
+                crate::services::private_store::StoreFailure::Read,
+            ))
     }
 }
 
@@ -101,10 +121,16 @@ fn migrate_legacy(path: &Path) -> SettingsLoad {
             return SettingsLoad::Missing;
         }
         Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
-        Err(_) => return SettingsLoad::Unavailable,
+        Err(_) => {
+            return SettingsLoad::Unavailable(
+                crate::services::private_store::StoreFailure::Read,
+            );
+        }
     };
     let Ok(legacy) = serde_json::from_slice::<LegacyStore>(&content) else {
-        return SettingsLoad::Unavailable;
+        return SettingsLoad::Unavailable(
+            crate::services::private_store::StoreFailure::Read,
+        );
     };
     let mut settings = SystemPromptSettings::default();
     for (model, prompt) in legacy.prompts.into_iter().take(MAX_MODELS) {
@@ -148,4 +174,22 @@ fn sanitize_override(value: &PromptOverride) -> Option<PromptOverride> {
 #[cfg(test)]
 fn store_unavailable() -> String {
     "system-prompt-store-unavailable".to_string()
+}
+
+#[cfg(test)]
+fn store_failure(failure: crate::services::private_store::StoreFailure) -> String {
+    match failure {
+        crate::services::private_store::StoreFailure::Read => store_unavailable(),
+        crate::services::private_store::StoreFailure::Write => {
+            "system-prompt-store-write".to_string()
+        }
+    }
+}
+
+fn retire_legacy(path: &Path) -> Result<(), String> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err("system-prompt-store-write".to_string()),
+    }
 }

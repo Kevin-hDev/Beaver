@@ -494,6 +494,22 @@ fn corrupt_system_prompt_settings_are_unavailable_and_never_overwritten() {
 }
 
 #[test]
+fn runtime_prompt_composition_falls_back_to_defaults_when_settings_are_corrupt() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    std::fs::write(&path, b"{not valid json").unwrap();
+    let store = SystemPromptSettingsStore::open(path, legacy_path);
+
+    let settings = store.snapshot_for_runtime();
+
+    assert_eq!(
+        settings.global_override(PromptMode::Chatbot, PromptTier::Compact),
+        None
+    );
+}
+
+#[test]
 fn unavailable_system_prompt_store_recovers_after_valid_settings_are_restored() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("system-prompt-settings.json");
@@ -552,9 +568,90 @@ fn deleted_current_settings_do_not_resurrect_stale_legacy_prompts() {
 
     assert_eq!(
         store.save_global(PromptMode::Chatbot, PromptTier::Detailed, "new"),
-        Err("system-prompt-store-unavailable".to_string())
+        Err("system-prompt-store-missing".to_string())
     );
     assert!(!path.exists());
+}
+
+#[test]
+fn successful_legacy_migration_is_retired_before_a_later_restart() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    std::fs::write(
+        &legacy_path,
+        br#"{"prompts":{"gemma4:e2b":"legacy prompt"}}"#,
+    )
+    .unwrap();
+
+    let first = SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
+    assert_eq!(
+        first.ollama_override(
+            "gemma4:e2b",
+            PromptMode::Chatbot,
+            PromptTier::Compact,
+        ),
+        Some(&PromptOverride::Custom("legacy prompt".to_string()))
+    );
+    assert!(!legacy_path.exists());
+
+    std::fs::remove_file(&path).unwrap();
+    let restarted = SystemPromptSettingsStore::open(path, legacy_path);
+    assert_eq!(
+        restarted
+            .snapshot()
+            .unwrap()
+            .ollama_override(
+                "gemma4:e2b",
+                PromptMode::Chatbot,
+                PromptTier::Compact,
+            ),
+        None
+    );
+}
+
+#[test]
+fn stale_legacy_file_is_retired_when_current_settings_already_exist() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    let mut current = SystemPromptSettings::default();
+    current
+        .set_global(PromptMode::Chatbot, PromptTier::Compact, "current")
+        .unwrap();
+    current.write_to_path(&path).unwrap();
+    std::fs::write(
+        &legacy_path,
+        br#"{"prompts":{"gemma4:e2b":"stale legacy"}}"#,
+    )
+    .unwrap();
+
+    let loaded = SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
+
+    assert_eq!(
+        loaded.global_override(PromptMode::Chatbot, PromptTier::Compact),
+        Some(&PromptOverride::Custom("current".to_string()))
+    );
+    assert!(!legacy_path.exists());
+}
+
+#[test]
+#[cfg(unix)]
+fn failed_legacy_migration_write_reports_a_write_error() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = tempfile::tempdir().unwrap();
+    let legacy_parent = directory.path().join("read-only-legacy");
+    std::fs::create_dir(&legacy_parent).unwrap();
+    let legacy_path = legacy_parent.join("ollama-system-prompts.json");
+    std::fs::write(&legacy_path, br#"{"prompts":{}}"#).unwrap();
+    std::fs::set_permissions(&legacy_parent, std::fs::Permissions::from_mode(0o500)).unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+
+    let result = SystemPromptSettings::read_with_legacy(&path, &legacy_path).err();
+    std::fs::set_permissions(&legacy_parent, std::fs::Permissions::from_mode(0o700)).unwrap();
+
+    assert_eq!(result, Some("system-prompt-store-write".to_string()));
 }
 
 #[test]

@@ -6,6 +6,12 @@ use std::sync::Mutex;
 const MAX_MODELS: usize = 512;
 const MAX_PROMPT_BYTES: usize = 64 * 1024;
 const MAX_STORE_BYTES: u64 = 8 * 1024 * 1024;
+const STORE_ERRORS: crate::services::private_store::StoreErrorCodes =
+    crate::services::private_store::StoreErrorCodes::new(
+        "ollama-native-prompt-store-missing",
+        "ollama-native-prompt-store-unavailable",
+        "ollama-native-prompt-write",
+    );
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "state", content = "content", rename_all = "lowercase")]
@@ -43,7 +49,7 @@ impl NativePromptStore {
         Ok(current
             .value_or_reload(
                 || NativePromptCatalog::load_from_path(&self.path),
-                store_unavailable(),
+                &STORE_ERRORS,
             )?
             .get(model)
             .cloned())
@@ -70,7 +76,7 @@ impl NativePromptStore {
             .map_err(|_| "ollama-native-prompt-store-unavailable".to_string())?;
         let mut candidate = current.candidate_for_write(
             || NativePromptCatalog::load_from_path(&self.path),
-            store_unavailable(),
+            &STORE_ERRORS,
         )?;
         update(&mut candidate)?;
         candidate.write_to_path(&self.path)?;
@@ -103,7 +109,7 @@ impl NativePromptCatalog {
         match Self::load_from_path(path) {
             crate::services::private_store::StoreLoad::Missing => Ok(Self::default()),
             crate::services::private_store::StoreLoad::Ready(catalog) => Ok(catalog),
-            crate::services::private_store::StoreLoad::Unavailable => {
+            crate::services::private_store::StoreLoad::Unavailable(_) => {
                 Err(store_unavailable().to_string())
             }
         }
@@ -143,15 +149,22 @@ impl NativePromptCatalog {
                 return crate::services::private_store::StoreLoad::Missing;
             }
             Ok(crate::services::private_store::BoundedFile::Content(content)) => content,
-            Err(_) => return crate::services::private_store::StoreLoad::Unavailable,
+            Err(_) => {
+                return crate::services::private_store::StoreLoad::Unavailable(
+                    crate::services::private_store::StoreFailure::Read,
+                );
+            }
         };
         serde_json::from_slice::<Self>(&content)
             .map(Self::sanitized)
             .map(crate::services::private_store::StoreLoad::Ready)
-            .unwrap_or(crate::services::private_store::StoreLoad::Unavailable)
+            .unwrap_or(crate::services::private_store::StoreLoad::Unavailable(
+                crate::services::private_store::StoreFailure::Read,
+            ))
     }
 }
 
+#[cfg(test)]
 fn store_unavailable() -> &'static str {
     "ollama-native-prompt-store-unavailable"
 }

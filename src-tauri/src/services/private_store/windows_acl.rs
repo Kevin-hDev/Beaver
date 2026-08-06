@@ -1,3 +1,4 @@
+use super::private_store_error;
 use windows_sys::core::PWSTR;
 use windows_sys::Win32::Foundation::{LocalFree, ERROR_SUCCESS, HLOCAL};
 use windows_sys::Win32::Security::Authorization::{
@@ -12,15 +13,13 @@ use windows_sys::Win32::Security::{
 };
 use windows_sys::Win32::Storage::FileSystem::FILE_ALL_ACCESS;
 
-const ERROR: &str = "stockage privé indisponible";
-
 pub fn apply_and_verify(path: &[u16], sid: PSID, is_directory: bool) -> Result<(), String> {
     let inheritance = inheritance_for(is_directory);
     let entry = explicit_access(sid, inheritance);
     let mut acl = std::ptr::null_mut();
     let status = unsafe { SetEntriesInAclW(1, &entry, std::ptr::null(), &mut acl) };
     if status != ERROR_SUCCESS || acl.is_null() {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
     let acl_guard = LocalAllocation(acl.cast());
     let status = unsafe {
@@ -35,7 +34,7 @@ pub fn apply_and_verify(path: &[u16], sid: PSID, is_directory: bool) -> Result<(
         )
     };
     if status != ERROR_SUCCESS {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
     drop(acl_guard);
     verify(path, sid, inheritance)
@@ -57,7 +56,7 @@ fn verify(path: &[u16], sid: PSID, inheritance: u32) -> Result<(), String> {
         )
     };
     if status != ERROR_SUCCESS || acl.is_null() || descriptor.is_null() {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
     let descriptor_guard = LocalAllocation(descriptor.cast());
     verify_descriptor(descriptor)?;
@@ -71,7 +70,7 @@ fn verify_descriptor(descriptor: PSECURITY_DESCRIPTOR) -> Result<(), String> {
     let mut revision = 0_u32;
     let success = unsafe { GetSecurityDescriptorControl(descriptor, &mut control, &mut revision) };
     if success == 0 || control & SE_DACL_PROTECTED == 0 {
-        Err(ERROR.to_string())
+        Err(private_store_error())
     } else {
         Ok(())
     }
@@ -82,7 +81,7 @@ fn verify_entries(acl: *const ACL, sid: PSID, inheritance: u32) -> Result<(), St
     let mut entries = std::ptr::null_mut();
     let status = unsafe { GetExplicitEntriesFromAclW(acl, &mut count, &mut entries) };
     if status != ERROR_SUCCESS || count != 1 || entries.is_null() {
-        return Err(ERROR.to_string());
+        return Err(private_store_error());
     }
     let entries_guard = LocalAllocation(entries.cast());
     let entry = unsafe { &*entries };
@@ -97,7 +96,7 @@ fn verify_entries(acl: *const ACL, sid: PSID, inheritance: u32) -> Result<(), St
         && unsafe { IsValidSid(entry_sid) } != 0
         && unsafe { EqualSid(entry_sid, sid) } != 0;
     drop(entries_guard);
-    valid.then_some(()).ok_or_else(|| ERROR.to_string())
+    valid.then_some(()).ok_or_else(private_store_error)
 }
 
 fn valid_trustee_type(trustee_type: i32) -> bool {

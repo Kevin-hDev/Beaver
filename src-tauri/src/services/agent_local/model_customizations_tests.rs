@@ -247,6 +247,20 @@ fn customization_store_does_not_overwrite_corruption_that_happens_after_open() {
 }
 
 #[test]
+fn deleted_customization_store_reports_that_the_file_is_missing() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("ollama-custom-models.json");
+    let store = ModelCustomizationStore::open(path.clone());
+    store.mark_parameters("first:latest").unwrap();
+    std::fs::remove_file(path).unwrap();
+
+    assert_eq!(
+        store.mark_parameters("second:latest"),
+        Err("ollama-custom-store-missing".to_string())
+    );
+}
+
+#[test]
 fn invalid_model_name_is_not_reported_as_customized() {
     let directory = tempfile::tempdir().unwrap();
     let store = ModelCustomizationStore::open(

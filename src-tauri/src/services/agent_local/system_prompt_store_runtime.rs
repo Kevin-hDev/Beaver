@@ -3,8 +3,19 @@ use crate::services::agent_local::system_prompt_types::{PromptMode, PromptTier};
 use std::path::PathBuf;
 use std::sync::{Mutex, OnceLock};
 
+const STORE_ERRORS: crate::services::private_store::StoreErrorCodes =
+    crate::services::private_store::StoreErrorCodes::new(
+        "system-prompt-store-missing",
+        "system-prompt-store-unavailable",
+        "system-prompt-store-write",
+    );
+
 pub fn snapshot() -> Result<SystemPromptSettings, String> {
     runtime_store().snapshot()
+}
+
+pub fn snapshot_for_runtime() -> SystemPromptSettings {
+    runtime_store().snapshot_for_runtime()
 }
 
 pub fn save_global(mode: PromptMode, tier: PromptTier, prompt: &str) -> Result<(), String> {
@@ -71,9 +82,13 @@ impl SystemPromptSettingsStore {
         current
             .value_or_reload(
                 || SystemPromptSettings::load_from_path(&self.path),
-                store_unavailable(),
+                &STORE_ERRORS,
             )
             .cloned()
+    }
+
+    pub(crate) fn snapshot_for_runtime(&self) -> SystemPromptSettings {
+        self.snapshot().unwrap_or_default()
     }
 
     pub(crate) fn save_global(
@@ -95,7 +110,7 @@ impl SystemPromptSettingsStore {
             .map_err(|_| store_unavailable())?;
         let mut candidate = current.candidate_for_write(
             || SystemPromptSettings::load_from_path(&self.path),
-            store_unavailable(),
+            &STORE_ERRORS,
         )?;
         update(&mut candidate)?;
         candidate.write_to_path(&self.path)?;

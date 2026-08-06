@@ -1126,9 +1126,15 @@
     "crashMessage": "Une erreur est survenue. Relance l'application.",
     "operationFailed": "L'opération a échoué. Réessaye.",
     "localStore": {
-      "ollamaCustomization": "Le fichier de personnalisation Ollama est illisible. Restaure « ollama-custom-models.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver, puis réessaye.",
-      "ollamaNativePrompts": "Le fichier des instructions natives Ollama est illisible. Restaure « ollama-native-system-prompts.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver, puis réessaye.",
-      "systemPrompts": "Le fichier des réglages de system prompt est illisible. Restaure « system-prompt-settings.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver, puis réessaye."
+      "ollamaCustomization": "Le fichier de personnalisation Ollama est illisible. Restaure « ollama-custom-models.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver. Ne le supprime pas : il permet de distinguer les modèles personnalisés de leur version d’origine.",
+      "ollamaNativePrompts": "Le fichier des instructions natives Ollama est illisible. Restaure « ollama-native-system-prompts.json » depuis une sauvegarde. Sans sauvegarde, ferme Beaver, supprime ce fichier dans Réglages > Avancé > Données Beaver, puis relance l’application pour repartir des valeurs par défaut.",
+      "systemPrompts": "Le fichier des réglages de system prompt est illisible. Restaure « system-prompt-settings.json » depuis une sauvegarde. Sans sauvegarde, ferme Beaver, supprime ce fichier et l’ancien « ollama-system-prompts.json » s’il existe, puis relance l’application pour repartir des valeurs par défaut.",
+      "ollamaCustomizationMissing": "Le fichier « ollama-custom-models.json » a été supprimé pendant l’exécution. Restaure-le depuis une sauvegarde dans Réglages > Avancé > Données Beaver avant de redémarrer : il permet de distinguer les modèles personnalisés de leur version d’origine.",
+      "ollamaNativePromptsMissing": "Le fichier « ollama-native-system-prompts.json » a été supprimé pendant l’exécution. Si c’était volontaire, redémarre Beaver. Sinon, restaure-le depuis une sauvegarde dans Réglages > Avancé > Données Beaver.",
+      "systemPromptsMissing": "Le fichier « system-prompt-settings.json » a été supprimé pendant l’exécution. Si c’était volontaire, redémarre Beaver. Sinon, restaure-le depuis une sauvegarde dans Réglages > Avancé > Données Beaver.",
+      "ollamaCustomizationWrite": "Beaver ne peut pas enregistrer « ollama-custom-models.json ». Vérifie que le disque n’est pas plein, puis réessaye.",
+      "ollamaNativePromptsWrite": "Beaver ne peut pas enregistrer « ollama-native-system-prompts.json ». Vérifie que le disque n’est pas plein, puis réessaye.",
+      "systemPromptsWrite": "Beaver ne peut pas enregistrer « system-prompt-settings.json ». Vérifie que le disque n’est pas plein, puis réessaye."
     },
     "streamStartFailed": "Le flux n'a pas pu démarrer.",
     "streamInterrupted": "Le flux s'est interrompu.",

@@ -1,4 +1,4 @@
-use super::{windows_acl, windows_token};
+use super::{private_store_error, windows_acl, windows_token};
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 
@@ -15,9 +15,7 @@ pub fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
             MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
         )
     };
-    (success != 0)
-        .then_some(())
-        .ok_or_else(|| "stockage privé indisponible".to_string())
+    (success != 0).then_some(()).ok_or_else(private_store_error)
 }
 
 pub fn secure_acl(path: &Path) -> Result<(), String> {
@@ -33,7 +31,7 @@ fn path_is_directory(path: &[u16]) -> Result<bool, String> {
     };
     let attributes = unsafe { GetFileAttributesW(path.as_ptr()) };
     if attributes == INVALID_FILE_ATTRIBUTES {
-        Err("stockage privé indisponible".to_string())
+        Err(private_store_error())
     } else {
         Ok(attributes & FILE_ATTRIBUTE_DIRECTORY != 0)
     }

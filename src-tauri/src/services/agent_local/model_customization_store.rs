@@ -6,6 +6,12 @@ use std::sync::Mutex;
 
 const MAX_CUSTOM_MODELS: usize = 512;
 const MAX_STORE_BYTES: u64 = 256 * 1024;
+const STORE_ERRORS: crate::services::private_store::StoreErrorCodes =
+    crate::services::private_store::StoreErrorCodes::new(
+        "ollama-custom-store-missing",
+        "ollama-custom-store-unavailable",
+        "ollama-custom-store-write",
+    );
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub(crate) struct ModelCustomizationCatalog {
@@ -47,7 +53,7 @@ impl ModelCustomizationStore {
             .lock()
             .map_err(|_| "ollama-custom-store-read".to_string())?;
         Ok(current
-            .value_or_reload(|| load_catalog(&self.path), store_unavailable())?
+            .value_or_reload(|| load_catalog(&self.path), &STORE_ERRORS)?
             .kind(name))
     }
 
@@ -77,7 +83,7 @@ impl ModelCustomizationStore {
             .map_err(|_| "ollama-custom-store-write".to_string())?;
         let mut candidate = current.candidate_for_write(
             || load_catalog(&self.path),
-            store_unavailable(),
+            &STORE_ERRORS,
         )?;
         update(&mut candidate)?;
         candidate.write_to_path(&self.path)?;
@@ -123,7 +129,7 @@ impl ModelCustomizationCatalog {
         match load_catalog(path) {
             crate::services::private_store::StoreLoad::Missing => Ok(Self::default()),
             crate::services::private_store::StoreLoad::Ready(catalog) => Ok(catalog),
-            crate::services::private_store::StoreLoad::Unavailable => {
+            crate::services::private_store::StoreLoad::Unavailable(_) => {
                 Err(store_unavailable().to_string())
             }
         }
@@ -200,14 +206,19 @@ fn load_catalog(
         CatalogLoad::Missing => crate::services::private_store::StoreLoad::Missing,
         CatalogLoad::Ready { catalog, migrated } => {
             if migrated && catalog.write_to_path(path).is_err() {
-                return crate::services::private_store::StoreLoad::Unavailable;
+                return crate::services::private_store::StoreLoad::Unavailable(
+                    crate::services::private_store::StoreFailure::Write,
+                );
             }
             crate::services::private_store::StoreLoad::Ready(catalog)
         }
-        CatalogLoad::Unavailable => crate::services::private_store::StoreLoad::Unavailable,
+        CatalogLoad::Unavailable => crate::services::private_store::StoreLoad::Unavailable(
+            crate::services::private_store::StoreFailure::Read,
+        ),
     }
 }
 
+#[cfg(test)]
 fn store_unavailable() -> &'static str {
     "ollama-custom-store-unavailable"
 }

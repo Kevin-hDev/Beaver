@@ -1073,9 +1073,15 @@
     "crashMessage": "エラーが発生しました。アプリケーションを再起動してください。",
     "operationFailed": "操作に失敗しました。もう一度お試しください。",
     "localStore": {
-      "ollamaCustomization": "Ollama のカスタマイズファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-custom-models.json」を復元して、もう一度お試しください。",
-      "ollamaNativePrompts": "Ollama のネイティブ指示ファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-native-system-prompts.json」を復元して、もう一度お試しください。",
-      "systemPrompts": "システムプロンプト設定ファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「system-prompt-settings.json」を復元して、もう一度お試しください。"
+      "ollamaCustomization": "Ollama のカスタマイズファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-custom-models.json」を復元してください。削除しないでください。Beaver がカスタマイズ済みモデルと元のバージョンを区別するために必要です。",
+      "ollamaNativePrompts": "Ollama のネイティブ指示ファイルを読み取れません。バックアップから「ollama-native-system-prompts.json」を復元してください。バックアップがない場合は Beaver を終了し、「設定 > 詳細 > Beaver データ」でこのファイルを削除してから再起動し、デフォルト値を使用してください。",
+      "systemPrompts": "システムプロンプト設定ファイルを読み取れません。バックアップから「system-prompt-settings.json」を復元してください。バックアップがない場合は Beaver を終了し、このファイルと、存在する場合は旧「ollama-system-prompts.json」を削除してから再起動し、デフォルト値を使用してください。",
+      "ollamaCustomizationMissing": "Beaver の実行中に「ollama-custom-models.json」が削除されました。再起動する前に、「設定 > 詳細 > Beaver データ」でバックアップから復元してください。Beaver がカスタマイズ済みモデルと元のバージョンを区別するために必要です。",
+      "ollamaNativePromptsMissing": "Beaver の実行中に「ollama-native-system-prompts.json」が削除されました。意図的な場合は Beaver を再起動してください。そうでない場合は、「設定 > 詳細 > Beaver データ」でバックアップから復元してください。",
+      "systemPromptsMissing": "Beaver の実行中に「system-prompt-settings.json」が削除されました。意図的な場合は Beaver を再起動してください。そうでない場合は、「設定 > 詳細 > Beaver データ」でバックアップから復元してください。",
+      "ollamaCustomizationWrite": "Beaver は「ollama-custom-models.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
+      "ollamaNativePromptsWrite": "Beaver は「ollama-native-system-prompts.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
+      "systemPromptsWrite": "Beaver は「system-prompt-settings.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。"
     },
     "streamStartFailed": "ストリームを開始できませんでした。",
     "streamInterrupted": "ストリームが中断されました。",

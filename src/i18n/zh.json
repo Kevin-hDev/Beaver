@@ -1073,9 +1073,15 @@
     "crashMessage": "发生错误，请重启应用。",
     "operationFailed": "操作失败，请重试。",
     "localStore": {
-      "ollamaCustomization": "Ollama 自定义文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“ollama-custom-models.json”，然后重试。",
-      "ollamaNativePrompts": "Ollama 原生指令文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“ollama-native-system-prompts.json”，然后重试。",
-      "systemPrompts": "系统提示词设置文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“system-prompt-settings.json”，然后重试。"
+      "ollamaCustomization": "Ollama 自定义文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“ollama-custom-models.json”。请勿删除它：Beaver 需要它来区分自定义模型和原始版本。",
+      "ollamaNativePrompts": "Ollama 原生指令文件无法读取。请从备份恢复“ollama-native-system-prompts.json”。如果没有备份，请关闭 Beaver，在“设置 > 高级 > Beaver 数据”中删除该文件，然后重启并使用默认值。",
+      "systemPrompts": "系统提示词设置文件无法读取。请从备份恢复“system-prompt-settings.json”。如果没有备份，请关闭 Beaver，删除该文件以及可能存在的旧“ollama-system-prompts.json”，然后重启并使用默认值。",
+      "ollamaCustomizationMissing": "Beaver 运行时“ollama-custom-models.json”已被删除。重启前，请在“设置 > 高级 > Beaver 数据”中从备份恢复它：Beaver 需要它来区分自定义模型和原始版本。",
+      "ollamaNativePromptsMissing": "Beaver 运行时“ollama-native-system-prompts.json”已被删除。如果这是有意操作，请重启 Beaver；否则请在“设置 > 高级 > Beaver 数据”中从备份恢复。",
+      "systemPromptsMissing": "Beaver 运行时“system-prompt-settings.json”已被删除。如果这是有意操作，请重启 Beaver；否则请在“设置 > 高级 > Beaver 数据”中从备份恢复。",
+      "ollamaCustomizationWrite": "Beaver 无法保存“ollama-custom-models.json”。请检查磁盘是否已满，然后重试。",
+      "ollamaNativePromptsWrite": "Beaver 无法保存“ollama-native-system-prompts.json”。请检查磁盘是否已满，然后重试。",
+      "systemPromptsWrite": "Beaver 无法保存“system-prompt-settings.json”。请检查磁盘是否已满，然后重试。"
     },
     "streamStartFailed": "流无法启动。",
     "streamInterrupted": "流传输被中断。",

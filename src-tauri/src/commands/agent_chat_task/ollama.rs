@@ -52,7 +52,7 @@ pub(crate) async fn run(
         prompt_mode,
         prompt_tier,
     );
-    let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot()?;
+    let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot_for_runtime();
     let instructions =
         match crate::services::agent_local::system_prompt_resolver::resolve_ollama_without_native(
             &prompt_settings,
