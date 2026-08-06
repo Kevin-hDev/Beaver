@@ -46,6 +46,12 @@
   transition: background var(--ease-smooth), color var(--ease-smooth);
 }
 
+/* Le dessin garde sa taille quand le libellé s'allonge : laissé compressible,
+   il s'écrasait en fuseau sur les onglets aux noms les plus longs. */
+.settings-subtab-icon {
+  flex-shrink: 0;
+}
+
 .settings-subtab-label {
   min-width: 0;
   overflow: hidden;
