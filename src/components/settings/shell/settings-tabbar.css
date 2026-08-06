@@ -22,8 +22,11 @@
   align-items: center;
   gap: var(--space-2xs);
   min-width: 0;
-  min-height: var(--settings-tabbar-item-height);
-  padding: var(--space-xs) var(--space-md);
+  /* Hauteur fixe et marge intérieure verticale nulle, comme les boutons : une
+     marge en rem regonflait l'onglet au-delà de la hauteur voulue dès que le
+     réglage de police montait. */
+  height: var(--settings-tabbar-item-height);
+  padding: 0 var(--space-md);
   /* Bordure transparente au repos : sans elle, l'onglet qui devient actif
      grandit d'un pixel et décale ses voisins. */
   border: var(--line-thin) solid transparent;

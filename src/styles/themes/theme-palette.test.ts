@@ -11,6 +11,7 @@ const toolPreviewsCss = readFileSync("src/components/agent-local/tool-previews.c
 const gitDiffCss = readFileSync("src/components/file-preview/git-diff-preview.css", "utf8");
 const chatCss = readFileSync("src/components/agent-local/chat.css", "utf8");
 const tabbarCss = readFileSync("src/components/settings/shell/settings-tabbar.css", "utf8");
+const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
 
 function tokenNames(css: string): string[] {
   return [...css.matchAll(/(--[a-z0-9-]+)\s*:/g)]
@@ -136,6 +137,11 @@ describe("Barre de sous-onglets des Réglages", () => {
   });
 
   it("fige la hauteur d'un onglet pour qu'elle ne suive pas son contenu", () => {
-    expect(tabbarCss).toContain("min-height: var(--settings-tabbar-item-height);");
+    expect(tabbarCss).toContain("height: var(--settings-tabbar-item-height);");
+    expect(tabbarCss).not.toContain("min-height: var(--settings-tabbar-item-height);");
+  });
+
+  it("aligne la hauteur d'un onglet sur celle d'un bouton", () => {
+    expect(tokensCss).toContain("--settings-tabbar-item-height: var(--btn-height);");
   });
 });
