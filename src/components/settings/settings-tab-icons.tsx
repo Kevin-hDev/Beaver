@@ -14,7 +14,7 @@ interface TabIconProps extends SettingsTabIconProps {
 /* Les dessins sont posés dans la page en SVG plutôt que chargés en image :
    `currentColor` ne suit la couleur de l'onglet — grise au repos, franche à la
    sélection — et celle du thème que si le tracé appartient au document. */
-function TabIcon({ size = "var(--icon-md)", className, viewBox, children }: TabIconProps) {
+function TabIcon({ size = "var(--settings-tab-icon-size)", className, viewBox, children }: TabIconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SETTINGS_SECTIONS } from "../settings-sections";
 
 const ICONS = readFileSync("src/components/settings/settings-tab-icons.tsx", "utf8");
+const TOKENS = readFileSync("src/styles/tokens.css", "utf8");
 
 describe("dessins des onglets de Réglages", () => {
   it("donne un dessin à chaque onglet", () => {
@@ -29,6 +30,13 @@ describe("dessins des onglets de Réglages", () => {
 
     expect(painted.length).toBeGreaterThan(0);
     expect(hardcoded).toEqual([]);
+  });
+
+  /* La colonne pose ses dessins plus petits que les icônes courantes : revenir
+     au token générique les regonflerait d'un quart sans que rien ne l'indique. */
+  it("pose les dessins à la taille réservée à la colonne", () => {
+    expect(ICONS).toContain('size = "var(--settings-tab-icon-size)"');
+    expect(TOKENS).toContain("--settings-tab-icon-size: calc(var(--icon-md) * 0.8);");
   });
 
   /* Le cadrage sert d'échelle au tracé : sans lui, le navigateur rend le dessin
