@@ -1,0 +1,132 @@
+/* Beaver — tokens, base typographique, textures, loader */
+
+:root {
+  --bg: #0A0908;
+  --bg-raise: #141210;
+  --ink: #F2EDE6;
+  --ink-dim: #8A8378;
+  --accent: #E8862E;
+  --line: #26221D;
+  --term-green: #7DBB7D;
+  --pill: rgba(20, 18, 16, .72);
+  --log: #2A231B;
+  --log-hi: #3D2F1E;
+}
+
+[data-theme="light"] {
+  --bg: #F4EFE7;
+  --bg-raise: #FFFDF9;
+  --ink: #1A1713;
+  --ink-dim: #6E6558;
+  --accent: #C2651B;
+  --line: #DCD2C2;
+  --term-green: #3E7D3E;
+  --pill: rgba(255, 253, 249, .78);
+  --log: #E4D8C6;
+  --log-hi: #D9C6A6;
+}
+
+/* Le palier `lead` est celui qui manquait en v1 : sans lui, le regard tombe
+   du titre géant directement dans le corps de texte, sans marche. */
+:root {
+  --f-display: 'Anton', 'Archivo Black', sans-serif;
+  --f-tension: 'Instrument Serif', Georgia, serif;
+  --f-text: 'Instrument Sans', system-ui, sans-serif;
+  --f-mono: 'Martian Mono', ui-monospace, monospace;
+
+  --t-hero: clamp(46px, 8.4vw, 132px);
+  --t-h2: clamp(38px, 6vw, 96px);
+  --t-h3: clamp(23px, 2.5vw, 38px);
+  --t-lead: clamp(17px, 1.45vw, 21px);
+  --t-body: 15.5px;
+  --t-small: 13.5px;
+  --t-label: 11.5px;
+
+  --pad-x: 6vw;
+  --gap-sec: clamp(88px, 13vh, 168px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-text);
+  font-size: var(--t-body);
+  line-height: 1.65;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+/* Dot-matrix : au-delà de ~.18 la trame moire pendant le défilement. */
+.grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: .15;
+}
+
+#dust { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+section { position: relative; z-index: 2; }
+
+h1, h2, h3 { font-family: var(--f-display); text-transform: uppercase; font-weight: 400; }
+
+h1 em, h2 em, h3 em, .foot-cta em {
+  font-family: var(--f-tension);
+  font-style: italic;
+  text-transform: none;
+  color: var(--accent);
+  font-size: .94em;
+}
+
+.kicker {
+  font-family: var(--f-mono);
+  font-size: var(--t-label);
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 22px;
+}
+
+.lead {
+  font-size: var(--t-lead);
+  line-height: 1.6;
+  color: var(--ink-dim);
+  max-width: 46ch;
+}
+.lead b { color: var(--ink); font-weight: 600; }
+
+.sec-head {
+  padding: var(--gap-sec) var(--pad-x) 54px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 48px; flex-wrap: wrap;
+}
+
+/* Anton est très condensé : sous 1.0, les accents des capitales sont mangés
+   par la ligne du dessus dès qu'un titre passe sur deux lignes. */
+h2 { font-size: var(--t-h2); line-height: 1.0; }
+
+/* Deuxième ligne plus petite : à taille égale, le complément visuel écrase
+   le sujet de la phrase. */
+h2 .l2 { display: block; font-size: .74em; }
+
+/* Joué une seule fois par session — au-delà, c'est du délai pur infligé
+   à quelqu'un qui n'a pas encore lu un mot. */
+#loader {
+  position: fixed; inset: 0; z-index: 100; background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+  transition: clip-path .8s cubic-bezier(.77, 0, .18, 1);
+}
+#loader.done { clip-path: inset(0 0 100% 0); }
+#loader .count { font-family: var(--f-display); font-size: clamp(56px, 11vw, 120px); }
+#loader .lbl {
+  font-family: var(--f-mono); font-size: 10.5px;
+  letter-spacing: .34em; text-transform: uppercase; color: var(--ink-dim);
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }

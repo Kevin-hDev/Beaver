@@ -1,0 +1,188 @@
+/* Beaver — documentation : trois colonnes, lecture au centre */
+
+.docs-top {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 22px;
+  padding: 13px 26px;
+  border-bottom: 1px solid var(--line);
+  background: var(--pill);
+  backdrop-filter: blur(10px);
+}
+.docs-top .logo { font-size: 18px; }
+
+.crumb {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.search {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 15px;
+  color: var(--ink-dim);
+  font-size: var(--t-small);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.search:hover { border-color: var(--accent); color: var(--accent); }
+.search kbd {
+  font-family: var(--f-mono);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 9.5px;
+}
+
+.wrap {
+  display: grid;
+  grid-template-columns: 254px minmax(0, 720px) 200px;
+  gap: 46px;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 40px 26px 120px;
+}
+
+aside nav {
+  position: static;
+  display: block;
+  top: 88px;
+  font-size: var(--t-small);
+}
+@supports (position: sticky) { aside nav { position: sticky; } }
+
+.group { margin-bottom: 26px; }
+.group h2 {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 9px;
+  line-height: 1.4;
+}
+.group a {
+  display: block;
+  padding: 6px 0 6px 14px;
+  color: var(--ink-dim);
+  text-decoration: none;
+  border-left: 1px solid var(--line);
+  transition: color .25s, border-color .25s;
+}
+.group a:hover { color: var(--ink); }
+.group a[aria-current="page"] { color: var(--accent); border-left-color: var(--accent); }
+
+.doc h1 { font-size: clamp(32px, 4vw, 46px); margin: 6px 0 20px; line-height: 1; }
+.doc h2 { font-size: clamp(19px, 2vw, 24px); margin: 46px 0 12px; line-height: 1.1; }
+.doc p { color: var(--ink-dim); margin-bottom: 15px; }
+.doc b { color: var(--ink); font-weight: 600; }
+.doc code {
+  font-family: var(--f-mono);
+  background: var(--bg-raise);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* Liseré fin : la convention des encadrés de documentation, sans l'épaisseur
+   qui la fait basculer dans le tic visuel. */
+.callout {
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-raise);
+  padding: 16px 20px;
+  margin: 24px 0;
+  color: var(--ink-dim);
+  font-size: var(--t-small);
+  line-height: 1.75;
+}
+.callout .t {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 7px;
+}
+
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: var(--t-small); }
+caption {
+  text-align: left;
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding-bottom: 10px;
+}
+
+/* Le bloc terminal suit la colonne de lecture, pas la marge du site. */
+.doc .term { margin: 20px 0; max-width: none; }
+th {
+  text-align: left;
+  font-family: var(--f-mono);
+  font-weight: 400;
+  font-size: 9.5px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+td { padding: 11px 12px; border-bottom: 1px solid var(--line); color: var(--ink-dim); }
+td:first-child { color: var(--ink); }
+
+.toc { position: static; top: 88px; font-size: 12.5px; }
+@supports (position: sticky) { .toc { position: sticky; } }
+.toc h2 {
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 11px;
+}
+.toc a { display: block; padding: 5px 0; color: var(--ink-dim); text-decoration: none; transition: color .25s; }
+.toc a:hover { color: var(--accent); }
+
+.mascot { margin-top: 38px; text-align: center; }
+.beaver-book {
+  width: 92px; height: 100px;
+  image-rendering: pixelated;
+  display: inline-block;
+  background: url('../assets/base.webp') 0 -800px / 736px 1100px no-repeat;
+  animation: book 1.44s steps(8) infinite;
+}
+@keyframes book { to { background-position-x: -736px; } }
+.mascot span {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 7px;
+}
+
+@media (max-width: 1100px) {
+  .toc { display: none; }
+  .wrap { grid-template-columns: 254px minmax(0, 1fr); }
+}
+@media (max-width: 800px) {
+  aside { display: none; }
+  .wrap { grid-template-columns: 1fr; padding-top: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beaver-book { animation: none; }
+}

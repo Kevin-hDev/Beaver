@@ -1,0 +1,53 @@
+/* Beaver — pied de page et appel à l'action typographique */
+
+.foot {
+  border-top: 1px solid var(--line);
+  padding: var(--gap-sec) var(--pad-x) 54px;
+  position: relative; z-index: 2;
+}
+
+.foot-cta {
+  font-family: var(--f-display);
+  text-transform: uppercase;
+  font-size: var(--t-h2);
+  line-height: 1.0;
+}
+.foot-cta .l2 { display: block; font-size: .74em; }
+
+.foot-links {
+  margin-top: 54px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 30px; flex-wrap: wrap;
+}
+.foot-links a {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-decoration: none;
+  transition: color .3s;
+}
+.foot-links a:hover, .foot-links a:focus-visible { color: var(--accent); }
+
+.foot-nav { display: flex; gap: 26px; flex-wrap: wrap; }
+
+.beaver-sleep {
+  width: 92px; height: 100px;
+  image-rendering: pixelated;
+  background: url('../assets/extension.webp') 0 -600px / 736px 800px no-repeat;
+  /* Le sprite a 8 colonnes : avec un nombre d'étapes différent, l'animation
+     s'arrête entre deux images et affiche deux moitiés de castor. */
+  animation: sleep 2.28s steps(8) infinite;
+}
+@keyframes sleep { to { background-position-x: -736px; } }
+
+.sleep-tag {
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-align: center;
+  margin-top: 7px;
+}

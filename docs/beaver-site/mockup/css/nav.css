@@ -1,0 +1,55 @@
+/* Beaver — navigation flottante et boutons d'action */
+
+nav {
+  position: fixed; top: 18px; left: var(--pad-x); right: var(--pad-x); z-index: 20;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.logo {
+  font-family: var(--f-display);
+  font-size: 21px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.logo em { font-family: var(--f-tension); font-style: italic; color: var(--accent); }
+
+.nav-pill {
+  display: flex; gap: 26px; align-items: center;
+  padding: 10px 22px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--pill);
+  backdrop-filter: blur(10px);
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+}
+.nav-pill a { color: var(--ink-dim); text-decoration: none; transition: color .3s; }
+.nav-pill a:hover, .nav-pill a:focus-visible { color: var(--accent); }
+
+.tbtn {
+  border: 0; background: none; cursor: pointer; color: var(--ink-dim);
+  font-family: inherit; font-size: 13px; padding: 0; transition: color .3s;
+}
+.tbtn:hover, .tbtn:focus-visible { color: var(--accent); }
+
+.ctas { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; }
+
+.btn {
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  padding: 15px 30px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: transform .3s, background .3s, color .3s, border-color .3s;
+}
+
+.btn-fill { background: var(--accent); color: var(--bg); }
+.btn-fill:hover, .btn-fill:focus-visible { transform: translateY(-3px); background: var(--ink); }
+
+.btn-ghost { border: 1px solid var(--line); color: var(--ink); }
+.btn-ghost:hover, .btn-ghost:focus-visible { transform: translateY(-3px); border-color: var(--accent); color: var(--accent); }

@@ -1,0 +1,131 @@
+/* Beaver — hero et démonstration « l'app se remodule »
+   La thèse du site est montrée ici avant d'être écrite ailleurs. */
+
+.hero {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 5vw;
+  align-items: center;
+  padding: 132px var(--pad-x) 64px;
+}
+
+/* 1.02 et non .92 : quand le titre passe sur deux lignes, un interligne plus
+   serré fait manger les accents des capitales par la ligne du dessus.
+   « DÉJÀ LÀ » perdait ses deux accents. */
+h1 { font-size: var(--t-hero); line-height: 1.02; letter-spacing: .005em; }
+h1 .l2 { display: block; font-size: .68em; margin-top: .08em; }
+
+/* Les accents des capitales montent au-dessus de la hauteur de ligne. Sans
+   cette réserve, `overflow: hidden` décapite le É de DÉJÀ et le À de LÀ. */
+.hero .reveal {
+  display: block;
+  overflow: hidden;
+  padding-top: .18em;
+  margin-top: -.18em;
+}
+.hero .reveal > span {
+  display: block;
+  transform: translateY(108%);
+  animation: rise .95s cubic-bezier(.19, 1, .22, 1) forwards;
+}
+.hero .reveal:nth-of-type(2) > span { animation-delay: .1s; }
+@keyframes rise { to { transform: translateY(0); } }
+
+.hero .lead { margin-top: 30px; }
+
+.demo-wrap { display: flex; flex-direction: column; gap: 14px; }
+
+.demo {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-raise);
+  padding: 13px;
+  position: relative;
+  aspect-ratio: 16 / 11;
+  overflow: hidden;
+}
+
+.demo-bar { display: flex; gap: 6px; }
+.demo-bar i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+
+.blk {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: var(--f-mono);
+  font-size: 8.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 0 6px;
+  left: var(--x); top: var(--y); width: var(--w); height: var(--h);
+  opacity: var(--o, 1);
+  transform: scale(var(--s, 1));
+  transition:
+    left .9s cubic-bezier(.77, 0, .18, 1),
+    top .9s cubic-bezier(.77, 0, .18, 1),
+    width .9s cubic-bezier(.77, 0, .18, 1),
+    height .9s cubic-bezier(.77, 0, .18, 1),
+    opacity .5s, transform .6s;
+}
+
+.blk.mine {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* Repos des blocs ajoutés par l'utilisateur, avant leur entrée en scène. */
+.b-x1 { --x: 75%; --y: 56%; --w: 21%; --h: 36%; --o: 0; --s: .6; }
+.b-x2 { --x: 82%; --y: 16%; --w: 14%; --h: 48%; --o: 0; --s: .6; }
+.b-x3 { --x: 54%; --y: 68%; --w: 42%; --h: 24%; --o: 0; --s: .6; }
+
+/* État 1 — Beaver tel qu'il arrive */
+.demo[data-state="1"] .b-side  { --x: 4%;  --y: 16%; --w: 20%; --h: 76%; }
+.demo[data-state="1"] .b-chat  { --x: 27%; --y: 16%; --w: 45%; --h: 55%; }
+.demo[data-state="1"] .b-term  { --x: 27%; --y: 75%; --w: 45%; --h: 17%; }
+.demo[data-state="1"] .b-tools { --x: 75%; --y: 16%; --w: 21%; --h: 36%; }
+.demo[data-state="1"] .b-prev  { --x: 75%; --y: 56%; --w: 21%; --h: 36%; }
+
+/* État 2 — ton panneau prend la place de l'aperçu */
+.demo[data-state="2"] .b-side  { --x: 4%;  --y: 16%; --w: 20%; --h: 76%; }
+.demo[data-state="2"] .b-chat  { --x: 27%; --y: 16%; --w: 45%; --h: 55%; }
+.demo[data-state="2"] .b-term  { --x: 27%; --y: 75%; --w: 45%; --h: 17%; }
+.demo[data-state="2"] .b-tools { --x: 75%; --y: 16%; --w: 21%; --h: 32%; }
+.demo[data-state="2"] .b-prev  { --o: 0; --s: .6; }
+.demo[data-state="2"] .b-x1    { --x: 75%; --y: 52%; --w: 21%; --h: 40%; --o: 1; --s: 1; }
+
+/* État 3 — ton atelier : outil du cœur remplacé, vue à toi */
+.demo[data-state="3"] .b-side  { --x: 4%;  --y: 16%; --w: 20%; --h: 34%; }
+.demo[data-state="3"] .b-chat  { --x: 27%; --y: 16%; --w: 52%; --h: 48%; }
+.demo[data-state="3"] .b-term  { --x: 27%; --y: 68%; --w: 25%; --h: 24%; }
+.demo[data-state="3"] .b-tools { --o: 0; --s: .6; }
+.demo[data-state="3"] .b-prev  { --o: 0; --s: .6; }
+.demo[data-state="3"] .b-x1    { --x: 4%;  --y: 54%; --w: 20%; --h: 38%; --o: 1; --s: 1; }
+.demo[data-state="3"] .b-x2    { --x: 82%; --y: 16%; --w: 14%; --h: 48%; --o: 1; --s: 1; }
+.demo[data-state="3"] .b-x3    { --x: 54%; --y: 68%; --w: 42%; --h: 24%; --o: 1; --s: 1; }
+
+.demo-legend { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+
+.demo-label {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.demo-label b { color: var(--accent); font-weight: 600; }
+
+.demo-dots { display: flex; gap: 6px; }
+.demo-dots button {
+  width: 22px; height: 3px;
+  border: 0; border-radius: 2px; padding: 0;
+  background: var(--line);
+  cursor: pointer;
+  transition: background .4s;
+}
+.demo-dots button[aria-current="true"] { background: var(--accent); }

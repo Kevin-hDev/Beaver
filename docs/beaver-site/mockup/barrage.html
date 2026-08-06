@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver — ce qu'il embarque</title>
+<meta name="description" content="Sept branches déjà construites : modèles locaux et cloud, outils et sous-agents, réveils nocturnes, Git, navigateur embarqué, extensions et vault chiffré.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/dam.css">
+<link rel="stylesheet" href="css/forecast.css">
+<link rel="stylesheet" href="css/footer.css">
+<link rel="stylesheet" href="css/motion.css">
+</head>
+<body>
+
+<canvas id="dust" data-mode="drift" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<nav>
+  <a class="logo" href="index.html">Beaver<em>.</em></a>
+  <div class="nav-pill">
+    <a href="index.html">← Le harnais</a>
+    <a href="#forecast">Forecast</a>
+    <a href="docs.html">Docs</a>
+    <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  </div>
+</nav>
+
+<section>
+  <div class="sec-head">
+    <div>
+      <p class="kicker">01 / Le barrage</p>
+      <h2>Sept <em>branches.</em><span class="l2">Déjà posées.</span></h2>
+    </div>
+    <p class="lead"><b>Tout ça existe le jour de l'installation.</b>
+    Et tout ça, tu peux le remplacer.</p>
+  </div>
+
+  <div class="dam">
+    <div class="dam-visual">
+      <div class="dam-beaver" aria-hidden="true"></div>
+      <div class="dam-stack" id="stack" aria-hidden="true">
+        <div class="log" style="--rot:-1.2deg">01 · Modèles</div>
+        <div class="log" style="--rot:.8deg">02 · Travail</div>
+        <div class="log" style="--rot:-.6deg">03 · Nuit</div>
+        <div class="log" style="--rot:1deg">04 · Git</div>
+        <div class="log" style="--rot:-.9deg">05 · Web</div>
+        <div class="log" style="--rot:.7deg">06 · Harnais</div>
+        <div class="log" style="--rot:-.5deg">07 · Vault</div>
+      </div>
+      <div class="dam-river" aria-hidden="true"></div>
+    </div>
+
+    <div class="feats">
+      <article class="feat">
+        <span class="num">01 /</span>
+        <h3>Tous tes <em>modèles</em></h3>
+        <p>Ollama installé et géré par Beaver, <b>dix fournisseurs cloud</b>,
+        et tes comptes web OpenAI, Grok et Kimi. Local ou distant, il construit.</p>
+      </article>
+      <article class="feat">
+        <span class="num">02 /</span>
+        <h3>Il fait le <em>travail</em></h3>
+        <p>Fichiers, web, documents Office. Des sous-agents isolés dans
+        leurs propres branches Git. Un mode Plan. <b>Une mémoire qui tient</b>.</p>
+      </article>
+      <article class="feat">
+        <span class="num">03 /</span>
+        <h3>Pendant que tu <em>dors</em></h3>
+        <p>Réveils programmés — ponctuels, quotidiens, hebdomadaires — et
+        <b>Telegram, Slack, Discord</b> pour lui parler de loin. Tu te lèves, c'est fait.</p>
+      </article>
+      <article class="feat">
+        <span class="num">04 /</span>
+        <h3>Ton code, ton <em>Git</em></h3>
+        <p>Branches, worktrees, commits, fusions, conflits guidés.
+        Et un <b>vrai terminal</b> intégré, sur les trois systèmes.</p>
+      </article>
+      <article class="feat">
+        <span class="num">05 /</span>
+        <h3>Le web, <em>sur place</em></h3>
+        <p>Un Chromium embarqué qui <b>repère les serveurs qui tournent</b> et
+        affiche tes pages sans quitter Beaver. Et il reste un vrai navigateur
+        quand tu veux t'en servir comme tel.</p>
+      </article>
+      <article class="feat">
+        <span class="num">06 /</span>
+        <h3>Et tu peux tout <em>reprendre</em></h3>
+        <p>Ses outils, son prompt système, son interface : tu remplaces ce que
+        tu veux. <b><a href="index.html#harnais">C'est le harnais →</a></b></p>
+      </article>
+      <article class="feat">
+        <span class="num">07 /</span>
+        <h3>Tes secrets restent <em>secrets</em></h3>
+        <p>Coffre <b>XChaCha20-Poly1305</b>, clé maîtresse confiée au gestionnaire
+        de secrets de ton système — trousseau macOS, gestionnaire d'identifiants
+        Windows, portefeuille Linux. L'interface ne voit jamais une clé. Jamais.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="forecast" id="forecast">
+  <div class="sec-head">
+    <div>
+      <p class="kicker">02 / Le forecast</p>
+      <h2>Il voit <em>loin.</em></h2>
+    </div>
+    <p class="lead"><b>Ce que les autres agents n'ont pas.</b>
+    Un atelier de séries temporelles que l'agent sait utiliser lui-même :
+    historiques, comparaisons, scénarios, exports.</p>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-meta">
+      <span>chronos-bolt · horizon 12 · confiance 90%</span>
+      <span class="live">● run #047</span>
+    </div>
+    <svg class="chart" id="chart" viewBox="0 0 1000 380" preserveAspectRatio="none" role="img" aria-label="Courbe historique prolongée par une prévision et son intervalle de confiance">
+      <defs>
+        <linearGradient id="hgrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="gs-from"></stop>
+          <stop offset="1" class="gs-to"></stop>
+        </linearGradient>
+      </defs>
+      <g id="grid"></g>
+      <rect id="fzone" y="18" height="334" opacity="0"></rect>
+      <path id="harea" fill="url(#hgrad)" opacity="0" stroke="none"></path>
+      <polygon id="band" opacity="0"></polygon>
+      <path id="hist" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+      <path id="pred" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+      <line id="split" x1="0" y1="18" x2="0" y2="352" stroke-dasharray="3 6" opacity="0"></line>
+    </svg>
+    <div class="legend">
+      <span class="l-hist"><i></i>Historique</span>
+      <span class="l-pred"><i></i>Prédiction</span>
+      <span class="l-band"><i></i>Intervalle 90%</span>
+    </div>
+  </div>
+
+  <div class="models">
+    <span class="chip">Chronos</span>
+    <span class="chip">Chronos-Bolt</span>
+    <span class="chip">TimesFM</span>
+    <span class="chip">MOIRAI 2.0</span>
+    <span class="chip">Toto 2.0</span>
+    <span class="chip">FlowState</span>
+    <span class="chip">TabPFN-TS</span>
+    <span class="chip">TiRex</span>
+    <span class="chip">Sundial</span>
+    <span class="chip cloud">TimeGPT-2 ☁</span>
+  </div>
+</section>
+
+<section class="install" id="install">
+  <div class="sec-head">
+    <div>
+      <p class="kicker">03 / L'installation</p>
+      <h2>Une <em>ligne.</em></h2>
+    </div>
+    <p class="lead">macOS, Linux et Windows. Au premier lancement, un assistant
+    te propose d'installer Ollama <b>si tu veux des modèles locaux</b> — sinon tu
+    branches tes fournisseurs cloud et tu démarres.</p>
+  </div>
+  <div class="term">
+    <div class="term-bar">
+      <i></i><i></i><i></i>
+      <button class="copy" id="copy-install" type="button">Copier</button>
+    </div>
+    <p class="term-body"><span class="prompt">$</span> <span id="typed"></span><span class="cursor" aria-hidden="true"></span></p>
+  </div>
+  <p class="stack">Rust · Tauri 2 · React 19 · 3 systèmes · Apache-2.0</p>
+</section>
+
+<footer class="foot">
+  <p class="foot-cta">Construis <em>ton</em> barrage.<span class="l2">Puis démonte le nôtre.</span></p>
+  <div class="foot-links">
+    <div class="foot-nav">
+      <a href="index.html">Le harnais</a>
+      <a href="docs.html">Docs</a>
+      <a href="#">GitHub</a>
+    </div>
+    <div>
+      <div class="beaver-sleep" aria-hidden="true"></div>
+      <p class="sleep-tag">beaver — sleeping</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/theme.js"></script>
+<script src="js/dust.js"></script>
+<script src="js/dam.js"></script>
+<script src="js/chart.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>

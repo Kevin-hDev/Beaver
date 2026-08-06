@@ -1,0 +1,87 @@
+/* Beaver — manifeste éditorial et section « le barrage » */
+
+.manifesto { padding: var(--gap-sec) var(--pad-x); border-top: 1px solid var(--line); }
+.manifesto p {
+  font-size: clamp(21px, 2.5vw, 36px);
+  line-height: 1.45;
+  max-width: 20ch;
+  color: var(--ink);
+}
+.manifesto p + p { margin-top: 1.1em; color: var(--ink-dim); max-width: 27ch; }
+.manifesto em { font-family: var(--f-tension); font-style: italic; color: var(--accent); }
+
+.dam {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 6vw;
+  padding: 0 var(--pad-x) var(--gap-sec);
+}
+
+.dam-visual {
+  position: sticky; top: 96px;
+  height: calc(100svh - 140px);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+}
+
+.dam-beaver {
+  width: 118px; height: 128px;
+  image-rendering: pixelated;
+  margin-bottom: -6px;
+  background: url('../assets/extension.webp') 0 0 / 944px 1024px no-repeat;
+  animation: work 1.28s steps(8) infinite;
+}
+@keyframes work { to { background-position-x: -944px; } }
+
+.dam-stack {
+  display: flex; flex-direction: column-reverse; gap: 9px;
+  width: min(420px, 92%);
+  padding-bottom: 22px;
+}
+
+.log {
+  height: 31px;
+  border-radius: 16px;
+  background: var(--log);
+  border: 1px solid var(--line);
+  display: flex; align-items: center;
+  padding: 0 18px;
+  font-family: var(--f-mono);
+  font-size: 9.5px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  opacity: 0;
+  transform: translateX(-38px) rotate(var(--rot));
+  transition: opacity .6s, transform .6s cubic-bezier(.19, 1, .22, 1),
+              background .6s, border-color .6s, color .6s;
+}
+.log:nth-child(odd) { margin-left: 6%; }
+.log.on { opacity: 1; transform: translateX(0) rotate(var(--rot)); }
+.log.now { background: var(--log-hi); border-color: var(--accent); color: var(--accent); }
+
+.dam-river { width: min(420px, 92%); height: 3px; background: var(--line); border-radius: 2px; }
+
+.feats { display: flex; flex-direction: column; }
+
+/* .45 et non .28 : en dessous, le texte inactif tombe sous 2:1 de contraste.
+   Six blocs sur sept deviennent alors illisibles en permanence. */
+.feat {
+  min-height: 44vh;
+  display: flex; flex-direction: column; justify-content: center;
+  opacity: .45;
+  border-left: 1px solid var(--line);
+  padding-left: 38px;
+  transition: opacity .5s, border-color .5s;
+}
+.feat.on { opacity: 1; border-left-color: var(--accent); }
+
+.feat .num {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: .3em;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.feat h3 { font-size: var(--t-h3); line-height: 1.02; margin-bottom: 14px; }
+.feat p { color: var(--ink-dim); max-width: 44ch; }
+.feat p b { color: var(--ink); font-weight: 600; }

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver Docs — Modes de permission</title>
+<meta name="description" content="Les trois modes de permission d'une session Beaver : accès complet, demande d'approbation, et chatbot sans outils.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/forecast.css">
+<link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+<header class="docs-top">
+  <a class="logo" href="index.html">Beaver<em>.</em></a>
+  <span class="crumb">Docs / Agent / Modes de permission</span>
+  <button class="search" type="button">Rechercher… <kbd>Ctrl K</kbd></button>
+  <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+</header>
+
+<div class="wrap">
+  <aside>
+    <nav aria-label="Sommaire de la documentation">
+      <div class="group">
+        <h2>Démarrage</h2>
+        <a href="#">Installation</a>
+        <a href="#">Premier lancement</a>
+        <a href="#">Fournisseurs & comptes web</a>
+        <a href="#">Importer d'un autre agent</a>
+      </div>
+      <div class="group">
+        <h2>Agent</h2>
+        <a href="#" aria-current="page">Modes de permission</a>
+        <a href="#">Mode Plan</a>
+        <a href="#">Brancher une conversation</a>
+        <a href="#">Sous-agents</a>
+        <a href="#">Mémoire & skills</a>
+      </div>
+      <div class="group">
+        <h2>Outils</h2>
+        <a href="#">Fichiers & terminal</a>
+        <a href="#">Recherche web</a>
+        <a href="#">Navigateur intégré</a>
+        <a href="#">Canaux externes</a>
+      </div>
+      <div class="group">
+        <h2>Extensions</h2>
+        <a href="#">Centre d'extensions</a>
+        <a href="#">Remplacer un outil</a>
+        <a href="#">Réécrire le prompt système</a>
+        <a href="#">Écrire une extension</a>
+      </div>
+      <div class="group">
+        <h2>Forecast</h2>
+        <a href="#">Atelier</a>
+        <a href="#">Modèles locaux</a>
+        <a href="#">Backtests & métriques</a>
+        <a href="#">Scénarios & exports</a>
+      </div>
+      <div class="group">
+        <h2>Référence</h2>
+        <a href="#">Réveils programmés</a>
+        <a href="#">Sécurité & coffre</a>
+        <a href="#">Raccourcis clavier</a>
+        <a href="#">Thèmes & langues</a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="doc">
+    <h1>Modes de <em>permission</em></h1>
+    <p>Chaque session d'agent tourne dans l'un des trois modes de permission.
+    Le mode choisi détermine ce que Beaver peut faire <b>sans te demander ton accord</b>.
+    Tu peux en changer à tout moment depuis la session, et définir un mode par
+    défaut dans les réglages.</p>
+
+    <h2 id="full">Accès complet</h2>
+    <p>L'agent exécute ses outils librement : lecture et écriture de fichiers,
+    commandes shell, actions Git, appels aux connecteurs. C'est le mode le plus
+    fluide pour les longues tâches autonomes — à réserver aux projets de confiance.</p>
+
+    <h2 id="approval">Demande d'approbation</h2>
+    <p>Chaque action sensible — écriture, commande shell, suppression — déclenche
+    une <b>demande d'approbation</b> dans la conversation. Tu vois exactement ce
+    que l'agent s'apprête à faire, tu acceptes ou tu refuses. C'est le mode
+    recommandé au quotidien.</p>
+
+    <h2 id="chatbot">Chatbot</h2>
+    <p>Aucun outil actif : Beaver répond uniquement en texte, comme un chat
+    classique. Utile pour explorer, rédiger ou raisonner sans rien toucher sur
+    ta machine.</p>
+
+    <table>
+      <caption class="crumb">Ce que chaque mode autorise sans confirmation</caption>
+      <tr><th>Action</th><th>Accès complet</th><th>Approbation</th><th>Chatbot</th></tr>
+      <tr><td>Lire des fichiers</td><td>Automatique</td><td>Automatique</td><td>—</td></tr>
+      <tr><td>Écrire ou modifier</td><td>Automatique</td><td>Approbation</td><td>—</td></tr>
+      <tr><td>Commandes shell</td><td>Automatique</td><td>Approbation</td><td>—</td></tr>
+      <tr><td>Outils d'extension</td><td>Automatique</td><td>Approbation</td><td>—</td></tr>
+    </table>
+
+    <div class="callout">
+      <span class="t">Sécurité</span>
+      Quel que soit le mode, tes clés d'API restent dans le coffre chiffré
+      <b>XChaCha20-Poly1305</b>. Elles ne sont exposées ni à l'interface ni à
+      l'agent : le cœur Rust les charge au moment de l'appel, puis efface sa
+      copie en mémoire.
+    </div>
+
+    <h2 id="default">Définir le mode par défaut</h2>
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i></div>
+      <pre class="term-body"><span class="prompt">#</span> Réglages → Agent → Mode par défaut
+<span class="prompt">$</span> cat ~/.local/share/cl-go-dash/agent-settings.json
+{ "permission_mode": "approval" }</pre>
+    </div>
+  </main>
+
+  <div class="toc">
+    <h2>Sur cette page</h2>
+    <a href="#full">Accès complet</a>
+    <a href="#approval">Demande d'approbation</a>
+    <a href="#chatbot">Chatbot</a>
+    <a href="#default">Mode par défaut</a>
+    <div class="mascot">
+      <div class="beaver-book" aria-hidden="true"></div>
+      <span>beaver — reading</span>
+    </div>
+  </div>
+</div>
+
+<script src="js/theme.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>

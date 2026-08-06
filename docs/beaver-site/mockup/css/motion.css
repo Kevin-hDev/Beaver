@@ -1,0 +1,43 @@
+/* Beaver — adaptation aux écrans et respect du mouvement réduit */
+
+@media (max-width: 1080px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 46px;
+    padding-top: 116px;
+    min-height: 0;
+  }
+  .dam, .hwrap { grid-template-columns: 1fr; }
+  .dam-visual { position: relative; top: 0; height: auto; padding: 26px 0 40px; }
+  /* Empilées, les features sont toutes proches du regard : les atténuer
+     n'aiderait plus à se concentrer, ça masquerait juste du contenu. */
+  .feat { min-height: 0; padding: 34px 0 34px 26px; opacity: 1; }
+  .manifesto p, .manifesto p + p { max-width: none; }
+}
+
+@media (max-width: 620px) {
+  :root { --pad-x: 6.5vw; --t-body: 15px; }
+  .nav-pill { gap: 16px; padding: 9px 16px; font-size: 9.5px; }
+  .sec-head { padding-bottom: 40px; }
+}
+
+/* Exigé par la direction artistique, absent de la première version.
+   Sans ce bloc, la page impose en continu : particules, mascotte en boucle,
+   titres qui montent, compteur de chargement. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+
+  .hero .reveal > span { transform: none; }
+  .log { opacity: 1; transform: none; }
+  .feat { opacity: 1; }
+  .chip { opacity: 1; transform: none; }
+
+  #dust { display: none; }
+  .dam-beaver, .beaver-sleep, .cursor { animation: none; }
+}

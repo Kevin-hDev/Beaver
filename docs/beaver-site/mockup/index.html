@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beaver — l'agent complet que tu peux entièrement reprendre</title>
+<meta name="description" content="Un agent de développement qui arrive équipé — modèles locaux et cloud, Git, terminal, navigateur — et dont tu remplaces les outils, le prompt système et l'interface sans le forker.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@1&family=Martian+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/nav.css">
+<link rel="stylesheet" href="css/hero.css">
+<link rel="stylesheet" href="css/dam.css">
+<link rel="stylesheet" href="css/harness.css">
+<link rel="stylesheet" href="css/footer.css">
+<link rel="stylesheet" href="css/motion.css">
+</head>
+<body>
+
+<div id="loader">
+  <div class="count">0</div>
+  <div class="lbl">Construction du barrage</div>
+</div>
+
+<canvas id="dust" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<nav>
+  <a class="logo" href="index.html">Beaver<em>.</em></a>
+  <div class="nav-pill">
+    <a href="#harnais">Le harnais</a>
+    <a href="barrage.html">Ce qu'il embarque</a>
+    <a href="docs.html">Docs</a>
+    <button class="tbtn" id="theme-toggle" title="Basculer le thème" aria-label="Basculer le thème">◐</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div>
+    <p class="kicker">Open source · macOS · Linux · Windows</p>
+    <h1>
+      <span class="reveal"><span>Tout est déjà là</span></span>
+      <span class="reveal l2"><span><em>et tu peux tout</em> reprendre</span></span>
+    </h1>
+    <p class="lead">Modèles locaux et cloud, Git, terminal, navigateur embarqué,
+    prévision de séries temporelles : Beaver arrive équipé. Puis tu
+    <b>remplaces ses outils</b>, tu <b>réécris son prompt système</b>, tu ajoutes
+    les tiens. Sans le forker.</p>
+    <div class="ctas">
+      <a class="btn btn-fill" href="barrage.html#install">Télécharger</a>
+      <a class="btn btn-ghost" href="#harnais">Voir comment →</a>
+    </div>
+  </div>
+
+  <div class="demo-wrap">
+    <div class="demo" id="demo" data-state="1">
+      <div class="demo-bar"><i></i><i></i><i></i></div>
+      <div class="blk b-side">Sessions</div>
+      <div class="blk b-chat">Chat</div>
+      <div class="blk b-term">Terminal</div>
+      <div class="blk b-tools">Outils</div>
+      <div class="blk b-prev">Aperçu</div>
+      <div class="blk mine b-x1">Ton CRM</div>
+      <div class="blk mine b-x2">Ta vue</div>
+      <div class="blk mine b-x3">Ton outil</div>
+    </div>
+    <div class="demo-legend">
+      <p class="demo-label" id="demo-label">Beaver, à l'installation</p>
+      <div class="demo-dots" id="demo-dots"></div>
+    </div>
+  </div>
+</header>
+
+<section class="manifesto">
+  <p>Les autres agents te donnent ce qu'ils ont décidé.</p>
+  <p>Beaver te donne tout, <em>puis les clés.</em></p>
+</section>
+
+<section class="harness" id="harnais">
+  <div class="sec-head">
+    <div>
+      <p class="kicker">02 / Le harnais</p>
+      <h2>À ta <em>main.</em><span class="l2">Vraiment.</span></h2>
+    </div>
+    <p class="lead"><b>Pas un fork. Ton Beaver.</b>
+    Une extension n'ajoute pas seulement : elle retire et elle remplace.
+    Le même Beaver, remodulé par toi.</p>
+  </div>
+
+  <div class="hwrap">
+    <div class="code-card">
+      <div class="code-head"><i></i><i></i><i></i><span>mon-extension.ts — beaverApi: "1"</span></div>
+      <pre><span class="k">export default</span> {
+  <span class="c">// tes outils, à côté de ceux de Beaver</span>
+  tools: [monTool, maRecherche],
+
+  <span class="c">// tes panneaux et tes vues dans l'interface</span>
+  panels: [{ id: <span class="s">'crm'</span>, title: <span class="s">'Mon CRM'</span> }],
+
+  <span class="c">// et ce que tu remplaces purement et simplement</span>
+  replace: {
+    tool: <span class="s">'bash'</span>,
+    systemPrompt: monPrompt,
+  },
+}</pre>
+    </div>
+
+    <div class="hpoints">
+      <div class="hpoint">
+        <span class="n">01</span>
+        <div>
+          <h3>Remplace ses outils</h3>
+          <p>Son outil bash ne te convient pas ? Mets le tien à la place.
+          L'agent ne verra que le tien.</p>
+        </div>
+      </div>
+      <div class="hpoint">
+        <span class="n">02</span>
+        <div>
+          <h3>Réécris son cerveau</h3>
+          <p>Le prompt système se remplace, se désactive, ou revient à celui
+          du modèle — séparément pour le mode agent et le mode chat.</p>
+        </div>
+      </div>
+      <div class="hpoint">
+        <span class="n">03</span>
+        <div>
+          <h3>Ajoute tes panneaux et tes vues</h3>
+          <p>L'interface n'est pas figée : tes panneaux, tes boutons et tes
+          vues prennent leur place à côté des siens.</p>
+        </div>
+      </div>
+      <div class="hpoint">
+        <span class="n">04</span>
+        <div>
+          <h3>Sans jamais tout casser</h3>
+          <p>Les extensions tournent dans un hôte Node séparé. L'une plante,
+          Beaver continue. Et rien ne s'active sans ton accord explicite.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="import">
+  <div class="sec-head">
+    <div>
+      <p class="kicker">03 / L'arrivée</p>
+      <h2>Tu viens <em>d'ailleurs.</em><span class="l2">Deux minutes.</span></h2>
+    </div>
+    <p class="lead">Tes instructions, tes règles et tes habitudes de travail
+    se reprennent telles quelles. Tu n'abandonnes rien en changeant d'atelier.</p>
+  </div>
+  <div class="from-list">
+    <span class="from">Claude Code</span>
+    <span class="from">Codex</span>
+    <span class="from">OpenClaw</span>
+    <span class="from">Hermes</span>
+    <span class="from">Kimi Code</span>
+    <span class="from">GLM</span>
+  </div>
+  <p class="lead import-note">Et l'application parle sept langues :
+  français, anglais, espagnol, allemand, italien, chinois, japonais.</p>
+</section>
+
+<footer class="foot">
+  <p class="foot-cta">Construis <em>ton</em> barrage.<span class="l2">Puis démonte le nôtre.</span></p>
+  <div class="foot-links">
+    <div class="foot-nav">
+      <a href="barrage.html">Ce qu'il embarque</a>
+      <a href="docs.html">Docs</a>
+      <a href="#">GitHub</a>
+      <a href="barrage.html#install">Télécharger</a>
+    </div>
+    <div>
+      <div class="beaver-sleep" aria-hidden="true"></div>
+      <p class="sleep-tag">beaver — sleeping</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/theme.js"></script>
+<script src="js/dust.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/install.js"></script>
+</body>
+</html>

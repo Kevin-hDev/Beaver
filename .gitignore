@@ -27,6 +27,17 @@ docs/
 /docs/feature/tools/*
 !/docs/feature/tools/audit-catalogue-outils.md
 !/docs/feature/tools/investigation-cache-fournisseurs.md
+# Maquettes du site : le code et les assets sont suivis, pas les captures
+# d'écran, qui se régénèrent et pèsent plus lourd que tout le reste.
+!/docs/beaver-site/
+/docs/beaver-site/*
+!/docs/beaver-site/direction-artistique.md
+!/docs/beaver-site/mockup/
+/docs/beaver-site/mockup/*
+!/docs/beaver-site/mockup/*.html
+!/docs/beaver-site/mockup/css/
+!/docs/beaver-site/mockup/js/
+!/docs/beaver-site/mockup/assets/
 CLAUDE.md
 AGENTS.md
 .worktrees/
