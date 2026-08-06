@@ -8,9 +8,9 @@ const MAX_PROMPT_BYTES: usize = 64 * 1024;
 const MAX_STORE_BYTES: u64 = 8 * 1024 * 1024;
 const STORE_ERRORS: crate::services::private_store::StoreErrorCodes =
     crate::services::private_store::StoreErrorCodes::new(
-        "ollama-native-prompt-store-missing",
-        "ollama-native-prompt-store-unavailable",
-        "ollama-native-prompt-write",
+        crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_MISSING,
+        crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE,
+        crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_WRITE,
     );
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,7 +45,10 @@ impl NativePromptStore {
         let mut current = self
             .catalog
             .lock()
-            .map_err(|_| "ollama-native-prompt-store-unavailable".to_string())?;
+            .map_err(|_| {
+                crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
+                    .to_string()
+            })?;
         Ok(current
             .value_or_reload(
                 || NativePromptCatalog::load_from_path(&self.path),
@@ -73,7 +76,10 @@ impl NativePromptStore {
         let mut current = self
             .catalog
             .lock()
-            .map_err(|_| "ollama-native-prompt-store-unavailable".to_string())?;
+            .map_err(|_| {
+                crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
+                    .to_string()
+            })?;
         let mut candidate = current.candidate_for_write(
             || NativePromptCatalog::load_from_path(&self.path),
             &STORE_ERRORS,
@@ -116,13 +122,16 @@ impl NativePromptCatalog {
     }
 
     pub fn write_to_path(&self, path: &Path) -> Result<(), String> {
-        let data = serde_json::to_vec_pretty(self)
-            .map_err(|_| "ollama-native-prompt-write".to_string())?;
+        let data = serde_json::to_vec_pretty(self).map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_WRITE.to_string()
+        })?;
         if data.len() as u64 > MAX_STORE_BYTES {
             return Err("ollama-native-prompt-limit".into());
         }
         crate::services::private_store::atomic_write(path, &data)
-            .map_err(|_| "ollama-native-prompt-write".to_string())
+            .map_err(|_| {
+                crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_WRITE.to_string()
+            })
     }
 
     fn sanitized(self) -> Self {
@@ -166,7 +175,7 @@ impl NativePromptCatalog {
 
 #[cfg(test)]
 fn store_unavailable() -> &'static str {
-    "ollama-native-prompt-store-unavailable"
+    crate::services::private_store::error_codes::OLLAMA_NATIVE_PROMPT_UNAVAILABLE
 }
 
 fn sanitize_state(state: NativePromptState) -> Option<NativePromptState> {

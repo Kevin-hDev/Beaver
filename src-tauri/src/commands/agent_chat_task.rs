@@ -8,6 +8,7 @@ mod context_usage_seed;
 mod gemma4_thinking_guard;
 mod ollama;
 mod params;
+mod prompt_settings;
 mod session_events;
 pub(crate) mod tool_policy;
 mod workspace_prompt;

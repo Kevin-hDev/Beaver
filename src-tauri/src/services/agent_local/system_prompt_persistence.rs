@@ -36,13 +36,16 @@ impl SystemPromptSettings {
     }
 
     pub fn write_to_path(&self, path: &Path) -> Result<(), String> {
-        let data = serde_json::to_vec_pretty(self)
-            .map_err(|_| "system-prompt-store-write".to_string())?;
+        let data = serde_json::to_vec_pretty(self).map_err(|_| {
+            crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
+        })?;
         if data.len() as u64 > MAX_STORE_BYTES {
             return Err("system-prompt-store-limit".into());
         }
         crate::services::private_store::atomic_write(path, &data)
-            .map_err(|_| "system-prompt-store-write".to_string())
+            .map_err(|_| {
+                crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
+            })
     }
 
     fn sanitized(self) -> Self {
@@ -63,30 +66,27 @@ impl SystemPromptSettings {
 
     pub(super) fn load_with_legacy(path: &Path, legacy_path: &Path) -> SettingsLoad {
         match Self::load_from_path(path) {
-            SettingsLoad::Ready(settings) => {
-                if retire_legacy(legacy_path).is_err() {
-                    return SettingsLoad::Unavailable(
-                        crate::services::private_store::StoreFailure::Write,
-                    );
-                }
-                SettingsLoad::Ready(settings)
-            }
+            SettingsLoad::Ready(settings) => SettingsLoad::Ready(settings),
             SettingsLoad::Unavailable(failure) => SettingsLoad::Unavailable(failure),
-            SettingsLoad::Missing => match migrate_legacy(legacy_path) {
+            SettingsLoad::Missing => match migration_archive_exists(legacy_path) {
+                Err(()) => SettingsLoad::Unavailable(
+                    crate::services::private_store::StoreFailure::Read,
+                ),
+                Ok(true) => SettingsLoad::Missing,
+                Ok(false) => match migrate_legacy(legacy_path) {
                 SettingsLoad::Ready(settings) => {
                     if settings.write_to_path(path).is_err() {
                         return SettingsLoad::Unavailable(
                             crate::services::private_store::StoreFailure::Write,
                         );
                     }
-                    if retire_legacy(legacy_path).is_err() {
-                        return SettingsLoad::Unavailable(
-                            crate::services::private_store::StoreFailure::Write,
-                        );
-                    }
+                    // The new settings are already durable. Archiving the source is
+                    // best-effort so a backup problem cannot disable valid settings.
+                    let _ = archive_legacy(legacy_path);
                     SettingsLoad::Ready(settings)
                 }
                 other => other,
+                },
             },
         }
     }
@@ -173,7 +173,7 @@ fn sanitize_override(value: &PromptOverride) -> Option<PromptOverride> {
 
 #[cfg(test)]
 fn store_unavailable() -> String {
-    "system-prompt-store-unavailable".to_string()
+    crate::services::private_store::error_codes::SYSTEM_PROMPT_UNAVAILABLE.to_string()
 }
 
 #[cfg(test)]
@@ -181,15 +181,36 @@ fn store_failure(failure: crate::services::private_store::StoreFailure) -> Strin
     match failure {
         crate::services::private_store::StoreFailure::Read => store_unavailable(),
         crate::services::private_store::StoreFailure::Write => {
-            "system-prompt-store-write".to_string()
+            crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
         }
     }
 }
 
-fn retire_legacy(path: &Path) -> Result<(), String> {
-    match std::fs::remove_file(path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(_) => Err("system-prompt-store-write".to_string()),
+fn migration_archive_path(path: &Path) -> std::path::PathBuf {
+    let mut name = path.as_os_str().to_owned();
+    name.push(".migrated");
+    std::path::PathBuf::from(name)
+}
+
+fn migration_archive_exists(path: &Path) -> Result<bool, ()> {
+    match std::fs::symlink_metadata(migration_archive_path(path)) {
+        Ok(metadata) if metadata.is_file() => Ok(true),
+        Ok(_) => Err(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err(()),
     }
+}
+
+fn archive_legacy(path: &Path) -> Result<(), String> {
+    let archive = migration_archive_path(path);
+    if migration_archive_exists(path).map_err(|()| {
+        crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
+    })? {
+        return Ok(());
+    }
+    std::fs::rename(path, &archive).map_err(|_| {
+        crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string()
+    })?;
+    crate::services::private_store::repair_path(&archive)
+        .map_err(|_| crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE.to_string())
 }

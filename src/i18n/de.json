@@ -1073,15 +1073,17 @@
     "crashMessage": "Ein Fehler ist aufgetreten. Bitte starte die Anwendung neu.",
     "operationFailed": "Vorgang fehlgeschlagen. Bitte erneut versuchen.",
     "localStore": {
-      "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Lösche sie nicht: Beaver benötigt sie, um angepasste Modelle von ihren Originalversionen zu unterscheiden.",
+      "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Lösche sie nicht: Ohne Sicherung geht dieser Verlauf beim Neustart verloren und Beaver kann nicht mehr garantieren, dass ein als nativ angezeigter Ollama-Prompt wirklich das Original ist.",
       "ollamaNativePrompts": "Die Datei mit den nativen Ollama-Anweisungen ist nicht lesbar. Stelle „ollama-native-system-prompts.json“ aus einer Sicherung wieder her. Ohne Sicherung: Beaver schließen, diese Datei unter Einstellungen > Erweitert > Beaver-Daten löschen und die Anwendung mit Standardwerten neu starten.",
       "systemPrompts": "Die Datei mit den System-Prompt-Einstellungen ist nicht lesbar. Stelle „system-prompt-settings.json“ aus einer Sicherung wieder her. Ohne Sicherung: Beaver schließen, diese Datei und die alte „ollama-system-prompts.json“ löschen, falls vorhanden, und die Anwendung mit Standardwerten neu starten.",
-      "ollamaCustomizationMissing": "Die Datei „ollama-custom-models.json“ wurde entfernt, während Beaver lief. Stelle sie vor dem Neustart aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her: Beaver benötigt sie, um angepasste Modelle von ihren Originalversionen zu unterscheiden.",
+      "ollamaCustomizationMissing": "Die Datei „ollama-custom-models.json“ wurde entfernt, während Beaver lief. Stelle sie vor dem Neustart aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Ohne Sicherung geht dieser Verlauf beim Neustart verloren und Beaver kann nicht mehr garantieren, dass ein als nativ angezeigter Ollama-Prompt wirklich das Original ist.",
       "ollamaNativePromptsMissing": "Die Datei „ollama-native-system-prompts.json“ wurde entfernt, während Beaver lief. Falls dies beabsichtigt war, starte Beaver neu. Andernfalls stelle sie aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her.",
       "systemPromptsMissing": "Die Datei „system-prompt-settings.json“ wurde entfernt, während Beaver lief. Falls dies beabsichtigt war, starte Beaver neu. Andernfalls stelle sie aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her.",
       "ollamaCustomizationWrite": "Beaver kann „ollama-custom-models.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
       "ollamaNativePromptsWrite": "Beaver kann „ollama-native-system-prompts.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
-      "systemPromptsWrite": "Beaver kann „system-prompt-settings.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut."
+      "systemPromptsWrite": "Beaver kann „system-prompt-settings.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
+      "privateStorage": "Beaver kann nicht auf seinen privaten Speicher zugreifen. Prüfe Speicherplatz und Berechtigungen und versuche es erneut.",
+      "systemPromptsRuntimeFallback": "Die System-Prompt-Einstellungen sind nicht verfügbar. Beaver verwendet für diese Nachricht vorübergehend seine Standardanweisungen."
     },
     "streamStartFailed": "Stream konnte nicht gestartet werden.",
     "streamInterrupted": "Stream wurde unterbrochen.",

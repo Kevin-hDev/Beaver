@@ -5,16 +5,21 @@ use std::sync::{Mutex, OnceLock};
 
 const STORE_ERRORS: crate::services::private_store::StoreErrorCodes =
     crate::services::private_store::StoreErrorCodes::new(
-        "system-prompt-store-missing",
-        "system-prompt-store-unavailable",
-        "system-prompt-store-write",
+        crate::services::private_store::error_codes::SYSTEM_PROMPT_MISSING,
+        crate::services::private_store::error_codes::SYSTEM_PROMPT_UNAVAILABLE,
+        crate::services::private_store::error_codes::SYSTEM_PROMPT_WRITE,
     );
 
 pub fn snapshot() -> Result<SystemPromptSettings, String> {
     runtime_store().snapshot()
 }
 
-pub fn snapshot_for_runtime() -> SystemPromptSettings {
+pub struct RuntimeSystemPromptSettings {
+    pub settings: SystemPromptSettings,
+    pub notice_key: Option<&'static str>,
+}
+
+pub fn snapshot_for_runtime() -> RuntimeSystemPromptSettings {
     runtime_store().snapshot_for_runtime()
 }
 
@@ -87,8 +92,17 @@ impl SystemPromptSettingsStore {
             .cloned()
     }
 
-    pub(crate) fn snapshot_for_runtime(&self) -> SystemPromptSettings {
-        self.snapshot().unwrap_or_default()
+    pub(crate) fn snapshot_for_runtime(&self) -> RuntimeSystemPromptSettings {
+        match self.snapshot() {
+            Ok(settings) => RuntimeSystemPromptSettings {
+                settings,
+                notice_key: None,
+            },
+            Err(_) => RuntimeSystemPromptSettings {
+                settings: SystemPromptSettings::default(),
+                notice_key: Some("errors.localStore.systemPromptsRuntimeFallback"),
+            },
+        }
     }
 
     pub(crate) fn save_global(
@@ -133,5 +147,5 @@ fn legacy_store_path() -> std::path::PathBuf {
 }
 
 fn store_unavailable() -> &'static str {
-    "system-prompt-store-unavailable"
+    crate::services::private_store::error_codes::SYSTEM_PROMPT_UNAVAILABLE
 }

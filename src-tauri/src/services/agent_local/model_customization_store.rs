@@ -8,9 +8,9 @@ const MAX_CUSTOM_MODELS: usize = 512;
 const MAX_STORE_BYTES: u64 = 256 * 1024;
 const STORE_ERRORS: crate::services::private_store::StoreErrorCodes =
     crate::services::private_store::StoreErrorCodes::new(
-        "ollama-custom-store-missing",
-        "ollama-custom-store-unavailable",
-        "ollama-custom-store-write",
+        crate::services::private_store::error_codes::OLLAMA_CUSTOM_MISSING,
+        crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE,
+        crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE,
     );
 
 #[derive(Clone, Default, Serialize, Deserialize)]
@@ -51,7 +51,9 @@ impl ModelCustomizationStore {
         let mut current = self
             .catalog
             .lock()
-            .map_err(|_| "ollama-custom-store-read".to_string())?;
+            .map_err(|_| {
+                crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE.to_string()
+            })?;
         Ok(current
             .value_or_reload(|| load_catalog(&self.path), &STORE_ERRORS)?
             .kind(name))
@@ -80,7 +82,9 @@ impl ModelCustomizationStore {
         let mut current = self
             .catalog
             .lock()
-            .map_err(|_| "ollama-custom-store-write".to_string())?;
+            .map_err(|_| {
+                crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
+            })?;
         let mut candidate = current.candidate_for_write(
             || load_catalog(&self.path),
             &STORE_ERRORS,
@@ -136,13 +140,16 @@ impl ModelCustomizationCatalog {
     }
 
     pub(crate) fn write_to_path(&self, path: &Path) -> Result<(), String> {
-        let data =
-            serde_json::to_vec_pretty(self).map_err(|_| "ollama-custom-store-write".to_string())?;
+        let data = serde_json::to_vec_pretty(self).map_err(|_| {
+            crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
+        })?;
         if data.len() as u64 > MAX_STORE_BYTES {
             return Err("ollama-custom-store-limit".to_string());
         }
         crate::services::private_store::atomic_write(path, &data)
-            .map_err(|_| "ollama-custom-store-write".to_string())
+            .map_err(|_| {
+                crate::services::private_store::error_codes::OLLAMA_CUSTOM_WRITE.to_string()
+            })
     }
 
     fn read_with_format(path: &Path) -> CatalogLoad {
@@ -220,5 +227,5 @@ fn load_catalog(
 
 #[cfg(test)]
 fn store_unavailable() -> &'static str {
-    "ollama-custom-store-unavailable"
+    crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE
 }

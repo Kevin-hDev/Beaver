@@ -54,7 +54,7 @@ pub(crate) async fn run(
         prompt_mode,
         prompt_tier,
     );
-    let prompt_settings = crate::services::agent_local::system_prompt_store::snapshot_for_runtime();
+    let prompt_settings = super::prompt_settings::load(&params.on_event);
     let instructions = crate::services::agent_local::system_prompt_resolver::resolve_global(
         &prompt_settings,
         prompt_mode,

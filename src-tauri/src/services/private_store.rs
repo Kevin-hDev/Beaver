@@ -3,16 +3,16 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-const PRIVATE_STORE_UNAVAILABLE: &str = "private-store-unavailable";
-
 fn private_store_error() -> String {
-    PRIVATE_STORE_UNAVAILABLE.to_string()
+    error_codes::PRIVATE_STORE_UNAVAILABLE.to_string()
 }
 
 pub(crate) use cache::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
 
 #[path = "private_store/cache.rs"]
 mod cache;
+
+pub(crate) mod error_codes;
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum BoundedFile {

@@ -162,6 +162,22 @@ fn windows_acl_implementation_uses_no_external_commands() {
     }
 }
 
+#[test]
+fn frontend_contract_covers_every_local_store_error_code() {
+    let contract: std::collections::BTreeMap<String, String> = serde_json::from_str(include_str!(
+        "../../../src/lib/local-store-error-contract.json"
+    ))
+    .unwrap();
+
+    assert_eq!(contract.len(), super::error_codes::LOCAL_STORE_CODES.len());
+    for code in super::error_codes::LOCAL_STORE_CODES {
+        assert!(
+            contract.contains_key(code),
+            "missing frontend mapping for {code}"
+        );
+    }
+}
+
 #[cfg(windows)]
 #[test]
 fn repair_path_is_repeatable_for_current_user_directory() {

@@ -501,12 +501,30 @@ fn runtime_prompt_composition_falls_back_to_defaults_when_settings_are_corrupt()
     std::fs::write(&path, b"{not valid json").unwrap();
     let store = SystemPromptSettingsStore::open(path, legacy_path);
 
-    let settings = store.snapshot_for_runtime();
+    let snapshot = store.snapshot_for_runtime();
 
     assert_eq!(
-        settings.global_override(PromptMode::Chatbot, PromptTier::Compact),
+        snapshot
+            .settings
+            .global_override(PromptMode::Chatbot, PromptTier::Compact),
         None
     );
+    assert_eq!(
+        snapshot.notice_key,
+        Some("errors.localStore.systemPromptsRuntimeFallback")
+    );
+}
+
+#[test]
+fn runtime_prompt_composition_has_no_warning_when_settings_are_available() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    let store = SystemPromptSettingsStore::open(path, legacy_path);
+
+    let snapshot = store.snapshot_for_runtime();
+
+    assert_eq!(snapshot.notice_key, None);
 }
 
 #[test]
@@ -593,10 +611,17 @@ fn successful_legacy_migration_is_retired_before_a_later_restart() {
         ),
         Some(&PromptOverride::Custom("legacy prompt".to_string()))
     );
+    let archive_path = directory
+        .path()
+        .join("ollama-system-prompts.json.migrated");
     assert!(!legacy_path.exists());
+    assert_eq!(
+        std::fs::read(&archive_path).unwrap(),
+        br#"{"prompts":{"gemma4:e2b":"legacy prompt"}}"#
+    );
 
     std::fs::remove_file(&path).unwrap();
-    let restarted = SystemPromptSettingsStore::open(path, legacy_path);
+    let restarted = SystemPromptSettingsStore::open(path, legacy_path.clone());
     assert_eq!(
         restarted
             .snapshot()
@@ -608,10 +633,12 @@ fn successful_legacy_migration_is_retired_before_a_later_restart() {
             ),
         None
     );
+    assert!(!legacy_path.exists());
+    assert!(archive_path.exists());
 }
 
 #[test]
-fn stale_legacy_file_is_retired_when_current_settings_already_exist() {
+fn current_settings_do_not_remove_a_restored_legacy_backup() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("system-prompt-settings.json");
     let legacy_path = directory.path().join("ollama-system-prompts.json");
@@ -632,12 +659,15 @@ fn stale_legacy_file_is_retired_when_current_settings_already_exist() {
         loaded.global_override(PromptMode::Chatbot, PromptTier::Compact),
         Some(&PromptOverride::Custom("current".to_string()))
     );
-    assert!(!legacy_path.exists());
+    assert_eq!(
+        std::fs::read(legacy_path).unwrap(),
+        br#"{"prompts":{"gemma4:e2b":"stale legacy"}}"#
+    );
 }
 
 #[test]
 #[cfg(unix)]
-fn failed_legacy_migration_write_reports_a_write_error() {
+fn failed_legacy_archiving_does_not_block_migrated_settings() {
     use std::os::unix::fs::PermissionsExt;
 
     let directory = tempfile::tempdir().unwrap();
@@ -648,10 +678,95 @@ fn failed_legacy_migration_write_reports_a_write_error() {
     std::fs::set_permissions(&legacy_parent, std::fs::Permissions::from_mode(0o500)).unwrap();
     let path = directory.path().join("system-prompt-settings.json");
 
-    let result = SystemPromptSettings::read_with_legacy(&path, &legacy_path).err();
+    let result = SystemPromptSettings::read_with_legacy(&path, &legacy_path);
     std::fs::set_permissions(&legacy_parent, std::fs::Permissions::from_mode(0o700)).unwrap();
 
-    assert_eq!(result, Some("system-prompt-store-write".to_string()));
+    assert!(result.is_ok());
+    assert!(path.exists());
+    assert!(legacy_path.exists());
+}
+
+#[test]
+fn archived_legacy_source_is_not_reimported_when_a_backup_is_restored() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    std::fs::write(
+        &legacy_path,
+        br#"{"prompts":{"gemma4:e2b":"first migration"}}"#,
+    )
+    .unwrap();
+    SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
+    std::fs::remove_file(&path).unwrap();
+    std::fs::write(
+        &legacy_path,
+        br#"{"prompts":{"gemma4:e2b":"restored backup"}}"#,
+    )
+    .unwrap();
+
+    let restarted = SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
+
+    assert_eq!(
+        restarted.ollama_override(
+            "gemma4:e2b",
+            PromptMode::Chatbot,
+            PromptTier::Compact,
+        ),
+        None
+    );
+    assert_eq!(
+        std::fs::read(legacy_path).unwrap(),
+        br#"{"prompts":{"gemma4:e2b":"restored backup"}}"#
+    );
+}
+
+#[test]
+fn migration_archive_keeps_entries_rejected_by_the_new_format() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    let legacy = br#"{"prompts":{"bad..model":"must stay recoverable"}}"#;
+    std::fs::write(&legacy_path, legacy).unwrap();
+
+    SystemPromptSettings::read_with_legacy(&path, &legacy_path).unwrap();
+
+    assert_eq!(
+        std::fs::read(
+            directory
+                .path()
+                .join("ollama-system-prompts.json.migrated")
+        )
+        .unwrap(),
+        legacy
+    );
+}
+
+#[test]
+#[cfg(unix)]
+fn invalid_migration_archive_blocks_legacy_reimport() {
+    use std::os::unix::fs::symlink;
+
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    let legacy_path = directory.path().join("ollama-system-prompts.json");
+    let archive_path = directory
+        .path()
+        .join("ollama-system-prompts.json.migrated");
+    let target = directory.path().join("archive-target");
+    std::fs::write(
+        &legacy_path,
+        br#"{"prompts":{"gemma4:e2b":"must not be imported"}}"#,
+    )
+    .unwrap();
+    std::fs::write(&target, b"archived").unwrap();
+    symlink(target, archive_path).unwrap();
+
+    assert_eq!(
+        SystemPromptSettings::read_with_legacy(&path, &legacy_path).err(),
+        Some("system-prompt-store-unavailable".to_string())
+    );
+    assert!(!path.exists());
+    assert!(legacy_path.exists());
 }
 
 #[test]
