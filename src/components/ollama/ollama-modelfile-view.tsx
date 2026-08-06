@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { SettingsDetailHeader } from "@/components/settings/shell/settings-detail-header";
 import { SettingsEntryList } from "@/components/settings/shell/settings-entry-list";
 import type { OllamaModel } from "@/types/agent";
 import { ModelfileViewer } from "./modelfile-viewer";
@@ -20,10 +19,11 @@ export function OllamaModelfileView({ models, selected, onSelect }: OllamaModelf
 
   if (selected) {
     return (
-      <>
-        <SettingsDetailHeader title={selected} onBack={() => onSelect(null)} />
-        <ModelfileViewer modelName={selected} onDeleted={() => onSelect(null)} />
-      </>
+      <ModelfileViewer
+        modelName={selected}
+        onBack={() => onSelect(null)}
+        onDeleted={() => onSelect(null)}
+      />
     );
   }
 

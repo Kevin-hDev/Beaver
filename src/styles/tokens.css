@@ -133,9 +133,10 @@
      d'un onglet de Réglages à l'autre. */
   --settings-tabbar-item-height: 1.6667rem;
   --settings-status-dot-size: 0.375rem;
-  --system-prompt-tier-min-width: 5.1111rem;
   --system-prompt-card-header-min-height: 3.2222rem;
-  --system-prompt-preview-min-height: 6.6667rem;
+  /* Une ligne de contenu entre ses marges : assez pour que la carte garde un
+     corps pendant le chargement, sans creuser un vide sous un prompt court. */
+  --system-prompt-preview-min-height: 4.75rem;
   --system-prompt-preview-max-height: calc(33em + var(--space-2xl));
   --system-prompt-editor-max-height: min(58vh, 37.7778rem);
   --system-prompt-preview-line-height: 1.5;

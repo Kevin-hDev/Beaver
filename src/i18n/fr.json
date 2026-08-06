@@ -785,7 +785,7 @@
       },
       "loss": {
         "title": "Le prompt personnalisé va être supprimé",
-        "body": "En continuant avec {{destination}}, le prompt personnalisé de ce mode et de ce format sera définitivement supprimé. Copiez-le avant de continuer si vous souhaitez le conserver.",
+        "body": "En continuant avec {{destination}}, le prompt personnalisé de ce mode et de ce format sera définitivement supprimé. Copie-le avant de continuer si tu veux le conserver.",
         "copy": "Copier le prompt", "copied": "Prompt copié", "copyError": "Impossible de copier le prompt.", "continue": "Continuer"
       }
     },

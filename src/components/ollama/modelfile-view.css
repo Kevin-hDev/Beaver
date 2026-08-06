@@ -1,28 +1,8 @@
 /* modelfile-view.css — ModelfileView component */
 
-.mfv-scroll {
-  padding: var(--chrome-5);
-  overflow-y: auto;
-  flex: 1;
-}
-
-.mfv-inner {
-  max-width: var(--settings-content-max-width);
-  width: 100%;
-  margin: 0 auto;
-}
-
-.mfv-title {
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-
-.mfv-actions {
-  display: flex;
-  gap: 8px;
-}
+/* La largeur de colonne, le défilement et les marges viennent du panneau de
+   Réglages qui accueille cette vue. Les redéclarer ici rétrécissait le contenu
+   et le décalait de l'en-tête qui porte le nom du modèle. */
 
 .mfv-parameters-card {
   margin-top: var(--space-lg);

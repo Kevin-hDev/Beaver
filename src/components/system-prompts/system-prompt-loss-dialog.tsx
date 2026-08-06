@@ -5,6 +5,9 @@ import type { PromptReplacementDestination } from "./use-system-prompt-replaceme
 import "./system-prompt-warning-dialog.css";
 import "./system-prompt-loss-dialog.css";
 
+/* Durée d'affichage de la confirmation de copie, avant retour au libellé. */
+const COPY_FEEDBACK_MS = 2000;
+
 interface SystemPromptLossDialogProps {
   content: string;
   destination: PromptReplacementDestination;
@@ -38,6 +41,14 @@ export function SystemPromptLossDialog({
       previousFocus?.focus();
     };
   }, [onCancel]);
+
+  /* Le libellé revient à son état d'origine : figé sur « copié », un second clic
+     ne renvoie plus rien à l'écran et on ne sait pas s'il a été pris en compte. */
+  useEffect(() => {
+    if (copyState !== "copied") return;
+    const timer = setTimeout(() => setCopyState("idle"), COPY_FEEDBACK_MS);
+    return () => clearTimeout(timer);
+  }, [copyState]);
 
   const copyPrompt = async () => {
     try {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -75,7 +75,7 @@ describe("SystemPromptSettingsPanel", () => {
       />,
     );
     await screen.findByText("Beaver instructions");
-    expect(screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact ≤ 25B" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact < 25B" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("tab", { name: "settings.systemPrompt.modes.chatbot" }));
     fireEvent.click(screen.getByRole("tab", { name: /settings.systemPrompt.tiers.compact/ }));
@@ -173,24 +173,24 @@ describe("SystemPromptSettingsPanel", () => {
     expect(listen).toHaveBeenCalledWith("modelfile-updated", expect.any(Function));
   });
 
-  it("peut placer le mode à côté de l’en-tête du modèle Ollama", async () => {
-    render(
+  it("garde les deux sélecteurs groupés sur une seule ligne", async () => {
+    const { container } = render(
       <SystemPromptSettingsPanel
         target={{ scope: "ollama", model: "gemma4:e2b" }}
         warningKind="ollama"
         initialMode="agentic"
         initialTier="compact"
-        selectorHeader={<span>gemma4:e2b</span>}
-        selectorActions={<button type="button">Model actions</button>}
       />,
     );
     await screen.findByText("Beaver instructions");
 
-    const row = screen.getByText("gemma4:e2b").closest(".spp-mode-row");
+    const row = container.querySelector(".spp-selectors");
     expect(row).toContainElement(
       screen.getByRole("tab", { name: "settings.systemPrompt.modes.agentic" }),
     );
-    expect(row).toContainElement(screen.getByRole("button", { name: "Model actions" }));
+    expect(row).toContainElement(
+      screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact < 25B" }),
+    );
   });
 
   it("utilise Beaver seulement pour la combinaison sélectionnée", async () => {
@@ -317,6 +317,37 @@ describe("SystemPromptSettingsPanel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.loss.continue" }));
     await screen.findByText("Native instructions");
+  });
+
+  it("réarme le bouton de copie pour qu'un second clic reste lisible", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const customView: SystemPromptView = {
+      content: "Instructions to copy twice",
+      source: "custom",
+      selection: "custom",
+      nativePromptAvailable: true,
+    };
+    vi.mocked(invoke).mockResolvedValue(customView);
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "ollama", model: "phi4:latest" }}
+        warningKind="ollama"
+        initialMode="agentic"
+        initialTier="compact"
+      />,
+    );
+    await screen.findByText("Instructions to copy twice");
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useOllama" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.loss.copy" }));
+    await screen.findByRole("button", { name: "settings.systemPrompt.loss.copied" });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.loss.copy" })).toBeVisible();
+    vi.useRealTimers();
   });
 
   it("garde le dialogue ouvert si la copie échoue", async () => {
