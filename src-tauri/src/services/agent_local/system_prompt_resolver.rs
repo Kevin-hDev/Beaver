@@ -10,7 +10,7 @@ pub fn resolve_global(
     beaver_prompt: &str,
 ) -> SystemPromptView {
     match settings.global_override(mode, tier) {
-        Some(value) => from_override(value, true),
+        Some(value) => from_override(value, true, beaver_prompt),
         None => view(beaver_prompt, PromptSource::Beaver, false),
     }
 }
@@ -24,21 +24,26 @@ pub fn resolve_ollama(
     beaver_prompt: &str,
 ) -> SystemPromptView {
     if let Some(value) = settings.ollama_override(model, mode, tier) {
-        return from_override(value, true);
+        return from_override(value, true, beaver_prompt);
     }
     if let Some(native) = native_prompt.map(str::trim).filter(|value| !value.is_empty()) {
         return view(native, PromptSource::Ollama, false);
     }
     match settings.global_override(mode, tier) {
-        Some(value) => from_override(value, false),
+        Some(value) => from_override(value, false, beaver_prompt),
         None => view(beaver_prompt, PromptSource::Beaver, false),
     }
 }
 
-fn from_override(value: &PromptOverride, customized: bool) -> SystemPromptView {
+fn from_override(
+    value: &PromptOverride,
+    customized: bool,
+    beaver_prompt: &str,
+) -> SystemPromptView {
     match value {
         PromptOverride::Custom(content) => view(content, PromptSource::Custom, customized),
         PromptOverride::Disabled => view("", PromptSource::Custom, customized),
+        PromptOverride::Beaver => view(beaver_prompt, PromptSource::Beaver, false),
     }
 }
 

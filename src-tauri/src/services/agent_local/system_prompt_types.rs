@@ -19,6 +19,7 @@ pub enum PromptTier {
 pub enum PromptOverride {
     Custom(String),
     Disabled,
+    Beaver,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

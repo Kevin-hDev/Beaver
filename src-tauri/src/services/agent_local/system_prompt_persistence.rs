@@ -95,6 +95,7 @@ fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix) {
 fn sanitize_override(value: &PromptOverride) -> Option<PromptOverride> {
     match value {
         PromptOverride::Disabled => Some(PromptOverride::Disabled),
+        PromptOverride::Beaver => Some(PromptOverride::Beaver),
         PromptOverride::Custom(content)
             if !content.contains('\0') && content.len() <= MAX_PROMPT_BYTES =>
         {

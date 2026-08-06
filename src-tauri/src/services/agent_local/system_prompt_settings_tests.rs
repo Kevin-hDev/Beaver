@@ -91,6 +91,36 @@ fn ollama_custom_prompt_has_priority_over_native_and_global_prompts() {
 }
 
 #[test]
+fn restoring_an_ollama_prompt_explicitly_returns_to_beaver() {
+    let mut settings = SystemPromptSettings::default();
+    settings
+        .set_global(PromptMode::Chatbot, PromptTier::Compact, "global")
+        .unwrap();
+    settings
+        .set_ollama(
+            "gemma4:e2b",
+            PromptMode::Chatbot,
+            PromptTier::Compact,
+            "custom",
+        )
+        .unwrap();
+
+    settings.restore_ollama("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact);
+    let view = resolve_ollama(
+        &settings,
+        "gemma4:e2b",
+        PromptMode::Chatbot,
+        PromptTier::Compact,
+        Some("Test system prompt"),
+        "beaver",
+    );
+
+    assert_eq!(view.content, "beaver");
+    assert_eq!(view.source, PromptSource::Beaver);
+    assert!(!view.customized);
+}
+
+#[test]
 fn native_ollama_prompt_has_priority_over_the_global_prompt() {
     let mut settings = SystemPromptSettings::default();
     settings
@@ -208,6 +238,15 @@ fn settings_round_trip_keeps_disabled_and_custom_variants() {
             "local detailed",
         )
         .unwrap();
+    settings
+        .set_ollama(
+            "gemma4:e2b",
+            PromptMode::Chatbot,
+            PromptTier::Compact,
+            "custom",
+        )
+        .unwrap();
+    settings.restore_ollama("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact);
 
     settings.write_to_path(&path).unwrap();
     let loaded = SystemPromptSettings::read_from_path(&path);
@@ -219,6 +258,10 @@ fn settings_round_trip_keeps_disabled_and_custom_variants() {
     assert_eq!(
         loaded.ollama_override("qwen3:32b", PromptMode::Agentic, PromptTier::Detailed),
         Some(&PromptOverride::Custom("local detailed".into()))
+    );
+    assert_eq!(
+        loaded.ollama_override("gemma4:e2b", PromptMode::Chatbot, PromptTier::Compact),
+        Some(&PromptOverride::Beaver)
     );
 }
 

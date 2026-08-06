@@ -73,13 +73,8 @@ impl SystemPromptSettings {
     }
 
     pub fn restore_ollama(&mut self, model: &str, mode: PromptMode, tier: PromptTier) {
-        let Some(matrix) = self.ollama.get_mut(model) else {
-            return;
-        };
-        *matrix.get_mut(mode, tier) = None;
-        if matrix.is_empty() {
-            self.ollama.remove(model);
-        }
+        let matrix = self.ollama.entry(model.to_string()).or_default();
+        *matrix.get_mut(mode, tier) = Some(PromptOverride::Beaver);
     }
 
     pub fn remove_ollama_model(&mut self, model: &str) {
