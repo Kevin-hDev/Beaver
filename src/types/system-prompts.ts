@@ -12,4 +12,5 @@ export interface SystemPromptView {
   source: SystemPromptSource;
   selection: SystemPromptSelection;
   disabled: boolean;
+  nativePromptAvailable: boolean;
 }

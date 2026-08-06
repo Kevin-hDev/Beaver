@@ -3,7 +3,6 @@ import { ConfirmButton } from "@/components/settings/confirm-button";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SystemPromptSettingsPanel } from "@/components/system-prompts/system-prompt-settings-panel";
 import { systemPromptTierForModel } from "@/lib/system-prompt-tiers";
-import { hasSystemPrompt } from "./modelfile-utils";
 import "./ollama.css";
 import "./modelfile-view.css";
 
@@ -37,7 +36,6 @@ export function ModelfileView({
           warningKind="ollama"
           initialMode="agentic"
           initialTier={systemPromptTierForModel(modelName)}
-          nativePromptAvailable={hasSystemPrompt(modelfile)}
           selectorHeader={<h2 className="mfv-title">{modelName}</h2>}
           selectorActions={(
             <div className="mfv-actions">

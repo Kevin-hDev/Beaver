@@ -76,6 +76,7 @@ pub async fn translate_description(
 pub async fn delete_ollama_model(app: tauri::AppHandle, name: String) -> Result<(), String> {
     ollama_registry::delete_model(&name).await?;
     crate::services::agent_local::system_prompt_store::remove_ollama_model(&name)?;
+    crate::services::agent_local::ollama_native_prompts::remove(&name)?;
     model_customizations::clear_model_customized(&name)?;
     let _ = app.emit("ollama-models-changed", ());
     Ok(())
@@ -97,6 +98,10 @@ pub async fn update_modelfile(
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<(), String> {
     let was_customized = model_customizations::is_model_customized(&name);
+    if !was_customized {
+        crate::services::agent_local::ollama_native_prompts::capture_current(&ollama, &name)
+            .await?;
+    }
     model_customizations::mark_model_customized(&name)?;
     if let Err(e) = ollama.update_modelfile(&name, &content).await {
         if !was_customized {
@@ -116,6 +121,10 @@ pub async fn update_parameters(
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<(), String> {
     let was_customized = model_customizations::is_model_customized(&name);
+    if !was_customized {
+        crate::services::agent_local::ollama_native_prompts::capture_current(&ollama, &name)
+            .await?;
+    }
     model_customizations::mark_model_customized(&name)?;
     if let Err(e) = ollama.update_parameters(&name, parameters).await {
         if !was_customized {

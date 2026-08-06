@@ -87,6 +87,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   min-height: var(--system-prompt-card-header-min-height);
   padding: var(--space-sm) var(--space-lg);
   gap: var(--space-md);
@@ -100,10 +101,23 @@
   gap: var(--space-sm);
 }
 
+.spp-title-group {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.spp-actions {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
 .spp-card-title {
   color: var(--ink);
   font-size: var(--text-sm);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .spp-source {

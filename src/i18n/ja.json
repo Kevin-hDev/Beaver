@@ -772,23 +772,7 @@
       "tiers": { "compact": "コンパクト", "detailed": "詳細" },
       "modeLabel": "モデルモード", "tierLabel": "指示形式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "編集", "restore": "復元", "useBeaver": "Beaver を使用", "restoreOllama": "Ollama を復元", "restoreDefault": "既定の動作に戻す", "save": "保存", "cancel": "キャンセル",
-      "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
-      "placeholder": "空のままにすると、システム指示は送信されません。",
-      "warning": {
-        "title": "注意",
-        "global": { "body": "この変更は、独自のカスタム指示を持つ Ollama モデルを除き、すべての AI の Beaver システム指示を置き換えます。" },
-        "ollama": { "body": "この変更は、この Ollama モデルだけが使用するシステム指示を置き換えます。一般設定やモデル付属の指示より優先されます。" },
-        "remember": "この警告を今後表示しない", "continue": "続ける"
-      }
-    },
-    "systemPrompt": {
-      "title": "システム指示", "instructions": "システム指示",
-      "modes": { "chatbot": "チャットボット", "agentic": "エージェント" },
-      "tiers": { "compact": "コンパクト", "detailed": "詳細" },
-      "modeLabel": "モデルモード", "tierLabel": "指示形式",
-      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "編集", "restore": "復元", "useBeaver": "Beaver を使用", "restoreOllama": "Ollama を復元", "restoreDefault": "既定の動作に戻す", "save": "保存", "cancel": "キャンセル",
+      "edit": "編集", "restore": "復元", "useBeaver": "Beaver を使用", "useOllama": "Ollama を使用", "save": "保存", "cancel": "キャンセル",
       "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
       "placeholder": "空のままにすると、システム指示は送信されません。",
       "warning": {
@@ -809,7 +793,6 @@
       "llm": "LLM",
       "tools": "Tools",
       "memory": "メモリ",
-      "systemPrompt": "System prompt",
       "systemPrompt": "System prompt",
       "mascot": "マスコット",
       "archivedChats": "アーカイブ済みチャット",

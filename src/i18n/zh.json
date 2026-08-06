@@ -772,23 +772,7 @@
       "tiers": { "compact": "精简", "detailed": "详细" },
       "modeLabel": "模型模式", "tierLabel": "指令格式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "编辑", "restore": "恢复", "useBeaver": "使用 Beaver", "restoreOllama": "恢复 Ollama", "restoreDefault": "恢复默认行为", "save": "保存", "cancel": "取消",
-      "empty": "无系统指令", "editorLabel": "自定义系统指令",
-      "placeholder": "留空则不发送任何系统指令。",
-      "warning": {
-        "title": "注意",
-        "global": { "body": "此更改将替换所有 AI 的 Beaver 系统指令，但拥有自定义指令的 Ollama 模型除外。" },
-        "ollama": { "body": "此更改仅替换此 Ollama 模型使用的系统指令，并优先于常规设置和模型自带的指令。" },
-        "remember": "不再显示此警告", "continue": "继续"
-      }
-    },
-    "systemPrompt": {
-      "title": "系统指令", "instructions": "系统指令",
-      "modes": { "chatbot": "聊天机器人", "agentic": "智能体" },
-      "tiers": { "compact": "精简", "detailed": "详细" },
-      "modeLabel": "模型模式", "tierLabel": "指令格式",
-      "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "编辑", "restore": "恢复", "useBeaver": "使用 Beaver", "restoreOllama": "恢复 Ollama", "restoreDefault": "恢复默认行为", "save": "保存", "cancel": "取消",
+      "edit": "编辑", "restore": "恢复", "useBeaver": "使用 Beaver", "useOllama": "使用 Ollama", "save": "保存", "cancel": "取消",
       "empty": "无系统指令", "editorLabel": "自定义系统指令",
       "placeholder": "留空则不发送任何系统指令。",
       "warning": {
@@ -809,7 +793,6 @@
       "llm": "LLM",
       "tools": "Tools",
       "memory": "记忆",
-      "systemPrompt": "System prompt",
       "systemPrompt": "System prompt",
       "mascot": "吉祥物",
       "archivedChats": "已归档聊天",

@@ -1,7 +1,6 @@
 use super::system_prompt_types::{PromptMode, PromptOverride, PromptTier};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::sync::{Mutex, OnceLock};
 
 const MAX_MODELS: usize = 512;
 const MAX_PROMPT_BYTES: usize = 64 * 1024;
@@ -18,7 +17,7 @@ struct PromptMatrix {
     agentic: PromptPair,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 struct PromptPair {
     compact: Option<PromptOverride>,
     detailed: Option<PromptOverride>,
@@ -143,86 +142,19 @@ fn normalize_override(prompt: &str) -> Result<PromptOverride, String> {
     }
 }
 
-pub fn snapshot() -> Result<SystemPromptSettings, String> {
-    store_cache()
-        .lock()
-        .map(|settings| settings.clone())
-        .map_err(|_| "system-prompt-store-read".to_string())
-}
-
-pub fn save_global(mode: PromptMode, tier: PromptTier, prompt: &str) -> Result<(), String> {
-    mutate(|settings| settings.set_global(mode, tier, prompt))
-}
-
-pub fn save_ollama(
-    model: &str,
-    mode: PromptMode,
-    tier: PromptTier,
-    prompt: &str,
-) -> Result<(), String> {
-    mutate(|settings| settings.set_ollama(model, mode, tier, prompt))
-}
-
-pub fn restore_global(mode: PromptMode, tier: PromptTier) -> Result<(), String> {
-    mutate(|settings| {
-        settings.restore_global(mode, tier);
-        Ok(())
-    })
-}
-
-pub fn restore_ollama(model: &str, mode: PromptMode, tier: PromptTier) -> Result<(), String> {
-    mutate(|settings| settings.select_ollama_beaver(model, mode, tier))
-}
-
-pub fn restore_ollama_default(
-    model: &str,
-    mode: PromptMode,
-    tier: PromptTier,
-) -> Result<(), String> {
-    mutate(|settings| settings.restore_ollama_default(model, mode, tier))
-}
-
-pub fn remove_ollama_model(model: &str) -> Result<(), String> {
-    super::model_customizations::validate_model_name(model)?;
-    mutate(|settings| {
-        settings.remove_ollama_model(model);
-        Ok(())
-    })
-}
-
-fn mutate(
-    update: impl FnOnce(&mut SystemPromptSettings) -> Result<(), String>,
-) -> Result<(), String> {
-    let mut current = store_cache()
-        .lock()
-        .map_err(|_| "system-prompt-store-write".to_string())?;
-    let mut candidate = current.clone();
-    update(&mut candidate)?;
-    candidate.write_to_path(&store_path())?;
-    *current = candidate;
-    Ok(())
-}
-
-fn store_cache() -> &'static Mutex<SystemPromptSettings> {
-    static STORE: OnceLock<Mutex<SystemPromptSettings>> = OnceLock::new();
-    STORE.get_or_init(|| {
-        Mutex::new(SystemPromptSettings::read_with_legacy(
-            &store_path(),
-            &legacy_store_path(),
-        ))
-    })
-}
-
-fn store_path() -> std::path::PathBuf {
-    crate::services::paths::data_dir().join("system-prompt-settings.json")
-}
-
-fn legacy_store_path() -> std::path::PathBuf {
-    crate::services::paths::data_dir().join("ollama-system-prompts.json")
-}
+pub use runtime::{
+    remove_ollama_model, restore_global, restore_ollama, restore_ollama_default, save_global,
+    save_ollama, snapshot,
+};
 
 #[path = "system_prompt_persistence.rs"]
 mod persistence;
 
 #[path = "system_prompt_store_selection.rs"]
 mod selection;
+
+#[path = "system_prompt_store_serde.rs"]
+mod serde_pair;
+
+#[path = "system_prompt_store_runtime.rs"]
+mod runtime;

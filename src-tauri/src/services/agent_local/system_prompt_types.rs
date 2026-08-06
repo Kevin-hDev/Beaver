@@ -14,13 +14,11 @@ pub enum PromptTier {
     Detailed,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "state", content = "content", rename_all = "lowercase")]
 pub enum PromptOverride {
     Custom(String),
     Disabled,
-    #[serde(skip_serializing)]
-    Beaver,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -47,4 +45,5 @@ pub struct SystemPromptView {
     pub source: PromptSource,
     pub selection: PromptSelection,
     pub disabled: bool,
+    pub native_prompt_available: bool,
 }

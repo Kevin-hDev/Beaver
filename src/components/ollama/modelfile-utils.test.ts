@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractParameters, hasSystemPrompt } from "./modelfile-utils";
+import { extractParameters } from "./modelfile-utils";
 
 // --- extractParameters -----------------------------------------------------
 
@@ -63,14 +63,5 @@ describe("extractParameters", () => {
     ).join("\n");
 
     expect(extractParameters(modelfile)).toHaveLength(128);
-  });
-});
-
-describe("hasSystemPrompt", () => {
-  it("détecte uniquement une instruction SYSTEM réelle", () => {
-    expect(hasSystemPrompt('FROM llama3\nSYSTEM "Native prompt"')).toBe(true);
-    expect(hasSystemPrompt('FROM llama3\n  SYSTEM "Indented prompt"')).toBe(true);
-    expect(hasSystemPrompt("FROM llama3\n# SYSTEM disabled")).toBe(false);
-    expect(hasSystemPrompt("FROM llama3\nPARAMETER stop SYSTEM")).toBe(false);
   });
 });

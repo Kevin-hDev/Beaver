@@ -18,6 +18,7 @@ const beaverView: SystemPromptView = {
   source: "beaver",
   selection: "default",
   disabled: false,
+  nativePromptAvailable: false,
 };
 
 describe("SystemPromptSettingsPanel", () => {
@@ -52,6 +53,7 @@ describe("SystemPromptSettingsPanel", () => {
       />,
     );
     await screen.findByText("Beaver instructions");
+    expect(screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact ≤ 25B" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("tab", { name: "settings.systemPrompt.modes.chatbot" }));
     fireEvent.click(screen.getByRole("tab", { name: /settings.systemPrompt.tiers.compact/ }));
@@ -100,6 +102,7 @@ describe("SystemPromptSettingsPanel", () => {
       source: "custom",
       selection: "disabled",
       disabled: true,
+      nativePromptAvailable: false,
     };
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "save_system_prompt_setting") return Promise.resolve(disabledView);
@@ -175,6 +178,7 @@ describe("SystemPromptSettingsPanel", () => {
       source: "custom",
       selection: "custom",
       disabled: false,
+      nativePromptAvailable: false,
     };
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "restore_system_prompt_setting") return Promise.resolve(beaverView);
@@ -208,10 +212,12 @@ describe("SystemPromptSettingsPanel", () => {
       source: "ollama",
       selection: "default",
       disabled: false,
+      nativePromptAvailable: true,
     };
     const forcedBeaverView: SystemPromptView = {
       ...beaverView,
       selection: "beaver",
+      nativePromptAvailable: true,
     };
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "restore_system_prompt_setting") return Promise.resolve(forcedBeaverView);
@@ -224,16 +230,15 @@ describe("SystemPromptSettingsPanel", () => {
         warningKind="ollama"
         initialMode="chatbot"
         initialTier="compact"
-        nativePromptAvailable
       />,
     );
     await screen.findByText("Native instructions");
 
     fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useBeaver" }));
     await screen.findByText("Beaver instructions");
-    expect(screen.getByRole("button", { name: "settings.systemPrompt.restoreOllama" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.useOllama" })).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.restoreOllama" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useOllama" }));
     await screen.findByText("Native instructions");
     expect(invoke).toHaveBeenCalledWith("restore_default_system_prompt_setting", {
       target: { scope: "ollama", model: "phi4:latest" },
@@ -248,12 +253,14 @@ describe("SystemPromptSettingsPanel", () => {
       source: "custom",
       selection: "custom",
       disabled: false,
+      nativePromptAvailable: true,
     };
     const nativeView: SystemPromptView = {
       content: "Native instructions",
       source: "ollama",
       selection: "default",
       disabled: false,
+      nativePromptAvailable: true,
     };
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "restore_default_system_prompt_setting") return Promise.resolve(nativeView);
@@ -265,14 +272,37 @@ describe("SystemPromptSettingsPanel", () => {
         warningKind="ollama"
         initialMode="agentic"
         initialTier="detailed"
-        nativePromptAvailable
       />,
     );
     await screen.findByText("Custom instructions");
 
     expect(screen.getByRole("button", { name: "settings.systemPrompt.restore" })).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.restoreOllama" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useOllama" }));
 
     await screen.findByText("Native instructions");
+  });
+
+  it("ne propose jamais Ollama quand aucun prompt natif vérifié n’existe", async () => {
+    const customView: SystemPromptView = {
+      content: "Test system prompt",
+      source: "custom",
+      selection: "custom",
+      disabled: false,
+      nativePromptAvailable: false,
+    };
+    vi.mocked(invoke).mockResolvedValue(customView);
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "ollama", model: "gemma4:e2b" }}
+        warningKind="ollama"
+        initialMode="agentic"
+        initialTier="compact"
+      />,
+    );
+    await screen.findByText("Test system prompt");
+
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.restore" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "settings.systemPrompt.useOllama" })).toBeNull();
+    expect(screen.queryByText("settings.systemPrompt.restoreDefault")).toBeNull();
   });
 });

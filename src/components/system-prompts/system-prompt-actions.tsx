@@ -4,20 +4,18 @@ import type { SystemPromptView } from "@/types/system-prompts";
 interface SystemPromptActionsProps {
   view: SystemPromptView | null;
   isOllama: boolean;
-  nativePromptAvailable: boolean;
   saving: boolean;
   onUseBeaver: () => void;
-  onRestoreDefault: () => void;
+  onUseOllama: () => void;
   onEdit: () => void;
 }
 
 export function SystemPromptActions({
   view,
   isOllama,
-  nativePromptAvailable,
   saving,
   onUseBeaver,
-  onRestoreDefault,
+  onUseOllama,
   onEdit,
 }: SystemPromptActionsProps) {
   const { t } = useTranslation();
@@ -26,26 +24,22 @@ export function SystemPromptActions({
   const canUseBeaver = isOllama
     && selection === "default"
     && view?.source !== "beaver";
-  const canRestoreDefault = isOllama
-    && (selection === "beaver" || hasCustomSelection);
+  const canUseOllama = isOllama
+    && view?.nativePromptAvailable
+    && selection !== "default";
 
   return (
     <div className="spp-actions">
-      {!isOllama && hasCustomSelection && (
-        <SecondaryAction label={t("settings.systemPrompt.restore")} onClick={onUseBeaver} disabled={saving} />
-      )}
-      {isOllama && hasCustomSelection && (
+      {hasCustomSelection && (
         <SecondaryAction label={t("settings.systemPrompt.restore")} onClick={onUseBeaver} disabled={saving} />
       )}
       {canUseBeaver && (
         <SecondaryAction label={t("settings.systemPrompt.useBeaver")} onClick={onUseBeaver} disabled={saving} />
       )}
-      {canRestoreDefault && (
+      {canUseOllama && (
         <SecondaryAction
-          label={t(nativePromptAvailable
-            ? "settings.systemPrompt.restoreOllama"
-            : "settings.systemPrompt.restoreDefault")}
-          onClick={onRestoreDefault}
+          label={t("settings.systemPrompt.useOllama")}
+          onClick={onUseOllama}
           disabled={saving}
         />
       )}

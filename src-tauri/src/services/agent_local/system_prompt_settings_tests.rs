@@ -213,6 +213,7 @@ fn native_ollama_prompt_has_priority_over_the_global_prompt() {
     assert_eq!(view.content, "native");
     assert_eq!(view.source, PromptSource::Ollama);
     assert_eq!(view.selection, PromptSelection::Default);
+    assert!(view.native_prompt_available);
 }
 
 #[test]
@@ -234,6 +235,7 @@ fn global_custom_prompt_is_used_when_ollama_has_no_own_prompt() {
     assert_eq!(view.content, "global");
     assert_eq!(view.source, PromptSource::Custom);
     assert_eq!(view.selection, PromptSelection::Default);
+    assert!(!view.native_prompt_available);
 }
 
 #[test]
@@ -419,4 +421,27 @@ fn legacy_beaver_state_is_migrated_without_discarding_other_settings() {
     );
     assert_eq!(restored.selection, PromptSelection::Beaver);
     assert_eq!(restored.content, "beaver");
+}
+
+#[test]
+fn legacy_global_beaver_marker_is_discarded_because_global_already_defaults_to_beaver() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("system-prompt-settings.json");
+    std::fs::write(
+        &path,
+        r#"{
+          "global": {
+            "chatbot": { "compact": { "state": "beaver" }, "detailed": null },
+            "agentic": { "compact": null, "detailed": null }
+          },
+          "ollama": {}
+        }"#,
+    )
+    .unwrap();
+
+    let settings = SystemPromptSettings::read_from_path(&path);
+    settings.write_to_path(&path).unwrap();
+
+    let serialized = std::fs::read_to_string(path).unwrap();
+    assert!(!serialized.contains(r#""compact_beaver": true"#));
 }

@@ -89,13 +89,14 @@ async fn finish_ollama(
     let id = state.id.clone();
     match result {
         Ok(()) => {
+            let ollama = OllamaClient::new();
+            let _ = crate::services::agent_local::ollama_native_prompts::capture_current(
+                &ollama,
+                &state.model_id,
+            )
+            .await;
             if let Some(perso) = saved {
-                model_customizations::restore_after_update(
-                    &OllamaClient::new(),
-                    &state.model_id,
-                    &perso,
-                )
-                .await;
+                model_customizations::restore_after_update(&ollama, &state.model_id, &perso).await;
             }
             let _ = app.emit("ollama-models-changed", ());
             emit_states(

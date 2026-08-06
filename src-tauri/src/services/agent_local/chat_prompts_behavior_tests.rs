@@ -33,6 +33,7 @@ fn custom_prompt_replaces_beaver_instructions_but_keeps_dynamic_context() {
         source: PromptSource::Custom,
         selection: PromptSelection::Custom,
         disabled: false,
+        native_prompt_available: false,
     };
     prepare_messages_with_tools(
         &mut messages,
@@ -83,6 +84,7 @@ fn custom_chat_prompt_replaces_static_chatbot_instructions() {
         source: PromptSource::Custom,
         selection: PromptSelection::Custom,
         disabled: false,
+        native_prompt_available: false,
     };
     prepare_messages_with_tools(
         &mut messages,
@@ -120,6 +122,7 @@ fn empty_custom_prompt_keeps_only_dynamic_system_context() {
         source: PromptSource::Custom,
         selection: PromptSelection::Disabled,
         disabled: true,
+        native_prompt_available: false,
     };
 
     prepare_messages_with_tools(

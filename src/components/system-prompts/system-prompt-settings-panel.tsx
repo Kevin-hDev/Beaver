@@ -26,7 +26,6 @@ interface SystemPromptSettingsPanelProps {
   warningKind: SystemPromptWarningKind;
   initialMode: SystemPromptMode;
   initialTier: SystemPromptTier;
-  nativePromptAvailable?: boolean;
   selectorHeader?: ReactNode;
   selectorActions?: ReactNode;
 }
@@ -36,7 +35,6 @@ export function SystemPromptSettingsPanel({
   warningKind,
   initialMode,
   initialTier,
-  nativePromptAvailable = false,
   selectorHeader,
   selectorActions,
 }: SystemPromptSettingsPanelProps) {
@@ -149,7 +147,7 @@ export function SystemPromptSettingsPanel({
     }
   };
 
-  const restoreDefault = async () => {
+  const selectOllama = async () => {
     setSaving(true);
     setError(false);
     try {
@@ -199,10 +197,9 @@ export function SystemPromptSettingsPanel({
             <SystemPromptActions
               view={view}
               isOllama={targetModel !== null}
-              nativePromptAvailable={nativePromptAvailable}
               saving={saving}
               onUseBeaver={() => { void restore(); }}
-              onRestoreDefault={() => { void restoreDefault(); }}
+              onUseOllama={() => { void selectOllama(); }}
               onEdit={startEditing}
             />
           </div>

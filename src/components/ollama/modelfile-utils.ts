@@ -15,7 +15,3 @@ export function extractParameters(modelfile: string): ModelParameter[] {
   }
   return result;
 }
-
-export function hasSystemPrompt(modelfile: string): boolean {
-  return /^[ \t]*SYSTEM(?:\s|$)/im.test(modelfile);
-}

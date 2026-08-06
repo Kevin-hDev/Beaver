@@ -71,12 +71,9 @@ pub async fn estimate_context_hidden_usage(
         ) {
             Some(view) => view,
             None => {
+                let client = crate::services::agent_local::ollama_client::OllamaClient::new();
                 let native_prompt =
-                    crate::services::agent_local::ollama_client::OllamaClient::new()
-                        .get_native_system_prompt(&model)
-                        .await
-                        .ok()
-                        .flatten();
+                    crate::services::agent_local::ollama_native_prompts::get(&client, &model).await;
                 crate::services::agent_local::system_prompt_resolver::resolve_ollama(
                     &prompt_settings,
                     &model,

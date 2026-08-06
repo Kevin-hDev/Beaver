@@ -81,6 +81,9 @@ pub mod ollama_collect;
 pub mod ollama_create_payload;
 pub mod ollama_model_helpers;
 pub mod ollama_modelfile_create;
+pub mod ollama_native_prompts;
+#[cfg(test)]
+mod ollama_native_prompts_tests;
 pub mod ollama_parameter_validation;
 pub mod ollama_registry;
 pub mod ollama_registry_details;

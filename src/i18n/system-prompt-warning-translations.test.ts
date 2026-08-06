@@ -13,8 +13,7 @@ interface WarningLocale {
     systemPrompt: {
       title: string;
       useBeaver: string;
-      restoreOllama: string;
-      restoreDefault: string;
+      useOllama: string;
       warning: {
         title: string;
         global: { body: string };
@@ -34,8 +33,7 @@ describe("system prompt warning translations", () => {
       expect(locale.settings.tabs.systemPrompt).toBeTruthy();
       expect(locale.settings.systemPrompt.title).toBeTruthy();
       expect(locale.settings.systemPrompt.useBeaver).toBeTruthy();
-      expect(locale.settings.systemPrompt.restoreOllama).toBeTruthy();
-      expect(locale.settings.systemPrompt.restoreDefault).toBeTruthy();
+      expect(locale.settings.systemPrompt.useOllama).toBeTruthy();
       expect(warning.title).toBeTruthy();
       expect(warning.global.body).toBeTruthy();
       expect(warning.ollama.body).toBeTruthy();

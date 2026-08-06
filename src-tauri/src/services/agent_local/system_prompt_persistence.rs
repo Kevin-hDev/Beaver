@@ -44,13 +44,13 @@ impl SystemPromptSettings {
 
     fn sanitized(self) -> Self {
         let mut clean = Self::default();
-        copy_matrix(&mut clean.global, &self.global);
+        copy_matrix(&mut clean.global, &self.global, false);
         for (model, matrix) in self.ollama.into_iter().take(MAX_MODELS) {
             if super::super::model_customizations::validate_model_name(&model).is_err() {
                 continue;
             }
             let mut target = PromptMatrix::default();
-            copy_matrix(&mut target, &matrix);
+            copy_matrix(&mut target, &matrix, true);
             if !target.is_empty() {
                 clean.ollama.insert(model, target);
             }
@@ -81,12 +81,10 @@ fn migrate_legacy(path: &Path) -> SystemPromptSettings {
     settings
 }
 
-fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix) {
+fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix, keep_beaver: bool) {
     for mode in [PromptMode::Chatbot, PromptMode::Agentic] {
         for tier in [PromptTier::Compact, PromptTier::Detailed] {
-            if source.beaver(mode, tier)
-                || matches!(source.get(mode, tier), Some(PromptOverride::Beaver))
-            {
+            if keep_beaver && source.beaver(mode, tier) {
                 target.set_beaver(mode, tier, true);
                 continue;
             }
@@ -101,7 +99,6 @@ fn copy_matrix(target: &mut PromptMatrix, source: &PromptMatrix) {
 fn sanitize_override(value: &PromptOverride) -> Option<PromptOverride> {
     match value {
         PromptOverride::Disabled => Some(PromptOverride::Disabled),
-        PromptOverride::Beaver => None,
         PromptOverride::Custom(content)
             if !content.contains('\0') && content.len() <= MAX_PROMPT_BYTES =>
         {
