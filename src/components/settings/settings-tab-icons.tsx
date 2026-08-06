@@ -1,32 +1,14 @@
 import type { ReactNode } from "react";
-import { svgSizeProps } from "@/components/ui/icon-size";
+import { InlineIcon } from "@/components/ui/inline-icon";
+import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
+import type { InlineIconProps } from "@/components/ui/inline-icon";
 
-export interface SettingsTabIconProps {
-  size?: number | string;
-  className?: string;
-}
+export type SettingsTabIconProps = InlineIconProps;
 
-interface TabIconProps extends SettingsTabIconProps {
-  viewBox: string;
-  children: ReactNode;
-}
+const TAB_ICON_SIZE = "var(--settings-tab-icon-size)";
 
-/* Les dessins sont posés dans la page en SVG plutôt que chargés en image :
-   `currentColor` ne suit la couleur de l'onglet — grise au repos, franche à la
-   sélection — et celle du thème que si le tracé appartient au document. */
-function TabIcon({ size = "var(--settings-tab-icon-size)", className, viewBox, children }: TabIconProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      {...svgSizeProps(size)}
-      viewBox={viewBox}
-      className={className}
-      aria-hidden="true"
-      focusable="false"
-    >
-      {children}
-    </svg>
-  );
+function TabIcon({ size = TAB_ICON_SIZE, className, viewBox, children }: SettingsTabIconProps & { viewBox: string; children: ReactNode }) {
+  return <InlineIcon size={size} className={className} viewBox={viewBox}>{children}</InlineIcon>;
 }
 
 export function GeneralIcon(props: SettingsTabIconProps) {
@@ -161,13 +143,10 @@ export function ExtensionsIcon(props: SettingsTabIconProps) {
   );
 }
 
-export function ArchivedChatsIcon(props: SettingsTabIconProps) {
-  return (
-    <TabIcon {...props} viewBox="0 0 24 25">
-      <path fill="currentColor" d="M10 11.565a.75.75 0 1 0 0 1.5h4a.75.75 0 0 0 0-1.5z" />
-      <path fill="currentColor" d="M2 6.064a2.25 2.25 0 0 1 2.25-2.25h15.5A2.25 2.25 0 0 1 22 6.064v1a2.25 2.25 0 0 1-1.25 2.017v9.984a2.25 2.25 0 0 1-2.25 2.25h-13a2.25 2.25 0 0 1-2.25-2.25V9.08A2.25 2.25 0 0 1 2 7.064zm2.75 3.25v9.75c0 .415.336.75.75.75h13a.75.75 0 0 0 .75-.75v-9.75zm15.75-2.25v-1a.75.75 0 0 0-.75-.75H4.25a.75.75 0 0 0-.75.75v1c0 .415.336.75.75.75h15.5a.75.75 0 0 0 .75-.75" />
-    </TabIcon>
-  );
+/* Le dessin vit hors de ce module : l'action qui archive une session, dans la
+   barre latérale, porte le même et les deux doivent rester identiques. */
+export function ArchivedChatsIcon({ size = TAB_ICON_SIZE, className }: SettingsTabIconProps) {
+  return <ArchiveBoxIcon size={size} className={className} />;
 }
 
 export function AboutIcon(props: SettingsTabIconProps) {
