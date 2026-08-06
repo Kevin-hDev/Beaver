@@ -90,6 +90,9 @@ async fn finish_ollama(
     match result {
         Ok(()) => {
             let ollama = OllamaClient::new();
+            // Keep this capture before restoring the user's saved Modelfile.
+            // At this point Ollama exposes the freshly downloaded native prompt;
+            // reversing the order would persist the custom prompt as native.
             let _ = crate::services::agent_local::ollama_native_prompts::capture_current(
                 &ollama,
                 &state.model_id,
