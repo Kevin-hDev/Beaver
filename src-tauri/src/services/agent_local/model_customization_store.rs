@@ -134,7 +134,8 @@ impl ModelCustomizationCatalog {
             crate::services::private_store::StoreLoad::Missing => Ok(Self::default()),
             crate::services::private_store::StoreLoad::Ready(catalog) => Ok(catalog),
             crate::services::private_store::StoreLoad::Unavailable(_) => {
-                Err(store_unavailable().to_string())
+                Err(crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE
+                    .to_string())
             }
         }
     }
@@ -223,9 +224,4 @@ fn load_catalog(
             crate::services::private_store::StoreFailure::Read,
         ),
     }
-}
-
-#[cfg(test)]
-fn store_unavailable() -> &'static str {
-    crate::services::private_store::error_codes::OLLAMA_CUSTOM_UNAVAILABLE
 }

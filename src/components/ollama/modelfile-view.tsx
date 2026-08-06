@@ -54,7 +54,7 @@ export function ModelfileView({
         />
 
         <SettingsCard className="mfv-parameters-card">
-          <ViewSection title={t("ollama.parameters")} editLabel={t("ollama.edit")} onEdit={onEditParameters} last>
+          <ViewSection title={t("ollama.parameters")} editLabel={t("ollama.edit")} onEdit={onEditParameters}>
             {parameters.length === 0 ? (
               <div className="mfv-no-params">
                 {t("ollama.noParameters")}
@@ -81,13 +81,13 @@ export function ModelfileView({
 }
 
 function ViewSection({
-  title, editLabel, onEdit, children, last,
+  title, editLabel, onEdit, children,
 }: {
   title: string; editLabel: string; onEdit: () => void;
-  children: React.ReactNode; last?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <div className={`mfv-section ${last ? "" : "mfv-section-border"}`}>
+    <div className="mfv-section">
       <div className="mfv-section-header">
         <span className="mfv-section-title">
           {title}

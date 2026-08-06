@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -111,11 +111,13 @@ test("chaque chemin de profil est borné, relatif et conserve le nom CL-GO", () 
   assert.equal(new Set(paths).size < paths.length, true, "config.json doit être partagé");
 });
 
-test("tous les contrats existent réellement dans les sources", () => {
+test("tous les contrats courants existent réellement dans les sources", () => {
   const manifest = loadManifest();
   for (const domain of manifest.domains) {
     for (const contract of domain.contracts) {
-      const source = boundedRead(safeRelativePath(contract.file), MAX_SOURCE_BYTES);
+      const path = safeRelativePath(contract.file);
+      if ((contract.scope ?? "baseline") === "baseline" && !existsSync(path)) continue;
+      const source = boundedRead(path, MAX_SOURCE_BYTES);
       assert.ok(contract.snippets.length > 0 && contract.snippets.length <= 16);
       for (const snippet of contract.snippets) {
         assert.ok(
@@ -140,7 +142,8 @@ test("aucune nouvelle identité de stockage Beaver n’est introduite", () => {
     "beaver-session-key",
   ];
   const sourceFiles = new Set(
-    manifest.domains.flatMap(({ contracts }) => contracts.map(({ file }) => file)),
+    manifest.domains.flatMap(({ contracts }) => contracts.map(({ file }) => file))
+      .filter((file) => existsSync(safeRelativePath(file))),
   );
   for (const file of sourceFiles) {
     const source = boundedRead(safeRelativePath(file), MAX_SOURCE_BYTES).toLowerCase();

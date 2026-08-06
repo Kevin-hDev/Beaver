@@ -79,7 +79,6 @@ pub fn prepare_messages(
         content: super::system_prompt_defaults::beaver_prompt(prompt_mode, prompt_tier),
         source: PromptSource::Beaver,
         selection: PromptSelection::Default,
-        disabled: false,
         native_prompt_available: None,
     };
     prepare_messages_with_tools(

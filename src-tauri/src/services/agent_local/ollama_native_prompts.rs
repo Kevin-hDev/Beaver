@@ -3,8 +3,6 @@ use super::modelfile_parser::parse_modelfile;
 use super::ollama_client::OllamaClient;
 use std::sync::OnceLock;
 
-#[cfg(test)]
-pub(crate) use store::NativePromptCatalog;
 pub(crate) use store::NativePromptStore;
 pub use store::NativePromptState;
 
@@ -127,3 +125,6 @@ fn store() -> &'static NativePromptStore {
 fn store_path() -> std::path::PathBuf {
     crate::services::paths::data_dir().join("ollama-native-system-prompts.json")
 }
+
+#[cfg(test)]
+pub(crate) use store::NativePromptCatalog;

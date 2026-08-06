@@ -32,7 +32,6 @@ fn custom_prompt_replaces_beaver_instructions_but_keeps_dynamic_context() {
         content: "CUSTOM MODEL BEHAVIOR".into(),
         source: PromptSource::Custom,
         selection: PromptSelection::Custom,
-        disabled: false,
         native_prompt_available: None,
     };
     prepare_messages_with_tools(
@@ -83,7 +82,6 @@ fn custom_chat_prompt_replaces_static_chatbot_instructions() {
         content: "CUSTOM CHAT BEHAVIOR".into(),
         source: PromptSource::Custom,
         selection: PromptSelection::Custom,
-        disabled: false,
         native_prompt_available: None,
     };
     prepare_messages_with_tools(
@@ -121,7 +119,6 @@ fn empty_custom_prompt_keeps_only_dynamic_system_context() {
         content: String::new(),
         source: PromptSource::Custom,
         selection: PromptSelection::Disabled,
-        disabled: true,
         native_prompt_available: None,
     };
 

@@ -573,9 +573,7 @@
     "ctx": "ctx",
     "vramWarning": "该模型可能超出你的可用 VRAM",
     "editModelfile": "编辑 Modelfile",
-    "systemPrompt": "System prompt",
     "parameters": "参数",
-    "noSystemPrompt": "（未定义 System prompt）",
     "noParameters": "（无参数 — Ollama 使用默认值）",
     "parameterEditorHint": "留空即可使用 Ollama 的默认设置。",
     "parameterDefaultValue": "默认值：{{value}}",
@@ -617,7 +615,6 @@
       "min_p": "相对于最佳候选，移除概率过低的选项。较高值更严格。",
       "stop": "遇到此文本或 token 时立即停止回复。可以添加多个停止序列。"
     },
-    "systemPromptPlaceholder": "定义模型的行为和个性…",
     "description": "描述",
     "translate": "翻译…",
     "translating": "翻译中…",

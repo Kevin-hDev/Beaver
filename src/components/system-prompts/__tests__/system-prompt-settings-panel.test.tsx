@@ -17,7 +17,6 @@ const beaverView: SystemPromptView = {
   content: "Beaver instructions",
   source: "beaver",
   selection: "default",
-  disabled: false,
   nativePromptAvailable: false,
 };
 
@@ -124,7 +123,6 @@ describe("SystemPromptSettingsPanel", () => {
       content: "",
       source: "custom",
       selection: "disabled",
-      disabled: true,
       nativePromptAvailable: false,
     };
     vi.mocked(invoke).mockImplementation((command) => {
@@ -200,7 +198,6 @@ describe("SystemPromptSettingsPanel", () => {
       content: "Custom instructions",
       source: "custom",
       selection: "custom",
-      disabled: false,
       nativePromptAvailable: false,
     };
     vi.mocked(invoke).mockImplementation((command) => {
@@ -239,7 +236,6 @@ describe("SystemPromptSettingsPanel", () => {
       content: "Native instructions",
       source: "ollama",
       selection: "default",
-      disabled: false,
       nativePromptAvailable: true,
     };
     const forcedBeaverView: SystemPromptView = {
@@ -280,14 +276,12 @@ describe("SystemPromptSettingsPanel", () => {
       content: "Custom instructions",
       source: "custom",
       selection: "custom",
-      disabled: false,
       nativePromptAvailable: true,
     };
     const nativeView: SystemPromptView = {
       content: "Native instructions",
       source: "ollama",
       selection: "default",
-      disabled: false,
       nativePromptAvailable: true,
     };
     vi.mocked(invoke).mockImplementation((command) => {
@@ -330,7 +324,6 @@ describe("SystemPromptSettingsPanel", () => {
       content: "Instructions to preserve",
       source: "custom",
       selection: "custom",
-      disabled: false,
       nativePromptAvailable: true,
     };
     clipboardWrite.mockRejectedValueOnce(new Error("clipboard unavailable"));
@@ -363,7 +356,6 @@ describe("SystemPromptSettingsPanel", () => {
       content: "Keep these instructions",
       source: "custom",
       selection: "custom",
-      disabled: false,
       nativePromptAvailable: false,
     };
     vi.mocked(invoke).mockResolvedValue(customView);
@@ -396,7 +388,6 @@ describe("SystemPromptSettingsPanel", () => {
       content: "Test system prompt",
       source: "custom",
       selection: "custom",
-      disabled: false,
       nativePromptAvailable: false,
     };
     vi.mocked(invoke).mockResolvedValue(customView);

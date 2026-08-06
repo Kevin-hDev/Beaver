@@ -573,9 +573,7 @@
     "ctx": "ctx",
     "vramWarning": "このモデルは利用可能な VRAM を超える可能性があります",
     "editModelfile": "Modelfile を編集",
-    "systemPrompt": "System prompt",
     "parameters": "パラメーター",
-    "noSystemPrompt": "（System prompt が定義されていません）",
     "noParameters": "（パラメーターなし — Ollama のデフォルト設定を使用）",
     "parameterEditorHint": "空欄のままにすると Ollama の既定値を使用します。",
     "parameterDefaultValue": "既定値：{{value}}",
@@ -617,7 +615,6 @@
       "min_p": "最良候補と比べて確率が低すぎる候補を除外します。高い値ほど厳しくなります。",
       "stop": "このテキストまたは token に達すると応答を直ちに停止します。複数追加できます。"
     },
-    "systemPromptPlaceholder": "モデルの動作とキャラクターを定義してください…",
     "description": "説明",
     "translate": "翻訳…",
     "translating": "翻訳中…",

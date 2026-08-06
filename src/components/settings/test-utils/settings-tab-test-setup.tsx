@@ -42,7 +42,6 @@ vi.mock("@tauri-apps/api/core", async () => {
         content: "Beaver instructions",
         source: "beaver",
         selection: "default",
-        disabled: false,
       });
       if (FAILED_COMMANDS.has(cmd)) return Promise.reject(new Error("test failure"));
       if (cmd === "get_memory_project_topics") {

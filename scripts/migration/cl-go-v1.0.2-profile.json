@@ -292,7 +292,9 @@
       "profilePaths": [
         "ollama-bundle/VERSION",
         "ollama-custom-models.json",
-        "ollama-system-prompts.json"
+        "ollama-system-prompts.json",
+        "ollama-native-system-prompts.json",
+        "system-prompt-settings.json"
       ],
       "contracts": [
         {
@@ -306,9 +308,26 @@
         {
           "file": "src-tauri/src/services/agent_local/ollama_behavior_overrides.rs",
           "snippets": [".join(\"ollama-system-prompts.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/system_prompt_store_runtime.rs",
+          "snippets": [
+            ".join(\"ollama-system-prompts.json\")",
+            ".join(\"system-prompt-settings.json\")"
+          ]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/ollama_native_prompts.rs",
+          "snippets": [".join(\"ollama-native-system-prompts.json\")"]
         }
       ],
-      "evidence": ["src-tauri/src/commands/ollama_audit_tests.rs"],
+      "evidence": [
+        "src-tauri/src/commands/ollama_audit_tests.rs",
+        "src-tauri/src/services/agent_local/ollama_native_prompts_tests.rs",
+        "src-tauri/src/services/agent_local/system_prompt_settings_tests.rs"
+      ],
       "manualGates": ["Vérifie qu’aucun modèle Ollama réel n’est retéléchargé."]
     },
     {

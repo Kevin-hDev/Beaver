@@ -2,8 +2,6 @@ use crate::services::agent_local::ollama_client::OllamaClient;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
-#[cfg(test)]
-pub(crate) use store::ModelCustomizationCatalog;
 pub(crate) use store::ModelCustomizationStore;
 
 #[path = "model_customization_store.rs"]
@@ -96,3 +94,6 @@ pub(crate) fn validate_model_name(name: &str) -> Result<(), String> {
 fn is_allowed_model_char(c: char) -> bool {
     c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ':' | '/')
 }
+
+#[cfg(test)]
+pub(crate) use store::ModelCustomizationCatalog;

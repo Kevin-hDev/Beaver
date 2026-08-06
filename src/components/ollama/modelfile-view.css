@@ -32,10 +32,6 @@
   padding: 12px 20px;
 }
 
-.mfv-section-border {
-  border-bottom: 1px solid var(--edge);
-}
-
 .mfv-section-header {
   display: flex;
   align-items: center;

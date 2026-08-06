@@ -578,9 +578,7 @@
     "ctx": "ctx",
     "vramWarning": "Ce modèle pourrait dépasser votre VRAM disponible",
     "editModelfile": "Éditer le modelfile",
-    "systemPrompt": "System prompt",
     "parameters": "Paramètres",
-    "noSystemPrompt": "(aucun system prompt défini)",
     "noParameters": "(aucun paramètre — Ollama utilise ses valeurs par défaut)",
     "parameterEditorHint": "Laisse une valeur vide pour utiliser le réglage par défaut d’Ollama.",
     "parameterDefaultValue": "Valeur par défaut : {{value}}",
@@ -622,7 +620,6 @@
       "min_p": "Élimine les choix trop improbables par rapport au meilleur choix. Plus haut rend la sélection plus stricte.",
       "stop": "Texte ou token qui arrête immédiatement la réponse. Plusieurs séquences peuvent être ajoutées."
     },
-    "systemPromptPlaceholder": "Définis le comportement et la personnalité du modèle…",
     "description": "Description",
     "translate": "Traduire…",
     "translating": "Traduction en cours…",

@@ -90,7 +90,6 @@ fn ollama_custom_prompt_has_priority_over_native_and_global_prompts() {
     assert_eq!(view.content, "local");
     assert_eq!(view.source, PromptSource::Custom);
     assert_eq!(view.selection, PromptSelection::Custom);
-    assert!(!view.disabled);
 }
 
 #[test]
@@ -291,7 +290,6 @@ fn explicit_empty_ollama_prompt_blocks_every_inherited_prompt() {
     assert_eq!(view.content, "");
     assert_eq!(view.source, PromptSource::Custom);
     assert_eq!(view.selection, PromptSelection::Disabled);
-    assert!(view.disabled);
 }
 
 #[test]
@@ -310,7 +308,6 @@ fn global_empty_prompt_is_custom_and_can_be_restored_to_beaver() {
     assert_eq!(disabled.content, "");
     assert_eq!(disabled.source, PromptSource::Custom);
     assert_eq!(disabled.selection, PromptSelection::Disabled);
-    assert!(disabled.disabled);
 
     settings.restore_global(PromptMode::Chatbot, PromptTier::Compact);
     let restored = resolve_global(

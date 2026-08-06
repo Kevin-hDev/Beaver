@@ -122,7 +122,6 @@ fn view(
         content: content.to_string(),
         source,
         selection,
-        disabled: content.is_empty(),
         native_prompt_available,
     }
 }

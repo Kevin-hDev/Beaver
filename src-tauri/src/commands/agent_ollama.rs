@@ -75,11 +75,22 @@ pub async fn translate_description(
 #[tauri::command]
 pub async fn delete_ollama_model(app: tauri::AppHandle, name: String) -> Result<(), String> {
     ollama_registry::delete_model(&name).await?;
-    crate::services::agent_local::system_prompt_store::remove_ollama_model(&name)?;
-    crate::services::agent_local::ollama_native_prompts::remove(&name)?;
-    model_customizations::clear_model_customized(&name)?;
+    // Construire le tableau exécute les trois nettoyages avant de retenir la
+    // première erreur : un store indisponible ne doit pas laisser les suivants orphelins.
+    let cleanup_result = first_cleanup_error([
+        crate::services::agent_local::system_prompt_store::remove_ollama_model(&name),
+        crate::services::agent_local::ollama_native_prompts::remove(&name),
+        model_customizations::clear_model_customized(&name),
+    ]);
     let _ = app.emit("ollama-models-changed", ());
-    Ok(())
+    cleanup_result
+}
+
+fn first_cleanup_error<const N: usize>(results: [Result<(), String>; N]) -> Result<(), String> {
+    results
+        .into_iter()
+        .find_map(Result::err)
+        .map_or(Ok(()), Err)
 }
 
 #[tauri::command]
@@ -135,4 +146,32 @@ pub async fn update_parameters(
     }
     let _ = app.emit("modelfile-updated", &name);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::first_cleanup_error;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn deleted_model_cleanup_attempts_every_store_and_returns_the_first_error() {
+        let calls = AtomicUsize::new(0);
+        let result = first_cleanup_error([
+            {
+                calls.fetch_add(1, Ordering::Relaxed);
+                Err("first".to_string())
+            },
+            {
+                calls.fetch_add(1, Ordering::Relaxed);
+                Ok(())
+            },
+            {
+                calls.fetch_add(1, Ordering::Relaxed);
+                Err("last".to_string())
+            },
+        ]);
+
+        assert_eq!(calls.load(Ordering::Relaxed), 3);
+        assert_eq!(result, Err("first".to_string()));
+    }
 }
