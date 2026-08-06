@@ -772,7 +772,7 @@
       "tiers": { "compact": "Compacto", "detailed": "Detallado" },
       "modeLabel": "Modo del modelo", "tierLabel": "Formato de instrucciones",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "Editar", "restore": "Restaurar", "useBeaver": "Usar Beaver", "useOllama": "Usar Ollama", "save": "Guardar", "cancel": "Cancelar",
+      "edit": "Editar", "useBeaver": "Usar Beaver", "useOllama": "Usar Ollama", "save": "Guardar", "cancel": "Cancelar",
       "empty": "Sin instrucciones del sistema", "editorLabel": "Instrucciones del sistema personalizadas",
       "placeholder": "Déjalo vacío para no enviar instrucciones del sistema.",
       "warning": {
@@ -780,6 +780,11 @@
         "global": { "body": "Este cambio reemplaza las instrucciones del sistema de Beaver para todas las IA, excepto los modelos Ollama que tienen sus propias instrucciones personalizadas." },
         "ollama": { "body": "Este cambio reemplaza las instrucciones del sistema usadas solo por este modelo Ollama. Tiene prioridad sobre los ajustes generales y las instrucciones incluidas con el modelo." },
         "remember": "No volver a mostrar esta advertencia", "continue": "Continuar"
+      },
+      "loss": {
+        "title": "El prompt personalizado se eliminará",
+        "body": "Al continuar con {{destination}}, se eliminará definitivamente el prompt personalizado de este modo y formato. Cópialo antes de continuar si quieres conservarlo.",
+        "copy": "Copiar prompt", "copied": "Prompt copiado", "copyError": "No se pudo copiar el prompt.", "continue": "Continuar"
       }
     },
     "sections": { "preferences": "Preferencias", "agent": "Agente", "models": "Modelos", "integrations": "Integraciones", "application": "Aplicación" },

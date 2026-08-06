@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -15,6 +14,11 @@ import type {
 import { SystemPromptEditorCard } from "./system-prompt-editor-card";
 import { SystemPromptPreview } from "./system-prompt-preview";
 import { SystemPromptActions } from "./system-prompt-actions";
+import { SystemPromptLossDialog } from "./system-prompt-loss-dialog";
+import {
+  useSystemPromptReplacement,
+  type PromptReplacementDestination,
+} from "./use-system-prompt-replacement";
 import { SystemPromptSelectors } from "./system-prompt-selectors";
 import {
   shouldShowSystemPromptWarning,
@@ -55,6 +59,7 @@ export function SystemPromptSettingsPanel({
     [targetModel],
   );
   const targetKey = targetModel ? `ollama:${targetModel}` : "global";
+  const selectionKey = `${targetKey}:${mode}:${tier}`;
 
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
@@ -132,16 +137,19 @@ export function SystemPromptSettingsPanel({
     }
   };
 
-  const restore = async () => {
+  const replacePrompt = async (destination: PromptReplacementDestination) => {
     setSaving(true);
     setError(null);
     try {
-      const restored = await invoke<SystemPromptView>("restore_system_prompt_setting", {
+      const command = destination === "beaver"
+        ? "restore_system_prompt_setting"
+        : "restore_default_system_prompt_setting";
+      const replacement = await invoke<SystemPromptView>(command, {
         target: commandTarget,
         mode,
         tier,
       });
-      setView(restored);
+      setView(replacement);
     } catch (cause) {
       setError(cause);
     } finally {
@@ -149,22 +157,12 @@ export function SystemPromptSettingsPanel({
     }
   };
 
-  const selectOllama = async () => {
-    setSaving(true);
-    setError(null);
-    try {
-      const restored = await invoke<SystemPromptView>("restore_default_system_prompt_setting", {
-        target: commandTarget,
-        mode,
-        tier,
-      });
-      setView(restored);
-    } catch (cause) {
-      setError(cause);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    pendingReplacement,
+    requestReplacement,
+    cancelReplacement,
+    confirmReplacement,
+  } = useSystemPromptReplacement({ view, selectionKey, replacePrompt });
 
   return (
     <div className="spp-root">
@@ -200,8 +198,8 @@ export function SystemPromptSettingsPanel({
               view={view}
               isOllama={targetModel !== null}
               saving={saving}
-              onUseBeaver={() => { void restore(); }}
-              onUseOllama={() => { void selectOllama(); }}
+              onUseBeaver={() => requestReplacement("beaver")}
+              onUseOllama={() => requestReplacement("ollama")}
               onEdit={startEditing}
             />
           </div>
@@ -216,6 +214,14 @@ export function SystemPromptSettingsPanel({
           kind={warningKind}
           onCancel={() => setWarning(false)}
           onContinue={() => { setWarning(false); setEditing(true); }}
+        />
+      )}
+      {pendingReplacement?.selectionKey === selectionKey && (
+        <SystemPromptLossDialog
+          content={pendingReplacement.content}
+          destination={pendingReplacement.destination}
+          onCancel={cancelReplacement}
+          onContinue={confirmReplacement}
         />
       )}
     </div>

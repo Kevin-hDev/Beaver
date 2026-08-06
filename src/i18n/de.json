@@ -772,7 +772,7 @@
       "tiers": { "compact": "Kompakt", "detailed": "Detailliert" },
       "modeLabel": "Modellmodus", "tierLabel": "Anweisungsformat",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "Bearbeiten", "restore": "Wiederherstellen", "useBeaver": "Beaver verwenden", "useOllama": "Ollama verwenden", "save": "Speichern", "cancel": "Abbrechen",
+      "edit": "Bearbeiten", "useBeaver": "Beaver verwenden", "useOllama": "Ollama verwenden", "save": "Speichern", "cancel": "Abbrechen",
       "empty": "Keine Systemanweisungen", "editorLabel": "Benutzerdefinierte Systemanweisungen",
       "placeholder": "Leer lassen, um keine Systemanweisungen zu senden.",
       "warning": {
@@ -780,6 +780,11 @@
         "global": { "body": "Diese Änderung ersetzt Beavers Systemanweisungen für alle KI-Modelle, außer für Ollama-Modelle mit eigenen benutzerdefinierten Anweisungen." },
         "ollama": { "body": "Diese Änderung ersetzt die Systemanweisungen nur für dieses Ollama-Modell. Sie hat Vorrang vor allgemeinen Einstellungen und den mitgelieferten Modellanweisungen." },
         "remember": "Diese Warnung nicht mehr anzeigen", "continue": "Fortfahren"
+      },
+      "loss": {
+        "title": "Der benutzerdefinierte Prompt wird gelöscht",
+        "body": "Wenn Sie mit {{destination}} fortfahren, wird der benutzerdefinierte Prompt für diesen Modus und dieses Format dauerhaft gelöscht. Kopieren Sie ihn vorher, wenn Sie ihn behalten möchten.",
+        "copy": "Prompt kopieren", "copied": "Prompt kopiert", "copyError": "Der Prompt konnte nicht kopiert werden.", "continue": "Fortfahren"
       }
     },
     "sections": { "preferences": "Einstellungen", "agent": "Agent", "models": "Modelle", "integrations": "Integrationen", "application": "Anwendung" },

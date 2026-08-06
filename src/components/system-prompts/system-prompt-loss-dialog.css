@@ -1,0 +1,20 @@
+.spld-error {
+  margin: var(--space-md) 0 0;
+  color: var(--signal-error);
+  font-size: var(--text-xs);
+}
+
+.spld-copy {
+  margin-right: auto;
+}
+
+@media (max-width: 480px) {
+  .spld-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .spld-copy {
+    margin-right: 0;
+  }
+}

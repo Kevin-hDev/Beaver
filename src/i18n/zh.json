@@ -772,7 +772,7 @@
       "tiers": { "compact": "精简", "detailed": "详细" },
       "modeLabel": "模型模式", "tierLabel": "指令格式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "编辑", "restore": "恢复", "useBeaver": "使用 Beaver", "useOllama": "使用 Ollama", "save": "保存", "cancel": "取消",
+      "edit": "编辑", "useBeaver": "使用 Beaver", "useOllama": "使用 Ollama", "save": "保存", "cancel": "取消",
       "empty": "无系统指令", "editorLabel": "自定义系统指令",
       "placeholder": "留空则不发送任何系统指令。",
       "warning": {
@@ -780,6 +780,11 @@
         "global": { "body": "此更改将替换所有 AI 的 Beaver 系统指令，但拥有自定义指令的 Ollama 模型除外。" },
         "ollama": { "body": "此更改仅替换此 Ollama 模型使用的系统指令，并优先于常规设置和模型自带的指令。" },
         "remember": "不再显示此警告", "continue": "继续"
+      },
+      "loss": {
+        "title": "自定义提示词将被删除",
+        "body": "继续使用 {{destination}} 将永久删除此模式和格式的自定义提示词。如需保留，请先复制提示词。",
+        "copy": "复制提示词", "copied": "提示词已复制", "copyError": "无法复制提示词。", "continue": "继续"
       }
     },
     "sections": { "preferences": "偏好设置", "agent": "智能体", "models": "模型", "integrations": "集成", "application": "应用" },

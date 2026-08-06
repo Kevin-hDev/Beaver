@@ -22,9 +22,16 @@ const beaverView: SystemPromptView = {
 };
 
 describe("SystemPromptSettingsPanel", () => {
+  let clipboardWrite: ReturnType<typeof vi.fn>;
+
   beforeEach(() => {
     localStorage.clear();
     vi.mocked(invoke).mockReset().mockResolvedValue(beaverView);
+    clipboardWrite = vi.fn(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: clipboardWrite },
+    });
   });
 
   it("explique comment récupérer des réglages de prompts illisibles", async () => {
@@ -142,7 +149,7 @@ describe("SystemPromptSettingsPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.save" }));
 
     await screen.findByText("settings.systemPrompt.empty");
-    expect(screen.getByRole("button", { name: "settings.systemPrompt.restore" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.useBeaver" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.edit" }));
     expect(screen.getByRole("textbox", { name: "settings.systemPrompt.editorLabel" })).toHaveValue("");
@@ -188,7 +195,7 @@ describe("SystemPromptSettingsPanel", () => {
     expect(row).toContainElement(screen.getByRole("button", { name: "Model actions" }));
   });
 
-  it("restaure seulement la combinaison sélectionnée", async () => {
+  it("utilise Beaver seulement pour la combinaison sélectionnée", async () => {
     const customView: SystemPromptView = {
       content: "Custom instructions",
       source: "custom",
@@ -210,7 +217,12 @@ describe("SystemPromptSettingsPanel", () => {
     );
     await screen.findByText("Custom instructions");
 
-    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.restore" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useBeaver" }));
+
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "settings.systemPrompt.loss.body",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.loss.continue" }));
 
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("restore_system_prompt_setting", {
@@ -218,7 +230,7 @@ describe("SystemPromptSettingsPanel", () => {
         mode: "chatbot",
         tier: "detailed",
       });
-      expect(screen.queryByRole("button", { name: "settings.systemPrompt.restore" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "settings.systemPrompt.useBeaver" })).toBeNull();
     });
   });
 
@@ -263,7 +275,7 @@ describe("SystemPromptSettingsPanel", () => {
     });
   });
 
-  it("peut restaurer Ollama directement depuis un prompt personnalisé", async () => {
+  it("avertit et permet de copier avant de remplacer un prompt personnalisé par Ollama", async () => {
     const customView: SystemPromptView = {
       content: "Custom instructions",
       source: "custom",
@@ -292,10 +304,91 @@ describe("SystemPromptSettingsPanel", () => {
     );
     await screen.findByText("Custom instructions");
 
-    expect(screen.getByRole("button", { name: "settings.systemPrompt.restore" })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useOllama" }));
 
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "settings.systemPrompt.loss.body",
+    );
+    expect(invoke).not.toHaveBeenCalledWith(
+      "restore_default_system_prompt_setting",
+      expect.anything(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.loss.copy" }));
+    await waitFor(() => {
+      expect(clipboardWrite).toHaveBeenCalledWith("Custom instructions");
+      expect(screen.getByRole("button", { name: "settings.systemPrompt.loss.copied" })).toBeVisible();
+    });
+    expect(screen.getByRole("dialog")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.loss.continue" }));
     await screen.findByText("Native instructions");
+  });
+
+  it("garde le dialogue ouvert si la copie échoue", async () => {
+    const customView: SystemPromptView = {
+      content: "Instructions to preserve",
+      source: "custom",
+      selection: "custom",
+      disabled: false,
+      nativePromptAvailable: true,
+    };
+    clipboardWrite.mockRejectedValueOnce(new Error("clipboard unavailable"));
+    vi.mocked(invoke).mockResolvedValue(customView);
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "ollama", model: "phi4:latest" }}
+        warningKind="ollama"
+        initialMode="agentic"
+        initialTier="compact"
+      />,
+    );
+    await screen.findByText("Instructions to preserve");
+
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useOllama" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.loss.copy" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "settings.systemPrompt.loss.copyError",
+    );
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(invoke).not.toHaveBeenCalledWith(
+      "restore_default_system_prompt_setting",
+      expect.anything(),
+    );
+  });
+
+  it("annule sans perdre le prompt personnalisé", async () => {
+    const customView: SystemPromptView = {
+      content: "Keep these instructions",
+      source: "custom",
+      selection: "custom",
+      disabled: false,
+      nativePromptAvailable: false,
+    };
+    vi.mocked(invoke).mockResolvedValue(customView);
+    render(
+      <SystemPromptSettingsPanel
+        target={{ scope: "global" }}
+        warningKind="global"
+        initialMode="chatbot"
+        initialTier="compact"
+      />,
+    );
+    await screen.findByText("Keep these instructions");
+
+    expect(screen.queryByRole("button", { name: "settings.systemPrompt.restore" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "settings.systemPrompt.useBeaver" }));
+    const cancelButton = screen.getByRole("button", { name: "settings.systemPrompt.cancel" });
+    expect(cancelButton).toHaveFocus();
+    fireEvent.click(cancelButton);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("Keep these instructions")).toBeVisible();
+    expect(invoke).not.toHaveBeenCalledWith(
+      "restore_system_prompt_setting",
+      expect.anything(),
+    );
   });
 
   it("ne propose jamais Ollama quand aucun prompt natif vérifié n’existe", async () => {
@@ -317,7 +410,7 @@ describe("SystemPromptSettingsPanel", () => {
     );
     await screen.findByText("Test system prompt");
 
-    expect(screen.getByRole("button", { name: "settings.systemPrompt.restore" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "settings.systemPrompt.useBeaver" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "settings.systemPrompt.useOllama" })).toBeNull();
     expect(screen.queryByText("settings.systemPrompt.restoreDefault")).toBeNull();
   });

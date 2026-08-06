@@ -772,7 +772,7 @@
       "tiers": { "compact": "コンパクト", "detailed": "詳細" },
       "modeLabel": "モデルモード", "tierLabel": "指示形式",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "編集", "restore": "復元", "useBeaver": "Beaver を使用", "useOllama": "Ollama を使用", "save": "保存", "cancel": "キャンセル",
+      "edit": "編集", "useBeaver": "Beaver を使用", "useOllama": "Ollama を使用", "save": "保存", "cancel": "キャンセル",
       "empty": "システム指示なし", "editorLabel": "カスタムシステム指示",
       "placeholder": "空のままにすると、システム指示は送信されません。",
       "warning": {
@@ -780,6 +780,11 @@
         "global": { "body": "この変更は、独自のカスタム指示を持つ Ollama モデルを除き、すべての AI の Beaver システム指示を置き換えます。" },
         "ollama": { "body": "この変更は、この Ollama モデルだけが使用するシステム指示を置き換えます。一般設定やモデル付属の指示より優先されます。" },
         "remember": "この警告を今後表示しない", "continue": "続ける"
+      },
+      "loss": {
+        "title": "カスタムプロンプトは削除されます",
+        "body": "{{destination}} を続けて使用すると、このモードと形式のカスタムプロンプトは完全に削除されます。残したい場合は、続行する前にコピーしてください。",
+        "copy": "プロンプトをコピー", "copied": "プロンプトをコピーしました", "copyError": "プロンプトをコピーできませんでした。", "continue": "続ける"
       }
     },
     "sections": { "preferences": "環境設定", "agent": "エージェント", "models": "モデル", "integrations": "連携", "application": "アプリケーション" },

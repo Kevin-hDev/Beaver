@@ -777,7 +777,7 @@
       "tiers": { "compact": "Compact", "detailed": "Detailed" },
       "modeLabel": "Model mode", "tierLabel": "Instruction format",
       "sources": { "beaver": "Beaver", "ollama": "Ollama", "custom": "Custom" },
-      "edit": "Edit", "restore": "Restore", "useBeaver": "Use Beaver", "useOllama": "Use Ollama", "save": "Save", "cancel": "Cancel",
+      "edit": "Edit", "useBeaver": "Use Beaver", "useOllama": "Use Ollama", "save": "Save", "cancel": "Cancel",
       "empty": "No system instructions", "editorLabel": "Custom system instructions",
       "placeholder": "Leave empty to send no system instructions.",
       "warning": {
@@ -785,6 +785,11 @@
         "global": { "body": "This change replaces Beaver's system instructions for every AI, except Ollama models that have their own custom instructions." },
         "ollama": { "body": "This change replaces the system instructions used only by this Ollama model. It takes priority over general settings and instructions supplied with the model." },
         "remember": "Do not show this warning again", "continue": "Continue"
+      },
+      "loss": {
+        "title": "The custom prompt will be deleted",
+        "body": "Continuing with {{destination}} will permanently delete the custom prompt for this mode and format. Copy it before continuing if you want to keep it.",
+        "copy": "Copy prompt", "copied": "Prompt copied", "copyError": "The prompt could not be copied.", "continue": "Continue"
       }
     },
     "sections": { "preferences": "Preferences", "agent": "Agent", "models": "Models", "integrations": "Integrations", "application": "Application" },

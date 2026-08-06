@@ -21,18 +21,17 @@ export function SystemPromptActions({
   const { t } = useTranslation();
   const selection = view?.selection;
   const hasCustomSelection = selection === "custom" || selection === "disabled";
-  const canUseBeaver = isOllama
+  const canUseBeaver = hasCustomSelection || (
+    isOllama
     && selection === "default"
-    && view?.source !== "beaver";
+    && view?.source !== "beaver"
+  );
   const canUseOllama = isOllama
     && view?.nativePromptAvailable
     && selection !== "default";
 
   return (
     <div className="spp-actions">
-      {hasCustomSelection && (
-        <SecondaryAction label={t("settings.systemPrompt.restore")} onClick={onUseBeaver} disabled={saving} />
-      )}
       {canUseBeaver && (
         <SecondaryAction label={t("settings.systemPrompt.useBeaver")} onClick={onUseBeaver} disabled={saving} />
       )}
