@@ -2,11 +2,19 @@
 //! Ces tests sont indépendants de la configuration réelle de la machine.
 
 use crate::services::agent_local::security::{
-    validate_read_path_in_roots, validate_write_path_in_roots,
+    validate_read_path, validate_read_path_in_roots, validate_write_path,
+    validate_write_path_in_roots,
 };
 
 fn canonical(path: &std::path::Path) -> std::path::PathBuf {
     dunce::canonicalize(path).expect("canonical test directory")
+}
+
+fn system_path() -> std::path::PathBuf {
+    #[cfg(windows)]
+    return std::path::PathBuf::from(r"C:\Windows\cl-go-deny-test");
+    #[cfg(not(windows))]
+    return std::path::PathBuf::from("/etc/cl-go-deny-test");
 }
 
 // --- validate_write_path : cas négatifs -------------------------------------
@@ -57,6 +65,16 @@ fn write_rejects_dotdot_escape() {
     );
 }
 
+#[test]
+fn public_write_validator_rejects_path_outside_restrictive_policy() {
+    let allowed = tempfile::tempdir().expect("allowed root");
+    let roots = vec![canonical(allowed.path())];
+
+    super::super::directory_policy::test_support::with_roots(roots, || {
+        assert!(validate_write_path(&system_path(), allowed.path()).is_err());
+    });
+}
+
 // --- validate_read_path : cas négatifs --------------------------------------
 
 #[test]
@@ -79,7 +97,17 @@ fn read_rejects_outside_working_dir_and_roots() {
 }
 
 #[test]
-fn read_allows_file_in_working_dir() {
+fn public_read_validator_rejects_path_outside_restrictive_policy() {
+    let allowed = tempfile::tempdir().expect("allowed root");
+    let roots = vec![canonical(allowed.path())];
+
+    super::super::directory_policy::test_support::with_roots(roots, || {
+        assert!(validate_read_path(&system_path(), allowed.path()).is_err());
+    });
+}
+
+#[test]
+fn read_allows_file_in_explicit_root() {
     let allowed = tempfile::tempdir().expect("allowed root");
     let target = allowed.path().join("inside.txt");
     std::fs::write(&target, b"").expect("inside test file");
