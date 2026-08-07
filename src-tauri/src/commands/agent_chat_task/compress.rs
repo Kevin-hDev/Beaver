@@ -71,7 +71,7 @@ pub(crate) async fn handle_compress_command(
     {
         Ok(summary) => summary,
         Err(err) => {
-            ::log::warn!("[compress] manual failed session={session_id}: {err}");
+            ::log::error!("[compress] manual failed session={session_id}: {err}");
             send_compressing_done(on_event);
             return Err(err);
         }

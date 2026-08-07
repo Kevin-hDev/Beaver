@@ -2,8 +2,6 @@ use super::ollama_client::OllamaClient;
 use wiremock::matchers::{body_json, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-static PORT_TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-
 #[tokio::test]
 async fn ollama_catalog_uses_the_real_http_contract() {
     let server = MockServer::start().await;
@@ -56,7 +54,7 @@ fn ollama_test_client_rejects_non_loopback_urls() {
 
 #[tokio::test]
 async fn client_created_before_port_selection_follows_the_runtime_port() {
-    let _guard = PORT_TEST_LOCK.lock().await;
+    let _guard = crate::services::ollama_port::PORT_TEST_LOCK.lock().await;
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/api/tags"))

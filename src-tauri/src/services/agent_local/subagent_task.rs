@@ -113,7 +113,7 @@ pub async fn run(
                 break;
             }
             Err(_) => {
-                ::log::warn!("[subagent] échec {}", child_session_id);
+                ::log::error!("[subagent] échec {}", child_session_id);
                 (
                     false,
                     super::subagent_status::FAILED.to_string(),

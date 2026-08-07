@@ -57,7 +57,7 @@ pub(super) async fn persist_delegate_prompt(
     if let Ok(persisted) = result {
         return Ok(persisted);
     }
-    ::log::warn!("[subagent] persistance prompt enfant {child_id}");
+    ::log::error!("[subagent] persistance prompt enfant {child_id}");
     let _ = super::session_subagents::mark_status(child_id, super::subagent_status::FAILED).await;
     Err(ToolResult::internal(
         "subagent_prompt_save_failed",

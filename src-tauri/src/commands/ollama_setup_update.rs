@@ -48,7 +48,7 @@ pub async fn update_ollama_binary(
         if had_backup {
             let _ = remove_temp_dir(&backup);
         }
-        ::log::warn!("[ollama-update] mis à jour vers v{version}");
+        ::log::info!("[ollama-update] mis à jour vers v{version}");
         return Ok(());
     }
 
@@ -59,7 +59,7 @@ fn swap_installation(dest: &Path, staging: &Path, backup: &Path) -> Result<bool,
     let had_backup = dest.exists();
     if had_backup {
         std::fs::rename(dest, backup).map_err(|error| {
-            ::log::warn!("[ollama-update] backup: {error}");
+            ::log::error!("[ollama-update] backup: {error}");
             "ollama-update-error".to_string()
         })?;
     }
@@ -67,7 +67,7 @@ fn swap_installation(dest: &Path, staging: &Path, backup: &Path) -> Result<bool,
         if had_backup {
             let _ = std::fs::rename(backup, dest);
         }
-        ::log::warn!("[ollama-update] swap: {error}");
+        ::log::error!("[ollama-update] swap: {error}");
         return Err("ollama-update-error".into());
     }
     Ok(had_backup)
@@ -108,7 +108,7 @@ fn restore_previous_install(dest: &Path, backup: &Path, failed: &Path) -> Result
         return Ok(());
     }
     if std::fs::rename(failed, dest).is_err() {
-        ::log::warn!("[ollama-update] failed installation recovery failed");
+        ::log::error!("[ollama-update] failed installation recovery failed");
     }
     Err("ollama-rollback-error".into())
 }
@@ -118,7 +118,7 @@ fn remove_temp_dir(path: &Path) -> Result<(), String> {
         return Ok(());
     }
     std::fs::remove_dir_all(path).map_err(|error| {
-        ::log::warn!("[ollama-update] temporary cleanup: {error}");
+        ::log::error!("[ollama-update] temporary cleanup: {error}");
         "ollama-update-error".to_string()
     })
 }

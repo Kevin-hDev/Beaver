@@ -64,7 +64,7 @@ pub fn plugin<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
 
 pub fn synchronize_at_startup(app: &tauri::AppHandle, requested: bool) {
     if synchronize(app, requested).is_err() {
-        ::log::warn!("[autostart] synchronization failed");
+        ::log::error!("[autostart] synchronization failed");
     }
 }
 

@@ -21,7 +21,7 @@ pub fn process_chunk(
     result.total_chunks = result.total_chunks.saturating_add(1);
 
     if let Some(err) = chunk["error"].as_str() {
-        ::log::warn!("[ollama-stream] erreur modèle: {err}");
+        ::log::error!("[ollama-stream] erreur modèle: {err}");
         return Err(format!("Ollama: {err}"));
     }
 

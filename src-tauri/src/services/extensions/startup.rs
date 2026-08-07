@@ -2,7 +2,7 @@ use tauri::Emitter;
 
 pub fn initialize_on_startup(app: &tauri::AppHandle) {
     if super::runtime::init(app).is_err() {
-        ::log::warn!("[extensions] initialization failed");
+        ::log::error!("[extensions] initialization failed");
         return;
     }
 

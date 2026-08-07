@@ -160,13 +160,13 @@ impl OllamaClient {
             .send()
             .await
             .map_err(|e| {
-                ::log::warn!("[ollama] /api/create send: {e}");
+                ::log::error!("[ollama] /api/create send: {e}");
                 "ollama-create-error".to_string()
             })?;
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
-            ::log::warn!(
+            ::log::error!(
                 "[ollama] /api/create failed ({status}): {}",
                 crate::services::llm::sanitize_log_body(&body)
             );

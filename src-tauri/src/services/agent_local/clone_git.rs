@@ -90,7 +90,7 @@ async fn create_unique_branch_from_candidates(
         })
         .await
         .map_err(|e| {
-            ::log::warn!("[clone-git] create_branch join: {e}");
+            ::log::error!("[clone-git] create_branch join: {e}");
             branch::CreateBranchError::InternalError
         })?;
         match result {

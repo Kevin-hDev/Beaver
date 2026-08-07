@@ -97,7 +97,7 @@ pub async fn try_auto_compress(
             )
             .await
             .unwrap_or_else(|err| {
-                ::log::warn!("[compress] save session failed: {err}");
+                ::log::error!("[compress] save session failed: {err}");
                 token_estimate::estimate_tokens(messages) as u32
             });
             send_compression_done(on_event);

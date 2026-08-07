@@ -72,7 +72,7 @@ pub async fn spawn_delegate(
                     super::session_subagents::mark_status(&child_id, super::subagent_status::FAILED)
                         .await
                 {
-                    ::log::warn!("[delegate] mark_status failed {child_id}: {mark_err}");
+                    ::log::error!("[delegate] mark_status failed {child_id}: {mark_err}");
                 }
                 return Err(ToolResult::internal(
                     "subagent_spawn_dispatch_failed",

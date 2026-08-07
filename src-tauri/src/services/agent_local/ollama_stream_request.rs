@@ -127,7 +127,10 @@ async fn handle_http_failure(
         });
     }
 
-    ::log::warn!("[ollama-stream] HTTP {status}: {body}");
+    ::log::error!(
+        "[ollama-stream] HTTP {status}: {}",
+        crate::services::llm::sanitize_log_body(&body)
+    );
     let msg = "ollama_server_error".to_string();
     let _ = on_event.send(StreamEvent::Error {
         message: msg.clone(),

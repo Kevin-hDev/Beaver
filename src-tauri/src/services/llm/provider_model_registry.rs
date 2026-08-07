@@ -76,7 +76,7 @@ fn registry() -> Option<&'static ProviderModelRegistry> {
         .get_or_init(|| match parse_sources(SOURCES) {
             Ok(registry) => Some(registry),
             Err(code) => {
-                ::log::warn!("[provider-models] chargement refusé code={code}");
+                ::log::error!("[provider-models] chargement refusé code={code}");
                 None
             }
         })

@@ -76,7 +76,7 @@ pub fn start(app: &AppHandle) {
         }) {
             Ok(w) => w,
             Err(e) => {
-                ::log::warn!("[file_watcher] failed to create watcher: {e}");
+                ::log::error!("[file_watcher] failed to create watcher: {e}");
                 return;
             }
         };
