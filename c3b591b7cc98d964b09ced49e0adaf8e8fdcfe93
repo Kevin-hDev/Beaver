@@ -1,0 +1,15 @@
+Probleme et objectif
+
+La review a confirme quatre defauts: la tentative reduite affichait sa cible comme fenetre reelle; un diagnostic de capacite malforme pouvait exposer sa chaine interne; les valeurs texte d'un Modelfile etaient echappees comme du JSON alors qu'Ollama ne les decode pas ainsi; le frontend lisait des lignes PARAMETER situees dans SYSTEM/TEMPLATE multilignes. L'objectif est de corriger ces cas sans changer le routage provider, les outils actifs, les capacites modele ni le workflow Ollama.
+
+Decisions
+
+La fenetre configuree et le budget de retry sont maintenant transportes separement. La conversion en erreur publique est centralisee et masque tout diagnostic de capacite encode, valide ou malforme, tout en conservant les details structures valides. Les textes PARAMETER suivent les regles de citation du parser Ollama au lieu de JSON. Le frontend utilise un scanner borne qui ignore les blocs triples guillemets. Toutes les directives non-PARAMETER sont preservees; la review des sources Ollama a confirme que modeles, projecteurs, adapters, drafts, renderer et parser sont presents dans le Modelfile genere, donc aucune reconstruction parallele n'a ete ajoutee.
+
+Verification
+
+TDD rouge/vert confirme pour les quatre defauts. Cibles: capacite 4/4, budget 14/14, Modelfile 5/5, frontend concerne 23/23. TypeScript, lint, cargo check et Clippy passent. Global: Vitest 1880/1880, scripts build 40/40, CEF 6/6, extensions 51/51; Rust 2948 passes, 4 ignores, 2 echecs preexistants lies aux fins de ligne Windows. Le runner E2E conserve 1 echec preexistant de comparaison chemin Windows/Linux. Aucun de ces trois echecs ne touche les fichiers modifies.
+
+Portee
+
+La branche codex/fix-windows-directoryless-streams reste separee. src-tauri/Cargo.toml, signale modifie uniquement par les fins de ligne Windows avec un hash identique a HEAD, est volontairement exclu du commit. Graphify a ete mis a jour apres les changements.
