@@ -1,0 +1,26 @@
+Problem:
+Ollama parameters cleared in the UI were omitted from the save payload, but the backend recreated the model with FROM set to the model itself. Ollama therefore inherited the old overrides (for example num_ctx=100000), so empty fields reappeared after reload.
+
+Objective:
+Make an empty field mean no custom override for every Ollama parameter, including official numeric fields, repeated stop values, and custom settings, while preserving the model's real base and all unrelated Modelfile directives.
+
+Decisions:
+- Rewrite only top-level PARAMETER directives in the Modelfile returned by Ollama.
+- Preserve the original FROM blob/reference, multiline SYSTEM/TEMPLATE content, line endings, and unknown/future directives.
+- Recreate through the existing bounded Ollama CLI path with separated process arguments instead of the self-referencing /api/create payload.
+- Render text values as JSON-quoted strings and reject CR/LF/NUL in parameter values to prevent directive injection.
+- Remove the now-unused API payload helper and parser serialization path.
+
+Verification:
+- Rust regression tests: 6/6 passed.
+- Ollama editor tests: 8/8 passed.
+- Extension host tests: 51/51 passed.
+- npm lint, TypeScript check, cargo fmt, cargo check, and cargo clippy passed (clippy run suppressed only the known unrelated nonminimal_bool warning in chat_prompts.rs).
+- Full Rust suite: 2942 passed, 3 unrelated failures (two Windows CRLF source-comparison tests and one concurrency test that passed immediately when rerun alone), 4 ignored.
+- Full npm test: frontend/build/CEF suites passed; one pre-existing Windows path expectation failed in scripts/e2e/e2e-process.test.mjs.
+
+Manual follow-up:
+Rebuild/relaunch Beaver, clear Gemma 4 num_ctx and other overrides, save, reopen settings, then verify fields remain empty and chat uses Ollama defaults. Recheck Qwen 3.5 as a control.
+
+Branch separation:
+Review fixes for codex/fix-windows-directoryless-streams remain intentionally separate and pending reviewer feedback.
