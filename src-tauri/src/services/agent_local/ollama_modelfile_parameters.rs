@@ -1,6 +1,10 @@
-use serde_json::Value;
-
 const INVALID_MODELFILE: &str = "ollama-modelfile-invalid";
+
+#[derive(Clone, Copy)]
+enum QuoteDelimiter {
+    Single,
+    Triple,
+}
 
 pub fn rewrite(content: &str, entries: &[(String, String)]) -> Result<String, String> {
     super::ollama_parameter_validation::validate_parameter_entries(entries)?;
@@ -12,24 +16,31 @@ pub fn rewrite(content: &str, entries: &[(String, String)]) -> Result<String, St
     let keep_final_line_ending = content.ends_with('\n');
     let mut lines = Vec::new();
     let mut insertion_index = None;
-    let mut in_multiline = false;
+    let mut multiline = None;
 
     for raw_line in content.lines() {
         let line = raw_line.trim_end_matches('\r');
-        if !in_multiline && is_parameter_directive(line) {
+        if let Some(delimiter) = multiline {
+            lines.push(line.to_string());
+            if closes_multiline(line, delimiter) {
+                multiline = None;
+            }
+            continue;
+        }
+
+        let opening = opening_delimiter(line);
+        if is_parameter_directive(line) && opening.is_none() {
             insertion_index.get_or_insert(lines.len());
             continue;
         }
         lines.push(line.to_string());
-        if triple_quote_count(line) % 2 == 1 {
-            in_multiline = !in_multiline;
-        }
+        multiline = opening;
     }
 
     let rendered = entries
         .iter()
         .map(|(key, value)| render_parameter(key.trim(), value.trim()))
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Vec<_>>();
     let insert_at = insertion_index.unwrap_or_else(|| trailing_content_index(&lines));
     lines.splice(insert_at..insert_at, rendered);
 
@@ -47,8 +58,40 @@ fn is_parameter_directive(line: &str) -> bool {
         .is_some_and(|word| word.eq_ignore_ascii_case("PARAMETER"))
 }
 
-fn triple_quote_count(line: &str) -> usize {
-    line.match_indices("\"\"\"").count()
+fn opening_delimiter(line: &str) -> Option<QuoteDelimiter> {
+    let value = directive_value(line)?.trim();
+    if value.starts_with("\"\"\"") {
+        return (!(value.len() >= 6 && value.ends_with("\"\"\""))).then_some(QuoteDelimiter::Triple);
+    }
+    if value.starts_with('"') {
+        return (!(value.len() >= 2 && value.ends_with('"'))).then_some(QuoteDelimiter::Single);
+    }
+    None
+}
+
+fn directive_value(line: &str) -> Option<&str> {
+    let line = line.trim_start();
+    if line.starts_with('#') {
+        return None;
+    }
+    let (directive, rest) = line.split_once(char::is_whitespace)?;
+    let rest = rest.trim_start();
+    if directive.eq_ignore_ascii_case("PARAMETER")
+        || directive.eq_ignore_ascii_case("MESSAGE")
+    {
+        return rest
+            .split_once(char::is_whitespace)
+            .map(|(_, value)| value.trim_start());
+    }
+    Some(rest)
+}
+
+fn closes_multiline(line: &str, delimiter: QuoteDelimiter) -> bool {
+    let line = line.trim_end();
+    match delimiter {
+        QuoteDelimiter::Single => line.ends_with('"'),
+        QuoteDelimiter::Triple => line.ends_with("\"\"\""),
+    }
 }
 
 fn trailing_content_index(lines: &[String]) -> usize {
@@ -58,37 +101,13 @@ fn trailing_content_index(lines: &[String]) -> usize {
         .map_or(0, |index| index + 1)
 }
 
-fn render_parameter(key: &str, raw: &str) -> Result<String, String> {
-    let value = parse_value(raw);
-    let rendered = match value {
-        Value::String(value) => quote_modelfile_text(&value),
-        other => other.to_string(),
-    };
-    Ok(format!("PARAMETER {key} {rendered}"))
-}
-
-fn parse_value(raw: &str) -> Value {
-    if let Some(value) = raw
-        .strip_prefix("\"\"\"")
-        .and_then(|value| value.strip_suffix("\"\"\""))
-    {
-        return Value::String(value.to_string());
-    }
-    if let Some(value) = raw
-        .strip_prefix('"')
-        .and_then(|value| value.strip_suffix('"'))
-    {
-        return Value::String(value.to_string());
-    }
-    super::modelfile_parser::parse_param_value(raw)
+fn render_parameter(key: &str, value: &str) -> String {
+    format!("PARAMETER {key} {}", quote_modelfile_text(value))
 }
 
 fn quote_modelfile_text(value: &str) -> String {
-    if value.contains('\n') || value.starts_with(char::is_whitespace) || value.ends_with(char::is_whitespace) {
-        if value.contains('"') {
-            return format!("\"\"\"{value}\"\"\"");
-        }
-        return format!("\"{value}\"");
+    if value.contains('"') {
+        return format!("\"\"\"{value}\"\"\"");
     }
     value.to_string()
 }

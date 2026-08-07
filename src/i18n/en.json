@@ -1094,6 +1094,8 @@
     },
     "streamStartFailed": "Stream could not start.",
     "streamInterrupted": "Stream was interrupted.",
+    "contextCapacityExceededUnknownWindow": "The required context exceeds the reduction target: system prompt {{systemTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, for a target of {{maxInputTokens}} tokens. The model's actual context window could not be determined.",
+    "contextCapacityExceededUnknownWindowWithReports": "The required context exceeds the reduction target: system prompt {{systemTokens}} tokens + required reports {{reportTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, for a target of {{maxInputTokens}} tokens. The model's actual context window could not be determined.",
     "contextCapacityExceeded": "The required context exceeds the model capacity: system prompt {{systemTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, with an input limit of {{maxInputTokens}} tokens in a {{contextWindow}}-token window.",
     "contextCapacityExceededWithReports": "The required context exceeds the model capacity: system prompt {{systemTokens}} tokens + required reports {{reportTokens}} tokens + active tools {{toolTokens}} tokens = {{requiredTokens}} tokens, with an input limit of {{maxInputTokens}} tokens in a {{contextWindow}}-token window.",
     "ollamaConnectionLost": "Connection to Ollama lost",

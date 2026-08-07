@@ -9,9 +9,14 @@ export function contextCapacityErrorMessage(
   details?: ContextCapacityDetails,
 ): string | null {
   if (code !== ERROR_CODE || !details || !validDetails(details)) return null;
-  const key = details.requiredReportTokens > 0
-    ? "errors.contextCapacityExceededWithReports"
-    : "errors.contextCapacityExceeded";
+  const unknownWindow = details.contextWindow === 0;
+  const key = unknownWindow
+    ? details.requiredReportTokens > 0
+      ? "errors.contextCapacityExceededUnknownWindowWithReports"
+      : "errors.contextCapacityExceededUnknownWindow"
+    : details.requiredReportTokens > 0
+      ? "errors.contextCapacityExceededWithReports"
+      : "errors.contextCapacityExceeded";
   return i18n.t(key, {
     systemTokens: details.systemTokens,
     reportTokens: details.requiredReportTokens,
@@ -33,8 +38,7 @@ function validDetails(details: ContextCapacityDetails): boolean {
   ];
   return values.every((value) => Number.isSafeInteger(value) && value >= 0
       && value <= MAX_SAFE_TOKENS)
-    && details.contextWindow > 0
-    && details.maxInputTokens <= details.contextWindow
+    && (details.contextWindow === 0 || details.maxInputTokens <= details.contextWindow)
     && details.requiredTokens === details.systemTokens
       + details.requiredReportTokens + details.toolTokens
     && details.requiredTokens > details.maxInputTokens;

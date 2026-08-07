@@ -67,7 +67,7 @@ fn repeated_text_parameters_follow_ollama_quoting_and_preserve_crlf() {
     let input = "FROM C:/models/blobs/sha256-base\r\nPARAMETER stop \"old\"\r\n";
     let entries = vec![
         ("stop".to_string(), "First".to_string()),
-        ("stop".to_string(), "\"User:\"".to_string()),
+        ("stop".to_string(), "User:".to_string()),
         ("future_option".to_string(), "enabled value".to_string()),
     ];
 
@@ -99,9 +99,104 @@ fn text_parameters_preserve_quotes_and_windows_backslashes() {
         output,
         concat!(
             "FROM C:/models/blobs/sha256-base\n",
-            "PARAMETER stop say \"hi\"\n",
+            "PARAMETER stop \"\"\"say \"hi\"\"\"\"\n",
             "PARAMETER stop C:\\x\n",
-            "PARAMETER stop \"\"\" say \"hi\" \"\"\"\n",
+            "PARAMETER stop \"\"\"\"\"\" say \"hi\" \"\"\"\"\"\"\n",
+        )
+    );
+}
+
+#[test]
+fn literal_quote_values_are_never_treated_as_modelfile_syntax() {
+    let input = "FROM C:/models/blobs/sha256-base\nPARAMETER stop old\n";
+    let entries = vec![
+        ("stop".to_string(), "\"".to_string()),
+        ("stop".to_string(), "\"\"".to_string()),
+    ];
+
+    let output = rewrite(input, &entries).expect("literal quotes are valid stop values");
+
+    assert_eq!(
+        output,
+        concat!(
+            "FROM C:/models/blobs/sha256-base\n",
+            "PARAMETER stop \"\"\"\"\"\"\"\n",
+            "PARAMETER stop \"\"\"\"\"\"\"\"\n",
+        )
+    );
+}
+
+#[test]
+fn triple_quoted_parameter_span_is_preserved_while_following_parameters_are_replaced() {
+    let input = concat!(
+        "FROM x\n",
+        "PARAMETER stop \"\"\"\n",
+        "end\n",
+        "\"\"\"\n",
+        "PARAMETER temperature 0.7\n",
+    );
+
+    let output = rewrite(input, &[("temperature".into(), "0.4".into())])
+        .expect("valid multiline parameter");
+
+    assert_eq!(
+        output,
+        concat!(
+            "FROM x\n",
+            "PARAMETER stop \"\"\"\n",
+            "end\n",
+            "\"\"\"\n",
+            "PARAMETER temperature 0.4\n",
+        )
+    );
+}
+
+#[test]
+fn simple_quoted_multiline_parameter_span_is_preserved() {
+    let input = concat!(
+        "FROM x\r\n",
+        "PARAMETER stop \"\r\n",
+        "end\r\n",
+        "\"\r\n",
+        "PARAMETER temperature 0.7\r\n",
+    );
+
+    let output = rewrite(input, &[("temperature".into(), "0.4".into())])
+        .expect("valid multiline parameter");
+
+    assert_eq!(
+        output,
+        concat!(
+            "FROM x\r\n",
+            "PARAMETER stop \"\r\n",
+            "end\r\n",
+            "\"\r\n",
+            "PARAMETER temperature 0.4\r\n",
+        )
+    );
+}
+
+#[test]
+fn parameter_text_inside_multiline_message_is_preserved() {
+    let input = concat!(
+        "FROM x\n",
+        "MESSAGE user \"\"\"Keep this text.\n",
+        "PARAMETER temperature 0.7 is message text.\n",
+        "\"\"\"\n",
+        "PARAMETER temperature 0.8\n",
+    );
+
+    let output = rewrite(input, &[("temperature".into(), "0.4".into())])
+        .expect("valid multiline message");
+
+    assert_eq!(
+        output,
+        concat!(
+            "FROM x\n",
+            "MESSAGE user \"\"\"Keep this text.\n",
+            "PARAMETER temperature 0.7 is message text.\n",
+            "\"\"\"\n",
+            "PARAMETER temperature 0.4\n",
         )
     );
 }

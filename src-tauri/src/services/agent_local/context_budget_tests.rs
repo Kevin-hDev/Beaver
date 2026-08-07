@@ -171,6 +171,20 @@ fn payload_reduction_capacity_error_reports_the_real_context_window() {
 }
 
 #[test]
+fn payload_reduction_reports_known_counts_when_context_window_is_unknown() {
+    let mut messages = vec![msg("system", &"rules".repeat(20_000))];
+
+    let error = reduce_after_payload_too_large(&mut messages, 0, &[], "ollama")
+        .expect_err("mandatory context must exceed the reduced retry target");
+    let details = super::super::context_capacity_error::decode(&error)
+        .expect("known counters remain structured");
+
+    assert_eq!(details.context_window, 0);
+    assert!(details.system_tokens > details.max_input_tokens);
+    assert_eq!(details.required_tokens, details.system_tokens);
+}
+
+#[test]
 fn codex_does_not_prune_reasoning_that_is_not_sent() {
     let mut messages = vec![msg("system", "rules"), msg("user", &"a".repeat(280_000))];
     messages.push(ChatMessage {

@@ -1089,6 +1089,8 @@
     },
     "streamStartFailed": "流无法启动。",
     "streamInterrupted": "流传输被中断。",
+    "contextCapacityExceededUnknownWindow": "必需上下文超过缩减目标：系统提示词 {{systemTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token，目标为 {{maxInputTokens}} 个 token。无法确定模型的实际上下文窗口。",
+    "contextCapacityExceededUnknownWindowWithReports": "必需上下文超过缩减目标：系统提示词 {{systemTokens}} 个 token + 必需报告 {{reportTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token，目标为 {{maxInputTokens}} 个 token。无法确定模型的实际上下文窗口。",
     "contextCapacityExceeded": "必需上下文超过模型容量：系统提示词 {{systemTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token；当前上下文窗口为 {{contextWindow}} 个 token，输入上限为 {{maxInputTokens}} 个 token。",
     "contextCapacityExceededWithReports": "必需上下文超过模型容量：系统提示词 {{systemTokens}} 个 token + 必需报告 {{reportTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token；当前上下文窗口为 {{contextWindow}} 个 token，输入上限为 {{maxInputTokens}} 个 token。",
     "ollamaConnectionLost": "与 Ollama 的连接已断开",

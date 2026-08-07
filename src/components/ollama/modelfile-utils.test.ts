@@ -51,6 +51,30 @@ describe("extractParameters", () => {
     expect(params[0].value).toBe("User:");
   });
 
+  it("decode les valeurs citees en valeurs semantiques", () => {
+    const modelfile = [
+      'PARAMETER stop "User:"',
+      'PARAMETER stop """say "hi""""',
+    ].join("\n");
+
+    expect(extractParameters(modelfile)).toEqual([
+      { key: "stop", value: "User:" },
+      { key: "stop", value: 'say "hi"' },
+    ]);
+  });
+
+  it("decode les guillemets litteraux rendus entre triples guillemets", () => {
+    const modelfile = [
+      `PARAMETER stop ${'"'.repeat(7)}`,
+      `PARAMETER stop ${'"'.repeat(8)}`,
+    ].join("\n");
+
+    expect(extractParameters(modelfile)).toEqual([
+      { key: "stop", value: '"' },
+      { key: "stop", value: '""' },
+    ]);
+  });
+
   it("est insensible à la casse de PARAMETER", () => {
     const modelfile = "parameter temperature 0.5";
     expect(extractParameters(modelfile)).toEqual([{ key: "temperature", value: "0.5" }]);
@@ -81,6 +105,48 @@ describe("extractParameters", () => {
     expect(extractParameters(modelfile)).toEqual([
       { key: "temperature", value: "0.5" },
       { key: "top_p", value: "0.9" },
+    ]);
+  });
+
+  it("ignore un PARAMETER a valeur multiligne sans masquer le parametre suivant", () => {
+    const modelfile = [
+      "FROM x",
+      'PARAMETER stop """',
+      "end",
+      '"""',
+      "PARAMETER temperature 0.7",
+    ].join("\n");
+
+    expect(extractParameters(modelfile)).toEqual([
+      { key: "temperature", value: "0.7" },
+    ]);
+  });
+
+  it("ignore aussi un PARAMETER multiligne entre guillemets simples", () => {
+    const modelfile = [
+      "FROM x",
+      'PARAMETER stop "',
+      "end",
+      '"',
+      "PARAMETER temperature 0.7",
+    ].join("\n");
+
+    expect(extractParameters(modelfile)).toEqual([
+      { key: "temperature", value: "0.7" },
+    ]);
+  });
+
+  it("ignore le texte PARAMETER dans un MESSAGE multiligne", () => {
+    const modelfile = [
+      "FROM x",
+      'MESSAGE user """Keep this text.',
+      "PARAMETER temperature 0.4 is message text.",
+      '"""',
+      "PARAMETER temperature 0.7",
+    ].join("\n");
+
+    expect(extractParameters(modelfile)).toEqual([
+      { key: "temperature", value: "0.7" },
     ]);
   });
 });

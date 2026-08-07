@@ -1142,6 +1142,8 @@
     },
     "streamStartFailed": "Le flux n'a pas pu démarrer.",
     "streamInterrupted": "Le flux s'est interrompu.",
+    "contextCapacityExceededUnknownWindow": "Le contexte obligatoire dépasse la cible de réduction : prompt système {{systemTokens}} tokens + outils actifs {{toolTokens}} tokens = {{requiredTokens}} tokens, pour une cible de {{maxInputTokens}} tokens. La fenêtre réelle du modèle n'a pas pu être déterminée.",
+    "contextCapacityExceededUnknownWindowWithReports": "Le contexte obligatoire dépasse la cible de réduction : prompt système {{systemTokens}} tokens + rapports obligatoires {{reportTokens}} tokens + outils actifs {{toolTokens}} tokens = {{requiredTokens}} tokens, pour une cible de {{maxInputTokens}} tokens. La fenêtre réelle du modèle n'a pas pu être déterminée.",
     "contextCapacityExceeded": "Le contexte obligatoire dépasse la capacité du modèle : prompt système {{systemTokens}} tokens + outils actifs {{toolTokens}} tokens = {{requiredTokens}} tokens, pour une limite d'entrée de {{maxInputTokens}} tokens sur une fenêtre de {{contextWindow}} tokens.",
     "contextCapacityExceededWithReports": "Le contexte obligatoire dépasse la capacité du modèle : prompt système {{systemTokens}} tokens + rapports obligatoires {{reportTokens}} tokens + outils actifs {{toolTokens}} tokens = {{requiredTokens}} tokens, pour une limite d'entrée de {{maxInputTokens}} tokens sur une fenêtre de {{contextWindow}} tokens.",
     "ollamaConnectionLost": "Connexion à Ollama perdue",

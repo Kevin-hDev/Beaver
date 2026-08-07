@@ -1089,6 +1089,8 @@
     },
     "streamStartFailed": "Stream konnte nicht gestartet werden.",
     "streamInterrupted": "Stream wurde unterbrochen.",
+    "contextCapacityExceededUnknownWindow": "Der erforderliche Kontext überschreitet das Reduktionsziel: System-Prompt {{systemTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Ziel von {{maxInputTokens}} Token. Das tatsächliche Kontextfenster des Modells konnte nicht ermittelt werden.",
+    "contextCapacityExceededUnknownWindowWithReports": "Der erforderliche Kontext überschreitet das Reduktionsziel: System-Prompt {{systemTokens}} Token + erforderliche Berichte {{reportTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Ziel von {{maxInputTokens}} Token. Das tatsächliche Kontextfenster des Modells konnte nicht ermittelt werden.",
     "contextCapacityExceeded": "Der erforderliche Kontext überschreitet die Modellkapazität: System-Prompt {{systemTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Eingabelimit von {{maxInputTokens}} Token in einem Kontextfenster mit {{contextWindow}} Token.",
     "contextCapacityExceededWithReports": "Der erforderliche Kontext überschreitet die Modellkapazität: System-Prompt {{systemTokens}} Token + erforderliche Berichte {{reportTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Eingabelimit von {{maxInputTokens}} Token in einem Kontextfenster mit {{contextWindow}} Token.",
     "ollamaConnectionLost": "Verbindung zu Ollama verloren",
