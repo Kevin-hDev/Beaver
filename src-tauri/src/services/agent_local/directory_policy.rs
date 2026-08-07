@@ -11,6 +11,10 @@ struct Policy {
 
 static POLICY: OnceLock<RwLock<Result<Policy, ()>>> = OnceLock::new();
 
+#[cfg(test)]
+#[path = "directory_policy_test_support.rs"]
+pub(crate) mod test_support;
+
 pub(super) fn initialize() -> Result<(), String> {
     let state = load();
     let success = state.is_ok();
@@ -20,6 +24,10 @@ pub(super) fn initialize() -> Result<(), String> {
 }
 
 pub(super) fn roots() -> Result<Vec<PathBuf>, String> {
+    #[cfg(test)]
+    if let Some(roots) = test_support::current_roots() {
+        return Ok(roots);
+    }
     if POLICY.get().is_none() {
         initialize()?;
     }
