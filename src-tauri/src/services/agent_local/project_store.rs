@@ -97,7 +97,7 @@ fn canonical_existing_dir(path: &Path) -> Result<PathBuf, String> {
     if path.as_os_str().is_empty() {
         return Err("Chemin de projet invalide".to_string());
     }
-    let canonical = std::fs::canonicalize(path).map_err(|_| "Dossier introuvable".to_string())?;
+    let canonical = dunce::canonicalize(path).map_err(|_| "Dossier introuvable".to_string())?;
     if !canonical.is_dir() {
         return Err("Le chemin ne pointe pas vers un dossier valide".to_string());
     }
@@ -159,13 +159,13 @@ mod tests {
 
         let canonical = canonical_existing_dir(&nested.join(".")).expect("canonical");
 
-        assert_eq!(canonical, std::fs::canonicalize(&nested).expect("expected"));
+        assert_eq!(canonical, dunce::canonicalize(&nested).expect("expected"));
     }
 
     #[test]
     fn project_match_accepts_equivalent_path() {
         let tmp = tempfile::tempdir().expect("temp");
-        let canonical = std::fs::canonicalize(tmp.path()).expect("canonical");
+        let canonical = dunce::canonicalize(tmp.path()).expect("canonical");
         let equivalent = tmp.path().join(".");
 
         assert!(project_matches_canonical(
@@ -183,8 +183,8 @@ mod tests {
         std::fs::create_dir_all(&child).expect("child");
         std::fs::create_dir_all(&sibling).expect("sibling");
 
-        let child = std::fs::canonicalize(child).expect("canonical child");
-        let sibling = std::fs::canonicalize(sibling).expect("canonical sibling");
+        let child = dunce::canonicalize(child).expect("canonical child");
+        let sibling = dunce::canonicalize(sibling).expect("canonical sibling");
 
         assert!(path_is_inside_project(&child, &project.to_string_lossy()));
         assert!(!path_is_inside_project(

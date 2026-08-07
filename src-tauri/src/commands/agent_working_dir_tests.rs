@@ -129,6 +129,46 @@ async fn projectless_session_gets_a_hidden_workspace_instead_of_home() {
 }
 
 #[tokio::test]
+async fn projectless_session_reuses_its_persisted_workspace() {
+    let session = crate::services::agent_local::session_store::create_full(
+        "Workspace reuse",
+        "llama3",
+        "ollama",
+        false,
+        None,
+    )
+    .await
+    .expect("create session");
+    crate::services::agent_local::session_store::add_messages(
+        &session.id,
+        vec![user_message("Create a report")],
+        0,
+    )
+    .await
+    .expect("save first message");
+
+    let first = super::resolve_for_session(&session.id, None)
+        .await
+        .expect("resolve first workspace");
+    let saved = crate::services::agent_local::session_store::get(&session.id)
+        .await
+        .expect("load persisted workspace");
+    let saved_path = std::path::Path::new(&saved.working_dir);
+    assert_eq!(saved_path, dunce::simplified(saved_path));
+    let second = super::resolve_for_session(&session.id, None).await;
+
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+
+    let second = second.expect("reuse persisted workspace");
+    assert_eq!(
+        dunce::canonicalize(first.path).expect("canonical first workspace"),
+        dunce::canonicalize(second.path).expect("canonical second workspace")
+    );
+}
+
+#[tokio::test]
 async fn user_selected_directory_is_never_marked_as_managed() {
     let session = crate::services::agent_local::session_store::create_full(
         "Selected", "llama3", "ollama", false, None,

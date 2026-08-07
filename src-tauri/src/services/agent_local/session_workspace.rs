@@ -48,6 +48,8 @@ async fn ensure_work_path(
     work: &Path,
     outputs_base: Option<&Path>,
 ) -> Result<SessionWorkspace, String> {
+    let base = dunce::simplified(base);
+    let work = dunce::simplified(work);
     let relative = work.strip_prefix(base).map_err(|_| workspace_error())?;
     let mut components = relative.components();
     let date = normal_component(components.next())?;

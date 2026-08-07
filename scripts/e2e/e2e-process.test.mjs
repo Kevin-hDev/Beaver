@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { test } from "node:test";
 import {
   buildArguments,
@@ -23,11 +24,13 @@ test("the E2E build always enables the isolated feature", () => {
 });
 
 test("the E2E binary path is platform specific", () => {
-  assert.equal(debugBinaryPath("linux", "/repo"), "/repo/src-tauri/target/e2e/debug/cl-go-dash");
-  assert.equal(debugBinaryPath("win32", "/repo"), "/repo/src-tauri/target/e2e/debug/cl-go-dash.exe");
+  const debugRoot = resolve("/repo", "src-tauri", "target", "e2e", "debug");
+
+  assert.equal(debugBinaryPath("linux", "/repo"), join(debugRoot, "cl-go-dash"));
+  assert.equal(debugBinaryPath("win32", "/repo"), join(debugRoot, "cl-go-dash.exe"));
   assert.equal(
     debugBinaryPath("darwin", "/repo"),
-    "/repo/src-tauri/target/e2e/debug/bundle/macos/Beaver.app/Contents/MacOS/cl-go-dash",
+    join(debugRoot, "bundle", "macos", "Beaver.app", "Contents", "MacOS", "cl-go-dash"),
   );
 });
 

@@ -39,7 +39,7 @@ fn provider_category_rejects_unknown_wire_values() {
 
 #[test]
 fn checked_in_typescript_matches_the_rust_contract() {
-    let checked_in = include_str!("../../../src/types/api.ts");
+    let checked_in = include_str!("../../../src/types/api.ts").replace("\r\n", "\n");
 
     assert_eq!(checked_in, typescript_bindings());
 }

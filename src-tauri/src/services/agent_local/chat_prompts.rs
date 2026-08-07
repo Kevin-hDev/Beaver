@@ -123,7 +123,10 @@ pub fn prepare_messages_with_tools(
             instructions,
             enabled_tool_names,
         );
-        if !messages.first().is_some_and(|message| message.role == "system") {
+        if messages
+            .first()
+            .is_none_or(|message| message.role != "system")
+        {
             messages.insert(0, build_system_message(prompt));
         }
         super::extension_discovery_prompt::append(messages, enabled_tool_names);
