@@ -1,8 +1,7 @@
 use super::cef_app::BrowserApp;
 use super::cef_engine_config::{prepare_profile, to_cef_settings};
-#[cfg(target_os = "macos")]
-use super::cef_library::CefLibrary;
 use super::cef_surface::BrowserSurfaceManager;
+#[cfg(target_os = "windows")]
 use super::native_paths::resolve_runtime_files;
 #[cfg(target_os = "macos")]
 use super::process_role::validate_browser_process_result;
@@ -11,6 +10,8 @@ use super::runtime_handle::BrowserRuntimeHandle;
 use super::settings::cef_settings_policy;
 use super::surface_bounds::BrowserSurfaceBounds;
 use super::url_policy::ValidatedUrl;
+#[cfg(target_os = "macos")]
+use super::BrowserLibraryGuard;
 use super::{browser_api_types::BrowserNavigationAction, browser_view_key::BrowserViewKey};
 use cef::{args::Args, *};
 use std::cell::RefCell;
@@ -23,27 +24,43 @@ struct CefEngine {
     pump: PumpScheduler,
     surface: BrowserSurfaceManager,
     _app: App,
-    #[cfg(target_os = "macos")]
-    _library: CefLibrary,
 }
 
-pub(super) fn initialize(app: tauri::AppHandle, runtime: BrowserRuntimeHandle) {
-    if initialize_inner(app, runtime.clone()).is_err() {
+pub(super) fn initialize(
+    app: tauri::AppHandle,
+    runtime: BrowserRuntimeHandle,
+    #[cfg(target_os = "macos")] library: &BrowserLibraryGuard,
+) {
+    if initialize_inner(
+        app,
+        runtime.clone(),
+        #[cfg(target_os = "macos")]
+        library,
+    )
+    .is_err()
+    {
         let _ = runtime.mark_failed();
         eprintln!("[browser] initialization failed");
     }
 }
 
-fn initialize_inner(app: tauri::AppHandle, runtime: BrowserRuntimeHandle) -> Result<(), ()> {
+fn initialize_inner(
+    app: tauri::AppHandle,
+    runtime: BrowserRuntimeHandle,
+    #[cfg(target_os = "macos")] library: &BrowserLibraryGuard,
+) -> Result<(), ()> {
     if ENGINE.with(|engine| engine.borrow().is_some()) {
         return Err(());
     }
-    let executable = std::env::current_exe().map_err(|_| ())?;
-    let downloaded = cef::sys::get_cef_dir();
-    let files = resolve_runtime_files(&executable, downloaded.as_deref()).ok_or(())?;
-    let profile = prepare_profile()?;
+    #[cfg(target_os = "windows")]
+    let files = {
+        let executable = std::env::current_exe().map_err(|_| ())?;
+        let downloaded = cef::sys::get_cef_dir();
+        resolve_runtime_files(&executable, downloaded.as_deref()).ok_or(())?
+    };
     #[cfg(target_os = "macos")]
-    let library = CefLibrary::load(&files.framework)?;
+    let files = library.runtime_files();
+    let profile = prepare_profile()?;
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::new();
     #[cfg(target_os = "macos")]
@@ -77,8 +94,6 @@ fn initialize_inner(app: tauri::AppHandle, runtime: BrowserRuntimeHandle) -> Res
             pump: pump.clone(),
             surface: BrowserSurfaceManager::new(),
             _app: cef_app,
-            #[cfg(target_os = "macos")]
-            _library: library,
         });
     });
     Ok(())

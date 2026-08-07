@@ -9,6 +9,7 @@
 
 mod app_events;
 mod app_exit;
+mod app_lifecycle;
 mod commands;
 mod invoke_handler;
 mod invoke_handler_tail;
@@ -17,6 +18,8 @@ mod ollama_polling;
 mod runtime_state;
 mod services;
 mod startup;
+#[cfg(test)]
+mod startup_tests;
 mod storage_default_skills;
 mod storage_migration;
 mod storage_migration_files;
@@ -35,16 +38,20 @@ use services::scheduler::Scheduler;
 use tauri::{Emitter, Manager};
 
 pub use runtime_state::ActiveStreams;
+#[cfg(target_os = "macos")]
+pub use services::browser::BrowserLibraryGuard;
 #[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
 pub use startup::launch_windows_browser_host;
+#[cfg(target_os = "macos")]
+pub use startup::prepare_macos_application;
 pub use startup::{
     configure_git_network_policy, initialize_shell_environment, prepare_browser_native_application,
-    run_shell_sandbox_helper,
+    run, run_shell_sandbox_helper,
 };
 
 static STREAM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-pub fn run() {
+pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>) {
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
@@ -196,11 +203,10 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    let app_handle = app.handle().clone();
-    let exit_code = app.run_return(|app_handle, event| {
-        services::browser::setup_on_run_event(app_handle, &event);
-        app_events::handle_run_event(app_handle, event);
-    });
-    services::browser::shutdown(&app_handle);
+    let exit_code = app_lifecycle::run(
+        app,
+        #[cfg(target_os = "macos")]
+        browser_library,
+    );
     std::process::exit(exit_code);
 }

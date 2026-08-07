@@ -99,3 +99,69 @@ fn extract(output: &[u8], marker: &[u8]) -> Option<OsString> {
 fn find(input: &[u8], needle: &[u8]) -> Option<usize> {
     input.windows(needle.len()).position(|window| window == needle)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use std::time::Duration;
+
+    const HELPER_PHASE: &str = "BEAVER_CAPTURE_HELPER_PHASE";
+    const HELPER_MARKER: &str = "BEAVER_CAPTURE_HELPER_MARKER";
+
+    #[test]
+    fn capture_timeout_remains_bounded_when_writer_escapes_process_group() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let marker = temp.path().join("escaped-writer-ready");
+        let mut command = Command::new(std::env::current_exe().expect("test executable"));
+        command
+            .args(["escaped_pipe_writer_helper", "--nocapture"])
+            .env(HELPER_PHASE, "parent")
+            .env(HELPER_MARKER, &marker);
+
+        let started = Instant::now();
+        assert!(run(&mut command, b"missing-marker", Duration::from_millis(100)).is_none());
+
+        assert!(
+            marker.exists(),
+            "escaped descendant did not leave the process group"
+        );
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn escaped_pipe_writer_helper() {
+        match std::env::var(HELPER_PHASE).as_deref() {
+            Ok("parent") => spawn_escaped_writer(),
+            Ok("child") => hold_inherited_stdout(),
+            _ => {}
+        }
+    }
+
+    fn spawn_escaped_writer() {
+        let marker = std::env::var_os(HELPER_MARKER).expect("marker path");
+        let mut child = Command::new(std::env::current_exe().expect("test executable"))
+            .args(["escaped_pipe_writer_helper", "--nocapture"])
+            .env(HELPER_PHASE, "child")
+            .env(HELPER_MARKER, &marker)
+            .spawn()
+            .expect("escaped writer");
+        std::thread::spawn(move || {
+            let _ = child.wait();
+        });
+
+        let marker = PathBuf::from(marker);
+        let started = Instant::now();
+        while !marker.exists() && started.elapsed() < Duration::from_secs(1) {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert!(marker.exists());
+    }
+
+    fn hold_inherited_stdout() {
+        assert_ne!(unsafe { libc::setsid() }, -1);
+        let marker = PathBuf::from(std::env::var_os(HELPER_MARKER).expect("marker path"));
+        std::fs::write(marker, b"ready").expect("write marker");
+        std::thread::sleep(Duration::from_secs(5));
+    }
+}

@@ -41,19 +41,3 @@ fn cef_can_stop_while_security_gate_is_pending() {
     assert!(lifecycle.begin_stopping());
     assert!(lifecycle.mark_stopped());
 }
-
-#[test]
-fn browser_stops_only_after_the_native_event_loop_returns() {
-    let cleanup_source = include_str!("../../app_exit.rs");
-    assert!(!cleanup_source.contains("services::browser::shutdown"));
-
-    let app_source = include_str!("../../lib.rs");
-    let event_loop = app_source
-        .find("app.run_return(|")
-        .expect("returning native event loop");
-    let browser = app_source
-        .find("services::browser::shutdown(&app_handle);")
-        .expect("browser cleanup");
-
-    assert!(event_loop < browser);
-}

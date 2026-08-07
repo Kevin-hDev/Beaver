@@ -1,5 +1,65 @@
+#[cfg(target_os = "macos")]
+use super::services::browser::BrowserLibraryGuard;
+
 pub fn prepare_browser_native_application() -> bool {
     super::services::browser::prepare_native_application()
+}
+
+#[cfg(any(test, target_os = "macos"))]
+pub(crate) fn prepare_macos_browser<Guard>(
+    load_library: impl FnOnce() -> Result<Guard, ()>,
+    prepare_native: impl FnOnce() -> bool,
+) -> Option<Guard> {
+    let library = load_library().ok()?;
+    prepare_native().then_some(library)
+}
+
+#[cfg(any(test, target_os = "macos"))]
+pub(crate) fn prepare_macos_startup<Guard>(
+    load_library: impl FnOnce() -> Result<Guard, ()>,
+    prepare_native: impl FnOnce() -> bool,
+    initialize_shell: impl FnOnce() -> bool,
+) -> (Option<Guard>, bool) {
+    let library = prepare_macos_browser(load_library, prepare_native);
+    let shell_environment_ready = initialize_shell();
+    (library, shell_environment_ready)
+}
+
+#[cfg(any(test, target_os = "macos"))]
+pub(crate) fn shutdown_before_library_unload<Guard>(
+    library: Option<Guard>,
+    shutdown: impl FnOnce(),
+) {
+    shutdown();
+    drop(library);
+}
+
+pub(crate) fn run_before_browser_shutdown<ExitCode>(
+    run_event_loop: impl FnOnce() -> ExitCode,
+    shutdown_browser: impl FnOnce(),
+) -> ExitCode {
+    let exit_code = run_event_loop();
+    shutdown_browser();
+    exit_code
+}
+
+#[cfg(target_os = "macos")]
+pub fn prepare_macos_application() -> (Option<BrowserLibraryGuard>, bool) {
+    prepare_macos_startup(
+        BrowserLibraryGuard::load_for_current_process,
+        prepare_browser_native_application,
+        initialize_shell_environment,
+    )
+}
+
+#[cfg(target_os = "macos")]
+pub fn run(browser_library: Option<BrowserLibraryGuard>) {
+    super::run_inner(browser_library);
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn run() {
+    super::run_inner();
 }
 
 /// Exécute le lanceur shell isolé avant l'initialisation de Tauri ou de CEF.

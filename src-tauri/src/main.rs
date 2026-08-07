@@ -11,12 +11,24 @@ fn main() {
         eprintln!("[git] network policy unavailable");
         return;
     }
-    if !cl_go_dash_lib::initialize_shell_environment() {
+    #[cfg(target_os = "macos")]
+    let (browser_library, shell_environment_ready) = cl_go_dash_lib::prepare_macos_application();
+    #[cfg(not(target_os = "macos"))]
+    let shell_environment_ready = cl_go_dash_lib::initialize_shell_environment();
+    if !shell_environment_ready {
         eprintln!("[shell] login environment unavailable; using fallback PATH");
     }
+    #[cfg(target_os = "macos")]
+    if browser_library.is_none() {
+        eprintln!("[browser] native integration unavailable");
+    }
+    #[cfg(not(target_os = "macos"))]
     if !cl_go_dash_lib::prepare_browser_native_application() {
         eprintln!("[browser] native integration unavailable");
     }
+    #[cfg(target_os = "macos")]
+    cl_go_dash_lib::run(browser_library);
+    #[cfg(not(target_os = "macos"))]
     cl_go_dash_lib::run();
 }
 

@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+use super::BrowserLibraryGuard;
 #[cfg(native_browser)]
 use super::BrowserRuntimeHandle;
 #[cfg(native_browser)]
@@ -7,6 +9,10 @@ use tauri::Manager;
 
 #[cfg(native_browser)]
 static NATIVE_APPLICATION_READY: AtomicBool = AtomicBool::new(false);
+
+pub(super) fn is_browser_ready_event(event: &tauri::RunEvent) -> bool {
+    matches!(event, tauri::RunEvent::Ready)
+}
 
 #[cfg(target_os = "macos")]
 pub(crate) fn prepare_native_application() -> bool {
@@ -27,19 +33,38 @@ pub(crate) fn prepare_native_application() -> bool {
 }
 
 #[cfg(native_browser)]
-pub(crate) fn setup_on_run_event(app: &tauri::AppHandle, event: &tauri::RunEvent) {
-    if !matches!(event, tauri::RunEvent::Ready) {
+pub(crate) fn setup_on_run_event(
+    app: &tauri::AppHandle,
+    event: &tauri::RunEvent,
+    #[cfg(target_os = "macos")] library: Option<&BrowserLibraryGuard>,
+) {
+    if !is_browser_ready_event(event) {
         return;
     }
+    #[cfg(target_os = "macos")]
+    let Some(library) = library
+    else {
+        return;
+    };
     let runtime = app.state::<BrowserRuntimeHandle>().inner().clone();
     if !NATIVE_APPLICATION_READY.load(Ordering::Acquire) || !runtime.mark_application_prepared() {
         return;
     }
-    super::cef_engine::initialize(app.clone(), runtime);
+    super::cef_engine::initialize(
+        app.clone(),
+        runtime,
+        #[cfg(target_os = "macos")]
+        library,
+    );
 }
 
 #[cfg(not(native_browser))]
-pub(crate) fn setup_on_run_event(_app: &tauri::AppHandle, _event: &tauri::RunEvent) {}
+pub(crate) fn setup_on_run_event(
+    _app: &tauri::AppHandle,
+    _event: &tauri::RunEvent,
+    #[cfg(target_os = "macos")] _library: Option<&BrowserLibraryGuard>,
+) {
+}
 
 pub(crate) fn reset_page_surface(_app: &tauri::AppHandle) {
     #[cfg(native_browser)]

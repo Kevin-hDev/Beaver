@@ -1,11 +1,18 @@
 use super::runtime_handle::{BrowserCapability, BrowserRuntimeHandle, CEF_VERSION};
+use super::runtime_integration::is_browser_ready_event;
 
 #[test]
-fn browser_initialization_waits_for_the_ready_event() {
-    let source = include_str!("../../lib.rs");
+fn browser_initialization_accepts_only_the_ready_event() {
+    assert!(is_browser_ready_event(&tauri::RunEvent::Ready));
+    assert!(!is_browser_ready_event(&tauri::RunEvent::Resumed));
+    assert!(!is_browser_ready_event(&tauri::RunEvent::MainEventsCleared));
+}
 
-    assert!(!source.contains("services::browser::setup(app);"));
-    assert!(source.contains("services::browser::setup_on_run_event(app_handle, &event);"));
+#[test]
+fn production_runtime_applies_the_ready_event_gate() {
+    let source = include_str!("runtime_integration.rs");
+
+    assert!(source.contains("if !is_browser_ready_event(event)"));
 }
 
 #[test]

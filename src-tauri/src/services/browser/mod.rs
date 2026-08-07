@@ -167,6 +167,8 @@ pub use browser_api_types::{BrowserCommandError, BrowserNavigationAction, Browse
 pub use browser_surface_api::{
     apply_surface, close_native_view, navigate_native_view, run_navigation_action,
 };
+#[cfg(target_os = "macos")]
+pub use cef_library::BrowserLibraryGuard;
 pub use local_site_scanner::LocalSiteScanner;
 pub use local_site_types::{LocalSiteScanResult, LOCAL_SITES_CHANGED_EVENT};
 pub use runtime_handle::{BrowserCapability, BrowserRuntimeHandle};
