@@ -31,7 +31,9 @@ pub fn validate_parameter_entries(entries: &[(String, String)]) -> Result<(), St
         if !valid_key(key)
             || value.is_empty()
             || value.len() > MAX_PARAMETER_VALUE_BYTES
-            || value.contains('\0')
+            || value
+                .chars()
+                .any(|character| matches!(character, '\0' | '\n' | '\r'))
         {
             return Err(invalid_parameter());
         }
@@ -88,5 +90,19 @@ mod tests {
         let too_many = vec![("stop".to_string(), "x".to_string()); 129];
         assert!(validate_parameter_entries(&too_many).is_err());
         assert!(validate_parameter_entries(&[("invalid-key".into(), "1".into())]).is_err());
+    }
+
+    #[test]
+    fn rejects_line_breaks_that_could_inject_modelfile_directives() {
+        assert!(validate_parameter_entries(&[(
+            "stop".into(),
+            "safe\nPARAMETER num_ctx 100000".into(),
+        )])
+        .is_err());
+        assert!(validate_parameter_entries(&[(
+            "future_option".into(),
+            "safe\rSYSTEM hostile".into(),
+        )])
+        .is_err());
     }
 }
