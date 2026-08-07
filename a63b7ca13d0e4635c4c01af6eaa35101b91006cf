@@ -15,3 +15,5 @@ Couverture : tests comportementaux sur l’ordre load/prepare/shell, les replis,
 Validation : cargo fmt, cargo check, Clippy strict, 3019 tests Rust réussis et 1 ignoré, lint sans erreur, TypeScript, 1875 tests frontend, 40 tests de build, 6 tests CEF et 51 tests de l’hôte d’extensions. Graphify AST mis à jour. Le bundle de développement contenant réellement CEF a ensuite été lancé 20 fois : 20 processus actifs, zéro erreur navigateur et aucun nouveau rapport de crash macOS.
 
 Périmètre de review : commit unique main..a63b7ca. Les anciens SIGABRT de fermeture ont une signature distincte et restent hors périmètre.
+
+Maintenance documentaire : les deux documents CEF modifiés ont aussi été ré-extraits sémantiquement et fusionnés de façon ciblée dans le graphe existant, puis les communautés et le rapport Graphify ont été recalculés.
