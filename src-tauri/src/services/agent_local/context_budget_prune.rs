@@ -7,6 +7,7 @@ pub(super) struct PruneParams<'a> {
     pub max_input: usize,
     pub tool_tokens: usize,
     pub capsule_context: u64,
+    pub context_window: u64,
     pub provider_id: &'a str,
     pub original_len: usize,
     pub repair: super::context_budget_history::HistoryRepairReport,
@@ -42,7 +43,7 @@ pub(super) fn prepare_with_limit(
             report_tokens,
             params.tool_tokens,
             params.max_input,
-            params.capsule_context,
+            params.context_window,
         );
         return Err(super::context_capacity_error::encode(details));
     }

@@ -157,13 +157,8 @@ pub async fn chat_stream(
             // Ne pas envoyer l'erreur "Annulé" — le frontend gère déjà le cancel
             // via stopSession(). Envoyer ce message tuerait un nouveau stream.
             if is_current && message != "Annulé" {
-                let context_capacity =
-                    crate::services::agent_local::context_capacity_error::decode(&message);
-                let public_message = if context_capacity.is_some() {
-                    crate::services::agent_local::context_capacity_error::CODE.to_string()
-                } else {
-                    message.clone()
-                };
+                let (public_message, context_capacity) =
+                    crate::services::agent_local::context_capacity_error::public_error(&message);
                 let is_conn =
                     crate::services::agent_local::stream_diagnostics_failure::is_connection_error(
                         &public_message,

@@ -158,6 +158,19 @@ fn payload_reduction_changes_an_oversized_request_once() {
 }
 
 #[test]
+fn payload_reduction_capacity_error_reports_the_real_context_window() {
+    let mut messages = vec![msg("system", &"rules".repeat(20_000))];
+
+    let error = reduce_after_payload_too_large(&mut messages, 128_000, &[], "ollama")
+        .expect_err("mandatory context must exceed the reduced retry target");
+    let details = super::super::context_capacity_error::decode(&error)
+        .expect("structured context capacity details");
+
+    assert_eq!(details.context_window, 128_000);
+    assert!(details.max_input_tokens < details.context_window);
+}
+
+#[test]
 fn codex_does_not_prune_reasoning_that_is_not_sent() {
     let mut messages = vec![msg("system", "rules"), msg("user", &"a".repeat(280_000))];
     messages.push(ChatMessage {
