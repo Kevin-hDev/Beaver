@@ -1,0 +1,11 @@
+Objectif : supprimer le crash macOS intermittent SIGTRAP observé au démarrage de Beaver, sans modifier le comportement Windows ou Linux.
+
+Problème diagnostiqué : CEF était chargé dynamiquement pendant l’événement Ready, après le démarrage de Tauri et de plusieurs tâches Tokio. Les rapports de crash montrent le thread principal dans cef_load_library pendant qu’un worker Rust libère de la mémoire. CEF déclenche alors un arrêt immédiat interne, cohérent avec une modification tardive des zones mémoire de macOS dans un processus déjà multithreadé.
+
+Correction : CEF est désormais chargé dans le point d’entrée macOS après la préparation de l’environnement mais avant AppKit, Tauri et les threads secondaires. Un garde opaque conserve la bibliothèque pendant tout le cycle de vie. Le moteur exige une référence à ce garde et ne peut donc plus charger CEF tardivement. Après le retour de la boucle native, CEF est arrêté avant le déchargement explicite de la bibliothèque, nécessaire car process::exit ne lance pas les destructeurs Rust.
+
+Repli : si les fichiers CEF sont absents, invalides ou impossibles à charger, Beaver continue de démarrer avec le navigateur intégré indisponible. Les erreurs restent génériques. Le bootstrap Windows existant reste inchangé et le nouveau code est exclu de Linux par les gardes de compilation.
+
+Couverture : tests comportementaux sur l’ordre chargement CEF puis préparation native, les échecs de chargement et de préparation, et l’ordre boucle native puis arrêt CEF puis déchargement. Validation effectuée : formatage, cargo check, Clippy strict, 3012 tests Rust réussis, 1875 tests frontend, 40 tests de build, 6 tests CEF, 51 tests de l’hôte d’extensions, TypeScript, Graphify, puis 20 lancements macOS consécutifs sans arrêt spontané ni nouveau rapport de crash.
+
+Périmètre de review : tous les commits de main..bc369326f59e6d18ffad07159c9e73f31d18003e. Les anciens SIGABRT de fermeture ont une signature distincte et ne font pas partie de ce correctif.
