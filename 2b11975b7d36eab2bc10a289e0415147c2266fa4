@@ -1,0 +1,7 @@
+Reviewer objective: correct the regressions and incomplete class-wide treatment identified in the review of 825f897, while preserving its intended Ollama, E2E, logging and forecast hardening.
+
+Decisions: the Ollama test mutex now lives beside the global ACTIVE_PORT and is acquired by all three tests that mutate it; synchronous tests reset the global value before asserting, preventing cascade pollution on failure. TimesFM capabilities are declared independently from Chronos-2. Rust tests that grepped source text for log levels or refactoring shape were removed; the CI configuration tests remain because they validate configuration presence.
+
+Log audit: all 182 warn sites were reviewed by behavior. Blocking or propagated failures now use error, normal lifecycle and audit events use info, and 57 warnings remain intentionally for retries, fallbacks, partial cleanup, external-service responses, race-safe process refusal and secondary diagnostics. Final Ollama HTTP error bodies are sanitized before logging.
+
+Validation: cargo test --all: 3033 passed, 2 ignored; cargo test --all --features e2e: 3036 passed, 2 ignored; strict Clippy passed with and without e2e; 40 concurrent Ollama stress runs passed; npm test passed 411 files / 1875 frontend tests plus build, CEF, E2E-runner and extension-host suites; native desktop onboarding E2E passed 1/1; TypeScript, ESLint, formatting, contract check, Graphify update, diff check and both npm audits passed with zero vulnerabilities.
