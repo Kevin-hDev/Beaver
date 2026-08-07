@@ -98,7 +98,7 @@ fn truncate_slug(slug: &str, max_bytes: usize) -> String {
 }
 
 fn storage_error(operation: &str, error: std::io::Error) -> String {
-    ::log::warn!("[memory] {operation}: {error}");
+    ::log::error!("[memory] {operation}: {error}");
     "Mémoire indisponible.".to_string()
 }
 

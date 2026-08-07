@@ -31,7 +31,14 @@ pub const fn chronos_2_caps() -> ForecastCapabilities {
 }
 
 pub const fn timesfm_caps() -> ForecastCapabilities {
-    chronos_2_caps()
+    ForecastCapabilities {
+        past_covariates: true,
+        future_covariates: true,
+        multi_series: true,
+        probabilistic: true,
+        backtesting_ready: true,
+        ..BASE_CAPABILITIES
+    }
 }
 
 pub const fn multiseries_prob_caps() -> ForecastCapabilities {

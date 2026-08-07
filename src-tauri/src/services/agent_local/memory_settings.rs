@@ -29,7 +29,7 @@ pub async fn save(settings: &MemorySettings) -> Result<MemorySettings, String> {
 
 async fn save_to(path: &Path, settings: &MemorySettings) -> Result<(), String> {
     let data = serde_json::to_vec_pretty(settings).map_err(|error| {
-        ::log::warn!("[memory] serialize settings: {error}");
+        ::log::error!("[memory] serialize settings: {error}");
         "Paramètres mémoire indisponibles.".to_string()
     })?;
     crate::services::private_store::atomic_write_async(path.to_path_buf(), data)
@@ -57,7 +57,7 @@ pub async fn set_budget(tokens: u32) -> Result<MemorySettings, String> {
 }
 
 fn log_storage_error(error: String) -> String {
-    ::log::warn!("[memory] settings storage: {error}");
+    ::log::error!("[memory] settings storage: {error}");
     "Paramètres mémoire indisponibles.".to_string()
 }
 

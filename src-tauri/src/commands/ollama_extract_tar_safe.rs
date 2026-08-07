@@ -9,19 +9,19 @@ pub(crate) fn safe_target_path(
     let target = canonical_dest.join(raw_path);
     let target_canonical = if target.exists() {
         std::fs::canonicalize(&target).map_err(|e| {
-            ::log::warn!("[ollama-extract] canonicalize entry: {e}");
+            ::log::error!("[ollama-extract] canonicalize entry: {e}");
             "ollama-extract-error".to_string()
         })?
     } else {
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent).map_err(|e| {
-                ::log::warn!("[ollama-extract] mkdir: {e}");
+                ::log::error!("[ollama-extract] mkdir: {e}");
                 "ollama-extract-error".to_string()
             })?;
         }
         let parent_canonical =
             std::fs::canonicalize(target.parent().unwrap_or(dest)).map_err(|e| {
-                ::log::warn!("[ollama-extract] canonicalize parent: {e}");
+                ::log::error!("[ollama-extract] canonicalize parent: {e}");
                 "ollama-extract-error".to_string()
             })?;
         parent_canonical.join(target.file_name().unwrap_or_default())
@@ -46,7 +46,7 @@ pub(crate) fn unpack_safe_symlink<R: Read>(
     let link = entry
         .link_name()
         .map_err(|e| {
-            ::log::warn!("[ollama-extract] symlink target: {e}");
+            ::log::error!("[ollama-extract] symlink target: {e}");
             "ollama-extract-error".to_string()
         })?
         .ok_or_else(|| "symlink sans cible — extraction refusée".to_string())?;
@@ -68,7 +68,7 @@ pub(crate) fn unpack_safe_symlink<R: Read>(
             return Err("symlink cible un dossier existant — extraction refusée".into());
         }
         std::fs::remove_file(target).map_err(|e| {
-            ::log::warn!("[ollama-extract] remove existing symlink target: {e}");
+            ::log::error!("[ollama-extract] remove existing symlink target: {e}");
             "ollama-extract-error".to_string()
         })?;
     }
@@ -76,7 +76,7 @@ pub(crate) fn unpack_safe_symlink<R: Read>(
     #[cfg(unix)]
     {
         std::os::unix::fs::symlink(&link, target).map_err(|e| {
-            ::log::warn!("[ollama-extract] symlink create: {e}");
+            ::log::error!("[ollama-extract] symlink create: {e}");
             "ollama-extract-error".to_string()
         })?;
         Ok(())

@@ -8,6 +8,9 @@ const DEFAULT_PORT: u16 = 11434;
 
 static ACTIVE_PORT: AtomicU16 = AtomicU16::new(0);
 
+#[cfg(test)]
+pub(crate) static PORT_TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 pub fn get_port() -> u16 {
     let port = ACTIVE_PORT.load(Ordering::Relaxed);
     if port == 0 {
@@ -92,16 +95,20 @@ mod tests {
 
     #[test]
     fn set_and_get_port_roundtrip() {
+        let _guard = PORT_TEST_LOCK.blocking_lock();
         set_port(11550);
-        assert_eq!(get_port(), 11550);
+        let actual = get_port();
         set_port(0);
+        assert_eq!(actual, 11550);
     }
 
     #[test]
     fn base_url_uses_active_port() {
+        let _guard = PORT_TEST_LOCK.blocking_lock();
         set_port(11555);
-        assert_eq!(base_url(), "http://127.0.0.1:11555");
+        let actual = base_url();
         set_port(0);
+        assert_eq!(actual, "http://127.0.0.1:11555");
     }
 
     #[test]

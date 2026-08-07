@@ -78,7 +78,7 @@ async fn stream_chat_inner(
         .map(|r| r.map_err(std::io::Error::other));
     let mut lines = BufReader::new(StreamReader::new(byte_stream)).lines();
 
-    ::log::warn!(
+    ::log::info!(
         "[ollama-stream] stream ouvert HTTP {} model={} think={:?} msgs={} tools={}",
         http_status,
         request.model,

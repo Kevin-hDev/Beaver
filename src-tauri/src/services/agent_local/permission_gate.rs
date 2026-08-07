@@ -53,7 +53,7 @@ static PENDING: LazyLock<Mutex<HashMap<String, oneshot::Sender<PermissionDecisio
 
 pub(crate) fn log_diagnostic(event: &str, tool_name: Option<&str>, detail: Option<&str>) {
     let entry = diagnostic_entry(event, tool_name, detail);
-    ::log::warn!("[permission] {}", entry);
+    ::log::info!("[permission] {}", entry);
 
     let dir = crate::services::paths::data_dir().join("logs");
     let _ = std::fs::create_dir_all(&dir);

@@ -28,7 +28,7 @@ pub async fn cleanup_orphans(startup_cutoff: DateTime<Utc>) {
     let cleaned = match cleanup_orphans_in_dir(&sessions_dir, startup_cutoff, true).await {
         Ok(count) => count,
         Err(_) => {
-            ::log::warn!("[startup-cleanup] cleanup sessions impossible");
+            ::log::error!("[startup-cleanup] cleanup sessions impossible");
             return;
         }
     };

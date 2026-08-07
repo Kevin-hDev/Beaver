@@ -30,7 +30,7 @@ fn migrate_raw_prefix(
         }
     }
     vault::write_vault(master_key, map)?;
-    ::log::warn!(
+    ::log::info!(
         "[vault] migrated {} raw keys to namespaced prefix",
         to_migrate.len()
     );

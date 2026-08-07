@@ -11,7 +11,7 @@ fn main() {
     // SAFETY: le helper éventuel ne crée aucun thread et remplace le processus
     // avec exec ; cet appel reste donc antérieur à CEF, Tauri et tout thread.
     if !unsafe { cl_go_dash_lib::configure_git_network_policy() } {
-        ::log::warn!("[git] network policy unavailable");
+        ::log::error!("[git] network policy unavailable");
         return;
     }
     #[cfg(target_os = "macos")]
@@ -23,11 +23,11 @@ fn main() {
     }
     #[cfg(target_os = "macos")]
     if browser_library.is_none() {
-        ::log::warn!("[browser] native integration unavailable");
+        ::log::error!("[browser] native integration unavailable");
     }
     #[cfg(not(target_os = "macos"))]
     if !cl_go_dash_lib::prepare_browser_native_application() {
-        ::log::warn!("[browser] native integration unavailable");
+        ::log::error!("[browser] native integration unavailable");
     }
     #[cfg(target_os = "macos")]
     cl_go_dash_lib::run(browser_library);

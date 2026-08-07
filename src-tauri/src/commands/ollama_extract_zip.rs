@@ -11,11 +11,11 @@ pub(crate) fn extract_zip(
     cancel: &CancellationToken,
 ) -> Result<(), String> {
     let file = std::fs::File::open(archive).map_err(|e| {
-        ::log::warn!("[ollama-extract] open zip: {e}");
+        ::log::error!("[ollama-extract] open zip: {e}");
         "ollama-extract-error".to_string()
     })?;
     let mut zip_archive = zip::ZipArchive::new(file).map_err(|e| {
-        ::log::warn!("[ollama-extract] read zip: {e}");
+        ::log::error!("[ollama-extract] read zip: {e}");
         "ollama-extract-error".to_string()
     })?;
     safe_unpack_zip(&mut zip_archive, dest, cancel)
@@ -27,7 +27,7 @@ fn safe_unpack_zip(
     cancel: &CancellationToken,
 ) -> Result<(), String> {
     let canonical_dest = std::fs::canonicalize(dest).map_err(|e| {
-        ::log::warn!("[ollama-extract] canonicalize dest: {e}");
+        ::log::error!("[ollama-extract] canonicalize dest: {e}");
         "ollama-extract-error".to_string()
     })?;
     if archive.len() > MAX_ZIP_ENTRIES {
@@ -38,7 +38,7 @@ fn safe_unpack_zip(
     for i in 0..archive.len() {
         ensure_not_cancelled(cancel)?;
         let mut entry = archive.by_index(i).map_err(|e| {
-            ::log::warn!("[ollama-extract] zip entry: {e}");
+            ::log::error!("[ollama-extract] zip entry: {e}");
             "ollama-extract-error".to_string()
         })?;
 
@@ -58,7 +58,7 @@ fn safe_unpack_zip(
 
         if entry.is_dir() {
             std::fs::create_dir_all(&target).map_err(|e| {
-                ::log::warn!("[ollama-extract] mkdir zip: {e}");
+                ::log::error!("[ollama-extract] mkdir zip: {e}");
                 "ollama-extract-error".to_string()
             })?;
             continue;
@@ -66,13 +66,13 @@ fn safe_unpack_zip(
 
         if let Some(parent) = target.parent() {
             std::fs::create_dir_all(parent).map_err(|e| {
-                ::log::warn!("[ollama-extract] mkdir zip parent: {e}");
+                ::log::error!("[ollama-extract] mkdir zip parent: {e}");
                 "ollama-extract-error".to_string()
             })?;
         }
 
         let mut outfile = std::fs::File::create(&target).map_err(|e| {
-            ::log::warn!("[ollama-extract] create zip file: {e}");
+            ::log::error!("[ollama-extract] create zip file: {e}");
             "ollama-extract-error".to_string()
         })?;
         copy_zip_entry(&mut entry, &mut outfile, cancel)?;
@@ -89,14 +89,14 @@ fn copy_zip_entry(
     loop {
         ensure_not_cancelled(cancel)?;
         let read = std::io::Read::read(entry, &mut buffer).map_err(|e| {
-            ::log::warn!("[ollama-extract] read zip entry: {e}");
+            ::log::error!("[ollama-extract] read zip entry: {e}");
             "ollama-extract-error".to_string()
         })?;
         if read == 0 {
             break;
         }
         std::io::Write::write_all(output, &buffer[..read]).map_err(|e| {
-            ::log::warn!("[ollama-extract] write zip entry: {e}");
+            ::log::error!("[ollama-extract] write zip entry: {e}");
             "ollama-extract-error".to_string()
         })?;
     }

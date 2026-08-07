@@ -6,7 +6,7 @@ fn main() {
     let result = std::panic::catch_unwind(cl_go_dash_lib::updater_worker::run_from_env);
     std::panic::set_hook(previous_hook);
     if !matches!(result, Ok(Ok(()))) {
-        ::log::warn!("update failed");
+        ::log::error!("update failed");
         std::process::exit(1);
     }
 }

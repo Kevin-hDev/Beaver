@@ -54,7 +54,7 @@ pub(crate) fn create_unique_temp_file(
             }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(e) => {
-                ::log::warn!("[update] create temp file: {e}");
+                ::log::error!("[update] create temp file: {e}");
                 return Err("update-write-error".to_string());
             }
         }

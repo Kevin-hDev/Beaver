@@ -52,7 +52,7 @@ pub async fn try_auto_compress(
         summary_budget::summary_instruction_for_input(configured_context, estimated);
     let compress_msgs =
         engine::build_compression_request_content(messages, summary_instruction.as_deref());
-    ::log::warn!(
+    ::log::info!(
         "[compress] auto ollama start session={session_id} input_tokens={estimated} output_limit={output_limit}"
     );
     let compression = ollama_stream::collect_chat_with_timeout_and_limit(
@@ -81,11 +81,11 @@ pub async fn try_auto_compress(
             )
             .await
             .unwrap_or_else(|err| {
-                ::log::warn!("[compress] save session failed: {err}");
+                ::log::error!("[compress] save session failed: {err}");
                 token_estimate::estimate_tokens(messages) as u32
             });
             send_compression_done(on_event);
-            ::log::warn!(
+            ::log::info!(
                 "[compress] auto ollama done session={session_id} context_tokens={current_tokens}"
             );
             Some(current_tokens)

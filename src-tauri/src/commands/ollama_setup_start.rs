@@ -23,7 +23,7 @@ pub(crate) async fn start_sidecar_and_wait(
         status: "starting".into(),
     });
     ollama_lifecycle::start_sidecar(app).map_err(|e| {
-        ::log::warn!("[ollama-setup] start: {e}");
+        ::log::error!("[ollama-setup] start: {e}");
         "ollama-start-error".to_string()
     })?;
     wait_until_ollama_ready(cancel).await

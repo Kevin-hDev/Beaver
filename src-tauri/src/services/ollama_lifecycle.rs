@@ -56,7 +56,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
                 *guard = None;
             }
             Err(e) => {
-                ::log::warn!("[ollama] sidecar status: {e}");
+                ::log::error!("[ollama] sidecar status: {e}");
                 return Err("ollama-status-error".to_string());
             }
         }
@@ -87,7 +87,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
     let log_dir = crate::services::paths::data_dir().join("logs");
     let _ = std::fs::create_dir_all(&log_dir);
     let stderr_file = std::fs::File::create(log_dir.join("ollama-sidecar.log")).map_err(|e| {
-        ::log::warn!("[ollama] log file: {e}");
+        ::log::error!("[ollama] log file: {e}");
         "ollama-log-error".to_string()
     })?;
 

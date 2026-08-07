@@ -96,5 +96,5 @@ pub async fn release_vram() {
         return;
     };
     let _ = client.post(&url).json(&body).send().await;
-    ::log::warn!("[ollama] VRAM release demandée");
+    ::log::info!("[ollama] VRAM release demandée");
 }

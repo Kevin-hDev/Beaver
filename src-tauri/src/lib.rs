@@ -106,7 +106,7 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
                 }
             });
             if services::security_cleanup::run().is_err() {
-                ::log::warn!("[security cleanup] cleanup failed");
+                ::log::error!("[security cleanup] cleanup failed");
             }
             // Cleanup des sous-agents orphelins (crash précédent) : non bloquant.
             tauri::async_runtime::spawn(async move {
@@ -135,8 +135,8 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
                         })
                         .await
                         {
-                            Ok(Err(e)) => ::log::warn!("[ollama] sidecar start failed: {}", e),
-                            Err(e) => ::log::warn!("[ollama] sidecar task failed: {}", e),
+                            Ok(Err(e)) => ::log::error!("[ollama] sidecar start failed: {}", e),
+                            Err(e) => ::log::error!("[ollama] sidecar task failed: {}", e),
                             _ => {}
                         }
                     });

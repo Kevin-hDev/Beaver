@@ -63,7 +63,7 @@ fn open_folder(path: &std::path::Path) -> Result<(), String> {
         .arg(path)
         .spawn()
         .map_err(|e| {
-            ::log::warn!("[projects] open_folder: {e}");
+            ::log::error!("[projects] open_folder: {e}");
             "Impossible d'ouvrir le dossier".to_string()
         })?;
     Ok(())

@@ -98,7 +98,7 @@ pub fn open_in_editor(path: String) -> Result<(), String> {
         .spawn();
 
     result.map_err(|e| {
-        ::log::warn!("[personality] open_in_editor: {e}");
+        ::log::error!("[personality] open_in_editor: {e}");
         "Impossible d'ouvrir l'éditeur".to_string()
     })?;
     Ok(())

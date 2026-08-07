@@ -102,7 +102,7 @@ pub fn kill(pid: u32, kind: ProcessKind) {
         std::thread::sleep(Duration::from_millis(100));
         force_tree(pid);
     }
-    ::log::warn!("[{}] arrêt arbre orphelin pid={pid}", kind.label());
+    ::log::info!("[{}] arrêt arbre orphelin pid={pid}", kind.label());
 }
 
 #[cfg(unix)]

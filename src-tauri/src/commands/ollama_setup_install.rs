@@ -35,7 +35,7 @@ async fn install_archives_to(
     archives: &[&str],
 ) -> Result<(), String> {
     std::fs::create_dir_all(dest).map_err(|e| {
-        ::log::warn!("[ollama-setup] mkdir {}: {e}", dest.display());
+        ::log::error!("[ollama-setup] mkdir {}: {e}", dest.display());
         "Impossible de créer le dossier d'installation".to_string()
     })?;
 
@@ -141,7 +141,7 @@ async fn fetch_checksums(version: &str, archives: &[&str]) -> Result<Vec<String>
         match super::ollama_checksum::fetch_expected_hash(version, name).await {
             Ok(hash) => result.push(hash),
             Err(e) => {
-                ::log::warn!("[ollama-setup] checksum unavailable for {name}: {e}");
+                ::log::error!("[ollama-setup] checksum unavailable for {name}: {e}");
                 return Err("checksum-not-available".to_string());
             }
         }

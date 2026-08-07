@@ -15,9 +15,9 @@ struct Entry<'a> {
 
 pub fn write(operation: &str, code: &str, reason: &str) {
     if write_at(&log_path(), operation, code, reason).is_err() {
-        ::log::warn!("[extensions] operation failed; diagnostic log unavailable");
+        ::log::error!("[extensions] operation failed; diagnostic log unavailable");
     } else {
-        ::log::warn!("[extensions] operation failed: {operation}/{code}/{reason}");
+        ::log::error!("[extensions] operation failed: {operation}/{code}/{reason}");
     }
 }
 

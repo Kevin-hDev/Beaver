@@ -28,7 +28,7 @@ pub async fn fire_wakeup(app: AppHandle, wakeup: ScheduledWakeup, scheduled_for:
         }
         Err(e) => {
             log::log_err(&wakeup.id, scheduled_for, &e).await;
-            ::log::warn!("[scheduler] fire_wakeup {} error", wakeup.id);
+            ::log::error!("[scheduler] fire_wakeup {} error", wakeup.id);
             let _ = app.emit(
                 "wakeup-failed",
                 serde_json::json!({
@@ -42,7 +42,7 @@ pub async fn fire_wakeup(app: AppHandle, wakeup: ScheduledWakeup, scheduled_for:
     // Marquage Once → active=false, quel que soit le résultat
     if matches!(wakeup.schedule, WakeupSchedule::Once { .. }) {
         if let Err(e) = deactivate_once(&wakeup.id) {
-            ::log::warn!("[scheduler] deactivate once {}: {}", wakeup.id, e);
+            ::log::error!("[scheduler] deactivate once {}: {}", wakeup.id, e);
         }
     }
 }

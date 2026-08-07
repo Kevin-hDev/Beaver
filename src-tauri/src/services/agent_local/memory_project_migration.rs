@@ -116,12 +116,12 @@ async fn finish_pending_migration(scope: &MemoryScope) -> Result<(), String> {
 }
 
 fn migration_io_error(operation: &str, error: std::io::Error) -> String {
-    ::log::warn!("[memory] {operation}: {error}");
+    ::log::error!("[memory] {operation}: {error}");
     "Mémoire indisponible.".to_string()
 }
 
 fn migration_error(detail: &str) -> String {
-    ::log::warn!("[memory] migration: {detail}");
+    ::log::error!("[memory] migration: {detail}");
     "Mémoire indisponible.".to_string()
 }
 
