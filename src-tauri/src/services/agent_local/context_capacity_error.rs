@@ -94,6 +94,13 @@ pub fn decode(error: &str) -> Option<ContextCapacityDetails> {
     details.is_valid().then_some(details)
 }
 
+pub fn public_error(error: &str) -> (String, Option<ContextCapacityDetails>) {
+    let details = decode(error);
+    let is_capacity_error = error == CODE || error.starts_with(&format!("{CODE}:"));
+    let message = if is_capacity_error { CODE } else { error }.to_string();
+    (message, details)
+}
+
 fn bounded(value: u64) -> u64 {
     value.min(MAX_SAFE_TOKENS)
 }
@@ -112,5 +119,23 @@ mod tests {
     fn context_capacity_decoder_rejects_inconsistent_numbers() {
         assert!(decode("context_capacity_exceeded:8000,0,5000,1,12000,16000").is_none());
         assert!(decode("context_capacity_exceeded:not-a-number").is_none());
+    }
+
+    #[test]
+    fn public_error_hides_malformed_capacity_counters() {
+        let (message, details) = public_error(
+            "context_capacity_exceeded:8000,0,5000,13000,12000,invalid",
+        );
+
+        assert_eq!(message, CODE);
+        assert_eq!(details, None);
+    }
+
+    #[test]
+    fn public_error_preserves_unrelated_errors() {
+        let (message, details) = public_error("ollama-connection-error");
+
+        assert_eq!(message, "ollama-connection-error");
+        assert_eq!(details, None);
     }
 }

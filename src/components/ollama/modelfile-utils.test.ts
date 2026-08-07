@@ -64,4 +64,23 @@ describe("extractParameters", () => {
 
     expect(extractParameters(modelfile)).toHaveLength(128);
   });
+
+  it("ignore le texte PARAMETER dans les blocs SYSTEM et TEMPLATE multilignes", () => {
+    const modelfile = [
+      "FROM llama3",
+      'SYSTEM """',
+      "PARAMETER num_ctx 99999 appartient au prompt",
+      '"""',
+      "PARAMETER temperature 0.5",
+      'TEMPLATE """',
+      "PARAMETER stop ne constitue pas une directive",
+      '"""',
+      "PARAMETER top_p 0.9",
+    ].join("\n");
+
+    expect(extractParameters(modelfile)).toEqual([
+      { key: "temperature", value: "0.5" },
+      { key: "top_p", value: "0.9" },
+    ]);
+  });
 });

@@ -63,7 +63,7 @@ fn replacement_keeps_real_from_and_unknown_directives() {
 }
 
 #[test]
-fn repeated_text_parameters_are_rendered_as_safe_strings() {
+fn repeated_text_parameters_follow_ollama_quoting_and_preserve_crlf() {
     let input = "FROM C:/models/blobs/sha256-base\r\nPARAMETER stop \"old\"\r\n";
     let entries = vec![
         ("stop".to_string(), "First".to_string()),
@@ -77,9 +77,55 @@ fn repeated_text_parameters_are_rendered_as_safe_strings() {
         output,
         concat!(
             "FROM C:/models/blobs/sha256-base\r\n",
-            "PARAMETER stop \"First\"\r\n",
-            "PARAMETER stop \"User:\"\r\n",
-            "PARAMETER future_option \"enabled value\"\r\n",
+            "PARAMETER stop First\r\n",
+            "PARAMETER stop User:\r\n",
+            "PARAMETER future_option enabled value\r\n",
         )
     );
+}
+
+#[test]
+fn text_parameters_preserve_quotes_and_windows_backslashes() {
+    let input = "FROM C:/models/blobs/sha256-base\nPARAMETER stop old\n";
+    let entries = vec![
+        ("stop".to_string(), "say \"hi\"".to_string()),
+        ("stop".to_string(), r"C:\x".to_string()),
+        ("stop".to_string(), "\"\"\" say \"hi\" \"\"\"".to_string()),
+    ];
+
+    let output = rewrite(input, &entries).expect("valid text parameters");
+
+    assert_eq!(
+        output,
+        concat!(
+            "FROM C:/models/blobs/sha256-base\n",
+            "PARAMETER stop say \"hi\"\n",
+            "PARAMETER stop C:\\x\n",
+            "PARAMETER stop \"\"\" say \"hi\" \"\"\"\n",
+        )
+    );
+}
+
+#[test]
+fn multimodal_sources_and_runtime_directives_are_preserved() {
+    let input = concat!(
+        "FROM C:/models/blobs/sha256-model\n",
+        "FROM C:/models/blobs/sha256-projector\n",
+        "ADAPTER C:/models/blobs/sha256-adapter\n",
+        "DRAFT C:/models/blobs/sha256-draft\n",
+        "RENDERER gemma4\n",
+        "PARSER gemma4\n",
+        "PARAMETER temperature 0.8\n",
+    );
+
+    let output = rewrite(input, &[("temperature".into(), "0.4".into())])
+        .expect("valid multimodal Modelfile");
+
+    assert!(output.contains("FROM C:/models/blobs/sha256-model\n"));
+    assert!(output.contains("FROM C:/models/blobs/sha256-projector\n"));
+    assert!(output.contains("ADAPTER C:/models/blobs/sha256-adapter\n"));
+    assert!(output.contains("DRAFT C:/models/blobs/sha256-draft\n"));
+    assert!(output.contains("RENDERER gemma4\n"));
+    assert!(output.contains("PARSER gemma4\n"));
+    assert!(output.contains("PARAMETER temperature 0.4\n"));
 }

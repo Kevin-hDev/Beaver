@@ -61,18 +61,34 @@ fn trailing_content_index(lines: &[String]) -> usize {
 fn render_parameter(key: &str, raw: &str) -> Result<String, String> {
     let value = parse_value(raw);
     let rendered = match value {
-        Value::String(value) => serde_json::to_string(&value),
-        other => Ok(other.to_string()),
-    }
-    .map_err(|_| "ollama-parameter-invalid".to_string())?;
+        Value::String(value) => quote_modelfile_text(&value),
+        other => other.to_string(),
+    };
     Ok(format!("PARAMETER {key} {rendered}"))
 }
 
 fn parse_value(raw: &str) -> Value {
-    if raw.starts_with('"') && raw.ends_with('"') {
-        if let Ok(value) = serde_json::from_str::<String>(raw) {
-            return Value::String(value);
-        }
+    if let Some(value) = raw
+        .strip_prefix("\"\"\"")
+        .and_then(|value| value.strip_suffix("\"\"\""))
+    {
+        return Value::String(value.to_string());
+    }
+    if let Some(value) = raw
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+    {
+        return Value::String(value.to_string());
     }
     super::modelfile_parser::parse_param_value(raw)
+}
+
+fn quote_modelfile_text(value: &str) -> String {
+    if value.contains('\n') || value.starts_with(char::is_whitespace) || value.ends_with(char::is_whitespace) {
+        if value.contains('"') {
+            return format!("\"\"\"{value}\"\"\"");
+        }
+        return format!("\"{value}\"");
+    }
+    value.to_string()
 }
