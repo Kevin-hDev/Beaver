@@ -48,8 +48,7 @@ impl ContextCapacityDetails {
             self.context_window,
         ];
         values.iter().all(|value| *value <= MAX_SAFE_TOKENS)
-            && self.context_window > 0
-            && self.max_input_tokens <= self.context_window
+            && (self.context_window == 0 || self.max_input_tokens <= self.context_window)
             && self.required_tokens
                 == self
                     .system_tokens

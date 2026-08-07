@@ -63,6 +63,48 @@ describe("error", () => {
     );
   });
 
+  it("affiche les compteurs connus quand la fenetre du modele est inconnue", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "error",
+      data: {
+        message: "context_capacity_exceeded",
+        contextCapacity: {
+          systemTokens: 8_450,
+          requiredReportTokens: 0,
+          toolTokens: 5_100,
+          requiredTokens: 13_550,
+          maxInputTokens: 10_000,
+          contextWindow: 0,
+        },
+      },
+    });
+
+    expect(result.state.error).toBe(
+      "errors.contextCapacityExceededUnknownWindow|8450|0|5100|13550|10000|0",
+    );
+  });
+
+  it("conserve le detail des rapports quand la fenetre est inconnue", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "error",
+      data: {
+        message: "context_capacity_exceeded",
+        contextCapacity: {
+          systemTokens: 7_000,
+          requiredReportTokens: 1_500,
+          toolTokens: 5_000,
+          requiredTokens: 13_500,
+          maxInputTokens: 10_000,
+          contextWindow: 0,
+        },
+      },
+    });
+
+    expect(result.state.error).toBe(
+      "errors.contextCapacityExceededUnknownWindowWithReports|7000|1500|5000|13500|10000|0",
+    );
+  });
+
   it("affiche séparément les rapports obligatoires réellement injectés", () => {
     const result = applyStreamEvent(makeState(), {
       event: "error",

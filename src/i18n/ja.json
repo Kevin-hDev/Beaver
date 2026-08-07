@@ -1089,6 +1089,8 @@
     },
     "streamStartFailed": "ストリームを開始できませんでした。",
     "streamInterrupted": "ストリームが中断されました。",
+    "contextCapacityExceededUnknownWindow": "必須コンテキストが縮小目標を超えています：システムプロンプト {{systemTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。目標は {{maxInputTokens}} トークンです。モデルの実際のコンテキストウィンドウを特定できませんでした。",
+    "contextCapacityExceededUnknownWindowWithReports": "必須コンテキストが縮小目標を超えています：システムプロンプト {{systemTokens}} トークン + 必須レポート {{reportTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。目標は {{maxInputTokens}} トークンです。モデルの実際のコンテキストウィンドウを特定できませんでした。",
     "contextCapacityExceeded": "必須コンテキストがモデル容量を超えています：システムプロンプト {{systemTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。コンテキストウィンドウ {{contextWindow}} トークンに対する入力上限は {{maxInputTokens}} トークンです。",
     "contextCapacityExceededWithReports": "必須コンテキストがモデル容量を超えています：システムプロンプト {{systemTokens}} トークン + 必須レポート {{reportTokens}} トークン + 有効なツール {{toolTokens}} トークン = {{requiredTokens}} トークン。コンテキストウィンドウ {{contextWindow}} トークンに対する入力上限は {{maxInputTokens}} トークンです。",
     "ollamaConnectionLost": "Ollama への接続が失われました",
