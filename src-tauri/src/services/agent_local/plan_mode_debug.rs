@@ -14,7 +14,7 @@ pub fn controller_decision(
         PlanModeDecision::Retry(_) => "retry",
         PlanModeDecision::Fail(_) => "fail",
     };
-    eprintln!(
+    ::log::warn!(
         "[plan-mode] session={} workflow={workflow:?} repairs={repair_count} content_chars={} question={} tools=[{}] decision={decision_label}",
         short_id(session_id),
         result.content.chars().count(),
@@ -24,7 +24,7 @@ pub fn controller_decision(
 }
 
 pub fn workflow_failed(session_id: &str, request_id: &str, message: &str) {
-    eprintln!(
+    ::log::warn!(
         "[plan-mode] failed session={} request={} reason={}",
         short_id(session_id),
         short_id(request_id),

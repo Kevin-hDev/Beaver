@@ -100,7 +100,7 @@ pub async fn map_error_status(resp: Response, provider_id: &str) -> LlmError {
             );
             let code = super::provider_error::classify_http(provider_id, status, &body);
             let log_code = super::provider_error::safe_log_code(provider_id, status, &body);
-            eprintln!("[llm] HTTP {status} code={log_code}");
+            ::log::warn!("[llm] HTTP {status} code={log_code}");
             if status == 402 {
                 return LlmError::KnownProvider(code);
             }

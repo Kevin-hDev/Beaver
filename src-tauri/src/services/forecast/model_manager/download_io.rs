@@ -12,7 +12,10 @@ use super::model_artifacts::{sha256_matches, ModelArtifact};
 
 const CHUNK_TIMEOUT: Duration = Duration::from_secs(60);
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 pub(super) async fn write_model_response(
     response: Response,
     destination: &Path,
@@ -49,7 +52,10 @@ pub(super) async fn write_model_response(
         .map_err(|_| "Finalisation du téléchargement impossible".to_string())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 async fn write_stream(
     response: Response,
     temporary: &Path,

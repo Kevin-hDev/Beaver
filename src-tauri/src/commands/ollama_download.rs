@@ -19,7 +19,7 @@ pub async fn download_file(
         .timeout(std::time::Duration::from_secs(DOWNLOAD_TIMEOUT_SECS))
         .build()
         .map_err(|e| {
-            eprintln!("[ollama-dl] client: {e}");
+            ::log::warn!("[ollama-dl] client: {e}");
             "ollama-download-error".to_string()
         })?;
 
@@ -27,7 +27,7 @@ pub async fn download_file(
         _ = cancel.cancelled() => return Err(super::ollama_setup_cancel::cancelled_error()),
         result = client.get(url).header("User-Agent", brand::user_agent()).send() => {
             result.map_err(|e| {
-                eprintln!("[ollama-dl] network: {e}");
+                ::log::warn!("[ollama-dl] network: {e}");
                 "ollama-download-error".to_string()
             })?
         }
@@ -61,7 +61,7 @@ pub async fn download_file(
         .open(dest)
         .await
         .map_err(|e| {
-            eprintln!("[ollama-dl] fs create: {e}");
+            ::log::warn!("[ollama-dl] fs create: {e}");
             "ollama-write-error".to_string()
         })?;
 
@@ -79,7 +79,7 @@ pub async fn download_file(
         chunk = stream.next() => chunk
     } {
         let chunk = chunk.map_err(|e| {
-            eprintln!("[ollama-dl] stream: {e}");
+            ::log::warn!("[ollama-dl] stream: {e}");
             "ollama-download-error".to_string()
         })?;
         downloaded += chunk.len() as u64;
@@ -88,7 +88,7 @@ pub async fn download_file(
             return Err("ollama-download-too-large".into());
         }
         file.write_all(&chunk).await.map_err(|e| {
-            eprintln!("[ollama-dl] write: {e}");
+            ::log::warn!("[ollama-dl] write: {e}");
             "ollama-write-error".to_string()
         })?;
         let _ = on_progress.send(OllamaSetupProgress {
@@ -99,14 +99,14 @@ pub async fn download_file(
     }
 
     file.flush().await.map_err(|e| {
-        eprintln!("[ollama-dl] flush: {e}");
+        ::log::warn!("[ollama-dl] flush: {e}");
         "ollama-write-error".to_string()
     })?;
 
     let size = tokio::fs::metadata(dest)
         .await
         .map_err(|e| {
-            eprintln!("[ollama-dl] metadata: {e}");
+            ::log::warn!("[ollama-dl] metadata: {e}");
             "ollama-write-error".to_string()
         })?
         .len();

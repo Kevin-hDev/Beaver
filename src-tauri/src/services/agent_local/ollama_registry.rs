@@ -180,12 +180,12 @@ pub async fn delete_model(name: &str) -> Result<(), String> {
         .send()
         .await
         .map_err(|e| {
-            eprintln!("[ollama] /api/delete: {e}");
+            ::log::warn!("[ollama] /api/delete: {e}");
             "ollama-delete-error".to_string()
         })?;
 
     if !resp.status().is_success() {
-        eprintln!("[ollama] /api/delete failed");
+        ::log::warn!("[ollama] /api/delete failed");
         return Err("ollama-delete-error".into());
     }
     Ok(())

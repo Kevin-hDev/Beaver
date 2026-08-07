@@ -3,16 +3,22 @@ use chacha20poly1305::{
     aead::{Aead, KeyInit},
     XChaCha20Poly1305, XNonce,
 };
+#[cfg(not(feature = "e2e"))]
 use keyring::Entry;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use zeroize::{Zeroize, Zeroizing};
+use zeroize::Zeroize;
+#[cfg(not(feature = "e2e"))]
+use zeroize::Zeroizing;
 
+#[cfg(not(feature = "e2e"))]
 const KEYRING_SERVICE: &str = "cl-go-dash";
+#[cfg(not(feature = "e2e"))]
 const MASTER_KEY_USER: &str = "master-key";
 const VAULT_VERSION: u8 = 1;
 
+#[cfg(not(feature = "e2e"))]
 const KNOWN_PROVIDERS: &[&str] = &[
     "groq",
     "google",
@@ -41,6 +47,7 @@ pub fn vault_path() -> std::path::PathBuf {
 #[path = "vault_tests.rs"]
 pub(crate) mod tests;
 
+#[cfg(not(feature = "e2e"))]
 pub fn load_or_create_master_key() -> Result<Zeroizing<Vec<u8>>, String> {
     let entry =
         Entry::new(KEYRING_SERVICE, MASTER_KEY_USER).map_err(|e| format!("keyring entry: {e}"))?;
@@ -125,6 +132,7 @@ pub(crate) fn decrypt(master_key: &[u8], vault_bytes: &[u8]) -> Result<Vec<u8>, 
         .map_err(|e| format!("decrypt: {e}"))
 }
 
+#[cfg(not(feature = "e2e"))]
 pub fn read_vault(master_key: &[u8]) -> Result<HashMap<String, String>, String> {
     let path = vault_path();
     if !path.exists() {
@@ -147,6 +155,7 @@ pub fn write_vault(master_key: &[u8], map: &HashMap<String, String>) -> Result<(
     crate::services::private_store::atomic_write(&path, &encrypted)
 }
 
+#[cfg(not(feature = "e2e"))]
 pub fn read_legacy_keychain_keys() -> HashMap<String, Zeroizing<String>> {
     let mut found = HashMap::new();
     if let Ok(entry) = Entry::new(KEYRING_SERVICE, "brave_api_key") {

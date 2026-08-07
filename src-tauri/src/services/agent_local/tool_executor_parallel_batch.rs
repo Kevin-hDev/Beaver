@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use crate::services::agent_local::tool_hooks::run_post_hooks;
 use crate::services::agent_local::types_tools::ToolResult;
 use crate::services::agent_local::tool_result_contract::ToolErrorCategory;

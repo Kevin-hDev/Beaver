@@ -61,13 +61,13 @@ pub fn terminate(child: &mut Child, kind: ProcessKind) {
     let pid = child.id();
     signal_tree(pid, false);
     if wait_for_child(child, GRACEFUL_STOP_TIMEOUT) {
-        eprintln!("[{}] arbre pid={pid} arrêté", kind.label());
+        ::log::info!("[{}] arbre pid={pid} arrêté", kind.label());
         return;
     }
     force_tree(pid);
     let _ = child.kill();
     let _ = child.wait();
-    eprintln!("[{}] arrêt forcé arbre pid={pid}", kind.label());
+    ::log::warn!("[{}] arrêt forcé arbre pid={pid}", kind.label());
 }
 
 pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKind) {
@@ -81,7 +81,7 @@ pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKin
     let deadline = tokio::time::Instant::now() + GRACEFUL_STOP_TIMEOUT;
     while tokio::time::Instant::now() < deadline {
         if child.try_wait().ok().flatten().is_some() {
-            eprintln!("[{}] arbre pid={pid} arrêté", kind.label());
+            ::log::info!("[{}] arbre pid={pid} arrêté", kind.label());
             return;
         }
         tokio::time::sleep(POLL_INTERVAL).await;
@@ -89,7 +89,7 @@ pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKin
     force_tree(pid);
     let _ = child.start_kill();
     let _ = child.wait().await;
-    eprintln!("[{}] arrêt forcé arbre pid={pid}", kind.label());
+    ::log::warn!("[{}] arrêt forcé arbre pid={pid}", kind.label());
 }
 
 pub fn kill(pid: u32, kind: ProcessKind) {
@@ -102,7 +102,7 @@ pub fn kill(pid: u32, kind: ProcessKind) {
         std::thread::sleep(Duration::from_millis(100));
         force_tree(pid);
     }
-    eprintln!("[{}] arrêt arbre orphelin pid={pid}", kind.label());
+    ::log::warn!("[{}] arrêt arbre orphelin pid={pid}", kind.label());
 }
 
 #[cfg(unix)]

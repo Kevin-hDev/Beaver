@@ -10,7 +10,7 @@ fn log_tool_call(tool_name: &str, args: &Value) {
         "tool": tool_name,
         "args": crate::services::agent_local::sensitive_data::redact_json(args),
     });
-    eprintln!("[office-tool] {}", entry);
+    ::log::warn!("[office-tool] {}", entry);
     let dir = crate::services::paths::data_dir().join("logs");
     let _ = std::fs::create_dir_all(&dir);
     let path = dir.join("tool-calls.jsonl");

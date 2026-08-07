@@ -21,7 +21,10 @@ pub(crate) fn compare_results(left: &ModelBacktestResult, right: &ModelBacktestR
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 pub(crate) fn compare_quality(
     left: &BacktestMetrics,
     left_calibration: Option<&IntervalCalibration>,

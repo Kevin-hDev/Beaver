@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::subagent_registry;
@@ -112,7 +113,7 @@ pub async fn run(
                 break;
             }
             Err(_) => {
-                eprintln!("[subagent] échec {}", child_session_id);
+                ::log::warn!("[subagent] échec {}", child_session_id);
                 (
                     false,
                     super::subagent_status::FAILED.to_string(),

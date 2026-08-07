@@ -74,12 +74,12 @@ pub(crate) fn reset_page_surface(_app: &tauri::AppHandle) {
         if app
             .run_on_main_thread(move || {
                 if super::cef_engine::reset_page_surface(&main_app).is_err() {
-                    eprintln!("[browser] surface reset failed");
+                    ::log::warn!("[browser] surface reset failed");
                 }
             })
             .is_err()
         {
-            eprintln!("[browser] surface reset unavailable");
+            ::log::warn!("[browser] surface reset unavailable");
         }
     }
 }

@@ -56,7 +56,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
                 *guard = None;
             }
             Err(e) => {
-                eprintln!("[ollama] sidecar status: {e}");
+                ::log::warn!("[ollama] sidecar status: {e}");
                 return Err("ollama-status-error".to_string());
             }
         }
@@ -67,19 +67,19 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
     let port = ollama_port::find_free_port();
 
     if ollama_port::detect_existing_instance(port) {
-        eprintln!("[ollama] daemon existant détecté sur {port}, sidecar ignoré");
+        ::log::info!("[ollama] daemon existant détecté sur {port}, sidecar ignoré");
         ollama_port::set_port(port);
         return Ok(false);
     }
 
     if ollama_port::detect_existing_instance(11434) {
-        eprintln!("[ollama] daemon système détecté sur 11434, réutilisation");
+        ::log::info!("[ollama] daemon système détecté sur 11434, réutilisation");
         ollama_port::set_port(11434);
         return Ok(false);
     }
 
     ollama_port::set_port(port);
-    eprintln!("[ollama] port sélectionné : {port}");
+    ::log::info!("[ollama] port sélectionné : {port}");
 
     let binary = ollama_binary_path()?;
     let bundle_dir = ollama_bundle_dir();
@@ -87,7 +87,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
     let log_dir = crate::services::paths::data_dir().join("logs");
     let _ = std::fs::create_dir_all(&log_dir);
     let stderr_file = std::fs::File::create(log_dir.join("ollama-sidecar.log")).map_err(|e| {
-        eprintln!("[ollama] log file: {e}");
+        ::log::warn!("[ollama] log file: {e}");
         "ollama-log-error".to_string()
     })?;
 
@@ -103,9 +103,10 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
     for (key, val) in &env_vars {
         cmd.env(key, val);
     }
-    eprintln!(
+    ::log::info!(
         "[ollama] GPU : {:?}, accel : {}",
-        gpu, config.advanced.hardware_accel
+        gpu,
+        config.advanced.hardware_accel
     );
     const SAFE_TO_LOG: &[&str] = &[
         "OLLAMA_HOST",
@@ -126,7 +127,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
         .filter(|(k, _)| SAFE_TO_LOG.contains(&k.as_str()))
         .map(|(k, v)| format!("{k}={v}"))
         .collect();
-    eprintln!("[ollama] env : {:?}", safe_vars);
+    ::log::info!("[ollama] env : {:?}", safe_vars);
 
     #[cfg(target_os = "linux")]
     {
@@ -135,7 +136,7 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
             let existing = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
             let new_path = format!("{}:{existing}", lib_dir.display());
             cmd.env("LD_LIBRARY_PATH", new_path);
-            eprintln!("[ollama] LD_LIBRARY_PATH prépend {}", lib_dir.display());
+            ::log::info!("[ollama] LD_LIBRARY_PATH prépend {}", lib_dir.display());
         }
     }
 
@@ -147,12 +148,12 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
     crate::services::process_tree::configure(&mut cmd);
 
     let child = cmd.spawn().map_err(|e| {
-        eprintln!("[ollama] spawn: {e}");
+        ::log::error!("[ollama] spawn: {e}");
         "ollama-start-error".to_string()
     })?;
     let pid = child.id();
     ollama_kill::save_pid(pid);
-    eprintln!("[ollama] sidecar démarré pid={pid} port={port}");
+    ::log::info!("[ollama] sidecar démarré pid={pid} port={port}");
 
     *guard = Some(child);
 

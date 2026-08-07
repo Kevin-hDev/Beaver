@@ -154,7 +154,7 @@ async fn cleanup_repository(meta: &SubagentChangeMeta) {
         .await
         .is_err()
     {
-        eprintln!("[subagent] directory repository cleanup failed");
+        ::log::warn!("[subagent] directory repository cleanup failed");
     }
 }
 

@@ -26,7 +26,7 @@ pub fn extract_overlay(
 
 fn extract_tar_gz(archive: &Path, dest: &Path, cancel: &CancellationToken) -> Result<(), String> {
     let file = std::fs::File::open(archive).map_err(|e| {
-        eprintln!("[ollama-extract] open tar.gz: {e}");
+        ::log::warn!("[ollama-extract] open tar.gz: {e}");
         "ollama-extract-error".to_string()
     })?;
     let gz = flate2::read::GzDecoder::new(file);
@@ -36,11 +36,11 @@ fn extract_tar_gz(archive: &Path, dest: &Path, cancel: &CancellationToken) -> Re
 
 fn extract_tar_zst(archive: &Path, dest: &Path, cancel: &CancellationToken) -> Result<(), String> {
     let file = std::fs::File::open(archive).map_err(|e| {
-        eprintln!("[ollama-extract] open tar.zst: {e}");
+        ::log::warn!("[ollama-extract] open tar.zst: {e}");
         "ollama-extract-error".to_string()
     })?;
     let zst = zstd::Decoder::new(file).map_err(|e| {
-        eprintln!("[ollama-extract] zstd decode: {e}");
+        ::log::warn!("[ollama-extract] zstd decode: {e}");
         "ollama-extract-error".to_string()
     })?;
     let tar = tar::Archive::new(zst);
@@ -53,7 +53,7 @@ pub(crate) fn safe_unpack_tar<R: Read>(
     cancel: &CancellationToken,
 ) -> Result<(), String> {
     let canonical_dest = std::fs::canonicalize(dest).map_err(|e| {
-        eprintln!("[ollama-extract] canonicalize dest: {e}");
+        ::log::warn!("[ollama-extract] canonicalize dest: {e}");
         "ollama-extract-error".to_string()
     })?;
 
@@ -62,7 +62,7 @@ pub(crate) fn safe_unpack_tar<R: Read>(
 
     ensure_not_cancelled(cancel)?;
     let entries = archive.entries().map_err(|e| {
-        eprintln!("[ollama-extract] tar entries: {e}");
+        ::log::warn!("[ollama-extract] tar entries: {e}");
         "ollama-extract-error".to_string()
     })?;
 
@@ -73,13 +73,13 @@ pub(crate) fn safe_unpack_tar<R: Read>(
             return Err("archive contient trop d'entrées — extraction refusée".into());
         }
         let mut entry = entry_result.map_err(|e| {
-            eprintln!("[ollama-extract] tar entry: {e}");
+            ::log::warn!("[ollama-extract] tar entry: {e}");
             "ollama-extract-error".to_string()
         })?;
         let raw_path = entry
             .path()
             .map_err(|e| {
-                eprintln!("[ollama-extract] tar path: {e}");
+                ::log::warn!("[ollama-extract] tar path: {e}");
                 "ollama-extract-error".to_string()
             })?
             .into_owned();
@@ -136,7 +136,7 @@ fn unpack_entry<R: Read>(
     let entry_type = entry.header().entry_type();
     if entry_type.is_dir() {
         std::fs::create_dir_all(target).map_err(|e| {
-            eprintln!("[ollama-extract] mkdir entry: {e}");
+            ::log::warn!("[ollama-extract] mkdir entry: {e}");
             "ollama-extract-error".to_string()
         })?;
         return Ok(());
@@ -144,26 +144,26 @@ fn unpack_entry<R: Read>(
 
     if let Some(parent) = target.parent() {
         std::fs::create_dir_all(parent).map_err(|e| {
-            eprintln!("[ollama-extract] mkdir parent: {e}");
+            ::log::warn!("[ollama-extract] mkdir parent: {e}");
             "ollama-extract-error".to_string()
         })?;
     }
     let mut output = std::fs::File::create(target).map_err(|e| {
-        eprintln!("[ollama-extract] create file: {e}");
+        ::log::warn!("[ollama-extract] create file: {e}");
         "ollama-extract-error".to_string()
     })?;
     let mut buffer = [0u8; COPY_BUFFER_BYTES];
     loop {
         ensure_not_cancelled(cancel)?;
         let read = entry.read(&mut buffer).map_err(|e| {
-            eprintln!("[ollama-extract] read entry: {e}");
+            ::log::warn!("[ollama-extract] read entry: {e}");
             "ollama-extract-error".to_string()
         })?;
         if read == 0 {
             break;
         }
         std::io::Write::write_all(&mut output, &buffer[..read]).map_err(|e| {
-            eprintln!("[ollama-extract] write entry: {e}");
+            ::log::warn!("[ollama-extract] write entry: {e}");
             "ollama-extract-error".to_string()
         })?;
     }

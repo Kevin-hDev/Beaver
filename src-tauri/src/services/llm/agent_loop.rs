@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::agent_loop_compression::{LastCounts, LoopCompression};
 use super::{agent_loop_request::ApiRequestParams, agent_loop_tools};
 use crate::services::agent_local::{

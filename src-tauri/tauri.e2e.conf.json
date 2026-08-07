@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "node scripts/e2e/prepare-build.mjs"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "capabilities": [
+        "default",
+        "forecast-workbench",
+        "forecast-docs",
+        "mascot",
+        {
+          "identifier": "e2e-wdio",
+          "description": "WebDriver bridge reserved for the isolated E2E build",
+          "windows": ["main"],
+          "permissions": ["wdio:default"]
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "resources": ["default-skills/**/*"]
+  }
+}

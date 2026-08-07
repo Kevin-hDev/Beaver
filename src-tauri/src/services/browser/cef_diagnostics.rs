@@ -2,7 +2,7 @@ use cef::TerminationStatus;
 
 pub(super) fn log_renderer_termination(status: TerminationStatus, error_code: i32) {
     #[cfg(debug_assertions)]
-    eprintln!("{}", diagnostic_line(status, error_code));
+    ::log::warn!("{}", diagnostic_line(status, error_code));
     #[cfg(not(debug_assertions))]
     let _ = (status, error_code);
 }

@@ -81,7 +81,7 @@ pub fn patch_advanced_settings(
 ) -> Result<(), String> {
     config_service::update_config(move |config| {
         let mut current = serde_json::to_value(&config.advanced).map_err(|e| {
-            eprintln!("[config] serialize: {e}");
+            ::log::warn!("[config] serialize: {e}");
             "Erreur de configuration".to_string()
         })?;
         if let (Some(base), Some(updates)) = (current.as_object_mut(), patch.as_object()) {
@@ -92,7 +92,7 @@ pub fn patch_advanced_settings(
             }
         }
         let mut merged: AdvancedSettings = serde_json::from_value(current).map_err(|e| {
-            eprintln!("[config] deserialize: {e}");
+            ::log::warn!("[config] deserialize: {e}");
             "Erreur de configuration".to_string()
         })?;
         validate_outputs_directory(&mut merged)?;

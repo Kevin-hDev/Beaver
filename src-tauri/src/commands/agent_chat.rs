@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 
 use crate::services::agent_local::stream_events::{self, AgentEventEmitter};
@@ -92,7 +96,7 @@ pub async fn chat_stream(
         };
     let working_dir = resolved_working_dir.path;
     let outputs_dir = resolved_working_dir.outputs_dir;
-    eprintln!("[stream] start session={session_id} gen={generation}");
+    ::log::info!("[stream] start session={session_id} gen={generation}");
     let stream_session = session_id.clone();
     let task_app = app.clone();
 

@@ -35,7 +35,7 @@ async fn install_archives_to(
     archives: &[&str],
 ) -> Result<(), String> {
     std::fs::create_dir_all(dest).map_err(|e| {
-        eprintln!("[ollama-setup] mkdir {}: {e}", dest.display());
+        ::log::warn!("[ollama-setup] mkdir {}: {e}", dest.display());
         "Impossible de créer le dossier d'installation".to_string()
     })?;
 
@@ -115,17 +115,17 @@ async fn install_archives_to(
             .args(["-d", "com.apple.quarantine"])
             .arg(&binary)
             .output();
-        eprintln!("[ollama] quarantine attribute supprimé");
+        ::log::info!("[ollama] quarantine attribute supprimé");
     }
 
     write_version_file(dest, version);
-    eprintln!("[ollama-setup] installé v{version}: {}", binary.display());
+    ::log::info!("[ollama-setup] installé v{version}: {}", binary.display());
     Ok(())
 }
 
 fn cleanup_cancelled_install(dest: &Path) {
     let _ = std::fs::remove_dir_all(dest);
-    eprintln!("[ollama-setup] installation annulée, fichiers partiels supprimés");
+    ::log::info!("[ollama-setup] installation annulée, fichiers partiels supprimés");
 }
 
 fn ensure_not_cancelled(cancel: &CancellationToken) -> Result<(), String> {
@@ -141,7 +141,7 @@ async fn fetch_checksums(version: &str, archives: &[&str]) -> Result<Vec<String>
         match super::ollama_checksum::fetch_expected_hash(version, name).await {
             Ok(hash) => result.push(hash),
             Err(e) => {
-                eprintln!("[ollama-setup] checksum unavailable for {name}: {e}");
+                ::log::warn!("[ollama-setup] checksum unavailable for {name}: {e}");
                 return Err("checksum-not-available".to_string());
             }
         }

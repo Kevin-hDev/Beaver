@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use super::permission_gate::{self, PermissionDecision};
 use super::stream_events::AgentEventEmitter;
 use super::tool_execution_outcome::ToolExecutionOutcome;

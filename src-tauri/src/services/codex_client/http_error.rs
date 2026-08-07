@@ -25,7 +25,7 @@ pub async fn require_success(
         tool_count,
     );
     let safe_code = safe_status_code(status);
-    eprintln!("[codex stream] HTTP {status} code={safe_code}");
+    ::log::warn!("[codex stream] HTTP {status} code={safe_code}");
     Err(status_error(status, &body))
 }
 

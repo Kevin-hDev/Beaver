@@ -53,7 +53,7 @@ pub async fn seed_pending(
         .await
         .is_err()
     {
-        eprintln!("[subagent] previous directory repository cleanup failed");
+        ::log::warn!("[subagent] previous directory repository cleanup failed");
     }
     Ok(())
 }

@@ -1,6 +1,9 @@
 pub mod agent_import;
 pub mod agent_local;
 pub mod api_keys;
+pub mod app_log;
+#[cfg(test)]
+mod app_log_tests;
 pub mod attachment_access;
 #[cfg(test)]
 mod attachment_access_tests;
@@ -14,6 +17,9 @@ pub mod codex_client;
 pub mod codex_oauth;
 pub mod compress;
 pub mod config;
+pub mod e2e_profile;
+#[cfg(all(test, feature = "e2e"))]
+mod e2e_profile_tests;
 pub mod env_detect;
 pub mod extensions;
 pub mod favorite_models;

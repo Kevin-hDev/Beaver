@@ -52,7 +52,7 @@ pub async fn retry_if_needed(
         });
     };
 
-    eprintln!(
+    ::log::warn!(
         "[agent-loop] thinking-only détecté (turn {}), retry think=false",
         params.turn
     );

@@ -10,15 +10,15 @@ pub async fn create_from_modelfile(name: &str, content: &str) -> Result<(), Stri
     validate_content(content)?;
 
     let mut file = tempfile::NamedTempFile::new().map_err(|error| {
-        eprintln!("[ollama-modelfile] temporary file: {error}");
+        ::log::warn!("[ollama-modelfile] temporary file: {error}");
         "ollama-create-error".to_string()
     })?;
     file.write_all(content.as_bytes()).map_err(|error| {
-        eprintln!("[ollama-modelfile] temporary write: {error}");
+        ::log::warn!("[ollama-modelfile] temporary write: {error}");
         "ollama-create-error".to_string()
     })?;
     file.flush().map_err(|error| {
-        eprintln!("[ollama-modelfile] temporary flush: {error}");
+        ::log::warn!("[ollama-modelfile] temporary flush: {error}");
         "ollama-create-error".to_string()
     })?;
 
@@ -40,7 +40,7 @@ pub async fn create_from_modelfile(name: &str, content: &str) -> Result<(), Stri
         .await
         .map_err(|_| "ollama-create-timeout".to_string())?
         .map_err(|error| {
-            eprintln!("[ollama-modelfile] command unavailable: {error}");
+            ::log::warn!("[ollama-modelfile] command unavailable: {error}");
             "ollama-create-error".to_string()
         })?;
     if status.success() {

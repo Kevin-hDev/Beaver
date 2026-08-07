@@ -17,7 +17,10 @@ pub fn ready_runtime(family_id: &str) -> Result<PathBuf, String> {
         .map_err(|_| "Moteur Forecast non préparé".to_string())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 pub fn spawn_process(
     runtime_python: PathBuf,
     script: &Path,

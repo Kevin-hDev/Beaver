@@ -39,15 +39,15 @@ pub fn kill_orphan_sidecar() {
     clear_pid_file();
 
     if !is_ollama_process(pid) {
-        eprintln!("[ollama] pid={pid} n'est plus ollama, ignoré");
+        ::log::warn!("[ollama] pid={pid} n'est plus ollama, ignoré");
         return;
     }
 
     if !is_ollama_process(pid) {
-        eprintln!("[ollama] pid={pid} changé entre check et kill, abandon");
+        ::log::warn!("[ollama] pid={pid} changé entre check et kill, abandon");
         return;
     }
-    eprintln!("[ollama] orphelin détecté pid={pid}, kill");
+    ::log::info!("[ollama] orphelin détecté pid={pid}, kill");
     crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Ollama);
 }
 
@@ -78,7 +78,7 @@ fn is_ollama_process(pid: u32) -> bool {
 
 pub fn kill_process(child: &mut Child) {
     let pid = child.id();
-    eprintln!("[ollama] kill sidecar pid={pid}");
+    ::log::info!("[ollama] kill sidecar pid={pid}");
     crate::services::process_tree::terminate(
         child,
         crate::services::process_tree::ProcessKind::Ollama,
@@ -96,5 +96,5 @@ pub async fn release_vram() {
         return;
     };
     let _ = client.post(&url).json(&body).send().await;
-    eprintln!("[ollama] VRAM release demandée");
+    ::log::warn!("[ollama] VRAM release demandée");
 }

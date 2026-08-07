@@ -26,7 +26,7 @@ pub async fn predict(
 
     if !resp.status().is_success() {
         let status = resp.status();
-        eprintln!("[nixtla] erreur {status}");
+        ::log::warn!("[nixtla] erreur {status}");
         return Err("Erreur du service de prédiction".to_string());
     }
 

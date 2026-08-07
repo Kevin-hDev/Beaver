@@ -20,7 +20,7 @@ pub async fn translate_text(
 
     let chosen_model = model.unwrap_or(DEFAULT_MODEL).to_string();
     let chunks = chunk_by_headings(text, CHUNK_MAX_CHARS);
-    eprintln!(
+    ::log::warn!(
         "[translator] model={chosen_model} lang={target_lang} total_chars={} chunks={}",
         text.len(),
         chunks.len(),
@@ -28,7 +28,7 @@ pub async fn translate_text(
 
     let mut translated_parts = Vec::with_capacity(chunks.len());
     for (i, chunk) in chunks.iter().enumerate() {
-        eprintln!(
+        ::log::warn!(
             "[translator] chunk {}/{} ({} chars)",
             i + 1,
             chunks.len(),
@@ -127,7 +127,7 @@ async fn translate_chunk(text: &str, lang_name: &str, model: &str) -> Result<Str
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        eprintln!(
+        ::log::warn!(
             "[translator] HTTP error status={status} body={}",
             crate::services::llm::sanitize_log_body(&body)
         );
@@ -142,7 +142,7 @@ async fn translate_chunk(text: &str, lang_name: &str, model: &str) -> Result<Str
     let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
     let elapsed = start.elapsed().as_secs();
     let done_reason = json["done_reason"].as_str().unwrap_or("?").to_string();
-    eprintln!(
+    ::log::warn!(
         "[translator]   chunk done in {elapsed}s eval={} reason={done_reason}",
         json["eval_count"].as_u64().unwrap_or(0),
     );

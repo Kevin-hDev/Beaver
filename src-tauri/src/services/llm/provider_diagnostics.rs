@@ -35,7 +35,7 @@ pub fn record_http_failure(
         tool_count,
     };
     if write_at(&log_path(), &entry).is_err() {
-        eprintln!("[llm] provider diagnostic log unavailable");
+        ::log::warn!("[llm] provider diagnostic log unavailable");
     }
 }
 

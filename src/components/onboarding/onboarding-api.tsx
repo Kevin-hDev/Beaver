@@ -163,6 +163,7 @@ export function OnboardingApi({ onComplete, onBack }: OnboardingApiProps) {
           className="btn btn-sm btn-secondary"
           onClick={() => void finish()}
           disabled={saveState === "saving"}
+          data-e2e="api-skip"
         >
           {t("onboarding.common.skip")}
         </button>

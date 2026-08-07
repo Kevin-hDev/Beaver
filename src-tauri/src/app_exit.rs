@@ -62,11 +62,11 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitReq
                 let cleanup =
                     std::panic::AssertUnwindSafe(cleanup_services(&handle)).catch_unwind();
                 match tokio::time::timeout(CLEANUP_TIMEOUT, cleanup).await {
-                    Err(_) => eprintln!("[exit] délai global atteint, fermeture forcée"),
-                    Ok(Err(_)) => eprintln!("[exit] nettoyage interrompu, fermeture forcée"),
+                    Err(_) => ::log::warn!("[exit] délai global atteint, fermeture forcée"),
+                    Ok(Err(_)) => ::log::warn!("[exit] nettoyage interrompu, fermeture forcée"),
                     Ok(Ok(())) => {}
                 }
-                eprintln!("[exit] nettoyage terminé en {:?}", started.elapsed());
+                ::log::info!("[exit] nettoyage terminé en {:?}", started.elapsed());
                 handle.state::<AppExitCoordinator>().mark_ready();
                 handle.exit(code.unwrap_or_default());
             });

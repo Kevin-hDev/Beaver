@@ -143,6 +143,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
               className="btn btn-sm btn-secondary"
               onClick={() => void handleSkip()}
               disabled={skipping}
+              data-e2e="ollama-skip"
             >
               {skipping ? t("ollamaSetup.skipping") : t("ollamaSetup.skip")}
             </button>

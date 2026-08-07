@@ -25,10 +25,10 @@ pub fn kill_orphan_sidecar() {
     let Some(pid) = read_saved_pid() else { return };
     clear_pid_file();
     if !is_searxng_process(pid) {
-        eprintln!("[searxng] pid={pid} ignoré");
+        ::log::warn!("[searxng] pid={pid} ignoré");
         return;
     }
-    eprintln!("[searxng] orphelin détecté pid={pid}, kill");
+    ::log::info!("[searxng] orphelin détecté pid={pid}, kill");
     crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Searxng);
 }
 
@@ -69,7 +69,7 @@ pub fn kill_child_process(mut child: Child) {
         clear_pid_file();
         return;
     }
-    eprintln!("[searxng] kill sidecar pid={pid}");
+    ::log::info!("[searxng] kill sidecar pid={pid}");
     crate::services::process_tree::terminate(
         &mut child,
         crate::services::process_tree::ProcessKind::Searxng,

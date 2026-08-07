@@ -78,7 +78,7 @@ async fn stream_chat_inner(
         .map(|r| r.map_err(std::io::Error::other));
     let mut lines = BufReader::new(StreamReader::new(byte_stream)).lines();
 
-    eprintln!(
+    ::log::warn!(
         "[ollama-stream] stream ouvert HTTP {} model={} think={:?} msgs={} tools={}",
         http_status,
         request.model,
@@ -118,7 +118,7 @@ async fn stream_chat_inner(
                                 && result.content.is_empty()
                             {
                                 let attempt = retry_counts.parser_retries + 1;
-                                eprintln!(
+                                ::log::warn!(
                                     "[ollama-stream] crash parser tool-call mid-stream (#{}), retry",
                                     attempt
                                 );

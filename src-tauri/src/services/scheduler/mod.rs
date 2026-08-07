@@ -56,7 +56,7 @@ async fn run_loop(app: AppHandle, mut reload_rx: watch::Receiver<u64>) {
         let cfg = match read_config() {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("[scheduler] read_config error: {}", e);
+                ::log::warn!("[scheduler] read_config error: {}", e);
                 tokio::time::sleep(std::time::Duration::from_secs(60)).await;
                 continue;
             }

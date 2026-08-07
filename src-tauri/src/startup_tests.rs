@@ -1,8 +1,20 @@
 use super::startup::{
-    prepare_macos_browser, prepare_macos_startup, run_before_browser_shutdown,
-    shutdown_before_library_unload,
+    emit_vault_init_failed, prepare_macos_browser, prepare_macos_startup,
+    run_before_browser_shutdown, shutdown_before_library_unload,
 };
 use std::cell::{Cell, RefCell};
+
+#[test]
+fn vault_init_failure_emits_only_a_signal() {
+    let captured = RefCell::new(None);
+
+    emit_vault_init_failed(|event, payload| {
+        captured.replace(Some((event, payload)));
+        Ok::<(), ()>(())
+    });
+
+    assert_eq!(captured.into_inner(), Some(("vault-init-failed", ())));
+}
 
 struct TestGuard<'a> {
     events: &'a RefCell<Vec<&'static str>>,

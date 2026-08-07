@@ -11,7 +11,7 @@ pub async fn write_atomic(path: &Path, content: &[u8]) -> Result<(), String> {
     crate::services::private_store::atomic_write_async(path.to_path_buf(), content.to_vec())
         .await
         .map_err(|error| {
-            eprintln!("[memory] atomic write: {error}");
+            ::log::warn!("[memory] atomic write: {error}");
             "Mémoire indisponible.".to_string()
         })
 }
@@ -29,6 +29,6 @@ pub async fn read_bounded(path: &Path, max_bytes: u64) -> Result<String, String>
 }
 
 pub fn storage_error(operation: &str, error: std::io::Error) -> String {
-    eprintln!("[memory] {operation}: {error}");
+    ::log::warn!("[memory] {operation}: {error}");
     "Mémoire indisponible.".to_string()
 }

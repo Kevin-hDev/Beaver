@@ -76,7 +76,7 @@ pub fn start(app: &AppHandle) {
         }) {
             Ok(w) => w,
             Err(e) => {
-                eprintln!("[file_watcher] failed to create watcher: {e}");
+                ::log::warn!("[file_watcher] failed to create watcher: {e}");
                 return;
             }
         };
@@ -84,7 +84,7 @@ pub fn start(app: &AppHandle) {
         for (path, mode) in &watch_paths {
             if path.exists() {
                 if let Err(e) = watcher.watch(path, *mode) {
-                    eprintln!("[file_watcher] watch error for {}: {e}", path.display());
+                    ::log::warn!("[file_watcher] watch error for {}: {e}", path.display());
                 }
             }
         }

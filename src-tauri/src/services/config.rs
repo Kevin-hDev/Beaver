@@ -38,7 +38,7 @@ pub(crate) fn read_config_from_path(path: &Path, data_dir: &Path) -> Result<Clgo
     let value: serde_json::Value = match serde_json::from_str(&content) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("[config] JSON invalide ({}), reset à zéro", e);
+            ::log::warn!("[config] JSON invalide ({}), reset à zéro", e);
             let sentinel = data_dir.join(".config-corrupted");
             let _ = fs::write(&sentinel, format!("{}", e));
             return Ok(ClgoConfig::default());
@@ -80,7 +80,7 @@ pub(crate) fn read_config_from_path(path: &Path, data_dir: &Path) -> Result<Clgo
             }
         }
         if dropped > 0 {
-            eprintln!(
+            ::log::warn!(
                 "[config] {} wakeup(s) au format obsolète ignoré(s)",
                 dropped
             );

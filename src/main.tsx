@@ -8,15 +8,23 @@ import { installTauriListenerCleanupGuard } from "@/lib/tauri-listen";
 import { applyStoredSettings } from "@/hooks/use-settings";
 import App from "./App";
 
-installTauriListenerCleanupGuard();
-applyStoredSettings();
+async function startApplication() {
+  if (import.meta.env.VITE_E2E === "1") {
+    await import("@wdio/tauri-plugin");
+  }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
-    </ErrorBoundary>
-  </React.StrictMode>,
-);
+  installTauriListenerCleanupGuard();
+  applyStoredSettings();
+
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </ErrorBoundary>
+    </React.StrictMode>,
+  );
+}
+
+void startApplication();

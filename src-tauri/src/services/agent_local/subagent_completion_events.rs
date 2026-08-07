@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::StreamEvent;
 

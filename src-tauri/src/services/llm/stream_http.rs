@@ -116,7 +116,7 @@ pub(super) async fn post_chat_request_with_timeout_measured(
             request_bytes,
             cfg.tools.len(),
         );
-        eprintln!("[llm stream] HTTP {status} code={log_code}");
+        ::log::warn!("[llm stream] HTTP {status} code={log_code}");
         return Err(classify_error(
             status.as_u16(),
             &body,

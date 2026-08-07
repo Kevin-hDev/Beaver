@@ -59,7 +59,7 @@ pub(crate) fn response_language() -> String {
 pub(crate) fn resolve_working_dir(working_dir: &Path) -> Result<PathBuf, String> {
     if working_dir.is_dir() {
         return working_dir.canonicalize().map_err(|err| {
-            eprintln!("[agent] canonicalize dir: {err}");
+            ::log::warn!("[agent] canonicalize dir: {err}");
             "Répertoire inaccessible".to_string()
         });
     }

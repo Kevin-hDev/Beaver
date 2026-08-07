@@ -79,6 +79,8 @@ pub mod system_prompt_types;
 #[cfg(test)]
 mod system_prompt_settings_tests;
 pub mod ollama_client;
+#[cfg(test)]
+mod ollama_client_integration_tests;
 pub mod ollama_collect;
 pub mod ollama_create_payload;
 pub mod ollama_model_helpers;

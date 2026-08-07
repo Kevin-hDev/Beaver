@@ -18,6 +18,7 @@ pub(crate) mod identity;
 mod identity_tests;
 pub mod process_env;
 pub mod process_manager;
+mod process_spawn;
 pub mod registry;
 #[cfg(test)]
 mod registry_tests;
@@ -30,6 +31,8 @@ pub mod stdio;
 pub mod stdio_catalog;
 pub mod stdio_cmd;
 mod stdio_env;
+#[cfg(test)]
+mod stdio_integration_tests;
 mod stdio_line;
 #[cfg(test)]
 mod stdio_line_tests;

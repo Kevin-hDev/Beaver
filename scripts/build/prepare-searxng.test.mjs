@@ -7,7 +7,7 @@ import test from "node:test";
 import { prepareSearxng } from "./prepare-searxng.mjs";
 
 async function makeRepository() {
-  const root = await mkdtemp(join(tmpdir(), "searxng-bridge-"));
+  const root = await mkdtemp(join(await realpath(tmpdir()), "searxng-bridge-"));
   await mkdir(join(root, "src-tauri", "scripts"), { recursive: true });
   await writeFile(join(root, "src-tauri", "scripts", "prepare_searxng.py"), "pass\n");
   return root;

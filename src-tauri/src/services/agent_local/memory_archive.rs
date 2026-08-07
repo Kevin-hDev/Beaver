@@ -50,6 +50,6 @@ fn reject_archive_symlink(path: &Path) -> Result<(), String> {
 }
 
 fn log_archive_error(error: String) -> String {
-    eprintln!("[memory] archive write: {error}");
+    ::log::warn!("[memory] archive write: {error}");
     "Mémoire indisponible.".to_string()
 }

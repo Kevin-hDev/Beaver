@@ -74,7 +74,7 @@ pub fn data_dir() -> PathBuf {
         .clone()
 }
 
-#[cfg(feature = "cef-test-profile")]
+#[cfg(all(not(test), feature = "cef-test-profile"))]
 fn resolve_cef_test_data_dir() -> Result<PathBuf, ()> {
     let raw = std::env::var_os("CL_GO_CEF_TEST_DATA_DIR").ok_or(())?;
     let requested = PathBuf::from(raw);

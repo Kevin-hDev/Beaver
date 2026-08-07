@@ -38,7 +38,7 @@ pub(super) fn collect_from(
     roots
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments, reason = "boundary parameters remain explicit and locally audited")]
 pub(super) fn collect_into(
     roots: &mut ToolRoots,
     workspace_roots: &[PathBuf],
