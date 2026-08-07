@@ -17,3 +17,5 @@ Validation : cargo fmt, cargo check, Clippy strict, 3021 tests Rust réussis et 
 Périmètre de review : commit unique main..b014325. Les anciens SIGABRT de fermeture ont une signature distincte et restent hors périmètre.
 
 Maintenance documentaire : Graphify AST a été mis à jour. Les deux documents CEF ont aussi été ré-extraits sémantiquement de façon ciblée, fusionnés dans le graphe existant et contrôlés pour exclure l’ancienne affirmation sur le join du lecteur ; les communautés et le rapport Graphify ont ensuite été recalculés.
+
+Durcissement final du test : le scénario exige désormais la présence du marqueur écrit après setsid(), utilise une limite de 2 secondes face à un descendant conservant stdout pendant 5 secondes, et a été validé par deux mutations temporaires. Un nom de helper invalide échoue sur le marqueur ; la réintroduction de l’ancien join échoue après environ 5 secondes sur la limite temporelle.
