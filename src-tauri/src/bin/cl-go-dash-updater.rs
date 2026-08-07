@@ -6,7 +6,8 @@ fn main() {
     let result = std::panic::catch_unwind(cl_go_dash_lib::updater_worker::run_from_env);
     std::panic::set_hook(previous_hook);
     if !matches!(result, Ok(Ok(()))) {
-        ::log::error!("update failed");
+        // Ce binaire autonome n'installe pas le plugin de logs Tauri.
+        eprintln!("update failed");
         std::process::exit(1);
     }
 }
