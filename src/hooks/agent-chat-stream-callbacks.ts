@@ -14,6 +14,7 @@ import { finishInterruptedStream, finishStream } from "./agent-chat-stream-final
 import { applyContextUsage, applyGeneratedTokenCount } from "./agent-stream-context-usage";
 import { applyToolOutput } from "./agent-chat-stream-tool-output";
 import { applyRetryIndicator } from "./agent-chat-stream-retry";
+import { contextCapacityErrorMessage } from "./agent-context-capacity-error";
 
 export type { ChatState, ManagedStreamState, PermissionRequestState, StreamApplyResult };
 export { EMPTY_CHAT_STATE, createManagedStreamState, toChatState } from "./agent-chat-stream-types";
@@ -155,7 +156,8 @@ export function applyStreamEvent(
     case "error": {
       const rawMsg = event.data.message || "";
       const errorKey = KNOWN_ERROR_KEYS[rawMsg];
-      next.error = errorKey ? i18n.t(errorKey) : i18n.t("errors.streamInterrupted");
+      next.error = contextCapacityErrorMessage(rawMsg, event.data.contextCapacity)
+        ?? (errorKey ? i18n.t(errorKey) : i18n.t("errors.streamInterrupted"));
       next.isConnectionError = (event.data as Record<string, unknown>).isConnection === true;
       next.diagnosticSummary = event.data.diagnostic?.safeSummary;
       const partial = finishInterruptedStream(next);

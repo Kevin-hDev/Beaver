@@ -2,7 +2,13 @@ import { describe, it, expect, vi } from "vitest";
 import { applyStreamEvent, createManagedStreamState } from "@/hooks/agent-chat-stream-callbacks";
 import type { ManagedStreamState } from "@/hooks/agent-chat-stream-callbacks";
 
-vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
+vi.mock("@/i18n", () => ({
+  default: {
+    t: (key: string, values?: Record<string, number>) => values
+      ? `${key}|${values.systemTokens}|${values.reportTokens}|${values.toolTokens}|${values.requiredTokens}|${values.maxInputTokens}|${values.contextWindow}`
+      : key,
+  },
+}));
 
 function makeState(overrides: Partial<ManagedStreamState> = {}): ManagedStreamState {
   return { ...createManagedStreamState([], 0), streamStartedAt: null, segmentStartedAt: null, ...overrides };
@@ -34,6 +40,67 @@ describe("error", () => {
     expect(applyStreamEvent(makeState(), {
       event: "error", data: { message: "ollama_server_error" },
     }).state.error).toBe("errors.ollamaServerError");
+  });
+
+  it("affiche le budget réellement calculé sans rapport de sous-agent", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "error",
+      data: {
+        message: "context_capacity_exceeded",
+        contextCapacity: {
+          systemTokens: 8_450,
+          requiredReportTokens: 0,
+          toolTokens: 5_100,
+          requiredTokens: 13_550,
+          maxInputTokens: 12_288,
+          contextWindow: 16_384,
+        },
+      },
+    });
+
+    expect(result.state.error).toBe(
+      "errors.contextCapacityExceeded|8450|0|5100|13550|12288|16384",
+    );
+  });
+
+  it("affiche séparément les rapports obligatoires réellement injectés", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "error",
+      data: {
+        message: "context_capacity_exceeded",
+        contextCapacity: {
+          systemTokens: 7_000,
+          requiredReportTokens: 1_500,
+          toolTokens: 5_000,
+          requiredTokens: 13_500,
+          maxInputTokens: 12_000,
+          contextWindow: 16_000,
+        },
+      },
+    });
+
+    expect(result.state.error).toBe(
+      "errors.contextCapacityExceededWithReports|7000|1500|5000|13500|12000|16000",
+    );
+  });
+
+  it("refuse les nombres incohérents et conserve l'erreur générique", () => {
+    const result = applyStreamEvent(makeState(), {
+      event: "error",
+      data: {
+        message: "context_capacity_exceeded",
+        contextCapacity: {
+          systemTokens: 7_000,
+          requiredReportTokens: 0,
+          toolTokens: 5_000,
+          requiredTokens: 1,
+          maxInputTokens: 12_000,
+          contextWindow: 16_000,
+        },
+      },
+    });
+
+    expect(result.state.error).toBe("errors.streamInterrupted");
   });
 
   it("traduit les codes sûrs Grok et Kimi sans afficher le corps HTTP", () => {

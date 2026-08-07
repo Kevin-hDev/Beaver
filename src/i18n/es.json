@@ -1089,6 +1089,8 @@
     },
     "streamStartFailed": "No se pudo iniciar el stream.",
     "streamInterrupted": "El stream fue interrumpido.",
+    "contextCapacityExceeded": "El contexto obligatorio supera la capacidad del modelo: prompt del sistema {{systemTokens}} tokens + herramientas activas {{toolTokens}} tokens = {{requiredTokens}} tokens, con un límite de entrada de {{maxInputTokens}} tokens en una ventana de {{contextWindow}} tokens.",
+    "contextCapacityExceededWithReports": "El contexto obligatorio supera la capacidad del modelo: prompt del sistema {{systemTokens}} tokens + informes obligatorios {{reportTokens}} tokens + herramientas activas {{toolTokens}} tokens = {{requiredTokens}} tokens, con un límite de entrada de {{maxInputTokens}} tokens en una ventana de {{contextWindow}} tokens.",
     "ollamaConnectionLost": "Se perdió la conexión con Ollama",
     "ollamaServerError": "Error del servidor Ollama",
     "ollamaWaiting": "Conexión con Ollama perdida ({{seconds}}s) — reconectando…",

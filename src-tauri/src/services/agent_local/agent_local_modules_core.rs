@@ -27,6 +27,7 @@ pub mod clone_summary;
 pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
 pub mod compress_hook;
+pub mod context_capacity_error;
 pub mod context_budget;
 mod context_budget_history;
 mod context_budget_prune;

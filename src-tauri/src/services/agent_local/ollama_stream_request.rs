@@ -135,6 +135,7 @@ async fn handle_http_failure(
     let _ = on_event.send(StreamEvent::Error {
         message: msg.clone(),
         is_connection: false,
+        context_capacity: None,
         diagnostic: None,
     });
     Err(msg)
@@ -165,6 +166,7 @@ fn connection_error(
     let _ = on_event.send(StreamEvent::Error {
         message: msg.clone(),
         is_connection,
+        context_capacity: None,
         diagnostic: None,
     });
     Err(msg)

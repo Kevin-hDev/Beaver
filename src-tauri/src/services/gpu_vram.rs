@@ -8,7 +8,7 @@ mod windows;
 const VRAM_TIER_HIGH_MB: u64 = 24_000;
 const VRAM_TIER_MID_MB: u64 = 12_000;
 const CTX_HIGH: u32 = 32768;
-const CTX_MID: u32 = 16384;
+const CTX_MID: u32 = 24576;
 const CTX_LOW: u32 = 8192;
 
 #[allow(clippy::needless_return)] // pattern multi-cfg cross-plateforme
@@ -48,7 +48,11 @@ pub fn detect_vram_used_mb() -> Option<u64> {
 }
 
 pub fn compute_default_num_ctx() -> u32 {
-    match detect_vram_mb() {
+    num_ctx_for_vram(detect_vram_mb())
+}
+
+fn num_ctx_for_vram(vram_mb: Option<u64>) -> u32 {
+    match vram_mb {
         Some(mb) if mb >= VRAM_TIER_HIGH_MB => CTX_HIGH,
         Some(mb) if mb >= VRAM_TIER_MID_MB => CTX_MID,
         _ => CTX_LOW,
@@ -74,5 +78,14 @@ mod tests {
     fn default_num_ctx_is_reasonable() {
         let ctx = compute_default_num_ctx();
         assert!((CTX_LOW..=CTX_HIGH).contains(&ctx));
+    }
+
+    #[test]
+    fn vram_context_tiers_use_twenty_four_k_for_mid_range_hardware() {
+        assert_eq!(num_ctx_for_vram(Some(11_999)), 8_192);
+        assert_eq!(num_ctx_for_vram(Some(12_000)), 24_576);
+        assert_eq!(num_ctx_for_vram(Some(23_999)), 24_576);
+        assert_eq!(num_ctx_for_vram(Some(24_000)), 32_768);
+        assert_eq!(num_ctx_for_vram(None), 8_192);
     }
 }

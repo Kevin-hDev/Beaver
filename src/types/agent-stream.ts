@@ -14,6 +14,15 @@ interface AgentErrorDiagnosticSummary {
   safeSummary: string;
 }
 
+export interface ContextCapacityDetails {
+  systemTokens: number;
+  requiredReportTokens: number;
+  toolTokens: number;
+  requiredTokens: number;
+  maxInputTokens: number;
+  contextWindow: number;
+}
+
 export type TokenPhase = "work" | "final";
 
 export interface RetryIndicatorState {
@@ -45,7 +54,15 @@ export type StreamEvent =
   | { event: "turnEnd"; data: Record<string, never> }
   | { event: "permissionRequest"; data: { id: string; toolName: string; arguments: Record<string, unknown> } }
   | { event: "done"; data: { evalCount: number | null; evalDurationNs: number; finalTps: number; tpsEstimated?: boolean; promptTokens: number | null; contextTokens: number | null } }
-  | { event: "error"; data: { message: string; isConnection?: boolean; diagnostic?: AgentErrorDiagnosticSummary } }
+  | {
+    event: "error";
+    data: {
+      message: string;
+      isConnection?: boolean;
+      diagnostic?: AgentErrorDiagnosticSummary;
+      contextCapacity?: ContextCapacityDetails;
+    };
+  }
   | { event: "notice"; data: { messageKey: string } }
   | { event: "retryIndicator"; data: RetryIndicatorState }
   | { event: "compressing"; data: { status: string } }
