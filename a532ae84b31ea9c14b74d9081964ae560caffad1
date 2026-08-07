@@ -1,0 +1,35 @@
+Contexte
+- Correctif de suivi de la review du commit c3b591b sur codex/fix-ollama-context-diagnostics.
+- La review confirmait deux corruptions possibles de Modelfile et un diagnostic incomplet quand la fen?tre de contexte ?tait inconnue.
+
+Probl?mes racines
+1. Le frontend transmettait parfois de la syntaxe Modelfile alors que le backend attendait une valeur, puis le backend retirait les guillemets. Les valeurs utilisateur `"` et `""` pouvaient donc produire une directive invalide ou vide.
+2. Le backend supprimait une ligne PARAMETER avant d'enregistrer qu'elle ouvrait un bloc cit? multiligne. Le reste du bloc devenait des directives parasites et un ancien param?tre pouvait survivre.
+3. La valeur interne context_window=0 signifie "inconnue", mais la validation des d?tails structur?s la rejetait. L'interface perdait alors tous les compteurs disponibles.
+4. Une branche de rendu des retours ? la ligne ?tait inaccessible et incorrecte pour les fins de ligne Windows.
+
+D?cisions
+- Le contrat UI/backend transporte uniquement des valeurs s?mantiques, jamais de syntaxe Modelfile.
+- Le frontend d?code les guillemets complets des valeurs monolignes.
+- Le backend ne retire jamais les guillemets saisis par l'utilisateur ; toute valeur contenant `"` est rendue entre triples guillemets.
+- Les blocs PARAMETER multilignes, non ?ditables avec l'interface actuelle, sont conserv?s octet pour octet et masqu?s de l'?diteur. Le scanner suit aussi les blocs MESSAGE pour ne pas confondre leur contenu avec des directives.
+- Le sentinel 0 est conserv? en interne pour limiter la port?e du changement. L'interface affiche les compteurs connus avec un message traduit indiquant explicitement que la fen?tre r?elle est inconnue ; aucun faux chiffre n'est invent?.
+- Aucun changement de routage provider, s?lection d'outils, capacit? mod?le, streaming ou cycle de vie Ollama.
+
+Couverture
+- Tests de r?gression pour `"`, `""`, guillemets int?gr?s, chemins Windows, d?codage aller-retour, PARAMETER multiligne simple/triple, MESSAGE multiligne, CRLF et fen?tre inconnue avec/sans rapports.
+- TDD : ?checs reproduits avant les corrections, puis passages apr?s correction ; test du choix du message avec rapports v?rifi? aussi par mutation temporaire.
+
+Validation Windows
+- cargo fmt --all -- --check : OK
+- npx tsc --noEmit : OK
+- npm run lint : OK
+- cargo check --lib : OK
+- cargo clippy --lib -- -A clippy::nonminimal_bool -D warnings : OK (l'exception vise un avertissement existant hors p?rim?tre)
+- Vitest : 411 fichiers, 1887 tests r?ussis
+- Build scripts : 40/40 ; CEF : 6/6 ; extension host : 51/51
+- Rust cibl? avec windows-tests : Modelfile 9/9, fen?tre inconnue 1/1, d?codage 4/4
+- Rust complet avec windows-tests : 2953 r?ussis, 4 ignor?s, 2 ?checs CRLF pr?existants et hors p?rim?tre (provider_contract_tests et startup_tests)
+- E2E runner : 5/6 ; seul ?chec pr?existant hors p?rim?tre, comparaison C:\repo avec /repo dans scripts/e2e/e2e-process.test.mjs:25
+- Sans windows-tests, le binaire de test local peut ?chouer avant les tests avec STATUS_ORDINAL_NOT_FOUND, probl?me de biblioth?que syst?me d?j? signal? par la review.
+- Graphify mis ? jour apr?s modification du code.
