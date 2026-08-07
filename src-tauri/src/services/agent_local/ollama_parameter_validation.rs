@@ -12,12 +12,7 @@ const INTEGER_PARAMETERS: &[&str] = &[
     "repeat_last_n",
     "top_k",
 ];
-const DECIMAL_PARAMETERS: &[&str] = &[
-    "temperature",
-    "repeat_penalty",
-    "top_p",
-    "min_p",
-];
+const DECIMAL_PARAMETERS: &[&str] = &["temperature", "repeat_penalty", "top_p", "min_p"];
 
 pub fn validate_parameter_entries(entries: &[(String, String)]) -> Result<(), String> {
     if entries.len() > MAX_PARAMETER_ENTRIES {
@@ -27,21 +22,27 @@ pub fn validate_parameter_entries(entries: &[(String, String)]) -> Result<(), St
     let mut custom_count = 0;
     for (key, value) in entries {
         let key = key.trim();
-        let value = value.trim();
         if !valid_key(key)
             || value.is_empty()
             || value.len() > MAX_PARAMETER_VALUE_BYTES
+            || value.contains("\"\"\"")
             || value
                 .chars()
-                .any(|character| matches!(character, '\0' | '\n' | '\r'))
+                .any(|character| character.is_control() && !matches!(character, '\n' | '\t'))
         {
             return Err(invalid_parameter());
         }
         let normalized_key = key.to_ascii_lowercase();
         if INTEGER_PARAMETERS.contains(&normalized_key.as_str()) {
-            value.parse::<i64>().map_err(|_| invalid_parameter())?;
+            value
+                .trim()
+                .parse::<i64>()
+                .map_err(|_| invalid_parameter())?;
         } else if DECIMAL_PARAMETERS.contains(&normalized_key.as_str()) {
-            let number = value.parse::<f64>().map_err(|_| invalid_parameter())?;
+            let number = value
+                .trim()
+                .parse::<f64>()
+                .map_err(|_| invalid_parameter())?;
             if !number.is_finite() {
                 return Err(invalid_parameter());
             }
@@ -60,12 +61,25 @@ pub fn validate_parameter_entries(entries: &[(String, String)]) -> Result<(), St
     Ok(())
 }
 
+pub(crate) fn value_for_render<'a>(key: &str, value: &'a str) -> &'a str {
+    let normalized_key = key.trim().to_ascii_lowercase();
+    if INTEGER_PARAMETERS.contains(&normalized_key.as_str())
+        || DECIMAL_PARAMETERS.contains(&normalized_key.as_str())
+    {
+        value.trim()
+    } else {
+        value
+    }
+}
+
 fn valid_key(key: &str) -> bool {
     if key.is_empty() || key.len() > MAX_PARAMETER_KEY_BYTES {
         return false;
     }
     let mut chars = key.chars();
-    chars.next().is_some_and(|first| first.is_ascii_alphabetic())
+    chars
+        .next()
+        .is_some_and(|first| first.is_ascii_alphabetic())
         && chars.all(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
@@ -93,16 +107,22 @@ mod tests {
     }
 
     #[test]
-    fn rejects_line_breaks_that_could_inject_modelfile_directives() {
-        assert!(validate_parameter_entries(&[(
-            "stop".into(),
-            "safe\nPARAMETER num_ctx 100000".into(),
-        )])
-        .is_err());
+    fn accepts_line_feeds_for_text_values_but_rejects_carriage_returns() {
+        assert!(
+            validate_parameter_entries(&[("stop".into(), "line one\nline two".into(),)]).is_ok()
+        );
         assert!(validate_parameter_entries(&[(
             "future_option".into(),
             "safe\rSYSTEM hostile".into(),
         )])
         .is_err());
+    }
+
+    #[test]
+    fn preserves_whitespace_text_and_rejects_unrepresentable_triple_quotes() {
+        assert!(validate_parameter_entries(&[("stop".into(), " ".into())]).is_ok());
+        assert!(validate_parameter_entries(&[("stop".into(), "say \"hi\"".into())]).is_ok());
+        assert!(validate_parameter_entries(&[("stop".into(), "a\"\"\"b".into())]).is_err());
+        assert!(validate_parameter_entries(&[("stop".into(), "a\u{7}b".into())]).is_err());
     }
 }

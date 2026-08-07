@@ -589,6 +589,7 @@
     "addCustomParameter": "+ Benutzerdefinierten Parameter hinzufügen",
     "invalidCustomParameter": "Prüfe Name und Wert des benutzerdefinierten Parameters.",
     "invalidOfficialParameter": "Prüfe die Zahlenwerte der offiziellen Parameter.",
+    "unsupportedParameterValue": "Werte dürfen keine nicht unterstützten Steuerzeichen und keine drei aufeinanderfolgenden Anführungszeichen (\"\"\") enthalten.",
     "parameterGroups": {
       "context": "Kontext",
       "length": "Antwortlänge",

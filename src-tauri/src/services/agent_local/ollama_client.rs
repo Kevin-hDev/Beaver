@@ -3,7 +3,9 @@ use crate::services::agent_local::ollama_base_url;
 use crate::services::agent_local::ollama_model_helpers::{
     build_model_from_tags, dedupe_by_digest, parse_show_response,
 };
-use crate::services::agent_local::types_ollama::{ModelInfo, OllamaModel};
+use crate::services::agent_local::types_ollama::{
+    ModelInfo, OllamaModel, OllamaModelEditorData, OllamaParameter,
+};
 use reqwest::Client;
 use std::time::Duration;
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -120,6 +122,18 @@ impl OllamaClient {
         Ok(info.modelfile)
     }
 
+    pub async fn get_model_editor_data(&self, name: &str) -> Result<OllamaModelEditorData, String> {
+        let info = self.show_model(name).await?;
+        let parameters = super::ollama_parameter_summary::parse(&info.parameters)?
+            .into_iter()
+            .map(|(key, value)| OllamaParameter { key, value })
+            .collect();
+        Ok(OllamaModelEditorData {
+            modelfile: info.modelfile,
+            parameters,
+        })
+    }
+
     pub async fn update_modelfile(&self, name: &str, content: &str) -> Result<(), String> {
         super::ollama_modelfile_create::create_from_modelfile(name, content).await
     }
@@ -129,8 +143,13 @@ impl OllamaClient {
         name: &str,
         entries: Vec<(String, String)>,
     ) -> Result<(), String> {
-        let current = self.get_modelfile(name).await?;
-        let updated = super::ollama_modelfile_parameters::rewrite(&current, &entries)?;
+        let info = self.show_model(name).await?;
+        let current_entries = super::ollama_parameter_summary::parse(&info.parameters)?;
+        let updated = super::ollama_modelfile_parameters::rewrite(
+            &info.modelfile,
+            &current_entries,
+            &entries,
+        )?;
         super::ollama_modelfile_create::create_from_modelfile(name, &updated).await
     }
 

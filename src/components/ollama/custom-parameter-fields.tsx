@@ -5,7 +5,8 @@ import {
   MAX_PARAMETER_KEY_LENGTH,
   MAX_PARAMETER_VALUE_LENGTH,
 } from "./parameter-editor-state";
-import type { ModelParameter } from "./modelfile-utils";
+import type { ModelParameter } from "./model-parameter-types";
+import { visibleParameterRows } from "./parameter-fields";
 
 interface CustomParameterFieldsProps {
   parameters: ModelParameter[];
@@ -38,13 +39,14 @@ export function CustomParameterFields({
             maxLength={MAX_PARAMETER_KEY_LENGTH}
             className="field pe-input pe-custom-key"
           />
-          <input
+          <textarea
             value={parameter.value}
             onChange={(event) => onChange(index, "value", event.target.value)}
             placeholder={t("ollama.customParameterValue")}
             aria-label={`${t("ollama.customParameterValue")} ${index + 1}`}
             maxLength={MAX_PARAMETER_VALUE_LENGTH}
-            className="field pe-input pe-custom-value"
+            rows={visibleParameterRows(parameter.value)}
+            className="field field-multiline pe-input pe-custom-value pe-textarea"
           />
           <Tooltip label={t("ollama.remove")}>
             <button

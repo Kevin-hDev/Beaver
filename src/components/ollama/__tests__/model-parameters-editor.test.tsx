@@ -43,6 +43,27 @@ describe("ParametersEditor catalog", () => {
     expect(screen.getByLabelText("ollama.customParameterValue 1")).toHaveValue("0");
   });
 
+  it("affiche et sauvegarde les valeurs multilignes sans retirer leurs espaces", async () => {
+    renderEditor([
+      { key: "stop", value: " line one\nline two " },
+      { key: "future_option", value: " value " },
+    ]);
+
+    expect(screen.getByLabelText("stop 1").tagName).toBe("TEXTAREA");
+    expect(screen.getByLabelText("ollama.customParameterValue 1").tagName).toBe("TEXTAREA");
+    fireEvent.click(screen.getByText("ollama.save"));
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("update_parameters", {
+        name: modelName,
+        parameters: [
+          ["stop", " line one\nline two "],
+          ["future_option", " value "],
+        ],
+      });
+    });
+  });
+
   it("ne sauvegarde que les valeurs renseignées", async () => {
     const onSave = vi.fn();
     renderEditor([
@@ -118,6 +139,17 @@ describe("ParametersEditor catalog", () => {
     fireEvent.click(screen.getByText("ollama.save"));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("ollama.invalidOfficialParameter");
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("bloque une valeur contenant trois guillemets consécutifs", async () => {
+    renderEditor([{ key: "stop", value: 'a"""b' }]);
+
+    fireEvent.click(screen.getByText("ollama.save"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "ollama.unsupportedParameterValue",
+    );
     expect(invoke).not.toHaveBeenCalled();
   });
 

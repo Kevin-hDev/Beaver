@@ -15,10 +15,11 @@ import {
   createParameterEditorState,
   hasInvalidCustomParameter,
   hasInvalidOfficialParameter,
+  hasUnsupportedParameterValue,
   type ParameterEditorState,
 } from "./parameter-editor-state";
 import { ParameterField, StopParameterField } from "./parameter-fields";
-import type { ModelParameter } from "./modelfile-utils";
+import type { ModelParameter } from "./model-parameter-types";
 import "./ollama.css";
 import "./parameters-editor.css";
 
@@ -93,6 +94,10 @@ export function ParametersEditor({
       }
       if (hasInvalidOfficialParameter(editorState)) {
         setError(t("ollama.invalidOfficialParameter"));
+        return;
+      }
+      if (hasUnsupportedParameterValue(editorState)) {
+        setError(t("ollama.unsupportedParameterValue"));
         return;
       }
       const payload = buildParameterPayload(editorState);

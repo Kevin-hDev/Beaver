@@ -1,113 +1,172 @@
+use std::ops::Range;
+
 const INVALID_MODELFILE: &str = "ollama-modelfile-invalid";
+const MAX_MODELFILE_BYTES: usize = 4 * 1024 * 1024;
+const MAX_PARAMETER_CANDIDATES: usize = 512;
 
-#[derive(Clone, Copy)]
-enum QuoteDelimiter {
-    Single,
-    Triple,
-}
+pub fn rewrite(
+    content: &str,
+    current_entries: &[(String, String)],
+    new_entries: &[(String, String)],
+) -> Result<String, String> {
+    super::ollama_parameter_validation::validate_parameter_entries(new_entries)?;
+    validate_content(content)?;
 
-pub fn rewrite(content: &str, entries: &[(String, String)]) -> Result<String, String> {
-    super::ollama_parameter_validation::validate_parameter_entries(entries)?;
-    if content.trim().is_empty() || content.contains('\0') {
-        return Err(INVALID_MODELFILE.into());
+    let line_ending = if content.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    let normalized = content.replace("\r\n", "\n");
+    if normalized.contains('\r') {
+        return Err(invalid_modelfile());
     }
 
-    let line_ending = if content.contains("\r\n") { "\r\n" } else { "\n" };
-    let keep_final_line_ending = content.ends_with('\n');
-    let mut lines = Vec::new();
-    let mut insertion_index = None;
-    let mut multiline = None;
-
-    for raw_line in content.lines() {
-        let line = raw_line.trim_end_matches('\r');
-        if let Some(delimiter) = multiline {
-            lines.push(line.to_string());
-            if closes_multiline(line, delimiter) {
-                multiline = None;
-            }
-            continue;
-        }
-
-        let opening = opening_delimiter(line);
-        if is_parameter_directive(line) && opening.is_none() {
-            insertion_index.get_or_insert(lines.len());
-            continue;
-        }
-        lines.push(line.to_string());
-        multiline = opening;
-    }
-
-    let rendered = entries
+    let rendered_new = new_entries
         .iter()
-        .map(|(key, value)| render_parameter(key.trim(), value.trim()))
-        .collect::<Vec<_>>();
-    let insert_at = insertion_index.unwrap_or_else(|| trailing_content_index(&lines));
-    lines.splice(insert_at..insert_at, rendered);
+        .map(|(key, value)| {
+            let value = super::ollama_parameter_validation::value_for_render(key, value);
+            render_source_parameter(key.trim(), value)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
-    let mut output = lines.join(line_ending);
-    if keep_final_line_ending || !entries.is_empty() {
-        output.push_str(line_ending);
-    }
-    Ok(output)
+    let updated = if current_entries.is_empty() {
+        append_parameters(&normalized, &rendered_new)
+    } else {
+        let range = locate_parameter_block(&normalized, current_entries)?;
+        let replacement = if rendered_new.is_empty() {
+            String::new()
+        } else {
+            format!("{rendered_new}\n")
+        };
+        let mut output = normalized;
+        output.replace_range(range, &replacement);
+        output
+    };
+
+    Ok(if line_ending == "\r\n" {
+        updated.replace('\n', "\r\n")
+    } else {
+        updated
+    })
 }
 
-fn is_parameter_directive(line: &str) -> bool {
-    line.trim_start()
-        .split_ascii_whitespace()
-        .next()
-        .is_some_and(|word| word.eq_ignore_ascii_case("PARAMETER"))
+fn locate_parameter_block(
+    content: &str,
+    entries: &[(String, String)],
+) -> Result<Range<usize>, String> {
+    let mut rendered = Vec::<(String, usize)>::new();
+    for (key, value) in entries {
+        let line = render_normalized_parameter(key, value);
+        if let Some((_, count)) = rendered.iter_mut().find(|(known, _)| known == &line) {
+            *count += 1;
+        } else {
+            rendered.push((line, 1));
+        }
+    }
+
+    let mut candidates = Vec::new();
+    let mut candidate_count = 0;
+    for (start, _) in content.match_indices("PARAMETER ") {
+        if start > 0 && content.as_bytes()[start - 1] != b'\n' {
+            continue;
+        }
+        candidate_count += 1;
+        if candidate_count > MAX_PARAMETER_CANDIDATES {
+            return Err(invalid_modelfile());
+        }
+        if let Some(end) = match_complete_block(content, start, &rendered, entries.len()) {
+            candidates.push(start..end);
+            if candidates.len() > 1 {
+                return Err(invalid_modelfile());
+            }
+        }
+    }
+    candidates.pop().ok_or_else(invalid_modelfile)
 }
 
-fn opening_delimiter(line: &str) -> Option<QuoteDelimiter> {
-    let value = directive_value(line)?.trim();
-    if value.starts_with("\"\"\"") {
-        return (!(value.len() >= 6 && value.ends_with("\"\"\""))).then_some(QuoteDelimiter::Triple);
+fn match_complete_block(
+    content: &str,
+    start: usize,
+    expected: &[(String, usize)],
+    total: usize,
+) -> Option<usize> {
+    let mut remaining = expected.to_vec();
+    let mut cursor = start;
+    for _ in 0..total {
+        let match_index = remaining.iter().position(|(rendered, count)| {
+            *count > 0 && matches_complete_entry(content, cursor, rendered)
+        })?;
+        cursor += remaining[match_index].0.len();
+        remaining[match_index].1 -= 1;
+        if cursor < content.len() {
+            cursor += 1;
+        }
     }
-    if value.starts_with('"') {
-        return (!(value.len() >= 2 && value.ends_with('"'))).then_some(QuoteDelimiter::Single);
-    }
-    None
-}
-
-fn directive_value(line: &str) -> Option<&str> {
-    let line = line.trim_start();
-    if line.starts_with('#') {
+    if content[cursor..].starts_with("PARAMETER ") {
         return None;
     }
-    let (directive, rest) = line.split_once(char::is_whitespace)?;
-    let rest = rest.trim_start();
-    if directive.eq_ignore_ascii_case("PARAMETER")
-        || directive.eq_ignore_ascii_case("MESSAGE")
-    {
-        return rest
-            .split_once(char::is_whitespace)
-            .map(|(_, value)| value.trim_start());
+    Some(cursor)
+}
+
+fn matches_complete_entry(content: &str, start: usize, rendered: &str) -> bool {
+    let Some(rest) = content.get(start..) else {
+        return false;
+    };
+    if !rest.starts_with(rendered) {
+        return false;
     }
-    Some(rest)
+    let end = start + rendered.len();
+    end == content.len() || content.as_bytes().get(end) == Some(&b'\n')
 }
 
-fn closes_multiline(line: &str, delimiter: QuoteDelimiter) -> bool {
-    let line = line.trim_end();
-    match delimiter {
-        QuoteDelimiter::Single => line.ends_with('"'),
-        QuoteDelimiter::Triple => line.ends_with("\"\"\""),
+fn append_parameters(content: &str, rendered: &str) -> String {
+    if rendered.is_empty() {
+        return content.to_string();
     }
+    let mut output = content.to_string();
+    if !output.ends_with('\n') {
+        output.push('\n');
+    }
+    output.push_str(rendered);
+    output.push('\n');
+    output
 }
 
-fn trailing_content_index(lines: &[String]) -> usize {
-    lines
-        .iter()
-        .rposition(|line| !line.trim().is_empty())
-        .map_or(0, |index| index + 1)
+fn render_normalized_parameter(key: &str, value: &str) -> String {
+    format!("PARAMETER {} {}", key.trim(), quote_normalized_text(value))
 }
 
-fn render_parameter(key: &str, value: &str) -> String {
-    format!("PARAMETER {key} {}", quote_modelfile_text(value))
+fn render_source_parameter(key: &str, value: &str) -> String {
+    format!("PARAMETER {} {}", key.trim(), quote_source_text(value))
 }
 
-fn quote_modelfile_text(value: &str) -> String {
+fn quote_normalized_text(value: &str) -> String {
+    let needs_quotes = value.contains('\n') || value.trim() != value;
+    if !needs_quotes {
+        return value.to_string();
+    }
     if value.contains('"') {
         return format!("\"\"\"{value}\"\"\"");
     }
-    value.to_string()
+    format!("\"{value}\"")
+}
+
+fn quote_source_text(value: &str) -> String {
+    if value.starts_with('"') {
+        return format!("\"\"\"{value}\"\"\"");
+    }
+    quote_normalized_text(value)
+}
+
+fn validate_content(content: &str) -> Result<(), String> {
+    if content.trim().is_empty() || content.len() > MAX_MODELFILE_BYTES || content.contains('\0') {
+        return Err(invalid_modelfile());
+    }
+    Ok(())
+}
+
+fn invalid_modelfile() -> String {
+    INVALID_MODELFILE.to_string()
 }

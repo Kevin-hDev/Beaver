@@ -43,6 +43,20 @@ pub struct ModelInfo {
     pub license: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OllamaParameter {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OllamaModelEditorData {
+    pub modelfile: String,
+    pub parameters: Vec<OllamaParameter>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegistryModel {
     pub name: String,
