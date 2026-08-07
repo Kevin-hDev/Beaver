@@ -1,0 +1,9 @@
+Reviewer objective: address the architecture and security review findings without renaming the com.clgo.dash / cl-go-dash compatibility identity.
+
+Decisions: vault startup failures now cross IPC as an empty signal while filtered details stay in structured logs; Rust provider DTOs are the source of truth for generated TypeScript contracts; desktop E2E uses an explicit e2e feature, embedded WebDriver, isolated temporary profile, ephemeral vault, and disabled host mutations; Ollama and MCP integration tests exercise real HTTP and child-process boundaries; eprintln calls were migrated to bounded redacted rotating logs; the global too_many_arguments allow was removed and remaining historical orchestration boundaries use local documented expectations instead of a risky mass signature rewrite.
+
+Additional hardening: CI runs the isolated desktop journey; vulnerable 2026 development overrides and both copies of pdfjs-dist were upgraded; root and extension-host npm audits report zero vulnerabilities. The npm lockfile refresh is intentionally broad because npm resolved the new pinned WebdriverIO graph together with the corrected security overrides.
+
+Validation: cargo test --all: 3030 passed, 2 ignored; cargo test --all --features e2e: 3033 passed, 2 ignored; cargo clippy --all-targets --features e2e -- -D warnings: passed; npm test: 411 files / 1875 frontend tests plus 40 build, 6 CEF, 3 E2E-runner, and 51 extension-host tests passed; real native onboarding E2E: 1 passed; TypeScript, ESLint, Rust formatting, Rust-to-TypeScript contract check, Graphify update, and both npm audits passed.
+
+Review focus: startup IPC/log redaction, the feature-gated E2E isolation boundary, generated provider DTO mappings, MCP direct spawn validation, and scoped clippy expectations. The brand identifier rename remains deliberately out of scope.
