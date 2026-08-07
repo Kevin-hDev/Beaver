@@ -15,6 +15,7 @@ import {
   createParameterEditorState,
   hasInvalidCustomParameter,
   hasInvalidOfficialParameter,
+  hasOversizedParameterValue,
   hasUnsupportedParameterValue,
   type ParameterEditorState,
 } from "./parameter-editor-state";
@@ -88,6 +89,10 @@ export function ParametersEditor({
     setSaving(true);
     setError(null);
     try {
+      if (hasOversizedParameterValue(editorState)) {
+        setError(t("ollama.parameterValueTooLong"));
+        return;
+      }
       if (hasInvalidCustomParameter(editorState)) {
         setError(t("ollama.invalidCustomParameter"));
         return;

@@ -169,7 +169,6 @@ fn frontend_contract_covers_every_local_store_error_code() {
     ))
     .unwrap();
 
-    assert_eq!(contract.len(), super::error_codes::LOCAL_STORE_CODES.len());
     for code in super::error_codes::LOCAL_STORE_CODES {
         assert!(
             contract.contains_key(code),

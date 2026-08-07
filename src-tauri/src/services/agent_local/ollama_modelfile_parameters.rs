@@ -12,11 +12,6 @@ pub fn rewrite(
     super::ollama_parameter_validation::validate_parameter_entries(new_entries)?;
     validate_content(content)?;
 
-    let line_ending = if content.contains("\r\n") {
-        "\r\n"
-    } else {
-        "\n"
-    };
     let normalized = content.replace("\r\n", "\n");
     if normalized.contains('\r') {
         return Err(invalid_modelfile());
@@ -45,11 +40,7 @@ pub fn rewrite(
         output
     };
 
-    Ok(if line_ending == "\r\n" {
-        updated.replace('\n', "\r\n")
-    } else {
-        updated
-    })
+    Ok(updated)
 }
 
 fn locate_parameter_block(
@@ -143,7 +134,7 @@ fn render_source_parameter(key: &str, value: &str) -> String {
 }
 
 fn quote_normalized_text(value: &str) -> String {
-    let needs_quotes = value.contains('\n') || value.trim() != value;
+    let needs_quotes = value.contains('\n') || value.starts_with(' ') || value.ends_with(' ');
     if !needs_quotes {
         return value.to_string();
     }
@@ -157,7 +148,18 @@ fn quote_source_text(value: &str) -> String {
     if value.starts_with('"') {
         return format!("\"\"\"{value}\"\"\"");
     }
-    quote_normalized_text(value)
+    let edge_whitespace = value
+        .chars()
+        .next()
+        .is_some_and(char::is_whitespace)
+        || value.chars().next_back().is_some_and(char::is_whitespace);
+    if !value.contains('\n') && !edge_whitespace {
+        return value.to_string();
+    }
+    if value.contains('"') {
+        return format!("\"\"\"{value}\"\"\"");
+    }
+    format!("\"{value}\"")
 }
 
 fn validate_content(content: &str) -> Result<(), String> {

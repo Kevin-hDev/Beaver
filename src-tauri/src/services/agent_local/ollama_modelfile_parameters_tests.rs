@@ -121,13 +121,46 @@ fn renders_edge_whitespace_whitespace_only_quotes_and_multiline_values() {
     assert_eq!(
         output,
         concat!(
-            "FROM x\r\n",
-            "PARAMETER stop \"Assistant: \"\r\n",
-            "PARAMETER stop \" \"\r\n",
-            "PARAMETER stop \"\"\"\"User:\"\"\"\r\n",
-            "PARAMETER stop \"line one\r\n",
-            "line two\"\r\n",
-            "PARAMETER future_option say \"hi\"\r\n",
+            "FROM x\n",
+            "PARAMETER stop \"Assistant: \"\n",
+            "PARAMETER stop \" \"\n",
+            "PARAMETER stop \"\"\"\"User:\"\"\"\n",
+            "PARAMETER stop \"line one\n",
+            "line two\"\n",
+            "PARAMETER future_option say \"hi\"\n",
+        )
+    );
+    assert!(!output.contains('\r'));
+}
+
+#[test]
+fn matches_ollama_raw_tabs_and_unicode_edge_whitespace() {
+    let input = concat!(
+        "FROM x\n",
+        "PARAMETER stop \tUser:\n",
+        "PARAMETER stop \u{a0}Assistant:\n",
+        "PARAMETER temperature 0.7\n",
+    );
+    let current = vec![
+        ("stop".into(), "\tUser:".into()),
+        ("stop".into(), "\u{a0}Assistant:".into()),
+        ("temperature".into(), "0.7".into()),
+    ];
+    let new = vec![
+        ("stop".into(), "\tUser:".into()),
+        ("stop".into(), "\u{a0}Assistant:".into()),
+        ("temperature".into(), "0.4".into()),
+    ];
+
+    let output = rewrite(input, &current, &new).expect("Ollama raw edge whitespace");
+
+    assert_eq!(
+        output,
+        concat!(
+            "FROM x\n",
+            "PARAMETER stop \"\tUser:\"\n",
+            "PARAMETER stop \"\u{a0}Assistant:\"\n",
+            "PARAMETER temperature 0.4\n",
         )
     );
 }

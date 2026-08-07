@@ -124,13 +124,21 @@ impl OllamaClient {
 
     pub async fn get_model_editor_data(&self, name: &str) -> Result<OllamaModelEditorData, String> {
         let info = self.show_model(name).await?;
-        let parameters = super::ollama_parameter_summary::parse(&info.parameters)?
-            .into_iter()
-            .map(|(key, value)| OllamaParameter { key, value })
-            .collect();
+        let decoded = super::ollama_parameter_summary::parse(&info.parameters).and_then(|entries| {
+            super::ollama_parameter_validation::validate_parameter_entries(&entries)?;
+            Ok(entries
+                .into_iter()
+                .map(|(key, value)| OllamaParameter { key, value })
+                .collect())
+        });
+        let (parameters, parameter_error) = match decoded {
+            Ok(parameters) => (Some(parameters), None),
+            Err(error) => (None, Some(error)),
+        };
         Ok(OllamaModelEditorData {
             modelfile: info.modelfile,
             parameters,
+            parameter_error,
         })
     }
 
@@ -145,6 +153,7 @@ impl OllamaClient {
     ) -> Result<(), String> {
         let info = self.show_model(name).await?;
         let current_entries = super::ollama_parameter_summary::parse(&info.parameters)?;
+        super::ollama_parameter_validation::validate_parameter_entries(&current_entries)?;
         let updated = super::ollama_modelfile_parameters::rewrite(
             &info.modelfile,
             &current_entries,

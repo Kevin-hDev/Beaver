@@ -54,7 +54,8 @@ pub struct OllamaParameter {
 #[serde(rename_all = "camelCase")]
 pub struct OllamaModelEditorData {
     pub modelfile: String,
-    pub parameters: Vec<OllamaParameter>,
+    pub parameters: Option<Vec<OllamaParameter>>,
+    pub parameter_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

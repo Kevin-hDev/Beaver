@@ -590,6 +590,7 @@
     "invalidCustomParameter": "カスタムパラメーターの名前と値を確認してください。",
     "invalidOfficialParameter": "公式パラメーターの数値を確認してください。",
     "unsupportedParameterValue": "値に未対応の制御文字または3つ連続した引用符（\"\"\"）を含めることはできません。",
+    "parameterValueTooLong": "各パラメーター値は 1024 バイト未満にしてください。",
     "parameterGroups": {
       "context": "コンテキスト",
       "length": "応答の長さ",
@@ -1086,7 +1087,10 @@
       "ollamaNativePromptsWrite": "Beaver は「ollama-native-system-prompts.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
       "systemPromptsWrite": "Beaver は「system-prompt-settings.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
       "privateStorage": "Beaver のプライベートストレージにアクセスできません。ディスク容量と権限を確認し、もう一度お試しください。",
-      "systemPromptsRuntimeFallback": "システムプロンプト設定を利用できません。このメッセージでは一時的に Beaver のデフォルト指示を使用します。"
+      "systemPromptsRuntimeFallback": "システムプロンプト設定を利用できません。このメッセージでは一時的に Beaver のデフォルト指示を使用します。",
+      "ollamaModelfileInvalid": "Modelfile を安全に変更できません。変更は適用されませんでした。",
+      "ollamaParameterInvalid": "少なくとも1つの Ollama パラメーターに、簡易エディターでは変更できない値があります。Modelfile エディターで修正してください。",
+      "ollamaResponseInvalid": "Ollama が読み取れない、または大きすぎるパラメーターを返しました。生の Modelfile は引き続き表示できます。"
     },
     "streamStartFailed": "ストリームを開始できませんでした。",
     "streamInterrupted": "ストリームが中断されました。",
