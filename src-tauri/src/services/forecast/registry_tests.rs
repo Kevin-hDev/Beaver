@@ -100,3 +100,14 @@ fn is_sha(revision: Option<&str>) -> bool {
         value.len() == 40 && value.chars().all(|character| character.is_ascii_hexdigit())
     })
 }
+
+#[test]
+fn static_forecast_specs_use_named_fields_instead_of_positional_argument_lists() {
+    let capabilities = include_str!("registry_caps.rs");
+    assert!(!capabilities.contains("const fn caps("));
+    assert!(!capabilities.contains("clippy::too_many_arguments"));
+
+    let experimental = include_str!("catalog_specs/experimental.rs");
+    assert!(!experimental.contains("clippy::too_many_arguments"));
+    assert!(experimental.contains("ExperimentalModelInput"));
+}

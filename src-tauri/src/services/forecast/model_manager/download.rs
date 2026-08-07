@@ -94,7 +94,10 @@ fn allowed_download_url(url: &reqwest::Url) -> bool {
     })
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 async fn download_single(
     client: &reqwest::Client,
     url: &str,

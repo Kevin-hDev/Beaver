@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::{Child, ChildStderr, ChildStdout};

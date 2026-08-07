@@ -15,8 +15,12 @@ HELPERS=(
 SIGNING_IDENTITY="${APPLE_SIGNING_IDENTITY:--}"
 DEV_PREP="${CLGO_CEF_DEV_PREP:-0}"
 ALLOW_ADHOC_SIGNING="${CLGO_CEF_ALLOW_ADHOC_SIGNING:-0}"
+BUILD_FEATURES="${CLGO_CEF_CARGO_FEATURES:-}"
 BUILD_TARGET="${CARGO_BUILD_TARGET:-}"
 TARGET_RELEASE_DIR="target/release"
+if [[ "$BUILD_FEATURES" == "e2e" ]]; then
+  TARGET_RELEASE_DIR="target/e2e/release"
+fi
 if [[ -z "$SIGNING_IDENTITY" || ${#SIGNING_IDENTITY} -gt 256 \
   || "$SIGNING_IDENTITY" == *$'\n'* || "$SIGNING_IDENTITY" == *$'\r'* \
   || "$SIGNING_IDENTITY" == *$'\t'* ]]; then
@@ -31,7 +35,15 @@ if [[ "$ALLOW_ADHOC_SIGNING" != "0" && "$ALLOW_ADHOC_SIGNING" != "1" ]]; then
   echo "CEF signing mode is invalid" >&2
   exit 1
 fi
+if [[ -n "$BUILD_FEATURES" && "$BUILD_FEATURES" != "e2e" ]]; then
+  echo "CEF build features are invalid" >&2
+  exit 1
+fi
 if [[ -n "$BUILD_TARGET" ]]; then
+  if [[ "$BUILD_FEATURES" == "e2e" ]]; then
+    echo "CEF E2E cross-target build is invalid" >&2
+    exit 1
+  fi
   if [[ "$BUILD_TARGET" != "aarch64-apple-darwin" ]]; then
     echo "CEF build target is invalid" >&2
     exit 1
@@ -49,7 +61,11 @@ if [[ "$DEV_PREP" == "1" ]]; then
 fi
 
 node ../scripts/cef/prepare-cef-source.mjs
-"${CARGO:-cargo}" build --release --bin cl-go-dash-helper
+BUILD_ARGS=(build --release --bin cl-go-dash-helper)
+if [[ -n "$BUILD_FEATURES" ]]; then
+  BUILD_ARGS+=(--features "$BUILD_FEATURES")
+fi
+"${CARGO:-cargo}" "${BUILD_ARGS[@]}"
 
 CEF_DIR=".cef-verified/current"
 CEF_FRAMEWORK="$CEF_DIR/Release/Chromium Embedded Framework.framework"

@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::{
     stream_chunk::{self, ParsedChunk},
     stream_sse::is_done_marker,

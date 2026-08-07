@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use super::{
     agent_loop_compression::{LastCounts, LoopCompression},
     agent_loop_ollama_request::OllamaRequestParams,

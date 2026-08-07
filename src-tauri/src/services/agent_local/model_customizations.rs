@@ -68,7 +68,7 @@ pub async fn save_for_update(ollama: &OllamaClient, name: &str) -> Option<String
 pub async fn restore_after_update(ollama: &OllamaClient, name: &str, saved: &str) {
     let restored = super::ollama_modelfile_create::use_updated_base(saved, name);
     if let Err(e) = ollama.update_modelfile(name, &restored).await {
-        eprintln!("[pull] restore perso {name} échoué: {e}");
+        ::log::warn!("[pull] restore perso {name} échoué: {e}");
     }
 }
 

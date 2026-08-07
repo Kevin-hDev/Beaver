@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 use crate::services::compress::{engine, prompt, state, summary_budget, token_estimate};
@@ -52,7 +56,7 @@ pub async fn try_auto_compress(
         summary_budget::summary_instruction_for_input(configured_context, estimated);
     let compress_msgs =
         engine::build_compression_request_content(messages, summary_instruction.as_deref());
-    eprintln!(
+    ::log::info!(
         "[compress] auto llm start session={session_id} provider={provider_id} input_tokens={estimated} output_limit={output_limit}"
     );
     let purpose =
@@ -93,18 +97,18 @@ pub async fn try_auto_compress(
             )
             .await
             .unwrap_or_else(|err| {
-                eprintln!("[compress] save session failed: {err}");
+                ::log::warn!("[compress] save session failed: {err}");
                 token_estimate::estimate_tokens(messages) as u32
             });
             send_compression_done(on_event);
-            eprintln!(
+            ::log::info!(
                 "[compress] auto llm done session={session_id} context_tokens={current_tokens}"
             );
             Some(current_tokens)
         }
         Err(e) => {
             if !cancel.is_cancelled() {
-                eprintln!("[compress] Échec compression LLM : {e}");
+                ::log::warn!("[compress] Échec compression LLM : {e}");
             }
             send_compressing_done(on_event);
             None

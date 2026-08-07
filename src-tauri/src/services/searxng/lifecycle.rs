@@ -37,7 +37,7 @@ pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
 pub fn prepare_on_startup(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         if let Err(e) = ensure_running(&app).await {
-            eprintln!("[searxng] warmup failed: {}", safe_log_error(&e));
+            ::log::warn!("[searxng] warmup failed: {}", safe_log_error(&e));
         }
     });
 }
@@ -81,7 +81,7 @@ async fn ensure_running(app: &tauri::AppHandle) -> Result<String, String> {
         .await?;
         return Err(e);
     }
-    eprintln!("[searxng] sidecar démarré pid={pid} port={port}");
+    ::log::info!("[searxng] sidecar démarré pid={pid} port={port}");
     clear_start_failure();
     *guard = Some(SearxngHandle { child, port });
     Ok(url)
@@ -97,7 +97,7 @@ pub async fn stop(sidecar: &SearxngSidecar) {
         })
         .await
         {
-            eprintln!("[searxng] {}", safe_log_error(&error));
+            ::log::warn!("[searxng] {}", safe_log_error(&error));
         }
     }
 }

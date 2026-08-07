@@ -139,7 +139,12 @@ export function AgentImportWizard({
                 {t("onboarding.common.back")}
               </button>
             )}
-            <button type="button" className="btn btn-sm btn-primary" onClick={onContinue}>
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              onClick={onContinue}
+              data-e2e="agent-import-continue"
+            >
               {t("onboarding.common.continue")}
             </button>
           </div>

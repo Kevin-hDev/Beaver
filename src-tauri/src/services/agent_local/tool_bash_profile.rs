@@ -158,7 +158,7 @@ async fn capture_process(
 }
 
 fn log_unavailable(reason: &str) {
-    eprintln!("[shell-profile] snapshot unavailable: {reason}");
+    ::log::warn!("[shell-profile] snapshot unavailable: {reason}");
 }
 
 fn snapshot_script(shell: &str, marker: &str) -> Option<String> {

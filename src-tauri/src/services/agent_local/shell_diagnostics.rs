@@ -38,13 +38,13 @@ pub fn record_xcrun_failure() {
 pub fn clear_xcrun_failure() {
     let path = log_path(XCRUN_FAILURE_FILE);
     if path.is_file() && std::fs::remove_file(path).is_err() {
-        eprintln!("[shell] diagnostic cleanup unavailable");
+        ::log::warn!("[shell] diagnostic cleanup unavailable");
     }
 }
 
 fn record(file: &str, status: Status) {
     if write_at(&log_path(file), status).is_err() {
-        eprintln!("[shell] persistent diagnostic unavailable");
+        ::log::warn!("[shell] persistent diagnostic unavailable");
     }
 }
 

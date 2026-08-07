@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use crate::services::agent_local::types_ollama::ChatMessage;
 use super::chat_prompt_sections::{response_language_instruction, skills_listing_section};
 use super::system_prompt_types::{PromptSource, SystemPromptView};

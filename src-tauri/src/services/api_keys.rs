@@ -10,6 +10,7 @@ include!("api_keys_state.rs");
 include!("api_keys_registry.rs");
 include!("api_keys_transactions.rs");
 
+#[cfg(not(feature = "e2e"))]
 fn migrate_raw_prefix(
     master_key: &Zeroizing<Vec<u8>>,
     map: &mut HashMap<String, String>,
@@ -29,13 +30,14 @@ fn migrate_raw_prefix(
         }
     }
     vault::write_vault(master_key, map)?;
-    eprintln!(
+    ::log::warn!(
         "[vault] migrated {} raw keys to namespaced prefix",
         to_migrate.len()
     );
     Ok(())
 }
 
+#[cfg(not(feature = "e2e"))]
 pub fn init() -> Result<(), String> {
     let master_key = vault::load_or_create_master_key()?;
     let mut raw_map = ZeroizingMap(vault::read_vault(&master_key)?);
@@ -49,7 +51,7 @@ pub fn init() -> Result<(), String> {
                     .entry(id.clone())
                     .or_insert_with(|| key.to_string());
             }
-            eprintln!("[vault] migrated {} keys from keychain", legacy.len());
+            ::log::info!("[vault] migrated {} keys from keychain", legacy.len());
         }
         vault::write_vault(&master_key, &raw_map.0)?;
         crate::services::private_store::atomic_write(&marker, b"ok")?;
@@ -66,6 +68,32 @@ pub fn init() -> Result<(), String> {
         .map_err(|_| "coffre indisponible".to_string())?;
     *state = Some(VaultState { master_key, keys });
     Ok(())
+}
+
+#[cfg(feature = "e2e")]
+fn ephemeral_vault_state() -> VaultState {
+    use rand::RngCore;
+
+    let mut master_key = vec![0_u8; 32];
+    rand::rngs::OsRng.fill_bytes(&mut master_key);
+    VaultState {
+        master_key: Zeroizing::new(master_key),
+        keys: HashMap::new(),
+    }
+}
+
+pub fn init_for_runtime() -> Result<(), String> {
+    #[cfg(not(feature = "e2e"))]
+    return init();
+
+    #[cfg(feature = "e2e")]
+    {
+        let mut state = STATE
+            .lock()
+            .map_err(|_| "coffre indisponible".to_string())?;
+        *state = Some(ephemeral_vault_state());
+        Ok(())
+    }
 }
 
 pub fn get_key(provider_id: &str) -> Result<Zeroizing<String>, String> {
@@ -115,3 +143,7 @@ mod mcp_tests;
 #[cfg(test)]
 #[path = "api_keys_transaction_tests.rs"]
 mod transaction_tests;
+
+#[cfg(all(test, feature = "e2e"))]
+#[path = "api_keys_e2e_tests.rs"]
+mod e2e_tests;

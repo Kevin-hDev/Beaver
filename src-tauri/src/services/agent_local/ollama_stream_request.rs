@@ -75,7 +75,7 @@ async fn handle_http_failure(
 
     if let Some(retry_req) = build_retry_request(request, &body) {
         let feature = feature_name(request, &retry_req);
-        eprintln!("[ollama-stream] modèle sans {feature}, retry");
+        ::log::warn!("[ollama-stream] modèle sans {feature}, retry");
         maybe_send_retry_indicator(on_event, emit_retry_indicator, REASON_FEATURE_DROPPED, 1, 1);
         if feature == "images" {
             let _ = on_event.send(StreamEvent::Notice {
@@ -90,7 +90,7 @@ async fn handle_http_failure(
 
     if is_tool_parse_crash(&body) && counts.parser_retries < MAX_PARSER_RETRIES {
         let attempt = counts.parser_retries + 1;
-        eprintln!("[ollama-stream] crash parser tool-call (#{attempt}), retry");
+        ::log::warn!("[ollama-stream] crash parser tool-call (#{attempt}), retry");
         maybe_send_retry_indicator(
             on_event,
             emit_retry_indicator,
@@ -109,7 +109,7 @@ async fn handle_http_failure(
 
     if should_retry_server_status(status) && counts.server_retries < MAX_SERVER_RETRIES {
         let attempt = counts.server_retries + 1;
-        eprintln!("[ollama-stream] HTTP {status}, retry serveur #{attempt}");
+        ::log::warn!("[ollama-stream] HTTP {status}, retry serveur #{attempt}");
         maybe_send_retry_indicator(
             on_event,
             emit_retry_indicator,
@@ -127,7 +127,7 @@ async fn handle_http_failure(
         });
     }
 
-    eprintln!("[ollama-stream] HTTP {status}: {body}");
+    ::log::warn!("[ollama-stream] HTTP {status}: {body}");
     let msg = "ollama_server_error".to_string();
     let _ = on_event.send(StreamEvent::Error {
         message: msg.clone(),

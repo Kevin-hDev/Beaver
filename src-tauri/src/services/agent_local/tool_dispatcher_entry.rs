@@ -145,7 +145,7 @@ pub async fn dispatch_with_progress(
     let before = super::tool_file_changes::direct_snapshot(tool_name, &args, working_dir);
     let mut result = if dynamic_tool {
         if crate::services::extensions::record_tool_invocation(tool_name).is_err() {
-            eprintln!("[extensions] usage counter unavailable");
+            ::log::warn!("[extensions] usage counter unavailable");
         }
         crate::services::extensions::dispatch_tool(tool_name, &args, working_dir)
             .await

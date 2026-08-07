@@ -27,20 +27,20 @@ pub fn kill_orphan_sidecar() {
     let Some(pid) = read_saved_pid() else { return };
     clear_pid_file();
     if !is_forecast_process(pid) {
-        eprintln!("[forecast] pid={pid} n'est plus le sidecar, ignoré");
+        ::log::warn!("[forecast] pid={pid} n'est plus le sidecar, ignoré");
         return;
     }
     if !is_forecast_process(pid) {
-        eprintln!("[forecast] pid={pid} changé entre check et kill, abandon");
+        ::log::warn!("[forecast] pid={pid} changé entre check et kill, abandon");
         return;
     }
-    eprintln!("[forecast] orphelin détecté pid={pid}, kill");
+    ::log::info!("[forecast] orphelin détecté pid={pid}, kill");
     process_tree::kill(pid, process_tree::ProcessKind::Forecast);
 }
 
 pub fn kill_child_process(mut child: Child) {
     let pid = child.id();
-    eprintln!("[forecast] kill sidecar pid={pid}");
+    ::log::info!("[forecast] kill sidecar pid={pid}");
     process_tree::terminate(&mut child, process_tree::ProcessKind::Forecast);
 }
 

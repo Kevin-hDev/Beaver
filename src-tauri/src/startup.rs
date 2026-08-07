@@ -1,6 +1,15 @@
 #[cfg(target_os = "macos")]
 use super::services::browser::BrowserLibraryGuard;
 
+const VAULT_INIT_FAILED_EVENT: &str = "vault-init-failed";
+
+pub(crate) fn emit_vault_init_failed<Emit, Error>(emit: Emit)
+where
+    Emit: FnOnce(&'static str, ()) -> Result<(), Error>,
+{
+    let _ = emit(VAULT_INIT_FAILED_EVENT, ());
+}
+
 pub fn prepare_browser_native_application() -> bool {
     super::services::browser::prepare_native_application()
 }

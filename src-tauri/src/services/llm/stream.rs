@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::stream_consume::consume_stream;
 use super::stream_http::{RequestConfig, RequestError};
 use crate::services::agent_local::stream_events::AgentEventEmitter;

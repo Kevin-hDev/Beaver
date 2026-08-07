@@ -2,13 +2,12 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Instant;
 
-use std::process::Stdio;
 use std::sync::Arc;
-use tokio::io::{AsyncReadExt, BufReader};
-use tokio::process::{Child, ChildStdin, ChildStdout, Command};
+use tokio::io::BufReader;
+use tokio::process::{Child, ChildStdin, ChildStdout};
 use zeroize::Zeroizing;
 
-use super::{process_env, stdio_cmd};
+use super::stdio_cmd;
 
 const MAX_PROCESSES: usize = 8;
 const TTL_SECS: u64 = 600;
@@ -53,49 +52,37 @@ pub fn spawn(
     let program_path = which::which(&parsed.program)
         .map_err(|_| "runtime requis non trouvé dans le PATH".to_string())?;
 
-    let safe_env = process_env::safe_env()?;
-    let mut command = Command::new(&program_path);
-    command
-        .args(&parsed.args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env_clear();
-    for (key, value) in safe_env {
-        command.env(key, value);
+    let (child, handle) =
+        super::process_spawn::spawn_program(&program_path, &parsed.args, env_tokens)?;
+    register_process(connector_id, child, handle)
+}
+
+#[cfg(test)]
+pub fn spawn_test_fixture(connector_id: &str) -> Result<ProcessHandle, String> {
+    if connector_id != "__beaver_mcp_fixture" {
+        return Err("connecteur de test non autorisé".to_string());
     }
-    for (key, value) in env_tokens {
-        command.env(key, value.as_str());
+    let fixture_root =
+        dunce::canonicalize(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("test-fixtures"))
+            .map_err(|_| "fixture MCP indisponible".to_string())?;
+    let fixture = dunce::canonicalize(fixture_root.join("mcp-echo-server.mjs"))
+        .map_err(|_| "fixture MCP indisponible".to_string())?;
+    if !fixture.starts_with(&fixture_root)
+        || fixture.file_name().and_then(std::ffi::OsStr::to_str) != Some("mcp-echo-server.mjs")
+    {
+        return Err("fixture MCP invalide".to_string());
     }
-    crate::services::process_tree::configure_tokio(&mut command);
+    let program = which::which("node").map_err(|_| "runtime de test indisponible".to_string())?;
+    let args = vec![fixture.to_string_lossy().into_owned()];
+    let (child, handle) = super::process_spawn::spawn_program(&program, &args, &[])?;
+    register_process(connector_id, child, handle)
+}
 
-    let mut child = command
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|_| "impossible de démarrer le connecteur MCP".to_string())?;
-
-    let stdin = child.stdin.take().ok_or("stdin indisponible")?;
-    let stdout = child.stdout.take().ok_or("stdout indisponible")?;
-
-    if let Some(stderr) = child.stderr.take() {
-        tokio::spawn(async move {
-            let mut reader = stderr;
-            let mut buffer = [0_u8; 4096];
-            loop {
-                match reader.read(&mut buffer).await {
-                    Ok(0) | Err(_) => break,
-                    _ => {}
-                }
-            }
-        });
-    }
-
-    let handle = ProcessHandle {
-        stdin: Arc::new(tokio::sync::Mutex::new(stdin)),
-        reader: Arc::new(tokio::sync::Mutex::new(BufReader::new(stdout))),
-        request_lock: Arc::new(tokio::sync::Mutex::new(())),
-    };
-
+fn register_process(
+    connector_id: &str,
+    child: Child,
+    handle: ProcessHandle,
+) -> Result<ProcessHandle, String> {
     let evicted = {
         let mut pool = POOL.lock().map_err(|_| "erreur interne")?;
         let evicted = evict_expired_inner(&mut pool);

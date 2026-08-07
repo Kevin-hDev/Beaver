@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 //! Logique de retry pour les appels LLM API.
 //!
 //! Gère les erreurs transitoires (429, 503, timeout) avec back-off progressif.

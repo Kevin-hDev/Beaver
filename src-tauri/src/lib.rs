@@ -1,7 +1,3 @@
-// La base de code contient légitimement des fonctions à many paramètres
-// (commandes Tauri, exécuteurs d'outils avec contexte riche). Les refactorer
-// en structs serait risqué et hors-sujet. On désactive le lint globalement.
-#![allow(clippy::too_many_arguments)]
 #![cfg_attr(all(test, windows), windows_subsystem = "windows")]
 // Plusieurs modules de tests compagnons portent le même nom que leur module
 // parent (convention *_tests.rs). C'est intentionnel et documenté.
@@ -53,7 +49,8 @@ static STREAM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::Atom
 
 pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>) {
     std::hint::black_box(tauri::utils::platform::bundle_type());
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
+        .plugin(services::app_log::plugin())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -64,7 +61,12 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
                 let _ = w.unminimize();
                 let _ = w.set_focus();
             }
-        }))
+        }));
+    #[cfg(feature = "e2e")]
+    let builder = builder.plugin(tauri_plugin_wdio::init());
+    #[cfg(feature = "e2e")]
+    let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    let app = builder
         .manage(OllamaClient::new())
         .manage(app_exit::AppExitCoordinator::default())
         .manage(ActiveStreams(Default::default()))
@@ -93,59 +95,64 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
             services::agent_local::subagent_spawn_channel::init();
             storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
             if services::agent_local::directory_access::initialize_policy().is_err() {
-                eprintln!("[directory-access] policy unavailable");
+                ::log::error!("[directory-access] policy unavailable");
             }
             tauri::async_runtime::spawn(async {
                 if services::forecast::notes_cleanup::recover_pending_deletions()
                     .await
                     .is_err()
                 {
-                    eprintln!("[forecast] récupération des notes différée");
+                    ::log::warn!("[forecast] récupération des notes différée");
                 }
             });
             if services::security_cleanup::run().is_err() {
-                eprintln!("[security cleanup] cleanup failed");
+                ::log::warn!("[security cleanup] cleanup failed");
             }
             // Cleanup des sous-agents orphelins (crash précédent) : non bloquant.
             tauri::async_runtime::spawn(async move {
                 services::agent_local::subagent_startup_cleanup::cleanup_orphans(startup_cutoff)
                     .await;
             });
-            let _ = dotenvy::dotenv();
-            if let Err(e) = services::api_keys::init() {
-                eprintln!("[vault] init failed: {}", e);
+            services::e2e_profile::load_dotenv(|| {
+                let _ = dotenvy::dotenv();
+            });
+            if services::api_keys::init_for_runtime().is_err() {
+                ::log::error!("[vault] init failed");
                 let handle = app.handle().clone();
-                let msg = e.to_string();
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    let _ = handle.emit("vault-init-failed", msg);
+                    startup::emit_vault_init_failed(|event, payload| handle.emit(event, payload));
                 });
             }
-            services::extensions::initialize_on_startup(app.handle());
-            services::searxng::prepare_on_startup(app.handle().clone());
-            if ollama_lifecycle::ollama_binary_path().is_ok() {
-                let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    match tokio::task::spawn_blocking(move || {
-                        ollama_lifecycle::start_sidecar(&handle)
-                    })
-                    .await
-                    {
-                        Ok(Err(e)) => eprintln!("[ollama] sidecar start failed: {}", e),
-                        Err(e) => eprintln!("[ollama] sidecar task failed: {}", e),
-                        _ => {}
-                    }
-                });
-            }
+            services::e2e_profile::run_host_mutation(|| {
+                services::extensions::initialize_on_startup(app.handle());
+                services::searxng::prepare_on_startup(app.handle().clone());
+                if ollama_lifecycle::ollama_binary_path().is_ok() {
+                    let handle = app.handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        match tokio::task::spawn_blocking(move || {
+                            ollama_lifecycle::start_sidecar(&handle)
+                        })
+                        .await
+                        {
+                            Ok(Err(e)) => ::log::warn!("[ollama] sidecar start failed: {}", e),
+                            Err(e) => ::log::warn!("[ollama] sidecar task failed: {}", e),
+                            _ => {}
+                        }
+                    });
+                }
+            });
 
             let config = services::config::read_config().unwrap_or_default();
             services::mascot::initialize(app.handle(), config.mascot.clone());
             services::mascot::start_activity_cleanup(app.handle().clone());
 
-            services::autostart_migration::synchronize_at_startup(
-                app.handle(),
-                config.advanced.autostart,
-            );
+            services::e2e_profile::run_host_mutation(|| {
+                services::autostart_migration::synchronize_at_startup(
+                    app.handle(),
+                    config.advanced.autostart,
+                );
+            });
 
             // Start hidden applies only to launches initiated by the autostart entry.
             if app_events::should_start_hidden(&config) {
@@ -181,8 +188,10 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
             services::file_watcher::start(app.handle());
             let scheduler = Scheduler::spawn(app.handle().clone());
             app.manage(scheduler);
-            ollama_polling::start(app.handle().clone());
-            tauri::async_runtime::spawn(services::llm::litellm_catalog::init());
+            services::e2e_profile::run_host_mutation(|| {
+                ollama_polling::start(app.handle().clone());
+                tauri::async_runtime::spawn(services::llm::litellm_catalog::init());
+            });
             services::update_health::acknowledge_from_args(std::env::args_os())
                 .map_err(std::io::Error::other)?;
             Ok(())

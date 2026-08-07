@@ -1,3 +1,4 @@
+#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
 use crate::commands::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::stream_events::{self, AgentEventEmitter};

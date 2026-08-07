@@ -1,47 +1,66 @@
 use super::ForecastCapabilities;
 
+const BASE_CAPABILITIES: ForecastCapabilities = ForecastCapabilities {
+    past_covariates: false,
+    future_covariates: false,
+    multi_series: false,
+    multivariate: false,
+    probabilistic: false,
+    backtesting_ready: false,
+    anomalies_ready: false,
+    fine_tuning_ready: false,
+};
+
 pub const fn chronos_bolt_caps() -> ForecastCapabilities {
-    caps(false, false, false, false, true, true, false, false)
+    ForecastCapabilities {
+        probabilistic: true,
+        backtesting_ready: true,
+        ..BASE_CAPABILITIES
+    }
 }
 
 pub const fn chronos_2_caps() -> ForecastCapabilities {
-    caps(true, true, true, false, true, true, false, false)
+    ForecastCapabilities {
+        past_covariates: true,
+        future_covariates: true,
+        multi_series: true,
+        probabilistic: true,
+        backtesting_ready: true,
+        ..BASE_CAPABILITIES
+    }
 }
 
 pub const fn timesfm_caps() -> ForecastCapabilities {
-    caps(true, true, true, false, true, true, false, false)
+    chronos_2_caps()
 }
 
 pub const fn multiseries_prob_caps() -> ForecastCapabilities {
-    caps(false, false, true, false, true, true, false, false)
+    ForecastCapabilities {
+        multi_series: true,
+        probabilistic: true,
+        backtesting_ready: true,
+        ..BASE_CAPABILITIES
+    }
 }
 
 pub const fn toto_caps() -> ForecastCapabilities {
-    caps(false, false, true, true, true, true, false, false)
+    ForecastCapabilities {
+        multi_series: true,
+        multivariate: true,
+        probabilistic: true,
+        backtesting_ready: true,
+        ..BASE_CAPABILITIES
+    }
 }
 
 pub const fn timegpt_caps(multivariate: bool) -> ForecastCapabilities {
-    caps(true, true, true, multivariate, true, true, false, false)
-}
-
-const fn caps(
-    past_covariates: bool,
-    future_covariates: bool,
-    multi_series: bool,
-    multivariate: bool,
-    probabilistic: bool,
-    backtesting_ready: bool,
-    anomalies_ready: bool,
-    fine_tuning_ready: bool,
-) -> ForecastCapabilities {
     ForecastCapabilities {
-        past_covariates,
-        future_covariates,
-        multi_series,
+        past_covariates: true,
+        future_covariates: true,
+        multi_series: true,
         multivariate,
-        probabilistic,
-        backtesting_ready,
-        anomalies_ready,
-        fine_tuning_ready,
+        probabilistic: true,
+        backtesting_ready: true,
+        ..BASE_CAPABILITIES
     }
 }

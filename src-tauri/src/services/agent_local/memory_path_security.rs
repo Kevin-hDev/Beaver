@@ -6,7 +6,7 @@ pub async fn ensure_scope_dir(scope: &MemoryScope) -> Result<(), String> {
     crate::services::private_store::ensure_private_dir_async(scope.topics_dir())
         .await
         .map_err(|error| {
-            eprintln!("[memory] scope create: {error}");
+            ::log::warn!("[memory] scope create: {error}");
             "Mémoire indisponible.".to_string()
         })?;
     canonical_scope_root(scope)?;

@@ -41,7 +41,7 @@ fn cleanup(path: &std::path::Path) {
 #[test]
 fn write_rejects_path_outside_allowed_zones() {
     if config_is_permissive() {
-        eprintln!("[skip] config allowed_paths contient '/' — test négatif sans objet");
+        ::log::warn!("[skip] config allowed_paths contient '/' — test négatif sans objet");
         return;
     }
     let Some(target) = file_in_home(".cl-go-deny-write-test") else {
@@ -58,7 +58,7 @@ fn write_rejects_path_outside_allowed_zones() {
 #[test]
 fn write_rejects_system_directory() {
     if config_is_permissive() {
-        eprintln!("[skip] config permissive — test négatif sans objet");
+        ::log::warn!("[skip] config permissive — test négatif sans objet");
         return;
     }
     // /usr/local : hors data_dir et temp_dir sur la plupart des OS.
@@ -73,7 +73,7 @@ fn write_rejects_system_directory() {
 #[test]
 fn write_rejects_dotdot_escape() {
     if config_is_permissive() {
-        eprintln!("[skip] config permissive — test négatif sans objet");
+        ::log::warn!("[skip] config permissive — test négatif sans objet");
         return;
     }
     let tmp = std::env::temp_dir();
@@ -92,7 +92,7 @@ fn write_rejects_dotdot_escape() {
 #[test]
 fn read_rejects_outside_working_dir_and_roots() {
     if config_is_permissive() {
-        eprintln!("[skip] config permissive — test négatif sans objet");
+        ::log::warn!("[skip] config permissive — test négatif sans objet");
         return;
     }
     let Some(target) = file_in_home(".cl-go-deny-read-test") else {

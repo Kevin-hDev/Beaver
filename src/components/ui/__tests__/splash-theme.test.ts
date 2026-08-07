@@ -42,8 +42,12 @@ function splashRule(theme: ResolvedTheme): string {
   const selector = theme === "light" || theme === "dark"
     ? `[data-theme="${theme}"] #splash`
     : `[data-palette="${theme}"] #splash`;
-  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const rule = indexHtml.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`))?.[1];
+  const selectorStart = indexHtml.indexOf(selector);
+  const bodyStart = indexHtml.indexOf("{", selectorStart);
+  const bodyEnd = indexHtml.indexOf("}", bodyStart);
+  const rule = selectorStart >= 0 && bodyStart >= 0 && bodyEnd > bodyStart
+    ? indexHtml.slice(bodyStart + 1, bodyEnd)
+    : undefined;
 
   expect(rule).toBeDefined();
   return rule!;

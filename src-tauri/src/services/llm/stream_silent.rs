@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::stream_http::{
     post_chat_request_measured, post_chat_request_with_timeout_measured, RequestConfig,
 };

@@ -47,7 +47,12 @@ export function OnboardingPreferences({
         </div>
       </div>
 
-      <button type="button" className="btn btn-sm btn-primary" onClick={onNext}>
+      <button
+        type="button"
+        className="btn btn-sm btn-primary"
+        onClick={onNext}
+        data-e2e="preferences-continue"
+      >
         {t("onboarding.common.continue")}
         <CaretRight size="var(--icon-sm)" weight="bold" />
       </button>

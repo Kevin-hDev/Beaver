@@ -100,7 +100,7 @@ export function OnboardingScreen({
     <div className={`ob-shell ${IS_MAC ? "os-mac" : "os-other"}`}>
       <div className="ob-track" style={{ transform: `translateX(-${step * 100}%)` }}>
         {slides.map((slide) => (
-          <section className="ob-slide" key={slide.id}>
+          <section className="ob-slide" key={slide.id} data-e2e-step={slide.id}>
             {slide.content}
           </section>
         ))}

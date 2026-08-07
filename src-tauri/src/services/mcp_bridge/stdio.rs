@@ -18,6 +18,8 @@ pub struct StdioTransport {
     pub install_command: String,
     pub env_key_names: Vec<String>,
     pub transient_env: Option<Vec<(String, Zeroizing<String>)>>,
+    #[cfg(test)]
+    pub(super) test_fixture: bool,
 }
 
 impl StdioTransport {
@@ -30,6 +32,13 @@ impl StdioTransport {
 
         process_manager::shutdown_one(&self.connector_id);
         let env_tokens = self.resolve_env_tokens();
+        #[cfg(test)]
+        let handle = if self.test_fixture {
+            process_manager::spawn_test_fixture(&self.connector_id)?
+        } else {
+            process_manager::spawn(&self.connector_id, &self.install_command, &env_tokens)?
+        };
+        #[cfg(not(test))]
         let handle =
             process_manager::spawn(&self.connector_id, &self.install_command, &env_tokens)?;
         tokio::time::sleep(Duration::from_millis(WARMUP_MS)).await;

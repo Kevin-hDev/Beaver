@@ -28,14 +28,14 @@ pub async fn cleanup_orphans(startup_cutoff: DateTime<Utc>) {
     let cleaned = match cleanup_orphans_in_dir(&sessions_dir, startup_cutoff, true).await {
         Ok(count) => count,
         Err(_) => {
-            eprintln!("[startup-cleanup] cleanup sessions impossible");
+            ::log::warn!("[startup-cleanup] cleanup sessions impossible");
             return;
         }
     };
 
     let pruned = prune_project_worktrees().await;
 
-    eprintln!(
+    ::log::info!(
         "[startup-cleanup] {cleaned} sous-agent(s) orphelin(s) nettoyé(s), {pruned} projet(s) pruné(s)"
     );
 }
@@ -55,14 +55,14 @@ pub(crate) async fn cleanup_orphans_in_dir(
         let mut session = match read_session_from_dir(sessions_dir, &meta.id).await {
             Ok(session) => session,
             Err(_) => {
-                eprintln!("[startup-cleanup] lecture session impossible");
+                ::log::warn!("[startup-cleanup] lecture session impossible");
                 continue;
             }
         };
         session.subagent_status = Some(subagent_status::INTERRUPTED.to_string());
 
         if write_session_to_dir(sessions_dir, &session).await.is_err() {
-            eprintln!("[startup-cleanup] mise à jour de session impossible");
+            ::log::warn!("[startup-cleanup] mise à jour de session impossible");
             continue;
         }
         cleaned += 1;
@@ -72,7 +72,7 @@ pub(crate) async fn cleanup_orphans_in_dir(
                 .await
                 .is_err()
         {
-            eprintln!("[startup-cleanup] récupération worktree impossible");
+            ::log::warn!("[startup-cleanup] récupération worktree impossible");
         }
     }
 
@@ -148,15 +148,15 @@ async fn prune_one_project(path: &std::path::Path) -> bool {
     match tokio::time::timeout(Duration::from_secs(PRUNE_TIMEOUT_SECS), fut).await {
         Ok(Ok(output)) if output.status.success() => true,
         Ok(Ok(_)) => {
-            eprintln!("[startup-cleanup] git worktree prune échoué");
+            ::log::warn!("[startup-cleanup] git worktree prune échoué");
             false
         }
         Ok(Err(_)) => {
-            eprintln!("[startup-cleanup] git worktree prune indisponible");
+            ::log::warn!("[startup-cleanup] git worktree prune indisponible");
             false
         }
         Err(_) => {
-            eprintln!("[startup-cleanup] git worktree prune timeout");
+            ::log::warn!("[startup-cleanup] git worktree prune timeout");
             false
         }
     }

@@ -1,3 +1,4 @@
+use crate::models::provider_contract::{ProviderCatalogEntry, ProviderCategory};
 use crate::services::forecast::{
     catalog, model_config, model_listing, model_manager, selection_policy, sidecar, validation,
 };
@@ -65,10 +66,19 @@ pub async fn uninstall_forecast_model(app: AppHandle, name: String) -> Result<()
 }
 
 #[tauri::command]
-pub fn list_forecast_providers_catalog() -> Vec<Value> {
+pub fn list_forecast_providers_catalog() -> Vec<ProviderCatalogEntry> {
     catalog::FORECAST_PROVIDERS
         .iter()
-        .map(|p| serde_json::to_value(p).unwrap_or_default())
+        .map(|provider| {
+            ProviderCatalogEntry::new(
+                provider.id,
+                provider.display_name,
+                ProviderCategory::Forecast,
+                provider.signup_url,
+                Some(provider.base_url),
+                None,
+            )
+        })
         .collect()
 }
 

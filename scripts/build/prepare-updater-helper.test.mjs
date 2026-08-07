@@ -5,6 +5,7 @@ import {
   mkdtemp,
   mkdir,
   readFile,
+  realpath,
   rm,
   symlink,
   truncate,
@@ -23,7 +24,7 @@ import {
 const GENERIC_ERROR = /Updater helper preparation failed/u;
 
 async function withTemporaryDirectory(run) {
-  const directory = await mkdtemp(join(tmpdir(), "beaver-updater-helper-"));
+  const directory = await mkdtemp(join(await realpath(tmpdir()), "beaver-updater-helper-"));
   try {
     await run(directory);
   } finally {

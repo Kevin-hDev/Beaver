@@ -14,7 +14,7 @@ const expectedDependencies = {
   fflate: "0.8.3",
   fontkit: "2.0.4",
   jiti: "2.7.0",
-  "pdfjs-dist": "6.1.200",
+  "pdfjs-dist": "6.2.108",
   pptxgenjs: "4.0.1",
 };
 

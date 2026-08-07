@@ -142,7 +142,7 @@ pub async fn cleanup_owned(
     .await
     .is_err()
     {
-        eprintln!("[subagent] cleanup worktree");
+        ::log::warn!("[subagent] cleanup worktree");
         return;
     }
     if clear_current {

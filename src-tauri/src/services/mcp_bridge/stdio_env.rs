@@ -10,6 +10,8 @@ impl StdioTransport {
             install_command,
             env_key_names,
             transient_env: None,
+            #[cfg(test)]
+            test_fixture: false,
         }
     }
 
@@ -24,6 +26,19 @@ impl StdioTransport {
             install_command,
             env_key_names,
             transient_env: Some(transient_env),
+            #[cfg(test)]
+            test_fixture: false,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_test_fixture() -> Self {
+        Self {
+            connector_id: "__beaver_mcp_fixture".to_string(),
+            install_command: String::new(),
+            env_key_names: Vec::new(),
+            transient_env: None,
+            test_fixture: true,
         }
     }
 

@@ -21,7 +21,7 @@ pub async fn delete_analysis(analysis_id: &str) -> Result<(), String> {
     }
     if let Some(path) = staged {
         if tokio::fs::remove_dir_all(path).await.is_err() {
-            eprintln!("[forecast] nettoyage différé des notes");
+            ::log::warn!("[forecast] nettoyage différé des notes");
         }
     }
     Ok(())

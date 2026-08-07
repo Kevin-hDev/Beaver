@@ -87,11 +87,11 @@ async fn resolve_install_version() -> String {
     match super::ollama_version::fetch_latest_github_version().await {
         Ok((version, _)) if is_valid_semver(&version) => version,
         Ok((version, _)) => {
-            eprintln!("[ollama-setup] latest version invalid: {version}");
+            ::log::warn!("[ollama-setup] latest version invalid: {version}");
             fallback_ollama_version().to_string()
         }
         Err(e) => {
-            eprintln!("[ollama-setup] latest version unavailable: {e}");
+            ::log::warn!("[ollama-setup] latest version unavailable: {e}");
             fallback_ollama_version().to_string()
         }
     }

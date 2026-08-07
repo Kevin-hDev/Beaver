@@ -31,6 +31,6 @@ fn configured_from_state() -> Vec<String> {
 fn sync_registry_cache() {
     let ids = configured_from_state();
     if write_registry(&ids).is_err() {
-        eprintln!("[vault] provider registry synchronization failed");
+        ::log::warn!("[vault] provider registry synchronization failed");
     }
 }

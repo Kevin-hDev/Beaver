@@ -106,6 +106,7 @@ export function AppLayout({
       <div
         className={`app-root ${IS_MAC ? "os-mac" : "os-other"} ${agentSidebar.sidebarOpen ? "" : "sidebar-hidden"} ${compactAgentChat ? "agent-chat-compact" : ""} ${fullscreen ? "is-fullscreen" : ""}`}
         style={layoutStyle}
+        data-e2e="app-root"
       >
         <WindowControls />
         <WindowToolbar

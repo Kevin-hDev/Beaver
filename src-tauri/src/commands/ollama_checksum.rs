@@ -67,7 +67,7 @@ pub fn verify_file_sha256(
     cancel: &CancellationToken,
 ) -> Result<(), String> {
     let mut file = std::fs::File::open(path).map_err(|e| {
-        eprintln!("[ollama-checksum] open: {e}");
+        ::log::warn!("[ollama-checksum] open: {e}");
         "checksum-read-error".to_string()
     })?;
     let mut hasher = Sha256::new();
@@ -78,7 +78,7 @@ pub fn verify_file_sha256(
             return Err(super::ollama_setup_cancel::cancelled_error());
         }
         let read = file.read(&mut buffer).map_err(|e| {
-            eprintln!("[ollama-checksum] read: {e}");
+            ::log::warn!("[ollama-checksum] read: {e}");
             "checksum-read-error".to_string()
         })?;
         if read == 0 {
@@ -90,7 +90,7 @@ pub fn verify_file_sha256(
     let actual = format!("{:x}", hasher.finalize());
 
     if actual != expected {
-        eprintln!(
+        ::log::warn!(
             "[ollama-checksum] mismatch: expected={} actual={}",
             &expected[..12],
             &actual[..12]

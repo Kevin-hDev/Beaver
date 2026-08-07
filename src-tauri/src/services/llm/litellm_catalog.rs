@@ -49,7 +49,9 @@ pub(crate) fn parse_catalog(json: &str) -> HashMap<String, ModelEntry> {
     let mut result = HashMap::with_capacity(cap);
     for (key, val) in raw {
         if result.len() >= MAX_CATALOG_ENTRIES {
-            eprintln!("[litellm-catalog] borne atteinte ({MAX_CATALOG_ENTRIES}), entrées ignorées");
+            ::log::warn!(
+                "[litellm-catalog] borne atteinte ({MAX_CATALOG_ENTRIES}), entrées ignorées"
+            );
             break;
         }
         if let Ok(entry) = serde_json::from_value::<ModelEntry>(val) {

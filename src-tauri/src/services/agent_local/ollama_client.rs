@@ -14,20 +14,52 @@ const MAX_RUNTIME_RESPONSE_BYTES: usize = 2 * 1024 * 1024;
 
 pub struct OllamaClient {
     client: Client,
+    base_url: Option<String>,
 }
 
 impl OllamaClient {
     pub fn new() -> Self {
+        Self::build(None)
+    }
+
+    fn build(base_url: Option<String>) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
             .build()
             .expect("failed to build HTTP client");
-        Self { client }
+        Self { client, base_url }
+    }
+
+    fn base_url(&self) -> String {
+        self.base_url.clone().unwrap_or_else(ollama_base_url)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_base_url(base_url: &str) -> Result<Self, String> {
+        let parsed = url::Url::parse(base_url).map_err(|_| "invalid Ollama test URL")?;
+        let loopback = parsed.host_str().is_some_and(|host| {
+            host == "localhost"
+                || host
+                    .parse::<std::net::IpAddr>()
+                    .is_ok_and(|address| address.is_loopback())
+        });
+        if parsed.scheme() != "http"
+            || !loopback
+            || !parsed.username().is_empty()
+            || parsed.password().is_some()
+            || parsed.query().is_some()
+            || parsed.fragment().is_some()
+        {
+            return Err("invalid Ollama test URL".to_string());
+        }
+        Ok(Self::build(Some(
+            base_url.trim_end_matches('/').to_string(),
+        )))
     }
 
     pub async fn is_running(&self) -> bool {
         self.client
-            .get(format!("{}/api/tags", ollama_base_url()))
+            .get(format!("{}/api/tags", self.base_url()))
             .timeout(TIMEOUT)
             .send()
             .await
@@ -38,12 +70,12 @@ impl OllamaClient {
         model_customizations::validate_model_name(name)?;
         let resp = self
             .client
-            .get(format!("{}/api/ps", ollama_base_url()))
+            .get(format!("{}/api/ps", self.base_url()))
             .timeout(TIMEOUT)
             .send()
             .await
             .map_err(|error| {
-                eprintln!("[ollama] /api/ps: {error}");
+                ::log::warn!("[ollama] /api/ps: {error}");
                 "ollama-runtime-error".to_string()
             })?;
         if !resp.status().is_success() {
@@ -62,11 +94,11 @@ impl OllamaClient {
     pub async fn list_models(&self) -> Result<Vec<OllamaModel>, String> {
         let resp = self
             .client
-            .get(format!("{}/api/tags", ollama_base_url()))
+            .get(format!("{}/api/tags", self.base_url()))
             .send()
             .await
             .map_err(|e| {
-                eprintln!("[ollama] /api/tags: {e}");
+                ::log::warn!("[ollama] /api/tags: {e}");
                 "ollama-connection-error".to_string()
             })?;
         let body = resp.bytes().await.map_err(|e| e.to_string())?;
@@ -123,18 +155,18 @@ impl OllamaClient {
         let enriched = super::ollama_create_payload::non_streaming(payload)?;
         let resp = self
             .client
-            .post(format!("{}/api/create", ollama_base_url()))
+            .post(format!("{}/api/create", self.base_url()))
             .json(&enriched)
             .send()
             .await
             .map_err(|e| {
-                eprintln!("[ollama] /api/create send: {e}");
+                ::log::warn!("[ollama] /api/create send: {e}");
                 "ollama-create-error".to_string()
             })?;
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
-            eprintln!(
+            ::log::warn!(
                 "[ollama] /api/create failed ({status}): {}",
                 crate::services::llm::sanitize_log_body(&body)
             );
@@ -146,12 +178,12 @@ impl OllamaClient {
     pub async fn show_model(&self, name: &str) -> Result<ModelInfo, String> {
         let resp = self
             .client
-            .post(format!("{}/api/show", ollama_base_url()))
+            .post(format!("{}/api/show", self.base_url()))
             .json(&serde_json::json!({ "model": name }))
             .send()
             .await
             .map_err(|e| {
-                eprintln!("[ollama] /api/show: {e}");
+                ::log::warn!("[ollama] /api/show: {e}");
                 "ollama-show-error".to_string()
             })?;
         let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;

@@ -9,8 +9,7 @@ const IMPORT_TASK_TIMEOUT: Duration = Duration::from_secs(15);
 #[tauri::command]
 pub async fn scan_external_agent_sources() -> Result<Vec<AgentSourceSummary>, String> {
     let task = tokio::task::spawn_blocking(|| {
-        let home =
-            dirs::home_dir().ok_or_else(|| "Dossier utilisateur indisponible".to_string())?;
+        let home = crate::services::e2e_profile::external_home_dir()?;
         Ok(agent_import::public_sources(&home))
     });
     tokio::time::timeout(IMPORT_TASK_TIMEOUT, task)
@@ -26,8 +25,7 @@ pub async fn save_external_agent_source_selection(
     replace_documents: bool,
 ) -> Result<SaveSelectionResult, String> {
     let task = tokio::task::spawn_blocking(move || {
-        let home =
-            dirs::home_dir().ok_or_else(|| "Dossier utilisateur indisponible".to_string())?;
+        let home = crate::services::e2e_profile::external_home_dir()?;
         agent_import::save_source_selection(&home, selection, replace_documents)
     });
     let result = task

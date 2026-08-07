@@ -13,7 +13,7 @@ pub(super) fn run_if_requested() -> Option<i32> {
     Some(match run(arguments.collect()) {
         Ok(code) => code,
         Err(_) => {
-            eprintln!("Isolation du shell indisponible.");
+            ::log::warn!("Isolation du shell indisponible.");
             126
         }
     })

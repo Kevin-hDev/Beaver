@@ -175,7 +175,7 @@ pub fn cleanup_stale() {
         }
     }
     if entries.next().is_some() {
-        eprintln!("[shell-sandbox] stale cleanup incomplete");
+        ::log::warn!("[shell-sandbox] stale cleanup incomplete");
     }
 }
 

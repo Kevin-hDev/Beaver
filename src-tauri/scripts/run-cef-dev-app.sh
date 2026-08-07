@@ -15,7 +15,17 @@ if [[ -z "$BINARY_INPUT" || ${#BINARY_INPUT} -gt 4096 \
   exit 1
 fi
 
-DEBUG_ROOT="$(cd target/debug && pwd -P)"
+TARGET_ROOT="target"
+if [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
+  ALLOWED_E2E_ROOT="$(cd target/e2e && pwd -P)"
+  PROVIDED_ROOT="$(cd "$CARGO_TARGET_DIR" && pwd -P)"
+  if [[ "$PROVIDED_ROOT" != "$ALLOWED_E2E_ROOT" ]]; then
+    echo "CEF development launch failed" >&2
+    exit 1
+  fi
+  TARGET_ROOT="$PROVIDED_ROOT"
+fi
+DEBUG_ROOT="$(cd "$TARGET_ROOT/debug" && pwd -P)"
 BINARY="$(cd "$(dirname "$BINARY_INPUT")" && pwd -P)/$(basename "$BINARY_INPUT")"
 if [[ ! -f "$BINARY" || ! -x "$BINARY" || "$BINARY" != "$DEBUG_ROOT"/* ]]; then
   echo "CEF development launch failed" >&2
@@ -32,7 +42,7 @@ FRAMEWORK_SOURCE="$RUNTIME/Chromium Embedded Framework.framework"
 HELPERS_SOURCE="$RUNTIME/helpers"
 PLIST_SOURCE="resources/cef/macos/dev-app/Info.plist"
 DEFAULT_SKILLS_SOURCE="$DEBUG_ROOT/default-skills"
-APP_MACOS="target/cef-dev/Beaver Dev.app/Contents/MacOS"
+APP_MACOS="$TARGET_ROOT/cef-dev/Beaver Dev.app/Contents/MacOS"
 APP_ROOT="$(dirname "$(dirname "$APP_MACOS")")"
 APP_FRAMEWORKS="$APP_ROOT/Contents/Frameworks"
 APP_RESOURCES="$APP_ROOT/Contents/Resources"

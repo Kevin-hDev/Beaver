@@ -28,7 +28,7 @@ pub async fn predict(
 
     if !resp.status().is_success() {
         let status = resp.status();
-        eprintln!("[forecast] requête de prédiction refusée status={status}");
+        ::log::warn!("[forecast] requête de prédiction refusée status={status}");
         return Err(if status.is_client_error() {
             "prediction_rejected".to_string()
         } else {

@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
@@ -22,7 +26,10 @@ const WEBSOCKET_COOLDOWN_MS: u64 = 5 * 60 * 1_000;
 static PROCESS_START: LazyLock<Instant> = LazyLock::new(Instant::now);
 static DISABLED_UNTIL_MS: AtomicU64 = AtomicU64::new(0);
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "boundary parameters remain explicit and locally audited"
+)]
 pub(super) async fn stream_chat(
     on_event: &AgentEventEmitter,
     session_id: &str,

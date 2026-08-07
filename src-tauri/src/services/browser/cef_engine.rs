@@ -40,7 +40,7 @@ pub(super) fn initialize(
     .is_err()
     {
         let _ = runtime.mark_failed();
-        eprintln!("[browser] initialization failed");
+        ::log::warn!("[browser] initialization failed");
     }
 }
 

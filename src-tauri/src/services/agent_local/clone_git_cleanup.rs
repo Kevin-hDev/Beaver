@@ -36,7 +36,7 @@ pub async fn close_tab_with_branch_cleanup(
     })
     .await
     .map_err(|e| {
-        eprintln!("[clone-git] close cleanup join: {e}");
+        ::log::warn!("[clone-git] close cleanup join: {e}");
         GitActionError::InternalError
     })??;
 

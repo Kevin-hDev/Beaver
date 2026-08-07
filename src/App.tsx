@@ -54,13 +54,13 @@ function MainApp() {
     useTabHistory(DEFAULT_APP_NAV);
 
   const { choice, setTheme } = useTheme();
-  const [vaultError, setVaultError] = useState<string | null>(null);
+  const [vaultError, setVaultError] = useState(false);
   const { focusedPanel } = usePanelFocus();
   const startupGate = useStartupGate();
 
   useEffect(() => {
-    const unlisten = listen<string>("vault-init-failed", (e) => {
-      setVaultError(e.payload);
+    const unlisten = listen<void>("vault-init-failed", () => {
+      setVaultError(true);
     });
     return () => { cleanupTauriListener(unlisten); };
   }, []);
@@ -141,7 +141,7 @@ function MainApp() {
 
   return (
     <ExtensionsProvider>
-      {vaultError && <VaultErrorBanner onDismiss={() => setVaultError(null)} />}
+      {vaultError && <VaultErrorBanner onDismiss={() => setVaultError(false)} />}
       <AppNavigationActionsProvider openFileAccessSettings={openFileAccessSettings}>
         <AppLayout
           activeTab={activeTab}

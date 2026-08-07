@@ -44,7 +44,7 @@ pub(crate) fn archives_to_download() -> Vec<&'static str> {
 
     use crate::services::gpu_detect::{self, GpuVendor};
     let gpu = gpu_detect::detect();
-    eprintln!("[ollama] GPU détecté : {:?}", gpu);
+    ::log::info!("[ollama] GPU détecté : {:?}", gpu);
 
     match gpu {
         GpuVendor::Amd => vec![

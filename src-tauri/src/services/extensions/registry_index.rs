@@ -92,7 +92,7 @@ fn usage_scores_with(
     load: impl FnOnce() -> Result<BTreeMap<String, f64>, String>,
 ) -> BTreeMap<String, f64> {
     load().unwrap_or_else(|_| {
-        eprintln!("[extensions] usage scores unavailable");
+        ::log::warn!("[extensions] usage scores unavailable");
         BTreeMap::new()
     })
 }

@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 use std::path::Path;
@@ -47,7 +51,7 @@ pub(crate) async fn handle_compress_command(
             context,
             input_tokens,
         );
-    eprintln!(
+    ::log::info!(
         "[compress] manual start session={session_id} provider={provider} input_tokens={input_tokens} output_limit={output_limit}"
     );
 
@@ -67,7 +71,7 @@ pub(crate) async fn handle_compress_command(
     {
         Ok(summary) => summary,
         Err(err) => {
-            eprintln!("[compress] manual failed session={session_id}: {err}");
+            ::log::warn!("[compress] manual failed session={session_id}: {err}");
             send_compressing_done(on_event);
             return Err(err);
         }
@@ -85,7 +89,7 @@ pub(crate) async fn handle_compress_command(
     .await?;
 
     send_compression_done(on_event);
-    eprintln!("[compress] manual done session={session_id} context_tokens={current_tokens}");
+    ::log::info!("[compress] manual done session={session_id} context_tokens={current_tokens}");
     Ok(())
 }
 

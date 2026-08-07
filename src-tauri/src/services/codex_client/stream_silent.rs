@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamResult};
 use eventsource_stream::Eventsource;
 use futures_util::StreamExt;

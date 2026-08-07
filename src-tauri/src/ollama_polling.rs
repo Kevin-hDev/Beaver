@@ -53,7 +53,7 @@ pub fn start(handle: tauri::AppHandle) {
                     && restart_attempts < MAX_RESTART_ATTEMPTS
                 {
                     let delay = backoff_secs(restart_attempts);
-                    eprintln!(
+                    ::log::warn!(
                         "[ollama] {} échecs, tentative {} dans {delay}s",
                         consecutive_failures,
                         restart_attempts + 1
@@ -61,9 +61,9 @@ pub fn start(handle: tauri::AppHandle) {
                     tokio::time::sleep(Duration::from_secs(delay)).await;
 
                     match crate::services::ollama_lifecycle::start_sidecar(&handle) {
-                        Ok(true) => eprintln!("[ollama] sidecar redémarré"),
-                        Ok(false) => eprintln!("[ollama] daemon externe détecté"),
-                        Err(e) => eprintln!("[ollama] restart échoué : {e}"),
+                        Ok(true) => ::log::info!("[ollama] sidecar redémarré"),
+                        Ok(false) => ::log::info!("[ollama] daemon externe détecté"),
+                        Err(e) => ::log::warn!("[ollama] restart échoué : {e}"),
                     }
 
                     restart_attempts += 1;

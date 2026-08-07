@@ -1,13 +1,24 @@
+use crate::models::provider_contract::{ProviderCatalogEntry, ProviderCategory};
 use crate::services::llm::{
-    catalog::{ProviderSpec, LLM_PROVIDERS},
-    openai_compat::OpenAiCompatProvider,
-    provider_model_lookup, tool_capable,
-    types::ModelInfo,
+    catalog::LLM_PROVIDERS, openai_compat::OpenAiCompatProvider, provider_model_lookup,
+    tool_capable, types::ModelInfo,
 };
 
 #[tauri::command]
-pub fn list_llm_providers_catalog() -> Vec<ProviderSpec> {
-    LLM_PROVIDERS.to_vec()
+pub fn list_llm_providers_catalog() -> Vec<ProviderCatalogEntry> {
+    LLM_PROVIDERS
+        .iter()
+        .map(|provider| {
+            ProviderCatalogEntry::new(
+                provider.id,
+                provider.display_name,
+                ProviderCategory::Llm,
+                provider.signup_url,
+                Some(provider.base_url),
+                Some(provider.models_endpoint),
+            )
+        })
+        .collect()
 }
 
 #[tauri::command]
