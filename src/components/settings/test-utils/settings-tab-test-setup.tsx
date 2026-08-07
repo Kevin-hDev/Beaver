@@ -90,6 +90,7 @@ vi.mock("@tauri-apps/api/core", async () => {
         return Promise.resolve({
           modelfile: "FROM llama3.2:latest\nPARAMETER temperature 0.7\n",
           parameters: [{ key: "temperature", value: "0.7" }],
+          parameterError: null,
         });
       }
       if (cmd === "get_selected_forecast_model") return Promise.resolve("chronos-bolt-small");

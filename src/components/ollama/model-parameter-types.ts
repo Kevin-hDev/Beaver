@@ -5,5 +5,6 @@ export interface ModelParameter {
 
 export interface OllamaModelEditorData {
   modelfile: string;
-  parameters: ModelParameter[];
+  parameters: ModelParameter[] | null;
+  parameterError: string | null;
 }

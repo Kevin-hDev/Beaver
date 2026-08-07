@@ -103,6 +103,12 @@ mod tests {
     fn bounds_and_validates_parameter_entries() {
         let too_many = vec![("stop".to_string(), "x".to_string()); 129];
         assert!(validate_parameter_entries(&too_many).is_err());
+        let too_many_stops = vec![("stop".to_string(), "x".to_string()); 33];
+        assert!(validate_parameter_entries(&too_many_stops).is_err());
+        let too_many_custom = (0..65)
+            .map(|index| (format!("custom_{index}"), "x".to_string()))
+            .collect::<Vec<_>>();
+        assert!(validate_parameter_entries(&too_many_custom).is_err());
         assert!(validate_parameter_entries(&[("invalid-key".into(), "1".into())]).is_err());
     }
 

@@ -595,6 +595,7 @@
     "invalidCustomParameter": "Check the custom parameter name and value.",
     "invalidOfficialParameter": "Check the numeric values of the official parameters.",
     "unsupportedParameterValue": "Values cannot contain unsupported control characters or three consecutive quotation marks (\"\"\").",
+    "parameterValueTooLong": "Each parameter value must stay under 1024 bytes.",
     "parameterGroups": {
       "context": "Context",
       "length": "Response length",
@@ -1091,7 +1092,10 @@
       "ollamaNativePromptsWrite": "Beaver cannot save “ollama-native-system-prompts.json”. Check that the disk is not full, then try again.",
       "systemPromptsWrite": "Beaver cannot save “system-prompt-settings.json”. Check that the disk is not full, then try again.",
       "privateStorage": "Beaver cannot access its private storage. Check disk space and permissions, then try again.",
-      "systemPromptsRuntimeFallback": "System prompt settings are unavailable. Beaver is temporarily using its default instructions for this message."
+      "systemPromptsRuntimeFallback": "System prompt settings are unavailable. Beaver is temporarily using its default instructions for this message.",
+      "ollamaModelfileInvalid": "The Modelfile cannot be changed safely. No changes were applied.",
+      "ollamaParameterInvalid": "At least one Ollama parameter contains a value that the simplified editor cannot change. Use the Modelfile editor to correct it.",
+      "ollamaResponseInvalid": "Ollama returned unreadable or oversized parameters. The raw Modelfile remains available."
     },
     "streamStartFailed": "Stream could not start.",
     "streamInterrupted": "Stream was interrupted.",

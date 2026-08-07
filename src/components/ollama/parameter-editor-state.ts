@@ -31,16 +31,14 @@ export function createParameterEditorState(
   for (const parameter of initialParameters.slice(0, MAX_PARAMETER_ENTRIES)) {
     const normalizedKey = parameter.key.trim().toLowerCase();
     if (normalizedKey === "stop") {
-      if (stopValues.length < MAX_STOP_SEQUENCES) stopValues.push(parameter.value);
+      stopValues.push(parameter.value);
       continue;
     }
     if (isOfficialParameterKey(normalizedKey)) {
       values[normalizedKey as SingleValueParameterKey] = parameter.value;
       continue;
     }
-    if (customParameters.length < MAX_CUSTOM_PARAMETERS) {
-      customParameters.push({ key: parameter.key, value: parameter.value });
-    }
+    customParameters.push({ key: parameter.key, value: parameter.value });
   }
 
   return {
@@ -82,19 +80,20 @@ export function hasInvalidCustomParameter(state: ParameterEditorState): boolean 
 }
 
 export function hasUnsupportedParameterValue(state: ParameterEditorState): boolean {
-  const values = [
-    ...Object.values(state.values),
-    ...state.stopValues,
-    ...state.customParameters.map((parameter) => parameter.value),
-  ];
-  return values.some((value) => (
+  return parameterValues(state).some((value) => (
     value.includes('"""')
     || Array.from(value).some((character) => {
       const codePoint = character.codePointAt(0) ?? 0;
-      return codePoint === 0x7f
+      return (codePoint >= 0x7f && codePoint <= 0x9f)
         || (codePoint < 0x20 && character !== "\n" && character !== "\t");
     })
   ));
+}
+
+export function hasOversizedParameterValue(state: ParameterEditorState): boolean {
+  return parameterValues(state).some(
+    (value) => utf8ByteLength(value) > MAX_PARAMETER_VALUE_LENGTH,
+  );
 }
 
 export function hasInvalidOfficialParameter(state: ParameterEditorState): boolean {
@@ -132,4 +131,12 @@ function pushTextEntry(payload: Array<[string, string]>, key: string, value: str
 
 function utf8ByteLength(value: string): number {
   return new TextEncoder().encode(value).length;
+}
+
+function parameterValues(state: ParameterEditorState): string[] {
+  return [
+    ...Object.values(state.values),
+    ...state.stopValues,
+    ...state.customParameters.map((parameter) => parameter.value),
+  ];
 }

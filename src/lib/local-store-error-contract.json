@@ -6,6 +6,9 @@
   "ollama-native-prompt-store-missing": "errors.localStore.ollamaNativePromptsMissing",
   "ollama-native-prompt-store-unavailable": "errors.localStore.ollamaNativePrompts",
   "ollama-native-prompt-store-write": "errors.localStore.ollamaNativePromptsWrite",
+  "ollama-modelfile-invalid": "errors.localStore.ollamaModelfileInvalid",
+  "ollama-parameter-invalid": "errors.localStore.ollamaParameterInvalid",
+  "ollama-invalid-response": "errors.localStore.ollamaResponseInvalid",
   "system-prompt-store-missing": "errors.localStore.systemPromptsMissing",
   "system-prompt-store-unavailable": "errors.localStore.systemPrompts",
   "system-prompt-store-write": "errors.localStore.systemPromptsWrite"

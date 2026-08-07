@@ -13,15 +13,17 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("../modelfile-view", () => ({
-  ModelfileView: ({ modelfile, parameters }: {
+  ModelfileView: ({ modelfile, parameters, parameterError }: {
     modelfile: string;
-    parameters: Array<{ key: string; value: string }>;
+    parameters: Array<{ key: string; value: string }> | null;
+    parameterError: string | null;
   }) => (
     <div>
       <span>{modelfile}</span>
       <span data-testid="semantic-parameters">
-        {parameters.map(({ key, value }) => `${key}:${value}`).join("|")}
+        {parameters?.map(({ key, value }) => `${key}:${value}`).join("|")}
       </span>
+      {parameterError && <span role="alert">{parameterError}</span>}
     </div>
   ),
 }));
@@ -32,6 +34,7 @@ describe("ModelfileViewer data contract", () => {
     mocks.invoke.mockResolvedValue({
       modelfile: "FROM x",
       parameters: [{ key: "stop", value: " line one\nline two " }],
+      parameterError: null,
     });
   });
 
@@ -46,6 +49,22 @@ describe("ModelfileViewer data contract", () => {
     });
     expect(mocks.invoke).toHaveBeenCalledWith("get_modelfile", {
       name: "gemma4:e2b",
+    });
+  });
+
+  it("conserve le Modelfile brut quand les paramètres simplifiés sont indisponibles", async () => {
+    mocks.invoke.mockResolvedValueOnce({
+      modelfile: "FROM x\nPARAMETER stop oversized",
+      parameters: null,
+      parameterError: "ollama-invalid-response",
+    });
+
+    render(<ModelfileViewer modelName="large:latest" onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "errors.localStore.ollamaResponseInvalid",
+      );
     });
   });
 });

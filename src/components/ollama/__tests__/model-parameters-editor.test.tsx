@@ -177,6 +177,17 @@ describe("ParametersEditor catalog", () => {
     expect(screen.getByLabelText("temperature")).toHaveValue(null);
     expect(screen.getByLabelText("stop 1")).toHaveValue("");
   });
+
+  it("bloque une valeur qui dépasse 1024 octets UTF-8", async () => {
+    renderEditor([{ key: "stop", value: "界".repeat(600) }]);
+
+    fireEvent.click(screen.getByText("ollama.save"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "ollama.parameterValueTooLong",
+    );
+    expect(invoke).not.toHaveBeenCalled();
+  });
 });
 
 function renderEditor(

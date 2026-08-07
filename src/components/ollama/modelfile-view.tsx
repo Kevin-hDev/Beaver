@@ -7,7 +7,8 @@ import "./modelfile-view.css";
 
 interface ModelfileViewProps {
   modelName: string;
-  parameters: { key: string; value: string }[];
+  parameters: { key: string; value: string }[] | null;
+  parameterError: string | null;
   modelfile: string;
   onEditParameters: () => void;
 }
@@ -15,6 +16,7 @@ interface ModelfileViewProps {
 export function ModelfileView({
   modelName,
   parameters,
+  parameterError,
   modelfile,
   onEditParameters,
 }: ModelfileViewProps) {
@@ -31,14 +33,23 @@ export function ModelfileView({
       />
 
       <SettingsCard className="mfv-parameters-card">
-        <ViewSection title={t("ollama.parameters")} editLabel={t("ollama.edit")} onEdit={onEditParameters}>
-          {parameters.length === 0 ? (
+        <ViewSection
+          title={t("ollama.parameters")}
+          editLabel={t("ollama.edit")}
+          onEdit={onEditParameters}
+          disabled={parameters === null}
+        >
+          {parameterError ? (
+            <div className="mfv-parameter-error" role="alert">
+              {parameterError}
+            </div>
+          ) : parameters?.length === 0 ? (
             <div className="mfv-no-params">
               {t("ollama.noParameters")}
             </div>
           ) : (
             <div className="mfv-params-list">
-              {parameters.map((p, i) => (
+              {parameters?.map((p, i) => (
                 <div key={i} className="mfv-param-row">
                   <span className="mfv-param-key">{p.key}</span>
                   <span className="mfv-param-value">{p.value}</span>
@@ -57,9 +68,10 @@ export function ModelfileView({
 }
 
 function ViewSection({
-  title, editLabel, onEdit, children,
+  title, editLabel, onEdit, disabled = false, children,
 }: {
   title: string; editLabel: string; onEdit: () => void;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -68,7 +80,7 @@ function ViewSection({
         <span className="mfv-section-title">
           {title}
         </span>
-        <button className="btn btn-sm btn-primary" onClick={onEdit}>
+        <button className="btn btn-sm btn-primary" onClick={onEdit} disabled={disabled}>
           {editLabel}
         </button>
       </div>

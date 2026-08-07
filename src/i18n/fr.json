@@ -595,6 +595,7 @@
     "invalidCustomParameter": "Vérifie le nom et la valeur du paramètre personnalisé.",
     "invalidOfficialParameter": "Vérifie les valeurs numériques des paramètres officiels.",
     "unsupportedParameterValue": "Les valeurs ne peuvent pas contenir de caractères de contrôle non pris en charge ni trois guillemets consécutifs (\"\"\").",
+    "parameterValueTooLong": "Chaque valeur de paramètre doit rester sous 1024 octets.",
     "parameterGroups": {
       "context": "Contexte",
       "length": "Longueur de réponse",
@@ -1139,7 +1140,10 @@
       "ollamaNativePromptsWrite": "Beaver ne peut pas enregistrer « ollama-native-system-prompts.json ». Vérifie que le disque n’est pas plein, puis réessaye.",
       "systemPromptsWrite": "Beaver ne peut pas enregistrer « system-prompt-settings.json ». Vérifie que le disque n’est pas plein, puis réessaye.",
       "privateStorage": "Beaver ne peut pas accéder à son stockage privé. Vérifie l’espace disque et les autorisations, puis réessaye.",
-      "systemPromptsRuntimeFallback": "Les réglages de system prompt sont indisponibles. Beaver utilise temporairement ses instructions par défaut pour ce message."
+      "systemPromptsRuntimeFallback": "Les réglages de system prompt sont indisponibles. Beaver utilise temporairement ses instructions par défaut pour ce message.",
+      "ollamaModelfileInvalid": "Le Modelfile ne peut pas être modifié en toute sécurité. Aucun changement n’a été appliqué.",
+      "ollamaParameterInvalid": "Au moins un paramètre Ollama contient une valeur que l’éditeur simplifié ne peut pas modifier. Utilise l’éditeur Modelfile pour la corriger.",
+      "ollamaResponseInvalid": "Ollama a renvoyé des paramètres illisibles ou trop volumineux. Le Modelfile brut reste disponible."
     },
     "streamStartFailed": "Le flux n'a pas pu démarrer.",
     "streamInterrupted": "Le flux s'est interrompu.",

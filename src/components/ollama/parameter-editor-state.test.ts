@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  MAX_CUSTOM_PARAMETERS,
-  MAX_STOP_SEQUENCES,
   buildParameterPayload,
   createParameterEditorState,
   hasInvalidCustomParameter,
   hasInvalidOfficialParameter,
+  hasOversizedParameterValue,
   hasUnsupportedParameterValue,
 } from "./parameter-editor-state";
 
 describe("parameter editor state", () => {
-  it("borne les stops et les paramètres personnalisés provenant du Modelfile", () => {
+  it("ne tronque pas les paramètres provenant du backend", () => {
     const initial = [
       ...Array.from({ length: 40 }, (_, index) => ({ key: "stop", value: `stop-${index}` })),
       ...Array.from({ length: 80 }, (_, index) => ({ key: `custom_${index}`, value: `${index}` })),
@@ -18,8 +17,8 @@ describe("parameter editor state", () => {
 
     const state = createParameterEditorState(initial);
 
-    expect(state.stopValues).toHaveLength(MAX_STOP_SEQUENCES);
-    expect(state.customParameters).toHaveLength(MAX_CUSTOM_PARAMETERS);
+    expect(state.stopValues).toHaveLength(40);
+    expect(state.customParameters).toHaveLength(80);
   });
 
   it("normalise les clés officielles et conserve les clés personnalisées", () => {
@@ -94,5 +93,16 @@ describe("parameter editor state", () => {
 
     state.stopValues[0] = "unsafe\u0007value";
     expect(hasUnsupportedParameterValue(state)).toBe(true);
+
+    state.stopValues[0] = "unsafe\u0085value";
+    expect(hasUnsupportedParameterValue(state)).toBe(true);
+  });
+
+  it("compte la taille des valeurs en octets UTF-8", () => {
+    const state = createParameterEditorState([
+      { key: "stop", value: "界".repeat(600) },
+    ]);
+
+    expect(hasOversizedParameterValue(state)).toBe(true);
   });
 });
