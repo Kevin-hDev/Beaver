@@ -10,29 +10,6 @@ pub struct ParsedModelfile {
     pub parameters: HashMap<String, Value>,
 }
 
-impl ParsedModelfile {
-    pub fn to_api_payload(&self, model_name: &str) -> Value {
-        let mut payload = json!({ "model": model_name });
-        let obj = payload.as_object_mut().unwrap();
-        if let Some(v) = &self.from {
-            obj.insert("from".into(), json!(v));
-        }
-        if let Some(v) = &self.system {
-            obj.insert("system".into(), json!(v));
-        }
-        if let Some(v) = &self.template {
-            obj.insert("template".into(), json!(v));
-        }
-        if let Some(v) = &self.license {
-            obj.insert("license".into(), json!(v));
-        }
-        if !self.parameters.is_empty() {
-            obj.insert("parameters".into(), json!(self.parameters));
-        }
-        payload
-    }
-}
-
 pub fn parse_modelfile(content: &str) -> ParsedModelfile {
     let mut parsed = ParsedModelfile::default();
     let mut lines = content.lines().peekable();
@@ -158,19 +135,6 @@ SYSTEM """hello world"""
 "#;
         let p = parse_modelfile(mf);
         assert_eq!(p.system.as_deref(), Some("hello world"));
-    }
-
-    #[test]
-    fn api_payload_only_contains_set_fields() {
-        let mf = "FROM base\nSYSTEM \"hi\"";
-        let p = parse_modelfile(mf);
-        let payload = p.to_api_payload("mymodel");
-        let obj = payload.as_object().unwrap();
-        assert_eq!(obj["model"], json!("mymodel"));
-        assert_eq!(obj["from"], json!("base"));
-        assert_eq!(obj["system"], json!("hi"));
-        assert!(!obj.contains_key("template"));
-        assert!(!obj.contains_key("parameters"));
     }
 
     #[test]

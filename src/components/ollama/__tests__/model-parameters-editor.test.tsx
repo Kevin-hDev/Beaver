@@ -120,6 +120,31 @@ describe("ParametersEditor catalog", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("ollama.invalidOfficialParameter");
     expect(invoke).not.toHaveBeenCalled();
   });
+
+  it("retire tous les réglages vidés du payload", async () => {
+    renderEditor([
+      { key: "num_ctx", value: "100000" },
+      { key: "temperature", value: "0.7" },
+      { key: "stop", value: "User:" },
+    ]);
+
+    clearParameter("num_ctx");
+    clearParameter("temperature");
+    fireEvent.click(screen.getByRole("button", {
+      name: "ollama.removeStopSequence",
+    }));
+    fireEvent.click(screen.getByText("ollama.save"));
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("update_parameters", {
+        name: modelName,
+        parameters: [],
+      });
+    });
+    expect(screen.getByLabelText("num_ctx")).toHaveValue(null);
+    expect(screen.getByLabelText("temperature")).toHaveValue(null);
+    expect(screen.getByLabelText("stop 1")).toHaveValue("");
+  });
 });
 
 function renderEditor(
@@ -134,4 +159,11 @@ function renderEditor(
       onCancel={vi.fn()}
     />,
   );
+}
+
+function clearParameter(label: string) {
+  const control = screen.getByLabelText(label).closest(".pe-value-control");
+  const button = control?.querySelector("button");
+  if (!(button instanceof HTMLButtonElement)) throw new Error(`clear button missing: ${label}`);
+  fireEvent.click(button);
 }

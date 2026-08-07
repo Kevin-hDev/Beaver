@@ -83,9 +83,11 @@ pub mod ollama_client;
 #[cfg(test)]
 mod ollama_client_integration_tests;
 pub mod ollama_collect;
-pub mod ollama_create_payload;
 pub mod ollama_model_helpers;
 pub mod ollama_modelfile_create;
+pub mod ollama_modelfile_parameters;
+#[cfg(test)]
+mod ollama_modelfile_parameters_tests;
 pub mod ollama_native_prompts;
 #[cfg(test)]
 mod ollama_native_prompts_tests;
