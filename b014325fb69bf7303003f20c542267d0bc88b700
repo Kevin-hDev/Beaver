@@ -1,0 +1,19 @@
+Objectif : supprimer le crash macOS intermittent SIGTRAP observé au démarrage de Beaver, sans modifier le comportement Windows ou Linux.
+
+Cause : CEF était chargé dynamiquement pendant l’événement Ready, après le démarrage de Tauri et de plusieurs fils. Les rapports plaçaient le thread principal dans cef_load_library pendant qu’un worker Rust libérait de la mémoire, situation cohérente avec une modification tardive des zones mémoire macOS dans un processus déjà multithreadé.
+
+Corrections : le point d’entrée macOS suit maintenant l’ordre helper éventuel, politique réseau Git, chargement CEF, préparation AppKit, capture du shell, puis Tauri. La capture reste bornée même si un descendant sort du groupe de processus et conserve le tube stdout ouvert ; elle n’effectue aucune attente illimitée du lecteur. Comme CEF est déjà chargé avant cette capture, un lecteur tardif ne peut pas recréer la fenêtre du crash. Un garde opaque conserve à la fois la bibliothèque et les RuntimeFiles déjà validés ; le moteur réutilise donc exactement les mêmes chemins au lieu de les résoudre une seconde fois. L’initialisation reste limitée à l’événement Ready, la branche défensive inatteignable a été retirée, et l’emprunt RefCell est libéré avant le pompage final de CEF.
+
+Fermeture : le câblage réel attend le retour de la boucle native, arrête CEF, puis détruit le garde et décharge la bibliothèque. Le nettoyage asynchrone app_exit ne dépend jamais du navigateur. Des tests protègent l’ordre réel des appels et ces invariants.
+
+Repli documenté : si CEF est absent, invalide ou impossible à charger, la sous-classe native dédiée à CEF n’est pas installée. Beaver continue avec le navigateur intégré indisponible et des messages génériques.
+
+Plateformes : la résolution CEF Windows reste inchangée et windows_entry.rs n’est pas modifié. Le flux Linux conserve la capture du shell et exclut toujours CEF par compilation conditionnelle.
+
+Couverture : tests comportementaux sur l’ordre load/prepare/shell, les replis, l’événement Ready, le câblage réel de main.rs, l’ordre de fermeture, la réutilisation des chemins validés et le cas d’un descendant échappé gardant stdout ouvert. Ce dernier test échouait avec l’attente illimitée du lecteur, puis passe après correction. Le garde main.rs a aussi été vérifié par mutation temporaire : il détecte bien une capture du shell sortie du coordinateur CEF. Historique maintenu en un seul commit compilable et vert.
+
+Validation : cargo fmt, cargo check, Clippy strict, 3021 tests Rust réussis et 1 ignoré, lint sans erreur, TypeScript, 1875 tests frontend, 40 tests de build, 6 tests CEF et 51 tests de l’hôte d’extensions. Le bundle de développement contenant réellement CEF a été lancé 20 fois : 20 processus actifs, zéro erreur navigateur et aucun nouveau rapport de crash macOS.
+
+Périmètre de review : commit unique main..b014325. Les anciens SIGABRT de fermeture ont une signature distincte et restent hors périmètre.
+
+Maintenance documentaire : Graphify AST a été mis à jour. Les deux documents CEF ont aussi été ré-extraits sémantiquement de façon ciblée, fusionnés dans le graphe existant et contrôlés pour exclure l’ancienne affirmation sur le join du lecteur ; les communautés et le rapport Graphify ont ensuite été recalculés.
