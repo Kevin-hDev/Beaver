@@ -1,0 +1,17 @@
+Objectif : supprimer le crash macOS intermittent SIGTRAP observé au démarrage de Beaver, sans modifier le comportement Windows ou Linux.
+
+Cause : CEF était chargé dynamiquement pendant l’événement Ready, après le démarrage de Tauri et de plusieurs fils. Les rapports plaçaient le thread principal dans cef_load_library pendant qu’un worker Rust libérait de la mémoire, situation cohérente avec une modification tardive des zones mémoire macOS dans un processus déjà multithreadé.
+
+Corrections : le point d’entrée macOS suit maintenant l’ordre helper éventuel, politique réseau Git, chargement CEF, préparation AppKit, capture du shell, puis Tauri. Le lecteur utilisé par la capture du shell est rejoint avant le retour de la fonction. Un garde opaque conserve à la fois la bibliothèque et les RuntimeFiles déjà validés ; le moteur réutilise donc exactement les mêmes chemins au lieu de les résoudre une seconde fois. L’initialisation reste limitée à l’événement Ready, la branche défensive inatteignable a été retirée, et l’emprunt RefCell est libéré avant le pompage final de CEF.
+
+Fermeture : le câblage réel attend le retour de la boucle native, arrête CEF, puis détruit le garde et décharge la bibliothèque. Le nettoyage asynchrone app_exit ne peut pas arrêter CEF. Des tests protègent explicitement ces deux invariants.
+
+Repli documenté : si CEF est absent, invalide ou impossible à charger, la sous-classe native dédiée à CEF n’est pas installée. Beaver continue avec le navigateur intégré indisponible et des messages génériques.
+
+Plateformes : la résolution CEF Windows reste inchangée et windows_entry.rs n’est pas modifié. Le flux Linux conserve la capture du shell et exclut toujours CEF par compilation conditionnelle.
+
+Couverture : tests comportementaux sur l’ordre load/prepare/shell, les replis, l’événement Ready, le câblage de fermeture, la réutilisation des chemins validés et le JoinHandle du lecteur. Historique réécrit en un seul commit compilable et vert.
+
+Validation : cargo fmt, cargo check, Clippy strict, 3019 tests Rust réussis et 1 ignoré, lint sans erreur, TypeScript, 1875 tests frontend, 40 tests de build, 6 tests CEF et 51 tests de l’hôte d’extensions. Graphify AST mis à jour. Le bundle de développement contenant réellement CEF a ensuite été lancé 20 fois : 20 processus actifs, zéro erreur navigateur et aucun nouveau rapport de crash macOS.
+
+Périmètre de review : commit unique main..a63b7ca. Les anciens SIGABRT de fermeture ont une signature distincte et restent hors périmètre.
