@@ -12,11 +12,11 @@ Ollama 0.32.5 emits a raw value unless it contains a newline or leading/trailing
 
 ## Architecture
 
-Rust becomes the single source of truth for parameter extraction and rewriting. A bounded scanner parses the normalized Modelfile into semantic parameter entries and directive spans. The Tauri read command returns the Modelfile and extracted parameters together, so the frontend no longer implements a second Modelfile parser.
+Rust becomes the single source of truth for parameter extraction and rewriting. Ollama `/api/show` already returns a separate `parameters` field generated directly from its stored option values with Go string escaping. A bounded Rust parser decodes that authoritative field instead of trying to infer semantic values from the ambiguous normalized Modelfile. The Tauri read command returns the Modelfile and decoded parameters together, so the frontend no longer implements a second Modelfile parser.
 
-A quoted block is recognized only when a matching closing delimiter is found. An unmatched quote-looking parameter value is treated as literal normalized data, not as an open block. Non-parameter directives such as `SYSTEM`, `TEMPLATE`, and `MESSAGE` are still skipped as complete spans.
+For rewriting, Rust renders the decoded current entries with Ollama's own normalization rules and identifies the one complete contiguous parameter block in the normalized Modelfile. A raw quote is therefore matched as literal data and a multiline value is matched as a complete rendered span; no heuristic quote scanner decides between them. Missing, partial, or ambiguous matches fail closed. New source lines use a separate safe renderer: values whose semantic content begins and ends with quotes are triple-quoted so Ollama's parser does not strip those literal outer quotes.
 
-When saving, Rust removes every top-level `PARAMETER` span, including multiline spans, and inserts the complete semantic payload supplied by the editor. This restores the invariant that an empty editor field means no override.
+When saving, Rust removes the complete current parameter block, including multiline entries, and inserts the full semantic payload supplied by the editor. This restores the invariant that an empty editor field means no override.
 
 ## Value Rules
 

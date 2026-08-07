@@ -73,14 +73,15 @@ export function StopParameterField({
       <div className="pe-stop-controls">
         {values.map((value, index) => (
           <div className="pe-value-control" key={rowIds[index]}>
-            <input
+            <textarea
               value={value}
               onChange={(event) => onChange(index, event.target.value)}
               placeholder={t("ollama.stopSequencePlaceholder")}
               aria-label={`${definition.key} ${index + 1}`}
               aria-describedby={descriptionId}
               maxLength={MAX_PARAMETER_VALUE_LENGTH}
-              className="field pe-input pe-fixed-input"
+              rows={visibleParameterRows(value)}
+              className="field field-multiline pe-input pe-fixed-input pe-textarea"
             />
             <Tooltip label={t("ollama.removeStopSequence")}>
               <button
@@ -105,6 +106,10 @@ export function StopParameterField({
       </div>
     </div>
   );
+}
+
+export function visibleParameterRows(value: string): number {
+  return Math.min(4, Math.max(1, value.split("\n").length));
 }
 
 function ParameterInfo({ definition, descriptionId, t }: {

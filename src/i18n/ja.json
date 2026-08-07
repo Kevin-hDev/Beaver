@@ -589,6 +589,7 @@
     "addCustomParameter": "+ カスタムパラメーターを追加",
     "invalidCustomParameter": "カスタムパラメーターの名前と値を確認してください。",
     "invalidOfficialParameter": "公式パラメーターの数値を確認してください。",
+    "unsupportedParameterValue": "値に未対応の制御文字または3つ連続した引用符（\"\"\"）を含めることはできません。",
     "parameterGroups": {
       "context": "コンテキスト",
       "length": "応答の長さ",

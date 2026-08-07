@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -7,7 +7,7 @@ import { SettingsDetailHeader } from "@/components/settings/shell/settings-detai
 import { ModelfileEditor } from "./modelfile-editor";
 import { ParametersEditor } from "./parameters-editor";
 import { ModelfileView } from "./modelfile-view";
-import { extractParameters } from "./modelfile-utils";
+import type { ModelParameter, OllamaModelEditorData } from "./model-parameter-types";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 
 type Mode = "view" | "edit-parameters" | "edit-modelfile";
@@ -21,6 +21,7 @@ interface ModelfileViewerProps {
 export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewerProps) {
   const { t } = useTranslation();
   const [modelfile, setModelfile] = useState("");
+  const [parameters, setParameters] = useState<ModelParameter[]>([]);
   const [mode, setMode] = useState<Mode>("view");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -37,12 +38,16 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
     }
   };
 
-  const parameters = useMemo(() => extractParameters(modelfile), [modelfile]);
-
   const loadModelfile = useCallback(() => {
-    return invoke<string>("get_modelfile", { name: modelName })
-      .then(setModelfile)
-      .catch(() => {});
+    return invoke<OllamaModelEditorData>("get_modelfile", { name: modelName })
+      .then((data) => {
+        setModelfile(data.modelfile);
+        setParameters(data.parameters);
+      })
+      .catch(() => {
+        setModelfile("");
+        setParameters([]);
+      });
   }, [modelName]);
 
   useEffect(() => {

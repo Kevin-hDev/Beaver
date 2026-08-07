@@ -86,7 +86,12 @@ vi.mock("@tauri-apps/api/core", async () => {
         return Promise.resolve({ permission_mode: "auto", enabled_optional_tools: enabled });
       }
       if (cmd === "is_ollama_installed") return Promise.resolve(true);
-      if (cmd === "get_modelfile") return Promise.resolve("FROM llama3.2:latest\nPARAMETER temperature 0.7\n");
+      if (cmd === "get_modelfile") {
+        return Promise.resolve({
+          modelfile: "FROM llama3.2:latest\nPARAMETER temperature 0.7\n",
+          parameters: [{ key: "temperature", value: "0.7" }],
+        });
+      }
       if (cmd === "get_selected_forecast_model") return Promise.resolve("chronos-bolt-small");
       if (cmd === "list_configured_providers") return Promise.resolve(["groq", "brave", "nixtla"]);
       if (cmd === "list_oauth_provider_statuses") {

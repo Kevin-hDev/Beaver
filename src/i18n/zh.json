@@ -589,6 +589,7 @@
     "addCustomParameter": "+ 添加自定义参数",
     "invalidCustomParameter": "请检查自定义参数的名称和值。",
     "invalidOfficialParameter": "请检查官方参数的数值。",
+    "unsupportedParameterValue": "值不能包含不受支持的控制字符或三个连续的引号（\"\"\"）。",
     "parameterGroups": {
       "context": "上下文",
       "length": "回复长度",

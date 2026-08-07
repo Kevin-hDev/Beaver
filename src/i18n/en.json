@@ -594,6 +594,7 @@
     "addCustomParameter": "+ Add a custom parameter",
     "invalidCustomParameter": "Check the custom parameter name and value.",
     "invalidOfficialParameter": "Check the numeric values of the official parameters.",
+    "unsupportedParameterValue": "Values cannot contain unsupported control characters or three consecutive quotation marks (\"\"\").",
     "parameterGroups": {
       "context": "Context",
       "length": "Response length",

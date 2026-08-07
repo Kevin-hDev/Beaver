@@ -594,6 +594,7 @@
     "addCustomParameter": "+ Ajouter un paramètre personnalisé",
     "invalidCustomParameter": "Vérifie le nom et la valeur du paramètre personnalisé.",
     "invalidOfficialParameter": "Vérifie les valeurs numériques des paramètres officiels.",
+    "unsupportedParameterValue": "Les valeurs ne peuvent pas contenir de caractères de contrôle non pris en charge ni trois guillemets consécutifs (\"\"\").",
     "parameterGroups": {
       "context": "Contexte",
       "length": "Longueur de réponse",

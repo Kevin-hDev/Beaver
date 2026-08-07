@@ -92,6 +92,9 @@ pub mod ollama_native_prompts;
 #[cfg(test)]
 mod ollama_native_prompts_tests;
 pub mod ollama_parameter_validation;
+pub mod ollama_parameter_summary;
+#[cfg(test)]
+mod ollama_parameter_summary_tests;
 pub mod ollama_registry;
 pub mod ollama_registry_details;
 #[cfg(test)]
