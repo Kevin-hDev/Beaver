@@ -1,89 +1,59 @@
-//! Cas NÉGATIFS de validate_read_path / validate_write_path : un chemin en
-//! dehors des zones autorisées doit être REJETÉ.
-//!
-//! IMPORTANT : les zones autorisées incluent `config.allowed_paths`. Si cette
-//! config contient "/" (tout autorisé, mode développement permissif), les
-//! tests négatifs n'ont pas de sens sur cette machine — on les SAUTE avec un
-//! message explicite plutôt que de fail.
+//! Cas négatifs des validateurs de chemins avec des racines explicites.
+//! Ces tests sont indépendants de la configuration réelle de la machine.
 
-use crate::services::agent_local::security::{validate_read_path, validate_write_path};
-use crate::services::config::read_config;
+use crate::services::agent_local::security::{
+    validate_read_path_in_roots, validate_write_path_in_roots,
+};
 
-/// True si la config autorise tout (allowed_paths contient "/" ou vide dans un
-/// contexte permissif). Dans ce cas, les tests négatifs sont skippés.
-fn config_is_permissive() -> bool {
-    match read_config() {
-        Ok(config) => crate::services::agent_local::directory_access::configured_roots_from_paths(
-            config.advanced.allowed_paths,
-        )
-        .is_ok_and(|roots| {
-            crate::services::agent_local::directory_access::roots_allow_full_disk(&roots)
-        }),
-        Err(_) => false,
-    }
-}
-
-/// Crée un fichier vide hors des zones par défaut (home directement, pas un
-/// sous-dossier de data_dir/temp).
-fn file_in_home(file_name: &str) -> Option<std::path::PathBuf> {
-    let home = dirs::home_dir()?;
-    let target = home.join(file_name);
-    std::fs::write(&target, b"").ok()?;
-    Some(target)
-}
-
-fn cleanup(path: &std::path::Path) {
-    let _ = std::fs::remove_file(path);
+fn canonical(path: &std::path::Path) -> std::path::PathBuf {
+    dunce::canonicalize(path).expect("canonical test directory")
 }
 
 // --- validate_write_path : cas négatifs -------------------------------------
 
 #[test]
 fn write_rejects_path_outside_allowed_zones() {
-    if config_is_permissive() {
-        ::log::info!("[skip] config allowed_paths contient '/' — test négatif sans objet");
-        return;
-    }
-    let Some(target) = file_in_home(".cl-go-deny-write-test") else {
-        return;
-    };
-    let result = validate_write_path(&target, &std::env::temp_dir());
-    cleanup(&target);
+    let allowed = tempfile::tempdir().expect("allowed root");
+    let outside = tempfile::tempdir().expect("outside root");
+    let target = outside.path().join("existing.txt");
+    std::fs::write(&target, b"").expect("outside test file");
+
+    let result = validate_write_path_in_roots(&target, &[canonical(allowed.path())]);
+
     assert!(
         result.is_err(),
-        "l'écriture hors des zones autorisées doit être rejetée (path traversal)"
+        "l'écriture d'un fichier existant hors des racines doit être rejetée"
     );
 }
 
 #[test]
-fn write_rejects_system_directory() {
-    if config_is_permissive() {
-        ::log::info!("[skip] config permissive — test négatif sans objet");
-        return;
-    }
-    // /usr/local : hors data_dir et temp_dir sur la plupart des OS.
-    let target = std::path::PathBuf::from("/usr/local/.cl-go-deny-write-test");
-    let result = validate_write_path(&target, &std::env::temp_dir());
+fn write_rejects_new_file_in_unrelated_directory() {
+    let allowed = tempfile::tempdir().expect("allowed root");
+    let outside = tempfile::tempdir().expect("outside root");
+    let target = outside.path().join("new.txt");
+
+    let result = validate_write_path_in_roots(&target, &[canonical(allowed.path())]);
+
     assert!(
         result.is_err(),
-        "l'écriture dans /usr/local doit être rejetée hors zones autorisées"
+        "l'écriture d'un nouveau fichier hors des racines doit être rejetée"
     );
 }
 
 #[test]
 fn write_rejects_dotdot_escape() {
-    if config_is_permissive() {
-        ::log::info!("[skip] config permissive — test négatif sans objet");
-        return;
-    }
-    let tmp = std::env::temp_dir();
-    // ../ depuis temp pour sortir de la zone temp.
-    let escape = tmp.join("../../../.cl-go-dotdot-escape-test");
-    let result = validate_write_path(&escape, &std::env::temp_dir());
-    cleanup(&std::path::Path::new("/").join(".cl-go-dotdot-escape-test"));
+    let base = tempfile::tempdir().expect("test base");
+    let allowed = base.path().join("allowed");
+    let outside = base.path().join("outside");
+    std::fs::create_dir_all(&allowed).expect("allowed root");
+    std::fs::create_dir_all(&outside).expect("outside root");
+    let escape = allowed.join("../outside/escaped.txt");
+
+    let result = validate_write_path_in_roots(&escape, &[canonical(&allowed)]);
+
     assert!(
         result.is_err(),
-        "un chemin avec ../ qui s'échappe des zones autorisées doit être rejeté"
+        "un chemin avec .. qui sort de la racine doit être rejeté"
     );
 }
 
@@ -91,33 +61,37 @@ fn write_rejects_dotdot_escape() {
 
 #[test]
 fn read_rejects_outside_working_dir_and_roots() {
-    if config_is_permissive() {
-        ::log::info!("[skip] config permissive — test négatif sans objet");
-        return;
-    }
-    let Some(target) = file_in_home(".cl-go-deny-read-test") else {
-        return;
-    };
-    let working = std::env::temp_dir();
-    let result = validate_read_path(&target, &working);
-    cleanup(&target);
+    let allowed = tempfile::tempdir().expect("allowed root");
+    let outside = tempfile::tempdir().expect("outside root");
+    let target = outside.path().join("outside.txt");
+    std::fs::write(&target, b"").expect("outside test file");
+
+    let result = validate_read_path_in_roots(
+        &target,
+        allowed.path(),
+        &[canonical(allowed.path())],
+    );
+
     assert!(
         result.is_err(),
-        "la lecture hors working_dir et des roots autorisés doit être rejetée"
+        "la lecture hors des racines doit être rejetée"
     );
 }
 
 #[test]
 fn read_allows_file_in_working_dir() {
-    // Contrôle positif : un fichier DANS working_dir doit toujours passer,
-    // indépendamment de la config (working_dir est autorisé par défaut).
-    let working = std::env::temp_dir();
-    let target = working.join(".cl-go-allow-read-test");
-    std::fs::write(&target, b"").unwrap();
-    let result = validate_read_path(&target, &working);
-    cleanup(&target);
+    let allowed = tempfile::tempdir().expect("allowed root");
+    let target = allowed.path().join("inside.txt");
+    std::fs::write(&target, b"").expect("inside test file");
+
+    let result = validate_read_path_in_roots(
+        &target,
+        allowed.path(),
+        &[canonical(allowed.path())],
+    );
+
     assert!(
         result.is_ok(),
-        "la lecture dans working_dir doit être autorisée"
+        "la lecture dans une racine explicite doit être autorisée"
     );
 }
