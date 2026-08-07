@@ -99,7 +99,7 @@ async fn stream_chat_inner(
             }
             _ = tokio::time::sleep(std::time::Duration::from_secs(300)) => {
                 let msg = "Timeout : aucune réponse d'Ollama depuis 5 min".to_string();
-                let _ = on_event.send(StreamEvent::Error { message: msg.clone(), is_connection: false, diagnostic: None });
+                let _ = on_event.send(StreamEvent::Error { message: msg.clone(), is_connection: false, context_capacity: None, diagnostic: None });
                 return Err(msg);
             }
             line = lines.next_line() => {
@@ -144,7 +144,7 @@ async fn stream_chat_inner(
                                 ))
                                 .await;
                             }
-                            let _ = on_event.send(StreamEvent::Error { message: e.clone(), is_connection: false, diagnostic: None });
+                            let _ = on_event.send(StreamEvent::Error { message: e.clone(), is_connection: false, context_capacity: None, diagnostic: None });
                             return Err(e);
                         }
                         if should_interrupt(&mut realtime_budget, token_count, !result.tool_calls.is_empty()) {
@@ -159,7 +159,7 @@ async fn stream_chat_inner(
                             || e.kind() == std::io::ErrorKind::UnexpectedEof
                             || e.to_string().contains("decoding");
                         let msg = "ollama_connection_lost".to_string();
-                        let _ = on_event.send(StreamEvent::Error { message: msg.clone(), is_connection: is_conn, diagnostic: None });
+                        let _ = on_event.send(StreamEvent::Error { message: msg.clone(), is_connection: is_conn, context_capacity: None, diagnostic: None });
                         return Err(msg);
                     }
                 }

@@ -47,6 +47,60 @@ fn oversized_subagent_report_fails_closed_instead_of_truncating() {
 }
 
 #[test]
+fn context_capacity_error_reports_the_actual_injected_budget() {
+    let mut messages = vec![msg("system", &"rules".repeat(4_000))];
+    let tools = vec![serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "enabled_tool",
+            "description": "d".repeat(8_000),
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+
+    let error = prepare_for_request(&mut messages, 4_000, &tools, "ollama")
+        .expect_err("mandatory context must exceed the configured window");
+    let details = super::super::context_capacity_error::decode(&error)
+        .expect("structured context capacity details");
+
+    assert_eq!(details.context_window, 4_000);
+    assert_eq!(details.max_input_tokens, 2_000);
+    assert!(details.system_tokens > 0);
+    assert_eq!(details.required_report_tokens, 0);
+    assert!(details.tool_tokens > 0);
+    assert_eq!(
+        details.required_tokens,
+        details
+            .system_tokens
+            .saturating_add(details.required_report_tokens)
+            .saturating_add(details.tool_tokens)
+    );
+}
+
+#[test]
+fn context_capacity_error_counts_only_the_tools_given_to_the_request() {
+    let mut messages = vec![msg("system", &"rules".repeat(4_000))];
+    let enabled_tools = vec![serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "only_enabled_tool",
+            "description": "small",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+
+    let error = prepare_for_request(&mut messages, 4_000, &enabled_tools, "ollama")
+        .expect_err("system prompt alone must exceed the configured window");
+    let details = super::super::context_capacity_error::decode(&error)
+        .expect("structured context capacity details");
+
+    assert_eq!(
+        details.tool_tokens,
+        token_estimate::estimate_tool_tokens(&enabled_tools) as u64
+    );
+}
+
+#[test]
 fn fitting_subagent_report_survives_saturated_context_intact() {
     let report_content = format!(
         "{}\n{}",

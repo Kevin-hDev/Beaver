@@ -101,6 +101,8 @@ pub enum StreamEvent {
         #[serde(default)]
         is_connection: bool,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        context_capacity: Option<super::context_capacity_error::ContextCapacityDetails>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         diagnostic:
             Option<crate::services::agent_local::types_diagnostics::AgentErrorDiagnosticSummary>,
     },
