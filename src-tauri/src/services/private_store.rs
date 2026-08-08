@@ -12,6 +12,7 @@ pub(crate) use cache::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
 #[path = "private_store/cache.rs"]
 mod cache;
 
+#[path = "private_store/error_codes.rs"]
 pub(crate) mod error_codes;
 
 #[derive(Debug, PartialEq, Eq)]
