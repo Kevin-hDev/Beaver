@@ -16,12 +16,20 @@ const APP_CACHE_ENV: &[(&str, &str)] = &[
     ("DENO_DIR", "deno"),
     ("UV_CACHE_DIR", "uv-cache"),
 ];
+#[cfg(windows)]
+const WINDOWS_ENV_ERROR: &str = "environnement Windows indisponible";
 
 pub fn safe_env() -> Result<Vec<(String, String)>, String> {
     let mut env: Vec<(String, String)> = PASSTHROUGH_ENV
         .iter()
         .filter_map(|k| std::env::var(k).ok().map(|v| (k.to_string(), v)))
         .collect();
+
+    #[cfg(windows)]
+    env.push((
+        "SystemRoot".to_string(),
+        validated_windows_system_root(std::env::var_os("SystemRoot"))?,
+    ));
 
     let runtime_dir = crate::services::paths::data_dir().join("mcp-runtime");
     std::fs::create_dir_all(&runtime_dir)
@@ -34,6 +42,21 @@ pub fn safe_env() -> Result<Vec<(String, String)>, String> {
     }
 
     Ok(env)
+}
+
+#[cfg(windows)]
+fn validated_windows_system_root(value: Option<std::ffi::OsString>) -> Result<String, String> {
+    let root = value
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| WINDOWS_ENV_ERROR.to_string())?;
+    let canonical = dunce::canonicalize(root).map_err(|_| WINDOWS_ENV_ERROR.to_string())?;
+    if !canonical.is_absolute() || !canonical.join("System32").is_dir() {
+        return Err(WINDOWS_ENV_ERROR.to_string());
+    }
+    canonical
+        .into_os_string()
+        .into_string()
+        .map_err(|_| WINDOWS_ENV_ERROR.to_string())
 }
 
 #[cfg(test)]
@@ -60,5 +83,26 @@ mod tests {
                 .expect("cache env manquant");
             assert!(std::path::Path::new(value).starts_with(&data_dir));
         }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn preserves_the_validated_windows_system_root() {
+        let env = safe_env().unwrap();
+        let system_root = env
+            .iter()
+            .find(|(key, _)| key == "SystemRoot")
+            .map(|(_, value)| value)
+            .expect("SystemRoot manquant");
+
+        assert!(std::path::Path::new(system_root).is_absolute());
+        assert!(std::path::Path::new(system_root).join("System32").is_dir());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn rejects_missing_or_relative_windows_system_roots() {
+        assert!(validated_windows_system_root(None).is_err());
+        assert!(validated_windows_system_root(Some("Windows".into())).is_err());
     }
 }
