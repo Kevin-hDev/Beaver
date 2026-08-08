@@ -6,8 +6,7 @@ async fn working_dir_update_cannot_overwrite_a_concurrent_correction() {
         .await
         .expect("create session");
     let target = crate::services::paths::data_dir();
-    let expected = target
-        .canonicalize()
+    let expected = dunce::canonicalize(&target)
         .expect("canonical target")
         .to_string_lossy()
         .to_string();

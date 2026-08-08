@@ -86,7 +86,7 @@ pub async fn resolve(
             tokio::fs::create_dir_all(&target)
                 .await
                 .map_err(|_| generic_error())?;
-            target.canonicalize().map_err(|_| generic_error())?
+            dunce::canonicalize(&target).map_err(|_| generic_error())?
         }
     };
     let text = path_text(&resolved)?;
@@ -127,7 +127,7 @@ fn nearest_existing_parent(path: &Path) -> Result<PathBuf, String> {
     let mut candidate = path.parent();
     while let Some(parent) = candidate {
         if parent.is_dir() {
-            return parent.canonicalize().map_err(|_| generic_error());
+            return dunce::canonicalize(parent).map_err(|_| generic_error());
         }
         candidate = parent.parent();
     }

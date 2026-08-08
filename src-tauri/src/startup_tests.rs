@@ -153,7 +153,7 @@ fn asynchronous_exit_cleanup_never_stops_the_browser() {
 
 #[test]
 fn macos_entry_point_captures_the_shell_through_cef_startup() {
-    let source = include_str!("main.rs");
+    let source = include_str!("main.rs").replace("\r\n", "\n");
 
     assert!(source.contains(
         "let (browser_library, shell_environment_ready) = cl_go_dash_lib::prepare_macos_application();"
