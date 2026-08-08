@@ -1,0 +1,9 @@
+Objective: harden the test-only directory policy seam so it cannot accept root shapes that production configuration rejects.
+
+Decision: enforce more than is_absolute(). Every injected root must be absolute, reference an existing directory, and equal its canonical path. This also rejects absolute paths containing traversal components or symlink aliases.
+
+Decision: leave cached_paths() and replace() untouched. The scoped seam remains deliberately limited to roots(), which is the only behavior required by the public path-validator tests.
+
+TDD evidence: relative and absolute-but-noncanonical root tests first failed because with_roots accepted them, then passed after the validation was added.
+
+Validation: cargo fmt --all -- --check; clippy strict in normal and E2E modes; cargo test --all with 3037 passed and 2 ignored plus updater integration; cargo test --all --features e2e with 3040 passed and 2 ignored plus updater integration; graphify update .; git diff --check.
