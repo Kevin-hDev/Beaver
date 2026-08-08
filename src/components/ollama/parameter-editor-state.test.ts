@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
-  MAX_CUSTOM_PARAMETERS,
-  MAX_STOP_SEQUENCES,
   buildParameterPayload,
   createParameterEditorState,
   hasInvalidCustomParameter,
   hasInvalidOfficialParameter,
+  hasOversizedParameterValue,
+  hasUnsupportedParameterValue,
 } from "./parameter-editor-state";
 
 describe("parameter editor state", () => {
-  it("borne les stops et les paramètres personnalisés provenant du Modelfile", () => {
+  it("ne tronque pas les paramètres provenant du backend", () => {
     const initial = [
       ...Array.from({ length: 40 }, (_, index) => ({ key: "stop", value: `stop-${index}` })),
       ...Array.from({ length: 80 }, (_, index) => ({ key: `custom_${index}`, value: `${index}` })),
@@ -17,8 +17,8 @@ describe("parameter editor state", () => {
 
     const state = createParameterEditorState(initial);
 
-    expect(state.stopValues).toHaveLength(MAX_STOP_SEQUENCES);
-    expect(state.customParameters).toHaveLength(MAX_CUSTOM_PARAMETERS);
+    expect(state.stopValues).toHaveLength(40);
+    expect(state.customParameters).toHaveLength(80);
   });
 
   it("normalise les clés officielles et conserve les clés personnalisées", () => {
@@ -31,16 +31,30 @@ describe("parameter editor state", () => {
     expect(state.customParameters).toEqual([{ key: "future_option", value: "enabled" }]);
   });
 
-  it("retire les valeurs vides du payload", () => {
+  it("retire seulement les valeurs exactement vides du payload", () => {
     const state = createParameterEditorState([
       { key: "num_ctx", value: " 32768 " },
       { key: "stop", value: "" },
+      { key: "stop", value: " " },
       { key: "future_option", value: " yes " },
     ]);
 
     expect(buildParameterPayload(state)).toEqual([
       ["num_ctx", "32768"],
-      ["future_option", "yes"],
+      ["stop", " "],
+      ["future_option", " yes "],
+    ]);
+  });
+
+  it("conserve les valeurs multilignes provenant du backend", () => {
+    const state = createParameterEditorState([
+      { key: "stop", value: "line one\nline two" },
+      { key: "future_option", value: " first\nsecond " },
+    ]);
+
+    expect(buildParameterPayload(state)).toEqual([
+      ["stop", "line one\nline two"],
+      ["future_option", " first\nsecond "],
     ]);
   });
 
@@ -64,5 +78,31 @@ describe("parameter editor state", () => {
 
     state.values.temperature = "0.7";
     expect(hasInvalidOfficialParameter(state)).toBe(false);
+  });
+
+  it("refuse les retours chariot et les triples guillemets", () => {
+    const state = createParameterEditorState([{ key: "stop", value: "safe" }]);
+    state.stopValues[0] = "line one\rline two";
+    expect(hasUnsupportedParameterValue(state)).toBe(true);
+
+    state.stopValues[0] = 'a"""b';
+    expect(hasUnsupportedParameterValue(state)).toBe(true);
+
+    state.stopValues[0] = 'say "hi"\nnext';
+    expect(hasUnsupportedParameterValue(state)).toBe(false);
+
+    state.stopValues[0] = "unsafe\u0007value";
+    expect(hasUnsupportedParameterValue(state)).toBe(true);
+
+    state.stopValues[0] = "unsafe\u0085value";
+    expect(hasUnsupportedParameterValue(state)).toBe(true);
+  });
+
+  it("compte la taille des valeurs en octets UTF-8", () => {
+    const state = createParameterEditorState([
+      { key: "stop", value: "界".repeat(600) },
+    ]);
+
+    expect(hasOversizedParameterValue(state)).toBe(true);
   });
 });

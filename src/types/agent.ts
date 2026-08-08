@@ -32,6 +32,7 @@ export type {
   AgentPlanRun,
 } from "./agent-plan";
 export type {
+  ContextCapacityDetails,
   RetryIndicatorState,
   StreamEvent,
   TokenPhase,

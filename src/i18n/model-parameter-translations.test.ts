@@ -13,6 +13,8 @@ interface ParameterTranslations {
     parameterEditorHint: string;
     parameterDefaultValue: string;
     parameterDefaultShort: string;
+    unsupportedParameterValue: string;
+    parameterValueTooLong: string;
     parameterGroups: Record<string, string>;
     parameterTypes: Record<string, string>;
     parameterDescriptions: Record<string, string>;
@@ -27,6 +29,8 @@ describe("model parameter translations", () => {
       expect(locale.ollama.parameterEditorHint).toBeTruthy();
       expect(locale.ollama.parameterDefaultValue).toContain("{{value}}");
       expect(locale.ollama.parameterDefaultShort).toContain("{{value}}");
+      expect(locale.ollama.unsupportedParameterValue).toBeTruthy();
+      expect(locale.ollama.parameterValueTooLong).toContain("1024");
       for (const group of MODEL_PARAMETER_GROUPS) {
         expect(locale.ollama.parameterGroups[group]).toBeTruthy();
       }

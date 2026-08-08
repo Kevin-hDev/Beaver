@@ -589,6 +589,8 @@
     "addCustomParameter": "+ Añadir un parámetro personalizado",
     "invalidCustomParameter": "Comprueba el nombre y el valor del parámetro personalizado.",
     "invalidOfficialParameter": "Comprueba los valores numéricos de los parámetros oficiales.",
+    "unsupportedParameterValue": "Los valores no pueden contener caracteres de control no compatibles ni tres comillas consecutivas (\"\"\").",
+    "parameterValueTooLong": "Cada valor de parámetro debe tener menos de 1024 bytes.",
     "parameterGroups": {
       "context": "Contexto",
       "length": "Longitud de la respuesta",
@@ -1085,10 +1087,17 @@
       "ollamaNativePromptsWrite": "Beaver no puede guardar «ollama-native-system-prompts.json». Comprueba que el disco no esté lleno y vuelve a intentarlo.",
       "systemPromptsWrite": "Beaver no puede guardar «system-prompt-settings.json». Comprueba que el disco no esté lleno y vuelve a intentarlo.",
       "privateStorage": "Beaver no puede acceder a su almacenamiento privado. Comprueba el espacio en disco y los permisos y vuelve a intentarlo.",
-      "systemPromptsRuntimeFallback": "Los ajustes del system prompt no están disponibles. Beaver usa temporalmente sus instrucciones predeterminadas para este mensaje."
+      "systemPromptsRuntimeFallback": "Los ajustes del system prompt no están disponibles. Beaver usa temporalmente sus instrucciones predeterminadas para este mensaje.",
+      "ollamaModelfileInvalid": "El Modelfile no se puede modificar de forma segura. No se aplicó ningún cambio.",
+      "ollamaParameterInvalid": "Al menos un parámetro de Ollama contiene un valor que el editor simplificado no puede modificar. Usa el editor de Modelfile para corregirlo.",
+      "ollamaResponseInvalid": "Ollama devolvió parámetros ilegibles o demasiado grandes. El Modelfile sin procesar sigue disponible."
     },
     "streamStartFailed": "No se pudo iniciar el stream.",
     "streamInterrupted": "El stream fue interrumpido.",
+    "contextCapacityExceededUnknownWindow": "El contexto obligatorio supera el objetivo de reducción: prompt del sistema {{systemTokens}} tokens + herramientas activas {{toolTokens}} tokens = {{requiredTokens}} tokens, para un objetivo de {{maxInputTokens}} tokens. No se pudo determinar la ventana de contexto real del modelo.",
+    "contextCapacityExceededUnknownWindowWithReports": "El contexto obligatorio supera el objetivo de reducción: prompt del sistema {{systemTokens}} tokens + informes obligatorios {{reportTokens}} tokens + herramientas activas {{toolTokens}} tokens = {{requiredTokens}} tokens, para un objetivo de {{maxInputTokens}} tokens. No se pudo determinar la ventana de contexto real del modelo.",
+    "contextCapacityExceeded": "El contexto obligatorio supera la capacidad del modelo: prompt del sistema {{systemTokens}} tokens + herramientas activas {{toolTokens}} tokens = {{requiredTokens}} tokens, con un límite de entrada de {{maxInputTokens}} tokens en una ventana de {{contextWindow}} tokens.",
+    "contextCapacityExceededWithReports": "El contexto obligatorio supera la capacidad del modelo: prompt del sistema {{systemTokens}} tokens + informes obligatorios {{reportTokens}} tokens + herramientas activas {{toolTokens}} tokens = {{requiredTokens}} tokens, con un límite de entrada de {{maxInputTokens}} tokens en una ventana de {{contextWindow}} tokens.",
     "ollamaConnectionLost": "Se perdió la conexión con Ollama",
     "ollamaServerError": "Error del servidor Ollama",
     "ollamaWaiting": "Conexión con Ollama perdida ({{seconds}}s) — reconectando…",

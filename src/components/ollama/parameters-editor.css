@@ -86,6 +86,14 @@
   min-width: 0;
 }
 
+.pe-textarea {
+  min-height: var(--btn-height);
+}
+
+.pe-stop-controls .pe-value-control,
+.pe-custom-row {
+  align-items: flex-start;
+}
 
 .pe-fixed-input,
 .pe-custom-value {

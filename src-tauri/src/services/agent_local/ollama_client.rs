@@ -1,12 +1,11 @@
 use crate::services::agent_local::model_customizations;
-use crate::services::agent_local::modelfile_parser::{
-    merge_parameter, parse_modelfile, parse_param_value,
-};
 use crate::services::agent_local::ollama_base_url;
 use crate::services::agent_local::ollama_model_helpers::{
     build_model_from_tags, dedupe_by_digest, parse_show_response,
 };
-use crate::services::agent_local::types_ollama::{ModelInfo, OllamaModel};
+use crate::services::agent_local::types_ollama::{
+    ModelInfo, OllamaModel, OllamaModelEditorData, OllamaParameter,
+};
 use reqwest::Client;
 use std::time::Duration;
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -123,6 +122,26 @@ impl OllamaClient {
         Ok(info.modelfile)
     }
 
+    pub async fn get_model_editor_data(&self, name: &str) -> Result<OllamaModelEditorData, String> {
+        let info = self.show_model(name).await?;
+        let decoded = super::ollama_parameter_summary::parse(&info.parameters).and_then(|entries| {
+            super::ollama_parameter_validation::validate_parameter_entries(&entries)?;
+            Ok(entries
+                .into_iter()
+                .map(|(key, value)| OllamaParameter { key, value })
+                .collect())
+        });
+        let (parameters, parameter_error) = match decoded {
+            Ok(parameters) => (Some(parameters), None),
+            Err(error) => (None, Some(error)),
+        };
+        Ok(OllamaModelEditorData {
+            modelfile: info.modelfile,
+            parameters,
+            parameter_error,
+        })
+    }
+
     pub async fn update_modelfile(&self, name: &str, content: &str) -> Result<(), String> {
         super::ollama_modelfile_create::create_from_modelfile(name, content).await
     }
@@ -132,47 +151,15 @@ impl OllamaClient {
         name: &str,
         entries: Vec<(String, String)>,
     ) -> Result<(), String> {
-        super::ollama_parameter_validation::validate_parameter_entries(&entries)?;
-        let current = self.get_modelfile(name).await?;
-        let mut parsed = parse_modelfile(&current);
-        parsed.parameters.clear();
-        for (k, v) in entries {
-            let key = k.trim();
-            let raw = v.trim();
-            if key.is_empty() || raw.is_empty() {
-                continue;
-            }
-            let value = parse_param_value(raw);
-            merge_parameter(&mut parsed.parameters, key, value);
-        }
-        parsed.from = Some(name.to_string());
-        parsed.license = None;
-        let payload = parsed.to_api_payload(name);
-        self.post_create(&payload).await
-    }
-
-    pub(crate) async fn post_create(&self, payload: &serde_json::Value) -> Result<(), String> {
-        let enriched = super::ollama_create_payload::non_streaming(payload)?;
-        let resp = self
-            .client
-            .post(format!("{}/api/create", self.base_url()))
-            .json(&enriched)
-            .send()
-            .await
-            .map_err(|e| {
-                ::log::error!("[ollama] /api/create send: {e}");
-                "ollama-create-error".to_string()
-            })?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let body = resp.text().await.unwrap_or_default();
-            ::log::error!(
-                "[ollama] /api/create failed ({status}): {}",
-                crate::services::llm::sanitize_log_body(&body)
-            );
-            return Err("ollama-create-error".to_string());
-        }
-        Ok(())
+        let info = self.show_model(name).await?;
+        let current_entries = super::ollama_parameter_summary::parse(&info.parameters)?;
+        super::ollama_parameter_validation::validate_parameter_entries(&current_entries)?;
+        let updated = super::ollama_modelfile_parameters::rewrite(
+            &info.modelfile,
+            &current_entries,
+            &entries,
+        )?;
+        super::ollama_modelfile_create::create_from_modelfile(name, &updated).await
     }
 
     pub async fn show_model(&self, name: &str) -> Result<ModelInfo, String> {

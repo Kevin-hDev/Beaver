@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -7,8 +7,9 @@ import { SettingsDetailHeader } from "@/components/settings/shell/settings-detai
 import { ModelfileEditor } from "./modelfile-editor";
 import { ParametersEditor } from "./parameters-editor";
 import { ModelfileView } from "./modelfile-view";
-import { extractParameters } from "./modelfile-utils";
+import type { ModelParameter, OllamaModelEditorData } from "./model-parameter-types";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
+import { localStoreErrorMessage } from "@/lib/local-store-error";
 
 type Mode = "view" | "edit-parameters" | "edit-modelfile";
 
@@ -21,6 +22,9 @@ interface ModelfileViewerProps {
 export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewerProps) {
   const { t } = useTranslation();
   const [modelfile, setModelfile] = useState("");
+  const [parameters, setParameters] = useState<ModelParameter[] | null>([]);
+  const [parameterError, setParameterError] = useState<string | null>(null);
+  const [loadErrorKey, setLoadErrorKey] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("view");
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -37,12 +41,20 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
     }
   };
 
-  const parameters = useMemo(() => extractParameters(modelfile), [modelfile]);
-
   const loadModelfile = useCallback(() => {
-    return invoke<string>("get_modelfile", { name: modelName })
-      .then(setModelfile)
-      .catch(() => {});
+    return invoke<OllamaModelEditorData>("get_modelfile", { name: modelName })
+      .then((data) => {
+        setModelfile(data.modelfile);
+        setParameters(data.parameters);
+        setParameterError(data.parameterError);
+        setLoadErrorKey(null);
+      })
+      .catch((cause: unknown) => {
+        setModelfile("");
+        setParameters(null);
+        setParameterError(null);
+        setLoadErrorKey(localStoreErrorMessage(cause, (key) => key));
+      });
   }, [modelName]);
 
   useEffect(() => {
@@ -68,7 +80,11 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
         onConfirm={() => void handleDelete()}
         disabled={deleting}
       />
-      <button className="btn btn-sm btn-secondary" onClick={() => setMode("edit-modelfile")}>
+      <button
+        className="btn btn-sm btn-secondary"
+        onClick={() => setMode("edit-modelfile")}
+        disabled={loadErrorKey !== null}
+      >
         {t("ollama.editModelfile")}
       </button>
     </>
@@ -81,7 +97,7 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
   ) : mode === "edit-parameters" ? (
     <ParametersEditor
       modelName={modelName}
-      initialParameters={parameters}
+      initialParameters={parameters ?? []}
       onSave={() => { setMode("view"); void loadModelfile(); }}
       onCancel={() => setMode("view")}
     />
@@ -96,6 +112,9 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
     <ModelfileView
       modelName={modelName}
       parameters={parameters}
+      parameterError={loadErrorKey !== null
+        ? t(loadErrorKey)
+        : parameterError ? localStoreErrorMessage(parameterError, t) : null}
       modelfile={modelfile}
       onEditParameters={() => setMode("edit-parameters")}
     />

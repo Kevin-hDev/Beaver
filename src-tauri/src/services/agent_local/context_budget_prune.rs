@@ -1,13 +1,13 @@
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::compress::{context_capsules, token_estimate};
 
-const REQUIRED_CONTEXT_ERROR: &str = "Le rapport du sous-agent dépasse la capacité du modèle.";
 const TRUNCATION_NOTICE: &str = "\n[message truncated for context budget]";
 
 pub(super) struct PruneParams<'a> {
     pub max_input: usize,
     pub tool_tokens: usize,
     pub capsule_context: u64,
+    pub context_window: u64,
     pub provider_id: &'a str,
     pub original_len: usize,
     pub repair: super::context_budget_history::HistoryRepairReport,
@@ -33,13 +33,19 @@ pub(super) fn prepare_with_limit(
         .filter(|message| is_required_report(message))
         .cloned()
         .collect::<Vec<_>>();
-    let required_tokens = super::context_budget::estimate_messages(params.provider_id, &next)
-        .saturating_add(super::context_budget::estimate_messages(
-            params.provider_id,
-            &required_reports,
-        ));
+    let system_tokens = super::context_budget::estimate_messages(params.provider_id, &next);
+    let report_tokens =
+        super::context_budget::estimate_messages(params.provider_id, &required_reports);
+    let required_tokens = system_tokens.saturating_add(report_tokens);
     if required_tokens > message_limit {
-        return Err(REQUIRED_CONTEXT_ERROR.to_string());
+        let details = super::context_capacity_error::ContextCapacityDetails::from_counts(
+            system_tokens,
+            report_tokens,
+            params.tool_tokens,
+            params.max_input,
+            params.context_window,
+        );
+        return Err(super::context_capacity_error::encode(details));
     }
 
     let capsule = context_capsules::recent_file_context_message(messages, params.capsule_context)
