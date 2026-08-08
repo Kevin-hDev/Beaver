@@ -1,0 +1,36 @@
+Problème
+
+Beaver pouvait masquer sa fenêtre avant d'avoir réellement arrêté ses services. Des tâches asynchrones et des processus enfants (Ollama, SearXNG, terminaux, MCP, extensions, forecast, téléchargements et flux agentiques) pouvaient encore vivre pendant ou après la sortie. La fermeture devait aussi préserver le comportement macOS de la croix rouge et permettre à l'outil de mise à jour validé de relancer l'application.
+
+Objectif
+
+Rendre la fermeture déterministe sur Windows, Linux et macOS : aucune ressource possédée par Beaver ne survit à une fermeture complète, aucun nouveau travail ne démarre après le début du nettoyage, et la mise à jour automatique reste fonctionnelle.
+
+Décisions
+
+- Cycle explicite Running -> Cleaning -> Ready : toutes les fenêtres sont masquées, le jeton de durée de vie est annulé, les services sont nettoyés, puis Tauri reçoit l'autorisation de sortir.
+- Windows/Linux : fermer la fenêtre principale demande la sortie complète. macOS : la croix rouge masque uniquement la fenêtre ; Cmd+Q et le menu Quitter déclenchent le nettoyage complet.
+- Flux, téléchargements, SearXNG, scheduler, polling Ollama et file watcher utilisent des jetons d'annulation. Les tâches importantes attendent leur libération avec un délai borné et un abandon forcé en dernier recours.
+- Les démarrages tardifs de flux, téléchargements, gateway, Ollama et réveils planifiés sont refusés dès que le nettoyage commence.
+- Après la boucle Tauri, CEF est arrêté dans l'ordre requis, puis un balayage borné termine les descendants encore possédés par Beaver.
+- Pendant une mise à jour, un seul helper peut survivre : PID, parent, heure de démarrage et chemin canonique doivent tous correspondre à l'identité enregistrée. Les autres enfants sont arrêtés.
+- Le clic droit de l'icône de zone de notification reste disponible ; seul le clic gauche relâché restaure la fenêtre.
+- Le test instable de frontière de sous-agent n'utilise plus un délai arbitraire de deux secondes : un signal exact marque désormais la sauvegarde terminale.
+
+Sécurité et portée
+
+Les listes et lots restent bornés. Les commandes système reçoivent leurs arguments séparément. Les erreurs visibles ajoutées restent génériques. Les échecs d'identification, de nettoyage ou de handoff ferment par défaut. Aucun secret ni corps de provider n'est journalisé.
+
+Validation
+
+- Rust : cargo test --lib --features windows-tests -- --test-threads=1 = 2987 réussis, 0 échec, 4 ignorés.
+- Rust : cargo check --lib --features windows-tests réussi.
+- Clippy : profil windows-tests réussi avec uniquement l'autorisation dead-code nécessaire à ce profil sans CEF. Le Clippy natif normal est bloqué avant compilation du code par l'archive CEF locale absente et l'indisponibilité DNS.
+- Frontend : 412 fichiers / 1885 tests réussis ; TypeScript et lint réussis.
+- Scripts : build 44/44, CEF 6/6, runner E2E 6/6, hôte extensions 51/51.
+- Format Rust, vérification de format du projet et git diff --check réussis.
+- graphify update . terminé après les dernières modifications.
+
+Contrôles manuels recommandés
+
+Vérifier sur Windows et Linux que la croix et Quitter ne laissent aucun processus Beaver/Ollama/enfant. Vérifier sur macOS que la croix rouge conserve l'application active mais que Cmd+Q la termine entièrement. Vérifier enfin une mise à jour réelle avec relance automatique.
