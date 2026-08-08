@@ -10,6 +10,7 @@ use tauri::Manager;
 #[cfg(native_browser)]
 static NATIVE_APPLICATION_READY: AtomicBool = AtomicBool::new(false);
 
+#[cfg(any(test, native_browser))]
 pub(super) fn is_browser_ready_event(event: &tauri::RunEvent) -> bool {
     matches!(event, tauri::RunEvent::Ready)
 }
