@@ -52,12 +52,86 @@ async fn reuses_a_workspace_saved_with_a_verbatim_windows_prefix() {
         .unwrap();
     let verbatim_work = PathBuf::from(format!(r"\\?\{}", first.work.display()));
 
-    let second = ensure_work_path(&base, &verbatim_work, None)
-        .await
-        .unwrap();
+    let second = ensure_work_path(&base, &verbatim_work, None).await.unwrap();
 
     assert_eq!(first.work, second.work);
     assert_eq!(first.outputs, second.outputs);
+}
+
+#[cfg(windows)]
+#[test]
+fn network_workspace_namespaces_resolve_to_the_same_relative_path() {
+    let base = PathBuf::from(r"\\server\share\Beaver\session-workspaces");
+    let relative = PathBuf::from(r"2026-08-08\analyse-12345678\work");
+    let work = PathBuf::from(
+        r"\\?\UNC\server\share\Beaver\session-workspaces\2026-08-08\analyse-12345678\work",
+    );
+    let canonical_base = PathBuf::from(r"\\?\UNC\server\share\Beaver\session-workspaces");
+    let canonical_work = canonical_base.join(&relative);
+
+    let resolved = relative_workspace_path_with(&base, &work, |path| {
+        if path == base {
+            Ok(canonical_base.clone())
+        } else if path == work {
+            Ok(canonical_work.clone())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "unexpected path",
+            ))
+        }
+    })
+    .expect("network workspace relative path");
+
+    assert_eq!(resolved, relative);
+}
+
+#[cfg(windows)]
+#[test]
+fn long_workspace_namespaces_resolve_to_the_same_relative_path() {
+    let long_home = format!(r"C:\{}", vec!["profile-segment"; 14].join(r"\"));
+    let base = PathBuf::from(long_home).join(r".local\share\cl-go-dash\session-workspaces");
+    let relative = PathBuf::from(r"2026-08-08\analyse-12345678\work");
+    let canonical_base = PathBuf::from(format!(r"\\?\{}", base.display()));
+    let canonical_work = canonical_base.join(&relative);
+    assert!(canonical_work.as_os_str().len() > 260);
+
+    let resolved = relative_workspace_path_with(&base, &canonical_work, |path| {
+        if path == base {
+            Ok(canonical_base.clone())
+        } else if path == canonical_work {
+            Ok(canonical_work.clone())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "unexpected path",
+            ))
+        }
+    })
+    .expect("long workspace relative path");
+
+    assert_eq!(resolved, relative);
+}
+
+#[cfg(windows)]
+#[test]
+fn canonical_fallback_rejects_a_workspace_outside_the_base() {
+    let base = PathBuf::from(r"\\server\share\Beaver\session-workspaces");
+    let work = PathBuf::from(r"\\?\UNC\server\share\outside\2026-08-08\session\work");
+
+    let result = relative_workspace_path_with(&base, &work, |path| {
+        if path == base {
+            Ok(PathBuf::from(
+                r"\\?\UNC\server\share\Beaver\session-workspaces",
+            ))
+        } else {
+            Ok(PathBuf::from(
+                r"\\?\UNC\server\share\outside\2026-08-08\session\work",
+            ))
+        }
+    });
+
+    assert!(result.is_err());
 }
 
 #[test]
@@ -70,7 +144,10 @@ fn reserved_and_unusable_names_have_a_safe_fallback() {
 #[test]
 fn unicode_labels_remain_readable() {
     assert_eq!(slugify("Créer une présentation"), "créer-une-présentation");
-    assert_eq!(slugify("プレゼンテーションを作成"), "プレゼンテーションを作成");
+    assert_eq!(
+        slugify("プレゼンテーションを作成"),
+        "プレゼンテーションを作成"
+    );
     assert_eq!(slugify("创建演示文稿"), "创建演示文稿");
 }
 

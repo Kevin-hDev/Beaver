@@ -1,9 +1,9 @@
 use super::types_session::AgentSession;
 #[path = "session_workspace_name.rs"]
 mod name;
-use name::{session_suffix, slugify, valid_date};
 #[cfg(test)]
 use name::SLUG_MAX_CHARS;
+use name::{session_suffix, slugify, valid_date};
 use std::path::{Path, PathBuf};
 
 pub struct SessionWorkspace {
@@ -50,7 +50,7 @@ async fn ensure_work_path(
 ) -> Result<SessionWorkspace, String> {
     let base = dunce::simplified(base);
     let work = dunce::simplified(work);
-    let relative = work.strip_prefix(base).map_err(|_| workspace_error())?;
+    let relative = relative_workspace_path(base, work)?;
     let mut components = relative.components();
     let date = normal_component(components.next())?;
     let name = normal_component(components.next())?;
@@ -80,11 +80,34 @@ async fn ensure_work_path(
     })
 }
 
-fn normal_component(component: Option<std::path::Component<'_>>) -> Result<&std::ffi::OsStr, String> {
+fn relative_workspace_path(base: &Path, work: &Path) -> Result<PathBuf, String> {
+    relative_workspace_path_with(base, work, |path| std::fs::canonicalize(path))
+}
+
+fn relative_workspace_path_with<F>(
+    base: &Path,
+    work: &Path,
+    canonicalize: F,
+) -> Result<PathBuf, String>
+where
+    F: Fn(&Path) -> std::io::Result<PathBuf>,
+{
+    if let Ok(relative) = dunce::simplified(work).strip_prefix(dunce::simplified(base)) {
+        return Ok(relative.to_path_buf());
+    }
+    let canonical_base = canonicalize(base).map_err(|_| workspace_error())?;
+    let canonical_work = canonicalize(work).map_err(|_| workspace_error())?;
+    canonical_work
+        .strip_prefix(canonical_base)
+        .map(Path::to_path_buf)
+        .map_err(|_| workspace_error())
+}
+
+fn normal_component(
+    component: Option<std::path::Component<'_>>,
+) -> Result<&std::ffi::OsStr, String> {
     match component {
-        Some(std::path::Component::Normal(value))
-            if !value.to_string_lossy().contains('\0') =>
-        {
+        Some(std::path::Component::Normal(value)) if !value.to_string_lossy().contains('\0') => {
             Ok(value)
         }
         _ => Err(workspace_error()),
@@ -101,7 +124,10 @@ pub(crate) fn access_roots_for(candidate: &Path) -> Vec<PathBuf> {
     let Some(base) = dunce::canonicalize(base).ok().filter(|path| path.is_dir()) else {
         return Vec::new();
     };
-    let Some(candidate) = dunce::canonicalize(candidate).ok().filter(|path| path.is_dir()) else {
+    let Some(candidate) = dunce::canonicalize(candidate)
+        .ok()
+        .filter(|path| path.is_dir())
+    else {
         return Vec::new();
     };
     let Ok(relative) = candidate.strip_prefix(&base) else {
@@ -119,7 +145,10 @@ pub(crate) fn access_roots_for(candidate: &Path) -> Vec<PathBuf> {
         .join(components[0].as_os_str())
         .join(components[1].as_os_str())
         .join("work");
-    let Some(work) = dunce::canonicalize(work).ok().filter(|path| candidate.starts_with(path)) else {
+    let Some(work) = dunce::canonicalize(work)
+        .ok()
+        .filter(|path| candidate.starts_with(path))
+    else {
         return Vec::new();
     };
     let outputs = configured_outputs_base()
@@ -140,7 +169,11 @@ pub(crate) fn access_roots_for(candidate: &Path) -> Vec<PathBuf> {
 }
 
 fn first_user_label(session: &AgentSession) -> Result<&str, String> {
-    let Some(message) = session.messages.iter().find(|message| message.role == "user") else {
+    let Some(message) = session
+        .messages
+        .iter()
+        .find(|message| message.role == "user")
+    else {
         return Err(workspace_error());
     };
     if !message.content.trim().is_empty() {
