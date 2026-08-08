@@ -6,7 +6,7 @@ mod paths;
 #[cfg(test)]
 use name::SLUG_MAX_CHARS;
 use name::{session_suffix, slugify, valid_date};
-#[cfg(test)]
+#[cfg(all(test, windows))]
 use paths::relative_workspace_path_with;
 use paths::{reject_symlinks, relative_workspace_path, validate_created_path, workspace_error};
 use std::path::{Path, PathBuf};
