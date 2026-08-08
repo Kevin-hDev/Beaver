@@ -1,0 +1,23 @@
+Problème constaté
+
+Une fermeture immédiate de Beaver, surtout pendant le démarrage sous Windows, pouvait laisser actifs WebView2/CEF, l'hôte Node des extensions, SearXNG ou Ollama. Le flux de sortie réentrant en deux étapes, un délai global unique et des démarrages détachés concurrents rendaient le nettoyage incomplet. Le gestionnaire du tray traitait aussi tout clic comme une activation gauche.
+
+Objectif
+
+Garantir qu'une vraie commande Quitter arrête Beaver et tous les processus qu'il possède, sans modifier le comportement natif de la croix rouge macOS : elle masque toujours la fenêtre et conserve l'application active.
+
+Décisions
+
+Une seule demande de sortie est désormais envoyée. Le retour de la boucle Tauri déclenche ensuite le nettoyage ordonné des services, puis du navigateur/CEF, puis un balayage final borné des enfants directs. Chaque service dispose de son propre délai de 3 secondes afin qu'un service bloqué n'annule pas le nettoyage des autres. Les PID du balayage final sont limités à 256 et leur parenté est revérifiée juste avant l'arrêt pour éviter de viser un processus réutilisé ou étranger.
+
+Les démarrages des extensions, de SearXNG, d'Ollama et de la gateway partagent un CancellationToken. Une fermeture pendant le démarrage interrompt le travail et détruit l'arbre de processus déjà lancé. Les commandes SearXNG utilisent des arguments séparés, drainent stderr avec une conservation bornée à 16 Kio et ferment l'arbre en cas d'annulation ou d'erreur.
+
+La croix rouge macOS masque la fenêtre. Cmd+Q et Quitter dans le tray effectuent une sortie complète. Sous Windows et Linux, fermer la fenêtre principale effectue une sortie complète. Le réglage historique run_when_window_closed reste lisible pour compatibilité mais ne peut plus maintenir silencieusement l'application après une fermeture explicite. Seul un relâchement du bouton gauche active la fenêtre depuis le tray ; le clic droit reste réservé au menu natif. Tauri ne remonte pas les événements TrayIconEvent sous Linux, mais le menu contextuel natif reste géré par le framework.
+
+Vérifications
+
+Rust avec le profil Windows de test : cargo fmt, cargo check, clippy strict et 2981 tests réussis, 4 ignorés, 0 échec en exécution séquentielle. Les collisions préexistantes du private store observées en parallèle passent isolément. Frontend : 412 fichiers et 1885 tests Vitest, 44 scripts de build, 6 tests CEF, 6 tests e2e et 51 tests de l'hôte d'extensions ; lint et TypeScript passent. graphify update a été exécuté.
+
+Limite locale
+
+Le contrôle natif CEF hors profil windows-tests et le smoke test de l'application corrigée n'ont pas pu être exécutés sur cette machine : la préparation locale de CEF échoue avec EPERM lors du renommage vers .cef-verified/current. Les archives et leurs empreintes sont valides, et ce blocage d'environnement est indépendant du diff. La compilation et les tests compatibles CI Windows passent.
