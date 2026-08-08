@@ -16,21 +16,31 @@ where
     if let Ok(relative) = dunce::simplified(work).strip_prefix(dunce::simplified(base)) {
         return Ok(relative.to_path_buf());
     }
-    canonical_path_and_relative_with(base, work, canonicalize).map(|(_, relative)| relative)
+    canonical_contained_path_and_relative_with(base, work, canonicalize)
+        .map(|(_, relative)| relative)
 }
 
 pub(super) fn reject_symlinks(base: &Path, target: &Path) -> Result<(), String> {
+    let canonical_base = if dunce::simplified(target)
+        .strip_prefix(dunce::simplified(base))
+        .is_err()
+    {
+        canonicalize_optional(base)?
+    } else {
+        None
+    };
     let mut current = target;
     loop {
-        match std::fs::symlink_metadata(current) {
+        let current_exists = match std::fs::symlink_metadata(current) {
             Ok(metadata) if metadata.file_type().is_symlink() => {
                 return Err(workspace_error());
             }
-            Ok(_) => {}
-            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Ok(_) => true,
+            Err(error) if error.kind() == ErrorKind::NotFound => false,
             Err(_) => return Err(workspace_error()),
-        }
-        if paths_identify_same_directory(base, current)? {
+        };
+        if paths_identify_same_directory(base, canonical_base.as_deref(), current, current_exists)?
+        {
             return Ok(());
         }
         current = current.parent().ok_or_else(workspace_error)?;
@@ -39,7 +49,7 @@ pub(super) fn reject_symlinks(base: &Path, target: &Path) -> Result<(), String> 
 
 pub(super) fn validate_created_path(base: &Path, path: &Path) -> Result<(), String> {
     let (canonical_path, _) =
-        canonical_path_and_relative_with(base, path, |path| std::fs::canonicalize(path))?;
+        canonical_contained_path_and_relative_with(base, path, |path| std::fs::canonicalize(path))?;
     if canonical_path.is_dir() {
         Ok(())
     } else {
@@ -47,7 +57,7 @@ pub(super) fn validate_created_path(base: &Path, path: &Path) -> Result<(), Stri
     }
 }
 
-fn canonical_path_and_relative_with<F>(
+fn canonical_contained_path_and_relative_with<F>(
     base: &Path,
     path: &Path,
     canonicalize: F,
@@ -64,24 +74,26 @@ where
     Ok((canonical_path, relative))
 }
 
-fn paths_identify_same_directory(base: &Path, candidate: &Path) -> Result<bool, String> {
+fn paths_identify_same_directory(
+    base: &Path,
+    canonical_base: Option<&Path>,
+    candidate: &Path,
+    candidate_exists: bool,
+) -> Result<bool, String> {
     if dunce::simplified(base) == dunce::simplified(candidate) {
         return Ok(true);
     }
-    let base_exists = path_exists(base)?;
-    let candidate_exists = path_exists(candidate)?;
-    if !base_exists || !candidate_exists {
+    let Some(canonical_base) = canonical_base.filter(|_| candidate_exists) else {
         return Ok(false);
-    }
-    let canonical_base = std::fs::canonicalize(base).map_err(|_| workspace_error())?;
+    };
     let canonical_candidate = std::fs::canonicalize(candidate).map_err(|_| workspace_error())?;
-    Ok(canonical_base == canonical_candidate)
+    Ok(canonical_base == canonical_candidate.as_path())
 }
 
-fn path_exists(path: &Path) -> Result<bool, String> {
-    match std::fs::symlink_metadata(path) {
-        Ok(_) => Ok(true),
-        Err(error) if error.kind() == ErrorKind::NotFound => Ok(false),
+fn canonicalize_optional(path: &Path) -> Result<Option<PathBuf>, String> {
+    match std::fs::canonicalize(path) {
+        Ok(path) => Ok(Some(path)),
+        Err(error) if error.kind() == ErrorKind::NotFound => Ok(None),
         Err(_) => Err(workspace_error()),
     }
 }
