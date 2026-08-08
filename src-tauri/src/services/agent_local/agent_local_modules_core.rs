@@ -27,6 +27,7 @@ pub mod clone_summary;
 pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
 pub mod compress_hook;
+pub mod context_capacity_error;
 pub mod context_budget;
 mod context_budget_history;
 mod context_budget_prune;
@@ -82,13 +83,18 @@ pub mod ollama_client;
 #[cfg(test)]
 mod ollama_client_integration_tests;
 pub mod ollama_collect;
-pub mod ollama_create_payload;
 pub mod ollama_model_helpers;
 pub mod ollama_modelfile_create;
+pub mod ollama_modelfile_parameters;
+#[cfg(test)]
+mod ollama_modelfile_parameters_tests;
 pub mod ollama_native_prompts;
 #[cfg(test)]
 mod ollama_native_prompts_tests;
 pub mod ollama_parameter_validation;
+pub mod ollama_parameter_summary;
+#[cfg(test)]
+mod ollama_parameter_summary_tests;
 pub mod ollama_registry;
 pub mod ollama_registry_details;
 #[cfg(test)]

@@ -5,7 +5,7 @@ use crate::services::agent_local::ollama_registry_details;
 use crate::services::agent_local::translation_cache;
 use crate::services::agent_local::translator;
 use crate::services::agent_local::types_ollama::{
-    ModelInfo, OllamaModel, RegistryModel, RegistryModelDetails, RegistryTag,
+    ModelInfo, OllamaModel, OllamaModelEditorData, RegistryModel, RegistryModelDetails, RegistryTag,
 };
 use crate::services::ollama_lifecycle;
 use tauri::Emitter;
@@ -97,8 +97,8 @@ fn first_cleanup_error<const N: usize>(results: [Result<(), String>; N]) -> Resu
 pub async fn get_modelfile(
     name: String,
     ollama: tauri::State<'_, OllamaClient>,
-) -> Result<String, String> {
-    ollama.get_modelfile(&name).await
+) -> Result<OllamaModelEditorData, String> {
+    ollama.get_model_editor_data(&name).await
 }
 
 #[tauri::command]

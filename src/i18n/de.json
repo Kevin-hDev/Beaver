@@ -589,6 +589,8 @@
     "addCustomParameter": "+ Benutzerdefinierten Parameter hinzufügen",
     "invalidCustomParameter": "Prüfe Name und Wert des benutzerdefinierten Parameters.",
     "invalidOfficialParameter": "Prüfe die Zahlenwerte der offiziellen Parameter.",
+    "unsupportedParameterValue": "Werte dürfen keine nicht unterstützten Steuerzeichen und keine drei aufeinanderfolgenden Anführungszeichen (\"\"\") enthalten.",
+    "parameterValueTooLong": "Jeder Parameterwert muss unter 1024 Byte bleiben.",
     "parameterGroups": {
       "context": "Kontext",
       "length": "Antwortlänge",
@@ -1085,10 +1087,17 @@
       "ollamaNativePromptsWrite": "Beaver kann „ollama-native-system-prompts.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
       "systemPromptsWrite": "Beaver kann „system-prompt-settings.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
       "privateStorage": "Beaver kann nicht auf seinen privaten Speicher zugreifen. Prüfe Speicherplatz und Berechtigungen und versuche es erneut.",
-      "systemPromptsRuntimeFallback": "Die System-Prompt-Einstellungen sind nicht verfügbar. Beaver verwendet für diese Nachricht vorübergehend seine Standardanweisungen."
+      "systemPromptsRuntimeFallback": "Die System-Prompt-Einstellungen sind nicht verfügbar. Beaver verwendet für diese Nachricht vorübergehend seine Standardanweisungen.",
+      "ollamaModelfileInvalid": "Die Modelfile kann nicht sicher geändert werden. Es wurden keine Änderungen angewendet.",
+      "ollamaParameterInvalid": "Mindestens ein Ollama-Parameter enthält einen Wert, den der vereinfachte Editor nicht ändern kann. Korrigiere ihn im Modelfile-Editor.",
+      "ollamaResponseInvalid": "Ollama hat unlesbare oder zu große Parameter zurückgegeben. Die rohe Modelfile bleibt verfügbar."
     },
     "streamStartFailed": "Stream konnte nicht gestartet werden.",
     "streamInterrupted": "Stream wurde unterbrochen.",
+    "contextCapacityExceededUnknownWindow": "Der erforderliche Kontext überschreitet das Reduktionsziel: System-Prompt {{systemTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Ziel von {{maxInputTokens}} Token. Das tatsächliche Kontextfenster des Modells konnte nicht ermittelt werden.",
+    "contextCapacityExceededUnknownWindowWithReports": "Der erforderliche Kontext überschreitet das Reduktionsziel: System-Prompt {{systemTokens}} Token + erforderliche Berichte {{reportTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Ziel von {{maxInputTokens}} Token. Das tatsächliche Kontextfenster des Modells konnte nicht ermittelt werden.",
+    "contextCapacityExceeded": "Der erforderliche Kontext überschreitet die Modellkapazität: System-Prompt {{systemTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Eingabelimit von {{maxInputTokens}} Token in einem Kontextfenster mit {{contextWindow}} Token.",
+    "contextCapacityExceededWithReports": "Der erforderliche Kontext überschreitet die Modellkapazität: System-Prompt {{systemTokens}} Token + erforderliche Berichte {{reportTokens}} Token + aktive Tools {{toolTokens}} Token = {{requiredTokens}} Token, bei einem Eingabelimit von {{maxInputTokens}} Token in einem Kontextfenster mit {{contextWindow}} Token.",
     "ollamaConnectionLost": "Verbindung zu Ollama verloren",
     "ollamaServerError": "Ollama-Serverfehler",
     "ollamaWaiting": "Verbindung zu Ollama verloren ({{seconds}}s) — Verbindung wird wiederhergestellt…",

@@ -21,6 +21,9 @@ const messageKeys = [
   "systemPromptsWrite",
   "privateStorage",
   "systemPromptsRuntimeFallback",
+  "ollamaModelfileInvalid",
+  "ollamaParameterInvalid",
+  "ollamaResponseInvalid",
 ] as const;
 
 type MessageKey = typeof messageKeys[number];
@@ -40,6 +43,9 @@ describe("localStoreErrorMessage", () => {
     ["ollama-native-prompt-store-write", "errors.localStore.ollamaNativePromptsWrite"],
     ["system-prompt-store-write", "errors.localStore.systemPromptsWrite"],
     ["private-store-unavailable", "errors.localStore.privateStorage"],
+    ["ollama-modelfile-invalid", "errors.localStore.ollamaModelfileInvalid"],
+    ["ollama-parameter-invalid", "errors.localStore.ollamaParameterInvalid"],
+    ["ollama-invalid-response", "errors.localStore.ollamaResponseInvalid"],
   ])("traduit %s sans exposer l’erreur brute", (error, expected) => {
     expect(localStoreErrorMessage(error, translate)).toBe(expected);
   });

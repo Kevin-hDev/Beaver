@@ -589,6 +589,8 @@
     "addCustomParameter": "+ 添加自定义参数",
     "invalidCustomParameter": "请检查自定义参数的名称和值。",
     "invalidOfficialParameter": "请检查官方参数的数值。",
+    "unsupportedParameterValue": "值不能包含不受支持的控制字符或三个连续的引号（\"\"\"）。",
+    "parameterValueTooLong": "每个参数值必须小于 1024 字节。",
     "parameterGroups": {
       "context": "上下文",
       "length": "回复长度",
@@ -1085,10 +1087,17 @@
       "ollamaNativePromptsWrite": "Beaver 无法保存“ollama-native-system-prompts.json”。请检查磁盘是否已满，然后重试。",
       "systemPromptsWrite": "Beaver 无法保存“system-prompt-settings.json”。请检查磁盘是否已满，然后重试。",
       "privateStorage": "Beaver 无法访问其私有存储。请检查磁盘空间和权限，然后重试。",
-      "systemPromptsRuntimeFallback": "系统提示词设置当前不可用。Beaver 将暂时为此消息使用默认指令。"
+      "systemPromptsRuntimeFallback": "系统提示词设置当前不可用。Beaver 将暂时为此消息使用默认指令。",
+      "ollamaModelfileInvalid": "无法安全修改 Modelfile。未应用任何更改。",
+      "ollamaParameterInvalid": "至少一个 Ollama 参数包含简化编辑器无法修改的值。请使用 Modelfile 编辑器进行修正。",
+      "ollamaResponseInvalid": "Ollama 返回了无法读取或过大的参数。原始 Modelfile 仍可查看。"
     },
     "streamStartFailed": "流无法启动。",
     "streamInterrupted": "流传输被中断。",
+    "contextCapacityExceededUnknownWindow": "必需上下文超过缩减目标：系统提示词 {{systemTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token，目标为 {{maxInputTokens}} 个 token。无法确定模型的实际上下文窗口。",
+    "contextCapacityExceededUnknownWindowWithReports": "必需上下文超过缩减目标：系统提示词 {{systemTokens}} 个 token + 必需报告 {{reportTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token，目标为 {{maxInputTokens}} 个 token。无法确定模型的实际上下文窗口。",
+    "contextCapacityExceeded": "必需上下文超过模型容量：系统提示词 {{systemTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token；当前上下文窗口为 {{contextWindow}} 个 token，输入上限为 {{maxInputTokens}} 个 token。",
+    "contextCapacityExceededWithReports": "必需上下文超过模型容量：系统提示词 {{systemTokens}} 个 token + 必需报告 {{reportTokens}} 个 token + 已启用工具 {{toolTokens}} 个 token = {{requiredTokens}} 个 token；当前上下文窗口为 {{contextWindow}} 个 token，输入上限为 {{maxInputTokens}} 个 token。",
     "ollamaConnectionLost": "与 Ollama 的连接已断开",
     "ollamaServerError": "Ollama 服务器错误",
     "ollamaWaiting": "与 Ollama 的连接已断开（{{seconds}}s）— 正在重连…",

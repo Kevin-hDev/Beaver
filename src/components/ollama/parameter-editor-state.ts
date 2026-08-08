@@ -3,7 +3,7 @@ import {
   isOfficialParameterKey,
   type SingleValueParameterKey,
 } from "./model-parameter-catalog";
-import type { ModelParameter } from "./modelfile-utils";
+import type { ModelParameter } from "./model-parameter-types";
 
 export const MAX_PARAMETER_ENTRIES = 128;
 export const MAX_STOP_SEQUENCES = 32;
@@ -31,16 +31,14 @@ export function createParameterEditorState(
   for (const parameter of initialParameters.slice(0, MAX_PARAMETER_ENTRIES)) {
     const normalizedKey = parameter.key.trim().toLowerCase();
     if (normalizedKey === "stop") {
-      if (stopValues.length < MAX_STOP_SEQUENCES) stopValues.push(parameter.value);
+      stopValues.push(parameter.value);
       continue;
     }
     if (isOfficialParameterKey(normalizedKey)) {
       values[normalizedKey as SingleValueParameterKey] = parameter.value;
       continue;
     }
-    if (customParameters.length < MAX_CUSTOM_PARAMETERS) {
-      customParameters.push({ key: parameter.key, value: parameter.value });
-    }
+    customParameters.push({ key: parameter.key, value: parameter.value });
   }
 
   return {
@@ -59,13 +57,13 @@ export function buildParameterPayload(state: ParameterEditorState): Array<[strin
   const payload: Array<[string, string]> = [];
   for (const definition of MODEL_PARAMETER_DEFINITIONS) {
     if (definition.key === "stop") {
-      for (const value of state.stopValues) pushEntry(payload, "stop", value);
+      for (const value of state.stopValues) pushTextEntry(payload, "stop", value);
       continue;
     }
-    pushEntry(payload, definition.key, state.values[definition.key]);
+    pushNumericEntry(payload, definition.key, state.values[definition.key]);
   }
   for (const parameter of state.customParameters) {
-    pushEntry(payload, parameter.key, parameter.value);
+    pushTextEntry(payload, parameter.key, parameter.value);
   }
   return payload;
 }
@@ -73,13 +71,29 @@ export function buildParameterPayload(state: ParameterEditorState): Array<[strin
 export function hasInvalidCustomParameter(state: ParameterEditorState): boolean {
   return state.customParameters.some(({ key, value }) => {
     const trimmedKey = key.trim();
-    const trimmedValue = value.trim();
-    if (!trimmedKey && !trimmedValue) return false;
+    if (!trimmedKey && !value) return false;
     return !CUSTOM_PARAMETER_KEY.test(trimmedKey)
       || isOfficialParameterKey(trimmedKey.toLowerCase())
       || trimmedKey.length > MAX_PARAMETER_KEY_LENGTH
-      || trimmedValue.length > MAX_PARAMETER_VALUE_LENGTH;
+      || utf8ByteLength(value) > MAX_PARAMETER_VALUE_LENGTH;
   });
+}
+
+export function hasUnsupportedParameterValue(state: ParameterEditorState): boolean {
+  return parameterValues(state).some((value) => (
+    value.includes('"""')
+    || Array.from(value).some((character) => {
+      const codePoint = character.codePointAt(0) ?? 0;
+      return (codePoint >= 0x7f && codePoint <= 0x9f)
+        || (codePoint < 0x20 && character !== "\n" && character !== "\t");
+    })
+  ));
+}
+
+export function hasOversizedParameterValue(state: ParameterEditorState): boolean {
+  return parameterValues(state).some(
+    (value) => utf8ByteLength(value) > MAX_PARAMETER_VALUE_LENGTH,
+  );
 }
 
 export function hasInvalidOfficialParameter(state: ParameterEditorState): boolean {
@@ -104,8 +118,25 @@ function emptyOfficialValues(): Record<SingleValueParameterKey, string> {
   ) as Record<SingleValueParameterKey, string>;
 }
 
-function pushEntry(payload: Array<[string, string]>, key: string, value: string): void {
+function pushNumericEntry(payload: Array<[string, string]>, key: string, value: string): void {
   const trimmedKey = key.trim();
   const trimmedValue = value.trim();
   if (trimmedKey && trimmedValue) payload.push([trimmedKey, trimmedValue]);
+}
+
+function pushTextEntry(payload: Array<[string, string]>, key: string, value: string): void {
+  const trimmedKey = key.trim();
+  if (trimmedKey && value !== "") payload.push([trimmedKey, value]);
+}
+
+function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
+
+function parameterValues(state: ParameterEditorState): string[] {
+  return [
+    ...Object.values(state.values),
+    ...state.stopValues,
+    ...state.customParameters.map((parameter) => parameter.value),
+  ];
 }
