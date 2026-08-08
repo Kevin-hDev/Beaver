@@ -186,26 +186,26 @@ fn a_very_long_label_is_bounded() {
     assert_eq!(slugify(&label).len(), SLUG_MAX_CHARS);
 }
 
+// Windows symlink creation depends on developer/admin privileges, so these real
+// filesystem scenarios run only where they are portable.
+#[cfg(unix)]
 #[tokio::test]
 async fn a_symlinked_workspace_component_is_rejected() {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::symlink;
+    use std::os::unix::fs::symlink;
 
-        let root = tempfile::tempdir().unwrap();
-        let outside = tempfile::tempdir().unwrap();
-        let base = root.path().join("session-workspaces");
-        let date = base.join("2026-07-29");
-        std::fs::create_dir_all(&date).unwrap();
-        let id = uuid::Uuid::new_v4().to_string();
-        let name = format!("analyse-{}", session_suffix(&id).unwrap());
-        symlink(outside.path(), date.join(name)).unwrap();
+    let root = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    let base = root.path().join("session-workspaces");
+    let date = base.join("2026-07-29");
+    std::fs::create_dir_all(&date).unwrap();
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = format!("analyse-{}", session_suffix(&id).unwrap());
+    symlink(outside.path(), date.join(name)).unwrap();
 
-        assert!(ensure_layout(&base, None, "2026-07-29", "Analyse", &id)
-            .await
-            .is_err());
-        assert!(!outside.path().join("work").exists());
-    }
+    assert!(ensure_layout(&base, None, "2026-07-29", "Analyse", &id)
+        .await
+        .is_err());
+    assert!(!outside.path().join("work").exists());
 }
 
 #[cfg(unix)]
