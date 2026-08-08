@@ -41,6 +41,25 @@ async fn the_same_session_reuses_the_same_workspace() {
     assert_eq!(first.outputs, second.outputs);
 }
 
+#[cfg(windows)]
+#[tokio::test]
+async fn reuses_a_workspace_saved_with_a_verbatim_windows_prefix() {
+    let root = tempfile::tempdir().unwrap();
+    let id = uuid::Uuid::new_v4().to_string();
+    let base = root.path().join("session-workspaces");
+    let first = ensure_layout(&base, None, "2026-07-29", "Analyse", &id)
+        .await
+        .unwrap();
+    let verbatim_work = PathBuf::from(format!(r"\\?\{}", first.work.display()));
+
+    let second = ensure_work_path(&base, &verbatim_work, None)
+        .await
+        .unwrap();
+
+    assert_eq!(first.work, second.work);
+    assert_eq!(first.outputs, second.outputs);
+}
+
 #[test]
 fn reserved_and_unusable_names_have_a_safe_fallback() {
     assert_eq!(slugify("CON"), "session");

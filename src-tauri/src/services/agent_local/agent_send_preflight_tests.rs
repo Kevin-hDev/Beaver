@@ -29,7 +29,10 @@ async fn missing_directory_returns_nearest_existing_parent() {
         prepared,
         PrepareAgentSend::Missing {
             missing_path: missing.to_string_lossy().to_string(),
-            nearest_parent: root.path().canonicalize().unwrap().to_string_lossy().to_string(),
+            nearest_parent: dunce::canonicalize(root.path())
+                .unwrap()
+                .to_string_lossy()
+                .to_string(),
         }
     );
     super::session_store::delete_one(&session.id).await.expect("cleanup");
@@ -55,7 +58,10 @@ async fn create_rebuilds_only_empty_path_and_switch_updates_session() {
     .expect("create");
     assert!(missing.is_dir());
     assert_eq!(std::fs::read_dir(&missing).unwrap().count(), 0);
-    assert_eq!(created, missing.canonicalize().unwrap().to_string_lossy());
+    assert_eq!(
+        created,
+        dunce::canonicalize(&missing).unwrap().to_string_lossy()
+    );
 
     std::fs::remove_dir_all(root.path().join("gone")).expect("remove again");
     let recreated_path = super::session_store::get(&session.id)
@@ -69,7 +75,10 @@ async fn create_rebuilds_only_empty_path_and_switch_updates_session() {
     )
     .await
     .expect("switch");
-    assert_eq!(switched, root.path().canonicalize().unwrap().to_string_lossy());
+    assert_eq!(
+        switched,
+        dunce::canonicalize(root.path()).unwrap().to_string_lossy()
+    );
     let saved = super::session_store::get(&session.id).await.expect("saved");
     assert_eq!(saved.working_dir, switched);
     let project_id = saved.project_id.expect("switched project id");
