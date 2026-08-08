@@ -1,9 +1,14 @@
 use super::types_session::AgentSession;
 #[path = "session_workspace_name.rs"]
 mod name;
+#[path = "session_workspace_paths.rs"]
+mod paths;
 #[cfg(test)]
 use name::SLUG_MAX_CHARS;
 use name::{session_suffix, slugify, valid_date};
+#[cfg(test)]
+use paths::relative_workspace_path_with;
+use paths::{reject_symlinks, relative_workspace_path, validate_created_path, workspace_error};
 use std::path::{Path, PathBuf};
 
 pub struct SessionWorkspace {
@@ -78,29 +83,6 @@ async fn ensure_work_path(
         work: work.to_path_buf(),
         outputs,
     })
-}
-
-fn relative_workspace_path(base: &Path, work: &Path) -> Result<PathBuf, String> {
-    relative_workspace_path_with(base, work, |path| std::fs::canonicalize(path))
-}
-
-fn relative_workspace_path_with<F>(
-    base: &Path,
-    work: &Path,
-    canonicalize: F,
-) -> Result<PathBuf, String>
-where
-    F: Fn(&Path) -> std::io::Result<PathBuf>,
-{
-    if let Ok(relative) = dunce::simplified(work).strip_prefix(dunce::simplified(base)) {
-        return Ok(relative.to_path_buf());
-    }
-    let canonical_base = canonicalize(base).map_err(|_| workspace_error())?;
-    let canonical_work = canonicalize(work).map_err(|_| workspace_error())?;
-    canonical_work
-        .strip_prefix(canonical_base)
-        .map(Path::to_path_buf)
-        .map_err(|_| workspace_error())
 }
 
 fn normal_component(
@@ -184,36 +166,6 @@ fn first_user_label(session: &AgentSession) -> Result<&str, String> {
         .first()
         .map(|file| file.name.as_str())
         .unwrap_or(&session.name))
-}
-
-fn reject_symlinks(base: &Path, target: &Path) -> Result<(), String> {
-    let mut current = target;
-    while current.starts_with(base) {
-        if std::fs::symlink_metadata(current)
-            .is_ok_and(|metadata| metadata.file_type().is_symlink())
-        {
-            return Err(workspace_error());
-        }
-        if current == base {
-            break;
-        }
-        current = current.parent().ok_or_else(workspace_error)?;
-    }
-    Ok(())
-}
-
-fn validate_created_path(base: &Path, path: &Path) -> Result<(), String> {
-    let base = dunce::canonicalize(base).map_err(|_| workspace_error())?;
-    let path = dunce::canonicalize(path).map_err(|_| workspace_error())?;
-    if path.starts_with(base) && path.is_dir() {
-        Ok(())
-    } else {
-        Err(workspace_error())
-    }
-}
-
-fn workspace_error() -> String {
-    "Espace de travail indisponible.".to_string()
 }
 
 #[cfg(test)]

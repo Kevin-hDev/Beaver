@@ -59,6 +59,34 @@ async fn reuses_a_workspace_saved_with_a_verbatim_windows_prefix() {
 }
 
 #[cfg(windows)]
+#[tokio::test]
+async fn reuses_an_existing_workspace_beyond_the_legacy_windows_path_limit() {
+    let root = tempfile::tempdir().unwrap();
+    let mut base = root.path().to_path_buf();
+    while base.as_os_str().len() < 205 {
+        base.push("profile-segment");
+    }
+    base.push("session-workspaces");
+    assert!(base.as_os_str().len() < 260);
+    std::fs::create_dir_all(&base).unwrap();
+
+    let normal_work = base
+        .join("2026-08-08")
+        .join("analyse-with-a-deliberately-long-name-12345678")
+        .join("work");
+    assert!(normal_work.as_os_str().len() > 260);
+    let verbatim_work = PathBuf::from(format!(r"\\?\{}", normal_work.display()));
+    std::fs::create_dir_all(&verbatim_work).unwrap();
+
+    let result = ensure_work_path(&base, &verbatim_work, None).await;
+    assert!(verbatim_work.parent().unwrap().join("outputs").is_dir());
+    let workspace = result.expect("reuse long workspace");
+
+    assert!(workspace.work.is_dir());
+    assert!(workspace.outputs.is_dir());
+}
+
+#[cfg(windows)]
 #[test]
 fn network_workspace_namespaces_resolve_to_the_same_relative_path() {
     let base = PathBuf::from(r"\\server\share\Beaver\session-workspaces");
@@ -178,6 +206,28 @@ async fn a_symlinked_workspace_component_is_rejected() {
             .is_err());
         assert!(!outside.path().join("work").exists());
     }
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn a_symlinked_workspace_alias_is_rejected_after_canonical_fallback() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir().unwrap();
+    let base = root.path().join("session-workspaces");
+    let alias = root.path().join("workspace-alias");
+    let work = base
+        .join("2026-08-08")
+        .join("analyse-12345678")
+        .join("work");
+    std::fs::create_dir_all(&work).unwrap();
+    symlink(&base, &alias).unwrap();
+    let aliased_work = alias
+        .join("2026-08-08")
+        .join("analyse-12345678")
+        .join("work");
+
+    assert!(ensure_work_path(&base, &aliased_work, None).await.is_err());
 }
 
 #[tokio::test]
