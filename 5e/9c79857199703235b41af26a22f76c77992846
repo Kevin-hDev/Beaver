@@ -1,0 +1,7 @@
+Problem: the prior workspace-path commit was correct, but an older Unix symlink test still appeared as a successful no-op on Windows. The canonical fallback also repeated metadata and base canonicalization while walking each ancestor, adding avoidable filesystem traffic on network shares.
+
+Objective: make platform test reporting honest and reduce filesystem work without weakening containment, symlink rejection, long-path support, or fail-closed error handling.
+
+Decisions: move cfg(unix) onto the complete legacy symlink test and document why real symlink creation is not exercised on Windows; keep both real Unix symlink scenarios; canonicalize the base at most once and only when target/base spellings require the alias or Windows namespace fallback; reuse the current symlink_metadata result instead of probing the candidate twice; keep NotFound as the sole tolerated filesystem error; rename the helper to canonical_contained_path_and_relative_with so its containment guarantee is visible.
+
+Validation: Windows targeted workspace suite now reports 12 real tests instead of 13 including a no-op. Full Rust suite: 2974 tests, 2970 passed, 0 failed, 4 ignored. cargo clippy --lib --features windows-tests -- -A dead-code -D warnings passed. cargo fmt --check and git diff --check passed. Independent read-only review found no critical, important, or minor issue and marked the change ready to commit. Graphify AST graph updated.
