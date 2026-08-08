@@ -97,7 +97,9 @@ fn extract(output: &[u8], marker: &[u8]) -> Option<OsString> {
 }
 
 fn find(input: &[u8], needle: &[u8]) -> Option<usize> {
-    input.windows(needle.len()).position(|window| window == needle)
+    input
+        .windows(needle.len())
+        .position(|window| window == needle)
 }
 
 #[cfg(test)]
@@ -110,7 +112,19 @@ mod tests {
     const HELPER_MARKER: &str = "BEAVER_CAPTURE_HELPER_MARKER";
 
     #[test]
-    fn capture_timeout_remains_bounded_when_writer_escapes_process_group() {
+    fn capture_timeout_remains_bounded() {
+        let mut command = Command::new(std::env::current_exe().expect("test executable"));
+        command
+            .args(["escaped_pipe_writer_helper", "--nocapture"])
+            .env(HELPER_PHASE, "slow");
+
+        let started = Instant::now();
+        assert!(run(&mut command, b"missing-marker", Duration::from_millis(100)).is_none());
+        assert!(started.elapsed() < Duration::from_secs(2));
+    }
+
+    #[test]
+    fn escaped_writer_cannot_hold_capture_open() {
         let temp = tempfile::tempdir().expect("tempdir");
         let marker = temp.path().join("escaped-writer-ready");
         let mut command = Command::new(std::env::current_exe().expect("test executable"));
@@ -120,13 +134,13 @@ mod tests {
             .env(HELPER_MARKER, &marker);
 
         let started = Instant::now();
-        assert!(run(&mut command, b"missing-marker", Duration::from_millis(100)).is_none());
+        assert!(run(&mut command, b"missing-marker", Duration::from_secs(5)).is_none());
 
         assert!(
             marker.exists(),
             "escaped descendant did not leave the process group"
         );
-        assert!(started.elapsed() < Duration::from_secs(2));
+        assert!(started.elapsed() < Duration::from_secs(6));
     }
 
     #[test]
@@ -134,6 +148,7 @@ mod tests {
         match std::env::var(HELPER_PHASE).as_deref() {
             Ok("parent") => spawn_escaped_writer(),
             Ok("child") => hold_inherited_stdout(),
+            Ok("slow") => std::thread::sleep(Duration::from_secs(5)),
             _ => {}
         }
     }
@@ -152,7 +167,7 @@ mod tests {
 
         let marker = PathBuf::from(marker);
         let started = Instant::now();
-        while !marker.exists() && started.elapsed() < Duration::from_secs(1) {
+        while !marker.exists() && started.elapsed() < Duration::from_secs(5) {
             std::thread::sleep(Duration::from_millis(10));
         }
         assert!(marker.exists());

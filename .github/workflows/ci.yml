@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -44,6 +46,11 @@ jobs:
       - name: Format check (bloquant)
         working-directory: src-tauri
         run: cargo fmt --check
+
+      - name: Format check for included Rust sources (bloquant)
+        env:
+          RUSTFMT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/build/check-rust-format.mjs
 
       - name: Clippy strict (bloquant)
         working-directory: src-tauri
