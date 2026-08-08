@@ -131,8 +131,7 @@ where
     if !path.is_absolute() || !path.is_dir() {
         return Err(format!("Répertoire invalide : {dir}"));
     }
-    let canonical =
-        dunce::canonicalize(path).map_err(|e| format!("Canonicalize : {e}"))?;
+    let canonical = dunce::canonicalize(path).map_err(|e| format!("Canonicalize : {e}"))?;
     let lock = super::session_store::lock_session(id).await;
     let _guard = lock.lock().await;
     let mut session = get(id).await?;
