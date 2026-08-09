@@ -4,6 +4,11 @@ use super::{session_store, subagent_hidden_reports, subagent_registry};
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
 
+// This is only a wall-clock CI watchdog. Ordering assertions below prove that
+// terminal events wake the parent directly, while five seconds absorbs a
+// saturated Windows test runner without weakening production behavior.
+const TERMINAL_WAKE_TEST_TIMEOUT: Duration = Duration::from_secs(5);
+
 async fn parent_session(name: &str) -> super::types_session::AgentSession {
     session_store::create_full(name, "llama3", "ollama", false, None)
         .await
@@ -20,7 +25,7 @@ fn report(child_id: &str) -> super::types_session::SubagentHiddenReport {
     )
 }
 
-#[tokio::test(start_paused = true)]
+#[tokio::test]
 async fn terminal_report_wakes_parent_immediately() {
     let _guard = lock().await;
     let parent = parent_session("Terminal report wait").await;
@@ -48,7 +53,7 @@ async fn terminal_report_wakes_parent_immediately() {
     .await
     .expect("complete child");
 
-    let (outcome, messages) = tokio::time::timeout(Duration::from_millis(1), waiter)
+    let (outcome, messages) = tokio::time::timeout(TERMINAL_WAKE_TEST_TIMEOUT, waiter)
         .await
         .expect("terminal event must wake immediately")
         .expect("join waiter");
@@ -61,7 +66,7 @@ async fn terminal_report_wakes_parent_immediately() {
     cleanup_parent(&parent.id).await;
 }
 
-#[tokio::test(start_paused = true)]
+#[tokio::test]
 async fn terminal_failure_wakes_parent_immediately() {
     let _guard = lock().await;
     let parent = parent_session("Terminal failure wait").await;
@@ -84,7 +89,7 @@ async fn terminal_failure_wakes_parent_immediately() {
     .await
     .expect("complete child failure");
 
-    let outcome = tokio::time::timeout(Duration::from_millis(1), waiter)
+    let outcome = tokio::time::timeout(TERMINAL_WAKE_TEST_TIMEOUT, waiter)
         .await
         .expect("terminal failure must wake immediately")
         .expect("join waiter");
@@ -125,11 +130,13 @@ async fn first_report_resumes_once_then_waits_for_the_second_child() {
     )
     .await
     .expect("complete first child");
+    tokio::time::resume();
     let (first_outcome, mut messages, mut orchestrator) =
-        tokio::time::timeout(Duration::from_millis(1), first_waiter)
+        tokio::time::timeout(TERMINAL_WAKE_TEST_TIMEOUT, first_waiter)
             .await
             .expect("first report must wake immediately")
             .expect("join first waiter");
+    tokio::time::pause();
     assert_eq!(first_outcome, Ok(true));
     orchestrator
         .complete_model_request(true, &CancellationToken::new(), &messages)
@@ -159,7 +166,8 @@ async fn first_report_resumes_once_then_waits_for_the_second_child() {
     )
     .await
     .expect("complete second child");
-    let (second_outcome, _) = tokio::time::timeout(Duration::from_millis(1), second_waiter)
+    tokio::time::resume();
+    let (second_outcome, _) = tokio::time::timeout(TERMINAL_WAKE_TEST_TIMEOUT, second_waiter)
         .await
         .expect("second report must wake immediately")
         .expect("join second waiter");

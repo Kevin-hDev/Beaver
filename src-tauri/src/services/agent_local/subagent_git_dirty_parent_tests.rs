@@ -3,7 +3,7 @@ use std::process::Command;
 
 #[tokio::test]
 async fn apply_preserves_unrelated_parent_changes() {
-    let repo = super::subagent_worktree_ownership_tests::init_repo_with_commit();
+    let repo = super::subagent_worktree_ownership_tests::init_repo_with_commit().await;
     let parent = session_store::create_full(
         "Parent dirty",
         "model",
@@ -54,13 +54,17 @@ async fn apply_preserves_unrelated_parent_changes() {
         "from child\n"
     );
     let _ = super::subagent_change_store::remove(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }
 
 #[tokio::test]
 async fn conflict_restores_unrelated_parent_changes_exactly() {
-    let repo = super::subagent_worktree_ownership_tests::init_repo_with_commit();
+    let repo = super::subagent_worktree_ownership_tests::init_repo_with_commit().await;
     let (parent, child) = sessions().await;
     let execution = uuid::Uuid::new_v4().to_string();
     let worktree = subagent_worktree::create_for_execution(repo.path(), &child.id, &execution)
@@ -82,21 +86,32 @@ async fn conflict_restores_unrelated_parent_changes_exactly() {
     let head = git(repo.path(), &["rev-parse", "HEAD"]);
     let before = status(repo.path(), &["README.md", "local.txt"]);
 
-    assert!(subagent_git_actions::apply(repo.path(), &parent.id, &child.id, &change.id)
-        .await
-        .is_err());
+    assert!(
+        subagent_git_actions::apply(repo.path(), &parent.id, &child.id, &change.id)
+            .await
+            .is_err()
+    );
 
     assert_eq!(git(repo.path(), &["rev-parse", "HEAD"]), head);
     assert_eq!(status(repo.path(), &["README.md", "local.txt"]), before);
-    assert_eq!(std::fs::read_to_string(repo.path().join("local.txt")).unwrap(), "keep me\n");
     assert_eq!(
-        super::subagent_change_store::load(&child.id).await.unwrap().status,
+        std::fs::read_to_string(repo.path().join("local.txt")).unwrap(),
+        "keep me\n"
+    );
+    assert_eq!(
+        super::subagent_change_store::load(&child.id)
+            .await
+            .unwrap()
+            .status,
         super::types_subagent_change::SubagentChangeStatus::Conflict
     );
     cleanup(&parent.id, &child.id).await;
 }
 
-async fn sessions() -> (super::types_session::AgentSession, super::types_session::AgentSession) {
+async fn sessions() -> (
+    super::types_session::AgentSession,
+    super::types_session::AgentSession,
+) {
     let parent = session_store::create_full(
         "Parent dirty",
         "model",
@@ -129,7 +144,14 @@ fn status(repo: &std::path::Path, paths: &[&str]) -> String {
         .args(paths)
         .output()
         .expect("git status");
-    assert!(output.status.success());
+    assert!(
+        output.status.success(),
+        "git status failed ({:?}, repo={}, gitdir={}): {}",
+        output.status,
+        repo.is_dir(),
+        repo.join(".git").exists(),
+        String::from_utf8_lossy(&output.stderr)
+    );
     String::from_utf8(output.stdout).expect("utf8")
 }
 
@@ -140,19 +162,51 @@ fn git(repo: &std::path::Path, args: &[&str]) -> String {
         .args(args)
         .output()
         .expect("git");
-    assert!(output.status.success());
-    String::from_utf8(output.stdout).expect("utf8").trim().to_string()
+    assert!(
+        output.status.success(),
+        "git command failed ({:?}, repo={}, gitdir={}): {}",
+        output.status,
+        repo.is_dir(),
+        repo.join(".git").exists(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8(output.stdout)
+        .expect("utf8")
+        .trim()
+        .to_string()
 }
 
 fn commit_all(repo: &std::path::Path, message: &str) {
-    assert!(Command::new("git").args(["-C"]).arg(repo).args(["add", "-A"]).status().unwrap().success());
-    assert!(Command::new("git").args(["-C"]).arg(repo).args([
-        "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", message,
-    ]).status().unwrap().success());
+    assert!(Command::new("git")
+        .args(["-C"])
+        .arg(repo)
+        .args(["add", "-A"])
+        .status()
+        .unwrap()
+        .success());
+    assert!(Command::new("git")
+        .args(["-C"])
+        .arg(repo)
+        .args([
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.com",
+            "commit",
+            "-m",
+            message,
+        ])
+        .status()
+        .unwrap()
+        .success());
 }
 
 async fn cleanup(parent_id: &str, child_id: &str) {
     let _ = super::subagent_change_store::remove(child_id).await;
-    session_store::delete_one(child_id).await.expect("delete child");
-    session_store::delete_one(parent_id).await.expect("delete parent");
+    session_store::delete_one(child_id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(parent_id)
+        .await
+        .expect("delete parent");
 }
