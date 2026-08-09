@@ -58,7 +58,7 @@ impl UltimateExit {
         Self::initialize_inner(Instant::now(), RawExitActions::production(), |worker| {
             std::thread::Builder::new()
                 .name("beaver-ultimate-exit".to_string())
-                .spawn(move || worker())
+                .spawn(worker)
         })
     }
 
@@ -89,7 +89,7 @@ impl UltimateExit {
         Self::initialize_with(origin, actions, |worker| {
             std::thread::Builder::new()
                 .name("beaver-ultimate-exit-test".to_string())
-                .spawn(move || worker())
+                .spawn(worker)
         })
     }
 

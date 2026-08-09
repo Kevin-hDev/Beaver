@@ -1,5 +1,5 @@
 use std::io;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use tauri::{ExitRequestApi, Manager};
 
 mod blocking;
@@ -32,6 +32,7 @@ mod ultimate_tests;
 mod watchdog_tests;
 
 pub struct AppExitCoordinator {
+    begin_lock: Mutex<()>,
     state: Arc<state::ShutdownState>,
     registry: registry::AdmissionRegistry,
     emergency: emergency::EmergencyInventory,
@@ -45,11 +46,13 @@ enum BeginResult {
     Started(policy::ShutdownTimeline),
     Waiting,
     Ready,
+    InvariantViolation,
 }
 
 impl AppExitCoordinator {
     pub fn initialize() -> io::Result<Self> {
         Ok(Self {
+            begin_lock: Mutex::new(()),
             state: Arc::new(state::ShutdownState::new()),
             registry: registry::AdmissionRegistry::new(),
             emergency: emergency::EmergencyInventory::new(),
@@ -60,21 +63,27 @@ impl AppExitCoordinator {
     }
 
     fn begin(&self, exit_code: i32) -> BeginResult {
+        let _guard = match self.begin_lock.lock() {
+            Ok(guard) => guard,
+            Err(_) => return BeginResult::InvariantViolation,
+        };
+        match self.state.phase() {
+            state::ShutdownPhase::ReadyToExit => return BeginResult::Ready,
+            state::ShutdownPhase::Closing => return BeginResult::Waiting,
+            state::ShutdownPhase::Running => {}
+        }
         let origin = std::time::Instant::now();
         if !self.registry.close() {
-            return match self.state.phase() {
-                state::ShutdownPhase::ReadyToExit => BeginResult::Ready,
-                _ => BeginResult::Waiting,
-            };
+            return BeginResult::InvariantViolation;
         }
         if self.state.begin_closing() != state::BeginClosing::Started {
-            raw_exit::terminate_process(1);
+            return BeginResult::InvariantViolation;
         }
         let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
         if self.timeline.set(timeline).is_err()
             || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
         {
-            raw_exit::terminate_process(1);
+            return BeginResult::InvariantViolation;
         }
         BeginResult::Started(timeline)
     }
@@ -112,6 +121,7 @@ impl AppExitCoordinator {
         ultimate: ultimate::UltimateExit,
     ) -> Self {
         Self {
+            begin_lock: Mutex::new(()),
             state: Arc::new(state::ShutdownState::new()),
             registry: registry::AdmissionRegistry::new(),
             emergency: emergency::EmergencyInventory::new(),
@@ -135,6 +145,11 @@ impl AppExitCoordinator {
     fn phase_for_test(&self) -> state::ShutdownPhase {
         self.state.phase()
     }
+
+    #[cfg(test)]
+    fn close_registry_for_test(&self) {
+        assert!(self.registry.close());
+    }
 }
 
 pub fn request(app: &tauri::AppHandle, code: i32) {
@@ -150,6 +165,7 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitReq
     match coordinator.begin(exit_code) {
         BeginResult::Ready => {}
         BeginResult::Waiting => api.prevent_exit(),
+        BeginResult::InvariantViolation => raw_exit::terminate_process(1),
         BeginResult::Started(timeline) => {
             api.prevent_exit();
             if coordinator
@@ -178,7 +194,7 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitReq
                         ::log::warn!("[exit] cleanup interrupted")
                     }
                 }
-                ::log::info!("[exit] cleanup completed in {:?}", started.elapsed());
+                ::log::info!("[exit] cleanup phase finished in {:?}", started.elapsed());
                 if handle.state::<AppExitCoordinator>().mark_ready() {
                     handle.exit(exit_code);
                 }

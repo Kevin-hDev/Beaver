@@ -39,6 +39,17 @@ async fn a_cleanup_panic_is_contained() {
 }
 
 #[tokio::test]
+async fn a_blocking_cleanup_panic_is_not_silently_ignored() {
+    let outcome = run_with_deadline(
+        Instant::now() + Duration::from_secs(1),
+        blocking::execute(|| panic!("injected blocking cleanup panic")),
+    )
+    .await;
+
+    assert_eq!(outcome, CleanupOutcome::Panicked);
+}
+
+#[tokio::test]
 async fn ollama_phase_runs_after_the_other_services() {
     let order = Arc::new(Mutex::new(Vec::with_capacity(2)));
     let services_order = Arc::clone(&order);

@@ -1,7 +1,7 @@
 use super::policy::{ShutdownPolicy, ShutdownTimeline};
 use super::ultimate::{RawExitActions, UltimateExit};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
 fn test_timeline(origin: Instant) -> ShutdownTimeline {
@@ -107,5 +107,46 @@ fn panic_in_primary_action_invokes_the_fallback() {
 
     assert!(ultimate.arm(origin + Duration::from_millis(10), 3));
     wait_for_count(&fallbacks, 1);
+    ultimate.stop_for_test();
+}
+
+#[test]
+fn blocked_cef_shutdown_cannot_delay_the_ultimate_exit() {
+    let origin = Instant::now();
+    let calls = Arc::new(AtomicUsize::new(0));
+    let action_calls = Arc::clone(&calls);
+    let mut ultimate = UltimateExit::initialize_for_test(
+        origin,
+        RawExitActions::testing(
+            move |_| {
+                action_calls.fetch_add(1, Ordering::AcqRel);
+            },
+            |_| {},
+        ),
+    )
+    .expect("ultimate thread");
+    assert!(ultimate.arm(origin + Duration::from_millis(30), 1));
+
+    let release = Arc::new((Mutex::new(false), Condvar::new()));
+    let worker_release = Arc::clone(&release);
+    let lifecycle = std::thread::spawn(move || {
+        crate::startup::run_before_browser_shutdown(
+            || 0,
+            || {
+                let (lock, wake) = &*worker_release;
+                let mut released = lock.lock().expect("CEF test lock");
+                while !*released {
+                    released = wake.wait(released).expect("CEF test wait");
+                }
+            },
+            || {},
+        )
+    });
+
+    wait_for_count(&calls, 1);
+    let (lock, wake) = &*release;
+    *lock.lock().expect("CEF release lock") = true;
+    wake.notify_all();
+    assert_eq!(lifecycle.join().expect("CEF lifecycle"), 0);
     ultimate.stop_for_test();
 }
