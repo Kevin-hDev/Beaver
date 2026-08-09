@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::subagent_task::FinalizedSubagent;
 
 pub(super) const SUBAGENT_COMPLETION_ERROR: &str =
@@ -21,7 +24,11 @@ impl TerminalOutcome {
     }
 
     pub fn failure() -> Self {
-        Self::new(false, super::subagent_status::FAILED, SUBAGENT_COMPLETION_ERROR)
+        Self::new(
+            false,
+            super::subagent_status::FAILED,
+            SUBAGENT_COMPLETION_ERROR,
+        )
     }
 }
 
