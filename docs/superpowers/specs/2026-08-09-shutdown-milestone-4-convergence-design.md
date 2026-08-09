@@ -30,7 +30,7 @@ Fermer les angles morts restants sans ajouter de nouveau comportement produit, p
 
 Les recherches couvrent le diff cumulé depuis le `main` antérieur au jalon 1, pas seulement le dernier PR.
 
-La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse toute ligne encore ouverte ou fermée sans test et revalide spécifiquement le job macOS natif issu de `d3c7011`, déjà introduit au jalon 1B. Ce job doit préparer la source CEF vérifiée, exécuter `cargo check --all-targets` et Clippy strict sur macOS ; sa présence dans le YAML sans exécution verte ne suffit pas.
+La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse toute ligne encore ouverte ou fermée sans test et revalide spécifiquement le job macOS natif issu de `d3c7011`, repris dès le jalon 1. Ce job doit préparer la source CEF vérifiée, exécuter `cargo check --all-targets` et Clippy strict sur macOS ; sa présence dans le YAML sans exécution verte ne suffit pas.
 
 ## Validation native
 

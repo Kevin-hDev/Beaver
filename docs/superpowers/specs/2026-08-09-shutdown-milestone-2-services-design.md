@@ -61,6 +61,13 @@ Le téléchargement Beaver écoute l'annulation à chaque étape et supprime son
 
 ## Tests obligatoires
 
+Avant l'adoption des producteurs, le jalon rend hermétiques les deux interférences parallèles observées pendant la validation de J1, sans les attribuer au code de fermeture et sans masquer leur cause par une exécution globale séquentielle :
+
+- `subagent_correction_capacity_tests::sixty_four_corrections_are_allowed_and_sixty_fifth_is_rejected` ;
+- `tool_result_truncate::tests::persisted_result_path_is_directly_readable_by_the_file_tool`.
+
+La cause racine de chaque interférence est démontrée séparément. Les deux tests doivent réussir isolément et au sein de la suite Rust parallèle avant la fusion de J2 ; une sérialisation ciblée n'est acceptable que si la ressource réellement partagée ne peut pas être isolée et si cette contrainte est documentée.
+
 - démarrage refusé après `Closing` pour chaque service ;
 - fermeture pendant `starting`, `running` et `stopping` ;
 - saturation de chaque registre borné ;

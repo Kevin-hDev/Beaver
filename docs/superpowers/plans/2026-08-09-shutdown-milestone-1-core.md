@@ -374,3 +374,34 @@ Créer des commits cohérents par lot, puis rattacher au dernier commit une note
 **Step 7: Préparer la continuité de maintenance avant fusion**
 
 Créer depuis le dernier `main` publiable une branche protégée réservée aux correctifs critiques ou de sécurité. Consigner son point de départ, reporter tout correctif dans les branches de jalon actives et conserver cette branche jusqu’à la fusion et à la validation native du jalon 4. Aucune release publique ne part du `main` transitoire.
+
+### Task 11: Fermer les réserves de review avant la PR
+
+**Files:**
+- Modify: `.github/workflows/ci.yml`
+- Modify: `docs/superpowers/specs/2026-08-09-shutdown-milestone-2-services-design.md`
+- Modify: `docs/superpowers/specs/2026-08-09-shutdown-milestone-4-convergence-design.md`
+
+**Step 1: Restaurer la preuve native macOS**
+
+- Reprendre uniquement le job `backend-macos-native` du commit historique `d3c7011`.
+- Ne reprendre aucun code de l'ancienne architecture de fermeture.
+- Préparer la source CEF vérifiée, puis exécuter `cargo check --all-targets` et `cargo clippy --all-targets -- -D warnings` sur `macos-latest`.
+
+**Step 2: Attribuer précisément les instabilités parallèles**
+
+- Nommer les deux tests observés pendant la validation J1.
+- Consigner leur correction hermétique comme prérequis J2, sans prétendre qu'ils ont été cassés par J1.
+- Interdire qu'une exécution globale séquentielle soit présentée comme leur correction.
+- Faire revalider leur réussite parallèle au jalon 4.
+
+**Step 3: Valider avant commit**
+
+```powershell
+git diff --exit-code d3c7011 -- .github/workflows/ci.yml
+git diff --check
+```
+
+- Comparer le job repris à `d3c7011`.
+- Vérifier que le workflow de PR couvre Ubuntu, Windows et macOS.
+- Vérifier que la branche de maintenance reste différée jusqu'au dernier instant avant la fusion.

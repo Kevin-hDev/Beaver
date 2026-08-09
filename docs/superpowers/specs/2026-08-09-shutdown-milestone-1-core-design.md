@@ -67,6 +67,7 @@ Juste avant la fusion de ce jalon, une branche de maintenance protégée est cr�
 - ordre CEF existant inchangé ;
 - frontière CEF factice volontairement bloquée : le processus parent atteint tout de même la sortie ultime ;
 - smoke test du chemin CEF normal existant sur Windows et macOS, sans modification du sandbox ni du lancement des helpers ;
+- job CI natif macOS repris de `d3c7011`, avec préparation de la source CEF vérifiée, `cargo check --all-targets` et Clippy strict ;
 - test Linux confirmant que `native_browser` reste désactivé et qu'aucun helper CEF n'est créé.
 
 ## Critères de fusion
