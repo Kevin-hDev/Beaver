@@ -46,6 +46,10 @@ Après qu'un processus a potentiellement été créé, une publication invalide,
 
 Le comportement supposé d'auto-terminaison des processus Chromium n'est jamais utilisé comme preuve contractuelle. Le repli sûr est l'absence de lancement, pas l'espoir qu'un helper non supervisé finira par sortir.
 
+L'état `Unavailable avant lancement` écrit uniquement une catégorie locale bornée et nettoyée — création d'objet, permission, admission, reaper ou sandbox — sans chemin, jeton ni détail système sensible. Ces catégories permettent de distinguer une machine réellement défaillante d'une incompatibilité de livraison sans ajouter de télémétrie distante.
+
+La preuve de livraison ne se limite pas aux runners CI propres. Le build empaqueté est exercé sur une machine Windows avec les protections Microsoft actives, puis sur au moins un environnement renforcé représentatif — antivirus tiers ou politique d'entreprise — ainsi que sur un macOS avec Gatekeeper et quarantaine actifs. Les produits et versions observés sont consignés dans la Git note. Une incompatibilité reproductible sur une configuration normalement supportée bloque la fusion ; elle n'est pas reclassée en simple panne locale.
+
 ## Contraintes Windows
 
 L'exécutable Beaver sert aussi au bac à sable shell. Le filtre CEF exige donc réservation, génération, parent, heure de démarrage et exécutable canonique ; le chemin seul est insuffisant. L'autorité et les handles restent exclusivement dans le parent. La zone modifiable par le helper ne porte jamais un handle, un état d'admission ou les identifiants d'un autre slot.
@@ -77,6 +81,8 @@ Le reaper parent précréé rescane les générations admises et revalide l'iden
 - échec de chaque prérequis avant initialisation : `BrowserCapability::Unavailable`, Beaver utilisable et aucun helper créé ;
 - test Linux confirmant que `native_browser` reste désactivé et qu'aucun helper CEF n'est créé ;
 - smoke test natif `Ready supervisé` obligatoire sur Windows et macOS ; l'échec injecté avant initialisation couvre séparément `Unavailable avant lancement` sans en faire un état de livraison ;
+- build empaqueté `Ready supervisé` avec protections système actives, puis Windows renforcé par antivirus tiers ou politique d'entreprise ; aucune désactivation du sandbox, aucune exception antivirus demandée à l'utilisateur ;
+- catégories locales d'indisponibilité bornées, nettoyées et testées sans chemin ni détail interne ; aucune télémétrie distante ajoutée ;
 - test Linux limité à l'absence de `native_browser` et de helper CEF, l'intégration Linux complète restant hors périmètre.
 
 ## Critères de fusion
@@ -84,11 +90,12 @@ Le reaper parent précréé rescane les générations admises et revalide l'iden
 - aucune identification fondée seulement sur un nom ou un PID ;
 - aucune permission de sandbox élargie pour faire passer la publication ;
 - Windows et macOS sont obligatoirement `Ready supervisé` avec leurs preuves natives ;
+- la matrice réelle de compatibilité du build empaqueté est verte et consignée ; une incompatibilité reproductible sur une machine supportée bloque la fusion ;
 - le chemin local `Unavailable avant lancement` est testé par injection et ne remplace jamais la preuve normale ;
 - aucun helper CEF admis ne poursuit d'exécution dans le scénario d'arrêt natif bloqué ;
 - tout objet noyau résiduel et tout bootstrap refusé disparaissent dans la fenêtre de constat ;
 - aucune application externe ni aucun helper shell adopté ou signalé ;
-- job CI macOS CEF et validations Windows natives réellement exécutés ;
+- job CI macOS CEF, validations Windows natives et essais avec protections système réellement exécutés ;
 - toutes les sous-lignes J1B de l'inventaire sont fermées et référencent leurs tests ;
 - fichiers de production sous 230 lignes, suites complètes et CI native vertes ;
-- Git note détaillant les preuves `Ready supervisé`, la défense locale, les alternatives rejetées et la décision de ne pas livrer une plateforme avec le navigateur désactivé.
+- Git note détaillant les preuves `Ready supervisé`, les environnements renforcés testés, la défense locale, les alternatives rejetées et la décision de ne pas livrer une plateforme avec le navigateur désactivé. Ce jalon est nécessaire mais ne suffit pas à autoriser une release, qui attend encore la validation du jalon 4.

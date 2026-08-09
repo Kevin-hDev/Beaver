@@ -34,6 +34,7 @@ Ce jalon est volontairement limité : il garantit la sortie du processus parent 
 - admission, identification, confinement et terminaison forcée des helpers CEF : jalon 1B ;
 - CI native et smoke tests du protocole CEF sandboxé : jalon 1B ;
 - adoption exhaustive des autres services et Job Objects : jalon 2 ;
+- compteurs opérationnels de saturation et preuves de libération propres à chaque producteur : jalon 2, au moment de leur adoption ;
 - journal et migration Ollama : jalon 3 ;
 - nettoyage structurel et validation finale cumulative : jalon 4.
 
@@ -45,7 +46,9 @@ Le watchdog de processus ne signale qu'une identité vérifiable déjà admise d
 
 Le chemin CEF reste inchangé dans ce jalon : même sandbox, même initialisation et même ordre d'arrêt. Si `cef::shutdown()` se bloque, le tueur ultime garantit que Beaver lui-même sort à 15 secondes, mais le jalon 1 ne transforme pas l'auto-terminaison habituelle des helpers Chromium en garantie contractuelle. L'absence de preuve forcée pour ces helpers est une exception temporaire, explicitement ouverte dans l'inventaire jusqu'au jalon 1B.
 
-Aucune release publique ne peut être créée dans cet état transitoire. Après la fusion de ce socle, les jalons 1B et 2 peuvent démarrer en parallèle ; le jalon 1B doit être fusionné et validé nativement sur Windows et macOS avant le jalon 4 et avant la publication d'une version.
+Aucune release publique ne peut être créée dans cet état transitoire. Après la fusion de ce socle, les jalons 1B et 2 peuvent démarrer en parallèle ; le jalon 1B doit être fusionné et validé nativement sur Windows et macOS avant le jalon 4. La publication reste interdite jusqu'à la fusion et à la validation du jalon 4 complet.
+
+Juste avant la fusion de ce jalon, une branche de maintenance protégée est créée depuis le `main` antérieur au chantier. Elle ne reçoit que les correctifs critiques ou de sécurité nécessaires à une release d'urgence, et chaque correctif est reporté dans les branches actives. Elle reste disponible jusqu'à la validation du jalon 4 ; le `main` transitoire n'est jamais utilisé pour fabriquer une release publique.
 
 ## Tests obligatoires
 
@@ -75,5 +78,6 @@ Aucune release publique ne peut être créée dans cet état transitoire. Après
 - toutes les sous-lignes J1 de l'inventaire sont fermées et référencent leurs tests ;
 - fichiers de production sous 230 lignes ;
 - tests Rust ciblés et complets, formatage, Clippy, frontend et CI native verts ;
-- aucune release publique avant fusion du jalon 1B ;
+- branche de maintenance pré-chantier créée avant fusion et conservée jusqu'au jalon 4 ;
+- aucune release publique avant fusion et validation du jalon 4 ;
 - Git note du jalon avec décisions et preuves de validation.

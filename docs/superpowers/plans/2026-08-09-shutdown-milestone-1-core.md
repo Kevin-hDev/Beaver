@@ -370,3 +370,7 @@ Comparer tout le diff à `main` sous cinq angles :
 **Step 6: Commit et Git note**
 
 Créer des commits cohérents par lot, puis rattacher au dernier commit une note détaillée contenant : problème, objectif, architecture, décisions rejetées, lignes d’inventaire fermées ou laissées ouvertes, tests rouges/verts, validations multi-OS disponibles et limites restantes du jalon 1B.
+
+**Step 7: Préparer la continuité de maintenance avant fusion**
+
+Créer depuis le dernier `main` publiable une branche protégée réservée aux correctifs critiques ou de sécurité. Consigner son point de départ, reporter tout correctif dans les branches de jalon actives et conserver cette branche jusqu’à la fusion et à la validation native du jalon 4. Aucune release publique ne part du `main` transitoire.

@@ -15,6 +15,7 @@ Remplacer les suppositions basées sur les dossiers et le résultat booléen du 
 - empreintes et versions exactes de la cible et de la version précédente, avec cible rejetée optionnelle uniquement quand la cible a déjà disparu avant le rollback durable ;
 - deux stagings modernes distincts ;
 - migration des layouts publiés ;
+- résolution et confinement du stockage effectif des modèles avant toute mutation de bundle ;
 - sonde possédée du binaire cible sur port et dossier de modèles isolés ;
 - résultat de démarrage typé ;
 - rollback durable et nettoyage non fatal après validation ;
@@ -41,6 +42,14 @@ Les tests partent des layouts réellement publiés :
 - branche de référence actuelle.
 
 Ces layouts utilisent `ollama-bundle`, `ollama-bundle-staging`, `ollama-bundle-old` et `ollama-bundle-failed`. La migration applique exactement la table du contrat principal. Une combinaison inconnue reste intacte et retourne une récupération requise ; elle n'est jamais « nettoyée » par intuition.
+
+Les migrations automatisées sont complétées par une vraie mise à niveau depuis chaque version publiée listée, avec un profil produit par cette version et au moins un modèle déjà présent. Après la mise à niveau, la liste des modèles, leurs empreintes de contrôle et un appel local restent valides sans nouveau téléchargement. Ces essais sont exécutés sur chaque OS où la version source a été publiée et leurs versions exactes sont consignées.
+
+## Isolation du stockage des modèles
+
+Avant toute écriture de journal, renommage ou suppression, le gestionnaire calcule le chemin de modèles réellement transmis au sidecar : valeur héritée de `OLLAMA_MODELS` lorsqu'elle existe, sinon valeur par défaut de l'environnement d'exécution. Une valeur relative est résolue depuis le vrai dossier de travail du processus Ollama. La sonde de validation utilise toujours un dossier temporaire explicitement isolé.
+
+Le chemin effectif et chacun des dossiers transactionnels modernes ou hérités sont résolus à partir de leurs ancêtres existants, sans suivre silencieusement un symlink, une junction ou un reparse point. La comparaison emploie l'identité et les règles de casse du système de fichiers, jamais un simple préfixe textuel. Si le stockage des modèles est égal, parent ou enfant de `ollama-bundle`, `ollama-bundle-staging`, `ollama-bundle-old`, d'un staging moderne, d'une sauvegarde, d'une cible rejetée ou d'un rebut, l'opération échoue avant toute mutation avec un code stable traduit dans les sept langues. Un chemin impossible à déterminer échoue également fermé. Aucun chemin complet n'est affiché ou journalisé.
 
 ## Validation possédée
 
@@ -70,6 +79,9 @@ Le journal est synchronisé avant chaque renommage destructif. Les copies, suppr
 - `RollbackPending { rejected_target: None }` avec `ollama-bundle-failed` ou `ollama-bundle-failed-delete` présent : récupération requise, aucun renommage ou retrait, journal et contenu des dossiers identiques octet par octet ;
 - même preuve pour `RollbackCleanupPending { rejected_target: None }` ;
 - migrations de toutes les releases listées ;
+- mise à niveau réelle depuis chaque release listée sur ses OS publiés, avec modèle préexistant toujours listé, vérifié et utilisable sans nouveau téléchargement ;
+- `OLLAMA_MODELS` absent, externe, relatif, situé dans chaque dossier transactionnel moderne ou hérité, parent ou enfant d'un tel dossier, et aliasé par symlink, junction ou reparse point ; seuls les chemins sans chevauchement sont autorisés selon les règles natives de casse ;
+- chemin de modèles impossible à résoudre : aucune écriture de journal, aucun renommage et erreur publique traduite sans chemin ;
 - démon externe sur la route globale avec version identique ou différente ;
 - sonde cible réussie, version différente, port occupé et enfant mort ;
 - échec de nettoyage après validation ;
@@ -84,6 +96,8 @@ Le journal est synchronisé avant chaque renommage destructif. Les copies, suppr
 - aucun accès direct aux dossiers transactionnels hors gestionnaire ;
 - aucun booléen ne confond sidecar possédé et démon externe ;
 - toute interruption testée possède une reprise automatique ou un état fermé sans perte ;
+- aucune transaction ne démarre tant que l'absence de chevauchement avec le stockage effectif des modèles n'est pas prouvée ;
+- les mises à niveau réelles de toutes les versions publiées conservent les modèles existants sans redownload ;
 - toutes les sous-lignes J3 de l'inventaire sont fermées et référencent leurs tests ;
 - tests ciblés, suite complète, CI native et test manuel Ollama verts ;
 - Git note détaillée du jalon.

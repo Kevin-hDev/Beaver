@@ -139,6 +139,8 @@ Le registre n'invente aucun identifiant public : une entrée est référencée p
 
 Le registre global suit les opérations de haut niveau. Les services composés, comme le gateway ou le scheduler, conservent un registre interne borné pour leurs propres tâches.
 
+Le jalon 1 expose déjà le nombre actif nécessaire à sa preuve de fermeture. Pendant l'adoption du jalon 2, avant de brancher les producteurs, le registre global et chaque registre métier ajoutent uniquement des compteurs atomiques de taille fixe : admissions actives, maximum atteint depuis le démarrage, refus pour saturation et refus après `Closing`. Ces compteurs alimentent les diagnostics locaux sans identifiant, contenu utilisateur ni télémétrie distante. Les tests de chaque producteur prouvent la libération du slot sur succès, erreur, annulation, panique et abandon, puis répètent assez de cycles pour dépasser largement la capacité cumulée sans provoquer de fausse saturation.
+
 ### Inventaire d'adoption obligatoire
 
 Doivent passer par l'admission suivie :
@@ -349,6 +351,12 @@ Les noms sont centralisés dans `services::paths` et désignent uniquement des e
 
 Les deux stagings distincts empêchent une première installation et une mise à jour interrompues de se confondre. Le verrou unique interdit néanmoins leur exécution concurrente.
 
+### Isolement du stockage des modèles
+
+Le sidecar hérite actuellement de l'environnement Beaver. Le gestionnaire calcule donc avant toute mutation le chemin de modèles réellement transmis : `OLLAMA_MODELS` hérité lorsqu'il existe, sinon le chemin par défaut de l'environnement d'exécution. Une valeur relative est résolue depuis le vrai dossier de travail du processus Ollama. La sonde possédée reçoit au contraire un dossier temporaire explicitement isolé et ne peut jamais réutiliser ce stockage réel.
+
+Le chemin effectif et tous les dossiers transactionnels modernes ou hérités de la table des layouts sont comparés après résolution canonique de leurs ancêtres existants et rejet de tout symlink, junction ou reparse point ambigu. La comparaison emploie l'identité et les règles de casse du système de fichiers, jamais un préfixe textuel. Tout chevauchement dans un sens ou dans l'autre — égalité, stockage parent d'un bundle ou stockage enfant d'un bundle — bloque l'installation, la mise à jour et la récupération avant l'écriture du journal. Une résolution impossible échoue fermée. Le code public `ollama-model-store-conflict` est traduit dans les sept langues et ne révèle aucun chemin ; les logs conservent seulement la catégorie nettoyée.
+
 Une sauvegarde ou une cible rejetée n'est jamais supprimée récursivement sous son nom d'autorité. Le gestionnaire vérifie d'abord son empreinte, exige l'absence du rebut correspondant, la renomme atomiquement vers ce rebut direct, synchronise le parent, puis supprime le rebut sans suivre de symlink, junction ou reparse point. Une interruption peut laisser un rebut partiel dont l'empreinte a changé : la phase durable autorise explicitement la reprise de cette seule suppression. La présence simultanée de la source et du rebut, un rebut hors de la phase attendue ou une racine non régulière reste ambigu et ne déclenche aucune suppression.
 
 Les layouts réellement publiés sont recensés, pas déduits :
@@ -557,6 +565,7 @@ Cet inventaire n'adopte pas les applications externes ouvertes par Beaver et ne 
 - permis CEF pris avant `Closing` mais encore inachevé après 50 millisecondes : génération invalidée, preuve locale nettoyée et admission tardive impossible ;
 - sous Windows, `TerminateProcess` réussi mais handle pas encore signalé : le slot reste possédé et est revérifié sans fermeture prématurée ;
 - chaque type de helper CEF Windows réel avec sandbox actif publie en état `Ready supervisé` à travers la DACL, les SIDs de restriction et le niveau MIC attendus, sans droit de signaler lui-même l'admission ou la fermeture ; un échec local injecté avant initialisation prouve séparément qu'aucun helper n'est créé ;
+- build empaqueté exercé avec protections Microsoft actives, puis dans un environnement Windows renforcé représentatif par antivirus tiers ou politique d'entreprise ; macOS exercé avec Gatekeeper et quarantaine actifs ; une incompatibilité reproductible sur une configuration supportée bloque la fusion ;
 - corruption volontaire d'une boîte CEF avant validation, réécriture après scellement, tentative d'écriture inter-slot et fausse valeur de handle : aucune autorité parent n'est modifiée, aucun PID externe n'est adopté ou signalé et l'initialisation échoue fermée ;
 - appel OS du watchdog général bloqué : le Job Object Windows ou le reaper CEF macOS distinct rend tout helper admis non exécutable avant la sortie brute ;
 - reaper macOS absent, arrêté ou signal refusé dans le smoke test : CEF n'est pas initialisé ou la fermeture coordonnée démarre ; le sandbox n'est jamais relâché ;
@@ -580,6 +589,7 @@ Cet inventaire n'adopte pas les applications externes ouvertes par Beaver et ne 
 - erreur de `claim_once` pendant la réconciliation d'un réveil manqué journalisée de façon bornée, sans détail interne visible ;
 - notification du scheduler après chaque mutation de réveil ;
 - saturation et remplacement de flux exposés par des codes stables traduits dans les sept langues ; erreur inconnue masquée par le fallback générique.
+- compteurs d'admission locaux exacts et bornés ; cycles successifs au-delà de la capacité cumulée sans fuite de slot ni fausse saturation.
 
 ### Mise à jour Beaver
 
@@ -618,6 +628,16 @@ Cet inventaire n'adopte pas les applications externes ouvertes par Beaver et ne 
 - erreur d'inspection journalisée puis réessayée ;
 - renommage Windows temporairement verrouillé puis réussi ;
 - renommage Windows définitivement verrouillé, sans perte des deux versions.
+- chemin de modèles par défaut ou `OLLAMA_MODELS` externe accepté ; valeur relative résolue depuis le vrai dossier de travail ; égalité ou chevauchement parent/enfant avec chaque dossier transactionnel moderne ou hérité refusé avant toute mutation ; alias symlink, junction et reparse point refusés ;
+- migration réelle depuis chaque release `1.0.2`, `1.1.0`, `1.1.1` et `1.1.2` sur chaque OS où elle a été publiée, avec modèle préexistant toujours listé, vérifié et utilisable sans nouveau téléchargement.
+
+### Intégrité des données utilisateur
+
+- profil éphémère contenant configuration, sessions, vault avec keystore factice isolé, données Forecast, skills, mémoire, métadonnées de modèles et historiques ;
+- fermeture normale puis fermeture forcée à chaque frontière durable pendant une écriture de chaque famille ;
+- après redémarrage, chaque fichier final est lisible et cohérent, et chaque mutation est entièrement absente ou entièrement commitée ;
+- seuls des temporaires explicitement documentés peuvent rester, sans secret, avec reprise ou nettoyage borné ;
+- aucune valeur sensible ni aucun chemin complet n'apparaît dans les diagnostics de reprise.
 
 ### Processus et plateformes
 
@@ -655,6 +675,8 @@ Pour chaque jalon :
 
 La branche du premier jalon reprend uniquement les commits documentaires du contrat, des cinq spécifications et de l'inventaire, puis implémente son propre périmètre. Aucun commit de code de la grande branche n'est repris en bloc ; une correction existante n'est réutilisée qu'après comparaison avec `main`, test isolé et rattachement au jalon qui la possède. Chaque PR ferme ses lignes d'inventaire avec le commit de remplacement et ses preuves ; une ligne partagée reste ouverte jusqu'au dernier jalon indiqué. Aucune release publique n'est créée entre le début du jalon 1 et la fusion du jalon 4.
 
+Juste avant la fusion du jalon 1, une branche de maintenance protégée est créée depuis le dernier `main` publiable. Elle ne reçoit que les correctifs critiques ou de sécurité nécessaires à une release d'urgence. Chaque correctif est immédiatement reporté dans les branches de jalon concernées et revalidé. Cette branche reste disponible jusqu'à la fusion et à la validation native du jalon 4, puis elle peut être retirée ; le `main` transitoire ne sert jamais à produire une release.
+
 Chaque commit final de jalon reçoit une Git note expliquant objectif, causes racines, décisions, alternatives rejetées, compatibilité multi-OS et validations. Le reviewer peut ainsi vérifier le raisonnement sans dépendre de l'historique de conversation.
 
 ## Journal des décisions pour le reviewer
@@ -670,6 +692,8 @@ Chaque commit final de jalon reçoit une Git note expliquant objectif, causes ra
 | Watchdog Unix | slots avec heure de démarrage et revérification native dans des buffers fixes | garantir l'identité sans dépendre de Tokio, `sysinfo`, du tas ou d'un mutex |
 | Sortie ultime | `TerminateProcess` sous Windows, `_exit` sous macOS/Linux | chemin brut qui ne peut pas attendre un destructeur ou un callback |
 | Migration Ollama | couvrir explicitement baseline `1.0.2` et releases `1.1.0` à `1.1.2` | ce sont les layouts réellement présents chez les utilisateurs |
+| Stockage des modèles | résoudre le chemin effectif, y compris `OLLAMA_MODELS` hérité, et refuser tout chevauchement avec les dossiers transactionnels avant mutation | une configuration personnalisée peut placer des modèles hors du chemin par défaut et ne doit jamais les faire entrer dans un renommage ou une suppression de bundle |
+| Validation des migrations | exécuter une vraie mise à niveau depuis chaque release publiée avec modèle préexistant | les fixtures unitaires prouvent la table d'états, pas l'ensemble du cycle produit par les anciens binaires |
 | Adoption | nommer MCP, Forecast, PTY, SearXNG et tous les autres producteurs de processus | empêcher qu'un service ne contourne l'autorité globale |
 | CEF bloqué | fermer une porte de lancement partagée, réserver et marquer chaque rôle CEF avant le spawn, puis drainer ses slots en continu de 13 à 15 s | le balayage post-CEF n'est jamais atteint si l'appel natif bloque ; un passage unique à 13 s laisserait une fenêtre aux helpers publiés tardivement |
 | Échéance CEF | séparer le watchdog de processus du tueur ultime précréé, qui ne scanne rien et force seul la sortie brute à 15 secondes | une création de thread tardive, un appel OS bloqué ou une dernière passe ne doit jamais repousser la seule garantie empêchant Beaver de devenir invisible et impossible à quitter |
@@ -680,20 +704,24 @@ Chaque commit final de jalon reçoit une Git note expliquant objectif, causes ra
 | Secours CEF macOS | reaper parent précréé sur les groupes admis, plus auto-terminaison du helper à la mort du parent | `_exit` du parent ne tue pas ses groupes et la politique Seatbelt ne garantit pas qu'un helper sandboxé puisse signaler tout son groupe |
 | Découpage CEF | déplacer toute la supervision native dans un jalon 1B parallèle au jalon 2 après le socle | le socle anti-fantôme reste petit et fusionnable ; les services peuvent avancer sans réduire les garanties finales de CEF |
 | Livraison CEF | Windows et macOS exigent `Ready supervisé` avant fusion du jalon 1B et avant release ; `Unavailable avant lancement` reste seulement une défense locale injectée ou liée à une machine défaillante | livrer un navigateur intégré désactivé serait une régression produit ; face à un blocage technique, le calendrier cède, jamais la fonctionnalité ni le sandbox |
+| Compatibilité CEF réelle | tester le build empaqueté avec protections système actives et au moins un environnement Windows renforcé, sans télémétrie distante | les permissions, antivirus et politiques d'entreprise ne sont pas reproduits intégralement par un runner CI propre |
 | Portée Linux CEF | conserver `native_browser` désactivé sous Linux et traiter son intégration complète dans un chantier séparé | l'intégration Linux est plus large que la supervision de fermeture et ne doit pas être simulée dans ce chantier |
 | Reprise rollback héritée | décrire `RollbackPending + sauvegarde seule + rejected_target: None` comme une restauration automatique | ce layout est créé par la migration et par une cible absente ; le classer ambigu contredirait la récupération promise |
 | Suppression Ollama | renommer une source validée vers un rebut propre à la phase avant toute suppression récursive, synchroniser sa disparition puis retirer le journal | une coupure au milieu de `remove_dir_all` détruit l'empreinte initiale ; le nom durable et la phase donnent une autorité de reprise sans deviner ni abandonner un rebut ressuscité |
 | Empreintes | conserver la comparaison en temps constant | règle de sécurité obligatoire du projet pour les hash, même si l'empreinte du binaire est publique |
+| Continuité des releases | conserver une branche de maintenance depuis le dernier `main` publiable jusqu'au jalon 4 | un correctif critique doit rester publiable sans expédier l'architecture transitoire |
+| Intégrité des données | redémarrer un profil complet après fermetures normales et forcées à chaque frontière | le chantier ne déplace pas ces données, mais l'annulation et la sortie ultime peuvent interrompre une écriture en cours |
 
 ## Revue globale obligatoire avant chaque fusion
 
-La review de chaque jalon met à jour les cinq inventaires explicitement vérifiés :
+La review de chaque jalon met à jour les six inventaires explicitement vérifiés :
 
 1. Tous les chemins qui créent un processus, y compris indirectement dans CEF, Tauri ou une bibliothèque native, classés en possédé, externe, court ou transféré.
 2. Tous les travaux asynchrones longs ou mutateurs, avec leur admission, annulation et preuve de fin.
 3. Tous les appels synchrones atteignables pendant une fermeture, avec leur frontière bloquante et leur borne.
 4. Toutes les transitions Ollama, avec l'état durable avant et après chaque mutation de fichiers.
 5. Tous les accès au journal ou aux dossiers Ollama, qui doivent aboutir au gestionnaire unique et au même verrou.
+6. Tous les stockages persistants, avec leur écriture atomique, leur comportement sous annulation et leur preuve de réouverture après fermeture normale ou forcée.
 
 Elle met aussi à jour les lignes du [registre de reprise des 22 commits](./2026-08-09-shutdown-reference-branch-inventory.md) attribuées au jalon. Le reviewer vérifie le scénario repris et son test, pas uniquement la présence d'un hash ou d'un fichier similaire.
 
@@ -710,7 +738,7 @@ Elle vérifie également :
 - l'absence de chemin, secret ou erreur brute dans l'interface et les journaux ;
 - la mise à jour Graphify après le code et la documentation.
 
-Après le cinquième jalon, une dernière review compare le `main` obtenu au `main` antérieur au premier jalon et vérifie les cinq inventaires cumulés. Cette review finale ne remplace pas les reviews de chaque PR.
+Après le cinquième jalon, une dernière review compare le `main` obtenu au `main` antérieur au premier jalon et vérifie les six inventaires cumulés. Cette review finale ne remplace pas les reviews de chaque PR.
 
 ## Validation finale
 
@@ -724,8 +752,11 @@ Après le cinquième jalon, une dernière review compare le `main` obtenu au `ma
 - CI native Windows, Ubuntu et macOS ;
 - test manuel d'une vraie fermeture sur chaque système à partir du build natif ;
 - sur Windows et macOS, preuve obligatoire du chemin normal `Ready supervisé` avec helpers `Admitted` non runnable après fermeture ; test séparé d'un échec local avant initialisation, qui rend le navigateur indisponible sans créer de helper ; candidat non admis limité au bootstrap fail-closed, puis contrôle sous 5 secondes de la disparition de tous les objets associés ;
+- build empaqueté CEF validé avec protections système actives et environnement Windows renforcé représentatif, résultats consignés sans télémétrie distante ;
 - sous Linux, preuve que `native_browser` reste désactivé et qu'aucun helper CEF n'est créé dans ce chantier ;
-- tests manuels d'une mise à jour Beaver et d'une mise à jour Ollama interrompue.
+- tests manuels d'une mise à jour Beaver et d'une mise à jour Ollama interrompue ;
+- mises à niveau réelles depuis chaque release publiée, avec stockage de modèles par défaut et personnalisé hors bundle ;
+- profil complet rouvert avec succès après fermeture normale et forcée, sans fichier final tronqué ni secret dans les diagnostics.
 
 ## Critères d'acceptation
 
@@ -737,6 +768,7 @@ Après le cinquième jalon, une dernière review compare le `main` obtenu au `ma
 - Aucun service ne redémarre après la fermeture de l'admission.
 - Aucun gros téléchargement partiel Beaver ne survit à une annulation normale.
 - Une mise à jour Ollama ne peut être validée que par le binaire cible possédé et la version attendue.
+- Une transaction Ollama ne commence pas tant que l'absence de chevauchement avec le stockage effectif des modèles n'est pas prouvée.
 - Un démon Ollama externe n'est jamais arrêté ni utilisé comme preuve de validation.
 - Une suppression de sauvegarde échouée n'annule pas une mise à jour déjà validée.
 - Toute transaction Ollama interrompue possède un chemin automatique de reprise.
@@ -744,4 +776,6 @@ Après le cinquième jalon, une dernière review compare le `main` obtenu au `ma
 - Un journal sans `rejected_target` accompagné d'un dossier rejeté reste intact et échoue fermé.
 - Les 22 lignes de reprise de la branche de référence sont closes avec une preuve testée ou une justification approuvée.
 - Aucun test de délai ne confond une future coopérative avec un appel bloquant.
+- Les stockages persistants restent lisibles et cohérents après redémarrage, y compris après la sortie ultime.
+- Une branche de maintenance du dernier `main` publiable reste disponible et synchronisée jusqu'à la validation du jalon 4.
 - Les suites et builds des trois systèmes réussissent avant fusion.

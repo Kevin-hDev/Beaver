@@ -53,6 +53,8 @@ Les enfants possédés reçoivent un groupe dédié. Les slots du watchdog stock
 
 Chaque service expose un `stop_and_wait` idempotent qui ferme son admission locale, annule, attend dans le budget restant puis abandonne seulement les tâches encore actives. Les handles ne sont jamais attendus sous le verrou qui protège leur registre.
 
+Chaque registre expose des compteurs locaux de taille fixe : admissions actives, maximum atteint depuis le démarrage, refus pour saturation et refus pour fermeture. Ils servent aux diagnostics locaux et aux tests, sans identifiant de tâche, contenu utilisateur ni télémétrie distante. Toute admission libère son slot sur succès, erreur, annulation, panique ou abandon ; une saturation réelle retourne le code public stable du domaine au lieu d'un message technique.
+
 Le gateway borne sa file à 256 messages et ses traitements simultanés à 64. Une vraie fermeture l'arrête ; la croix rouge macOS ne déclenche pas la fermeture et le laisse actif.
 
 Le téléchargement Beaver écoute l'annulation à chaque étape et supprime son partiel. Le helper validé reste l'unique survivant autorisé. Le menu et le clic du tray partagent `show`, `unminimize`, `focus` ; un vrai Quitter macOS masque le Dock avant le nettoyage.
@@ -62,6 +64,8 @@ Le téléchargement Beaver écoute l'annulation à chaque étape et supprime son
 - démarrage refusé après `Closing` pour chaque service ;
 - fermeture pendant `starting`, `running` et `stopping` ;
 - saturation de chaque registre borné ;
+- cycles répétés bien au-delà de la capacité cumulée sans fausse saturation, avec libération vérifiée après succès, erreur, annulation, panique et abandon ;
+- compteurs locaux de saturation et de fermeture exacts, bornés et dépourvus de données utilisateur ;
 - aucun redémarrage d'extension après son arrêt ;
 - gateway simulé sur les trois canaux, file fermée et tâches attendues ;
 - MCP, Forecast, SearXNG et PTY réellement lancés puis moissonnés dans les profils de test natifs ;
@@ -82,6 +86,7 @@ Le téléchargement Beaver écoute l'annulation à chaque étape et supprime son
 - inventaire des spawns complet et joint à la review ;
 - aucun service possédé encore runnable après fermeture, puis aucun objet processus possédé vérifiable après la fenêtre native de constat ;
 - aucune application externe adoptée ou tuée ;
+- aucune fuite d'admission sur les chemins de sortie de chaque producteur et diagnostics de saturation disponibles localement ;
 - aucun changement de transaction Ollama hors intégration de son processus au superviseur ;
 - toutes les sous-lignes J2 de l'inventaire sont fermées et référencent leurs tests ;
 - suites, CI native et tests manuels du jalon verts ;
