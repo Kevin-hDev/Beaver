@@ -5,6 +5,8 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::Duration;
 use tauri::{ExitRequestApi, Manager};
 
+mod blocking;
+mod cleanup;
 mod emergency;
 mod emergency_drain;
 mod policy;
@@ -14,6 +16,8 @@ mod state;
 mod ultimate;
 mod watchdog;
 
+#[cfg(test)]
+mod cleanup_tests;
 #[cfg(test)]
 mod emergency_tests;
 #[cfg(test)]
