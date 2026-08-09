@@ -2,7 +2,7 @@
 
 ## Autorité et dépendance
 
-Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et du [jalon 1](./2026-08-09-shutdown-milestone-1-core-design.md). Sa branche est créée depuis le `main` où le jalon 1 a été fusionné.
+Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md), du [jalon 1](./2026-08-09-shutdown-milestone-1-core-design.md) et du [jalon 1B](./2026-08-09-shutdown-milestone-1b-cef-design.md). Sa branche est créée depuis le `main` où ces deux jalons ont été fusionnés.
 
 ## Objectif fusionnable
 
@@ -29,9 +29,9 @@ Le jalon reprend aussi explicitement les deux dettes fonctionnelles que la grand
 - résultats typés des réveils ponctuels, annulation après consommation journalisée, désactivation bénigne silencieuse, erreur de revendication manquée journalisée et notification après chaque mutation ;
 - codes d'admission de flux stables, liste publique fermée côté interface et traductions dans les sept langues.
 
-Toutes les lignes J2 de l'inventaire sont fermées dans cette PR. Une ligne partagée conserve la preuve de sa partie J1 déjà fusionnée ; toute sous-partie J3 reste explicitement ouverte jusqu'au jalon 3.
+Toutes les lignes J2 de l'inventaire sont fermées dans cette PR. Une ligne partagée conserve la preuve de ses parties J1 et J1B déjà fusionnées ; toute sous-partie J3 reste explicitement ouverte jusqu'au jalon 3.
 
-La review du jalon recherche aussi tous les `Command::new`, `tokio::process::Command`, `portable-pty`, `tokio::spawn`, `tauri::async_runtime::spawn` et `std::thread::spawn`. Elle compare en plus l'arbre de processus natif avant et après l'ouverture des WebViews Tauri et CEF afin de couvrir les créations cachées dans les bibliothèques. Chaque résultat reçoit un propriétaire, une borne et un chemin d'arrêt, ou une exemption documentée.
+La review du jalon recherche aussi tous les `Command::new`, `tokio::process::Command`, `portable-pty`, `tokio::spawn`, `tauri::async_runtime::spawn` et `std::thread::spawn`. Elle compare en plus l'arbre de processus natif avant et après l'ouverture des WebViews Tauri et CEF afin de couvrir les créations cachées dans les bibliothèques. Les helpers CEF restent la propriété du jalon 1B et sont revalidés ici sans réimplémentation ; chaque autre résultat reçoit un propriétaire, une borne et un chemin d'arrêt, ou une exemption documentée.
 
 ## Confinement par plateforme
 

@@ -10,12 +10,13 @@ Cette conception remplace les décisions incompatibles ou incomplètes des trois
 
 Les mécanismes déjà corrects restent réutilisés, mais le présent document devient la source de vérité lorsqu'un détail diffère. Il constitue le contrat transverse : les invariants, décisions produit et frontières qu'il contient ne peuvent pas être modifiés par un jalon d'implémentation sans un nouvel amendement approuvé.
 
-L'implémentation est décomposée en quatre spécifications et quatre PR successives :
+L'implémentation est décomposée en cinq spécifications et cinq PR successives :
 
 1. [Jalon 1 — socle de fermeture](./2026-08-09-shutdown-milestone-1-core-design.md) ;
-2. [Jalon 2 — processus et services](./2026-08-09-shutdown-milestone-2-services-design.md) ;
-3. [Jalon 3 — transaction Ollama](./2026-08-09-shutdown-milestone-3-ollama-design.md) ;
-4. [Jalon 4 — convergence multi-OS](./2026-08-09-shutdown-milestone-4-convergence-design.md).
+2. [Jalon 1B — supervision native de CEF](./2026-08-09-shutdown-milestone-1b-cef-design.md) ;
+3. [Jalon 2 — processus et services](./2026-08-09-shutdown-milestone-2-services-design.md) ;
+4. [Jalon 3 — transaction Ollama](./2026-08-09-shutdown-milestone-3-ollama-design.md) ;
+5. [Jalon 4 — convergence multi-OS](./2026-08-09-shutdown-milestone-4-convergence-design.md).
 
 L'[inventaire de reprise de la branche de référence](./2026-08-09-shutdown-reference-branch-inventory.md) rattache séparément les 22 commits de code existants à ces jalons. Il fait partie du contrat : une correction de la grande branche ne peut pas disparaître simplement parce que cette branche n'est pas fusionnée.
 
@@ -88,6 +89,7 @@ Le comportement visible est figé ainsi :
 16. En cas de conflit entre « ne pas tuer un processus externe » et « ne rien laisser tourner », l'identité non vérifiable n'est jamais tuée ; le confinement établi au spawn et le nettoyage du lancement suivant servent de défenses complémentaires.
 17. Chaque jalon reste fusionnable sans activer un mécanisme incomplet et conserve les protections existantes tant que leur remplacement n'est pas totalement adopté.
 18. Les 22 lignes de l'inventaire de reprise sont toutes fermées par une correction testée ou un abandon explicitement justifié avant la fusion du jalon 4.
+19. CEF n'est activé sur une plateforme que si sa supervision native est prouvée avec le sandbox réel ; sinon le navigateur intégré reste indisponible avant tout lancement de helper, sans affaiblissement du sandbox ni identification approximative.
 
 ## Vocabulaire de propriété
 
@@ -199,7 +201,9 @@ Avant `cef::initialize`, Beaver crée une table d'autorité parent privée à 64
 
 Chaque réservation reçoit une boîte de publication distincte et une page de contrôle distincte, toutes deux de taille fixe et nommées par des nonces CSPRNG de 256 bits jamais loggés. La boîte, seule zone modifiable par le helper, ne contient que la génération publiée, le PID, l'heure de démarrage et, sur macOS, le groupe proposé. La page de contrôle est modifiable seulement par le parent et expose en lecture la génération ainsi que l'échéance de fermeture en ticks `u64` de la même horloge monotone native dans les deux processus ; schéma, unité et bornes sont validés avant usage. Deux événements distincts, eux aussi modifiables seulement par le parent, permettent uniquement d'attendre l'admission et la fermeture. Aucun de ces objets ne contient un handle ou un état d'autorité, et le parent traite chaque octet de la boîte comme non fiable. Un helper reçoit seulement les identifiants de son slot ; les nonces d'un autre slot ne lui sont jamais transmis et une corruption de sa boîte ne peut pas modifier l'autorité parent ni l'admettre. Tous les noms et handles sont invalidés à la libération de la génération, puis les buffers des nonces sont zéroïsés.
 
-Sous Windows, ces objets utilisent des handles non héritables et des descripteurs construits pour le profil de jeton initial réellement configuré par CEF. La DACL accorde seulement les droits minimaux nécessaires aux SIDs activés et aux SIDs de restriction de ce jeton, et la SACL porte le niveau d'intégrité explicite requis, jusqu'au niveau `Untrusted` pour les types qui l'utilisent. Le parent garde seul `EVENT_MODIFY_STATE` et l'écriture de la page de contrôle ; le helper reçoit uniquement `SYNCHRONIZE` sur les événements, la lecture de la page de contrôle et l'écriture bornée de sa boîte. La conception tient donc compte des deux contrôles d'accès d'un jeton restreint et du contrôle d'intégrité obligatoire, au lieu de supposer qu'une DACL utilisateur suffit. Si un type CEF sandboxé ne peut pas publier avec ces droits minimaux, le jalon échoue : le sandbox n'est jamais désactivé et les permissions ne sont jamais élargies par repli.
+Sous Windows, ces objets utilisent des handles non héritables et des descripteurs construits pour le profil de jeton initial réellement configuré par CEF. La DACL accorde seulement les droits minimaux nécessaires aux SIDs activés et aux SIDs de restriction de ce jeton, et la SACL porte le niveau d'intégrité explicite requis, jusqu'au niveau `Untrusted` pour les types qui l'utilisent. Le parent garde seul `EVENT_MODIFY_STATE` et l'écriture de la page de contrôle ; le helper reçoit uniquement `SYNCHRONIZE` sur les événements, la lecture de la page de contrôle et l'écriture bornée de sa boîte. La conception tient donc compte des deux contrôles d'accès d'un jeton restreint et du contrôle d'intégrité obligatoire, au lieu de supposer qu'une DACL utilisateur suffit. Si un type CEF sandboxé ne peut pas publier avec ces droits minimaux, le sandbox n'est jamais désactivé et les permissions ne sont jamais élargies par repli.
+
+Le repli CEF est fermé et pré-approuvé. Avant `cef::initialize`, tout échec de création ou de preuve de la supervision sélectionne `BrowserCapability::Unavailable` et Beaver continue sans lancer de helper. Les tests natifs autorisent seulement deux états par plateforme : CEF actif et totalement supervisé, ou navigateur intégré indisponible avant lancement. Une simple identification par nom, PID ou callback parent n'est pas un troisième mode. Après qu'un helper a potentiellement été créé, une ambiguïté déclenche l'arrêt du bootstrap avant CEF ou, si la porte était déjà ouverte, une vraie fermeture coordonnée ; elle ne peut pas être masquée en indisponibilité silencieuse.
 
 Tant que la porte est ouverte, `on_before_child_process_launch` réserve atomiquement un slot avant le lancement et ajoute un marqueur privé de rôle CEF, de format et longueur bornés, contenant seulement le slot, sa génération et les identifiants aléatoires propres à cette réservation. Si le callback ne reçoit pas de ligne de commande exploitable, si l'ajout du marqueur échoue ou si la réservation ne peut pas être publiée, il invalide sa génération, ferme la porte et fait échouer l'initialisation CEF ; aucun lancement n'est admis par défaut. Le bootstrap du helper valide strictement le format, la réservation, la génération, le parent et l'exécutable, puis écrit son identité dans sa seule boîte de publication. Il n'appelle pas encore `cef::execute_process` : il attend de façon bornée l'événement d'admission que seul le parent peut signaler. Un processus portant `--beaver-shell-sandbox`, un marqueur absent, une réservation inconnue ou une génération périmée ne peut jamais être adopté comme CEF ni appeler CEF par un chemin de repli.
 
@@ -211,7 +215,7 @@ Ce bootstrap pré-admission est un candidat transitoire, pas un service CEF admi
 
 Un traqueur natif démarre avant `cef::initialize`, adopte uniquement les publications validées par sa table privée et les rafraîchit jusqu'à la sortie effective de Beaver. Sous Windows, il ouvre un handle avec `SYNCHRONIZE`, `PROCESS_TERMINATE`, `PROCESS_QUERY_LIMITED_INFORMATION` et `PROCESS_SET_QUOTA`, vérifie l'identité, crée pour ce slot un Job Object vide sans restriction d'interface avec `KILL_ON_JOB_CLOSE`, puis y affecte uniquement ce helper avant `Admitted`. Un Job distinct par helper respecte la contrainte des jobs imbriqués lorsque le sandbox Chromium a déjà placé le processus dans son propre job ; ce point reste obligatoirement validé avec le sandbox actif dans le smoke test natif. Les handles du processus et du Job ne sont ni héritables ni dupliqués dans le helper : le slot parent en possède les seules copies, afin que la sortie brute ferme réellement le dernier handle du Job. L'échec d'ouverture, de vérification, d'affectation ou de publication du slot ferme les guards locaux, tue le bootstrap et refuse l'admission.
 
-Sous macOS, le point d'entrée valide d'abord le marqueur, ouvre et mappe uniquement sa boîte, sa page de contrôle et ses événements, puis crée son groupe dédié, le tout avant `sandbox.initialize`. Aucun thread n'est encore créé et aucun appel CEF n'est effectué. Après l'application réussie du sandbox, le helper publie son PID, son parent, son heure de démarrage et ce groupe ; le parent les revérifie avant `Admitted` et les inscrit dans le slot privé du reaper macOS. Le helper démarre alors, toujours avant `cef::execute_process`, un moniteur minimal. Il compare de façon bornée `getppid()` au parent validé et appelle `_exit` dès que ce parent disparaît ou change. Quand l'événement de fermeture est signalé, il lit l'échéance absolue sur la page de contrôle en lecture seule et s'auto-termine au plus tard une seconde avant la sortie brute ; une page absente, invalide ou déjà expirée provoque une sortie immédiate. Il ne tente pas de signaler le groupe depuis le sandbox, dont la politique peut limiter le signal à soi-même. Ce moniteur n'utilise ni Tokio, ni tas dans sa boucle, ni objet partagé modifiable, et un échec de création fait sortir le bootstrap avant CEF. Le reaper parent précréé reste l'autorité indépendante qui signale, après revérification, le groupe si le watchdog général se bloque ; le moniteur enfant apporte une seconde coupure par helper. Le smoke test natif prouve cet ordre pré-sandbox/post-sandbox, l'échéance d'auto-terminaison et l'absence de descendants CEF échappant au groupe ; un échec bloque le jalon au lieu d'affaiblir le sandbox.
+Sous macOS, le point d'entrée valide d'abord le marqueur, ouvre et mappe uniquement sa boîte, sa page de contrôle et ses événements, puis crée son groupe dédié, le tout avant `sandbox.initialize`. Aucun thread n'est encore créé et aucun appel CEF n'est effectué. Après l'application réussie du sandbox, le helper publie son PID, son parent, son heure de démarrage et ce groupe ; le parent les revérifie avant `Admitted` et les inscrit dans le slot privé du reaper macOS. Le helper démarre alors, toujours avant `cef::execute_process`, un moniteur minimal. Il compare de façon bornée `getppid()` au parent validé et appelle `_exit` dès que ce parent disparaît ou change. Quand l'événement de fermeture est signalé, il lit l'échéance absolue sur la page de contrôle en lecture seule et s'auto-termine au plus tard une seconde avant la sortie brute ; une page absente, invalide ou déjà expirée provoque une sortie immédiate. Il ne tente pas de signaler le groupe depuis le sandbox, dont la politique peut limiter le signal à soi-même. Ce moniteur n'utilise ni Tokio, ni tas dans sa boucle, ni objet partagé modifiable, et un échec de création fait sortir le bootstrap avant CEF. Le reaper parent précréé reste l'autorité indépendante qui signale, après revérification, le groupe si le watchdog général se bloque ; le moniteur enfant apporte une seconde coupure par helper. Le smoke test natif prouve cet ordre pré-sandbox/post-sandbox, l'échéance d'auto-terminaison et l'absence de descendants CEF échappant au groupe ; son échec maintient CEF indisponible sur cette plateforme au lieu d'affaiblir le sandbox.
 
 Une saturation, une publication invalide ou une identité ambiguë fait échouer l'initialisation si elle est encore en cours, sinon elle ferme la porte et déclenche immédiatement une vraie fermeture coordonnée. Beaver ne continue jamais avec un enfant CEF connu mais non supervisé.
 
@@ -551,7 +555,7 @@ Cet inventaire n'adopte pas les applications externes ouvertes par Beaver et ne 
 - callback CEF sans ligne de commande exploitable ou ajout du marqueur impossible : génération invalidée, porte fermée, initialisation refusée et aucun chemin de repli vers `cef::execute_process` ;
 - permis CEF pris avant `Closing` mais encore inachevé après 50 millisecondes : génération invalidée, preuve locale nettoyée et admission tardive impossible ;
 - sous Windows, `TerminateProcess` réussi mais handle pas encore signalé : le slot reste possédé et est revérifié sans fermeture prématurée ;
-- chaque type de helper CEF Windows réel, sandbox actif : publication réussie à travers la DACL, les SIDs de restriction et le niveau MIC attendus, sans droit de signaler lui-même l'admission ou la fermeture ;
+- en état `Ready supervisé`, chaque type de helper CEF Windows réel avec sandbox actif publie à travers la DACL, les SIDs de restriction et le niveau MIC attendus, sans droit de signaler lui-même l'admission ou la fermeture ; en état `Unavailable avant lancement`, aucun de ces helpers n'est créé ;
 - corruption volontaire d'une boîte CEF avant validation, réécriture après scellement, tentative d'écriture inter-slot et fausse valeur de handle : aucune autorité parent n'est modifiée, aucun PID externe n'est adopté ou signalé et l'initialisation échoue fermée ;
 - appel OS du watchdog général bloqué : le Job Object Windows ou le reaper CEF macOS distinct rend tout helper admis non exécutable avant la sortie brute ;
 - reaper macOS absent, arrêté ou signal refusé dans le smoke test : CEF n'est pas initialisé ou la fermeture coordonnée démarre ; le sandbox n'est jamais relâché ;
@@ -628,12 +632,13 @@ Cet inventaire n'adopte pas les applications externes ouvertes par Beaver et ne 
 
 La branche actuelle contient 31 commits dans la photographie `main..42823ba`, dont 22 commits de code ou de CI et 9 commits documentaires. Elle reste intacte comme sauvegarde et source de comparaison. Aucun nouveau code d'implémentation n'y est ajouté et elle n'est pas proposée à la fusion. L'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) est l'autorité exhaustive pour ces 22 commits.
 
-Le travail passe par quatre jalons :
+Le travail passe par cinq jalons :
 
 1. **Socle de fermeture** : états, admission suivie, budgets, frontière bloquante et watchdog.
-2. **Processus et services** : inventaire, confinement, gateway, extensions, MCP, Forecast, terminaux, SearXNG et mise à jour Beaver.
-3. **Transaction Ollama** : journal, migration, sonde isolée, première installation, mise à jour, récupération et polling.
-4. **Convergence multi-OS** : dettes structurelles dans le périmètre, inventaires finaux, tests natifs et validation manuelle.
+2. **Supervision CEF** : admission native, confinement Windows, reaper macOS, sandbox et repli indisponible avant lancement.
+3. **Processus et services** : inventaire, confinement, gateway, extensions, MCP, Forecast, terminaux, SearXNG et mise à jour Beaver.
+4. **Transaction Ollama** : journal, migration, sonde isolée, première installation, mise à jour, récupération et polling.
+5. **Convergence multi-OS** : dettes structurelles dans le périmètre, inventaires finaux, tests natifs et validation manuelle.
 
 Pour chaque jalon :
 
@@ -645,7 +650,7 @@ Pour chaque jalon :
 - exécuter la review globale du jalon et les tests natifs avant fusion ;
 - fusionner la PR avant de créer la branche suivante.
 
-La branche du premier jalon reprend uniquement les commits documentaires du contrat, des quatre spécifications et de l'inventaire, puis implémente son propre périmètre. Aucun commit de code de la grande branche n'est repris en bloc ; une correction existante n'est réutilisée qu'après comparaison avec `main`, test isolé et rattachement au jalon qui la possède. Chaque PR ferme ses lignes d'inventaire avec le commit de remplacement et ses preuves ; une ligne partagée reste ouverte jusqu'au dernier jalon indiqué.
+La branche du premier jalon reprend uniquement les commits documentaires du contrat, des cinq spécifications et de l'inventaire, puis implémente son propre périmètre. Aucun commit de code de la grande branche n'est repris en bloc ; une correction existante n'est réutilisée qu'après comparaison avec `main`, test isolé et rattachement au jalon qui la possède. Chaque PR ferme ses lignes d'inventaire avec le commit de remplacement et ses preuves ; une ligne partagée reste ouverte jusqu'au dernier jalon indiqué. Aucune release publique n'est créée entre le jalon 1 et le jalon 1B.
 
 Chaque commit final de jalon reçoit une Git note expliquant objectif, causes racines, décisions, alternatives rejetées, compatibilité multi-OS et validations. Le reviewer peut ainsi vérifier le raisonnement sans dépendre de l'historique de conversation.
 
@@ -655,7 +660,7 @@ Chaque commit final de jalon reçoit une Git note expliquant objectif, causes ra
 |---|---|---|
 | Gateway | Une vraie fermeture arrête Telegram, Discord et Slack ; seule la croix rouge macOS masque l'app | comportement demandé explicitement, prévisible et identique pour Quitter sur les trois OS |
 | `run_when_window_closed` | retirer le champ des modèles et nouvelles écritures, tolérer sa présence dans les anciens JSON | éviter un réglage mort tout en conservant la compatibilité des données |
-| Taille du chantier | quatre PR successives depuis un `main` vert ; branche actuelle conservée mais non fusionnée | éviter une nouvelle méga-branche et isoler les régressions |
+| Taille du chantier | cinq PR successives depuis un `main` vert ; branche actuelle conservée mais non fusionnée | éviter une nouvelle méga-branche, isoler CEF du socle et empêcher qu'un risque natif bloque les corrections anti-fantôme |
 | Acquis de la grande branche | inventorier les 22 commits de code et fermer chaque ligne dans son jalon | empêcher la perte silencieuse de corrections déjà trouvées, notamment les réveils ponctuels et les erreurs de flux traduites |
 | Windows | affecter immédiatement les enfants au Job Object après spawn, sans suspension généralisée | `portable-pty` expose le handle ; le gain d'une suspension partout ne justifie pas une réécriture de tous les lanceurs |
 | Helper Beaver | conserver `UpdateHandoff`, sans Job Object de transfert supplémentaire | mécanisme existant borné à une identité ; complexité supplémentaire sans bénéfice proportionné |
@@ -670,6 +675,8 @@ Chaque commit final de jalon reçoit une Git note expliquant objectif, causes ra
 | Rôle CEF Windows | exiger une réservation et une génération injectées par le callback, pas seulement `current_exe()` | Beaver utilise aussi son propre exécutable pour le helper shell ; filtrer seulement le chemin mélangerait les rôles et pourrait saturer les slots CEF |
 | Registre CEF Windows | garder états et handles dans le parent, isoler chaque publication sandboxée et adapter DACL, SIDs de restriction et MIC au jeton CEF réel | une zone enfant-écrivable ne peut porter aucune autorité ; une simple DACL utilisateur ne suffit pas pour les jetons restreints ou `Untrusted` |
 | Secours CEF macOS | reaper parent précréé sur les groupes admis, plus auto-terminaison du helper à la mort du parent | `_exit` du parent ne tue pas ses groupes et la politique Seatbelt ne garantit pas qu'un helper sandboxé puisse signaler tout son groupe |
+| Découpage CEF | déplacer toute la supervision native dans un jalon 1B entre le socle et les services | le socle anti-fantôme reste petit et fusionnable ; CEF conserve ses propres tests natifs sans perdre une seule garantie finale |
+| Repli CEF | soit CEF est actif et totalement supervisé, soit il reste indisponible avant tout lancement de helper | ne jamais affaiblir le sandbox, adopter un processus par approximation ou dépendre d'une auto-terminaison Chromium non prouvée |
 | Reprise rollback héritée | décrire `RollbackPending + sauvegarde seule + rejected_target: None` comme une restauration automatique | ce layout est créé par la migration et par une cible absente ; le classer ambigu contredirait la récupération promise |
 | Suppression Ollama | renommer une source validée vers un rebut propre à la phase avant toute suppression récursive, synchroniser sa disparition puis retirer le journal | une coupure au milieu de `remove_dir_all` détruit l'empreinte initiale ; le nom durable et la phase donnent une autorité de reprise sans deviner ni abandonner un rebut ressuscité |
 | Empreintes | conserver la comparaison en temps constant | règle de sécurité obligatoire du projet pour les hash, même si l'empreinte du binaire est publique |
@@ -690,7 +697,7 @@ Elle vérifie également :
 
 - le diff complet du jalon contre le `main` dont il est issu ;
 - les comportements existants de CEF, gateway, scheduler, SearXNG, MCP, Forecast et mise à jour ;
-- l'identification bornée des helpers CEF et leur terminaison forcée quand l'arrêt natif ne rend pas la main ;
+- si CEF est actif, l'identification bornée de ses helpers et leur terminaison forcée quand l'arrêt natif ne rend pas la main ; sinon, la preuve qu'aucun helper n'est lancé ;
 - l'appel à `scheduler.notify_config_changed()` après chaque mutation de réveil ;
 - les textes visibles dans les sept langues ;
 - les fichiers de production sous 230 lignes ;
@@ -699,7 +706,7 @@ Elle vérifie également :
 - l'absence de chemin, secret ou erreur brute dans l'interface et les journaux ;
 - la mise à jour Graphify après le code et la documentation.
 
-Après le quatrième jalon, une dernière review compare le `main` obtenu au `main` antérieur au premier jalon et vérifie les cinq inventaires cumulés. Cette review finale ne remplace pas les reviews de chaque PR.
+Après le cinquième jalon, une dernière review compare le `main` obtenu au `main` antérieur au premier jalon et vérifie les cinq inventaires cumulés. Cette review finale ne remplace pas les reviews de chaque PR.
 
 ## Validation finale
 
@@ -712,13 +719,13 @@ Après le quatrième jalon, une dernière review compare le `main` obtenu au `ma
 - tests des scripts de build, du runner E2E, de CEF et de l'hôte d'extensions ;
 - CI native Windows, Ubuntu et macOS ;
 - test manuel d'une vraie fermeture sur chaque système à partir du build natif ;
-- contrôle immédiat qu'aucun service ni helper `Admitted` ne reste runnable ; candidat CEF non admis limité au bootstrap fail-closed, puis contrôle sous 5 secondes de la disparition de tous les objets associés ;
+- pour chaque plateforme CEF, preuve de l'un des deux états autorisés : helpers `Admitted` supervisés et non runnable après fermeture, ou navigateur intégré indisponible avant tout lancement ; candidat non admis limité au bootstrap fail-closed, puis contrôle sous 5 secondes de la disparition de tous les objets associés ;
 - tests manuels d'une mise à jour Beaver et d'une mise à jour Ollama interrompue.
 
 ## Critères d'acceptation
 
 - Beaver ne peut pas rester invisible en état `Closing` au-delà du délai absolu.
-- Un blocage de l'arrêt CEF ne laisse aucun helper `Admitted` capable de poursuivre du travail après la sortie forcée de Beaver ; un candidat non admis ne peut qu'exécuter le bootstrap fail-closed, et tous les états résiduels disparaissent dans les 5 secondes de constat.
+- Sur chaque plateforme, CEF est soit actif avec une supervision native prouvée, soit indisponible avant tout lancement ; lorsqu'il est actif, un blocage de son arrêt ne laisse aucun helper `Admitted` capable de poursuivre du travail après la sortie forcée de Beaver, un candidat non admis ne peut qu'exécuter le bootstrap fail-closed et tous les états résiduels disparaissent dans les 5 secondes de constat.
 - Une vraie fermeture arrête le gateway et tous les processus possédés.
 - La croix macOS ne ferme pas Beaver.
 - Aucun service ne redémarre après la fermeture de l'admission.

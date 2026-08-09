@@ -2,7 +2,7 @@
 
 ## Autorité et dépendance
 
-Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et des trois jalons précédents fusionnés. Sa branche est créée depuis leur `main` validé.
+Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et des quatre jalons précédents — 1, 1B, 2 et 3 — fusionnés. Sa branche est créée depuis leur `main` validé.
 
 ## Objectif fusionnable
 
@@ -29,7 +29,7 @@ Fermer les angles morts restants sans ajouter de nouveau comportement produit, p
 
 Les recherches couvrent le diff cumulé depuis le `main` antérieur au jalon 1, pas seulement le dernier PR.
 
-La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse toute ligne encore ouverte ou fermée sans test et revalide spécifiquement le job macOS natif issu de `d3c7011`, déjà introduit au jalon 1. Ce job doit préparer la source CEF vérifiée, exécuter `cargo check --all-targets` et Clippy strict sur macOS ; sa présence dans le YAML sans exécution verte ne suffit pas.
+La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse toute ligne encore ouverte ou fermée sans test et revalide spécifiquement le job macOS natif issu de `d3c7011`, déjà introduit au jalon 1B. Ce job doit préparer la source CEF vérifiée, exécuter `cargo check --all-targets` et Clippy strict sur macOS ; sa présence dans le YAML sans exécution verte ne suffit pas.
 
 ## Validation native
 
@@ -37,10 +37,11 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 
 - fermeture par croix et tray ;
 - Job Object et descendants ;
-- helper CEF suivi par table parent privée, boîte sandboxée isolée et Job Object vide propre au slot, affectation imbriquée revalidée avec le sandbox Chromium actif ;
-- chaque type CEF réel publie avec ses SIDs de restriction et son niveau MIC sans pouvoir écrire l'autorité ou signaler sa propre admission ; corruption inter-slot et faux handle refusés ;
+- état CEF explicitement contrôlé : `Ready supervisé` ou `Unavailable avant lancement`, sans troisième mode ;
+- en état `Ready supervisé`, helper suivi par table parent privée, boîte sandboxée isolée et Job Object vide propre au slot, affectation imbriquée revalidée avec le sandbox Chromium actif ;
+- en état `Ready supervisé`, chaque type CEF réel publie avec ses SIDs de restriction et son niveau MIC sans pouvoir écrire l'autorité ou signaler sa propre admission ; corruption inter-slot et faux handle refusés ;
 - publication après 13 secondes refusée par sa génération invalidée, aucun appel CEF, puis disparition du bootstrap constatée sous 5 secondes ;
-- helper shell simultané jamais classé comme CEF ;
+- helper shell simultané jamais classé comme CEF ; en état `Unavailable avant lancement`, aucun helper CEF créé ;
 - PTY et handles verrouillés ;
 - mise à jour Beaver avec helper survivant ;
 - mise à jour Ollama avec renommage temporairement bloqué.
@@ -51,8 +52,10 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 - `Cmd+Q` qui ferme tout ;
 - Dock masqué pendant le vrai nettoyage ;
 - groupes possédés et vérification `proc_pidinfo` ;
-- arrêt CEF natif normal, objets et groupe préparés avant le sandbox, publication et moniteur après le sandbox, réservation tardive refusée ;
-- watchdog général bloqué, reaper parent qui revalide PID/parent/démarrage/exécutable/PGID et auto-terminaison du helper à l'échéance, sans signaler un PGID réutilisé ; disparition constatée sous 5 secondes.
+- état CEF explicitement contrôlé : `Ready supervisé` ou `Unavailable avant lancement`, sans troisième mode ;
+- en état `Ready supervisé`, arrêt CEF natif normal, objets et groupe préparés avant le sandbox, publication et moniteur après le sandbox, réservation tardive refusée ;
+- en état `Ready supervisé`, watchdog général bloqué, reaper parent qui revalide PID/parent/démarrage/exécutable/PGID et auto-terminaison du helper à l'échéance, sans signaler un PGID réutilisé ; disparition constatée sous 5 secondes ;
+- en état `Unavailable avant lancement`, interface utilisable avec capacité navigateur indisponible et aucun helper CEF créé.
 
 ### Linux
 
@@ -73,7 +76,7 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 - CI native Windows, Ubuntu et macOS ;
 - lancement et fermeture manuels d'un build natif sur les trois OS ;
 - tueur ultime précréé, échec de création au démarrage et watchdog général réellement bloqué sans dépassement de l'échéance ;
-- contrôle immédiat des services/helpers admis encore exécutables, vérification qu'un candidat CEF non admis reste dans le bootstrap fail-closed, puis attente de 5 secondes au plus pour tous les objets résiduels et contrôle des fichiers ;
+- contrôle immédiat des services/helpers admis encore exécutables ; si CEF est actif, vérification qu'un candidat non admis reste dans le bootstrap fail-closed, sinon preuve qu'aucun helper n'a été lancé ; puis attente de 5 secondes au plus pour tous les objets résiduels et contrôle des fichiers ;
 - mise à jour Beaver interrompue et mise à jour Ollama interrompue ;
 - mise à jour Ollama coupée pendant chaque suppression de rebut et entre disparition du rebut, synchronisation du parent et retrait du journal ;
 - contrôle final des 22 lignes de reprise et des preuves consignées dans les Git notes des jalons.
@@ -88,6 +91,7 @@ La review compare le `main` final au `main` précédant le jalon 1. Elle vérifi
 - tous les constats des reviews précédentes reliés à une correction et à un test ;
 - les 22 commits de code de la branche de référence tous reliés à une reprise testée ou à un abandon approuvé ;
 - aucun service ou helper admis Beaver encore runnable après une vraie fermeture ; tout bootstrap CEF refusé et tout objet noyau résiduel disparaissent dans les 5 secondes de constat ;
+- sur Windows et macOS, CEF est soit `Ready supervisé` avec preuves natives, soit `Unavailable avant lancement` sans helper et sans sandbox affaibli ;
 - aucun impact sur une application ou un démon externe ;
 - CI et tests manuels des trois OS verts ;
 - Git note finale résumant l'ensemble des décisions et preuves.
