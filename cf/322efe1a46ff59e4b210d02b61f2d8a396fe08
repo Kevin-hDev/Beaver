@@ -1,0 +1,36 @@
+Problème et objectif
+
+Beaver devait quitter complètement sur Windows et Linux, conserver le comportement natif de la croix rouge sur macOS, arrêter ses processus enfants sans course, et ne pas transformer une fermeture volontaire en échec d'installation ou de mise à jour Ollama. La revue a aussi relevé la perte silencieuse de réveils ponctuels et un message de limite de flux codé en français.
+
+Décisions prises
+
+- Installation initiale Ollama traitée comme une transaction : téléchargement et validation dans un dossier de staging, puis renommage atomique seulement après validation. Une fermeture pendant le téléchargement nettoie le staging incomplet ; une fermeture après le commit de l'installation ne supprime plus un binaire valide.
+- Mise à jour Ollama rendue récupérable : l'ancienne et la nouvelle installation sont conservées si l'application se ferme pendant la première validation. Au prochain lancement, Beaver valide la nouvelle version ; il supprime la sauvegarde si elle fonctionne et restaure l'ancienne uniquement après un véritable échec. La récupération couvre aussi l'impossibilité de démarrer le nouveau binaire. Aucun choix destructif ne dépend d'une comparaison de texte d'erreur.
+- Annulation Ollama centralisée dans un état typé partagé afin de distinguer fermeture, annulation et erreur réelle sans logique dupliquée.
+- Réveils ponctuels modélisés avec des résultats explicites : exécuté, désactivé, annulé. Une annulation après consommation est enregistrée comme annulée ; une désactivation bénigne reste silencieuse ; toute mutation notifie le planificateur.
+- Fermeture coordonnée avec un budget total borné : services indépendants nettoyés en phases parallèles, Ollama arrêté en dernier, puis balayage final des processus enfants. Sur Unix, le groupe est signalé avant le parcours feuilles-vers-racine ; Windows conserve taskkill. L'index parent/enfants est construit une seule fois.
+- Erreurs de flux exposées sous forme de codes stables et traduites dans les sept langues. Seuls les codes autorisés sont affichés ; les erreurs inconnues restent masquées.
+- AppWorkPermit renommé AppRunToken pour ne plus promettre un comptage qu'il ne réalise pas. Le test global du premier setup réinitialise maintenant son état avant exécution.
+
+Pourquoi
+
+Ces choix séparent clairement une fermeture volontaire d'un échec métier, empêchent toute suppression d'une installation Ollama valide, rendent les opérations interrompues récupérables au prochain lancement et bornent la durée de fermeture. Ils préservent le comportement natif macOS, la stratégie Windows existante et les chemins Unix spécifiques derrière leurs cfg et tests dédiés.
+
+Auto-review
+
+La relecture finale a détecté deux oublis avant clôture : le rollback manquait lorsque le nouveau binaire ne pouvait pas être lancé au démarrage suivant, et une vraie erreur lors de la revendication d'un réveil ponctuel pouvait être traitée comme une simple désactivation. Les deux chemins ont été corrigés et couverts par des tests.
+
+Validations
+
+- cargo fmt --check : réussi.
+- cargo test --lib --features windows-tests -- --test-threads=1 : 3022 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : réussi avec le Ninja livré par Visual Studio afin d'exercer le vrai build CEF Windows.
+- npm run lint : réussi.
+- npx tsc --noEmit : réussi.
+- npm test -- --run : 413 fichiers et 1889 tests Vitest réussis ; scripts de build, tests CEF, E2E runner et hôte d'extensions réussis.
+- La suite Rust parallèle avait exposé quatre tests préexistants sensibles au partage d'état ou au délai ; chacun passait seul et la suite séquentielle équivalente à la CI est entièrement verte.
+- graphify update . : réussi après les derniers changements, sans modification de topologie.
+
+Limites de validation
+
+Le comportement natif macOS et Linux ne peut pas être lancé depuis cette machine Windows ; les branches spécifiques restent couvertes statiquement et par leurs tests cfg, puis devront être confirmées par la CI native. La mise à jour sémantique Graphify des documents n'a pas été exécutée : l'outil voulait réindexer environ 800 artefacts sans backend LLM configuré ; l'index AST du code est à jour.
