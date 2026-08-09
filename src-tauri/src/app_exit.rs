@@ -6,8 +6,10 @@ use std::time::Duration;
 use tauri::{ExitRequestApi, Manager};
 
 mod policy;
+mod raw_exit;
 mod registry;
 mod state;
+mod ultimate;
 
 #[cfg(test)]
 mod policy_tests;
@@ -15,6 +17,8 @@ mod policy_tests;
 mod registry_tests;
 #[cfg(test)]
 mod state_tests;
+#[cfg(test)]
+mod ultimate_tests;
 
 const PHASE_IDLE: u8 = 0;
 const PHASE_CLEANING: u8 = 1;
