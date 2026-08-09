@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { access, readFile, readdir } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { join, relative, sep } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
@@ -13,6 +14,7 @@ const expectedDependencies = {
   docx: "9.7.1",
   fflate: "0.8.3",
   fontkit: "2.0.4",
+  "image-size": "file:vendor/image-size-disabled",
   jiti: "2.7.0",
   "pdfjs-dist": "6.2.108",
   pptxgenjs: "4.0.1",
@@ -26,7 +28,10 @@ test("the production Office tree is exact and pinned", async () => {
 
   assert.deepEqual(hostManifest.dependencies, expectedDependencies);
   for (const [name, version] of Object.entries(expectedDependencies)) {
-    assert.equal(rootManifest.devDependencies[name], version);
+    const rootVersion = name === "image-size"
+      ? "file:src-tauri/resources/extension-host/vendor/image-size-disabled"
+      : version;
+    assert.equal(rootManifest.devDependencies[name], rootVersion);
     assert.equal(rootManifest.dependencies[name], undefined);
   }
   await access(join(hostDirectory, "node_modules/@napi-rs/canvas"));
@@ -35,6 +40,17 @@ test("the production Office tree is exact and pinned", async () => {
   );
   assert.equal(httpsManifest.name, "https-browserify");
   assert.equal(httpsManifest.version, "1.0.0");
+});
+
+test("the disabled image inspector fails closed", async () => {
+  const hostRequire = createRequire(join(hostDirectory, "package.json"));
+  const imageSize = hostRequire("image-size");
+
+  assert.throws(
+    () => imageSize(new Uint8Array([0, 0, 0, 0])),
+    /image_inspection_disabled/u,
+  );
+  assert.deepEqual([...imageSize.types], []);
 });
 
 test("the prepared PDF runtime provides native DOM geometry", async () => {
