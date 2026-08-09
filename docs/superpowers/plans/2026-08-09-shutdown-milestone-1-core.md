@@ -166,7 +166,7 @@ Tester :
 
 **Step 3: Vérifier la plateforme compilée**
 
-Run tests ciblés, `cargo check --features windows-tests`, puis vérifier par inspection `cfg` que les deux branches natives ont la même interface.
+Run les tests ciblés avec `--features windows-tests`, puis `cargo check --lib` sur le chemin CEF Windows natif et vérifier par inspection `cfg` que les deux branches natives ont la même interface. La feature `windows-tests` désactive volontairement l'export CEF utilisé par le binaire et ne doit donc pas être appliquée à une cible binaire.
 
 ### Task 5: Ajouter l’inventaire d’urgence fixe et le watchdog séparé
 
@@ -318,7 +318,7 @@ Run les tests config ciblés, `npx tsc --noEmit` et les tests Settings concerné
 
 ```powershell
 git diff --check
-node scripts/check-rust-format.mjs
+node scripts/build/check-rust-format.mjs
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 ```
 
@@ -333,8 +333,8 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 $env:CARGO_TARGET_DIR='C:\Users\huynh\projects\Beaver\src-tauri\target'
 cargo test --manifest-path src-tauri/Cargo.toml --lib --features windows-tests -- --test-threads=1
 cargo test --manifest-path src-tauri/Cargo.toml --lib --features windows-tests
-cargo check --manifest-path src-tauri/Cargo.toml --features windows-tests
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --features windows-tests -- -D warnings
+cargo check --manifest-path src-tauri/Cargo.toml --lib
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
 Tout échec est investigué ; aucun résultat n’est déclaré vert par simple relance.
