@@ -1,0 +1,13 @@
+Objectif : recadrer le programme de fermeture pour que le premier jalon livre rapidement la garantie anti-application-fantôme, sans faire dépendre ce socle du sous-système CEF natif le plus risqué.
+
+Cause : la révision précédente avait correctement durci CEF, mais avait placé dans J1 la publication sandboxée, les Job Objects Windows, le reaper macOS et leurs smoke tests. J1 n'était donc plus un petit socle fusionnable et pouvait être bloqué par un détail interne de Chromium.
+
+Décision de découpage : le programme comporte désormais cinq PR ordonnées J1, J1B, J2, J3 et J4. J1 conserve états, admission, budgets, frontière bloquante, watchdog, tueur ultime et ordre CEF existant. J1B possède seul l'admission, l'identification, le confinement et la terminaison forcée des helpers CEF. J2 dépend de J1 et J1B. Aucune release publique n'est autorisée entre J1 et J1B.
+
+Décision de repli CEF : une plateforme possède exactement deux états autorisés. Soit CEF est actif avec supervision native prouvée, soit le navigateur intégré est indisponible avant tout lancement de helper. Le sandbox n'est jamais désactivé, les droits ne sont jamais élargis et aucun processus n'est adopté par nom, PID seul ou callback parent. Une ambiguïté après création potentielle d'un helper déclenche l'arrêt du bootstrap ou une fermeture coordonnée, jamais une indisponibilité silencieuse.
+
+Garanties conservées : le protocole CEF complet reste dans le contrat maître et a été déplacé sans suppression vers J1B. Les lignes de reprise b1d666d, d3c7011 et 50c5de9 attribuent désormais explicitement leurs parties CEF à J1B. Les 22 lignes de l'inventaire restent présentes. Windows conserve table parent privée, droits SID/MIC et Job par slot ; macOS conserve groupe, reaper parent et moniteur enfant ; Linux conserve native_browser désactivé.
+
+Alternatives rejetées : conserver CEF dans J1, car cela inverse la priorité du programme ; compter sur l'auto-terminaison habituelle de Chromium, car elle n'est pas une preuve contractuelle ; identifier entièrement les helpers depuis le callback parent, car ce callback ne fournit pas à lui seul une identité stable ; relâcher le sandbox ou les permissions, interdit pour des raisons de sécurité.
+
+Validation documentaire : sept documents staged et relus, aucun changement de code ; liens Markdown locaux valides ; inventaire 22/22 avec numérotation continue ; chaîne de dépendance J1 vers J1B vers J2 vers J3 vers J4 vérifiée ; anciennes formulations à quatre PR et clauses d'échec sans repli absentes ; git diff --cached --check réussi. Aucun test produit exécuté car ce commit modifie uniquement les specs. Graphify n'a pas été modifié : ces specs sous docs ne figurent pas dans son manifeste actuel.
