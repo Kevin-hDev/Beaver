@@ -53,10 +53,7 @@ async fn missing_child_generic_report_stays_hidden_until_single_failure_signal()
         .expect("missing child must fail");
     assert_eq!(error, SUBAGENT_COMPLETION_ERROR);
     assert_waiter_observed_failure(wait_result);
-    assert_eq!(
-        prepare_result,
-        Err(SUBAGENT_COMPLETION_ERROR.into())
-    );
+    assert_eq!(prepare_result, Err(SUBAGENT_COMPLETION_ERROR.into()));
     assert_single_failure_signal(state);
 }
 
@@ -110,7 +107,9 @@ async fn failed_child_save_generic_report_stays_hidden_until_single_failure_sign
     tokio::fs::remove_dir(&child_path)
         .await
         .expect("remove save blocker");
-    session_store::save(&child).await.expect("restore child file");
+    session_store::save(&child)
+        .await
+        .expect("restore child file");
     session_store::delete_one(&child.id)
         .await
         .expect("delete child");
@@ -122,14 +121,13 @@ async fn failed_child_save_generic_report_stays_hidden_until_single_failure_sign
         .expect("failed save must fail");
     assert_eq!(error, SUBAGENT_COMPLETION_ERROR);
     assert_waiter_observed_failure(wait_result);
-    assert_eq!(
-        prepare_result,
-        Err(SUBAGENT_COMPLETION_ERROR.into())
-    );
+    assert_eq!(prepare_result, Err(SUBAGENT_COMPLETION_ERROR.into()));
     assert_single_failure_signal(state);
 }
 
-async fn parent_and_child(name: &str) -> (
+async fn parent_and_child(
+    name: &str,
+) -> (
     super::types_session::AgentSession,
     super::types_session::AgentSession,
 ) {
@@ -165,9 +163,7 @@ fn spawn_waiter(
     })
 }
 
-async fn failure_state(
-    parent_id: &str,
-) -> super::subagent_terminal_signal::SubagentTerminalState {
+async fn failure_state(parent_id: &str) -> super::subagent_terminal_signal::SubagentTerminalState {
     subagent_registry::terminal_state_for_parent(parent_id)
         .await
         .expect("terminal failure state")
