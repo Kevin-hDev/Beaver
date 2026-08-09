@@ -50,7 +50,7 @@ async fn cleanup_services(app: &tauri::AppHandle) {
     let services_phase = stop_services(app);
     let ollama_handle = app.clone();
     let ollama_phase = async move {
-        let _ = super::blocking::execute(move || {
+        super::blocking::execute(move || {
             services::ollama_lifecycle::stop_sidecar(&ollama_handle);
         })
         .await;

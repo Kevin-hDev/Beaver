@@ -68,7 +68,7 @@ impl WatchdogThread {
         Self::spawn_inner(timeline, state, inventory, exit_code, actions, |worker| {
             std::thread::Builder::new()
                 .name("beaver-shutdown-watchdog".to_string())
-                .spawn(move || worker())
+                .spawn(worker)
         })
     }
 

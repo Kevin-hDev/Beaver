@@ -2,6 +2,7 @@ use super::policy::ShutdownPolicy;
 use super::state::ShutdownPhase;
 use super::ultimate::{RawExitActions, UltimateExit};
 use super::{AppExitCoordinator, BeginResult};
+use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
 
 fn coordinator() -> AppExitCoordinator {
@@ -46,4 +47,44 @@ fn ready_cannot_be_marked_before_closing() {
     let coordinator = coordinator();
     assert!(!coordinator.mark_ready());
     assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Running);
+}
+
+#[test]
+fn a_closed_registry_with_running_state_is_an_invariant_failure() {
+    let coordinator = coordinator();
+    coordinator.close_registry_for_test();
+
+    assert_eq!(coordinator.begin(0), BeginResult::InvariantViolation);
+}
+
+#[test]
+fn concurrent_close_requests_never_observe_a_partial_transition() {
+    let coordinator = Arc::new(coordinator());
+    let barrier = Arc::new(Barrier::new(17));
+    let requests = (0..16)
+        .map(|_| {
+            let coordinator = Arc::clone(&coordinator);
+            let barrier = Arc::clone(&barrier);
+            std::thread::spawn(move || {
+                barrier.wait();
+                coordinator.begin(0)
+            })
+        })
+        .collect::<Vec<_>>();
+    barrier.wait();
+    let results = requests
+        .into_iter()
+        .map(|request| request.join().expect("close request"))
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        results
+            .iter()
+            .filter(|result| matches!(result, BeginResult::Started(_)))
+            .count(),
+        1
+    );
+    assert!(results
+        .iter()
+        .all(|result| { matches!(result, BeginResult::Started(_) | BeginResult::Waiting) }));
 }
