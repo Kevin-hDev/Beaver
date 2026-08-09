@@ -1,0 +1,103 @@
+Objectif
+--------
+Remplacer la succession de correctifs locaux de fermeture par un contrat d'architecture vérifiable avant toute nouvelle implémentation. La cause de fond retenue est l'adoption incomplète des mécanismes de supervision : des chemins lançaient encore des processus, des travaux longs ou des mutations Ollama en dehors de l'autorité commune. Ce commit ne modifie aucun code de production.
+
+Photographie auditée
+--------------------
+- base et main de comparaison : d68ccdc37ad7b9839992ef88a38c93f35c8520ce ;
+- tête documentaire de référence : 42823ba ;
+- 31 commits propres à la branche de référence, dont 22 code/CI et 9 documentaires ;
+- inventaire exhaustif des 22 commits, dans l'ordre Git, avec jalon, décision de reprise et état ;
+- d3c7011 appartient au socle J1 puis à la revalidation J4 ;
+- cf322ef est partagé entre J2 (erreur claim_once du scheduler) et J3 (validation Ollama).
+
+Découpage décidé
+----------------
+1. J1 : état de fermeture, admission suivie, budgets absolus, CEF et sortie ultime.
+2. J2 : adoption de tous les services/processus/travaux longs, scheduler et erreurs de flux traduites.
+3. J3 : transaction Ollama durable et autorité unique.
+4. J4 : convergence, nettoyage structurel et preuves natives cumulatives sur les trois OS.
+
+Chaque jalon part d'un main vert, doit être fusionnable seul et ferme explicitement ses lignes d'inventaire. La grande branche n'est pas fusionnée ni cherry-pickée en bloc : chaque comportement utile est reproduit avec le nouveau contrat ou abandonné avec une justification et une preuve.
+
+Décisions produit conservées
+----------------------------
+- Une vraie commande Quitter arrête Telegram, Discord, Slack et tous les processus possédés sur Windows, Linux et macOS.
+- La croix rouge macOS conserve le comportement natif et masque seulement la fenêtre.
+- run_when_window_closed est retiré des nouveaux modèles/écritures, mais les anciens JSON restent lisibles.
+
+Fermeture et échéances
+----------------------
+- Politique centrale : 8 s gracieux, 10 s sortie Tauri, 13 s forcé, 14 s auto-terminaison CEF macOS, 15 s sortie brute, puis 5 s d'observation uniquement dans le test.
+- Le tueur ultime est précréé avant toute fenêtre ou service. Son échec refuse le démarrage ; il ne scanne rien et ne dépend pas du watchdog.
+- Le watchdog processus est distinct. Un appel OS bloqué ne peut pas repousser la sortie brute.
+- La preuve immédiate porte sur l'absence de travail runnable. Les objets Windows en terminaison et les zombies Unix peuvent disparaître dans la fenêtre d'observation sans prolonger Beaver.
+
+Décisions CEF
+-------------
+- Portée réelle : Windows et macOS ; native_browser reste désactivé sous Linux.
+- on_before_child_process_launch réserve une génération avant le spawn. Aucun helper n'entre dans cef::execute_process avant une admission parent.
+- Les admissions encore incomplètes 50 ms après Closing sont invalidées ; aucune admission tardive n'est possible.
+- L'autorité CEF reste dans une table parent privée de 64 slots. Chaque helper reçoit une boîte de publication isolée, une page de contrôle en lecture seule et deux événements parent-only ; aucune zone enfant-écrivable ne contient état, handle, Job ou admission.
+- Les nonces de 256 bits sont CSPRNG, jamais loggés et zéroïsés après usage. Une publication est copiée puis scellée ; toute réécriture est ignorée.
+- Windows : DACL, SIDs activés/restrictifs et MIC sont adaptés au vrai jeton sandboxé. Le parent garde EVENT_MODIFY_STATE. Chaque helper est affecté avant Admitted à son propre Job Object vide KILL_ON_JOB_CLOSE ; les handles non héritables restent exclusivement dans le parent. PROCESS_SET_QUOTA, PROCESS_TERMINATE, SYNCHRONIZE et QUERY_LIMITED_INFORMATION sont requis.
+- Le rôle privé est obligatoire, car current_exe est aussi utilisé par le helper shell Windows. Le chemin de l'exécutable seul ne suffit jamais.
+- macOS : objets et groupe sont préparés avant sandbox.initialize ; publication et moniteur commencent seulement après le sandbox. Un reaper parent indépendant revalide PID, parent, heure, exécutable et PGID avant SIGKILL. Chaque helper s'auto-termine à 14 s ou à la mort du parent. Le helper sandboxé ne promet pas de tuer son groupe, car Seatbelt peut limiter le signal à soi-même.
+- Un bootstrap non admis peut seulement constater l'absence/fermeture de ses objets et sortir ; il ne charge pas CEF, le profil ou la VRAM et ne lance aucun descendant.
+- Les tests natifs doivent couvrir chaque type CEF réel, sandbox actif, Job imbriqué, ACL/MIC, corruption de boîte, rôle shell simultané, PID/PGID réutilisé, watchdog bloqué et disparition finale.
+
+Sources primaires vérifiées pour ces choix
+------------------------------------------
+- Microsoft AssignProcessToJobObject : https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-assignprocesstojobobject
+- Microsoft Nested Jobs : https://learn.microsoft.com/en-us/windows/win32/procthread/nested-jobs
+- Microsoft Mandatory Integrity Control : https://learn.microsoft.com/en-us/windows/win32/secauthz/mandatory-integrity-control
+- Microsoft Restricted Tokens : https://learn.microsoft.com/en-us/windows/win32/secauthz/restricted-tokens
+- Chromium Windows sandbox : https://chromium.googlesource.com/chromium/src/+/HEAD/docs/design/sandbox.md
+- Chromium target Job assignment : https://chromium.googlesource.com/chromium/src/+/b3ed17839d4177142aeab4a832f42ad21d18da3f/sandbox/win/src/target_process.cc
+- Chromium macOS sandbox ordering : https://chromium.googlesource.com/chromium/src/+/main/sandbox/mac/README.md
+- Chromium Seatbelt common policy : https://chromium.googlesource.com/chromium/src/+/main/sandbox/policy/mac/common.sb
+
+Décisions Ollama
+----------------
+- Un seul gestionnaire et un seul verrou possèdent installation, update, reprise, journal, polling et sidecar.
+- Journal borné à 4 Kio, cinq phases : Prepared, PendingValidation, CleanupPending, RollbackPending, RollbackCleanupPending.
+- La validation utilise uniquement une sonde du binaire cible possédé ; un démon externe ne valide jamais le bundle et n'est jamais arrêté.
+- rejected_target=None n'est légal que si la cible a déjà disparu (migration héritée ou PendingValidation sans destination). Une cible présente écrit directement Some(empreinte) avant le premier renommage.
+- None accompagné de failed ou failed-delete est ambigu : aucune mutation, journal conservé, erreur publique récupérable.
+- backup et failed sont renommés vers backup-delete/failed-delete avant suppression récursive. Un tombstone partiel est repris uniquement dans sa phase, avec destination exacte et source absente ; symlink, junction, reparse, source+tombstone ou tombstone hors phase ferment l'opération.
+- Ordre durable : supprimer le tombstone, synchroniser le parent, retirer le journal, synchroniser encore le parent. Une synchronisation indisponible conserve la phase ; aucune réussite n'est inventée.
+
+Autres acquis explicitement repris
+----------------------------------
+- Inventaire de tous les spawns directs et indirects Tauri/WebView/CEF.
+- Gateway, extensions, SearXNG, MCP, Forecast, PTY, shell, sous-agents, téléchargements et helper d'update passent par l'admission/supervision.
+- Réveils ponctuels : résultats typés, annulation après claim journalisée, Inactive bénin, erreur claim_once visible sans détail interne et notify_config_changed après mutation.
+- Flux : codes publics stables, fallback générique et sept langues.
+
+Alternatives rejetées
+---------------------
+- fusionner ou cherry-picker la grande branche en bloc ;
+- compter sur le code situé après cef::shutdown ;
+- faire une passe unique à 13 s ou une dernière passe sur le chemin critique de 15 s ;
+- créer le tueur ultime seulement à Closing ;
+- créer un thread avant le sandbox CEF ;
+- mettre handles/états d'autorité dans une mémoire modifiable par le helper ;
+- classer CEF uniquement par le chemin current_exe ;
+- supposer qu'un helper Seatbelt peut tuer tout son groupe ;
+- supprimer récursivement backup/failed sous leur nom d'autorité ;
+- déduire un rollback à partir de dossiers ambigus.
+
+Validation de ce commit documentaire
+-------------------------------------
+- review globale indépendante : aucun blocage critique, important ou mineur restant ;
+- six documents relus intégralement ;
+- inventaire 22/22, 22 uniques, aucun manquant, supplémentaire ou doublon ;
+- 17 liens Markdown relatifs, 0 cassé ;
+- aucune erreur d'encodage, TODO, TBD ou FIXME ;
+- git diff --check réussi ;
+- uniquement six fichiers docs, aucun code de production ; les suites runtime ne sont donc pas exécutées à ce stade de spécification.
+- mise à jour Graphify sémantique tentée avec graphify extract . ; arrêt avant écriture car aucun backend/API LLM n'est configuré pour les 800 fichiers documentaires. Aucun fichier du graphe ni du dépôt n'a été modifié. Cette maintenance devra être relancée dès qu'un backend est disponible.
+
+Règle pour les reviewers des futurs jalons
+------------------------------------------
+La Git note de chaque jalon doit indiquer les hashes de référence fermés, le comportement repris ou abandonné, le test rouge puis vert, les tests voisins et le commit de remplacement. Le jalon 4 compare cumulativement le main final au main d68ccdc et refuse toute ligne non fermée.
