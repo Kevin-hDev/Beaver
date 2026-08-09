@@ -88,6 +88,7 @@ async fn failed_child_save_generic_report_stays_hidden_until_single_failure_sign
                     .await
                     .expect("block child save path");
             },
+            || async {},
             move |_outcome| async move {
                 let _ = saved_tx.send(());
                 let _ = release_rx.await;

@@ -42,6 +42,7 @@ pub(super) async fn persist_terminal_completion(
         status == super::subagent_status::COMPLETED,
         None,
         || async {},
+        || async {},
         |_| async {},
     )
     .await?
@@ -72,6 +73,7 @@ where
         status == super::subagent_status::COMPLETED,
         None,
         || async {},
+        || async {},
         after_report,
     )
     .await?
@@ -79,18 +81,21 @@ where
 }
 
 #[cfg(test)]
-pub(super) async fn persist_terminal_completion_with_hooks<FL, FLFut, FR, FRFut>(
+pub(super) async fn persist_terminal_completion_with_hooks<FL, FLFut, FS, FSFut, FR, FRFut>(
     parent_session_id: &str,
     child_session_id: &str,
     subagent_type: &str,
     status: &str,
     summary: &str,
     after_child_loaded: FL,
+    after_child_saved: FS,
     after_report: FR,
 ) -> Result<FinalizedSubagent, String>
 where
     FL: FnOnce() -> FLFut,
     FLFut: std::future::Future<Output = ()>,
+    FS: FnOnce() -> FSFut,
+    FSFut: std::future::Future<Output = ()>,
     FR: FnOnce(TerminalOutcome) -> FRFut,
     FRFut: std::future::Future<Output = ()>,
 {
@@ -103,13 +108,14 @@ where
         status == super::subagent_status::COMPLETED,
         None,
         after_child_loaded,
+        after_child_saved,
         after_report,
     )
     .await?
     .ok_or_else(|| SUBAGENT_COMPLETION_ERROR.to_string())
 }
 
-pub(super) async fn persist_terminal_completion_inner<FL, FLFut, FR, FRFut>(
+pub(super) async fn persist_terminal_completion_inner<FL, FLFut, FS, FSFut, FR, FRFut>(
     parent_session_id: &str,
     child_session_id: &str,
     subagent_type: &str,
@@ -118,11 +124,14 @@ pub(super) async fn persist_terminal_completion_inner<FL, FLFut, FR, FRFut>(
     successful: bool,
     expected_owner: Option<(&str, &str)>,
     after_child_loaded: FL,
+    after_child_saved: FS,
     after_report: FR,
 ) -> Result<Option<FinalizedSubagent>, String>
 where
     FL: FnOnce() -> FLFut,
     FLFut: std::future::Future<Output = ()>,
+    FS: FnOnce() -> FSFut,
+    FSFut: std::future::Future<Output = ()>,
     FR: FnOnce(TerminalOutcome) -> FRFut,
     FRFut: std::future::Future<Output = ()>,
 {
@@ -165,6 +174,7 @@ where
         .await?;
         return Err(SUBAGENT_COMPLETION_ERROR.to_string());
     }
+    after_child_saved().await;
 
     if finalized.queued_followup {
         return Ok(Some(finalized));

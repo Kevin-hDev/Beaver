@@ -40,6 +40,7 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
             true,
             Some((&old_run, &old_execution)),
             || async {},
+            || async {},
             move |_outcome| async move {
                 let active = subagent_registry::active_children_for_parent(&callback_parent)
                     .await

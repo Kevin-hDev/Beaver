@@ -23,6 +23,7 @@ pub(super) async fn persist_terminal(
         success,
         Some((run_id, execution_id)),
         || async {},
+        || async {},
         after_report,
     )
     .await
