@@ -1,0 +1,35 @@
+Objectif
+- Remplacer la mega-fusion du cycle de vie par un contrat transverse et quatre PR successives, chacune issue d'un main vert.
+- Conserver la grande branche codex/fix-app-shutdown-lifecycle comme sauvegarde/reference, sans la fusionner telle quelle.
+
+Causes racines traitees
+- Perimetre trop large: plus de trente commits et plus de cent fichiers rendaient les regressions difficiles a isoler.
+- Ambiguites de spec sur le Job Object Windows, la verification Unix du watchdog, les layouts Ollama publies et les producteurs de processus omis.
+- Champ run_when_window_closed devenu sans effet apres la decision produit de fermer aussi le gateway.
+
+Decisions et justifications
+- Une vraie fermeture arrete Telegram, Discord et Slack; seule la croix rouge macOS masque Beaver. Decision produit explicite de Kevin.
+- run_when_window_closed est retire des modeles et nouvelles ecritures; les anciens JSON restent lisibles par tolerance aux champs inconnus. Evite un reglage zombie sans casser les donnees.
+- Quatre jalons/PR: socle, services/processus, transaction Ollama, convergence multi-OS. Chaque PR est revue et fusionnee avant la suivante.
+- Windows assigne les enfants au Job Object immediatement apres spawn au lieu d'imposer CREATE_SUSPENDED partout. portable-pty expose le handle natif; le balayage et l'inventaire couvrent la courte fenetre.
+- Le helper Beaver conserve UpdateHandoff et reste hors du Job Object destructeur; aucun transfert de handle supplementaire.
+- Le watchdog Unix stocke aussi l'heure de demarrage et reverifie l'identite avec /proc ou proc_pidinfo dans des buffers fixes, sans Tokio, sysinfo, tas ou mutex.
+- La sortie ultime utilise TerminateProcess sous Windows et _exit sous macOS/Linux afin de ne lancer aucun destructeur ou callback.
+- La migration Ollama couvre explicitement le layout de la baseline 1.0.2 et des releases 1.1.0, 1.1.1 et 1.1.2: ollama-bundle, ollama-bundle-staging, ollama-bundle-old, ollama-bundle-failed.
+- MCP, Forecast, PTY, SearXNG et les autres producteurs de processus sont ajoutes a l'admission obligatoire.
+- La comparaison constante des empreintes est conservee: les regles securite du projet l'imposent aux hash, meme publics.
+- Le journal Ollama est type par phase; rejected_target est optionnel uniquement pour restaurer un ancien layout dont la cible a deja disparu.
+
+Alternatives rejetees
+- Fusionner la branche actuelle en un bloc: surface de review et risque de regression trop eleves.
+- Reintroduire un gateway cache sous Windows/Linux: contraire a la decision produit validee.
+- Lancement suspendu et Job Object de handoff generalises: complexite native disproportionnee, notamment pour portable-pty.
+- Supprimer la comparaison constante des empreintes: contraire aux contraintes obligatoires du projet.
+
+Verification documentaire
+- Aucun placeholder ou caractere UTF-8 invalide.
+- Tous les liens entre les cinq specifications sont valides.
+- git diff --cached --check passe.
+- Les quatre tags publies ont ete controles directement et contiennent bien les trois chemins legacy.
+- La mise a jour semantique Graphify a ete tentee mais n'a pas pu s'executer sans backend LLM; elle n'a modifie aucun fichier.
+- Aucun code metier n'est modifie par ce commit.
