@@ -33,5 +33,6 @@ pub(crate) fn run(
             #[cfg(not(target_os = "macos"))]
             crate::services::browser::shutdown(&app_handle);
         },
+        || crate::app_exit::post_event_loop(&app_handle),
     )
 }

@@ -1,6 +1,6 @@
 use super::emergency::{EmergencyInventory, VerifiedProcessIdentity};
 use super::emergency_drain::{EmergencyObservation, EmergencySignaler};
-use super::policy::{watchdog_recheck_interval, ShutdownTimeline};
+use super::policy::{post_loop_sweep_timeout, watchdog_recheck_interval, ShutdownTimeline};
 use super::state::ShutdownState;
 use std::io;
 use std::sync::Arc;
@@ -47,6 +47,13 @@ impl WatchdogActions {
 }
 
 pub(super) struct WatchdogThread {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "production deliberately detaches the watchdog thread"
+        )
+    )]
     join: Option<JoinHandle<()>>,
 }
 
@@ -135,5 +142,18 @@ fn wait_until(deadline: Instant) {
             return;
         }
         std::thread::park_timeout(remaining);
+    }
+}
+
+pub(super) fn drain_post_loop(inventory: &EmergencyInventory, timeline: ShutdownTimeline) {
+    let signaler = UnadoptedSignaler;
+    let local_limit = Instant::now() + post_loop_sweep_timeout();
+    let deadline = local_limit.min(timeline.emergency_deadline());
+    while inventory.has_active() && Instant::now() < deadline {
+        inventory.drain_once(&signaler);
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        if !remaining.is_zero() && inventory.has_active() {
+            std::thread::park_timeout(remaining.min(watchdog_recheck_interval()));
+        }
     }
 }

@@ -135,6 +135,11 @@ impl UltimateExit {
         self.stop_and_join();
     }
 
+    #[cfg(test)]
+    pub(super) fn is_armed_for_test(&self) -> bool {
+        matches!(self.control.state.load(Ordering::Acquire), ARMED | FIRED)
+    }
+
     fn stop_and_join(&mut self) {
         self.control.state.store(STOPPED, Ordering::Release);
         self.thread.unpark();

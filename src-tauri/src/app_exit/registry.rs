@@ -1,8 +1,17 @@
-use std::future::Future;
+#![cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "the bounded admission API is adopted by service producers in milestone 2"
+    )
+)]
+
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 use tokio::sync::Notify;
 use tokio_util::sync::CancellationToken;
+
+pub(super) use super::registry_admission::{AdmissionKey, TrackedAdmission};
 
 pub(super) const REGISTRY_CAPACITY: usize = 128;
 
@@ -19,12 +28,6 @@ impl AdmissionError {
             Self::Capacity => "app-work-capacity-reached",
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct AdmissionKey {
-    index: usize,
-    generation: u64,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -80,7 +83,7 @@ impl AdmissionRegistry {
             .enumerate()
             .find(|(_, slot)| !slot.occupied)
             .ok_or(AdmissionError::Capacity)?;
-        slot.generation = next_generation(slot.generation);
+        slot.generation = super::registry_admission::next_generation(slot.generation);
         slot.occupied = true;
         let key = AdmissionKey {
             index,
@@ -127,7 +130,7 @@ impl AdmissionRegistry {
         }
     }
 
-    fn release(&self, key: AdmissionKey) -> bool {
+    pub(super) fn release(&self, key: AdmissionKey) -> bool {
         let mut state = self.lock_state();
         let Some(slot) = state.slots.get_mut(key.index) else {
             return false;
@@ -166,58 +169,5 @@ impl AdmissionRegistry {
 impl Default for AdmissionRegistry {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-pub(super) struct TrackedAdmission {
-    registry: AdmissionRegistry,
-    key: Option<AdmissionKey>,
-    cancel: CancellationToken,
-}
-
-impl TrackedAdmission {
-    pub(super) fn cancellation_token(&self) -> CancellationToken {
-        self.cancel.clone()
-    }
-
-    pub(super) async fn run<F>(self, future: F) -> F::Output
-    where
-        F: Future,
-    {
-        let guard = self;
-        let output = future.await;
-        drop(guard);
-        output
-    }
-
-    #[cfg(test)]
-    pub(super) fn key_for_test(&self) -> AdmissionKey {
-        self.key.expect("tracked admission key")
-    }
-}
-
-impl std::fmt::Debug for TrackedAdmission {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("TrackedAdmission")
-            .field("key", &self.key)
-            .finish_non_exhaustive()
-    }
-}
-
-impl Drop for TrackedAdmission {
-    fn drop(&mut self) {
-        if let Some(key) = self.key.take() {
-            let _ = self.registry.release(key);
-        }
-    }
-}
-
-fn next_generation(current: u64) -> u64 {
-    let next = current.wrapping_add(1);
-    if next == 0 {
-        1
-    } else {
-        next
     }
 }

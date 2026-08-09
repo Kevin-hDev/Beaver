@@ -1,4 +1,4 @@
-use super::policy::{ShutdownPolicy, ShutdownTimeline};
+use super::policy::{post_loop_sweep_timeout, ShutdownPolicy, ShutdownTimeline};
 use std::time::{Duration, Instant};
 
 #[test]
@@ -82,6 +82,7 @@ fn production_policy_matches_the_contract() {
     let policy = ShutdownPolicy::production();
     assert_eq!(policy.graceful(), Duration::from_secs(8));
     assert_eq!(policy.tauri_exit(), Duration::from_secs(10));
+    assert_eq!(post_loop_sweep_timeout(), Duration::from_secs(3));
     assert_eq!(policy.emergency(), Duration::from_secs(13));
     assert_eq!(policy.ultimate(), Duration::from_secs(15));
 }

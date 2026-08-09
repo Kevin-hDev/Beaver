@@ -5,6 +5,13 @@ use super::emergency::{
 use std::sync::atomic::Ordering;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "Exited is returned by native service signalers introduced in milestone 2"
+    )
+)]
 pub(super) enum EmergencyObservation {
     Terminating,
     Exited,
