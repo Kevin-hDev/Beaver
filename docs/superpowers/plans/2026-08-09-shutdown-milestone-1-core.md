@@ -405,3 +405,53 @@ git diff --check
 - Comparer le job repris à `d3c7011`.
 - Vérifier que le workflow de PR couvre Ubuntu, Windows et macOS.
 - Vérifier que la branche de maintenance reste différée jusqu'au dernier instant avant la fusion.
+
+### Task 12: Rendre les nouveaux contrôles de sécurité exploitables
+
+**Files:**
+- Modify: `.github/workflows/codeql.yml`
+- Modify: `.github/dependabot.yml`
+- Modify: `.github/workflows/audit.yml`
+- Modify: `package.json`
+- Modify: `package-lock.json`
+- Modify: `src-tauri/resources/extension-host/package.json`
+- Modify: `src-tauri/resources/extension-host/package-lock.json`
+- Create: `src-tauri/resources/extension-host/vendor/image-size-disabled/`
+- Modify: `scripts/extensions/office-dependencies.test.mjs`
+
+**Step 1: Fermer les deux dettes de configuration**
+
+- Remplacer les deux usages CodeQL v3 par le SHA vérifié de CodeQL v4.
+- Borner explicitement à trois les PR Dependabot du catalogue GitHub Actions.
+
+**Step 2: Corriger les alertes npm sans masquer les audits**
+
+- Mettre `nanoid` à une version corrigée compatible avec les contraintes existantes.
+- Ne pas appliquer la rétrogradation majeure erronée proposée par `npm audit` pour `pptxgenjs`.
+- Remplacer la dépendance `image-size`, inutilisée par le bundle `pptxgenjs` 4.0.1 livré, par un module interne minimal qui refuse toute inspection d'image.
+- Garder ce remplacement identique dans l'arbre de développement et l'arbre de production de l'hôte d'extensions.
+- Ajouter le contrat aux tests des dépendances Office et vérifier qu'un appel accidentel échoue immédiatement.
+
+**Step 3: Rejouer les audits exacts de la CI**
+
+```powershell
+npm audit --audit-level=high
+npm audit --prefix src-tauri/resources/extension-host --audit-level=high
+```
+
+- Aucun avis de sécurité ne doit être ignoré ou filtré.
+- Auditer aussi les deux `Cargo.lock` avec `cargo-audit` dans un emplacement temporaire, sans installation persistante lourde.
+
+**Step 4: Validation cumulative**
+
+```powershell
+npm run test:extensions-host
+npm test
+npx tsc --noEmit
+npm run lint
+git diff --check
+```
+
+- Vérifier que la création de présentations fonctionne toujours.
+- Refaire une review sécurité du diff complet depuis `main`.
+- Maintenir Graphify après les changements de documentation et de code.
