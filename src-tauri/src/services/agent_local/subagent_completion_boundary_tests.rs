@@ -29,32 +29,23 @@ async fn message_between_terminal_save_and_registry_completion_is_never_stranded
     let parent_guard = parent_lock.lock().await;
     let completion_parent = parent.id.clone();
     let completion_child = child.id.clone();
+    let (saved_tx, saved_rx) = tokio::sync::oneshot::channel();
     let completion = tokio::spawn(async move {
-        subagent_completion::persist_terminal_completion(
+        subagent_completion::persist_terminal_completion_with_hooks(
             &completion_parent,
             &completion_child,
             "explorer",
             subagent_status::COMPLETED,
             "Rapport terminal",
+            || async {},
+            move || async move {
+                let _ = saved_tx.send(());
+            },
+            |_| async {},
         )
         .await
     });
-    tokio::time::timeout(std::time::Duration::from_secs(2), async {
-        loop {
-            if session_store::get(&child.id)
-                .await
-                .ok()
-                .and_then(|saved| saved.subagent_status)
-                .as_deref()
-                == Some(subagent_status::COMPLETED)
-            {
-                break;
-            }
-            tokio::task::yield_now().await;
-        }
-    })
-    .await
-    .expect("terminal status saved before report");
+    saved_rx.await.expect("terminal status saved before report");
 
     let restart_parent = parent.id.clone();
     let restart_child = child.id.clone();
