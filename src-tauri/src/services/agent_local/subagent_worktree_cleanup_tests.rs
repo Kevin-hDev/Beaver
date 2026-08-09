@@ -6,12 +6,12 @@ use super::{
     subagent_worktree_ownership_tests::init_repo_with_commit,
 };
 use std::future::Future;
+use std::path::Path;
 use std::pin::Pin;
+use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
-use std::path::Path;
-use std::process::Command;
 
 struct BlockingRunner {
     attempts: Arc<AtomicUsize>,
@@ -26,8 +26,7 @@ impl GitRemoveRunner for BlockingRunner {
         retry_locked: bool,
     ) -> Pin<Box<dyn Future<Output = bool> + Send + 'a>> {
         self.attempts.fetch_add(1, Ordering::SeqCst);
-        self.retried_locked
-            .fetch_or(retry_locked, Ordering::SeqCst);
+        self.retried_locked.fetch_or(retry_locked, Ordering::SeqCst);
         Box::pin(BlockingProcess {
             abandoned: Arc::clone(&self.abandoned),
         })
@@ -93,7 +92,7 @@ async fn blocked_git_remove_is_abandoned_bounded_and_fail_closed() {
 
 #[tokio::test]
 async fn locked_worktree_cleanup_removes_git_metadata() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let child_id = id();
     let execution_id = id();
     let target = subagent_worktree::create_for_execution(repo.path(), &child_id, &execution_id)
@@ -121,7 +120,7 @@ async fn locked_worktree_cleanup_removes_git_metadata() {
 
 #[tokio::test]
 async fn successful_cleanup_removes_empty_child_directory() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let target = subagent_worktree::create_for_execution(repo.path(), &id(), &id())
         .await
         .expect("create worktree");
@@ -147,12 +146,15 @@ async fn missing_execution_cleanup_removes_empty_child_directory() {
         .await
         .expect("missing worktree is already removed");
 
-    assert!(!child_dir.exists(), "le répertoire UUID vide subsiste après l'échec initial");
+    assert!(
+        !child_dir.exists(),
+        "le répertoire UUID vide subsiste après l'échec initial"
+    );
 }
 
 #[tokio::test]
 async fn cleanup_never_removes_a_sibling_execution() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let child_id = id();
     let first = subagent_worktree::create_for_execution(repo.path(), &child_id, &id())
         .await

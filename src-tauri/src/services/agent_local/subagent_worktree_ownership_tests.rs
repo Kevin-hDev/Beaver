@@ -1,9 +1,23 @@
 use super::{session_store, subagent_registry, subagent_working_dir, subagent_worktree};
 use tokio_util::sync::CancellationToken;
 
+// Git for Windows can fail DLL initialization when these process-heavy fixtures overlap.
+static GIT_INTEGRATION_TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+pub(super) struct TestRepository {
+    temp_dir: tempfile::TempDir,
+    _guard: tokio::sync::MutexGuard<'static, ()>,
+}
+
+impl TestRepository {
+    pub(super) fn path(&self) -> &std::path::Path {
+        self.temp_dir.path()
+    }
+}
+
 #[tokio::test]
 async fn prepared_dir_survives_internal_turn_and_new_execution_is_distinct() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let parent = session("Parent").await;
     let mut child = child_session(&parent.id, "Coder").await;
     let first_run = register(&parent.id, &child.id).await;
@@ -22,7 +36,12 @@ async fn prepared_dir_survives_internal_turn_and_new_execution_is_distinct() {
         .expect("write uncommitted file");
 
     let second_turn_dir = prepared.path();
-    assert_eq!(tokio::fs::read_to_string(second_turn_dir.join("uncommitted.txt")).await.unwrap(), "must survive");
+    assert_eq!(
+        tokio::fs::read_to_string(second_turn_dir.join("uncommitted.txt"))
+            .await
+            .unwrap(),
+        "must survive"
+    );
 
     subagent_registry::unregister(&child.id).await;
     let next_run = register(&parent.id, &child.id).await;
@@ -51,25 +70,35 @@ async fn prepared_dir_survives_internal_turn_and_new_execution_is_distinct() {
 
 #[tokio::test]
 async fn preexisting_execution_target_is_rejected() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let child_id = uuid::Uuid::new_v4().to_string();
     let execution_id = uuid::Uuid::new_v4().to_string();
     let target = subagent_worktree::path_for_execution(&child_id, &execution_id).unwrap();
-    tokio::fs::create_dir_all(&target).await.expect("create collision");
+    tokio::fs::create_dir_all(&target)
+        .await
+        .expect("create collision");
     tokio::fs::write(target.join("owner.txt"), "existing")
         .await
         .expect("write owner");
 
-    let result = subagent_worktree::create_for_execution(repo.path(), &child_id, &execution_id).await;
+    let result =
+        subagent_worktree::create_for_execution(repo.path(), &child_id, &execution_id).await;
 
     assert!(result.is_err());
-    assert_eq!(tokio::fs::read_to_string(target.join("owner.txt")).await.unwrap(), "existing");
-    tokio::fs::remove_dir_all(target).await.expect("cleanup collision");
+    assert_eq!(
+        tokio::fs::read_to_string(target.join("owner.txt"))
+            .await
+            .unwrap(),
+        "existing"
+    );
+    tokio::fs::remove_dir_all(target)
+        .await
+        .expect("cleanup collision");
 }
 
 #[tokio::test]
 async fn old_cleanup_removes_only_old_path_after_new_execution_ended() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let parent = session("Parent cleanup").await;
     let mut child = child_session(&parent.id, "Coder cleanup").await;
     let sibling = child_session(&parent.id, "Sibling").await;
@@ -98,7 +127,7 @@ async fn old_cleanup_removes_only_old_path_after_new_execution_ended() {
 
 #[tokio::test]
 async fn missing_session_after_creation_never_leaks_the_worktree() {
-    let repo = init_repo_with_commit();
+    let repo = init_repo_with_commit().await;
     let parent = session("Parent missing session").await;
     let mut child = child_session(&parent.id, "Coder missing session").await;
     let run = register(&parent.id, &child.id).await;
@@ -132,9 +161,14 @@ async fn prepare(
     child: &super::types_session::AgentSession,
     run: &subagent_registry::RegisteredSubagent,
 ) -> subagent_working_dir::PreparedWorkingDir {
-    subagent_working_dir::create_coder_worktree_for_test(repo, &child.id, &run.run_id, &run.execution_id)
-        .await
-        .expect("prepare worktree")
+    subagent_working_dir::create_coder_worktree_for_test(
+        repo,
+        &child.id,
+        &run.run_id,
+        &run.execution_id,
+    )
+    .await
+    .expect("prepare worktree")
 }
 
 async fn register(parent_id: &str, child_id: &str) -> subagent_registry::RegisteredSubagent {
@@ -149,7 +183,9 @@ async fn save_run(child: &mut super::types_session::AgentSession, run_id: &str) 
 }
 
 async fn session(name: &str) -> super::types_session::AgentSession {
-    session_store::create_full(name, "llama3", "ollama", false, None).await.unwrap()
+    session_store::create_full(name, "llama3", "ollama", false, None)
+        .await
+        .unwrap()
 }
 
 async fn child_session(parent_id: &str, name: &str) -> super::types_session::AgentSession {
@@ -167,7 +203,8 @@ async fn delete_sessions(ids: &[&str]) {
     }
 }
 
-pub(super) fn init_repo_with_commit() -> tempfile::TempDir {
+pub(super) async fn init_repo_with_commit() -> TestRepository {
+    let guard = GIT_INTEGRATION_TEST_LOCK.lock().await;
     let tmp = tempfile::tempdir().expect("temp repo");
     let repo = git2::Repository::init(tmp.path()).expect("init repo");
     repo.config()
@@ -176,12 +213,20 @@ pub(super) fn init_repo_with_commit() -> tempfile::TempDir {
         .expect("disable automatic line ending conversion");
     std::fs::write(tmp.path().join("README.md"), "init").expect("write file");
     let mut index = repo.index().expect("index");
-    index.add_path(std::path::Path::new("README.md")).expect("add file");
+    index
+        .add_path(std::path::Path::new("README.md"))
+        .expect("add file");
     index.write().expect("write index");
-    let tree = repo.find_tree(index.write_tree().expect("write tree")).expect("find tree");
+    let tree = repo
+        .find_tree(index.write_tree().expect("write tree"))
+        .expect("find tree");
     let signature = git2::Signature::now("CL-GO Test", "test@example.com").expect("signature");
-    repo.commit(Some("HEAD"), &signature, &signature, "init", &tree, &[]).expect("commit");
+    repo.commit(Some("HEAD"), &signature, &signature, "init", &tree, &[])
+        .expect("commit");
     drop(tree);
     drop(repo);
-    tmp
+    TestRepository {
+        temp_dir: tmp,
+        _guard: guard,
+    }
 }
