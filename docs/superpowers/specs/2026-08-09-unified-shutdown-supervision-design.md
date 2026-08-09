@@ -8,7 +8,16 @@ Cette conception remplace les décisions incompatibles ou incomplètes des trois
 - `2026-08-08-app-shutdown-review-hardening-design.md` ;
 - `2026-08-09-shutdown-recovery-hardening-design.md`.
 
-Les mécanismes déjà corrects restent réutilisés, mais le présent document devient la source de vérité lorsqu'un détail diffère. L'objectif est de terminer la série de corrections locales en imposant une autorité unique pour le cycle de vie de Beaver, une autorité unique pour Ollama et des scénarios de validation complets.
+Les mécanismes déjà corrects restent réutilisés, mais le présent document devient la source de vérité lorsqu'un détail diffère. Il constitue le contrat transverse : les invariants, décisions produit et frontières qu'il contient ne peuvent pas être modifiés par un jalon d'implémentation sans un nouvel amendement approuvé.
+
+L'implémentation est décomposée en quatre spécifications et quatre PR successives :
+
+1. [Jalon 1 — socle de fermeture](./2026-08-09-shutdown-milestone-1-core-design.md) ;
+2. [Jalon 2 — processus et services](./2026-08-09-shutdown-milestone-2-services-design.md) ;
+3. [Jalon 3 — transaction Ollama](./2026-08-09-shutdown-milestone-3-ollama-design.md) ;
+4. [Jalon 4 — convergence multi-OS](./2026-08-09-shutdown-milestone-4-convergence-design.md).
+
+Chaque jalon part du `main` qui contient le jalon précédent déjà fusionné. La branche `codex/fix-app-shutdown-lifecycle`, devenue trop large, reste une sauvegarde et une source de référence ; elle n'est pas fusionnée telle quelle.
 
 ## Objectif utilisateur
 
@@ -22,7 +31,7 @@ Le comportement visible est figé ainsi :
 - les trois systèmes : Quitter depuis le tray lance une vraie fermeture ;
 - une vraie fermeture arrête le gateway et ses canaux Telegram, Discord et Slack ;
 - si sa configuration le demande, le gateway redémarre normalement au prochain lancement ;
-- le champ historique `run_when_window_closed` reste accepté lors de la lecture des anciennes configurations, mais ne transforme pas une vraie fermeture Windows ou Linux en exécution cachée ;
+- le champ historique `run_when_window_closed` est retiré des modèles Rust et TypeScript, des réglages visibles et des nouvelles écritures ; les anciens fichiers qui le contiennent restent lisibles grâce à la tolérance aux champs inconnus, mais sa valeur n'est plus utilisée ;
 - une mise à jour Beaver autorise uniquement le helper validé à survivre temporairement au processus courant.
 
 ## Problèmes à résoudre
@@ -75,6 +84,7 @@ Le comportement visible est figé ainsi :
 14. Les chemins macOS, Linux et Windows disposent de tests natifs dédiés ; une validation Windows ne vaut pas validation multi-OS.
 15. Une sortie forcée ne doit jamais dépendre du runtime asynchrone, d'un verrou de service ou d'une allocation non bornée.
 16. En cas de conflit entre « ne pas tuer un processus externe » et « ne rien laisser tourner », l'identité non vérifiable n'est jamais tuée ; le confinement établi au spawn et le nettoyage du lancement suivant servent de défenses complémentaires.
+17. Chaque jalon reste fusionnable sans activer un mécanisme incomplet et conserve les protections existantes tant que leur remplacement n'est pas totalement adopté.
 
 ## Vocabulaire de propriété
 
@@ -131,9 +141,13 @@ Doivent passer par l'admission suivie :
 - téléchargement et préparation d'une mise à jour Beaver ;
 - installation et redémarrage de l'hôte d'extensions ;
 - démarrage et traitements supervisés du gateway ;
+- installation, démarrage et arrêt de SearXNG ;
+- serveurs MCP stdio, processus d'installation MCP et leurs superviseurs ;
+- installation du runtime, sidecar, évaluations et commandes longues de Forecast ;
+- création des terminaux PTY, processus shell et threads lecteurs associés ;
 - téléchargements de modèles ;
 - réveils du scheduler ;
-- flux agentiques et travaux longs déjà suivis par un registre métier.
+- flux agentiques, sous-agents, commandes shell et travaux longs déjà suivis par un registre métier.
 
 Les commandes courtes attendues jusqu'à leur sortie et les applications externes ouvertes pour l'utilisateur sont documentées comme exemptions et ne sont pas artificiellement transformées en services possédés.
 
@@ -165,20 +179,24 @@ Un watchdog basé sur un thread système indépendant :
 2. à 10 secondes, passe atomiquement à `ReadyToExit` si nécessaire et demande la sortie Tauri ;
 3. laisse ensuite CEF et le balayage final s'exécuter ;
 4. à 13 secondes, ferme le confinement Windows ou envoie un dernier signal borné aux groupes Unix possédés dont l'identité est encore vérifiée ;
-5. à 15 secondes, termine le processus Beaver si celui-ci existe encore.
+5. à 15 secondes, appelle `TerminateProcess(GetCurrentProcess(), code)` sous Windows ou `libc::_exit(code)` sous macOS/Linux si Beaver existe encore.
 
-Le watchdog ne prend aucun verrou asynchrone, ne parcourt aucun dossier, ne supprime aucun fichier et ne décide aucun rollback. Il lit seulement l'état atomique et un inventaire d'urgence à capacité fixe. Si l'identité d'un PID ne peut pas être revérifiée, il ne le signale pas au risque de tuer une application externe. Il garantit avant tout que Beaver ne reste jamais invisible et impossible à quitter.
+Le watchdog ne prend aucun verrou asynchrone, ne parcourt aucun dossier, ne supprime aucun fichier et ne décide aucun rollback. Il lit seulement l'état atomique et un inventaire d'urgence à capacité fixe. Sous Linux, la revérification lit `/proc/<pid>/stat` avec `open/read` dans un buffer de pile fixe ; sous macOS, elle utilise `proc_pidinfo` dans une structure de pile fixe. Les deux chemins comparent PID, groupe et heure de démarrage sans `sysinfo`, allocation de tas ou mutex. Si l'identité ne peut pas être revérifiée, le PID n'est pas signalé au risque de tuer une application externe.
+
+La sortie de 15 secondes est volontairement brute : elle n'exécute aucun destructeur, callback `atexit`, flush de log ou nettoyage supplémentaire. Tout travail récupérable repose donc sur un journal durable écrit avant cette limite.
 
 ### Confinement établi au lancement
 
 Le filet d'urgence est préparé au moment du spawn, pas improvisé pendant la fermeture :
 
-- Windows : tout enfant possédé créé par Beaver est lancé suspendu, placé dans un Job Object Beaver configuré pour le terminer à la fermeture de son dernier handle, enregistré, puis repris ; CEF conserve son arrêt natif et le balayage direct déjà prévu ;
+- Windows : un enfant possédé est affecté au Job Object Beaver immédiatement après son spawn et avant que son handle soit rendu à l'appelant ; `portable-pty` fournit le handle natif nécessaire sans fork de la dépendance ; si l'affectation échoue, l'enfant et les descendants détectés dans cette courte fenêtre sont arrêtés et moissonnés, puis l'opération échoue ;
 - Linux : chaque enfant direct possédé reçoit un signal de mort du parent et un groupe de processus dédié avant `exec` ;
 - macOS : chaque enfant possédé reçoit un groupe de processus dédié, enregistré dans les slots atomiques du watchdog ;
 - toutes les plateformes : le parent vérifie immédiatement que l'identité enregistrée correspond au processus créé ; un échec tue et moissonne cet enfant avant de rendre le spawn visible.
 
-Le helper de mise à jour Beaver est créé selon un chemin distinct. Sous Windows, il est d'abord suspendu dans un Job Object de handoff dédié. La validation et la publication de `UpdateHandoff` lui transfèrent un handle de ce job avant sa reprise : avant ce transfert, une mort de Beaver le termine ; après, le handle conservé par le helper lui permet de finir la mise à jour. Sur Unix, son groupe reste possédé jusqu'au transfert validé. Si le transfert échoue, le helper est arrêté et moissonné comme tout autre enfant.
+La fenêtre entre spawn et affectation Windows est acceptée comme compromis explicite : le Job Object, l'inventaire d'identité, le balayage final et le nettoyage borné au lancement suivant forment quatre défenses complémentaires, sans réécrire tous les lanceurs avec `CreateProcessW` brut.
+
+Le helper de mise à jour Beaver conserve le mécanisme `UpdateHandoff` déjà présent et suit un lanceur distinct qui ne l'inscrit jamais dans le Job Object destructeur. Son exécutable, l'asset et les arguments sont validés avant le spawn ; l'opération suivie capture puis publie immédiatement son identité complète. Tant que cette publication n'a pas réussi, le guard local l'arrête et le moissonne lors d'une fermeture normale. Après publication, le balayage l'exclut uniquement si l'identité complète correspond encore. Un crash brutal dans la courte fenêtre spawn–publication peut laisser continuer ce helper déjà validé : c'est cohérent avec la mise à jour explicitement déclenchée et son protocole de santé au redémarrage. Aucun Job Object de handoff ni transfert de handle supplémentaire n'est introduit.
 
 ### Phases de fermeture
 
@@ -280,6 +298,16 @@ Les noms sont centralisés dans `services::paths` et désignent uniquement des e
 
 Les deux stagings distincts empêchent une première installation et une mise à jour interrompues de se confondre. Le verrou unique interdit néanmoins leur exécution concurrente.
 
+Les layouts réellement publiés sont recensés, pas déduits :
+
+| Versions sources | Destination | Staging partagé | Sauvegarde | Cible rejetée |
+|---|---|---|---|---|
+| baseline `1.0.2`, `1.1.0`, `1.1.1`, `1.1.2` | `ollama-bundle` | `ollama-bundle-staging` | `ollama-bundle-old` | `ollama-bundle-failed` |
+| branche de référence actuelle | `ollama-bundle` | `ollama-bundle-staging` | `ollama-bundle-old` | `ollama-bundle-failed` |
+| format moderne | `ollama-bundle` | deux stagings distincts | `ollama-bundle-backup` | `ollama-bundle-failed` |
+
+Toute future disposition publiée doit être ajoutée à cette table avant de modifier la migration.
+
 États durables :
 
 ```text
@@ -290,19 +318,21 @@ RollbackPending
 RollbackCleanupPending
 ```
 
-Le schéma conceptuel est exact et refuse les champs inconnus :
+Le schéma conceptuel est un enum typé et refuse les champs inconnus :
 
 ```text
-TransactionJournal {
-  schema_version: 1,
-  phase: Prepared | PendingValidation | CleanupPending
-       | RollbackPending | RollbackCleanupPending,
-  target:   BundleFingerprint { version, executable_sha256 },
-  previous: BundleFingerprint { version, executable_sha256 }
+TransactionJournal(schema_version = 1) {
+  Prepared { target, previous }
+  PendingValidation { target, previous }
+  CleanupPending { target, previous }
+  RollbackPending { previous, rejected_target? }
+  RollbackCleanupPending { previous, rejected_target? }
 }
+
+BundleFingerprint { version, executable_sha256 }
 ```
 
-Une mise à jour exige une destination existante et identifiable ; sans version précédente valide, la commande est redirigée vers la réparation ou la première installation et ne crée pas ce journal. Chaque version est une chaîne semver normalisée d'au plus 64 octets et chaque empreinte contient exactement 64 caractères hexadécimaux ASCII. Les empreintes sont comparées en temps constant, octet par octet. Aucun chemin absolu, message d'erreur ou texte extérieur n'est sérialisé. Aucun identifiant aléatoire n'est nécessaire, car le verrou et l'unique journal imposent une seule transaction.
+Une mise à jour moderne exige une destination existante et identifiable ; sans version précédente valide, la commande est redirigée vers la réparation ou la première installation et ne crée pas ce journal. `rejected_target` n'est absent que lors de la restauration d'un layout hérité où la cible a déjà disparu. Chaque version est une chaîne semver normalisée d'au plus 64 octets et chaque empreinte contient exactement 64 caractères hexadécimaux ASCII. Les empreintes sont comparées en temps constant, octet par octet. Aucun chemin absolu, message d'erreur ou texte extérieur n'est sérialisé. Aucun identifiant aléatoire n'est nécessaire, car le verrou et l'unique journal imposent une seule transaction.
 
 - `Prepared` : staging complet et validé, échange pas encore confirmé ;
 - `PendingValidation` : nouvelle installation en place, ancienne sauvegarde conservée ;
@@ -310,7 +340,7 @@ Une mise à jour exige une destination existante et identifiable ; sans version 
 - `RollbackPending` : restauration de l'ancienne version à reprendre.
 - `RollbackCleanupPending` : ancienne version restaurée, suppression de la cible rejetée à reprendre.
 
-L'absence du journal signifie qu'aucune transaction moderne n'est active. Une migration unique interprète prudemment les dossiers hérités produits par la branche actuelle. Toute ambiguïté ferme l'opération sans supprimer de dossier et produit un code récupérable.
+L'absence du journal signifie qu'aucune transaction moderne n'est active. Une migration unique interprète prudemment les dossiers des versions publiées et de la branche de référence listés ci-dessus. Toute ambiguïté ferme l'opération sans supprimer de dossier et produit un code récupérable.
 
 ### Table de reprise après interruption
 
@@ -337,7 +367,16 @@ La reprise ne devine pas une réussite à partir d'un simple dossier. Elle appli
 
 Chaque qualification « cible » ou « précédente » exige l'empreinte attendue et la version normalisée inscrites dans le journal. Toute combinaison non listée ou empreinte différente est ambiguë : aucune suppression n'a lieu, l'état reste durable et un code public de récupération requise est renvoyé. Les tests coupent artificiellement l'opération avant et après chaque renommage et chaque écriture du journal.
 
-La migration des dossiers hérités est elle-même unique et testée. Destination + sauvegarde devient `PendingValidation` après calcul borné de leurs empreintes ; sauvegarde sans destination devient `RollbackPending` ; destination + cible rejetée sans sauvegarde devient `RollbackCleanupPending`. Toute autre combinaison héritée reste intacte et produit une récupération requise. Le marqueur de migration n'est écrit qu'après la création durable du journal moderne ou la confirmation qu'aucun dossier hérité n'existe.
+La migration des dossiers hérités est elle-même unique et testée :
+
+- destination seule : installation normale, aucun journal créé ;
+- destination + `ollama-bundle-staging`, sans sauvegarde : staging pré-échange abandonné ; la destination est conservée et le staging exact est supprimé après validation de son type ;
+- destination + `ollama-bundle-old`, sans staging : création de `PendingValidation` après calcul borné des deux empreintes ;
+- `ollama-bundle-old` sans destination : création de `RollbackPending` pour restaurer l'ancienne version ;
+- destination + `ollama-bundle-failed`, sans sauvegarde : création de `RollbackCleanupPending` ;
+- toute autre combinaison : aucun déplacement ni suppression, code de récupération requise.
+
+Le marqueur de migration n'est écrit qu'après la création durable du journal moderne, la fin sûre du nettoyage pré-échange ou la confirmation qu'aucun dossier hérité n'existe. Les tests construisent chaque layout publié et chaque combinaison ambiguë.
 
 ### Disponibilité selon la phase
 
@@ -427,7 +466,7 @@ Les sous-systèmes restent propriétaires de leurs handles enfants. En compléme
 
 L'inventaire normal est borné à 128 entrées et retire une entrée quand l'enfant est moissonné. Un échec d'enregistrement tue immédiatement le nouvel enfant et ferme l'opération.
 
-Une vue d'urgence séparée utilise 128 slots atomiques préalloués contenant seulement PID, groupe ou Job, génération et état. Elle n'alloue pas et ne prend pas le mutex du registre normal dans le watchdog. Les métadonnées riches restent dans le registre normal et servent à la revérification d'identité pendant le balayage post-boucle.
+Une vue d'urgence séparée utilise 128 slots atomiques préalloués contenant PID, groupe ou Job, heure de démarrage, génération et état. Elle n'alloue pas et ne prend pas le mutex du registre normal dans le watchdog. Sous Unix, les appels natifs décrits plus haut revérifient PID, groupe et heure de démarrage directement contre ces slots. Les métadonnées riches restent dans le registre normal et servent au balayage post-boucle.
 
 Le balayage final traite d'abord cet inventaire, puis les enfants directs découverts par le système. Il revérifie l'identité avant tout signal. Le helper transféré est exclu uniquement si son identité complète correspond encore.
 
@@ -496,26 +535,49 @@ Cet inventaire n'adopte pas les applications externes ouvertes par Beaver et ne 
 - croix macOS masque sans nettoyage ;
 - vrai Quitter macOS masque le Dock avant le nettoyage.
 
-## Stratégie de mise en œuvre
+## Stratégie de mise en œuvre et de fusion
 
-Le travail est découpé par autorité, avec un test rouge et un commit révisable par comportement :
+La branche actuelle contient déjà au moins trente commits et plus de cent fichiers modifiés. Elle reste intacte comme sauvegarde et source de comparaison. Aucun nouveau code d'implémentation n'y est ajouté et elle n'est pas proposée à la fusion.
 
-1. Tests de contrat et superviseur global suivi.
-2. Frontière bloquante, budgets et watchdog indépendant.
-3. Adoption gateway et extensions.
-4. Téléchargement/helper de mise à jour Beaver.
-5. Journal et gestionnaire unique Ollama.
-6. Sonde Ollama possédée et migration des chemins de démarrage/polling.
-7. Première installation, annulation et interface.
-8. Inventaire de processus, terminaux, zombies et détails plateforme.
-9. Nettoyage structurel du scheduler et des utilitaires de fichiers.
-10. Validation globale et tests manuels.
+Le travail passe par quatre jalons :
 
-Après chaque lot, la relecture porte aussi sur le diff complet depuis `main`, pas seulement sur le dernier commit.
+1. **Socle de fermeture** : états, admission suivie, budgets, frontière bloquante et watchdog.
+2. **Processus et services** : inventaire, confinement, gateway, extensions, MCP, Forecast, terminaux, SearXNG et mise à jour Beaver.
+3. **Transaction Ollama** : journal, migration, sonde isolée, première installation, mise à jour, récupération et polling.
+4. **Convergence multi-OS** : dettes structurelles dans le périmètre, inventaires finaux, tests natifs et validation manuelle.
 
-## Revue globale obligatoire avant fusion
+Pour chaque jalon :
 
-La revue finale doit produire cinq inventaires explicitement vérifiés :
+- créer une nouvelle branche depuis le `main` qui contient le jalon précédent fusionné ;
+- écrire un plan TDD propre au jalon ;
+- commencer chaque comportement par un test qui échoue pour la bonne raison ;
+- conserver le mécanisme existant tant que son remplacement n'est pas totalement adopté ;
+- produire des commits petits et révisables, puis une PR dédiée ;
+- exécuter la review globale du jalon et les tests natifs avant fusion ;
+- fusionner la PR avant de créer la branche suivante.
+
+La branche du premier jalon reprend uniquement les commits documentaires du contrat et des quatre spécifications, puis implémente son propre périmètre. Aucun commit de code de la grande branche n'est repris en bloc ; une correction existante n'est réutilisée qu'après comparaison avec `main`, test isolé et rattachement au jalon qui la possède.
+
+Chaque commit final de jalon reçoit une Git note expliquant objectif, causes racines, décisions, alternatives rejetées, compatibilité multi-OS et validations. Le reviewer peut ainsi vérifier le raisonnement sans dépendre de l'historique de conversation.
+
+## Journal des décisions pour le reviewer
+
+| Sujet | Décision | Justification |
+|---|---|---|
+| Gateway | Une vraie fermeture arrête Telegram, Discord et Slack ; seule la croix rouge macOS masque l'app | comportement demandé explicitement, prévisible et identique pour Quitter sur les trois OS |
+| `run_when_window_closed` | retirer le champ des modèles et nouvelles écritures, tolérer sa présence dans les anciens JSON | éviter un réglage mort tout en conservant la compatibilité des données |
+| Taille du chantier | quatre PR successives depuis un `main` vert ; branche actuelle conservée mais non fusionnée | éviter une nouvelle méga-branche et isoler les régressions |
+| Windows | affecter immédiatement les enfants au Job Object après spawn, sans suspension généralisée | `portable-pty` expose le handle ; le gain d'une suspension partout ne justifie pas une réécriture de tous les lanceurs |
+| Helper Beaver | conserver `UpdateHandoff`, sans Job Object de transfert supplémentaire | mécanisme existant borné à une identité ; complexité supplémentaire sans bénéfice proportionné |
+| Watchdog Unix | slots avec heure de démarrage et revérification native dans des buffers fixes | garantir l'identité sans dépendre de Tokio, `sysinfo`, du tas ou d'un mutex |
+| Sortie ultime | `TerminateProcess` sous Windows, `_exit` sous macOS/Linux | chemin brut qui ne peut pas attendre un destructeur ou un callback |
+| Migration Ollama | couvrir explicitement baseline `1.0.2` et releases `1.1.0` à `1.1.2` | ce sont les layouts réellement présents chez les utilisateurs |
+| Adoption | nommer MCP, Forecast, PTY, SearXNG et tous les autres producteurs de processus | empêcher qu'un service ne contourne l'autorité globale |
+| Empreintes | conserver la comparaison en temps constant | règle de sécurité obligatoire du projet pour les hash, même si l'empreinte du binaire est publique |
+
+## Revue globale obligatoire avant chaque fusion
+
+La review de chaque jalon met à jour les cinq inventaires explicitement vérifiés :
 
 1. Tous les chemins qui créent un processus, classés en possédé, externe, court ou transféré.
 2. Tous les travaux asynchrones longs ou mutateurs, avec leur admission, annulation et preuve de fin.
@@ -525,7 +587,7 @@ La revue finale doit produire cinq inventaires explicitement vérifiés :
 
 Elle vérifie également :
 
-- le diff complet de la branche contre `main` ;
+- le diff complet du jalon contre le `main` dont il est issu ;
 - les comportements existants de CEF, gateway, scheduler, SearXNG, MCP, Forecast et mise à jour ;
 - l'appel à `scheduler.notify_config_changed()` après chaque mutation de réveil ;
 - les textes visibles dans les sept langues ;
@@ -534,6 +596,8 @@ Elle vérifie également :
 - l'absence de `tokio::spawn`, `std::thread::spawn` ou spawn de processus longue durée sans propriétaire, limite et chemin d'arrêt documentés ;
 - l'absence de chemin, secret ou erreur brute dans l'interface et les journaux ;
 - la mise à jour Graphify après le code et la documentation.
+
+Après le quatrième jalon, une dernière review compare le `main` obtenu au `main` antérieur au premier jalon et vérifie les cinq inventaires cumulés. Cette review finale ne remplace pas les reviews de chaque PR.
 
 ## Validation finale
 
