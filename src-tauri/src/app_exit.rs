@@ -5,12 +5,17 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::time::Duration;
 use tauri::{ExitRequestApi, Manager};
 
+mod emergency;
+mod emergency_drain;
 mod policy;
 mod raw_exit;
 mod registry;
 mod state;
 mod ultimate;
+mod watchdog;
 
+#[cfg(test)]
+mod emergency_tests;
 #[cfg(test)]
 mod policy_tests;
 #[cfg(test)]
@@ -19,6 +24,8 @@ mod registry_tests;
 mod state_tests;
 #[cfg(test)]
 mod ultimate_tests;
+#[cfg(test)]
+mod watchdog_tests;
 
 const PHASE_IDLE: u8 = 0;
 const PHASE_CLEANING: u8 = 1;

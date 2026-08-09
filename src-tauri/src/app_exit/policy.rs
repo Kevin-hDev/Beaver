@@ -4,6 +4,11 @@ const GRACEFUL_TIMEOUT: Duration = Duration::from_secs(8);
 const TAURI_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
 const ULTIMATE_EXIT_TIMEOUT: Duration = Duration::from_secs(15);
+const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
+
+pub(super) const fn watchdog_recheck_interval() -> Duration {
+    WATCHDOG_RECHECK_INTERVAL
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct ShutdownPolicy {
