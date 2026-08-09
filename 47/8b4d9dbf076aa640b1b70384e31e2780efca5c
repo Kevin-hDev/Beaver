@@ -1,0 +1,25 @@
+Problème
+
+Le lot 70dfebd ajoutait les bons contrôles de chaîne de dépendances, mais le workflow npm aurait été rouge immédiatement : nanoid 3.3.16 est vulnérable et pptxgenjs 4.0.1 déclare image-size 1.2.1, dont toutes les versions publiées jusqu’à 2.0.2 sont concernées par GHSA-w3rx-r6r6-pgpr et GHSA-5p2g-fcmc-qvqq sans version corrigée. CodeQL utilisait encore v3 et la file Dependabot GitHub Actions n’était pas bornée explicitement.
+
+Objectif
+
+Rendre les nouveaux contrôles réellement exploitables et verts sans masquer un avis, sans rétrogradation fonctionnelle et sans modifier le comportement de fermeture du jalon 1.
+
+Décisions
+
+CodeQL init/analyze passe au SHA v4 vérifié 5595ccaf912efad79be6eef63a5619ff05969be3. Les PR Dependabot GitHub Actions sont bornées à 3. L’audit npm se déclenche aussi sur les package.json. nanoid est résolu en 3.3.18, version corrigée compatible.
+
+La rétrogradation automatique de pptxgenjs vers 1.1.5 a été rejetée. Une liste blanche npm a aussi été rejetée. Le bundle publié de pptxgenjs 4.0.1 ne charge pas image-size et l’outil Beaver ne prend en charge que des diapositives texte. Le parseur vulnérable a donc été retiré des deux arbres npm et remplacé par @beaver/image-size-disabled 1.0.0, un adaptateur local minimal qui échoue immédiatement si une inspection d’image est appelée. Le même remplacement est imposé par override en développement et dans l’hôte de production. Il devra être supprimé quand l’amont publiera une correction ou retirera la dépendance.
+
+Portée et absence de régression
+
+Aucun fichier Rust, aucun processus, aucun chemin de fermeture et aucune décision Windows/macOS/Linux n’est modifié par ce commit. La préparation de l’hôte copie explicitement le seul adaptateur attendu. Les tests résolvent le vrai module installé, vérifient son échec fermé et génèrent toujours de vrais artefacts Office.
+
+Validations
+
+npm ci --ignore-scripts : 1127 paquets audités, 0 vulnérabilité. npm audit racine : 0. npm audit hôte : 0. npm test : 412 fichiers et 1885 tests Vitest, puis scripts build/CEF/E2E/hôte verts ; 52 tests hôte, dont la création de vrais documents. npx tsc --noEmit : vert. npm run lint : vert. actionlint 1.7.12, archive officielle vérifiée SHA-256 : tous les workflows valides. cargo-audit 0.22.2, binaire officiel Windows vérifié SHA-256 : aucune vulnérabilité dans les deux Cargo.lock ; 21 avertissements de maintenance transitifs autorisés dans le backend principal. git diff --check : vert. Graphify : 29030 nœuds, 58351 arêtes.
+
+Limites restantes
+
+Les jobs natifs Ubuntu, Windows et macOS, CodeQL et les audits doivent encore être exécutés par GitHub sur la PR. Aucun ruleset bloquant n’est créé avant d’avoir observé les noms exacts des premiers checks verts, afin de ne pas verrouiller le dépôt mono-mainteneur. Le signalement privé de vulnérabilités a été vérifié actif côté GitHub mais ne fait pas partie de ce diff.
