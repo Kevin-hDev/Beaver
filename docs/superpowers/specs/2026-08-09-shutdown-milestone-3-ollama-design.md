@@ -2,7 +2,7 @@
 
 ## Autorité et dépendance
 
-Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et des jalons 1, 1B et 2 fusionnés. Sa branche est créée depuis leur `main` validé.
+Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et des jalons 1 et 2 fusionnés. Sa branche est créée depuis leur `main` validé et peut avancer pendant que le jalon 1B termine ses preuves CEF natives.
 
 ## Objectif fusionnable
 

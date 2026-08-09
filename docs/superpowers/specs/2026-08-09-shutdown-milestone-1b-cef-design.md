@@ -4,13 +4,13 @@
 
 Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et du [jalon 1](./2026-08-09-shutdown-milestone-1-core-design.md). Sa branche est créée depuis le `main` où le jalon 1 a été fusionné.
 
-Le contrat principal décrit le protocole CEF complet et prévaut sur ce résumé. Le présent jalon isole son implémentation, ses tests natifs et sa décision de repli afin qu'un problème interne au sandbox Chromium ne bloque pas la livraison du socle anti-fantôme.
+Le contrat principal décrit le protocole CEF complet et prévaut sur ce résumé. Le présent jalon isole son implémentation, ses tests natifs et sa défense locale avant lancement afin que le socle anti-fantôme et le jalon 2 puissent avancer sans réduire les garanties de livraison du navigateur.
 
 ## Objectif fusionnable
 
 Garantir qu'un arrêt CEF bloqué ne laisse aucun helper CEF admis capable de poursuivre du travail après la sortie forcée de Beaver, sans désactiver le sandbox, sans adopter un processus externe et sans dépendre du balayage placé après `cef::shutdown()`.
 
-La fusion de ce jalon ferme l'exception transitoire du jalon 1. Le jalon 2 et toute nouvelle release publique dépendent de cette fusion.
+La fusion de ce jalon ferme l'exception transitoire du jalon 1. Elle exige le chemin normal `Ready supervisé` prouvé sur Windows et macOS. Le jalon 2 n'en dépend pas ; le jalon 4 et toute nouvelle release publique en dépendent.
 
 ## Inclus
 
@@ -29,18 +29,18 @@ La fusion de ce jalon ferme l'exception transitoire du jalon 1. Le jalon 2 et to
 - job CI macOS natif qui prépare CEF et exécute compilation et Clippy strict ;
 - fermeture des sous-lignes J1B de l'inventaire de reprise.
 
-## Repli sûr pré-approuvé
+## Défense locale avant lancement
 
 Le mode dégradé n'essaie jamais de deviner l'identité d'un helper à partir de son nom, de son PID seul ou du callback parent, qui ne fournit pas à lui seul une preuve de processus stable.
 
-Chaque plateforme possède exactement deux états autorisés :
+Sur une machine Windows ou macOS, le runtime possède exactement deux résultats avant initialisation :
 
 1. `Ready supervisé` : tous les prérequis natifs sont créés avant CEF et les smoke tests prouvent la publication, l'admission et la terminaison des types de helpers réellement utilisés ;
-2. `Unavailable avant lancement` : le navigateur intégré reste indisponible et Beaver continue normalement, sans avoir lancé ni admis de helper CEF.
+2. `Unavailable avant lancement` : un prérequis local a échoué, le navigateur intégré reste indisponible sur cette machine et Beaver continue normalement, sans avoir lancé ni admis de helper CEF.
 
 Une impossibilité détectée avant `cef::initialize` — création du traqueur, des objets sécurisés, du reaper ou échec d'un prérequis natif Windows — sélectionne `Unavailable avant lancement`. Le runtime marque la capacité navigateur indisponible, comme il sait déjà le faire, et l'interface utilise son message traduit existant. La politique de capacité est centralisée et choisie avant CEF ; elle ne peut pas basculer silencieusement après la création d'un helper.
 
-Si les tests natifs montrent qu'un type sandboxé ne peut pas publier avec les droits minimaux, la plateforme ne peut pas activer `Ready supervisé`. Le sandbox n'est jamais désactivé, les droits ne sont jamais élargis et aucun suivi approximatif n'est ajouté. La Git note indique explicitement si la plateforme reste temporairement en `Unavailable avant lancement`.
+Si les tests natifs montrent qu'un type sandboxé ne peut pas publier avec les droits minimaux, la fusion du jalon et la release sont bloquées. Le sandbox n'est jamais désactivé, les droits ne sont jamais élargis et aucun suivi approximatif n'est ajouté. Le calendrier est ajusté ; le navigateur n'est pas retiré de la plateforme livrée.
 
 Après qu'un processus a potentiellement été créé, une publication invalide, une identité ambiguë ou une admission impossible ne peut plus être convertie en simple indisponibilité silencieuse. Le bootstrap est arrêté avant CEF quand son identité est sûre ; si CEF est déjà actif ou si un enfant connu peut avoir échappé à l'admission, la porte ferme et Beaver déclenche immédiatement une vraie fermeture coordonnée.
 
@@ -67,26 +67,28 @@ Le reaper parent précréé rescane les générations admises et revalide l'iden
 - permis encore inachevé après la barrière de 50 millisecondes : admission tardive impossible ;
 - candidat jamais publié juste avant 15 secondes : aucun appel CEF et disparition dans la fenêtre de constat ;
 - helpers CEF et shell simultanés sous Windows : seul le rôle réservé est adopté ;
-- en état `Ready supervisé`, chaque type CEF Windows réel publie avec le sandbox actif, les SIDs de restriction et le MIC minimal ; en état `Unavailable avant lancement`, aucun helper n'est créé ;
+- chaque type CEF Windows réel publie en état `Ready supervisé` avec le sandbox actif, les SIDs de restriction et le MIC minimal ; un échec local injecté avant initialisation prouve séparément qu'aucun helper n'est créé ;
 - corruption de boîte, réécriture après scellement, faux handle et tentative inter-slot : aucune autorité parent modifiée et aucun processus externe signalé ;
 - Job Object imbriqué Windows réussi avec le sandbox actif ; échec d'affectation fermé ;
 - `TerminateProcess` accepté mais handle pas encore signalé : slot conservé puis revérifié ;
 - panne du traqueur et watchdog général bloqué : Job Object Windows ou reaper macOS reste efficace ;
 - macOS : objets et groupe avant sandbox, publication et moniteur après sandbox, PGID réutilisé refusé ;
-- reaper macOS absent ou arrêté : CEF indisponible avant lancement ou fermeture coordonnée si la porte était déjà ouverte ;
+- reaper macOS absent avant initialisation dans le test injecté : CEF indisponible localement et aucun helper ; reaper arrêté après ouverture : fermeture coordonnée ;
 - échec de chaque prérequis avant initialisation : `BrowserCapability::Unavailable`, Beaver utilisable et aucun helper créé ;
 - test Linux confirmant que `native_browser` reste désactivé et qu'aucun helper CEF n'est créé ;
-- smoke test natif de l'état retenu sur chaque plateforme ; l'échec injecté avant initialisation couvre toujours `Unavailable avant lancement`, et le chemin `Ready supervisé` est obligatoire partout où CEF reste activé.
+- smoke test natif `Ready supervisé` obligatoire sur Windows et macOS ; l'échec injecté avant initialisation couvre séparément `Unavailable avant lancement` sans en faire un état de livraison ;
+- test Linux limité à l'absence de `native_browser` et de helper CEF, l'intégration Linux complète restant hors périmètre.
 
 ## Critères de fusion
 
 - aucune identification fondée seulement sur un nom ou un PID ;
 - aucune permission de sandbox élargie pour faire passer la publication ;
-- toute plateforme est soit `Ready supervisé` avec ses preuves natives, soit `Unavailable avant lancement` sans helper ;
+- Windows et macOS sont obligatoirement `Ready supervisé` avec leurs preuves natives ;
+- le chemin local `Unavailable avant lancement` est testé par injection et ne remplace jamais la preuve normale ;
 - aucun helper CEF admis ne poursuit d'exécution dans le scénario d'arrêt natif bloqué ;
 - tout objet noyau résiduel et tout bootstrap refusé disparaissent dans la fenêtre de constat ;
 - aucune application externe ni aucun helper shell adopté ou signalé ;
 - job CI macOS CEF et validations Windows natives réellement exécutés ;
 - toutes les sous-lignes J1B de l'inventaire sont fermées et référencent leurs tests ;
 - fichiers de production sous 230 lignes, suites complètes et CI native vertes ;
-- Git note détaillant le mode retenu par plateforme, les alternatives rejetées et les preuves.
+- Git note détaillant les preuves `Ready supervisé`, la défense locale, les alternatives rejetées et la décision de ne pas livrer une plateforme avec le navigateur désactivé.
