@@ -1,0 +1,9 @@
+Objectif: figer la politique de livraison CEF avant l'implémentation des jalons de fermeture.
+
+Décisions: Windows et macOS doivent livrer le chemin Ready supervisé avec sandbox réel; Unavailable avant lancement reste uniquement une défense locale avant création de helper; l'intégration CEF Linux demeure désactivée et relève d'un chantier séparé.
+
+Ordonnancement: J1 ouvre deux branches indépendantes J1B et J2; J3 dépend de J2; J4 dépend de J1B et J3. Aucune release publique n'est autorisée entre le début de J1 et la fusion de J4.
+
+Justification: ne pas livrer une fonctionnalité navigateur intégrée désactivée, ne jamais affaiblir le sandbox, et laisser avancer les travaux indépendants si la preuve native CEF demande plus de temps.
+
+Vérifications: diff-check propre; 22 lignes d'inventaire uniques numérotées 1 à 22; aucun lien documentaire local cassé; recherche des anciennes dépendances et des anciens critères de livraison contradictoires.
