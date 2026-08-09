@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 pub struct GatewayConfig {
     pub enabled: bool,
     pub start_with_app: bool,
-    pub run_when_window_closed: bool,
     pub default_provider: String,
     pub default_model: String,
     pub max_sessions: u32,
@@ -20,7 +19,6 @@ impl Default for GatewayConfig {
         Self {
             enabled: false,
             start_with_app: true,
-            run_when_window_closed: true,
             default_provider: String::new(),
             default_model: String::new(),
             max_sessions: 500,
@@ -107,7 +105,6 @@ mod tests {
         let cfg = GatewayConfig::default();
         assert!(!cfg.enabled);
         assert!(cfg.start_with_app);
-        assert!(cfg.run_when_window_closed);
     }
 
     #[test]
@@ -132,5 +129,16 @@ mod tests {
         assert!(!cfg.enabled);
         assert_eq!(cfg.max_sessions, 500);
         assert!(cfg.channels.telegram.is_empty());
+    }
+
+    #[test]
+    fn legacy_window_lifecycle_field_is_read_but_never_written_again() {
+        let cfg: GatewayConfig =
+            serde_json::from_str(r#"{"enabled":true,"run_when_window_closed":true}"#)
+                .expect("legacy gateway config");
+        let serialized = serde_json::to_string(&cfg).expect("serialize gateway config");
+
+        assert!(cfg.enabled);
+        assert!(!serialized.contains("run_when_window_closed"));
     }
 }

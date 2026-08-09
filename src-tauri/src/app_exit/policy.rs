@@ -2,12 +2,17 @@ use std::time::{Duration, Instant};
 
 const GRACEFUL_TIMEOUT: Duration = Duration::from_secs(8);
 const TAURI_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
+const POST_LOOP_SWEEP_TIMEOUT: Duration = Duration::from_secs(3);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
 const ULTIMATE_EXIT_TIMEOUT: Duration = Duration::from_secs(15);
 const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
 
 pub(super) const fn watchdog_recheck_interval() -> Duration {
     WATCHDOG_RECHECK_INTERVAL
+}
+
+pub(super) const fn post_loop_sweep_timeout() -> Duration {
+    POST_LOOP_SWEEP_TIMEOUT
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -28,6 +33,7 @@ impl ShutdownPolicy {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn new(
         graceful: Duration,
         tauri_exit: Duration,
@@ -63,17 +69,13 @@ impl ShutdownPolicy {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct ShutdownTimeline {
     origin: Instant,
     policy: ShutdownPolicy,
 }
 
 impl ShutdownTimeline {
-    pub(super) fn start(policy: ShutdownPolicy) -> Self {
-        Self::from_origin(Instant::now(), policy)
-    }
-
     pub(super) fn from_origin(origin: Instant, policy: ShutdownPolicy) -> Self {
         Self { origin, policy }
     }

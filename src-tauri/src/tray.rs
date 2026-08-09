@@ -36,6 +36,14 @@ fn labels() -> TrayLabels {
     }
 }
 
+fn restore_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
 pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let l = labels();
     let show = MenuItem::with_id(app, "show", l.show, true, None::<&str>)?;
@@ -53,10 +61,7 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "show" => {
-                if let Some(win) = app.get_webview_window("main") {
-                    let _ = win.show();
-                    let _ = win.set_focus();
-                }
+                restore_main_window(app);
             }
             "gateway-toggle" => {
                 let handle = app.clone();
@@ -77,10 +82,7 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
         })
         .on_tray_icon_event(|tray, event| {
             if let tauri::tray::TrayIconEvent::Click { .. } = event {
-                if let Some(win) = tray.app_handle().get_webview_window("main") {
-                    let _ = win.show();
-                    let _ = win.set_focus();
-                }
+                restore_main_window(tray.app_handle());
             }
         })
         .build(app)?;

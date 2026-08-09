@@ -1,3 +1,11 @@
+#![cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "service process publishers adopt the emergency slots in milestone 2"
+    )
+)]
+
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 
@@ -147,6 +155,13 @@ impl EmergencyInventory {
                 _ => return false,
             }
         }
+    }
+
+    pub(super) fn has_active(&self) -> bool {
+        self.inner
+            .slots
+            .iter()
+            .any(|slot| slot.state.load(Ordering::Acquire) != SLOT_FREE)
     }
 
     #[cfg(test)]
