@@ -1,0 +1,39 @@
+Contexte
+Une contre-review de la stratégie de fermeture a recherché les effets collatéraux hors processus. Elle a confirmé des risques de compatibilité CEF, de saturation fail-closed, de migration Ollama et d interruption d écritures persistantes. Elle a aussi proposé une voie de maintenance pendant la période sans release.
+
+Objectif
+Rendre ces risques vérifiables et bloquants dans les jalons propriétaires avant la review du jalon 1, sans modifier le code déjà validé ni étendre CEF à Linux.
+
+Décisions
+- J1 : créer avant fusion une branche de maintenance depuis le dernier main publiable, réservée aux correctifs critiques ou de sécurité, et la conserver jusqu à la validation native de J4.
+- Politique de release : aucune release publique depuis le main transitoire avant J4. J1B est nécessaire pour CEF mais ne suffit pas seul.
+- J1B : exiger le build empaqueté Ready supervisé sur Windows et macOS avec protections système actives, plus un environnement Windows renforcé par antivirus tiers ou politique d entreprise.
+- Les indisponibilités CEF utilisent seulement des catégories locales bornées et nettoyées. Aucune télémétrie distante et aucune exception antivirus demandée.
+- J2 : ajouter lors de l adoption des producteurs des compteurs locaux fixes pour activité, maximum, saturation et fermeture. Le registre J1 conserve son périmètre déjà livré.
+- J3 : déterminer le stockage effectif des modèles à partir de OLLAMA_MODELS hérité ou du défaut réel, résoudre les valeurs relatives depuis le dossier de travail Ollama et employer les règles natives du système de fichiers.
+- J3 : refuser avant toute mutation tout chevauchement avec les dossiers transactionnels modernes ou hérités, y compris via symlink, junction ou reparse point. Le code public ne révèle aucun chemin.
+- J3/J4 : exécuter une vraie mise à niveau depuis 1.0.2, 1.1.0, 1.1.1 et 1.1.2 sur leurs OS publiés, avec un modèle préexistant toujours disponible sans nouveau téléchargement.
+- J4 : ajouter un sixième inventaire consacré aux stockages persistants et rouvrir un profil complet après fermetures normales et forcées à chaque frontière durable.
+
+Justifications
+- Beaver ne fixe pas OLLAMA_MODELS et le processus Ollama hérite de l environnement. Supposer que les modèles sont toujours hors du bundle n est donc pas une garantie.
+- Les runners CI propres ne reproduisent pas entièrement antivirus, Gatekeeper, quarantaine ou politiques d entreprise.
+- Un registre borné remplace une fuite silencieuse par un refus visible ; les compteurs locaux rendent ce mode de panne diagnosticable sans collecter de données.
+- Le chantier ne déplace pas vault, sessions, Forecast, skills ou mémoire, mais une sortie ultime peut interrompre une écriture en cours.
+- Le contrat interdit les releases jusqu à J4 ; la maintenance d urgence doit donc rester possible pendant toute cette fenêtre.
+
+Alternatives rejetées
+- Faire confiance uniquement aux chemins par défaut Ollama.
+- Tester seulement des fixtures de dossiers au lieu des profils produits par les anciennes releases.
+- Accepter CEF indisponible sur une configuration normalement supportée.
+- Ajouter une télémétrie distante pour suivre les indisponibilités.
+- Produire une release depuis le main transitoire.
+- Ajouter rétroactivement du code de diagnostics au jalon 1 alors que leur propriétaire est l adoption J2.
+
+Validation
+- Sept fichiers Markdown modifiés, aucun fichier de code.
+- Vérification explicite des sept groupes d exigences : tous présents.
+- Liens relatifs : aucun lien cassé.
+- Aucun placeholder TBD, TODO ou formulation laissée à définir.
+- git diff --check réussi avant commit.
+- Graphify code graph : aucune modification de topologie. La réextraction sémantique documentaire reste en attente faute de moteur Gemini configuré ; aucun résultat sémantique n a été inventé.
