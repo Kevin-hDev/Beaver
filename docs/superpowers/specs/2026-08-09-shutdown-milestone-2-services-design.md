@@ -2,11 +2,11 @@
 
 ## Autorité et dépendance
 
-Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md) et du [jalon 1](./2026-08-09-shutdown-milestone-1-core-design.md). Sa branche est créée depuis le `main` où le jalon 1 a été fusionné.
+Ce document dépend du [contrat de supervision unifiée](./2026-08-09-unified-shutdown-supervision-design.md), de l'[inventaire de reprise](./2026-08-09-shutdown-reference-branch-inventory.md) et du [jalon 1](./2026-08-09-shutdown-milestone-1-core-design.md). Sa branche est créée depuis le `main` où le jalon 1 a été fusionné.
 
 ## Objectif fusionnable
 
-Faire passer chaque service capable de lancer un processus ou un travail long par le superviseur, puis garantir son arrêt et son moissonnage. À la fusion, une vraie fermeture ne laisse aucun processus Beaver possédé parmi les services couverts.
+Faire passer chaque service capable de lancer un processus ou un travail long par le superviseur, puis garantir son arrêt et son moissonnage. À la fusion, une vraie fermeture ne laisse aucun service Beaver possédé encore runnable ; les objets déjà terminés disparaissent ensuite dans la fenêtre native de constat de 5 secondes.
 
 ## Inventaire obligatoire
 
@@ -21,9 +21,17 @@ Faire passer chaque service capable de lancer un processus ou un travail long pa
 - scheduler et réveils ;
 - flux agentiques, sous-agents et commandes shell ;
 - téléchargement de mise à jour Beaver et helper `UpdateHandoff` ;
-- OAuth et autres serveurs locaux temporaires du périmètre de fermeture.
+- OAuth et autres serveurs locaux temporaires du périmètre de fermeture ;
+- sous-processus WebView créés indirectement par Tauri ou le runtime OS, classés comme descendants dédiés possédés ou services système partagés externes à partir d'une observation native.
 
-La review du jalon recherche aussi tous les `Command::new`, `tokio::process::Command`, `portable-pty`, `tokio::spawn`, `tauri::async_runtime::spawn` et `std::thread::spawn`. Chaque résultat reçoit un propriétaire, une borne et un chemin d'arrêt, ou une exemption documentée.
+Le jalon reprend aussi explicitement les deux dettes fonctionnelles que la grande branche avait corrigées mais que `main` possède encore :
+
+- résultats typés des réveils ponctuels, annulation après consommation journalisée, désactivation bénigne silencieuse, erreur de revendication manquée journalisée et notification après chaque mutation ;
+- codes d'admission de flux stables, liste publique fermée côté interface et traductions dans les sept langues.
+
+Toutes les lignes J2 de l'inventaire sont fermées dans cette PR. Une ligne partagée conserve la preuve de sa partie J1 déjà fusionnée ; toute sous-partie J3 reste explicitement ouverte jusqu'au jalon 3.
+
+La review du jalon recherche aussi tous les `Command::new`, `tokio::process::Command`, `portable-pty`, `tokio::spawn`, `tauri::async_runtime::spawn` et `std::thread::spawn`. Elle compare en plus l'arbre de processus natif avant et après l'ouverture des WebViews Tauri et CEF afin de couvrir les créations cachées dans les bibliothèques. Chaque résultat reçoit un propriétaire, une borne et un chemin d'arrêt, ou une exemption documentée.
 
 ## Confinement par plateforme
 
@@ -57,18 +65,24 @@ Le téléchargement Beaver écoute l'annulation à chaque étape et supprime son
 - aucun redémarrage d'extension après son arrêt ;
 - gateway simulé sur les trois canaux, file fermée et tâches attendues ;
 - MCP, Forecast, SearXNG et PTY réellement lancés puis moissonnés dans les profils de test natifs ;
+- WebView Tauri activée sur chaque OS, descendants dédiés identifiés puis absents après fermeture, sans signal envoyé aux services système partagés ;
 - Job Object réussi et échec d'affectation Windows ;
 - groupe et zombie Linux ;
 - groupe et identité macOS ;
 - fermeture pendant le téléchargement et le handoff Beaver ;
 - helper non transféré arrêté, helper transféré préservé ;
+- réveil ponctuel inactif sans appel provider, puis annulation après revendication enregistrée comme annulée ;
+- erreur de `claim_once` pendant la réconciliation d'un réveil manqué : entrée d'erreur bornée et traduite ; état `Inactive` bénin sans fausse erreur ;
+- notification du scheduler après chaque mutation de réveil ;
+- admission de flux saturée ou remplacée affichée dans chacune des sept langues, erreur inconnue masquée par le fallback générique ;
 - tray et Dock sur leurs plateformes natives.
 
 ## Critères de fusion
 
 - inventaire des spawns complet et joint à la review ;
-- aucun processus possédé vérifiable après fermeture ;
+- aucun service possédé encore runnable après fermeture, puis aucun objet processus possédé vérifiable après la fenêtre native de constat ;
 - aucune application externe adoptée ou tuée ;
 - aucun changement de transaction Ollama hors intégration de son processus au superviseur ;
+- toutes les sous-lignes J2 de l'inventaire sont fermées et référencent leurs tests ;
 - suites, CI native et tests manuels du jalon verts ;
 - Git note détaillée du jalon.
