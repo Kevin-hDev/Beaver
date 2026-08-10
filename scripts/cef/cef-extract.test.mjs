@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { delimiter, join } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import test from "node:test";
 import * as cefExtract from "./cef-extract.mjs";
 
@@ -111,6 +111,64 @@ test("the Tauri launcher exposes the verified Ninja directory first", async () =
   );
   const packageJson = JSON.parse(await read(join(repoRoot, "package.json")));
   assert.equal(packageJson.scripts.tauri, "node scripts/cef/run-tauri.mjs");
+});
+
+test("the Tauri launcher shortens the default Windows Cargo target path", async () => {
+  const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
+  const projectRoot = join("workspace", "project");
+
+  assert.equal(typeof resolveCargoTargetDir, "function");
+  assert.equal(
+    resolveCargoTargetDir({
+      configuredTargetDir: undefined,
+      platform: "win32",
+      repoRoot: projectRoot,
+    }),
+    resolve(projectRoot, "target"),
+  );
+});
+
+test("the Tauri launcher preserves a configured Cargo target path", async () => {
+  const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
+  const configuredTargetDir = join("cache", "custom-cargo-target");
+
+  assert.equal(typeof resolveCargoTargetDir, "function");
+  assert.equal(
+    resolveCargoTargetDir({
+      configuredTargetDir,
+      platform: "win32",
+      repoRoot: join("workspace", "project"),
+    }),
+    configuredTargetDir,
+  );
+});
+
+test("the Tauri launcher keeps the native Cargo target path outside Windows", async () => {
+  const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
+
+  assert.equal(typeof resolveCargoTargetDir, "function");
+  assert.equal(
+    resolveCargoTargetDir({
+      configuredTargetDir: undefined,
+      platform: "darwin",
+      repoRoot: join("workspace", "project"),
+    }),
+    undefined,
+  );
+});
+
+test("the Tauri launcher rejects an oversized resolved Cargo target path", async () => {
+  const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
+
+  assert.throws(
+    () =>
+      resolveCargoTargetDir({
+        configuredTargetDir: undefined,
+        platform: "win32",
+        repoRoot: "x".repeat(30_000),
+      }),
+    /invalid/,
+  );
 });
 
 test("the Tauri launcher rejects an unbounded argument list", async () => {

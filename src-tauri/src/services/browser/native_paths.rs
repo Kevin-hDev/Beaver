@@ -32,6 +32,14 @@ pub(super) const WINDOWS_RUNTIME_FILES: [&str; 23] = [
 ];
 #[cfg(any(test, target_os = "windows"))]
 const MAX_RUNTIME_FILE_BYTES: u64 = 512 * 1024 * 1024;
+#[cfg(any(test, target_os = "windows"))]
+const WINDOWS_RELEASE_BOOTSTRAP: &str = "cl-go-dash.exe";
+#[cfg(any(test, target_os = "windows"))]
+const WINDOWS_RELEASE_MODULE: &str = "cl-go-dash.dll";
+#[cfg(any(test, target_os = "windows"))]
+const WINDOWS_DEVELOPMENT_BOOTSTRAP: &str = "cl_go_dash_lib.exe";
+#[cfg(any(test, target_os = "windows"))]
+const WINDOWS_DEVELOPMENT_MODULE: &str = "cl_go_dash_lib.dll";
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -113,7 +121,15 @@ pub(super) fn resolve_windows_runtime_files(executable: &Path) -> Option<PathBuf
     if !helper.starts_with(&root) {
         return None;
     }
+    let application_module = windows_application_module(&helper)?;
+    let canonical_module = root.join(application_module).canonicalize().ok()?;
+    if !canonical_module.starts_with(&root) || !private_regular_file(&canonical_module) {
+        return None;
+    }
     for relative in WINDOWS_RUNTIME_FILES {
+        if relative == WINDOWS_RELEASE_MODULE {
+            continue;
+        }
         let candidate = root.join(relative);
         let canonical = candidate.canonicalize().ok()?;
         if !canonical.starts_with(&root) || !private_regular_file(&canonical) {
@@ -121,6 +137,18 @@ pub(super) fn resolve_windows_runtime_files(executable: &Path) -> Option<PathBuf
         }
     }
     Some(helper)
+}
+
+#[cfg(any(test, target_os = "windows"))]
+fn windows_application_module(executable: &Path) -> Option<&'static str> {
+    let name = executable.file_name()?.to_str()?;
+    if name.eq_ignore_ascii_case(WINDOWS_RELEASE_BOOTSTRAP) {
+        return Some(WINDOWS_RELEASE_MODULE);
+    }
+    if name.eq_ignore_ascii_case(WINDOWS_DEVELOPMENT_BOOTSTRAP) {
+        return Some(WINDOWS_DEVELOPMENT_MODULE);
+    }
+    None
 }
 
 #[cfg(any(test, target_os = "windows"))]

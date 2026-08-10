@@ -1,0 +1,57 @@
+version: 2
+
+# Les mises à jour sont groupées par écosystème : une PR hebdomadaire à relire
+# plutôt qu'une par dépendance. Les avis de sécurité restent séparés et
+# arrivent immédiatement, sans attendre la fenêtre hebdomadaire.
+updates:
+  # Maintient à jour les empreintes SHA épinglées dans les workflows. Sans
+  # cette entrée, l'épinglage fige les actions sur des versions vulnérables.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      npm-frontend:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /src-tauri/resources/extension-host
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      npm-extension-host:
+        update-types: [minor, patch]
+
+  - package-ecosystem: cargo
+    directory: /src-tauri
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      cargo-backend:
+        update-types: [minor, patch]
+
+  - package-ecosystem: cargo
+    directory: /src-tauri/tests/windows-private-store
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 1
+    groups:
+      cargo-windows-private-store:
+        update-types: [minor, patch]

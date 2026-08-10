@@ -1,48 +1,158 @@
-use crate::services::gateway::GatewayService;
-use crate::{services, ActiveStreams};
-use futures_util::FutureExt;
-use std::sync::atomic::{AtomicU8, Ordering};
-use std::time::Duration;
+use std::io;
+use std::sync::{Arc, Mutex, OnceLock};
 use tauri::{ExitRequestApi, Manager};
 
-const PHASE_IDLE: u8 = 0;
-const PHASE_CLEANING: u8 = 1;
-const PHASE_READY: u8 = 2;
-const CLEANUP_TIMEOUT: Duration = Duration::from_secs(2);
+mod blocking;
+mod cleanup;
+mod emergency;
+mod emergency_drain;
+mod policy;
+mod raw_exit;
+mod registry;
+mod registry_admission;
+mod state;
+mod ultimate;
+mod watchdog;
 
-#[derive(Default)]
+#[cfg(test)]
+mod cleanup_tests;
+#[cfg(test)]
+mod coordinator_tests;
+#[cfg(test)]
+mod emergency_tests;
+#[cfg(test)]
+mod policy_tests;
+#[cfg(test)]
+mod registry_tests;
+#[cfg(test)]
+mod state_tests;
+#[cfg(test)]
+mod ultimate_tests;
+#[cfg(test)]
+mod watchdog_tests;
+
 pub struct AppExitCoordinator {
-    phase: AtomicU8,
+    begin_lock: Mutex<()>,
+    state: Arc<state::ShutdownState>,
+    registry: registry::AdmissionRegistry,
+    emergency: emergency::EmergencyInventory,
+    policy: policy::ShutdownPolicy,
+    timeline: OnceLock<policy::ShutdownTimeline>,
+    ultimate: ultimate::UltimateExit,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BeginResult {
-    Started,
+    Started(policy::ShutdownTimeline),
     Waiting,
     Ready,
+    InvariantViolation,
 }
 
 impl AppExitCoordinator {
-    fn begin(&self) -> BeginResult {
-        match self.phase.compare_exchange(
-            PHASE_IDLE,
-            PHASE_CLEANING,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        ) {
-            Ok(_) => BeginResult::Started,
-            Err(PHASE_READY) => BeginResult::Ready,
-            Err(_) => BeginResult::Waiting,
+    pub fn initialize() -> io::Result<Self> {
+        Ok(Self {
+            begin_lock: Mutex::new(()),
+            state: Arc::new(state::ShutdownState::new()),
+            registry: registry::AdmissionRegistry::new(),
+            emergency: emergency::EmergencyInventory::new(),
+            policy: policy::ShutdownPolicy::production(),
+            timeline: OnceLock::new(),
+            ultimate: ultimate::UltimateExit::initialize()?,
+        })
+    }
+
+    fn begin(&self, exit_code: i32) -> BeginResult {
+        let _guard = match self.begin_lock.lock() {
+            Ok(guard) => guard,
+            Err(_) => return BeginResult::InvariantViolation,
+        };
+        match self.state.phase() {
+            state::ShutdownPhase::ReadyToExit => return BeginResult::Ready,
+            state::ShutdownPhase::Closing => return BeginResult::Waiting,
+            state::ShutdownPhase::Running => {}
+        }
+        let origin = std::time::Instant::now();
+        if !self.registry.close() {
+            return BeginResult::InvariantViolation;
+        }
+        if self.state.begin_closing() != state::BeginClosing::Started {
+            return BeginResult::InvariantViolation;
+        }
+        let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
+        if self.timeline.set(timeline).is_err()
+            || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
+        {
+            return BeginResult::InvariantViolation;
+        }
+        BeginResult::Started(timeline)
+    }
+
+    fn mark_ready(&self) -> bool {
+        self.state.mark_ready()
+    }
+
+    fn spawn_watchdog(
+        &self,
+        app: tauri::AppHandle,
+        timeline: policy::ShutdownTimeline,
+        exit_code: i32,
+    ) -> io::Result<()> {
+        let actions = watchdog::WatchdogActions::production(move |code| app.exit(code));
+        watchdog::WatchdogThread::spawn(
+            timeline,
+            Arc::clone(&self.state),
+            self.emergency.clone(),
+            exit_code,
+            actions,
+        )
+        .map(drop)
+    }
+
+    fn drain_post_loop(&self) {
+        if let Some(timeline) = self.timeline.get().copied() {
+            watchdog::drain_post_loop(&self.emergency, timeline);
         }
     }
 
-    fn mark_ready(&self) {
-        self.phase.store(PHASE_READY, Ordering::Release);
+    #[cfg(test)]
+    fn from_parts_for_test(
+        policy: policy::ShutdownPolicy,
+        ultimate: ultimate::UltimateExit,
+    ) -> Self {
+        Self {
+            begin_lock: Mutex::new(()),
+            state: Arc::new(state::ShutdownState::new()),
+            registry: registry::AdmissionRegistry::new(),
+            emergency: emergency::EmergencyInventory::new(),
+            policy,
+            timeline: OnceLock::new(),
+            ultimate,
+        }
+    }
+
+    #[cfg(test)]
+    fn admit_for_test(&self) -> Result<registry::TrackedAdmission, registry::AdmissionError> {
+        self.registry.try_admit()
+    }
+
+    #[cfg(test)]
+    fn ultimate_is_armed_for_test(&self) -> bool {
+        self.ultimate.is_armed_for_test()
+    }
+
+    #[cfg(test)]
+    fn phase_for_test(&self) -> state::ShutdownPhase {
+        self.state.phase()
+    }
+
+    #[cfg(test)]
+    fn close_registry_for_test(&self) {
+        assert!(self.registry.close());
     }
 }
 
 pub fn request(app: &tauri::AppHandle, code: i32) {
-    hide_application(app);
     app.exit(code);
 }
 
@@ -50,27 +160,52 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitReq
     if code == Some(tauri::RESTART_EXIT_CODE) {
         return;
     }
-    match app.state::<AppExitCoordinator>().begin() {
+    let exit_code = code.unwrap_or_default();
+    let coordinator = app.state::<AppExitCoordinator>();
+    match coordinator.begin(exit_code) {
         BeginResult::Ready => {}
         BeginResult::Waiting => api.prevent_exit(),
-        BeginResult::Started => {
+        BeginResult::InvariantViolation => raw_exit::terminate_process(1),
+        BeginResult::Started(timeline) => {
             api.prevent_exit();
+            if coordinator
+                .spawn_watchdog(app.clone(), timeline, exit_code)
+                .is_err()
+            {
+                ::log::error!("[exit] watchdog unavailable; ultimate guard remains armed");
+            }
             hide_application(app);
             let handle = app.clone();
+            let registry = coordinator.registry.clone();
             tauri::async_runtime::spawn(async move {
                 let started = std::time::Instant::now();
-                let cleanup =
-                    std::panic::AssertUnwindSafe(cleanup_services(&handle)).catch_unwind();
-                match tokio::time::timeout(CLEANUP_TIMEOUT, cleanup).await {
-                    Err(_) => ::log::warn!("[exit] délai global atteint, fermeture forcée"),
-                    Ok(Err(_)) => ::log::warn!("[exit] nettoyage interrompu, fermeture forcée"),
-                    Ok(Ok(())) => {}
+                if !registry
+                    .wait_empty_until(timeline.graceful_deadline())
+                    .await
+                {
+                    ::log::warn!("[exit] tracked work exceeded graceful deadline");
                 }
-                ::log::info!("[exit] nettoyage terminé en {:?}", started.elapsed());
-                handle.state::<AppExitCoordinator>().mark_ready();
-                handle.exit(code.unwrap_or_default());
+                match cleanup::run(&handle, timeline).await {
+                    cleanup::CleanupOutcome::Completed => {}
+                    cleanup::CleanupOutcome::TimedOut => {
+                        ::log::warn!("[exit] graceful deadline reached")
+                    }
+                    cleanup::CleanupOutcome::Panicked => {
+                        ::log::warn!("[exit] cleanup interrupted")
+                    }
+                }
+                ::log::info!("[exit] cleanup phase finished in {:?}", started.elapsed());
+                if handle.state::<AppExitCoordinator>().mark_ready() {
+                    handle.exit(exit_code);
+                }
             });
         }
+    }
+}
+
+pub(crate) fn post_event_loop(app: &tauri::AppHandle) {
+    if let Some(coordinator) = app.try_state::<AppExitCoordinator>() {
+        coordinator.drain_post_loop();
     }
 }
 
@@ -82,80 +217,4 @@ fn hide_application(app: &tauri::AppHandle) {
     }
     #[cfg(target_os = "macos")]
     let _ = app.set_dock_visibility(false);
-}
-
-async fn cleanup_services(app: &tauri::AppHandle) {
-    cancel_active_streams(app).await;
-    if let Some(downloads) = app.try_state::<services::model_downloads::ModelDownloadManager>() {
-        downloads.cancel_all().await;
-    }
-    services::agent_local::tool_bash_profile::clear();
-    services::mcp_oauth::flow::cancel_all();
-
-    let gateway = async {
-        if let Some(service) = app.try_state::<GatewayService>() {
-            service.stop().await;
-        }
-    };
-    let chronos = async {
-        if let Some(sidecar) = app.try_state::<services::forecast::sidecar::ChronosSidecar>() {
-            services::forecast::sidecar::stop(sidecar.inner()).await;
-        }
-    };
-    let searxng = async {
-        if let Some(sidecar) = app.try_state::<services::searxng::SearxngSidecar>() {
-            services::searxng::stop(sidecar.inner()).await;
-        }
-    };
-    let terminal_handle = app.clone();
-    let terminals = tokio::task::spawn_blocking(move || {
-        if let Some(pty) = terminal_handle.try_state::<services::terminal::PtyManager>() {
-            pty.kill_all();
-        }
-    });
-    let ollama_handle = app.clone();
-    let ollama = tokio::task::spawn_blocking(move || {
-        services::ollama_lifecycle::stop_sidecar(&ollama_handle);
-    });
-
-    let _ = tokio::join!(
-        services::oauth_providers::cancel_all(),
-        services::codex_oauth::login::cancel_login(),
-        services::agent_local::tool_bash_registry::stop_all(),
-        services::mcp_bridge::process_manager::shutdown_all(),
-        services::extensions::stop(),
-        services::ollama_kill::release_vram(),
-        gateway,
-        chronos,
-        searxng,
-        terminals,
-        ollama,
-    );
-}
-
-async fn cancel_active_streams(app: &tauri::AppHandle) {
-    let Some(streams) = app.try_state::<ActiveStreams>() else {
-        return;
-    };
-    let active = {
-        let mut streams = streams.0.lock().await;
-        streams.drain().map(|(_, entry)| entry).collect::<Vec<_>>()
-    };
-    for (cancel, _, _, _) in active {
-        cancel.cancel();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn cleanup_starts_once_and_only_exits_when_ready() {
-        let state = AppExitCoordinator::default();
-        assert_eq!(state.begin(), BeginResult::Started);
-        assert_eq!(state.begin(), BeginResult::Waiting);
-        state.mark_ready();
-        assert_eq!(state.begin(), BeginResult::Ready);
-    }
 }

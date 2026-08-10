@@ -12,13 +12,10 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
     child.parent_session_id = Some(parent.id.clone());
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-    .await
-    .expect("register old execution");
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register old execution");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save child");
 
@@ -39,6 +36,7 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
             "Rapport terminal",
             true,
             Some((&old_run, &old_execution)),
+            || async {},
             || async {},
             move |_outcome| async move {
                 let active = subagent_registry::active_children_for_parent(&callback_parent)
@@ -84,9 +82,11 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
         .expect("register restart")
     });
     let mut restart = Box::pin(restart);
-    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut restart)
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), &mut restart)
+            .await
+            .is_err()
+    );
 
     let _ = release_tx.send(());
     completion
@@ -94,14 +94,20 @@ async fn terminal_event_boundary_precedes_registry_release_and_redeployment() {
         .expect("join completion")
         .expect("complete old execution");
     let new_execution = restart.await.expect("join restart");
-    assert!(subagent_registry::owns_execution(
-        &child.id,
-        &new_execution.run_id,
-        &new_execution.execution_id,
-    )
-    .await);
+    assert!(
+        subagent_registry::owns_execution(
+            &child.id,
+            &new_execution.run_id,
+            &new_execution.execution_id,
+        )
+        .await
+    );
 
     subagent_registry::unregister(&child.id).await;
-    session_store::delete_one(&child.id).await.expect("delete child");
-    session_store::delete_one(&parent.id).await.expect("delete parent");
+    session_store::delete_one(&child.id)
+        .await
+        .expect("delete child");
+    session_store::delete_one(&parent.id)
+        .await
+        .expect("delete parent");
 }

@@ -24,7 +24,6 @@ export interface ChannelAccountConfig {
 export interface GatewayConfig {
   enabled: boolean;
   start_with_app: boolean;
-  run_when_window_closed: boolean;
   default_provider: string;
   default_model: string;
   max_sessions: number;

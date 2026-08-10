@@ -40,8 +40,11 @@ fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> 
     if !crate::prepare_browser_native_application() {
         return 1;
     }
-    crate::run();
-    0
+    if crate::run() {
+        0
+    } else {
+        1
+    }
 }
 
 pub(crate) fn launch_development_bootstrap() -> i32 {

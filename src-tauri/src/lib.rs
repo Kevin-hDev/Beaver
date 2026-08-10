@@ -47,7 +47,16 @@ pub use startup::{
 
 static STREAM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
-pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>) {
+pub(crate) fn run_inner(
+    #[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>,
+) -> bool {
+    let exit_coordinator = match app_exit::AppExitCoordinator::initialize() {
+        Ok(coordinator) => coordinator,
+        Err(_) => {
+            eprintln!("[exit] safety initialization unavailable");
+            return false;
+        }
+    };
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let builder = tauri::Builder::default()
         .plugin(services::app_log::plugin())
@@ -68,7 +77,7 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
     let app = builder
         .manage(OllamaClient::new())
-        .manage(app_exit::AppExitCoordinator::default())
+        .manage(exit_coordinator)
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
@@ -199,13 +208,6 @@ pub(crate) fn run_inner(#[cfg(target_os = "macos")] browser_library: Option<Brow
         .on_window_event(|_window, _event| {
             if let tauri::WindowEvent::Focused(focused) = _event {
                 services::mascot::handle_window_focus(_window.app_handle(), *focused);
-            }
-            #[cfg(target_os = "macos")]
-            if let tauri::WindowEvent::CloseRequested { api, .. } = _event {
-                if _window.label() == "main" {
-                    let _ = _window.hide();
-                    api.prevent_close();
-                }
             }
         })
         .invoke_handler(invoke_handler::generate!())

@@ -125,10 +125,14 @@ fn event_loop_precedes_browser_shutdown_and_library_unload() {
                 events.borrow_mut().push("shutdown");
             });
         },
+        || events.borrow_mut().push("sweep"),
     );
 
     assert_eq!(exit_code, 7);
-    assert_eq!(*events.borrow(), ["event_loop", "shutdown", "unload"]);
+    assert_eq!(
+        *events.borrow(),
+        ["event_loop", "shutdown", "unload", "sweep"]
+    );
 }
 
 #[test]
@@ -149,6 +153,33 @@ fn asynchronous_exit_cleanup_never_stops_the_browser() {
     let source = include_str!("app_exit.rs");
 
     assert!(!source.contains("browser"));
+}
+
+#[test]
+fn ultimate_exit_is_initialized_before_tauri_builder_side_effects() {
+    let source = include_str!("lib.rs");
+    let coordinator = source
+        .find("AppExitCoordinator::initialize()")
+        .expect("ultimate coordinator initialization");
+    let builder = source
+        .find("tauri::Builder::default()")
+        .expect("tauri builder");
+
+    assert!(coordinator < builder);
+}
+
+#[test]
+fn tray_restore_unminimizes_before_focusing() {
+    let source = include_str!("tray.rs");
+    let restore = source
+        .find("fn restore_main_window")
+        .expect("restore helper");
+    let unminimize = source[restore..]
+        .find("unminimize()")
+        .expect("unminimize window");
+    let focus = source[restore..].find("set_focus()").expect("focus window");
+
+    assert!(unminimize < focus);
 }
 
 #[test]
