@@ -1031,7 +1031,10 @@
     "operationFailed": "El navegador no pudo realizar esta acción.",
     "loading": "Cargando el navegador…",
     "blockedFeature": "Esta función está desactivada en esta versión.",
-    "unavailable": "El navegador seguro no está disponible."
+    "unavailable": "El navegador seguro no está disponible.",
+    "recoveryUnavailable": "El navegador integrado no pudo iniciarse. Beaver sigue disponible.",
+    "restartApplication": "Reiniciar Beaver",
+    "dismissRecovery": "Cerrar la notificación"
   },
   "filePreview": {
     "closeTab": "Cerrar pestaña",

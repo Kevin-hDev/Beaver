@@ -1,6 +1,6 @@
 use std::io;
 use std::sync::{Arc, Mutex, OnceLock};
-use tauri::{ExitRequestApi, Manager};
+use tauri::Manager;
 
 mod blocking;
 mod cleanup;
@@ -11,6 +11,7 @@ mod presentation;
 mod raw_exit;
 mod registry;
 mod registry_admission;
+mod request_flow;
 mod state;
 mod ultimate;
 mod watchdog;
@@ -39,12 +40,19 @@ pub struct AppExitCoordinator {
     emergency: emergency::EmergencyInventory,
     policy: policy::ShutdownPolicy,
     timeline: OnceLock<policy::ShutdownTimeline>,
+    intent: OnceLock<ExitIntent>,
     ultimate: ultimate::UltimateExit,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ExitIntent {
+    Exit,
+    Restart,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BeginResult {
-    Started(policy::ShutdownTimeline),
+    Started(policy::ShutdownTimeline, ExitIntent),
     Waiting,
     Ready,
     InvariantViolation,
@@ -59,16 +67,35 @@ impl AppExitCoordinator {
             emergency: emergency::EmergencyInventory::new(),
             policy: policy::ShutdownPolicy::production(),
             timeline: OnceLock::new(),
+            intent: OnceLock::new(),
             ultimate: ultimate::UltimateExit::initialize()?,
         })
     }
 
+    #[cfg(test)]
     fn begin(&self, exit_code: i32) -> BeginResult {
-        self.begin_with_cef_close(exit_code, crate::services::browser::begin_cef_shutdown)
+        self.begin_with_intent(
+            ExitIntent::Exit,
+            exit_code,
+            crate::services::browser::begin_cef_shutdown,
+        )
     }
 
+    #[cfg(test)]
     fn begin_with_cef_close(
         &self,
+        exit_code: i32,
+        close_cef: impl FnOnce(
+            std::time::Instant,
+            std::time::Instant,
+        ) -> crate::services::browser::CefShutdownBarrier,
+    ) -> BeginResult {
+        self.begin_with_intent(ExitIntent::Exit, exit_code, close_cef)
+    }
+
+    fn begin_with_intent(
+        &self,
+        intent: ExitIntent,
         exit_code: i32,
         close_cef: impl FnOnce(
             std::time::Instant,
@@ -92,7 +119,8 @@ impl AppExitCoordinator {
             return BeginResult::InvariantViolation;
         }
         let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
-        if self.timeline.set(timeline).is_err()
+        if self.intent.set(intent).is_err()
+            || self.timeline.set(timeline).is_err()
             || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
         {
             return BeginResult::InvariantViolation;
@@ -104,7 +132,7 @@ impl AppExitCoordinator {
         {
             ::log::warn!("[exit] CEF admission barrier exceeded; cleanup continues");
         }
-        BeginResult::Started(timeline)
+        BeginResult::Started(timeline, intent)
     }
 
     fn mark_ready(&self) -> bool {
@@ -146,6 +174,7 @@ impl AppExitCoordinator {
             emergency: emergency::EmergencyInventory::new(),
             policy,
             timeline: OnceLock::new(),
+            intent: OnceLock::new(),
             ultimate,
         }
     }
@@ -169,57 +198,23 @@ impl AppExitCoordinator {
     fn close_registry_for_test(&self) {
         assert!(self.registry.close());
     }
+
+    #[cfg(test)]
+    fn intent_for_test(&self) -> Option<ExitIntent> {
+        self.intent.get().copied()
+    }
 }
 
 pub fn request(app: &tauri::AppHandle, code: i32) {
     app.exit(code);
 }
 
-pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitRequestApi) {
-    if code == Some(tauri::RESTART_EXIT_CODE) {
-        return;
-    }
-    let exit_code = code.unwrap_or_default();
-    let coordinator = app.state::<AppExitCoordinator>();
-    match coordinator.begin(exit_code) {
-        BeginResult::Ready => {}
-        BeginResult::Waiting => api.prevent_exit(),
-        BeginResult::InvariantViolation => raw_exit::terminate_process(1),
-        BeginResult::Started(timeline) => {
-            api.prevent_exit();
-            if coordinator
-                .spawn_watchdog(app.clone(), timeline, exit_code)
-                .is_err()
-            {
-                ::log::error!("[exit] watchdog unavailable; ultimate guard remains armed");
-            }
-            presentation::hide_application(app);
-            let handle = app.clone();
-            let registry = coordinator.registry.clone();
-            tauri::async_runtime::spawn(async move {
-                let started = std::time::Instant::now();
-                if !registry
-                    .wait_empty_until(timeline.graceful_deadline())
-                    .await
-                {
-                    ::log::warn!("[exit] tracked work exceeded graceful deadline");
-                }
-                match cleanup::run(&handle, timeline).await {
-                    cleanup::CleanupOutcome::Completed => {}
-                    cleanup::CleanupOutcome::TimedOut => {
-                        ::log::warn!("[exit] graceful deadline reached")
-                    }
-                    cleanup::CleanupOutcome::Panicked => {
-                        ::log::warn!("[exit] cleanup interrupted")
-                    }
-                }
-                ::log::info!("[exit] cleanup phase finished in {:?}", started.elapsed());
-                if handle.state::<AppExitCoordinator>().mark_ready() {
-                    handle.exit(exit_code);
-                }
-            });
-        }
-    }
+pub fn request_restart(app: &tauri::AppHandle) {
+    app.exit(tauri::RESTART_EXIT_CODE);
+}
+
+pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::ExitRequestApi) {
+    request_flow::handle_requested(app, code, api);
 }
 
 pub(crate) fn post_event_loop(app: &tauri::AppHandle) {

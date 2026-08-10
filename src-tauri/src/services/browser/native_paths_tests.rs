@@ -2,6 +2,8 @@
 use super::native_paths::{framework_candidates, helper_executable, resolve_runtime_files};
 use super::native_paths::{resolve_windows_runtime_files, WINDOWS_RUNTIME_FILES};
 #[cfg(target_os = "macos")]
+use super::native_paths_macos_preflight::resolve_runtime_files as resolve_typed_runtime_files;
+#[cfg(target_os = "macos")]
 use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "macos")]
@@ -53,6 +55,9 @@ fn runtime_files_fail_closed_when_the_helper_is_missing() {
     std::fs::write(&framework, []).expect("framework binary");
 
     assert!(resolve_runtime_files(&executable, None).is_none());
+    assert!(!resolve_typed_runtime_files(&executable, None)
+        .expect_err("missing helper")
+        .retryable());
 
     let helper = helper_executable(&executable).expect("helper path");
     std::fs::create_dir_all(helper.parent().expect("helper parent")).expect("helper dirs");
@@ -64,6 +69,8 @@ fn runtime_files_fail_closed_when_the_helper_is_missing() {
         framework.canonicalize().expect("framework")
     );
     assert_eq!(resolved.helper, helper.canonicalize().expect("helper"));
+    let typed = resolve_typed_runtime_files(&executable, None).expect("typed runtime files");
+    assert_eq!(typed, resolved);
 }
 
 #[test]

@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::Emitter;
 use zeroize::{Zeroize, Zeroizing};
 
 pub(super) const PROBE_COOKIE_URL: &str = "https://clgo.invalid/";
@@ -64,10 +63,7 @@ impl CookieGateContext {
         } else {
             let _ = self.runtime.mark_failed();
         }
-        let _ = self.app.emit(
-            "browser-capability-v1",
-            super::cef_runtime_policy::capability_for_runtime(&self.runtime),
-        );
+        super::cef_runtime_policy::emit_capability(&self.app, &self.runtime);
     }
 }
 

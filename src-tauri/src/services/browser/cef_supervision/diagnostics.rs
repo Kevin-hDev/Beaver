@@ -17,7 +17,6 @@ impl CefUnavailableCategory {
         Self::Sandbox,
     ];
 
-    #[cfg(test)]
     pub(super) const fn code(self) -> &'static str {
         match self {
             Self::Object => "cef-supervision-object",

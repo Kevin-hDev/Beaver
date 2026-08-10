@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::pending::{MacPendingLaunch, MacPendingSlots};
 use super::{MacEmergencyReaper, MacEmergencySlots, MacPublicationObjects, MacReaperControl};
+use crate::services::browser::cef_preflight::CefPreflightError;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
@@ -46,17 +47,17 @@ impl MacCefTracker {
         expected_executable: &Path,
         root: PathBuf,
     ) -> Result<Self, CefUnavailableCategory> {
-        Self::start_inner(expected_executable, root, None)
+        Self::start_inner(expected_executable, root, None).map_err(CefPreflightError::category)
     }
 
     pub(in crate::services::browser) fn start_supervised(
         expected_executable: &Path,
         root: PathBuf,
         app: tauri::AppHandle,
-    ) -> Result<Self, CefUnavailableCategory> {
+    ) -> Result<Self, CefPreflightError> {
         let tracker = Self::start_inner(expected_executable, root, Some(app))?;
         super::super::emergency::register_macos(Arc::clone(&tracker.shared))
-            .map_err(|_| CefUnavailableCategory::Reaper)?;
+            .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Reaper))?;
         Ok(tracker)
     }
 
@@ -64,9 +65,9 @@ impl MacCefTracker {
         expected_executable: &Path,
         root: PathBuf,
         shutdown_app: Option<tauri::AppHandle>,
-    ) -> Result<Self, CefUnavailableCategory> {
-        let expected_executable =
-            dunce::canonicalize(expected_executable).map_err(|_| CefUnavailableCategory::Reaper)?;
+    ) -> Result<Self, CefPreflightError> {
+        let expected_executable = dunce::canonicalize(expected_executable)
+            .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
         let emergency = Arc::new(MacEmergencySlots::new());
         let reaper_control = Arc::new(MacReaperControl::new());
         let shared = Arc::new(MacTrackerShared {
@@ -96,7 +97,7 @@ impl MacCefTracker {
                     failure.fail(CefUnavailableCategory::Reaper);
                 }
             })
-            .map_err(|_| CefUnavailableCategory::Reaper)?;
+            .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
         Ok(Self {
             shared,
             normal_thread: Some(thread),

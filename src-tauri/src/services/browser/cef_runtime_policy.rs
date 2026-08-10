@@ -1,5 +1,10 @@
 use super::{BrowserCapability, BrowserRuntimeHandle};
 use std::time::Instant;
+#[cfg(native_browser)]
+use tauri::Emitter;
+
+#[cfg(native_browser)]
+const BROWSER_CAPABILITY_EVENT: &str = "browser-capability-v1";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum CefShutdownBarrier {
@@ -50,10 +55,17 @@ pub(super) fn capability_for_runtime(runtime: &BrowserRuntimeHandle) -> BrowserC
     if matches!(runtime_capability, BrowserCapability::Ready { .. })
         && super::session_store::session_key().is_err()
     {
-        BrowserCapability::Unavailable
+        BrowserCapability::Unavailable {
+            restart_recommended: false,
+        }
     } else {
         runtime_capability
     }
+}
+
+#[cfg(native_browser)]
+pub(super) fn emit_capability(app: &tauri::AppHandle, runtime: &BrowserRuntimeHandle) {
+    let _ = app.emit(BROWSER_CAPABILITY_EVENT, capability_for_runtime(runtime));
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]

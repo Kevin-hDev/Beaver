@@ -38,6 +38,8 @@ mod cef_life_span_handler;
 mod cef_load_handler;
 #[cfg(native_browser)]
 mod cef_permission_handler;
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+mod cef_preflight;
 #[cfg(native_browser)]
 mod cef_request_handler;
 mod cef_runtime_policy;
@@ -51,6 +53,9 @@ mod cef_surface;
 mod cef_surface_view;
 #[cfg(native_browser)]
 mod cef_text;
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[path = "cef_supervision/diagnostics.rs"]
+mod cef_unavailable;
 #[cfg(any(test, target_os = "macos"))]
 mod cookie_store_probe;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -71,6 +76,10 @@ mod macos_helper_entry;
 mod native_application;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod native_paths;
+#[cfg(target_os = "macos")]
+mod native_paths_macos_preflight;
+#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+mod native_paths_windows_preflight;
 #[cfg(target_os = "macos")]
 mod native_pump;
 #[cfg(target_os = "macos")]
@@ -119,6 +128,8 @@ mod bundle_layout_tests;
 mod cef_cookie_gate_policy_tests;
 #[cfg(all(test, native_browser))]
 mod cef_diagnostics_tests;
+#[cfg(test)]
+mod cef_preflight_tests;
 #[cfg(test)]
 mod cookie_store_probe_tests;
 #[cfg(all(test, any(target_os = "macos", target_os = "windows")))]

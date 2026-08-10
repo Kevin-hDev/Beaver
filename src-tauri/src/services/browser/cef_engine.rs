@@ -1,21 +1,15 @@
-use super::cef_app::BrowserApp;
-use super::cef_child_admission::BrowserCefSupervision;
-use super::cef_engine_config::{prepare_profile, to_cef_settings};
 use super::cef_surface::BrowserSurfaceManager;
-#[cfg(target_os = "windows")]
-use super::native_paths::resolve_runtime_files;
-#[cfg(target_os = "macos")]
-use super::process_role::validate_browser_process_result;
 use super::pump_scheduler::PumpScheduler;
 use super::runtime_handle::BrowserRuntimeHandle;
-use super::settings::cef_settings_policy;
 use super::surface_bounds::BrowserSurfaceBounds;
 use super::url_policy::ValidatedUrl;
 #[cfg(target_os = "macos")]
 use super::BrowserLibraryGuard;
 use super::{browser_api_types::BrowserNavigationAction, browser_view_key::BrowserViewKey};
-use cef::{args::Args, *};
+use cef::App;
 use std::cell::RefCell;
+
+mod startup;
 
 thread_local! {
     static ENGINE: RefCell<Option<CefEngine>> = const { RefCell::new(None) };
@@ -36,91 +30,27 @@ pub(super) fn initialize(
     runtime: BrowserRuntimeHandle,
     #[cfg(target_os = "macos")] library: &BrowserLibraryGuard,
 ) {
-    if initialize_inner(
-        app,
+    match startup::start(
+        app.clone(),
         runtime.clone(),
         #[cfg(target_os = "macos")]
         library,
-    )
-    .is_err()
-    {
-        let _ = runtime.mark_failed();
-        ::log::error!("[browser] initialization failed");
+    ) {
+        Ok(()) => {}
+        Err(startup::CefStartFailure::Preflight(error)) => {
+            let _ = runtime.mark_failed();
+            ::log::warn!(
+                "[browser] preflight unavailable ({})",
+                error.category().code()
+            );
+            super::cef_runtime_policy::emit_capability(&app, &runtime);
+        }
+        Err(startup::CefStartFailure::Fatal) => {
+            let _ = runtime.mark_failed();
+            ::log::error!("[browser] initialization failed after CEF boundary");
+            crate::app_exit::request(&app, 1);
+        }
     }
-}
-
-fn initialize_inner(
-    app: tauri::AppHandle,
-    runtime: BrowserRuntimeHandle,
-    #[cfg(target_os = "macos")] library: &BrowserLibraryGuard,
-) -> Result<(), ()> {
-    if ENGINE.with(|engine| engine.borrow().is_some()) {
-        return Err(());
-    }
-    #[cfg(target_os = "windows")]
-    let files = {
-        let executable = std::env::current_exe().map_err(|_| ())?;
-        let downloaded = cef::sys::get_cef_dir();
-        resolve_runtime_files(&executable, downloaded.as_deref()).ok_or(())?
-    };
-    #[cfg(target_os = "macos")]
-    let files = library.runtime_files();
-    let profile = prepare_profile()?;
-    #[cfg(target_os = "windows")]
-    let tracker =
-        super::cef_supervision::WindowsCefTracker::start_supervised(&files.helper, app.clone())
-            .map_err(|_| ())?;
-    #[cfg(target_os = "macos")]
-    let tracker = super::cef_supervision::MacCefTracker::start_supervised(
-        &files.helper,
-        super::cef_runtime_policy::cef_supervision_root(),
-        app.clone(),
-    )
-    .map_err(|_| ())?;
-    if !runtime.mark_supervised() {
-        return Err(());
-    }
-    let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
-    let args = Args::new();
-    #[cfg(target_os = "macos")]
-    {
-        let process_result = execute_process(
-            Some(args.as_main_args()),
-            None::<&mut App>,
-            std::ptr::null_mut(),
-        );
-        validate_browser_process_result(process_result)?;
-    }
-    let pump = PumpScheduler::new(app);
-    let supervision = BrowserCefSupervision::new(tracker.handle());
-    let mut cef_app = BrowserApp::new(pump.clone(), runtime, profile.clone(), supervision);
-    let settings = to_cef_settings(cef_settings_policy(&profile, &files.helper));
-    #[cfg(target_os = "macos")]
-    let sandbox_info = std::ptr::null_mut();
-    #[cfg(target_os = "windows")]
-    let sandbox_info = super::windows_sandbox::get().ok_or(())?;
-    if cef::initialize(
-        Some(args.as_main_args()),
-        Some(&settings),
-        Some(&mut cef_app),
-        sandbox_info,
-    ) != 1
-    {
-        return Err(());
-    }
-    pump.start_fallback()?;
-    ENGINE.with(|engine| {
-        *engine.borrow_mut() = Some(CefEngine {
-            pump: pump.clone(),
-            surface: BrowserSurfaceManager::new(),
-            _app: cef_app,
-            #[cfg(target_os = "windows")]
-            _tracker: tracker,
-            #[cfg(target_os = "macos")]
-            _tracker: tracker,
-        });
-    });
-    Ok(())
 }
 
 pub(super) fn apply_surface(
