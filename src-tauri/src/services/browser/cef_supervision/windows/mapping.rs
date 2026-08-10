@@ -92,3 +92,7 @@ impl<T> std::fmt::Debug for SharedMapping<T> {
         formatter.write_str("SharedMapping([redacted])")
     }
 }
+
+// The mapped pages contain only atomics and the Windows mapping handle is thread-safe.
+unsafe impl<T: Send> Send for SharedMapping<T> {}
+unsafe impl<T: Sync> Sync for SharedMapping<T> {}

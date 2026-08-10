@@ -1,12 +1,14 @@
 use super::super::CefUnavailableCategory;
 use std::fmt;
-use windows_sys::Win32::Foundation::{CloseHandle, GetHandleInformation, HANDLE};
+use windows_sys::Win32::Foundation::{
+    CloseHandle, GetHandleInformation, HANDLE, INVALID_HANDLE_VALUE,
+};
 
 pub(super) struct OwnedHandle(HANDLE);
 
 impl OwnedHandle {
     pub(super) fn new(handle: HANDLE) -> Result<Self, CefUnavailableCategory> {
-        if handle.is_null() {
+        if handle.is_null() || handle == INVALID_HANDLE_VALUE {
             Err(CefUnavailableCategory::Object)
         } else {
             Ok(Self(handle))
@@ -17,11 +19,19 @@ impl OwnedHandle {
         self.0
     }
 
+    pub(super) fn into_raw(self) -> HANDLE {
+        let this = std::mem::ManuallyDrop::new(self);
+        this.0
+    }
+
     pub(super) fn is_non_inheritable(&self) -> bool {
         let mut flags = 0_u32;
         (unsafe { GetHandleInformation(self.0, &mut flags) }) != 0 && flags & 1 == 0
     }
 }
+
+unsafe impl Send for OwnedHandle {}
+unsafe impl Sync for OwnedHandle {}
 
 impl fmt::Debug for OwnedHandle {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {

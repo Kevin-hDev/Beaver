@@ -25,4 +25,25 @@ impl CefUnavailableCategory {
             Self::Sandbox => "cef-supervision-sandbox",
         }
     }
+
+    pub(super) const fn id(self) -> u8 {
+        match self {
+            Self::Object => 1,
+            Self::Permission => 2,
+            Self::Admission => 3,
+            Self::Reaper => 4,
+            Self::Sandbox => 5,
+        }
+    }
+
+    pub(super) const fn from_id(value: u8) -> Option<Self> {
+        match value {
+            1 => Some(Self::Object),
+            2 => Some(Self::Permission),
+            3 => Some(Self::Admission),
+            4 => Some(Self::Reaper),
+            5 => Some(Self::Sandbox),
+            _ => None,
+        }
+    }
 }

@@ -24,6 +24,16 @@ pub(super) struct CefSlotKey {
     generation: u64,
 }
 
+impl CefSlotKey {
+    pub(super) fn index(self) -> usize {
+        self.index
+    }
+
+    pub(super) fn generation(self) -> u64 {
+        self.generation
+    }
+}
+
 pub(super) struct CefAuthorityInner {
     gate: CefLaunchGate,
     slots: [CefAuthoritySlot; CEF_SLOT_CAPACITY],
@@ -151,7 +161,7 @@ impl CefAuthorityTable {
         let drained = self.inner.gate.close_and_wait(deadline);
         for slot in &self.inner.slots {
             let generation = slot.generation.load(Ordering::Acquire);
-            for state in [SLOT_RESERVED, SLOT_PUBLISHED] {
+            for state in [SLOT_WRITING, SLOT_RESERVED, SLOT_CLAIMING, SLOT_PUBLISHED] {
                 if slot.clear_if(generation, state) {
                     break;
                 }

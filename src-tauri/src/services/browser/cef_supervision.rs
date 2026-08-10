@@ -35,8 +35,17 @@ mod protocol_tests;
 #[cfg(test)]
 mod table_tests;
 #[cfg(all(test, windows))]
+#[path = "cef_supervision/windows/identity_tests.rs"]
+mod windows_identity_tests;
+#[cfg(all(test, windows))]
+#[path = "cef_supervision/windows/job_tests.rs"]
+mod windows_job_tests;
+#[cfg(all(test, windows))]
 #[path = "cef_supervision/windows/objects_tests.rs"]
 mod windows_objects_tests;
 #[cfg(all(test, windows))]
 #[path = "cef_supervision/windows/security_tests.rs"]
 mod windows_security_tests;
+#[cfg(all(test, windows))]
+#[path = "cef_supervision/windows/tracker_tests.rs"]
+mod windows_tracker_tests;
