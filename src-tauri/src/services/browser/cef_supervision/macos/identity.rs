@@ -81,6 +81,31 @@ impl MacProcessIdentity {
         }
     }
 
+    #[cfg(test)]
+    pub(in crate::services::browser) fn test_pid(&self) -> u32 {
+        self.pid
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::browser) fn test_parent_pid(&self) -> u32 {
+        self.parent_pid
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::browser) fn test_started_at(&self) -> u64 {
+        self.started_at
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::browser) fn test_process_group(&self) -> u32 {
+        self.process_group
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::browser) fn test_executable(&self) -> &Path {
+        &self.executable
+    }
+
     fn kernel_identity(&self) -> MacKernelIdentity {
         MacKernelIdentity {
             parent_pid: self.parent_pid,

@@ -9,7 +9,7 @@ fn reaper_admits_only_the_stable_process_group_identity() {
         .join(format!("cef-mac-tracker-test-{}", std::process::id()));
     let mut child = grouped_sleep();
     let identity = MacProcessIdentity::read(child.id()).expect("child identity");
-    let tracker = MacCefTracker::start(&identity.executable, root).expect("tracker");
+    let tracker = MacCefTracker::start(identity.test_executable(), root).expect("tracker");
     let ticket = tracker.handle().reserve().expect("reservation");
     let marker = ticket.decode_marker().expect("marker");
     let names = CefIpcNames::from_marker(&marker).expect("names");
@@ -22,9 +22,9 @@ fn reaper_admits_only_the_stable_process_group_identity() {
     helper
         .publish(
             marker.generation(),
-            identity.pid,
-            identity.started_at,
-            identity.process_group,
+            identity.test_pid(),
+            identity.test_started_at(),
+            identity.test_process_group(),
         )
         .expect("publication");
     let deadline = Instant::now() + Duration::from_secs(2);
@@ -34,11 +34,11 @@ fn reaper_admits_only_the_stable_process_group_identity() {
     assert!(helper.admission_signaled().expect("admitted"));
     assert_eq!(
         MacProcessIdentity::validate(
-            identity.pid,
-            identity.parent_pid,
-            identity.started_at + 1,
-            identity.process_group,
-            &identity.executable,
+            identity.test_pid(),
+            identity.test_parent_pid(),
+            identity.test_started_at() + 1,
+            identity.test_process_group(),
+            identity.test_executable(),
         ),
         Err(CefUnavailableCategory::Admission)
     );
@@ -56,7 +56,7 @@ fn closing_the_gate_preserves_an_admitted_helper_until_force_phase() {
         .join(format!("cef-mac-emergency-test-{}", std::process::id()));
     let mut child = grouped_sleep();
     let identity = MacProcessIdentity::read(child.id()).expect("child identity");
-    let tracker = MacCefTracker::start(&identity.executable, root.clone()).expect("tracker");
+    let tracker = MacCefTracker::start(identity.test_executable(), root.clone()).expect("tracker");
     let ticket = tracker.handle().reserve().expect("reservation");
     let marker = ticket.decode_marker().expect("marker");
     let names = CefIpcNames::from_marker(&marker).expect("names");
@@ -64,9 +64,9 @@ fn closing_the_gate_preserves_an_admitted_helper_until_force_phase() {
     helper
         .publish(
             marker.generation(),
-            identity.pid,
-            identity.started_at,
-            identity.process_group,
+            identity.test_pid(),
+            identity.test_started_at(),
+            identity.test_process_group(),
         )
         .expect("publication");
     wait_until_admitted(&helper);
