@@ -7,6 +7,7 @@ mod tracker;
 mod tracker_loop;
 
 pub(in crate::services::browser) use bootstrap::{parse_helper_marker, MacHelperBootstrap};
+#[cfg(test)]
 pub(super) use identity::MacProcessIdentity;
 pub(super) use objects::{MacHelperObjects, MacPublicationObjects};
 pub(in crate::services::browser) use tracker::MacTrackerShared;

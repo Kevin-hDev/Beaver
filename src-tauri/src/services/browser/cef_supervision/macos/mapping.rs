@@ -8,7 +8,7 @@ use std::path::Path;
 use zeroize::Zeroizing;
 
 pub(super) struct MacMapping<T> {
-    file: MacFile,
+    _file: MacFile,
     address: *mut T,
     _value: PhantomData<T>,
 }
@@ -63,7 +63,7 @@ impl<T> MacMapping<T> {
             return Err(CefUnavailableCategory::Object);
         }
         Ok(Self {
-            file,
+            _file: file,
             address: address.cast(),
             _value: PhantomData,
         })
@@ -75,7 +75,7 @@ impl<T> MacMapping<T> {
 
     #[cfg(test)]
     pub(super) fn is_close_on_exec(&self) -> bool {
-        let flags = unsafe { libc::fcntl(self.file.file.as_raw_fd(), libc::F_GETFD) };
+        let flags = unsafe { libc::fcntl(self._file.file.as_raw_fd(), libc::F_GETFD) };
         flags >= 0 && flags & libc::FD_CLOEXEC != 0
     }
 }
