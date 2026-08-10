@@ -97,6 +97,7 @@
     "eslint-plugin-security": "^4.0.1",
     "fflate": "0.8.3",
     "fontkit": "2.0.4",
+    "image-size": "file:src-tauri/resources/extension-host/vendor/image-size-disabled",
     "jsdom": "^29.1.1",
     "jiti": "2.7.0",
     "pdfjs-dist": "6.2.108",
@@ -116,6 +117,7 @@
     "brace-expansion@^1.0.0": "1.1.18",
     "brace-expansion@^5.0.0": "5.0.9",
     "serialize-javascript": "7.0.5",
+    "image-size": "$image-size",
     "https": "npm:https-browserify@1.0.0"
   }
 }

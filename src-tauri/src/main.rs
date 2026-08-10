@@ -31,9 +31,12 @@ fn main() {
         eprintln!("[browser] native integration unavailable");
     }
     #[cfg(target_os = "macos")]
-    cl_go_dash_lib::run(browser_library);
+    let started = cl_go_dash_lib::run(browser_library);
     #[cfg(not(target_os = "macos"))]
-    cl_go_dash_lib::run();
+    let started = cl_go_dash_lib::run();
+    if !started {
+        std::process::exit(1);
+    }
 }
 
 #[cfg(target_os = "windows")]

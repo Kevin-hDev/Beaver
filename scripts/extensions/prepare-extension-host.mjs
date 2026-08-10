@@ -85,6 +85,11 @@ async function copyHostSources(source, destination) {
     ...sdkFiles.map((file) =>
       copyFile(resolve(source, "sdk", file), resolve(destination, "sdk", file)),
     ),
+    copyDirectory(
+      resolve(source, "vendor", "image-size-disabled"),
+      resolve(destination, "vendor", "image-size-disabled"),
+      { count: 0 },
+    ),
   ]);
   await copyDirectory(
     resolve(source, "builtin-plugins"),

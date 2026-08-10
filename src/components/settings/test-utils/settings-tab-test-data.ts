@@ -116,7 +116,6 @@ export function gatewayConfig() {
   return {
     enabled: false,
     start_with_app: true,
-    run_when_window_closed: true,
     default_provider: "",
     default_model: "",
     max_sessions: 500,

@@ -1,10 +1,22 @@
 use crate::models::ClgoConfig;
-#[cfg(not(target_os = "macos"))]
-use crate::services;
 use std::ffi::OsStr;
 use tauri::{Manager, RunEvent, WindowEvent};
 
 pub const AUTOSTART_ARG: &str = "--clgo-autostart";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MainWindowCloseAction {
+    Hide,
+    Quit,
+}
+
+const fn main_window_close_action(is_macos: bool) -> MainWindowCloseAction {
+    if is_macos {
+        MainWindowCloseAction::Hide
+    } else {
+        MainWindowCloseAction::Quit
+    }
+}
 
 pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
     match event {
@@ -14,18 +26,14 @@ pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
             ..
         } => {
             if label == "main" {
-                #[cfg(target_os = "macos")]
-                let _ = api;
-                #[cfg(not(target_os = "macos"))]
-                {
-                    api.prevent_close();
-                    if should_hide_instead_of_quit() {
+                api.prevent_close();
+                match main_window_close_action(cfg!(target_os = "macos")) {
+                    MainWindowCloseAction::Hide => {
                         if let Some(win) = app_handle.get_webview_window("main") {
                             let _ = win.hide();
                         }
-                    } else {
-                        crate::app_exit::request(app_handle, 0);
                     }
+                    MainWindowCloseAction::Quit => crate::app_exit::request(app_handle, 0),
                 }
             }
         }
@@ -41,14 +49,6 @@ pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
         }
         _ => {}
     }
-}
-
-#[cfg(not(target_os = "macos"))]
-fn should_hide_instead_of_quit() -> bool {
-    let config = services::config::read_config().unwrap_or_default();
-    let gateway_active = config.gateway.enabled && config.gateway.run_when_window_closed;
-    let tray_visible = config.advanced.show_tray;
-    gateway_active && tray_visible
 }
 
 pub fn should_start_hidden(config: &ClgoConfig) -> bool {
@@ -105,5 +105,11 @@ mod tests {
             &config,
             [OsStr::new(AUTOSTART_ARG)]
         ));
+    }
+
+    #[test]
+    fn main_window_close_keeps_native_macos_behavior_only() {
+        assert_eq!(main_window_close_action(true), MainWindowCloseAction::Hide);
+        assert_eq!(main_window_close_action(false), MainWindowCloseAction::Quit);
     }
 }

@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::StreamEvent;
 
@@ -22,6 +25,7 @@ pub(super) async fn persist_terminal(
         summary,
         success,
         Some((run_id, execution_id)),
+        || async {},
         || async {},
         after_report,
     )

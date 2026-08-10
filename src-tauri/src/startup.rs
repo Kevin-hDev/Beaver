@@ -46,9 +46,11 @@ pub(crate) fn shutdown_before_library_unload<Guard>(
 pub(crate) fn run_before_browser_shutdown<ExitCode>(
     run_event_loop: impl FnOnce() -> ExitCode,
     shutdown_browser: impl FnOnce(),
+    post_browser_cleanup: impl FnOnce(),
 ) -> ExitCode {
     let exit_code = run_event_loop();
     shutdown_browser();
+    post_browser_cleanup();
     exit_code
 }
 
@@ -62,13 +64,13 @@ pub fn prepare_macos_application() -> (Option<BrowserLibraryGuard>, bool) {
 }
 
 #[cfg(target_os = "macos")]
-pub fn run(browser_library: Option<BrowserLibraryGuard>) {
-    super::run_inner(browser_library);
+pub fn run(browser_library: Option<BrowserLibraryGuard>) -> bool {
+    super::run_inner(browser_library)
 }
 
 #[cfg(not(target_os = "macos"))]
-pub fn run() {
-    super::run_inner();
+pub fn run() -> bool {
+    super::run_inner()
 }
 
 /// Exécute le lanceur shell isolé avant l'initialisation de Tauri ou de CEF.
