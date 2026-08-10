@@ -5,6 +5,7 @@ const TAURI_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 const POST_LOOP_SWEEP_TIMEOUT: Duration = Duration::from_secs(3);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
 const ULTIMATE_EXIT_TIMEOUT: Duration = Duration::from_secs(15);
+const CEF_ADMISSION_BARRIER_TIMEOUT: Duration = Duration::from_millis(50);
 const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
 
 pub(super) const fn watchdog_recheck_interval() -> Duration {
@@ -82,6 +83,10 @@ impl ShutdownTimeline {
 
     pub(super) fn graceful_deadline(self) -> Instant {
         self.origin + self.policy.graceful()
+    }
+
+    pub(super) fn cef_admission_deadline(self) -> Instant {
+        self.origin + CEF_ADMISSION_BARRIER_TIMEOUT
     }
 
     pub(super) fn tauri_exit_deadline(self) -> Instant {

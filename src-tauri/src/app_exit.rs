@@ -63,6 +63,14 @@ impl AppExitCoordinator {
     }
 
     fn begin(&self, exit_code: i32) -> BeginResult {
+        self.begin_with_cef_close(exit_code, crate::services::browser::begin_cef_shutdown)
+    }
+
+    fn begin_with_cef_close(
+        &self,
+        exit_code: i32,
+        close_cef: impl FnOnce(std::time::Instant) -> crate::services::browser::CefShutdownBarrier,
+    ) -> BeginResult {
         let _guard = match self.begin_lock.lock() {
             Ok(guard) => guard,
             Err(_) => return BeginResult::InvariantViolation,
@@ -82,9 +90,13 @@ impl AppExitCoordinator {
         let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
         if self.timeline.set(timeline).is_err()
             || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
-            || !crate::services::browser::begin_cef_shutdown()
         {
             return BeginResult::InvariantViolation;
+        }
+        if close_cef(timeline.cef_admission_deadline())
+            == crate::services::browser::CefShutdownBarrier::TimedOut
+        {
+            ::log::warn!("[exit] CEF admission barrier exceeded; cleanup continues");
         }
         BeginResult::Started(timeline)
     }

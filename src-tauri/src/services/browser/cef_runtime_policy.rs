@@ -1,10 +1,24 @@
 use super::{BrowserCapability, BrowserRuntimeHandle};
+use std::time::Instant;
 
-pub(crate) fn begin_cef_shutdown() -> bool {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum CefShutdownBarrier {
+    Drained,
+    TimedOut,
+}
+
+pub(crate) fn begin_cef_shutdown(deadline: Instant) -> CefShutdownBarrier {
     #[cfg(any(target_os = "windows", target_os = "macos"))]
-    return super::cef_supervision::emergency::close_gate();
+    return if super::cef_supervision::emergency::close_gate(deadline) {
+        CefShutdownBarrier::Drained
+    } else {
+        CefShutdownBarrier::TimedOut
+    };
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    true
+    {
+        let _ = deadline;
+        CefShutdownBarrier::Drained
+    }
 }
 
 pub(crate) fn force_cef_shutdown() {

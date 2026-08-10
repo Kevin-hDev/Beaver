@@ -2,6 +2,7 @@ use super::policy::ShutdownPolicy;
 use super::state::ShutdownPhase;
 use super::ultimate::{RawExitActions, UltimateExit};
 use super::{AppExitCoordinator, BeginResult};
+use crate::services::browser::CefShutdownBarrier;
 use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
 
@@ -39,6 +40,17 @@ fn admission_is_permanently_closed_before_closing_is_visible() {
     let coordinator = coordinator();
     assert!(matches!(coordinator.begin(0), BeginResult::Started(_)));
     assert!(coordinator.admit_for_test().is_err());
+    assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Closing);
+}
+
+#[test]
+fn cef_barrier_timeout_keeps_coordinated_shutdown_running() {
+    let coordinator = coordinator();
+
+    let result = coordinator.begin_with_cef_close(0, |_| CefShutdownBarrier::TimedOut);
+
+    assert!(matches!(result, BeginResult::Started(_)));
+    assert!(coordinator.ultimate_is_armed_for_test());
     assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Closing);
 }
 

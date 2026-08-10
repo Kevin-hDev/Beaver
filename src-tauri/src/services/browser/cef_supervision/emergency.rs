@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 #[cfg(target_os = "windows")]
 static WINDOWS: std::sync::OnceLock<std::sync::Arc<super::windows::WindowsTrackerShared>> =
@@ -21,8 +21,7 @@ pub(super) fn register_macos(
     MACOS.set(shared).map_err(|_| ())
 }
 
-pub(in crate::services::browser) fn close_gate() -> bool {
-    let deadline = Instant::now() + Duration::from_millis(50);
+pub(in crate::services::browser) fn close_gate(deadline: Instant) -> bool {
     #[cfg(target_os = "windows")]
     if let Some(shared) = WINDOWS.get() {
         return shared.emergency_close(deadline);
