@@ -1,3 +1,4 @@
+use super::super::constants::CEF_TRACKER_DROP_TIMEOUT;
 use super::super::gate::CefLaunchGate;
 use super::super::{
     CefAuthorityTable, CefIpcNames, CefLaunchTicket, CefProcessRole, CefUnavailableCategory,
@@ -10,7 +11,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 #[cfg(test)]
 mod test_api;
@@ -189,7 +190,7 @@ impl WindowsTrackerShared {
 
 impl Drop for WindowsCefTracker {
     fn drop(&mut self) {
-        let deadline = Instant::now() + Duration::from_millis(50);
+        let deadline = Instant::now() + CEF_TRACKER_DROP_TIMEOUT;
         let _ = self.shared.gate.close_and_wait(deadline);
         let _ = self.shared.table.close_and_invalidate(deadline);
         self.shared.stopping.store(true, Ordering::Release);

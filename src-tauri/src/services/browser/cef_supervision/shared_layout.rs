@@ -122,7 +122,7 @@ impl CefControlPage {
         })
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, target_os = "macos"))]
     pub(super) fn begin_closing(&self, deadline_ticks: u64) -> Result<(), CefSharedLayoutError> {
         if deadline_ticks == 0 {
             return Err(CefSharedLayoutError::Invalid);

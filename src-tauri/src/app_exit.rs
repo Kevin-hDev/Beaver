@@ -7,6 +7,7 @@ mod cleanup;
 mod emergency;
 mod emergency_drain;
 mod policy;
+mod presentation;
 mod raw_exit;
 mod registry;
 mod registry_admission;
@@ -69,7 +70,10 @@ impl AppExitCoordinator {
     fn begin_with_cef_close(
         &self,
         exit_code: i32,
-        close_cef: impl FnOnce(std::time::Instant) -> crate::services::browser::CefShutdownBarrier,
+        close_cef: impl FnOnce(
+            std::time::Instant,
+            std::time::Instant,
+        ) -> crate::services::browser::CefShutdownBarrier,
     ) -> BeginResult {
         let _guard = match self.begin_lock.lock() {
             Ok(guard) => guard,
@@ -93,8 +97,10 @@ impl AppExitCoordinator {
         {
             return BeginResult::InvariantViolation;
         }
-        if close_cef(timeline.cef_admission_deadline())
-            == crate::services::browser::CefShutdownBarrier::TimedOut
+        if close_cef(
+            timeline.cef_admission_deadline(),
+            timeline.cef_helper_exit_deadline(),
+        ) == crate::services::browser::CefShutdownBarrier::TimedOut
         {
             ::log::warn!("[exit] CEF admission barrier exceeded; cleanup continues");
         }
@@ -187,7 +193,7 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitReq
             {
                 ::log::error!("[exit] watchdog unavailable; ultimate guard remains armed");
             }
-            hide_application(app);
+            presentation::hide_application(app);
             let handle = app.clone();
             let registry = coordinator.registry.clone();
             tauri::async_runtime::spawn(async move {
@@ -220,14 +226,4 @@ pub(crate) fn post_event_loop(app: &tauri::AppHandle) {
     if let Some(coordinator) = app.try_state::<AppExitCoordinator>() {
         coordinator.drain_post_loop();
     }
-}
-
-fn hide_application(app: &tauri::AppHandle) {
-    for label in ["main", "mascot"] {
-        if let Some(window) = app.get_webview_window(label) {
-            let _ = window.hide();
-        }
-    }
-    #[cfg(target_os = "macos")]
-    let _ = app.set_dock_visibility(false);
 }

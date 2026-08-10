@@ -2,17 +2,10 @@ use super::super::constants::{CEF_ADMISSION_TIMEOUT, CEF_HELPER_WAIT_SLICE};
 use super::super::{CefIpcNames, CefLaunchMarker, CefUnavailableCategory};
 use super::identity::MacProcessIdentity;
 use super::MacHelperObjects;
-use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use zeroize::Zeroizing;
-
-const ADMISSION_PREFIX: &str = "--beaver-cef-admission=";
-const TYPE_PREFIX: &str = "--type=";
-const MAX_ARGUMENTS: usize = 64;
-const MAX_ARGUMENT_BYTES: usize = 2_048;
 
 pub(in crate::services::browser) struct MacHelperBootstrap {
     objects: Arc<MacHelperObjects>,
@@ -88,36 +81,6 @@ impl Drop for MacHelperAdmission {
     }
 }
 
-pub(in crate::services::browser) fn parse_helper_marker(
-) -> Result<Zeroizing<String>, CefUnavailableCategory> {
-    let mut marker = None;
-    let mut process_type = false;
-    for (index, raw) in std::env::args_os().enumerate() {
-        if index >= MAX_ARGUMENTS || raw.as_os_str().as_bytes().len() > MAX_ARGUMENT_BYTES {
-            return Err(CefUnavailableCategory::Admission);
-        }
-        let value = Zeroizing::new(
-            raw.into_string()
-                .map_err(|_| CefUnavailableCategory::Admission)?,
-        );
-        if let Some(found) = strip_ascii_prefix(&value, ADMISSION_PREFIX) {
-            if found.is_empty() || marker.is_some() {
-                return Err(CefUnavailableCategory::Admission);
-            }
-            marker = Some(Zeroizing::new(found.to_string()));
-        } else if let Some(found) = strip_ascii_prefix(&value, TYPE_PREFIX) {
-            if found.is_empty() || process_type {
-                return Err(CefUnavailableCategory::Admission);
-            }
-            process_type = true;
-        }
-    }
-    match (process_type, marker) {
-        (true, Some(marker)) => Ok(marker),
-        _ => Err(CefUnavailableCategory::Admission),
-    }
-}
-
 fn wait_for_admission(
     objects: &MacHelperObjects,
     generation: u64,
@@ -159,7 +122,7 @@ fn start_monitor(
                 Ok(alive) => !alive,
                 Err(_) => true,
             };
-            let close = closing_or_failure(&objects) || control_requires_exit(&objects, generation);
+            let close = control_requires_exit(&objects, generation);
             if parent_gone || close {
                 unsafe { libc::_exit(1) };
             }
@@ -174,14 +137,9 @@ fn closing_or_failure(objects: &MacHelperObjects) -> bool {
 
 fn control_requires_exit(objects: &MacHelperObjects, generation: u64) -> bool {
     match objects.control_snapshot() {
-        Ok(state) => state.closing || state.generation != generation,
+        Ok(state) if state.generation != generation => true,
+        Ok(state) if !state.closing => false,
+        Ok(state) => super::clock::reached(state.deadline_ticks).unwrap_or(true),
         Err(_) => true,
     }
-}
-
-fn strip_ascii_prefix<'a>(value: &'a str, prefix: &str) -> Option<&'a str> {
-    value
-        .get(..prefix.len())?
-        .eq_ignore_ascii_case(prefix)
-        .then(|| &value[prefix.len()..])
 }

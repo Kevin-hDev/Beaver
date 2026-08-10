@@ -51,7 +51,7 @@ impl MacProcessIdentity {
     }
 
     pub(super) fn revalidate(&self) -> Result<(), CefUnavailableCategory> {
-        (kernel_identity(self.pid)? == self.kernel_identity())
+        (Self::read(self.pid)? == *self)
             .then_some(())
             .ok_or(CefUnavailableCategory::Reaper)
     }
@@ -104,14 +104,6 @@ impl MacProcessIdentity {
     #[cfg(test)]
     pub(in crate::services::browser) fn test_executable(&self) -> &Path {
         &self.executable
-    }
-
-    fn kernel_identity(&self) -> MacKernelIdentity {
-        MacKernelIdentity {
-            parent_pid: self.parent_pid,
-            started_at: self.started_at,
-            process_group: self.process_group,
-        }
     }
 }
 
