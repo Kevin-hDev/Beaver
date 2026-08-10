@@ -40,6 +40,8 @@ mod cef_permission_handler;
 mod cef_request_handler;
 #[cfg(native_browser)]
 mod cef_state_bridge;
+#[cfg(any(test, native_browser))]
+mod cef_supervision;
 #[cfg(native_browser)]
 mod cef_surface;
 #[cfg(native_browser)]
@@ -72,7 +74,7 @@ mod native_pump_wake;
 mod native_surface;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod navigation_target;
-#[cfg(any(test, target_os = "macos"))]
+#[cfg(any(test, native_browser))]
 mod process_role;
 #[cfg(target_os = "macos")]
 mod pump_gate;
