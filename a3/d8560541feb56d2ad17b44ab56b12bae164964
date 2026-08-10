@@ -1,0 +1,16 @@
+Problème
+Le raccourcissement du chemin Cargo Windows avait déplacé les artefacts compilés vers target à la racine du worktree, tandis que plusieurs préparateurs continuaient à supposer src-tauri/target. Deux autorités concurrentes rendaient le build dépendant du script appelé.
+
+Objectif
+Définir avant l'implémentation un contrat unique pour le dossier Cargo Windows, sans modifier les destinations de ressources attendues par Tauri ni les chemins macOS/Linux.
+
+Décisions
+- scripts/cef/tauri-launch.mjs sélectionne l'autorité locale et propage CARGO_TARGET_DIR.
+- Un job CI en plusieurs étapes exporte la même valeur avant le build.
+- Les consommateurs revalident la valeur et ne cherchent jamais silencieusement un second dossier.
+- Le préparateur updater conserve un repli direct uniquement parce qu'il recompile son propre binaire avant lecture.
+- Le préparateur CEF refuse tout repli direct, car il consomme l'exécutable principal construit par Tauri et pourrait autrement accepter un artefact périmé.
+- Les ressources Tauri restent sous src-tauri/target/updater-helper et src-tauri/target/cef-runtime/windows.
+
+Pourquoi
+Cette séparation conserve le chemin Cargo court nécessaire à CEF, ferme le risque d'artefact périmé et évite toute modification collatérale des autres OS ou du layout de bundle.
