@@ -27,6 +27,11 @@ pub(in crate::services::browser) struct WindowsCefTracker {
     thread: Option<JoinHandle<()>>,
 }
 
+#[derive(Clone)]
+pub(in crate::services::browser) struct WindowsCefTrackerHandle {
+    shared: Arc<WindowsTrackerShared>,
+}
+
 impl WindowsCefTracker {
     pub(in crate::services::browser) fn start(
         expected_executable: &Path,
@@ -54,6 +59,24 @@ impl WindowsCefTracker {
         })
     }
 
+    pub(in crate::services::browser) fn reserve(
+        &self,
+    ) -> Result<WindowsLaunchTicket, CefUnavailableCategory> {
+        self.handle().reserve()
+    }
+
+    pub(in crate::services::browser) fn handle(&self) -> WindowsCefTrackerHandle {
+        WindowsCefTrackerHandle {
+            shared: Arc::clone(&self.shared),
+        }
+    }
+
+    pub(in crate::services::browser) fn failure(&self) -> Option<CefUnavailableCategory> {
+        self.shared.failure()
+    }
+}
+
+impl WindowsCefTrackerHandle {
     pub(in crate::services::browser) fn reserve(
         &self,
     ) -> Result<WindowsLaunchTicket, CefUnavailableCategory> {
@@ -89,7 +112,11 @@ impl WindowsCefTracker {
     }
 
     pub(in crate::services::browser) fn failure(&self) -> Option<CefUnavailableCategory> {
-        failure_from_id(self.shared.failure.load(Ordering::Acquire))
+        self.shared.failure()
+    }
+
+    pub(in crate::services::browser) fn fail(&self, category: CefUnavailableCategory) {
+        self.shared.fail(category);
     }
 }
 
@@ -132,5 +159,11 @@ fn failure_from_id(value: u8) -> Option<CefUnavailableCategory> {
 impl std::fmt::Debug for WindowsCefTracker {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter.write_str("WindowsCefTracker([redacted])")
+    }
+}
+
+impl std::fmt::Debug for WindowsCefTrackerHandle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("WindowsCefTrackerHandle([redacted])")
     }
 }

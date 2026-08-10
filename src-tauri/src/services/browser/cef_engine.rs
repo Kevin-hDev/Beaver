@@ -1,4 +1,5 @@
 use super::cef_app::BrowserApp;
+use super::cef_child_admission::BrowserCefSupervision;
 use super::cef_engine_config::{prepare_profile, to_cef_settings};
 use super::cef_surface::BrowserSurfaceManager;
 #[cfg(target_os = "windows")]
@@ -24,6 +25,8 @@ struct CefEngine {
     pump: PumpScheduler,
     surface: BrowserSurfaceManager,
     _app: App,
+    #[cfg(target_os = "windows")]
+    _tracker: super::cef_supervision::WindowsCefTracker,
 }
 
 pub(super) fn initialize(
@@ -61,6 +64,9 @@ fn initialize_inner(
     #[cfg(target_os = "macos")]
     let files = library.runtime_files();
     let profile = prepare_profile()?;
+    #[cfg(target_os = "windows")]
+    let tracker =
+        super::cef_supervision::WindowsCefTracker::start(&files.helper).map_err(|_| ())?;
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::new();
     #[cfg(target_os = "macos")]
@@ -73,7 +79,11 @@ fn initialize_inner(
         validate_browser_process_result(process_result)?;
     }
     let pump = PumpScheduler::new(app);
-    let mut cef_app = BrowserApp::new(pump.clone(), runtime, profile.clone());
+    let supervision = BrowserCefSupervision::new(
+        #[cfg(target_os = "windows")]
+        tracker.handle(),
+    );
+    let mut cef_app = BrowserApp::new(pump.clone(), runtime, profile.clone(), supervision);
     let settings = to_cef_settings(cef_settings_policy(&profile, &files.helper));
     #[cfg(target_os = "macos")]
     let sandbox_info = std::ptr::null_mut();
@@ -94,6 +104,8 @@ fn initialize_inner(
             pump: pump.clone(),
             surface: BrowserSurfaceManager::new(),
             _app: cef_app,
+            #[cfg(target_os = "windows")]
+            _tracker: tracker,
         });
     });
     Ok(())

@@ -1,4 +1,6 @@
 mod authority_slot;
+#[cfg(windows)]
+mod bootstrap;
 mod constants;
 mod diagnostics;
 mod gate;
@@ -14,6 +16,9 @@ mod slots;
 mod windows;
 
 pub(super) use super::process_role::CefProcessRole;
+#[cfg(windows)]
+pub(crate) use bootstrap::WindowsHelperAdmission;
+pub(crate) use constants::CEF_ADMISSION_SWITCH;
 pub(super) use constants::CEF_SLOT_CAPACITY;
 pub(super) use diagnostics::CefUnavailableCategory;
 pub(super) use gate::CefLaunchGate;
@@ -24,6 +29,8 @@ pub(super) use shared_layout::{
     CefControlPage, CefEventPage, CefMailboxPage, CefSharedLayoutError,
 };
 pub(super) use slots::{CefAuthorityTable, CefTableError};
+#[cfg(windows)]
+pub(super) use windows::{WindowsCefTracker, WindowsCefTrackerHandle};
 
 #[cfg(test)]
 mod ipc_tests;
