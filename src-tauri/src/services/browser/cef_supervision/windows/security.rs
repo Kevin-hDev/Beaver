@@ -55,13 +55,7 @@ impl WindowsObjectSecurity {
     pub(in crate::services::browser) fn new(
         kind: WindowsObjectKind,
     ) -> Result<Self, CefUnavailableCategory> {
-        let user = crate::services::private_store::current_windows_user()
-            .map_err(|_| CefUnavailableCategory::Permission)?;
-        let user_sid = sid_text(user.sid())?;
-        let sddl = format!(
-            "D:P(A;;GA;;;{user_sid})(A;;0x{:08x};;;RC)S:(ML;;NW;;;{UNTRUSTED_MANDATORY_LABEL_SID})",
-            kind.helper_access(),
-        );
+        let sddl = descriptor_sddl(kind)?;
         if sddl.encode_utf16().count() >= MAX_SDDL_UNITS || sddl.contains('\0') {
             return Err(CefUnavailableCategory::Permission);
         }
@@ -94,6 +88,13 @@ impl WindowsObjectSecurity {
 
     pub(in crate::services::browser) fn attributes(&self) -> SECURITY_ATTRIBUTES {
         self.attributes
+    }
+
+    #[cfg(test)]
+    pub(in crate::services::browser) fn sddl_for_test(
+        kind: WindowsObjectKind,
+    ) -> Result<String, CefUnavailableCategory> {
+        descriptor_sddl(kind)
     }
 }
 
@@ -128,4 +129,14 @@ impl Drop for LocalText {
             unsafe { LocalFree(self.0) };
         }
     }
+}
+
+fn descriptor_sddl(kind: WindowsObjectKind) -> Result<String, CefUnavailableCategory> {
+    let user = crate::services::private_store::current_windows_user()
+        .map_err(|_| CefUnavailableCategory::Permission)?;
+    let user_sid = sid_text(user.sid())?;
+    Ok(format!(
+        "D:P(A;;GA;;;{user_sid})(A;;0x{:08x};;;RC)S:(ML;;NW;;;{UNTRUSTED_MANDATORY_LABEL_SID})",
+        kind.helper_access(),
+    ))
 }
