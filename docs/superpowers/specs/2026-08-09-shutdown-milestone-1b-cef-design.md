@@ -62,6 +62,22 @@ Le helper ouvre sa boîte, sa page de contrôle et ses événements, puis crée 
 
 Le reaper parent précréé rescane les générations admises et revalide l'identité avant chaque signal. Le moniteur du helper s'auto-termine si le parent disparaît ou au plus tard une seconde avant la sortie brute. Il ne suppose pas que Seatbelt l'autorise à signaler tout son groupe.
 
+## Contrat du dossier Cargo Windows
+
+Le build empaqueté Windows conserve un dossier Cargo court afin de ne pas réintroduire les dépassements de chemins rencontrés pendant la compilation CEF. `scripts/cef/tauri-launch.mjs` reste l'unique autorité qui choisit ce dossier : valeur configurée validée lorsqu'elle existe, sinon `target` à la racine du worktree. La valeur effective est absolue et transmise par `CARGO_TARGET_DIR` à Cargo ainsi qu'à chaque étape qui relit un artefact compilé.
+
+Les consommateurs n'inventent plus leur propre chemin :
+
+- le préparateur de l'updater lit son binaire dans le dossier Cargo effectif ;
+- `prepare-cef-windows.ps1` lit `cl_go_dash_lib.dll` et `cl-go-dash.exe` dans ce même dossier ;
+- les dossiers `src-tauri/target/updater-helper` et `src-tauri/target/cef-runtime/windows` restent des destinations de ressources Tauri, pas des dossiers d'artefacts Cargo ;
+- en exécution directe sans `CARGO_TARGET_DIR`, les scripts conservent le repli historique `src-tauri/target` ;
+- macOS, Linux, le profil E2E et les runtimes d'extensions ne changent pas de dossier dans ce correctif.
+
+Toute valeur configurée est bornée, sans caractère de contrôle ni segment `..`, normalisée une seule fois par le lanceur puis revalidée avant lecture. Un chemin absent, ambigu, lié ou incohérent fait échouer la préparation ; aucun script ne cherche silencieusement dans un second dossier.
+
+La preuve comprend les dossiers par défaut et personnalisés, une cible Rust explicite, les chemins invalides, un contrat interdisant aux lecteurs d'artefacts Windows de recoder `src-tauri/target/release`, puis un vrai `npm run tauri build`. La CI complète Windows/macOS/Linux est rejouée après la correction.
+
 ## Tests obligatoires
 
 - arrêt natif CEF normal suivi du balayage final dans l'ordre existant ;
