@@ -64,19 +64,20 @@ Le reaper parent précréé rescane les générations admises et revalide l'iden
 
 ## Contrat du dossier Cargo Windows
 
-Le build empaqueté Windows conserve un dossier Cargo court afin de ne pas réintroduire les dépassements de chemins rencontrés pendant la compilation CEF. `scripts/cef/tauri-launch.mjs` reste l'unique autorité qui choisit ce dossier : valeur configurée validée lorsqu'elle existe, sinon `target` à la racine du worktree. La valeur effective est absolue et transmise par `CARGO_TARGET_DIR` à Cargo ainsi qu'à chaque étape qui relit un artefact compilé.
+Le build empaqueté Windows conserve un dossier Cargo court afin de ne pas réintroduire les dépassements de chemins rencontrés pendant la compilation CEF. `scripts/cef/tauri-launch.mjs` reste l'unique autorité locale qui choisit ce dossier : valeur configurée validée lorsqu'elle existe, sinon `target` à la racine du worktree. La valeur effective est absolue et transmise par `CARGO_TARGET_DIR` à Cargo ainsi qu'à chaque étape qui relit un artefact compilé. Un job CI qui sépare le build de la relecture configure cette même valeur au niveau du job, avant le build, car l'environnement d'un processus enfant ne remonte pas vers une étape sœur.
 
 Les consommateurs n'inventent plus leur propre chemin :
 
 - le préparateur de l'updater lit son binaire dans le dossier Cargo effectif ;
 - `prepare-cef-windows.ps1` lit `cl_go_dash_lib.dll` et `cl-go-dash.exe` dans ce même dossier ;
 - les dossiers `src-tauri/target/updater-helper` et `src-tauri/target/cef-runtime/windows` restent des destinations de ressources Tauri, pas des dossiers d'artefacts Cargo ;
-- en exécution directe sans `CARGO_TARGET_DIR`, les scripts conservent le repli historique `src-tauri/target` ;
+- le préparateur updater peut conserver le repli historique `src-tauri/target` en exécution directe, car il recompile lui-même le binaire exact avant de le copier ;
+- `prepare-cef-windows.ps1` refuse au contraire de relire un artefact sans `CARGO_TARGET_DIR` explicite : il consomme l'exécutable principal construit par Tauri et ne doit jamais accepter silencieusement un ancien `src-tauri/target` ;
 - macOS, Linux, le profil E2E et les runtimes d'extensions ne changent pas de dossier dans ce correctif.
 
 Toute valeur configurée est bornée, sans caractère de contrôle ni segment `..`, normalisée une seule fois par le lanceur puis revalidée avant lecture. Un chemin absent, ambigu, lié ou incohérent fait échouer la préparation ; aucun script ne cherche silencieusement dans un second dossier.
 
-La preuve comprend les dossiers par défaut et personnalisés, une cible Rust explicite, les chemins invalides, un contrat interdisant aux lecteurs d'artefacts Windows de recoder `src-tauri/target/release`, puis un vrai `npm run tauri build`. La CI complète Windows/macOS/Linux est rejouée après la correction.
+La preuve comprend les dossiers par défaut et personnalisés, une cible Rust explicite, les chemins invalides, le refus CEF sans autorité explicite, la propagation entre étapes sœurs du job de release, un contrat interdisant aux lecteurs d'artefacts Windows de recoder `src-tauri/target/release`, puis un vrai `npm run tauri build`. La CI complète Windows/macOS/Linux est rejouée après la correction.
 
 ## Tests obligatoires
 

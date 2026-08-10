@@ -7,7 +7,7 @@ const NPM_CLI_FILENAME = "npm-cli.js";
 
 export async function createNpmInvocation(
   args,
-  npmCliPath = process.env.npm_execpath,
+  npmCliPath = npmCliPathFromEnvironment(process.env),
 ) {
   if (!validArguments(args) || !validCliPath(npmCliPath)) {
     throw new Error("Invalid npm runtime");
@@ -34,6 +34,11 @@ export async function createNpmInvocation(
   } catch {
     throw new Error("Invalid npm runtime");
   }
+}
+
+export function npmCliPathFromEnvironment(environment) {
+  if (typeof environment !== "object" || environment === null) return undefined;
+  return environment.BEAVER_NPM_CLI_PATH ?? environment.npm_execpath;
 }
 
 function validArguments(args) {

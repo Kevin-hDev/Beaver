@@ -29,6 +29,9 @@ try {
     toolPath,
   });
   const environment = { ...process.env, PATH: launch.path };
+  if (typeof process.env.npm_execpath === "string") {
+    environment.BEAVER_NPM_CLI_PATH = process.env.npm_execpath;
+  }
   const cargoTargetDir = resolveCargoTargetDir({
     configuredTargetDir: process.env.CARGO_TARGET_DIR,
     platform: process.platform,

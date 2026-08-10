@@ -41,7 +41,9 @@ fn windows_bundle_hook_pins_and_verifies_the_cef_bootstrap() {
     assert!(script.contains("LICENSE.txt"));
     assert!(script.contains("CREDITS.html"));
     assert!(script.contains("$env:CARGO_BUILD_TARGET"));
-    assert!(script.contains("target\\$BuildTarget\\release"));
+    assert!(script.contains("cargo-target-dir.mjs"));
+    assert!(script.contains("Join-Path $CargoTargetRoot \"$BuildTarget\\release\""));
+    assert!(!script.contains("Join-Path $TauriDir \"target\\release\""));
     let library_build = script
         .find("cargo build --release --lib")
         .expect("explicit Windows application DLL build");
@@ -74,6 +76,8 @@ fn windows_release_exposes_the_explicit_cargo_target_to_the_bundle_hook() {
         .expect("release workflow");
 
     assert!(workflow.contains("CARGO_BUILD_TARGET: ${{ matrix.target }}"));
+    assert!(workflow.contains("CARGO_TARGET_DIR=$target"));
+    assert!(workflow.contains("Out-File -FilePath $env:GITHUB_ENV"));
     assert!(workflow.contains("- os: windows-latest"));
 }
 

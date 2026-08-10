@@ -178,6 +178,13 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Configure Windows Cargo target
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $target = [IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "target"))
+          "CARGO_TARGET_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Build Tauri app without publishing
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
