@@ -1,22 +1,10 @@
 Problème
-Après une CI entièrement verte, l'inspection explicite des journaux a montré un avertissement masqué : actions/upload-artifact v4 était encore forcée de Node.js 20 vers Node.js 24. Le workflow de release utilisait aussi download-artifact v4, qui aurait produit la même dette lors d'une publication.
+Une première CI verte avait révélé un avertissement caché sur les actions d'artefacts encore liées à Node.js 20. Ce commit a migré download-artifact vers v7.0.0 et upload-artifact vers v5.0.0 sans changer les entrées des workflows.
 
-Objectif
-Terminer la migration Node.js 24 des actions d'artefacts dans la CI et la chaîne de release, sans modifier les noms, chemins, durées de rétention ni règles de validation des artefacts.
+Décisions réellement appliquées
+- download-artifact v7.0.0 est la première version dont action.yml active réellement node24 ; les téléchargements Beaver sont par nom, donc son changement de comportement pour artifact-ids ne s'applique pas.
+- upload-artifact v5.0.0 annonçait un support préliminaire Node.js 24, mais son manifeste restait sur node20. La CI suivante a objectivement montré que ce choix ne supprimait pas l'avertissement.
+- Le correctif définitif d'upload-artifact est apporté par le commit suivant, qui passe à v6.0.0 après vérification directe de runs.using=node24.
 
-Décisions
-- Utiliser actions/upload-artifact v5.0.0, première version officielle de cette action exécutée sur Node.js 24, épinglée au SHA 330a01c490aca151604b8cf639adc76d48f6c5d4.
-- Utiliser actions/download-artifact v7.0.0, première version dont le manifeste active réellement node24 par défaut, épinglée au SHA 37930b1c2abaa49bbe596cd826c3c89aef350131.
-- Mettre à jour toutes les occurrences CI et release pour éviter de déplacer l'avertissement vers une future publication.
-- Ne pas utiliser les versions majeures les plus récentes lorsqu'elles n'apportent rien à l'objectif.
-- Le changement de chemin connu de download-artifact ne concerne que les téléchargements par artifact-ids ; Beaver télécharge exclusivement par name, donc le layout de release reste inchangé.
-- Les workflows utilisent des runners GitHub hébergés, compatibles avec le runtime Node.js 24 requis.
-
-Validation
-- Les manifests officiels des actions et les tags/SHA ont été vérifiés via l'API GitHub.
-- Prettier valide ci.yml et release.yml.
-- 44/44 tests des scripts de build passent.
-- Aucune occurrence des anciens SHA upload/download v4 ne reste dans .github/workflows.
-- Les cinq téléchargements de release utilisent name et aucun artifact-ids.
-- git diff --check passe.
-- Graphify a été synchronisé et n'a détecté aucun changement de topologie.
+Pourquoi conserver cette note corrigée
+Le reviewer doit voir la décision initiale et sa limite réelle, plutôt qu'une justification devenue fausse après observation CI. Le contenu fonctionnel de release ajouté ici pour download-artifact reste correct ; seule la version upload-artifact nécessitait le suivi.
