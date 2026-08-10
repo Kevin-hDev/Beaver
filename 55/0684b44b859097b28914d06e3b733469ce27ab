@@ -1,0 +1,24 @@
+Problème
+Le bootstrap Windows appliquait une limite globale de 64 arguments et 2048 unités UTF-16 à toute la ligne Chromium, convertissait chaque argument en Unicode et refusait explicitement le helper d'isolation du shell. Dans un build empaqueté, ce helper repasse pourtant par RunWinMain : il devenait inutilisable. Une vraie ligne CEF longue ou opaque pouvait également être rejetée avant son admission.
+
+Objectif
+Donner une décision de rôle unique et fail-closed au bootstrap sans interpréter ni limiter les arguments qui appartiennent à Chromium ou à la commande shell.
+
+Décisions
+- Les rôles Parent, CefHelper, ShellSandbox et invalide sont mutuellement exclusifs.
+- Le rôle shell n'est reconnu qu'en tête de la ligne, puis seul son en-tête est contrôlé ; le payload après -- reste la responsabilité du parseur shell existant.
+- Le helper shell est exécuté avant toute configuration ou branche CEF, comme dans le binaire de développement.
+- Le classificateur CEF parcourt les OsString sans recopier les arguments ordinaires ; seuls les switches privés Beaver sont décodés et bornés.
+- Les arguments non Unicode, longs ou plus nombreux que 64 restent acceptés s'ils ne sont pas privés.
+- Le forwarding du bootstrap de développement n'a plus de plafond arbitraire : sa collection est bornée par les 32767 unités UTF-16 de CreateProcess, null, séparateurs, guillemets et échappements compris.
+- Toute tentative --module reste refusée, y compris avec une valeur opaque.
+- La logique d'arguments et ses tests sont séparés de la gestion des fichiers afin de garder chaque fichier de production sous 230 lignes.
+
+Preuves
+- TDD rouge reproduit : rôle ShellSandbox absent, plus de 64 arguments refusés, signature sans limite CreateProcess.
+- 13 tests du routeur et de la préparation Windows réussis.
+- 2 tests voisins du helper shell réussis.
+- cargo check --lib --features cef-cross-check réussi sur le vrai module windows_entry.
+- cargo clippy --lib --features cef-cross-check -- -D warnings réussi.
+- cargo fmt --check et git diff --check réussis.
+- Le cargo check CEF natif sans profil reste non vérifiable dans ce shell local : MSVC ne retrouve pas stdint.h hors environnement développeur ; ce défaut d'environnement est distinct et le profil cef-cross-check compile le code Rust touché.
