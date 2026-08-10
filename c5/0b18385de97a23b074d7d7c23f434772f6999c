@@ -1,0 +1,16 @@
+Problème
+Le passage des actions de cache CEF à actions/cache v6.1.0 avait oublié le workflow audit.yml. Ce quatrième appel utilisait encore la v4 embarquant Node.js 20 et conservait donc l'avertissement de dépréciation GitHub.
+
+Objectif
+Aligner tous les workflows sur la même action compatible Node.js 24 sans modifier le comportement des caches.
+
+Décisions
+- Épingler actions/cache v6.1.0 sur le SHA immuable 55cc8345863c7cc4c66a329aec7e433d2d1c52a9.
+- Conserver exactement la clé, le chemin et les conditions du cache cargo-audit.
+- Ne toucher à aucun autre comportement du workflow.
+
+Validation
+- Prettier valide audit.yml.
+- Les quatre occurrences actions/cache des workflows utilisent désormais le même SHA v6.1.0.
+- Aucun ancien SHA v4 ne subsiste dans .github/workflows.
+- git diff --check passe.
