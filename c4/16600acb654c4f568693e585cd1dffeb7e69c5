@@ -1,0 +1,22 @@
+Problème
+Après une CI entièrement verte, l'inspection explicite des journaux a montré un avertissement masqué : actions/upload-artifact v4 était encore forcée de Node.js 20 vers Node.js 24. Le workflow de release utilisait aussi download-artifact v4, qui aurait produit la même dette lors d'une publication.
+
+Objectif
+Terminer la migration Node.js 24 des actions d'artefacts dans la CI et la chaîne de release, sans modifier les noms, chemins, durées de rétention ni règles de validation des artefacts.
+
+Décisions
+- Utiliser actions/upload-artifact v5.0.0, première version officielle de cette action exécutée sur Node.js 24, épinglée au SHA 330a01c490aca151604b8cf639adc76d48f6c5d4.
+- Utiliser actions/download-artifact v7.0.0, première version dont le manifeste active réellement node24 par défaut, épinglée au SHA 37930b1c2abaa49bbe596cd826c3c89aef350131.
+- Mettre à jour toutes les occurrences CI et release pour éviter de déplacer l'avertissement vers une future publication.
+- Ne pas utiliser les versions majeures les plus récentes lorsqu'elles n'apportent rien à l'objectif.
+- Le changement de chemin connu de download-artifact ne concerne que les téléchargements par artifact-ids ; Beaver télécharge exclusivement par name, donc le layout de release reste inchangé.
+- Les workflows utilisent des runners GitHub hébergés, compatibles avec le runtime Node.js 24 requis.
+
+Validation
+- Les manifests officiels des actions et les tags/SHA ont été vérifiés via l'API GitHub.
+- Prettier valide ci.yml et release.yml.
+- 44/44 tests des scripts de build passent.
+- Aucune occurrence des anciens SHA upload/download v4 ne reste dans .github/workflows.
+- Les cinq téléchargements de release utilisent name et aucun artifact-ids.
+- git diff --check passe.
+- Graphify a été synchronisé et n'a détecté aucun changement de topologie.
