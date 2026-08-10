@@ -55,6 +55,14 @@ impl CefClaim {
             key: Some(key),
         })
     }
+
+    pub(super) fn slot(&self) -> usize {
+        self.key.map_or(usize::MAX, |key| key.index())
+    }
+
+    pub(super) fn generation(&self) -> u64 {
+        self.key.map_or(0, |key| key.generation())
+    }
 }
 
 impl fmt::Debug for CefClaim {
