@@ -2,7 +2,7 @@ use super::cef_supervision::{parse_helper_marker, MacHelperBootstrap};
 use cef::{args::Args, *};
 use zeroize::Zeroize;
 
-pub(super) fn run() -> std::process::ExitCode {
+pub(crate) fn run() -> std::process::ExitCode {
     let mut marker = match parse_helper_marker() {
         Ok(marker) => marker,
         Err(_) => return std::process::ExitCode::FAILURE,
