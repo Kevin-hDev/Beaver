@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback, createContext } from "react";
+import { useState, useEffect, useCallback, createContext, useContext } from "react";
 import type { ReactNode } from "react";
-import { Check } from "@/components/ui/icons";
+import { Check, X } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
-import { registerToast, type ToastType } from "@/lib/toast-emitter";
+import {
+  registerToast,
+  type ToastOptions,
+  type ToastType,
+} from "@/lib/toast-emitter";
 import "./toast.css";
 
 interface Toast {
@@ -10,10 +14,16 @@ interface Toast {
   message: string;
   type: ToastType;
   duration: number;
+  options?: ToastOptions;
 }
 
 interface ToastContextValue {
-  show: (message: string, type?: ToastType, duration?: number) => void;
+  show: (
+    message: string,
+    type?: ToastType,
+    duration?: number,
+    options?: ToastOptions,
+  ) => void;
 }
 
 const ToastContext = createContext<ToastContextValue>({ show: () => {} });
@@ -34,11 +44,22 @@ let nextId = 0;
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const show = useCallback((message: string, type: ToastType = "info", duration?: number) => {
-    const id = nextId++;
-    const ms = duration ?? DEFAULT_DURATIONS[type];
-    setToasts((prev) => [...prev, { id, message, type, duration: ms }].slice(-MAX_TOASTS));
-  }, []);
+  const show = useCallback(
+    (
+      message: string,
+      type: ToastType = "info",
+      duration?: number,
+      options?: ToastOptions,
+    ) => {
+      const id = nextId++;
+      const ms = duration ?? DEFAULT_DURATIONS[type];
+      setToasts((prev) => [
+        ...prev,
+        { id, message, type, duration: ms, options },
+      ].slice(-MAX_TOASTS));
+    },
+    [],
+  );
 
   useEffect(() => { registerToast(show); }, [show]);
 
@@ -58,11 +79,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export function useToast(): ToastContextValue {
+  return useContext(ToastContext);
+}
+
 function ToastItem({ toast, onDone }: { toast: Toast; onDone: () => void }) {
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setExiting(true), toast.duration - EXIT_DURATION);
+    const fadeTimer = setTimeout(
+      () => setExiting(true),
+      Math.max(0, toast.duration - EXIT_DURATION),
+    );
     const removeTimer = setTimeout(onDone, toast.duration);
     return () => {
       clearTimeout(fadeTimer);
@@ -80,7 +108,39 @@ function ToastItem({ toast, onDone }: { toast: Toast; onDone: () => void }) {
     );
   }
 
-  return <div className={cls}>{toast.message}</div>;
+  const role = toast.type === "error" ? "alert" : "status";
+  const runAction = () => {
+    try {
+      toast.options?.action?.onClick();
+    } finally {
+      onDone();
+    }
+  };
+
+  return (
+    <div className={cls} role={role}>
+      <span className="toast-message">{toast.message}</span>
+      {(toast.options?.action || toast.options?.dismissLabel) && (
+        <span className="toast-actions">
+          {toast.options.action && (
+            <button type="button" className="toast-action" onClick={runAction}>
+              {toast.options.action.label}
+            </button>
+          )}
+          {toast.options.dismissLabel && (
+            <button
+              type="button"
+              className="toast-dismiss"
+              aria-label={toast.options.dismissLabel}
+              onClick={onDone}
+            >
+              <X size="var(--icon-sm)" aria-hidden="true" />
+            </button>
+          )}
+        </span>
+      )}
+    </div>
+  );
 }
 
 interface InlineToastProps {

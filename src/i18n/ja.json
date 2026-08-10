@@ -1031,7 +1031,10 @@
     "operationFailed": "ブラウザーはこの操作を完了できませんでした。",
     "loading": "ブラウザーを読み込み中…",
     "blockedFeature": "この機能は現在のバージョンでは無効です。",
-    "unavailable": "安全なブラウザーは利用できません。"
+    "unavailable": "安全なブラウザーは利用できません。",
+    "recoveryUnavailable": "組み込みブラウザーを起動できませんでした。Beaver は引き続き使用できます。",
+    "restartApplication": "Beaver を再起動",
+    "dismissRecovery": "通知を閉じる"
   },
   "filePreview": {
     "closeTab": "タブを閉じる",

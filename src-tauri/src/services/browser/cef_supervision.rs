@@ -2,7 +2,6 @@ mod authority_slot;
 #[cfg(windows)]
 mod bootstrap;
 mod constants;
-mod diagnostics;
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 pub(super) mod emergency;
 mod gate;
@@ -19,6 +18,7 @@ mod slots;
 #[cfg(windows)]
 mod windows;
 
+pub(super) use super::cef_unavailable::CefUnavailableCategory;
 pub(super) use super::process_role::CefProcessRole;
 #[cfg(all(windows, not(feature = "windows-tests")))]
 pub(crate) use bootstrap::WindowsHelperAdmission;
@@ -26,7 +26,6 @@ pub(crate) use bootstrap::WindowsHelperAdmission;
 pub(crate) use constants::CEF_ADMISSION_SWITCH;
 #[cfg(test)]
 pub(super) use constants::CEF_SLOT_CAPACITY;
-pub(super) use diagnostics::CefUnavailableCategory;
 #[cfg(test)]
 pub(super) use gate::CefLaunchGate;
 pub(super) use ipc_names::CefIpcNames;
@@ -42,7 +41,7 @@ pub(super) use role_marker::{CefLaunchMarker, CefMarkerError};
 pub(super) use shared_layout::CefEventPage;
 pub(super) use shared_layout::{CefControlPage, CefMailboxPage, CefSharedLayoutError};
 pub(super) use slots::{CefAuthorityTable, CefTableError};
-#[cfg(windows)]
+#[cfg(all(windows, not(feature = "windows-tests")))]
 pub(super) use windows::{WindowsCefTracker, WindowsCefTrackerHandle};
 
 #[cfg(test)]

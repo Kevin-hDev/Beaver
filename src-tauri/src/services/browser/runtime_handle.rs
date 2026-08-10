@@ -29,7 +29,7 @@ pub enum BrowserCapability {
             reason = "native-only capability kept in the shared IPC schema"
         )
     )]
-    Unavailable,
+    Unavailable { restart_recommended: bool },
     #[cfg_attr(
         all(not(test), any(target_os = "macos", target_os = "windows")),
         expect(
@@ -58,13 +58,20 @@ impl BrowserRuntimeHandle {
     #[cfg(any(test, target_os = "macos", target_os = "windows"))]
     pub fn capability(&self) -> BrowserCapability {
         let Ok(lifecycle) = self.lifecycle.lock() else {
-            return BrowserCapability::Unavailable;
+            return BrowserCapability::Unavailable {
+                restart_recommended: true,
+            };
         };
         match lifecycle.phase() {
             RuntimePhase::Running => BrowserCapability::Ready {
                 engine_version: CEF_VERSION.to_string(),
             },
-            _ => BrowserCapability::Unavailable,
+            RuntimePhase::Failed => BrowserCapability::Unavailable {
+                restart_recommended: true,
+            },
+            _ => BrowserCapability::Unavailable {
+                restart_recommended: false,
+            },
         }
     }
 

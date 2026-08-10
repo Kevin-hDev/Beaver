@@ -31,11 +31,11 @@ pub(super) const WINDOWS_RUNTIME_FILES: [&str; 23] = [
     "locales/zh-CN.pak",
 ];
 #[cfg(any(test, target_os = "windows"))]
-const MAX_RUNTIME_FILE_BYTES: u64 = 512 * 1024 * 1024;
+pub(super) const MAX_RUNTIME_FILE_BYTES: u64 = 512 * 1024 * 1024;
 #[cfg(any(test, target_os = "windows"))]
 const WINDOWS_RELEASE_BOOTSTRAP: &str = "cl-go-dash.exe";
 #[cfg(any(test, target_os = "windows"))]
-const WINDOWS_RELEASE_MODULE: &str = "cl-go-dash.dll";
+pub(super) const WINDOWS_RELEASE_MODULE: &str = "cl-go-dash.dll";
 #[cfg(any(test, target_os = "windows"))]
 const WINDOWS_DEVELOPMENT_BOOTSTRAP: &str = "cl_go_dash_lib.exe";
 #[cfg(any(test, target_os = "windows"))]
@@ -55,8 +55,8 @@ pub(super) fn framework_candidates(
     downloaded_cef_dir: Option<&Path>,
 ) -> Vec<PathBuf> {
     let mut candidates = Vec::with_capacity(2);
-    if let Some(contents) = bundle_contents(executable) {
-        candidates.push(contents.join("Frameworks").join(FRAMEWORK_BINARY));
+    if let Some(root) = bundle_framework_root(executable) {
+        candidates.push(root.join(FRAMEWORK_BINARY));
     }
     if let Some(downloaded) = downloaded_cef_dir {
         candidates.push(downloaded.join(FRAMEWORK_BINARY));
@@ -73,12 +73,12 @@ pub(super) fn helper_executable(executable: &Path) -> Option<PathBuf> {
     )
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(test, target_os = "macos"))]
 pub(super) fn resolve_runtime_files(
     executable: &Path,
     downloaded_cef_dir: Option<&Path>,
 ) -> Option<RuntimeFiles> {
-    let bundle_root = bundle_contents(executable)?.join("Frameworks");
+    let bundle_root = bundle_framework_root(executable)?;
     let canonical_bundle_root = bundle_root.canonicalize().ok()?;
     let helper = helper_executable(executable)?.canonicalize().ok()?;
     if !helper.is_file() || !helper.starts_with(&canonical_bundle_root) {
@@ -101,17 +101,7 @@ pub(super) fn resolve_runtime_files(
     None
 }
 
-#[cfg(target_os = "windows")]
-pub(super) fn resolve_runtime_files(
-    executable: &Path,
-    _downloaded_cef_dir: Option<&Path>,
-) -> Option<RuntimeFiles> {
-    Some(RuntimeFiles {
-        helper: resolve_windows_runtime_files(executable)?,
-    })
-}
-
-#[cfg(any(test, target_os = "windows"))]
+#[cfg(test)]
 pub(super) fn resolve_windows_runtime_files(executable: &Path) -> Option<PathBuf> {
     let helper = executable.canonicalize().ok()?;
     if !private_regular_file(&helper) {
@@ -139,8 +129,13 @@ pub(super) fn resolve_windows_runtime_files(executable: &Path) -> Option<PathBuf
     Some(helper)
 }
 
+#[cfg(target_os = "macos")]
+pub(super) fn bundle_framework_root(executable: &Path) -> Option<PathBuf> {
+    Some(bundle_contents(executable)?.join("Frameworks"))
+}
+
 #[cfg(any(test, target_os = "windows"))]
-fn windows_application_module(executable: &Path) -> Option<&'static str> {
+pub(super) fn windows_application_module(executable: &Path) -> Option<&'static str> {
     let name = executable.file_name()?.to_str()?;
     if name.eq_ignore_ascii_case(WINDOWS_RELEASE_BOOTSTRAP) {
         return Some(WINDOWS_RELEASE_MODULE);
@@ -151,7 +146,7 @@ fn windows_application_module(executable: &Path) -> Option<&'static str> {
     None
 }
 
-#[cfg(any(test, target_os = "windows"))]
+#[cfg(test)]
 fn private_regular_file(path: &Path) -> bool {
     path.symlink_metadata().is_ok_and(|metadata| {
         metadata.file_type().is_file()

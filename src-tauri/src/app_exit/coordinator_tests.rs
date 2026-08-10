@@ -1,7 +1,7 @@
 use super::policy::ShutdownPolicy;
 use super::state::ShutdownPhase;
 use super::ultimate::{RawExitActions, UltimateExit};
-use super::{AppExitCoordinator, BeginResult};
+use super::{AppExitCoordinator, BeginResult, ExitIntent};
 use crate::services::browser::CefShutdownBarrier;
 use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
@@ -26,7 +26,10 @@ fn first_close_owns_cleanup_and_arms_the_ultimate_guard() {
     let admission = coordinator.admit_for_test().expect("admission");
     let cancellation = admission.cancellation_token();
 
-    assert!(matches!(coordinator.begin(4), BeginResult::Started(_)));
+    assert!(matches!(
+        coordinator.begin(4),
+        BeginResult::Started(_, ExitIntent::Exit)
+    ));
     assert!(cancellation.is_cancelled());
     assert!(coordinator.ultimate_is_armed_for_test());
     assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Closing);
@@ -38,7 +41,10 @@ fn first_close_owns_cleanup_and_arms_the_ultimate_guard() {
 #[test]
 fn admission_is_permanently_closed_before_closing_is_visible() {
     let coordinator = coordinator();
-    assert!(matches!(coordinator.begin(0), BeginResult::Started(_)));
+    assert!(matches!(
+        coordinator.begin(0),
+        BeginResult::Started(_, ExitIntent::Exit)
+    ));
     assert!(coordinator.admit_for_test().is_err());
     assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Closing);
 }
@@ -49,7 +55,7 @@ fn cef_barrier_timeout_keeps_coordinated_shutdown_running() {
 
     let result = coordinator.begin_with_cef_close(0, |_, _| CefShutdownBarrier::TimedOut);
 
-    assert!(matches!(result, BeginResult::Started(_)));
+    assert!(matches!(result, BeginResult::Started(_, ExitIntent::Exit)));
     assert!(coordinator.ultimate_is_armed_for_test());
     assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Closing);
 }
@@ -92,11 +98,35 @@ fn concurrent_close_requests_never_observe_a_partial_transition() {
     assert_eq!(
         results
             .iter()
-            .filter(|result| matches!(result, BeginResult::Started(_)))
+            .filter(|result| matches!(result, BeginResult::Started(_, ExitIntent::Exit)))
             .count(),
         1
     );
-    assert!(results
-        .iter()
-        .all(|result| { matches!(result, BeginResult::Started(_) | BeginResult::Waiting) }));
+    assert!(results.iter().all(|result| {
+        matches!(
+            result,
+            BeginResult::Started(_, ExitIntent::Exit) | BeginResult::Waiting
+        )
+    }));
+}
+
+#[test]
+fn first_shutdown_intent_is_immutable_and_restart_keeps_the_raw_exit_safe() {
+    let coordinator = coordinator();
+
+    assert_eq!(
+        super::request_flow::requested_intent(Some(tauri::RESTART_EXIT_CODE)),
+        (ExitIntent::Restart, 0)
+    );
+
+    let started =
+        coordinator.begin_with_intent(ExitIntent::Restart, 0, |_, _| CefShutdownBarrier::Drained);
+
+    assert!(matches!(
+        started,
+        BeginResult::Started(_, ExitIntent::Restart)
+    ));
+    assert_eq!(coordinator.intent_for_test(), Some(ExitIntent::Restart));
+    assert_eq!(coordinator.begin(9), BeginResult::Waiting);
+    assert_eq!(coordinator.intent_for_test(), Some(ExitIntent::Restart));
 }

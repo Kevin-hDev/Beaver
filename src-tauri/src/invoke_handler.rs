@@ -3,6 +3,7 @@ macro_rules! generate {
         crate::invoke_handler_tail::generate_tail![
             crate::commands::get_config,
             crate::commands::browser_capability,
+            crate::commands::restart_application,
             crate::commands::browser_surface,
             crate::commands::browser_open_session,
             crate::commands::browser_create_tab,

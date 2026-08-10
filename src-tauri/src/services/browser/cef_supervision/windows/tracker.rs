@@ -7,6 +7,7 @@ use super::native_authority::WindowsNativeAuthority;
 use super::objects::WindowsPublicationObjects;
 use super::tracker_loop::run_tracker;
 use super::tracker_pending::{WindowsPendingLaunch, WindowsPendingSlots};
+use crate::services::browser::cef_preflight::CefPreflightError;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
@@ -43,25 +44,26 @@ impl WindowsCefTracker {
     pub(in crate::services::browser) fn start(
         expected_executable: &Path,
     ) -> Result<Self, CefUnavailableCategory> {
-        Self::start_inner(expected_executable, None)
+        Self::start_inner(expected_executable, None).map_err(CefPreflightError::category)
     }
 
     pub(in crate::services::browser) fn start_supervised(
         expected_executable: &Path,
         app: tauri::AppHandle,
-    ) -> Result<Self, CefUnavailableCategory> {
+    ) -> Result<Self, CefPreflightError> {
         let tracker = Self::start_inner(expected_executable, Some(app))?;
         super::super::emergency::register_windows(Arc::clone(&tracker.shared))
-            .map_err(|_| CefUnavailableCategory::Reaper)?;
+            .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Reaper))?;
         Ok(tracker)
     }
 
     fn start_inner(
         expected_executable: &Path,
         shutdown_app: Option<tauri::AppHandle>,
-    ) -> Result<Self, CefUnavailableCategory> {
-        let expected_executable = super::process_query::canonical_executable(expected_executable)
-            .map_err(|_| CefUnavailableCategory::Reaper)?;
+    ) -> Result<Self, CefPreflightError> {
+        let expected_executable =
+            super::process_query::canonical_executable(expected_executable)
+                .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Reaper))?;
         let shared = Arc::new(WindowsTrackerShared {
             table: CefAuthorityTable::new(),
             native: WindowsNativeAuthority::new(),
@@ -84,7 +86,7 @@ impl WindowsCefTracker {
                     failure.fail(CefUnavailableCategory::Reaper);
                 }
             })
-            .map_err(|_| CefUnavailableCategory::Reaper)?;
+            .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
         Ok(Self {
             shared,
             thread: Some(thread),

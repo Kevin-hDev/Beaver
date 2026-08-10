@@ -30,5 +30,7 @@ pub(super) use objects::WindowsPublicationObjects;
 pub(super) use process_query::WindowsProcessProbe;
 #[cfg(test)]
 pub(super) use security::{WindowsObjectKind, WindowsObjectSecurity};
+pub(in crate::services::browser) use tracker::WindowsCefTracker;
+#[cfg(not(feature = "windows-tests"))]
+pub(in crate::services::browser) use tracker::WindowsCefTrackerHandle;
 pub(in crate::services::browser) use tracker::WindowsTrackerShared;
-pub(in crate::services::browser) use tracker::{WindowsCefTracker, WindowsCefTrackerHandle};

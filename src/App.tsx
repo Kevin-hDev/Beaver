@@ -19,6 +19,7 @@ import { useStartupGate } from "@/hooks/use-startup-gate";
 import { ExtensionsProvider } from "@/hooks/use-extensions";
 import { usePlatformBodyClass } from "@/hooks/use-platform-body-class";
 import { AppNavigationActionsProvider } from "@/hooks/use-app-navigation-actions";
+import { useBrowserRecoveryNotice } from "@/hooks/use-browser-recovery-notice";
 import type { TabId } from "@/components/layout/nav-items";
 import "./App.css";
 import {
@@ -50,6 +51,7 @@ function ForecastDocsApp() {
 }
 
 function MainApp() {
+  useBrowserRecoveryNotice();
   const { current: nav, pushNav, replaceNav, goBack, goForward, canGoBack, canGoForward } =
     useTabHistory(DEFAULT_APP_NAV);
 

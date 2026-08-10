@@ -1,6 +1,7 @@
 use super::super::constants::{CEF_REAPER_START_TIMEOUT, CEF_TRACKER_POLL};
 use super::super::CefUnavailableCategory;
 use super::tracker::MacTrackerShared;
+use crate::services::browser::cef_preflight::CefPreflightError;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -36,7 +37,7 @@ impl MacReaperControl {
 }
 
 impl MacEmergencyReaper {
-    pub(super) fn start(shared: Arc<MacTrackerShared>) -> Result<Self, CefUnavailableCategory> {
+    pub(super) fn start(shared: Arc<MacTrackerShared>) -> Result<Self, CefPreflightError> {
         let (ready_tx, ready_rx) = std::sync::mpsc::sync_channel(1);
         let control = Arc::clone(&shared.reaper_control);
         let worker_control = Arc::clone(&control);
@@ -53,13 +54,15 @@ impl MacEmergencyReaper {
                     shared.fail(CefUnavailableCategory::Reaper);
                 }
             })
-            .map_err(|_| CefUnavailableCategory::Reaper)?;
+            .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
         if ready_rx.recv_timeout(CEF_REAPER_START_TIMEOUT).is_err()
             || !control.healthy.load(Ordering::Acquire)
         {
             control.stop();
             drop(thread);
-            return Err(CefUnavailableCategory::Reaper);
+            return Err(CefPreflightError::deterministic(
+                CefUnavailableCategory::Reaper,
+            ));
         }
         Ok(Self {
             control,

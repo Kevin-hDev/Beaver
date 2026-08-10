@@ -19,7 +19,7 @@ fn production_runtime_applies_the_ready_event_gate() {
 fn capability_events_apply_the_same_security_gate_as_commands() {
     let source = include_str!("cef_cookie_gate.rs");
 
-    assert!(source.contains("super::cef_runtime_policy::capability_for_runtime(&self.runtime)"));
+    assert!(source.contains("super::cef_runtime_policy::emit_capability(&self.app, &self.runtime)"));
     assert!(!source.contains("self.runtime.capability()"));
 }
 
@@ -28,11 +28,21 @@ fn runtime_becomes_ready_only_after_ordered_bootstrap() {
     let invalid = BrowserRuntimeHandle::default();
     assert!(invalid.mark_application_prepared());
     assert!(!invalid.mark_running());
-    assert_eq!(invalid.capability(), BrowserCapability::Unavailable);
+    assert_eq!(
+        invalid.capability(),
+        BrowserCapability::Unavailable {
+            restart_recommended: true,
+        }
+    );
 
     let runtime = BrowserRuntimeHandle::default();
 
-    assert_eq!(runtime.capability(), BrowserCapability::Unavailable);
+    assert_eq!(
+        runtime.capability(),
+        BrowserCapability::Unavailable {
+            restart_recommended: false,
+        }
+    );
     assert!(runtime.mark_application_prepared());
     assert!(runtime.mark_supervised());
     assert!(runtime.mark_running());
@@ -50,7 +60,12 @@ fn invalid_runtime_transition_fails_closed_for_all_clones() {
     let clone = runtime.clone();
 
     assert!(!runtime.mark_running());
-    assert_eq!(clone.capability(), BrowserCapability::Unavailable);
+    assert_eq!(
+        clone.capability(),
+        BrowserCapability::Unavailable {
+            restart_recommended: true,
+        }
+    );
 }
 
 #[test]
@@ -72,6 +87,10 @@ fn capability_payload_is_versioned_without_internal_details() {
     })
     .expect("serialize capability");
     let hidden = serde_json::to_value(BrowserCapability::Hidden).expect("serialize hidden");
+    let unavailable = serde_json::to_value(BrowserCapability::Unavailable {
+        restart_recommended: true,
+    })
+    .expect("serialize unavailable");
 
     assert_eq!(
         ready,
@@ -81,4 +100,11 @@ fn capability_payload_is_versioned_without_internal_details() {
         })
     );
     assert_eq!(hidden, serde_json::json!({ "status": "hidden" }));
+    assert_eq!(
+        unavailable,
+        serde_json::json!({
+            "status": "unavailable",
+            "restartRecommended": true,
+        })
+    );
 }

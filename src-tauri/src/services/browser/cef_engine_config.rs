@@ -1,12 +1,16 @@
 use super::settings::CefSettingsPolicy;
+use super::{cef_preflight::CefPreflightError, cef_unavailable::CefUnavailableCategory};
 use cef::{CefString, LogSeverity, Settings};
 
-pub(super) fn prepare_profile() -> Result<std::path::PathBuf, ()> {
+pub(super) fn prepare_profile() -> Result<std::path::PathBuf, CefPreflightError> {
     let browser_root = crate::services::paths::data_dir().join("browser");
     let profile = browser_root.join("profile");
-    std::fs::create_dir_all(&profile).map_err(|_| ())?;
-    crate::services::private_store::repair_path(&browser_root).map_err(|_| ())?;
-    crate::services::private_store::repair_path(&profile).map_err(|_| ())?;
+    std::fs::create_dir_all(&profile)
+        .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Permission, &error))?;
+    crate::services::private_store::repair_path(&browser_root)
+        .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Permission))?;
+    crate::services::private_store::repair_path(&profile)
+        .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Permission))?;
     Ok(profile)
 }
 

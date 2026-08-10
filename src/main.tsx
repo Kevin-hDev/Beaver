@@ -6,6 +6,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { installTauriListenerCleanupGuard } from "@/lib/tauri-listen";
 import { applyStoredSettings } from "@/hooks/use-settings";
+import { BrowserCapabilityProvider } from "@/hooks/use-browser-capability";
 import App from "./App";
 
 async function startApplication() {
@@ -20,7 +21,9 @@ async function startApplication() {
     <React.StrictMode>
       <ErrorBoundary>
         <ToastProvider>
-          <App />
+          <BrowserCapabilityProvider>
+            <App />
+          </BrowserCapabilityProvider>
         </ToastProvider>
       </ErrorBoundary>
     </React.StrictMode>,
