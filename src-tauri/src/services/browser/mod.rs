@@ -177,7 +177,7 @@ pub use browser_surface_api::{
 #[cfg(target_os = "macos")]
 pub use cef_library::BrowserLibraryGuard;
 pub(crate) use cef_runtime_policy::{
-    begin_cef_shutdown, cef_has_runnable_helpers, force_cef_shutdown,
+    begin_cef_shutdown, cef_has_runnable_helpers, force_cef_shutdown, CefShutdownBarrier,
 };
 #[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
 pub(crate) use cef_supervision::{WindowsHelperAdmission, CEF_ADMISSION_SWITCH};
