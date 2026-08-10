@@ -119,6 +119,12 @@ jobs:
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
 
+      - name: Windows CEF supervision authority
+        working-directory: src-tauri
+        run: |
+          cargo test --lib --features windows-tests services::browser::cef_supervision::windows_tracker_tests -- --test-threads=1
+          cargo test --lib --features windows-tests services::browser::cef_supervision::capability_tests -- --test-threads=1
+
   backend-macos-native:
     name: Backend macOS CEF (Rust)
     runs-on: macos-latest
@@ -161,6 +167,12 @@ jobs:
       - name: Clippy macOS backend
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
+
+      - name: macOS CEF supervision authority
+        working-directory: src-tauri
+        run: |
+          cargo test --lib services::browser::cef_supervision::macos_tracker_tests -- --test-threads=1
+          cargo test --lib services::browser::cef_supervision::capability_tests -- --test-threads=1
 
   backend-windows:
     name: Backend Windows tests (Rust)
