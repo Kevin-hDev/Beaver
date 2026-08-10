@@ -7,7 +7,10 @@ import {
   tauriDir,
 } from "./cef-artifacts.mjs";
 import { prepareBuildTool } from "./cef-tool.mjs";
-import { createTauriLaunch } from "./tauri-launch.mjs";
+import {
+  createTauriLaunch,
+  resolveCargoTargetDir,
+} from "./tauri-launch.mjs";
 
 try {
   const cliPath = await trustedFile(
@@ -25,9 +28,17 @@ try {
     executablePath: process.execPath,
     toolPath,
   });
+  const environment = { ...process.env, PATH: launch.path };
+  const cargoTargetDir = resolveCargoTargetDir({
+    configuredTargetDir: process.env.CARGO_TARGET_DIR,
+    platform: process.platform,
+    repoRoot,
+  });
+  if (cargoTargetDir !== undefined) {
+    environment.CARGO_TARGET_DIR = cargoTargetDir;
+  }
 
-  process.env.PATH = launch.path;
-  process.exitCode = await run(launch);
+  process.exitCode = await run(launch, environment);
 } catch {
   console.error("Tauri preparation failed");
   process.exitCode = 1;
@@ -45,11 +56,11 @@ async function trustedFile(candidate, parent) {
   return filePath;
 }
 
-function run(launch) {
+function run(launch, environment) {
   return new Promise((resolveRun, rejectRun) => {
     const child = spawn(launch.command, launch.args, {
       cwd: repoRoot,
-      env: process.env,
+      env: environment,
       shell: false,
       stdio: "inherit",
       windowsHide: true,
