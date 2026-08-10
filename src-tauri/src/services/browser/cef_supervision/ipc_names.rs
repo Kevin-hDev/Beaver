@@ -56,6 +56,7 @@ impl CefIpcNames {
         difference == 0
     }
 
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     pub(super) fn get(&self, index: usize) -> Option<&str> {
         self.names.get(index).map(|name| name.as_str())
     }
