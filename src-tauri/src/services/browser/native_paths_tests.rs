@@ -84,3 +84,52 @@ fn windows_runtime_validation_requires_every_pinned_file() {
     std::fs::remove_file(temp.path().join("locales/fr.pak")).expect("remove locale");
     assert!(resolve_windows_runtime_files(&executable).is_none());
 }
+
+#[test]
+fn windows_development_runtime_validates_the_loaded_development_module() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let executable = temp.path().join("cl_go_dash_lib.exe");
+    std::fs::write(&executable, [1]).expect("development bootstrap");
+    for relative in WINDOWS_RUNTIME_FILES {
+        if relative == "cl-go-dash.dll" {
+            continue;
+        }
+        let path = temp.path().join(relative);
+        std::fs::create_dir_all(path.parent().expect("runtime parent")).expect("runtime directory");
+        std::fs::write(path, [1]).expect("runtime file");
+    }
+    std::fs::write(temp.path().join("cl_go_dash_lib.dll"), [1]).expect("development module");
+
+    assert_eq!(
+        resolve_windows_runtime_files(&executable),
+        executable.canonicalize().ok()
+    );
+}
+
+#[test]
+fn windows_development_runtime_rejects_the_release_module() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let executable = temp.path().join("cl_go_dash_lib.exe");
+    std::fs::write(&executable, [1]).expect("development bootstrap");
+    for relative in WINDOWS_RUNTIME_FILES {
+        let path = temp.path().join(relative);
+        std::fs::create_dir_all(path.parent().expect("runtime parent")).expect("runtime directory");
+        std::fs::write(path, [1]).expect("runtime file");
+    }
+
+    assert!(resolve_windows_runtime_files(&executable).is_none());
+}
+
+#[test]
+fn windows_runtime_validation_rejects_an_unknown_bootstrap_name() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let executable = temp.path().join("unexpected.exe");
+    std::fs::write(&executable, [1]).expect("unknown bootstrap");
+    for relative in WINDOWS_RUNTIME_FILES {
+        let path = temp.path().join(relative);
+        std::fs::create_dir_all(path.parent().expect("runtime parent")).expect("runtime directory");
+        std::fs::write(path, [1]).expect("runtime file");
+    }
+
+    assert!(resolve_windows_runtime_files(&executable).is_none());
+}
