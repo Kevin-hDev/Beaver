@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { delimiter, join, resolve } from "node:path";
+import { delimiter, join, resolve, sep } from "node:path";
 import test from "node:test";
 import * as cefExtract from "./cef-extract.mjs";
 
@@ -115,7 +115,7 @@ test("the Tauri launcher exposes the verified Ninja directory first", async () =
 
 test("the Tauri launcher shortens the default Windows Cargo target path", async () => {
   const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
-  const projectRoot = join("workspace", "project");
+  const projectRoot = resolve("workspace", "project");
 
   assert.equal(typeof resolveCargoTargetDir, "function");
   assert.equal(
@@ -130,7 +130,7 @@ test("the Tauri launcher shortens the default Windows Cargo target path", async 
 
 test("the Tauri launcher preserves a configured Cargo target path", async () => {
   const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
-  const configuredTargetDir = join("cache", "custom-cargo-target");
+  const configuredTargetDir = resolve("cache", "custom-cargo-target");
 
   assert.equal(typeof resolveCargoTargetDir, "function");
   assert.equal(
@@ -169,6 +169,26 @@ test("the Tauri launcher rejects an oversized resolved Cargo target path", async
       }),
     /invalid/,
   );
+});
+
+test("the Tauri launcher rejects relative or traversing Cargo target paths", async () => {
+  const { resolveCargoTargetDir } = await import("./tauri-launch.mjs");
+  const projectRoot = resolve("workspace", "project");
+
+  for (const configuredTargetDir of [
+    "target",
+    `${projectRoot}${sep}..${sep}outside`,
+  ]) {
+    assert.throws(
+      () =>
+        resolveCargoTargetDir({
+          configuredTargetDir,
+          platform: "win32",
+          repoRoot: projectRoot,
+        }),
+      /invalid/,
+    );
+  }
 });
 
 test("the Tauri launcher rejects an unbounded argument list", async () => {

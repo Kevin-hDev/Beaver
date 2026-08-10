@@ -43,6 +43,12 @@ function Copy-CheckedFile([string] $Source, [string] $Destination) {
 }
 
 $TauriDir = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$CargoTargetValidator = Join-Path $TauriDir "..\scripts\build\cargo-target-dir.mjs"
+$CargoTargetOutput = @(& node $CargoTargetValidator)
+if ($LASTEXITCODE -ne 0 -or $CargoTargetOutput.Count -ne 1) {
+  throw "CEF runtime validation failed"
+}
+$CargoTargetRoot = [string] $CargoTargetOutput[0]
 $PrepareSource = Join-Path $TauriDir "..\scripts\cef\prepare-cef-source.mjs"
 & node $PrepareSource
 if ($LASTEXITCODE -ne 0) {
@@ -50,12 +56,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 $BuildTarget = $env:CARGO_BUILD_TARGET
 if ([string]::IsNullOrWhiteSpace($BuildTarget)) {
-  $TargetDir = Join-Path $TauriDir "target\release"
+  $TargetDir = Join-Path $CargoTargetRoot "release"
 } else {
   if ($BuildTarget -ne "x86_64-pc-windows-msvc") {
     throw "CEF runtime validation failed"
   }
-  $TargetDir = Join-Path $TauriDir "target\$BuildTarget\release"
+  $TargetDir = Join-Path $CargoTargetRoot "$BuildTarget\release"
 }
 $CargoManifest = Join-Path $TauriDir "Cargo.toml"
 & cargo build --release --lib --features tauri/custom-protocol --manifest-path $CargoManifest

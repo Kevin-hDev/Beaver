@@ -46,6 +46,7 @@ function defaultPreparations(run) {
         platform,
         target: process.env.CARGO_BUILD_TARGET ?? "",
         tauriDir: join(repoRoot, "src-tauri"),
+        cargoTargetDir: process.env.CARGO_TARGET_DIR ?? "",
         run,
       });
     },

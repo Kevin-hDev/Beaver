@@ -2,6 +2,7 @@ import { lstat, rm } from "node:fs/promises";
 import { join } from "node:path";
 
 import { runCommand } from "./command-runner.mjs";
+import { normalizeCargoTargetDir } from "./cargo-target-dir.mjs";
 import {
   canonicalDirectory,
   copyVerifiedAtomic,
@@ -19,7 +20,12 @@ function fail() {
 
 export { copyVerifiedAtomic };
 
-export function createUpdaterBuildPlan({ platform, target = "", tauriDir } = {}) {
+export function createUpdaterBuildPlan({
+  platform,
+  target = "",
+  tauriDir,
+  cargoTargetDir = "",
+} = {}) {
   try {
     if (
       !PLATFORMS.has(platform) ||
@@ -31,11 +37,14 @@ export function createUpdaterBuildPlan({ platform, target = "", tauriDir } = {})
       fail();
     }
     validateAbsolutePath(tauriDir);
+    const cargoRoot = cargoTargetDir
+      ? normalizeCargoTargetDir(cargoTargetDir)
+      : join(tauriDir, "target");
     const cargoArgs = ["build", "--release", "--bin", "cl-go-dash-updater"];
     if (target) cargoArgs.push("--target", target);
     const windows = target ? target.includes("-windows-") : platform === "win32";
     const filename = `cl-go-dash-updater${windows ? ".exe" : ""}`;
-    const targetRoot = target ? join(tauriDir, "target", target) : join(tauriDir, "target");
+    const targetRoot = target ? join(cargoRoot, target) : cargoRoot;
     return {
       cargoArgs,
       source: join(targetRoot, "release", filename),
@@ -62,10 +71,16 @@ async function removeStaleHelper(path) {
   }
 }
 
-export async function prepareUpdaterHelper({ platform, target = "", tauriDir, run = runCommand } = {}) {
+export async function prepareUpdaterHelper({
+  platform,
+  target = "",
+  tauriDir,
+  cargoTargetDir = "",
+  run = runCommand,
+} = {}) {
   try {
     if (typeof run !== "function") fail();
-    const plan = createUpdaterBuildPlan({ platform, target, tauriDir });
+    const plan = createUpdaterBuildPlan({ platform, target, tauriDir, cargoTargetDir });
     await canonicalDirectory(tauriDir);
     await run({ command: "cargo", args: plan.cargoArgs, cwd: tauriDir });
     await copyVerifiedAtomic(plan.source, plan.destination, MAX_HELPER_BYTES);

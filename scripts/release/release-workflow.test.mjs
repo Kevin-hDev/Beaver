@@ -77,6 +77,17 @@ test("les trois machines construisent sans toucher à une release", () => {
   }
 });
 
+test("partage la cible Cargo Windows avant le build et sa relecture", () => {
+  const configure = workflow.indexOf("Configure Windows Cargo target");
+  const build = workflow.indexOf("Build Tauri app without publishing");
+  const resolvePaths = workflow.indexOf("Resolve exact artifact paths");
+  assert.ok(configure > 0 && configure < build && build < resolvePaths);
+  assert.match(
+    workflow,
+    /Configure Windows Cargo target\n\s+if: runner\.os == 'Windows'[\s\S]*?CARGO_TARGET_DIR=[^\n]*GITHUB_ENV/,
+  );
+});
+
 test("fige chaque action tierce sur une empreinte Git exacte", () => {
   const uses = [...workflow.matchAll(/^\s*-?\s*uses:\s+([^#\s]+)(?:\s+#.*)?$/gmu)].map(
     (match) => match[1],
