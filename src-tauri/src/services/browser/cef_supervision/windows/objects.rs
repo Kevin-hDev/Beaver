@@ -18,9 +18,9 @@ const NATIVE_NAME_LIMIT: usize = 128;
 #[derive(Debug)]
 pub(in crate::services::browser) struct WindowsPublicationObjects {
     mailbox: SharedMapping<CefMailboxPage>,
-    control: SharedMapping<CefControlPage>,
+    _control: SharedMapping<CefControlPage>,
     admission: OwnedHandle,
-    closing: OwnedHandle,
+    _closing: OwnedHandle,
 }
 
 impl WindowsPublicationObjects {
@@ -42,9 +42,9 @@ impl WindowsPublicationObjects {
         let closing = create_event(names, WindowsObjectKind::ClosingEvent)?;
         Ok(Self {
             mailbox,
-            control,
+            _control: control,
             admission,
-            closing,
+            _closing: closing,
         })
     }
 
@@ -60,22 +60,24 @@ impl WindowsPublicationObjects {
         signal(&self.admission)
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn begin_closing(
         &self,
         deadline_ticks: u64,
     ) -> Result<(), CefUnavailableCategory> {
-        self.control
+        self._control
             .value()
             .begin_closing(deadline_ticks)
             .map_err(|_| CefUnavailableCategory::Object)?;
-        signal(&self.closing)
+        signal(&self._closing)
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn handles_are_non_inheritable(&self) -> bool {
         self.mailbox.handle_is_non_inheritable()
-            && self.control.handle_is_non_inheritable()
+            && self._control.handle_is_non_inheritable()
             && self.admission.is_non_inheritable()
-            && self.closing.is_non_inheritable()
+            && self._closing.is_non_inheritable()
     }
 }
 
@@ -137,6 +139,7 @@ impl WindowsHelperObjects {
         wait(&self.closing, timeout_ms)
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn handles_are_non_inheritable(&self) -> bool {
         self.mailbox.handle_is_non_inheritable()
             && self.control.handle_is_non_inheritable()

@@ -55,6 +55,7 @@ impl WindowsNativeAuthority {
         })
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn terminate(
         &self,
         slot: usize,
@@ -78,6 +79,16 @@ impl WindowsNativeAuthority {
             slot.refresh()?;
         }
         Ok(self.slots.iter().filter(|slot| slot.is_occupied()).count())
+    }
+
+    pub(super) fn force_all(&self) -> Result<(), CefUnavailableCategory> {
+        let mut first_error = None;
+        for slot in &self.slots {
+            if let Err(error) = slot.force_current() {
+                first_error.get_or_insert(error);
+            }
+        }
+        first_error.map_or(Ok(()), Err)
     }
 
     pub(in crate::services::browser) fn occupied_slots(&self) -> usize {
@@ -148,6 +159,7 @@ pub(in crate::services::browser) struct WindowsTrackedAdmission {
 }
 
 impl WindowsTrackedAdmission {
+    #[cfg(test)]
     pub(in crate::services::browser) fn terminate(
         &self,
     ) -> Result<WindowsTerminationState, CefUnavailableCategory> {

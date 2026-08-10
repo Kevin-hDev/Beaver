@@ -45,6 +45,7 @@ impl MacPublicationObjects {
         self.admission.value().signal();
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn begin_closing(
         &self,
         deadline_ticks: u64,
@@ -54,6 +55,7 @@ impl MacPublicationObjects {
         Ok(())
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn descriptors_are_close_on_exec(&self) -> bool {
         self.mailbox.is_close_on_exec()
             && self.control.is_close_on_exec()
@@ -113,6 +115,7 @@ impl MacHelperObjects {
         self.closing.value().is_signaled()
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn descriptors_are_close_on_exec(&self) -> bool {
         self.mailbox.is_close_on_exec()
             && self.control.is_close_on_exec()

@@ -3,8 +3,10 @@ mod authority_slot;
 mod bootstrap;
 mod constants;
 mod diagnostics;
+pub(super) mod emergency;
 mod gate;
 mod ipc_names;
+mod launch_ticket;
 #[cfg(target_os = "macos")]
 mod macos;
 mod mailbox;
@@ -19,24 +21,36 @@ pub(super) use super::process_role::CefProcessRole;
 #[cfg(windows)]
 pub(crate) use bootstrap::WindowsHelperAdmission;
 pub(crate) use constants::CEF_ADMISSION_SWITCH;
+#[cfg(test)]
 pub(super) use constants::CEF_SLOT_CAPACITY;
 pub(super) use diagnostics::CefUnavailableCategory;
+#[cfg(test)]
 pub(super) use gate::CefLaunchGate;
 pub(super) use ipc_names::CefIpcNames;
+pub(super) use launch_ticket::CefLaunchTicket;
+#[cfg(target_os = "macos")]
+pub(super) use macos::{parse_helper_marker, MacHelperBootstrap};
+#[cfg(target_os = "macos")]
+pub(super) use macos::{MacCefTracker, MacCefTrackerHandle};
 pub(super) use mailbox::CefPublication;
 pub(super) use role_marker::{CefLaunchMarker, CefMarkerError};
-pub(super) use shared_layout::{
-    CefControlPage, CefEventPage, CefMailboxPage, CefSharedLayoutError,
-};
+#[cfg(any(test, target_os = "macos"))]
+pub(super) use shared_layout::CefEventPage;
+pub(super) use shared_layout::{CefControlPage, CefMailboxPage, CefSharedLayoutError};
 pub(super) use slots::{CefAuthorityTable, CefTableError};
 #[cfg(windows)]
 pub(super) use windows::{WindowsCefTracker, WindowsCefTrackerHandle};
 
 #[cfg(test)]
+mod capability_tests;
+#[cfg(test)]
 mod ipc_tests;
 #[cfg(all(test, target_os = "macos"))]
 #[path = "cef_supervision/macos/objects_tests.rs"]
 mod macos_objects_tests;
+#[cfg(all(test, target_os = "macos"))]
+#[path = "cef_supervision/macos/tracker_tests.rs"]
+mod macos_tracker_tests;
 #[cfg(test)]
 mod protocol_tests;
 #[cfg(test)]

@@ -1,8 +1,8 @@
 use super::super::CefUnavailableCategory;
 use std::fmt;
-use windows_sys::Win32::Foundation::{
-    CloseHandle, GetHandleInformation, HANDLE, INVALID_HANDLE_VALUE,
-};
+#[cfg(test)]
+use windows_sys::Win32::Foundation::GetHandleInformation;
+use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, INVALID_HANDLE_VALUE};
 
 pub(super) struct OwnedHandle(HANDLE);
 
@@ -24,6 +24,7 @@ impl OwnedHandle {
         this.0
     }
 
+    #[cfg(test)]
     pub(super) fn is_non_inheritable(&self) -> bool {
         let mut flags = 0_u32;
         (unsafe { GetHandleInformation(self.0, &mut flags) }) != 0 && flags & 1 == 0

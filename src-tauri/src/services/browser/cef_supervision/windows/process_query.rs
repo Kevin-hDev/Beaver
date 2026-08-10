@@ -45,6 +45,7 @@ impl WindowsProcessProbe {
         self.started_at
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn executable(&self) -> &Path {
         &self.executable
     }

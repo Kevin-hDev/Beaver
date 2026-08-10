@@ -3,7 +3,8 @@ use super::handle::OwnedHandle;
 use super::process_query::WindowsProcessProbe;
 use std::path::Path;
 use windows_sys::Win32::Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT};
-use windows_sys::Win32::System::Threading::{OpenProcess, WaitForSingleObject};
+use windows_sys::Win32::System::Threading::OpenProcess;
+use windows_sys::Win32::System::Threading::WaitForSingleObject;
 
 const SYNCHRONIZE_ACCESS: u32 = 0x0010_0000;
 const PROCESS_TERMINATE_ACCESS: u32 = 0x0000_0001;
@@ -48,22 +49,27 @@ impl WindowsProcessIdentity {
         })
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn pid(&self) -> u32 {
         self.pid
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn parent_pid(&self) -> u32 {
         self.parent_pid
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn started_at(&self) -> u64 {
         self.started_at
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn is_exited(&self) -> Result<bool, CefUnavailableCategory> {
         process_exited(&self.handle)
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn wait_for_exit(
         &self,
         timeout_ms: u32,

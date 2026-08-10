@@ -20,6 +20,7 @@ pub(in crate::services::browser) enum WindowsObjectKind {
 }
 
 impl WindowsObjectKind {
+    #[cfg(test)]
     pub(in crate::services::browser) const ALL: [Self; 4] = [
         Self::Mailbox,
         Self::Control,

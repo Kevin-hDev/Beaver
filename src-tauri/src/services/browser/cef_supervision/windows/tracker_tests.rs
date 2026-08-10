@@ -114,6 +114,28 @@ fn abandoning_a_prepared_admission_closes_its_job_without_admitting_cef() {
     assert_eq!(authority.occupied_slots(), 0);
 }
 
+#[test]
+fn emergency_close_rejects_new_helpers_and_force_stops_an_admitted_helper() {
+    let child = ChildGuard::spawn();
+    let probe = WindowsProcessProbe::read(child.id()).expect("probe");
+    let tracker = WindowsCefTracker::start(probe.executable()).expect("tracker");
+    let ticket = tracker.reserve().expect("launch ticket");
+    let marker = ticket.decode_marker().expect("ticket marker");
+    let names = super::CefIpcNames::from_marker(&marker).expect("names");
+    let helper = WindowsHelperObjects::open(&names).expect("helper objects");
+    helper
+        .publish(marker.generation(), child.id(), probe.started_at(), 0)
+        .expect("publication");
+    assert!(helper.wait_for_admission(2_000).expect("admission wait"));
+
+    assert!(tracker.close_gate_for_test());
+    assert!(tracker.reserve().is_err());
+    assert!(WindowsProcessProbe::read(child.id()).is_ok());
+
+    tracker.force_for_test();
+    assert!(wait_until_native_process_disappears(child.id()));
+}
+
 fn wait_until_process_disappears(pid: u32, authority: &WindowsNativeAuthority) -> bool {
     for _ in 0..100 {
         authority.refresh_all().expect("bounded tracker refresh");

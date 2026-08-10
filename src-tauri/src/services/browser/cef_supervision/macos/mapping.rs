@@ -13,6 +13,9 @@ pub(super) struct MacMapping<T> {
     _value: PhantomData<T>,
 }
 
+unsafe impl<T: Send> Send for MacMapping<T> {}
+unsafe impl<T: Sync> Sync for MacMapping<T> {}
+
 impl<T> MacMapping<T> {
     pub(super) fn create(
         path: Zeroizing<Vec<u8>>,
@@ -70,6 +73,7 @@ impl<T> MacMapping<T> {
         unsafe { &*self.address }
     }
 
+    #[cfg(test)]
     pub(super) fn is_close_on_exec(&self) -> bool {
         let flags = unsafe { libc::fcntl(self.file.file.as_raw_fd(), libc::F_GETFD) };
         flags >= 0 && flags & libc::FD_CLOEXEC != 0

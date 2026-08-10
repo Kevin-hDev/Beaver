@@ -122,6 +122,7 @@ impl CefControlPage {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn begin_closing(&self, deadline_ticks: u64) -> Result<(), CefSharedLayoutError> {
         if deadline_ticks == 0 {
             return Err(CefSharedLayoutError::Invalid);
@@ -149,12 +150,14 @@ impl CefControlPage {
     }
 }
 
+#[cfg(any(test, target_os = "macos"))]
 #[repr(C, align(64))]
 pub(in crate::services::browser) struct CefEventPage {
     pub(super) schema: AtomicU32,
     signaled: AtomicU32,
 }
 
+#[cfg(any(test, target_os = "macos"))]
 impl CefEventPage {
     pub(super) fn new() -> Self {
         Self {
@@ -176,6 +179,7 @@ impl CefEventPage {
     }
 }
 
+#[cfg(any(test, target_os = "macos"))]
 impl Default for CefEventPage {
     fn default() -> Self {
         Self::new()

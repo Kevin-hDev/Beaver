@@ -3,6 +3,7 @@ pub(super) enum RuntimePhase {
     #[default]
     Cold,
     ApplicationPrepared,
+    Supervised,
     Running,
     Stopping,
     Stopped,
@@ -28,7 +29,7 @@ impl Lifecycle {
     }
 
     pub(super) fn mark_running(&mut self) -> bool {
-        if self.phase != RuntimePhase::ApplicationPrepared {
+        if self.phase != RuntimePhase::Supervised {
             self.phase = RuntimePhase::Failed;
             return false;
         }
@@ -36,10 +37,19 @@ impl Lifecycle {
         true
     }
 
+    pub(super) fn mark_supervised(&mut self) -> bool {
+        if self.phase != RuntimePhase::ApplicationPrepared {
+            self.phase = RuntimePhase::Failed;
+            return false;
+        }
+        self.phase = RuntimePhase::Supervised;
+        true
+    }
+
     pub(super) fn mark_failed(&mut self) -> bool {
         if !matches!(
             self.phase,
-            RuntimePhase::ApplicationPrepared | RuntimePhase::Running
+            RuntimePhase::ApplicationPrepared | RuntimePhase::Supervised | RuntimePhase::Running
         ) {
             return false;
         }
@@ -50,7 +60,10 @@ impl Lifecycle {
     pub(super) fn begin_stopping(&mut self) -> bool {
         if !matches!(
             self.phase,
-            RuntimePhase::ApplicationPrepared | RuntimePhase::Running | RuntimePhase::Failed
+            RuntimePhase::ApplicationPrepared
+                | RuntimePhase::Supervised
+                | RuntimePhase::Running
+                | RuntimePhase::Failed
         ) {
             return false;
         }

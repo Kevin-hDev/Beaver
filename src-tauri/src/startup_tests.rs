@@ -152,7 +152,9 @@ fn production_lifecycle_uses_the_ordered_browser_cleanup() {
 fn asynchronous_exit_cleanup_never_stops_the_browser() {
     let source = include_str!("app_exit.rs");
 
-    assert!(!source.contains("browser"));
+    assert!(!source.contains("services::browser::shutdown"));
+    assert!(!source.contains("cef::shutdown"));
+    assert!(source.contains("services::browser::begin_cef_shutdown"));
 }
 
 #[test]

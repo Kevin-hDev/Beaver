@@ -84,6 +84,14 @@ impl BrowserRuntimeHandle {
             .unwrap_or(false)
     }
 
+    #[cfg(any(test, target_os = "macos", target_os = "windows"))]
+    pub(super) fn mark_supervised(&self) -> bool {
+        self.lifecycle
+            .lock()
+            .map(|mut lifecycle| lifecycle.mark_supervised())
+            .unwrap_or(false)
+    }
+
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     pub(super) fn mark_failed(&self) -> bool {
         self.lifecycle

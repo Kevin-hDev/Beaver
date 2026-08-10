@@ -126,6 +126,7 @@ fn run_watchdog(
     }
     wait_until(timeline.emergency_deadline());
     while Instant::now() < timeline.ultimate_deadline() {
+        crate::services::browser::force_cef_shutdown();
         inventory.drain_once(actions.signaler.as_ref());
         let remaining = timeline.remaining_until(timeline.ultimate_deadline());
         if remaining.is_zero() {
@@ -150,10 +151,14 @@ pub(super) fn drain_post_loop(inventory: &EmergencyInventory, timeline: Shutdown
     let local_limit = Instant::now() + post_loop_sweep_timeout();
     let deadline = local_limit.min(timeline.emergency_deadline());
     while inventory.has_active() && Instant::now() < deadline {
+        crate::services::browser::force_cef_shutdown();
         inventory.drain_once(&signaler);
         let remaining = deadline.saturating_duration_since(Instant::now());
         if !remaining.is_zero() && inventory.has_active() {
             std::thread::park_timeout(remaining.min(watchdog_recheck_interval()));
         }
+    }
+    if crate::services::browser::cef_has_runnable_helpers() {
+        crate::services::browser::force_cef_shutdown();
     }
 }
