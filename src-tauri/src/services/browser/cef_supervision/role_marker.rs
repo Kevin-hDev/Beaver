@@ -89,6 +89,10 @@ impl CefLaunchMarker {
         })
     }
 
+    pub(super) fn nonce_bytes(&self) -> &[u8; CEF_NONCE_BYTES] {
+        &self.nonce
+    }
+
     pub(super) fn decode_unique(values: &[&str]) -> Result<Self, CefMarkerError> {
         let value = match values {
             [] => return Err(CefMarkerError::Missing),
