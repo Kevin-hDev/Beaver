@@ -2,6 +2,7 @@ use cef::{args::Args, *};
 use sha2::{Digest, Sha256};
 use std::io::Read;
 use std::path::Path;
+use zeroize::{Zeroize, Zeroizing};
 
 #[path = "windows_entry_plan.rs"]
 mod plan;
@@ -24,6 +25,19 @@ fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> 
     if !unsafe { crate::configure_git_network_policy() } {
         return 1;
     }
+    let role = match plan::classify_bootstrap(std::env::args_os()) {
+        Ok(role) => role,
+        Err(()) => return 1,
+    };
+    match role {
+        plan::BootstrapRole::Parent => run_parent(instance, sandbox_info),
+        plan::BootstrapRole::CefHelper(marker) => {
+            run_admitted_helper(instance, sandbox_info, marker)
+        }
+    }
+}
+
+fn run_parent(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::from(MainArgs { instance });
     let result = execute_process(
@@ -44,6 +58,53 @@ fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> 
         0
     } else {
         1
+    }
+}
+
+fn run_admitted_helper(
+    instance: cef::sys::HINSTANCE,
+    sandbox_info: *mut u8,
+    mut encoded_marker: Zeroizing<String>,
+) -> i32 {
+    let admission = match crate::services::browser::WindowsHelperAdmission::prepare(&encoded_marker)
+    {
+        Ok(admission) => admission,
+        Err(_) => return 1,
+    };
+    encoded_marker.zeroize();
+    if admission.revalidate().is_err() {
+        return 1;
+    }
+    let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
+    let args = Args::from(MainArgs { instance });
+    let mut app = AdmittedHelperApp::new();
+    let result = execute_process(
+        Some(args.as_main_args()),
+        Some(&mut app),
+        sandbox_info.cast(),
+    );
+    if result >= 0 {
+        result
+    } else {
+        1
+    }
+}
+
+wrap_app! {
+    struct AdmittedHelperApp {}
+
+    impl App {
+        fn on_before_command_line_processing(
+            &self,
+            _process_type: Option<&CefString>,
+            command_line: Option<&mut CommandLine>,
+        ) {
+            if let Some(command_line) = command_line {
+                command_line.remove_switch(Some(&CefString::from(
+                    crate::services::browser::CEF_ADMISSION_SWITCH,
+                )));
+            }
+        }
     }
 }
 

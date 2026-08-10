@@ -11,6 +11,8 @@ mod cef_app;
 #[cfg(native_browser)]
 mod cef_blocked_feature;
 #[cfg(native_browser)]
+mod cef_child_admission;
+#[cfg(native_browser)]
 mod cef_client;
 #[cfg(native_browser)]
 mod cef_cookie_gate;
@@ -171,6 +173,8 @@ pub use browser_surface_api::{
 };
 #[cfg(target_os = "macos")]
 pub use cef_library::BrowserLibraryGuard;
+#[cfg(target_os = "windows")]
+pub(crate) use cef_supervision::{WindowsHelperAdmission, CEF_ADMISSION_SWITCH};
 pub use local_site_scanner::LocalSiteScanner;
 pub use local_site_types::{LocalSiteScanResult, LOCAL_SITES_CHANGED_EVENT};
 pub use runtime_handle::{BrowserCapability, BrowserRuntimeHandle};

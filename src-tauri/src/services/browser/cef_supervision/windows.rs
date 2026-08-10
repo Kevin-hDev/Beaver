@@ -23,4 +23,4 @@ pub(super) use native_authority::{
 pub(super) use objects::{WindowsHelperObjects, WindowsPublicationObjects};
 pub(super) use process_query::WindowsProcessProbe;
 pub(super) use security::{WindowsObjectKind, WindowsObjectSecurity};
-pub(super) use tracker::WindowsCefTracker;
+pub(in crate::services::browser) use tracker::{WindowsCefTracker, WindowsCefTrackerHandle};
