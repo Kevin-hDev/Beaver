@@ -58,12 +58,12 @@ impl CefClaim {
         })
     }
 
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     pub(super) fn slot(&self) -> usize {
         self.key.map_or(usize::MAX, |key| key.index())
     }
 
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     pub(super) fn generation(&self) -> u64 {
         self.key.map_or(0, |key| key.generation())
     }

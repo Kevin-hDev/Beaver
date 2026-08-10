@@ -169,10 +169,7 @@ fn start_monitor(
 }
 
 fn closing_or_failure(objects: &MacHelperObjects) -> bool {
-    match objects.closing_signaled() {
-        Ok(signaled) => signaled,
-        Err(_) => true,
-    }
+    objects.closing_signaled() != Ok(false)
 }
 
 fn control_requires_exit(objects: &MacHelperObjects, generation: u64) -> bool {

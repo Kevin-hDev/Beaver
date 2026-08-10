@@ -12,9 +12,9 @@ use zeroize::Zeroizing;
 #[derive(Debug)]
 pub(in crate::services::browser) struct MacPublicationObjects {
     mailbox: MacMapping<CefMailboxPage>,
-    control: MacMapping<CefControlPage>,
+    _control: MacMapping<CefControlPage>,
     admission: MacMapping<CefEventPage>,
-    closing: MacMapping<CefEventPage>,
+    _closing: MacMapping<CefEventPage>,
 }
 
 impl MacPublicationObjects {
@@ -26,12 +26,12 @@ impl MacPublicationObjects {
         ensure_private_root(root)?;
         Ok(Self {
             mailbox: MacMapping::create(object_path(root, names, 0)?, CefMailboxPage::new())?,
-            control: MacMapping::create(
+            _control: MacMapping::create(
                 object_path(root, names, 1)?,
                 CefControlPage::new(generation).map_err(|_| CefUnavailableCategory::Object)?,
             )?,
             admission: MacMapping::create(object_path(root, names, 2)?, CefEventPage::new())?,
-            closing: MacMapping::create(object_path(root, names, 3)?, CefEventPage::new())?,
+            _closing: MacMapping::create(object_path(root, names, 3)?, CefEventPage::new())?,
         })
     }
 
@@ -50,17 +50,17 @@ impl MacPublicationObjects {
         &self,
         deadline_ticks: u64,
     ) -> Result<(), CefSharedLayoutError> {
-        self.control.value().begin_closing(deadline_ticks)?;
-        self.closing.value().signal();
+        self._control.value().begin_closing(deadline_ticks)?;
+        self._closing.value().signal();
         Ok(())
     }
 
     #[cfg(test)]
     pub(in crate::services::browser) fn descriptors_are_close_on_exec(&self) -> bool {
         self.mailbox.is_close_on_exec()
-            && self.control.is_close_on_exec()
+            && self._control.is_close_on_exec()
             && self.admission.is_close_on_exec()
-            && self.closing.is_close_on_exec()
+            && self._closing.is_close_on_exec()
     }
 }
 

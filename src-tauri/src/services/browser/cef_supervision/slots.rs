@@ -25,12 +25,12 @@ pub(super) struct CefSlotKey {
 }
 
 impl CefSlotKey {
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     pub(super) fn index(self) -> usize {
         self.index
     }
 
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     pub(super) fn generation(self) -> u64 {
         self.generation
     }
