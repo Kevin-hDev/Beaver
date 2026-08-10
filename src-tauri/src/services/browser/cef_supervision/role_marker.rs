@@ -53,6 +53,7 @@ impl CefLaunchMarker {
         ))
     }
 
+    #[cfg(test)]
     pub(super) fn constant_time_matches(&self, other: &Self) -> bool {
         let mut difference = 0_u8;
         for (left, right) in self.nonce.iter().zip(other.nonce.iter()) {

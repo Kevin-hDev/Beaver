@@ -2,10 +2,14 @@ use super::super::CefUnavailableCategory;
 use super::handle::OwnedHandle;
 use super::identity::WindowsProcessIdentity;
 use windows_sys::Win32::System::JobObjects::{
-    AssignProcessToJobObject, CreateJobObjectW, IsProcessInJob,
-    JobObjectBasicAccountingInformation, JobObjectExtendedLimitInformation,
-    QueryInformationJobObject, SetInformationJobObject, JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
-    JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    AssignProcessToJobObject, CreateJobObjectW, IsProcessInJob, JobObjectExtendedLimitInformation,
+    SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+};
+#[cfg(test)]
+use windows_sys::Win32::System::JobObjects::{
+    JobObjectBasicAccountingInformation, QueryInformationJobObject,
+    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
 };
 
 pub(in crate::services::browser) struct WindowsJobGuard {
@@ -55,6 +59,7 @@ impl WindowsJobGuard {
         }
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn is_empty(&self) -> Result<bool, CefUnavailableCategory> {
         let mut accounting = JOBOBJECT_BASIC_ACCOUNTING_INFORMATION::default();
         query_job(
@@ -65,6 +70,7 @@ impl WindowsJobGuard {
         Ok(accounting.TotalProcesses == 0 && accounting.ActiveProcesses == 0)
     }
 
+    #[cfg(test)]
     pub(in crate::services::browser) fn has_only_kill_on_close(
         &self,
     ) -> Result<bool, CefUnavailableCategory> {
@@ -84,6 +90,7 @@ impl std::fmt::Debug for WindowsJobGuard {
     }
 }
 
+#[cfg(test)]
 fn query_job<T>(
     handle: &OwnedHandle,
     class: i32,

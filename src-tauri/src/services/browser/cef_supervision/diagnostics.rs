@@ -8,6 +8,7 @@ pub(in crate::services::browser) enum CefUnavailableCategory {
 }
 
 impl CefUnavailableCategory {
+    #[cfg(test)]
     pub(super) const ALL: [Self; 5] = [
         Self::Object,
         Self::Permission,
@@ -16,6 +17,7 @@ impl CefUnavailableCategory {
         Self::Sandbox,
     ];
 
+    #[cfg(test)]
     pub(super) const fn code(self) -> &'static str {
         match self {
             Self::Object => "cef-supervision-object",

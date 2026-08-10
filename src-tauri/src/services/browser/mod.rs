@@ -40,6 +40,7 @@ mod cef_load_handler;
 mod cef_permission_handler;
 #[cfg(native_browser)]
 mod cef_request_handler;
+mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
 #[cfg(any(test, native_browser))]
@@ -64,6 +65,8 @@ mod local_site_scan_state;
 mod local_site_scan_throttle;
 mod local_site_scanner;
 mod local_site_types;
+#[cfg(target_os = "macos")]
+mod macos_helper_entry;
 #[cfg(target_os = "macos")]
 mod native_application;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
@@ -173,6 +176,9 @@ pub use browser_surface_api::{
 };
 #[cfg(target_os = "macos")]
 pub use cef_library::BrowserLibraryGuard;
+pub(crate) use cef_runtime_policy::{
+    begin_cef_shutdown, cef_has_runnable_helpers, force_cef_shutdown,
+};
 #[cfg(target_os = "windows")]
 pub(crate) use cef_supervision::{WindowsHelperAdmission, CEF_ADMISSION_SWITCH};
 pub use local_site_scanner::LocalSiteScanner;
@@ -184,23 +190,9 @@ pub(crate) use runtime_integration::{
 pub use session_model::{BrowserSessionState, BrowserTabCreation};
 pub use session_service::BrowserSessionService;
 
+#[cfg(target_os = "macos")]
+pub(crate) use macos_helper_entry::run as run_macos_cef_helper;
+
 pub fn capability(app: &tauri::AppHandle) -> BrowserCapability {
-    capability_for_runtime(app.state::<BrowserRuntimeHandle>().inner())
-}
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-pub(super) fn capability_for_runtime(runtime: &BrowserRuntimeHandle) -> BrowserCapability {
-    let runtime_capability = runtime.capability();
-    if matches!(runtime_capability, BrowserCapability::Ready { .. })
-        && session_store::session_key().is_err()
-    {
-        BrowserCapability::Unavailable
-    } else {
-        runtime_capability
-    }
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub(super) fn capability_for_runtime(_runtime: &BrowserRuntimeHandle) -> BrowserCapability {
-    BrowserCapability::Hidden
+    cef_runtime_policy::capability_for_runtime(app.state::<BrowserRuntimeHandle>().inner())
 }

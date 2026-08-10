@@ -29,6 +29,7 @@ impl CefIpcNames {
         Ok(Self { names })
     }
 
+    #[cfg(test)]
     pub(super) fn are_pairwise_distinct(&self) -> bool {
         let mut duplicate = 0_u8;
         for left in 0..self.names.len() {
@@ -41,10 +42,12 @@ impl CefIpcNames {
         duplicate == 0
     }
 
+    #[cfg(test)]
     pub(super) fn max_name_bytes(&self) -> usize {
         self.names.iter().map(|name| name.len()).max().unwrap_or(0)
     }
 
+    #[cfg(test)]
     pub(super) fn constant_time_matches(&self, other: &Self) -> bool {
         let mut difference = 0_u8;
         for (left, right) in self.names.iter().zip(other.names.iter()) {
@@ -64,6 +67,7 @@ impl fmt::Debug for CefIpcNames {
     }
 }
 
+#[cfg(test)]
 fn constant_time_text_difference(left: &str, right: &str) -> u8 {
     let mut difference = (left.len() ^ right.len()) as u8;
     for index in 0..NAME_LIMIT {

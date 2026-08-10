@@ -3,6 +3,7 @@ use super::slots::{CefAuthorityInner, CefSlotKey};
 use super::{CefLaunchMarker, CefTableError};
 use std::fmt;
 use std::sync::Arc;
+#[cfg(test)]
 use zeroize::Zeroizing;
 
 pub(super) struct CefReservation {
@@ -16,6 +17,7 @@ impl CefReservation {
         &self.marker
     }
 
+    #[cfg(test)]
     pub(super) fn encode_marker(&self) -> Zeroizing<String> {
         self.marker.encode()
     }

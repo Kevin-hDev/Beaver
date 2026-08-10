@@ -9,7 +9,7 @@ use windows_sys::Win32::System::Memory::{
 };
 
 pub(super) struct SharedMapping<T> {
-    handle: OwnedHandle,
+    _handle: OwnedHandle,
     address: *mut T,
     _value: PhantomData<T>,
 }
@@ -58,7 +58,7 @@ impl<T> SharedMapping<T> {
             return Err(CefUnavailableCategory::Object);
         }
         Ok(Self {
-            handle,
+            _handle: handle,
             address: view.Value.cast(),
             _value: PhantomData,
         })
@@ -68,8 +68,9 @@ impl<T> SharedMapping<T> {
         unsafe { &*self.address }
     }
 
+    #[cfg(test)]
     pub(super) fn handle_is_non_inheritable(&self) -> bool {
-        self.handle.is_non_inheritable()
+        self._handle.is_non_inheritable()
     }
 }
 

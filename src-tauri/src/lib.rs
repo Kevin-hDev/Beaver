@@ -36,6 +36,10 @@ use tauri::{Emitter, Manager};
 pub use runtime_state::ActiveStreams;
 #[cfg(target_os = "macos")]
 pub use services::browser::BrowserLibraryGuard;
+#[cfg(target_os = "macos")]
+pub fn run_macos_cef_helper() -> std::process::ExitCode {
+    services::browser::run_macos_cef_helper()
+}
 #[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
 pub use startup::launch_windows_browser_host;
 #[cfg(target_os = "macos")]

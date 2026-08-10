@@ -66,7 +66,7 @@ impl CookieGateContext {
         }
         let _ = self.app.emit(
             "browser-capability-v1",
-            super::capability_for_runtime(&self.runtime),
+            super::cef_runtime_policy::capability_for_runtime(&self.runtime),
         );
     }
 }

@@ -53,7 +53,7 @@ wrap_browser_process_handler! {
             super::ffi_guard::unit(|| self.pump.schedule(delay_ms));
         }
 
-        #[cfg(target_os = "windows")]
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
         fn on_before_child_process_launch(&self, command_line: Option<&mut CommandLine>) {
             let supervision = self.supervision.clone();
             let runtime = self.runtime.clone();

@@ -82,6 +82,7 @@ impl AppExitCoordinator {
         let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
         if self.timeline.set(timeline).is_err()
             || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
+            || !crate::services::browser::begin_cef_shutdown()
         {
             return BeginResult::InvariantViolation;
         }
