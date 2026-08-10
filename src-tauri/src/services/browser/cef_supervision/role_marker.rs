@@ -13,7 +13,7 @@ pub(in crate::services::browser) enum CefMarkerError {
     Invalid,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub(in crate::services::browser) struct CefLaunchMarker {
     slot: usize,
     generation: u64,
@@ -51,6 +51,42 @@ impl CefLaunchMarker {
             self.generation,
             u8::from(self.role)
         ))
+    }
+
+    pub(super) fn constant_time_matches(&self, other: &Self) -> bool {
+        let mut difference = 0_u8;
+        for (left, right) in self.nonce.iter().zip(other.nonce.iter()) {
+            difference |= left ^ right;
+        }
+        self.slot == other.slot
+            && self.generation == other.generation
+            && self.role == other.role
+            && difference == 0
+    }
+
+    pub(super) fn slot(&self) -> usize {
+        self.slot
+    }
+
+    pub(super) fn generation(&self) -> u64 {
+        self.generation
+    }
+
+    pub(super) fn role(&self) -> CefProcessRole {
+        self.role
+    }
+
+    pub(super) fn copy_nonce(&self) -> Zeroizing<[u8; CEF_NONCE_BYTES]> {
+        self.nonce.clone()
+    }
+
+    pub(super) fn nonce_words(&self) -> [u64; CEF_NONCE_BYTES / 8] {
+        std::array::from_fn(|index| {
+            let offset = index * 8;
+            let mut bytes = [0_u8; 8];
+            bytes.copy_from_slice(&self.nonce[offset..offset + 8]);
+            u64::from_le_bytes(bytes)
+        })
     }
 
     pub(super) fn decode_unique(values: &[&str]) -> Result<Self, CefMarkerError> {

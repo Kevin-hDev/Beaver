@@ -15,7 +15,7 @@ fn a_generated_marker_round_trips_without_exposing_its_nonce() {
     let encoded = marker.encode();
     let decoded = CefLaunchMarker::decode_unique(&[encoded.as_str()]).expect("decode");
 
-    assert_eq!(decoded, marker);
+    assert!(decoded.constant_time_matches(&marker));
     assert_eq!(format!("{marker:?}"), "CefLaunchMarker([redacted])");
     assert!(!format!("{marker:?}").contains(encoded.as_str()));
 }
@@ -25,27 +25,27 @@ fn generated_markers_do_not_reuse_the_same_capability() {
     let first = CefLaunchMarker::generate(0, 1, CefProcessRole::Helper).expect("first");
     let second = CefLaunchMarker::generate(0, 1, CefProcessRole::Helper).expect("second");
 
-    assert_ne!(first, second);
+    assert!(!first.constant_time_matches(&second));
 }
 
 #[test]
 fn missing_duplicate_or_malformed_markers_fail_closed() {
-    assert_eq!(
+    assert!(matches!(
         CefLaunchMarker::decode_unique(&[]),
         Err(CefMarkerError::Missing)
-    );
-    assert_eq!(
+    ));
+    assert!(matches!(
         CefLaunchMarker::decode_unique(&["v1:0:1:00", "v1:0:1:00"]),
         Err(CefMarkerError::Duplicate)
-    );
-    assert_eq!(
+    ));
+    assert!(matches!(
         CefLaunchMarker::decode_unique(&["v1:0:1:00"]),
         Err(CefMarkerError::Invalid)
-    );
-    assert_eq!(
+    ));
+    assert!(matches!(
         CefLaunchMarker::decode_unique(&[&"x".repeat(512)]),
         Err(CefMarkerError::Invalid)
-    );
+    ));
 }
 
 #[test]
