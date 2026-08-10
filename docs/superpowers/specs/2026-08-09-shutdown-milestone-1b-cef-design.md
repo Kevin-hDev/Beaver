@@ -99,3 +99,16 @@ Le reaper parent précréé rescane les générations admises et revalide l'iden
 - toutes les sous-lignes J1B de l'inventaire sont fermées et référencent leurs tests ;
 - fichiers de production sous 230 lignes, suites complètes et CI native vertes ;
 - Git note détaillant les preuves `Ready supervisé`, les environnements renforcés testés, la défense locale, les alternatives rejetées et la décision de ne pas livrer une plateforme avec le navigateur désactivé. Ce jalon est nécessaire mais ne suffit pas à autoriser une release, qui attend encore la validation du jalon 4.
+
+## État factuel des preuves au 10 août 2026
+
+La PR J1B compile et teste les chemins natifs avec CEF vérifié et sandbox actif. Le run GitHub Actions `31404848819` est vert sur Windows, macOS et Linux : Clippy strict, suites complètes voisines, autorité native Windows/macOS, contrats de sandbox et absence de CEF Linux. Les commits d'implémentation sont `0e505ca` à `4812d09`; les durcissements CI et multi-OS sont `84a7fb2`, `3f517a1`, `3936a14`, `baf14dc` et `1b4f15d`.
+
+Cette preuve automatisée valide le protocole, les appels natifs et la terminaison de vrais processus enfants confinés. Elle ne remplace pas les essais de livraison du navigateur complet. Avant passage de la PR hors brouillon, il reste donc à consigner séparément :
+
+- build empaqueté Windows avec protections Microsoft actives ;
+- build empaqueté Windows dans un environnement renforcé représentatif ;
+- build empaqueté macOS avec Gatekeeper et quarantaine actifs ;
+- pour chaque essai, ouverture réelle du navigateur, navigation, fermeture de Beaver pendant que CEF est actif et constat d'absence de helper runnable.
+
+Ces lignes ne peuvent être cochées ni déduites de la CI. Une Git note finale ne les déclare réussies qu'avec l'environnement réellement observé ; sinon la PR reste en brouillon.
