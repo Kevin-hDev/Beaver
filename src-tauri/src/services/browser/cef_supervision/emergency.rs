@@ -21,14 +21,18 @@ pub(super) fn register_macos(
     MACOS.set(shared).map_err(|_| ())
 }
 
-pub(in crate::services::browser) fn close_gate(deadline: Instant) -> bool {
+pub(in crate::services::browser) fn close_gate(
+    admission_deadline: Instant,
+    helper_exit_deadline: Instant,
+) -> bool {
     #[cfg(target_os = "windows")]
     if let Some(shared) = WINDOWS.get() {
-        return shared.emergency_close(deadline);
+        let _ = helper_exit_deadline;
+        return shared.emergency_close(admission_deadline);
     }
     #[cfg(target_os = "macos")]
     if let Some(shared) = MACOS.get() {
-        return shared.emergency_close(deadline);
+        return shared.emergency_close(admission_deadline, helper_exit_deadline);
     }
     true
 }

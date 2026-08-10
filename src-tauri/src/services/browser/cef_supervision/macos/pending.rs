@@ -1,22 +1,23 @@
 use super::super::constants::CEF_SLOT_CAPACITY;
 use super::super::reservation::CefReservation;
-use super::super::CefUnavailableCategory;
+use super::super::shared_layout::CefMailboxSnapshot;
+use super::super::{CefSharedLayoutError, CefUnavailableCategory};
 use super::MacPublicationObjects;
-use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 pub(super) struct MacPendingLaunch {
     pub(super) reservation: CefReservation,
-    pub(super) objects: MacPublicationObjects,
+    pub(super) objects: Arc<MacPublicationObjects>,
 }
 
 pub(super) struct MacPendingSlots {
-    slots: [AtomicPtr<MacPendingLaunch>; CEF_SLOT_CAPACITY],
+    slots: [Mutex<Option<MacPendingLaunch>>; CEF_SLOT_CAPACITY],
 }
 
 impl MacPendingSlots {
     pub(super) fn new() -> Self {
         Self {
-            slots: std::array::from_fn(|_| AtomicPtr::new(std::ptr::null_mut())),
+            slots: std::array::from_fn(|_| Mutex::new(None)),
         }
     }
 
@@ -25,44 +26,55 @@ impl MacPendingSlots {
         slot: usize,
         pending: MacPendingLaunch,
     ) -> Result<(), CefUnavailableCategory> {
-        let target = self
-            .slots
-            .get(slot)
-            .ok_or(CefUnavailableCategory::Admission)?;
-        let raw = Box::into_raw(Box::new(pending));
-        if target
-            .compare_exchange(
-                std::ptr::null_mut(),
-                raw,
-                Ordering::Release,
-                Ordering::Acquire,
-            )
-            .is_err()
-        {
-            unsafe { drop(Box::from_raw(raw)) };
-            Err(CefUnavailableCategory::Admission)
-        } else {
-            Ok(())
+        let mut target = self.lock(slot).ok_or(CefUnavailableCategory::Admission)?;
+        if target.is_some() {
+            return Err(CefUnavailableCategory::Admission);
         }
+        *target = Some(pending);
+        Ok(())
     }
 
-    pub(super) fn peek(&self, slot: usize) -> Option<&MacPendingLaunch> {
-        let pointer = self.slots.get(slot)?.load(Ordering::Acquire);
-        (!pointer.is_null()).then(|| unsafe { &*pointer })
+    pub(super) fn mailbox_snapshot(
+        &self,
+        slot: usize,
+    ) -> Option<Result<CefMailboxSnapshot, CefSharedLayoutError>> {
+        let target = self.lock(slot)?;
+        target
+            .as_ref()
+            .map(|pending| pending.objects.mailbox_snapshot())
     }
 
     pub(super) fn take(&self, slot: usize) -> Option<Box<MacPendingLaunch>> {
-        let pointer = self
-            .slots
-            .get(slot)?
-            .swap(std::ptr::null_mut(), Ordering::AcqRel);
-        (!pointer.is_null()).then(|| unsafe { Box::from_raw(pointer) })
+        self.lock(slot)?.take().map(Box::new)
+    }
+
+    pub(super) fn begin_closing(&self, deadline_ticks: u64) -> Result<(), CefSharedLayoutError> {
+        let mut failed = false;
+        for slot in 0..CEF_SLOT_CAPACITY {
+            let Some(target) = self.lock(slot) else {
+                failed = true;
+                continue;
+            };
+            if target
+                .as_ref()
+                .is_some_and(|pending| pending.objects.begin_closing(deadline_ticks).is_err())
+            {
+                failed = true;
+            }
+        }
+        (!failed).then_some(()).ok_or(CefSharedLayoutError::Invalid)
     }
 
     pub(super) fn drain(&self) {
         for slot in 0..CEF_SLOT_CAPACITY {
             drop(self.take(slot));
         }
+    }
+
+    fn lock(&self, slot: usize) -> Option<MutexGuard<'_, Option<MacPendingLaunch>>> {
+        self.slots
+            .get(slot)
+            .map(|slot| slot.lock().unwrap_or_else(|poisoned| poisoned.into_inner()))
     }
 }
 

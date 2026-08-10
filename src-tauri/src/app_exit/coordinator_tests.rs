@@ -47,7 +47,7 @@ fn admission_is_permanently_closed_before_closing_is_visible() {
 fn cef_barrier_timeout_keeps_coordinated_shutdown_running() {
     let coordinator = coordinator();
 
-    let result = coordinator.begin_with_cef_close(0, |_| CefShutdownBarrier::TimedOut);
+    let result = coordinator.begin_with_cef_close(0, |_, _| CefShutdownBarrier::TimedOut);
 
     assert!(matches!(result, BeginResult::Started(_)));
     assert!(coordinator.ultimate_is_armed_for_test());

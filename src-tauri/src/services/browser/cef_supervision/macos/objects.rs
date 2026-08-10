@@ -45,7 +45,6 @@ impl MacPublicationObjects {
         self.admission.value().signal();
     }
 
-    #[cfg(test)]
     pub(in crate::services::browser) fn begin_closing(
         &self,
         deadline_ticks: u64,

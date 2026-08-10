@@ -83,6 +83,41 @@ fn closing_the_gate_preserves_an_admitted_helper_until_force_phase() {
     assert!(child.try_wait().expect("final status").is_some());
 }
 
+#[test]
+fn emergency_reaper_survives_the_normal_tracker_stopping() {
+    let root = crate::services::paths::data_dir().join(format!(
+        "cef-mac-independent-reaper-test-{}",
+        std::process::id()
+    ));
+    let mut child = grouped_sleep();
+    let identity = MacProcessIdentity::read(child.id()).expect("child identity");
+    let mut tracker =
+        MacCefTracker::start(identity.test_executable(), root.clone()).expect("tracker");
+    let ticket = tracker.handle().reserve().expect("reservation");
+    let marker = ticket.decode_marker().expect("marker");
+    let names = CefIpcNames::from_marker(&marker).expect("names");
+    let helper = MacHelperObjects::open(&root, &names).expect("helper objects");
+    helper
+        .publish(
+            marker.generation(),
+            identity.test_pid(),
+            identity.test_started_at(),
+            identity.test_process_group(),
+        )
+        .expect("publication");
+    wait_until_admitted(&helper);
+
+    tracker.stop_normal_for_test();
+    assert!(child.try_wait().expect("child status").is_none());
+
+    tracker.force_for_test();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while child.try_wait().expect("child status").is_none() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert!(child.try_wait().expect("final status").is_some());
+}
+
 fn wait_until_admitted(helper: &MacHelperObjects) {
     let deadline = Instant::now() + Duration::from_secs(2);
     while !helper.admission_signaled().expect("admission state") && Instant::now() < deadline {

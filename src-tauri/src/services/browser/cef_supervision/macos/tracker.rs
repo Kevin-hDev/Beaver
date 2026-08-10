@@ -3,30 +3,30 @@ use super::super::{
     CefAuthorityTable, CefIpcNames, CefLaunchTicket, CefProcessRole, CefUnavailableCategory,
 };
 use super::pending::{MacPendingLaunch, MacPendingSlots};
-use super::MacPublicationObjects;
+use super::{MacEmergencyReaper, MacEmergencySlots, MacPublicationObjects, MacReaperControl};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
-use std::time::{Duration, Instant};
 
 pub(in crate::services::browser) struct MacTrackerShared {
     pub(super) table: CefAuthorityTable,
     pub(super) pending: MacPendingSlots,
     pub(super) gate: CefLaunchGate,
-    pub(super) stopping: AtomicBool,
-    failure: AtomicU8,
+    pub(super) tracker_stopping: AtomicBool,
+    pub(super) failure: AtomicU8,
     pub(super) expected_executable: PathBuf,
     pub(super) parent_pid: u32,
     pub(super) root: PathBuf,
-    shutdown_app: Option<tauri::AppHandle>,
-    pub(super) force_requested: AtomicBool,
-    pub(super) active_count: AtomicUsize,
+    pub(super) shutdown_app: Option<tauri::AppHandle>,
+    pub(super) emergency: Arc<MacEmergencySlots>,
+    pub(super) reaper_control: Arc<MacReaperControl>,
 }
 
 pub(in crate::services::browser) struct MacCefTracker {
-    shared: Arc<MacTrackerShared>,
-    thread: Option<JoinHandle<()>>,
+    pub(super) shared: Arc<MacTrackerShared>,
+    pub(super) normal_thread: Option<JoinHandle<()>>,
+    _emergency_reaper: MacEmergencyReaper,
 }
 
 #[derive(Clone)]
@@ -67,19 +67,22 @@ impl MacCefTracker {
     ) -> Result<Self, CefUnavailableCategory> {
         let expected_executable =
             dunce::canonicalize(expected_executable).map_err(|_| CefUnavailableCategory::Reaper)?;
+        let emergency = Arc::new(MacEmergencySlots::new());
+        let reaper_control = Arc::new(MacReaperControl::new());
         let shared = Arc::new(MacTrackerShared {
             table: CefAuthorityTable::new(),
             pending: MacPendingSlots::new(),
             gate: CefLaunchGate::new(),
-            stopping: AtomicBool::new(false),
+            tracker_stopping: AtomicBool::new(false),
             failure: AtomicU8::new(0),
             expected_executable,
             parent_pid: std::process::id(),
             root,
             shutdown_app,
-            force_requested: AtomicBool::new(false),
-            active_count: AtomicUsize::new(0),
+            emergency,
+            reaper_control,
         });
+        let emergency_reaper = MacEmergencyReaper::start(Arc::clone(&shared))?;
         let worker = Arc::clone(&shared);
         let failure = Arc::clone(&shared);
         let thread = std::thread::Builder::new()
@@ -96,7 +99,8 @@ impl MacCefTracker {
             .map_err(|_| CefUnavailableCategory::Reaper)?;
         Ok(Self {
             shared,
-            thread: Some(thread),
+            normal_thread: Some(thread),
+            _emergency_reaper: emergency_reaper,
         })
     }
 
@@ -116,7 +120,7 @@ impl MacCefTrackerHandle {
             .gate
             .try_enter()
             .map_err(|_| CefUnavailableCategory::Admission)?;
-        if self.failure().is_some() || self.shared.stopping.load(Ordering::Acquire) {
+        if self.failure().is_some() || self.shared.tracker_stopping.load(Ordering::Acquire) {
             return Err(CefUnavailableCategory::Admission);
         }
         let reservation = self
@@ -126,11 +130,11 @@ impl MacCefTrackerHandle {
             .map_err(|_| CefUnavailableCategory::Admission)?;
         let names = CefIpcNames::from_marker(reservation.marker())
             .map_err(|_| CefUnavailableCategory::Object)?;
-        let objects = MacPublicationObjects::create(
+        let objects = Arc::new(MacPublicationObjects::create(
             &self.shared.root,
             &names,
             reservation.marker().generation(),
-        )?;
+        )?);
         let ticket = CefLaunchTicket::new(reservation.marker());
         let slot = reservation.marker().slot();
         if self.shared.gate.is_closed() {
@@ -155,67 +159,7 @@ impl MacCefTrackerHandle {
     }
 }
 
-impl MacTrackerShared {
-    pub(super) fn fail(&self, category: CefUnavailableCategory) {
-        if self
-            .failure
-            .compare_exchange(0, category.id(), Ordering::AcqRel, Ordering::Acquire)
-            .is_ok()
-        {
-            if let Some(app) = &self.shutdown_app {
-                crate::app_exit::request(app, 1);
-            }
-        }
-    }
-
-    pub(super) fn failure(&self) -> Option<CefUnavailableCategory> {
-        failure_from_id(self.failure.load(Ordering::Acquire))
-    }
-
-    pub(in crate::services::browser) fn emergency_close(&self, deadline: Instant) -> bool {
-        let gate_closed = self.gate.close_and_wait(deadline);
-        let table_closed = self.table.close_and_invalidate(deadline);
-        gate_closed && table_closed
-    }
-
-    pub(in crate::services::browser) fn emergency_force(&self) {
-        self.force_requested.store(true, Ordering::Release);
-    }
-
-    pub(in crate::services::browser) fn emergency_has_runnable(&self) -> bool {
-        self.active_count.load(Ordering::Acquire) != 0
-    }
-}
-
-#[cfg(test)]
-impl MacCefTracker {
-    pub(in crate::services::browser) fn close_gate_for_test(&self) -> bool {
-        self.shared
-            .emergency_close(Instant::now() + Duration::from_millis(50))
-    }
-
-    pub(in crate::services::browser) fn force_for_test(&self) {
-        self.shared.emergency_force();
-    }
-}
-
-impl Drop for MacCefTracker {
-    fn drop(&mut self) {
-        let deadline = Instant::now() + Duration::from_millis(50);
-        let _ = self.shared.gate.close_and_wait(deadline);
-        let _ = self.shared.table.close_and_invalidate(deadline);
-        self.shared.stopping.store(true, Ordering::Release);
-        if self
-            .thread
-            .take()
-            .is_some_and(|thread| thread.join().is_err())
-        {
-            self.shared.fail(CefUnavailableCategory::Reaper);
-        }
-    }
-}
-
-fn failure_from_id(value: u8) -> Option<CefUnavailableCategory> {
+pub(super) fn failure_from_id(value: u8) -> Option<CefUnavailableCategory> {
     (value != 0)
         .then(|| CefUnavailableCategory::from_id(value).unwrap_or(CefUnavailableCategory::Reaper))
 }
