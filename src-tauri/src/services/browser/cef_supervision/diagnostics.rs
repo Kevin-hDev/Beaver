@@ -28,6 +28,7 @@ impl CefUnavailableCategory {
         }
     }
 
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     pub(super) const fn id(self) -> u8 {
         match self {
             Self::Object => 1,
@@ -38,6 +39,7 @@ impl CefUnavailableCategory {
         }
     }
 
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     pub(super) const fn from_id(value: u8) -> Option<Self> {
         match value {
             1 => Some(Self::Object),

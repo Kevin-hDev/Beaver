@@ -3,9 +3,11 @@ mod authority_slot;
 mod bootstrap;
 mod constants;
 mod diagnostics;
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 pub(super) mod emergency;
 mod gate;
 mod ipc_names;
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 mod launch_ticket;
 #[cfg(target_os = "macos")]
 mod macos;
@@ -18,8 +20,9 @@ mod slots;
 mod windows;
 
 pub(super) use super::process_role::CefProcessRole;
-#[cfg(windows)]
+#[cfg(all(windows, not(feature = "windows-tests")))]
 pub(crate) use bootstrap::WindowsHelperAdmission;
+#[cfg(native_browser)]
 pub(crate) use constants::CEF_ADMISSION_SWITCH;
 #[cfg(test)]
 pub(super) use constants::CEF_SLOT_CAPACITY;
@@ -27,6 +30,7 @@ pub(super) use diagnostics::CefUnavailableCategory;
 #[cfg(test)]
 pub(super) use gate::CefLaunchGate;
 pub(super) use ipc_names::CefIpcNames;
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 pub(super) use launch_ticket::CefLaunchTicket;
 #[cfg(target_os = "macos")]
 pub(super) use macos::{parse_helper_marker, MacHelperBootstrap};
