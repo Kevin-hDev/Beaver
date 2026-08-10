@@ -1,0 +1,25 @@
+Problem:
+The cumulative J1B review showed that several proofs were weaker than the behavior they claimed. A 50 ms CEF admission timeout could bypass all normal cleanup, the macOS emergency path still depended on the tracker it was meant to replace, the packaged Windows bootstrap rejected the shell sandbox and valid Chromium command lines, and CI did not exercise a real packaged CEF child. The Tauri bundle marker warning also remained only documented, not resolved.
+
+Objective:
+Freeze a correction contract before touching production code so the next pass fixes the shared mechanisms instead of adding local patches. Keep the integrated browser functional on every platform where it is shipped, preserve the CEF sandbox, and expose a useful but non-blocking recovery action when local preflight fails.
+
+Decisions and reasons:
+- Keep the 50 ms CEF barrier only as a centralized invalidation deadline. Timing out closes admission and logs a sanitized category, but coordinated cleanup continues; machine load is not an authority corruption.
+- Create a macOS reaper distinct from the normal tracker, backed by its own fixed parent-private view. A tracker panic must not disable the emergency path.
+- Use one packaged Windows role router for parent, reserved CEF helper, shell sandbox helper, and invalid input. Chromium-owned arguments are streamed; only Beaver-private fields are decoded and bounded.
+- Retry only typed transient preflight failures once after 200 ms with freshly created native state. CEF initialization itself remains once per process; if it fails, no other CEF call is legal and Beaver closes through the coordinator.
+- Reuse the existing toast visual system with a generic optional action. The translated, non-modal browser notification and its Restart button disappear completely after 10 seconds. Restart is an immutable shutdown intent and occurs only after normal cleanup; an ultimate forced exit never promises a relaunch.
+- Require CI filters to prove non-zero test inventories, execute the Node contract directly, and add a packaged smoke with a real CEF child. Protocol tests using small substitute processes remain complementary only.
+- Treat __TAURI_BUNDLE_TYPE as a blocking packaging defect. The correction must follow the official Tauri injection boundary and prove the value in the bootstrap and the module that runs Tauri; hiding the warning is rejected.
+- Keep Linux CEF integration outside this milestone; Linux continues to prove that native_browser is absent.
+
+Validation of this documentation commit:
+- npm run test:cef: 15/15 passed.
+- npm run test:brand-boundaries: 12/12 passed, zero blocking unknown references.
+- Local Markdown links checked across the five changed documents.
+- git diff --cached --check passed.
+- graphify update . completed with no code-graph topology change; these ignored specification files are not present in the current Graphify manifest.
+
+Implementation discipline:
+The new corrective plan requires red-green TDD for each behavior, native Windows/macOS proof, full multi-OS CI, a cumulative cross-feature review, and detailed Git notes for every lifecycle or security decision.
