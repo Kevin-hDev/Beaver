@@ -1,0 +1,5 @@
+Objectif : rendre explicites les garanties de durée de vie et de fermeture macOS signalées par Clippy et la review.
+
+Décisions : nommer comme gardes les mappings conservés uniquement pour leur Drop, limiter les accesseurs de revendication à Windows et remplacer le repli silencieux de la vérification de fermeture par un branchement fail-closed explicite.
+
+Justification : une erreur de lecture du contrôle doit arrêter le helper, jamais l'autoriser à continuer. Les changements réduisent le code mort multi-OS sans modifier la politique de sandbox ni l'autorité.
