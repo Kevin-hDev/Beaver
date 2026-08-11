@@ -9,3 +9,5 @@ Ce que nous testons sur macOS : E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e doit ma
 Répartition des preuves : la session macOS exécutera le parcours natif CEF réel ; cette session Windows vérifie les contrats portables, le pipeline de diagnostic, Clippy multi-configuration et les régressions Rust. Aucune valeur libre, chemin, erreur OS ou donnée sensible n'est ajoutée aux diagnostics.
 
 Validations Windows : test rouge observé puis vert ; test:cef 29/29 ; test:e2e-runner 34/34 ; Clippy --all-targets normal et feature e2e avec -D warnings ; garde de format Rust ; trois tests de stockage privé initialement en conflit parallèle réussis isolément ; suite Rust sérialisée 3070 réussis, 0 échec, 4 ignorés ; git diff --check ; graphify update.
+
+Validation native Windows ajoutée après le commit : E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e a compilé Beaver, lancé le vrai parcours CEF, chargé une page dans un helper sandboxé et validé la fermeture sans processus possédé survivant (1 scénario réussi, 0 échec).
