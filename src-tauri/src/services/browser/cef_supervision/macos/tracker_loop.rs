@@ -1,8 +1,8 @@
 use super::super::constants::{CEF_SLOT_CAPACITY, CEF_TRACKER_POLL};
 use super::super::{CefPublication, CefSharedLayoutError, CefUnavailableCategory};
+use super::emergency_slots::MacEmergencySlots;
 use super::identity::MacProcessIdentity;
 use super::tracker::MacTrackerShared;
-use super::MacEmergencySlots;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
