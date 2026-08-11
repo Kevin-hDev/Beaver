@@ -2,6 +2,7 @@ import { mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { reportNativeCefDiagnostics } from "./native-diagnostics.mjs";
 import {
   buildArguments,
   cleanupProfile,
@@ -16,6 +17,7 @@ import {
 const repoRoot = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
 const canonicalTemp = await realpath(tmpdir());
+const logDirectory = join(profilePath, "logs");
 const cargoTargetDir = e2eCargoTargetDir(
   process.platform,
   repoRoot,
@@ -33,6 +35,7 @@ const environment = {
   CLGO_CEF_DEV_PREP: "1",
   CLGO_CEF_CARGO_FEATURES: "e2e",
   E2E_APP_BINARY: debugBinaryPath(process.platform, cargoTargetDir),
+  E2E_LOG_DIR: logDirectory,
   VITE_E2E: "1",
 };
 
@@ -58,6 +61,13 @@ try {
   hadPriorFailure = true;
   throw error;
 } finally {
+  if (process.env.E2E_REQUIRE_CEF_SMOKE === "1" && (hadPriorFailure || process.exitCode)) {
+    try {
+      await reportNativeCefDiagnostics(logDirectory);
+    } catch {
+      process.stderr.write("Native CEF diagnostic collection failed.\n");
+    }
+  }
   await cleanupProfile(profilePath, {
     tempPath: canonicalTemp,
     hadPriorFailure: hadPriorFailure || Boolean(process.exitCode),

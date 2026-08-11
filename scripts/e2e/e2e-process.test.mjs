@@ -167,6 +167,9 @@ test("the native CEF journey uses one isolated application session", () => {
   assert.match(wdioSource, /E2E_REQUIRE_CEF_SMOKE[\s\S]*native-cef-shutdown\.spec\.ts[\s\S]*onboarding\.spec\.ts/u);
   assert.match(nativeSmokeSource, /completeOnboarding\(\)/u);
   assert.match(wdioSource, /logLevel:\s*nativeCefSmoke\s*\?\s*"info"\s*:\s*"warn"/u);
+  assert.match(runnerSource, /const logDirectory = join\(profilePath,\s*"logs"\)/u);
+  assert.match(runnerSource, /E2E_LOG_DIR:\s*logDirectory/u);
+  assert.match(wdioSource, /outputDir:\s*e2eLogDirectory/u);
 });
 
 test("the coordinated exit command is compiled only into the E2E handler", () => {
