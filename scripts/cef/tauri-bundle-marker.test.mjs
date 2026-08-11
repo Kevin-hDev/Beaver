@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { link, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -59,6 +59,22 @@ test("module patching fails closed on missing, repeated or unknown markers", asy
     const valid = join(directory, "valid.dll");
     await writeFile(valid, Buffer.from(BUNDLE_MARKERS.unknown, "ascii"));
     await assert.rejects(() => patchTauriModuleMarker(valid, "zip"), /validation failed/u);
+  });
+});
+
+test("module patching refuses a hard-linked destination without modifying its source", async () => {
+  await withTemporaryDirectory(async (directory) => {
+    const source = join(directory, "source.dll");
+    const destination = join(directory, "destination.dll");
+    const original = Buffer.from(`MZ-${BUNDLE_MARKERS.unknown}`, "ascii");
+    await writeFile(source, original);
+    await link(source, destination);
+
+    await assert.rejects(
+      () => patchTauriModuleMarker(destination, "nsis"),
+      /validation failed/u,
+    );
+    assert.deepEqual(await readFile(source), original);
   });
 });
 
