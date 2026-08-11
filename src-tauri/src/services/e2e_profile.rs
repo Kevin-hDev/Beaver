@@ -35,7 +35,7 @@ pub fn report_browser_exit_source(source: BrowserExitSource) {
     let _ = source;
 }
 
-#[cfg(feature = "e2e")]
+#[cfg(all(feature = "e2e", any(target_os = "windows", target_os = "macos")))]
 const fn exit_source_name(source: BrowserExitSource) -> &'static str {
     match source {
         BrowserExitSource::Initialization => "browser-initialization",
