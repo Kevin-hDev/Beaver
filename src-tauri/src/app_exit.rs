@@ -6,6 +6,7 @@ mod blocking;
 mod cleanup;
 mod emergency;
 mod emergency_drain;
+mod final_action;
 mod policy;
 mod presentation;
 mod raw_exit;
@@ -13,6 +14,8 @@ mod registry;
 mod registry_admission;
 mod request_flow;
 mod state;
+#[cfg(test)]
+mod test_api;
 mod ultimate;
 mod watchdog;
 
@@ -22,6 +25,8 @@ mod cleanup_tests;
 mod coordinator_tests;
 #[cfg(test)]
 mod emergency_tests;
+#[cfg(test)]
+mod final_action_tests;
 #[cfg(test)]
 mod policy_tests;
 #[cfg(test)]
@@ -135,21 +140,21 @@ impl AppExitCoordinator {
         BeginResult::Started(timeline, intent)
     }
 
-    fn mark_ready(&self) -> bool {
-        self.state.mark_ready()
-    }
-
     fn spawn_watchdog(
         &self,
         app: tauri::AppHandle,
         timeline: policy::ShutdownTimeline,
+        intent: ExitIntent,
         exit_code: i32,
     ) -> io::Result<()> {
-        let actions = watchdog::WatchdogActions::production(move |code| app.exit(code));
+        let actions = watchdog::WatchdogActions::production(move |intent, code| {
+            final_action::dispatch_tauri(&app, intent, code);
+        });
         watchdog::WatchdogThread::spawn(
             timeline,
             Arc::clone(&self.state),
             self.emergency.clone(),
+            intent,
             exit_code,
             actions,
         )
@@ -160,48 +165,6 @@ impl AppExitCoordinator {
         if let Some(timeline) = self.timeline.get().copied() {
             watchdog::drain_post_loop(&self.emergency, timeline);
         }
-    }
-
-    #[cfg(test)]
-    fn from_parts_for_test(
-        policy: policy::ShutdownPolicy,
-        ultimate: ultimate::UltimateExit,
-    ) -> Self {
-        Self {
-            begin_lock: Mutex::new(()),
-            state: Arc::new(state::ShutdownState::new()),
-            registry: registry::AdmissionRegistry::new(),
-            emergency: emergency::EmergencyInventory::new(),
-            policy,
-            timeline: OnceLock::new(),
-            intent: OnceLock::new(),
-            ultimate,
-        }
-    }
-
-    #[cfg(test)]
-    fn admit_for_test(&self) -> Result<registry::TrackedAdmission, registry::AdmissionError> {
-        self.registry.try_admit()
-    }
-
-    #[cfg(test)]
-    fn ultimate_is_armed_for_test(&self) -> bool {
-        self.ultimate.is_armed_for_test()
-    }
-
-    #[cfg(test)]
-    fn phase_for_test(&self) -> state::ShutdownPhase {
-        self.state.phase()
-    }
-
-    #[cfg(test)]
-    fn close_registry_for_test(&self) {
-        assert!(self.registry.close());
-    }
-
-    #[cfg(test)]
-    fn intent_for_test(&self) -> Option<ExitIntent> {
-        self.intent.get().copied()
     }
 }
 

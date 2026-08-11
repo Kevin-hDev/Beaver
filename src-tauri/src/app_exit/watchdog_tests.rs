@@ -4,6 +4,7 @@ use super::policy::{ShutdownPolicy, ShutdownTimeline};
 use super::state::{ShutdownPhase, ShutdownState};
 use super::ultimate::{RawExitActions, UltimateExit};
 use super::watchdog::{WatchdogActions, WatchdogThread};
+use super::ExitIntent;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
@@ -60,13 +61,21 @@ fn watchdog_requests_tauri_exit_then_starts_emergency_drain() {
         calls: AtomicUsize::new(0),
     });
     let actions = WatchdogActions::testing(
-        move |_| {
+        move |intent, _| {
+            assert_eq!(intent, ExitIntent::Restart);
             exit_calls.fetch_add(1, Ordering::AcqRel);
         },
         signaler.clone(),
     );
-    let watchdog = WatchdogThread::spawn(timeline, Arc::clone(&state), inventory, 9, actions)
-        .expect("watchdog");
+    let watchdog = WatchdogThread::spawn(
+        timeline,
+        Arc::clone(&state),
+        inventory,
+        ExitIntent::Restart,
+        9,
+        actions,
+    )
+    .expect("watchdog");
 
     wait_until(|| exits.load(Ordering::Acquire) == 1);
     assert_eq!(state.phase(), ShutdownPhase::ReadyToExit);
@@ -83,9 +92,10 @@ fn watchdog_spawn_failure_does_not_touch_existing_state() {
         timeline(origin),
         Arc::clone(&state),
         EmergencyInventory::new(),
+        ExitIntent::Exit,
         0,
         WatchdogActions::testing(
-            |_| {},
+            |_, _| {},
             Arc::new(CountingSignaler {
                 calls: AtomicUsize::new(0),
             }),
@@ -155,8 +165,9 @@ fn blocked_watchdog_cannot_delay_the_ultimate_exit() {
         released: Mutex::new(false),
         wake: Condvar::new(),
     });
-    let actions = WatchdogActions::testing(|_| {}, signaler.clone());
-    let watchdog = WatchdogThread::spawn(timeline, state, inventory, 0, actions).expect("watchdog");
+    let actions = WatchdogActions::testing(|_, _| {}, signaler.clone());
+    let watchdog = WatchdogThread::spawn(timeline, state, inventory, ExitIntent::Exit, 0, actions)
+        .expect("watchdog");
 
     wait_until(|| signaler.entered.load(Ordering::Acquire));
     wait_until(|| ultimate_calls.load(Ordering::Acquire) == 1);
