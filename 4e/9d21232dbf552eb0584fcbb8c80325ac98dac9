@@ -1,0 +1,1 @@
+Décision : figer avant implémentation les corrections N1, N2, N12, N3 et N4, avec une autorité unique pour chaque état, délai et table. Le document impose le TDD, les budgets absolus, les collections bornées et laisse N5 à N11 ainsi que N13 à N15 hors périmètre.
