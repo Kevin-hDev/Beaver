@@ -1,5 +1,6 @@
 use super::super::constants::CEF_TRACKER_DROP_TIMEOUT;
 use super::super::mac_supervision_failure::MacSupervisionFailure;
+use super::super::CefUnavailableCategory;
 use super::tracker::{failure_from_id, MacCefTracker, MacTrackerShared};
 use std::sync::atomic::Ordering;
 #[cfg(test)]

@@ -26,6 +26,11 @@ backend-macos-native:
   }`,
   macHelper: "sandbox.initialize(args.as_main_args()); bootstrap.admit_after_sandbox()",
   macBootstrap: "libc::getppid(); start_monitor(parent_pid)",
+  macTrackerLifecycle: `
+use super::super::CefUnavailableCategory;
+impl MacTrackerShared {
+  fn failure(&self) -> Option<CefUnavailableCategory> { None }
+}`,
 };
 
 test("native CI proves both CEF supervision authorities without enabling Linux", () => {
@@ -61,6 +66,18 @@ test("macOS helper checks only its validated parent identity after sandbox", () 
 
   assert.ok(errors.includes("macOS helper must compare its current parent after sandbox"));
   assert.ok(errors.includes("macOS helper must not inspect its parent after sandbox"));
+});
+
+test("macOS tracker lifecycle binds the category type used by its public signature", () => {
+  const errors = validateCefSupervisionContracts({
+    ...valid,
+    macTrackerLifecycle: `
+impl MacTrackerShared {
+  fn failure(&self) -> Option<CefUnavailableCategory> { None }
+}`,
+  });
+
+  assert.ok(errors.includes("macOS tracker lifecycle category type is not in scope"));
 });
 
 test("the checked-in repository satisfies the native supervision contract", async () => {
@@ -99,6 +116,11 @@ test("an invalid fixture fails when the contract is executed directly", async ()
       writeFile(join(fixture, "src-tauri", "build.rs"), "fn main() {}\n", "utf8"),
       writeFile(join(browserDirectory, "macos_helper_entry.rs"), "fn run() {}\n", "utf8"),
       writeFile(join(macSupervisionDirectory, "bootstrap.rs"), "fn run() {}\n", "utf8"),
+      writeFile(
+        join(macSupervisionDirectory, "tracker_lifecycle.rs"),
+        "fn run() {}\n",
+        "utf8",
+      ),
     ]);
 
     const result = spawnSync(process.execPath, [copiedScript], {
