@@ -2,8 +2,10 @@ use super::super::gate::CefLaunchGate;
 use super::super::{
     CefAuthorityTable, CefIpcNames, CefLaunchTicket, CefProcessRole, CefUnavailableCategory,
 };
+use super::emergency_slots::MacEmergencySlots;
 use super::pending::{MacPendingLaunch, MacPendingSlots};
-use super::{MacEmergencyReaper, MacEmergencySlots, MacPublicationObjects, MacReaperControl};
+use super::reaper::{MacEmergencyReaper, MacReaperControl};
+use super::MacPublicationObjects;
 use crate::services::browser::cef_preflight::CefPreflightError;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
