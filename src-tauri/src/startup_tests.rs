@@ -198,7 +198,7 @@ fn macos_entry_point_captures_the_shell_through_cef_startup() {
 
 #[test]
 fn macos_engine_reuses_the_prevalidated_runtime_files() {
-    let source = include_str!("services/browser/cef_engine.rs");
+    let source = include_str!("services/browser/cef_engine/startup.rs");
 
     assert!(source.contains("library.runtime_files()"));
     assert!(!source.contains("load_library("));
