@@ -6,6 +6,7 @@ pub(super) fn handle_requested(
     code: Option<i32>,
     api: &tauri::ExitRequestApi,
 ) {
+    ::log::info!("[exit] coordinated shutdown requested");
     let (intent, exit_code) = requested_intent(code);
     let coordinator = app.state::<AppExitCoordinator>();
     match coordinator.begin_with_intent(

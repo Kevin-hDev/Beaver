@@ -37,6 +37,7 @@ wrap_browser_process_handler! {
             let runtime = self.runtime.clone();
             super::ffi_guard::unit_or(
                 || {
+                    ::log::error!("[browser] launch callback failed");
                     let _ = runtime.mark_failed();
                 },
                 || {
