@@ -9,7 +9,7 @@ use crate::services::browser::native_paths::MacHelperExecutables;
 #[cfg(test)]
 use std::path::Path;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8};
 use std::sync::Arc;
 use std::thread::JoinHandle;
 
