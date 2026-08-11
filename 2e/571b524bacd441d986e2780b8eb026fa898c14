@@ -1,0 +1,5 @@
+Problème : la passe globale a révélé un échec du contrat macOS macos_engine_reuses_the_prevalidated_runtime_files. Le découpage du démarrage CEF effectué dans fa32c1d avait déplacé l'appel vers cef_engine/startup.rs, mais le test continuait à inspecter cef_engine.rs.
+
+Décision : faire suivre au test le module qui possède désormais la responsabilité de préparation et conserver ses deux assertions : réutilisation de library.runtime_files() et absence de nouveau load_library(). Aucun code runtime n'est modifié.
+
+Preuves : le test exact sélectionne 1 test et passe ; la suite Rust complète passe avec 3069 réussis, 0 échec et 4 ignorés explicitement sur Windows.
