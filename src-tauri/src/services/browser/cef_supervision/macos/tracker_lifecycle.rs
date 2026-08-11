@@ -1,5 +1,5 @@
 use super::super::constants::CEF_TRACKER_DROP_TIMEOUT;
-use super::super::CefUnavailableCategory;
+use super::super::mac_supervision_failure::MacSupervisionFailure;
 use super::tracker::{failure_from_id, MacCefTracker, MacTrackerShared};
 use std::sync::atomic::Ordering;
 #[cfg(test)]
@@ -7,13 +7,20 @@ use std::time::Duration;
 use std::time::Instant;
 
 impl MacTrackerShared {
-    pub(super) fn fail(&self, category: CefUnavailableCategory) {
+    pub(super) fn fail(&self, failure: MacSupervisionFailure) {
+        let category = failure.category();
         if self
             .failure
             .compare_exchange(0, category.id(), Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
-            ::log::error!("[browser] macOS supervision failed ({})", category.code());
+            ::log::error!(
+                "[browser] macOS supervision failed ({}) reason={}",
+                category.code(),
+                failure.code()
+            );
+            #[cfg(feature = "e2e")]
+            eprintln!("[e2e-supervision-failure] {}", failure.code());
             if let Some(app) = &self.shutdown_app {
                 crate::services::e2e_profile::report_browser_exit_source(
                     crate::services::e2e_profile::BrowserExitSource::Supervision,
@@ -35,20 +42,29 @@ impl MacTrackerShared {
         let deadline_ticks = super::clock::ticks_at(helper_exit_deadline);
         let gate_closed = self.gate.close_and_wait(admission_deadline);
         let table_closed = self.table.close_and_invalidate(admission_deadline);
-        let signaled = deadline_ticks.is_ok_and(|deadline| {
-            let pending = self.pending.begin_closing(deadline).is_ok();
-            let admitted = self.emergency.begin_closing(deadline).is_ok();
-            pending && admitted
-        });
-        if !signaled {
-            self.fail(CefUnavailableCategory::Reaper);
+        let failure = match deadline_ticks {
+            Err(_) => Some(MacSupervisionFailure::ClosingClock),
+            Ok(deadline) => {
+                let pending_failed = self.pending.begin_closing(deadline).is_err();
+                let admitted_failed = self.emergency.begin_closing(deadline).is_err();
+                if pending_failed {
+                    Some(MacSupervisionFailure::PendingCloseSignal)
+                } else if admitted_failed {
+                    Some(MacSupervisionFailure::AdmittedCloseSignal)
+                } else {
+                    None
+                }
+            }
+        };
+        if let Some(failure) = failure {
+            self.fail(failure);
         }
         gate_closed && table_closed
     }
 
     pub(in crate::services::browser) fn emergency_force(&self) {
         if !self.reaper_control.force() {
-            self.fail(CefUnavailableCategory::Reaper);
+            self.fail(MacSupervisionFailure::EmergencyUnavailable);
         }
     }
 
@@ -90,7 +106,7 @@ impl Drop for MacCefTracker {
             .take()
             .is_some_and(|thread| thread.join().is_err())
         {
-            self.shared.fail(CefUnavailableCategory::Reaper);
+            self.shared.fail(MacSupervisionFailure::TrackerJoinPanic);
         }
         self.shared.emergency_force();
     }

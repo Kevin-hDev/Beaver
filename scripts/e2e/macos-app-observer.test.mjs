@@ -73,6 +73,25 @@ test("the macOS observer accepts only fixed lifecycle and run-event markers", ()
   assert.equal(safeObservedDiagnostic("[e2e-lifecycle] setup-completed extra"), undefined);
 });
 
+test("the macOS observer persists only bounded supervision failure reasons", () => {
+  assert.equal(
+    safeObservedDiagnostic("[e2e-supervision-failure] admission-identity"),
+    "[e2e-supervision-failure] admission-identity",
+  );
+  assert.equal(
+    safeObservedDiagnostic("[e2e-supervision-failure] reaper-force-pass"),
+    "[e2e-supervision-failure] reaper-force-pass",
+  );
+  assert.equal(
+    safeObservedDiagnostic("[e2e-supervision-failure] secret-/private/path"),
+    undefined,
+  );
+  assert.equal(
+    safeObservedDiagnostic("[e2e-supervision-failure] admission-identity extra"),
+    undefined,
+  );
+});
+
 test("the macOS observer reconstructs split markers with bounded line storage", () => {
   const diagnostics = [];
   const capture = createDiagnosticBuffer((value) => diagnostics.push(value));

@@ -1,4 +1,5 @@
 use super::super::gate::CefLaunchGate;
+use super::super::mac_supervision_failure::MacSupervisionFailure;
 use super::super::{
     CefAuthorityTable, CefIpcNames, CefLaunchTicket, CefProcessRole, CefUnavailableCategory,
 };
@@ -96,7 +97,7 @@ impl MacCefTracker {
                 }))
                 .is_err()
                 {
-                    failure.fail(CefUnavailableCategory::Reaper);
+                    failure.fail(MacSupervisionFailure::TrackerPanic);
                 }
             })
             .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
@@ -154,7 +155,7 @@ impl MacCefTrackerHandle {
     }
 
     pub(in crate::services::browser) fn fail(&self, category: CefUnavailableCategory) {
-        self.shared.fail(category);
+        self.shared.fail(MacSupervisionFailure::External(category));
     }
 
     fn failure(&self) -> Option<CefUnavailableCategory> {

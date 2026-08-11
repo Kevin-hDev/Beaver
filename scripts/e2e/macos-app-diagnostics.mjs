@@ -49,6 +49,7 @@ const SAFE_EXIT_SIGNAL_NAMES = new Set([
   ...[...SAFE_EXIT_SIGNALS].map((signal) => signal.toLowerCase()),
   "unknown",
 ]);
+const SAFE_SUPERVISION_FAILURE = /^(?:admission|reaper|external)-(?:[a-z]+)(?:-[a-z]+){0,3}$/u;
 
 export function isSafeAbsolutePosixPath(value) {
   return typeof value === "string"
@@ -104,6 +105,8 @@ export function safeObservedDiagnostic(line) {
   if (runEvent && SAFE_RUN_EVENTS.has(runEvent[1])) return line;
   const exitSource = line.match(/^\[e2e-exit-source\] ([a-z-]+)$/u);
   if (exitSource && SAFE_EXIT_SOURCES.has(exitSource[1])) return line;
+  const supervision = line.match(/^\[e2e-supervision-failure\] ([a-z-]{1,64})$/u);
+  if (supervision && SAFE_SUPERVISION_FAILURE.test(supervision[1])) return line;
   if (/^\[e2e-process\] application-spawn-failed$/u.test(line)) return line;
   const exitCode = line.match(/^\[e2e-process\] application-exit-code-([0-9]{1,3})$/u);
   if (exitCode && Number(exitCode[1]) <= 255) return line;

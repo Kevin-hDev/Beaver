@@ -49,6 +49,7 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
         "[e2e-run-event] exit-requested-programmatic",
         "[e2e-run-event] exit",
         "[e2e-exit-source] browser-supervision",
+        "[e2e-supervision-failure] admission-identity",
         "[e2e-process] application-exit-signal-sigsegv",
       ].join("\n"),
       "utf8",
@@ -68,6 +69,7 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
       "application-event:exit-requested-programmatic",
       "application-event:exit",
       "application-exit-source:browser-supervision",
+      "browser-supervision-detail:admission-identity",
       "process-exit:signal-sigsegv",
     ]);
   } finally {

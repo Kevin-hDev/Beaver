@@ -4,11 +4,13 @@ pub enum LifecycleStage {
     SetupCompleted,
 }
 
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 #[derive(Clone, Copy)]
 pub enum BrowserExitSource {
     Initialization,
     LaunchCallback,
     ChildAdmission,
+    #[cfg(target_os = "macos")]
     Supervision,
 }
 
@@ -25,6 +27,7 @@ pub fn report_lifecycle(stage: LifecycleStage) {
     let _ = stage;
 }
 
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 pub fn report_browser_exit_source(source: BrowserExitSource) {
     #[cfg(feature = "e2e")]
     eprintln!("[e2e-exit-source] {}", exit_source_name(source));
@@ -38,6 +41,7 @@ const fn exit_source_name(source: BrowserExitSource) -> &'static str {
         BrowserExitSource::Initialization => "browser-initialization",
         BrowserExitSource::LaunchCallback => "browser-launch-callback",
         BrowserExitSource::ChildAdmission => "browser-child-admission",
+        #[cfg(target_os = "macos")]
         BrowserExitSource::Supervision => "browser-supervision",
     }
 }
@@ -82,7 +86,7 @@ pub fn external_home_dir() -> Result<std::path::PathBuf, String> {
     }
 }
 
-#[cfg(all(test, feature = "e2e"))]
+#[cfg(all(test, feature = "e2e", any(target_os = "windows", target_os = "macos")))]
 mod tests {
     use super::{exit_source_name, BrowserExitSource};
 
@@ -100,6 +104,7 @@ mod tests {
             exit_source_name(BrowserExitSource::ChildAdmission),
             "browser-child-admission"
         );
+        #[cfg(target_os = "macos")]
         assert_eq!(
             exit_source_name(BrowserExitSource::Supervision),
             "browser-supervision"

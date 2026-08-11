@@ -48,6 +48,7 @@ const SAFE_EXIT_SIGNALS = new Set([
   "sigtrap",
   "unknown",
 ]);
+const SAFE_SUPERVISION_FAILURE = /^(?:admission|reaper|external)-(?:[a-z]+)(?:-[a-z]+){0,3}$/u;
 
 export async function collectNativeCefDiagnostics(logDirectory) {
   const names = await boundedLogNames(logDirectory);
@@ -151,6 +152,12 @@ function safeDiagnostic(line) {
   const exitSource = line.match(/\[e2e-exit-source\] ([a-z-]+)/u);
   if (exitSource && SAFE_EXIT_SOURCES.has(exitSource[1])) {
     return `application-exit-source:${exitSource[1]}`;
+  }
+  const supervisionFailure = line.match(
+    /\[e2e-supervision-failure\] ([a-z-]{1,64})/u,
+  );
+  if (supervisionFailure && SAFE_SUPERVISION_FAILURE.test(supervisionFailure[1])) {
+    return `browser-supervision-detail:${supervisionFailure[1]}`;
   }
   const exitCode = line.match(/\[e2e-process\] application-exit-code-([0-9]{1,3})/u);
   if (exitCode && Number(exitCode[1]) <= 255) {

@@ -1,5 +1,6 @@
 use super::super::constants::{CEF_SLOT_CAPACITY, CEF_TRACKER_POLL};
-use super::super::{CefPublication, CefSharedLayoutError, CefUnavailableCategory};
+use super::super::mac_supervision_failure::MacSupervisionFailure;
+use super::super::{CefPublication, CefSharedLayoutError};
 use super::emergency_slots::MacEmergencySlots;
 use super::identity::MacProcessIdentity;
 use super::tracker::MacTrackerShared;
@@ -32,18 +33,22 @@ fn scan_pending(
             Err(CefSharedLayoutError::Unpublished) => continue,
             Err(_) => {
                 drop(shared.pending.take(slot));
-                shared.fail(CefUnavailableCategory::Admission);
+                shared.fail(MacSupervisionFailure::PendingLayout);
                 return;
             }
             Ok(_) => {
                 let Some(pending) = shared.pending.take(slot) else {
-                    shared.fail(CefUnavailableCategory::Admission);
+                    shared.fail(MacSupervisionFailure::PendingMissing);
                     continue;
                 };
                 match admit(shared, *pending) {
                     Ok(helper) if active_slot.is_none() => *active_slot = Some(helper),
-                    Ok(_) | Err(_) => {
-                        shared.fail(CefUnavailableCategory::Admission);
+                    Ok(_) => {
+                        shared.fail(MacSupervisionFailure::ActiveSlotOccupied);
+                        return;
+                    }
+                    Err(failure) => {
+                        shared.fail(failure);
                         return;
                     }
                 }
@@ -55,39 +60,43 @@ fn scan_pending(
 fn admit(
     shared: &Arc<MacTrackerShared>,
     pending: super::pending::MacPendingLaunch,
-) -> Result<ActiveHelper, CefUnavailableCategory> {
+) -> Result<ActiveHelper, MacSupervisionFailure> {
     let snapshot = pending
         .objects
         .mailbox_snapshot()
-        .map_err(|_| CefUnavailableCategory::Admission)?;
+        .map_err(|_| MacSupervisionFailure::MailboxSnapshot)?;
     if snapshot.generation != pending.reservation.marker().generation() {
-        return Err(CefUnavailableCategory::Admission);
+        return Err(MacSupervisionFailure::GenerationMismatch);
     }
     let publication = CefPublication::from_marker(pending.reservation.marker(), snapshot.pid)
-        .map_err(|_| CefUnavailableCategory::Admission)?;
+        .map_err(|_| MacSupervisionFailure::Publication)?;
     let claim = shared
         .table
         .claim(&publication)
-        .map_err(|_| CefUnavailableCategory::Admission)?;
+        .map_err(|_| MacSupervisionFailure::AuthorityClaim)?;
     let identity = MacProcessIdentity::validate(
         snapshot.pid,
         shared.parent_pid,
         snapshot.started_at,
         snapshot.native_group,
         &shared.expected_executable,
-    )?;
+    )
+    .map_err(|_| MacSupervisionFailure::Identity)?;
     let admission = claim
         .admit()
-        .map_err(|_| CefUnavailableCategory::Admission)?;
+        .map_err(|_| MacSupervisionFailure::AuthorityAdmission)?;
     let slot = pending.reservation.marker().slot();
     let generation = pending.reservation.marker().generation();
-    shared.emergency.install(
-        slot,
-        generation,
-        identity.clone(),
-        Arc::clone(&pending.objects),
-        admission,
-    )?;
+    shared
+        .emergency
+        .install(
+            slot,
+            generation,
+            identity.clone(),
+            Arc::clone(&pending.objects),
+            admission,
+        )
+        .map_err(|_| MacSupervisionFailure::EmergencyInstall)?;
     pending.objects.signal_admission();
     Ok(ActiveHelper {
         slot,
@@ -111,7 +120,7 @@ fn refresh_active(
                 current.emergency.clear(current.slot, current.generation);
                 drop(helper.take());
             }
-            Err(_) => shared.fail(CefUnavailableCategory::Reaper),
+            Err(_) => shared.fail(MacSupervisionFailure::Liveness),
         }
     }
 }
