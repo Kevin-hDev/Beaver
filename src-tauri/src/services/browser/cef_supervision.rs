@@ -8,6 +8,12 @@ mod gate;
 mod ipc_names;
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 mod launch_ticket;
+#[cfg(any(test, target_os = "macos"))]
+#[path = "cef_supervision/macos/failure.rs"]
+mod mac_supervision_failure;
+#[cfg(test)]
+#[path = "cef_supervision/macos/failure_tests.rs"]
+mod mac_supervision_failure_tests;
 #[cfg(target_os = "macos")]
 mod macos;
 mod mailbox;

@@ -1,4 +1,5 @@
 use super::super::constants::{CEF_REAPER_START_TIMEOUT, CEF_TRACKER_POLL};
+use super::super::mac_supervision_failure::MacSupervisionFailure;
 use super::super::CefUnavailableCategory;
 use super::tracker::MacTrackerShared;
 use crate::services::browser::cef_preflight::CefPreflightError;
@@ -51,7 +52,7 @@ impl MacEmergencyReaper {
                         .is_err();
                 worker_control.healthy.store(false, Ordering::Release);
                 if panicked && !worker_control.stopping.load(Ordering::Acquire) {
-                    shared.fail(CefUnavailableCategory::Reaper);
+                    shared.fail(MacSupervisionFailure::EmergencyReaperPanic);
                 }
             })
             .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
@@ -79,7 +80,7 @@ fn run(shared: &MacTrackerShared) {
             .load(Ordering::Acquire)
             && shared.emergency.force_pass().is_err()
         {
-            shared.fail(CefUnavailableCategory::Reaper);
+            shared.fail(MacSupervisionFailure::ForcePass);
         }
         std::thread::park_timeout(CEF_TRACKER_POLL);
     }
