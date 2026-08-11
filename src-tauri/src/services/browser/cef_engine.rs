@@ -48,6 +48,9 @@ pub(super) fn initialize(
         Err(startup::CefStartFailure::Fatal) => {
             let _ = runtime.mark_failed();
             ::log::error!("[browser] initialization failed after CEF boundary");
+            crate::services::e2e_profile::report_browser_exit_source(
+                crate::services::e2e_profile::BrowserExitSource::Initialization,
+            );
             crate::app_exit::request(&app, 1);
         }
     }

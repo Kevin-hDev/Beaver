@@ -32,6 +32,12 @@ const SAFE_RUN_EVENTS = new Set([
   "window-close-main",
   "exit",
 ]);
+const SAFE_EXIT_SOURCES = new Set([
+  "browser-initialization",
+  "browser-launch-callback",
+  "browser-child-admission",
+  "browser-supervision",
+]);
 const SAFE_EXIT_SIGNALS = new Set([
   "sigabrt",
   "sigbus",
@@ -141,6 +147,10 @@ function safeDiagnostic(line) {
   const runEvent = line.match(/\[e2e-run-event\] ([a-z-]+)/u);
   if (runEvent && SAFE_RUN_EVENTS.has(runEvent[1])) {
     return `application-event:${runEvent[1]}`;
+  }
+  const exitSource = line.match(/\[e2e-exit-source\] ([a-z-]+)/u);
+  if (exitSource && SAFE_EXIT_SOURCES.has(exitSource[1])) {
+    return `application-exit-source:${exitSource[1]}`;
   }
   const exitCode = line.match(/\[e2e-process\] application-exit-code-([0-9]{1,3})/u);
   if (exitCode && Number(exitCode[1]) <= 255) {

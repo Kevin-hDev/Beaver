@@ -4,6 +4,14 @@ pub enum LifecycleStage {
     SetupCompleted,
 }
 
+#[derive(Clone, Copy)]
+pub enum BrowserExitSource {
+    Initialization,
+    LaunchCallback,
+    ChildAdmission,
+    Supervision,
+}
+
 pub fn report_lifecycle(stage: LifecycleStage) {
     #[cfg(feature = "e2e")]
     eprintln!(
@@ -15,6 +23,23 @@ pub fn report_lifecycle(stage: LifecycleStage) {
     );
     #[cfg(not(feature = "e2e"))]
     let _ = stage;
+}
+
+pub fn report_browser_exit_source(source: BrowserExitSource) {
+    #[cfg(feature = "e2e")]
+    eprintln!("[e2e-exit-source] {}", exit_source_name(source));
+    #[cfg(not(feature = "e2e"))]
+    let _ = source;
+}
+
+#[cfg(feature = "e2e")]
+const fn exit_source_name(source: BrowserExitSource) -> &'static str {
+    match source {
+        BrowserExitSource::Initialization => "browser-initialization",
+        BrowserExitSource::LaunchCallback => "browser-launch-callback",
+        BrowserExitSource::ChildAdmission => "browser-child-admission",
+        BrowserExitSource::Supervision => "browser-supervision",
+    }
 }
 
 pub fn load_dotenv<Action>(action: Action)
@@ -54,5 +79,30 @@ pub fn external_home_dir() -> Result<std::path::PathBuf, String> {
             .starts_with(canonical_profile)
             .then_some(canonical_home)
             .ok_or_else(|| "Analyse indisponible".to_string())
+    }
+}
+
+#[cfg(all(test, feature = "e2e"))]
+mod tests {
+    use super::{exit_source_name, BrowserExitSource};
+
+    #[test]
+    fn browser_exit_sources_are_fixed_categories() {
+        assert_eq!(
+            exit_source_name(BrowserExitSource::Initialization),
+            "browser-initialization"
+        );
+        assert_eq!(
+            exit_source_name(BrowserExitSource::LaunchCallback),
+            "browser-launch-callback"
+        );
+        assert_eq!(
+            exit_source_name(BrowserExitSource::ChildAdmission),
+            "browser-child-admission"
+        );
+        assert_eq!(
+            exit_source_name(BrowserExitSource::Supervision),
+            "browser-supervision"
+        );
     }
 }
