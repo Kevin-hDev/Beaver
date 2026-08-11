@@ -2,6 +2,10 @@ use std::io;
 use std::sync::{Arc, Mutex, OnceLock};
 use tauri::Manager;
 
+// Tauri n'ignore prevent_exit que pour son code réservé : Beaver emploie donc
+// une sentinelle distincte jusqu'à la fin du nettoyage coordonné.
+const BEAVER_RESTART_REQUEST_CODE: i32 = i32::MAX - 1;
+
 mod blocking;
 mod cleanup;
 mod emergency;
@@ -173,7 +177,11 @@ pub fn request(app: &tauri::AppHandle, code: i32) {
 }
 
 pub fn request_restart(app: &tauri::AppHandle) {
-    app.exit(tauri::RESTART_EXIT_CODE);
+    request_restart_with(|code| app.exit(code));
+}
+
+fn request_restart_with(exit: impl FnOnce(i32)) {
+    exit(BEAVER_RESTART_REQUEST_CODE);
 }
 
 pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::ExitRequestApi) {
