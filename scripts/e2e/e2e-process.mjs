@@ -3,7 +3,10 @@ import { rm } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import { resolveCargoTargetDir } from "../cef/tauri-launch.mjs";
 
-const PROCESS_TIMEOUT_MS = 20 * 60 * 1000;
+export const E2E_BUILD_TIMEOUT_MS = 35 * 60 * 1000;
+export const E2E_JOURNEY_TIMEOUT_MS = 10 * 60 * 1000;
+const MAX_PROCESS_TIMEOUT_MS = 60 * 60 * 1000;
+const PROCESS_TIMEOUT_MESSAGE = "E2E process timeout";
 const PROFILE_CLEANUP_MESSAGE = "E2E profile cleanup failed";
 const MAX_PROFILE_PATH_CHARS = 32_768;
 
@@ -76,7 +79,14 @@ function validPath(value) {
     && !/[\0\r\n]/u.test(value);
 }
 
-export function runCommand(command, args, { cwd, env }) {
+export function runCommand(command, args, { cwd, env, timeoutMs }) {
+  if (
+    !Number.isSafeInteger(timeoutMs)
+    || timeoutMs < 1
+    || timeoutMs > MAX_PROCESS_TIMEOUT_MS
+  ) {
+    return Promise.reject(new Error(PROCESS_TIMEOUT_MESSAGE));
+  }
   return new Promise((resolveRun, rejectRun) => {
     const child = spawn(command, args, {
       cwd,
@@ -85,7 +95,10 @@ export function runCommand(command, args, { cwd, env }) {
       stdio: "inherit",
       windowsHide: true,
     });
-    const timeout = setTimeout(() => child.kill("SIGTERM"), PROCESS_TIMEOUT_MS);
+    const timeout = setTimeout(() => {
+      process.stderr.write(`${PROCESS_TIMEOUT_MESSAGE} after ${timeoutMs} ms.\n`);
+      child.kill("SIGTERM");
+    }, timeoutMs);
     child.once("error", (error) => {
       clearTimeout(timeout);
       rejectRun(error);

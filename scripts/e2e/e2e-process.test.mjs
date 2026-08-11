@@ -6,8 +6,11 @@ import {
   buildArguments,
   cleanupProfile,
   debugBinaryPath,
+  E2E_BUILD_TIMEOUT_MS,
+  E2E_JOURNEY_TIMEOUT_MS,
   e2eCargoTargetDir,
   isAllowedProfilePath,
+  runCommand,
 } from "./e2e-process.mjs";
 
 const ciSource = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
@@ -63,6 +66,26 @@ test("the E2E build and binary reader share one Cargo target directory", () => {
     resolve(projectRoot, "src-tauri", "target", "e2e"),
   );
   assert.equal(e2eCargoTargetDir("win32", projectRoot, configured), configured);
+});
+
+test("a cold native build has a larger budget than the bounded app journey", () => {
+  assert.equal(E2E_BUILD_TIMEOUT_MS, 35 * 60 * 1000);
+  assert.equal(E2E_JOURNEY_TIMEOUT_MS, 10 * 60 * 1000);
+  assert.ok(E2E_BUILD_TIMEOUT_MS > E2E_JOURNEY_TIMEOUT_MS);
+});
+
+test("runCommand fails when its bounded process exceeds the selected budget", async () => {
+  const exitCode = await runCommand(
+    process.execPath,
+    ["-e", "setInterval(() => {}, 1_000)"],
+    {
+      cwd: process.cwd(),
+      env: process.env,
+      timeoutMs: 50,
+    },
+  );
+
+  assert.equal(exitCode, 1);
 });
 
 test("only a dedicated direct child of the system temp directory is accepted", () => {
