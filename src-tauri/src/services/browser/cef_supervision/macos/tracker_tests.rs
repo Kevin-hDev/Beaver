@@ -1,4 +1,6 @@
-use super::macos::{parent_changed, MacCefTracker, MacHelperObjects, MacProcessIdentity};
+use super::macos::{
+    helper_parent_changed_for_test, MacCefTracker, MacHelperObjects, MacProcessIdentity,
+};
 use super::{CefIpcNames, CefUnavailableCategory};
 use std::os::unix::process::CommandExt;
 use std::time::{Duration, Instant};
@@ -7,9 +9,11 @@ use std::time::{Duration, Instant};
 fn helper_accepts_only_its_validated_current_parent() {
     let current = unsafe { libc::getppid() };
     assert!(current > 0);
-    assert!(!parent_changed(current as u32));
-    assert!(parent_changed(0));
-    assert!(parent_changed((current as u32).saturating_add(1)));
+    assert!(!helper_parent_changed_for_test(current as u32));
+    assert!(helper_parent_changed_for_test(0));
+    assert!(helper_parent_changed_for_test(
+        (current as u32).saturating_add(1)
+    ));
 }
 
 #[test]
