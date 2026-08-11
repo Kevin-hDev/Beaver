@@ -1,0 +1,12 @@
+Problème
+Le support optionnel des actions dans les notifications faisait toujours appeler le handler avec un quatrième argument `undefined`. Cela modifiait le contrat historique pour toutes les notifications existantes et faisait échouer quatre tests de compatibilité.
+
+Objectif
+Conserver strictement le comportement des appels existants tout en gardant la nouvelle action de redémarrage CEF.
+
+Décision
+`showToast` appelle le handler avec trois arguments lorsque `options` est absent et n'utilise le quatrième argument que lorsqu'une option réelle est fournie. Cette branche explicite évite de modifier silencieusement la forme des appels existants sans dupliquer le système de notification.
+
+Preuves
+- `npx vitest run src/lib/toast-emitter.test.ts src/components/ui/__tests__/toast.test.tsx src/hooks/__tests__/use-browser-recovery-notice.test.tsx`
+- 3 fichiers, 11 tests réussis.
