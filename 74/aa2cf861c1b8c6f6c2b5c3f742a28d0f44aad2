@@ -1,0 +1,1 @@
+Reason: Tauri ignores prevent_exit for its reserved restart code, so Beaver must use an interceptable private sentinel until the unique post-cleanup final action calls request_restart.
