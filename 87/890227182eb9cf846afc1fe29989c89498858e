@@ -1,0 +1,1 @@
+Reason: an expired Windows CEF launch must release its emergency registration and IPC objects before its central reservation, otherwise a new generation can reserve the slot while the old emergency authority still owns it.
