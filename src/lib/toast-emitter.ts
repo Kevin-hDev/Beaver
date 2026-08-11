@@ -28,5 +28,9 @@ export function showToast(
   duration?: number,
   options?: ToastOptions,
 ) {
+  if (options === undefined) {
+    _show(message, type, duration);
+    return;
+  }
   _show(message, type, duration, options);
 }
