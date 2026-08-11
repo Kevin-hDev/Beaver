@@ -1,0 +1,1 @@
+Documentation d’exécution : sous Windows, les tests Rust utilisent --lib --features windows-tests, un CARGO_TARGET_DIR court et Ninja dans PATH. Cette commande évite de charger la DLL CEF de distribution pendant les tests. Validation cumulée observée : 3079 réussis, 0 échec, 4 ignorés.
