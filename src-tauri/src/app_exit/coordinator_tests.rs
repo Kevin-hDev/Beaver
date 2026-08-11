@@ -115,7 +115,7 @@ fn first_shutdown_intent_is_immutable_and_restart_keeps_the_raw_exit_safe() {
     let coordinator = coordinator();
 
     assert_eq!(
-        super::request_flow::requested_intent(Some(tauri::RESTART_EXIT_CODE)),
+        super::request_flow::requested_intent(Some(super::BEAVER_RESTART_REQUEST_CODE)),
         (ExitIntent::Restart, 0)
     );
 
@@ -128,5 +128,43 @@ fn first_shutdown_intent_is_immutable_and_restart_keeps_the_raw_exit_safe() {
     ));
     assert_eq!(coordinator.intent_for_test(), Some(ExitIntent::Restart));
     assert_eq!(coordinator.begin(9), BeginResult::Waiting);
+    assert_eq!(coordinator.intent_for_test(), Some(ExitIntent::Restart));
+}
+
+#[test]
+fn restart_button_uses_an_interceptable_beaver_sentinel() {
+    let mut requested = None;
+
+    super::request_restart_with(|code| requested = Some(code));
+
+    let code = requested.expect("restart exit request");
+    assert_ne!(code, tauri::RESTART_EXIT_CODE);
+    assert_eq!(
+        super::request_flow::requested_intent(Some(code)),
+        (ExitIntent::Restart, 0)
+    );
+}
+
+#[test]
+fn final_tauri_restart_exit_does_not_start_cleanup_again() {
+    let coordinator = coordinator();
+    assert!(matches!(
+        coordinator.begin_with_intent(ExitIntent::Restart, 0, |_, _| {
+            CefShutdownBarrier::Drained
+        }),
+        BeginResult::Started(_, ExitIntent::Restart)
+    ));
+    assert!(coordinator.mark_ready());
+
+    let (intent, exit_code) = super::request_flow::requested_intent(Some(tauri::RESTART_EXIT_CODE));
+
+    assert_eq!(intent, ExitIntent::Exit);
+    assert_eq!(exit_code, tauri::RESTART_EXIT_CODE);
+    assert_eq!(
+        coordinator.begin_with_intent(intent, exit_code, |_, _| {
+            panic!("CEF cleanup must not start twice")
+        }),
+        BeginResult::Ready
+    );
     assert_eq!(coordinator.intent_for_test(), Some(ExitIntent::Restart));
 }

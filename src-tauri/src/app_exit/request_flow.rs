@@ -26,7 +26,7 @@ pub(super) fn handle_requested(
 }
 
 pub(super) fn requested_intent(code: Option<i32>) -> (ExitIntent, i32) {
-    if code == Some(tauri::RESTART_EXIT_CODE) {
+    if code == Some(super::BEAVER_RESTART_REQUEST_CODE) {
         (ExitIntent::Restart, 0)
     } else {
         (ExitIntent::Exit, code.unwrap_or_default())
