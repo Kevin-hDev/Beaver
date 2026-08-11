@@ -1,0 +1,5 @@
+Problème : la première implémentation CEF associait encore plusieurs garanties de fermeture sans plan d'adoption ni preuve native complète, ce qui rendait les corrections locales difficiles à revoir et à ordonner.
+
+Décision : définir un jalon J1B autonome, avec protocole borné, autorité parent privée, confinement natif Windows/macOS, intégration avant CEF et critères de preuve séparés. Linux reste hors de l'intégration CEF tant que son chantier dédié n'est pas terminé.
+
+Justification : isoler le risque CEF du socle de fermeture évite de bloquer les jalons indépendants et interdit de fusionner une plateforme dont le navigateur serait désactivé. Ce commit est un contrat de travail, pas une preuve d'implémentation.
