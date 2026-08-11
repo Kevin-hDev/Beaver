@@ -1,0 +1,1 @@
+Plan d’exécution : cinq corrections séparées en étapes rouge-vert avec fichiers, commandes, critères d’acceptation et commits dédiés. La raison est de rendre chaque garantie vérifiable indépendamment avant la validation cumulée.
