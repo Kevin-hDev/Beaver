@@ -1,0 +1,1 @@
+Clarification de revue : l’action finale de N2 est atomique et déclenchée une seule fois ; l’expiration N3 utilise clear_if avec génération et état Reserved ; le perdant s’abandonne avant CEF ; le test N1 analyse la structure YAML ; le passage macOS de 14 à 13 secondes est volontaire.
