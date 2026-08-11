@@ -33,6 +33,8 @@ pub mod context_usage;
 pub(crate) mod context_usage_memory;
 mod context_usage_tools;
 pub mod directory_access;
+#[cfg(feature = "e2e")]
+mod e2e;
 pub mod extensions;
 pub mod favorite_models;
 pub mod file_preview;
@@ -117,6 +119,8 @@ pub use codex::*;
 pub use config::*;
 pub use context_usage::*;
 pub use directory_access::*;
+#[cfg(feature = "e2e")]
+pub use e2e::*;
 pub use extensions::*;
 pub use favorite_models::*;
 pub use file_preview::*;

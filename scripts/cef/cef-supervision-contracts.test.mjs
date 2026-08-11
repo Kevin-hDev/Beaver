@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { copyFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 
 import {
+  isDirectExecution,
   validateCefSupervisionContracts,
   validateRepository,
 } from "./cef-supervision-contracts.mjs";
@@ -48,4 +54,44 @@ test("Linux native_browser activation fails the contract", () => {
 
 test("the checked-in repository satisfies the native supervision contract", async () => {
   assert.deepEqual(await validateRepository(), []);
+});
+
+test("direct execution is detected from canonical filesystem paths", () => {
+  const script = resolve("scripts/cef/cef-supervision-contracts.mjs");
+
+  assert.equal(isDirectExecution(pathToFileURL(script), script), true);
+  assert.equal(isDirectExecution(pathToFileURL(script), `${script}.other`), false);
+  assert.equal(isDirectExecution(pathToFileURL(script), undefined), false);
+});
+
+test("an invalid fixture fails when the contract is executed directly", async () => {
+  const fixture = await mkdtemp(join(tmpdir(), "beaver-cef-contract-"));
+  const scriptDirectory = join(fixture, "scripts", "cef");
+  const workflowDirectory = join(fixture, ".github", "workflows");
+  const browserDirectory = join(fixture, "src-tauri", "src", "services", "browser");
+  try {
+    await Promise.all([
+      mkdir(scriptDirectory, { recursive: true }),
+      mkdir(workflowDirectory, { recursive: true }),
+      mkdir(browserDirectory, { recursive: true }),
+    ]);
+    const copiedScript = join(scriptDirectory, "cef-supervision-contracts.mjs");
+    await Promise.all([
+      copyFile(resolve("scripts/cef/cef-supervision-contracts.mjs"), copiedScript),
+      writeFile(join(workflowDirectory, "ci.yml"), "jobs: {}\n", "utf8"),
+      writeFile(join(fixture, "src-tauri", "build.rs"), "fn main() {}\n", "utf8"),
+      writeFile(join(browserDirectory, "macos_helper_entry.rs"), "fn run() {}\n", "utf8"),
+    ]);
+
+    const result = spawnSync(process.execPath, [copiedScript], {
+      cwd: fixture,
+      encoding: "utf8",
+      shell: false,
+    });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /native job is missing/u);
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
 });

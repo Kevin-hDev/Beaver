@@ -214,7 +214,7 @@ pub(crate) fn run_inner(
                 services::mascot::handle_window_focus(_window.app_handle(), *focused);
             }
         })
-        .invoke_handler(invoke_handler::generate!())
+        .invoke_handler(invoke_handler::for_build!())
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
