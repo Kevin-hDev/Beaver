@@ -12,6 +12,8 @@ mod tracker_lifecycle;
 mod tracker_loop;
 
 pub(in crate::services::browser) use arguments::parse_helper_marker;
+#[cfg(test)]
+pub(super) use bootstrap::parent_changed;
 pub(in crate::services::browser) use bootstrap::MacHelperBootstrap;
 #[cfg(test)]
 pub(super) use identity::MacProcessIdentity;

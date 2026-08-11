@@ -1,7 +1,16 @@
-use super::macos::{MacCefTracker, MacHelperObjects, MacProcessIdentity};
+use super::macos::{parent_changed, MacCefTracker, MacHelperObjects, MacProcessIdentity};
 use super::{CefIpcNames, CefUnavailableCategory};
 use std::os::unix::process::CommandExt;
 use std::time::{Duration, Instant};
+
+#[test]
+fn helper_accepts_only_its_validated_current_parent() {
+    let current = unsafe { libc::getppid() };
+    assert!(current > 0);
+    assert!(!parent_changed(current as u32));
+    assert!(parent_changed(0));
+    assert!(parent_changed((current as u32).saturating_add(1)));
+}
 
 #[test]
 fn reaper_admits_only_the_stable_process_group_identity() {

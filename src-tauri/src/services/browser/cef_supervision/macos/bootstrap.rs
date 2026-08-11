@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 pub(in crate::services::browser) struct MacHelperBootstrap {
     objects: Arc<MacHelperObjects>,
     generation: u64,
-    parent_identity: MacProcessIdentity,
+    parent_pid: u32,
     identity: MacProcessIdentity,
 }
 
@@ -36,11 +36,11 @@ impl MacHelperBootstrap {
         if identity.process_group != identity.pid {
             return Err(CefUnavailableCategory::Admission);
         }
-        let parent_identity = MacProcessIdentity::read(identity.parent_pid)?;
+        let parent_pid = MacProcessIdentity::read(identity.parent_pid)?.pid;
         Ok(Self {
             objects: Arc::new(MacHelperObjects::open(root, &names)?),
             generation: marker.generation(),
-            parent_identity,
+            parent_pid,
             identity,
         })
     }
@@ -60,7 +60,7 @@ impl MacHelperBootstrap {
         let monitor = start_monitor(
             Arc::clone(&self.objects),
             Arc::clone(&stop_monitor),
-            self.parent_identity,
+            self.parent_pid,
             self.generation,
         )?;
         wait_for_admission(&self.objects, self.generation)?;
@@ -109,7 +109,7 @@ fn wait_for_admission(
 fn start_monitor(
     objects: Arc<MacHelperObjects>,
     stop: Arc<AtomicBool>,
-    parent_identity: MacProcessIdentity,
+    parent_pid: u32,
     generation: u64,
 ) -> Result<std::thread::JoinHandle<()>, CefUnavailableCategory> {
     std::thread::Builder::new()
@@ -118,10 +118,7 @@ fn start_monitor(
             if stop.load(Ordering::Acquire) {
                 return;
             }
-            let parent_gone = match parent_identity.is_alive() {
-                Ok(alive) => !alive,
-                Err(_) => true,
-            };
+            let parent_gone = parent_changed(parent_pid);
             let close = control_requires_exit(&objects, generation);
             if parent_gone || close {
                 unsafe { libc::_exit(1) };
@@ -129,6 +126,13 @@ fn start_monitor(
             std::thread::sleep(Duration::from_millis(10));
         })
         .map_err(|_| CefUnavailableCategory::Reaper)
+}
+
+pub(super) fn parent_changed(expected: u32) -> bool {
+    // Seatbelt peut refuser l'inspection d'un autre processus. `getppid`
+    // relit uniquement la relation parentale du helper lui-même.
+    let current = unsafe { libc::getppid() };
+    current <= 0 || current as u32 != expected
 }
 
 fn closing_or_failure(objects: &MacHelperObjects) -> bool {

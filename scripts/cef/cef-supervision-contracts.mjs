@@ -6,7 +6,12 @@ export { isDirectExecution } from "./direct-execution.mjs";
 
 const FORBIDDEN_SANDBOX_BYPASS = /(?:no[_-]sandbox|CEF_NO_SANDBOX)/iu;
 
-export function validateCefSupervisionContracts({ workflow, build, macHelper }) {
+export function validateCefSupervisionContracts({
+  workflow,
+  build,
+  macHelper,
+  macBootstrap,
+}) {
   const errors = [];
   requireText(workflow, "backend-windows-native:", "Windows native job is missing", errors);
   requireText(workflow, "backend-macos-native:", "macOS native job is missing", errors);
@@ -33,6 +38,12 @@ export function validateCefSupervisionContracts({ workflow, build, macHelper }) 
   if (sandbox < 0 || admission < 0 || sandbox > admission) {
     errors.push("macOS helper admission must follow sandbox initialization");
   }
+  if (!macBootstrap.includes("libc::getppid")) {
+    errors.push("macOS helper must compare its current parent after sandbox");
+  }
+  if (macBootstrap.includes("parent_identity.is_alive")) {
+    errors.push("macOS helper must not inspect its parent after sandbox");
+  }
   return errors;
 }
 
@@ -42,12 +53,21 @@ function requireText(source, expected, message, errors) {
 
 export async function validateRepository() {
   const root = new URL("../../", import.meta.url);
-  const [workflow, build, macHelper] = await Promise.all([
+  const [workflow, build, macHelper, macBootstrap] = await Promise.all([
     readFile(new URL(".github/workflows/ci.yml", root), "utf8"),
     readFile(new URL("src-tauri/build.rs", root), "utf8"),
     readFile(new URL("src-tauri/src/services/browser/macos_helper_entry.rs", root), "utf8"),
+    readFile(
+      new URL("src-tauri/src/services/browser/cef_supervision/macos/bootstrap.rs", root),
+      "utf8",
+    ),
   ]);
-  return validateCefSupervisionContracts({ workflow, build, macHelper });
+  return validateCefSupervisionContracts({
+    workflow,
+    build,
+    macHelper,
+    macBootstrap,
+  });
 }
 
 if (isDirectExecution(import.meta.url, process.argv[1])) {

@@ -13,6 +13,7 @@ impl MacTrackerShared {
             .compare_exchange(0, category.id(), Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
+            ::log::error!("[browser] macOS supervision failed ({})", category.code());
             if let Some(app) = &self.shutdown_app {
                 crate::app_exit::request(app, 1);
             }

@@ -25,6 +25,7 @@ backend-macos-native:
     println!("cargo:rustc-cfg=native_browser");
   }`,
   macHelper: "sandbox.initialize(args.as_main_args()); bootstrap.admit_after_sandbox()",
+  macBootstrap: "libc::getppid(); start_monitor(parent_pid)",
 };
 
 test("native CI proves both CEF supervision authorities without enabling Linux", () => {
@@ -52,6 +53,16 @@ test("Linux native_browser activation fails the contract", () => {
   assert.ok(errors.includes("Linux native_browser must remain disabled"));
 });
 
+test("macOS helper checks only its validated parent identity after sandbox", () => {
+  const errors = validateCefSupervisionContracts({
+    ...valid,
+    macBootstrap: "parent_identity.is_alive(); start_monitor(parent_identity)",
+  });
+
+  assert.ok(errors.includes("macOS helper must compare its current parent after sandbox"));
+  assert.ok(errors.includes("macOS helper must not inspect its parent after sandbox"));
+});
+
 test("the checked-in repository satisfies the native supervision contract", async () => {
   assert.deepEqual(await validateRepository(), []);
 });
@@ -69,11 +80,13 @@ test("an invalid fixture fails when the contract is executed directly", async ()
   const scriptDirectory = join(fixture, "scripts", "cef");
   const workflowDirectory = join(fixture, ".github", "workflows");
   const browserDirectory = join(fixture, "src-tauri", "src", "services", "browser");
+  const macSupervisionDirectory = join(browserDirectory, "cef_supervision", "macos");
   try {
     await Promise.all([
       mkdir(scriptDirectory, { recursive: true }),
       mkdir(workflowDirectory, { recursive: true }),
       mkdir(browserDirectory, { recursive: true }),
+      mkdir(macSupervisionDirectory, { recursive: true }),
     ]);
     const copiedScript = join(scriptDirectory, "cef-supervision-contracts.mjs");
     await Promise.all([
@@ -85,6 +98,7 @@ test("an invalid fixture fails when the contract is executed directly", async ()
       writeFile(join(workflowDirectory, "ci.yml"), "jobs: {}\n", "utf8"),
       writeFile(join(fixture, "src-tauri", "build.rs"), "fn main() {}\n", "utf8"),
       writeFile(join(browserDirectory, "macos_helper_entry.rs"), "fn run() {}\n", "utf8"),
+      writeFile(join(macSupervisionDirectory, "bootstrap.rs"), "fn run() {}\n", "utf8"),
     ]);
 
     const result = spawnSync(process.execPath, [copiedScript], {
