@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, sep } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -31,7 +31,9 @@ test("refuse les cibles relatives, traversées ou contenant un contrôle", () =>
 });
 
 test("accepte uniquement un dossier réel non lié", async () => {
-  const root = await mkdtemp(resolve(tmpdir(), "beaver-cargo-target-"));
+  const root = await realpath(
+    await mkdtemp(resolve(tmpdir(), "beaver-cargo-target-")),
+  );
   const target = resolve(root, "target");
   try {
     await mkdir(target);

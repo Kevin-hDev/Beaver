@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { link, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { link, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -12,7 +12,9 @@ import {
 } from "./tauri-bundle-marker.mjs";
 
 async function withTemporaryDirectory(callback) {
-  const directory = await mkdtemp(join(tmpdir(), "beaver-bundle-marker-"));
+  const directory = await realpath(
+    await mkdtemp(join(tmpdir(), "beaver-bundle-marker-")),
+  );
   try {
     await callback(directory);
   } finally {
