@@ -22,6 +22,11 @@ mod state;
 mod test_api;
 mod ultimate;
 mod watchdog;
+mod work_supervisor;
+
+pub use work_supervisor::AppWorkSupervisor;
+pub type AppWorkAdmission = registry::TrackedAdmission;
+pub type AppWorkAdmissionError = registry::AdmissionError;
 
 #[cfg(test)]
 mod cleanup_tests;
@@ -41,6 +46,8 @@ mod state_tests;
 mod ultimate_tests;
 #[cfg(test)]
 mod watchdog_tests;
+#[cfg(test)]
+mod work_supervisor_tests;
 
 pub struct AppExitCoordinator {
     begin_lock: Mutex<()>,
@@ -79,6 +86,17 @@ impl AppExitCoordinator {
             intent: OnceLock::new(),
             ultimate: ultimate::UltimateExit::initialize()?,
         })
+    }
+
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "service producers adopt the app work supervisor during milestone 2"
+        )
+    )]
+    pub(crate) fn work_supervisor(&self) -> AppWorkSupervisor {
+        AppWorkSupervisor::new(self.registry.clone())
     }
 
     #[cfg(test)]
