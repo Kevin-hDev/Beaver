@@ -7,7 +7,7 @@ export const MAX_DIAGNOSTIC_FILES = 4;
 const MAX_DIRECTORY_ENTRIES = 64;
 const MAX_DIAGNOSTIC_FILE_BYTES = 512 * 1024;
 const MAX_DIAGNOSTIC_LINES = 2_048;
-const MAX_DIAGNOSTICS = 8;
+const MAX_DIAGNOSTICS = 16;
 const LOG_NAME = /^wdio[-A-Za-z0-9.]{1,96}\.log$/u;
 const SAFE_CATEGORIES = new Set([
   "cef-supervision-object",
@@ -15,6 +15,24 @@ const SAFE_CATEGORIES = new Set([
   "cef-supervision-admission",
   "cef-supervision-reaper",
   "cef-supervision-sandbox",
+]);
+const SAFE_LIFECYCLE_STAGES = new Set([
+  "main-entered",
+  "native-prepared",
+  "setup-entered",
+  "setup-completed",
+  "event-loop-entered",
+  "event-loop-returned",
+]);
+const SAFE_EXIT_SIGNALS = new Set([
+  "sigabrt",
+  "sigbus",
+  "sigill",
+  "sigkill",
+  "sigsegv",
+  "sigterm",
+  "sigtrap",
+  "unknown",
 ]);
 
 export async function collectNativeCefDiagnostics(logDirectory) {
@@ -101,6 +119,21 @@ function safeDiagnostic(line) {
   }
   if (line.includes("[browser] launch callback failed")) {
     return "browser-callback:fatal";
+  }
+  const lifecycle = line.match(/\[e2e-lifecycle\] ([a-z-]+)/u);
+  if (lifecycle && SAFE_LIFECYCLE_STAGES.has(lifecycle[1])) {
+    return `application-stage:${lifecycle[1]}`;
+  }
+  const exitCode = line.match(/\[e2e-process\] application-exit-code-([0-9]{1,3})/u);
+  if (exitCode && Number(exitCode[1]) <= 255) {
+    return `process-exit:code-${exitCode[1]}`;
+  }
+  const exitSignal = line.match(/\[e2e-process\] application-exit-signal-([a-z]+)/u);
+  if (exitSignal && SAFE_EXIT_SIGNALS.has(exitSignal[1])) {
+    return `process-exit:signal-${exitSignal[1]}`;
+  }
+  if (line.includes("[e2e-process] application-spawn-failed")) {
+    return "process-exit:spawn-failed";
   }
   const helper = line.match(
     /\[browser-helper\] setup failed \((cef-supervision-[a-z-]+)\)/u,

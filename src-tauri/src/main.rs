@@ -5,6 +5,8 @@ compile_error!("the e2e feature must never be compiled in release mode");
 
 #[cfg(not(target_os = "windows"))]
 fn main() {
+    #[cfg(feature = "e2e")]
+    eprintln!("[e2e-lifecycle] main-entered");
     // Le plugin de logs Tauri n'existe pas encore ici : garder ces diagnostics sur stderr.
     if let Some(code) = cl_go_dash_lib::run_shell_sandbox_helper() {
         std::process::exit(code);
@@ -17,6 +19,8 @@ fn main() {
     }
     #[cfg(target_os = "macos")]
     let (browser_library, shell_environment_ready) = cl_go_dash_lib::prepare_macos_application();
+    #[cfg(all(feature = "e2e", target_os = "macos"))]
+    eprintln!("[e2e-lifecycle] native-prepared");
     #[cfg(not(target_os = "macos"))]
     let shell_environment_ready = cl_go_dash_lib::initialize_shell_environment();
     if !shell_environment_ready {
