@@ -62,11 +62,17 @@ wrap_browser_process_handler! {
             super::ffi_guard::unit_or(
                 || {
                     let _ = runtime.mark_failed();
+                    crate::services::e2e_profile::report_browser_exit_source(
+                        crate::services::e2e_profile::BrowserExitSource::LaunchCallback,
+                    );
                     crate::app_exit::request(&app, 1);
                 },
                 || {
                     if supervision.attach_launch_marker(command_line).is_err() {
                         let _ = runtime.mark_failed();
+                        crate::services::e2e_profile::report_browser_exit_source(
+                            crate::services::e2e_profile::BrowserExitSource::ChildAdmission,
+                        );
                         crate::app_exit::request(&app, 1);
                     }
                 },

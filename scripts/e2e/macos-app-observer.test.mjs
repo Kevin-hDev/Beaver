@@ -65,6 +65,10 @@ test("the macOS observer accepts only fixed lifecycle and run-event markers", ()
     safeObservedDiagnostic("[e2e-run-event] exit-requested-user"),
     "[e2e-run-event] exit-requested-user",
   );
+  assert.equal(
+    safeObservedDiagnostic("[e2e-exit-source] browser-child-admission"),
+    "[e2e-exit-source] browser-child-admission",
+  );
   assert.equal(safeObservedDiagnostic("[e2e-run-event] secret=/private/path"), undefined);
   assert.equal(safeObservedDiagnostic("[e2e-lifecycle] setup-completed extra"), undefined);
 });

@@ -15,6 +15,9 @@ impl MacTrackerShared {
         {
             ::log::error!("[browser] macOS supervision failed ({})", category.code());
             if let Some(app) = &self.shutdown_app {
+                crate::services::e2e_profile::report_browser_exit_source(
+                    crate::services::e2e_profile::BrowserExitSource::Supervision,
+                );
                 crate::app_exit::request(app, 1);
             }
         }
