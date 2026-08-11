@@ -52,7 +52,7 @@ fn scan_pending(
                 match pending.objects.mailbox_snapshot() {
                     Err(CefSharedLayoutError::Unpublished) => {
                         let pending = *pending;
-                        if pending.reservation.expire() {
+                        if pending.expire() {
                             ::log::warn!("[browser] CEF helper publication expired");
                         }
                         continue;

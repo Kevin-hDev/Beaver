@@ -4,6 +4,7 @@ use super::windows::{
 };
 use super::windows_identity_tests::ChildGuard;
 use super::{CefAuthorityTable, CefProcessRole, CefPublication, CEF_SLOT_CAPACITY};
+use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
 
 #[test]
@@ -178,6 +179,58 @@ fn unpublished_reservations_expire_without_failing_the_tracker() {
 
     assert_eq!(replacements.len(), CEF_SLOT_CAPACITY);
     assert!(tracker.reserve().is_err());
+    assert_eq!(tracker.failure(), None);
+}
+
+#[test]
+fn expiration_destroys_the_emergency_surface_before_reusing_its_central_slot() {
+    let child = ChildGuard::spawn();
+    let probe = WindowsProcessProbe::read(child.id()).expect("probe");
+    let tracker = WindowsCefTracker::start(probe.executable()).expect("tracker");
+    let expires_at = Instant::now() + Duration::from_secs(30);
+    let tickets = (0..CEF_SLOT_CAPACITY)
+        .map(|_| {
+            tracker
+                .handle()
+                .reserve_until_for_test(expires_at)
+                .expect("reserved slot")
+        })
+        .collect::<Vec<_>>();
+    let expired = tickets[0].decode_marker().expect("expired marker");
+    let attempt_started = Arc::new(Barrier::new(2));
+    let attempt_finished = Arc::new(Barrier::new(2));
+    let competing_handle = tracker.handle();
+    let competing_start = Arc::clone(&attempt_started);
+    let competing_finish = Arc::clone(&attempt_finished);
+    let competitor = std::thread::spawn(move || {
+        competing_start.wait();
+        assert!(competing_handle.reserve().is_err());
+        competing_finish.wait();
+        let deadline = Instant::now() + Duration::from_secs(2);
+        loop {
+            match competing_handle.reserve() {
+                Ok(ticket) => return ticket,
+                Err(_) if Instant::now() < deadline => std::thread::yield_now(),
+                Err(error) => panic!("replacement reservation failed: {error:?}"),
+            }
+        }
+    });
+
+    assert!(
+        tracker.expire_pending_with_probe_for_test(expired.slot(), || {
+            attempt_started.wait();
+            attempt_finished.wait();
+        })
+    );
+
+    let replacement = competitor.join().expect("competing reservation");
+    assert_eq!(
+        replacement
+            .decode_marker()
+            .expect("replacement marker")
+            .slot(),
+        expired.slot()
+    );
     assert_eq!(tracker.failure(), None);
 }
 

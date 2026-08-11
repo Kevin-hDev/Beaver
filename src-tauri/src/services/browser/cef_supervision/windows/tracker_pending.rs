@@ -14,6 +14,32 @@ pub(super) struct WindowsPendingLaunch {
     pub(super) expires_at: Instant,
 }
 
+impl WindowsPendingLaunch {
+    pub(super) fn expire(self) -> bool {
+        self.expire_after_resources_released(|| {})
+    }
+
+    #[cfg(test)]
+    pub(super) fn expire_with_probe(self, probe: impl FnOnce()) -> bool {
+        self.expire_after_resources_released(probe)
+    }
+
+    fn expire_after_resources_released(self, resources_released: impl FnOnce()) -> bool {
+        let Self {
+            reservation,
+            objects,
+            emergency,
+            expires_at: _,
+        } = self;
+        // L'acquisition est réservation -> objets -> urgence : la libération
+        // inverse empêche une nouvelle génération de voir deux autorités.
+        drop(emergency);
+        drop(objects);
+        resources_released();
+        reservation.expire()
+    }
+}
+
 pub(super) struct WindowsPendingSlots {
     slots: [AtomicPtr<WindowsPendingLaunch>; CEF_SLOT_CAPACITY],
 }

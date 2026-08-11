@@ -13,4 +13,15 @@ impl WindowsCefTracker {
     pub(in crate::services::browser) fn force_for_test(&self) {
         self.shared.emergency_force();
     }
+
+    pub(in crate::services::browser) fn expire_pending_with_probe_for_test(
+        &self,
+        slot: usize,
+        resources_released: impl FnOnce(),
+    ) -> bool {
+        self.shared
+            .pending
+            .take(slot)
+            .is_some_and(|pending| (*pending).expire_with_probe(resources_released))
+    }
 }
