@@ -31,7 +31,7 @@ fn all_deadlines_share_one_origin() {
     );
     assert_eq!(
         timeline.cef_helper_exit_deadline(),
-        origin + Duration::from_secs(14)
+        origin + Duration::from_secs(13)
     );
 }
 
@@ -63,7 +63,7 @@ fn remaining_budget_never_restarts_after_deadline() {
     );
     assert_eq!(
         timeline.cef_helper_exit_deadline(),
-        origin + Duration::from_millis(14)
+        origin + Duration::from_millis(13)
     );
 }
 

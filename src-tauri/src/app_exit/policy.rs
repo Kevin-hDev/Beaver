@@ -6,7 +6,6 @@ const POST_LOOP_SWEEP_TIMEOUT: Duration = Duration::from_secs(3);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
 const ULTIMATE_EXIT_TIMEOUT: Duration = Duration::from_secs(15);
 const CEF_ADMISSION_BARRIER_TIMEOUT: Duration = Duration::from_millis(50);
-const CEF_HELPER_EXIT_MARGIN: Duration = Duration::from_secs(1);
 const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
 
 pub(super) const fn watchdog_recheck_interval() -> Duration {
@@ -91,8 +90,7 @@ impl ShutdownTimeline {
     }
 
     pub(super) fn cef_helper_exit_deadline(self) -> Instant {
-        let derived_margin = self.policy.ultimate() / 15;
-        self.ultimate_deadline() - CEF_HELPER_EXIT_MARGIN.min(derived_margin)
+        self.emergency_deadline()
     }
 
     pub(super) fn tauri_exit_deadline(self) -> Instant {
