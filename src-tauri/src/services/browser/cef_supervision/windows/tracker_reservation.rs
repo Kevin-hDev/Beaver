@@ -4,6 +4,7 @@ use super::objects::WindowsPublicationObjects;
 use super::tracker::WindowsCefTrackerHandle;
 use super::tracker_pending::WindowsPendingLaunch;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::time::Instant;
 
 impl WindowsCefTrackerHandle {
@@ -32,9 +33,17 @@ impl WindowsCefTrackerHandle {
             .map_err(|_| CefUnavailableCategory::Admission)?;
         let names = CefIpcNames::from_marker(reservation.marker())
             .map_err(|_| CefUnavailableCategory::Object)?;
-        let objects = WindowsPublicationObjects::create(&names, reservation.marker().generation())?;
+        let objects = Arc::new(WindowsPublicationObjects::create(
+            &names,
+            reservation.marker().generation(),
+        )?);
         let ticket = CefLaunchTicket::new(reservation.marker());
         let slot = reservation.marker().slot();
+        let emergency = self.shared.emergency.install(
+            slot,
+            reservation.marker().generation(),
+            Arc::clone(&objects),
+        )?;
         if self.shared.gate.is_closed() {
             return Err(CefUnavailableCategory::Admission);
         }
@@ -43,6 +52,7 @@ impl WindowsCefTrackerHandle {
             WindowsPendingLaunch {
                 reservation,
                 objects,
+                emergency,
                 expires_at,
             },
         )?;

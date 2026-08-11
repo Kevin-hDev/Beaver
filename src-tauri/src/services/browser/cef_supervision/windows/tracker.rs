@@ -1,6 +1,9 @@
 use super::super::constants::CEF_TRACKER_DROP_TIMEOUT;
 use super::super::gate::CefLaunchGate;
-use super::super::{CefAuthorityTable, CefLaunchTicket, CefUnavailableCategory};
+#[cfg(test)]
+use super::super::CefLaunchTicket;
+use super::super::{CefAuthorityTable, CefUnavailableCategory};
+use super::emergency_slots::WindowsEmergencySlots;
 use super::native_authority::WindowsNativeAuthority;
 use super::tracker_loop::run_tracker;
 use super::tracker_pending::WindowsPendingSlots;
@@ -17,6 +20,7 @@ mod test_api;
 pub(in crate::services::browser) struct WindowsTrackerShared {
     pub(super) table: CefAuthorityTable,
     pub(super) native: Arc<WindowsNativeAuthority>,
+    pub(super) emergency: Arc<WindowsEmergencySlots>,
     pub(super) pending: WindowsPendingSlots,
     pub(super) gate: CefLaunchGate,
     pub(super) stopping: AtomicBool,
@@ -64,6 +68,7 @@ impl WindowsCefTracker {
         let shared = Arc::new(WindowsTrackerShared {
             table: CefAuthorityTable::new(),
             native: WindowsNativeAuthority::new(),
+            emergency: Arc::new(WindowsEmergencySlots::new()),
             pending: WindowsPendingSlots::new(),
             gate: CefLaunchGate::new(),
             stopping: AtomicBool::new(false),
@@ -126,10 +131,23 @@ impl WindowsTrackerShared {
         failure_from_id(self.failure.load(Ordering::Acquire))
     }
 
-    pub(in crate::services::browser) fn emergency_close(&self, deadline: Instant) -> bool {
-        let gate_closed = self.gate.close_and_wait(deadline);
-        let table_closed = self.table.close_and_invalidate(deadline);
-        gate_closed && table_closed
+    pub(in crate::services::browser) fn emergency_close(
+        &self,
+        admission_deadline: Instant,
+        helper_exit_deadline: Instant,
+    ) -> bool {
+        let gate_closed = self.gate.close_and_wait(admission_deadline);
+        let table_closed = self.table.close_and_invalidate(admission_deadline);
+        let helpers_closed = match super::clock::ticks_at(helper_exit_deadline)
+            .and_then(|deadline| self.emergency.begin_closing(deadline))
+        {
+            Ok(()) => true,
+            Err(category) => {
+                self.fail(category);
+                false
+            }
+        };
+        gate_closed && table_closed && helpers_closed
     }
 
     pub(in crate::services::browser) fn emergency_force(&self) {

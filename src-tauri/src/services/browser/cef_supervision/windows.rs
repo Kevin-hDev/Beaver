@@ -1,5 +1,14 @@
+mod clock;
+#[cfg(test)]
+mod clock_tests;
 mod confinement;
+mod emergency_slots;
+#[cfg(test)]
+mod emergency_slots_tests;
 mod handle;
+mod helper_monitor;
+#[cfg(test)]
+mod helper_monitor_tests;
 mod identity;
 mod job;
 mod mapping;
@@ -16,6 +25,7 @@ mod tracker_reservation;
 
 #[cfg(test)]
 pub(super) use confinement::WindowsConfinement;
+pub(super) use helper_monitor::WindowsHelperMonitor;
 pub(super) use identity::WindowsProcessIdentity;
 #[cfg(test)]
 pub(super) use identity::CEF_PROCESS_ACCESS_RIGHTS;

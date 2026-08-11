@@ -1,11 +1,13 @@
 use super::constants::{CEF_ADMISSION_TIMEOUT, CEF_HELPER_WAIT_SLICE};
-use super::windows::{WindowsHelperObjects, WindowsProcessProbe};
+use super::windows::{WindowsHelperMonitor, WindowsHelperObjects, WindowsProcessProbe};
 use super::{CefIpcNames, CefLaunchMarker, CefUnavailableCategory};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[derive(Debug)]
 pub(crate) struct WindowsHelperAdmission {
-    objects: WindowsHelperObjects,
+    objects: Arc<WindowsHelperObjects>,
+    _monitor: WindowsHelperMonitor,
     generation: u64,
 }
 
@@ -22,17 +24,20 @@ impl WindowsHelperAdmission {
             .map_err(|_| CefUnavailableCategory::Admission)?;
         let names =
             CefIpcNames::from_marker(&marker).map_err(|_| CefUnavailableCategory::Object)?;
-        let objects = WindowsHelperObjects::open(&names)?;
+        let objects = Arc::new(WindowsHelperObjects::open(&names)?);
         let pid = std::process::id();
         let started_at = WindowsProcessProbe::read(pid)?.started_at();
         objects
             .publish(marker.generation(), pid, started_at, 0)
             .map_err(|_| CefUnavailableCategory::Admission)?;
-        wait_for_parent(&objects, marker.generation(), timeout)?;
+        // Le helper arme son propre filet avant d'attendre le parent : aucun
+        // blocage d'admission ne peut le priver de l'échéance de fermeture.
         let admission = Self {
+            _monitor: WindowsHelperMonitor::start(Arc::clone(&objects), marker.generation())?,
             objects,
             generation: marker.generation(),
         };
+        wait_for_parent(&admission.objects, marker.generation(), timeout)?;
         admission.revalidate_category()?;
         Ok(admission)
     }

@@ -27,8 +27,7 @@ pub(in crate::services::browser) fn close_gate(
 ) -> bool {
     #[cfg(target_os = "windows")]
     if let Some(shared) = WINDOWS.get() {
-        let _ = helper_exit_deadline;
-        return shared.emergency_close(admission_deadline);
+        return shared.emergency_close(admission_deadline, helper_exit_deadline);
     }
     #[cfg(target_os = "macos")]
     if let Some(shared) = MACOS.get() {

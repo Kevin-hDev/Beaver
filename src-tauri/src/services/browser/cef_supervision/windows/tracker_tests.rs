@@ -128,10 +128,26 @@ fn emergency_close_rejects_new_helpers_and_force_stops_an_admitted_helper() {
         .publish(marker.generation(), child.id(), probe.started_at(), 0)
         .expect("publication");
     assert!(helper.wait_for_admission(2_000).expect("admission wait"));
+    let pending_ticket = tracker.reserve().expect("pending launch ticket");
+    let pending_marker = pending_ticket.decode_marker().expect("pending marker");
+    let pending_names = super::CefIpcNames::from_marker(&pending_marker).expect("pending names");
+    let pending_helper = WindowsHelperObjects::open(&pending_names).expect("pending objects");
 
     assert!(tracker.close_gate_for_test());
     assert!(tracker.reserve().is_err());
     assert!(WindowsProcessProbe::read(child.id()).is_ok());
+    assert!(helper.wait_for_closing(100).expect("admitted closing"));
+    assert!(pending_helper
+        .wait_for_closing(100)
+        .expect("pending closing"));
+    let admitted_control = helper.control_snapshot().expect("admitted control");
+    let pending_control = pending_helper.control_snapshot().expect("pending control");
+    assert!(admitted_control.closing);
+    assert_eq!(
+        pending_control.deadline_ticks,
+        admitted_control.deadline_ticks
+    );
+    assert_ne!(admitted_control.deadline_ticks, 0);
 
     tracker.force_for_test();
     assert!(wait_until_native_process_disappears(child.id()));
