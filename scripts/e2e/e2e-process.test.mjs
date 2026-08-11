@@ -4,13 +4,28 @@ import { join, resolve } from "node:path";
 import { test } from "node:test";
 import {
   buildArguments,
+  cleanupProfile,
   debugBinaryPath,
+  e2eCargoTargetDir,
   isAllowedProfilePath,
 } from "./e2e-process.mjs";
 
 const ciSource = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../../src-tauri/src/main.rs", import.meta.url), "utf8");
 const runnerSource = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
+const wdioSource = readFileSync(new URL("../../wdio.conf.ts", import.meta.url), "utf8");
+const nativeSmokeSource = readFileSync(
+  new URL("../../tests/e2e/native-cef-shutdown.spec.ts", import.meta.url),
+  "utf8",
+);
+const invokeSource = readFileSync(
+  new URL("../../src-tauri/src/invoke_handler.rs", import.meta.url),
+  "utf8",
+);
+const commandsSource = readFileSync(
+  new URL("../../src-tauri/src/commands/mod.rs", import.meta.url),
+  "utf8",
+);
 
 test("the E2E build always enables the isolated feature", () => {
   assert.deepEqual(buildArguments("linux"), [
@@ -24,14 +39,30 @@ test("the E2E build always enables the isolated feature", () => {
 });
 
 test("the E2E binary path is platform specific", () => {
-  const debugRoot = resolve("/repo", "src-tauri", "target", "e2e", "debug");
+  const cargoTargetDir = resolve("/repo", "target", "e2e");
+  const debugRoot = resolve(cargoTargetDir, "debug");
 
-  assert.equal(debugBinaryPath("linux", "/repo"), join(debugRoot, "cl-go-dash"));
-  assert.equal(debugBinaryPath("win32", "/repo"), join(debugRoot, "cl-go-dash.exe"));
+  assert.equal(debugBinaryPath("linux", cargoTargetDir), join(debugRoot, "cl-go-dash"));
+  assert.equal(debugBinaryPath("win32", cargoTargetDir), join(debugRoot, "cl-go-dash.exe"));
   assert.equal(
-    debugBinaryPath("darwin", "/repo"),
+    debugBinaryPath("darwin", cargoTargetDir),
     join(debugRoot, "bundle", "macos", "Beaver.app", "Contents", "MacOS", "cl-go-dash"),
   );
+});
+
+test("the E2E build and binary reader share one Cargo target directory", () => {
+  const projectRoot = resolve("workspace", "project");
+  const configured = resolve("cache", "beaver-e2e");
+
+  assert.equal(
+    e2eCargoTargetDir("win32", projectRoot, undefined),
+    resolve(projectRoot, "target", "e2e"),
+  );
+  assert.equal(
+    e2eCargoTargetDir("darwin", projectRoot, undefined),
+    resolve(projectRoot, "src-tauri", "target", "e2e"),
+  );
+  assert.equal(e2eCargoTargetDir("win32", projectRoot, configured), configured);
 });
 
 test("only a dedicated direct child of the system temp directory is accepted", () => {
@@ -54,5 +85,76 @@ test("release builds reject the E2E control feature in the application binary", 
 });
 
 test("profile cleanup cannot hide the preceding E2E failure", () => {
-  assert.match(runnerSource, /rm\(profilePath, \{ recursive: true, force: true,/u);
+  assert.match(runnerSource, /cleanupProfile\(profilePath,[\s\S]*hadPriorFailure/u);
+});
+
+test("profile cleanup preserves an earlier E2E failure", async () => {
+  const tempRoot = resolve("temp-root");
+  const profilePath = join(tempRoot, "beaver-e2e-Ab12");
+  const reports = [];
+  await cleanupProfile(profilePath, {
+    tempPath: tempRoot,
+    hadPriorFailure: true,
+    remove: async () => { throw new Error("locked"); },
+    report: (message) => reports.push(message),
+  });
+
+  assert.deepEqual(reports, ["E2E profile cleanup failed after an earlier failure.\n"]);
+  await assert.rejects(
+    cleanupProfile(profilePath, {
+      tempPath: tempRoot,
+      hadPriorFailure: false,
+      remove: async () => { throw new Error("locked"); },
+    }),
+    /E2E profile cleanup failed/u,
+  );
+});
+
+test("profile cleanup rejects a target outside the isolated E2E shape", async () => {
+  const tempRoot = resolve("temp-root");
+  let removed = false;
+
+  await assert.rejects(
+    cleanupProfile(tempRoot, {
+      tempPath: tempRoot,
+      remove: async () => { removed = true; },
+    }),
+    /E2E profile cleanup failed/u,
+  );
+  assert.equal(removed, false);
+});
+
+test("CI runs the real CEF journey on Windows and macOS only", () => {
+  const windowsJob = ciSource.slice(
+    ciSource.indexOf("  backend-windows-native:"),
+    ciSource.indexOf("  backend-macos-native:"),
+  );
+  const macJob = ciSource.slice(
+    ciSource.indexOf("  backend-macos-native:"),
+    ciSource.indexOf("  backend-windows:"),
+  );
+  assert.match(windowsJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e/u);
+  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e/u);
+  const extensionHostInstall = /npm ci --ignore-scripts --omit=dev --prefix src-tauri\/resources\/extension-host/u;
+  assert.match(windowsJob, extensionHostInstall);
+  assert.match(macJob, extensionHostInstall);
+});
+
+test("the native CEF journey uses one isolated application session", () => {
+  assert.match(wdioSource, /E2E_REQUIRE_CEF_SMOKE[\s\S]*native-cef-shutdown\.spec\.ts[\s\S]*onboarding\.spec\.ts/u);
+  assert.match(nativeSmokeSource, /completeOnboarding\(\)/u);
+});
+
+test("the coordinated exit command is compiled only into the E2E handler", () => {
+  assert.match(commandsSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*mod e2e/u);
+  assert.match(invokeSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*e2e_request_exit/u);
+  assert.match(invokeSource, /#\[cfg\(not\(feature = "e2e"\)\)\]/u);
+});
+
+test("the native smoke releases WebDriver before Beaver performs its coordinated exit", () => {
+  const request = nativeSmokeSource.indexOf('invokeTauri("e2e_request_exit")');
+  const release = nativeSmokeSource.indexOf("browser.deleteSession()", request);
+  const detach = nativeSmokeSource.indexOf("sessionId = undefined", release);
+  const observation = nativeSmokeSource.indexOf("waitForOwnedProcessesToExit", detach);
+  assert.ok(request >= 0 && release > request && detach > release && observation > detach);
 });

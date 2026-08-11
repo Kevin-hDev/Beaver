@@ -1,4 +1,6 @@
 import { readFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const FORBIDDEN_SANDBOX_BYPASS = /(?:no[_-]sandbox|CEF_NO_SANDBOX)/iu;
@@ -47,7 +49,22 @@ export async function validateRepository() {
   return validateCefSupervisionContracts({ workflow, build, macHelper });
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(new URL(`file:///${process.argv[1].replaceAll("\\", "/")}`))) {
+function canonicalPath(path) {
+  let canonical;
+  try {
+    canonical = realpathSync.native(resolve(path));
+  } catch {
+    canonical = resolve(path);
+  }
+  return process.platform === "win32" ? canonical.toLocaleLowerCase("en-US") : canonical;
+}
+
+export function isDirectExecution(moduleUrl, argvPath) {
+  if (!argvPath) return false;
+  return canonicalPath(fileURLToPath(moduleUrl)) === canonicalPath(argvPath);
+}
+
+if (isDirectExecution(import.meta.url, process.argv[1])) {
   const errors = await validateRepository();
   if (errors.length > 0) {
     process.stderr.write(`${errors.join("\n")}\n`);

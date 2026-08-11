@@ -17,7 +17,9 @@ pub(super) fn prepare_profile() -> Result<std::path::PathBuf, CefPreflightError>
 pub(super) fn to_cef_settings(policy: CefSettingsPolicy) -> Settings {
     Settings {
         no_sandbox: i32::from(policy.no_sandbox),
-        browser_subprocess_path: CefString::from(policy.helper.to_string_lossy().as_ref()),
+        browser_subprocess_path: CefString::from(
+            policy.browser_subprocess_path.to_string_lossy().as_ref(),
+        ),
         multi_threaded_message_loop: i32::from(policy.multi_threaded_message_loop),
         external_message_pump: i32::from(policy.external_message_pump),
         command_line_args_disabled: i32::from(policy.command_line_args_disabled),

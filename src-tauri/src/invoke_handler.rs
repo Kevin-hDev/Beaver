@@ -1,5 +1,5 @@
 macro_rules! generate {
-    () => {
+    ($($extra:path),* $(,)?) => {
         crate::invoke_handler_tail::generate_tail![
             crate::commands::get_config,
             crate::commands::browser_capability,
@@ -118,8 +118,23 @@ macro_rules! generate {
             crate::commands::cancel_mcp_oauth,
             crate::commands::has_mcp_oauth_token,
             crate::commands::delete_mcp_oauth_token,
+            $($extra,)*
         ]
     };
 }
 
+macro_rules! for_build {
+    () => {{
+        #[cfg(feature = "e2e")]
+        {
+            crate::invoke_handler::generate![crate::commands::e2e_request_exit]
+        }
+        #[cfg(not(feature = "e2e"))]
+        {
+            crate::invoke_handler::generate![]
+        }
+    }};
+}
+
+pub(crate) use for_build;
 pub(crate) use generate;

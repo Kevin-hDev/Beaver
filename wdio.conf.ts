@@ -1,9 +1,12 @@
 const appBinaryPath = process.env.E2E_APP_BINARY;
 if (!appBinaryPath) throw new Error("E2E app binary is not configured");
+const nativeCefSmoke = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
 
 export const config: WebdriverIO.Config = {
   runner: "local",
-  specs: ["./tests/e2e/**/*.spec.ts"],
+  specs: [nativeCefSmoke
+    ? "./tests/e2e/native-cef-shutdown.spec.ts"
+    : "./tests/e2e/onboarding.spec.ts"],
   maxInstances: 1,
   capabilities: [{ browserName: "tauri" }],
   services: [["@wdio/tauri-service", {
