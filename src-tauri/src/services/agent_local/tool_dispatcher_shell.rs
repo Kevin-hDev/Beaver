@@ -1,5 +1,6 @@
 use serde_json::Value;
 use std::path::Path;
+use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
 use super::subagent_tool_profile::SubagentToolProfile;
@@ -22,9 +23,7 @@ pub async fn dispatch(
             .map(to_tool_result),
         "bash_control" => control_process(args, session_id, cancel, progress)
             .await
-            .map(|(output, command)| {
-                to_tool_result(output).with_display_summary(command.as_str())
-            }),
+            .map(|(output, command)| to_tool_result(output).with_display_summary(command.as_str())),
         _ => {
             return ToolResult::error(
                 "Outil shell inconnu.",
@@ -45,12 +44,44 @@ async fn execute_command(
     profile: Option<SubagentToolProfile>,
     progress: Option<ShellProgress>,
 ) -> Result<ShellOutput, String> {
+    let app = super::app_handle_global::get()
+        .ok_or_else(|| "application-context-unavailable".to_string())?;
+    let work = app
+        .state::<super::agent_work_supervision::AgentWorkServices>()
+        .shells();
+    execute_command_with_work(
+        args,
+        working_dir,
+        session_id,
+        cancel,
+        profile,
+        progress,
+        work,
+    )
+    .await
+}
+
+pub(super) async fn execute_command_with_work(
+    args: &Value,
+    working_dir: &Path,
+    session_id: &str,
+    cancel: CancellationToken,
+    profile: Option<SubagentToolProfile>,
+    progress: Option<ShellProgress>,
+    work: super::agent_work_supervision::ShellWork,
+) -> Result<ShellOutput, String> {
     let command = args["command"].as_str().unwrap_or("");
     let timeout = args["timeout"].as_u64();
     let execution_dir = super::tool_bash::resolve_workdir(args["workdir"].as_str(), working_dir)?;
     if profile == Some(SubagentToolProfile::Explorer) {
-        return super::subagent_explorer_bash::execute(command, &execution_dir, timeout, cancel)
-            .await;
+        return super::subagent_explorer_bash::execute(
+            command,
+            &execution_dir,
+            timeout,
+            cancel,
+            work,
+        )
+        .await;
     }
     super::tool_bash::execute_shell_managed(
         command,
@@ -61,6 +92,7 @@ async fn execute_command(
             yield_time_ms: yield_time_ms(args),
             cancel,
             progress,
+            work,
         },
     )
     .await
@@ -95,7 +127,10 @@ fn yield_time_ms(args: &Value) -> Option<u64> {
 fn to_tool_result(output: ShellOutput) -> ToolResult {
     let mut content = render_streams(&output.stdout, &output.stderr);
     if !output.running && !output.stopped && output.exit_code > 0 {
-        append_note(&mut content, &format!("[Code de sortie: {}]", output.exit_code));
+        append_note(
+            &mut content,
+            &format!("[Code de sortie: {}]", output.exit_code),
+        );
     }
     let mut result = if output.running {
         ToolResult::running(content)

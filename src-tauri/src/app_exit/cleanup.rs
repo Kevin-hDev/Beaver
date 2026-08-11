@@ -15,7 +15,8 @@ pub(super) enum CleanupOutcome {
 }
 
 pub(super) async fn run(app: &tauri::AppHandle, timeline: ShutdownTimeline) -> CleanupOutcome {
-    run_with_deadline(timeline.graceful_deadline(), cleanup_services(app)).await
+    let deadline = timeline.graceful_deadline();
+    run_with_deadline(deadline, cleanup_services(app, deadline)).await
 }
 
 pub(super) async fn run_with_deadline<Work>(deadline: Instant, work: Work) -> CleanupOutcome
@@ -39,7 +40,7 @@ where
     ollama.await;
 }
 
-async fn cleanup_services(app: &tauri::AppHandle) {
+async fn cleanup_services(app: &tauri::AppHandle, deadline: Instant) {
     cancel_active_streams(app).await;
     if let Some(downloads) = app.try_state::<services::model_downloads::ModelDownloadManager>() {
         downloads.cancel_all().await;
@@ -47,7 +48,7 @@ async fn cleanup_services(app: &tauri::AppHandle) {
     services::agent_local::tool_bash_profile::clear();
     services::mcp_oauth::flow::cancel_all();
 
-    let services_phase = stop_services(app);
+    let services_phase = stop_services(app, deadline);
     let ollama_handle = app.clone();
     let ollama_phase = async move {
         super::blocking::execute(move || {
@@ -58,7 +59,14 @@ async fn cleanup_services(app: &tauri::AppHandle) {
     run_ordered(services_phase, ollama_phase).await;
 }
 
-async fn stop_services(app: &tauri::AppHandle) {
+async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
+    let agent_work = async {
+        if let Some(work) =
+            app.try_state::<services::agent_local::agent_work_supervision::AgentWorkServices>()
+        {
+            let _ = work.stop_and_wait(deadline).await;
+        }
+    };
     let gateway = async {
         if let Some(service) = app.try_state::<GatewayService>() {
             service.stop().await;
@@ -92,6 +100,7 @@ async fn stop_services(app: &tauri::AppHandle) {
         chronos,
         searxng,
         terminals,
+        agent_work,
     );
 }
 

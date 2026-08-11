@@ -10,8 +10,6 @@ pub(crate) type StreamEntry = (
     Arc<crate::services::agent_local::parent_message_inbox::ParentMessageInbox>,
 );
 
-const MAX_ACTIVE_STREAMS: usize = 32;
-
 pub(crate) async fn replace_active_stream<Cancel, CancelFuture, Start, StartFuture>(
     streams: &ActiveStreams,
     session_id: &str,
@@ -29,14 +27,20 @@ where
 {
     {
         let map = streams.0.lock().await;
-        if map.len() >= MAX_ACTIVE_STREAMS && !map.contains_key(session_id) {
+        if map.len()
+            >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
+            && !map.contains_key(session_id)
+        {
             return Err("Trop de flux actifs simultanément".to_string());
         }
     }
     let request_id = start_request().await;
     let old_stream = {
         let mut map = streams.0.lock().await;
-        if map.len() >= MAX_ACTIVE_STREAMS && !map.contains_key(session_id) {
+        if map.len()
+            >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
+            && !map.contains_key(session_id)
+        {
             return Err("Trop de flux actifs simultanément".to_string());
         }
         let old_stream = map.insert(

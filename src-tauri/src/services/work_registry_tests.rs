@@ -1,4 +1,6 @@
-use super::work_registry::{ServiceWorkAdmissionError, ServiceWorkPhase, WorkRegistry};
+use super::work_registry::{
+    ServiceWorkAdmissionError, ServiceWorkPhase, ServiceWorkSupervisor, WorkRegistry,
+};
 use crate::app_exit::{AppExitCoordinator, AppWorkAdmissionError, AppWorkSupervisor};
 use std::future;
 use std::time::{Duration, Instant};
@@ -189,4 +191,28 @@ async fn abandoning_stop_still_aborts_every_extracted_handle() {
         .is_cancelled());
     assert_eq!(registry.phase(), ServiceWorkPhase::Closed);
     assert_eq!(registry.diagnostics().active, 0);
+}
+
+#[tokio::test]
+async fn service_owner_binds_global_and_local_admission_once() {
+    let (_coordinator, app) = supervisor();
+    let service = ServiceWorkSupervisor::<1>::new(app);
+    let admission = service.try_admit().expect("service admission");
+    admission
+        .spawn(|cancel| async move { cancel.cancelled().await })
+        .expect("admitted task starts");
+
+    assert!(
+        service
+            .stop_and_wait(Instant::now() + Duration::from_secs(1))
+            .await
+    );
+    assert_eq!(service.phase(), ServiceWorkPhase::Closed);
+    assert_eq!(service.diagnostics().active, 0);
+    assert_eq!(
+        service
+            .try_admit()
+            .expect_err("closed service refuses work"),
+        ServiceWorkAdmissionError::Closing
+    );
 }

@@ -4,6 +4,36 @@ use super::{
 };
 use tokio_util::sync::CancellationToken;
 
+struct DropProbe(std::sync::Arc<std::sync::atomic::AtomicBool>);
+
+impl Drop for DropProbe {
+    fn drop(&mut self) {
+        self.0.store(true, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+#[tokio::test]
+async fn aborting_the_guard_cannot_detach_the_owned_subagent() {
+    let dropped = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let probe = DropProbe(std::sync::Arc::clone(&dropped));
+    let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+    let guard = tokio::spawn(subagent_panic_supervisor::run_guarded(
+        async move {
+            let _probe = probe;
+            let _ = started_tx.send(());
+            std::future::pending::<()>().await;
+        },
+        || async {},
+    ));
+    started_rx.await.expect("owned subagent starts");
+
+    guard.abort();
+    let _ = guard.await;
+    tokio::task::yield_now().await;
+
+    assert!(dropped.load(std::sync::atomic::Ordering::SeqCst));
+}
+
 async fn session(name: &str) -> super::types_session::AgentSession {
     session_store::create_full(name, "llama3", "ollama", false, None)
         .await
@@ -18,13 +48,10 @@ async fn panic_persists_generic_failure_and_leaves_no_registry_ghost() {
     child.subagent_type = Some("explorer".into());
     child.subagent_status = Some(subagent_status::RUNNING.into());
     session_store::save(&child).await.expect("save child");
-    let registered = subagent_registry::register_execution(
-        &parent.id,
-        &child.id,
-        CancellationToken::new(),
-    )
-        .await
-        .expect("register child");
+    let registered =
+        subagent_registry::register_execution(&parent.id, &child.id, CancellationToken::new())
+            .await
+            .expect("register child");
     child.subagent_run_id = Some(registered.run_id.clone());
     session_store::save(&child).await.expect("save run id");
     let mut signal = subagent_registry::subscribe_for_parent(&parent.id)

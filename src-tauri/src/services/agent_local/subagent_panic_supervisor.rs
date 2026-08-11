@@ -1,4 +1,6 @@
+use futures_util::FutureExt;
 use std::future::Future;
+use std::panic::AssertUnwindSafe;
 
 pub const SUBAGENT_PANIC_SUMMARY: &str = "Le sous-agent n'a pas pu terminer correctement.";
 
@@ -8,7 +10,9 @@ where
     Recover: FnOnce() -> RecoverFuture,
     RecoverFuture: Future<Output = ()>,
 {
-    if tokio::spawn(future).await.is_err() {
+    // La capture de panique reste dans la tâche propriétaire : une annulation
+    // du superviseur ne doit jamais détacher le sous-agent qu'il possède.
+    if AssertUnwindSafe(future).catch_unwind().await.is_err() {
         recover().await;
     }
 }
@@ -74,11 +78,7 @@ pub async fn recover_panicked_completion(
     !matches!(completion, Ok(None))
 }
 
-async fn cleanup(
-    child_session_id: &str,
-    execution_id: &str,
-    expected_worktree_path: Option<&str>,
-) {
+async fn cleanup(child_session_id: &str, execution_id: &str, expected_worktree_path: Option<&str>) {
     super::subagent_working_dir::cleanup_owned(
         child_session_id,
         execution_id,
