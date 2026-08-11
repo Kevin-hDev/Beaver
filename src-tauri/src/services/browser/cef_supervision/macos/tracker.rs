@@ -1,12 +1,9 @@
 use super::super::gate::CefLaunchGate;
 use super::super::mac_supervision_failure::MacSupervisionFailure;
-use super::super::{
-    CefAuthorityTable, CefIpcNames, CefLaunchTicket, CefProcessRole, CefUnavailableCategory,
-};
+use super::super::{CefAuthorityTable, CefUnavailableCategory};
 use super::emergency_slots::MacEmergencySlots;
-use super::pending::{MacPendingLaunch, MacPendingSlots};
+use super::pending::MacPendingSlots;
 use super::reaper::{MacEmergencyReaper, MacReaperControl};
-use super::MacPublicationObjects;
 use crate::services::browser::cef_preflight::CefPreflightError;
 use crate::services::browser::native_paths::MacHelperExecutables;
 #[cfg(test)]
@@ -38,7 +35,7 @@ pub(in crate::services::browser) struct MacCefTracker {
 
 #[derive(Clone)]
 pub(in crate::services::browser) struct MacCefTrackerHandle {
-    shared: Arc<MacTrackerShared>,
+    pub(super) shared: Arc<MacTrackerShared>,
 }
 
 impl std::fmt::Debug for MacCefTrackerHandle {
@@ -120,54 +117,6 @@ impl MacCefTracker {
         MacCefTrackerHandle {
             shared: Arc::clone(&self.shared),
         }
-    }
-}
-
-impl MacCefTrackerHandle {
-    pub(in crate::services::browser) fn reserve(
-        &self,
-    ) -> Result<CefLaunchTicket, CefUnavailableCategory> {
-        let _permit = self
-            .shared
-            .gate
-            .try_enter()
-            .map_err(|_| CefUnavailableCategory::Admission)?;
-        if self.failure().is_some() || self.shared.tracker_stopping.load(Ordering::Acquire) {
-            return Err(CefUnavailableCategory::Admission);
-        }
-        let reservation = self
-            .shared
-            .table
-            .try_reserve(CefProcessRole::Helper)
-            .map_err(|_| CefUnavailableCategory::Admission)?;
-        let names = CefIpcNames::from_marker(reservation.marker())
-            .map_err(|_| CefUnavailableCategory::Object)?;
-        let objects = Arc::new(MacPublicationObjects::create(
-            &self.shared.root,
-            &names,
-            reservation.marker().generation(),
-        )?);
-        let ticket = CefLaunchTicket::new(reservation.marker());
-        let slot = reservation.marker().slot();
-        if self.shared.gate.is_closed() {
-            return Err(CefUnavailableCategory::Admission);
-        }
-        self.shared.pending.install(
-            slot,
-            MacPendingLaunch {
-                reservation,
-                objects,
-            },
-        )?;
-        Ok(ticket)
-    }
-
-    pub(in crate::services::browser) fn fail(&self, category: CefUnavailableCategory) {
-        self.shared.fail(MacSupervisionFailure::External(category));
-    }
-
-    fn failure(&self) -> Option<CefUnavailableCategory> {
-        failure_from_id(self.shared.failure.load(Ordering::Acquire))
     }
 }
 

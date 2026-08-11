@@ -1,12 +1,9 @@
 use super::super::constants::CEF_TRACKER_DROP_TIMEOUT;
 use super::super::gate::CefLaunchGate;
-use super::super::{
-    CefAuthorityTable, CefIpcNames, CefLaunchTicket, CefProcessRole, CefUnavailableCategory,
-};
+use super::super::{CefAuthorityTable, CefLaunchTicket, CefUnavailableCategory};
 use super::native_authority::WindowsNativeAuthority;
-use super::objects::WindowsPublicationObjects;
 use super::tracker_loop::run_tracker;
-use super::tracker_pending::{WindowsPendingLaunch, WindowsPendingSlots};
+use super::tracker_pending::WindowsPendingSlots;
 use crate::services::browser::cef_preflight::CefPreflightError;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
@@ -36,7 +33,7 @@ pub(in crate::services::browser) struct WindowsCefTracker {
 
 #[derive(Clone)]
 pub(in crate::services::browser) struct WindowsCefTrackerHandle {
-    shared: Arc<WindowsTrackerShared>,
+    pub(super) shared: Arc<WindowsTrackerShared>,
 }
 
 impl WindowsCefTracker {
@@ -109,50 +106,6 @@ impl WindowsCefTracker {
     #[cfg(test)]
     pub(in crate::services::browser) fn failure(&self) -> Option<CefUnavailableCategory> {
         self.shared.failure()
-    }
-}
-
-impl WindowsCefTrackerHandle {
-    pub(in crate::services::browser) fn reserve(
-        &self,
-    ) -> Result<CefLaunchTicket, CefUnavailableCategory> {
-        let _permit = self
-            .shared
-            .gate
-            .try_enter()
-            .map_err(|_| CefUnavailableCategory::Admission)?;
-        if self.failure().is_some() || self.shared.stopping.load(Ordering::Acquire) {
-            return Err(CefUnavailableCategory::Admission);
-        }
-        let reservation = self
-            .shared
-            .table
-            .try_reserve(CefProcessRole::Helper)
-            .map_err(|_| CefUnavailableCategory::Admission)?;
-        let names = CefIpcNames::from_marker(reservation.marker())
-            .map_err(|_| CefUnavailableCategory::Object)?;
-        let objects = WindowsPublicationObjects::create(&names, reservation.marker().generation())?;
-        let ticket = CefLaunchTicket::new(reservation.marker());
-        let slot = reservation.marker().slot();
-        if self.shared.gate.is_closed() {
-            return Err(CefUnavailableCategory::Admission);
-        }
-        self.shared.pending.install(
-            slot,
-            WindowsPendingLaunch {
-                reservation,
-                objects,
-            },
-        )?;
-        Ok(ticket)
-    }
-
-    pub(in crate::services::browser) fn failure(&self) -> Option<CefUnavailableCategory> {
-        self.shared.failure()
-    }
-
-    pub(in crate::services::browser) fn fail(&self, category: CefUnavailableCategory) {
-        self.shared.fail(category);
     }
 }
 

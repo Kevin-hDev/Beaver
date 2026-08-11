@@ -1,7 +1,7 @@
 use super::macos::{
     helper_parent_changed_for_test, MacCefTracker, MacHelperObjects, MacProcessIdentity,
 };
-use super::{CefIpcNames, CefUnavailableCategory};
+use super::{CefIpcNames, CefUnavailableCategory, CEF_SLOT_CAPACITY};
 use std::os::unix::process::CommandExt;
 use std::time::{Duration, Instant};
 
@@ -168,6 +168,38 @@ fn emergency_reaper_survives_the_normal_tracker_stopping() {
         std::thread::sleep(Duration::from_millis(10));
     }
     assert!(child.try_wait().expect("final status").is_some());
+}
+
+#[test]
+fn unpublished_reservations_expire_without_failing_the_tracker() {
+    let root = crate::services::paths::data_dir()
+        .join(format!("cef-mac-expiration-test-{}", std::process::id()));
+    let mut child = grouped_sleep();
+    let identity = MacProcessIdentity::read(child.id()).expect("child identity");
+    let tracker = MacCefTracker::start(identity.test_executable(), root).expect("tracker");
+    let expires_at = Instant::now() + Duration::from_secs(2);
+    for _ in 0..CEF_SLOT_CAPACITY {
+        tracker
+            .handle()
+            .reserve_until_for_test(expires_at)
+            .expect("expiring reservation");
+    }
+    assert!(tracker.handle().reserve().is_err());
+
+    let deadline = expires_at + Duration::from_secs(3);
+    let mut replacements = Vec::with_capacity(CEF_SLOT_CAPACITY);
+    while replacements.len() < CEF_SLOT_CAPACITY && Instant::now() < deadline {
+        match tracker.handle().reserve() {
+            Ok(ticket) => replacements.push(ticket),
+            Err(_) => std::thread::sleep(Duration::from_millis(10)),
+        }
+    }
+
+    assert_eq!(replacements.len(), CEF_SLOT_CAPACITY);
+    assert!(tracker.handle().reserve().is_err());
+    assert_eq!(tracker.failure_for_test(), None);
+    child.kill().expect("stop child");
+    child.wait().expect("reap child");
 }
 
 fn wait_until_admitted(helper: &MacHelperObjects) {

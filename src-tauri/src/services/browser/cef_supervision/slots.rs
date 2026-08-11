@@ -42,10 +42,10 @@ pub(super) struct CefAuthorityInner {
 }
 
 impl CefAuthorityInner {
-    pub(super) fn release(&self, key: CefSlotKey, expected: u8) {
-        if let Some(slot) = self.slots.get(key.index) {
-            slot.clear_if(key.generation, expected);
-        }
+    pub(super) fn release(&self, key: CefSlotKey, expected: u8) -> bool {
+        self.slots
+            .get(key.index)
+            .is_some_and(|slot| slot.clear_if(key.generation, expected))
     }
 
     pub(super) fn admit(&self, key: CefSlotKey) -> Result<(), CefTableError> {
@@ -115,7 +115,7 @@ impl CefAuthorityTable {
             slot.state.store(SLOT_RESERVED, Ordering::Release);
             return Ok(CefReservation {
                 table: Arc::clone(&self.inner),
-                key: CefSlotKey { index, generation },
+                key: Some(CefSlotKey { index, generation }),
                 marker,
             });
         }

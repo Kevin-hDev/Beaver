@@ -12,6 +12,7 @@ mod security;
 mod tracker;
 mod tracker_loop;
 mod tracker_pending;
+mod tracker_reservation;
 
 #[cfg(test)]
 pub(super) use confinement::WindowsConfinement;

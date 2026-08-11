@@ -3,7 +3,8 @@ use super::windows::{
     WindowsNativeAuthority, WindowsProcessIdentity, WindowsProcessProbe, WindowsTerminationState,
 };
 use super::windows_identity_tests::ChildGuard;
-use super::{CefAuthorityTable, CefProcessRole, CefPublication};
+use super::{CefAuthorityTable, CefProcessRole, CefPublication, CEF_SLOT_CAPACITY};
+use std::time::{Duration, Instant};
 
 #[test]
 fn an_accepted_termination_is_not_released_before_the_handle_is_signaled() {
@@ -134,6 +135,34 @@ fn emergency_close_rejects_new_helpers_and_force_stops_an_admitted_helper() {
 
     tracker.force_for_test();
     assert!(wait_until_native_process_disappears(child.id()));
+}
+
+#[test]
+fn unpublished_reservations_expire_without_failing_the_tracker() {
+    let child = ChildGuard::spawn();
+    let probe = WindowsProcessProbe::read(child.id()).expect("probe");
+    let tracker = WindowsCefTracker::start(probe.executable()).expect("tracker");
+    let expires_at = Instant::now() + Duration::from_secs(2);
+    for _ in 0..CEF_SLOT_CAPACITY {
+        tracker
+            .handle()
+            .reserve_until_for_test(expires_at)
+            .expect("expiring reservation");
+    }
+    assert!(tracker.reserve().is_err());
+
+    let deadline = expires_at + Duration::from_secs(3);
+    let mut replacements = Vec::with_capacity(CEF_SLOT_CAPACITY);
+    while replacements.len() < CEF_SLOT_CAPACITY && Instant::now() < deadline {
+        match tracker.reserve() {
+            Ok(ticket) => replacements.push(ticket),
+            Err(_) => std::thread::sleep(Duration::from_millis(10)),
+        }
+    }
+
+    assert_eq!(replacements.len(), CEF_SLOT_CAPACITY);
+    assert!(tracker.reserve().is_err());
+    assert_eq!(tracker.failure(), None);
 }
 
 fn wait_until_process_disappears(pid: u32, authority: &WindowsNativeAuthority) -> bool {

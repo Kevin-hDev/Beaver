@@ -3,10 +3,12 @@ use super::super::reservation::CefReservation;
 use super::super::CefUnavailableCategory;
 use super::objects::WindowsPublicationObjects;
 use std::sync::atomic::{AtomicPtr, Ordering};
+use std::time::Instant;
 
 pub(super) struct WindowsPendingLaunch {
     pub(super) reservation: CefReservation,
     pub(super) objects: WindowsPublicationObjects,
+    pub(super) expires_at: Instant,
 }
 
 pub(super) struct WindowsPendingSlots {
@@ -63,6 +65,27 @@ impl WindowsPendingSlots {
         } else {
             Some(unsafe { Box::from_raw(pointer) })
         }
+    }
+
+    pub(super) fn take_if_expired(
+        &self,
+        slot: usize,
+        now: Instant,
+    ) -> Option<Box<WindowsPendingLaunch>> {
+        let target = self.slots.get(slot)?;
+        let pointer = target.load(Ordering::Acquire);
+        if pointer.is_null() || unsafe { (*pointer).expires_at > now } {
+            return None;
+        }
+        target
+            .compare_exchange(
+                pointer,
+                std::ptr::null_mut(),
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            )
+            .ok()
+            .map(|claimed| unsafe { Box::from_raw(claimed) })
     }
 
     pub(super) fn drain(&self) {
