@@ -12,6 +12,9 @@ pub mod agent_md;
 pub mod agent_definition;
 pub mod agent_resource_access;
 pub mod agent_settings;
+pub mod agent_work_supervision;
+#[cfg(test)]
+mod agent_work_supervision_tests;
 pub mod app_handle_global;
 pub mod circuit_breaker;
 #[cfg(test)]
@@ -199,6 +202,8 @@ mod subagent_report_delivery_tests;
 #[cfg(test)]
 mod subagent_report_ack_tests;
 pub mod subagent_spawn_channel;
+#[cfg(test)]
+mod subagent_spawn_channel_tests;
 pub mod subagent_startup_cleanup;
 pub mod subagent_status;
 pub mod subagent_summary;

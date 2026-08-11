@@ -1,6 +1,6 @@
 use super::{
     ServiceWorkAdmission, ServiceWorkAdmissionError, ServiceWorkCancellation, ServiceWorkKey,
-    ServiceWorkPhase, WorkRegistry,
+    ServiceWorkPhase, ServiceWorkSupervisor, WorkRegistry,
 };
 use crate::app_exit::{AppWorkAdmissionError, AppWorkSupervisor};
 use std::future::Future;
@@ -31,6 +31,35 @@ impl<const CAPACITY: usize> ServiceWorkAdmission<CAPACITY> {
         let output = future.await;
         drop(guard);
         output
+    }
+
+    pub fn spawn<Factory, Task>(self, work: Factory) -> Result<(), ServiceWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: Future + Send + 'static,
+    {
+        let key = self.key.expect("new admission has a key");
+        let cancellation = self.cancellation();
+        let registry = self.registry.clone();
+        let mut state = registry.lock_state();
+        if state.phase != ServiceWorkPhase::Open {
+            state.diagnostics.closing_refusals =
+                state.diagnostics.closing_refusals.saturating_add(1);
+            drop(state);
+            drop(self);
+            return Err(ServiceWorkAdmissionError::Closing);
+        }
+        let handle = tokio::spawn(async move {
+            drop(self.run(work(cancellation)).await);
+        });
+        let slot = &mut state.slots[key.index];
+        if !slot.occupied || slot.generation != key.generation {
+            drop(state);
+            handle.abort();
+            return Err(ServiceWorkAdmissionError::Closing);
+        }
+        slot.handle = Some(handle);
+        Ok(())
     }
 
     #[cfg(test)]
@@ -108,28 +137,28 @@ impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
         Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
         Task: Future + Send + 'static,
     {
-        let admission = self.try_admit(app)?;
-        let key = admission.key.expect("new admission has a key");
-        let cancellation = admission.cancellation();
-        let mut state = self.lock_state();
-        if state.phase != ServiceWorkPhase::Open {
-            state.diagnostics.closing_refusals =
-                state.diagnostics.closing_refusals.saturating_add(1);
-            drop(state);
-            drop(admission);
-            return Err(ServiceWorkAdmissionError::Closing);
+        self.try_admit(app)?.spawn(work)
+    }
+}
+
+impl<const CAPACITY: usize> ServiceWorkSupervisor<CAPACITY> {
+    pub fn new(app: AppWorkSupervisor) -> Self {
+        Self {
+            app,
+            registry: WorkRegistry::new(),
         }
-        let handle = tokio::spawn(async move {
-            drop(admission.run(work(cancellation)).await);
-        });
-        let slot = &mut state.slots[key.index];
-        if !slot.occupied || slot.generation != key.generation {
-            drop(state);
-            handle.abort();
-            return Err(ServiceWorkAdmissionError::Closing);
-        }
-        slot.handle = Some(handle);
-        Ok(())
+    }
+
+    pub fn try_admit(&self) -> Result<ServiceWorkAdmission<CAPACITY>, ServiceWorkAdmissionError> {
+        self.registry.try_admit(&self.app)
+    }
+
+    pub fn spawn<Factory, Task>(&self, work: Factory) -> Result<(), ServiceWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: Future + Send + 'static,
+    {
+        self.registry.spawn(&self.app, work)
     }
 }
 

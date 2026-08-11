@@ -60,6 +60,7 @@ pub(crate) fn run_inner(
             return false;
         }
     };
+    let agent_work = runtime_state::agent_work(&exit_coordinator);
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let builder = tauri::Builder::default()
         .plugin(services::app_log::plugin())
@@ -81,6 +82,7 @@ pub(crate) fn run_inner(
     let app = builder
         .manage(OllamaClient::new())
         .manage(exit_coordinator)
+        .manage(agent_work)
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
@@ -103,9 +105,7 @@ pub(crate) fn run_inner(
         .setup(|app| {
             report_lifecycle(LifecycleStage::SetupEntered);
             let startup_cutoff = chrono::Utc::now();
-            services::agent_local::shell_sandbox::cleanup_stale();
-            services::agent_local::app_handle_global::init(app.handle().clone());
-            services::agent_local::subagent_spawn_channel::init();
+            runtime_state::initialize_agent_runtime(app.handle())?;
             storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
             if services::agent_local::directory_access::initialize_policy().is_err() {
                 ::log::error!("[directory-access] policy unavailable");

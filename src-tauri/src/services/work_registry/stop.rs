@@ -1,4 +1,4 @@
-use super::{ServiceWorkKey, ServiceWorkPhase, WorkRegistry};
+use super::{ServiceWorkKey, ServiceWorkPhase, ServiceWorkSupervisor, WorkRegistry};
 use std::time::Instant;
 use tokio::task::JoinHandle;
 
@@ -126,5 +126,11 @@ impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
                 return self.phase() == ServiceWorkPhase::Closed;
             }
         }
+    }
+}
+
+impl<const CAPACITY: usize> ServiceWorkSupervisor<CAPACITY> {
+    pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
+        self.registry.stop_and_wait(deadline).await
     }
 }

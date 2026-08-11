@@ -9,7 +9,7 @@
 mod stop;
 mod task;
 
-use crate::app_exit::AppWorkAdmission;
+use crate::app_exit::{AppWorkAdmission, AppWorkSupervisor};
 use std::sync::{Arc, Mutex, MutexGuard};
 use tokio::sync::{Mutex as AsyncMutex, Notify};
 use tokio::task::JoinHandle;
@@ -102,6 +102,12 @@ pub struct WorkRegistry<const CAPACITY: usize> {
     pub(super) inner: Arc<WorkRegistryInner<CAPACITY>>,
 }
 
+#[derive(Clone)]
+pub struct ServiceWorkSupervisor<const CAPACITY: usize> {
+    pub(super) app: AppWorkSupervisor,
+    pub(super) registry: WorkRegistry<CAPACITY>,
+}
+
 impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
     pub fn new() -> Self {
         assert!(CAPACITY > 0, "work registry capacity must be positive");
@@ -183,5 +189,15 @@ impl<const CAPACITY: usize> Clone for WorkRegistry<CAPACITY> {
 impl<const CAPACITY: usize> Default for WorkRegistry<CAPACITY> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<const CAPACITY: usize> ServiceWorkSupervisor<CAPACITY> {
+    pub fn phase(&self) -> ServiceWorkPhase {
+        self.registry.phase()
+    }
+
+    pub fn diagnostics(&self) -> ServiceWorkDiagnostics {
+        self.registry.diagnostics()
     }
 }

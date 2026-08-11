@@ -88,13 +88,6 @@ impl AppExitCoordinator {
         })
     }
 
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "service producers adopt the app work supervisor during milestone 2"
-        )
-    )]
     pub(crate) fn work_supervisor(&self) -> AppWorkSupervisor {
         AppWorkSupervisor::new(self.registry.clone())
     }

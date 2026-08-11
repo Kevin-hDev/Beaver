@@ -4,7 +4,7 @@ use zeroize::Zeroizing;
 
 use super::tool_bash_session::ShellSession;
 
-const MAX_SESSIONS: usize = 64;
+const MAX_SESSIONS: usize = super::agent_work_supervision::MAX_ACTIVE_SHELLS;
 const STOP_ALL_GRACE: std::time::Duration = std::time::Duration::from_millis(300);
 
 struct RegisteredSession {

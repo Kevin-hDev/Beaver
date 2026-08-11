@@ -5,6 +5,9 @@ pub mod agent_chat_queue;
 mod agent_chat_stream_replacement_tests;
 pub(crate) mod agent_chat_streams;
 pub(crate) mod agent_chat_task;
+pub(crate) mod agent_chat_work;
+#[cfg(test)]
+mod agent_chat_work_tests;
 pub mod agent_clone;
 pub mod agent_import;
 pub mod agent_md;

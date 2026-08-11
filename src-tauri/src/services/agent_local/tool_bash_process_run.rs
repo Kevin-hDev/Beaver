@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::{Child, ChildStderr, ChildStdout};
@@ -25,6 +28,7 @@ pub(super) async fn run(
     mut tracker: Option<ChangeTracker>,
     hard_timeout_secs: Option<u64>,
     agent_cancel: CancellationToken,
+    shutdown: crate::services::work_registry::ServiceWorkCancellation,
     sandbox_cleanup: Option<std::path::PathBuf>,
 ) {
     let (sender, mut receiver) = mpsc::channel(super::tool_bash_io::OUTPUT_CHANNEL_SIZE);
@@ -42,6 +46,7 @@ pub(super) async fn run(
 
     let mut completion = loop {
         tokio::select! {
+            _ = shutdown.cancelled() => break CompletionKind::Cancelled,
             _ = agent_cancel.cancelled() => break CompletionKind::Cancelled,
             _ = session_cancel.cancelled() => break CompletionKind::Cancelled,
             _ = session_stop.cancelled() => break CompletionKind::Stopped,
@@ -116,7 +121,9 @@ async fn settle_changes(session: &ShellSession, tracker: &mut Option<ChangeTrack
     if settle_ms > 0 {
         tokio::time::sleep(Duration::from_millis(settle_ms)).await;
     }
-    let Some(mut tracker) = tracker.take() else { return };
+    let Some(mut tracker) = tracker.take() else {
+        return;
+    };
     match tokio::task::spawn_blocking(move || tracker.finish_changes()).await {
         Ok((changes, incomplete)) => session.update_changes(changes, incomplete),
         Err(_) => session.update_changes(Vec::new(), true),
