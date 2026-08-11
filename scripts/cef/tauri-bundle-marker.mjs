@@ -100,21 +100,24 @@ async function openTrustedBinary(path, flags) {
   let handle;
   try {
     if (!safeAbsolutePath(path)) fail();
-    const canonical = await realpath(path);
-    if (comparable(canonical) !== comparable(resolve(path))) fail();
-    const before = await lstat(canonical);
-    if (
-      !before.isFile() ||
-      before.isSymbolicLink() ||
-      (flags !== "r" && before.nlink > 1) ||
-      before.size < 1 ||
-      before.size > MAX_BINARY_BYTES
-    ) {
-      fail();
-    }
-    handle = await open(canonical, flags);
+    const requested = resolve(path);
+    handle = await open(requested, flags);
     const opened = await handle.stat();
-    if (!opened.isFile() || !sameFile(before, opened) || opened.size !== before.size) {
+    const [canonical, current] = await Promise.all([
+      realpath(requested),
+      lstat(requested),
+    ]);
+    if (
+      comparable(canonical) !== comparable(requested) ||
+      !opened.isFile() ||
+      !current.isFile() ||
+      current.isSymbolicLink() ||
+      !sameFile(current, opened) ||
+      current.size !== opened.size ||
+      (flags !== "r" && opened.nlink > 1) ||
+      opened.size < 1 ||
+      opened.size > MAX_BINARY_BYTES
+    ) {
       fail();
     }
     return { handle, size: opened.size };
