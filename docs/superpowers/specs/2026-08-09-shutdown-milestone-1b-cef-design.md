@@ -142,11 +142,15 @@ La preuve comprend les dossiers par défaut et personnalisés, une cible Rust ex
 - chaque commit qui porte une décision de sécurité ou de cycle de vie reçoit une Git note ; la note finale relie ces décisions à leurs tests et à la matrice manuelle réelle ;
 - l'avertissement `__TAURI_BUNDLE_TYPE` du bootstrap Windows possède une preuve de cause et un test d'empaquetage. La PR ne passe pas hors brouillon tant que le bootstrap et le module qui exécute Tauri ne reçoivent pas le type de bundle attendu, ou qu'une solution officielle équivalente n'est pas démontrée ; l'avertissement ne peut pas être seulement consigné dans une note.
 
-## État factuel des preuves au 10 août 2026
+## État factuel des preuves au 11 août 2026
 
 La PR J1B compile les chemins natifs avec CEF vérifié et sandbox actif. Le run GitHub Actions `31404848819` est vert sur Windows, macOS et Linux : Clippy strict, suites complètes voisines, tests des autorités natives Windows/macOS, contrats de sandbox et absence de CEF Linux. Les commits d'implémentation sont `0e505ca` à `4812d09`; les durcissements CI et multi-OS sont `84a7fb2`, `3f517a1`, `3936a14`, `baf14dc` et `1b4f15d`.
 
-Cette preuve automatisée valide le protocole et certains appels natifs sur des processus factices confinés. Elle ne valide pas encore la ligne de commande, le routage et le cycle complet d'un vrai enfant CEF. La review complète a également rouvert la barrière de fermeture, le reaper macOS indépendant, le rôle shell Windows, l'entrée directe du contrat Node et le marqueur Tauri du bootstrap. Ces points restent ouverts tant que les tests ci-dessus ne les ferment pas. Avant passage de la PR hors brouillon, il reste aussi à consigner séparément :
+Les corrections suivantes ferment désormais les angles rouverts par la review complète : la barrière CEF continue le nettoyage après son échéance, le reaper macOS possède une voie d'urgence indépendante, le routeur Windows sépare les rôles CEF et shell sans plafonner la ligne Chromium, l'entrée directe du contrat Node échoue réellement et les jobs natifs ouvrent une vraie page CEF avant une fermeture coordonnée. Les filtres Rust échouent aussi lorsqu'ils ne sélectionnent aucun test.
+
+Le type de bundle Tauri possède une autorité unique. Chaque invocation Windows construit exactement un type : NSIS par défaut ou MSI explicitement demandé. Le bootstrap porte le marqueur officiel inconnu que Tauri remplace, tandis que seule la copie de la DLL destinée au paquet reçoit le même type. Le vérificateur compare les deux fichiers empaquetés à leurs références issues du même build et refuse toute différence autre que ce remplacement. Les preuves locales comprennent un NSIS construit, installé, vérifié puis désinstallé, ainsi qu'un MSI construit, extrait et vérifié ; aucun avertissement `__TAURI_BUNDLE_TYPE` n'est masqué.
+
+Ces preuves automatisées et locales ne remplacent ni la CI du HEAD final ni la matrice manuelle renforcée. Avant passage de la PR hors brouillon, il reste à consigner séparément :
 
 - build empaqueté Windows avec protections Microsoft actives ;
 - build empaqueté Windows dans un environnement renforcé représentatif ;

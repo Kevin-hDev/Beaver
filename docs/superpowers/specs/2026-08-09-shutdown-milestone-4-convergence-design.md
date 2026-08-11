@@ -46,7 +46,7 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 - routeur du bootstrap empaqueté validé pour les quatre résultats exclusifs : parent Beaver, helper CEF réservé, helper shell isolé réel et entrée invalide ; une combinaison shell + CEF est refusée ;
 - ligne de commande Chromium réelle de plus de 64 arguments et arguments opaques : aucun plafond artificiel, seuls les champs privés Beaver sont décodés et bornés ;
 - helper shell simultané jamais classé comme CEF ; échec local injecté avant initialisation : `Unavailable avant lancement` et aucun helper CEF créé ;
-- `__TAURI_BUNDLE_TYPE` correctement reçu par le bootstrap et par le module qui exécute Tauri dans le paquet NSIS de release, ainsi que dans tout autre type Windows réellement demandé par la commande de build — notamment MSI lorsque `targets: all` le génère — sans avertissement masqué ni valeur inventée ;
+- `__TAURI_BUNDLE_TYPE` correctement reçu par le bootstrap et par le module qui exécute Tauri dans le paquet NSIS de release, ainsi que dans tout autre type Windows explicitement demandé — notamment MSI dans son invocation isolée — sans build multi-bundles partageant une DLL préparée, avertissement masqué ni valeur inventée ;
 - PTY et handles verrouillés ;
 - mise à jour Beaver avec helper survivant ;
 - mise à jour Ollama avec renommage temporairement bloqué.

@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
-import { realpathSync } from "node:fs";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+
+import { isDirectExecution } from "./direct-execution.mjs";
+
+export { isDirectExecution } from "./direct-execution.mjs";
 
 const FORBIDDEN_SANDBOX_BYPASS = /(?:no[_-]sandbox|CEF_NO_SANDBOX)/iu;
 
@@ -47,21 +48,6 @@ export async function validateRepository() {
     readFile(new URL("src-tauri/src/services/browser/macos_helper_entry.rs", root), "utf8"),
   ]);
   return validateCefSupervisionContracts({ workflow, build, macHelper });
-}
-
-function canonicalPath(path) {
-  let canonical;
-  try {
-    canonical = realpathSync.native(resolve(path));
-  } catch {
-    canonical = resolve(path);
-  }
-  return process.platform === "win32" ? canonical.toLocaleLowerCase("en-US") : canonical;
-}
-
-export function isDirectExecution(moduleUrl, argvPath) {
-  if (!argvPath) return false;
-  return canonicalPath(fileURLToPath(moduleUrl)) === canonicalPath(argvPath);
 }
 
 if (isDirectExecution(import.meta.url, process.argv[1])) {
