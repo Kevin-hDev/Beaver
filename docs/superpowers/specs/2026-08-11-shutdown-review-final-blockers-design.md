@@ -20,7 +20,7 @@ Ce correctif ferme les deux blocages de fusion confirmés après N2 et l'interac
 
 ### Contrat de marque
 
-1. **Hypothèse confirmée — compteurs figés périmés.** Le test observe `cl-go-dash = 229` et `cl_go_dash = 46`, contre `211` et `32` attendus.
+1. **Hypothèse confirmée — compteurs figés périmés.** Après ajout des documents suivis de conception et d'exécution, le test observe `cl-go-dash = 231` et `cl_go_dash = 48`, contre `211` et `32` attendus.
 2. **Hypothèse réfutée — nouvelles références inconnues.** Le balayage produit `INCONNU ET BLOQUANT (0)`.
 3. **Hypothèse réfutée — pollution par des fichiers locaux non suivis.** Le dépôt de travail est propre et les écarts viennent des fichiers suivis de la branche.
 

@@ -46,7 +46,7 @@
 - Modify: `scripts/brand/brand-boundaries-contracts.mjs`
 - Modify: `src-tauri/src/services/browser/cef_supervision/windows/clock_tests.rs`
 
-1. Run `npm run test:brand-boundaries` and preserve the current red evidence: `cl-go-dash` 229 versus 211 and `cl_go_dash` 46 versus 32, with zero unknown references.
+1. Run `npm run test:brand-boundaries` and preserve the current red evidence after adding the tracked design and plan: `cl-go-dash` 231 versus 211 and `cl_go_dash` 48 versus 32, with zero unknown references.
 2. Update exactly those two expected internal counts; do not add exclusions or weaken the unknown-reference assertion.
 3. Replace the 20 ms immediate clock assertion with a sufficiently future monotonic deadline, then prove it is future and becomes reached before an independent absolute limit.
 4. Run the brand test green and repeat the focused Windows clock test enough times to exercise scheduler delays.
