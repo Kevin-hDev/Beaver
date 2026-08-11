@@ -8,7 +8,7 @@ La branche devient fusionnable lorsque les vérifications de publication Windows
 
 ## Hors périmètre
 
-- Tu ne corriges pas N5 à N15, dont le détail complet n'a pas été fourni.
+- Tu ne corriges pas N5 à N11 ni N13 à N15, dont le détail complet n'a pas été fourni.
 - Tu ne modifies pas l'interface ni les traductions.
 - Tu ne remplaces pas l'autorité native Windows, le Job Object ou le reaper macOS.
 - Tu ne promets pas de redémarrage après la sortie brute ultime à 15 secondes : ce filet reste volontairement indépendant de Tauri.
@@ -19,7 +19,7 @@ Tu fournis `CARGO_BUILD_TARGET` et `BEAVER_TAURI_BUNDLE_TYPE` directement à l'�
 
 Tu contrôles immédiatement le code de sortie de `tauri-bundle-marker.mjs verify` et tu fais échouer l'étape s'il est non nul. PowerShell ne transforme pas automatiquement l'échec d'un programme natif en échec de l'étape, et une commande réussie ensuite masque sinon la vérification ratée.
 
-Le test du workflow vérifie que les deux variables et la propagation d'erreur appartiennent à la même étape Windows que la commande de vérification.
+Le test charge le workflow comme du YAML et inspecte sa structure. Il vérifie que les deux variables et la propagation d'erreur appartiennent à la même étape Windows que la commande de vérification ; une recherche globale de chaînes dans le fichier n'est pas une preuve suffisante.
 
 ## N2 — Intention de redémarrage immuable jusqu'au watchdog
 
@@ -31,13 +31,15 @@ Le chemin normal et le watchdog des 10 secondes appellent la même action finale
 - `Restart` demande le redémarrage Tauri ;
 - une requête concurrente ne peut pas remplacer l'intention initiale.
 
+L'action finale est à déclenchement unique. La transition atomique existante de `Closing` vers `ReadyToExit` fait autorité : la première invocation gagne, qu'elle vienne du nettoyage normal ou du watchdog ; les suivantes sont ignorées et écrivent une trace générique. Quand le watchdog gagne avec l'intention `Restart`, une trace explicite indique que le redémarrage a été déclenché par le watchdog.
+
 La sortie brute ultime à 15 secondes conserve seulement un code sûr. Elle ne dépend ni de l'intention, ni de la boucle Tauri, car sa raison d'être est de terminer Beaver même si ces mécanismes sont bloqués.
 
 ## N12 — Une seule échéance CEF à 13 secondes
 
 `ShutdownTimeline::cef_helper_exit_deadline()` renvoie l'échéance d'urgence globale. Tu ne recalcules plus une échéance locale à partir de la marge de la sortie ultime.
 
-Le parent commence donc la phase forcée à 13 secondes et les moniteurs enfants reçoivent exactement la même échéance absolue. La sortie ultime reste à 15 secondes et fournit deux secondes indépendantes pour constater ou répéter la terminaison forcée.
+Le parent commence donc la phase forcée à 13 secondes et les moniteurs enfants reçoivent exactement la même échéance absolue. Cela remplace explicitement les 14 secondes de l'auto-destruction des enfants macOS. La sortie ultime reste à 15 secondes et fournit deux secondes indépendantes pour constater ou répéter la terminaison forcée.
 
 ## N3 — Expiration bornée des publications absentes
 
@@ -48,9 +50,11 @@ Les boucles de suivi Windows et macOS traitent `Unpublished` de deux façons :
 - avant l'échéance, elles continuent d'attendre ;
 - à l'échéance, elles retirent l'entrée en attente et laissent tomber la réservation et ses objets.
 
+Ce retrait est conditionnel et atomique : `clear_if` ne libère le slot que si la génération correspond encore et si son état est toujours `Reserved`. Une publication qui a gagné la course juste avant l'expiration reste donc admissible. Si l'expiration gagne, l'enfant trouve ses objets absents ou invalidés et abandonne son lancement avant CEF ; seul l'onglet concerné est perdu, Beaver ne ferme pas.
+
 L'expiration d'une publication est une panne récupérable du lancement du helper. Elle libère le slot, écrit un avertissement générique et ne ferme pas Beaver. Une publication présente mais invalide, une identité incohérente ou une admission sans confinement restent des erreurs fatales, car un processus a alors franchi une frontière de sécurité avec un état contradictoire.
 
-La même règle s'applique aux 64 slots des deux plateformes. Un test remplit les slots avec des réservations déjà expirées, constate leur nettoyage, puis prouve qu'une nouvelle réservation est de nouveau acceptée sans enregistrer de panne du superviseur.
+La même règle s'applique aux 64 slots des deux plateformes. Un test remplit les slots avec des réservations déjà expirées, constate leur nettoyage, puis prouve qu'une nouvelle réservation est de nouveau acceptée sans enregistrer de panne du superviseur. Un test de course synchronise publication et expiration et prouve qu'un seul résultat est possible : publication admise, ou réservation expirée avec abandon local de l'enfant, sans libérer une génération plus récente.
 
 ## N4 — Signal de fermeture Windows réellement consommé
 
@@ -86,10 +90,10 @@ L'horloge Windows vit dans un fichier dédié et utilise des ticks monotones par
 
 Tu écris chaque test avant son correctif et tu observes son échec attendu.
 
-- workflow de release : variables disponibles dans l'étape consommatrice et échec natif propagé ;
-- watchdog : une intention `Restart` atteint l'action de redémarrage à 10 secondes ;
+- workflow de release : analyse structurelle du YAML, variables disponibles dans l'étape consommatrice et échec natif propagé ;
+- watchdog : une intention `Restart` atteint l'action de redémarrage à 10 secondes et l'action finale ne s'exécute qu'une fois si le nettoyage termine ensuite ;
 - politique : échéance enfant CEF strictement égale à l'échéance d'urgence ;
-- Windows et macOS : 64 publications absentes expirent, les slots redeviennent disponibles et le superviseur reste sain ;
+- Windows et macOS : 64 publications absentes expirent, les slots redeviennent disponibles et le superviseur reste sain ; la course publication-expiration conserve exactement un gagnant et ne libère jamais une génération plus récente ;
 - Windows : le signal de fermeture atteint un helper admis avec l'échéance globale ;
 - Windows : le moniteur enfant refuse une génération invalide et réagit à l'échéance ;
 - régressions : tests Rust ciblés, tests Node du workflow, `cargo fmt --check`, `cargo check`, Clippy strict et suite Rust complète.
@@ -97,7 +101,7 @@ Tu écris chaque test avant son correctif et tu observes son échec attendu.
 ## Critères d'acceptation
 
 - Une release Windows ne peut pas être verte si la vérification du bundle échoue ou manque ses paramètres.
-- Le bouton `Redémarrer` redémarre après nettoyage normal et après le watchdog Tauri des 10 secondes.
+- Le bouton `Redémarrer` redémarre après nettoyage normal et après le watchdog Tauri des 10 secondes, avec une seule exécution de l'action finale.
 - Tous les mécanismes CEF écrits avant la sortie ultime utilisent l'échéance absolue de 13 secondes.
 - Une suite de lancements qui ne publient jamais ne sature pas définitivement les 64 slots et ne ferme pas Beaver.
 - Les helpers Windows en attente et admis reçoivent le signal de fermeture, puis le Job Object reste capable de les forcer.
