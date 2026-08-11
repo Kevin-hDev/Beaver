@@ -82,7 +82,7 @@ fn prepare_once(
     let tracker = super::super::cef_supervision::WindowsCefTracker::start_supervised(&helper, app)?;
     #[cfg(target_os = "macos")]
     let tracker = super::super::cef_supervision::MacCefTracker::start_supervised(
-        &helper,
+        &library.runtime_files().supervised_helpers,
         super::super::cef_runtime_policy::cef_supervision_root(),
         app,
     )?;

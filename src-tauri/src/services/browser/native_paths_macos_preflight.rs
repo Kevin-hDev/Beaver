@@ -1,7 +1,7 @@
 use super::cef_preflight::CefPreflightError;
 use super::cef_unavailable::CefUnavailableCategory;
 use super::native_paths::{
-    bundle_framework_root, framework_candidates, helper_executable, RuntimeFiles,
+    bundle_framework_root, framework_candidates, helper_executables, RuntimeFiles,
 };
 use std::io;
 use std::path::{Path, PathBuf};
@@ -12,20 +12,31 @@ pub(super) fn resolve_runtime_files(
 ) -> Result<RuntimeFiles, CefPreflightError> {
     let bundle_root = bundle_framework_root(executable).ok_or_else(invalid_runtime)?;
     let canonical_bundle_root = canonicalize_required(&bundle_root)?;
-    let helper =
-        canonicalize_required(&helper_executable(executable).ok_or_else(invalid_runtime)?)?;
-    ensure_contained_regular_file(&helper, &canonical_bundle_root)?;
+    let mut supervised_helpers = helper_executables(executable).ok_or_else(invalid_runtime)?;
+    for helper in &mut supervised_helpers {
+        *helper = canonicalize_required(helper)?;
+        ensure_contained_regular_file(helper, &canonical_bundle_root)?;
+    }
+    let helper = supervised_helpers[0].clone();
 
     let candidates = framework_candidates(executable, downloaded_cef_dir);
     let bundled = candidates.first().ok_or_else(invalid_runtime)?;
     if let Some(framework) = resolve_candidate(bundled, &canonical_bundle_root)? {
-        return Ok(RuntimeFiles { framework, helper });
+        return Ok(RuntimeFiles {
+            framework,
+            helper,
+            supervised_helpers,
+        });
     }
     if let Some(downloaded) = downloaded_cef_dir {
         if let Some(downloaded_root) = canonicalize_optional(downloaded)? {
             let candidate = candidates.last().ok_or_else(invalid_runtime)?;
             if let Some(framework) = resolve_candidate(candidate, &downloaded_root)? {
-                return Ok(RuntimeFiles { framework, helper });
+                return Ok(RuntimeFiles {
+                    framework,
+                    helper,
+                    supervised_helpers,
+                });
             }
         }
     }

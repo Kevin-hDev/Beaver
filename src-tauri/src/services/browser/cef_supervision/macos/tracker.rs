@@ -8,7 +8,10 @@ use super::pending::{MacPendingLaunch, MacPendingSlots};
 use super::reaper::{MacEmergencyReaper, MacReaperControl};
 use super::MacPublicationObjects;
 use crate::services::browser::cef_preflight::CefPreflightError;
-use std::path::{Path, PathBuf};
+use crate::services::browser::native_paths::MacHelperExecutables;
+#[cfg(test)]
+use std::path::Path;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread::JoinHandle;
@@ -19,7 +22,7 @@ pub(in crate::services::browser) struct MacTrackerShared {
     pub(super) gate: CefLaunchGate,
     pub(super) tracker_stopping: AtomicBool,
     pub(super) failure: AtomicU8,
-    pub(super) expected_executable: PathBuf,
+    pub(super) expected_executables: MacHelperExecutables,
     pub(super) parent_pid: u32,
     pub(super) root: PathBuf,
     pub(super) shutdown_app: Option<tauri::AppHandle>,
@@ -50,27 +53,32 @@ impl MacCefTracker {
         expected_executable: &Path,
         root: PathBuf,
     ) -> Result<Self, CefUnavailableCategory> {
-        Self::start_inner(expected_executable, root, None).map_err(CefPreflightError::category)
+        let expected_executables = std::array::from_fn(|_| expected_executable.to_path_buf());
+        Self::start_inner(&expected_executables, root, None).map_err(CefPreflightError::category)
     }
 
     pub(in crate::services::browser) fn start_supervised(
-        expected_executable: &Path,
+        expected_executables: &MacHelperExecutables,
         root: PathBuf,
         app: tauri::AppHandle,
     ) -> Result<Self, CefPreflightError> {
-        let tracker = Self::start_inner(expected_executable, root, Some(app))?;
+        let tracker = Self::start_inner(expected_executables, root, Some(app))?;
         super::super::emergency::register_macos(Arc::clone(&tracker.shared))
             .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Reaper))?;
         Ok(tracker)
     }
 
     fn start_inner(
-        expected_executable: &Path,
+        expected_executables: &MacHelperExecutables,
         root: PathBuf,
         shutdown_app: Option<tauri::AppHandle>,
     ) -> Result<Self, CefPreflightError> {
-        let expected_executable = dunce::canonicalize(expected_executable)
-            .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error))?;
+        let mut expected_executables = expected_executables.clone();
+        for executable in &mut expected_executables {
+            *executable = dunce::canonicalize(&*executable).map_err(|error| {
+                CefPreflightError::from_io(CefUnavailableCategory::Reaper, &error)
+            })?;
+        }
         let emergency = Arc::new(MacEmergencySlots::new());
         let reaper_control = Arc::new(MacReaperControl::new());
         let shared = Arc::new(MacTrackerShared {
@@ -79,7 +87,7 @@ impl MacCefTracker {
             gate: CefLaunchGate::new(),
             tracker_stopping: AtomicBool::new(false),
             failure: AtomicU8::new(0),
-            expected_executable,
+            expected_executables,
             parent_pid: std::process::id(),
             root,
             shutdown_app,

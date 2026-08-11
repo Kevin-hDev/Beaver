@@ -79,7 +79,7 @@ fn admit(
         shared.parent_pid,
         snapshot.started_at,
         snapshot.native_group,
-        &shared.expected_executable,
+        &shared.expected_executables,
     )
     .map_err(|_| MacSupervisionFailure::Identity)?;
     let admission = claim
