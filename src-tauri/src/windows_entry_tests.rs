@@ -37,16 +37,3 @@ fn development_bootstrap_is_staged_with_the_module_basename() {
         b"verified bootstrap"
     );
 }
-
-#[test]
-fn bootstrap_arguments_only_forward_validated_values() {
-    let arguments =
-        bootstrap_arguments(vec![OsString::from("--inspect")]).expect("bootstrap arguments");
-
-    assert_eq!(arguments, vec![OsString::from("--inspect")]);
-}
-
-#[test]
-fn bootstrap_arguments_reject_an_external_module_override() {
-    assert!(bootstrap_arguments(vec![OsString::from("--module=other")]).is_err());
-}

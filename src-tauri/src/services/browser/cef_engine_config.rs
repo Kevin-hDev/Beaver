@@ -1,19 +1,25 @@
 use super::settings::CefSettingsPolicy;
+use super::{cef_preflight::CefPreflightError, cef_unavailable::CefUnavailableCategory};
 use cef::{CefString, LogSeverity, Settings};
 
-pub(super) fn prepare_profile() -> Result<std::path::PathBuf, ()> {
+pub(super) fn prepare_profile() -> Result<std::path::PathBuf, CefPreflightError> {
     let browser_root = crate::services::paths::data_dir().join("browser");
     let profile = browser_root.join("profile");
-    std::fs::create_dir_all(&profile).map_err(|_| ())?;
-    crate::services::private_store::repair_path(&browser_root).map_err(|_| ())?;
-    crate::services::private_store::repair_path(&profile).map_err(|_| ())?;
+    std::fs::create_dir_all(&profile)
+        .map_err(|error| CefPreflightError::from_io(CefUnavailableCategory::Permission, &error))?;
+    crate::services::private_store::repair_path(&browser_root)
+        .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Permission))?;
+    crate::services::private_store::repair_path(&profile)
+        .map_err(|_| CefPreflightError::deterministic(CefUnavailableCategory::Permission))?;
     Ok(profile)
 }
 
 pub(super) fn to_cef_settings(policy: CefSettingsPolicy) -> Settings {
     Settings {
         no_sandbox: i32::from(policy.no_sandbox),
-        browser_subprocess_path: CefString::from(policy.helper.to_string_lossy().as_ref()),
+        browser_subprocess_path: CefString::from(
+            policy.browser_subprocess_path.to_string_lossy().as_ref(),
+        ),
         multi_threaded_message_loop: i32::from(policy.multi_threaded_message_loop),
         external_message_pump: i32::from(policy.external_message_pump),
         command_line_args_disabled: i32::from(policy.command_line_args_disabled),

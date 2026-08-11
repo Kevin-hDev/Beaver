@@ -1,39 +1,14 @@
-use std::ffi::{OsStr, OsString};
-use std::os::windows::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
+
+#[path = "windows_entry_arguments.rs"]
+mod arguments;
+#[cfg(not(feature = "windows-tests"))]
+pub(crate) use arguments::{bootstrap_arguments, classify_bootstrap, BootstrapRole};
 
 const APPLICATION_MODULE_FILE: &str = "cl_go_dash_lib.dll";
 const DEVELOPMENT_BOOTSTRAP_FILE: &str = "cl_go_dash_lib.exe";
 const MAX_APPLICATION_DLL_BYTES: u64 = 512 * 1024 * 1024;
 pub(crate) const MAX_BOOTSTRAP_BYTES: u64 = 32 * 1024 * 1024;
-const MAX_FORWARD_ARGS: usize = 64;
-const MAX_ARG_UTF16: usize = 2_048;
-
-pub(crate) fn bootstrap_arguments(
-    forwarded: impl IntoIterator<Item = OsString>,
-) -> Result<Vec<OsString>, ()> {
-    let mut result = Vec::with_capacity(MAX_FORWARD_ARGS);
-    for argument in forwarded.into_iter().take(MAX_FORWARD_ARGS + 1) {
-        if result.len() == MAX_FORWARD_ARGS
-            || argument.encode_wide().count() > MAX_ARG_UTF16
-            || is_module_switch(&argument)
-        {
-            return Err(());
-        }
-        result.push(argument);
-    }
-    Ok(result)
-}
-
-fn is_module_switch(argument: &OsStr) -> bool {
-    let Some(value) = argument.to_str() else {
-        return true;
-    };
-    value.eq_ignore_ascii_case("--module")
-        || value
-            .get(..9)
-            .is_some_and(|prefix| prefix.eq_ignore_ascii_case("--module="))
-}
 
 pub(crate) fn stage_application_module(root: &Path) -> Result<PathBuf, ()> {
     let dependency_root = root.join("deps").canonicalize().map_err(|_| ())?;

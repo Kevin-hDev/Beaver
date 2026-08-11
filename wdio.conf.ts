@@ -1,20 +1,34 @@
+import { resolve } from "node:path";
+
 const appBinaryPath = process.env.E2E_APP_BINARY;
 if (!appBinaryPath) throw new Error("E2E app binary is not configured");
+const e2eLogDirectory = process.env.E2E_LOG_DIR;
+if (!e2eLogDirectory) throw new Error("E2E log directory is not configured");
+const nativeCefSmoke = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
+const observeMacApplication = process.platform === "darwin";
+const driverBinaryPath = observeMacApplication ? process.execPath : appBinaryPath;
+const driverArguments = observeMacApplication
+  ? [resolve(process.cwd(), "scripts/e2e/macos-app-observer.mjs")]
+  : undefined;
 
 export const config: WebdriverIO.Config = {
+  outputDir: e2eLogDirectory,
   runner: "local",
-  specs: ["./tests/e2e/**/*.spec.ts"],
+  specs: [nativeCefSmoke
+    ? "./tests/e2e/native-cef-shutdown.spec.ts"
+    : "./tests/e2e/onboarding.spec.ts"],
   maxInstances: 1,
   capabilities: [{ browserName: "tauri" }],
   services: [["@wdio/tauri-service", {
-    appBinaryPath,
+    appBinaryPath: driverBinaryPath,
+    appArgs: driverArguments,
     driverProvider: "embedded",
     captureBackendLogs: true,
     captureFrontendLogs: true,
   }]],
   framework: "mocha",
   reporters: ["spec"],
-  logLevel: "warn",
+  logLevel: nativeCefSmoke ? "info" : "warn",
   bail: 1,
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,

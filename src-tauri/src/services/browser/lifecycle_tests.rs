@@ -15,6 +15,7 @@ fn valid_lifecycle_starts_and_stops_once() {
 
     assert!(lifecycle.mark_application_prepared());
     assert!(!lifecycle.mark_application_prepared());
+    assert!(lifecycle.mark_supervised());
     assert!(lifecycle.mark_running());
     assert!(lifecycle.begin_stopping());
     assert!(!lifecycle.begin_stopping());

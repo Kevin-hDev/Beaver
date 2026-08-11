@@ -1,11 +1,16 @@
 import { lstat, open, realpath } from "node:fs/promises";
-import { isAbsolute, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import {
+  canonicalCargoTargetDir,
+  normalizeCargoTargetDir,
+} from "../build/cargo-target-dir.mjs";
 
 const ERROR_MESSAGE = "Artifact path resolution failed";
 const MAX_OUTPUT_BYTES = 1024 * 1024;
 const MAX_OUTPUT_PATH_LENGTH = 4096;
-const MAX_RESULT_LENGTH = 512;
+const MAX_RESULT_LENGTH = 30_000;
 const TAG_PATTERN = /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/u;
 const TARGET_PATTERN = /^[A-Za-z0-9_.-]{1,128}$/u;
 const BUNDLES = Object.freeze({
@@ -28,7 +33,13 @@ function safeText(value, maximumLength) {
   );
 }
 
-export function resolveArtifact({ tag, target, bundleDir, suffix } = {}) {
+export function resolveArtifact({
+  tag,
+  target,
+  bundleDir,
+  suffix,
+  cargoTargetDir = "",
+} = {}) {
   try {
     if (
       !safeText(tag, 64) ||
@@ -40,12 +51,23 @@ export function resolveArtifact({ tag, target, bundleDir, suffix } = {}) {
     ) {
       fail();
     }
+    const windows = target.includes("-windows-");
+    if (windows && !cargoTargetDir) fail();
+    const cargoRoot = cargoTargetDir
+      ? normalizeCargoTargetDir(cargoTargetDir)
+      : "src-tauri/target";
     const version = tag.slice(1);
-    const base = `src-tauri/target/${target}/release/bundle`;
-    const asset = `${base}/${bundleDir}/Beaver_${version}${suffix}`;
+    const base = cargoTargetDir
+      ? join(cargoRoot, target, "release", "bundle")
+      : `${cargoRoot}/${target}/release/bundle`;
+    const asset = cargoTargetDir
+      ? join(base, bundleDir, `Beaver_${version}${suffix}`)
+      : `${base}/${bundleDir}/Beaver_${version}${suffix}`;
     if (asset.length > MAX_RESULT_LENGTH || asset.includes("..")) fail();
     if (bundleDir !== "dmg") return { asset };
-    const app = `${base}/macos/Beaver.app`;
+    const app = cargoTargetDir
+      ? join(base, "macos", "Beaver.app")
+      : `${base}/macos/Beaver.app`;
     if (app.length > MAX_RESULT_LENGTH) fail();
     return { asset, app };
   } catch {
@@ -113,11 +135,15 @@ async function appendGithubOutput(outputPath, artifact) {
 
 async function main() {
   if (process.argv.length !== 2) fail();
+  const cargoTargetDir = process.env.CARGO_TARGET_DIR
+    ? await canonicalCargoTargetDir(process.env.CARGO_TARGET_DIR)
+    : "";
   const artifact = resolveArtifact({
     tag: process.env.RELEASE_TAG,
     target: process.env.BUNDLE_TARGET,
     bundleDir: process.env.BUNDLE_DIR,
     suffix: process.env.ASSET_SUFFIX,
+    cargoTargetDir,
   });
   await appendGithubOutput(process.env.GITHUB_OUTPUT, artifact);
 }

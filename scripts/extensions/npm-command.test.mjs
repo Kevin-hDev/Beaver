@@ -39,3 +39,18 @@ test("npm preparation rejects invalid command inputs", async () => {
     /Invalid npm runtime/,
   );
 });
+
+test("npm preparation keeps a trusted path across Tauri environment cleanup", async () => {
+  const { npmCliPathFromEnvironment } = await import("./npm-command.mjs");
+
+  assert.equal(
+    npmCliPathFromEnvironment({
+      BEAVER_NPM_CLI_PATH: "C:\\trusted\\npm-cli.js",
+    }),
+    "C:\\trusted\\npm-cli.js",
+  );
+  assert.equal(
+    npmCliPathFromEnvironment({ npm_execpath: "/trusted/npm-cli.js" }),
+    "/trusted/npm-cli.js",
+  );
+});

@@ -3,6 +3,7 @@
     "beforeBundleCommand": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File src-tauri/scripts/prepare-cef-windows.ps1"
   },
   "bundle": {
+    "targets": ["nsis"],
     "resources": {
       "default-skills/": "default-skills/",
       "resources/extension-host/": "resources/extension-host/",

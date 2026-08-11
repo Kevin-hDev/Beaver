@@ -17,7 +17,7 @@ fn cef_settings_keep_the_sandbox_and_disable_remote_debugging() {
     assert!(settings.command_line_args_disabled);
     assert!(settings.persist_session_cookies);
     assert_eq!(settings.profile, profile);
-    assert_eq!(settings.helper, helper);
+    assert_eq!(settings.browser_subprocess_path, helper);
 }
 
 #[test]
@@ -31,4 +31,5 @@ fn windows_uses_cef_owned_message_loop_without_weakening_the_sandbox() {
     assert!(!settings.external_message_pump);
     assert!(settings.multi_threaded_message_loop);
     assert_eq!(settings.remote_debugging_port, None);
+    assert!(settings.browser_subprocess_path.as_os_str().is_empty());
 }

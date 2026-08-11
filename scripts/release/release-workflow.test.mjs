@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { load as loadYaml } from "js-yaml";
 import { normalizeNewlines } from "./text-contracts.mjs";
 
 const workflow = normalizeNewlines(
   readFileSync(".github/workflows/release.yml", "utf8"),
 );
+const workflowDocument = loadYaml(workflow);
 
 test("valide tout le projet et les métadonnées Beaver avant les builds", () => {
   assert.match(workflow, /\n  gate:\n/);
@@ -75,6 +77,18 @@ test("les trois machines construisent sans toucher à une release", () => {
   ]) {
     assert.ok(workflow.includes(value), `build incomplet : ${value}`);
   }
+  assert.match(workflow, /--bundles=\$\{\{ matrix\.bundles \}\}/u);
+});
+
+test("partage la cible Cargo Windows avant le build et sa relecture", () => {
+  const configure = workflow.indexOf("Configure Windows Cargo target");
+  const build = workflow.indexOf("Build Tauri app without publishing");
+  const resolvePaths = workflow.indexOf("Resolve exact artifact paths");
+  assert.ok(configure > 0 && configure < build && build < resolvePaths);
+  assert.match(
+    workflow,
+    /Configure Windows Cargo target\n\s+if: runner\.os == 'Windows'[\s\S]*?CARGO_TARGET_DIR=[^\n]*GITHUB_ENV/,
+  );
 });
 
 test("fige chaque action tierce sur une empreinte Git exacte", () => {
@@ -101,6 +115,20 @@ test("inspecte chaque bundle avec son outil natif", () => {
     assert.ok(workflow.includes(value), `inspection absente : ${value}`);
   }
   assert.match(workflow, /if-no-files-found: error/g);
+});
+
+test("la vérification Windows possède ses variables et propage son échec natif", () => {
+  const step = workflowDocument.jobs.build.steps.find(
+    ({ name }) => name === "Inspect and install Windows package",
+  );
+
+  assert.ok(step);
+  assert.equal(step.env.CARGO_BUILD_TARGET, "${{ matrix.target }}");
+  assert.equal(step.env.BEAVER_TAURI_BUNDLE_TYPE, "${{ matrix.bundles }}");
+  assert.match(
+    step.run,
+    /tauri-bundle-marker\.mjs verify[\s\S]*?if \(\$LASTEXITCODE -ne 0\) \{[\s\S]*?throw/,
+  );
 });
 
 test("le parcours Windows résout et valide sans Bash", () => {

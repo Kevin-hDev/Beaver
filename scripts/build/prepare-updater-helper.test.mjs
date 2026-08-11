@@ -63,6 +63,23 @@ test("construit le helper Unix sans extension", () => {
   assert.match(plan.destination, /target[\\/]updater-helper[\\/]cl-go-dash-updater$/u);
 });
 
+test("lit le helper depuis le target Cargo centralisé du lanceur Windows", () => {
+  const tauriDir = process.cwd();
+  const cargoTargetDir = join(tauriDir, "..", "target-central");
+  const plan = createUpdaterBuildPlan({
+    platform: "win32",
+    target: "",
+    tauriDir,
+    cargoTargetDir,
+  });
+
+  assert.equal(plan.source, join(cargoTargetDir, "release", "cl-go-dash-updater.exe"));
+  assert.equal(
+    plan.destination,
+    join(tauriDir, "target", "updater-helper", "cl-go-dash-updater.exe"),
+  );
+});
+
 test("refuse les cibles invalides", () => {
   for (const target of ["x".repeat(129), "windows target", "bad\ntarget", "../target", ".."] ) {
     assert.throws(

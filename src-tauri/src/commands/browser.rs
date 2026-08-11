@@ -11,6 +11,11 @@ pub fn browser_capability(app: tauri::AppHandle) -> BrowserCapability {
 }
 
 #[tauri::command]
+pub fn restart_application(app: tauri::AppHandle) {
+    crate::app_exit::request_restart(&app);
+}
+
+#[tauri::command]
 pub async fn browser_surface(
     app: tauri::AppHandle,
     request: BrowserSurfaceRequest,

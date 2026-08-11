@@ -1,5 +1,7 @@
 import { delimiter, dirname, resolve } from "node:path";
 
+import { normalizeCargoTargetDir } from "../build/cargo-target-dir.mjs";
+
 const MAX_ARGUMENTS = 64;
 const MAX_ARGUMENT_LENGTH = 512;
 const MAX_PATH_LENGTH = 30_000;
@@ -9,27 +11,16 @@ export function resolveCargoTargetDir({
   platform,
   repoRoot,
 }) {
-  if (configuredTargetDir !== undefined) {
-    if (
-      typeof configuredTargetDir !== "string" ||
-      configuredTargetDir.length > MAX_PATH_LENGTH ||
-      /[\0\r\n]/u.test(configuredTargetDir)
-    ) {
-      throw new Error("Tauri launch configuration is invalid");
+  try {
+    if (configuredTargetDir !== undefined) {
+      return normalizeCargoTargetDir(configuredTargetDir);
     }
-    return configuredTargetDir;
-  }
-
-  if (platform !== "win32") return undefined;
-  if (!validText(repoRoot, MAX_PATH_LENGTH)) {
+    if (platform !== "win32") return undefined;
+    const normalizedRoot = normalizeCargoTargetDir(repoRoot);
+    return normalizeCargoTargetDir(resolve(normalizedRoot, "target"));
+  } catch {
     throw new Error("Tauri launch configuration is invalid");
   }
-
-  const targetDir = resolve(repoRoot, "target");
-  if (!validText(targetDir, MAX_PATH_LENGTH)) {
-    throw new Error("Tauri launch configuration is invalid");
-  }
-  return targetDir;
 }
 
 export function createTauriLaunch({

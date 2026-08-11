@@ -11,6 +11,8 @@ mod cef_app;
 #[cfg(native_browser)]
 mod cef_blocked_feature;
 #[cfg(native_browser)]
+mod cef_child_admission;
+#[cfg(native_browser)]
 mod cef_client;
 #[cfg(native_browser)]
 mod cef_cookie_gate;
@@ -36,16 +38,24 @@ mod cef_life_span_handler;
 mod cef_load_handler;
 #[cfg(native_browser)]
 mod cef_permission_handler;
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+mod cef_preflight;
 #[cfg(native_browser)]
 mod cef_request_handler;
+mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
+#[cfg(any(test, native_browser))]
+mod cef_supervision;
 #[cfg(native_browser)]
 mod cef_surface;
 #[cfg(native_browser)]
 mod cef_surface_view;
 #[cfg(native_browser)]
 mod cef_text;
+#[cfg(any(test, target_os = "macos", target_os = "windows"))]
+#[path = "cef_supervision/diagnostics.rs"]
+mod cef_unavailable;
 #[cfg(any(test, target_os = "macos"))]
 mod cookie_store_probe;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -61,9 +71,15 @@ mod local_site_scan_throttle;
 mod local_site_scanner;
 mod local_site_types;
 #[cfg(target_os = "macos")]
+mod macos_helper_entry;
+#[cfg(target_os = "macos")]
 mod native_application;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod native_paths;
+#[cfg(target_os = "macos")]
+mod native_paths_macos_preflight;
+#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+mod native_paths_windows_preflight;
 #[cfg(target_os = "macos")]
 mod native_pump;
 #[cfg(target_os = "macos")]
@@ -72,7 +88,7 @@ mod native_pump_wake;
 mod native_surface;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod navigation_target;
-#[cfg(any(test, target_os = "macos"))]
+#[cfg(any(test, native_browser))]
 mod process_role;
 #[cfg(target_os = "macos")]
 mod pump_gate;
@@ -112,6 +128,8 @@ mod bundle_layout_tests;
 mod cef_cookie_gate_policy_tests;
 #[cfg(all(test, native_browser))]
 mod cef_diagnostics_tests;
+#[cfg(test)]
+mod cef_preflight_tests;
 #[cfg(test)]
 mod cookie_store_probe_tests;
 #[cfg(all(test, any(target_os = "macos", target_os = "windows")))]
@@ -169,6 +187,11 @@ pub use browser_surface_api::{
 };
 #[cfg(target_os = "macos")]
 pub use cef_library::BrowserLibraryGuard;
+pub(crate) use cef_runtime_policy::{
+    begin_cef_shutdown, cef_has_runnable_helpers, force_cef_shutdown, CefShutdownBarrier,
+};
+#[cfg(all(target_os = "windows", not(feature = "windows-tests")))]
+pub(crate) use cef_supervision::{WindowsHelperAdmission, CEF_ADMISSION_SWITCH};
 pub use local_site_scanner::LocalSiteScanner;
 pub use local_site_types::{LocalSiteScanResult, LOCAL_SITES_CHANGED_EVENT};
 pub use runtime_handle::{BrowserCapability, BrowserRuntimeHandle};
@@ -178,23 +201,9 @@ pub(crate) use runtime_integration::{
 pub use session_model::{BrowserSessionState, BrowserTabCreation};
 pub use session_service::BrowserSessionService;
 
+#[cfg(target_os = "macos")]
+pub(crate) use macos_helper_entry::run as run_macos_cef_helper;
+
 pub fn capability(app: &tauri::AppHandle) -> BrowserCapability {
-    capability_for_runtime(app.state::<BrowserRuntimeHandle>().inner())
-}
-
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-pub(super) fn capability_for_runtime(runtime: &BrowserRuntimeHandle) -> BrowserCapability {
-    let runtime_capability = runtime.capability();
-    if matches!(runtime_capability, BrowserCapability::Ready { .. })
-        && session_store::session_key().is_err()
-    {
-        BrowserCapability::Unavailable
-    } else {
-        runtime_capability
-    }
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub(super) fn capability_for_runtime(_runtime: &BrowserRuntimeHandle) -> BrowserCapability {
-    BrowserCapability::Hidden
+    cef_runtime_policy::capability_for_runtime(app.state::<BrowserRuntimeHandle>().inner())
 }

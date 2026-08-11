@@ -213,6 +213,8 @@ mod windows_acl;
 #[cfg(windows)]
 #[path = "private_store/windows_token.rs"]
 mod windows_token;
+#[cfg(windows)]
+pub(crate) use windows_token::current_user as current_windows_user;
 
 #[cfg(test)]
 #[path = "private_store_tests.rs"]

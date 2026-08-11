@@ -1,12 +1,13 @@
 use crate::services::agent_local::types_ollama::StreamEvent;
 use serde::Serialize;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 use tauri::{AppHandle, Emitter};
 
 pub const AGENT_STREAM_EVENT: &str = "agent-stream-event";
+static STREAM_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 pub fn next_generation() -> u64 {
-    crate::STREAM_GENERATION.fetch_add(1, Ordering::Relaxed)
+    STREAM_GENERATION.fetch_add(1, Ordering::Relaxed)
 }
 
 #[derive(Clone)]

@@ -3,7 +3,10 @@ import { resolveAvailablePanelMode } from "../use-available-panel-mode";
 
 describe("resolveAvailablePanelMode", () => {
   it("revient à l'aperçu quand le coffre bloque le navigateur", () => {
-    expect(resolveAvailablePanelMode("browser", { status: "unavailable" })).toBe("preview");
+    expect(resolveAvailablePanelMode("browser", {
+      status: "unavailable",
+      restartRecommended: false,
+    })).toBe("preview");
     expect(resolveAvailablePanelMode("browser", { status: "hidden" })).toBe("preview");
   });
 

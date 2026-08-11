@@ -1031,7 +1031,10 @@
     "operationFailed": "浏览器无法完成此操作。",
     "loading": "正在加载浏览器…",
     "blockedFeature": "此版本已禁用该功能。",
-    "unavailable": "安全浏览器不可用。"
+    "unavailable": "安全浏览器不可用。",
+    "recoveryUnavailable": "内置浏览器无法启动，Beaver 仍可继续使用。",
+    "restartApplication": "重启 Beaver",
+    "dismissRecovery": "关闭通知"
   },
   "filePreview": {
     "closeTab": "关闭标签页",
