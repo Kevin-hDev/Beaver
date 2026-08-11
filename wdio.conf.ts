@@ -17,7 +17,7 @@ export const config: WebdriverIO.Config = {
   }]],
   framework: "mocha",
   reporters: ["spec"],
-  logLevel: "warn",
+  logLevel: nativeCefSmoke ? "info" : "warn",
   bail: 1,
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,

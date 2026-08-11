@@ -166,6 +166,7 @@ test("CI runs the real CEF journey on Windows and macOS only", () => {
 test("the native CEF journey uses one isolated application session", () => {
   assert.match(wdioSource, /E2E_REQUIRE_CEF_SMOKE[\s\S]*native-cef-shutdown\.spec\.ts[\s\S]*onboarding\.spec\.ts/u);
   assert.match(nativeSmokeSource, /completeOnboarding\(\)/u);
+  assert.match(wdioSource, /logLevel:\s*nativeCefSmoke\s*\?\s*"info"\s*:\s*"warn"/u);
 });
 
 test("the coordinated exit command is compiled only into the E2E handler", () => {
