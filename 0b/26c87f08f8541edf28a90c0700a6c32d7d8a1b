@@ -1,0 +1,15 @@
+Probleme
+
+La CI macOS prouve une demande de sortie programmatique juste apres RunEvent::Ready. Plusieurs echecs CEF synchrones peuvent demander cette sortie et leurs journaux WDIO n'etaient pas garantis dans le collecteur borne.
+
+Objectif
+
+Attribuer la sortie a son sous-chemin CEF exact sans modifier le comportement de production ni conserver une erreur brute.
+
+Decisions
+
+Quatre sources enumerees et fixes sont exposees uniquement par le profil E2E: initialisation CEF, callback de lancement, admission d'un helper et supervision macOS. Chaque source est emise juste avant sa demande de sortie. L'observateur et le collecteur n'acceptent que ces quatre valeurs; toute ligne libre ou enrichie est rejetee. Windows n'est pas instrumente dans son tracker afin de ne pas modifier inutilement ce chemin deja vert et de garder son fichier sous la limite structurelle.
+
+Validation
+
+Les tests Node ont d'abord echoue sur les nouvelles categories absentes. Apres implementation: 11 tests cibles et 33 tests du runner E2E passent; le test Rust browser_exit_sources_are_fixed_categories passe avec 3077 filtres; cargo fmt --check, git diff --check et graphify update . passent. Tous les fichiers modifies restent entre 82 et 192 lignes. Ce commit reste un diagnostic E2E borne, pas le correctif fonctionnel.
