@@ -45,6 +45,9 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
         "[browser-helper] setup failed (cef-supervision-admission)",
         "[e2e-lifecycle] setup-completed",
         "[e2e-lifecycle] event-loop-entered",
+        "[e2e-run-event] ready",
+        "[e2e-run-event] exit-requested-programmatic",
+        "[e2e-run-event] exit",
         "[e2e-process] application-exit-signal-sigsegv",
       ].join("\n"),
       "utf8",
@@ -60,6 +63,9 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
       "browser-helper:cef-supervision-admission",
       "application-stage:setup-completed",
       "application-stage:event-loop-entered",
+      "application-event:ready",
+      "application-event:exit-requested-programmatic",
+      "application-event:exit",
       "process-exit:signal-sigsegv",
     ]);
   } finally {
