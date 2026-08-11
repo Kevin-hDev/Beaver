@@ -19,6 +19,7 @@ const fn main_window_close_action(is_macos: bool) -> MainWindowCloseAction {
 }
 
 pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
+    report_run_event(&event);
     match event {
         RunEvent::WindowEvent {
             label,
@@ -48,6 +49,40 @@ pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
             }
         }
         _ => {}
+    }
+}
+
+#[cfg(feature = "e2e")]
+fn report_run_event(event: &RunEvent) {
+    if let Some(name) = run_event_diagnostic(event) {
+        eprintln!("[e2e-run-event] {name}");
+    }
+}
+
+#[cfg(not(feature = "e2e"))]
+fn report_run_event(_event: &RunEvent) {}
+
+#[cfg(feature = "e2e")]
+fn run_event_diagnostic(event: &RunEvent) -> Option<&'static str> {
+    match event {
+        RunEvent::Ready => Some("ready"),
+        RunEvent::ExitRequested { code, .. } => Some(exit_request_diagnostic(*code)),
+        RunEvent::Exit => Some("exit"),
+        RunEvent::WindowEvent {
+            label,
+            event: WindowEvent::CloseRequested { .. },
+            ..
+        } if label == "main" => Some("window-close-main"),
+        _ => None,
+    }
+}
+
+#[cfg(feature = "e2e")]
+const fn exit_request_diagnostic(code: Option<i32>) -> &'static str {
+    if code.is_some() {
+        "exit-requested-programmatic"
+    } else {
+        "exit-requested-user"
     }
 }
 
@@ -111,5 +146,18 @@ mod tests {
     fn main_window_close_keeps_native_macos_behavior_only() {
         assert_eq!(main_window_close_action(true), MainWindowCloseAction::Hide);
         assert_eq!(main_window_close_action(false), MainWindowCloseAction::Quit);
+    }
+
+    #[cfg(feature = "e2e")]
+    #[test]
+    fn e2e_run_event_diagnostics_are_fixed_categories() {
+        assert_eq!(run_event_diagnostic(&RunEvent::Ready), Some("ready"));
+        assert_eq!(run_event_diagnostic(&RunEvent::Exit), Some("exit"));
+        assert_eq!(run_event_diagnostic(&RunEvent::Resumed), None);
+        assert_eq!(
+            exit_request_diagnostic(Some(0)),
+            "exit-requested-programmatic"
+        );
+        assert_eq!(exit_request_diagnostic(None), "exit-requested-user");
     }
 }

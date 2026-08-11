@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  createDiagnosticBuffer,
   diagnosticFilePath,
   exitDiagnostic,
+  safeObservedDiagnostic,
+} from "./macos-app-diagnostics.mjs";
+import {
   isAllowedObservedBinary,
   observedLaunch,
 } from "./macos-app-observer.mjs";
@@ -21,7 +25,7 @@ test("the macOS observer launches the application without a shell or inherited a
     options: {
       env: process.env,
       shell: false,
-      stdio: "inherit",
+      stdio: ["ignore", "inherit", "pipe"],
     },
   });
 });
@@ -50,4 +54,31 @@ test("the macOS observer persists only inside its canonical temporary E2E profil
     realpath: identity,
     temporaryDirectory: "/private/tmp",
   }), undefined);
+});
+
+test("the macOS observer accepts only fixed lifecycle and run-event markers", () => {
+  assert.equal(
+    safeObservedDiagnostic("[e2e-lifecycle] setup-completed"),
+    "[e2e-lifecycle] setup-completed",
+  );
+  assert.equal(
+    safeObservedDiagnostic("[e2e-run-event] exit-requested-user"),
+    "[e2e-run-event] exit-requested-user",
+  );
+  assert.equal(safeObservedDiagnostic("[e2e-run-event] secret=/private/path"), undefined);
+  assert.equal(safeObservedDiagnostic("[e2e-lifecycle] setup-completed extra"), undefined);
+});
+
+test("the macOS observer reconstructs split markers with bounded line storage", () => {
+  const diagnostics = [];
+  const capture = createDiagnosticBuffer((value) => diagnostics.push(value));
+  capture.push(Buffer.from("[e2e-life", "utf8"));
+  capture.push(Buffer.from("cycle] event-loop-entered\n", "utf8"));
+  capture.push(Buffer.alloc(512, 65));
+  capture.push(Buffer.from("\n[e2e-run-event] exit\n", "utf8"));
+  capture.finish();
+  assert.deepEqual(diagnostics, [
+    "[e2e-lifecycle] event-loop-entered",
+    "[e2e-run-event] exit",
+  ]);
 });
