@@ -77,11 +77,10 @@ jobs:
 
       - name: Linux Landlock confinement
         working-directory: src-tauri
-        shell: bash
-        run: |
-          tests="$(cargo test --lib -- --ignored --list)"
-          grep -Fq 'services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root: test' <<<"$tests"
-          cargo test --lib services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root -- --ignored --exact --nocapture
+        run: >-
+          node ../scripts/ci/run-rust-test-filter.mjs
+          --filter services::agent_local::shell_sandbox::linux::tests::landlock_writes_only_inside_the_selected_root
+          --ignored --exact --nocapture
 
   backend-windows-native:
     name: Backend Windows CEF (Rust)
@@ -99,6 +98,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install extension host dependencies
+        run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host
+
       - name: Cache verified CEF archives
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -110,6 +112,9 @@ jobs:
       - name: Prepare verified CEF source
         run: node scripts/cef/prepare-cef-source.mjs
 
+      - name: Install npm dependencies
+        run: npm ci
+
       - name: Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
@@ -118,6 +123,17 @@ jobs:
       - name: Clippy Windows backend
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
+
+      - name: Windows CEF supervision authority
+        working-directory: src-tauri
+        run: |
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::windows_tracker_tests --features windows-tests
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests --features windows-tests
+
+      - name: Native Windows CEF journey
+        env:
+          E2E_REQUIRE_CEF_SMOKE: "1"
+        run: npm run test:e2e
 
   backend-macos-native:
     name: Backend macOS CEF (Rust)
@@ -149,6 +165,9 @@ jobs:
       - name: Prepare verified CEF source
         run: node scripts/cef/prepare-cef-source.mjs
 
+      - name: Install npm dependencies
+        run: npm ci
+
       - name: Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
@@ -161,6 +180,17 @@ jobs:
       - name: Clippy macOS backend
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
+
+      - name: macOS CEF supervision authority
+        working-directory: src-tauri
+        run: |
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos_tracker_tests
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests
+
+      - name: Native macOS CEF journey
+        env:
+          E2E_REQUIRE_CEF_SMOKE: "1"
+        run: npm run test:e2e
 
   backend-windows:
     name: Backend Windows tests (Rust)
@@ -187,8 +217,8 @@ jobs:
       - name: Windows extension installer preflight
         working-directory: src-tauri
         run: |
-          cargo test --lib --features windows-tests services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc -- --exact --nocapture --test-threads=1
-          cargo test --lib --features windows-tests services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script -- --exact --nocapture --test-threads=1
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::git_dependencies_tests::git_materialization_installs_dependencies_without_running_scripts_or_npmrc --features windows-tests --exact --nocapture
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::extensions::npm_runner_tests::local_fixture_install_never_runs_its_lifecycle_script --features windows-tests --exact --nocapture
 
       # CEF is replaced by its compile-only profile so the complete backend
       # suite can run without loading libcef.dll in the test process.

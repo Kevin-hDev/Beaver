@@ -57,7 +57,7 @@ pub(crate) fn run_before_browser_shutdown<ExitCode>(
 #[cfg(target_os = "macos")]
 pub fn prepare_macos_application() -> (Option<BrowserLibraryGuard>, bool) {
     prepare_macos_startup(
-        BrowserLibraryGuard::load_for_current_process,
+        BrowserLibraryGuard::load_for_current_process_with_retry,
         prepare_browser_native_application,
         initialize_shell_environment,
     )

@@ -43,7 +43,10 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 - helper suivi par table parent privée, boîte sandboxée isolée et Job Object vide propre au slot, affectation imbriquée revalidée avec le sandbox Chromium actif ;
 - chaque type CEF réel publie avec ses SIDs de restriction et son niveau MIC sans pouvoir écrire l'autorité ou signaler sa propre admission ; corruption inter-slot et faux handle refusés ;
 - publication après 13 secondes refusée par sa génération invalidée, aucun appel CEF, puis disparition du bootstrap constatée sous 5 secondes ;
+- routeur du bootstrap empaqueté validé pour les quatre résultats exclusifs : parent Beaver, helper CEF réservé, helper shell isolé réel et entrée invalide ; une combinaison shell + CEF est refusée ;
+- ligne de commande Chromium réelle de plus de 64 arguments et arguments opaques : aucun plafond artificiel, seuls les champs privés Beaver sont décodés et bornés ;
 - helper shell simultané jamais classé comme CEF ; échec local injecté avant initialisation : `Unavailable avant lancement` et aucun helper CEF créé ;
+- `__TAURI_BUNDLE_TYPE` correctement reçu par le bootstrap et par le module qui exécute Tauri dans le paquet NSIS de release, ainsi que dans tout autre type Windows explicitement demandé — notamment MSI dans son invocation isolée — sans build multi-bundles partageant une DLL préparée, avertissement masqué ni valeur inventée ;
 - PTY et handles verrouillés ;
 - mise à jour Beaver avec helper survivant ;
 - mise à jour Ollama avec renommage temporairement bloqué.
@@ -57,7 +60,8 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 - état CEF normal obligatoirement `Ready supervisé`, prouvé nativement avant fusion ;
 - build empaqueté validé avec Gatekeeper et quarantaine actifs ;
 - arrêt CEF natif normal, objets et groupe préparés avant le sandbox, publication et moniteur après le sandbox, réservation tardive refusée ;
-- watchdog général bloqué, reaper parent qui revalide PID/parent/démarrage/exécutable/PGID et auto-terminaison du helper à l'échéance, sans signaler un PGID réutilisé ; disparition constatée sous 5 secondes ;
+- watchdog général bloqué puis traqueur CEF normal paniqué : le reaper parent distinct, alimenté directement par sa table privée, revalide PID/parent/démarrage/exécutable/PGID et le helper s'auto-termine à l'échéance, sans signaler un PGID réutilisé ; disparition constatée sous 5 secondes ;
+- le chemin de production écrit réellement l'état de fermeture et l'échéance dans les objets ouverts avant sandbox ; le test ne peut pas appeler directement un helper réservé aux tests pour simuler cette transition ;
 - échec local injecté avant initialisation : interface utilisable avec capacité navigateur indisponible et aucun helper CEF créé.
 
 ### Linux
@@ -77,6 +81,11 @@ La review recoupe aussi les 22 lignes de l'inventaire de reprise. Elle refuse to
 - TypeScript, lint et tous les tests frontend ;
 - scripts de build, runner E2E, CEF et hôte d'extensions ;
 - CI native Windows, Ubuntu et macOS ;
+- chaque filtre de tests CI énumère d'abord les tests attendus et échoue si aucun ne correspond ; un succès avec zéro test exécuté est interdit ;
+- le contrat Node de supervision est lancé comme processus direct sur les trois OS avec une fixture invalide qui doit produire un code non nul ;
+- smoke test d'un build empaqueté lançant un vrai enfant CEF avec sa ligne de commande réelle, ouverture d'une page puis fermeture pendant son activité ; les processus factices ne remplacent pas cette preuve ;
+- prévalidation CEF transitoire retentée exactement une fois, erreur déterministe non retentée et échec de `cef::initialize` suivi d'aucun autre appel CEF ;
+- notification d'indisponibilité utilisant le design existant, les sept langues et une action non bloquante qui disparaît entièrement après 10 secondes ; son redémarrage passe par le nettoyage coordonné ;
 - lancement et fermeture manuels d'un build natif sur les trois OS ;
 - tueur ultime précréé, échec de création au démarrage et watchdog général réellement bloqué sans dépassement de l'échéance ;
 - contrôle immédiat des services/helpers admis encore exécutables ; si CEF est actif, vérification qu'un candidat non admis reste dans le bootstrap fail-closed, sinon preuve qu'aucun helper n'a été lancé ; puis attente de 5 secondes au plus pour tous les objets résiduels et contrôle des fichiers ;
@@ -100,6 +109,7 @@ La review compare le `main` final au `main` précédant le jalon 1. Elle vérifi
 - aucun service ou helper admis Beaver encore runnable après une vraie fermeture ; tout bootstrap CEF refusé et tout objet noyau résiduel disparaissent dans les 5 secondes de constat ;
 - sur Windows et macOS, CEF est `Ready supervisé` avec preuves natives ; le chemin local `Unavailable avant lancement` est testé séparément et n'est pas un état de livraison ;
 - la matrice du build empaqueté avec protections système et environnement Windows renforcé est verte ;
+- le marqueur de bundle Tauri est résolu et testé pour NSIS et pour chaque autre type Windows effectivement construit dans les deux modules concernés ; aucun avertissement `__TAURI_BUNDLE_TYPE` n'est seulement reporté après la fusion ;
 - aucun impact sur une application ou un démon externe ;
 - aucun stockage de modèles ne chevauche un dossier transactionnel et toutes les migrations réelles publiées conservent les modèles ;
 - les profils de données restent lisibles et cohérents après fermeture normale et forcée ;

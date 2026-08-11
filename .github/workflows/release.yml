@@ -178,6 +178,13 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Configure Windows Cargo target
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $target = [IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE "target"))
+          "CARGO_TARGET_DIR=$target" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Build Tauri app without publishing
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
@@ -185,8 +192,9 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: "1"
           CARGO_BUILD_TARGET: ${{ matrix.target }}
           CLGO_CEF_ALLOW_ADHOC_SIGNING: ${{ runner.os == 'macOS' && '1' || '0' }}
+          BEAVER_TAURI_BUNDLE_TYPE: ${{ matrix.bundles }}
         with:
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          args: --target ${{ matrix.target }} --bundles=${{ matrix.bundles }}
 
       - name: Resolve exact artifact paths
         id: paths
@@ -225,6 +233,8 @@ jobs:
         shell: pwsh
         env:
           BEAVER_INSTALLER: ${{ steps.paths.outputs.asset }}
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+          BEAVER_TAURI_BUNDLE_TYPE: ${{ matrix.bundles }}
         run: |
           & scripts/test-install-ps1.ps1
           $installer = (Resolve-Path -LiteralPath $env:BEAVER_INSTALLER).Path
@@ -233,6 +243,15 @@ jobs:
           $installDir = Join-Path $env:RUNNER_TEMP "beaver-package-validation"
           $process = Start-Process -FilePath $installer -ArgumentList @("/S", "/D=$installDir") -Wait -PassThru
           if ($process.ExitCode -ne 0) {
+            throw "Windows package validation failed."
+          }
+          $releaseRoot = Join-Path $env:CARGO_TARGET_DIR "$env:CARGO_BUILD_TARGET\release"
+          node scripts/cef/tauri-bundle-marker.mjs verify $env:BEAVER_TAURI_BUNDLE_TYPE `
+            (Join-Path $installDir "cl-go-dash.exe") `
+            (Join-Path $installDir "cl-go-dash.dll") `
+            (Join-Path $releaseRoot "cl-go-dash.exe") `
+            (Join-Path $releaseRoot "cl_go_dash_lib.dll")
+          if ($LASTEXITCODE -ne 0) {
             throw "Windows package validation failed."
           }
           & scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer

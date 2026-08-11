@@ -42,13 +42,18 @@ pub(crate) fn setup_on_run_event(
     if !is_browser_ready_event(event) {
         return;
     }
+    let runtime = app.state::<BrowserRuntimeHandle>().inner().clone();
     #[cfg(target_os = "macos")]
     let Some(library) = library
     else {
+        mark_prelaunch_failed(app, &runtime);
         return;
     };
-    let runtime = app.state::<BrowserRuntimeHandle>().inner().clone();
-    if !NATIVE_APPLICATION_READY.load(Ordering::Acquire) || !runtime.mark_application_prepared() {
+    if !NATIVE_APPLICATION_READY.load(Ordering::Acquire) {
+        mark_prelaunch_failed(app, &runtime);
+        return;
+    }
+    if !runtime.mark_application_prepared() {
         return;
     }
     super::cef_engine::initialize(
@@ -57,6 +62,13 @@ pub(crate) fn setup_on_run_event(
         #[cfg(target_os = "macos")]
         library,
     );
+}
+
+#[cfg(native_browser)]
+fn mark_prelaunch_failed(app: &tauri::AppHandle, runtime: &BrowserRuntimeHandle) {
+    let _ = runtime.mark_application_prepared();
+    let _ = runtime.mark_failed();
+    super::cef_runtime_policy::emit_capability(app, runtime);
 }
 
 #[cfg(not(native_browser))]

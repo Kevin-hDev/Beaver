@@ -1,16 +1,27 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useState } from "react";
+import {
+  createContext,
+  createElement,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import { IS_LINUX } from "@/lib/platform";
 
 export type BrowserCapability =
   | { status: "hidden" }
-  | { status: "unavailable" }
+  | { status: "unavailable"; restartRecommended: boolean }
   | { status: "ready"; engineVersion: string };
 
 const HIDDEN_CAPABILITY: BrowserCapability = { status: "hidden" };
-const UNAVAILABLE_CAPABILITY: BrowserCapability = { status: "unavailable" };
+const UNAVAILABLE_CAPABILITY: BrowserCapability = {
+  status: "unavailable",
+  restartRecommended: false,
+};
+const BrowserCapabilityContext = createContext<BrowserCapability | null>(null);
 
 export function initialBrowserCapability(isLinux: boolean): BrowserCapability {
   return isLinux ? HIDDEN_CAPABILITY : UNAVAILABLE_CAPABILITY;
@@ -20,7 +31,12 @@ function normalizeCapability(value: unknown): BrowserCapability {
   if (!value || typeof value !== "object") return UNAVAILABLE_CAPABILITY;
   const raw = value as Record<string, unknown>;
   if (raw.status === "hidden") return HIDDEN_CAPABILITY;
-  if (raw.status === "unavailable") return UNAVAILABLE_CAPABILITY;
+  if (raw.status === "unavailable") {
+    return {
+      status: "unavailable",
+      restartRecommended: raw.restartRecommended === true,
+    };
+  }
   if (
     raw.status === "ready" &&
     typeof raw.engineVersion === "string" &&
@@ -32,7 +48,7 @@ function normalizeCapability(value: unknown): BrowserCapability {
   return UNAVAILABLE_CAPABILITY;
 }
 
-export function useBrowserCapability(): BrowserCapability {
+export function BrowserCapabilityProvider({ children }: { children: ReactNode }) {
   const [capability, setCapability] = useState<BrowserCapability>(() =>
     initialBrowserCapability(IS_LINUX));
 
@@ -61,5 +77,9 @@ export function useBrowserCapability(): BrowserCapability {
     };
   }, []);
 
-  return capability;
+  return createElement(BrowserCapabilityContext.Provider, { value: capability }, children);
+}
+
+export function useBrowserCapability(): BrowserCapability {
+  return useContext(BrowserCapabilityContext) ?? initialBrowserCapability(IS_LINUX);
 }

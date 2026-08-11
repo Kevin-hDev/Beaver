@@ -9,18 +9,18 @@ use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken}
 
 const MAX_TOKEN_INFO: usize = 65_536;
 
-pub struct CurrentUser {
+pub(crate) struct CurrentUser {
     _storage: Vec<usize>,
     sid: PSID,
 }
 
 impl CurrentUser {
-    pub fn sid(&self) -> PSID {
+    pub(crate) fn sid(&self) -> PSID {
         self.sid
     }
 }
 
-pub fn current_user() -> Result<CurrentUser, String> {
+pub(crate) fn current_user() -> Result<CurrentUser, String> {
     let token = open_process_token()?;
     let mut required = 0_u32;
     let first =

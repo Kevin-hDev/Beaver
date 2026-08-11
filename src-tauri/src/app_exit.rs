@@ -1,16 +1,25 @@
 use std::io;
 use std::sync::{Arc, Mutex, OnceLock};
-use tauri::{ExitRequestApi, Manager};
+use tauri::Manager;
+
+// Tauri n'ignore prevent_exit que pour son code réservé : Beaver emploie donc
+// une sentinelle distincte jusqu'à la fin du nettoyage coordonné.
+const BEAVER_RESTART_REQUEST_CODE: i32 = i32::MAX - 1;
 
 mod blocking;
 mod cleanup;
 mod emergency;
 mod emergency_drain;
+mod final_action;
 mod policy;
+mod presentation;
 mod raw_exit;
 mod registry;
 mod registry_admission;
+mod request_flow;
 mod state;
+#[cfg(test)]
+mod test_api;
 mod ultimate;
 mod watchdog;
 
@@ -20,6 +29,8 @@ mod cleanup_tests;
 mod coordinator_tests;
 #[cfg(test)]
 mod emergency_tests;
+#[cfg(test)]
+mod final_action_tests;
 #[cfg(test)]
 mod policy_tests;
 #[cfg(test)]
@@ -38,12 +49,19 @@ pub struct AppExitCoordinator {
     emergency: emergency::EmergencyInventory,
     policy: policy::ShutdownPolicy,
     timeline: OnceLock<policy::ShutdownTimeline>,
+    intent: OnceLock<ExitIntent>,
     ultimate: ultimate::UltimateExit,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ExitIntent {
+    Exit,
+    Restart,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BeginResult {
-    Started(policy::ShutdownTimeline),
+    Started(policy::ShutdownTimeline, ExitIntent),
     Waiting,
     Ready,
     InvariantViolation,
@@ -58,11 +76,41 @@ impl AppExitCoordinator {
             emergency: emergency::EmergencyInventory::new(),
             policy: policy::ShutdownPolicy::production(),
             timeline: OnceLock::new(),
+            intent: OnceLock::new(),
             ultimate: ultimate::UltimateExit::initialize()?,
         })
     }
 
+    #[cfg(test)]
     fn begin(&self, exit_code: i32) -> BeginResult {
+        self.begin_with_intent(
+            ExitIntent::Exit,
+            exit_code,
+            crate::services::browser::begin_cef_shutdown,
+        )
+    }
+
+    #[cfg(test)]
+    fn begin_with_cef_close(
+        &self,
+        exit_code: i32,
+        close_cef: impl FnOnce(
+            std::time::Instant,
+            std::time::Instant,
+        ) -> crate::services::browser::CefShutdownBarrier,
+    ) -> BeginResult {
+        self.begin_with_intent(ExitIntent::Exit, exit_code, close_cef)
+    }
+
+    fn begin_with_intent(
+        &self,
+        intent: ExitIntent,
+        exit_code: i32,
+        close_cef: impl FnOnce(
+            std::time::Instant,
+            std::time::Instant,
+        ) -> crate::services::browser::CefShutdownBarrier,
+    ) -> BeginResult {
         let _guard = match self.begin_lock.lock() {
             Ok(guard) => guard,
             Err(_) => return BeginResult::InvariantViolation,
@@ -80,29 +128,37 @@ impl AppExitCoordinator {
             return BeginResult::InvariantViolation;
         }
         let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
-        if self.timeline.set(timeline).is_err()
+        if self.intent.set(intent).is_err()
+            || self.timeline.set(timeline).is_err()
             || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
         {
             return BeginResult::InvariantViolation;
         }
-        BeginResult::Started(timeline)
-    }
-
-    fn mark_ready(&self) -> bool {
-        self.state.mark_ready()
+        if close_cef(
+            timeline.cef_admission_deadline(),
+            timeline.cef_helper_exit_deadline(),
+        ) == crate::services::browser::CefShutdownBarrier::TimedOut
+        {
+            ::log::warn!("[exit] CEF admission barrier exceeded; cleanup continues");
+        }
+        BeginResult::Started(timeline, intent)
     }
 
     fn spawn_watchdog(
         &self,
         app: tauri::AppHandle,
         timeline: policy::ShutdownTimeline,
+        intent: ExitIntent,
         exit_code: i32,
     ) -> io::Result<()> {
-        let actions = watchdog::WatchdogActions::production(move |code| app.exit(code));
+        let actions = watchdog::WatchdogActions::production(move |intent, code| {
+            final_action::dispatch_tauri(&app, intent, code);
+        });
         watchdog::WatchdogThread::spawn(
             timeline,
             Arc::clone(&self.state),
             self.emergency.clone(),
+            intent,
             exit_code,
             actions,
         )
@@ -114,107 +170,27 @@ impl AppExitCoordinator {
             watchdog::drain_post_loop(&self.emergency, timeline);
         }
     }
-
-    #[cfg(test)]
-    fn from_parts_for_test(
-        policy: policy::ShutdownPolicy,
-        ultimate: ultimate::UltimateExit,
-    ) -> Self {
-        Self {
-            begin_lock: Mutex::new(()),
-            state: Arc::new(state::ShutdownState::new()),
-            registry: registry::AdmissionRegistry::new(),
-            emergency: emergency::EmergencyInventory::new(),
-            policy,
-            timeline: OnceLock::new(),
-            ultimate,
-        }
-    }
-
-    #[cfg(test)]
-    fn admit_for_test(&self) -> Result<registry::TrackedAdmission, registry::AdmissionError> {
-        self.registry.try_admit()
-    }
-
-    #[cfg(test)]
-    fn ultimate_is_armed_for_test(&self) -> bool {
-        self.ultimate.is_armed_for_test()
-    }
-
-    #[cfg(test)]
-    fn phase_for_test(&self) -> state::ShutdownPhase {
-        self.state.phase()
-    }
-
-    #[cfg(test)]
-    fn close_registry_for_test(&self) {
-        assert!(self.registry.close());
-    }
 }
 
 pub fn request(app: &tauri::AppHandle, code: i32) {
     app.exit(code);
 }
 
-pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &ExitRequestApi) {
-    if code == Some(tauri::RESTART_EXIT_CODE) {
-        return;
-    }
-    let exit_code = code.unwrap_or_default();
-    let coordinator = app.state::<AppExitCoordinator>();
-    match coordinator.begin(exit_code) {
-        BeginResult::Ready => {}
-        BeginResult::Waiting => api.prevent_exit(),
-        BeginResult::InvariantViolation => raw_exit::terminate_process(1),
-        BeginResult::Started(timeline) => {
-            api.prevent_exit();
-            if coordinator
-                .spawn_watchdog(app.clone(), timeline, exit_code)
-                .is_err()
-            {
-                ::log::error!("[exit] watchdog unavailable; ultimate guard remains armed");
-            }
-            hide_application(app);
-            let handle = app.clone();
-            let registry = coordinator.registry.clone();
-            tauri::async_runtime::spawn(async move {
-                let started = std::time::Instant::now();
-                if !registry
-                    .wait_empty_until(timeline.graceful_deadline())
-                    .await
-                {
-                    ::log::warn!("[exit] tracked work exceeded graceful deadline");
-                }
-                match cleanup::run(&handle, timeline).await {
-                    cleanup::CleanupOutcome::Completed => {}
-                    cleanup::CleanupOutcome::TimedOut => {
-                        ::log::warn!("[exit] graceful deadline reached")
-                    }
-                    cleanup::CleanupOutcome::Panicked => {
-                        ::log::warn!("[exit] cleanup interrupted")
-                    }
-                }
-                ::log::info!("[exit] cleanup phase finished in {:?}", started.elapsed());
-                if handle.state::<AppExitCoordinator>().mark_ready() {
-                    handle.exit(exit_code);
-                }
-            });
-        }
-    }
+pub fn request_restart(app: &tauri::AppHandle) {
+    request_restart_with(|code| app.exit(code));
+}
+
+fn request_restart_with(exit: impl FnOnce(i32)) {
+    exit(BEAVER_RESTART_REQUEST_CODE);
+}
+
+pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::ExitRequestApi) {
+    request_flow::handle_requested(app, code, api);
 }
 
 pub(crate) fn post_event_loop(app: &tauri::AppHandle) {
+    ::log::info!("[exit] event loop returned");
     if let Some(coordinator) = app.try_state::<AppExitCoordinator>() {
         coordinator.drain_post_loop();
     }
-}
-
-fn hide_application(app: &tauri::AppHandle) {
-    for label in ["main", "mascot"] {
-        if let Some(window) = app.get_webview_window(label) {
-            let _ = window.hide();
-        }
-    }
-    #[cfg(target_os = "macos")]
-    let _ = app.set_dock_visibility(false);
 }

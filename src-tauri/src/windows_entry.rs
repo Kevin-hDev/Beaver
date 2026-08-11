@@ -2,6 +2,7 @@ use cef::{args::Args, *};
 use sha2::{Digest, Sha256};
 use std::io::Read;
 use std::path::Path;
+use zeroize::{Zeroize, Zeroizing};
 
 #[path = "windows_entry_plan.rs"]
 mod plan;
@@ -20,10 +21,27 @@ pub unsafe extern "C" fn RunWinMain(
 }
 
 fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
+    let role = match plan::classify_bootstrap(std::env::args_os()) {
+        Ok(role) => role,
+        Err(()) => return 1,
+    };
+    if matches!(&role, plan::BootstrapRole::ShellSandbox) {
+        return crate::run_shell_sandbox_helper().unwrap_or(1);
+    }
     // SAFETY: premier travail du point d'entrée DLL, avant CEF et tout thread.
     if !unsafe { crate::configure_git_network_policy() } {
         return 1;
     }
+    match role {
+        plan::BootstrapRole::Parent => run_parent(instance, sandbox_info),
+        plan::BootstrapRole::CefHelper(marker) => {
+            run_admitted_helper(instance, sandbox_info, marker)
+        }
+        plan::BootstrapRole::ShellSandbox => 1,
+    }
+}
+
+fn run_parent(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> i32 {
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let args = Args::from(MainArgs { instance });
     let result = execute_process(
@@ -47,6 +65,53 @@ fn run_bootstrap_entry(instance: cef::sys::HINSTANCE, sandbox_info: *mut u8) -> 
     }
 }
 
+fn run_admitted_helper(
+    instance: cef::sys::HINSTANCE,
+    sandbox_info: *mut u8,
+    mut encoded_marker: Zeroizing<String>,
+) -> i32 {
+    let admission = match crate::services::browser::WindowsHelperAdmission::prepare(&encoded_marker)
+    {
+        Ok(admission) => admission,
+        Err(_) => return 1,
+    };
+    encoded_marker.zeroize();
+    if admission.revalidate().is_err() {
+        return 1;
+    }
+    let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
+    let args = Args::from(MainArgs { instance });
+    let mut app = AdmittedHelperApp::new();
+    let result = execute_process(
+        Some(args.as_main_args()),
+        Some(&mut app),
+        sandbox_info.cast(),
+    );
+    if result >= 0 {
+        result
+    } else {
+        1
+    }
+}
+
+wrap_app! {
+    struct AdmittedHelperApp {}
+
+    impl App {
+        fn on_before_command_line_processing(
+            &self,
+            _process_type: Option<&CefString>,
+            command_line: Option<&mut CommandLine>,
+        ) {
+            if let Some(command_line) = command_line {
+                command_line.remove_switch(Some(&CefString::from(
+                    crate::services::browser::CEF_ADMISSION_SWITCH,
+                )));
+            }
+        }
+    }
+}
+
 pub(crate) fn launch_development_bootstrap() -> i32 {
     launch_development_bootstrap_inner().unwrap_or(1)
 }
@@ -67,7 +132,10 @@ fn launch_development_bootstrap_inner() -> Result<i32, ()> {
     }
     plan::stage_application_module(&root)?;
     let development_bootstrap = plan::stage_bootstrap_executable(&root, &bootstrap)?;
-    let args = plan::bootstrap_arguments(std::env::args_os().skip(1))?;
+    let args = plan::bootstrap_arguments(
+        development_bootstrap.as_os_str(),
+        std::env::args_os().skip(1),
+    )?;
     let status = std::process::Command::new(development_bootstrap)
         .args(args)
         .status()

@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct CefSettingsPolicy {
     pub(super) profile: PathBuf,
-    pub(super) helper: PathBuf,
+    pub(super) browser_subprocess_path: PathBuf,
     pub(super) no_sandbox: bool,
     pub(super) external_message_pump: bool,
     pub(super) multi_threaded_message_loop: bool,
@@ -23,7 +23,15 @@ pub(super) fn cef_settings_policy_for_platform(
 ) -> CefSettingsPolicy {
     CefSettingsPolicy {
         profile: profile.to_path_buf(),
-        helper: helper.to_path_buf(),
+        // CEF force explicitement --no-sandbox sous Windows lorsqu'un chemin
+        // d'exécutable enfant séparé est fourni. Le bootstrap courant est déjà
+        // le bon hôte : un chemin vide laisse CEF le relancer sans désactiver
+        // son sandbox. macOS conserve son bundle helper dédié.
+        browser_subprocess_path: if windows {
+            PathBuf::new()
+        } else {
+            helper.to_path_buf()
+        },
         no_sandbox: false,
         external_message_pump: !windows,
         multi_threaded_message_loop: windows,

@@ -1,23 +1,45 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import { resolveArtifact } from "./resolve-artifact-path.mjs";
 
 test("résout le NSIS Windows sans shell", () => {
+  const cargoTargetDir = resolve("target", "release-windows");
   assert.deepEqual(
     resolveArtifact({
       tag: "v1.1.1",
       target: "x86_64-pc-windows-msvc",
       bundleDir: "nsis",
       suffix: "_x64-setup.exe",
+      cargoTargetDir,
     }),
     {
-      asset: "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Beaver_1.1.1_x64-setup.exe",
+      asset: join(
+        cargoTargetDir,
+        "x86_64-pc-windows-msvc",
+        "release",
+        "bundle",
+        "nsis",
+        "Beaver_1.1.1_x64-setup.exe",
+      ),
     },
+  );
+});
+
+test("refuse de deviner le dossier Cargo d'un bundle Windows", () => {
+  assert.throws(
+    () =>
+      resolveArtifact({
+        tag: "v1.1.1",
+        target: "x86_64-pc-windows-msvc",
+        bundleDir: "nsis",
+        suffix: "_x64-setup.exe",
+      }),
+    /Artifact path resolution failed/,
   );
 });
 
@@ -62,9 +84,11 @@ test("refuse les entrées non strictes, traversées ou démesurées", () => {
 
 test("écrit les sorties GitHub bornées sans argument CLI", async () => {
   const root = await mkdtemp(join(tmpdir(), "beaver-artifact-path-"));
+  const cargoTargetDir = join(root, "target");
   const output = join(root, "github-output.txt");
   try {
     await writeFile(output, "");
+    await mkdir(cargoTargetDir);
     const result = spawnSync(process.execPath, ["scripts/release/resolve-artifact-path.mjs"], {
       cwd: process.cwd(),
       env: {
@@ -73,6 +97,7 @@ test("écrit les sorties GitHub bornées sans argument CLI", async () => {
         BUNDLE_TARGET: "x86_64-pc-windows-msvc",
         BUNDLE_DIR: "nsis",
         ASSET_SUFFIX: "_x64-setup.exe",
+        CARGO_TARGET_DIR: cargoTargetDir,
         GITHUB_OUTPUT: output,
       },
       shell: false,
@@ -81,7 +106,7 @@ test("écrit les sorties GitHub bornées sans argument CLI", async () => {
     assert.equal(result.status, 0);
     assert.equal(
       await readFile(output, "utf8"),
-      "asset=src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Beaver_1.1.1_x64-setup.exe\n",
+      `asset=${join(cargoTargetDir, "x86_64-pc-windows-msvc", "release", "bundle", "nsis", "Beaver_1.1.1_x64-setup.exe")}\n`,
     );
 
     const rejected = spawnSync(
@@ -98,6 +123,7 @@ test("écrit les sorties GitHub bornées sans argument CLI", async () => {
 
 test("refuse un fichier de sortie absent ou déjà trop grand", async () => {
   const root = await mkdtemp(join(tmpdir(), "beaver-artifact-output-"));
+  const cargoTargetDir = join(root, "target");
   const missing = join(root, "missing.txt");
   const oversized = join(root, "oversized.txt");
   const environment = (output) => ({
@@ -106,9 +132,11 @@ test("refuse un fichier de sortie absent ou déjà trop grand", async () => {
     BUNDLE_TARGET: "x86_64-pc-windows-msvc",
     BUNDLE_DIR: "nsis",
     ASSET_SUFFIX: "_x64-setup.exe",
+    CARGO_TARGET_DIR: cargoTargetDir,
     GITHUB_OUTPUT: output,
   });
   try {
+    await mkdir(cargoTargetDir);
     await writeFile(oversized, Buffer.alloc(1024 * 1024));
     for (const output of [missing, oversized]) {
       const result = spawnSync(process.execPath, ["scripts/release/resolve-artifact-path.mjs"], {

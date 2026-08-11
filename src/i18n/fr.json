@@ -1084,7 +1084,10 @@
     "operationFailed": "Le navigateur n’a pas pu effectuer cette action.",
     "loading": "Chargement du navigateur…",
     "blockedFeature": "Cette fonction est désactivée dans cette version.",
-    "unavailable": "Le navigateur sécurisé est indisponible."
+    "unavailable": "Le navigateur sécurisé est indisponible.",
+    "recoveryUnavailable": "Le navigateur intégré n’a pas pu démarrer. Beaver reste utilisable.",
+    "restartApplication": "Redémarrer Beaver",
+    "dismissRecovery": "Fermer la notification"
   },
   "filePreview": {
     "closeTab": "Fermer l'onglet",

@@ -12,6 +12,8 @@ pub(crate) fn run(
     let event_browser_library = std::rc::Rc::clone(&browser_library);
     crate::startup::run_before_browser_shutdown(
         || {
+            #[cfg(feature = "e2e")]
+            eprintln!("[e2e-lifecycle] event-loop-entered");
             app.run_return(move |app_handle, event| {
                 crate::services::browser::setup_on_run_event(
                     app_handle,
@@ -33,6 +35,10 @@ pub(crate) fn run(
             #[cfg(not(target_os = "macos"))]
             crate::services::browser::shutdown(&app_handle);
         },
-        || crate::app_exit::post_event_loop(&app_handle),
+        || {
+            #[cfg(feature = "e2e")]
+            eprintln!("[e2e-lifecycle] event-loop-returned");
+            crate::app_exit::post_event_loop(&app_handle);
+        },
     )
 }

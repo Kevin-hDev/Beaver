@@ -1036,7 +1036,10 @@
     "operationFailed": "The browser could not complete this action.",
     "loading": "Loading browser…",
     "blockedFeature": "This feature is disabled in this version.",
-    "unavailable": "The secure browser is unavailable."
+    "unavailable": "The secure browser is unavailable.",
+    "recoveryUnavailable": "The integrated browser could not start. Beaver remains usable.",
+    "restartApplication": "Restart Beaver",
+    "dismissRecovery": "Dismiss notification"
   },
   "filePreview": {
     "closeTab": "Close tab",
