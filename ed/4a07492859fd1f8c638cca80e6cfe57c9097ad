@@ -1,0 +1,33 @@
+Problèmes confirmés
+- Les filtres `cargo test` pouvaient réussir avec zéro test réellement exécuté.
+- Le contrat CEF lancé directement pouvait ne rien faire selon la représentation du chemin du script.
+- La CI ne prouvait pas le cycle réel navigateur → helper CEF → page chargée → fermeture coordonnée.
+- Sous Windows, fournir explicitement `browser_subprocess_path` déclenche dans CEF la désactivation du sandbox pour l'exécutable enfant séparé. Les tests factices n'avaient pas révélé ce comportement.
+- Le runner E2E recodait `src-tauri/target/e2e`, ce qui réintroduisait les chemins CMake trop longs déjà corrigés par l'autorité Cargo centrale.
+
+Objectif
+Transformer les assertions de supervision en preuves exécutées sur les plateformes natives, tout en gardant le sandbox, les limites de ressources et l'isolation stricte du contrôle E2E.
+
+Décisions
+1. `run-rust-test-filter.mjs` inventorie d'abord le filtre, échoue si le résultat est vide, puis exécute exactement la même commande sans shell. Entrées, tailles et nombre de threads sont bornés.
+2. La détection d'exécution directe compare des chemins canoniques et tient compte de l'insensibilité à la casse Windows.
+3. Le smoke natif ouvre une vraie page HTTP locale dans CEF, observe un vrai helper `--type=...`, refuse immédiatement tout `--no-sandbox`, demande la fermeture coordonnée et attend la disparition des exécutables possédés.
+4. La commande de sortie E2E n'existe que sous la feature `e2e`; le handler de production ne l'enregistre pas et les builds release continuent de refuser cette feature.
+5. Windows laisse `browser_subprocess_path` vide : CEF relance naturellement le bootstrap courant et conserve son sandbox. macOS conserve le helper de bundle dédié.
+6. Le build et la lecture du binaire E2E utilisent la même autorité `CARGO_TARGET_DIR`; le nettoyage récursif refuse tout chemin qui n'est pas un enfant direct `beaver-e2e-*` du dossier temporaire canonique.
+7. Les deux jobs natifs installent également l'hôte d'extensions pour exercer une application complète, pas un démarrage artificiellement incomplet.
+
+Preuves locales Windows
+- `npm test` : 414 fichiers / 1889 tests frontend, 50 tests build, 6 tests CI, 17 tests CEF, 20 tests runner E2E et 53 tests hôte d'extensions, tous réussis.
+- `npx tsc --noEmit` : réussi.
+- `npm run lint` : réussi.
+- `cargo fmt --check` : réussi.
+- `cargo clippy --all-targets --features e2e -- -D warnings` avec l'outil Ninja vérifié du projet : réussi.
+- Filtre Rust `services::browser::settings_tests` : 2 tests inventoriés et réussis.
+- `E2E_REQUIRE_CEF_SMOKE=1 E2E_SKIP_BUILD=1 npm run test:e2e` : une vraie page CEF chargée, sandbox observé actif, fermeture coordonnée réussie.
+- Contrôle Win32 après le smoke : aucun processus Beaver/CEF sous le runtime E2E restant.
+- Graphify mis à jour après les changements de code.
+
+Limites honnêtes
+- La preuve locale est Windows. Le même parcours macOS est désormais obligatoire dans le job natif GitHub et doit encore être observé vert avant fusion.
+- Le service WebDriver embarqué affiche localement un diagnostic trompeur sur l'absence du pilote Tauri externe, alors que le provider configuré est `embedded`; la session native Edge et le test passent réellement.
