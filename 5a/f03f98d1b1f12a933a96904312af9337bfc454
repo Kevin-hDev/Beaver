@@ -1,0 +1,23 @@
+Problem
+- The native macOS CI app made the embedded WebDriver healthy, then disappeared before POST /session.
+- The WebDriver service removes its early-exit listener after readiness, so the previous bounded collector could not distinguish a native signal, an exit code, or a Tauri lifecycle return.
+
+Objective
+- Attribute the real macOS failure without exposing raw stderr, paths, PIDs, ports, environment variables, or user data.
+- Keep production behavior and Windows/Linux E2E launch paths unchanged.
+
+Decisions and reasons
+- On macOS E2E only, WebDriver launches a Node observer which spawns the exact bundle executable with shell=false and an empty argument list.
+- The observer validates one absolute normalized path, uses fixed bounded signal sets, forwards termination signals, and emits only allowlisted exit categories.
+- Fixed E2E lifecycle markers identify main entry, native preparation, setup entry/completion, and event-loop entry/return.
+- The diagnostic collector remains bounded by files, directory entries, bytes, lines, and now 16 fixed categories; arbitrary lines are never relayed.
+- The stream generation counter moved to its owning module solely to keep lib.rs below the project 230-line ceiling; behavior and memory ordering are unchanged.
+
+Validation
+- npm run test:e2e-runner: 29 passed.
+- npx tsc --noEmit: passed.
+- npm run lint: passed.
+- cargo fmt --all -- --check: passed.
+- cargo test --lib --features windows-tests services::agent_local::stream_events -- --test-threads=1: 1 passed.
+- cargo check --features e2e reached the external cef-dll-sys build and stopped because Ninja is unavailable in this local terminal; the same native compilation is delegated to CI.
+- graphify update .: completed.
