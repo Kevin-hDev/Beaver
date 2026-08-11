@@ -11,6 +11,7 @@ import {
   createTauriLaunch,
   resolveCargoTargetDir,
 } from "./tauri-launch.mjs";
+import { resolveWindowsBundleRequest } from "./tauri-bundle-request.mjs";
 
 try {
   const cliPath = await trustedFile(
@@ -21,8 +22,12 @@ try {
   const toolPath = tool
     ? await trustedFile(await prepareBuildTool(tool), tauriDir)
     : null;
-  const launch = createTauriLaunch({
+  const bundleRequest = resolveWindowsBundleRequest({
     args: process.argv.slice(2),
+    platform: process.platform,
+  });
+  const launch = createTauriLaunch({
+    args: bundleRequest.args,
     cliPath,
     currentPath: process.env.PATH ?? "",
     executablePath: process.execPath,
@@ -39,6 +44,11 @@ try {
   });
   if (cargoTargetDir !== undefined) {
     environment.CARGO_TARGET_DIR = cargoTargetDir;
+  }
+  if (bundleRequest.bundleType === null) {
+    delete environment.BEAVER_TAURI_BUNDLE_TYPE;
+  } else {
+    environment.BEAVER_TAURI_BUNDLE_TYPE = bundleRequest.bundleType;
   }
 
   process.exitCode = await run(launch, environment);

@@ -5,6 +5,10 @@ $ExpectedBootstrapSha256 = "eab5d939293a666b210b8f5faec191324a017d6105485cfc4515
 $ExpectedLicenseSha256 = "2e69c36a7eaa4fa153426eab635c607ea0356cbc7a68a70f42a49e8ab8eb8106"
 $ExpectedCreditsSha256 = "333620129bfec11001385ea24d68de049ce0eeb8d012d2a1382b5340d7d62daf"
 $MaxFileBytes = 536870912
+$BundleType = $env:BEAVER_TAURI_BUNDLE_TYPE
+if ($BundleType -cnotin @("msi", "nsis")) {
+  throw "CEF runtime validation failed"
+}
 
 $BinaryFiles = @(
   "chrome_elf.dll",
@@ -50,6 +54,8 @@ if ($LASTEXITCODE -ne 0 -or $CargoTargetOutput.Count -ne 1) {
 }
 $CargoTargetRoot = [string] $CargoTargetOutput[0]
 $PrepareSource = Join-Path $TauriDir "..\scripts\cef\prepare-cef-source.mjs"
+$BundleMarkerScript = Join-Path $TauriDir "..\scripts\cef\tauri-bundle-marker.mjs"
+Assert-RegularFile $BundleMarkerScript
 & node $PrepareSource
 if ($LASTEXITCODE -ne 0) {
   throw "CEF runtime validation failed"
@@ -114,7 +120,12 @@ if ((Get-FileHash -LiteralPath $License -Algorithm SHA256).Hash.ToLowerInvariant
 Copy-Item -LiteralPath $License -Destination (Join-Path $LicensesDir "LICENSE.txt") -Force
 
 $ApplicationDll = Join-Path $TargetDir "cl_go_dash_lib.dll"
-Copy-CheckedFile $ApplicationDll (Join-Path $StageDir "cl-go-dash.dll")
+$StagedApplicationDll = Join-Path $StageDir "cl-go-dash.dll"
+Copy-CheckedFile $ApplicationDll $StagedApplicationDll
+& node $BundleMarkerScript patch-module $BundleType $StagedApplicationDll
+if ($LASTEXITCODE -ne 0) {
+  throw "CEF runtime validation failed"
+}
 $ApplicationExecutable = Join-Path $TargetDir "cl-go-dash.exe"
 $BrandedBootstrap = Join-Path $TargetDir "cl-go-dash.exe.branded.tmp"
 $ExecutableBackup = Join-Path $TargetDir "cl-go-dash.exe.branding.bak"
@@ -139,6 +150,10 @@ try {
     -DestinationExecutable $BrandedBootstrap `
     -ExpectedProductName $TauriConfig.productName `
     -ExpectedVersion $TauriConfig.version
+  & node $BundleMarkerScript prepare-bootstrap $BrandedBootstrap
+  if ($LASTEXITCODE -ne 0) {
+    throw "CEF runtime validation failed"
+  }
   [IO.File]::Replace($BrandedBootstrap, $ApplicationExecutable, $ExecutableBackup, $true)
 } finally {
   Remove-Item -LiteralPath $BrandedBootstrap -Force -ErrorAction SilentlyContinue

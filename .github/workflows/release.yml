@@ -192,8 +192,9 @@ jobs:
           APPIMAGE_EXTRACT_AND_RUN: "1"
           CARGO_BUILD_TARGET: ${{ matrix.target }}
           CLGO_CEF_ALLOW_ADHOC_SIGNING: ${{ runner.os == 'macOS' && '1' || '0' }}
+          BEAVER_TAURI_BUNDLE_TYPE: ${{ matrix.bundles }}
         with:
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          args: --target ${{ matrix.target }} --bundles=${{ matrix.bundles }}
 
       - name: Resolve exact artifact paths
         id: paths
@@ -242,6 +243,12 @@ jobs:
           if ($process.ExitCode -ne 0) {
             throw "Windows package validation failed."
           }
+          $releaseRoot = Join-Path $env:CARGO_TARGET_DIR "$env:CARGO_BUILD_TARGET\release"
+          node scripts/cef/tauri-bundle-marker.mjs verify $env:BEAVER_TAURI_BUNDLE_TYPE `
+            (Join-Path $installDir "cl-go-dash.exe") `
+            (Join-Path $installDir "cl-go-dash.dll") `
+            (Join-Path $releaseRoot "cl-go-dash.exe") `
+            (Join-Path $releaseRoot "cl_go_dash_lib.dll")
           & scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
           & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
             -File scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer

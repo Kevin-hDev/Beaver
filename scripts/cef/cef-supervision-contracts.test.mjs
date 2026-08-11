@@ -78,6 +78,10 @@ test("an invalid fixture fails when the contract is executed directly", async ()
     const copiedScript = join(scriptDirectory, "cef-supervision-contracts.mjs");
     await Promise.all([
       copyFile(resolve("scripts/cef/cef-supervision-contracts.mjs"), copiedScript),
+      copyFile(
+        resolve("scripts/cef/direct-execution.mjs"),
+        join(scriptDirectory, "direct-execution.mjs"),
+      ),
       writeFile(join(workflowDirectory, "ci.yml"), "jobs: {}\n", "utf8"),
       writeFile(join(fixture, "src-tauri", "build.rs"), "fn main() {}\n", "utf8"),
       writeFile(join(browserDirectory, "macos_helper_entry.rs"), "fn run() {}\n", "utf8"),

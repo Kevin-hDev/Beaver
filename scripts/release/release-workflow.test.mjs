@@ -75,6 +75,7 @@ test("les trois machines construisent sans toucher à une release", () => {
   ]) {
     assert.ok(workflow.includes(value), `build incomplet : ${value}`);
   }
+  assert.match(workflow, /--bundles=\$\{\{ matrix\.bundles \}\}/u);
 });
 
 test("partage la cible Cargo Windows avant le build et sa relecture", () => {
@@ -108,6 +109,8 @@ test("inspecte chaque bundle avec son outil natif", () => {
     "check-nsis-migration.ps1 -Mode Source",
     "check-nsis-migration.ps1 -Mode Installed",
     'Start-Process -FilePath $installer -ArgumentList @("/S", "/D=$installDir")',
+    "BEAVER_TAURI_BUNDLE_TYPE: ${{ matrix.bundles }}",
+    "tauri-bundle-marker.mjs verify $env:BEAVER_TAURI_BUNDLE_TYPE",
   ]) {
     assert.ok(workflow.includes(value), `inspection absente : ${value}`);
   }
