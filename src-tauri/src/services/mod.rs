@@ -69,3 +69,6 @@ pub mod terminal;
 pub mod token_counting;
 pub mod update_health;
 pub mod vault;
+pub mod work_registry;
+#[cfg(test)]
+mod work_registry_tests;
