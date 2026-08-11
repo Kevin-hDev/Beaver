@@ -1,6 +1,7 @@
 use super::super::constants::{CEF_SLOT_CAPACITY, CEF_TRACKER_POLL};
 use super::super::{CefPublication, CefSharedLayoutError, CefUnavailableCategory};
 use super::confinement::WindowsConfinement;
+use super::emergency_slots::WindowsEmergencyRegistration;
 use super::native_authority::{WindowsTerminationState, WindowsTrackedAdmission};
 use super::objects::WindowsPublicationObjects;
 use super::tracker::WindowsTrackerShared;
@@ -123,6 +124,7 @@ fn admit_pending(
     pending.objects.signal_admission()?;
     Ok(ActiveHelper {
         _objects: pending.objects,
+        _emergency: pending.emergency,
         admission,
     })
 }
@@ -144,6 +146,7 @@ fn refresh_active(
 }
 
 struct ActiveHelper {
-    _objects: WindowsPublicationObjects,
+    _objects: Arc<WindowsPublicationObjects>,
+    _emergency: WindowsEmergencyRegistration,
     admission: WindowsTrackedAdmission,
 }

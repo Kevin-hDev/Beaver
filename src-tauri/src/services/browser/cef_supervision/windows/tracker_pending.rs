@@ -1,13 +1,16 @@
 use super::super::constants::CEF_SLOT_CAPACITY;
 use super::super::reservation::CefReservation;
 use super::super::CefUnavailableCategory;
+use super::emergency_slots::WindowsEmergencyRegistration;
 use super::objects::WindowsPublicationObjects;
 use std::sync::atomic::{AtomicPtr, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 
 pub(super) struct WindowsPendingLaunch {
     pub(super) reservation: CefReservation,
-    pub(super) objects: WindowsPublicationObjects,
+    pub(super) objects: Arc<WindowsPublicationObjects>,
+    pub(super) emergency: WindowsEmergencyRegistration,
     pub(super) expires_at: Instant,
 }
 
