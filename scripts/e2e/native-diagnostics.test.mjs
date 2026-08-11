@@ -91,6 +91,26 @@ test("native CEF diagnostics bound files and ignore unrelated names", async () =
   }
 });
 
+test("the dedicated process exit marker has priority over unrelated WDIO logs", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-native-logs-"));
+  try {
+    for (let index = 0; index < MAX_DIAGNOSTIC_FILES; index += 1) {
+      await writeFile(join(directory, `wdio-${index}.log`), "unrelated\n", "utf8");
+    }
+    await writeFile(
+      join(directory, "native-app-exit.log"),
+      "[e2e-process] application-exit-code-101\n",
+      "utf8",
+    );
+
+    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+      "process-exit:code-101",
+    ]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("a missing diagnostic directory is a safe empty result", async () => {
   const missing = join(tmpdir(), "beaver-native-logs-missing");
   await rm(missing, { recursive: true, force: true });

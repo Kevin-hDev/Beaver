@@ -8,6 +8,7 @@ const MAX_DIRECTORY_ENTRIES = 64;
 const MAX_DIAGNOSTIC_FILE_BYTES = 512 * 1024;
 const MAX_DIAGNOSTIC_LINES = 2_048;
 const MAX_DIAGNOSTICS = 16;
+const EXIT_LOG_NAME = "native-app-exit.log";
 const LOG_NAME = /^wdio[-A-Za-z0-9.]{1,96}\.log$/u;
 const SAFE_CATEGORIES = new Set([
   "cef-supervision-object",
@@ -72,10 +73,16 @@ async function boundedLogNames(logDirectory) {
   for await (const entry of directory) {
     inspected += 1;
     if (inspected > MAX_DIRECTORY_ENTRIES) break;
-    if (entry.isFile() && LOG_NAME.test(entry.name)) names.push(entry.name);
-    if (names.length >= MAX_DIAGNOSTIC_FILES) break;
+    if (entry.isFile() && (entry.name === EXIT_LOG_NAME || LOG_NAME.test(entry.name))) {
+      names.push(entry.name);
+    }
   }
-  return names;
+  names.sort((left, right) => {
+    if (left === EXIT_LOG_NAME) return -1;
+    if (right === EXIT_LOG_NAME) return 1;
+    return left.localeCompare(right);
+  });
+  return names.slice(0, MAX_DIAGNOSTIC_FILES);
 }
 
 async function scanLog(path, diagnostics) {
