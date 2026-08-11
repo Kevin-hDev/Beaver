@@ -1,3 +1,4 @@
+use super::final_action::{self, FinalActionSource};
 use super::{cleanup, policy, presentation, raw_exit, AppExitCoordinator, BeginResult, ExitIntent};
 use tauri::Manager;
 
@@ -40,7 +41,7 @@ fn start_cleanup(
     exit_code: i32,
 ) {
     if coordinator
-        .spawn_watchdog(app.clone(), timeline, exit_code)
+        .spawn_watchdog(app.clone(), timeline, intent, exit_code)
         .is_err()
     {
         ::log::error!("[exit] watchdog unavailable; ultimate guard remains armed");
@@ -58,12 +59,14 @@ fn start_cleanup(
         }
         log_cleanup_outcome(cleanup::run(&handle, timeline).await);
         ::log::info!("[exit] cleanup phase finished in {:?}", started.elapsed());
-        if handle.state::<AppExitCoordinator>().mark_ready() {
-            match intent {
-                ExitIntent::Exit => handle.exit(exit_code),
-                ExitIntent::Restart => handle.request_restart(),
-            }
-        }
+        let coordinator = handle.state::<AppExitCoordinator>();
+        final_action::run(
+            &coordinator.state,
+            intent,
+            exit_code,
+            FinalActionSource::Cleanup,
+            |intent, code| final_action::dispatch_tauri(&handle, intent, code),
+        );
     });
 }
 
