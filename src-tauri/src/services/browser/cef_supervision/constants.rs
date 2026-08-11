@@ -14,4 +14,10 @@ pub(super) const CEF_REAPER_START_TIMEOUT: std::time::Duration = std::time::Dura
 #[cfg(any(windows, target_os = "macos"))]
 pub(super) const CEF_ADMISSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 #[cfg(any(windows, target_os = "macos"))]
+pub(super) fn publication_deadline(now: std::time::Instant) -> std::time::Instant {
+    // Un dépassement d'Instant expire immédiatement plutôt que de créer un
+    // budget concurrent ou non borné.
+    now.checked_add(CEF_ADMISSION_TIMEOUT).unwrap_or(now)
+}
+#[cfg(any(windows, target_os = "macos"))]
 pub(super) const CEF_HELPER_WAIT_SLICE: std::time::Duration = std::time::Duration::from_millis(10);

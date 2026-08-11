@@ -2,7 +2,7 @@ use super::{
     CefAuthorityTable, CefLaunchGate, CefLaunchMarker, CefProcessRole, CefPublication,
     CefTableError, CEF_SLOT_CAPACITY,
 };
-use std::sync::Arc;
+use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
 
 #[test]
@@ -99,6 +99,44 @@ fn a_stale_generation_cannot_claim_a_reused_slot() {
 
     let current = CefPublication::from_marker(replacement.marker(), 46).expect("current");
     assert!(table.claim(&current).is_ok());
+}
+
+#[test]
+fn expiration_and_publication_have_exactly_one_winner() {
+    for pid in 100..164 {
+        let table = CefAuthorityTable::new();
+        let reservation = table
+            .try_reserve(CefProcessRole::Helper)
+            .expect("reservation");
+        let publication =
+            CefPublication::from_marker(reservation.marker(), pid).expect("publication");
+        let stale = CefPublication::from_marker(reservation.marker(), pid).expect("stale");
+        let barrier = Arc::new(Barrier::new(3));
+        let expire_barrier = Arc::clone(&barrier);
+        let expire = std::thread::spawn(move || {
+            expire_barrier.wait();
+            reservation.expire()
+        });
+        let claim_barrier = Arc::clone(&barrier);
+        let claim_table = table.clone();
+        let claim = std::thread::spawn(move || {
+            claim_barrier.wait();
+            claim_table.claim(&publication)
+        });
+
+        barrier.wait();
+        let expired = expire.join().expect("expiration thread");
+        let claimed = claim.join().expect("publication thread");
+        assert_ne!(expired, claimed.is_ok());
+        drop(claimed);
+
+        let replacement = table
+            .try_reserve(CefProcessRole::Helper)
+            .expect("new generation");
+        assert_eq!(table.claim(&stale).unwrap_err(), CefTableError::Stale);
+        let current = CefPublication::from_marker(replacement.marker(), pid + 1).expect("current");
+        assert!(table.claim(&current).is_ok());
+    }
 }
 
 #[test]

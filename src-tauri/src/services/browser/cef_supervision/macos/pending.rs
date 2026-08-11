@@ -4,10 +4,12 @@ use super::super::shared_layout::CefMailboxSnapshot;
 use super::super::{CefSharedLayoutError, CefUnavailableCategory};
 use super::MacPublicationObjects;
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Instant;
 
 pub(super) struct MacPendingLaunch {
     pub(super) reservation: CefReservation,
     pub(super) objects: Arc<MacPublicationObjects>,
+    pub(super) expires_at: Instant,
 }
 
 pub(super) struct MacPendingSlots {
@@ -46,6 +48,21 @@ impl MacPendingSlots {
 
     pub(super) fn take(&self, slot: usize) -> Option<Box<MacPendingLaunch>> {
         self.lock(slot)?.take().map(Box::new)
+    }
+
+    pub(super) fn take_if_expired(
+        &self,
+        slot: usize,
+        now: Instant,
+    ) -> Option<Box<MacPendingLaunch>> {
+        let mut target = self.lock(slot)?;
+        if target
+            .as_ref()
+            .is_none_or(|pending| pending.expires_at > now)
+        {
+            return None;
+        }
+        target.take().map(Box::new)
     }
 
     pub(super) fn begin_closing(&self, deadline_ticks: u64) -> Result<(), CefSharedLayoutError> {

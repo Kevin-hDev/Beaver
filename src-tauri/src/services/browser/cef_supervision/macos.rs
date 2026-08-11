@@ -10,6 +10,7 @@ mod reaper;
 mod tracker;
 mod tracker_lifecycle;
 mod tracker_loop;
+mod tracker_reservation;
 
 pub(in crate::services::browser) use arguments::parse_helper_marker;
 #[cfg(test)]

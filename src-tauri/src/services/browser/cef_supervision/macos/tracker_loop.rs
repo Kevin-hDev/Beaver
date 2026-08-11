@@ -6,6 +6,7 @@ use super::identity::MacProcessIdentity;
 use super::tracker::MacTrackerShared;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Instant;
 
 pub(super) fn run_tracker(shared: Arc<MacTrackerShared>) {
     let mut active: [Option<ActiveHelper>; CEF_SLOT_CAPACITY] = std::array::from_fn(|_| None);
@@ -30,7 +31,36 @@ fn scan_pending(
             continue;
         };
         match snapshot {
-            Err(CefSharedLayoutError::Unpublished) => continue,
+            Err(CefSharedLayoutError::Unpublished) => {
+                let Some(pending) = shared.pending.take_if_expired(slot, Instant::now()) else {
+                    continue;
+                };
+                match pending.objects.mailbox_snapshot() {
+                    Err(CefSharedLayoutError::Unpublished) => {
+                        let pending = *pending;
+                        if pending.reservation.expire() {
+                            ::log::warn!("[browser] CEF helper publication expired");
+                        }
+                        continue;
+                    }
+                    Err(_) => {
+                        drop(pending);
+                        shared.fail(MacSupervisionFailure::PendingLayout);
+                        return;
+                    }
+                    Ok(_) => match admit(shared, *pending) {
+                        Ok(helper) if active_slot.is_none() => *active_slot = Some(helper),
+                        Ok(_) => {
+                            shared.fail(MacSupervisionFailure::ActiveSlotOccupied);
+                            return;
+                        }
+                        Err(failure) => {
+                            shared.fail(failure);
+                            return;
+                        }
+                    },
+                }
+            }
             Err(_) => {
                 drop(shared.pending.take(slot));
                 shared.fail(MacSupervisionFailure::PendingLayout);

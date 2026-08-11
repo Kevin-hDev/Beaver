@@ -8,13 +8,19 @@ use zeroize::Zeroizing;
 
 pub(super) struct CefReservation {
     pub(super) table: Arc<CefAuthorityInner>,
-    pub(super) key: CefSlotKey,
+    pub(super) key: Option<CefSlotKey>,
     pub(super) marker: CefLaunchMarker,
 }
 
 impl CefReservation {
     pub(super) fn marker(&self) -> &CefLaunchMarker {
         &self.marker
+    }
+
+    pub(super) fn expire(mut self) -> bool {
+        self.key
+            .take()
+            .is_some_and(|key| self.table.release(key, SLOT_RESERVED))
     }
 
     #[cfg(test)]
@@ -31,7 +37,9 @@ impl fmt::Debug for CefReservation {
 
 impl Drop for CefReservation {
     fn drop(&mut self) {
-        self.table.release(self.key, SLOT_RESERVED);
+        if let Some(key) = self.key.take() {
+            self.table.release(key, SLOT_RESERVED);
+        }
     }
 }
 
