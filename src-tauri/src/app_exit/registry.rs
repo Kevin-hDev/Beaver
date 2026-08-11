@@ -11,18 +11,19 @@ use std::time::Instant;
 use tokio::sync::Notify;
 use tokio_util::sync::CancellationToken;
 
-pub(super) use super::registry_admission::{AdmissionKey, TrackedAdmission};
+pub(super) use super::registry_admission::AdmissionKey;
+pub use super::registry_admission::TrackedAdmission;
 
 pub(super) const REGISTRY_CAPACITY: usize = 128;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum AdmissionError {
+pub enum AdmissionError {
     Closing,
     Capacity,
 }
 
 impl AdmissionError {
-    pub(super) fn public_code(self) -> &'static str {
+    pub fn public_code(self) -> &'static str {
         match self {
             Self::Closing => "app-shutting-down",
             Self::Capacity => "app-work-capacity-reached",

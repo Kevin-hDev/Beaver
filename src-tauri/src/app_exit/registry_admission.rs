@@ -16,18 +16,18 @@ pub(super) struct AdmissionKey {
     pub(super) generation: u64,
 }
 
-pub(super) struct TrackedAdmission {
+pub struct TrackedAdmission {
     pub(super) registry: AdmissionRegistry,
     pub(super) key: Option<AdmissionKey>,
     pub(super) cancel: CancellationToken,
 }
 
 impl TrackedAdmission {
-    pub(super) fn cancellation_token(&self) -> CancellationToken {
+    pub fn cancellation_token(&self) -> CancellationToken {
         self.cancel.clone()
     }
 
-    pub(super) async fn run<F>(self, future: F) -> F::Output
+    pub async fn run<F>(self, future: F) -> F::Output
     where
         F: Future,
     {
