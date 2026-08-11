@@ -1,0 +1,1 @@
+Reason: macOS Clippy compiles tracker.rs without any Ordering use, so the stale import must be removed to preserve the strict -D warnings CI contract.
