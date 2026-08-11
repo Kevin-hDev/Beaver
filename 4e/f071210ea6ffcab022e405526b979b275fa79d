@@ -1,0 +1,5 @@
+Objectif : déplacer la preuve d'admission avant le premier appel CEF du processus enfant Windows.
+
+Décisions : le callback parent réserve et injecte le marqueur privé ; le bootstrap enfant ouvre ses objets, publie son identité, attend l'admission bornée puis seulement appelle CEF. Une réservation absente, ambiguë ou refusée termine le bootstrap sans repli non supervisé.
+
+Justification : enregistrer un helper après son démarrage laisse une fenêtre où il peut exécuter CEF ou créer des descendants hors autorité. Le bootstrap devient donc la frontière fail-closed. Les tests couvrent parent, helper, entrée invalide et fermeture avant admission.
