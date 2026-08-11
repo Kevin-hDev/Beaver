@@ -1,11 +1,3 @@
-#![cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "service producers adopt the app work supervisor during milestone 2"
-    )
-)]
-
 use super::registry::AdmissionRegistry;
 use super::{AppWorkAdmission, AppWorkAdmissionError};
 
