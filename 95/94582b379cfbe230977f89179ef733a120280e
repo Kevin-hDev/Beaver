@@ -1,0 +1,7 @@
+Jalon 2 — registre local borné des services.
+
+Référence: 1eb3cb7 expose l'unique superviseur global. Ce commit n'ajoute aucune seconde barrière globale: chaque slot local possède exactement une AppWorkAdmission et la rend hors verrou dans l'ordre inverse de l'acquisition.
+
+Décision: tableau fixe générique, générations et libération conditionnelle; diagnostics limités à active, high_water, saturation_refusals et closing_refusals. stop_and_wait ferme l'admission, annule, extrait les JoinHandle sous verrou, les attend hors verrou sur l'échéance absolue, puis force l'abandon si nécessaire. Le lot reste propriétaire de ses handles même si l'appel d'arrêt est lui-même abandonné.
+
+TDD rouge: module absent; abandon forcé laissant 127/128 admissions globales; abandon de stop laissant l'état Closing. Vert: 5/5 tests work_registry, 46/46 tests app_exit, cargo fmt --check et Clippy strict all-targets. Graphify mis à jour. Commit remplaçant: aucun, nouveau mécanisme J2.
