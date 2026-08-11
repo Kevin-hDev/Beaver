@@ -1,7 +1,10 @@
 use super::super::CefUnavailableCategory;
+use crate::services::browser::native_paths::MacHelperExecutables;
 use std::ffi::OsStr;
 use std::os::unix::ffi::OsStrExt;
-use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::path::Path;
+use std::path::PathBuf;
 
 const MAX_EXECUTABLE_BYTES: usize = 4_096;
 
@@ -31,18 +34,16 @@ impl MacProcessIdentity {
         parent_pid: u32,
         started_at: u64,
         process_group: u32,
-        executable: &Path,
+        executables: &MacHelperExecutables,
     ) -> Result<Self, CefUnavailableCategory> {
         let identity = Self::read(pid)?;
-        let expected =
-            dunce::canonicalize(executable).map_err(|_| CefUnavailableCategory::Admission)?;
         if parent_pid == 0
             || started_at == 0
             || process_group != pid
             || identity.parent_pid != parent_pid
             || identity.started_at != started_at
             || identity.process_group != process_group
-            || identity.executable != expected
+            || !executables.contains(&identity.executable)
         {
             Err(CefUnavailableCategory::Admission)
         } else {
@@ -66,18 +67,16 @@ impl MacProcessIdentity {
     }
 
     pub(super) fn is_alive(&self) -> Result<bool, CefUnavailableCategory> {
-        match kernel_identity(self.pid) {
+        let info = match bsd_info(self.pid) {
+            Ok(info) => info,
+            Err(_) => return unverifiable_process_state(self.pid),
+        };
+        if info.pbi_status == libc::SZOMB {
+            return Ok(false);
+        }
+        match kernel_identity_from_info(self.pid, &info) {
             Ok(current) => Ok(current == self.kernel_identity()),
-            Err(_) => {
-                let result = unsafe { libc::kill(self.pid as i32, 0) };
-                if result == 0 {
-                    Err(CefUnavailableCategory::Reaper)
-                } else if std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH) {
-                    Ok(false)
-                } else {
-                    Err(CefUnavailableCategory::Reaper)
-                }
-            }
+            Err(_) => unverifiable_process_state(self.pid),
         }
     }
 
@@ -113,6 +112,13 @@ impl MacProcessIdentity {
     pub(in crate::services::browser) fn test_executable(&self) -> &Path {
         &self.executable
     }
+
+    #[cfg(test)]
+    pub(in crate::services::browser) fn test_is_alive(
+        &self,
+    ) -> Result<bool, CefUnavailableCategory> {
+        self.is_alive()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -127,6 +133,16 @@ fn kernel_identity(pid: u32) -> Result<MacKernelIdentity, CefUnavailableCategory
         return Err(CefUnavailableCategory::Admission);
     }
     let info = bsd_info(pid)?;
+    kernel_identity_from_info(pid, &info)
+}
+
+fn kernel_identity_from_info(
+    pid: u32,
+    info: &libc::proc_bsdinfo,
+) -> Result<MacKernelIdentity, CefUnavailableCategory> {
+    if info.pbi_status == libc::SZOMB {
+        return Err(CefUnavailableCategory::Admission);
+    }
     let process_group = unsafe { libc::getpgid(pid as i32) };
     if process_group <= 0 {
         return Err(CefUnavailableCategory::Admission);
@@ -142,6 +158,29 @@ fn kernel_identity(pid: u32) -> Result<MacKernelIdentity, CefUnavailableCategory
         started_at,
         process_group: process_group as u32,
     })
+}
+
+fn unverifiable_process_state(pid: u32) -> Result<bool, CefUnavailableCategory> {
+    let mut exit_info = unsafe { std::mem::zeroed::<libc::siginfo_t>() };
+    let wait_result = unsafe {
+        libc::waitid(
+            libc::P_PID,
+            pid as libc::id_t,
+            &mut exit_info,
+            libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
+        )
+    };
+    if wait_result == 0 && unsafe { exit_info.si_pid() } == pid as libc::pid_t {
+        return Ok(false);
+    }
+    let result = unsafe { libc::kill(pid as i32, 0) };
+    if result == 0 {
+        Err(CefUnavailableCategory::Reaper)
+    } else if std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH) {
+        Ok(false)
+    } else {
+        Err(CefUnavailableCategory::Reaper)
+    }
 }
 
 fn bsd_info(pid: u32) -> Result<libc::proc_bsdinfo, CefUnavailableCategory> {

@@ -92,6 +92,14 @@ impl MacCefTracker {
             thread.join().expect("normal tracker thread");
         }
     }
+
+    pub(in crate::services::browser) fn failure_for_test(&self) -> Option<CefUnavailableCategory> {
+        self.shared.failure()
+    }
+
+    pub(in crate::services::browser) fn has_runnable_for_test(&self) -> bool {
+        self.shared.emergency_has_runnable()
+    }
 }
 
 impl Drop for MacCefTracker {

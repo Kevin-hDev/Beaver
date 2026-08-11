@@ -45,22 +45,61 @@ fn reaper_admits_only_the_stable_process_group_identity() {
         std::thread::sleep(Duration::from_millis(10));
     }
     assert!(helper.admission_signaled().expect("admitted"));
+    let mut allowed_executables =
+        std::array::from_fn(|index| std::path::PathBuf::from(format!("/invalid/{index}")));
+    allowed_executables[4] = identity.test_executable().to_path_buf();
+    assert!(MacProcessIdentity::validate(
+        identity.test_pid(),
+        identity.test_parent_pid(),
+        identity.test_started_at(),
+        identity.test_process_group(),
+        &allowed_executables,
+    )
+    .is_ok());
     assert_eq!(
         MacProcessIdentity::validate(
             identity.test_pid(),
             identity.test_parent_pid(),
             identity.test_started_at() + 1,
             identity.test_process_group(),
-            identity.test_executable(),
+            &std::array::from_fn(|_| identity.test_executable().to_path_buf()),
         ),
         Err(CefUnavailableCategory::Admission)
     );
+    child.kill().expect("stop child");
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while tracker.has_runnable_for_test()
+        && tracker.failure_for_test().is_none()
+        && Instant::now() < deadline
+    {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    assert_eq!(tracker.failure_for_test(), None);
+    assert!(!tracker.has_runnable_for_test());
     drop(tracker);
     let deadline = Instant::now() + Duration::from_secs(2);
     while child.try_wait().expect("child status").is_none() && Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(10));
     }
     assert!(child.try_wait().expect("final status").is_some());
+}
+
+#[test]
+fn reaper_treats_an_unreaped_exited_helper_as_stopped() {
+    let mut child = grouped_sleep();
+    let identity = MacProcessIdentity::read(child.id()).expect("child identity");
+    child.kill().expect("kill child");
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let observed = loop {
+        let current = identity.test_is_alive();
+        if current == Ok(false) || Instant::now() >= deadline {
+            break current;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    child.wait().expect("reap child");
+
+    assert_eq!(observed, Ok(false));
 }
 
 #[test]
