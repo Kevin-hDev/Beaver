@@ -1,0 +1,1 @@
+N1 : l’étape Windows de publication reçoit CARGO_BUILD_TARGET et BEAVER_TAURI_BUNDLE_TYPE dans sa propre portée et propage immédiatement l’échec du vérificateur natif. Le test charge le workflow avec js-yaml et inspecte jobs.build.steps, au lieu de rechercher des chaînes. Validation finale du workflow : 30 tests réussis, 0 échec.
