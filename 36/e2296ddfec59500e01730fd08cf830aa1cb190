@@ -1,0 +1,5 @@
+Objectif : consigner honnêtement ce que la première CI J1B prouvait et ce qu'elle ne prouvait pas encore.
+
+Décisions : référencer le run natif Windows/macOS/Linux, fermer uniquement les lignes d'inventaire couvertes et laisser ouvertes la matrice de machines renforcées, le parcours CEF réel et les défauts remontés ensuite par la review.
+
+Justification : une CI verte ne remplace ni un paquet installé ni Gatekeeper/antivirus. La documentation sépare donc preuve automatisée et validation manuelle au lieu de déduire l'une de l'autre.
