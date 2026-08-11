@@ -1,0 +1,1 @@
+N12 : toutes les échéances CEF dérivent désormais de la chronologie globale à 13 secondes ; l’ancienne promesse enfant macOS à 14 secondes est supprimée volontairement. Les tests de politique vérifient l’origine unique, l’ordre et les valeurs de production.
