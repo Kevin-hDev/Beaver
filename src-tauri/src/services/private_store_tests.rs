@@ -190,3 +190,48 @@ fn repair_path_is_repeatable_for_current_user_directory() {
 
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[cfg(windows)]
+#[test]
+fn concurrent_writes_under_one_private_parent_do_not_interfere() {
+    const WRITERS: usize = 32;
+    const WRITES_PER_WRITER: usize = 64;
+
+    let root = test_dir();
+    let parent = root.join("shared");
+    super::ensure_private_dir(&parent).expect("prepare shared private parent");
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(WRITERS));
+    let mut threads = Vec::with_capacity(WRITERS);
+
+    for writer in 0..WRITERS {
+        let parent = parent.clone();
+        let barrier = barrier.clone();
+        threads.push(std::thread::spawn(move || {
+            barrier.wait();
+            for write_index in 0..WRITES_PER_WRITER {
+                let content = format!("writer-{writer}-write-{write_index}");
+                let path = parent.join(format!("{writer}.json"));
+                atomic_write(&path, content.as_bytes())?;
+                if std::fs::read(&path).ok().as_deref() != Some(content.as_bytes()) {
+                    return Err("persisted bytes differ".to_string());
+                }
+            }
+            Ok::<(), String>(())
+        }));
+    }
+
+    let failures = threads
+        .into_iter()
+        .filter_map(|thread| match thread.join() {
+            Ok(Ok(())) => None,
+            Ok(Err(error)) => Some(error),
+            Err(_) => Some("writer panicked".to_string()),
+        })
+        .collect::<Vec<_>>();
+
+    let _ = std::fs::remove_dir_all(root);
+    assert!(
+        failures.is_empty(),
+        "concurrent private writes failed: {failures:?}"
+    );
+}
