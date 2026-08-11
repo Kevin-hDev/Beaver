@@ -1,8 +1,15 @@
+import { resolve } from "node:path";
+
 const appBinaryPath = process.env.E2E_APP_BINARY;
 if (!appBinaryPath) throw new Error("E2E app binary is not configured");
 const e2eLogDirectory = process.env.E2E_LOG_DIR;
 if (!e2eLogDirectory) throw new Error("E2E log directory is not configured");
 const nativeCefSmoke = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
+const observeMacApplication = process.platform === "darwin";
+const driverBinaryPath = observeMacApplication ? process.execPath : appBinaryPath;
+const driverArguments = observeMacApplication
+  ? [resolve(process.cwd(), "scripts/e2e/macos-app-observer.mjs")]
+  : undefined;
 
 export const config: WebdriverIO.Config = {
   outputDir: e2eLogDirectory,
@@ -13,7 +20,8 @@ export const config: WebdriverIO.Config = {
   maxInstances: 1,
   capabilities: [{ browserName: "tauri" }],
   services: [["@wdio/tauri-service", {
-    appBinaryPath,
+    appBinaryPath: driverBinaryPath,
+    appArgs: driverArguments,
     driverProvider: "embedded",
     captureBackendLogs: true,
     captureFrontendLogs: true,

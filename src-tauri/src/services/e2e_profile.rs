@@ -1,3 +1,22 @@
+#[derive(Clone, Copy)]
+pub enum LifecycleStage {
+    SetupEntered,
+    SetupCompleted,
+}
+
+pub fn report_lifecycle(stage: LifecycleStage) {
+    #[cfg(feature = "e2e")]
+    eprintln!(
+        "[e2e-lifecycle] {}",
+        match stage {
+            LifecycleStage::SetupEntered => "setup-entered",
+            LifecycleStage::SetupCompleted => "setup-completed",
+        }
+    );
+    #[cfg(not(feature = "e2e"))]
+    let _ = stage;
+}
+
 pub fn load_dotenv<Action>(action: Action)
 where
     Action: FnOnce(),

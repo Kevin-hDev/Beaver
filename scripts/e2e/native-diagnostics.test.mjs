@@ -43,6 +43,9 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
         "[Tauri:Backend] [exit] event loop returned",
         "[Tauri:Backend] [browser] launch callback failed",
         "[browser-helper] setup failed (cef-supervision-admission)",
+        "[e2e-lifecycle] setup-completed",
+        "[e2e-lifecycle] event-loop-entered",
+        "[e2e-process] application-exit-signal-sigsegv",
       ].join("\n"),
       "utf8",
     );
@@ -55,6 +58,9 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
       "application-exit:event-loop",
       "browser-callback:fatal",
       "browser-helper:cef-supervision-admission",
+      "application-stage:setup-completed",
+      "application-stage:event-loop-entered",
+      "process-exit:signal-sigsegv",
     ]);
   } finally {
     await rm(directory, { recursive: true, force: true });

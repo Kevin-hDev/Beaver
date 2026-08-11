@@ -28,6 +28,7 @@ mod windows_entry;
 mod windows_entry_plan;
 
 use services::agent_local::ollama_client::OllamaClient;
+use services::e2e_profile::{report_lifecycle, LifecycleStage};
 use services::gateway::GatewayService;
 use services::ollama_lifecycle::{self, OllamaSidecar};
 use services::scheduler::Scheduler;
@@ -48,8 +49,6 @@ pub use startup::{
     configure_git_network_policy, initialize_shell_environment, prepare_browser_native_application,
     run, run_shell_sandbox_helper,
 };
-
-static STREAM_GENERATION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 pub(crate) fn run_inner(
     #[cfg(target_os = "macos")] browser_library: Option<BrowserLibraryGuard>,
@@ -102,6 +101,7 @@ pub(crate) fn run_inner(
             }
         })
         .setup(|app| {
+            report_lifecycle(LifecycleStage::SetupEntered);
             let startup_cutoff = chrono::Utc::now();
             services::agent_local::shell_sandbox::cleanup_stale();
             services::agent_local::app_handle_global::init(app.handle().clone());
@@ -207,6 +207,7 @@ pub(crate) fn run_inner(
             });
             services::update_health::acknowledge_from_args(std::env::args_os())
                 .map_err(std::io::Error::other)?;
+            report_lifecycle(LifecycleStage::SetupCompleted);
             Ok(())
         })
         .on_window_event(|_window, _event| {

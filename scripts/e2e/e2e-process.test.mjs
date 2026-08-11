@@ -170,6 +170,9 @@ test("the native CEF journey uses one isolated application session", () => {
   assert.match(runnerSource, /const logDirectory = join\(profilePath,\s*"logs"\)/u);
   assert.match(runnerSource, /E2E_LOG_DIR:\s*logDirectory/u);
   assert.match(wdioSource, /outputDir:\s*e2eLogDirectory/u);
+  assert.match(wdioSource, /process\.platform === "darwin"[\s\S]*macos-app-observer\.mjs/u);
+  assert.match(wdioSource, /appBinaryPath:\s*driverBinaryPath/u);
+  assert.match(wdioSource, /appArgs:\s*driverArguments/u);
 });
 
 test("the coordinated exit command is compiled only into the E2E handler", () => {
