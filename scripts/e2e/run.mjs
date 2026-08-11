@@ -6,6 +6,8 @@ import {
   buildArguments,
   cleanupProfile,
   debugBinaryPath,
+  E2E_BUILD_TIMEOUT_MS,
+  E2E_JOURNEY_TIMEOUT_MS,
   e2eCargoTargetDir,
   isAllowedProfilePath,
   runCommand,
@@ -40,7 +42,7 @@ try {
     const buildExit = await runCommand(
       process.execPath,
       [resolve(repoRoot, "scripts/cef/run-tauri.mjs"), ...buildArguments(process.platform)],
-      { cwd: repoRoot, env: environment },
+      { cwd: repoRoot, env: environment, timeoutMs: E2E_BUILD_TIMEOUT_MS },
     );
     if (buildExit !== 0) process.exitCode = buildExit;
   }
@@ -49,7 +51,7 @@ try {
     process.exitCode = await runCommand(
       process.execPath,
       [resolve(repoRoot, "node_modules/@wdio/cli/bin/wdio.js"), "run", "wdio.conf.ts"],
-      { cwd: repoRoot, env: environment },
+      { cwd: repoRoot, env: environment, timeoutMs: E2E_JOURNEY_TIMEOUT_MS },
     );
   }
 } catch (error) {
