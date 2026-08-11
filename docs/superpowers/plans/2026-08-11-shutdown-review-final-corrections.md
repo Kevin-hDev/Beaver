@@ -17,6 +17,7 @@
 - Une expiration sans publication est récupérable; une publication incohérente reste fatale.
 - Les traces restent génériques et n'exposent ni chemin, nonce, ligne de commande, handle ou jeton.
 - Aucun fichier de production ou de test mêlant plusieurs responsabilités ne doit dépasser 230 lignes; extraire de nouveaux modules ciblés avant ce seuil.
+- Sous Windows, toute commande `cargo test` de ce plan doit ajouter `--lib --features windows-tests`, définir `CARGO_TARGET_DIR` sur un chemin court et mettre Ninja dans `PATH`. Cette feature est l'autorité du projet pour les tests sans chargement de la DLL CEF de distribution.
 
 ---
 
@@ -479,7 +480,9 @@ Run: `cargo check --manifest-path src-tauri/Cargo.toml`
 
 Run: `cargo clippy --all-targets --manifest-path src-tauri/Cargo.toml -- -D warnings`
 
-Run: `cargo test --manifest-path src-tauri/Cargo.toml`
+Run (Windows): `cargo test --lib --features windows-tests --manifest-path src-tauri/Cargo.toml -- --test-threads=1`
+
+Run (macOS): `cargo test --manifest-path src-tauri/Cargo.toml`
 
 Expected: chaque commande sort avec le code 0.
 
