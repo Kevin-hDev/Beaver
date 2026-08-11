@@ -84,6 +84,30 @@ async function scanLog(path, diagnostics) {
 }
 
 function safeDiagnostic(line) {
+  if (line.includes("Tauri app spawned (PID:")) {
+    return "webdriver:spawned";
+  }
+  if (line.includes("WebDriver server ready on port")) {
+    return "webdriver:ready";
+  }
+  if (line.includes("Embedded WebDriver on port") && line.includes("is healthy")) {
+    return "webdriver:healthy";
+  }
+  if (line.includes("[exit] coordinated shutdown requested")) {
+    return "application-exit:coordinated";
+  }
+  if (line.includes("[exit] event loop returned")) {
+    return "application-exit:event-loop";
+  }
+  if (line.includes("[browser] launch callback failed")) {
+    return "browser-callback:fatal";
+  }
+  const helper = line.match(
+    /\[browser-helper\] setup failed \((cef-supervision-[a-z-]+)\)/u,
+  );
+  if (helper && SAFE_CATEGORIES.has(helper[1])) {
+    return `browser-helper:${helper[1]}`;
+  }
   const supervision = line.match(
     /\[browser\] macOS supervision failed \((cef-supervision-[a-z-]+)\)/u,
   );

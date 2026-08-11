@@ -30,6 +30,37 @@ test("native CEF diagnostics expose only bounded browser failure categories", as
   }
 });
 
+test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-native-logs-"));
+  try {
+    await writeFile(
+      join(directory, "wdio-lifecycle.log"),
+      [
+        "Tauri app spawned (PID: 1234) secret=do-not-print",
+        "WebDriver server ready on port 4445",
+        "Embedded WebDriver on port 4445 (instance: 0) is healthy",
+        "[Tauri:Backend] [exit] coordinated shutdown requested",
+        "[Tauri:Backend] [exit] event loop returned",
+        "[Tauri:Backend] [browser] launch callback failed",
+        "[browser-helper] setup failed (cef-supervision-admission)",
+      ].join("\n"),
+      "utf8",
+    );
+
+    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+      "webdriver:spawned",
+      "webdriver:ready",
+      "webdriver:healthy",
+      "application-exit:coordinated",
+      "application-exit:event-loop",
+      "browser-callback:fatal",
+      "browser-helper:cef-supervision-admission",
+    ]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("native CEF diagnostics bound files and ignore unrelated names", async () => {
   const directory = await mkdtemp(join(tmpdir(), "beaver-native-logs-"));
   try {

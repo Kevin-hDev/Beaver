@@ -1,18 +1,18 @@
-use super::cef_supervision::{parse_helper_marker, MacHelperBootstrap};
+use super::cef_supervision::{parse_helper_marker, CefUnavailableCategory, MacHelperBootstrap};
 use cef::{args::Args, *};
 use zeroize::Zeroize;
 
 pub(crate) fn run() -> std::process::ExitCode {
     let mut marker = match parse_helper_marker() {
         Ok(marker) => marker,
-        Err(_) => return std::process::ExitCode::FAILURE,
+        Err(_) => return setup_failed(CefUnavailableCategory::Admission),
     };
     let bootstrap = match MacHelperBootstrap::prepare(
         &marker,
         &super::cef_runtime_policy::cef_supervision_root(),
     ) {
         Ok(bootstrap) => bootstrap,
-        Err(_) => return std::process::ExitCode::FAILURE,
+        Err(category) => return setup_failed(category),
     };
     marker.zeroize();
     let args = Args::new();
@@ -20,15 +20,15 @@ pub(crate) fn run() -> std::process::ExitCode {
     sandbox.initialize(args.as_main_args());
     let admission = match bootstrap.admit_after_sandbox() {
         Ok(admission) => admission,
-        Err(_) => return std::process::ExitCode::FAILURE,
+        Err(category) => return setup_failed(category),
     };
     let executable = match std::env::current_exe() {
         Ok(executable) => executable,
-        Err(_) => return std::process::ExitCode::FAILURE,
+        Err(_) => return setup_failed(CefUnavailableCategory::Object),
     };
     let loader = cef::library_loader::LibraryLoader::new(&executable, true);
     if !loader.load() {
-        return std::process::ExitCode::FAILURE;
+        return setup_failed(CefUnavailableCategory::Sandbox);
     }
     let _ = api_hash(sys::CEF_API_VERSION_LAST, 0);
     let mut app = AdmittedMacHelperApp::new();
@@ -43,6 +43,11 @@ pub(crate) fn run() -> std::process::ExitCode {
     } else {
         std::process::ExitCode::from(code as u8)
     }
+}
+
+fn setup_failed(category: CefUnavailableCategory) -> std::process::ExitCode {
+    eprintln!("[browser-helper] setup failed ({})", category.code());
+    std::process::ExitCode::FAILURE
 }
 
 wrap_app! {

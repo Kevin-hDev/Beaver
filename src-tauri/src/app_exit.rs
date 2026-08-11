@@ -218,6 +218,7 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::
 }
 
 pub(crate) fn post_event_loop(app: &tauri::AppHandle) {
+    ::log::info!("[exit] event loop returned");
     if let Some(coordinator) = app.try_state::<AppExitCoordinator>() {
         coordinator.drain_post_loop();
     }
