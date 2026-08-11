@@ -25,6 +25,7 @@ impl CefPreflightError {
         }
     }
 
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     pub(super) const fn category(self) -> CefUnavailableCategory {
         self.category
     }
