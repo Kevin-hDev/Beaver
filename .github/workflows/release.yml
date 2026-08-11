@@ -233,6 +233,8 @@ jobs:
         shell: pwsh
         env:
           BEAVER_INSTALLER: ${{ steps.paths.outputs.asset }}
+          CARGO_BUILD_TARGET: ${{ matrix.target }}
+          BEAVER_TAURI_BUNDLE_TYPE: ${{ matrix.bundles }}
         run: |
           & scripts/test-install-ps1.ps1
           $installer = (Resolve-Path -LiteralPath $env:BEAVER_INSTALLER).Path
@@ -249,6 +251,9 @@ jobs:
             (Join-Path $installDir "cl-go-dash.dll") `
             (Join-Path $releaseRoot "cl-go-dash.exe") `
             (Join-Path $releaseRoot "cl_go_dash_lib.dll")
+          if ($LASTEXITCODE -ne 0) {
+            throw "Windows package validation failed."
+          }
           & scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
           & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass `
             -File scripts/release/check-nsis-migration.ps1 -Mode Installed -InstallerPath $installer
