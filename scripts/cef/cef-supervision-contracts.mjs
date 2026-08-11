@@ -11,6 +11,7 @@ export function validateCefSupervisionContracts({
   build,
   macHelper,
   macBootstrap,
+  macTrackerLifecycle,
 }) {
   const errors = [];
   requireText(workflow, "backend-windows-native:", "Windows native job is missing", errors);
@@ -44,6 +45,12 @@ export function validateCefSupervisionContracts({
   if (macBootstrap.includes("parent_identity.is_alive")) {
     errors.push("macOS helper must not inspect its parent after sandbox");
   }
+  if (
+    macTrackerLifecycle.includes("Option<CefUnavailableCategory>")
+    && !/^\s*use\b[^;]*\bCefUnavailableCategory\b[^;]*;/mu.test(macTrackerLifecycle)
+  ) {
+    errors.push("macOS tracker lifecycle category type is not in scope");
+  }
   return errors;
 }
 
@@ -53,12 +60,19 @@ function requireText(source, expected, message, errors) {
 
 export async function validateRepository() {
   const root = new URL("../../", import.meta.url);
-  const [workflow, build, macHelper, macBootstrap] = await Promise.all([
+  const [workflow, build, macHelper, macBootstrap, macTrackerLifecycle] = await Promise.all([
     readFile(new URL(".github/workflows/ci.yml", root), "utf8"),
     readFile(new URL("src-tauri/build.rs", root), "utf8"),
     readFile(new URL("src-tauri/src/services/browser/macos_helper_entry.rs", root), "utf8"),
     readFile(
       new URL("src-tauri/src/services/browser/cef_supervision/macos/bootstrap.rs", root),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "src-tauri/src/services/browser/cef_supervision/macos/tracker_lifecycle.rs",
+        root,
+      ),
       "utf8",
     ),
   ]);
@@ -67,6 +81,7 @@ export async function validateRepository() {
     build,
     macHelper,
     macBootstrap,
+    macTrackerLifecycle,
   });
 }
 
