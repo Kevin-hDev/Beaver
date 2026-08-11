@@ -1,0 +1,11 @@
+Tests de chemins temporaires macOS — 2026-08-11
+
+Symptôme : npm run test:cef échouait sur 3 tests de marqueur Tauri et npm test échouait ensuite sur 1 test Cargo target, alors que les validateurs de production fonctionnaient correctement.
+
+Cause racine : os.tmpdir() renvoie /var/... sur cette machine, dont le chemin canonique macOS est /private/var/... ; les fixtures passaient donc un alias à des validateurs qui exigent volontairement un chemin canonique.
+
+Correction : appliquer realpath immédiatement après mkdtemp dans les deux préparations de fixtures. Aucun assouplissement des contrôles de production.
+
+Validation : npm test = 414 fichiers/1889 tests Vitest, 50 tests build, 6 tests CI, 29 tests CEF, 34 tests E2E runner et 53 tests extension host, tous réussis.
+
+Recommandation : toute future fixture destinée à un validateur de chemin canonique doit canoniser sa racine temporaire avant de construire les chemins enfants.
