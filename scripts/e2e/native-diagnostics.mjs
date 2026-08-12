@@ -145,6 +145,12 @@ function safeDiagnostic(line) {
   if (lifecycle && SAFE_LIFECYCLE_STAGES.has(lifecycle[1])) {
     return `application-stage:${lifecycle[1]}`;
   }
+  const capturedLifecycle = line.match(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z INFO tauri-service:service: \[Tauri:Backend(?::[A-Za-z0-9_-]{1,32})?\] ([a-z-]+)$/u,
+  );
+  if (capturedLifecycle && SAFE_LIFECYCLE_STAGES.has(capturedLifecycle[1])) {
+    return `application-stage:${capturedLifecycle[1]}`;
+  }
   const runEvent = line.match(/\[e2e-run-event\] ([a-z-]+)/u);
   if (runEvent && SAFE_RUN_EVENTS.has(runEvent[1])) {
     return `application-event:${runEvent[1]}`;

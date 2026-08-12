@@ -77,6 +77,29 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
   }
 });
 
+test("native diagnostics recognize lifecycle stages normalized by the WDIO writer", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-native-logs-"));
+  try {
+    await writeFile(
+      join(directory, "wdio-normalized.log"),
+      [
+        "2026-08-12T05:52:43.543Z INFO tauri-service:service: [Tauri:Backend:0] setup-completed",
+        "2026-08-12T05:52:43.544Z INFO tauri-service:service: [Tauri:Backend:0] event-loop-entered",
+        "2026-08-12T05:52:43.545Z INFO tauri-service:service: [Tauri:Backend:../../secret] setup-entered",
+        "2026-08-12T05:52:43.546Z INFO tauri-service:service: [Tauri:Backend:0] private-value",
+      ].join("\n"),
+      "utf8",
+    );
+
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
+      "application-stage:setup-completed",
+      "application-stage:event-loop-entered",
+    ]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("native CEF diagnostics bound files and ignore unrelated names", async () => {
   const directory = await mkdtemp(join(tmpdir(), "beaver-native-logs-"));
   try {
