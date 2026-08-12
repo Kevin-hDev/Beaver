@@ -29,6 +29,10 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
     }
     let handle = app.clone();
     let _ = background.spawn_task(move |cancel| async move {
+        let _ = crate::services::gpu_vram::refresh_owned(cancel.clone()).await;
+        if cancel.is_cancelled() {
+            return;
+        }
         let stop_handle = handle.clone();
         let result = tokio::task::spawn_blocking(move || {
             crate::services::ollama_lifecycle::start_sidecar(&handle)

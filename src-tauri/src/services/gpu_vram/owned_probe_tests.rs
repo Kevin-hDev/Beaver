@@ -65,7 +65,6 @@ async fn operational_timeout_reaps_the_probe_process() {
     let admission = supervisor.try_admit().expect("probe admission");
     let cancel = admission.cancellation();
     let (started_tx, started_rx) = tokio::sync::oneshot::channel();
-    let started = std::time::Instant::now();
     let probe = tokio::spawn(async move {
         owned_probe::run_for_test(
             python_spec("import time; time.sleep(30)"),
@@ -75,6 +74,7 @@ async fn operational_timeout_reaps_the_probe_process() {
         .await
     });
     let pid = started_rx.await.expect("probe pid");
+    let started = std::time::Instant::now();
 
     assert!(probe.await.expect("probe task").is_none());
     assert!(started.elapsed() < Duration::from_secs(5));
