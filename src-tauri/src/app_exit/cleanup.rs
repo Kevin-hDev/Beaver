@@ -95,12 +95,11 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             let _ = sidecar.stop_and_wait(deadline).await;
         }
     };
-    let terminal_handle = app.clone();
-    let terminals = super::blocking::execute(move || {
-        if let Some(pty) = terminal_handle.try_state::<services::terminal::PtyManager>() {
-            pty.kill_all();
+    let terminals = async {
+        if let Some(pty) = app.try_state::<services::terminal::PtyManager>() {
+            let _ = pty.stop_and_wait(deadline).await;
         }
-    });
+    };
     let oauth = async {
         if let Some(work) = app.try_state::<services::oauth_work::OAuthWorkServices>() {
             let _ = work.stop_and_wait(deadline).await;

@@ -89,7 +89,7 @@ pub(crate) fn run_inner(
         .manage(runtime.downloads)
         .manage(runtime.app_update)
         .manage(runtime.searxng)
-        .manage(services::terminal::PtyManager::new())
+        .manage(runtime.terminal)
         .manage(services::browser::BrowserRuntimeHandle::default())
         .manage(services::browser::BrowserSessionService::default())
         .manage(services::browser::LocalSiteScanner::default())
