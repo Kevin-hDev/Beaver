@@ -1,0 +1,5 @@
+Raison : un descendant Unix sorti de son groupe pouvait recevoir un signal après réutilisation de son PID ; la comparaison terminal devait utiliser la primitive cryptographique du projet.
+
+Décision : capturer PID + heure de démarrage avec sysinfo, revalider juste avant chaque signal individuel et ignorer toute identité changée ; remplacer le XOR local par subtle::ConstantTimeEq. Les tests sont séparés pour maintenir process_tree.rs à 212 lignes.
+
+TDD : stale_descendant_identity_is_rejected_before_signal a d'abord échoué car UnixProcessIdentity n'existait pas. Vérification finale : ce test 1/1 vert ; terminal_token_accepts_only_the_exact_value 1/1 vert ; git diff --check vert ; fichiers métier 212, 60 et 46 lignes. cargo check standard reste non exécuté localement car l'archive CEF manque et son téléchargement échoue avec Hôte inconnu ; la compilation de test officielle windows-tests est verte.
