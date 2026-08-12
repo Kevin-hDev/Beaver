@@ -72,6 +72,22 @@ async fn silent_connection_does_not_delay_the_valid_callback() {
     );
 }
 
+#[tokio::test]
+async fn cancelled_wait_releases_the_owned_listener_before_returning() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = CallbackServer {
+        listener,
+        port: address.port(),
+    };
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+
+    assert!(server.wait(STATE, &cancel).await.is_err());
+    let rebound = TcpListener::bind(address).await.unwrap();
+    drop(rebound);
+}
+
 async fn send(address: std::net::SocketAddr, request: &str) {
     let mut stream = TcpStream::connect(address).await.unwrap();
     stream.write_all(request.as_bytes()).await.unwrap();

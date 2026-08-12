@@ -46,8 +46,6 @@ async fn cleanup_services(app: &tauri::AppHandle, deadline: Instant) {
         downloads.cancel_all().await;
     }
     services::agent_local::tool_bash_profile::clear();
-    services::mcp_oauth::flow::cancel_all();
-
     let services_phase = stop_services(app, deadline);
     let ollama_handle = app.clone();
     let ollama_phase = async move {
@@ -88,10 +86,13 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             pty.kill_all();
         }
     });
+    let oauth = async {
+        if let Some(work) = app.try_state::<services::oauth_work::OAuthWorkServices>() {
+            let _ = work.stop_and_wait(deadline).await;
+        }
+    };
 
     let _ = tokio::join!(
-        services::oauth_providers::cancel_all(),
-        services::codex_oauth::login::cancel_login(),
         services::agent_local::tool_bash_registry::stop_all(),
         services::mcp_bridge::process_manager::stop_and_wait(deadline),
         services::extensions::stop_and_wait(deadline),
@@ -100,6 +101,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
         chronos,
         searxng,
         terminals,
+        oauth,
         agent_work,
     );
 }

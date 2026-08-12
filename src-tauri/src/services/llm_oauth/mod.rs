@@ -13,6 +13,8 @@ mod xai;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 
+use crate::services::work_registry::ServiceWorkCancellation;
+
 pub use device_flow::DeviceFlowConfig;
 pub use headers::request_headers_for;
 pub use types::{AccessToken, DeviceAuthorization, LlmOAuthProvider, OAuthFailure, TokenBundle};
@@ -31,13 +33,23 @@ struct LoginProgress<'a> {
     user_code: Option<&'a str>,
 }
 
-pub async fn login(app: AppHandle, provider: LlmOAuthProvider) -> Result<(), String> {
+pub async fn login(
+    app: AppHandle,
+    provider: LlmOAuthProvider,
+    work_cancel: ServiceWorkCancellation,
+) -> Result<(), String> {
     let cancel = login_registry::register(provider).await?;
     let expected_generation = store::generation(provider);
     emit_progress(&app, provider, "starting", None, None);
-    let result = match provider {
-        LlmOAuthProvider::Xai => xai::login(&app, &cancel).await,
-        LlmOAuthProvider::Kimi => kimi::login(&app, &cancel).await,
+    let provider_login = async {
+        match provider {
+            LlmOAuthProvider::Xai => xai::login(&app, &cancel).await,
+            LlmOAuthProvider::Kimi => kimi::login(&app, &cancel).await,
+        }
+    };
+    let result = tokio::select! {
+        result = provider_login => result,
+        _ = work_cancel.cancelled() => Err(OAuthFailure::Cancelled),
     };
     let outcome = match result {
         Ok(tokens) => {
@@ -73,10 +85,6 @@ pub async fn login(app: AppHandle, provider: LlmOAuthProvider) -> Result<(), Str
 
 pub async fn cancel(provider: LlmOAuthProvider) {
     login_registry::cancel(provider).await;
-}
-
-pub async fn cancel_all() {
-    login_registry::cancel_all().await;
 }
 
 pub async fn logout(provider: LlmOAuthProvider) -> Result<(), String> {

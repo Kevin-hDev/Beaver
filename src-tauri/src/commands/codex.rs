@@ -3,8 +3,21 @@ use crate::services::llm::types::ModelInfo;
 use tauri::Emitter;
 
 #[tauri::command]
-pub async fn codex_login(app: tauri::AppHandle) -> Result<String, String> {
-    let result = login::login().await;
+pub async fn codex_login(
+    app: tauri::AppHandle,
+    work: tauri::State<'_, crate::services::oauth_work::OAuthWorkServices>,
+) -> Result<String, String> {
+    codex_login_with_work(app, &work).await
+}
+
+pub(crate) async fn codex_login_with_work(
+    app: tauri::AppHandle,
+    work: &crate::services::oauth_work::OAuthWorkServices,
+) -> Result<String, String> {
+    let result = work
+        .run(login::login)
+        .await
+        .map_err(|_| "Connexion impossible".to_string())?;
     if result.is_ok() {
         crate::services::codex_client::model_catalog::invalidate().await;
         let _ = app.emit("codex-auth-changed", ());

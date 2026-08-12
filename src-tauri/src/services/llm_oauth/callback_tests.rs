@@ -30,7 +30,23 @@ fn validates_state_in_constant_time_helper() {
 #[tokio::test]
 async fn fixed_callback_port_reports_unavailable_for_device_fallback() {
     let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
-    let result = start(Zeroizing::new(STATE.to_string()), CancellationToken::new()).await;
+    let result = CallbackServer::bind(Zeroizing::new(STATE.to_string())).await;
     assert!(matches!(result, Err(OAuthFailure::Generic)));
     drop(listener);
+}
+
+#[tokio::test]
+async fn cancelled_wait_releases_the_owned_listener_before_returning() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = CallbackServer {
+        listener,
+        expected_state: Zeroizing::new(STATE.to_string()),
+    };
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+
+    assert_eq!(server.wait(&cancel).await, Err(OAuthFailure::Cancelled));
+    let rebound = tokio::net::TcpListener::bind(address).await.unwrap();
+    drop(rebound);
 }
