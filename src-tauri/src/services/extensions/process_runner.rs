@@ -57,8 +57,11 @@ pub fn run(
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     configure_environment(&mut command, path, temporary_directory)?;
-    crate::services::process_tree::configure(&mut command);
-    let mut child = command.spawn().map_err(|_| ProcessFailure::Unavailable)?;
+    let mut child = crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        crate::services::process_tree::ProcessKind::ExtensionInstaller,
+    )
+    .map_err(|_| ProcessFailure::Unavailable)?;
     let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait() {

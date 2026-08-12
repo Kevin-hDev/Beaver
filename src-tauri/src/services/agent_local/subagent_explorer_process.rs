@@ -40,8 +40,12 @@ pub async fn run(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    super::tool_bash_platform::configure_process_group(&mut command);
-    let mut child = match command.spawn() {
+    let mut child = match crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::AgentShell,
+    )
+    .await
+    {
         Ok(child) => child,
         Err(_) => {
             super::shell_sandbox::cleanup_temp(cleanup_dir).await;

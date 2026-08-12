@@ -29,12 +29,13 @@ pub(super) async fn spawn_program(
     for (key, value) in env_tokens {
         command.env(key, value.as_str());
     }
-    crate::services::process_tree::configure_tokio(&mut command);
-
-    let mut child = command
-        .kill_on_drop(true)
-        .spawn()
-        .map_err(|_| "impossible de démarrer le connecteur MCP".to_string())?;
+    command.kill_on_drop(true);
+    let mut child = crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::Mcp,
+    )
+    .await
+    .map_err(|_| "impossible de démarrer le connecteur MCP".to_string())?;
     let Some(stdin) = child.stdin.take() else {
         reap_failed_spawn(&mut child).await;
         return Err("stdin indisponible".to_string());

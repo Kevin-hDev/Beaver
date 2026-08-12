@@ -51,9 +51,11 @@ pub fn spawn_process(
     for (key, value) in launch.env_vars() {
         cmd.env(key, value);
     }
-    crate::services::process_tree::configure(&mut cmd);
-    cmd.spawn()
-        .map_err(|_| "Impossible de lancer le sidecar Forecast".to_string())
+    crate::services::owned_process::OwnedProcess::spawn(
+        &mut cmd,
+        crate::services::process_tree::ProcessKind::Forecast,
+    )
+    .map_err(|_| "Impossible de lancer le sidecar Forecast".to_string())
 }
 
 pub async fn wait_until_ready(

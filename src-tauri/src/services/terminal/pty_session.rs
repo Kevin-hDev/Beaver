@@ -56,10 +56,20 @@ impl PtySession {
             command.cwd(directory);
         }
 
-        let child = pair
+        let mut child = pair
             .slave
             .spawn_command(command)
             .map_err(|_| terminal_error())?;
+        let pid = child.process_id().ok_or_else(terminal_error)?;
+        if crate::services::owned_process::OwnedProcess::adopt_existing(pid).is_err() {
+            crate::services::process_tree::kill(
+                pid,
+                crate::services::process_tree::ProcessKind::Terminal,
+            );
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(terminal_error());
+        }
         let reader = pair
             .master
             .try_clone_reader()

@@ -9,3 +9,8 @@ pub fn e2e_request_exit(app: tauri::AppHandle) {
         crate::app_exit::request(&app, 0);
     });
 }
+
+#[tauri::command]
+pub fn e2e_native_webviews() -> crate::services::browser::process_role::NativeWebViewObservation {
+    crate::services::browser::observe_native_webviews()
+}

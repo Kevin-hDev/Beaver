@@ -206,6 +206,12 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::
 
 pub(crate) fn post_event_loop(app: &tauri::AppHandle) {
     ::log::info!("[exit] event loop returned");
+    let webviews = crate::services::browser::observe_native_webviews();
+    ::log::info!(
+        "[exit] native WebView descendants={} shared-system={}",
+        webviews.dedicated_pids.len(),
+        webviews.shared_system_count
+    );
     if let Some(coordinator) = app.try_state::<AppExitCoordinator>() {
         coordinator.drain_post_loop();
     }

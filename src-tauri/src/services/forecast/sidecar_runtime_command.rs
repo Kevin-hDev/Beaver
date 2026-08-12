@@ -50,8 +50,11 @@ pub(super) fn run_cancellable(
     message: &str,
 ) -> Result<(), String> {
     command.stdout(Stdio::null()).stderr(Stdio::null());
-    process_tree::configure(command);
-    let mut child = command.spawn().map_err(|_| message.to_string())?;
+    let mut child = crate::services::owned_process::OwnedProcess::spawn(
+        command,
+        process_tree::ProcessKind::ForecastRuntime,
+    )
+    .map_err(|_| message.to_string())?;
     loop {
         if cancel.is_cancelled() {
             process_tree::terminate(&mut child, process_tree::ProcessKind::ForecastRuntime);

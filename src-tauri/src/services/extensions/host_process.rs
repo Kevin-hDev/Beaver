@@ -36,10 +36,12 @@ impl HostProcess {
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .kill_on_drop(true);
-        crate::services::process_tree::configure_tokio(&mut command);
-        let mut child = command
-            .spawn()
-            .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())?;
+        let mut child = crate::services::owned_process::OwnedProcess::spawn_tokio(
+            &mut command,
+            crate::services::process_tree::ProcessKind::ExtensionHost,
+        )
+        .await
+        .map_err(|_| error_codes::HOST_UNAVAILABLE.to_string())?;
         let stdin = child
             .stdin
             .take()

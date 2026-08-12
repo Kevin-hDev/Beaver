@@ -88,8 +88,9 @@ pub fn spawn_test_fixture() -> Result<Child, String> {
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
-    process_tree::configure(&mut command);
-    command
-        .spawn()
-        .map_err(|_| "fixture Forecast indisponible".to_string())
+    crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        process_tree::ProcessKind::Forecast,
+    )
+    .map_err(|_| "fixture Forecast indisponible".to_string())
 }

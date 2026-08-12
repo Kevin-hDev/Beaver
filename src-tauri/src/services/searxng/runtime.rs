@@ -105,7 +105,6 @@ async fn install_requirements(
 }
 
 async fn run(mut command: Command, cancel: &ServiceWorkCancellation) -> Result<(), String> {
-    crate::services::process_tree::configure_tokio(&mut command);
     command
         .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
         .env("PIP_NO_INPUT", "1")
@@ -114,9 +113,12 @@ async fn run(mut command: Command, cancel: &ServiceWorkCancellation) -> Result<(
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .kill_on_drop(true);
-    let mut child = command
-        .spawn()
-        .map_err(|_| "SearXNG: runtime indisponible".to_string())?;
+    let mut child = crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::Searxng,
+    )
+    .await
+    .map_err(|_| "SearXNG: runtime indisponible".to_string())?;
     let status = tokio::select! {
         result = child.wait() => result.map_err(|_| "SearXNG: runtime indisponible".to_string())?,
         _ = cancel.cancelled() => {
