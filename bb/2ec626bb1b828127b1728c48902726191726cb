@@ -3,3 +3,20 @@ Raison : l'audit final des 76 fichiers de production modifiés a trouvé discord
 Décision : extraire le décodage et le traitement des événements Discord dans discord_events.rs. discord.rs conserve la connexion et le cycle de vie ; le nouveau module possède les événements READY, HELLO et MESSAGE_CREATE. Aucun délai ni comportement réseau n'est dupliqué.
 
 Preuves : tests gateway 148/148 ; cargo fmt --check vert ; git diff --check vert ; graphify update . vert.
+
+Audit final des 35 obligations :
+- 1-2 : corrigé par ba16c48.
+- 3-4 et 12-13 : corrigé par 13ffbc0.
+- 5-6 et 27-28 (extensions) : corrigé par 844e171.
+- 10, 14, 16, 18-19 : corrigé par e6547c0.
+- 15, 17, 20-21 : corrigé par 1176a5d.
+- 22-23 et 35 (OAuth Codex) : corrigé par 9ad0c32.
+- 24-25 et 27 (MCP) : corrigé par 572e341.
+- 7-9 et 11 : corrigé par 4a1377f.
+- 29-31 : corrigé par 91cc38b.
+- 32 : corrigé par b36b940.
+- 26 et 35 (sous-agents) : corrigé par f27b68c.
+- 33-34 : corrigé par 21bd2a8.
+- Contrôles stricts découverts en vérification : corrigés par 84aa9f8.
+- Limite de 230 lignes : corrigée par bb2ec62.
+Aucune obligation classée déjà conforme ou non applicable : chacune possède un correctif et une preuve dans la note du commit indiqué.
