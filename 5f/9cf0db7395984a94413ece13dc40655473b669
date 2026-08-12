@@ -1,0 +1,7 @@
+Reason: strict native Clippy sees cfg-specific code that the local Windows profile cannot lint. The fixes preserve wire behavior while making ownership and the intentional subprocess exception explicit.
+
+RED: PR 14 run 31612936422 failed strict Clippy on Linux, Windows CEF, and macOS CEF. Findings were: the legacy deserialization-only wakeup error field looked unread, every uninstall boundary ended in Removed, and the Unix parent-death probe intentionally did not wait for its child.
+
+GREEN: the changed-file rustfmt contract passed locally. Scheduler tests passed 36/36 and Forecast model-manager tests passed 20/20. The legacy JSON name remains error but maps to _legacy_error and is never serialized; all production files remain below 230 lines. The Unix-only lint expectation is precise and will be proved by the next native Clippy run.
+
+Graph: graphify update . completed at 31397 nodes / 63235 edges.
