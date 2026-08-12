@@ -21,6 +21,10 @@ fn owned_child_dies_with_real_parent() {
 
 #[test]
 #[ignore = "subprocess entry point"]
+#[expect(
+    clippy::zombie_processes,
+    reason = "the probe parent must exit without waiting to exercise parent-death behavior"
+)]
 fn parent_probe() {
     let mode = std::env::var(MODE_ENV).expect("probe mode");
     let ready = required_path(READY_ENV);

@@ -146,7 +146,7 @@ fn cancelled_and_claim_error_entries_are_sanitized() {
     let scheduled_for = chrono::Local::now();
     let cancelled = super::log::cancelled_entry_for_test("once", scheduled_for);
     assert_eq!(cancelled.status, WakeupRunStatus::Cancelled);
-    assert!(cancelled.error.is_none());
+    assert!(cancelled._legacy_error.is_none());
     assert!(cancelled.error_code.is_none());
 
     let error = super::log::error_entry_for_test(
@@ -156,7 +156,7 @@ fn cancelled_and_claim_error_entries_are_sanitized() {
     );
     assert_eq!(error.status, WakeupRunStatus::Error);
     assert_eq!(error.error_code, Some(WakeupRunErrorCode::Failed));
-    assert!(error.error.is_none());
+    assert!(error._legacy_error.is_none());
 }
 
 #[tokio::test]

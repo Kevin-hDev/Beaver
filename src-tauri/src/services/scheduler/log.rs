@@ -29,7 +29,7 @@ pub async fn log_ok(
         fired_at: Utc::now().to_rfc3339(),
         status: WakeupRunStatus::Ok,
         error_code: None,
-        error: None,
+        _legacy_error: None,
         session_id: Some(safe_id(session_id)),
         tokens: Some(tokens),
     })
@@ -73,7 +73,7 @@ fn missed_entry(wakeup_id: &str, scheduled_for: DateTime<Local>) -> WakeupRun {
         fired_at: Utc::now().to_rfc3339(),
         status: WakeupRunStatus::Missed,
         error_code: Some(WakeupRunErrorCode::MissedUnavailable),
-        error: None,
+        _legacy_error: None,
         session_id: None,
         tokens: None,
     }
@@ -94,7 +94,7 @@ fn cancelled_entry(wakeup_id: &str, scheduled_for: DateTime<Local>) -> WakeupRun
         fired_at: Utc::now().to_rfc3339(),
         status: WakeupRunStatus::Cancelled,
         error_code: None,
-        error: None,
+        _legacy_error: None,
         session_id: None,
         tokens: None,
     }
@@ -111,7 +111,7 @@ fn error_entry(
         fired_at: Utc::now().to_rfc3339(),
         status: WakeupRunStatus::Error,
         error_code: Some(code),
-        error: None,
+        _legacy_error: None,
         session_id: None,
         tokens: None,
     }
