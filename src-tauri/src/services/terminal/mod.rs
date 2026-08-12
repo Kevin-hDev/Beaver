@@ -2,6 +2,7 @@ mod manager;
 mod owned_session;
 pub mod pty_session;
 mod public_error;
+mod shutdown;
 
 pub use manager::{PtyChannelEvent, PtyManager};
 

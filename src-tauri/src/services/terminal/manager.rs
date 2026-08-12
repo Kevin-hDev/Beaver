@@ -138,15 +138,12 @@ impl PtyManager {
             state.closing = true;
             state.sessions.drain().map(|(_, owned)| owned).collect()
         };
-        let close = tokio::task::spawn_blocking(move || {
+        let close = super::shutdown::run_until(deadline, move || {
             for owned in sessions {
                 owned.close();
             }
         });
-        if tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), close)
-            .await
-            .is_err()
-        {
+        if !close.await {
             return false;
         }
         self.work.stop_and_wait(deadline).await
