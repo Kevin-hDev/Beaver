@@ -1,0 +1,5 @@
+Raison : la vérification stricte finale a révélé trois écarts propres à la branche : un test Forecast dont le type explicite déclenchait type_complexity, une aide de test compilée hors cfg(test), et un map_err utilisé seulement pour tracer une erreur scheduler.
+
+Décision : exercer directement le contrat Zeroizing, borner l'aide de processus au profil test et utiliser inspect_err afin que l'erreur reste propagée sans transformation. Aucun comportement de production n'est affaibli.
+
+Preuves : Forecast 292/292 ; scheduler 40/40 ; cargo fmt --check vert ; le second clippy ne rapporte plus ces trois écarts et reste bloqué uniquement par les erreurs CEF/Windows préexistantes du profil all-targets.
