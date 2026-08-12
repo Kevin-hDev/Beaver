@@ -39,8 +39,8 @@ pub fn get(
     process_id: &str,
     owner_session_id: &str,
 ) -> Result<(Arc<ShellSession>, RegisteredCommand), String> {
-    let parsed = uuid::Uuid::parse_str(process_id)
-        .map_err(|_| "Session shell introuvable.".to_string())?;
+    let parsed =
+        uuid::Uuid::parse_str(process_id).map_err(|_| "Session shell introuvable.".to_string())?;
     let process_id = parsed.to_string();
     let mut sessions = lock_sessions();
     let Some(position) = sessions.iter().position(|entry| {

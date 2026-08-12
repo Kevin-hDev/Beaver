@@ -7,10 +7,12 @@ use tauri::Manager;
 pub async fn backtest(args: &Value) -> ToolResult {
     let request: BacktestRequest = match serde_json::from_value(args.clone()) {
         Ok(request) => request,
-        Err(_) => return ToolResult::validation(
-            "forecast_backtest_request_invalid",
-            "Paramètres de backtest invalides",
-        ),
+        Err(_) => {
+            return ToolResult::validation(
+                "forecast_backtest_request_invalid",
+                "Paramètres de backtest invalides",
+            )
+        }
     };
     let Some(app) = super::app_handle_global::get() else {
         return ToolResult::unavailable(
@@ -31,19 +33,18 @@ pub async fn backtest(args: &Value) -> ToolResult {
             crate::services::forecast::events::emit_updated(app, &analysis);
             comparison_payload(&analysis)
         }
-        Err(error) => ToolResult::external(
-            "forecast_backtest_failed",
-            error,
-            false,
-        )
-        .with_error_hint(
-            "Relire l'analyse avant de relancer : le backtest peut avoir été enregistré.",
-        ),
+        Err(error) => ToolResult::external("forecast_backtest_failed", error, false)
+            .with_error_hint(
+                "Relire l'analyse avant de relancer : le backtest peut avoir été enregistré.",
+            ),
     }
 }
 
 pub async fn compare(args: &Value) -> ToolResult {
-    let Some(id) = args["analysis_id"].as_str().filter(|id| !id.trim().is_empty()) else {
+    let Some(id) = args["analysis_id"]
+        .as_str()
+        .filter(|id| !id.trim().is_empty())
+    else {
         return ToolResult::validation(
             "forecast_analysis_id_required",
             "Identifiant d'analyse requis",
