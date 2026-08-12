@@ -1,0 +1,1 @@
+Strict verification follow-up: the consumer no longer receives a duplicate cancellation token; it derives it from the single GatewayWorkServices owner. This also restores the seven-argument limit without suppressing Clippy. Evidence: gateway backpressure 3/3; cargo clippy --all-targets -- -D warnings.
