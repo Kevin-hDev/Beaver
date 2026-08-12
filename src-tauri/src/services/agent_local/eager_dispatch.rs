@@ -50,14 +50,7 @@ async fn collect_eager_results_with<Dispatch, DispatchFuture>(
     dispatch: Dispatch,
 ) -> HashMap<usize, ToolResult>
 where
-    Dispatch: Fn(
-            String,
-            serde_json::Value,
-            PathBuf,
-            String,
-            CancellationToken,
-            bool,
-        ) -> DispatchFuture
+    Dispatch: Fn(String, serde_json::Value, PathBuf, String, CancellationToken, bool) -> DispatchFuture
         + Clone
         + Send
         + 'static,
@@ -90,15 +83,8 @@ where
                 None,
             )
             .await;
-            let result = task_dispatch(
-                name.clone(),
-                args,
-                wd,
-                sid.clone(),
-                task_cancel,
-                chat_mode,
-            )
-            .await;
+            let result =
+                task_dispatch(name.clone(), args, wd, sid.clone(), task_cancel, chat_mode).await;
             super::stream_diagnostics::record_tool(
                 &sid,
                 &rid,
