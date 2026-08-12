@@ -216,3 +216,18 @@ async fn service_owner_binds_global_and_local_admission_once() {
         ServiceWorkAdmissionError::Closing
     );
 }
+
+#[test]
+fn service_probe_checks_both_gates_without_consuming_a_local_slot() {
+    let (_coordinator, app) = supervisor();
+    let service = ServiceWorkSupervisor::<1>::new(app);
+
+    service.try_probe().expect("open service probe");
+    assert_eq!(service.diagnostics().active, 0);
+    service.begin_closing();
+    assert_eq!(
+        service.try_probe().expect_err("closed service probe"),
+        ServiceWorkAdmissionError::Closing
+    );
+    assert_eq!(service.diagnostics().closing_refusals, 1);
+}
