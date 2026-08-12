@@ -1,0 +1,5 @@
+Raison : la CI utilise Rust 1.97.1 tandis que la machine locale dispose de Rust 1.94 ; rustfmt 1.97 impose un regroupement différent dans le test de retry de réflexion.
+
+Décision : appliquer exactement l'unique diff produit par cargo fmt --check en CI. Le changement est purement typographique et ne modifie aucun comportement.
+
+Preuves : le journal CI identifie une seule différence ; le test interrupted_thinking_retry_keeps_interrupted_outcome passe 1/1 ; git diff --check et graphify update . sont verts. La prochaine CI constitue l'autorité de format Rust 1.97.
