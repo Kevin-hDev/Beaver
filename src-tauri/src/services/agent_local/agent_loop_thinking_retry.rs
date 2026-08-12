@@ -116,12 +116,11 @@ mod tests {
     use super::*;
     #[test]
     fn interrupted_thinking_retry_keeps_interrupted_outcome() {
-        let (result, interrupted) = split_retry_outcome(
-            StreamOutcome::InterruptedForCompression(StreamResult {
+        let (result, interrupted) =
+            split_retry_outcome(StreamOutcome::InterruptedForCompression(StreamResult {
                 content: "partiel".into(),
                 ..Default::default()
-            }),
-        );
+            }));
 
         assert_eq!(result.content, "partiel");
         assert!(interrupted);
