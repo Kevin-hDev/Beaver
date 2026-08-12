@@ -129,3 +129,23 @@ async fn cancelling_before_publication_reaps_the_spawned_sidecar() {
     .await
     .expect("unpublished sidecar reaped on cancellation");
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn reuse_allows_the_full_four_second_health_budget() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let sidecar = ChronosSidecar::new(coordinator.work_supervisor());
+    sidecar
+        .start_test_process_for_test()
+        .await
+        .expect("real Forecast fixture");
+
+    let reused = sidecar
+        .probe_running_for_test(|port, _token| {
+            std::thread::sleep(Duration::from_millis(3_500));
+            Some((port, "fixture".to_string(), "fixture".to_string()))
+        })
+        .await;
+    super::sidecar_stop::stop_state(&sidecar, Instant::now() + Duration::from_secs(1)).await;
+
+    assert!(reused, "reuse ended before the health probe's own budget");
+}

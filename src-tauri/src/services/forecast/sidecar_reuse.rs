@@ -1,9 +1,6 @@
 use super::sidecar::{ChronosSidecar, SidecarEndpoint, SidecarHandle};
 use super::sidecar_settings::LaunchSettings;
-use std::time::Duration;
 use zeroize::Zeroizing;
-
-const HEALTH_PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
 struct RunningIdentity {
     port: u16,
@@ -69,7 +66,7 @@ where
     };
     let probe_port = identity.port;
     let health = tokio::time::timeout(
-        HEALTH_PROBE_TIMEOUT,
+        super::sidecar_http::HEALTH_PROBE_BUDGET,
         tokio::task::spawn_blocking(move || probe(probe_port, probe_token)),
     )
     .await
