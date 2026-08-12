@@ -8,12 +8,13 @@ use std::collections::HashMap;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
 const READER_STOP_TIMEOUT: Duration = Duration::from_secs(1);
+pub(super) const HOST_STOP_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct HostProcess {
     child: Mutex<Child>,
@@ -127,20 +128,62 @@ impl HostProcess {
         }
     }
 
-    pub async fn kill(&self) {
+    pub async fn kill(&self, deadline: Instant) -> bool {
         self.alive.store(false, Ordering::Release);
-        let mut child = self.child.lock().await;
-        crate::services::process_tree::terminate_tokio(
-            &mut child,
-            crate::services::process_tree::ProcessKind::ExtensionHost,
+        let Ok(mut child) =
+            tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), self.child.lock())
+                .await
+        else {
+            return false;
+        };
+        let terminated = tokio::time::timeout_at(
+            tokio::time::Instant::from_std(deadline),
+            crate::services::process_tree::terminate_tokio(
+                &mut child,
+                crate::services::process_tree::ProcessKind::ExtensionHost,
+            ),
         )
-        .await;
+        .await
+        .is_ok();
         drop(child);
-        host_channel::fail_all(&self.pending).await;
-        if let Some(reader_done) = self.reader_done.lock().await.take() {
-            let _ = tokio::time::timeout(READER_STOP_TIMEOUT, reader_done).await;
-        }
+        let pending_failed = tokio::time::timeout_at(
+            tokio::time::Instant::from_std(deadline),
+            host_channel::fail_all(&self.pending),
+        )
+        .await
+        .is_ok();
+        terminated && pending_failed && wait_reader_done(&self.reader_done, deadline).await
     }
+}
+
+pub(super) async fn wait_reader_done(
+    reader_done: &Mutex<Option<tokio::sync::oneshot::Receiver<()>>>,
+    deadline: Instant,
+) -> bool {
+    let reader_deadline = deadline.min(Instant::now() + READER_STOP_TIMEOUT);
+    let Ok(mut slot) = tokio::time::timeout_at(
+        tokio::time::Instant::from_std(reader_deadline),
+        reader_done.lock(),
+    )
+    .await
+    else {
+        return false;
+    };
+    let Some(receiver) = slot.as_mut() else {
+        return true;
+    };
+    if tokio::time::timeout_at(tokio::time::Instant::from_std(reader_deadline), receiver)
+        .await
+        .is_err()
+    {
+        return false;
+    }
+    slot.take();
+    true
+}
+
+pub(super) fn stop_deadline() -> Instant {
+    Instant::now() + HOST_STOP_TIMEOUT
 }
 
 #[cfg(test)]

@@ -157,7 +157,7 @@ async fn invalidate(failed: &Arc<HostProcess>) {
         }
     };
     if let Some(host) = removed {
-        host.kill().await;
+        host.kill(super::host_process::stop_deadline()).await;
         runtime.set_state(
             HostState::Error,
             Some("Hôte d'extensions indisponible.".to_string()),
