@@ -62,12 +62,9 @@ mod tests {
             .unwrap();
         let completing_child = child.clone();
         let completion = tokio::spawn(async move {
-            complete_child(
-                &completing_child,
-                SubagentTerminalKind::ReportPersisted,
-            )
-            .await
-            .unwrap();
+            complete_child(&completing_child, SubagentTerminalKind::ReportPersisted)
+                .await
+                .unwrap();
         });
         let terminal = loop {
             let snapshot = parent_snapshot(&parent).await;
@@ -83,12 +80,7 @@ mod tests {
             tokio::task::yield_now().await;
         };
         completion.await.unwrap();
-        assert!(consume_terminal(
-            &parent,
-            terminal.generation,
-            terminal.sequence,
-        )
-        .await);
+        assert!(consume_terminal(&parent, terminal.generation, terminal.sequence,).await);
 
         // --- cancel_one ---
         let parent = uid();
@@ -128,7 +120,10 @@ mod tests {
         .await
         .err()
         .expect("the first admission over the production total must fail");
-        assert_eq!(error, format!("Limite de {MAX_TOTAL} sous-agents actifs atteinte"));
+        assert_eq!(
+            error,
+            format!("Limite de {MAX_TOTAL} sous-agents actifs atteinte")
+        );
         for child in registered_children {
             unregister(&child).await;
         }
