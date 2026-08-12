@@ -104,7 +104,7 @@ async fn download_app_update_inner(
         let _ = on_progress.send(progress);
     })
     .await?;
-    let helper = spawn_update_helper(&app, tmp.path(), &cancellation)?;
+    let helper = spawn_update_helper(&app, tmp.path(), &cancellation).await?;
     helper.commit(updates.handoff(), &cancellation)?;
     let _ = tmp.persist();
     crate::app_exit::request(&app, 0);

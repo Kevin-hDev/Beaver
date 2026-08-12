@@ -27,6 +27,9 @@ pub enum ProcessKind {
     UpdateHelper,
 }
 
+#[cfg(all(test, target_os = "linux"))]
+#[path = "process_tree_unix_tests.rs"]
+mod linux_parent_death_tests;
 #[cfg(all(test, windows))]
 #[path = "process_tree_windows_tests.rs"]
 mod windows_tests;
@@ -168,6 +171,15 @@ fn signal_tree(pid: u32, force: bool) {
         }
         libc::kill(raw_pid, signal);
     }
+}
+
+pub fn configure_update_helper(command: &mut Command) {
+    // Le helper applique la mise à jour après la mort de Beaver : le signal
+    // Linux de mort du parent annulerait précisément le travail transféré.
+    #[cfg(unix)]
+    command.process_group(0);
+    #[cfg(windows)]
+    crate::services::background_command::configure(command);
 }
 
 #[cfg(target_os = "linux")]

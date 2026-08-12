@@ -8,7 +8,18 @@ use std::path::Path;
 use std::process::{Child, Stdio};
 use tauri::Manager;
 
-pub(crate) fn spawn_update_helper(
+pub(crate) async fn spawn_update_helper(
+    app: &tauri::AppHandle,
+    asset: &Path,
+    cancellation: &ServiceWorkCancellation,
+) -> Result<SpawnedUpdateHelper, String> {
+    let app = app.clone();
+    let asset = asset.to_path_buf();
+    let cancellation = cancellation.clone();
+    run_helper_operation(move || spawn_update_helper_blocking(&app, &asset, &cancellation)).await?
+}
+
+fn spawn_update_helper_blocking(
     app: &tauri::AppHandle,
     asset: &Path,
     cancellation: &ServiceWorkCancellation,
@@ -40,7 +51,7 @@ pub(crate) fn spawn_update_helper(
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    crate::services::process_tree::configure(&mut command);
+    crate::services::process_tree::configure_update_helper(&mut command);
     check_cancelled(cancellation)?;
     let mut child = command.spawn().map_err(|_| install_error())?;
     let identity = ProcessIdentity::capture_child(child.id(), std::process::id(), helper.path());
@@ -60,6 +71,16 @@ pub(crate) fn spawn_update_helper(
         helper: Some(helper),
         identity: identity.expect("identity checked above"),
     })
+}
+
+async fn run_helper_operation<Operation, Output>(operation: Operation) -> Result<Output, String>
+where
+    Operation: FnOnce() -> Output + Send + 'static,
+    Output: Send + 'static,
+{
+    tokio::task::spawn_blocking(operation)
+        .await
+        .map_err(|_| install_error())
 }
 
 pub(crate) struct SpawnedUpdateHelper {
