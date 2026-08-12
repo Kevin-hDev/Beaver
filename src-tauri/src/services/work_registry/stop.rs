@@ -1,6 +1,6 @@
 use super::{ServiceWorkKey, ServiceWorkPhase, ServiceWorkSupervisor, WorkRegistry};
 use std::time::Instant;
-use tokio::task::JoinHandle;
+use tauri::async_runtime::JoinHandle;
 
 struct StopBatch<const CAPACITY: usize> {
     registry: WorkRegistry<CAPACITY>,

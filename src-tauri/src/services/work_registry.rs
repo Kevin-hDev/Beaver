@@ -3,8 +3,8 @@ mod task;
 
 use crate::app_exit::{AppWorkAdmission, AppWorkSupervisor};
 use std::sync::{Arc, Mutex, MutexGuard};
+use tauri::async_runtime::JoinHandle;
 use tokio::sync::{Mutex as AsyncMutex, Notify};
-use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

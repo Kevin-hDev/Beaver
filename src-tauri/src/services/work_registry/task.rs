@@ -49,7 +49,9 @@ impl<const CAPACITY: usize> ServiceWorkAdmission<CAPACITY> {
             drop(self);
             return Err(ServiceWorkAdmissionError::Closing);
         }
-        let handle = tokio::spawn(async move {
+        // Le démarrage Tauri est synchrone : son runtime global est l'unique
+        // autorité capable de lancer ce travail avec ou sans runtime Tokio entré.
+        let handle = tauri::async_runtime::spawn(async move {
             drop(self.run(work(cancellation)).await);
         });
         let slot = &mut state.slots[key.index];
