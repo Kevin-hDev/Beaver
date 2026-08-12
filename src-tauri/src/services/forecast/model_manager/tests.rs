@@ -156,9 +156,9 @@ async fn runtime_cleanup_failure_leaves_only_an_unused_runtime() {
 #[tokio::test]
 async fn every_uninstall_boundary_preserves_the_model_runtime_invariant() {
     for boundary in [
-        UninstallBoundary::StagingRemoved,
-        UninstallBoundary::ModelRemoved,
-        UninstallBoundary::RuntimeRemoved,
+        UninstallBoundary::Staging,
+        UninstallBoundary::Model,
+        UninstallBoundary::Runtime,
     ] {
         let temp = tempfile::tempdir().unwrap();
         let models = temp.path().join("models");

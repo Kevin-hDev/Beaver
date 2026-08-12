@@ -4,9 +4,9 @@ use std::path::Path;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum UninstallBoundary {
-    StagingRemoved,
-    ModelRemoved,
-    RuntimeRemoved,
+    Staging,
+    Model,
+    Runtime,
 }
 
 pub async fn uninstall(model_id: &str) -> Result<(), String> {
@@ -34,14 +34,14 @@ async fn uninstall_transaction(
     fs_safety::remove_path(&staging)
         .await
         .map_err(|_| "Suppression du modèle Forecast impossible".to_string())?;
-    fail_if_requested(fail_after, UninstallBoundary::StagingRemoved)?;
+    fail_if_requested(fail_after, UninstallBoundary::Staging)?;
     fs_safety::remove_path(&models.join(model_id))
         .await
         .map_err(|_| "Suppression du modèle Forecast impossible".to_string())?;
-    fail_if_requested(fail_after, UninstallBoundary::ModelRemoved)?;
+    fail_if_requested(fail_after, UninstallBoundary::Model)?;
     if !family_has_other_installed_model(models, spec.family_id, None) {
         remove_runtime(sidecar, spec.family_id).await?;
-        fail_if_requested(fail_after, UninstallBoundary::RuntimeRemoved)?;
+        fail_if_requested(fail_after, UninstallBoundary::Runtime)?;
     }
     Ok(())
 }

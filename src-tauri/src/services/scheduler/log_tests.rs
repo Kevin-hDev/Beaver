@@ -7,7 +7,7 @@ fn line(id: &str, fired_at: &str, status: WakeupRunStatus) -> String {
         fired_at: fired_at.into(),
         status,
         error_code: None,
-        error: None,
+        _legacy_error: None,
         session_id: None,
         tokens: None,
     })
@@ -90,7 +90,7 @@ fn missed_occurrence_has_a_typed_missed_outcome() {
         entry.error_code,
         Some(WakeupRunErrorCode::MissedUnavailable)
     );
-    assert!(entry.error.is_none());
+    assert!(entry._legacy_error.is_none());
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn legacy_error_is_read_but_never_serialized_back_to_the_frontend() {
     let raw = r#"{"wakeup_id":"daily","scheduled_for":"2026-08-12T10:00:00+02:00","fired_at":"2026-08-12T08:00:00Z","status":"error","error":"/private/config.json","session_id":null,"tokens":null}"#;
     let entry: WakeupRun = serde_json::from_str(raw).unwrap();
 
-    assert_eq!(entry.error.as_deref(), Some("/private/config.json"));
+    assert_eq!(entry._legacy_error.as_deref(), Some("/private/config.json"));
     assert!(!serde_json::to_string(&entry).unwrap().contains("/private"));
 }
 
@@ -173,7 +173,7 @@ fn seeded_log() -> Vec<u8> {
                 fired_at: format!("2026-08-12T08:{:02}:00Z", index % 60),
                 status: WakeupRunStatus::Error,
                 error_code: Some(WakeupRunErrorCode::Failed),
-                error: None,
+                _legacy_error: None,
                 session_id: None,
                 tokens: None,
             })
@@ -191,7 +191,7 @@ fn new_entry() -> WakeupRun {
         fired_at: "2026-08-12T10:00:00Z".into(),
         status: WakeupRunStatus::Error,
         error_code: Some(WakeupRunErrorCode::Failed),
-        error: None,
+        _legacy_error: None,
         session_id: None,
         tokens: None,
     }
