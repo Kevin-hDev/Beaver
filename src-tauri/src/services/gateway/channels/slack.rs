@@ -7,6 +7,7 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
+use super::backpressure::try_enqueue;
 use super::slack_types::*;
 use super::websocket_limits::bounded_websocket_config;
 use super::{
@@ -127,7 +128,7 @@ impl ChannelAdapter for SlackAdapter {
                                         require_mention,
                                         &bot_user_id,
                                     ) {
-                                        let _ = sender.send(inbound).await;
+                                        try_enqueue(&sender, inbound, &key);
                                     }
                                 }
                             }

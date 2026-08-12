@@ -11,6 +11,7 @@ mod service_channels;
 mod service_consumer;
 pub mod service_runtime;
 pub mod service_state;
+mod service_stop;
 pub mod session_map;
 pub mod stream_capture;
 pub mod supervisor;

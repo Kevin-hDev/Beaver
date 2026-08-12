@@ -123,15 +123,22 @@ impl GatewayWorkServices {
     }
 
     pub(crate) async fn stop_and_wait(&self, deadline: Instant) -> bool {
-        // Le jeton du run arrête aussi les opérations internes qui ne portent
-        // pas directement le jeton de leur registre local.
-        self.cancel.cancel();
+        self.begin_closing();
         let (consumer, channels, messages) = tokio::join!(
             self.consumer.stop_and_wait(deadline),
             self.channels.stop_and_wait(deadline),
             self.messages.stop_and_wait(deadline),
         );
         consumer && channels && messages
+    }
+
+    pub(crate) fn begin_closing(&self) {
+        // Le jeton du run arrête aussi les opérations internes qui ne portent
+        // pas directement le jeton de leur registre local.
+        self.cancel.cancel();
+        self.consumer.begin_closing();
+        self.channels.begin_closing();
+        self.messages.begin_closing();
     }
 }
 

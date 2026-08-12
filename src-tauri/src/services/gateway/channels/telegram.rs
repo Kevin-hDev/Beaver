@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use tokio::sync::{mpsc, RwLock};
 use zeroize::Zeroizing;
 
+use super::backpressure::try_enqueue;
 use super::telegram_types::*;
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
@@ -79,7 +80,7 @@ impl ChannelAdapter for TelegramAdapter {
                                 let bot_name = state.read().await.bot_username.clone();
                                 for u in updates {
                                     if let Some(m) = Self::to_inbound(&u, &channel_key, require_mention, &bot_name) {
-                                        let _ = sender.send(m).await;
+                                        try_enqueue(&sender, m, &channel_key);
                                     }
                                 }
                             }
