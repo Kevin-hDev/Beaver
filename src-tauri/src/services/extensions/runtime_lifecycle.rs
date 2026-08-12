@@ -27,7 +27,11 @@ pub async fn stop_and_wait(deadline: Instant) -> bool {
     // requête concurrente ne puisse pas recréer l'hôte pendant l'arrêt.
     runtime.work.begin_closing();
     let host_stopped = runtime.stop_host(deadline).await;
-    host_stopped && runtime.work.stop_and_wait(deadline).await
+    crate::services::shutdown_completion::combine_with_work(
+        host_stopped,
+        runtime.work.stop_and_wait(deadline),
+    )
+    .await
 }
 
 pub(super) fn start_background(app: tauri::AppHandle) -> Result<(), String> {

@@ -93,7 +93,11 @@ impl McpProcessService {
         let entries = self.drain_pool();
         drop(owner);
         let second_stopped = terminate_all(entries, deadline).await;
-        first_stopped && second_stopped && self.work.stop_and_wait(deadline).await
+        crate::services::shutdown_completion::combine_with_work(
+            first_stopped && second_stopped,
+            self.work.stop_and_wait(deadline),
+        )
+        .await
     }
 
     #[cfg(test)]
