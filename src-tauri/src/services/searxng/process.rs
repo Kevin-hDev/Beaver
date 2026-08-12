@@ -1,6 +1,8 @@
 use crate::services::paths::data_dir;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+#[cfg(unix)]
+use std::process::Command;
+use std::process::Stdio;
 
 fn pid_path() -> PathBuf {
     data_dir().join("searxng-sidecar.pid")
@@ -32,12 +34,17 @@ pub fn kill_orphan_sidecar() {
     crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Searxng);
 }
 
-pub fn spawn(python: &Path, source: &Path, settings: &Path, port: u16) -> Result<Child, String> {
+pub async fn spawn(
+    python: &Path,
+    source: &Path,
+    settings: &Path,
+    port: u16,
+) -> Result<tokio::process::Child, String> {
     let log_dir = data_dir().join("logs");
     let _ = std::fs::create_dir_all(&log_dir);
     let stderr =
         std::fs::File::create(log_path()).map_err(|_| "SearXNG: log indisponible".to_string())?;
-    let mut cmd = Command::new(python);
+    let mut cmd = tokio::process::Command::new(python);
     cmd.args(["-m", "searx.webapp"])
         .current_dir(source)
         .env("SEARXNG_SETTINGS_PATH", settings)
@@ -52,29 +59,45 @@ pub fn spawn(python: &Path, source: &Path, settings: &Path, port: u16) -> Result
         cmd.env("PYTHONPATH", path);
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000);
-    }
-    crate::services::process_tree::configure(&mut cmd);
+    crate::services::process_tree::configure_tokio(&mut cmd);
 
-    cmd.spawn()
+    cmd.kill_on_drop(true)
+        .spawn()
         .map_err(|_| "SearXNG: démarrage impossible".to_string())
 }
 
-pub fn kill_child_process(mut child: Child) {
-    let pid = child.id();
+pub async fn kill_child_process(mut child: tokio::process::Child) {
+    let pid = child.id().unwrap_or_default();
     if let Ok(Some(_)) = child.try_wait() {
         clear_pid_file();
         return;
     }
     ::log::info!("[searxng] kill sidecar pid={pid}");
-    crate::services::process_tree::terminate(
+    crate::services::process_tree::terminate_tokio(
         &mut child,
         crate::services::process_tree::ProcessKind::Searxng,
-    );
+    )
+    .await;
     clear_pid_file();
+}
+
+#[cfg(test)]
+pub async fn spawn_test_fixture() -> Result<tokio::process::Child, String> {
+    let python = ["python3", "python"]
+        .into_iter()
+        .find_map(|candidate| which::which(candidate).ok())
+        .ok_or_else(|| "runtime de test indisponible".to_string())?;
+    let mut command = tokio::process::Command::new(python);
+    command
+        .args(["-c", "import time; time.sleep(30)"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .kill_on_drop(true);
+    crate::services::process_tree::configure_tokio(&mut command);
+    command
+        .spawn()
+        .map_err(|_| "fixture SearXNG indisponible".to_string())
 }
 
 pub fn startup_log_hint() -> Option<String> {
