@@ -31,8 +31,15 @@ impl Clone for ProcessHandle {
 }
 
 impl ProcessHandle {
-    pub(super) async fn close_stdin(&self) {
-        self.stdin.lock().await.take();
+    pub(super) async fn close_stdin(&self, deadline: Instant) -> bool {
+        let Ok(mut stdin) =
+            tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), self.stdin.lock())
+                .await
+        else {
+            return false;
+        };
+        stdin.take();
+        true
     }
 }
 

@@ -1,9 +1,21 @@
 use super::*;
 use serde_json::json;
+use std::time::{Duration, Instant};
 
 fn extension_work() -> super::super::work_supervision::ExtensionWorkServices {
     let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
     super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
+}
+
+#[tokio::test]
+async fn reader_timeout_preserves_the_signal_for_a_retry() {
+    let (finished_tx, finished_rx) = tokio::sync::oneshot::channel();
+    let reader_done = tokio::sync::Mutex::new(Some(finished_rx));
+
+    assert!(!super::wait_reader_done(&reader_done, Instant::now()).await);
+    finished_tx.send(()).unwrap();
+    assert!(super::wait_reader_done(&reader_done, Instant::now() + Duration::from_secs(1)).await);
+    assert!(reader_done.lock().await.is_none());
 }
 
 fn bundled_paths() -> HostPaths {
@@ -49,7 +61,7 @@ lines.on("line", (line) => {
 
     assert_eq!(slow.unwrap(), json!("slow"));
     assert_eq!(fast.unwrap(), json!("fast"));
-    host.kill().await;
+    assert!(host.kill(super::stop_deadline()).await);
     assert!(host.request("test", json!({})).await.is_err());
 }
 
@@ -62,7 +74,7 @@ async fn bundled_extension_host_answers_hello() {
 
     assert_eq!(hello["apiVersion"], "1");
     assert!(hello["nodeVersion"].as_str().is_some());
-    host.kill().await;
+    assert!(host.kill(super::stop_deadline()).await);
 }
 
 #[tokio::test]
@@ -85,6 +97,6 @@ async fn repeated_host_restarts_reuse_the_single_reader_slot() {
         let host = HostProcess::spawn(&paths, &work)
             .await
             .expect("reader slot must be reusable after kill");
-        host.kill().await;
+        assert!(host.kill(super::stop_deadline()).await);
     }
 }

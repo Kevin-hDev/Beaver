@@ -5,6 +5,8 @@ use std::path::Path;
 use std::time::Instant;
 use zeroize::Zeroizing;
 
+const MCP_PROCESS_STOP_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
 impl McpProcessService {
     pub(super) async fn ensure_spawned(
         &self,
@@ -21,10 +23,16 @@ impl McpProcessService {
             }
         }
         if let Some(entry) = self.take_one(connector_id) {
-            terminate_entry(entry).await;
+            terminate_entry(entry, process_deadline()).await;
         }
         let evicted = self.take_evictions();
-        join_all(evicted.into_iter().map(terminate_entry)).await;
+        let deadline = process_deadline();
+        join_all(
+            evicted
+                .into_iter()
+                .map(|entry| terminate_entry(entry, deadline)),
+        )
+        .await;
 
         let admission = self
             .work
@@ -43,7 +51,7 @@ impl McpProcessService {
             _admission: admission,
         };
         if cancellation.is_cancelled() {
-            terminate_entry(entry).await;
+            terminate_entry(entry, process_deadline()).await;
             return Err("connecteur MCP indisponible".to_string());
         }
         let rejected = {
@@ -56,7 +64,7 @@ impl McpProcessService {
             }
         };
         if let Some(entry) = rejected {
-            terminate_entry(entry).await;
+            terminate_entry(entry, process_deadline()).await;
             return Err("connecteur MCP indisponible".to_string());
         }
         Ok(handle)
@@ -65,12 +73,14 @@ impl McpProcessService {
     pub(super) async fn shutdown_one(&self, connector_id: &str) {
         let _owner = self.spawn_owner.lock().await;
         if let Some(entry) = self.take_one(connector_id) {
-            terminate_entry(entry).await;
+            terminate_entry(entry, process_deadline()).await;
         }
     }
 
     pub(super) async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.work.begin_closing();
+        let entries = self.drain_pool();
+        let first_stopped = terminate_all(entries, deadline).await;
         let Ok(owner) = tokio::time::timeout_at(
             tokio::time::Instant::from_std(deadline),
             self.spawn_owner.lock(),
@@ -80,14 +90,10 @@ impl McpProcessService {
             let _ = self.work.stop_and_wait(deadline).await;
             return false;
         };
-        let entries = self
-            .lock_pool()
-            .drain()
-            .map(|(_, entry)| entry)
-            .collect::<Vec<_>>();
+        let entries = self.drain_pool();
         drop(owner);
-        join_all(entries.into_iter().map(terminate_entry)).await;
-        self.work.stop_and_wait(deadline).await
+        let second_stopped = terminate_all(entries, deadline).await;
+        first_stopped && second_stopped && self.work.stop_and_wait(deadline).await
     }
 
     #[cfg(test)]
@@ -138,13 +144,39 @@ impl McpProcessService {
             .filter_map(|key| pool.remove(&key))
             .collect()
     }
+
+    fn drain_pool(&self) -> Vec<PoolEntry> {
+        self.lock_pool().drain().map(|(_, entry)| entry).collect()
+    }
 }
 
-async fn terminate_entry(mut entry: PoolEntry) {
-    entry.handle.close_stdin().await;
-    crate::services::process_tree::terminate_tokio(
-        &mut entry.child,
-        crate::services::process_tree::ProcessKind::Mcp,
+pub(super) async fn terminate_entry(mut entry: PoolEntry, deadline: Instant) -> bool {
+    if !entry.handle.close_stdin(deadline).await {
+        let _ = entry.child.start_kill();
+        return false;
+    }
+    tokio::time::timeout_at(
+        tokio::time::Instant::from_std(deadline),
+        crate::services::process_tree::terminate_tokio(
+            &mut entry.child,
+            crate::services::process_tree::ProcessKind::Mcp,
+        ),
     )
-    .await;
+    .await
+    .is_ok()
+}
+
+async fn terminate_all(entries: Vec<PoolEntry>, deadline: Instant) -> bool {
+    join_all(
+        entries
+            .into_iter()
+            .map(|entry| terminate_entry(entry, deadline)),
+    )
+    .await
+    .into_iter()
+    .all(|stopped| stopped)
+}
+
+fn process_deadline() -> Instant {
+    Instant::now() + MCP_PROCESS_STOP_TIMEOUT
 }

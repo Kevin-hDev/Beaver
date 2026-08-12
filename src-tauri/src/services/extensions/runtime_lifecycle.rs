@@ -26,8 +26,8 @@ pub async fn stop_and_wait(deadline: Instant) -> bool {
     // L'admission ferme avant la destruction du processus afin qu'une
     // requête concurrente ne puisse pas recréer l'hôte pendant l'arrêt.
     runtime.work.begin_closing();
-    runtime.stop_host().await;
-    runtime.work.stop_and_wait(deadline).await
+    let host_stopped = runtime.stop_host(deadline).await;
+    host_stopped && runtime.work.stop_and_wait(deadline).await
 }
 
 pub(super) fn start_background(app: tauri::AppHandle) -> Result<(), String> {
@@ -58,7 +58,7 @@ pub(super) async fn ensure_running() -> Result<Arc<HostProcess>, String> {
     runtime.set_state(HostState::Starting, None, 0);
     if let Err(error) = runtime.sync_locked(&mut slot).await {
         if let Some(process) = slot.take() {
-            process.kill().await;
+            process.kill(super::host_process::stop_deadline()).await;
         }
         runtime.mark_unavailable();
         return Err(error);
@@ -78,7 +78,7 @@ impl ExtensionRuntime {
         let result = self.sync_locked(&mut process).await;
         if result.is_err() {
             if let Some(host) = process.take() {
-                host.kill().await;
+                host.kill(super::host_process::stop_deadline()).await;
             }
             self.mark_unavailable();
         }
@@ -86,16 +86,29 @@ impl ExtensionRuntime {
     }
 
     async fn restart_untracked(&self) -> Result<(), String> {
-        self.stop_host().await;
+        self.stop_host(super::host_process::stop_deadline()).await;
         self.auto_restarts.reset();
         self.start_untracked().await
     }
 
-    pub(super) async fn stop_host(&self) {
-        if let Some(process) = self.process.lock().await.take() {
-            process.kill().await;
+    pub(super) async fn stop_host(&self, deadline: Instant) -> bool {
+        let Ok(mut slot) = tokio::time::timeout_at(
+            tokio::time::Instant::from_std(deadline),
+            self.process.lock(),
+        )
+        .await
+        else {
+            return false;
+        };
+        let process = slot.take();
+        drop(slot);
+        if let Some(process) = process {
+            if !process.kill(deadline).await {
+                return false;
+            }
         }
         self.set_state(HostState::Stopped, None, 0);
+        true
     }
 
     fn mark_unavailable(&self) {
@@ -113,6 +126,7 @@ mod tests {
     use super::super::host_paths::HostPaths;
     use super::super::types::ExtensionHostStatus;
     use super::*;
+    use std::time::Duration;
     use tokio::sync::Mutex;
 
     #[tokio::test]
@@ -147,5 +161,26 @@ mod tests {
         );
         assert!(!directory.path().join("started").exists());
         assert!(runtime.process.lock().await.is_none());
+    }
+
+    #[tokio::test]
+    async fn stop_host_respects_the_absolute_deadline_while_process_is_locked() {
+        let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+        let runtime = ExtensionRuntime {
+            paths: None,
+            process: Mutex::new(None),
+            status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+            auto_restarts: super::super::runtime_restart::RestartBudget::default(),
+            work: super::super::work_supervision::ExtensionWorkServices::new(
+                coordinator.work_supervisor(),
+            ),
+        };
+        let _guard = runtime.process.lock().await;
+
+        assert!(
+            !runtime
+                .stop_host(Instant::now() + Duration::from_millis(20))
+                .await
+        );
     }
 }

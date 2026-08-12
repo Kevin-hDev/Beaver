@@ -73,7 +73,9 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
     let runtime = extension_runtime()?;
     let work = runtime.work.clone();
     work.run_operation(move |_| async move {
-        runtime.stop_host().await;
+        runtime
+            .stop_host(super::host_process::stop_deadline())
+            .await;
         if super::registry::remove(&id).is_err() {
             let _ = runtime.start_untracked().await;
             return Err(OperationFailure::UninstallFailed);
@@ -141,7 +143,9 @@ async fn replace_current(
     prepared: PreparedInstall,
 ) -> Result<ExtensionRecord, OperationFailure> {
     let replacement = super::installer_record::for_update(&current, prepared.record);
-    runtime.stop_host().await;
+    runtime
+        .stop_host(super::host_process::stop_deadline())
+        .await;
     if super::registry::replace_user(&current, replacement.clone()).is_err() {
         cleanup(&replacement).await;
         let _ = runtime.start_untracked().await;
