@@ -45,8 +45,11 @@ pub(super) fn terminate_tree(root_pid: u32, deadline: std::time::Instant) {
         collect_descendants(&snapshot, &mut members);
     }
     // Children go first so they cannot keep inherited pipes open while their parent is reaped.
-    for pid in members.into_iter().rev() {
-        crate::services::owned_process::terminate_if_confined(pid, deadline);
+    members.reverse();
+    let expected = members.len();
+    let reaped = crate::services::owned_process::terminate_confined(&members, deadline);
+    if reaped != expected {
+        ::log::warn!("[process] balayage Windows incomplet: {reaped}/{expected}");
     }
 }
 

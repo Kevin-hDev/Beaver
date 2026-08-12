@@ -20,6 +20,7 @@ pub enum OwnedProcessError {
 pub struct OwnedProcess;
 
 impl OwnedProcess {
+    #[cfg(unix)]
     pub(crate) fn adopt_existing(pid: u32) -> Result<(), OwnedProcessError> {
         platform::admit(pid)
     }
@@ -45,6 +46,14 @@ impl OwnedProcess {
             return Err(OwnedProcessError::Admission);
         }
         Ok(child)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn spawn_conpty<T: windows_spawn::AsPseudoConsole>(
+        command: &mut windows_spawn::Command,
+        pseudoconsole: &T,
+    ) -> Result<windows_spawn::Child, OwnedProcessError> {
+        platform::spawn_conpty(command, pseudoconsole)
     }
 
     fn spawn_with_admitter(
@@ -88,8 +97,8 @@ pub(crate) fn is_confined(pid: u32) -> bool {
 }
 
 #[cfg(windows)]
-pub(crate) fn terminate_if_confined(pid: u32, deadline: std::time::Instant) -> bool {
-    platform::terminate_if_confined(pid, deadline)
+pub(crate) fn terminate_confined(pids: &[u32], deadline: std::time::Instant) -> usize {
+    platform::terminate_confined(pids, deadline)
 }
 
 #[cfg(target_os = "macos")]
