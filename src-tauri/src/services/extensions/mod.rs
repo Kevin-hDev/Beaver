@@ -40,6 +40,7 @@ mod registry_sync;
 mod runtime;
 mod runtime_diagnostics;
 mod runtime_dispatch;
+mod runtime_lifecycle;
 mod runtime_restart;
 mod runtime_sync;
 mod runtime_version;
@@ -51,6 +52,9 @@ mod tool_result;
 mod types;
 mod validation;
 mod view;
+mod work_supervision;
+#[cfg(test)]
+mod work_supervision_tests;
 
 pub use types::{ExtensionHostStatus, ExtensionKind};
 pub use view::ExtensionView;
@@ -66,8 +70,9 @@ pub(crate) use registry_index::{
     catalog_snapshot, dynamic_tool_names, indexed_plugins, plugin_id_for_tool,
 };
 pub use registry_index::{is_dynamic_tool, is_replacement};
-pub use runtime::{restart, status, stop};
+pub use runtime::status;
 pub use runtime_dispatch::{dispatch_tool, emit_event};
+pub use runtime_lifecycle::{restart, stop_and_wait};
 pub use startup::initialize_on_startup;
 pub(crate) use tool_bridge::definitions as extension_tool_definitions;
 pub(crate) use tool_bridge::{core_fallback, without_core_fallback};

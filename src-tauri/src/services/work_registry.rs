@@ -1,11 +1,3 @@
-#![cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "service producers adopt the bounded registry during milestone 2"
-    )
-)]
-
 mod stop;
 mod task;
 

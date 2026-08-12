@@ -3,13 +3,18 @@ use git2::CheckoutNotificationType;
 use std::collections::HashSet;
 use std::path::Component;
 
-pub fn bounded() -> CheckoutBuilder<'static> {
+use crate::services::work_registry::ServiceWorkCancellation;
+
+pub fn bounded(cancellation: ServiceWorkCancellation) -> CheckoutBuilder<'static> {
     let mut checkout = CheckoutBuilder::new();
     let mut paths = HashSet::new();
     let mut bytes = 0_u64;
     checkout.disable_filters(true);
     checkout.notify_on(CheckoutNotificationType::all());
     checkout.notify(move |_, path, _, target, _| {
+        if cancellation.is_cancelled() {
+            return false;
+        }
         let Some(path) = path else {
             return false;
         };

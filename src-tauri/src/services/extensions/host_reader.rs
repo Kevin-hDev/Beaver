@@ -1,27 +1,32 @@
 use super::core_bridge::CoreResponse;
 use super::host_channel::{self, PendingRequests, SharedWriter};
 use super::protocol::{RpcError, RpcErrorBody, RpcResult};
-use super::types::{MAX_IN_FLIGHT_REQUESTS, MAX_MESSAGE_BYTES};
+use super::types::MAX_MESSAGE_BYTES;
+use crate::services::work_registry::ServiceWorkCancellation;
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::ChildStdout;
-use tokio::sync::Semaphore;
 
 pub async fn run(
     stdout: ChildStdout,
     writer: SharedWriter,
     pending: PendingRequests,
     alive: Arc<AtomicBool>,
+    work: super::work_supervision::ExtensionWorkServices,
+    cancellation: ServiceWorkCancellation,
 ) {
     let mut reader = BufReader::new(stdout);
-    let core_limit = Arc::new(Semaphore::new(MAX_IN_FLIGHT_REQUESTS));
-    while let Ok(bytes) = read_bounded_line(&mut reader).await {
-        if receive(&bytes, &writer, &pending, &core_limit)
-            .await
-            .is_err()
-        {
+    loop {
+        let bytes = tokio::select! {
+            _ = cancellation.cancelled() => break,
+            line = read_bounded_line(&mut reader) => match line {
+                Ok(line) => line,
+                Err(_) => break,
+            },
+        };
+        if receive(&bytes, &writer, &pending, &work).await.is_err() {
             break;
         }
     }
@@ -33,7 +38,7 @@ async fn receive(
     bytes: &[u8],
     writer: &SharedWriter,
     pending: &PendingRequests,
-    core_limit: &Arc<Semaphore>,
+    work: &super::work_supervision::ExtensionWorkServices,
 ) -> Result<(), String> {
     let message: Value = serde_json::from_slice(bytes)
         .map_err(|_| "Réponse de l'hôte d'extensions invalide.".to_string())?;
@@ -45,14 +50,7 @@ async fn receive(
         .ok_or_else(|| "Réponse de l'hôte d'extensions invalide.".to_string())?;
     if let Some(method) = object.get("method").and_then(Value::as_str) {
         let params = object.get("params").cloned();
-        return spawn_core_call(
-            id.to_string(),
-            method.to_string(),
-            params,
-            writer,
-            core_limit,
-        )
-        .await;
+        return spawn_core_call(id.to_string(), method.to_string(), params, writer, work).await;
     }
     let Some(sender) = pending.lock().await.remove(id) else {
         return Ok(());
@@ -74,9 +72,55 @@ async fn spawn_core_call(
     method: String,
     params: Option<Value>,
     writer: &SharedWriter,
-    core_limit: &Arc<Semaphore>,
+    work: &super::work_supervision::ExtensionWorkServices,
 ) -> Result<(), String> {
-    let Ok(permit) = core_limit.clone().try_acquire_owned() else {
+    let output = writer.clone();
+    let task_id = id.clone();
+    let spawn = work.spawn_core_call(move |cancel| async move {
+        let response = tokio::select! {
+            _ = cancel.cancelled() => return,
+            response = super::core_bridge::call(&method, params.as_ref()) => response,
+        };
+        match response {
+            Ok(CoreResponse::Json(result)) => {
+                let _ = host_channel::write(
+                    &output,
+                    &RpcResult {
+                        jsonrpc: "2.0",
+                        id: &task_id,
+                        result,
+                    },
+                )
+                .await;
+            }
+            Ok(CoreResponse::Secret(secret)) => {
+                let _ = host_channel::write(
+                    &output,
+                    &RpcResult {
+                        jsonrpc: "2.0",
+                        id: &task_id,
+                        result: secret.as_str(),
+                    },
+                )
+                .await;
+            }
+            Err(()) => {
+                let _ = host_channel::write(
+                    &output,
+                    &RpcError {
+                        jsonrpc: "2.0",
+                        id: &task_id,
+                        error: RpcErrorBody {
+                            code: -32601,
+                            message: "core_method_unavailable",
+                        },
+                    },
+                )
+                .await;
+            }
+        }
+    });
+    if spawn.is_err() {
         return host_channel::write(
             writer,
             &RpcError {
@@ -89,49 +133,7 @@ async fn spawn_core_call(
             },
         )
         .await;
-    };
-    let output = writer.clone();
-    tokio::spawn(async move {
-        let _permit = permit;
-        match super::core_bridge::call(&method, params.as_ref()).await {
-            Ok(CoreResponse::Json(result)) => {
-                let _ = host_channel::write(
-                    &output,
-                    &RpcResult {
-                        jsonrpc: "2.0",
-                        id: &id,
-                        result,
-                    },
-                )
-                .await;
-            }
-            Ok(CoreResponse::Secret(secret)) => {
-                let _ = host_channel::write(
-                    &output,
-                    &RpcResult {
-                        jsonrpc: "2.0",
-                        id: &id,
-                        result: secret.as_str(),
-                    },
-                )
-                .await;
-            }
-            Err(()) => {
-                let _ = host_channel::write(
-                    &output,
-                    &RpcError {
-                        jsonrpc: "2.0",
-                        id: &id,
-                        error: RpcErrorBody {
-                            code: -32601,
-                            message: "core_method_unavailable",
-                        },
-                    },
-                )
-                .await;
-            }
-        }
-    });
+    }
     Ok(())
 }
 

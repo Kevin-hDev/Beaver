@@ -22,6 +22,8 @@ pub enum OperationFailure {
     UpdateIdentityChanged,
     UpdateUnavailable,
     CleanupFailed,
+    HostBusy,
+    HostUnavailable,
 }
 
 impl OperationFailure {
@@ -47,6 +49,8 @@ impl OperationFailure {
             Self::UpdateIdentityChanged => error_codes::UPDATE_IDENTITY_CHANGED,
             Self::UpdateUnavailable => error_codes::UPDATE_UNAVAILABLE,
             Self::CleanupFailed => error_codes::CLEANUP_FAILED,
+            Self::HostBusy => error_codes::HOST_BUSY,
+            Self::HostUnavailable => error_codes::HOST_UNAVAILABLE,
         }
     }
 
@@ -72,6 +76,8 @@ impl OperationFailure {
             Self::UpdateIdentityChanged => "update_identity_changed",
             Self::UpdateUnavailable => "update_unavailable",
             Self::CleanupFailed => "cleanup_failed",
+            Self::HostBusy => "host_busy",
+            Self::HostUnavailable => "host_unavailable",
         }
     }
 }
