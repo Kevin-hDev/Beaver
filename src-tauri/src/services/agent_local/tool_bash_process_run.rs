@@ -135,11 +135,9 @@ async fn settle_changes(
     let Some(tracker) = tracker.take() else {
         return;
     };
-    let (changes, incomplete) = collect_final_changes(
-        tracker,
-        shutdown_cancelled,
-        |tracker| tracker.finish_changes(),
-    )
+    let (changes, incomplete) = collect_final_changes(tracker, shutdown_cancelled, |tracker| {
+        tracker.finish_changes()
+    })
     .await;
     session.update_changes(changes, incomplete);
 }

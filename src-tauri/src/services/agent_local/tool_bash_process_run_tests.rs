@@ -8,7 +8,10 @@ use std::sync::{
 async fn collect_with_counter(
     shutdown_cancelled: bool,
     scans: Arc<AtomicUsize>,
-) -> (Vec<crate::services::agent_local::types_tools::ToolFileChange>, bool) {
+) -> (
+    Vec<crate::services::agent_local::types_tools::ToolFileChange>,
+    bool,
+) {
     let root = tempfile::tempdir().expect("workspace");
     let tracker = ChangeTracker::start(root.path()).await.expect("tracker");
     collect_final_changes(tracker, shutdown_cancelled, move |tracker| {
