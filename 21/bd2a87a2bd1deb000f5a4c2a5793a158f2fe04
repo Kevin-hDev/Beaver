@@ -1,0 +1,5 @@
+Raison : le japonais utilisait 未実行 à la fois pour une occurrence manquée et pour un réveil jamais exécuté ; le test de traduction ne vérifiait que le nombre de valeurs et le composant n'exerçait aucun error_code réel.
+
+Décision : missed devient 実行漏れ tandis que never conserve 未実行. Le test énumère les sept clés réellement produites par le contrat Rust/TypeScript actuel (l'exemple à six noms du plan ne correspondait à aucune autorité du code). Le test React rend capacity_reached via WakeupHistory et exige la clé traduite capacityReached tout en interdisant le code brut.
+
+TDD : le test japonais a échoué avec expected 未実行 not to be 未実行 ; le test de composant et l'inventaire exact étaient déjà conformes. Vérifications finales : Vitest ciblé 11/11 ; npx tsc --noEmit vert ; npm run lint vert ; git diff --check et graphify update . verts.
