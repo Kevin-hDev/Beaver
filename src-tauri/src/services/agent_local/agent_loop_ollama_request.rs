@@ -92,6 +92,7 @@ pub(super) async fn run(params: OllamaRequestParams<'_>) -> Result<OllamaRequest
         params.session_id.to_string(),
         params.request_id.to_string(),
         params.chat_mode,
+        params.cancel.clone(),
     ));
     super::stream_diagnostics::mark_phase(
         params.session_id,

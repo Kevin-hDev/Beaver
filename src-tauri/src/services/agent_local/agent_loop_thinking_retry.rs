@@ -75,6 +75,7 @@ pub async fn retry_if_needed(
         params.session_id.clone(),
         params.request_id.clone(),
         params.chat_mode,
+        params.cancel.clone(),
     ));
     let retry_outcome = super::ollama_stream::stream_chat_with_tool_notify(
         params.on_event,
