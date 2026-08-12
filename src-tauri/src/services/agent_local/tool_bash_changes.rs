@@ -29,8 +29,7 @@ impl ChangeTracker {
             .canonicalize()
             .map_err(|_| "Suivi des fichiers indisponible.".to_string())?;
         let watcher_root = root.clone();
-        let mut watcher_setup =
-            tokio::task::spawn_blocking(move || workspace_hub(watcher_root));
+        let mut watcher_setup = tokio::task::spawn_blocking(move || workspace_hub(watcher_root));
         let baseline_root = root.clone();
         let mut baseline_setup =
             tokio::task::spawn_blocking(move || capture_baseline(&baseline_root));
@@ -209,9 +208,7 @@ fn metadata_change(path: &Path, status: ToolFileChangeStatus) -> ToolFileChange 
     }
 }
 
-fn capture_baseline(
-    root: &Path,
-) -> (Option<GitBaseline>, Option<DirectoryBaseline>, bool) {
+fn capture_baseline(root: &Path) -> (Option<GitBaseline>, Option<DirectoryBaseline>, bool) {
     let (git, git_incomplete) = GitBaseline::capture(root);
     if let Some(git) = git {
         let incomplete = git_incomplete || git.is_incomplete();
