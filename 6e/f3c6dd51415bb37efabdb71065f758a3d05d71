@@ -1,0 +1,9 @@
+Intent: make every GPU subprocess used by polling owned and cancellable, and prevent global shutdown from starting a final Git/workspace scan after shell reaping.
+
+RED evidence: the initial owned_probe suite failed 3/3: cancelled GPU probe survived, 16384 stdout bytes exceeded the 8192-byte bound, and PowerShell was not confined by OwnedProcess. The shutdown bookkeeping test failed with scan_count=1 instead of 0.
+
+GREEN evidence (Windows, --features windows-tests): services::gpu_vram 7/7, including cancellation, 3 s operational timeout, 8 KiB truncation, real PID disappearance and PowerShell ownership; tool_bash_process_run 2/2; tool_bash_changes 6/6. The cancellation test passed again in isolation. Rust emitted only the 19 pre-existing browser/CEF dead_code warnings.
+
+Decisions: one ProbeSpec/OwnedProcess runner owns nvidia-smi, PowerShell, sysctl and vm_stat; stdout is drained but retained only to 8 KiB; cancellation and timeout terminate then reap before return. Polling uses only get_vram_info_owned while legacy synchronous APIs remain for non-shutdown callers. Global shutdown drains ready watcher events without waiting or scanning, returns metadata-only changes and marks them incomplete; normal exit and user cancellation retain finish_changes.
+
+Maintenance: cargo fmt and git diff --check passed; all changed production files are <=230 lines (maximum 227); graphify update . completed from repository root.
