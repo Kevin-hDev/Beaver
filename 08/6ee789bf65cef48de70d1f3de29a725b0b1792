@@ -1,0 +1,9 @@
+Jalon 2 — arrêt natif borné des arbres de processus Windows.
+
+Raison : taskkill.exe était attendu sans échéance. La suite Windows a observé un blocage supérieur à 64 s et la CI avait vu l’annulation Forecast durer les 30 s naturels du processus ; le repli direct n’était donc jamais atteint.
+
+Décision : ToolHelp énumère au plus 256 descendants. Seuls les PID encore contenus dans l’unique Job Object Beaver sont terminés, enfants avant parent. Le contrôle d’appartenance et TerminateProcess utilisent le même handle afin qu’une réutilisation de PID ne puisse jamais viser un processus extérieur. Toutes les attentes partagent une échéance absolue de 500 ms.
+
+Preuves locales : test de régression arbre réel parent+enfant ; test négatif processus non confiné ; cinq séries Windows arbre 4/4 ; annulation Forecast 5/5 ; terminal réel 5/5 ; confinement 3/3 ; terminal 9/9 avec 2 exclusions Windows documentées ; clippy strict vert ; deux suites complètes consécutives 3157 réussis, 4 ignorés, 0 échec (88,04 s et 88,74 s).
+
+Le traçage temporaire du commit 115d03c est retiré : la cause est désormais couverte par des tests de comportement.
