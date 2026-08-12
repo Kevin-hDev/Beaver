@@ -11,6 +11,7 @@ mod invoke_handler;
 mod invoke_handler_tail;
 mod models;
 mod ollama_polling;
+mod runtime_startup;
 mod runtime_state;
 mod services;
 mod startup;
@@ -30,7 +31,7 @@ mod windows_entry_plan;
 use services::agent_local::ollama_client::OllamaClient;
 use services::e2e_profile::{report_lifecycle, LifecycleStage};
 use services::gateway::GatewayService;
-use services::ollama_lifecycle::{self, OllamaSidecar};
+use services::ollama_lifecycle::OllamaSidecar;
 use tauri::{Emitter, Manager};
 
 pub use runtime_state::ActiveStreams;
@@ -90,6 +91,7 @@ pub(crate) fn run_inner(
         .manage(runtime.app_update)
         .manage(runtime.searxng)
         .manage(runtime.terminal)
+        .manage(runtime.background)
         .manage(services::browser::BrowserRuntimeHandle::default())
         .manage(services::browser::BrowserSessionService::default())
         .manage(services::browser::LocalSiteScanner::default())
@@ -106,60 +108,43 @@ pub(crate) fn run_inner(
         .setup(|app| {
             report_lifecycle(LifecycleStage::SetupEntered);
             let startup_cutoff = chrono::Utc::now();
+            let background = app
+                .state::<services::runtime_background::RuntimeBackgroundServices>()
+                .inner()
+                .clone();
             runtime_state::initialize_agent_runtime(app.handle())?;
             storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
             if services::agent_local::directory_access::initialize_policy().is_err() {
                 ::log::error!("[directory-access] policy unavailable");
             }
-            tauri::async_runtime::spawn(async {
-                if services::forecast::notes_cleanup::recover_pending_deletions()
-                    .await
-                    .is_err()
-                {
-                    ::log::warn!("[forecast] récupération des notes différée");
-                }
-            });
+            runtime_startup::start_recovery(&background, startup_cutoff);
             if services::security_cleanup::run().is_err() {
                 ::log::error!("[security cleanup] cleanup failed");
             }
-            // Cleanup des sous-agents orphelins (crash précédent) : non bloquant.
-            tauri::async_runtime::spawn(async move {
-                services::agent_local::subagent_startup_cleanup::cleanup_orphans(startup_cutoff)
-                    .await;
-            });
             services::e2e_profile::load_dotenv(|| {
                 let _ = dotenvy::dotenv();
             });
             if services::api_keys::init_for_runtime().is_err() {
                 ::log::error!("[vault] init failed");
                 let handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                    startup::emit_vault_init_failed(|event, payload| handle.emit(event, payload));
+                let _ = background.spawn_task(move |cancel| async move {
+                    tokio::select! {
+                        _ = cancel.cancelled() => {}
+                        _ = tokio::time::sleep(std::time::Duration::from_secs(2)) => {
+                            startup::emit_vault_init_failed(|event, payload| handle.emit(event, payload));
+                        }
+                    }
                 });
             }
             services::e2e_profile::run_host_mutation(|| {
                 services::extensions::initialize_on_startup(app.handle());
                 services::searxng::prepare_on_startup(app.handle().clone());
-                if ollama_lifecycle::ollama_binary_path().is_ok() {
-                    let handle = app.handle().clone();
-                    tauri::async_runtime::spawn(async move {
-                        match tokio::task::spawn_blocking(move || {
-                            ollama_lifecycle::start_sidecar(&handle)
-                        })
-                        .await
-                        {
-                            Ok(Err(e)) => ::log::error!("[ollama] sidecar start failed: {}", e),
-                            Err(e) => ::log::error!("[ollama] sidecar task failed: {}", e),
-                            _ => {}
-                        }
-                    });
-                }
+                runtime_startup::start_ollama(&background, app.handle());
             });
 
             let config = services::config::read_config().unwrap_or_default();
             services::mascot::initialize(app.handle(), config.mascot.clone());
-            services::mascot::start_activity_cleanup(app.handle().clone());
+            services::mascot::start_activity_cleanup(app.handle());
 
             services::e2e_profile::run_host_mutation(|| {
                 services::autostart_migration::synchronize_at_startup(
@@ -193,9 +178,14 @@ pub(crate) fn run_inner(
             if config.gateway.enabled && config.gateway.start_with_app {
                 let gw_config = config.gateway.clone();
                 let gw_handle = app.handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    let gw = gw_handle.state::<GatewayService>();
-                    let _ = gw.start(gw_config, gw_handle.clone()).await;
+                let _ = background.spawn_task(move |cancel| async move {
+                    tokio::select! {
+                        _ = cancel.cancelled() => {}
+                        _ = async {
+                            let gw = gw_handle.state::<GatewayService>();
+                            let _ = gw.start(gw_config, gw_handle.clone()).await;
+                        } => {}
+                    }
                 });
             }
 
@@ -204,7 +194,7 @@ pub(crate) fn run_inner(
             app.manage(scheduler);
             services::e2e_profile::run_host_mutation(|| {
                 ollama_polling::start(app.handle().clone());
-                tauri::async_runtime::spawn(services::llm::litellm_catalog::init());
+                runtime_startup::start_litellm(&background);
             });
             services::update_health::acknowledge_from_args(std::env::args_os())
                 .map_err(std::io::Error::other)?;

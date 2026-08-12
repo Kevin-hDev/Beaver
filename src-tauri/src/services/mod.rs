@@ -67,6 +67,9 @@ mod reasoning_effort;
 mod reasoning_google;
 #[cfg(test)]
 mod reasoning_tests;
+pub mod runtime_background;
+#[cfg(test)]
+mod runtime_background_tests;
 pub mod scheduler;
 pub mod search;
 pub mod searxng;

@@ -79,7 +79,7 @@ pub(crate) fn get_lock() -> &'static RwLock<HashMap<String, ModelEntry>> {
 
 pub async fn init() {
     let _ = get_lock();
-    tokio::spawn(async { super::litellm_catalog_refresh::refresh().await });
+    super::litellm_catalog_refresh::refresh().await;
 }
 
 pub(crate) fn is_trusted_host(host: &str) -> bool {
