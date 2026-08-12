@@ -35,7 +35,7 @@ pub(super) async fn run_loop(
 
         let now = Local::now();
         if config.heartbeat.global_paused {
-            let _ = state::write_last_checked(now).await;
+            checkpoint(now).await;
         } else {
             reconcile_missed(&config.scheduled_wakeups, now).await;
         }
@@ -86,26 +86,30 @@ fn next_scheduled_at(
 
 async fn reconcile_missed(wakeups: &[crate::models::ScheduledWakeup], now: DateTime<Local>) {
     let Some(last_checked) = state::read_last_checked().await else {
-        let _ = state::write_last_checked(now).await;
+        checkpoint(now).await;
         return;
     };
+    let mut decisions_persisted = true;
     for (wakeup, scheduled_for) in missed_occurrences(wakeups, last_checked, now) {
-        if is_once(&wakeup) {
+        let result = if is_once(&wakeup) {
             match fire::missed_once_action(fire::claim_once(&wakeup.id)) {
                 fire::MissedOnceAction::LogMissed => {
-                    log::log_missed(&wakeup.id, scheduled_for).await;
+                    log::log_missed(&wakeup.id, scheduled_for).await
                 }
-                fire::MissedOnceAction::Silent => {}
+                fire::MissedOnceAction::Silent => Ok(()),
                 fire::MissedOnceAction::LogClaimError(error) => {
-                    log::log_err(&wakeup.id, scheduled_for, &error).await;
                     ::log::warn!("[scheduler] revendication ponctuelle impossible");
+                    log::log_err(&wakeup.id, scheduled_for, &error).await
                 }
             }
         } else {
-            log::log_missed(&wakeup.id, scheduled_for).await;
-        }
+            log::log_missed(&wakeup.id, scheduled_for).await
+        };
+        decisions_persisted &= warn_if_log_failed(result);
     }
-    let _ = state::write_last_checked(now).await;
+    if decisions_persisted {
+        checkpoint(now).await;
+    }
 }
 
 async fn handle_due(
@@ -129,6 +133,7 @@ async fn handle_due(
         if lifetime.is_cancelled() {
             return;
         }
+        let wakeup_id = wakeup.id.clone();
         let app_clone = app.clone();
         let result = work.spawn(move |service_cancel| async move {
             let cancel = CancellationToken::new();
@@ -144,12 +149,59 @@ async fn handle_due(
                 _ = &mut task => {}
             }
         });
-        match result {
-            Ok(()) => {}
-            Err(ServiceWorkAdmissionError::Capacity) => {
-                ::log::warn!("[scheduler] capacité des réveils atteinte");
-            }
-            Err(_) => return,
+        let keep_running = handle_due_admission(
+            result,
+            wakeup_id,
+            target,
+            |wakeup_id, scheduled_for, error| async move {
+                log::log_refused(&wakeup_id, scheduled_for, error).await
+            },
+        )
+        .await;
+        if !keep_running {
+            return;
         }
+    }
+}
+
+pub(super) async fn handle_due_admission<Recorder, RecordFuture>(
+    result: Result<(), ServiceWorkAdmissionError>,
+    wakeup_id: String,
+    scheduled_for: DateTime<Local>,
+    record: Recorder,
+) -> bool
+where
+    Recorder: FnOnce(String, DateTime<Local>, ServiceWorkAdmissionError) -> RecordFuture,
+    RecordFuture: std::future::Future<Output = Result<(), String>>,
+{
+    let Err(error) = result else {
+        return true;
+    };
+    warn_if_log_failed(record(wakeup_id, scheduled_for, error).await);
+    match error {
+        ServiceWorkAdmissionError::AppClosing | ServiceWorkAdmissionError::Closing => false,
+        ServiceWorkAdmissionError::AppCapacity | ServiceWorkAdmissionError::Capacity => {
+            ::log::warn!("[scheduler] capacité des réveils atteinte");
+            true
+        }
+    }
+}
+
+async fn checkpoint(now: DateTime<Local>) -> bool {
+    match state::write_last_checked(now).await {
+        Ok(()) => true,
+        Err(_) => {
+            ::log::warn!("[scheduler] état de contrôle indisponible");
+            false
+        }
+    }
+}
+
+fn warn_if_log_failed(result: Result<(), String>) -> bool {
+    if result.is_ok() {
+        true
+    } else {
+        ::log::warn!("[scheduler] journal indisponible");
+        false
     }
 }

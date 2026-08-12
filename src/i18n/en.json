@@ -682,7 +682,16 @@
     },
     "history": {
       "title": "History",
-      "empty": "No runs yet"
+      "empty": "No runs yet",
+      "errors": {
+        "failed": "The wakeup failed.",
+        "rateLimited": "The provider request limit was reached.",
+        "authenticationFailed": "Provider authentication failed.",
+        "ollamaUnavailable": "Ollama was unavailable.",
+        "missedUnavailable": "The wakeup was missed while Beaver was unavailable.",
+        "schedulerStopping": "The wakeup did not start because Beaver was closing.",
+        "capacityReached": "The wakeup did not start because too many operations were already running."
+      }
     },
     "sidebar": {
       "title": "Wakeups",

@@ -4,7 +4,9 @@ use super::fire::{
 };
 use super::Scheduler;
 use crate::app_exit::AppExitCoordinator;
-use crate::models::{ClgoConfig, ScheduledWakeup, WakeupRunStatus, WakeupSchedule};
+use crate::models::{
+    ClgoConfig, ScheduledWakeup, WakeupRunErrorCode, WakeupRunStatus, WakeupSchedule,
+};
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -145,6 +147,7 @@ fn cancelled_and_claim_error_entries_are_sanitized() {
     let cancelled = super::log::cancelled_entry_for_test("once", scheduled_for);
     assert_eq!(cancelled.status, WakeupRunStatus::Cancelled);
     assert!(cancelled.error.is_none());
+    assert!(cancelled.error_code.is_none());
 
     let error = super::log::error_entry_for_test(
         "once",
@@ -152,7 +155,8 @@ fn cancelled_and_claim_error_entries_are_sanitized() {
         "Bearer secret at C:\\private\\config.json",
     );
     assert_eq!(error.status, WakeupRunStatus::Error);
-    assert_eq!(error.error.as_deref(), Some("Le réveil a échoué"));
+    assert_eq!(error.error_code, Some(WakeupRunErrorCode::Failed));
+    assert!(error.error.is_none());
 }
 
 #[tokio::test]

@@ -677,7 +677,16 @@
     },
     "history": {
       "title": "履歴",
-      "empty": "実行履歴なし"
+      "empty": "実行履歴なし",
+      "errors": {
+        "failed": "ウェイクアップに失敗しました。",
+        "rateLimited": "プロバイダーのリクエスト上限に達しました。",
+        "authenticationFailed": "プロバイダーの認証に失敗しました。",
+        "ollamaUnavailable": "Ollama を利用できませんでした。",
+        "missedUnavailable": "Beaver が利用できない間にウェイクアップを実行できませんでした。",
+        "schedulerStopping": "Beaver が終了中のため、ウェイクアップは開始されませんでした。",
+        "capacityReached": "実行中の操作が多すぎるため、ウェイクアップは開始されませんでした。"
+      }
     },
     "sidebar": {
       "title": "ウェイクアップ",

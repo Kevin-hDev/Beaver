@@ -7,6 +7,8 @@ pub mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
 mod runtime;
+#[cfg(test)]
+mod runtime_tests;
 pub mod state;
 #[cfg(test)]
 #[path = "task_tests.rs"]
