@@ -1,0 +1,11 @@
+Références historiques : b1d666d (arrêt déterministe des processus possédés), a563d73 (courses finales de fermeture) et 4ce1b84 (exception du helper de mise à jour).
+
+Comportement : OwnedProcess devient l'autorité unique de lancement des processus possédés. Windows les affecte immédiatement à un Job Object global KILL_ON_JOB_CLOSE ; Linux crée un groupe dédié avec PR_SET_PDEATHSIG ; macOS conserve dans une table fixe l'identité PID/groupe/démarrage et la revalide avant signal. Un échec d'admission tue et moissonne l'enfant avant de rendre l'erreur. Les shells agent, extensions, MCP, SearXNG, Forecast, Ollama et PTY utilisent cette autorité ; le helper de mise à jour reste l'exception de transfert validé. Les WebViews dédiées sont classées par descendance sur Windows/Linux ; les services WebKit macOS restent partagés et ne sont jamais ciblés.
+
+Raison : aucun enfant possédé ne doit être rendu à son appelant avant que la mort du parent et la fermeture coordonnée puissent garantir son arrêt, sans toucher un processus externe ou un service système partagé.
+
+Test rouge observé : les tests OwnedProcess ne compilaient pas avant l'ajout du module et de ProcessKind::AgentShell ; les tests de rôle WebView échouaient sur les types/classificateurs absents ; les tests E2E Node échouaient sur le scénario Linux et parseLinuxProcessTable absents.
+
+Tests verts observés : cargo test --lib --features windows-tests : 3150 réussis, 0 échec, 4 ignorés sur 3154 ; cargo clippy --all-targets -- -D warnings vert ; même contrôle avec --features e2e vert ; cargo fmt --check vert ; npx tsc --noEmit vert ; tests E2E Node 38/38 ; npm test complet vert (1890 tests Vitest et toutes les suites build/CI/CEF/E2E/extensions). Les tests Windows locaux prouvent l'appartenance réelle au Job Object et le moissonnage après admission refusée. Les parcours natifs Windows/macOS ont été étendus et le parcours Linux WebView ajouté à la CI ; ils restent à être exécutés par leurs hôtes CI respectifs.
+
+Remplace : le lancement/configuration dispersé des processus possédés et complète b1d666d/a563d73 sans modifier la transaction Ollama ni l'exception 4ce1b84.
