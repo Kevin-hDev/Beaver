@@ -5,6 +5,23 @@ pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u6
     if let Some(info) = nvidia_smi_info_owned(cancel).await {
         return Some(info);
     }
+    if cancel.is_cancelled() {
+        return None;
+    }
+    // sysfs is filesystem I/O even when usually fast, so the blocking pool owns
+    // the whole snapshot and no Tokio worker performs a partial scan.
+    let snapshot = tokio::task::spawn_blocking(drm_memory_snapshot)
+        .await
+        .ok()
+        .flatten();
+    if cancel.is_cancelled() {
+        None
+    } else {
+        snapshot
+    }
+}
+
+fn drm_memory_snapshot() -> Option<(u64, u64)> {
     let total = drm_memory_mb("mem_info_vram_total", false)
         .or_else(|| drm_memory_mb("mem_info_gtt_total", false));
     let used = drm_memory_mb("mem_info_vram_used", true)

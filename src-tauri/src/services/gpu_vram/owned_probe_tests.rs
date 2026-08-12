@@ -85,6 +85,19 @@ async fn operational_timeout_reaps_the_probe_process() {
     drop(admission);
 }
 
+#[tokio::test]
+async fn blocked_reader_cannot_outlive_the_probe_deadline() {
+    let reader = tokio::spawn(std::future::pending());
+    let started = std::time::Instant::now();
+
+    assert!(
+        owned_probe::join_reader_for_test(reader, started + Duration::from_millis(30))
+            .await
+            .is_none()
+    );
+    assert!(started.elapsed() < Duration::from_secs(1));
+}
+
 async fn wait_until_process_is_gone(pid: u32) -> bool {
     let deadline = std::time::Instant::now() + Duration::from_secs(2);
     loop {
