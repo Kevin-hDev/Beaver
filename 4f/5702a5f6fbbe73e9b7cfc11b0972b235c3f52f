@@ -1,0 +1,5 @@
+Raison : verrouiller le périmètre des corrections mineures après la fusion du jalon 2 avant toute modification de code.
+
+Décision : traiter les sections Mineurs et Nouveaux mineurs en cinq lots, avec 35 obligations vérifiables ; exclure explicitement les sept Infos consignées ; TDD et une git note par lot.
+
+Preuve de base : npm test vert (417 fichiers, 1916 tests) ; cargo test --quiet --lib --features windows-tests -- --test-threads=1 vert (3196 réussis, 2 ignorés, 0 échec). Le premier passage Rust a seulement dépassé la limite de compilation de 5 minutes ; le second passage complet est sorti avec le code 0.
