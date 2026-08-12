@@ -2,7 +2,7 @@ import { mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { reportNativeCefDiagnostics } from "./native-diagnostics.mjs";
+import { reportNativeDiagnostics } from "./native-diagnostics.mjs";
 import {
   buildArguments,
   cleanupProfile,
@@ -61,11 +61,13 @@ try {
   hadPriorFailure = true;
   throw error;
 } finally {
-  if (process.env.E2E_REQUIRE_CEF_SMOKE === "1" && (hadPriorFailure || process.exitCode)) {
+  // Every native journey owns the same bounded logs, so every failure must expose them
+  // before the isolated profile is removed.
+  if (hadPriorFailure || process.exitCode) {
     try {
-      await reportNativeCefDiagnostics(logDirectory);
+      await reportNativeDiagnostics(logDirectory);
     } catch {
-      process.stderr.write("Native CEF diagnostic collection failed.\n");
+      process.stderr.write("Native diagnostic collection failed.\n");
     }
   }
   await cleanupProfile(profilePath, {

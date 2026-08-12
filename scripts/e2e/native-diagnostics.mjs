@@ -50,7 +50,7 @@ const SAFE_EXIT_SIGNALS = new Set([
 ]);
 const SAFE_SUPERVISION_FAILURE = /^(?:admission|reaper|external)-(?:[a-z]+)(?:-[a-z]+){0,3}$/u;
 
-export async function collectNativeCefDiagnostics(logDirectory) {
+export async function collectNativeDiagnostics(logDirectory) {
   const names = await boundedLogNames(logDirectory);
   const diagnostics = new Set();
   for (const name of names) {
@@ -60,17 +60,17 @@ export async function collectNativeCefDiagnostics(logDirectory) {
   return [...diagnostics];
 }
 
-export async function reportNativeCefDiagnostics(
+export async function reportNativeDiagnostics(
   logDirectory,
   report = process.stderr.write.bind(process.stderr),
 ) {
-  const diagnostics = await collectNativeCefDiagnostics(logDirectory);
+  const diagnostics = await collectNativeDiagnostics(logDirectory);
   if (diagnostics.length === 0) {
-    report("Native CEF diagnostic: no safe browser failure category captured.\n");
+    report("Native diagnostic: no safe failure category captured.\n");
     return;
   }
   for (const diagnostic of diagnostics) {
-    report(`Native CEF diagnostic: ${diagnostic}\n`);
+    report(`Native diagnostic: ${diagnostic}\n`);
   }
 }
 
