@@ -9,7 +9,11 @@ pub async fn run_forecast_backtest(
     request: BacktestRequest,
     chronos: State<'_, ChronosSidecar>,
 ) -> Result<ForecastResult, String> {
-    let analysis = evaluation::run(request, chronos.inner()).await?;
+    let sidecar = chronos.inner().clone();
+    let operation_sidecar = sidecar.clone();
+    let analysis = sidecar
+        .run_cancellable(move || async move { evaluation::run(request, &operation_sidecar).await })
+        .await?;
     crate::services::forecast::events::emit_updated(&app, &analysis);
     Ok(analysis)
 }
@@ -21,12 +25,18 @@ pub async fn create_forecast_ensemble(
     model_ids: Vec<String>,
     chronos: State<'_, ChronosSidecar>,
 ) -> Result<ForecastResult, String> {
-    let analysis = crate::services::forecast::advanced::ensemble::create(
-        &analysis_id,
-        &model_ids,
-        Some(chronos.inner()),
-    )
-    .await?;
+    let sidecar = chronos.inner().clone();
+    let operation_sidecar = sidecar.clone();
+    let analysis = sidecar
+        .run_cancellable(move || async move {
+            crate::services::forecast::advanced::ensemble::create(
+                &analysis_id,
+                &model_ids,
+                Some(&operation_sidecar),
+            )
+            .await
+        })
+        .await?;
     crate::services::forecast::events::emit_updated(&app, &analysis);
     Ok(analysis)
 }

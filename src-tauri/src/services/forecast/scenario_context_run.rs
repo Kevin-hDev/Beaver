@@ -57,7 +57,7 @@ pub async fn rerun_with_model(
         None,
     )
     .await;
-    sidecar::schedule_idle_stop(chronos);
+    sidecar::schedule_idle_stop(chronos).await;
     prediction
 }
 

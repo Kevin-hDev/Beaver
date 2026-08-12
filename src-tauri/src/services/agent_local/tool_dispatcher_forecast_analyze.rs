@@ -93,8 +93,17 @@ async fn scenario_create(analysis_id: &str, params: &Value) -> ToolResult {
         Ok(request) => request,
         Err(error) => return ToolResult::validation("forecast_scenario_invalid", error),
     };
-    let chronos = forecast_chronos();
-    save_scenario_result(scenarios::create(request, chronos.as_deref()).await)
+    let Some(chronos) = forecast_chronos() else {
+        return forecast_service_unavailable();
+    };
+    let operation_sidecar = chronos.clone();
+    save_scenario_result(
+        chronos
+            .run_cancellable(move || async move {
+                scenarios::create(request, Some(&operation_sidecar)).await
+            })
+            .await,
+    )
 }
 
 async fn scenario_update(analysis_id: &str, params: &Value) -> ToolResult {
@@ -105,8 +114,17 @@ async fn scenario_update(analysis_id: &str, params: &Value) -> ToolResult {
         Ok(request) => request,
         Err(error) => return ToolResult::validation("forecast_scenario_invalid", error),
     };
-    let chronos = forecast_chronos();
-    save_scenario_result(scenarios::update(request, chronos.as_deref()).await)
+    let Some(chronos) = forecast_chronos() else {
+        return forecast_service_unavailable();
+    };
+    let operation_sidecar = chronos.clone();
+    save_scenario_result(
+        chronos
+            .run_cancellable(move || async move {
+                scenarios::update(request, Some(&operation_sidecar)).await
+            })
+            .await,
+    )
 }
 
 async fn scenario_delete(analysis_id: &str, params: &Value) -> ToolResult {
@@ -145,14 +163,22 @@ async fn ensemble_create(analysis_id: &str, params: &Value) -> ToolResult {
             "Liste de modèles d'ensemble invalide",
         ),
     };
-    let chronos = forecast_chronos();
+    let Some(chronos) = forecast_chronos() else {
+        return forecast_service_unavailable();
+    };
+    let analysis_id = analysis_id.to_string();
+    let operation_sidecar = chronos.clone();
     save_scenario_result(
-        crate::services::forecast::advanced::ensemble::create(
-            analysis_id,
-            &model_ids,
-            chronos.as_deref(),
-        )
-        .await,
+        chronos
+            .run_cancellable(move || async move {
+                crate::services::forecast::advanced::ensemble::create(
+                    &analysis_id,
+                    &model_ids,
+                    Some(&operation_sidecar),
+                )
+                .await
+            })
+            .await,
     )
 }
 
@@ -183,7 +209,15 @@ fn save_scenario_result(
     }
 }
 
-fn forecast_chronos() -> Option<tauri::State<'static, sidecar::ChronosSidecar>> {
+fn forecast_chronos() -> Option<sidecar::ChronosSidecar> {
     let app = super::app_handle_global::get()?;
-    Some(app.state::<sidecar::ChronosSidecar>())
+    Some(app.state::<sidecar::ChronosSidecar>().inner().clone())
+}
+
+fn forecast_service_unavailable() -> ToolResult {
+    ToolResult::unavailable(
+        "forecast_service_unavailable",
+        "Service Forecast indisponible",
+        true,
+    )
 }

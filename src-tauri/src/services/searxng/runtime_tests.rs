@@ -5,10 +5,7 @@ use std::time::{Duration, Instant};
 
 #[tokio::test]
 async fn cancellation_terminates_a_real_runtime_process() {
-    let python = ["python3", "python"]
-        .into_iter()
-        .find_map(|candidate| which::which(candidate).ok())
-        .expect("runtime Python de test");
+    let python = crate::services::test_runtime::python().expect("runtime Python de test");
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
     let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
     let admission = supervisor.try_admit().expect("runtime admission");

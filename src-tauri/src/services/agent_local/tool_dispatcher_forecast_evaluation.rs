@@ -19,8 +19,14 @@ pub async fn backtest(args: &Value) -> ToolResult {
             true,
         );
     };
-    let chronos = app.state::<ChronosSidecar>();
-    match crate::services::forecast::evaluation::run(request, chronos.inner()).await {
+    let chronos = app.state::<ChronosSidecar>().inner().clone();
+    let operation_sidecar = chronos.clone();
+    let result = chronos
+        .run_cancellable(move || async move {
+            crate::services::forecast::evaluation::run(request, &operation_sidecar).await
+        })
+        .await;
+    match result {
         Ok(analysis) => {
             crate::services::forecast::events::emit_updated(app, &analysis);
             comparison_payload(&analysis)

@@ -83,10 +83,7 @@ pub async fn kill_child_process(mut child: tokio::process::Child) {
 
 #[cfg(test)]
 pub async fn spawn_test_fixture() -> Result<tokio::process::Child, String> {
-    let python = ["python3", "python"]
-        .into_iter()
-        .find_map(|candidate| which::which(candidate).ok())
-        .ok_or_else(|| "runtime de test indisponible".to_string())?;
+    let python = crate::services::test_runtime::python()?;
     let mut command = tokio::process::Command::new(python);
     command
         .args(["-c", "import time; time.sleep(30)"])

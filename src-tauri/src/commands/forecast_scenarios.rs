@@ -8,7 +8,13 @@ pub async fn create_forecast_scenario(
     request: scenarios::ScenarioRequest,
     chronos: State<'_, sidecar::ChronosSidecar>,
 ) -> Result<ForecastResult, String> {
-    let analysis = scenarios::create(request, Some(chronos.inner())).await?;
+    let sidecar = chronos.inner().clone();
+    let operation_sidecar = sidecar.clone();
+    let analysis = sidecar
+        .run_cancellable(move || async move {
+            scenarios::create(request, Some(&operation_sidecar)).await
+        })
+        .await?;
     emit_updated(&app, &analysis);
     Ok(analysis)
 }
@@ -19,7 +25,13 @@ pub async fn update_forecast_scenario(
     request: scenarios::ScenarioUpdateRequest,
     chronos: State<'_, sidecar::ChronosSidecar>,
 ) -> Result<ForecastResult, String> {
-    let analysis = scenarios::update(request, Some(chronos.inner())).await?;
+    let sidecar = chronos.inner().clone();
+    let operation_sidecar = sidecar.clone();
+    let analysis = sidecar
+        .run_cancellable(move || async move {
+            scenarios::update(request, Some(&operation_sidecar)).await
+        })
+        .await?;
     emit_updated(&app, &analysis);
     Ok(analysis)
 }
