@@ -93,6 +93,11 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             let _ = work.stop_and_wait(deadline).await;
         }
     };
+    let scheduler = async {
+        if let Some(scheduler) = app.try_state::<services::scheduler::Scheduler>() {
+            let _ = scheduler.stop_and_wait(deadline).await;
+        }
+    };
 
     let _ = tokio::join!(
         services::agent_local::tool_bash_registry::stop_all(),
@@ -105,6 +110,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
         searxng,
         terminals,
         oauth,
+        scheduler,
         agent_work,
     );
 }

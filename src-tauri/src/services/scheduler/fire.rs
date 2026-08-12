@@ -3,19 +3,37 @@ use crate::services::agent_local::ollama_stream;
 use crate::services::agent_local::session_store;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_session::AgentMessage;
-use crate::services::config as cfg;
 use crate::services::llm;
 use crate::services::scheduler::log;
 use chrono::{DateTime, Local, Utc};
 use tauri::{AppHandle, Emitter};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
+
+pub(crate) use super::fire_once::{
+    claim_once, missed_once_action, run_wakeup_steps, MissedOnceAction, WakeupStepOutcome,
+};
+#[cfg(test)]
+pub(crate) use super::fire_once::{claim_once_in, OnceClaimOutcome};
 
 /// Déclenche un wakeup : trouve/crée la conversation Heartbeat pour le modèle,
 /// envoie le prompt à Ollama, append les messages, log l'exécution et émet
-/// l'événement frontend. Si Once → marque active=false.
-pub async fn fire_wakeup(app: AppHandle, wakeup: ScheduledWakeup, scheduled_for: DateTime<Local>) {
-    match dispatch(&app, &wakeup).await {
-        Ok((session_id, tokens)) => {
+/// l'événement frontend. Un réveil ponctuel est revendiqué avant tout appel provider.
+pub async fn fire_wakeup(
+    app: AppHandle,
+    wakeup: ScheduledWakeup,
+    scheduled_for: DateTime<Local>,
+    cancel: CancellationToken,
+) {
+    let result = run_wakeup_steps(
+        matches!(wakeup.schedule, WakeupSchedule::Once { .. }),
+        &cancel,
+        || async { claim_once(&wakeup.id) },
+        || dispatch(&app, &wakeup, &cancel),
+    )
+    .await;
+    match result {
+        Ok(WakeupStepOutcome::Completed((session_id, tokens))) => {
             log::log_ok(&wakeup.id, scheduled_for, &session_id, tokens).await;
             let _ = app.emit(
                 "wakeup-completed",
@@ -26,9 +44,17 @@ pub async fn fire_wakeup(app: AppHandle, wakeup: ScheduledWakeup, scheduled_for:
                 }),
             );
         }
-        Err(e) => {
-            log::log_err(&wakeup.id, scheduled_for, &e).await;
-            ::log::error!("[scheduler] fire_wakeup {} error", wakeup.id);
+        Ok(WakeupStepOutcome::SkippedInactive) => {}
+        Ok(WakeupStepOutcome::Cancelled) => {
+            log::log_cancelled(&wakeup.id, scheduled_for).await;
+            ::log::info!("[scheduler] réveil ponctuel annulé pendant la fermeture");
+        }
+        Err(error) => {
+            if cancel.is_cancelled() {
+                return;
+            }
+            log::log_err(&wakeup.id, scheduled_for, &error).await;
+            ::log::error!("[scheduler] échec d'un réveil");
             let _ = app.emit(
                 "wakeup-failed",
                 serde_json::json!({
@@ -38,45 +64,51 @@ pub async fn fire_wakeup(app: AppHandle, wakeup: ScheduledWakeup, scheduled_for:
             );
         }
     }
-
-    // Marquage Once → active=false, quel que soit le résultat
-    if matches!(wakeup.schedule, WakeupSchedule::Once { .. }) {
-        if let Err(e) = deactivate_once(&wakeup.id) {
-            ::log::error!("[scheduler] deactivate once {}: {}", wakeup.id, e);
-        }
-    }
 }
 
-async fn dispatch(app: &AppHandle, wakeup: &ScheduledWakeup) -> Result<(String, u32), String> {
+async fn dispatch(
+    app: &AppHandle,
+    wakeup: &ScheduledWakeup,
+    cancel: &CancellationToken,
+) -> Result<(String, u32), String> {
     if llm::route::is_interactive_only(&wakeup.provider) {
         return Err("Provider réservé aux conversations manuelles".to_string());
     }
     let session_id = find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?;
     // Route selon provider : Ollama (local) ou LLM API (via catalog).
     let (reply, tokens) = if wakeup.agentic {
-        super::agentic::run(app, wakeup, &session_id).await?
-    } else if wakeup.provider == "ollama" {
-        ollama_stream::collect_chat(
-            &wakeup.model,
-            vec![ChatMessage {
-                role: "user".into(),
-                content: wakeup.prompt.clone(),
-                images: None,
-                tool_calls: None,
-                tool_name: None,
-                tool_call_id: None,
-                reasoning_content: None,
-            }],
-        )
-        .await?
+        super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?
     } else {
-        llm::collect_chat(
-            &wakeup.provider,
-            &wakeup.model,
-            &wakeup.prompt,
-            Some(&session_id),
-        )
-        .await?
+        let response = async {
+            if wakeup.provider == "ollama" {
+                ollama_stream::collect_chat(
+                    &wakeup.model,
+                    vec![ChatMessage {
+                        role: "user".into(),
+                        content: wakeup.prompt.clone(),
+                        images: None,
+                        tool_calls: None,
+                        tool_name: None,
+                        tool_call_id: None,
+                        reasoning_content: None,
+                    }],
+                )
+                .await
+            } else {
+                llm::collect_chat(
+                    &wakeup.provider,
+                    &wakeup.model,
+                    &wakeup.prompt,
+                    Some(&session_id),
+                )
+                .await
+            }
+        };
+        tokio::select! {
+            biased;
+            _ = cancel.cancelled() => return Err("cancelled".to_string()),
+            result = response => result?,
+        }
     };
 
     let user_msg = AgentMessage {
@@ -132,17 +164,4 @@ async fn find_or_create_heartbeat_session(provider: &str, model: &str) -> Result
     // La conserver même après un échec évite de supprimer une session déjà
     // utilisée par un autre réveil concurrent et stabilise la clé de cache.
     Ok(session.id)
-}
-
-pub(crate) fn deactivate_once(id: &str) -> Result<(), String> {
-    cfg::update_config(|config| {
-        if let Some(wakeup) = config
-            .scheduled_wakeups
-            .iter_mut()
-            .find(|wakeup| wakeup.id == id)
-        {
-            wakeup.active = false;
-        }
-        Ok(())
-    })
 }

@@ -33,7 +33,7 @@ export interface HeartbeatConfig {
   global_paused: boolean;
 }
 
-export type WakeupRunStatus = "ok" | "error" | "missed";
+export type WakeupRunStatus = "ok" | "error" | "missed" | "cancelled";
 
 export interface WakeupRun {
   wakeup_id: string;
