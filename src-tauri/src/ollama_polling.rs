@@ -46,7 +46,7 @@ pub fn start(handle: tauri::AppHandle) {
                     .map(|r| r.status().is_success())
                     .unwrap_or(false);
 
-                emit_gpu_status(&handle, &client, &base, running).await;
+                emit_gpu_status(&handle, &client, &base, running, &cancel).await;
 
                 if running {
                     consecutive_failures = 0;
@@ -115,23 +115,24 @@ async fn emit_gpu_status(
     client: &reqwest::Client,
     base: &str,
     ollama_running: bool,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
 ) {
-    let (vram_total, vram_used) = tokio::task::spawn_blocking(|| {
-        use crate::services::gpu_vram;
-        (
-            gpu_vram::detect_vram_mb().unwrap_or(0),
-            gpu_vram::detect_vram_used_mb().unwrap_or(0),
-        )
-    })
-    .await
-    .unwrap_or((0, 0));
+    let (vram_total, vram_used) = crate::services::gpu_vram::get_vram_info_owned(cancel.clone())
+        .await
+        .unwrap_or((0, 0));
+    if cancel.is_cancelled() {
+        return;
+    }
 
     let empty = ollama_ps::PsResponse { models: vec![] };
     let ps = if ollama_running {
         let url = format!("{base}/api/ps");
-        match client.get(&url).send().await {
-            Ok(r) => r.json::<ollama_ps::PsResponse>().await.unwrap_or(empty),
-            Err(_) => empty,
+        tokio::select! {
+            _ = cancel.cancelled() => return,
+            response = client.get(&url).send() => match response {
+                Ok(response) => response.json::<ollama_ps::PsResponse>().await.unwrap_or(empty),
+                Err(_) => empty,
+            }
         }
     } else {
         empty

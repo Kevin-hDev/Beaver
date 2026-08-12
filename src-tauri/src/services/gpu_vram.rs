@@ -2,6 +2,9 @@
 mod linux;
 #[cfg(target_os = "macos")]
 mod macos;
+mod owned_probe;
+#[cfg(test)]
+mod owned_probe_tests;
 #[cfg(target_os = "windows")]
 mod windows;
 
@@ -42,6 +45,26 @@ pub fn detect_vram_used_mb() -> Option<u64> {
     #[cfg(target_os = "windows")]
     {
         return windows::detect_used();
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
+    None
+}
+
+#[allow(clippy::needless_return)] // pattern multi-cfg cross-plateforme
+pub async fn get_vram_info_owned(
+    cancel: crate::services::work_registry::ServiceWorkCancellation,
+) -> Option<(u64, u64)> {
+    #[cfg(target_os = "macos")]
+    {
+        macos::detect_owned(&cancel).await
+    }
+    #[cfg(target_os = "linux")]
+    {
+        return linux::detect_owned(&cancel).await;
+    }
+    #[cfg(target_os = "windows")]
+    {
+        return windows::detect_owned(&cancel).await;
     }
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
     None
