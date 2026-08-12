@@ -71,7 +71,13 @@ fn local_fixture_install_never_runs_its_lifecycle_script() {
         package_name: "beaver-test-extension".to_string(),
     };
 
-    let installed = runner.install_package(&prefix, &source).unwrap();
+    let installed = runner
+        .install_package(
+            &prefix,
+            &source,
+            &super::work_supervision::open_cancellation_for_test(),
+        )
+        .unwrap();
 
     assert!(installed.join("index.js").is_file());
     assert!(!installed.join("postinstall-ran").exists());
@@ -128,6 +134,12 @@ fn an_uncleanable_cache_blocks_installation_before_validation() {
         package_name: "beaver-test-extension".to_string(),
     };
 
-    assert!(runner.install_package(&prefix, &source).is_err());
+    assert!(runner
+        .install_package(
+            &prefix,
+            &source,
+            &super::work_supervision::open_cancellation_for_test(),
+        )
+        .is_err());
     assert!(prefix.join(".npm-cache").is_file());
 }

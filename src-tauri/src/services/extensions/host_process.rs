@@ -11,20 +11,23 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::{Child, Command};
 use tokio::sync::Mutex;
-use tokio::task::JoinHandle;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
+const READER_STOP_TIMEOUT: Duration = Duration::from_secs(1);
 
 pub struct HostProcess {
     child: Mutex<Child>,
     writer: SharedWriter,
     pending: PendingRequests,
     alive: Arc<AtomicBool>,
-    reader: Mutex<Option<JoinHandle<()>>>,
+    reader_done: Mutex<Option<tokio::sync::oneshot::Receiver<()>>>,
 }
 
 impl HostProcess {
-    pub fn spawn(paths: &HostPaths) -> Result<Self, String> {
+    pub async fn spawn(
+        paths: &HostPaths,
+        work: &super::work_supervision::ExtensionWorkServices,
+    ) -> Result<Self, String> {
         let mut command = Command::new(&paths.node);
         command
             .arg(&paths.script)
@@ -48,18 +51,40 @@ impl HostProcess {
         let writer = Arc::new(Mutex::new(stdin));
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let alive = Arc::new(AtomicBool::new(true));
-        let reader = tokio::spawn(super::host_reader::run(
-            stdout,
-            writer.clone(),
-            pending.clone(),
-            alive.clone(),
-        ));
+        let reader_work = work.clone();
+        let run_work = work.clone();
+        let run_writer = writer.clone();
+        let run_pending = pending.clone();
+        let run_alive = alive.clone();
+        let (reader_done, reader_finished) = tokio::sync::oneshot::channel();
+        if reader_work
+            .spawn_reader(move |cancel| async move {
+                super::host_reader::run(
+                    stdout,
+                    run_writer,
+                    run_pending,
+                    run_alive,
+                    run_work,
+                    cancel,
+                )
+                .await;
+                let _ = reader_done.send(());
+            })
+            .is_err()
+        {
+            crate::services::process_tree::terminate_tokio(
+                &mut child,
+                crate::services::process_tree::ProcessKind::ExtensionHost,
+            )
+            .await;
+            return Err(error_codes::HOST_UNAVAILABLE.to_string());
+        }
         Ok(Self {
             child: Mutex::new(child),
             writer,
             pending,
             alive,
-            reader: Mutex::new(Some(reader)),
+            reader_done: Mutex::new(Some(reader_finished)),
         })
     }
 
@@ -109,69 +134,13 @@ impl HostProcess {
         )
         .await;
         drop(child);
-        if let Some(reader) = self.reader.lock().await.take() {
-            reader.abort();
-        }
         host_channel::fail_all(&self.pending).await;
+        if let Some(reader_done) = self.reader_done.lock().await.take() {
+            let _ = tokio::time::timeout(READER_STOP_TIMEOUT, reader_done).await;
+        }
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[tokio::test]
-    async fn matches_concurrent_out_of_order_responses_by_id() {
-        let directory = tempfile::tempdir().unwrap();
-        let script = directory.path().join("host.mjs");
-        std::fs::write(
-            &script,
-            r#"import readline from "node:readline";
-const lines = readline.createInterface({ input: process.stdin });
-lines.on("line", (line) => {
-  const message = JSON.parse(line);
-  setTimeout(() => process.stdout.write(JSON.stringify({
-    jsonrpc: "2.0", id: message.id, result: message.params.value
-  }) + "\n"), message.params.delay);
-});"#,
-        )
-        .unwrap();
-        let paths = HostPaths {
-            node: which::which("node").unwrap(),
-            script,
-            directory: directory.path().to_path_buf(),
-        };
-        let host = Arc::new(HostProcess::spawn(&paths).unwrap());
-        let slow_host = host.clone();
-        let fast_host = host.clone();
-        let (slow, fast) = tokio::join!(
-            slow_host.request("test", json!({"value": "slow", "delay": 50})),
-            fast_host.request("test", json!({"value": "fast", "delay": 1})),
-        );
-
-        assert_eq!(slow.unwrap(), json!("slow"));
-        assert_eq!(fast.unwrap(), json!("fast"));
-        host.kill().await;
-        assert!(host.request("test", json!({})).await.is_err());
-    }
-
-    #[tokio::test]
-    async fn bundled_extension_host_answers_hello() {
-        let directory = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("resources")
-            .join("extension-host");
-        let paths = HostPaths {
-            node: which::which("node").unwrap().canonicalize().unwrap(),
-            script: directory.join("host.mjs"),
-            directory,
-        };
-        let host = HostProcess::spawn(&paths).unwrap();
-
-        let hello = host.request("host.hello", json!({})).await.unwrap();
-
-        assert_eq!(hello["apiVersion"], "1");
-        assert!(hello["nodeVersion"].as_str().is_some());
-        host.kill().await;
-    }
-}
+#[path = "host_process_tests.rs"]
+mod tests;

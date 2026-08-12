@@ -94,7 +94,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
         services::codex_oauth::login::cancel_login(),
         services::agent_local::tool_bash_registry::stop_all(),
         services::mcp_bridge::process_manager::shutdown_all(),
-        services::extensions::stop(),
+        services::extensions::stop_and_wait(deadline),
         services::ollama_kill::release_vram(),
         gateway,
         chronos,

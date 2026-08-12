@@ -56,6 +56,19 @@ impl<const CAPACITY: usize> Drop for StopBatch<CAPACITY> {
 }
 
 impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
+    pub fn begin_closing(&self) {
+        let mut state = self.lock_state();
+        if state.phase == ServiceWorkPhase::Open {
+            state.phase = ServiceWorkPhase::Closing;
+        }
+        if state.diagnostics.active == 0 {
+            state.phase = ServiceWorkPhase::Closed;
+        }
+        drop(state);
+        self.inner.cancel.cancel();
+        self.inner.changed.notify_waiters();
+    }
+
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
         if self.phase() == ServiceWorkPhase::Closed {
             return true;
@@ -84,10 +97,8 @@ impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
     }
 
     fn begin_stop(&self) -> Vec<(ServiceWorkKey, JoinHandle<()>)> {
+        self.begin_closing();
         let mut state = self.lock_state();
-        if state.phase == ServiceWorkPhase::Open {
-            state.phase = ServiceWorkPhase::Closing;
-        }
         let mut handles = Vec::with_capacity(CAPACITY);
         for (index, slot) in state.slots.iter_mut().enumerate() {
             if slot.occupied {
@@ -102,12 +113,7 @@ impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
                 }
             }
         }
-        if state.diagnostics.active == 0 {
-            state.phase = ServiceWorkPhase::Closed;
-        }
         drop(state);
-        self.inner.cancel.cancel();
-        self.inner.changed.notify_waiters();
         handles
     }
 
@@ -130,6 +136,10 @@ impl<const CAPACITY: usize> WorkRegistry<CAPACITY> {
 }
 
 impl<const CAPACITY: usize> ServiceWorkSupervisor<CAPACITY> {
+    pub fn begin_closing(&self) {
+        self.registry.begin_closing();
+    }
+
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.registry.stop_and_wait(deadline).await
     }
