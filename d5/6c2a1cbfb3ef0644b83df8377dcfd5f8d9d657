@@ -1,0 +1,7 @@
+Reference: CI run 31567578177, Desktop E2E job 94022566525, plus the @wdio/native-core LogWriter implementation used by @wdio/tauri-service.
+Behavior: the bounded native diagnostic reader recognizes allowlisted lifecycle stages after WDIO has normalized them into timestamped Tauri backend records; malformed instance labels and all other messages remain ignored.
+Reason: the all-failure collector ran in CI but reported no safe category because WDIO removes bracketed application markers before writing its log authority.
+Red proof: the normalized-log test returned an empty diagnostic list for setup-completed and event-loop-entered records in the exact writer envelope.
+Green proof: 24 focused Node tests pass, npm run lint exits 0, diff --check exits 0, and graphify update completes with 31064 nodes and 62557 edges.
+Neighbors: completes the diagnostic visibility introduced by 2fbce7e; it does not change Beaver production or E2E runtime behavior.
+Replacement: extends the existing single bounded parser; it adds no second log reader or unbounded fallback.
