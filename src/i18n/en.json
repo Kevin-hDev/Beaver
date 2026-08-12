@@ -1085,6 +1085,14 @@
   "errors": {
     "crashMessage": "An error occurred. Please restart the application.",
     "operationFailed": "Operation failed. Please try again.",
+    "admission": {
+      "appShuttingDown": "Beaver is closing. Try again after restarting the application.",
+      "appCapacity": "Beaver is handling too many operations. Try again shortly.",
+      "serviceShuttingDown": "This service is stopping. Try again shortly.",
+      "serviceCapacity": "Too many operations are already running. Try again shortly.",
+      "gatewayShuttingDown": "Messaging channels are stopping. Try again shortly.",
+      "gatewayBusy": "Too many messages are already being processed. Try again shortly."
+    },
     "localStore": {
       "ollamaCustomization": "The Ollama customization file is unreadable. Restore “ollama-custom-models.json” from a backup in Settings > Advanced > Beaver data. Do not delete it: without a backup, restarting loses this history and Beaver can no longer guarantee that a prompt shown as native Ollama is truly the original.",
       "ollamaNativePrompts": "The native Ollama instructions file is unreadable. Restore “ollama-native-system-prompts.json” from a backup. Without a backup, close Beaver, delete this file in Settings > Advanced > Beaver data, then restart the application to use the defaults.",

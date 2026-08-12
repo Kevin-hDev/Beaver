@@ -6,6 +6,7 @@ use std::future::Future;
 use std::sync::OnceLock;
 use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc;
+use tokio::sync::mpsc::error::TrySendError;
 use tokio_util::sync::CancellationToken;
 
 use super::agent_work_supervision::{AgentWorkServices, MAX_ACTIVE_SUBAGENTS};
@@ -59,7 +60,7 @@ where
         .map_err(public_error)?;
     let sender = TX
         .get()
-        .ok_or_else(|| "Canal de spawn non initialisé".to_string())?;
+        .ok_or_else(|| "service-shutting-down".to_string())?;
     try_send_then(
         sender,
         QueuedSpawn {
@@ -78,9 +79,10 @@ pub(super) fn try_send_then<T, F>(
 where
     F: FnOnce(),
 {
-    sender
-        .try_send(value)
-        .map_err(|_| "Trop de sous-agents en attente".to_string())?;
+    sender.try_send(value).map_err(|error| match error {
+        TrySendError::Full(_) => "service-work-capacity-reached".to_string(),
+        TrySendError::Closed(_) => "service-shutting-down".to_string(),
+    })?;
     after_accepted();
     Ok(())
 }

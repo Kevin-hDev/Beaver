@@ -1080,6 +1080,14 @@
   "errors": {
     "crashMessage": "Si è verificato un errore. Riavvia l'applicazione.",
     "operationFailed": "Operazione fallita. Riprova.",
+    "admission": {
+      "appShuttingDown": "Beaver si sta chiudendo. Riprova dopo aver riavviato l’applicazione.",
+      "appCapacity": "Beaver sta già gestendo troppe operazioni. Riprova tra poco.",
+      "serviceShuttingDown": "Questo servizio si sta arrestando. Riprova tra poco.",
+      "serviceCapacity": "Sono già in corso troppe operazioni. Riprova tra poco.",
+      "gatewayShuttingDown": "I canali di messaggistica si stanno arrestando. Riprova tra poco.",
+      "gatewayBusy": "Sono già in elaborazione troppi messaggi. Riprova tra poco."
+    },
     "localStore": {
       "ollamaCustomization": "Il file di personalizzazione di Ollama non è leggibile. Ripristina “ollama-custom-models.json” da un backup in Impostazioni > Avanzate > Dati Beaver. Non eliminarlo: senza backup, il riavvio perderà questa cronologia e Beaver non potrà più garantire che un prompt mostrato come nativo di Ollama sia davvero l’originale.",
       "ollamaNativePrompts": "Il file delle istruzioni native di Ollama non è leggibile. Ripristina “ollama-native-system-prompts.json” da un backup. Senza backup, chiudi Beaver, elimina questo file in Impostazioni > Avanzate > Dati Beaver e riavvia l’applicazione con i valori predefiniti.",

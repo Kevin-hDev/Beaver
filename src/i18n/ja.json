@@ -1080,6 +1080,14 @@
   "errors": {
     "crashMessage": "エラーが発生しました。アプリケーションを再起動してください。",
     "operationFailed": "操作に失敗しました。もう一度お試しください。",
+    "admission": {
+      "appShuttingDown": "Beaver を終了しています。アプリを再起動してからもう一度お試しください。",
+      "appCapacity": "Beaver で処理中の操作が多すぎます。しばらくしてからもう一度お試しください。",
+      "serviceShuttingDown": "このサービスを停止しています。しばらくしてからもう一度お試しください。",
+      "serviceCapacity": "実行中の操作が多すぎます。しばらくしてからもう一度お試しください。",
+      "gatewayShuttingDown": "メッセージチャンネルを停止しています。しばらくしてからもう一度お試しください。",
+      "gatewayBusy": "処理中のメッセージが多すぎます。しばらくしてからもう一度お試しください。"
+    },
     "localStore": {
       "ollamaCustomization": "Ollama のカスタマイズファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-custom-models.json」を復元してください。削除しないでください。バックアップなしで再起動するとこの履歴が失われ、Ollama ネイティブと表示されるプロンプトが本当に元のものか Beaver は保証できなくなります。",
       "ollamaNativePrompts": "Ollama のネイティブ指示ファイルを読み取れません。バックアップから「ollama-native-system-prompts.json」を復元してください。バックアップがない場合は Beaver を終了し、「設定 > 詳細 > Beaver データ」でこのファイルを削除してから再起動し、デフォルト値を使用してください。",

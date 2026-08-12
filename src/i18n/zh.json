@@ -1080,6 +1080,14 @@
   "errors": {
     "crashMessage": "发生错误，请重启应用。",
     "operationFailed": "操作失败，请重试。",
+    "admission": {
+      "appShuttingDown": "Beaver 正在关闭。请在重新启动应用后重试。",
+      "appCapacity": "Beaver 正在处理过多操作，请稍后重试。",
+      "serviceShuttingDown": "此服务正在停止，请稍后重试。",
+      "serviceCapacity": "当前运行的操作过多，请稍后重试。",
+      "gatewayShuttingDown": "消息通道正在停止，请稍后重试。",
+      "gatewayBusy": "当前处理的消息过多，请稍后重试。"
+    },
     "localStore": {
       "ollamaCustomization": "Ollama 自定义文件无法读取。请在“设置 > 高级 > Beaver 数据”中从备份恢复“ollama-custom-models.json”。请勿删除它：如果没有备份，重启后将丢失此历史记录，Beaver 也无法再保证标为 Ollama 原生的提示词确实是原始版本。",
       "ollamaNativePrompts": "Ollama 原生指令文件无法读取。请从备份恢复“ollama-native-system-prompts.json”。如果没有备份，请关闭 Beaver，在“设置 > 高级 > Beaver 数据”中删除该文件，然后重启并使用默认值。",

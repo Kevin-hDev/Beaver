@@ -17,6 +17,7 @@ import {
 import { ToolItem } from "./tool-item";
 import { toolDisplayInfo } from "./tool-display";
 import { isLegacyShellStopError, shellCommandPreview } from "./tool-shell-display";
+import { isAdmissionError } from "@/lib/admission-error";
 
 export interface RenderableTool {
   name: string;
@@ -144,7 +145,9 @@ export function ToolDetailRow({
     ...(tool.warnings ?? []),
     ...(tool.truncated ? [t("agentLocal.toolActivity.resultTruncated")] : []),
   ].map(sanitizeToolErrorDetails);
-  const resultDetails = tool.is_error
+  const resultDetails = tool.is_error && isAdmissionError(tool.result)
+    ? ""
+    : tool.is_error
     ? sanitizeToolErrorDetails(tool.result ?? "")
     : rawResult;
   const result = [resultDetails, ...notices].filter(Boolean).join("\n\n");
