@@ -1,0 +1,39 @@
+Jalon 2 — supervision du scheduler et résultats ponctuels typés
+
+Référence
+- Branche de référence du jalon : d0c7d6b.
+- Ce commit suit la supervision Forecast 0bbed33.
+- Il remplace les mécanismes historiques eab61c1 et e835ef7 par l'admission globale et locale actuelle.
+
+Problèmes observés
+- La boucle du scheduler et chaque réveil étaient lancés sans propriétaire attendu par la fermeture.
+- Un réveil ponctuel était désactivé après l'appel provider : deux passages concurrents pouvaient donc l'exécuter deux fois.
+- Un réveil devenu inactif était traité comme une erreur et une annulation après revendication disparaissait du journal.
+- Une erreur de revendication pendant la réconciliation d'un réveil manqué était avalée.
+- Le journal bornait le résultat après avoir lu et collecté tout le fichier, et ses écritures concurrentes n'avaient aucune autorité unique.
+
+Décisions et raisons
+- Le scheduler possède deux registres locaux bornés : une boucle persistante et 64 réveils. Chaque tâche acquiert aussi l'admission globale avant de démarrer.
+- stop_and_wait ferme les deux admissions, propage l'annulation existante jusque dans le flux agentique et attend le nettoyage sous l'échéance absolue commune.
+- Un réveil ponctuel est revendiqué atomiquement avant tout appel provider et retourne Claimed ou Inactive ; aucun texte n'est interprété comme un état.
+- Inactive ne déclenche ni provider, ni événement d'erreur, ni fausse entrée de journal. Une annulation après Claimed produit le statut Cancelled.
+- La réconciliation journalise une erreur claim_once avec un message générique, mais garde Inactive silencieux.
+- claim_once appelle notify_config_changed uniquement après la mutation réelle, afin que la boucle recalcule son prochain instant.
+- Le journal possède une écriture sérialisée, lit au plus 1 024 000 octets, conserve au plus 500 lignes de 2 048 octets et assainit les identifiants à 128 caractères ASCII.
+- Le statut Cancelled est fermé côté Rust et TypeScript et traduit en français, anglais, espagnol, allemand, italien, chinois et japonais.
+
+Tests écrits avant correction et échecs observés
+- Les tests Rust ont échoué à compiler car OnceClaimOutcome, WakeupStepOutcome, MissedOnceAction, Cancelled, les entrées de journal et stop_and_wait n'existaient pas.
+- Le test de boucle persistante a ensuite échoué à compiler tant que le scheduler n'exposait aucun chemin supervisé pour son worker.
+- Le test frontend a échoué avec heartbeat.status.cancelled absent des catalogues.
+
+Preuves finales Windows
+- Suite scheduler ciblée : 28 réussis, 0 échec.
+- Tests frontend du format et de l'historique : 10 réussis, 0 échec.
+- Le test de fermeture prouve l'attente du nettoyage, active=0, high_water=1, le refus tardif et le compteur de refus exact.
+- Un test distinct prouve que la boucle persistante est annulée et attendue.
+- Suite Rust complète avec windows-tests : 3133 tests, 3129 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- npx tsc --noEmit et npm run lint : verts.
+- cargo fmt, git diff --check et limite de 230 lignes : verts.
+- graphify update . exécuté après les changements.
