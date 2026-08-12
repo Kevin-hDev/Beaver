@@ -1,14 +1,12 @@
 use std::sync::Arc;
 
-use tokio::sync::{mpsc, RwLock};
-use tokio_util::sync::CancellationToken;
-
 use super::agent_bridge::GatewayAgentBridge;
 use super::channels::InboundMessage;
 use super::refusal_audit::RefusalAudit;
 use super::service_state::GatewayState;
 use super::work_supervision::GatewayWorkServices;
 use crate::services::work_registry::ServiceWorkCancellation;
+use tokio::sync::{mpsc, RwLock};
 
 pub(super) async fn consume_messages(
     mut receiver: mpsc::Receiver<InboundMessage>,
@@ -16,10 +14,10 @@ pub(super) async fn consume_messages(
     bridge: Arc<GatewayAgentBridge>,
     app: tauri::AppHandle,
     work: GatewayWorkServices,
-    run_cancel: CancellationToken,
     consumer_cancel: ServiceWorkCancellation,
     refusal_audit: RefusalAudit,
 ) {
+    let run_cancel = work.cancellation_token();
     loop {
         let message = tokio::select! {
             _ = consumer_cancel.cancelled() => return,

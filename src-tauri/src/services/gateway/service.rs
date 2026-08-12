@@ -101,7 +101,6 @@ impl GatewayService {
         drop(sender);
 
         let message_work = work.clone();
-        let run_cancel = work.cancellation_token();
         let state = Arc::clone(&self.state);
         let consumer_app = app.clone();
         let consumer_audit = refusal_audit.clone();
@@ -112,7 +111,6 @@ impl GatewayService {
                 bridge,
                 consumer_app,
                 message_work,
-                run_cancel,
                 consumer_cancel,
                 consumer_audit,
             )
