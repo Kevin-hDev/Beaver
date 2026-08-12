@@ -2,10 +2,27 @@ use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 
+type SharedChild = Arc<Mutex<Box<dyn portable_pty::Child + Send + Sync>>>;
+
 pub struct PtySession {
     master: Box<dyn portable_pty::MasterPty + Send>,
-    child: Box<dyn portable_pty::Child + Send + Sync>,
-    writer: Arc<Mutex<Box<dyn Write + Send>>>,
+    child: SharedChild,
+    writer: Mutex<Option<Box<dyn Write + Send>>>,
+}
+
+#[derive(Clone)]
+pub(super) struct PtyChildStatus(SharedChild);
+
+impl PtyChildStatus {
+    pub(super) fn exit_code(&self) -> Option<u32> {
+        self.0
+            .lock()
+            .ok()?
+            .try_wait()
+            .ok()
+            .flatten()
+            .map(|status| status.exit_code())
+    }
 }
 
 impl PtySession {
@@ -14,98 +31,123 @@ impl PtySession {
         cols: u16,
         rows: u16,
     ) -> Result<(Self, Box<dyn Read + Send>), String> {
+        if cols == 0 || rows == 0 {
+            return Err("terminal-size-invalid".to_string());
+        }
         let pty_system = NativePtySystem::default();
-
-        let size = PtySize {
-            rows,
-            cols,
-            pixel_width: 0,
-            pixel_height: 0,
-        };
-
         let pair = pty_system
-            .openpty(size)
-            .map_err(|e| format!("openpty failed: {}", e))?;
-
+            .openpty(pty_size(cols, rows))
+            .map_err(|_| terminal_error())?;
         let shell = default_shell()?;
-        let mut cmd = CommandBuilder::new(&shell);
+        let mut command = CommandBuilder::new(&shell);
 
         #[cfg(unix)]
-        cmd.arg("-l");
+        command.arg("-l");
 
-        cmd.env("TERM", "xterm-256color");
-        // Empêche zsh de basculer en mode vi si EDITOR contient "vi"
-        if let Ok(editor) = std::env::var("EDITOR") {
-            if editor.contains("vi") {
-                cmd.env("EDITOR", "");
-            }
+        command.env("TERM", "xterm-256color");
+        if std::env::var("EDITOR").is_ok_and(|editor| editor.contains("vi")) {
+            command.env("EDITOR", "");
         }
-
-        if let Some(dir) = cwd {
-            let path = std::path::Path::new(dir);
+        if let Some(directory) = cwd {
+            let path = std::path::Path::new(directory);
             if !path.is_absolute() || !path.is_dir() {
-                return Err("Invalid working directory".to_string());
+                return Err("terminal-cwd-invalid".to_string());
             }
-            cmd.cwd(dir);
+            command.cwd(directory);
         }
 
         let child = pair
             .slave
-            .spawn_command(cmd)
-            .map_err(|e| format!("spawn failed: {}", e))?;
-
+            .spawn_command(command)
+            .map_err(|_| terminal_error())?;
         let reader = pair
             .master
             .try_clone_reader()
-            .map_err(|e| format!("clone reader: {}", e))?;
-
-        let writer = pair
-            .master
-            .take_writer()
-            .map_err(|e| format!("take writer: {}", e))?;
-
-        let session = Self {
-            master: pair.master,
-            child,
-            writer: Arc::new(Mutex::new(writer)),
-        };
-
-        Ok((session, reader))
+            .map_err(|_| terminal_error())?;
+        let writer = pair.master.take_writer().map_err(|_| terminal_error())?;
+        Ok((
+            Self {
+                master: pair.master,
+                child: Arc::new(Mutex::new(child)),
+                writer: Mutex::new(Some(writer)),
+            },
+            reader,
+        ))
     }
 
     const MAX_WRITE_BYTES: usize = 65_536;
 
     pub fn write(&self, data: &[u8]) -> Result<(), String> {
         if data.len() > Self::MAX_WRITE_BYTES {
-            return Err("Write payload too large".to_string());
+            return Err("terminal-write-too-large".to_string());
         }
-        let mut w = self.writer.lock().map_err(|e| format!("lock: {}", e))?;
-        w.write_all(data).map_err(|e| format!("write: {}", e))?;
-        w.flush().map_err(|e| format!("flush: {}", e))?;
-        Ok(())
+        let mut writer = self.writer.lock().map_err(|_| terminal_error())?;
+        let writer = writer.as_mut().ok_or_else(terminal_error)?;
+        writer.write_all(data).map_err(|_| terminal_error())?;
+        writer.flush().map_err(|_| terminal_error())
     }
 
     pub fn resize(&self, cols: u16, rows: u16) -> Result<(), String> {
+        if cols == 0 || rows == 0 {
+            return Err("terminal-size-invalid".to_string());
+        }
         self.master
-            .resize(PtySize {
-                rows,
-                cols,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .map_err(|e| format!("resize: {}", e))
+            .resize(pty_size(cols, rows))
+            .map_err(|_| terminal_error())
     }
 
+    #[cfg(test)]
     pub fn kill(&mut self) -> Result<(), String> {
-        self.child.kill().map_err(|e| format!("kill: {}", e))
+        self.shutdown().map(|_| ())
     }
 
-    pub fn try_wait(&mut self) -> Option<u32> {
-        self.child
-            .try_wait()
-            .ok()
-            .flatten()
+    pub(super) fn process_id(&self) -> Option<u32> {
+        self.child.lock().ok()?.process_id()
+    }
+
+    pub(super) fn child_status(&self) -> PtyChildStatus {
+        PtyChildStatus(Arc::clone(&self.child))
+    }
+
+    pub(super) fn shutdown(&mut self) -> Result<u32, String> {
+        let _ = self.close_input();
+        if let Some(code) = self.child_status().exit_code() {
+            return Ok(code);
+        }
+        let pid = self.process_id().ok_or_else(terminal_error)?;
+        crate::services::process_tree::kill(
+            pid,
+            crate::services::process_tree::ProcessKind::Terminal,
+        );
+        let mut child = self.child.lock().map_err(|_| terminal_error())?;
+        if child.try_wait().map_err(|_| terminal_error())?.is_none() {
+            child.kill().map_err(|_| terminal_error())?;
+        }
+        child
+            .wait()
             .map(|status| status.exit_code())
+            .map_err(|_| terminal_error())
+    }
+
+    fn close_input(&self) -> Result<(), String> {
+        let writer = self.writer.lock().map_err(|_| terminal_error())?.take();
+        drop(writer);
+        Ok(())
+    }
+}
+
+impl Drop for PtySession {
+    fn drop(&mut self) {
+        let _ = self.shutdown();
+    }
+}
+
+fn pty_size(cols: u16, rows: u16) -> PtySize {
+    PtySize {
+        rows,
+        cols,
+        pixel_width: 0,
+        pixel_height: 0,
     }
 }
 
@@ -115,7 +157,7 @@ fn default_shell() -> Result<String, String> {
         let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
         let path = std::path::Path::new(&shell);
         if !path.is_absolute() || !path.is_file() {
-            return Err("Invalid shell binary".to_string());
+            return Err("terminal-shell-invalid".to_string());
         }
         Ok(shell)
     }
@@ -123,4 +165,8 @@ fn default_shell() -> Result<String, String> {
     {
         Ok("powershell.exe".to_string())
     }
+}
+
+fn terminal_error() -> String {
+    "terminal-error".to_string()
 }

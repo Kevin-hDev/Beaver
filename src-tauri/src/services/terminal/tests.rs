@@ -1,8 +1,20 @@
 #[cfg(test)]
 mod tests {
+    use crate::app_exit::AppExitCoordinator;
     use crate::services::terminal::pty_session::PtySession;
+    use crate::services::terminal::PtyManager;
     use std::io::Read;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
+    use sysinfo::{Pid, System};
+
+    fn process_is_running(pid: u32) -> bool {
+        let mut system = System::new();
+        system.refresh_processes(
+            sysinfo::ProcessesToUpdate::Some(&[Pid::from_u32(pid)]),
+            true,
+        );
+        system.process(Pid::from_u32(pid)).is_some()
+    }
 
     #[test]
     fn test_pty_spawn() {
@@ -81,5 +93,46 @@ mod tests {
         let (_s1, _r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
         let (_s2, _r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
         let (_s3, _r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+    }
+
+    #[tokio::test]
+    async fn shutdown_reaps_a_real_shell_and_waits_for_terminal_threads() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+        let (id, _) = manager
+            .spawn_for_test(None, 80, 24)
+            .expect("real PTY shell");
+        let pid = manager.process_id_for_test(id).expect("shell process id");
+        assert!(process_is_running(pid));
+
+        assert!(
+            manager
+                .stop_and_wait(Instant::now() + Duration::from_secs(5))
+                .await
+        );
+
+        assert!(!process_is_running(pid));
+        assert_eq!(manager.active_sessions_for_test(), 0);
+    }
+
+    #[tokio::test]
+    async fn shutdown_permanently_refuses_new_terminal_sessions() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+
+        assert!(
+            manager
+                .stop_and_wait(Instant::now() + Duration::from_secs(1))
+                .await
+        );
+        assert_eq!(
+            manager.spawn_for_test(None, 80, 24).unwrap_err(),
+            "terminal-shutting-down"
+        );
+    }
+
+    #[test]
+    fn terminal_capacity_remains_sixteen_sessions() {
+        assert_eq!(PtyManager::MAX_PTY_SESSIONS, 16);
     }
 }
