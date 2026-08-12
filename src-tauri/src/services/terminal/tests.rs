@@ -2,8 +2,10 @@
 mod tests {
     use crate::app_exit::AppExitCoordinator;
     use crate::services::terminal::pty_session::PtySession;
+    use crate::services::terminal::shutdown;
     use crate::services::terminal::PtyManager;
     use std::io::Read;
+    use std::sync::{Arc, Condvar, Mutex};
     use std::time::{Duration, Instant};
     use sysinfo::{Pid, System};
 
@@ -134,5 +136,38 @@ mod tests {
     #[test]
     fn terminal_capacity_remains_sixteen_sessions() {
         assert_eq!(PtyManager::MAX_PTY_SESSIONS, 16);
+    }
+
+    #[test]
+    fn timed_out_terminal_close_does_not_pin_tokio_runtime_shutdown() {
+        let release = Arc::new((Mutex::new(false), Condvar::new()));
+        let operation_release = Arc::clone(&release);
+        let (dropped, observed) = std::sync::mpsc::sync_channel(1);
+        let runtime_owner = std::thread::spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_time()
+                .build()
+                .expect("test runtime");
+            assert!(!runtime.block_on(shutdown::run_until(
+                Instant::now() + Duration::from_millis(20),
+                move || {
+                    let (lock, wake) = &*operation_release;
+                    let mut released = lock.lock().expect("release lock");
+                    while !*released {
+                        released = wake.wait(released).expect("release wait");
+                    }
+                },
+            )));
+            drop(runtime);
+            dropped.send(()).expect("report runtime drop");
+        });
+
+        let runtime_dropped = observed.recv_timeout(Duration::from_millis(250));
+        let (lock, wake) = &*release;
+        *lock.lock().expect("release lock") = true;
+        wake.notify_one();
+        runtime_owner.join().expect("runtime owner");
+
+        assert!(runtime_dropped.is_ok(), "Tokio waited for timed-out close");
     }
 }
