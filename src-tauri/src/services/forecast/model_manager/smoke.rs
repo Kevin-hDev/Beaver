@@ -64,10 +64,11 @@ fn run_smoke(
         .env("TABPFN_DISABLE_TELEMETRY", "1")
         .stdout(Stdio::null())
         .stderr(Stdio::null());
-    process_tree::configure(&mut command);
-    let mut child = command
-        .spawn()
-        .map_err(|_| "Validation du modèle Forecast impossible".to_string())?;
+    let mut child = crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        process_tree::ProcessKind::ForecastRuntime,
+    )
+    .map_err(|_| "Validation du modèle Forecast impossible".to_string())?;
     let started = Instant::now();
     loop {
         if cancel.is_cancelled() || started.elapsed() >= SMOKE_TIMEOUT {

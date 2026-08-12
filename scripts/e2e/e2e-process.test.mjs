@@ -21,6 +21,10 @@ const nativeSmokeSource = readFileSync(
   new URL("../../tests/e2e/native-cef-shutdown.spec.ts", import.meta.url),
   "utf8",
 );
+const nativeWebViewSource = readFileSync(
+  new URL("../../tests/e2e/native-webview-shutdown.spec.ts", import.meta.url),
+  "utf8",
+);
 const invokeSource = readFileSync(
   new URL("../../src-tauri/src/invoke_handler.rs", import.meta.url),
   "utf8",
@@ -163,16 +167,34 @@ test("CI runs the real CEF journey on Windows and macOS only", () => {
   assert.match(macJob, extensionHostInstall);
 });
 
+test("CI runs the real Tauri WebView journey on Linux", () => {
+  const linuxJob = ciSource.slice(
+    ciSource.indexOf("  backend-linux-native:"),
+    ciSource.indexOf("  backend-windows-native:"),
+  );
+  assert.match(linuxJob, /E2E_REQUIRE_WEBVIEW_SMOKE: "1"[\s\S]*xvfb-run[\s\S]*npm run test:e2e/u);
+  assert.match(linuxJob, /webkit2gtk-driver/u);
+});
+
 test("the native CEF journey uses one isolated application session", () => {
   assert.match(wdioSource, /E2E_REQUIRE_CEF_SMOKE[\s\S]*native-cef-shutdown\.spec\.ts[\s\S]*onboarding\.spec\.ts/u);
   assert.match(nativeSmokeSource, /completeOnboarding\(\)/u);
-  assert.match(wdioSource, /logLevel:\s*nativeCefSmoke\s*\?\s*"info"\s*:\s*"warn"/u);
+  assert.match(wdioSource, /logLevel:\s*nativeSmoke\s*\?\s*"info"\s*:\s*"warn"/u);
   assert.match(runnerSource, /const logDirectory = join\(profilePath,\s*"logs"\)/u);
   assert.match(runnerSource, /E2E_LOG_DIR:\s*logDirectory/u);
   assert.match(wdioSource, /outputDir:\s*e2eLogDirectory/u);
   assert.match(wdioSource, /process\.platform === "darwin"[\s\S]*macos-app-observer\.mjs/u);
   assert.match(wdioSource, /appBinaryPath:\s*driverBinaryPath/u);
   assert.match(wdioSource, /appArgs:\s*driverArguments/u);
+});
+
+test("the native WebView journey observes classified pids before coordinated exit", () => {
+  const observation = nativeWebViewSource.indexOf('invokeTauri<NativeWebViews>("e2e_native_webviews")');
+  const request = nativeWebViewSource.indexOf('invokeTauri("e2e_request_exit")', observation);
+  const release = nativeWebViewSource.indexOf("browser.deleteSession()", request);
+  const exit = nativeWebViewSource.indexOf("waitForProcessIdsToExit", release);
+  assert.ok(observation >= 0 && request > observation && release > request && exit > release);
+  assert.match(wdioSource, /E2E_REQUIRE_WEBVIEW_SMOKE[\s\S]*native-webview-shutdown\.spec\.ts/u);
 });
 
 test("the coordinated exit command is compiled only into the E2E handler", () => {

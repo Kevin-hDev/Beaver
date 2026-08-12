@@ -53,6 +53,9 @@ mod ollama_kill_tests;
 pub mod ollama_lifecycle;
 pub mod ollama_port;
 pub mod ollama_ps;
+pub mod owned_process;
+#[cfg(test)]
+mod owned_process_tests;
 pub mod paths;
 pub mod personality_injection;
 pub mod private_store;

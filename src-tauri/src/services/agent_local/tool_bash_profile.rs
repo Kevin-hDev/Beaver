@@ -90,7 +90,6 @@ async fn capture(shell: &str, working_dir: &Path) -> Option<ShellProfile> {
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .kill_on_drop(true);
-    super::tool_bash_platform::configure_process_group(&mut command);
     let result = capture_process(command, &marker).await;
     super::shell_sandbox::cleanup_temp(cleanup_dir).await;
     result
@@ -100,7 +99,12 @@ async fn capture_process(
     mut command: tokio::process::Command,
     marker: &str,
 ) -> Option<ShellProfile> {
-    let mut child = command.spawn().ok()?;
+    let mut child = crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::AgentShell,
+    )
+    .await
+    .ok()?;
     let Some(pid) = child.id() else {
         let _ = child.kill().await;
         let _ = child.wait().await;

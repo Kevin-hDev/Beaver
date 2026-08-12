@@ -6,13 +6,15 @@ use std::os::unix::process::CommandExt;
 #[cfg(windows)]
 use std::process::Stdio;
 #[cfg(unix)]
-use sysinfo::{Pid, System};
+#[path = "process_tree_unix.rs"]
+mod unix;
 
 const GRACEFUL_STOP_TIMEOUT: Duration = Duration::from_millis(500);
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
 
 #[derive(Debug, Clone, Copy)]
 pub enum ProcessKind {
+    AgentShell,
     ExtensionHost,
     ExtensionInstaller,
     Forecast,
@@ -31,6 +33,7 @@ mod windows_tests;
 impl ProcessKind {
     fn label(self) -> &'static str {
         match self {
+            Self::AgentShell => "agent-shell",
             Self::ExtensionHost => "extension-host",
             Self::ExtensionInstaller => "extension-installer",
             Self::Forecast => "forecast",
@@ -47,6 +50,10 @@ impl ProcessKind {
 pub fn configure(command: &mut Command) {
     #[cfg(unix)]
     command.process_group(0);
+    #[cfg(target_os = "linux")]
+    unsafe {
+        command.pre_exec(configure_linux_parent_death);
+    }
     #[cfg(windows)]
     crate::services::background_command::configure(command);
 }
@@ -54,28 +61,38 @@ pub fn configure(command: &mut Command) {
 pub fn configure_tokio(command: &mut tokio::process::Command) {
     #[cfg(unix)]
     command.process_group(0);
+    #[cfg(target_os = "linux")]
+    unsafe {
+        command.pre_exec(configure_linux_parent_death);
+    }
     #[cfg(windows)]
     crate::services::background_command::configure_tokio(command);
 }
 
 pub fn terminate(child: &mut Child, kind: ProcessKind) {
     if child.try_wait().ok().flatten().is_some() {
+        crate::services::owned_process::release(child.id());
         return;
     }
     let pid = child.id();
     signal_tree(pid, false);
     if wait_for_child(child, GRACEFUL_STOP_TIMEOUT) {
+        crate::services::owned_process::release(pid);
         ::log::info!("[{}] arbre pid={pid} arrêté", kind.label());
         return;
     }
     force_tree(pid);
     let _ = child.kill();
     let _ = child.wait();
+    crate::services::owned_process::release(pid);
     ::log::warn!("[{}] arrêt forcé arbre pid={pid}", kind.label());
 }
 
 pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKind) {
     if child.try_wait().ok().flatten().is_some() {
+        if let Some(pid) = child.id() {
+            crate::services::owned_process::release(pid);
+        }
         return;
     }
     let Some(pid) = child.id() else {
@@ -85,6 +102,7 @@ pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKin
     let deadline = tokio::time::Instant::now() + GRACEFUL_STOP_TIMEOUT;
     while tokio::time::Instant::now() < deadline {
         if child.try_wait().ok().flatten().is_some() {
+            crate::services::owned_process::release(pid);
             ::log::info!("[{}] arbre pid={pid} arrêté", kind.label());
             return;
         }
@@ -93,6 +111,7 @@ pub async fn terminate_tokio(child: &mut tokio::process::Child, kind: ProcessKin
     force_tree(pid);
     let _ = child.start_kill();
     let _ = child.wait().await;
+    crate::services::owned_process::release(pid);
     ::log::warn!("[{}] arrêt forcé arbre pid={pid}", kind.label());
 }
 
@@ -106,6 +125,7 @@ pub fn kill(pid: u32, kind: ProcessKind) {
         std::thread::sleep(Duration::from_millis(100));
         force_tree(pid);
     }
+    crate::services::owned_process::release(pid);
     ::log::info!("[{}] arrêt arbre orphelin pid={pid}", kind.label());
 }
 
@@ -130,11 +150,15 @@ fn wait_for_child(child: &mut Child, timeout: Duration) -> bool {
 
 #[cfg(unix)]
 fn signal_tree(pid: u32, force: bool) {
+    if !crate::services::owned_process::signal_is_safe(pid) {
+        ::log::warn!("[process] identité macOS changée pid={pid}, signal ignoré");
+        return;
+    }
     let Ok(raw_pid) = i32::try_from(pid) else {
         return;
     };
     let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
-    let children = collect_children(pid);
+    let children = unix::collect_children(pid);
     // SAFETY: les identifiants proviennent de l'OS et aucun pointeur Rust n'est utilisé.
     unsafe {
         libc::kill(-raw_pid, signal);
@@ -143,6 +167,17 @@ fn signal_tree(pid: u32, force: bool) {
         }
         libc::kill(raw_pid, signal);
     }
+}
+
+#[cfg(target_os = "linux")]
+fn configure_linux_parent_death() -> std::io::Result<()> {
+    if unsafe { libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGKILL) } != 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+    if unsafe { libc::getppid() } == 1 {
+        unsafe { libc::raise(libc::SIGKILL) };
+    }
+    Ok(())
 }
 
 #[cfg(windows)]
@@ -162,36 +197,6 @@ fn signal_tree(pid: u32, _force: bool) {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status();
-}
-
-#[cfg(unix)]
-const MAX_CHILDREN: usize = 256;
-#[cfg(unix)]
-const MAX_DEPTH: u32 = 10;
-
-#[cfg(unix)]
-fn collect_children(pid: u32) -> Vec<Pid> {
-    let mut system = System::new();
-    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
-    let mut result = Vec::new();
-    collect_children_inner(&system, Pid::from_u32(pid), &mut result, 0);
-    result
-}
-
-#[cfg(unix)]
-fn collect_children_inner(system: &System, parent: Pid, result: &mut Vec<Pid>, depth: u32) {
-    if depth >= MAX_DEPTH || result.len() >= MAX_CHILDREN {
-        return;
-    }
-    for (pid, process) in system.processes() {
-        if result.len() >= MAX_CHILDREN {
-            return;
-        }
-        if process.parent() == Some(parent) {
-            result.push(*pid);
-            collect_children_inner(system, *pid, result, depth + 1);
-        }
-    }
 }
 
 #[cfg(all(test, unix))]

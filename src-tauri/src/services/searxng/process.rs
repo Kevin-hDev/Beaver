@@ -59,11 +59,13 @@ pub async fn spawn(
         cmd.env("PYTHONPATH", path);
     }
 
-    crate::services::process_tree::configure_tokio(&mut cmd);
-
-    cmd.kill_on_drop(true)
-        .spawn()
-        .map_err(|_| "SearXNG: démarrage impossible".to_string())
+    cmd.kill_on_drop(true);
+    crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut cmd,
+        crate::services::process_tree::ProcessKind::Searxng,
+    )
+    .await
+    .map_err(|_| "SearXNG: démarrage impossible".to_string())
 }
 
 pub async fn kill_child_process(mut child: tokio::process::Child) {
@@ -91,10 +93,12 @@ pub async fn spawn_test_fixture() -> Result<tokio::process::Child, String> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .kill_on_drop(true);
-    crate::services::process_tree::configure_tokio(&mut command);
-    command
-        .spawn()
-        .map_err(|_| "fixture SearXNG indisponible".to_string())
+    crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::Searxng,
+    )
+    .await
+    .map_err(|_| "fixture SearXNG indisponible".to_string())
 }
 
 pub fn startup_log_hint() -> Option<String> {

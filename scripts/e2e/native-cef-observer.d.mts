@@ -20,3 +20,10 @@ export function waitForOwnedProcessesToExit(options: {
   pollMs?: number;
   listProcesses?: (platform: string) => NativeProcessRecord[] | Promise<NativeProcessRecord[]>;
 }): Promise<void>;
+export function waitForProcessIdsToExit(options: {
+  platform?: string;
+  pids: number[];
+  timeoutMs?: number;
+  pollMs?: number;
+  listProcesses?: (platform: string) => NativeProcessRecord[] | Promise<NativeProcessRecord[]>;
+}): Promise<void>;

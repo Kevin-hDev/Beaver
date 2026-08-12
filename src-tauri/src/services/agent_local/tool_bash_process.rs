@@ -107,12 +107,22 @@ async fn prepare(
             return Err(error);
         }
     };
-    let mut child = match command.spawn() {
+    let mut child = match crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::AgentShell,
+    )
+    .await
+    {
         Ok(child) => child,
-        Err(error) => {
+        Err(crate::services::owned_process::OwnedProcessError::Spawn(kind)) => {
             super::shell_sandbox::cleanup_temp(sandbox_cleanup).await;
             let _ = store.finalize(false).await;
-            return Err(super::tool_bash_spawn_error::message(error));
+            return Err(super::tool_bash_spawn_error::message(kind));
+        }
+        Err(crate::services::owned_process::OwnedProcessError::Admission) => {
+            super::shell_sandbox::cleanup_temp(sandbox_cleanup).await;
+            let _ = store.finalize(false).await;
+            return Err("Lancement du shell impossible.".to_string());
         }
     };
     let Some(pid) = child.id() else {
