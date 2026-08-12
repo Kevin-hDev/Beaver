@@ -1,0 +1,5 @@
+Raison : l'audit final des 76 fichiers de production modifiés a trouvé discord.rs à 237 lignes, au-dessus de la limite structurelle de 230.
+
+Décision : extraire le décodage et le traitement des événements Discord dans discord_events.rs. discord.rs conserve la connexion et le cycle de vie ; le nouveau module possède les événements READY, HELLO et MESSAGE_CREATE. Aucun délai ni comportement réseau n'est dupliqué.
+
+Preuves : tests gateway 148/148 ; cargo fmt --check vert ; git diff --check vert ; graphify update . vert.
