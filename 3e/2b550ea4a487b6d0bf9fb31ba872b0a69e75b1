@@ -1,0 +1,5 @@
+Raison : l’avis GHSA-jmr9-qjv8-65gv classe extract-zip 2.0.1 comme vulnérable et aucune version corrigée n’existe ; WebdriverIO l’introduisait via @puppeteer/browsers 2.13.2.
+
+Décision : forcer @puppeteer/browsers 3.2.0, qui remplace extract-zip par modern-tar. Le projet et toutes les CI utilisent déjà une version de Node compatible (Node 24 en CI).
+
+Preuves : npm ci vert ; npm audit --audit-level=high à 0 vulnérabilité au lieu de 13 alertes hautes ; arbre npm sans extract-zip ; import ESM et CLI WebdriverIO verts ; vrai parcours Windows CEF vert avec page chargée et zéro processus restant ; npm test 1918/1918 ; lint et TypeScript verts ; graphify update . vert.
