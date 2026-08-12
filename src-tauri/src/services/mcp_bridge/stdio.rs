@@ -1,13 +1,12 @@
-use std::time::Duration;
-
-use async_trait::async_trait;
 use serde_json::Value;
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use zeroize::Zeroizing;
 
 use super::identity;
 use super::process_manager::{self, ProcessHandle};
-use super::transport::{next_id, validate_tools, McpCallError, McpToolDef, McpTransport};
+use super::transport::next_id;
+use crate::services::work_registry::ServiceWorkCancellation;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(360);
 const MAX_LINE_BYTES: usize = 1_048_576;
@@ -23,50 +22,74 @@ pub struct StdioTransport {
 }
 
 impl StdioTransport {
-    async fn ensure_running(&self) -> Result<ProcessHandle, String> {
-        if self.transient_env.is_none() {
-            if let Some(handle) = process_manager::get_alive_handle(&self.connector_id) {
-                return Ok(handle);
-            }
-        }
-
-        process_manager::shutdown_one(&self.connector_id);
+    async fn ensure_running(
+        &self,
+        cancel: &ServiceWorkCancellation,
+    ) -> Result<ProcessHandle, String> {
         let env_tokens = self.resolve_env_tokens();
         #[cfg(test)]
         let handle = if self.test_fixture {
-            process_manager::spawn_test_fixture(&self.connector_id)?
+            process_manager::ensure_test_fixture(&self.connector_id).await?
         } else {
-            process_manager::spawn(&self.connector_id, &self.install_command, &env_tokens)?
+            self.ensure_configured_process(&env_tokens).await?
         };
         #[cfg(not(test))]
-        let handle =
-            process_manager::spawn(&self.connector_id, &self.install_command, &env_tokens)?;
-        tokio::time::sleep(Duration::from_millis(WARMUP_MS)).await;
-        self.handshake(&handle).await?;
+        let handle = self.ensure_configured_process(&env_tokens).await?;
+
+        let initialized = handle
+            .initialized
+            .get_or_try_init(|| async {
+                tokio::select! {
+                    _ = tokio::time::sleep(Duration::from_millis(WARMUP_MS)) => {}
+                    _ = cancel.cancelled() => {
+                        return Err("connecteur MCP indisponible".to_string());
+                    }
+                }
+                self.handshake(&handle, cancel).await
+            })
+            .await;
+        if let Err(error) = initialized {
+            process_manager::shutdown_one(&self.connector_id).await;
+            return Err(error);
+        }
         Ok(handle)
     }
 
-    async fn handshake(&self, handle: &ProcessHandle) -> Result<(), String> {
+    async fn ensure_configured_process(
+        &self,
+        env_tokens: &[(String, Zeroizing<String>)],
+    ) -> Result<ProcessHandle, String> {
+        process_manager::ensure_process(
+            &self.connector_id,
+            &self.install_command,
+            env_tokens,
+            self.transient_env.is_some(),
+        )
+        .await
+    }
+
+    async fn handshake(
+        &self,
+        handle: &ProcessHandle,
+        cancel: &ServiceWorkCancellation,
+    ) -> Result<(), String> {
         let id = next_id();
         let init = serde_json::json!({
-            "jsonrpc": "2.0",
-            "method": "initialize",
-            "id": id,
+            "jsonrpc": "2.0", "method": "initialize", "id": id,
             "params": {
-                "protocolVersion": "2025-03-26",
-                "capabilities": {},
+                "protocolVersion": "2025-03-26", "capabilities": {},
                 "clientInfo": identity::client_info()
             }
         });
-
-        let _ = self.send_with_id(handle, &init, id).await?;
-
-        let notif = serde_json::json!({
-            "jsonrpc": "2.0",
-            "method": "notifications/initialized"
-        });
-        self.write_line(handle, &notif).await?;
-        Ok(())
+        let _ = self.send_with_id(handle, &init, id, cancel).await?;
+        self.write_line(
+            handle,
+            &serde_json::json!({
+                "jsonrpc": "2.0", "method": "notifications/initialized"
+            }),
+            cancel,
+        )
+        .await
     }
 
     async fn send_with_id(
@@ -74,22 +97,45 @@ impl StdioTransport {
         handle: &ProcessHandle,
         request: &Value,
         expected_id: u64,
+        cancel: &ServiceWorkCancellation,
     ) -> Result<Value, String> {
-        let _guard = handle.request_lock.lock().await;
-        self.write_line(handle, request).await?;
-        self.read_response(handle, Some(expected_id)).await
+        let guard = tokio::select! {
+            guard = handle.request_lock.lock() => guard,
+            _ = cancel.cancelled() => return Err("connecteur MCP indisponible".to_string()),
+        };
+        self.write_line(handle, request, cancel).await?;
+        let response = self.read_response(handle, Some(expected_id), cancel).await;
+        drop(guard);
+        response
     }
 
-    async fn write_line(&self, handle: &ProcessHandle, msg: &Value) -> Result<(), String> {
-        let mut line = serde_json::to_string(msg).map_err(|_| "sérialisation échouée")?;
+    async fn write_line(
+        &self,
+        handle: &ProcessHandle,
+        message: &Value,
+        cancel: &ServiceWorkCancellation,
+    ) -> Result<(), String> {
+        let mut line = serde_json::to_string(message).map_err(|_| "requête MCP invalide")?;
         line.push('\n');
-
-        let mut stdin = handle.stdin.lock().await;
-        stdin
-            .write_all(line.as_bytes())
-            .await
-            .map_err(|_| "impossible d'écrire sur stdin du process MCP".to_string())?;
-        stdin.flush().await.map_err(|_| "flush stdin échoué")?;
+        let mut stdin = tokio::select! {
+            stdin = handle.stdin.lock() => stdin,
+            _ = cancel.cancelled() => return Err("connecteur MCP indisponible".to_string()),
+        };
+        let writer = stdin
+            .as_mut()
+            .ok_or_else(|| "connecteur MCP indisponible".to_string())?;
+        tokio::select! {
+            result = writer.write_all(line.as_bytes()) => {
+                result.map_err(|_| "connecteur MCP indisponible".to_string())?;
+            }
+            _ = cancel.cancelled() => return Err("connecteur MCP indisponible".to_string()),
+        }
+        tokio::select! {
+            result = writer.flush() => {
+                result.map_err(|_| "connecteur MCP indisponible".to_string())?;
+            }
+            _ = cancel.cancelled() => return Err("connecteur MCP indisponible".to_string()),
+        }
         Ok(())
     }
 
@@ -97,86 +143,48 @@ impl StdioTransport {
         &self,
         handle: &ProcessHandle,
         expected_id: Option<u64>,
+        cancel: &ServiceWorkCancellation,
     ) -> Result<Value, String> {
-        let mut reader = handle.reader.lock().await;
-
-        let result = tokio::time::timeout(REQUEST_TIMEOUT, async {
-            loop {
-                let line = super::stdio_line::read_bounded_line(&mut *reader, MAX_LINE_BYTES)
-                    .await?
-                    .ok_or_else(|| "le process MCP s'est arrêté".to_string())?;
-                let text = std::str::from_utf8(&line)
-                    .map_err(|_| "réponse JSON-RPC invalide".to_string())?;
-                let trimmed = text.trim();
-                if !trimmed.starts_with('{') || !trimmed.contains("\"jsonrpc\"") {
-                    continue;
-                }
-                let parsed: Value = serde_json::from_str(trimmed)
-                    .map_err(|_| "réponse JSON-RPC invalide".to_string())?;
-                if let Some(eid) = expected_id {
-                    if parsed.get("id").and_then(Value::as_u64) != Some(eid) {
+        let mut reader = tokio::select! {
+            reader = handle.reader.lock() => reader,
+            _ = cancel.cancelled() => return Err("connecteur MCP indisponible".to_string()),
+        };
+        let result = {
+            let response = tokio::time::timeout(REQUEST_TIMEOUT, async {
+                loop {
+                    let line = super::stdio_line::read_bounded_line(&mut *reader, MAX_LINE_BYTES)
+                        .await?
+                        .ok_or_else(|| "connecteur MCP indisponible".to_string())?;
+                    let text = std::str::from_utf8(&line)
+                        .map_err(|_| "réponse MCP invalide".to_string())?;
+                    let trimmed = text.trim();
+                    if !trimmed.starts_with('{') || !trimmed.contains("\"jsonrpc\"") {
                         continue;
                     }
+                    let parsed: Value = serde_json::from_str(trimmed)
+                        .map_err(|_| "réponse MCP invalide".to_string())?;
+                    if expected_id
+                        .is_none_or(|id| parsed.get("id").and_then(Value::as_u64) == Some(id))
+                    {
+                        return Ok::<Value, String>(parsed);
+                    }
                 }
-                return Ok::<Value, String>(parsed);
+            });
+            tokio::pin!(response);
+            tokio::select! {
+                result = &mut response => Some(result),
+                _ = cancel.cancelled() => None,
             }
-        })
-        .await;
+        };
         drop(reader);
-
         match result {
-            Ok(Ok(response)) => Ok(response),
-            Ok(Err(_)) | Err(_) => {
-                process_manager::shutdown_one(&self.connector_id);
+            Some(Ok(Ok(value))) => Ok(value),
+            Some(Ok(Err(_))) | Some(Err(_)) | None => {
+                process_manager::shutdown_one(&self.connector_id).await;
                 Err("réponse MCP invalide".to_string())
             }
         }
     }
 }
 
-#[async_trait]
-impl McpTransport for StdioTransport {
-    async fn list_tools(&self) -> Result<Vec<McpToolDef>, String> {
-        let handle = self.ensure_running().await?;
-        let id = next_id();
-
-        let body = serde_json::json!({
-            "jsonrpc": "2.0", "method": "tools/list", "id": id
-        });
-
-        let resp = self.send_with_id(&handle, &body, id).await?;
-
-        let tools_val = resp
-            .get("result")
-            .and_then(|r| r.get("tools").cloned())
-            .ok_or("réponse tools/list invalide")?;
-
-        let tools: Vec<McpToolDef> =
-            serde_json::from_value(tools_val).map_err(|_| "format tools invalide")?;
-
-        validate_tools(tools)
-    }
-
-    async fn call_tool(
-        &self,
-        name: &str,
-        args: Value,
-    ) -> Result<super::transport::McpToolResult, McpCallError> {
-        let handle = self
-            .ensure_running()
-            .await
-            .map_err(|_| McpCallError::Unavailable)?;
-        let id = next_id();
-
-        let body = serde_json::json!({
-            "jsonrpc": "2.0", "method": "tools/call", "id": id,
-            "params": { "name": name, "arguments": args }
-        });
-
-        let resp = self
-            .send_with_id(&handle, &body, id)
-            .await
-            .map_err(|_| McpCallError::Transport)?;
-        super::transport::extract_tool_result(&resp)
-    }
-}
+include!("stdio_transport.rs");

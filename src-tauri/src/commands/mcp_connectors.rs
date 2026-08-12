@@ -28,7 +28,7 @@ pub async fn remove_mcp_connector(
     delete_connector_secrets(&connector_id, connector.as_ref())?;
     config::remove(&connector_id)?;
     registry::invalidate_cache(&connector_id);
-    process_manager::shutdown_one(&connector_id);
+    process_manager::shutdown_one(&connector_id).await;
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())
 }
@@ -42,7 +42,7 @@ pub async fn set_mcp_connector_status(
     config::set_status(&connector_id, &status)?;
     registry::invalidate_cache(&connector_id);
     if status == "disconnected" {
-        process_manager::shutdown_one(&connector_id);
+        process_manager::shutdown_one(&connector_id).await;
     }
     let _ = app.emit("fs:connectors-changed", ());
     Ok(())

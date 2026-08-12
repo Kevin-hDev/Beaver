@@ -24,10 +24,10 @@ pub async fn test_connector_with_env(
         .ok_or_else(|| "connecteur MCP invalide".to_string())?;
     let env_keys = config::validated_env_keys(connector.env_keys.as_deref())?;
     let id = connector.id.clone();
-    process_manager::shutdown_one(&id);
+    process_manager::shutdown_one(&id).await;
     let transport = StdioTransport::new_with_env(id.clone(), command, env_keys, env_tokens);
     let result = run_probe(transport.list_tools()).await;
-    process_manager::shutdown_one(&id);
+    process_manager::shutdown_one(&id).await;
     cache_probe_result(&id, &result);
     result.map(|_| ())
 }
