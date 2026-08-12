@@ -53,10 +53,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(
-        windows,
-        ignore = "ClosePseudoConsole can block indefinitely during output teardown on Windows CI"
-    )]
     fn test_pty_read_output() {
         let (session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo pty_test_marker\n").expect("write");
@@ -87,10 +83,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(
-        windows,
-        ignore = "ClosePseudoConsole can block indefinitely during multi-session teardown on Windows CI"
-    )]
     fn test_multiple_independent_sessions() {
         let (_s1, _r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
         let (_s2, _r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
@@ -115,6 +107,39 @@ mod tests {
 
         assert!(!process_is_running(pid));
         assert_eq!(manager.active_sessions_for_test(), 0);
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn windows_terminal_process_is_confined_by_beaver() {
+        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let pid = session.process_id().expect("shell process id");
+
+        assert!(crate::services::owned_process::OwnedProcess::is_confined_for_test(pid));
+
+        drop(session);
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn windows_full_output_pipe_does_not_block_pty_close() {
+        let (finished, result) = std::sync::mpsc::sync_channel(1);
+        std::thread::spawn(move || {
+            let (session, _unread_output) =
+                PtySession::spawn(None, 80, 24).expect("spawn flooding shell");
+            let pid = session.process_id().expect("shell process id");
+            session
+                .write(b"1..10000 | % { 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }\r\n")
+                .expect("start output flood");
+            std::thread::sleep(Duration::from_millis(250));
+            drop(session);
+            finished.send(pid).expect("report bounded close");
+        });
+
+        let pid = result
+            .recv_timeout(Duration::from_secs(3))
+            .expect("closing a full ConPTY pipe must stay bounded");
+        assert!(!process_is_running(pid));
     }
 
     #[tokio::test]
