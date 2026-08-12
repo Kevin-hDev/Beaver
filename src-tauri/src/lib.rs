@@ -61,6 +61,7 @@ pub(crate) fn run_inner(
         }
     };
     let agent_work = runtime_state::agent_work(&exit_coordinator);
+    let gateway = GatewayService::new(exit_coordinator.work_supervisor());
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let builder = tauri::Builder::default()
         .plugin(services::app_log::plugin())
@@ -92,7 +93,7 @@ pub(crate) fn run_inner(
         .manage(services::browser::BrowserRuntimeHandle::default())
         .manage(services::browser::BrowserSessionService::default())
         .manage(services::browser::LocalSiteScanner::default())
-        .manage(GatewayService::new())
+        .manage(gateway)
         .manage(commands::file_tree_watcher::FileTreeWatcher::new())
         .manage(services::forecast::sidecar::ChronosSidecar::new())
         .on_page_load(|webview, payload| {

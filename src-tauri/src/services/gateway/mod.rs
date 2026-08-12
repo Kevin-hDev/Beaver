@@ -7,6 +7,8 @@ pub mod message_convert;
 pub mod security;
 pub mod service;
 mod service_audit;
+mod service_channels;
+mod service_consumer;
 pub mod service_runtime;
 pub mod service_state;
 pub mod session_map;
@@ -15,6 +17,8 @@ pub mod supervisor;
 pub(crate) mod token_probe;
 pub mod tokens;
 pub mod types;
-pub mod watchdog;
+mod work_supervision;
+#[cfg(test)]
+mod work_supervision_tests;
 
 pub use service::GatewayService;

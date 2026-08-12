@@ -1,9 +1,7 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use super::discord_types::*;
-use futures_util::SinkExt;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 
 use crate::services::brand::DISPLAY_NAME;
@@ -27,26 +25,6 @@ impl HeartbeatSequence {
 
     pub async fn current(&self) -> Option<u64> {
         *self.0.read().await
-    }
-}
-
-pub async fn heartbeat_loop(
-    sink: Arc<Mutex<WsSink>>,
-    cancel: tokio_util::sync::CancellationToken,
-    interval: Duration,
-    sequence: HeartbeatSequence,
-) {
-    loop {
-        tokio::select! {
-            _ = cancel.cancelled() => break,
-            _ = tokio::time::sleep(interval) => {
-                let hb = Heartbeat { op: 1, d: sequence.current().await };
-                let json = serde_json::to_string(&hb).unwrap_or_default();
-                if sink.lock().await.send(WsMessage::Text(json.into())).await.is_err() {
-                    break;
-                }
-            }
-        }
     }
 }
 
