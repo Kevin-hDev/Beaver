@@ -1,0 +1,5 @@
+Raison : Forecast pouvait perdre un enfant lancé si la future était annulée avant publication ; l'inspection d'orphelin répétait sa sonde ; la requête de santé copiait le jeton dans un String ordinaire ; plusieurs consommateurs Windows résolvaient encore PowerShell par PATH.
+
+Décision : le sidecar Forecast est désormais un enfant Tokio kill_on_drop enveloppé par PendingSidecar jusqu'à sa publication atomique ; son Drop tue l'enfant non publié et libère son suivi. L'identité d'orphelin est sondée une fois avant kill. health_info exige un Zeroizing<String> et écrit le jeton directement dans le flux sans l'insérer dans la chaîne de requête. system_executable devient l'unique autorité PowerShell absolue issue de SystemRoot validé et sert Forecast, SearXNG, agent shell, terminal et GPU.
+
+TDD : les quatre preuves ont échoué avant interfaces (resolver, pending sidecar, sonde unique, type Zeroizing). Vérifications finales : preuves ciblées 4/4 ; Forecast 291/291 ; SearXNG 17/17 ; GPU 7/7 ; terminal 45/45 ; aucun lancement PowerShell littéral en production ; fichiers de production maximum 192 lignes ; cargo fmt, git diff --check et graphify update . verts.
