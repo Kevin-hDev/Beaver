@@ -90,3 +90,35 @@ async fn incomplete_stop_keeps_the_existing_host_in_its_slot() {
     let _ = host.kill(Instant::now() + Duration::from_secs(5)).await;
     assert!(retained, "an unconfirmed host must still own its slot");
 }
+
+#[tokio::test]
+async fn stale_stop_request_never_clears_a_newer_host() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = directory.path().join("host.mjs");
+    std::fs::write(&script, "setInterval(() => {}, 1000);").unwrap();
+    let paths = HostPaths {
+        node: which::which("node").unwrap().canonicalize().unwrap(),
+        script,
+        directory: directory.path().to_path_buf(),
+    };
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let work =
+        super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor());
+    let stale = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
+    assert!(stale.kill(Instant::now() + Duration::from_secs(5)).await);
+    let current = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
+    let slot = Mutex::new(Some(Arc::clone(&current)));
+
+    let outcome =
+        stop_host_slot(&slot, Some(&stale), Instant::now() + Duration::from_secs(5)).await;
+
+    assert_eq!(outcome, StopHostOutcome::NotCurrent);
+    assert!(
+        slot.lock()
+            .await
+            .as_ref()
+            .is_some_and(|host| Arc::ptr_eq(host, &current)),
+        "a stale stop request must not release a newer generation"
+    );
+    let _ = current.kill(Instant::now() + Duration::from_secs(5)).await;
+}
