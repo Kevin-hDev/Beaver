@@ -27,11 +27,8 @@ pub async fn run(
         .and_then(|path| dunce::canonicalize(path).ok())
         .filter(|path| path.is_file())
         .ok_or_else(|| "Commande d'exploration indisponible.".to_string())?;
-    let prepared = super::shell_sandbox::prepare_command(
-        executable.as_os_str(),
-        arguments,
-        working_dir,
-    )?;
+    let prepared =
+        super::shell_sandbox::prepare_command(executable.as_os_str(), arguments, working_dir)?;
     let cleanup_dir = prepared.cleanup_dir;
     let mut command = prepared.command;
     command
@@ -40,8 +37,12 @@ pub async fn run(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    super::tool_bash_platform::configure_process_group(&mut command);
-    let mut child = match command.spawn() {
+    let mut child = match crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::AgentShell,
+    )
+    .await
+    {
         Ok(child) => child,
         Err(_) => {
             super::shell_sandbox::cleanup_temp(cleanup_dir).await;
@@ -148,7 +149,13 @@ fn current_directory(working_dir: &Path) -> Result<ShellOutput, String> {
 type Captured = std::io::Result<(Vec<u8>, bool)>;
 
 enum ProcessOutcome {
-    Finished((Captured, Captured, std::io::Result<std::process::ExitStatus>)),
+    Finished(
+        (
+            Captured,
+            Captured,
+            std::io::Result<std::process::ExitStatus>,
+        ),
+    ),
     Cancelled,
     TimedOut,
 }

@@ -1,218 +1,225 @@
+use crate::app_exit::AppWorkSupervisor;
 use crate::services::agent_local::{app_handle_global, types_tools::SearchResult};
-use std::process::Child;
-use std::sync::{Arc, Mutex as StdMutex};
-use std::time::{Duration, Instant};
+use crate::services::work_registry::{ServiceWorkAdmission, ServiceWorkCancellation};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
+use std::time::Instant;
 use tauri::Manager;
 use tokio::sync::Mutex;
 
-const START_FAILURE_COOLDOWN: Duration = Duration::from_secs(30);
-const PROCESS_TASK_ERROR: &str = "SearXNG: nettoyage processus interrompu";
+use super::work_supervision::{SearxngWorkServices, SERVER_PROCESSES};
 
-static LAST_START_FAILURE: StdMutex<Option<StartFailure>> = StdMutex::new(None);
-
-pub struct SearxngSidecar(pub Arc<Mutex<Option<SearxngHandle>>>);
-
-pub struct SearxngHandle {
-    child: Child,
-    port: u16,
+#[derive(Clone)]
+pub struct SearxngSidecar {
+    process: Arc<Mutex<Option<SearxngHandle>>>,
+    start_gate: Arc<Mutex<()>>,
+    publication_generation: Arc<AtomicU64>,
+    work: SearxngWorkServices,
 }
 
-struct StartFailure {
-    at: Instant,
-    message: String,
+struct SearxngHandle {
+    child: tokio::process::Child,
+    port: u16,
+    _admission: ServiceWorkAdmission<SERVER_PROCESSES>,
 }
 
 impl SearxngSidecar {
-    pub fn new() -> Self {
-        Self(Arc::new(Mutex::new(None)))
+    pub fn new(app_work: AppWorkSupervisor) -> Self {
+        Self {
+            process: Arc::new(Mutex::new(None)),
+            start_gate: Arc::new(Mutex::new(())),
+            publication_generation: Arc::new(AtomicU64::new(1)),
+            work: SearxngWorkServices::new(app_work),
+        }
+    }
+
+    async fn ensure_running(
+        &self,
+        app: &tauri::AppHandle,
+        cancel: &ServiceWorkCancellation,
+    ) -> Result<String, String> {
+        let _start = tokio::select! {
+            guard = self.start_gate.lock() => guard,
+            _ = cancel.cancelled() => return Err(shutdown_error()),
+        };
+        let generation = self.publication_generation.load(Ordering::Acquire);
+        {
+            let mut guard = self.process.lock().await;
+            if let Some(handle) = guard.as_mut() {
+                match handle.child.try_wait() {
+                    Ok(None) => return Ok(base_url(handle.port)),
+                    Ok(Some(_)) => *guard = None,
+                    Err(_) => return Err("SearXNG: état processus illisible".to_string()),
+                }
+            }
+        }
+        ensure_start_active(self, cancel, generation)?;
+        if let Some(error) = super::startup_failure::recent() {
+            return Err(error);
+        }
+
+        super::startup::run_blocking(super::process::kill_orphan_sidecar).await?;
+        ensure_start_active(self, cancel, generation)?;
+        let source = super::paths::source_dir(app)?;
+        let python = super::runtime::ensure_runtime(&source, cancel).await?;
+        ensure_start_active(self, cancel, generation)?;
+        let port = super::settings::find_free_port()?;
+        let settings = super::settings::write_settings(port)?;
+        let admission = self.work.try_admit_server().map_err(|_| shutdown_error())?;
+        let mut child = super::process::spawn(&python, &source, &settings, port).await?;
+        let pid = child
+            .id()
+            .ok_or_else(|| "SearXNG: démarrage impossible".to_string())?;
+        let url = base_url(port);
+        if let Err(error) = super::startup::wait_until_ready(&url, &mut child, cancel).await {
+            super::startup_failure::remember(&error);
+            super::process::kill_child_process(child).await;
+            return Err(error);
+        }
+        if ensure_start_active(self, cancel, generation).is_err() {
+            super::process::kill_child_process(child).await;
+            return Err(shutdown_error());
+        }
+        let mut guard = self.process.lock().await;
+        if ensure_start_active(self, cancel, generation).is_err() || guard.is_some() {
+            drop(guard);
+            super::process::kill_child_process(child).await;
+            return Err(shutdown_error());
+        }
+        super::process::save_pid(pid);
+        ::log::info!("[searxng] sidecar démarré pid={pid} port={port}");
+        super::startup_failure::clear();
+        *guard = Some(SearxngHandle {
+            child,
+            port,
+            _admission: admission,
+        });
+        Ok(url)
+    }
+
+    pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
+        self.work.begin_closing();
+        self.publication_generation.fetch_add(1, Ordering::AcqRel);
+        let process_stopped = stop_published_process(self, deadline).await;
+        self.work.stop_and_wait(deadline).await && process_stopped
+    }
+
+    #[cfg(test)]
+    pub(crate) fn try_admit_start_for_test(&self) -> Result<(), ()> {
+        let admission = self.work.try_admit_server().map_err(|_| ())?;
+        drop(admission);
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn start_test_process_for_test(&self) -> Result<u32, String> {
+        let admission = self
+            .work
+            .try_admit_server()
+            .map_err(|_| "fixture SearXNG indisponible".to_string())?;
+        let child = super::process::spawn_test_fixture().await?;
+        let pid = child
+            .id()
+            .ok_or_else(|| "fixture SearXNG indisponible".to_string())?;
+        *self.process.lock().await = Some(SearxngHandle {
+            child,
+            port: 0,
+            _admission: admission,
+        });
+        Ok(pid)
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn suspend_test_start_before_publication_for_test(
+        &self,
+        started: tokio::sync::oneshot::Sender<u32>,
+        release: tokio::sync::oneshot::Receiver<()>,
+    ) -> Result<(), String> {
+        let run_state = self.clone();
+        self.work
+            .run_start(move |_cancel| async move {
+                let _start = run_state.start_gate.lock().await;
+                let child = super::process::spawn_test_fixture().await?;
+                let pid = child
+                    .id()
+                    .ok_or_else(|| "fixture SearXNG indisponible".to_string())?;
+                let _ = started.send(pid);
+                let _ = release.await;
+                drop(child);
+                Ok(())
+            })
+            .await
+            .map_err(|_| "fixture SearXNG interrompue".to_string())?
     }
 }
 
 pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
     let app = app_handle_global::get().ok_or_else(|| "SearXNG: app non initialisée".to_string())?;
-    let base_url = ensure_running(app).await?;
+    let state = app.state::<SearxngSidecar>().inner().clone();
+    let run_state = state.clone();
+    let run_app = app.clone();
+    let base_url = state
+        .work
+        .run_start(move |cancel| async move { run_state.ensure_running(&run_app, &cancel).await })
+        .await
+        .map_err(|_| "SearXNG: arrêt en cours".to_string())??;
     super::client::search(&base_url, query).await
 }
 
 pub fn prepare_on_startup(app: tauri::AppHandle) {
-    tauri::async_runtime::spawn(async move {
-        if let Err(e) = ensure_running(&app).await {
-            ::log::warn!("[searxng] warmup failed: {}", safe_log_error(&e));
+    let Some(state) = app.try_state::<SearxngSidecar>() else {
+        return;
+    };
+    let state = state.inner().clone();
+    let run_state = state.clone();
+    let _ = state.work.spawn_start(move |cancel| async move {
+        if let Err(error) = run_state.ensure_running(&app, &cancel).await {
+            ::log::warn!(
+                "[searxng] warmup failed: {}",
+                super::startup_failure::safe_log_error(&error)
+            );
         }
     });
-}
-
-async fn ensure_running(app: &tauri::AppHandle) -> Result<String, String> {
-    let state = app.state::<SearxngSidecar>();
-    let mut guard = state.0.clone().lock_owned().await;
-    if let Some(handle) = guard.as_mut() {
-        match handle.child.try_wait() {
-            Ok(None) => return Ok(base_url(handle.port)),
-            Ok(Some(_)) => {
-                *guard = None;
-            }
-            Err(_) => return Err("SearXNG: état processus illisible".to_string()),
-        }
-    }
-
-    if let Some(error) = recent_start_failure() {
-        return Err(error);
-    }
-
-    let mut guard = run_blocking_process_operation(move || {
-        super::process::kill_orphan_sidecar();
-        guard
-    })
-    .await?;
-    let source = super::paths::source_dir(app)?;
-    let python = super::runtime::ensure_runtime(&source).await?;
-    let port = super::settings::find_free_port()?;
-    let settings = super::settings::write_settings(port)?;
-    let mut child = super::process::spawn(&python, &source, &settings, port)?;
-    let pid = child.id();
-    super::process::save_pid(pid);
-    let url = base_url(port);
-    if let Err(e) = wait_until_ready(&url, &mut child).await {
-        remember_start_failure(&e);
-        run_blocking_process_operation(move || {
-            super::process::kill_child_process(child);
-            drop(guard);
-        })
-        .await?;
-        return Err(e);
-    }
-    ::log::info!("[searxng] sidecar démarré pid={pid} port={port}");
-    clear_start_failure();
-    *guard = Some(SearxngHandle { child, port });
-    Ok(url)
-}
-
-pub async fn stop(sidecar: &SearxngSidecar) {
-    let mut guard = sidecar.0.clone().lock_owned().await;
-    if let Some(handle) = guard.take() {
-        // The task owns the guard so cancellation cannot expose a stale PID cleanup race.
-        if let Err(error) = run_blocking_process_operation(move || {
-            super::process::kill_child_process(handle.child);
-            drop(guard);
-        })
-        .await
-        {
-            ::log::warn!("[searxng] {}", safe_log_error(&error));
-        }
-    }
-}
-
-async fn run_blocking_process_operation<T, F>(operation: F) -> Result<T, String>
-where
-    T: Send + 'static,
-    F: FnOnce() -> T + Send + 'static,
-{
-    tokio::task::spawn_blocking(operation)
-        .await
-        .map_err(|_| PROCESS_TASK_ERROR.to_string())
-}
-
-async fn wait_until_ready(base_url: &str, child: &mut Child) -> Result<(), String> {
-    let client = reqwest::Client::new();
-    let url = format!("{}/healthz", base_url);
-    for _ in 0..40 {
-        if let Ok(Some(status)) = child.try_wait() {
-            let hint = super::process::startup_log_hint()
-                .map(|hint| format!(" ({hint})"))
-                .unwrap_or_default();
-            return Err(format!("SearXNG: arrêt au démarrage {status}{hint}"));
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-        if let Ok(resp) = client
-            .get(&url)
-            .timeout(std::time::Duration::from_millis(500))
-            .send()
-            .await
-        {
-            if resp.status().is_success() {
-                return Ok(());
-            }
-        }
-    }
-    Err("SearXNG: timeout au démarrage".to_string())
 }
 
 fn base_url(port: u16) -> String {
     format!("http://127.0.0.1:{port}")
 }
 
-fn recent_start_failure() -> Option<String> {
-    let guard = LAST_START_FAILURE.lock().ok()?;
-    let failure = guard.as_ref()?;
-    (failure.at.elapsed() < START_FAILURE_COOLDOWN).then(|| failure.message.clone())
+fn ensure_start_active(
+    sidecar: &SearxngSidecar,
+    cancel: &ServiceWorkCancellation,
+    generation: u64,
+) -> Result<(), String> {
+    if cancel.is_cancelled() || sidecar.publication_generation.load(Ordering::Acquire) != generation
+    {
+        return Err(shutdown_error());
+    }
+    Ok(())
 }
 
-fn remember_start_failure(error: &str) {
-    if let Ok(mut guard) = LAST_START_FAILURE.lock() {
-        *guard = Some(StartFailure {
-            at: Instant::now(),
-            message: error.to_string(),
-        });
-    }
+async fn stop_published_process(sidecar: &SearxngSidecar, deadline: Instant) -> bool {
+    let Ok(mut process) = tokio::time::timeout_at(
+        tokio::time::Instant::from_std(deadline),
+        sidecar.process.lock(),
+    )
+    .await
+    else {
+        return false;
+    };
+    let handle = process.take();
+    drop(process);
+    let Some(handle) = handle else { return true };
+    tokio::time::timeout_at(
+        tokio::time::Instant::from_std(deadline),
+        super::process::kill_child_process(handle.child),
+    )
+    .await
+    .is_ok()
 }
 
-fn clear_start_failure() {
-    if let Ok(mut guard) = LAST_START_FAILURE.lock() {
-        *guard = None;
-    }
-}
-
-fn safe_log_error(error: &str) -> String {
-    let cleaned: String = error
-        .chars()
-        .map(|ch| if ch.is_control() { ' ' } else { ch })
-        .take(240)
-        .collect();
-    cleaned.trim().to_string()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn safe_log_error_removes_control_chars_and_truncates() {
-        let input = format!("SearXNG: timeout\n{}", "x".repeat(400));
-        let output = safe_log_error(&input);
-        assert!(!output.contains('\n'));
-        assert!(output.chars().count() <= 240);
-    }
-
-    #[test]
-    fn start_failure_cache_expires() {
-        clear_start_failure();
-        remember_start_failure("SearXNG: arrêt au démarrage");
-        assert_eq!(
-            recent_start_failure(),
-            Some("SearXNG: arrêt au démarrage".to_string())
-        );
-        clear_start_failure();
-        assert_eq!(recent_start_failure(), None);
-    }
-
-    #[tokio::test(flavor = "current_thread")]
-    async fn process_operation_runs_off_async_thread() {
-        let async_thread = std::thread::current().id();
-        let blocking_thread = run_blocking_process_operation(|| std::thread::current().id())
-            .await
-            .unwrap();
-
-        assert_ne!(blocking_thread, async_thread);
-    }
-
-    #[tokio::test]
-    async fn stop_without_handle_preserves_tracked_pid() {
-        let pid_path = crate::services::paths::data_dir().join("searxng-sidecar.pid");
-        std::fs::write(&pid_path, "424242").unwrap();
-
-        stop(&SearxngSidecar::new()).await;
-
-        assert_eq!(std::fs::read_to_string(&pid_path).unwrap(), "424242");
-        std::fs::remove_file(pid_path).unwrap();
-    }
+fn shutdown_error() -> String {
+    "SearXNG: arrêt en cours".to_string()
 }

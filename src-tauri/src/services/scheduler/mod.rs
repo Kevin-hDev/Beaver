@@ -1,39 +1,102 @@
 mod agentic;
 pub mod due;
 pub mod fire;
+mod fire_once;
 pub mod log;
 pub mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
+mod runtime;
+#[cfg(test)]
+mod runtime_tests;
 pub mod state;
+#[cfg(test)]
+#[path = "task_tests.rs"]
+mod task_tests;
+mod work_supervision;
 
-use crate::services::config::read_config;
-use chrono::{DateTime, Duration as ChronoDuration, Local};
-use due::{due_wakeups_at, is_late, is_once, missed_occurrences};
-use next_fire::next_fire_at;
+use crate::app_exit::AppWorkSupervisor;
+#[cfg(test)]
+use crate::services::work_registry::{ServiceWorkAdmissionError, ServiceWorkCancellation};
 use std::sync::{Mutex, OnceLock};
+use std::time::Instant;
 use tauri::AppHandle;
 use tokio::sync::watch;
+pub use work_supervision::SchedulerDiagnostics;
+use work_supervision::SchedulerWorkServices;
 
-const MAX_SLEEP_MIN: i64 = 60;
 static RELOAD_SENDER: OnceLock<Mutex<Option<watch::Sender<u64>>>> = OnceLock::new();
 
 pub struct Scheduler {
     reload_tx: watch::Sender<u64>,
+    work: SchedulerWorkServices,
 }
 
 impl Scheduler {
-    pub fn spawn(app: AppHandle) -> Self {
+    pub fn spawn(app: AppHandle, app_work: AppWorkSupervisor) -> Result<Self, String> {
         let (reload_tx, reload_rx) = watch::channel(0u64);
+        let work = SchedulerWorkServices::new(app_work);
+        let wakeups = work.wakeups();
+        work.start_loop(move |cancel| runtime::run_loop(app, reload_rx, cancel, wakeups))
+            .map_err(|error| error.public_code().to_string())?;
         let sender = RELOAD_SENDER.get_or_init(|| Mutex::new(None));
         *sender.lock().unwrap_or_else(|error| error.into_inner()) = Some(reload_tx.clone());
-        tauri::async_runtime::spawn(run_loop(app, reload_rx));
-        Scheduler { reload_tx }
+        Ok(Scheduler { reload_tx, work })
     }
 
     pub fn notify_config_changed(&self) {
         let next = self.reload_tx.borrow().wrapping_add(1);
         let _ = self.reload_tx.send(next);
+    }
+
+    pub fn diagnostics(&self) -> SchedulerDiagnostics {
+        self.work.diagnostics()
+    }
+
+    pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
+        let stopped = self.work.stop_and_wait(deadline).await;
+        if !stopped {
+            let diagnostics = self.diagnostics();
+            ::log::warn!(
+                "[scheduler] arrêt incomplet: boucle={}, réveils={}",
+                diagnostics.loop_work.active,
+                diagnostics.wakeups.active
+            );
+        }
+        stopped
+    }
+
+    #[cfg(test)]
+    fn for_test(app_work: AppWorkSupervisor) -> Self {
+        let (reload_tx, _) = watch::channel(0u64);
+        Self {
+            reload_tx,
+            work: SchedulerWorkServices::new(app_work),
+        }
+    }
+
+    #[cfg(test)]
+    fn spawn_wakeup_for_test<Factory, Task>(
+        &self,
+        work: Factory,
+    ) -> Result<(), ServiceWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: std::future::Future + Send + 'static,
+    {
+        self.work.spawn_wakeup(work)
+    }
+
+    #[cfg(test)]
+    fn spawn_loop_for_test<Factory, Task>(
+        &self,
+        work: Factory,
+    ) -> Result<(), ServiceWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: std::future::Future + Send + 'static,
+    {
+        self.work.start_loop(work)
     }
 }
 
@@ -48,85 +111,5 @@ pub fn notify_config_changed() {
     {
         let next = sender.borrow().wrapping_add(1);
         let _ = sender.send(next);
-    }
-}
-
-async fn run_loop(app: AppHandle, mut reload_rx: watch::Receiver<u64>) {
-    loop {
-        let cfg = match read_config() {
-            Ok(c) => c,
-            Err(e) => {
-                ::log::warn!("[scheduler] read_config error: {}", e);
-                tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-                continue;
-            }
-        };
-
-        let now = Local::now();
-        if cfg.heartbeat.global_paused {
-            let _ = state::write_last_checked(now).await;
-        } else {
-            reconcile_missed(&cfg.scheduled_wakeups, now).await;
-        }
-        let cap = now + ChronoDuration::minutes(MAX_SLEEP_MIN);
-
-        let next: Option<DateTime<Local>> = if cfg.heartbeat.global_paused {
-            None
-        } else {
-            cfg.scheduled_wakeups
-                .iter()
-                .filter(|w| w.active && !w.paused_by_global)
-                .filter_map(|w| next_fire_at(&w.schedule, now))
-                .min()
-        };
-
-        let target_dt = next.map(|t| t.min(cap)).unwrap_or(cap);
-        let sleep_dur = (target_dt - now)
-            .to_std()
-            .unwrap_or(std::time::Duration::from_secs(60));
-
-        tokio::select! {
-            _ = tokio::time::sleep(sleep_dur) => {
-                if let Some(target) = next {
-                    handle_due(app.clone(), &cfg.scheduled_wakeups, now, target).await;
-                }
-            }
-            _ = reload_rx.changed() => {}
-        }
-    }
-}
-
-async fn reconcile_missed(wakeups: &[crate::models::ScheduledWakeup], now: DateTime<Local>) {
-    let Some(last_checked) = state::read_last_checked().await else {
-        let _ = state::write_last_checked(now).await;
-        return;
-    };
-    for (wakeup, scheduled_for) in missed_occurrences(wakeups, last_checked, now) {
-        log::log_missed(&wakeup.id, scheduled_for).await;
-        if is_once(&wakeup) {
-            let _ = fire::deactivate_once(&wakeup.id);
-        }
-    }
-    let _ = state::write_last_checked(now).await;
-}
-
-async fn handle_due(
-    app: AppHandle,
-    wakeups: &[crate::models::ScheduledWakeup],
-    loop_now: DateTime<Local>,
-    target: DateTime<Local>,
-) {
-    let current = Local::now();
-    if is_late(target, current) {
-        reconcile_missed(wakeups, current).await;
-        return;
-    }
-
-    let due = due_wakeups_at(wakeups, loop_now, target);
-    for wakeup in due {
-        let app_clone = app.clone();
-        tauri::async_runtime::spawn(async move {
-            fire::fire_wakeup(app_clone, wakeup, target).await;
-        });
     }
 }

@@ -12,6 +12,7 @@ pub async fn run(
     app: &AppHandle,
     wakeup: &ScheduledWakeup,
     session_id: &str,
+    cancel: CancellationToken,
 ) -> Result<(String, u32), String> {
     let working_dir = validate_working_dir(&wakeup.working_dir)?;
     let tools = selected_tools(&wakeup.tool_names).await?;
@@ -46,7 +47,7 @@ pub async fn run(
         parent_message_inbox: None,
         subagent_profile: None,
         plan_mode: Some(false),
-        cancel: CancellationToken::new(),
+        cancel,
     })
     .await?;
     let reply = completed

@@ -78,7 +78,9 @@ pub async fn gateway_stop(
     app: tauri::AppHandle,
     state: tauri::State<'_, GatewayService>,
 ) -> Result<(), String> {
-    state.stop().await;
+    if !state.stop().await {
+        return Err("gateway-stop-timeout".to_string());
+    }
     let health = state.health().await;
     for channel in &health.channels {
         let _ = app.emit("gateway-channel-status", channel);
@@ -120,8 +122,8 @@ pub async fn gateway_set_config(
     if should_restart && config.enabled {
         return state.start(config, app).await;
     }
-    if should_restart {
-        state.stop().await;
+    if should_restart && !state.stop().await {
+        return Err("gateway-stop-timeout".to_string());
     }
     let _ = app.emit("gateway-status-changed", state.health().await);
     Ok(())

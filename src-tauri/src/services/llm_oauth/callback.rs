@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::oneshot;
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
 
@@ -14,27 +13,33 @@ const MAX_REQUEST_BYTES: usize = 8 * 1024;
 const MAX_CODE_BYTES: usize = 4 * 1024;
 const MAX_QUERY_PAIRS: usize = 8;
 
-pub async fn start(
+pub struct CallbackServer {
+    listener: TcpListener,
     expected_state: Zeroizing<String>,
-    cancel: CancellationToken,
-) -> Result<oneshot::Receiver<Result<Zeroizing<String>, OAuthFailure>>, OAuthFailure> {
-    verify_state(&expected_state, &expected_state)?;
-    let listener = TcpListener::bind(BIND_ADDR)
-        .await
-        .map_err(|_| OAuthFailure::Generic)?;
-    let (sender, receiver) = oneshot::channel();
-    tokio::spawn(async move {
-        let result = tokio::time::timeout(TIMEOUT, async {
+}
+
+impl CallbackServer {
+    pub async fn bind(expected_state: Zeroizing<String>) -> Result<Self, OAuthFailure> {
+        verify_state(&expected_state, &expected_state)?;
+        let listener = TcpListener::bind(BIND_ADDR)
+            .await
+            .map_err(|_| OAuthFailure::Generic)?;
+        Ok(Self {
+            listener,
+            expected_state,
+        })
+    }
+
+    pub async fn wait(self, cancel: &CancellationToken) -> Result<Zeroizing<String>, OAuthFailure> {
+        tokio::time::timeout(TIMEOUT, async {
             tokio::select! {
-                value = accept_until_valid(&listener, &expected_state) => value,
+                value = accept_until_valid(&self.listener, &self.expected_state) => value,
                 _ = cancel.cancelled() => Err(OAuthFailure::Cancelled),
             }
         })
         .await
-        .unwrap_or(Err(OAuthFailure::Expired));
-        let _ = sender.send(result);
-    });
-    Ok(receiver)
+        .unwrap_or(Err(OAuthFailure::Expired))
+    }
 }
 
 async fn accept_until_valid(

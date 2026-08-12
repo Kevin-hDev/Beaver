@@ -25,11 +25,15 @@ pub struct GatewayState {
 
 impl GatewayState {
     pub(crate) fn new() -> Self {
+        let cancel = CancellationToken::new();
+        // Une configuration persistée n'est pas une exécution : seul start()
+        // remplace ce jeton annulé par celui du run effectivement possédé.
+        cancel.cancel();
         Self {
             channels: HashMap::new(),
             adapters: HashMap::new(),
             config: GatewayConfig::default(),
-            cancel: CancellationToken::new(),
+            cancel,
             limits: Arc::new(Mutex::new(GatewayRateLimiters::new(
                 &GatewayConfig::default().rate_limits,
             ))),
@@ -53,7 +57,7 @@ pub(crate) fn build_health(state: &GatewayState) -> GatewayHealth {
         })
         .collect();
     GatewayHealth {
-        running: !state.cancel.is_cancelled(),
+        running: state.config.enabled && !state.cancel.is_cancelled(),
         channels,
     }
 }

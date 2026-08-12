@@ -4,21 +4,8 @@ use tokio::process::Command;
 #[path = "tool_bash_platform_windows_tests.rs"]
 mod windows_tests;
 
-#[cfg(unix)]
-const TERMINATION_GRACE_MS: u64 = 50;
-
 pub fn configure_process_group(command: &mut Command) {
-    #[cfg(unix)]
-    {
-        command.process_group(0);
-    }
-    #[cfg(windows)]
-    {
-        use windows_sys::Win32::System::Threading::{
-            CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW,
-        };
-        command.creation_flags(CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW);
-    }
+    crate::services::process_tree::configure_tokio(command);
 }
 
 #[cfg(windows)]
@@ -47,35 +34,11 @@ fn system32_file(components: &[&str]) -> Option<std::path::PathBuf> {
 }
 
 pub async fn terminate_process_tree(pid: u32) {
-    #[cfg(unix)]
-    {
-        let Ok(pid) = i32::try_from(pid) else {
-            return;
-        };
-        let group = -pid;
-        // SAFETY: the child was placed in a dedicated process group before spawn.
-        unsafe {
-            libc::kill(group, libc::SIGTERM);
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(TERMINATION_GRACE_MS)).await;
-        // SAFETY: the same validated process-group id is used for forced cleanup.
-        unsafe {
-            libc::kill(group, libc::SIGKILL);
-        }
-    }
-
-    #[cfg(windows)]
-    {
-        let pid = pid.to_string();
-        let Some(taskkill) = system32_file(&["taskkill.exe"]) else {
-            return;
-        };
-        let _ = crate::services::background_command::new_tokio(taskkill)
-            .args(["/PID", &pid, "/T", "/F"])
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .status()
-            .await;
-    }
+    let _ = tokio::task::spawn_blocking(move || {
+        crate::services::process_tree::kill(
+            pid,
+            crate::services::process_tree::ProcessKind::AgentShell,
+        );
+    })
+    .await;
 }

@@ -671,12 +671,22 @@
       "ok": "Erfolgreich",
       "error": "Fehlgeschlagen",
       "missed": "Verpasst",
+      "cancelled": "Abgebrochen",
       "never": "Nie ausgeführt",
       "none": "Keine"
     },
     "history": {
       "title": "Verlauf",
-      "empty": "Keine Ausführungen"
+      "empty": "Keine Ausführungen",
+      "errors": {
+        "failed": "Das Wakeup ist fehlgeschlagen.",
+        "rateLimited": "Das Anfragekontingent des Anbieters wurde erreicht.",
+        "authenticationFailed": "Die Authentifizierung beim Anbieter ist fehlgeschlagen.",
+        "ollamaUnavailable": "Ollama war nicht verfügbar.",
+        "missedUnavailable": "Das Wakeup wurde verpasst, während Beaver nicht verfügbar war.",
+        "schedulerStopping": "Das Wakeup wurde nicht gestartet, weil Beaver beendet wurde.",
+        "capacityReached": "Das Wakeup wurde nicht gestartet, weil bereits zu viele Vorgänge liefen."
+      }
     },
     "sidebar": {
       "title": "Wakeups",
@@ -1079,6 +1089,14 @@
   "errors": {
     "crashMessage": "Ein Fehler ist aufgetreten. Bitte starte die Anwendung neu.",
     "operationFailed": "Vorgang fehlgeschlagen. Bitte erneut versuchen.",
+    "admission": {
+      "appShuttingDown": "Beaver wird beendet. Versuche es nach dem Neustart der Anwendung erneut.",
+      "appCapacity": "Beaver verarbeitet bereits zu viele Vorgänge. Versuche es gleich erneut.",
+      "serviceShuttingDown": "Dieser Dienst wird beendet. Versuche es gleich erneut.",
+      "serviceCapacity": "Es laufen bereits zu viele Vorgänge. Versuche es gleich erneut.",
+      "gatewayShuttingDown": "Die Nachrichtenkanäle werden beendet. Versuche es gleich erneut.",
+      "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut."
+    },
     "localStore": {
       "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Lösche sie nicht: Ohne Sicherung geht dieser Verlauf beim Neustart verloren und Beaver kann nicht mehr garantieren, dass ein als nativ angezeigter Ollama-Prompt wirklich das Original ist.",
       "ollamaNativePrompts": "Die Datei mit den nativen Ollama-Anweisungen ist nicht lesbar. Stelle „ollama-native-system-prompts.json“ aus einer Sicherung wieder her. Ohne Sicherung: Beaver schließen, diese Datei unter Einstellungen > Erweitert > Beaver-Daten löschen und die Anwendung mit Standardwerten neu starten.",

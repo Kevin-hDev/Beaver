@@ -33,13 +33,23 @@ export interface HeartbeatConfig {
   global_paused: boolean;
 }
 
-export type WakeupRunStatus = "ok" | "error" | "missed";
+export type WakeupRunStatus = "ok" | "error" | "missed" | "cancelled";
+
+export type WakeupRunErrorCode =
+  | "failed"
+  | "rate_limited"
+  | "authentication_failed"
+  | "ollama_unavailable"
+  | "missed_unavailable"
+  | "scheduler_stopping"
+  | "capacity_reached";
 
 export interface WakeupRun {
   wakeup_id: string;
   scheduled_for: string;
   fired_at: string;
   status: WakeupRunStatus;
+  error_code?: WakeupRunErrorCode;
   error?: string;
   session_id?: string;
   tokens?: number;

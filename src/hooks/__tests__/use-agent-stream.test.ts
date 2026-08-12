@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   isStreaming: vi.fn(),
   queueUserMessage: vi.fn(),
   removeQueuedUserMessage: vi.fn(),
+  showToast: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -23,6 +24,10 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 vi.mock("@tauri-apps/plugin-fs", () => ({
   readFile: mocks.readFile,
+}));
+
+vi.mock("@/lib/toast-emitter", () => ({
+  showToast: mocks.showToast,
 }));
 
 vi.mock("../agent-stream-manager", () => ({
@@ -180,5 +185,52 @@ describe("useAgentStream", () => {
       messages: [expect.objectContaining({ role: "user", content: "Ajoute une comparaison" })],
     });
     expect(mocks.stopSession).not.toHaveBeenCalled();
+  });
+  it("traduit un refus de démarrage au lieu d'afficher son code", async () => {
+    const message = userMessage([]);
+    mocks.invoke.mockRejectedValueOnce("app-shutting-down");
+    const { result } = renderHook(() => useAgentStream());
+
+    await act(async () => {
+      await result.current.startStream(
+        "session-1",
+        "model",
+        "provider",
+        [message],
+        false,
+        { displayMessages: [message], baseTokenCount: 0 },
+      );
+    });
+
+    expect(mocks.failSession).toHaveBeenCalledWith(
+      "session-1",
+      "Beaver is closing. Try again after restarting the application.",
+    );
+  });
+
+  it("traduit un refus de mise en file", async () => {
+    const first = userMessage([]);
+    const queued = { ...userMessage([]), id: "m2" };
+    mocks.invoke.mockResolvedValueOnce(42).mockRejectedValueOnce(
+      "service-work-capacity-reached",
+    );
+    const { result } = renderHook(() => useAgentStream());
+
+    await act(async () => {
+      await result.current.startStream(
+        "session-1",
+        "model",
+        "provider",
+        [first],
+        false,
+        { displayMessages: [first], baseTokenCount: 0 },
+      );
+      await result.current.queueStreamMessage("session-1", [queued], queued);
+    });
+
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      "Too many operations are already running. Try again shortly.",
+      "error",
+    );
   });
 });

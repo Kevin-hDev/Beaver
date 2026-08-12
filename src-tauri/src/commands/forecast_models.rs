@@ -57,10 +57,17 @@ pub fn set_forecast_auto_cloud_allowed(
 #[tauri::command]
 pub async fn uninstall_forecast_model(app: AppHandle, name: String) -> Result<(), String> {
     validation::validate_model_id(&name)?;
-    let chronos = app.state::<sidecar::ChronosSidecar>();
-    let _prediction_guard = chronos.lock_prediction().await;
-    sidecar::stop_model(chronos.inner(), &name).await;
-    model_manager::uninstall(&name).await?;
+    let chronos = app.state::<sidecar::ChronosSidecar>().inner().clone();
+    let operation_sidecar = chronos.clone();
+    chronos
+        .run_cancellable(move || async move {
+            let _prediction_guard = operation_sidecar.lock_prediction().await;
+            if !sidecar::stop_model(&operation_sidecar, &name).await {
+                return Err("Impossible d'arrêter le service Forecast".to_string());
+            }
+            model_manager::uninstall(&name).await
+        })
+        .await?;
     let _ = app.emit("forecast-models-changed", ());
     Ok(())
 }

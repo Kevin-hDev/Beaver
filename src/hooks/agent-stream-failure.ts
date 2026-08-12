@@ -5,7 +5,7 @@ import { notifyRecord, notifyRecordActivity } from "./agent-stream-notify-dispat
 import { finishPersistenceRun } from "./agent-stream-persistence-owner";
 import { getRecord, records } from "./agent-stream-records";
 
-export function failSession(sessionId: string) {
+export function failSession(sessionId: string, message = i18n.t("errors.streamStartFailed")) {
   const record = getRecord(sessionId);
   if (!record) return;
   record.activeGeneration = null;
@@ -15,7 +15,7 @@ export function failSession(sessionId: string) {
     isCompressing: false,
     completed: true,
     activeStreamItem: null,
-    error: i18n.t("errors.streamStartFailed"),
+    error: message,
     updatedAt: Date.now(),
   };
   finishPersistenceRun(record);

@@ -1,4 +1,7 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::process::{Child, ChildStderr, ChildStdout};
@@ -25,6 +28,7 @@ pub(super) async fn run(
     mut tracker: Option<ChangeTracker>,
     hard_timeout_secs: Option<u64>,
     agent_cancel: CancellationToken,
+    shutdown: crate::services::work_registry::ServiceWorkCancellation,
     sandbox_cleanup: Option<std::path::PathBuf>,
 ) {
     let (sender, mut receiver) = mpsc::channel(super::tool_bash_io::OUTPUT_CHANNEL_SIZE);
@@ -39,9 +43,14 @@ pub(super) async fn run(
     let mut tick = tokio::time::interval(Duration::from_millis(PROGRESS_INTERVAL_MS));
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let mut output_open = true;
+    let mut shutdown_cancelled = false;
 
     let mut completion = loop {
         tokio::select! {
+            _ = shutdown.cancelled() => {
+                shutdown_cancelled = true;
+                break CompletionKind::Cancelled;
+            }
             _ = agent_cancel.cancelled() => break CompletionKind::Cancelled,
             _ = session_cancel.cancelled() => break CompletionKind::Cancelled,
             _ = session_stop.cancelled() => break CompletionKind::Stopped,
@@ -88,7 +97,9 @@ pub(super) async fn run(
         let _ = reader.await;
     }
     super::tool_bash_io::clear_pending(&mut receiver);
-    settle_changes(session, &mut tracker).await;
+    // La fermeture peut commencer après la sortie du processus mais avant le bilan final.
+    shutdown_cancelled |= shutdown.is_cancelled();
+    settle_changes(session, &mut tracker, shutdown_cancelled).await;
     session.emit_progress();
     session.close_stdin().await;
 
@@ -107,20 +118,47 @@ pub(super) async fn run(
     super::shell_sandbox::cleanup_temp(sandbox_cleanup).await;
 }
 
-async fn settle_changes(session: &ShellSession, tracker: &mut Option<ChangeTracker>) {
-    let settle_ms = match tracker.as_ref() {
-        Some(tracker) if tracker.requires_event_settle() => FINAL_CHANGE_SETTLE_MS,
-        Some(_) => FINAL_GIT_CHANGE_SETTLE_MS,
-        None => 0,
+async fn settle_changes(
+    session: &ShellSession,
+    tracker: &mut Option<ChangeTracker>,
+    shutdown_cancelled: bool,
+) {
+    let settle_ms = match (shutdown_cancelled, tracker.as_ref()) {
+        (true, _) => 0,
+        (false, Some(tracker)) if tracker.requires_event_settle() => FINAL_CHANGE_SETTLE_MS,
+        (false, Some(_)) => FINAL_GIT_CHANGE_SETTLE_MS,
+        (false, None) => 0,
     };
     if settle_ms > 0 {
         tokio::time::sleep(Duration::from_millis(settle_ms)).await;
     }
-    let Some(mut tracker) = tracker.take() else { return };
-    match tokio::task::spawn_blocking(move || tracker.finish_changes()).await {
-        Ok((changes, incomplete)) => session.update_changes(changes, incomplete),
-        Err(_) => session.update_changes(Vec::new(), true),
+    let Some(tracker) = tracker.take() else {
+        return;
+    };
+    let (changes, incomplete) = collect_final_changes(tracker, shutdown_cancelled, |tracker| {
+        tracker.finish_changes()
+    })
+    .await;
+    session.update_changes(changes, incomplete);
+}
+
+async fn collect_final_changes<Finish>(
+    mut tracker: ChangeTracker,
+    shutdown_cancelled: bool,
+    finish: Finish,
+) -> (Vec<super::types_tools::ToolFileChange>, bool)
+where
+    Finish: FnOnce(&mut ChangeTracker) -> (Vec<super::types_tools::ToolFileChange>, bool)
+        + Send
+        + 'static,
+{
+    if shutdown_cancelled {
+        tracker.drain_ready();
+        return (tracker.snapshot(false, None), true);
     }
+    tokio::task::spawn_blocking(move || finish(&mut tracker))
+        .await
+        .unwrap_or_else(|_| (Vec::new(), true))
 }
 
 fn refresh_changes(session: &ShellSession, tracker: Option<&mut ChangeTracker>) {
@@ -137,3 +175,7 @@ async fn wait_for_timeout(timeout_secs: Option<u64>) {
         None => std::future::pending::<()>().await,
     }
 }
+
+#[cfg(test)]
+#[path = "tool_bash_process_run_tests.rs"]
+mod tests;

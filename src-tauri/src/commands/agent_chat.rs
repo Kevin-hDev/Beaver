@@ -4,6 +4,7 @@
 )]
 use super::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 
+use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
 use crate::services::agent_local::stream_events::{self, AgentEventEmitter};
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 use crate::ActiveStreams;
@@ -29,6 +30,9 @@ pub async fn chat_stream(
     plan_mode: Option<bool>,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<u64, String> {
+    // L'admission précède toute mutation de session : une fermeture en cours
+    // refuse donc la requête sans publier un flux fantôme.
+    let stream_admission = super::agent_chat_work::admit(&app.state::<AgentWorkServices>())?;
     let permission_mode = Some(
         crate::services::agent_local::session_permission_state::prepare_send(
             &session_id,
@@ -99,86 +103,105 @@ pub async fn chat_stream(
     ::log::info!("[stream] start session={session_id} gen={generation}");
     let stream_session = session_id.clone();
     let task_app = app.clone();
+    let task_cancel = cancel.clone();
+    let task_inbox = parent_message_inbox.clone();
 
-    tauri::async_runtime::spawn(async move {
-        let emitter = AgentEventEmitter::with_generation(
-            task_app.clone(),
-            stream_session.clone(),
-            generation,
-        );
-        let stream_request_id = request_id.clone();
-        let result = run_stream_task(StreamTaskParams {
-            on_event: emitter.clone(),
-            session_id: stream_session.clone(),
-            request_id: stream_request_id.clone(),
-            model,
-            messages,
-            tools,
-            think,
-            provider,
-            working_dir,
-            outputs_dir,
-            capability_hints: StreamCapabilityHints {
-                supports_tools,
-                supports_thinking,
-                supports_vision,
-            },
-            reasoning_mode,
-            permission_mode_override: permission_mode,
-            permission_emitter: None,
-            parent_message_inbox: Some(parent_message_inbox.clone()),
-            subagent_profile: None,
-            plan_mode,
-            cancel,
-        })
-        .await;
-        parent_message_inbox.close().await;
+    let spawn_result =
+        super::agent_chat_work::spawn(stream_admission, cancel.clone(), async move {
+            let emitter = AgentEventEmitter::with_generation(
+                task_app.clone(),
+                stream_session.clone(),
+                generation,
+            );
+            let stream_request_id = request_id.clone();
+            let result = run_stream_task(StreamTaskParams {
+                on_event: emitter.clone(),
+                session_id: stream_session.clone(),
+                request_id: stream_request_id.clone(),
+                model,
+                messages,
+                tools,
+                think,
+                provider,
+                working_dir,
+                outputs_dir,
+                capability_hints: StreamCapabilityHints {
+                    supports_tools,
+                    supports_thinking,
+                    supports_vision,
+                },
+                reasoning_mode,
+                permission_mode_override: permission_mode,
+                permission_emitter: None,
+                parent_message_inbox: Some(task_inbox.clone()),
+                subagent_profile: None,
+                plan_mode,
+                cancel: task_cancel,
+            })
+            .await;
+            task_inbox.close().await;
 
-        // Cleanup : ne supprime que si NOTRE génération est encore active
-        // (une nouvelle requête a pu remplacer notre entrée)
-        let is_current = {
-            let state = task_app.state::<ActiveStreams>();
-            let mut map = state.0.lock().await;
-            match map.get(&stream_session) {
-                Some((_, gen, _, _)) if *gen == generation => {
-                    map.remove(&stream_session);
-                    true
+            // Cleanup : ne supprime que si NOTRE génération est encore active
+            // (une nouvelle requête a pu remplacer notre entrée)
+            let is_current = {
+                let state = task_app.state::<ActiveStreams>();
+                let mut map = state.0.lock().await;
+                match map.get(&stream_session) {
+                    Some((_, gen, _, _)) if *gen == generation => {
+                        map.remove(&stream_session);
+                        true
+                    }
+                    _ => false,
                 }
-                _ => false,
+            };
+
+            if is_current {
+                crate::services::agent_local::permission_gate::clear_session(&stream_session).await;
+                crate::services::agent_local::session_store::remove_session_lock(&stream_session)
+                    .await;
             }
-        };
 
-        if is_current {
-            crate::services::agent_local::permission_gate::clear_session(&stream_session).await;
-            crate::services::agent_local::session_store::remove_session_lock(&stream_session).await;
-        }
-
-        if let Err(message) = result {
-            // Ne pas envoyer l'erreur "Annulé" — le frontend gère déjà le cancel
-            // via stopSession(). Envoyer ce message tuerait un nouveau stream.
-            if is_current && message != "Annulé" {
-                let (public_message, context_capacity) =
-                    crate::services::agent_local::context_capacity_error::public_error(&message);
-                let is_conn =
+            if let Err(message) = result {
+                // Ne pas envoyer l'erreur "Annulé" — le frontend gère déjà le cancel
+                // via stopSession(). Envoyer ce message tuerait un nouveau stream.
+                if is_current && message != "Annulé" {
+                    let (public_message, context_capacity) =
+                        crate::services::agent_local::context_capacity_error::public_error(
+                            &message,
+                        );
+                    let is_conn =
                     crate::services::agent_local::stream_diagnostics_failure::is_connection_error(
                         &public_message,
                     );
-                let diagnostic = crate::services::agent_local::stream_diagnostics::record_failure(
-                    &stream_session,
-                    Some(&stream_request_id),
-                    &public_message,
-                    is_conn,
-                )
-                .await;
-                let _ = emitter.send(StreamEvent::Error {
-                    message: public_message,
-                    is_connection: is_conn,
-                    context_capacity,
-                    diagnostic,
-                });
+                    let diagnostic =
+                        crate::services::agent_local::stream_diagnostics::record_failure(
+                            &stream_session,
+                            Some(&stream_request_id),
+                            &public_message,
+                            is_conn,
+                        )
+                        .await;
+                    let _ = emitter.send(StreamEvent::Error {
+                        message: public_message,
+                        is_connection: is_conn,
+                        context_capacity,
+                        diagnostic,
+                    });
+                }
             }
+        });
+    if let Err(error) = spawn_result {
+        cancel.cancel();
+        parent_message_inbox.close().await;
+        let mut map = streams.0.lock().await;
+        if matches!(
+            map.get(&session_id),
+            Some((_, active_generation, _, _)) if *active_generation == generation
+        ) {
+            map.remove(&session_id);
         }
-    });
+        return Err(error);
+    }
 
     Ok(generation)
 }

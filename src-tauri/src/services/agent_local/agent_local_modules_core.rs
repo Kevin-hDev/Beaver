@@ -1,17 +1,20 @@
+pub mod agent_definition;
 pub mod agent_loop;
 pub mod agent_loop_completion;
-pub mod agent_loop_finish;
 mod agent_loop_compression;
 pub mod agent_loop_errors;
+pub mod agent_loop_finish;
 pub mod agent_loop_limits;
 mod agent_loop_ollama_request;
 pub mod agent_loop_plan;
 pub mod agent_loop_support;
 pub mod agent_loop_thinking_retry;
 pub mod agent_md;
-pub mod agent_definition;
 pub mod agent_resource_access;
 pub mod agent_settings;
+pub mod agent_work_supervision;
+#[cfg(test)]
+mod agent_work_supervision_tests;
 pub mod app_handle_global;
 pub mod circuit_breaker;
 #[cfg(test)]
@@ -27,10 +30,10 @@ pub mod clone_summary;
 pub mod clone_summary_ops;
 pub mod clone_summary_prompt;
 pub mod compress_hook;
-pub mod context_capacity_error;
 pub mod context_budget;
 mod context_budget_history;
 mod context_budget_prune;
+pub mod context_capacity_error;
 pub mod context_usage_buckets;
 pub mod diagnostic_args;
 #[cfg(test)]
@@ -39,6 +42,7 @@ pub mod diagnostic_redaction;
 pub mod directory_access;
 mod directory_access_scope;
 mod directory_policy;
+pub mod eager_dispatch;
 pub mod extension_discovery_prompt;
 mod extension_session_plugins;
 pub mod extension_session_state;
@@ -46,13 +50,12 @@ pub mod extension_tool_mask;
 pub mod extension_tool_selection;
 mod extension_tool_set_apply;
 mod extension_tool_set_diagnostics;
-pub mod eager_dispatch;
 pub mod interactive_choice_gate;
-pub mod memory_format;
-pub mod memory_format_update;
 pub mod memory_archive;
 pub mod memory_context;
 pub mod memory_context_usage;
+pub mod memory_format;
+pub mod memory_format_update;
 pub mod memory_index;
 pub mod memory_io;
 pub mod memory_overview;
@@ -74,11 +77,6 @@ pub mod model_customizations;
 mod model_customizations_tests;
 pub mod model_size;
 pub mod modelfile_parser;
-pub mod system_prompt_resolver;
-pub mod system_prompt_store;
-pub mod system_prompt_types;
-#[cfg(test)]
-mod system_prompt_settings_tests;
 pub mod ollama_client;
 #[cfg(test)]
 mod ollama_client_integration_tests;
@@ -91,10 +89,10 @@ mod ollama_modelfile_parameters_tests;
 pub mod ollama_native_prompts;
 #[cfg(test)]
 mod ollama_native_prompts_tests;
-pub mod ollama_parameter_validation;
 pub mod ollama_parameter_summary;
 #[cfg(test)]
 mod ollama_parameter_summary_tests;
+pub mod ollama_parameter_validation;
 pub mod ollama_registry;
 pub mod ollama_registry_details;
 #[cfg(test)]
@@ -102,8 +100,8 @@ mod ollama_registry_tests;
 pub mod ollama_retry_indicator;
 pub mod ollama_runtime;
 pub mod ollama_stream;
-pub mod ollama_stream_process;
 mod ollama_stream_filter;
+pub mod ollama_stream_process;
 #[cfg(test)]
 mod ollama_stream_process_tests;
 pub mod ollama_stream_request;
@@ -114,20 +112,25 @@ pub mod ollama_tool_role;
 #[cfg(test)]
 mod ollama_tool_role_tests;
 pub mod ollama_wire;
-pub mod permission_gate;
-pub mod permission_bash;
+pub(crate) mod parent_message_inbox;
+#[cfg(test)]
+mod parent_message_inbox_tests;
+#[cfg(test)]
+mod parent_message_wakeup_tests;
 mod permission_allow_cache;
+pub mod permission_bash;
+pub mod permission_gate;
 #[cfg(test)]
 pub mod permission_gate_tests;
 pub mod permission_policy;
-pub mod private_data_access;
-mod shell_sandbox_diagnostics;
-pub mod provider_tool_limits;
 pub mod plan_mode_controller;
 pub mod plan_mode_debug;
+pub mod private_data_access;
 pub mod project_store;
+pub mod provider_tool_limits;
 pub mod security;
 pub mod sensitive_data;
+mod shell_sandbox_diagnostics;
 pub mod subagent_activity;
 pub mod subagent_completion;
 mod subagent_completion_boundary;
@@ -137,68 +140,69 @@ mod subagent_completion_boundary_tests;
 mod subagent_completion_capacity_tests;
 #[cfg(test)]
 mod subagent_completion_tests;
+pub mod subagent_context;
+#[cfg(test)]
+mod subagent_correction_capacity_tests;
+#[cfg(test)]
+mod subagent_delegate_prompt_tests;
+#[cfg(test)]
+mod subagent_event_completion_failure_tests;
+#[cfg(test)]
+mod subagent_event_completion_signal_tests;
+#[cfg(test)]
+#[path = "subagent_terminal_wait_tests.rs"]
+mod subagent_event_terminal_tests;
+#[cfg(test)]
+mod subagent_event_wait_tests;
+#[cfg(test)]
+mod subagent_execution_ownership_tests;
 #[cfg(test)]
 mod subagent_failure_queue_tests;
-pub mod subagent_context;
 pub mod subagent_hidden_reports;
 pub(crate) mod subagent_instruction_delivery;
 #[cfg(test)]
 mod subagent_instruction_delivery_tests;
 #[cfg(test)]
+mod subagent_instruction_execution_race_tests;
+#[cfg(test)]
 mod subagent_instruction_limit_tests;
 #[cfg(test)]
 mod subagent_instruction_wiring_tests;
-#[cfg(test)]
-mod subagent_review_fail_closed_tests;
-#[cfg(test)]
-mod subagent_redeploy_atomic_tests;
-#[cfg(test)]
-mod subagent_delegate_prompt_tests;
 pub mod subagent_live_state;
 pub mod subagent_orchestration;
-pub(crate) mod parent_message_inbox;
-#[cfg(test)]
-mod parent_message_inbox_tests;
-#[cfg(test)]
-mod parent_message_wakeup_tests;
-#[cfg(test)]
-mod subagent_event_wait_tests;
-#[cfg(test)]
-mod subagent_event_completion_signal_tests;
-#[cfg(test)]
-mod subagent_event_completion_failure_tests;
+pub mod subagent_orchestration_context;
 #[cfg(test)]
 mod subagent_orchestration_race_tests;
-#[cfg(test)]
-#[path = "subagent_terminal_wait_tests.rs"]
-mod subagent_event_terminal_tests;
-#[cfg(test)]
-mod subagent_terminal_wait_test_support;
-pub mod subagent_orchestration_context;
-pub mod subagent_parent_guidance;
-#[cfg(test)]
-mod subagent_parent_guidance_tests;
 pub mod subagent_panic_supervisor;
 #[cfg(test)]
 mod subagent_panic_supervisor_tests;
+pub mod subagent_parent_guidance;
+#[cfg(test)]
+mod subagent_parent_guidance_tests;
 pub mod subagent_profile;
 pub mod subagent_prompts;
 #[cfg(test)]
 pub mod subagent_prompts_tests;
+#[cfg(test)]
+mod subagent_redeploy_atomic_tests;
 pub mod subagent_registry;
+#[cfg(test)]
+mod subagent_registry_test_support;
 #[cfg(test)]
 pub mod subagent_registry_tests;
 #[cfg(test)]
-mod subagent_terminal_consumption_tests;
-#[cfg(test)]
-mod subagent_registry_test_support;
+mod subagent_report_ack_tests;
 mod subagent_report_context;
 mod subagent_report_delivery;
 #[cfg(test)]
 mod subagent_report_delivery_tests;
 #[cfg(test)]
-mod subagent_report_ack_tests;
+mod subagent_review_fail_closed_tests;
+#[cfg(test)]
+mod subagent_same_run_tests;
 pub mod subagent_spawn_channel;
+#[cfg(test)]
+mod subagent_spawn_channel_tests;
 pub mod subagent_startup_cleanup;
 pub mod subagent_status;
 pub mod subagent_summary;
@@ -207,18 +211,19 @@ pub mod subagent_task_stream;
 #[cfg(test)]
 pub mod subagent_task_tests;
 #[cfg(test)]
-mod subagent_same_run_tests;
-#[cfg(test)]
-mod subagent_worktree_ownership_tests;
-#[cfg(test)]
-mod subagent_execution_ownership_tests;
-#[cfg(test)]
-mod subagent_worktree_wiring_tests;
-#[cfg(test)]
-mod subagent_instruction_execution_race_tests;
-#[cfg(test)]
-mod subagent_correction_capacity_tests;
+mod subagent_terminal_consumption_tests;
 mod subagent_terminal_signal;
+#[cfg(test)]
+mod subagent_terminal_wait_test_support;
 pub mod subagent_tool_control;
 #[cfg(test)]
 mod subagent_tool_control_tests;
+#[cfg(test)]
+mod subagent_worktree_ownership_tests;
+#[cfg(test)]
+mod subagent_worktree_wiring_tests;
+pub mod system_prompt_resolver;
+#[cfg(test)]
+mod system_prompt_settings_tests;
+pub mod system_prompt_store;
+pub mod system_prompt_types;

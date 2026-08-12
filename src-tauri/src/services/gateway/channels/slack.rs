@@ -7,6 +7,7 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
+use super::backpressure::try_enqueue;
 use super::slack_types::*;
 use super::websocket_limits::bounded_websocket_config;
 use super::{
@@ -63,17 +64,18 @@ impl ChannelAdapter for SlackAdapter {
         &self,
         ctx: ChannelContext,
         sender: mpsc::Sender<InboundMessage>,
-    ) -> GatewayResult<tokio::task::JoinHandle<()>> {
+    ) -> GatewayResult<super::ChannelRun> {
         self.load_tokens(&format!("gateway.slack.{}", ctx.key.account_id))
             .await?;
         let state = self.state.clone();
         let client = self.client.clone();
         let cancel = ctx.cancel;
         let key = ctx.key;
+        let refusal_audit = ctx.refusal_audit;
         let require_mention = ctx.config.require_mention;
         let bot_user_id = self.state.read().await.bot_user_id.clone();
 
-        Ok(tokio::spawn(async move {
+        Ok(Box::pin(async move {
             loop {
                 if cancel.is_cancelled() {
                     break;
@@ -127,7 +129,7 @@ impl ChannelAdapter for SlackAdapter {
                                         require_mention,
                                         &bot_user_id,
                                     ) {
-                                        let _ = sender.send(inbound).await;
+                                        try_enqueue(&sender, inbound, &key, &refusal_audit);
                                     }
                                 }
                             }

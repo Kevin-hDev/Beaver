@@ -2,6 +2,7 @@ use super::host_paths::HostPaths;
 use super::host_process::HostProcess;
 use super::protocol::{HelloResult, SyncResult};
 use super::types::{ExtensionDiagnostic, ExtensionHostStatus, HostState, BEAVER_API_VERSION};
+use crate::app_exit::AppWorkSupervisor;
 use serde_json::{json, Value};
 use std::sync::{Arc, OnceLock, RwLock};
 use tokio::sync::Mutex;
@@ -12,10 +13,11 @@ pub struct ExtensionRuntime {
     pub(super) paths: Option<HostPaths>,
     pub(super) process: Mutex<Option<Arc<HostProcess>>>,
     pub(super) status: RwLock<ExtensionHostStatus>,
-    auto_restarts: super::runtime_restart::RestartBudget,
+    pub(super) auto_restarts: super::runtime_restart::RestartBudget,
+    pub(super) work: super::work_supervision::ExtensionWorkServices,
 }
 
-pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
+pub fn init(app: &tauri::AppHandle, app_work: AppWorkSupervisor) -> Result<(), String> {
     super::registry::init()?;
     let paths = super::host_paths::resolve(app).ok();
     let mut status = ExtensionHostStatus::default();
@@ -28,74 +30,11 @@ pub fn init(app: &tauri::AppHandle) -> Result<(), String> {
         process: Mutex::new(None),
         status: RwLock::new(status),
         auto_restarts: super::runtime_restart::RestartBudget::default(),
+        work: super::work_supervision::ExtensionWorkServices::new(app_work),
     });
     RUNTIME
         .set(runtime)
         .map_err(|_| "Hôte d'extensions déjà initialisé.".to_string())
-}
-
-pub async fn start_and_sync() -> Result<(), String> {
-    let runtime = global()?;
-    runtime.set_state(HostState::Starting, None, 0);
-    let mut process_guard = runtime.process.lock().await;
-    let result = runtime.sync_locked(&mut process_guard).await;
-    if result.is_err() {
-        if let Some(process) = process_guard.take() {
-            process.kill().await;
-        }
-        runtime.set_state(
-            HostState::Error,
-            Some("Hôte d'extensions indisponible.".to_string()),
-            0,
-        );
-        mark_enabled_extensions_error();
-    }
-    result
-}
-
-pub async fn restart() -> Result<(), String> {
-    stop().await;
-    if let Ok(runtime) = global() {
-        runtime.auto_restarts.reset();
-    }
-    start_and_sync().await
-}
-
-pub(super) async fn ensure_running() -> Result<Arc<HostProcess>, String> {
-    let runtime = global()?;
-    let mut slot = runtime.process.lock().await;
-    if let Some(process) = slot.as_ref() {
-        return Ok(process.clone());
-    }
-    if !runtime.auto_restarts.allow() {
-        return Err("Hôte d'extensions indisponible.".to_string());
-    }
-    runtime.set_state(HostState::Starting, None, 0);
-    if let Err(error) = runtime.sync_locked(&mut slot).await {
-        if let Some(process) = slot.take() {
-            process.kill().await;
-        }
-        runtime.set_state(
-            HostState::Error,
-            Some("Hôte d'extensions indisponible.".to_string()),
-            0,
-        );
-        mark_enabled_extensions_error();
-        return Err(error);
-    }
-    slot.as_ref()
-        .cloned()
-        .ok_or_else(|| "Hôte d'extensions indisponible.".to_string())
-}
-
-pub async fn stop() {
-    let Ok(runtime) = global() else {
-        return;
-    };
-    if let Some(process) = runtime.process.lock().await.take() {
-        process.kill().await;
-    }
-    runtime.set_state(HostState::Stopped, None, 0);
 }
 
 pub fn status() -> ExtensionHostStatus {
@@ -106,13 +45,16 @@ pub fn status() -> ExtensionHostStatus {
 }
 
 impl ExtensionRuntime {
-    async fn sync_locked(&self, slot: &mut Option<Arc<HostProcess>>) -> Result<(), String> {
+    pub(super) async fn sync_locked(
+        &self,
+        slot: &mut Option<Arc<HostProcess>>,
+    ) -> Result<(), String> {
         if slot.is_none() {
             let paths = self
                 .paths
                 .as_ref()
                 .ok_or_else(|| "Runtime Node.js indisponible.".to_string())?;
-            *slot = Some(Arc::new(HostProcess::spawn(paths)?));
+            *slot = Some(Arc::new(HostProcess::spawn(paths, &self.work).await?));
         }
         let process = slot
             .as_ref()

@@ -7,7 +7,7 @@ pub use super::subagent_terminal_signal::SubagentTerminalKind;
 use super::subagent_terminal_signal::{SubagentTerminalNotifier, SubagentTerminalState};
 
 const MAX_PER_PARENT: usize = 4;
-const MAX_TOTAL: usize = 8;
+const MAX_TOTAL: usize = super::agent_work_supervision::MAX_ACTIVE_SUBAGENTS;
 
 struct SubagentEntry {
     pub cancel: CancellationToken,

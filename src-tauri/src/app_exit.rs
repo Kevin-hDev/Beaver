@@ -22,6 +22,11 @@ mod state;
 mod test_api;
 mod ultimate;
 mod watchdog;
+mod work_supervisor;
+
+pub use work_supervisor::AppWorkSupervisor;
+pub type AppWorkAdmission = registry::TrackedAdmission;
+pub type AppWorkAdmissionError = registry::AdmissionError;
 
 #[cfg(test)]
 mod cleanup_tests;
@@ -41,6 +46,8 @@ mod state_tests;
 mod ultimate_tests;
 #[cfg(test)]
 mod watchdog_tests;
+#[cfg(test)]
+mod work_supervisor_tests;
 
 pub struct AppExitCoordinator {
     begin_lock: Mutex<()>,
@@ -79,6 +86,15 @@ impl AppExitCoordinator {
             intent: OnceLock::new(),
             ultimate: ultimate::UltimateExit::initialize()?,
         })
+    }
+
+    pub(crate) fn work_supervisor(&self) -> AppWorkSupervisor {
+        AppWorkSupervisor::new(self.registry.clone())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn close_work_admission_for_test(&self) {
+        let _ = self.registry.close();
     }
 
     #[cfg(test)]
@@ -190,6 +206,12 @@ pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::
 
 pub(crate) fn post_event_loop(app: &tauri::AppHandle) {
     ::log::info!("[exit] event loop returned");
+    let webviews = crate::services::browser::observe_native_webviews();
+    ::log::info!(
+        "[exit] native WebView descendants={} shared-system={}",
+        webviews.dedicated_pids.len(),
+        webviews.shared_system_count
+    );
     if let Some(coordinator) = app.try_state::<AppExitCoordinator>() {
         coordinator.drain_post_loop();
     }

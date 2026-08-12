@@ -18,6 +18,9 @@ pub(crate) mod identity;
 mod identity_tests;
 pub mod process_env;
 pub mod process_manager;
+mod process_pool;
+#[cfg(test)]
+mod process_pool_tests;
 mod process_spawn;
 pub mod registry;
 #[cfg(test)]
@@ -43,3 +46,6 @@ mod transport_result_tests;
 #[cfg(test)]
 mod transport_validation_tests;
 pub mod trusted;
+mod work_supervision;
+#[cfg(test)]
+mod work_supervision_tests;

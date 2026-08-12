@@ -88,8 +88,8 @@ mod native_pump_wake;
 mod native_surface;
 #[cfg(any(test, target_os = "macos", target_os = "windows"))]
 mod navigation_target;
-#[cfg(any(test, native_browser))]
-mod process_role;
+pub(crate) mod process_role;
+pub(crate) use process_role::observe_native_webviews;
 #[cfg(target_os = "macos")]
 mod pump_gate;
 #[cfg(native_browser)]

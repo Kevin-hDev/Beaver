@@ -145,10 +145,12 @@ pub fn start_sidecar(app: &AppHandle) -> Result<bool, String> {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000);
     }
-    crate::services::process_tree::configure(&mut cmd);
-
-    let child = cmd.spawn().map_err(|e| {
-        ::log::error!("[ollama] spawn: {e}");
+    let child = crate::services::owned_process::OwnedProcess::spawn(
+        &mut cmd,
+        crate::services::process_tree::ProcessKind::Ollama,
+    )
+    .map_err(|error| {
+        ::log::error!("[ollama] démarrage possédé: {error:?}");
         "ollama-start-error".to_string()
     })?;
     let pid = child.id();

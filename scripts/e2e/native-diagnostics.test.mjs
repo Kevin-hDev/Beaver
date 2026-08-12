@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import {
-  collectNativeCefDiagnostics,
+  collectNativeDiagnostics,
   MAX_DIAGNOSTIC_FILES,
 } from "./native-diagnostics.mjs";
 
@@ -21,7 +21,7 @@ test("native CEF diagnostics expose only bounded browser failure categories", as
       "utf8",
     );
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "browser-supervision:cef-supervision-admission",
       "browser-initialization:fatal",
     ]);
@@ -55,7 +55,7 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
       "utf8",
     );
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "webdriver:spawned",
       "webdriver:ready",
       "webdriver:healthy",
@@ -71,6 +71,31 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
       "application-exit-source:browser-supervision",
       "browser-supervision-detail:admission-identity",
       "process-exit:signal-sigsegv",
+    ]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("native diagnostics recognize lifecycle stages normalized by the WDIO writer", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-native-logs-"));
+  try {
+    await writeFile(
+      join(directory, "wdio-normalized.log"),
+      [
+        "2026-08-12T05:52:43.542Z INFO tauri-service:service: [Tauri:Backend:0] shell-cleanup-completed",
+        "2026-08-12T05:52:43.543Z INFO tauri-service:service: [Tauri:Backend:0] setup-completed",
+        "2026-08-12T05:52:43.544Z INFO tauri-service:service: [Tauri:Backend:0] event-loop-entered",
+        "2026-08-12T05:52:43.545Z INFO tauri-service:service: [Tauri:Backend:../../secret] setup-entered",
+        "2026-08-12T05:52:43.546Z INFO tauri-service:service: [Tauri:Backend:0] private-value",
+      ].join("\n"),
+      "utf8",
+    );
+
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
+      "application-stage:shell-cleanup-completed",
+      "application-stage:setup-completed",
+      "application-stage:event-loop-entered",
     ]);
   } finally {
     await rm(directory, { recursive: true, force: true });
@@ -93,7 +118,7 @@ test("native CEF diagnostics bound files and ignore unrelated names", async () =
       );
     }
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "browser-preflight:cef-supervision-object",
     ]);
   } finally {
@@ -113,7 +138,7 @@ test("the dedicated process exit marker has priority over unrelated WDIO logs", 
       "utf8",
     );
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "process-exit:code-101",
     ]);
   } finally {
@@ -124,5 +149,5 @@ test("the dedicated process exit marker has priority over unrelated WDIO logs", 
 test("a missing diagnostic directory is a safe empty result", async () => {
   const missing = join(tmpdir(), "beaver-native-logs-missing");
   await rm(missing, { recursive: true, force: true });
-  assert.deepEqual(await collectNativeCefDiagnostics(missing), []);
+  assert.deepEqual(await collectNativeDiagnostics(missing), []);
 });

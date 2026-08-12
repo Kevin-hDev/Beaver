@@ -65,11 +65,14 @@ pub mod selection_tickets;
 pub mod sidecar;
 mod sidecar_auth;
 mod sidecar_http;
+mod sidecar_idle;
 pub mod sidecar_process;
 mod sidecar_process_env;
+mod sidecar_reuse;
 pub mod sidecar_runtime;
 mod sidecar_settings;
 mod sidecar_spawn;
+mod sidecar_stop;
 pub mod spreadsheet_mapping;
 pub mod storage;
 mod storage_backtests;
@@ -82,6 +85,7 @@ pub mod target_domain;
 pub mod types;
 pub mod validation;
 mod validation_selection;
+mod work_supervision;
 pub mod workbench_context;
 pub mod workbench_drafts;
 pub mod workbench_geometry;
@@ -96,6 +100,8 @@ mod input_data_tests;
 mod notes_security_tests;
 #[cfg(test)]
 mod registry_tests;
+#[cfg(test)]
+mod sidecar_lifecycle_tests;
 #[cfg(test)]
 mod types_compat_tests;
 #[cfg(test)]

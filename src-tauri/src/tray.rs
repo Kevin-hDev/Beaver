@@ -86,13 +86,24 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
             }
             TrayMenuAction::ToggleGateway => {
                 let handle = app.clone();
-                tauri::async_runtime::spawn(async move {
-                    let gw = handle.state::<GatewayService>();
-                    if gw.is_enabled().await {
-                        gw.stop().await;
-                    } else {
-                        let config = gw.config().await;
-                        let _ = gw.start(config, handle.clone()).await;
+                let background = app
+                    .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+                    .inner()
+                    .clone();
+                let _ = background.spawn_task(move |cancel| async move {
+                    tokio::select! {
+                        _ = cancel.cancelled() => {}
+                        _ = async {
+                            let gw = handle.state::<GatewayService>();
+                            if gw.is_enabled().await {
+                                if !gw.stop().await {
+                                    ::log::warn!("[gateway] gateway-stop-timeout");
+                                }
+                            } else {
+                                let config = gw.config().await;
+                                let _ = gw.start(config, handle.clone()).await;
+                            }
+                        } => {}
                     }
                 });
             }

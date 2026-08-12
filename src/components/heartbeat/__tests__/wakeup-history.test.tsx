@@ -22,13 +22,14 @@ describe("WakeupHistory", () => {
             scheduled_for: "2026-05-17T08:00:00+02:00",
             fired_at: "2026-05-17T08:00:10Z",
             status: "missed",
-            error: "Réveil raté",
+            error: "/private/config.json",
           },
         ]}
       />,
     );
 
     expect(container.textContent).toContain("heartbeat.status.missed");
-    expect(container.textContent).toContain("Réveil raté");
+    expect(container.textContent).toContain("heartbeat.history.errors.failed");
+    expect(container.textContent).not.toContain("/private/config.json");
   });
 });

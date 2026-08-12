@@ -1,9 +1,13 @@
-#![expect(clippy::too_many_arguments, reason = "orchestration boundary keeps related runtime context explicit")]
+#![expect(
+    clippy::too_many_arguments,
+    reason = "orchestration boundary keeps related runtime context explicit"
+)]
 use std::path::{Path, PathBuf};
 use tokio_util::sync::CancellationToken;
 
 use super::tool_bash_progress::ShellProgress;
 use super::types_tools::ShellOutput;
+use zeroize::Zeroizing;
 
 #[cfg(not(windows))]
 const MAX_COMMAND_BYTES: usize = 512 * 1024;
@@ -23,6 +27,7 @@ pub struct ShellExecutionContext<'a> {
     pub yield_time_ms: Option<u64>,
     pub cancel: CancellationToken,
     pub progress: Option<ShellProgress>,
+    pub work: super::agent_work_supervision::ShellWork,
 }
 
 pub async fn execute_shell_managed(
@@ -38,14 +43,21 @@ pub async fn execute_shell_managed(
         return Err("Le timeout shell doit etre superieur a zero.".to_string());
     }
 
-    let session = super::tool_bash_process::spawn(super::tool_bash_process::SpawnRequest {
-        command,
-        working_dir,
-        owner_session_id: context.owner_session_id,
-        hard_timeout_secs: context.hard_timeout_secs,
-        progress: context.progress,
-        agent_cancel: context.cancel.clone(),
-    })
+    let admission = context
+        .work
+        .try_admit()
+        .map_err(|error| error.public_code().to_string())?;
+    let session = super::tool_bash_process::spawn(
+        super::tool_bash_process::SpawnRequest {
+            command: Zeroizing::new(command.to_string()),
+            working_dir: working_dir.to_path_buf(),
+            owner_session_id: context.owner_session_id.to_string(),
+            hard_timeout_secs: context.hard_timeout_secs,
+            progress: context.progress,
+            agent_cancel: context.cancel.clone(),
+        },
+        admission,
+    )
     .await?;
     let snapshot = super::tool_bash_wait::wait(
         &session,
@@ -98,13 +110,8 @@ pub async fn control_shell_session(
     if eof {
         session.close_stdin().await;
     }
-    let snapshot = super::tool_bash_wait::wait(
-        &session,
-        yield_duration(yield_time_ms),
-        &cancel,
-        true,
-    )
-    .await;
+    let snapshot =
+        super::tool_bash_wait::wait(&session, yield_duration(yield_time_ms), &cancel, true).await;
     session.set_progress(None);
     let output = super::tool_bash_result::from_snapshot(&session, snapshot);
     if session.is_done() {
@@ -147,6 +154,11 @@ pub async fn execute_shell(
             yield_time_ms: None,
             cancel: CancellationToken::new(),
             progress: None,
+            work: super::agent_work_supervision::ShellWork::new(
+                crate::app_exit::AppExitCoordinator::initialize()
+                    .expect("exit coordinator")
+                    .work_supervisor(),
+            ),
         },
     )
     .await

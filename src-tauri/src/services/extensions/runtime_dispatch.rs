@@ -15,15 +15,35 @@ pub async fn dispatch_tool(
     if !super::registry_index::is_dynamic_tool(name) {
         return None;
     }
-    let host = match super::runtime::ensure_running().await {
-        Ok(host) => host,
+    let runtime = match super::runtime::global() {
+        Ok(runtime) => Arc::clone(runtime),
         Err(_) => return Some(super::tool_result::unavailable()),
     };
+    let name = name.to_string();
+    let arguments = arguments.clone();
+    let working_directory = working_directory.to_path_buf();
+    let work = runtime.work.clone();
+    let result = work
+        .run_operation(move |cancel| async move {
+            tokio::select! {
+                _ = cancel.cancelled() => super::tool_result::unavailable(),
+                result = dispatch_tracked(&name, &arguments, &working_directory) => result,
+            }
+        })
+        .await;
+    Some(result.unwrap_or_else(|_| super::tool_result::unavailable()))
+}
+
+async fn dispatch_tracked(name: &str, arguments: &Value, working_directory: &Path) -> ToolResult {
+    let host = match super::runtime_lifecycle::ensure_running().await {
+        Ok(host) => host,
+        Err(_) => return super::tool_result::unavailable(),
+    };
     let Some(working_directory) = working_directory.to_str() else {
-        return Some(extension_context_unavailable());
+        return extension_context_unavailable();
     };
     if working_directory.encode_utf16().count() > MAX_WORKING_DIRECTORY_CHARS {
-        return Some(extension_context_unavailable());
+        return extension_context_unavailable();
     }
     let response = host
         .request(
@@ -39,7 +59,7 @@ pub async fn dispatch_tool(
     if response.is_err() {
         invalidate(&host).await;
     }
-    Some(to_tool_result(response))
+    to_tool_result(response)
 }
 
 pub async fn emit_event(name: &str, payload: Value) {
@@ -47,9 +67,22 @@ pub async fn emit_event(name: &str, payload: Value) {
     {
         return;
     }
-    let Ok(runtime) = super::runtime::global() else {
+    let Ok(runtime) = super::runtime::global().map(Arc::clone) else {
         return;
     };
+    let name = name.to_string();
+    let work = runtime.work.clone();
+    let _ = work
+        .run_operation(move |cancel| async move {
+            tokio::select! {
+                _ = cancel.cancelled() => {},
+                _ = emit_tracked(&runtime, &name, payload) => {},
+            }
+        })
+        .await;
+}
+
+async fn emit_tracked(runtime: &Arc<super::runtime::ExtensionRuntime>, name: &str, payload: Value) {
     let host = {
         let Ok(process) = runtime.process.try_lock() else {
             return;
@@ -112,19 +145,13 @@ async fn invalidate(failed: &Arc<HostProcess>) {
     let Ok(runtime) = super::runtime::global() else {
         return;
     };
-    let removed = {
-        let mut slot = runtime.process.lock().await;
-        if slot
-            .as_ref()
-            .is_some_and(|current| Arc::ptr_eq(current, failed))
-        {
-            slot.take()
-        } else {
-            None
-        }
-    };
-    if let Some(host) = removed {
-        host.kill().await;
+    let outcome = super::runtime_lifecycle::stop_host_slot(
+        &runtime.process,
+        Some(failed),
+        super::host_process::stop_deadline(),
+    )
+    .await;
+    if outcome != super::runtime_lifecycle::StopHostOutcome::NotCurrent {
         runtime.set_state(
             HostState::Error,
             Some("Hôte d'extensions indisponible.".to_string()),

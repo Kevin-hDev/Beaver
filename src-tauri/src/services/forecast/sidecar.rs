@@ -1,26 +1,45 @@
+use crate::app_exit::AppWorkSupervisor;
 use crate::services::forecast::{
     sidecar_auth, sidecar_http, sidecar_process,
-    sidecar_settings::{self, LaunchSettings, UnloadPolicy},
+    sidecar_settings::{self, LaunchSettings},
     sidecar_spawn,
+    work_supervision::{ForecastWorkServices, SidecarAdmission},
 };
 use crate::services::paths::data_dir;
+use crate::services::work_registry::ServiceWorkCancellation;
+use std::future::Future;
 use std::process::Child;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::sync::{
+    atomic::{AtomicBool, AtomicU64, Ordering},
+    Arc,
+};
+use tokio::sync::{Mutex, Notify};
+use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
 
-struct SidecarHandle {
-    child: Child,
-    model_id: String,
-    family_id: String,
-    auth_token: Zeroizing<String>,
-    launch: LaunchSettings,
-    generation: u64,
+pub use super::sidecar_idle::schedule_idle_stop;
+pub use super::sidecar_stop::{stop, stop_model};
+
+pub(super) struct SidecarHandle {
+    pub(super) child: Child,
+    pub(super) model_id: String,
+    pub(super) family_id: String,
+    pub(super) auth_token: Zeroizing<String>,
+    pub(super) launch: LaunchSettings,
+    pub(super) generation: u64,
+    pub(super) publication_generation: u64,
+    pub(super) _admission: SidecarAdmission,
 }
 
+#[derive(Clone)]
 pub struct ChronosSidecar {
-    process: Arc<Mutex<Option<SidecarHandle>>>,
-    prediction: Mutex<()>,
+    pub(super) process: Arc<Mutex<Option<SidecarHandle>>>,
+    prediction: Arc<Mutex<()>>,
+    pub(super) work: ForecastWorkServices,
+    pub(super) idle_changed: Arc<Notify>,
+    pub(super) idle_started: Arc<AtomicBool>,
+    // Cette génération reste stable pendant une sonde, contrairement au compteur d'inactivité.
+    pub(super) next_publication_generation: Arc<AtomicU64>,
 }
 
 pub struct SidecarEndpoint {
@@ -30,24 +49,77 @@ pub struct SidecarEndpoint {
 }
 
 impl ChronosSidecar {
-    pub fn new() -> Self {
+    pub fn new(app_work: AppWorkSupervisor) -> Self {
         Self {
             process: Arc::new(Mutex::new(None)),
-            prediction: Mutex::new(()),
+            prediction: Arc::new(Mutex::new(())),
+            work: ForecastWorkServices::new(app_work),
+            idle_changed: Arc::new(Notify::new()),
+            idle_started: Arc::new(AtomicBool::new(false)),
+            next_publication_generation: Arc::new(AtomicU64::new(1)),
         }
     }
 
     pub async fn lock_prediction(&self) -> tokio::sync::MutexGuard<'_, ()> {
         self.prediction.lock().await
     }
-}
 
-pub fn get_port() -> u16 {
-    sidecar_http::get_port()
-}
+    pub async fn run_operation<Factory, Task, Output>(
+        &self,
+        work: Factory,
+    ) -> Result<Output, String>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: Future<Output = Result<Output, String>> + Send + 'static,
+        Output: Send + 'static,
+    {
+        self.work.run_operation(work).await
+    }
 
-pub fn base_url() -> String {
-    sidecar_http::base_url()
+    pub async fn run_cancellable<Factory, Task, Output>(
+        &self,
+        work: Factory,
+    ) -> Result<Output, String>
+    where
+        Factory: FnOnce() -> Task + Send + 'static,
+        Task: Future<Output = Result<Output, String>> + Send + 'static,
+        Output: Send + 'static,
+    {
+        self.run_operation(move |cancel| async move {
+            let task = work();
+            tokio::pin!(task);
+            tokio::select! {
+                result = &mut task => result,
+                _ = cancel.cancelled() => Err("app-shutting-down".to_string()),
+            }
+        })
+        .await
+    }
+
+    pub async fn run_with_cancel<Factory, Task, Output>(
+        &self,
+        cancel: CancellationToken,
+        work: Factory,
+    ) -> Result<Output, String>
+    where
+        Factory: FnOnce(CancellationToken) -> Task + Send + 'static,
+        Task: Future<Output = Result<Output, String>> + Send + 'static,
+        Output: Send + 'static,
+    {
+        self.run_operation(move |shutdown| async move {
+            let shutdown_cancel = cancel.clone();
+            let task = work(cancel);
+            tokio::pin!(task);
+            tokio::select! {
+                result = &mut task => result,
+                _ = shutdown.cancelled() => {
+                    shutdown_cancel.cancel();
+                    task.await
+                }
+            }
+        })
+        .await
+    }
 }
 
 pub async fn start(
@@ -56,21 +128,28 @@ pub async fn start(
     family_id: &str,
 ) -> Result<SidecarEndpoint, String> {
     let launch = sidecar_settings::current();
-    if let Some(endpoint) = reuse_running(sidecar, model_name, family_id, &launch).await {
+    if let Some(endpoint) =
+        super::sidecar_reuse::reuse_running(sidecar, model_name, family_id, &launch).await
+    {
         return Ok(endpoint);
     }
 
-    stop(sidecar).await;
+    if !stop(sidecar).await {
+        return Err("Sidecar Forecast indisponible".to_string());
+    }
     sidecar_process::kill_orphan_sidecar();
     let port = sidecar_http::find_free_port();
     let script = sidecar_spawn::sidecar_dir().join("server.py");
     if !script.exists() {
         return Err("Sidecar Python non installé".into());
     }
-
     let runtime_python = sidecar_spawn::ready_runtime(family_id)?;
     let models_dir = data_dir().join("forecast-models");
     let auth_token = sidecar_auth::generate_auth_token();
+    let admission = sidecar
+        .work
+        .try_admit_sidecar()
+        .map_err(|error| error.public_code().to_string())?;
     let child = sidecar_spawn::spawn_process(
         runtime_python,
         &script,
@@ -92,107 +171,18 @@ pub async fn start(
         auth_token: auth_token.clone(),
         launch,
         generation: 1,
+        publication_generation: sidecar
+            .next_publication_generation
+            .fetch_add(1, Ordering::Relaxed),
+        _admission: admission,
     });
+    sidecar.idle_changed.notify_waiters();
 
     match sidecar_spawn::wait_until_ready(port, model_name, family_id, pid, auth_token).await {
         Ok(endpoint) => Ok(endpoint),
-        Err(err) => {
-            stop(sidecar).await;
-            Err(err)
+        Err(error) => {
+            let _ = stop(sidecar).await;
+            Err(error)
         }
     }
-}
-
-async fn reuse_running(
-    sidecar: &ChronosSidecar,
-    model_name: &str,
-    family_id: &str,
-    launch: &LaunchSettings,
-) -> Option<SidecarEndpoint> {
-    let mut guard = sidecar.process.lock().await;
-    let handle = guard.as_mut()?;
-    if handle.model_id != model_name || handle.family_id != family_id || &handle.launch != launch {
-        return None;
-    }
-    let (_port, model, family) = sidecar_http::health_info(get_port(), handle.auth_token.as_str())?;
-    if model != model_name || family != family_id {
-        return None;
-    }
-    handle.generation = handle.generation.saturating_add(1);
-    Some(SidecarEndpoint {
-        base_url: base_url(),
-        auth_token: handle.auth_token.clone(),
-        pid: handle.child.id(),
-    })
-}
-
-pub fn schedule_idle_stop(sidecar: &ChronosSidecar) {
-    let state = sidecar.process.clone();
-    tokio::spawn(async move {
-        let (generation, policy) = match touch_state(&state).await {
-            Some(item) => item,
-            None => return,
-        };
-        let UnloadPolicy::After(delay) = policy else {
-            return;
-        };
-        tokio::time::sleep(delay).await;
-        stop_if_generation(&state, generation).await;
-    });
-}
-
-async fn touch_state(state: &Arc<Mutex<Option<SidecarHandle>>>) -> Option<(u64, UnloadPolicy)> {
-    let mut guard = state.lock().await;
-    let handle = guard.as_mut()?;
-    handle.generation = handle.generation.saturating_add(1);
-    Some((handle.generation, handle.launch.unload_policy.clone()))
-}
-
-async fn stop_if_generation(state: &Arc<Mutex<Option<SidecarHandle>>>, generation: u64) {
-    let should_stop = state
-        .lock()
-        .await
-        .as_ref()
-        .is_some_and(|handle| handle.generation == generation);
-    if should_stop {
-        stop_state(state).await;
-    }
-}
-
-pub async fn stop(sidecar: &ChronosSidecar) {
-    stop_state(&sidecar.process).await;
-}
-
-pub async fn stop_model(sidecar: &ChronosSidecar, model_id: &str) {
-    let handle = {
-        let mut state = sidecar.process.lock().await;
-        if state
-            .as_ref()
-            .is_some_and(|handle| handle.model_id == model_id)
-        {
-            state.take()
-        } else {
-            None
-        }
-    };
-    if let Some(handle) = handle {
-        stop_handle(handle).await;
-        sidecar_process::clear_pid_file();
-        sidecar_http::clear_port();
-    }
-}
-
-async fn stop_state(state: &Arc<Mutex<Option<SidecarHandle>>>) {
-    if let Some(handle) = state.lock().await.take() {
-        stop_handle(handle).await;
-    }
-    sidecar_process::clear_pid_file();
-    sidecar_http::clear_port();
-}
-
-async fn stop_handle(handle: SidecarHandle) {
-    let _ = tokio::task::spawn_blocking(move || {
-        sidecar_process::kill_child_process(handle.child);
-    })
-    .await;
 }

@@ -1,4 +1,6 @@
 pub mod lifecycle;
+#[cfg(test)]
+mod lifecycle_tests;
 
 mod client;
 mod compat;
@@ -7,7 +9,10 @@ mod process;
 mod runtime;
 mod settings;
 mod source_filter;
+mod startup;
+mod startup_failure;
 mod wheels;
+mod work_supervision;
 
 pub use lifecycle::SearxngSidecar;
 
@@ -19,8 +24,4 @@ pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
 
 pub fn prepare_on_startup(app: tauri::AppHandle) {
     lifecycle::prepare_on_startup(app);
-}
-
-pub async fn stop(sidecar: &SearxngSidecar) {
-    lifecycle::stop(sidecar).await;
 }

@@ -19,6 +19,11 @@ pub(super) async fn managed(
             yield_time_ms,
             cancel,
             progress: None,
+            work: crate::services::agent_local::agent_work_supervision::ShellWork::new(
+                crate::app_exit::AppExitCoordinator::initialize()
+                    .expect("exit coordinator")
+                    .work_supervisor(),
+            ),
         },
     )
     .await

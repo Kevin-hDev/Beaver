@@ -4,7 +4,7 @@ use zeroize::Zeroizing;
 
 use super::tool_bash_session::ShellSession;
 
-const MAX_SESSIONS: usize = 64;
+const MAX_SESSIONS: usize = super::agent_work_supervision::MAX_ACTIVE_SHELLS;
 const STOP_ALL_GRACE: std::time::Duration = std::time::Duration::from_millis(300);
 
 struct RegisteredSession {
@@ -39,8 +39,8 @@ pub fn get(
     process_id: &str,
     owner_session_id: &str,
 ) -> Result<(Arc<ShellSession>, RegisteredCommand), String> {
-    let parsed = uuid::Uuid::parse_str(process_id)
-        .map_err(|_| "Session shell introuvable.".to_string())?;
+    let parsed =
+        uuid::Uuid::parse_str(process_id).map_err(|_| "Session shell introuvable.".to_string())?;
     let process_id = parsed.to_string();
     let mut sessions = lock_sessions();
     let Some(position) = sessions.iter().position(|entry| {

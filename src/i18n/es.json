@@ -671,12 +671,22 @@
       "ok": "Correcto",
       "error": "Error",
       "missed": "Perdido",
+      "cancelled": "Cancelado",
       "never": "Nunca ejecutado",
       "none": "Ninguno"
     },
     "history": {
       "title": "Historial",
-      "empty": "Sin ejecuciones"
+      "empty": "Sin ejecuciones",
+      "errors": {
+        "failed": "El wakeup ha fallado.",
+        "rateLimited": "Se alcanzó el límite de solicitudes del proveedor.",
+        "authenticationFailed": "Falló la autenticación con el proveedor.",
+        "ollamaUnavailable": "Ollama no estaba disponible.",
+        "missedUnavailable": "El wakeup se perdió mientras Beaver no estaba disponible.",
+        "schedulerStopping": "El wakeup no se inició porque Beaver se estaba cerrando.",
+        "capacityReached": "El wakeup no se inició porque ya había demasiadas operaciones en curso."
+      }
     },
     "sidebar": {
       "title": "Wakeups",
@@ -1079,6 +1089,14 @@
   "errors": {
     "crashMessage": "Se produjo un error. Por favor, reinicia la aplicación.",
     "operationFailed": "La operación falló. Por favor, inténtalo de nuevo.",
+    "admission": {
+      "appShuttingDown": "Beaver se está cerrando. Inténtalo de nuevo después de reiniciar la aplicación.",
+      "appCapacity": "Beaver ya está gestionando demasiadas operaciones. Inténtalo de nuevo en breve.",
+      "serviceShuttingDown": "Este servicio se está deteniendo. Inténtalo de nuevo en breve.",
+      "serviceCapacity": "Ya hay demasiadas operaciones en curso. Inténtalo de nuevo en breve.",
+      "gatewayShuttingDown": "Los canales de mensajería se están deteniendo. Inténtalo de nuevo en breve.",
+      "gatewayBusy": "Ya se están procesando demasiados mensajes. Inténtalo de nuevo en breve."
+    },
     "localStore": {
       "ollamaCustomization": "El archivo de personalización de Ollama no se puede leer. Restaura «ollama-custom-models.json» desde una copia de seguridad en Ajustes > Avanzado > Datos de Beaver. No lo elimines: sin copia, al reiniciar se perderá este historial y Beaver ya no podrá garantizar que un prompt mostrado como nativo de Ollama sea realmente el original.",
       "ollamaNativePrompts": "El archivo de instrucciones nativas de Ollama no se puede leer. Restaura «ollama-native-system-prompts.json» desde una copia de seguridad. Sin copia, cierra Beaver, elimina este archivo en Ajustes > Avanzado > Datos de Beaver y reinicia la aplicación para usar los valores predeterminados.",

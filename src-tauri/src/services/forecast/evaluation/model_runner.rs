@@ -121,7 +121,7 @@ async fn evaluate_inner(
     let outcome = evaluate_windows(analysis, model_id, plan, &executor).await;
     let max_memory_mb = sampler.and_then(super::memory_sampler::MemorySampler::finish);
     if matches!(executor, Executor::Local(_)) {
-        crate::services::forecast::sidecar::schedule_idle_stop(chronos);
+        crate::services::forecast::sidecar::schedule_idle_stop(chronos).await;
     }
     outcome.map(|(observations, folds)| (observations, folds, max_memory_mb))
 }

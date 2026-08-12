@@ -1,3 +1,6 @@
+mod backpressure;
+#[cfg(test)]
+mod backpressure_tests;
 mod bounded_vec;
 pub mod capabilities;
 pub mod discord;
@@ -15,7 +18,8 @@ mod websocket_limits;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use tokio::task::JoinHandle;
+use std::future::Future;
+use std::pin::Pin;
 use tokio_util::sync::CancellationToken;
 
 use super::types::ChannelKey;
@@ -47,9 +51,11 @@ pub struct ChannelContext {
     pub key: ChannelKey,
     pub config: ChannelAccountConfig,
     pub cancel: CancellationToken,
+    pub(super) refusal_audit: super::refusal_audit::RefusalAudit,
 }
 
 pub type GatewayResult<T> = Result<T, GatewayError>;
+pub type ChannelRun = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
 #[derive(Debug)]
 pub struct GatewayError {
@@ -89,7 +95,7 @@ pub trait ChannelAdapter: Send + Sync {
         &self,
         ctx: ChannelContext,
         sender: tokio::sync::mpsc::Sender<InboundMessage>,
-    ) -> GatewayResult<JoinHandle<()>>;
+    ) -> GatewayResult<ChannelRun>;
 
     async fn send(&self, msg: OutboundMessage) -> GatewayResult<()>;
 }

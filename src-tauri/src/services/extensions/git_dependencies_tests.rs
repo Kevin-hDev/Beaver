@@ -100,7 +100,13 @@ fn git_materialization_installs_dependencies_without_running_scripts_or_npmrc() 
         reference: None,
     };
 
-    let installed = super::git_source::materialize(&source, &destination, &npm).unwrap();
+    let installed = super::git_source::materialize(
+        &source,
+        &destination,
+        &npm,
+        &super::work_supervision::open_cancellation_for_test(),
+    )
+    .unwrap();
 
     assert!(installed
         .root

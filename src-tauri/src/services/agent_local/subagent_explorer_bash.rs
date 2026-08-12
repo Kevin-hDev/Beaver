@@ -11,10 +11,34 @@ pub async fn execute(
     working_dir: &Path,
     timeout_secs: Option<u64>,
     cancel: tokio_util::sync::CancellationToken,
+    work: super::agent_work_supervision::ShellWork,
 ) -> Result<ShellOutput, String> {
     let tokens = parse(command)?;
     validate_tokens(&tokens, working_dir)?;
-    super::subagent_explorer_process::run(&tokens, working_dir, timeout_secs, cancel).await
+    let admission = work
+        .try_admit()
+        .map_err(|error| error.public_code().to_string())?;
+    let working_dir = working_dir.to_path_buf();
+    let request_cancel = cancel.clone();
+    let (result_tx, result_rx) = tokio::sync::oneshot::channel();
+    admission
+        .spawn(move |shutdown| async move {
+            let task =
+                super::subagent_explorer_process::run(&tokens, &working_dir, timeout_secs, cancel);
+            tokio::pin!(task);
+            let result = tokio::select! {
+                _ = shutdown.cancelled() => {
+                    request_cancel.cancel();
+                    task.await
+                }
+                result = &mut task => result,
+            };
+            let _ = result_tx.send(result);
+        })
+        .map_err(|error| error.public_code().to_string())?;
+    result_rx
+        .await
+        .map_err(|_| "Commande d'exploration indisponible.".to_string())?
 }
 
 fn parse(command: &str) -> Result<Vec<String>, String> {
@@ -57,7 +81,9 @@ fn validate_tree(args: &[String], working_dir: &Path) -> Result<(), String> {
     if args.len() < 2 || args[0] != "-L" {
         return Err("tree exige -L avec une profondeur de 1 à 8.".to_string());
     }
-    let depth = args[1].parse::<u8>().map_err(|_| "Profondeur invalide.".to_string())?;
+    let depth = args[1]
+        .parse::<u8>()
+        .map_err(|_| "Profondeur invalide.".to_string())?;
     if !(1..=8).contains(&depth) {
         return Err("Profondeur invalide.".to_string());
     }
@@ -101,7 +127,12 @@ fn validate_git(args: &[String], working_dir: &Path) -> Result<(), String> {
             if args[1..].iter().all(|arg| {
                 matches!(
                     arg.as_str(),
-                    "-a" | "--all" | "-r" | "--remotes" | "-v" | "-vv" | "--list"
+                    "-a" | "--all"
+                        | "-r"
+                        | "--remotes"
+                        | "-v"
+                        | "-vv"
+                        | "--list"
                         | "--show-current"
                 )
             }) =>

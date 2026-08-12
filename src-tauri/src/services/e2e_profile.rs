@@ -1,6 +1,17 @@
 #[derive(Clone, Copy)]
 pub enum LifecycleStage {
     SetupEntered,
+    ShellCleanupCompleted,
+    AppHandleInitialized,
+    AgentRuntimeInitialized,
+    StorageInitialized,
+    RecoveryStarted,
+    VaultInitialized,
+    ConfigLoaded,
+    MascotStarted,
+    WindowConfigured,
+    FileWatcherStarted,
+    SchedulerStarted,
     SetupCompleted,
 }
 
@@ -20,6 +31,17 @@ pub fn report_lifecycle(stage: LifecycleStage) {
         "[e2e-lifecycle] {}",
         match stage {
             LifecycleStage::SetupEntered => "setup-entered",
+            LifecycleStage::ShellCleanupCompleted => "shell-cleanup-completed",
+            LifecycleStage::AppHandleInitialized => "app-handle-initialized",
+            LifecycleStage::AgentRuntimeInitialized => "agent-runtime-initialized",
+            LifecycleStage::StorageInitialized => "storage-initialized",
+            LifecycleStage::RecoveryStarted => "recovery-started",
+            LifecycleStage::VaultInitialized => "vault-initialized",
+            LifecycleStage::ConfigLoaded => "config-loaded",
+            LifecycleStage::MascotStarted => "mascot-started",
+            LifecycleStage::WindowConfigured => "window-configured",
+            LifecycleStage::FileWatcherStarted => "file-watcher-started",
+            LifecycleStage::SchedulerStarted => "scheduler-started",
             LifecycleStage::SetupCompleted => "setup-completed",
         }
     );

@@ -5,11 +5,13 @@ import {
   assertOwnedCefHelpersSandboxed,
   hasOwnedCefHelper,
   hasOwnedProcess,
+  parseLinuxProcessTable,
   parseMacProcessTable,
   parseWindowsProcessJson,
   runtimeRootForBinary,
   waitForOwnedCefHelper,
   waitForOwnedProcessesToExit,
+  waitForProcessIdsToExit,
 } from "./native-cef-observer.mjs";
 
 const WINDOWS_ROOT = "C:\\build\\target\\e2e\\debug";
@@ -31,6 +33,17 @@ test("Windows process inventory is bounded and ignores malformed entries", () =>
     parentPid: 21,
     executable: `${WINDOWS_ROOT}\\cl_go_dash_lib.exe`,
     command: "cl_go_dash_lib.exe --type=renderer",
+  }]);
+});
+
+test("Linux process inventory preserves bounded pid ancestry", () => {
+  const input = "  52  41 WebKitWebProces /usr/lib/webkit2gtk/WebKitWebProcess --type=renderer\n";
+
+  assert.deepEqual(parseLinuxProcessTable(input), [{
+    pid: 52,
+    parentPid: 41,
+    executable: "WebKitWebProces",
+    command: "/usr/lib/webkit2gtk/WebKitWebProcess --type=renderer",
   }]);
 });
 
@@ -137,4 +150,18 @@ test("a missing real helper fails closed", async () => {
     }),
     /Native CEF observation failed/u,
   );
+});
+
+test("pid exit observation waits only for the bounded requested set", async () => {
+  let polls = 0;
+  await waitForProcessIdsToExit({
+    platform: "linux",
+    pids: [52, 53],
+    timeoutMs: 50,
+    pollMs: 1,
+    listProcesses: () => (polls++ === 0
+      ? [{ pid: 52, parentPid: 41, executable: "WebKitWebProces", command: "" }]
+      : []),
+  });
+  assert.equal(polls, 2);
 });
