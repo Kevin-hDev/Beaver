@@ -117,8 +117,9 @@ async fn emit_gpu_status(
     ollama_running: bool,
     cancel: &crate::services::work_registry::ServiceWorkCancellation,
 ) {
-    let (vram_total, vram_used) = crate::services::gpu_vram::get_vram_info_owned(cancel.clone())
-        .await
+    let snapshot = crate::services::gpu_vram::refresh_owned(cancel.clone()).await;
+    let (vram_total, vram_used) = snapshot
+        .map(|snapshot| (snapshot.total_mb, snapshot.used_mb))
         .unwrap_or((0, 0));
     if cancel.is_cancelled() {
         return;
