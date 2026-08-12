@@ -1,0 +1,31 @@
+Jalon 2 — supervision de la file de téléchargements de modèles
+
+Référence
+- Branche de référence du jalon : d0c7d6b.
+- Ce commit suit la supervision SearXNG 2204923.
+
+Problème observé
+- La file était bornée à 16 éléments, mais son worker était lancé par tauri::async_runtime::spawn sans propriétaire attendu par la fermeture.
+- Le nettoyage annulait les jetons sans attendre la fin réseau, la suppression des partiels et la finalisation du worker.
+- Chaque événement de progression Ollama ou Forecast créait une nouvelle tâche détachée.
+
+Décisions et raisons
+- ModelDownloadManager reçoit l'unique AppWorkSupervisor et possède un registre local d'un worker ; la file bornée existante reste l'unique autorité de capacité.
+- Le worker reste supervisé et en attente entre deux éléments. Cette persistance supprime la course entre la restitution du slot précédent et l'ajout du téléchargement suivant.
+- Un probe d'admission vérifie les barrières globale et locale pour les éléments ajoutés au worker existant sans consommer un second slot local.
+- La fermeture ferme l'admission, annule les éléments actifs et en attente, réveille le worker puis l'attend sous l'échéance absolue.
+- L'annulation du service est relayée au jeton du téléchargement courant, puis le chemin normal est attendu afin qu'il termine son nettoyage.
+- Les progressions utilisent une mise à jour immédiate non bloquante ; une progression indicative peut être remplacée par la suivante, mais ne crée plus de tâche autonome.
+
+Test écrit avant correction et échec observé
+- Le test de fermeture a échoué à compiler : le manager n'acceptait aucun AppWorkSupervisor, le runner ne possédait qu'un CancellationToken et stop_and_wait n'existait pas.
+
+Preuves finales Windows
+- Sous-ensemble téléchargements : 9 réussis, 0 échec.
+- Le test de fermeture prouve que le worker coopératif est attendu avant le retour et que tout nouveau téléchargement reçoit service-shutting-down.
+- Le test du worker inactif prouve qu'un second élément est reçu sans nouveau worker ni course de redémarrage.
+- Le probe d'admission ne consomme aucun slot et compte exactement le refus après fermeture.
+- Suite Rust complète avec windows-tests : 3121 tests, 3117 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt, git diff --check et limite de 230 lignes : verts.
+- graphify update . exécuté après les changements.
