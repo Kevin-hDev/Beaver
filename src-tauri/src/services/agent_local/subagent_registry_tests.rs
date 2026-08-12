@@ -13,6 +13,40 @@ mod tests {
         uuid::Uuid::new_v4().to_string()
     }
 
+    #[test]
+    fn parallel_test_registrations_have_isolated_capacity() {
+        let thread_count = MAX_TOTAL + 1;
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(thread_count));
+        let handles = (0..thread_count)
+            .map(|_| {
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    let runtime = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                        .expect("build isolated test runtime");
+                    runtime.block_on(async move {
+                        let parent = uid();
+                        let child = uid();
+                        let result = register(&parent, &child, CancellationToken::new()).await;
+                        barrier.wait();
+                        if result.is_ok() {
+                            unregister(&child).await;
+                        }
+                        result
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+
+        for handle in handles {
+            handle
+                .join()
+                .expect("isolated registration thread")
+                .expect("parallel test registration must not consume another test's capacity");
+        }
+    }
+
     // All tests run in a single async test to avoid state conflicts
     // on the global static registry shared across parallel tokio tests.
     #[tokio::test]
