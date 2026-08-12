@@ -69,6 +69,7 @@ impl ChannelAdapter for TelegramAdapter {
         let cancel = ctx.cancel;
         let require_mention = ctx.config.require_mention;
         let channel_key = ctx.key;
+        let refusal_audit = ctx.refusal_audit;
 
         Ok(Box::pin(async move {
             loop {
@@ -80,7 +81,7 @@ impl ChannelAdapter for TelegramAdapter {
                                 let bot_name = state.read().await.bot_username.clone();
                                 for u in updates {
                                     if let Some(m) = Self::to_inbound(&u, &channel_key, require_mention, &bot_name) {
-                                        try_enqueue(&sender, m, &channel_key);
+                                        try_enqueue(&sender, m, &channel_key, &refusal_audit);
                                     }
                                 }
                             }

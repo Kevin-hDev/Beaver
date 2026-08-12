@@ -51,6 +51,7 @@ pub struct ChannelContext {
     pub key: ChannelKey,
     pub config: ChannelAccountConfig,
     pub cancel: CancellationToken,
+    pub(super) refusal_audit: super::refusal_audit::RefusalAudit,
 }
 
 pub type GatewayResult<T> = Result<T, GatewayError>;

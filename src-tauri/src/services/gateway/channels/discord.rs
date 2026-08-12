@@ -65,6 +65,7 @@ impl ChannelAdapter for DiscordAdapter {
         let state = self.state.clone();
         let cancel = ctx.cancel;
         let key = ctx.key;
+        let refusal_audit = ctx.refusal_audit;
         let require_mention = ctx.config.require_mention;
 
         Ok(Box::pin(async move {
@@ -121,6 +122,7 @@ impl ChannelAdapter for DiscordAdapter {
                                 require_mention,
                                 token: token.as_str(),
                                 sender: &sender,
+                                refusal_audit: &refusal_audit,
                                 sequence: &sequence,
                             };
                             if !handle_gateway_message(
@@ -155,6 +157,7 @@ struct GatewayMessageContext<'a> {
     require_mention: bool,
     token: &'a str,
     sender: &'a mpsc::Sender<InboundMessage>,
+    refusal_audit: &'a crate::services::gateway::refusal_audit::RefusalAudit,
     sequence: &'a HeartbeatSequence,
 }
 
@@ -208,7 +211,7 @@ async fn handle_gateway_message(
                         context.require_mention,
                         &bot_id,
                     ) {
-                        try_enqueue(context.sender, inbound, context.key);
+                        try_enqueue(context.sender, inbound, context.key, context.refusal_audit);
                     }
                 }
             }

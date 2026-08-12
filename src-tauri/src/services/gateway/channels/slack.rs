@@ -71,6 +71,7 @@ impl ChannelAdapter for SlackAdapter {
         let client = self.client.clone();
         let cancel = ctx.cancel;
         let key = ctx.key;
+        let refusal_audit = ctx.refusal_audit;
         let require_mention = ctx.config.require_mention;
         let bot_user_id = self.state.read().await.bot_user_id.clone();
 
@@ -128,7 +129,7 @@ impl ChannelAdapter for SlackAdapter {
                                         require_mention,
                                         &bot_user_id,
                                     ) {
-                                        try_enqueue(&sender, inbound, &key);
+                                        try_enqueue(&sender, inbound, &key, &refusal_audit);
                                     }
                                 }
                             }

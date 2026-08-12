@@ -5,6 +5,7 @@ use tokio_util::sync::CancellationToken;
 
 use super::agent_bridge::GatewayAgentBridge;
 use super::channels::InboundMessage;
+use super::refusal_audit::RefusalAudit;
 use super::service_state::GatewayState;
 use super::work_supervision::GatewayWorkServices;
 use crate::services::work_registry::ServiceWorkCancellation;
@@ -17,6 +18,7 @@ pub(super) async fn consume_messages(
     work: GatewayWorkServices,
     run_cancel: CancellationToken,
     consumer_cancel: ServiceWorkCancellation,
+    refusal_audit: RefusalAudit,
 ) {
     loop {
         let message = tokio::select! {
@@ -58,7 +60,7 @@ pub(super) async fn consume_messages(
                 diagnostics.saturation_refusals,
                 diagnostics.closing_refusals,
             );
-            let _ = super::service_audit::work_refused(&channel_key, error.audit_code());
+            refusal_audit.try_record(channel_key, error.audit_code());
         }
     }
 }
