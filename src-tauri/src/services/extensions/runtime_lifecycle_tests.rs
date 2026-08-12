@@ -110,13 +110,21 @@ async fn incomplete_stop_keeps_the_existing_host_in_its_slot() {
         work,
     };
 
-    assert!(!runtime.stop_host(Instant::now()).await);
+    // Force kill() past its deadline instead of assuming an already-expired timer wins
+    // against an immediately-ready process operation on every platform.
+    let child_guard = host.hold_child_for_test().await;
+    assert!(
+        !runtime
+            .stop_host(Instant::now() + Duration::from_millis(20))
+            .await
+    );
     let retained = runtime
         .process
         .lock()
         .await
         .as_ref()
         .is_some_and(|current| Arc::ptr_eq(current, &host));
+    drop(child_guard);
     let _ = host.kill(Instant::now() + Duration::from_secs(5)).await;
     assert!(retained, "an unconfirmed host must still own its slot");
 }
