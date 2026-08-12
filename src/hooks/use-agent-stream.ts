@@ -4,6 +4,9 @@ import { agentStreamManager, type StreamSnapshot } from "./agent-stream-manager"
 import { resolveAgentStreamMessages } from "./agent-stream-message-resolver";
 import type { AgentMessage } from "@/types/agent";
 import type { StreamKind } from "./agent-chat-stream-types";
+import i18n from "@/i18n";
+import { admissionErrorMessage, isAdmissionError } from "@/lib/admission-error";
+import { showToast } from "@/lib/toast-emitter";
 
 interface StreamStartState {
   displayMessages: AgentMessage[];
@@ -72,8 +75,11 @@ export function useAgentStream() {
       }
       generationRef.current = gen;
       agentStreamManager.setSessionGeneration(sessionId, gen);
-    } catch {
-      agentStreamManager.failSession(sessionId);
+    } catch (error) {
+      agentStreamManager.failSession(
+        sessionId,
+        admissionErrorMessage(error, i18n.t, "errors.streamStartFailed"),
+      );
       streamingRef.current = false;
     }
   }, []);
@@ -94,8 +100,10 @@ export function useAgentStream() {
         messages: await resolveAgentStreamMessages(messages),
       });
       if (queued) return true;
-    } catch {
-      // The generic user feedback is handled by the caller.
+    } catch (error) {
+      if (isAdmissionError(error)) {
+        showToast(admissionErrorMessage(error, i18n.t), "error");
+      }
     }
     agentStreamManager.removeQueuedUserMessage(sessionId, displayMessage.id);
     return false;

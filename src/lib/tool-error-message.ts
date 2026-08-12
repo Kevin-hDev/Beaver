@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 import type { ToolErrorCategory, ToolErrorInfo } from "@/types/agent";
 import { officeToolErrorMessage } from "./office-tool-errors";
 import { sanitizeToolError } from "./tool-error-sanitize";
+import { admissionErrorKey } from "./admission-error";
 
 const CATEGORY_KEYS: Record<ToolErrorCategory, string> = {
   validation: "agentLocal.toolActivity.errorCategories.validation",
@@ -22,6 +23,9 @@ export function toolErrorMessage(
   error: ToolErrorInfo | undefined,
   t: TFunction,
 ): string {
+  const admissionKey = admissionErrorKey(result);
+  if (admissionKey) return t(admissionKey);
+
   if (toolName.startsWith("beaver.office.")) {
     const officeMessage = officeToolErrorMessage(result, t);
     if (officeMessage) return officeMessage;

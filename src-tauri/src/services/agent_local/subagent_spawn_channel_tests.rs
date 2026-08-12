@@ -13,10 +13,11 @@ fn full_channel_does_not_publish_spawned_event() {
     sender.try_send(1).expect("fill channel");
     let published = AtomicBool::new(false);
 
-    assert!(subagent_spawn_channel::try_send_then(&sender, 2, || {
+    let error = subagent_spawn_channel::try_send_then(&sender, 2, || {
         published.store(true, Ordering::SeqCst)
     })
-    .is_err());
+    .expect_err("full dispatcher");
+    assert_eq!(error, "service-work-capacity-reached");
     assert!(!published.load(Ordering::SeqCst));
 }
 
@@ -26,10 +27,11 @@ fn closed_channel_does_not_publish_spawned_event() {
     drop(receiver);
     let published = AtomicBool::new(false);
 
-    assert!(subagent_spawn_channel::try_send_then(&sender, 1, || {
+    let error = subagent_spawn_channel::try_send_then(&sender, 1, || {
         published.store(true, Ordering::SeqCst)
     })
-    .is_err());
+    .expect_err("closed dispatcher");
+    assert_eq!(error, "service-shutting-down");
     assert!(!published.load(Ordering::SeqCst));
 }
 
