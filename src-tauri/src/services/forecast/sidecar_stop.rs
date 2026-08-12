@@ -110,6 +110,7 @@ impl ChronosSidecar {
         Ok(pid)
     }
 
+    #[cfg(test)]
     pub(crate) async fn hold_unpublished_test_process_for_test(
         &self,
         spawned: tokio::sync::oneshot::Sender<u32>,

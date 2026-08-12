@@ -69,8 +69,7 @@ pub fn health_info(port: u16, auth_token: &Zeroizing<String>) -> Option<(u16, St
 mod tests {
     #[test]
     fn health_request_accepts_only_zeroizing_token_ownership() {
-        let function: fn(u16, &zeroize::Zeroizing<String>) -> Option<(u16, String, String)> =
-            super::health_info;
-        let _ = function;
+        let token = zeroize::Zeroizing::new("fixture".to_string());
+        assert!(super::health_info(0, &token).is_none());
     }
 }
