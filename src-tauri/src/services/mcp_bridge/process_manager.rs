@@ -127,8 +127,15 @@ pub async fn ensure_process(
 }
 
 #[cfg(test)]
-pub async fn ensure_test_fixture(connector_id: &str) -> Result<ProcessHandle, String> {
-    if connector_id != "__beaver_mcp_fixture" {
+pub async fn ensure_test_fixture(
+    connector_id: &str,
+    init_delay_ms: u64,
+) -> Result<ProcessHandle, String> {
+    if !matches!(
+        connector_id,
+        "__beaver_mcp_fixture" | "__beaver_mcp_slow_fixture"
+    ) || init_delay_ms > 1_000
+    {
         return Err("connecteur de test non autorisé".to_string());
     }
     let root =
@@ -142,12 +149,16 @@ pub async fn ensure_test_fixture(connector_id: &str) -> Result<ProcessHandle, St
         return Err("fixture MCP invalide".to_string());
     }
     let program = which::which("node").map_err(|_| "runtime de test indisponible".to_string())?;
+    let env_tokens = [(
+        "BEAVER_MCP_INIT_DELAY_MS".to_string(),
+        Zeroizing::new(init_delay_ms.to_string()),
+    )];
     global()?
         .ensure_spawned(
             connector_id,
             &program,
             &[fixture.to_string_lossy().into_owned()],
-            &[],
+            &env_tokens,
             false,
         )
         .await
