@@ -677,7 +677,16 @@
     },
     "history": {
       "title": "Verlauf",
-      "empty": "Keine Ausführungen"
+      "empty": "Keine Ausführungen",
+      "errors": {
+        "failed": "Das Wakeup ist fehlgeschlagen.",
+        "rateLimited": "Das Anfragekontingent des Anbieters wurde erreicht.",
+        "authenticationFailed": "Die Authentifizierung beim Anbieter ist fehlgeschlagen.",
+        "ollamaUnavailable": "Ollama war nicht verfügbar.",
+        "missedUnavailable": "Das Wakeup wurde verpasst, während Beaver nicht verfügbar war.",
+        "schedulerStopping": "Das Wakeup wurde nicht gestartet, weil Beaver beendet wurde.",
+        "capacityReached": "Das Wakeup wurde nicht gestartet, weil bereits zu viele Vorgänge liefen."
+      }
     },
     "sidebar": {
       "title": "Wakeups",

@@ -34,7 +34,7 @@ pub async fn fire_wakeup(
     .await;
     match result {
         Ok(WakeupStepOutcome::Completed((session_id, tokens))) => {
-            log::log_ok(&wakeup.id, scheduled_for, &session_id, tokens).await;
+            warn_if_log_failed(log::log_ok(&wakeup.id, scheduled_for, &session_id, tokens).await);
             let _ = app.emit(
                 "wakeup-completed",
                 serde_json::json!({
@@ -46,14 +46,14 @@ pub async fn fire_wakeup(
         }
         Ok(WakeupStepOutcome::SkippedInactive) => {}
         Ok(WakeupStepOutcome::Cancelled) => {
-            log::log_cancelled(&wakeup.id, scheduled_for).await;
+            warn_if_log_failed(log::log_cancelled(&wakeup.id, scheduled_for).await);
             ::log::info!("[scheduler] réveil ponctuel annulé pendant la fermeture");
         }
         Err(error) => {
             if cancel.is_cancelled() {
                 return;
             }
-            log::log_err(&wakeup.id, scheduled_for, &error).await;
+            warn_if_log_failed(log::log_err(&wakeup.id, scheduled_for, &error).await);
             ::log::error!("[scheduler] échec d'un réveil");
             let _ = app.emit(
                 "wakeup-failed",
@@ -63,6 +63,12 @@ pub async fn fire_wakeup(
                 }),
             );
         }
+    }
+}
+
+fn warn_if_log_failed(result: Result<(), String>) {
+    if result.is_err() {
+        ::log::warn!("[scheduler] journal indisponible");
     }
 }
 

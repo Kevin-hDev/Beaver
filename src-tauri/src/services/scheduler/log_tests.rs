@@ -6,6 +6,7 @@ fn line(id: &str, fired_at: &str, status: WakeupRunStatus) -> String {
         scheduled_for: "2026-05-17T08:00:00+02:00".into(),
         fired_at: fired_at.into(),
         status,
+        error_code: None,
         error: None,
         session_id: None,
         tokens: None,
@@ -27,23 +28,29 @@ fn parse_runs_filters_and_sorts_newest_first() {
 
 #[test]
 fn generic_error_does_not_return_raw_message() {
-    assert_eq!(generic_error("token secret leaked"), "Le réveil a échoué");
-    assert_eq!(generic_error("Ollama HTTP 500"), "Ollama indisponible");
+    assert_eq!(
+        generic_error_code("token secret leaked"),
+        WakeupRunErrorCode::Failed
+    );
+    assert_eq!(
+        generic_error_code("Ollama HTTP 500"),
+        WakeupRunErrorCode::OllamaUnavailable
+    );
 }
 
 #[test]
 fn generic_error_maps_known_failures() {
     assert_eq!(
-        generic_error("RATE LIMIT hit"),
-        "Limite de requêtes atteinte"
+        generic_error_code("RATE LIMIT hit"),
+        WakeupRunErrorCode::RateLimited
     );
     assert_eq!(
-        generic_error("401 unauthorized"),
-        "Authentification échouée"
+        generic_error_code("401 unauthorized"),
+        WakeupRunErrorCode::AuthenticationFailed
     );
     assert_eq!(
-        generic_error("invalid api key sk-xxx"),
-        "Le réveil a échoué"
+        generic_error_code("invalid api key sk-xxx"),
+        WakeupRunErrorCode::Failed
     );
 }
 
@@ -56,12 +63,137 @@ fn generic_error_never_returns_sensitive_input() {
         "/Users/secret/.config/keys.json not found",
     ];
     for input in sensitive_inputs {
-        let result = generic_error(input);
-        assert_ne!(result, input);
-        assert!(!result.contains("sk-"));
-        assert!(!result.contains("127.0.0.1"));
-        assert!(!result.contains("panic"));
-        assert!(!result.contains("/Users/"));
+        assert_eq!(generic_error_code(input), WakeupRunErrorCode::Failed);
+    }
+}
+
+#[test]
+fn admission_refusals_have_stable_error_codes() {
+    use crate::services::work_registry::ServiceWorkAdmissionError;
+
+    assert_eq!(
+        refusal_error_code(ServiceWorkAdmissionError::Closing),
+        WakeupRunErrorCode::SchedulerStopping
+    );
+    assert_eq!(
+        refusal_error_code(ServiceWorkAdmissionError::Capacity),
+        WakeupRunErrorCode::CapacityReached
+    );
+}
+
+#[test]
+fn missed_occurrence_has_a_typed_missed_outcome() {
+    let entry = missed_entry("daily", chrono::Local::now());
+
+    assert_eq!(entry.status, WakeupRunStatus::Missed);
+    assert_eq!(
+        entry.error_code,
+        Some(WakeupRunErrorCode::MissedUnavailable)
+    );
+    assert!(entry.error.is_none());
+}
+
+#[test]
+fn legacy_error_is_read_but_never_serialized_back_to_the_frontend() {
+    let raw = r#"{"wakeup_id":"daily","scheduled_for":"2026-08-12T10:00:00+02:00","fired_at":"2026-08-12T08:00:00Z","status":"error","error":"/private/config.json","session_id":null,"tokens":null}"#;
+    let entry: WakeupRun = serde_json::from_str(raw).unwrap();
+
+    assert_eq!(entry.error.as_deref(), Some("/private/config.json"));
+    assert!(!serde_json::to_string(&entry).unwrap().contains("/private"));
+}
+
+#[tokio::test]
+async fn repeated_occurrence_is_written_only_once() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("wakeups.jsonl");
+    let entry = error_entry(
+        "daily",
+        chrono::Local::now(),
+        WakeupRunErrorCode::CapacityReached,
+    );
+
+    append_at(&path, entry.clone()).await.unwrap();
+    append_at(&path, entry).await.unwrap();
+
+    assert_eq!(list_runs_at(&path, None).await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn concurrent_reader_never_observes_partial_rotation() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("wakeups.jsonl");
+    tokio::fs::write(&path, seeded_log()).await.unwrap();
+    let (rotation_started_tx, rotation_started_rx) = tokio::sync::oneshot::channel();
+    let (resume_rotation_tx, resume_rotation_rx) = tokio::sync::oneshot::channel();
+    let writer_path = path.clone();
+    let writer = tokio::spawn(async move {
+        append_at_with_atomic_writer(&writer_path, new_entry(), move |path, bytes| async move {
+            let _ = rotation_started_tx.send(());
+            let _ = resume_rotation_rx.await;
+            crate::services::private_store::atomic_write_async(path, bytes).await
+        })
+        .await
+    });
+    rotation_started_rx.await.unwrap();
+
+    let reader_path = path.clone();
+    let reader = tokio::spawn(async move { list_runs_at(&reader_path, None).await });
+    tokio::task::yield_now().await;
+    assert!(!reader.is_finished(), "reader escaped the journal lock");
+
+    resume_rotation_tx.send(()).unwrap();
+    writer.await.unwrap().unwrap();
+    let runs = reader.await.unwrap().unwrap();
+    assert_eq!(runs.len(), MAX_LINES);
+    assert_eq!(runs[0].wakeup_id, "new-entry");
+}
+
+#[tokio::test]
+async fn failed_rotation_keeps_the_previous_journal_unchanged() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("wakeups.jsonl");
+    let original = seeded_log();
+    tokio::fs::write(&path, &original).await.unwrap();
+
+    let result = append_at_with_atomic_writer(&path, new_entry(), |_, _| async {
+        Err("injected-rotation-failure".to_string())
+    })
+    .await;
+
+    assert_eq!(result.unwrap_err(), "injected-rotation-failure");
+    assert_eq!(tokio::fs::read(&path).await.unwrap(), original);
+}
+
+fn seeded_log() -> Vec<u8> {
+    (0..MAX_LINES)
+        .map(|index| {
+            serde_json::to_string(&WakeupRun {
+                wakeup_id: format!("w{index}"),
+                scheduled_for: format!("2026-08-12T10:{:02}:00+02:00", index % 60),
+                fired_at: format!("2026-08-12T08:{:02}:00Z", index % 60),
+                status: WakeupRunStatus::Error,
+                error_code: Some(WakeupRunErrorCode::Failed),
+                error: None,
+                session_id: None,
+                tokens: None,
+            })
+            .unwrap()
+                + "\n"
+        })
+        .collect::<String>()
+        .into_bytes()
+}
+
+fn new_entry() -> WakeupRun {
+    WakeupRun {
+        wakeup_id: "new-entry".into(),
+        scheduled_for: "2026-08-12T12:00:00+02:00".into(),
+        fired_at: "2026-08-12T10:00:00Z".into(),
+        status: WakeupRunStatus::Error,
+        error_code: Some(WakeupRunErrorCode::Failed),
+        error: None,
+        session_id: None,
+        tokens: None,
     }
 }
 

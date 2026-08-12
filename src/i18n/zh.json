@@ -677,7 +677,16 @@
     },
     "history": {
       "title": "历史",
-      "empty": "暂无执行记录"
+      "empty": "暂无执行记录",
+      "errors": {
+        "failed": "定时唤醒失败。",
+        "rateLimited": "已达到服务提供商的请求限制。",
+        "authenticationFailed": "服务提供商身份验证失败。",
+        "ollamaUnavailable": "Ollama 不可用。",
+        "missedUnavailable": "Beaver 不可用期间错过了定时唤醒。",
+        "schedulerStopping": "Beaver 正在关闭，定时唤醒未启动。",
+        "capacityReached": "已有过多操作在运行，定时唤醒未启动。"
+      }
     },
     "sidebar": {
       "title": "定时唤醒",

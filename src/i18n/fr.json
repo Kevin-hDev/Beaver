@@ -682,7 +682,16 @@
     },
     "history": {
       "title": "Historique",
-      "empty": "Aucune exécution"
+      "empty": "Aucune exécution",
+      "errors": {
+        "failed": "Le réveil a échoué.",
+        "rateLimited": "La limite de requêtes du fournisseur a été atteinte.",
+        "authenticationFailed": "L'authentification auprès du fournisseur a échoué.",
+        "ollamaUnavailable": "Ollama était indisponible.",
+        "missedUnavailable": "Le réveil a été manqué pendant l'indisponibilité de Beaver.",
+        "schedulerStopping": "Le réveil n'a pas démarré car Beaver était en cours de fermeture.",
+        "capacityReached": "Le réveil n'a pas démarré car trop d'opérations étaient déjà en cours."
+      }
     },
     "sidebar": {
       "title": "Réveils",

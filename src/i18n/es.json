@@ -677,7 +677,16 @@
     },
     "history": {
       "title": "Historial",
-      "empty": "Sin ejecuciones"
+      "empty": "Sin ejecuciones",
+      "errors": {
+        "failed": "El wakeup ha fallado.",
+        "rateLimited": "Se alcanzó el límite de solicitudes del proveedor.",
+        "authenticationFailed": "Falló la autenticación con el proveedor.",
+        "ollamaUnavailable": "Ollama no estaba disponible.",
+        "missedUnavailable": "El wakeup se perdió mientras Beaver no estaba disponible.",
+        "schedulerStopping": "El wakeup no se inició porque Beaver se estaba cerrando.",
+        "capacityReached": "El wakeup no se inició porque ya había demasiadas operaciones en curso."
+      }
     },
     "sidebar": {
       "title": "Wakeups",

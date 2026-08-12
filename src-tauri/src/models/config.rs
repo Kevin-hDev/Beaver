@@ -170,13 +170,27 @@ pub enum WakeupRunStatus {
     Cancelled,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WakeupRunErrorCode {
+    Failed,
+    RateLimited,
+    AuthenticationFailed,
+    OllamaUnavailable,
+    MissedUnavailable,
+    SchedulerStopping,
+    CapacityReached,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WakeupRun {
     pub wakeup_id: String,
     pub scheduled_for: String,
     pub fired_at: String,
     pub status: WakeupRunStatus,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<WakeupRunErrorCode>,
+    #[serde(default, skip_serializing)]
     pub error: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
