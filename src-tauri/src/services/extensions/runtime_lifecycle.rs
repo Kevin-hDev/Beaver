@@ -23,6 +23,10 @@ pub async fn stop_and_wait(deadline: Instant) -> bool {
     let Ok(runtime) = super::runtime::global() else {
         return true;
     };
+    stop_runtime(runtime, deadline).await
+}
+
+async fn stop_runtime(runtime: &ExtensionRuntime, deadline: Instant) -> bool {
     // L'admission ferme avant la destruction du processus afin qu'une
     // requête concurrente ne puisse pas recréer l'hôte pendant l'arrêt.
     runtime.work.begin_closing();

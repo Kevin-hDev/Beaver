@@ -29,6 +29,11 @@ impl HostProcess {
         paths: &HostPaths,
         work: &super::work_supervision::ExtensionWorkServices,
     ) -> Result<Self, String> {
+        // L'admission précède le spawn : pendant Closing, aucun enfant Node
+        // transitoire ne doit franchir la frontière de fermeture.
+        let reader_admission = work
+            .try_admit_reader()
+            .map_err(|error| error.public_code().to_string())?;
         let mut command = Command::new(&paths.node);
         command
             .arg(&paths.script)
@@ -54,14 +59,13 @@ impl HostProcess {
         let writer = Arc::new(Mutex::new(stdin));
         let pending = Arc::new(Mutex::new(HashMap::new()));
         let alive = Arc::new(AtomicBool::new(true));
-        let reader_work = work.clone();
         let run_work = work.clone();
         let run_writer = writer.clone();
         let run_pending = pending.clone();
         let run_alive = alive.clone();
         let (reader_done, reader_finished) = tokio::sync::oneshot::channel();
-        if reader_work
-            .spawn_reader(move |cancel| async move {
+        if reader_admission
+            .spawn(move |cancel| async move {
                 super::host_reader::run(
                     stdout,
                     run_writer,
