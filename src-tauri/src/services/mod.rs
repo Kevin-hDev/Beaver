@@ -80,6 +80,8 @@ mod shutdown_completion;
 #[cfg(test)]
 mod shutdown_completion_tests;
 pub mod stream_utils;
+// This resolver trusts Windows' SystemRoot and has no caller on other platforms.
+#[cfg(windows)]
 pub mod system_executable;
 pub mod terminal;
 #[cfg(test)]
