@@ -7,9 +7,9 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
-use super::backpressure::{try_enqueue, EnqueueOutcome};
-use super::discord_gateway::{build_identify, HeartbeatSequence, SecretTextPayload};
-use super::discord_types::*;
+use super::discord_events::{handle_gateway_message, GatewayMessageContext};
+use super::discord_gateway::HeartbeatSequence;
+use super::discord_types::{Heartbeat, GATEWAY_URL};
 use super::websocket_limits::bounded_websocket_config;
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
@@ -156,82 +156,5 @@ impl ChannelAdapter for DiscordAdapter {
 
     async fn send(&self, msg: OutboundMessage) -> GatewayResult<()> {
         self.send_message(msg).await
-    }
-}
-
-struct GatewayMessageContext<'a> {
-    state: &'a Arc<RwLock<DiscordState>>,
-    key: &'a crate::services::gateway::types::ChannelKey,
-    require_mention: bool,
-    token: &'a str,
-    sender: &'a mpsc::Sender<InboundMessage>,
-    refusal_audit: &'a crate::services::gateway::refusal_audit::RefusalAudit,
-    sequence: &'a HeartbeatSequence,
-}
-
-async fn handle_gateway_message(
-    text: &str,
-    context: &GatewayMessageContext<'_>,
-    heartbeat: &mut Option<tokio::time::Interval>,
-    sink: &mut super::discord_gateway::WsSink,
-) -> bool {
-    let Ok(payload) = serde_json::from_str::<GatewayPayload>(text) else {
-        return true;
-    };
-    if let Some(value) = payload.s {
-        context.sequence.update(value).await;
-    }
-    match payload.op {
-        10 => {
-            if let Some(data) = &payload.d {
-                if let Ok(hello) = serde_json::from_value::<GatewayHello>(data.clone()) {
-                    let every = Duration::from_millis(hello.heartbeat_interval);
-                    *heartbeat = Some(tokio::time::interval_at(
-                        tokio::time::Instant::now() + every,
-                        every,
-                    ));
-                }
-            }
-            let json = Zeroizing::new(
-                serde_json::to_string(&build_identify(context.token)).unwrap_or_default(),
-            );
-            let mut payload = SecretTextPayload::new(json.as_str());
-            let Ok(message) = payload.message() else {
-                let _ = payload.zeroize_after_send();
-                return false;
-            };
-            let sent = sink.send(message).await.is_ok();
-            let zeroized = payload.zeroize_after_send();
-            sent && zeroized
-        }
-        0 if payload.t.as_deref() == Some("READY") => {
-            if let Some(data) = &payload.d {
-                if let Ok(ready) = serde_json::from_value::<ReadyEvent>(data.clone()) {
-                    context.state.write().await.bot_user_id = ready.user.id;
-                }
-            }
-            true
-        }
-        0 if payload.t.as_deref() == Some("MESSAGE_CREATE") => {
-            if let Some(data) = payload.d {
-                if let Ok(message) = serde_json::from_value::<DiscordMessage>(data) {
-                    let bot_id = context.state.read().await.bot_user_id.clone();
-                    if let Some(inbound) = DiscordAdapter::to_inbound(
-                        &message,
-                        context.key,
-                        context.require_mention,
-                        &bot_id,
-                    ) {
-                        if try_enqueue(context.sender, inbound, context.key, context.refusal_audit)
-                            == EnqueueOutcome::Closed
-                        {
-                            return false;
-                        }
-                    }
-                }
-            }
-            true
-        }
-        _ => true,
     }
 }
