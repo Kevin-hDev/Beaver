@@ -114,6 +114,7 @@ pub(crate) fn run_inner(
                 .clone();
             runtime_state::initialize_agent_runtime(app.handle())?;
             storage_migration::initialize(app.handle()).map_err(std::io::Error::other)?;
+            report_lifecycle(LifecycleStage::StorageInitialized);
             if services::agent_local::directory_access::initialize_policy().is_err() {
                 ::log::error!("[directory-access] policy unavailable");
             }
@@ -121,6 +122,7 @@ pub(crate) fn run_inner(
             if services::security_cleanup::run().is_err() {
                 ::log::error!("[security cleanup] cleanup failed");
             }
+            report_lifecycle(LifecycleStage::RecoveryStarted);
             services::e2e_profile::load_dotenv(|| {
                 let _ = dotenvy::dotenv();
             });
@@ -136,6 +138,7 @@ pub(crate) fn run_inner(
                     }
                 });
             }
+            report_lifecycle(LifecycleStage::VaultInitialized);
             services::e2e_profile::run_host_mutation(|| {
                 services::extensions::initialize_on_startup(app.handle());
                 services::searxng::prepare_on_startup(app.handle().clone());
@@ -143,8 +146,10 @@ pub(crate) fn run_inner(
             });
 
             let config = services::config::read_config().unwrap_or_default();
+            report_lifecycle(LifecycleStage::ConfigLoaded);
             services::mascot::initialize(app.handle(), config.mascot.clone());
             services::mascot::start_activity_cleanup(app.handle());
+            report_lifecycle(LifecycleStage::MascotStarted);
 
             services::e2e_profile::run_host_mutation(|| {
                 services::autostart_migration::synchronize_at_startup(
@@ -189,9 +194,12 @@ pub(crate) fn run_inner(
                 });
             }
 
+            report_lifecycle(LifecycleStage::WindowConfigured);
             services::file_watcher::start(app.handle());
+            report_lifecycle(LifecycleStage::FileWatcherStarted);
             let scheduler = runtime_state::scheduler(app.handle())?;
             app.manage(scheduler);
+            report_lifecycle(LifecycleStage::SchedulerStarted);
             services::e2e_profile::run_host_mutation(|| {
                 ollama_polling::start(app.handle().clone());
                 runtime_startup::start_litellm(&background);
