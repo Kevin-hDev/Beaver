@@ -60,6 +60,10 @@ pub(crate) fn run_inner(
             return false;
         }
     };
+    if services::mcp_bridge::process_manager::init(exit_coordinator.work_supervisor()).is_err() {
+        eprintln!("[mcp] shutdown supervision unavailable");
+        return false;
+    }
     let agent_work = runtime_state::agent_work(&exit_coordinator);
     let gateway = GatewayService::new(exit_coordinator.work_supervisor());
     std::hint::black_box(tauri::utils::platform::bundle_type());

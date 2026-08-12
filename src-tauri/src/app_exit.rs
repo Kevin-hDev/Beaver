@@ -93,6 +93,11 @@ impl AppExitCoordinator {
     }
 
     #[cfg(test)]
+    pub(crate) fn close_work_admission_for_test(&self) {
+        let _ = self.registry.close();
+    }
+
+    #[cfg(test)]
     fn begin(&self, exit_code: i32) -> BeginResult {
         self.begin_with_intent(
             ExitIntent::Exit,
