@@ -19,19 +19,28 @@ fn generate_token() -> zeroize::Zeroizing<String> {
 }
 
 fn verify_token(expected: &str, provided: &str) -> Result<(), String> {
-    if expected.len() != provided.len() {
-        return Err("terminal-access-denied".to_string());
-    }
-    let mismatch = expected
-        .as_bytes()
-        .iter()
-        .zip(provided.as_bytes())
-        .fold(0_u8, |accumulator, (left, right)| {
-            accumulator | (left ^ right)
-        });
-    if mismatch == 0 {
-        Ok(())
-    } else {
-        Err("terminal-access-denied".to_string())
+    use subtle::ConstantTimeEq;
+
+    let matches: bool = expected.as_bytes().ct_eq(provided.as_bytes()).into();
+    matches
+        .then_some(())
+        .ok_or_else(|| "terminal-access-denied".to_string())
+}
+
+#[cfg(test)]
+mod token_tests {
+    use super::verify_token;
+
+    #[test]
+    fn terminal_token_accepts_only_the_exact_value() {
+        assert_eq!(verify_token("0123456789abcdef", "0123456789abcdef"), Ok(()));
+        assert_eq!(
+            verify_token("0123456789abcdef", "0123456789abcdee"),
+            Err("terminal-access-denied".to_string())
+        );
+        assert_eq!(
+            verify_token("0123456789abcdef", "short"),
+            Err("terminal-access-denied".to_string())
+        );
     }
 }
