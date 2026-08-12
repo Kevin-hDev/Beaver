@@ -167,6 +167,7 @@ pub enum WakeupRunStatus {
     Ok,
     Error,
     Missed,
+    Cancelled,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

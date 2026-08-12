@@ -676,6 +676,7 @@
       "ok": "Succeeded",
       "error": "Failed",
       "missed": "Missed",
+      "cancelled": "Cancelled",
       "never": "Never run",
       "none": "None"
     },

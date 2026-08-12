@@ -671,6 +671,7 @@
       "ok": "成功",
       "error": "失败",
       "missed": "已错过",
+      "cancelled": "已取消",
       "never": "从未执行",
       "none": "无"
     },

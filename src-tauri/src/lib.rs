@@ -31,7 +31,6 @@ use services::agent_local::ollama_client::OllamaClient;
 use services::e2e_profile::{report_lifecycle, LifecycleStage};
 use services::gateway::GatewayService;
 use services::ollama_lifecycle::{self, OllamaSidecar};
-use services::scheduler::Scheduler;
 use tauri::{Emitter, Manager};
 
 pub use runtime_state::ActiveStreams;
@@ -200,7 +199,7 @@ pub(crate) fn run_inner(
             }
 
             services::file_watcher::start(app.handle());
-            let scheduler = Scheduler::spawn(app.handle().clone());
+            let scheduler = runtime_state::scheduler(app.handle())?;
             app.manage(scheduler);
             services::e2e_profile::run_host_mutation(|| {
                 ollama_polling::start(app.handle().clone());

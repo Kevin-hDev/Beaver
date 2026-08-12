@@ -671,6 +671,7 @@
       "ok": "Erfolgreich",
       "error": "Fehlgeschlagen",
       "missed": "Verpasst",
+      "cancelled": "Abgebrochen",
       "never": "Nie ausgeführt",
       "none": "Keine"
     },

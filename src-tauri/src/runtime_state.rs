@@ -44,6 +44,12 @@ pub fn show_main_window(app: &tauri::AppHandle) {
     }
 }
 
+pub fn scheduler(app: &tauri::AppHandle) -> std::io::Result<crate::services::scheduler::Scheduler> {
+    let exit = app.state::<crate::app_exit::AppExitCoordinator>();
+    crate::services::scheduler::Scheduler::spawn(app.clone(), exit.work_supervisor())
+        .map_err(std::io::Error::other)
+}
+
 pub fn initialize_agent_runtime(app: &tauri::AppHandle) -> std::io::Result<()> {
     crate::services::agent_local::shell_sandbox::cleanup_stale();
     crate::services::agent_local::app_handle_global::init(app.clone());
