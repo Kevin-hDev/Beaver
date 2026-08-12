@@ -1,0 +1,21 @@
+Lot 5 — fermetures MCP et extensions bornées
+
+Preuves rouges observées avant correction :
+- test reader_timeout_preserves_the_signal_for_a_retry : FAIL, wait_reader_done absent et premier timeout consommait le receiver.
+- test stop_host_respects_the_absolute_deadline_while_process_is_locked : FAIL, stop_host n'acceptait aucune échéance et ne retournait aucun résultat.
+- tests process_pool_tests : FAIL, terminate_entry était privé, sans échéance et sans résultat.
+
+Décisions :
+- HostProcess::kill, ExtensionRuntime::stop_host et tous leurs appelants partagent une échéance absolue ; le processus est extrait du mutex avant sa terminaison.
+- reader_done est emprunté pendant l'attente et retiré seulement après un signal terminal ; un timeout reste donc réessayable.
+- MCP draine le pool publié avant d'attendre spawn_owner, puis le redraine après acquisition pour couvrir une publication concurrente.
+- fermeture stdin et terminaison MCP consomment la même échéance ; toutes les entrées sont terminées en parallèle sous ce budget.
+
+Preuves vertes :
+- cargo test --lib --features windows-tests services::extensions -- --nocapture : 94 passed, 0 failed.
+- cargo test --lib --features windows-tests services::mcp_bridge -- --nocapture : 69 passed, 0 failed.
+- cargo fmt --check : succès.
+- graphify update . : succès, 31 305 nœuds / 63 040 arêtes.
+- Tous les fichiers source modifiés restent sous 230 lignes (maximum : installer.rs, 202).
+
+Note : le build Windows ciblé émet 19 avertissements dead_code préexistants du navigateur CEF, aucun avertissement MCP/extensions nouveau.
