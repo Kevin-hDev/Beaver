@@ -42,6 +42,7 @@ mod model_downloads_store_queue;
 #[cfg(test)]
 mod model_downloads_store_tests;
 pub mod model_downloads_types;
+pub mod oauth_completion;
 pub mod oauth_providers;
 pub mod oauth_work;
 #[cfg(test)]

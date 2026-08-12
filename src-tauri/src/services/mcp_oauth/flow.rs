@@ -97,7 +97,7 @@ async fn run_inner(
 
     flow_auth::open_browser(app, &auth_url)?;
 
-    let callback = server.wait(&cancel).await?;
+    let callback = server.wait(&state, &cancel).await?;
 
     flow_auth::verify_state_constant_time(&state, &callback.state)?;
 
