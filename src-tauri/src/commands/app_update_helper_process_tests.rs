@@ -1,4 +1,4 @@
-use super::SpawnedUpdateHelper;
+use super::{run_helper_operation, SpawnedUpdateHelper};
 use crate::app_exit::AppExitCoordinator;
 use crate::services::process_identity::ProcessIdentity;
 use crate::services::update_handoff::AppUpdateRuntime;
@@ -31,6 +31,36 @@ fn is_running(identity: &ProcessIdentity) -> bool {
         true,
     );
     identity.is_current(&system)
+}
+
+#[test]
+fn update_helper_has_a_dedicated_process_configuration() {
+    let executable = crate::services::test_runtime::python().expect("runtime Python de test");
+    let mut command = crate::services::background_command::new(executable);
+    command.args(["-c", "pass"]);
+    crate::services::process_tree::configure_update_helper(&mut command);
+    let status = command.status().expect("helper configuration");
+
+    assert!(status.success());
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn helper_io_does_not_block_the_async_worker() {
+    let started = Instant::now();
+    let blocker = std::thread::spawn(|| std::thread::sleep(Duration::from_millis(250)));
+    let operation = run_helper_operation(move || {
+        blocker.join().expect("blocking probe");
+        7_u8
+    });
+    let sentinel = async {
+        tokio::task::yield_now().await;
+        started.elapsed()
+    };
+
+    let (result, sentinel_elapsed) = tokio::join!(operation, sentinel);
+
+    assert_eq!(result.expect("blocking helper operation"), 7);
+    assert!(sentinel_elapsed < Duration::from_millis(100));
 }
 
 #[test]
