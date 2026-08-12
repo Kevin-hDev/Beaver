@@ -61,7 +61,8 @@ pub(super) async fn ensure_running() -> Result<Arc<HostProcess>, String> {
     }
     runtime.set_state(HostState::Starting, None, 0);
     if let Err(error) = runtime.sync_locked(&mut slot).await {
-        let _ = stop_host_slot(&mut slot, super::host_process::stop_deadline()).await;
+        drop(slot);
+        let _ = stop_host_slot(&runtime.process, None, super::host_process::stop_deadline()).await;
         runtime.mark_unavailable();
         return Err(error);
     }
@@ -79,7 +80,8 @@ impl ExtensionRuntime {
         let mut process = self.process.lock().await;
         let result = self.sync_locked(&mut process).await;
         if result.is_err() {
-            let _ = stop_host_slot(&mut process, super::host_process::stop_deadline()).await;
+            drop(process);
+            let _ = stop_host_slot(&self.process, None, super::host_process::stop_deadline()).await;
             self.mark_unavailable();
         }
         result
@@ -99,18 +101,9 @@ impl ExtensionRuntime {
     }
 
     pub(super) async fn stop_host(&self, deadline: Instant) -> bool {
-        let Ok(mut slot) = tokio::time::timeout_at(
-            tokio::time::Instant::from_std(deadline),
-            self.process.lock(),
-        )
-        .await
-        else {
-            return false;
-        };
-        if !stop_host_slot(&mut slot, deadline).await {
+        if stop_host_slot(&self.process, None, deadline).await != StopHostOutcome::Confirmed {
             return false;
         }
-        drop(slot);
         self.set_state(HostState::Stopped, None, 0);
         true
     }
@@ -125,17 +118,49 @@ impl ExtensionRuntime {
     }
 }
 
-pub(super) async fn stop_host_slot(slot: &mut Option<Arc<HostProcess>>, deadline: Instant) -> bool {
-    let Some(process) = slot.as_ref() else {
-        return true;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum StopHostOutcome {
+    Confirmed,
+    Incomplete,
+    NotCurrent,
+}
+
+pub(super) async fn stop_host_slot(
+    slot: &tokio::sync::Mutex<Option<Arc<HostProcess>>>,
+    expected: Option<&Arc<HostProcess>>,
+    deadline: Instant,
+) -> StopHostOutcome {
+    let Ok(current) =
+        tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), slot.lock()).await
+    else {
+        return StopHostOutcome::Incomplete;
     };
-    if !process.kill(deadline).await {
-        return false;
+    let Some(process) = current.as_ref().cloned() else {
+        return StopHostOutcome::Confirmed;
+    };
+    if expected.is_some_and(|expected| !Arc::ptr_eq(expected, &process)) {
+        return StopHostOutcome::NotCurrent;
     }
-    // Le slot reste occupé jusqu'à la confirmation de mort : un arrêt
-    // incomplet ne peut donc jamais autoriser le spawn d'un second hôte.
-    slot.take();
-    true
+    drop(current);
+    if !process.kill(deadline).await {
+        return StopHostOutcome::Incomplete;
+    }
+    let Ok(mut current) =
+        tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), slot.lock()).await
+    else {
+        return StopHostOutcome::Incomplete;
+    };
+    // Le slot reste occupé jusqu'à la confirmation de mort, mais le verrou
+    // est libéré pendant l'attente afin de ne pas bloquer tout le runtime.
+    if current
+        .as_ref()
+        .is_some_and(|candidate| Arc::ptr_eq(candidate, &process))
+    {
+        current.take();
+    } else if expected.is_some() {
+        return StopHostOutcome::NotCurrent;
+    }
+    StopHostOutcome::Confirmed
 }
 
 #[cfg(test)]

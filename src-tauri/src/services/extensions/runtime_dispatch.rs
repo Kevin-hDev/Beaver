@@ -145,17 +145,13 @@ async fn invalidate(failed: &Arc<HostProcess>) {
     let Ok(runtime) = super::runtime::global() else {
         return;
     };
-    let mut slot = runtime.process.lock().await;
-    if slot
-        .as_ref()
-        .is_some_and(|current| Arc::ptr_eq(current, failed))
-    {
-        let _ = super::runtime_lifecycle::stop_host_slot(
-            &mut slot,
-            super::host_process::stop_deadline(),
-        )
-        .await;
-        drop(slot);
+    let outcome = super::runtime_lifecycle::stop_host_slot(
+        &runtime.process,
+        Some(failed),
+        super::host_process::stop_deadline(),
+    )
+    .await;
+    if outcome != super::runtime_lifecycle::StopHostOutcome::NotCurrent {
         runtime.set_state(
             HostState::Error,
             Some("Hôte d'extensions indisponible.".to_string()),
