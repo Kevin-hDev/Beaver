@@ -1,0 +1,5 @@
+Raison : les remplacements de flux consommaient deux admissions, les dispatches eager et le focus mascotte pouvaient survivre à leur propriétaire, et certains refus d'admission disparaissaient sans trace.
+
+Décision : admettre le nouveau flux après la frontière de remplacement avec nettoyage générationnel en cas de refus ; posséder les enfants eager dans un JoinSet et leur transmettre le jeton parent ; exécuter le délai mascotte via RuntimeBackgroundServices ; tracer les refus startup/watcher par catégories bornées.
+
+TDD observé : remplacement rouge puis vert ; collecteur eager absent puis test d'abandon vert ; focus Tauri détaché rouge puis vert ; refus startup/watcher rouges puis verts. Vérification finale : agent_chat_stream_replacement_tests 4/4, eager child 1/1, admission_refusal 3/3, focus 1/1, git diff --check vert ; tous les fichiers métier touchés restent sous 230 lignes (maximum agent_chat.rs : 221).
