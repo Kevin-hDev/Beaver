@@ -64,13 +64,7 @@ pub(crate) fn run_inner(
         eprintln!("[mcp] shutdown supervision unavailable");
         return false;
     }
-    let agent_work = runtime_state::agent_work(&exit_coordinator);
-    let gateway = GatewayService::new(exit_coordinator.work_supervisor());
-    let oauth_work =
-        services::oauth_work::OAuthWorkServices::new(exit_coordinator.work_supervisor());
-    let searxng = services::searxng::SearxngSidecar::new(exit_coordinator.work_supervisor());
-    let downloads =
-        services::model_downloads::ModelDownloadManager::new(exit_coordinator.work_supervisor());
+    let runtime = runtime_state::services(&exit_coordinator);
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let builder = tauri::Builder::default()
         .plugin(services::app_log::plugin())
@@ -79,11 +73,7 @@ pub(crate) fn run_inner(
         .plugin(tauri_plugin_dialog::init())
         .plugin(services::autostart_migration::plugin())
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-                let _ = w.unminimize();
-                let _ = w.set_focus();
-            }
+            runtime_state::show_main_window(app);
         }));
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio::init());
@@ -92,20 +82,20 @@ pub(crate) fn run_inner(
     let app = builder
         .manage(OllamaClient::new())
         .manage(exit_coordinator)
-        .manage(agent_work)
-        .manage(oauth_work)
+        .manage(runtime.agent_work)
+        .manage(runtime.oauth_work)
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
-        .manage(downloads)
-        .manage(searxng)
+        .manage(runtime.downloads)
+        .manage(runtime.searxng)
         .manage(services::terminal::PtyManager::new())
         .manage(services::browser::BrowserRuntimeHandle::default())
         .manage(services::browser::BrowserSessionService::default())
         .manage(services::browser::LocalSiteScanner::default())
-        .manage(gateway)
+        .manage(runtime.gateway)
         .manage(commands::file_tree_watcher::FileTreeWatcher::new())
-        .manage(services::forecast::sidecar::ChronosSidecar::new())
+        .manage(runtime.forecast)
         .on_page_load(|webview, payload| {
             if webview.label() == "main"
                 && matches!(payload.event(), tauri::webview::PageLoadEvent::Started)

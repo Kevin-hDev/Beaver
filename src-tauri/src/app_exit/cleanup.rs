@@ -69,7 +69,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
     };
     let chronos = async {
         if let Some(sidecar) = app.try_state::<services::forecast::sidecar::ChronosSidecar>() {
-            services::forecast::sidecar::stop(sidecar.inner()).await;
+            let _ = sidecar.stop_and_wait(deadline).await;
         }
     };
     let downloads = async {

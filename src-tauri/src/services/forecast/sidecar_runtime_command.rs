@@ -75,9 +75,11 @@ fn null_device() -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::{configure_pip, harden_python};
+    use super::{configure_pip, harden_python, run_cancellable};
     use std::path::Path;
     use std::process::Command;
+    use std::time::{Duration, Instant};
+    use tokio_util::sync::CancellationToken;
 
     #[test]
     fn pip_uses_only_the_approved_index_and_cache() {
@@ -99,5 +101,43 @@ mod tests {
         assert!(command.get_envs().any(|(key, value)| {
             key == "PYTHONNOUSERSITE" && value.is_some_and(|value| value == "1")
         }));
+    }
+
+    #[tokio::test]
+    async fn cancellation_reaps_a_real_runtime_install_process() {
+        let python = crate::services::test_runtime::python().expect("runtime Python de test");
+        let temp = tempfile::tempdir().unwrap();
+        let pid_file = temp.path().join("runtime.pid");
+        let mut command = Command::new(python);
+        command
+            .args([
+                "-c",
+                "import os,sys,time; open(sys.argv[1], 'w').write(str(os.getpid())); time.sleep(30)",
+            ])
+            .arg(&pid_file);
+        let cancel = CancellationToken::new();
+        let worker_cancel = cancel.clone();
+        let started = Instant::now();
+        let task = tokio::task::spawn_blocking(move || {
+            run_cancellable(&mut command, &worker_cancel, "runtime test")
+        });
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !pid_file.exists() {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("runtime process started");
+        let pid = std::fs::read_to_string(&pid_file)
+            .unwrap()
+            .parse::<u32>()
+            .unwrap();
+
+        cancel.cancel();
+        assert_eq!(task.await.unwrap().unwrap_err(), "cancelled");
+        assert!(started.elapsed() < Duration::from_secs(3));
+        let mut processes = sysinfo::System::new();
+        processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+        assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
     }
 }
