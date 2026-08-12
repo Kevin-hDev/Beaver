@@ -4,6 +4,7 @@ mod backpressure_tests;
 mod bounded_vec;
 pub mod capabilities;
 pub mod discord;
+mod discord_events;
 pub mod discord_gateway;
 mod discord_http;
 mod discord_support;
