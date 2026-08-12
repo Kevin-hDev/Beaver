@@ -1,0 +1,5 @@
+Raison : transformer la conception validée en étapes TDD exécutables et relisibles.
+
+Décision : 12 lots de correction indépendants couvrent explicitement les 35 obligations, suivis d'une vérification complète et d'un push sans fusion.
+
+Preuve : contrôle automatique du plan, obligations 1 à 35 toutes présentes, aucun placeholder interdit, git diff --cached --check sans erreur.
