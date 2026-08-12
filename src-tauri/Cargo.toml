@@ -112,6 +112,7 @@ rand = "0.8.6"
 
 # Zeroize mémoire pour les secrets (clés API)
 zeroize = { version = "1.8", features = ["derive"] }
+bytes = "1"
 
 # Chargement .env au démarrage (credentials OAuth runtime)
 dotenvy = "0.15"

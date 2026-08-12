@@ -29,6 +29,18 @@ fn sanitize_error_never_keeps_internal_details() {
 }
 
 #[test]
+fn sanitizer_keeps_only_closed_stable_reason_categories() {
+    assert_eq!(sanitize_error("invalid_config"), "invalid_config");
+    assert_eq!(sanitize_error("rate_limited"), "rate_limited");
+    assert_eq!(
+        sanitize_error("authentication_failed"),
+        "authentication_failed"
+    );
+    assert_eq!(sanitize_error("channel_unavailable"), "channel_unavailable");
+    assert_eq!(sanitize_error("new_unreviewed_reason"), "operation_failed");
+}
+
+#[test]
 fn concurrent_audit_writes_are_complete_json_lines() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("audit.jsonl");

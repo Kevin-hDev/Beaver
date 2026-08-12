@@ -80,15 +80,11 @@ impl GatewayAgentBridge {
         }
         let decision = self.limits.lock().await.consume(&msg);
         if !decision.allowed {
-            let retry = format!(
-                "retry_after_ms={};remaining={}",
-                decision.retry_after_ms, decision.remaining
-            );
             audit_msg(
                 &msg,
                 AuditAction::RateLimited,
                 Some("rate_limited"),
-                Some(&retry),
+                Some("rate_limited"),
             )?;
             return Err(BridgeError::Blocked("rate limited".into()));
         }
