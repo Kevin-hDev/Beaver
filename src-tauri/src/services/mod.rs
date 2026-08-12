@@ -38,6 +38,7 @@ pub mod mcp_bridge;
 pub mod mcp_oauth;
 pub mod model_downloads;
 pub mod model_downloads_store;
+mod model_downloads_store_queue;
 #[cfg(test)]
 mod model_downloads_store_tests;
 pub mod model_downloads_types;

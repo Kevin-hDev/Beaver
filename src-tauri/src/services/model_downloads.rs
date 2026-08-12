@@ -7,6 +7,7 @@ use crate::services::agent_local::{
     model_customizations, ollama_client::OllamaClient, ollama_registry, types_ollama::PullProgress,
 };
 use crate::services::forecast::model_manager;
+use crate::services::work_registry::ServiceWorkCancellation;
 use tauri::{AppHandle, Emitter};
 use tokio_util::sync::CancellationToken;
 
@@ -27,25 +28,17 @@ pub async fn run_ollama_download(
     let mut digests = Vec::new();
     let progress = |event: PullProgress| {
         let percent = progress_percent(event.completed, event.total);
-        let manager = manager.clone();
-        let app = app.clone();
-        let id = id.clone();
-        tauri::async_runtime::spawn(async move {
-            emit_states(
-                &app,
-                manager
-                    .progress(
-                        &id,
-                        ProgressUpdate {
-                            phase: ModelDownloadPhase::Downloading,
-                            downloaded: event.completed.unwrap_or_default(),
-                            total: event.total.unwrap_or_default(),
-                            percent,
-                        },
-                    )
-                    .await,
-            );
-        });
+        if let Some(states) = manager.try_progress(
+            &id,
+            ProgressUpdate {
+                phase: ModelDownloadPhase::Downloading,
+                downloaded: event.completed.unwrap_or_default(),
+                total: event.total.unwrap_or_default(),
+                percent,
+            },
+        ) {
+            emit_states(&app, states);
+        }
         let _ = event.status;
     };
 
@@ -59,22 +52,53 @@ pub async fn run_download_queue(
     manager: ModelDownloadManager,
     mut state: ModelDownloadState,
     mut cancel: CancellationToken,
+    shutdown: ServiceWorkCancellation,
 ) {
     loop {
-        match state.kind {
-            ModelDownloadKind::Ollama => {
-                run_ollama_download(app.clone(), manager.clone(), state, cancel).await;
-            }
-            ModelDownloadKind::Forecast => {
-                run_forecast_download(app.clone(), manager.clone(), state, cancel).await;
-            }
-        }
-        let Some((next_state, next_cancel)) = manager.activate_next().await else {
+        run_one_download(
+            app.clone(),
+            manager.clone(),
+            state,
+            cancel.clone(),
+            &shutdown,
+        )
+        .await;
+        let Some((next_state, next_cancel)) = manager.wait_for_next(&shutdown).await else {
             break;
         };
         state = next_state;
         cancel = next_cancel;
         emit_states(&app, manager.list().await);
+    }
+}
+
+async fn run_one_download(
+    app: AppHandle,
+    manager: ModelDownloadManager,
+    state: ModelDownloadState,
+    cancel: CancellationToken,
+    shutdown: &ServiceWorkCancellation,
+) {
+    let shutdown_cancel = cancel.clone();
+    let stop = async {
+        shutdown.cancelled().await;
+        shutdown_cancel.cancel();
+    };
+    let work = async {
+        match state.kind {
+            ModelDownloadKind::Ollama => {
+                run_ollama_download(app, manager, state, cancel).await;
+            }
+            ModelDownloadKind::Forecast => {
+                run_forecast_download(app, manager, state, cancel).await;
+            }
+        }
+    };
+    tokio::pin!(stop);
+    tokio::pin!(work);
+    tokio::select! {
+        _ = &mut stop => work.await,
+        _ = &mut work => {}
     }
 }
 
@@ -148,12 +172,9 @@ pub async fn run_forecast_download(
     let result = match resources {
         Ok(()) => {
             model_manager::install_with_callback(&state.model_id, &cancel, |progress| {
-                let manager = manager.clone();
-                let app = app.clone();
-                let id = id.clone();
-                tauri::async_runtime::spawn(async move {
-                    emit_states(&app, manager.progress(&id, progress).await);
-                });
+                if let Some(states) = manager.try_progress(&id, progress) {
+                    emit_states(&app, states);
+                }
             })
             .await
         }

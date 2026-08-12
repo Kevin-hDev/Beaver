@@ -42,9 +42,6 @@ where
 
 async fn cleanup_services(app: &tauri::AppHandle, deadline: Instant) {
     cancel_active_streams(app).await;
-    if let Some(downloads) = app.try_state::<services::model_downloads::ModelDownloadManager>() {
-        downloads.cancel_all().await;
-    }
     services::agent_local::tool_bash_profile::clear();
     let services_phase = stop_services(app, deadline);
     let ollama_handle = app.clone();
@@ -75,6 +72,11 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             services::forecast::sidecar::stop(sidecar.inner()).await;
         }
     };
+    let downloads = async {
+        if let Some(manager) = app.try_state::<services::model_downloads::ModelDownloadManager>() {
+            let _ = manager.stop_and_wait(deadline).await;
+        }
+    };
     let searxng = async {
         if let Some(sidecar) = app.try_state::<services::searxng::SearxngSidecar>() {
             let _ = sidecar.stop_and_wait(deadline).await;
@@ -98,6 +100,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
         services::extensions::stop_and_wait(deadline),
         services::ollama_kill::release_vram(),
         gateway,
+        downloads,
         chronos,
         searxng,
         terminals,

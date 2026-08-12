@@ -153,6 +153,19 @@ impl<const CAPACITY: usize> ServiceWorkSupervisor<CAPACITY> {
         self.registry.try_admit(&self.app)
     }
 
+    pub fn try_probe(&self) -> Result<(), ServiceWorkAdmissionError> {
+        let app_admission = self.app.try_admit().map_err(map_app_error)?;
+        let mut state = self.registry.lock_state();
+        if state.phase != ServiceWorkPhase::Open {
+            state.diagnostics.closing_refusals =
+                state.diagnostics.closing_refusals.saturating_add(1);
+            return Err(ServiceWorkAdmissionError::Closing);
+        }
+        drop(state);
+        drop(app_admission);
+        Ok(())
+    }
+
     pub fn spawn<Factory, Task>(&self, work: Factory) -> Result<(), ServiceWorkAdmissionError>
     where
         Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,

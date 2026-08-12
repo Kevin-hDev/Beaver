@@ -20,8 +20,16 @@ pub async fn start_model_download(
         .start(kind, model_id, is_update.unwrap_or(false))
         .await?;
     emit_states(&app, manager.list().await);
-    if let Some(cancel) = runner {
-        tauri::async_runtime::spawn(run_download_queue(app, manager, state.clone(), cancel));
+    if let Some((cancel, admission)) = runner {
+        let task_app = app.clone();
+        let task_manager = manager.clone();
+        let task_state = state.clone();
+        if let Err(error) = admission.spawn(move |shutdown| {
+            run_download_queue(task_app, task_manager, task_state, cancel, shutdown)
+        }) {
+            manager.worker_start_failed(&state.id).await;
+            return Err(error.public_code().to_string());
+        }
     }
     Ok(state)
 }

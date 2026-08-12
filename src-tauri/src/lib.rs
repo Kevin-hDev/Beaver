@@ -69,6 +69,8 @@ pub(crate) fn run_inner(
     let oauth_work =
         services::oauth_work::OAuthWorkServices::new(exit_coordinator.work_supervisor());
     let searxng = services::searxng::SearxngSidecar::new(exit_coordinator.work_supervisor());
+    let downloads =
+        services::model_downloads::ModelDownloadManager::new(exit_coordinator.work_supervisor());
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let builder = tauri::Builder::default()
         .plugin(services::app_log::plugin())
@@ -95,7 +97,7 @@ pub(crate) fn run_inner(
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
-        .manage(services::model_downloads::ModelDownloadManager::new())
+        .manage(downloads)
         .manage(searxng)
         .manage(services::terminal::PtyManager::new())
         .manage(services::browser::BrowserRuntimeHandle::default())
