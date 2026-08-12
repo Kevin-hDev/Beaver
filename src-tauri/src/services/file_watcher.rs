@@ -137,12 +137,17 @@ fn run(
                             .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
                             .inner()
                             .clone();
-                        let _ = background.spawn_task(move |cancel| async move {
-                            tokio::select! {
-                                _ = cancel.cancelled() => {}
-                                _ = crate::services::mascot::sync_from_disk(app) => {}
-                            }
-                        });
+                        if background
+                            .spawn_task(move |cancel| async move {
+                                tokio::select! {
+                                    _ = cancel.cancelled() => {}
+                                    _ = crate::services::mascot::sync_from_disk(app) => {}
+                                }
+                            })
+                            .is_err()
+                        {
+                            ::log::warn!("[file_watcher] config sync unavailable");
+                        }
                     }
                 }
             }

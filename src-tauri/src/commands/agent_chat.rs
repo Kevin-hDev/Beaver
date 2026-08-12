@@ -30,9 +30,6 @@ pub async fn chat_stream(
     plan_mode: Option<bool>,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<u64, String> {
-    // L'admission précède toute mutation de session : une fermeture en cours
-    // refuse donc la requête sans publier un flux fantôme.
-    let stream_admission = super::agent_chat_work::admit(&app.state::<AgentWorkServices>())?;
     let permission_mode = Some(
         crate::services::agent_local::session_permission_state::prepare_send(
             &session_id,
@@ -80,6 +77,23 @@ pub async fn chat_stream(
         },
     )
     .await?;
+    // Le remplacement doit rendre l'admission précédente avant d'en prendre une
+    // nouvelle, sinon un remplacement consomme temporairement deux des 32 places.
+    let stream_admission = match super::agent_chat_work::admit(&app.state::<AgentWorkServices>()) {
+        Ok(admission) => admission,
+        Err(error) => {
+            cancel.cancel();
+            parent_message_inbox.close().await;
+            let mut map = streams.0.lock().await;
+            if matches!(
+                map.get(&session_id),
+                Some((_, active_generation, _, _)) if *active_generation == generation
+            ) {
+                map.remove(&session_id);
+            }
+            return Err(error);
+        }
+    };
     let provider = provider.unwrap_or_else(|| "ollama".to_string());
     let resolved_working_dir =
         match super::agent_working_dir::resolve_for_session(&session_id, working_dir.as_deref())
