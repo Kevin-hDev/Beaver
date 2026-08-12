@@ -1,0 +1,32 @@
+Jalon 2 — supervision des flux et serveurs OAuth temporaires
+
+Référence
+- Branche de référence du jalon : d0c7d6b.
+- Ce commit suit la supervision MCP stdio 847c4e1.
+
+Problème observé
+- Les callbacks MCP et xAI lançaient un tokio::spawn détaché et rendaient seulement un receiver ; le serveur local n'avait donc aucun propriétaire attendu par la fermeture.
+- Le démarrage MCP OAuth utilisait tauri::async_runtime::spawn sans handle possédé.
+- MCP OAuth, Codex OAuth et les deux fournisseurs LLM avaient trois mécanismes d'annulation séparés, mais aucune admission commune issue de la barrière globale.
+- Le nettoyage central appelait plusieurs cancel_all relatifs et n'attendait pas sous l'unique échéance absolue.
+
+Décisions et raisons
+- OAuthWorkServices devient l'autorité locale unique, dérivée de AppWorkSupervisor, avec 8 slots fixes : 5 flux MCP existants, 2 fournisseurs LLM et 1 flux Codex.
+- Tous les points d'entrée MCP, Codex, xAI et Kimi passent par spawn/run du registre ; les refus après fermeture échouent avant l'ouverture d'un socket.
+- run utilise une tâche possédée par le registre et un canal de résultat : stop_and_wait annule puis attend réellement le corps du flux avant de rendre le slot.
+- Les callbacks MCP et xAI deviennent des CallbackServer possédés directement par le futur de login. Leur annulation détruit le listener avant le retour ; plus aucun spawn de production ne reste dans les domaines OAuth.
+- Le callback Codex était déjà possédé directement ; il rejoint la même admission globale et locale.
+- Le nettoyage central appelle uniquement OAuthWorkServices::stop_and_wait avec l'échéance absolue du coordinateur. Les anciens cancel_all concurrents sont supprimés.
+- Les erreurs visibles restent génériques ; les erreurs bind/accept/read ne révèlent plus de détail système.
+
+Test écrit avant correction et échec observé
+- Le premier test du registre OAuth a échoué à compiler car le module oauth_work et son autorité n'existaient pas. L'ancien code ne pouvait donc ni borner globalement les flux ni attendre leur fin.
+
+Preuves finales Windows
+- Sous-ensemble OAuth : 79 réussis, 0 échec.
+- Les trois callbacks MCP, xAI et Codex prouvent qu'après annulation leur adresse peut être liée à nouveau immédiatement.
+- Le test run supervisé prouve que stop_and_wait ne rend qu'après la fin de la tâche annulée ; capacité 8 et refus permanent après fermeture prouvés.
+- Suite Rust complète avec windows-tests : 3118 tests, 3114 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt, git diff --check et limite de 230 lignes : verts.
+- graphify update . exécuté après les changements.
