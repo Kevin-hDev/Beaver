@@ -109,9 +109,8 @@ async fn reconcile_missed(
             persist_once_missed_decision(
                 || log::log_missed(&wakeup.id, scheduled_for),
                 || {
-                    fire::claim_once(&wakeup.id).map(|_| ()).map_err(|error| {
+                    fire::claim_once(&wakeup.id).map(|_| ()).inspect_err(|_| {
                         ::log::warn!("[scheduler] revendication ponctuelle impossible");
-                        error
                     })
                 },
             )
