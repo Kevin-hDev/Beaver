@@ -231,3 +231,20 @@ fn service_probe_checks_both_gates_without_consuming_a_local_slot() {
     );
     assert_eq!(service.diagnostics().closing_refusals, 1);
 }
+
+#[test]
+fn synchronous_startup_can_spawn_tracked_service_work() {
+    let (_coordinator, app) = supervisor();
+    let service = ServiceWorkSupervisor::<1>::new(app);
+    let (completed, observed) = std::sync::mpsc::sync_channel(1);
+
+    service
+        .spawn(move |_| async move {
+            completed.send(()).expect("report task completion");
+        })
+        .expect("tracked task starts outside an entered Tokio runtime");
+
+    observed
+        .recv_timeout(Duration::from_secs(1))
+        .expect("tracked task completes on the application runtime");
+}
