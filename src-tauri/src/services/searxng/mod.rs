@@ -9,8 +9,10 @@ mod process;
 mod runtime;
 mod settings;
 mod source_filter;
+mod start_lifecycle;
 mod startup;
 mod startup_failure;
+mod stop_lifecycle;
 mod wheels;
 mod work_supervision;
 
