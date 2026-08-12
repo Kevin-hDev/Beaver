@@ -18,9 +18,23 @@ pub(super) struct RefusalAuditEntry {
     decision: &'static str,
 }
 
+#[derive(Clone, Default)]
+pub(super) struct RefusalCounter(Arc<AtomicU64>);
+
+impl RefusalCounter {
+    pub(super) fn total(&self) -> u64 {
+        self.0.load(Ordering::Relaxed)
+    }
+
+    fn increment(&self) {
+        increment_saturating(&self.0);
+    }
+}
+
 #[derive(Clone)]
 pub(super) struct RefusalAudit {
     sender: mpsc::Sender<RefusalAuditEntry>,
+    refused: RefusalCounter,
     dropped: Arc<AtomicU64>,
 }
 
@@ -30,10 +44,25 @@ impl RefusalAudit {
         (
             Self {
                 sender,
+                refused: RefusalCounter::default(),
                 dropped: Arc::new(AtomicU64::new(0)),
             },
             receiver,
         )
+    }
+
+    pub(super) fn record_refusal(
+        &self,
+        key: ChannelKey,
+        decision: &'static str,
+    ) -> RefusalAuditOutcome {
+        // The in-memory observation is authoritative even when persistent audit is disabled.
+        self.refused.increment();
+        self.try_record(key, decision)
+    }
+
+    pub(super) fn counter(&self) -> RefusalCounter {
+        self.refused.clone()
     }
 
     pub(super) fn try_record(

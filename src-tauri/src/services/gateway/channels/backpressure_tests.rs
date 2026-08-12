@@ -80,6 +80,24 @@ fn closed_queue_has_a_distinct_shutdown_outcome() {
 }
 
 #[test]
+fn disabled_persistent_audit_still_counts_refused_messages() {
+    let (sender, _receiver) = tokio::sync::mpsc::channel(1);
+    sender.try_send(message("first")).unwrap();
+    let (audit, _audit_receiver) = RefusalAudit::channel();
+
+    assert_eq!(
+        try_enqueue(
+            &sender,
+            message("second"),
+            &ChannelKey::new("discord", "main"),
+            &audit,
+        ),
+        EnqueueOutcome::Full
+    );
+    assert_eq!(audit.counter().total(), 1);
+}
+
+#[test]
 fn refusal_audit_queue_is_bounded() {
     let (audit, _receiver) = RefusalAudit::channel();
     let key = ChannelKey::new("discord", "main");

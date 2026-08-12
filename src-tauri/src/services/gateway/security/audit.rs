@@ -35,6 +35,37 @@ pub enum AuditAction {
     AuthFailed,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum AuditErrorCategory {
+    InvalidConfig,
+    RateLimited,
+    AuthenticationFailed,
+    ChannelUnavailable,
+    OperationFailed,
+}
+
+impl AuditErrorCategory {
+    pub(crate) const fn as_str(self) -> &'static str {
+        match self {
+            Self::InvalidConfig => "invalid_config",
+            Self::RateLimited => "rate_limited",
+            Self::AuthenticationFailed => "authentication_failed",
+            Self::ChannelUnavailable => "channel_unavailable",
+            Self::OperationFailed => "operation_failed",
+        }
+    }
+
+    fn from_stable_reason(reason: &str) -> Self {
+        match reason {
+            "invalid_config" => Self::InvalidConfig,
+            "rate_limited" => Self::RateLimited,
+            "authentication_failed" => Self::AuthenticationFailed,
+            "channel_unavailable" => Self::ChannelUnavailable,
+            _ => Self::OperationFailed,
+        }
+    }
+}
+
 pub fn configure(config: &AuditConfig) {
     ENABLED.store(config.enabled, Ordering::Relaxed);
     RETENTION_DAYS.store(config.retention_days.clamp(1, 365), Ordering::Relaxed);
@@ -90,8 +121,10 @@ pub fn log_gateway_action(
     })
 }
 
-pub fn sanitize_error(_error: &str) -> String {
-    "operation_failed".to_string()
+pub fn sanitize_error(error: &str) -> String {
+    AuditErrorCategory::from_stable_reason(error)
+        .as_str()
+        .to_string()
 }
 
 fn safe_code(value: &str) -> String {
