@@ -120,23 +120,36 @@ impl PtySession {
     }
 
     pub(super) fn shutdown(&mut self) -> Result<u32, String> {
+        #[cfg(test)]
+        eprintln!("[terminal-test] shutdown: close input");
         let _ = self.close_input();
         if let Some(code) = self.child_status().exit_code() {
+            #[cfg(test)]
+            eprintln!("[terminal-test] shutdown: child already exited");
             return Ok(code);
         }
         let pid = self.process_id().ok_or_else(terminal_error)?;
+        #[cfg(test)]
+        eprintln!("[terminal-test] shutdown: terminate process tree");
         crate::services::process_tree::kill(
             pid,
             crate::services::process_tree::ProcessKind::Terminal,
         );
+        #[cfg(test)]
+        eprintln!("[terminal-test] shutdown: process tree returned");
         let mut child = self.child.lock().map_err(|_| terminal_error())?;
         if child.try_wait().map_err(|_| terminal_error())?.is_none() {
+            #[cfg(test)]
+            eprintln!("[terminal-test] shutdown: kill direct child");
             child.kill().map_err(|_| terminal_error())?;
         }
-        child
+        let result = child
             .wait()
             .map(|status| status.exit_code())
-            .map_err(|_| terminal_error())
+            .map_err(|_| terminal_error());
+        #[cfg(test)]
+        eprintln!("[terminal-test] shutdown: child reaped");
+        result
     }
 
     fn close_input(&self) -> Result<(), String> {
