@@ -8,7 +8,7 @@ use std::{
     collections::{HashMap, VecDeque},
     sync::Arc,
 };
-use tokio::sync::{Mutex, Notify};
+use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
@@ -18,7 +18,6 @@ pub type DownloadWorkAdmission = ServiceWorkAdmission<DOWNLOAD_WORKERS>;
 #[derive(Clone)]
 pub struct ModelDownloadManager {
     pub(super) inner: Arc<Mutex<DownloadStore>>,
-    pub(super) changed: Arc<Notify>,
     pub(super) work: ServiceWorkSupervisor<DOWNLOAD_WORKERS>,
 }
 
@@ -47,7 +46,6 @@ impl ModelDownloadManager {
     pub fn new(app_work: AppWorkSupervisor) -> Self {
         Self {
             inner: Arc::new(Mutex::new(DownloadStore::default())),
-            changed: Arc::new(Notify::new()),
             work: ServiceWorkSupervisor::new(app_work),
         }
     }
@@ -112,7 +110,6 @@ impl ModelDownloadManager {
             },
         );
         drop(store);
-        self.changed.notify_one();
         Ok((state, admission.map(|admission| (cancel, admission))))
     }
 

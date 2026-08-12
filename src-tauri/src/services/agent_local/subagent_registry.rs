@@ -6,8 +6,8 @@ use tokio_util::sync::CancellationToken;
 pub use super::subagent_terminal_signal::SubagentTerminalKind;
 use super::subagent_terminal_signal::{SubagentTerminalNotifier, SubagentTerminalState};
 
-const MAX_PER_PARENT: usize = 4;
-const MAX_TOTAL: usize = super::agent_work_supervision::MAX_ACTIVE_SUBAGENTS;
+pub(super) const MAX_PER_PARENT: usize = 4;
+pub(super) const MAX_TOTAL: usize = super::agent_work_supervision::MAX_ACTIVE_SUBAGENTS;
 
 struct SubagentEntry {
     pub cancel: CancellationToken,
@@ -149,14 +149,7 @@ pub(super) fn capacity_error(total: usize, parent_count: usize) -> Option<String
 }
 
 fn registration_capacity_error(total: usize, parent_count: usize) -> Option<String> {
-    #[cfg(not(test))]
-    let effective_total = total;
-    #[cfg(test)]
-    let effective_total = {
-        let _ = total;
-        parent_count
-    };
-    capacity_error(effective_total, parent_count)
+    capacity_error(total, parent_count)
 }
 
 pub async fn unregister(child_id: &str) {

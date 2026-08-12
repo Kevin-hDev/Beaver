@@ -3,13 +3,11 @@ mod tests {
     use crate::services::agent_local::subagent_registry::{
         active_children_for_parent, cancel_one, capacity_error, complete_child, consume_terminal,
         get_or_create_run_id, get_run_id_for_child, parent_snapshot, register,
-        release_run_claim, unregister, SubagentTerminalKind, PRODUCTION_MAX_TERMINAL_PARENTS,
+        register_execution_for_parent_stream, release_run_claim, unregister, SubagentTerminalKind,
+        MAX_PER_PARENT, MAX_TOTAL, PRODUCTION_MAX_TERMINAL_PARENTS,
     };
     use crate::services::agent_local::subagent_registry_test_support::meta;
     use tokio_util::sync::CancellationToken;
-
-    const MAX_PER_PARENT: usize = 4;
-    const MAX_TOTAL: usize = 8;
 
     fn uid() -> String {
         uuid::Uuid::new_v4().to_string()
@@ -106,7 +104,7 @@ mod tests {
         assert!(capacity_error(0, MAX_PER_PARENT).is_some());
         assert!(capacity_error(MAX_TOTAL - 1, MAX_PER_PARENT - 1).is_none());
 
-        // --- unrelated test parents do not consume this test's total capacity ---
+        // --- the exact production path rejects the first admission over MAX_TOTAL ---
         let mut registered_children = Vec::new();
         for parent in [uid(), uid()] {
             for _ in 0..MAX_PER_PARENT {
@@ -119,14 +117,18 @@ mod tests {
         }
         let independent_parent = uid();
         let independent_child = uid();
-        register(
+        let parent_cancel = CancellationToken::new();
+        let error = register_execution_for_parent_stream(
             &independent_parent,
             &independent_child,
             CancellationToken::new(),
+            None,
+            &parent_cancel,
         )
         .await
-        .expect("another test parent must keep independent capacity");
-        registered_children.push(independent_child);
+        .err()
+        .expect("the first admission over the production total must fail");
+        assert_eq!(error, format!("Limite de {MAX_TOTAL} sous-agents actifs atteinte"));
         for child in registered_children {
             unregister(&child).await;
         }
