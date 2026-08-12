@@ -62,7 +62,9 @@ pub async fn uninstall_forecast_model(app: AppHandle, name: String) -> Result<()
     chronos
         .run_cancellable(move || async move {
             let _prediction_guard = operation_sidecar.lock_prediction().await;
-            sidecar::stop_model(&operation_sidecar, &name).await;
+            if !sidecar::stop_model(&operation_sidecar, &name).await {
+                return Err("Impossible d'arrêter le service Forecast".to_string());
+            }
             model_manager::uninstall(&name).await
         })
         .await?;

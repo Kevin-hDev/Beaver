@@ -1,11 +1,13 @@
 use super::sidecar::{ChronosSidecar, SidecarHandle};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-pub async fn stop(sidecar: &ChronosSidecar) {
-    stop_state(sidecar).await;
+const FORECAST_STOP_TIMEOUT: Duration = Duration::from_secs(5);
+
+pub async fn stop(sidecar: &ChronosSidecar) -> bool {
+    stop_state(sidecar, control_deadline()).await
 }
 
-pub async fn stop_model(sidecar: &ChronosSidecar, model_id: &str) {
+pub async fn stop_model(sidecar: &ChronosSidecar, model_id: &str) -> bool {
     let handle = {
         let mut state = sidecar.process.lock().await;
         if state
@@ -18,35 +20,60 @@ pub async fn stop_model(sidecar: &ChronosSidecar, model_id: &str) {
         }
     };
     if let Some(handle) = handle {
-        stop_handle(handle).await;
+        let stopped = stop_handle(handle, control_deadline()).await;
         super::sidecar_process::clear_pid_file();
         super::sidecar_http::clear_port();
         sidecar.idle_changed.notify_waiters();
+        stopped
+    } else {
+        true
     }
 }
 
-pub(super) async fn stop_state(sidecar: &ChronosSidecar) {
-    if let Some(handle) = sidecar.process.lock().await.take() {
-        stop_handle(handle).await;
-    }
+pub(super) async fn stop_state(sidecar: &ChronosSidecar, deadline: Instant) -> bool {
+    let Ok(mut process) = tokio::time::timeout_at(
+        tokio::time::Instant::from_std(deadline),
+        sidecar.process.lock(),
+    )
+    .await
+    else {
+        return false;
+    };
+    let handle = process.take();
+    drop(process);
+    let stopped = match handle {
+        Some(handle) => stop_handle(handle, deadline).await,
+        None => true,
+    };
     super::sidecar_process::clear_pid_file();
     super::sidecar_http::clear_port();
     sidecar.idle_changed.notify_waiters();
+    stopped
 }
 
-async fn stop_handle(handle: SidecarHandle) {
-    let _ = tokio::task::spawn_blocking(move || {
-        super::sidecar_process::kill_child_process(handle.child);
-    })
-    .await;
+async fn stop_handle(handle: SidecarHandle, deadline: Instant) -> bool {
+    matches!(
+        tokio::time::timeout_at(
+            tokio::time::Instant::from_std(deadline),
+            tokio::task::spawn_blocking(move || {
+                super::sidecar_process::kill_child_process(handle.child);
+            }),
+        )
+        .await,
+        Ok(Ok(()))
+    )
+}
+
+fn control_deadline() -> Instant {
+    Instant::now() + FORECAST_STOP_TIMEOUT
 }
 
 impl ChronosSidecar {
     pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.work.begin_closing();
-        stop_state(self).await;
+        let process_stopped = stop_state(self, deadline).await;
         self.idle_changed.notify_waiters();
-        self.work.stop_and_wait(deadline).await
+        self.work.stop_and_wait(deadline).await && process_stopped
     }
 
     #[cfg(test)]
@@ -76,6 +103,9 @@ impl ChronosSidecar {
             auth_token: zeroize::Zeroizing::new("fixture".to_string()),
             launch: super::sidecar_settings::current(),
             generation: 1,
+            publication_generation: self
+                .next_publication_generation
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             _admission: admission,
         });
         Ok(pid)

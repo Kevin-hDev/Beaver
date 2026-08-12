@@ -78,7 +78,7 @@ async fn run_local_inner(
     };
     let endpoint = tokio::select! {
         _ = cancel.cancelled() => {
-            sidecar::stop(&chronos).await;
+            let _ = sidecar::stop(&chronos).await;
             return Err("Annulé".to_string());
         }
         result = sidecar::start(&chronos, &model_id, runtime.family_id) => {
@@ -87,7 +87,7 @@ async fn run_local_inner(
     };
     let result = tokio::select! {
         _ = cancel.cancelled() => {
-            sidecar::stop(&chronos).await;
+            let _ = sidecar::stop(&chronos).await;
             Err("Annulé".to_string())
         }
         result = client_chronos::predict(
