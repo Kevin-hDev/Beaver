@@ -25,6 +25,11 @@ pub struct HostProcess {
 }
 
 impl HostProcess {
+    #[cfg(test)]
+    pub(super) async fn hold_child_for_test(&self) -> tokio::sync::MutexGuard<'_, Child> {
+        self.child.lock().await
+    }
+
     pub async fn spawn(
         paths: &HostPaths,
         work: &super::work_supervision::ExtensionWorkServices,
