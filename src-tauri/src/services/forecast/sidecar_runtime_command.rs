@@ -115,7 +115,7 @@ mod tests {
         command
             .args([
                 "-c",
-                "import os,sys,time; open(sys.argv[1], 'w').write(str(os.getpid())); time.sleep(30)",
+                "import os,pathlib,sys,time; tmp=sys.argv[1]+'.tmp'; pathlib.Path(tmp).write_text(str(os.getpid())); os.replace(tmp,sys.argv[1]); time.sleep(30)",
             ])
             .arg(&pid_file);
         let cancel = CancellationToken::new();
