@@ -1,1 +1,3 @@
 Jalon 2 - stabilisation Windows. Cause observee dans la CI 31586449610: le test attendait seulement l'existence du fichier PID et pouvait lire un fichier encore vide. Correction: publication atomique par fichier temporaire puis os.replace. Preuves locales: test d'annulation Forecast 5/5; deux suites Rust completes sequentielles et une parallele vertes.
+
+CI distante: PR #14, commit final 47e48be, execution 31593057788; tous les controles termines avec succes, dont Backend Windows tests et parcours CEF natifs Windows/macOS.
