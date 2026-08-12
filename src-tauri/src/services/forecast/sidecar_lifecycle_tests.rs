@@ -101,3 +101,31 @@ async fn shutdown_does_not_wait_for_a_slow_health_probe_lock() {
 
     assert!(stopped_quickly, "health probe kept the process lock");
 }
+
+#[tokio::test]
+async fn cancelling_before_publication_reaps_the_spawned_sidecar() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let sidecar = ChronosSidecar::new(coordinator.work_supervisor());
+    let (spawned_tx, spawned_rx) = tokio::sync::oneshot::channel();
+    let starting = tokio::spawn(async move {
+        sidecar
+            .hold_unpublished_test_process_for_test(spawned_tx)
+            .await
+    });
+    let pid = spawned_rx.await.expect("fixture spawned");
+
+    starting.abort();
+    let _ = starting.await;
+    tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            let mut processes = sysinfo::System::new();
+            processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+            if processes.process(sysinfo::Pid::from_u32(pid)).is_none() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .expect("unpublished sidecar reaped on cancellation");
+}

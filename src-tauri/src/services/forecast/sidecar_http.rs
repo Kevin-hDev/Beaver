@@ -1,6 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::time::Duration;
+use zeroize::Zeroizing;
 
 const PORT_RANGE_START: u16 = 12000;
 const PORT_RANGE_END: u16 = 12099;
@@ -34,7 +35,7 @@ pub fn find_free_port() -> u16 {
     DEFAULT_PORT
 }
 
-pub fn health_info(port: u16, auth_token: &str) -> Option<(u16, String, String)> {
+pub fn health_info(port: u16, auth_token: &Zeroizing<String>) -> Option<(u16, String, String)> {
     use std::io::{Read, Write};
 
     let addr = format!("127.0.0.1:{port}");
@@ -43,10 +44,12 @@ pub fn health_info(port: u16, auth_token: &str) -> Option<(u16, String, String)>
         return None;
     };
     stream.set_read_timeout(Some(Duration::from_secs(2))).ok();
-    let req = format!(
-        "GET /health HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\nX-CLGO-Forecast-Token: {auth_token}\r\n\r\n"
-    );
-    if stream.write_all(req.as_bytes()).is_err() {
+    let request_prefix =
+        format!("GET /health HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\nX-CLGO-Forecast-Token: ");
+    if stream.write_all(request_prefix.as_bytes()).is_err()
+        || stream.write_all(auth_token.as_bytes()).is_err()
+        || stream.write_all(b"\r\n\r\n").is_err()
+    {
         return None;
     }
     let mut buf = [0u8; 512];
@@ -57,4 +60,14 @@ pub fn health_info(port: u16, auth_token: &str) -> Option<(u16, String, String)>
     let model = json["model"].as_str()?.to_string();
     let family = json["family"].as_str().unwrap_or("").to_string();
     Some((port, model, family))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn health_request_accepts_only_zeroizing_token_ownership() {
+        let function: fn(u16, &zeroize::Zeroizing<String>) -> Option<(u16, String, String)> =
+            super::health_info;
+        let _ = function;
+    }
 }

@@ -10,27 +10,8 @@ pub fn configure_process_group(command: &mut Command) {
 
 #[cfg(windows)]
 pub fn powershell_executable() -> Result<std::path::PathBuf, String> {
-    system32_file(&["WindowsPowerShell", "v1.0", "powershell.exe"])
-        .ok_or_else(|| "Shell utilisateur indisponible.".to_string())
-}
-
-#[cfg(windows)]
-fn system32_file(components: &[&str]) -> Option<std::path::PathBuf> {
-    let root = std::env::var_os("SystemRoot")
-        .map(std::path::PathBuf::from)
-        .filter(|path| path.is_absolute())?;
-    let mut path = root.join("System32");
-    for component in components {
-        if component.is_empty()
-            || component.contains('/')
-            || component.contains('\\')
-            || *component == ".."
-        {
-            return None;
-        }
-        path.push(component);
-    }
-    path.is_file().then_some(path)
+    crate::services::system_executable::powershell()
+        .map_err(|_| "Shell utilisateur indisponible.".to_string())
 }
 
 pub async fn terminate_process_tree(pid: u32) {
