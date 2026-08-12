@@ -73,28 +73,35 @@ pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
     let runtime = extension_runtime()?;
     let work = runtime.work.clone();
     work.run_operation(move |_| async move {
-        runtime
+        let stopped = runtime
             .stop_host(super::host_process::stop_deadline())
             .await;
-        if super::registry::remove(&id).is_err() {
-            let _ = runtime.start_untracked().await;
-            return Err(OperationFailure::UninstallFailed);
-        }
-        let result = if is_managed(&current) {
-            let record = current.clone();
-            blocking(
-                move || {
-                    super::managed_store::remove_record(&record)
-                        .map_err(|_| OperationFailure::StorageFailed)
-                },
-                OperationFailure::UninstallFailed,
-            )
-            .await
-        } else {
-            Ok(())
-        };
-        let _ = runtime.start_untracked().await;
-        result
+        super::host_stop_boundary::after_confirmed_stop(
+            stopped,
+            OperationFailure::HostUnavailable,
+            async move {
+                if super::registry::remove(&id).is_err() {
+                    let _ = runtime.start_untracked().await;
+                    return Err(OperationFailure::UninstallFailed);
+                }
+                let result = if is_managed(&current) {
+                    let record = current.clone();
+                    blocking(
+                        move || {
+                            super::managed_store::remove_record(&record)
+                                .map_err(|_| OperationFailure::StorageFailed)
+                        },
+                        OperationFailure::UninstallFailed,
+                    )
+                    .await
+                } else {
+                    Ok(())
+                };
+                let _ = runtime.start_untracked().await;
+                result
+            },
+        )
+        .await
     })
     .await
     .map_err(|error| error.operation_failure())?
@@ -143,24 +150,32 @@ async fn replace_current(
     prepared: PreparedInstall,
 ) -> Result<ExtensionRecord, OperationFailure> {
     let replacement = super::installer_record::for_update(&current, prepared.record);
-    runtime
+    let stopped = runtime
         .stop_host(super::host_process::stop_deadline())
         .await;
-    if super::registry::replace_user(&current, replacement.clone()).is_err() {
-        cleanup(&replacement).await;
-        let _ = runtime.start_untracked().await;
-        return Err(OperationFailure::UpdateFailed);
-    }
-    let old = current.clone();
-    let _ = blocking(
-        move || {
-            super::managed_store::remove_record(&old).map_err(|_| OperationFailure::StorageFailed)
+    super::host_stop_boundary::after_confirmed_stop(
+        stopped,
+        OperationFailure::HostUnavailable,
+        async move {
+            if super::registry::replace_user(&current, replacement.clone()).is_err() {
+                cleanup(&replacement).await;
+                let _ = runtime.start_untracked().await;
+                return Err(OperationFailure::UpdateFailed);
+            }
+            let old = current.clone();
+            let _ = blocking(
+                move || {
+                    super::managed_store::remove_record(&old)
+                        .map_err(|_| OperationFailure::StorageFailed)
+                },
+                OperationFailure::UpdateFailed,
+            )
+            .await;
+            let _ = runtime.start_untracked().await;
+            Ok(replacement)
         },
-        OperationFailure::UpdateFailed,
     )
-    .await;
-    let _ = runtime.start_untracked().await;
-    Ok(replacement)
+    .await
 }
 
 async fn cleanup(record: &ExtensionRecord) {

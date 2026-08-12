@@ -61,9 +61,7 @@ pub(super) async fn ensure_running() -> Result<Arc<HostProcess>, String> {
     }
     runtime.set_state(HostState::Starting, None, 0);
     if let Err(error) = runtime.sync_locked(&mut slot).await {
-        if let Some(process) = slot.take() {
-            process.kill(super::host_process::stop_deadline()).await;
-        }
+        let _ = stop_host_slot(&mut slot, super::host_process::stop_deadline()).await;
         runtime.mark_unavailable();
         return Err(error);
     }
@@ -81,18 +79,23 @@ impl ExtensionRuntime {
         let mut process = self.process.lock().await;
         let result = self.sync_locked(&mut process).await;
         if result.is_err() {
-            if let Some(host) = process.take() {
-                host.kill(super::host_process::stop_deadline()).await;
-            }
+            let _ = stop_host_slot(&mut process, super::host_process::stop_deadline()).await;
             self.mark_unavailable();
         }
         result
     }
 
     async fn restart_untracked(&self) -> Result<(), String> {
-        self.stop_host(super::host_process::stop_deadline()).await;
-        self.auto_restarts.reset();
-        self.start_untracked().await
+        let stopped = self.stop_host(super::host_process::stop_deadline()).await;
+        super::host_stop_boundary::after_confirmed_stop(
+            stopped,
+            error_codes::HOST_UNAVAILABLE.to_string(),
+            async {
+                self.auto_restarts.reset();
+                self.start_untracked().await
+            },
+        )
+        .await
     }
 
     pub(super) async fn stop_host(&self, deadline: Instant) -> bool {
@@ -104,13 +107,10 @@ impl ExtensionRuntime {
         else {
             return false;
         };
-        let process = slot.take();
-        drop(slot);
-        if let Some(process) = process {
-            if !process.kill(deadline).await {
-                return false;
-            }
+        if !stop_host_slot(&mut slot, deadline).await {
+            return false;
         }
+        drop(slot);
         self.set_state(HostState::Stopped, None, 0);
         true
     }
@@ -125,66 +125,19 @@ impl ExtensionRuntime {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::super::host_paths::HostPaths;
-    use super::super::types::ExtensionHostStatus;
-    use super::*;
-    use std::time::Duration;
-    use tokio::sync::Mutex;
-
-    #[tokio::test]
-    async fn internal_start_cannot_bypass_closed_admission() {
-        let directory = tempfile::tempdir().unwrap();
-        let script = directory.path().join("host.mjs");
-        std::fs::write(
-            &script,
-            "import { writeFileSync } from 'node:fs'; writeFileSync('started', 'yes');",
-        )
-        .unwrap();
-        let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
-        let work = super::super::work_supervision::ExtensionWorkServices::new(
-            coordinator.work_supervisor(),
-        );
-        work.begin_closing();
-        let runtime = ExtensionRuntime {
-            paths: Some(HostPaths {
-                node: which::which("node").unwrap().canonicalize().unwrap(),
-                script,
-                directory: directory.path().to_path_buf(),
-            }),
-            process: Mutex::new(None),
-            status: std::sync::RwLock::new(ExtensionHostStatus::default()),
-            auto_restarts: super::super::runtime_restart::RestartBudget::default(),
-            work,
-        };
-
-        assert_eq!(
-            runtime.start_untracked().await,
-            Err(error_codes::HOST_UNAVAILABLE.to_string())
-        );
-        assert!(!directory.path().join("started").exists());
-        assert!(runtime.process.lock().await.is_none());
+pub(super) async fn stop_host_slot(slot: &mut Option<Arc<HostProcess>>, deadline: Instant) -> bool {
+    let Some(process) = slot.as_ref() else {
+        return true;
+    };
+    if !process.kill(deadline).await {
+        return false;
     }
-
-    #[tokio::test]
-    async fn stop_host_respects_the_absolute_deadline_while_process_is_locked() {
-        let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
-        let runtime = ExtensionRuntime {
-            paths: None,
-            process: Mutex::new(None),
-            status: std::sync::RwLock::new(ExtensionHostStatus::default()),
-            auto_restarts: super::super::runtime_restart::RestartBudget::default(),
-            work: super::super::work_supervision::ExtensionWorkServices::new(
-                coordinator.work_supervisor(),
-            ),
-        };
-        let _guard = runtime.process.lock().await;
-
-        assert!(
-            !runtime
-                .stop_host(Instant::now() + Duration::from_millis(20))
-                .await
-        );
-    }
+    // Le slot reste occupé jusqu'à la confirmation de mort : un arrêt
+    // incomplet ne peut donc jamais autoriser le spawn d'un second hôte.
+    slot.take();
+    true
 }
+
+#[cfg(test)]
+#[path = "runtime_lifecycle_tests.rs"]
+mod tests;

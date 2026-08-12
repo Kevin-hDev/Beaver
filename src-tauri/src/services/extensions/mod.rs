@@ -13,6 +13,9 @@ mod host_channel;
 mod host_paths;
 mod host_process;
 mod host_reader;
+mod host_stop_boundary;
+#[cfg(test)]
+mod host_stop_boundary_tests;
 mod install_preparation;
 mod installer;
 mod installer_record;
