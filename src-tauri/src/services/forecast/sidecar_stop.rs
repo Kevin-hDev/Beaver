@@ -55,12 +55,10 @@ async fn stop_handle(handle: SidecarHandle, deadline: Instant) -> bool {
     matches!(
         tokio::time::timeout_at(
             tokio::time::Instant::from_std(deadline),
-            tokio::task::spawn_blocking(move || {
-                super::sidecar_process::kill_child_process(handle.child);
-            }),
+            super::sidecar_process::kill_child_process(handle.child, handle.pid),
         )
         .await,
-        Ok(Ok(()))
+        Ok(())
     )
 }
 
@@ -94,10 +92,11 @@ impl ChronosSidecar {
             .work
             .try_admit_sidecar()
             .map_err(|_| "fixture Forecast indisponible".to_string())?;
-        let child = super::sidecar_process::spawn_test_fixture()?;
-        let pid = child.id();
+        let child = super::sidecar_process::spawn_test_fixture().await?;
+        let pid = child.pid();
         *self.process.lock().await = Some(SidecarHandle {
-            child,
+            child: child.publish(),
+            pid,
             model_id: "fixture".to_string(),
             family_id: "fixture".to_string(),
             auth_token: zeroize::Zeroizing::new("fixture".to_string()),
@@ -109,5 +108,20 @@ impl ChronosSidecar {
             _admission: admission,
         });
         Ok(pid)
+    }
+
+    pub(crate) async fn hold_unpublished_test_process_for_test(
+        &self,
+        spawned: tokio::sync::oneshot::Sender<u32>,
+    ) -> Result<(), String> {
+        let _admission = self
+            .work
+            .try_admit_sidecar()
+            .map_err(|_| "fixture Forecast indisponible".to_string())?;
+        let child = super::sidecar_process::spawn_test_fixture().await?;
+        let _ = spawned.send(child.pid());
+        std::future::pending::<()>().await;
+        drop(child);
+        Ok(())
     }
 }

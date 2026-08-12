@@ -42,8 +42,9 @@ async fn nvidia_smi_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64,
 }
 
 async fn powershell_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, u64)> {
+    let powershell = crate::services::system_executable::powershell().ok()?;
     let output = owned_probe::run(
-        ProbeSpec::new("powershell").args([
+        ProbeSpec::new(powershell).args([
             "-NoProfile",
             "-NonInteractive",
             "-Command",

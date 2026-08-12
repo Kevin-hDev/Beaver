@@ -69,7 +69,10 @@ fn detect_linux() -> GpuVendor {
 
 #[cfg(target_os = "windows")]
 fn detect_windows() -> GpuVendor {
-    let mut cmd = crate::services::background_command::new("powershell");
+    let Ok(powershell) = crate::services::system_executable::powershell() else {
+        return GpuVendor::Unknown;
+    };
+    let mut cmd = crate::services::background_command::new(powershell);
     cmd.args([
         "-NoProfile",
         "-Command",

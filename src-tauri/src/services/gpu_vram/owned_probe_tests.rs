@@ -110,7 +110,7 @@ async fn powershell_probe_is_registered_in_owned_process_authority() {
     let (started_tx, started_rx) = tokio::sync::oneshot::channel();
     let probe = tokio::spawn(async move {
         owned_probe::run_for_test(
-            ProbeSpec::new("powershell").args([
+            ProbeSpec::new(crate::services::system_executable::powershell().unwrap()).args([
                 "-NoProfile",
                 "-NonInteractive",
                 "-Command",
