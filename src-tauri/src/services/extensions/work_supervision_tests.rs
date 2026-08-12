@@ -52,11 +52,13 @@ async fn stop_cancels_and_awaits_reader_operation_and_core_call() {
     let completed = Arc::new(AtomicUsize::new(0));
 
     let reader_completed = Arc::clone(&completed);
-    work.spawn_reader(move |cancel| async move {
-        cancel.cancelled().await;
-        reader_completed.fetch_add(1, Ordering::SeqCst);
-    })
-    .expect("supervised extension reader starts");
+    work.try_admit_reader()
+        .expect("reader admission")
+        .spawn(move |cancel| async move {
+            cancel.cancelled().await;
+            reader_completed.fetch_add(1, Ordering::SeqCst);
+        })
+        .expect("supervised extension reader starts");
     let operation_completed = Arc::clone(&completed);
     work.spawn_operation(move |cancel| async move {
         cancel.cancelled().await;

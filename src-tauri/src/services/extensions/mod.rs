@@ -19,6 +19,7 @@ mod host_stop_boundary_tests;
 mod install_preparation;
 mod installer;
 mod installer_record;
+mod installer_uninstall;
 mod managed_cleanup;
 mod managed_store;
 mod managed_tree;
