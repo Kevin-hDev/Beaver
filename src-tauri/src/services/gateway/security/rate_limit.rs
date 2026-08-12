@@ -18,8 +18,6 @@ struct Bucket {
 
 pub struct RateLimitDecision {
     pub allowed: bool,
-    pub retry_after_ms: u64,
-    pub remaining: u32,
 }
 
 pub struct RateLimiter {
@@ -55,20 +53,11 @@ impl RateLimiter {
         }
 
         if bucket.count >= self.max_per_window {
-            let retry_after = self.window_secs.saturating_sub(elapsed) * 1000;
-            return RateLimitDecision {
-                allowed: false,
-                retry_after_ms: retry_after,
-                remaining: 0,
-            };
+            return RateLimitDecision { allowed: false };
         }
 
         bucket.count += 1;
-        RateLimitDecision {
-            allowed: true,
-            retry_after_ms: 0,
-            remaining: self.max_per_window - bucket.count,
-        }
+        RateLimitDecision { allowed: true }
     }
 
     #[cfg(test)]
@@ -130,8 +119,6 @@ mod tests {
         assert!(rl.consume(&key).allowed);
         let d = rl.consume(&key);
         assert!(!d.allowed);
-        assert!(d.retry_after_ms > 0);
-        assert_eq!(d.remaining, 0);
     }
 
     #[test]
@@ -143,15 +130,6 @@ mod tests {
         assert!(rl.consume(&k2).allowed);
         assert!(!rl.consume(&k1).allowed);
         assert!(!rl.consume(&k2).allowed);
-    }
-
-    #[test]
-    fn remaining_decrements() {
-        let mut rl = RateLimiter::new(5, 60);
-        let key = test_key("user1");
-        assert_eq!(rl.consume(&key).remaining, 4);
-        assert_eq!(rl.consume(&key).remaining, 3);
-        assert_eq!(rl.consume(&key).remaining, 2);
     }
 
     #[test]

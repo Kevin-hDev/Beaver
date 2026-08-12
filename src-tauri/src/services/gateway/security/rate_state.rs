@@ -44,11 +44,7 @@ impl GatewayRateLimiters {
                 return decision;
             }
         }
-        RateLimitDecision {
-            allowed: true,
-            retry_after_ms: 0,
-            remaining: 0,
-        }
+        RateLimitDecision { allowed: true }
     }
 }
 
