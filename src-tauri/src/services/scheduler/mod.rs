@@ -7,6 +7,7 @@ pub mod next_fire;
 #[cfg(test)]
 mod next_fire_tests;
 mod runtime;
+mod runtime_decisions;
 #[cfg(test)]
 mod runtime_tests;
 pub mod state;

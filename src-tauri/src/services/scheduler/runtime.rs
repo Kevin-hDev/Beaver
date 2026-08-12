@@ -1,9 +1,14 @@
-use super::due::{due_wakeups_at, is_late, is_once, missed_occurrences};
+use super::due::{
+    due_wakeups_at, is_late, is_once, missed_occurrences, reconciliation_cutoff, ReconciliationMode,
+};
 use super::next_fire::next_fire_at;
+use super::runtime_decisions::{
+    handle_due_admission, persist_once_missed_decision, warn_if_log_failed,
+};
 use super::work_supervision::SchedulerWakeupWork;
 use super::{fire, log, state};
 use crate::services::config::read_config;
-use crate::services::work_registry::{ServiceWorkAdmissionError, ServiceWorkCancellation};
+use crate::services::work_registry::ServiceWorkCancellation;
 use chrono::{DateTime, Duration as ChronoDuration, Local};
 use tauri::AppHandle;
 use tokio::sync::watch;
@@ -17,6 +22,7 @@ pub(super) async fn run_loop(
     lifetime: ServiceWorkCancellation,
     wakeup_work: SchedulerWakeupWork,
 ) {
+    let mut reconciliation_mode = ReconciliationMode::Startup;
     loop {
         if lifetime.is_cancelled() {
             return;
@@ -35,9 +41,13 @@ pub(super) async fn run_loop(
 
         let now = Local::now();
         if config.heartbeat.global_paused {
-            checkpoint(now).await;
+            if checkpoint(now).await {
+                reconciliation_mode = ReconciliationMode::Running;
+            }
         } else {
-            reconcile_missed(&config.scheduled_wakeups, now).await;
+            if reconcile_missed(&config.scheduled_wakeups, now, reconciliation_mode).await {
+                reconciliation_mode = ReconciliationMode::Running;
+            }
         }
         let cap = now + ChronoDuration::minutes(MAX_SLEEP_MIN);
         let next = next_scheduled_at(
@@ -84,31 +94,37 @@ fn next_scheduled_at(
         .min()
 }
 
-async fn reconcile_missed(wakeups: &[crate::models::ScheduledWakeup], now: DateTime<Local>) {
+async fn reconcile_missed(
+    wakeups: &[crate::models::ScheduledWakeup],
+    now: DateTime<Local>,
+    mode: ReconciliationMode,
+) -> bool {
     let Some(last_checked) = state::read_last_checked().await else {
-        checkpoint(now).await;
-        return;
+        return checkpoint(now).await;
     };
+    let cutoff = reconciliation_cutoff(now, mode);
     let mut decisions_persisted = true;
-    for (wakeup, scheduled_for) in missed_occurrences(wakeups, last_checked, now) {
+    for (wakeup, scheduled_for) in missed_occurrences(wakeups, last_checked, cutoff) {
         let result = if is_once(&wakeup) {
-            match fire::missed_once_action(fire::claim_once(&wakeup.id)) {
-                fire::MissedOnceAction::LogMissed => {
-                    log::log_missed(&wakeup.id, scheduled_for).await
-                }
-                fire::MissedOnceAction::Silent => Ok(()),
-                fire::MissedOnceAction::LogClaimError(error) => {
-                    ::log::warn!("[scheduler] revendication ponctuelle impossible");
-                    log::log_err(&wakeup.id, scheduled_for, &error).await
-                }
-            }
+            persist_once_missed_decision(
+                || log::log_missed(&wakeup.id, scheduled_for),
+                || {
+                    fire::claim_once(&wakeup.id).map(|_| ()).map_err(|error| {
+                        ::log::warn!("[scheduler] revendication ponctuelle impossible");
+                        error
+                    })
+                },
+            )
+            .await
         } else {
             log::log_missed(&wakeup.id, scheduled_for).await
         };
         decisions_persisted &= warn_if_log_failed(result);
     }
     if decisions_persisted {
-        checkpoint(now).await;
+        checkpoint(cutoff).await
+    } else {
+        false
     }
 }
 
@@ -125,7 +141,7 @@ async fn handle_due(
     }
     let current = Local::now();
     if is_late(target, current) {
-        reconcile_missed(wakeups, current).await;
+        let _ = reconcile_missed(wakeups, current, ReconciliationMode::Running).await;
         return;
     }
 
@@ -149,7 +165,7 @@ async fn handle_due(
                 _ = &mut task => {}
             }
         });
-        let keep_running = handle_due_admission(
+        let outcome = handle_due_admission(
             result,
             wakeup_id,
             target,
@@ -158,31 +174,11 @@ async fn handle_due(
             },
         )
         .await;
-        if !keep_running {
-            return;
+        if !outcome.decision_persisted {
+            ::log::warn!("[scheduler] refus conservé pour réconciliation");
         }
-    }
-}
-
-pub(super) async fn handle_due_admission<Recorder, RecordFuture>(
-    result: Result<(), ServiceWorkAdmissionError>,
-    wakeup_id: String,
-    scheduled_for: DateTime<Local>,
-    record: Recorder,
-) -> bool
-where
-    Recorder: FnOnce(String, DateTime<Local>, ServiceWorkAdmissionError) -> RecordFuture,
-    RecordFuture: std::future::Future<Output = Result<(), String>>,
-{
-    let Err(error) = result else {
-        return true;
-    };
-    warn_if_log_failed(record(wakeup_id, scheduled_for, error).await);
-    match error {
-        ServiceWorkAdmissionError::AppClosing | ServiceWorkAdmissionError::Closing => false,
-        ServiceWorkAdmissionError::AppCapacity | ServiceWorkAdmissionError::Capacity => {
-            ::log::warn!("[scheduler] capacité des réveils atteinte");
-            true
+        if !outcome.keep_running {
+            return;
         }
     }
 }
@@ -194,14 +190,5 @@ async fn checkpoint(now: DateTime<Local>) -> bool {
             ::log::warn!("[scheduler] état de contrôle indisponible");
             false
         }
-    }
-}
-
-fn warn_if_log_failed(result: Result<(), String>) -> bool {
-    if result.is_ok() {
-        true
-    } else {
-        ::log::warn!("[scheduler] journal indisponible");
-        false
     }
 }
