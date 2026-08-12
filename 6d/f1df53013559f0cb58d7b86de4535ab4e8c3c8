@@ -1,0 +1,7 @@
+Reason: the milestone now guarantees that persisted wakeup failures are displayed through bounded translated categories, so the old component assertion for the raw backend error contradicted the product contract.
+
+RED: npm test failed with 1/1916 tests because wakeup-history.test.tsx expected the raw string "R?veil rat?" while the component correctly rendered heartbeat.history.errors.failed.
+
+GREEN: npx vitest run src/components/heartbeat/__tests__/wakeup-history.test.tsx passed 1/1. A fresh npm test passed 417/417 Vitest files (1916/1916 tests), plus 50 build-script, 6 CI-script, 29 CEF, 40 E2E-runner and 53 extension-host tests.
+
+Graph: graphify update . completed; no code-graph topology changes were required.
