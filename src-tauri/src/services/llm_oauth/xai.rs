@@ -21,14 +21,14 @@ pub async fn login(
     let (verifier, challenge) = crate::services::mcp_oauth::pkce::generate();
     let state = generate_state();
     let nonce = generate_state();
-    let receiver = match callback::start(state.clone(), cancel.clone()).await {
-        Ok(receiver) => receiver,
+    let server = match callback::CallbackServer::bind(state.clone()).await {
+        Ok(server) => server,
         Err(_) => return login_device(app, cancel).await,
     };
     let url = build_auth_url(&challenge, &state, &nonce)?;
     emit_progress(app, LlmOAuthProvider::Xai, "browser_open", None, None);
     let _ = open::that(&url);
-    let code = receiver.await.map_err(|_| OAuthFailure::Generic)??;
+    let code = server.wait(cancel).await?;
     let response = oauth_http::post_form(
         LlmOAuthProvider::Xai,
         TOKEN_URL,

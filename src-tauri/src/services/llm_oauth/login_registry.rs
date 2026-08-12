@@ -40,13 +40,6 @@ pub async fn cancel(provider: LlmOAuthProvider) {
     }
 }
 
-pub async fn cancel_all() {
-    let tokens = ACTIVE.lock().await.clone();
-    for token in tokens.into_iter().flatten() {
-        token.cancel();
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -42,6 +42,9 @@ pub mod model_downloads_store;
 mod model_downloads_store_tests;
 pub mod model_downloads_types;
 pub mod oauth_providers;
+pub mod oauth_work;
+#[cfg(test)]
+mod oauth_work_tests;
 pub mod ollama_env;
 pub mod ollama_kill;
 #[cfg(test)]

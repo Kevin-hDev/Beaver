@@ -66,6 +66,8 @@ pub(crate) fn run_inner(
     }
     let agent_work = runtime_state::agent_work(&exit_coordinator);
     let gateway = GatewayService::new(exit_coordinator.work_supervisor());
+    let oauth_work =
+        services::oauth_work::OAuthWorkServices::new(exit_coordinator.work_supervisor());
     std::hint::black_box(tauri::utils::platform::bundle_type());
     let builder = tauri::Builder::default()
         .plugin(services::app_log::plugin())
@@ -88,6 +90,7 @@ pub(crate) fn run_inner(
         .manage(OllamaClient::new())
         .manage(exit_coordinator)
         .manage(agent_work)
+        .manage(oauth_work)
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
