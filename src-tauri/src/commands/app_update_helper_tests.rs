@@ -1,6 +1,6 @@
 use std::fs;
 
-use super::copy_helper;
+use super::{copy_helper, copy_helper_while};
 
 #[test]
 fn copies_a_bounded_regular_helper_with_private_permissions() {
@@ -45,4 +45,22 @@ fn rejects_empty_outside_and_symlinked_helpers() {
         symlink(&outside_file, &link).unwrap();
         assert!(copy_helper(&link, resources.path(), destination.path()).is_err());
     }
+}
+
+#[test]
+fn cancellation_during_copy_removes_the_private_helper_copy() {
+    let resources = tempfile::tempdir().unwrap();
+    let destination = tempfile::tempdir().unwrap();
+    let source = resources.path().join("cl-go-dash-updater");
+    fs::write(&source, vec![7_u8; 128 * 1024]).unwrap();
+    let checks = std::cell::Cell::new(0_u8);
+
+    let result = copy_helper_while(&source, resources.path(), destination.path(), || {
+        let next = checks.get().saturating_add(1);
+        checks.set(next);
+        next >= 3
+    });
+
+    assert!(matches!(result, Err(error) if error == "update-install-error"));
+    assert_eq!(fs::read_dir(destination.path()).unwrap().count(), 0);
 }

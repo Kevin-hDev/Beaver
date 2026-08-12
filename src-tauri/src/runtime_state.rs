@@ -22,6 +22,7 @@ pub struct RuntimeServices {
     pub searxng: crate::services::searxng::SearxngSidecar,
     pub downloads: crate::services::model_downloads::ModelDownloadManager,
     pub forecast: crate::services::forecast::sidecar::ChronosSidecar,
+    pub app_update: crate::services::update_handoff::AppUpdateRuntime,
 }
 
 pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
@@ -32,7 +33,8 @@ pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
         oauth_work: crate::services::oauth_work::OAuthWorkServices::new(supervisor.clone()),
         searxng: crate::services::searxng::SearxngSidecar::new(supervisor.clone()),
         downloads: crate::services::model_downloads::ModelDownloadManager::new(supervisor.clone()),
-        forecast: crate::services::forecast::sidecar::ChronosSidecar::new(supervisor),
+        forecast: crate::services::forecast::sidecar::ChronosSidecar::new(supervisor.clone()),
+        app_update: crate::services::update_handoff::AppUpdateRuntime::new(supervisor),
     }
 }
 

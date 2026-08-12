@@ -2,39 +2,28 @@ use rand::RngCore;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
-use tauri::Manager;
 
 const MAX_HELPER_SIZE: u64 = 64 * 1024 * 1024;
 const MAX_COPY_ATTEMPTS: usize = 8;
 
-pub(crate) fn spawn_update_helper(app: &tauri::AppHandle, asset: &Path) -> Result<(), String> {
-    let resource_root = app.path().resource_dir().map_err(|_| install_error())?;
-    let source = resource_root
-        .join("target/updater-helper")
-        .join(helper_resource_name());
-    let helper = copy_helper(&source, &resource_root, &std::env::temp_dir())?;
-    let working_directory = current_install_directory()?;
-    let mut command = crate::services::background_command::new(helper.path());
-    command
-        .arg("--apply-update")
-        .arg(asset)
-        .arg("--parent-pid")
-        .arg(std::process::id().to_string())
-        .current_dir(working_directory)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
-    command.spawn().map_err(|_| install_error())?;
-    helper.persist();
-    Ok(())
-}
-
-fn copy_helper(
+#[cfg(test)]
+pub(crate) fn copy_helper(
     source: &Path,
     resource_root: &Path,
     temp_root: &Path,
 ) -> Result<TemporaryHelper, String> {
+    copy_helper_while(source, resource_root, temp_root, || false)
+}
+
+pub(crate) fn copy_helper_while(
+    source: &Path,
+    resource_root: &Path,
+    temp_root: &Path,
+    is_cancelled: impl Fn() -> bool,
+) -> Result<TemporaryHelper, String> {
+    if is_cancelled() {
+        return Err(install_error());
+    }
     let canonical_root = std::fs::canonicalize(resource_root).map_err(|_| install_error())?;
     let source_metadata = std::fs::symlink_metadata(source).map_err(|_| install_error())?;
     if !source_metadata.file_type().is_file() || source_metadata.file_type().is_symlink() {
@@ -49,17 +38,44 @@ fn copy_helper(
     }
     let mut input = File::open(&canonical_source).map_err(|_| install_error())?;
     let (temporary, mut output) = create_helper_file(temp_root)?;
-    let copied = std::io::copy(
-        &mut Read::by_ref(&mut input).take(MAX_HELPER_SIZE + 1),
-        &mut output,
-    )
-    .map_err(|_| install_error())?;
+    let mut copied = 0_u64;
+    let mut buffer = [0_u8; 64 * 1024];
+    loop {
+        if is_cancelled() {
+            return Err(install_error());
+        }
+        let read = Read::by_ref(&mut input)
+            .take((MAX_HELPER_SIZE + 1).saturating_sub(copied))
+            .read(&mut buffer)
+            .map_err(|_| install_error())?;
+        if read == 0 {
+            break;
+        }
+        output
+            .write_all(&buffer[..read])
+            .map_err(|_| install_error())?;
+        copied = copied
+            .checked_add(u64::try_from(read).map_err(|_| install_error())?)
+            .ok_or_else(install_error)?;
+    }
     if copied != source_metadata.len() || copied > MAX_HELPER_SIZE {
         return Err(install_error());
     }
+    if is_cancelled() {
+        return Err(install_error());
+    }
     output.flush().map_err(|_| install_error())?;
+    if is_cancelled() {
+        return Err(install_error());
+    }
     output.sync_all().map_err(|_| install_error())?;
+    if is_cancelled() {
+        return Err(install_error());
+    }
     set_executable_permissions(temporary.path())?;
+    if is_cancelled() {
+        return Err(install_error());
+    }
     Ok(temporary)
 }
 
@@ -86,7 +102,7 @@ fn create_helper_file(temp_root: &Path) -> Result<(TemporaryHelper, File), Strin
     Err(install_error())
 }
 
-fn current_install_directory() -> Result<PathBuf, String> {
+pub(crate) fn current_install_directory() -> Result<PathBuf, String> {
     let executable = std::env::current_exe().map_err(|_| install_error())?;
     if executable.file_name().and_then(|name| name.to_str()) != Some(main_executable_name()) {
         return Err(install_error());
@@ -107,7 +123,7 @@ fn set_executable_permissions(_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn helper_resource_name() -> &'static str {
+pub(crate) fn helper_resource_name() -> &'static str {
     if cfg!(target_os = "windows") {
         "cl-go-dash-updater.exe"
     } else {
@@ -131,18 +147,25 @@ fn exe_suffix() -> &'static str {
     }
 }
 
-struct TemporaryHelper {
+pub(crate) struct TemporaryHelper {
     path: PathBuf,
 }
 
 impl TemporaryHelper {
-    fn path(&self) -> &Path {
+    pub(crate) fn path(&self) -> &Path {
         &self.path
     }
 
-    fn persist(self) {
+    pub(crate) fn persist(self) {
         std::mem::forget(self);
     }
+}
+
+#[cfg(test)]
+pub(crate) fn test_temporary_helper() -> TemporaryHelper {
+    let (helper, file) = create_helper_file(&std::env::temp_dir()).expect("temporary helper");
+    drop(file);
+    helper
 }
 
 impl Drop for TemporaryHelper {

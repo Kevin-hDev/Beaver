@@ -56,6 +56,7 @@ pub mod ollama_ps;
 pub mod paths;
 pub mod personality_injection;
 pub mod private_store;
+pub mod process_identity;
 pub mod process_tree;
 pub mod provider_usage;
 pub mod reasoning;
@@ -73,6 +74,7 @@ pub mod terminal;
 #[cfg(test)]
 pub(crate) mod test_runtime;
 pub mod token_counting;
+pub mod update_handoff;
 pub mod update_health;
 pub mod vault;
 pub mod work_registry;

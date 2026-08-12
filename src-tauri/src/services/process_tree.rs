@@ -20,6 +20,7 @@ pub enum ProcessKind {
     Mcp,
     Ollama,
     Searxng,
+    UpdateHelper,
 }
 
 #[cfg(all(test, windows))]
@@ -36,6 +37,7 @@ impl ProcessKind {
             Self::Mcp => "mcp",
             Self::Ollama => "ollama",
             Self::Searxng => "searxng",
+            Self::UpdateHelper => "update-helper",
         }
     }
 }
