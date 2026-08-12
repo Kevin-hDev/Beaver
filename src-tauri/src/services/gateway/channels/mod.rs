@@ -1,3 +1,6 @@
+mod backpressure;
+#[cfg(test)]
+mod backpressure_tests;
 mod bounded_vec;
 pub mod capabilities;
 pub mod discord;

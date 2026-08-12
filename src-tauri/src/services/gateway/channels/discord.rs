@@ -7,6 +7,7 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::{Zeroize, Zeroizing};
 
+use super::backpressure::try_enqueue;
 use super::discord_gateway::{build_identify, HeartbeatSequence};
 use super::discord_types::*;
 use super::websocket_limits::bounded_websocket_config;
@@ -207,7 +208,7 @@ async fn handle_gateway_message(
                         context.require_mention,
                         &bot_id,
                     ) {
-                        let _ = context.sender.send(inbound).await;
+                        try_enqueue(context.sender, inbound, context.key);
                     }
                 }
             }

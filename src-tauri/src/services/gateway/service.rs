@@ -1,5 +1,5 @@
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::sync::{Arc, Mutex as StdMutex};
+use std::time::Duration;
 
 use tauri::Emitter;
 use tokio::sync::{mpsc, Mutex, RwLock};
@@ -11,25 +11,31 @@ use super::security::rate_state::GatewayRateLimiters;
 use super::service_channels::start_channel_accounts;
 use super::service_consumer::consume_messages;
 use super::service_state::{build_health, shared_state, GatewayState};
-use super::types::{ChannelStatus, GatewayHealth};
+use super::types::GatewayHealth;
 use super::work_supervision::{GatewayWorkServices, GATEWAY_MESSAGE_QUEUE_CAPACITY};
 use crate::app_exit::AppWorkSupervisor;
 use crate::models::GatewayConfig;
 
-const GATEWAY_CONTROL_STOP_TIMEOUT: Duration = Duration::from_secs(5);
+pub(super) const GATEWAY_CONTROL_STOP_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct GatewayService {
     pub(crate) state: Arc<RwLock<GatewayState>>,
-    app_work: AppWorkSupervisor,
-    run: Mutex<Option<GatewayWorkServices>>,
+    pub(super) app_work: AppWorkSupervisor,
+    pub(super) run: Mutex<Option<GatewayWorkServices>>,
+    pub(super) active_cancel: StdMutex<tokio_util::sync::CancellationToken>,
+    pub(super) app: StdMutex<Option<tauri::AppHandle>>,
 }
 
 impl GatewayService {
     pub fn new(app_work: AppWorkSupervisor) -> Self {
+        let inactive = tokio_util::sync::CancellationToken::new();
+        inactive.cancel();
         Self {
             state: shared_state(),
             app_work,
             run: Mutex::new(None),
+            active_cancel: StdMutex::new(inactive),
+            app: StdMutex::new(None),
         }
     }
 
@@ -42,7 +48,7 @@ impl GatewayService {
         if !self
             .stop_locked(
                 &mut current_run,
-                Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT,
+                std::time::Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT,
             )
             .await
         {
@@ -51,6 +57,11 @@ impl GatewayService {
 
         audit::configure(&config.audit);
         let work = GatewayWorkServices::new(self.app_work.clone());
+        *self
+            .active_cancel
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = work.cancellation_token();
+        *self.app.lock().unwrap_or_else(|error| error.into_inner()) = Some(app.clone());
         let (sender, receiver) = mpsc::channel::<InboundMessage>(GATEWAY_MESSAGE_QUEUE_CAPACITY);
         let bridge;
         let channels_started;
@@ -72,7 +83,7 @@ impl GatewayService {
 
         if let Err(error) = channels_started {
             let _ = work
-                .stop_and_wait(Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT)
+                .stop_and_wait(std::time::Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT)
                 .await;
             return Err(error);
         }
@@ -95,51 +106,13 @@ impl GatewayService {
             .await;
         }) {
             let _ = work
-                .stop_and_wait(Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT)
+                .stop_and_wait(std::time::Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT)
                 .await;
             return Err(error.public_code().to_string());
         }
 
         *current_run = Some(work);
         Ok(())
-    }
-
-    pub async fn stop(&self) -> bool {
-        self.stop_and_wait(Instant::now() + GATEWAY_CONTROL_STOP_TIMEOUT)
-            .await
-    }
-
-    pub async fn stop_and_wait(&self, deadline: Instant) -> bool {
-        let Ok(mut current_run) =
-            tokio::time::timeout_at(tokio::time::Instant::from_std(deadline), self.run.lock())
-                .await
-        else {
-            return false;
-        };
-        self.stop_locked(&mut current_run, deadline).await
-    }
-
-    async fn stop_locked(
-        &self,
-        current_run: &mut Option<GatewayWorkServices>,
-        deadline: Instant,
-    ) -> bool {
-        {
-            let mut state = self.state.write().await;
-            state.cancel.cancel();
-            for (key, entry) in state.channels.iter_mut() {
-                entry.cancel.cancel();
-                entry.status = ChannelStatus::Stopping;
-                if super::service_audit::channel_stopped(key, None, None).is_err() {
-                    entry.error = Some("auditUnavailable".to_string());
-                }
-            }
-            state.adapters.clear();
-        }
-        match current_run.take() {
-            Some(work) => work.stop_and_wait(deadline).await,
-            None => true,
-        }
     }
 
     pub async fn health(&self) -> GatewayHealth {
@@ -159,6 +132,14 @@ impl GatewayService {
     pub async fn update_config(&self, config: GatewayConfig) {
         audit::configure(&config.audit);
         self.state.write().await.config = config;
+    }
+
+    #[cfg(test)]
+    pub(super) fn set_active_cancel_for_test(&self, cancel: tokio_util::sync::CancellationToken) {
+        *self
+            .active_cancel
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = cancel;
     }
 }
 
