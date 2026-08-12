@@ -27,11 +27,8 @@ pub async fn run(
         .and_then(|path| dunce::canonicalize(path).ok())
         .filter(|path| path.is_file())
         .ok_or_else(|| "Commande d'exploration indisponible.".to_string())?;
-    let prepared = super::shell_sandbox::prepare_command(
-        executable.as_os_str(),
-        arguments,
-        working_dir,
-    )?;
+    let prepared =
+        super::shell_sandbox::prepare_command(executable.as_os_str(), arguments, working_dir)?;
     let cleanup_dir = prepared.cleanup_dir;
     let mut command = prepared.command;
     command
@@ -152,7 +149,13 @@ fn current_directory(working_dir: &Path) -> Result<ShellOutput, String> {
 type Captured = std::io::Result<(Vec<u8>, bool)>;
 
 enum ProcessOutcome {
-    Finished((Captured, Captured, std::io::Result<std::process::ExitStatus>)),
+    Finished(
+        (
+            Captured,
+            Captured,
+            std::io::Result<std::process::ExitStatus>,
+        ),
+    ),
     Cancelled,
     TimedOut,
 }

@@ -7,17 +7,21 @@ use tauri::Manager;
 pub async fn handle(args: &Value) -> ToolResult {
     let analysis_id = match args["analysis_id"].as_str() {
         Some(id) => id,
-        None => return ToolResult::validation(
-            "forecast_analysis_id_required",
-            "Paramètre analysis_id requis",
-        ),
+        None => {
+            return ToolResult::validation(
+                "forecast_analysis_id_required",
+                "Paramètre analysis_id requis",
+            )
+        }
     };
     let action = match args["action"].as_str() {
         Some(a) => a,
-        None => return ToolResult::validation(
-            "forecast_analysis_action_required",
-            "Paramètre action requis",
-        ),
+        None => {
+            return ToolResult::validation(
+                "forecast_analysis_action_required",
+                "Paramètre action requis",
+            )
+        }
     };
 
     let analysis = match super::tool_dispatcher_forecast_load::load(analysis_id).await {
@@ -141,7 +145,9 @@ async fn scenario_delete(analysis_id: &str, params: &Value) -> ToolResult {
 async fn ensemble_create(analysis_id: &str, params: &Value) -> ToolResult {
     let model_ids = match params.get("model_ids") {
         None | Some(Value::Null) => Vec::new(),
-        Some(Value::Array(values)) if values.len() <= crate::services::forecast::limits::MAX_ENSEMBLE_MODELS => {
+        Some(Value::Array(values))
+            if values.len() <= crate::services::forecast::limits::MAX_ENSEMBLE_MODELS =>
+        {
             let Some(ids) = values.iter().map(Value::as_str).collect::<Option<Vec<_>>>() else {
                 return ToolResult::validation(
                     "forecast_ensemble_models_invalid",
@@ -158,10 +164,12 @@ async fn ensemble_create(analysis_id: &str, params: &Value) -> ToolResult {
             }
             ids.into_iter().map(str::to_string).collect()
         }
-        _ => return ToolResult::validation(
-            "forecast_ensemble_models_invalid",
-            "Liste de modèles d'ensemble invalide",
-        ),
+        _ => {
+            return ToolResult::validation(
+                "forecast_ensemble_models_invalid",
+                "Liste de modèles d'ensemble invalide",
+            )
+        }
     };
     let Some(chronos) = forecast_chronos() else {
         return forecast_service_unavailable();
@@ -200,12 +208,8 @@ fn save_scenario_result(
                 .with_error_hint("Relire l'analyse : la modification a déjà été enregistrée."),
             }
         }
-        Err(error) => ToolResult::external(
-            "forecast_scenario_mutation_failed",
-            error,
-            false,
-        )
-        .with_error_hint("Relire l'analyse avant de répéter cette modification de scénario."),
+        Err(error) => ToolResult::external("forecast_scenario_mutation_failed", error, false)
+            .with_error_hint("Relire l'analyse avant de répéter cette modification de scénario."),
     }
 }
 

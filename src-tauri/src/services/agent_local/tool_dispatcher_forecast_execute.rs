@@ -1,7 +1,5 @@
 use crate::services::forecast::types::{ForecastRequest, ForecastResult};
-use crate::services::forecast::{
-    client_chronos, client_nixtla, model_manager, registry, sidecar,
-};
+use crate::services::forecast::{client_chronos, client_nixtla, model_manager, registry, sidecar};
 use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 
@@ -72,8 +70,7 @@ async fn run_local_inner(
     if !model_manager::is_installed(&model_id) {
         return Err("Modèle non installé".into());
     }
-    let spec = crate::services::forecast::catalog::find_model(&model_id)
-        .ok_or("Modèle inconnu")?;
+    let spec = crate::services::forecast::catalog::find_model(&model_id).ok_or("Modèle inconnu")?;
     crate::services::forecast::hardware_profile::validate_model_resources(spec)?;
     let _prediction_guard = tokio::select! {
         _ = cancel.cancelled() => return Err("Annulé".to_string()),
