@@ -1,0 +1,5 @@
+Raison : l'hôte Node pouvait être créé avant le refus du lecteur, la désinstallation ignorait son annulation et aucune preuve ne traversait la fermeture processus + lecteur + admission.
+
+Décision : réserver l'unique lecteur avant OwnedProcess::spawn_tokio ; vérifier l'annulation avant l'arrêt puis avant toute mutation de désinstallation ; extraire cette opération dans installer_uninstall.rs ; faire passer stop_and_wait par une frontière testable sur un runtime réel. La couture UninstallBoundary citée par la review appartient en réalité à Forecast et reste pour son lot dédié.
+
+TDD : reader_admission_precedes_host_process_creation et cancelled_uninstall_is_refused_before_registry_mutation ont échoué avant leurs autorités ; ils sont verts. Vérification finale : services::extensions 100/100, dont stop_runtime_reaps_real_host_reader_and_closes_admission sur un vrai Node ; git diff --check vert ; fichiers métier touchés sous 230 lignes (maximum 195).
