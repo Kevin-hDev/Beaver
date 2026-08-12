@@ -2,7 +2,7 @@ use super::install_plan::{
     install_plan, plan_for_state, should_remove_prepared_runtime, InstallPlan,
 };
 use super::is_installed_in;
-use super::uninstall::uninstall_from_roots;
+use super::uninstall::{uninstall_from_roots, uninstall_with_failure_after, UninstallBoundary};
 use super::{resolve_readiness, ModelReadiness};
 use std::fs;
 
@@ -137,7 +137,7 @@ async fn shared_runtime_is_removed_only_after_the_last_model() {
 }
 
 #[tokio::test]
-async fn runtime_cleanup_failure_preserves_the_last_model() {
+async fn runtime_cleanup_failure_leaves_only_an_unused_runtime() {
     let temp = tempfile::tempdir().unwrap();
     let models = temp.path().join("models");
     let sidecar = temp.path().join("sidecar");
@@ -149,5 +149,33 @@ async fn runtime_cleanup_failure_preserves_the_last_model() {
     assert!(uninstall_from_roots("chronos-bolt-tiny", &models, &sidecar)
         .await
         .is_err());
-    assert!(is_installed_in(&models, "chronos-bolt-tiny"));
+    assert!(!is_installed_in(&models, "chronos-bolt-tiny"));
+    assert!(runtime.exists());
+}
+
+#[tokio::test]
+async fn every_uninstall_boundary_preserves_the_model_runtime_invariant() {
+    for boundary in [
+        UninstallBoundary::StagingRemoved,
+        UninstallBoundary::ModelRemoved,
+        UninstallBoundary::RuntimeRemoved,
+    ] {
+        let temp = tempfile::tempdir().unwrap();
+        let models = temp.path().join("models");
+        let sidecar = temp.path().join("sidecar");
+        let runtime = sidecar.join(".venvs").join("chronos");
+        mark_installed(&models, "chronos-bolt-tiny");
+        fs::create_dir_all(&runtime).unwrap();
+
+        assert!(
+            uninstall_with_failure_after("chronos-bolt-tiny", &models, &sidecar, boundary,)
+                .await
+                .is_err()
+        );
+        let model_exists = is_installed_in(&models, "chronos-bolt-tiny");
+        assert!(
+            !model_exists || runtime.exists(),
+            "model survived without its runtime after {boundary:?}"
+        );
+    }
 }

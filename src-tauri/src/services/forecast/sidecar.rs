@@ -9,7 +9,10 @@ use crate::services::paths::data_dir;
 use crate::services::work_registry::ServiceWorkCancellation;
 use std::future::Future;
 use std::process::Child;
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::{
+    atomic::{AtomicBool, AtomicU64, Ordering},
+    Arc,
+};
 use tokio::sync::{Mutex, Notify};
 use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
@@ -24,6 +27,7 @@ pub(super) struct SidecarHandle {
     pub(super) auth_token: Zeroizing<String>,
     pub(super) launch: LaunchSettings,
     pub(super) generation: u64,
+    pub(super) publication_generation: u64,
     pub(super) _admission: SidecarAdmission,
 }
 
@@ -34,6 +38,8 @@ pub struct ChronosSidecar {
     pub(super) work: ForecastWorkServices,
     pub(super) idle_changed: Arc<Notify>,
     pub(super) idle_started: Arc<AtomicBool>,
+    // Cette génération reste stable pendant une sonde, contrairement au compteur d'inactivité.
+    pub(super) next_publication_generation: Arc<AtomicU64>,
 }
 
 pub struct SidecarEndpoint {
@@ -50,6 +56,7 @@ impl ChronosSidecar {
             work: ForecastWorkServices::new(app_work),
             idle_changed: Arc::new(Notify::new()),
             idle_started: Arc::new(AtomicBool::new(false)),
+            next_publication_generation: Arc::new(AtomicU64::new(1)),
         }
     }
 
@@ -115,25 +122,21 @@ impl ChronosSidecar {
     }
 }
 
-pub fn get_port() -> u16 {
-    sidecar_http::get_port()
-}
-
-pub fn base_url() -> String {
-    sidecar_http::base_url()
-}
-
 pub async fn start(
     sidecar: &ChronosSidecar,
     model_name: &str,
     family_id: &str,
 ) -> Result<SidecarEndpoint, String> {
     let launch = sidecar_settings::current();
-    if let Some(endpoint) = reuse_running(sidecar, model_name, family_id, &launch).await {
+    if let Some(endpoint) =
+        super::sidecar_reuse::reuse_running(sidecar, model_name, family_id, &launch).await
+    {
         return Ok(endpoint);
     }
 
-    stop(sidecar).await;
+    if !stop(sidecar).await {
+        return Err("Sidecar Forecast indisponible".to_string());
+    }
     sidecar_process::kill_orphan_sidecar();
     let port = sidecar_http::find_free_port();
     let script = sidecar_spawn::sidecar_dir().join("server.py");
@@ -168,6 +171,9 @@ pub async fn start(
         auth_token: auth_token.clone(),
         launch,
         generation: 1,
+        publication_generation: sidecar
+            .next_publication_generation
+            .fetch_add(1, Ordering::Relaxed),
         _admission: admission,
     });
     sidecar.idle_changed.notify_waiters();
@@ -175,31 +181,8 @@ pub async fn start(
     match sidecar_spawn::wait_until_ready(port, model_name, family_id, pid, auth_token).await {
         Ok(endpoint) => Ok(endpoint),
         Err(error) => {
-            stop(sidecar).await;
+            let _ = stop(sidecar).await;
             Err(error)
         }
     }
-}
-
-async fn reuse_running(
-    sidecar: &ChronosSidecar,
-    model_name: &str,
-    family_id: &str,
-    launch: &LaunchSettings,
-) -> Option<SidecarEndpoint> {
-    let mut guard = sidecar.process.lock().await;
-    let handle = guard.as_mut()?;
-    if handle.model_id != model_name || handle.family_id != family_id || &handle.launch != launch {
-        return None;
-    }
-    let (_, model, family) = sidecar_http::health_info(get_port(), handle.auth_token.as_str())?;
-    if model != model_name || family != family_id {
-        return None;
-    }
-    handle.generation = handle.generation.saturating_add(1);
-    Some(SidecarEndpoint {
-        base_url: base_url(),
-        auth_token: handle.auth_token.clone(),
-        pid: handle.child.id(),
-    })
 }

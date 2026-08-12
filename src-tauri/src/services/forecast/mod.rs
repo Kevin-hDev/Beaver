@@ -68,6 +68,7 @@ mod sidecar_http;
 mod sidecar_idle;
 pub mod sidecar_process;
 mod sidecar_process_env;
+mod sidecar_reuse;
 pub mod sidecar_runtime;
 mod sidecar_settings;
 mod sidecar_spawn;

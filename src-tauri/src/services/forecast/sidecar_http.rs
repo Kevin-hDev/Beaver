@@ -25,10 +25,6 @@ pub fn clear_port() {
     ACTIVE_PORT.store(0, Ordering::Relaxed);
 }
 
-pub fn base_url() -> String {
-    format!("http://127.0.0.1:{}", get_port())
-}
-
 pub fn find_free_port() -> u16 {
     for port in PORT_RANGE_START..=PORT_RANGE_END {
         if TcpListener::bind(("127.0.0.1", port)).is_ok() {

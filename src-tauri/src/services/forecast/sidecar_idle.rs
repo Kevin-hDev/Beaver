@@ -79,6 +79,6 @@ async fn stop_if_generation(sidecar: &ChronosSidecar, generation: u64) {
         .as_ref()
         .is_some_and(|handle| handle.generation == generation);
     if should_stop {
-        super::sidecar_stop::stop_state(sidecar).await;
+        let _ = super::sidecar_stop::stop(sidecar).await;
     }
 }

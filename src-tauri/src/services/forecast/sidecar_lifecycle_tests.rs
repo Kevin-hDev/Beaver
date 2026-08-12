@@ -66,3 +66,38 @@ async fn shutdown_waits_for_an_active_forecast_operation() {
     assert!(finished.load(Ordering::Acquire));
     assert!(operation.await.unwrap().is_ok());
 }
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn shutdown_does_not_wait_for_a_slow_health_probe_lock() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let sidecar = ChronosSidecar::new(coordinator.work_supervisor());
+    sidecar
+        .start_test_process_for_test()
+        .await
+        .expect("real Forecast fixture");
+    let (started_tx, started_rx) = std::sync::mpsc::sync_channel(1);
+    let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
+    let probing = sidecar.clone();
+    let probe = tokio::spawn(async move {
+        probing
+            .probe_running_for_test(move |port, _token| {
+                started_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+                Some((port, "fixture".to_string(), "fixture".to_string()))
+            })
+            .await
+    });
+    started_rx.recv_timeout(Duration::from_secs(1)).unwrap();
+
+    let stopped_quickly = tokio::time::timeout(
+        Duration::from_millis(100),
+        super::sidecar_stop::stop_state(&sidecar, Instant::now() + Duration::from_millis(100)),
+    )
+    .await
+    .is_ok();
+    release_tx.send(()).unwrap();
+    let _ = probe.await;
+    super::sidecar_stop::stop_state(&sidecar, Instant::now() + Duration::from_secs(1)).await;
+
+    assert!(stopped_quickly, "health probe kept the process lock");
+}
