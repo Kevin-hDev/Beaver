@@ -5,3 +5,5 @@ Red proof: the new every-failure runner contract failed against the CEF-only gua
 Green proof: 23 focused Node tests pass, npm run lint exits 0, diff --check exits 0, and graphify update reports no topology change.
 Neighbors: feeds the next CI diagnosis without changing production startup, shutdown, WebView, or CEF behavior.
 Replacement: replaces the CEF-only failure reporting guard and CEF-specific diagnostic API names with the shared native-journey authority.
+
+Additional green proof: npm test exits 0; Vitest reports 414/414 files and 1890/1890 tests, followed by green build-script, CI-script, CEF, E2E-runner, and extension-host suites.
