@@ -1,0 +1,7 @@
+Reference: CI run 31568574073, Linux jobs 94025543460 and 94025543562.
+Behavior: the E2E-only lifecycle stream now emits fixed, data-free milestones after each synchronous setup boundary; the existing bounded parser allowlists those names and still caps output at 16 categories.
+Reason: both Linux journeys proved main-entered, event-loop-entered, and setup-entered but not setup-completed, which confines the failure to the setup body without identifying the blocking owner.
+Red proof: the normalized-log contract rejected shell-cleanup-completed before the allowlist was extended.
+Green proof: 24 focused Node tests pass; npm run lint, cargo fmt --check, cargo check --features e2e, and diff --check exit 0; lib.rs is 227 lines; graphify update completes with 31064 nodes and 62557 edges.
+Neighbors: extends d56c2a1 and preserves the single diagnostic reader introduced by 2fbce7e; no production decision or shutdown behavior changes.
+Replacement: replaces the coarse setup-entered/setup-completed-only visibility with bounded boundary milestones; no raw log fallback is added.
