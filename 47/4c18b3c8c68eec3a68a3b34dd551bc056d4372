@@ -1,0 +1,26 @@
+Lot 3 — scheduler durable et localisable
+
+Preuves rouges observées avant correction :
+- npx vitest run src/lib/wakeup-run-error.test.ts : FAIL, module ./wakeup-run-error absent.
+- cargo test --lib --features windows-tests services::scheduler::log::tests -- --nocapture : FAIL, WakeupRunErrorCode/error_code et l'autorité de stockage n'existaient pas.
+- cargo test --lib --features windows-tests services::scheduler::log::tests::failed_rotation_keeps_the_previous_journal_unchanged -- --nocapture : FAIL, append_at_with_atomic_writer absent.
+- cargo test --lib --features windows-tests services::scheduler::log::tests::missed_occurrence_has_a_typed_missed_outcome -- --nocapture : FAIL, missed_entry absent.
+- cargo test --lib --features windows-tests services::scheduler::runtime_tests -- --nocapture : FAIL, handle_due_admission absent.
+
+Décisions :
+- Une occurrence est identifiée par (wakeup_id, scheduled_for) et ne reçoit qu'une décision durable ; cette déduplication empêche un checkpoint défaillant de dupliquer un réveil manqué.
+- Lectures, ajouts et rotations partagent un verrou unique ; la rotation atomique remplace le fichier seulement après écriture complète.
+- Les anciens textes error restent lisibles pour compatibilité mais ne sont jamais sérialisés vers l'interface ; seul un enum fermé et traduit est exposé.
+- Le curseur temporel avance seulement après la persistance de toutes les décisions, afin qu'une panne du journal ne perde aucune occurrence.
+
+Preuves vertes :
+- cargo test --lib --features windows-tests services::scheduler -- --nocapture : 36 passed, 0 failed.
+- cargo fmt --check : succès.
+- npx vitest run src/lib/wakeup-run-error.test.ts src/hooks/__tests__/use-wakeups.test.ts : 10 passed, 0 failed.
+- npx tsc --noEmit : succès.
+- npm run lint : succès.
+- npm run test:brand-boundaries : 12 passed, 0 failed, 0 référence inconnue.
+- graphify update . : succès, 31 259 nœuds / 62 935 arêtes.
+- Tous les fichiers source modifiés restent sous 230 lignes (maximum : runtime.rs, 207).
+
+Note : le cargo test Windows ciblé émet 19 avertissements dead_code préexistants du navigateur CEF sous cette combinaison de features ; aucun avertissement scheduler nouveau.
