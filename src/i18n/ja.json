@@ -670,7 +670,7 @@
     "status": {
       "ok": "成功",
       "error": "失敗",
-      "missed": "未実行",
+      "missed": "実行漏れ",
       "cancelled": "キャンセル済み",
       "never": "未実行",
       "none": "なし"

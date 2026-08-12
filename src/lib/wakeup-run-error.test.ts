@@ -12,6 +12,16 @@ import { WAKEUP_RUN_ERROR_CODES, wakeupRunErrorMessage } from "./wakeup-run-erro
 const t = ((key: string) => key) as TFunction;
 
 describe("wakeup-run-error", () => {
+  const requiredKeys = [
+    "failed",
+    "rateLimited",
+    "authenticationFailed",
+    "ollamaUnavailable",
+    "missedUnavailable",
+    "schedulerStopping",
+    "capacityReached",
+  ];
+
   it("traduit un code stable et masque un ancien texte", () => {
     expect(wakeupRunErrorMessage({ error_code: "capacity_reached" }, t))
       .toBe("heartbeat.history.errors.capacityReached");
@@ -24,7 +34,12 @@ describe("wakeup-run-error", () => {
     ["it", itCatalog], ["zh", zh], ["ja", ja],
   ])("traduit les erreurs de réveil en %s", (_language, catalog) => {
     const errors = catalog.heartbeat.history.errors;
+    expect(Object.keys(errors)).toEqual(requiredKeys);
     expect(Object.values(errors)).toHaveLength(WAKEUP_RUN_ERROR_CODES.length);
     expect(Object.values(errors).every((value) => value.trim().length > 0)).toBe(true);
+  });
+
+  it("distingue en japonais une occurrence ratée d'un réveil jamais exécuté", () => {
+    expect(ja.heartbeat.status.missed).not.toBe(ja.heartbeat.status.never);
   });
 });
