@@ -12,10 +12,12 @@ pub(crate) const MAX_GATEWAY_ACCOUNTS_PER_CHANNEL: usize = 16;
 pub(crate) const MAX_ACTIVE_GATEWAY_CHANNELS: usize = MAX_GATEWAY_ACCOUNTS_PER_CHANNEL * 3;
 pub(crate) const MAX_ACTIVE_GATEWAY_MESSAGES: usize = 64;
 const GATEWAY_CONSUMERS: usize = 1;
+const GATEWAY_AUDIT_WORKERS: usize = 1;
 
 type GatewayConsumerWork = ServiceWorkSupervisor<GATEWAY_CONSUMERS>;
 type GatewayChannelWork = ServiceWorkSupervisor<MAX_ACTIVE_GATEWAY_CHANNELS>;
 type GatewayMessageWork = ServiceWorkSupervisor<MAX_ACTIVE_GATEWAY_MESSAGES>;
+type GatewayAuditWork = ServiceWorkSupervisor<GATEWAY_AUDIT_WORKERS>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum GatewayMessageAdmissionError {
@@ -45,6 +47,7 @@ pub(crate) struct GatewayWorkServices {
     consumer: GatewayConsumerWork,
     channels: GatewayChannelWork,
     messages: GatewayMessageWork,
+    audit: GatewayAuditWork,
 }
 
 impl GatewayWorkServices {
@@ -53,7 +56,8 @@ impl GatewayWorkServices {
             cancel: CancellationToken::new(),
             consumer: GatewayConsumerWork::new(app.clone()),
             channels: GatewayChannelWork::new(app.clone()),
-            messages: GatewayMessageWork::new(app),
+            messages: GatewayMessageWork::new(app.clone()),
+            audit: GatewayAuditWork::new(app),
         }
     }
 
@@ -103,6 +107,17 @@ impl GatewayWorkServices {
             .map_err(map_message_error)
     }
 
+    pub(crate) fn spawn_audit<Factory, Task>(
+        &self,
+        work: Factory,
+    ) -> Result<(), ServiceWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: Future + Send + 'static,
+    {
+        self.audit.spawn(work)
+    }
+
     pub(crate) fn message_diagnostics(&self) -> ServiceWorkDiagnostics {
         self.messages.diagnostics()
     }
@@ -124,12 +139,13 @@ impl GatewayWorkServices {
 
     pub(crate) async fn stop_and_wait(&self, deadline: Instant) -> bool {
         self.begin_closing();
-        let (consumer, channels, messages) = tokio::join!(
+        let (consumer, channels, messages, audit) = tokio::join!(
             self.consumer.stop_and_wait(deadline),
             self.channels.stop_and_wait(deadline),
             self.messages.stop_and_wait(deadline),
+            self.audit.stop_and_wait(deadline),
         );
-        consumer && channels && messages
+        consumer && channels && messages && audit
     }
 
     pub(crate) fn begin_closing(&self) {
@@ -139,6 +155,7 @@ impl GatewayWorkServices {
         self.consumer.begin_closing();
         self.channels.begin_closing();
         self.messages.begin_closing();
+        self.audit.begin_closing();
     }
 }
 

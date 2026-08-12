@@ -6,6 +6,7 @@ use tokio::sync::{mpsc, Mutex, RwLock};
 
 use super::agent_bridge::GatewayAgentBridge;
 use super::channels::InboundMessage;
+use super::refusal_audit::RefusalAudit;
 use super::security::audit;
 use super::security::rate_state::GatewayRateLimiters;
 use super::service_channels::start_channel_accounts;
@@ -57,6 +58,9 @@ impl GatewayService {
 
         audit::configure(&config.audit);
         let work = GatewayWorkServices::new(self.app_work.clone());
+        let (refusal_audit, audit_receiver) = RefusalAudit::channel();
+        work.spawn_audit(move |cancel| super::refusal_audit::run(audit_receiver, cancel))
+            .map_err(|error| error.public_code().to_string())?;
         *self
             .active_cancel
             .lock()
@@ -72,8 +76,15 @@ impl GatewayService {
             state.adapters.clear();
             state.config = config.clone();
             state.limits = Arc::new(Mutex::new(GatewayRateLimiters::new(&config.rate_limits)));
-            channels_started =
-                start_channel_accounts(&mut state, &self.state, &config, &sender, &app, &work);
+            channels_started = start_channel_accounts(
+                &mut state,
+                &self.state,
+                &config,
+                &sender,
+                &app,
+                &work,
+                &refusal_audit,
+            );
             bridge = Arc::new(GatewayAgentBridge::new(
                 state.limits.clone(),
                 config.max_sessions as usize,
@@ -93,6 +104,7 @@ impl GatewayService {
         let run_cancel = work.cancellation_token();
         let state = Arc::clone(&self.state);
         let consumer_app = app.clone();
+        let consumer_audit = refusal_audit.clone();
         if let Err(error) = work.spawn_consumer(move |consumer_cancel| async move {
             consume_messages(
                 receiver,
@@ -102,6 +114,7 @@ impl GatewayService {
                 message_work,
                 run_cancel,
                 consumer_cancel,
+                consumer_audit,
             )
             .await;
         }) {

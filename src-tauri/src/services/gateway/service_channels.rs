@@ -4,6 +4,7 @@ use tokio::sync::{mpsc, RwLock};
 
 use super::channels::telegram::TelegramAdapter;
 use super::channels::{ChannelAdapter, ChannelContext, InboundMessage};
+use super::refusal_audit::RefusalAudit;
 use super::service_runtime::{emit_channel_status, run_supervised_channel, validate_account};
 use super::service_state::{ChannelEntry, GatewayState};
 use super::types::{ChannelKey, ChannelStatus};
@@ -17,12 +18,14 @@ pub(super) fn start_channel_accounts(
     sender: &mpsc::Sender<InboundMessage>,
     app: &tauri::AppHandle,
     work: &GatewayWorkServices,
+    refusal_audit: &RefusalAudit,
 ) -> Result<(), String> {
     let context = StartContext {
         shared_state,
         sender,
         app,
         work,
+        refusal_audit,
     };
     start_provider(state, "telegram", &config.channels.telegram, &context)?;
     start_provider(state, "slack", &config.channels.slack, &context)?;
@@ -34,6 +37,7 @@ struct StartContext<'a> {
     sender: &'a mpsc::Sender<InboundMessage>,
     app: &'a tauri::AppHandle,
     work: &'a GatewayWorkServices,
+    refusal_audit: &'a RefusalAudit,
 }
 
 fn start_provider(
@@ -63,6 +67,7 @@ fn start_provider(
             key: key.clone(),
             config: account.clone(),
             cancel: channel_cancel,
+            refusal_audit: start.refusal_audit.clone(),
         };
         let task_sender = start.sender.clone();
         let task_state = Arc::clone(start.shared_state);
