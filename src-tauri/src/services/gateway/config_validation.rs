@@ -2,7 +2,8 @@ use std::collections::HashSet;
 
 use crate::models::{ChannelAccountConfig, GatewayConfig};
 
-const MAX_ACCOUNTS_PER_CHANNEL: usize = 16;
+use super::work_supervision::MAX_GATEWAY_ACCOUNTS_PER_CHANNEL;
+
 const MAX_ALLOWLIST: usize = 100;
 const MAX_SESSIONS: u32 = 1_000;
 const MAX_MESSAGE_CHARS: u32 = 12_000;
@@ -34,7 +35,7 @@ fn bounded_nonzero(value: u32, maximum: u32) -> Result<(), String> {
 }
 
 fn validate_accounts(accounts: &[ChannelAccountConfig]) -> Result<(), String> {
-    if accounts.len() > MAX_ACCOUNTS_PER_CHANNEL {
+    if accounts.len() > MAX_GATEWAY_ACCOUNTS_PER_CHANNEL {
         return Err("configuration Gateway invalide".to_string());
     }
     let mut account_ids = HashSet::with_capacity(accounts.len());

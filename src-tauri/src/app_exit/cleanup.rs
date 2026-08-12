@@ -69,7 +69,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
     };
     let gateway = async {
         if let Some(service) = app.try_state::<GatewayService>() {
-            service.stop().await;
+            let _ = service.stop_and_wait(deadline).await;
         }
     };
     let chronos = async {

@@ -61,7 +61,7 @@ impl ChannelAdapter for TelegramAdapter {
         &self,
         ctx: ChannelContext,
         sender: mpsc::Sender<InboundMessage>,
-    ) -> GatewayResult<tokio::task::JoinHandle<()>> {
+    ) -> GatewayResult<super::ChannelRun> {
         self.load_token_and_identity(&ctx.key.vault_key()).await?;
         let client = self.client.clone();
         let state = self.state.clone();
@@ -69,7 +69,7 @@ impl ChannelAdapter for TelegramAdapter {
         let require_mention = ctx.config.require_mention;
         let channel_key = ctx.key;
 
-        Ok(tokio::spawn(async move {
+        Ok(Box::pin(async move {
             loop {
                 tokio::select! {
                     _ = cancel.cancelled() => break,

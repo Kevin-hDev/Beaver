@@ -63,7 +63,7 @@ impl ChannelAdapter for SlackAdapter {
         &self,
         ctx: ChannelContext,
         sender: mpsc::Sender<InboundMessage>,
-    ) -> GatewayResult<tokio::task::JoinHandle<()>> {
+    ) -> GatewayResult<super::ChannelRun> {
         self.load_tokens(&format!("gateway.slack.{}", ctx.key.account_id))
             .await?;
         let state = self.state.clone();
@@ -73,7 +73,7 @@ impl ChannelAdapter for SlackAdapter {
         let require_mention = ctx.config.require_mention;
         let bot_user_id = self.state.read().await.bot_user_id.clone();
 
-        Ok(tokio::spawn(async move {
+        Ok(Box::pin(async move {
             loop {
                 if cancel.is_cancelled() {
                     break;

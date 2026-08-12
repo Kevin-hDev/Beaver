@@ -53,6 +53,16 @@ pub(crate) fn channel_stopped(
     )
 }
 
+pub(crate) fn work_refused(key: &ChannelKey, decision: &str) -> Result<(), String> {
+    log(
+        &key.channel_id,
+        &key.account_id,
+        AuditAction::Blocked,
+        Some(decision),
+        None,
+    )
+}
+
 fn log(
     channel_id: &str,
     account_id: &str,

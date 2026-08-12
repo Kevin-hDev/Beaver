@@ -89,7 +89,9 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
                 tauri::async_runtime::spawn(async move {
                     let gw = handle.state::<GatewayService>();
                     if gw.is_enabled().await {
-                        gw.stop().await;
+                        if !gw.stop().await {
+                            ::log::warn!("[gateway] gateway-stop-timeout");
+                        }
                     } else {
                         let config = gw.config().await;
                         let _ = gw.start(config, handle.clone()).await;
