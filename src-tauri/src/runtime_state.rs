@@ -24,6 +24,7 @@ pub struct RuntimeServices {
     pub forecast: crate::services::forecast::sidecar::ChronosSidecar,
     pub app_update: crate::services::update_handoff::AppUpdateRuntime,
     pub terminal: crate::services::terminal::PtyManager,
+    pub background: crate::services::runtime_background::RuntimeBackgroundServices,
 }
 
 pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
@@ -36,7 +37,8 @@ pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
         downloads: crate::services::model_downloads::ModelDownloadManager::new(supervisor.clone()),
         forecast: crate::services::forecast::sidecar::ChronosSidecar::new(supervisor.clone()),
         app_update: crate::services::update_handoff::AppUpdateRuntime::new(supervisor.clone()),
-        terminal: crate::services::terminal::PtyManager::new(supervisor),
+        terminal: crate::services::terminal::PtyManager::new(supervisor.clone()),
+        background: crate::services::runtime_background::RuntimeBackgroundServices::new(supervisor),
     }
 }
 

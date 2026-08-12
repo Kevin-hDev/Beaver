@@ -43,15 +43,27 @@ pub fn initialize(app: &AppHandle, settings: MascotSettings) {
     }
 }
 
-pub fn start_activity_cleanup(app: AppHandle) {
-    tauri::async_runtime::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_millis(250));
-        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-        loop {
-            interval.tick().await;
-            refresh_activity(&app);
-        }
-    });
+pub fn start_activity_cleanup(app: &AppHandle) {
+    let handle = app.clone();
+    let background = app
+        .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+        .inner()
+        .clone();
+    if background
+        .spawn_loop(move |cancel| async move {
+            let mut interval = tokio::time::interval(Duration::from_millis(250));
+            interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+            loop {
+                tokio::select! {
+                    _ = cancel.cancelled() => return,
+                    _ = interval.tick() => refresh_activity(&handle),
+                }
+            }
+        })
+        .is_err()
+    {
+        ::log::warn!("[mascot] activity cleanup unavailable during shutdown");
+    }
 }
 
 pub fn observe_stream_event(

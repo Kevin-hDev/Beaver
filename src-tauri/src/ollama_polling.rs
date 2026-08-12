@@ -2,6 +2,7 @@ use crate::services::agent_local::ollama_base_url;
 use crate::services::ollama_ps;
 use std::time::Duration;
 use tauri::Emitter;
+use tauri::Manager;
 
 const POLL_INTERVAL: Duration = Duration::from_secs(2);
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(2);
@@ -18,67 +19,95 @@ fn backoff_secs(attempt: u32) -> u64 {
 }
 
 pub fn start(handle: tauri::AppHandle) {
-    tauri::async_runtime::spawn(async move {
-        let client = reqwest::Client::builder()
-            .timeout(HEALTH_TIMEOUT)
-            .build()
-            .unwrap_or_default();
+    let background = handle
+        .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+        .inner()
+        .clone();
+    if background
+        .spawn_loop(move |cancel| async move {
+            let client = reqwest::Client::builder()
+                .timeout(HEALTH_TIMEOUT)
+                .build()
+                .unwrap_or_default();
 
-        let mut last_running = false;
-        let mut consecutive_failures: u32 = 0;
-        let mut restart_attempts: u32 = 0;
+            let mut last_running = false;
+            let mut consecutive_failures: u32 = 0;
+            let mut restart_attempts: u32 = 0;
 
-        loop {
-            let base = ollama_base_url();
-            let running = client
-                .get(format!("{base}/api/version"))
-                .send()
-                .await
-                .map(|r| r.status().is_success())
-                .unwrap_or(false);
-
-            emit_gpu_status(&handle, &client, &base, running).await;
-
-            if running {
-                consecutive_failures = 0;
-                restart_attempts = 0;
-            } else {
-                if crate::services::ollama_lifecycle::ollama_binary_path().is_err() {
-                    tokio::time::sleep(POLL_INTERVAL).await;
-                    continue;
+            loop {
+                if cancel.is_cancelled() {
+                    return;
                 }
+                let base = ollama_base_url();
+                let running = client
+                    .get(format!("{base}/api/version"))
+                    .send()
+                    .await
+                    .map(|r| r.status().is_success())
+                    .unwrap_or(false);
 
-                consecutive_failures += 1;
-                if consecutive_failures >= FAILURES_BEFORE_RESTART
-                    && restart_attempts < MAX_RESTART_ATTEMPTS
-                {
-                    let delay = backoff_secs(restart_attempts);
-                    ::log::warn!(
-                        "[ollama] {} échecs, tentative {} dans {delay}s",
-                        consecutive_failures,
-                        restart_attempts + 1
-                    );
-                    tokio::time::sleep(Duration::from_secs(delay)).await;
+                emit_gpu_status(&handle, &client, &base, running).await;
 
-                    match crate::services::ollama_lifecycle::start_sidecar(&handle) {
-                        Ok(true) => ::log::info!("[ollama] sidecar redémarré"),
-                        Ok(false) => ::log::info!("[ollama] daemon externe détecté"),
-                        Err(e) => ::log::warn!("[ollama] restart échoué : {e}"),
+                if running {
+                    consecutive_failures = 0;
+                    restart_attempts = 0;
+                } else {
+                    if crate::services::ollama_lifecycle::ollama_binary_path().is_err() {
+                        if sleep_or_cancel(&cancel, POLL_INTERVAL).await {
+                            return;
+                        }
+                        continue;
                     }
 
-                    restart_attempts += 1;
-                    consecutive_failures = 0;
+                    consecutive_failures += 1;
+                    if consecutive_failures >= FAILURES_BEFORE_RESTART
+                        && restart_attempts < MAX_RESTART_ATTEMPTS
+                    {
+                        let delay = backoff_secs(restart_attempts);
+                        ::log::warn!(
+                            "[ollama] {} échecs, tentative {} dans {delay}s",
+                            consecutive_failures,
+                            restart_attempts + 1
+                        );
+                        if sleep_or_cancel(&cancel, Duration::from_secs(delay)).await {
+                            return;
+                        }
+
+                        match crate::services::ollama_lifecycle::start_sidecar(&handle) {
+                            Ok(true) => ::log::info!("[ollama] sidecar redémarré"),
+                            Ok(false) => ::log::info!("[ollama] daemon externe détecté"),
+                            Err(e) => ::log::warn!("[ollama] restart échoué : {e}"),
+                        }
+
+                        restart_attempts += 1;
+                        consecutive_failures = 0;
+                    }
+                }
+
+                if running != last_running {
+                    let _ = handle.emit("ollama-status", running);
+                    last_running = running;
+                }
+
+                if sleep_or_cancel(&cancel, POLL_INTERVAL).await {
+                    return;
                 }
             }
+        })
+        .is_err()
+    {
+        ::log::warn!("[ollama] polling unavailable during shutdown");
+    }
+}
 
-            if running != last_running {
-                let _ = handle.emit("ollama-status", running);
-                last_running = running;
-            }
-
-            tokio::time::sleep(POLL_INTERVAL).await;
-        }
-    });
+async fn sleep_or_cancel(
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+    duration: Duration,
+) -> bool {
+    tokio::select! {
+        _ = cancel.cancelled() => true,
+        _ = tokio::time::sleep(duration) => false,
+    }
 }
 
 async fn emit_gpu_status(
