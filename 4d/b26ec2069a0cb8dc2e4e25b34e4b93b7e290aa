@@ -1,0 +1,5 @@
+Raison : la CI stricte échouait sur Linux, Windows CEF et macOS à cause de code utilisé uniquement par d’anciens tests, de champs de limitation jamais lus et d’un résolveur PowerShell compilé hors Windows.
+
+Décision : supprimer les décisions scheduler et métriques de limitation devenues sans consommateur, et compiler l’autorité SystemRoot uniquement sur Windows. Les refus de limitation conservent leur unique donnée réellement consommée : allowed.
+
+Preuves : cargo fmt --check vert ; tests scheduler 7/7 ; tests rate_limit 4/4 ; cargo clippy --all-targets -- -D warnings vert ; suite Windows complète 3225 passés, 2 ignorés, 0 échec ; graphify update . vert.
