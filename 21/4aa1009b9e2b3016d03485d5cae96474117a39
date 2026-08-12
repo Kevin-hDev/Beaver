@@ -1,0 +1,1 @@
+Raison: la re-review a identifié quatre régressions localisées. Décision: audit gateway différé dans une file bornée et possédée, combinaison de fermeture sans court-circuit, arrêt extensions fail-closed, et cache GPU publié uniquement par la sonde possédée. Preuve: conception et plan auto-relus, sans placeholder ni contradiction de périmètre.
