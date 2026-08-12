@@ -3,11 +3,12 @@ use std::time::Duration;
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-#[cfg(windows)]
-use std::process::Stdio;
 #[cfg(unix)]
 #[path = "process_tree_unix.rs"]
 mod unix;
+#[cfg(windows)]
+#[path = "process_tree_windows.rs"]
+mod windows;
 
 const GRACEFUL_STOP_TIMEOUT: Duration = Duration::from_millis(500);
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
@@ -182,21 +183,7 @@ fn configure_linux_parent_death() -> std::io::Result<()> {
 
 #[cfg(windows)]
 fn signal_tree(pid: u32, _force: bool) {
-    let Some(system_root) = std::env::var_os("SystemRoot") else {
-        return;
-    };
-    let executable = std::path::PathBuf::from(system_root)
-        .join("System32")
-        .join("taskkill.exe");
-    if !executable.is_absolute() || !executable.is_file() {
-        return;
-    }
-    let _ = crate::services::background_command::new(executable)
-        .args(["/PID", &pid.to_string(), "/T", "/F"])
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+    windows::terminate_tree(pid, std::time::Instant::now() + GRACEFUL_STOP_TIMEOUT);
 }
 
 #[cfg(all(test, unix))]

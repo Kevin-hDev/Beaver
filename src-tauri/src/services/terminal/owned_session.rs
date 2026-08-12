@@ -84,21 +84,11 @@ impl OwnedSession {
     }
 
     pub(super) fn close(mut self) {
-        #[cfg(test)]
-        eprintln!("[terminal-test] close: cancel reader");
         self.reader_cancelled.store(true, Ordering::Release);
-        #[cfg(test)]
-        eprintln!("[terminal-test] close: shutdown child");
         let _ = self.session.shutdown();
-        #[cfg(test)]
-        eprintln!("[terminal-test] close: drop PTY master");
         drop(self.session);
-        #[cfg(test)]
-        eprintln!("[terminal-test] close: join reader");
         if self.reader.join().is_err() {
             ::log::warn!("[terminal] lecteur PTY interrompu");
         }
-        #[cfg(test)]
-        eprintln!("[terminal-test] close: complete");
     }
 }

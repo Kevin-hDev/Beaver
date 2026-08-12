@@ -82,6 +82,16 @@ pub(crate) fn release(pid: u32) {
     platform::release(pid);
 }
 
+#[cfg(windows)]
+pub(crate) fn is_confined(pid: u32) -> bool {
+    platform::is_confined(pid)
+}
+
+#[cfg(windows)]
+pub(crate) fn terminate_if_confined(pid: u32, deadline: std::time::Instant) -> bool {
+    platform::terminate_if_confined(pid, deadline)
+}
+
 #[cfg(target_os = "macos")]
 pub(crate) fn signal_is_safe(pid: u32) -> bool {
     macos::signal_is_safe(pid)
