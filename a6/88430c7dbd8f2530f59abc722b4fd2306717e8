@@ -1,0 +1,8 @@
+Jalon 2 review - helper de mise a jour transfere.
+
+Rouge local 1: cargo test --lib --features windows-tests update_helper_has_a_dedicated_process_configuration -- --nocapture a echoue avec E0425 car configure_update_helper n'existait pas.
+Rouge local 2: cargo test --lib --features windows-tests helper_io_does_not_block_the_async_worker -- --nocapture a echoue avec E0432 car le chemin spawn_blocking n'existait pas.
+
+Correction: configuration explicite du helper transfere sans PR_SET_PDEATHSIG sous Linux; groupe de processus conserve sur Unix; copie, sync_all, spawn et capture d'identite executes sur le pool bloquant; appelant rendu asynchrone. Le test Linux lance un vrai parent intermediaire et prouve le comportement oppose d'un enfant possede.
+
+Vert local: famille commands::app_update, 46/46; cargo fmt --check vert. Le test natif Linux ne peut pas etre execute sur cette machine Windows sans distribution WSL; son resultat CI Linux devra etre ajoute a cette note avant fusion.
