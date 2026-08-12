@@ -40,16 +40,23 @@ impl CallbackServer {
         self.port
     }
 
-    pub async fn wait(self, cancel: &CancellationToken) -> Result<CallbackResult, String> {
+    pub async fn wait(
+        self,
+        expected_state: &str,
+        cancel: &CancellationToken,
+    ) -> Result<CallbackResult, String> {
         tokio::select! {
-            result = accept_callback(&self.listener) => result,
+            result = accept_callback(&self.listener, expected_state) => result,
             _ = tokio::time::sleep(TIMEOUT) => Err("délai d'attente dépassé".to_string()),
             _ = cancel.cancelled() => Err("annulé".to_string()),
         }
     }
 }
 
-async fn accept_callback(listener: &TcpListener) -> Result<CallbackResult, String> {
+async fn accept_callback(
+    listener: &TcpListener,
+    expected_state: &str,
+) -> Result<CallbackResult, String> {
     let mut attempts = 0u32;
     const MAX_ATTEMPTS: u32 = 50;
     loop {
@@ -75,7 +82,10 @@ async fn accept_callback(listener: &TcpListener) -> Result<CallbackResult, Strin
         };
         buf.zeroize();
 
-        if let Some(result) = parsed {
+        if let Some(result) = parsed.filter(|result| {
+            super::flow_auth::verify_state_constant_time(expected_state, result.state.as_str())
+                .is_ok()
+        }) {
             let response = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\
                  Content-Length: {}\r\nConnection: close\r\n\r\n{}",
