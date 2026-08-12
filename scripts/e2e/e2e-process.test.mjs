@@ -115,6 +115,14 @@ test("profile cleanup cannot hide the preceding E2E failure", () => {
   assert.match(runnerSource, /cleanupProfile\(profilePath,[\s\S]*hadPriorFailure/u);
 });
 
+test("every E2E failure reports bounded diagnostics before profile cleanup", () => {
+  assert.match(runnerSource, /if \(hadPriorFailure \|\| process\.exitCode\) \{/u);
+  assert.ok(
+    runnerSource.indexOf("await reportNativeDiagnostics(logDirectory)")
+      < runnerSource.indexOf("await cleanupProfile(profilePath"),
+  );
+});
+
 test("profile cleanup preserves an earlier E2E failure", async () => {
   const tempRoot = resolve("temp-root");
   const profilePath = join(tempRoot, "beaver-e2e-Ab12");

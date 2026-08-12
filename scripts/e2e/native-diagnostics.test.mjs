@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import {
-  collectNativeCefDiagnostics,
+  collectNativeDiagnostics,
   MAX_DIAGNOSTIC_FILES,
 } from "./native-diagnostics.mjs";
 
@@ -21,7 +21,7 @@ test("native CEF diagnostics expose only bounded browser failure categories", as
       "utf8",
     );
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "browser-supervision:cef-supervision-admission",
       "browser-initialization:fatal",
     ]);
@@ -55,7 +55,7 @@ test("native CEF diagnostics expose only fixed lifecycle stages", async () => {
       "utf8",
     );
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "webdriver:spawned",
       "webdriver:ready",
       "webdriver:healthy",
@@ -93,7 +93,7 @@ test("native CEF diagnostics bound files and ignore unrelated names", async () =
       );
     }
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "browser-preflight:cef-supervision-object",
     ]);
   } finally {
@@ -113,7 +113,7 @@ test("the dedicated process exit marker has priority over unrelated WDIO logs", 
       "utf8",
     );
 
-    assert.deepEqual(await collectNativeCefDiagnostics(directory), [
+    assert.deepEqual(await collectNativeDiagnostics(directory), [
       "process-exit:code-101",
     ]);
   } finally {
@@ -124,5 +124,5 @@ test("the dedicated process exit marker has priority over unrelated WDIO logs", 
 test("a missing diagnostic directory is a safe empty result", async () => {
   const missing = join(tmpdir(), "beaver-native-logs-missing");
   await rm(missing, { recursive: true, force: true });
-  assert.deepEqual(await collectNativeCefDiagnostics(missing), []);
+  assert.deepEqual(await collectNativeDiagnostics(missing), []);
 });
