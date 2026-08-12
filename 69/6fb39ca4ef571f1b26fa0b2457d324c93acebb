@@ -1,0 +1,11 @@
+Jalon 2 — supervision du Gateway.
+
+Autorité unique : chaque exécution Gateway possède trois registres bornés dérivés du superviseur global (1 consommateur, 48 canaux, 64 messages) et une file mpsc de 256 éléments. stop_and_wait annule puis attend les trois registres sur la même échéance absolue ; un redémarrage crée des registres neufs.
+
+Telegram, Slack et Discord rendent désormais une future possédée au lieu d'un JoinHandle détaché. Le heartbeat Discord vit dans la boucle supervisée. Le watchdog à callback vide a été supprimé. Le traitement agent reçoit le jeton d'annulation du run.
+
+Codes stables : gateway-busy, gateway-shutting-down et gateway-stop-timeout. Les diagnostics de saturation ne contiennent ni contenu utilisateur ni identifiant de message. L'état running exige désormais une configuration activée et un vrai run non annulé.
+
+Preuves TDD : absence initiale de work_supervision ; limite 64/65, file 256, saturation du consommateur et des 48 canaux, réutilisation après cycles, arrêt de trois canaux simulés, fermeture effective du receiver et attente des tâches. Les tests d'état ont aussi reproduit puis corrigé les faux running avant démarrage.
+
+Vérification : Gateway 136/136 ; test d'audit concurrent isolé 5/5 après une interférence parallèle transitoire puis vert dans le groupe ; suite Rust 3099 réussis, 0 échec, 4 ignorés ; cargo fmt --check vert ; Clippy strict all-targets vert ; graphify update . exécuté.
