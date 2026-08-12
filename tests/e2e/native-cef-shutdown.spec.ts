@@ -4,6 +4,7 @@ import {
   runtimeRootForBinary,
   waitForOwnedCefHelper,
   waitForOwnedProcessesToExit,
+  waitForProcessIdsToExit,
 } from "../../scripts/e2e/native-cef-observer.mjs";
 import { completeOnboarding } from "./onboarding-flow";
 import { invokeTauri } from "./tauri-invoke";
@@ -23,6 +24,11 @@ interface BrowserSession {
   tabs: BrowserTab[];
 }
 
+interface NativeWebViews {
+  dedicatedPids: number[];
+  sharedSystemCount: number;
+}
+
 const required = process.env.E2E_REQUIRE_CEF_SMOKE === "1";
 if (required && !["win32", "darwin"].includes(process.platform)) {
   throw new Error("Native CEF smoke is unsupported on this platform");
@@ -37,6 +43,13 @@ describe("native CEF shutdown", () => {
     const server = await startPageServer();
     try {
       await completeOnboarding();
+      const nativeWebViews = await invokeTauri<NativeWebViews>("e2e_native_webviews");
+      if (process.platform === "win32" && nativeWebViews.dedicatedPids.length === 0) {
+        throw new Error("Native WebView observation failed");
+      }
+      if (process.platform === "darwin" && nativeWebViews.sharedSystemCount === 0) {
+        throw new Error("Native WebView observation failed");
+      }
       const url = serverUrl(server);
       await browser.waitUntil(async () => (
         (await invokeTauri<BrowserCapability>("browser_capability")).status === "ready"
@@ -75,6 +88,7 @@ describe("native CEF shutdown", () => {
       await browser.deleteSession();
       (browser as unknown as { sessionId?: string }).sessionId = undefined;
       await waitForOwnedProcessesToExit({ root: runtimeRoot });
+      await waitForProcessIdsToExit({ pids: nativeWebViews.dedicatedPids });
     } finally {
       await closeServer(server);
     }

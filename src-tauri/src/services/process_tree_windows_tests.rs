@@ -1,4 +1,4 @@
-use super::{configure, configure_tokio};
+use super::{configure, configure_tokio, kill, terminate, ProcessKind};
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::process::Command;
@@ -51,10 +51,58 @@ fn console_is_visible(title: &str) -> bool {
 }
 
 #[test]
-fn tree_termination_uses_the_background_command_boundary() {
-    let source = include_str!("process_tree.rs");
-    assert!(
-        source.contains("background_command::new(executable)"),
-        "taskkill must use the shared invisible command builder"
-    );
+fn tree_termination_reaps_a_confined_parent_and_child() {
+    let python = crate::services::test_runtime::python().expect("runtime Python de test");
+    let temp = tempfile::tempdir().unwrap();
+    let pid_file = temp.path().join("tree.pid");
+    let gate_file = temp.path().join("admitted.gate");
+    let mut command = Command::new(python);
+    command
+        .args([
+            "-c",
+            "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]);\nwhile not gate.exists(): time.sleep(.01)\nchild=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']); pathlib.Path(sys.argv[2]).write_text(f'{os.getpid()},{child.pid}'); time.sleep(30)",
+        ])
+        .arg(&gate_file)
+        .arg(&pid_file);
+    let mut parent = crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        ProcessKind::ForecastRuntime,
+    )
+    .expect("start confined process tree");
+    std::fs::write(&gate_file, b"admitted").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while !pid_file.exists() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let pids = std::fs::read_to_string(&pid_file).expect("process tree started");
+    let pids = pids
+        .split(',')
+        .map(|pid| pid.parse::<u32>().unwrap())
+        .collect::<Vec<_>>();
+
+    let started = Instant::now();
+    terminate(&mut parent, ProcessKind::ForecastRuntime);
+
+    assert!(started.elapsed() < Duration::from_secs(2));
+    assert!(parent.try_wait().unwrap().is_some());
+    let mut processes = sysinfo::System::new();
+    processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    assert!(pids
+        .iter()
+        .all(|pid| processes.process(sysinfo::Pid::from_u32(*pid)).is_none()));
+}
+
+#[test]
+fn tree_termination_never_kills_an_unconfined_process() {
+    let python = crate::services::test_runtime::python().expect("runtime Python de test");
+    let mut outsider = Command::new(python)
+        .args(["-c", "import time;time.sleep(30)"])
+        .spawn()
+        .expect("start unconfined process");
+
+    kill(outsider.id(), ProcessKind::ForecastRuntime);
+
+    assert!(outsider.try_wait().unwrap().is_none());
+    outsider.kill().unwrap();
+    outsider.wait().unwrap();
 }

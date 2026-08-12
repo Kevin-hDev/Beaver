@@ -6,6 +6,7 @@ use zeroize::Zeroizing;
 
 use super::CLIENT_ID;
 use super::{callback_server::CallbackServer, jwt, pkce, token};
+use crate::services::work_registry::ServiceWorkCancellation;
 
 const AUTH_URL: &str = "https://auth.openai.com/oauth/authorize";
 const SCOPES: &str = "openid profile email offline_access";
@@ -62,9 +63,12 @@ fn validate_redirect_uri(redirect_uri: &str) -> Result<(), String> {
     }
 }
 
-pub async fn login() -> Result<String, String> {
+pub async fn login(work_cancel: ServiceWorkCancellation) -> Result<String, String> {
     let cancel = register_login().await?;
-    let result = login_registered(&cancel).await;
+    let result = tokio::select! {
+        result = login_registered(&cancel) => result,
+        _ = work_cancel.cancelled() => Err("Connexion annulée".to_string()),
+    };
     *ACTIVE_LOGIN.lock().await = None;
     result
 }

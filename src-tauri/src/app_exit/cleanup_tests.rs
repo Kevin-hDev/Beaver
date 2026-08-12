@@ -1,5 +1,9 @@
 use super::blocking;
-use super::cleanup::{run_ordered, run_with_deadline, CleanupOutcome};
+use super::cleanup::{
+    global_registry_is_empty, run_ordered, run_service_group, run_with_deadline, CleanupOutcome,
+    StopFuture,
+};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -76,4 +80,29 @@ async fn completed_cleanup_reports_success() {
         run_with_deadline(Instant::now() + Duration::from_secs(1), async {}).await,
         CleanupOutcome::Completed
     );
+}
+
+#[tokio::test]
+async fn one_service_timeout_does_not_skip_the_other_services() {
+    let completed = Arc::new(AtomicUsize::new(0));
+    let completed_by_neighbor = Arc::clone(&completed);
+    let services: [(&'static str, StopFuture<'_>); 2] = [
+        ("timed-out", Box::pin(async { false })),
+        (
+            "completed",
+            Box::pin(async move {
+                completed_by_neighbor.fetch_add(1, Ordering::SeqCst);
+                true
+            }),
+        ),
+    ];
+
+    assert!(!run_service_group(services).await);
+    assert_eq!(completed.load(Ordering::SeqCst), 1);
+}
+
+#[test]
+fn the_global_registry_must_be_empty_after_service_cleanup() {
+    assert!(global_registry_is_empty(0));
+    assert!(!global_registry_is_empty(1));
 }

@@ -2,30 +2,37 @@ use super::model_downloads_types::{
     ModelDownloadKind, ModelDownloadPhase, ModelDownloadState, ModelDownloadStatus,
     MAX_PENDING_DOWNLOADS,
 };
+use crate::app_exit::AppWorkSupervisor;
+use crate::services::work_registry::{ServiceWorkAdmission, ServiceWorkSupervisor};
 use std::{
     collections::{HashMap, VecDeque},
     sync::Arc,
 };
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, Notify};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Default)]
+const DOWNLOAD_WORKERS: usize = 1;
+pub type DownloadWorkAdmission = ServiceWorkAdmission<DOWNLOAD_WORKERS>;
+
+#[derive(Clone)]
 pub struct ModelDownloadManager {
-    inner: Arc<Mutex<DownloadStore>>,
+    pub(super) inner: Arc<Mutex<DownloadStore>>,
+    pub(super) changed: Arc<Notify>,
+    pub(super) work: ServiceWorkSupervisor<DOWNLOAD_WORKERS>,
 }
 
 #[derive(Debug, Default)]
-struct DownloadStore {
-    entries: HashMap<String, DownloadEntry>,
-    order: VecDeque<String>,
-    worker_running: bool,
+pub(super) struct DownloadStore {
+    pub(super) entries: HashMap<String, DownloadEntry>,
+    pub(super) order: VecDeque<String>,
+    pub(super) worker_running: bool,
 }
 
 #[derive(Debug, Clone)]
-struct DownloadEntry {
-    state: ModelDownloadState,
-    cancel: CancellationToken,
+pub(super) struct DownloadEntry {
+    pub(super) state: ModelDownloadState,
+    pub(super) cancel: CancellationToken,
 }
 
 #[derive(Debug, Clone)]
@@ -37,9 +44,11 @@ pub struct ProgressUpdate {
 }
 
 impl ModelDownloadManager {
-    pub fn new() -> Self {
+    pub fn new(app_work: AppWorkSupervisor) -> Self {
         Self {
             inner: Arc::new(Mutex::new(DownloadStore::default())),
+            changed: Arc::new(Notify::new()),
+            work: ServiceWorkSupervisor::new(app_work),
         }
     }
 
@@ -52,8 +61,20 @@ impl ModelDownloadManager {
         kind: ModelDownloadKind,
         model_id: String,
         is_update: bool,
-    ) -> Result<(ModelDownloadState, Option<CancellationToken>), String> {
+    ) -> Result<
+        (
+            ModelDownloadState,
+            Option<(CancellationToken, DownloadWorkAdmission)>,
+        ),
+        String,
+    > {
         let mut store = self.inner.lock().await;
+        let admission = if store.worker_running {
+            self.work.try_probe().map_err(public_admission_error)?;
+            None
+        } else {
+            Some(self.work.try_admit().map_err(public_admission_error)?)
+        };
         remove_finished(&mut store);
         if store.entries.values().any(|entry| {
             entry.state.kind == kind
@@ -90,7 +111,9 @@ impl ModelDownloadManager {
                 cancel: cancel.clone(),
             },
         );
-        Ok((state, runs_now.then_some(cancel)))
+        drop(store);
+        self.changed.notify_one();
+        Ok((state, admission.map(|admission| (cancel, admission))))
     }
 
     pub async fn list(&self) -> Vec<ModelDownloadState> {
@@ -98,15 +121,23 @@ impl ModelDownloadManager {
         list_locked(&store)
     }
 
+    #[cfg(test)]
     pub async fn progress(&self, id: &str, update: ProgressUpdate) -> Vec<ModelDownloadState> {
         let mut store = self.inner.lock().await;
-        if let Some(entry) = store.entries.get_mut(id) {
-            entry.state.phase = update.phase;
-            entry.state.downloaded = update.downloaded;
-            entry.state.total = update.total;
-            entry.state.percent = update.percent.min(100);
-        }
+        apply_progress(&mut store, id, update);
         list_locked(&store)
+    }
+
+    pub fn try_progress(
+        &self,
+        id: &str,
+        update: ProgressUpdate,
+    ) -> Option<Vec<ModelDownloadState>> {
+        // La progression est indicative : ne jamais bloquer un thread de téléchargement
+        // pour une mise à jour d'interface qui sera remplacée par la suivante.
+        let mut store = self.inner.try_lock().ok()?;
+        apply_progress(&mut store, id, update);
+        Some(list_locked(&store))
     }
 
     pub async fn finish(
@@ -126,49 +157,20 @@ impl ModelDownloadManager {
         }
         list_locked(&store)
     }
+}
 
-    pub async fn activate_next(&self) -> Option<(ModelDownloadState, CancellationToken)> {
-        let mut store = self.inner.lock().await;
-        let next_id = store
-            .order
-            .iter()
-            .find(|id| {
-                store
-                    .entries
-                    .get(*id)
-                    .is_some_and(|entry| entry.state.status == ModelDownloadStatus::Queued)
-            })
-            .cloned();
-        let Some(next_id) = next_id else {
-            store.worker_running = false;
-            return None;
-        };
-        let entry = store.entries.get_mut(&next_id)?;
-        entry.state.status = ModelDownloadStatus::Running;
-        Some((entry.state.clone(), entry.cancel.clone()))
-    }
+fn public_admission_error(
+    error: crate::services::work_registry::ServiceWorkAdmissionError,
+) -> String {
+    error.public_code().to_string()
+}
 
-    pub async fn cancel(&self, id: &str) -> Result<Vec<ModelDownloadState>, String> {
-        let mut store = self.inner.lock().await;
-        let entry = store
-            .entries
-            .get_mut(id)
-            .ok_or_else(|| "model-download-not-found".to_string())?;
-        entry.cancel.cancel();
-        if entry.state.status == ModelDownloadStatus::Queued {
-            entry.state.status = ModelDownloadStatus::Cancelled;
-        }
-        Ok(list_locked(&store))
-    }
-
-    pub async fn cancel_all(&self) {
-        let mut store = self.inner.lock().await;
-        for entry in store.entries.values_mut() {
-            entry.cancel.cancel();
-            if entry.state.status == ModelDownloadStatus::Queued {
-                entry.state.status = ModelDownloadStatus::Cancelled;
-            }
-        }
+fn apply_progress(store: &mut DownloadStore, id: &str, update: ProgressUpdate) {
+    if let Some(entry) = store.entries.get_mut(id) {
+        entry.state.phase = update.phase;
+        entry.state.downloaded = update.downloaded;
+        entry.state.total = update.total;
+        entry.state.percent = update.percent.min(100);
     }
 }
 
@@ -186,7 +188,7 @@ fn remove_finished(store: &mut DownloadStore) {
     store.order.retain(|id| store.entries.contains_key(id));
 }
 
-fn list_locked(store: &DownloadStore) -> Vec<ModelDownloadState> {
+pub(super) fn list_locked(store: &DownloadStore) -> Vec<ModelDownloadState> {
     store
         .order
         .iter()

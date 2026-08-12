@@ -66,6 +66,7 @@ impl GatewayAgentBridge {
         msg: InboundMessage,
         adapter: Arc<dyn ChannelAdapter>,
         app: tauri::AppHandle,
+        cancel: CancellationToken,
     ) -> Result<(), BridgeError> {
         let config = Self::read_config();
         validate_inbound(&msg)?;
@@ -161,7 +162,7 @@ impl GatewayAgentBridge {
             parent_message_inbox: None,
             subagent_profile: None,
             plan_mode: Some(false),
-            cancel: CancellationToken::new(),
+            cancel,
         })
         .await
         {

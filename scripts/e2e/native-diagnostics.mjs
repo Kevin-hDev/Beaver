@@ -21,6 +21,17 @@ const SAFE_LIFECYCLE_STAGES = new Set([
   "main-entered",
   "native-prepared",
   "setup-entered",
+  "shell-cleanup-completed",
+  "app-handle-initialized",
+  "agent-runtime-initialized",
+  "storage-initialized",
+  "recovery-started",
+  "vault-initialized",
+  "config-loaded",
+  "mascot-started",
+  "window-configured",
+  "file-watcher-started",
+  "scheduler-started",
   "setup-completed",
   "event-loop-entered",
   "event-loop-returned",
@@ -50,7 +61,7 @@ const SAFE_EXIT_SIGNALS = new Set([
 ]);
 const SAFE_SUPERVISION_FAILURE = /^(?:admission|reaper|external)-(?:[a-z]+)(?:-[a-z]+){0,3}$/u;
 
-export async function collectNativeCefDiagnostics(logDirectory) {
+export async function collectNativeDiagnostics(logDirectory) {
   const names = await boundedLogNames(logDirectory);
   const diagnostics = new Set();
   for (const name of names) {
@@ -60,17 +71,17 @@ export async function collectNativeCefDiagnostics(logDirectory) {
   return [...diagnostics];
 }
 
-export async function reportNativeCefDiagnostics(
+export async function reportNativeDiagnostics(
   logDirectory,
   report = process.stderr.write.bind(process.stderr),
 ) {
-  const diagnostics = await collectNativeCefDiagnostics(logDirectory);
+  const diagnostics = await collectNativeDiagnostics(logDirectory);
   if (diagnostics.length === 0) {
-    report("Native CEF diagnostic: no safe browser failure category captured.\n");
+    report("Native diagnostic: no safe failure category captured.\n");
     return;
   }
   for (const diagnostic of diagnostics) {
-    report(`Native CEF diagnostic: ${diagnostic}\n`);
+    report(`Native diagnostic: ${diagnostic}\n`);
   }
 }
 
@@ -144,6 +155,12 @@ function safeDiagnostic(line) {
   const lifecycle = line.match(/\[e2e-lifecycle\] ([a-z-]+)/u);
   if (lifecycle && SAFE_LIFECYCLE_STAGES.has(lifecycle[1])) {
     return `application-stage:${lifecycle[1]}`;
+  }
+  const capturedLifecycle = line.match(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z INFO tauri-service:service: \[Tauri:Backend(?::[A-Za-z0-9_-]{1,32})?\] ([a-z-]+)$/u,
+  );
+  if (capturedLifecycle && SAFE_LIFECYCLE_STAGES.has(capturedLifecycle[1])) {
+    return `application-stage:${capturedLifecycle[1]}`;
   }
   const runEvent = line.match(/\[e2e-run-event\] ([a-z-]+)/u);
   if (runEvent && SAFE_RUN_EVENTS.has(runEvent[1])) {

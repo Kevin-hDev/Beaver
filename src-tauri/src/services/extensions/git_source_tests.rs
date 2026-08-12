@@ -49,10 +49,17 @@ fn git_materialization_is_clean_and_reports_the_revision() {
         reference: None,
     };
     let probe = temporary.path().join("probe");
-    super::git_source::clone_repository(&source, &probe).unwrap();
+    let cancellation = super::work_supervision::open_cancellation_for_test();
+    super::git_source::clone_repository(&source, &probe, &cancellation).unwrap();
     std::fs::remove_dir_all(probe).unwrap();
 
-    let materialized = super::git_source::materialize(&source, &destination, &npm).unwrap();
+    let materialized = super::git_source::materialize(
+        &source,
+        &destination,
+        &npm,
+        &super::work_supervision::open_cancellation_for_test(),
+    )
+    .unwrap();
 
     assert_eq!(materialized.revision, expected_revision);
     assert!(!materialized.root.join(".git").exists());
@@ -84,9 +91,12 @@ fn git_materialization_accepts_a_declared_tag() {
         reference: Some("v1.0.0".to_string()),
     };
 
-    let cloned =
-        super::git_source::clone_repository(&source, &temporary.path().join("tag-checkout"))
-            .unwrap();
+    let cloned = super::git_source::clone_repository(
+        &source,
+        &temporary.path().join("tag-checkout"),
+        &super::work_supervision::open_cancellation_for_test(),
+    )
+    .unwrap();
 
     assert_eq!(
         cloned
@@ -119,9 +129,12 @@ fn git_materialization_accepts_a_declared_branch() {
         reference: Some("feature".to_string()),
     };
 
-    let cloned =
-        super::git_source::clone_repository(&source, &temporary.path().join("branch-checkout"))
-            .unwrap();
+    let cloned = super::git_source::clone_repository(
+        &source,
+        &temporary.path().join("branch-checkout"),
+        &super::work_supervision::open_cancellation_for_test(),
+    )
+    .unwrap();
 
     assert_eq!(
         cloned
@@ -170,9 +183,12 @@ fn git_materialization_accepts_a_pinned_commit() {
         reference: Some(expected_revision.clone()),
     };
 
-    let cloned =
-        super::git_source::clone_repository(&source, &temporary.path().join("commit-checkout"))
-            .unwrap();
+    let cloned = super::git_source::clone_repository(
+        &source,
+        &temporary.path().join("commit-checkout"),
+        &super::work_supervision::open_cancellation_for_test(),
+    )
+    .unwrap();
 
     assert_eq!(
         cloned

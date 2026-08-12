@@ -3,6 +3,8 @@ use super::types::{ExtensionOrigin, ExtensionOriginKind, ExtensionRecord};
 use super::OperationFailure;
 use std::path::Path;
 
+use crate::services::work_registry::ServiceWorkCancellation;
+
 pub struct PreparedInstall {
     pub record: ExtensionRecord,
 }
@@ -10,10 +12,11 @@ pub struct PreparedInstall {
 pub fn git(
     source: GitSource,
     npm: super::npm_runner::NpmRunner,
+    cancellation: &ServiceWorkCancellation,
 ) -> Result<PreparedInstall, OperationFailure> {
     let staging = super::managed_store::prepare().map_err(|_| OperationFailure::StorageFailed)?;
     let staging_path = staging.path().to_path_buf();
-    let materialized = super::git_source::materialize(&source, &staging_path, &npm)?;
+    let materialized = super::git_source::materialize(&source, &staging_path, &npm, cancellation)?;
     record(
         staging,
         &materialized.root,
@@ -28,10 +31,11 @@ pub fn git(
 pub fn npm(
     source: NpmSource,
     npm: super::npm_runner::NpmRunner,
+    cancellation: &ServiceWorkCancellation,
 ) -> Result<PreparedInstall, OperationFailure> {
     let staging = super::managed_store::prepare().map_err(|_| OperationFailure::StorageFailed)?;
     let staging_path = staging.path().to_path_buf();
-    let package = super::npm_source::materialize(&source, &staging_path, &npm)?;
+    let package = super::npm_source::materialize(&source, &staging_path, &npm, cancellation)?;
     record(
         staging,
         &package,

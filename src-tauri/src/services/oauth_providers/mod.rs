@@ -27,19 +27,16 @@ pub fn list_statuses() -> Vec<OAuthProviderStatus> {
 pub async fn login_external(
     app: tauri::AppHandle,
     provider: ProviderId,
-    _diagnostic_id: &str,
+    _diagnostic_id: String,
+    work_cancel: crate::services::work_registry::ServiceWorkCancellation,
 ) -> Result<(), String> {
-    llm_oauth::login(app, provider.as_llm_oauth()?).await
+    llm_oauth::login(app, provider.as_llm_oauth()?, work_cancel).await
 }
 
 pub async fn cancel_login(provider: ProviderId) {
     if let Ok(provider) = provider.as_llm_oauth() {
         llm_oauth::cancel(provider).await;
     }
-}
-
-pub async fn cancel_all() {
-    llm_oauth::cancel_all().await;
 }
 
 pub async fn logout_external(provider: ProviderId) -> Result<(), String> {

@@ -1,14 +1,16 @@
-use tauri::Emitter;
+use tauri::Manager;
 
 pub fn initialize_on_startup(app: &tauri::AppHandle) {
-    if super::runtime::init(app).is_err() {
+    let Some(coordinator) = app.try_state::<crate::app_exit::AppExitCoordinator>() else {
+        ::log::error!("[extensions] shutdown supervision unavailable");
+        return;
+    };
+    if super::runtime::init(app, coordinator.work_supervisor()).is_err() {
         ::log::error!("[extensions] initialization failed");
         return;
     }
 
-    let handle = app.clone();
-    tauri::async_runtime::spawn(async move {
-        let _ = super::runtime::start_and_sync().await;
-        let _ = handle.emit("fs:extensions-changed", ());
-    });
+    if super::runtime_lifecycle::start_background(app.clone()).is_err() {
+        ::log::warn!("[extensions] startup refused");
+    }
 }

@@ -1,8 +1,22 @@
 #[cfg(test)]
 mod tests {
+    use crate::app_exit::AppExitCoordinator;
     use crate::services::terminal::pty_session::PtySession;
+    use crate::services::terminal::shutdown;
+    use crate::services::terminal::PtyManager;
     use std::io::Read;
-    use std::time::Duration;
+    use std::sync::{Arc, Condvar, Mutex};
+    use std::time::{Duration, Instant};
+    use sysinfo::{Pid, System};
+
+    fn process_is_running(pid: u32) -> bool {
+        let mut system = System::new();
+        system.refresh_processes(
+            sysinfo::ProcessesToUpdate::Some(&[Pid::from_u32(pid)]),
+            true,
+        );
+        system.process(Pid::from_u32(pid)).is_some()
+    }
 
     #[test]
     fn test_pty_spawn() {
@@ -39,10 +53,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(
-        windows,
-        ignore = "ClosePseudoConsole can block indefinitely during output teardown on Windows CI"
-    )]
     fn test_pty_read_output() {
         let (session, mut reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo pty_test_marker\n").expect("write");
@@ -73,13 +83,116 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(
-        windows,
-        ignore = "ClosePseudoConsole can block indefinitely during multi-session teardown on Windows CI"
-    )]
     fn test_multiple_independent_sessions() {
         let (_s1, _r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
         let (_s2, _r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
         let (_s3, _r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+    }
+
+    #[tokio::test]
+    async fn shutdown_reaps_a_real_shell_and_waits_for_terminal_threads() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+        let (id, _) = manager
+            .spawn_for_test(None, 80, 24)
+            .expect("real PTY shell");
+        let pid = manager.process_id_for_test(id).expect("shell process id");
+        assert!(process_is_running(pid));
+
+        assert!(
+            manager
+                .stop_and_wait(Instant::now() + Duration::from_secs(5))
+                .await
+        );
+
+        assert!(!process_is_running(pid));
+        assert_eq!(manager.active_sessions_for_test(), 0);
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn windows_terminal_process_is_confined_by_beaver() {
+        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let pid = session.process_id().expect("shell process id");
+
+        assert!(crate::services::owned_process::OwnedProcess::is_confined_for_test(pid));
+
+        drop(session);
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn windows_full_output_pipe_does_not_block_pty_close() {
+        let (finished, result) = std::sync::mpsc::sync_channel(1);
+        std::thread::spawn(move || {
+            let (session, _unread_output) =
+                PtySession::spawn(None, 80, 24).expect("spawn flooding shell");
+            let pid = session.process_id().expect("shell process id");
+            session
+                .write(b"1..10000 | % { 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }\r\n")
+                .expect("start output flood");
+            std::thread::sleep(Duration::from_millis(250));
+            drop(session);
+            finished.send(pid).expect("report bounded close");
+        });
+
+        let pid = result
+            .recv_timeout(Duration::from_secs(3))
+            .expect("closing a full ConPTY pipe must stay bounded");
+        assert!(!process_is_running(pid));
+    }
+
+    #[tokio::test]
+    async fn shutdown_permanently_refuses_new_terminal_sessions() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = PtyManager::new(coordinator.work_supervisor());
+
+        assert!(
+            manager
+                .stop_and_wait(Instant::now() + Duration::from_secs(1))
+                .await
+        );
+        assert_eq!(
+            manager.spawn_for_test(None, 80, 24).unwrap_err(),
+            "terminal-shutting-down"
+        );
+    }
+
+    #[test]
+    fn terminal_capacity_remains_sixteen_sessions() {
+        assert_eq!(PtyManager::MAX_PTY_SESSIONS, 16);
+    }
+
+    #[test]
+    fn timed_out_terminal_close_does_not_pin_tokio_runtime_shutdown() {
+        let release = Arc::new((Mutex::new(false), Condvar::new()));
+        let operation_release = Arc::clone(&release);
+        let (dropped, observed) = std::sync::mpsc::sync_channel(1);
+        let runtime_owner = std::thread::spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_time()
+                .build()
+                .expect("test runtime");
+            assert!(!runtime.block_on(shutdown::run_until(
+                Instant::now() + Duration::from_millis(20),
+                move || {
+                    let (lock, wake) = &*operation_release;
+                    let mut released = lock.lock().expect("release lock");
+                    while !*released {
+                        released = wake.wait(released).expect("release wait");
+                    }
+                },
+            )));
+            drop(runtime);
+            dropped.send(()).expect("report runtime drop");
+        });
+
+        let runtime_dropped = observed.recv_timeout(Duration::from_millis(250));
+        let (lock, wake) = &*release;
+        *lock.lock().expect("release lock") = true;
+        wake.notify_one();
+        runtime_owner.join().expect("runtime owner");
+
+        assert!(runtime_dropped.is_ok(), "Tokio waited for timed-out close");
     }
 }

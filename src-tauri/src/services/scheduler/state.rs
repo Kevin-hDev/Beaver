@@ -29,13 +29,9 @@ pub async fn write_last_checked(value: DateTime<Local>) -> Result<(), String> {
     let state = SchedulerRuntimeState {
         last_checked_at: value.to_rfc3339(),
     };
-    let tmp = path.with_extension("json.tmp");
     let content =
         serde_json::to_string_pretty(&state).map_err(|_| "Erreur état scheduler".to_string())?;
-    tokio::fs::write(&tmp, content)
-        .await
-        .map_err(|_| "Erreur état scheduler".to_string())?;
-    tokio::fs::rename(&tmp, &path)
+    crate::services::private_store::atomic_write_async(path, content.into_bytes())
         .await
         .map_err(|_| "Erreur état scheduler".to_string())?;
     Ok(())

@@ -130,9 +130,6 @@ eventsource-stream = "0.2"
 # Shell cross-platform
 which = "7"
 
-# Terminal PTY cross-platform
-portable-pty = "0.9"
-
 # Archive extraction (Ollama bundle)
 zstd = "0.13"
 tar = "0.4"
@@ -175,11 +172,16 @@ cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
+# Unix PTY implementation; Windows uses a lifecycle-safe ConPTY backend below.
+portable-pty = "0.9"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 landlock = "0.4.4"
 
 [target.'cfg(windows)'.dependencies]
+# ConPTY children are created suspended and enter Beaver's global Job before
+# they can execute, preserving the single native confinement authority.
+windows-spawn = "=0.1.0"
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_Globalization",
@@ -190,6 +192,7 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_JobObjects",
     "Win32_System_Console",
+    "Win32_System_Pipes",
     "Win32_System_Memory",
     "Win32_System_SystemServices",
     "Win32_System_Threading",

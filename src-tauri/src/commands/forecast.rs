@@ -8,8 +8,19 @@ use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn run_forecast(
-    mut request: ForecastRequest,
+    request: ForecastRequest,
     chronos: State<'_, sidecar::ChronosSidecar>,
+) -> Result<ForecastResult, String> {
+    let sidecar = chronos.inner().clone();
+    let operation_sidecar = sidecar.clone();
+    sidecar
+        .run_cancellable(move || run_forecast_inner(request, operation_sidecar))
+        .await
+}
+
+async fn run_forecast_inner(
+    mut request: ForecastRequest,
+    chronos: sidecar::ChronosSidecar,
 ) -> Result<ForecastResult, String> {
     let started_at = Instant::now();
     crate::services::forecast::request_normalize::normalize_request(&mut request);
@@ -71,7 +82,7 @@ pub async fn run_forecast(
             None,
         )
         .await;
-        sidecar::schedule_idle_stop(&chronos);
+        sidecar::schedule_idle_stop(&chronos).await;
         prediction.map_err(|_| "Erreur du service de prédiction".to_string())?
     };
 

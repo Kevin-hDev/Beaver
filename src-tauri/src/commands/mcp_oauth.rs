@@ -7,6 +7,7 @@ fn validate_connector_id(id: &str) -> Result<(), String> {
 #[tauri::command]
 pub async fn start_mcp_oauth(
     app: tauri::AppHandle,
+    work: tauri::State<'_, crate::services::oauth_work::OAuthWorkServices>,
     connector_id: String,
     endpoint: String,
 ) -> Result<(), String> {
@@ -17,8 +18,8 @@ pub async fn start_mcp_oauth(
     if !crate::services::mcp_bridge::registry::is_trusted_endpoint_pub(&connector_id, &endpoint) {
         return Err("endpoint non autorisé pour OAuth".to_string());
     }
-    tauri::async_runtime::spawn(flow::run(app, connector_id, endpoint));
-    Ok(())
+    work.spawn(move |cancel| flow::run(app, connector_id, endpoint, cancel))
+        .map_err(|_| "Connexion impossible".to_string())
 }
 
 #[tauri::command]

@@ -1,11 +1,15 @@
 use super::{private_store_error, windows_acl, windows_token};
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
+use std::sync::{Mutex, MutexGuard};
+
+static SECURITY_METADATA: Mutex<()> = Mutex::new(());
 
 pub fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
     use windows_sys::Win32::Storage::FileSystem::{
         MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
     };
+    let _metadata_guard = security_metadata_guard()?;
     let source = wide(source);
     let destination = wide(destination);
     let success = unsafe {
@@ -19,10 +23,17 @@ pub fn replace_file(source: &Path, destination: &Path) -> Result<(), String> {
 }
 
 pub fn secure_acl(path: &Path) -> Result<(), String> {
+    let _metadata_guard = security_metadata_guard()?;
     let user = windows_token::current_user()?;
     let path = wide(path);
     let is_directory = path_is_directory(path.as_slice())?;
     windows_acl::apply_and_verify(&path, user.sid(), is_directory)
+}
+
+fn security_metadata_guard() -> Result<MutexGuard<'static, ()>, String> {
+    // Windows peut propager une ACL de dossier pendant le remplacement ou la
+    // vérification d'un enfant ; une seule autorité ordonne ces métadonnées.
+    SECURITY_METADATA.lock().map_err(|_| private_store_error())
 }
 
 fn path_is_directory(path: &[u16]) -> Result<bool, String> {

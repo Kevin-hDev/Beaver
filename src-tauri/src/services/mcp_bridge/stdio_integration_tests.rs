@@ -16,5 +16,11 @@ async fn stdio_transport_handshakes_and_calls_a_real_child_process() {
         .expect("tools/call response");
     assert_eq!(result.content, "hello");
 
-    process_manager::shutdown_one("__beaver_mcp_fixture");
+    let pid = process_manager::process_id_for_test("__beaver_mcp_fixture")
+        .expect("fixture process remains owned");
+    process_manager::shutdown_one("__beaver_mcp_fixture").await;
+
+    let mut processes = sysinfo::System::new();
+    processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
 }

@@ -3,6 +3,8 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
+use crate::services::work_registry::ServiceWorkCancellation;
+
 const MAX_ARGUMENTS: usize = 48;
 const MAX_ARGUMENT_CHARS: usize = 4_096;
 const MAX_PATH_CHARS: usize = 16_384;
@@ -26,6 +28,7 @@ pub fn run(
     working_directory: &Path,
     temporary_directory: &Path,
     timeout: Duration,
+    cancellation: &ServiceWorkCancellation,
 ) -> Result<(), ProcessFailure> {
     if !program.is_absolute()
         || !program.is_file()
@@ -40,6 +43,9 @@ pub fn run(
     {
         return Err(ProcessFailure::CommandInvalid);
     }
+    if cancellation.is_cancelled() {
+        return Err(ProcessFailure::Interrupted);
+    }
     let path = std::env::var_os("PATH")
         .filter(|value| valid_environment_value(value, MAX_PATH_CHARS))
         .ok_or(ProcessFailure::EnvironmentInvalid)?;
@@ -51,13 +57,23 @@ pub fn run(
         .stdout(Stdio::null())
         .stderr(Stdio::null());
     configure_environment(&mut command, path, temporary_directory)?;
-    crate::services::process_tree::configure(&mut command);
-    let mut child = command.spawn().map_err(|_| ProcessFailure::Unavailable)?;
+    let mut child = crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        crate::services::process_tree::ProcessKind::ExtensionInstaller,
+    )
+    .map_err(|_| ProcessFailure::Unavailable)?;
     let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait() {
             Ok(Some(status)) if status.success() => return Ok(()),
             Ok(Some(_)) => return Err(ProcessFailure::Failed),
+            Ok(None) if cancellation.is_cancelled() => {
+                crate::services::process_tree::terminate(
+                    &mut child,
+                    crate::services::process_tree::ProcessKind::ExtensionInstaller,
+                );
+                return Err(ProcessFailure::Interrupted);
+            }
             Ok(None) if Instant::now() < deadline => std::thread::sleep(POLL_INTERVAL),
             Ok(None) => {
                 crate::services::process_tree::terminate(
@@ -110,6 +126,8 @@ fn valid_environment_value(value: &std::ffi::OsStr, maximum: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app_exit::AppExitCoordinator;
+    use crate::services::extensions::work_supervision::ExtensionWorkServices;
 
     #[test]
     fn inherited_environment_is_bounded_and_single_line() {
@@ -166,5 +184,41 @@ mod tests {
             environment.get(std::ffi::OsStr::new("USERPROFILE")),
             Some(&Some(temporary.path().as_os_str().to_owned()))
         );
+    }
+
+    #[tokio::test]
+    async fn cancellation_terminates_and_reaps_a_real_installer_child() {
+        let node = which::which("node").unwrap().canonicalize().unwrap();
+        let workspace = tempfile::tempdir().unwrap();
+        let script = workspace.path().join("wait.mjs");
+        std::fs::write(&script, "setInterval(() => {}, 1000);\n").unwrap();
+        let temporary = workspace.path().join("tmp");
+        std::fs::create_dir(&temporary).unwrap();
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let work = ExtensionWorkServices::new(coordinator.work_supervisor());
+        let admission = work.try_admit_operation().expect("operation admission");
+        let cancellation = admission.cancellation();
+        let root = workspace.path().to_path_buf();
+        let arguments = vec![script.into_os_string()];
+
+        let child = tokio::task::spawn_blocking(move || {
+            run(
+                &node,
+                &arguments,
+                &root,
+                &temporary,
+                Duration::from_secs(30),
+                &cancellation,
+            )
+        });
+        tokio::time::sleep(Duration::from_millis(150)).await;
+        work.begin_closing();
+
+        let result = tokio::time::timeout(Duration::from_secs(3), child)
+            .await
+            .expect("cancelled installer must finish")
+            .expect("installer task must not panic");
+        assert_eq!(result, Err(ProcessFailure::Interrupted));
+        drop(admission);
     }
 }

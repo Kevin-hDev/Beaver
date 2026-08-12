@@ -1,34 +1,38 @@
+use crate::services::work_registry::ServiceWorkCancellation;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::Stdio;
+use tokio::process::Command;
+
+#[cfg(test)]
+#[path = "runtime_tests.rs"]
+mod tests;
 
 const STAMP: &str = ".runtime.stamp";
 
-pub async fn ensure_runtime(source: &Path) -> Result<PathBuf, String> {
-    let source = source.to_path_buf();
-    tokio::task::spawn_blocking(move || ensure_runtime_blocking(&source))
-        .await
-        .map_err(|_| "SearXNG: runtime indisponible".to_string())?
-}
-
-fn ensure_runtime_blocking(source: &Path) -> Result<PathBuf, String> {
+pub async fn ensure_runtime(
+    source: &Path,
+    cancel: &ServiceWorkCancellation,
+) -> Result<PathBuf, String> {
     validate_source(source)?;
     let venv = super::paths::venv_dir();
     let python = venv_python(&venv);
     if !python.exists() {
         let base_python = find_python()?;
-        run(
-            Command::new(base_python).args(["-m", "venv"]).arg(&venv),
-            "venv",
-        )?;
+        let mut command = Command::new(base_python);
+        command.args(["-m", "venv"]).arg(&venv);
+        run(command, cancel).await?;
     }
 
     let stamp_path = venv.join(STAMP);
     let stamp = source_stamp(source)?;
     let installed = std::fs::read_to_string(&stamp_path).unwrap_or_default();
     if installed != stamp {
-        install_build_tools(&python, source)?;
-        install_requirements(&python, source)?;
+        install_build_tools(&python, source, cancel).await?;
+        install_requirements(&python, source, cancel).await?;
+        if cancel.is_cancelled() {
+            return Err("SearXNG: arrêt en cours".to_string());
+        }
         std::fs::write(stamp_path, stamp)
             .map_err(|_| "SearXNG: validation runtime impossible".to_string())?;
     }
@@ -38,9 +42,10 @@ fn ensure_runtime_blocking(source: &Path) -> Result<PathBuf, String> {
 fn validate_source(source: &Path) -> Result<(), String> {
     let required = ["setup.py", "requirements.txt", "LICENSE", "searx/webapp.py"];
     if required.iter().all(|file| source.join(file).exists()) {
-        return Ok(());
+        Ok(())
+    } else {
+        Err("SearXNG: bundle incomplet".to_string())
     }
-    Err("SearXNG: bundle incomplet".to_string())
 }
 
 fn source_stamp(source: &Path) -> Result<String, String> {
@@ -53,49 +58,81 @@ fn source_stamp(source: &Path) -> Result<String, String> {
     Ok(hex::encode(hasher.finalize()))
 }
 
-fn install_build_tools(python: &Path, source: &Path) -> Result<(), String> {
+async fn install_build_tools(
+    python: &Path,
+    source: &Path,
+    cancel: &ServiceWorkCancellation,
+) -> Result<(), String> {
+    let mut command = Command::new(python);
     if let Some(wheels) = wheelhouse_for_source(source) {
-        run(
-            Command::new(python)
-                .args(["-m", "pip", "install", "--no-index", "--find-links"])
-                .arg(wheels)
-                .args(["setuptools", "wheel"]),
-            "outils Python",
-        )
+        command
+            .args(["-m", "pip", "install", "--no-index", "--find-links"])
+            .arg(wheels)
+            .args(["setuptools", "wheel"]);
     } else {
-        run(
-            Command::new(python).args([
-                "-m",
-                "pip",
-                "install",
-                "--upgrade",
-                "pip",
-                "setuptools",
-                "wheel",
-            ]),
-            "outils Python",
-        )
+        command.args([
+            "-m",
+            "pip",
+            "install",
+            "--upgrade",
+            "pip",
+            "setuptools",
+            "wheel",
+        ]);
     }
+    run(command, cancel).await
 }
 
-fn install_requirements(python: &Path, source: &Path) -> Result<(), String> {
+async fn install_requirements(
+    python: &Path,
+    source: &Path,
+    cancel: &ServiceWorkCancellation,
+) -> Result<(), String> {
     let requirements = source.join("requirements.txt");
+    let mut command = Command::new(python);
     if let Some(wheels) = wheelhouse_for_source(source) {
-        run(
-            Command::new(python)
-                .args(["-m", "pip", "install", "--no-index", "--find-links"])
-                .arg(wheels)
-                .args(["-r"])
-                .arg(requirements),
-            "dépendances Python",
-        )
+        command
+            .args(["-m", "pip", "install", "--no-index", "--find-links"])
+            .arg(wheels)
+            .arg("-r")
+            .arg(requirements);
     } else {
-        run(
-            Command::new(python)
-                .args(["-m", "pip", "install", "-r"])
-                .arg(requirements),
-            "dépendances Python",
-        )
+        command
+            .args(["-m", "pip", "install", "-r"])
+            .arg(requirements);
+    }
+    run(command, cancel).await
+}
+
+async fn run(mut command: Command, cancel: &ServiceWorkCancellation) -> Result<(), String> {
+    command
+        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
+        .env("PIP_NO_INPUT", "1")
+        .env("PYTHONUNBUFFERED", "1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .kill_on_drop(true);
+    let mut child = crate::services::owned_process::OwnedProcess::spawn_tokio(
+        &mut command,
+        crate::services::process_tree::ProcessKind::Searxng,
+    )
+    .await
+    .map_err(|_| "SearXNG: runtime indisponible".to_string())?;
+    let status = tokio::select! {
+        result = child.wait() => result.map_err(|_| "SearXNG: runtime indisponible".to_string())?,
+        _ = cancel.cancelled() => {
+            crate::services::process_tree::terminate_tokio(
+                &mut child,
+                crate::services::process_tree::ProcessKind::Searxng,
+            ).await;
+            return Err("SearXNG: arrêt en cours".to_string());
+        }
+    };
+    if status.success() {
+        Ok(())
+    } else {
+        Err("SearXNG: installation runtime échouée".to_string())
     }
 }
 
@@ -124,56 +161,5 @@ fn venv_python(venv: &Path) -> PathBuf {
         venv.join("Scripts").join("python.exe")
     } else {
         venv.join("bin").join("python")
-    }
-}
-
-fn run(command: &mut Command, step: &str) -> Result<(), String> {
-    crate::services::background_command::configure(command);
-    command.env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
-    command.env("PIP_NO_INPUT", "1");
-    command.env("PYTHONUNBUFFERED", "1");
-    let output = command
-        .output()
-        .map_err(|_| "SearXNG: runtime indisponible".to_string())?;
-    if output.status.success() {
-        return Ok(());
-    }
-    Err(format!(
-        "SearXNG: installation runtime échouée ({})",
-        safe_failure_hint(&output.stderr, step)
-    ))
-}
-
-fn safe_failure_hint(stderr: &[u8], step: &str) -> String {
-    let text = String::from_utf8_lossy(stderr);
-    for marker in [
-        "No module named",
-        "No matching distribution found",
-        "Could not find a version",
-    ] {
-        if let Some(line) = text.lines().find(|line| line.contains(marker)) {
-            return truncate(line.trim(), 180);
-        }
-    }
-    step.to_string()
-}
-
-fn truncate(input: &str, max_chars: usize) -> String {
-    if input.chars().count() <= max_chars {
-        return input.to_string();
-    }
-    let mut out: String = input.chars().take(max_chars).collect();
-    out.push_str("...");
-    out
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn failure_hint_keeps_safe_python_reason() {
-        let hint = safe_failure_hint(b"ModuleNotFoundError: No module named 'msgspec'", "SearXNG");
-        assert!(hint.contains("No module named"));
     }
 }

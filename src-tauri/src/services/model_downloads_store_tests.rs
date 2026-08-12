@@ -1,13 +1,24 @@
 #[cfg(test)]
 mod tests {
+    use crate::app_exit::AppExitCoordinator;
     use crate::services::model_downloads_store::{ModelDownloadManager, ProgressUpdate};
     use crate::services::model_downloads_types::{
         ModelDownloadKind, ModelDownloadPhase, ModelDownloadStatus, MAX_PENDING_DOWNLOADS,
     };
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    };
+    use std::time::{Duration, Instant};
+
+    fn test_manager() -> ModelDownloadManager {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        ModelDownloadManager::new(coordinator.work_supervisor())
+    }
 
     #[tokio::test]
     async fn queues_a_second_download_while_one_is_running() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         let (first, first_runner) = manager
             .start(ModelDownloadKind::Ollama, "llama3:latest".into(), false)
             .await
@@ -26,14 +37,14 @@ mod tests {
 
     #[tokio::test]
     async fn cancel_marks_token_then_finish_sets_cancelled_status() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         let (state, cancel) = manager
             .start(ModelDownloadKind::Forecast, "chronos-tiny".into(), false)
             .await
             .unwrap();
 
         manager.cancel(&state.id).await.unwrap();
-        assert!(cancel.unwrap().is_cancelled());
+        assert!(cancel.unwrap().0.is_cancelled());
 
         let states = manager
             .finish(&state.id, ModelDownloadStatus::Cancelled, None)
@@ -43,7 +54,7 @@ mod tests {
 
     #[tokio::test]
     async fn completed_download_is_removed_before_next_start() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         let (state, _) = manager
             .start(ModelDownloadKind::Ollama, "llama3:latest".into(), false)
             .await
@@ -76,7 +87,7 @@ mod tests {
 
     #[tokio::test]
     async fn finishing_the_active_download_starts_the_next_queued_item() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         let (first, _) = manager
             .start(ModelDownloadKind::Ollama, "llama3:latest".into(), false)
             .await
@@ -97,7 +108,7 @@ mod tests {
 
     #[tokio::test]
     async fn queue_is_bounded() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         for index in 0..MAX_PENDING_DOWNLOADS {
             manager
                 .start(ModelDownloadKind::Ollama, format!("model-{index}"), false)
@@ -116,7 +127,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_queued_download_can_be_cancelled_before_it_starts() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         let (first, _) = manager
             .start(ModelDownloadKind::Ollama, "first".into(), false)
             .await
@@ -143,7 +154,7 @@ mod tests {
 
     #[tokio::test]
     async fn app_exit_cancels_running_and_queued_downloads() {
-        let manager = ModelDownloadManager::new();
+        let manager = test_manager();
         let (_, running_cancel) = manager
             .start(ModelDownloadKind::Ollama, "first".into(), false)
             .await
@@ -155,11 +166,74 @@ mod tests {
 
         manager.cancel_all().await;
 
-        assert!(running_cancel.unwrap().is_cancelled());
+        assert!(running_cancel.unwrap().0.is_cancelled());
         assert!(queued_cancel.is_none());
         assert_eq!(
             manager.list().await[1].status,
             ModelDownloadStatus::Cancelled
         );
+    }
+
+    #[tokio::test]
+    async fn shutdown_waits_for_the_worker_and_permanently_refuses_new_downloads() {
+        let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+        let manager = ModelDownloadManager::new(coordinator.work_supervisor());
+        let (_, runner) = manager
+            .start(ModelDownloadKind::Ollama, "first".into(), false)
+            .await
+            .unwrap();
+        let (_, admission) = runner.expect("download worker");
+        let finished = Arc::new(AtomicBool::new(false));
+        let task_finished = Arc::clone(&finished);
+        admission
+            .spawn(move |cancel| async move {
+                cancel.cancelled().await;
+                tokio::time::sleep(Duration::from_millis(20)).await;
+                task_finished.store(true, Ordering::Release);
+            })
+            .unwrap();
+
+        assert!(
+            manager
+                .stop_and_wait(Instant::now() + Duration::from_secs(1))
+                .await
+        );
+        assert!(finished.load(Ordering::Acquire));
+        assert_eq!(
+            manager
+                .start(ModelDownloadKind::Forecast, "chronos-tiny".into(), false)
+                .await
+                .unwrap_err(),
+            "service-shutting-down"
+        );
+    }
+
+    #[tokio::test]
+    async fn idle_worker_receives_the_next_download_without_a_restart_race() {
+        let manager = test_manager();
+        let (first, runner) = manager
+            .start(ModelDownloadKind::Ollama, "first".into(), false)
+            .await
+            .unwrap();
+        manager
+            .finish(&first.id, ModelDownloadStatus::Completed, None)
+            .await;
+        let (_, admission) = runner.expect("download worker");
+        let waiting_manager = manager.clone();
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        admission
+            .spawn(move |shutdown| async move {
+                let next = waiting_manager.wait_for_next(&shutdown).await;
+                let _ = sender.send(next.map(|(state, _)| state.id));
+            })
+            .unwrap();
+
+        let (second, second_runner) = manager
+            .start(ModelDownloadKind::Forecast, "chronos-tiny".into(), false)
+            .await
+            .unwrap();
+
+        assert!(second_runner.is_none());
+        assert_eq!(receiver.await.unwrap(), Some(second.id));
     }
 }

@@ -1,6 +1,5 @@
 use std::ffi::OsString;
 use std::io::Read;
-use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::time::Instant;
 
@@ -15,9 +14,12 @@ pub(super) fn run(
     command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .process_group(0);
-    let mut child = command.spawn().ok()?;
+        .stderr(Stdio::null());
+    let mut child = crate::services::owned_process::OwnedProcess::spawn(
+        command,
+        crate::services::process_tree::ProcessKind::AgentShell,
+    )
+    .ok()?;
     let pid = child.id();
     let Some(stdout) = child.stdout.take() else {
         terminate_group(pid);
@@ -80,12 +82,10 @@ fn terminate_descendants(pid: u32) {
 }
 
 fn terminate_group(pid: u32) {
-    let Ok(pid) = i32::try_from(pid) else { return };
-    // SAFETY: seul le groupe dédié au processus enfant validé est ciblé.
-    unsafe {
-        libc::kill(-pid, libc::SIGTERM);
-        libc::kill(-pid, libc::SIGKILL);
-    }
+    crate::services::process_tree::kill(
+        pid,
+        crate::services::process_tree::ProcessKind::AgentShell,
+    );
 }
 
 fn extract(output: &[u8], marker: &[u8]) -> Option<OsString> {

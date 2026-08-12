@@ -676,12 +676,22 @@
       "ok": "Réussi",
       "error": "Échoué",
       "missed": "Raté",
+      "cancelled": "Annulé",
       "never": "Jamais exécuté",
       "none": "Aucun"
     },
     "history": {
       "title": "Historique",
-      "empty": "Aucune exécution"
+      "empty": "Aucune exécution",
+      "errors": {
+        "failed": "Le réveil a échoué.",
+        "rateLimited": "La limite de requêtes du fournisseur a été atteinte.",
+        "authenticationFailed": "L'authentification auprès du fournisseur a échoué.",
+        "ollamaUnavailable": "Ollama était indisponible.",
+        "missedUnavailable": "Le réveil a été manqué pendant l'indisponibilité de Beaver.",
+        "schedulerStopping": "Le réveil n'a pas démarré car Beaver était en cours de fermeture.",
+        "capacityReached": "Le réveil n'a pas démarré car trop d'opérations étaient déjà en cours."
+      }
     },
     "sidebar": {
       "title": "Réveils",
@@ -1132,6 +1142,14 @@
   "errors": {
     "crashMessage": "Une erreur est survenue. Relance l'application.",
     "operationFailed": "L'opération a échoué. Réessaye.",
+    "admission": {
+      "appShuttingDown": "Beaver est en cours de fermeture. Réessaye après avoir relancé l’application.",
+      "appCapacity": "Beaver traite déjà trop d’opérations. Réessaye dans un instant.",
+      "serviceShuttingDown": "Ce service est en cours d’arrêt. Réessaye dans un instant.",
+      "serviceCapacity": "Trop d’opérations sont déjà en cours. Réessaye dans un instant.",
+      "gatewayShuttingDown": "Les canaux de messagerie sont en cours d’arrêt. Réessaye dans un instant.",
+      "gatewayBusy": "Trop de messages sont déjà en cours de traitement. Réessaye dans un instant."
+    },
     "localStore": {
       "ollamaCustomization": "Le fichier de personnalisation Ollama est illisible. Restaure « ollama-custom-models.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver. Ne le supprime pas : sans sauvegarde, un redémarrage fera perdre cet historique et Beaver ne pourra plus garantir qu’un prompt présenté comme natif Ollama est réellement celui d’origine.",
       "ollamaNativePrompts": "Le fichier des instructions natives Ollama est illisible. Restaure « ollama-native-system-prompts.json » depuis une sauvegarde. Sans sauvegarde, ferme Beaver, supprime ce fichier dans Réglages > Avancé > Données Beaver, puis relance l’application pour repartir des valeurs par défaut.",

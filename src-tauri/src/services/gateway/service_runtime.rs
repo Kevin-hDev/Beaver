@@ -1,16 +1,15 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use tauri::Emitter;
 use tokio::sync::{mpsc, RwLock};
 
-use super::channels::{ChannelAdapter, ChannelContext, InboundMessage};
+use super::channels::{ChannelAdapter, ChannelContext, ChannelRun, InboundMessage};
 use super::security::ids;
 use super::service_audit;
 use super::service_state::{build_health, GatewayState};
 use super::supervisor::{ChannelSupervisor, RestartDecision};
+use super::tokens;
 use super::types::{ChannelHealthEntry, ChannelKey, ChannelStatus};
-use super::{tokens, watchdog::StallWatchdog};
 use crate::models::ChannelAccountConfig;
 
 pub(crate) fn validate_account(channel_id: &str, acc: &ChannelAccountConfig) -> Result<(), String> {
@@ -39,11 +38,8 @@ pub(crate) async fn run_supervised_channel(
     app: tauri::AppHandle,
 ) {
     let mut supervisor = ChannelSupervisor::new(&key.channel_id, &key.account_id);
-    let watchdog = StallWatchdog::spawn(Duration::from_secs(180), |_| {});
-    watchdog.arm();
     loop {
         if ctx.cancel.is_cancelled() {
-            watchdog.stop();
             return;
         }
         set_status(&state, &app, &key, ChannelStatus::Starting, None).await;
@@ -54,7 +50,6 @@ pub(crate) async fn run_supervised_channel(
         match start_result {
             Ok(handle) => {
                 if !handle_channel_run(handle, &mut supervisor, &state, &app, &key, &ctx).await {
-                    watchdog.stop();
                     return;
                 }
             }
@@ -68,11 +63,11 @@ pub(crate) async fn run_supervised_channel(
                         Some("auditUnavailable"),
                     )
                     .await;
-                    watchdog.stop();
                     return;
                 }
-                if !handle_restart(&mut supervisor, &state, &app, &key, e.is_auth).await {
-                    watchdog.stop();
+                if !handle_restart(&mut supervisor, &state, &app, &key, e.is_auth, &ctx.cancel)
+                    .await
+                {
                     return;
                 }
             }
@@ -81,7 +76,7 @@ pub(crate) async fn run_supervised_channel(
 }
 
 async fn handle_channel_run(
-    handle: tokio::task::JoinHandle<()>,
+    run: ChannelRun,
     supervisor: &mut ChannelSupervisor,
     state: &Arc<RwLock<GatewayState>>,
     app: &tauri::AppHandle,
@@ -90,7 +85,6 @@ async fn handle_channel_run(
 ) -> bool {
     supervisor.mark_started();
     if service_audit::channel_started(key).is_err() {
-        handle.abort();
         set_status(
             state,
             app,
@@ -102,11 +96,11 @@ async fn handle_channel_run(
         return false;
     }
     set_status(state, app, key, ChannelStatus::Running, None).await;
-    let _ = handle.await;
+    run.await;
     if ctx.cancel.is_cancelled() {
         return false;
     }
-    handle_restart(supervisor, state, app, key, false).await
+    handle_restart(supervisor, state, app, key, false, &ctx.cancel).await
 }
 
 async fn handle_restart(
@@ -115,12 +109,15 @@ async fn handle_restart(
     app: &tauri::AppHandle,
     key: &ChannelKey,
     is_auth: bool,
+    cancel: &tokio_util::sync::CancellationToken,
 ) -> bool {
     match supervisor.on_error(is_auth) {
         RestartDecision::Retry(delay) => {
             set_status(state, app, key, ChannelStatus::Starting, None).await;
-            tokio::time::sleep(delay).await;
-            true
+            tokio::select! {
+                _ = cancel.cancelled() => false,
+                _ = tokio::time::sleep(delay) => true,
+            }
         }
         RestartDecision::GiveUp(reason) => {
             let audit_failed =

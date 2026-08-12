@@ -7,6 +7,9 @@ mod test_support;
 #[path = "tool_bash_workdir_tests.rs"]
 mod workdir_tests;
 
+#[path = "tool_bash_supervision_tests.rs"]
+mod supervision_tests;
+
 #[cfg(unix)]
 #[path = "tool_bash_lifecycle_tests.rs"]
 mod lifecycle_tests;

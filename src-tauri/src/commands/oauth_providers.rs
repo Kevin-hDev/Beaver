@@ -11,6 +11,7 @@ pub async fn list_oauth_provider_statuses() -> Vec<oauth_providers::OAuthProvide
 #[tauri::command]
 pub async fn start_oauth_provider_login(
     app: tauri::AppHandle,
+    work: tauri::State<'_, crate::services::oauth_work::OAuthWorkServices>,
     provider_id: String,
     diagnostic_id: String,
 ) -> Result<(), String> {
@@ -18,14 +19,22 @@ pub async fn start_oauth_provider_login(
     match provider {
         ProviderId::OpenAi => {
             emit_openai_progress(&app, "waiting");
-            if crate::commands::codex_login(app.clone()).await.is_err() {
+            if crate::commands::codex_login_with_work(app.clone(), &work)
+                .await
+                .is_err()
+            {
                 emit_openai_progress(&app, "error");
                 return Err("Connexion impossible".to_string());
             }
             emit_openai_progress(&app, "success");
         }
         ProviderId::Moonshot | ProviderId::Xai => {
-            oauth_providers::login_external(app.clone(), provider, &diagnostic_id).await?;
+            let login_app = app.clone();
+            work.run(move |cancel| {
+                oauth_providers::login_external(login_app, provider, diagnostic_id, cancel)
+            })
+            .await
+            .map_err(|_| "Connexion impossible".to_string())??;
         }
     }
     crate::services::provider_usage::invalidate_remote(provider.usage_connection_id()).await;

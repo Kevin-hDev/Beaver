@@ -78,3 +78,19 @@ fn process_text_matches(text: &str) -> bool {
     let lower = text.to_lowercase();
     lower.contains("forecast-sidecar") && lower.contains("server.py")
 }
+
+#[cfg(test)]
+pub fn spawn_test_fixture() -> Result<Child, String> {
+    let python = crate::services::test_runtime::python()?;
+    let mut command = std::process::Command::new(python);
+    command
+        .args(["-c", "import time; time.sleep(30)"])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+    crate::services::owned_process::OwnedProcess::spawn(
+        &mut command,
+        process_tree::ProcessKind::Forecast,
+    )
+    .map_err(|_| "fixture Forecast indisponible".to_string())
+}

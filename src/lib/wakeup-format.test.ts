@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { formatDateTime, formatRunStatus, formatSchedule } from "@/lib/wakeup-format";
+import de from "@/i18n/de.json";
+import en from "@/i18n/en.json";
+import es from "@/i18n/es.json";
+import fr from "@/i18n/fr.json";
+import itJson from "@/i18n/it.json";
+import ja from "@/i18n/ja.json";
+import zh from "@/i18n/zh.json";
 
 vi.mock("@/i18n", () => ({
   default: { t: (key: string) => key, language: "fr" },
@@ -46,7 +53,14 @@ describe("formatSchedule", () => {
   describe("status", () => {
     it("formate un statut de run", () => {
       expect(formatRunStatus("missed")).toBe("heartbeat.status.missed");
+      expect(formatRunStatus("cancelled")).toBe("heartbeat.status.cancelled");
       expect(formatRunStatus(null)).toBe("heartbeat.status.never");
+    });
+
+    it("traduit l'annulation dans les sept langues", () => {
+      for (const locale of [fr, en, es, de, itJson, zh, ja]) {
+        expect(locale.heartbeat.status.cancelled.trim()).not.toBe("");
+      }
     });
 
     it("formate none pour une date absente ou invalide", () => {

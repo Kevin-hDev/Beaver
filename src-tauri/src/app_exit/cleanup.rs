@@ -1,6 +1,6 @@
 use super::policy::ShutdownTimeline;
+use crate::services;
 use crate::services::gateway::GatewayService;
-use crate::{services, ActiveStreams};
 use futures_util::FutureExt;
 use std::future::Future;
 use std::panic::AssertUnwindSafe;
@@ -14,8 +14,11 @@ pub(super) enum CleanupOutcome {
     Panicked,
 }
 
+pub(super) type StopFuture<'a> = futures_util::future::BoxFuture<'a, bool>;
+
 pub(super) async fn run(app: &tauri::AppHandle, timeline: ShutdownTimeline) -> CleanupOutcome {
-    run_with_deadline(timeline.graceful_deadline(), cleanup_services(app)).await
+    let deadline = timeline.graceful_deadline();
+    run_with_deadline(deadline, cleanup_services(app, deadline)).await
 }
 
 pub(super) async fn run_with_deadline<Work>(deadline: Instant, work: Work) -> CleanupOutcome
@@ -39,15 +42,9 @@ where
     ollama.await;
 }
 
-async fn cleanup_services(app: &tauri::AppHandle) {
-    cancel_active_streams(app).await;
-    if let Some(downloads) = app.try_state::<services::model_downloads::ModelDownloadManager>() {
-        downloads.cancel_all().await;
-    }
+async fn cleanup_services(app: &tauri::AppHandle, deadline: Instant) {
     services::agent_local::tool_bash_profile::clear();
-    services::mcp_oauth::flow::cancel_all();
-
-    let services_phase = stop_services(app);
+    let services_phase = stop_services(app, deadline);
     let ollama_handle = app.clone();
     let ollama_phase = async move {
         super::blocking::execute(move || {
@@ -58,52 +55,150 @@ async fn cleanup_services(app: &tauri::AppHandle) {
     run_ordered(services_phase, ollama_phase).await;
 }
 
-async fn stop_services(app: &tauri::AppHandle) {
+async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
+    let agent_work = async {
+        if let Some(work) =
+            app.try_state::<services::agent_local::agent_work_supervision::AgentWorkServices>()
+        {
+            work.stop_and_wait(deadline).await
+        } else {
+            true
+        }
+    };
     let gateway = async {
         if let Some(service) = app.try_state::<GatewayService>() {
-            service.stop().await;
+            service.stop_and_wait(deadline).await
+        } else {
+            true
         }
     };
     let chronos = async {
         if let Some(sidecar) = app.try_state::<services::forecast::sidecar::ChronosSidecar>() {
-            services::forecast::sidecar::stop(sidecar.inner()).await;
+            sidecar.stop_and_wait(deadline).await
+        } else {
+            true
+        }
+    };
+    let downloads = async {
+        if let Some(manager) = app.try_state::<services::model_downloads::ModelDownloadManager>() {
+            manager.stop_and_wait(deadline).await
+        } else {
+            true
+        }
+    };
+    let app_update = async {
+        if let Some(runtime) = app.try_state::<services::update_handoff::AppUpdateRuntime>() {
+            let stopped = runtime.stop_and_wait(deadline).await;
+            if let Some(identity) = runtime.transferred_identity() {
+                let mut system = sysinfo::System::new();
+                let pid = sysinfo::Pid::from_u32(identity.pid());
+                system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), true);
+                if identity.is_current(&system) {
+                    ::log::info!("[update] helper transféré préservé pid={}", identity.pid());
+                }
+            }
+            stopped
+        } else {
+            true
         }
     };
     let searxng = async {
         if let Some(sidecar) = app.try_state::<services::searxng::SearxngSidecar>() {
-            services::searxng::stop(sidecar.inner()).await;
+            sidecar.stop_and_wait(deadline).await
+        } else {
+            true
         }
     };
-    let terminal_handle = app.clone();
-    let terminals = super::blocking::execute(move || {
-        if let Some(pty) = terminal_handle.try_state::<services::terminal::PtyManager>() {
-            pty.kill_all();
+    let terminals = async {
+        if let Some(pty) = app.try_state::<services::terminal::PtyManager>() {
+            pty.stop_and_wait(deadline).await
+        } else {
+            true
         }
-    });
+    };
+    let oauth = async {
+        if let Some(work) = app.try_state::<services::oauth_work::OAuthWorkServices>() {
+            work.stop_and_wait(deadline).await
+        } else {
+            true
+        }
+    };
+    let scheduler = async {
+        if let Some(scheduler) = app.try_state::<services::scheduler::Scheduler>() {
+            scheduler.stop_and_wait(deadline).await
+        } else {
+            true
+        }
+    };
+    let background = async {
+        if let Some(work) =
+            app.try_state::<services::runtime_background::RuntimeBackgroundServices>()
+        {
+            work.stop_and_wait(deadline).await
+        } else {
+            true
+        }
+    };
 
-    let _ = tokio::join!(
-        services::oauth_providers::cancel_all(),
-        services::codex_oauth::login::cancel_login(),
-        services::agent_local::tool_bash_registry::stop_all(),
-        services::mcp_bridge::process_manager::shutdown_all(),
-        services::extensions::stop(),
+    let service_stops = [
+        ("agent-work", agent_work.boxed()),
+        ("gateway", gateway.boxed()),
+        ("forecast", chronos.boxed()),
+        ("model-downloads", downloads.boxed()),
+        ("app-update", app_update.boxed()),
+        ("searxng", searxng.boxed()),
+        ("terminal", terminals.boxed()),
+        ("oauth", oauth.boxed()),
+        ("scheduler", scheduler.boxed()),
+        ("runtime-background", background.boxed()),
+        (
+            "mcp",
+            services::mcp_bridge::process_manager::stop_and_wait(deadline).boxed(),
+        ),
+        (
+            "extensions",
+            services::extensions::stop_and_wait(deadline).boxed(),
+        ),
+    ];
+    let (all_stopped, ()) = tokio::join!(
+        run_service_group(service_stops),
         services::ollama_kill::release_vram(),
-        gateway,
-        chronos,
-        searxng,
-        terminals,
     );
+    if !all_stopped {
+        ::log::warn!("[exit] one or more services exceeded the graceful deadline");
+    }
+    verify_global_registry(app);
 }
 
-async fn cancel_active_streams(app: &tauri::AppHandle) {
-    let Some(streams) = app.try_state::<ActiveStreams>() else {
+pub(super) async fn run_service_group<'a, const N: usize>(
+    services: [(&'static str, StopFuture<'a>); N],
+) -> bool {
+    let results =
+        futures_util::future::join_all(services.into_iter().map(|(name, stop)| async move {
+            let stopped = stop.await;
+            if !stopped {
+                ::log::warn!("[exit] service {name} exceeded the graceful deadline");
+            }
+            stopped
+        }))
+        .await;
+    results.into_iter().all(std::convert::identity)
+}
+
+fn verify_global_registry(app: &tauri::AppHandle) {
+    let Some(coordinator) = app.try_state::<super::AppExitCoordinator>() else {
+        ::log::warn!("[exit] global work registry unavailable after service cleanup");
         return;
     };
-    let active = {
-        let mut streams = streams.0.lock().await;
-        streams.drain().map(|(_, entry)| entry).collect::<Vec<_>>()
-    };
-    for (cancel, _, _, _) in active {
-        cancel.cancel();
+    let _ = global_registry_is_empty(coordinator.registry.active_count());
+}
+
+pub(super) fn global_registry_is_empty(active_count: usize) -> bool {
+    if active_count == 0 {
+        ::log::info!("[exit] global work registry empty");
+        true
+    } else {
+        ::log::warn!("[exit] global work registry still active count={active_count}");
+        false
     }
 }

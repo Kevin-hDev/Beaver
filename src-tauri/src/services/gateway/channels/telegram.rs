@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use tokio::sync::{mpsc, RwLock};
 use zeroize::Zeroizing;
 
+use super::backpressure::try_enqueue;
 use super::telegram_types::*;
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
@@ -61,15 +62,16 @@ impl ChannelAdapter for TelegramAdapter {
         &self,
         ctx: ChannelContext,
         sender: mpsc::Sender<InboundMessage>,
-    ) -> GatewayResult<tokio::task::JoinHandle<()>> {
+    ) -> GatewayResult<super::ChannelRun> {
         self.load_token_and_identity(&ctx.key.vault_key()).await?;
         let client = self.client.clone();
         let state = self.state.clone();
         let cancel = ctx.cancel;
         let require_mention = ctx.config.require_mention;
         let channel_key = ctx.key;
+        let refusal_audit = ctx.refusal_audit;
 
-        Ok(tokio::spawn(async move {
+        Ok(Box::pin(async move {
             loop {
                 tokio::select! {
                     _ = cancel.cancelled() => break,
@@ -79,7 +81,7 @@ impl ChannelAdapter for TelegramAdapter {
                                 let bot_name = state.read().await.bot_username.clone();
                                 for u in updates {
                                     if let Some(m) = Self::to_inbound(&u, &channel_key, require_mention, &bot_name) {
-                                        let _ = sender.send(m).await;
+                                        try_enqueue(&sender, m, &channel_key, &refusal_audit);
                                     }
                                 }
                             }

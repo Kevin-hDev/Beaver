@@ -29,8 +29,7 @@ impl ChangeTracker {
             .canonicalize()
             .map_err(|_| "Suivi des fichiers indisponible.".to_string())?;
         let watcher_root = root.clone();
-        let mut watcher_setup =
-            tokio::task::spawn_blocking(move || workspace_hub(watcher_root));
+        let mut watcher_setup = tokio::task::spawn_blocking(move || workspace_hub(watcher_root));
         let baseline_root = root.clone();
         let mut baseline_setup =
             tokio::task::spawn_blocking(move || capture_baseline(&baseline_root));
@@ -72,12 +71,12 @@ impl ChangeTracker {
 
     #[cfg(test)]
     pub fn changes(&mut self) -> Vec<ToolFileChange> {
-        self.drain();
+        self.drain_ready();
         self.snapshot(false, None)
     }
 
     pub fn updated_changes(&mut self) -> Option<(Vec<ToolFileChange>, bool)> {
-        if !self.drain() && !std::mem::take(&mut self.pending_update) {
+        if !self.drain_ready() && !std::mem::take(&mut self.pending_update) {
             return None;
         }
         Some((self.snapshot(false, None), self.overflowed))
@@ -88,7 +87,7 @@ impl ChangeTracker {
     }
 
     pub fn finish_changes(&mut self) -> (Vec<ToolFileChange>, bool) {
-        self.drain();
+        self.drain_ready();
         self.overflowed = self.baseline_incomplete;
         let repository = self
             .baseline
@@ -114,7 +113,7 @@ impl ChangeTracker {
         (self.snapshot(true, repository.as_ref()), self.overflowed)
     }
 
-    fn snapshot(
+    pub(super) fn snapshot(
         &self,
         include_diffs: bool,
         repository: Option<&git2::Repository>,
@@ -160,7 +159,7 @@ impl ChangeTracker {
         Some(metadata_change(path, status))
     }
 
-    fn drain(&mut self) -> bool {
+    pub(super) fn drain_ready(&mut self) -> bool {
         let Some(hub) = &self.hub else {
             return false;
         };
@@ -209,9 +208,7 @@ fn metadata_change(path: &Path, status: ToolFileChangeStatus) -> ToolFileChange 
     }
 }
 
-fn capture_baseline(
-    root: &Path,
-) -> (Option<GitBaseline>, Option<DirectoryBaseline>, bool) {
+fn capture_baseline(root: &Path) -> (Option<GitBaseline>, Option<DirectoryBaseline>, bool) {
     let (git, git_incomplete) = GitBaseline::capture(root);
     if let Some(git) = git {
         let incomplete = git_incomplete || git.is_incomplete();

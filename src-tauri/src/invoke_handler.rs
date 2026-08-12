@@ -127,7 +127,10 @@ macro_rules! for_build {
     () => {{
         #[cfg(feature = "e2e")]
         {
-            crate::invoke_handler::generate![crate::commands::e2e_request_exit]
+            crate::invoke_handler::generate![
+                crate::commands::e2e_request_exit,
+                crate::commands::e2e_native_webviews
+            ]
         }
         #[cfg(not(feature = "e2e"))]
         {

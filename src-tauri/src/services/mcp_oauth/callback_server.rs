@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
-use tokio::sync::oneshot;
 use tokio_util::sync::CancellationToken;
 use zeroize::{Zeroize, Zeroizing};
 
@@ -20,30 +19,34 @@ align-items:center;height:100vh;margin:0;background:#1a1a2e;color:#e0e0e0}
 <p>Vous pouvez fermer cet onglet et retourner dans l'application.</p>
 </div></body></html>"#;
 
-pub async fn start(
-    cancel: CancellationToken,
-) -> Result<(u16, oneshot::Receiver<Result<CallbackResult, String>>), String> {
-    let listener = TcpListener::bind("127.0.0.1:0")
-        .await
-        .map_err(|e| format!("bind: {e}"))?;
+pub struct CallbackServer {
+    listener: TcpListener,
+    port: u16,
+}
 
-    let port = listener
-        .local_addr()
-        .map_err(|e| format!("addr: {e}"))?
-        .port();
+impl CallbackServer {
+    pub async fn bind() -> Result<Self, String> {
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .map_err(|_| "callback OAuth indisponible".to_string())?;
+        let port = listener
+            .local_addr()
+            .map_err(|_| "callback OAuth indisponible".to_string())?
+            .port();
+        Ok(Self { listener, port })
+    }
 
-    let (tx, rx) = oneshot::channel();
+    pub fn port(&self) -> u16 {
+        self.port
+    }
 
-    tokio::spawn(async move {
-        let result = tokio::select! {
-            r = accept_callback(&listener) => r,
-            () = tokio::time::sleep(TIMEOUT) => Err("délai d'attente dépassé".to_string()),
-            () = cancel.cancelled() => Err("annulé".to_string()),
-        };
-        let _ = tx.send(result);
-    });
-
-    Ok((port, rx))
+    pub async fn wait(self, cancel: &CancellationToken) -> Result<CallbackResult, String> {
+        tokio::select! {
+            result = accept_callback(&self.listener) => result,
+            _ = tokio::time::sleep(TIMEOUT) => Err("délai d'attente dépassé".to_string()),
+            _ = cancel.cancelled() => Err("annulé".to_string()),
+        }
+    }
 }
 
 async fn accept_callback(listener: &TcpListener) -> Result<CallbackResult, String> {
@@ -57,13 +60,13 @@ async fn accept_callback(listener: &TcpListener) -> Result<CallbackResult, Strin
         let (mut stream, _) = listener
             .accept()
             .await
-            .map_err(|e| format!("accept: {e}"))?;
+            .map_err(|_| "callback OAuth indisponible".to_string())?;
 
         let mut buf = Zeroizing::new(vec![0u8; MAX_REQUEST_LEN]);
         let n = stream
             .read(buf.as_mut_slice())
             .await
-            .map_err(|e| format!("read: {e}"))?;
+            .map_err(|_| "callback OAuth invalide".to_string())?;
 
         let parsed = {
             let request = String::from_utf8_lossy(&buf[..n]);
@@ -151,3 +154,7 @@ fn hex_val(b: u8) -> Option<u8> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+#[path = "callback_server_tests.rs"]
+mod tests;

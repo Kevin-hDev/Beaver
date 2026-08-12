@@ -1,5 +1,5 @@
-use super::super::types_tools::ShellOutput;
 use super::super::tool_result_contract::ToolResultStatus;
+use super::super::types_tools::ShellOutput;
 #[cfg(not(target_os = "windows"))]
 use serde_json::json;
 #[cfg(not(target_os = "windows"))]
@@ -82,7 +82,10 @@ fn nonzero_exit_keeps_output_and_exposes_the_exit_code() {
     let result = super::to_tool_result(output("done", "", 7, false));
 
     assert!(result.is_error);
-    assert_eq!(result.error.as_ref().unwrap().code.as_ref(), "shell_exit_nonzero");
+    assert_eq!(
+        result.error.as_ref().unwrap().code.as_ref(),
+        "shell_exit_nonzero"
+    );
     assert_eq!(result.content, "done\n\n[Code de sortie: 7]");
 }
 
@@ -104,7 +107,10 @@ fn cancellation_has_a_distinct_status() {
     let result = super::to_tool_result(shell_output);
 
     assert_eq!(result.status, ToolResultStatus::Cancelled);
-    assert_eq!(result.error.as_ref().unwrap().code.as_ref(), "tool_cancelled");
+    assert_eq!(
+        result.error.as_ref().unwrap().code.as_ref(),
+        "tool_cancelled"
+    );
 }
 
 #[test]
@@ -143,13 +149,19 @@ async fn stopped_session_returns_its_exact_command_as_display_summary() {
     let dir = tempfile::tempdir().expect("tempdir");
     let owner = uuid::Uuid::new_v4().to_string();
     let command = "sleep 30";
-    let started = super::execute_command(
+    let work = super::super::agent_work_supervision::ShellWork::new(
+        crate::app_exit::AppExitCoordinator::initialize()
+            .expect("exit coordinator")
+            .work_supervisor(),
+    );
+    let started = super::execute_command_with_work(
         &json!({"command": command, "yield_time_ms": 250}),
         dir.path(),
         &owner,
         CancellationToken::new(),
         None,
         None,
+        work,
     )
     .await
     .expect("start process");

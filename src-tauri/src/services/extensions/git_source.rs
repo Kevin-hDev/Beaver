@@ -5,6 +5,8 @@ use git2::{AutotagOption, FetchOptions, RemoteCallbacks, Repository};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use crate::services::work_registry::ServiceWorkCancellation;
+
 const MAX_TRANSFER_BYTES: usize = 512 * 1024 * 1024;
 const MAX_GIT_OBJECTS: usize = 100_000;
 const MIN_COMMIT_PREFIX_CHARS: usize = 7;
@@ -21,10 +23,11 @@ pub fn materialize(
     source: &GitSource,
     destination: &Path,
     npm: &NpmRunner,
+    cancellation: &ServiceWorkCancellation,
 ) -> Result<GitMaterialization, super::OperationFailure> {
     let started = Instant::now();
     let checkout = destination.join("repository");
-    let repository = clone_repository(source, &checkout)
+    let repository = clone_repository(source, &checkout, cancellation)
         .map_err(|error| clone_failure(&error, started.elapsed()))?;
     let revision = repository
         .head()
@@ -36,7 +39,7 @@ pub fn materialize(
         .map_err(|_| super::OperationFailure::StorageFailed)?;
     super::managed_tree::validate(destination)?;
     if super::git_package::has_runtime_dependencies(&checkout)? {
-        npm.install_dependencies(&checkout)?;
+        npm.install_dependencies(&checkout, cancellation)?;
     }
     super::managed_tree::validate(destination)?;
     Ok(GitMaterialization {
@@ -48,27 +51,37 @@ pub fn materialize(
 pub(super) fn clone_repository(
     source: &GitSource,
     checkout: &Path,
+    cancellation: &ServiceWorkCancellation,
 ) -> Result<Repository, git2::Error> {
     let deadline = Instant::now() + GIT_TIMEOUT;
-    let fetch = fetch_options(deadline, should_use_shallow_clone(source))?;
+    let fetch = fetch_options(
+        deadline,
+        should_use_shallow_clone(source),
+        cancellation.clone(),
+    )?;
     let mut builder = RepoBuilder::new();
     builder.fetch_options(fetch);
-    builder.with_checkout(super::git_checkout::bounded());
+    builder.with_checkout(super::git_checkout::bounded(cancellation.clone()));
     let repository = builder.clone(&source.clone_url, checkout)?;
     if let Some(reference) = &source.reference {
-        checkout_reference(&repository, reference, deadline)?;
+        checkout_reference(&repository, reference, deadline, cancellation)?;
     }
     Ok(repository)
 }
 
-fn fetch_options(deadline: Instant, shallow: bool) -> Result<FetchOptions<'static>, git2::Error> {
+fn fetch_options(
+    deadline: Instant,
+    shallow: bool,
+    cancellation: ServiceWorkCancellation,
+) -> Result<FetchOptions<'static>, git2::Error> {
     let config = git2::Config::open_default()
         .map_err(|_| git2::Error::from_str("git configuration unavailable"))?;
     let mut credentials =
         crate::services::git::remote_credentials::CredentialProvider::new(config, None);
     let mut callbacks = RemoteCallbacks::new();
+    let credential_cancellation = cancellation.clone();
     callbacks.credentials(move |url, username, allowed| {
-        if Instant::now() >= deadline {
+        if credential_cancellation.is_cancelled() || Instant::now() >= deadline {
             return Err(git2::Error::new(
                 git2::ErrorCode::Timeout,
                 git2::ErrorClass::Net,
@@ -77,8 +90,10 @@ fn fetch_options(deadline: Instant, shallow: bool) -> Result<FetchOptions<'stati
         }
         credentials.credentials(url, username, allowed)
     });
+    let transfer_cancellation = cancellation.clone();
     callbacks.transfer_progress(move |progress| {
-        Instant::now() < deadline
+        !transfer_cancellation.is_cancelled()
+            && Instant::now() < deadline
             && progress.received_bytes() <= MAX_TRANSFER_BYTES
             && progress.total_objects() <= MAX_GIT_OBJECTS
     });
@@ -96,22 +111,23 @@ fn checkout_reference(
     repository: &Repository,
     reference: &str,
     deadline: Instant,
+    cancellation: &ServiceWorkCancellation,
 ) -> Result<(), git2::Error> {
     if let Some(commit) = resolve_commit(repository, reference) {
         repository.checkout_tree(
             commit.as_object(),
-            Some(&mut super::git_checkout::bounded()),
+            Some(&mut super::git_checkout::bounded(cancellation.clone())),
         )?;
         return repository.set_head_detached(commit.id());
     }
     let mut remote = repository.find_remote("origin")?;
-    let mut fetch = fetch_options(deadline, true)?;
+    let mut fetch = fetch_options(deadline, true, cancellation.clone())?;
     let targeted = remote.fetch(&[reference], Some(&mut fetch), None);
     if let Some(commit) = resolve_commit(repository, reference) {
-        return checkout_commit(repository, &commit);
+        return checkout_commit(repository, &commit, cancellation);
     }
     if looks_like_short_commit(reference) {
-        let mut complete = fetch_options(deadline, false)?;
+        let mut complete = fetch_options(deadline, false, cancellation.clone())?;
         remote.fetch(
             &[
                 "+refs/heads/*:refs/remotes/origin/*",
@@ -125,13 +141,17 @@ fn checkout_reference(
     }
     let commit = resolve_commit(repository, reference)
         .ok_or_else(|| git2::Error::from_str("git reference unavailable"))?;
-    checkout_commit(repository, &commit)
+    checkout_commit(repository, &commit, cancellation)
 }
 
-fn checkout_commit(repository: &Repository, commit: &git2::Commit<'_>) -> Result<(), git2::Error> {
+fn checkout_commit(
+    repository: &Repository,
+    commit: &git2::Commit<'_>,
+    cancellation: &ServiceWorkCancellation,
+) -> Result<(), git2::Error> {
     repository.checkout_tree(
         commit.as_object(),
-        Some(&mut super::git_checkout::bounded()),
+        Some(&mut super::git_checkout::bounded(cancellation.clone())),
     )?;
     repository.set_head_detached(commit.id())
 }
