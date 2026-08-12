@@ -1,0 +1,30 @@
+Jalon 2 — supervision du cycle de vie SearXNG
+
+Référence
+- Branche de référence du jalon : d0c7d6b.
+- Ce commit suit la supervision OAuth a7dae65.
+
+Problème observé
+- Le démarrage SearXNG était lancé dans une tâche détachée sans propriétaire attendu par la fermeture.
+- L'installation Python et le serveur utilisaient des processus dont l'arrêt n'était pas relié à la barrière globale.
+- Le nettoyage central tuait seulement le handle connu, sans fermer l'admission ni attendre les démarrages en cours.
+
+Décisions et raisons
+- SearxngWorkServices devient l'autorité locale unique, dérivée de AppWorkSupervisor : 32 opérations de démarrage, alignées sur la limite existante des flux agent, et un seul processus serveur.
+- Le serveur acquiert son admission avant le spawn ; après fermeture, aucun nouveau processus ne peut être créé.
+- Installation, recherche et warmup reçoivent la même annulation coopérative. Les processus Tokio sont configurés en arbre, kill_on_drop, puis terminés et attendus lors de l'annulation.
+- stop_and_wait ferme les admissions, tue et récolte le serveur possédé, puis attend les registres sous l'échéance absolue du coordinateur.
+- Aucun lecteur détaché n'est créé : les sorties d'installation sont nulles et le stderr du serveur reste dirigé vers son fichier borné existant.
+- Les capacités réutilisent l'autorité existante des flux agent afin de ne pas introduire une deuxième limite divergente.
+
+Test écrit avant correction et échec observé
+- Le premier test de fermeture a échoué à compiler : SearxngSidecar ne recevait aucun AppWorkSupervisor et n'exposait ni stop_and_wait ni admission testable. L'ancien code ne pouvait donc pas prouver le refus des démarrages tardifs.
+
+Preuves finales Windows
+- Sous-ensemble SearXNG : 16 réussis, 0 échec.
+- Un vrai processus serveur Python est lancé, son PID est observé, puis son absence est vérifiée après stop_and_wait.
+- Un vrai processus d'installation Python de 30 secondes est annulé et récolté en moins de 3 secondes.
+- Suite Rust complète avec windows-tests : 3118 tests, 3114 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt, git diff --check et limite de 230 lignes : verts.
+- graphify update . exécuté après les changements.
