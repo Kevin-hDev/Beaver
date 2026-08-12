@@ -1,0 +1,5 @@
+Raison : le contrôle CI séparé des fichiers Rust inclus a trouvé eager_dispatch.rs formaté selon rustfmt 1.94 plutôt que l'autorité CI 1.97.
+
+Décision : appliquer exactement les deux regroupements produits par le contrôle CI, sans modifier l'exécution.
+
+Preuves : le test eager_dispatch passe 1/1 ; git diff --check et graphify update . sont verts ; le prochain contrôle CI des sources incluses constitue la preuve de format 1.97.
