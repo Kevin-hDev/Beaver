@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 const MAX_TEMP_ATTEMPTS: usize = 8;
 
+#[derive(Debug)]
 pub(crate) struct TemporaryUpdate {
     path: PathBuf,
     remove_on_drop: bool,

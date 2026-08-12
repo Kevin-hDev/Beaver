@@ -87,6 +87,7 @@ pub(crate) fn run_inner(
         .manage(services::mascot::MascotRuntime::default())
         .manage(OllamaSidecar::new())
         .manage(runtime.downloads)
+        .manage(runtime.app_update)
         .manage(runtime.searxng)
         .manage(services::terminal::PtyManager::new())
         .manage(services::browser::BrowserRuntimeHandle::default())

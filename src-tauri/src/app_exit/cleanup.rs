@@ -77,6 +77,19 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             let _ = manager.stop_and_wait(deadline).await;
         }
     };
+    let app_update = async {
+        if let Some(runtime) = app.try_state::<services::update_handoff::AppUpdateRuntime>() {
+            let _ = runtime.stop_and_wait(deadline).await;
+            if let Some(identity) = runtime.transferred_identity() {
+                let mut system = sysinfo::System::new();
+                let pid = sysinfo::Pid::from_u32(identity.pid());
+                system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), true);
+                if identity.is_current(&system) {
+                    ::log::info!("[update] helper transféré préservé pid={}", identity.pid());
+                }
+            }
+        }
+    };
     let searxng = async {
         if let Some(sidecar) = app.try_state::<services::searxng::SearxngSidecar>() {
             let _ = sidecar.stop_and_wait(deadline).await;
@@ -105,6 +118,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
         services::extensions::stop_and_wait(deadline),
         services::ollama_kill::release_vram(),
         gateway,
+        app_update,
         downloads,
         chronos,
         searxng,
