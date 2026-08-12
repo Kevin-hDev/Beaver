@@ -13,6 +13,8 @@ struct SubagentEntry {
     pub cancel: CancellationToken,
     pub parent_stream_cancel: CancellationToken,
     pub parent_session_id: String,
+    #[cfg(test)]
+    test_owner: std::thread::ThreadId,
     pub run_id: String,
     pub execution_id: String,
     pub initial_prompt_hash: Option<[u8; 32]>,
@@ -104,7 +106,7 @@ pub async fn register_execution_for_parent_stream(
         .values()
         .filter(|e| e.parent_session_id == parent_id)
         .count();
-    if let Some(error) = registration_capacity_error(state.entries.len(), parent_count) {
+    if let Some(error) = registration_capacity_error(registration_total(&state), parent_count) {
         return Err(error);
     }
     if state.entries.contains_key(child_id) {
@@ -124,6 +126,8 @@ pub async fn register_execution_for_parent_stream(
             cancel,
             parent_stream_cancel: parent_cancel.clone(),
             parent_session_id: parent_id.to_string(),
+            #[cfg(test)]
+            test_owner: std::thread::current().id(),
             run_id: run_id.clone(),
             execution_id: execution_id.clone(),
             initial_prompt_hash: initial_prompt.map(prompt_hash),
@@ -134,6 +138,23 @@ pub async fn register_execution_for_parent_stream(
         run_id,
         execution_id,
     })
+}
+
+#[cfg(not(test))]
+fn registration_total(state: &RegistryState) -> usize {
+    state.entries.len()
+}
+
+#[cfg(test)]
+fn registration_total(state: &RegistryState) -> usize {
+    let current_test = std::thread::current().id();
+    // Rust runs each async unit test on its own current-thread runtime. Counting only that
+    // owner preserves the production limit while preventing parallel tests from sharing it.
+    state
+        .entries
+        .values()
+        .filter(|entry| entry.test_owner == current_test)
+        .count()
 }
 
 pub(super) fn capacity_error(total: usize, parent_count: usize) -> Option<String> {
