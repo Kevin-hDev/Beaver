@@ -75,6 +75,9 @@ pub mod search;
 pub mod searxng;
 pub mod secure_http;
 pub mod security_cleanup;
+mod shutdown_completion;
+#[cfg(test)]
+mod shutdown_completion_tests;
 pub mod stream_utils;
 pub mod terminal;
 #[cfg(test)]
