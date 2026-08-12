@@ -77,7 +77,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
     };
     let searxng = async {
         if let Some(sidecar) = app.try_state::<services::searxng::SearxngSidecar>() {
-            services::searxng::stop(sidecar.inner()).await;
+            let _ = sidecar.stop_and_wait(deadline).await;
         }
     };
     let terminal_handle = app.clone();
