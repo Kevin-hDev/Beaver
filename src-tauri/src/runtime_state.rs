@@ -58,6 +58,17 @@ pub fn scheduler(app: &tauri::AppHandle) -> std::io::Result<crate::services::sch
 
 pub fn initialize_agent_runtime(app: &tauri::AppHandle) -> std::io::Result<()> {
     crate::services::agent_local::shell_sandbox::cleanup_stale();
+    crate::services::e2e_profile::report_lifecycle(
+        crate::services::e2e_profile::LifecycleStage::ShellCleanupCompleted,
+    );
     crate::services::agent_local::app_handle_global::init(app.clone());
-    crate::services::agent_local::subagent_spawn_channel::init(app).map_err(std::io::Error::other)
+    crate::services::e2e_profile::report_lifecycle(
+        crate::services::e2e_profile::LifecycleStage::AppHandleInitialized,
+    );
+    crate::services::agent_local::subagent_spawn_channel::init(app)
+        .map_err(std::io::Error::other)?;
+    crate::services::e2e_profile::report_lifecycle(
+        crate::services::e2e_profile::LifecycleStage::AgentRuntimeInitialized,
+    );
+    Ok(())
 }

@@ -83,6 +83,7 @@ test("native diagnostics recognize lifecycle stages normalized by the WDIO write
     await writeFile(
       join(directory, "wdio-normalized.log"),
       [
+        "2026-08-12T05:52:43.542Z INFO tauri-service:service: [Tauri:Backend:0] shell-cleanup-completed",
         "2026-08-12T05:52:43.543Z INFO tauri-service:service: [Tauri:Backend:0] setup-completed",
         "2026-08-12T05:52:43.544Z INFO tauri-service:service: [Tauri:Backend:0] event-loop-entered",
         "2026-08-12T05:52:43.545Z INFO tauri-service:service: [Tauri:Backend:../../secret] setup-entered",
@@ -92,6 +93,7 @@ test("native diagnostics recognize lifecycle stages normalized by the WDIO write
     );
 
     assert.deepEqual(await collectNativeDiagnostics(directory), [
+      "application-stage:shell-cleanup-completed",
       "application-stage:setup-completed",
       "application-stage:event-loop-entered",
     ]);
