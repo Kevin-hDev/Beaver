@@ -6,6 +6,12 @@ if [[ "$(uname -s)" != "Darwin" || $# -lt 1 || $# -gt 65 ]]; then
   exit 1
 fi
 
+source scripts/cef-runtime-profile.sh
+if ! resolve_cef_runtime_profile; then
+  echo "CEF development launch failed" >&2
+  exit 1
+fi
+
 BINARY_INPUT="$1"
 shift
 if [[ -z "$BINARY_INPUT" || ${#BINARY_INPUT} -gt 4096 \
@@ -15,8 +21,12 @@ if [[ -z "$BINARY_INPUT" || ${#BINARY_INPUT} -gt 4096 \
   exit 1
 fi
 
-TARGET_ROOT="target"
-if [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
+TARGET_ROOT="$CEF_TARGET_ROOT"
+if [[ "$CEF_RUNTIME_PROFILE" == "e2e" ]]; then
+  if [[ -z "${CARGO_TARGET_DIR:-}" ]]; then
+    echo "CEF development launch failed" >&2
+    exit 1
+  fi
   ALLOWED_E2E_ROOT="$(cd target/e2e && pwd -P)"
   PROVIDED_ROOT="$(cd "$CARGO_TARGET_DIR" && pwd -P)"
   if [[ "$PROVIDED_ROOT" != "$ALLOWED_E2E_ROOT" ]]; then
@@ -24,6 +34,9 @@ if [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
     exit 1
   fi
   TARGET_ROOT="$PROVIDED_ROOT"
+elif [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
+  echo "CEF development launch failed" >&2
+  exit 1
 fi
 DEBUG_ROOT="$(cd "$TARGET_ROOT/debug" && pwd -P)"
 BINARY="$(cd "$(dirname "$BINARY_INPUT")" && pwd -P)/$(basename "$BINARY_INPUT")"
@@ -37,7 +50,11 @@ fi
 
 bash scripts/ensure-cef-dev-runtime.sh
 
-RUNTIME="target/cef-runtime/macos"
+RUNTIME="$TARGET_ROOT/cef-runtime/macos"
+if ! cef_runtime_profile_matches "$RUNTIME/.profile"; then
+  echo "CEF development launch failed" >&2
+  exit 1
+fi
 FRAMEWORK_SOURCE="$RUNTIME/Chromium Embedded Framework.framework"
 HELPERS_SOURCE="$RUNTIME/helpers"
 PLIST_SOURCE="resources/cef/macos/dev-app/Info.plist"
