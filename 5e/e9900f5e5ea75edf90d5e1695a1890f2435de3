@@ -1,0 +1,85 @@
+REPRISE MACOS — BUGS DU JALON 1B
+
+Point de départ
+- PR #16 fusionnée dans main par le commit 5ee9900f5e5ea75edf90d5e1695a1890f2435de3.
+- Branche fusionnée : codex/fix-windows-local-tls-log-spam, tête 2ef803a08d8afabbc21d7f09cc0d83a54e9ed35e.
+- CI de la PR : 14/14 contrôles verts, dont Backend macOS CEF, Backend Windows CEF, E2E CEF, CodeQL et GitGuardian.
+- Les six documents locaux de diagnostic sont dans docs/superpowers/specs/bug-jalon-1b/. Ils sont ignorés par Git et doivent déjà être présents sur le Mac.
+
+Déjà corrigé
+1. Windows, navigateur CEF invisible — b2178f97.
+   Cause prouvée : WebView2 remontait sa fenêtre avec HWND_TOP tandis que CEF conservait SWP_NOZORDER et restait derrière. L'autorité Windows de surface impose désormais HWND_TOP lorsque CEF est visible. Tests Win32 et vérification visuelle effectués.
+2. Windows, bruit TLS UnknownIssuer toutes les cinq secondes — 3d32a6f6, avec conception 0572991e.
+   Le certificat auto-signé reste refusé. Seule la trace attendue de rustls_platform_verifier est filtrée dans la tâche de découverte HTTPS locale ; les autres requêtes et erreurs TLS restent visibles.
+3. Parcours E2E CEF macOS instable — 2ef803a0, avec conception 6bcd7c34.
+   Une échéance monotone unique borne les douze étapes et les trace. Cela corrige et diagnostique le test, pas la fermeture spontanée de l'application en production.
+4. « Ordinal 345 » sous Windows : ce n'est pas un bug Beaver mais un binaire de tests lancé sans la feature windows-tests. Aucun correctif produit à faire.
+
+Bloquant macOS encore ouvert
+Document principal : docs/superpowers/specs/bug-jalon-1b/2026-08-12-macos-liveness-lecture-incertaine.md.
+Symptôme observé : Beaver se ferme seul après quelques minutes, au repos ou avec le navigateur CEF ouvert. Les traces montrent reaper-liveness puis une fermeture coordonnée ; ce n'est pas un crash brut.
+
+Chaîne causale encore présente dans main au moment de cette note
+- CEF_TRACKER_POLL interroge chaque helper toutes les 10 ms.
+- macos/tracker_loop.rs::refresh_active appelle MacProcessIdentity::is_alive().
+- Ok(true) conserve le helper ; Ok(false) nettoie normalement son slot ; tout Err déclenche immédiatement MacSupervisionFailure::Liveness.
+- tracker_lifecycle.rs transforme cette panne en fermeture CEF puis appelle app_exit::request(app, 1).
+- identity.rs peut renvoyer Err pendant la fin de vie normale d'un helper : bsd_info voit encore le processus, getpgid ne le voit déjà plus, waitid ne le considère pas encore récoltable, puis kill(pid, 0) indique que le PID existe toujours.
+- Une seule lecture incertaine suffit donc à fermer Beaver. À 100 lectures par seconde et par helper, la fenêtre transitoire finit par être rencontrée.
+- Le test reaper_treats_an_unreaped_exited_helper_as_stopped masque le défaut : il retente les Err jusqu'à Ok(false), alors que la production échoue au premier Err.
+
+Résultat attendu, sans affaiblir la sécurité
+- Une lecture indéterminée transitoire est récupérable et doit être confirmée au tick suivant.
+- Une indétermination persistante reste fatale et doit toujours produire Liveness : le filet fail-closed ne disparaît pas.
+- Un seul composant possède la politique de confirmation et son budget ; pas de compteur ou délai dupliqué.
+- Les traces distinguent au minimum la cause système de la lecture incertaine et le passage de transitoire à persistante, sans donnée sensible.
+- La valeur de confirmation (nombre de ticks ou échéance monotone) doit être décidée et justifiée dans la conception après mesure locale, pas choisie arbitrairement dans le correctif.
+
+Workflow obligatoire sur le Mac
+1. Synchronisation
+   git switch main
+   git pull --ff-only origin main
+   git fetch origin refs/notes/commits:refs/notes/commits
+   git notes show 5ee9900f5e5ea75edf90d5e1695a1890f2435de3
+   Créer ensuite une branche codex/fix-macos-cef-liveness.
+2. Investigation avant modification
+   - Reproduire sur le vrai Mac et conserver les traces : au moins 10 minutes, navigateur réel ouvert, navigation puis période au repos.
+   - Confirmer le dernier code reaper-liveness et le syscall/cas exact ayant rendu la lecture incertaine.
+   - Examiner au moins trois hypothèses : course normale de fin de helper ; échec transitoire de lecture d'identité ; véritable perte persistante de supervision.
+   - Ne pas conclure à partir du seul E2E actuel : il se ferme quelques secondes après le chargement et n'observe pas la fin naturelle d'un helper court.
+3. Conception puis planification
+   - Écrire un document de conception avec l'autorité unique, les états transitoire/persistant, le budget monotone, les traces et les invariants de sécurité.
+   - Écrire ensuite un plan d'exécution par petits commits, avec tests rouges avant correctifs.
+   - Vérifier les limites de 230 lignes et les règles du projet avant toute édition.
+4. Correction pilotée par les tests
+   - Test déterministe injectant une lecture indéterminée unique dans refresh_active : aucune panne, helper toujours supervisé.
+   - Test injectant une séquence persistante : Liveness est déclaré et la fermeture coordonnée reste active.
+   - Test de remise à zéro : une lecture franche après une incertitude annule la série ; l'état d'un helper ne contamine jamais un autre helper ou une génération suivante.
+   - Aligner reaper_treats_an_unreaped_exited_helper_as_stopped sur la sémantique réelle de production.
+   - Éviter les tests fondés seulement sur sleep : injecter la séquence et l'horloge pour prouver les transitions.
+5. Validation locale réelle
+   - Tests Rust macOS ciblés, puis cargo fmt --all -- --check, cargo check, cargo clippy --all-targets -- -D warnings et cargo test.
+   - npm run lint, npx tsc --noEmit et npm test.
+   - graphify update . après les changements de code.
+   - Ouvrir Beaver sur le Mac et refaire une navigation réelle suivie d'au moins 10 minutes de vie : aucune fermeture spontanée. Provoquer aussi le chemin persistant dans un test pour prouver que le filet fatal fonctionne encore.
+6. Commits et git notes
+   - Un commit de conception, un commit de plan, puis des commits logiques de correction/tests.
+   - Ajouter à chaque nouveau commit une git note indiquant intention, raison, test rouge observé, preuves vertes et limites restantes.
+   - Pousser la branche et refs/notes/commits.
+7. PR, CI et revue indépendante
+   - Créer une PR prête à relire, sans fusion anticipée.
+   - Attendre tous les contrôles CI, notamment le vrai job macOS CEF, l'E2E, Windows CEF, CodeQL et GitGuardian. Aucun rouge ou test vide n'est acceptable.
+   - Faire relire le diff complet, les tests et chaque git note par un autre agent. Lui demander explicitement de chercher les courses, l'affaiblissement du fail-closed, la contamination entre helpers/générations et les tests qui ne prouvent pas la production.
+   - Corriger les constats, repousser, attendre de nouveau toute la CI, puis demander une re-review complète.
+   - Fusion uniquement après CI entièrement verte et validation explicite du reviewer.
+
+Critères de clôture
+- Beaver ne se ferme plus seul lors d'une session macOS réelle d'au moins 10 minutes avec navigateur CEF.
+- Une incertitude transitoire est récupérée sans libérer la supervision ni fermer l'app.
+- Une incertitude persistante ferme toujours la porte CEF et déclenche la fermeture coordonnée.
+- Production et tests partagent exactement la même politique.
+- Traces exploitables, aucune donnée sensible, aucune autorité dupliquée, tous les contrôles CI verts, review indépendante validée.
+
+Hors périmètre de cette branche macOS
+- Le constat gateway de reprise non bornée doit être réévalué séparément contre le main actuel ; ne pas le mélanger à la correction CEF macOS.
+- Les points non bloquants du README du dossier restent du suivi séparé sauf preuve qu'ils participent directement à la reproduction.
