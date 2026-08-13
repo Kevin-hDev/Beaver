@@ -29,6 +29,11 @@ fi
     `#!/bin/bash
 set -euo pipefail
 : "\${FIXTURE_CARGO_LOG:?}"
+if [[ "\${FIXTURE_REJECT_TAURI_CONFIG:-0}" == "1" \
+  && -n "\${TAURI_CONFIG+x}" ]]; then
+  /usr/bin/printf 'unexpected Tauri bundle config\\n' >&2
+  exit 86
+fi
 /usr/bin/printf 'cargo\\n' >> "$FIXTURE_CARGO_LOG"
 profile="dev"
 for argument in "$@"; do
