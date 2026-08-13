@@ -57,7 +57,9 @@ inchangés.
 1. Lancer `cargo fmt --all -- --check`.
 2. Lancer `cargo test local_site_probe --lib --features windows-tests -- --test-threads=1`.
 3. Lancer `cargo test app_log_tests --lib --features windows-tests -- --test-threads=1`.
-4. Lancer `cargo clippy --all-targets --features windows-tests -- -D warnings`.
+4. Lancer `cargo clippy --all-targets -- -D warnings`; le profil
+   `windows-tests` remplace CEF par ses stubs documentaires et produit des
+   avertissements de code mort qui ne représentent pas le build Windows réel.
 5. Lancer le profil Windows complet prescrit par le projet si sa commande est
    disponible localement.
 6. Lancer `graphify update .` depuis la racine du worktree.
