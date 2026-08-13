@@ -1,10 +1,9 @@
-import { realpath } from "node:fs/promises";
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { buildFrontend } from "../build/frontend-build.mjs";
 import { runCommand } from "../build/command-runner.mjs";
+import { canonicalE2eRepoRoot } from "./e2e-process.mjs";
 
-const repoRoot = await realpath(resolve(fileURLToPath(new URL("../..", import.meta.url))));
+const repoRoot = await canonicalE2eRepoRoot(import.meta.url);
 
 try {
   await runCommand({

@@ -1,10 +1,10 @@
 import { mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { reportNativeDiagnostics } from "./native-diagnostics.mjs";
 import {
   buildArguments,
+  canonicalE2eRepoRoot,
   cleanupProfile,
   debugBinaryPath,
   E2E_BUILD_TIMEOUT_MS,
@@ -14,7 +14,7 @@ import {
   runCommand,
 } from "./e2e-process.mjs";
 
-const repoRoot = resolve(fileURLToPath(new URL("../..", import.meta.url)));
+const repoRoot = await canonicalE2eRepoRoot(import.meta.url);
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
 const canonicalTemp = await realpath(tmpdir());
 const logDirectory = join(profilePath, "logs");

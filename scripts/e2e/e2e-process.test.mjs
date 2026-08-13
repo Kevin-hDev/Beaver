@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { mkdir, mkdtemp, realpath, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { test } from "node:test";
-import {
+import * as e2eProcess from "./e2e-process.mjs";
+
+const {
   buildArguments,
   cleanupProfile,
   debugBinaryPath,
@@ -11,7 +16,7 @@ import {
   e2eCargoTargetDir,
   isAllowedProfilePath,
   runCommand,
-} from "./e2e-process.mjs";
+} = e2eProcess;
 
 const ciSource = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../../src-tauri/src/main.rs", import.meta.url), "utf8");
@@ -70,6 +75,31 @@ test("the E2E build and binary reader share one Cargo target directory", () => {
     resolve(projectRoot, "src-tauri", "target", "e2e"),
   );
   assert.equal(e2eCargoTargetDir("win32", projectRoot, configured), configured);
+});
+
+test("the E2E repository root resolves through a symbolic link", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "beaver-e2e-root-"));
+  const physicalRoot = join(directory, "repository");
+  const linkedRoot = join(directory, "checkout");
+  try {
+    await mkdir(physicalRoot);
+    await symlink(
+      physicalRoot,
+      linkedRoot,
+      process.platform === "win32" ? "junction" : "dir",
+    );
+    const moduleUrl = pathToFileURL(
+      join(linkedRoot, "scripts", "e2e", "run.mjs"),
+    ).href;
+
+    assert.equal(typeof e2eProcess.canonicalE2eRepoRoot, "function");
+    assert.equal(
+      await e2eProcess.canonicalE2eRepoRoot(moduleUrl),
+      await realpath(physicalRoot),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("a cold native build has a larger budget than the bounded app journey", () => {

@@ -184,3 +184,15 @@ fn macos_development_runner_uses_a_real_application_bundle() {
     assert!(workflow
         .contains("CLGO_CEF_ALLOW_ADHOC_SIGNING: ${{ runner.os == 'macOS' && '1' || '0' }}"));
 }
+
+#[test]
+fn macos_e2e_bundle_uses_its_isolated_cef_runtime() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let config =
+        std::fs::read_to_string(root.join("tauri.e2e.conf.json")).expect("macOS E2E bundle config");
+
+    assert!(config.contains("target/e2e/cef-runtime/macos/Chromium Embedded Framework.framework"));
+    assert!(config.contains("\"Frameworks\": \"target/e2e/cef-runtime/macos/helpers\""));
+    assert!(config
+        .contains("\"Resources/cef/LICENSE.txt\": \"target/e2e/cef-runtime/macos/LICENSE.txt\""));
+}
