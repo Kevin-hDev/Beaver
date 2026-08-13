@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
-  chmod,
   copyFile,
   mkdir,
   readFile,
@@ -9,6 +8,11 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+
+import {
+  createFakeCommands,
+  writeExecutable,
+} from "./macos-runtime-profile-fake-tools.mjs";
 
 export const HELPERS = [
   "Beaver Helper",
@@ -18,19 +22,17 @@ export const HELPERS = [
   "Beaver Helper (Alerts)",
 ];
 
-async function writeExecutable(path, body) {
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, body, "utf8");
-  await chmod(path, 0o755);
-}
-
-export function runScript(cwd, script, environment = {}, argumentsList = []) {
-  const result = spawnSync("/bin/bash", [script, ...argumentsList], {
+export function runScriptResult(cwd, script, environment = {}, argumentsList = []) {
+  return spawnSync("/bin/bash", [script, ...argumentsList], {
     cwd,
     encoding: "utf8",
     env: { ...process.env, ...environment },
     shell: false,
   });
+}
+
+export function runScript(cwd, script, environment = {}, argumentsList = []) {
+  const result = runScriptResult(cwd, script, environment, argumentsList);
   assert.equal(
     result.status,
     0,
@@ -96,41 +98,6 @@ async function createTrackedInputs(tauriDirectory) {
   }
 }
 
-async function createFakeCommands(fakeBin) {
-  await writeExecutable(join(fakeBin, "uname"), "#!/bin/bash\nprintf 'Darwin\\n'\n");
-  await writeExecutable(join(fakeBin, "node"), "#!/bin/bash\nexit 0\n");
-  await writeExecutable(join(fakeBin, "codesign"), "#!/bin/bash\nexit 0\n");
-  await writeExecutable(
-    join(fakeBin, "ditto"),
-    `#!/bin/bash
-set -euo pipefail
-if [[ -d "$2" ]]; then
-  /bin/cp -R "$1"/. "$2"/
-else
-  /bin/cp -R "$1" "$2"
-fi
-`,
-  );
-  await writeExecutable(
-    join(fakeBin, "cargo"),
-    `#!/bin/bash
-set -euo pipefail
-profile="dev"
-for argument in "$@"; do
-  [[ "$argument" == "e2e" ]] && profile="e2e"
-done
-if [[ "$profile" == "e2e" ]]; then
-  release_root="target/e2e/release"
-else
-  release_root="target/release"
-fi
-/bin/mkdir -p "$release_root"
-/usr/bin/printf '%s-helper\\n' "$profile" > "$release_root/cl-go-dash-helper"
-/bin/chmod 755 "$release_root/cl-go-dash-helper"
-`,
-  );
-}
-
 export async function createFixture(directory) {
   const tauriDirectory = join(directory, "src-tauri");
   const fakeBin = join(directory, "fake-bin");
@@ -159,12 +126,15 @@ export async function createFixture(directory) {
     createCefSource(tauriDirectory),
     createHelperSkeletons(tauriDirectory),
     createTrackedInputs(tauriDirectory),
-    createFakeCommands(fakeBin),
   ]);
+  const cargoLog = await createFakeCommands(fakeBin);
   return {
+    cargoLog,
     environment: {
       CARGO: join(fakeBin, "cargo"),
+      CARGO_TARGET_DIR: "",
       CLGO_CEF_DEV_PREP: "1",
+      FIXTURE_CARGO_LOG: cargoLog,
       PATH: `${fakeBin}:${process.env.PATH}`,
     },
     tauriDirectory,

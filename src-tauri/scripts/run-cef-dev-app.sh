@@ -23,17 +23,11 @@ fi
 
 TARGET_ROOT="$CEF_TARGET_ROOT"
 if [[ "$CEF_RUNTIME_PROFILE" == "e2e" ]]; then
-  if [[ -z "${CARGO_TARGET_DIR:-}" ]]; then
+  if ! cef_e2e_target_dir_matches "$(pwd -P)"; then
     echo "CEF development launch failed" >&2
     exit 1
   fi
-  ALLOWED_E2E_ROOT="$(cd target/e2e && pwd -P)"
-  PROVIDED_ROOT="$(cd "$CARGO_TARGET_DIR" && pwd -P)"
-  if [[ "$PROVIDED_ROOT" != "$ALLOWED_E2E_ROOT" ]]; then
-    echo "CEF development launch failed" >&2
-    exit 1
-  fi
-  TARGET_ROOT="$PROVIDED_ROOT"
+  TARGET_ROOT="$CARGO_TARGET_DIR"
 elif [[ -n "${CARGO_TARGET_DIR:-}" ]]; then
   echo "CEF development launch failed" >&2
   exit 1

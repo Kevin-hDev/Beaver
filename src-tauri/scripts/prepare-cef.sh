@@ -23,6 +23,10 @@ if ! resolve_cef_runtime_profile; then
   echo "CEF build features are invalid" >&2
   exit 1
 fi
+if ! cef_e2e_target_dir_matches "$(pwd -P)"; then
+  echo "CEF build target directory is invalid" >&2
+  exit 1
+fi
 if [[ -z "$SIGNING_IDENTITY" || ${#SIGNING_IDENTITY} -gt 256 \
   || "$SIGNING_IDENTITY" == *$'\n'* || "$SIGNING_IDENTITY" == *$'\r'* \
   || "$SIGNING_IDENTITY" == *$'\t'* ]]; then
@@ -35,10 +39,6 @@ if [[ "$DEV_PREP" != "0" && "$DEV_PREP" != "1" ]]; then
 fi
 if [[ "$ALLOW_ADHOC_SIGNING" != "0" && "$ALLOW_ADHOC_SIGNING" != "1" ]]; then
   echo "CEF signing mode is invalid" >&2
-  exit 1
-fi
-if [[ -n "$BUILD_FEATURES" && "$BUILD_FEATURES" != "e2e" ]]; then
-  echo "CEF build features are invalid" >&2
   exit 1
 fi
 if [[ -n "$BUILD_TARGET" ]]; then
