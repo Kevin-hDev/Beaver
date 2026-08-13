@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct GatewayHealth {
     pub running: bool,
     pub channels: Vec<ChannelHealthEntry>,
+    pub refused_messages: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -42,6 +42,7 @@ mod model_downloads_store_queue;
 #[cfg(test)]
 mod model_downloads_store_tests;
 pub mod model_downloads_types;
+pub mod oauth_completion;
 pub mod oauth_providers;
 pub mod oauth_work;
 #[cfg(test)]
@@ -79,6 +80,9 @@ mod shutdown_completion;
 #[cfg(test)]
 mod shutdown_completion_tests;
 pub mod stream_utils;
+// This resolver trusts Windows' SystemRoot and has no caller on other platforms.
+#[cfg(windows)]
+pub mod system_executable;
 pub mod terminal;
 #[cfg(test)]
 pub(crate) mod test_runtime;

@@ -73,7 +73,7 @@ mod tests {
         manager
             .finish(&state.id, ModelDownloadStatus::Completed, None)
             .await;
-        assert!(manager.activate_next().await.is_none());
+        assert!(manager.complete_and_activate_next().await.is_none());
 
         let (next, runner) = manager
             .start(ModelDownloadKind::Forecast, "chronos-tiny".into(), false)
@@ -100,7 +100,7 @@ mod tests {
         manager
             .finish(&first.id, ModelDownloadStatus::Completed, None)
             .await;
-        let (activated, _) = manager.activate_next().await.unwrap();
+        let (activated, _) = manager.complete_and_activate_next().await.unwrap();
 
         assert_eq!(activated.id, second.id);
         assert_eq!(activated.status, ModelDownloadStatus::Running);
@@ -149,7 +149,7 @@ mod tests {
         manager
             .finish(&first.id, ModelDownloadStatus::Completed, None)
             .await;
-        assert!(manager.activate_next().await.is_none());
+        assert!(manager.complete_and_activate_next().await.is_none());
     }
 
     #[tokio::test]
@@ -209,7 +209,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn idle_worker_receives_the_next_download_without_a_restart_race() {
+    async fn production_completion_releases_an_empty_worker_for_the_next_download() {
         let manager = test_manager();
         let (first, runner) = manager
             .start(ModelDownloadKind::Ollama, "first".into(), false)
@@ -218,22 +218,16 @@ mod tests {
         manager
             .finish(&first.id, ModelDownloadStatus::Completed, None)
             .await;
-        let (_, admission) = runner.expect("download worker");
-        let waiting_manager = manager.clone();
-        let (sender, receiver) = tokio::sync::oneshot::channel();
-        admission
-            .spawn(move |shutdown| async move {
-                let next = waiting_manager.wait_for_next(&shutdown).await;
-                let _ = sender.send(next.map(|(state, _)| state.id));
-            })
-            .unwrap();
+        assert!(runner.is_some());
+        assert!(manager.complete_and_activate_next().await.is_none());
+        drop(runner);
 
         let (second, second_runner) = manager
             .start(ModelDownloadKind::Forecast, "chronos-tiny".into(), false)
             .await
             .unwrap();
 
-        assert!(second_runner.is_none());
-        assert_eq!(receiver.await.unwrap(), Some(second.id));
+        assert!(second_runner.is_some());
+        assert_eq!(manager.list().await[0].id, second.id);
     }
 }

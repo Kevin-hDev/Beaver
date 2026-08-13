@@ -3,16 +3,48 @@ mod tests {
     use crate::services::agent_local::subagent_registry::{
         active_children_for_parent, cancel_one, capacity_error, complete_child, consume_terminal,
         get_or_create_run_id, get_run_id_for_child, parent_snapshot, register,
-        release_run_claim, unregister, SubagentTerminalKind, PRODUCTION_MAX_TERMINAL_PARENTS,
+        register_execution_for_parent_stream, release_run_claim, unregister, SubagentTerminalKind,
+        MAX_PER_PARENT, MAX_TOTAL, PRODUCTION_MAX_TERMINAL_PARENTS,
     };
     use crate::services::agent_local::subagent_registry_test_support::meta;
     use tokio_util::sync::CancellationToken;
 
-    const MAX_PER_PARENT: usize = 4;
-    const MAX_TOTAL: usize = 8;
-
     fn uid() -> String {
         uuid::Uuid::new_v4().to_string()
+    }
+
+    #[test]
+    fn parallel_test_registrations_have_isolated_capacity() {
+        let thread_count = MAX_TOTAL + 1;
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(thread_count));
+        let handles = (0..thread_count)
+            .map(|_| {
+                let barrier = barrier.clone();
+                std::thread::spawn(move || {
+                    let runtime = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                        .expect("build isolated test runtime");
+                    runtime.block_on(async move {
+                        let parent = uid();
+                        let child = uid();
+                        let result = register(&parent, &child, CancellationToken::new()).await;
+                        barrier.wait();
+                        if result.is_ok() {
+                            unregister(&child).await;
+                        }
+                        result
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+
+        for handle in handles {
+            handle
+                .join()
+                .expect("isolated registration thread")
+                .expect("parallel test registration must not consume another test's capacity");
+        }
     }
 
     // All tests run in a single async test to avoid state conflicts
@@ -64,12 +96,9 @@ mod tests {
             .unwrap();
         let completing_child = child.clone();
         let completion = tokio::spawn(async move {
-            complete_child(
-                &completing_child,
-                SubagentTerminalKind::ReportPersisted,
-            )
-            .await
-            .unwrap();
+            complete_child(&completing_child, SubagentTerminalKind::ReportPersisted)
+                .await
+                .unwrap();
         });
         let terminal = loop {
             let snapshot = parent_snapshot(&parent).await;
@@ -85,12 +114,7 @@ mod tests {
             tokio::task::yield_now().await;
         };
         completion.await.unwrap();
-        assert!(consume_terminal(
-            &parent,
-            terminal.generation,
-            terminal.sequence,
-        )
-        .await);
+        assert!(consume_terminal(&parent, terminal.generation, terminal.sequence,).await);
 
         // --- cancel_one ---
         let parent = uid();
@@ -106,7 +130,7 @@ mod tests {
         assert!(capacity_error(0, MAX_PER_PARENT).is_some());
         assert!(capacity_error(MAX_TOTAL - 1, MAX_PER_PARENT - 1).is_none());
 
-        // --- unrelated test parents do not consume this test's total capacity ---
+        // --- the exact production path rejects the first admission over MAX_TOTAL ---
         let mut registered_children = Vec::new();
         for parent in [uid(), uid()] {
             for _ in 0..MAX_PER_PARENT {
@@ -119,14 +143,21 @@ mod tests {
         }
         let independent_parent = uid();
         let independent_child = uid();
-        register(
+        let parent_cancel = CancellationToken::new();
+        let error = register_execution_for_parent_stream(
             &independent_parent,
             &independent_child,
             CancellationToken::new(),
+            None,
+            &parent_cancel,
         )
         .await
-        .expect("another test parent must keep independent capacity");
-        registered_children.push(independent_child);
+        .err()
+        .expect("the first admission over the production total must fail");
+        assert_eq!(
+            error,
+            format!("Limite de {MAX_TOTAL} sous-agents actifs atteinte")
+        );
         for child in registered_children {
             unregister(&child).await;
         }

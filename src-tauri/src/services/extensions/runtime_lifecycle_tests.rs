@@ -38,6 +38,36 @@ async fn internal_start_cannot_bypass_closed_admission() {
 }
 
 #[tokio::test]
+async fn stop_runtime_reaps_real_host_reader_and_closes_admission() {
+    let directory = tempfile::tempdir().unwrap();
+    let script = directory.path().join("host.mjs");
+    std::fs::write(&script, "setInterval(() => {}, 1000);").unwrap();
+    let paths = HostPaths {
+        node: which::which("node").unwrap().canonicalize().unwrap(),
+        script,
+        directory: directory.path().to_path_buf(),
+    };
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let work =
+        super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor());
+    let host = Arc::new(HostProcess::spawn(&paths, &work).await.unwrap());
+    let runtime = ExtensionRuntime {
+        paths: Some(paths),
+        process: Mutex::new(Some(host)),
+        status: std::sync::RwLock::new(ExtensionHostStatus::default()),
+        auto_restarts: super::super::runtime_restart::RestartBudget::default(),
+        work,
+    };
+
+    assert!(stop_runtime(&runtime, Instant::now() + Duration::from_secs(5)).await);
+    assert!(runtime.process.lock().await.is_none());
+    assert_eq!(
+        runtime.work.reader_phase(),
+        crate::services::work_registry::ServiceWorkPhase::Closed
+    );
+}
+
+#[tokio::test]
 async fn stop_host_respects_the_absolute_deadline_while_process_is_locked() {
     let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
     let runtime = ExtensionRuntime {
@@ -80,13 +110,21 @@ async fn incomplete_stop_keeps_the_existing_host_in_its_slot() {
         work,
     };
 
-    assert!(!runtime.stop_host(Instant::now()).await);
+    // Force kill() past its deadline instead of assuming an already-expired timer wins
+    // against an immediately-ready process operation on every platform.
+    let child_guard = host.hold_child_for_test().await;
+    assert!(
+        !runtime
+            .stop_host(Instant::now() + Duration::from_millis(20))
+            .await
+    );
     let retained = runtime
         .process
         .lock()
         .await
         .as_ref()
         .is_some_and(|current| Arc::ptr_eq(current, &host));
+    drop(child_guard);
     let _ = host.kill(Instant::now() + Duration::from_secs(5)).await;
     assert!(retained, "an unconfirmed host must still own its slot");
 }

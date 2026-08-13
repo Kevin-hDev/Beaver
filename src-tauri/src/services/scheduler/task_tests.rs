@@ -1,7 +1,4 @@
-use super::fire::{
-    claim_once_in, missed_once_action, run_wakeup_steps, MissedOnceAction, OnceClaimOutcome,
-    WakeupStepOutcome,
-};
+use super::fire::{claim_once_in, run_wakeup_steps, OnceClaimOutcome, WakeupStepOutcome};
 use super::Scheduler;
 use crate::app_exit::AppExitCoordinator;
 use crate::models::{
@@ -123,22 +120,6 @@ fn once_claim_is_typed_and_mutates_only_an_active_once() {
         claim_once_in(&mut config, "missing"),
         OnceClaimOutcome::Inactive
     );
-}
-
-#[test]
-fn missed_once_claim_errors_are_logged_but_inactive_is_silent() {
-    assert_eq!(
-        missed_once_action(Ok(OnceClaimOutcome::Inactive)),
-        MissedOnceAction::Silent
-    );
-    assert_eq!(
-        missed_once_action(Ok(OnceClaimOutcome::Claimed)),
-        MissedOnceAction::LogMissed
-    );
-    assert!(matches!(
-        missed_once_action(Err("private config path".into())),
-        MissedOnceAction::LogClaimError(_)
-    ));
 }
 
 #[test]

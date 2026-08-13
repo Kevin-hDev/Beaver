@@ -24,3 +24,21 @@ async fn stdio_transport_handshakes_and_calls_a_real_child_process() {
     processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
     assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
 }
+
+#[tokio::test]
+async fn slow_ready_connector_uses_protocol_signal_instead_of_fixed_warmup() {
+    let transport = StdioTransport::for_slow_test_fixture(650);
+    let started = std::time::Instant::now();
+
+    let tools = tokio::time::timeout(
+        std::time::Duration::from_millis(900),
+        transport.list_tools(),
+    )
+    .await
+    .expect("the protocol response, not an added warmup, owns readiness")
+    .expect("slow fixture tools");
+
+    assert_eq!(tools[0].name, "echo");
+    assert!(started.elapsed() >= std::time::Duration::from_millis(600));
+    process_manager::shutdown_one("__beaver_mcp_slow_fixture").await;
+}

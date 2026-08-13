@@ -5,38 +5,48 @@ use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 
 use super::LlmOAuthProvider;
+use crate::services::oauth_completion::{OAuthCompletion, OAuthCompletionOwner};
 
-static ACTIVE: LazyLock<Mutex<[Option<CancellationToken>; 2]>> =
+#[derive(Clone)]
+struct ActiveLogin {
+    cancel: CancellationToken,
+    completion: OAuthCompletion<()>,
+}
+
+pub(super) struct RegisteredLogin {
+    pub(super) cancel: CancellationToken,
+    pub(super) completion: OAuthCompletionOwner<()>,
+}
+
+static ACTIVE: LazyLock<Mutex<[Option<ActiveLogin>; 2]>> =
     LazyLock::new(|| Mutex::new([None, None]));
 
-pub async fn register(provider: LlmOAuthProvider) -> Result<CancellationToken, String> {
+pub async fn register(provider: LlmOAuthProvider) -> Result<RegisteredLogin, String> {
     let mut active = ACTIVE.lock().await;
     let slot = &mut active[provider.index()];
-    if slot.is_some() {
+    if slot
+        .as_ref()
+        .is_some_and(|login| !login.completion.is_finished())
+    {
         return Err("Connexion déjà en cours".to_string());
     }
     let token = CancellationToken::new();
-    *slot = Some(token.clone());
-    Ok(token)
-}
-
-pub async fn release(provider: LlmOAuthProvider) {
-    ACTIVE.lock().await[provider.index()] = None;
+    let (completion, observed) = OAuthCompletion::channel();
+    *slot = Some(ActiveLogin {
+        cancel: token.clone(),
+        completion: observed,
+    });
+    Ok(RegisteredLogin {
+        cancel: token,
+        completion,
+    })
 }
 
 pub async fn cancel(provider: LlmOAuthProvider) {
-    let token = ACTIVE.lock().await[provider.index()].clone();
-    if let Some(token) = token {
-        token.cancel();
-        let _ = tokio::time::timeout(Duration::from_secs(2), async {
-            loop {
-                if ACTIVE.lock().await[provider.index()].is_none() {
-                    break;
-                }
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
-        })
-        .await;
+    let active = ACTIVE.lock().await[provider.index()].clone();
+    if let Some(active) = active {
+        active.cancel.cancel();
+        let _ = tokio::time::timeout(Duration::from_secs(2), active.completion.wait()).await;
     }
 }
 
@@ -48,7 +58,8 @@ mod tests {
     async fn limits_one_login_per_provider() {
         let first = register(LlmOAuthProvider::Xai).await.unwrap();
         assert!(register(LlmOAuthProvider::Xai).await.is_err());
-        first.cancel();
-        release(LlmOAuthProvider::Xai).await;
+        first.cancel.cancel();
+        drop(first);
+        assert!(register(LlmOAuthProvider::Xai).await.is_ok());
     }
 }

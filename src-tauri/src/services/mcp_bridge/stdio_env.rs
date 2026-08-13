@@ -11,7 +11,7 @@ impl StdioTransport {
             env_key_names,
             transient_env: None,
             #[cfg(test)]
-            test_fixture: false,
+            test_init_delay_ms: 0,
         }
     }
 
@@ -27,7 +27,7 @@ impl StdioTransport {
             env_key_names,
             transient_env: Some(transient_env),
             #[cfg(test)]
-            test_fixture: false,
+            test_init_delay_ms: 0,
         }
     }
 
@@ -38,7 +38,18 @@ impl StdioTransport {
             install_command: String::new(),
             env_key_names: Vec::new(),
             transient_env: None,
-            test_fixture: true,
+            test_init_delay_ms: 0,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_slow_test_fixture(delay_ms: u64) -> Self {
+        Self {
+            connector_id: "__beaver_mcp_slow_fixture".to_string(),
+            install_command: String::new(),
+            env_key_names: Vec::new(),
+            transient_env: None,
+            test_init_delay_ms: delay_ms,
         }
     }
 

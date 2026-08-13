@@ -39,6 +39,8 @@ mod stdio_integration_tests;
 mod stdio_line;
 #[cfg(test)]
 mod stdio_line_tests;
+mod stdio_session;
+mod stdio_transport;
 mod token_validation;
 pub mod transport;
 #[cfg(test)]

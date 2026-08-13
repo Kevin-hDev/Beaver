@@ -51,6 +51,7 @@ where
     if cancel.is_cancelled() {
         return None;
     }
+    let deadline = std::time::Instant::now() + PROBE_TIMEOUT;
     let mut command = crate::services::background_command::new_tokio(&spec.program);
     command
         .args(spec.args)
@@ -75,7 +76,7 @@ where
     let end = tokio::select! {
         result = child.wait() => ProbeEnd::Exited(result.is_ok_and(|status| status.success())),
         _ = cancel.cancelled() => ProbeEnd::Cancelled,
-        _ = tokio::time::sleep(PROBE_TIMEOUT) => ProbeEnd::Cancelled,
+        _ = tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)) => ProbeEnd::Cancelled,
     };
     let succeeded = match end {
         ProbeEnd::Exited(succeeded) => {
@@ -91,11 +92,32 @@ where
             false
         }
     };
-    let output = reader.await.ok()??;
+    let output = join_reader(reader, deadline).await?;
     if !succeeded {
         return None;
     }
     Some(output)
+}
+
+async fn join_reader(
+    reader: tokio::task::JoinHandle<Option<ProbeOutput>>,
+    deadline: std::time::Instant,
+) -> Option<ProbeOutput> {
+    join_by_deadline(reader, deadline).await.flatten()
+}
+
+async fn join_by_deadline<Output>(
+    mut task: tokio::task::JoinHandle<Output>,
+    deadline: std::time::Instant,
+) -> Option<Output> {
+    tokio::select! {
+        result = &mut task => result.ok(),
+        _ = tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)) => {
+            task.abort();
+            let _ = task.await;
+            None
+        }
+    }
 }
 
 async fn read_bounded_and_drain(stdout: tokio::process::ChildStdout) -> Option<ProbeOutput> {
@@ -128,4 +150,12 @@ pub(super) async fn run_for_test(
         let _ = started.send(pid);
     })
     .await
+}
+
+#[cfg(test)]
+pub(super) async fn join_reader_for_test(
+    reader: tokio::task::JoinHandle<()>,
+    deadline: std::time::Instant,
+) -> Option<()> {
+    join_by_deadline(reader, deadline).await
 }

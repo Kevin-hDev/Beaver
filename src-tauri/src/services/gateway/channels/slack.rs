@@ -7,13 +7,15 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
-use super::backpressure::try_enqueue;
+use super::backpressure::{try_enqueue, EnqueueOutcome};
 use super::slack_types::*;
 use super::websocket_limits::bounded_websocket_config;
+use super::websocket_message::{classify_incoming, IncomingWebSocket};
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
     InboundMessage, OutboundMessage,
 };
+use crate::services::gateway::reconnect_policy::ReconnectPolicy;
 use crate::services::gateway::tokens;
 use crate::services::secure_http::{read_json_bounded, AuthenticatedClient, SLACK_BODY_LIMIT};
 
@@ -76,7 +78,8 @@ impl ChannelAdapter for SlackAdapter {
         let bot_user_id = self.state.read().await.bot_user_id.clone();
 
         Ok(Box::pin(async move {
-            loop {
+            let mut reconnect = ReconnectPolicy::new();
+            'gateway: loop {
                 if cancel.is_cancelled() {
                     break;
                 }
@@ -90,7 +93,9 @@ impl ChannelAdapter for SlackAdapter {
                 let ws_url = match Self::get_ws_url(&client, &app_token).await {
                     Ok(u) => u,
                     Err(_) => {
-                        tokio::time::sleep(Duration::from_secs(10)).await;
+                        if !reconnect.wait(&cancel).await {
+                            break;
+                        }
                         continue;
                     }
                 };
@@ -103,16 +108,23 @@ impl ChannelAdapter for SlackAdapter {
                 {
                     Ok((s, _)) => s,
                     Err(_) => {
-                        tokio::time::sleep(Duration::from_secs(5)).await;
+                        if !reconnect.wait(&cancel).await {
+                            break;
+                        }
                         continue;
                     }
                 };
+                let connected_at = std::time::Instant::now();
                 let (mut sink, mut stream) = ws.split();
                 loop {
                     tokio::select! {
-                        _ = cancel.cancelled() => break,
+                        _ = cancel.cancelled() => break 'gateway,
                         msg = stream.next() => {
-                            let Some(Ok(WsMessage::Text(txt))) = msg else { break; };
+                            let txt = match classify_incoming(msg) {
+                                IncomingWebSocket::Text(txt) => txt,
+                                IncomingWebSocket::Ignore => continue,
+                                IncomingWebSocket::Disconnect => break,
+                            };
                             let Ok(sm) = serde_json::from_str::<SlackSocketMessage>(&txt) else { continue; };
                             if let Some(eid) = &sm.envelope_id {
                                 let ack = serde_json::to_string(&SlackAck { envelope_id: eid.clone() }).unwrap_or_default();
@@ -129,12 +141,20 @@ impl ChannelAdapter for SlackAdapter {
                                         require_mention,
                                         &bot_user_id,
                                     ) {
-                                        try_enqueue(&sender, inbound, &key, &refusal_audit);
+                                        if try_enqueue(&sender, inbound, &key, &refusal_audit)
+                                            == EnqueueOutcome::Closed
+                                        {
+                                            break 'gateway;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                }
+                reconnect.record_connection(connected_at.elapsed());
+                if !reconnect.wait(&cancel).await {
+                    break;
                 }
             }
         }))

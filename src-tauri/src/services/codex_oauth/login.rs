@@ -6,12 +6,23 @@ use zeroize::Zeroizing;
 
 use super::CLIENT_ID;
 use super::{callback_server::CallbackServer, jwt, pkce, token};
+use crate::services::oauth_completion::{OAuthCompletion, OAuthCompletionOwner};
 use crate::services::work_registry::ServiceWorkCancellation;
 
 const AUTH_URL: &str = "https://auth.openai.com/oauth/authorize";
 const SCOPES: &str = "openid profile email offline_access";
-static ACTIVE_LOGIN: LazyLock<Mutex<Option<CancellationToken>>> =
-    LazyLock::new(|| Mutex::new(None));
+#[derive(Clone)]
+struct ActiveLogin {
+    cancel: CancellationToken,
+    completion: OAuthCompletion<()>,
+}
+
+struct RegisteredLogin {
+    cancel: CancellationToken,
+    completion: OAuthCompletionOwner<()>,
+}
+
+static ACTIVE_LOGIN: LazyLock<Mutex<Option<ActiveLogin>>> = LazyLock::new(|| Mutex::new(None));
 
 fn generate_state() -> Zeroizing<String> {
     let mut bytes = [0u8; 16];
@@ -64,23 +75,30 @@ fn validate_redirect_uri(redirect_uri: &str) -> Result<(), String> {
 }
 
 pub async fn login(work_cancel: ServiceWorkCancellation) -> Result<String, String> {
-    let cancel = register_login().await?;
+    let registered = register_login().await?;
     let result = tokio::select! {
-        result = login_registered(&cancel) => result,
+        result = login_registered(&registered.cancel) => result,
         _ = work_cancel.cancelled() => Err("Connexion annulée".to_string()),
     };
-    *ACTIVE_LOGIN.lock().await = None;
+    registered.completion.complete(());
     result
 }
 
-async fn register_login() -> Result<CancellationToken, String> {
+async fn register_login() -> Result<RegisteredLogin, String> {
     let mut active = ACTIVE_LOGIN.lock().await;
-    if active.is_some() {
+    if active
+        .as_ref()
+        .is_some_and(|login| !login.completion.is_finished())
+    {
         return Err("Connexion déjà en cours".to_string());
     }
     let cancel = CancellationToken::new();
-    *active = Some(cancel.clone());
-    Ok(cancel)
+    let (completion, observed) = OAuthCompletion::channel();
+    *active = Some(ActiveLogin {
+        cancel: cancel.clone(),
+        completion: observed,
+    });
+    Ok(RegisteredLogin { cancel, completion })
 }
 
 async fn login_registered(cancel: &CancellationToken) -> Result<String, String> {
@@ -105,18 +123,11 @@ async fn login_registered(cancel: &CancellationToken) -> Result<String, String> 
 }
 
 pub async fn cancel_login() {
-    let token = { ACTIVE_LOGIN.lock().await.as_ref().cloned() };
-    if let Some(token) = token {
-        token.cancel();
-        let _ = tokio::time::timeout(std::time::Duration::from_secs(2), async {
-            loop {
-                if ACTIVE_LOGIN.lock().await.is_none() {
-                    break;
-                }
-                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-            }
-        })
-        .await;
+    let active = { ACTIVE_LOGIN.lock().await.as_ref().cloned() };
+    if let Some(active) = active {
+        active.cancel.cancel();
+        let _ =
+            tokio::time::timeout(std::time::Duration::from_secs(2), active.completion.wait()).await;
     }
 }
 
@@ -130,19 +141,20 @@ mod tests {
 
     #[tokio::test]
     async fn cancellation_waits_until_the_callback_slot_is_released() {
-        let token = register_login().await.expect("login slot");
+        let registered = register_login().await.expect("login slot");
+        let token = registered.cancel.clone();
         let cleanup = tokio::spawn(async move {
             token.cancelled().await;
             tokio::time::sleep(std::time::Duration::from_millis(30)).await;
-            *ACTIVE_LOGIN.lock().await = None;
+            drop(registered);
         });
 
         let started = std::time::Instant::now();
         cancel_login().await;
 
-        assert!(ACTIVE_LOGIN.lock().await.is_none());
         assert!(started.elapsed() < std::time::Duration::from_millis(500));
         cleanup.await.expect("cleanup task");
+        drop(register_login().await.expect("completed slot is reusable"));
     }
 
     #[test]

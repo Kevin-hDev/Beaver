@@ -4,7 +4,7 @@
 )]
 use std::time::Duration;
 
-use zeroize::Zeroizing;
+use zeroize::{Zeroize, Zeroizing};
 
 use super::types::{DcrResponse, OAuthTokens, TokenResponse};
 use crate::services::secure_http::AuthenticatedClient;
@@ -80,7 +80,10 @@ pub fn verify_state_constant_time(expected: &str, received: &str) -> Result<(), 
     for index in 0..STATE_LEN {
         diff |= expected_fixed[index] ^ received_fixed[index];
     }
-    if diff != 0 {
+    let matches = diff == 0;
+    expected_fixed.zeroize();
+    received_fixed.zeroize();
+    if !matches {
         return Err("état OAuth invalide".to_string());
     }
     Ok(())

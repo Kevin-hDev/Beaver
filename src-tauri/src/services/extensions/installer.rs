@@ -5,6 +5,8 @@ use super::OperationFailure;
 use crate::services::work_registry::ServiceWorkCancellation;
 use std::sync::Arc;
 
+pub use super::installer_uninstall::uninstall;
+
 pub async fn install_git(
     app: &tauri::AppHandle,
     locator: &str,
@@ -62,46 +64,6 @@ pub async fn update(app: &tauri::AppHandle, id: &str) -> Result<ExtensionRecord,
             return Err(OperationFailure::UpdateIdentityChanged);
         }
         replace_current(&runtime, current, prepared).await
-    })
-    .await
-    .map_err(|error| error.operation_failure())?
-}
-
-pub async fn uninstall(id: &str) -> Result<(), OperationFailure> {
-    let current = super::registry::find(id).map_err(|_| OperationFailure::UninstallFailed)?;
-    let id = id.to_string();
-    let runtime = extension_runtime()?;
-    let work = runtime.work.clone();
-    work.run_operation(move |_| async move {
-        let stopped = runtime
-            .stop_host(super::host_process::stop_deadline())
-            .await;
-        super::host_stop_boundary::after_confirmed_stop(
-            stopped,
-            OperationFailure::HostUnavailable,
-            async move {
-                if super::registry::remove(&id).is_err() {
-                    let _ = runtime.start_untracked().await;
-                    return Err(OperationFailure::UninstallFailed);
-                }
-                let result = if is_managed(&current) {
-                    let record = current.clone();
-                    blocking(
-                        move || {
-                            super::managed_store::remove_record(&record)
-                                .map_err(|_| OperationFailure::StorageFailed)
-                        },
-                        OperationFailure::UninstallFailed,
-                    )
-                    .await
-                } else {
-                    Ok(())
-                };
-                let _ = runtime.start_untracked().await;
-                result
-            },
-        )
-        .await
     })
     .await
     .map_err(|error| error.operation_failure())?
@@ -190,13 +152,13 @@ async fn cleanup(record: &ExtensionRecord) {
     .await;
 }
 
-fn extension_runtime() -> Result<Arc<ExtensionRuntime>, OperationFailure> {
+pub(super) fn extension_runtime() -> Result<Arc<ExtensionRuntime>, OperationFailure> {
     super::runtime::global()
         .map(Arc::clone)
         .map_err(|_| OperationFailure::HostUnavailable)
 }
 
-fn is_managed(record: &ExtensionRecord) -> bool {
+pub(super) fn is_managed(record: &ExtensionRecord) -> bool {
     record
         .origin
         .as_ref()
@@ -207,7 +169,7 @@ fn is_managed_kind(kind: &ExtensionOriginKind) -> bool {
     matches!(kind, ExtensionOriginKind::Git | ExtensionOriginKind::Npm)
 }
 
-async fn blocking<T: Send + 'static>(
+pub(super) async fn blocking<T: Send + 'static>(
     operation: impl FnOnce() -> Result<T, OperationFailure> + Send + 'static,
     interrupted: OperationFailure,
 ) -> Result<T, OperationFailure> {

@@ -1,9 +1,6 @@
 use super::sidecar::{ChronosSidecar, SidecarEndpoint, SidecarHandle};
 use super::sidecar_settings::LaunchSettings;
-use std::time::Duration;
 use zeroize::Zeroizing;
-
-const HEALTH_PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
 struct RunningIdentity {
     port: u16,
@@ -16,7 +13,7 @@ struct RunningIdentity {
 
 impl RunningIdentity {
     fn still_matches(&self, handle: &SidecarHandle) -> bool {
-        handle.child.id() == self.pid
+        handle.pid == self.pid
             && handle.model_id == self.model_id
             && handle.family_id == self.family_id
             && handle.launch == self.launch
@@ -31,7 +28,7 @@ pub(super) async fn reuse_running(
     launch: &LaunchSettings,
 ) -> Option<SidecarEndpoint> {
     reuse_running_with_probe(sidecar, model_name, family_id, launch, |port, token| {
-        super::sidecar_http::health_info(port, token.as_str())
+        super::sidecar_http::health_info(port, &token)
     })
     .await
 }
@@ -58,7 +55,7 @@ where
         (
             RunningIdentity {
                 port: super::sidecar_http::get_port(),
-                pid: handle.child.id(),
+                pid: handle.pid,
                 model_id: handle.model_id.clone(),
                 family_id: handle.family_id.clone(),
                 launch: handle.launch.clone(),
@@ -69,7 +66,7 @@ where
     };
     let probe_port = identity.port;
     let health = tokio::time::timeout(
-        HEALTH_PROBE_TIMEOUT,
+        super::sidecar_http::HEALTH_PROBE_BUDGET,
         tokio::task::spawn_blocking(move || probe(probe_port, probe_token)),
     )
     .await
@@ -89,7 +86,7 @@ where
     Some(SidecarEndpoint {
         base_url: format!("http://127.0.0.1:{ready_port}"),
         auth_token: handle.auth_token.clone(),
-        pid: handle.child.id(),
+        pid: handle.pid,
     })
 }
 

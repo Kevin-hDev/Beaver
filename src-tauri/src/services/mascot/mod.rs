@@ -120,16 +120,28 @@ pub fn handle_window_focus(app: &AppHandle, focused: bool) {
         return;
     }
     let handle = app.clone();
-    tauri::async_runtime::spawn(async move {
-        tokio::time::sleep(Duration::from_millis(50)).await;
-        let any_focused = ["main", "mascot"].iter().any(|label| {
-            handle
-                .get_webview_window(label)
-                .and_then(|window| window.is_focused().ok())
-                .unwrap_or(false)
-        });
-        let _ = handle.emit(APP_FOCUS_EVENT, any_focused);
-    });
+    let background = app
+        .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+        .inner()
+        .clone();
+    if background
+        .spawn_task(move |cancel| async move {
+            tokio::select! {
+                _ = cancel.cancelled() => return,
+                _ = tokio::time::sleep(Duration::from_millis(50)) => {}
+            }
+            let any_focused = ["main", "mascot"].iter().any(|label| {
+                handle
+                    .get_webview_window(label)
+                    .and_then(|window| window.is_focused().ok())
+                    .unwrap_or(false)
+            });
+            let _ = handle.emit(APP_FOCUS_EVENT, any_focused);
+        })
+        .is_err()
+    {
+        ::log::warn!("[mascot] focus refresh unavailable during shutdown");
+    }
 }
 
 fn refresh_activity(app: &AppHandle) {
@@ -153,4 +165,15 @@ pub(super) fn update_activity(
 
 fn generic_error() -> String {
     "Mascotte indisponible".to_string()
+}
+
+#[cfg(test)]
+mod focus_ownership_tests {
+    #[test]
+    fn delayed_focus_check_uses_the_runtime_background_owner() {
+        let source = include_str!("mod.rs");
+
+        assert_eq!(source.matches("tauri::async_runtime::spawn").count(), 1);
+        assert!(source.contains("RuntimeBackgroundServices"));
+    }
 }

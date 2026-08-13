@@ -4,6 +4,7 @@ use crate::services::gateway::types::ChannelKey;
 use tokio::sync::mpsc;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "Closed must stop the channel consumer"]
 pub(super) enum EnqueueOutcome {
     Enqueued,
     Full,
@@ -19,11 +20,11 @@ pub(super) fn try_enqueue(
     match sender.try_send(message) {
         Ok(()) => EnqueueOutcome::Enqueued,
         Err(mpsc::error::TrySendError::Full(_)) => {
-            audit.try_record(key.clone(), "gateway_busy");
+            let _ = audit.record_refusal(key.clone(), "gateway_busy");
             EnqueueOutcome::Full
         }
         Err(mpsc::error::TrySendError::Closed(_)) => {
-            audit.try_record(key.clone(), "gateway_shutting_down");
+            let _ = audit.record_refusal(key.clone(), "gateway_shutting_down");
             EnqueueOutcome::Closed
         }
     }
