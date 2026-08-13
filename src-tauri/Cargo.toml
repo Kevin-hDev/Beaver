@@ -67,7 +67,7 @@ netstat2 = "=0.11.2"
 # Gateway messaging
 url = "2"
 subtle = "2"
-tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
+tokio-tungstenite = { version = "0.30", features = ["rustls-tls-webpki-roots"] }
 hmac = "0.12"
 
 # Streaming NDJSON
