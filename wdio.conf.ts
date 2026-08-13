@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { NATIVE_JOURNEY_MOCHA_TIMEOUT_MS } from "./scripts/e2e/native-journey-deadline.mjs";
 
 const appBinaryPath = process.env.E2E_APP_BINARY;
 if (!appBinaryPath) throw new Error("E2E app binary is not configured");
@@ -37,5 +38,5 @@ export const config: WebdriverIO.Config = {
   waitforTimeout: 15_000,
   connectionRetryTimeout: 90_000,
   connectionRetryCount: 1,
-  mochaOpts: { ui: "bdd", timeout: 60_000 },
+  mochaOpts: { ui: "bdd", timeout: NATIVE_JOURNEY_MOCHA_TIMEOUT_MS },
 };

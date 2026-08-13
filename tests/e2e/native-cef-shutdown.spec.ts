@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
+import { createNativeJourney } from "../../scripts/e2e/native-journey-deadline.mjs";
 import {
   runtimeRootForBinary,
   waitForOwnedCefHelper,
@@ -37,60 +38,85 @@ const nativeTest = required ? it : it.skip;
 
 describe("native CEF shutdown", () => {
   nativeTest("loads a page in a real helper and leaves no owned process", async () => {
+    const journey = createNativeJourney();
     const binaryPath = process.env.E2E_APP_BINARY;
     if (!binaryPath) throw new Error("E2E app binary is not configured");
     const runtimeRoot = runtimeRootForBinary(process.platform, binaryPath);
-    const server = await startPageServer();
+    let server: Server | undefined;
     try {
-      await completeOnboarding();
-      const nativeWebViews = await invokeTauri<NativeWebViews>("e2e_native_webviews");
-      if (process.platform === "win32" && nativeWebViews.dedicatedPids.length === 0) {
-        throw new Error("Native WebView observation failed");
-      }
-      if (process.platform === "darwin" && nativeWebViews.sharedSystemCount === 0) {
-        throw new Error("Native WebView observation failed");
-      }
+      server = await journey.run("page_server_start", () => startPageServer());
+      await journey.run("onboarding", () => completeOnboarding());
+      const nativeWebViews = await journey.run("native_webviews", async () => {
+        const observation = await invokeTauri<NativeWebViews>("e2e_native_webviews");
+        if (process.platform === "win32" && observation.dedicatedPids.length === 0) {
+          throw new Error("Native WebView observation failed");
+        }
+        if (process.platform === "darwin" && observation.sharedSystemCount === 0) {
+          throw new Error("Native WebView observation failed");
+        }
+        return observation;
+      });
       const url = serverUrl(server);
-      await browser.waitUntil(async () => (
-        (await invokeTauri<BrowserCapability>("browser_capability")).status === "ready"
-      ), { timeout: 15_000, interval: 100 });
+      await journey.run("browser_capability", ({ timeoutMs }) => (
+        browser.waitUntil(async () => (
+          (await invokeTauri<BrowserCapability>("browser_capability")).status === "ready"
+        ), { timeout: timeoutMs, interval: 100 })
+      ));
 
       const conversationId = randomUUID();
-      const session = await invokeTauri<BrowserSession>("browser_open_session", {
-        conversationId,
-      });
-      await invokeTauri("browser_surface", {
-        request: {
-          conversationId,
-          tabId: session.activeTabId,
-          url,
-          bounds: {
-            x: 20,
-            y: 80,
-            width: 480,
-            height: 320,
-            visible: true,
-            generation: 1,
+      const session = await journey.run("browser_session_open", () => (
+        invokeTauri<BrowserSession>("browser_open_session", { conversationId })
+      ));
+      await journey.run("browser_surface", () => (
+        invokeTauri("browser_surface", {
+          request: {
+            conversationId,
+            tabId: session.activeTabId,
+            url,
+            bounds: {
+              x: 20,
+              y: 80,
+              width: 480,
+              height: 320,
+              visible: true,
+              generation: 1,
+            },
           },
-        },
+        })
+      ));
+
+      await journey.run("cef_helper_start", ({ timeoutMs }) => (
+        waitForOwnedCefHelper({ root: runtimeRoot, timeoutMs })
+      ));
+      await journey.run("page_load", ({ timeoutMs }) => (
+        browser.waitUntil(async () => {
+          const current = await invokeTauri<BrowserSession>("browser_open_session", {
+            conversationId,
+          });
+          const tab = current.tabs.find(({ id }) => id === current.activeTabId);
+          return tab?.title === "Beaver CEF smoke" && !tab.loading;
+        }, { timeout: timeoutMs, interval: 100 })
+      ));
+
+      await journey.run("exit_request", () => invokeTauri("e2e_request_exit"));
+      await journey.run("webdriver_release", async () => {
+        try {
+          await browser.deleteSession();
+        } finally {
+          (browser as unknown as { sessionId?: string }).sessionId = undefined;
+        }
       });
-
-      await waitForOwnedCefHelper({ root: runtimeRoot });
-      await browser.waitUntil(async () => {
-        const current = await invokeTauri<BrowserSession>("browser_open_session", {
-          conversationId,
-        });
-        const tab = current.tabs.find(({ id }) => id === current.activeTabId);
-        return tab?.title === "Beaver CEF smoke" && !tab.loading;
-      }, { timeout: 15_000, interval: 100 });
-
-      await invokeTauri("e2e_request_exit");
-      await browser.deleteSession();
-      (browser as unknown as { sessionId?: string }).sessionId = undefined;
-      await waitForOwnedProcessesToExit({ root: runtimeRoot });
-      await waitForProcessIdsToExit({ pids: nativeWebViews.dedicatedPids });
+      await journey.run("owned_process_exit", ({ timeoutMs }) => (
+        waitForOwnedProcessesToExit({ root: runtimeRoot, timeoutMs })
+      ));
+      await journey.run("native_webview_exit", ({ timeoutMs }) => (
+        waitForProcessIdsToExit({ pids: nativeWebViews.dedicatedPids, timeoutMs })
+      ));
     } finally {
-      await closeServer(server);
+      const activeServer = server;
+      if (activeServer) {
+        await journey.cleanup("page_server_close", () => closeServer(activeServer));
+      }
     }
   });
 });
@@ -115,5 +141,6 @@ function serverUrl(server: Server): string {
 function closeServer(server: Server): Promise<void> {
   return new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
+    server.closeAllConnections();
   });
 }
