@@ -103,6 +103,30 @@ test(
 );
 
 test(
+  "macOS E2E helper compilation does not inherit the Tauri bundle config",
+  { skip: process.platform !== "darwin" },
+  async () => {
+    const directory = await realpath(
+      await mkdtemp(join(tmpdir(), "beaver-cef-runtime-tauri-config-")),
+    );
+    try {
+      const { environment, tauriDirectory } = await createFixture(directory);
+      runScript(tauriDirectory, "scripts/prepare-cef.sh", {
+        ...environment,
+        CARGO_TARGET_DIR: join(tauriDirectory, "target", "e2e"),
+        CLGO_CEF_CARGO_FEATURES: "e2e",
+        FIXTURE_REJECT_TAURI_CONFIG: "1",
+        TAURI_CONFIG: '{"bundle":{"macOS":{"frameworks":["missing.framework"]}}}',
+      });
+
+      await assertProfile(tauriDirectory, join("target", "e2e"), "e2e");
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
   "macOS Dev rebuilds its runtime when the profile authority changes",
   { skip: process.platform !== "darwin" },
   async () => {

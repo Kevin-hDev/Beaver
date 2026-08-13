@@ -67,7 +67,11 @@ BUILD_ARGS=(build --release --bin cl-go-dash-helper)
 if [[ -n "$BUILD_FEATURES" ]]; then
   BUILD_ARGS+=(--features "$BUILD_FEATURES")
 fi
-"${CARGO:-cargo}" "${BUILD_ARGS[@]}"
+# The helper build must not consume bundle resources before this script creates them.
+(
+  unset TAURI_CONFIG
+  "${CARGO:-cargo}" "${BUILD_ARGS[@]}"
+)
 
 CEF_DIR=".cef-verified/current"
 CEF_FRAMEWORK="$CEF_DIR/Release/Chromium Embedded Framework.framework"
