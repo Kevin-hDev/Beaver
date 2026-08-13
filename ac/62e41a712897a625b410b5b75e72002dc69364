@@ -1,10 +1,10 @@
 Suivi de review macOS CEF du commit 708f14e
 
-Corrections : cef-runtime-profile.sh centralise aussi la cohérence du CARGO_TARGET_DIR E2E; prepare-cef.sh refuse un répertoire absent ou étranger avant Cargo et supprime la validation BUILD_FEATURES morte; run-cef-dev-app.sh réutilise la même autorité; ensure-cef-dev-runtime.sh invalide le cache quand l'autorité de profil change.
+Corrections : cef-runtime-profile.sh centralise aussi la cohérence du CARGO_TARGET_DIR E2E; prepare-cef.sh refuse une variable CARGO_TARGET_DIR absente ou une cible étrangère avant Cargo et supprime la validation BUILD_FEATURES morte; run-cef-dev-app.sh réutilise la même autorité; ensure-cef-dev-runtime.sh invalide le cache quand l'autorité de profil change.
 
 Fixture : la fausse toolchain est isolée dans macos-runtime-profile-fake-tools.mjs. Le faux Cargo utilise désormais --features pour le contenu du helper et CARGO_TARGET_DIR pour son emplacement, comme Cargo réel. Chaque invocation est observable et bornée dans un journal temporaire de fixture.
 
-TDD rouge : cible E2E absente = 1 appel Cargo observé au lieu de 0; cible étrangère = 1 au lieu de 0; autorité de profil plus récente = 1 compilation au lieu de 2. Après correction, test ciblé 5/5 et suite CEF 34/34 PASS.
+TDD rouge : variable CARGO_TARGET_DIR absente = 1 appel Cargo observé au lieu de 0; cible étrangère = 1 au lieu de 0; autorité de profil plus récente = 1 compilation au lieu de 2. Après correction, test ciblé 5/5 et suite CEF 34/34 PASS.
 
 Validation verte : npm test (417 fichiers Vitest, 1918 tests frontend; 50 build; 6 CI; 34 CEF; 48 runner E2E; 53 extension-host); npm run lint; npx tsc --noEmit; syntaxe Bash; cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo check; contrats Rust bundle 7/7; diff indexé sans défaut.
 
