@@ -3,11 +3,14 @@ mod bootstrap;
 mod clock;
 mod emergency_slots;
 mod identity;
+// La production l'active avec l'adoption de l'automate par les slots macOS.
+#[cfg(test)]
 mod liveness_policy;
 mod mapping;
 mod objects;
 mod pending;
 mod process_state;
+mod process_syscalls;
 mod reaper;
 mod tracker;
 mod tracker_lifecycle;
@@ -30,5 +33,7 @@ pub(in crate::services::browser) use tracker::{MacCefTracker, MacCefTrackerHandl
 mod liveness_policy_tests;
 #[cfg(test)]
 mod objects_tests;
+#[cfg(test)]
+mod process_state_tests;
 #[cfg(test)]
 mod tracker_tests;

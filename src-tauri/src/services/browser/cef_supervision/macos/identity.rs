@@ -1,12 +1,11 @@
 use super::super::CefUnavailableCategory;
+use super::process_state::{
+    MacProcessActions, MacProcessObservation, MacSignalObservation, MacSystemProcessActions,
+};
 use crate::services::browser::native_paths::MacHelperExecutables;
-use std::ffi::OsStr;
-use std::os::unix::ffi::OsStrExt;
 #[cfg(test)]
 use std::path::Path;
 use std::path::PathBuf;
-
-const MAX_EXECUTABLE_BYTES: usize = 4_096;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::services::browser) struct MacProcessIdentity {
@@ -19,14 +18,7 @@ pub(in crate::services::browser) struct MacProcessIdentity {
 
 impl MacProcessIdentity {
     pub(in crate::services::browser) fn read(pid: u32) -> Result<Self, CefUnavailableCategory> {
-        let kernel = kernel_identity(pid)?;
-        Ok(Self {
-            pid,
-            parent_pid: kernel.parent_pid,
-            started_at: kernel.started_at,
-            process_group: kernel.process_group,
-            executable: executable(pid)?,
-        })
+        super::process_state::read_active_identity(pid)
     }
 
     pub(in crate::services::browser) fn validate(
@@ -52,39 +44,24 @@ impl MacProcessIdentity {
     }
 
     pub(super) fn revalidate(&self) -> Result<(), CefUnavailableCategory> {
-        (Self::read(self.pid)? == *self)
-            .then_some(())
-            .ok_or(CefUnavailableCategory::Reaper)
+        match MacSystemProcessActions.revalidate_before_signal(self) {
+            MacSignalObservation::Ready => Ok(()),
+            MacSignalObservation::Stopped | MacSignalObservation::Unknown => {
+                Err(CefUnavailableCategory::Reaper)
+            }
+        }
     }
 
     pub(super) fn kill_group(&self) -> Result<(), CefUnavailableCategory> {
         self.revalidate()?;
-        if unsafe { libc::kill(-(self.process_group as i32), libc::SIGKILL) } == 0 {
-            Ok(())
-        } else {
-            Err(CefUnavailableCategory::Reaper)
-        }
+        MacSystemProcessActions.signal_group(self).map(|_| ())
     }
 
     pub(super) fn is_alive(&self) -> Result<bool, CefUnavailableCategory> {
-        let info = match bsd_info(self.pid) {
-            Ok(info) => info,
-            Err(_) => return unverifiable_process_state(self.pid),
-        };
-        if info.pbi_status == libc::SZOMB {
-            return Ok(false);
-        }
-        match kernel_identity_from_info(self.pid, &info) {
-            Ok(current) => Ok(current == self.kernel_identity()),
-            Err(_) => unverifiable_process_state(self.pid),
-        }
-    }
-
-    fn kernel_identity(&self) -> MacKernelIdentity {
-        MacKernelIdentity {
-            parent_pid: self.parent_pid,
-            started_at: self.started_at,
-            process_group: self.process_group,
+        match MacSystemProcessActions.observe(self) {
+            MacProcessObservation::Alive => Ok(true),
+            MacProcessObservation::Stopped => Ok(false),
+            MacProcessObservation::Unknown => Err(CefUnavailableCategory::Reaper),
         }
     }
 
@@ -119,103 +96,4 @@ impl MacProcessIdentity {
     ) -> Result<bool, CefUnavailableCategory> {
         self.is_alive()
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct MacKernelIdentity {
-    parent_pid: u32,
-    started_at: u64,
-    process_group: u32,
-}
-
-fn kernel_identity(pid: u32) -> Result<MacKernelIdentity, CefUnavailableCategory> {
-    if pid == 0 || pid > i32::MAX as u32 {
-        return Err(CefUnavailableCategory::Admission);
-    }
-    let info = bsd_info(pid)?;
-    kernel_identity_from_info(pid, &info)
-}
-
-fn kernel_identity_from_info(
-    pid: u32,
-    info: &libc::proc_bsdinfo,
-) -> Result<MacKernelIdentity, CefUnavailableCategory> {
-    if info.pbi_status == libc::SZOMB {
-        return Err(CefUnavailableCategory::Admission);
-    }
-    let process_group = unsafe { libc::getpgid(pid as i32) };
-    if process_group <= 0 {
-        return Err(CefUnavailableCategory::Admission);
-    }
-    let started_at = info
-        .pbi_start_tvsec
-        .checked_mul(1_000_000)
-        .and_then(|value| value.checked_add(info.pbi_start_tvusec))
-        .filter(|value| *value != 0)
-        .ok_or(CefUnavailableCategory::Admission)?;
-    Ok(MacKernelIdentity {
-        parent_pid: info.pbi_ppid,
-        started_at,
-        process_group: process_group as u32,
-    })
-}
-
-fn unverifiable_process_state(pid: u32) -> Result<bool, CefUnavailableCategory> {
-    let mut exit_info = unsafe { std::mem::zeroed::<libc::siginfo_t>() };
-    let wait_result = unsafe {
-        libc::waitid(
-            libc::P_PID,
-            pid as libc::id_t,
-            &mut exit_info,
-            libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
-        )
-    };
-    if wait_result == 0 && unsafe { exit_info.si_pid() } == pid as libc::pid_t {
-        return Ok(false);
-    }
-    let result = unsafe { libc::kill(pid as i32, 0) };
-    if result == 0 {
-        Err(CefUnavailableCategory::Reaper)
-    } else if std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH) {
-        Ok(false)
-    } else {
-        Err(CefUnavailableCategory::Reaper)
-    }
-}
-
-fn bsd_info(pid: u32) -> Result<libc::proc_bsdinfo, CefUnavailableCategory> {
-    let mut info = unsafe { std::mem::zeroed::<libc::proc_bsdinfo>() };
-    let size = std::mem::size_of::<libc::proc_bsdinfo>();
-    let read = unsafe {
-        libc::proc_pidinfo(
-            pid as i32,
-            libc::PROC_PIDTBSDINFO,
-            0,
-            (&mut info as *mut libc::proc_bsdinfo).cast(),
-            size as i32,
-        )
-    };
-    (read == size as i32 && info.pbi_pid == pid)
-        .then_some(info)
-        .ok_or(CefUnavailableCategory::Admission)
-}
-
-fn executable(pid: u32) -> Result<PathBuf, CefUnavailableCategory> {
-    let mut buffer = Box::new([0_u8; MAX_EXECUTABLE_BYTES]);
-    let read = unsafe {
-        libc::proc_pidpath(
-            pid as i32,
-            buffer.as_mut_ptr().cast(),
-            MAX_EXECUTABLE_BYTES as u32,
-        )
-    };
-    if read <= 0 || read as usize >= MAX_EXECUTABLE_BYTES {
-        return Err(CefUnavailableCategory::Admission);
-    }
-    let bytes = &buffer[..read as usize];
-    if bytes.contains(&0) {
-        return Err(CefUnavailableCategory::Admission);
-    }
-    dunce::canonicalize(PathBuf::from(OsStr::from_bytes(bytes)))
-        .map_err(|_| CefUnavailableCategory::Admission)
 }
