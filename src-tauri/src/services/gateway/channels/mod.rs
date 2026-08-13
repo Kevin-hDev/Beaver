@@ -5,6 +5,8 @@ mod bounded_vec;
 pub mod capabilities;
 pub mod discord;
 mod discord_events;
+#[cfg(test)]
+mod discord_events_tests;
 pub mod discord_gateway;
 mod discord_http;
 mod discord_support;
@@ -16,6 +18,9 @@ pub mod telegram;
 mod telegram_support;
 pub mod telegram_types;
 mod websocket_limits;
+mod websocket_message;
+#[cfg(test)]
+mod websocket_message_tests;
 
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};

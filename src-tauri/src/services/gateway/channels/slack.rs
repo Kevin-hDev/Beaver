@@ -10,6 +10,7 @@ use zeroize::Zeroizing;
 use super::backpressure::{try_enqueue, EnqueueOutcome};
 use super::slack_types::*;
 use super::websocket_limits::bounded_websocket_config;
+use super::websocket_message::{classify_incoming, IncomingWebSocket};
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
     InboundMessage, OutboundMessage,
@@ -119,7 +120,11 @@ impl ChannelAdapter for SlackAdapter {
                     tokio::select! {
                         _ = cancel.cancelled() => break 'gateway,
                         msg = stream.next() => {
-                            let Some(Ok(WsMessage::Text(txt))) = msg else { break; };
+                            let txt = match classify_incoming(msg) {
+                                IncomingWebSocket::Text(txt) => txt,
+                                IncomingWebSocket::Ignore => continue,
+                                IncomingWebSocket::Disconnect => break,
+                            };
                             let Ok(sm) = serde_json::from_str::<SlackSocketMessage>(&txt) else { continue; };
                             if let Some(eid) = &sm.envelope_id {
                                 let ack = serde_json::to_string(&SlackAck { envelope_id: eid.clone() }).unwrap_or_default();
