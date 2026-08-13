@@ -226,7 +226,7 @@ jobs:
       - name: macOS CEF supervision authority
         working-directory: src-tauri
         run: |
-          node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos_tracker_tests
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos::tracker_tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests
 
       - name: Native macOS CEF journey

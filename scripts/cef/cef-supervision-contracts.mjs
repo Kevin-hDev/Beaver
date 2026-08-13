@@ -24,7 +24,7 @@ export function validateCefSupervisionContracts({
   );
   requireText(
     workflow,
-    "services::browser::cef_supervision::macos_tracker_tests",
+    "services::browser::cef_supervision::macos::tracker_tests",
     "macOS supervision tests are missing",
     errors,
   );

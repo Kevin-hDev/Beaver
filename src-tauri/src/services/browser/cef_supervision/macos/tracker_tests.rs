@@ -1,7 +1,5 @@
-use super::macos::{
-    helper_parent_changed_for_test, MacCefTracker, MacHelperObjects, MacProcessIdentity,
-};
-use super::{CefIpcNames, CefUnavailableCategory, CEF_SLOT_CAPACITY};
+use super::super::{CefIpcNames, CefUnavailableCategory, CEF_SLOT_CAPACITY};
+use super::{helper_parent_changed_for_test, MacCefTracker, MacHelperObjects, MacProcessIdentity};
 use std::os::unix::process::CommandExt;
 use std::time::{Duration, Instant};
 
