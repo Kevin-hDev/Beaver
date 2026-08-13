@@ -7,7 +7,7 @@ Preuves : tests gateway 148/148 ; cargo fmt --check vert ; git diff --check vert
 Audit final des 35 obligations :
 - 1-2 : corrigé par ba16c48.
 - 3-4 et 12-13 : corrigé par 13ffbc0.
-- 5-6 et 27-28 (extensions) : corrigé par 844e171.
+- 5-6 et 27 (extensions) : corrigé par 844e171.`n- 28 (Forecast) : corrigé par 0b34451.
 - 10, 14, 16, 18-19 : corrigé par e6547c0.
 - 15, 17, 20-21 : corrigé par 1176a5d.
 - 22-23 et 35 (OAuth Codex) : corrigé par 9ad0c32.
