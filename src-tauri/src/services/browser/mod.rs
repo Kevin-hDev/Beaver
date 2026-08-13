@@ -117,6 +117,8 @@ mod view_recency;
 mod view_state;
 #[cfg(target_os = "windows")]
 pub(crate) mod windows_sandbox;
+#[cfg(target_os = "windows")]
+mod windows_surface_order;
 
 #[cfg(all(test, native_browser))]
 mod browser_slot_tests;
@@ -178,6 +180,8 @@ mod view_recency_tests;
 mod view_state_tests;
 #[cfg(test)]
 mod windows_bundle_layout_tests;
+#[cfg(all(test, target_os = "windows"))]
+mod windows_surface_order_tests;
 
 use tauri::Manager;
 
