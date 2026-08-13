@@ -1,0 +1,7 @@
+Références : échecs macOS des runs 31689954308 et 31702280982, tous deux arrêtés par le délai Mocha global de 60 secondes alors que le même arbre Git avait terminé le parcours en 3 à 10 secondes.
+
+Décision : le parcours CEF natif reçoit une autorité temporelle unique. Chaque étape dérive son budget de l'échéance globale, produit une trace structurée et conserve une grâce bornée uniquement pour le nettoyage final.
+
+Raison : une relance aveugle pouvait passer par hasard sans identifier le blocage ; augmenter seulement le délai aurait conservé le conflit entre budgets locaux et délai global.
+
+Périmètre : stabilisation et diagnostic du test uniquement. Aucun comportement de production Beaver n'est modifié sans preuve d'une étape fautive.
