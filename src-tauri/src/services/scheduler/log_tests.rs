@@ -143,6 +143,18 @@ async fn appends_do_not_reread_the_log_before_the_trim_boundary() {
     .await
     .unwrap();
     assert_eq!(reads.load(Ordering::Relaxed), 2);
+
+    let reads_after_rotation = Arc::clone(&reads);
+    append_at_with_read_observer(&path, indexed_entry(MAX_LINES + 1), move || {
+        reads_after_rotation.fetch_add(1, Ordering::Relaxed);
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        reads.load(Ordering::Relaxed),
+        2,
+        "the append after rotation must stay incremental"
+    );
 }
 
 #[tokio::test]
@@ -171,7 +183,7 @@ async fn concurrent_reader_never_observes_partial_rotation() {
     resume_rotation_tx.send(()).unwrap();
     writer.await.unwrap().unwrap();
     let runs = reader.await.unwrap().unwrap();
-    assert_eq!(runs.len(), MAX_LINES);
+    assert_eq!(runs.len(), ROTATED_LINES);
     assert_eq!(runs[0].wakeup_id, "new-entry");
 }
 

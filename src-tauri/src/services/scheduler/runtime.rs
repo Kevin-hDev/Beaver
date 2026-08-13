@@ -1,9 +1,10 @@
 use super::due::{
     due_wakeups_at, is_late, is_once, missed_occurrences, reconciliation_cutoff, ReconciliationMode,
 };
+use super::in_flight::InFlightWakeups;
 use super::next_fire::next_fire_at;
 use super::runtime_decisions::{
-    handle_due_admission, persist_once_missed_decision, warn_if_log_failed,
+    handle_due_admission, persist_once_missed_decision, reserve_due_occurrence, warn_if_log_failed,
 };
 use super::work_supervision::SchedulerWakeupWork;
 use super::{fire, log, state};
@@ -22,6 +23,7 @@ pub(super) async fn run_loop(
     lifetime: ServiceWorkCancellation,
     wakeup_work: SchedulerWakeupWork,
 ) {
+    let in_flight = InFlightWakeups::default();
     let mut reconciliation_mode = ReconciliationMode::Startup;
     loop {
         if lifetime.is_cancelled() {
@@ -45,7 +47,14 @@ pub(super) async fn run_loop(
                 reconciliation_mode = ReconciliationMode::Running;
             }
         } else {
-            if reconcile_missed(&config.scheduled_wakeups, now, reconciliation_mode).await {
+            if reconcile_missed(
+                &config.scheduled_wakeups,
+                now,
+                reconciliation_mode,
+                &in_flight,
+            )
+            .await
+            {
                 reconciliation_mode = ReconciliationMode::Running;
             }
         }
@@ -71,6 +80,7 @@ pub(super) async fn run_loop(
                         target,
                         &lifetime,
                         &wakeup_work,
+                        &in_flight,
                     ).await;
                 }
             }
@@ -98,13 +108,15 @@ async fn reconcile_missed(
     wakeups: &[crate::models::ScheduledWakeup],
     now: DateTime<Local>,
     mode: ReconciliationMode,
+    in_flight: &InFlightWakeups,
 ) -> bool {
     let Some(last_checked) = state::read_last_checked().await else {
         return checkpoint(now).await;
     };
     let cutoff = reconciliation_cutoff(now, mode);
     let mut decisions_persisted = true;
-    for (wakeup, scheduled_for) in missed_occurrences(wakeups, last_checked, cutoff) {
+    let candidates = in_flight.partition(missed_occurrences(wakeups, last_checked, cutoff));
+    for (wakeup, scheduled_for) in candidates.decidable {
         let result = if is_once(&wakeup) {
             persist_once_missed_decision(
                 || log::log_missed(&wakeup.id, scheduled_for),
@@ -120,7 +132,11 @@ async fn reconcile_missed(
         };
         decisions_persisted &= warn_if_log_failed(result);
     }
-    if decisions_persisted {
+    if candidates.has_in_flight {
+        // Advancing here would make a crash during the running wakeup
+        // impossible to reconcile at the next startup.
+        false
+    } else if decisions_persisted {
         checkpoint(cutoff).await
     } else {
         false
@@ -134,13 +150,14 @@ async fn handle_due(
     target: DateTime<Local>,
     lifetime: &ServiceWorkCancellation,
     work: &SchedulerWakeupWork,
+    in_flight: &InFlightWakeups,
 ) {
     if lifetime.is_cancelled() {
         return;
     }
     let current = Local::now();
     if is_late(target, current) {
-        let _ = reconcile_missed(wakeups, current, ReconciliationMode::Running).await;
+        let _ = reconcile_missed(wakeups, current, ReconciliationMode::Running, in_flight).await;
         return;
     }
 
@@ -149,8 +166,12 @@ async fn handle_due(
             return;
         }
         let wakeup_id = wakeup.id.clone();
+        let Some(occurrence) = reserve_due_occurrence(in_flight, &wakeup_id, target).await else {
+            continue;
+        };
         let app_clone = app.clone();
         let result = work.spawn(move |service_cancel| async move {
+            let _occurrence = occurrence;
             let cancel = CancellationToken::new();
             let shutdown_cancel = cancel.clone();
             let task = fire::fire_wakeup(app_clone, wakeup, target, cancel);
