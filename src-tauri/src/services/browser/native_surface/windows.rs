@@ -1,10 +1,10 @@
 use super::super::surface_bounds::{BrowserSurfaceBounds, NativeSurfaceRect};
+use super::super::windows_surface_order::apply_surface_placement;
 use cef::{Browser, ImplBrowser, ImplBrowserHost, Rect, RuntimeStyle, WindowInfo};
 use tauri::Manager;
-use windows_sys::Win32::UI::WindowsAndMessaging::{
-    DestroyWindow, SetWindowPos, ShowWindow, SWP_NOACTIVATE, SWP_NOOWNERZORDER, SWP_NOZORDER,
-    SW_HIDE, SW_SHOWNA,
-};
+#[cfg(debug_assertions)]
+mod diagnostics;
+use windows_sys::Win32::UI::WindowsAndMessaging::DestroyWindow;
 
 pub(crate) struct NativeParent {
     window: cef::sys::cef_window_handle_t,
@@ -67,27 +67,10 @@ pub(crate) fn update_browser(
         return Err(());
     }
     let native_handle = handle.0.cast();
-    let moved = unsafe {
-        SetWindowPos(
-            native_handle,
-            std::ptr::null_mut(),
-            parent.rect.x,
-            parent.rect.y,
-            parent.rect.width,
-            parent.rect.height,
-            SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER,
-        )
-    };
-    if moved == 0 {
-        return Err(());
-    }
-    unsafe {
-        ShowWindow(
-            native_handle,
-            if bounds.visible { SW_SHOWNA } else { SW_HIDE },
-        );
-    }
+    apply_surface_placement(native_handle, parent.rect, bounds.visible)?;
     host.was_hidden(i32::from(!bounds.visible));
     host.was_resized();
+    #[cfg(debug_assertions)]
+    diagnostics::log_surface_state(parent.window.0.cast(), native_handle, parent.rect);
     Ok(())
 }
