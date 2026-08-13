@@ -1,0 +1,4 @@
+Intent: stop the repeated expected Windows verifier error emitted by local HTTPS discovery without accepting an untrusted certificate.
+Result: app_log owns an exact-target Tokio task-local filter; only the local HTTPS send enters that scope; HTTP, CEF, the TLS backend, and every unrelated request remain unchanged.
+Tests: TDD reproduced one escaped verifier record before the fix and zero after it while the self-signed certificate remained rejected. Contract tests preserve the same verifier log outside the scope and unrelated logs inside it.
+Verification: cargo fmt --all -- --check; cargo test --lib --features windows-tests -- --test-threads=1 (3240 passed, 2 ignored, 0 failed); cargo clippy --all-targets -- -D warnings; graphify update .
