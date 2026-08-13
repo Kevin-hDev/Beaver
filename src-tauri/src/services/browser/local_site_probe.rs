@@ -34,12 +34,16 @@ async fn probe_endpoint(
 ) -> Result<LocalSite, ()> {
     let client = local_client(address)?;
     let url = format!("{}://localhost:{port}/", protocol.as_str());
-    let response = client
+    let request = client
         .get(&url)
-        .header("User-Agent", format!("{DISPLAY_NAME} Local Site Detector"))
-        .send()
-        .await
-        .map_err(|_| ())?;
+        .header("User-Agent", format!("{DISPLAY_NAME} Local Site Detector"));
+    let response = match protocol {
+        LocalSiteProtocol::Http => request.send().await,
+        LocalSiteProtocol::Https => {
+            crate::services::app_log::with_expected_local_tls_rejection(request.send()).await
+        }
+    }
+    .map_err(|_| ())?;
     if !response.status().is_success() || !is_allowed_local_url(response.url()) {
         return Err(());
     }
