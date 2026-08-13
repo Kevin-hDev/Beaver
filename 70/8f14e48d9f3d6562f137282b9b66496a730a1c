@@ -1,0 +1,15 @@
+Correctif macOS CEF — isolation des profils Dev et E2E
+
+Cause racine : prepare-cef.sh utilisait auparavant un stage macOS partagé (target/cef-runtime/macos). Une préparation E2E pouvait donc remplacer les cinq helpers Dev par des helpers compilés avec la feature e2e. Au lancement normal, ces helpers recevaient un chemin de données absent et paniquaient sur invalid CEF test data directory; Chromium finissait par SIGTRAP avec GPU process isn't usable.
+
+Correction : source de vérité unique cef-runtime-profile.sh; stage normal target/cef-runtime/macos marqué dev; stage E2E target/e2e/cef-runtime/macos marqué e2e; validation stricte du marqueur avant réutilisation et avant copie; reconstruction automatique des caches historiques sans marqueur; tauri.e2e.conf.json surcharge framework, helpers et licence vers le stage E2E.
+
+TDD : le premier test de régression a échoué sur le stage historique sans .profile. Une mutation supprimant la validation du marqueur a fait échouer le scénario de récupération. Le contrat Rust a échoué tant que le bundle E2E ne pointait pas vers son stage. Un premier Dev vers E2E natif a échoué SIGTRAP et révélé la surcharge Tauri manquante.
+
+Validation verte : npm test (417 fichiers Vitest, 1918 tests frontend; 50 build; 6 CI; 31 CEF; 48 runner E2E; 53 extension-host); node --test scripts/build/prepare-release.test.mjs 5/5; cargo fmt --check; cargo clippy --all-targets -- -D warnings; cargo check; bundle_layout_tests 7/7; bash -n et diff --check.
+
+Validation native : E2E avant Dev PASS; Dev sans nettoyage a reconstruit le cache contaminé, ouvert la fenêtre Beaver et n'a produit ni panic de données CEF ni erreur GPU; E2E après Dev PASS. Matrice finale : stage normal 5/5 helpers Dev, marqueur dev; stage E2E et bundle E2E 5/5 helpers E2E, marqueur e2e; aucun processus de validation restant.
+
+Limites séparées : cargo test complet reste non vert à cause d'un test app_update_helper_process reproductible et de six tests PTY bloqués, hors fichiers CEF modifiés. Le faux positif macOS cef-supervision-reaper reason=reaper-liveness reste le prochain problème à corriger. Un arrêt pendant une génération Agent Local a aussi laissé Ollama vivant une fois et doit être investigué séparément.
+
+Recommandation : poursuivre sur cette branche avec un commit distinct pour la liveness macOS; ne pas réintroduire de stage CEF partagé; investiguer updater/PTY et l'orphelin Ollama séparément. Aucun nettoyage manuel de target n'est requis pour récupérer un ancien cache contaminé.
