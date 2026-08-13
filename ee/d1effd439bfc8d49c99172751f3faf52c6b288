@@ -13,3 +13,7 @@ Validation native réellement froide : target/e2e entier déplacé avant exécut
 Limite observée : après ce bootstrap réussi, le parcours natif reste rouge au stade browser_capability après 15003 ms. Onboarding et native_webviews passent. Ce timeout est le chantier séparé de liveness/supervision déjà identifié ; il ne doit pas être masqué ni déclaré résolu par ce commit.
 
 Recommandation : conserver ce correctif minimal. Valider maintenant le nouveau commit sur les trois OS en CI, puis traiter browser_capability et cef-supervision-reaper dans un commit distinct avec sa propre reproduction.
+
+Résultat CI final du 13 août 2026 : workflow CI 31741950112 terminé success, 7 jobs sur 7 verts. Backend macOS CEF vert avec parcours natif froid réussi en 12 min 08 ; Backend Windows CEF vert avec parcours natif réussi en 14 min 51 ; Backend Windows tests, Backend Rust Linux, Desktop E2E Linux, Native Linux WebView et Frontend tous verts. CodeQL 31741950134 et Dependency audit 31741950110 sont également success.
+
+Conclusion après CI : la cause racine de bootstrap à froid est corrigée sur runner vierge sans régression sur Windows ou Linux. Le timeout browser_capability observé localement sur cette machine macOS ne s est pas reproduit en CI et reste un signal local à investiguer séparément dans le chantier liveness ; il ne remet pas en cause ce correctif de configuration.
