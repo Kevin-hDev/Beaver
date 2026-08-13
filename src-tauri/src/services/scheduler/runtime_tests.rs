@@ -1,9 +1,10 @@
 use super::due::{missed_occurrences, reconciliation_cutoff, ReconciliationMode};
+use super::in_flight::{InFlightReservationError, InFlightWakeups};
 use super::runtime_decisions::{handle_due_admission, persist_once_missed_decision};
 use super::work_supervision::SchedulerWorkServices;
 use crate::app_exit::AppExitCoordinator;
 use crate::services::work_registry::ServiceWorkAdmissionError;
-use chrono::Local;
+use chrono::{Local, TimeZone};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -29,6 +30,53 @@ fn daily_wakeup(
         skill_ids: Vec::new(),
         tool_names: Vec::new(),
     }
+}
+
+#[test]
+fn in_flight_occurrence_blocks_missed_decision_until_terminal_result() {
+    let scheduled_for = Local
+        .with_ymd_and_hms(2026, 8, 13, 8, 0, 0)
+        .single()
+        .unwrap();
+    let wakeup = daily_wakeup("daily", scheduled_for);
+    let in_flight = InFlightWakeups::default();
+    let guard = in_flight.reserve("daily", scheduled_for).unwrap();
+
+    let blocked = in_flight.partition(vec![(wakeup.clone(), scheduled_for)]);
+    assert!(blocked.decidable.is_empty());
+    assert!(blocked.has_in_flight);
+
+    drop(guard);
+    let released = in_flight.partition(vec![(wakeup, scheduled_for)]);
+    assert_eq!(released.decidable.len(), 1);
+    assert!(!released.has_in_flight);
+}
+
+#[test]
+fn in_flight_registry_rejects_duplicates_and_a_sixty_fifth_occurrence() {
+    let scheduled_for = Local
+        .with_ymd_and_hms(2026, 8, 13, 8, 0, 0)
+        .single()
+        .unwrap();
+    let in_flight = InFlightWakeups::default();
+    let first = in_flight.reserve("wakeup-0", scheduled_for).unwrap();
+    assert!(matches!(
+        in_flight.reserve("wakeup-0", scheduled_for),
+        Err(InFlightReservationError::Duplicate)
+    ));
+
+    let mut guards = vec![first];
+    for index in 1..64 {
+        guards.push(
+            in_flight
+                .reserve(&format!("wakeup-{index}"), scheduled_for)
+                .unwrap(),
+        );
+    }
+    assert!(matches!(
+        in_flight.reserve("wakeup-64", scheduled_for),
+        Err(InFlightReservationError::Capacity)
+    ));
 }
 
 #[tokio::test]

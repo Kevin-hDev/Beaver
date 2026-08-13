@@ -1,9 +1,36 @@
 use crate::services::work_registry::ServiceWorkAdmissionError;
 use chrono::{DateTime, Local};
 
+use super::in_flight::{InFlightReservationError, InFlightWakeupGuard, InFlightWakeups};
+use super::log;
+
 pub(super) struct DueAdmissionOutcome {
     pub(super) keep_running: bool,
     pub(super) decision_persisted: bool,
+}
+
+pub(super) async fn reserve_due_occurrence(
+    in_flight: &InFlightWakeups,
+    wakeup_id: &str,
+    scheduled_for: DateTime<Local>,
+) -> Option<InFlightWakeupGuard> {
+    match in_flight.reserve(wakeup_id, scheduled_for) {
+        Ok(occurrence) => Some(occurrence),
+        Err(InFlightReservationError::Duplicate) => None,
+        Err(InFlightReservationError::Capacity) => {
+            let outcome = handle_due_admission(
+                Err(ServiceWorkAdmissionError::Capacity),
+                wakeup_id.to_string(),
+                scheduled_for,
+                |id, target, error| async move { log::log_refused(&id, target, error).await },
+            )
+            .await;
+            if !outcome.decision_persisted {
+                ::log::warn!("[scheduler] refus conservé pour réconciliation");
+            }
+            None
+        }
+    }
 }
 
 pub(super) async fn handle_due_admission<Recorder, RecordFuture>(

@@ -10,6 +10,7 @@ mod metadata;
 use metadata::{LogMetadata, LogStoreState};
 
 pub(super) const MAX_LINES: usize = 500;
+pub(super) const ROTATED_LINES: usize = MAX_LINES / 2;
 pub(super) const MAX_ID_CHARS: usize = 128;
 pub(super) const MAX_LOG_LINE_BYTES: usize = 2_048;
 const MAX_LOG_BYTES: usize = MAX_LINES * MAX_LOG_LINE_BYTES;
@@ -165,7 +166,7 @@ fn rotated_content(existing: &str, new_line: &str) -> Vec<u8> {
         .lines()
         .rev()
         .filter(|line| line.len() <= MAX_LOG_LINE_BYTES)
-        .take(MAX_LINES - 1)
+        .take(ROTATED_LINES - 1)
         .collect::<Vec<_>>();
     lines.reverse();
     let mut rotated = lines.join("\n");

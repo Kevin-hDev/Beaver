@@ -2,6 +2,7 @@ mod agentic;
 pub mod due;
 pub mod fire;
 mod fire_once;
+mod in_flight;
 pub mod log;
 pub mod next_fire;
 #[cfg(test)]
