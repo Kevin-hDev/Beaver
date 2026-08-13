@@ -1,5 +1,5 @@
-use super::macos::{MacHelperObjects, MacPublicationObjects};
-use super::{CefIpcNames, CefLaunchMarker, CefProcessRole, CefUnavailableCategory};
+use super::super::{CefIpcNames, CefLaunchMarker, CefProcessRole, CefUnavailableCategory};
+use super::{MacHelperObjects, MacPublicationObjects};
 
 #[test]
 fn helper_opens_every_descriptor_before_the_sandbox_and_observes_parent_events() {
