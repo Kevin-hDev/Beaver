@@ -1,5 +1,14 @@
-use super::app_log::{format_message, format_record};
+use super::app_log::{
+    format_message, format_record, should_emit, with_expected_local_tls_rejection,
+};
 use chrono::{TimeZone, Utc};
+
+fn metadata(target: &str) -> log::Metadata<'_> {
+    log::Metadata::builder()
+        .level(log::Level::Error)
+        .target(target)
+        .build()
+}
 
 #[test]
 fn log_messages_are_redacted_and_bounded() {
@@ -42,4 +51,30 @@ fn formatted_records_include_a_utc_timestamp() {
         output,
         "[2026-08-07T12:34:56.000Z][INFO][beaver::test] ready"
     );
+}
+
+#[test]
+fn windows_verifier_errors_remain_visible_outside_the_local_probe() {
+    assert!(should_emit(&metadata(
+        "rustls_platform_verifier::verification::windows"
+    )));
+}
+
+#[tokio::test]
+async fn windows_verifier_error_is_hidden_inside_the_local_probe() {
+    let emitted = with_expected_local_tls_rejection(async {
+        should_emit(&metadata("rustls_platform_verifier::verification::windows"))
+    })
+    .await;
+
+    assert!(!emitted);
+}
+
+#[tokio::test]
+async fn unrelated_errors_remain_visible_inside_the_local_probe() {
+    let emitted =
+        with_expected_local_tls_rejection(async { should_emit(&metadata("beaver::unrelated")) })
+            .await;
+
+    assert!(emitted);
 }
