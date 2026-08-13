@@ -1,0 +1,13 @@
+Suivi de review macOS CEF après ac62e41
+
+Cause : run.mjs calculait la racine E2E lexicalement alors que prepare-build.mjs la canonicalisait. Avec un dépôt ouvert via un lien symbolique et la validation stricte de CARGO_TARGET_DIR, les deux chemins équivalents pouvaient diverger.
+
+Correction : canonicalE2eRepoRoot est l'autorité unique dans e2e-process.mjs. run.mjs et prepare-build.mjs l'utilisent tous les deux. Le test crée un vrai lien symbolique ou une jonction et exige la racine physique.
+
+TDD : le test ciblé a d'abord échoué car canonicalE2eRepoRoot était absent, puis a passé après implémentation.
+
+Validation automatisée : npm test PASS (417 fichiers Vitest, 1918 tests frontend; 50 build; 6 CI; 34 CEF; 49 runner E2E; 53 extension-host); npm run lint PASS; npx tsc --noEmit PASS; git diff --check PASS; graphify update . PASS (27749 nœuds, 59963 relations).
+
+Validation native macOS : depuis un lien symbolique, la reconstruction complète a atteint le bundle physique src-tauri/target/e2e sans rejet CARGO_TARGET_DIR, sans panic de profil et sans défaut liveness. Le parcours a ensuite expiré sur browser_capability. Le rejeu via le lien et le rejeu depuis le chemin physique expirent au même stade : ce défaut runtime est distinct de la canonicalisation et reste à investiguer.
+
+Recommandation : conserver f6fb725 après 708f14e et ac62e41. Traiter séparément le timeout browser_capability avant de déclarer le parcours natif macOS vert.
