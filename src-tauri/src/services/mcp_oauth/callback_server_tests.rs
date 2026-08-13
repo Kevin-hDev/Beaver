@@ -44,3 +44,32 @@ async fn wrong_state_does_not_consume_the_mcp_callback_server() {
     let result = waiter.await.unwrap().unwrap();
     assert_eq!(result.code.as_str(), format!("code-{expected}"));
 }
+
+#[tokio::test]
+async fn silent_connection_does_not_block_valid_mcp_callback() {
+    let server = CallbackServer::bind().await.expect("callback server");
+    let port = server.port();
+    let cancel = CancellationToken::new();
+    let waiter_cancel = cancel.clone();
+    let expected = "e".repeat(43);
+    let waiter_state = expected.clone();
+    let mut waiter = tokio::spawn(async move { server.wait(&waiter_state, &waiter_cancel).await });
+    let _silent = tokio::net::TcpStream::connect(("127.0.0.1", port))
+        .await
+        .expect("silent callback connection");
+    tokio::task::yield_now().await;
+    let callback_state = expected.clone();
+    let callback = tokio::spawn(async move { send_callback(port, &callback_state).await });
+
+    let result = tokio::time::timeout(std::time::Duration::from_secs(1), &mut waiter).await;
+    if result.is_err() {
+        cancel.cancel();
+        let _ = waiter.await;
+        callback.abort();
+        panic!("a silent connection blocked the valid callback");
+    }
+
+    let callback_result = result.unwrap().unwrap().unwrap();
+    callback.await.unwrap();
+    assert_eq!(callback_result.code.as_str(), format!("code-{expected}"));
+}
