@@ -8,9 +8,16 @@ fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$ROOT"
 
-HELPER_BINARY="target/release/cl-go-dash-helper"
-STAGE="target/cef-runtime/macos"
+source scripts/cef-runtime-profile.sh
+if ! resolve_cef_runtime_profile; then
+  echo "CEF development runtime validation failed" >&2
+  exit 1
+fi
+
+HELPER_BINARY="$TARGET_RELEASE_DIR/cl-go-dash-helper"
+STAGE="$CEF_RUNTIME_STAGE"
 STAMP="$STAGE/.prepared"
+PROFILE_MARKER="$STAGE/.profile"
 CEF_FRAMEWORK_BINARY=".cef-verified/current/Release/Chromium Embedded Framework.framework/Chromium Embedded Framework"
 CEF_LICENSE=".cef-verified/current/LICENSE.txt"
 HELPERS=(
@@ -25,6 +32,7 @@ INPUTS=(
   "Cargo.lock"
   "build.rs"
   "Entitlements.dev.plist"
+  "scripts/cef-runtime-profile.sh"
   "scripts/prepare-cef.sh"
   "src/bin/cl-go-dash-helper.rs"
 )
@@ -34,6 +42,9 @@ if [[ ! -x "$HELPER_BINARY" \
   || ! -d "$STAGE/Chromium Embedded Framework.framework" \
   || ! -s "$STAGE/LICENSE.txt" \
   || ! -f "$STAMP" ]]; then
+  CACHE_VALID=false
+fi
+if [[ "$CACHE_VALID" == true ]] && ! cef_runtime_profile_matches "$PROFILE_MARKER"; then
   CACHE_VALID=false
 fi
 
@@ -58,4 +69,6 @@ if [[ "$CACHE_VALID" == true ]]; then
   exit 0
 fi
 
-CLGO_CEF_DEV_PREP=1 bash scripts/prepare-cef.sh
+CLGO_CEF_DEV_PREP=1 \
+  CLGO_CEF_CARGO_FEATURES="${CLGO_CEF_CARGO_FEATURES:-}" \
+  bash scripts/prepare-cef.sh
