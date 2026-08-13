@@ -4,7 +4,8 @@ use super::agent_bridge::GatewayAgentBridge;
 use super::channels::InboundMessage;
 use super::refusal_audit::RefusalAudit;
 use super::service_state::GatewayState;
-use super::work_supervision::GatewayWorkServices;
+use super::types::ChannelKey;
+use super::work_supervision::{GatewayMessageAdmissionError, GatewayWorkServices};
 use crate::services::work_registry::ServiceWorkCancellation;
 use tokio::sync::{mpsc, RwLock};
 
@@ -58,7 +59,36 @@ pub(super) async fn consume_messages(
                 diagnostics.saturation_refusals,
                 diagnostics.closing_refusals,
             );
-            refusal_audit.try_record(channel_key, error.audit_code());
+            record_work_refusal(&refusal_audit, channel_key, error);
         }
+    }
+}
+
+fn record_work_refusal(
+    refusal_audit: &RefusalAudit,
+    channel_key: ChannelKey,
+    error: GatewayMessageAdmissionError,
+) {
+    let _ = refusal_audit.record_refusal(channel_key, error.audit_code());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::record_work_refusal;
+    use crate::services::gateway::refusal_audit::RefusalAudit;
+    use crate::services::gateway::types::ChannelKey;
+    use crate::services::gateway::work_supervision::GatewayMessageAdmissionError;
+
+    #[test]
+    fn consumer_work_refusal_increments_counter_without_writer() {
+        let (audit, _receiver) = RefusalAudit::channel();
+
+        record_work_refusal(
+            &audit,
+            ChannelKey::new("discord", "main"),
+            GatewayMessageAdmissionError::Busy,
+        );
+
+        assert_eq!(audit.counter().total(), 1);
     }
 }

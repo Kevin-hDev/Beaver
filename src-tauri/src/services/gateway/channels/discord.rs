@@ -7,10 +7,11 @@ use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
-use super::discord_events::{handle_gateway_message, GatewayMessageContext};
+use super::discord_events::{handle_gateway_message, DiscordEventOutcome, GatewayMessageContext};
 use super::discord_gateway::HeartbeatSequence;
 use super::discord_types::{Heartbeat, GATEWAY_URL};
 use super::websocket_limits::bounded_websocket_config;
+use super::websocket_message::{classify_incoming, IncomingWebSocket};
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
     InboundMessage, OutboundMessage,
@@ -120,7 +121,11 @@ impl ChannelAdapter for DiscordAdapter {
                             continue;
                         }
                         message = stream.next() => {
-                            let Some(Ok(WsMessage::Text(txt))) = message else { break; };
+                            let txt = match classify_incoming(message) {
+                                IncomingWebSocket::Text(txt) => txt,
+                                IncomingWebSocket::Ignore => continue,
+                                IncomingWebSocket::Disconnect => break,
+                            };
                             let message_context = GatewayMessageContext {
                                 state: &state,
                                 key: &key,
@@ -130,7 +135,7 @@ impl ChannelAdapter for DiscordAdapter {
                                 refusal_audit: &refusal_audit,
                                 sequence: &sequence,
                             };
-                            if !handle_gateway_message(
+                            match handle_gateway_message(
                                 &txt,
                                 &message_context,
                                 &mut heartbeat,
@@ -138,7 +143,9 @@ impl ChannelAdapter for DiscordAdapter {
                             )
                             .await
                             {
-                                break 'gateway;
+                                DiscordEventOutcome::Continue => {}
+                                DiscordEventOutcome::Reconnect => break,
+                                DiscordEventOutcome::ConsumerClosed => break 'gateway,
                             }
                         }
                     }

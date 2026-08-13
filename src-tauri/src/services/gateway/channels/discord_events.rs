@@ -1,13 +1,14 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures_util::SinkExt;
+use futures_util::{Sink, SinkExt};
 use tokio::sync::{mpsc, RwLock};
+use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
 use super::backpressure::{try_enqueue, EnqueueOutcome};
 use super::discord::{DiscordAdapter, DiscordState};
-use super::discord_gateway::{build_identify, HeartbeatSequence, SecretTextPayload, WsSink};
+use super::discord_gateway::{build_identify, HeartbeatSequence, SecretTextPayload};
 use super::discord_types::{DiscordMessage, GatewayHello, GatewayPayload, ReadyEvent};
 use super::InboundMessage;
 use crate::services::gateway::refusal_audit::RefusalAudit;
@@ -23,14 +24,25 @@ pub(super) struct GatewayMessageContext<'a> {
     pub(super) sequence: &'a HeartbeatSequence,
 }
 
-pub(super) async fn handle_gateway_message(
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[must_use = "the caller must distinguish reconnection from consumer shutdown"]
+pub(super) enum DiscordEventOutcome {
+    Continue,
+    Reconnect,
+    ConsumerClosed,
+}
+
+pub(super) async fn handle_gateway_message<S>(
     text: &str,
     context: &GatewayMessageContext<'_>,
     heartbeat: &mut Option<tokio::time::Interval>,
-    sink: &mut WsSink,
-) -> bool {
+    sink: &mut S,
+) -> DiscordEventOutcome
+where
+    S: Sink<WsMessage> + Unpin,
+{
     let Ok(payload) = serde_json::from_str::<GatewayPayload>(text) else {
-        return true;
+        return DiscordEventOutcome::Continue;
     };
     if let Some(value) = payload.s {
         context.sequence.update(value).await;
@@ -43,21 +55,24 @@ pub(super) async fn handle_gateway_message(
                     context.state.write().await.bot_user_id = ready.user.id;
                 }
             }
-            true
+            DiscordEventOutcome::Continue
         }
         0 if payload.t.as_deref() == Some("MESSAGE_CREATE") => {
             handle_message_create(payload, context).await
         }
-        _ => true,
+        _ => DiscordEventOutcome::Continue,
     }
 }
 
-async fn handle_hello(
+async fn handle_hello<S>(
     payload: &GatewayPayload,
     context: &GatewayMessageContext<'_>,
     heartbeat: &mut Option<tokio::time::Interval>,
-    sink: &mut WsSink,
-) -> bool {
+    sink: &mut S,
+) -> DiscordEventOutcome
+where
+    S: Sink<WsMessage> + Unpin,
+{
     if let Some(data) = &payload.d {
         if let Ok(hello) = serde_json::from_value::<GatewayHello>(data.clone()) {
             let every = Duration::from_millis(hello.heartbeat_interval);
@@ -72,26 +87,38 @@ async fn handle_hello(
     let mut payload = SecretTextPayload::new(json.as_str());
     let Ok(message) = payload.message() else {
         let _ = payload.zeroize_after_send();
-        return false;
+        return DiscordEventOutcome::Reconnect;
     };
     let sent = sink.send(message).await.is_ok();
-    sent && payload.zeroize_after_send()
+    if !payload.zeroize_after_send() {
+        // The network library may still own its frame; never log the payload.
+        ::log::warn!("[gateway] nettoyage du payload Discord incomplet");
+    }
+    if sent {
+        DiscordEventOutcome::Continue
+    } else {
+        DiscordEventOutcome::Reconnect
+    }
 }
 
 async fn handle_message_create(
     payload: GatewayPayload,
     context: &GatewayMessageContext<'_>,
-) -> bool {
-    let Some(data) = payload.d else { return true };
+) -> DiscordEventOutcome {
+    let Some(data) = payload.d else {
+        return DiscordEventOutcome::Continue;
+    };
     let Ok(message) = serde_json::from_value::<DiscordMessage>(data) else {
-        return true;
+        return DiscordEventOutcome::Continue;
     };
     let bot_id = context.state.read().await.bot_user_id.clone();
     let Some(inbound) =
         DiscordAdapter::to_inbound(&message, context.key, context.require_mention, &bot_id)
     else {
-        return true;
+        return DiscordEventOutcome::Continue;
     };
-    try_enqueue(context.sender, inbound, context.key, context.refusal_audit)
-        != EnqueueOutcome::Closed
+    match try_enqueue(context.sender, inbound, context.key, context.refusal_audit) {
+        EnqueueOutcome::Closed => DiscordEventOutcome::ConsumerClosed,
+        EnqueueOutcome::Enqueued | EnqueueOutcome::Full => DiscordEventOutcome::Continue,
+    }
 }

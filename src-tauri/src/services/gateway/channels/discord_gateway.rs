@@ -8,11 +8,6 @@ use zeroize::Zeroize;
 
 use crate::services::brand::DISPLAY_NAME;
 
-pub type WsSink = futures_util::stream::SplitSink<
-    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
-    WsMessage,
->;
-
 pub(super) struct SecretTextPayload {
     bytes: Option<Bytes>,
 }
