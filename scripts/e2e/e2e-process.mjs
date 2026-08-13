@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
-import { rm } from "node:fs/promises";
+import { realpath, rm } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { resolveCargoTargetDir } from "../cef/tauri-launch.mjs";
 
 export const E2E_BUILD_TIMEOUT_MS = 35 * 60 * 1000;
@@ -9,6 +10,11 @@ const MAX_PROCESS_TIMEOUT_MS = 60 * 60 * 1000;
 const PROCESS_TIMEOUT_MESSAGE = "E2E process timeout";
 const PROFILE_CLEANUP_MESSAGE = "E2E profile cleanup failed";
 const MAX_PROFILE_PATH_CHARS = 32_768;
+
+export async function canonicalE2eRepoRoot(moduleUrl) {
+  const candidate = resolve(fileURLToPath(new URL("../..", moduleUrl)));
+  return realpath(candidate);
+}
 
 export function buildArguments(platform) {
   const bundleArguments = platform === "darwin"
