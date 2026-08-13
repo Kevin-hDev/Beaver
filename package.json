@@ -20,7 +20,7 @@
     "test:update-manifest": "node --test scripts/release/create-update-manifest.test.mjs",
     "test:package-migration": "node --test scripts/release/package-migration.test.mjs",
     "test:persistence-migration": "node --test scripts/migration/persistence-baseline.test.mjs scripts/migration/persistence-profile.test.mjs scripts/migration/persistence-roots.test.mjs",
-    "test:cef": "node --test scripts/cef/cef-extract.test.mjs scripts/cef/cef-supervision-contracts.test.mjs scripts/cef/tauri-bundle-marker.test.mjs scripts/cef/tauri-bundle-request.test.mjs",
+    "test:cef": "node --test scripts/cef/cef-extract.test.mjs scripts/cef/cef-supervision-contracts.test.mjs scripts/cef/macos-runtime-profile.test.mjs scripts/cef/tauri-bundle-marker.test.mjs scripts/cef/tauri-bundle-request.test.mjs",
     "test:extensions-host": "node scripts/extensions/prepare-extension-host.mjs --dev && node --test scripts/extensions/*.test.mjs",
     "test:e2e": "node scripts/e2e/run.mjs",
     "test:e2e-runner": "node --test scripts/e2e/*.test.mjs",

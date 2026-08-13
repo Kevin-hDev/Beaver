@@ -5,6 +5,8 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
   exit 0
 fi
 
+source scripts/cef-runtime-profile.sh
+
 HELPERS=(
   "Beaver Helper"
   "Beaver Helper (GPU)"
@@ -17,9 +19,9 @@ DEV_PREP="${CLGO_CEF_DEV_PREP:-0}"
 ALLOW_ADHOC_SIGNING="${CLGO_CEF_ALLOW_ADHOC_SIGNING:-0}"
 BUILD_FEATURES="${CLGO_CEF_CARGO_FEATURES:-}"
 BUILD_TARGET="${CARGO_BUILD_TARGET:-}"
-TARGET_RELEASE_DIR="target/release"
-if [[ "$BUILD_FEATURES" == "e2e" ]]; then
-  TARGET_RELEASE_DIR="target/e2e/release"
+if ! resolve_cef_runtime_profile; then
+  echo "CEF build features are invalid" >&2
+  exit 1
 fi
 if [[ -z "$SIGNING_IDENTITY" || ${#SIGNING_IDENTITY} -gt 256 \
   || "$SIGNING_IDENTITY" == *$'\n'* || "$SIGNING_IDENTITY" == *$'\r'* \
@@ -75,7 +77,7 @@ if [[ ! -d "$CEF_FRAMEWORK" \
   exit 1
 fi
 
-STAGE="target/cef-runtime/macos"
+STAGE="$CEF_RUNTIME_STAGE"
 rm -rf -- "$STAGE"
 mkdir -p "$STAGE"
 ditto "$CEF_FRAMEWORK" \
@@ -108,4 +110,5 @@ for helper in "${HELPERS[@]}"; do
     --sign "$SIGNING_IDENTITY" "$app"
 done
 
+printf '%s\n' "$CEF_RUNTIME_PROFILE" > "$STAGE/.profile"
 touch "$STAGE/.prepared"
