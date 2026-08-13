@@ -32,6 +32,7 @@ INPUTS=(
   "Cargo.lock"
   "build.rs"
   "Entitlements.dev.plist"
+  "scripts/cef-runtime-profile.sh"
   "scripts/prepare-cef.sh"
   "src/bin/cl-go-dash-helper.rs"
 )

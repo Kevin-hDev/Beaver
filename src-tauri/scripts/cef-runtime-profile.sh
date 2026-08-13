@@ -19,6 +19,20 @@ resolve_cef_runtime_profile() {
   CEF_RUNTIME_STAGE="$CEF_TARGET_ROOT/cef-runtime/macos"
 }
 
+cef_e2e_target_dir_matches() {
+  local project_root="$1"
+  local target_dir="${CARGO_TARGET_DIR:-}"
+  if [[ "$CEF_RUNTIME_PROFILE" != "e2e" ]]; then
+    return 0
+  fi
+  if [[ -z "$target_dir" || ${#target_dir} -gt 4096 \
+    || "$target_dir" == *$'\n'* || "$target_dir" == *$'\r'* \
+    || "$target_dir" == *$'\t'* ]]; then
+    return 1
+  fi
+  [[ "$target_dir" == "$project_root/$CEF_TARGET_ROOT" ]]
+}
+
 cef_runtime_profile_matches() {
   local marker="$1"
   local marker_size
