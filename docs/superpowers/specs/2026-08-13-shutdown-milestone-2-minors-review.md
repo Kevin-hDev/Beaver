@@ -56,4 +56,3 @@ Obligations 1-9, 11-14, 17, 22-27, 29, 30, 32-35 : corrigées et vérifiées en 
 2. La contradiction de l'obligation 28 tranchée (correctif ou audit corrigé).
 3. CI verte sur les trois OS après le lot de corrections.
 4. Les nouveaux mineurs ci-dessus rejoignent la liste à reprendre après la fusion.
-

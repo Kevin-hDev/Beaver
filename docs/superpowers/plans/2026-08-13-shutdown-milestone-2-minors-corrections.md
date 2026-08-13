@@ -373,7 +373,9 @@ Run: `cargo test --lib --features windows-tests -- --test-threads=1`
 
 Run: `cargo check`
 
-Run: `cargo clippy --all-targets --features windows-tests -- -D warnings`
+Run: `cargo clippy --all-targets -- -D warnings`
+
+Le profil `windows-tests` reste réservé à `cargo test` : il désactive le navigateur natif pour ne pas charger CEF dans le binaire de tests, tandis que Clippy doit vérifier le profil Windows natif utilisé par la CI.
 
 Expected: toutes les commandes sortent avec le code 0 ; consigner les comptes exacts.
 
