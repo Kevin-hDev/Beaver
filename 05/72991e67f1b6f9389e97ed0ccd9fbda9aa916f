@@ -1,0 +1,4 @@
+Intent: document the verified Windows local TLS log-spam root cause and the correction boundary.
+Result: rejects a global Reqwest backend change and specifies task-scoped filtering that preserves strict certificate validation and unrelated TLS logs.
+Evidence: useLocalSites scans every five seconds; the local probe tries HTTP then HTTPS; rustls-platform-verifier logs before returning UnknownIssuer; Reqwest TLS features are additive.
+Verification: design and execution plan checked against the current scanner, logger, Cargo feature resolution, and Windows test profile.
