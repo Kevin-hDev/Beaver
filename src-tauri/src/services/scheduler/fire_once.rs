@@ -16,13 +16,6 @@ pub(crate) enum WakeupStepOutcome<T> {
     Cancelled,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub(crate) enum MissedOnceAction {
-    LogMissed,
-    Silent,
-    LogClaimError(String),
-}
-
 pub(crate) async fn run_wakeup_steps<T, Claim, ClaimFuture, Dispatch, DispatchFuture>(
     is_once: bool,
     cancel: &CancellationToken,
@@ -82,12 +75,4 @@ pub(crate) fn claim_once_in(config: &mut ClgoConfig, id: &str) -> OnceClaimOutco
     }
     wakeup.active = false;
     OnceClaimOutcome::Claimed
-}
-
-pub(crate) fn missed_once_action(outcome: Result<OnceClaimOutcome, String>) -> MissedOnceAction {
-    match outcome {
-        Ok(OnceClaimOutcome::Claimed) => MissedOnceAction::LogMissed,
-        Ok(OnceClaimOutcome::Inactive) => MissedOnceAction::Silent,
-        Err(error) => MissedOnceAction::LogClaimError(error),
-    }
 }

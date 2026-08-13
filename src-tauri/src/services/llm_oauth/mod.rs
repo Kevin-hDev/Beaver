@@ -38,13 +38,13 @@ pub async fn login(
     provider: LlmOAuthProvider,
     work_cancel: ServiceWorkCancellation,
 ) -> Result<(), String> {
-    let cancel = login_registry::register(provider).await?;
+    let registered = login_registry::register(provider).await?;
     let expected_generation = store::generation(provider);
     emit_progress(&app, provider, "starting", None, None);
     let provider_login = async {
         match provider {
-            LlmOAuthProvider::Xai => xai::login(&app, &cancel).await,
-            LlmOAuthProvider::Kimi => kimi::login(&app, &cancel).await,
+            LlmOAuthProvider::Xai => xai::login(&app, &registered.cancel).await,
+            LlmOAuthProvider::Kimi => kimi::login(&app, &registered.cancel).await,
         }
     };
     let result = tokio::select! {
@@ -54,7 +54,7 @@ pub async fn login(
     let outcome = match result {
         Ok(tokens) => {
             let _guard = lifecycle::lock(provider).await;
-            if cancel.is_cancelled() {
+            if registered.cancel.is_cancelled() {
                 emit_progress(&app, provider, "cancelled", None, None);
                 Err("Connexion annulée".to_string())
             } else {
@@ -79,7 +79,7 @@ pub async fn login(
             Err("Connexion impossible".to_string())
         }
     };
-    login_registry::release(provider).await;
+    registered.completion.complete(());
     outcome
 }
 

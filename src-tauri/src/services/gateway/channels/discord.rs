@@ -5,16 +5,18 @@ use async_trait::async_trait;
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::{mpsc, RwLock};
 use tokio_tungstenite::tungstenite::Message as WsMessage;
-use zeroize::{Zeroize, Zeroizing};
+use zeroize::Zeroizing;
 
-use super::backpressure::try_enqueue;
-use super::discord_gateway::{build_identify, HeartbeatSequence};
-use super::discord_types::*;
+use super::discord_events::{handle_gateway_message, DiscordEventOutcome, GatewayMessageContext};
+use super::discord_gateway::HeartbeatSequence;
+use super::discord_types::{Heartbeat, GATEWAY_URL};
 use super::websocket_limits::bounded_websocket_config;
+use super::websocket_message::{classify_incoming, IncomingWebSocket};
 use super::{
     capabilities::ChannelCapabilities, ChannelAdapter, ChannelContext, GatewayError, GatewayResult,
     InboundMessage, OutboundMessage,
 };
+use crate::services::gateway::reconnect_policy::ReconnectPolicy;
 use crate::services::gateway::tokens;
 use crate::services::secure_http::{AuthenticatedClient, DISCORD_BODY_LIMIT};
 
@@ -69,6 +71,7 @@ impl ChannelAdapter for DiscordAdapter {
         let require_mention = ctx.config.require_mention;
 
         Ok(Box::pin(async move {
+            let mut reconnect = ReconnectPolicy::new();
             'gateway: loop {
                 if cancel.is_cancelled() {
                     break;
@@ -89,10 +92,13 @@ impl ChannelAdapter for DiscordAdapter {
                 {
                     Ok((s, _)) => s,
                     Err(_) => {
-                        tokio::time::sleep(Duration::from_secs(5)).await;
+                        if !reconnect.wait(&cancel).await {
+                            break;
+                        }
                         continue;
                     }
                 };
+                let connected_at = std::time::Instant::now();
                 let (mut sink, mut stream) = ws.split();
                 let sequence = HeartbeatSequence::new();
                 let mut heartbeat: Option<tokio::time::Interval> = None;
@@ -115,7 +121,11 @@ impl ChannelAdapter for DiscordAdapter {
                             continue;
                         }
                         message = stream.next() => {
-                            let Some(Ok(WsMessage::Text(txt))) = message else { break; };
+                            let txt = match classify_incoming(message) {
+                                IncomingWebSocket::Text(txt) => txt,
+                                IncomingWebSocket::Ignore => continue,
+                                IncomingWebSocket::Disconnect => break,
+                            };
                             let message_context = GatewayMessageContext {
                                 state: &state,
                                 key: &key,
@@ -125,7 +135,7 @@ impl ChannelAdapter for DiscordAdapter {
                                 refusal_audit: &refusal_audit,
                                 sequence: &sequence,
                             };
-                            if !handle_gateway_message(
+                            match handle_gateway_message(
                                 &txt,
                                 &message_context,
                                 &mut heartbeat,
@@ -133,7 +143,9 @@ impl ChannelAdapter for DiscordAdapter {
                             )
                             .await
                             {
-                                break;
+                                DiscordEventOutcome::Continue => {}
+                                DiscordEventOutcome::Reconnect => break,
+                                DiscordEventOutcome::ConsumerClosed => break 'gateway,
                             }
                         }
                     }
@@ -141,82 +153,15 @@ impl ChannelAdapter for DiscordAdapter {
                 if cancel.is_cancelled() {
                     break;
                 }
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                reconnect.record_connection(connected_at.elapsed());
+                if !reconnect.wait(&cancel).await {
+                    break;
+                }
             }
         }))
     }
 
     async fn send(&self, msg: OutboundMessage) -> GatewayResult<()> {
         self.send_message(msg).await
-    }
-}
-
-struct GatewayMessageContext<'a> {
-    state: &'a Arc<RwLock<DiscordState>>,
-    key: &'a crate::services::gateway::types::ChannelKey,
-    require_mention: bool,
-    token: &'a str,
-    sender: &'a mpsc::Sender<InboundMessage>,
-    refusal_audit: &'a crate::services::gateway::refusal_audit::RefusalAudit,
-    sequence: &'a HeartbeatSequence,
-}
-
-async fn handle_gateway_message(
-    text: &str,
-    context: &GatewayMessageContext<'_>,
-    heartbeat: &mut Option<tokio::time::Interval>,
-    sink: &mut super::discord_gateway::WsSink,
-) -> bool {
-    let Ok(payload) = serde_json::from_str::<GatewayPayload>(text) else {
-        return true;
-    };
-    if let Some(value) = payload.s {
-        context.sequence.update(value).await;
-    }
-    match payload.op {
-        10 => {
-            if let Some(data) = &payload.d {
-                if let Ok(hello) = serde_json::from_value::<GatewayHello>(data.clone()) {
-                    let every = Duration::from_millis(hello.heartbeat_interval);
-                    *heartbeat = Some(tokio::time::interval_at(
-                        tokio::time::Instant::now() + every,
-                        every,
-                    ));
-                }
-            }
-            let mut json =
-                serde_json::to_string(&build_identify(context.token)).unwrap_or_default();
-            let sent = sink
-                .send(WsMessage::Text(json.as_str().into()))
-                .await
-                .is_ok();
-            json.zeroize();
-            sent
-        }
-        0 if payload.t.as_deref() == Some("READY") => {
-            if let Some(data) = &payload.d {
-                if let Ok(ready) = serde_json::from_value::<ReadyEvent>(data.clone()) {
-                    context.state.write().await.bot_user_id = ready.user.id;
-                }
-            }
-            true
-        }
-        0 if payload.t.as_deref() == Some("MESSAGE_CREATE") => {
-            if let Some(data) = payload.d {
-                if let Ok(message) = serde_json::from_value::<DiscordMessage>(data) {
-                    let bot_id = context.state.read().await.bot_user_id.clone();
-                    if let Some(inbound) = DiscordAdapter::to_inbound(
-                        &message,
-                        context.key,
-                        context.require_mention,
-                        &bot_id,
-                    ) {
-                        try_enqueue(context.sender, inbound, context.key, context.refusal_audit);
-                    }
-                }
-            }
-            true
-        }
-        _ => true,
     }
 }

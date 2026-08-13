@@ -1,4 +1,6 @@
 use super::*;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 fn line(id: &str, fired_at: &str, status: WakeupRunStatus) -> String {
     serde_json::to_string(&WakeupRun {
@@ -119,6 +121,43 @@ async fn repeated_occurrence_is_written_only_once() {
 }
 
 #[tokio::test]
+async fn appends_do_not_reread_the_log_before_the_trim_boundary() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("incremental-wakeups.jsonl");
+    let reads = Arc::new(AtomicUsize::new(0));
+
+    for index in 0..MAX_LINES {
+        let reads = Arc::clone(&reads);
+        append_at_with_read_observer(&path, indexed_entry(index), move || {
+            reads.fetch_add(1, Ordering::Relaxed);
+        })
+        .await
+        .unwrap();
+    }
+    assert_eq!(reads.load(Ordering::Relaxed), 1);
+
+    let reads_at_rotation = Arc::clone(&reads);
+    append_at_with_read_observer(&path, indexed_entry(MAX_LINES), move || {
+        reads_at_rotation.fetch_add(1, Ordering::Relaxed);
+    })
+    .await
+    .unwrap();
+    assert_eq!(reads.load(Ordering::Relaxed), 2);
+
+    let reads_after_rotation = Arc::clone(&reads);
+    append_at_with_read_observer(&path, indexed_entry(MAX_LINES + 1), move || {
+        reads_after_rotation.fetch_add(1, Ordering::Relaxed);
+    })
+    .await
+    .unwrap();
+    assert_eq!(
+        reads.load(Ordering::Relaxed),
+        2,
+        "the append after rotation must stay incremental"
+    );
+}
+
+#[tokio::test]
 async fn concurrent_reader_never_observes_partial_rotation() {
     let temp = tempfile::tempdir().unwrap();
     let path = temp.path().join("wakeups.jsonl");
@@ -144,7 +183,7 @@ async fn concurrent_reader_never_observes_partial_rotation() {
     resume_rotation_tx.send(()).unwrap();
     writer.await.unwrap().unwrap();
     let runs = reader.await.unwrap().unwrap();
-    assert_eq!(runs.len(), MAX_LINES);
+    assert_eq!(runs.len(), ROTATED_LINES);
     assert_eq!(runs[0].wakeup_id, "new-entry");
 }
 
@@ -189,6 +228,19 @@ fn new_entry() -> WakeupRun {
         wakeup_id: "new-entry".into(),
         scheduled_for: "2026-08-12T12:00:00+02:00".into(),
         fired_at: "2026-08-12T10:00:00Z".into(),
+        status: WakeupRunStatus::Error,
+        error_code: Some(WakeupRunErrorCode::Failed),
+        _legacy_error: None,
+        session_id: None,
+        tokens: None,
+    }
+}
+
+fn indexed_entry(index: usize) -> WakeupRun {
+    WakeupRun {
+        wakeup_id: format!("incremental-{index}"),
+        scheduled_for: format!("2026-08-12T10:{:02}:00+02:00", index % 60),
+        fired_at: format!("2026-08-12T08:{:02}:00Z", index % 60),
         status: WakeupRunStatus::Error,
         error_code: Some(WakeupRunErrorCode::Failed),
         _legacy_error: None,

@@ -5,6 +5,23 @@ use super::next_fire::{latest_fire_between, next_fire_at};
 
 pub const MISSED_GRACE_MIN: i64 = 5;
 
+#[derive(Clone, Copy)]
+pub(super) enum ReconciliationMode {
+    Startup,
+    Running,
+}
+
+pub(super) fn reconciliation_cutoff(
+    now: DateTime<Local>,
+    mode: ReconciliationMode,
+) -> DateTime<Local> {
+    match mode {
+        // No work from the previous process can still publish a decision.
+        ReconciliationMode::Startup => now,
+        ReconciliationMode::Running => now - Duration::minutes(MISSED_GRACE_MIN),
+    }
+}
+
 pub fn due_wakeups_at(
     wakeups: &[ScheduledWakeup],
     now: DateTime<Local>,
@@ -21,14 +38,14 @@ pub fn due_wakeups_at(
 pub fn missed_occurrences(
     wakeups: &[ScheduledWakeup],
     last_checked: DateTime<Local>,
-    now: DateTime<Local>,
+    decision_cutoff: DateTime<Local>,
 ) -> Vec<(ScheduledWakeup, DateTime<Local>)> {
-    let cutoff = now - Duration::minutes(MISSED_GRACE_MIN);
     wakeups
         .iter()
         .filter(|w| w.active && !w.paused_by_global)
         .filter_map(|w| {
-            latest_fire_between(&w.schedule, last_checked, cutoff).map(|dt| (w.clone(), dt))
+            latest_fire_between(&w.schedule, last_checked, decision_cutoff)
+                .map(|dt| (w.clone(), dt))
         })
         .collect()
 }
@@ -91,6 +108,16 @@ mod tests {
             local(2026, 5, 17, 7, 0),
             local(2026, 5, 17, 8, 10),
         );
+        assert_eq!(missed.len(), 1);
+        assert_eq!(missed[0].1, local(2026, 5, 17, 8, 0));
+    }
+
+    #[test]
+    fn restart_grace_records_each_due_occurrence_as_missed() {
+        let now = local(2026, 5, 17, 8, 3);
+        let cutoff = reconciliation_cutoff(now, ReconciliationMode::Startup);
+        let missed = missed_occurrences(&[wakeup("a", "08:00")], local(2026, 5, 17, 7, 0), cutoff);
+
         assert_eq!(missed.len(), 1);
         assert_eq!(missed[0].1, local(2026, 5, 17, 8, 0));
     }

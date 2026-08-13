@@ -64,3 +64,31 @@ async fn locked_stdin_cannot_extend_the_shared_deadline() {
     );
     assert!(started.elapsed() < Duration::from_secs(1));
 }
+
+#[tokio::test]
+async fn stop_and_wait_closes_admission_terminates_child_and_drains_work() {
+    let service = service();
+    let (entry, pid) = entry(&service).await;
+    service.lock_pool().insert("complete-stop".into(), entry);
+    let (drained_tx, drained_rx) = tokio::sync::oneshot::channel();
+    service
+        .work
+        .try_admit()
+        .unwrap()
+        .spawn(move |cancel| async move {
+            cancel.cancelled().await;
+            let _ = drained_tx.send(());
+        })
+        .unwrap();
+
+    assert!(
+        service
+            .stop_and_wait(Instant::now() + Duration::from_secs(2))
+            .await
+    );
+    drained_rx.await.expect("operation drained");
+    assert!(service.work.try_admit().is_err());
+    let mut processes = sysinfo::System::new();
+    processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());
+}

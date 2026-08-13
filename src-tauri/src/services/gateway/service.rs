@@ -76,6 +76,7 @@ impl GatewayService {
             state.adapters.clear();
             state.config = config.clone();
             state.limits = Arc::new(Mutex::new(GatewayRateLimiters::new(&config.rate_limits)));
+            state.refused_messages = refusal_audit.counter();
             channels_started = start_channel_accounts(
                 &mut state,
                 &self.state,

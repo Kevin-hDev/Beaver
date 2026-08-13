@@ -1,6 +1,14 @@
 use super::*;
 
 #[test]
+fn config_sync_admission_refusal_is_not_discarded() {
+    let source = include_str!("file_watcher.rs");
+
+    assert!(!source.contains("let _ = background.spawn_task"));
+    assert!(source.contains("config sync unavailable"));
+}
+
+#[test]
 fn classify_memory_paths() {
     assert_eq!(
         classify_path("/Users/kevin/.local/share/cl-go-dash/memory/core/identity.md"),

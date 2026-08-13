@@ -5,16 +5,26 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
+#[path = "log_metadata.rs"]
+mod metadata;
+use metadata::{LogMetadata, LogStoreState};
+
 pub(super) const MAX_LINES: usize = 500;
+pub(super) const ROTATED_LINES: usize = MAX_LINES / 2;
 pub(super) const MAX_ID_CHARS: usize = 128;
 pub(super) const MAX_LOG_LINE_BYTES: usize = 2_048;
 const MAX_LOG_BYTES: usize = MAX_LINES * MAX_LOG_LINE_BYTES;
-static LOG_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+static STORE_STATE: OnceLock<tokio::sync::Mutex<LogStoreState>> = OnceLock::new();
 
 pub(super) async fn append_at(path: &Path, entry: WakeupRun) -> Result<(), String> {
-    append_at_inner(path, entry, |path, bytes| async move {
-        crate::services::private_store::atomic_write_async(path, bytes).await
-    })
+    append_at_inner(
+        path,
+        entry,
+        |path, bytes| async move {
+            crate::services::private_store::atomic_write_async(path, bytes).await
+        },
+        || {},
+    )
     .await
     .map_err(|_| log_error())
 }
@@ -29,26 +39,62 @@ where
     Writer: FnOnce(PathBuf, Vec<u8>) -> WriteFuture,
     WriteFuture: std::future::Future<Output = Result<(), String>>,
 {
-    append_at_inner(path, entry, atomic_writer).await
+    append_at_inner(path, entry, atomic_writer, || {}).await
 }
 
-async fn append_at_inner<Writer, WriteFuture>(
+#[cfg(test)]
+pub(super) async fn append_at_with_read_observer<Observer>(
+    path: &Path,
+    entry: WakeupRun,
+    observer: Observer,
+) -> Result<(), String>
+where
+    Observer: FnMut(),
+{
+    append_at_inner(
+        path,
+        entry,
+        |path, bytes| async move {
+            crate::services::private_store::atomic_write_async(path, bytes).await
+        },
+        observer,
+    )
+    .await
+}
+
+async fn append_at_inner<Writer, WriteFuture, Observer>(
     path: &Path,
     entry: WakeupRun,
     atomic_writer: Writer,
+    mut observe_read: Observer,
 ) -> Result<(), String>
 where
     Writer: FnOnce(PathBuf, Vec<u8>) -> WriteFuture,
     WriteFuture: std::future::Future<Output = Result<(), String>>,
+    Observer: FnMut(),
 {
-    let _guard = log_lock().lock().await;
+    let mut store = store_state().lock().await;
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
             .map_err(|_| log_error())?;
     }
-    let existing = read_bounded_tail(path).await?;
-    if contains_occurrence(&existing, &entry) {
+    let position = match store.position(path) {
+        Some(position) if store.get(position).byte_len() == file_len(path).await? => position,
+        Some(position) => {
+            // An external replacement invalidates the cached offset; rebuild once.
+            observe_read();
+            let existing = read_bounded_tail(path).await?;
+            *store.get_mut(position) = LogMetadata::from_content(&existing);
+            position
+        }
+        None => {
+            observe_read();
+            let existing = read_bounded_tail(path).await?;
+            store.insert(path.to_path_buf(), LogMetadata::from_content(&existing))
+        }
+    };
+    if store.get(position).contains(&entry) {
         return Ok(());
     }
     let line = format!(
@@ -58,8 +104,18 @@ where
     if line.len() > MAX_LOG_LINE_BYTES {
         return Err(log_error());
     }
-    if needs_rotation(&existing, line.len()) {
-        return atomic_writer(path.to_path_buf(), rotated_content(&existing, &line)).await;
+    if store
+        .get(position)
+        .needs_rotation(line.len(), MAX_LOG_BYTES)
+    {
+        observe_read();
+        let existing = read_bounded_tail(path).await?;
+        let rotated = rotated_content(&existing, &line);
+        let content = String::from_utf8_lossy(&rotated);
+        let metadata = LogMetadata::from_content(&content);
+        atomic_writer(path.to_path_buf(), rotated).await?;
+        *store.get_mut(position) = metadata;
+        return Ok(());
     }
     let mut file = tokio::fs::OpenOptions::new()
         .create(true)
@@ -72,23 +128,24 @@ where
         .map_err(|_| log_error())?;
     file.flush().await.map_err(|_| log_error())?;
     file.sync_data().await.map_err(|_| log_error())?;
+    store.get_mut(position).record(&entry, line.len());
     Ok(())
+}
+
+async fn file_len(path: &Path) -> Result<usize, String> {
+    match tokio::fs::metadata(path).await {
+        Ok(metadata) => usize::try_from(metadata.len()).map_err(|_| log_error()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(0),
+        Err(_) => Err(log_error()),
+    }
 }
 
 pub(super) async fn list_runs_at(
     path: &Path,
     wakeup_id: Option<&str>,
 ) -> Result<Vec<WakeupRun>, String> {
-    let _guard = log_lock().lock().await;
+    let _guard = store_state().lock().await;
     Ok(parse_runs(&read_bounded_tail(path).await?, wakeup_id))
-}
-
-fn contains_occurrence(content: &str, entry: &WakeupRun) -> bool {
-    content
-        .lines()
-        .filter(|line| line.len() <= MAX_LOG_LINE_BYTES)
-        .filter_map(|line| serde_json::from_str::<WakeupRun>(line).ok())
-        .any(|run| run.wakeup_id == entry.wakeup_id && run.scheduled_for == entry.scheduled_for)
 }
 
 pub(super) fn parse_runs(content: &str, wakeup_id: Option<&str>) -> Vec<WakeupRun> {
@@ -104,17 +161,12 @@ pub(super) fn parse_runs(content: &str, wakeup_id: Option<&str>) -> Vec<WakeupRu
     runs
 }
 
-fn needs_rotation(existing: &str, new_line_bytes: usize) -> bool {
-    existing.lines().count() >= MAX_LINES
-        || existing.len().saturating_add(new_line_bytes) > MAX_LOG_BYTES
-}
-
 fn rotated_content(existing: &str, new_line: &str) -> Vec<u8> {
     let mut lines = existing
         .lines()
         .rev()
         .filter(|line| line.len() <= MAX_LOG_LINE_BYTES)
-        .take(MAX_LINES - 1)
+        .take(ROTATED_LINES - 1)
         .collect::<Vec<_>>();
     lines.reverse();
     let mut rotated = lines.join("\n");
@@ -150,8 +202,8 @@ async fn read_bounded_tail(path: &Path) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&bytes).into_owned())
 }
 
-fn log_lock() -> &'static tokio::sync::Mutex<()> {
-    LOG_LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+fn store_state() -> &'static tokio::sync::Mutex<LogStoreState> {
+    STORE_STATE.get_or_init(|| tokio::sync::Mutex::new(LogStoreState::default()))
 }
 
 fn log_error() -> String {

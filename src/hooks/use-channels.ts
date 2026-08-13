@@ -5,10 +5,15 @@ import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { GatewayConfig, GatewayHealth, ChannelHealthEntry } from "@/types/channels";
 
 function normalizeHealth(value: GatewayHealth | null | undefined): GatewayHealth {
-  if (!value || typeof value !== "object") return { running: false, channels: [] };
+  if (!value || typeof value !== "object") {
+    return { running: false, channels: [], refused_messages: 0 };
+  }
   return {
     ...value,
     channels: Array.isArray(value.channels) ? value.channels : [],
+    refused_messages: Number.isSafeInteger(value.refused_messages)
+      ? value.refused_messages
+      : 0,
   };
 }
 
@@ -26,7 +31,11 @@ function normalizeConfig(value: GatewayConfig | null | undefined): GatewayConfig
 }
 
 export function useChannels() {
-  const [health, setHealth] = useState<GatewayHealth>({ running: false, channels: [] });
+  const [health, setHealth] = useState<GatewayHealth>({
+    running: false,
+    channels: [],
+    refused_messages: 0,
+  });
   const [config, setConfig] = useState<GatewayConfig | null>(null);
 
   const fetchHealth = useCallback(async () => {

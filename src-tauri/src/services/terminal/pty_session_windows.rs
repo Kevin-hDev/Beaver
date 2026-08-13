@@ -36,7 +36,9 @@ impl PtySession {
     ) -> Result<(Self, Box<dyn Read + Send>), String> {
         validate_size(cols, rows)?;
         let (console, input, output_file) = PseudoConsole::create(cols, rows)?;
-        let mut command = windows_spawn::Command::new("powershell.exe");
+        let powershell =
+            crate::services::system_executable::powershell().map_err(|_| terminal_error())?;
+        let mut command = windows_spawn::Command::new(powershell);
         command.env("TERM", "xterm-256color");
         if std::env::var("EDITOR").is_ok_and(|editor| editor.contains("vi")) {
             command.env("EDITOR", "");

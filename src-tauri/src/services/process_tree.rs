@@ -3,7 +3,8 @@ use std::time::Duration;
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-#[cfg(unix)]
+#[cfg(any(unix, test))]
+#[cfg_attr(all(test, not(unix)), allow(dead_code))]
 #[path = "process_tree_unix.rs"]
 mod unix;
 #[cfg(windows)]
@@ -31,6 +32,9 @@ pub enum ProcessKind {
 #[cfg(all(test, target_os = "linux"))]
 #[path = "process_tree_unix_tests.rs"]
 mod linux_parent_death_tests;
+#[cfg(test)]
+#[path = "process_tree_tests.rs"]
+mod unit_tests;
 #[cfg(all(test, windows))]
 #[path = "process_tree_windows_tests.rs"]
 mod windows_tests;
@@ -169,7 +173,14 @@ fn signal_tree(pid: u32, force: bool) {
     unsafe {
         libc::kill(-raw_pid, signal);
         for child in children.iter().rev() {
-            libc::kill(child.as_u32() as i32, signal);
+            if unix::is_current(*child) {
+                libc::kill(child.pid().as_u32() as i32, signal);
+            } else {
+                ::log::warn!(
+                    "[process] identité descendante changée pid={}, signal ignoré",
+                    child.pid().as_u32()
+                );
+            }
         }
         libc::kill(raw_pid, signal);
     }
@@ -198,23 +209,4 @@ fn configure_linux_parent_death() -> std::io::Result<()> {
 #[cfg(windows)]
 fn signal_tree(pid: u32, _force: bool) {
     windows::terminate_tree(pid, std::time::Instant::now() + GRACEFUL_STOP_TIMEOUT);
-}
-
-#[cfg(all(test, unix))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn terminate_reaps_child_without_three_second_delay() {
-        let mut command = Command::new("/bin/sleep");
-        command.arg("30");
-        configure(&mut command);
-        let mut child = command.spawn().unwrap();
-        let started = std::time::Instant::now();
-
-        terminate(&mut child, ProcessKind::ForecastRuntime);
-
-        assert!(started.elapsed() < Duration::from_secs(2));
-        assert!(child.try_wait().unwrap().is_some());
-    }
 }

@@ -1,14 +1,17 @@
 use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
 use zeroize::{Zeroize, Zeroizing};
 
 use super::types::CallbackResult;
 
 const TIMEOUT: Duration = Duration::from_secs(300);
+const CONNECTION_TIMEOUT: Duration = Duration::from_secs(5);
 const MAX_REQUEST_LEN: usize = 4096;
+const MAX_ATTEMPTS: usize = 50;
 
 const SUCCESS_HTML: &str = r#"<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Beaver</title>
@@ -40,61 +43,87 @@ impl CallbackServer {
         self.port
     }
 
-    pub async fn wait(self, cancel: &CancellationToken) -> Result<CallbackResult, String> {
+    pub async fn wait(
+        self,
+        expected_state: &str,
+        cancel: &CancellationToken,
+    ) -> Result<CallbackResult, String> {
         tokio::select! {
-            result = accept_callback(&self.listener) => result,
+            result = accept_callback(&self.listener, expected_state) => result,
             _ = tokio::time::sleep(TIMEOUT) => Err("délai d'attente dépassé".to_string()),
             _ = cancel.cancelled() => Err("annulé".to_string()),
         }
     }
 }
 
-async fn accept_callback(listener: &TcpListener) -> Result<CallbackResult, String> {
-    let mut attempts = 0u32;
-    const MAX_ATTEMPTS: u32 = 50;
+async fn accept_callback(
+    listener: &TcpListener,
+    expected_state: &str,
+) -> Result<CallbackResult, String> {
+    let mut handlers = JoinSet::new();
+    let mut accepted = 0usize;
     loop {
-        attempts += 1;
-        if attempts > MAX_ATTEMPTS {
+        if accepted >= MAX_ATTEMPTS && handlers.is_empty() {
             return Err("trop de requêtes sans callback valide".to_string());
         }
-        let (mut stream, _) = listener
-            .accept()
-            .await
-            .map_err(|_| "callback OAuth indisponible".to_string())?;
-
-        let mut buf = Zeroizing::new(vec![0u8; MAX_REQUEST_LEN]);
-        let n = stream
-            .read(buf.as_mut_slice())
-            .await
-            .map_err(|_| "callback OAuth invalide".to_string())?;
-
-        let parsed = {
-            let request = String::from_utf8_lossy(&buf[..n]);
-            let first_line = request.lines().next().unwrap_or("");
-            parse_callback(first_line)
-        };
-        buf.zeroize();
-
-        if let Some(result) = parsed {
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\
-                 Content-Length: {}\r\nConnection: close\r\n\r\n{}",
-                SUCCESS_HTML.len(),
-                SUCCESS_HTML
-            );
-            let _ = stream.write_all(response.as_bytes()).await;
-            let _ = stream.shutdown().await;
-            return Ok(result);
+        tokio::select! {
+            accepted_stream = listener.accept(), if accepted < MAX_ATTEMPTS => {
+                let (mut stream, _) = accepted_stream
+                    .map_err(|_| "callback OAuth indisponible".to_string())?;
+                let state = Zeroizing::new(expected_state.to_string());
+                accepted += 1;
+                handlers.spawn(async move {
+                    tokio::time::timeout(
+                        CONNECTION_TIMEOUT,
+                        handle_connection(&mut stream, state.as_str()),
+                    )
+                    .await
+                    .ok()
+                    .flatten()
+                });
+            }
+            handled = handlers.join_next(), if !handlers.is_empty() => {
+                if let Some(Ok(Some(result))) = handled {
+                    return Ok(result);
+                }
+            }
         }
-
-        let body = "not found";
-        let resp_404 = format!(
-            "HTTP/1.1 404 Not Found\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-            body.len()
-        );
-        let _ = stream.write_all(resp_404.as_bytes()).await;
-        let _ = stream.shutdown().await;
     }
+}
+
+async fn handle_connection(stream: &mut TcpStream, expected_state: &str) -> Option<CallbackResult> {
+    let mut buf = Zeroizing::new(vec![0u8; MAX_REQUEST_LEN]);
+    let n = stream.read(buf.as_mut_slice()).await.ok()?;
+
+    let parsed = {
+        let request = String::from_utf8_lossy(&buf[..n]);
+        let first_line = request.lines().next().unwrap_or("");
+        parse_callback(first_line)
+    };
+    buf.zeroize();
+
+    if let Some(result) = parsed.filter(|result| {
+        super::flow_auth::verify_state_constant_time(expected_state, result.state.as_str()).is_ok()
+    }) {
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\n\
+             Content-Length: {}\r\nConnection: close\r\n\r\n{}",
+            SUCCESS_HTML.len(),
+            SUCCESS_HTML
+        );
+        let _ = stream.write_all(response.as_bytes()).await;
+        let _ = stream.shutdown().await;
+        return Some(result);
+    }
+
+    let body = "not found";
+    let resp_404 = format!(
+        "HTTP/1.1 404 Not Found\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    let _ = stream.write_all(resp_404.as_bytes()).await;
+    let _ = stream.shutdown().await;
+    None
 }
 
 fn parse_callback(request_line: &str) -> Option<CallbackResult> {

@@ -7,10 +7,10 @@ use std::future::Future;
 use std::time::Instant;
 
 const SCHEDULER_LOOPS: usize = 1;
-const SCHEDULED_WAKEUPS: usize = 64;
+pub(super) const SCHEDULED_WAKEUPS_CAPACITY: usize = 64;
 
 type SchedulerLoopWork = ServiceWorkSupervisor<SCHEDULER_LOOPS>;
-pub(super) type SchedulerWakeupWork = ServiceWorkSupervisor<SCHEDULED_WAKEUPS>;
+pub(super) type SchedulerWakeupWork = ServiceWorkSupervisor<SCHEDULED_WAKEUPS_CAPACITY>;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SchedulerDiagnostics {

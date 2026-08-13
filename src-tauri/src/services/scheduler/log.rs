@@ -8,7 +8,8 @@ use std::path::PathBuf;
 use store::{append_at, list_runs_at};
 #[cfg(test)]
 use store::{
-    append_at_with_atomic_writer, parse_runs, MAX_ID_CHARS, MAX_LINES, MAX_LOG_LINE_BYTES,
+    append_at_with_atomic_writer, append_at_with_read_observer, parse_runs, MAX_ID_CHARS,
+    MAX_LINES, MAX_LOG_LINE_BYTES, ROTATED_LINES,
 };
 
 fn log_path() -> PathBuf {

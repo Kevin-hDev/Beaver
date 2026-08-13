@@ -7,6 +7,19 @@ fn extension_work() -> super::super::work_supervision::ExtensionWorkServices {
     super::super::work_supervision::ExtensionWorkServices::new(coordinator.work_supervisor())
 }
 
+#[test]
+fn reader_admission_precedes_host_process_creation() {
+    let source = include_str!("host_process.rs");
+    let admission = source
+        .find("try_admit_reader")
+        .expect("reader admission boundary");
+    let spawn = source
+        .find("OwnedProcess::spawn_tokio")
+        .expect("host process spawn");
+
+    assert!(admission < spawn);
+}
+
 #[tokio::test]
 async fn reader_timeout_preserves_the_signal_for_a_retry() {
     let (finished_tx, finished_rx) = tokio::sync::oneshot::channel();

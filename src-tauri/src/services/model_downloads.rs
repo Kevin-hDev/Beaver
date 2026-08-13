@@ -63,7 +63,7 @@ pub async fn run_download_queue(
             &shutdown,
         )
         .await;
-        let Some((next_state, next_cancel)) = manager.wait_for_next(&shutdown).await else {
+        let Some((next_state, next_cancel)) = manager.complete_and_activate_next().await else {
             break;
         };
         state = next_state;

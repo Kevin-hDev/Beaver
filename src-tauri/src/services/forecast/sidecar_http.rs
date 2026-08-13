@@ -1,10 +1,14 @@
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::time::Duration;
+use zeroize::Zeroizing;
 
 const PORT_RANGE_START: u16 = 12000;
 const PORT_RANGE_END: u16 = 12099;
 const DEFAULT_PORT: u16 = 12000;
+const HEALTH_IO_PHASE_TIMEOUT: Duration = Duration::from_secs(2);
+// Connect and read are sequential phases, so callers must allow their sum.
+pub(super) const HEALTH_PROBE_BUDGET: Duration = Duration::from_secs(4);
 
 static ACTIVE_PORT: AtomicU16 = AtomicU16::new(0);
 
@@ -34,19 +38,21 @@ pub fn find_free_port() -> u16 {
     DEFAULT_PORT
 }
 
-pub fn health_info(port: u16, auth_token: &str) -> Option<(u16, String, String)> {
+pub fn health_info(port: u16, auth_token: &Zeroizing<String>) -> Option<(u16, String, String)> {
     use std::io::{Read, Write};
 
     let addr = format!("127.0.0.1:{port}");
-    let Ok(mut stream) = TcpStream::connect_timeout(&addr.parse().ok()?, Duration::from_secs(2))
+    let Ok(mut stream) = TcpStream::connect_timeout(&addr.parse().ok()?, HEALTH_IO_PHASE_TIMEOUT)
     else {
         return None;
     };
-    stream.set_read_timeout(Some(Duration::from_secs(2))).ok();
-    let req = format!(
-        "GET /health HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\nX-CLGO-Forecast-Token: {auth_token}\r\n\r\n"
-    );
-    if stream.write_all(req.as_bytes()).is_err() {
+    stream.set_read_timeout(Some(HEALTH_IO_PHASE_TIMEOUT)).ok();
+    let request_prefix =
+        format!("GET /health HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\nX-CLGO-Forecast-Token: ");
+    if stream.write_all(request_prefix.as_bytes()).is_err()
+        || stream.write_all(auth_token.as_bytes()).is_err()
+        || stream.write_all(b"\r\n\r\n").is_err()
+    {
         return None;
     }
     let mut buf = [0u8; 512];
@@ -57,4 +63,13 @@ pub fn health_info(port: u16, auth_token: &str) -> Option<(u16, String, String)>
     let model = json["model"].as_str()?.to_string();
     let family = json["family"].as_str().unwrap_or("").to_string();
     Some((port, model, family))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn health_request_accepts_only_zeroizing_token_ownership() {
+        let token = zeroize::Zeroizing::new("fixture".to_string());
+        assert!(super::health_info(0, &token).is_none());
+    }
 }

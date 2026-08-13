@@ -17,6 +17,22 @@ fn chat_stream_uses_the_tested_replacement_path() {
 }
 
 #[test]
+fn replacement_finishes_before_the_new_work_admission() {
+    let source = include_str!("agent_chat.rs");
+    let replacement = source
+        .find("agent_chat_streams::replace_active_stream")
+        .expect("replacement boundary");
+    let admission = source
+        .find("agent_chat_work::admit")
+        .expect("stream admission");
+
+    assert!(
+        replacement < admission,
+        "a replacement temporarily consumes two stream admissions"
+    );
+}
+
+#[test]
 fn active_user_message_uses_the_current_stream_inbox() {
     let backend = include_str!("agent_chat_queue.rs");
 

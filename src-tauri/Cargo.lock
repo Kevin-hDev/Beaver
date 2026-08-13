@@ -948,6 +948,7 @@ dependencies = [
  "async-trait",
  "auto-launch",
  "base64 0.22.1",
+ "bytes",
  "calamine",
  "cef",
  "chacha20poly1305",

@@ -10,6 +10,7 @@ export interface ChannelHealthEntry {
 export interface GatewayHealth {
   running: boolean;
   channels: ChannelHealthEntry[];
+  refused_messages: number;
 }
 
 export interface ChannelAccountConfig {

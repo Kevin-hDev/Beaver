@@ -60,22 +60,17 @@ impl ExtensionWorkServices {
         self.operations.try_admit().map_err(map_admission_error)
     }
 
+    pub(super) fn try_admit_reader(
+        &self,
+    ) -> Result<ServiceWorkAdmission<EXTENSION_HOST_READERS>, ExtensionWorkAdmissionError> {
+        self.readers.try_admit().map_err(map_admission_error)
+    }
+
     #[cfg(test)]
     pub(super) fn try_admit_core_call(
         &self,
     ) -> Result<ServiceWorkAdmission<MAX_EXTENSION_CORE_CALLS>, ExtensionWorkAdmissionError> {
         self.core_calls.try_admit().map_err(map_admission_error)
-    }
-
-    pub(super) fn spawn_reader<Factory, Task>(
-        &self,
-        work: Factory,
-    ) -> Result<(), ExtensionWorkAdmissionError>
-    where
-        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
-        Task: Future + Send + 'static,
-    {
-        self.readers.spawn(work).map_err(map_admission_error)
     }
 
     pub(super) fn spawn_operation<Factory, Task>(

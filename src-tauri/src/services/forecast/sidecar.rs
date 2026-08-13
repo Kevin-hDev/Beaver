@@ -8,7 +8,6 @@ use crate::services::forecast::{
 use crate::services::paths::data_dir;
 use crate::services::work_registry::ServiceWorkCancellation;
 use std::future::Future;
-use std::process::Child;
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc,
@@ -21,7 +20,8 @@ pub use super::sidecar_idle::schedule_idle_stop;
 pub use super::sidecar_stop::{stop, stop_model};
 
 pub(super) struct SidecarHandle {
-    pub(super) child: Child,
+    pub(super) child: tokio::process::Child,
+    pub(super) pid: u32,
     pub(super) model_id: String,
     pub(super) family_id: String,
     pub(super) auth_token: Zeroizing<String>,
@@ -159,13 +159,14 @@ pub async fn start(
         &models_dir,
         &auth_token,
         &launch,
-    )?;
+    )
+    .await?;
 
-    let pid = child.id();
-    sidecar_process::save_pid(pid);
-    sidecar_http::set_port(port);
-    *sidecar.process.lock().await = Some(SidecarHandle {
-        child,
+    let pid = child.pid();
+    let mut process = sidecar.process.lock().await;
+    *process = Some(SidecarHandle {
+        child: child.publish(),
+        pid,
         model_id: model_name.to_string(),
         family_id: family_id.to_string(),
         auth_token: auth_token.clone(),
@@ -176,6 +177,9 @@ pub async fn start(
             .fetch_add(1, Ordering::Relaxed),
         _admission: admission,
     });
+    drop(process);
+    sidecar_process::save_pid(pid);
+    sidecar_http::set_port(port);
     sidecar.idle_changed.notify_waiters();
 
     match sidecar_spawn::wait_until_ready(port, model_name, family_id, pid, auth_token).await {

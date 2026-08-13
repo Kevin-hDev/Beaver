@@ -1,5 +1,5 @@
 use super::channels::GatewayError;
-use super::security::audit::{self, AuditAction};
+use super::security::audit::{self, AuditAction, AuditErrorCategory};
 use super::types::ChannelKey;
 
 pub(crate) fn invalid_account_config(
@@ -70,13 +70,18 @@ fn log(
     decision: Option<&str>,
     error: Option<&str>,
 ) -> Result<(), String> {
-    let safe_error = error.map(audit::sanitize_error);
-    audit::log_gateway_action(
-        channel_id,
-        account_id,
-        "",
-        action,
-        decision,
-        safe_error.as_deref(),
-    )
+    let safe_error = error.map(|_| error_category(&action, decision).as_str());
+    audit::log_gateway_action(channel_id, account_id, "", action, decision, safe_error)
+}
+
+fn error_category(action: &AuditAction, decision: Option<&str>) -> AuditErrorCategory {
+    if decision == Some("invalid_config") {
+        return AuditErrorCategory::InvalidConfig;
+    }
+    match action {
+        AuditAction::RateLimited => AuditErrorCategory::RateLimited,
+        AuditAction::AuthFailed => AuditErrorCategory::AuthenticationFailed,
+        AuditAction::ChannelStopped => AuditErrorCategory::ChannelUnavailable,
+        _ => AuditErrorCategory::OperationFailed,
+    }
 }

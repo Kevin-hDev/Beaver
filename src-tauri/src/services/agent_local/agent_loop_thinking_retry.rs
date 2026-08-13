@@ -75,6 +75,7 @@ pub async fn retry_if_needed(
         params.session_id.clone(),
         params.request_id.clone(),
         params.chat_mode,
+        params.cancel.clone(),
     ));
     let retry_outcome = super::ollama_stream::stream_chat_with_tool_notify(
         params.on_event,
@@ -115,12 +116,11 @@ mod tests {
     use super::*;
     #[test]
     fn interrupted_thinking_retry_keeps_interrupted_outcome() {
-        let (result, interrupted) = split_retry_outcome(
-            StreamOutcome::InterruptedForCompression(StreamResult {
+        let (result, interrupted) =
+            split_retry_outcome(StreamOutcome::InterruptedForCompression(StreamResult {
                 content: "partiel".into(),
                 ..Default::default()
-            }),
-        );
+            }));
 
         assert_eq!(result.content, "partiel");
         assert!(interrupted);
