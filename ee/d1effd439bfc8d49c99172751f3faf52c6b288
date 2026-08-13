@@ -1,0 +1,15 @@
+Investigation et correctif du bootstrap CEF macOS à froid
+
+Cause racine : pendant prepare-cef.sh, la compilation Cargo du helper héritait de TAURI_CONFIG fourni au build E2E Tauri. Le build.rs du helper exécutait alors tauri-build avec la configuration de bundle E2E et cherchait target/e2e/cef-runtime/macos/Chromium Embedded Framework.framework avant que prepare-cef.sh ait créé ce stage. Un cache local déjà préparé masquait le défaut ; un runner CI vierge échouait avant le lancement de l application.
+
+Correctif : TAURI_CONFIG est retiré uniquement dans un sous-shell autour de la compilation Cargo du helper. Les variables de profil CEF et CARGO_TARGET_DIR restent inchangées, et le build Tauri parent conserve sa configuration de bundle. La frontière concernée est donc isolée sans modifier build.rs ni les configurations CI.
+
+TDD : le nouveau test macOS configure un framework volontairement absent et un faux Cargo qui refuse toute présence de TAURI_CONFIG. Avant le correctif, le test ciblé échoue avec le code 86 et unexpected Tauri bundle config. Après le correctif, il passe et le stage porte bien le profil e2e.
+
+Validations locales vertes : npm test (417 fichiers, 1918 tests, suites build/CI/CEF/E2E runner/extensions host incluses), test CEF 35 sur 35, npm run lint, npx tsc --noEmit, cargo fmt --check, cargo clippy --all-targets -- -D warnings, bash -n et git diff --check. Graphify update exécuté sans changement de topologie.
+
+Validation native réellement froide : target/e2e entier déplacé avant exécution. E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e compile le helper release, crée et signe le framework et les cinq helpers, compile et bundle Beaver.app, puis lance réellement l application. Le stage final est valide avec profil e2e et framework présent. L ancien cache a été déplacé de façon récupérable dans la Corbeille.
+
+Limite observée : après ce bootstrap réussi, le parcours natif reste rouge au stade browser_capability après 15003 ms. Onboarding et native_webviews passent. Ce timeout est le chantier séparé de liveness/supervision déjà identifié ; il ne doit pas être masqué ni déclaré résolu par ce commit.
+
+Recommandation : conserver ce correctif minimal. Valider maintenant le nouveau commit sur les trois OS en CI, puis traiter browser_capability et cef-supervision-reaper dans un commit distinct avec sa propre reproduction.
