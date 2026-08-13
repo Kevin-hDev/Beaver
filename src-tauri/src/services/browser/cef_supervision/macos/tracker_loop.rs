@@ -1,8 +1,8 @@
 use super::super::constants::{CEF_SLOT_CAPACITY, CEF_TRACKER_POLL};
 use super::super::mac_supervision_failure::MacSupervisionFailure;
 use super::super::{CefPublication, CefSharedLayoutError};
-use super::emergency_slots::MacEmergencySlots;
 use super::identity::MacProcessIdentity;
+use super::liveness_policy::MacLivenessDecision;
 use super::tracker::MacTrackerShared;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -122,18 +122,13 @@ fn admit(
         .install(
             slot,
             generation,
-            identity.clone(),
+            identity,
             Arc::clone(&pending.objects),
             admission,
         )
         .map_err(|_| MacSupervisionFailure::EmergencyInstall)?;
     pending.objects.signal_admission();
-    Ok(ActiveHelper {
-        slot,
-        generation,
-        identity,
-        emergency: Arc::clone(&shared.emergency),
-    })
+    Ok(ActiveHelper { slot, generation })
 }
 
 fn refresh_active(
@@ -144,13 +139,12 @@ fn refresh_active(
         let Some(current) = helper.as_ref() else {
             continue;
         };
-        match current.identity.is_alive() {
-            Ok(true) => {}
-            Ok(false) => {
-                current.emergency.clear(current.slot, current.generation);
-                drop(helper.take());
+        match shared.emergency.refresh(current.slot, current.generation) {
+            Ok(Some(MacLivenessDecision::Alive | MacLivenessDecision::Pending)) => {}
+            Ok(Some(MacLivenessDecision::Stopped)) | Ok(None) => drop(helper.take()),
+            Ok(Some(MacLivenessDecision::Expired)) | Err(_) => {
+                shared.fail(MacSupervisionFailure::Liveness)
             }
-            Err(_) => shared.fail(MacSupervisionFailure::Liveness),
         }
     }
 }
@@ -158,6 +152,4 @@ fn refresh_active(
 struct ActiveHelper {
     slot: usize,
     generation: u64,
-    identity: MacProcessIdentity,
-    emergency: Arc<MacEmergencySlots>,
 }

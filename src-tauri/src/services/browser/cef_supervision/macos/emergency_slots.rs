@@ -2,6 +2,8 @@ use super::super::constants::CEF_SLOT_CAPACITY;
 use super::super::reservation::CefAdmission;
 use super::super::CefUnavailableCategory;
 use super::identity::MacProcessIdentity;
+use super::liveness_policy::{MacLivenessDecision, MacLivenessState};
+use super::process_state::{MacProcessActions, MacProcessObservation, MacSystemProcessActions};
 use super::MacPublicationObjects;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -11,6 +13,7 @@ struct MacEmergencyEntry {
     identity: MacProcessIdentity,
     objects: Arc<MacPublicationObjects>,
     _admission: CefAdmission,
+    liveness: MacLivenessState,
 }
 
 #[derive(Clone)]
@@ -56,6 +59,7 @@ impl MacEmergencySlots {
             identity,
             objects,
             _admission: admission,
+            liveness: MacLivenessState::new(),
         });
         self.occupied.fetch_add(1, Ordering::AcqRel);
         Ok(())
@@ -106,6 +110,46 @@ impl MacEmergencySlots {
         (!failed).then_some(()).ok_or(())
     }
 
+    pub(super) fn refresh(
+        &self,
+        slot: usize,
+        generation: u64,
+    ) -> Result<Option<MacLivenessDecision>, CefUnavailableCategory> {
+        let mut target = match self.write(slot) {
+            Some(target) => target,
+            None => return Ok(None),
+        };
+        let Some(entry) = target
+            .as_mut()
+            .filter(|entry| entry.generation == generation)
+        else {
+            return Ok(None);
+        };
+        let observation = MacSystemProcessActions.observe(&entry.identity);
+        let now_ticks = super::clock::now_ticks()?;
+        self.apply_observation(&mut target, observation, now_ticks)
+    }
+
+    fn apply_observation(
+        &self,
+        target: &mut Option<MacEmergencyEntry>,
+        observation: MacProcessObservation,
+        now_ticks: u64,
+    ) -> Result<Option<MacLivenessDecision>, CefUnavailableCategory> {
+        let Some(entry) = target.as_mut() else {
+            return Ok(None);
+        };
+        let decision = entry
+            .liveness
+            .apply(observation, now_ticks, None)
+            .map_err(|_| CefUnavailableCategory::Reaper)?;
+        if decision == MacLivenessDecision::Stopped {
+            drop(target.take());
+            self.occupied.fetch_sub(1, Ordering::AcqRel);
+        }
+        Ok(Some(decision))
+    }
+
     pub(super) fn clear(&self, slot: usize, generation: u64) {
         let Some(mut target) = self.write(slot) else {
             return;
@@ -146,3 +190,6 @@ impl MacEmergencySlots {
         })
     }
 }
+
+#[cfg(test)]
+mod test_api;
