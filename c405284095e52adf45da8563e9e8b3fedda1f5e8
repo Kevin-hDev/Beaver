@@ -1,0 +1,7 @@
+Objectif de la branche : permettre à l’utilisateur de consulter, personnaliser, remplacer, désactiver et restaurer les instructions système de Beaver, globalement et par modèle Ollama, tout en conservant séparément le contexte dynamique du projet, les outils, la mémoire, la langue et les modes de travail.
+
+Décisions prises : gérer séparément Chatbot et Agentique ainsi que les variantes Compact et Détaillé ; afficher le prompt natif des modèles Ollama lorsqu’il existe ; donner la priorité au réglage propre au modèle sur le réglage global ; représenter un prompt vide comme une désactivation explicite ; stocker les réglages dans le répertoire de données partagé entre macOS, Linux et Windows.
+
+Correction importante de ce commit : Restaurer ne supprime plus simplement la personnalisation Ollama, car cela pouvait réactiver un ancien SYSTEM résiduel du Modelfile. La restauration enregistre désormais explicitement le choix Beaver et le conserve après redémarrage.
+
+Historique : le commit précédent 54457e1 (feat: add configurable system prompts) introduit la fonctionnalité principale. Le présent commit c405284 corrige la sémantique de restauration découverte ensuite. La présentation visuelle reste destinée à être retravaillée séparément.
