@@ -1,0 +1,5 @@
+Raison : les trois boucles réseau ignoraient la fermeture de leur consommateur, les pertes redevenaient invisibles sans audit, les erreurs perdaient toute catégorie, les reconnexions internes restaient fixes et le message WebSocket Discord conservait une copie non effacée du jeton.
+
+Décision : rendre EnqueueOutcome obligatoire et arrêter Discord, Slack et Telegram sur Closed ; partager un compteur saturant exposé dans GatewayHealth avant toute écriture optionnelle ; limiter les erreurs à cinq catégories fermées ; partager un backoff 1/2/4/8/16/30 s réinitialisé après 60 s stables ; conserver l'allocation Bytes transmise à tungstenite puis la zéroïser après send.
+
+TDD : les nouveaux tests ont d'abord échoué sur ReconnectPolicy, SecretTextPayload et le compteur absent. Vérifications finales : gateway 159/159 ; npx tsc --noEmit vert ; npm run lint vert ; cargo fmt et git diff --check verts ; graphify update . exécuté. Le clippy Windows hors test reste inexécutable à cause du cfg préexistant cef_supervision/private_store, tandis que la commande officielle cargo test --lib --features windows-tests est verte.
