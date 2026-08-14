@@ -1,0 +1,17 @@
+Problème
+Le job GitHub Actions Backend (Rust) échouait dans le contrôle Linux check-rust-format.mjs. Le formatage Cargo local ne couvrait pas tous les fichiers Rust changés isolément avec skip_children=true, alors que la CI les vérifie un par un. Après correction du premier fichier signalé, le contrôle a révélé quatre autres fichiers du même lot.
+
+Objectif
+Rendre le lot strictement conforme au formateur Rust utilisé par la CI sans modifier son comportement, ses garanties de fermeture ni ses tests.
+
+Décisions
+- Conserver le contrôle CI strict au lieu de l'affaiblir ou de l'exclure.
+- Appliquer rustfmt avec exactement les paramètres de la CI à tous les fichiers Rust changés depuis la base de la PR.
+- Isoler la correction dans un commit de formatage uniquement.
+
+Validation
+- check-rust-format.mjs exécuté avec RUSTFMT_BASE_SHA égal au merge-base origin/main : réussi.
+- git diff --check : réussi.
+- Tests Rust ciblés subagent_completion avec la feature windows-tests : 6 réussis, 0 échec.
+- graphify update . exécuté.
+- Le diff ne contient que les transformations mécaniques produites par rustfmt.
