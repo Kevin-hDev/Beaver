@@ -1,0 +1,9 @@
+Problem: On Windows, the first send in a directoryless session created a managed workspace from the regular data_dir path. Session persistence then used std::fs::canonicalize and saved the same path with the verbatim \\?\ prefix. On the second send, session_workspace compared that persisted path with the regular base path using lexical strip_prefix, rejected the workspace, and aborted before any Ollama, API, OAuth, prompt-building, or prompt-cache code ran.
+
+Objective: Make directoryless sessions reusable across turns on Windows for every provider, recover sessions already saved with a verbatim path, and preserve the existing workspace confinement and symlink protections.
+
+Decisions: Use dunce::canonicalize consistently at session, preflight, and project persistence boundaries so saved and returned paths share one compatible representation. Use dunce::simplified on both operands immediately before the managed-workspace containment comparison so legacy verbatim paths are healed without filesystem I/O. Keep the existing component validation, symlink rejection, private directory creation, and post-creation canonical containment checks unchanged. No provider, OAuth, frontend streaming, prompt construction, or prompt-cache behavior was changed.
+
+Regression coverage: Added an end-to-end working-directory test that resolves a projectless session twice through persisted state and a Windows-only test for an existing \\?\ workspace. Updated related path expectations. Windows-only verification tests were made line-ending/path-separator portable, and one Rust 1.94 Clippy-equivalent boolean expression was simplified.
+
+Validation: cargo test --lib --features windows-tests -- --test-threads=1 (2941 passed, 4 intentionally ignored); cargo check; cargo clippy --all-targets -- -D warnings; npm test (411 files / 1875 Vitest tests plus build, CEF, E2E, and extension-host suites); npm run lint; npx tsc --noEmit; cargo fmt --check; graphify update .
