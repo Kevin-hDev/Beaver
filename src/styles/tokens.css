@@ -66,6 +66,10 @@
      saisie. Trop court, la coupure reste franche ; trop long, une ligne
      entière devient illisible avant de sortir de l'écran. */
   --chat-fade-height: 40px;
+  /* Marge intérieure de la bulle d'un message utilisateur. La zone d'édition
+     reprend la même : sans cela le texte se décale au moment où l'on passe la
+     bulle en édition. */
+  --chat-bubble-padding: var(--space-xs) var(--space-sm);
   --dialog-compact-min-width: 18.75rem;
   --dialog-compact-max-width: 27.5rem;
   --dialog-wide-max-width: 53.75rem;

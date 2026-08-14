@@ -1,0 +1,40 @@
+/* Bouton de retour au bas de la conversation. Reprend .icon-btn
+   (src/styles/buttons.css) et n'ajoute que sa surface posée et sa position.
+
+   Il flotte au-dessus du champ de saisie, centré sur lui : il apparaît et
+   disparaît au gré du défilement, et posé dans le flux il poussait le champ
+   vers le haut à chaque fois. */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: calc(100% + var(--space-sm));
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid var(--edge);
+  background: var(--surface);
+  opacity: 0.85;
+  z-index: var(--z-sticky);
+  color: var(--ink-muted);
+}
+
+.scroll-bottom-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--surface);
+  color: var(--ink-muted);
+}
+
+.scroll-bottom-icon {
+  width: 16px;
+  height: 16px;
+}
+
+[data-theme="light"] .scroll-bottom-btn,
+[data-theme="light"] .scroll-bottom-btn:hover:not(:disabled) {
+  background: var(--chat-composer-bg);
+  border-color: transparent;
+}
+
+[data-theme="dark"] .scroll-bottom-btn,
+[data-theme="dark"] .scroll-bottom-btn:hover:not(:disabled) {
+  background: var(--surface-glass);
+  border-color: transparent;
+}
