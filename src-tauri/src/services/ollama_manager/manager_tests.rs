@@ -3,7 +3,9 @@ use super::types::OperationState;
 use super::OllamaManager;
 use crate::app_exit::AppExitCoordinator;
 use std::future;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Notify;
 
 #[path = "types_tests.rs"]
 mod types_tests;
@@ -51,6 +53,34 @@ async fn closing_refuses_new_operations() {
 }
 
 #[tokio::test]
+async fn closing_wins_after_admission_before_publication() {
+    let (_coordinator, manager) = manager();
+    let admitted = Arc::new(Notify::new());
+    let resume = Arc::new(Notify::new());
+    let admitted_wait = admitted.notified();
+    tokio::pin!(admitted_wait);
+    admitted_wait.as_mut().enable();
+    let task_manager = manager.clone();
+    let task_admitted = Arc::clone(&admitted);
+    let task_resume = Arc::clone(&resume);
+    let task = tokio::spawn(async move {
+        let result = task_manager
+            .begin_operation_paused_for_test(OperationState::Installing, task_admitted, task_resume)
+            .await;
+        result.map(drop)
+    });
+
+    admitted_wait.await;
+    manager.begin_closing();
+    resume.notify_one();
+
+    let result = task.await.expect("operation task");
+    assert!(matches!(result, Err(OllamaErrorCode::OllamaClosing)));
+    assert_eq!(manager.status().await.operation, OperationState::Idle);
+    wait_for_no_active_work(&manager).await;
+}
+
+#[tokio::test]
 async fn cancellation_marks_cancelling_and_releases_admission() {
     let (_coordinator, manager) = manager();
     let operation = manager
@@ -58,6 +88,7 @@ async fn cancellation_marks_cancelling_and_releases_admission() {
         .await
         .expect("operation admission");
     manager.begin_closing();
+    assert_eq!(manager.status().await.operation, OperationState::Cancelling);
     drop(operation);
 
     wait_for_no_active_work(&manager).await;

@@ -11,6 +11,8 @@ use crate::services::work_registry::{
     ServiceWorkAdmission, ServiceWorkAdmissionError, ServiceWorkSupervisor,
 };
 use std::sync::{Arc, Mutex};
+#[cfg(test)]
+use tokio::sync::Notify;
 use tokio::sync::{Mutex as AsyncMutex, MutexGuard};
 
 #[derive(Clone)]
@@ -23,6 +25,7 @@ struct OllamaManagerInner {
 }
 
 struct OllamaManagerState {
+    closing: bool,
     generation: u64,
     status: OllamaRuntimeStatus,
 }
@@ -41,6 +44,7 @@ impl OllamaManager {
             work: ServiceWorkSupervisor::new(app_work),
             operation_lock: AsyncMutex::new(()),
             state: Mutex::new(OllamaManagerState {
+                closing: false,
                 generation: 0,
                 status: OllamaRuntimeStatus::initial(),
             }),
@@ -52,6 +56,8 @@ impl OllamaManager {
     }
 
     pub fn begin_closing(&self) {
+        // Publier la fermeture avant le registre ferme la fenêtre admission/publication.
+        self.inner().mark_closing();
         self.inner().work.begin_closing();
     }
 
@@ -60,9 +66,21 @@ impl OllamaManager {
         operation: OperationState,
     ) -> Result<OllamaOperationGuard<'_>, OllamaErrorCode> {
         let admission = self.inner().work.try_admit().map_err(map_admission_error)?;
+        self.begin_operation_after_admission(admission, operation)
+            .await
+    }
+
+    async fn begin_operation_after_admission(
+        &self,
+        admission: ServiceWorkAdmission<OLLAMA_WORK_CAPACITY>,
+        operation: OperationState,
+    ) -> Result<OllamaOperationGuard<'_>, OllamaErrorCode> {
         let operation_lock = self.inner().operation_lock.lock().await;
         let generation = {
             let mut state = self.inner().lock_state();
+            if state.closing || admission.cancellation().is_cancelled() {
+                return Err(OllamaErrorCode::OllamaClosing);
+            }
             let generation = state
                 .generation
                 .checked_add(1)
@@ -79,6 +97,20 @@ impl OllamaManager {
             operation_lock,
             generation,
         })
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn begin_operation_paused_for_test(
+        &self,
+        operation: OperationState,
+        admitted: Arc<Notify>,
+        resume: Arc<Notify>,
+    ) -> Result<OllamaOperationGuard<'_>, OllamaErrorCode> {
+        let admission = self.inner().work.try_admit().map_err(map_admission_error)?;
+        admitted.notify_one();
+        resume.notified().await;
+        self.begin_operation_after_admission(admission, operation)
+            .await
     }
 
     fn inner(&self) -> &OllamaManagerInner {
@@ -118,12 +150,22 @@ impl OllamaManager {
 }
 
 impl OllamaManagerInner {
+    fn mark_closing(&self) {
+        let mut state = self.lock_state();
+        state.closing = true;
+        if !matches!(state.status.operation, OperationState::Idle) {
+            state.status.operation = OperationState::Cancelling;
+            state.status.progress = None;
+        }
+    }
+
     fn lock_state(&self) -> std::sync::MutexGuard<'_, OllamaManagerState> {
         match self.state.lock() {
             Ok(state) => state,
             Err(poisoned) => {
                 self.work.begin_closing();
                 let mut state = poisoned.into_inner();
+                state.closing = true;
                 state.status.operation = OperationState::Cancelling;
                 state.status.progress = None;
                 state.status.last_error = Some(OllamaErrorCode::OllamaInternal);
@@ -137,7 +179,7 @@ impl OllamaManagerInner {
         if state.generation != generation {
             return;
         }
-        state.status.operation = if cancelled {
+        state.status.operation = if state.closing || cancelled {
             OperationState::Cancelling
         } else {
             OperationState::Idle
