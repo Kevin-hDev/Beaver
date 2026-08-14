@@ -1,0 +1,69 @@
+# Beaver — directory access review follow-up
+
+Date: 2026-08-02
+Reviewed base: `61134af`
+Scope: directory access enforcement, session/project UX, and shell confinement
+
+## Outcome
+
+All actionable findings from the review are addressed. The backend remains the source of truth, the frontend now explains every blocked selection, and `bash`/`bash_control` stay registered and usable under restricted access through an OS-level filesystem sandbox.
+
+## Finding disposition
+
+| # | Disposition |
+|---|---|
+| 1 | Legacy `allowed_paths: []` is migrated during config normalization to the platform default root. Strict write validation still rejects empty lists. |
+| 2 | Direct session creation inside a project now runs through the shared directory guard and renders the same settings prompt. Missing projects produce a generic localized error. |
+| 3 | Home-directory detection now canonicalizes geographically without applying access control. Actual working-directory resolution still enforces access. |
+| 4 | Config reads ignore unavailable roots while preserving valid roots, and fail closed when none remain. Settings writes remain strict. |
+| 5 | The rejected product behavior was removed: restricted access no longer disables shell tools. The setting copy now accurately states that sessions and their tools work inside the selected folders. |
+| 6 | Active agents and shells are stopped only when the new roots remove previously available access. Pure expansions do not interrupt work. |
+| 7 | The i18n test checks every required key in every locale, plus `common.cancel`. |
+| 8 | Pure root-injected decision and enforcement functions are covered directly, including valid, forbidden, missing-root and canonical-path behavior. |
+| 9 | `useDirectoryAccessGuard` exposes the ready-to-render prompt; three duplicated prompt assemblies were removed. |
+| 10 | Project selection is centralized in one helper shared by the welcome and session views. |
+| 11 | Frontend parsing limits are centralized, and the missing-directory flow reuses the same parser. Backend path/root limits are also shared by the sandbox. |
+| 12 | The navigation context value is memoized. |
+| 13 | The redundant dark-theme border declaration was removed. |
+| 14 | The non-modal popover now uses `role="dialog"`, matching its actual behavior. |
+| 15 | Missing project selections now show a generic localized error instead of doing nothing. |
+| 16 | Canonical paths use `dunce::canonicalize`, avoiding Windows verbatim path display. |
+| 17 | Project lookup is centralized in `project_store::find`. |
+| 18 | No new code change: the earlier vault-banner extraction is correct and already merged; reverting it in this follow-up would add unrelated churn without fixing a defect. |
+
+The raw `common.cancel` visible in the screenshot was not normal. The component was correctly using a shared key, but that key did not exist in the locale files. It now exists in all seven languages and is explicitly tested.
+
+## Shell confinement decisions
+
+- Unrestricted default roots preserve the direct shell path and existing behavior.
+- Restricted launches go through a dedicated Beaver helper which re-reads and canonicalizes the current roots immediately before confinement.
+- macOS uses a deny-by-default Seatbelt profile. Allowed roots and a private per-process temporary directory are writable; required system/tool roots are read-only.
+- Linux uses Landlock ABI V3 with a hard requirement and `no_new_privs`. ABI V3 was selected because it covers truncate operations while supporting more kernels than newer ABIs.
+- Windows uses a unique AppContainer profile per shell. Allowed roots and the private temporary directory receive writable access; executable/PATH roots receive read/execute access. ACLs and the profile are removed after normal exit, forced cancellation, or startup recovery.
+- Shell children inherit the confinement, so `bash_control` controls the same isolated process rather than a second unrestricted path.
+- Login-profile capture and explorer subagent commands also use the sandbox, closing preparatory-shell bypasses.
+- Network behavior is intentionally unchanged; this change confines local filesystem access without removing shell capabilities.
+- If the OS cannot apply the sandbox, the individual launch fails closed with a generic error. It never falls back to an unrestricted process.
+
+## Regression review
+
+- Access narrowing/widening races were checked: the helper revalidates current settings, narrowing cancels active processes, and expansion leaves existing narrower processes safe until their next command.
+- Sandbox temporary directories are private, bounded, uniquely named, and cleaned on success, spawn failure, cancellation, timeout, crash recovery, and application startup.
+- Windows cleanup records live outside the sandbox-writable child directory, are size/count/path validated, and are removed even when invalid.
+- Read-only tool roots are bounded and cannot overlap configured writable roots in a way that broadens a selected project to one of its parents.
+- No configuration cache was added. This avoids stale-root invalidation risk; disk-read performance remains the explicitly deferred question from the review.
+
+## Validation
+
+- Frontend: 394 Vitest files, 1,808 tests passed.
+- CEF extraction: 2 tests passed.
+- Extension host: 46 tests passed.
+- Rust: 2,866 tests passed.
+- `npm run lint`: passed.
+- `npx tsc --noEmit`: passed.
+- `cargo clippy --all-targets -- -D warnings`: passed.
+- macOS Seatbelt runtime test: allowed write, forbidden outside read, and child-shell inheritance passed.
+- Linux sandbox source: cross-target `cargo clippy -D warnings` passed for `x86_64-unknown-linux-gnu`.
+- Windows sandbox source: cross-target `cargo clippy -D warnings` passed for `x86_64-pc-windows-msvc`.
+
+Platform limitation: macOS received a real runtime confinement test on this machine. Linux and Windows were type-checked and linted against their actual targets, but their kernel/AppContainer runtime behavior still needs the normal native CI or device validation.
