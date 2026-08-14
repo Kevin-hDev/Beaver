@@ -1,0 +1,13 @@
+J3 Task 1 fix round 1: central CEF helper deadline and injected test clock.
+
+Intention: restore the policy-owned 14-second CEF helper auto-termination slot, derive it from the original exit origin, keep short policy tests scaled, and prove late Ollama callers receive only the remaining 600ms.
+
+Red: after updating the three timeline assertions and the injected-clock test, cargo test --lib app_exit::policy_tests -- --test-threads=1 failed 3/7: all_deadlines_share_one_origin, remaining_budget_never_restarts_after_deadline, and the total-order test; the observed helper values were 13s/13ms and [3s, 8s, 10s, 13s, 13s, 15s].
+
+Green: cargo test app_exit::policy_tests passed 7/7; cargo test --lib app_exit::coordinator_tests -- --test-threads=1 passed 10/10; cargo clippy --lib -- -D warnings, cargo fmt --check, and git diff --check passed.
+
+Real result: CEF_HELPER_EXIT_TIMEOUT is 14s; cef_helper_exit_deadline derives the scaled absolute budget from origin, producing origin+14s in production and origin+14ms for the 15ms short policy without exceeding ultimate. The order test now calls only real timeline methods, and the explicit TestClock advances 2.4s before measuring 600ms.
+
+Limits: this fix changes only policy.rs and policy_tests.rs; no CEF runtime consumer code was changed because existing consumers already receive the absolute helper deadline. The global ultimate budget remains 15s.
+
+Recommendation: keep CEF_HELPER_EXIT_TIMEOUT as the sole policy authority and pass cef_helper_exit_deadline through consumers; do not rebuild the 14s slot in tests or add a local helper wait.
