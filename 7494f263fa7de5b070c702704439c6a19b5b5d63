@@ -1,0 +1,119 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 7b198b186e84d93ef991bc471ec89c64109ef354
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs: record shutdown milestone one proofs
+---
+
+Jalon 1 — cœur de fermeture déterministe
+
+Problème
+La branche historique de fermeture avait accumulé des correctifs locaux : certains arrêts bloquants pouvaient empêcher le délai de sécurité de progresser, plusieurs demandes simultanées pouvaient observer une transition partielle, et la fermeture de fenêtre ne suivait plus une règle produit unique. L'objectif de ce jalon n'est pas encore de superviser chaque producteur ni les helpers CEF ; il établit l'autorité et les échéances sur lesquelles les jalons suivants doivent se brancher.
+
+Objectif
+- empêcher le processus Beaver de rester invisible indéfiniment ;
+- fermer atomiquement l'admission au premier vrai Quitter ;
+- préserver l'ordre de nettoyage existant et la frontière CEF ;
+- rendre la sémantique de fermeture explicite sur les trois OS ;
+- ne déclarer aucun périmètre J1B/J2/J3 terminé avant ses preuves natives.
+
+Décisions et justifications
+1. Une autorité unique et monotone Running -> Closing -> ReadyToExit. La première demande possède la fermeture ; les suivantes attendent ou passent seulement lorsque l'état est prêt. Un mutex très court sérialise la fermeture du registre et la publication de Closing afin qu'aucun appel concurrent n'observe un demi-état. Toute incohérence termine le processus en échec au lieu de poursuivre.
+2. Registre fixe de 128 admissions, gardes non clonables, générations et jeton enfant. La capacité est bornée et une garde prouve la fin par son Drop, y compris après panique ou abort. Les producteurs seront migrés au jalon 2 ; ce jalon ne prétend pas déjà les superviser.
+3. Une seule chronologie absolue 8/10/13/15 s. Le nettoyage gracieux cesse d'obtenir de nouveaux budgets ; Tauri reçoit la sortie à 10 s, le drainage d'urgence commence à 13 s et un tueur ultime précréé force la mort du parent à 15 s.
+4. Le tueur ultime est créé avant les effets de bord Tauri puis seulement armé à Closing. Il ne dépend ni du runtime async, ni du watchdog de processus, ni de CEF. Un échec de création empêche Beaver de démarrer ; un échec d'armement ferme immédiatement en échec.
+5. Les arrêts synchrones atteignables depuis le nettoyage passent par spawn_blocking. Une panique de ce travail n'est plus avalée : elle remonte dans la classification du nettoyage, tandis que le tueur ultime reste indépendant.
+6. L'ordre conservé est services concurrents -> Ollama en dernier -> retour de boucle Tauri -> arrêt CEF -> passe post-boucle. Aucun fichier du moteur, protocole de lancement ou sandbox CEF n'est modifié par J1.
+7. Produit : la croix Windows/Linux est un vrai Quitter ; la croix rouge macOS masque la fenêtre et garde le comportement natif de l'application ; tout vrai Quitter ferme aussi le gateway. Le réglage historique run_when_window_closed est lu comme champ JSON inconnu puis n'est plus réécrit. Le menu tray Quitter utilise le même chemin coordonné ; Afficher restaure, dé-minimise puis focalise.
+8. CEF : Windows et macOS doivent être Ready supervisé avant toute release. Unavailable avant lancement reste uniquement une défense locale face à une machine défaillante, jamais un état de livraison. Linux CEF reste désactivé dans le build actuel et son intégration est un chantier séparé.
+
+Alternatives rejetées
+- additionner des délais locaux par service : ne fournit aucune borne globale ;
+- créer le tueur ultime au moment de fermer : sa création peut elle-même échouer sous pression ;
+- laisser le gateway survivre à un vrai Quitter : contredit la décision produit « tout fermer » ;
+- désactiver CEF sur une plateforme pour tenir le calendrier : fonctionnalité livrée cassée ;
+- identifier ou tuer des processus par nom/PID seul : risque de viser un processus externe ;
+- adopter partiellement J2/J3 dans ce jalon : réintroduirait plusieurs autorités concurrentes.
+
+Inventaire historique
+- lignes 3, 8 et 10 : fondation d'admission J1 reprise ; adoption des flux/téléchargements reste J2 ;
+- lignes 1 et 6 : décision de fermeture, nettoyage et frontière post-boucle repris ; confinement natif CEF J1B et adoption services J2 restent ouverts ;
+- ligne 7 : atomicité du début de fermeture reprise, producteurs J2 ouverts ;
+- ligne 19 : budget unique, appel bloquant réel, CEF bloqué et watchdog bloqué couverts ; signalement natif J2 ouvert ;
+- ligne 21 : vraie garde suivie reprise ; classification et transaction Ollama restent J3.
+Le fichier d'inventaire contient toujours exactement 22 commits valides et les jalons propriétaires non fermés restent visibles.
+
+Preuves exécutées sur Windows
+- tests ciblés app_exit : 37 réussis, 0 échec ;
+- suite Rust de référence CI Windows, séquentielle : 3014 réussis, 0 échec, 4 ignorés ;
+- cargo check --lib : réussi ;
+- cargo clippy --all-targets -- -D warnings : réussi ;
+- cargo fmt --check, check-rust-format.mjs et git diff --check : réussis ;
+- frontend Vitest : 412 fichiers, 1885 tests réussis ;
+- scripts de build : 44/44 ; tests CEF : 6/6 ; runner E2E : 6/6 ; hôte d'extensions : 51/51 ;
+- npx tsc --noEmit et npm run lint : réussis ;
+- smoke test réel Windows avec profil isolé : sortie en 515 ms, nettoyage journalisé en 316 ms, aucun processus Beaver/Ollama/SearXNG du profil restant.
+
+Écart de harnais observé et non masqué
+Un passage Rust parallèle supplémentaire a produit deux échecs dans des tests de stockage privé inchangés par cette branche. Chacun a ensuite réussi 10/10 isolément, et la suite CI Windows séquentielle a réussi intégralement. Ce signal est consigné comme interférence préexistante du harnais parallèle ; aucune modification du stockage privé n'a été introduite sans cause racine démontrée. Le CI Windows officiel exécute cette suite avec --test-threads=1.
+
+Limites et suite obligatoire
+- Le smoke test Cargo direct n'a pas exercé le chemin CEF normal, car le packaging Windows officiel publie le module sous un nom différent de l'artefact Cargo direct. La preuve native CEF appartient au jalon 1B et reste bloquante avant release.
+- Les exécutions natives macOS et Linux restent à produire en CI ; les décisions multi-OS de J1 sont couvertes par tests purs et inspection cfg, sans prétendre remplacer les preuves natives.
+- J1B : supervision CEF Windows/macOS avec sandbox réel ; aucune release avant Ready supervisé sur les deux OS.
+- J2 : adoption de tous les producteurs, inventaire d'urgence natif, processus, téléchargements, gateway, extensions et UpdateHandoff.
+- J3 : installation/mise à jour Ollama transactionnelle et récupérable.
+- J4 : convergence et matrice finale multi-OS.
+- L'intégration CEF Linux est explicitement un chantier séparé.
+
+Commits de finition
+- f30ece8 : atomicité concurrente, panique bloquante, preuve CEF bloqué, tray explicite ;
+- 0c93d7c : stabilisation des seuls tests Windows concernés ;
+- 7b198b1 : commandes de validation corrigées et inventaire final mis à jour.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: bd079937d846ee24b190fea9d7cb96410636134c
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs: harden shutdown rollout safeguards
+---
+
+Contexte
+Une contre-review de la stratégie de fermeture a recherché les effets collatéraux hors processus. Elle a confirmé des risques de compatibilité CEF, de saturation fail-closed, de migration Ollama et d interruption d écritures persistantes. Elle a aussi proposé une voie de maintenance pendant la période sans release.
+
+Objectif
+Rendre ces risques vérifiables et bloquants dans les jalons propriétaires avant la review du jalon 1, sans modifier le code déjà validé ni étendre CEF à Linux.
+
+Décisions
+- J1 : créer avant fusion une branche de maintenance depuis le dernier main publiable, réservée aux correctifs critiques ou de sécurité, et la conserver jusqu à la validation native de J4.
+- Politique de release : aucune release publique depuis le main transitoire avant J4. J1B est nécessaire pour CEF mais ne suffit pas seul.
+- J1B : exiger le build empaqueté Ready supervisé sur Windows et macOS avec protections système actives, plus un environnement Windows renforcé par antivirus tiers ou politique d entreprise.
+- Les indisponibilités CEF utilisent seulement des catégories locales bornées et nettoyées. Aucune télémétrie distante et aucune exception antivirus demandée.
+- J2 : ajouter lors de l adoption des producteurs des compteurs locaux fixes pour activité, maximum, saturation et fermeture. Le registre J1 conserve son périmètre déjà livré.
+- J3 : déterminer le stockage effectif des modèles à partir de OLLAMA_MODELS hérité ou du défaut réel, résoudre les valeurs relatives depuis le dossier de travail Ollama et employer les règles natives du système de fichiers.
+- J3 : refuser avant toute mutation tout chevauchement avec les dossiers transactionnels modernes ou hérités, y compris via symlink, junction ou reparse point. Le code public ne révèle aucun chemin.
+- J3/J4 : exécuter une vraie mise à niveau depuis 1.0.2, 1.1.0, 1.1.1 et 1.1.2 sur leurs OS publiés, avec un modèle préexistant toujours disponible sans nouveau téléchargement.
+- J4 : ajouter un sixième inventaire consacré aux stockages persistants et rouvrir un profil complet après fermetures normales et forcées à chaque frontière durable.
+
+Justifications
+- Beaver ne fixe pas OLLAMA_MODELS et le processus Ollama hérite de l environnement. Supposer que les modèles sont toujours hors du bundle n est donc pas une garantie.
+- Les runners CI propres ne reproduisent pas entièrement antivirus, Gatekeeper, quarantaine ou politiques d entreprise.
+- Un registre borné remplace une fuite silencieuse par un refus visible ; les compteurs locaux rendent ce mode de panne diagnosticable sans collecter de données.
+- Le chantier ne déplace pas vault, sessions, Forecast, skills ou mémoire, mais une sortie ultime peut interrompre une écriture en cours.
+- Le contrat interdit les releases jusqu à J4 ; la maintenance d urgence doit donc rester possible pendant toute cette fenêtre.
+
+Alternatives rejetées
+- Faire confiance uniquement aux chemins par défaut Ollama.
+- Tester seulement des fixtures de dossiers au lieu des profils produits par les anciennes releases.
+- Accepter CEF indisponible sur une configuration normalement supportée.
+- Ajouter une télémétrie distante pour suivre les indisponibilités.
+- Produire une release depuis le main transitoire.
+- Ajouter rétroactivement du code de diagnostics au jalon 1 alors que leur propriétaire est l adoption J2.
+
+Validation
+- Sept fichiers Markdown modifiés, aucun fichier de code.
+- Vérification explicite des sept groupes d exigences : tous présents.
+- Liens relatifs : aucun lien cassé.
+- Aucun placeholder TBD, TODO ou formulation laissée à définir.
+- git diff --check réussi avant commit.
+- Graphify code graph : aucune modification de topologie. La réextraction sémantique documentaire reste en attente faute de moteur Gemini configuré ; aucun résultat sémantique n a été inventé.
