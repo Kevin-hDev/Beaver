@@ -1,0 +1,21 @@
+Problème
+- Sur Windows, certaines requêtes Ollama/Gemma échouaient avant le démarrage du flux lorsque le contexte obligatoire dépassait la limite d'entrée.
+- Le palier VRAM intermédiaire utilisait une fenêtre de 16 384 tokens. Dans les sessions observées, le prompt final et 35 outils réellement injectés dépassaient la réserve d'entrée de 12 288 tokens. Qwen continuait de fonctionner grâce à une fenêtre déclarée beaucoup plus grande.
+- Le message générique masquait la cause exacte.
+
+Objectif
+- Conserver le choix des outils sous le contrôle exclusif de l'utilisateur.
+- Afficher un diagnostic sûr, précis et calculé au moment de la requête.
+- Donner plus de marge aux modèles locaux du palier intermédiaire.
+
+Décisions
+- Aucun outil n'est activé, désactivé ou retiré automatiquement par le backend.
+- Les tokens sont recalculés depuis le prompt système final, les rapports obligatoires et la liste finale des outils effectivement transmise.
+- Le backend transporte un code stable et six compteurs numériques validés; les erreurs inconnues restent génériques et aucun corps provider ou chemin interne n'est exposé.
+- Le frontend vérifie à nouveau les compteurs puis affiche le détail dans les 7 langues.
+- Le palier intermédiaire passe à 24 576 tokens; les paliers bas et haut restent inchangés.
+- Une stratégie future de réduction ou de sélection du contexte est volontairement reportée à une session dédiée.
+
+Validation
+- Tests ciblés frontend: 14/14. Tests ciblés Rust: 5/5. TypeScript, ESLint, rustfmt, cargo check --lib et Graphify passent.
+- Suites complètes: 1 878 tests frontend et 2 941 tests Rust passent. Échecs Windows préexistants hors périmètre: chemin E2E attendu au format Unix, deux comparaisons CRLF/LF; le test transactionnel des notes est instable en parallèle et passe isolément.
