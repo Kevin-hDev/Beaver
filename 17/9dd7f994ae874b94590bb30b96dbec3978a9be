@@ -1,0 +1,11 @@
+Correctif round 2/5 — intention : empêcher tout futur journal_store sibling de nommer ou appeler les parseurs wire non bornés.
+
+Rouge TDD lu avant la correction : node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::document_tests ; 10 tests, 9 passés et 1 échec sur journal_wire_stays_private_to_bounded_journal_module avec le message wire parser must be nested under journal.rs ; le filtre a terminé par Rust test filter failed.
+
+Preuve de visibilité : le test rouge vérifiait la déclaration dans ollama_manager.rs. Après correction, journal_wire est déclaré seulement dans journal.rs et le fichier est journal/journal_wire.rs ; la façade ne le déclare ni ne le réexporte. Les fonctions restent pub(super) vers leur parent journal, hors visibilité d’un sibling journal_store.
+
+Verts réellement lus : filtre final 10 passed, 0 failed, 3347 filtered out, dont 9 tests documentaires et 1 contrat de topologie ; chemins 4 passed, 0 failed, 3353 filtered out ; cargo check code 0 ; cargo clippy --all-targets -- -D warnings code 0 ; cargo fmt --all -- --check code 0 ; git diff --check code 0 ; graphify update . : 32195 nodes, 64795 edges, 2010 communities.
+
+Résultat réel : la seule désérialisation des documents passe par parse_bounded ou classify_migration_marker, qui contrôlent 4096 octets avant les wire-types privés. Aucun parseur générique ou re-export ne réintroduit une voie non bornée.
+
+Limites : aucun store, accès disque, migration, recovery ou ancien consommateur modifié. Le catalogue de chemins est centralisé pour la nouvelle adoption, mais l’autorité globale effective du dépôt attend Task 14. Les 73 fichiers Graphify sans nœud restent un avertissement connu. Recommandation : Task 4 doit appeler uniquement les API bornées et la primitive durable commune.
