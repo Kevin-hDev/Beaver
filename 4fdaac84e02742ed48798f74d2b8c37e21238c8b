@@ -1,0 +1,1 @@
+N3 : une réservation sans publication expire de façon récupérable et libère sa case par comparaison atomique de génération et d’état. Une publication incohérente reste fatale. Les tables Windows et macOS restent bornées à 64 ; les tests couvrent 64 expirations, la réutilisation et la course expiration/publication avec un seul gagnant.
