@@ -1,0 +1,13 @@
+J3 preflight fix round 1.
+
+Intention: require exact 40-hex SHA tokens in the Markdown cell and reject oversized inventories before reading.
+
+Red: node --test scripts/ollama/j3-reference-preflight.test.mjs failed on the 41-character SHA case and statCalls was 0 for a 256 KiB+1 file.
+
+Green: npm run test:j3-reference passed 14/14; SHA cases 39/40/41 covered and stat ran before read.
+
+Real result: npm run preflight:j3-reference with the explicit real inventory reported 6 J3 reference commits verified at 50b5515c6d849945f08073d04eebb0aecb479f26.
+
+Limits: 256 KiB inventory, 64 KiB Git output, six commits, 30 s Git timeout; explicit inventory path required.
+
+Recommendation: keep this read-only preflight and rerun it before each J3 mutation; do not import archive history.
