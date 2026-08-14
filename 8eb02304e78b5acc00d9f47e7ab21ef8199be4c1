@@ -1,0 +1,7 @@
+Problème : CodeQL alerte 37 (sévérité haute, js/file-system-race) a identifié un schéma realpath/lstat puis open dans le vérificateur des marqueurs Tauri. Malgré la comparaison d'identité après ouverture, le nom de fichier restait consulté avant la prise du handle.
+
+Décision : après la validation syntaxique bornée, ouvrir d'abord le handle puis établir toutes les preuves sur cet objet déjà fixé : fichier régulier, chemin canonique identique, absence de symlink/reparse, identité native identique, taille stable et hardlink refusé pour toute mutation. Une modification ultérieure du nom ne peut ainsi rediriger ni la lecture ni l'écriture.
+
+Alternatives rejetées : suppression CodeQL, commentaire d'exclusion ou simple seconde vérification avant open ; ces options auraient conservé la fenêtre check-then-use. Le hardlink reste accepté uniquement pour les références en lecture, car Cargo l'utilise réellement.
+
+Preuves : 27/27 contrats CEF, dont le nouveau refus d'une destination hardlinkée sans modification de sa source ; 29/29 contrats release ; vrai NSIS installé, comparé exactement avec le nouveau vérificateur puis désinstallé. La CI et CodeQL sont relancés pour confirmer la fermeture de l'alerte.
