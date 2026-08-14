@@ -1,0 +1,9 @@
+Probleme: le parcours CEF natif macOS de la CI echouait exactement apres 20 minutes. Le journal prouve que Beaver et WebDriver n'avaient pas encore demarre: Cargo compilait toujours des dependances puis cl-go-dash lorsque le lanceur generique a envoye SIGTERM. La meme limite couvrait a tort deux phases de nature differente.
+
+Objectif: rendre la preuve macOS fiable sur un runner froid sans transformer un vrai blocage applicatif en attente longue ou silencieuse.
+
+Decisions: budget centralise de 35 minutes pour la construction native froide; budget distinct de 10 minutes pour le parcours WebDriver deja construit; validation fail-closed de toute duree entre 1 ms et 60 minutes; message explicite avant SIGTERM. L'isolation Cargo target/e2e est conservee pour ne pas melanger les profils et artefacts CEF. Aucun comportement de production n'est modifie.
+
+Alternatives ecartees: relancer aveuglement la CI aurait reproduit le cache froid; supprimer l'isolation du target aurait pu melanger les profils et verrous; augmenter une limite unique aurait aussi masque un blocage de l'application.
+
+Verification: test rouge initial sur exports absents; 15/15 tests cibles apres implementation; 22/22 tests du runner E2E; npm run lint; npx tsc --noEmit; git diff --check; graphify update. La CI native doit maintenant prouver le build complet puis le parcours CEF reel.
