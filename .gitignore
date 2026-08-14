@@ -17,9 +17,9 @@ src-tauri/resources/searxng-sidecar/wheels.tmp/
 src-tauri/resources/searxng-sidecar/.prepare.lock
 src-tauri/resources/extension-host/runtime/
 .DS_Store
-# Notes de travail personnelles : rien de docs/ ne part sur GitHub, à la seule
-# exception des maquettes du site ci-dessous. Toute nouvelle exception ici rend
-# public un dossier destiné à rester local — on n'en ajoute pas sans raison.
+# Notes de travail personnelles : rien de docs/ ne part sur GitHub, aux seules
+# exceptions ci-dessous. Toute nouvelle exception ici rend public un dossier
+# destiné à rester local — on n'en ajoute pas sans raison.
 /docs/*
 # Maquettes du site : le code et les assets sont suivis, pas les captures
 # d'écran, qui se régénèrent et pèsent plus lourd que tout le reste.
@@ -32,6 +32,12 @@ src-tauri/resources/extension-host/runtime/
 !/docs/beaver-site/mockup/css/
 !/docs/beaver-site/mockup/js/
 !/docs/beaver-site/mockup/assets/
+# Briefs de contenu de la documentation du site : suivis parce qu'ils sont
+# destinés au développeur qui construira les pages, donc partagés hors de cette
+# machine. Ils décrivent le comportement réel du produit, code à l'appui.
+# Attention : ce dossier est public. Ce qui ne doit pas l'être — constats de
+# sécurité non corrigés, écarts relevés dans le code — n'a rien à y faire.
+!/docs/documentation-site-web/
 CLAUDE.md
 AGENTS.md
 .worktrees/
