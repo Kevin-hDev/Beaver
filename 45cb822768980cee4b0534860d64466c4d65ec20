@@ -1,0 +1,15 @@
+Objectif: rendre les résultats et erreurs de tous les outils fiables, structurés et actionnables pour le LLM, sans ajouter de mode ni modifier les permissions.
+
+Décisions: les succès ordinaires restent bruts pour la compatibilité; tous les états non ordinaires utilisent status, code, catégorie, retryable, hint, warnings et truncated. retryable signifie strictement qu'une relance est sûre sans vérifier l'état externe. Les résultats incertains après une mutation restent non relançables et demandent une vérification.
+
+Architecture: association stable par identifiant et index; chaînes appel-résultats atomiques dans le budget de contexte; résultats manquants matérialisés; historique compatible et validé; troncature explicite avec conservation privée; métadonnées froides séparées pour garder ToolResult compact.
+
+Couverture: Bash, fichiers, grep/glob, web, MCP, extensions, sous-agents, Git, Forecast, Office, batches, diagnostics, persistance et interface. Les erreurs et avertissements sont dépliables dans le même accordéon; les détails visuels sont bornés et rédigés.
+
+Revue: correction des relances shell potentiellement mutantes, distinction inspection/mutation Git sous-agent, troncature des colonnes, filtre MCP centralisé, validation imbriquée Forecast, causes Git précises et rédaction étendue des secrets. Le fallback des anciens textes libres reste volontairement conservateur et ne devine jamais une relance sûre.
+
+Périmètre: aucun changement dans permission_bash.rs, permission_policy.rs ou tool_plan_guard.rs. tool_executor_plan.rs ne change que le contrat de l'erreur produite après un refus déjà décidé.
+
+Validation finale: cargo check; clippy strict; cargo test --lib 2760 réussis; npm test 1782 Vitest, 2 CEF et 46 extension-host réussis; lint et TypeScript verts; suite Bash 18 tests répétée trois fois; diff check et limite de 230 lignes verts; graphify update réussi.
+
+Limites connues: compilation native Windows non exécutée sur ce Mac; aucun fournisseur web, MCP ou extension externe réel appelé. Les frontières de protocole et variantes simulées sont couvertes.
