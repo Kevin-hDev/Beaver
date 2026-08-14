@@ -1,5 +1,9 @@
 use std::path::PathBuf;
 
+pub mod ollama;
+#[allow(unused_imports)]
+pub use ollama::{ollama_paths, OllamaPaths};
+
 const MAX_DATA_COMPONENT_CHARS: usize = 255;
 
 #[cfg(all(not(test), not(feature = "cef-test-profile")))]
