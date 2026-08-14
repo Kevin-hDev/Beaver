@@ -1,0 +1,7 @@
+Reference: CI run 31566149033, job Backend (Rust), and scripts/build/check-rust-format.mjs against base d0c7d6b131d253ddbe2c80c70e44c2cab47ba396.
+Behavior: applies rustfmt with skip_children=true to the five changed Rust files rejected by the changed-file formatting contract; only whitespace and line wrapping change.
+Reason: cargo fmt was green, but the repository has a second authority that checks every changed Rust source independently, including files not traversed from the Windows module graph.
+Red proof: the local reproduction exited 1 on subagent_explorer_process.rs exactly as CI did; the CI job ended with Rust format check failed.
+Green proof: the exact check-rust-format.mjs command now exits 0 across all 192 changed Rust files, cargo fmt --check exits 0, cargo check exits 0, diff --check exits 0, all five files remain below 230 lines, and Graphify updated successfully.
+Neighbors: completes the CI-only formatting correction begun by 696893c; the earlier milestone behavior commits remain unchanged.
+Replacement: replaces five non-canonical source layouts detected by the repository-specific changed-file formatter; no runtime mechanism is replaced.
