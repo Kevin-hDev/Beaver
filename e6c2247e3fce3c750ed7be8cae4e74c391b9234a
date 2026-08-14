@@ -1,0 +1,19 @@
+Decisions taken after the 2026-07-29 working-directory investigation and cross-review.
+
+--- Stable project root, not confinement ---
+
+The selected project's canonical path is the authoritative session root. Incoming and previously stored working directories cannot replace it. Retry and Edit deliberately omit the cached directory so the backend resolves the project root again.
+
+This is an anchoring rule, not a filesystem sandbox. Full Access still bypasses approval requests, including for intentional work outside the project.
+
+--- Shell directory changes are per call ---
+
+A cd made inside one Bash command no longer mutates the session or affects later commands. Every call starts from the project root by default. The optional absolute workdir argument allows an intentional external directory for that call only, without an approval prompt in Full Access.
+
+--- Fail closed and memory routing ---
+
+A missing or inaccessible configured root now returns an error instead of silently falling back to the home directory. Persistence errors are propagated. Ordinary project paths such as . and ./src bypass the memory-path validator; actual memory paths still receive strict traversal validation.
+
+--- Verification ---
+
+Validated with 2462 Rust tests, 1641 frontend tests, 2 CEF tests, 46 extension-host tests, cargo clippy with warnings denied, cargo fmt check, TypeScript, lint, git diff check, and an updated Graphify graph.
