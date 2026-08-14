@@ -1,0 +1,19 @@
+Objective: close the review coverage gap around the public read/write path validators and complete the previously blocked native E2E validation.
+
+Decision: do not use the reviewer's direct /etc assertion against the machine policy. Beaver intentionally supports a full-disk policy, including as the compatibility default, so that test would depend on local configuration.
+
+Decision: add a bounded thread-local test policy override. It exercises the real public validate_read_path and validate_write_path functions under a restrictive policy without reading or mutating user configuration and without contaminating parallel tests. The override is compiled only for tests and restored on panic through RAII.
+
+Decision: keep the test utility in its own test-support file and rename read_allows_file_in_working_dir to read_allows_file_in_explicit_root so its name matches the behavior it verifies.
+
+TDD evidence: the new public-validator tests first failed to compile because the isolated policy seam did not exist, then passed after the minimal test-only seam was implemented.
+
+Validation: cargo fmt --all -- --check; cargo clippy --all-targets -- -D warnings; cargo clippy --all-targets --features e2e -- -D warnings.
+
+Validation: cargo test --all passed with 3035 passed and 2 ignored, plus the updater integration test. cargo test --all --features e2e passed with 3038 passed and 2 ignored, plus the updater integration test.
+
+Validation: npm run test:e2e passed with Beaver Dev closed; the isolated desktop application completed its real onboarding scenario (1/1). npm run test:e2e-runner passed 6/6.
+
+E2E runner assessment: no change was needed for the alleged false-green case. The previous early app exit produced a Webdriver severe startup error and a non-zero runner result; run.mjs already propagates runCommand's exit code, with an existing regression test proving cleanup cannot hide failure.
+
+Maintenance: graphify update . and git diff --check completed.
