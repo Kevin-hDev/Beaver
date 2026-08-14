@@ -1,0 +1,21 @@
+Lot 4 — gateway réactif et arrêt final Off
+
+Preuves rouges observées avant correction :
+- cargo fmt / test gateway après ajout des tests : FAIL, module backpressure absent.
+- cargo test ... service::tests : FAIL, méthodes d'annulation indépendante et publication Off absentes.
+- cargo test ... blocked_audit_never_holds_the_gateway_state_lock : FAIL, seam d'audit borné absent.
+- cargo test ... admission_is_closed_before_the_stop_audit_runs : FAIL, registres encore Open pendant l'audit.
+
+Décisions :
+- Les trois canaux utilisent une seule autorité try_enqueue/try_send ; une file pleine ne suspend jamais leur boucle réseau ni le heartbeat Discord.
+- Le jeton actif est accessible sans le mutex du run et est annulé avant toute attente de ce mutex.
+- L'admission des registres est fermée avant l'audit ; l'audit s'exécute hors verrou d'état et sous l'échéance absolue.
+- Un arrêt réussi publie Off dans l'état et dans les événements finaux ; Stopping n'est plus terminal.
+
+Preuves vertes :
+- cargo test --lib --features windows-tests services::gateway -- --nocapture : 142 passed, 0 failed.
+- cargo fmt --check : succès.
+- graphify update . : succès, 31 291 nœuds / 62 999 arêtes.
+- Tous les fichiers source modifiés restent sous 230 lignes (maximum : discord.rs, 219).
+
+Note : le build Windows ciblé émet 19 avertissements dead_code préexistants du navigateur CEF, aucun avertissement gateway nouveau.
