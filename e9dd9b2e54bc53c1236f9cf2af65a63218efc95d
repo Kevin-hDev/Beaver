@@ -1,0 +1,22 @@
+Problem
+The macOS emergency path previously only set a flag consumed by the normal tracker. If that tracker stopped or panicked, the ultimate app exit could leave admitted CEF helpers alive. The bootstrap parser also imposed an application-owned 64-argument limit on Chromium's opaque command line.
+
+Objective
+Make forced CEF shutdown independent from the normal tracker, preserve the 15-second app exit ceiling, and accept Chromium command lines without weakening validation of Beaver-owned switches.
+
+Decisions
+- Keep a fixed 64-slot parent-private emergency table. Each entry owns the admission authority and a fully validated process identity; no PID or process group is trusted alone.
+- Start and handshake a separate emergency reaper before the normal tracker. Closing invalidates admission first, signals every pending/admitted helper, and the reaper performs repeated full-identity checks before SIGKILL.
+- Give admitted helpers a CLOCK_MONOTONIC deadline one second before ultimate app exit. The margin is derived from the global budget for short test policies and remains exactly 14 seconds in production.
+- Keep helper-opened mappings and monitoring in place before CEF proceeds; helpers fail closed if the parent, generation, control page, or deadline becomes invalid.
+- Parse only Beaver-owned switches as bounded UTF-8 values. All other Chromium arguments remain opaque and unbounded by Beaver, including non-UTF-8 values.
+- Extract window hiding into a dedicated presentation module so app_exit.rs remains below the 230-line source limit.
+
+Verification
+- 38 app_exit tests passed with the windows-tests profile.
+- cargo check --lib --features cef-cross-check passed.
+- cargo clippy --lib --features cef-cross-check -- -D warnings passed before the final presentation-only extraction; the final shared compilation passed again.
+- cargo fmt --check and git diff --check passed.
+- All modified production Rust files are at or below 230 lines.
+- Native macOS tracker/reaper tests are included, including stopping the normal tracker before forcing the helper; execution is delegated to macOS CI because Windows cannot link macOS system libraries.
+- The code graph was refreshed with graphify update .
