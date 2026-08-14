@@ -1,0 +1,9 @@
+Objectif : traiter les deux derniers points de review sur le cycle de vie SearXNG.
+
+Décisions : kill_orphan_sidecar et kill_child_process passent désormais par un helper spawn_blocking commun. SearxngSidecar utilise un verrou possédé via Arc ; le verrou est transféré dans la tâche bloquante pendant les nettoyages, de sorte qu'une annulation du futur asynchrone ne puisse pas libérer l'état avant la fin du traitement du PID.
+
+Code mort : SEARXNG_READY, is_ready, set_ready, leurs imports, leurs écritures et leur test ont été supprimés. L'historique montre que leur seul consommateur de production avait été retiré dans f3c5c16.
+
+Test : le remplacement vérifie que le helper exécute effectivement l'opération hors du fil asynchrone. Le fichier final contient 209 lignes.
+
+Validation : cargo fmt --all -- --check ; cargo clippy --all-targets -- -D warnings ; tests SearXNG ciblés (3 réussis) ; cargo test --quiet (2843 réussis, 0 échec) ; graphify update .
