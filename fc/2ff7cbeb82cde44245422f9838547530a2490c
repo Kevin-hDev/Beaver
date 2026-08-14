@@ -1,0 +1,9 @@
+Jalon 2 preflight — stockage privé Windows parallèle.
+
+Référence: spécification docs/superpowers/specs/2026-08-09-shutdown-milestone-2-services-design.md; base J1 d0c7d6b. Les deux tests imposés passent seuls mais la suite parallèle échouait aléatoirement dans des écritures de session avec private-store-unavailable.
+
+Cause observée: sous charge, MoveFileExW et l'application/vérification des ACL du stockage privé s'exécutaient simultanément. L'instrumentation cfg(test) a montré des remplacements refusés et des descripteurs relus sans SE_DACL_PROTECTED après une application réussie.
+
+Décision: SECURITY_METADATA est l'unique mutex Windows pour ordonner seulement replace_file et secure_acl. Les écritures de contenu et fsync restent parallèles. Un mutex empoisonné échoue fermé avec le code générique existant.
+
+TDD rouge: concurrent_writes_under_one_private_parent_do_not_interfere échoue 0/1 avec 22 écrivains en erreur avant le verrou. Vert: test 1/1; correction 64/65 1/1; lecture résultat persistant 1/1; crate Windows ACL 10/10; suite Rust à 32 threads 3083 réussis, 0 échec, 4 ignorés; Clippy strict all-targets vert avec le cache CEF local.
