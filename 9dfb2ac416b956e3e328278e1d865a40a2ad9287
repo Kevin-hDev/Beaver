@@ -1,0 +1,19 @@
+Problème
+La fermeture coordonnée traitait le dépassement de 50 ms de la barrière d'admission CEF comme une corruption d'invariant. Ce résultat déclenchait la sortie brute avant l'arrêt d'Ollama, SearXNG, des extensions et des autres ressources.
+
+Objectif
+Garantir que la barrière CEF reste bornée sans transformer une machine lente ou un antivirus en abandon immédiat du nettoyage global.
+
+Décisions
+- La durée de la barrière est centralisée dans la chronologie de fermeture et convertie en échéance monotone absolue.
+- Le résultat CEF distingue explicitement Drained et TimedOut.
+- TimedOut ferme l'admission, produit uniquement un diagnostic non sensible, puis poursuit le nettoyage coordonné.
+- La sortie brute reste réservée aux vraies violations d'autorité du coordinateur : chronologie impossible à publier ou tueur ultime impossible à armer.
+- Aucun délai local n'est recréé dans le superviseur CEF.
+
+Preuves
+- Test TDD ajouté : cef_barrier_timeout_keeps_coordinated_shutdown_running.
+- Tests app_exit : 38 réussis.
+- Tests de table CEF : 7 réussis.
+- cargo fmt --check et git diff --check réussis.
+- Fichiers de production modifiés sous la limite de 230 lignes.
