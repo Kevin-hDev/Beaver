@@ -1,0 +1,13 @@
+Objective: close the shell profile discovery gaps reported after 79c7069 without weakening workspace confinement or disabling bash/bash_control.
+
+Decisions: login PATH discovery now performs at most two sandboxed passes inside the existing global 8-second budget. The second pass is seeded with the first normalized PATH so its executable directories become read-only tool roots; if refinement fails or times out, the first valid capture is preserved.
+
+Profile capture receives a fixed, bounded read-only allowlist for common user tool managers and shell configuration roots: .nvm, .local/bin, .local/share/mise, .rbenv, .pyenv, .asdf, .volta, .bun, .cargo/bin, .oh-my-zsh, .zsh, and .config/zsh. Every existing root is canonicalized, must remain below home, and is rejected when any path component is a symlink. Home, .config, .local, filesystem roots, writes outside the private capture temp, and network access remain forbidden.
+
+Hardening: captured PATH entries must be absolute, bounded, control-free, and existing directories before they are retained. This prevents direct data encoding through invented PATH entries. Tool-root parent expansion remains intentionally tied to a PATH bin/sbin/shims directory because the parent supplies that toolchain's libraries; the executable filter still applies to the PATH directory itself.
+
+Compatibility: the helper parser now accepts a valid executable with zero command arguments. Process capture/timeout/cleanup was extracted into shell_environment_capture.rs so source files remain below the repository's 230-line limit. Linux and macOS consume the same profile read roots; Windows profile capture remains unsupported and unchanged.
+
+Regression coverage: added two-pass refinement and fallback tests, rejection of nonexistent discovered entries, narrow-root and symlink rejection tests, zero-argument helper parsing, and a real macOS Seatbelt test sourcing nvm.sh and executing a tool from .local/bin while blocking escape writes.
+
+Validation executed: cargo test => 2897 passed, 0 failed, 1 ignored; ignored macOS development test => git/npm/cargo/go/heredoc/diff/native all OK, Darwin temp and outside writes blocked; cargo clippy --all-targets -- -D warnings => OK; cargo fmt --all -- --check => OK; graphify update . => OK. Linux cross-clippy stopped in GTK pkg-config because no Linux sysroot was configured. Windows cross-clippy stopped in native dependencies because the Windows SDK/headers and llvm-rc are unavailable on this Mac; both fail before Beaver code and remain for native CI.
