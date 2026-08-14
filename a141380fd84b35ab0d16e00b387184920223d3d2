@@ -1,0 +1,13 @@
+Reference: CI run 31571266444, Linux jobs 94033600300 and 94033600452.
+
+Behavior: every supervised service task is now launched by Tauri's global async executor, and the registry owns the matching Tauri join handle through normal completion, bounded shutdown, or forced abort.
+
+Reason: Tauri's synchronous setup callback has no entered Tokio runtime on its event-loop thread. Calling tokio::spawn there panicked while the registry lock was held, and unwinding the admission re-entered that same lock, freezing setup immediately after app-handle-initialized.
+
+Red proof: synchronous_startup_can_spawn_tracked_service_work left the test process blocked past the 120-second command limit on the previous implementation, matching the two 210-second Linux journey timeouts.
+
+Green proof: the new regression test passes; all 8 work-registry tests pass; cargo fmt --check, cargo check --features e2e, and strict clippy pass; the complete Windows Rust suite passes 3159/3159; graphify update completes with 31065 nodes and 62559 edges.
+
+Neighbors: completes the milestone-2 adoption of the shared work registry without changing capacity, cancellation, deadline, or shutdown ordering. The E2E lifecycle milestones from 4b74126 remain bounded diagnostics.
+
+Replacement: replaces direct tokio::spawn in the single supervised-work authority; no service-specific fallback is introduced.
