@@ -1,0 +1,26 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 59152714b472bfde90b55f53ee31eafcf81081bf
+Motif du rattachement: commit réécrit
+Sujet original: test(extensions): make stop timeout deterministic
+---
+
+Raison: le test d'arret incomplet utilisait une echeance deja expiree, mais timeout_at peut laisser gagner une operation immediatement prete; Linux a donc confirme l'arret et rendu l'assertion dependante de la vitesse. Decision: verrouiller explicitement le vrai processus enfant sous cfg(test), donner une fenetre de 20 ms, verifier que l'echec conserve son slot, puis liberer et nettoyer le processus. Preuves: echec CI Linux reproduit dans le job 94296333700; test cible 10/10; suite Rust parallele 3226 reussis, 2 ignores, 0 echec; cargo clippy --all-targets -- -D warnings vert.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 91f96c1b1f87154aee2efecb4b3b6427552e80bc
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): plan final minor review fixes
+---
+
+Raison : les sept constats couvrent quatre domaines et exigent des preuves rouges puis vertes sans mélanger leurs autorités. Décision : planifier huit tâches, regroupées en trois commits de code révisables (scheduler, gateway, OAuth/Forecast), suivies des vérifications et du push sans fusion. Preuve : plan auto-relu, huit tâches couvrent les sept constats, aucun placeholder et commandes ciblées sans filtre de test vide.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: f88e6db4079ce5472353456e122ab82c36d24ffa
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): design final minor review fixes
+---
+
+Raison : la re-review du lot mineur a confirmé sept écarts avant fusion et le document source n'était pas encore présent dans la branche. Décision : conserver la review et verrouiller la conception des correctifs, notamment le gel durable du curseur pendant un réveil en vol, la marge de rotation à 250 lignes et la suppression des coutures Forecast du binaire publié. Preuve : état initial 3226 tests Rust réussis, 0 échec, 2 ignorés avec cargo test --lib --features windows-tests -- --test-threads=1 ; auto-relecture du périmètre et absence de placeholder.
