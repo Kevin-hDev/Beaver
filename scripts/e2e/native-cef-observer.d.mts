@@ -6,6 +6,11 @@ export interface NativeProcessRecord {
 }
 
 export function runtimeRootForBinary(platform: string, binaryPath: string): string;
+export function ownedCefHelperPids(
+  processes: NativeProcessRecord[],
+  root: string,
+  platform?: string,
+): number[];
 export function waitForOwnedCefHelper(options: {
   platform?: string;
   root: string;
