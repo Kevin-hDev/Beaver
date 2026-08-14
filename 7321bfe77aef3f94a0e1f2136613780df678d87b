@@ -1,0 +1,15 @@
+Shell change tracking edge-case follow-up
+
+Directory fallback: a bounded scan no longer treats absence from an incomplete side as proof. Additions require a complete initial scan, deletions require a complete final scan, and modifications remain reportable when both states are known. The incomplete flag is preserved. This intentionally prefers omitting an uncertain path over inventing a deletion or addition.
+
+Watcher dispatch: notify events are prepared once into at most 128 paths. Linux directory checks happen once per path rather than once per hub. The bounded list of at most 64 hubs is copied while holding the global lock, then all event recording and filesystem work happens after the lock is released.
+
+Blocking setup: spawn_blocking handles are now explicitly dropped after their timeout. No abort call suggests cancellation that Tokio cannot provide. A late watcher setup may still populate the shared cache as designed; a late baseline task simply finishes detached.
+
+Watcher detach recovery: tracked paths use bounded sets. Successful unwatch operations are removed, failed operations remain registered and can be retried. Attach rollback also records only watches that could not be removed, preventing the fix from introducing an untracked partial watch. A persistent OS unwatch failure can retain a root slot until a retry succeeds; failing closed is preferable to losing ownership of the watch.
+
+Settle delay: the 200 ms event delay is used only when both Git and directory baselines are unavailable. A directory baseline is authoritative at final scan and no longer pays that delay.
+
+Scope: no Plan mode, permission, command policy, shell capability, or source-write restriction changed.
+
+Validation: cargo fmt --check; cargo check; cargo clippy --all-targets with warnings denied; four focused regressions; two complete Rust passes at 2623 tests, including one with four concurrent CPU loads; isolated mkdir tracking at 0.56 s; npm run lint; npx tsc --noEmit; npm test with 1746 Vitest, 2 CEF, and 46 extension-host tests; git diff --check; graphify update. Native Linux and Windows compilation was not performed on this Mac and remains covered by platform CI.
