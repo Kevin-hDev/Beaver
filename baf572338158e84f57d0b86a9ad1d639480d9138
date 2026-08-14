@@ -1,0 +1,26 @@
+Problème
+Dans le worktree codex/shutdown-milestone-1-core, cef-dll-sys générait un objet MSVC dont le chemin complet atteignait 262 caractères sous src-tauri/target. Malgré LongPathsEnabled, cl.exe échouait avec C1083 et un nom de fichier généré vide/invalid argument. Le message Cargo ne montrait que l'échec générique du build CEF.
+
+Objectif
+Rendre npm run tauri dev/build fiable dans les worktrees Windows longs, sans changer les builds macOS/Linux ni empêcher un développeur de choisir son propre cache Cargo.
+
+Décisions
+- Quand CARGO_TARGET_DIR n'est pas défini et que la plateforme est Windows, utiliser le dossier target à la racine du worktree.
+- Ce déplacement ramène le chemin reproduit de 262 à 252 caractères et reste isolé par worktree.
+- Préserver intégralement un CARGO_TARGET_DIR explicitement configuré.
+- Ne définir aucune valeur par défaut sur macOS ou Linux : Cargo conserve son comportement actuel.
+- Construire un environnement enfant dédié au lieu de modifier process.env globalement.
+- Valider et borner les chemins avant le lancement ; les arguments restent transmis sans shell.
+- Conserver target/ ignoré par Git.
+
+Tests et preuves
+- Cycle TDD observé : les trois tests initiaux ont échoué avant l'export du résolveur puis sont passés après le correctif ; le test de dépassement de longueur a également été vu rouge puis vert.
+- 10/10 tests CEF ciblés passent.
+- npm test : 412 fichiers et 1885 tests frontend passent, ainsi que 44 tests de scripts de build, 10 tests CEF, 6 tests E2E et 52 tests de l'hôte d'extensions.
+- npm run lint et npx tsc --noEmit passent.
+- npm run tauri -- --version passe par le lanceur corrigé.
+- cargo build --manifest-path src-tauri/Cargo.toml --lib termine avec succès dans le nouveau target racine.
+- Graphify a été mis à jour après les changements.
+
+Nettoyage local
+L'ancien cache src-tauri/target, strictement vérifié dans ce worktree, a été supprimé : 13 909 246 184 octets récupérables par reconstruction. Le nouveau cache target fonctionnel a été conservé.
