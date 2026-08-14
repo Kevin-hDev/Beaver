@@ -1,0 +1,58 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 10ba904aba1aad1c727f24d72bfd3e80d6a7f98d
+Motif du rattachement: commit réécrit
+Sujet original: fix(ci): gate CEF exit diagnostics by platform
+---
+
+Objectif
+- Rétablir la compilation du profil E2E Linux sans modifier le comportement CEF Windows/macOS validé par les parcours natifs.
+
+Cause racine
+- BrowserExitSource est volontairement compilé uniquement sur Windows et macOS.
+- exit_source_name était conditionné seulement par la feature e2e, donc le profil E2E Linux compilait cette fonction sans le type associé.
+- Les jobs Backend Rust et Desktop E2E Linux échouaient sur la même erreur E0425/E0433.
+
+Décision
+- Aligner exactement la condition de compilation de exit_source_name sur celle de BrowserExitSource : feature e2e ET plateforme Windows ou macOS.
+- Ne pas élargir artificiellement BrowserExitSource à Linux : ce diagnostic décrit exclusivement les sorties CEF natives supervisées sur les deux plateformes actuellement intégrées.
+- Ne toucher à aucune logique de supervision, aucun délai et aucun parcours de fermeture.
+
+Preuves avant commit
+- CI 9009084 : Windows CEF natif vert, macOS CEF natif vert, Windows Rust vert, frontend vert, CodeQL et audits verts.
+- Journal Linux : les deux échecs partagent uniquement l'absence de BrowserExitSource dans e2e_profile.rs.
+- cargo fmt --check : succès.
+- cargo check --all-targets --features e2e : succès.
+- cargo clippy --all-targets --features e2e -- -D warnings : succès.
+- git diff --check : succès.
+- graphify update . : exécuté, aucune modification de topologie.
+
+Limite locale observée
+- Une tentative de suite E2E Rust complète a été interrompue par Windows avec os error 1455 (fichier de pagination insuffisant) dans le cache Cargo partagé ; aucun test du code n'a échoué. La CI isolée est relancée pour la preuve complète multi-OS.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 2250650ce2f03a42ff4b1d818d881052d01042b1
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs: clarify shutdown correction races
+---
+
+Clarification de revue : l’action finale de N2 est atomique et déclenchée une seule fois ; l’expiration N3 utilise clear_if avec génération et état Reserved ; le perdant s’abandonne avant CEF ; le test N1 analyse la structure YAML ; le passage macOS de 14 à 13 secondes est volontaire.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 4e9d21232dbf552eb0584fcbb8c80325ac98dac9
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs: specify final shutdown review fixes
+---
+
+Décision : figer avant implémentation les corrections N1, N2, N12, N3 et N4, avec une autorité unique pour chaque état, délai et table. Le document impose le TDD, les budgets absolus, les collections bornées et laisse N5 à N11 ainsi que N13 à N15 hors périmètre.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: d2caca5083cd7dace6f9dad6284f2bfb2af9f019
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs: plan shutdown review corrections
+---
+
+Plan d’exécution : cinq corrections séparées en étapes rouge-vert avec fichiers, commandes, critères d’acceptation et commits dédiés. La raison est de rendre chaque garantie vérifiable indépendamment avant la validation cumulée.
