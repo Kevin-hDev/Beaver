@@ -1,0 +1,13 @@
+Objectif : appliquer les constats actionnables de l’audit général des outils sans rouvrir le chantier du cache ni prendre à la place du produit les décisions de renommage ou de suppression.
+
+Contrats du catalogue : la source native est isolée de la fusion dynamique des extensions. Un test exhaustif protège les 45 outils, les 12 verrouillés, les 33 optionnels, les 24 actifs par défaut, les 16 groupes et l’unique exception search_extension_tools. Un second test exige une description pour chaque paramètre obligatoire et un relevé reproductible mesure 21 221 caractères de descriptions, 22 200 caractères sérialisés et environ 5 566 tokens pour le jeu natif actif par défaut.
+
+Sous-agents : les métadonnées exposent désormais les alias exacts subagent_id et change_id tout en conservant child_session_id et id pour compatibilité. Les trois outils expliquent leur origine et le validateur central exige deux UUID v4 avant le dispatcher. Le test couvre le parcours réel métadonnées vers arguments vers trois outils.
+
+Guidage : les prompts n’inventent plus un timeout Bash de 120 secondes, ne présentent plus read_image comme un outil de vision et séparent MCP, extensions Beaver et skills. web_search décrit Brave, Exa, Firecrawl et le repli local SearXNG sans clé.
+
+Diagnostics : tool-metrics.json agrège uniquement les noms et compteurs de résultat, jamais les arguments, prompts, contenus ou chemins. Le registre privé est versionné, atomique, borné à 256 outils et 128 Kio, avec lecture et désérialisation limitées. Les refus utilisateur, blocages explicites des politiques Beaver, erreurs de permission système et annulations restent distincts. agent_diagnostics expose au plus 20 entrées classées par échecs puis volume ; une panne de télémétrie ne bloque pas l’outil et son avertissement est limité.
+
+Choix différés : renommer, remplacer ou supprimer read_image, différer Forecast ou Office et renommer les outils historiques nécessitent une décision produit ou de compatibilité et ne sont pas imposés par ce commit.
+
+Validation : 2 856 tests Rust, 1 794 tests interface, 2 tests CEF et 46 tests de l’hôte d’extensions ; cargo check, Clippy strict, formatage Rust, TypeScript et lint réussis. Graphify a été mis à jour sur les 25 fichiers du chantier avec une intégrité propre. Le cache fournisseur reste validé ; ses trois trous de mesure non bloquants sont consignés séparément dans la mémoire Beaver.
