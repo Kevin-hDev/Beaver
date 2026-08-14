@@ -1,0 +1,11 @@
+Reference: CI run 31579310339, Windows job 94058542672.
+
+Behavior: test-only milestones now identify the last completed PTY teardown boundary: reader cancellation, child shutdown, process-tree termination, direct child reap, PTY master drop, and reader join. Production binaries contain none of these diagnostics because every line is guarded by cfg(test).
+
+Reason: the Windows suite returned false from the real-shell five-second shutdown test and then stopped before the next terminal result. The previous close-worker fix proved the Tokio runtime no longer pins, but the live log could not distinguish an unbounded taskkill, child wait, ClosePseudoConsole, or reader join. Guessing the next fix would violate the root-cause rule.
+
+Red proof: GitHub run 31579310339 reports shutdown_reaps_a_real_shell_and_waits_for_terminal_threads as FAILED after five seconds, then the Windows job remains in progress after entering the following PTY test.
+
+Local proof: cargo fmt --check passes; the ordered terminal module completes with 9 passed and 2 intentional Windows ignores; the diagnostic reaches close: complete on the real shell and reaches child reaped on the direct PTY tests. Source files remain below 230 lines (104 and 195). graphify update completes with 31069 nodes and 62566 edges.
+
+Next decision: use the first missing milestone on a GitHub-hosted Windows runner to correct the exact blocking boundary, then remove or narrow these diagnostic traces.
