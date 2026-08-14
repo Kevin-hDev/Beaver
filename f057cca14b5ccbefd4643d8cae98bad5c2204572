@@ -1,0 +1,11 @@
+Objectif : mesurer le cache par tentative, requête et session avec les durées et le fournisseur réellement utilisé, compléter les parseurs DeepSeek et GPT-5.6, puis appliquer uniquement les contrôles de cache officiellement acceptés par chaque fournisseur.
+
+Décisions de mesure : séparer lecture, écriture et miss ; conserver inconnu quand le fournisseur ne répond pas, sauf le zéro explicitement défini par Mistral ; stocker un journal atomique borné à 1 000 tentatives globales et 200 par session ; ne jamais enregistrer les prompts, clés, erreurs brutes ou chemins sensibles.
+
+Décisions fournisseur : OpenAI GPT-5.6 reçoit une clé opaque, un breakpoint stable et le TTL explicite 30m ; OpenRouter reçoit un session_id opaque et les métadonnées de routage, mais les champs GPT-5.6 seulement pour les modèles openai compatibles ; Mistral, Moonshot et Kimi reçoivent leur clé documentée ; xAI API-key reçoit x-grok-conv-id ; Codex OAuth reçoit prompt_cache_key. DeepSeek, Groq, Google, Cerebras et Z.ai conservent leur cache automatique sans champ étranger.
+
+Choix différés : cache explicite Gemini natif, clé Cerebras conditionnée au compte et contrat xAI OAuth. Ils restent désactivés tant que leur chemin exact n'est pas confirmé et testé.
+
+Robustesse : refus des flux SSE fermés avant le marqueur final, détection des erreurs OpenRouter dans un HTTP 200, attente DeepSeek portée à 600 secondes, identités Heartbeat stables et validation stricte des mesures persistées.
+
+Validation locale : 2 835 tests Rust, 1 794 tests interface, 2 tests CEF et 46 tests de l'hôte d'extensions ; cargo check, Clippy strict, TypeScript, ESLint et formatage réussis. Aucun appel fournisseur payant n'a été lancé. Les recherches et limites restantes sont consignées dans docs/feature/tools/audit-catalogue-outils.md et investigation-cache-fournisseurs.md.
