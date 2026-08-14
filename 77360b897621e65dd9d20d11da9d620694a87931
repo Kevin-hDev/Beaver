@@ -1,0 +1,20 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 0b34451b35876e590163544f68899e7bab764a21
+Motif du rattachement: commit réécrit
+Sujet original: fix(runtime): close OAuth and Forecast review gaps
+---
+
+Raison : une connexion OAuth silencieuse bloquait l'unique boucle d'acceptation, et l'injection de panne Forecast restait compilée dans le chemin de production. Décision : borner chaque connexion OAuth à 5 secondes dans un JoinSet limité à 50 tentatives, tout en conservant l'échéance globale de 300 secondes ; réserver les frontières d'injection Forecast à cfg(test) et faire partager aux tests les mêmes étapes réelles de désinstallation. TDD rouge : silent_connection_does_not_block_valid_mcp_callback expirait après 1 seconde avant le correctif. Preuves vertes : services::mcp_oauth 8 réussis, services::forecast::model_manager 20 réussis, cargo check --lib vert avec le chemin CARGO_TARGET_DIR court imposé par le lanceur Windows ; cargo fmt --check et git diff --check verts ; fichiers de production à 189 et 102 lignes.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: b139aac8b61ad85dab284b0dfda5aec9c0aa4326
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): align Windows verification profiles
+---
+
+Raison : la première exécution de Clippy a révélé que le plan combinait à tort le profil de tests sans CEF avec l'analyse de tous les binaires natifs. Décision : réserver windows-tests à cargo test et exécuter Clippy sans cette feature, exactement comme la CI Windows. Preuves : la commande incorrecte échoue sur le cfg native_browser désactivé ; cargo clippy --all-targets -- -D warnings réussit en 45,1 s et cargo check réussit.
+Preuve documentaire supplémentaire : git diff 5915271..HEAD --check ne signale plus de ligne vide finale.
+Vérification finale : Rust 3234 réussis, 0 échec, 2 ignorés ; frontend 1918/1918 et toutes les suites npm réussies ; cargo fmt --check, cargo check, Clippy CI Windows, TypeScript et lint verts ; diff sans erreur ; maximum production modifié 214 lignes ; graphify update . réussi avec 31704 nœuds et 63822 arêtes.
+CI GitHub finale : 14/14 contrôles verts. La première tentative macOS CEF a rencontré une course reaper-liveness sans changement de code CEF ; la relance isolée du même job a passé cargo check, Clippy, les tests de supervision et le vrai parcours navigateur. Windows CEF a réussi dès la première tentative.
