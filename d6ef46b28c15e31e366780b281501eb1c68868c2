@@ -1,0 +1,7 @@
+Reason: Windows cargo fmt does not discover these cfg-gated modules, while the repository CI intentionally formats every changed Rust source independently so Linux-only files cannot escape the style contract.
+
+RED: PR 14 Backend (Rust), run 31612271672 / job 94166312605, failed in scripts/build/check-rust-format.mjs. The same command reproduced locally and reported three changed files.
+
+GREEN: RUSTFMT_BASE_SHA=d0c7d6b131d253ddbe2c80c70e44c2cab47ba396 node scripts/build/check-rust-format.mjs completed with exit 0. The focused Windows tests passed: tool_bash_changes 6/6 and tool_bash_process_run 2/2. Both production files remain below 230 lines (224 and 181).
+
+Graph: graphify update . completed and rebuilt the graph at 31397 nodes / 63235 edges.
