@@ -1,0 +1,5 @@
+Objectif : fiabiliser l'authentification OAuth ChatGPT et les flux de réponses OpenAI, en alignant Beaver sur le comportement actuel de Codex tout en conservant un repli HTTPS sûr.
+
+Corrections principales : suppression de la limite totale de 180 secondes qui coupait les longues générations ; délai basé uniquement sur une réelle inactivité ; validation obligatoire de la fin complète du flux ; transport WebSocket v2 avec repli HTTPS et période de refroidissement ; reprises plus courtes avec nettoyage de la réponse partielle ; renouvellement OAuth anticipé et sérialisé, récupération après 401, callbacks sur les ports 1455/1457 et validation PKCE/state renforcée ; limites mémoire et validation stricte des événements et appels d'outils.
+
+Validation : 2 653 tests Rust, 1 795 tests frontend/hôte, TypeScript, lint, format et Clippy strict réussis. Graphify a été actualisé.
