@@ -1,0 +1,9 @@
+Objectif : fermer les six points mineurs restants de la review du confinement des sessions, sans réduire les capacités bash/bash_control ni modifier la politique réseau ou l'ordre de priorité des racines.
+
+Décisions : exclure du suivi les répertoires générés Python, Go, CocoaPods, Gradle et couverture ; garantir dans canonical_local que les ressources Beaver restent sous le data_dir canonique tout en conservant séparément les ressources de migrations activées ; fixer MAX_READ_ROOTS à 160 et MAX_WRITE_ROOTS à 100 ; vérifier le plafond d'écriture contre le pire cas réellement déclaré par source_specs ; conserver les bornes amont et MAX_ROOTS Windows dérivé.
+
+Diagnostic : suppression des eprintln de saturation afin de ne jamais polluer stderr. Un fichier privé atomique shell-root-limit.json, borné à moins de 256 octets et sans chemin, décrit les plafonds atteints et est effacé quand la saturation disparaît. Le résultat bash reçoit un avertissement borné uniquement si le fichier a été modifié depuis le démarrage de la commande ; le contenu n'est lu qu'après ce contrôle.
+
+Structure : extraction des répertoires générés, de la finalisation des résultats et du routage dynamique pour maintenir chaque fichier source sous 230 lignes. Aucun comportement de routage n'a été modifié.
+
+Validation exécutée : cargo test = 2915 passés, 0 échec, 1 ignoré ; cargo clippy --all-targets -- -D warnings = vert ; cargo fmt --check = vert ; test de saturation = stderr vide et diagnostic borné/sans chemin ; test Seatbelt macOS ignoré relancé manuellement = git/npm/cargo/go/heredoc/diff/compilation native OK, répertoires temporaires Darwin et écriture hors périmètre bloqués. graphify update . exécuté. Frontend non relancé : diff exclusivement Rust. Linux Landlock et Windows AppContainer restent à valider en CI native.
