@@ -1,9 +1,8 @@
 import { execFile } from "node:child_process";
-import { readFile, stat } from "node:fs/promises";
+import { open, stat } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-
 const execFileAsync = promisify(execFile);
 const MAX_COLLECTION_SIZE = 6;
 const MAX_MARKDOWN_BYTES = 256 * 1024;
@@ -15,7 +14,6 @@ const SHA_PATTERN = /(?<![0-9A-Fa-f])[0-9a-f]{40}(?![0-9A-Fa-f])/gu;
 const HEAD_REF_PATTERN = /refs\/heads\/[A-Za-z0-9][A-Za-z0-9._/-]{0,255}/gu;
 const NOTES_REF_PATTERN = /refs\/notes\/[A-Za-z0-9][A-Za-z0-9._/-]{0,255}/gu;
 const FAILURE = "J3 reference preflight failed";
-
 function fail() {
   throw new Error(FAILURE);
 }
@@ -137,17 +135,23 @@ function remoteArchiveRef(archiveRef) {
   const branch = archiveRef.slice("refs/heads/".length);
   return validateRef(`refs/remotes/origin/${branch}`, "refs/remotes/");
 }
-async function readInventory(inventoryPath, repoRoot, statFile = stat, readInventoryFile = readFile) {
+async function readInventory(inventoryPath, repoRoot, statFile = stat, openFile = open) {
   assertSafePath(repoRoot);
   assertSafePath(inventoryPath);
-  if (typeof statFile !== "function" || typeof readInventoryFile !== "function") fail();
+  if (typeof statFile !== "function" || typeof openFile !== "function") fail();
   const path = isAbsolute(inventoryPath) ? inventoryPath : resolve(repoRoot, inventoryPath);
   try {
     const metadata = await statFile(path);
     if (!metadata || !Number.isSafeInteger(metadata.size) || metadata.size < 0 || metadata.size > MAX_MARKDOWN_BYTES) fail();
-    const markdown = await readInventoryFile(path, "utf8");
-    if (Buffer.byteLength(markdown, "utf8") > MAX_MARKDOWN_BYTES) fail();
-    return markdown;
+    const handle = await openFile(path, "r");
+    try {
+      const buffer = Buffer.alloc(MAX_MARKDOWN_BYTES + 1);
+      const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+      if (!Number.isSafeInteger(bytesRead) || bytesRead < 0 || bytesRead > MAX_MARKDOWN_BYTES) fail();
+      return buffer.subarray(0, bytesRead).toString("utf8");
+    } finally {
+      await handle.close();
+    }
   } catch {
     fail();
   }
@@ -171,11 +175,11 @@ export async function verifyJ3ReferenceArchive({
   inventoryPath,
   runGit = createGitRunner(repoRoot),
   statFile = stat,
-  readInventoryFile = readFile,
+  openFile = open,
 }) {
   try {
     if (typeof runGit !== "function") fail();
-    const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot, statFile, readInventoryFile));
+    const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot, statFile, openFile));
     const remoteRef = remoteArchiveRef(inventory.archiveRef);
     const actualHead = (await callGit(runGit, ["rev-parse", "--verify", `${remoteRef}^{commit}`])).trim();
     if (actualHead !== inventory.archiveHead) fail();

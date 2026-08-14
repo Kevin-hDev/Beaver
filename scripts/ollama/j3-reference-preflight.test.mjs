@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, open, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
@@ -178,14 +178,14 @@ test("refuse un fichier de plus de 256 Kio avant sa lecture complète", async ()
   const inventoryPath = join(temporaryRoot, "oversized.md");
   await writeFile(inventoryPath, Buffer.alloc(MAX_INVENTORY_BYTES + 1, "x"));
   let statCalls = 0;
-  let readCalls = 0;
+  let openCalls = 0;
   const statFile = async (...args) => {
     statCalls += 1;
     return stat(...args);
   };
-  const readInventoryFile = async (...args) => {
-    readCalls += 1;
-    return readFile(...args);
+  const openFile = async () => {
+    openCalls += 1;
+    throw new Error("open should not be called");
   };
 
   try {
@@ -195,12 +195,43 @@ test("refuse un fichier de plus de 256 Kio avant sa lecture complète", async ()
         inventoryPath,
         runGit: async () => "",
         statFile,
-        readInventoryFile,
+        openFile,
       }),
       GENERIC_FAILURE,
     );
     assert.equal(statCalls, 1);
-    assert.equal(readCalls, 0);
+    assert.equal(openCalls, 0);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test("borne la lecture après une course de taille", async () => {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "j3-reference-race-"));
+  const inventoryPath = join(temporaryRoot, "race.md");
+  await writeFile(inventoryPath, Buffer.alloc(MAX_INVENTORY_BYTES + 32, "x"));
+  let openCalls = 0;
+  let requestedBytes = 0;
+  const statFile = async () => ({ size: 1 });
+  const openFile = async (...args) => {
+    openCalls += 1;
+    const handle = await open(...args);
+    return {
+      read: async (...readArgs) => {
+        requestedBytes = readArgs[2];
+        return handle.read(...readArgs);
+      },
+      close: (...closeArgs) => handle.close(...closeArgs),
+    };
+  };
+
+  try {
+    await assert.rejects(
+      () => verifyJ3ReferenceArchive({ repoRoot: temporaryRoot, inventoryPath, runGit: async () => "", statFile, openFile }),
+      GENERIC_FAILURE,
+    );
+    assert.equal(openCalls, 1);
+    assert.equal(requestedBytes, MAX_INVENTORY_BYTES + 1);
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
