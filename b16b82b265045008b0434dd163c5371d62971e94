@@ -1,0 +1,8 @@
+Jalon 2 review - codes publics d'admission.
+
+Rouge frontend: 3 fichiers en echec. Le module admission-error et les cles i18n etaient absents; failSession ne recevait que session-1; aucun toast n'etait emis pour service-work-capacity-reached; le panneau rendait gateway-busy brut.
+Rouge Rust: full_channel_does_not_publish_spawned_event et closed_channel_does_not_publish_spawned_event renvoyaient le texte francais Trop de sous-agents en attente au lieu des codes stables attendus.
+
+Correction: liste frontend fermee de six codes, validation stricte et fallback generique; traductions en en/fr/es/de/it/zh/ja; branchement demarrage, file et outils; suppression du detail brut; backend sous-agents aligne sur les codes service existants.
+
+Vert local: Vitest 4 fichiers, 27/27; subagent_spawn_channel 5/5; npx tsc --noEmit vert; npm run lint vert; cargo fmt --check vert. Tous les fichiers de production modifies restent sous 230 lignes.
