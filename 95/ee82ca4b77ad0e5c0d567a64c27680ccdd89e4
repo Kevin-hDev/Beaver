@@ -1,0 +1,9 @@
+Task 5: immutable spawn profile with native path confinement.
+
+Rouges: first spawn_profile_tests filter ran before production modules and reported 8 tests failing with OllamaInternal stubs; full cargo test --lib also hit the pre-existing app_update_helper_process failure and then PTY tests exceeded 60 seconds, interrupted with code 130.
+
+Verts: spawn_profile_tests 11/11, spawn_profile_environment_tests 6/6, spawn_profile_attempt_tests 2/2, ollama_manager 63/63, ollama_env 13/13; cargo check, clippy --all-targets -D warnings, fmt check and diff check passed.
+
+Preuve: macOS arm64 native. Windows GNU cross-check reached Task 5 then stopped on three pre-existing cef_supervision cfg errors plus private_store warning; Linux cross-check stopped on missing cross pkg-config/sysroot for pango/cairo/GTK. No native Windows or Linux cross test claimed. Final Graphify update read 32560 nodes, 65808 edges, 1969 communities and retained the known 73 zero-node warning.
+
+Décisions: stable Unix dev/ino and handles; Windows non-inheritable volume/file-ID handles with reparse rejection; absent locations keep canonical parent plus one validated leaf; overlap checks both directions and native aliases before mutation; bounded inherited environment preserves unknown keys, removes inherited OLLAMA_HOST, injects OLLAMA_MODELS and OLLAMA_NO_CLOUD once; drive-relative Windows models are rejected; attempt stores endpoint only and reuses one profile. Old consumers and real spawn remain deferred.
