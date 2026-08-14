@@ -1,0 +1,19 @@
+Review des corrections — état validé
+
+Les points 1, 2, 3, 5, 6, 8, 9 et 10 de la review étaient confirmés. Les points 4 et 11 étaient partiellement exacts. Les points 7 et 12 décrivaient des choix intentionnels plutôt que des défauts.
+
+Corrections principales : une seule décision de capacité est désormais partagée entre préparation, découverte, état de session et exécution ; les descriptions exactes de la requête remplacent les compteurs globaux ; aucun plugin ne peut être partiellement exposé ; les priorités utilisateur passent avant le classement usage ; le classement usage intervient uniquement en cas de dépassement et ne modifie jamais le catalogue visible ni sa version.
+
+Les remplacements de Tools natifs conservent maintenant un fallback interne qui est retiré avant exposition au modèle. Cela corrige aussi un problème secondaire découvert pendant la correction : sur Groq, désactiver les plugins pouvait auparavant faire disparaître un Tool natif remplacé.
+
+Lecture du point 4 : le scénario précis donné par la review allait dans le mauvais sens, mais il révélait une vraie divergence entre les différents chemins de sélection. La correction supprime cette divergence au lieu de seulement adapter le test.
+
+Lecture du point 7 : le message de capacité reste en anglais car il appartient à une définition de Tool entièrement en anglais destinée au modèle. Les résultats visibles de découverte restent en français conformément au contrat actuel. Mélanger deux langues dans le même schéma aurait dégradé la compréhension.
+
+Lecture du point 12 : le compteur mesure une invocation validée choisie par le modèle, même si le runtime échoue ensuite. Le nom a été clarifié en record_tool_invocation afin de rendre cette sémantique explicite. Une entrée inconnue ou invalide ne compte pas.
+
+Limites providers : les limites strictes sont identifiées comme telles lorsque la documentation officielle les garantit. Les autres valeurs sont explicitement des bornes de compatibilité ou de sécurité Beaver, afin de ne pas présenter une hypothèse comme une contrainte officielle.
+
+Autres corrections : lecture des scores non bloquante avec conservation du dernier snapshot stable, découverte déterministe, limite UI issue de la constante partagée, traductions mises à jour dans les 7 langues, diagnostics extraits dans un module dédié et nouveaux tests de non-régression.
+
+Validation exécutée : cargo test --lib (2443 tests), cargo clippy --all-targets -- -D warnings, cargo fmt --check, npx vitest run (1620 tests), npm run test:extensions-host (46 tests), npx tsc --noEmit, npm run lint et graphify update. Tous passent. Aucun appel réel à un provider ni test visuel manuel inclus dans cette validation.
