@@ -1,0 +1,11 @@
+Note de revue — anneau de contexte temps réel
+
+Cause racine : pendant le stream, l’interface affichait un découpage estimé de la requête, puis forçait à la fin ce découpage à correspondre au total différent rapporté par le provider. Cette redistribution artificielle modifiait surtout Meta contexte et pouvait aussi déplacer Messages et Outils.
+
+Correction : le backend découpe désormais la requête réellement préparée juste avant son envoi. Ce découpage devient un instantané immuable ; le frontend lui ajoute uniquement les sorties générées après cet instantané. Le total exact du provider reste utilisé pour la persistance et le diagnostic, mais ne réécrit plus les catégories.
+
+Affichage : l’anneau reste caché après le premier message utilisateur. Un événement GenerationStarted est émis dès la première sortie du modèle — réflexion, texte ou appel d’outil, y compris quand le mode Plan met le contenu en tampon — puis l’anneau et son panneau de survol apparaissent dans la même frame. La limite de contexte est fournie avant la requête pour éviter une attente asynchrone.
+
+Sémantique : Skills contient seulement les noms et descriptions du catalogue. Le contenu chargé par load_skill est compté dans Meta contexte. Le raisonnement Codex non rejoué est exclu de l’entrée estimée.
+
+Garanties testées : la somme des catégories égale l’estimation de la requête préparée ; une correction provider ne modifie pas les catégories ; aucun double comptage entre appels d’outils ou à la fin du stream ; l’anneau est absent avant le premier début de génération. Vérifications finales : 2566 tests Rust, 1739 tests frontend, 2 tests CEF et 46 tests hôte d’extensions passés ; TypeScript, lint et Clippy propres.
