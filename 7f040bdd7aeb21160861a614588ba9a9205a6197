@@ -1,0 +1,5 @@
+Probleme CI: la fonction parent_changed etait correctement limitee au module macos::bootstrap, mais sa reexportation cfg(test) vers le module cef_supervision demandait une visibilite Rust plus large. Le cargo check macOS a donc bloque avant tout test.
+
+Decision: conserver parent_changed privee au sous-module de production et ajouter dans le module parent un wrapper compile uniquement avec cfg(test). Le test natif macos_tracker_tests reste trouve par le filtre CI, tandis que l'API et les permissions du binaire de production restent strictement inchangees.
+
+Validation locale: cargo fmt --check, npm run test:cef (28/28), npm run test:e2e-runner (22/22), git diff --check et graphify update. La compilation macOS native est volontairement deleguee au runner GitHub qui possede la cible et CEF ARM64.
