@@ -1,0 +1,8 @@
+Reference: 42823ba (milestone plan) and the historical spawn inventory, with implementation proof from 1eb3cb7 through b104cc3.
+Behavior: records every production process/thread/task spawn in the milestone-2 scope, classifies it as owned and bounded, special platform handling, external, or short awaited exemption, closes the completed historical rows, and leaves only the explicitly milestone-3 Ollama work open. Updates the exact cl-go-dash brand-boundary count from 231 to 234 for the three new process-name classifier references while preserving zero unknown references.
+Reason: the milestone is not complete until the inventory itself proves that no owned runtime producer is implicit and the remaining scope cannot be mistaken for completed work.
+Red proof: test:brand-boundaries failed with expected 231 versus observed 234.
+Green proof: test:brand-boundaries 12/12 with zero unknown references; git diff/index are clean, diff --check is clean, and the code graph update completed at 31064 nodes / 62557 edges / 1904 communities.
+Maintenance limitation: semantic Graphify extraction for the changed documentation was attempted but could not run because this machine has no configured LLM API key; no documentation result is claimed from that step.
+Neighbors: 1f8fd38 supplies the child-process authority and b104cc3 closes the remaining runtime work; this commit is their auditable inventory and acceptance record.
+Replacement: replaces the open milestone-2 portions of the historical inventory with commit-backed closure evidence without closing milestone 3 by implication.
