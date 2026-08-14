@@ -1,0 +1,17 @@
+Task 6 J3 Beaver: gated Ollama publication, bounded durable receipt, J2 emergency inventory registration, native signaling, watchdog handoff.
+
+Base: 71409b8788192e26dd9f1699cd1ed215cd7452a9. No PreparedBundle, begin_closing adoption, second Job, second inventory, push, or merge.
+
+TDD red first: initial targeted filters failed because Task 6 modules/types were absent. Later real cutpoints cover fork/admission, closed gate, receipt write and sync, post-receipt identity revalidation, emergency capacity, gate open failure, reap failure, abandonment, unwind, PID reuse, scope/start/executable/hash mismatches, bounded receipt and 128/129 saturation.
+
+Unix uses manual fork with async-safe child setup, bounded frozen environment, /dev/null stdout/stderr, no shell, and terminate plus waitpid reap. The stable Task 5 executable identity is anchored by a private hard-link whose dev/ino is checked before fork; fexecve linkage was unavailable and /dev/fd execution was denied, so this is the recorded proof-equivalent ruling. Replacement-after-profile test is green.
+
+Receipt: ProcessReceipt is Serialize-only publicly; private bounded wire parser with deny_unknown_fields rejects duplicate pid, bundle.version, bundle.executable_sha256, unknown fields and documents over 4096 bytes. Recovery checks active bundle with constant-time hash comparison and PID/start/scope-or-Job/executable identity; absent/different is removed without signal, ambiguous remains RecoveryRequired, exact is removed only after reap.
+
+Lifecycle: receipt is written and read back durably before emergency admission, then identity is revalidated. Every failure attempts terminate/reap; registration and receipt remain owned by watchdog when reap fails. Drop never clears proof/slot before confirmed reap. Handoff is explicit and generation guarded; no mem::forget.
+
+Windows creates CREATE_SUSPENDED with exact frozen environment and non-inherited handles, admits into the existing global Job before ResumeThread, reads nonzero executable identity from the stable process handle, rejects mismatch, and maps WAIT_TIMEOUT or other non-success waits to Reap. Native Windows tests were added but not run on macOS arm64.
+
+Observed green: process filter 16 passed, emergency filter 10 passed, emergency_signaler_tests 6 passed, cargo check --lib --no-default-features code 0, cargo clippy --all-targets --no-default-features -- -D warnings code 0, cargo fmt --all -- --check code 0, git diff --check code 0. Known baseline residuals: updater handoff test red and five PTY tests hung beyond 60 seconds; global suite was not rerun. Graphify maintenance was already observed by orchestration and not rerun.
+
+Production files remain below 230 lines. Final SHA: 0f9dc84fe28d378cd3e3eea300e2cf6e445fb2f1. Report is task-6-report.md in the SDD ledger.
