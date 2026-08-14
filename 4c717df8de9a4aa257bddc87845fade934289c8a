@@ -1,0 +1,9 @@
+Objectif : supprimer l'ambiguïté entre inspection et conversion dans transform_image.
+
+Décision : operations=[] n'est valide que sans output_path et déclenche une inspection sans écriture. Si output_path est également fourni, Beaver renvoie l'erreur de validation image_intent_ambiguous, qui explique les deux intentions valides. Une conversion doit fournir output_path et omettre operations.
+
+Couverture : le test dédié vérifie le code d'erreur, les deux indications correctives et l'absence de fichier créé. La définition de l'outil et l'audit documentent explicitement cette incompatibilité.
+
+Mesure actualisée : 20 206 caractères de descriptions ; les 24 outils actifs par défaut restent à 21 376 caractères sérialisés et environ 5 360 tokens.
+
+Validation : cargo fmt --check, cargo check, clippy strict, 2 838 tests Rust, 1 793 tests Vitest, 2 tests CEF, 46 tests d'extensions, TypeScript et lint réussis. Graphify mis à jour : delta +35/-13 nœuds et +41/-29 liens, intégrité sans anomalie, puis 0 fichier restant à analyser.
