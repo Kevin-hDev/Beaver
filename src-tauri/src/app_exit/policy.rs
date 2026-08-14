@@ -14,6 +14,8 @@ const TAURI_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 const POST_LOOP_SWEEP_TIMEOUT: Duration = Duration::from_secs(3);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
 const ULTIMATE_EXIT_TIMEOUT: Duration = Duration::from_secs(15);
+// CEF helpers auto-terminate one second before ultimate exit; this named budget never extends it.
+const CEF_HELPER_EXIT_TIMEOUT: Duration = Duration::from_secs(14);
 const CEF_ADMISSION_BARRIER_TIMEOUT: Duration = Duration::from_millis(50);
 const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
 
@@ -110,7 +112,12 @@ impl ShutdownTimeline {
     }
 
     pub(super) fn cef_helper_exit_deadline(self) -> Instant {
-        self.emergency_deadline()
+        let helper_timeout = self
+            .policy
+            .ultimate()
+            .saturating_mul(CEF_HELPER_EXIT_TIMEOUT.as_secs() as u32)
+            / ULTIMATE_EXIT_TIMEOUT.as_secs() as u32;
+        self.origin + helper_timeout
     }
 
     pub(super) fn tauri_exit_deadline(self) -> Instant {

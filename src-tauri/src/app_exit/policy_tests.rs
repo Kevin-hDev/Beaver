@@ -3,6 +3,25 @@ use super::policy::{
 };
 use std::time::{Duration, Instant};
 
+#[derive(Clone, Copy)]
+struct TestClock {
+    now: Instant,
+}
+
+impl TestClock {
+    fn new(now: Instant) -> Self {
+        Self { now }
+    }
+
+    fn advance(&mut self, duration: Duration) {
+        self.now += duration;
+    }
+
+    fn now(self) -> Instant {
+        self.now
+    }
+}
+
 #[test]
 fn all_deadlines_share_one_origin() {
     let origin = Instant::now();
@@ -33,7 +52,7 @@ fn all_deadlines_share_one_origin() {
     );
     assert_eq!(
         timeline.cef_helper_exit_deadline(),
-        origin + Duration::from_secs(13)
+        origin + Duration::from_secs(14)
     );
 }
 
@@ -65,7 +84,7 @@ fn remaining_budget_never_restarts_after_deadline() {
     );
     assert_eq!(
         timeline.cef_helper_exit_deadline(),
-        origin + Duration::from_millis(13)
+        origin + Duration::from_millis(14)
     );
 }
 
@@ -127,11 +146,12 @@ fn ollama_setup_deadline_is_derived_from_the_shutdown_origin() {
 fn late_ollama_waiter_only_receives_the_remaining_grace() {
     let origin = Instant::now();
     let timeline = ShutdownTimeline::from_origin(origin, ShutdownPolicy::production());
-    let late_call = origin + Duration::from_millis(2_400);
+    let mut clock = TestClock::new(origin);
+    clock.advance(Duration::from_millis(2_400));
     let deadline = timeline.ollama_setup_deadline();
 
     assert_eq!(
-        timeline.remaining_at(deadline, late_call),
+        timeline.remaining_at(deadline, clock.now()),
         Duration::from_millis(600)
     );
 }
@@ -140,13 +160,12 @@ fn late_ollama_waiter_only_receives_the_remaining_grace() {
 fn shutdown_deadlines_keep_the_total_order() {
     let origin = Instant::now();
     let timeline = ShutdownTimeline::from_origin(origin, ShutdownPolicy::production());
-    let helper_exit_deadline = timeline.ultimate_deadline() - Duration::from_secs(1);
     let deadlines = [
         timeline.ollama_setup_deadline().duration_since(origin),
         timeline.graceful_deadline().duration_since(origin),
         timeline.tauri_exit_deadline().duration_since(origin),
         timeline.emergency_deadline().duration_since(origin),
-        helper_exit_deadline.duration_since(origin),
+        timeline.cef_helper_exit_deadline().duration_since(origin),
         timeline.ultimate_deadline().duration_since(origin),
     ];
 
