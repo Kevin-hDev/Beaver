@@ -1,0 +1,49 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 1b4f15db8819cdba8a1877657f1b3757d749b96c
+Motif du rattachement: commit réécrit
+Sujet original: fix(browser): express macOS supervision guards
+---
+
+Objectif : rendre explicites les garanties de durée de vie et de fermeture macOS signalées par Clippy et la review.
+
+Décisions : nommer comme gardes les mappings conservés uniquement pour leur Drop, limiter les accesseurs de revendication à Windows et remplacer le repli silencieux de la vérification de fermeture par un branchement fail-closed explicite.
+
+Justification : une erreur de lecture du contrôle doit arrêter le helper, jamais l'autoriser à continuer. Les changements réduisent le code mort multi-OS sans modifier la politique de sandbox ni l'autorité.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 36e2296ddfec59500e01730fd08cf830aa1cb190
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(browser): record J1B native evidence
+---
+
+Objectif : consigner honnêtement ce que la première CI J1B prouvait et ce qu'elle ne prouvait pas encore.
+
+Décisions : référencer le run natif Windows/macOS/Linux, fermer uniquement les lignes d'inventaire couvertes et laisser ouvertes la matrice de machines renforcées, le parcours CEF réel et les défauts remontés ensuite par la review.
+
+Justification : une CI verte ne remplace ni un paquet installé ni Gatekeeper/antivirus. La documentation sépare donc preuve automatisée et validation manuelle au lieu de déduire l'une de l'autre.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: a3d8560541feb56d2ad17b44ab56b12bae164964
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(build): define Windows Cargo target contract
+---
+
+Problème
+Le raccourcissement du chemin Cargo Windows avait déplacé les artefacts compilés vers target à la racine du worktree, tandis que plusieurs préparateurs continuaient à supposer src-tauri/target. Deux autorités concurrentes rendaient le build dépendant du script appelé.
+
+Objectif
+Définir avant l'implémentation un contrat unique pour le dossier Cargo Windows, sans modifier les destinations de ressources attendues par Tauri ni les chemins macOS/Linux.
+
+Décisions
+- scripts/cef/tauri-launch.mjs sélectionne l'autorité locale et propage CARGO_TARGET_DIR.
+- Un job CI en plusieurs étapes exporte la même valeur avant le build.
+- Les consommateurs revalident la valeur et ne cherchent jamais silencieusement un second dossier.
+- Le préparateur updater conserve un repli direct uniquement parce qu'il recompile son propre binaire avant lecture.
+- Le préparateur CEF refuse tout repli direct, car il consomme l'exécutable principal construit par Tauri et pourrait autrement accepter un artefact périmé.
+- Les ressources Tauri restent sous src-tauri/target/updater-helper et src-tauri/target/cef-runtime/windows.
+
+Pourquoi
+Cette séparation conserve le chemin Cargo court nécessaire à CEF, ferme le risque d'artefact périmé et évite toute modification collatérale des autres OS ou du layout de bundle.
