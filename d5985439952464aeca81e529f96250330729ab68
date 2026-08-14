@@ -1,0 +1,5 @@
+Problème : le job Linux Backend (Rust) compilait CefPreflightError::category() alors que les seuls consommateurs runtime vivent dans les chemins CEF natifs Windows/macOS. Clippy -D warnings le signalait donc comme code mort et bloquait la CI.
+
+Décision : compiler cet accesseur seulement sur les deux plateformes où CEF est actuellement intégré. Le type d'erreur, sa politique de retry et les tests portables restent compilés sur Linux. Une garde native_browser seule a été rejetée car les tests Windows sans CEF utilisent aussi l'accesseur dans le tracker natif.
+
+Preuves : cause confirmée dans le log GitHub du job 93664086072 ; cargo fmt --check, 4/4 tests cef_preflight et Clippy strict avec CEF réel passent localement. La matrice GitHub complète est relancée pour la preuve Linux native.
