@@ -1,0 +1,5 @@
+Objectif : garantir qu'un helper Windows admis reste tuable sans jamais viser un processus externe ayant réutilisé son PID.
+
+Décisions : identité stable composée du PID, de l'heure de création et de l'exécutable canonique ; handle ouvert avec droits minimaux ; Job Object vide propre au slot avec KILL_ON_JOB_CLOSE ; affectation et appartenance vérifiées avant admission ; table native parent privée pour l'urgence.
+
+Justification : un balayage par nom ou PID peut tuer une autre application. Le Job Object ferme la fenêtre de respawn et l'identité est revalidée avant chaque observation ou terminaison. L'imbrication reste compatible avec le sandbox Chromium moderne. Les tests natifs couvrent identité, réutilisation simulée, limites du Job, admission et terminaison.
