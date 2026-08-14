@@ -7,3 +7,64 @@ Ordonnancement: J1 ouvre deux branches indépendantes J1B et J2; J3 dépend de J
 Justification: ne pas livrer une fonctionnalité navigateur intégrée désactivée, ne jamais affaiblir le sandbox, et laisser avancer les travaux indépendants si la preuve native CEF demande plus de temps.
 
 Vérifications: diff-check propre; 22 lignes d'inventaire uniques numérotées 1 à 22; aucun lien documentaire local cassé; recherche des anciennes dépendances et des anciens critères de livraison contradictoires.
+
+REPRISE JALON 3 — BRANCHE HISTORIQUE RESTAURÉE
+
+Statut de la référence
+- La branche codex/fix-app-shutdown-lifecycle a été restaurée sur origin et pointe sur 407e2ff5e75297841aa7dcfea25b2fa63ddabda5.
+- Cette branche est une archive de comparaison. Ne jamais la fusionner dans main, ne pas la rebaser et ne pas reprendre toute la série par cherry-pick.
+- Toute nouvelle implémentation J3 part du main actuel validé. En cas de conflit, le contrat unifié et la conception J3 actuels font autorité sur le code historique.
+
+Autorités documentaires
+- docs/superpowers/specs/2026-08-09-unified-shutdown-supervision-design.md
+- docs/superpowers/specs/2026-08-09-shutdown-milestone-3-ollama-design.md
+- docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md
+
+Les six commits historiques J3 récupérés
+1. 34e02af8355aa5d2539657647bdfa9ee3afb0f67 — fix: bind Ollama setup to app shutdown
+   À préserver : une seule installation suivie, annulation et attente lors de la fermeture, refus d'un setup tardif, distinction entre démarrage annulé et Ollama déjà actif.
+   À ne pas reprendre : délai local de 10 secondes et état global séparé du superviseur actuel.
+2. a563d734faaf9aae20536595c85ce0b3d842252b — fix: close final shutdown lifecycle races
+   Partie J3 à préserver : génération du setup empêchant la fin tardive d'une ancienne installation d'effacer le suivi de la nouvelle.
+   À ne pas reprendre : les anciens registres concurrents ; la génération doit vivre dans l'autorité transactionnelle unique J3.
+3. c92620b00506c0e29b410756c6ec77999eccc8ac — fix: preserve completed Ollama installs on exit
+   À préserver : staging séparé, validation avant commit, suppression d'une installation incomplète et conservation d'une installation déjà commitée si le premier démarrage est annulé. Reprendre les scénarios avant/après commit et l'échec d'écriture du marqueur de version.
+4. f3cdf633cb570be03c9f2aeb55157c0ebfe76eac — fix: recover interrupted Ollama updates
+   À préserver : ancienne et nouvelle versions conservées pendant la validation, nettoyage de la sauvegarde après succès réel, rollback seulement après échec réel, décision différée après interruption.
+   À ne pas reprendre : l'inférence de l'état par simple présence de dossiers ; la conception actuelle impose le journal durable à cinq états et la sonde possédée.
+5. 7a8fef08caf5aaf8d2ec78b48710e341afcc515a — refactor: centralize Ollama cancellation state
+   À préserver : une seule classification typée fermeture / annulation / erreur métier et aucun test fondé sur du texte d'erreur.
+   À ne pas reprendre : AppRunToken ou un jeton sans preuve de fin ; employer l'admission suivie actuelle et l'autorité J3.
+6. cf322efe1a46ff59e4b210d02b61f2d8a396fe08 — fix: recover failed Ollama update validation
+   À préserver : spawn impossible classé échec réel de validation, démon externe distinct et incapable de valider ou déclencher un rollback du bundle Beaver, même décision au démarrage et dans la commande. Les issues attendues sont OwnedStarted, OwnedAlreadyRunning et ExternalAvailable avec sonde isolée.
+
+Important sur la plage historique
+- Les six commits sont tous ancêtres de 407e2ff5e75297841aa7dcfea25b2fa63ddabda5.
+- La plage 34e02af^..cf322ef contient aussi des commits non J3 sur les services, le scheduler, la fermeture et la documentation. Ne pas considérer toute la plage comme du code Ollama à reporter.
+- Des git notes détaillées existent notamment sur a563d73 et cf322ef. Les autres décisions sont décrites par l'inventaire et leurs diffs.
+- Les anciens tests sont des scénarios à retrouver et à réécrire contre la nouvelle architecture, pas une preuve que l'ancien mécanisme est encore correct.
+
+Commandes de récupération et de lecture sur le Mac
+  git fetch origin codex/fix-app-shutdown-lifecycle
+  git fetch origin refs/notes/commits:refs/notes/commits
+  git notes show 407e2ff5e75297841aa7dcfea25b2fa63ddabda5
+  git log --oneline --reverse 34e02af^..cf322ef
+  git show --stat <sha>
+  git diff <sha>^ <sha> -- src-tauri src tests scripts
+
+Vérification des objets sur le Mac
+  for sha in 34e02af a563d73 c92620b f3cdf63 7a8fef0 cf322ef; do
+    git cat-file -e "$sha^{commit}" && git show -s --oneline "$sha"
+  done
+
+Workflow J3 attendu
+1. Créer la branche d'implémentation depuis origin/main actuel, jamais depuis la branche historique.
+2. Inventorier pour chaque commit les comportements, tests et cas d'échec pertinents.
+3. Écrire le plan J3 conforme au gestionnaire unique, au journal durable, à la sonde possédée et au stockage de modèles isolé.
+4. Écrire chaque test rouge avant son correctif, notamment toutes les coupures avant/après les frontières durables.
+5. Valider migrations réelles, démon externe, concurrence, annulation et conservation des modèles sur les OS concernés.
+6. Ajouter une git note à chaque nouveau commit J3 avec décision, raison, test rouge et preuves vertes.
+7. PR sans fusion anticipée, CI native entièrement verte, puis review complète par un autre agent et re-review après corrections.
+
+Critère de bonne utilisation de l'archive
+La comparaison est terminée seulement lorsque chaque comportement J3 listé dans l'inventaire pointe vers un test actuel et une décision actuelle : reprise testée ou abandon explicitement justifié. Aucun ancien fichier n'est copié par confiance et aucun ancien commit n'est fusionné pour « récupérer » le travail.
