@@ -1,6 +1,4 @@
 use super::super::CefUnavailableCategory;
-#[cfg(test)]
-use super::process_state::{MacProcessActions, MacProcessObservation, MacSystemProcessActions};
 use crate::services::browser::native_paths::MacHelperExecutables;
 #[cfg(test)]
 use std::path::Path;
@@ -43,15 +41,6 @@ impl MacProcessIdentity {
     }
 
     #[cfg(test)]
-    pub(super) fn is_alive(&self) -> Result<bool, CefUnavailableCategory> {
-        match MacSystemProcessActions.observe(self) {
-            MacProcessObservation::Alive => Ok(true),
-            MacProcessObservation::Stopped => Ok(false),
-            MacProcessObservation::Unknown => Err(CefUnavailableCategory::Reaper),
-        }
-    }
-
-    #[cfg(test)]
     pub(in crate::services::browser) fn test_pid(&self) -> u32 {
         self.pid
     }
@@ -74,12 +63,5 @@ impl MacProcessIdentity {
     #[cfg(test)]
     pub(in crate::services::browser) fn test_executable(&self) -> &Path {
         &self.executable
-    }
-
-    #[cfg(test)]
-    pub(in crate::services::browser) fn test_is_alive(
-        &self,
-    ) -> Result<bool, CefUnavailableCategory> {
-        self.is_alive()
     }
 }
