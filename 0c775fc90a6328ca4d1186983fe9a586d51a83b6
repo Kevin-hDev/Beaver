@@ -1,0 +1,15 @@
+Probleme
+
+La CI macOS a prouve que le bundle Beaver quitte avec le code 0 entre la disponibilite du WebDriver embarque et la premiere session. Ce code exclut un crash CEF, mais ne dit pas si Tauri a recu une demande de sortie, une fermeture de fenetre ou si sa boucle s'est terminee seule.
+
+Objectif
+
+Identifier l'evenement exact avant toute correction fonctionnelle, avec un diagnostic utilisable en CI qui ne persiste ni journal brut, ni chemin, ni contenu utilisateur.
+
+Decisions
+
+Le stderr du vrai bundle macOS est retransmis comme avant mais passe aussi dans un assembleur de lignes limite a 256 octets. Seules des categories fixes sont retenues: six etapes de cycle de vie et cinq evenements Tauri. Les lignes trop longues, inconnues, partielles ou enrichies sont rejetees. Les marqueurs rejoignent le fichier E2E canonique deja limite a 4096 octets. La logique de chemin et de persistance a ete extraite dans macos-app-diagnostics.mjs afin que chaque fichier reste sous 230 lignes. Le code de production n'ajoute ces marqueurs qu'avec la feature e2e; aucune journalisation utilisateur n'est modifiee.
+
+Validation
+
+Les tests ont d'abord echoue car le module de diagnostic et les categories run-event n'existaient pas. Apres implementation: npm run test:e2e-runner 33/33, test Rust e2e_run_event_diagnostics_are_fixed_categories 1/1 avec 3076 filtres, cargo fmt --check, git diff --check et graphify update . passent. Ce commit observe encore la panne; il ne modifie ni le comportement CEF, ni le cycle de fermeture de production.
