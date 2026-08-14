@@ -1,0 +1,38 @@
+Jalon 2 — supervision des services Extensions
+
+Problème observé
+- Le démarrage de l'hôte Node, son lecteur stdout, les appels core, le démarrage initial et les installations utilisaient des tâches ou processus séparés sans autorité locale commune.
+- L'arrêt tuait l'hôte mais ne fermait pas d'abord les admissions d'installation, d'exécution ou de redémarrage.
+- Les processus npm/Git longs n'écoutaient aucune annulation.
+- Un redémarrage immédiat pouvait tenter de réutiliser l'unique slot lecteur avant sa libération.
+
+Décisions et raisons
+- ExtensionWorkServices est l'autorité unique du domaine, dérivée du superviseur global : 1 lecteur d'hôte, 64 opérations et 64 appels core. Les capacités 64 réutilisent les limites du contrat de l'hôte au lieu d'introduire une seconde valeur.
+- begin_closing ferme atomiquement les trois admissions avant la destruction du processus ; stop_and_wait utilise l'échéance absolue du coordinateur global.
+- Le lecteur, le démarrage initial, les appels core, les outils et les installations sont tous possédés par ces registres. Aucun tokio::spawn ou tauri::async_runtime::spawn de production ne reste dans le domaine Extensions.
+- HostProcess conserve un signal de fin du lecteur et kill() attend ce signal après moissonnage de l'enfant. Cette attente empêche une fausse saturation au redémarrage.
+- L'annulation descend jusque dans npm, le processus Node, les callbacks Git et le checkout. Un enfant annulé est terminé puis attendu avant le retour.
+- Les refus réutilisent les codes publics bornés extensions_host_busy et extensions_host_unavailable ; aucun détail système nouveau n'est exposé.
+- Le démarrage interne vérifie aussi l'état Open : aucun chemin interne d'update/uninstall ne peut contourner la fermeture et recréer l'hôte.
+
+Tests écrits avant correction et échecs observés
+- Le premier contrat ne compilait pas car work_supervision n'existait pas.
+- Le test de processus réel ne compilait pas car process_runner ne recevait aucun signal d'annulation.
+- Le test de 16 redémarrages réels échouait avec extensions_host_unavailable avant l'ajout du signal reader_done.
+
+Preuves finales Windows
+- Suite Extensions : 91 réussis, 0 échec.
+- Redémarrages réels de l'hôte Node : 16 cycles réussis avec réutilisation du slot unique.
+- Processus d'installation Node réel : annulé, arbre terminé et enfant moissonné.
+- Suite Rust complète avec windows-tests : 3110 tests, 3106 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt --all -- --check et git diff --check : verts.
+- Aucun fichier de production Extensions ne dépasse 230 lignes.
+- graphify update . exécuté après les changements finaux ; aucune topologie supplémentaire en attente.
+
+Incidents de vérification sans défaut produit
+- Une première suite complète a été coupée par la limite de 120 s du harnais, produisant un broken pipe ; la relance avec une fenêtre adaptée est entièrement verte.
+- Clippy avec la feature windows-tests a d'abord activé une combinaison CEF non prise en charge par ce contrôle. La commande stricte officielle, sans cette feature, est verte.
+
+Limite volontaire
+- L'affectation à l'autorité de confinement natif unique reste la tâche du lot 6 owned_process/process_tree. Ce commit échoue fermé et moissonne si le spawn ou l'admission du lecteur échoue, sans anticiper ni dupliquer cette future autorité native.
