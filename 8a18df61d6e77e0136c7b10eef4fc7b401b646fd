@@ -1,0 +1,8 @@
+Reference: CI run 31565875590, job Backend (Rust), failing cargo fmt --check on agent_local_modules_core.rs.
+Behavior: reorders only the module declarations and their attached cfg attributes to the canonical rustfmt order; runtime behavior and visibility are unchanged.
+Reason: rustfmt on Linux traverses this include file and rejected the Windows-authored order, while the local Windows cargo fmt traversal did not expose the mismatch.
+Red proof: GitHub Backend (Rust) exited 1 and printed the complete rustfmt diff for agent_local_modules_core.rs.
+Green proof: direct stdin rustfmt --check on the staged file exited 0, local cargo fmt --check exited 0, cargo check exited 0, and Graphify reported no code-graph topology change.
+Environment limitation: the follow-up focused cargo test was unable to start because Windows reported a persistent external CEF file lock (os error 32); no Beaver/CEF process was running, so this test is not claimed green and CI remains the authority.
+Neighbors: follows 40ab115 without changing milestone behavior; it exists solely to make the already-tested module registry canonical on every CI platform.
+Replacement: replaces the non-canonical declaration order rejected by CI; no prior runtime mechanism is replaced.
