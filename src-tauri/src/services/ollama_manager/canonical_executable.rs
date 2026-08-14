@@ -9,6 +9,10 @@ pub struct NativeFileIdentity {
 }
 
 impl NativeFileIdentity {
+    pub(crate) fn value(&self) -> u128 {
+        self.value
+    }
+
     pub(crate) fn synthetic(value: u64) -> Self {
         Self {
             value: value as u128,
@@ -92,6 +96,26 @@ impl CanonicalExecutable {
     #[allow(dead_code)]
     pub(crate) fn identity(&self) -> &NativeFileIdentity {
         &self.identity
+    }
+
+    pub(crate) fn value(&self) -> u128 {
+        self.identity.value
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn stable_handle(&self) -> Option<&std::fs::File> {
+        self.handle.as_ref().map(|handle| handle.0.as_ref())
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn stable_path_is_current(&self) -> bool {
+        use std::os::unix::fs::MetadataExt;
+
+        let Ok(metadata) = std::fs::metadata(&self.path) else {
+            return false;
+        };
+        let value = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
+        value == self.identity.value
     }
 
     #[cfg(test)]

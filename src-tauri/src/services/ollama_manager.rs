@@ -9,7 +9,21 @@ mod journal_store;
 mod manager;
 mod path_identity;
 mod path_identity_resolver;
+#[allow(dead_code)]
+mod process;
+#[allow(dead_code)]
+mod process_owned;
+#[allow(dead_code)]
+mod process_receipt;
+#[allow(dead_code)]
+mod process_receipt_recovery;
 mod spawn_environment;
+#[cfg(unix)]
+#[allow(dead_code)]
+mod spawn_gate_unix;
+#[cfg(windows)]
+#[allow(dead_code)]
+mod spawn_gate_windows;
 mod spawn_profile;
 mod spawn_profile_paths;
 mod types;
@@ -25,6 +39,10 @@ mod durable_fs_tests;
 #[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
+mod process_receipt_tests;
+#[cfg(test)]
+mod process_tests;
+#[cfg(test)]
 mod spawn_profile_attempt_tests;
 #[cfg(test)]
 mod spawn_profile_environment_tests;
@@ -36,6 +54,8 @@ mod spawn_profile_tests;
 mod windows_durable_fs_tests;
 #[cfg(all(test, windows))]
 mod windows_path_identity_tests;
+#[cfg(all(test, windows))]
+mod windows_spawn_gate_tests;
 
 #[allow(unused_imports)]
 pub(crate) use canonical_executable::{CanonicalExecutable, NativeFileIdentity};

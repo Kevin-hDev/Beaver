@@ -17,12 +17,38 @@ pub enum OwnedProcessError {
     Admission,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct OwnedProcessIdentity {
+    pub(crate) pid: u32,
+    pub(crate) native_scope: u64,
+    pub(crate) native_start_time: u64,
+    pub(crate) executable: u128,
+}
+
 pub struct OwnedProcess;
 
 impl OwnedProcess {
     #[cfg(unix)]
     pub(crate) fn adopt_existing(pid: u32) -> Result<(), OwnedProcessError> {
         platform::admit(pid)
+    }
+
+    pub(crate) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity(pid)
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn identity_with_executable(
+        pid: u32,
+        executable: u128,
+    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity_with_executable(pid, executable)
+    }
+
+    pub(crate) fn identity_matches(
+        expected: OwnedProcessIdentity,
+    ) -> Result<(), OwnedProcessError> {
+        platform::identity_matches(expected)
     }
 
     pub fn spawn(command: &mut Command, kind: ProcessKind) -> Result<Child, OwnedProcessError> {
@@ -54,6 +80,13 @@ impl OwnedProcess {
         pseudoconsole: &T,
     ) -> Result<windows_spawn::Child, OwnedProcessError> {
         platform::spawn_conpty(command, pseudoconsole)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn admit_suspended_handle(
+        process: windows_sys::Win32::Foundation::HANDLE,
+    ) -> Result<(), OwnedProcessError> {
+        platform::admit_suspended_handle(process)
     }
 
     fn spawn_with_admitter(

@@ -5,20 +5,13 @@ use super::emergency::{
 use std::sync::atomic::Ordering;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "Exited is returned by native service signalers introduced in milestone 2"
-    )
-)]
-pub(super) enum EmergencyObservation {
+pub(crate) enum EmergencyObservation {
     Terminating,
     Exited,
     IdentityMismatch,
 }
 
-pub(super) trait EmergencySignaler: Send + Sync {
+pub(crate) trait EmergencySignaler: Send + Sync {
     fn signal_or_recheck(
         &self,
         identity: VerifiedProcessIdentity,
@@ -27,7 +20,7 @@ pub(super) trait EmergencySignaler: Send + Sync {
 }
 
 impl EmergencyInventory {
-    pub(super) fn drain_once(&self, signaler: &dyn EmergencySignaler) {
+    pub(crate) fn drain_once(&self, signaler: &dyn EmergencySignaler) {
         for slot in &self.inner.slots {
             if slot
                 .state
@@ -45,6 +38,8 @@ impl EmergencyInventory {
                 pid: slot.pid.load(Ordering::Relaxed),
                 native_scope: slot.native_scope.load(Ordering::Relaxed),
                 started_at: slot.started_at.load(Ordering::Relaxed),
+                executable: (u128::from(slot.executable_high.load(Ordering::Relaxed)) << 64)
+                    | u128::from(slot.executable_low.load(Ordering::Relaxed)),
             };
             let already_requested = slot.termination_requested.load(Ordering::Acquire);
             let observation = signaler.signal_or_recheck(identity, already_requested);

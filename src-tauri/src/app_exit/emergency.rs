@@ -6,51 +6,66 @@
     )
 )]
 
+use super::emergency_registration::EmergencyRegistration;
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 
-pub(super) const EMERGENCY_CAPACITY: usize = 128;
-pub(super) const SLOT_FREE: u8 = 0;
-pub(super) const SLOT_WRITING: u8 = 1;
-pub(super) const SLOT_PUBLISHED: u8 = 2;
-pub(super) const SLOT_CLAIMED: u8 = 3;
-pub(super) const SLOT_REMOVE_PENDING: u8 = 4;
+pub(crate) const EMERGENCY_CAPACITY: usize = 128;
+pub(crate) const SLOT_FREE: u8 = 0;
+pub(crate) const SLOT_WRITING: u8 = 1;
+pub(crate) const SLOT_PUBLISHED: u8 = 2;
+pub(crate) const SLOT_CLAIMED: u8 = 3;
+pub(crate) const SLOT_REMOVE_PENDING: u8 = 4;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct VerifiedProcessIdentity {
-    pub(super) pid: u32,
-    pub(super) native_scope: u64,
-    pub(super) started_at: u64,
+pub(crate) struct VerifiedProcessIdentity {
+    pub(crate) pid: u32,
+    pub(crate) native_scope: u64,
+    pub(crate) started_at: u64,
+    pub(crate) executable: u128,
 }
 
 impl VerifiedProcessIdentity {
-    pub(super) fn new(pid: u32, native_scope: u64, started_at: u64) -> Option<Self> {
+    pub(crate) fn new(pid: u32, native_scope: u64, started_at: u64) -> Option<Self> {
+        Self::new_with_executable(pid, native_scope, started_at, 0)
+    }
+
+    pub(crate) fn new_with_executable(
+        pid: u32,
+        native_scope: u64,
+        started_at: u64,
+        executable: u128,
+    ) -> Option<Self> {
         (pid > 0 && native_scope > 0 && started_at > 0).then_some(Self {
             pid,
             native_scope,
             started_at,
+            executable,
         })
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct EmergencyKey {
-    pub(super) index: usize,
-    pub(super) generation: u64,
+pub(crate) struct EmergencyKey {
+    pub(crate) index: usize,
+    pub(crate) generation: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum EmergencyPublishError {
+pub(crate) enum EmergencyPublishError {
+    InvalidIdentity,
     Capacity,
 }
 
-pub(super) struct EmergencySlot {
-    pub(super) state: AtomicU8,
-    pub(super) generation: AtomicU64,
-    pub(super) pid: AtomicU32,
-    pub(super) native_scope: AtomicU64,
-    pub(super) started_at: AtomicU64,
-    pub(super) termination_requested: AtomicBool,
+pub(crate) struct EmergencySlot {
+    pub(crate) state: AtomicU8,
+    pub(crate) generation: AtomicU64,
+    pub(crate) pid: AtomicU32,
+    pub(crate) native_scope: AtomicU64,
+    pub(crate) started_at: AtomicU64,
+    pub(crate) executable_high: AtomicU64,
+    pub(crate) executable_low: AtomicU64,
+    pub(crate) termination_requested: AtomicBool,
 }
 
 impl EmergencySlot {
@@ -61,22 +76,24 @@ impl EmergencySlot {
             pid: AtomicU32::new(0),
             native_scope: AtomicU64::new(0),
             started_at: AtomicU64::new(0),
+            executable_high: AtomicU64::new(0),
+            executable_low: AtomicU64::new(0),
             termination_requested: AtomicBool::new(false),
         }
     }
 }
 
-pub(super) struct EmergencyInner {
-    pub(super) slots: [EmergencySlot; EMERGENCY_CAPACITY],
+pub(crate) struct EmergencyInner {
+    pub(crate) slots: [EmergencySlot; EMERGENCY_CAPACITY],
 }
 
 #[derive(Clone)]
-pub(super) struct EmergencyInventory {
-    pub(super) inner: Arc<EmergencyInner>,
+pub(crate) struct EmergencyInventory {
+    pub(crate) inner: Arc<EmergencyInner>,
 }
 
 impl EmergencyInventory {
-    pub(super) fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             inner: Arc::new(EmergencyInner {
                 slots: std::array::from_fn(|_| EmergencySlot::new()),
@@ -84,7 +101,7 @@ impl EmergencyInventory {
         }
     }
 
-    pub(super) fn try_publish(
+    pub(crate) fn try_publish(
         &self,
         identity: VerifiedProcessIdentity,
     ) -> Result<EmergencyRegistration, EmergencyPublishError> {
@@ -102,6 +119,10 @@ impl EmergencyInventory {
                 .store(identity.native_scope, Ordering::Relaxed);
             slot.started_at
                 .store(identity.started_at, Ordering::Relaxed);
+            slot.executable_high
+                .store((identity.executable >> 64) as u64, Ordering::Relaxed);
+            slot.executable_low
+                .store(identity.executable as u64, Ordering::Relaxed);
             slot.termination_requested.store(false, Ordering::Relaxed);
             slot.generation.store(generation, Ordering::Relaxed);
             slot.state.store(SLOT_PUBLISHED, Ordering::Release);
@@ -113,7 +134,7 @@ impl EmergencyInventory {
         Err(EmergencyPublishError::Capacity)
     }
 
-    pub(super) fn clear(&self, key: EmergencyKey) -> bool {
+    pub(crate) fn clear(&self, key: EmergencyKey) -> bool {
         let Some(slot) = self.inner.slots.get(key.index) else {
             return false;
         };
@@ -157,7 +178,7 @@ impl EmergencyInventory {
         }
     }
 
-    pub(super) fn has_active(&self) -> bool {
+    pub(crate) fn has_active(&self) -> bool {
         self.inner
             .slots
             .iter()
@@ -165,7 +186,7 @@ impl EmergencyInventory {
     }
 
     #[cfg(test)]
-    pub(super) fn active_count_for_test(&self) -> usize {
+    pub(crate) fn active_count_for_test(&self) -> usize {
         self.inner
             .slots
             .iter()
@@ -174,7 +195,7 @@ impl EmergencyInventory {
     }
 
     #[cfg(test)]
-    pub(super) fn clear_key_for_test(&self, key: EmergencyKey) -> bool {
+    pub(crate) fn clear_key_for_test(&self, key: EmergencyKey) -> bool {
         self.clear(key)
     }
 }
@@ -182,26 +203,6 @@ impl EmergencyInventory {
 impl Default for EmergencyInventory {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-pub(super) struct EmergencyRegistration {
-    inventory: EmergencyInventory,
-    key: Option<EmergencyKey>,
-}
-
-impl EmergencyRegistration {
-    #[cfg(test)]
-    pub(super) fn key_for_test(&self) -> EmergencyKey {
-        self.key.expect("emergency registration key")
-    }
-}
-
-impl Drop for EmergencyRegistration {
-    fn drop(&mut self) {
-        if let Some(key) = self.key.take() {
-            let _ = self.inventory.clear(key);
-        }
     }
 }
 

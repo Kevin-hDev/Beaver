@@ -1,5 +1,6 @@
-use super::emergency::{EmergencyInventory, VerifiedProcessIdentity};
-use super::emergency_drain::{EmergencyObservation, EmergencySignaler};
+use super::emergency::EmergencyInventory;
+use super::emergency_drain::EmergencySignaler;
+use super::emergency_signaler::NativeEmergencySignaler;
 use super::final_action::{self, FinalActionSource};
 use super::policy::{post_loop_sweep_timeout, watchdog_recheck_interval, ShutdownTimeline};
 use super::state::ShutdownState;
@@ -10,18 +11,6 @@ use std::thread::JoinHandle;
 use std::time::Instant;
 
 type ExitRequest = Arc<dyn Fn(ExitIntent, i32) + Send + Sync + 'static>;
-
-struct UnadoptedSignaler;
-
-impl EmergencySignaler for UnadoptedSignaler {
-    fn signal_or_recheck(
-        &self,
-        _identity: VerifiedProcessIdentity,
-        _already_requested: bool,
-    ) -> EmergencyObservation {
-        EmergencyObservation::IdentityMismatch
-    }
-}
 
 pub(super) struct WatchdogActions {
     request_exit: ExitRequest,
@@ -34,7 +23,7 @@ impl WatchdogActions {
     ) -> Self {
         Self {
             request_exit: Arc::new(request_exit),
-            signaler: Arc::new(UnadoptedSignaler),
+            signaler: Arc::new(NativeEmergencySignaler),
         }
     }
 
@@ -170,7 +159,7 @@ fn wait_until(deadline: Instant) {
 }
 
 pub(super) fn drain_post_loop(inventory: &EmergencyInventory, timeline: ShutdownTimeline) {
-    let signaler = UnadoptedSignaler;
+    let signaler = NativeEmergencySignaler;
     let local_limit = Instant::now() + post_loop_sweep_timeout();
     let deadline = local_limit.min(timeline.emergency_deadline());
     while inventory.has_active() && Instant::now() < deadline {

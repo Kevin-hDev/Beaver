@@ -10,6 +10,9 @@ mod blocking;
 mod cleanup;
 mod emergency;
 mod emergency_drain;
+#[allow(dead_code)]
+mod emergency_registration;
+mod emergency_signaler;
 mod final_action;
 mod policy;
 mod presentation;
@@ -24,6 +27,10 @@ mod ultimate;
 mod watchdog;
 mod work_supervisor;
 
+#[cfg(test)]
+pub(crate) use emergency::EMERGENCY_CAPACITY;
+pub(crate) use emergency_registration::EmergencyHandoffReason;
+pub(crate) use emergency_signaler::{AppEmergencyPublisher, AppEmergencyRegistration};
 pub use work_supervisor::AppWorkSupervisor;
 pub type AppWorkAdmission = registry::TrackedAdmission;
 pub type AppWorkAdmissionError = registry::AdmissionError;
@@ -32,6 +39,8 @@ pub type AppWorkAdmissionError = registry::AdmissionError;
 mod cleanup_tests;
 #[cfg(test)]
 mod coordinator_tests;
+#[cfg(test)]
+mod emergency_signaler_tests;
 #[cfg(test)]
 mod emergency_tests;
 #[cfg(test)]
@@ -90,6 +99,11 @@ impl AppExitCoordinator {
 
     pub(crate) fn work_supervisor(&self) -> AppWorkSupervisor {
         AppWorkSupervisor::new(self.registry.clone())
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn emergency_publisher(&self) -> AppEmergencyPublisher {
+        AppEmergencyPublisher::new(self.emergency.clone())
     }
 
     #[cfg(test)]

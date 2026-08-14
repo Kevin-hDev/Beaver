@@ -1,4 +1,5 @@
 use super::OwnedProcessError;
+use super::OwnedProcessIdentity;
 use std::sync::{Mutex, OnceLock};
 
 const MAX_OWNED_PROCESSES: usize = 64;
@@ -130,3 +131,27 @@ fn read_identity(pid: u32) -> Result<MacProcessIdentity, OwnedProcessError> {
         started_at,
     })
 }
+
+pub(super) fn read_start_time(pid: u32) -> Option<u64> {
+    let identity = read_identity(pid).ok()?;
+    Some(identity.started_at)
+}
+
+pub(super) fn read_executable_identity(pid: u32) -> Option<u128> {
+    let mut path = [0_u8; libc::PROC_PIDPATHINFO_MAXSIZE as usize];
+    let length =
+        unsafe { libc::proc_pidpath(pid as i32, path.as_mut_ptr().cast(), path.len() as u32) };
+    if length <= 0 {
+        return None;
+    }
+    use std::os::unix::ffi::OsStrExt;
+    use std::os::unix::fs::MetadataExt;
+    let metadata = std::fs::metadata(std::ffi::OsStr::from_bytes(
+        &path[..usize::try_from(length).ok()?],
+    ))
+    .ok()?;
+    Some((u128::from(metadata.dev()) << 64) | u128::from(metadata.ino()))
+}
+
+#[allow(dead_code)]
+fn _identity_type_marker(_: OwnedProcessIdentity) {}
