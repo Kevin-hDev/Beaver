@@ -1,0 +1,38 @@
+Contexte
+Le dépôt est public et ses réglages de sécurité GitHub étaient déjà bons : dependency graph, alertes Dependabot, alertes malware, correctifs de sécurité automatiques, regroupement de ces correctifs, secret scanning et push protection étaient actifs. Deux manques restaient côté interface : private vulnerability reporting désactivé, et Dependabot version updates inactif faute de fichier de configuration. Côté dépôt, release.yml appliquait déjà les bonnes pratiques (permissions minimales, actions épinglées par SHA, concurrency) alors que ci.yml, plus ancien, n'en appliquait aucune.
+
+Objectif
+Aligner ci.yml sur le niveau de release.yml et ajouter les contrôles de chaîne d'approvisionnement absents des deux, sans introduire de garde-fou nécessitant un relecteur humain : le dépôt n'a qu'un mainteneur.
+
+Décisions
+- Déclarer permissions: contents: read au niveau de ci.yml. Le jeton de la CI n'avait aucune restriction explicite et héritait donc des droits par défaut du dépôt.
+- Ajouter concurrency à ci.yml avec cancel-in-progress conditionnel : vrai sur pull_request, faux sur push vers main. Une série sur main valide un état déjà fusionné et son annulation ferait perdre la trace de cette validation.
+- Épingler les six actions de ci.yml par empreinte SHA de commit, en réutilisant à l'identique les valeurs déjà présentes dans release.yml pour checkout, rust-toolchain, setup-node et upload-artifact. Les deux SHA manquants (Swatinem/rust-cache, actions/cache) ont été résolus via l'API GitHub, tags annotés déréférencés jusqu'au commit.
+- Créer .github/dependabot.yml couvrant cinq écosystèmes : github-actions à la racine, npm à la racine, npm dans src-tauri/resources/extension-host, cargo dans src-tauri, cargo dans src-tauri/tests/windows-private-store. Les deux projets Cargo ont des Cargo.lock distincts et ne partagent pas de workspace.
+- Grouper les mises à jour par écosystème et plafonner à trois PR ouvertes. Un mainteneur unique ne peut pas absorber une PR par dépendance.
+- Inclure l'écosystème github-actions : sans lui, l'épinglage par SHA fige les actions sur des versions qui ne seront jamais corrigées.
+- Créer .github/workflows/codeql.yml sur actions, javascript-typescript et rust, en build-mode: none. Le support Rust de CodeQL est en disponibilité générale depuis octobre 2025 et l'analyse sans compilation y est prise en charge.
+- Poser fail-fast: false sur la matrice CodeQL : l'échec d'un extracteur ne doit pas supprimer les résultats des deux autres.
+- Créer .github/workflows/audit.yml avec npm audit --audit-level=high et cargo audit sur les deux Cargo.lock.
+- Déclencher l'audit uniquement sur changement de fichier de verrouillage, plus une passe hebdomadaire et un lancement manuel. Une passe périodique est nécessaire car une faille publiée après la fusion n'est vue par aucun déclencheur de pull request.
+- Ne poser aucun continue-or-error sur l'audit. Aucune règle de protection n'existe sur main, donc un échec ne peut de toute façon pas bloquer une fusion ; masquer le résultat ne ferait que supprimer le signal.
+- Fixer cargo-audit à la version 0.22.2 et mettre le binaire en cache, la clé de cache portant le numéro de version.
+
+Alternatives rejetées
+- Environnement de release avec relecteurs obligatoires : écarté sur demande, aucun second mainteneur n'existe pour approuver.
+- Rulesets sur main imposant des checks obligatoires : écarté pour l'instant. Avec un seul mainteneur, un check bloqué immobiliserait le dépôt sans personne pour débloquer.
+- CODEOWNERS et attestation de provenance des artefacts : sans revue humaine ni distribution signée, ils n'apportent rien aujourd'hui.
+- Action rustsec/audit-check : elle demande des permissions d'écriture supplémentaires sur les checks et les issues ; l'installation directe de cargo-audit évite cette surface.
+- Compilation de cargo-audit à chaque pull request : écartée au profit du filtre par chemin, la recompilation ne se justifiant pas quand aucune dépendance ne change.
+
+Validation
+- Syntaxe YAML des quatre fichiers validée par js-yaml.
+- Contrôle automatique du dossier .github/workflows : toutes les références uses: portent une empreinte de 40 caractères hexadécimaux, aucune action n'est laissée sur une étiquette mobile.
+- Existence de cargo-audit 0.22.2 vérifiée sur l'API crates.io ; une première rédaction indiquait 0.21.2, corrigée avant commit.
+- Visibilité publique du dépôt confirmée par l'API, ce qui rend CodeQL disponible sans licence.
+- git diff --check sans anomalie ; le commit ne touche que les quatre fichiers prévus, aucun source Rust ou TypeScript.
+
+Limites et preuve distante restante
+Aucun des trois workflows n'a été exécuté : leur passage au vert n'est pas démontré. Deux incertitudes subsistent, à lever sur GitHub Actions après le push. L'extracteur Rust de CodeQL doit localiser seul src-tauri/Cargo.toml depuis la racine du dépôt. Le premier passage de cargo audit peut remonter des failles préexistantes, ce qui est son rôle mais produira un premier résultat rouge.
+
+Deux actions restent à faire dans l'interface GitHub et ne relèvent pas de ce commit : activer private vulnerability reporting, et vérifier que Dependabot version updates bascule bien à l'état actif une fois ce dependabot.yml présent sur main.
