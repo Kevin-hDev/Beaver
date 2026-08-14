@@ -1,0 +1,9 @@
+Jalon 2 - supervision PTY
+
+Autorite: PtyManager possede seul la table bornee a 16 sessions, l'admission locale/globale, les shells et leurs fils de lecture. La fermeture centrale refuse toute nouvelle session, vide la table, ferme l'entree, abat l'arbre du shell puis attend le lecteur avant l'echeance globale.
+
+Raison: les correctifs historiques 8a5f967 et b6caf60 evitaient certains blocages ConPTY sans donner au coordinateur de fermeture une preuve de terminaison. Cette adoption rend le processus et son lecteur explicitement possedes et attendus.
+
+TDD rouge: les tests ne compilaient pas tant que stop_and_wait, spawn_for_test, process_id_for_test et l'admission supervisee n'existaient pas.
+
+Preuves vertes: tests shutdown PTY 2/2; suite terminal 8 passes et 2 anciens tests Windows ignores; suite Rust complete 3143 passes, 0 echec, 4 ignores; cargo fmt --check; clippy strict; graphify update. Le test natif lance un vrai shell, observe son PID, ferme le service et confirme que le processus et les sessions ont disparu.
