@@ -1,0 +1,35 @@
+Context
+- Follow-up to the review of commit c3b591b on codex/fix-ollama-context-diagnostics.
+- The review confirmed two possible Modelfile corruptions and incomplete diagnostics when the context window is unknown.
+
+Root causes
+1. The frontend could send Modelfile syntax while the backend expected a semantic value, then the backend stripped quotes. User values `"` and `""` could therefore create an invalid or empty directive.
+2. The backend removed a PARAMETER line before recording that it opened a multiline quoted block. The remaining block became stray directives and a later old parameter could survive.
+3. The internal context_window=0 sentinel means "unknown", but structured-detail validation rejected it and discarded every known counter.
+4. An unreachable newline-rendering branch was also incorrect for Windows line endings.
+
+Decisions
+- The UI/backend contract carries semantic values only, never Modelfile syntax.
+- The frontend decodes complete quoted single-line values.
+- The backend never strips quotes entered by the user; any value containing `"` is rendered inside triple quotes.
+- Multiline PARAMETER blocks cannot be edited safely by the current single-line UI, so they are preserved byte-for-byte and omitted from the editor. The scanner also tracks MESSAGE blocks so their contents cannot be mistaken for directives.
+- The existing zero sentinel stays internal to keep the change narrow. The UI shows every known counter with a translated message saying the real model window is unknown; it never invents or displays a false window size.
+- No provider routing, tool selection, model capability, streaming, or Ollama lifecycle behavior changed.
+
+Coverage
+- Regression tests cover `"`, `""`, embedded quotes, Windows paths, frontend round trips, simple/triple multiline PARAMETER blocks, multiline MESSAGE blocks, CRLF, and unknown windows with and without required reports.
+- TDD evidence: defects reproduced before production changes and passed afterward. The report-specific unknown-window message was additionally mutation-checked.
+
+Windows validation
+- cargo fmt --all -- --check: PASS
+- npx tsc --noEmit: PASS
+- npm run lint: PASS
+- cargo check --lib: PASS
+- cargo clippy --lib -- -A clippy::nonminimal_bool -D warnings: PASS (allowance is for a pre-existing warning outside this scope)
+- Vitest: 411 files, 1887 tests passed
+- Build scripts: 40/40; CEF: 6/6; extension host: 51/51
+- Targeted Rust with windows-tests: Modelfile 9/9, unknown window 1/1, structured decoder 4/4
+- Full Rust with windows-tests: 2953 passed, 4 ignored, 2 pre-existing CRLF-only failures outside scope (provider_contract_tests and startup_tests)
+- E2E runner: 5/6; only the pre-existing out-of-scope C:\repo versus /repo assertion fails in scripts/e2e/e2e-process.test.mjs:25
+- Without windows-tests, the local test binary may fail before running tests with STATUS_ORDINAL_NOT_FOUND, the system-library problem already reported by the reviewer.
+- Graphify updated after the code changes.
