@@ -1,0 +1,32 @@
+Contexte
+La review finale du jalon 1 a demandé une preuve CI native sur les trois systèmes. L'inspection du dépôt a montré que le job macOS existait dans le commit historique d3c7011 de l'ancienne branche de fermeture, mais qu'il n'avait jamais rejoint main et n'avait pas été repris lors de la reconstruction propre de codex/shutdown-milestone-1-core. La CI de PR ne couvrait donc plus que Linux et Windows, alors que le workflow de release conservait sa matrice macOS/Linux/Windows.
+
+Objectif
+Restaurer la validation native macOS avant la PR du jalon 1 sans réintroduire le code de l'ancienne architecture, puis attribuer précisément les deux interférences de tests parallèles observées pendant la validation.
+
+Décisions
+- Reprendre uniquement le job backend-macos-native de d3c7011 dans .github/workflows/ci.yml.
+- Conserver exactement ses garanties : runner macos-latest, préparation vérifiée de CEF, cargo check --all-targets et Clippy strict.
+- Ne cherry-pick ni d3c7011 ni aucun autre changement de l'ancienne branche de fermeture.
+- Ne pas modifier les deux tests instables sans cause racine démontrée : ils sont inchangés par J1 et réussissent isolément.
+- Inscrire dans J2 les deux tests exacts comme dette de harnais à rendre hermétique avant sa fusion, avec réussite exigée dans la suite parallèle. Une exécution globale séquentielle ne constitue pas une correction.
+- Maintenir J4 comme revalidation cumulative et corriger son attribution : le job macOS est désormais repris dès J1, pas introduit en J1B.
+- Ne pas créer encore la branche de maintenance : le contrat exige sa création depuis le dernier main publiable, juste avant la fusion de J1, après PR et CI vertes.
+
+Alternatives rejetées
+- Utiliser seulement le build macOS du workflow de release : il exige un tag existant et contredit l'interdiction de release pendant l'état transitoire.
+- Attendre J1B pour rétablir toute validation macOS : J1 exige déjà une preuve native de compilation avant sa propre fusion.
+- Cherry-pick d3c7011 en bloc : ce commit appartient à l'ancienne branche et son périmètre n'est pas celui de ce lot.
+- Masquer les interférences parallèles avec --test-threads=1 partout : cela cacherait la dette au lieu d'en identifier la cause.
+
+Validation
+- Le fichier .github/workflows/ci.yml est identique octet pour octet à sa version dans d3c7011 après restauration du job.
+- Un seul identifiant backend-macos-native est présent ; aucun identifiant de job n'est dupliqué.
+- Les runners Ubuntu, Windows natif, Windows tests et macOS sont présents.
+- Les deux noms de tests documentés existent dans les sources.
+- Le diff est limité aux cinq fichiers prévus et git diff --check réussit.
+- Les liens relatifs et l'absence de placeholders ont été contrôlés dans les documents modifiés.
+- Aucun fichier Rust ou TypeScript n'est modifié par ce commit.
+
+Limites et preuve distante restante
+Le job macOS ne peut être déclaré vert localement depuis Windows. Sa syntaxe et son contenu reprennent exactement la référence historique ; la preuve d'exécution sera fournie par GitHub Actions après le push et l'ouverture de la PR. La mise à jour sémantique Graphify a été tentée mais le worktree a été détecté comme un nouveau corpus de 4 000 fichiers et aucun moteur LLM n'est configuré ; aucun résultat sémantique n'a été inventé ni enregistré.
