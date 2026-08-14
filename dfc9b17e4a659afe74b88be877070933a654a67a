@@ -1,0 +1,38 @@
+État validé — refonte complète de la découverte progressive des plugins.
+
+Implémenté :
+- suppression totale du filtrage automatique par mots-clés et de discovery_text.rs ;
+- catalogue complet, stable et ordonné, une ligne par plugin activé, placé dans la description de search_extension_tools ; les plugins sans outil restent visibles ;
+- version du catalogue par empreinte SHA-256 structurée, recalculée lors des mutations du registre ou des préférences ;
+- masquage des schémas seulement au-delà de 10 % de la fenêtre totale, avec seuil de secours de 20 000 tokens si la fenêtre est inconnue ; décision figée par session + fournisseur + modèle + fenêtre + version du catalogue ;
+- persistance bornée des plugins découverts pour toute la session ; sélection par plugin entier, jamais par outil isolé ;
+- liste utilisateur de 15 plugins prioritaires, UI responsive, stockage atomique, nettoyage automatique des plugins désactivés ou supprimés ;
+- champ de manifeste essential, borné à 15 auto-déclarations après la priorité utilisateur ;
+- compteur d’usage borné, +1 par appel réel, décroissance paresseuse de 0,8 par semaine et éviction sous 0,01 ;
+- plafonds de compatibilité par fournisseur, omission de plugins entiers, explication au modèle et diagnostics avec identifiants bornés ;
+- mode Chat limité à web_search et web_fetch natifs, dans les définitions, l’UI et le dispatcher ; les appels halluciné, anticipés et les remplacements avancés de plugins ne traversent pas cette frontière ;
+- traductions complètes dans les 7 langues et documentation SDK du champ essential.
+
+Choix volontairement refusés :
+- aucune description de plugin ajoutée au system prompt ;
+- aucun déclenchement par mots-clés, synonymes, langue ou contexte du projet ;
+- aucun catalogue différentiel, profil statique ou sélection manuelle à chaque requête ;
+- aucun plugin, MCP, outil fichier ou outil agentique en mode Chat.
+
+Sécurité et structure :
+- entrées, collections et fichiers persistants bornés ; écritures atomiques ; erreurs visibles génériques ;
+- catalogue normalisé sur une ligne pour empêcher les fausses entrées ;
+- sélection fail-closed et frontière Chat contrôlée au moment réel de l’exécution ;
+- tous les fichiers code/test modifiés restent sous 200 lignes ;
+- graphe Graphify mis à jour.
+
+Validation exécutée :
+- cargo test --lib : 2429 réussis ;
+- cargo clippy --all-targets -- -D warnings : réussi ;
+- cargo fmt --check : réussi ;
+- npx vitest run : 355 fichiers, 1619 tests réussis ;
+- npm run test:extensions-host : 46 réussis ;
+- npx tsc --noEmit : réussi ;
+- npm run lint : réussi.
+
+Non vérifié manuellement : appels réels aux quotas des fournisseurs cloud, rendu visuel interactif sur les trois OS et comportement avec un catalogue réel proche de 80 plugins. Les limites sont couvertes par politiques et tests locaux, mais ces trois points restent adaptés à une validation E2E/review.
