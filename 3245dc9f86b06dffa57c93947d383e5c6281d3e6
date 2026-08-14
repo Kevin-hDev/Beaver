@@ -1,0 +1,9 @@
+Regression follow-up (2026-07-30) — provider-aware model registry
+
+Architecture: LiteLLM remains the embedded enrichment source, while live /models catalogs remain the source of models currently offered. Pricing uses strict route entries; capabilities merge route and upstream model metadata; OpenRouter output limits prefer upstream model data and then live runtime metadata.
+
+Provider policy: Groq and Cerebras omit automatic output caps, while explicit caller limits remain supported and clamped. Runtime catalogs are isolated and bounded to 16 providers and 500 models per provider.
+
+Onboarding: configured status is filtered against displayed providers, the CSS contract test uses CSSOM, and real Chromium checks passed from 800x500 down to 360x420 with dense lists and an inline API error.
+
+Validation: 2517 Rust tests, 1661 frontend tests, 2 CEF tests, and 46 extension-host tests passed. TypeScript, frontend lint, cargo check, cargo clippy with warnings denied, cargo fmt, diff checks, and Graphify update also passed. Full report: BEAVER_DIFFERENTIAL_REVIEW_407029C_FIXES_2026-07-30.md.
