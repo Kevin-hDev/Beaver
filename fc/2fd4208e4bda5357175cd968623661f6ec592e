@@ -1,0 +1,9 @@
+Task 4 round 2: correction Windows sync_file et fake post-rename.
+
+Rouges: filtre durable 17 tests, 15 verts, 2 rouges (every_durability_boundary_blocks_publication et sync_parent_failure_happens_after_fake_publication: assertion failed: fs.temp_is_absent()); contrat Windows rouge sur unresolved import windows_file_flush_access.
+
+Fix: sync_file et sync_directory partagent flush_path avec CreateFileW GENERIC_WRITE, FlushFileBuffers et CloseHandle; le fake consomme tmp et publie final au rename avant SyncParent.
+
+Verts: durable 18/18, blocking 2/2, document 10/10, paths 4/4, ollama_manager 44/44; cargo check, clippy strict, fmt check et diff check verts.
+
+Etat: avant rename les erreurs conservent tmp et final absent; SyncParent apres rename laisse tmp absent et final present. Cross-check GNU Windows non natif: code atteint puis bloque sur 3 erreurs CEF preexistantes et warning private_store; aucun test Windows natif execute sur macOS.
