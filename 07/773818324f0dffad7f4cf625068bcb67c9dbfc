@@ -1,0 +1,19 @@
+Revue et validation macOS CEF liveness — 2026-08-14
+
+Statut: implementation prete pour review. Ne pas presenter la branche comme totalement verte tant que les deux controles hors perimetre ci-dessous ne sont pas traites.
+
+Cause racine corrigee: macOS peut rendre temporairement illisible identite de processus CEF deja termine mais pas encore recoltable. La production traitait la premiere lecture incertaine comme une panne fatale. La serie introduit une observation Alive/Stopped/Unknown, une politique bornee unique de 250 ms par place et generation, et la partage entre tracker normal, passe urgence et revalidation avant signal. Une incertitude durable reste fatale.
+
+Tests TDD: rouges observes avant chaque autorite manquante (politique, classification, proprietaire partage, fermeture urgence, contrats CI et observateur natif). Le parcours turnover a revele une hypothese de test fausse: les helpers courts disparaissent avant entree de WebDriver. Mesure instrumentee: PID 56220 visible a 00:28:23.331Z puis absent a 00:28:23.501Z, alors que le parcours commencait a 00:28:24.012Z. Le commit 0777381 demarre donc observation dans le wrapper avant lancement de Beaver et publie une preuve atomique bornee dans profil E2E isole.
+
+Validations vertes sur 0777381: cargo fmt --check; cargo check --all-targets; cargo clippy --all-targets -D warnings; filtres Rust app_exit coordinator 10, work supervisor 2, liveness policy 7, process state 4, emergency slots 12, tracker 6, capability 3; npx tsc --noEmit; npm run lint; npm test avec Vitest 417 fichiers et 1918 tests puis build 50, CI 6, CEF 38, E2E runner 61, extension host 53; Graphify mis a jour.
+
+Preuves natives vertes consecutives: parcours 3e9f8e3a-688a-4ac5-9e37-173127108d44 puis 4f306182-a41a-4d51-b929-1f2ff8896906. Turnover, page load, capacite et session apres turnover, sortie coordonnee, disparition processus possedes et WebView ont tous termine. Aucun reaper-liveness, reaper-force-pass ou panic.
+
+Session application reelle: premier journal 2026-08-14T00:43:53.070Z, application encore vivante a 00:54:18.430Z, soit plus de 10 min 25 s, avec plusieurs flux Agent local. Aucun evenement panne CEF ni fermeture spontanee. Les erreurs TLS NotValidForName et avertissements ResizeObserver/IMK observes sont non fatals et hors de ce correctif.
+
+Controle rouge preexistant: cargo test --all echoue sur commands::app_update_helper_process::tests::handoff_preserves_exactly_one_validated_helper, assertion is_running(first_identity) ligne 130. Rejeu exact sur 0777381: meme echec en 0.08 s. Sept tests PTY du parcours complet restent aussi bloques au-dela de 60 s. Aucun fichier de ces sous-systemes ne change dans cette serie.
+
+Defaut separe revele par validation manuelle: menu macOS Quit Beaver Dev ferme processus principal sans evenement coordonne ni logs de nettoyage, et laisse sidecars Ollama/SearXNG orphelins. app_events.rs, app_lifecycle.rs et request_flow.rs sont inchanges depuis b679076; seule signature app_exit modifiee transmet echeance ultime CEF. Le parcours E2E coordonne reste propre. Les PID exacts crees par test ont ete termines et absence processus verifiee. A traiter dans chantier distinct, sans melanger a liveness.
+
+Recommandation: reviewer les sept commits fca69e8..0777381 comme une serie. La correction liveness est validee deterministiquement, deux fois nativement et plus de dix minutes en application. Ne lancer fusion finale qu apres decision explicite sur les deux rouges preexistants et le chemin macOS Quit separe.
