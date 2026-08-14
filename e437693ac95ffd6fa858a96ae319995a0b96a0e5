@@ -1,0 +1,7 @@
+Branche de maintenance pré-chantier
+- Branche : maintenance/v1.1.2-pre-shutdown
+- Point de départ : main d68ccdc37ad7b9839992ef88a38c93f35c8520ce, version 1.1.2.
+- Objectif : conserver une base publiable pour les seuls correctifs critiques ou de sécurité pendant les jalons transitoires de fermeture.
+- Politique : aucune fonctionnalité du chantier shutdown n'y est fusionnée ; tout correctif appliqué ici doit être reporté et revalidé dans les branches de jalon actives.
+- Conservation : jusqu'à la fusion et à la validation native du jalon 4.
+- Protection GitHub : administrateurs inclus, force-push et suppression interdits ; aucune approbation tierce obligatoire afin de ne pas bloquer un dépôt maintenu par un seul propriétaire.
