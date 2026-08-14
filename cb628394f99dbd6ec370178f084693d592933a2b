@@ -1,0 +1,27 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 214aa1009b9e2b3016d03485d5cae96474117a39
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): plan final milestone 2 fixes
+---
+
+Raison: la re-review a identifié quatre régressions localisées. Décision: audit gateway différé dans une file bornée et possédée, combinaison de fermeture sans court-circuit, arrêt extensions fail-closed, et cache GPU publié uniquement par la sonde possédée. Preuve: conception et plan auto-relus, sans placeholder ni contradiction de périmètre.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 5f9cf0db7395984a94413ece13dc40655473b669
+Motif du rattachement: commit réécrit
+Sujet original: fix(ci): satisfy strict cross-platform lint
+---
+
+Reason: strict native Clippy sees cfg-specific code that the local Windows profile cannot lint. The fixes preserve wire behavior while making ownership and the intentional subprocess exception explicit.
+
+RED: PR 14 run 31612936422 failed strict Clippy on Linux, Windows CEF, and macOS CEF. Findings were: the legacy deserialization-only wakeup error field looked unread, every uninstall boundary ended in Removed, and the Unix parent-death probe intentionally did not wait for its child.
+
+GREEN: the changed-file rustfmt contract passed locally. Scheduler tests passed 36/36 and Forecast model-manager tests passed 20/20. The legacy JSON name remains error but maps to _legacy_error and is never serialized; all production files remain below 230 lines. The Unix-only lint expectation is precise and will be proved by the next native Clippy run.
+
+Graph: graphify update . completed at 31397 nodes / 63235 edges.
+
+NATIVE CI: PR 14, run https://github.com/Kevin-hDev/Beaver/actions/runs/31614021818 is green on the final SHA. Linux backend 8m49, Linux WebView 4m53, Windows CEF 26m00, Windows backend tests 10m09, macOS CEF 23m48 on rerun, frontend 11m27, and desktop CEF 4m06. CodeQL, RustSec, npm audit, and GitGuardian also passed.
+
+FLAKE ACCOUNTING: the first macOS native journey reached application ready but its unchanged WebDriver spec timed out at 60s. The failed job alone was rerun on the identical SHA and the full real-browser journey passed; no timeout or product budget was weakened.
