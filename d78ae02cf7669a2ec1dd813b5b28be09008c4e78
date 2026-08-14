@@ -1,0 +1,28 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 13bef59f739a76fb90ff837ebc1bae16778c58d4
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): plan milestone 2 review fixes
+---
+
+Plan d'execution des corrections de la revue du jalon 2. Decision: sept lots fonctionnels TDD et une validation finale, avec fichiers, interfaces, preuves rouges et commandes vertes explicites. Auto-review: aucun placeholder, couverture 17/17 des mecanismes structurants. La mise a jour semantique Graphify a ete tentee et a echoue faute de cle LLM disponible; aucune fausse validation n'est revendiquee.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 47e48bec78c77f49f28c03f2a319ff0212230939
+Motif du rattachement: commit réécrit
+Sujet original: fix(terminal): bound Windows ConPTY teardown
+---
+
+Jalon 2 - fermeture deterministe du terminal Windows. Cause: portable-pty pouvait bloquer dans ClosePseudoConsole quand la sortie n'etait pas drainee, et l'ancien balayage attendait chaque processus avant de tuer le suivant, epuisant l'echeance partagee. Correction: backend ConPTY Windows dedie; enfant cree suspendu puis place dans l'unique Job Beaver avant execution; lecture de sortie bornee; canaux fermes avant la pseudoconsole; abattage de tous les membres confines avant leur attente. Preuves locales: terminal 13/13, processus possedes 3/3, arbre Windows 4/4, test de course 10/10, deux suites completes sequentielles 3161 reussis/2 ignores et une suite parallele verte, cargo fmt et clippy strict verts.
+
+CI distante: PR #14, commit final 47e48be, execution 31593057788; tous les controles termines avec succes, dont Backend Windows tests et parcours CEF natifs Windows/macOS.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 90309c0c25711c84f3f0b3fa334ec761e84a8a89
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): design milestone 2 review fixes
+---
+
+Conception des corrections de la revue complete du jalon 2. Decision: sept lots TDD autour des autorites existantes afin de fermer les deux bloquants et les vingt constats sans creer de second registre ni de seconde chronologie. Verification locale: git diff --cached --check vert et controle documentaire 12/12. La mise a jour semantique Graphify a ete tentee mais n'a pas pu s'executer faute de cle LLM disponible; elle devra etre relancee apres l'implementation avec l'environnement CI ou une cle configuree.
