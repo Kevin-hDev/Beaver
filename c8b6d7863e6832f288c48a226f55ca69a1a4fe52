@@ -1,0 +1,5 @@
+Objectif : relier le protocole aux vrais cycles Windows et macOS ainsi qu'à la chronologie d'arrêt de Beaver.
+
+Décisions : admission de chaque helper natif avant CEF, identité et handles privés, sandbox conservé, groupes de processus macOS vérifiés, contrôle de fermeture transmis aux helpers et balayage d'urgence borné de 13 à 15 secondes. Linux compile uniquement le protocole car native_browser y reste désactivé.
+
+Justification : la fermeture CEF ne doit ni retarder la sortie ultime ni laisser un helper fonctionnel après la mort du parent. Le runtime publie une capacité explicite et refuse tout démarrage non supervisé. Les suites natives et les tests de capacité couvrent admission, fermeture, identité et absence d'activation Linux.
