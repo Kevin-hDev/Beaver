@@ -1,0 +1,7 @@
+Probleme observe: sur macOS, le binaire et le bundle se construisent, le serveur WebDriver embarque devient pret, puis Beaver disparait environ quatre secondes plus tard avant POST /session. Les logs backend etaient captures dans logs/wdio-*.log mais le runner GitHub etait detruit sans les publier; le message tauri-driver est un diagnostic trompeur du service et non la cause, puisque le provider embarque etait deja pret.
+
+Objectif: obtenir la categorie racine lors du prochain echec sans exposer les logs complets ni introduire une collecte permanente.
+
+Decision: WDIO ecrit maintenant dans un sous-dossier du profil E2E temporaire deja canonique et borne. En cas d'echec du smoke natif uniquement, le lanceur lit au maximum 4 fichiers autorises, 512 Kio par fichier, 2048 lignes et 8 resultats. Seuls trois formats allow-listes sont reemis: categorie cef-supervision connue, preflight connu ou echec fatal apres frontiere CEF. Tout chemin, token, texte libre, erreur inconnue, nom non conforme, fichier lie/non regulier ou volume hors bornes est ignore; une panne du diagnostic ne masque jamais l'echec E2E initial. Le profil et les logs sont ensuite supprimes comme avant.
+
+Validation: TDD avec echec initial module absent/contrat non branche, puis npm run test:e2e-runner 25/25, npm run lint, npx tsc --noEmit, git diff --check, limites de fichiers sous 230 lignes et graphify update. Ce commit est diagnostique: il ne modifie ni CEF, ni le sandbox, ni le comportement de production.
