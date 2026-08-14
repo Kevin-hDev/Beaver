@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -11,7 +11,7 @@ const MAX_OUTPUT_BYTES = 64 * 1024;
 const MAX_PATH_LENGTH = 4096;
 const MAX_REF_LENGTH = 512;
 const MAX_TIMEOUT_MS = 30_000;
-const SHA_PATTERN = /[0-9a-f]{40}/gu;
+const SHA_PATTERN = /(?<![0-9A-Fa-f])[0-9a-f]{40}(?![0-9A-Fa-f])/gu;
 const HEAD_REF_PATTERN = /refs\/heads\/[A-Za-z0-9][A-Za-z0-9._/-]{0,255}/gu;
 const NOTES_REF_PATTERN = /refs\/notes\/[A-Za-z0-9][A-Za-z0-9._/-]{0,255}/gu;
 const FAILURE = "J3 reference preflight failed";
@@ -55,13 +55,24 @@ function parseArchiveHead(lines) {
   const markedLines = lines.filter((line) => /(?:tête\s+immuable|archive\s+head)/iu.test(line));
   if (markedLines.length !== 1 || markedLines.length > MAX_COLLECTION_SIZE) fail();
   const marker = /(?:tête\s+immuable|archive\s+head)/iu.exec(markedLines[0]);
-  const valueWindow = markedLines[0].slice((marker?.index ?? 0) + (marker?.[0].length ?? 0), (marker?.index ?? 0) + 128);
-  return assertSingle(collectMatches(valueWindow, SHA_PATTERN));
+  const valueWindow = markedLines[0].slice((marker?.index ?? 0) + (marker?.[0].length ?? 0));
+  const valueCell = /`([^`]+)`/u.exec(valueWindow)?.[1] ?? valueWindow.split(/[.;]/u, 1)[0];
+  return assertSingle(collectMatches(valueCell, SHA_PATTERN));
+}
+function splitMarkdownCells(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("|")) return [];
+  const content = trimmed.replace(/^\|/u, "").replace(/\|$/u, "");
+  const cells = content.split("|").map((cell) => cell.trim());
+  if (cells.length > 32) fail();
+  return cells;
 }
 function parseCommits(lines) {
   const headers = lines.filter((line) => /SHA\s+complet\s+J3/iu.test(line));
   if (headers.length !== 1 || headers.length > MAX_COLLECTION_SIZE) fail();
   const headerIndex = lines.indexOf(headers[0]);
+  const shaColumn = splitMarkdownCells(headers[0]).findIndex((cell) => /SHA\s+complet\s+J3/iu.test(cell));
+  if (shaColumn < 0) fail();
   const commits = [];
   let tableStarted = false;
   for (let index = headerIndex + 1; index < lines.length; index += 1) {
@@ -75,12 +86,14 @@ function parseCommits(lines) {
       continue;
     }
     tableStarted = true;
-    const rowCommits = collectMatches(line, SHA_PATTERN);
-    if (rowCommits.length > 1) fail();
-    if (rowCommits.length === 1) {
-      commits.push(rowCommits[0]);
-      if (commits.length > MAX_COLLECTION_SIZE) fail();
-    }
+    const cells = splitMarkdownCells(line);
+    if (cells.length <= shaColumn) fail();
+    const shaCell = cells[shaColumn];
+    if (/^:?-{3,}:?$/u.test(shaCell)) continue;
+    const rowCommits = collectMatches(shaCell, SHA_PATTERN);
+    if (rowCommits.length !== 1) fail();
+    commits.push(rowCommits[0]);
+    if (commits.length > MAX_COLLECTION_SIZE) fail();
   }
   if (commits.length !== MAX_COLLECTION_SIZE || new Set(commits).size !== commits.length) fail();
   return commits;
@@ -124,12 +137,15 @@ function remoteArchiveRef(archiveRef) {
   const branch = archiveRef.slice("refs/heads/".length);
   return validateRef(`refs/remotes/origin/${branch}`, "refs/remotes/");
 }
-async function readInventory(inventoryPath, repoRoot) {
+async function readInventory(inventoryPath, repoRoot, statFile = stat, readInventoryFile = readFile) {
   assertSafePath(repoRoot);
   assertSafePath(inventoryPath);
+  if (typeof statFile !== "function" || typeof readInventoryFile !== "function") fail();
   const path = isAbsolute(inventoryPath) ? inventoryPath : resolve(repoRoot, inventoryPath);
   try {
-    const markdown = await readFile(path, "utf8");
+    const metadata = await statFile(path);
+    if (!metadata || !Number.isSafeInteger(metadata.size) || metadata.size < 0 || metadata.size > MAX_MARKDOWN_BYTES) fail();
+    const markdown = await readInventoryFile(path, "utf8");
     if (Buffer.byteLength(markdown, "utf8") > MAX_MARKDOWN_BYTES) fail();
     return markdown;
   } catch {
@@ -150,10 +166,16 @@ function createGitRunner(repoRoot) {
     return result.stdout;
   };
 }
-export async function verifyJ3ReferenceArchive({ repoRoot, inventoryPath, runGit = createGitRunner(repoRoot) }) {
+export async function verifyJ3ReferenceArchive({
+  repoRoot,
+  inventoryPath,
+  runGit = createGitRunner(repoRoot),
+  statFile = stat,
+  readInventoryFile = readFile,
+}) {
   try {
     if (typeof runGit !== "function") fail();
-    const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot));
+    const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot, statFile, readInventoryFile));
     const remoteRef = remoteArchiveRef(inventory.archiveRef);
     const actualHead = (await callGit(runGit, ["rev-parse", "--verify", `${remoteRef}^{commit}`])).trim();
     if (actualHead !== inventory.archiveHead) fail();
