@@ -1,0 +1,5 @@
+Raison : lifecycle.rs mélangeait façade, démarrage, publication et arrêt ; surtout, save_pid s'exécutait sous le mutex du processus et pouvait bloquer statut ou fermeture sur une écriture lente.
+
+Décision : lifecycle.rs ne possède plus que l'état et la façade, start_lifecycle.rs possède la sérialisation, la génération et la publication, stop_lifecycle.rs possède la fermeture. La publication place le handle sous verrou puis le libère avant toute persistance bloquante. Le start_gate empêche une nouvelle génération de sauver son PID pendant la revalidation ; si la fermeture gagne pendant l'écriture, l'ancien PID est effacé sans pouvoir toucher une génération plus récente.
+
+TDD : pid_persistence_does_not_hold_the_process_lock a échoué faute de l'interface de publication séparée. Une seconde preuve rejette une génération devenue obsolète et vérifie que son enfant disparaît. Vérifications finales : SearXNG 19/19 ; fichiers de production 217 lignes maximum ; cargo fmt, git diff --check et graphify update . verts.
