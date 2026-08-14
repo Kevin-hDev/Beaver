@@ -1,0 +1,5 @@
+Raison : les lectures sysfs Linux bloquaient un worker Tokio, le lecteur stdout pouvait être attendu sans borne après l'arrêt du processus, et Forecast interrompait à 3 s une sonde de santé dont les deux phases autorisent jusqu'à 4 s.
+
+Décision : le snapshot sysfs complet s'exécute dans spawn_blocking et n'est publié qu'après revalidation de l'annulation. Chaque sonde calcule une seule échéance absolue avant le lancement ; le processus et la tâche de lecture utilisent cette même échéance, puis le lecteur est avorté et moissonné si elle expire. sidecar_http expose HEALTH_PROBE_BUDGET=4 s, somme documentée des phases connexion/lecture, et la réutilisation dépend directement de cette autorité.
+
+TDD : join_reader_for_test manquait au test rouge ; le scénario Forecast de 3,5 s ciblait l'ancien timeout de 3 s. Vérifications finales : tests ciblés 1/1 + 1/1 (Forecast fini en 3,98 s) ; gpu_vram 8/8 ; Forecast 292/292 ; fichiers de production maximum 161 lignes ; cargo fmt et git diff --check verts ; graphify update . exécuté avec succès.
