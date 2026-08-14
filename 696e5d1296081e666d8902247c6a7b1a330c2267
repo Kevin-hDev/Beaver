@@ -1,0 +1,15 @@
+Diagnostic natif macOS CEF — 2026-08-11
+
+Contexte : investigation du commit ef90eb5 sur la branche de diagnostic macOS.
+
+Symptôme initial : le paquet était construit et signé, puis Beaver quittait avant la connexion WebDriver avec admission-identity.
+
+Causes racines : (1) CEF macOS lance cinq exécutables officiels — principal, GPU, Renderer, Plugin et Alerts — mais la supervision n’autorisait que le principal ; (2) un helper court pouvait terminer sans être encore récupéré, et l’état zombie/exit non récupéré était classé à tort comme reaper-liveness.
+
+Correction : prévalidation canonique et bornée des cinq chemins exacts dans le bundle ; admission uniquement si l’exécutable appartient à ce tableau fixe ; reconnaissance de SZOMB et interrogation waitid(WNOWAIT) pour constater la fin d’un enfant sans récupérer son code de sortie à la place de Chromium.
+
+Preuves rouge/vert : le test de runtime échouait quand seuls le framework et le helper principal existaient ; le test de processus terminé retournait Err(Reaper) au lieu de Ok(false). Les deux passent après correction.
+
+Validation : cargo fmt --check ; cargo clippy --all-targets avec et sans feature e2e ; cargo test = 3149 réussis, 0 échec, 2 ignorés ; E2E natif complet avec reconstruction/signature = réussi ; trois relances E2E sans reconstruction = 3/3 réussies. Un délai capability de 15 s a échoué une fois pendant le diagnostic, mais la mesure directe a montré ready autour d’une seconde et les cycles suivants ont réussi : aucun délai n’a été augmenté.
+
+Recommandation : conserver cette liste exacte synchronisée avec le packaging CEF macOS et maintenir le test natif réel sur macOS ; ne pas remplacer la vérification par un balayage de dossier ou une comparaison approximative.
