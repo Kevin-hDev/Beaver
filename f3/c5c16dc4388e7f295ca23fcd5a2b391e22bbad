@@ -1,0 +1,15 @@
+Objectif : finaliser la phase 2 du catalogue d'outils après review, sans rouvrir le chantier du cache fournisseur.
+
+Décisions : suppression de l'outil agent_diagnostics et de la télémétrie tool_metrics, car son écriture atomique synchronisée à chaque appel sérialisait les outils parallèles. Les diagnostics de session diagnostic_runs et stream_failures sont explicitement conservés, bornés et toujours persistés.
+
+Images : suppression de read_image ; transform_image inspecte désormais l'entrée avec operations=[] sans output_path, permission d'écriture ni fichier créé. L'absence de operations reste réservée à la conversion avec output_path.
+
+Contrats : renommage sans alias de bash_write vers bash_control, planmode vers plan_mode, forecast vers forecast_run et process_image vers transform_image. Les anciens identifiants enregistrés sont ignorés sans bloquer le chargement. Catalogue final : 43 outils, 12 verrouillés, 31 optionnels, 24 actifs par défaut, 15 groupes et search_extension_tools seul hors groupe.
+
+Prompts : description bash découpée sans perte ; règles --no-verify déplacées dans les prompts. Les fournisseurs et le statut dynamique ont été retirés de web_search ; l'absence de fournisseur renvoie une erreur structurée et exploitable.
+
+Cache : la suppression de la section de statut est vérifiée par comportement. Le point de rupture explicite couvre exactement tout le message système et le seuil est calculé sur son contenu complet ; le cache automatique reste utilisé sous le seuil.
+
+Mesure : 20 111 caractères de descriptions, 20 640 de schémas, 21 376 caractères sérialisés pour 24 outils actifs par défaut, estimation Beaver 5 360 tokens.
+
+Validation : cargo check, cargo fmt --check, clippy strict, cargo test (2 837 tests), npx tsc --noEmit, npm run lint et npm test (1 793 Vitest + 2 CEF + 46 hôte d'extensions) réussis. Graphify mis à jour : intégrité sans anomalie ; 95/95 sources productrices de nœuds et 2/2 documents à jour. Limite connue : les 7 JSON i18n ne produisent aucun nœud dans l'extracteur Graphify (#1666).
