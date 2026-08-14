@@ -1,0 +1,22 @@
+Problème
+La CI du commit c416600 était entièrement verte, mais son journal contenait encore l'avertissement Node.js 20 pour actions/upload-artifact v5. La release v5 annonçait un support préliminaire de Node.js 24, tandis que son action.yml déclarait toujours runs.using=node20. GitHub se base sur ce manifeste et forçait donc encore l'ancien runtime.
+
+Objectif
+Utiliser la première version upload-artifact réellement exécutée par défaut sur Node.js 24 et obtenir une preuve dans le journal CI, pas seulement dans le texte d'une release.
+
+Décisions
+- Remplacer upload-artifact v5.0.0 par v6.0.0, épinglée au SHA officiel b7c566a772e6b6bfb58ed0dc250532a479d7789f.
+- Vérifier directement action.yml au SHA : runs.using vaut node24.
+- Conserver download-artifact v7.0.0, déjà vérifiée avec runs.using=node24.
+- Ne modifier aucun nom, chemin, niveau de compression, durée de rétention ou comportement d'artefact.
+- Conserver les runners GitHub hébergés, compatibles avec le runtime Node.js 24 requis.
+
+Validation locale
+- Prettier valide ci.yml et release.yml.
+- 44/44 tests des scripts de build passent.
+- Toutes les occurrences upload-artifact utilisent le SHA v6.0.0 ; toutes les occurrences download-artifact utilisent le SHA v7.0.0.
+- git diff --check passe.
+- Graphify a été synchronisé sans changement de topologie.
+
+Validation attendue
+Le journal de la nouvelle CI doit être inspecté après exécution et ne plus contenir l'avertissement Node.js 20. Le statut vert seul n'est pas considéré comme une preuve suffisante.
