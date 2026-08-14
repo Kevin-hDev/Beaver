@@ -1,0 +1,34 @@
+Problème
+- Beaver relisait les paramètres depuis le Modelfile normalisé renvoyé par Ollama. Cette représentation est ambiguë pour les guillemets, les espaces de bord et les valeurs multilignes.
+- Les anciens scanners frontend/backend pouvaient masquer un paramètre, conserver une ancienne valeur, produire des doublons ou déformer une valeur au fil des sauvegardes.
+
+Objectif
+- Garantir qu'une sauvegarde des réglages Ollama conserve exactement les valeurs réellement stockées, permet de voir/modifier/supprimer les valeurs multilignes et bloque toute réécriture ambiguë.
+
+Décisions
+- La source sémantique devient /api/show.parameters; le Modelfile reste uniquement le document structurel à réécrire.
+- Ajout d'un décodeur borné du format Go renvoyé par Ollama: 160 KiB, 128 entrées, clés 64 octets, valeurs 1024 octets.
+- Remplacement uniquement du bloc PARAMETER normalisé qui correspond de façon complète et unique aux valeurs courantes; absence ou ambiguïté = erreur bloquante.
+- Séparation du rendu normalisé (pour localiser le bloc Ollama) et du rendu source (pour recréer le modèle). Toute valeur commençant par un guillemet est protégée par des triples guillemets.
+- Conservation exacte des espaces, des valeurs composées uniquement d'espaces et des sauts de ligne. Les valeurs multilignes sont visibles dans des zones de texte.
+- Rejet des triples guillemets et des caractères de contrôle non représentables afin d'éviter une suppression ou une dérive silencieuse par le parseur Ollama.
+- Suppression du parseur Modelfile dupliqué côté interface.
+- Toutes les collections et réponses externes utilisées par ce flux sont bornées; les erreurs de cohérence échouent fermées.
+
+Portée
+- Aucun changement dans le chat, les providers API/OAuth, la sélection ou l'injection des outils, les capacités des modèles, le streaming ou le cycle de vie Ollama/CEF.
+- L'ancien get_modelfile natif reste disponible pour les prompts système et personnalisations internes; seul le contrat Tauri de l'éditeur retourne maintenant { modelfile, parameters }.
+
+Vérifications
+- Frontend complet: 411 fichiers, 1878 tests passés.
+- Hôte d'extensions: 51 tests passés.
+- Tests Rust ciblés Ollama: 18 passés (résumé, validation, réécriture, contrat HTTP).
+- npm run lint: passé.
+- npx tsc --noEmit: passé.
+- cargo check --features windows-tests --lib: passé (avertissements CEF préexistants).
+- Suite Rust complète observée sur cet état Rust: 2959 passés, 2 échecs, 4 ignorés. Les 2 échecs sont les comparaisons LF/CRLF Windows préexistantes: provider_contract_tests::checked_in_typescript_matches_the_rust_contract et startup_tests::macos_entry_point_captures_the_shell_through_cef_startup.
+- npm test global atteint encore l'échec Windows préexistant de scripts/e2e/e2e-process.test.mjs (chemin /repo attendu contre C:\repo réel); Vitest, build scripts et CEF passent avant cet arrêt. L'hôte d'extensions a donc été exécuté séparément et passe.
+- Graphify AST mis à jour après les changements.
+
+Limite de vérification
+- Aucun modèle utilisateur n'a été recréé automatiquement pendant les tests. Le comportement de citation/décitation a été comparé au parseur officiel Ollama v0.32.5 et couvert par les tests, mais le cycle manuel avec l'installation Ollama de l'utilisateur reste à effectuer.
