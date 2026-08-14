@@ -1,0 +1,9 @@
+Objectif: terminer la compatibilite du shell confine sans desactiver bash ni bash_control et sans permettre au LLM de sortir des dossiers autorises.
+
+Decisions: TMPPREFIX est isole avec TMPDIR/TMP/TEMP et filtre des profils; caches inscriptibles limites a des chemins precis et adaptes a macOS/Linux/Windows; variables standard de cache respectees; caches standards absents crees uniquement pour un outil installe, sous le home canonique et sans lien symbolique; caches Go module et sumdb ajoutes; /private/tmp sur macOS et /tmp sur Linux autorises en lecture/ecriture sur decision explicite pour les outils qui ignorent TMPDIR; aucun dossier contenant des executables du PATH ne devient inscriptible.
+
+Revue de securite: collections bornees, chemins absolus/canonicalises, refus des parents, racines larges, liens symboliques, chemins hors home, chevauchements workspace et caches couvrant le PATH. Risques assumes: temp systeme partage selon permissions OS, lecture de .npmrc, cache uv potentiellement partage sous Linux, telemetrie Go hors perimetre.
+
+Validation: cargo test = 2879 passes, 0 echec, 1 ignore; test Seatbelt reel relance = git/npm/cargo/go/heredoc/diff OK et ecriture hors projet bloquee; cargo clippy --all-targets -D warnings OK; cargo fmt --check OK; graphify update execute. Cross-clippy Linux bloque avant Beaver par le sysroot/pkg-config GTK absent; Windows bloque avant Beaver par CEF et le SDK MSVC absents, a valider en CI native.
+
+Rapport: /Users/kevinh/.codex/visualizations/2026/08/02/019fc21a-874f-7583-bbbe-882f80893ac1/BEAVER_SANDBOX_REVIEW_FINAL_2026-08-02.md
