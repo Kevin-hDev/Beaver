@@ -1,0 +1,23 @@
+Suivi de review macOS CEF après ac62e41
+
+Cause : run.mjs calculait la racine E2E lexicalement alors que prepare-build.mjs la canonicalisait. Avec un dépôt ouvert via un lien symbolique et la validation stricte de CARGO_TARGET_DIR, les deux chemins équivalents pouvaient diverger.
+
+Correction : canonicalE2eRepoRoot est l'autorité unique dans e2e-process.mjs. run.mjs et prepare-build.mjs l'utilisent tous les deux. Le test crée un vrai lien symbolique ou une jonction et exige la racine physique.
+
+TDD : le test ciblé a d'abord échoué car canonicalE2eRepoRoot était absent, puis a passé après implémentation.
+
+Validation automatisée : npm test PASS (417 fichiers Vitest, 1918 tests frontend; 50 build; 6 CI; 34 CEF; 49 runner E2E; 53 extension-host); npm run lint PASS; npx tsc --noEmit PASS; git diff --check PASS; graphify update . PASS (27749 nœuds, 59963 relations).
+
+Validation native macOS : depuis un lien symbolique, la reconstruction complète a atteint le bundle physique src-tauri/target/e2e sans rejet CARGO_TARGET_DIR, sans panic de profil et sans défaut liveness. Le parcours a ensuite expiré sur browser_capability. Le rejeu via le lien et le rejeu depuis le chemin physique expirent au même stade : ce défaut runtime est distinct de la canonicalisation et reste à investiguer.
+
+Recommandation : conserver f6fb725 après 708f14e et ac62e41. Traiter séparément le timeout browser_capability avant de déclarer le parcours natif macOS vert.
+
+CI trois OS — exécution PR #17 / run 31732179000
+
+Résultats finaux : Windows entièrement vert (tests backend, autorité CEF et parcours natif); Linux WebView et Desktop E2E verts; frontend vert; Dependency audit et CodeQL verts. Le job Backend Rust Linux a échoué une fois sur repeated_host_restarts_reuse_the_single_reader_slot avec extensions_host_busy, puis a passé intégralement au rejeu ciblé : instabilité de concurrence séparée.
+
+Blocage macOS reproductible sur deux exécutions propres : le parcours natif échoue pendant beforeBuildCommand, avant le lancement de Beaver, avec IO error sur target/e2e/cef-runtime/macos/Chromium Embedded Framework.framework absent. Ce n'est donc ni browser_capability ni le reaper à ce stade CI.
+
+Cause racine observée : prepare-cef.sh doit compiler cl-go-dash-helper avant de créer le stage E2E. Cette compilation exécute build.rs; tauri-build lit TAURI_CONFIG hérité du build E2E, voit le framework E2E déclaré dans tauri.e2e.conf.json et tente de le copier immédiatement. Sur un runner propre le stage n'existe pas encore, donc la compilation du helper échoue avant que prepare-cef.sh puisse le créer. Les validations locales avaient un stage E2E déjà présent; la fixture remplace Cargo et n'exécute pas build.rs, donc aucune ne couvrait le démarrage réellement propre.
+
+Recommandation : CI globale non validée. Ajouter en TDD une reproduction réelle ou un contrat de démarrage à froid, puis casser ce cycle de bootstrap à sa source sans réintroduire le stage partagé. Rejouer ensuite la CI complète avant d'aborder séparément browser_capability/liveness.
