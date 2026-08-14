@@ -1,0 +1,13 @@
+J3 Task 1 fix round 2: reject invalid short CEF timelines.
+
+Intention: guarantee that every policy accepted by ShutdownPolicy::new has emergency < CEF helper < ultimate, while keeping 14s in production and 14ms for the 8/10/13/15ms short policy.
+
+Red: cargo test --lib app_exit::policy_tests::rejects_policy_without_a_strict_cef_helper_slot -- --test-threads=1 failed 1/1 because the valid 8/10/14/15ms boundary was still accepted.
+
+Green: the boundary test passed 1/1; cargo test app_exit::policy_tests passed 8/8; cargo test --lib app_exit::coordinator_tests -- --test-threads=1 passed 10/10; cargo clippy --lib -- -D warnings, cargo fmt --check, and git diff --check passed.
+
+Real result: cef_helper_timeout is the single formula authority used by policy validation and cef_helper_exit_deadline. 8/10/13/15ms yields 14ms; 8/10/14/15ms is rejected; production yields origin+14s and remains below origin+15s. Graphify rebuilt 32,026 nodes, 64,454 relations and 1,986 communities.
+
+Limits: invalid short policies now fail closed at the test constructor; production policy constants remain unchanged and no CEF consumer file was modified. The global ultimate budget remains 15s.
+
+Recommendation: keep all future policy construction behind the strict-slot validation and consume cef_helper_exit_deadline directly; do not add another local CEF budget or relax the boundary check.
