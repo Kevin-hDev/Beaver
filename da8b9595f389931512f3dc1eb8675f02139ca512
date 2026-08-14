@@ -1,0 +1,1 @@
+Raison: Rust court-circuitait l'attente du registre lorsque l'arrêt d'un processus extensions ou MCP échouait. Correction: autorité combine_with_work qui attend toujours le futur du domaine avant de combiner les résultats. TDD rouge: module absent; vert: shutdown_completion 1/1, MCP process_pool 2/2, extensions work_supervision 3/3 avec --features windows-tests.
