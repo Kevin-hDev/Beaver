@@ -1,0 +1,5 @@
+Raison : le curseur avançait au-delà d'un refus non journalisé et au-delà de la grâce de redémarrage ; un réveil ponctuel pouvait aussi être désactivé avant sa décision durable ; chaque append relisait jusqu'à 1 Mo.
+
+Décision : distinguer la réconciliation Startup de Running ; au redémarrage décider jusqu'à maintenant, puis conserver en fonctionnement le curseur derrière la grâce de 5 minutes ; ne déplacer le curseur qu'après les décisions ; journaliser un once avant sa désactivation ; garder sous un verrou unique une métadonnée bornée (16 chemins, 500 occurrences par chemin), validée par l'offset fichier, et relire uniquement au premier append, après remplacement externe ou au seuil de rotation.
+
+TDD : les tests ont d'abord échoué sur l'absence de cutoff Startup, l'absence d'état de persistance, l'absence d'observateur de lecture et l'ordre once. Vérifications finales : scheduler 40/40 ; composant WakeupHistory legacy 1/1 ; cargo fmt et git diff --check verts ; graphify update . exécuté ; tous les fichiers de production touchés sont sous 230 lignes (maximum 197).
