@@ -1,0 +1,35 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 0572991e67f1b6f9389e97ed0ccd9fbda9aa916f
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(browser): design Windows local TLS probe fix
+---
+
+Intent: document the verified Windows local TLS log-spam root cause and the correction boundary.
+Result: rejects a global Reqwest backend change and specifies task-scoped filtering that preserves strict certificate validation and unrelated TLS logs.
+Evidence: useLocalSites scans every five seconds; the local probe tries HTTP then HTTPS; rustls-platform-verifier logs before returning UnknownIssuer; Reqwest TLS features are additive.
+Verification: design and execution plan checked against the current scanner, logger, Cargo feature resolution, and Windows test profile.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: b2178f97225ea9c552a3db8341be128dd41caca3
+Motif du rattachement: commit réécrit
+Sujet original: fix(browser): restore Windows CEF visibility
+---
+
+Cause:
+- Wry remonte sa fenêtre enfant WebView2 avec HWND_TOP.
+- Le placement CEF conservait SWP_NOZORDER, donc CEF restait derrière malgré une géométrie et une visibilité correctes.
+
+Décision:
+- Une autorité Windows unique possède la position, la taille, la visibilité et l'ordre de la surface CEF.
+- Une surface visible utilise HWND_TOP; une surface masquée conserve son ordre avec SWP_NOZORDER.
+- Les diagnostics d'ordre des fenêtres ne sont compilés qu'en mode debug.
+
+Preuves:
+- TDD rouge: les deux tests Win32 réels échouaient avec l'autorité non implémentée.
+- TDD vert: les tests prouvent la remontée de CEF, le masquage sans mutation d'ordre et la réouverture au premier plan.
+- cargo test --lib --features windows-tests -- --test-threads=1: 3238 réussis.
+- cargo fmt --all -- --check: réussi.
+- cargo clippy --all-targets -- -D warnings: réussi avec Ninja disponible dans PATH.
+- Vérification visuelle: la page CEF est visible et reste devant après redimensionnements répétés.
