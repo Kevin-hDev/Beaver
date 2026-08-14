@@ -19,7 +19,10 @@ backend-windows-native:
   run: cargo test --lib --features windows-tests services::browser::cef_supervision::windows_tracker_tests
 backend-macos-native:
   run: cargo clippy --all-targets -- -D warnings
-  run: cargo test --lib services::browser::cef_supervision::macos_tracker_tests
+  run: cargo test --lib services::browser::cef_supervision::macos::liveness_policy_tests
+  run: cargo test --lib services::browser::cef_supervision::macos::process_state_tests
+  run: cargo test --lib services::browser::cef_supervision::macos::emergency_slots_tests
+  run: cargo test --lib services::browser::cef_supervision::macos::tracker_tests
 `,
   build: `if target == "macos" || (target == "windows" && !windows_tests) {
     println!("cargo:rustc-cfg=native_browser");
@@ -41,13 +44,37 @@ test("missing native tests and sandbox bypasses fail the contract", () => {
   const errors = validateCefSupervisionContracts({
     ...valid,
     workflow: valid.workflow
-      .replace("services::browser::cef_supervision::macos_tracker_tests", "missing")
+      .replace("services::browser::cef_supervision::macos::tracker_tests", "missing")
       .concat("\nCEF_NO_SANDBOX: 1\n"),
   });
 
   assert.ok(errors.includes("macOS supervision tests are missing"));
   assert.ok(errors.includes("CEF sandbox bypass is forbidden"));
 });
+
+for (const [filter, message] of [
+  [
+    "services::browser::cef_supervision::macos::liveness_policy_tests",
+    "macOS liveness policy tests are missing",
+  ],
+  [
+    "services::browser::cef_supervision::macos::process_state_tests",
+    "macOS process state tests are missing",
+  ],
+  [
+    "services::browser::cef_supervision::macos::emergency_slots_tests",
+    "macOS emergency slot tests are missing",
+  ],
+]) {
+  test(`missing ${filter} fails the contract`, () => {
+    const errors = validateCefSupervisionContracts({
+      ...valid,
+      workflow: valid.workflow.replace(filter, "missing"),
+    });
+
+    assert.ok(errors.includes(message));
+  });
+}
 
 test("Linux native_browser activation fails the contract", () => {
   const errors = validateCefSupervisionContracts({

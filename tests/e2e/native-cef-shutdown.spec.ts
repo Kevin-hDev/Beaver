@@ -1,12 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { createNativeJourney } from "../../scripts/e2e/native-journey-deadline.mjs";
+import { waitForMacCefTurnoverProof } from "../../scripts/e2e/macos-cef-turnover-proof.mjs";
 import {
   runtimeRootForBinary,
   waitForOwnedCefHelper,
   waitForOwnedProcessesToExit,
   waitForProcessIdsToExit,
 } from "../../scripts/e2e/native-cef-observer.mjs";
+import { waitForOwnedCefHelperSet } from "../../scripts/e2e/native-cef-liveness-observer.mjs";
 import { completeOnboarding } from "./onboarding-flow";
 import { invokeTauri } from "./tauri-invoke";
 
@@ -41,6 +43,8 @@ describe("native CEF shutdown", () => {
     const journey = createNativeJourney();
     const binaryPath = process.env.E2E_APP_BINARY;
     if (!binaryPath) throw new Error("E2E app binary is not configured");
+    const logDirectory = process.env.E2E_LOG_DIR;
+    if (!logDirectory) throw new Error("E2E log directory is not configured");
     const runtimeRoot = runtimeRootForBinary(process.platform, binaryPath);
     let server: Server | undefined;
     try {
@@ -85,9 +89,22 @@ describe("native CEF shutdown", () => {
         })
       ));
 
-      await journey.run("cef_helper_start", ({ timeoutMs }) => (
-        waitForOwnedCefHelper({ root: runtimeRoot, timeoutMs })
-      ));
+      await journey.run(
+        "cef_helper_start",
+        async ({ timeoutMs }) => {
+          if (process.platform === "darwin") {
+            await waitForOwnedCefHelperSet({ root: runtimeRoot, timeoutMs });
+            return;
+          }
+          await waitForOwnedCefHelper({ root: runtimeRoot, timeoutMs });
+        },
+      );
+      if (process.platform === "darwin") {
+        // The wrapper observes before spawning Beaver because short helpers can exit pre-WebDriver.
+        await journey.run("cef_helper_turnover", ({ timeoutMs }) => (
+          waitForMacCefTurnoverProof({ logDirectory, timeoutMs })
+        ));
+      }
       await journey.run("page_load", ({ timeoutMs }) => (
         browser.waitUntil(async () => {
           const current = await invokeTauri<BrowserSession>("browser_open_session", {
@@ -97,6 +114,22 @@ describe("native CEF shutdown", () => {
           return tab?.title === "Beaver CEF smoke" && !tab.loading;
         }, { timeout: timeoutMs, interval: 100 })
       ));
+      if (process.platform === "darwin") {
+        await journey.run("browser_capability_after_turnover", ({ timeoutMs }) => (
+          browser.waitUntil(async () => (
+            (await invokeTauri<BrowserCapability>("browser_capability")).status === "ready"
+          ), { timeout: timeoutMs, interval: 100 })
+        ));
+        await journey.run("browser_session_after_turnover", async () => {
+          const current = await invokeTauri<BrowserSession>("browser_open_session", {
+            conversationId,
+          });
+          const tab = current.tabs.find(({ id }) => id === current.activeTabId);
+          if (tab?.title !== "Beaver CEF smoke" || tab.loading) {
+            throw new Error("Native CEF session recovery failed");
+          }
+        });
+      }
 
       await journey.run("exit_request", () => invokeTauri("e2e_request_exit"));
       await journey.run("webdriver_release", async () => {

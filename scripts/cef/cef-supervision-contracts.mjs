@@ -24,8 +24,26 @@ export function validateCefSupervisionContracts({
   );
   requireText(
     workflow,
-    "services::browser::cef_supervision::macos_tracker_tests",
+    "services::browser::cef_supervision::macos::tracker_tests",
     "macOS supervision tests are missing",
+    errors,
+  );
+  requireText(
+    workflow,
+    "services::browser::cef_supervision::macos::liveness_policy_tests",
+    "macOS liveness policy tests are missing",
+    errors,
+  );
+  requireText(
+    workflow,
+    "services::browser::cef_supervision::macos::process_state_tests",
+    "macOS process state tests are missing",
+    errors,
+  );
+  requireText(
+    workflow,
+    "services::browser::cef_supervision::macos::emergency_slots_tests",
+    "macOS emergency slot tests are missing",
     errors,
   );
   if (FORBIDDEN_SANDBOX_BYPASS.test(workflow)) {

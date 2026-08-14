@@ -2,29 +2,30 @@ use super::super::constants::CEF_SLOT_CAPACITY;
 use super::super::reservation::CefAdmission;
 use super::super::CefUnavailableCategory;
 use super::identity::MacProcessIdentity;
+use super::liveness_policy::{MacLivenessDecision, MacLivenessState};
+use super::process_state::{MacProcessActions, MacProcessObservation, MacSystemProcessActions};
 use super::MacPublicationObjects;
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, OnceLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 struct MacEmergencyEntry {
     generation: u64,
     identity: MacProcessIdentity,
     objects: Arc<MacPublicationObjects>,
     _admission: CefAdmission,
-}
-
-#[derive(Clone)]
-pub(super) struct MacEmergencyTarget {
-    pub(super) slot: usize,
-    pub(super) generation: u64,
-    pub(super) identity: MacProcessIdentity,
-    objects: Arc<MacPublicationObjects>,
+    liveness: MacLivenessState,
 }
 
 pub(super) struct MacEmergencySlots {
     slots: [RwLock<Option<MacEmergencyEntry>>; CEF_SLOT_CAPACITY],
     occupied: AtomicUsize,
-    closing_deadline: AtomicU64,
+    closing: OnceLock<MacClosingDeadlines>,
+}
+
+#[derive(Clone, Copy)]
+struct MacClosingDeadlines {
+    helper_exit: u64,
+    ultimate: u64,
 }
 
 impl MacEmergencySlots {
@@ -32,7 +33,7 @@ impl MacEmergencySlots {
         Self {
             slots: std::array::from_fn(|_| RwLock::new(None)),
             occupied: AtomicUsize::new(0),
-            closing_deadline: AtomicU64::new(0),
+            closing: OnceLock::new(),
         }
     }
 
@@ -44,11 +45,11 @@ impl MacEmergencySlots {
         objects: Arc<MacPublicationObjects>,
         admission: CefAdmission,
     ) -> Result<(), CefUnavailableCategory> {
-        if generation == 0 || self.closing_deadline.load(Ordering::Acquire) != 0 {
+        if generation == 0 || self.closing.get().is_some() {
             return Err(CefUnavailableCategory::Admission);
         }
         let mut target = self.write(slot).ok_or(CefUnavailableCategory::Admission)?;
-        if target.is_some() || self.closing_deadline.load(Ordering::Acquire) != 0 {
+        if target.is_some() || self.closing.get().is_some() {
             return Err(CefUnavailableCategory::Admission);
         }
         *target = Some(MacEmergencyEntry {
@@ -56,30 +57,29 @@ impl MacEmergencySlots {
             identity,
             objects,
             _admission: admission,
+            liveness: MacLivenessState::new(),
         });
         self.occupied.fetch_add(1, Ordering::AcqRel);
         Ok(())
     }
 
-    pub(super) fn begin_closing(&self, deadline_ticks: u64) -> Result<(), ()> {
-        if deadline_ticks == 0 {
+    pub(super) fn begin_closing(
+        &self,
+        helper_exit_ticks: u64,
+        ultimate_ticks: u64,
+    ) -> Result<(), ()> {
+        if helper_exit_ticks == 0 || ultimate_ticks == 0 || helper_exit_ticks > ultimate_ticks {
             return Err(());
         }
-        let stored = match self.closing_deadline.compare_exchange(
-            0,
-            deadline_ticks,
-            Ordering::AcqRel,
-            Ordering::Acquire,
-        ) {
-            Ok(_) => deadline_ticks,
-            Err(existing) if existing != 0 => existing,
-            Err(_) => return Err(()),
-        };
+        let stored = *self.closing.get_or_init(|| MacClosingDeadlines {
+            helper_exit: helper_exit_ticks,
+            ultimate: ultimate_ticks,
+        });
         let mut failed = false;
         for slot in 0..CEF_SLOT_CAPACITY {
             if self
-                .target(slot)
-                .is_some_and(|target| target.objects.begin_closing(stored).is_err())
+                .objects(slot)
+                .is_some_and(|objects| objects.begin_closing(stored.helper_exit).is_err())
             {
                 failed = true;
             }
@@ -87,25 +87,51 @@ impl MacEmergencySlots {
         (!failed).then_some(()).ok_or(())
     }
 
-    pub(super) fn force_pass(&self) -> Result<(), ()> {
-        let mut failed = false;
-        for slot in 0..CEF_SLOT_CAPACITY {
-            let Some(target) = self.target(slot) else {
-                continue;
-            };
-            match target.identity.is_alive() {
-                Ok(false) => self.clear(target.slot, target.generation),
-                Ok(true) => {
-                    if target.identity.kill_group().is_err() {
-                        failed = true;
-                    }
-                }
-                Err(_) => failed = true,
-            }
-        }
-        (!failed).then_some(()).ok_or(())
+    pub(super) fn refresh(
+        &self,
+        slot: usize,
+        generation: u64,
+    ) -> Result<Option<MacLivenessDecision>, CefUnavailableCategory> {
+        let mut target = match self.write(slot) {
+            Some(target) => target,
+            None => return Ok(None),
+        };
+        let Some(entry) = target
+            .as_mut()
+            .filter(|entry| entry.generation == generation)
+        else {
+            return Ok(None);
+        };
+        let observation = MacSystemProcessActions.observe(&entry.identity);
+        let now_ticks = super::clock::now_ticks()?;
+        self.apply_observation(&mut target, observation, now_ticks)
     }
 
+    fn apply_observation(
+        &self,
+        target: &mut Option<MacEmergencyEntry>,
+        observation: MacProcessObservation,
+        now_ticks: u64,
+    ) -> Result<Option<MacLivenessDecision>, CefUnavailableCategory> {
+        let Some(entry) = target.as_mut() else {
+            return Ok(None);
+        };
+        let decision = entry
+            .liveness
+            .apply(
+                observation,
+                now_ticks,
+                self.closing.get().map(|deadlines| deadlines.ultimate),
+            )
+            .map_err(|_| CefUnavailableCategory::Reaper)?;
+        if decision == MacLivenessDecision::Stopped {
+            drop(target.take());
+            self.occupied.fetch_sub(1, Ordering::AcqRel);
+        }
+        Ok(Some(decision))
+    }
+
+    #[cfg(test)]
     pub(super) fn clear(&self, slot: usize, generation: u64) {
         let Some(mut target) = self.write(slot) else {
             return;
@@ -123,14 +149,9 @@ impl MacEmergencySlots {
         self.occupied.load(Ordering::Acquire) != 0
     }
 
-    fn target(&self, slot: usize) -> Option<MacEmergencyTarget> {
+    fn objects(&self, slot: usize) -> Option<Arc<MacPublicationObjects>> {
         let target = self.read(slot)?;
-        target.as_ref().map(|entry| MacEmergencyTarget {
-            slot,
-            generation: entry.generation,
-            identity: entry.identity.clone(),
-            objects: Arc::clone(&entry.objects),
-        })
+        target.as_ref().map(|entry| Arc::clone(&entry.objects))
     }
 
     fn read(&self, slot: usize) -> Option<RwLockReadGuard<'_, Option<MacEmergencyEntry>>> {
@@ -146,3 +167,7 @@ impl MacEmergencySlots {
         })
     }
 }
+
+mod force;
+#[cfg(test)]
+mod test_api;

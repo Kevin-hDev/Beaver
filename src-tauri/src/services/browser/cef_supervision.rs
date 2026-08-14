@@ -54,12 +54,6 @@ pub(super) use windows::{WindowsCefTracker, WindowsCefTrackerHandle};
 mod capability_tests;
 #[cfg(test)]
 mod ipc_tests;
-#[cfg(all(test, target_os = "macos"))]
-#[path = "cef_supervision/macos/objects_tests.rs"]
-mod macos_objects_tests;
-#[cfg(all(test, target_os = "macos"))]
-#[path = "cef_supervision/macos/tracker_tests.rs"]
-mod macos_tracker_tests;
 #[cfg(test)]
 mod protocol_tests;
 #[cfg(test)]

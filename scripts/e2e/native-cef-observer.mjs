@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { posix, win32 } from "node:path";
 
+export { runtimeRootForBinary } from "./native-cef-runtime-root.mjs";
+
 const MAX_PROCESS_OUTPUT_BYTES = 4 * 1024 * 1024;
 const MAX_PROCESSES = 4_096;
 const MAX_COMMAND_CHARS = 65_536;
@@ -111,13 +113,30 @@ function isContainedExecutable(process, root, platform) {
   return false;
 }
 
+function validateProcessSnapshot(processes) {
+  invalid(!Array.isArray(processes) || processes.length > MAX_PROCESSES);
+  invalid(processes.some((entry) => !entry || typeof entry !== "object"
+    || processRecord(entry.pid, entry.parentPid, entry.executable, entry.command) === null));
+}
+
 export function hasOwnedProcess(processes, root, platform = process.platform) {
+  validateProcessSnapshot(processes);
   return processes.some((entry) => isContainedExecutable(entry, root, platform));
 }
 
 export function hasOwnedCefHelper(processes, root, platform = process.platform) {
-  return processes.some((entry) => isContainedExecutable(entry, root, platform)
-    && /(?:^|\s)--type=[^\s]+/u.test(entry.command));
+  return ownedCefHelperPids(processes, root, platform).length > 0;
+}
+
+export function ownedCefHelperPids(processes, root, platform = process.platform) {
+  validateProcessSnapshot(processes);
+  const pids = processes.flatMap((entry) => (
+    isContainedExecutable(entry, root, platform)
+      && /(?:^|\s)--type=[^\s]+/u.test(entry.command)
+      ? [entry.pid]
+      : []
+  ));
+  return [...new Set(pids)].sort((left, right) => left - right);
 }
 
 export function assertOwnedCefHelpersSandboxed(
@@ -125,25 +144,11 @@ export function assertOwnedCefHelpersSandboxed(
   root,
   platform = process.platform,
 ) {
+  validateProcessSnapshot(processes);
   const insecure = processes.some((entry) => isContainedExecutable(entry, root, platform)
     && /(?:^|\s)--type=[^\s]+/u.test(entry.command)
     && /(?:^|\s)--no-sandbox(?:=|\s|$)/u.test(entry.command));
   invalid(insecure);
-}
-
-export function runtimeRootForBinary(platform, binaryPath) {
-  invalid(typeof binaryPath !== "string" || binaryPath.length === 0 || binaryPath.length > 1_024);
-  if (platform === "win32") {
-    invalid(!win32.isAbsolute(binaryPath));
-    return win32.dirname(binaryPath);
-  }
-  if (platform === "darwin") {
-    const marker = ".app/Contents/MacOS/";
-    const markerIndex = binaryPath.lastIndexOf(marker);
-    invalid(!posix.isAbsolute(binaryPath) || markerIndex < 1);
-    return binaryPath.slice(0, markerIndex + ".app".length);
-  }
-  throw new Error(FAILURE_MESSAGE);
 }
 
 function validateWait({ root, timeoutMs, pollMs, listProcesses }) {

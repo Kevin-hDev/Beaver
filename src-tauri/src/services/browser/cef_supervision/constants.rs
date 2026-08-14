@@ -6,6 +6,9 @@ pub(super) const CEF_NONCE_BYTES: usize = 32;
 pub(super) const GATE_RECHECK: std::time::Duration = std::time::Duration::from_millis(1);
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 pub(super) const CEF_TRACKER_POLL: std::time::Duration = std::time::Duration::from_millis(10);
+#[cfg(target_os = "macos")]
+pub(super) const CEF_LIVENESS_UNKNOWN_TIMEOUT: std::time::Duration =
+    std::time::Duration::from_millis(250);
 #[cfg(any(target_os = "windows", target_os = "macos"))]
 pub(super) const CEF_TRACKER_DROP_TIMEOUT: std::time::Duration =
     std::time::Duration::from_millis(50);

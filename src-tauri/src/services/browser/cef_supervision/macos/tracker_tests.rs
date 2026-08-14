@@ -1,7 +1,8 @@
-use super::macos::{
-    helper_parent_changed_for_test, MacCefTracker, MacHelperObjects, MacProcessIdentity,
-};
-use super::{CefIpcNames, CefUnavailableCategory, CEF_SLOT_CAPACITY};
+use super::super::constants::CEF_TRACKER_POLL;
+use super::super::{CefIpcNames, CefUnavailableCategory, CEF_SLOT_CAPACITY};
+use super::liveness_policy::{MacLivenessDecision, MacLivenessState};
+use super::process_state::{MacProcessActions, MacSystemProcessActions};
+use super::{helper_parent_changed_for_test, MacCefTracker, MacHelperObjects, MacProcessIdentity};
 use std::os::unix::process::CommandExt;
 use std::time::{Duration, Instant};
 
@@ -89,17 +90,27 @@ fn reaper_treats_an_unreaped_exited_helper_as_stopped() {
     let mut child = grouped_sleep();
     let identity = MacProcessIdentity::read(child.id()).expect("child identity");
     child.kill().expect("kill child");
+    let mut state = MacLivenessState::new();
     let deadline = Instant::now() + Duration::from_secs(2);
-    let observed = loop {
-        let current = identity.test_is_alive();
-        if current == Ok(false) || Instant::now() >= deadline {
-            break current;
+    let final_decision = loop {
+        let observation = MacSystemProcessActions.observe(&identity);
+        let now_ticks = super::clock::now_ticks().expect("monotonic clock");
+        let decision = state
+            .apply(observation, now_ticks, None)
+            .expect("bounded liveness decision");
+        match decision {
+            MacLivenessDecision::Stopped | MacLivenessDecision::Expired => break decision,
+            MacLivenessDecision::Alive | MacLivenessDecision::Pending
+                if Instant::now() < deadline =>
+            {
+                std::thread::sleep(CEF_TRACKER_POLL);
+            }
+            _ => panic!("unreaped child did not become stopped"),
         }
-        std::thread::sleep(Duration::from_millis(10));
     };
     child.wait().expect("reap child");
 
-    assert_eq!(observed, Ok(false));
+    assert_eq!(final_decision, MacLivenessDecision::Stopped);
 }
 
 #[test]
@@ -168,6 +179,7 @@ fn emergency_reaper_survives_the_normal_tracker_stopping() {
         std::thread::sleep(Duration::from_millis(10));
     }
     assert!(child.try_wait().expect("final status").is_some());
+    assert_eq!(tracker.failure_for_test(), None);
 }
 
 #[test]

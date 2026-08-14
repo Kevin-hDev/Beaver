@@ -1,11 +1,30 @@
 use super::super::CefUnavailableCategory;
 use std::time::Instant;
 
-pub(super) fn ticks_at(deadline: Instant) -> Result<u64, CefUnavailableCategory> {
-    let remaining = deadline.saturating_duration_since(Instant::now());
+pub(super) fn closing_ticks(
+    helper_exit: Instant,
+    ultimate: Instant,
+) -> Result<(u64, u64), CefUnavailableCategory> {
+    if helper_exit > ultimate {
+        return Err(CefUnavailableCategory::Reaper);
+    }
+    let origin = Instant::now();
+    let origin_ticks = now_ticks()?;
+    Ok((
+        deadline_ticks(origin, origin_ticks, helper_exit)?,
+        deadline_ticks(origin, origin_ticks, ultimate)?,
+    ))
+}
+
+fn deadline_ticks(
+    origin: Instant,
+    origin_ticks: u64,
+    deadline: Instant,
+) -> Result<u64, CefUnavailableCategory> {
+    let remaining = deadline.saturating_duration_since(origin);
     let remaining =
         u64::try_from(remaining.as_nanos()).map_err(|_| CefUnavailableCategory::Reaper)?;
-    monotonic_ticks()?
+    origin_ticks
         .checked_add(remaining)
         .filter(|value| *value != 0)
         .ok_or(CefUnavailableCategory::Reaper)
@@ -15,10 +34,10 @@ pub(super) fn reached(deadline_ticks: u64) -> Result<bool, CefUnavailableCategor
     if deadline_ticks == 0 {
         return Err(CefUnavailableCategory::Reaper);
     }
-    Ok(monotonic_ticks()? >= deadline_ticks)
+    Ok(now_ticks()? >= deadline_ticks)
 }
 
-fn monotonic_ticks() -> Result<u64, CefUnavailableCategory> {
+pub(super) fn now_ticks() -> Result<u64, CefUnavailableCategory> {
     let mut value = libc::timespec {
         tv_sec: 0,
         tv_nsec: 0,
