@@ -52,6 +52,7 @@ pub mod ollama_kill;
 #[cfg(test)]
 mod ollama_kill_tests;
 pub mod ollama_lifecycle;
+pub mod ollama_manager;
 pub mod ollama_port;
 pub mod ollama_ps;
 pub mod owned_process;

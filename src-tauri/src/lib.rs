@@ -81,6 +81,7 @@ pub(crate) fn run_inner(
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
     let app = builder
         .manage(OllamaClient::new())
+        .manage(runtime.ollama)
         .manage(exit_coordinator)
         .manage(runtime.agent_work)
         .manage(runtime.oauth_work)

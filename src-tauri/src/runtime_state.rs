@@ -17,6 +17,7 @@ pub fn agent_work(
 // Une seule construction garantit que tous les services partagent le superviseur de fermeture.
 pub struct RuntimeServices {
     pub agent_work: crate::services::agent_local::agent_work_supervision::AgentWorkServices,
+    pub ollama: crate::services::ollama_manager::OllamaManager,
     pub gateway: crate::services::gateway::GatewayService,
     pub oauth_work: crate::services::oauth_work::OAuthWorkServices,
     pub searxng: crate::services::searxng::SearxngSidecar,
@@ -29,8 +30,10 @@ pub struct RuntimeServices {
 
 pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
     let supervisor = exit.work_supervisor();
+    let ollama = crate::services::ollama_manager::OllamaManager::new(supervisor.clone());
     RuntimeServices {
         agent_work: agent_work(exit),
+        ollama,
         gateway: crate::services::gateway::GatewayService::new(supervisor.clone()),
         oauth_work: crate::services::oauth_work::OAuthWorkServices::new(supervisor.clone()),
         searxng: crate::services::searxng::SearxngSidecar::new(supervisor.clone()),
