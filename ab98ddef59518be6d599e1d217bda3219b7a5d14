@@ -1,0 +1,59 @@
+Review follow-up (2026-07-30) — output caps stay per provider for now
+
+A review flagged this commit as blocking before merge. Each claim was
+checked against the vendors' own documentation. What held, what did not,
+and what was decided.
+
+CONFIRMED — o3 regresses.
+o3 is still served: 200k context, 100k max output, retirement announced for
+2026-12-11. It now receives 128k and OpenAI will reject the request. This
+commit did introduce that regression.
+
+NOT CONFIRMED — deepseek-reasoner.
+The review cited a 65,536 cap on deepseek-reasoner. That model no longer
+appears in DeepSeek's model-list endpoint nor on its pricing page; only
+deepseek-v4-flash and deepseek-v4-pro are served, both capped at 384k. The
+figure belongs to an earlier generation. No regression on DeepSeek.
+
+WIDER THAN THE REVIEW SAID — the defect predates this commit.
+gpt-4o is still actively maintained (three current snapshots) and caps
+output at 16,384. At the previous value of 64k it was already being
+rejected. One cap per provider is broken for any provider serving
+heterogeneous models: this commit widened the blast radius, it did not
+create it. Reverting to 64k would not have fixed the design.
+
+THE PROPOSED FIX REFERENCES SOMETHING THAT DOES NOT EXIST.
+The review said to compute the cap "using the limits already present in
+the registry". There is no per-model output-cap registry in this codebase.
+The nearest field is context length, a different quantity — gpt-4o has
+128k of context for 16,384 of output, a factor of eight — and for most
+providers it arrives from the vendor's API at runtime rather than being
+stored locally. Fixing this properly means building that registry, not
+wiring up an existing one.
+
+DECISION (Kevin, 2026-07-30) — do not revert.
+Dropping OpenAI back to 64k would cap today's frontier models in order to
+protect o3: a maintained model, but one used by a very small minority. Not
+a trade worth making. The raised caps stand as committed.
+
+AGREED ARCHITECTURE — resolve the cap per model, not per provider.
+`ProviderSpec::default_max_tokens` sits at the wrong level:
+`stream_http::build_chat_payload` ships it for every model of that
+provider. It should be resolved from the selected model. Two candidate
+approaches:
+
+  1. A per-model cap registry with a per-provider fallback. Explicit and
+     testable, but one more table to keep current — the same maintenance
+     trap we just walked away from for provider descriptions.
+
+  2. Retry without the cap when the vendor rejects the request for that
+     reason. Self-adjusting, needs no table, but it touches the streaming
+     path and spends one failed round trip per unknown model.
+
+Either approach also repairs gpt-4o, which the current design breaks.
+
+ALSO OPEN — no automated coverage for the splash layout work (201d518).
+The measurements behind that commit were real but ran in a throwaway
+browser harness that was never versioned, so nothing would catch a future
+regression. The only existing style test asserts a single CSS declaration
+by regex: src/components/agent-import/__tests__/agent-import-styles.test.ts
