@@ -107,6 +107,24 @@ fn unordered_or_zero_policy_is_rejected() {
 }
 
 #[test]
+fn rejects_policy_without_a_strict_cef_helper_slot() {
+    assert!(ShutdownPolicy::new(
+        Duration::from_millis(8),
+        Duration::from_millis(10),
+        Duration::from_millis(13),
+        Duration::from_millis(15),
+    )
+    .is_some());
+    assert!(ShutdownPolicy::new(
+        Duration::from_millis(8),
+        Duration::from_millis(10),
+        Duration::from_millis(14),
+        Duration::from_millis(15),
+    )
+    .is_none());
+}
+
+#[test]
 fn production_policy_matches_the_contract() {
     let policy = ShutdownPolicy::production();
     assert_eq!(policy.graceful(), Duration::from_secs(8));

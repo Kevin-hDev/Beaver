@@ -19,6 +19,11 @@ const CEF_HELPER_EXIT_TIMEOUT: Duration = Duration::from_secs(14);
 const CEF_ADMISSION_BARRIER_TIMEOUT: Duration = Duration::from_millis(50);
 const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
 
+fn cef_helper_timeout(ultimate: Duration) -> Duration {
+    ultimate.saturating_mul(CEF_HELPER_EXIT_TIMEOUT.as_secs() as u32)
+        / ULTIMATE_EXIT_TIMEOUT.as_secs() as u32
+}
+
 pub(super) const fn watchdog_recheck_interval() -> Duration {
     WATCHDOG_RECHECK_INTERVAL
 }
@@ -52,10 +57,12 @@ impl ShutdownPolicy {
         emergency: Duration,
         ultimate: Duration,
     ) -> Option<Self> {
+        let cef_helper = cef_helper_timeout(ultimate);
         (Duration::ZERO < graceful
             && graceful < tauri_exit
             && tauri_exit < emergency
-            && emergency < ultimate)
+            && emergency < cef_helper
+            && cef_helper < ultimate)
             .then_some(Self {
                 graceful,
                 tauri_exit,
@@ -112,12 +119,7 @@ impl ShutdownTimeline {
     }
 
     pub(super) fn cef_helper_exit_deadline(self) -> Instant {
-        let helper_timeout = self
-            .policy
-            .ultimate()
-            .saturating_mul(CEF_HELPER_EXIT_TIMEOUT.as_secs() as u32)
-            / ULTIMATE_EXIT_TIMEOUT.as_secs() as u32;
-        self.origin + helper_timeout
+        self.origin + cef_helper_timeout(self.policy.ultimate())
     }
 
     pub(super) fn tauri_exit_deadline(self) -> Instant {
