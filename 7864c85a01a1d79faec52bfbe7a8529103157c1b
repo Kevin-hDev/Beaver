@@ -1,0 +1,9 @@
+Intent: make SearXNG and Forecast teardown honor the caller deadline, keep slow probes outside process mutexes, and preserve the model/runtime uninstall invariant.
+
+RED evidence: shutdown_does_not_wait_for_a_slow_unpublished_start failed with 'shutdown waited on an unpublished start lock'; shutdown_does_not_wait_for_a_slow_health_probe_lock failed with 'health probe kept the process lock'; runtime_cleanup_failure_leaves_only_an_unused_runtime failed because the model still existed.
+
+GREEN evidence (Windows, --features windows-tests): services::searxng 17/17; services::forecast::sidecar 22/22; services::forecast::model_manager 20/20. The SearXNG deadline test also passed twice consecutively after replacing its fixed OS-process observation delay with a bounded poll. Rust emitted only the 19 pre-existing browser/CEF dead_code warnings.
+
+Decisions: SearXNG serializes preparation with a separate start gate and invalidates publication by generation; startup diagnostics read at most 16 KiB and expose only fixed technical categories. Forecast snapshots PID, port, model, launch settings, a stable publication generation and a temporary Zeroizing token before a bounded blocking health probe. Stop operations derive from one 5 s control budget or the global deadline. Uninstall removes the model before cleaning an unused family runtime, so cleanup failure can leave only an orphan runtime, never a model without its runtime.
+
+Maintenance: cargo fmt and git diff --check passed; every changed production Rust file is <=230 lines; graphify update . completed from the repository root.
