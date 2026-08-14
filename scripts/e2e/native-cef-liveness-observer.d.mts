@@ -9,6 +9,9 @@ interface NativeCefLivenessOptions {
 }
 
 export const CEF_HELPER_TURNOVER_POLL_MS: number;
+export function observeOwnedCefHelperTurnover(
+  options: NativeCefLivenessOptions,
+): Promise<{ exitedPid: number; initialPids: number[] }>;
 export function waitForOwnedCefHelperSet(options: NativeCefLivenessOptions): Promise<number[]>;
 export function waitForOwnedCefHelperTurnover(
   options: NativeCefLivenessOptions & { initialPids: number[] },

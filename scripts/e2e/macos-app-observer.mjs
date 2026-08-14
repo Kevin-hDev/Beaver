@@ -7,6 +7,9 @@ import {
   observeDiagnosticStream,
   writeProcessDiagnostic,
 } from "./macos-app-diagnostics.mjs";
+import { captureMacCefTurnoverProof } from "./macos-cef-turnover-proof.mjs";
+import { NATIVE_CEF_STAGE_CEILINGS_MS } from "./native-journey-deadline.mjs";
+import { runtimeRootForBinary } from "./native-cef-runtime-root.mjs";
 
 const FORWARDED_SIGNALS = ["SIGHUP", "SIGINT", "SIGTERM"];
 const SAFE_EXIT_SIGNALS = new Set([
@@ -43,6 +46,15 @@ function run() {
     return;
   }
   const launch = observedLaunch(binary);
+  if (process.env.E2E_REQUIRE_CEF_SMOKE === "1") {
+    void captureMacCefTurnoverProof({
+      logDirectory: process.env.E2E_LOG_DIR,
+      root: runtimeRootForBinary("darwin", binary),
+      timeoutMs: NATIVE_CEF_STAGE_CEILINGS_MS.cef_helper_turnover,
+    }).catch(() => {
+      writeProcessDiagnostic("[e2e-process] cef-turnover-observation-failed");
+    });
+  }
   const child = spawn(launch.command, launch.args, launch.options);
   if (child.stderr) observeDiagnosticStream(child.stderr);
   const forwarders = new Map();

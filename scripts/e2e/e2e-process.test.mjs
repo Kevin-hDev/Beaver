@@ -22,6 +22,7 @@ const ciSource = readFileSync(new URL("../../.github/workflows/ci.yml", import.m
 const mainSource = readFileSync(new URL("../../src-tauri/src/main.rs", import.meta.url), "utf8");
 const runnerSource = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
 const wdioSource = readFileSync(new URL("../../wdio.conf.ts", import.meta.url), "utf8");
+const macObserverSource = readFileSync(new URL("./macos-app-observer.mjs", import.meta.url), "utf8");
 const nativeSmokeSource = readFileSync(
   new URL("../../tests/e2e/native-cef-shutdown.spec.ts", import.meta.url),
   "utf8",
@@ -224,6 +225,13 @@ test("the native CEF journey uses one isolated application session", () => {
   assert.match(wdioSource, /process\.platform === "darwin"[\s\S]*macos-app-observer\.mjs/u);
   assert.match(wdioSource, /appBinaryPath:\s*driverBinaryPath/u);
   assert.match(wdioSource, /appArgs:\s*driverArguments/u);
+});
+
+test("macOS captures CEF helper turnover before launching Beaver", () => {
+  const capture = macObserverSource.indexOf("captureMacCefTurnoverProof(");
+  const spawn = macObserverSource.indexOf("spawn(launch.command", capture);
+  assert.ok(capture >= 0 && spawn > capture);
+  assert.match(nativeSmokeSource, /waitForMacCefTurnoverProof/u);
 });
 
 test("the native WebView journey observes classified pids before coordinated exit", () => {
