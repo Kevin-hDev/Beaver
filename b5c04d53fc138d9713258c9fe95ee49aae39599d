@@ -1,0 +1,13 @@
+Problème : Beaver remplace l'exécutable Rust principal par le bootstrap CEF officiel. Tauri ne trouvait donc plus son marqueur __TAURI_BUNDLE_TYPE dans l'EXE, tandis que la DLL qui exécute réellement Tauri conservait UNK car le bundler Tauri ne corrige que l'exécutable principal. Une préparation unique ne pouvait pas non plus donner simultanément les types NSIS et MSI à la même DLL.
+
+Objectif : garantir que chaque paquet Windows contient le type réel et identique dans le bootstrap et dans la DLL, sans masquer l'avertissement, sans déduire le type au runtime et sans modifier l'artefact Cargo source.
+
+Décisions : une invocation Windows construit exactement un bundle ; NSIS est la valeur produit par défaut et MSI reste disponible par demande explicite isolée. Le lanceur normalise --bundles=<type> et dérive BEAVER_TAURI_BUNDLE_TYPE de cette même demande, en ignorant toute valeur d'environnement préexistante. Le bootstrap brandé reçoit le marqueur officiel UNK en overlay PE avant que Tauri ne le remplace. Seule la copie stagée de cl_go_dash_lib.dll est remplacée par le type réel. Le maintien de bundle_type() via black_box reste nécessaire pour conserver le marqueur officiel dans la DLL.
+
+Sécurité et intégrité : chemins absolus bornés, traversées, reparse points et changements d'identité refusés ; mutations refusées sur hardlinks ; erreurs publiques génériques. Le vérificateur de paquet compare les octets aux références du même build et autorise exactement le remplacement UNK vers le type demandé, rien d'autre.
+
+Alternatives rejetées : masquer l'avertissement, inventer le type au démarrage, modifier la DLL Cargo d'origine, construire NSIS et MSI dans une même invocation ou retirer MSI sans preuve. Ces options auraient caché l'incohérence, créé une course ou réduit une capacité existante.
+
+Preuves : 26/26 contrats CEF, 29/29 contrats release, 6/6 tests Rust du layout Windows et cargo fmt --check. Un vrai NSIS a été construit avec le log Tauri de patch nsis, installé, comparé exactement puis désinstallé. Un vrai MSI a été construit avec le log Tauri de patch msi, extrait et comparé exactement. Les deux fichiers de chaque paquet portent le type attendu et aucun avertissement __TAURI_BUNDLE_TYPE n'a été masqué.
+
+Compatibilité : macOS et Linux ne reçoivent aucun type inventé ; leurs arguments restent inchangés. La CI transmet la cible Windows et le type depuis la même matrice et vérifie le NSIS installé contre les références exactes du build.
