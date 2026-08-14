@@ -1,0 +1,9 @@
+Probleme: sur macOS, le helper CEF validait correctement Beaver avant le sandbox, puis son moniteur repetait MacProcessIdentity::is_alive apres Seatbelt. Cette inspection croisee utilise proc_pidinfo/getpgid et peut etre refusee par le sandbox. Toute erreur etait interpretee comme la disparition du parent, ce qui faisait quitter un helper sain et rendait le navigateur indisponible pendant le smoke natif.
+
+Objectif: conserver la supervision fail-closed et la fermeture des helpers sans exiger apres sandbox une permission d'inspection d'un autre processus.
+
+Decision: l'identite complete du parent et l'executable restent valides avant sandbox. Apres sandbox, le moniteur compare uniquement getppid() au PID deja valide. Cette primitive lit la relation parentale du helper lui-meme; si Beaver meurt, le helper est reparente et la comparaison echoue. Aucun descripteur supplementaire, aucun assouplissement Seatbelt et aucun contournement no-sandbox ne sont introduits. Une solution kqueue a ete ecartee car elle ajoutait une autorite et un descripteur inutiles alors que le contrat existant demandait deja getppid.
+
+Diagnostics: la premiere panne de supervision ecrit seulement le code categorie borne et non sensible. Le smoke natif passe WebdriverIO en niveau info afin que la CI macOS expose cette categorie, sans augmenter la verbosite des autres tests ni afficher de donnees utilisateur.
+
+Preuves locales: cargo fmt --check; cargo clippy --all-targets -- -D warnings avec CARGO_TARGET_DIR Windows court; cargo test --lib --features windows-tests -- --test-threads=1 (3069 passes, 0 echec, 4 ignores); npm test (414 fichiers, 1889 tests); npm run lint; npx tsc --noEmit; test:cef 28/28; test:e2e-runner 22/22; graphify update. Deux executions Rust paralleles ont chacune revele une collision differente du private store, puis les tests concernes et la suite hermetique utilisee par la CI ont passe; aucune modification hors scope n'a ete faite.
