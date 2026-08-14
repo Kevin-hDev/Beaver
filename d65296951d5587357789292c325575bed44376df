@@ -1,0 +1,3 @@
+Review decision: memory routing and authorization now share one classifier. It compares both the lexically normalized path and the best-effort canonical destination so traversal and symlink aliases cannot bypass the memory boundary. Actual memory access still rejects dot components and validates the resolved target inside the selected scope.
+
+Validation: cargo fmt --check; cargo clippy --lib --tests -- -D warnings; cargo test (2467 passed).
