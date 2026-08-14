@@ -1,0 +1,13 @@
+Decision record — root fix for Plan mode and interactive answers. Follow-up to the review recorded on 2694f08; this supersedes the prompt-only authority workaround in a8b9198.
+
+Root cause: user answers and backend Plan decisions were flattened into role=tool results. Plan approval also depended on the model calling exitplanmode, with a backend repair loop compensating when it did not.
+
+Protocol decision: every tool call still receives a neutral role=tool receipt, then a typed follow-up is appended after the complete tool batch according to its real source. General ask_user_choice answers and Plan adjustments become role=user messages; an approved Plan creates a trusted role=system next-step message; dismissal produces a Stop control with no fabricated message.
+
+Plan approval transitions are now owned by the backend. Implement marks the run approved, disables Plan mode, clears the active preview, and resumes implementation without another model tool call. Adjustments reject only the published version, clear its preview, keep Plan mode enabled, and return the requested changes as user input. Escape cancels the published version, clears the preview, keeps Plan mode enabled, and ends the current agent turn. The tool batch that contained approval remains Plan-guarded; writes unlock only on the next model turn.
+
+UI decision: final Plan approval has exactly two rows — Implement this plan, then an always-visible adjustments field with Ignore ESC and Send. Generic interactive Escape uses the same explicit dismiss path. The preview is cleared locally as soon as the backend accepts the response, eliminating the former visible delay.
+
+Cleanup: removed exitplanmode from schemas, catalog, settings, dispatcher, diagnostics, prompts, and frontend; removed the persisted plan_approval_decision field and the post-approval controller repair loop. Prompt authority exceptions for ask_user_choice and Plan mode are no longer needed; load_skill remains the only named tool-result instruction exception. The ignored local prompt specification was updated to describe the new source-typed follow-up protocol.
+
+Validation: cargo test (2460 passed), cargo clippy --all-targets -- -D warnings, cargo fmt --all -- --check, npm test (Vitest + CEF + extension host), npm run lint, npx tsc --noEmit, and git diff --check all passed. graphify update . completed. All modified code and test files remain below 200 lines.
