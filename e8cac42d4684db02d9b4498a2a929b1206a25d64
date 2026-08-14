@@ -1,0 +1,19 @@
+Objectif
+Corriger les constats de review apparus après le commit 277bbbc, sans réintroduire de récupération réseau ni risquer de prendre un ancien prompt personnalisé (par exemple « Test system prompt ») pour le prompt natif Ollama.
+
+Décisions
+- Le registre des modèles personnalisés distingue désormais parameters_only, modelfile et unknown. L’ancien format est migré vers unknown car il ne permet pas de savoir ce qui avait été modifié.
+- Un modèle ancien ambigu n’est pas capturé rétroactivement à l’aveugle. Son prompt natif reste inconnu jusqu’à une mise à jour ou un nouveau téléchargement capable de capturer une source fiable.
+- Une modification de paramètres conserve SYSTEM : la capture locale est non bloquante et peut être retentée plus tard.
+- Une modification complète du Modelfile peut détruire SYSTEM : la capture fiable est obligatoire avant l’écriture et l’état de personnalisation est restauré si l’écriture échoue.
+- La disponibilité du prompt natif est propagée avec trois états : présent, absent vérifié ou inconnu. L’interface ne transforme donc plus inconnu en faux.
+- Aucun appel à registry.ollama.ai ni autre communication externe n’est ajouté.
+- Décision produit maintenue : aucun bouton ne permet de revenir à un prompt Custom/global. « Restaurer » applique Beaver ; « Utiliser Ollama » applique le prompt natif lorsqu’il est connu ; un prompt Custom se crée uniquement via Modifier et n’est pas mémorisé comme destination restaurable.
+
+Validation
+- cargo clippy --all-targets -- -D warnings
+- cargo test : 2973 réussis, 1 ignoré
+- npm test : 1836 tests Vitest, plus les suites build/CEF/extensions
+- npx tsc --noEmit
+- npm run lint
+- graphify update .
