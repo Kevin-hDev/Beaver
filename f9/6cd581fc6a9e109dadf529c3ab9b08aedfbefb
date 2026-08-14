@@ -1,0 +1,24 @@
+Problème
+Le build Windows utilisait trois interprétations différentes du dossier Cargo. Le lanceur Tauri compilait sous target à la racine pour éviter les limites de chemin CEF, mais le préparateur updater, le hook CEF et le résolveur de release relisaient encore src-tauri/target. Tauri supprimait aussi npm_execpath avant beforeBuildCommand, ce qui empêchait la préparation des extensions.
+
+Objectif
+Faire traverser au build empaqueté Windows un seul dossier Cargo validé, de la compilation jusqu'à la découverte des bundles, sans changer macOS, Linux, E2E ni les destinations de ressources Tauri.
+
+Décisions
+- Ajout d'un contrat partagé qui exige un chemin absolu, borné, sans contrôle ni segment .., puis vérifie l'identité canonique avant lecture.
+- Le lanceur Windows choisit target à la racine par défaut et transmet CARGO_TARGET_DIR.
+- Le chemin npm fiable est copié vers une variable Beaver avant le nettoyage d'environnement de Tauri.
+- Le préparateur updater lit le binaire dans la cible effective mais publie toujours la ressource dans src-tauri/target/updater-helper.
+- prepare-cef-windows.ps1 refuse l'absence de CARGO_TARGET_DIR et lit la DLL et l'exécutable uniquement dans cette cible.
+- Le workflow de release exporte CARGO_TARGET_DIR via GITHUB_ENV avant le build, afin que l'étape sœur de résolution retrouve le même bundle.
+- Le résolveur Windows échoue fermé sans autorité explicite; les chemins historiques macOS/Linux restent inchangés.
+
+Preuves
+- Red/green sur les chemins relatifs, les traversées, l'autorité absente, la cible personnalisée et la propagation CI.
+- npm test: 412 fichiers Vitest / 1885 tests, plus 50 build, 15 CEF, 6 E2E et 53 extensions.
+- TypeScript, lint, release, marque et rustfmt passent.
+- Rust Windows: 3058 réussis, 4 ignorés, 0 échec.
+- npm run tauri build termine et produit le MSI et le NSIS sous target/release/bundle.
+
+Point séparé
+Tauri signale encore que le marqueur __TAURI_BUNDLE_TYPE n'est pas présent dans le bootstrap CEF remplacé avant le bundling. Cet avertissement est antérieur au contrat de chemin et n'a pas été masqué; il demande une investigation dédiée avant une release publique.
