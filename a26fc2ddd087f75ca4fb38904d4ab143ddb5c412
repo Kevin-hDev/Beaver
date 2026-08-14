@@ -1,0 +1,19 @@
+Shell runtime architecture decisions
+
+- No new permission mode, sandbox, environment filtering, or shell capability restriction was introduced. Existing permission and destructive-command policies remain unchanged.
+
+- Main execution uses the inherited environment plus one bounded in-memory user-profile snapshot per agent session, then the user shell directly. No plaintext profile snapshot is written to disk.
+
+- The old heuristic background launcher and default 120-second timeout were removed. Commands yield after 10 seconds by default and continue through bash_write, with optional stdin, polling, stopping, and explicit hard timeout.
+
+- Every process gets a dedicated process group. Cancellation and application-exit cleanup stop the complete process tree on Unix and Windows.
+
+- Pre/post workspace scans were replaced by a shared bounded event watcher. Cold watcher setup is isolated from the async runtime, capped at one second, runs in parallel with profile capture, and ignores generated dependency/build directories.
+
+- Model and live previews are bounded. Full output storage is created lazily only above 28 KiB, uses private files, and is cleaned on failed or incomplete creation.
+
+- Redundant detected and started diagnostic persistence was removed; final completion diagnostics remain. Root-session subagent activity checks are cached and bounded.
+
+Validation completed: cargo test (2594 passed), cargo clippy --all-targets -- -D warnings, npx tsc --noEmit, npm run lint, npm test, and graphify update .
+
+Cross-target caveat: Windows source checking could not complete on this Mac because the MSVC target stopped in aws-lc native C compilation without a compatible MSVC compiler, while the GNU target is rejected upstream by cef-dll-sys. Native macOS compilation and all project tests pass.
