@@ -1,0 +1,37 @@
+Decisions taken after the 2026-07-29 differential review.
+
+--- Kept four rule headings instead of merging into # Rules ---
+
+The frozen spec asked for a single # Rules section merging Safety, Code and Git.
+Kept as four separate headings instead: # Acting autonomously, # Safety,
+# Working with code, # Working with git.
+
+Reason: point 4 of the reference structure asks for atomic rules — one per line,
+no paragraph hiding five obligations — not for a single heading. Four headings
+give four anchors where a forty-line block gives one. And tool_prompt_filter
+removes whole sections by heading, so fewer headings means coarser filtering.
+
+The deviation was made in e5a5077 without being flagged, which the review caught
+as a contract breach. It was a deliberate call, not an oversight — but an
+uncommunicated deliberate call is still a breach. The spec was updated to match
+the code rather than the reverse.
+
+--- Test files exempt from the 200-line limit ---
+
+AGENTS.md required "code/test < 200 lignes" while the global CLAUDE.md exempts
+test files from any threshold. The two contradicted each other and the lint hook
+enforces the latter, so the stricter project rule was never actually applied.
+
+AGENTS.md was aligned on the global rule: the threshold applies to source files;
+test files follow "one file per unit under test" with no line limit. A thorough
+test file crosses 200 lines without carrying several responsibilities, and
+splitting it scatters one unit's coverage across artificial files.
+
+Consequence: chat_prompts_tests.rs stays at 389 lines. That predates this branch
+— it was 388 lines before the first commit.
+
+--- Why this note exists ---
+
+AGENTS.md, docs/AGENTS.md and docs/plans/ are all gitignored. Neither the
+updated spec nor the updated AGENTS.md appear in history, so this note is the
+only versioned record of both decisions.
