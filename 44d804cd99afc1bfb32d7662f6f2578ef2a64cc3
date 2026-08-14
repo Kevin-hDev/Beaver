@@ -1,0 +1,32 @@
+Problème
+- La réécriture des paramètres reconvertissait tout le Modelfile en CRLF sous Windows, y compris les retours à la ligne appartenant aux valeurs.
+- La règle utilisée pour retrouver le bloc normalisé ne correspondait pas exactement à celle d’Ollama pour les tabulations et espaces Unicode.
+- Le décodeur acceptait des caractères et volumes ensuite refusés à la sauvegarde.
+- Un échec de décodage vidait l’écran Modelfile, les erreurs Ollama n’étaient pas traduites et les paramètres au-delà des limites visibles pouvaient être perdus silencieusement.
+
+Objectif
+Garantir qu’une sauvegarde via l’éditeur simplifié est soit complète et sans dérive, soit bloquée clairement, tout en laissant le Modelfile brut visible et éditable.
+
+Décisions
+- Produire une structure Modelfile canonique en LF et conserver les LF sémantiques des valeurs.
+- Reproduire exactement la règle d’émission normalisée d’Ollama : guillemets seulement pour LF ou espace ASCII en bordure ; utiliser un rendu source distinct et sûr pour les autres espaces de bordure.
+- Valider les paramètres décodés avec le même alphabet, les mêmes limites en octets UTF-8 et les mêmes capacités que lors de l’écriture.
+- Ne jamais tronquer silencieusement les stops ou paramètres personnalisés. Si le jeu stocké dépasse la capacité de l’éditeur simplifié, désactiver celui-ci et orienter vers l’éditeur Modelfile.
+- Retourner séparément le Modelfile brut, les paramètres optionnels et un code d’erreur sûr. Le brut reste affiché si le décodage échoue.
+- Mapper trois codes d’erreur Ollama et les traduire dans les 7 langues.
+- La version Ollama embarquée n’est pas modifiée par ce commit.
+
+Vérifications
+- TDD : les nouveaux scénarios ont échoué avant correction puis réussi.
+- Tests ciblés frontend : 38/38.
+- Suite frontend : 412 fichiers, 1885 tests réussis.
+- Scripts build : 40/40 ; CEF : 6/6 ; hôte extensions : 51/51.
+- TypeScript et lint : réussis.
+- cargo check et cargo fmt --check : réussis.
+- Tests Rust ciblés : 10 réécriture + 4 contrat éditeur + 4 validation, tous réussis.
+- Suite Rust : 2963 réussis, 2 échecs préexistants de comparaison LF/CRLF, 4 ignorés. Le test asynchrone instable aperçu au premier passage réussit isolément et au second passage complet.
+- Le runner E2E conserve son unique échec Windows préexistant sur une attente de chemin Unix.
+- graphify update . exécuté après les modifications.
+
+Portée
+Aucun chemin de chat, provider, outils, capacités de modèle, cycle de vie Ollama ou configuration de fenêtre de contexte n’est modifié.
