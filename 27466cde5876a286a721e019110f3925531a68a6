@@ -1,0 +1,5 @@
+Raison : l'initialisation MCP ajoutait 500 ms avant chaque vrai handshake et stdio.rs masquait plusieurs responsabilités via include!, tandis que l'arrêt complet du propriétaire n'était pas prouvé avec une opération et un enfant réels.
+
+Décision : la première réponse JSON-RPC initialize devient l'unique signal de disponibilité. Un oneshot transmet ce résultat depuis une tâche de lecture possédée par un JoinSet ; annulation, EOF ou délai ferment le chemin sans tâche détachée. La session stdio, le transport et l'environnement sont désormais des modules Rust normaux. Le test lent injecte 650 ms côté enfant et doit finir sous 900 ms, ce qui échouerait avec l'ancien warmup. Le test d'arrêt ferme les admissions, attend l'opération annulée et vérifie la disparition du PID réel.
+
+TDD : slow_ready_connector_uses_protocol_signal_instead_of_fixed_warmup a d'abord échoué faute de l'interface lente. Vérifications finales : tests ciblés 1/1 + 1/1 ; suite mcp_bridge 71/71 ; aucun WARMUP_MS ni include! stdio restant ; fichiers de production maximum 152 lignes ; cargo fmt, git diff --check et graphify update . verts.
