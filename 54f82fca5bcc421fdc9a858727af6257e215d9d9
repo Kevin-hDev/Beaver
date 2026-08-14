@@ -1,0 +1,7 @@
+Comportement : native-journey-deadline.mjs possède l'échéance monotone du parcours CEF, les plafonds de ses douze étapes, la grâce de nettoyage et le délai Mocha dérivé. Chaque frontière asynchrone du scénario est bornée et trace started/completed/failed avec un identifiant CSPRNG, sans donnée sensible. Le serveur local ferme aussi ses connexions actives dans le finally.
+
+Raison : le test pouvait cumuler plus de 65 secondes d'attentes indépendantes sous une limite globale de 60 secondes, puis masquer l'étape bloquée. La politique est isolée de WebDriver, Tauri et CEF pour être prouvée localement.
+
+Tests rouges observés : ERR_MODULE_NOT_FOUND avant la création de l'autorité ; 60000 !== 66000 avant que WebdriverIO dérive sa limite ; 100 !== 50 avant l'instantané immuable des plafonds.
+
+Preuves vertes observées : node --test ciblé 7/7 ; npm run test:e2e-runner 47/47 ; npx tsc --noEmit code 0 ; npm run lint code 0 ; npm test code 0 avec 417 fichiers et 1918 tests Vitest, puis toutes les suites build/CI/CEF/E2E/extensions vertes ; git diff --check sans erreur ; six fichiers de code entre 27 et 179 lignes ; graphify update . terminé avec 31769 nœuds et 63950 arêtes.
