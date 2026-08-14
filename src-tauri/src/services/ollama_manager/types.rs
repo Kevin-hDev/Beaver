@@ -85,6 +85,10 @@ impl OllamaEndpoint {
         format!("http://127.0.0.1:{}", self.port)
     }
 
+    pub(crate) fn port(&self) -> u16 {
+        self.port.get()
+    }
+
     pub fn try_from_http_url(raw: &str) -> Result<Self, OllamaErrorCode> {
         let parsed = url::Url::parse(raw).map_err(|_| OllamaErrorCode::OllamaUnavailable)?;
         let authority = raw

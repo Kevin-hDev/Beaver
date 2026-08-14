@@ -1,5 +1,6 @@
 use crate::models::config::AdvancedSettings;
 use crate::services::gpu_detect::GpuVendor;
+use std::ffi::OsString;
 
 const GPU_OVERHEAD_BYTES: &str = "1073741824";
 const LOAD_TIMEOUT: &str = "10m";
@@ -9,9 +10,14 @@ pub fn build_env_vars(
     gpu: &GpuVendor,
     port: u16,
 ) -> Vec<(String, String)> {
-    let mut vars = Vec::with_capacity(13);
+    let mut vars = build_static_env_vars(config, gpu);
+    vars.insert(0, ("OLLAMA_HOST".into(), format!("127.0.0.1:{port}")));
+    vars
+}
 
-    vars.push(("OLLAMA_HOST".into(), format!("127.0.0.1:{port}")));
+fn build_static_env_vars(config: &AdvancedSettings, gpu: &GpuVendor) -> Vec<(String, String)> {
+    let mut vars = Vec::with_capacity(12);
+
     vars.push(("OLLAMA_FLASH_ATTENTION".into(), "1".into()));
     vars.push(("OLLAMA_KV_CACHE_TYPE".into(), "q8_0".into()));
     vars.push(("OLLAMA_NUM_PARALLEL".into(), "1".into()));
@@ -45,6 +51,24 @@ pub fn build_env_vars(
     }
 
     vars
+}
+
+/// Réglages statiques injectables par le profil; le host reste choisi par la tentative tardive.
+#[allow(dead_code)]
+pub(crate) fn profile_overrides(
+    config: &AdvancedSettings,
+    gpu: &GpuVendor,
+) -> Vec<(OsString, OsString)> {
+    build_static_env_vars(config, gpu)
+        .into_iter()
+        .filter(|(key, _)| {
+            !matches!(
+                key.as_str(),
+                "OLLAMA_HOST" | "OLLAMA_MODELS" | "OLLAMA_NO_CLOUD"
+            )
+        })
+        .map(|(key, value)| (OsString::from(key), OsString::from(value)))
+        .collect()
 }
 
 #[cfg(test)]
