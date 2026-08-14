@@ -1,0 +1,9 @@
+Problème : la CI macOS quittait proprement avec application-exit-source=browser-supervision, mais cette catégorie regroupait trop de points d'échec pour identifier la cause racine. Les relances complètes ne pouvaient donc qu'échouer sans information nouvelle.
+
+Objectif : faire produire à une seule exécution native macOS la raison exacte de supervision, sans modifier le comportement CEF ni tenter un correctif spéculatif.
+
+Décisions : utiliser une enum fermée de raisons admission/reaper ; conserver le mapping vers les catégories publiques existantes ; n'émettre le détail que sous la feature E2E ; n'accepter et ne persister que des codes ASCII fixes, bornés à 64 caractères ; ne jamais inclure chemin, erreur OS, pile ou donnée libre ; limiter les helpers de source de sortie aux OS réellement supportés afin que Clippy reste strict sur Linux et Windows.
+
+Invariants préservés : aucun délai, aucun ordre d'admission, aucune politique sandbox, aucun signal de fermeture et aucune décision de sortie n'ont changé. La première erreur reste seule autoritaire et la fermeture coordonnée reste identique.
+
+Validation locale : 34/34 tests scripts E2E ; 3070 tests Rust réussis, 0 échec, 4 ignorés avec windows-tests ; Clippy --all-targets normal et E2E avec -D warnings ; garde de format Rust ; git diff --check ; graphify update. Ces preuves ne remplacent pas le test natif macOS : le prochain pas est une seule exécution macOS ciblée, pas une nouvelle CI complète.
