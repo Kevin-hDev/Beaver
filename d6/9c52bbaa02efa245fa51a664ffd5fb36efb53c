@@ -1,0 +1,13 @@
+J3 preflight fix round 2.
+
+Intention: keep the inventory read bounded after the initial stat, even if the file grows or is replaced.
+
+Red: node --test scripts/ollama/j3-reference-preflight.test.mjs failed on borne la lecture après une course de taille; openCalls was 0 instead of 1.
+
+Green: npm run test:j3-reference passed 15/15; the race test observed one open and a read request of exactly 256 KiB + 1 byte, then rejected the extra byte.
+
+Real result: npm run preflight:j3-reference with the explicit real inventory reported 6 J3 reference commits verified at 50b5515c6d849945f08073d04eebb0aecb479f26.
+
+Limits: the inventory buffer is 256 KiB + 1 byte, Git output is 64 KiB, six commits are checked, and the Git timeout is 30 s; the inventory path remains explicit.
+
+Recommendation: keep the stat, bounded open/read, and fail-closed extra-byte rejection as one read authority before any future J3 mutation.
