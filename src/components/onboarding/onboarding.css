@@ -5,6 +5,17 @@
   height: 100vh;
   overflow: hidden;
   background: var(--void);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bande de déplacement de la fenêtre. Elle occupe sa place dans le flux au lieu
+   de se poser par-dessus : posée par-dessus, elle recouvrirait les boutons
+   d'en-tête de l'étape d'import — « rechercher à nouveau », « retour » — qui
+   remontent jusqu'au bord haut sur une fenêtre courte, et les clics n'y
+   arriveraient plus. */
+.ob-drag-region {
+  flex-shrink: 0;
 }
 
 .ob-shell.os-mac {
@@ -18,15 +29,18 @@
 }
 
 .ob-track {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   transition: transform 500ms ease-out;
   will-change: transform;
 }
 
+/* Hauteur prise du parent, pas de la fenêtre : la bande de déplacement occupe
+   déjà le haut, et 100vh ferait déborder chaque diapositive d'autant. */
 .ob-slide {
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   flex: 0 0 100vw;
   min-width: 0;
 }
