@@ -22,6 +22,21 @@ fn journal(state: OllamaJournalState) -> OllamaTransactionJournal {
     OllamaTransactionJournal::new(state)
 }
 
+#[test]
+fn journal_wire_stays_private_to_bounded_journal_module() {
+    let facade = include_str!("../ollama_manager.rs");
+    let journal_module = include_str!("journal.rs");
+
+    assert!(
+        journal_module.contains("mod journal_wire;"),
+        "wire parser must be nested under journal.rs"
+    );
+    assert!(
+        !facade.contains("mod journal_wire;"),
+        "wire parser must not be a sibling visible from the manager facade"
+    );
+}
+
 fn assert_direct_children(paths: &OllamaPaths, root: &Path) {
     let values = [
         &paths.active,

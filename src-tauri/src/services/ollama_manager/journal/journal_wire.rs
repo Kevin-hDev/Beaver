@@ -1,8 +1,7 @@
 #![allow(dead_code)]
 
-use super::fingerprint::{OllamaVersion, Sha256Digest};
-use super::journal::{DocumentError, OllamaJournalState, OllamaTransactionJournal};
-use super::BundleFingerprint;
+use super::super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
+use super::{DocumentError, OllamaJournalState, OllamaTransactionJournal};
 use serde::Deserialize;
 
 #[derive(Deserialize)]

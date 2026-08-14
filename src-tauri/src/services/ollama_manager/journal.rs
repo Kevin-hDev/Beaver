@@ -4,6 +4,8 @@ use super::constants::MAX_DURABLE_DOCUMENT_BYTES;
 use super::fingerprint::BundleFingerprint;
 use serde::Serialize;
 
+mod journal_wire;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DocumentError {
     Oversized,
@@ -55,7 +57,7 @@ impl OllamaTransactionJournal {
         if bytes.len() > MAX_DURABLE_DOCUMENT_BYTES {
             return Err(DocumentError::Oversized);
         }
-        super::journal_wire::parse_journal(bytes)
+        journal_wire::parse_journal(bytes)
     }
 
     pub fn validate(&self) -> Result<(), DocumentError> {
@@ -83,7 +85,7 @@ impl OllamaMigrationMarker {
         if bytes.len() > MAX_DURABLE_DOCUMENT_BYTES {
             return Err(DocumentError::Oversized);
         }
-        let (schema_version, legacy_layout_migrated) = super::journal_wire::parse_marker(bytes)?;
+        let (schema_version, legacy_layout_migrated) = journal_wire::parse_marker(bytes)?;
         let marker = Self {
             schema_version,
             legacy_layout_migrated,
