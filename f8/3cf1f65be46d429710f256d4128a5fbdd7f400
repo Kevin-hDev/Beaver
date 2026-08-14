@@ -1,0 +1,5 @@
+Problème : les modules natifs de supervision étaient visibles sur Linux alors que l'intégration navigateur Linux n'existe pas encore, ce qui créait du code mort et pouvait forcer des dépendances système inutiles.
+
+Décision : garder les types de protocole portables disponibles partout, mais compiler tickets, identités, autorités d'urgence et constantes natives seulement sous Windows ou macOS.
+
+Justification : Linux conserve la couverture du format et des bornes sans simuler un navigateur inexistant. La CI peut ainsi détecter une activation accidentelle au lieu de la masquer.
