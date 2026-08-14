@@ -1,0 +1,23 @@
+Problème
+- En mode développement Windows, le bootstrap actif est cl_go_dash_lib.exe et charge cl_go_dash_lib.dll.
+- Le validateur du runtime CEF exigeait pourtant le nom de production cl-go-dash.dll.
+- Après nettoyage des anciens artefacts, cette incohérence faisait échouer l'initialisation CEF avant le démarrage du navigateur et grisait l'interface.
+
+Objectif
+- Rendre CEF utilisable avec npm run tauri dev sur Windows sans relâcher la validation fail-closed du runtime distribué.
+
+Décisions
+- Déduire un unique module autorisé à partir du nom canonique du bootstrap actif.
+- Autoriser uniquement cl-go-dash.exe avec cl-go-dash.dll pour une application distribuée.
+- Autoriser uniquement cl_go_dash_lib.exe avec cl_go_dash_lib.dll pour le bootstrap de développement.
+- Refuser tout nom de bootstrap inconnu et refuser le module de production avec le bootstrap de développement.
+- Conserver les contrôles existants : chemin canonique confiné au dossier runtime, fichier régulier privé, non vide et borné.
+- Ne pas dupliquer ni renommer artificiellement la DLL : une copie pourrait devenir périmée et masquer une divergence entre le code exécuté et le code validé.
+
+Validation
+- TDD : les trois nouveaux scénarios échouaient avant la correction puis réussissent après.
+- 4 tests ciblés native_paths réussis.
+- cargo fmt --check réussi.
+- cargo test --lib --features windows-tests -- --test-threads=1 : 3017 réussis, 0 échec, 4 ignorés.
+- Test réel Windows en développement : navigateur utilisable, processus CEF démarrés, aucune erreur d'initialisation, puis arrêt complet des processus CEF à la fermeture de Beaver.
+- Aucun changement macOS/Linux : les nouvelles constantes et la sélection sont compilées uniquement pour Windows ou les tests.
