@@ -1,0 +1,15 @@
+Objective: make Beaver disappear immediately when quitting while still giving background services a short, deterministic cleanup window on macOS, Linux, and Windows.
+
+Decision 1: use one AppExitCoordinator state machine. The first exit request hides the UI and defers process exit; duplicate requests wait; the final request is allowed only after cleanup is ready.
+
+Decision 2: run independent cleanup work concurrently with a two-second global deadline. Cancel active model streams, downloads, OAuth flows, managed shells, MCP processes, extensions, gateway channels, terminals, Forecast, SearXNG, and Ollama.
+
+Decision 3: use App::run_return so native CEF cleanup runs on the main thread before the final process exit. Remove the fixed VRAM sleep and bound the local request to 300 ms.
+
+Decision 4: use dedicated Unix process groups plus real Child wait/reaping with a 500 ms grace period, then force termination. Use the Windows System32 taskkill tree adapter with a direct Child kill fallback. This keeps one orchestration design while respecting each OS process model.
+
+Decision 5: route tray quit through the same coordinator and call prevent_close when Windows/Linux intentionally keep Beaver in the tray.
+
+Validation: cargo check; cargo clippy --all-targets -- -D warnings; cargo test (2843 passed); npm test (1793 UI tests, 2 CEF tests, 46 extension-host tests); npm run lint; npx tsc --noEmit; graphify update .
+
+Reviewer note: a Windows cross-check was attempted from macOS but stopped in third-party native zlib/zstd build scripts because the Windows C SDK headers are unavailable. Native Windows CI remains the authoritative target validation.
