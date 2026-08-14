@@ -1,0 +1,5 @@
+Objectif : rendre l'admission CEF linéarisable et impossible après le début de la fermeture.
+
+Décisions : table parent privée de 64 slots, états monotones, génération renouvelée à chaque réservation, porte atomique avec permis comptés et boîte de publication considérée comme non fiable. La fermeture ferme d'abord la porte puis invalide les générations non admises.
+
+Justification : l'enfant peut proposer une identité, mais seul le parent peut la revendiquer, la vérifier et conserver le permis. Une saturation, un rejeu, une publication tardive ou un verrou empoisonné bloque l'admission. Les tests couvrent saturation, libération, rejeu, fermeture et génération périmée.
