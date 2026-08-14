@@ -1,0 +1,17 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 20b300779a26d8b20779c5b0dff52becd6eb1a6e
+Motif du rattachement: commit réécrit
+Sujet original: fix: signal Windows CEF helpers before force
+---
+
+N4 : Windows conserve les objets de fermeture dans une table d’urgence fixe indépendante du tracker. L’échéance utilise QueryUnbiasedInterruptTimePrecise, jamais l’heure murale. Chaque helper arme son moniteur après publication et avant admission ; au délai il termine son propre processus, tandis que le Job Object reste le filet forcé. Validation : compilation de production, clippy strict et 45 tests CEF ciblés réussis ; le test d’intégration couvre helpers admis et en attente avec la même échéance.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: a4dcb9bbee15767eb3e1da12b4952af50e6b24ae
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs: clarify Windows shutdown test command
+---
+
+Documentation d’exécution : sous Windows, les tests Rust utilisent --lib --features windows-tests, un CARGO_TARGET_DIR court et Ninja dans PATH. Cette commande évite de charger la DLL CEF de distribution pendant les tests. Validation cumulée observée : 3079 réussis, 0 échec, 4 ignorés.
