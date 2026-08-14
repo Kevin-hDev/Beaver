@@ -1,0 +1,15 @@
+Task 4 Terra round 1 corrigee en TDD : primitive unique OllamaDurableFs, store borne, executeur spawn_blocking.
+
+Rouges : filtre initial modules absents; puis compilation des symboles sync_parent_pair, validate_wide_units, WINDOWS_PARENT_FLUSH_ACCESS et hook no-replace absents; fake ancien ne conservait pas le tmp et n'arretait pas les appels inattendus.
+
+Verts : durable_fs_tests 16/16; blocking 2/2; document_tests 10/10; paths 4/4; ollama_manager 42/42; cargo check; clippy --all-targets -D warnings; fmt --check; diff --check.
+
+Unix : renameatx_np(RENAME_EXCL) macOS, renameat2(RENAME_NOREPLACE) Linux, replace explicite; course testee avec destination creee entre sync fichier et publication; parents source puis destination, une fois si identiques.
+
+Windows : MoveFileExW WRITE_THROUGH, REPLACE_EXISTING seulement replace; FlushFileBuffers avec GENERIC_WRITE et handles fermes; retry uniquement sharing/lock, 40 attentes de 50 ms sur 2 s, annulable; UTF-16 valide, NUL interne refuse, 32768 unites bornees avant allocation.
+
+Le tmp reste sur toute erreur avant consommation; tmp preexistant bloque ferme; fake file finie, chemins exacts et write_new/replace distincts. Aucun test Windows natif execute sur macOS.
+
+Cross-check GNU bloque par trois erreurs CEF preexistantes; MSVC bloque par headers SDK absents. Graphify update : 32357 noeuds, 65261 liens; avertissement connu 73 fichiers sans noeud. Tailles production : durable_fs 183, Unix 211, Windows 208, blocking 13, journal_store 126 lignes.
+
+Limite restante : executer le filtre Windows natif et un vrai verrou de partage sur Windows CI/machine Windows avant preuve multiplateforme complete.
