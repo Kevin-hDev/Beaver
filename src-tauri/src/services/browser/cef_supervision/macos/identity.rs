@@ -1,13 +1,12 @@
 use super::super::CefUnavailableCategory;
-use super::process_state::{
-    MacProcessActions, MacProcessObservation, MacSignalObservation, MacSystemProcessActions,
-};
+#[cfg(test)]
+use super::process_state::{MacProcessActions, MacProcessObservation, MacSystemProcessActions};
 use crate::services::browser::native_paths::MacHelperExecutables;
 #[cfg(test)]
 use std::path::Path;
 use std::path::PathBuf;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub(in crate::services::browser) struct MacProcessIdentity {
     pub(super) pid: u32,
     pub(super) parent_pid: u32,
@@ -43,20 +42,7 @@ impl MacProcessIdentity {
         }
     }
 
-    pub(super) fn revalidate(&self) -> Result<(), CefUnavailableCategory> {
-        match MacSystemProcessActions.revalidate_before_signal(self) {
-            MacSignalObservation::Ready => Ok(()),
-            MacSignalObservation::Stopped | MacSignalObservation::Unknown => {
-                Err(CefUnavailableCategory::Reaper)
-            }
-        }
-    }
-
-    pub(super) fn kill_group(&self) -> Result<(), CefUnavailableCategory> {
-        self.revalidate()?;
-        MacSystemProcessActions.signal_group(self).map(|_| ())
-    }
-
+    #[cfg(test)]
     pub(super) fn is_alive(&self) -> Result<bool, CefUnavailableCategory> {
         match MacSystemProcessActions.observe(self) {
             MacProcessObservation::Alive => Ok(true),

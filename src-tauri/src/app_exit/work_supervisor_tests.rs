@@ -25,7 +25,7 @@ fn coordinator_supervisor_cancels_admitted_work_and_refuses_late_starts() {
     let admission = supervisor.try_admit().expect("tracked app work");
     let cancellation = admission.cancellation_token();
 
-    coordinator.begin_with_cef_close(0, |_, _| CefShutdownBarrier::Drained);
+    coordinator.begin_with_cef_close(0, |_, _, _| CefShutdownBarrier::Drained);
 
     assert!(cancellation.is_cancelled());
     let error = supervisor

@@ -53,11 +53,27 @@ fn admission_is_permanently_closed_before_closing_is_visible() {
 fn cef_barrier_timeout_keeps_coordinated_shutdown_running() {
     let coordinator = coordinator();
 
-    let result = coordinator.begin_with_cef_close(0, |_, _| CefShutdownBarrier::TimedOut);
+    let result = coordinator.begin_with_cef_close(0, |_, _, _| CefShutdownBarrier::TimedOut);
 
     assert!(matches!(result, BeginResult::Started(_, ExitIntent::Exit)));
     assert!(coordinator.ultimate_is_armed_for_test());
     assert_eq!(coordinator.phase_for_test(), ShutdownPhase::Closing);
+}
+
+#[test]
+fn cef_receives_the_ultimate_deadline_from_the_original_timeline() {
+    let coordinator = coordinator();
+    let mut received = None;
+
+    let result = coordinator.begin_with_cef_close(0, |admission, helper, ultimate| {
+        received = Some((admission, helper, ultimate));
+        CefShutdownBarrier::Drained
+    });
+
+    let (admission, helper, ultimate) = received.expect("CEF deadlines");
+    assert!(admission < helper);
+    assert!(helper < ultimate);
+    assert!(matches!(result, BeginResult::Started(_, ExitIntent::Exit)));
 }
 
 #[test]
@@ -119,8 +135,9 @@ fn first_shutdown_intent_is_immutable_and_restart_keeps_the_raw_exit_safe() {
         (ExitIntent::Restart, 0)
     );
 
-    let started =
-        coordinator.begin_with_intent(ExitIntent::Restart, 0, |_, _| CefShutdownBarrier::Drained);
+    let started = coordinator.begin_with_intent(ExitIntent::Restart, 0, |_, _, _| {
+        CefShutdownBarrier::Drained
+    });
 
     assert!(matches!(
         started,
@@ -149,7 +166,7 @@ fn restart_button_uses_an_interceptable_beaver_sentinel() {
 fn final_tauri_restart_exit_does_not_start_cleanup_again() {
     let coordinator = coordinator();
     assert!(matches!(
-        coordinator.begin_with_intent(ExitIntent::Restart, 0, |_, _| {
+        coordinator.begin_with_intent(ExitIntent::Restart, 0, |_, _, _| {
             CefShutdownBarrier::Drained
         }),
         BeginResult::Started(_, ExitIntent::Restart)
@@ -161,7 +178,7 @@ fn final_tauri_restart_exit_does_not_start_cleanup_again() {
     assert_eq!(intent, ExitIntent::Exit);
     assert_eq!(exit_code, tauri::RESTART_EXIT_CODE);
     assert_eq!(
-        coordinator.begin_with_intent(intent, exit_code, |_, _| {
+        coordinator.begin_with_intent(intent, exit_code, |_, _, _| {
             panic!("CEF cleanup must not start twice")
         }),
         BeginResult::Ready

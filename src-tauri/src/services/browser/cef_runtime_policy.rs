@@ -15,11 +15,13 @@ pub(crate) enum CefShutdownBarrier {
 pub(crate) fn begin_cef_shutdown(
     admission_deadline: Instant,
     helper_exit_deadline: Instant,
+    ultimate_deadline: Instant,
 ) -> CefShutdownBarrier {
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     return if super::cef_supervision::emergency::close_gate(
         admission_deadline,
         helper_exit_deadline,
+        ultimate_deadline,
     ) {
         CefShutdownBarrier::Drained
     } else {
@@ -27,7 +29,7 @@ pub(crate) fn begin_cef_shutdown(
     };
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        let _ = (admission_deadline, helper_exit_deadline);
+        let _ = (admission_deadline, helper_exit_deadline, ultimate_deadline);
         CefShutdownBarrier::Drained
     }
 }

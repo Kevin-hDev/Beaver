@@ -28,6 +28,8 @@ pub(in crate::services::browser) use tracker::MacTrackerShared;
 pub(in crate::services::browser) use tracker::{MacCefTracker, MacCefTrackerHandle};
 
 #[cfg(test)]
+mod emergency_actions_test_support;
+#[cfg(test)]
 mod emergency_slots_test_support;
 #[cfg(test)]
 mod emergency_slots_tests;

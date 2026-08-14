@@ -78,9 +78,8 @@ fn run(shared: &MacTrackerShared) {
             .reaper_control
             .force_requested
             .load(Ordering::Acquire)
-            && shared.emergency.force_pass().is_err()
         {
-            shared.fail(MacSupervisionFailure::ForcePass);
+            run_force_pass(shared, false);
         }
         std::thread::park_timeout(CEF_TRACKER_POLL);
     }
@@ -89,7 +88,18 @@ fn run(shared: &MacTrackerShared) {
         .force_requested
         .load(Ordering::Acquire)
     {
-        let _ = shared.emergency.force_pass();
+        run_force_pass(shared, true);
+    }
+}
+
+fn run_force_pass(shared: &MacTrackerShared, final_pass: bool) {
+    let result = if final_pass {
+        shared.emergency.force_final_pass()
+    } else {
+        shared.emergency.force_pass()
+    };
+    if result.is_err() {
+        shared.fail(MacSupervisionFailure::ForcePass);
     }
 }
 

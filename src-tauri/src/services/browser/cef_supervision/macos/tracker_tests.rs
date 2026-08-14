@@ -166,6 +166,7 @@ fn emergency_reaper_survives_the_normal_tracker_stopping() {
         std::thread::sleep(Duration::from_millis(10));
     }
     assert!(child.try_wait().expect("final status").is_some());
+    assert_eq!(tracker.failure_for_test(), None);
 }
 
 #[test]
