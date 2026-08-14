@@ -1,0 +1,11 @@
+Objectif : appliquer la review du support de cache fournisseur sans affaiblir les contrats déjà confirmés par les documentations officielles.
+
+Décisions : le zéro explicite et la granularité par blocs de 64 de Mistral sont conservés, car son contrat les documente ; une absence ne devient donc zéro que dans ce cas fournisseur précisément encadré.
+
+GPT-5.6 : prompt_cache_key reste actif, mais le mode explicite 30 minutes et son breakpoint ne sont ajoutés que si le préfixe système stable atteint 1280 tokens estimés, soit une marge de 25 % au-dessus du minimum officiel de 1024. Les sections variables à partir de Web search status restent après le breakpoint. En dessous du seuil, le cache implicite automatique reste actif.
+
+OpenRouter : seul session_id est envoyé pour l'affinité de cache. Les options explicites OpenAI sont retirées afin que provider.require_parameters ne puisse pas exclure toutes les routes. X-OpenRouter-Metadata reste activé pour les générations, mais sa suppression sur les appels de compte repose désormais sur RequestPurpose::AccountMetadata, sans faux nom de modèle sentinelle.
+
+Usage : stream_options.include_usage reste omis pour Mistral et Z.ai, dont les schémas ne le déclarent pas, ainsi que pour OpenRouter, qui retourne l'usage automatiquement et déprécie cette option.
+
+Validation : 2838 tests Rust, 1794 tests frontend, 2 tests CEF, 46 tests d'hôte d'extensions, cargo check, Clippy strict, formatage Rust, TypeScript et lint tous réussis. Graphify ciblé mis à jour et vérifié. Aucun appel fournisseur payant n'a été lancé.
