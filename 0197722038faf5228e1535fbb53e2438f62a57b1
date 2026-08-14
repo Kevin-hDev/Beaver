@@ -1,0 +1,13 @@
+Decision record — review follow-up for aea78b7 (Plan mode backend approval).
+
+Scope decision: the adjustment draft remains intentionally independent from Implement. Clicking Implement approves the published plan; entering text and pressing Send requests a revised plan. No draft is merged into an approval.
+
+Backend error decision: a failed interactive request is returned as a ToolResult error and is never fabricated as a user dismissal. Interactive gate errors are now consistent English control messages. The existing validated response-removal ordering remains unchanged.
+
+UI decision: failed respond/dismiss calls keep the panel actionable and display the existing ErrorBubble with the generic localized errors.operationFailed message. Internal backend details are not exposed. Escape is handled only by focused controls inside the choice or Plan panel, stops propagation, and cannot cancel a plan from another menu or panel. Closing the generic Other field restores focus to the choices.
+
+Authority decision: model-authored question text is no longer copied into the role=user follow-up; answers are associated with a neutral question index. ToolFollowUp is must_use, and the delegate-only batch now records follow-ups in ToolExecutionOutcome instead of silently discarding them.
+
+No system-prompt or tool-description workaround was added in this follow-up.
+
+Validation: cargo test (2460 passed), cargo clippy --all-targets -- -D warnings, cargo fmt --all -- --check, npm test (1633 Vitest + 2 CEF + 46 extension-host passed), npm run lint, npx tsc --noEmit, git diff --check, and graphify update . all completed successfully. All modified code and test files remain below 200 lines.
