@@ -1,0 +1,1 @@
+N2 : ExitIntent reste immuable et la transition atomique Closing vers ReadyToExit est l’unique autorité de l’action finale. Le chemin normal et le watchdog appellent le même dispatcher ; la première invocation gagne, les suivantes sont tracées et ignorées. Les tests prouvent un seul redémarrage et l’impossibilité d’une seconde action après le watchdog.
