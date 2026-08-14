@@ -1,0 +1,11 @@
+Correctif round 1/5 — intention: fermer la lecture des documents durables contre les clés JSON dupliquées et empêcher le contournement de la borne par Deserialize public.
+
+Rouge TDD lu: node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::document_tests ; 9 tests, 8 passed et 1 failed sur duplicate_root_and_nested_fields_fail_closed avec schema_version 2 puis 1 accepté ; le filtre a fini par Rust test filter failed. Le test du JSON valide complété à 4097 octets était aussi ajouté dans ce cycle.
+
+Verts lus: filtre documentaire 9 passed, 0 failed, 3347 filtered out ; cargo test --lib services::paths 4 passed, 0 failed, 3352 filtered out ; cargo check code 0 ; cargo clippy --all-targets -- -D warnings code 0 ; cargo fmt --all -- --check code 0 ; git diff --check code 0 ; graphify update .: 32194 nodes, 64796 edges, 1995 communities.
+
+Résultat réel: les wire-types privés JournalWire, BundleFingerprintWire, MigrationMarkerWire et WireField utilisent serde deny_unknown_fields et rejettent les doublons racine et imbriqués ; OllamaTransactionJournal, OllamaJournalState et OllamaMigrationMarker n implémentent plus Deserialize ; parse_bounded et classify_migration_marker restent les seules frontières publiques de lecture depuis des octets, après contrôle de 4096 octets.
+
+Limites: aucun store, accès disque, migration, recovery ou ancien consommateur modifié. Le module privé journal_wire est nécessaire pour garder les fichiers de production sous 230 lignes. Les dispositions rejected_target restent une décision de recovery avec layout réel.
+
+Recommandation: Task 4 doit appeler uniquement les parseurs bornés et la primitive durable commune ; ne pas réintroduire serde_json::from_slice sur les documents publics ni une seconde désérialisation.
