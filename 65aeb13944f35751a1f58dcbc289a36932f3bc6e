@@ -1,0 +1,5 @@
+Problème : les tests Windows inspectaient des pointeurs ACL bruts, ce qui compliquait l'analyse CodeQL et reproduisait une partie risquée de l'API native dans la preuve.
+
+Décision : exposer uniquement sous test la chaîne SDDL exacte générée et vérifier directement propriétaire, droits du code restreint et label d'intégrité Untrusted ; conserver les tests natifs de conversion et d'ouverture d'objets.
+
+Justification : la preuve porte sur la politique produite sans déréférencement arbitraire et sans élargir l'API de production. Aucun droit sandbox n'est relâché.
