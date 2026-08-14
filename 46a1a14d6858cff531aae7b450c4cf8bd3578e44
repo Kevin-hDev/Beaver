@@ -1,0 +1,1 @@
+Follow-up to the extension stop fix: the host generation remains reserved until confirmed death, while the slot mutex is released during process termination. A generation-aware outcome prevents stale invalidation from clearing or marking a newer host. Evidence: runtime_lifecycle 4/4; full extensions suite 97/97; cargo check.
