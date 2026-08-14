@@ -15,3 +15,5 @@ Windows creates CREATE_SUSPENDED with exact frozen environment and non-inherited
 Observed green: process filter 16 passed, emergency filter 10 passed, emergency_signaler_tests 6 passed, cargo check --lib --no-default-features code 0, cargo clippy --all-targets --no-default-features -- -D warnings code 0, cargo fmt --all -- --check code 0, git diff --check code 0. Known baseline residuals: updater handoff test red and five PTY tests hung beyond 60 seconds; global suite was not rerun. Graphify maintenance was already observed by orchestration and not rerun.
 
 Production files remain below 230 lines. Final SHA: 0f9dc84fe28d378cd3e3eea300e2cf6e445fb2f1. Report is task-6-report.md in the SDD ledger.
+
+Branch: codex/shutdown-milestone-3-ollama. The ledger and report carry the same branch, base, commit, platform limit, and validation evidence.
