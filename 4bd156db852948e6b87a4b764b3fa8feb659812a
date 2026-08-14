@@ -1,0 +1,9 @@
+Root cause: WebKit bug 307471 causes legacy SVG content to switch between paint paths with different device-pixel rounding when a nearby compositing animation starts. In the conversation sidebar, hover-triggered opacity transitions for the session age/menu and project actions caused every session and folder SVG icon to visibly jump even though layout geometry remained unchanged.
+
+Fix: keep the age/menu and project actions superimposed in their existing layout, but swap them with visibility instead of opacity transitions. Restrict the folder icon transition to color only, removing unused opacity and transform transitions. This preserves row dimensions and prevents WebKit from changing the SVG compositing path.
+
+Important: keep the app-sidebar-block keep-compositing animation. It is a separate WebKit workaround required to prevent backdrop-filter blur from disappearing when the application loses focus.
+
+Upstream reference: https://bugs.webkit.org/show_bug.cgi?id=307471
+
+Validated manually in the macOS WKWebView for both session and folder icons. Automated validation: frontend, CEF, extension-host, TypeScript, and lint checks passed.
