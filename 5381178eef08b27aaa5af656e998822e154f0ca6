@@ -1,0 +1,25 @@
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: 4f5702a5f6fbbe73e9b7cfc11b0972b235c3f52f
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): design milestone 2 minor fixes
+---
+
+Raison : verrouiller le périmètre des corrections mineures après la fusion du jalon 2 avant toute modification de code.
+
+Décision : traiter les sections Mineurs et Nouveaux mineurs en cinq lots, avec 35 obligations vérifiables ; exclure explicitement les sept Infos consignées ; TDD et une git note par lot.
+
+Preuve de base : npm test vert (417 fichiers, 1916 tests) ; cargo test --quiet --lib --features windows-tests -- --test-threads=1 vert (3196 réussis, 2 ignorés, 0 échec). Le premier passage Rust a seulement dépassé la limite de compilation de 5 minutes ; le second passage complet est sorti avec le code 0.
+
+---
+NOTE HISTORIQUE RATTACHÉE APRÈS PURGE DE docs/superpowers
+Ancien commit: dadc635c658c7b9b47b47297853875e3d62a5108
+Motif du rattachement: commit documentaire retiré
+Sujet original: docs(shutdown): plan milestone 2 minor fixes
+---
+
+Raison : transformer la conception validée en étapes TDD exécutables et relisibles.
+
+Décision : 12 lots de correction indépendants couvrent explicitement les 35 obligations, suivis d'une vérification complète et d'un push sans fusion.
+
+Preuve : contrôle automatique du plan, obligations 1 à 35 toutes présentes, aucun placeholder interdit, git diff --cached --check sans erreur.
