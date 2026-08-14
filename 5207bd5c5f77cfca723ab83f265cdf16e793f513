@@ -1,0 +1,19 @@
+Problème
+Les jobs CEF étaient verts mais GitHub signalait que actions/cache v4 embarquait encore le runtime Node.js 20, désormais déprécié et forcé vers Node.js 24 par les runners. Le réglage node-version de Beaver était déjà 24 et ne pouvait pas supprimer cet avertissement, car le runtime concerné appartient à l'action GitHub elle-même.
+
+Objectif
+Supprimer cette dette CI sans modifier les clés, les chemins, la politique de cache CEF ni le comportement des builds Windows, macOS et Linux.
+
+Décisions
+- Remplacer les trois usages CEF de actions/cache v4.3.0 par la version officielle v6.1.0.
+- Verrouiller l'action sur le commit immuable 55cc8345863c7cc4c66a329aec7e433d2d1c52a9 plutôt que sur un tag mobile.
+- Conserver intégralement les paramètres path et key existants.
+- Ne pas modifier la version Node du projet, déjà fixée à 24 dans chaque job.
+
+Validation
+- Le tag officiel actions/cache v6.1.0 pointe vers le SHA retenu.
+- action.yml à ce SHA déclare runs.using=node24.
+- Prettier valide .github/workflows/ci.yml.
+- Les 6 tests scripts/e2e/e2e-process.test.mjs passent.
+- git diff --check passe et le diff est limité aux trois références de l'action.
+- graphify update . exécuté sans changement de topologie.
