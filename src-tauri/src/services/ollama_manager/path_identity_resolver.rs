@@ -1,3 +1,4 @@
+use super::canonical_executable::CanonicalExecutable;
 use super::path_identity::{
     CanonicalDirectory, OllamaError, PathIdentityResolver, VerifiedDirectoryLocation,
 };
@@ -9,6 +10,10 @@ pub(crate) struct NativePathIdentityResolver;
 impl PathIdentityResolver for NativePathIdentityResolver {
     fn canonical_directory(&self, path: &Path) -> Result<CanonicalDirectory, OllamaError> {
         platform::canonical_directory(path)
+    }
+
+    fn canonical_executable(&self, path: &Path) -> Result<CanonicalExecutable, OllamaError> {
+        platform::canonical_executable(path)
     }
 
     fn verified_location(&self, path: &Path) -> Result<VerifiedDirectoryLocation, OllamaError> {
@@ -45,6 +50,9 @@ mod platform {
         Err(super::super::error::OllamaErrorCode::OllamaStorageUnavailable)
     }
     pub(super) fn verified_location(_: &Path) -> Result<VerifiedDirectoryLocation, OllamaError> {
+        Err(super::super::error::OllamaErrorCode::OllamaStorageUnavailable)
+    }
+    pub(super) fn canonical_executable(_: &Path) -> Result<CanonicalExecutable, OllamaError> {
         Err(super::super::error::OllamaErrorCode::OllamaStorageUnavailable)
     }
     pub(super) fn same_directory(

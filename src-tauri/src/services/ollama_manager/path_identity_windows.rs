@@ -1,17 +1,12 @@
-use super::{
-    CanonicalDirectory, NativeDirectoryIdentity, OllamaError, StableDirectoryHandle,
-    ValidatedPathComponent, VerifiedDirectoryLocation,
-};
-use std::fs::{self, OpenOptions};
-use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
-use std::os::windows::io::AsRawHandle;
+use super::super::canonical_executable::CanonicalExecutable;
+use super::{CanonicalDirectory, OllamaError, ValidatedPathComponent, VerifiedDirectoryLocation};
+use std::fs;
+use std::os::windows::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
-use std::sync::Arc;
-use windows_sys::Win32::Foundation::{SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT};
-use windows_sys::Win32::Storage::FileSystem::{
-    GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, FILE_ATTRIBUTE_REPARSE_POINT,
-    FILE_FLAG_BACKUP_SEMANTICS,
-};
+use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_REPARSE_POINT;
+
+#[path = "path_identity_windows_handles.rs"]
+mod handles;
 
 fn reject_shape(path: &Path) -> Result<(), OllamaError> {
     if path.as_os_str().is_empty()
@@ -25,7 +20,7 @@ fn reject_shape(path: &Path) -> Result<(), OllamaError> {
     Ok(())
 }
 
-fn reject_reparse_components(path: &Path) -> Result<(), OllamaError> {
+fn reject_reparse_components(path: &Path, allow_missing_final: bool) -> Result<(), OllamaError> {
     let absolute = if path.is_absolute() {
         path.to_path_buf()
     } else {
@@ -34,10 +29,21 @@ fn reject_reparse_components(path: &Path) -> Result<(), OllamaError> {
             .join(path)
     };
     let mut current = PathBuf::new();
-    for component in absolute.components() {
+    let mut components = absolute.components().peekable();
+    while let Some(component) = components.next() {
         current.push(component.as_os_str());
-        let metadata = fs::symlink_metadata(&current)
-            .map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
+        let is_final = components.peek().is_none();
+        let metadata = match fs::symlink_metadata(&current) {
+            Ok(metadata) => metadata,
+            Err(error)
+                if allow_missing_final
+                    && is_final
+                    && error.kind() == std::io::ErrorKind::NotFound =>
+            {
+                return Ok(())
+            }
+            Err(_) => return Err(super::OllamaErrorCode::OllamaStorageUnavailable),
+        };
         if metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
             return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
         }
@@ -45,77 +51,54 @@ fn reject_reparse_components(path: &Path) -> Result<(), OllamaError> {
     Ok(())
 }
 
-fn opened(path: &Path, _metadata: &fs::Metadata) -> Result<CanonicalDirectory, OllamaError> {
-    let file = OpenOptions::new()
-        .read(true)
-        .custom_flags(FILE_FLAG_BACKUP_SEMANTICS)
-        .open(path)
-        .map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
-    let raw = file.as_raw_handle();
-    let non_inheritable =
-        unsafe { SetHandleInformation(raw as HANDLE, HANDLE_FLAG_INHERIT, 0) } != 0;
-    if !non_inheritable {
-        return Err(super::OllamaErrorCode::OllamaStorageUnavailable);
-    }
-    let mut info = std::mem::MaybeUninit::<BY_HANDLE_FILE_INFORMATION>::zeroed();
-    let success = unsafe { GetFileInformationByHandle(raw as _, info.as_mut_ptr()) } != 0;
-    if !success {
-        return Err(super::OllamaErrorCode::OllamaStorageUnavailable);
-    }
-    let info = unsafe { info.assume_init() };
-    let file_id = ((info.nFileIndexHigh as u64) << 32) | info.nFileIndexLow as u64;
-    Ok(CanonicalDirectory::from_native(
-        path.to_path_buf(),
-        Some(NativeDirectoryIdentity::windows(
-            info.dwVolumeSerialNumber as u64,
-            file_id,
-        )),
-        Some(StableDirectoryHandle(Arc::new(file))),
-    ))
-}
-
 pub(crate) fn canonical_directory(path: &Path) -> Result<CanonicalDirectory, OllamaError> {
     reject_shape(path)?;
-    reject_reparse_components(path)?;
-    let canonical =
-        dunce::canonicalize(path).map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
-    let metadata = fs::symlink_metadata(&canonical)
-        .map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
-    if !metadata.is_dir() || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-        return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
-    }
-    opened(&canonical, &metadata)
+    reject_reparse_components(path, false)?;
+    handles::opened(path)
 }
 
 pub(crate) fn verified_location(path: &Path) -> Result<VerifiedDirectoryLocation, OllamaError> {
     reject_shape(path)?;
-    if let Ok(metadata) = fs::symlink_metadata(path) {
-        if !metadata.is_dir() || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-            return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if !metadata.is_dir() || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+            {
+                return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
+            }
+            reject_reparse_components(path, false)?;
+            let canonical = canonical_directory(path)?;
+            let parent = canonical_directory(
+                path.parent()
+                    .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
+            )?;
+            let leaf = ValidatedPathComponent::from_os(
+                path.file_name()
+                    .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
+            )?;
+            Ok(VerifiedDirectoryLocation::native_existing(
+                parent, leaf, canonical,
+            ))
         }
-        reject_reparse_components(path)?;
-        let canonical = canonical_directory(path)?;
-        let parent = canonical_directory(
-            path.parent()
-                .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-        )?;
-        let leaf = ValidatedPathComponent::from_os(
-            path.file_name()
-                .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-        )?;
-        return Ok(VerifiedDirectoryLocation::native_existing(
-            parent, leaf, canonical,
-        ));
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            reject_reparse_components(path, true)?;
+            let parent = canonical_directory(
+                path.parent()
+                    .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
+            )?;
+            let leaf = ValidatedPathComponent::from_os(
+                path.file_name()
+                    .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
+            )?;
+            Ok(VerifiedDirectoryLocation::absent(parent, leaf))
+        }
+        Err(_) => Err(super::OllamaErrorCode::OllamaStorageUnavailable),
     }
-    let parent = canonical_directory(
-        path.parent()
-            .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-    )?;
-    let leaf = ValidatedPathComponent::from_os(
-        path.file_name()
-            .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-    )?;
-    Ok(VerifiedDirectoryLocation::absent(parent, leaf))
+}
+
+pub(crate) fn canonical_executable(path: &Path) -> Result<CanonicalExecutable, OllamaError> {
+    reject_shape(path)?;
+    reject_reparse_components(path, false)?;
+    handles::canonical_executable(path)
 }
 
 fn normalized(path: &Path) -> String {
@@ -137,6 +120,22 @@ pub(crate) fn contains(
     child: &CanonicalDirectory,
 ) -> Result<bool, OllamaError> {
     if same_directory(parent, child)? {
+        return Ok(false);
+    }
+    if let Some(parent_identity) = parent.identity() {
+        let child_missing = matches!(
+            fs::symlink_metadata(child.path()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound
+        );
+        let mut ancestors = child.path().ancestors();
+        if child_missing {
+            ancestors.next();
+        }
+        for ancestor in ancestors {
+            if handles::ancestor_identity(ancestor)? == *parent_identity {
+                return Ok(true);
+            }
+        }
         return Ok(false);
     }
     let parent = normalized(parent.path())

@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use super::canonical_executable::CanonicalExecutable;
 use super::error::OllamaErrorCode;
 use super::path_identity::{CanonicalDirectory, PathIdentityResolver};
 use super::spawn_profile_paths::{
@@ -8,7 +9,7 @@ use super::spawn_profile_paths::{
 use super::types::OllamaEndpoint;
 use crate::services::paths::OllamaPaths;
 use std::ffi::OsString;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 #[allow(unused_imports)]
 pub(crate) use super::constants::{
@@ -16,17 +17,6 @@ pub(crate) use super::constants::{
     MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16, MAX_OLLAMA_ENV_VALUE_UNITS,
 };
 pub(crate) use super::spawn_environment::FrozenEnvironment;
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CanonicalExecutable {
-    path: PathBuf,
-}
-
-impl CanonicalExecutable {
-    pub(crate) fn path(&self) -> &Path {
-        &self.path
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OllamaSpawnProfile {
@@ -124,9 +114,8 @@ impl OllamaSpawnProfile {
         if overlaps(identity, &models_directory, &active_directory)? {
             return Err(OllamaErrorCode::OllamaModelStoreConflict);
         }
-        let executable = CanonicalExecutable {
-            path: active_executable(active_directory.path()),
-        };
+        let executable =
+            identity.canonical_executable(&active_executable(active_directory.path()))?;
         let mut overrides = dynamic_overrides;
         overrides.push((
             OsString::from("OLLAMA_MODELS"),

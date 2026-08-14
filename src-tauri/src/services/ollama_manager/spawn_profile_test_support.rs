@@ -1,3 +1,4 @@
+use super::canonical_executable::{CanonicalExecutable, NativeFileIdentity};
 use super::path_identity::{
     CanonicalDirectory, NativeDirectoryIdentity, PathIdentityResolver, ValidatedPathComponent,
     VerifiedDirectoryLocation,
@@ -92,6 +93,20 @@ impl PathIdentityResolver for FakeResolver {
             .get(path)
             .cloned()
             .ok_or(super::error::OllamaErrorCode::OllamaStorageUnavailable)
+    }
+
+    fn canonical_executable(
+        &self,
+        path: &Path,
+    ) -> Result<CanonicalExecutable, super::error::OllamaErrorCode> {
+        self.record_call(format!("executable:{}", path.display()));
+        if let Some(error) = self.failure {
+            return Err(error);
+        }
+        Ok(CanonicalExecutable::synthetic(
+            path.to_path_buf(),
+            NativeFileIdentity::synthetic(11),
+        ))
     }
 
     fn verified_location(

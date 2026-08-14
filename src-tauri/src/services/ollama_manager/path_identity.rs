@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use super::canonical_executable::CanonicalExecutable;
 use super::error::OllamaErrorCode;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -100,6 +101,18 @@ impl CanonicalDirectory {
         self.identity.as_ref()
     }
 
+    #[cfg(test)]
+    pub(crate) fn has_stable_handle(&self) -> bool {
+        #[cfg(any(unix, windows))]
+        {
+            self.handle.is_some()
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            false
+        }
+    }
+
     pub(crate) fn child(&self, path: PathBuf, identity: Option<NativeDirectoryIdentity>) -> Self {
         #[cfg(any(unix, windows))]
         return Self::from_native(path, identity, self.handle.clone());
@@ -188,6 +201,7 @@ impl VerifiedDirectoryLocation {
 
 pub trait PathIdentityResolver: Send + Sync {
     fn canonical_directory(&self, path: &Path) -> Result<CanonicalDirectory, OllamaError>;
+    fn canonical_executable(&self, path: &Path) -> Result<CanonicalExecutable, OllamaError>;
     fn verified_location(&self, path: &Path) -> Result<VerifiedDirectoryLocation, OllamaError>;
     fn same_directory(
         &self,

@@ -1,4 +1,5 @@
 mod blocking;
+mod canonical_executable;
 mod constants;
 mod durable_fs;
 mod error;
@@ -37,6 +38,8 @@ mod windows_durable_fs_tests;
 mod windows_path_identity_tests;
 
 #[allow(unused_imports)]
+pub(crate) use canonical_executable::{CanonicalExecutable, NativeFileIdentity};
+#[allow(unused_imports)]
 pub use error::OllamaErrorCode;
 #[allow(unused_imports)]
 pub use fingerprint::{BundleFingerprint, FingerprintError, OllamaVersion, Sha256Digest};
@@ -54,9 +57,7 @@ pub(crate) use path_identity::{
 #[allow(unused_imports)]
 pub(crate) use path_identity_resolver::NativePathIdentityResolver;
 #[allow(unused_imports)]
-pub(crate) use spawn_profile::{
-    CanonicalExecutable, FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile,
-};
+pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
 #[allow(unused_imports)]
 pub use types::{
     BundleState, DaemonState, OllamaEndpoint, OllamaProgressStage, OllamaRuntimeStatus,

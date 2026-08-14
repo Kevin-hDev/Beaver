@@ -145,3 +145,45 @@ fn dynamic_gpu_overrides_cross_the_explicit_boundary_once() {
         Some("cuda:0")
     );
 }
+
+#[cfg(windows)]
+#[test]
+fn windows_environment_block_counts_the_final_nul_at_the_exact_limit() {
+    use super::spawn_environment::freeze;
+    use super::spawn_profile::MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16;
+
+    fn entries_for_total(total: usize) -> Vec<(OsString, OsString)> {
+        let keys = ["K0", "K1", "K2", "K3"];
+        let body = total - 1;
+        let key_and_separators = keys
+            .iter()
+            .map(|key| key.encode_utf16().count() + 2)
+            .sum::<usize>();
+        let last_value = body - key_and_separators - (3 * 8_192);
+        keys.iter()
+            .enumerate()
+            .map(|(index, key)| {
+                let units = if index == 3 { last_value } else { 8_192 };
+                (OsString::from(*key), OsString::from("x".repeat(units)))
+            })
+            .collect()
+    }
+
+    assert!(freeze(
+        entries_for_total(MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16 - 1),
+        Vec::new()
+    )
+    .is_ok());
+    assert!(freeze(
+        entries_for_total(MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16),
+        Vec::new()
+    )
+    .is_ok());
+    assert_eq!(
+        freeze(
+            entries_for_total(MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16 + 1),
+            Vec::new()
+        ),
+        Err(OllamaErrorCode::OllamaInternal)
+    );
+}

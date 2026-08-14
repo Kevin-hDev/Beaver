@@ -1,11 +1,9 @@
-use super::{
-    CanonicalDirectory, NativeDirectoryIdentity, OllamaError, StableDirectoryHandle,
-    ValidatedPathComponent, VerifiedDirectoryLocation,
-};
-use std::fs::{self, File};
-use std::os::unix::fs::MetadataExt;
+use super::super::canonical_executable::CanonicalExecutable;
+use super::{CanonicalDirectory, OllamaError, VerifiedDirectoryLocation};
 use std::path::{Component, Path};
-use std::sync::Arc;
+
+#[path = "path_identity_unix_handles.rs"]
+mod handles;
 
 fn reject_shape(path: &Path) -> Result<(), OllamaError> {
     if path.as_os_str().is_empty()
@@ -19,71 +17,19 @@ fn reject_shape(path: &Path) -> Result<(), OllamaError> {
     Ok(())
 }
 
-fn reject_symlink_components(path: &Path) -> Result<(), OllamaError> {
-    if fs::symlink_metadata(path)
-        .map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?
-        .file_type()
-        .is_symlink()
-    {
-        return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
-    }
-    Ok(())
-}
-
-fn opened(path: &Path, metadata: &fs::Metadata) -> Result<CanonicalDirectory, OllamaError> {
-    let file = File::open(path).map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
-    Ok(CanonicalDirectory::from_native(
-        path.to_path_buf(),
-        Some(NativeDirectoryIdentity::unix(
-            metadata.dev(),
-            metadata.ino(),
-        )),
-        Some(StableDirectoryHandle(Arc::new(file))),
-    ))
-}
-
 pub(crate) fn canonical_directory(path: &Path) -> Result<CanonicalDirectory, OllamaError> {
     reject_shape(path)?;
-    reject_symlink_components(path)?;
-    let canonical =
-        fs::canonicalize(path).map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
-    let metadata = fs::symlink_metadata(&canonical)
-        .map_err(|_| super::OllamaErrorCode::OllamaStorageUnavailable)?;
-    if !metadata.is_dir() {
-        return Err(super::OllamaErrorCode::OllamaStorageUnavailable);
-    }
-    opened(&canonical, &metadata)
+    handles::canonical_directory(path)
 }
 
 pub(crate) fn verified_location(path: &Path) -> Result<VerifiedDirectoryLocation, OllamaError> {
     reject_shape(path)?;
-    if let Ok(metadata) = fs::symlink_metadata(path) {
-        if metadata.file_type().is_symlink() || !metadata.is_dir() {
-            return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
-        }
-        reject_symlink_components(path)?;
-        let canonical = canonical_directory(path)?;
-        let parent = canonical_directory(
-            path.parent()
-                .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-        )?;
-        let leaf = ValidatedPathComponent::from_os(
-            path.file_name()
-                .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-        )?;
-        return Ok(VerifiedDirectoryLocation::native_existing(
-            parent, leaf, canonical,
-        ));
-    }
-    let parent = canonical_directory(
-        path.parent()
-            .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-    )?;
-    let leaf = ValidatedPathComponent::from_os(
-        path.file_name()
-            .ok_or(super::OllamaErrorCode::OllamaModelStoreConflict)?,
-    )?;
-    Ok(VerifiedDirectoryLocation::absent(parent, leaf))
+    handles::verified_location(path)
+}
+
+pub(crate) fn canonical_executable(path: &Path) -> Result<CanonicalExecutable, OllamaError> {
+    reject_shape(path)?;
+    handles::canonical_executable(path)
 }
 
 pub(crate) fn same_directory(
@@ -103,5 +49,17 @@ pub(crate) fn contains(
     if same_directory(parent, child)? {
         return Ok(false);
     }
-    Ok(child.path().starts_with(parent.path()))
+    let Some(parent_identity) = parent.identity() else {
+        return Ok(child.path().starts_with(parent.path()));
+    };
+    let mut ancestors = child.path().ancestors();
+    if child.identity().is_none() {
+        ancestors.next();
+    }
+    for ancestor in ancestors {
+        if handles::ancestor_identity(ancestor)? == *parent_identity {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }

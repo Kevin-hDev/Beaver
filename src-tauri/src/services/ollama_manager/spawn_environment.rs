@@ -125,6 +125,9 @@ fn same_key(left: &OsStr, right: &OsStr) -> bool {
 }
 
 fn validate_entries(entries: &[(OsString, OsString)]) -> Result<(), OllamaErrorCode> {
+    #[cfg(windows)]
+    let mut total = 1usize;
+    #[cfg(not(windows))]
     let mut total = 0usize;
     for (key, value) in entries {
         if key.is_empty()
