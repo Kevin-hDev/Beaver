@@ -1,0 +1,10 @@
+Problème
+Une première CI verte avait révélé un avertissement caché sur les actions d'artefacts encore liées à Node.js 20. Ce commit a migré download-artifact vers v7.0.0 et upload-artifact vers v5.0.0 sans changer les entrées des workflows.
+
+Décisions réellement appliquées
+- download-artifact v7.0.0 est la première version dont action.yml active réellement node24 ; les téléchargements Beaver sont par nom, donc son changement de comportement pour artifact-ids ne s'applique pas.
+- upload-artifact v5.0.0 annonçait un support préliminaire Node.js 24, mais son manifeste restait sur node20. La CI suivante a objectivement montré que ce choix ne supprimait pas l'avertissement.
+- Le correctif définitif d'upload-artifact est apporté par le commit suivant, qui passe à v6.0.0 après vérification directe de runs.using=node24.
+
+Pourquoi conserver cette note corrigée
+Le reviewer doit voir la décision initiale et sa limite réelle, plutôt qu'une justification devenue fausse après observation CI. Le contenu fonctionnel de release ajouté ici pour download-artifact reste correct ; seule la version upload-artifact nécessitait le suivi.
