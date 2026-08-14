@@ -1,0 +1,15 @@
+Reference: CI run 31573048090, Windows job 94038995612.
+
+Behavior: terminal session teardown now runs on a named OS close worker and reports completion through one bounded channel plus a Tokio oneshot. The existing absolute deadline remains authoritative, while a stuck ClosePseudoConsole can no longer pin Tokio runtime shutdown.
+
+Reason: GitHub's live log stopped after shutdown_permanently_refuses_new_terminal_sessions; the next ordered test, shutdown_reaps_a_real_shell_and_waits_for_terminal_threads, entered a known Windows ClosePseudoConsole hazard. spawn_blocking timed out but Tokio waited for the blocking worker while dropping the test runtime, so the job could never finish.
+
+Red proof: timed_out_terminal_close_does_not_pin_tokio_runtime_shutdown failed in 0.26 seconds with 'Tokio waited for timed-out close' on the spawn_blocking implementation.
+
+Green proof: the regression test passes; all terminal tests complete with 9 passed and 2 intentional Windows ignores; the real shell shutdown test passes five consecutive runs; strict clippy passes; the complete Windows Rust suite passes 3160/3160 in 92.7 seconds; fmt and diff checks pass; graphify update completes with 31069 nodes and 62566 edges.
+
+Failure policy: work transfers only after the worker thread exists. If creation or transfer fails, the potentially blocking destructor is deliberately retained for ultimate process exit; no synchronous fallback can violate the shutdown deadline. Owned sessions retain their bounded global admissions until close actually completes.
+
+Neighbors: complements 1c8b33c without changing terminal capacity, token handling, process kill policy, or the global shutdown chronology.
+
+Replacement: replaces the terminal-specific tokio::spawn_blocking close path; no second deadline or unbounded queue is introduced.
