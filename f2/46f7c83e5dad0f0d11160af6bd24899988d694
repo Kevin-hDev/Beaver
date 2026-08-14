@@ -1,0 +1,5 @@
+Objectif : transporter la publication et la fermeture à travers le sandbox sans rendre l'autorité modifiable par un helper CEF.
+
+Décisions : noms IPC dérivés du nonce borné, pages de contrôle séparées des boîtes enfant-écrivable, handles et états d'autorité conservés dans le parent, mappings non héritables, permissions macOS privées et SDDL Windows adapté aux SIDs restreints et au niveau MIC du sandbox.
+
+Justification : partager un handle ou un état d'autorité aurait permis à un renderer compromis de falsifier son admission ou celle d'un autre slot. Les objets sont créés une seule fois, les collisions échouent fermées et les noms temporaires sensibles sont zéroïsés. Les tests couvrent publication, signal, collision, permissions et corruption inter-slot.
