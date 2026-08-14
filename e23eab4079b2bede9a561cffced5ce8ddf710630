@@ -1,0 +1,34 @@
+Limite automatique de Kimi K3, et retrait des rapports de revue.
+
+Kimi K3 recevait sa limite maximale comme limite automatique. Le guide de
+démarrage rapide K3 distingue les deux valeurs : max_completion_tokens vaut
+131 072 par défaut et peut monter jusqu'à 1 048 576. Le registre local porte
+désormais les deux, via un champ `default_output_tokens`. La limite automatique
+utilise le défaut, une demande explicite reste rognée au maximum, et le
+plafonnement au contexte restant s'applique ensuite. La validation refuse un
+défaut nul, supérieur au maximum, ou supérieur au contexte.
+
+Une demande de limite à zéro était rapportée comme « contenu trop volumineux ».
+Elle renvoie maintenant provider_configuration_invalid, distinct de
+PayloadTooLarge.
+
+Ce commit retire aussi six rapports de revue de la racine du dépôt, soit 1 716
+lignes, ce que son titre n'annonce pas :
+
+  BEAVER_DIFFERENTIAL_REVIEW_2026-07-26.md (présent depuis le commit initial)
+  BEAVER_DIFFERENTIAL_REVIEW_2026-07-29.md
+  BEAVER_DIFFERENTIAL_REREVIEW_2694F08_2026-07-29.md
+  BEAVER_PASSATION_ANCRAGE_REPERTOIRE_2026-07-29.md
+  BEAVER_DIFFERENTIAL_REVIEW_407029C_FIXES_2026-07-30.md
+  BEAVER_PROVIDER_REGISTRY_DIFFERENTIAL_REVIEW_2026-07-30.md
+
+Chacun reste lisible avec `git show ca0afe0:<fichier>`.
+
+Revue (2026-07-30) : la valeur 1 048 576 avait été signalée comme non sourcée.
+Vérification faite, elle est documentée. La page consultée lors du signalement
+(platform.kimi.com/docs/models.md) ne publie aucune limite de sortie ; le guide
+de démarrage K3 publie les deux. La valeur était juste, seule sa source manquait
+au fichier fournisseur — elle y figure désormais.
+
+Validation de ce commit : clippy sans avertissement, 2 552 tests Rust, 1 661
+tests frontend.
