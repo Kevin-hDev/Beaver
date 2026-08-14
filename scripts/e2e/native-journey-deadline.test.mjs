@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   createNativeJourney,
+  NATIVE_CEF_STAGE_CEILINGS_MS,
   NATIVE_JOURNEY_MOCHA_TIMEOUT_MS,
   NATIVE_JOURNEY_TIMEOUT_MS,
 } from "./native-journey-deadline.mjs";
@@ -27,6 +28,23 @@ test("spent journey time cannot be reissued to a later stage", async () => {
   });
 
   assert.deepEqual(receivedBudgets, [900, 600]);
+});
+
+test("CEF helper turnover is bounded by its stage and the original journey", async () => {
+  let currentTime = 0;
+  const journey = createNativeJourney({
+    now: () => currentTime,
+    report: () => {},
+  });
+  currentTime = 55_000;
+
+  const receivedBudget = await journey.run(
+    "cef_helper_turnover",
+    async ({ timeoutMs }) => timeoutMs,
+  );
+
+  assert.equal(NATIVE_CEF_STAGE_CEILINGS_MS.cef_helper_turnover, 20_000);
+  assert.equal(receivedBudget, 5_000);
 });
 
 test("the validated stage policy cannot be replaced after journey creation", async () => {
