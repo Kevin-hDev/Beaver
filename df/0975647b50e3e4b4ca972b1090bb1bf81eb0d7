@@ -1,0 +1,13 @@
+J3 Task 1 central Ollama setup deadline.
+
+Intention: expose one policy-owned three-second grace and derive its absolute deadline from the global exit origin, capped by the graceful deadline.
+
+Red: cd src-tauri && node ../scripts/ci/run-rust-test-filter.mjs --filter app_exit::policy_tests::ollama_setup_deadline failed with Rust test filter failed.; the equivalent cargo test failed to compile because OLLAMA_SETUP_GRACE_TIMEOUT and ollama_setup_deadline were absent (five compiler errors).
+
+Green: the filtered command verified 1/1 test; cargo test app_exit::policy_tests passed 7/7; cargo clippy --lib -- -D warnings passed; cargo fmt --check and git diff --check passed.
+
+Real result: ollama_setup_deadline returns min(origin + 3s, graceful_deadline); a synthetic call at origin + 2.4s receives exactly 600ms; the policy test asserts 3 < 8 < 10 < 13 < 14 < 15. graphify update . rebuilt 32,017 nodes, 64,430 relations and 1,969 communities.
+
+Limits: this task only materializes the central API; no Ollama supervisor consumes it yet. The 14s order slot is represented as the one-second pre-ultimate margin in the invariant test; the existing CEF policy remains unchanged at 13s from the approved baseline.
+
+Recommendation: the next integration must pass this absolute deadline to the admitted setup wait and must never create or restart a local three-second timeout.
