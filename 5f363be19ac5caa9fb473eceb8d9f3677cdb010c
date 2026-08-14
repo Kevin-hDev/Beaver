@@ -1,0 +1,15 @@
+Décisions prises après la revue de 34af724 :
+
+- Flux principal : aucun délai total. Connexion limitée à 10 s, attente de lecture et inactivité sémantique limitées à 10 min, réarmées par l'activité, avec annulation possible avant même les premiers en-têtes. Le délai total explicite de la compression reste borné à 10 min.
+
+- Requête Responses : tools est toujours sérialisé, y compris sous forme de tableau vide, avec tool_choice=auto pour rester aligné sur Codex officiel.
+
+- WebSocket : la production accepte uniquement l'URL wss ChatGPT exacte ; ws en clair est réservé aux tests loopback. Le drapeau de réponse partielle ne devient vrai qu'après une sortie utile. Les Ping répondent par Pong mais ne réarment volontairement pas le délai du modèle, car ils prouvent seulement que le transport est vivant.
+
+- Callback OAuth : les connexions sont traitées en parallèle avec une borne globale de 16, afin qu'une préconnexion silencieuse ne retarde pas le callback valide.
+
+- Jetons : les comparaisons passent par subtle sur des empreintes SHA-256 fixes et zéroïsées. Les erreurs du store utilisent un code stable. Un refresh sans nouvel access_token conserve l'expiration réelle et mémorise un délai anti-boucle de 60 s ; un jeton expiré ignore ce délai.
+
+- Secrets transportés : aucune garantie artificielle de zéroïsation n'est annoncée pour les copies internes imposées par reqwest, Hyper ou Tungstenite. Les buffers contrôlés par Beaver restent zéroïsés et les en-têtes sensibles restent marqués comme tels.
+
+- Protocole et maintenance : l'événement error est géré dans le flux silencieux, les limites sont centralisées, le code mort et les logs de debug signalés sont retirés, et les chemins accumulateur/SSE disposent désormais de tests de régression dédiés.
