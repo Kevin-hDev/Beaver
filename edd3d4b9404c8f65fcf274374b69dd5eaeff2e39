@@ -1,0 +1,5 @@
+Objectif : corriger les frontières de visibilité macOS sans rendre publiques les identités natives ni les détails du tracker.
+
+Décisions : conserver les champs d'identité privés, ajouter seulement des accesseurs cfg(test) et élargir au niveau crate les deux réexports indispensables à l'entrée helper.
+
+Justification : les tests obtiennent la preuve nécessaire sans transformer des détails de sécurité en API mutable. Le runtime ne gagne aucune surface publique supplémentaire.
