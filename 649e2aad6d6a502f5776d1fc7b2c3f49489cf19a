@@ -1,0 +1,13 @@
+Objectif : débloquer la compilation native macOS du diagnostic CEF introduit par 78f6b57, sans modifier le comportement du navigateur ni la fermeture de Beaver. Le build macOS échouait avant tout lancement parce que tracker_lifecycle.rs utilisait encore CefUnavailableCategory après que son import avait été remplacé par MacSupervisionFailure.
+
+Références de conception et d'exécution : docs/superpowers/specs/2026-08-09-shutdown-milestone-1b-cef-design.md ; docs/superpowers/plans/2026-08-10-shutdown-milestone-1b-cef.md ; docs/superpowers/plans/2026-08-10-shutdown-milestone-1b-review-corrections.md.
+
+Plan appliqué : 1) reproduire le défaut par un contrat rouge ; 2) restaurer uniquement l'import manquant ; 3) étendre scripts/cef/cef-supervision-contracts.mjs pour que Windows détecte désormais cette omission propre au module macOS ; 4) revalider les contrats CEF, les diagnostics E2E, Clippy normal/E2E et la suite Rust complète ; 5) remettre le commit sur la branche macOS temporaire, sans PR ni CI complète.
+
+Ce que nous testons sur macOS : E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e doit maintenant dépasser la compilation, lancer le vrai CEF sandboxé et produire, en cas de fermeture par la supervision, browser-supervision-detail:<raison-fixe>. La raison recherchée doit identifier le point exact d'admission ou de reaper qui déclenche application-exit-source=browser-supervision. Le but suivant sera de corriger cette cause racine précise, pas de masquer l'échec ni de relancer la CI à l'aveugle.
+
+Répartition des preuves : la session macOS exécutera le parcours natif CEF réel ; cette session Windows vérifie les contrats portables, le pipeline de diagnostic, Clippy multi-configuration et les régressions Rust. Aucune valeur libre, chemin, erreur OS ou donnée sensible n'est ajoutée aux diagnostics.
+
+Validations Windows : test rouge observé puis vert ; test:cef 29/29 ; test:e2e-runner 34/34 ; Clippy --all-targets normal et feature e2e avec -D warnings ; garde de format Rust ; trois tests de stockage privé initialement en conflit parallèle réussis isolément ; suite Rust sérialisée 3070 réussis, 0 échec, 4 ignorés ; git diff --check ; graphify update.
+
+Validation native Windows ajoutée après le commit : E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e a compilé Beaver, lancé le vrai parcours CEF, chargé une page dans un helper sandboxé et validé la fermeture sans processus possédé survivant (1 scénario réussi, 0 échec).
