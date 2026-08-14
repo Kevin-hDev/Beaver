@@ -1,0 +1,11 @@
+CONFIDENTIALITY HISTORY REWRITE — 2026-08-14
+
+Context: the repository was made private before rewriting every writable branch and the Git notes to remove docs/superpowers from branch and tag history. The local private documents remain ignored and untracked. A verified complete bundle was created before the rewrite.
+
+Verification: all 16 remote branch/tag refs contain zero docs/superpowers paths. GitHub still retains nine read-only refs/pull/* refs containing the former history; they cannot be force-updated by repository maintainers. Because the repository is private, those refs are now limited to authorized users. Full removal requires GitHub Support or an explicitly approved repository recreation.
+
+CI observation: run 31809147328 received the former main SHA as github.event.before, so the changed-Rust formatter could not inspect that intentionally removed object. CodeQL run 31809147319 completed analysis but failed to read its private workflow-run metadata with Resource not accessible by integration.
+
+Change: grant CodeQL only actions: read, alongside existing contents: read and security-events: write. This commit also establishes an ordinary post-rewrite main parent for subsequent CI comparisons.
+
+Validation before commit: git diff --check passed; the staged scope contained only .github/workflows/codeql.yml. Recommendation: retain the minimal read permission and validate this commit with the complete CI and CodeQL workflows.
