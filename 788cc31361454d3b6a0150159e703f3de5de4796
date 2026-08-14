@@ -1,0 +1,5 @@
+Objectif : créer le vocabulaire commun et borné utilisé par tous les chemins CEF avant d'introduire des objets système.
+
+Décisions : marqueur de rôle versionné, 64 slots maximum, générations non nulles, nonce CSPRNG, décodage unique et borné, comparaison du nonce en temps constant et diagnostics sans valeur sensible. Toute entrée ambiguë, répétée ou mal formée échoue fermée.
+
+Justification : le PID ou le type Chromium seuls ne prouvent ni l'origine ni la génération d'un helper. Le marqueur privé lie une réservation parent à une seule publication sans exposer d'autorité à l'enfant. Les tests de protocole couvrent bornes, unicité, rejeu et masquage des diagnostics.
