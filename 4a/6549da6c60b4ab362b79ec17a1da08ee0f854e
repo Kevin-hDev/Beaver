@@ -1,0 +1,11 @@
+Intention: centraliser les 16 chemins Ollama et définir les documents durables bornés sans ajouter de store ni de primitive d’écriture.
+
+Rouge TDD: node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::document_tests ; sortie lue: Rust test filter failed. puis cargo a confirmé les imports fingerprint/journal/ollama_paths absents.
+
+Verts lus: filtre documentaire 7 passed, 0 failed, 3347 filtered out ; cargo test --lib services::paths 4 passed, 0 failed, 3350 filtered out ; cargo check code 0 ; cargo clippy --all-targets -- -D warnings code 0 ; cargo fmt --all -- --check code 0 ; git diff --check code 0 ; graphify update .: 32180 nodes, 64760 edges, 1975 communities.
+
+Résultat réel: chemins enfants directs et distincts sous la racine reçue ; OllamaVersion semver canonique limitée à 64 octets ; Sha256Digest 64 hex ASCII vers [u8; 32] avec ConstantTimeEq ; journal serde fermé à cinq phases avec previous obligatoire et target interdit en rollback ; marqueur schema 1 et true, classification pure absent/valide/invalide, borne de 4096 octets avant désérialisation.
+
+Limites: aucune lecture/écriture disque, migration, recovery, adoption d’ancien consommateur ou store ; les dispositions rejected_target restent à décider avec le layout réel dans les tâches de recovery. Les 73 fichiers Graphify sans nœud restent l’avertissement connu.
+
+Recommandation: Task 4 doit réutiliser MAX_DURABLE_DOCUMENT_BYTES, OllamaPaths et les parseurs bornés via une unique primitive durable, sans reconstruire de nom ni ajouter de deuxième écriture.
