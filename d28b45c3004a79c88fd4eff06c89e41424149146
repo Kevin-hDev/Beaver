@@ -1,0 +1,67 @@
+BEAVER — ÉTAT DU SYSTÈME D’EXTENSIONS AU 27 JUILLET 2026
+
+STATUT
+Première verticale fonctionnelle et validée. Ce commit fournit le socle des extensions locales, mais ne représente pas encore tout l’écosystème hybride ni la parité fonctionnelle complète avec Pi.
+
+DÉCISIONS À PRÉSERVER
+- Les Tools internes Documents, Spreadsheets et Images restent exclusivement dans Réglages > Tools.
+- Aucun Tool interne ne doit être déplacé, renommé ou présenté comme plugin.
+- Le catalogue des plugins Beaver est volontairement vide dans ce commit.
+- La future suite Office doit être composée de véritables plugins officiels distincts.
+- Une extension utilisateur est du code de confiance complète choisi par utilisateur. Elle peut utiliser les droits du compte, le réseau, les fichiers, les processus et les secrets volontairement demandés.
+- Le processus séparé protège la continuité de Beaver, mais ne constitue pas une sandbox ni une matrice de permissions.
+
+IMPLÉMENTÉ ET VALIDÉ
+- Nouvel onglet Réglages > Extensions avec quatre espaces : Plugins Beaver, Extensions personnalisées, Applications externes, Hôte et diagnostics.
+- Registre Rust persistant et borné, source de vérité unique pour enabled, showInChat, état, manifeste et contributions.
+- Ajout local depuis un fichier JavaScript ou TypeScript, un manifeste JSON, package.json ou un dossier.
+- Activation, désactivation, rechargement, suppression, ouverture de la source et récupération sans extensions utilisateur.
+- Hôte séparé Node.js 24.18.0 LTS avec Jiti 2.7 et SDK local @beaver/sdk.
+- Chargement JS, TS, ESM, CommonJS, JSX et TSX.
+- Outils dynamiques isolés par identifiant extension.
+- Remplacement explicite des outils du cœur via API avancée instable.
+- Événement session.turn.started.
+- Pont vers informations Beaver, lecture sessions, projets, MCP, configuration canaux et appel outils MCP.
+- Remise volontaire des clés providers, tokens OAuth MCP, secrets environnement MCP et tokens canaux.
+- Raccourcis plugins du chat indépendants de activation : sélection sans limite, huit lignes visibles puis défilement.
+- Interface compacte Beaver, tokens CSS, thèmes clair et sombre, responsive et positionnement sans scintillement.
+- Sept langues prises en charge.
+- Placeholder Plugins retiré de Connecteurs, qui reste consacré à MCP.
+
+PROTECTIONS DU CŒUR
+- Validation des identifiants, manifestes, schémas, chemins canoniques et traversées par liens symboliques.
+- Messages, collections, outils, extensions, événements, appels simultanés et téléchargements bornés.
+- Protocole JSON-RPC versionné, taille maximale, délais et arrêt fail-closed de hôte invalide.
+- Erreurs utilisateur génériques et absence de secrets dans les logs.
+- Buffers secrets Rust zéroïsés après remise.
+- Téléchargement Node limité, empreintes SHA-256 officielles comparées en temps constant et extraction sans shell intermédiaire.
+- Événements non essentiels abandonnés lorsque hôte est occupé afin de ne pas créer une file illimitée.
+
+VALIDATIONS EXÉCUTÉES
+- npm run lint : réussi.
+- npx tsc --noEmit : réussi.
+- cargo fmt --check : réussi.
+- cargo clippy --all-targets avec warnings refusés : réussi.
+- npm test : 346 fichiers et 1583 tests réussis.
+- Tests CEF : 2 réussis.
+- Tests hôte extensions : 6 réussis.
+- cargo test : 2330 tests réussis.
+- Préparation réelle du runtime embarqué : Node.js v24.18.0 téléchargé, vérifié et extrait avec succès.
+- Contrôles visuels effectués en clair, sombre et fenêtre compacte.
+- Graphify mis à jour après les changements.
+
+RESTE À FAIRE POUR LA VISION COMPLÈTE
+1. Compléter la parité fonctionnelle avec Pi : davantage événements, commandes, actions, transformations du contexte et du prompt, écriture sessions, mémoire, automatisations, sous-agents, terminal, navigateur, fichiers, fournisseurs et modèles.
+2. Ajouter installation directe, mise à jour et provenance depuis Git et npm.
+3. Implémenter le protocole entrant pour Applications externes et ses transports locaux.
+4. Implémenter les modules interface tiers : panneaux, onglets, boutons, vues et mode avancé de personnalisation UI.
+5. Intégrer la véritable suite Office comme plugins officiels lorsque son code et ses manifestes seront disponibles, sans réutiliser les Tools maison.
+6. Enrichir les diagnostics : attribution précise des arrêts, historique actions borné, incompatibilités et dernière extension chargée.
+7. Ajouter ultérieurement marketplace, publication, notation et mises à jour automatiques si ces choix sont validés.
+8. Étendre les validations de packaging aux trois systèmes dans la CI.
+
+DOCUMENTATION
+La SPEC évolutive se trouve localement dans docs/extenstion/SPEC.md. Elle est volontairement ignorée par Git et ne fait pas partie de ce commit.
+
+POINT DE REVIEW RECOMMANDÉ
+Vérifier en priorité le modèle de confiance complète, la frontière de remise des secrets, les courses activation ou rechargement, le routage des remplacements outils, le cycle de vie de hôte, le packaging Node sur trois systèmes et la garantie que les Tools internes restent indépendants des plugins.
