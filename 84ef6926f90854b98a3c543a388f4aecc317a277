@@ -1,0 +1,7 @@
+Objectif : corriger la régression de concurrence SearXNG signalée lors de la review de de56000 et fermer l'angle mort de compilation Windows.
+
+Décisions : le verrou asynchrone SearXNG reste détenu jusqu'à la fin de la terminaison bloquante exécutée par spawn_blocking. Ainsi, ensure_running ne peut pas enregistrer un nouveau processus avant la suppression finale de l'ancien fichier PID. Le verrou asynchrone sérialise l'état sans bloquer un fil Tokio.
+
+Les tests précédemment extraits ont été réintégrés avec leurs commentaires d'origine. Les fichiers de production font 206 et 220 lignes, sous la limite corrigée de 230. Le job CI Windows est renommé et exécute maintenant cargo check --all-targets sur le cœur de Beaver avant les tests du stockage privé.
+
+Validation : cargo fmt --all -- --check ; cargo clippy --all-targets -- -D warnings ; cargo test --quiet (2843 réussis, 0 échec) ; syntaxe ci.yml validée ; graphify update .
