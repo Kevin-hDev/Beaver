@@ -1,0 +1,5 @@
+Raison : le premier callback MCP, même avec un mauvais state, fermait le listener ; Codex et les providers LLM attendaient leur libération par une boucle de polling de 10 ms, et le test Codex libérait lui-même le registre qu'il prétendait vérifier.
+
+Décision : valider chaque state MCP en temps constant dans la boucle d'acceptation et continuer après un refus ; introduire OAuthCompletion<T>, un oneshot partagé dont le propriétaire matérialise la durée de vie du travail ; les registres conservent ce signal et cancel attend sa vraie fin, sans fonction release séparée. Les buffers fixes de comparaison du state sont zéroïsés avant retour.
+
+TDD : wrong_state_does_not_consume_the_mcp_callback_server et owned_work_drop_completes_without_polling ont échoué avant les nouvelles interfaces ; le test Codex ne modifie plus ACTIVE_LOGIN. Vérifications finales : oauth 81/81 ; aucun polling 10 ms ni login_registry::release restant ; cargo fmt et git diff --check verts ; graphify update . exécuté ; maximum production 172 lignes.
