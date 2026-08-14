@@ -1,0 +1,7 @@
+Objectif : corriger les trois remarques du reviewer sur d1cc8be sans réécrire le commit déjà relu.
+
+Décisions : (1) l'arrêt SearXNG libère son mutex puis exécute la terminaison bloquante dans spawn_blocking ; (2) le nettoyage des terminaux et l'arrêt d'Ollama utilisent deux tâches indépendantes afin qu'Ollama démarre immédiatement sous la limite globale de 2 secondes ; (3) sous Windows, un seul taskkill fondé sur le PID est envoyé, la seconde escalade restant réservée à Unix, tandis que le handle Child demeure le dernier recours sûr ; (4) les tests ont été déplacés dans des fichiers dédiés pour conserver les fichiers de production sous 200 lignes.
+
+Validation : cargo fmt --all -- --check ; cargo clippy --all-targets -- -D warnings ; cargo test --quiet (2843 réussis, 0 échec) ; graphify update .
+
+Points mineurs laissés volontairement inchangés : le double parcours sysinfo Unix est négligeable ; aucun signal de groupe n'est envoyé après le reap, afin d'éviter d'agir sur un groupe réutilisé.
