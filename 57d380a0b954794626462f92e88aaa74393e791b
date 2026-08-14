@@ -1,0 +1,39 @@
+Probleme
+Beaver pouvait quitter visuellement tout en laissant des taches ou processus appartenant a l'application actifs. Plusieurs courses autorisaient aussi un flux, un reveil planifie, une installation Ollama, un telechargement ou un service a demarrer pendant la transition d'arret. Des etats perimes pouvaient ensuite retirer ou masquer un travail plus recent.
+
+Objectif
+Garantir qu'un vrai Quitter ferme Beaver et tout ce qu'il possede sur Windows, macOS et Linux, sans changer le comportement natif de la croix rouge macOS. Une mise a jour validee conserve uniquement son helper dedie afin qu'il termine l'installation puis relance l'application.
+
+Decisions principales
+- Centralisation de l'admission du travail dans AppExitCoordinator : la transition vers l'arret et la delivrance d'un permis sont atomiques; chaque permis recoit un jeton enfant annule au debut de l'arret.
+- Nettoyage ordonne et borne : scheduler, installation Ollama, flux, telechargements, OAuth, shells, gateway, MCP, extensions, VRAM, Forecast, SearXNG, terminaux puis Ollama.
+- Registre borne des taches longues avec fermeture permanente, annulation, attente de liberation des ressources puis abandon borne si necessaire.
+- Flux conversationnels transactionnels : executeur cree avant publication, activation explicite, numeros de generation, finalisation des diagnostics refuses et impossibilite pour un ancien flux de retirer le nouveau.
+- Reveils planifies suivis et attendus; un reveil ponctuel est reclame avant l'appel provider; le chemin agentique recoit le jeton d'arret et termine son propre nettoyage.
+- Installation Ollama suivie par generation : la fin tardive d'une ancienne installation ne peut plus effacer le suivi de la suivante.
+- Telechargements et demarrages de services refuses apres le debut de l'arret; erreurs publiques generiques et collections bornees.
+- Balayage final apres la boucle Tauri et l'arret du navigateur. Le helper de mise a jour est la seule exception, validee par PID, parent, heure de demarrage et executable canonique.
+- Windows conserve taskkill /T /F. Unix utilise un parcours iteratif, borne, deduplique et feuilles-vers-racine, sans limite artificielle de profondeur.
+- macOS : la croix rouge masque la fenetre; Cmd+Q, le menu Quitter et une vraie demande de sortie declenchent le nettoyage complet. Windows/Linux : fermer la fenetre declenche ce meme nettoyage.
+
+Corrections issues de la revue finale
+- Le remplacement d'un flux est regroupe dans StreamRegistration afin de reduire les erreurs d'appel.
+- Une ancienne installation Ollama terminee ne peut plus effacer l'installation active plus recente.
+- Les arbres Unix de plus de dix niveaux restent entierement parcourus dans la borne globale de 256 descendants.
+
+Verifications locales (Windows)
+- cargo fmt --check : reussi.
+- check-rust-format.mjs : reussi.
+- cargo clippy --lib --features windows-tests -- -A dead-code -D warnings : reussi.
+- cargo test --lib --features windows-tests -- --test-threads=1 : 3008 reussis, 0 echec, 4 ignores.
+- npm test -- --run : 412 fichiers Vitest / 1885 tests, 44 tests scripts de build, 6 tests CEF, 6 tests runner E2E et 51 tests hote d'extensions, tous reussis.
+- npx tsc --noEmit : reussi.
+- npm run lint : reussi.
+- git diff --check et controle des fichiers metier sous 230 lignes : reussis.
+- graphify update . : reussi.
+
+Couverture multiplateforme
+Seule la cible Rust Windows est installee localement. Les chemins Unix sont couverts par des tests purs (ordre profond, cycles et borne), les tests cfg Unix existants et le job Linux complet. Le workflow ajoute un job macOS natif avec cargo check --all-targets et Clippy strict; le job Linux execute Clippy et les tests complets. Les comportements natifs de fermeture restent a confirmer par le smoke test manuel sur chaque OS apres passage de la CI.
+
+Limite de validation locale
+Le check natif CEF all-targets n'a pas pu etre reproduit hors CI car l'archive CEF verifiee n'etait pas presente et le telechargement etait indisponible sur cette machine. Aucun resultat natif macOS/Linux n'est donc revendique localement.
