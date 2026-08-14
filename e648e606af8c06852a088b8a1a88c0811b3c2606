@@ -1,0 +1,11 @@
+Objectif : conserver le contexte complet de Beaver lorsque les sessions sont limitées à des dossiers, sans rendre les données internes modifiables implicitement, et porter la limite de dossiers configurables à 70.
+
+Décisions : les racines explicitement configurées forment une union et gardent toutes les mêmes permissions de lecture/écriture ; le comportement Tout le disque reste inchangé. En mode restreint, le dossier retourné par services::paths::data_dir() est ajouté en lecture seule aux outils fichiers et au shell. memory, skills, AGENTS.md et les ressources de migration activées conservent leurs exceptions d’écriture. Si data_dir ou un de ses parents est explicitement configuré, il redevient entièrement inscriptible comme toute autre racine.
+
+Vault : secrets.enc reste lisible comme le reste des données Beaver, mais le fichier ne contient que le nonce et le texte chiffré XChaCha20-Poly1305 ; la clé maître reste dans le trousseau système. Le mode restreint implicite ne permet ni de modifier ni de corrompre ce fichier.
+
+Confinement : la racine privée de lecture est prioritaire avant les racines d’outils et rejette les redirections symboliques. Sur Windows, son ACL de lecture est obligatoire alors que les ACL des dossiers système restent optionnelles. La borne du journal de nettoyage Windows est dérivée des nouvelles limites et toute écriture hors borne échoue avant la mutation des ACL.
+
+Validation : cargo test = 2917 réussis, 0 échec, 1 ignoré ; cargo fmt --check et cargo clippy --all-targets -- -D warnings réussis ; npm test = 1813 Vitest dans 396 fichiers, 2 tests CEF et 46 tests hôte extensions ; npx tsc --noEmit et npm run lint réussis. Le test Seatbelt réel confirme git, npm, cargo, Go, heredoc, diff et compilation native fonctionnels, avec écritures hors périmètre bloquées. Un test Seatbelt dédié confirme la lecture du magasin Beaver et le refus de sa modification.
+
+Limites de vérification : les clippy croisés Linux et Windows ont été tentés mais sont bloqués avant le code Beaver par les sysroots/dépendances natives absents sur macOS (pkg-config GTK sous Linux ; CEF, en-têtes MSVC et vcpkg sous Windows). La validation runtime native de ces deux plateformes reste à la CI.
