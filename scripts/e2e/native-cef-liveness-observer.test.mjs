@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  observeOwnedCefHelperTurnover,
   waitForOwnedCefHelperSet,
   waitForOwnedCefHelperTurnover,
 } from "./native-cef-liveness-observer.mjs";
@@ -54,6 +55,26 @@ test("turnover tracks a later owned helper and resolves when it disappears", asy
 
   assert.equal(result.exitedPid, 44);
   assert.deepEqual(result.initialPids, [42]);
+  assert.equal(polls, 3);
+});
+
+test("rolling observation catches a helper that exits before browser capability is ready", async () => {
+  let polls = 0;
+  const snapshots = [
+    [],
+    [helper(42), helper(43)],
+    [helper(43)],
+  ];
+  const result = await observeOwnedCefHelperTurnover({
+    platform: "darwin",
+    root: MAC_ROOT,
+    timeoutMs: 50,
+    pollMs: 1,
+    listProcesses: () => snapshots[Math.min(polls++, snapshots.length - 1)],
+  });
+
+  assert.equal(result.exitedPid, 42);
+  assert.deepEqual(result.initialPids, [42, 43]);
   assert.equal(polls, 3);
 });
 

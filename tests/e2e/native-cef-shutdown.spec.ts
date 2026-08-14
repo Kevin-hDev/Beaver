@@ -1,16 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import { createNativeJourney } from "../../scripts/e2e/native-journey-deadline.mjs";
+import { waitForMacCefTurnoverProof } from "../../scripts/e2e/macos-cef-turnover-proof.mjs";
 import {
   runtimeRootForBinary,
   waitForOwnedCefHelper,
   waitForOwnedProcessesToExit,
   waitForProcessIdsToExit,
 } from "../../scripts/e2e/native-cef-observer.mjs";
-import {
-  waitForOwnedCefHelperSet,
-  waitForOwnedCefHelperTurnover,
-} from "../../scripts/e2e/native-cef-liveness-observer.mjs";
+import { waitForOwnedCefHelperSet } from "../../scripts/e2e/native-cef-liveness-observer.mjs";
 import { completeOnboarding } from "./onboarding-flow";
 import { invokeTauri } from "./tauri-invoke";
 
@@ -45,6 +43,8 @@ describe("native CEF shutdown", () => {
     const journey = createNativeJourney();
     const binaryPath = process.env.E2E_APP_BINARY;
     if (!binaryPath) throw new Error("E2E app binary is not configured");
+    const logDirectory = process.env.E2E_LOG_DIR;
+    if (!logDirectory) throw new Error("E2E log directory is not configured");
     const runtimeRoot = runtimeRootForBinary(process.platform, binaryPath);
     let server: Server | undefined;
     try {
@@ -89,23 +89,20 @@ describe("native CEF shutdown", () => {
         })
       ));
 
-      const initialHelperPids = await journey.run(
+      await journey.run(
         "cef_helper_start",
         async ({ timeoutMs }) => {
           if (process.platform === "darwin") {
-            return waitForOwnedCefHelperSet({ root: runtimeRoot, timeoutMs });
+            await waitForOwnedCefHelperSet({ root: runtimeRoot, timeoutMs });
+            return;
           }
           await waitForOwnedCefHelper({ root: runtimeRoot, timeoutMs });
-          return [];
         },
       );
       if (process.platform === "darwin") {
+        // The wrapper observes before spawning Beaver because short helpers can exit pre-WebDriver.
         await journey.run("cef_helper_turnover", ({ timeoutMs }) => (
-          waitForOwnedCefHelperTurnover({
-            root: runtimeRoot,
-            initialPids: initialHelperPids,
-            timeoutMs,
-          })
+          waitForMacCefTurnoverProof({ logDirectory, timeoutMs })
         ));
       }
       await journey.run("page_load", ({ timeoutMs }) => (

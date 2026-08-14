@@ -11,6 +11,34 @@ const FAILURE_MESSAGE = "Native CEF liveness observation failed";
 
 export const CEF_HELPER_TURNOVER_POLL_MS = 25;
 
+export async function observeOwnedCefHelperTurnover({
+  platform = process.platform,
+  root,
+  timeoutMs = 20_000,
+  pollMs = CEF_HELPER_TURNOVER_POLL_MS,
+  listProcesses = listNativeProcesses,
+}) {
+  validateOptions({ platform, root, timeoutMs, pollMs, listProcesses });
+  const deadline = Date.now() + timeoutMs;
+  const initialPids = await waitForOwnedCefHelperSet({
+    platform,
+    root,
+    timeoutMs,
+    pollMs,
+    listProcesses,
+  });
+  const remainingMs = deadline - Date.now();
+  invalid(remainingMs < 1);
+  return waitForOwnedCefHelperTurnover({
+    platform,
+    root,
+    initialPids,
+    timeoutMs: remainingMs,
+    pollMs,
+    listProcesses,
+  });
+}
+
 export async function waitForOwnedCefHelperSet({
   platform = process.platform,
   root,
