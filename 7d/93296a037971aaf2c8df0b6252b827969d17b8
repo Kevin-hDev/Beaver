@@ -1,0 +1,39 @@
+Fix round 1/5 — publier immédiatement l'annulation et fermer la course admission/publication.
+
+Intention:
+- Conserver l'ordre admission -> verrou d'opération -> génération.
+- Publier Cancelling dès begin_closing() pour toute opération active, avant la destruction de sa garde.
+- Refuser une admission déjà obtenue mais pas encore publiée si la fermeture survient, sans créer d'opération tardive.
+
+Rouge TDD réellement lu:
+1. Commande: cd src-tauri && node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::manager_tests
+   Résultat avant production: exit 1, 12 passed, 1 failed; cancellation_marks_cancelling_and_releases_admission a échoué avec assertion left: Updating, right: Cancelling alors que la garde vivait encore.
+2. Après ajout du test de course, le même filtre a échoué à la compilation car begin_operation_paused_for_test n'existait pas encore (cargo E0599); le helper a ensuite été ajouté avec la logique de production partagée.
+
+Correction:
+- OllamaManagerState possède désormais l'autorité closing.
+- begin_closing marque l'état avant d'annuler ServiceWorkSupervisor; une opération active devient Cancelling immédiatement.
+- Après admission, la publication vérifie closing et le jeton d'annulation sous le verrou d'état; une fermeture gagnante retourne OllamaClosing sans incrémenter la génération ni publier Installing/Updating.
+- release_generation conserve Cancelling lorsque la fermeture est engagée.
+- Le test suspend une admission réelle entre try_admit et la publication, ferme, reprend et vérifie qu'aucune opération ne démarre.
+
+Course vérifiée:
+- try_admit -> begin_closing -> publication: closing est déjà vrai, la publication tardive est refusée.
+- begin_closing -> try_admit: le registre refuse l'admission en fermeture.
+- publication -> begin_closing: l'état actif est immédiatement remplacé par Cancelling; la garde ne peut pas restaurer Idle.
+
+Verts réellement lus:
+- Filtre manager: 14 passed, 0 failed, 3333 filtered out; Verified 14 filtered Rust test(s).
+- cargo check: exit 0.
+- cargo clippy --all-targets -- -D warnings: exit 0.
+- cargo fmt --all -- --check: exit 0.
+- git diff --check: exit 0.
+- graphify update .: 32102 nodes, 64602 edges, 1986 communities; 73 zero-node files reported as existing warning.
+
+Limites:
+- Aucun ancien consommateur Ollama n'est basculé ou supprimé.
+- Le helper de synchronisation est cfg(test); aucune API publique supplémentaire n'est exposée.
+- Les opérations métier restent aux tâches d'adoption prévues.
+
+Recommandation:
+- Conserver closing comme autorité unique de publication et faire passer les futures opérations par begin_operation; ne jamais recréer un état concurrent côté consommateur.
