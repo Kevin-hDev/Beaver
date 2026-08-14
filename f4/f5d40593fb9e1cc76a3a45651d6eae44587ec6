@@ -1,0 +1,9 @@
+Jalon 2 — adoption des producteurs Agent.
+
+Référence: 9594582 fournit le registre local borné. Ce commit nomme une seule autorité, AgentWorkServices, pour quatre classes fixes: flux Agent (32), sous-agents (8), shells (64) et distributeur de sous-agents (1). Les quatre dérivent du superviseur global et s'arrêtent sur la même échéance absolue; aucune seconde barrière globale n'est créée.
+
+Décisions: le flux obtient son admission avant toute mutation de session et relaie la fermeture vers son CancellationToken existant. Chaque sous-agent réserve sa place avant publication dans la file bornée; le distributeur est lui-même suivi, ferme sa file et annule les éléments non démarrés. La capture de panique reste dans la tâche propriétaire via catch_unwind afin qu'un abandon ne détache jamais le sous-agent. Les shells normaux et explorateurs démarrent derrière une admission; la tâche suivie possède le processus jusqu'à sa terminaison, relaie l'annulation, tue l'arbre de processus et conserve la commande dans Zeroizing<String>.
+
+TDD rouge observé: API ServiceWorkSupervisor absente; propriétaire AgentWorkServices absent; helpers de flux et de file absents; ShellExecutionContext sans superviseur; vrai processus de 30 s non suivi; abandon du garde de panique laissant son enfant détaché. Vert: 6/6 work_registry, 17/17 agent_chat, 5/5 file sous-agent, 34/34 shell, 46/46 app_exit, 208/208 sous-agents, puis suite Rust complète 3098 réussis / 4 ignorés / 0 échec. cargo fmt --check, Clippy strict all-targets et graphify update verts.
+
+Compatibilité: les limites préexistantes des flux, sous-agents et shells renvoient désormais aux mêmes constantes que leurs registres de supervision. Commit remplaçant: aucun, adoption J2 du mécanisme introduit par 9594582.
