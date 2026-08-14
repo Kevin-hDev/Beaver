@@ -1,0 +1,11 @@
+Intention: Task 4 ajoute l'unique primitive OllamaDurableFs injectee et testable, ses voies Unix/Windows, l'execut eur spawn_blocking et OllamaJournalStore. Le store utilise exclusivement OllamaPaths, MAX_DURABLE_DOCUMENT_BYTES et parse_bounded; private_store reste hors autorite.
+
+TDD rouge: le filtre services::ollama_manager::durable_fs_tests a ete lance avant production et a retourne Rust test filter failed; Cargo a confirme les modules blocking, durable_fs et journal_store absents.
+
+Verts lus: durable_fs_tests 9/9; blocking_tests 2/2; services::ollama_manager::document_tests 10/10; services::paths 4/4; services::ollama_manager complet 35/35; cargo check, clippy --all-targets -D warnings, fmt --check et git diff --check verts.
+
+Contrat: tmp exact refuse s'il existe; write_new refuse une destination; replace remplace explicitement; ordre tmp-write-sync-file-rename-sync-parent-read-parse-revalidation; suppression et renommage synchronisent les parents; erreurs publiques restent generiques; panique/join devient OllamaInternal.
+
+Windows: MoveFileExW + MOVEFILE_WRITE_THROUGH, remplacement seulement pour replace_atomic, parent FILE_FLAG_BACKUP_SEMANTICS + FlushFileBuffers; retry seulement ERROR_SHARING_VIOLATION/ERROR_LOCK_VIOLATION, 40 attentes maximum de 50 ms sur 2 s et annulation. Filtre Windows non execute sur macOS. Le cargo check cible Windows a compile le nouveau module puis reste bloque uniquement par trois erreurs CEF preexistantes cef_supervision hors native_browser et un avertissement private_store.
+
+Graphify: graphify update . relu 32326 noeuds et 65160 liens; avertissement connu de 73 fichiers sans noeud. Tailles production: durable_fs 140, Unix 132, Windows 216, blocking 13, journal_store 126 lignes. Recommandation: lire le filtre Windows natif et un vrai verrou de partage avant preuve multiplateforme complete.
