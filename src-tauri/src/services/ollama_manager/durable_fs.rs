@@ -5,6 +5,9 @@ use std::fmt;
 use std::path::Path;
 use std::time::Duration;
 
+pub(super) const MAX_WINDOWS_PATH_UNITS: usize = 32_768;
+pub(super) const WINDOWS_PARENT_FLUSH_ACCESS: u32 = 0x4000_0000;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum OllamaFsErrorKind {
     NotFound,
@@ -72,6 +75,45 @@ pub(super) trait OllamaDurableFs: Send + Sync {
     fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError>;
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError>;
     fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError>;
+}
+
+pub(super) fn sync_parent_pair<Sync>(
+    source: &Path,
+    destination: &Path,
+    mut sync: Sync,
+) -> Result<(), OllamaFsError>
+where
+    Sync: FnMut(&Path) -> Result<(), OllamaFsError>,
+{
+    let source_parent = source
+        .parent()
+        .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
+    let destination_parent = destination
+        .parent()
+        .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
+    // Après une publication inter-répertoires, source puis destination ; un seul sync si identiques.
+    sync(source_parent)?;
+    if source_parent != destination_parent {
+        sync(destination_parent)?;
+    }
+    Ok(())
+}
+
+pub(super) fn validate_wide_units<I>(units: I) -> Result<(), OllamaFsErrorKind>
+where
+    I: IntoIterator<Item = u16>,
+{
+    let mut count = 0usize;
+    for unit in units {
+        if unit == 0 {
+            return Err(OllamaFsErrorKind::InvalidInput);
+        }
+        count = count.saturating_add(1);
+        if count.saturating_add(1) > MAX_WINDOWS_PATH_UNITS {
+            return Err(OllamaFsErrorKind::InvalidInput);
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn io_error_kind(error: &std::io::Error) -> OllamaFsErrorKind {

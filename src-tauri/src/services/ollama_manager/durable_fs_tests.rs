@@ -1,7 +1,10 @@
-use super::durable_fs::{retry_windows_sharing, OllamaFsError, OllamaFsErrorKind};
+use super::durable_fs::{
+    retry_windows_sharing, sync_parent_pair, validate_wide_units, OllamaFsError, OllamaFsErrorKind,
+    WINDOWS_PARENT_FLUSH_ACCESS,
+};
 #[cfg(unix)]
 use super::durable_fs::{OllamaDurableFs, PlatformOllamaDurableFs};
-use super::durable_fs_test_support::{FailurePoint, ScriptedFs};
+use super::durable_fs_test_support::{ExpectedCall, FailurePoint, ScriptedFs};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::journal_store::OllamaJournalStore;
 use crate::services::ollama_manager::fingerprint::{
@@ -31,14 +34,28 @@ fn store(fs: Arc<ScriptedFs>) -> OllamaJournalStore<ScriptedFs> {
     OllamaJournalStore::new(fs, ollama_paths(Path::new("/tmp/ollama-task-4")))
 }
 
+fn scripted(calls: impl IntoIterator<Item = ExpectedCall>) -> Arc<ScriptedFs> {
+    Arc::new(ScriptedFs::scripted_at(
+        Path::new("/tmp/ollama-task-4"),
+        calls,
+    ))
+}
+
 #[tokio::test]
 async fn store_revalidates_after_the_final_parent_sync() {
-    let fs = Arc::new(ScriptedFs::default());
+    let fs = scripted([
+        ExpectedCall::CreateDirectory,
+        ExpectedCall::ReadTmp,
+        ExpectedCall::WriteNew,
+        ExpectedCall::ReadFinal,
+    ]);
     store(Arc::clone(&fs)).write_new(&journal()).await.unwrap();
     assert_eq!(
         fs.events(),
         [
+            "create_directory",
             "read_tmp",
+            "write_new",
             "create_tmp",
             "write",
             "sync_file",
@@ -47,6 +64,7 @@ async fn store_revalidates_after_the_final_parent_sync() {
             "read_final"
         ]
     );
+    fs.finish();
 }
 
 #[tokio::test]
@@ -58,35 +76,70 @@ async fn every_durability_boundary_blocks_publication() {
         FailurePoint::Rename,
         FailurePoint::SyncParent,
     ] {
-        let fs = Arc::new(ScriptedFs::default());
+        let fs = scripted([
+            ExpectedCall::CreateDirectory,
+            ExpectedCall::ReadTmp,
+            ExpectedCall::WriteNew,
+        ]);
         fs.fail_at(point);
         assert!(store(Arc::clone(&fs)).write_new(&journal()).await.is_err());
         assert!(!fs.events().contains(&"read_final"));
-        assert!(fs.temp_is_absent());
+        if point == FailurePoint::CreateTmp {
+            assert!(fs.temp_is_absent());
+        } else {
+            assert!(!fs.temp_is_absent());
+        }
+        fs.finish();
     }
 }
 
 #[tokio::test]
 async fn final_revalidation_rejects_a_tampered_document() {
-    let fs = Arc::new(ScriptedFs::default());
+    let fs = scripted([
+        ExpectedCall::CreateDirectory,
+        ExpectedCall::ReadTmp,
+        ExpectedCall::WriteNew,
+        ExpectedCall::ReadFinal,
+    ]);
     fs.set_final_override(b"not-json".to_vec());
     assert!(store(Arc::clone(&fs)).write_new(&journal()).await.is_err());
     assert!(fs.events().contains(&"read_final"));
+    fs.finish();
 }
 
 #[tokio::test]
 async fn replacement_calls_the_explicit_replace_primitive() {
-    let fs = Arc::new(ScriptedFs::default());
+    let fs = scripted([
+        ExpectedCall::CreateDirectory,
+        ExpectedCall::ReadTmp,
+        ExpectedCall::Replace,
+        ExpectedCall::ReadFinal,
+    ]);
     store(Arc::clone(&fs)).replace(&journal()).await.unwrap();
     assert!(fs.events().contains(&"replace"));
+    fs.finish();
+}
+
+#[tokio::test]
+async fn replacement_does_not_delegate_to_the_new_publication() {
+    let fs = scripted([
+        ExpectedCall::CreateDirectory,
+        ExpectedCall::ReadTmp,
+        ExpectedCall::Replace,
+        ExpectedCall::ReadFinal,
+    ]);
+    store(Arc::clone(&fs)).replace(&journal()).await.unwrap();
+    assert!(!fs.events().contains(&"write_new"));
+    fs.finish();
 }
 
 #[tokio::test]
 async fn preexisting_tmp_is_rejected_without_writing() {
-    let fs = Arc::new(ScriptedFs::default());
+    let fs = scripted([ExpectedCall::CreateDirectory, ExpectedCall::ReadTmp]);
     fs.set_tmp(b"ambiguous".to_vec());
     assert!(store(Arc::clone(&fs)).write_new(&journal()).await.is_err());
-    assert_eq!(fs.events(), ["read_tmp"]);
+    assert_eq!(fs.events(), ["create_directory", "read_tmp"]);
+    fs.finish();
 }
 
 #[test]
@@ -143,12 +196,96 @@ fn non_sharing_errors_are_not_retried() {
     assert_eq!(waits, 0);
 }
 
+#[test]
+#[should_panic(expected = "unexpected fake FS call")]
+fn scripted_fake_rejects_an_unexpected_call() {
+    let fs = ScriptedFs::default();
+    let _ = fs.read_bounded(Path::new("journal.json"), 64);
+}
+
+#[cfg(unix)]
+#[test]
+fn unix_publication_rejects_a_destination_created_after_preflight() {
+    let root = tempfile::tempdir().unwrap();
+    let fs = PlatformOllamaDurableFs;
+    let tmp = root.path().join("journal.tmp");
+    let final_path = root.path().join("journal.json");
+    fs.write_new_atomic_with_hook(&tmp, &final_path, b"candidate", || {
+        std::fs::write(&final_path, b"concurrent").unwrap();
+    })
+    .unwrap_err();
+    assert_eq!(std::fs::read(&final_path).unwrap(), b"concurrent");
+}
+
+#[test]
+fn publication_syncs_source_then_destination_parent_once() {
+    let root = tempfile::tempdir().unwrap();
+    let source_dir = root.path().join("source");
+    let destination_dir = root.path().join("destination");
+    std::fs::create_dir_all(&source_dir).unwrap();
+    std::fs::create_dir_all(&destination_dir).unwrap();
+    let source = source_dir.join("journal.tmp");
+    let destination = destination_dir.join("journal.json");
+    let mut seen = Vec::new();
+    sync_parent_pair(&source, &destination, |parent| {
+        seen.push(parent.to_path_buf());
+        Ok::<_, OllamaFsError>(())
+    })
+    .unwrap();
+    assert_eq!(seen, vec![source_dir.clone(), destination_dir]);
+
+    let mut same_parent = Vec::new();
+    sync_parent_pair(&source, &source_dir.join("other.json"), |parent| {
+        same_parent.push(parent.to_path_buf());
+        Ok::<_, OllamaFsError>(())
+    })
+    .unwrap();
+    assert_eq!(same_parent, vec![source_dir]);
+}
+
+#[cfg(unix)]
+#[test]
+fn unix_publication_supports_distinct_source_and_destination_parents() {
+    let root = tempfile::tempdir().unwrap();
+    let source_dir = root.path().join("source");
+    let destination_dir = root.path().join("destination");
+    std::fs::create_dir_all(&source_dir).unwrap();
+    std::fs::create_dir_all(&destination_dir).unwrap();
+    let source = source_dir.join("journal.tmp");
+    let destination = destination_dir.join("journal.json");
+
+    PlatformOllamaDurableFs
+        .write_new_atomic(&source, &destination, b"cross-directory")
+        .unwrap();
+    assert_eq!(std::fs::read(destination).unwrap(), b"cross-directory");
+    assert!(!source.exists());
+}
+
+#[test]
+fn windows_parent_flush_uses_generic_write() {
+    assert_eq!(WINDOWS_PARENT_FLUSH_ACCESS, 0x4000_0000);
+}
+
+#[test]
+fn wide_path_validation_rejects_nul_and_32768_units() {
+    assert_eq!(
+        validate_wide_units([b'a' as u16, 0, b'b' as u16]),
+        Err(OllamaFsErrorKind::InvalidInput)
+    );
+    assert_eq!(
+        validate_wide_units(std::iter::repeat_n(b'a' as u16, 32_768)),
+        Err(OllamaFsErrorKind::InvalidInput)
+    );
+    assert!(validate_wide_units(std::iter::repeat_n(b'a' as u16, 32_767)).is_ok());
+}
+
 #[cfg(unix)]
 #[test]
 fn unix_atomic_primitive_distinguishes_new_and_replace() {
     let root = tempfile::tempdir().unwrap();
     let fs = PlatformOllamaDurableFs;
     let tmp = root.path().join("journal.tmp");
+    let replacement_tmp = root.path().join("replacement.tmp");
     let final_path = root.path().join("journal.json");
 
     fs.write_new_atomic(&tmp, &final_path, b"first").unwrap();
@@ -158,8 +295,10 @@ fn unix_atomic_primitive_distinguishes_new_and_replace() {
         .unwrap_err();
     assert_eq!(error.kind(), OllamaFsErrorKind::AlreadyExists);
     assert_eq!(std::fs::read(&final_path).unwrap(), b"first");
+    assert!(tmp.exists());
 
-    fs.replace_atomic(&tmp, &final_path, b"second").unwrap();
+    fs.replace_atomic(&replacement_tmp, &final_path, b"second")
+        .unwrap();
     assert_eq!(std::fs::read(&final_path).unwrap(), b"second");
     fs.remove_file_durable(&final_path).unwrap();
     assert!(!final_path.exists());

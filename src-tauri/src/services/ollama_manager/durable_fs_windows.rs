@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
 use super::{
-    io_error_kind, retry_windows_sharing, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
+    io_error_kind, retry_windows_sharing, sync_parent_pair, validate_wide_units, OllamaDurableFs,
+    OllamaFsError, OllamaFsErrorKind, WINDOWS_PARENT_FLUSH_ACCESS,
 };
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -16,7 +17,7 @@ use std::thread;
 use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_FILE_NOT_FOUND,
     ERROR_INVALID_PARAMETER, ERROR_LOCK_VIOLATION, ERROR_PATH_NOT_FOUND, ERROR_SHARING_VIOLATION,
-    GENERIC_READ, INVALID_HANDLE_VALUE,
+    INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
     CreateFileW, FlushFileBuffers, MoveFileExW, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_DELETE,
@@ -80,11 +81,7 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
 
     fn rename_durable(&self, source: &Path, destination: &Path) -> Result<(), OllamaFsError> {
         move_file(source, destination, true, &self.cancelled)?;
-        sync_parent_path(source)?;
-        if source.parent() != destination.parent() {
-            sync_parent_path(destination)?;
-        }
-        Ok(())
+        sync_parent_pair(source, destination, sync_directory)
     }
 
     fn remove_file_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
@@ -116,29 +113,19 @@ fn write_atomic(
     replace: bool,
     cancelled: &AtomicBool,
 ) -> Result<(), OllamaFsError> {
-    if !replace && fs::symlink_metadata(final_path).is_ok() {
-        return Err(OllamaFsError::new(OllamaFsErrorKind::AlreadyExists));
-    }
-    let mut temp_created = false;
-    let result = (|| {
+    (|| {
         let mut file = OpenOptions::new()
             .create_new(true)
             .write(true)
             .open(tmp)
             .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
-        temp_created = true;
         file.write_all(bytes)
             .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
         file.sync_all()
             .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
         move_file(tmp, final_path, replace, cancelled)?;
-        temp_created = false;
-        sync_parent_path(final_path)
-    })();
-    if result.is_err() && temp_created {
-        let _ = fs::remove_file(tmp);
-    }
-    result
+        sync_parent_pair(tmp, final_path, sync_directory)
+    })()
 }
 
 fn move_file(
@@ -147,8 +134,8 @@ fn move_file(
     replace: bool,
     cancelled: &AtomicBool,
 ) -> Result<(), OllamaFsError> {
-    let source = wide(source);
-    let destination = wide(destination);
+    let source = wide(source)?;
+    let destination = wide(destination)?;
     let flags = MOVEFILE_WRITE_THROUGH
         | if replace {
             MOVEFILE_REPLACE_EXISTING
@@ -169,11 +156,11 @@ fn move_file(
 }
 
 fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
-    let wide_path = wide(path);
+    let wide_path = wide(path)?;
     let handle = unsafe {
         CreateFileW(
             wide_path.as_ptr(),
-            GENERIC_READ,
+            WINDOWS_PARENT_FLUSH_ACCESS,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             std::ptr::null(),
             OPEN_EXISTING,
@@ -211,6 +198,11 @@ fn win_error(code: u32) -> OllamaFsError {
     OllamaFsError::new(kind)
 }
 
-fn wide(path: &Path) -> Vec<u16> {
-    path.as_os_str().encode_wide().chain(Some(0)).collect()
+fn wide(path: &Path) -> Result<Vec<u16>, OllamaFsError> {
+    validate_wide_units(path.as_os_str().encode_wide()).map_err(OllamaFsError::new)?;
+    let units = path.as_os_str().encode_wide().count();
+    let mut result = Vec::with_capacity(units + 1);
+    result.extend(path.as_os_str().encode_wide());
+    result.push(0);
+    Ok(result)
 }
