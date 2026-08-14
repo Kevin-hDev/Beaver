@@ -499,7 +499,7 @@
     "description": "{{from}} から {{to}} に切り替えます。現在の会話はどうしますか？",
     "remember": "このセッションの選択を記憶する",
     "newSession": "新しいセッション",
-    "continue": "このセッションを続ける"
+    "continue": "ここで続ける"
   },
   "switchWorktree": {
     "title": "フォルダの変更",

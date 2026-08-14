@@ -34,7 +34,7 @@ describe("WorktreeSwitchDialog", () => {
     expect(screen.getByText("feature/worktree - /tmp/worktree")).not.toBeNull();
     expect(screen.getByText("Annuler")).not.toBeNull();
     expect(screen.getByText("Nouvelle session")).not.toBeNull();
-    expect(screen.queryByText("Continuer dans cette session")).toBeNull();
+    expect(screen.queryByText("Continuer ici")).toBeNull();
   });
 
   it("calls the expected action buttons", () => {

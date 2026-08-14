@@ -501,10 +501,10 @@
   },
   "switchModel": {
     "title": "Model change",
-    "description": "Switching from {{from}} to {{to}}. What do you want to do with the current conversation?",
+    "description": "Switching from {{from}} to {{to}}. What about the current conversation?",
     "remember": "Remember my choice for this session",
     "newSession": "New session",
-    "continue": "Continue in this session"
+    "continue": "Continue here"
   },
   "switchWorktree": {
     "title": "Folder change",

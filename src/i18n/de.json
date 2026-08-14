@@ -496,10 +496,10 @@
   },
   "switchModel": {
     "title": "Modellwechsel",
-    "description": "Wechsel von {{from}} zu {{to}}. Was möchtest du mit dem aktuellen Gespräch tun?",
+    "description": "Wechsel von {{from}} zu {{to}}. Was soll mit dem aktuellen Gespräch geschehen?",
     "remember": "Meine Wahl für diese Sitzung merken",
     "newSession": "Neue Sitzung",
-    "continue": "In dieser Sitzung fortfahren"
+    "continue": "Hier fortfahren"
   },
   "switchWorktree": {
     "title": "Ordnerwechsel",

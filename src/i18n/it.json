@@ -496,10 +496,10 @@
   },
   "switchModel": {
     "title": "Cambio modello",
-    "description": "Passaggio da {{from}} a {{to}}. Cosa vuoi fare con la conversazione corrente?",
+    "description": "Passaggio da {{from}} a {{to}}. Cosa fare della conversazione corrente?",
     "remember": "Ricorda la mia scelta per questa sessione",
     "newSession": "Nuova sessione",
-    "continue": "Continua in questa sessione"
+    "continue": "Continua qui"
   },
   "switchWorktree": {
     "title": "Cambio cartella",

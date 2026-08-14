@@ -78,6 +78,13 @@
   overflow-y: auto;
 }
 
+/* Quand le footer est imbriqué dans le formulaire, son padding bas s'ajoute à
+   celui du form : l'espace sous les boutons vaut le double de celui du header.
+   Le form rend donc le sien et laisse le footer seul maître de la marge basse. */
+.wk-form:has(> .wk-dialog-footer:last-child) {
+  padding-bottom: 0;
+}
+
 .wk-form-field {
   display: flex;
   flex-direction: column;
@@ -158,8 +165,14 @@
   border-radius: var(--radius-sm);
 }
 
+/* flex-wrap : les boutons portent white-space: nowrap et ne se compriment pas.
+   Sans wrap, une rangée trop large déborde vers la gauche (justify-content:
+   flex-end) et se fait couper par l'overflow: hidden du panneau. Les libellés
+   traduits varient du simple au double selon la langue : la garantie doit être
+   structurelle, pas dépendante de la longueur du texte. */
 .wk-dialog-footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
