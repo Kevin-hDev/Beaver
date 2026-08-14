@@ -1,0 +1,13 @@
+Review decisions — directory anchoring, 2026-07-29
+
+Directoryless sessions no longer fall back to the user home. After the first user message, Beaver creates <data_dir>/session-workspaces/<date>/<bounded-label>-<session-id>/work plus outputs. The resolved PathBuf is mandatory for every main, gateway, and subagent stream.
+
+Automatic workspaces are persisted with working_dir_managed=true, not registered as Projects. The frontend deliberately hides managed paths, so no directory name or project list appears below the composer. Runtime canonical refreshes preserve that flag; an explicit user-selected directory clears it.
+
+The outputs base is optional and configurable in Advanced settings. A dedicated action opens Beaver data. The outputs path enters the main-agent system context only after control-character and length validation.
+
+Full Access semantics are unchanged: there is no new permission request or filesystem wall. Successful writes outside the active root receive a static, non-blocking workspace notice naming the expected root; configured outputs are accepted. External content is explicitly unable to initiate permission/config changes.
+
+The home fallback was also removed from context estimation, gateway sessions, and explorer subagents. First-message persistence now fails closed before stream startup because workspace naming depends on durable user input.
+
+Validation: cargo test (2486 passed); npm test -- --run (1645 frontend, 2 CEF, 46 extension-host passed); cargo clippy --all-targets -- -D warnings; cargo fmt --check; npm run lint; npx tsc --noEmit; git diff --check; graphify update .
