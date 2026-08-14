@@ -1,0 +1,5 @@
+Raison : après alignement de l'outil local sur Rust 1.97.1, le contrôle exhaustif des 95 sources Rust modifiées a trouvé un dernier fichier de tests sous-agents formaté selon l'ancienne version.
+
+Décision : reformater ce fichier avec rustfmt 1.9.0, même autorité que la CI. Aucun comportement ni assertion n'est modifié.
+
+Preuves : rustfmt 1.9.0 ; les 95 fichiers passent scripts/build/check-rust-format.mjs avec la base main ; cargo fmt --check vert ; test subagent_registry ciblé 1/1 ; git diff --check et graphify update . verts.
