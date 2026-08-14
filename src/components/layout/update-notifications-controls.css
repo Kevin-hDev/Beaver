@@ -2,12 +2,17 @@
    Split out of update-notifications.css to keep both files under 200 lines;
    imported after it to preserve cascade order. */
 
+/* width nulle, min-width plein : le panneau s'étire sur la bulle au rendu mais
+   ne pèse pas dans sa largeur naturelle. Sans cela, un paragraphe de notes de
+   version élargirait la bulle alors même qu'il est replié. */
 .update-release-panel {
+  width: 0;
+  min-width: 100%;
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows 220ms cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 160ms ease;
+  transition: grid-template-rows var(--update-fold-duration) var(--update-fold-ease),
+              opacity var(--update-fold-duration) var(--update-fold-ease);
 }
 
 .update-bubble-expanded .update-release-panel {
@@ -15,11 +20,17 @@
   opacity: 1;
 }
 
+/* La marge basse et le trait suivent le même mouvement que la hauteur. Hors
+   transition, ils basculaient à la première image : la pile perdait treize
+   pixels d'un coup avant que le panneau ne commence à se fermer, et le trait
+   s'éteignait net — le sursaut et le clignotement du repliement. */
 .update-release-inner {
   min-height: 0;
   overflow: hidden;
   padding: 0 14px;
   border-top: 1px solid transparent;
+  transition: padding-bottom var(--update-fold-duration) var(--update-fold-ease),
+              border-top-color var(--update-fold-duration) var(--update-fold-ease);
 }
 
 .update-bubble-expanded .update-release-inner {
