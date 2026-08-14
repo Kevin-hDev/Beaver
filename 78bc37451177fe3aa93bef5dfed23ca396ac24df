@@ -1,0 +1,19 @@
+Shell runtime load-stability follow-up
+
+Root cause: watcher creation and the dirty Git snapshot previously shared one short startup budget. Blocking setup jobs cannot be reliably cancelled once running, so concurrent test or build load discarded the whole tracker and leaked an incomplete-tracking note into stdout.
+
+Tracking design: Beaver now reuses one bounded filesystem watcher for up to 64 workspace roots and avoids queueing new watcher setup behind a busy initialization. Every command also captures an independent pre-command baseline: Git for repositories, or a bounded directory baseline elsewhere. The final baseline scan is authoritative for net changes when watcher startup is busy. Directory fallback limits are 500 paths, 4096 directories, and 8 MiB of captured content; exceeding a limit is reported as incomplete.
+
+Async and Git design: final status and diff work runs through spawn_blocking. The repository is opened once for final status and all per-file baseline reads instead of once per changed file.
+
+Result semantics: tracking and detached-output conditions are dedicated ShellOutput flags. They are rendered as Beaver warnings in the tool result and never appended to stdout or stderr. A pipe still held by a detached descendant preserves the direct command exit status; only the output is marked incomplete.
+
+Profile transport: the cached 128 KiB profile snapshot is split across two UTF-8-safe environment values capped at 64 KiB each, then both values are unset before the user command. The profile remains outside argv and is zeroized on drop. Same-user inspection of the process startup environment remains possible where the OS allows it; unset prevents inheritance by user-command children but cannot rewrite Linux proc environ retroactively.
+
+Plan mode: this commit removes the conservative read-only classifier introduced by 8aa6ee9 and restores the previous safe shell policy. cargo test/check, cargo build/clippy, npm run, npm test, and npx tsc are available for exploration and validation. Existing shell sessions remain controllable. Direct source-writing tools remain blocked in Plan mode. No extra permission mode or general shell limitation was added.
+
+Other behavior: incompatible Unix user shells still fall back to zsh, bash, or sh and the tool description now says so. Ordinary background jobs remain managed by the shell session intentionally; deliberately detached descendants degrade to a successful result with an output warning. The former 531-line shell test file was split by responsibility and every touched Rust file is at or below 230 lines.
+
+Validation: cargo fmt --check; cargo check; cargo clippy --all-targets with warnings denied; three complete green Rust passes after the tracker redesign, including two passes at 2618 tests and the final pass at 2619 after adding the npm-test regression; the 20-workspace load regression passed three consecutive isolated runs; cold mkdir passed three times at about 0.71, 0.65, and 0.65 seconds; npm run lint; npx tsc --noEmit; npm test with 1746 Vitest, 2 CEF, and 46 extension-host tests; Semgrep 51 rules on 34 shell-related Rust files with zero findings; git diff --check; graphify update.
+
+Review note: the validation claim attached to 8aa6ee9 was not reproducible under load and is superseded by this note. Native Windows compilation was not performed on this Mac; platform-specific Windows CI remains the authoritative check.
