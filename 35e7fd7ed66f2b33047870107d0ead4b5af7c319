@@ -1,0 +1,15 @@
+Probleme
+
+Le test natif macOS perdait l'application entre la disponibilite du WebDriver et la premiere creation de session. Les journaux du service pouvaient ne pas contenir la derniere ligne du processus observateur, et le collecteur bornait sa selection avant de trouver cette information. La CI ne pouvait donc pas distinguer une sortie native d'une course WebDriver.
+
+Objectif
+
+Conserver un diagnostic exact, borne et sans donnee sensible sur la sortie du binaire natif afin de corriger la cause racine au lieu d'ajouter un retry aveugle.
+
+Decisions
+
+L'observateur macOS conserve stderr et ecrit en plus un unique marqueur allowliste dans native-app-exit.log. Le chemin est accepte uniquement sous le profil E2E canonique, enfant direct du dossier temporaire, avec nom borne, sans traversal, sans lien symbolique et ouverture O_NOFOLLOW en mode 0600. Le fichier est limite a 4096 octets et ne contient ni chemin, ni message libre. Le collecteur inspecte au plus 64 entrees, n'accepte que les noms WDIO bornes ou ce fichier exact, donne priorite au marqueur puis ne lit que quatre fichiers. Toute erreur de diagnostic reste sans effet sur l'application observee.
+
+Validation
+
+Le test a d'abord reproduit les deux absences: export diagnosticFilePath manquant et marqueur ignore apres quatre journaux WDIO. Apres correction: 9 tests cibles passes, 31 tests du runner E2E passes, npm run lint passe, npx tsc --noEmit passe, git diff --check passe et graphify update . execute. La preuve macOS native reste a obtenir par la CI; ce commit ne pretend pas corriger la sortie prematuree.
