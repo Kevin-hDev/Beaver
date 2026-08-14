@@ -1,0 +1,37 @@
+Jalon 2 — supervision des processus MCP stdio
+
+Référence
+- Branche de référence du jalon : d0c7d6b.
+- Ce commit suit le lot Extensions 8066a3c et remplace l'ancien gestionnaire MCP qui lançait et évinçait des enfants sans attente systématique.
+
+Problème observé
+- shutdown_one et les évictions appelaient seulement start_kill : le processus pouvait encore exister lorsque l'arrêt était annoncé terminé.
+- Le lecteur stderr était une tâche tokio détachée, sans propriétaire ni attente.
+- Les opérations stdio et les processus inactifs ne détenaient aucune admission issue de la barrière globale.
+- Le handshake était rejoué à chaque récupération d'un processus existant.
+
+Décisions et raisons
+- McpProcessService devient l'autorité unique du pool fixe de 8 processus ; McpWorkServices possède deux registres fixes, 8 processus et 32 opérations, cette seconde capacité dérivant de MAX_CONNECTORS.
+- Chaque processus conserve son admission globale et locale pendant toute sa vie. Chaque list_tools/call_tool possède aussi une admission annulable.
+- L'arrêt ferme d'abord les admissions, retire les entrées sous verrou, relâche le verrou, ferme stdin, termine le groupe puis attend l'enfant.
+- Les évictions TTL/LRU utilisent exactement le même chemin de terminaison et de moissonnage.
+- stderr est redirigé vers null : son ancien lecteur borné ne produisait aucun diagnostic et constituait seulement une tâche détachée.
+- Le handshake utilise une OnceCell partagée par le handle : un processus vivant n'est initialisé qu'une fois.
+- Le nettoyage central transmet l'unique échéance absolue à stop_and_wait.
+
+Test écrit avant correction et échec observé
+- Le test du vrai serveur Node a d'abord échoué à compiler : process_id_for_test n'existait pas et shutdown_one retournait () au lieu d'une future attendable. Cet échec prouvait que l'ancien contrat ne pouvait ni observer ni attendre le moissonnage.
+
+Preuves finales Windows
+- Suite MCP : 67 réussis, 0 échec, dont lancement, handshake, appel, fermeture et absence du PID du vrai serveur Node après shutdown_one.
+- Registre processus borné à 8 et refus de redémarrage après fermeture globale : verts.
+- Suite Rust complète avec windows-tests : 3112 tests, 3108 réussis, 0 échec, 4 ignorés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt, git diff --check et limite de 230 lignes : verts.
+- graphify update . exécuté après les changements.
+
+Incident de vérification sans défaut produit
+- Une première commande avec --exact a filtré tous les tests et exécuté 0 test ; elle n'a pas été comptée. La commande corrigée a exécuté le vrai test, puis la suite MCP et la suite Rust complète.
+
+Limite volontaire
+- L'affectation au confinement natif unique OwnedProcess reste centralisée dans le lot 6. Ce commit réutilise process_tree pour terminer et moissonner sans créer une seconde autorité native.
