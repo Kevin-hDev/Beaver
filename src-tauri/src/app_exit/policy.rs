@@ -1,6 +1,15 @@
 use std::time::{Duration, Instant};
 
 const GRACEFUL_TIMEOUT: Duration = Duration::from_secs(8);
+// This grace covers only an admitted setup; it never extends the global shutdown deadlines.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "central J3 deadline is consumed by the Ollama shutdown supervisor"
+    )
+)]
+pub const OLLAMA_SETUP_GRACE_TIMEOUT: Duration = Duration::from_secs(3);
 const TAURI_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 const POST_LOOP_SWEEP_TIMEOUT: Duration = Duration::from_secs(3);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
@@ -83,6 +92,17 @@ impl ShutdownTimeline {
 
     pub(super) fn graceful_deadline(self) -> Instant {
         self.origin + self.policy.graceful()
+    }
+
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "central J3 deadline is consumed by the Ollama shutdown supervisor"
+        )
+    )]
+    pub(super) fn ollama_setup_deadline(self) -> Instant {
+        (self.origin + OLLAMA_SETUP_GRACE_TIMEOUT).min(self.graceful_deadline())
     }
 
     pub(super) fn cef_admission_deadline(self) -> Instant {
