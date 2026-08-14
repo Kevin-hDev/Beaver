@@ -1,0 +1,5 @@
+Objectif : empêcher qu'une architecture native correcte seulement sur le papier soit considérée comme validée.
+
+Décisions : exécuter les autorités CEF sur runners Windows et macOS, conserver les tests de protocole sur Linux, interdire tout bypass du sandbox et faire échouer le contrat si native_browser est activé sur Linux ou si une preuve native disparaît.
+
+Justification : des tests compilés sous un drapeau qui retire CEF ou un filtre vide donnent un faux vert. Ce commit pose la première porte CI native et un contrat de dépôt vérifiable séparément.
