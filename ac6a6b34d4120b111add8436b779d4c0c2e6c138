@@ -1,0 +1,7 @@
+Probleme: le job natif macOS de la PR ne compilait pas. Trois types declares pub(super) dans des sous-modules etaient reexportes un niveau plus haut, ce que la visibilite Rust interdit. MacProcessIdentity::is_alive appelait aussi une projection kernel_identity absente du code de production.
+
+Objectif: retablir la preuve native macOS sans elargir l'API de supervision et sans affaiblir la revalidation d'identite qui empeche de tuer un processus externe apres reutilisation d'un PID ou groupe.
+
+Decisions: supprimer les reexports fautifs; importer MacEmergencySlots, MacEmergencyReaper et MacReaperControl directement depuis leurs modules freres; ajouter une methode privee qui projette uniquement parent_pid, started_at et process_group deja valides. Aucun type n'est expose hors du domaine macOS et aucune logique de fermeture Windows ou Linux ne change.
+
+Verification locale: 27/27 contrats CEF Node; 3/3 tests Rust de capacite CEF; cargo fmt --check; git diff --check; fichiers touches sous 230 lignes. La compilation et les tests natifs macOS sont volontairement revalides par le runner macOS de la PR.
