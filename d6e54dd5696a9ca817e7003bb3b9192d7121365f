@@ -1,0 +1,19 @@
+Probleme
+Le parcours natif CEF macOS atteint l'etat WebDriver pret, puis l'application disparait avant POST /session. Le premier collecteur ne remontait aucune categorie, car les sorties Tauri et les echecs precoces du helper n'avaient pas de marqueur stable.
+
+Objectif
+Rendre le prochain echec CI attribuable sans publier de log brut, chemin, PID, port, environnement, token ou message arbitraire, et sans changer le comportement de production.
+
+Decisions
+- Reutiliser exclusivement les cinq categories CEF centralisees pour les echecs du helper macOS ; aucun texte d'erreur systeme n'est propage.
+- Ajouter deux marqueurs fixes au cycle de sortie (fermeture coordonnee et retour de boucle) et un marqueur fixe au garde FFI de lancement.
+- Autoriser cote collecteur seulement des etats WebDriver et Beaver codes en dur ; les valeurs presentes dans les lignes sources ne sont jamais reemises.
+- Conserver toutes les bornes existantes : 4 fichiers, 64 entrees, 512 Kio par fichier, 2048 lignes, 8 diagnostics.
+- Ne modifier ni delai, ni admission, ni sandbox, ni politique de fermeture : ce commit est strictement diagnostique.
+
+Validation
+- npm run test:e2e-runner : 26/26 reussis.
+- cargo test --lib --features windows-tests app_exit -- --test-threads=1 : 40/40 reussis.
+- cargo fmt --all -- --check : reussi.
+- Tous les fichiers modifies restent sous 230 lignes.
+- graphify update . : reussi.
