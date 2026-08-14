@@ -1,0 +1,50 @@
+# Differential review — contrat d'erreurs des outils Beaver
+
+Date : 2026-08-01
+Branche : `codex/tool-error-contract`
+Base relue : `45cb822`
+
+## Objectif
+
+Vérifier que les corrections demandées rendent les erreurs réellement exploitables par le modèle, sans régression d'affichage, de budget de contexte, de persistance ou de permissions du mode Plan.
+
+## Invariants contrôlés
+
+- chaque échec produit un statut, un code, une catégorie et une règle de nouvelle tentative explicites ;
+- une opération dont l'issue est incertaine n'encourage jamais une relance aveugle ;
+- une réussite partielle reste distincte d'un échec et explique ce qui a déjà été appliqué ;
+- les métadonnées survivent à la réduction du contexte ;
+- les sorties ordinaires et volumineuses ne sont pas échappées dans un second JSON ;
+- un historique envoyé au fournisseur ne contient pas de chaîne appel/résultat incohérente ;
+- les collections provenant des outils Office restent bornées ;
+- aucune restriction du mode Plan n'est modifiée.
+
+## Résultat de la revue
+
+Aucun défaut bloquant ou régression non résolue trouvé dans le diff final.
+
+Les sept constats de la revue initiale sont couverts : suppression de `ToolResult::err()`, suppression du classifieur global basé sur des phrases françaises, helper d'extension unique, conseils réservés au modèle masqués dans l'interface, annulation frontend traduite, métadonnées conservées lors de la réduction, historique réparé et diagnostiqué sans clonage intégral, protocole `raw_following` pour éviter le double échappement.
+
+Les deux défauts adjacents signalés sont aussi corrigés : parcours `list_dir` trié en profondeur avec une borne exacte, et chemin absolu des résultats persistés directement lisible par `read_file`.
+
+La seconde passe a ajouté des garde-fous ciblés autour des cas où une erreur imprécise pouvait encore mal guider le modèle : chargements Forecast typés, erreurs MCP typées avant/après envoi, mémoire distinguant contenu périmé, absence et écriture partielle, validation stricte des images et plages Excel, limites Office, et reprise de todo sans mutation préalable du travail actif.
+
+Les adaptations textuelles restantes sont limitées aux frontières qui ne fournissent encore qu'un texte brut (sortie du shell, anciens retours web et validation historique de chemins). Elles ne servent plus de classifieur global et leur repli est conservateur : aucune relance automatique n'est suggérée lorsque l'action peut avoir eu lieu.
+
+## Validations exécutées
+
+- `cargo fmt --all`
+- `cargo clippy --all-targets -- -D warnings`
+- `cargo test --lib -q` : 2 788 réussis, 0 échec
+- `npx tsc --noEmit`
+- `npm run lint`
+- `npm test` : 1 784 Vitest, 2 CEF, 46 extension-host, 0 échec
+- vérification de diff et espaces : verte
+- aucun fichier source ou test modifié au-dessus de 230 lignes
+- aucun appel `ToolResult::err()` restant
+- aucun changement des règles de permission du mode Plan
+- `graphify update .` exécuté avec succès
+
+## Limite de validation
+
+La compilation Windows ne peut pas être reproduite depuis ce Mac. Les chemins concernés restent couverts par les abstractions multiplateformes et la suite locale complète.
