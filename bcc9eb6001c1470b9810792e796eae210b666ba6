@@ -1,0 +1,13 @@
+Jalon 2 — téléchargements Beaver et UpdateHandoff
+
+Référence historique : 4ce1b84 (fix: preserve only the validated update helper).
+
+Comportement : le téléchargement Beaver possède une admission globale et locale exclusive ; fermeture, réseau, écriture, validation et préparation du helper observent la même annulation. Le fichier partiel et la copie privée du helper restent possédés jusqu'au succès et sont supprimés sur toute erreur. Le helper lancé reste détenu et est tué/moissonné tant que le transfert atomique n'a pas validé son identité, l'admission encore ouverte et l'absence d'annulation. Un seul helper transféré peut survivre ; tout second helper est refusé et récolté.
+
+Raison : une fermeture pendant le téléchargement ne doit laisser ni fichier partiel ni processus détaché, tandis que l'unique helper nécessaire à une mise à jour déjà intégralement validée doit pouvoir terminer l'installation après la sortie de Beaver.
+
+Rouge observé : les nouveaux tests ne compilaient pas car AppUpdateRuntime, write_verified_stream, SpawnedUpdateHelper, ProcessIdentity et les bornes d'admission n'existaient pas.
+
+Vert observé : 44 tests app_update ; vrais helpers Windows non transféré/fermé/transféré et unicité ; suite Rust 3144 tests, 3140 réussis et 4 ignorés ; cargo fmt --check ; cargo clippy --all-targets -- -D warnings ; graphify update .
+
+Remplace pour ce périmètre : 4ce1b84, en intégrant son transfert validé au superviseur global du jalon 2.
