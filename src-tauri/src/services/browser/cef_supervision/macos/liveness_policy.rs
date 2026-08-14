@@ -26,6 +26,10 @@ impl MacLivenessState {
         }
     }
 
+    pub(super) const fn has_unknown_budget(&self) -> bool {
+        self.unknown_deadline.is_some()
+    }
+
     pub(super) fn apply(
         &mut self,
         observation: MacProcessObservation,

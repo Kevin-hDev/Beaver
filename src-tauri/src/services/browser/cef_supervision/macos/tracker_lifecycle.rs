@@ -39,15 +39,15 @@ impl MacTrackerShared {
         &self,
         admission_deadline: Instant,
         helper_exit_deadline: Instant,
+        ultimate_deadline: Instant,
     ) -> bool {
-        let deadline_ticks = super::clock::ticks_at(helper_exit_deadline);
+        let closing_ticks = super::clock::closing_ticks(helper_exit_deadline, ultimate_deadline);
         let gate_closed = self.gate.close_and_wait(admission_deadline);
         let table_closed = self.table.close_and_invalidate(admission_deadline);
-        let failure = match deadline_ticks {
-            Err(_) => Some(MacSupervisionFailure::ClosingClock),
-            Ok(deadline) => {
-                let pending_failed = self.pending.begin_closing(deadline).is_err();
-                let admitted_failed = self.emergency.begin_closing(deadline).is_err();
+        let failure = match closing_ticks {
+            Ok((helper_exit, ultimate)) => {
+                let pending_failed = self.pending.begin_closing(helper_exit).is_err();
+                let admitted_failed = self.emergency.begin_closing(helper_exit, ultimate).is_err();
                 if pending_failed {
                     Some(MacSupervisionFailure::PendingCloseSignal)
                 } else if admitted_failed {
@@ -56,6 +56,7 @@ impl MacTrackerShared {
                     None
                 }
             }
+            Err(_) => Some(MacSupervisionFailure::ClosingClock),
         };
         if let Some(failure) = failure {
             self.fail(failure);
@@ -78,8 +79,11 @@ impl MacTrackerShared {
 impl MacCefTracker {
     pub(in crate::services::browser) fn close_gate_for_test(&self) -> bool {
         let now = Instant::now();
-        self.shared
-            .emergency_close(now + CEF_TRACKER_DROP_TIMEOUT, now + Duration::from_secs(2))
+        self.shared.emergency_close(
+            now + CEF_TRACKER_DROP_TIMEOUT,
+            now + Duration::from_secs(2),
+            now + Duration::from_secs(3),
+        )
     }
 
     pub(in crate::services::browser) fn force_for_test(&self) {
@@ -105,7 +109,10 @@ impl MacCefTracker {
 impl Drop for MacCefTracker {
     fn drop(&mut self) {
         let now = Instant::now();
+        // Le tracker normal doit libérer toute observation avant que le reaper
+        // d'urgence ne force puis ne joigne son propre fil à la fin de ce Drop.
         let _ = self.shared.emergency_close(
+            now + CEF_TRACKER_DROP_TIMEOUT,
             now + CEF_TRACKER_DROP_TIMEOUT,
             now + CEF_TRACKER_DROP_TIMEOUT,
         );

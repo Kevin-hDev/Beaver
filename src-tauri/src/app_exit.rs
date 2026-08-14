@@ -113,6 +113,7 @@ impl AppExitCoordinator {
         close_cef: impl FnOnce(
             std::time::Instant,
             std::time::Instant,
+            std::time::Instant,
         ) -> crate::services::browser::CefShutdownBarrier,
     ) -> BeginResult {
         self.begin_with_intent(ExitIntent::Exit, exit_code, close_cef)
@@ -123,6 +124,7 @@ impl AppExitCoordinator {
         intent: ExitIntent,
         exit_code: i32,
         close_cef: impl FnOnce(
+            std::time::Instant,
             std::time::Instant,
             std::time::Instant,
         ) -> crate::services::browser::CefShutdownBarrier,
@@ -153,6 +155,7 @@ impl AppExitCoordinator {
         if close_cef(
             timeline.cef_admission_deadline(),
             timeline.cef_helper_exit_deadline(),
+            timeline.ultimate_deadline(),
         ) == crate::services::browser::CefShutdownBarrier::TimedOut
         {
             ::log::warn!("[exit] CEF admission barrier exceeded; cleanup continues");
