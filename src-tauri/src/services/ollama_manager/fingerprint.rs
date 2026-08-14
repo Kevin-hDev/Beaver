@@ -159,8 +159,7 @@ impl<'de> Deserialize<'de> for Sha256Digest {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct BundleFingerprint {
     pub version: OllamaVersion,
     pub executable_sha256: Sha256Digest,

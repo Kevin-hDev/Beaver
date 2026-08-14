@@ -209,7 +209,54 @@ fn each_journal_phase_round_trips_only_its_legal_fields() {
     for state in states {
         let encoded = serde_json::to_vec(&journal(state)).expect("serialize journal");
         let decoded = OllamaTransactionJournal::parse_bounded(&encoded).expect("parse journal");
-        assert_eq!(decoded, serde_json::from_slice(&encoded).unwrap());
+        assert_eq!(
+            decoded,
+            OllamaTransactionJournal::parse_bounded(&encoded).unwrap()
+        );
+    }
+}
+
+#[test]
+fn duplicate_root_and_nested_fields_fail_closed() {
+    let previous = format!(
+        "{{\"version\":\"1.2.2\",\"executable_sha256\":\"{}\"}}",
+        "22".repeat(32)
+    );
+    let target = format!(
+        "{{\"version\":\"1.2.3\",\"executable_sha256\":\"{}\"}}",
+        "11".repeat(32)
+    );
+    let fixtures = [
+        format!(
+            "{{\"schema_version\":2,\"schema_version\":1,\"phase\":\"Prepared\",\"target\":{},\"previous\":{}}}",
+            target, previous
+        ),
+        format!(
+            "{{\"schema_version\":1,\"phase\":\"RollbackPending\",\"phase\":\"Prepared\",\"target\":{},\"previous\":{}}}",
+            target, previous
+        ),
+        format!(
+            "{{\"schema_version\":1,\"phase\":\"Prepared\",\"target\":{{\"version\":\"1.2.3\",\"version\":\"1.2.3\",\"executable_sha256\":\"{}\"}},\"previous\":{}}}",
+            "11".repeat(32), previous
+        ),
+        format!(
+            "{{\"schema_version\":1,\"phase\":\"Prepared\",\"target\":{{\"version\":\"1.2.3\",\"executable_sha256\":\"{}\",\"executable_sha256\":\"{}\"}},\"previous\":{}}}",
+            "11".repeat(32), "11".repeat(32), previous
+        ),
+        format!(
+            "{{\"schema_version\":1,\"phase\":\"Prepared\",\"target\":{},\"previous\":{},\"previous\":{}}}",
+            target, previous, previous
+        ),
+        format!(
+            "{{\"schema_version\":1,\"phase\":\"RollbackPending\",\"previous\":{},\"rejected_target\":null,\"rejected_target\":null}}",
+            previous
+        ),
+    ];
+    for fixture in fixtures {
+        assert!(
+            OllamaTransactionJournal::parse_bounded(fixture.as_bytes()).is_err(),
+            "duplicate JSON key was accepted: {fixture}"
+        );
     }
 }
 
@@ -279,6 +326,19 @@ fn oversized_documents_are_rejected_before_deserialization() {
 }
 
 #[test]
+fn valid_json_padded_to_4097_bytes_is_rejected_by_the_bounded_reader() {
+    let mut padded = serde_json::to_vec(&journal(OllamaJournalState::Prepared {
+        target: fingerprint("1.2.3", &"11".repeat(32)),
+        previous: fingerprint("1.2.2", &"22".repeat(32)),
+    }))
+    .unwrap();
+    assert!(padded.len() < 4097);
+    padded.resize(4097, b' ');
+    assert!(serde_json::from_slice::<Value>(&padded).is_ok());
+    assert!(OllamaTransactionJournal::parse_bounded(&padded).is_err());
+}
+
+#[test]
 fn migration_marker_distinguishes_absent_valid_and_invalid() {
     assert!(matches!(
         classify_migration_marker(None),
@@ -298,6 +358,16 @@ fn migration_marker_distinguishes_absent_valid_and_invalid() {
         let bytes = serde_json::to_vec(&value).unwrap();
         assert!(matches!(
             classify_migration_marker(Some(&bytes)),
+            OllamaMigrationMarkerClassification::Invalid
+        ));
+    }
+    for fixture in [
+        br#"{"schema_version":2,"schema_version":1,"legacy_layout_migrated":true}"#.as_slice(),
+        br#"{"schema_version":1,"legacy_layout_migrated":true,"legacy_layout_migrated":false}"#
+            .as_slice(),
+    ] {
+        assert!(matches!(
+            classify_migration_marker(Some(fixture)),
             OllamaMigrationMarkerClassification::Invalid
         ));
     }

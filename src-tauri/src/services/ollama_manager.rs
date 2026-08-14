@@ -2,6 +2,7 @@ mod constants;
 mod error;
 mod fingerprint;
 mod journal;
+mod journal_wire;
 mod manager;
 mod types;
 
