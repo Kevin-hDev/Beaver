@@ -1,0 +1,7 @@
+Jalon 2 — façade d'admission globale suivie.
+
+Référence: 105ea70 pour l'intention historique de suivre le travail long. L'ancien TaskRegistry/TaskControl n'est pas restauré: AppExitCoordinator reste l'unique propriétaire de la barrière globale créée au jalon 1.
+
+Décision: AppWorkSupervisor ne contient qu'un clone de handle vers AdmissionRegistry et n'expose aucune fermeture. AppWorkAdmission reste le garde RAII existant; son jeton enfant est annulé par Closing et son slot est libéré par Drop. Les codes publics restent définis une seule fois dans AdmissionError.
+
+TDD rouge: work_supervisor_tests ne compilait pas (module, type d'erreur et work_supervisor absents). Vert: 2/2 tests du nouveau contrat; 45/45 tests app_exit; cargo fmt --check et Clippy strict all-targets verts avec le cache CEF validé. Le test prouve refus après Closing, annulation du travail déjà admis, saturation à 128 et réutilisation sur 512 cycles.
