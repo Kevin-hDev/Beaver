@@ -1,6 +1,6 @@
 use super::durable_fs::{
-    retry_windows_sharing, sync_parent_pair, validate_wide_units, OllamaFsError, OllamaFsErrorKind,
-    WINDOWS_PARENT_FLUSH_ACCESS,
+    retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
+    OllamaFsError, OllamaFsErrorKind, WINDOWS_PARENT_FLUSH_ACCESS,
 };
 #[cfg(unix)]
 use super::durable_fs::{OllamaDurableFs, PlatformOllamaDurableFs};
@@ -86,11 +86,30 @@ async fn every_durability_boundary_blocks_publication() {
         assert!(!fs.events().contains(&"read_final"));
         if point == FailurePoint::CreateTmp {
             assert!(fs.temp_is_absent());
+        } else if point == FailurePoint::SyncParent {
+            assert!(fs.temp_is_absent());
+            assert!(fs.final_is_present());
         } else {
             assert!(!fs.temp_is_absent());
+            assert!(!fs.final_is_present());
         }
         fs.finish();
     }
+}
+
+#[tokio::test]
+async fn sync_parent_failure_happens_after_fake_publication() {
+    let fs = scripted([
+        ExpectedCall::CreateDirectory,
+        ExpectedCall::ReadTmp,
+        ExpectedCall::WriteNew,
+    ]);
+    fs.fail_at(FailurePoint::SyncParent);
+
+    assert!(store(Arc::clone(&fs)).write_new(&journal()).await.is_err());
+    assert!(fs.temp_is_absent());
+    assert!(fs.final_is_present());
+    fs.finish();
 }
 
 #[tokio::test]
@@ -264,6 +283,11 @@ fn unix_publication_supports_distinct_source_and_destination_parents() {
 #[test]
 fn windows_parent_flush_uses_generic_write() {
     assert_eq!(WINDOWS_PARENT_FLUSH_ACCESS, 0x4000_0000);
+}
+
+#[test]
+fn windows_file_flush_uses_the_same_write_access_contract() {
+    assert_eq!(windows_file_flush_access(), 0x4000_0000);
 }
 
 #[test]

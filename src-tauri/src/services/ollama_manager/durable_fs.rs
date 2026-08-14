@@ -116,6 +116,10 @@ where
     Ok(())
 }
 
+pub(super) const fn windows_file_flush_access() -> u32 {
+    WINDOWS_PARENT_FLUSH_ACCESS
+}
+
 pub(super) fn io_error_kind(error: &std::io::Error) -> OllamaFsErrorKind {
     match error.kind() {
         std::io::ErrorKind::NotFound => OllamaFsErrorKind::NotFound,

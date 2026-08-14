@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use super::{
-    io_error_kind, retry_windows_sharing, sync_parent_pair, validate_wide_units, OllamaDurableFs,
-    OllamaFsError, OllamaFsErrorKind, WINDOWS_PARENT_FLUSH_ACCESS,
+    io_error_kind, retry_windows_sharing, sync_parent_pair, validate_wide_units,
+    windows_file_flush_access, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
 };
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -17,7 +17,7 @@ use std::thread;
 use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_FILE_NOT_FOUND,
     ERROR_INVALID_PARAMETER, ERROR_LOCK_VIOLATION, ERROR_PATH_NOT_FOUND, ERROR_SHARING_VIOLATION,
-    INVALID_HANDLE_VALUE,
+    GENERIC_WRITE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
     CreateFileW, FlushFileBuffers, MoveFileExW, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_DELETE,
@@ -95,10 +95,7 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError> {
-        File::open(path)
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?
-            .sync_all()
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))
+        flush_path(path, 0)
     }
 
     fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError> {
@@ -156,15 +153,20 @@ fn move_file(
 }
 
 fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
+    flush_path(path, FILE_FLAG_BACKUP_SEMANTICS)
+}
+
+fn flush_path(path: &Path, flags: u32) -> Result<(), OllamaFsError> {
     let wide_path = wide(path)?;
+    debug_assert_eq!(windows_file_flush_access(), GENERIC_WRITE);
     let handle = unsafe {
         CreateFileW(
             wide_path.as_ptr(),
-            WINDOWS_PARENT_FLUSH_ACCESS,
+            GENERIC_WRITE,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             std::ptr::null(),
             OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS,
+            flags,
             std::ptr::null_mut(),
         )
     };

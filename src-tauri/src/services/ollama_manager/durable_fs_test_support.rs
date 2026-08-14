@@ -108,9 +108,9 @@ impl ScriptedFs {
         self.record("rename");
         self.fail(FailurePoint::Rename)?;
         *self.final_bytes.lock().unwrap() = Some(bytes.to_vec());
+        self.tmp.lock().unwrap().take();
         self.record("sync_parent");
         self.fail(FailurePoint::SyncParent)?;
-        self.tmp.lock().unwrap().take();
         Ok(())
     }
 
@@ -135,6 +135,10 @@ impl ScriptedFs {
 
     pub(super) fn temp_is_absent(&self) -> bool {
         self.tmp.lock().unwrap().is_none()
+    }
+
+    pub(super) fn final_is_present(&self) -> bool {
+        self.final_bytes.lock().unwrap().is_some()
     }
 }
 
