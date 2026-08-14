@@ -1,0 +1,21 @@
+Objectif
+Corriger les deux blocages restants du shell restreint en production : retrouver les outils installés par l’utilisateur quand Beaver est lancé depuis Finder/Dock avec un PATH minimal, et permettre à xcrun de créer son cache afin que les compilations natives macOS fonctionnent.
+
+Décisions
+- Le PATH du shell de connexion est capturé une seule fois avant Tauri/CEF, puis conservé en mémoire. Le PATH global du processus ne change pas : la valeur validée est injectée uniquement dans les shells et leur helper de confinement.
+- La capture lance directement un shell pris dans une liste bornée de quatre candidats avec arguments séparés. Elle est limitée à 3 secondes et 128 Kio, utilise un marqueur UUID aléatoire, accepte au plus 256 entrées absolues, rejette contrôles, chemins relatifs et composants parent, puis retombe sur le PATH du processus ou le PATH système.
+- Le calcul des racines lisibles et la préparation des caches consomment exactement cette même liste bornée. Un dépassement désactive les caches supplémentaires en écriture.
+- Sur macOS, la règle xcrun est générée depuis confstr(_CS_DARWIN_USER_TEMP_DIR), canonicalisée et validée. Seuls les fichiers xcrun_db* placés directement dans le dossier temporaire exact de cet utilisateur sont lisibles et inscriptibles. Le reste de ce dossier demeure bloqué.
+- Le code de démarrage et ActiveStreams ont été extraits pour conserver des fichiers source sous 200 lignes.
+
+Sécurité et compromis
+Le profil de connexion est exécuté au démarrage avec les droits de l’utilisateur, avant le confinement, car il constitue la source utilisateur du PATH. La capture est bornée, ses descendants sont arrêtés et aucune sortie brute ni chemin n’est journalisé. En mode restreint, le modèle ne peut pas modifier ce profil.
+Le cache xcrun doit rester inscriptible pour cc, c++, les build.rs natifs, node-gyp et cgo. Cela laisse au modèle la possibilité d’altérer ce cache utilisateur précis ; la portée est réduite aux noms xcrun_db* et aucun autre fichier du dossier temporaire Darwin n’est ouvert.
+
+Validation exécutée
+- cargo test : 2883 passés, 0 échec, 1 ignoré.
+- Test macOS ignoré relancé : git=ok, npm=ok, cargo=ok, go=ok, heredoc=ok, diff=ok, native=ok, darwin-temp=blocked, outside-write=blocked.
+- cargo clippy --all-targets -- -D warnings : succès.
+- cargo fmt --all -- --check : succès.
+- graphify update . : succès.
+- Les clippy croisés Linux et Windows ont été tentés. Linux est bloqué avant Beaver par le sysroot/pkg-config GTK absent ; Windows par CEF et les en-têtes SDK/MSVC absents. Les exécutions natives Landlock et AppContainer restent donc à confirmer en CI sur leurs OS.
