@@ -1,0 +1,25 @@
+Problem and objective
+
+A transient CEF preflight failure made the browser unavailable for the whole session, while retrying CEF itself after initialization would violate its process-lifetime contract. The recovery also needed to remain nonblocking and use Beaver's existing notification design.
+
+Decisions
+
+1. Classify preflight errors only from typed IO kinds and OS codes. Retry a recognized transient failure exactly once after the central 200 ms delay. Deterministic corruption, permission, identity, sandbox, or protocol failures remain fail-closed with no retry. Each attempt rebuilds its tracker and native objects; the tracker is deliberately created last.
+
+2. Validate all pinned Windows runtime files and the macOS helper/framework through typed, contained-path checks before CEF. The Linux build remains outside native_browser and does not compile these native-only modules.
+
+3. Keep cef::initialize to one call per Beaver process. A false result requests coordinated shutdown, leaves ENGINE empty so cef::shutdown cannot run, and disables BrowserLibraryGuard unloading on macOS so no later CEF API is called.
+
+4. Add an immutable Exit or Restart intent to the existing shutdown coordinator. Restart follows the same registry drain and cleanup as Exit; only ReadyToExit calls the Tauri restart mechanism. The ultimate raw-exit guard is armed with code 0 and can never relaunch the application.
+
+5. Extend the existing Toast rather than introducing another notification system. Its optional action and accessible close control use existing theme tokens. The translated CEF recovery toast is nonmodal, appears only for a real failed state, and removes the full toast and restart action after 10 seconds in all seven locales.
+
+6. Centralize browser capability observation in one Provider so the notice and browser consumers share one event/query authority and cannot race duplicate listeners.
+
+Security and privacy
+
+User-visible errors stay generic. Logs contain only one of five bounded CEF categories and never include paths, tokens, native handles, or raw OS messages. All collections remain bounded and no sandbox permission was widened.
+
+Verification
+
+Windows native CEF: cargo check --lib passed with the short contract CARGO_TARGET_DIR; cargo clippy --lib -- -D warnings passed; cargo fmt --check passed. Rust targeted tests passed: preflight 4, runtime capability 7, exit coordinator 7, CEF boundary contracts 3. Frontend targeted tests passed: 5 files and 11 tests; npx tsc --noEmit and npm run lint passed. graphify update . completed.
