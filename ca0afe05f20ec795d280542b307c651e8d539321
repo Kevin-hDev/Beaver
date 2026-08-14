@@ -1,0 +1,5 @@
+Revue complète du registre fournisseurs.
+
+Registre Beaver local prioritaire, avec un JSON par fournisseur. LiteLLM est conservé pour Settings/LLM et comme repli. Inventaires, alias, limites et capacités ont été vérifiés aux sources officielles. Les requêtes OpenAI, Kimi et xAI ont été corrigées. Validation complète réussie : lint, TypeScript, tests frontend et 2 546 tests Rust.
+
+Rapport : BEAVER_PROVIDER_REGISTRY_DIFFERENTIAL_REVIEW_2026-07-30.md, retiré du dépôt au commit e23eab4. Son contenu reste lisible via `git show ca0afe0:BEAVER_PROVIDER_REGISTRY_DIFFERENTIAL_REVIEW_2026-07-30.md`.
