@@ -18,9 +18,9 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[test]
 fn production_install_entrypoint_uses_the_manager_not_a_free_facade() {
-    let source = include_str!("../../commands/ollama_setup_install.rs");
-    assert!(source.contains(".install(request)"));
-    assert!(!source.contains("install_bundle"));
+    let source = include_str!("../../commands/ollama_setup.rs");
+    assert!(source.contains("manager\n        .install(request)"));
+    assert!(!source.contains("install_ollama_to"));
 }
 
 #[test]

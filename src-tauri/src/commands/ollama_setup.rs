@@ -1,5 +1,9 @@
-use crate::services::ollama_manager::{BundleState, OllamaManager, OllamaStartOutcome};
+use crate::services::ollama_manager::{
+    BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaStartOutcome, OllamaVersion,
+    OperationState,
+};
 use serde::Serialize;
+use std::ffi::OsString;
 use std::time::{Duration, Instant};
 use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
@@ -25,16 +29,7 @@ pub async fn download_ollama(
     manager: tauri::State<'_, OllamaManager>,
 ) -> Result<(), String> {
     let cancel = CancellationToken::new();
-    super::ollama_setup_cancel::register(cancel.clone()).await;
     let result = run_download_ollama(manager.inner(), &on_progress, &cancel).await;
-    if let Err(error) = &result {
-        if super::ollama_setup_cancel::is_cancelled_error(error) {
-            let paths = crate::services::paths::ollama_paths(&crate::services::paths::data_dir());
-            let _ = manager.stop_and_wait(Instant::now() + Duration::from_secs(1)).await;
-            let _ = std::fs::remove_dir_all(paths.active);
-        }
-    }
-    super::ollama_setup_cancel::clear().await;
     result
 }
 
@@ -48,21 +43,50 @@ pub(crate) async fn run_download_ollama(
     }
     let paths = crate::services::paths::ollama_paths(&crate::services::paths::data_dir());
     let version = resolve_install_version().await;
-    super::ollama_setup_install::install_ollama_to(
-        manager,
-        &paths.active,
-        &version,
-        on_progress,
-        cancel,
+    let manifest = crate::services::ollama_manager::release_source::fetch_manifest(
+        version.clone(),
+        &crate::services::ollama_manager::release_source::archive_names_for_platform(),
     )
-    .await?;
+    .await
+    .map_err(|code| code.as_str().to_string())?;
+    let request = InstallRequest {
+        paths,
+        version: Some(version),
+        manifest: Some(manifest),
+        inherited_environment: std::env::vars_os().collect::<Vec<(OsString, OsString)>>(),
+        inherited_cwd: std::env::current_dir().map_err(|_| "ollama-storage-unavailable")?,
+        cancellation: cancel.clone(),
+        deadline: None,
+        #[cfg(test)]
+        local_archives: None,
+    };
+    let _ = on_progress.send(OllamaSetupProgress {
+        completed: 0,
+        total: 0,
+        status: "downloading".into(),
+    });
+    match manager
+        .install(request)
+        .await
+        .map_err(|code| code.as_str().to_string())?
+    {
+        InstallOutcome::Installed { .. } => {}
+        InstallOutcome::Preparing => return Err("ollama-install-incomplete".into()),
+    }
     start_manager_and_wait(manager, on_progress, cancel).await
 }
 
 #[tauri::command]
-pub async fn cancel_ollama_setup() -> Result<(), String> {
-    super::ollama_setup_cancel::cancel_active().await;
-    Ok(())
+pub async fn cancel_ollama_setup(
+    manager: tauri::State<'_, OllamaManager>,
+) -> Result<(), String> {
+    match manager.cancel_operation().await {
+        crate::services::ollama_manager::CancelOutcome::RejectedDuringShutdown => {
+            Err("ollama-closing".into())
+        }
+        crate::services::ollama_manager::CancelOutcome::Cancelled
+        | crate::services::ollama_manager::CancelOutcome::AlreadyIdle => Ok(()),
+    }
 }
 
 #[tauri::command]
@@ -102,8 +126,10 @@ pub(crate) async fn start_manager_and_wait(
         .map_err(|_| "ollama-start-error")?;
     let deadline = Instant::now() + Duration::from_secs(45);
     while Instant::now() < deadline {
-        if cancel.is_cancelled() {
-            return Err(super::ollama_setup_cancel::cancelled_error());
+        if cancel.is_cancelled()
+            || matches!(manager.status().await.operation, OperationState::Cancelling)
+        {
+            return Err("ollama-operation-cancelled".into());
         }
         if let Ok(endpoint) = manager.usable_endpoint().await {
             if client
@@ -121,14 +147,13 @@ pub(crate) async fn start_manager_and_wait(
     Err("ollama-start-timeout".into())
 }
 
-async fn resolve_install_version() -> String {
+async fn resolve_install_version() -> OllamaVersion {
     match crate::services::ollama_manager::release_source::fetch_latest_version().await {
-        Ok(version) => version.to_string(),
+        Ok(version) => version,
         Err(error) => {
             ::log::warn!("[ollama-setup] latest version unavailable: {}", error.as_str());
             crate::services::ollama_manager::release_source::fallback_version()
                 .expect("bundled Ollama version must be valid")
-                .to_string()
         }
     }
 }

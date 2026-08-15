@@ -10,7 +10,6 @@ mod commands;
 mod invoke_handler;
 mod invoke_handler_tail;
 mod models;
-mod ollama_polling;
 mod runtime_startup;
 mod runtime_state;
 mod services;
@@ -201,7 +200,7 @@ pub(crate) fn run_inner(
             app.manage(scheduler);
             report_lifecycle(LifecycleStage::SchedulerStarted);
             services::e2e_profile::run_host_mutation(|| {
-                ollama_polling::start(app.handle().clone());
+                runtime_state::start_ollama_polling(app.handle());
                 runtime_startup::start_litellm(&background);
             });
             services::update_health::acknowledge_from_args(std::env::args_os())

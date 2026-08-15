@@ -11,7 +11,9 @@ impl OllamaManager {
         request: InstallRequest,
     ) -> Result<InstallOutcome, OllamaErrorCode> {
         let guard = self.begin_operation(OperationState::Installing).await?;
+        self.set_operation_cancellation(request.cancellation.clone());
         let result = install::install(request).await;
+        self.clear_operation_cancellation();
         if let Err(error) = result {
             guard.fail(error);
         } else {

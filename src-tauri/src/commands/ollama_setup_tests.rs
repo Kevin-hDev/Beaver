@@ -1,23 +1,26 @@
-use crate::commands::ollama_bundle_utils::is_valid_semver;
+use crate::app_exit::AppExitCoordinator;
+use crate::services::ollama_manager::{
+    CancelOutcome, OllamaManager, OllamaVersion, OperationState,
+};
 use tokio_util::sync::CancellationToken;
 
 #[test]
 fn valid_semver_accepted() {
-    assert!(is_valid_semver("0.23.1"));
-    assert!(is_valid_semver("1.0.0"));
-    assert!(is_valid_semver("0.30.0-rc3"));
-    assert!(is_valid_semver("2.1.0-beta.1"));
+    assert!(OllamaVersion::parse("0.23.1").is_ok());
+    assert!(OllamaVersion::parse("1.0.0").is_ok());
+    assert!(OllamaVersion::parse("0.30.0-rc3").is_ok());
+    assert!(OllamaVersion::parse("2.1.0-beta.1").is_ok());
 }
 
 #[test]
 fn invalid_semver_rejected() {
-    assert!(!is_valid_semver(""));
-    assert!(!is_valid_semver("1.0"));
-    assert!(!is_valid_semver("abc"));
-    assert!(!is_valid_semver("1.0.0/../../evil"));
-    assert!(!is_valid_semver("1.0.0%0d%0aHeader: inject"));
-    assert!(!is_valid_semver("1.0.0\nmalicious"));
-    assert!(!is_valid_semver("v1.0.0"));
+    assert!(OllamaVersion::parse("").is_err());
+    assert!(OllamaVersion::parse("1.0").is_err());
+    assert!(OllamaVersion::parse("abc").is_err());
+    assert!(OllamaVersion::parse("1.0.0/../../evil").is_err());
+    assert!(OllamaVersion::parse("1.0.0%0d%0aHeader: inject").is_err());
+    assert!(OllamaVersion::parse("1.0.0\nmalicious").is_err());
+    assert!(OllamaVersion::parse("v1.0.0").is_err());
 }
 
 #[test]
@@ -26,28 +29,23 @@ fn fallback_install_version_is_current_supported_release() {
         .unwrap()
         .to_string();
     assert_eq!(fallback, "0.32.1");
-    assert!(is_valid_semver(&fallback));
-}
-
-#[test]
-fn cancelled_error_is_detected_exactly() {
-    let err = crate::commands::ollama_setup_cancel::cancelled_error();
-
-    assert!(crate::commands::ollama_setup_cancel::is_cancelled_error(
-        &err
-    ));
-    assert!(!crate::commands::ollama_setup_cancel::is_cancelled_error(
-        "cancelled"
-    ));
+    assert!(OllamaVersion::parse(&fallback).is_ok());
 }
 
 #[tokio::test]
-async fn cancel_active_setup_cancels_registered_token() {
+async fn cancel_active_setup_cancels_manager_token() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let manager = OllamaManager::new(coordinator.work_supervisor());
     let token = CancellationToken::new();
-    crate::commands::ollama_setup_cancel::register(token.clone()).await;
+    let operation = manager
+        .begin_operation(OperationState::Installing)
+        .await
+        .expect("operation admission");
+    manager.set_operation_cancellation(token.clone());
 
-    crate::commands::ollama_setup_cancel::cancel_active().await;
+    assert_eq!(manager.cancel_operation().await, CancelOutcome::Cancelled);
 
     assert!(token.is_cancelled());
-    crate::commands::ollama_setup_cancel::clear().await;
+    manager.clear_operation_cancellation();
+    drop(operation);
 }

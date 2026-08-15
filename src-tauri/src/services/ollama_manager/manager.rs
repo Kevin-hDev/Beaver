@@ -15,6 +15,7 @@ use std::sync::{Arc, Mutex};
 #[cfg(test)]
 use tokio::sync::Notify;
 use tokio::sync::{Mutex as AsyncMutex, MutexGuard};
+use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]
 pub struct OllamaManager(Arc<OllamaManagerInner>);
@@ -24,6 +25,7 @@ struct OllamaManagerInner {
     operation_lock: AsyncMutex<()>,
     state: Mutex<OllamaManagerState>,
     owned_process: Mutex<Option<super::process::OwnedOllamaProcess>>,
+    active_cancellation: Mutex<Option<CancellationToken>>,
     emergency: Option<AppEmergencyPublisher>,
     startup: OllamaStartupBarrier,
     retry: OllamaRecoveryRetry,

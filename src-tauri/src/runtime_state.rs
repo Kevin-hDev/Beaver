@@ -62,6 +62,33 @@ pub fn scheduler(app: &tauri::AppHandle) -> std::io::Result<crate::services::sch
         .map_err(std::io::Error::other)
 }
 
+pub fn start_ollama_polling(app: &tauri::AppHandle) {
+    let background = app
+        .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+        .inner()
+        .clone();
+    let manager = app
+        .state::<crate::services::ollama_manager::OllamaManager>()
+        .inner()
+        .clone();
+    if background
+        .spawn_loop(move |cancel| async move {
+            let cancellation = tokio_util::sync::CancellationToken::new();
+            let mut loop_task = Box::pin(manager.run_background_loop(cancellation.clone()));
+            tokio::select! {
+                _ = cancel.cancelled() => {
+                    cancellation.cancel();
+                    loop_task.as_mut().await;
+                }
+                _ = loop_task.as_mut() => {}
+            }
+        })
+        .is_err()
+    {
+        ::log::warn!("[ollama] polling unavailable during shutdown");
+    }
+}
+
 pub fn initialize_agent_runtime(app: &tauri::AppHandle) -> std::io::Result<()> {
     crate::services::agent_local::shell_sandbox::cleanup_stale();
     crate::services::e2e_profile::report_lifecycle(

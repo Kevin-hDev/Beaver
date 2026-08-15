@@ -10,6 +10,22 @@ const MAX_ARCHIVE_NAME_BYTES: usize = 96;
 const MAX_MANIFEST_BYTES: usize = 8 * 1024;
 const ALLOWED_HOST: &str = "github.com";
 
+pub(crate) fn archive_names_for_platform() -> Vec<&'static str> {
+    if cfg!(target_os = "macos") {
+        return vec!["ollama-darwin.tgz"];
+    }
+    if cfg!(target_os = "windows") {
+        return vec!["ollama-windows-amd64.zip"];
+    }
+    match crate::services::gpu_detect::detect() {
+        crate::services::gpu_detect::GpuVendor::Amd => vec![
+            "ollama-linux-amd64.tar.zst",
+            "ollama-linux-amd64-rocm.tar.zst",
+        ],
+        _ => vec!["ollama-linux-amd64.tar.zst"],
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct AllowlistedArchiveName(String);
 

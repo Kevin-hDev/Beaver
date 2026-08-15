@@ -43,8 +43,8 @@ pub async fn check_ollama_binary_update(
 ) -> Result<Option<OllamaBinaryUpdate>, String> {
     let current = match fetch_installed_version(&ollama).await {
         Ok(v) => v,
-        Err(_) => match super::ollama_bundle_utils::read_version_file() {
-            Some(v) => v,
+        Err(_) => match ollama.manager().installed_version().await {
+            Some(v) => v.to_string(),
             None => return Ok(None),
         },
     };

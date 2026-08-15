@@ -123,11 +123,10 @@ fn frozen_environment_accessor_is_bounded_and_does_not_expose_mutation() {
 #[test]
 fn dynamic_gpu_overrides_cross_the_explicit_boundary_once() {
     let resolver = FakeResolver::with_paths(&paths());
-    let config = crate::models::config::AdvancedSettings::default();
-    let overrides = crate::services::ollama_env::profile_overrides(
-        &config,
-        &crate::services::gpu_detect::GpuVendor::Nvidia,
-    );
+    let overrides = [(
+        OsString::from("OLLAMA_GPU_OVERHEAD"),
+        OsString::from("1073741824"),
+    )];
     let profile = OllamaSpawnProfile::resolve_with_overrides(
         &paths(),
         env(&[

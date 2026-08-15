@@ -189,4 +189,4 @@ pub use types::{
     OllamaProgressStage, OllamaRuntimeStatus, OllamaStartOutcome, OperationState,
 };
 #[allow(unused_imports)]
-pub use update::{UpdateOutcome, UpdateRequest};
+pub use update::{UpdateOutcome, UpdateRequest, UpdateSidecar};
