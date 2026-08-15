@@ -1,0 +1,5 @@
+Purpose: synchronize PR #20 with the current main after the complete CI verdict on run 31902290923.
+
+Reason: GitHub tested the synthetic merge with current main, but the PR merge base still pointed to ec1751bc. The included-source formatter therefore rechecked an unrelated Agent Local source added on main and failed before the backend suite. All six application jobs in that run were green, including native macOS and Windows CEF.
+
+Validation after synchronization: RUSTFMT_BASE_SHA set to current origin/main passed scripts/build/check-rust-format.mjs; work_registry_tests 9/9; extension host_process tests 6/6; browser runtime_revision_tests 5/5; cargo fmt --all -- --check green; cargo clippy --all-targets -- -D warnings green; git diff --check green; graphify update completed.
