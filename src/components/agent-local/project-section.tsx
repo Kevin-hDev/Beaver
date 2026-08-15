@@ -172,6 +172,7 @@ export function ProjectSection({
               onRenameSubmit={handleSessionRename}
               onCancelRename={() => setRenamingSessionId(null)}
               onMenu={handleSessionMenu}
+              onStartRename={startSessionRename}
               dragProps={sessionDrag.itemProps(s.id)}
               dragHandleProps={sessionDrag.handleProps(s.id)}
               didDrag={sessionDrag.didDrag}

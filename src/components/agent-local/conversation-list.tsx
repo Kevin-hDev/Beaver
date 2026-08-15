@@ -169,6 +169,7 @@ export function ConversationList({
                     onRenameSubmit={handleRenameSubmit}
                     onCancelRename={() => setRenamingId(null)}
                     onMenu={handleSessionMenu}
+                    onStartRename={startRename}
                     dragProps={sessionDrag.itemProps(s.id)}
                     dragHandleProps={sessionDrag.handleProps(s.id)}
                     didDrag={sessionDrag.didDrag}

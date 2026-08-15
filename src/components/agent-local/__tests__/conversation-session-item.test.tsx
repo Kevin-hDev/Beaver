@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { ConversationSessionItem } from "../conversation-session-item";
 import type { AgentSessionMeta } from "@/types/agent";
 
@@ -45,6 +45,7 @@ function renderItem(overrides: Partial<Parameters<typeof ConversationSessionItem
       dragProps={{ "data-drag-id": "s1", "data-drag-group": "essai", "data-dragging": undefined, style: {} }}
       dragHandleProps={{ onPointerDown: vi.fn() }}
       didDrag={() => false}
+      onStartRename={vi.fn()}
       onRenameSubmit={vi.fn()}
       onCancelRename={vi.fn()}
       onMenu={vi.fn()}
@@ -70,6 +71,26 @@ describe("ConversationSessionItem", () => {
 
     expect(container.querySelector(".conv-session-indented.has-unread")).not.toBeNull();
     expect(container.querySelector(".conv-unread-dot")).not.toBeNull();
+  });
+
+  it("passe en renommage au double-clic sur le nom", () => {
+    const onStartRename = vi.fn();
+    const { container } = renderItem({ onStartRename });
+
+    fireEvent.doubleClick(container.querySelector(".conv-session-main") as HTMLElement);
+
+    expect(onStartRename).toHaveBeenCalledWith("s1");
+  });
+
+  /* Le bouton de menu et l'âge vivent hors de la zone du nom : les
+     double-cliquer en visant leur action ne doit pas ouvrir un renommage. */
+  it("ignore le double-clic sur le bouton de menu", () => {
+    const onStartRename = vi.fn();
+    const { getByTestId } = renderItem({ onStartRename });
+
+    fireEvent.doubleClick(getByTestId("dots"));
+
+    expect(onStartRename).not.toHaveBeenCalled();
   });
 
   it("masque le point terminé pour la session active", () => {

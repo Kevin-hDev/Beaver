@@ -9,7 +9,13 @@
 }
 
 /* Rename input */
+
+/* La ligne et l'en-tête qui l'accueillent interdisent la sélection de texte —
+   ils s'attrapent et se double-cliquent. Le champ, lui, en a besoin : sans
+   cette exception il hérite de l'interdiction et son contenu ne se sélectionne
+   plus, alors qu'on l'ouvre justement pour le réécrire. */
 .conv-rename {
+  user-select: text;
   width: 100%;
   padding: 2px var(--space-xs);
   font-size: var(--text-sm);
