@@ -70,6 +70,9 @@
      reprend la même : sans cela le texte se décale au moment où l'on passe la
      bulle en édition. */
   --chat-bubble-padding: var(--space-xs) var(--space-sm);
+  /* Hauteur maximale du champ de saisie, marges intérieures comprises :
+     au-delà, il défile au lieu de grandir. */
+  --chat-input-max-height: 200px;
   --dialog-compact-min-width: 18.75rem;
   --dialog-compact-max-width: 27.5rem;
   --dialog-wide-max-width: 53.75rem;
@@ -140,29 +143,6 @@
      plus petit. Seule la piste déborde, de sa marge intérieure. */
   --settings-tabbar-item-height: var(--btn-height);
   --settings-status-dot-size: 0.375rem;
-  /* Dessins qui accompagnent une session ou un projet dans la barre latérale :
-     état d'un dossier, renommer, archiver. Un cinquième sous l'icône courante
-     de ces lignes, pour la même raison que ceux de la colonne de Réglages. */
-  --session-icon-size: calc(var(--icon-sm) * 0.8);
-  /* Le dossier d'un projet, posé plus grand que ses voisins de la même ligne :
-     son tracé n'occupe que 60 % de la hauteur de son cadre — un dossier est
-     plat — contre 70 à 75 % pour les autres, et à cadre égal il se lit plus
-     petit qu'eux. Exprimé par rapport à eux, pour que l'écart tienne. */
-  --project-folder-icon-size: calc(var(--session-icon-size) * 1.2);
-  /* Dessin devant un fichier de /beaver, posé au-dessus de l'icône standard :
-     la ligne porte un nom et sa description sur deux lignes serrées, et le
-     dessin seul en face paraissait maigre. Mesuré à la largeur minimale de la
-     colonne : un cinquième de plus tient jusqu'au réglage de police 20 sans
-     rogner le plus long des cinq noms. */
-  --personality-file-icon-size: calc(var(--icon-md) * 1.2);
-  /* Bouton « Ouvrir » de /beaver, la moitié au-dessus des icônes de bouton :
-     il est seul dans son en-tête, sans libellé pour le désigner, face à un
-     titre au corps le plus grand de l'application. */
-  --personality-open-icon-size: calc(var(--icon-sm) * 1.5);
-  /* Croix de fermeture d'un panneau. Au-dessus de l'icône de sa rangée : deux
-     traits croisés ne couvrent que 42 % de leur cadre, contre 67 à 100 % pour
-     les autres actions posées à côté, et à cadre égal la croix rapetisse. */
-  --panel-close-icon-size: calc(var(--icon-md) * 1.2);
   --system-prompt-card-header-min-height: 3.2222rem;
   /* Une ligne de contenu entre ses marges : assez pour que la carte garde un
      corps pendant le chargement, sans creuser un vide sous un prompt court. */
@@ -200,17 +180,6 @@
   --nav-item-gap: var(--space-xs);
   --nav-item-padding-x: var(--space-sm);
   --nav-item-radius: var(--radius-sm);
-  /* Dessin d'une entrée de navigation — rangée d'onglets du bas, colonne des
-     Réglages. Un cinquième sous l'icône standard : ces tracés sont plus denses
-     que le reste de l'application — lettrage, cadrans, traits fins — et à
-     taille normale ils pesaient plus lourd que le libellé qu'ils accompagnent.
-     Exprimé en proportion et non en valeur figée, pour que la réduction suive
-     l'échelle d'icônes si elle bouge. */
-  --nav-icon-size: calc(var(--icon-md) * 0.8);
-  /* Le battement de cœur, posé plus grand que ses trois voisins de la rangée :
-     son tracé n'occupe que 60 % de la hauteur de son cadre, contre 75 à 92 %
-     pour eux, et à cadre égal il se lisait comme le petit de la rangée. */
-  --nav-heartbeat-icon-size: calc(var(--nav-icon-size) * 1.2);
   /* 189px de liste plus les 49.5px du rail de navigation supprimé : la colonne
      garde la largeur qu'elle avait à deux panneaux, et le gain va au texte des
      conversations, qui se tronquait trop tôt. En px et non en rem : la largeur

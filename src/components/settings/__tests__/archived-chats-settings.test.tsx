@@ -52,8 +52,6 @@ vi.mock("@/hooks/use-projects", () => ({
 
 vi.mock("@/components/ui/icons", () => ({
   Archive: () => <span />,
-  ChatsCircle: () => <span />,
-  FolderSimple: () => <span />,
   Search: () => <span />,
   Trash: () => <span />,
   CaretDown: () => <span />,

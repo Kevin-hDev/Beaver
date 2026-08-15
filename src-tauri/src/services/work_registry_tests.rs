@@ -129,6 +129,26 @@ async fn managed_work_releases_slots_on_success_error_panic_and_drop() {
 }
 
 #[tokio::test]
+async fn completion_is_published_only_after_the_slot_is_released() {
+    let (_coordinator, app) = supervisor();
+    let service = ServiceWorkSupervisor::<1>::new(app);
+    let completion = service
+        .try_admit()
+        .expect("service admission")
+        .spawn_with_completion(|_| async {})
+        .expect("tracked task starts");
+
+    completion.await.expect("tracked task completion");
+
+    assert_eq!(service.diagnostics().active, 0);
+    drop(
+        service
+            .try_admit()
+            .expect("completion makes the slot reusable"),
+    );
+}
+
+#[tokio::test]
 async fn stop_cancels_cooperative_work_and_aborts_uncooperative_work() {
     let (_coordinator, app) = supervisor();
     let cooperative = WorkRegistry::<1>::new();

@@ -1,6 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { isInternalDrag } from "@/lib/internal-drag";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 
 interface FileDropZoneProps {
@@ -22,7 +21,6 @@ export function FileDropZone({ dragging, onDragChange, onDropPaths, children }: 
     let unlisten: ReturnType<ReturnType<typeof getCurrentWebview>["onDragDropEvent"]>;
     try {
       unlisten = getCurrentWebview().onDragDropEvent((event) => {
-        if (isInternalDrag()) return;
         if (event.payload.type === "over") {
           dragRef.current(true);
         } else if (event.payload.type === "drop") {

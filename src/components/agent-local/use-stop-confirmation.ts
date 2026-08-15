@@ -34,6 +34,15 @@ export function useStopConfirmation(isStreaming: boolean, onStop: () => void) {
     }, STOP_CONFIRMATION_TIMEOUT_MS);
   }, [clearConfirmationTimer, clearStopConfirmation, isConfirmingStop, isStreaming, onStop]);
 
+  /* Le bouton arrête sans confirmation : viser puis cliquer est déjà délibéré,
+     alors qu'Échap part souvent d'un réflexe. Demander « ESC » après un clic
+     réclamait en plus une touche à qui venait d'utiliser la souris. */
+  const stopNow = useCallback(() => {
+    if (!isStreaming) return;
+    clearStopConfirmation();
+    onStop();
+  }, [clearStopConfirmation, isStreaming, onStop]);
+
   useEffect(() => {
     if (isStreaming) return undefined;
     clearConfirmationTimer();
@@ -43,5 +52,5 @@ export function useStopConfirmation(isStreaming: boolean, onStop: () => void) {
 
   useEffect(() => clearConfirmationTimer, [clearConfirmationTimer]);
 
-  return { isConfirmingStop: isStreaming && isConfirmingStop, requestStop, clearStopConfirmation };
+  return { isConfirmingStop: isStreaming && isConfirmingStop, requestStop, stopNow, clearStopConfirmation };
 }

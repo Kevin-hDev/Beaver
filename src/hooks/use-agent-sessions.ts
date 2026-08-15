@@ -82,6 +82,13 @@ export function useAgentSessions() {
     await refresh();
   }, [refresh]);
 
+  /* `projectId` nul range les conversations qui n'appartiennent à aucun
+     projet. Chaque liste garde le sien : rien ne se mélange entre elles. */
+  const reorder = useCallback(async (projectId: string | null, ids: string[]) => {
+    await invoke("reorder_agent_sessions", { projectId, ids });
+    await refresh();
+  }, [refresh]);
+
   const remove = useCallback(async (id: string) => {
     await invoke("delete_agent_session", { id });
     await refresh();
@@ -136,6 +143,7 @@ export function useAgentSessions() {
     refresh,
     create,
     rename,
+    reorder,
     remove,
     archive,
     restore,

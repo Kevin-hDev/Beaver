@@ -31,7 +31,14 @@
   -webkit-backdrop-filter: var(--popover-backdrop-filter, none);
 }
 
-.os-mac .fcw-sidebar {
+/* Même contournement que la barre latérale de l'application, et pour la même
+   raison animé à côté du panneau plutôt que sur lui — voir app-layout.css. */
+.os-mac .fcw-sidebar::after {
+  content: "";
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
   animation: fcw-keep-compositing 1s linear infinite;
 }
 

@@ -5,7 +5,6 @@ import { ThinkingSection } from "../thinking-section";
 afterEach(cleanup);
 
 vi.mock("@/components/ui/icons", () => ({
-  Brain: ({ className }: { className?: string }) => <span className={className} data-testid="brain-icon" />,
   CaretDown: ({ className }: { className?: string }) => <span className={className} data-testid="caret-down" />,
   CaretUp: ({ className }: { className?: string }) => <span className={className} data-testid="caret-up" />,
 }));
@@ -19,10 +18,13 @@ vi.mock("react-i18next", () => ({
 }));
 
 describe("ThinkingSection", () => {
-  it("affiche le cerveau et le chevron sans ancien caractère de flèche", () => {
-    const { getByRole, getByTestId, queryByText } = render(<ThinkingSection content="raisonnement" />);
+  /* La ligne n'a plus de dessin devant son libellé : il portait le seul mot
+     « Réflexion » que le texte disait déjà, et décalait la ligne par rapport
+     aux autres traces de la conversation. */
+  it("n'affiche que le libellé et le chevron, sans dessin ni ancienne flèche", () => {
+    const { container, getByRole, getByTestId, queryByText } = render(<ThinkingSection content="raisonnement" />);
 
-    expect(getByTestId("brain-icon")).toBeTruthy();
+    expect(container.querySelectorAll("svg, [data-testid$='-icon']")).toHaveLength(0);
     expect(getByTestId("caret-down")).toBeTruthy();
     expect(queryByText("▸")).toBeNull();
     expect(getByRole("button")).toHaveAttribute("aria-expanded", "false");

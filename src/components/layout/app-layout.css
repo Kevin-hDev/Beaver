@@ -27,10 +27,23 @@ body.os-mac {
   border: 1px solid var(--edge);
   flex-shrink: 0;
   width: auto;
-  animation: keep-compositing 1s linear infinite;
   transition: margin-left 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
               border-right-color var(--ease-smooth);
+}
+
+/* Le contournement anime une couche à part, et non le panneau lui-même : un
+   panneau dont la position bouge à chaque image voit sa géométrie recalculée
+   en continu, et le curseur de la souris retombe sur la flèche par défaut
+   entre deux images. Le point est hors flux, sans dimension utile et sourd à
+   la souris — il ne sert qu'à garder le compositeur en marche. */
+.app-sidebar-block::after {
+  content: "";
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  animation: keep-compositing 1s linear infinite;
 }
 
 /* WebKit bug workaround: forces continuous compositing so backdrop-filter

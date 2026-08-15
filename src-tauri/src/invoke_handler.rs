@@ -64,6 +64,7 @@ macro_rules! generate {
             crate::commands::cancel_agent_request,
             crate::commands::list_agent_sessions,
             crate::commands::list_archived_agent_sessions,
+            crate::commands::reorder_agent_sessions,
             crate::commands::get_agent_session,
             crate::commands::save_agent_session,
             crate::commands::get_session_permission_state,

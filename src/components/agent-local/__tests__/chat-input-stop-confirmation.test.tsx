@@ -88,21 +88,33 @@ afterEach(() => {
 });
 
 describe("ChatInput stop confirmation", () => {
-  it("affiche la confirmation au premier clic et arrête au deuxième", () => {
+  /* Viser un bouton puis cliquer est délibéré ; Échap part souvent d'un
+     réflexe. Seul le clavier demande à confirmer. */
+  it("arrête dès le premier clic sur le bouton", () => {
     const onStop = vi.fn();
 
     render(<ChatInput {...baseProps} onStop={onStop} />);
-
     const stopAction = screen.getByText("stop action");
-
     expect(stopAction).toHaveAttribute("data-state", "stop");
 
     fireEvent.click(stopAction);
 
+    expect(onStop).toHaveBeenCalledOnce();
+    expect(stopAction).toHaveAttribute("data-state", "stop");
+  });
+
+  it("demande une deuxième pression d'Échap avant d'arrêter", () => {
+    const onStop = vi.fn();
+
+    render(<ChatInput {...baseProps} onStop={onStop} />);
+    const stopAction = screen.getByText("stop action");
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
     expect(stopAction).toHaveAttribute("data-state", "confirmStop");
     expect(onStop).not.toHaveBeenCalled();
 
-    fireEvent.click(stopAction);
+    fireEvent.keyDown(window, { key: "Escape" });
 
     expect(onStop).toHaveBeenCalledOnce();
   });

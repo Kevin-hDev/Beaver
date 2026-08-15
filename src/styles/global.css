@@ -1,6 +1,7 @@
 @import "tailwindcss" source("../");
 @import "@fontsource-variable/jetbrains-mono";
 @import "./tokens.css";
+@import "./tokens-icon-sizes.css";
 @import "./themes/light.css";
 @import "./themes/dark.css";
 @import "./themes/emerald-night.css";
@@ -9,6 +10,7 @@
 @import "./themes/crimson-eclipse.css";
 @import "./focus.css";
 @import "./buttons.css";
+@import "./drag-reorder.css";
 @import "./fields.css";
 
 @theme {
@@ -146,7 +148,7 @@ body {
 
   /* Exception: keep-compositing is not a visual animation — it keeps the
      WebKit backdrop-filter blur alive. It must keep running. */
-  .app-sidebar-block {
+  .app-sidebar-block::after {
     animation-duration: 1s !important;
     animation-iteration-count: infinite !important;
   }

@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { SidebarToggleIcon } from "@/components/layout/toolbar-icons";
-import { PanelRightClose, PanelRightOpen, Plus, TerminalSquare } from "../icons";
+import { PanelRightClose, PanelRightOpen, Plus, Compass } from "../icons";
 
 afterEach(() => cleanup());
 
@@ -18,7 +18,7 @@ describe("safe Phosphor icons", () => {
 
 describe("safe SVG icon sizes", () => {
   it("applies CSS variables via style for migrated Phosphor icons", () => {
-    const { container } = render(<TerminalSquare size="var(--chrome-icon-md)" />);
+    const { container } = render(<Compass size="var(--chrome-icon-md)" />);
     const svg = container.querySelector("svg");
 
     expect(svg).toHaveStyle({ width: "var(--chrome-icon-md)", height: "var(--chrome-icon-md)" });

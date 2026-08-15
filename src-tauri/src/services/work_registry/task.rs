@@ -38,9 +38,21 @@ impl<const CAPACITY: usize> ServiceWorkAdmission<CAPACITY> {
         Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
         Task: Future + Send + 'static,
     {
+        self.spawn_with_completion(work).map(drop)
+    }
+
+    pub fn spawn_with_completion<Factory, Task>(
+        self,
+        work: Factory,
+    ) -> Result<tokio::sync::oneshot::Receiver<()>, ServiceWorkAdmissionError>
+    where
+        Factory: FnOnce(ServiceWorkCancellation) -> Task + Send + 'static,
+        Task: Future + Send + 'static,
+    {
         let key = self.key.expect("new admission has a key");
         let cancellation = self.cancellation();
         let registry = self.registry.clone();
+        let (completed, completion) = tokio::sync::oneshot::channel();
         let mut state = registry.lock_state();
         if state.phase != ServiceWorkPhase::Open {
             state.diagnostics.closing_refusals =
@@ -53,6 +65,7 @@ impl<const CAPACITY: usize> ServiceWorkAdmission<CAPACITY> {
         // autorité capable de lancer ce travail avec ou sans runtime Tokio entré.
         let handle = tauri::async_runtime::spawn(async move {
             drop(self.run(work(cancellation)).await);
+            let _ = completed.send(());
         });
         let slot = &mut state.slots[key.index];
         if !slot.occupied || slot.generation != key.generation {
@@ -61,7 +74,7 @@ impl<const CAPACITY: usize> ServiceWorkAdmission<CAPACITY> {
             return Err(ServiceWorkAdmissionError::Closing);
         }
         slot.handle = Some(handle);
-        Ok(())
+        Ok(completion)
     }
 
     #[cfg(test)]

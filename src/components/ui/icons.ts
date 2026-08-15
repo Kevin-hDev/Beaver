@@ -16,7 +16,6 @@ import {
   Pencil as PhPencil,
   Trash as PhTrash,
   Plus as PhPlus,
-  Copy as PhCopy,
   Check as PhCheck,
   CheckCircle as PhCheckCircle,
   Circle as PhCircle,
@@ -37,14 +36,11 @@ import {
   MagnifyingGlass as PhMagnifyingGlass,
   ArrowSquareOut as PhArrowSquareOut,
   Star as PhStar,
-  FolderSimple as PhFolderSimple,
-  FolderSimplePlus as PhFolderSimplePlus,
   FolderOpen as PhFolderOpen,
   DotsThreeVertical as PhDotsThreeVertical,
   Hand as PhHand,
   PencilSimple as PhPencilSimple,
   ChatCircleDots as PhChatCircleDots,
-  ChatsCircle as PhChatsCircle,
   GearSix as PhGearSix,
   Info as PhInfo,
   Keyboard as PhKeyboard,
@@ -59,10 +55,8 @@ import {
   ChartLineUp as PhChartLineUp,
   Brain as PhBrain,
   Compass as PhCompass,
-  TerminalWindow as PhTerminalWindow,
   Globe as PhGlobe,
   Wrench as PhWrench,
-  FilePlus as PhFilePlus,
   Link as PhLink,
   List as PhList,
   ListChecks as PhListChecks,
@@ -102,7 +96,6 @@ export const Sun = withSafeCssSize(PhSun);
 export const Pencil = withSafeCssSize(PhPencil);
 export const Trash = withSafeCssSize(PhTrash);
 export const Plus = withSafeCssSize(PhPlus);
-export const Copy = withSafeCssSize(PhCopy);
 export const Check = withSafeCssSize(PhCheck);
 export const ShieldWarning = withSafeCssSize(PhShieldWarning);
 export const ArrowsClockwise = withSafeCssSize(PhArrowsClockwise);
@@ -119,14 +112,11 @@ export const Key = withSafeCssSize(PhKey);
 export const MagnifyingGlass = withSafeCssSize(PhMagnifyingGlass);
 export const ArrowSquareOut = withSafeCssSize(PhArrowSquareOut);
 export const Star = withSafeCssSize(PhStar);
-export const FolderSimple = withSafeCssSize(PhFolderSimple);
-export const FolderSimplePlus = withSafeCssSize(PhFolderSimplePlus);
 export const FolderOpen = withSafeCssSize(PhFolderOpen);
 export const DotsThreeVertical = withSafeCssSize(PhDotsThreeVertical);
 export const Hand = withSafeCssSize(PhHand);
 export const PencilSimple = withSafeCssSize(PhPencilSimple);
 export const ChatCircleDots = withSafeCssSize(PhChatCircleDots);
-export const ChatsCircle = withSafeCssSize(PhChatsCircle);
 export const GearSix = withSafeCssSize(PhGearSix);
 export const Info = withSafeCssSize(PhInfo);
 export const Keyboard = withSafeCssSize(PhKeyboard);
@@ -141,10 +131,8 @@ export const Hash = withSafeCssSize(PhHash);
 export const ChartLineUp = withSafeCssSize(PhChartLineUp);
 export const Brain = withSafeCssSize(PhBrain);
 export const Compass = withSafeCssSize(PhCompass);
-export const TerminalWindow = withSafeCssSize(PhTerminalWindow);
 export const Globe = withSafeCssSize(PhGlobe);
 export const Wrench = withSafeCssSize(PhWrench);
-export const FilePlus = withSafeCssSize(PhFilePlus);
 export const Link = withSafeCssSize(PhLink);
 export const Sparkle = withSafeCssSize(PhSparkle);
 export const Users = withSafeCssSize(PhUsers);
@@ -175,4 +163,3 @@ export const RotateCw = withSafeCssSize(PhArrowClockwise);
 export const Search = withSafeCssSize(PhMagnifyingGlass);
 export const Settings = withSafeCssSize(PhGear);
 export const Square = withSafeCssSize(PhSquare);
-export const TerminalSquare = withSafeCssSize(PhTerminalWindow);

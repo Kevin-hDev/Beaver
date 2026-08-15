@@ -17,7 +17,6 @@ const baseProps = {
   selectedId: null,
   runningIds: new Set<string>(),
   unreadIds: new Set<string>(),
-  isDragOver: false,
   onSelect: vi.fn(),
   onNewSession: vi.fn(),
   onRenameProject: vi.fn(),
@@ -25,8 +24,10 @@ const baseProps = {
   onOpenFolder: vi.fn(),
   onRenameSession: vi.fn(),
   onDeleteSession: vi.fn(),
-  onGrab: vi.fn(),
-  isDragging: false,
+  onReorderSessions: vi.fn(),
+  dragProps: { "data-drag-id": "p1", "data-drag-group": "projects", "data-dragging": undefined, style: {} },
+  dragHandleProps: { onPointerDown: vi.fn() },
+  didDrag: () => false,
   onToggleCollapse: vi.fn(),
   nowMs: Date.UTC(2026, 5, 30, 12, 0, 0),
 };
@@ -38,9 +39,8 @@ vi.mock("react-i18next", () => ({
 vi.mock("@/components/ui/icons", () => ({
   Archive: () => <span />,
   DotsThreeVertical: () => <span />,
-  FolderOpen: () => <span />,
   PencilSimple: () => <span />,
-  X: () => <span />,
+  Trash: () => <span />,
 }));
 
 vi.mock("@/components/ui/folder-state-icon", () => ({

@@ -1,0 +1,37 @@
+/* Apparence commune du réordonnancement par glissement — projets de la barre
+   latérale, onglets du terminal. Le décalage lui-même est calculé et posé par
+   src/hooks/use-drag-reorder.ts, avec la durée du mouvement ; seule l'allure
+   de l'élément tenu vit ici.
+
+   Le sélecteur porte sur les attributs que pose le hook, et non sur une classe
+   de composant : c'est ce qui garantit que les listes se comportent pareil, et
+   que la prochaine qui s'y mettra n'aura rien à redéfinir. */
+
+/* Les deux attributs plutôt qu'un seul : les lignes visées portent déjà une
+   classe qui pose leur curseur et leur position, et un sélecteur de même poids
+   l'aurait emporté ou se serait fait emporter selon l'ordre de chargement. */
+[data-drag-id][data-drag-group][data-dragging="true"] {
+  position: relative;
+  z-index: var(--z-sticky);
+  opacity: 0.85;
+  cursor: grabbing;
+}
+
+/* Pendant le geste, plus rien ne se surligne dans la page. Le navigateur étend
+   sinon une sélection de texte au fil du déplacement, sur tout ce que le
+   curseur survole — libellés de section, noms de projet, lignes voisines — et
+   comme le bouton reste enfoncé, rien ne l'arrête avant le relâchement.
+
+   Posé sur la page et non sur la liste : la sélection déborde de son conteneur
+   dès que le curseur en sort. Une valeur héritée, qu'un champ de saisie peut
+   toujours contredire en déclarant la sienne. */
+body[data-drag-active="true"] {
+  user-select: none;
+}
+
+/* Une seule main fermée sur toute la page. Chaque ligne pose son propre
+   curseur — une main pointée sur une conversation, par exemple — et sans ce
+   sélecteur il reprendrait le dessus dès que le geste survole un voisin. */
+body[data-drag-active="true"] * {
+  cursor: grabbing;
+}

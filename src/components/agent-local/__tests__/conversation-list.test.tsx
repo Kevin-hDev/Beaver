@@ -16,7 +16,7 @@ const defaultProps = {
   sessions: [] as AgentSessionMeta[], projects: [] as Project[], selectedId: null as string | null,
   onSelect: vi.fn(), onCreate: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(),
   onNewSessionInProject: vi.fn(), onRenameProject: vi.fn(), onDeleteProject: vi.fn(),
-  onOpenFolder: vi.fn(), onReorderProjects: vi.fn(),
+  onOpenFolder: vi.fn(), onReorderProjects: vi.fn(), onReorderSessions: vi.fn(),
 };
 
 vi.mock("react-i18next", () => ({
@@ -51,17 +51,6 @@ vi.mock("@/hooks/use-keyboard", () => ({
   useKeyboard: () => {},
 }));
 
-vi.mock("@/hooks/use-project-drag", () => ({
-  useProjectDrag: () => ({
-    draggingId: null,
-    liveOrder: null,
-    onGrab: vi.fn(),
-    onHover: vi.fn(),
-    onRelease: vi.fn(),
-    onCancel: vi.fn(),
-  }),
-}));
-
 vi.mock("@/hooks/use-session-activity-indicators", () => ({
   useSessionActivityIndicators: () => activityMocks,
 }));
@@ -75,6 +64,16 @@ describe("ConversationList", () => {
 	    activityMocks.runningIds = new Set<string>();
 	    activityMocks.unreadIds = new Set<string>();
 	  });
+
+  it("ouvre le champ de renommage au double-clic sur le nom d'une conversation", () => {
+    const { container } = render(
+      <ConversationList {...defaultProps} sessions={[makeSession()]} />,
+    );
+
+    fireEvent.doubleClick(container.querySelector(".conv-session-main") as HTMLElement);
+
+    expect(container.querySelector("input.conv-rename")).not.toBeNull();
+  });
 
   it("affiche le bouton nouveau avec la classe .conv-new-btn", () => {
     const { container } = render(<ConversationList {...defaultProps} />);

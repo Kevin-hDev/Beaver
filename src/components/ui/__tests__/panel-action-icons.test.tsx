@@ -4,7 +4,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { CloseIcon, DocumentationIcon, FullscreenIcon, OpenExternalIcon } from "../panel-action-icons";
 
-const TOKENS = readFileSync("src/styles/tokens.css", "utf8");
+const TOKENS = readFileSync("src/styles/tokens-icon-sizes.css", "utf8");
 
 afterEach(() => {
   cleanup();

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Brain, CaretDown, CaretUp } from "@/components/ui/icons";
+import { CaretDown, CaretUp } from "@/components/ui/icons";
 import { Collapsible } from "@/components/ui/collapsible";
 import "./messages.css";
 import "./stream-active.css";
@@ -29,7 +29,6 @@ export function ThinkingSection({ content, durationMs, isActive }: ThinkingSecti
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <Brain size="var(--icon-sm)" className="thinking-icon" aria-hidden="true" />
         <span className={labelClass}>{label}</span>
         <span className="thinking-chevron" aria-hidden="true">
           {open ? <CaretUp size="var(--icon-sm)" weight="bold" /> : <CaretDown size="var(--icon-sm)" weight="bold" />}

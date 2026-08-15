@@ -235,6 +235,9 @@
     "deleteError": "削除できませんでした。リポジトリを確認して再試行してください。"
   },
   "history": {
+    "copyId": "IDをコピー",
+    "idCopied": "IDをコピーしました",
+    "copyIdFailed": "コピーできません",
     "rename": "名前を変更",
     "delete": "削除",
     "archive": "アーカイブ",

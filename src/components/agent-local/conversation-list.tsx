@@ -1,16 +1,15 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
-import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
-import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
+import { ContextMenu } from "@/components/ui/context-menu";
+import { useSessionMenuItems } from "./use-session-menu-items";
 import { ProjectSection } from "./project-section";
 import { ConversationSessionItem } from "./conversation-session-item";
 import { CollapsePanel } from "./collapse-panel";
 import { ConversationSectionToggle } from "./conversation-section-toggle";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useMinuteNow } from "@/hooks/use-minute-now";
-import { useProjectDrag } from "@/hooks/use-project-drag";
+import { useDragReorder } from "@/hooks/use-drag-reorder";
 import { useSessionActivityIndicators } from "@/hooks/use-session-activity-indicators";
 import { idMatch } from "@/lib/utils";
 import type { ConversationListProps } from "./conversation-list-types";
@@ -19,88 +18,78 @@ import { DirectoryAccessPrompt } from "./directory-access-prompt";
 import "./conversation.css";
 import "./conversation-directory-access.css";
 import "./conversation-projects.css";
-import "./conversation-drag.css";
+import "./conversation-rename.css";
 import "./conversation-collapse.css";
 
 export function ConversationList({
   sessions, projects, selectedId,
   onSelect, onCreate, onRename, onDelete,
   onNewSessionInProject, onRenameProject, onDeleteProject,
-  onOpenFolder, onReorderProjects,
+  onOpenFolder, onReorderProjects, onReorderSessions,
   directoryAccessPrompt,
 }: ConversationListProps) {
   const { t } = useTranslation();
   const [ctx, setCtx] = useState<{ x: number; y: number; id: string } | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const ghostRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const collapse = useConversationCollapseState();
   const nowMs = useMinuteNow();
 
   const projectIds = projects.map((p) => p.id);
-  const drag = useProjectDrag(projectIds, onReorderProjects);
-  useKeyboard({
-    onEscape: () => { setRenamingId(null); setCtx(null); drag.onCancel(); },
-  });
-
-  useEffect(() => {
-    if (!drag.draggingId) {
-      if (ghostRef.current) { ghostRef.current.remove(); ghostRef.current = null; }
-      return;
-    }
-    const srcEl = document.querySelector(`[data-project-id="${drag.draggingId}"] .conv-project-header`);
-    if (!srcEl) return;
-    const ghost = document.createElement("div");
-    ghost.className = "conv-drag-ghost";
-    ghost.textContent = srcEl.textContent;
-    document.body.appendChild(ghost);
-    ghostRef.current = ghost;
-
-    const onMove = (e: PointerEvent) => {
-      ghost.style.left = `${e.clientX + 12}px`;
-      ghost.style.top = `${e.clientY - 12}px`;
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const wrapper = el?.closest("[data-project-id]");
-      const id = wrapper?.getAttribute("data-project-id");
-      if (id) drag.onHover(id);
-    };
-    const onUp = () => drag.onRelease();
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      if (ghostRef.current) { ghostRef.current.remove(); ghostRef.current = null; }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- drag object is stable (from useProjectDrag)
-  }, [drag.draggingId, drag.onHover, drag.onRelease]);
-  const handleSessionMenu = useCallback((e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    setCtx({ x: rect.right, y: rect.bottom, id });
-  }, []);
-  const ctxItems: ContextMenuItem[] = ctx ? [
-    { label: t("history.rename"), icon: <RenameIcon />, onClick: () => { setRenamingId(ctx.id); setTimeout(() => inputRef.current?.focus(), 0); } },
-    { label: t("history.archive"), icon: <ArchiveBoxIcon />, onClick: () => onDelete(ctx.id) },
-  ] : [];
-  const handleRenameSubmit = (id: string, value: string) => {
-    if (value.trim()) onRename(id, value.trim());
-    setRenamingId(null);
-  };
-
-  const displayOrder = drag.liveOrder ?? projectIds;
-  const projectMap = new Map(projects.map((p) => [p.id, p]));
   const projectIdSet = new Set(projectIds);
   const mainSessions = useMemo(
     () => sessions.filter((s) => !s.parent_session_id && !s.clone_parent_session_id),
     [sessions],
   );
-  const mainSessionIds = useMemo(() => mainSessions.map((s) => s.id), [mainSessions]);
-  const activity = useSessionActivityIndicators(mainSessionIds, selectedId);
   const orphanSessions = mainSessions.filter(
     (s) => !s.project_id || !projectIdSet.has(s.project_id),
   );
+
+  const drag = useDragReorder({
+    ids: projectIds,
+    axis: "y",
+    containerRef: listRef,
+    group: "projects",
+    onReorder: onReorderProjects,
+  });
+  /* Les conversations hors projet partagent le conteneur de la liste avec les
+     projets : c'est le nom du groupe, et non le conteneur, qui les sépare. */
+  const sessionDrag = useDragReorder({
+    ids: orphanSessions.map((s) => s.id),
+    axis: "y",
+    containerRef: listRef,
+    group: "sessions:orphan",
+    onReorder: (ids) => onReorderSessions(null, ids),
+  });
+  useKeyboard({
+    onEscape: () => {
+      setRenamingId(null);
+      setCtx(null);
+      drag.cancel();
+      sessionDrag.cancel();
+    },
+  });
+
+  const handleSessionMenu = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCtx({ x: rect.right, y: rect.bottom, id });
+  }, []);
+  const startRename = useCallback((id: string) => {
+    setRenamingId(id);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+  const ctxItems = useSessionMenuItems({ sessionId: ctx?.id ?? null, onRename: startRename, onArchive: onDelete });
+  const handleRenameSubmit = (id: string, value: string) => {
+    if (value.trim()) onRename(id, value.trim());
+    setRenamingId(null);
+  };
+
+  const projectMap = new Map(projects.map((p) => [p.id, p]));
+  const orphanMap = new Map(orphanSessions.map((s) => [s.id, s]));
+  const mainSessionIds = useMemo(() => mainSessions.map((s) => s.id), [mainSessions]);
+  const activity = useSessionActivityIndicators(mainSessionIds, selectedId);
   const handleSelect = useCallback((id: string) => {
     activity.markViewed(id);
     onSelect(id);
@@ -115,14 +104,14 @@ export function ConversationList({
         </button>
       </div>
       {directoryAccessPrompt && <div className="conv-dap-anchor"><DirectoryAccessPrompt {...directoryAccessPrompt} /></div>}
-      <div className={`conv-list ${drag.draggingId ? "is-dragging" : ""}`}>
+      <div ref={listRef} className="conv-list">
         {projects.length > 0 && (
           <>
             <ConversationSectionToggle open={!collapse.projectsCollapsed} onToggle={collapse.toggleProjects}>
               {t("projects.title", "Projets")}
             </ConversationSectionToggle>
             <CollapsePanel open={!collapse.projectsCollapsed}>
-              {displayOrder.map((id) => {
+              {drag.order.map((id) => {
                 const p = projectMap.get(id);
                 if (!p) return null;
                 return (
@@ -133,8 +122,6 @@ export function ConversationList({
                     selectedId={selectedId}
                     runningIds={activity.runningIds}
                     unreadIds={activity.unreadIds}
-                    isDragOver={false}
-                    isDragging={drag.draggingId === p.id}
                     onSelect={handleSelect}
                     onNewSession={onNewSessionInProject}
                     onRenameProject={onRenameProject}
@@ -142,7 +129,10 @@ export function ConversationList({
                     onOpenFolder={onOpenFolder}
                     onRenameSession={onRename}
                     onDeleteSession={onDelete}
-                    onGrab={drag.onGrab}
+                    onReorderSessions={onReorderSessions}
+                    dragProps={drag.itemProps(p.id)}
+                    dragHandleProps={drag.handleProps(p.id)}
+                    didDrag={drag.didDrag}
                     collapsed={collapse.collapsedProjects.has(p.id)}
                     onToggleCollapse={() => collapse.toggleProject(p.id)}
                     nowMs={nowMs}
@@ -161,7 +151,9 @@ export function ConversationList({
               </ConversationSectionToggle>
             )}
             <CollapsePanel open={!collapse.discussionsCollapsed}>
-              {orphanSessions.map((s) => {
+              {sessionDrag.order.map((id) => {
+                const s = orphanMap.get(id);
+                if (!s) return null;
                 const active = idMatch(selectedId, s.id);
                 const renaming = idMatch(renamingId, s.id);
                 return (
@@ -177,6 +169,10 @@ export function ConversationList({
                     onRenameSubmit={handleRenameSubmit}
                     onCancelRename={() => setRenamingId(null)}
                     onMenu={handleSessionMenu}
+                    onStartRename={startRename}
+                    dragProps={sessionDrag.itemProps(s.id)}
+                    dragHandleProps={sessionDrag.handleProps(s.id)}
+                    didDrag={sessionDrag.didDrag}
                     nowMs={nowMs}
                   />
                 );

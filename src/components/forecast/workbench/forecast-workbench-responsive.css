@@ -29,7 +29,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .os-mac .fcw-sidebar {
+  .os-mac .fcw-sidebar::after {
     animation-duration: 1s !important;
     animation-iteration-count: infinite !important;
   }

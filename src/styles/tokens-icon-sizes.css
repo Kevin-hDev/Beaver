@@ -1,0 +1,61 @@
+/* Taille des dessins posés à un endroit précis de l'application.
+
+   Ils vivent à part de tokens.css, qui porte l'échelle partagée — espacements,
+   rayons, corps de texte, et les paliers --icon-* dont ces valeurs dérivent.
+   Ici, chaque ligne répond à une question d'un seul écran : ce tracé-là, à côté
+   de ce texte-là, paraît-il de la bonne taille ? La réponse tient rarement sans
+   sa raison, d'où un commentaire par valeur.
+
+   La règle commune : on exprime l'écart en proportion d'un palier de l'échelle,
+   jamais en pixels figés, pour que le réglage la suive s'il bouge. La seule
+   exception est le bouton d'envoi, mesuré sur son bouton et non sur le texte —
+   sa raison est écrite avec lui. */
+:root {
+  /* Dessins qui accompagnent une session ou un projet dans la barre latérale :
+     état d'un dossier, renommer, archiver. Un cinquième sous l'icône courante
+     de ces lignes, pour la même raison que ceux de la colonne de Réglages. */
+  --session-icon-size: calc(var(--icon-sm) * 0.8);
+  /* Le dossier d'un projet, posé plus grand que ses voisins de la même ligne :
+     son tracé n'occupe que 60 % de la hauteur de son cadre — un dossier est
+     plat — contre 70 à 75 % pour les autres, et à cadre égal il se lit plus
+     petit qu'eux. Exprimé par rapport à eux, pour que l'écart tienne. */
+  --project-folder-icon-size: calc(var(--session-icon-size) * 1.2);
+  /* Dessin devant un fichier de /beaver, posé au-dessus de l'icône standard :
+     la ligne porte un nom et sa description sur deux lignes serrées, et le
+     dessin seul en face paraissait maigre. Mesuré à la largeur minimale de la
+     colonne : un cinquième de plus tient jusqu'au réglage de police 20 sans
+     rogner le plus long des cinq noms. */
+  --personality-file-icon-size: calc(var(--icon-md) * 1.2);
+  /* Bouton « Ouvrir » de /beaver, la moitié au-dessus des icônes de bouton :
+     il est seul dans son en-tête, sans libellé pour le désigner, face à un
+     titre au corps le plus grand de l'application. */
+  --personality-open-icon-size: calc(var(--icon-sm) * 1.5);
+  /* Envoyer, arrêter, confirmer l'arrêt : le dessin du bouton au bout du champ
+     de saisie. Il occupe presque tout son bouton — c'est le geste principal de
+     la conversation, seul de sa taille dans sa rangée et sans libellé.
+
+     Mesuré sur le bouton et non sur le texte, contrairement aux autres icônes :
+     la hauteur de bouton est fixe, donc un dessin qui suivrait le réglage de
+     police déborderait de son cadre dès qu'on agrandit le texte.
+
+     Le cadre du dessin dépasse d'un cheveu celui du bouton, et c'est voulu : le
+     tracé n'occupe que 83 % de son propre cadre, l'encre visible reste donc à
+     l'intérieur du bouton. Le facteur est le cran demandé au-dessus de la
+     taille d'origine, gardé lisible plutôt que réduit à un nombre. */
+  --chat-send-icon-size: calc((var(--btn-height) - 4px) * 1.2);
+  /* Croix de fermeture d'un panneau. Au-dessus de l'icône de sa rangée : deux
+     traits croisés ne couvrent que 42 % de leur cadre, contre 67 à 100 % pour
+     les autres actions posées à côté, et à cadre égal la croix rapetisse. */
+  --panel-close-icon-size: calc(var(--icon-md) * 1.2);
+  /* Dessin d'une entrée de navigation — rangée d'onglets du bas, colonne des
+     Réglages. Un cinquième sous l'icône standard : ces tracés sont plus denses
+     que le reste de l'application — lettrage, cadrans, traits fins — et à
+     taille normale ils pesaient plus lourd que le libellé qu'ils accompagnent.
+     Exprimé en proportion et non en valeur figée, pour que la réduction suive
+     l'échelle d'icônes si elle bouge. */
+  --nav-icon-size: calc(var(--icon-md) * 0.8);
+  /* Le battement de cœur, posé plus grand que ses trois voisins de la rangée :
+     son tracé n'occupe que 60 % de la hauteur de son cadre, contre 75 à 92 %
+     pour eux, et à cadre égal il se lisait comme le petit de la rangée. */
+  --nav-heartbeat-icon-size: calc(var(--nav-icon-size) * 1.2);
+}

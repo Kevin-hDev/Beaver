@@ -62,6 +62,10 @@
     calc(var(--space-sm) - 8px);
   border-radius: var(--nav-item-radius);
   cursor: pointer;
+  /* Le nom ne se surligne pas : la ligne s'attrape pour être déplacée et se
+     double-clique pour être renommée, deux gestes que la sélection de texte
+     accompagnerait d'un surlignage parasite. */
+  user-select: none;
   /* Seules les couleurs s'animent. « all » animait aussi la géométrie, si bien
      qu'un changement de hauteur ou de marge se jouait comme un mouvement sous
      le curseur. */

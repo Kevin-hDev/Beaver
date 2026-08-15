@@ -25,7 +25,6 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: transform 200ms ease;
 }
 
 .terminal-tab-item:hover {
@@ -35,10 +34,6 @@
 .terminal-tab-item.active-multi {
   color: var(--ink);
   background: var(--edge);
-}
-
-.terminal-tab-item.dragging {
-  opacity: 0.5;
 }
 
 /* Icône terminal devant le label — taille fixe, pas de décalage au hover */

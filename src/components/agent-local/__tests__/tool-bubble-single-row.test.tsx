@@ -66,7 +66,7 @@ describe("ToolBubble single row rendering", () => {
     if (!toggle) throw new Error("tool toggle absent");
 
     const children = Array.from(toggle.children);
-    expect(children[0]?.getAttribute("data-testid")).toBe("tool-icon-TerminalWindow");
+    expect(children[0]?.getAttribute("data-testid")).toBe("tool-icon-Terminal");
     expect(children[1]?.textContent).toBe("bash");
     expect(children[2]?.classList.contains("tb-tool-arrow")).toBe(true);
   });

@@ -1,9 +1,10 @@
 import {
   AboutIcon, AdvancedIcon, ArchivedChatsIcon, ChannelsIcon, ConnectorsIcon,
-  ExtensionsIcon, ForecastIcon, GeneralIcon, LlmIcon, MascotIcon, MemoryIcon,
+  ExtensionsIcon, GeneralIcon, LlmIcon, MascotIcon, MemoryIcon,
   OllamaIcon, ProvidersIcon, ShortcutsIcon, SystemPromptIcon, ToolsIcon,
 } from "./settings-tab-icons";
 import type { SettingsTabIconProps } from "./settings-tab-icons";
+import { ForecastIcon } from "@/components/ui/forecast-icon";
 import type { ComponentType } from "react";
 import type { SettingsSubTab } from "@/types/navigation";
 

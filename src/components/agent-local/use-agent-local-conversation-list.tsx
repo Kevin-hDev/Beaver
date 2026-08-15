@@ -10,6 +10,7 @@ export function useAgentLocalConversationList(
     sessions,
     projectsHook,
     rename,
+    reorderSessions,
     sessionActions,
     handleSelectById,
     handleDeleteProject,
@@ -35,11 +36,12 @@ export function useAgentLocalConversationList(
       onDeleteProject={handleDeleteProject}
       onOpenFolder={(path) => void projectsHook.openFolder(path)}
       onReorderProjects={(ids) => void projectsHook.reorder(ids)}
+      onReorderSessions={(projectId, ids) => void reorderSessions(projectId, ids)}
       directoryAccessPrompt={directoryAccessPrompt}
     />
   ), [
     activeSessionId, handleCreate, handleCreateInProject, handleDeleteProject,
-    handleDeleteSession, handleSelectById, projectsHook, rename, sessions,
+    handleDeleteSession, handleSelectById, projectsHook, rename, reorderSessions, sessions,
     directoryAccessPrompt,
   ]);
 }

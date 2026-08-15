@@ -5,7 +5,7 @@ import { SETTINGS_SECTIONS } from "../settings-sections";
 import { ArchivedChatsIcon } from "../settings-tab-icons";
 import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
 
-const TOKENS = readFileSync("src/styles/tokens.css", "utf8");
+const TOKENS = readFileSync("src/styles/tokens-icon-sizes.css", "utf8");
 const TABS = SETTINGS_SECTIONS.flatMap((section) => section.tabs);
 
 function drawing(node: React.ReactElement): SVGSVGElement {

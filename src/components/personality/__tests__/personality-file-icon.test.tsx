@@ -4,7 +4,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { PersonalityFileIcon } from "../personality-file-icon";
 
-const TOKENS = readFileSync("src/styles/tokens.css", "utf8");
+const TOKENS = readFileSync("src/styles/tokens-icon-sizes.css", "utf8");
 
 afterEach(() => {
   cleanup();

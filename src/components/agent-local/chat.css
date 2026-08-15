@@ -171,14 +171,12 @@
 
 .send-btn:disabled { cursor: default; opacity: 0.25; }
 
-.send-stop-icon { width: 24px; height: 24px; }
-
-.send-stop-confirm-text {
-  fill: currentColor;
-  font-family: var(--font-sans);
-  font-size: 122px;
-  font-weight: 700;
-  letter-spacing: 0;
+/* Sans flex-shrink, le dessin serait comprimé par son bouton dès qu'il en
+   dépasse : la rangée le rétrécirait au lieu de le laisser déborder. */
+.send-stop-icon {
+  flex-shrink: 0;
+  width: var(--chat-send-icon-size);
+  height: var(--chat-send-icon-size);
 }
 
 /* "+" menu trigger — composes .icon-btn; keeps its optical offset and

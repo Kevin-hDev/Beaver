@@ -6,6 +6,16 @@ pub async fn list_agent_sessions() -> Result<Vec<AgentSessionMeta>, String> {
     session_store::list().await
 }
 
+/// Range une liste de conversations dans l'ordre reçu. `project_id` absent
+/// désigne les conversations qui n'appartiennent à aucun projet.
+#[tauri::command]
+pub async fn reorder_agent_sessions(
+    project_id: Option<String>,
+    ids: Vec<String>,
+) -> Result<(), String> {
+    crate::services::agent_local::session_order::set(project_id.as_deref(), ids).await
+}
+
 #[tauri::command]
 pub async fn list_archived_agent_sessions() -> Result<Vec<AgentSessionMeta>, String> {
     session_store::list_archived().await

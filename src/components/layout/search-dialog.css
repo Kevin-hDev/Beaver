@@ -104,6 +104,10 @@
   color: var(--ink);
 }
 
+.search-result-icon {
+  flex-shrink: 0;
+}
+
 .search-result-name {
   flex: 1;
   min-width: 0;

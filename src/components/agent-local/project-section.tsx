@@ -1,14 +1,15 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { FolderOpen, DotsThreeVertical, X } from "@/components/ui/icons";
-import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
+import { DotsThreeVertical, Trash } from "@/components/ui/icons";
 import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
 import { FolderStateIcon } from "@/components/ui/folder-state-icon";
 import { CollapsePanel } from "./collapse-panel";
 import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { ConversationSessionItem } from "./conversation-session-item";
+import { useSessionMenuItems } from "./use-session-menu-items";
 import { useKeyboard } from "@/hooks/use-keyboard";
+import { useDragReorder, type DragHandleProps, type DragItemProps } from "@/hooks/use-drag-reorder";
 import type { AgentSessionMeta, Project } from "@/types/agent";
 import { idMatch } from "@/lib/utils";
 
@@ -18,7 +19,6 @@ interface ProjectSectionProps {
   selectedId: string | null;
   runningIds: Set<string>;
   unreadIds: Set<string>;
-  isDragOver: boolean;
   onSelect: (id: string) => void;
   onNewSession: (projectId: string) => void;
   onRenameProject: (id: string, name: string) => void;
@@ -26,19 +26,23 @@ interface ProjectSectionProps {
   onOpenFolder: (path: string) => void;
   onRenameSession: (id: string, name: string) => void;
   onDeleteSession: (id: string) => void;
-  onGrab: (id: string) => void;
-  isDragging: boolean;
+  onReorderSessions: (projectId: string | null, ids: string[]) => void;
+  /* Le glissement de réordonnancement, tenu par useDragReorder : la case
+     entière se décale, mais on ne l'attrape que par son en-tête. */
+  dragProps: DragItemProps;
+  dragHandleProps: DragHandleProps;
+  didDrag: () => boolean;
   collapsed: boolean;
   onToggleCollapse: () => void;
   nowMs: number;
 }
 
 export function ProjectSection({
-  project, sessions, selectedId, isDragOver,
+  project, sessions, selectedId,
   runningIds, unreadIds,
   onSelect, onNewSession, onRenameProject, onDeleteProject,
-  onOpenFolder, onRenameSession, onDeleteSession,
-  onGrab, isDragging, collapsed, onToggleCollapse,
+  onOpenFolder, onRenameSession, onDeleteSession, onReorderSessions,
+  dragProps, dragHandleProps, didDrag, collapsed, onToggleCollapse,
   nowMs,
 }: ProjectSectionProps) {
   const { t } = useTranslation();
@@ -48,15 +52,33 @@ export function ProjectSection({
   const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  /* Chaque projet range ses propres conversations, d'où un nom de liste tiré
+     du sien : sans lui, saisir une conversation mesurerait aussi celles des
+     projets voisins, toutes posées dans la même barre latérale. */
+  const sessionDrag = useDragReorder({
+    ids: sessions.map((session) => session.id),
+    axis: "y",
+    containerRef: wrapperRef,
+    group: `sessions:${project.id}`,
+    onReorder: (ids) => onReorderSessions(project.id, ids),
+  });
 
   useKeyboard({
-    onEscape: () => { setCtx(null); setRenaming(false); setSessionCtx(null); setRenamingSessionId(null); },
+    onEscape: () => {
+      setCtx(null);
+      setRenaming(false);
+      setSessionCtx(null);
+      setRenamingSessionId(null);
+      sessionDrag.cancel();
+    },
   });
 
   const projectMenuItems: ContextMenuItem[] = [
-    { label: t("projects.openFolder", "Ouvrir le dossier"), icon: <FolderOpen size="var(--icon-sm)" />, onClick: () => onOpenFolder(project.path) },
+    { label: t("projects.openFolder", "Ouvrir le dossier"), icon: <FolderStateIcon open size="var(--icon-sm)" />, onClick: () => onOpenFolder(project.path) },
     { label: t("projects.rename", "Renommer"), icon: <RenameIcon />, onClick: () => { setRenaming(true); setTimeout(() => inputRef.current?.focus(), 0); } },
-    { label: t("projects.delete", "Supprimer"), icon: <X size="var(--icon-sm)" />, onClick: () => onDeleteProject(project.id) },
+    { label: t("projects.delete", "Supprimer"), icon: <Trash size="var(--icon-sm)" />, onClick: () => onDeleteProject(project.id) },
   ];
 
   const handleSessionMenu = useCallback((e: React.MouseEvent, id: string) => {
@@ -65,15 +87,25 @@ export function ProjectSection({
     setSessionCtx({ x: rect.right, y: rect.bottom, id });
   }, []);
 
-  const sessionMenuItems: ContextMenuItem[] = sessionCtx ? [
-    { label: t("history.rename"), icon: <RenameIcon />, onClick: () => { setRenamingSessionId(sessionCtx.id); setTimeout(() => sessionInputRef.current?.focus(), 0); } },
-    { label: t("history.archive"), icon: <ArchiveBoxIcon />, onClick: () => onDeleteSession(sessionCtx.id) },
-  ] : [];
+  const startSessionRename = useCallback((id: string) => {
+    setRenamingSessionId(id);
+    setTimeout(() => sessionInputRef.current?.focus(), 0);
+  }, []);
+
+  /* Les conversations d'un projet et celles hors projet ouvrent le même menu.
+     Il était écrit deux fois, et les deux copies avaient déjà divergé. */
+  const sessionMenuItems = useSessionMenuItems({
+    sessionId: sessionCtx?.id ?? null,
+    onRename: startSessionRename,
+    onArchive: onDeleteSession,
+  });
 
   const handleRename = useCallback((value: string) => {
     if (value.trim()) onRenameProject(project.id, value.trim());
     setRenaming(false);
   }, [project.id, onRenameProject]);
+
+  const sessionById = new Map(sessions.map((session) => [session.id, session]));
 
   const handleSessionRename = useCallback((id: string, value: string) => {
     if (value.trim()) onRenameSession(id, value.trim());
@@ -81,22 +113,16 @@ export function ProjectSection({
   }, [onRenameSession]);
 
   return (
-    <div
-      className={`conv-project-wrapper ${isDragOver ? "conv-project-drag-over" : ""} ${isDragging ? "conv-project-dragging" : ""}`}
-      data-project-id={project.id}
-    >
+    <div ref={wrapperRef} className="conv-project-wrapper" {...dragProps}>
       <div
         className="conv-project-header"
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
         role="button"
         tabIndex={0}
-        onClick={onToggleCollapse}
+        /* Un glissement se termine par un clic que le navigateur envoie quand
+           même : sans ce filtre, déplacer un projet le replierait au passage. */
+        onClick={() => { if (!didDrag()) onToggleCollapse(); }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggleCollapse(); }}
-        onPointerDown={(e) => {
-          if (e.button !== 0) return;
-          e.preventDefault();
-          onGrab(project.id);
-        }}
+        {...dragHandleProps}
       >
         {renaming ? (
           <input
@@ -128,7 +154,9 @@ export function ProjectSection({
       </div>
 
       <CollapsePanel open={!collapsed}>
-        {sessions.map((s) => {
+        {sessionDrag.order.map((id) => {
+          const s = sessionById.get(id);
+          if (!s) return null;
           const active = idMatch(selectedId, s.id);
           const isRenaming = idMatch(renamingSessionId, s.id);
           return (
@@ -144,6 +172,10 @@ export function ProjectSection({
               onRenameSubmit={handleSessionRename}
               onCancelRename={() => setRenamingSessionId(null)}
               onMenu={handleSessionMenu}
+              onStartRename={startSessionRename}
+              dragProps={sessionDrag.itemProps(s.id)}
+              dragHandleProps={sessionDrag.handleProps(s.id)}
+              didDrag={sessionDrag.didDrag}
               nowMs={nowMs}
             />
           );
