@@ -4,11 +4,14 @@
   min-height: 44px;
 }
 
-/* Host div that CodeMirror mounts into. */
+/* Host div that CodeMirror mounts into.
+   Les marges hautes et basses sont posées sur `.cm-content`, à l'intérieur de
+   la zone qui défile : posées ici, elles retrancheraient leur hauteur au
+   plafond ci-dessous, et la dernière ligne écrite finirait sous le bord. */
 .chat-cm-host {
   width: 100%;
   min-height: 44px;
-  padding: var(--space-sm) var(--space-md);
+  padding: 0 var(--space-md);
   font-size: var(--text-sm);
   font-family: var(--font-sans);
   line-height: 1.5;
@@ -27,7 +30,10 @@
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   line-height: 1.5;
-  max-height: 200px;
+  /* Seule autorité sur la hauteur du champ : l'éditeur grandit avec son texte
+     et s'arrête ici, le défilement prend le relais. Rien en JavaScript ne
+     mesure ni ne fixe cette hauteur. */
+  max-height: var(--chat-input-max-height);
 }
 
 .chat-cm-host .cm-editor.cm-focused {
@@ -42,7 +48,7 @@
 }
 
 .chat-cm-host .cm-content {
-  padding: 0;
+  padding: var(--space-sm) 0;
   caret-color: var(--ink);
   word-wrap: break-word;
   white-space: pre-wrap;
