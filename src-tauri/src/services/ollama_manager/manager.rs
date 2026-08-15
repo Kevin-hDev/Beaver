@@ -98,7 +98,6 @@ impl OllamaManager {
             generation,
         })
     }
-
     #[cfg(test)]
     pub(crate) async fn begin_operation_paused_for_test(
         &self,
@@ -194,12 +193,16 @@ impl<'a> OllamaOperationGuard<'a> {
         self.generation
     }
 
-    #[cfg(test)]
-    pub(crate) fn fail_for_test(self, error: OllamaErrorCode) {
+    pub(super) fn fail(self, error: OllamaErrorCode) {
         let mut state = self.manager.lock_state();
         if state.generation == self.generation {
+            state.status.bundle = super::types::BundleState::RecoveryRequired;
             state.status.last_error = Some(error);
         }
+    }
+    #[cfg(test)]
+    pub(crate) fn fail_for_test(self, error: OllamaErrorCode) {
+        self.fail(error);
     }
 }
 

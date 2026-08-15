@@ -1,5 +1,7 @@
 mod blocking;
 mod canonical_executable;
+mod cleanup;
+mod cleanup_inspection;
 mod constants;
 mod durable_fs;
 mod error;
@@ -24,8 +26,11 @@ mod process_owned;
 mod process_receipt;
 #[allow(dead_code)]
 mod process_receipt_recovery;
+mod recovery;
 mod recovery_decision;
 mod recovery_decision_rules;
+mod recovery_entry;
+mod rollback;
 mod spawn_environment;
 #[cfg(unix)]
 #[allow(dead_code)]
@@ -39,6 +44,8 @@ mod types;
 
 #[cfg(test)]
 mod blocking_tests;
+#[cfg(test)]
+mod cleanup_tests;
 #[cfg(test)]
 mod document_tests;
 #[cfg(test)]
@@ -61,6 +68,10 @@ mod process_receipt_tests;
 mod process_tests;
 #[cfg(test)]
 mod recovery_decision_tests;
+#[cfg(test)]
+mod recovery_tests;
+#[cfg(test)]
+mod rollback_tests;
 #[cfg(test)]
 mod spawn_profile_attempt_tests;
 #[cfg(test)]
@@ -101,6 +112,8 @@ pub(crate) use path_identity_resolver::NativePathIdentityResolver;
 pub use port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
 #[allow(unused_imports)]
 pub use probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
+#[allow(unused_imports)]
+pub use recovery::{RecoveryOutcome, RecoveryReason};
 #[allow(unused_imports)]
 pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
 #[allow(unused_imports)]
