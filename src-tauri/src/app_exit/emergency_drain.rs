@@ -5,6 +5,7 @@ use super::emergency::{
 use std::sync::atomic::Ordering;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[allow(dead_code)]
 pub(crate) enum EmergencyObservation {
     Terminating,
     Exited,

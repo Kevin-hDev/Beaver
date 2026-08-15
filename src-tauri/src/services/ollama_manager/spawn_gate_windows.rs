@@ -25,6 +25,23 @@ pub(crate) struct NativeGatedProcess {
 pub(crate) fn create(
     attempt: &OllamaSpawnAttempt<'_>,
 ) -> Result<NativeGatedProcess, OllamaProcessError> {
+    create_with_hooks(attempt, || {}, || {})
+}
+
+#[cfg(test)]
+pub(crate) fn create_with_hooks_for_test(
+    attempt: &OllamaSpawnAttempt<'_>,
+    before_create: impl FnOnce(),
+    after_create: impl FnOnce(),
+) -> Result<NativeGatedProcess, OllamaProcessError> {
+    create_with_hooks(attempt, before_create, after_create)
+}
+
+fn create_with_hooks(
+    attempt: &OllamaSpawnAttempt<'_>,
+    before_create: impl FnOnce(),
+    after_create: impl FnOnce(),
+) -> Result<NativeGatedProcess, OllamaProcessError> {
     let executable = wide_path(attempt.profile().executable().path())?;
     let cwd = wide_path(attempt.profile().working_directory().path())?;
     let mut command_line = quote_path(attempt.profile().executable().path());
@@ -37,6 +54,7 @@ pub(crate) fn create(
     };
     let mut info = unsafe { std::mem::zeroed::<PROCESS_INFORMATION>() };
     let flags = CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
+    before_create();
     let created = unsafe {
         CreateProcessW(
             executable.as_ptr(),
@@ -54,18 +72,26 @@ pub(crate) fn create(
     if created == 0 {
         return Err(OllamaProcessError::Spawn);
     }
+    after_create();
     if OwnedProcess::admit_suspended_handle(info.hProcess).is_err() {
         support::terminate_created_process(info.hProcess, info.hThread);
         return Err(OllamaProcessError::Admission);
     }
-    let identity = match OwnedProcess::identity(info.dwProcessId) {
+    let identity = match OwnedProcess::identity_from_handle(info.hProcess) {
         Ok(identity) => identity,
         Err(_) => {
             support::terminate_created_process(info.hProcess, info.hThread);
             return Err(OllamaProcessError::Identity);
         }
     };
-    let expected_executable = attempt.profile().executable().identity().value();
+    let expected_executable = match attempt.profile().executable().execution_identity() {
+        Some(identity) if identity != 0 => identity,
+        _ => {
+            support::terminate_created_process(info.hProcess, info.hThread);
+            crate::services::owned_process::release(info.dwProcessId);
+            return Err(OllamaProcessError::Identity);
+        }
+    };
     if expected_executable == 0 || identity.executable != expected_executable {
         support::terminate_created_process(info.hProcess, info.hThread);
         crate::services::owned_process::release(info.dwProcessId);
@@ -101,7 +127,11 @@ impl NativeGatedProcess {
         if executable == 0 || self.identity.executable != executable {
             return Err(OllamaProcessError::Identity);
         }
-        OwnedProcess::identity_matches(self.identity).map_err(|_| OllamaProcessError::Identity)
+        let current = OwnedProcess::identity_from_handle(self.process)
+            .map_err(|_| OllamaProcessError::Identity)?;
+        (current == self.identity)
+            .then_some(())
+            .ok_or(OllamaProcessError::Identity)
     }
 
     pub(crate) fn wait_for_executable(

@@ -246,6 +246,83 @@ fn identity_change_after_receipt_write_fails_before_emergency_admission() {
 
 #[cfg(unix)]
 #[test]
+fn revalidation_reap_failure_leaves_durable_recovery_handoff() {
+    let root = tempfile::tempdir().expect("root");
+    let (_models, _guard, profile) = attempt(root.path());
+    let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_445).expect("port"));
+    let spawn_attempt = OllamaSpawnAttempt::new(&profile, endpoint);
+    let bundle = BundleFingerprint {
+        version: OllamaVersion::parse("7.8.9").expect("version"),
+        executable_sha256: Sha256Digest::from_hex(&"77".repeat(32)).expect("digest"),
+    };
+    let launcher = DefaultOllamaProcessLauncher::new(bundle);
+    let mut gated = launcher.create_gated(&spawn_attempt).expect("gated");
+    let pid = gated.identity().expect("identity").pid;
+    gated.force_reap_failure_for_test();
+    let paths = ollama_paths(&std::fs::canonicalize(root.path()).expect("canonical root"));
+    let store = super::process_receipt::ProcessReceiptStore::new(
+        std::sync::Arc::new(super::durable_fs::platform_fs()),
+        paths.process_receipt.clone(),
+        paths.process_receipt.with_extension("tmp"),
+    );
+    let coordinator = AppExitCoordinator::initialize().expect("coordinator");
+    let result = gated.publish_with_cutpoint(&store, &coordinator.emergency_publisher(), || {
+        unsafe { libc::kill(pid as libc::pid_t, libc::SIGKILL) };
+    });
+    assert!(matches!(result, Err(OllamaProcessError::Identity)));
+    assert!(store.read().expect("durable handoff").is_some());
+    unsafe { libc::waitpid(pid as libc::pid_t, std::ptr::null_mut(), 0) };
+    crate::services::owned_process::release(pid);
+    store.remove().expect("cleanup");
+}
+
+#[cfg(unix)]
+#[test]
+fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
+    let root = tempfile::tempdir().expect("root");
+    let (_models, _guard, profile) = attempt(root.path());
+    let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_446).expect("port"));
+    let spawn_attempt = OllamaSpawnAttempt::new(&profile, endpoint);
+    let bundle = BundleFingerprint {
+        version: OllamaVersion::parse("8.9.0").expect("version"),
+        executable_sha256: Sha256Digest::from_hex(&"88".repeat(32)).expect("digest"),
+    };
+    let launcher = DefaultOllamaProcessLauncher::new(bundle);
+    let mut gated = launcher.create_gated(&spawn_attempt).expect("gated");
+    gated.open_gate_for_test();
+    gated.force_reap_failure_for_test();
+    let coordinator = AppExitCoordinator::initialize().expect("coordinator");
+    let publisher = coordinator.emergency_publisher();
+    let registrations = (0..crate::app_exit::EMERGENCY_CAPACITY)
+        .map(|index| publisher.publish(index as u32 + 2, index as u64 + 1, index as u64 + 2, 1))
+        .collect::<Result<Vec<_>, _>>()
+        .expect("capacity");
+    let paths = ollama_paths(&std::fs::canonicalize(root.path()).expect("canonical root"));
+    let store = super::process_receipt::ProcessReceiptStore::new(
+        std::sync::Arc::new(super::durable_fs::platform_fs()),
+        paths.process_receipt.clone(),
+        paths.process_receipt.with_extension("tmp"),
+    );
+    assert!(matches!(
+        gated.publish(&store, &publisher),
+        Err(OllamaProcessError::EmergencyCapacity)
+    ));
+    assert!(store.read().expect("durable handoff").is_some());
+    let expected = profile
+        .executable()
+        .execution_identity()
+        .expect("executable");
+    assert_eq!(
+        launcher
+            .recover_receipt(&store, expected, Instant::now() + Duration::from_secs(2))
+            .expect("recovery"),
+        super::process_receipt::ProcessReceiptRecovery::Reaped
+    );
+    drop(registrations);
+}
+
+#[cfg(unix)]
+#[test]
 fn publish_write_failure_keeps_an_existing_receipt_and_reaps_child() {
     let root = tempfile::tempdir().expect("root");
     let (_models, _guard, profile) = attempt(root.path());

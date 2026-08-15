@@ -57,6 +57,8 @@ mod windows_path_identity_tests;
 #[cfg(all(test, windows))]
 mod windows_spawn_gate_tests;
 
+#[cfg(windows)]
+pub(crate) use canonical_executable::windows_image_identity_from_path;
 #[allow(unused_imports)]
 pub(crate) use canonical_executable::{CanonicalExecutable, NativeFileIdentity};
 #[allow(unused_imports)]

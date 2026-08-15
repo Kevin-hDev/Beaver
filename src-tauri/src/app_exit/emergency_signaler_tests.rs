@@ -7,6 +7,7 @@ use super::emergency_signaler::{AppEmergencyPublisher, NativeEmergencySignaler};
 use crate::services::owned_process::OwnedProcess;
 use crate::services::process_tree::ProcessKind;
 use std::process::{Command, Stdio};
+#[cfg(target_os = "linux")]
 use std::time::Duration;
 
 #[test]
@@ -49,6 +50,31 @@ fn native_signaler_rejects_zero_executable_identity() {
     );
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn native_signaler_uses_the_owned_process_group() {
+    let mut command = Command::new("/bin/sleep");
+    command
+        .arg("30")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    let mut child = OwnedProcess::spawn(&mut command, ProcessKind::Ollama).expect("child");
+    let identity = OwnedProcess::identity(child.id()).expect("identity");
+    let emergency = VerifiedProcessIdentity::new_with_executable(
+        identity.pid,
+        identity.native_scope,
+        identity.native_start_time,
+        identity.executable,
+    )
+    .expect("identity");
+    assert_eq!(
+        NativeEmergencySignaler.signal_or_recheck(emergency, false),
+        EmergencyObservation::Terminating
+    );
+    child.wait().expect("reap");
+}
+
 #[test]
 fn watchdog_handoff_keeps_slot_until_generation_is_cleared() {
     let publisher = AppEmergencyPublisher::new(EmergencyInventory::new());
@@ -85,7 +111,7 @@ fn native_signaler_refuses_an_identity_mismatch() {
     crate::services::process_tree::terminate(&mut child, ProcessKind::Ollama);
 }
 
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 #[test]
 fn publisher_and_native_signaler_terminate_exact_child() {
     let mut command = Command::new("/bin/sleep");

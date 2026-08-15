@@ -102,6 +102,21 @@ impl CanonicalExecutable {
         self.identity.value
     }
 
+    pub(crate) fn execution_identity(&self) -> Option<u128> {
+        #[cfg(windows)]
+        {
+            return self.stable_image_identity();
+        }
+        #[cfg(not(windows))]
+        Some(self.value())
+    }
+
+    #[cfg(windows)]
+    fn stable_image_identity(&self) -> Option<u128> {
+        let handle = self.handle.as_ref()?.0.as_ref();
+        windows_file_image_identity(handle)
+    }
+
     #[cfg(unix)]
     pub(crate) fn stable_handle(&self) -> Option<&std::fs::File> {
         self.handle.as_ref().map(|handle| handle.0.as_ref())
@@ -129,4 +144,36 @@ impl CanonicalExecutable {
             false
         }
     }
+}
+
+#[cfg(windows)]
+pub(crate) fn windows_file_image_identity(file: &std::fs::File) -> Option<u128> {
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::Storage::FileSystem::{
+        GetFinalPathNameByHandleW, FILE_NAME_NORMALIZED,
+    };
+    let mut path = vec![0_u16; 32_768];
+    let length = unsafe {
+        GetFinalPathNameByHandleW(
+            file.as_raw_handle() as _,
+            path.as_mut_ptr(),
+            path.len() as u32,
+            FILE_NAME_NORMALIZED,
+        )
+    };
+    if length == 0 || length as usize >= path.len() {
+        return None;
+    }
+    windows_image_identity_from_path(&path[..length as usize])
+}
+
+#[cfg(windows)]
+pub(crate) fn windows_image_identity_from_path(path: &[u16]) -> Option<u128> {
+    use sha2::{Digest, Sha256};
+    let mut value = String::from_utf16(path).ok()?.to_ascii_lowercase();
+    if let Some(stripped) = value.strip_prefix(r"\\?\") {
+        value = stripped.to_owned();
+    }
+    let digest = Sha256::digest(value.replace('/', r"\").as_bytes());
+    Some(u128::from_be_bytes(digest[..16].try_into().ok()?))
 }

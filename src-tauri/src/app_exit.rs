@@ -8,6 +8,7 @@ const BEAVER_RESTART_REQUEST_CODE: i32 = i32::MAX - 1;
 
 mod blocking;
 mod cleanup;
+mod coordinator_emergency;
 mod emergency;
 mod emergency_drain;
 #[allow(dead_code)]
@@ -19,6 +20,7 @@ mod presentation;
 mod raw_exit;
 mod registry;
 mod registry_admission;
+mod request_api;
 mod request_flow;
 mod state;
 #[cfg(test)]
@@ -29,8 +31,13 @@ mod work_supervisor;
 
 #[cfg(test)]
 pub(crate) use emergency::EMERGENCY_CAPACITY;
+#[allow(unused_imports)]
 pub(crate) use emergency_registration::EmergencyHandoffReason;
+#[allow(unused_imports)]
 pub(crate) use emergency_signaler::{AppEmergencyPublisher, AppEmergencyRegistration};
+#[cfg(test)]
+pub(crate) use request_api::request_restart_with;
+pub use request_api::{request, request_restart};
 pub use work_supervisor::AppWorkSupervisor;
 pub type AppWorkAdmission = registry::TrackedAdmission;
 pub type AppWorkAdmissionError = registry::AdmissionError;
@@ -99,11 +106,6 @@ impl AppExitCoordinator {
 
     pub(crate) fn work_supervisor(&self) -> AppWorkSupervisor {
         AppWorkSupervisor::new(self.registry.clone())
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn emergency_publisher(&self) -> AppEmergencyPublisher {
-        AppEmergencyPublisher::new(self.emergency.clone())
     }
 
     #[cfg(test)]
@@ -203,18 +205,6 @@ impl AppExitCoordinator {
             watchdog::drain_post_loop(&self.emergency, timeline);
         }
     }
-}
-
-pub fn request(app: &tauri::AppHandle, code: i32) {
-    app.exit(code);
-}
-
-pub fn request_restart(app: &tauri::AppHandle) {
-    request_restart_with(|code| app.exit(code));
-}
-
-fn request_restart_with(exit: impl FnOnce(i32)) {
-    exit(BEAVER_RESTART_REQUEST_CODE);
 }
 
 pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::ExitRequestApi) {

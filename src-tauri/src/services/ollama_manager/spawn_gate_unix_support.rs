@@ -7,6 +7,9 @@ use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
+const GATE_LINK_PREFIX: &str = ".beaver-gated-";
+const MAX_STALE_GATE_LINKS: usize = 32;
+
 pub(super) struct StableExecutableLink {
     directory: tempfile::TempDir,
     path: PathBuf,
@@ -23,7 +26,11 @@ pub(super) fn stable_executable_link(
     expected_identity: u128,
 ) -> Result<StableExecutableLink, OllamaProcessError> {
     let parent = executable.parent().ok_or(OllamaProcessError::Identity)?;
-    let directory = tempfile::tempdir_in(parent).map_err(|_| OllamaProcessError::Identity)?;
+    cleanup_stale_gate_links(parent)?;
+    let directory = tempfile::Builder::new()
+        .prefix(GATE_LINK_PREFIX)
+        .tempdir_in(parent)
+        .map_err(|_| OllamaProcessError::Identity)?;
     let linked = directory.path().join("executable");
     std::fs::hard_link(executable, &linked).map_err(|_| OllamaProcessError::Identity)?;
     let metadata = std::fs::metadata(&linked).map_err(|_| OllamaProcessError::Identity)?;
@@ -34,6 +41,34 @@ pub(super) fn stable_executable_link(
             path: linked,
         })
         .ok_or(OllamaProcessError::Identity)
+}
+
+fn cleanup_stale_gate_links(parent: &Path) -> Result<(), OllamaProcessError> {
+    let mut stale = Vec::new();
+    for entry in std::fs::read_dir(parent).map_err(|_| OllamaProcessError::Identity)? {
+        let entry = entry.map_err(|_| OllamaProcessError::Identity)?;
+        if !entry
+            .file_name()
+            .to_string_lossy()
+            .starts_with(GATE_LINK_PREFIX)
+        {
+            continue;
+        }
+        if stale.len() == MAX_STALE_GATE_LINKS {
+            return Err(OllamaProcessError::Identity);
+        }
+        stale.push(entry.path());
+    }
+    for path in stale {
+        let metadata =
+            std::fs::symlink_metadata(&path).map_err(|_| OllamaProcessError::Identity)?;
+        if metadata.file_type().is_dir() && !metadata.file_type().is_symlink() {
+            std::fs::remove_dir_all(path).map_err(|_| OllamaProcessError::Identity)?;
+        } else {
+            std::fs::remove_file(path).map_err(|_| OllamaProcessError::Identity)?;
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn child_exec(
@@ -95,8 +130,20 @@ pub(super) fn c_string(path: impl AsRef<Path>) -> Result<CString, OllamaProcessE
 
 pub(super) fn pipe() -> std::io::Result<(RawFd, RawFd)> {
     let mut fds = [-1; 2];
-    if unsafe { libc::pipe(fds.as_mut_ptr()) } != 0 {
+    #[cfg(target_os = "linux")]
+    let result = unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_CLOEXEC) };
+    #[cfg(not(target_os = "linux"))]
+    let result = unsafe { libc::pipe(fds.as_mut_ptr()) };
+    if result != 0 {
         return Err(std::io::Error::last_os_error());
+    }
+    for fd in fds {
+        let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
+        if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFD, flags | libc::FD_CLOEXEC) } < 0 {
+            close(fds[0]);
+            close(fds[1]);
+            return Err(std::io::Error::last_os_error());
+        }
     }
     Ok((fds[0], fds[1]))
 }

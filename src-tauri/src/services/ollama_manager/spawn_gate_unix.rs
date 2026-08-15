@@ -2,6 +2,9 @@ use super::process::OllamaProcessError;
 use super::spawn_profile::OllamaSpawnAttempt;
 #[path = "spawn_gate_unix_support.rs"]
 mod support;
+#[cfg(test)]
+#[path = "spawn_gate_unix_support_tests.rs"]
+mod support_tests;
 use crate::services::owned_process::{OwnedProcess, OwnedProcessError, OwnedProcessIdentity};
 use std::fs::File;
 use std::io::Write;

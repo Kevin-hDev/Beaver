@@ -94,8 +94,9 @@ pub(crate) enum ProcessReceiptError {
     Storage,
 }
 
+pub(crate) use super::process_receipt_recovery::ProcessReceiptRecovery;
 #[cfg(test)]
-pub(crate) use super::process_receipt_recovery::{ProcessReceiptRecovery, RecoveryProbe};
+pub(crate) use super::process_receipt_recovery::RecoveryProbe;
 
 #[derive(Clone)]
 pub(crate) struct ProcessReceiptStore {

@@ -55,8 +55,109 @@ pub(super) fn identity_with_executable(
     })
 }
 
-pub(super) fn identity_matches(expected: OwnedProcessIdentity) -> Result<(), OwnedProcessError> {
-    (identity(expected.pid)? == expected)
+pub(super) fn recover_exact(
+    expected: OwnedProcessIdentity,
+    deadline: std::time::Instant,
+) -> Result<(), OwnedProcessError> {
+    let current = identity(expected.pid)?;
+    if current != expected {
+        return Err(OwnedProcessError::Admission);
+    }
+    unsafe {
+        libc::kill(-(expected.native_scope as libc::pid_t), libc::SIGTERM);
+        libc::kill(expected.pid as libc::pid_t, libc::SIGTERM);
+    }
+    while std::time::Instant::now() < deadline {
+        match wait_for_recovery(expected.pid)? {
+            Some(()) => {
+                release(expected.pid);
+                return Ok(());
+            }
+            None => std::thread::yield_now(),
+        }
+    }
+    unsafe {
+        libc::kill(-(expected.native_scope as libc::pid_t), libc::SIGKILL);
+        libc::kill(expected.pid as libc::pid_t, libc::SIGKILL);
+    }
+    wait_for_recovery_blocking(expected.pid)?;
+    release(expected.pid);
+    Ok(())
+}
+
+pub(super) fn signal_exact(
+    expected: OwnedProcessIdentity,
+    force: bool,
+) -> Result<(), OwnedProcessError> {
+    #[cfg(target_os = "linux")]
+    {
+        let fd = pidfd_open(expected.pid)?;
+        let result = (identity(expected.pid)? == expected)
+            .then_some(())
+            .ok_or(OwnedProcessError::Admission)
+            .and_then(|()| pidfd_signal(fd, if force { libc::SIGKILL } else { libc::SIGTERM }));
+        unsafe { libc::close(fd) };
+        return result;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let current = identity(expected.pid)?;
+        if current != expected || current.native_scope != expected.pid as u64 {
+            return Err(OwnedProcessError::Admission);
+        }
+        let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
+        let result = unsafe { libc::kill(-(expected.native_scope as libc::pid_t), signal) };
+        (result == 0)
+            .then_some(())
+            .ok_or(OwnedProcessError::Admission)
+    }
+}
+
+pub(super) fn process_exists(pid: u32) -> bool {
+    if pid < 2 || pid > i32::MAX as u32 {
+        return false;
+    }
+    let result = unsafe { libc::kill(pid as libc::pid_t, 0) };
+    result == 0 || std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)
+}
+
+#[cfg(target_os = "linux")]
+fn pidfd_open(pid: u32) -> Result<libc::c_int, OwnedProcessError> {
+    let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) } as libc::c_int;
+    (fd >= 0).then_some(fd).ok_or(OwnedProcessError::Admission)
+}
+
+#[cfg(target_os = "linux")]
+fn pidfd_signal(fd: libc::c_int, signal: libc::c_int) -> Result<(), OwnedProcessError> {
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_pidfd_send_signal,
+            fd,
+            signal,
+            std::ptr::null::<libc::siginfo_t>(),
+            0,
+        )
+    };
+    (result == 0)
+        .then_some(())
+        .ok_or(OwnedProcessError::Admission)
+}
+
+fn wait_for_recovery(pid: u32) -> Result<Option<()>, OwnedProcessError> {
+    let mut status = 0;
+    let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
+    if result == pid as libc::pid_t {
+        Ok(Some(()))
+    } else if result == 0 {
+        Ok(None)
+    } else {
+        Err(OwnedProcessError::Admission)
+    }
+}
+
+fn wait_for_recovery_blocking(pid: u32) -> Result<(), OwnedProcessError> {
+    let mut status = 0;
+    (unsafe { libc::waitpid(pid as libc::pid_t, &mut status, 0) } == pid as libc::pid_t)
         .then_some(())
         .ok_or(OwnedProcessError::Admission)
 }

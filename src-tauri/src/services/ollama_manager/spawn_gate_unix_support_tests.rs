@@ -1,0 +1,75 @@
+use super::support::{close, pipe, stable_executable_link};
+use std::os::unix::fs::MetadataExt;
+
+#[test]
+fn gate_pipe_ends_are_close_on_exec_before_concurrent_spawns() {
+    std::thread::scope(|scope| {
+        let workers = (0..16)
+            .map(|_| {
+                scope.spawn(|| {
+                    let (read_fd, write_fd) = pipe().expect("pipe");
+                    let read_flags = unsafe { libc::fcntl(read_fd, libc::F_GETFD) };
+                    let write_flags = unsafe { libc::fcntl(write_fd, libc::F_GETFD) };
+                    close(read_fd);
+                    close(write_fd);
+                    (read_flags, write_flags)
+                })
+            })
+            .collect::<Vec<_>>();
+        for worker in workers {
+            let (read_flags, write_flags) = worker.join().expect("worker");
+            assert_ne!(read_flags & libc::FD_CLOEXEC, 0);
+            assert_ne!(write_flags & libc::FD_CLOEXEC, 0);
+        }
+    });
+}
+
+#[test]
+fn stale_gate_links_are_cleaned_before_next_creation() {
+    let root = tempfile::tempdir().expect("root");
+    let executable = root.path().join("ollama");
+    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    let stale = root.path().join(".beaver-gated-stale");
+    std::fs::create_dir(&stale).expect("stale directory");
+    let metadata = std::fs::metadata(&executable).expect("metadata");
+    let identity = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
+    let link = stable_executable_link(&executable, identity).expect("link");
+    assert!(!stale.exists());
+    drop(link);
+    assert!(!root.path().join(".beaver-gated-stale").exists());
+}
+
+#[test]
+fn stale_gate_cleanup_is_bounded_and_fails_closed() {
+    let root = tempfile::tempdir().expect("root");
+    let executable = root.path().join("ollama");
+    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    for index in 0..33 {
+        std::fs::create_dir(root.path().join(format!(".beaver-gated-{index}")))
+            .expect("stale directory");
+    }
+    let metadata = std::fs::metadata(&executable).expect("metadata");
+    let identity = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
+    assert!(stable_executable_link(&executable, identity).is_err());
+}
+
+#[test]
+fn crashed_parent_gate_directory_is_recovered_on_next_creation() {
+    let root = tempfile::tempdir().expect("root");
+    let executable = root.path().join("ollama");
+    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    let stale = root.path().join(".beaver-gated-crashed");
+    let child = unsafe { libc::fork() };
+    assert!(child >= 0);
+    if child == 0 {
+        std::fs::create_dir(&stale).expect("stale directory");
+        unsafe { libc::_exit(0) };
+    }
+    let mut status = 0;
+    assert_eq!(unsafe { libc::waitpid(child, &mut status, 0) }, child);
+    let metadata = std::fs::metadata(&executable).expect("metadata");
+    let identity = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
+    let link = stable_executable_link(&executable, identity).expect("recovered link");
+    assert!(!stale.exists());
+    drop(link);
+}

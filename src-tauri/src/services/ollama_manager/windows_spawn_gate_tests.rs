@@ -44,7 +44,10 @@ fn suspended_child_enters_global_job_before_resume_and_reaps() {
     assert!(profile.executable().has_stable_handle());
     let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_435).expect("port"));
     let attempt = OllamaSpawnAttempt::new(&profile, endpoint);
-    let expected = profile.executable().identity().value();
+    let expected = profile
+        .executable()
+        .execution_identity()
+        .expect("image identity");
     let mut process = spawn_gate_windows::create(&attempt).expect("suspended process");
     assert_ne!(process.identity().executable, 0);
     assert_eq!(process.identity().executable, expected);
@@ -93,9 +96,52 @@ fn executable_identity_mismatch_is_rejected_before_resume() {
     let (_models, _guard, profile) = attempt(root.path());
     let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_438).expect("port"));
     let spawn_attempt = OllamaSpawnAttempt::new(&profile, endpoint);
-    let expected = profile.executable().identity().value();
+    let expected = profile
+        .executable()
+        .execution_identity()
+        .expect("image identity");
     let mut process = spawn_gate_windows::create(&spawn_attempt).expect("suspended process");
     assert!(process.revalidate(expected ^ 1).is_err());
+    process
+        .terminate_and_reap(Instant::now() + Duration::from_secs(2))
+        .expect("reap");
+}
+
+#[test]
+fn image_identity_is_read_from_the_suspended_process_handle_after_path_swap() {
+    let root = tempfile::tempdir().expect("root");
+    let (_models, _guard, profile) = attempt(root.path());
+    let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_439).expect("port"));
+    let spawn_attempt = OllamaSpawnAttempt::new(&profile, endpoint);
+    let executable = profile.executable().path().to_path_buf();
+    let backup = executable.with_extension("stable");
+    let mut replacement =
+        std::path::PathBuf::from(std::env::var_os("SystemRoot").expect("SystemRoot"));
+    replacement.push("System32");
+    replacement.push("WindowsPowerShell");
+    replacement.push("v1.0");
+    replacement.push("powershell.exe");
+    assert!(replacement.exists(), "replacement image");
+    let mut restored = false;
+    let mut process = spawn_gate_windows::create_with_hooks_for_test(
+        &spawn_attempt,
+        || {
+            std::fs::rename(&executable, &backup).expect("move active image");
+            std::fs::copy(replacement, &executable).expect("replace active image");
+        },
+        || {
+            std::fs::remove_file(&executable).expect("remove replacement");
+            std::fs::rename(&backup, &executable).expect("restore active image");
+            restored = true;
+        },
+    )
+    .expect("suspended process");
+    assert!(restored);
+    let expected = profile
+        .executable()
+        .execution_identity()
+        .expect("image identity");
+    assert_eq!(process.identity().executable, expected);
     process
         .terminate_and_reap(Instant::now() + Duration::from_secs(2))
         .expect("reap");

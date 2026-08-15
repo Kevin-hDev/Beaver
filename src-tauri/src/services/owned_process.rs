@@ -45,10 +45,29 @@ impl OwnedProcess {
         platform::identity_with_executable(pid, executable)
     }
 
+    #[cfg(windows)]
     pub(crate) fn identity_matches(
         expected: OwnedProcessIdentity,
     ) -> Result<(), OwnedProcessError> {
         platform::identity_matches(expected)
+    }
+
+    pub(crate) fn recover_exact(
+        expected: OwnedProcessIdentity,
+        deadline: std::time::Instant,
+    ) -> Result<(), OwnedProcessError> {
+        platform::recover_exact(expected, deadline)
+    }
+
+    pub(crate) fn signal_exact(
+        expected: OwnedProcessIdentity,
+        force: bool,
+    ) -> Result<(), OwnedProcessError> {
+        platform::signal_exact(expected, force)
+    }
+
+    pub(crate) fn process_exists(pid: u32) -> bool {
+        platform::process_exists(pid)
     }
 
     pub fn spawn(command: &mut Command, kind: ProcessKind) -> Result<Child, OwnedProcessError> {
@@ -87,6 +106,13 @@ impl OwnedProcess {
         process: windows_sys::Win32::Foundation::HANDLE,
     ) -> Result<(), OwnedProcessError> {
         platform::admit_suspended_handle(process)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn identity_from_handle(
+        process: windows_sys::Win32::Foundation::HANDLE,
+    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity_from_handle(process)
     }
 
     fn spawn_with_admitter(

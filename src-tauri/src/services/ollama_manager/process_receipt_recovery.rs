@@ -1,6 +1,7 @@
 use super::fingerprint::BundleFingerprint;
 use super::process_receipt::{ProcessReceipt, ProcessReceiptError, ProcessReceiptStore};
-use crate::services::owned_process::OwnedProcessIdentity;
+use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity};
+use std::time::Instant;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum RecoveryProbe {
@@ -16,6 +17,7 @@ pub(crate) enum ProcessReceiptRecovery {
     StaleRemoved,
     RecoveryRequired,
     Exact(ProcessReceipt),
+    Reaped,
 }
 
 impl ProcessReceiptStore {
@@ -30,11 +32,19 @@ impl ProcessReceiptStore {
         let Some(receipt) = self.read()? else {
             return Ok(ProcessReceiptRecovery::Missing);
         };
+        let probe = inspect(&receipt);
         if !bundle_matches(&receipt.bundle, active_bundle) {
-            self.remove()?;
-            return Ok(ProcessReceiptRecovery::StaleRemoved);
+            return match probe {
+                RecoveryProbe::Missing | RecoveryProbe::Different => {
+                    self.remove()?;
+                    Ok(ProcessReceiptRecovery::StaleRemoved)
+                }
+                RecoveryProbe::Exact | RecoveryProbe::Ambiguous => {
+                    Ok(ProcessReceiptRecovery::RecoveryRequired)
+                }
+            };
         }
-        match inspect(&receipt) {
+        match probe {
             RecoveryProbe::Exact => Ok(ProcessReceiptRecovery::Exact(receipt)),
             RecoveryProbe::Missing | RecoveryProbe::Different => {
                 self.remove()?;
@@ -80,6 +90,47 @@ impl ProcessReceiptStore {
     {
         reap(receipt)?;
         self.remove()
+    }
+
+    pub(crate) fn recover_active(
+        &self,
+        active_bundle: &BundleFingerprint,
+        expected_executable: u128,
+        deadline: Instant,
+    ) -> Result<ProcessReceiptRecovery, ProcessReceiptError> {
+        let Some(receipt) = self.read()? else {
+            return Ok(ProcessReceiptRecovery::Missing);
+        };
+        let identity = match OwnedProcess::identity(receipt.pid) {
+            Ok(identity) => identity,
+            Err(_) => {
+                if OwnedProcess::process_exists(receipt.pid) {
+                    return Ok(ProcessReceiptRecovery::RecoveryRequired);
+                }
+                self.remove()?;
+                return Ok(ProcessReceiptRecovery::StaleRemoved);
+            }
+        };
+        let exact_identity = identity.pid == receipt.pid
+            && identity.native_start_time == receipt.native_start_time
+            && identity.native_scope == receipt.native_scope
+            && identity.executable != 0
+            && identity.executable == expected_executable;
+        if !exact_identity {
+            if identity.executable == 0 {
+                return Ok(ProcessReceiptRecovery::RecoveryRequired);
+            }
+            self.remove()?;
+            return Ok(ProcessReceiptRecovery::StaleRemoved);
+        }
+        if !bundle_matches(&receipt.bundle, active_bundle) {
+            return Ok(ProcessReceiptRecovery::RecoveryRequired);
+        }
+        if OwnedProcess::recover_exact(identity, deadline).is_err() {
+            return Ok(ProcessReceiptRecovery::RecoveryRequired);
+        }
+        self.remove()?;
+        Ok(ProcessReceiptRecovery::Reaped)
     }
 }
 

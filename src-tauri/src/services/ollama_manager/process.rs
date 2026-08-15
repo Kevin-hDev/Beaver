@@ -1,6 +1,6 @@
 use super::constants::PROCESS_REAP_FALLBACK_TIMEOUT;
 use super::fingerprint::BundleFingerprint;
-use super::process_receipt::{ProcessReceipt, ProcessReceiptStore};
+use super::process_receipt::{ProcessReceipt, ProcessReceiptRecovery, ProcessReceiptStore};
 use super::spawn_profile::OllamaSpawnAttempt;
 #[path = "process_lifecycle.rs"]
 mod lifecycle;
@@ -40,6 +40,17 @@ impl DefaultOllamaProcessLauncher {
     pub(crate) fn new(bundle: BundleFingerprint) -> Self {
         Self { bundle }
     }
+
+    pub(crate) fn recover_receipt(
+        &self,
+        store: &ProcessReceiptStore,
+        expected_executable: u128,
+        deadline: Instant,
+    ) -> Result<ProcessReceiptRecovery, OllamaProcessError> {
+        store
+            .recover_active(&self.bundle, expected_executable, deadline)
+            .map_err(|_| OllamaProcessError::Receipt)
+    }
 }
 
 pub(crate) struct GatedOllamaProcess {
@@ -58,7 +69,11 @@ impl OllamaProcessLauncher for DefaultOllamaProcessLauncher {
     ) -> Result<GatedOllamaProcess, OllamaProcessError> {
         let native = platform_create(attempt)?;
         let identity = native.identity();
-        let executable = attempt.profile().executable().identity().value();
+        let executable = attempt
+            .profile()
+            .executable()
+            .execution_identity()
+            .ok_or(OllamaProcessError::Identity)?;
         Ok(GatedOllamaProcess {
             native: Some(native),
             identity,
@@ -93,6 +108,21 @@ impl GatedOllamaProcess {
         after_receipt: impl FnOnce(),
     ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
         self.publish_inner(receipt, emergency, after_receipt)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn force_reap_failure_for_test(&mut self) {
+        #[cfg(unix)]
+        if let Some(native) = self.native.as_mut() {
+            native.force_reap_failure_for_test();
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn open_gate_for_test(&mut self) {
+        if let Some(native) = self.native.as_mut() {
+            let _ = native.open_gate();
+        }
     }
 
     fn publish_inner(
