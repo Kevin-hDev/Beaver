@@ -1,0 +1,7 @@
+CI Jalon 3 — correction unique après verdict complet du run 31913715648.
+
+Le run a terminé avec six jobs verts sur sept : backend Rust, backend Windows complet, macOS CEF, Desktop E2E, Linux WebView et frontend. Windows CEF s’est arrêté pendant Clippy avant tout test CEF, car AppEmergencyPublisher était importé sous cfg(test) alors que son seul consommateur est cfg(all(test, unix)).
+
+Correction : aligner l’import sur cfg(all(test, unix)). Aucun comportement CEF, Ollama ou de production n’est modifié.
+
+Preuves locales : cargo fmt --all -- --check vert ; cargo clippy --all-targets -- -D warnings vert ; test d’identité ciblé 1/1 ; git diff --check vert ; fichier 89 lignes ; graphify update . sans changement topologique.
