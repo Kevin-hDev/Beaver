@@ -1,0 +1,3 @@
+Synchronisation de la branche J3 avec origin/main avant correction des échecs CI de la PR #19.
+
+Raison: tester exactement le résultat de fusion attendu sans modifier ni fusionner main. Merge sans conflit; main reste inchangé.
