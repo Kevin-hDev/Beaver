@@ -1,0 +1,21 @@
+CI follow-up for platform-specific Rust lint failures.
+
+Observed on GitHub Actions run 31889624848:
+- Linux backend reached Clippy and failed only on needless_return in owned_process_unix.rs.
+- Windows CEF reached Clippy after the raw HANDLE ownership correction; remaining failures were dead code and target-specific lint findings.
+
+Changes:
+- remove unused Windows process wrappers rather than suppressing dead-code diagnostics;
+- restrict the test-only Ollama ProcessKind to Unix, where its tests use it;
+- gate the native probe event fixture field to Unix;
+- apply the exact Linux and Windows Clippy suggestions without changing runtime policy.
+
+Local evidence before commit:
+- cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check: PASS
+- RUSTFMT_BASE_SHA=39a53c40e6c524a4ef2498df494085b623188617 node scripts/build/check-rust-format.mjs: PASS
+- cargo clippy --all-targets -- -D warnings (macOS): PASS
+- official services::ollama_manager filter: 266 passed, 0 failed, 1 ignored; 267 matched
+- git diff --check: PASS
+- graphify update .: completed
+
+Linux and Windows target-specific validation remains intentionally pending their native GitHub Actions runners; this note does not claim those jobs green.
