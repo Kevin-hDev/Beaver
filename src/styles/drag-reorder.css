@@ -16,3 +16,22 @@
   opacity: 0.85;
   cursor: grabbing;
 }
+
+/* Pendant le geste, plus rien ne se surligne dans la page. Le navigateur étend
+   sinon une sélection de texte au fil du déplacement, sur tout ce que le
+   curseur survole — libellés de section, noms de projet, lignes voisines — et
+   comme le bouton reste enfoncé, rien ne l'arrête avant le relâchement.
+
+   Posé sur la page et non sur la liste : la sélection déborde de son conteneur
+   dès que le curseur en sort. Une valeur héritée, qu'un champ de saisie peut
+   toujours contredire en déclarant la sienne. */
+body[data-drag-active="true"] {
+  user-select: none;
+}
+
+/* Une seule main fermée sur toute la page. Chaque ligne pose son propre
+   curseur — une main pointée sur une conversation, par exemple — et sans ce
+   sélecteur il reprendrait le dessus dès que le geste survole un voisin. */
+body[data-drag-active="true"] * {
+  cursor: grabbing;
+}

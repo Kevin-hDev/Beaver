@@ -1,14 +1,6 @@
-/* Ce qui accompagne un glissement ou un renommage dans la liste des
-   conversations. Le décalage des projets et l'allure de celui qu'on tient ne
-   sont plus ici : ils viennent de src/styles/drag-reorder.css, partagé avec
-   les onglets du terminal. */
-
-.conv-list.is-dragging {
-  user-select: none;
-  cursor: grabbing;
-}
-
-/* Rename input */
+/* Le champ de renommage d'une conversation ou d'un projet. Tout ce qui
+   concerne le glissement lui-même vit dans src/styles/drag-reorder.css,
+   partagé avec les onglets du terminal. */
 
 /* La ligne et l'en-tête qui l'accueillent interdisent la sélection de texte —
    ils s'attrapent et se double-cliquent. Le champ, lui, en a besoin : sans

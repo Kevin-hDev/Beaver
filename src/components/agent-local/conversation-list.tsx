@@ -18,7 +18,7 @@ import { DirectoryAccessPrompt } from "./directory-access-prompt";
 import "./conversation.css";
 import "./conversation-directory-access.css";
 import "./conversation-projects.css";
-import "./conversation-drag.css";
+import "./conversation-rename.css";
 import "./conversation-collapse.css";
 
 export function ConversationList({
@@ -104,7 +104,7 @@ export function ConversationList({
         </button>
       </div>
       {directoryAccessPrompt && <div className="conv-dap-anchor"><DirectoryAccessPrompt {...directoryAccessPrompt} /></div>}
-      <div ref={listRef} className={`conv-list ${drag.draggingId ?? sessionDrag.draggingId ? "is-dragging" : ""}`}>
+      <div ref={listRef} className="conv-list">
         {projects.length > 0 && (
           <>
             <ConversationSectionToggle open={!collapse.projectsCollapsed} onToggle={collapse.toggleProjects}>

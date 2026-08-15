@@ -16,6 +16,9 @@ import {
 
 export const DRAG_ID_ATTR = "data-drag-id";
 const DRAG_GROUP_ATTR = "data-drag-group";
+/* Posé sur la page entière le temps d'un geste. Sa règle vit dans
+   src/styles/drag-reorder.css. */
+const DRAG_ACTIVE_ATTR = "data-drag-active";
 
 /* Distance à parcourir avant qu'un appui devienne un glissement. Sans elle,
    un simple clic sur une ligne démarrait un geste complet : l'élément
@@ -78,6 +81,7 @@ export function useDragReorder({ ids, axis, containerRef, group, onReorder }: Dr
   const stop = useCallback(() => {
     grab.current = null;
     active.current = false;
+    document.body.removeAttribute(DRAG_ACTIVE_ATTR);
     setDraggingId(null);
     setOffsets(new Map());
   }, []);
@@ -92,6 +96,11 @@ export function useDragReorder({ ids, axis, containerRef, group, onReorder }: Dr
         if (Math.abs(delta) < THRESHOLD_PX) return;
         active.current = true;
         dragged.current = true;
+        /* Le navigateur a commencé une sélection de texte pendant les premiers
+           pixels : on l'efface, puis la page cesse d'en accepter le temps du
+           geste. Sans quoi le déplacement surligne tout ce qu'il survole. */
+        window.getSelection()?.removeAllRanges();
+        document.body.setAttribute(DRAG_ACTIVE_ATTR, "true");
         setDraggingId(held.id);
       }
       target.current = targetIndex(slots.current, held.from, delta);
@@ -117,6 +126,8 @@ export function useDragReorder({ ids, axis, containerRef, group, onReorder }: Dr
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
+      /* Démonté en plein geste, la page resterait insélectionnable. */
+      document.body.removeAttribute(DRAG_ACTIVE_ATTR);
     };
   }, [axis, containerRef, stop]);
 

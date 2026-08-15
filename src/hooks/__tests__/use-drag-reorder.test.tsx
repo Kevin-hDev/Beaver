@@ -121,6 +121,33 @@ describe("useDragReorder", () => {
     expect(getByTestId("item-b").style.transition).toBe("");
   });
 
+  it("empêche la page de surligner du texte pendant le geste", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+
+    expect(document.body.getAttribute("data-drag-active")).toBe("true");
+  });
+
+  it("rend le surlignage à la page au relâchement", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+    fireEvent.pointerUp(window);
+
+    expect(document.body.getAttribute("data-drag-active")).toBeNull();
+  });
+
+  it("ne bride jamais la page pour un simple clic", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+
+    expect(document.body.getAttribute("data-drag-active")).toBeNull();
+  });
+
   it("garde le nouvel ordre à l'écran tant que la source n'a pas suivi", () => {
     const { getByTestId, getAllByTestId } = render(
       <Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />,
