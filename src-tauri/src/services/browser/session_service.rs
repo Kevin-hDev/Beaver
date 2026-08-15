@@ -90,7 +90,7 @@ impl BrowserSessionService {
         session_id: &str,
         tab_id: &str,
         stamp: RuntimeStamp,
-        update: BrowserRuntimeTabUpdate,
+        mut update: BrowserRuntimeTabUpdate,
     ) -> Result<Option<BrowserSessionState>, BrowserCommandError> {
         let view_key = validated_view_key(session_id, tab_id)?;
         let _guard = self
@@ -101,7 +101,7 @@ impl BrowserSessionService {
             .runtime_revisions
             .lock()
             .map_err(|_| BrowserCommandError::Internal)?
-            .accept_update(view_key, stamp)
+            .filter_update(view_key, stamp, &mut update)
         {
             return Ok(None);
         }
