@@ -29,6 +29,11 @@ impl NativeGatedProcess {
         Ok(())
     }
 
+    #[cfg(test)]
+    pub(crate) fn force_identity_change_for_test(&mut self) {
+        self.identity.native_start_time ^= 1;
+    }
+
     pub(crate) fn wait_for_executable(
         &mut self,
         executable: u128,

@@ -1,5 +1,5 @@
 use super::cleanup;
-use super::durable_fs::{OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
+use super::durable_fs::{platform_fs, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
@@ -242,9 +242,7 @@ impl OllamaDurableFs for RealCutpointFs {
     }
 
     fn create_directory_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        fs::create_dir_all(path).map_err(real_io_error)?;
-        sync_directory(path)?;
-        sync_parent_path(path)
+        platform_fs().create_directory_durable(path)
     }
 
     fn write_new_atomic(
@@ -359,18 +357,8 @@ fn real_io_error(error: std::io::Error) -> OllamaFsError {
     OllamaFsError::new(kind)
 }
 
-fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
-    File::open(path)
-        .map_err(real_io_error)?
-        .sync_all()
-        .map_err(real_io_error)
-}
-
 fn sync_parent_path(path: &Path) -> Result<(), OllamaFsError> {
-    let parent = path
-        .parent()
-        .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
-    sync_directory(parent)
+    platform_fs().sync_parent(path)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

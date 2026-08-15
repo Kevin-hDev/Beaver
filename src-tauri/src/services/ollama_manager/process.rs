@@ -97,7 +97,7 @@ impl GatedOllamaProcess {
         receipt: &ProcessReceiptStore,
         emergency: &AppEmergencyPublisher,
     ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
-        self.publish_inner(receipt, emergency, || {})
+        self.publish_inner(receipt, emergency, |_| {})
     }
 
     #[cfg(test)]
@@ -107,7 +107,7 @@ impl GatedOllamaProcess {
         emergency: &AppEmergencyPublisher,
         after_receipt: impl FnOnce(),
     ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
-        self.publish_inner(receipt, emergency, after_receipt)
+        self.publish_inner(receipt, emergency, |_| after_receipt())
     }
 
     #[cfg(test)]
@@ -135,7 +135,7 @@ impl GatedOllamaProcess {
         mut self,
         receipt: &ProcessReceiptStore,
         emergency: &AppEmergencyPublisher,
-        after_receipt: impl FnOnce(),
+        after_receipt: impl FnOnce(&mut Self),
     ) -> Result<OwnedOllamaProcess, OllamaProcessError> {
         self.native
             .as_ref()
@@ -152,7 +152,7 @@ impl GatedOllamaProcess {
             self.cleanup_failed_publish(receipt, None, false);
             return Err(OllamaProcessError::Receipt);
         }
-        after_receipt();
+        after_receipt(&mut self);
         if self
             .native
             .as_ref()

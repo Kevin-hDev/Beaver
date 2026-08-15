@@ -1,6 +1,8 @@
 use super::super::constants::PROCESS_REAP_FALLBACK_TIMEOUT;
 use super::super::process_receipt::ProcessReceiptStore;
 use super::{GatedOllamaProcess, OllamaProcessError};
+#[cfg(test)]
+use crate::app_exit::AppEmergencyPublisher;
 use crate::app_exit::AppEmergencyRegistration;
 use crate::app_exit::EmergencyHandoffReason;
 use std::time::Instant;
@@ -59,6 +61,21 @@ impl GatedOllamaProcess {
         if let Some(native) = self.native.as_mut() {
             native.close_gate_for_test();
         }
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn publish_with_identity_change_for_test(
+        self,
+        receipt: &ProcessReceiptStore,
+        emergency: &AppEmergencyPublisher,
+    ) -> Result<super::OwnedOllamaProcess, OllamaProcessError> {
+        self.publish_inner(receipt, emergency, |process| {
+            // A deterministic identity transition proves the post-receipt
+            // revalidation without depending on signal delivery scheduling.
+            if let Some(native) = process.native.as_mut() {
+                native.force_identity_change_for_test();
+            }
+        })
     }
 }
 

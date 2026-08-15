@@ -232,7 +232,6 @@ fn identity_change_after_receipt_write_fails_before_emergency_admission() {
     };
     let launcher = DefaultOllamaProcessLauncher::new(bundle);
     let gated = launcher.create_gated(&spawn_attempt).expect("gated");
-    let pid = gated.identity().expect("identity").pid;
     let paths = ollama_paths(&std::fs::canonicalize(root.path()).expect("canonical root"));
     let receipt_path = paths.process_receipt.clone();
     let store = super::process_receipt::ProcessReceiptStore::new(
@@ -242,9 +241,7 @@ fn identity_change_after_receipt_write_fails_before_emergency_admission() {
     );
     let coordinator = AppExitCoordinator::initialize().expect("coordinator");
     assert!(matches!(
-        gated.publish_with_cutpoint(&store, &coordinator.emergency_publisher(), || unsafe {
-            libc::kill(pid as libc::pid_t, libc::SIGKILL);
-        }),
+        gated.publish_with_identity_change_for_test(&store, &coordinator.emergency_publisher()),
         Err(OllamaProcessError::Identity)
     ));
     assert!(store.read().expect("reaped receipt").is_none());
