@@ -146,7 +146,7 @@ body {
 
   /* Exception: keep-compositing is not a visual animation — it keeps the
      WebKit backdrop-filter blur alive. It must keep running. */
-  .app-sidebar-block {
+  .app-sidebar-block::after {
     animation-duration: 1s !important;
     animation-iteration-count: infinite !important;
   }
