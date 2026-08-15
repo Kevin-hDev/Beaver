@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { FolderOpen, DotsThreeVertical, X } from "@/components/ui/icons";
+import { DotsThreeVertical, Trash } from "@/components/ui/icons";
 import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
 import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
@@ -54,9 +54,9 @@ export function ProjectSection({
   });
 
   const projectMenuItems: ContextMenuItem[] = [
-    { label: t("projects.openFolder", "Ouvrir le dossier"), icon: <FolderOpen size="var(--icon-sm)" />, onClick: () => onOpenFolder(project.path) },
+    { label: t("projects.openFolder", "Ouvrir le dossier"), icon: <FolderStateIcon open size="var(--icon-sm)" />, onClick: () => onOpenFolder(project.path) },
     { label: t("projects.rename", "Renommer"), icon: <RenameIcon />, onClick: () => { setRenaming(true); setTimeout(() => inputRef.current?.focus(), 0); } },
-    { label: t("projects.delete", "Supprimer"), icon: <X size="var(--icon-sm)" />, onClick: () => onDeleteProject(project.id) },
+    { label: t("projects.delete", "Supprimer"), icon: <Trash size="var(--icon-sm)" />, onClick: () => onDeleteProject(project.id) },
   ];
 
   const handleSessionMenu = useCallback((e: React.MouseEvent, id: string) => {

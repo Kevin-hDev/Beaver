@@ -1,28 +1,19 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, ChatsCircle, FolderSimple, Search, Trash } from "@/components/ui/icons";
+import { Search, Trash } from "@/components/ui/icons";
 import { useArchivedAgentSessions } from "@/hooks/use-archived-agent-sessions";
 import { useProjects } from "@/hooks/use-projects";
 import { showToast } from "@/lib/toast-emitter";
 import { displaySessionName } from "@/lib/utils";
-import type { AgentSessionMeta, Project } from "@/types/agent";
 import { ConfirmButton } from "./confirm-button";
-import { SettingsSelect, type SelectOption } from "./settings-select";
+import { SettingsSelect } from "./settings-select";
+import { ArchiveBubble } from "./archived-chats-bubble";
+import { ALL_FILTER, buildArchiveGroups, projectFilterOptions } from "./archived-chats-groups";
 import "./archived-chats-settings.css";
 import "./archived-chats-settings-controls.css";
 import "./archived-chats-settings-responsive.css";
 
-const DISCUSSIONS_FILTER = "__discussions__";
-const ALL_FILTER = "__all__";
-const MAX_VISIBLE_SESSIONS = 6;
 const MAX_ARCHIVED_SESSIONS = 2000;
-
-interface ArchiveGroup {
-  id: string;
-  title: string;
-  kind: "project" | "discussions";
-  sessions: AgentSessionMeta[];
-}
 
 export function ArchivedChatsSettings() {
   const { t, i18n } = useTranslation();
@@ -120,107 +111,4 @@ export function ArchivedChatsSettings() {
       </div>
     </div>
   );
-}
-
-function ArchiveBubble({
-  group,
-  locale,
-  onRestore,
-  onDelete,
-  restoreLabel,
-  deleteLabel,
-  confirmDeleteLabel,
-  countLabel,
-  displayName,
-}: {
-  group: ArchiveGroup;
-  locale: string;
-  onRestore: (id: string) => void;
-  onDelete: (id: string) => void;
-  restoreLabel: string;
-  deleteLabel: string;
-  confirmDeleteLabel: string;
-  countLabel: string;
-  displayName: (name: string) => string;
-}) {
-  const Icon = group.kind === "project" ? FolderSimple : ChatsCircle;
-  const scroll = group.sessions.length > MAX_VISIBLE_SESSIONS;
-  return (
-    <section className="acs-bubble">
-      <header className="acs-bubble-head">
-        <span className="acs-group-title"><Icon size="var(--icon-sm)" />{group.title}</span>
-        <span className="acs-count">{countLabel}</span>
-      </header>
-      <div className={`acs-session-list ${scroll ? "is-scrollable" : ""}`}>
-        {group.sessions.map((session) => (
-          <article className="acs-session" key={session.id}>
-            <div className="acs-session-info">
-              <div className="acs-session-name">{displayName(session.name)}</div>
-              <time className="acs-session-date">{formatSessionDate(session, locale)}</time>
-            </div>
-            <div className="acs-actions">
-              <ConfirmButton
-                className="icon-btn icon-btn-destructive"
-                title={deleteLabel}
-                ariaLabel={deleteLabel}
-                label={<Trash size="var(--icon-sm)" />}
-                confirmLabel={confirmDeleteLabel}
-                onConfirm={() => onDelete(session.id)}
-              />
-              <button className="btn btn-sm btn-secondary" onClick={() => onRestore(session.id)}>
-                <Archive size="var(--icon-sm)" />
-                <span>{restoreLabel}</span>
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function buildArchiveGroups(
-  sessions: AgentSessionMeta[],
-  projects: Project[],
-  projectMap: Map<string, Project>,
-  query: string,
-  filter: string,
-  discussionsTitle: string,
-): ArchiveGroup[] {
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const matches = (session: AgentSessionMeta) =>
-    !normalizedQuery || session.name.toLocaleLowerCase().includes(normalizedQuery);
-  const sorted = [...sessions.filter(matches)].sort((a, b) => activityTime(b) - activityTime(a));
-  const groups: ArchiveGroup[] = [];
-  for (const project of projects) {
-    if (filter !== ALL_FILTER && filter !== project.id) continue;
-    const projectSessions = sorted.filter((session) => session.project_id === project.id);
-    if (projectSessions.length > 0) groups.push({ id: project.id, title: project.name, kind: "project", sessions: projectSessions });
-  }
-  if (filter === ALL_FILTER || filter === DISCUSSIONS_FILTER) {
-    const discussions = sorted.filter((session) => !session.project_id || !projectMap.has(session.project_id));
-    if (discussions.length > 0) groups.push({ id: DISCUSSIONS_FILTER, title: discussionsTitle, kind: "discussions", sessions: discussions });
-  }
-  return groups;
-}
-
-function projectFilterOptions(t: (key: string) => string, projects: Project[]): SelectOption[] {
-  return [
-    { value: ALL_FILTER, label: t("settings.archivedChats.allProjects"), icon: <FolderSimple size="var(--icon-sm)" /> },
-    { value: DISCUSSIONS_FILTER, label: t("projects.discussions"), icon: <ChatsCircle size="var(--icon-sm)" /> },
-    ...projects.map((project) => ({
-      value: project.id,
-      label: project.name,
-      icon: <FolderSimple size="var(--icon-sm)" />,
-    })),
-  ];
-}
-
-function activityTime(session: AgentSessionMeta): number {
-  return new Date(session.updated_at ?? session.created_at).getTime();
-}
-
-function formatSessionDate(session: AgentSessionMeta, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
-    .format(new Date(session.updated_at ?? session.created_at));
 }

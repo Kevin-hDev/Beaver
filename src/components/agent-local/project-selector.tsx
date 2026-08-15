@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { FolderSimple, FolderSimplePlus, Check, CaretDown } from "@/components/ui/icons";
+import { Check, CaretDown } from "@/components/ui/icons";
+import { FolderStateIcon } from "@/components/ui/folder-state-icon";
+import { FolderAddIcon } from "@/components/ui/folder-add-icon";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useClickOutside } from "@/hooks/use-click-outside";
 import type { Project } from "@/types/agent";
@@ -57,7 +59,7 @@ export function ProjectSelector({
     return (
       <div className="project-selector-row">
         <div className="project-selector-indicator">
-          <FolderSimple size="var(--icon-sm)" />
+          <FolderStateIcon open={false} size="var(--icon-sm)" />
           <span>{selected.name}</span>
         </div>
         {directoryAccessPrompt && <DirectoryAccessPrompt {...directoryAccessPrompt} />}
@@ -75,7 +77,7 @@ export function ProjectSelector({
         className="btn btn-sm btn-secondary"
         onClick={() => setOpen(!open)}
       >
-        <FolderSimple size="var(--icon-sm)" />
+        <FolderStateIcon open={false} size="var(--icon-sm)" />
         <span>{label}</span>
         <CaretDown size="var(--icon-2xs)" />
       </button>
@@ -113,7 +115,7 @@ export function ProjectSelector({
               onClick={() => handleSelect(p.id)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelect(p.id); }}
             >
-              <FolderSimple size="var(--icon-sm)" />
+              <FolderStateIcon open={false} size="var(--icon-sm)" />
               <span style={{ flex: 1 }}>{p.name}</span>
               {p.id === selectedProjectId && <Check size="var(--icon-sm)" />}
             </div>
@@ -122,7 +124,7 @@ export function ProjectSelector({
           <div className="project-dropdown-sep" />
 
           <div className="project-dropdown-item" role="button" tabIndex={0} onClick={handleAdd} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleAdd(); }}>
-            <FolderSimplePlus size="var(--icon-sm)" />
+            <FolderAddIcon size="var(--icon-sm)" />
             <span>{t("projects.addNew", "Ajouter un nouveau projet")}</span>
           </div>
         </div>

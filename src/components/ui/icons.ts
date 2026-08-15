@@ -37,14 +37,11 @@ import {
   MagnifyingGlass as PhMagnifyingGlass,
   ArrowSquareOut as PhArrowSquareOut,
   Star as PhStar,
-  FolderSimple as PhFolderSimple,
-  FolderSimplePlus as PhFolderSimplePlus,
   FolderOpen as PhFolderOpen,
   DotsThreeVertical as PhDotsThreeVertical,
   Hand as PhHand,
   PencilSimple as PhPencilSimple,
   ChatCircleDots as PhChatCircleDots,
-  ChatsCircle as PhChatsCircle,
   GearSix as PhGearSix,
   Info as PhInfo,
   Keyboard as PhKeyboard,
@@ -119,14 +116,11 @@ export const Key = withSafeCssSize(PhKey);
 export const MagnifyingGlass = withSafeCssSize(PhMagnifyingGlass);
 export const ArrowSquareOut = withSafeCssSize(PhArrowSquareOut);
 export const Star = withSafeCssSize(PhStar);
-export const FolderSimple = withSafeCssSize(PhFolderSimple);
-export const FolderSimplePlus = withSafeCssSize(PhFolderSimplePlus);
 export const FolderOpen = withSafeCssSize(PhFolderOpen);
 export const DotsThreeVertical = withSafeCssSize(PhDotsThreeVertical);
 export const Hand = withSafeCssSize(PhHand);
 export const PencilSimple = withSafeCssSize(PhPencilSimple);
 export const ChatCircleDots = withSafeCssSize(PhChatCircleDots);
-export const ChatsCircle = withSafeCssSize(PhChatsCircle);
 export const GearSix = withSafeCssSize(PhGearSix);
 export const Info = withSafeCssSize(PhInfo);
 export const Keyboard = withSafeCssSize(PhKeyboard);

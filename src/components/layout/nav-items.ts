@@ -1,4 +1,5 @@
-import { BeaverIcon, HeartbeatIcon, SessionIcon, SettingsIcon } from "./nav-tab-icons";
+import { BeaverIcon, HeartbeatIcon, SettingsIcon } from "./nav-tab-icons";
+import { SessionIcon } from "@/components/ui/session-icon";
 import type { InlineIconProps } from "@/components/ui/inline-icon";
 import type { ComponentType } from "react";
 

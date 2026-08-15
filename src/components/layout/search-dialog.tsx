@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, useId } from "react"
 import { useTranslation } from "react-i18next";
 import { useAgentSessions } from "@/hooks/use-agent-sessions";
 import { useProjects } from "@/hooks/use-projects";
+import { SessionIcon } from "@/components/ui/session-icon";
 import "./search-dialog.css";
 
 const MAX_RECENT = 6;
@@ -148,7 +149,7 @@ export function SearchDialog({ open, onClose, onSelect }: SearchDialogProps) {
                 onMouseEnter={() => setSelectedIndex(i)}
                 onClick={() => handleSelect(session.id)}
               >
-                <SessionIcon />
+                <SessionIcon size="var(--icon-lg)" className="search-result-icon" />
                 <span className="search-result-name">{session.name}</span>
                 {session.project_id && projectMap.has(session.project_id) && (
                   <span className="search-result-project">
@@ -165,14 +166,5 @@ export function SearchDialog({ open, onClose, onSelect }: SearchDialogProps) {
         )}
       </div>
     </div>
-  );
-}
-
-function SessionIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
   );
 }
