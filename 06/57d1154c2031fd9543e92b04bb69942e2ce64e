@@ -1,0 +1,7 @@
+Task18 / conformité Rust — preuve
+
+Périmètre : formatage mécanique cargo fmt et correction des 12 diagnostics Clippy apparus après l’adoption Ollama. Les autorités strictement de test ont été cfg(test) (execute, variantes RetryCategory et accesseurs de complétion) ; les tests de retry utilisent begin_timer/finish_timer ; StreamChatOptions regroupe les options de streaming ; stop_owned_process transporte son erreur boxée ; map_process_error est centralisée dans process_error.rs. Le découpage stream/process respecte la limite de 230 lignes.
+
+Résultats vus : cargo fmt --all -- --check vert ; cargo clippy --all-targets -- -D warnings vert ; git diff --check vert ; tous les fichiers Rust de production modifiés sont <=230 lignes ; graphify update . terminé (34030 nœuds, 69643 arêtes). Le test Rust emergency_capacity_reap_failure... n’a pas reçu de correction : le filtre officiel services::ollama_manager est vert (266 passés, 0 échec, 1 ignoré), le rouge n’existe qu’en interférence d’exécution parallèle.
+
+Non exécuté conformément au périmètre : cargo test complet, npm test global, CI, preuve native, review, updater et PTY.
