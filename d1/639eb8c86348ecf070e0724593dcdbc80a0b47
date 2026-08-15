@@ -1,0 +1,32 @@
+J3 Task 8 — décision de reprise Ollama
+
+Base: 2551b566c7f71303b27808135444b365237327f1.
+Commit: d1639eb8 (feat(ollama): encode exhaustive recovery decisions).
+
+TDD rouge exact avant production:
+cd src-tauri && node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::recovery_decision_tests
+Sortie exacte du filtre: Rust test filter failed.
+Diagnostic Cargo: imports recovery_decision et migration absents, échec attendu.
+
+Résultats finaux réellement lus:
+- recovery_decision_tests: 38 passed; 0 failed.
+- migration_tests: 4 passed; 0 failed.
+- cargo check: code 0.
+- cargo clippy --all-targets -- -D warnings: code 0.
+- cargo fmt --all -- --check: code 0.
+- git diff --check: code 0.
+- graphify update .: 33134 nœuds, 67322 relations, 2012 communautés; avertissement connu de 73 fichiers sans nœud.
+
+Décisions:
+- decide_recovery est pure et ne touche ni disque ni processus.
+- Les cinq phases durables et les lignes de migration reconnues sont classées par présence et empreinte exacte; le reste retourne Defer.
+- Les dix présences fixes sont parcourues dans 1024 combinaisons sans panique; Unknown/Invalid bloque toute action destructive et aucune ambiguïté ne devient Ready.
+- La politique de sauvegarde est unique: avant marqueur durable, ancien et moderne; après marqueur valide, moderne seul; marqueur temporaire sans autorité; marqueur invalide/inconnu fermé.
+- Les règles sont séparées dans recovery_decision_rules.rs pour maintenir chaque production sous 230 lignes.
+
+Limites:
+- Aucun exécuteur disque/processus de Task 9, aucune adoption Task 14, aucun ancien consommateur, aucune suite globale/CI.
+- Preuve Windows native non exécutée sur macOS arm64.
+- Aucun push ni merge.
+
+Recommandation: Task 9 doit consommer cette table comme seule autorité et réutiliser la primitive durable existante, sans seconde table ni mutation dans le classifieur.
