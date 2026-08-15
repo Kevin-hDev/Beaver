@@ -1,0 +1,7 @@
+Purpose: synchronize milestone 3 with main after PR #20 fixed extension-host reader-slot release and the CEF runtime update race.
+
+Merge result: clean ort merge with no conflicts. The J3 Ollama authority and transaction files were not manually changed during synchronization.
+
+Targeted validation observed after merge: services::ollama_manager 267 passed, 0 failed, 1 intentional developer-only ignored, 268 verified; Ollama manager contracts 6/6 and 2485 sources scanned; J3 reference preflight 15/15; CI filter diagnostics 7/7; included Rust format check passed against current origin/main; git diff --check green; graphify update completed.
+
+CI policy: no local replay of the complete cross-platform matrix. PR #19 full CI is the final authority after this single push.
