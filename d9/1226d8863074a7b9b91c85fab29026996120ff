@@ -1,0 +1,25 @@
+Jalon 3 - observabilite precise de la suppression Windows
+
+Verdict complet du run 31907152347
+- verts: Frontend, Linux WebView, backend general, macOS CEF complet et Desktop E2E.
+- macOS: supervision, contrats Ollama et parcours natif complet verts; la correction du symbole pipe2 est validee.
+- Windows CEF: rouge uniquement sur un import cfg(windows) devenu inutilise; aucun parcours natif execute dans ce job.
+- Windows complet: 3451 tests passes, 5 echecs J3 avec ERROR_ACCESS_DENIED code 5 dans remove_tree_verified. Le handle brut de volume avait bien ete supprime, mais le refus se produit donc a une etape ulterieure.
+- le test process_tree preexistant rouge sur main est passe dans ce run; aucune modification hors J3.
+
+Correction
+- retrait de l import Windows inutilise qui bloquait Clippy.
+- OllamaFsError conserve maintenant une etape fermee et typee en plus de la categorie et du code OS.
+- la suppression verifiee marque chaque frontiere native: inspection, reouverture, enumeration, ouverture enfant, suppression enfant, suppression racine et synchronisation parent.
+- l erreur utilisateur reste generique; les details techniques restent dans Debug/tests.
+
+Preuves locales lues
+- durable_fs_tests: 21/21.
+- cargo fmt --all -- --check: vert.
+- cargo clippy --all-targets -- -D warnings: vert.
+- git diff --check: vert.
+- production: maximum 229 lignes.
+- graphify update .: termine, 34180 noeuds et 69972 aretes.
+
+Decision
+- ne pas modifier une seconde primitive Windows sans connaitre l etape exacte. Le prochain run doit produire operation + os_code si la suppression reste rouge; corriger ensuite uniquement cet appel.
