@@ -5,7 +5,7 @@ use crate::services::paths::OllamaPaths;
 use std::ffi::OsStr;
 use std::path::{Component, Path, PathBuf};
 
-pub(super) fn resolve_models_path(
+pub(crate) fn resolve_models_path(
     raw: Option<&OsStr>,
     cwd: &CanonicalDirectory,
     environment: &FrozenEnvironment,
@@ -71,6 +71,8 @@ pub(super) fn transaction_locations(paths: &OllamaPaths, probe: bool) -> Vec<&Pa
         &paths.legacy_backup,
         &paths.failed,
         &paths.install_staging,
+        &paths.archive_staging,
+        &paths.archive_failed,
         &paths.update_staging,
         &paths.backup,
         &paths.backup_delete,

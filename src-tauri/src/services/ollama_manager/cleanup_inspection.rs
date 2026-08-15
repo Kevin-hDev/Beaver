@@ -6,7 +6,8 @@ use super::fingerprint::{BundleFingerprint, OllamaVersion};
 use super::journal::{classify_migration_marker, OllamaMigrationMarkerClassification};
 use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
 use super::recovery_decision::{
-    DirectoryEvidence, JournalPresence, MigrationMarkerPresence, OllamaLayoutSnapshot,
+    ArchiveDirectoryEvidence, DirectoryEvidence, JournalPresence, MigrationMarkerPresence,
+    OllamaLayoutSnapshot,
 };
 use super::spawn_profile_paths::active_executable;
 use crate::services::paths::OllamaPaths;
@@ -32,6 +33,8 @@ pub(crate) fn snapshot<F: OllamaDurableFs>(
         migration_marker: marker(fs, paths),
         active: evidence(fs, &paths.active),
         install_staging: evidence(fs, &paths.install_staging),
+        archive_staging: archive_evidence(&paths.archive_staging),
+        archive_failed: archive_evidence(&paths.archive_failed),
         update_staging: evidence(fs, &paths.update_staging),
         backup: evidence(fs, &paths.backup),
         failed: evidence(fs, &paths.failed),
@@ -39,6 +42,19 @@ pub(crate) fn snapshot<F: OllamaDurableFs>(
         legacy_backup: evidence(fs, &paths.legacy_backup),
         backup_delete: evidence(fs, &paths.backup_delete),
         failed_delete: evidence(fs, &paths.failed_delete),
+    }
+}
+
+fn archive_evidence(path: &Path) -> ArchiveDirectoryEvidence {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
+            ArchiveDirectoryEvidence::Present
+        }
+        Ok(_) => ArchiveDirectoryEvidence::Invalid,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            ArchiveDirectoryEvidence::Absent
+        }
+        Err(_) => ArchiveDirectoryEvidence::Unknown,
     }
 }
 

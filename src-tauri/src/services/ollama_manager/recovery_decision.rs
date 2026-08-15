@@ -13,6 +13,14 @@ pub enum DirectoryEvidence {
     Unknown,
     Invalid,
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ArchiveDirectoryEvidence {
+    Absent,
+    Present,
+    Unknown,
+    Invalid,
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum JournalPresence {
     Absent,
@@ -35,6 +43,8 @@ pub struct OllamaLayoutSnapshot {
     pub migration_marker: MigrationMarkerPresence,
     pub active: DirectoryEvidence,
     pub install_staging: DirectoryEvidence,
+    pub archive_staging: ArchiveDirectoryEvidence,
+    pub archive_failed: ArchiveDirectoryEvidence,
     pub update_staging: DirectoryEvidence,
     pub backup: DirectoryEvidence,
     pub failed: DirectoryEvidence,
@@ -130,6 +140,12 @@ pub fn decide_recovery(s: &OllamaLayoutSnapshot) -> RecoveryDecision {
         return RecoveryDecision::Defer {
             code: OllamaErrorCode::OllamaJournalInvalid,
         };
+    }
+    if [s.archive_staging, s.archive_failed]
+        .into_iter()
+        .any(|evidence| !matches!(evidence, ArchiveDirectoryEvidence::Absent))
+    {
+        return defer();
     }
     if has_unknown(s)
         || matches!(

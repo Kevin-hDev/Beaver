@@ -14,7 +14,6 @@ pub(crate) use super::recovery_probe::{RecoveryProbe, RecoveryProbeResult};
 use super::rollback;
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RecoveryReason {
     Startup,
@@ -28,7 +27,6 @@ pub enum RecoveryOutcome {
     ProgressMade,
     Deferred { code: OllamaErrorCode },
 }
-
 pub struct RecoveryExecutor<F, P>
 where
     F: OllamaDurableFs + 'static,
@@ -97,6 +95,16 @@ where
         snapshot: &OllamaLayoutSnapshot,
         _reason: RecoveryReason,
     ) -> Result<RecoveryOutcome, OllamaErrorCode> {
+        if let Some(action) = super::archive_recovery::decide(snapshot)? {
+            super::archive_recovery::apply(
+                action,
+                &self.fs,
+                &self.paths,
+                self.models_directory.as_ref(),
+            )
+            .await?;
+            return Ok(RecoveryOutcome::ProgressMade);
+        }
         match decide_recovery(snapshot) {
             RecoveryDecision::Ready => Ok(RecoveryOutcome::Ready),
             RecoveryDecision::Defer { code } => Ok(RecoveryOutcome::Deferred { code }),

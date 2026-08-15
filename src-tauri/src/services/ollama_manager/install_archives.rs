@@ -3,15 +3,12 @@
 use super::blocking::run_ollama_blocking;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
+use crate::services::paths::OllamaPaths;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-pub(crate) fn archive_staging_path(staging: &Path) -> PathBuf {
-    let name = staging
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("ollama-bundle-install-staging");
-    staging.with_file_name(format!("{name}-archives"))
+pub(crate) fn archive_staging_path(paths: &OllamaPaths) -> &Path {
+    &paths.archive_staging
 }
 
 pub(crate) async fn remove_archives<F: OllamaDurableFs + 'static>(

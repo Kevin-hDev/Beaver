@@ -183,6 +183,8 @@ pub fn transaction_paths(paths: &crate::services::paths::OllamaPaths) -> Vec<&Pa
         &paths.legacy_backup,
         &paths.failed,
         &paths.install_staging,
+        &paths.archive_staging,
+        &paths.archive_failed,
         &paths.update_staging,
         &paths.backup,
         &paths.backup_delete,

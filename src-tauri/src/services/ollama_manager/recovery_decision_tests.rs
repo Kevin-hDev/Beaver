@@ -2,8 +2,8 @@ use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::recovery_decision::{
-    decide_recovery, DirectoryEvidence, JournalPresence, MigrationMarkerPresence,
-    OllamaLayoutSnapshot, RecoveryDecision,
+    decide_recovery, ArchiveDirectoryEvidence, DirectoryEvidence, JournalPresence,
+    MigrationMarkerPresence, OllamaLayoutSnapshot, RecoveryDecision,
 };
 
 fn fp(version: &str, byte: &str) -> BundleFingerprint {
@@ -19,6 +19,8 @@ fn empty() -> OllamaLayoutSnapshot {
         migration_marker: MigrationMarkerPresence::Absent,
         active: DirectoryEvidence::Absent,
         install_staging: DirectoryEvidence::Absent,
+        archive_staging: ArchiveDirectoryEvidence::Absent,
+        archive_failed: ArchiveDirectoryEvidence::Absent,
         update_staging: DirectoryEvidence::Absent,
         backup: DirectoryEvidence::Absent,
         failed: DirectoryEvidence::Absent,

@@ -34,8 +34,9 @@ fn first_install_request_is_bounded_and_has_no_update_journal() {
         .paths
         .install_staging
         .ends_with("ollama-bundle-install-staging"));
-    assert!(archive_staging_path(&request.paths.install_staging)
-        .ends_with("ollama-bundle-install-staging-archives"));
+    assert!(
+        archive_staging_path(&request.paths).ends_with("ollama-bundle-install-staging-archives")
+    );
     assert!(!request.cancellation.is_cancelled());
 }
 
@@ -174,7 +175,7 @@ async fn first_install_publishes_after_probe_and_reinspection() {
     assert!(result.is_ready());
     assert!(request.paths.active.join("bin/ollama").exists());
     assert!(!request.paths.install_staging.exists());
-    assert!(!archive_staging_path(&request.paths.install_staging).exists());
+    assert!(!archive_staging_path(&request.paths).exists());
     assert_eq!(
         std::fs::read_to_string(request.paths.active.join("VERSION")).unwrap(),
         "1.2.3"

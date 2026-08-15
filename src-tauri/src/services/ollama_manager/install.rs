@@ -94,18 +94,18 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
     }
     let fs = Arc::new(platform_fs());
     prepare_staging(&fs, &request.paths.install_staging).await?;
-    let archive_staging = archive_staging_path(&request.paths.install_staging);
-    prepare_staging(&fs, &archive_staging).await?;
+    let archive_staging = archive_staging_path(&request.paths);
+    prepare_staging(&fs, archive_staging).await?;
     #[cfg(test)]
     let archives = super::install_test_support::archive_paths(
         &request,
         &manifest,
-        &archive_staging,
+        archive_staging,
         &request.cancellation,
     )
     .await?;
     #[cfg(not(test))]
-    let archives = download_archives(&manifest, &archive_staging, &request.cancellation).await?;
+    let archives = download_archives(&manifest, archive_staging, &request.cancellation).await?;
     if archives.len() != manifest.archives().len() {
         return Err(OllamaErrorCode::OllamaDownloadFailed);
     }
@@ -124,7 +124,7 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
             &request.cancellation,
         )?;
     }
-    remove_archives(&fs, &archive_staging, &archives).await?;
+    remove_archives(&fs, archive_staging, &archives).await?;
     let prepared = prepare_bundle(&request.paths, &version).await?;
     write_metadata(&fs, &request.paths, &prepared).await?;
     let profile = resolve_install_profile(&request, &request.paths.install_staging)?;

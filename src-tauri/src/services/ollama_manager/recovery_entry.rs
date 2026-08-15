@@ -73,19 +73,40 @@ pub(crate) async fn recover_platform(
 fn frozen_models_directory(
     paths: &crate::services::paths::OllamaPaths,
 ) -> Option<CanonicalDirectory> {
-    let metadata = std::fs::symlink_metadata(&paths.active).ok()?;
-    if !metadata.is_dir() || metadata.file_type().is_symlink() {
-        return None;
-    }
     let cwd = std::env::current_dir().ok()?;
-    let profile = OllamaSpawnProfile::resolve(
-        paths,
-        std::env::vars_os(),
-        &cwd,
-        &NativePathIdentityResolver,
+    match std::fs::symlink_metadata(&paths.active) {
+        Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
+            if let Ok(profile) = OllamaSpawnProfile::resolve(
+                paths,
+                std::env::vars_os(),
+                &cwd,
+                &NativePathIdentityResolver,
+            ) {
+                return Some(profile.models_directory().clone());
+            }
+        }
+        Ok(_) => return None,
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => return None,
+        Err(_) => {}
+    }
+    let environment = super::spawn_environment::freeze(
+        super::spawn_environment::collect_bounded(std::env::vars_os()).ok()?,
+        Vec::new(),
     )
     .ok()?;
-    Some(profile.models_directory().clone())
+    let cwd = NativePathIdentityResolver.canonical_directory(&cwd).ok()?;
+    let model_path = super::spawn_profile_paths::resolve_models_path(
+        environment.value("OLLAMA_MODELS"),
+        &cwd,
+        &environment,
+    )
+    .ok()?;
+    Some(
+        NativePathIdentityResolver
+            .verified_location(&model_path)
+            .ok()?
+            .comparison_directory(),
+    )
 }
 
 impl OllamaManager {

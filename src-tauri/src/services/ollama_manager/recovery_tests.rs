@@ -6,9 +6,12 @@ use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
 use super::recovery::{RecoveryExecutor, RecoveryProbe, RecoveryProbeResult, RecoveryReason};
 use super::recovery_decision::{
-    DirectoryEvidence, JournalPresence, MigrationMarkerPresence, OllamaLayoutSnapshot,
+    ArchiveDirectoryEvidence, DirectoryEvidence, JournalPresence, MigrationMarkerPresence,
+    OllamaLayoutSnapshot,
 };
+use super::release_source::{OllamaArchive, OllamaReleaseManifest};
 use crate::services::paths::{ollama_paths, OllamaPaths};
+use sha2::Digest;
 use std::collections::HashSet;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -709,6 +712,8 @@ fn empty() -> OllamaLayoutSnapshot {
         migration_marker: MigrationMarkerPresence::Absent,
         active: DirectoryEvidence::Absent,
         install_staging: DirectoryEvidence::Absent,
+        archive_staging: ArchiveDirectoryEvidence::Absent,
+        archive_failed: ArchiveDirectoryEvidence::Absent,
         update_staging: DirectoryEvidence::Absent,
         backup: DirectoryEvidence::Absent,
         failed: DirectoryEvidence::Absent,
@@ -850,6 +855,124 @@ async fn real_recovery_executes_install_staging_and_reinspects_it() {
             code: OllamaErrorCode::OllamaRecoveryDeferred,
         })
     );
+}
+
+#[tokio::test]
+async fn interrupted_archive_staging_is_moved_to_rebut_before_retry() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let archive_staging = super::install::archive_staging_path(&paths);
+    std::fs::create_dir_all(archive_staging).expect("archive staging");
+    std::fs::write(archive_staging.join("ollama-darwin.tgz"), b"partial").expect("archive");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(!archive_staging.exists());
+    assert!(paths.archive_failed.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(!paths.archive_staging.exists());
+    assert!(!paths.archive_failed.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::Ready)
+    );
+
+    let archive = root.path().join("next-install.tgz");
+    std::fs::write(&archive, b"not an archive").expect("next archive");
+    let digest = hex::encode(sha2::Sha256::digest(b"not an archive"));
+    let manifest = OllamaReleaseManifest::for_test(
+        super::fingerprint::OllamaVersion::parse("1.2.3").expect("version"),
+        vec![OllamaArchive::for_test(
+            "ollama-darwin.tgz",
+            "https://github.com/ollama/ollama/releases/download/v1.2.3/ollama-darwin.tgz",
+            14,
+            &digest,
+        )],
+    );
+    let mut request = super::install::InstallRequest::for_test(root.path().to_path_buf());
+    request.version = Some(super::fingerprint::OllamaVersion::parse("1.2.3").unwrap());
+    request.manifest = Some(manifest);
+    request.local_archives = Some(vec![archive]);
+    assert_eq!(
+        super::install::install(request.clone()).await,
+        Err(OllamaErrorCode::OllamaBundleInvalid)
+    );
+    assert!(request.paths.archive_staging.exists());
+}
+
+#[tokio::test]
+async fn archive_staging_ambiguity_is_deferred_without_deletion() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    std::fs::create_dir_all(&paths.archive_staging).expect("archive staging");
+    std::fs::create_dir_all(&paths.archive_failed).expect("archive rebut");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Err(OllamaErrorCode::OllamaRecoveryDeferred)
+    );
+    assert!(paths.archive_staging.exists());
+    assert!(paths.archive_failed.exists());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn archive_staging_symlink_is_deferred_without_touching_target() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let outside = tempfile::tempdir_in(".").expect("outside");
+    std::fs::write(outside.path().join("archive"), b"must survive").expect("outside archive");
+    symlink(outside.path(), &paths.archive_staging).expect("archive staging alias");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Err(OllamaErrorCode::OllamaRecoveryDeferred)
+    );
+    assert!(paths.archive_staging.exists());
+    assert!(outside.path().join("archive").exists());
 }
 
 #[tokio::test]

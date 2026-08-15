@@ -1,3 +1,4 @@
+mod archive_recovery;
 mod blocking;
 mod bundle_install;
 mod bundle_receipt;

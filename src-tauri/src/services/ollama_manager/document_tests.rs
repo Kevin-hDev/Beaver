@@ -44,6 +44,8 @@ fn assert_direct_children(paths: &OllamaPaths, root: &Path) {
         &paths.legacy_backup,
         &paths.failed,
         &paths.install_staging,
+        &paths.archive_staging,
+        &paths.archive_failed,
         &paths.update_staging,
         &paths.backup,
         &paths.backup_delete,
