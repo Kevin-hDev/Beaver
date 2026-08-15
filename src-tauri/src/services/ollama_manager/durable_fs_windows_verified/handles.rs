@@ -1,12 +1,14 @@
 use super::super::{win_error, OllamaFsError, OllamaFsErrorKind};
 use std::path::{Component, Path};
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, GENERIC_READ, HANDLE, INVALID_HANDLE_VALUE,
+    CloseHandle, GetLastError, ERROR_ACCESS_DENIED, ERROR_INVALID_PARAMETER, ERROR_NOT_SUPPORTED,
+    GENERIC_READ, HANDLE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
-    CreateFileW, FileDispositionInfoEx, FileIdType, GetFileInformationByHandle, OpenFileById,
-    ReOpenFile, SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
-    FILE_DISPOSITION_FLAG_DELETE, FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE,
+    CreateFileW, FileDispositionInfo, FileDispositionInfoEx, FileIdType,
+    GetFileInformationByHandle, OpenFileById, ReOpenFile, SetFileInformationByHandle,
+    BY_HANDLE_FILE_INFORMATION, FILE_DISPOSITION_FLAG_DELETE,
+    FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE, FILE_DISPOSITION_INFO,
     FILE_DISPOSITION_INFO_EX, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
     FILE_ID_DESCRIPTOR, FILE_ID_DESCRIPTOR_0, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES,
     FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
@@ -109,6 +111,25 @@ pub(super) fn mark_deleted(handle: HANDLE) -> Result<(), OllamaFsError> {
             FileDispositionInfoEx,
             (&disposition as *const FILE_DISPOSITION_INFO_EX).cast(),
             std::mem::size_of::<FILE_DISPOSITION_INFO_EX>() as u32,
+        )
+    } != 0
+    {
+        return Ok(());
+    }
+    let extended_error = unsafe { GetLastError() };
+    if !matches!(
+        extended_error,
+        ERROR_ACCESS_DENIED | ERROR_INVALID_PARAMETER | ERROR_NOT_SUPPORTED
+    ) {
+        return Err(win_error(extended_error));
+    }
+    let legacy = FILE_DISPOSITION_INFO { DeleteFile: 1 };
+    if unsafe {
+        SetFileInformationByHandle(
+            handle,
+            FileDispositionInfo,
+            (&legacy as *const FILE_DISPOSITION_INFO).cast(),
+            std::mem::size_of::<FILE_DISPOSITION_INFO>() as u32,
         )
     } == 0
     {

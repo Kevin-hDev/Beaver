@@ -7,7 +7,7 @@ use super::spawn_profile::{
     FrozenEnvironment, OllamaSpawnProfile, MAX_OLLAMA_ENV_ENTRIES, MAX_OLLAMA_ENV_KEY_UNITS,
     MAX_OLLAMA_ENV_VALUE_UNITS,
 };
-use super::spawn_profile_test_support::{env, paths, resolve, FakeResolver, HOME};
+use super::spawn_profile_test_support::{env, paths, resolve, FakeResolver, CWD, HOME};
 use std::ffi::OsString;
 use std::path::Path;
 
@@ -123,6 +123,7 @@ fn frozen_environment_accessor_is_bounded_and_does_not_expose_mutation() {
 #[test]
 fn dynamic_gpu_overrides_cross_the_explicit_boundary_once() {
     let resolver = FakeResolver::with_paths(&paths());
+    let models = std::path::PathBuf::from(CWD).join("models");
     let overrides = [(
         OsString::from("OLLAMA_GPU_OVERHEAD"),
         OsString::from("1073741824"),
@@ -130,10 +131,10 @@ fn dynamic_gpu_overrides_cross_the_explicit_boundary_once() {
     let profile = OllamaSpawnProfile::resolve_with_overrides(
         &paths(),
         env(&[
-            ("OLLAMA_MODELS", "/fake/cwd/models"),
+            ("OLLAMA_MODELS", models.to_str().expect("models")),
             ("GPU_SELECTOR_UNKNOWN", "cuda:0"),
         ]),
-        Path::new("/fake/cwd"),
+        Path::new(CWD),
         &resolver,
         overrides,
     )

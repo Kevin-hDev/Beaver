@@ -22,6 +22,7 @@ pub(crate) struct NativeGatedProcess {
     thread: OwnedHandle,
     identity: OwnedProcessIdentity,
     opened: bool,
+    termination_requested: bool,
     reaped: bool,
 }
 
@@ -104,6 +105,7 @@ fn create_with_hooks(
         thread: unsafe { OwnedHandle::from_raw_handle(info.hThread) },
         identity,
         opened: false,
+        termination_requested: false,
         reaped: false,
     })
 }
@@ -148,14 +150,18 @@ impl NativeGatedProcess {
     }
 
     pub(crate) fn terminate(&mut self) -> Result<(), OllamaProcessError> {
-        if self.reaped {
+        if self.reaped || self.termination_requested {
             return Ok(());
         }
         if unsafe { TerminateProcess(self.process.as_raw_handle(), 1) } != 0 {
+            self.termination_requested = true;
             return Ok(());
         }
         match unsafe { WaitForSingleObject(self.process.as_raw_handle(), 0) } {
-            WAIT_OBJECT_0 => Ok(()),
+            WAIT_OBJECT_0 => {
+                self.termination_requested = true;
+                Ok(())
+            }
             _ => Err(OllamaProcessError::Gate),
         }
     }

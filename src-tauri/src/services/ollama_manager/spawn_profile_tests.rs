@@ -92,17 +92,15 @@ fn rejects_models_equal_to_or_overlapping_transaction_locations_in_both_directio
     let base = paths();
     let mut resolver = FakeResolver::with_paths(&base);
     let mut locations = (*resolver.locations).clone();
-    locations.insert(
-        base.active.clone(),
-        existing_location("/fake/data/ollama-bundle", 3),
-    );
+    let active = base.active.to_string_lossy().into_owned();
+    locations.insert(base.active.clone(), existing_location(&active, 3));
     resolver.locations = Arc::new(locations);
     assert_eq!(
-        resolve(&resolver, &[("OLLAMA_MODELS", "/fake/data/ollama-bundle")]),
+        resolve(&resolver, &[("OLLAMA_MODELS", &active)]),
         Err(OllamaErrorCode::OllamaModelStoreConflict)
     );
 
-    let model = PathBuf::from("/fake/data/ollama-bundle/models");
+    let model = base.active.join("models");
     let mut locations = (*resolver.locations).clone();
     locations.insert(
         model.clone(),
@@ -116,7 +114,7 @@ fn rejects_models_equal_to_or_overlapping_transaction_locations_in_both_directio
                 "OLLAMA_MODELS",
                 model.to_str().expect("model")
             )]),
-            Path::new("/fake/cwd"),
+            Path::new(CWD),
             &resolver
         ),
         Err(OllamaErrorCode::OllamaModelStoreConflict)
@@ -127,22 +125,15 @@ fn rejects_models_equal_to_or_overlapping_transaction_locations_in_both_directio
 fn identity_aliases_are_rejected_even_when_lexemes_differ() {
     let base = paths();
     let mut resolver = FakeResolver::with_paths(&base);
-    let model = PathBuf::from("/fake/data/alias-models");
+    let model = PathBuf::from(ROOT).join("alias-models");
+    let model_text = model.to_string_lossy().into_owned();
+    let active = base.active.to_string_lossy().into_owned();
     let mut locations = (*resolver.locations).clone();
-    locations.insert(
-        model.clone(),
-        existing_location("/fake/data/alias-models", 7),
-    );
-    locations.insert(
-        base.active.clone(),
-        existing_location("/fake/data/ollama-bundle", 7),
-    );
+    locations.insert(model.clone(), existing_location(&model_text, 7));
+    locations.insert(base.active.clone(), existing_location(&active, 7));
     resolver.locations = Arc::new(locations);
     assert_eq!(
-        resolve(
-            &resolver,
-            &[("OLLAMA_MODELS", model.to_str().expect("model"))]
-        ),
+        resolve(&resolver, &[("OLLAMA_MODELS", &model_text)]),
         Err(OllamaErrorCode::OllamaModelStoreConflict)
     );
 }
@@ -152,7 +143,13 @@ fn native_inspection_error_fails_closed_without_mutation() {
     let resolver =
         FakeResolver::with_paths(&paths()).fail_with(OllamaErrorCode::OllamaStorageUnavailable);
     assert_eq!(
-        resolve(&resolver, &[("OLLAMA_MODELS", "/fake/cwd/models")]),
+        resolve(
+            &resolver,
+            &[(
+                "OLLAMA_MODELS",
+                &PathBuf::from(CWD).join("models").to_string_lossy()
+            )]
+        ),
         Err(OllamaErrorCode::OllamaStorageUnavailable)
     );
     assert_eq!(resolver.mutation_count(), 0);
@@ -161,21 +158,19 @@ fn native_inspection_error_fails_closed_without_mutation() {
 #[test]
 fn probe_profile_has_an_isolated_models_directory() {
     let resolver = FakeResolver::with_paths(&paths());
+    let models = PathBuf::from(CWD).join("models");
     let profile = OllamaSpawnProfile::resolve_probe(
         &paths(),
         super::spawn_profile_test_support::env(&[
-            ("HOME", "/fake/home"),
-            ("OLLAMA_MODELS", "/fake/cwd/models"),
+            ("HOME", HOME),
+            ("OLLAMA_MODELS", models.to_str().expect("models")),
         ]),
-        Path::new("/fake/cwd"),
+        Path::new(CWD),
         &resolver,
     )
     .expect("probe profile");
     assert_eq!(profile.models_directory().path(), paths().probe_models);
-    assert_ne!(
-        profile.models_directory().path(),
-        Path::new("/fake/cwd/models")
-    );
+    assert_ne!(profile.models_directory().path(), models);
 }
 
 #[cfg(unix)]

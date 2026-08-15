@@ -136,9 +136,13 @@ fn serving_fixture() -> Fixture {
     fixture_with_native_server()
 }
 
-fn fixture_with_script(script: &[u8]) -> Fixture {
+fn fixture_with_script(_script: &[u8]) -> Fixture {
     let (root, root_path, executable, cwd, events_file) = fixture_paths();
-    std::fs::write(&executable, script).expect("probe executable");
+    #[cfg(windows)]
+    std::fs::copy(std::env::var_os("ComSpec").expect("ComSpec"), &executable)
+        .expect("probe executable");
+    #[cfg(not(windows))]
+    std::fs::write(&executable, _script).expect("probe executable");
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;

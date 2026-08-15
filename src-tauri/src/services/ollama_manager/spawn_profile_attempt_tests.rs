@@ -1,5 +1,5 @@
 use super::spawn_profile::OllamaSpawnAttempt;
-use super::spawn_profile_test_support::{env, paths, resolve, FakeResolver};
+use super::spawn_profile_test_support::{env, paths, resolve, FakeResolver, CWD, HOME};
 use super::types::OllamaEndpoint;
 use std::num::NonZeroU16;
 use std::path::Path;
@@ -7,11 +7,12 @@ use std::path::Path;
 #[test]
 fn same_profile_instance_is_reused_without_recalculating_models() {
     let resolver = FakeResolver::with_paths(&paths());
+    let models = std::path::PathBuf::from(CWD).join("models");
     let profile = resolve(
         &resolver,
         &[
-            ("HOME", "/fake/home"),
-            ("OLLAMA_MODELS", "/fake/cwd/models"),
+            ("HOME", HOME),
+            ("OLLAMA_MODELS", models.to_str().expect("models")),
         ],
     )
     .expect("profile");
@@ -28,13 +29,14 @@ fn same_profile_instance_is_reused_without_recalculating_models() {
 #[test]
 fn endpoint_is_selected_only_when_attempt_is_created_after_work() {
     let resolver = FakeResolver::with_paths(&paths());
+    let models = std::path::PathBuf::from(CWD).join("models");
     let profile = super::spawn_profile::OllamaSpawnProfile::resolve(
         &paths(),
         env(&[
-            ("HOME", "/fake/home"),
-            ("OLLAMA_MODELS", "/fake/cwd/models"),
+            ("HOME", HOME),
+            ("OLLAMA_MODELS", models.to_str().expect("models")),
         ]),
-        Path::new("/fake/cwd"),
+        Path::new(CWD),
         &resolver,
     )
     .expect("profile");

@@ -6,7 +6,7 @@ use super::path_identity_resolver::NativePathIdentityResolver;
 use super::spawn_environment::FrozenEnvironment;
 use super::spawn_profile::OllamaSpawnProfile;
 use super::spawn_profile_paths::resolve_models_path;
-use super::spawn_profile_test_support::{paths, FakeResolver};
+use super::spawn_profile_test_support::{paths, FakeResolver, CWD};
 use std::ffi::OsString;
 use std::path::Path;
 use std::path::PathBuf;
@@ -75,13 +75,11 @@ fn windows_unicode_and_nul_values_are_checked_in_utf16_units() {
 #[test]
 fn windows_host_override_is_rejected_without_case_aliases() {
     let resolver = FakeResolver::with_paths(&paths());
+    let models = PathBuf::from(CWD).join("models");
     let result = OllamaSpawnProfile::resolve_with_overrides(
         &paths(),
-        [(
-            OsString::from("OLLAMA_MODELS"),
-            OsString::from("/fake/cwd/models"),
-        )],
-        Path::new("/fake/cwd"),
+        [(OsString::from("OLLAMA_MODELS"), models.into_os_string())],
+        Path::new(CWD),
         &resolver,
         [(OsString::from("ollama_host"), OsString::from("late"))],
     );
