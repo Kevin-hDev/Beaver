@@ -123,7 +123,7 @@ pub(super) fn mark_deleted(handle: HANDLE) -> Result<(), OllamaFsError> {
     ) {
         return Err(win_error(extended_error));
     }
-    let legacy = FILE_DISPOSITION_INFO { DeleteFile: 1 };
+    let legacy = FILE_DISPOSITION_INFO { DeleteFile: true };
     if unsafe {
         SetFileInformationByHandle(
             handle,
