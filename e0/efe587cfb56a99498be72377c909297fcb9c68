@@ -1,0 +1,18 @@
+Jalon 3 - correction de compilation Windows
+
+Constat
+- Run CI 31892806319, job Backend Windows CEF 95031533629.
+- Erreur E0308 dans durable_fs_windows_verified/handles.rs: FILE_DISPOSITION_INFO.DeleteFile attend bool, le fallback utilisait l’entier 1.
+- Les deux filtres du job Windows complet échouaient pendant leur inventaire pour la même erreur de compilation; aucun test fonctionnel n’avait démarré.
+
+Correction
+- Utiliser true, type exact exposé par windows-sys 0.61.
+
+Validation observée
+- cargo fmt --all -- --check: vert.
+- node scripts/build/check-rust-format.mjs: vert.
+- git diff --check: vert.
+- graphify update .: aucune modification de topologie.
+
+Limite
+- La compilation Windows et les tests Windows doivent être revalidés par la prochaine CI; aucune réussite Windows n’est déclarée ici.
