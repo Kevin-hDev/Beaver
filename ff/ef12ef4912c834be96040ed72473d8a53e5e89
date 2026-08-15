@@ -1,0 +1,11 @@
+J3 Task 13 — barriere de demarrage et timer de recuperation unique.
+
+Commit: ffef12ef4912c834be96040ed72473d8a53e5e89.
+
+Implementation: OllamaStartupBarrier demarre en Pending, publie Ready apres la recuperation durable et Blocked avec un code type en cas d ambiguite. La publication est protegee par la generation du manager; une ancienne generation ne peut pas remplacer la nouvelle. Le demarrage Ollama attend la decision de recuperation avant toute tentative possedee. Le polling attend aussi la barriere, observe /api/version et /api/ps, et ne redemarre plus directement le sidecar ni ne lance de transaction. Le timer OllamaRecoveryRetry est unique, reutilise par le reveil manuel, applique 5 s / 15 s / 60 s / 300 s puis sature a 300 s, remet la sequence a zero apres un progres durable, dedoublonne les logs par code et categorie, et refuse toute nouvelle tentative apres fermeture.
+
+Polling: les types PsModel, PsResponse, GpuStatusPayload et build_gpu_status appartiennent maintenant au manager::polling. Le snapshot GPU deja publie est reutilise par les cycles d observation; aucun refresh GPU supplementaire n a ete ajoute dans Task 13. ollama_polling.rs est une enveloppe d admission qui relie l annulation du registre au CancellationToken du manager. ollama_ps.rs ne contient plus de comportement.
+
+TDD rouge: avant les modules de production, les deux filtres startup/retry renvoyaient Rust test filter failed; la compilation signalait les imports super::startup et super::retry absents. Vert final: startup_tests 4 passed, retry_tests 5 passed, polling_tests 6 passed; 0 failed, 0 ignored, aucun warning dans les sorties finales.
+
+Checks: git diff --check passe; tous les fichiers de production touches restent a 230 lignes ou moins (manager.rs 230, manager_startup.rs 95, startup.rs 66, retry.rs 141, polling.rs 161, ollama_manager.rs 190, runtime_startup.rs 107, ollama_polling.rs 28, ollama_ps.rs 1); graphify update . termine avec succes. Aucun cargo check, clippy global, suite voisine, CI, push ou merge n a ete lance pour cette tache.
