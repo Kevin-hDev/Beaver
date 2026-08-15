@@ -114,6 +114,12 @@ mod spawn_profile_test_support;
 mod spawn_profile_tests;
 #[cfg(test)]
 mod update_tests;
+#[cfg(test)]
+mod update_completion_support;
+#[cfg(test)]
+mod update_completion_tests;
+#[cfg(test)]
+mod transaction_property_tests;
 #[cfg(all(test, windows))]
 mod windows_durable_fs_tests;
 #[cfg(all(test, windows))]

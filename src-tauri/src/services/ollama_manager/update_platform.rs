@@ -15,10 +15,13 @@ use super::super::probe::{
 };
 use super::super::recovery_decision::{DirectoryEvidence, JournalPresence};
 use super::super::spawn_profile::OllamaSpawnProfile;
-use super::{execute, UpdateBackend, UpdateOutcome, UpdateRequest, UpdateSidecar};
+use super::{execute, CompletionRecovery, UpdateBackend, UpdateOutcome, UpdateRequest, UpdateSidecar};
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+
+#[path = "update_platform_completion.rs"]
+mod completion;
 
 const UPDATE_PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -197,6 +200,10 @@ impl UpdateBackend for PlatformUpdateBackend {
         OwnedOllamaTargetProbe::with_deadline(deadline)
             .validate(target, &profile, &request.cancellation)
             .await
+    }
+
+    async fn recover_completion(&self) -> Result<CompletionRecovery, OllamaErrorCode> {
+        completion::recover().await
     }
 }
 

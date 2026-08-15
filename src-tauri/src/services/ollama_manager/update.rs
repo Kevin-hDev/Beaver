@@ -12,6 +12,13 @@ use tokio_util::sync::CancellationToken;
 
 #[path = "update_platform.rs"]
 pub(crate) mod platform;
+#[path = "update_completion.rs"]
+mod completion;
+
+pub(crate) use completion::{
+    complete_valid_update, reject_target_and_restore, CompletionRecovery, RejectedJournal,
+    ValidatedJournal,
+};
 
 pub trait OwnedSidecarController: Send + Sync {
     fn stop(&self) -> Result<(), OllamaErrorCode>;
@@ -93,6 +100,12 @@ pub(crate) trait UpdateBackend: Send + Sync {
         request: &UpdateRequest,
         target: &super::probe::PreparedBundle,
     ) -> super::probe::TargetValidation;
+
+    async fn recover_completion(&self) -> Result<CompletionRecovery, OllamaErrorCode> {
+        Ok(CompletionRecovery::Deferred {
+            code: OllamaErrorCode::OllamaUpdateCleanupPending,
+        })
+    }
 }
 
 pub(crate) async fn execute<B: UpdateBackend>(
@@ -144,33 +157,21 @@ pub(crate) async fn execute<B: UpdateBackend>(
             true,
         )
         .await?;
+    let pending = super::journal::OllamaTransactionJournal::new(
+        super::journal::OllamaJournalState::PendingValidation {
+            target: target.fingerprint.clone(),
+            previous: previous.clone(),
+        },
+    );
     let validation = backend.probe_active(request, &target).await;
     match validation {
         super::probe::TargetValidation::Valid { fingerprint } => {
-            backend
-                .persist(
-                    super::journal::OllamaJournalState::CleanupPending {
-                        target: fingerprint.clone(),
-                        previous: previous.clone(),
-                    },
-                    true,
-                )
-                .await?;
-            Ok(UpdateOutcome::CleanupPending {
-                code: OllamaErrorCode::OllamaUpdateCleanupPending,
-            })
+            let journal = ValidatedJournal::from_pending(&pending, &fingerprint)?;
+            complete_valid_update(backend, journal).await
         }
         super::probe::TargetValidation::InvalidTarget { code } => {
-            backend
-                .persist(
-                    super::journal::OllamaJournalState::RollbackPending {
-                        previous: previous.clone(),
-                        rejected_target: Some(target.fingerprint.clone()),
-                    },
-                    true,
-                )
-                .await?;
-            Ok(UpdateOutcome::Deferred { code })
+            let journal = RejectedJournal::from_pending(&pending, &target.fingerprint, code)?;
+            reject_target_and_restore(backend, journal).await
         }
         super::probe::TargetValidation::Deferred { code } => Ok(UpdateOutcome::Deferred { code }),
     }
