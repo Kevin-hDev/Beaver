@@ -1,0 +1,35 @@
+Jalon 3 - observabilite CI native
+
+Contexte:
+- Le run CI 253 de la PR 19 compilait sur les trois OS mais restait rouge sur Windows et macOS.
+- Le filtre Rust masquait toute sortie lorsque inventaire cargo test echouait.
+- La couche Windows ramenait les erreurs natives inconnues a Other sans conserver le code numerique.
+- Le job macOS executait cargo check avant clippy, compilation redondante sur un runner contraint.
+
+Decisions:
+- Le filtre CI publie phase, status, signal, stdout et stderr lors de l echec inventaire, avec chaque canal borne a 8 KiB en conservant debut et fin.
+- OllamaFsError conserve optionnellement le code OS interne; ERROR_ACCESS_DENIED est classe PermissionDenied. Le message utilisateur reste generique.
+- Le cargo check macOS redondant est retire; clippy strict demeure autorite de compilation et de lint.
+- Aucun correctif fonctionnel Windows est devine avant la prochaine preuve native.
+
+TDD et resultats observes:
+- Rouge Node: le test attendait diagnostics inventaire/status/signal/stdout/stderr mais recevait uniquement Rust test filter failed.
+- Vert Node: run-rust-test-filter.test.mjs 7/7.
+- Rouge Rust: API from_os_code et variante PermissionDenied absentes; le nouveau filtre bavard a affiche les erreurs de compilation.
+- Vert Rust cible: durable_fs_tests 20/20.
+- Filtre officiel complet services::ollama_manager: 267 passes, 0 echec, 1 utilitaire ignore; 268 filtres verifies.
+- Contrats manager: 6/6 et 2467 fichiers verifies.
+- Suite Node combinee CI/CEF/E2E: 38/38.
+- cargo clippy --all-targets -- -D warnings: vert.
+- cargo fmt --all -- --check: vert.
+- git diff --check: vert.
+- Limites: durable_fs.rs 205 lignes, durable_fs_windows.rs 223, filtre Node 143.
+- graphify update .: 34063 noeuds, 69710 aretes, 2019 communautes.
+
+Limite de preuve:
+- Le test Windows specifique ERROR_ACCESS_DENIED ne peut pas etre execute sur macOS.
+- Une tentative de cross-check Windows local a ete bloquee par absence du SDK et des en-tetes natifs Windows/CEF; ce n est pas une erreur du code Rust.
+- La prochaine CI Windows doit fournir le code natif exact avant toute modification de la primitive de suppression.
+
+Recommandation:
+Synchroniser avec main apres validation de la correction separee du test extension-host, pousser une seule fois, puis attendre le verdict complet sans nouvelle relance speculative.
