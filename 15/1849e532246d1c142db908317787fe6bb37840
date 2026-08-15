@@ -1,0 +1,11 @@
+Task: stabilize the native macOS CEF journey exposed by PR #20.
+
+Root cause: CEF callbacks allocate a total RuntimeStamp order, but cef_state_bridge executes each update in an independent async/spawn_blocking task. A later loading=false update could reach BrowserSessionService before an earlier title update; the former single per-tab revision then rejected the title forever and page_load expired.
+
+Correction: RuntimeRevisionCache keeps one revision per independent tab field. An older value of the same field is removed fail-closed, while an older update carrying a different fresh field remains applicable. Release remains a whole-view barrier, epochs remain isolated, and the cache remains bounded by MAX_BROWSER_TABS.
+
+TDD: out_of_order_updates_preserve_independent_fields was first observed red because filter_update did not exist. Added stale_field_is_removed_without_discarding_a_fresh_field to prove mixed partial updates.
+
+Validation observed: runtime_revision_tests 5/5; full services::browser 165/165; services::work_registry_tests 9/9; services::extensions::host_process::tests 6/6; cargo fmt --all -- --check green; cargo clippy --all-targets -- -D warnings green; git diff --check green; production files <= 180 lines; graphify update completed.
+
+Native evidence boundary: before this correction, the isolated local journey reached page_load and passed in 357 ms. Afterward, local attempts were not valid page_load evidence because Beaver Dev and independent Rust suites were running concurrently; one attempt stopped at browser_capability before the corrected path executed. No blind rerun was used. A contemporary main CI native macOS journey passed, while both PR #20 attempts had deterministically expired at page_load.
