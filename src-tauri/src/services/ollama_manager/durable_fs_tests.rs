@@ -327,6 +327,16 @@ fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
 }
 
 #[test]
+fn windows_verified_delete_reopens_root_by_verified_file_id() {
+    let verified = include_str!("durable_fs_windows_verified.rs");
+    let handles = include_str!("durable_fs_windows_verified/handles.rs");
+
+    assert!(verified.contains("handles::open_root(stable.as_raw_handle(), &stable_info)"));
+    assert!(handles.contains("pub(super) fn open_root("));
+    assert!(!handles.contains("ReOpenFile"));
+}
+
+#[test]
 fn wide_path_validation_rejects_nul_and_32768_units() {
     assert_eq!(
         validate_wide_units([b'a' as u16, 0, b'b' as u16]),

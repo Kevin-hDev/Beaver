@@ -5,7 +5,7 @@ use windows_sys::Win32::Foundation::{
 };
 use windows_sys::Win32::Storage::FileSystem::{
     FileDispositionInfo, FileDispositionInfoEx, FileIdType, GetFileInformationByHandle,
-    OpenFileById, ReOpenFile, SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
+    OpenFileById, SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
     FILE_DISPOSITION_FLAG_DELETE, FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE,
     FILE_DISPOSITION_FLAG_POSIX_SEMANTICS, FILE_DISPOSITION_INFO, FILE_DISPOSITION_INFO_EX,
     FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_ID_DESCRIPTOR,
@@ -45,6 +45,14 @@ pub(super) fn open_child(
     file_id: i64,
     directory: bool,
 ) -> Result<OwnedHandle, OllamaFsError> {
+    open_by_id(volume, file_id, directory)
+}
+
+pub(super) fn open_root(volume: HANDLE, info: &FileInfo) -> Result<OwnedHandle, OllamaFsError> {
+    open_by_id(volume, file_id(info) as i64, true)
+}
+
+fn open_by_id(volume: HANDLE, file_id: i64, directory: bool) -> Result<OwnedHandle, OllamaFsError> {
     let access = if directory {
         DELETE | FILE_LIST_DIRECTORY | FILE_DELETE_CHILD | FILE_READ_ATTRIBUTES
     } else {
@@ -79,17 +87,6 @@ pub(super) fn file_info(handle: HANDLE) -> Result<FileInfo, OllamaFsError> {
         return Err(win_error(unsafe { GetLastError() }));
     }
     Ok(unsafe { info.assume_init() })
-}
-
-pub(super) fn reopen_directory(handle: HANDLE) -> Result<OwnedHandle, OllamaFsError> {
-    OwnedHandle::new(unsafe {
-        ReOpenFile(
-            handle,
-            DELETE | FILE_DELETE_CHILD | FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES,
-            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
-        )
-    })
 }
 
 pub(super) fn file_id(info: &FileInfo) -> u64 {

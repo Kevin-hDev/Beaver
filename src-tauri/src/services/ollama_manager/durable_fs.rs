@@ -22,7 +22,7 @@ pub(super) enum OllamaFsErrorKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum OllamaFsOperation {
     InspectHandle,
-    ReopenDirectory,
+    OpenRoot,
     EnumerateDirectory,
     OpenChild,
     MarkChildDeleted,

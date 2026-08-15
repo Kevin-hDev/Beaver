@@ -22,8 +22,10 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
     let stable_info = handles::file_info(stable.as_raw_handle())
         .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
     revalidate_root(root, expected, &stable_info)?;
-    let deletion = handles::reopen_directory(stable.as_raw_handle())
-        .map_err(|error| error.at(OllamaFsOperation::ReopenDirectory))?;
+    // Open by the already verified file ID. ReOpenFile is not a safe authority
+    // here: Windows runners reject its attempt to add DELETE access.
+    let deletion = handles::open_root(stable.as_raw_handle(), &stable_info)
+        .map_err(|error| error.at(OllamaFsOperation::OpenRoot))?;
     let deletion_info = handles::file_info(deletion.raw())
         .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
     if !handles::same_identity(&stable_info, &deletion_info) {
