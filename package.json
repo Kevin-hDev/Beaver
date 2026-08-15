@@ -28,6 +28,7 @@
     "test:install": "bash scripts/test-install-sh.sh && node --test scripts/installers-security.test.mjs && npm run test:package-migration",
     "test:provider-usage": "node scripts/check-provider-usage.mjs",
     "test:j3-reference": "node --test scripts/ollama/j3-reference-preflight.test.mjs",
+    "test:j3-native-assets": "node --test scripts/ollama/verify-native-upgrade-assets.test.mjs scripts/ollama/native-upgrade-proof.test.mjs",
     "test:ollama-manager-contracts": "node --test scripts/ollama/ollama-manager-contracts.test.mjs && node scripts/ollama/ollama-manager-contracts.mjs",
     "preflight:j3-reference": "node scripts/ollama/j3-reference-preflight.mjs",
     "contracts:generate": "cd src-tauri && cargo test models::provider_contract_tests::export_typescript_provider_contract -- --ignored --exact --nocapture",
