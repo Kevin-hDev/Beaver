@@ -1,0 +1,13 @@
+Task 7 — sonde Ollama possédée, isolée et bornée.
+
+Base exacte: b6c7f9de6fd20cd9b9fda94f0ce65604e81e6559. Commit: b0f0ea61 feat(ollama): validate owned targets with bounded probe. PreparedBundle est défini ici comme unique type futur; aucun ancien launcher, consommateur Task 14, Job ou inventaire parallèle.
+
+TDD rouge observé avant production: cd src-tauri && node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::probe_tests ; sortie lue: Rust test filter failed. Les verts relus sont probe_tests 7 passed/0 failed, probe_http_tests 6 passed/0 failed et port_tests 3 passed/0 failed.
+
+Preuves implémentées: format/permissions/absence/hash/version/JSON/réponse >4 KiB classés InvalidTarget; enfant mort, timeout/erreur transitoire, inspection temporaire et trois ports indisponibles classés Deferred; identité exacte et endpoint sain classés Valid. La lecture HTTP est loopback, sans redirection, par chunks et bornée à 4096 octets; le délai absolu et l'annulation sont observés.
+
+Garanties: profil probe Task 6 avec dossier modèles interne et OLLAMA_NO_CLOUD=1; tableau fixe de trois ports; démon externe seulement observé par TCP sans signal/restart/libération; identité du même processus revalidée avant/après /api/version; gate fermée, arrêt et reap avant retour; échec de reap n'autorise pas un second enfant; endpoint de sonde non publié.
+
+Validation: cargo check exit 0; cargo clippy --all-targets -- -D warnings exit 0; cargo fmt --all -- --check exit 0; git diff --check exit 0; graphify update . terminé avec succès. Production: probe.rs 217 lignes, probe_http.rs 226, port.rs 82.
+
+Limites: preuve Windows native non exécutée sur macOS arm64 et non déclarée verte; suite globale connue (updater rouge et cinq blocages PTY de baseline) non relancée. Aucun push ni merge. Note relue après écriture.
