@@ -12,6 +12,9 @@ mod path_identity_resolver;
 mod port;
 mod probe;
 mod probe_http;
+mod probe_ownership;
+mod probe_runner;
+mod probe_support;
 #[allow(dead_code)]
 mod process;
 #[allow(dead_code)]

@@ -25,3 +25,7 @@ pub(crate) const MAX_PROBE_RESPONSE_BYTES: usize = 4 * 1024;
 pub(crate) const PROBE_DEFAULT_PORT: u16 = 11_434;
 #[allow(dead_code)]
 pub(crate) const PROBE_CONNECT_TIMEOUT: Duration = Duration::from_millis(250);
+#[allow(dead_code)]
+pub(crate) const PROBE_ENDPOINT_POLL_INTERVAL: Duration = Duration::from_millis(10);
+#[allow(dead_code)]
+pub(crate) const MAX_PROBE_SOCKET_RECORDS: usize = 1024;
