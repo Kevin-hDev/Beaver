@@ -171,7 +171,10 @@
 
 .send-btn:disabled { cursor: default; opacity: 0.25; }
 
+/* Sans flex-shrink, le dessin serait comprimé par son bouton dès qu'il en
+   dépasse : la rangée le rétrécirait au lieu de le laisser déborder. */
 .send-stop-icon {
+  flex-shrink: 0;
   width: var(--chat-send-icon-size);
   height: var(--chat-send-icon-size);
 }

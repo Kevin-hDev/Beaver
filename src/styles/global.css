@@ -1,6 +1,7 @@
 @import "tailwindcss" source("../");
 @import "@fontsource-variable/jetbrains-mono";
 @import "./tokens.css";
+@import "./tokens-icon-sizes.css";
 @import "./themes/light.css";
 @import "./themes/dark.css";
 @import "./themes/emerald-night.css";
