@@ -7,7 +7,7 @@ use super::spawn_profile::{
     FrozenEnvironment, OllamaSpawnProfile, MAX_OLLAMA_ENV_ENTRIES, MAX_OLLAMA_ENV_KEY_UNITS,
     MAX_OLLAMA_ENV_VALUE_UNITS,
 };
-use super::spawn_profile_test_support::{env, paths, resolve, FakeResolver};
+use super::spawn_profile_test_support::{env, paths, resolve, FakeResolver, HOME};
 use std::ffi::OsString;
 use std::path::Path;
 
@@ -17,7 +17,7 @@ fn frozen_environment_preserves_unknown_inherited_values_and_overrides_once() {
     let profile = resolve(
         &resolver,
         &[
-            ("HOME", "/fake/home"),
+            ("HOME", HOME),
             ("PATH", "/bin"),
             ("HTTPS_PROXY", "http://proxy.invalid"),
             ("GPU_SELECTOR_UNKNOWN", "cuda:0"),
@@ -26,7 +26,7 @@ fn frozen_environment_preserves_unknown_inherited_values_and_overrides_once() {
     )
     .expect("profile");
     let environment = profile.environment();
-    assert_eq!(environment.get("HOME"), Some("/fake/home"));
+    assert_eq!(environment.get("HOME"), Some(HOME));
     assert_eq!(environment.get("PATH"), Some("/bin"));
     assert_eq!(environment.get("HTTPS_PROXY"), Some("http://proxy.invalid"));
     assert_eq!(environment.get("GPU_SELECTOR_UNKNOWN"), Some("cuda:0"));

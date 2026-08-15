@@ -22,7 +22,7 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[test]
 fn production_install_entrypoint_uses_the_manager_not_a_free_facade() {
-    let source = include_str!("../../commands/ollama_setup.rs");
+    let source = include_str!("../../commands/ollama_setup.rs").replace("\r\n", "\n");
     assert!(source.contains("manager\n        .install(request)"));
     assert!(!source.contains("install_ollama_to"));
 }
@@ -100,15 +100,17 @@ async fn version_and_receipt_are_coherent_before_publication() {
     let root_path = dunce::canonicalize(root.path()).unwrap();
     let paths = crate::services::paths::ollama_paths(&root_path);
     std::fs::create_dir_all(paths.install_staging.join("bin")).unwrap();
-    std::fs::write(paths.install_staging.join("bin/ollama"), b"#!/bin/sh\n").unwrap();
+    let executable_name = if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    };
+    let executable = paths.install_staging.join("bin").join(executable_name);
+    std::fs::write(&executable, b"#!/bin/sh\n").unwrap();
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(
-            paths.install_staging.join("bin/ollama"),
-            std::fs::Permissions::from_mode(0o755),
-        )
-        .unwrap();
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
     let version = OllamaVersion::parse("1.2.3").unwrap();
     let prepared = prepare_bundle(&paths, &version).await.unwrap();

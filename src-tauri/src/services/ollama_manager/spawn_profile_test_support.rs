@@ -9,7 +9,18 @@ use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
+#[cfg(not(windows))]
 pub const ROOT: &str = "/fake/data";
+#[cfg(windows)]
+pub const ROOT: &str = r"C:\fake\data";
+#[cfg(not(windows))]
+pub const CWD: &str = "/fake/cwd";
+#[cfg(windows)]
+pub const CWD: &str = r"C:\fake\cwd";
+#[cfg(not(windows))]
+pub const HOME: &str = "/fake/home";
+#[cfg(windows)]
+pub const HOME: &str = r"C:\fake\home";
 const MAX_FAKE_CALLS: usize = 256;
 
 #[derive(Clone)]
@@ -25,22 +36,28 @@ impl FakeResolver {
     pub fn with_paths(paths: &crate::services::paths::OllamaPaths) -> Self {
         let mut directories = HashMap::new();
         directories.insert(PathBuf::from(ROOT), directory(ROOT, 1));
-        directories.insert(PathBuf::from("/fake/cwd"), directory("/fake/cwd", 2));
+        directories.insert(PathBuf::from(CWD), directory(CWD, 2));
         let mut locations = HashMap::new();
         for path in transaction_paths(paths) {
             locations.insert(path.clone(), absent_location(ROOT, path));
         }
         locations.insert(
-            PathBuf::from("/fake/cwd/models"),
-            absent_location("/fake/cwd", Path::new("/fake/cwd/models")),
+            PathBuf::from(CWD).join("models"),
+            absent_location(CWD, &PathBuf::from(CWD).join("models")),
         );
         locations.insert(
-            PathBuf::from("/fake/data/.ollama/models"),
-            absent_location("/fake/data/.ollama", Path::new("/fake/data/.ollama/models")),
+            PathBuf::from(ROOT).join(".ollama").join("models"),
+            absent_location(
+                &PathBuf::from(ROOT).join(".ollama").to_string_lossy(),
+                &PathBuf::from(ROOT).join(".ollama").join("models"),
+            ),
         );
         locations.insert(
-            PathBuf::from("/fake/home/.ollama/models"),
-            absent_location("/fake/home/.ollama", Path::new("/fake/home/.ollama/models")),
+            PathBuf::from(HOME).join(".ollama").join("models"),
+            absent_location(
+                &PathBuf::from(HOME).join(".ollama").to_string_lossy(),
+                &PathBuf::from(HOME).join(".ollama").join("models"),
+            ),
         );
         locations.insert(
             paths.probe_models.clone(),
@@ -103,8 +120,12 @@ impl PathIdentityResolver for FakeResolver {
         if let Some(error) = self.failure {
             return Err(error);
         }
+        #[cfg(windows)]
+        let path = PathBuf::from(r"C:\fake\ollama.exe");
+        #[cfg(not(windows))]
+        let path = path.to_path_buf();
         Ok(CanonicalExecutable::synthetic(
-            path.to_path_buf(),
+            path,
             NativeFileIdentity::synthetic(11),
         ))
     }
@@ -210,7 +231,7 @@ pub fn resolve(
     super::spawn_profile::OllamaSpawnProfile::resolve(
         &paths(),
         env(inherited),
-        Path::new("/fake/cwd"),
+        Path::new(CWD),
         resolver,
     )
 }

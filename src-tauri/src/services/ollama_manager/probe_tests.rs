@@ -170,7 +170,11 @@ fn fixture_paths() -> (tempfile::TempDir, PathBuf, PathBuf, PathBuf, PathBuf) {
     let root = tempfile::tempdir().expect("temporary bundle root");
     let root_path = dunce::canonicalize(root.path()).expect("canonical bundle root");
     let paths = ollama_paths(&root_path);
-    let executable = paths.active.join("bin").join("ollama");
+    let executable = paths.active.join("bin").join(if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    });
     std::fs::create_dir_all(executable.parent().expect("bin parent")).expect("bin directory");
     let cwd = root_path.join("cwd");
     std::fs::create_dir_all(&cwd).expect("working directory");

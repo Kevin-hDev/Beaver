@@ -97,7 +97,6 @@ pub(super) fn extract_zip(
             .enclosed_name()
             .ok_or(OllamaErrorCode::OllamaBundleInvalid)?
             .to_path_buf();
-        validate_member_path(&name)?;
         if !names.insert(name.clone()) {
             return Err(OllamaErrorCode::OllamaBundleInvalid);
         }

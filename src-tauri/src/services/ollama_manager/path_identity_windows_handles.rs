@@ -11,21 +11,17 @@ use std::path::Path;
 use std::sync::Arc;
 use windows_sys::Win32::Foundation::{SetHandleInformation, HANDLE, HANDLE_FLAG_INHERIT};
 use windows_sys::Win32::Storage::FileSystem::{
-    GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, DELETE, FILE_ATTRIBUTE_DIRECTORY,
-    FILE_ATTRIBUTE_REPARSE_POINT, FILE_DELETE_CHILD, FILE_FLAG_BACKUP_SEMANTICS,
-    FILE_FLAG_OPEN_REPARSE_POINT, FILE_GENERIC_READ, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES,
-    FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
+    GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, FILE_ATTRIBUTE_DIRECTORY,
+    FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
+    FILE_GENERIC_READ, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE,
+    FILE_SHARE_READ, FILE_SHARE_WRITE,
 };
 
 fn open_handle(
     path: &Path,
     flags: u32,
+    access: u32,
 ) -> Result<(std::fs::File, BY_HANDLE_FILE_INFORMATION), OllamaError> {
-    let access = if flags & FILE_FLAG_BACKUP_SEMANTICS != 0 {
-        DELETE | FILE_DELETE_CHILD | FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES
-    } else {
-        FILE_GENERIC_READ
-    };
     let file = OpenOptions::new()
         .read(true)
         .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
@@ -56,6 +52,7 @@ pub(super) fn opened(path: &Path) -> Result<CanonicalDirectory, OllamaError> {
     let (file, info) = open_handle(
         path,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+        FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES,
     )?;
     if info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(super::super::super::error::OllamaErrorCode::OllamaModelStoreConflict);
@@ -73,7 +70,7 @@ pub(super) fn opened(path: &Path) -> Result<CanonicalDirectory, OllamaError> {
 }
 
 pub(super) fn canonical_executable(path: &Path) -> Result<CanonicalExecutable, OllamaError> {
-    let (file, info) = open_handle(path, FILE_FLAG_OPEN_REPARSE_POINT)?;
+    let (file, info) = open_handle(path, FILE_FLAG_OPEN_REPARSE_POINT, FILE_GENERIC_READ)?;
     if info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(super::super::super::error::OllamaErrorCode::OllamaModelStoreConflict);
     }
@@ -92,6 +89,7 @@ pub(super) fn ancestor_identity(path: &Path) -> Result<NativeDirectoryIdentity, 
     let (file, info) = open_handle(
         path,
         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+        FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES,
     )?;
     if info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(super::super::super::error::OllamaErrorCode::OllamaModelStoreConflict);

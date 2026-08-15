@@ -32,6 +32,9 @@ fn reject_reparse_components(path: &Path, allow_missing_final: bool) -> Result<(
     let mut components = absolute.components().peekable();
     while let Some(component) = components.next() {
         current.push(component.as_os_str());
+        if matches!(component, Component::Prefix(_) | Component::RootDir) {
+            continue;
+        }
         let is_final = components.peek().is_none();
         let metadata = match fs::symlink_metadata(&current) {
             Ok(metadata) => metadata,

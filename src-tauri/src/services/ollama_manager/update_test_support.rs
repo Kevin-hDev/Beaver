@@ -60,22 +60,31 @@ impl FakeBackend {
         let target = root.join("update-staging");
         std::fs::create_dir_all(active.join("bin")).unwrap();
         std::fs::create_dir_all(target.join("bin")).unwrap();
-        std::fs::copy("/usr/bin/true", active.join("bin/ollama")).unwrap();
-        std::fs::copy("/usr/bin/false", target.join("bin/ollama")).unwrap();
+        let executable_name = if cfg!(windows) {
+            "ollama.exe"
+        } else {
+            "ollama"
+        };
+        let executable = Path::new("bin").join(executable_name);
+        std::fs::write(active.join("bin").join(executable_name), b"active-ollama").unwrap();
+        std::fs::write(target.join("bin").join(executable_name), b"target-ollama").unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            for path in [active.join("bin/ollama"), target.join("bin/ollama")] {
+            for path in [
+                active.join("bin").join(executable_name),
+                target.join("bin").join(executable_name),
+            ] {
                 std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
             }
         }
         let resolver = super::super::path_identity_resolver::NativePathIdentityResolver;
         let active_executable = resolver
-            .canonical_executable(&active.join("bin/ollama"))
+            .canonical_executable(&active.join(&executable))
             .unwrap();
         let target_root = resolver.canonical_directory(&target).unwrap();
         let target_executable = resolver
-            .canonical_executable(&target.join("bin/ollama"))
+            .canonical_executable(&target.join(&executable))
             .unwrap();
         let previous = BundleFingerprint {
             version: OllamaVersion::parse("1.0.0").unwrap(),

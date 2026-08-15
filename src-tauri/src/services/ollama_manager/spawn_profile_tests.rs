@@ -6,7 +6,7 @@ use super::path_identity::VerifiedDirectoryLocation;
 use super::path_identity_resolver::NativePathIdentityResolver;
 use super::spawn_profile::OllamaSpawnProfile;
 use super::spawn_profile_test_support::{
-    directory, existing_location, paths, resolve, FakeResolver, ROOT,
+    directory, existing_location, paths, resolve, FakeResolver, CWD, HOME, ROOT,
 };
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -31,16 +31,19 @@ fn resolves_absolute_models_path_and_keeps_the_executable_profile() {
     let profile = resolve(
         &resolver,
         &[
-            ("HOME", "/fake/home"),
-            ("OLLAMA_MODELS", "/fake/cwd/models"),
+            ("HOME", HOME),
+            (
+                "OLLAMA_MODELS",
+                &PathBuf::from(CWD).join("models").to_string_lossy(),
+            ),
         ],
     )
     .expect("profile");
     assert_eq!(
         profile.models_directory().path(),
-        Path::new("/fake/cwd/models")
+        PathBuf::from(CWD).join("models")
     );
-    assert_eq!(profile.working_directory().path(), Path::new("/fake/cwd"));
+    assert_eq!(profile.working_directory().path(), Path::new(CWD));
     assert!(profile.executable().path().is_absolute());
     assert_eq!(profile.environment().get("OLLAMA_NO_CLOUD"), Some("1"));
 }
@@ -48,14 +51,11 @@ fn resolves_absolute_models_path_and_keeps_the_executable_profile() {
 #[test]
 fn resolves_relative_models_from_the_profile_cwd_not_process_cwd() {
     let resolver = FakeResolver::with_paths(&paths());
-    let profile = resolve(
-        &resolver,
-        &[("HOME", "/fake/home"), ("OLLAMA_MODELS", "models")],
-    )
-    .expect("profile");
+    let profile =
+        resolve(&resolver, &[("HOME", HOME), ("OLLAMA_MODELS", "models")]).expect("profile");
     assert_eq!(
         profile.models_directory().path(),
-        Path::new("/fake/cwd/models")
+        PathBuf::from(CWD).join("models")
     );
 }
 
@@ -79,13 +79,11 @@ fn rejects_empty_and_parent_models_values_before_identity_mutation() {
 fn absent_models_uses_the_same_inherited_home_authority() {
     let resolver = FakeResolver::with_paths(&paths());
     let profile = resolve(&resolver, &[("HOME", ROOT), ("PATH", "/bin")]).expect("profile");
-    assert_eq!(
-        profile.models_directory().path(),
-        Path::new("/fake/data/.ollama/models")
-    );
+    let expected_models = PathBuf::from(ROOT).join(".ollama").join("models");
+    assert_eq!(profile.models_directory().path(), expected_models);
     assert_eq!(
         profile.environment().get("OLLAMA_MODELS"),
-        Some("/fake/data/.ollama/models")
+        expected_models.to_str()
     );
 }
 

@@ -5,11 +5,11 @@ use windows_sys::Win32::Foundation::{
 };
 use windows_sys::Win32::Storage::FileSystem::{
     CreateFileW, FileDispositionInfoEx, FileIdType, GetFileInformationByHandle, OpenFileById,
-    SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, FILE_DISPOSITION_FLAG_DELETE,
-    FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE, FILE_DISPOSITION_INFO_EX,
-    FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_ID_DESCRIPTOR,
-    FILE_ID_DESCRIPTOR_0, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE,
-    FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
+    ReOpenFile, SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
+    FILE_DISPOSITION_FLAG_DELETE, FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE,
+    FILE_DISPOSITION_INFO_EX, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
+    FILE_ID_DESCRIPTOR, FILE_ID_DESCRIPTOR_0, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES,
+    FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows_sys::Win32::Storage::FileSystem::{DELETE, FILE_DELETE_CHILD};
 
@@ -78,6 +78,17 @@ pub(super) fn file_info(handle: HANDLE) -> Result<FileInfo, OllamaFsError> {
         return Err(win_error(unsafe { GetLastError() }));
     }
     Ok(unsafe { info.assume_init() })
+}
+
+pub(super) fn reopen_directory(handle: HANDLE) -> Result<OwnedHandle, OllamaFsError> {
+    OwnedHandle::new(unsafe {
+        ReOpenFile(
+            handle,
+            DELETE | FILE_DELETE_CHILD | FILE_LIST_DIRECTORY | FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+        )
+    })
 }
 
 pub(super) fn file_id(info: &FileInfo) -> u64 {
