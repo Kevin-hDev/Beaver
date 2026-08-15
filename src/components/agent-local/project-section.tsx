@@ -9,6 +9,7 @@ import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu"
 import { ConversationSessionItem } from "./conversation-session-item";
 import { useSessionMenuItems } from "./use-session-menu-items";
 import { useKeyboard } from "@/hooks/use-keyboard";
+import type { DragHandleProps, DragItemProps } from "@/hooks/use-drag-reorder";
 import type { AgentSessionMeta, Project } from "@/types/agent";
 import { idMatch } from "@/lib/utils";
 
@@ -18,7 +19,6 @@ interface ProjectSectionProps {
   selectedId: string | null;
   runningIds: Set<string>;
   unreadIds: Set<string>;
-  isDragOver: boolean;
   onSelect: (id: string) => void;
   onNewSession: (projectId: string) => void;
   onRenameProject: (id: string, name: string) => void;
@@ -26,19 +26,22 @@ interface ProjectSectionProps {
   onOpenFolder: (path: string) => void;
   onRenameSession: (id: string, name: string) => void;
   onDeleteSession: (id: string) => void;
-  onGrab: (id: string) => void;
-  isDragging: boolean;
+  /* Le glissement de réordonnancement, tenu par useDragReorder : la case
+     entière se décale, mais on ne l'attrape que par son en-tête. */
+  dragProps: DragItemProps;
+  dragHandleProps: DragHandleProps;
+  didDrag: () => boolean;
   collapsed: boolean;
   onToggleCollapse: () => void;
   nowMs: number;
 }
 
 export function ProjectSection({
-  project, sessions, selectedId, isDragOver,
+  project, sessions, selectedId,
   runningIds, unreadIds,
   onSelect, onNewSession, onRenameProject, onDeleteProject,
   onOpenFolder, onRenameSession, onDeleteSession,
-  onGrab, isDragging, collapsed, onToggleCollapse,
+  dragProps, dragHandleProps, didDrag, collapsed, onToggleCollapse,
   nowMs,
 }: ProjectSectionProps) {
   const { t } = useTranslation();
@@ -89,22 +92,16 @@ export function ProjectSection({
   }, [onRenameSession]);
 
   return (
-    <div
-      className={`conv-project-wrapper ${isDragOver ? "conv-project-drag-over" : ""} ${isDragging ? "conv-project-dragging" : ""}`}
-      data-project-id={project.id}
-    >
+    <div className="conv-project-wrapper" {...dragProps}>
       <div
         className="conv-project-header"
-        style={{ cursor: isDragging ? "grabbing" : "grab" }}
         role="button"
         tabIndex={0}
-        onClick={onToggleCollapse}
+        /* Un glissement se termine par un clic que le navigateur envoie quand
+           même : sans ce filtre, déplacer un projet le replierait au passage. */
+        onClick={() => { if (!didDrag()) onToggleCollapse(); }}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggleCollapse(); }}
-        onPointerDown={(e) => {
-          if (e.button !== 0) return;
-          e.preventDefault();
-          onGrab(project.id);
-        }}
+        {...dragHandleProps}
       >
         {renaming ? (
           <input

@@ -26,14 +26,18 @@
    ailleurs : une durée posée seule laisse « transition-property » à sa valeur
    par défaut, « all », et ce sont alors sa position et sa hauteur qui
    s'animent. Comme il ouvre la section, tout ce qui le suit glissait avec lui.
-   Les autres reçoivent leur propriété dans conversation-projects.css et
-   conversation-drag.css, chargés avant celui-ci. */
+   Les autres reçoivent leur propriété dans conversation-projects.css, chargé
+   avant celui-ci.
+
+   Le conteneur d'un projet ne figure pas ici : son seul mouvement est celui du
+   réordonnancement par glissement, réglé avec lui dans drag-reorder.css. Cette
+   durée l'y allongeait à 400 ms, et les voisins d'un projet déplacé mettaient
+   donc deux fois plus longtemps que prévu à lui céder la place. */
 .conv-section-toggle {
   transition: color 400ms ease;
 }
 
-.conv-project-header,
-.conv-project-wrapper {
+.conv-project-header {
   transition-duration: 400ms;
 }
 

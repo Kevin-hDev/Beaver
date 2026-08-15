@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { X as XIcon, Plus } from "@/components/ui/icons";
 import { TerminalIcon } from "@/components/ui/chat-header-icons";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useDragReorder } from "@/hooks/use-drag-reorder";
 import type { TerminalTab } from "@/hooks/use-terminal";
 import "./terminal-tab-bar.css";
 
@@ -17,8 +18,6 @@ interface TerminalTabBarProps {
   onClosePanel: () => void;
 }
 
-const DRAG_THRESHOLD = 5;
-
 export function TerminalTabBar({
   tabs,
   activeTabId,
@@ -31,98 +30,49 @@ export function TerminalTabBar({
 }: TerminalTabBarProps) {
   const { t } = useTranslation();
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
-  const startRef = useRef<{ x: number; idx: number } | null>(null);
-  const draggingRef = useRef(false);
-  const tabWidthRef = useRef(0);
   const isMulti = tabs.length > 1;
 
-  const handlePointerDown = useCallback((e: React.PointerEvent, idx: number) => {
-    if (e.button !== 0 || editingTabId !== null) return;
+  const drag = useDragReorder({
+    ids: tabs.map((tab) => tab.id),
+    axis: "x",
+    containerRef: barRef,
+    onReorder: (_ids, from, to) => onReorder(from, to),
+  });
+
+  const handlePointerDown = useCallback((id: string, e: React.PointerEvent) => {
+    if (editingTabId !== null) return;
+    /* La barre est posée dans un panneau qu'on redimensionne au même geste :
+       sans cette coupure, saisir un onglet déplacerait aussi le panneau. */
     e.stopPropagation();
-    startRef.current = { x: e.clientX, idx };
+    drag.handleProps(id).onPointerDown(e);
+  }, [drag, editingTabId]);
 
-    const el = (e.currentTarget as HTMLElement);
-    tabWidthRef.current = el.offsetWidth;
-  }, [editingTabId]);
-
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (!startRef.current) return;
-      if (!draggingRef.current) {
-        if (Math.abs(e.clientX - startRef.current.x) < DRAG_THRESHOLD) return;
-        draggingRef.current = true;
-        setDragIdx(startRef.current.idx);
-      }
-      if (!barRef.current) return;
-      const items = barRef.current.querySelectorAll<HTMLElement>("[data-term-tab-idx]");
-      let found: number | null = null;
-      for (const el of items) {
-        const rect = el.getBoundingClientRect();
-        const idx = Number(el.dataset.termTabIdx);
-        if (idx === startRef.current.idx) continue;
-        if (e.clientX >= rect.left && e.clientX <= rect.right) {
-          found = idx;
-          break;
-        }
-      }
-      setHoverIdx(found);
-    };
-
-    const onUp = () => {
-      if (draggingRef.current && startRef.current && hoverIdx !== null) {
-        onReorder(startRef.current.idx, hoverIdx);
-      }
-      startRef.current = null;
-      draggingRef.current = false;
-      setDragIdx(null);
-      setHoverIdx(null);
-    };
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-  }, [hoverIdx, onReorder]);
-
-  function getTransform(i: number): string {
-    if (dragIdx === null || hoverIdx === null || i === dragIdx) return "none";
-    const w = tabWidthRef.current;
-    if (dragIdx < hoverIdx) {
-      if (i > dragIdx && i <= hoverIdx) return `translateX(-${w}px)`;
-    } else if (dragIdx > hoverIdx) {
-      if (i < dragIdx && i >= hoverIdx) return `translateX(${w}px)`;
-    }
-    return "none";
-  }
+  const tabById = new Map(tabs.map((tab) => [tab.id, tab]));
 
   return (
     <div className="terminal-tab-bar" ref={barRef}>
-      {/* eslint-disable-next-line react-hooks/refs -- false positive, tabs is a prop not a ref */}
-      {tabs.map((tab, i) => {
+      {drag.order.map((id) => {
+        const tab = tabById.get(id);
+        if (!tab) return null;
         const isSelected = tab.id === activeTabId;
-        const isDragged = dragIdx === i;
         const isEditing = editingTabId === tab.id;
 
         return (
           <div
             key={tab.id}
-            data-term-tab-idx={i}
+            {...drag.itemProps(tab.id)}
             className={[
               "terminal-tab-item",
               isSelected && isMulti ? "active-multi" : "",
-              isDragged ? "dragging" : "",
             ].join(" ")}
-            style={{ transform: getTransform(i) }}
             role="button"
             tabIndex={0}
-            onClick={() => { if (!draggingRef.current) onSelect(tab.id); }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { if (!draggingRef.current) onSelect(tab.id); } }}
-            onPointerDown={(e) => handlePointerDown(e, i)}
+            /* Un glissement se termine par un clic que le navigateur envoie
+               quand même : sans ce filtre, déplacer un onglet l'activerait. */
+            onClick={() => { if (!drag.didDrag()) onSelect(tab.id); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(tab.id); }}
+            onPointerDown={(e) => handlePointerDown(tab.id, e)}
             onDoubleClick={() => setEditingTabId(tab.id)}
           >
             <div

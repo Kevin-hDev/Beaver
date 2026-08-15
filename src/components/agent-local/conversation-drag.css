@@ -1,35 +1,11 @@
-/* Glisser-déposer et renommage dans la liste des conversations.
-   Importé en dernier : .conv-project-wrapper y reçoit sa transition,
-   par-dessus la règle posée dans conversation-projects.css. */
-
-/* Drag-and-drop */
-.conv-project-wrapper {
-  transition: transform 200ms ease, opacity 200ms ease;
-}
-
-.conv-project-wrapper.conv-project-dragging {
-  opacity: 0.3;
-}
+/* Ce qui accompagne un glissement ou un renommage dans la liste des
+   conversations. Le décalage des projets et l'allure de celui qu'on tient ne
+   sont plus ici : ils viennent de src/styles/drag-reorder.css, partagé avec
+   les onglets du terminal. */
 
 .conv-list.is-dragging {
   user-select: none;
   cursor: grabbing;
-}
-
-.conv-drag-ghost {
-  position: fixed;
-  pointer-events: none;
-  z-index: var(--z-toast); /* transient drag preview, above all app layers */
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--surface);
-  border: 1px solid var(--pulse);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-card);
-  font-size: var(--text-sm);
-  color: var(--ink);
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0.9;
 }
 
 /* Rename input */
