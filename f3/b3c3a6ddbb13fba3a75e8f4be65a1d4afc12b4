@@ -1,0 +1,20 @@
+Jalon 3 - correction de compilation du diagnostic Windows
+
+Run 31908791644
+- Windows CEF a echoue avant les tests avec E0432: OllamaFsOperation etait importe depuis durable_fs_windows au lieu de durable_fs.
+- cette frontiere cfg(windows) n est pas compilee par Clippy macOS.
+- les deux jobs Windows ne pouvaient donc produire aucune nouvelle preuve native; attendre les autres duplications du run n aurait rien appris de plus.
+
+Correction
+- import explicite depuis super::super, l autorite durable_fs.
+- le contrat cross-platform durable_fs_tests verifie maintenant les deux chemins de modules Windows utilises par verified et entries, pour rendre cette erreur visible hors Windows.
+
+Preuves locales
+- durable_fs_tests: 21/21.
+- cargo fmt --all -- --check: vert.
+- cargo clippy --all-targets -- -D warnings: vert.
+- git diff --check: vert.
+- graphify update .: termine, 34180 noeuds et 69972 aretes.
+
+Suite
+- le prochain Windows complet doit soit valider la suppression, soit imprimer operation + os_code. Aucun autre changement metier n est inclus.
