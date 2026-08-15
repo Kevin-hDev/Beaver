@@ -1,0 +1,7 @@
+Correction du lot CI après synchronisation avec main.
+
+Causes corrigées: handles Windows bruts non Send remplacés par OwnedHandle; visibilités et imports conditionnels Windows; appels Windows invalides; formatage Rust; course stat puis open du préflight CodeQL; fixture de capacité Ollama rendue déterministe en attendant la fin de exec.
+
+Preuves locales vues vertes: cargo fmt --all -- --check; cargo clippy --all-targets -- -D warnings; npm run lint; npx tsc --noEmit; npm run test:j3-reference 15/15; npm run test:ollama-manager-contracts 6/6 et scan 2467 fichiers; filtre services::ollama_manager 266 passés, 0 échec, 1 test développeur ignoré; test sensible répété 5 fois, 5/5; git diff --check; fichiers Rust de production Ollama au plus 229 lignes; graphify update terminé.
+
+Limite: la cible Windows ne peut pas compiler localement sur ce Mac faute de SDK C Windows. La preuve native Windows est donc déléguée au nouveau run CI; aucune fusion n’est autorisée avant une CI complète verte.
