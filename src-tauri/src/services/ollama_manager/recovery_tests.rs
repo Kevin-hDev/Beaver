@@ -383,6 +383,10 @@ enum RealScenario {
     RemoveFailedDelete,
     RemoveCompletedLegacyJournal,
     AdoptLegacyActive,
+    CleanupPendingMoveBackupToDelete,
+    CleanupPendingRemoveBackupDelete,
+    RollbackPendingMoveRejectedToFailed,
+    RollbackPendingRestorePrevious,
 }
 
 struct RealFixture {
@@ -519,6 +523,49 @@ fn real_fixture(scenario: RealScenario) -> RealFixture {
         RealScenario::AdoptLegacyActive => {
             real_bundle_at(&paths.active, "1.2.3", b"active");
         }
+        RealScenario::CleanupPendingMoveBackupToDelete => {
+            let target = real_bundle_at(&paths.active, "1.2.3", b"target");
+            let previous = real_bundle_at(&paths.backup, "1.2.2", b"previous");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::CleanupPending {
+                    target,
+                    previous,
+                }),
+            );
+        }
+        RealScenario::CleanupPendingRemoveBackupDelete => {
+            let target = real_bundle_at(&paths.active, "1.2.3", b"target");
+            let previous = real_bundle_at(&paths.backup_delete, "1.2.2", b"previous");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::CleanupPending {
+                    target,
+                    previous,
+                }),
+            );
+        }
+        RealScenario::RollbackPendingMoveRejectedToFailed => {
+            let rejected = real_bundle_at(&paths.active, "1.2.3", b"rejected");
+            let previous = real_bundle_at(&paths.backup, "1.2.2", b"previous");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::RollbackPending {
+                    previous,
+                    rejected_target: Some(rejected),
+                }),
+            );
+        }
+        RealScenario::RollbackPendingRestorePrevious => {
+            let previous = real_bundle_at(&paths.backup, "1.2.2", b"previous");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::RollbackPending {
+                    previous,
+                    rejected_target: None,
+                }),
+            );
+        }
     }
 
     let fs = Arc::new(RealCutpointFs::default());
@@ -562,6 +609,16 @@ fn real_cutpoint_operations(scenario: RealScenario) -> &'static [RealOperation] 
             RealOperation::Publish,
             RealOperation::SyncParent,
         ],
+        RealScenario::CleanupPendingMoveBackupToDelete => {
+            &[RealOperation::Rename, RealOperation::SyncParent]
+        }
+        RealScenario::CleanupPendingRemoveBackupDelete => {
+            &[RealOperation::Remove, RealOperation::SyncParent]
+        }
+        RealScenario::RollbackPendingMoveRejectedToFailed
+        | RealScenario::RollbackPendingRestorePrevious => {
+            &[RealOperation::Rename, RealOperation::SyncParent]
+        }
     }
 }
 
@@ -590,6 +647,10 @@ async fn real_recovery_decision_cutpoints_converge_after_two_passes() {
         RealScenario::RemoveFailedDelete,
         RealScenario::RemoveCompletedLegacyJournal,
         RealScenario::AdoptLegacyActive,
+        RealScenario::CleanupPendingMoveBackupToDelete,
+        RealScenario::CleanupPendingRemoveBackupDelete,
+        RealScenario::RollbackPendingMoveRejectedToFailed,
+        RealScenario::RollbackPendingRestorePrevious,
     ];
     for scenario in scenarios {
         for operation in real_cutpoint_operations(scenario) {
