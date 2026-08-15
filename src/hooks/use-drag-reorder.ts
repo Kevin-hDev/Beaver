@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  clampDelta,
   moveId,
   sameOrder,
   slotOffsets,
@@ -82,14 +81,13 @@ export function useDragReorder({ ids, axis, containerRef, onReorder }: DragReord
       const held = grab.current;
       const container = containerRef.current;
       if (!held || !container) return;
-      const travelled = coordinate(container, axis, e.clientX, e.clientY) - held.origin;
+      const delta = coordinate(container, axis, e.clientX, e.clientY) - held.origin;
       if (!active.current) {
-        if (Math.abs(travelled) < THRESHOLD_PX) return;
+        if (Math.abs(delta) < THRESHOLD_PX) return;
         active.current = true;
         dragged.current = true;
         setDraggingId(held.id);
       }
-      const delta = clampDelta(slots.current, held.from, travelled);
       target.current = targetIndex(slots.current, held.from, delta);
       setOffsets(slotOffsets(slots.current, held.from, target.current, delta));
     };

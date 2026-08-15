@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  clampDelta,
   moveId,
   sameOrder,
   slotGap,
@@ -39,27 +38,24 @@ describe("slotGap", () => {
   });
 });
 
-describe("clampDelta", () => {
-  it("laisse passer un déplacement qui reste dans la liste", () => {
-    expect(clampDelta(uniform, 0, 60)).toBe(60);
-  });
-
-  it("arrête la première case au bas de la dernière", () => {
-    expect(clampDelta(uniform, 0, 500)).toBe(88);
-  });
-
-  it("arrête la dernière case en haut de la première", () => {
-    expect(clampDelta(uniform, 2, -500)).toBe(-88);
-  });
-
-  it("tient compte des tailles inégales", () => {
-    /* « a » fait 30 de haut ; le bas de la liste est à 300, elle ne peut donc
-       descendre que de 270. */
-    expect(clampDelta(uneven, 0, 999)).toBe(270);
-  });
-});
-
 describe("targetIndex", () => {
+  /* Le bornage du déplacement aux limites de la liste rendait ces deux places
+     inatteignables : la case tenue s'arrêtait pile là où son milieu rejoignait
+     celui du voisin, sans jamais le dépasser. */
+  it("atteint la dernière place quand le geste va au-delà de la liste", () => {
+    expect(targetIndex(uniform, 0, 999)).toBe(2);
+  });
+
+  it("atteint la première place quand le geste remonte au-delà de la liste", () => {
+    expect(targetIndex(uniform, 2, -999)).toBe(0);
+  });
+
+  it("échange les deux seules cases d'une liste de deux", () => {
+    const pair = uniform.slice(0, 2);
+    expect(targetIndex(pair, 0, 999)).toBe(1);
+    expect(targetIndex(pair, 1, -999)).toBe(0);
+  });
+
   it("ne change rien tant que le milieu du voisin n'est pas franchi", () => {
     /* La case « a » est centrée sur 20 ; le milieu de « b » est à 64. */
     expect(targetIndex(uniform, 0, 43)).toBe(0);

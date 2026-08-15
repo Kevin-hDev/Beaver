@@ -109,6 +109,41 @@ describe("useDragReorder", () => {
     expect(shown).toEqual(["b", "a", "c"]);
   });
 
+  /* Une liste de deux n'est faite que d'extrémités : si les bords sont
+     inatteignables, plus rien ne se réordonne du tout. */
+  it("fait passer la première case sous la seconde", () => {
+    const onReorder = vi.fn();
+    const { getByTestId } = render(<Reorderable ids={["a", "b"]} onReorder={onReorder} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 55 });
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).toHaveBeenCalledWith(["b", "a"], 0, 1);
+  });
+
+  it("fait passer la seconde case au-dessus de la première", () => {
+    const onReorder = vi.fn();
+    const { getByTestId } = render(<Reorderable ids={["a", "b"]} onReorder={onReorder} />);
+
+    grab(getByTestId("item-b"), 50);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 5 });
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).toHaveBeenCalledWith(["b", "a"], 1, 0);
+  });
+
+  it("atteint la dernière place d'une liste de trois", () => {
+    const onReorder = vi.fn();
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={onReorder} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 200 });
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).toHaveBeenCalledWith(["b", "c", "a"], 0, 2);
+  });
+
   it("abandonne le geste sans rien enregistrer quand on l'annule", () => {
     const onReorder = vi.fn();
     function Cancellable() {

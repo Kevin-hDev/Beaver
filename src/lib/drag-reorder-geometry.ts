@@ -25,17 +25,10 @@ export function slotGap(slots: DragSlot[]): number {
   return 0;
 }
 
-/* Le déplacement ne sort pas de la liste. Deux raisons : au-delà du dernier
-   voisin il ne se passe plus rien, et le conteneur des projets rogne ce qui
-   dépasse — un projet emmené trop loin s'y couperait en deux. */
-export function clampDelta(slots: DragSlot[], from: number, delta: number): number {
-  const dragged = slots[from];
-  const last = slots[slots.length - 1];
-  if (!dragged || !last) return delta;
-  const lowest = slots[0].start - dragged.start;
-  const highest = last.start + last.size - (dragged.start + dragged.size);
-  return Math.min(Math.max(delta, lowest), highest);
-}
+/* Rien ne borne le déplacement, et c'est délibéré : une borne posée sur les
+   extrémités de la liste arrête la case tenue à l'endroit exact où son milieu
+   rejoint celui du voisin, sans jamais le franchir. Les deux bouts deviennent
+   alors inatteignables — dans une liste de deux, plus rien ne se réordonne. */
 
 /* La case visée est celle dont on a franchi le milieu, pas celle qu'on
    effleure : un projet déplié occupe dix fois la surface d'un projet replié,
