@@ -639,7 +639,9 @@
     "modelfileTab": "Modelfile",
     "modelsTab": "Modelli",
     "noInstalledModels": "Nessun modello installato",
-    "noVariants": "Nessuna variante disponibile"
+    "noVariants": "Nessuna variante disponibile",
+    "runtime": { "loading": "Caricamento dello stato di Ollama…", "retry": "Riprova", "owned": "Ollama gestito da Beaver", "external": "Ollama esterno", "unavailable": "Ollama non disponibile" },
+    "errors": { "generic": "Ollama non ha completato questa operazione. Riprova." }
   },
   "heartbeat": {
     "back": "Indietro",

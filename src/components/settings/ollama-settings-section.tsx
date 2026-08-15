@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { IS_MAC } from "@/lib/platform";
 import { showToast } from "@/lib/toast-emitter";
+import { useOllamaRuntimeStatus } from "@/hooks/use-ollama-runtime-status";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
@@ -24,6 +25,7 @@ export function OllamaSettingsSection({
   const { t } = useTranslation();
   const [accelChanged, setAccelChanged] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const runtime = useOllamaRuntimeStatus();
 
   const hardwareAccelOptions = useMemo((): SelectOption[] => [
     { value: "cpu", label: t("settings.advanced.hardwareAccelCpu") },
@@ -44,9 +46,10 @@ export function OllamaSettingsSection({
     setRestarting(true);
     try {
       const launched = await invoke<boolean>("restart_ollama_sidecar");
-      const msg = launched
-        ? t("settings.advanced.hardwareAccelRestarted")
-        : t("settings.advanced.ollamaExternalReused");
+      await runtime.refresh();
+      const msg = isExternal(runtime.status)
+        ? t("settings.advanced.ollamaExternalReused")
+        : launched ? t("settings.advanced.hardwareAccelRestarted") : t("errors.ollamaRestartFailed");
       showToast(msg, "success");
       setAccelChanged(false);
     } catch {
@@ -127,4 +130,8 @@ export function OllamaSettingsSection({
       <VramTable />
     </SettingsCard>
   );
+}
+
+function isExternal(status: ReturnType<typeof useOllamaRuntimeStatus>["status"]): boolean {
+  return status !== null && typeof status.daemon !== "string" && "external" in status.daemon;
 }

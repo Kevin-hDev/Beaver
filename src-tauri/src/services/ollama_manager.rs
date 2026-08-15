@@ -131,6 +131,8 @@ mod polling_tests;
 mod adoption_tests;
 #[cfg(test)]
 mod transaction_property_tests;
+#[cfg(test)]
+mod typescript_contract_tests;
 #[cfg(all(test, windows))]
 mod windows_durable_fs_tests;
 #[cfg(all(test, windows))]

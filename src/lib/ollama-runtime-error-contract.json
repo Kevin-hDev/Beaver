@@ -1,0 +1,22 @@
+{
+  "ollama-update-cleanup-pending": "ollama.errors.generic",
+  "ollama-update-recovery-required": "ollama.errors.generic",
+  "ollama-recovery-deferred": "ollama.errors.generic",
+  "ollama-model-store-conflict": "ollama.errors.generic",
+  "ollama-storage-unavailable": "ollama.errors.generic",
+  "ollama-journal-invalid": "ollama.errors.generic",
+  "ollama-bundle-missing": "ollama.errors.generic",
+  "ollama-bundle-invalid": "ollama.errors.generic",
+  "ollama-download-failed": "ollama.errors.generic",
+  "ollama-checksum-mismatch": "ollama.errors.generic",
+  "ollama-extraction-failed": "ollama.errors.generic",
+  "ollama-validation-deferred": "ollama.errors.generic",
+  "ollama-operation-in-progress": "ollama.errors.generic",
+  "ollama-operation-cancelled": "ollama.errors.generic",
+  "ollama-closing": "ollama.errors.generic",
+  "ollama-start-failed": "ollama.errors.generic",
+  "ollama-stop-failed": "ollama.errors.generic",
+  "ollama-setup-timeout": "ollama.errors.generic",
+  "ollama-unavailable": "ollama.errors.generic",
+  "ollama-internal": "ollama.errors.generic"
+}

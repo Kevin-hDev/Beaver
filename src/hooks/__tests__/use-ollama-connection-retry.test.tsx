@@ -13,7 +13,13 @@ afterEach(() => {
 describe("useOllamaConnectionRetry", () => {
   it("affiche l'indicateur puis relance quand Ollama revient", async () => {
     const onRetry = vi.fn();
-    vi.mocked(invoke).mockResolvedValue(true);
+    vi.mocked(invoke).mockResolvedValue({
+      bundle: "ready",
+      daemon: { owned: { endpoint: { port: 11434 } } },
+      operation: "idle",
+      progress: null,
+      last_error: null,
+    });
 
     const { result } = renderHook(() => useOllamaConnectionRetry({
       error: "errors.ollamaConnectionLost",
@@ -25,13 +31,19 @@ describe("useOllamaConnectionRetry", () => {
     await waitFor(() => expect(onRetry).toHaveBeenCalledTimes(1));
     expect(result.current.indicator).toBeNull();
     expect(result.current.suppressError).toBe(true);
-    expect(invoke).toHaveBeenCalledWith("is_ollama_running");
+    expect(invoke).toHaveBeenCalledWith("get_ollama_runtime_status");
   });
 
   it("s'arrête après 10 tentatives sans relancer", async () => {
     vi.useFakeTimers();
     const onRetry = vi.fn();
-    vi.mocked(invoke).mockResolvedValue(false);
+    vi.mocked(invoke).mockResolvedValue({
+      bundle: "ready",
+      daemon: "unavailable",
+      operation: "idle",
+      progress: null,
+      last_error: null,
+    });
 
     const { result } = renderHook(() => useOllamaConnectionRetry({
       error: "errors.ollamaConnectionLost",

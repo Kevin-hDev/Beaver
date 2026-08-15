@@ -639,7 +639,9 @@
     "modelfileTab": "Modelfile",
     "modelsTab": "モデル",
     "noInstalledModels": "インストール済みモデルがありません",
-    "noVariants": "利用可能なバリアントがありません"
+    "noVariants": "利用可能なバリアントがありません",
+    "runtime": { "loading": "Ollama の状態を読み込んでいます…", "retry": "再試行", "owned": "Beaver が管理する Ollama", "external": "外部 Ollama", "unavailable": "Ollama は利用できません" },
+    "errors": { "generic": "Ollama はこの操作を完了できませんでした。もう一度お試しください。" }
   },
   "heartbeat": {
     "back": "戻る",

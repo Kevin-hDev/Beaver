@@ -639,7 +639,9 @@
     "modelfileTab": "Modelfile",
     "modelsTab": "模型",
     "noInstalledModels": "未安装模型",
-    "noVariants": "没有可用变体"
+    "noVariants": "没有可用变体",
+    "runtime": { "loading": "正在加载 Ollama 状态…", "retry": "重试", "owned": "Beaver 管理的 Ollama", "external": "外部 Ollama", "unavailable": "Ollama 不可用" },
+    "errors": { "generic": "Ollama 无法完成此操作，请重试。" }
   },
   "heartbeat": {
     "back": "返回",

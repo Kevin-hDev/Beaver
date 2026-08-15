@@ -4,10 +4,12 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import "./ollama.css";
 import "./ollama-setup-screen.css";
 
+type OllamaSetupStatus = "downloading" | "downloading-rocm" | "verifying" | "extracting" | "starting";
+
 interface OllamaSetupProgress {
   completed: number;
   total: number;
-  status: string;
+  status: OllamaSetupStatus;
 }
 
 interface OllamaSetupScreenProps {
@@ -54,7 +56,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
 
     const channel = new Channel<OllamaSetupProgress>();
     channel.onmessage = (event) => {
-      setStatus(event.status);
+      setStatus(parseSetupStatus(event.status));
       if (event.total > 0) {
         setPercent(Math.round((event.completed / event.total) * 100));
       }
@@ -163,4 +165,17 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
       )}
     </div>
   );
+}
+
+function parseSetupStatus(value: string): OllamaSetupStatus {
+  switch (value) {
+    case "downloading":
+    case "downloading-rocm":
+    case "verifying":
+    case "extracting":
+    case "starting":
+      return value;
+    default:
+      return "downloading";
+  }
 }

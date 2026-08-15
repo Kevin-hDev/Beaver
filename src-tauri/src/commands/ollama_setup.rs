@@ -1,6 +1,6 @@
 use crate::services::ollama_manager::{
     BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaStartOutcome, OllamaVersion,
-    OperationState,
+    OllamaRuntimeStatus, OperationState,
 };
 use serde::Serialize;
 use std::ffi::OsString;
@@ -21,6 +21,22 @@ pub async fn is_ollama_installed(
     manager: tauri::State<'_, OllamaManager>,
 ) -> Result<bool, String> {
     Ok(matches!(manager.status().await.bundle, BundleState::Ready))
+}
+
+#[tauri::command]
+pub async fn get_ollama_runtime_status(
+    manager: tauri::State<'_, OllamaManager>,
+) -> Result<OllamaRuntimeStatus, String> {
+    Ok(manager.status().await)
+}
+
+#[tauri::command]
+pub fn retry_ollama_recovery(
+    manager: tauri::State<'_, OllamaManager>,
+) -> Result<(), String> {
+    manager
+        .request_recovery_retry()
+        .map_err(|code| code.as_str().to_string())
 }
 
 #[tauri::command]
