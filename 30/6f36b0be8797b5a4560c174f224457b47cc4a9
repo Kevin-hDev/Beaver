@@ -1,0 +1,33 @@
+TASK 14 — FIN D’ADOPTION DU MANAGER
+
+Commit: 306f36b0be8797b5a4560c174f224457b47cc4a9
+
+Contexte : les étapes A et B avaient laissé des consommateurs réels hors du manager. Ce commit termine uniquement cette adoption.
+
+Changements :
+- le lancement du polling passe par RuntimeState et OllamaManager::run_background_loop ; l’ancienne enveloppe n’est plus utilisée ;
+- l’installation utilise InstallRequest et OllamaManager::install ; l’annulation utilise le jeton enregistré par le manager ;
+- la mise à jour utilise UpdateRequest et le sidecar possédé par le manager, avec arrêt puis reap via l’unique processus détenu ;
+- la lecture de version utilise le reçu durable de l’actif ;
+- l’ancien helper agent_local de base URL est retiré ;
+- les tests actifs semver, archives, annulation, environnement et point d’entrée ont été migrés vers les autorités manager ;
+- les helpers d’annulation du manager ont été déplacés dans manager_runtime.rs afin de maintenir manager.rs sous 230 lignes.
+
+Contrôles vus fonctionner :
+- adoption : 2 passed, 0 failed, 0 ignored ;
+- startup : 4 passed, 0 failed, 0 ignored ;
+- polling : 6 passed, 0 failed, 0 ignored ;
+- ollama_setup_tests : 4 passed ; ollama_audit_tests : 4 passed ; environnement de profil : 6 passed ; test d’entrée d’installation : 1 passed ;
+- cargo check : succès. Les 47 warnings restants proviennent des anciennes autorités qui seront supprimées par l’étape C ; aucun warning ne vient de l’adoption elle-même ;
+- git diff --check : succès ;
+- production modifiée sous 230 lignes : maximum lib.rs 226, manager.rs 224 ;
+- graphify update . : succès, graphe mis à jour.
+
+Références legacy encore présentes, attendues avant l’étape C :
+- commands/ollama_setup_start.rs, commands/ollama_bundle_utils.rs, commands/ollama_setup_install.rs, commands/ollama_checksum.rs, commands/ollama_extract.rs et leurs tests ;
+- services/ollama_lifecycle.rs, services/ollama_kill.rs, services/ollama_kill_tests.rs, services/ollama_port.rs, services/ollama_env.rs ;
+- les déclarations de ces modules dans commands/mod.rs et services/mod.rs.
+
+Exceptions à ne pas supprimer comme legacy Ollama : app_exit/cleanup_tests.rs et services/ollama_manager/adoption_tests.rs contiennent seulement des fixtures de contrat ; services/forecast/sidecar_http.rs possède son propre ACTIVE_PORT sans lien avec Ollama.
+
+Recommandation : poursuivre l’étape C en supprimant les autorités listées ci-dessus et en retirant leurs déclarations, sans toucher aux fixtures ni au port Forecast.
