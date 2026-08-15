@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { open, stat } from "node:fs/promises";
+import { open } from "node:fs/promises";
 import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -135,16 +135,16 @@ function remoteArchiveRef(archiveRef) {
   const branch = archiveRef.slice("refs/heads/".length);
   return validateRef(`refs/remotes/origin/${branch}`, "refs/remotes/");
 }
-async function readInventory(inventoryPath, repoRoot, statFile = stat, openFile = open) {
+async function readInventory(inventoryPath, repoRoot, openFile = open) {
   assertSafePath(repoRoot);
   assertSafePath(inventoryPath);
-  if (typeof statFile !== "function" || typeof openFile !== "function") fail();
+  if (typeof openFile !== "function") fail();
   const path = isAbsolute(inventoryPath) ? inventoryPath : resolve(repoRoot, inventoryPath);
   try {
-    const metadata = await statFile(path);
-    if (!metadata || !Number.isSafeInteger(metadata.size) || metadata.size < 0 || metadata.size > MAX_MARKDOWN_BYTES) fail();
     const handle = await openFile(path, "r");
     try {
+      const metadata = await handle.stat();
+      if (!metadata || !Number.isSafeInteger(metadata.size) || metadata.size < 0 || metadata.size > MAX_MARKDOWN_BYTES) fail();
       const buffer = Buffer.alloc(MAX_MARKDOWN_BYTES + 1);
       const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
       if (!Number.isSafeInteger(bytesRead) || bytesRead < 0 || bytesRead > MAX_MARKDOWN_BYTES) fail();
@@ -174,12 +174,11 @@ export async function verifyJ3ReferenceArchive({
   repoRoot,
   inventoryPath,
   runGit = createGitRunner(repoRoot),
-  statFile = stat,
   openFile = open,
 }) {
   try {
     if (typeof runGit !== "function") fail();
-    const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot, statFile, openFile));
+    const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot, openFile));
     const remoteRef = remoteArchiveRef(inventory.archiveRef);
     const actualHead = (await callGit(runGit, ["rev-parse", "--verify", `${remoteRef}^{commit}`])).trim();
     if (actualHead !== inventory.archiveHead) fail();

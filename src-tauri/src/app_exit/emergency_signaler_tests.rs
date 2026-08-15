@@ -1,11 +1,17 @@
-use super::emergency::{
-    EmergencyInventory, EmergencyPublishError, VerifiedProcessIdentity, EMERGENCY_CAPACITY,
-};
+#[cfg(unix)]
+use super::emergency::VerifiedProcessIdentity;
+use super::emergency::{EmergencyInventory, EmergencyPublishError, EMERGENCY_CAPACITY};
+#[cfg(unix)]
 use super::emergency_drain::{EmergencyObservation, EmergencySignaler};
 use super::emergency_registration::EmergencyHandoffReason;
-use super::emergency_signaler::{AppEmergencyPublisher, NativeEmergencySignaler};
+use super::emergency_signaler::AppEmergencyPublisher;
+#[cfg(unix)]
+use super::emergency_signaler::NativeEmergencySignaler;
+#[cfg(unix)]
 use crate::services::owned_process::OwnedProcess;
+#[cfg(unix)]
 use crate::services::process_tree::ProcessKind;
+#[cfg(unix)]
 use std::process::{Command, Stdio};
 #[cfg(target_os = "linux")]
 use std::time::Duration;

@@ -9,11 +9,15 @@ use super::install_phases::INSTALL_PHASE_ORDER;
 use super::release_source::{OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl};
 use super::types::BundleState;
 use sha2::{Digest, Sha256};
+#[cfg(unix)]
 use std::fs::File;
 use std::path::PathBuf;
+#[cfg(unix)]
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
+#[cfg(unix)]
 use wiremock::matchers::{method, path};
+#[cfg(unix)]
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[test]

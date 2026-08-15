@@ -37,9 +37,9 @@ mod probe_http;
 mod probe_ownership;
 mod probe_runner;
 mod probe_support;
-mod process_error;
 #[allow(dead_code)]
 mod process;
+mod process_error;
 #[allow(dead_code)]
 mod process_owned;
 #[allow(dead_code)]
@@ -106,7 +106,7 @@ mod probe_http_tests;
 mod probe_tests;
 #[cfg(test)]
 mod process_receipt_tests;
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod process_tests;
 #[cfg(test)]
 mod recovery_decision_tests;

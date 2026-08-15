@@ -119,10 +119,16 @@ impl GatedOllamaProcess {
     }
 
     #[cfg(test)]
-    pub(crate) fn open_gate_for_test(&mut self) {
-        if let Some(native) = self.native.as_mut() {
-            let _ = native.open_gate();
-        }
+    pub(crate) fn open_gate_and_wait_for_test(&mut self) -> Result<(), OllamaProcessError> {
+        let native = self
+            .native
+            .as_mut()
+            .ok_or(OllamaProcessError::InvalidState)?;
+        native.open_gate()?;
+        native.wait_for_executable(
+            self.executable,
+            Instant::now() + PROCESS_REAP_FALLBACK_TIMEOUT,
+        )
     }
 
     fn publish_inner(

@@ -4,6 +4,7 @@ use super::spawn_profile::OllamaSpawnAttempt;
 use super::spawn_profile_test_support::env;
 use super::types::OllamaEndpoint;
 use crate::services::paths::ollama_paths;
+use std::cell::Cell;
 use std::ffi::OsStr;
 use std::num::NonZeroU16;
 use std::time::{Duration, Instant};
@@ -35,6 +36,12 @@ fn attempt(
     .expect("profile");
     let guard = tempfile::tempdir().expect("guard");
     (models, guard, profile)
+}
+
+#[test]
+fn native_process_handles_are_send_and_sync() {
+    fn assert_send_sync<T: Send + Sync>() {}
+    assert_send_sync::<spawn_gate_windows::NativeGatedProcess>();
 }
 
 #[test]
@@ -122,25 +129,25 @@ fn executable_swap_is_denied_while_stable_handle_is_held() {
     replacement.push("v1.0");
     replacement.push("powershell.exe");
     assert!(replacement.exists(), "replacement image");
-    let mut swap_denied = false;
+    let swap_denied = Cell::new(false);
     let mut process = spawn_gate_windows::create_with_hooks_for_test(
         &spawn_attempt,
         || {
             if std::fs::rename(&executable, &backup).is_err() {
-                swap_denied = true;
+                swap_denied.set(true);
                 return;
             }
             std::fs::copy(replacement, &executable).expect("replace active image");
         },
         || {
-            if !swap_denied {
+            if !swap_denied.get() {
                 std::fs::remove_file(&executable).expect("remove replacement");
                 std::fs::rename(&backup, &executable).expect("restore active image");
             }
         },
     )
     .expect("suspended process");
-    assert!(swap_denied, "share lock must deny A to B replacement");
+    assert!(swap_denied.get(), "share lock must deny A to B replacement");
     let expected = profile
         .executable()
         .execution_identity()

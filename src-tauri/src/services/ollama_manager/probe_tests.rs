@@ -3,6 +3,7 @@ use sha2::{Digest, Sha256};
 use std::net::TcpListener;
 use std::num::NonZeroU16;
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
 use std::process::Command;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -17,7 +18,9 @@ use super::port::OllamaPortAllocator;
 use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 use super::probe_ownership::{wait_for_owned_endpoint, EndpointWaitResult};
 use super::spawn_profile::OllamaSpawnProfile;
-use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity};
+#[cfg(unix)]
+use crate::services::owned_process::OwnedProcess;
+use crate::services::owned_process::OwnedProcessIdentity;
 use crate::services::paths::ollama_paths;
 
 const DEAD_SCRIPT: &[u8] = b"#!/bin/sh\nexit 0\n";

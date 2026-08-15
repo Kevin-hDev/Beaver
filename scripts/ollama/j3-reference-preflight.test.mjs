@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, open, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, open, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
@@ -157,7 +157,6 @@ test("bloque une valeur dupliquée", async () => {
 });
 
 test("bloque une commande Git non nulle", async () => {
-  const inventory = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
   const runGit = async () => {
     throw new Error("private git detail");
   };
@@ -173,19 +172,25 @@ test("bloque l'inventaire auquel il manque un commit", async () => {
   assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
 });
 
-test("refuse un fichier de plus de 256 Kio avant sa lecture complète", async () => {
+test("refuse un fichier de plus de 256 Kio avant sa lecture", async () => {
   const temporaryRoot = await mkdtemp(join(tmpdir(), "j3-reference-"));
   const inventoryPath = join(temporaryRoot, "oversized.md");
   await writeFile(inventoryPath, Buffer.alloc(MAX_INVENTORY_BYTES + 1, "x"));
   let statCalls = 0;
   let openCalls = 0;
-  const statFile = async (...args) => {
-    statCalls += 1;
-    return stat(...args);
-  };
-  const openFile = async () => {
+  const openFile = async (...args) => {
     openCalls += 1;
-    throw new Error("open should not be called");
+    const handle = await open(...args);
+    return {
+      stat: async (...statArgs) => {
+        statCalls += 1;
+        return handle.stat(...statArgs);
+      },
+      read: () => {
+        throw new Error("read should not be called");
+      },
+      close: (...closeArgs) => handle.close(...closeArgs),
+    };
   };
 
   try {
@@ -194,13 +199,12 @@ test("refuse un fichier de plus de 256 Kio avant sa lecture complète", async ()
         repoRoot: temporaryRoot,
         inventoryPath,
         runGit: async () => "",
-        statFile,
         openFile,
       }),
       GENERIC_FAILURE,
     );
     assert.equal(statCalls, 1);
-    assert.equal(openCalls, 0);
+    assert.equal(openCalls, 1);
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
@@ -212,11 +216,11 @@ test("borne la lecture après une course de taille", async () => {
   await writeFile(inventoryPath, Buffer.alloc(MAX_INVENTORY_BYTES + 32, "x"));
   let openCalls = 0;
   let requestedBytes = 0;
-  const statFile = async () => ({ size: 1 });
   const openFile = async (...args) => {
     openCalls += 1;
     const handle = await open(...args);
     return {
+      stat: async () => ({ size: 1 }),
       read: async (...readArgs) => {
         requestedBytes = readArgs[2];
         return handle.read(...readArgs);
@@ -227,7 +231,7 @@ test("borne la lecture après une course de taille", async () => {
 
   try {
     await assert.rejects(
-      () => verifyJ3ReferenceArchive({ repoRoot: temporaryRoot, inventoryPath, runGit: async () => "", statFile, openFile }),
+      () => verifyJ3ReferenceArchive({ repoRoot: temporaryRoot, inventoryPath, runGit: async () => "", openFile }),
       GENERIC_FAILURE,
     );
     assert.equal(openCalls, 1);

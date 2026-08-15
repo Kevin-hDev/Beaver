@@ -295,7 +295,9 @@ fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
     };
     let launcher = DefaultOllamaProcessLauncher::new(bundle);
     let mut gated = launcher.create_gated(&spawn_attempt).expect("gated");
-    gated.open_gate_for_test();
+    gated
+        .open_gate_and_wait_for_test()
+        .expect("running executable");
     gated.force_reap_failure_for_test();
     let coordinator = AppExitCoordinator::initialize().expect("coordinator");
     let publisher = coordinator.emergency_publisher();

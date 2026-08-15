@@ -1,6 +1,6 @@
 use super::super::emergency::VerifiedProcessIdentity;
 use super::super::emergency_drain::EmergencyObservation;
-use crate::services::owned_process::{self, OwnedProcess, OwnedProcessIdentity};
+use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity};
 
 pub(super) fn signal_or_recheck(
     identity: VerifiedProcessIdentity,
@@ -16,7 +16,7 @@ pub(super) fn signal_or_recheck(
         executable: identity.executable,
     };
     if already_requested {
-        if !owned_process::process_exists(identity.pid) {
+        if !OwnedProcess::process_exists(identity.pid) {
             EmergencyObservation::Exited
         } else {
             OwnedProcess::signal_exact(expected, true)

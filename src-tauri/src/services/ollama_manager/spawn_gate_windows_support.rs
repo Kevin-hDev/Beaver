@@ -18,7 +18,7 @@ pub(super) fn terminate_created_process(process: HANDLE, thread: HANDLE) {
     }
 }
 
-pub(super) fn environment_block(
+pub(in crate::services::ollama_manager) fn environment_block(
     attempt: &OllamaSpawnAttempt<'_>,
 ) -> Result<Vec<u16>, OllamaProcessError> {
     let mut block = Vec::new();
@@ -31,7 +31,7 @@ pub(super) fn environment_block(
     Ok(block)
 }
 
-pub(super) fn append_entry(
+pub(in crate::services::ollama_manager) fn append_entry(
     block: &mut Vec<u16>,
     key: &OsStr,
     value: &OsStr,

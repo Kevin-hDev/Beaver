@@ -30,7 +30,7 @@ mod ultimate;
 mod watchdog;
 mod work_supervisor;
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 pub(crate) use emergency::EMERGENCY_CAPACITY;
 #[allow(unused_imports)]
 pub(crate) use emergency_registration::EmergencyHandoffReason;

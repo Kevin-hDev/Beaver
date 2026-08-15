@@ -1,9 +1,10 @@
+use super::durable_fs::OllamaDurableFs;
+#[cfg(unix)]
+use super::durable_fs::PlatformOllamaDurableFs;
 use super::durable_fs::{
     retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
     OllamaFsError, OllamaFsErrorKind, WINDOWS_PARENT_FLUSH_ACCESS,
 };
-#[cfg(unix)]
-use super::durable_fs::{OllamaDurableFs, PlatformOllamaDurableFs};
 use super::durable_fs_test_support::{ExpectedCall, FailurePoint, ScriptedFs};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::journal_store::OllamaJournalStore;

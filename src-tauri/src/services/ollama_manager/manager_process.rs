@@ -4,7 +4,7 @@ use super::fingerprint::BundleFingerprint;
 use super::path_identity_resolver::NativePathIdentityResolver;
 use super::port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
 use super::process::{
-    DefaultOllamaProcessLauncher, OllamaProcessError, OllamaProcessLauncher, OwnedOllamaProcess,
+    DefaultOllamaProcessLauncher, OllamaProcessLauncher, OwnedOllamaProcess,
 };
 use super::process_error::map_process_error;
 use super::process_receipt::ProcessReceiptStore;

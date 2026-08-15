@@ -3,20 +3,23 @@ use super::spawn_profile::OllamaSpawnAttempt;
 #[path = "spawn_gate_windows_support.rs"]
 mod support;
 use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity};
+use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
 use std::ptr;
 use std::time::Instant;
-use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT};
+use windows_sys::Win32::Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT};
 use windows_sys::Win32::System::Threading::{
     CreateProcessW, ResumeThread, TerminateProcess, WaitForSingleObject, CREATE_NO_WINDOW,
     CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, PROCESS_INFORMATION, STARTUPINFOW,
 };
 
-pub(super) use support::{append_entry, environment_block};
+#[cfg(test)]
+pub(super) use support::append_entry;
+pub(super) use support::environment_block;
 use support::{quote_path, wide_path, wide_string};
 
 pub(crate) struct NativeGatedProcess {
-    process: HANDLE,
-    thread: HANDLE,
+    process: OwnedHandle,
+    thread: OwnedHandle,
     identity: OwnedProcessIdentity,
     opened: bool,
     reaped: bool,
@@ -97,8 +100,8 @@ fn create_with_hooks(
         return Err(OllamaProcessError::Identity);
     }
     Ok(NativeGatedProcess {
-        process: info.hProcess,
-        thread: info.hThread,
+        process: unsafe { OwnedHandle::from_raw_handle(info.hProcess) },
+        thread: unsafe { OwnedHandle::from_raw_handle(info.hThread) },
         identity,
         opened: false,
         reaped: false,
@@ -114,7 +117,7 @@ impl NativeGatedProcess {
         if self.opened {
             return Err(OllamaProcessError::Gate);
         }
-        let previous = unsafe { ResumeThread(self.thread) };
+        let previous = unsafe { ResumeThread(self.thread.as_raw_handle()) };
         if previous == u32::MAX {
             return Err(OllamaProcessError::Gate);
         }
@@ -127,7 +130,7 @@ impl NativeGatedProcess {
             return Err(OllamaProcessError::Identity);
         }
         let current = OwnedProcess::identity_from_handle_with_executable(
-            self.process,
+            self.process.as_raw_handle(),
             self.identity.executable,
         )
         .map_err(|_| OllamaProcessError::Identity)?;
@@ -148,10 +151,10 @@ impl NativeGatedProcess {
         if self.reaped {
             return Ok(());
         }
-        if unsafe { TerminateProcess(self.process, 1) } != 0 {
+        if unsafe { TerminateProcess(self.process.as_raw_handle(), 1) } != 0 {
             return Ok(());
         }
-        match unsafe { WaitForSingleObject(self.process, 0) } {
+        match unsafe { WaitForSingleObject(self.process.as_raw_handle(), 0) } {
             WAIT_OBJECT_0 => Ok(()),
             _ => Err(OllamaProcessError::Gate),
         }
@@ -163,7 +166,7 @@ impl NativeGatedProcess {
         }
         let remaining = deadline.saturating_duration_since(Instant::now());
         let millis = remaining.as_millis().min(u128::from(u32::MAX)) as u32;
-        let result = unsafe { WaitForSingleObject(self.process, millis) };
+        let result = unsafe { WaitForSingleObject(self.process.as_raw_handle(), millis) };
         match result {
             WAIT_OBJECT_0 => {
                 crate::services::owned_process::release(self.identity.pid);
@@ -181,14 +184,5 @@ impl NativeGatedProcess {
     ) -> Result<(), OllamaProcessError> {
         self.terminate()?;
         self.reap(deadline)
-    }
-}
-
-impl Drop for NativeGatedProcess {
-    fn drop(&mut self) {
-        unsafe {
-            CloseHandle(self.thread);
-            CloseHandle(self.process);
-        }
     }
 }

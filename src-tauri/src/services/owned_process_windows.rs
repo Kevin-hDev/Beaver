@@ -140,7 +140,7 @@ pub(super) fn recover_exact(
     let millis = remaining.as_millis().min(u128::from(u32::MAX)) as u32;
     (unsafe { WaitForSingleObject(process.0, millis) } == WAIT_OBJECT_0)
         .then_some(())
-        .ok_or(OwnedProcessError::Reap)
+        .ok_or(OwnedProcessError::Admission)
 }
 
 pub(super) fn signal_exact(

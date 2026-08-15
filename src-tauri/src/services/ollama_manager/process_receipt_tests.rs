@@ -1,5 +1,6 @@
 use super::durable_fs::platform_fs;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
+#[cfg(unix)]
 use super::process::DefaultOllamaProcessLauncher;
 use super::process_receipt::{
     ProcessReceipt, ProcessReceiptError, ProcessReceiptRecovery, ProcessReceiptStore, RecoveryProbe,
