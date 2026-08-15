@@ -1,0 +1,45 @@
+JALON 3 — TASK 11 — MISE À JOUR DURABLE JUSQUÀ VALIDATION
+
+Commit : 7497d89e22a2a2afc36221b9a4a9a46c7a38c509
+Branche : codex/shutdown-milestone-3-ollama
+Base attendue : 3b234212
+Périmètre : Task 11 uniquement. Aucun travail Task 12, Task 13, Task 14, CI, push ou merge.
+
+AUTORITÉS RÉUTILISÉES
+- OllamaManager reste l’unique gestionnaire public de l’opération.
+- PreparedBundle, le journal durable, la décision de reprise, le téléchargement, l’extraction, le reçu et la sonde existants restent les autorités.
+- Le sidecar possédé est détenu par un seul OwnedProcessSidecar qui conserve un unique OwnedOllamaProcess.
+- Le sidecar externe est refusé avant toute préparation, journalisation ou mutation.
+- Le sidecar possédé est arrêté puis récolté avant tout rename.
+- L’extension Task 6 sépare terminate et reap dans les couches native, gated et owned; terminate_and_reap reste la composition pour les appelants existants. Les erreurs OS de terminate ne sont plus avalées : ESRCH seul converge vers reap, toute autre erreur échoue fermé.
+
+TRANSACTION TASK 11
+- Capture de previous avant préparation; la même empreinte est réutilisée dans Prepared, PendingValidation, CleanupPending et RollbackPending.
+- Prepared est durable avant stop/reap.
+- Ordre prouvé : prepare_target, persist_prepared, stop_owned_sidecar, reap_owned_sidecar, rename_active_to_backup, rename_target_to_active, persist_pending_validation, probe_active, persist_cleanup_pending.
+- Un échec stop/reap interdit tous les rename.
+- CleanupPending refuse une nouvelle mise à jour sans téléchargement ni mutation avec ollama-update-cleanup-pending.
+- Les erreurs VERSION et reçu pendant la préparation ne créent pas Prepared et laissent l’actif intact.
+- Les coupures avant/après journal, rename et synchronisation parent sont testées; chaque état est soumis à la décision de reprise existante.
+- Valid produit CleanupPending; InvalidTarget conserve previous et rejected_target puis produit RollbackPending; Deferred conserve PendingValidation.
+- Le reçu bundle est embarqué dans le répertoire du bundle : VERSION et ollama-bundle-receipt.json sont écrits dans le staging puis transportés par le rename; après publication, la sonde et la réinspection lisent le reçu sous active. Le champ global concurrent a été supprimé. Le nom et les chemins sont centralisés sous services::paths.
+- Le faux sync_file appliqué à un répertoire a été supprimé; les écritures atomiques synchronisent déjà fichier et parent.
+
+TESTS ET CONTRÔLES VUS
+Commande : node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::update_tests
+Résultat : 13 tests filtrés, 13 réussis, 0 échec, 0 ignoré, 3553 tests non filtrés.
+Commande : git diff --check
+Résultat : aucune erreur.
+Contrôle lignes production modifiées : maximum 230 lignes; manager.rs 230, update.rs 181, update_platform.rs 217, spawn_gate_unix.rs 130, spawn_gate_unix_lifecycle.rs 120, les autres fichiers modifiés sont sous 230.
+Commande : graphify update .
+Résultat : graphe mis à jour; 33788 nœuds, 69171 arêtes, 2003 communautés. Graphify signale 73 fichiers source sans nœud et demande éventuellement un relabel; ce sont des avertissements Graphify, sans échec de mise à jour.
+
+NON EXÉCUTÉ PAR PÉRIMÈTRE
+- cargo check, clippy strict, suites voisines, CI et tests natifs ne sont pas relancés dans cette reprise conformément à la consigne de périmètre fermé.
+- L’adoption de l’entrypoint par le démarrage réel du sidecar reste à raccorder par le chemin consommateur prévu; Task 11 expose le contrôleur et accepte UpdateSidecar sans créer un second propriétaire.
+- Le nettoyage final et le rollback effectifs restent aux Tasks 12 et suivantes.
+
+ÉTAT
+- Commit créé et relu.
+- Worktree propre après commit.
+- Aucun push ni merge effectué.
