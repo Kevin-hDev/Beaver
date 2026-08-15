@@ -120,15 +120,18 @@ pub(super) fn c_string(path: impl AsRef<Path>) -> Result<CString, OllamaProcessE
 
 pub(super) fn pipe() -> std::io::Result<(RawFd, RawFd)> {
     let mut fds = [-1; 2];
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    #[cfg(target_os = "linux")]
     #[allow(unused_unsafe)]
     let result = unsafe { pipe2_cloexec(fds.as_mut_ptr()) };
-    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+    #[cfg(not(target_os = "linux"))]
     let result = unsafe { libc::pipe(fds.as_mut_ptr()) };
     if result != 0 {
         return Err(std::io::Error::last_os_error());
     }
-    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+    // Linux can create both descriptors atomically with CLOEXEC. Other Unix
+    // targets do not expose pipe2 consistently, so close both ends if either
+    // descriptor cannot be made close-on-exec.
+    #[cfg(not(target_os = "linux"))]
     for fd in fds {
         let flags = unsafe { libc::fcntl(fd, libc::F_GETFD) };
         if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFD, flags | libc::FD_CLOEXEC) } < 0 {
@@ -138,17 +141,6 @@ pub(super) fn pipe() -> std::io::Result<(RawFd, RawFd)> {
         }
     }
     Ok((fds[0], fds[1]))
-}
-
-#[cfg(target_os = "macos")]
-unsafe extern "C" {
-    #[link_name = "pipe2"]
-    fn mac_pipe2(fds: *mut RawFd, flags: libc::c_int) -> libc::c_int;
-}
-
-#[cfg(target_os = "macos")]
-unsafe fn pipe2_cloexec(fds: *mut RawFd) -> libc::c_int {
-    mac_pipe2(fds, libc::O_CLOEXEC)
 }
 
 #[cfg(target_os = "linux")]

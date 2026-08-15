@@ -27,6 +27,16 @@ fn verified_windows_delete_never_falls_back_to_path_recursive_removal() {
     assert!(method.contains("verified::remove_tree(root)"));
 }
 
+#[test]
+fn verified_windows_delete_uses_an_existing_directory_as_the_volume_hint() {
+    let implementation = include_str!("durable_fs_windows_verified.rs");
+    let handles = include_str!("durable_fs_windows_verified/handles.rs");
+
+    assert!(!implementation.contains("open_volume"));
+    assert!(!handles.contains("fn open_volume"));
+    assert!(!handles.contains(r#"\\.\\"#));
+}
+
 #[cfg(windows)]
 #[test]
 fn verified_windows_delete_removes_nested_tree_using_the_native_handle() {

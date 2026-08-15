@@ -13,7 +13,7 @@ const MAX_NAME_UNITS: usize = 16 * 1024;
 
 pub(super) fn remove_contents(
     parent: HANDLE,
-    volume: HANDLE,
+    volume_hint: HANDLE,
     volume_serial: u32,
     depth: usize,
     removed_entries: &mut usize,
@@ -52,7 +52,7 @@ pub(super) fn remove_contents(
                 if *removed_entries > MAX_DELETE_ENTRIES {
                     return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
                 }
-                remove_child(&entry, volume, volume_serial, depth, removed_entries)?;
+                remove_child(&entry, volume_hint, volume_serial, depth, removed_entries)?;
             }
             if next == 0 {
                 break;
@@ -150,7 +150,7 @@ fn read_field<T: Copy>(buffer: &[u8], offset: usize, field: usize) -> Result<T, 
 
 fn remove_child(
     entry: &DirectoryEntry,
-    volume: HANDLE,
+    volume_hint: HANDLE,
     volume_serial: u32,
     depth: usize,
     removed_entries: &mut usize,
@@ -158,7 +158,7 @@ fn remove_child(
     if entry.attributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
-    let handle = handles::open_child(volume, entry.file_id, entry.directory)?;
+    let handle = handles::open_child(volume_hint, entry.file_id, entry.directory)?;
     let info = handles::file_info(handle.raw())?;
     if info.dwVolumeSerialNumber != volume_serial
         || handles::file_id(&info) != entry.file_id as u64
@@ -170,7 +170,7 @@ fn remove_child(
     if entry.directory {
         remove_contents(
             handle.raw(),
-            volume,
+            volume_hint,
             volume_serial,
             depth.saturating_add(1),
             removed_entries,

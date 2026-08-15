@@ -1,6 +1,14 @@
 use super::support::{close, pipe, stable_executable_link};
 use std::os::unix::fs::MetadataExt;
 
+#[cfg(target_os = "macos")]
+#[test]
+fn macos_gate_pipe_does_not_link_the_linux_only_pipe2_symbol() {
+    let source = include_str!("spawn_gate_unix_support.rs");
+
+    assert!(!source.contains("link_name = \"pipe2\""));
+}
+
 #[test]
 fn gate_pipe_ends_are_close_on_exec_before_concurrent_spawns() {
     std::thread::scope(|scope| {
