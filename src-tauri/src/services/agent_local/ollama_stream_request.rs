@@ -1,4 +1,4 @@
-use super::ollama_base_url;
+use super::ollama_client::OllamaClient;
 use super::ollama_retry_indicator::{
     send_retry_indicator, server_retry_delay, should_retry_server_status, MAX_SERVER_RETRIES,
     REASON_FEATURE_DROPPED, REASON_PARSER_CRASH, REASON_SERVER,
@@ -27,6 +27,7 @@ pub enum OpenChatResponse {
 }
 
 pub async fn open_chat_response(
+    ollama: &OllamaClient,
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
     cancel: &CancellationToken,
@@ -37,8 +38,9 @@ pub async fn open_chat_response(
     let wire_request = ollama_wire::chat_request(request, &wire_messages);
 
     let client = reqwest::Client::new();
+    let base_url = ollama.base_url().await?;
     let resp = match client
-        .post(format!("{}/api/chat", ollama_base_url()))
+        .post(format!("{base_url}/api/chat"))
         .json(&wire_request)
         .send()
         .await

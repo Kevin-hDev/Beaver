@@ -1,4 +1,4 @@
-use crate::services::agent_local::ollama_base_url;
+use crate::services::agent_local::ollama_client::OllamaClient;
 use reqwest::Client;
 use std::time::Duration;
 const DEFAULT_MODEL: &str = "gemma4:e2b";
@@ -6,6 +6,7 @@ const TIMEOUT: Duration = Duration::from_secs(600);
 const CHUNK_MAX_CHARS: usize = 8000;
 
 pub async fn translate_text(
+    ollama: &OllamaClient,
     text: &str,
     target_lang: &str,
     model: Option<&str>,
@@ -34,7 +35,7 @@ pub async fn translate_text(
             chunks.len(),
             chunk.len()
         );
-        let translated = translate_chunk(chunk, lang_name, &chosen_model).await?;
+        let translated = translate_chunk(ollama, chunk, lang_name, &chosen_model).await?;
         translated_parts.push(translated);
     }
 
@@ -86,7 +87,12 @@ fn chunk_by_headings(text: &str, max_chars: usize) -> Vec<String> {
     chunks
 }
 
-async fn translate_chunk(text: &str, lang_name: &str, model: &str) -> Result<String, String> {
+async fn translate_chunk(
+    ollama: &OllamaClient,
+    text: &str,
+    lang_name: &str,
+    model: &str,
+) -> Result<String, String> {
     let system = format!(
         "You are a translator. Your ONLY task is to translate the Markdown fragment below into {lang_name}.\n\
          \n\
@@ -107,8 +113,9 @@ async fn translate_chunk(text: &str, lang_name: &str, model: &str) -> Result<Str
         .build()
         .map_err(|e| e.to_string())?;
 
+    let base_url = ollama.base_url().await?;
     let resp = client
-        .post(format!("{}/api/chat", ollama_base_url()))
+        .post(format!("{base_url}/api/chat"))
         .json(&serde_json::json!({
             "model": model,
             "messages": [

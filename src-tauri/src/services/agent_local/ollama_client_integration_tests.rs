@@ -165,8 +165,7 @@ fn ollama_test_client_rejects_non_loopback_urls() {
 }
 
 #[tokio::test]
-async fn client_created_before_port_selection_follows_the_runtime_port() {
-    let _guard = crate::services::ollama_port::PORT_TEST_LOCK.lock().await;
+async fn client_uses_the_injected_runtime_endpoint() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/api/tags"))
@@ -177,11 +176,8 @@ async fn client_created_before_port_selection_follows_the_runtime_port() {
         .mount(&server)
         .await;
 
-    crate::services::ollama_port::set_port(0);
-    let client = OllamaClient::new();
-    crate::services::ollama_port::set_port(server.address().port());
+    let client = OllamaClient::with_base_url(&server.uri()).expect("loopback test server");
     let result = client.list_models().await;
-    crate::services::ollama_port::set_port(0);
 
     assert!(
         result.is_ok(),

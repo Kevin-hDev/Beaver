@@ -138,7 +138,9 @@ async fn collect_summary(
     cancel: CancellationToken,
 ) -> Result<String, String> {
     if provider == "ollama" {
+        let ollama = super::ollama_client::OllamaClient::from_global()?;
         let request = super::ollama_collect::collect_chat_with_timeout_and_limit(
+            &ollama,
             model,
             messages,
             Duration::from_secs(180),

@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::services::ollama_port;
+use crate::services::agent_local::ollama_client::OllamaClient;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -9,8 +9,8 @@ pub struct OllamaBinaryUpdate {
     pub latest_version: String,
 }
 
-pub async fn fetch_installed_version() -> Result<String, String> {
-    let url = format!("{}/api/version", ollama_port::base_url());
+pub async fn fetch_installed_version(ollama: &OllamaClient) -> Result<String, String> {
+    let url = format!("{}/api/version", ollama.base_url().await?);
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(3))
         .build()
@@ -38,8 +38,10 @@ pub async fn fetch_installed_version() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn check_ollama_binary_update() -> Result<Option<OllamaBinaryUpdate>, String> {
-    let current = match fetch_installed_version().await {
+pub async fn check_ollama_binary_update(
+    ollama: tauri::State<'_, OllamaClient>,
+) -> Result<Option<OllamaBinaryUpdate>, String> {
+    let current = match fetch_installed_version(&ollama).await {
         Ok(v) => v,
         Err(_) => match super::ollama_bundle_utils::read_version_file() {
             Some(v) => v,

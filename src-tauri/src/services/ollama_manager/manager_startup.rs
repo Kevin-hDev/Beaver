@@ -27,6 +27,7 @@ impl OllamaManager {
             let outcome = recover_platform(RecoveryReason::Startup).await;
             match outcome {
                 Ok(RecoveryOutcome::Ready) => {
+                    self.inner().lock_state().status.bundle = super::types::BundleState::Ready;
                     self.publish_startup(generation, StartupBarrierState::Ready);
                     drop(guard);
                     return self.inner().startup.state();
@@ -87,9 +88,11 @@ impl OllamaManager {
         self.publish_startup(generation, state);
     }
 
-    fn publish_startup(&self, generation: u64, state: StartupBarrierState) {
+fn publish_startup(&self, generation: u64, state: StartupBarrierState) {
         if self.inner().lock_state().generation == generation {
             self.inner().startup.publish(state);
         }
     }
 }
+
+include!("manager_runtime.rs");

@@ -128,6 +128,8 @@ mod retry_tests;
 #[cfg(test)]
 mod polling_tests;
 #[cfg(test)]
+mod adoption_tests;
+#[cfg(test)]
 mod transaction_property_tests;
 #[cfg(all(test, windows))]
 mod windows_durable_fs_tests;
@@ -183,8 +185,8 @@ pub use release_source::{
 pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
 #[allow(unused_imports)]
 pub use types::{
-    BundleState, DaemonState, OllamaEndpoint, OllamaProgressStage, OllamaRuntimeStatus,
-    OllamaStartOutcome, OperationState,
+    BundleState, CancelOutcome, DaemonState, OllamaCliArgs, OllamaCliOutput, OllamaEndpoint,
+    OllamaProgressStage, OllamaRuntimeStatus, OllamaStartOutcome, OperationState,
 };
 #[allow(unused_imports)]
 pub use update::{UpdateOutcome, UpdateRequest};

@@ -1,36 +1,34 @@
 use super::ollama_bundle_utils::is_valid_semver;
-use super::ollama_setup::{OllamaSetupProgress, OLLAMA_INSTALL_LOCK};
-use crate::services::ollama_lifecycle;
+use super::ollama_setup::{OllamaSetupProgress, start_manager_and_wait};
 use crate::services::ollama_manager::OllamaManager;
 use std::path::Path;
-use std::time::Duration;
-use tauri::{ipc::Channel, Manager};
+use std::time::{Duration, Instant};
+use tauri::ipc::Channel;
 use tokio_util::sync::CancellationToken;
 
 #[tauri::command]
 pub async fn update_ollama_binary(
-    app: tauri::AppHandle,
     version: String,
     on_progress: Channel<OllamaSetupProgress>,
+    manager: tauri::State<'_, OllamaManager>,
 ) -> Result<(), String> {
     let version = version.trim_start_matches('v');
     if !is_valid_semver(version) {
         return Err("ollama-version-invalid".into());
     }
 
-    let _guard = OLLAMA_INSTALL_LOCK.lock().await;
-    let dest = ollama_lifecycle::ollama_bundle_dir();
-    let staging = dest.with_file_name("ollama-bundle-staging");
-    let backup = dest.with_file_name("ollama-bundle-old");
+    let paths = crate::services::paths::ollama_paths(&crate::services::paths::data_dir());
+    let dest = paths.active;
+    let staging = paths.update_staging;
+    let backup = paths.backup;
     if backup.exists() {
         return Err("ollama-update-recovery-required".into());
     }
     remove_temp_dir(&staging)?;
 
     let cancel = CancellationToken::new();
-    let manager = app.state::<OllamaManager>().inner().clone();
     if let Err(error) = super::ollama_setup_install::install_ollama_to(
-        &manager,
+        manager.inner(),
         &staging,
         version,
         &on_progress,
@@ -43,12 +41,12 @@ pub async fn update_ollama_binary(
         return Err(error);
     }
 
-    ollama_lifecycle::stop_sidecar(&app);
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    manager.stop_and_wait(Instant::now() + Duration::from_secs(15)).await
+        .map_err(|code| code.as_str().to_string())?;
     let had_backup = swap_installation(&dest, &staging, &backup)?;
     send_status(&on_progress, "restarting");
 
-    if super::ollama_setup_start::start_sidecar_and_wait(&app, &on_progress, &cancel)
+    if start_manager_and_wait(manager.inner(), &on_progress, &cancel)
         .await
         .is_ok()
     {
@@ -59,7 +57,7 @@ pub async fn update_ollama_binary(
         return Ok(());
     }
 
-    rollback_after_failed_restart(&app, &on_progress, &dest, &backup, had_backup).await
+    rollback_after_failed_restart(manager.inner(), &on_progress, &dest, &backup, had_backup).await
 }
 
 fn swap_installation(dest: &Path, staging: &Path, backup: &Path) -> Result<bool, String> {
@@ -81,14 +79,14 @@ fn swap_installation(dest: &Path, staging: &Path, backup: &Path) -> Result<bool,
 }
 
 async fn rollback_after_failed_restart(
-    app: &tauri::AppHandle,
+    manager: &OllamaManager,
     on_progress: &Channel<OllamaSetupProgress>,
     dest: &Path,
     backup: &Path,
     had_backup: bool,
 ) -> Result<(), String> {
-    ollama_lifecycle::stop_sidecar(app);
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    manager.stop_and_wait(Instant::now() + Duration::from_secs(15)).await
+        .map_err(|code| code.as_str().to_string())?;
     if !had_backup {
         return Err("ollama-restart-error".into());
     }
@@ -98,7 +96,7 @@ async fn rollback_after_failed_restart(
     restore_previous_install(dest, backup, &failed)?;
 
     let cancel = CancellationToken::new();
-    let restored = super::ollama_setup_start::start_sidecar_and_wait(app, on_progress, &cancel)
+    let restored = start_manager_and_wait(manager, on_progress, &cancel)
         .await
         .is_ok();
     if restored {

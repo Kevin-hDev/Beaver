@@ -79,8 +79,9 @@ pub(crate) fn run_inner(
     let builder = builder.plugin(tauri_plugin_wdio::init());
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    let ollama_manager = runtime.ollama.clone();
     let app = builder
-        .manage(OllamaClient::new())
+        .manage(OllamaClient::new(ollama_manager))
         .manage(runtime.ollama)
         .manage(exit_coordinator)
         .manage(runtime.agent_work)

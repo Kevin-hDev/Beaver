@@ -6,6 +6,7 @@ use crate::services::agent_local::ollama_tool_parse_retry::{
     is_tool_parse_crash, MAX_PARSER_RETRIES,
 };
 use crate::services::agent_local::stream_events::AgentEventEmitter;
+use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::agent_local::types_ollama::{
     ChatRequest, StreamEvent, StreamOutcome, StreamResult,
 };
@@ -17,9 +18,26 @@ use tokio::sync::mpsc;
 use tokio_util::io::StreamReader;
 use tokio_util::sync::CancellationToken;
 
-pub use crate::services::agent_local::ollama_collect::{
-    collect_chat, collect_chat_with_timeout_and_limit,
-};
+pub async fn collect_chat(
+    model: &str,
+    messages: Vec<crate::services::agent_local::types_ollama::ChatMessage>,
+) -> Result<(String, u32), String> {
+    let client = OllamaClient::from_global()?;
+    crate::services::agent_local::ollama_collect::collect_chat(&client, model, messages).await
+}
+
+pub async fn collect_chat_with_timeout_and_limit(
+    model: &str,
+    messages: Vec<crate::services::agent_local::types_ollama::ChatMessage>,
+    timeout: std::time::Duration,
+    num_predict: Option<u32>,
+) -> Result<(String, u32), String> {
+    let client = OllamaClient::from_global()?;
+    crate::services::agent_local::ollama_collect::collect_chat_with_timeout_and_limit(
+        &client, model, messages, timeout, num_predict,
+    )
+    .await
+}
 
 /// Variante avec eager dispatch : les tool calls sont envoyés via `tool_tx` dès réception.
 pub async fn stream_chat_with_tool_notify(
@@ -30,7 +48,9 @@ pub async fn stream_chat_with_tool_notify(
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
 ) -> Result<StreamOutcome, String> {
+    let ollama = OllamaClient::from_global()?;
     stream_chat_inner(
+        &ollama,
         on_event,
         request,
         cancel,
@@ -46,6 +66,7 @@ pub async fn stream_chat_with_tool_notify(
 }
 
 async fn stream_chat_inner(
+    ollama: &OllamaClient,
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
     cancel: CancellationToken,
@@ -54,12 +75,13 @@ async fn stream_chat_inner(
     mut realtime_budget: Option<RealtimeBudget>,
     retry_counts: RetryCounts,
 ) -> Result<StreamOutcome, String> {
-    let resp = match open_chat_response(on_event, request, &cancel, retry_counts, !buffer_content)
+    let resp = match open_chat_response(ollama, on_event, request, &cancel, retry_counts, !buffer_content)
         .await?
     {
         OpenChatResponse::Ready(response) => response,
         OpenChatResponse::Retry { request, counts } => {
             return Box::pin(stream_chat_inner(
+                ollama,
                 on_event,
                 &request,
                 cancel,
@@ -131,6 +153,7 @@ async fn stream_chat_inner(
                                     );
                                 }
                                 return Box::pin(stream_chat_inner(
+                                    ollama,
                                     on_event,
                                     request,
                                     cancel,
