@@ -1,0 +1,30 @@
+Jalon 3 - correction CI native macOS et Windows
+
+Contexte
+- Run CI 31904910490.
+- macOS: l inventaire de tests echouait a l edition de liens sur le symbole arm64 _pipe2.
+- Windows: cinq tests J3 convergeaient vers OllamaStorageUnavailable; la preuve native exposait ERROR_ACCESS_DENIED, code 5, pendant la suppression verifiee.
+- Le sixieme rouge Windows, process_tree::windows_tests::tree_termination_reaps_a_confined_parent_and_child, est reproduit a l identique sur origin/main au run 31904700235 et reste hors de ce correctif.
+
+Cause racine
+- pipe2 etait lie explicitement sur macOS alors que ce symbole n existe pas sur le runner GitHub macOS.
+- la suppression Windows ouvrait directement le volume \\.\C: avec GENERIC_READ, operation refusee au runner sans privilege. OpenFileById accepte comme hVolumeHint le handle de n importe quel fichier du meme volume.
+
+Correction
+- Linux conserve pipe2(O_CLOEXEC). Les autres Unix utilisent pipe puis appliquent FD_CLOEXEC aux deux descripteurs; toute erreur ferme les deux extremites et echoue ferme.
+- Windows reutilise le handle de repertoire deja ouvert, revalide et partage comme indication de volume. L ouverture brute du volume et son autorite secondaire sont supprimees.
+- Les tests de contrat interdisent la reintroduction du symbole pipe2 macOS et de l ouverture brute du volume Windows.
+
+Preuves locales lues
+- rouge TDD macOS: macos_gate_pipe_does_not_link_the_linux_only_pipe2_symbol echouait avant correction.
+- services::ollama_manager: 268 passes, 0 echec, 1 ignore volontairement, 269 verifies.
+- spawn_gate_unix::support_tests: 6/6.
+- durable_fs_tests: 20/20.
+- cargo fmt --all -- --check: vert.
+- cargo clippy --all-targets -- -D warnings: vert.
+- git diff --check: vert.
+- graphify update .: termine, 34176 noeuds et 69956 aretes.
+
+Limite et recommandation
+- Le chemin Windows natif ne peut pas etre execute sur ce Mac; le prochain run Windows constitue la preuve d execution.
+- Ne pousser qu une fois puis attendre le verdict complet. Si Windows reste rouge, conserver le code systeme exact et ne corriger que l appel observe.
