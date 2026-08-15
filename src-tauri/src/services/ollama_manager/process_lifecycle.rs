@@ -1,7 +1,7 @@
 use super::super::constants::PROCESS_REAP_FALLBACK_TIMEOUT;
 use super::super::process_receipt::ProcessReceiptStore;
 use super::{GatedOllamaProcess, OllamaProcessError};
-#[cfg(test)]
+#[cfg(all(test, unix))]
 use crate::app_exit::AppEmergencyPublisher;
 use crate::app_exit::AppEmergencyRegistration;
 use crate::app_exit::EmergencyHandoffReason;
