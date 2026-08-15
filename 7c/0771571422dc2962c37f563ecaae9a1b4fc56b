@@ -1,0 +1,21 @@
+Jalon 3 Ollama — correction CI Windows après le run 31890174516
+
+Constats
+- Le job Backend Windows tests échouait sur 36 tests J3 regroupés autour de quatre causes communes : chemins/binaires Unix dans les fixtures, double validation ZIP dépendante du séparateur Windows, handles d’identité de répertoire ouverts avec des droits de suppression excessifs, et assertion de source sensible aux fins de ligne CRLF.
+- Les handles stables d’identité restent en lecture seule. La suppression durable réouvre explicitement le même objet avec les droits de suppression, puis compare son identité native avant toute mutation. Raison : séparer l’observation de l’autorité destructive et échouer fermé si l’objet a changé.
+- Les noms ZIP sont validés à la frontière sur leur forme brute, puis enclosed_name est utilisé sans revalidation dépendante de l’OS. Raison : ne pas rejeter sous Windows un membre déjà validé dont les séparateurs ont été normalisés par la bibliothèque.
+- Les fixtures choisissent désormais des racines absolues et le nom ollama.exe sous Windows.
+
+Validations observées localement
+- cargo clippy --all-targets -- -D warnings : vert.
+- filtre officiel services::ollama_manager : 266 passés, 0 échec, 1 ignoré volontairement ; 267 tests filtrés vérifiés.
+- npm run test:ollama-manager-contracts : 6/6 et scan de 2467 fichiers vert.
+- npm run test:j3-reference : 15/15 vert.
+- cargo fmt --all -- --check, contrôle rustfmt différentiel et git diff --check : verts.
+- graphify update . : terminé, 34052 nœuds / 69687 arêtes / 2043 communautés.
+
+Limite honnête
+- Le check croisé x86_64-pc-windows-msvc ne peut pas constituer une preuve sur ce Mac : libz-sys échoue avant le crate Beaver car les en-têtes/outils C MSVC ne sont pas installés. La validation Windows native reste donc à obtenir exclusivement sur GitHub Actions.
+- Aucune fusion ne doit avoir lieu tant que la CI complète de la PR 19 n’est pas verte.
+- Le rouge Linux isolé du run précédent concerne un test extension-host intermittent hors diff J3 ; il ne doit être relancé qu’après la preuve isolée déjà obtenue et sans correction opportuniste.
+- Le rouge macOS du run précédent s’est produit dans l’inventaire du harnais alors que les cinq filtres concernés passent localement ; une répétition devra être diagnostiquée avant toute modification.
