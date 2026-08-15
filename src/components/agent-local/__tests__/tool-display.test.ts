@@ -191,13 +191,13 @@ describe("toolDisplayInfo", () => {
       ["list_dir", "List"],
       ["grep", "MagnifyingGlass"],
       ["glob", "MagnifyingGlass"],
-      ["create_branch", "GitBranch"],
-      ["checkout_branch", "GitBranch"],
+      ["create_branch", "Git"],
+      ["checkout_branch", "Git"],
       ["load_skill", "Sparkle"],
       ["delegate_task", "Users"],
-      ["forecast_data_audit", "ChartLineUp"],
-      ["forecast_run", "ChartLineUp"],
-      ["forecast_analyze", "ChartLineUp"],
+      ["forecast_data_audit", "Forecast"],
+      ["forecast_run", "Forecast"],
+      ["forecast_analyze", "Forecast"],
       ["search_mcp_tools", "Plugs"],
     ];
     for (const [name, expectedIcon] of cases) {

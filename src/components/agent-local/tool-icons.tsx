@@ -1,22 +1,22 @@
 import type { ComponentType } from "react";
 import {
-  Compass,
   Globe,
-  GitBranch,
   Wrench,
   BookOpenText,
   MagnifyingGlass,
   Link,
   Sparkle,
   Users,
-  ChartLineUp,
   Plugs,
 } from "@/components/ui/icons";
 import { TerminalIcon } from "@/components/ui/chat-header-icons";
 import { FileReadIcon } from "@/components/ui/file-read-icon";
 import { FileWriteIcon } from "@/components/ui/file-write-icon";
 import { FolderStateIcon } from "@/components/ui/folder-state-icon";
+import { ForecastIcon } from "@/components/ui/forecast-icon";
+import { GitIcon } from "@/components/ui/git-icon";
 import { RenameIcon } from "@/components/ui/rename-icon";
+import { SearchGlobeIcon } from "@/components/ui/search-globe-icon";
 
 export interface ToolIconProps {
   size?: number | string;
@@ -32,10 +32,10 @@ function ListIcon({ size, className }: ToolIconProps) {
 }
 
 const ICONS: Record<string, ComponentType<ToolIconProps>> = {
-  Compass,
+  Explore: SearchGlobeIcon,
   Terminal: TerminalIcon,
   Globe,
-  GitBranch,
+  Git: GitIcon,
   Wrench,
   BookOpenText,
   MagnifyingGlass,
@@ -46,7 +46,7 @@ const ICONS: Record<string, ComponentType<ToolIconProps>> = {
   Link,
   Sparkle,
   Users,
-  ChartLineUp,
+  Forecast: ForecastIcon,
   Plugs,
 };
 

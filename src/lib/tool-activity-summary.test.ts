@@ -64,11 +64,11 @@ describe("groupToolActivities", () => {
 
 describe("groupIcon", () => {
   it("associe la bonne icône Phosphor à chaque type de groupe", () => {
-    expect(groupIcon("exploration")).toBe("Compass");
+    expect(groupIcon("exploration")).toBe("Explore");
     expect(groupIcon("modification")).toBe("Edit");
     expect(groupIcon("command")).toBe("Terminal");
     expect(groupIcon("web")).toBe("Globe");
-    expect(groupIcon("git")).toBe("GitBranch");
+    expect(groupIcon("git")).toBe("Git");
     expect(groupIcon("other")).toBe("Wrench");
   });
 });
