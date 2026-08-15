@@ -235,6 +235,9 @@
     "deleteError": "No se pudo eliminar. Revisa el repositorio e inténtalo de nuevo."
   },
   "history": {
+    "copyId": "Copiar el ID",
+    "idCopied": "ID copiado",
+    "copyIdFailed": "No se pudo copiar",
     "rename": "Renombrar",
     "delete": "Eliminar",
     "archive": "Archivar",

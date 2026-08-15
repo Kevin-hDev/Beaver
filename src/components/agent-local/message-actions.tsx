@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, GitFork } from "@/components/ui/icons";
-import { ReloadIcon, EditMessageIcon, CopyMessageIcon } from "@/components/ui/message-action-icons";
+import { ReloadIcon, EditMessageIcon } from "@/components/ui/message-action-icons";
+import { CopyIcon } from "@/components/ui/copy-icon";
 import { Tooltip } from "@/components/ui/tooltip";
 import "./messages.css";
 
@@ -52,7 +53,7 @@ export function MessageActions({
       )}
       <Tooltip label={t("agentLocal.copy")}>
         <button className="icon-btn msg-action-btn" onClick={() => void handleCopy()}>
-          {copied ? <Check size="var(--icon-sm)" /> : <CopyMessageIcon />}
+          {copied ? <Check size="var(--icon-sm)" /> : <CopyIcon />}
         </button>
       </Tooltip>
       {children}

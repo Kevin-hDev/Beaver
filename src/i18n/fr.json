@@ -240,6 +240,9 @@
     "deleteError": "La suppression a échoué. Vérifie le dépôt puis réessaie."
   },
   "history": {
+    "copyId": "Copier l'ID",
+    "idCopied": "ID copié",
+    "copyIdFailed": "Copie impossible",
     "rename": "Renommer",
     "delete": "Supprimer",
     "archive": "Archiver",

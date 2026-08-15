@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, type ReactNode } from "react";
 import { Check } from "@/components/ui/icons";
-import { CopyMessageIcon } from "@/components/ui/message-action-icons";
+import { CopyIcon } from "@/components/ui/copy-icon";
 import { FileIcon } from "@/components/file-preview/file-icon";
 import { highlightCodeNodes, type HighlightNode } from "@/lib/highlight";
 import "@/components/file-preview/file-preview-highlight.css";
@@ -80,7 +80,7 @@ export function CodeBlock({ code, language }: CodeBlockProps) {
           {language || ""}
         </span>
         <button className="icon-btn msg-action-btn" onClick={() => void handleCopy()}>
-          {copied ? <Check size="var(--icon-sm)" /> : <CopyMessageIcon />}
+          {copied ? <Check size="var(--icon-sm)" /> : <CopyIcon />}
         </button>
       </div>
       <pre>

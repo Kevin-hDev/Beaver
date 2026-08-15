@@ -27,6 +27,30 @@ the `@phosphor-icons/react` package.
 
 Copyright (c) 2020 Phosphor Icons
 
+### Grommet Icons
+
+The confirmation icon shown after copying a session ID
+(`src/components/ui/validate-icon.tsx`) is the `validate` icon from
+[Grommet Icons](https://github.com/grommet/grommet-icons), licensed under the
+Apache License 2.0.
+
+Copyright (c) 2016 Grommet
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+Changes made: the SVG was converted to a React component, its colour replaced by
+`currentColor`, and its viewBox widened so the drawing matches the visual weight
+of the surrounding icons. The path itself is unchanged.
+
 ### MIT License
 
 Applies to teenyicons and Phosphor Icons above.

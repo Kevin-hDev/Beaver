@@ -240,6 +240,9 @@
     "deleteError": "Deletion failed. Check the repository and try again."
   },
   "history": {
+    "copyId": "Copy ID",
+    "idCopied": "ID copied",
+    "copyIdFailed": "Copy failed",
     "rename": "Rename",
     "delete": "Delete",
     "archive": "Archive",

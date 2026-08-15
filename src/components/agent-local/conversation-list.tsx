@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
-import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
-import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
+import { ContextMenu } from "@/components/ui/context-menu";
+import { useSessionMenuItems } from "./use-session-menu-items";
 import { ProjectSection } from "./project-section";
 import { ConversationSessionItem } from "./conversation-session-item";
 import { CollapsePanel } from "./collapse-panel";
@@ -80,10 +79,11 @@ export function ConversationList({
     const rect = e.currentTarget.getBoundingClientRect();
     setCtx({ x: rect.right, y: rect.bottom, id });
   }, []);
-  const ctxItems: ContextMenuItem[] = ctx ? [
-    { label: t("history.rename"), icon: <RenameIcon />, onClick: () => { setRenamingId(ctx.id); setTimeout(() => inputRef.current?.focus(), 0); } },
-    { label: t("history.archive"), icon: <ArchiveBoxIcon />, onClick: () => onDelete(ctx.id) },
-  ] : [];
+  const startRename = useCallback((id: string) => {
+    setRenamingId(id);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+  const ctxItems = useSessionMenuItems({ sessionId: ctx?.id ?? null, onRename: startRename, onArchive: onDelete });
   const handleRenameSubmit = (id: string, value: string) => {
     if (value.trim()) onRename(id, value.trim());
     setRenamingId(null);

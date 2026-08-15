@@ -8,6 +8,12 @@ export interface ContextMenuItem {
   label: string;
   icon?: ReactNode;
   danger?: boolean;
+  /* Une action dont le résultat se lit sur la ligne elle-même garde le menu
+     ouvert : le fermer effacerait la confirmation au moment où elle s'affiche. */
+  keepOpen?: boolean;
+  /* Identité stable quand le libellé change après le clic. Sans elle, React
+     reconstruit la ligne et le clavier perd le focus qu'il tenait dessus. */
+  id?: string;
   onClick: () => void;
 }
 
@@ -27,7 +33,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const handleClick = useCallback(
     (item: ContextMenuItem) => {
       item.onClick();
-      onClose();
+      if (!item.keepOpen) onClose();
     },
     [onClose],
   );
@@ -41,7 +47,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
     >
       {items.map((item) => (
         <div
-          key={item.label}
+          key={item.id ?? item.label}
           className={`context-item ${item.danger ? "danger" : ""}`}
           role="menuitem"
           tabIndex={0}

@@ -235,6 +235,9 @@
     "deleteError": "Eliminazione non riuscita. Controlla il repository e riprova."
   },
   "history": {
+    "copyId": "Copia l'ID",
+    "idCopied": "ID copiato",
+    "copyIdFailed": "Copia non riuscita",
     "rename": "Rinomina",
     "delete": "Elimina",
     "archive": "Archivia",

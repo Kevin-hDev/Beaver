@@ -16,7 +16,6 @@ import {
   Pencil as PhPencil,
   Trash as PhTrash,
   Plus as PhPlus,
-  Copy as PhCopy,
   Check as PhCheck,
   CheckCircle as PhCheckCircle,
   Circle as PhCircle,
@@ -97,7 +96,6 @@ export const Sun = withSafeCssSize(PhSun);
 export const Pencil = withSafeCssSize(PhPencil);
 export const Trash = withSafeCssSize(PhTrash);
 export const Plus = withSafeCssSize(PhPlus);
-export const Copy = withSafeCssSize(PhCopy);
 export const Check = withSafeCssSize(PhCheck);
 export const ShieldWarning = withSafeCssSize(PhShieldWarning);
 export const ArrowsClockwise = withSafeCssSize(PhArrowsClockwise);

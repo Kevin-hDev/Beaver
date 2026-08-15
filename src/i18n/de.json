@@ -235,6 +235,9 @@
     "deleteError": "Löschen fehlgeschlagen. Prüfe das Repository und versuche es erneut."
   },
   "history": {
+    "copyId": "ID kopieren",
+    "idCopied": "ID kopiert",
+    "copyIdFailed": "Kopieren fehlgeschlagen",
     "rename": "Umbenennen",
     "delete": "Löschen",
     "archive": "Archivieren",

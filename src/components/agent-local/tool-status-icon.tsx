@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy } from "@/components/ui/icons";
+import { Check } from "@/components/ui/icons";
+import { CopyIcon } from "@/components/ui/copy-icon";
 import errorIcon from "@/assets/tool-status/error.svg?url";
 
 const HOVER_DELAY = 700;
@@ -60,7 +61,7 @@ export function ToolStatusIcon({
     >
       <span className="tb-error-tooltip-text">{message}</span>
       <button type="button" className="icon-btn tb-error-tooltip-copy" onClick={copy}>
-        {copied ? <Check size="var(--icon-xs)" weight="bold" /> : <Copy size="var(--icon-xs)" />}
+        {copied ? <Check size="var(--icon-xs)" weight="bold" /> : <CopyIcon size="var(--icon-xs)" />}
       </button>
     </div>,
     document.body,

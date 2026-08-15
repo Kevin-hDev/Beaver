@@ -12,7 +12,7 @@ const SOURCES: Record<string, string> = import.meta.glob("/src/**/*.{ts,tsx}", {
 
 /* Dessins de la bibliothèque externe remplacés par les primitives maison.
    Les réintroduire ferait réapparaître deux dossiers dans la même page. */
-const BANNED = ["FolderSimple", "FolderSimplePlus", "ChatsCircle"];
+const BANNED = ["FolderSimple", "FolderSimplePlus", "ChatsCircle", "CopyMessageIcon"];
 
 function scannedSources(): [string, string][] {
   return Object.entries(SOURCES).filter(([path]) => !path.includes("/__tests__/"));
@@ -28,10 +28,20 @@ describe("autorité unique des dessins de dossier et de discussion", () => {
   });
 
   it("ne déclare la discussion qu'à un seul endroit", () => {
-    const declarations = scannedSources()
-      .filter(([, content]) => content.includes("export function SessionIcon"))
-      .map(([path]) => path);
+    const declarations = declarationsOf("SessionIcon");
 
     expect(declarations).toEqual(["/src/components/ui/session-icon.tsx"]);
   });
+
+  it("ne déclare la copie qu'à un seul endroit", () => {
+    const declarations = declarationsOf("CopyIcon");
+
+    expect(declarations).toEqual(["/src/components/ui/copy-icon.tsx"]);
+  });
 });
+
+function declarationsOf(component: string): string[] {
+  return scannedSources()
+    .filter(([, content]) => content.includes(`export function ${component}`))
+    .map(([path]) => path);
+}

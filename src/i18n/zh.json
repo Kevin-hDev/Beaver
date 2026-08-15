@@ -235,6 +235,9 @@
     "deleteError": "删除失败。请检查仓库后重试。"
   },
   "history": {
+    "copyId": "复制 ID",
+    "idCopied": "ID 已复制",
+    "copyIdFailed": "复制失败",
     "rename": "重命名",
     "delete": "删除",
     "archive": "归档",
