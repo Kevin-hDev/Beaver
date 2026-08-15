@@ -68,9 +68,8 @@ impl HostProcess {
         let run_writer = writer.clone();
         let run_pending = pending.clone();
         let run_alive = alive.clone();
-        let (reader_done, reader_finished) = tokio::sync::oneshot::channel();
-        if reader_admission
-            .spawn(move |cancel| async move {
+        let reader_finished =
+            match reader_admission.spawn_with_completion(move |cancel| async move {
                 super::host_reader::run(
                     stdout,
                     run_writer,
@@ -80,17 +79,17 @@ impl HostProcess {
                     cancel,
                 )
                 .await;
-                let _ = reader_done.send(());
-            })
-            .is_err()
-        {
-            crate::services::process_tree::terminate_tokio(
-                &mut child,
-                crate::services::process_tree::ProcessKind::ExtensionHost,
-            )
-            .await;
-            return Err(error_codes::HOST_UNAVAILABLE.to_string());
-        }
+            }) {
+                Ok(completion) => completion,
+                Err(_) => {
+                    crate::services::process_tree::terminate_tokio(
+                        &mut child,
+                        crate::services::process_tree::ProcessKind::ExtensionHost,
+                    )
+                    .await;
+                    return Err(error_codes::HOST_UNAVAILABLE.to_string());
+                }
+            };
         Ok(Self {
             child: Mutex::new(child),
             writer,
