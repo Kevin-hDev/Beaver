@@ -696,6 +696,12 @@
       "pausedEmpty": "唤醒已暂停"
     },
     "form": {
+      "notice": "只有当电脑开机且 Beaver 正在运行时，唤醒才会触发。",
+      "required": "必填",
+      "at": "于",
+      "namePlaceholder": "晨间复盘",
+      "descriptionPlaceholder": "复盘昨天的提交",
+      "promptPlaceholder": "检查最近 24 小时的提交，总结改动内容，并标出需要后续跟进的地方。",
       "createTitle": "新建唤醒",
       "editTitle": "编辑唤醒",
       "name": "名称",
@@ -704,7 +710,7 @@
       "pickModel": "选择模型",
       "noToolCapable": "无支持工具的模型",
       "prompt": "提示词",
-      "description": "描述（简短）",
+      "description": "描述",
       "schedule": "计划",
       "cancel": "取消",
       "create": "创建",

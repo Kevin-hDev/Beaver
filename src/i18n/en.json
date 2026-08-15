@@ -701,6 +701,12 @@
       "pausedEmpty": "Wakeups paused"
     },
     "form": {
+      "notice": "Wakeups only fire while your computer is on and Beaver is running.",
+      "required": "required",
+      "at": "At",
+      "namePlaceholder": "morning-review",
+      "descriptionPlaceholder": "Review yesterday's commits",
+      "promptPlaceholder": "Review the commits from the last 24 hours, summarise what changed and flag anything worth following up.",
       "createTitle": "New wakeup",
       "editTitle": "Edit wakeup",
       "name": "Name",
@@ -709,7 +715,7 @@
       "pickModel": "Pick a model",
       "noToolCapable": "No tool-capable model",
       "prompt": "Prompt",
-      "description": "Description (short)",
+      "description": "Description",
       "schedule": "Schedule",
       "cancel": "Cancel",
       "create": "Create",

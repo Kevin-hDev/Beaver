@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X } from "@/components/ui/icons";
-import { CustomSelect } from "@/components/ui/custom-select";
+import { Info, X } from "@/components/ui/icons";
 import type { CreateWakeupInput, ScheduledWakeup, WakeupSchedule } from "@/types/wakeup";
 import { useAvailableModels, withoutInteractiveOnlyModels } from "@/hooks/use-available-models";
 import { SchedulePicker } from "./schedule-picker";
+import { WakeupField, WakeupModelFields } from "./wakeup-form-fields";
+import "./new-wakeup-dialog.css";
 
 interface NewWakeupDialogProps {
   initial: ScheduledWakeup | null;
@@ -99,72 +100,58 @@ export function NewWakeupDialog({
           </button>
         </header>
 
-        <form className="wk-form" onSubmit={(e) => void handleSubmit(e)}>
-          <div className="wk-form-field">
-            <label className="wk-form-label">{t("heartbeat.form.name")}</label>
+        <form className="wk-form nwd-form" onSubmit={(e) => void handleSubmit(e)}>
+          {/* Un réveil ne se déclenche pas machine éteinte ni application fermée :
+              dit ici, où il se crée, plutôt que découvert le lendemain matin. */}
+          <p className="nwd-notice">
+            <Info size="var(--icon-sm)" weight="regular" />
+            {t("heartbeat.form.notice")}
+          </p>
+
+          <WakeupField label={t("heartbeat.form.name")} required>
             <input
               type="text"
-              className="field wk-input"
+              className="field field-wide"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder={t("heartbeat.form.namePlaceholder")}
               required
               autoFocus
             />
-          </div>
+          </WakeupField>
 
-          <div className="wk-form-row">
-            <div className="wk-form-field">
-              <label className="wk-form-label">{t("heartbeat.form.provider")}</label>
-              <CustomSelect
-                value={provider}
-                onChange={setProvider}
-                options={
-                  availableProviders.length === 0
-                    ? [{ value: "ollama", label: "Ollama" }]
-                    : availableProviders.map((p) => ({ value: p.id, label: p.display_name }))
-                }
-              />
-            </div>
-
-            <div className="wk-form-field">
-              <label className="wk-form-label">{t("heartbeat.form.model")}</label>
-              <CustomSelect
-                value={model}
-                onChange={setModel}
-                disabled={toolCapableModels.length === 0}
-                placeholder={
-                  toolCapableModels.length === 0
-                    ? t("heartbeat.form.noToolCapable")
-                    : t("heartbeat.form.pickModel")
-                }
-                options={toolCapableModels.map((m) => ({ value: m.id, label: m.id }))}
-              />
-            </div>
-          </div>
-
-          <div className="wk-form-field">
-            <label className="wk-form-label">{t("heartbeat.form.prompt")}</label>
-            <textarea
-              className="field wk-input wk-textarea"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={4}
-              required
-            />
-          </div>
-
-          <SchedulePicker value={schedule} onChange={setSchedule} />
-
-          <div className="wk-form-field">
-            <label className="wk-form-label">{t("heartbeat.form.description")}</label>
+          <WakeupField label={t("heartbeat.form.description")}>
             <input
               type="text"
-              className="field wk-input"
+              className="field field-wide"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder={t("heartbeat.form.descriptionPlaceholder")}
               maxLength={200}
             />
-          </div>
+          </WakeupField>
+
+          <WakeupModelFields
+            provider={provider}
+            model={model}
+            providers={availableProviders}
+            models={toolCapableModels}
+            onProviderChange={setProvider}
+            onModelChange={setModel}
+          />
+
+          <WakeupField label={t("heartbeat.form.prompt")} required>
+            <textarea
+              className="field field-wide field-multiline nwd-textarea"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={t("heartbeat.form.promptPlaceholder")}
+              rows={5}
+              required
+            />
+          </WakeupField>
+
+          <SchedulePicker value={schedule} onChange={setSchedule} />
 
           {error && <div className="wk-form-error">{error}</div>}
 
