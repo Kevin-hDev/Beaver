@@ -5,7 +5,7 @@ use super::error::OllamaErrorCode;
 use super::retry::OllamaRecoveryRetry;
 use super::startup::OllamaStartupBarrier;
 use super::types::{OllamaRuntimeStatus, OperationState};
-use crate::app_exit::AppWorkSupervisor;
+use crate::app_exit::{AppEmergencyPublisher, AppWorkSupervisor};
 #[cfg(test)]
 use crate::services::work_registry::ServiceWorkDiagnostics;
 use crate::services::work_registry::{
@@ -23,6 +23,8 @@ struct OllamaManagerInner {
     work: ServiceWorkSupervisor<OLLAMA_WORK_CAPACITY>,
     operation_lock: AsyncMutex<()>,
     state: Mutex<OllamaManagerState>,
+    owned_process: Mutex<Option<super::process::OwnedOllamaProcess>>,
+    emergency: Option<AppEmergencyPublisher>,
     startup: OllamaStartupBarrier,
     retry: OllamaRecoveryRetry,
 }
@@ -43,17 +45,7 @@ pub(crate) struct OllamaOperationGuard<'a> {
 
 impl OllamaManager {
     pub fn new(app_work: AppWorkSupervisor) -> Self {
-        Self(Arc::new(OllamaManagerInner {
-            work: ServiceWorkSupervisor::new(app_work),
-            operation_lock: AsyncMutex::new(()),
-            startup: OllamaStartupBarrier::new(),
-            retry: OllamaRecoveryRetry::new(),
-            state: Mutex::new(OllamaManagerState {
-                closing: false,
-                generation: 0,
-                status: OllamaRuntimeStatus::initial(),
-            }),
-        }))
+        Self::new_inner(app_work, None)
     }
 
     pub async fn status(&self) -> OllamaRuntimeStatus {

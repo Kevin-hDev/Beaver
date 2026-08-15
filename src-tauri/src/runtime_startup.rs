@@ -39,7 +39,6 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
         .state::<crate::services::ollama_manager::OllamaManager>()
         .inner()
         .clone();
-    let handle = app.clone();
     if background
         .spawn_task(move |cancel| async move {
             let barrier = manager.run_startup_recovery().await;
@@ -53,26 +52,19 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
                     return;
                 }
             }
-            if crate::services::ollama_lifecycle::ollama_binary_path().is_err() {
-                return;
-            }
             let _ = crate::services::gpu_vram::refresh_owned(cancel.clone()).await;
             if cancel.is_cancelled() {
                 return;
             }
-            let stop_handle = handle.clone();
-            let result = tokio::task::spawn_blocking(move || {
-                crate::services::ollama_lifecycle::start_sidecar(&handle)
-            })
-            .await;
-            if cancel.is_cancelled() {
-                crate::services::ollama_lifecycle::stop_sidecar(&stop_handle);
-                return;
-            }
-            match result {
-                Ok(Err(error)) => ::log::error!("[ollama] sidecar start failed: {error}"),
-                Err(error) => ::log::error!("[ollama] sidecar task failed: {error}"),
-                _ => {}
+            match manager.start().await {
+                crate::services::ollama_manager::OllamaStartOutcome::Failed { code }
+                | crate::services::ollama_manager::OllamaStartOutcome::BlockedByRecovery { code } => {
+                    ::log::error!("[ollama] manager start blocked code={}", code.as_str());
+                }
+                crate::services::ollama_manager::OllamaStartOutcome::RejectedDuringShutdown => {}
+                crate::services::ollama_manager::OllamaStartOutcome::OwnedStarted { .. }
+                | crate::services::ollama_manager::OllamaStartOutcome::OwnedAlreadyRunning { .. }
+                | crate::services::ollama_manager::OllamaStartOutcome::ExternalAvailable { .. } => {}
             }
         })
         .is_err()

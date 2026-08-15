@@ -31,7 +31,6 @@ mod windows_entry_plan;
 use services::agent_local::ollama_client::OllamaClient;
 use services::e2e_profile::{report_lifecycle, LifecycleStage};
 use services::gateway::GatewayService;
-use services::ollama_lifecycle::OllamaSidecar;
 use tauri::{Emitter, Manager};
 
 pub use runtime_state::ActiveStreams;
@@ -88,7 +87,6 @@ pub(crate) fn run_inner(
         .manage(runtime.oauth_work)
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
-        .manage(OllamaSidecar::new())
         .manage(runtime.downloads)
         .manage(runtime.app_update)
         .manage(runtime.searxng)

@@ -1,8 +1,7 @@
 use super::manager::OllamaManager;
 use super::retry::RetryWait;
-use super::types::{DaemonState, OllamaEndpoint, OllamaRuntimeStatus};
+use super::types::{DaemonState, OllamaRuntimeStatus};
 use serde::{Deserialize, Serialize};
-use std::num::NonZeroU16;
 use std::time::Duration;
 use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
@@ -55,31 +54,23 @@ impl OllamaManager {
         if !matches!(barrier, super::startup::StartupBarrierState::Ready) {
             return self.status().await;
         }
+        let current = self.status().await;
+        let endpoint = match &current.daemon {
+            DaemonState::Owned { endpoint } | DaemonState::External { endpoint } => endpoint,
+            DaemonState::Unavailable => return current,
+        };
         let client = reqwest::Client::builder()
             .timeout(HEALTH_TIMEOUT)
             .build()
             .unwrap_or_default();
         let running = client
-            .get(format!(
-                "{}/api/version",
-                crate::services::agent_local::ollama_base_url()
-            ))
+            .get(format!("{}/api/version", endpoint.as_http_url()))
             .send()
             .await
             .map(|response| response.status().is_success())
             .unwrap_or(false);
-        let port = NonZeroU16::new(crate::services::ollama_port::get_port())
-            .unwrap_or(NonZeroU16::new(11_434).expect("non-zero default port"));
-        let endpoint = OllamaEndpoint::loopback(port);
-        let current = self.status().await;
         let daemon = if running {
-            match current.daemon {
-                DaemonState::Owned { .. } => DaemonState::Owned { endpoint },
-                _ if crate::services::ollama_lifecycle::ollama_binary_path().is_ok() => {
-                    DaemonState::Owned { endpoint }
-                }
-                _ => DaemonState::External { endpoint },
-            }
+            current.daemon
         } else {
             DaemonState::Unavailable
         };
@@ -138,9 +129,9 @@ impl OllamaManager {
     ) {
         let total = crate::services::gpu_vram::detect_vram_mb().unwrap_or(0);
         let used = crate::services::gpu_vram::detect_vram_used_mb().unwrap_or(0);
-        let ps = if matches!(status.daemon, DaemonState::Unavailable) {
-            PsResponse { models: vec![] }
-        } else {
+        let ps = if let DaemonState::Owned { endpoint }
+        | DaemonState::External { endpoint } = &status.daemon
+        {
             let client = reqwest::Client::builder()
                 .timeout(HEALTH_TIMEOUT)
                 .build()
@@ -149,12 +140,14 @@ impl OllamaManager {
                 _ = cancellation.cancelled() => return,
                 response = client.get(format!(
                     "{}/api/ps",
-                    crate::services::agent_local::ollama_base_url()
+                    endpoint.as_http_url()
                 )).send() => match response {
                     Ok(response) => response.json().await.unwrap_or(PsResponse { models: vec![] }),
                     Err(_) => PsResponse { models: vec![] },
                 }
             }
+        } else {
+            PsResponse { models: vec![] }
         };
         let _ = app.emit("ollama-gpu-status", &build_gpu_status(&ps, total, used));
     }

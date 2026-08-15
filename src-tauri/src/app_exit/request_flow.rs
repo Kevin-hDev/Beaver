@@ -40,6 +40,9 @@ fn start_cleanup(
     intent: ExitIntent,
     exit_code: i32,
 ) {
+    if let Some(manager) = app.try_state::<crate::services::ollama_manager::OllamaManager>() {
+        manager.begin_closing();
+    }
     if coordinator
         .spawn_watchdog(app.clone(), timeline, intent, exit_code)
         .is_err()

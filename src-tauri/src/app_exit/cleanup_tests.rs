@@ -106,3 +106,14 @@ fn the_global_registry_must_be_empty_after_service_cleanup() {
     assert!(global_registry_is_empty(0));
     assert!(!global_registry_is_empty(1));
 }
+
+mod ollama {
+    #[test]
+    fn cleanup_routes_ollama_through_manager_and_its_setup_deadline() {
+        let source = include_str!("cleanup.rs");
+        assert!(source.contains("stop_and_wait"));
+        assert!(source.contains("ollama_setup_deadline"));
+        assert!(!source.contains("ollama_lifecycle"));
+        assert!(!source.contains("ollama_kill"));
+    }
+}

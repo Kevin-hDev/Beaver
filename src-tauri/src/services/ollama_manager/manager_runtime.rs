@@ -2,64 +2,11 @@ use super::types::{
     BundleState, CancelOutcome, DaemonState, OllamaCliArgs, OllamaCliOutput, OllamaEndpoint,
     OllamaStartOutcome,
 };
-use crate::services::agent_local::app_handle_global;
-use crate::services::background_command;
-use std::num::NonZeroU16;
-use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 impl OllamaManager {
     pub async fn start(&self) -> OllamaStartOutcome {
-        if self.is_closing() {
-            return OllamaStartOutcome::RejectedDuringShutdown;
-        }
-        match self.startup_state() {
-            super::startup::StartupBarrierState::Pending => {
-                if !matches!(self.run_startup_recovery().await, super::startup::StartupBarrierState::Ready) {
-                    return OllamaStartOutcome::BlockedByRecovery {
-                        code: OllamaErrorCode::OllamaRecoveryDeferred,
-                    };
-                }
-            }
-            super::startup::StartupBarrierState::Blocked { code } => {
-                return OllamaStartOutcome::BlockedByRecovery { code };
-            }
-            super::startup::StartupBarrierState::Ready => {}
-        }
-        let current = self.status().await.daemon;
-        if let DaemonState::Owned { endpoint } = current {
-            return OllamaStartOutcome::OwnedAlreadyRunning { endpoint };
-        }
-        let Some(app) = app_handle_global::get() else {
-            return OllamaStartOutcome::Failed {
-                code: OllamaErrorCode::OllamaInternal,
-            };
-        };
-        match crate::services::ollama_lifecycle::start_sidecar(app) {
-            Ok(true) => match current_endpoint() {
-                Ok(endpoint) => {
-                    self.publish_daemon(DaemonState::Owned { endpoint: endpoint.clone() });
-                    self.publish_bundle_ready();
-                    OllamaStartOutcome::OwnedStarted { endpoint }
-                }
-                Err(_) => OllamaStartOutcome::Failed {
-                    code: OllamaErrorCode::OllamaStartFailed,
-                },
-            },
-            Ok(false) => match current_endpoint() {
-                Ok(endpoint) => {
-                    self.publish_daemon(DaemonState::External { endpoint: endpoint.clone() });
-                    self.publish_bundle_ready();
-                    OllamaStartOutcome::ExternalAvailable { endpoint }
-                }
-                Err(_) => OllamaStartOutcome::Failed {
-                    code: OllamaErrorCode::OllamaUnavailable,
-                },
-            },
-            Err(_) => OllamaStartOutcome::Failed {
-                code: OllamaErrorCode::OllamaStartFailed,
-            },
-        }
+        self.start_impl().await
     }
 
     pub async fn restart(&self) -> OllamaStartOutcome {
@@ -103,49 +50,14 @@ impl OllamaManager {
     }
 
     pub async fn stop_and_wait(&self, deadline: Instant) -> Result<(), OllamaErrorCode> {
-        if Instant::now() >= deadline {
-            return Err(OllamaErrorCode::OllamaSetupTimeout);
-        }
-        if let Some(app) = app_handle_global::get() {
-            crate::services::ollama_lifecycle::stop_sidecar(app);
-        }
-        self.publish_daemon(DaemonState::Unavailable);
-        Ok(())
+        self.stop_impl(deadline).await
     }
 
     pub async fn run_cli(
         &self,
         args: OllamaCliArgs,
     ) -> Result<OllamaCliOutput, OllamaErrorCode> {
-        args.validate()?;
-        let endpoint = self.usable_endpoint().await?;
-        let binary = crate::services::ollama_lifecycle::ollama_binary_path()
-            .map_err(|_| OllamaErrorCode::OllamaBundleMissing)?;
-        let mut command = background_command::new_tokio(binary);
-        match &args {
-            OllamaCliArgs::Version => {
-                command.arg("--version");
-            }
-            OllamaCliArgs::Create { model, modelfile } => {
-                if self.owned_endpoint().await.is_none() {
-                    return Err(OllamaErrorCode::OllamaUnavailable);
-                }
-                command
-                    .args(["create", model, "--file"])
-                    .arg(modelfile)
-                    .env("OLLAMA_HOST", endpoint.as_http_url());
-            }
-        }
-        let status = tokio::time::timeout(Duration::from_secs(600), command
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .kill_on_drop(true)
-            .status())
-            .await
-            .map_err(|_| OllamaErrorCode::OllamaSetupTimeout)?
-            .map_err(|_| OllamaErrorCode::OllamaStartFailed)?;
-        Ok(OllamaCliOutput { success: status.success() })
+        self.run_cli_impl(args).await
     }
 
     fn publish_bundle_ready(&self) {
@@ -153,8 +65,32 @@ impl OllamaManager {
     }
 }
 
-fn current_endpoint() -> Result<OllamaEndpoint, OllamaErrorCode> {
-    let port = NonZeroU16::new(crate::services::ollama_port::get_port())
-        .ok_or(OllamaErrorCode::OllamaUnavailable)?;
-    Ok(OllamaEndpoint::loopback(port))
+impl OllamaManager {
+    pub(crate) fn with_emergency(
+        app_work: crate::app_exit::AppWorkSupervisor,
+        emergency: crate::app_exit::AppEmergencyPublisher,
+    ) -> Self {
+        Self::new_inner(app_work, Some(emergency))
+    }
+
+    fn new_inner(
+        app_work: crate::app_exit::AppWorkSupervisor,
+        emergency: Option<crate::app_exit::AppEmergencyPublisher>,
+    ) -> Self {
+        Self(std::sync::Arc::new(super::manager::OllamaManagerInner {
+            work: crate::services::work_registry::ServiceWorkSupervisor::new(app_work),
+            operation_lock: tokio::sync::Mutex::new(()),
+            state: std::sync::Mutex::new(super::manager::OllamaManagerState {
+                closing: false,
+                generation: 0,
+                status: super::types::OllamaRuntimeStatus::initial(),
+            }),
+            owned_process: std::sync::Mutex::new(None),
+            emergency,
+            startup: super::startup::OllamaStartupBarrier::new(),
+            retry: super::retry::OllamaRecoveryRetry::new(),
+        }))
+    }
 }
+
+include!("manager_process.rs");

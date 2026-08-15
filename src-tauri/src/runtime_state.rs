@@ -30,7 +30,10 @@ pub struct RuntimeServices {
 
 pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
     let supervisor = exit.work_supervisor();
-    let ollama = crate::services::ollama_manager::OllamaManager::new(supervisor.clone());
+    let ollama = crate::services::ollama_manager::OllamaManager::with_emergency(
+        supervisor.clone(),
+        exit.emergency_publisher(),
+    );
     RuntimeServices {
         agent_work: agent_work(exit),
         ollama,

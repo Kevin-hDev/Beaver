@@ -18,7 +18,7 @@ pub(super) type StopFuture<'a> = futures_util::future::BoxFuture<'a, bool>;
 
 pub(super) async fn run(app: &tauri::AppHandle, timeline: ShutdownTimeline) -> CleanupOutcome {
     let deadline = timeline.graceful_deadline();
-    run_with_deadline(deadline, cleanup_services(app, deadline)).await
+    run_with_deadline(deadline, cleanup_services(app, timeline)).await
 }
 
 pub(super) async fn run_with_deadline<Work>(deadline: Instant, work: Work) -> CleanupOutcome
@@ -42,15 +42,26 @@ where
     ollama.await;
 }
 
-async fn cleanup_services(app: &tauri::AppHandle, deadline: Instant) {
+async fn cleanup_services(app: &tauri::AppHandle, timeline: ShutdownTimeline) {
     services::agent_local::tool_bash_profile::clear();
+    let ollama = app
+        .try_state::<services::ollama_manager::OllamaManager>()
+        .map(|manager| manager.inner().clone());
+    if let Some(manager) = &ollama {
+        manager.begin_closing();
+    }
+    let deadline = timeline.graceful_deadline();
     let services_phase = stop_services(app, deadline);
-    let ollama_handle = app.clone();
     let ollama_phase = async move {
-        super::blocking::execute(move || {
-            services::ollama_lifecycle::stop_sidecar(&ollama_handle);
-        })
-        .await;
+        if let Some(manager) = ollama {
+            if manager
+                .stop_and_wait(timeline.ollama_setup_deadline())
+                .await
+                .is_err()
+            {
+                ::log::warn!("[ollama] manager stop exceeded setup deadline");
+            }
+        }
     };
     run_ordered(services_phase, ollama_phase).await;
 }
@@ -160,10 +171,7 @@ async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {
             services::extensions::stop_and_wait(deadline).boxed(),
         ),
     ];
-    let (all_stopped, ()) = tokio::join!(
-        run_service_group(service_stops),
-        services::ollama_kill::release_vram(),
-    );
+    let all_stopped = run_service_group(service_stops).await;
     if !all_stopped {
         ::log::warn!("[exit] one or more services exceeded the graceful deadline");
     }
