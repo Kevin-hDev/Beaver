@@ -1,4 +1,5 @@
 use crate::services::runtime_background::RuntimeBackgroundServices;
+use tauri::Manager;
 
 pub fn start_recovery(
     background: &RuntimeBackgroundServices,
@@ -34,12 +35,27 @@ pub fn start_recovery(
 }
 
 pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHandle) {
-    if crate::services::ollama_lifecycle::ollama_binary_path().is_err() {
-        return;
-    }
+    let manager = app
+        .state::<crate::services::ollama_manager::OllamaManager>()
+        .inner()
+        .clone();
     let handle = app.clone();
     if background
         .spawn_task(move |cancel| async move {
+            let barrier = manager.run_startup_recovery().await;
+            if !matches!(barrier, crate::services::ollama_manager::StartupBarrierState::Ready) {
+                ::log::warn!("[ollama] startup blocked until recovery succeeds");
+                let ready = tokio::select! {
+                    _ = cancel.cancelled() => return,
+                    state = manager.wait_startup_ready() => state,
+                };
+                if !matches!(ready, crate::services::ollama_manager::StartupBarrierState::Ready) {
+                    return;
+                }
+            }
+            if crate::services::ollama_lifecycle::ollama_binary_path().is_err() {
+                return;
+            }
             let _ = crate::services::gpu_vram::refresh_owned(cancel.clone()).await;
             if cancel.is_cancelled() {
                 return;

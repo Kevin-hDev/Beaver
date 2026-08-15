@@ -1,8 +1,9 @@
 // Le gestionnaire pose l'autorité avant l'adoption des consommateurs des tâches suivantes.
 #![allow(dead_code)]
-
 use super::constants::OLLAMA_WORK_CAPACITY;
 use super::error::OllamaErrorCode;
+use super::retry::OllamaRecoveryRetry;
+use super::startup::OllamaStartupBarrier;
 use super::types::{OllamaRuntimeStatus, OperationState};
 use crate::app_exit::AppWorkSupervisor;
 #[cfg(test)]
@@ -22,6 +23,8 @@ struct OllamaManagerInner {
     work: ServiceWorkSupervisor<OLLAMA_WORK_CAPACITY>,
     operation_lock: AsyncMutex<()>,
     state: Mutex<OllamaManagerState>,
+    startup: OllamaStartupBarrier,
+    retry: OllamaRecoveryRetry,
 }
 
 struct OllamaManagerState {
@@ -43,6 +46,8 @@ impl OllamaManager {
         Self(Arc::new(OllamaManagerInner {
             work: ServiceWorkSupervisor::new(app_work),
             operation_lock: AsyncMutex::new(()),
+            startup: OllamaStartupBarrier::new(),
+            retry: OllamaRecoveryRetry::new(),
             state: Mutex::new(OllamaManagerState {
                 closing: false,
                 generation: 0,
@@ -53,12 +58,6 @@ impl OllamaManager {
 
     pub async fn status(&self) -> OllamaRuntimeStatus {
         self.inner().lock_state().status.clone()
-    }
-
-    pub fn begin_closing(&self) {
-        // Publier la fermeture avant le registre ferme la fenêtre admission/publication.
-        self.inner().mark_closing();
-        self.inner().work.begin_closing();
     }
 
     pub(crate) async fn begin_operation(
@@ -228,3 +227,4 @@ fn map_admission_error(error: ServiceWorkAdmissionError) -> OllamaErrorCode {
     }
 }
 include!("manager_update.rs");
+include!("manager_startup.rs");

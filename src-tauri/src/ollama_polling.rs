@@ -1,143 +1,28 @@
-use crate::services::agent_local::ollama_base_url;
-use crate::services::ollama_ps;
-use std::time::Duration;
-use tauri::Emitter;
+use crate::services::ollama_manager::OllamaManager;
+use crate::services::runtime_background::RuntimeBackgroundServices;
 use tauri::Manager;
-
-const POLL_INTERVAL: Duration = Duration::from_secs(2);
-const HEALTH_TIMEOUT: Duration = Duration::from_secs(2);
-const FAILURES_BEFORE_RESTART: u32 = 3;
-const MAX_RESTART_ATTEMPTS: u32 = 4;
-
-fn backoff_secs(attempt: u32) -> u64 {
-    match attempt {
-        0 => 2,
-        1 => 4,
-        2 => 8,
-        _ => 16,
-    }
-}
+use tokio_util::sync::CancellationToken;
 
 pub fn start(handle: tauri::AppHandle) {
     let background = handle
-        .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+        .state::<RuntimeBackgroundServices>()
         .inner()
         .clone();
+    let manager = handle.state::<OllamaManager>().inner().clone();
     if background
         .spawn_loop(move |cancel| async move {
-            let client = reqwest::Client::builder()
-                .timeout(HEALTH_TIMEOUT)
-                .build()
-                .unwrap_or_default();
-
-            let mut last_running = false;
-            let mut consecutive_failures: u32 = 0;
-            let mut restart_attempts: u32 = 0;
-
-            loop {
-                if cancel.is_cancelled() {
-                    return;
+            let cancellation = CancellationToken::new();
+            let mut loop_task = Box::pin(manager.run_background_loop(cancellation.clone()));
+            tokio::select! {
+                _ = cancel.cancelled() => {
+                    cancellation.cancel();
+                    loop_task.as_mut().await;
                 }
-                let base = ollama_base_url();
-                let running = client
-                    .get(format!("{base}/api/version"))
-                    .send()
-                    .await
-                    .map(|r| r.status().is_success())
-                    .unwrap_or(false);
-
-                emit_gpu_status(&handle, &client, &base, running, &cancel).await;
-
-                if running {
-                    consecutive_failures = 0;
-                    restart_attempts = 0;
-                } else {
-                    if crate::services::ollama_lifecycle::ollama_binary_path().is_err() {
-                        if sleep_or_cancel(&cancel, POLL_INTERVAL).await {
-                            return;
-                        }
-                        continue;
-                    }
-
-                    consecutive_failures += 1;
-                    if consecutive_failures >= FAILURES_BEFORE_RESTART
-                        && restart_attempts < MAX_RESTART_ATTEMPTS
-                    {
-                        let delay = backoff_secs(restart_attempts);
-                        ::log::warn!(
-                            "[ollama] {} échecs, tentative {} dans {delay}s",
-                            consecutive_failures,
-                            restart_attempts + 1
-                        );
-                        if sleep_or_cancel(&cancel, Duration::from_secs(delay)).await {
-                            return;
-                        }
-
-                        match crate::services::ollama_lifecycle::start_sidecar(&handle) {
-                            Ok(true) => ::log::info!("[ollama] sidecar redémarré"),
-                            Ok(false) => ::log::info!("[ollama] daemon externe détecté"),
-                            Err(e) => ::log::warn!("[ollama] restart échoué : {e}"),
-                        }
-
-                        restart_attempts += 1;
-                        consecutive_failures = 0;
-                    }
-                }
-
-                if running != last_running {
-                    let _ = handle.emit("ollama-status", running);
-                    last_running = running;
-                }
-
-                if sleep_or_cancel(&cancel, POLL_INTERVAL).await {
-                    return;
-                }
+                _ = loop_task.as_mut() => {}
             }
         })
         .is_err()
     {
         ::log::warn!("[ollama] polling unavailable during shutdown");
     }
-}
-
-async fn sleep_or_cancel(
-    cancel: &crate::services::work_registry::ServiceWorkCancellation,
-    duration: Duration,
-) -> bool {
-    tokio::select! {
-        _ = cancel.cancelled() => true,
-        _ = tokio::time::sleep(duration) => false,
-    }
-}
-
-async fn emit_gpu_status(
-    handle: &tauri::AppHandle,
-    client: &reqwest::Client,
-    base: &str,
-    ollama_running: bool,
-    cancel: &crate::services::work_registry::ServiceWorkCancellation,
-) {
-    let snapshot = crate::services::gpu_vram::refresh_owned(cancel.clone()).await;
-    let (vram_total, vram_used) = snapshot
-        .map(|snapshot| (snapshot.total_mb, snapshot.used_mb))
-        .unwrap_or((0, 0));
-    if cancel.is_cancelled() {
-        return;
-    }
-
-    let empty = ollama_ps::PsResponse { models: vec![] };
-    let ps = if ollama_running {
-        let url = format!("{base}/api/ps");
-        tokio::select! {
-            _ = cancel.cancelled() => return,
-            response = client.get(&url).send() => match response {
-                Ok(response) => response.json::<ollama_ps::PsResponse>().await.unwrap_or(empty),
-                Err(_) => empty,
-            }
-        }
-    } else {
-        empty
-    };
-    let status = ollama_ps::build_gpu_status(&ps, vram_total, vram_used);
-    let _ = handle.emit("ollama-gpu-status", &status);
 }

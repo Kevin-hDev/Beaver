@@ -52,6 +52,8 @@ mod recovery_helpers;
 mod recovery_probe;
 mod release_fetch;
 mod release_redirect;
+pub(crate) mod polling;
+mod retry;
 pub(crate) mod release_source;
 mod rollback;
 mod spawn_environment;
@@ -63,6 +65,7 @@ mod spawn_gate_unix;
 mod spawn_gate_windows;
 mod spawn_profile;
 mod spawn_profile_paths;
+mod startup;
 mod types;
 mod update;
 
@@ -119,6 +122,12 @@ mod update_completion_support;
 #[cfg(test)]
 mod update_completion_tests;
 #[cfg(test)]
+mod startup_tests;
+#[cfg(test)]
+mod retry_tests;
+#[cfg(test)]
+mod polling_tests;
+#[cfg(test)]
 mod transaction_property_tests;
 #[cfg(all(test, windows))]
 mod windows_durable_fs_tests;
@@ -149,6 +158,8 @@ pub use journal::{
     OllamaMigrationMarkerClassification, OllamaTransactionJournal,
 };
 pub use manager::OllamaManager;
+#[allow(unused_imports)]
+pub(crate) use startup::{OllamaStartupBarrier, StartupBarrierState};
 #[allow(unused_imports)]
 pub(crate) use path_identity::{
     CanonicalDirectory, NativeDirectoryIdentity, PathIdentityResolver, ValidatedPathComponent,
