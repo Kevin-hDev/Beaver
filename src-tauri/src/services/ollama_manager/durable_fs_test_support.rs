@@ -1,4 +1,5 @@
 use super::durable_fs::{OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
+use super::path_identity::CanonicalDirectory;
 use crate::services::paths::ollama_paths;
 use std::collections::VecDeque;
 use std::path::Path;
@@ -213,6 +214,10 @@ impl OllamaDurableFs for ScriptedFs {
     fn remove_tree(&self, _root: &Path) -> Result<(), OllamaFsError> {
         self.expect(ExpectedCall::RemoveTree);
         Ok(())
+    }
+
+    fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
+        self.remove_tree(root.path())
     }
 
     fn sync_file(&self, _path: &Path) -> Result<(), OllamaFsError> {

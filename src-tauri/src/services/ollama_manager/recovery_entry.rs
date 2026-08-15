@@ -3,18 +3,89 @@
 use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
 use super::manager::OllamaManager;
-use super::recovery::{RecoveryExecutor, RecoveryOutcome, RecoveryReason};
+use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
+use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
+use super::recovery::{
+    RecoveryExecutor, RecoveryOutcome, RecoveryProbe, RecoveryProbeResult, RecoveryReason,
+};
+use super::spawn_profile::OllamaSpawnProfile;
 use super::types::OperationState;
 use crate::services::paths::{data_dir, ollama_paths};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio_util::sync::CancellationToken;
+
+const RECOVERY_PROBE_TIMEOUT: Duration = Duration::from_secs(3);
+
+struct PlatformRecoveryProbe;
+
+#[async_trait::async_trait]
+impl RecoveryProbe for PlatformRecoveryProbe {
+    async fn validate(
+        &self,
+        target: &super::fingerprint::BundleFingerprint,
+        paths: &crate::services::paths::OllamaPaths,
+    ) -> RecoveryProbeResult {
+        let identity = NativePathIdentityResolver;
+        let cwd = match std::env::current_dir() {
+            Ok(cwd) => cwd,
+            Err(_) => {
+                return RecoveryProbeResult::Deferred(OllamaErrorCode::OllamaStorageUnavailable)
+            }
+        };
+        let profile =
+            match OllamaSpawnProfile::resolve_probe(paths, std::env::vars_os(), &cwd, &identity) {
+                Ok(profile) => profile,
+                Err(code) => return RecoveryProbeResult::Deferred(code),
+            };
+        let root = match identity.canonical_directory(&paths.active) {
+            Ok(root) => root,
+            Err(code) => return RecoveryProbeResult::Deferred(code),
+        };
+        let prepared = PreparedBundle {
+            root,
+            executable: profile.executable().clone(),
+            fingerprint: target.clone(),
+        };
+        let probe = OwnedOllamaTargetProbe::with_deadline(Instant::now() + RECOVERY_PROBE_TIMEOUT);
+        let cancellation = CancellationToken::new();
+        match probe.validate(&prepared, &profile, &cancellation).await {
+            TargetValidation::Valid { .. } => RecoveryProbeResult::Valid,
+            TargetValidation::InvalidTarget { code } => RecoveryProbeResult::Invalid(code),
+            TargetValidation::Deferred { code } => RecoveryProbeResult::Deferred(code),
+        }
+    }
+}
 
 pub(crate) async fn recover_platform(
     reason: RecoveryReason,
 ) -> Result<RecoveryOutcome, OllamaErrorCode> {
     let paths = ollama_paths(&data_dir());
-    RecoveryExecutor::new(Arc::new(platform_fs()), Arc::new(()), paths)
-        .recover(reason)
-        .await
+    let fs = Arc::new(platform_fs());
+    let probe = Arc::new(PlatformRecoveryProbe);
+    let executor = match frozen_models_directory(&paths) {
+        Some(models) => RecoveryExecutor::new_with_models(fs, probe, paths, models),
+        None => RecoveryExecutor::new(fs, probe, paths),
+    };
+    executor.recover(reason).await
+}
+
+fn frozen_models_directory(
+    paths: &crate::services::paths::OllamaPaths,
+) -> Option<CanonicalDirectory> {
+    let metadata = std::fs::symlink_metadata(&paths.active).ok()?;
+    if !metadata.is_dir() || metadata.file_type().is_symlink() {
+        return None;
+    }
+    let cwd = std::env::current_dir().ok()?;
+    let profile = OllamaSpawnProfile::resolve(
+        paths,
+        std::env::vars_os(),
+        &cwd,
+        &NativePathIdentityResolver,
+    )
+    .ok()?;
+    Some(profile.models_directory().clone())
 }
 
 impl OllamaManager {

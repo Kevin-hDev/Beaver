@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use super::super::path_identity::CanonicalDirectory;
 use super::sync_parent_pair;
 use super::{io_error_kind, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
 use std::ffi::CString;
@@ -7,6 +8,9 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
+
+#[path = "durable_fs_unix_verified.rs"]
+mod verified;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct UnixOllamaDurableFs;
@@ -68,6 +72,10 @@ impl OllamaDurableFs for UnixOllamaDurableFs {
     fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError> {
         fs::remove_dir_all(root).map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
         sync_parent_path(root)
+    }
+
+    fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
+        verified::remove_tree(root)
     }
 
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError> {

@@ -2,13 +2,15 @@
 
 use super::durable_fs::{OllamaDurableFs, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
+use super::fingerprint::{BundleFingerprint, OllamaVersion};
 use super::journal::{classify_migration_marker, OllamaMigrationMarkerClassification};
-use super::path_identity::{NativePathIdentityResolver, PathIdentityResolver};
+use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
 use super::recovery_decision::{
     DirectoryEvidence, JournalPresence, MigrationMarkerPresence, OllamaLayoutSnapshot,
 };
+use super::spawn_profile_paths::active_executable;
 use crate::services::paths::OllamaPaths;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub(crate) fn marker(fs: &dyn OllamaDurableFs, paths: &OllamaPaths) -> MigrationMarkerPresence {
     match fs.read_bounded(&paths.migration_marker, 4 * 1024) {
@@ -28,22 +30,22 @@ pub(crate) fn snapshot<F: OllamaDurableFs>(
     OllamaLayoutSnapshot {
         journal,
         migration_marker: marker(fs, paths),
-        active: evidence(&paths.active),
-        install_staging: evidence(&paths.install_staging),
-        update_staging: evidence(&paths.update_staging),
-        backup: evidence(&paths.backup),
-        failed: evidence(&paths.failed),
-        legacy_staging: evidence(&paths.legacy_staging),
-        legacy_backup: evidence(&paths.legacy_backup),
-        backup_delete: evidence(&paths.backup_delete),
-        failed_delete: evidence(&paths.failed_delete),
+        active: evidence(fs, &paths.active),
+        install_staging: evidence(fs, &paths.install_staging),
+        update_staging: evidence(fs, &paths.update_staging),
+        backup: evidence(fs, &paths.backup),
+        failed: evidence(fs, &paths.failed),
+        legacy_staging: evidence(fs, &paths.legacy_staging),
+        legacy_backup: evidence(fs, &paths.legacy_backup),
+        backup_delete: evidence(fs, &paths.backup_delete),
+        failed_delete: evidence(fs, &paths.failed_delete),
     }
 }
 
-fn evidence(path: &Path) -> DirectoryEvidence {
+fn evidence(fs: &dyn OllamaDurableFs, path: &Path) -> DirectoryEvidence {
     match std::fs::symlink_metadata(path) {
         Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
-            DirectoryEvidence::Unknown
+            fingerprint(fs, path).unwrap_or(DirectoryEvidence::Unknown)
         }
         Ok(_) => DirectoryEvidence::Invalid,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => DirectoryEvidence::Absent,
@@ -51,7 +53,33 @@ fn evidence(path: &Path) -> DirectoryEvidence {
     }
 }
 
-pub(crate) fn validate_trash(path: &Path, data_root: &Path) -> Result<(), OllamaErrorCode> {
+fn fingerprint(fs: &dyn OllamaDurableFs, path: &Path) -> Option<DirectoryEvidence> {
+    let identity = NativePathIdentityResolver;
+    let root = identity.canonical_directory(path).ok()?;
+    let executable_path = active_executable(root.path());
+    let executable = identity.canonical_executable(&executable_path).ok()?;
+    let version = fs
+        .read_bounded(&root.path().join("VERSION"), 4 * 1024)
+        .ok()
+        .and_then(|bytes| {
+            std::str::from_utf8(&bytes)
+                .ok()
+                .map(str::trim)
+                .map(str::to_owned)
+        })
+        .and_then(|value| OllamaVersion::parse(&value).ok())?;
+    let digest = super::probe_http::hash_file(executable.path()).ok()?;
+    Some(DirectoryEvidence::Present(BundleFingerprint {
+        version,
+        executable_sha256: digest,
+    }))
+}
+
+pub(crate) fn validate_trash(
+    path: &Path,
+    data_root: &Path,
+    models: &CanonicalDirectory,
+) -> Result<CanonicalDirectory, OllamaErrorCode> {
     let metadata =
         std::fs::symlink_metadata(path).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
     if !metadata.is_dir() || metadata.file_type().is_symlink() {
@@ -63,21 +91,16 @@ pub(crate) fn validate_trash(path: &Path, data_root: &Path) -> Result<(), Ollama
     if !identity.contains(&root, &trash)? {
         return Err(OllamaErrorCode::OllamaRecoveryDeferred);
     }
-    let models = std::env::var_os("OLLAMA_MODELS")
-        .map(PathBuf::from)
-        .or_else(|| dirs::home_dir().map(|home| home.join(".ollama").join("models")));
-    if let Some(models) = models {
-        if models.exists() {
-            let models = identity.canonical_directory(&models)?;
-            if identity.same_directory(&models, &trash)?
-                || identity.contains(&trash, &models)?
-                || identity.contains(&models, &trash)?
-            {
-                return Err(OllamaErrorCode::OllamaModelStoreConflict);
-            }
-        }
+    if identity.same_directory(models, &trash)?
+        || identity.contains(&trash, models)?
+        || identity.contains(models, &trash)?
+    {
+        return Err(OllamaErrorCode::OllamaModelStoreConflict);
     }
-    Ok(())
+    if trash.identity().is_none() {
+        return Err(OllamaErrorCode::OllamaRecoveryDeferred);
+    }
+    Ok(trash)
 }
 
 impl From<OllamaMigrationMarkerClassification> for MigrationMarkerPresence {

@@ -5,6 +5,7 @@ use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::journal_store::OllamaJournalStore;
+use super::path_identity::CanonicalDirectory;
 use super::recovery_decision::{DirectoryEvidence, JournalPresence, OllamaLayoutSnapshot};
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
@@ -83,6 +84,7 @@ pub(crate) async fn apply<F>(
     fs: &Arc<F>,
     journal: &OllamaJournalStore<F>,
     paths: &OllamaPaths,
+    models: Option<&CanonicalDirectory>,
 ) -> Result<(), OllamaErrorCode>
 where
     F: OllamaDurableFs + 'static,
@@ -106,7 +108,7 @@ where
             cleanup::rename(fs, &paths.failed, &paths.failed_delete).await
         }
         RollbackTransition::RemoveFailedDelete => {
-            cleanup::remove_trash(fs, &paths.failed_delete, paths).await
+            cleanup::remove_trash(fs, &paths.failed_delete, paths, models).await
         }
         RollbackTransition::RemoveJournal => journal.remove().await,
         RollbackTransition::PersistRollbackPending => Ok(()),

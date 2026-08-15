@@ -3,12 +3,14 @@
 use super::cleanup;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
-use super::fingerprint::BundleFingerprint;
-use super::journal::{OllamaJournalState, OllamaTransactionJournal};
+use super::journal::OllamaTransactionJournal;
 use super::journal_store::OllamaJournalStore;
+use super::path_identity::CanonicalDirectory;
 use super::recovery_decision::{
-    decide_recovery, DirectoryEvidence, JournalPresence, OllamaLayoutSnapshot, RecoveryDecision,
+    decide_recovery, JournalPresence, OllamaLayoutSnapshot, RecoveryDecision,
 };
+use super::recovery_helpers::{present, target_of};
+pub(crate) use super::recovery_probe::{RecoveryProbe, RecoveryProbeResult};
 use super::rollback;
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
@@ -27,22 +29,6 @@ pub enum RecoveryOutcome {
     Deferred { code: OllamaErrorCode },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RecoveryProbeResult {
-    Valid,
-    Invalid(OllamaErrorCode),
-    Deferred(OllamaErrorCode),
-}
-
-pub trait RecoveryProbe: Send + Sync {
-    fn validate(&self, target: &BundleFingerprint) -> RecoveryProbeResult;
-}
-impl RecoveryProbe for () {
-    fn validate(&self, _target: &BundleFingerprint) -> RecoveryProbeResult {
-        RecoveryProbeResult::Deferred(OllamaErrorCode::OllamaValidationDeferred)
-    }
-}
-
 pub struct RecoveryExecutor<F, P>
 where
     F: OllamaDurableFs + 'static,
@@ -52,6 +38,7 @@ where
     pub(crate) probe: Arc<P>,
     pub(crate) journal: OllamaJournalStore<F>,
     paths: OllamaPaths,
+    models_directory: Option<CanonicalDirectory>,
 }
 
 impl<F, P> RecoveryExecutor<F, P>
@@ -65,7 +52,19 @@ where
             fs,
             probe,
             paths,
+            models_directory: None,
         }
+    }
+
+    pub(crate) fn new_with_models(
+        fs: Arc<F>,
+        probe: Arc<P>,
+        paths: OllamaPaths,
+        models_directory: CanonicalDirectory,
+    ) -> Self {
+        let mut executor = Self::new(fs, probe, paths);
+        executor.models_directory = Some(models_directory);
+        executor
     }
 
     pub(crate) async fn recover(
@@ -122,12 +121,27 @@ where
             RecoveryDecision::ResumeTargetValidation => self.validate_target(snapshot).await,
             RecoveryDecision::ResumeCleanup => {
                 let transition = cleanup::choose(snapshot)?;
-                cleanup::apply(transition, &self.fs, &self.journal, &self.paths).await?;
+                cleanup::apply(
+                    transition,
+                    &self.fs,
+                    &self.journal,
+                    &self.paths,
+                    self.models_directory.as_ref(),
+                )
+                .await?;
                 Ok(ApplyResult::Progress)
             }
             RecoveryDecision::ResumeRollback | RecoveryDecision::ResumeRollbackCleanup => {
                 let transition = rollback::choose(snapshot)?;
-                rollback::apply(transition, snapshot, &self.fs, &self.journal, &self.paths).await?;
+                rollback::apply(
+                    transition,
+                    snapshot,
+                    &self.fs,
+                    &self.journal,
+                    &self.paths,
+                    self.models_directory.as_ref(),
+                )
+                .await?;
                 Ok(ApplyResult::Progress)
             }
             RecoveryDecision::AdoptLegacyActive => {
@@ -177,7 +191,7 @@ where
             _ => return Err(OllamaErrorCode::OllamaRecoveryDeferred),
         };
         let target = target_of(&journal).ok_or(OllamaErrorCode::OllamaJournalInvalid)?;
-        match self.probe.validate(target) {
+        match self.probe.validate(target, &self.paths).await {
             RecoveryProbeResult::Valid => {
                 let state = cleanup::cleanup_state(&journal)
                     .ok_or(OllamaErrorCode::OllamaJournalInvalid)?
@@ -204,15 +218,4 @@ where
 enum ApplyResult {
     Progress,
     Deferred(OllamaErrorCode),
-}
-fn target_of(journal: &OllamaTransactionJournal) -> Option<&BundleFingerprint> {
-    match &journal.state {
-        OllamaJournalState::Prepared { target, .. }
-        | OllamaJournalState::PendingValidation { target, .. }
-        | OllamaJournalState::CleanupPending { target, .. } => Some(target),
-        _ => None,
-    }
-}
-fn present(evidence: &DirectoryEvidence) -> bool {
-    matches!(evidence, DirectoryEvidence::Present(_))
 }

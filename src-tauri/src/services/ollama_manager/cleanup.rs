@@ -7,6 +7,7 @@ use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
 use super::journal::{OllamaJournalState, OllamaMigrationMarker, OllamaTransactionJournal};
 use super::journal_store::OllamaJournalStore;
+use super::path_identity::CanonicalDirectory;
 use super::recovery_decision::{DirectoryEvidence, OllamaLayoutSnapshot};
 use crate::services::paths::OllamaPaths;
 use std::path::Path;
@@ -65,6 +66,7 @@ pub(crate) async fn apply<F>(
     fs: &Arc<F>,
     journal: &OllamaJournalStore<F>,
     paths: &OllamaPaths,
+    models: Option<&CanonicalDirectory>,
 ) -> Result<(), OllamaErrorCode>
 where
     F: OllamaDurableFs + 'static,
@@ -74,13 +76,13 @@ where
             rename(fs, &paths.backup, &paths.backup_delete).await
         }
         CleanupTransition::RemoveBackupDelete => {
-            remove_trash(fs, &paths.backup_delete, paths).await
+            remove_trash(fs, &paths.backup_delete, paths, models).await
         }
         CleanupTransition::MoveFailedToDelete => {
             rename(fs, &paths.failed, &paths.failed_delete).await
         }
         CleanupTransition::RemoveFailedDelete => {
-            remove_trash(fs, &paths.failed_delete, paths).await
+            remove_trash(fs, &paths.failed_delete, paths, models).await
         }
         CleanupTransition::RemoveJournal => journal.remove().await,
     }
@@ -152,21 +154,23 @@ pub(crate) async fn remove_trash<F>(
     fs: &Arc<F>,
     path: &Path,
     paths: &OllamaPaths,
+    models: Option<&CanonicalDirectory>,
 ) -> Result<(), OllamaErrorCode>
 where
     F: OllamaDurableFs + 'static,
 {
-    validate_trash(
+    let models = models.ok_or(OllamaErrorCode::OllamaRecoveryDeferred)?;
+    let trash = validate_trash(
         path,
         paths
             .active
             .parent()
             .ok_or(OllamaErrorCode::OllamaInternal)?,
+        models,
     )?;
     let fs = Arc::clone(fs);
-    let path = path.to_path_buf();
     run_ollama_blocking(move || {
-        fs.remove_tree(&path)
+        fs.remove_tree_verified(&trash)
             .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
     })
     .await

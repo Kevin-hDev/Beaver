@@ -101,6 +101,11 @@ impl CanonicalDirectory {
         self.identity.as_ref()
     }
 
+    #[cfg(any(unix, windows))]
+    pub(crate) fn stable_handle(&self) -> Option<&std::fs::File> {
+        self.handle.as_ref().map(|handle| handle.0.as_ref())
+    }
+
     #[cfg(test)]
     pub(crate) fn has_stable_handle(&self) -> bool {
         #[cfg(any(unix, windows))]

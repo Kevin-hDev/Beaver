@@ -30,6 +30,8 @@ mod recovery;
 mod recovery_decision;
 mod recovery_decision_rules;
 mod recovery_entry;
+mod recovery_helpers;
+mod recovery_probe;
 mod rollback;
 mod spawn_environment;
 #[cfg(unix)]

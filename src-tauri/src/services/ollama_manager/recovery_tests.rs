@@ -3,6 +3,7 @@ use super::durable_fs::{OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
+use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
 use super::recovery::{RecoveryExecutor, RecoveryProbe, RecoveryProbeResult, RecoveryReason};
 use super::recovery_decision::{
     DirectoryEvidence, JournalPresence, MigrationMarkerPresence, OllamaLayoutSnapshot,
@@ -11,6 +12,9 @@ use crate::services::paths::{ollama_paths, OllamaPaths};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
+
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Failure {
@@ -146,6 +150,9 @@ impl OllamaDurableFs for CutpointFs {
         self.fail(Failure::BeforeSync)?;
         self.fail(Failure::AfterSync)
     }
+    fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
+        self.remove_tree(root.path())
+    }
     fn sync_parent(&self, _path: &Path) -> Result<(), OllamaFsError> {
         self.event("sync_parent");
         self.fail(Failure::BeforeSync)?;
@@ -154,8 +161,13 @@ impl OllamaDurableFs for CutpointFs {
 }
 
 struct ValidProbe;
+#[async_trait::async_trait]
 impl RecoveryProbe for ValidProbe {
-    fn validate(&self, _target: &BundleFingerprint) -> RecoveryProbeResult {
+    async fn validate(
+        &self,
+        _target: &BundleFingerprint,
+        _paths: &OllamaPaths,
+    ) -> RecoveryProbeResult {
         RecoveryProbeResult::Valid
     }
 }
@@ -193,7 +205,17 @@ fn setup() -> (
     let root = tempfile::tempdir_in(".").unwrap();
     let paths = ollama_paths(root.path());
     let fs = Arc::new(CutpointFs::default());
-    let runner = RecoveryExecutor::new(Arc::clone(&fs), Arc::new(ValidProbe), paths.clone());
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
     (root, fs, runner, paths)
 }
 fn cleanup_snapshot(fs: &CutpointFs, paths: &OllamaPaths) -> OllamaLayoutSnapshot {
@@ -246,6 +268,293 @@ fn rollback_snapshot(fs: &CutpointFs, paths: &OllamaPaths) -> OllamaLayoutSnapsh
         snapshot.failed_delete = known("1.2.3", "33");
     }
     snapshot
+}
+
+fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFingerprint {
+    let bundle = root.join(name);
+    let bin = bundle.join("bin");
+    std::fs::create_dir_all(&bin).expect("bundle directory");
+    std::fs::write(bundle.join("VERSION"), version).expect("version");
+    let executable = bin.join(if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    });
+    std::fs::write(&executable, body).expect("executable");
+    #[cfg(unix)]
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
+        .expect("executable permissions");
+    BundleFingerprint {
+        version: OllamaVersion::parse(version).expect("version fingerprint"),
+        executable_sha256: super::probe_http::hash_file(&executable)
+            .ok()
+            .expect("executable hash"),
+    }
+}
+
+#[test]
+fn real_layout_snapshot_records_the_bundle_fingerprint() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let fingerprint = real_bundle(root.path(), "ollama-bundle", "1.2.3", b"bundle");
+    let fs = super::durable_fs::platform_fs();
+    let snapshot = cleanup::snapshot(JournalPresence::Absent, &fs, &paths);
+
+    assert_eq!(snapshot.active, DirectoryEvidence::Present(fingerprint));
+}
+
+#[tokio::test]
+async fn real_recovery_executes_install_staging_and_reinspects_it() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let _fingerprint = real_bundle(
+        root.path(),
+        "ollama-bundle-install-staging",
+        "1.2.3",
+        b"staging",
+    );
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new(Arc::clone(&fs), Arc::new(ValidProbe), paths.clone());
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(!paths.install_staging.exists());
+    assert!(paths.failed.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::Deferred {
+            code: OllamaErrorCode::OllamaRecoveryDeferred,
+        })
+    );
+}
+
+#[tokio::test]
+async fn real_cleanup_removes_only_the_frozen_backup_rebut_then_journal() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let active = real_bundle(root.path(), "ollama-bundle", "1.2.3", b"active");
+    let previous = real_bundle(
+        root.path(),
+        "ollama-bundle-backup-delete",
+        "1.2.2",
+        b"previous",
+    );
+    let journal = OllamaTransactionJournal::new(OllamaJournalState::CleanupPending {
+        target: active,
+        previous,
+    });
+    std::fs::write(
+        &paths.journal,
+        serde_json::to_vec(&journal).expect("journal"),
+    )
+    .expect("journal");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(!paths.backup_delete.exists());
+    assert!(paths.active.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(!paths.journal.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(paths.migration_marker.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::Ready)
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn real_cleanup_rejects_an_alias_without_touching_the_target() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let active = real_bundle(root.path(), "ollama-bundle", "1.2.3", b"active");
+    let outside = tempfile::tempdir_in(".").expect("outside");
+    let outside_bundle = outside.path().join("outside-bundle");
+    let _ = real_bundle(outside.path(), "outside-bundle", "1.2.2", b"outside");
+    symlink(&outside_bundle, &paths.backup_delete).expect("alias");
+    let journal = OllamaTransactionJournal::new(OllamaJournalState::CleanupPending {
+        target: active,
+        previous: fp("1.2.2", "22"),
+    });
+    std::fs::write(
+        &paths.journal,
+        serde_json::to_vec(&journal).expect("journal"),
+    )
+    .expect("journal");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Ok(super::recovery::RecoveryOutcome::Deferred {
+            code: OllamaErrorCode::OllamaRecoveryDeferred,
+        })
+    );
+    assert!(outside_bundle.exists());
+    assert!(paths.backup_delete.exists());
+    assert!(paths.journal.exists());
+}
+
+#[tokio::test]
+async fn real_recovery_restores_a_legacy_backup_before_adopting_it() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let previous = real_bundle(root.path(), "ollama-bundle-old", "1.2.2", b"previous");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(!paths.legacy_backup.exists());
+    assert!(paths.active.exists());
+    assert_eq!(
+        cleanup::snapshot(JournalPresence::Absent, &*fs, &paths).legacy_backup,
+        DirectoryEvidence::Absent
+    );
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::ProgressMade)
+    );
+    assert!(paths.migration_marker.exists());
+    assert_eq!(
+        runner.recover(RecoveryReason::Retry).await,
+        Ok(super::recovery::RecoveryOutcome::Ready)
+    );
+    let _ = previous;
+}
+
+#[tokio::test]
+async fn real_recovery_rolls_back_the_rejected_bundle_and_cleans_its_rebut() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let rejected = real_bundle(root.path(), "ollama-bundle", "1.2.3", b"rejected");
+    let previous = real_bundle(root.path(), "ollama-bundle-backup", "1.2.2", b"previous");
+    let journal = OllamaTransactionJournal::new(OllamaJournalState::RollbackPending {
+        previous: previous.clone(),
+        rejected_target: Some(rejected),
+    });
+    std::fs::write(
+        &paths.journal,
+        serde_json::to_vec(&journal).expect("journal"),
+    )
+    .expect("journal");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    for _ in 0..7 {
+        let outcome = runner.recover(RecoveryReason::Retry).await;
+        assert!(matches!(
+            outcome,
+            Ok(super::recovery::RecoveryOutcome::ProgressMade)
+                | Ok(super::recovery::RecoveryOutcome::Ready)
+        ));
+    }
+    assert!(paths.active.exists());
+    assert!(!paths.failed.exists());
+    assert!(!paths.failed_delete.exists());
+    assert!(!paths.journal.exists());
+}
+
+#[tokio::test]
+async fn real_recovery_keeps_source_and_rebut_when_the_layout_is_ambiguous() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let active = real_bundle(root.path(), "ollama-bundle", "1.2.3", b"active");
+    let previous = real_bundle(root.path(), "ollama-bundle-backup", "1.2.2", b"previous");
+    let _ = real_bundle(
+        root.path(),
+        "ollama-bundle-backup-delete",
+        "1.2.2",
+        b"previous-delete",
+    );
+    let journal = OllamaTransactionJournal::new(OllamaJournalState::CleanupPending {
+        target: active,
+        previous,
+    });
+    std::fs::write(
+        &paths.journal,
+        serde_json::to_vec(&journal).expect("journal"),
+    )
+    .expect("journal");
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+    let fs = Arc::new(super::durable_fs::platform_fs());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Ok(super::recovery::RecoveryOutcome::Deferred {
+            code: OllamaErrorCode::OllamaRecoveryDeferred,
+        })
+    );
+    assert!(paths.backup.exists());
+    assert!(paths.backup_delete.exists());
+    assert!(paths.journal.exists());
 }
 
 #[tokio::test]

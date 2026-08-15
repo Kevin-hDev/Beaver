@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use super::constants::{WINDOWS_SHARING_RETRY_INTERVAL, WINDOWS_SHARING_RETRY_TIMEOUT};
+use super::path_identity::CanonicalDirectory;
 use std::fmt;
 use std::path::Path;
 use std::time::Duration;
@@ -73,6 +74,7 @@ pub(super) trait OllamaDurableFs: Send + Sync {
     fn rename_durable(&self, source: &Path, destination: &Path) -> Result<(), OllamaFsError>;
     fn remove_file_durable(&self, path: &Path) -> Result<(), OllamaFsError>;
     fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError>;
+    fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError>;
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError>;
     fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError>;
 }
