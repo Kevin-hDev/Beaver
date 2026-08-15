@@ -1,0 +1,9 @@
+Jalon 3 — correction Windows de suppression durable vérifiée.
+
+Cause observée sur la CI 31910619315 : OpenFileById ouvre correctement le dossier, mais SetFileInformationByHandle(FileDispositionInfo) échoue avec ERROR_INVALID_PARAMETER (87), opération MarkChildDeleted. Windows ne permet pas de marquer pour suppression un handle ouvert par identifiant.
+
+Décision : ouvrir chaque chemin avec CreateFileW et les droits DELETE, puis comparer immédiatement le volume et l’identifiant natif avec l’objet inventorié avant toute récursion ou suppression. Les reparse points et changements de type restent rejetés ; aucun fallback remove_dir_all ni comportement fail-open.
+
+TDD : le nouveau contrat a d’abord échoué car l’implémentation utilisait encore OpenFileById, puis il est passé après la bascule. Preuves locales finales : durable_fs_tests 22/22 ; filtre CI officiel services::ollama_manager 270 passés, 0 échec, 1 ignoré ; cargo clippy --all-targets -- -D warnings vert ; cargo fmt --all -- --check vert ; git diff --check vert ; fichiers de production 67/126/197 lignes ; graphify update . exécuté.
+
+Limite honnête : ce commit n’est pas encore validé sur un runner Windows natif. Il reste volontairement local jusqu’au verdict complet du run 31910619315 afin de ne pas annuler le parcours CEF Windows en cours.
