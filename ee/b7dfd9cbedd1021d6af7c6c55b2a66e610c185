@@ -1,0 +1,9 @@
+Jalon 3 — stabilisation des deux preuves rouges du run CI 31911980969.
+
+Constat Linux : identity_change_after_receipt_write_fails_before_emergency_admission utilisait SIGKILL puis supposait sa prise en compte immédiate. Selon l’ordonnancement, la seconde revalidation pouvait encore réussir et produire une autre erreur. Le test utilise désormais un seam cfg(test) qui modifie l’identité détenue par l’unique processus natif au cutpoint exact après reçu, sans attente ni signal.
+
+Constat Windows : real_recovery_decision_cutpoints_converge_after_two_passes réimplémentait la synchronisation d’un répertoire avec File::open(...).sync_all(), valable sur Unix mais refusé sur Windows avant le cutpoint SyncParent after. La fixture délègue désormais create_directory_durable et sync_parent à platform_fs(), l’autorité durable unique de l’OS.
+
+Le code métier de transaction et CEF est inchangé. Le même run a prouvé verts les trois tests natifs de suppression Windows, Windows CEF, macOS CEF, Desktop E2E, Linux WebView et le frontend.
+
+Preuves locales finales : deux filtres ciblés 1/1 ; test d’identité 20/20 répétitions ; filtre officiel services::ollama_manager 270 passés, 0 échec, 1 générateur ignoré ; cargo fmt --all -- --check vert ; cargo clippy --all-targets -- -D warnings vert ; git diff --check vert ; production 223/89/125 lignes ; graphify update . terminé.
