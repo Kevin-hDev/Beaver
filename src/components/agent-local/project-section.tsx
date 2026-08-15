@@ -1,13 +1,13 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { DotsThreeVertical, Trash } from "@/components/ui/icons";
-import { ArchiveBoxIcon } from "@/components/ui/archive-box-icon";
 import { RenameIcon } from "@/components/ui/rename-icon";
 import { ComposeIcon } from "@/components/ui/compose-icon";
 import { FolderStateIcon } from "@/components/ui/folder-state-icon";
 import { CollapsePanel } from "./collapse-panel";
 import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { ConversationSessionItem } from "./conversation-session-item";
+import { useSessionMenuItems } from "./use-session-menu-items";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import type { AgentSessionMeta, Project } from "@/types/agent";
 import { idMatch } from "@/lib/utils";
@@ -65,10 +65,18 @@ export function ProjectSection({
     setSessionCtx({ x: rect.right, y: rect.bottom, id });
   }, []);
 
-  const sessionMenuItems: ContextMenuItem[] = sessionCtx ? [
-    { label: t("history.rename"), icon: <RenameIcon />, onClick: () => { setRenamingSessionId(sessionCtx.id); setTimeout(() => sessionInputRef.current?.focus(), 0); } },
-    { label: t("history.archive"), icon: <ArchiveBoxIcon />, onClick: () => onDeleteSession(sessionCtx.id) },
-  ] : [];
+  const startSessionRename = useCallback((id: string) => {
+    setRenamingSessionId(id);
+    setTimeout(() => sessionInputRef.current?.focus(), 0);
+  }, []);
+
+  /* Les conversations d'un projet et celles hors projet ouvrent le même menu.
+     Il était écrit deux fois, et les deux copies avaient déjà divergé. */
+  const sessionMenuItems = useSessionMenuItems({
+    sessionId: sessionCtx?.id ?? null,
+    onRename: startSessionRename,
+    onArchive: onDeleteSession,
+  });
 
   const handleRename = useCallback((value: string) => {
     if (value.trim()) onRenameProject(project.id, value.trim());
