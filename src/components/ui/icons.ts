@@ -56,10 +56,8 @@ import {
   ChartLineUp as PhChartLineUp,
   Brain as PhBrain,
   Compass as PhCompass,
-  TerminalWindow as PhTerminalWindow,
   Globe as PhGlobe,
   Wrench as PhWrench,
-  FilePlus as PhFilePlus,
   Link as PhLink,
   List as PhList,
   ListChecks as PhListChecks,
@@ -135,10 +133,8 @@ export const Hash = withSafeCssSize(PhHash);
 export const ChartLineUp = withSafeCssSize(PhChartLineUp);
 export const Brain = withSafeCssSize(PhBrain);
 export const Compass = withSafeCssSize(PhCompass);
-export const TerminalWindow = withSafeCssSize(PhTerminalWindow);
 export const Globe = withSafeCssSize(PhGlobe);
 export const Wrench = withSafeCssSize(PhWrench);
-export const FilePlus = withSafeCssSize(PhFilePlus);
 export const Link = withSafeCssSize(PhLink);
 export const Sparkle = withSafeCssSize(PhSparkle);
 export const Users = withSafeCssSize(PhUsers);
@@ -169,4 +165,3 @@ export const RotateCw = withSafeCssSize(PhArrowClockwise);
 export const Search = withSafeCssSize(PhMagnifyingGlass);
 export const Settings = withSafeCssSize(PhGear);
 export const Square = withSafeCssSize(PhSquare);
-export const TerminalSquare = withSafeCssSize(PhTerminalWindow);

@@ -64,7 +64,7 @@ describe("toolDisplayInfo", () => {
       summary: "systeme-pulse/vite.config.ts",
       additions: 2,
       deletions: 0,
-      icon: "FilePlus",
+      icon: "FileWrite",
       dir: "systeme-pulse/",
       fileName: "vite.config.ts",
     });
@@ -82,7 +82,7 @@ describe("toolDisplayInfo", () => {
       summary: "systeme-pulse/src/main.rs",
       additions: 1,
       deletions: 3,
-      icon: "Pencil",
+      icon: "Edit",
       dir: "systeme-pulse/src/",
       fileName: "main.rs",
     });
@@ -100,12 +100,12 @@ describe("toolDisplayInfo", () => {
     expect(toolDisplayInfo({ name: "bash", summary: "npm test" }, undefined, t)).toEqual({
       label: "bash",
       summary: "npm test",
-      icon: "TerminalWindow",
+      icon: "Terminal",
     });
     expect(toolDisplayInfo({ name: "bash_control", summary: "session-1" }, undefined, t)).toEqual({
       label: "bash",
       summary: "session-1",
-      icon: "TerminalWindow",
+      icon: "Terminal",
     });
   });
 
@@ -117,7 +117,7 @@ describe("toolDisplayInfo", () => {
     }, undefined, t)).toEqual({
       label: "Process stopped",
       summary: "",
-      icon: "TerminalWindow",
+      icon: "Terminal",
     });
   });
 
@@ -170,25 +170,25 @@ describe("toolDisplayInfo", () => {
     expect(toolDisplayInfo({ name: "bash", summary: command }, undefined, t)).toEqual({
       label: "bash",
       summary: `${"a".repeat(96)}...`,
-      icon: "TerminalWindow",
+      icon: "Terminal",
     });
   });
 
   it("associe la bonne icône Phosphor à chaque type d'outil", () => {
     const cases: Array<[string, string]> = [
-      ["read_file", "BookOpenText"],
-      ["read_spreadsheet", "FileText"],
-      ["read_document", "FileText"],
-      ["write_file", "FilePlus"],
-      ["write_spreadsheet", "FilePlus"],
-      ["write_document", "FilePlus"],
-      ["edit_file", "Pencil"],
-      ["transform_image", "Pencil"],
-      ["bash", "TerminalWindow"],
-      ["bash_control", "TerminalWindow"],
+      ["read_file", "FileRead"],
+      ["read_spreadsheet", "FileRead"],
+      ["read_document", "FileRead"],
+      ["write_file", "FileWrite"],
+      ["write_spreadsheet", "FileWrite"],
+      ["write_document", "FileWrite"],
+      ["edit_file", "Edit"],
+      ["transform_image", "Edit"],
+      ["bash", "Terminal"],
+      ["bash_control", "Terminal"],
       ["web_search", "Globe"],
       ["web_fetch", "Link"],
-      ["list_dir", "FolderOpen"],
+      ["list_dir", "List"],
       ["grep", "MagnifyingGlass"],
       ["glob", "MagnifyingGlass"],
       ["create_branch", "GitBranch"],

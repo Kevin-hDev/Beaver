@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { TerminalSquare, X as XIcon, Plus } from "@/components/ui/icons";
+import { X as XIcon, Plus } from "@/components/ui/icons";
+import { TerminalIcon } from "@/components/ui/chat-header-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import type { TerminalTab } from "@/hooks/use-terminal";
 import "./terminal-tab-bar.css";
@@ -135,7 +136,7 @@ export function TerminalTabBar({
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onClose(tab.id); } }}
             >
               <span className="tab-icon-terminal">
-                <TerminalSquare size="var(--icon-xs)" />
+                <TerminalIcon size="var(--icon-xs)" />
               </span>
               <span className="tab-icon-close">
                 <XIcon size="var(--icon-2xs)" />

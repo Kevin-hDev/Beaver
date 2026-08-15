@@ -9,8 +9,8 @@ export type ToolActivityGroupKind =
 
 const GROUP_ICONS: Record<ToolActivityGroupKind, string> = {
   exploration: "Compass",
-  modification: "PencilSimple",
-  command: "TerminalWindow",
+  modification: "Edit",
+  command: "Terminal",
   web: "Globe",
   git: "GitBranch",
   memory: "BookOpenText",
