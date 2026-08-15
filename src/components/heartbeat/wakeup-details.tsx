@@ -49,25 +49,13 @@ export function WakeupDetails({
       <div className="wk-details-header">
         <Tooltip label={t("heartbeat.back")}>
           <button className="wk-back" onClick={onBack} type="button">
-            <CaretLeft size="var(--icon-md)" weight="regular" />
+            <CaretLeft size="var(--icon-sm)" weight="regular" />
           </button>
         </Tooltip>
         <div className="wk-details-title">
           <span className="wk-details-model">{wakeup.model}</span>
           {wakeup.provider !== "ollama" && (
-            <span
-              style={{
-                fontSize: 10,
-                padding: "2px 6px",
-                background: "var(--surface)",
-                borderRadius: 4,
-                color: "var(--ink-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "0.3px",
-              }}
-            >
-              {wakeup.provider}
-            </span>
+            <span className="wk-provider-tag">{wakeup.provider}</span>
           )}
           <ActiveBadge active={wakeup.active} />
         </div>
@@ -78,7 +66,7 @@ export function WakeupDetails({
               onClick={onEdit}
               type="button"
             >
-              <Pencil size="var(--icon-md)" />
+              <Pencil size="var(--icon-sm)" />
             </button>
           </Tooltip>
           {confirmDelete ? (
@@ -97,7 +85,7 @@ export function WakeupDetails({
                 onClick={handleDelete}
                 type="button"
               >
-                <Trash size="var(--icon-md)" />
+                <Trash size="var(--icon-sm)" />
               </button>
             </Tooltip>
           )}
@@ -116,12 +104,17 @@ export function WakeupDetails({
       </div>
 
       <div className="wk-details-body">
+        {/* Une ligne par information : le nom du réveil n'apparaissait nulle
+            part, et le fournisseur était répété en légende de deux lignes. */}
         <SettingsCard>
-          <SettingsRow title={t("heartbeat.fields.name")} description={wakeup.provider}>
-            <ActiveBadge active={wakeup.active} />
+          <SettingsRow title={t("heartbeat.fields.name")}>
+            <span className="wk-row-value">{wakeup.name || "—"}</span>
           </SettingsRow>
-          <SettingsRow title={t("heartbeat.fields.model")} description={wakeup.provider}>
+          <SettingsRow title={t("heartbeat.fields.model")}>
             <span className="wk-row-value">{wakeup.model}</span>
+          </SettingsRow>
+          <SettingsRow title={t("heartbeat.fields.provider")}>
+            <span className="wk-row-value">{wakeup.provider}</span>
           </SettingsRow>
           <SettingsRow title={t("heartbeat.fields.description")}>
             <span className="wk-row-value">{wakeup.description || "—"}</span>
@@ -143,10 +136,13 @@ export function WakeupDetails({
           </SettingsRow>
         </SettingsCard>
 
+        {/* Le prompt tient sur plusieurs lignes : en valeur de ligne de réglage,
+            il se posait par-dessus son propre libellé et débordait à droite. */}
         <SettingsCard>
-          <SettingsRow title={t("heartbeat.fields.prompt")}>
-            <span className="wk-row-value wk-row-multi">{wakeup.prompt}</span>
-          </SettingsRow>
+          <div className="wk-prompt">
+            <div className="wk-prompt-title">{t("heartbeat.fields.prompt")}</div>
+            <div className="wk-prompt-text">{wakeup.prompt}</div>
+          </div>
         </SettingsCard>
 
         <WakeupHistory runs={runs} />

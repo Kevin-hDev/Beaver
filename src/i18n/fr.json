@@ -663,7 +663,7 @@
     },
     "fields": {
       "name": "Nom",
-      "provider": "Provider",
+      "provider": "Fournisseur",
       "model": "Modèle",
       "schedule": "Planification",
       "nextFire": "Prochain déclenchement",

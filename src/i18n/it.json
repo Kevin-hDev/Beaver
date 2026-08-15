@@ -658,7 +658,7 @@
     },
     "fields": {
       "name": "Nome",
-      "provider": "Provider",
+      "provider": "Fornitore",
       "model": "Modello",
       "schedule": "Pianificazione",
       "nextFire": "Prossima esecuzione",
