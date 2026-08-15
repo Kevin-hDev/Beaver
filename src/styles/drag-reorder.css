@@ -1,21 +1,16 @@
 /* Apparence commune du réordonnancement par glissement — projets de la barre
    latérale, onglets du terminal. Le décalage lui-même est calculé et posé par
-   src/hooks/use-drag-reorder.ts ; seules la durée du mouvement et l'allure de
-   l'élément tenu vivent ici.
+   src/hooks/use-drag-reorder.ts, avec la durée du mouvement ; seule l'allure
+   de l'élément tenu vit ici.
 
-   Le sélecteur porte sur l'attribut que pose le hook, et non sur une classe
-   de composant : c'est ce qui garantit que les deux listes se comportent
-   pareil, et que la troisième qui s'y mettra n'aura rien à redéfinir. */
+   Le sélecteur porte sur les attributs que pose le hook, et non sur une classe
+   de composant : c'est ce qui garantit que les listes se comportent pareil, et
+   que la prochaine qui s'y mettra n'aura rien à redéfinir. */
 
-[data-drag-id] {
-  transition: transform var(--ease-smooth);
-}
-
-/* Ce qu'on tient suit le curseur sans retard — une transition ici installerait
-   un décalage permanent entre le dessin et la souris — et passe au-dessus de
-   ses voisins pendant qu'il les franchit. */
-[data-drag-id][data-dragging="true"] {
-  transition: none;
+/* Les deux attributs plutôt qu'un seul : les lignes visées portent déjà une
+   classe qui pose leur curseur et leur position, et un sélecteur de même poids
+   l'aurait emporté ou se serait fait emporter selon l'ordre de chargement. */
+[data-drag-id][data-drag-group][data-dragging="true"] {
   position: relative;
   z-index: var(--z-sticky);
   opacity: 0.85;

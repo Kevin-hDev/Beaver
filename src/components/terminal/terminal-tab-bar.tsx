@@ -37,6 +37,7 @@ export function TerminalTabBar({
     ids: tabs.map((tab) => tab.id),
     axis: "x",
     containerRef: barRef,
+    group: "terminal-tabs",
     onReorder: (_ids, from, to) => onReorder(from, to),
   });
 

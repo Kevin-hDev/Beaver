@@ -42,6 +42,9 @@ function renderItem(overrides: Partial<Parameters<typeof ConversationSessionItem
       renaming={false}
       inputRef={{ current: null }}
       onSelect={vi.fn()}
+      dragProps={{ "data-drag-id": "s1", "data-drag-group": "essai", "data-dragging": undefined, style: {} }}
+      dragHandleProps={{ onPointerDown: vi.fn() }}
+      didDrag={() => false}
       onRenameSubmit={vi.fn()}
       onCancelRename={vi.fn()}
       onMenu={vi.fn()}

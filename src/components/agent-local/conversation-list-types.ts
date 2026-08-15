@@ -14,5 +14,8 @@ export interface ConversationListProps {
   onDeleteProject: (id: string) => void;
   onOpenFolder: (path: string) => void;
   onReorderProjects: (ids: string[]) => void;
+  /* Range une liste de conversations. `projectId` nul désigne celles qui
+     n'appartiennent à aucun projet. */
+  onReorderSessions: (projectId: string | null, ids: string[]) => void;
   directoryAccessPrompt?: DirectoryAccessPromptProps;
 }

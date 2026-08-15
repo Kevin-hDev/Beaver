@@ -9,7 +9,7 @@ import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu"
 import { ConversationSessionItem } from "./conversation-session-item";
 import { useSessionMenuItems } from "./use-session-menu-items";
 import { useKeyboard } from "@/hooks/use-keyboard";
-import type { DragHandleProps, DragItemProps } from "@/hooks/use-drag-reorder";
+import { useDragReorder, type DragHandleProps, type DragItemProps } from "@/hooks/use-drag-reorder";
 import type { AgentSessionMeta, Project } from "@/types/agent";
 import { idMatch } from "@/lib/utils";
 
@@ -26,6 +26,7 @@ interface ProjectSectionProps {
   onOpenFolder: (path: string) => void;
   onRenameSession: (id: string, name: string) => void;
   onDeleteSession: (id: string) => void;
+  onReorderSessions: (projectId: string | null, ids: string[]) => void;
   /* Le glissement de réordonnancement, tenu par useDragReorder : la case
      entière se décale, mais on ne l'attrape que par son en-tête. */
   dragProps: DragItemProps;
@@ -40,7 +41,7 @@ export function ProjectSection({
   project, sessions, selectedId,
   runningIds, unreadIds,
   onSelect, onNewSession, onRenameProject, onDeleteProject,
-  onOpenFolder, onRenameSession, onDeleteSession,
+  onOpenFolder, onRenameSession, onDeleteSession, onReorderSessions,
   dragProps, dragHandleProps, didDrag, collapsed, onToggleCollapse,
   nowMs,
 }: ProjectSectionProps) {
@@ -51,9 +52,27 @@ export function ProjectSection({
   const [renamingSessionId, setRenamingSessionId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sessionInputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  /* Chaque projet range ses propres conversations, d'où un nom de liste tiré
+     du sien : sans lui, saisir une conversation mesurerait aussi celles des
+     projets voisins, toutes posées dans la même barre latérale. */
+  const sessionDrag = useDragReorder({
+    ids: sessions.map((session) => session.id),
+    axis: "y",
+    containerRef: wrapperRef,
+    group: `sessions:${project.id}`,
+    onReorder: (ids) => onReorderSessions(project.id, ids),
+  });
 
   useKeyboard({
-    onEscape: () => { setCtx(null); setRenaming(false); setSessionCtx(null); setRenamingSessionId(null); },
+    onEscape: () => {
+      setCtx(null);
+      setRenaming(false);
+      setSessionCtx(null);
+      setRenamingSessionId(null);
+      sessionDrag.cancel();
+    },
   });
 
   const projectMenuItems: ContextMenuItem[] = [
@@ -86,13 +105,15 @@ export function ProjectSection({
     setRenaming(false);
   }, [project.id, onRenameProject]);
 
+  const sessionById = new Map(sessions.map((session) => [session.id, session]));
+
   const handleSessionRename = useCallback((id: string, value: string) => {
     if (value.trim()) onRenameSession(id, value.trim());
     setRenamingSessionId(null);
   }, [onRenameSession]);
 
   return (
-    <div className="conv-project-wrapper" {...dragProps}>
+    <div ref={wrapperRef} className="conv-project-wrapper" {...dragProps}>
       <div
         className="conv-project-header"
         role="button"
@@ -133,7 +154,9 @@ export function ProjectSection({
       </div>
 
       <CollapsePanel open={!collapsed}>
-        {sessions.map((s) => {
+        {sessionDrag.order.map((id) => {
+          const s = sessionById.get(id);
+          if (!s) return null;
           const active = idMatch(selectedId, s.id);
           const isRenaming = idMatch(renamingSessionId, s.id);
           return (
@@ -149,6 +172,9 @@ export function ProjectSection({
               onRenameSubmit={handleSessionRename}
               onCancelRename={() => setRenamingSessionId(null)}
               onMenu={handleSessionMenu}
+              dragProps={sessionDrag.itemProps(s.id)}
+              dragHandleProps={sessionDrag.handleProps(s.id)}
+              didDrag={sessionDrag.didDrag}
               nowMs={nowMs}
             />
           );

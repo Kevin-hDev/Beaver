@@ -16,7 +16,7 @@ const defaultProps = {
   sessions: [] as AgentSessionMeta[], projects: [] as Project[], selectedId: null as string | null,
   onSelect: vi.fn(), onCreate: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(),
   onNewSessionInProject: vi.fn(), onRenameProject: vi.fn(), onDeleteProject: vi.fn(),
-  onOpenFolder: vi.fn(), onReorderProjects: vi.fn(),
+  onOpenFolder: vi.fn(), onReorderProjects: vi.fn(), onReorderSessions: vi.fn(),
 };
 
 vi.mock("react-i18next", () => ({
