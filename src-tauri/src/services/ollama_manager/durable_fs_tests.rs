@@ -327,12 +327,18 @@ fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
 }
 
 #[test]
-fn windows_verified_delete_reopens_root_by_verified_file_id() {
+fn windows_verified_delete_opens_paths_then_revalidates_native_identity() {
     let verified = include_str!("durable_fs_windows_verified.rs");
     let handles = include_str!("durable_fs_windows_verified/handles.rs");
+    let entries = include_str!("durable_fs_windows_verified/entries.rs");
 
-    assert!(verified.contains("handles::open_root(stable.as_raw_handle(), &stable_info)"));
-    assert!(handles.contains("pub(super) fn open_root("));
+    assert!(verified.contains("handles::open_path(root.path(), true)"));
+    assert!(entries.contains("handles::open_path(&child_path, entry.directory)"));
+    assert!(
+        entries.contains("handles::matches_identity(&info, entry.file_id as u64, volume_serial)")
+    );
+    assert!(handles.contains("CreateFileW"));
+    assert!(!handles.contains("OpenFileById"));
     assert!(!handles.contains("ReOpenFile"));
 }
 

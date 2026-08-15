@@ -1,6 +1,8 @@
 use super::super::super::{OllamaFsError, OllamaFsErrorKind, OllamaFsOperation};
 use super::handles;
 use std::mem::offset_of;
+use std::os::windows::ffi::OsStringExt;
+use std::path::{Component, Path, PathBuf};
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_NO_MORE_FILES, HANDLE};
 use windows_sys::Win32::Storage::FileSystem::{
     FileIdBothDirectoryInfo, FileIdBothDirectoryRestartInfo, GetFileInformationByHandleEx,
@@ -13,7 +15,7 @@ const MAX_NAME_UNITS: usize = 16 * 1024;
 
 pub(super) fn remove_contents(
     parent: HANDLE,
-    volume_hint: HANDLE,
+    parent_path: &Path,
     volume_serial: u32,
     depth: usize,
     removed_entries: &mut usize,
@@ -54,7 +56,7 @@ pub(super) fn remove_contents(
                 if *removed_entries > MAX_DELETE_ENTRIES {
                     return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
                 }
-                remove_child(&entry, volume_hint, volume_serial, depth, removed_entries)?;
+                remove_child(&entry, parent_path, volume_serial, depth, removed_entries)?;
             }
             if next == 0 {
                 break;
@@ -152,7 +154,7 @@ fn read_field<T: Copy>(buffer: &[u8], offset: usize, field: usize) -> Result<T, 
 
 fn remove_child(
     entry: &DirectoryEntry,
-    volume_hint: HANDLE,
+    parent_path: &Path,
     volume_serial: u32,
     depth: usize,
     removed_entries: &mut usize,
@@ -160,12 +162,12 @@ fn remove_child(
     if entry.attributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
-    let handle = handles::open_child(volume_hint, entry.file_id, entry.directory)
+    let child_path = child_path(parent_path, &entry.name)?;
+    let handle = handles::open_path(&child_path, entry.directory)
         .map_err(|error| error.at(OllamaFsOperation::OpenChild))?;
     let info = handles::file_info(handle.raw())
         .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
-    if info.dwVolumeSerialNumber != volume_serial
-        || handles::file_id(&info) != entry.file_id as u64
+    if !handles::matches_identity(&info, entry.file_id as u64, volume_serial)
         || info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0
         || (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY != 0) != entry.directory
     {
@@ -174,7 +176,7 @@ fn remove_child(
     if entry.directory {
         remove_contents(
             handle.raw(),
-            volume_hint,
+            &child_path,
             volume_serial,
             depth.saturating_add(1),
             removed_entries,
@@ -182,4 +184,14 @@ fn remove_child(
     }
     handles::mark_deleted(handle.raw())
         .map_err(|error| error.at(OllamaFsOperation::MarkChildDeleted))
+}
+
+fn child_path(parent: &Path, name: &[u16]) -> Result<PathBuf, OllamaFsError> {
+    let name = std::ffi::OsString::from_wide(name);
+    let mut components = Path::new(&name).components();
+    let component = match (components.next(), components.next()) {
+        (Some(Component::Normal(component)), None) => component,
+        _ => return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput)),
+    };
+    Ok(parent.join(component))
 }

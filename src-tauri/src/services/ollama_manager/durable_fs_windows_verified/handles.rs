@@ -1,16 +1,16 @@
 use super::super::{win_error, OllamaFsError};
+use std::path::Path;
 use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_ACCESS_DENIED, ERROR_INVALID_PARAMETER, ERROR_NOT_SUPPORTED,
     HANDLE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
-    FileDispositionInfo, FileDispositionInfoEx, FileIdType, GetFileInformationByHandle,
-    OpenFileById, SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
-    FILE_DISPOSITION_FLAG_DELETE, FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE,
-    FILE_DISPOSITION_FLAG_POSIX_SEMANTICS, FILE_DISPOSITION_INFO, FILE_DISPOSITION_INFO_EX,
-    FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT, FILE_ID_DESCRIPTOR,
-    FILE_ID_DESCRIPTOR_0, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE,
-    FILE_SHARE_READ, FILE_SHARE_WRITE,
+    CreateFileW, FileDispositionInfo, FileDispositionInfoEx, GetFileInformationByHandle,
+    SetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, FILE_DISPOSITION_FLAG_DELETE,
+    FILE_DISPOSITION_FLAG_IGNORE_READONLY_ATTRIBUTE, FILE_DISPOSITION_FLAG_POSIX_SEMANTICS,
+    FILE_DISPOSITION_INFO, FILE_DISPOSITION_INFO_EX, FILE_FLAG_BACKUP_SEMANTICS,
+    FILE_FLAG_OPEN_REPARSE_POINT, FILE_LIST_DIRECTORY, FILE_READ_ATTRIBUTES, FILE_SHARE_DELETE,
+    FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows_sys::Win32::Storage::FileSystem::{DELETE, FILE_DELETE_CHILD};
 
@@ -40,19 +40,8 @@ impl Drop for OwnedHandle {
     }
 }
 
-pub(super) fn open_child(
-    volume: HANDLE,
-    file_id: i64,
-    directory: bool,
-) -> Result<OwnedHandle, OllamaFsError> {
-    open_by_id(volume, file_id, directory)
-}
-
-pub(super) fn open_root(volume: HANDLE, info: &FileInfo) -> Result<OwnedHandle, OllamaFsError> {
-    open_by_id(volume, file_id(info) as i64, true)
-}
-
-fn open_by_id(volume: HANDLE, file_id: i64, directory: bool) -> Result<OwnedHandle, OllamaFsError> {
+pub(super) fn open_path(path: &Path, directory: bool) -> Result<OwnedHandle, OllamaFsError> {
+    let wide_path = super::super::wide(path)?;
     let access = if directory {
         DELETE | FILE_LIST_DIRECTORY | FILE_DELETE_CHILD | FILE_READ_ATTRIBUTES
     } else {
@@ -64,19 +53,15 @@ fn open_by_id(volume: HANDLE, file_id: i64, directory: bool) -> Result<OwnedHand
         } else {
             0
         };
-    let descriptor = FILE_ID_DESCRIPTOR {
-        dwSize: std::mem::size_of::<FILE_ID_DESCRIPTOR>() as u32,
-        Type: FileIdType,
-        Anonymous: FILE_ID_DESCRIPTOR_0 { FileId: file_id },
-    };
     OwnedHandle::new(unsafe {
-        OpenFileById(
-            volume,
-            &descriptor,
+        CreateFileW(
+            wide_path.as_ptr(),
             access,
             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
             std::ptr::null(),
+            OPEN_EXISTING,
             flags,
+            std::ptr::null_mut(),
         )
     })
 }
@@ -95,6 +80,10 @@ pub(super) fn file_id(info: &FileInfo) -> u64 {
 
 pub(super) fn same_identity(left: &FileInfo, right: &FileInfo) -> bool {
     left.dwVolumeSerialNumber == right.dwVolumeSerialNumber && file_id(left) == file_id(right)
+}
+
+pub(super) fn matches_identity(info: &FileInfo, expected_id: u64, expected_volume: u32) -> bool {
+    info.dwVolumeSerialNumber == expected_volume && file_id(info) == expected_id
 }
 
 pub(super) fn mark_deleted(handle: HANDLE) -> Result<(), OllamaFsError> {
