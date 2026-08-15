@@ -1,0 +1,28 @@
+TASK 14-C — SUPPRESSION DES AUTORITÉS LEGACY
+
+Commit: 83bacf513bb0fc67e6220bbd70fce1f654008b14
+
+Suppressions réalisées :
+- commandes historiques : ollama_bundle_utils, ollama_checksum, ollama_download, ollama_extract et ses auxiliaires/tests, ollama_setup_cancel, ollama_setup_install et ollama_setup_start ;
+- services historiques : ollama_env, ollama_kill et son test, ollama_lifecycle, ollama_port et ollama_ps ;
+- ancienne enveloppe racine ollama_polling ;
+- déclarations correspondantes retirées de commands/mod.rs et services/mod.rs.
+
+Aucun wrapper de compatibilité ni nouvelle autorité n’a été ajouté. Les consommateurs avaient été basculés vers OllamaManager dans le commit précédent.
+
+Contrôles vus fonctionner :
+- filtre services::ollama_manager::adoption_tests : 2 passed, 0 failed, 0 ignored ;
+- filtre app_exit::cleanup_tests : 9 passed, 0 failed, 0 ignored ;
+- cargo check : succès, 6 avertissements restants, tous hors des anciennes autorités supprimées ;
+- recherche négative des autorités Ollama Step 8 : succès sans résultat après exclusion explicite de app_exit/cleanup_tests.rs et services/ollama_manager/adoption_tests.rs (fixtures négatives), ainsi que services/forecast/sidecar_http.rs (ACTIVE_PORT indépendant de Ollama) ;
+- recherche négative OllamaClient::new() hors fixture : succès sans résultat ;
+- git diff --check : succès ;
+- fichiers de production conservés modifiés sous 230 lignes : commands/mod.rs 154, services/mod.rs 89 ;
+- graphify update . : succès, graphe reconstruit.
+
+Exceptions vérifiées et conservées :
+- app_exit/cleanup_tests.rs contient uniquement les chaînes attendues par le contrat de nettoyage ;
+- services/ollama_manager/adoption_tests.rs contient uniquement les chaînes de la fixture négative ;
+- services/forecast/sidecar_http.rs conserve son propre ACTIVE_PORT, sans lien avec Ollama.
+
+Résultat : aucune référence directe aux autorités Ollama supprimées ne subsiste hors ces exceptions documentées.
