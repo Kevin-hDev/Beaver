@@ -1,0 +1,21 @@
+/* Hauteur et overflow sont pilotés en style inline par <Collapsible> : cette
+   feuille ne pose que l'état fermé au repos et la transition. */
+.cps-region {
+  height: 0;
+  overflow: hidden;
+  transition: height var(--ease-gentle);
+}
+
+/* flow-root empêche les marges des enfants de s'échapper du conteneur : sans
+   lui la hauteur mesurée est plus petite que la hauteur réellement occupée. */
+.cps-inner {
+  display: flow-root;
+}
+
+/* Sans transition, <Collapsible> détecte une durée nulle et applique l'état
+   final immédiatement — le repli reste fonctionnel, il n'est plus animé. */
+@media (prefers-reduced-motion: reduce) {
+  .cps-region {
+    transition: none;
+  }
+}

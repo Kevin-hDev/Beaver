@@ -1,15 +1,15 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Spinner } from "@/components/ui/icons";
 import { CaretDown, CaretUp } from "@/components/ui/icons";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { Collapsible } from "@/components/ui/collapsible";
 import type { ToolActivityCounts, ToolActivityGroup } from "@/lib/tool-activity-summary";
 import { groupIcon } from "@/lib/tool-activity-summary";
 import type { RenderableTool } from "./tool-detail-row";
 import { ToolDetailRow } from "./tool-detail-row";
 import { ToolIcon } from "./tool-icons";
 import { ToolStatusIcon } from "./tool-status-icon";
-import { useCollapsiblePresence } from "./use-collapsible-presence";
 
 const COUNT_ORDER: Array<keyof ToolActivityCounts> = [
   "files",
@@ -49,7 +49,7 @@ function ToolActivityGroupRow({
   projectPath?: string;
 }) {
   const { t } = useTranslation();
-  const { open: isOpen, mounted, toggle, onTransitionEnd } = useCollapsiblePresence();
+  const [isOpen, setIsOpen] = useState(false);
   const label = t(`agentLocal.toolActivity.groups.${group.kind}`);
   const details = useMemo(
     () => summaryDetails(group, t),
@@ -64,7 +64,7 @@ function ToolActivityGroupRow({
         className={`tb-group-toggle${groupActive && !isOpen ? " stream-active" : ""}`}
         aria-expanded={isOpen}
         aria-label={t("agentLocal.toolActivity.toggleDetails")}
-        onClick={toggle}
+        onClick={() => setIsOpen((value) => !value)}
       >
         <ToolIcon name={groupIcon(group.kind)} size="var(--icon-sm)" className="tb-group-icon" aria-hidden="true" />
         <span className={`tb-group-title${groupActive && !isOpen ? " stream-active-label" : ""}`}>
@@ -94,22 +94,20 @@ function ToolActivityGroupRow({
           )}
         </span>
       </button>
-      <div className={`tb-group-accordion${isOpen ? " tb-open" : ""}`} onTransitionEnd={onTransitionEnd}>
-        {mounted && (
-          <div className="tb-group-details">
-            {group.tools.map((tool, index) => (
-              <ToolDetailRow
-                key={`${tool.name}-${index}-${tool.summary}`}
-                tool={tool}
-                previousTools={group.tools.slice(0, index)}
-                isActive={isOpen && tool.isActive}
-                onFilePreview={onFilePreview}
-                projectPath={projectPath}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <Collapsible open={isOpen} unmountWhenClosed>
+        <div className="tb-group-details">
+          {group.tools.map((tool, index) => (
+            <ToolDetailRow
+              key={`${tool.name}-${index}-${tool.summary}`}
+              tool={tool}
+              previousTools={group.tools.slice(0, index)}
+              isActive={isOpen && tool.isActive}
+              onFilePreview={onFilePreview}
+              projectPath={projectPath}
+            />
+          ))}
+        </div>
+      </Collapsible>
     </div>
   );
 }

@@ -189,6 +189,6 @@ describe("SavedToolBubble", () => {
     );
 
     expect(container.querySelector(".tb-group-toggle")).toBeNull();
-    expect(container.querySelector(".tb-accordion.tb-open")).toBeNull();
+    expect(container.querySelector(".cps-inner")).toBeNull();
   });
 });

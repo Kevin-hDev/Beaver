@@ -4,6 +4,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { ChevronDown, Settings, Square } from "@/components/ui/icons";
 import { subagentDisplayName, subagentSecondaryText } from "@/lib/subagent-display";
 import type { SubagentInfo } from "@/types/agent";
+import { Collapsible } from "@/components/ui/collapsible";
 import { SubagentIcon } from "./subagent-icon";
 import "./subagent-accordion.css";
 import "./subagent-accordion-controls.css";
@@ -68,8 +69,7 @@ export function SubagentAccordion({ subagents, onCancel, onOpen }: SubagentAccor
           <ChevronDown className={`sa-chevron ${expanded ? "sa-chevron-up" : ""}`} aria-hidden="true" />
         </button>
       </div>
-      <div className={`tb-accordion${expanded ? " tb-open" : ""}`}>
-       <div className="tb-accordion-inner">
+      <Collapsible open={expanded}>
         <div className="sa-accordion-body-inner">
         {subagents.map((agent) => (
           <div key={agent.sessionId} className="sa-agent-row">
@@ -111,8 +111,7 @@ export function SubagentAccordion({ subagents, onCancel, onOpen }: SubagentAccor
           </div>
         ))}
         </div>
-       </div>
-      </div>
+      </Collapsible>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { subagentDisplayName, subagentSecondaryText } from "@/lib/subagent-display";
 import type { SubagentInfo } from "@/types/agent";
+import { Collapsible } from "@/components/ui/collapsible";
 import { SubagentIcon } from "./subagent-icon";
 import "./subagent-bubble.css";
 
@@ -28,28 +29,26 @@ export function SubagentBubble({ subagents, onOpen }: SubagentBubbleProps) {
         </span>
         <span className={`sb-chevron ${expanded ? "sb-chevron-up" : ""}`}>›</span>
       </button>
-      <div className={`tb-accordion${expanded ? " tb-open" : ""}`}>
-        <div className="tb-accordion-inner">
-          <div className="sb-body">
-            {subagents.map((agent) => (
-              <button
-                key={agent.sessionId}
-                className="sb-agent-row"
-                onClick={() => onOpen(agent.sessionId)}
-                type="button"
-              >
-                <SubagentIcon agent={agent} className="sb-agent-icon" />
-                <span className="sb-agent-text">
-                  <span className="sb-agent-name">{subagentDisplayName(agent)}</span>
-                  <span className="sb-agent-description">
-                    {subagentSecondaryText(agent)}
-                  </span>
+      <Collapsible open={expanded}>
+        <div className="sb-body">
+          {subagents.map((agent) => (
+            <button
+              key={agent.sessionId}
+              className="sb-agent-row"
+              onClick={() => onOpen(agent.sessionId)}
+              type="button"
+            >
+              <SubagentIcon agent={agent} className="sb-agent-icon" />
+              <span className="sb-agent-text">
+                <span className="sb-agent-name">{subagentDisplayName(agent)}</span>
+                <span className="sb-agent-description">
+                  {subagentSecondaryText(agent)}
                 </span>
-              </button>
-            ))}
-          </div>
+              </span>
+            </button>
+          ))}
         </div>
-      </div>
+      </Collapsible>
     </div>
   );
 }

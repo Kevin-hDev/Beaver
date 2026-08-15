@@ -47,7 +47,7 @@ describe("ToolItem shell stop", () => {
     fireEvent.click(toggle);
 
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(container.querySelector(".tb-accordion.tb-open")).not.toBeNull();
+    expect(container.querySelector(".cps-inner")).not.toBeNull();
     expect(container.textContent).toContain(command);
     expect(container.textContent).toContain("Processus arrêté.");
   });
