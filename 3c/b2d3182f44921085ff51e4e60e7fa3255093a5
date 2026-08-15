@@ -1,0 +1,30 @@
+Jalon 3 - correction ciblée des échecs CI Windows
+
+Constat
+- Le run CI 31891582582 est passé de 36 à 15 échecs Windows après le premier durcissement.
+- Plusieurs tests utilisaient encore des chemins /fake incompatibles avec Windows.
+- La fixture de sonde écrivait un script shell dans ollama.exe.
+- Le handle stable de l’exécutable autorisait FILE_SHARE_DELETE, donc le test de verrou pouvait renommer l’image avant création.
+- Une seconde terminaison après timeout pouvait rappeler TerminateProcess au lieu d’attendre la terminaison déjà demandée.
+- FileDispositionInfoEx peut être refusé par le système de fichiers même avec DELETE; le contrat Win32 historique FileDispositionInfo reste disponible.
+
+Correction
+- Les fixtures partagent les autorités ROOT/CWD/HOME cross-platform.
+- Sous Windows, la sonde copie un véritable exécutable ComSpec qui termine rapidement.
+- Le handle stable de l’exécutable interdit le partage de suppression; les handles de répertoire conservent FILE_SHARE_DELETE pour la récupération durable.
+- La demande de terminaison Windows devient idempotente jusqu’au reap.
+- La suppression vérifiée tente FileDispositionInfoEx puis le contrat historique seulement pour les refus de compatibilité connus; toute autre erreur reste fatale.
+
+Validation locale observée
+- cargo clippy --all-targets -- -D warnings: vert sur macOS.
+- Filtre officiel services::ollama_manager: 266 réussis, 0 échec, 1 ignoré volontaire.
+- Les cinq filtres CEF macOS du job CI: 7 + 4 + 12 + 6 + 3 tests verts.
+- cargo fmt --all -- --check, check-rust-format et git diff --check: verts.
+- Production modifiée: 194 lignes maximum.
+- graphify update .: 34055 noeuds, 69697 arêtes, 2038 communautés.
+
+Limite
+- Les chemins cfg(windows) doivent encore être prouvés par le runner Windows de la CI; aucun résultat vert Windows n’est déclaré dans cette note.
+
+Recommandation
+- Pousser ce commit et juger exclusivement la prochaine matrice CI avant toute fusion.
