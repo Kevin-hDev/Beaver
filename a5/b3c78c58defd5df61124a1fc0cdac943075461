@@ -1,0 +1,24 @@
+Jalon 3 - correction CI Linux de récupération du reçu Ollama
+
+Constat
+- Le run CI 31891582582 échouait dans process_tests::emergency_capacity_reap_failure_is_recoverable_without_a_slot.
+- Après un échec de reap injecté, le processus avait reçu SIGTERM puis pouvait rester brièvement zombie.
+- /proc/<pid>/exe devenait illisible tandis que kill(pid, 0) indiquait encore une entrée de processus; la récupération restait donc RecoveryRequired sans appeler waitpid.
+
+Correction
+- Sur Unix uniquement, la récupération tente waitpid(WNOHANG) pour le PID exact lorsque l’identité native est illisible.
+- Seul un enfant effectivement terminé est récolté; un PID vivant, réattribué ou non-enfant reste fail-closed.
+- Windows conserve le comportement existant.
+
+Validation observée
+- Test exact répété 10 fois: 10 réussites.
+- Filtre officiel services::ollama_manager: 266 réussis, 0 échec, 1 ignoré volontaire, 267 vérifiés.
+- cargo clippy --all-targets -- -D warnings: vert.
+- cargo fmt --all -- --check: vert.
+- node scripts/build/check-rust-format.mjs: vert.
+- git diff --check: vert.
+- Fichiers de production modifiés: 217 lignes maximum.
+- graphify update .: 34055 noeuds, 69697 arêtes, 2044 communautés.
+
+Recommandation
+- Conserver ce commit. Il corrige la convergence Linux sans élargir le droit de signaler un processus.
