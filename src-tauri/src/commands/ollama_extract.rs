@@ -1,10 +1,7 @@
-use std::io::Read;
+#![allow(dead_code)]
+
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
-
-const MAX_TAR_ENTRIES: usize = 50_000;
-const MAX_UNPACKED_BYTES: u64 = 4 * 1024 * 1024 * 1024;
-const COPY_BUFFER_BYTES: usize = 64 * 1024;
 
 pub fn extract_overlay(
     archive: &Path,
@@ -12,41 +9,21 @@ pub fn extract_overlay(
     name: &str,
     cancel: &CancellationToken,
 ) -> Result<(), String> {
-    if name.ends_with(".tgz") || name.ends_with(".tar.gz") {
-        extract_tar_gz(archive, dest, cancel)?;
-    } else if name.ends_with(".tar.zst") {
-        extract_tar_zst(archive, dest, cancel)?;
-    } else if name.ends_with(".zip") {
-        super::ollama_extract_zip::extract_zip(archive, dest, cancel)?;
-    } else {
-        return Err(format!("format inconnu: {name}"));
-    }
-    Ok(())
+    crate::services::ollama_manager::extract_archive_overlay(archive, dest, name, cancel)
+        .map_err(|code| code.as_str().to_string())
 }
 
-fn extract_tar_gz(archive: &Path, dest: &Path, cancel: &CancellationToken) -> Result<(), String> {
-    let file = std::fs::File::open(archive).map_err(|e| {
-        ::log::error!("[ollama-extract] open tar.gz: {e}");
-        "ollama-extract-error".to_string()
-    })?;
-    let gz = flate2::read::GzDecoder::new(file);
-    let tar = tar::Archive::new(gz);
-    safe_unpack_tar(tar, dest, cancel)
-}
+#[cfg(test)]
+use std::io::Read;
 
-fn extract_tar_zst(archive: &Path, dest: &Path, cancel: &CancellationToken) -> Result<(), String> {
-    let file = std::fs::File::open(archive).map_err(|e| {
-        ::log::error!("[ollama-extract] open tar.zst: {e}");
-        "ollama-extract-error".to_string()
-    })?;
-    let zst = zstd::Decoder::new(file).map_err(|e| {
-        ::log::error!("[ollama-extract] zstd decode: {e}");
-        "ollama-extract-error".to_string()
-    })?;
-    let tar = tar::Archive::new(zst);
-    safe_unpack_tar(tar, dest, cancel)
-}
+#[cfg(test)]
+const MAX_TAR_ENTRIES: usize = 50_000;
+#[cfg(test)]
+const MAX_UNPACKED_BYTES: u64 = 4 * 1024 * 1024 * 1024;
+#[cfg(test)]
+const COPY_BUFFER_BYTES: usize = 64 * 1024;
 
+#[cfg(test)]
 pub(crate) fn safe_unpack_tar<R: Read>(
     mut archive: tar::Archive<R>,
     dest: &Path,
@@ -121,6 +98,7 @@ pub(crate) fn safe_unpack_tar<R: Read>(
     Ok(())
 }
 
+#[cfg(test)]
 fn ensure_not_cancelled(cancel: &CancellationToken) -> Result<(), String> {
     if cancel.is_cancelled() {
         return Err(super::ollama_setup_cancel::cancelled_error());
@@ -128,6 +106,7 @@ fn ensure_not_cancelled(cancel: &CancellationToken) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
 fn unpack_entry<R: Read>(
     entry: &mut tar::Entry<R>,
     target: &Path,

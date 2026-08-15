@@ -1,64 +1,30 @@
-use sha2::{Digest, Sha256};
-use std::io::Read;
+#![allow(dead_code)]
+
 use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
-use crate::services::brand;
-
-const CHECKSUM_TIMEOUT_SECS: u64 = 15;
-const MAX_CHECKSUM_BYTES: usize = 8 * 1024;
-
 pub async fn fetch_expected_hash(version: &str, archive_name: &str) -> Result<String, String> {
-    let url = format!(
-        "https://github.com/ollama/ollama/releases/download/v{}/sha256sum.txt",
-        version
-    );
-
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(CHECKSUM_TIMEOUT_SECS))
-        .build()
-        .map_err(|_| "checksum-client-error".to_string())?;
-
-    let resp = client
-        .get(&url)
-        .header("User-Agent", brand::user_agent())
-        .send()
-        .await
-        .map_err(|_| "checksum-download-error".to_string())?;
-
-    if !resp.status().is_success() {
-        return Err("checksum-not-available".into());
-    }
-
-    let body = resp
-        .text()
-        .await
-        .map_err(|_| "checksum-parse-error".to_string())?;
-
-    if body.len() > MAX_CHECKSUM_BYTES {
-        return Err("checksum-file-too-large".into());
-    }
-
-    parse_sha256_line(&body, archive_name).ok_or_else(|| "checksum-not-found".into())
+    let version = crate::services::ollama_manager::OllamaVersion::parse(version)
+        .map_err(|_| "checksum-not-available".to_string())?;
+    let manifest =
+        crate::services::ollama_manager::release_source::fetch_manifest(version, &[archive_name])
+            .await
+            .map_err(|_| "checksum-not-available".to_string())?;
+    manifest
+        .archives()
+        .first()
+        .map(|archive| archive.sha256.to_hex())
+        .ok_or_else(|| "checksum-not-found".to_string())
 }
 
 fn parse_sha256_line(content: &str, archive_name: &str) -> Option<String> {
-    for line in content.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = line.splitn(2, char::is_whitespace).collect();
-        if parts.len() != 2 {
-            continue;
-        }
-        let hash = parts[0].trim();
-        let name = parts[1].trim().trim_start_matches("./");
-        if name == archive_name && hash.len() == 64 && hash.chars().all(|c| c.is_ascii_hexdigit()) {
-            return Some(hash.to_lowercase());
-        }
-    }
-    None
+    let name = crate::services::ollama_manager::AllowlistedArchiveName::parse(archive_name).ok()?;
+    crate::services::ollama_manager::release_source::parse_sha256_manifest(
+        content.as_bytes(),
+        &name,
+    )
+    .ok()
+    .map(|digest| digest.to_hex())
 }
 
 pub fn verify_file_sha256(
@@ -66,39 +32,13 @@ pub fn verify_file_sha256(
     expected: &str,
     cancel: &CancellationToken,
 ) -> Result<(), String> {
-    let mut file = std::fs::File::open(path).map_err(|e| {
-        ::log::error!("[ollama-checksum] open: {e}");
-        "checksum-read-error".to_string()
-    })?;
-    let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 64 * 1024];
-
-    loop {
-        if cancel.is_cancelled() {
-            return Err(super::ollama_setup_cancel::cancelled_error());
-        }
-        let read = file.read(&mut buffer).map_err(|e| {
-            ::log::error!("[ollama-checksum] read: {e}");
-            "checksum-read-error".to_string()
-        })?;
-        if read == 0 {
-            break;
-        }
-        hasher.update(&buffer[..read]);
+    if cancel.is_cancelled() {
+        return Err(super::ollama_setup_cancel::cancelled_error());
     }
-
-    let actual = format!("{:x}", hasher.finalize());
-
-    if actual != expected {
-        ::log::error!(
-            "[ollama-checksum] mismatch: expected={} actual={}",
-            &expected[..12],
-            &actual[..12]
-        );
-        return Err("checksum-mismatch".into());
-    }
-
-    Ok(())
+    let expected = crate::services::ollama_manager::Sha256Digest::from_hex(expected)
+        .map_err(|_| "checksum-mismatch".to_string())?;
+    crate::services::ollama_manager::verify_sha256(path, &expected)
+        .map_err(|_| "checksum-mismatch".to_string())
 }
 
 #[cfg(test)]

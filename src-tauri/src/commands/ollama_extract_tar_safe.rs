@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 

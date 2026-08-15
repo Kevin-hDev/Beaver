@@ -1,11 +1,26 @@
 mod blocking;
+mod bundle_install;
+mod bundle_receipt;
 mod canonical_executable;
 mod cleanup;
 mod cleanup_inspection;
 mod constants;
+mod download;
 mod durable_fs;
 mod error;
+mod extract;
+mod extract_archive;
+#[cfg(test)]
+mod extract_fixture;
+mod extract_zip_validate;
 mod fingerprint;
+mod install;
+mod install_confinement;
+mod install_facade;
+#[cfg(test)]
+mod install_phases;
+#[cfg(test)]
+mod install_test_support;
 mod journal;
 mod journal_store;
 mod manager;
@@ -32,6 +47,8 @@ mod recovery_decision_rules;
 mod recovery_entry;
 mod recovery_helpers;
 mod recovery_probe;
+mod release_fetch;
+pub(crate) mod release_source;
 mod rollback;
 mod spawn_environment;
 #[cfg(unix)]
@@ -51,9 +68,15 @@ mod cleanup_tests;
 #[cfg(test)]
 mod document_tests;
 #[cfg(test)]
+mod download_tests;
+#[cfg(test)]
 mod durable_fs_test_support;
 #[cfg(test)]
 mod durable_fs_tests;
+#[cfg(test)]
+mod extract_tests;
+#[cfg(test)]
+mod install_tests;
 #[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
@@ -73,6 +96,8 @@ mod recovery_decision_tests;
 #[cfg(test)]
 mod recovery_tests;
 #[cfg(test)]
+mod release_source_tests;
+#[cfg(test)]
 mod rollback_tests;
 #[cfg(test)]
 mod spawn_profile_attempt_tests;
@@ -89,14 +114,23 @@ mod windows_path_identity_tests;
 #[cfg(all(test, windows))]
 mod windows_spawn_gate_tests;
 
+#[allow(unused_imports)]
+pub use bundle_receipt::{BundlePlatform, BundleReceipt};
 #[cfg(windows)]
 pub(crate) use canonical_executable::windows_image_identity_from_path;
 #[allow(unused_imports)]
 pub(crate) use canonical_executable::{CanonicalExecutable, NativeFileIdentity};
 #[allow(unused_imports)]
+pub use download::{download_archive, download_archives, verify_sha256};
+#[allow(unused_imports)]
 pub use error::OllamaErrorCode;
 #[allow(unused_imports)]
+pub use extract::{extract_archive, extract_archive_overlay};
+#[allow(unused_imports)]
 pub use fingerprint::{BundleFingerprint, FingerprintError, OllamaVersion, Sha256Digest};
+#[allow(unused_imports)]
+pub use install::{InstallOutcome, InstallRequest};
+pub(crate) use install_facade::install_bundle;
 #[allow(unused_imports)]
 pub use journal::{
     classify_migration_marker, DocumentError, OllamaJournalState, OllamaMigrationMarker,
@@ -116,6 +150,10 @@ pub use port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
 pub use probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 #[allow(unused_imports)]
 pub use recovery::{RecoveryOutcome, RecoveryReason};
+#[allow(unused_imports)]
+pub use release_source::{
+    AllowlistedArchiveName, OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl,
+};
 #[allow(unused_imports)]
 pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
 #[allow(unused_imports)]
