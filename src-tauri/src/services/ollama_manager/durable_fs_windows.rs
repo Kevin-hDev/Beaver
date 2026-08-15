@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 
-use super::super::path_identity::{
-    CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver,
-};
+use super::super::path_identity::CanonicalDirectory;
 use super::{
     io_error_kind, retry_windows_sharing, sync_parent_pair, validate_wide_units,
     windows_file_flush_access, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
@@ -27,6 +25,9 @@ use windows_sys::Win32::Storage::FileSystem::{
     FILE_SHARE_READ, FILE_SHARE_WRITE, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
     OPEN_EXISTING,
 };
+
+#[path = "durable_fs_windows_verified.rs"]
+mod verified;
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct WindowsOllamaDurableFs {
@@ -98,16 +99,7 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
-        let expected = root
-            .identity()
-            .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
-        let current = NativePathIdentityResolver
-            .canonical_directory(root.path())
-            .map_err(|_| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
-        if current.identity() != Some(expected) || root.stable_handle().is_none() {
-            return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
-        }
-        self.remove_tree(root.path())
+        verified::remove_tree(root)
     }
 
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError> {

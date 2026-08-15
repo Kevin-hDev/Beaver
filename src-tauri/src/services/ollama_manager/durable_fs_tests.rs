@@ -291,6 +291,19 @@ fn windows_file_flush_uses_the_same_write_access_contract() {
 }
 
 #[test]
+fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
+    let source = include_str!("durable_fs_windows.rs");
+    let method = source
+        .split_once("fn remove_tree_verified")
+        .and_then(|(_, remainder)| remainder.split_once("\n    fn sync_file"))
+        .map(|(body, _)| body)
+        .expect("verified Windows deletion method");
+
+    assert!(!method.contains("remove_tree(root.path())"));
+    assert!(method.contains("verified::remove_tree(root)"));
+}
+
+#[test]
 fn wide_path_validation_rejects_nul_and_32768_units() {
     assert_eq!(
         validate_wide_units([b'a' as u16, 0, b'b' as u16]),

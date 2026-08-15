@@ -1,5 +1,7 @@
 use super::cleanup;
-use super::durable_fs::{OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
+use super::durable_fs::{
+    OllamaDurableFs, OllamaFsError, OllamaFsErrorKind, PlatformOllamaDurableFs,
+};
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
@@ -169,6 +171,395 @@ impl RecoveryProbe for ValidProbe {
         _paths: &OllamaPaths,
     ) -> RecoveryProbeResult {
         RecoveryProbeResult::Valid
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RealOperation {
+    Rename,
+    Sync,
+    Remove,
+    Write,
+    Publish,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct RealCutpoint {
+    operation: RealOperation,
+    before: bool,
+}
+
+#[derive(Default)]
+struct RealCutpointFs {
+    inner: PlatformOllamaDurableFs,
+    failure: Mutex<Option<RealCutpoint>>,
+    events: Mutex<Vec<RealCutpoint>>,
+}
+
+impl RealCutpointFs {
+    fn fail_at(&self, cutpoint: RealCutpoint) {
+        *self.failure.lock().unwrap() = Some(cutpoint);
+    }
+
+    fn clear_failure(&self) {
+        *self.failure.lock().unwrap() = None;
+    }
+
+    fn boundary(&self, operation: RealOperation, before: bool) -> Result<(), OllamaFsError> {
+        let cutpoint = RealCutpoint { operation, before };
+        self.events.lock().unwrap().push(cutpoint);
+        if *self.failure.lock().unwrap() == Some(cutpoint) {
+            Err(OllamaFsError::new(OllamaFsErrorKind::Other))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn events(&self) -> Vec<RealCutpoint> {
+        self.events.lock().unwrap().clone()
+    }
+}
+
+impl OllamaDurableFs for RealCutpointFs {
+    fn read_bounded(&self, path: &Path, max_bytes: usize) -> Result<Vec<u8>, OllamaFsError> {
+        self.inner.read_bounded(path, max_bytes)
+    }
+
+    fn create_directory_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
+        self.inner.create_directory_durable(path)
+    }
+
+    fn write_new_atomic(
+        &self,
+        tmp: &Path,
+        final_path: &Path,
+        bytes: &[u8],
+    ) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Write, true)?;
+        self.boundary(RealOperation::Sync, true)?;
+        self.boundary(RealOperation::Publish, true)?;
+        self.inner.write_new_atomic(tmp, final_path, bytes)?;
+        self.boundary(RealOperation::Publish, false)?;
+        self.boundary(RealOperation::Sync, false)?;
+        self.boundary(RealOperation::Write, false)
+    }
+
+    fn replace_atomic(
+        &self,
+        tmp: &Path,
+        final_path: &Path,
+        bytes: &[u8],
+    ) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Write, true)?;
+        self.boundary(RealOperation::Sync, true)?;
+        self.boundary(RealOperation::Publish, true)?;
+        self.inner.replace_atomic(tmp, final_path, bytes)?;
+        self.boundary(RealOperation::Publish, false)?;
+        self.boundary(RealOperation::Sync, false)?;
+        self.boundary(RealOperation::Write, false)
+    }
+
+    fn rename_durable(&self, source: &Path, destination: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Rename, true)?;
+        self.inner.rename_durable(source, destination)?;
+        self.boundary(RealOperation::Sync, true)?;
+        self.boundary(RealOperation::Sync, false)?;
+        self.boundary(RealOperation::Rename, false)
+    }
+
+    fn remove_file_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Remove, true)?;
+        self.inner.remove_file_durable(path)?;
+        self.boundary(RealOperation::Sync, true)?;
+        self.boundary(RealOperation::Sync, false)?;
+        self.boundary(RealOperation::Remove, false)
+    }
+
+    fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Remove, true)?;
+        self.inner.remove_tree(root)?;
+        self.boundary(RealOperation::Sync, true)?;
+        self.boundary(RealOperation::Sync, false)?;
+        self.boundary(RealOperation::Remove, false)
+    }
+
+    fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Remove, true)?;
+        self.inner.remove_tree_verified(root)?;
+        self.boundary(RealOperation::Sync, true)?;
+        self.boundary(RealOperation::Sync, false)?;
+        self.boundary(RealOperation::Remove, false)
+    }
+
+    fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Sync, true)?;
+        self.inner.sync_file(path)?;
+        self.boundary(RealOperation::Sync, false)
+    }
+
+    fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Sync, true)?;
+        self.inner.sync_parent(path)?;
+        self.boundary(RealOperation::Sync, false)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum RealScenario {
+    RemoveUncommittedInstallStaging,
+    CommitFreshInstallFromActive,
+    CommitFreshInstallFromUpdate,
+    RestoreLegacyBackup,
+    RestoreLegacyBackupFromModernBackup,
+    ResumeTargetValidation,
+    PersistRollbackCleanupPending,
+    MoveFailedToDelete,
+    RemoveFailedDelete,
+    RemoveCompletedLegacyJournal,
+    AdoptLegacyActive,
+}
+
+struct RealFixture {
+    _root: tempfile::TempDir,
+    paths: OllamaPaths,
+    fs: Arc<RealCutpointFs>,
+    runner: RecoveryExecutor<RealCutpointFs, ValidProbe>,
+}
+
+fn real_bundle_at(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint {
+    let bin = path.join("bin");
+    std::fs::create_dir_all(&bin).expect("bundle directory");
+    std::fs::write(path.join("VERSION"), version).expect("version");
+    let executable = bin.join(if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    });
+    std::fs::write(&executable, body).expect("executable");
+    #[cfg(unix)]
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
+        .expect("executable permissions");
+    BundleFingerprint {
+        version: OllamaVersion::parse(version).expect("version fingerprint"),
+        executable_sha256: super::probe_http::hash_file(&executable)
+            .ok()
+            .expect("executable hash"),
+    }
+}
+
+fn write_real_journal(paths: &OllamaPaths, journal: &OllamaTransactionJournal) {
+    std::fs::write(
+        &paths.journal,
+        serde_json::to_vec(journal).expect("journal bytes"),
+    )
+    .expect("journal");
+}
+
+fn real_fixture(scenario: RealScenario) -> RealFixture {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let models_path = root.path().join("models");
+    std::fs::create_dir_all(&models_path).expect("models directory");
+    let models = NativePathIdentityResolver
+        .canonical_directory(&models_path)
+        .expect("models identity");
+
+    match scenario {
+        RealScenario::RemoveUncommittedInstallStaging => {
+            real_bundle_at(&paths.install_staging, "1.2.3", b"install");
+        }
+        RealScenario::CommitFreshInstallFromActive => {
+            let previous = real_bundle_at(&paths.active, "1.2.2", b"previous");
+            let target = real_bundle_at(&paths.update_staging, "1.2.3", b"target");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::Prepared { target, previous }),
+            );
+        }
+        RealScenario::CommitFreshInstallFromUpdate => {
+            let target = real_bundle_at(&paths.update_staging, "1.2.3", b"target");
+            let previous = real_bundle_at(&paths.backup, "1.2.2", b"previous");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::Prepared { target, previous }),
+            );
+        }
+        RealScenario::RestoreLegacyBackup => {
+            real_bundle_at(&paths.legacy_backup, "1.2.2", b"legacy");
+        }
+        RealScenario::RestoreLegacyBackupFromModernBackup => {
+            real_bundle_at(&paths.backup, "1.2.2", b"modern-backup");
+        }
+        RealScenario::ResumeTargetValidation => {
+            let target = real_bundle_at(&paths.active, "1.2.3", b"target");
+            let previous = real_bundle_at(&paths.backup, "1.2.2", b"previous");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::PendingValidation {
+                    target,
+                    previous,
+                }),
+            );
+        }
+        RealScenario::PersistRollbackCleanupPending => {
+            let previous = real_bundle_at(&paths.active, "1.2.2", b"previous");
+            let rejected = real_bundle_at(&paths.failed, "1.2.3", b"rejected");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::RollbackPending {
+                    previous,
+                    rejected_target: Some(rejected),
+                }),
+            );
+        }
+        RealScenario::MoveFailedToDelete => {
+            let previous = real_bundle_at(&paths.active, "1.2.2", b"previous");
+            let rejected = real_bundle_at(&paths.failed, "1.2.3", b"rejected");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::RollbackCleanupPending {
+                    previous,
+                    rejected_target: Some(rejected),
+                }),
+            );
+        }
+        RealScenario::RemoveFailedDelete => {
+            let previous = real_bundle_at(&paths.active, "1.2.2", b"previous");
+            let rejected = real_bundle_at(&paths.failed_delete, "1.2.3", b"rejected");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::RollbackCleanupPending {
+                    previous,
+                    rejected_target: Some(rejected),
+                }),
+            );
+        }
+        RealScenario::RemoveCompletedLegacyJournal => {
+            let target = real_bundle_at(&paths.active, "1.2.3", b"active");
+            write_real_journal(
+                &paths,
+                &OllamaTransactionJournal::new(OllamaJournalState::CleanupPending {
+                    target,
+                    previous: fp("1.2.2", "22"),
+                }),
+            );
+            std::fs::write(
+                &paths.migration_marker,
+                serde_json::to_vec(&super::journal::OllamaMigrationMarker::new())
+                    .expect("marker bytes"),
+            )
+            .expect("marker");
+        }
+        RealScenario::AdoptLegacyActive => {
+            real_bundle_at(&paths.active, "1.2.3", b"active");
+        }
+    }
+
+    let fs = Arc::new(RealCutpointFs::default());
+    let runner = RecoveryExecutor::new_with_models(
+        Arc::clone(&fs),
+        Arc::new(ValidProbe),
+        paths.clone(),
+        models,
+    );
+    RealFixture {
+        _root: root,
+        paths,
+        fs,
+        runner,
+    }
+}
+
+fn real_cutpoint_operations(scenario: RealScenario) -> &'static [RealOperation] {
+    match scenario {
+        RealScenario::RemoveUncommittedInstallStaging
+        | RealScenario::CommitFreshInstallFromActive
+        | RealScenario::CommitFreshInstallFromUpdate
+        | RealScenario::RestoreLegacyBackup
+        | RealScenario::MoveFailedToDelete => &[RealOperation::Rename, RealOperation::Sync],
+        RealScenario::RestoreLegacyBackupFromModernBackup => {
+            &[RealOperation::Rename, RealOperation::Sync]
+        }
+        RealScenario::ResumeTargetValidation | RealScenario::PersistRollbackCleanupPending => &[
+            RealOperation::Write,
+            RealOperation::Sync,
+            RealOperation::Publish,
+        ],
+        RealScenario::RemoveFailedDelete => &[RealOperation::Remove, RealOperation::Sync],
+        RealScenario::RemoveCompletedLegacyJournal => &[RealOperation::Remove, RealOperation::Sync],
+        RealScenario::AdoptLegacyActive => &[
+            RealOperation::Write,
+            RealOperation::Sync,
+            RealOperation::Publish,
+        ],
+    }
+}
+
+fn real_snapshot(fs: &RealCutpointFs, paths: &OllamaPaths) -> OllamaLayoutSnapshot {
+    let journal = match std::fs::read(&paths.journal) {
+        Ok(bytes) => OllamaTransactionJournal::parse_bounded(&bytes)
+            .map(JournalPresence::Valid)
+            .unwrap_or(JournalPresence::Invalid),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => JournalPresence::Absent,
+        Err(_) => JournalPresence::Unknown,
+    };
+    cleanup::snapshot(journal, fs, paths)
+}
+
+#[tokio::test]
+async fn real_recovery_decision_cutpoints_converge_after_two_passes() {
+    let scenarios = [
+        RealScenario::RemoveUncommittedInstallStaging,
+        RealScenario::CommitFreshInstallFromActive,
+        RealScenario::CommitFreshInstallFromUpdate,
+        RealScenario::RestoreLegacyBackup,
+        RealScenario::RestoreLegacyBackupFromModernBackup,
+        RealScenario::ResumeTargetValidation,
+        RealScenario::PersistRollbackCleanupPending,
+        RealScenario::MoveFailedToDelete,
+        RealScenario::RemoveFailedDelete,
+        RealScenario::RemoveCompletedLegacyJournal,
+        RealScenario::AdoptLegacyActive,
+    ];
+    for scenario in scenarios {
+        for operation in real_cutpoint_operations(scenario) {
+            for before in [true, false] {
+                let fixture = real_fixture(scenario);
+                fixture.fs.fail_at(RealCutpoint {
+                    operation: *operation,
+                    before,
+                });
+                let first = fixture.runner.recover(RecoveryReason::Startup).await;
+                assert_eq!(
+                    first,
+                    Err(OllamaErrorCode::OllamaStorageUnavailable),
+                    "first pass must fail closed at {scenario:?} {operation:?} before={before}"
+                );
+                fixture.fs.clear_failure();
+                let mut previous = None;
+                let mut converged = false;
+                for _ in 0..10 {
+                    let _ = fixture.runner.recover(RecoveryReason::Retry).await;
+                    let current = real_snapshot(&fixture.fs, &fixture.paths);
+                    if previous.as_ref() == Some(&current) {
+                        converged = true;
+                        break;
+                    }
+                    previous = Some(current);
+                }
+                assert!(
+                    converged,
+                    "two retry passes must converge at {scenario:?} {operation:?} before={before}"
+                );
+                assert!(
+                    fixture.fs.events().contains(&RealCutpoint {
+                        operation: *operation,
+                        before
+                    }),
+                    "cutpoint was not exercised at {scenario:?} {operation:?} before={before}"
+                );
+            }
+        }
     }
 }
 
