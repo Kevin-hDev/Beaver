@@ -1,0 +1,29 @@
+J3 Task 14-B — route lifecycle through manager
+
+Base: 57f202157decbff7f0fc7e07dba19bf84af97613 (Task 14-A).
+Commit teste: 75ce50d50978c9b693d419ab1e2d6bd3a1b09daf.
+
+Décisions et changements
+- RuntimeServices construit le seul OllamaManager de production avec le publisher de l'inventaire d'urgence de AppExitCoordinator. Les tests peuvent encore construire un manager isolé sans publisher.
+- Le manager possède désormais l'unique OwnedOllamaProcess. Le démarrage passe par le profil de spawn, la porte native, le reçu de processus et la publication d'urgence avant l'ouverture; le publisher reste détenu par OwnedOllamaProcess jusqu'au reap confirmé.
+- La détection d'un démon externe passe par DefaultOllamaPortAllocator et son endpoint n'est jamais arrêté par stop_and_wait. Toute action d'arrêt consomme uniquement le processus possédé du manager.
+- stop_and_wait attend le verrou d'opération seulement jusqu'à l'échéance reçue, puis exécute terminate puis reap dans une tâche bloquante. En cas d'échec, le processus et son guard restent dans le manager; en cas de succès, l'état devient Unavailable.
+- Le démarrage CLI utilise le binaire du bundle actif et l'endpoint décidé par le manager; aucun ancien port ou sidecar global n'est utilisé dans cette voie.
+- Le startup runtime et la boucle de polling consomment le manager. Le polling observe uniquement l'endpoint publié et ne relance ni ne choisit de port. La fermeture ferme l'admission dès la demande, rappelle begin_closing de façon idempotente, puis transmet timeline.ollama_setup_deadline à stop_and_wait. Le nettoyage ne touche plus le démon externe et ne demande plus de libération VRAM via un endpoint global.
+- Le sidecar Tauri séparé n'est plus enregistré dans lib.rs.
+- La grâce de setup est désormais consommée en production; les attentes mortes associées ont été retirées de la politique centrale.
+
+TDD et contrôles réellement observés
+- Rouge conservé avant correction: `node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::adoption_tests` a échoué avec `Rust test filter failed.` sur l'API manager/consommateurs incomplète; `--filter app_exit::cleanup_tests::ollama` a également échoué avec `Rust test filter failed.` avant le câblage de la fermeture.
+- Vert startup: filtre `services::ollama_manager::startup_tests`, 4 passed, 0 failed, 0 ignored; sortie finale `Verified 4 filtered Rust test(s).`
+- Vert polling: filtre `services::ollama_manager::polling_tests`, 6 passed, 0 failed, 0 ignored; sortie finale `Verified 6 filtered Rust test(s).`
+- Vert fermeture: filtre `app_exit::cleanup_tests::ollama`, 2 passed, 0 failed, 0 ignored; sortie finale `Verified 2 filtered Rust test(s).`
+- `cargo check --manifest-path src-tauri/Cargo.toml`: code 0, terminé; 39 avertissements legacy non masqués restent avant la suppression Task 14-C (anciens modules, enveloppe setup, autorités port/kill/lifecycle, variantes de contrats encore consommées aux tâches suivantes).
+- `git diff --cached --check`: vert, aucune sortie.
+- Tailles vérifiées: cleanup 212, policy 130, request_flow 82, lib 227, runtime_startup 99, runtime_state 80, manager 222, manager_process 229, manager_runtime 96, polling 154 lignes; tous les fichiers de production touchés restent sous 230.
+- `graphify update .`: vert; 33 974 nœuds, 69 658 arêtes, 2 007 communautés; avertissement existant de 73 fichiers sans nœud, puis graph rebuilt.
+
+Limites et suite
+- Aucun test global, clippy, CI, push, fusion ou Task 15 exécuté dans ce commit.
+- Les anciennes autorités restent présentes uniquement pour la bascule atomique de Task 14-C; les avertissements associés sont donc attendus et consignés, pas ignorés.
+- La vérification native multiplateforme reste hors de ce commit.
