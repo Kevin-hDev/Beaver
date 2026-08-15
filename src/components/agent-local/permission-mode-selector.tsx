@@ -12,15 +12,18 @@ interface Props {
   mode: PermissionMode;
   availableModes?: PermissionMode[];
   onChange: (mode: PermissionMode) => void;
+  /* Zone dont la liste reprend la largeur : le bouton qui l'ouvre est trop
+     étroit pour que ses libellés tiennent sans être coupés. */
+  widthRef?: React.RefObject<HTMLElement | null>;
 }
 
 const MODES: PermissionMode[] = ["chat", "manual", "auto"];
 
-export function PermissionModeSelector({ mode, availableModes = MODES, onChange }: Props) {
+export function PermissionModeSelector({ mode, availableModes = MODES, onChange, widthRef }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
-  const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(open, "left", 6);
+  const { anchorRef, floatingRef, floatingStyle } = useFloatingMenuPosition(open, "left", 6, "above", false, widthRef);
   const navItems = useMemo(() => availableModes.map((m) => ({
     id: modeNavId(m),
     onSelect: () => {
@@ -152,7 +155,7 @@ export function PermissionModeSelector({ mode, availableModes = MODES, onChange 
 function ModeIcon({
   mode,
   className = "perm-mode-option-icon",
-  size = "var(--icon-2xl)",
+  size = "var(--icon-lg)",
 }: {
   mode: PermissionMode;
   className?: string;

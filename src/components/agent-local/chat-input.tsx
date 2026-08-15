@@ -157,6 +157,7 @@ export function ChatInput({
             </div>
           )}
           <ChatInputActionsRow
+            inputBubbleRef={bubbleRef}
             modelName={modelName}
             providerName={providerName}
             reasoningMode={reasoningMode}

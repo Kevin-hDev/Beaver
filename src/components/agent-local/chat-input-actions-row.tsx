@@ -28,6 +28,7 @@ interface ChatInputActionsRowProps {
   planModeEnabled: boolean;
   retryIndicator?: RetryIndicatorState | null;
   buttonState: ButtonState;
+  inputBubbleRef?: React.RefObject<HTMLElement | null>;
   onPermissionModeChange: (mode: PermissionMode) => void;
   onResolveMissingDirectory?: (action: "switch" | "create") => void;
   onPlanModeChange?: (enabled: boolean) => void;
@@ -52,6 +53,7 @@ export function ChatInputActionsRow({
   planModeEnabled,
   retryIndicator,
   buttonState,
+  inputBubbleRef,
   onPermissionModeChange,
   onResolveMissingDirectory,
   onPlanModeChange,
@@ -75,6 +77,7 @@ export function ChatInputActionsRow({
           mode={permissionMode}
           availableModes={availablePermissionModes}
           onChange={onPermissionModeChange}
+          widthRef={inputBubbleRef}
         />
         {missingDirectory && onResolveMissingDirectory && (
           <MissingDirectoryPrompt

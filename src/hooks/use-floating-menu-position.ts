@@ -14,12 +14,17 @@ const HIDDEN_STYLE: CSSProperties = {
   zIndex: 1000,
 };
 
+/* spanRef : élément dont le menu reprend le bord gauche et la largeur, quand
+   ceux de l'ancre ne conviennent pas — un menu ouvert depuis un petit bouton
+   mais qui doit couvrir la zone à laquelle il appartient. Le placement vertical
+   reste celui de l'ancre. */
 export function useFloatingMenuPosition(
   open: boolean,
   align: FloatingAlign = "left",
   gap = 4,
   placement: FloatingPlacement = "above",
   matchAnchorWidth = false,
+  spanRef?: React.RefObject<HTMLElement | null>,
 ) {
   const anchorRef = useRef<HTMLElement | null>(null);
   const floatingRef = useRef<HTMLDivElement | null>(null);
@@ -32,15 +37,17 @@ export function useFloatingMenuPosition(
     if (!open || !anchor || !floating) return;
 
     const anchorRect = anchor.getBoundingClientRect();
+    const spanRect = spanRef?.current?.getBoundingClientRect() ?? null;
     const width = Math.max(
-      floating.offsetWidth,
+      spanRect ? spanRect.width : floating.offsetWidth,
       matchAnchorWidth ? anchorRect.width : 0,
     );
     const height = floating.offsetHeight;
     const maxWidth = Math.max(0, window.innerWidth - (VIEWPORT_PADDING * 2));
     const boundedWidth = Math.min(width, maxWidth);
     const maxLeft = Math.max(VIEWPORT_PADDING, window.innerWidth - boundedWidth - VIEWPORT_PADDING);
-    const rawLeft = align === "right" ? anchorRect.right - width : anchorRect.left;
+    const horizontalRect = spanRect ?? anchorRect;
+    const rawLeft = align === "right" ? horizontalRect.right - width : horizontalRect.left;
     const left = Math.min(Math.max(rawLeft, VIEWPORT_PADDING), maxLeft);
     const availableAbove = Math.max(0, anchorRect.top - gap - VIEWPORT_PADDING);
     const availableBelow = Math.max(
@@ -63,13 +70,14 @@ export function useFloatingMenuPosition(
       left,
       maxWidth,
       maxHeight,
+      width: spanRect ? boundedWidth : undefined,
       minWidth: matchAnchorWidth ? anchorRect.width : undefined,
       right: "auto",
       bottom: opensBelow ? "auto" : window.innerHeight - anchorRect.top + gap,
       visibility: "visible",
       zIndex: 1000,
     });
-  }, [align, gap, matchAnchorWidth, open, placement]);
+  }, [align, gap, matchAnchorWidth, open, placement, spanRef]);
 
   useLayoutEffect(() => {
     if (!open) {
