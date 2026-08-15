@@ -1,7 +1,5 @@
 use super::cleanup;
-use super::durable_fs::{
-    OllamaDurableFs, OllamaFsError, OllamaFsErrorKind, PlatformOllamaDurableFs,
-};
+use super::durable_fs::{OllamaDurableFs, OllamaFsError, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion, Sha256Digest};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
@@ -12,6 +10,8 @@ use super::recovery_decision::{
 };
 use crate::services::paths::{ollama_paths, OllamaPaths};
 use std::collections::HashSet;
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
@@ -177,10 +177,11 @@ impl RecoveryProbe for ValidProbe {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RealOperation {
     Rename,
-    Sync,
+    SyncFile,
     Remove,
     Write,
     Publish,
+    SyncParent,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -191,7 +192,6 @@ struct RealCutpoint {
 
 #[derive(Default)]
 struct RealCutpointFs {
-    inner: PlatformOllamaDurableFs,
     failure: Mutex<Option<RealCutpoint>>,
     events: Mutex<Vec<RealCutpoint>>,
 }
@@ -222,11 +222,26 @@ impl RealCutpointFs {
 
 impl OllamaDurableFs for RealCutpointFs {
     fn read_bounded(&self, path: &Path, max_bytes: usize) -> Result<Vec<u8>, OllamaFsError> {
-        self.inner.read_bounded(path, max_bytes)
+        let metadata = fs::symlink_metadata(path).map_err(real_io_error)?;
+        if !metadata.is_file() || metadata.len() > max_bytes as u64 {
+            return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
+        }
+        let mut bytes = Vec::new();
+        File::open(path)
+            .map_err(real_io_error)?
+            .take(max_bytes.saturating_add(1) as u64)
+            .read_to_end(&mut bytes)
+            .map_err(real_io_error)?;
+        if bytes.len() > max_bytes {
+            return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
+        }
+        Ok(bytes)
     }
 
     fn create_directory_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        self.inner.create_directory_durable(path)
+        fs::create_dir_all(path).map_err(real_io_error)?;
+        sync_directory(path)?;
+        sync_parent_path(path)
     }
 
     fn write_new_atomic(
@@ -235,13 +250,7 @@ impl OllamaDurableFs for RealCutpointFs {
         final_path: &Path,
         bytes: &[u8],
     ) -> Result<(), OllamaFsError> {
-        self.boundary(RealOperation::Write, true)?;
-        self.boundary(RealOperation::Sync, true)?;
-        self.boundary(RealOperation::Publish, true)?;
-        self.inner.write_new_atomic(tmp, final_path, bytes)?;
-        self.boundary(RealOperation::Publish, false)?;
-        self.boundary(RealOperation::Sync, false)?;
-        self.boundary(RealOperation::Write, false)
+        self.write_atomic(tmp, final_path, bytes, false)
     }
 
     fn replace_atomic(
@@ -250,58 +259,115 @@ impl OllamaDurableFs for RealCutpointFs {
         final_path: &Path,
         bytes: &[u8],
     ) -> Result<(), OllamaFsError> {
-        self.boundary(RealOperation::Write, true)?;
-        self.boundary(RealOperation::Sync, true)?;
-        self.boundary(RealOperation::Publish, true)?;
-        self.inner.replace_atomic(tmp, final_path, bytes)?;
-        self.boundary(RealOperation::Publish, false)?;
-        self.boundary(RealOperation::Sync, false)?;
-        self.boundary(RealOperation::Write, false)
+        self.write_atomic(tmp, final_path, bytes, true)
     }
 
     fn rename_durable(&self, source: &Path, destination: &Path) -> Result<(), OllamaFsError> {
         self.boundary(RealOperation::Rename, true)?;
-        self.inner.rename_durable(source, destination)?;
-        self.boundary(RealOperation::Sync, true)?;
-        self.boundary(RealOperation::Sync, false)?;
-        self.boundary(RealOperation::Rename, false)
+        fs::rename(source, destination).map_err(real_io_error)?;
+        self.boundary(RealOperation::Rename, false)?;
+        self.sync_parents(source, destination)
     }
 
     fn remove_file_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        self.boundary(RealOperation::Remove, true)?;
-        self.inner.remove_file_durable(path)?;
-        self.boundary(RealOperation::Sync, true)?;
-        self.boundary(RealOperation::Sync, false)?;
-        self.boundary(RealOperation::Remove, false)
+        self.remove_file(path)
     }
 
     fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError> {
         self.boundary(RealOperation::Remove, true)?;
-        self.inner.remove_tree(root)?;
-        self.boundary(RealOperation::Sync, true)?;
-        self.boundary(RealOperation::Sync, false)?;
-        self.boundary(RealOperation::Remove, false)
+        fs::remove_dir_all(root).map_err(real_io_error)?;
+        self.boundary(RealOperation::Remove, false)?;
+        self.sync_parents(root, root)
     }
 
     fn remove_tree_verified(&self, root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
-        self.boundary(RealOperation::Remove, true)?;
-        self.inner.remove_tree_verified(root)?;
-        self.boundary(RealOperation::Sync, true)?;
-        self.boundary(RealOperation::Sync, false)?;
-        self.boundary(RealOperation::Remove, false)
+        self.remove_tree(root.path())
     }
 
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError> {
-        self.boundary(RealOperation::Sync, true)?;
-        self.inner.sync_file(path)?;
-        self.boundary(RealOperation::Sync, false)
+        self.boundary(RealOperation::SyncFile, true)?;
+        File::open(path)
+            .map_err(real_io_error)?
+            .sync_all()
+            .map_err(real_io_error)?;
+        self.boundary(RealOperation::SyncFile, false)
     }
 
     fn sync_parent(&self, path: &Path) -> Result<(), OllamaFsError> {
-        self.boundary(RealOperation::Sync, true)?;
-        self.inner.sync_parent(path)?;
-        self.boundary(RealOperation::Sync, false)
+        self.boundary(RealOperation::SyncParent, true)?;
+        sync_parent_path(path)?;
+        self.boundary(RealOperation::SyncParent, false)
     }
+}
+
+impl RealCutpointFs {
+    fn write_atomic(
+        &self,
+        tmp: &Path,
+        final_path: &Path,
+        bytes: &[u8],
+        replace: bool,
+    ) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Write, true)?;
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(tmp)
+            .map_err(real_io_error)?;
+        file.write_all(bytes).map_err(real_io_error)?;
+        self.boundary(RealOperation::Write, false)?;
+        self.boundary(RealOperation::SyncFile, true)?;
+        file.sync_all().map_err(real_io_error)?;
+        drop(file);
+        self.boundary(RealOperation::SyncFile, false)?;
+        self.boundary(RealOperation::Publish, true)?;
+        if !replace && final_path.exists() {
+            return Err(OllamaFsError::new(OllamaFsErrorKind::AlreadyExists));
+        }
+        fs::rename(tmp, final_path).map_err(real_io_error)?;
+        self.boundary(RealOperation::Publish, false)?;
+        self.sync_parents(tmp, final_path)
+    }
+
+    fn remove_file(&self, path: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::Remove, true)?;
+        fs::remove_file(path).map_err(real_io_error)?;
+        self.boundary(RealOperation::Remove, false)?;
+        self.sync_parents(path, path)
+    }
+
+    fn sync_parents(&self, source: &Path, destination: &Path) -> Result<(), OllamaFsError> {
+        self.boundary(RealOperation::SyncParent, true)?;
+        sync_parent_path(source)?;
+        if source.parent() != destination.parent() {
+            sync_parent_path(destination)?;
+        }
+        self.boundary(RealOperation::SyncParent, false)
+    }
+}
+
+fn real_io_error(error: std::io::Error) -> OllamaFsError {
+    let kind = match error.kind() {
+        std::io::ErrorKind::NotFound => OllamaFsErrorKind::NotFound,
+        std::io::ErrorKind::AlreadyExists => OllamaFsErrorKind::AlreadyExists,
+        std::io::ErrorKind::InvalidInput => OllamaFsErrorKind::InvalidInput,
+        _ => OllamaFsErrorKind::Other,
+    };
+    OllamaFsError::new(kind)
+}
+
+fn sync_directory(path: &Path) -> Result<(), OllamaFsError> {
+    File::open(path)
+        .map_err(real_io_error)?
+        .sync_all()
+        .map_err(real_io_error)
+}
+
+fn sync_parent_path(path: &Path) -> Result<(), OllamaFsError> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
+    sync_directory(parent)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -476,21 +542,25 @@ fn real_cutpoint_operations(scenario: RealScenario) -> &'static [RealOperation] 
         | RealScenario::CommitFreshInstallFromActive
         | RealScenario::CommitFreshInstallFromUpdate
         | RealScenario::RestoreLegacyBackup
-        | RealScenario::MoveFailedToDelete => &[RealOperation::Rename, RealOperation::Sync],
+        | RealScenario::MoveFailedToDelete => &[RealOperation::Rename, RealOperation::SyncParent],
         RealScenario::RestoreLegacyBackupFromModernBackup => {
-            &[RealOperation::Rename, RealOperation::Sync]
+            &[RealOperation::Rename, RealOperation::SyncParent]
         }
         RealScenario::ResumeTargetValidation | RealScenario::PersistRollbackCleanupPending => &[
             RealOperation::Write,
-            RealOperation::Sync,
+            RealOperation::SyncFile,
             RealOperation::Publish,
+            RealOperation::SyncParent,
         ],
-        RealScenario::RemoveFailedDelete => &[RealOperation::Remove, RealOperation::Sync],
-        RealScenario::RemoveCompletedLegacyJournal => &[RealOperation::Remove, RealOperation::Sync],
+        RealScenario::RemoveFailedDelete => &[RealOperation::Remove, RealOperation::SyncParent],
+        RealScenario::RemoveCompletedLegacyJournal => {
+            &[RealOperation::Remove, RealOperation::SyncParent]
+        }
         RealScenario::AdoptLegacyActive => &[
             RealOperation::Write,
-            RealOperation::Sync,
+            RealOperation::SyncFile,
             RealOperation::Publish,
+            RealOperation::SyncParent,
         ],
     }
 }
