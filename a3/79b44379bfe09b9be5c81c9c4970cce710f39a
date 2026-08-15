@@ -5,3 +5,5 @@ Le run a terminé avec six jobs verts sur sept : backend Rust, backend Windows c
 Correction : aligner l’import sur cfg(all(test, unix)). Aucun comportement CEF, Ollama ou de production n’est modifié.
 
 Preuves locales : cargo fmt --all -- --check vert ; cargo clippy --all-targets -- -D warnings vert ; test d’identité ciblé 1/1 ; git diff --check vert ; fichier 89 lignes ; graphify update . sans changement topologique.
+
+VALIDATION CI FINALE — run 31914608650, commit a379b44379bfe09b9be5c81c9c4970cce710f39a : 7/7 jobs verts (Frontend, Backend Rust, Backend Windows, Windows CEF natif, macOS CEF natif, Linux WebView, Desktop E2E). Contrôles annexes verts : CodeQL actions/JavaScript/Rust, GitGuardian, npm advisories et RustSec. Aucun job ignoré ni relancé ; le run est allé à son verdict complet.
