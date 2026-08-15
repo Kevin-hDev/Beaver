@@ -37,9 +37,8 @@ pub(crate) fn build_gpu_status(
     vram_total_mb: u64,
     vram_used_mb: u64,
 ) -> GpuStatusPayload {
-    let has_gpu_signal = ps.models.iter().any(|model| model.size_vram > 0)
-        || vram_total_mb > 0
-        || vram_used_mb > 0;
+    let has_gpu_signal =
+        ps.models.iter().any(|model| model.size_vram > 0) || vram_total_mb > 0 || vram_used_mb > 0;
     GpuStatusPayload {
         accelerator: if has_gpu_signal { "GPU" } else { "CPU" }.into(),
         vram_used_mb,
@@ -129,8 +128,8 @@ impl OllamaManager {
     ) {
         let total = crate::services::gpu_vram::detect_vram_mb().unwrap_or(0);
         let used = crate::services::gpu_vram::detect_vram_used_mb().unwrap_or(0);
-        let ps = if let DaemonState::Owned { endpoint }
-        | DaemonState::External { endpoint } = &status.daemon
+        let ps = if let DaemonState::Owned { endpoint } | DaemonState::External { endpoint } =
+            &status.daemon
         {
             let client = reqwest::Client::builder()
                 .timeout(HEALTH_TIMEOUT)

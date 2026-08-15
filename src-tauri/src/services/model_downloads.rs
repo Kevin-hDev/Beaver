@@ -49,7 +49,8 @@ pub async fn run_ollama_download(
     };
 
     let result =
-        ollama_registry::pull_model_with_callback(&ollama, &model, progress, &cancel, &mut digests).await;
+        ollama_registry::pull_model_with_callback(&ollama, &model, progress, &cancel, &mut digests)
+            .await;
     finish_ollama(app, manager, state, result, saved, digests).await;
 }
 
@@ -130,7 +131,8 @@ async fn finish_ollama(
                 )
                 .await;
                 if let Some(perso) = saved {
-                    model_customizations::restore_after_update(ollama, &state.model_id, &perso).await;
+                    model_customizations::restore_after_update(ollama, &state.model_id, &perso)
+                        .await;
                 }
             }
             let _ = app.emit("ollama-models-changed", ());

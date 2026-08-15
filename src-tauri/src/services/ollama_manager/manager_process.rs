@@ -4,9 +4,9 @@ use super::fingerprint::BundleFingerprint;
 use super::path_identity_resolver::NativePathIdentityResolver;
 use super::port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
 use super::process::{
-    DefaultOllamaProcessLauncher, OllamaProcessError, OllamaProcessLauncher,
-    OwnedOllamaProcess,
+    DefaultOllamaProcessLauncher, OllamaProcessError, OllamaProcessLauncher, OwnedOllamaProcess,
 };
+use super::process_error::map_process_error;
 use super::process_receipt::ProcessReceiptStore;
 use super::spawn_profile::{OllamaSpawnAttempt, OllamaSpawnProfile};
 use crate::services::background_command;
@@ -127,12 +127,13 @@ impl OllamaManager {
                 self.publish_daemon(DaemonState::Unavailable);
                 Ok(())
             }
-            Err((process, code)) => {
+            Err(error) => {
+                let (process, code) = *error;
                 self.inner()
                     .owned_process
                     .lock()
                     .map_err(|_| OllamaErrorCode::OllamaInternal)?
-                    .replace(process);
+                .replace(process);
                 Err(code)
             }
         }
@@ -205,25 +206,12 @@ fn spawn_owned_process(
 fn stop_owned_process(
     mut process: OwnedOllamaProcess,
     deadline: Instant,
-) -> Result<(), (OwnedOllamaProcess, OllamaErrorCode)> {
+) -> Result<(), Box<(OwnedOllamaProcess, OllamaErrorCode)>> {
     if let Err(error) = process.terminate() {
-        return Err((process, map_process_error(error)));
+        return Err(Box::new((process, map_process_error(error))));
     }
     if let Err(error) = process.reap(deadline) {
-        return Err((process, map_process_error(error)));
+        return Err(Box::new((process, map_process_error(error))));
     }
     Ok(())
-}
-
-fn map_process_error(error: OllamaProcessError) -> OllamaErrorCode {
-    match error {
-        OllamaProcessError::Receipt => OllamaErrorCode::OllamaStorageUnavailable,
-        OllamaProcessError::EmergencyCapacity => OllamaErrorCode::OllamaOperationInProgress,
-        OllamaProcessError::Spawn
-        | OllamaProcessError::Gate
-        | OllamaProcessError::Admission
-        | OllamaProcessError::Identity
-        | OllamaProcessError::Reap
-        | OllamaProcessError::InvalidState => OllamaErrorCode::OllamaStartFailed,
-    }
 }

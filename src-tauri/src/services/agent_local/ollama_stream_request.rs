@@ -10,12 +10,21 @@ use super::ollama_wire;
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::{ChatRequest, StreamEvent};
 use crate::services::llm::vision;
+use crate::services::compress::realtime_budget::RealtimeBudget;
+use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Copy)]
 pub struct RetryCounts {
     pub parser_retries: u32,
     pub server_retries: u32,
+}
+
+pub(super) struct StreamChatOptions {
+    pub(super) tool_tx: Option<mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
+    pub(super) buffer_content: bool,
+    pub(super) realtime_budget: Option<RealtimeBudget>,
+    pub(super) retry_counts: RetryCounts,
 }
 
 pub enum OpenChatResponse {

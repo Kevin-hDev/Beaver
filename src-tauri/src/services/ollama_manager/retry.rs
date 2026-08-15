@@ -14,7 +14,9 @@ pub(crate) const OLLAMA_RECOVERY_RETRY_DELAYS: [Duration; 4] = [
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum RetryCategory {
     Recovery,
+    #[cfg(test)]
     Validation,
+    #[cfg(test)]
     Storage,
 }
 
@@ -49,13 +51,6 @@ impl OllamaRecoveryRetry {
                 last_log: None,
             })),
         }
-    }
-
-    pub(crate) fn next_delay(&mut self) -> Duration {
-        let mut state = self.lock();
-        let index = state.attempt.min(OLLAMA_RECOVERY_RETRY_DELAYS.len() - 1);
-        state.attempt = state.attempt.saturating_add(1);
-        OLLAMA_RECOVERY_RETRY_DELAYS[index]
     }
 
     pub(crate) fn reset_after_progress(&self) {
@@ -114,10 +109,7 @@ impl OllamaRecoveryRetry {
         }
     }
 
-    pub(crate) async fn wait(
-        &self,
-        cancellation: &CancellationToken,
-    ) -> RetryWait {
+    pub(crate) async fn wait(&self, cancellation: &CancellationToken) -> RetryWait {
         let Some(delay) = self.begin_timer() else {
             return if self.is_closing() {
                 RetryWait::Closing
@@ -136,6 +128,8 @@ impl OllamaRecoveryRetry {
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, RetryState> {
-        self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+        self.inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 }

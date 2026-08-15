@@ -100,7 +100,12 @@ impl CompletionHarness {
     }
 
     pub(crate) fn journal_state(&self) -> Option<OllamaJournalState> {
-        self.state.lock().unwrap().journal.as_ref().map(|j| j.state.clone())
+        self.state
+            .lock()
+            .unwrap()
+            .journal
+            .as_ref()
+            .map(|j| j.state.clone())
     }
 
     pub(crate) fn active(&self) -> Option<BundleFingerprint> {

@@ -33,14 +33,21 @@ fn runtime_contract_serializes_every_public_status_variant() {
 fn runtime_contract_keeps_start_and_cancel_outcomes_typed() {
     let start = OllamaStartOutcome::RejectedDuringShutdown;
     let cancel = CancelOutcome::RejectedDuringShutdown;
-    assert_eq!(serde_json::to_value(start).unwrap(), "rejected_during_shutdown");
-    assert_eq!(serde_json::to_value(cancel).unwrap(), "rejected_during_shutdown");
+    assert_eq!(
+        serde_json::to_value(start).unwrap(),
+        "rejected_during_shutdown"
+    );
+    assert_eq!(
+        serde_json::to_value(cancel).unwrap(),
+        "rejected_during_shutdown"
+    );
 }
 
 #[test]
 #[ignore = "developer command that refreshes the checked-in TypeScript contract"]
 fn export_typescript_runtime_contract() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/types/ollama-runtime.ts");
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../src/types/ollama-runtime.ts");
     std::fs::write(path, typescript_bindings()).unwrap();
 }
 

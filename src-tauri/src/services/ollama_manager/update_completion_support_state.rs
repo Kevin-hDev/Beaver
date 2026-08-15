@@ -109,7 +109,10 @@ impl CompletionHarness {
     ) -> Result<CompletionRecovery, OllamaErrorCode> {
         self.fail_at(CompletionCutpoint::JournalRemoveBefore)?;
         state.journal = None;
-        if self.fail_at(CompletionCutpoint::JournalRemoveAfter).is_err() {
+        if self
+            .fail_at(CompletionCutpoint::JournalRemoveAfter)
+            .is_err()
+        {
             return Err(OllamaErrorCode::OllamaStorageUnavailable);
         }
         Ok(CompletionRecovery::Ready)

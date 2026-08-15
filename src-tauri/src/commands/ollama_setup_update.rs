@@ -46,8 +46,7 @@ pub async fn update_ollama_binary(
                 total: 0,
                 status: "restarting".into(),
             });
-            start_manager_and_wait(manager.inner(), &on_progress, &CancellationToken::new())
-                .await
+            start_manager_and_wait(manager.inner(), &on_progress, &CancellationToken::new()).await
         }
         UpdateOutcome::CleanupPending { code } | UpdateOutcome::Deferred { code } => {
             Err(code.as_str().to_string())

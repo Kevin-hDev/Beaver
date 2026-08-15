@@ -15,7 +15,9 @@ use super::super::probe::{
 };
 use super::super::recovery_decision::{DirectoryEvidence, JournalPresence};
 use super::super::spawn_profile::OllamaSpawnProfile;
-use super::{execute, CompletionRecovery, UpdateBackend, UpdateOutcome, UpdateRequest, UpdateSidecar};
+use super::{
+    execute, CompletionRecovery, UpdateBackend, UpdateOutcome, UpdateRequest, UpdateSidecar,
+};
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

@@ -13,7 +13,10 @@ use tauri::Emitter;
 pub async fn list_ollama_models(
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<Vec<OllamaModel>, String> {
-    if matches!(ollama.manager().status().await.daemon, crate::services::ollama_manager::DaemonState::Unavailable) {
+    if matches!(
+        ollama.manager().status().await.daemon,
+        crate::services::ollama_manager::DaemonState::Unavailable
+    ) {
         return Ok(Vec::new());
     }
     ollama.list_models().await
@@ -67,7 +70,8 @@ pub async fn translate_description(
         return Ok(cached);
     }
     let translated =
-        translator::translate_text(&ollama, &text, &target_lang, translator_model.as_deref()).await?;
+        translator::translate_text(&ollama, &text, &target_lang, translator_model.as_deref())
+            .await?;
     translation_cache::set_cached(&model_name, &target_lang, &translated).await?;
     Ok(translated)
 }

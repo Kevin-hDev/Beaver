@@ -12,9 +12,15 @@ async fn manager_exposes_one_decision_for_all_start_results() {
     let manager = OllamaManager::new(coordinator.work_supervisor());
     let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11500).unwrap());
     let outcomes = [
-        OllamaStartOutcome::OwnedStarted { endpoint: endpoint.clone() },
-        OllamaStartOutcome::OwnedAlreadyRunning { endpoint: endpoint.clone() },
-        OllamaStartOutcome::ExternalAvailable { endpoint: endpoint.clone() },
+        OllamaStartOutcome::OwnedStarted {
+            endpoint: endpoint.clone(),
+        },
+        OllamaStartOutcome::OwnedAlreadyRunning {
+            endpoint: endpoint.clone(),
+        },
+        OllamaStartOutcome::ExternalAvailable {
+            endpoint: endpoint.clone(),
+        },
         OllamaStartOutcome::RejectedDuringShutdown,
         OllamaStartOutcome::BlockedByRecovery {
             code: OllamaErrorCode::OllamaRecoveryDeferred,

@@ -6,6 +6,7 @@ use tauri::Manager;
 // une sentinelle distincte jusqu'à la fin du nettoyage coordonné.
 const BEAVER_RESTART_REQUEST_CODE: i32 = i32::MAX - 1;
 
+#[cfg(test)]
 mod blocking;
 mod cleanup;
 mod coordinator_emergency;

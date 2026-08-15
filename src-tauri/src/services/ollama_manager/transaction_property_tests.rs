@@ -1,5 +1,5 @@
-use super::update_completion_tests::{rejection_cutpoint, success_cutpoint};
 use super::update_completion_support::CompletionCutpoint;
+use super::update_completion_tests::{rejection_cutpoint, success_cutpoint};
 
 const SUCCESS_CUTPOINTS: &[CompletionCutpoint] = &[
     CompletionCutpoint::BackupMoveBefore,

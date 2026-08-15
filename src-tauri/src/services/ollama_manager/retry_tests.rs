@@ -4,7 +4,7 @@ use std::time::Duration;
 
 #[test]
 fn retry_schedule_is_five_fifteen_sixty_three_hundred_then_saturated() {
-    let mut retry = OllamaRecoveryRetry::new();
+    let retry = OllamaRecoveryRetry::new();
     let expected = [
         Duration::from_secs(5),
         Duration::from_secs(15),
@@ -14,17 +14,20 @@ fn retry_schedule_is_five_fifteen_sixty_three_hundred_then_saturated() {
     ];
     assert_eq!(OLLAMA_RECOVERY_RETRY_DELAYS, expected[..4]);
     for delay in expected {
-        assert_eq!(retry.next_delay(), delay);
+        assert_eq!(retry.begin_timer(), Some(delay));
+        retry.finish_timer();
     }
 }
 
 #[test]
 fn durable_progress_resets_retry_sequence() {
-    let mut retry = OllamaRecoveryRetry::new();
-    assert_eq!(retry.next_delay(), Duration::from_secs(5));
-    assert_eq!(retry.next_delay(), Duration::from_secs(15));
+    let retry = OllamaRecoveryRetry::new();
+    assert_eq!(retry.begin_timer(), Some(Duration::from_secs(5)));
+    retry.finish_timer();
+    assert_eq!(retry.begin_timer(), Some(Duration::from_secs(15)));
+    retry.finish_timer();
     retry.reset_after_progress();
-    assert_eq!(retry.next_delay(), Duration::from_secs(5));
+    assert_eq!(retry.begin_timer(), Some(Duration::from_secs(5)));
 }
 
 #[test]

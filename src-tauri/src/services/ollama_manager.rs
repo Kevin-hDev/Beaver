@@ -30,12 +30,14 @@ mod manager;
 mod migration;
 mod path_identity;
 mod path_identity_resolver;
+pub(crate) mod polling;
 mod port;
 mod probe;
 mod probe_http;
 mod probe_ownership;
 mod probe_runner;
 mod probe_support;
+mod process_error;
 #[allow(dead_code)]
 mod process;
 #[allow(dead_code)]
@@ -52,9 +54,8 @@ mod recovery_helpers;
 mod recovery_probe;
 mod release_fetch;
 mod release_redirect;
-pub(crate) mod polling;
-mod retry;
 pub(crate) mod release_source;
+mod retry;
 mod rollback;
 mod spawn_environment;
 #[cfg(unix)]
@@ -70,6 +71,8 @@ mod types;
 mod update;
 
 #[cfg(test)]
+mod adoption_tests;
+#[cfg(test)]
 mod blocking_tests;
 #[cfg(test)]
 mod cleanup_tests;
@@ -84,11 +87,17 @@ mod durable_fs_tests;
 #[cfg(test)]
 mod extract_tests;
 #[cfg(test)]
+mod historical_scenarios_tests;
+#[cfg(test)]
 mod install_tests;
+#[cfg(test)]
+mod layout_fixtures_tests;
 #[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
 mod migration_tests;
+#[cfg(test)]
+mod polling_tests;
 #[cfg(test)]
 mod port_tests;
 #[cfg(test)]
@@ -106,6 +115,8 @@ mod recovery_tests;
 #[cfg(test)]
 mod release_source_tests;
 #[cfg(test)]
+mod retry_tests;
+#[cfg(test)]
 mod rollback_tests;
 #[cfg(test)]
 mod spawn_profile_attempt_tests;
@@ -116,27 +127,17 @@ mod spawn_profile_test_support;
 #[cfg(test)]
 mod spawn_profile_tests;
 #[cfg(test)]
-mod update_tests;
+mod startup_tests;
+#[cfg(test)]
+mod transaction_property_tests;
+#[cfg(test)]
+mod typescript_contract_tests;
 #[cfg(test)]
 mod update_completion_support;
 #[cfg(test)]
 mod update_completion_tests;
 #[cfg(test)]
-mod startup_tests;
-#[cfg(test)]
-mod retry_tests;
-#[cfg(test)]
-mod polling_tests;
-#[cfg(test)]
-mod adoption_tests;
-#[cfg(test)]
-mod historical_scenarios_tests;
-#[cfg(test)]
-mod layout_fixtures_tests;
-#[cfg(test)]
-mod transaction_property_tests;
-#[cfg(test)]
-mod typescript_contract_tests;
+mod update_tests;
 #[cfg(all(test, windows))]
 mod windows_durable_fs_tests;
 #[cfg(all(test, windows))]
@@ -167,8 +168,6 @@ pub use journal::{
 };
 pub use manager::OllamaManager;
 #[allow(unused_imports)]
-pub(crate) use startup::{OllamaStartupBarrier, StartupBarrierState};
-#[allow(unused_imports)]
 pub(crate) use path_identity::{
     CanonicalDirectory, NativeDirectoryIdentity, PathIdentityResolver, ValidatedPathComponent,
     VerifiedDirectoryLocation,
@@ -189,6 +188,8 @@ pub use release_source::{
 };
 #[allow(unused_imports)]
 pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
+#[allow(unused_imports)]
+pub(crate) use startup::{OllamaStartupBarrier, StartupBarrierState};
 #[allow(unused_imports)]
 pub use types::{
     BundleState, CancelOutcome, DaemonState, OllamaCliArgs, OllamaCliOutput, OllamaEndpoint,

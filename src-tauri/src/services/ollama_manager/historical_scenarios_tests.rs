@@ -134,10 +134,16 @@ fn line_22_distinguishes_owned_spawn_failure_and_external_daemon() {
         endpoint: endpoint.clone(),
     };
     assert!(matches!(owned, OllamaStartOutcome::OwnedStarted { .. }));
-    assert_eq!(failed, OllamaStartOutcome::Failed {
-        code: OllamaErrorCode::OllamaStartFailed,
-    });
-    assert!(matches!(external, OllamaStartOutcome::ExternalAvailable { .. }));
+    assert_eq!(
+        failed,
+        OllamaStartOutcome::Failed {
+            code: OllamaErrorCode::OllamaStartFailed,
+        }
+    );
+    assert!(matches!(
+        external,
+        OllamaStartOutcome::ExternalAvailable { .. }
+    ));
     assert_ne!(
         TargetValidation::InvalidTarget {
             code: OllamaErrorCode::OllamaBundleInvalid,
@@ -146,5 +152,10 @@ fn line_22_distinguishes_owned_spawn_failure_and_external_daemon() {
             code: OllamaErrorCode::OllamaValidationDeferred,
         }
     );
-    assert_ne!(DaemonState::External { endpoint: endpoint.clone() }, DaemonState::Unavailable);
+    assert_ne!(
+        DaemonState::External {
+            endpoint: endpoint.clone()
+        },
+        DaemonState::Unavailable
+    );
 }

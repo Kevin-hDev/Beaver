@@ -23,6 +23,7 @@ pub enum ProcessKind {
     ForecastRuntime,
     GpuProbe,
     Mcp,
+    #[cfg(test)]
     Ollama,
     Searxng,
     Terminal,
@@ -49,6 +50,7 @@ impl ProcessKind {
             Self::ForecastRuntime => "forecast-runtime",
             Self::GpuProbe => "gpu-probe",
             Self::Mcp => "mcp",
+            #[cfg(test)]
             Self::Ollama => "ollama",
             Self::Searxng => "searxng",
             Self::Terminal => "terminal",

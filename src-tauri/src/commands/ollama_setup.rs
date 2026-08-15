@@ -1,6 +1,6 @@
 use crate::services::ollama_manager::{
-    BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaStartOutcome, OllamaVersion,
-    OllamaRuntimeStatus, OperationState,
+    BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaRuntimeStatus,
+    OllamaStartOutcome, OllamaVersion, OperationState,
 };
 use serde::Serialize;
 use std::ffi::OsString;
@@ -17,9 +17,7 @@ pub struct OllamaSetupProgress {
 }
 
 #[tauri::command]
-pub async fn is_ollama_installed(
-    manager: tauri::State<'_, OllamaManager>,
-) -> Result<bool, String> {
+pub async fn is_ollama_installed(manager: tauri::State<'_, OllamaManager>) -> Result<bool, String> {
     Ok(matches!(manager.status().await.bundle, BundleState::Ready))
 }
 
@@ -31,9 +29,7 @@ pub async fn get_ollama_runtime_status(
 }
 
 #[tauri::command]
-pub fn retry_ollama_recovery(
-    manager: tauri::State<'_, OllamaManager>,
-) -> Result<(), String> {
+pub fn retry_ollama_recovery(manager: tauri::State<'_, OllamaManager>) -> Result<(), String> {
     manager
         .request_recovery_retry()
         .map_err(|code| code.as_str().to_string())
@@ -93,9 +89,7 @@ pub(crate) async fn run_download_ollama(
 }
 
 #[tauri::command]
-pub async fn cancel_ollama_setup(
-    manager: tauri::State<'_, OllamaManager>,
-) -> Result<(), String> {
+pub async fn cancel_ollama_setup(manager: tauri::State<'_, OllamaManager>) -> Result<(), String> {
     match manager.cancel_operation().await {
         crate::services::ollama_manager::CancelOutcome::RejectedDuringShutdown => {
             Err("ollama-closing".into())
@@ -167,7 +161,10 @@ async fn resolve_install_version() -> OllamaVersion {
     match crate::services::ollama_manager::release_source::fetch_latest_version().await {
         Ok(version) => version,
         Err(error) => {
-            ::log::warn!("[ollama-setup] latest version unavailable: {}", error.as_str());
+            ::log::warn!(
+                "[ollama-setup] latest version unavailable: {}",
+                error.as_str()
+            );
             crate::services::ollama_manager::release_source::fallback_version()
                 .expect("bundled Ollama version must be valid")
         }

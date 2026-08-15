@@ -18,14 +18,18 @@ impl ValidatedJournal {
     ) -> Result<Self, OllamaErrorCode> {
         match &journal.state {
             OllamaJournalState::PendingValidation { target, previous }
-                if target == observed && target != previous => Ok(Self {
+                if target == observed && target != previous =>
+            {
+                Ok(Self {
                     target: target.clone(),
                     previous: previous.clone(),
-                }),
+                })
+            }
             _ => Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn target(&self) -> &BundleFingerprint {
         &self.target
     }
@@ -61,15 +65,19 @@ impl RejectedJournal {
     ) -> Result<Self, OllamaErrorCode> {
         match &journal.state {
             OllamaJournalState::PendingValidation { target, previous }
-                if target == rejected_target && target != previous => Ok(Self {
+                if target == rejected_target && target != previous =>
+            {
+                Ok(Self {
                     previous: previous.clone(),
                     rejected_target: rejected_target.clone(),
                     code,
-                }),
+                })
+            }
             _ => Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn rejected_target(&self) -> &BundleFingerprint {
         &self.rejected_target
     }
@@ -139,19 +147,14 @@ pub(crate) async fn reject_target_and_restore<B: UpdateBackend>(
             }
             Ok(CompletionRecovery::Progress) => continue,
             Ok(CompletionRecovery::Deferred { .. }) | Err(_) => {
-                return Ok(UpdateOutcome::Deferred {
-                    code: journal.code,
-                });
+                return Ok(UpdateOutcome::Deferred { code: journal.code });
             }
         }
     }
     Ok(UpdateOutcome::Deferred { code: journal.code })
 }
 
-async fn ensure_pending<B, F>(
-    backend: &B,
-    matches: F,
-) -> Result<(), OllamaErrorCode>
+async fn ensure_pending<B, F>(backend: &B, matches: F) -> Result<(), OllamaErrorCode>
 where
     B: UpdateBackend,
     F: Fn(&OllamaTransactionJournal) -> bool,

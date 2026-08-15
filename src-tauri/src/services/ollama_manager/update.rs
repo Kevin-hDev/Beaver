@@ -10,10 +10,10 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio_util::sync::CancellationToken;
 
-#[path = "update_platform.rs"]
-pub(crate) mod platform;
 #[path = "update_completion.rs"]
 mod completion;
+#[path = "update_platform.rs"]
+pub(crate) mod platform;
 
 pub(crate) use completion::{
     complete_valid_update, reject_target_and_restore, CompletionRecovery, RejectedJournal,

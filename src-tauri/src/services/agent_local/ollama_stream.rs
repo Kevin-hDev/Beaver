@@ -1,6 +1,6 @@
 use crate::services::agent_local::ollama_stream_process::{flush_filter, process_chunk};
 use crate::services::agent_local::ollama_stream_request::{
-    open_chat_response, OpenChatResponse, RetryCounts,
+    open_chat_response, OpenChatResponse, RetryCounts, StreamChatOptions,
 };
 use crate::services::agent_local::ollama_tool_parse_retry::{
     is_tool_parse_crash, MAX_PARSER_RETRIES,
@@ -54,12 +54,14 @@ pub async fn stream_chat_with_tool_notify(
         on_event,
         request,
         cancel,
-        Some(tool_tx),
-        buffer_content,
-        realtime_budget,
-        RetryCounts {
-            parser_retries: 0,
-            server_retries: 0,
+        StreamChatOptions {
+            tool_tx: Some(tool_tx),
+            buffer_content,
+            realtime_budget,
+            retry_counts: RetryCounts {
+                parser_retries: 0,
+                server_retries: 0,
+            },
         },
     )
     .await
@@ -70,13 +72,17 @@ async fn stream_chat_inner(
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
     cancel: CancellationToken,
-    tool_tx: Option<mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
-    buffer_content: bool,
-    mut realtime_budget: Option<RealtimeBudget>,
-    retry_counts: RetryCounts,
+    mut options: StreamChatOptions,
 ) -> Result<StreamOutcome, String> {
-    let resp = match open_chat_response(ollama, on_event, request, &cancel, retry_counts, !buffer_content)
-        .await?
+    let resp = match open_chat_response(
+        ollama,
+        on_event,
+        request,
+        &cancel,
+        options.retry_counts,
+        !options.buffer_content,
+    )
+    .await?
     {
         OpenChatResponse::Ready(response) => response,
         OpenChatResponse::Retry { request, counts } => {
@@ -85,10 +91,10 @@ async fn stream_chat_inner(
                 on_event,
                 &request,
                 cancel,
-                tool_tx,
-                buffer_content,
-                realtime_budget,
-                counts,
+                StreamChatOptions {
+                    retry_counts: counts,
+                    ..options
+                },
             ))
             .await;
         }
@@ -129,22 +135,22 @@ async fn stream_chat_inner(
                     Ok(Some(text)) => {
                         if let Err(e) = process_chunk(
                             &text, on_event, &mut token_count,
-                            &mut result, tool_tx.as_ref(), &mut think_filter,
-                            buffer_content,
+                            &mut result, options.tool_tx.as_ref(), &mut think_filter,
+                            options.buffer_content,
                         ) {
                             // Bug Ollama #16383 : crash du parser tool-call en plein
                             // stream. Si aucun contenu final n'a encore été émis (on
                             // n'a reçu que du thinking), on peut retenter proprement.
                             if is_tool_parse_crash(&e)
-                                && retry_counts.parser_retries < MAX_PARSER_RETRIES
+                                && options.retry_counts.parser_retries < MAX_PARSER_RETRIES
                                 && result.content.is_empty()
                             {
-                                let attempt = retry_counts.parser_retries + 1;
+                                let attempt = options.retry_counts.parser_retries + 1;
                                 ::log::warn!(
                                     "[ollama-stream] crash parser tool-call mid-stream (#{}), retry",
                                     attempt
                                 );
-                                if !buffer_content {
+                                if !options.buffer_content {
                                     crate::services::agent_local::ollama_retry_indicator::send_retry_indicator(
                                         on_event,
                                         crate::services::agent_local::ollama_retry_indicator::REASON_PARSER_CRASH,
@@ -157,12 +163,14 @@ async fn stream_chat_inner(
                                     on_event,
                                     request,
                                     cancel,
-                                    tool_tx,
-                                    buffer_content,
-                                    realtime_budget,
-                                    RetryCounts {
-                                        parser_retries: attempt,
-                                        ..retry_counts
+                                    StreamChatOptions {
+                                        tool_tx: options.tool_tx,
+                                        buffer_content: options.buffer_content,
+                                        realtime_budget: options.realtime_budget,
+                                        retry_counts: RetryCounts {
+                                            parser_retries: attempt,
+                                            ..options.retry_counts
+                                        },
                                     },
                                 ))
                                 .await;
@@ -170,7 +178,7 @@ async fn stream_chat_inner(
                             let _ = on_event.send(StreamEvent::Error { message: e.clone(), is_connection: false, context_capacity: None, diagnostic: None });
                             return Err(e);
                         }
-                        if should_interrupt(&mut realtime_budget, token_count, !result.tool_calls.is_empty()) {
+                        if should_interrupt(&mut options.realtime_budget, token_count, !result.tool_calls.is_empty()) {
                             interrupted = true;
                             break;
                         }
@@ -195,7 +203,7 @@ async fn stream_chat_inner(
             on_event,
             &mut token_count,
             &mut result,
-            buffer_content,
+            options.buffer_content,
         );
     }
     Ok(if interrupted {

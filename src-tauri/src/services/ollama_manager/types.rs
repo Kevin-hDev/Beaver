@@ -81,7 +81,10 @@ pub enum CancelOutcome {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum OllamaCliArgs {
     Version,
-    Create { model: String, modelfile: std::path::PathBuf },
+    Create {
+        model: String,
+        modelfile: std::path::PathBuf,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -100,9 +103,9 @@ impl OllamaCliArgs {
                         .chars()
                         .all(|ch| ch.is_ascii_alphanumeric() || ":._-/".contains(ch))
                     || !modelfile.is_absolute()
-                    || modelfile.components().any(|component| {
-                        matches!(component, std::path::Component::ParentDir)
-                    })
+                    || modelfile
+                        .components()
+                        .any(|component| matches!(component, std::path::Component::ParentDir))
                 {
                     return Err(OllamaErrorCode::OllamaUnavailable);
                 }

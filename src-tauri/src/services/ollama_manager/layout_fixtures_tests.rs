@@ -50,7 +50,11 @@ fn every_beaver_layout_fixture_converges_without_touching_models() {
             let paths = ollama_paths(root.path());
             let models = root.path().join(format!("models-{platform}"));
             fs::create_dir_all(&models).expect("models directory");
-            fs::write(models.join("manifest.json"), format!("{version}:{platform}")).unwrap();
+            fs::write(
+                models.join("manifest.json"),
+                format!("{version}:{platform}"),
+            )
+            .unwrap();
             for (path, name) in [
                 (&paths.active, "ollama-bundle"),
                 (&paths.legacy_staging, "ollama-bundle-staging"),
@@ -58,7 +62,10 @@ fn every_beaver_layout_fixture_converges_without_touching_models() {
                 (&paths.failed, "ollama-bundle-failed"),
             ] {
                 assert_eq!(path.parent(), Some(root.path()));
-                assert_eq!(path.file_name().and_then(|value| value.to_str()), Some(name));
+                assert_eq!(
+                    path.file_name().and_then(|value| value.to_str()),
+                    Some(name)
+                );
                 fs::create_dir_all(path).expect("published layout directory");
                 fs::remove_dir(path).expect("remove unused layout directory");
             }

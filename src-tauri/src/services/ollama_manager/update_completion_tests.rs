@@ -61,7 +61,9 @@ async fn rejected_target_restores_previous_and_keeps_models() {
     let harness = CompletionHarness::valid();
     harness.set_pending();
     let models = harness.models();
-    let result = reject_target_and_restore(&harness, harness.rejected()).await.unwrap();
+    let result = reject_target_and_restore(&harness, harness.rejected())
+        .await
+        .unwrap();
     assert_eq!(
         result,
         UpdateOutcome::Deferred {
@@ -86,7 +88,9 @@ fn rejection_never_writes_an_empty_rejected_target() {
     assert_eq!(rejected.rejected_target(), &harness.target);
 }
 
-pub(crate) async fn success_cutpoint(cutpoint: super::update_completion_support::CompletionCutpoint) {
+pub(crate) async fn success_cutpoint(
+    cutpoint: super::update_completion_support::CompletionCutpoint,
+) {
     let harness = CompletionHarness::valid();
     harness.set_pending();
     harness.fail_once(cutpoint);
@@ -97,7 +101,9 @@ pub(crate) async fn success_cutpoint(cutpoint: super::update_completion_support:
     assert_eq!(harness.journal_state(), None);
 }
 
-pub(crate) async fn rejection_cutpoint(cutpoint: super::update_completion_support::CompletionCutpoint) {
+pub(crate) async fn rejection_cutpoint(
+    cutpoint: super::update_completion_support::CompletionCutpoint,
+) {
     let harness = CompletionHarness::valid();
     harness.set_pending();
     harness.fail_once(cutpoint);

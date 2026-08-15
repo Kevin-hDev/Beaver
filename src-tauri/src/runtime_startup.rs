@@ -42,13 +42,19 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
     if background
         .spawn_task(move |cancel| async move {
             let barrier = manager.run_startup_recovery().await;
-            if !matches!(barrier, crate::services::ollama_manager::StartupBarrierState::Ready) {
+            if !matches!(
+                barrier,
+                crate::services::ollama_manager::StartupBarrierState::Ready
+            ) {
                 ::log::warn!("[ollama] startup blocked until recovery succeeds");
                 let ready = tokio::select! {
                     _ = cancel.cancelled() => return,
                     state = manager.wait_startup_ready() => state,
                 };
-                if !matches!(ready, crate::services::ollama_manager::StartupBarrierState::Ready) {
+                if !matches!(
+                    ready,
+                    crate::services::ollama_manager::StartupBarrierState::Ready
+                ) {
                     return;
                 }
             }
@@ -58,13 +64,18 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
             }
             match manager.start().await {
                 crate::services::ollama_manager::OllamaStartOutcome::Failed { code }
-                | crate::services::ollama_manager::OllamaStartOutcome::BlockedByRecovery { code } => {
+                | crate::services::ollama_manager::OllamaStartOutcome::BlockedByRecovery { code } =>
+                {
                     ::log::error!("[ollama] manager start blocked code={}", code.as_str());
                 }
                 crate::services::ollama_manager::OllamaStartOutcome::RejectedDuringShutdown => {}
                 crate::services::ollama_manager::OllamaStartOutcome::OwnedStarted { .. }
-                | crate::services::ollama_manager::OllamaStartOutcome::OwnedAlreadyRunning { .. }
-                | crate::services::ollama_manager::OllamaStartOutcome::ExternalAvailable { .. } => {}
+                | crate::services::ollama_manager::OllamaStartOutcome::OwnedAlreadyRunning {
+                    ..
+                }
+                | crate::services::ollama_manager::OllamaStartOutcome::ExternalAvailable {
+                    ..
+                } => {}
             }
         })
         .is_err()
