@@ -20,10 +20,22 @@ pub(super) enum OllamaFsErrorKind {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum OllamaFsOperation {
+    InspectHandle,
+    ReopenDirectory,
+    EnumerateDirectory,
+    OpenChild,
+    MarkChildDeleted,
+    MarkRootDeleted,
+    SyncParent,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct OllamaFsError {
     kind: OllamaFsErrorKind,
     cancelled: bool,
     os_code: Option<u32>,
+    operation: Option<OllamaFsOperation>,
 }
 
 impl OllamaFsError {
@@ -32,6 +44,7 @@ impl OllamaFsError {
             kind,
             cancelled: false,
             os_code: None,
+            operation: None,
         }
     }
 
@@ -40,6 +53,7 @@ impl OllamaFsError {
             kind,
             cancelled: false,
             os_code: Some(os_code),
+            operation: None,
         }
     }
 
@@ -48,6 +62,7 @@ impl OllamaFsError {
             kind: OllamaFsErrorKind::Other,
             cancelled: true,
             os_code: None,
+            operation: None,
         }
     }
 
@@ -61,6 +76,15 @@ impl OllamaFsError {
 
     pub(super) const fn os_code(self) -> Option<u32> {
         self.os_code
+    }
+
+    pub(super) const fn at(mut self, operation: OllamaFsOperation) -> Self {
+        self.operation = Some(operation);
+        self
+    }
+
+    pub(super) const fn operation(self) -> Option<OllamaFsOperation> {
+        self.operation
     }
 }
 

@@ -3,7 +3,7 @@ use super::durable_fs::OllamaDurableFs;
 use super::durable_fs::PlatformOllamaDurableFs;
 use super::durable_fs::{
     retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
-    OllamaFsError, OllamaFsErrorKind, WINDOWS_PARENT_FLUSH_ACCESS,
+    OllamaFsError, OllamaFsErrorKind, OllamaFsOperation, WINDOWS_PARENT_FLUSH_ACCESS,
 };
 use super::durable_fs_test_support::{ExpectedCall, FailurePoint, ScriptedFs};
 use super::journal::{OllamaJournalState, OllamaTransactionJournal};
@@ -297,6 +297,15 @@ fn native_error_evidence_preserves_the_raw_os_code() {
 
     assert_eq!(error.kind(), OllamaFsErrorKind::PermissionDenied);
     assert_eq!(error.os_code(), Some(5));
+}
+
+#[test]
+fn native_error_evidence_preserves_the_failed_operation() {
+    let error = OllamaFsError::from_os_code(OllamaFsErrorKind::PermissionDenied, 5)
+        .at(OllamaFsOperation::OpenChild);
+
+    assert_eq!(error.os_code(), Some(5));
+    assert_eq!(error.operation(), Some(OllamaFsOperation::OpenChild));
 }
 
 #[test]

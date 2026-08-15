@@ -1,4 +1,4 @@
-use super::super::{win_error, OllamaFsError, OllamaFsErrorKind};
+use super::super::{win_error, OllamaFsError};
 use windows_sys::Win32::Foundation::{
     CloseHandle, GetLastError, ERROR_ACCESS_DENIED, ERROR_INVALID_PARAMETER, ERROR_NOT_SUPPORTED,
     HANDLE, INVALID_HANDLE_VALUE,

@@ -1,4 +1,4 @@
-use super::super::super::{OllamaFsError, OllamaFsErrorKind};
+use super::super::super::{OllamaFsError, OllamaFsErrorKind, OllamaFsOperation};
 use super::handles;
 use std::mem::offset_of;
 use windows_sys::Win32::Foundation::{GetLastError, ERROR_NO_MORE_FILES, HANDLE};
@@ -40,7 +40,9 @@ pub(super) fn remove_contents(
         if ok == 0 {
             return match unsafe { GetLastError() } {
                 ERROR_NO_MORE_FILES => Ok(()),
-                code => Err(super::super::win_error(code)),
+                code => {
+                    Err(super::super::win_error(code).at(OllamaFsOperation::EnumerateDirectory))
+                }
             };
         }
         restart = false;
@@ -158,8 +160,10 @@ fn remove_child(
     if entry.attributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
-    let handle = handles::open_child(volume_hint, entry.file_id, entry.directory)?;
-    let info = handles::file_info(handle.raw())?;
+    let handle = handles::open_child(volume_hint, entry.file_id, entry.directory)
+        .map_err(|error| error.at(OllamaFsOperation::OpenChild))?;
+    let info = handles::file_info(handle.raw())
+        .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
     if info.dwVolumeSerialNumber != volume_serial
         || handles::file_id(&info) != entry.file_id as u64
         || info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0
@@ -177,4 +181,5 @@ fn remove_child(
         )?;
     }
     handles::mark_deleted(handle.raw())
+        .map_err(|error| error.at(OllamaFsOperation::MarkChildDeleted))
 }

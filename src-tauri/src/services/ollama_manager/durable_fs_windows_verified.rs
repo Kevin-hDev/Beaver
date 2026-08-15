@@ -1,7 +1,7 @@
 use super::super::super::path_identity::{
     CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver,
 };
-use super::{sync_parent_path, OllamaFsError, OllamaFsErrorKind};
+use super::{sync_parent_path, OllamaFsError, OllamaFsErrorKind, OllamaFsOperation};
 use std::os::windows::io::AsRawHandle;
 
 #[path = "durable_fs_windows_verified/entries.rs"]
@@ -18,10 +18,13 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
     let stable = root
         .stable_handle()
         .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
-    let stable_info = handles::file_info(stable.as_raw_handle())?;
+    let stable_info = handles::file_info(stable.as_raw_handle())
+        .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
     revalidate_root(root, expected, &stable_info)?;
-    let deletion = handles::reopen_directory(stable.as_raw_handle())?;
-    let deletion_info = handles::file_info(deletion.raw())?;
+    let deletion = handles::reopen_directory(stable.as_raw_handle())
+        .map_err(|error| error.at(OllamaFsOperation::ReopenDirectory))?;
+    let deletion_info = handles::file_info(deletion.raw())
+        .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
     if !handles::same_identity(&stable_info, &deletion_info) {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
@@ -36,8 +39,9 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
         &mut removed_entries,
     )?;
     revalidate_root(root, expected, &stable_info)?;
-    handles::mark_deleted(deletion.raw())?;
-    sync_parent_path(root.path())
+    handles::mark_deleted(deletion.raw())
+        .map_err(|error| error.at(OllamaFsOperation::MarkRootDeleted))?;
+    sync_parent_path(root.path()).map_err(|error| error.at(OllamaFsOperation::SyncParent))
 }
 
 fn revalidate_root(
@@ -51,7 +55,8 @@ fn revalidate_root(
     let current_handle = current
         .stable_handle()
         .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?;
-    let current_info = handles::file_info(current_handle.as_raw_handle())?;
+    let current_info = handles::file_info(current_handle.as_raw_handle())
+        .map_err(|error| error.at(OllamaFsOperation::InspectHandle))?;
     if current.identity() != Some(expected) || !handles::same_identity(stable_info, &current_info) {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
