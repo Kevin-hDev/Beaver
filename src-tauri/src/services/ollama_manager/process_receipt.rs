@@ -106,7 +106,7 @@ pub(crate) struct ProcessReceiptStore {
 }
 
 impl ProcessReceiptStore {
-    pub(crate) fn new(fs: Arc<dyn OllamaDurableFs>, path: PathBuf, tmp: PathBuf) -> Self {
+    pub(super) fn new(fs: Arc<dyn OllamaDurableFs>, path: PathBuf, tmp: PathBuf) -> Self {
         Self { fs, path, tmp }
     }
 

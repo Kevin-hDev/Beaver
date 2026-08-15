@@ -6,21 +6,31 @@ use crate::app_exit::EmergencyHandoffReason;
 use std::time::Instant;
 
 impl GatedOllamaProcess {
+    pub(crate) fn terminate(&mut self) -> Result<(), OllamaProcessError> {
+        self.native
+            .as_mut()
+            .ok_or(OllamaProcessError::InvalidState)?
+            .terminate()
+    }
+
+    pub(crate) fn reap(&mut self, deadline: Instant) -> Result<(), OllamaProcessError> {
+        self.native
+            .as_mut()
+            .ok_or(OllamaProcessError::InvalidState)?
+            .reap(deadline)
+    }
+
     pub(crate) fn terminate_and_reap(
         mut self,
         deadline: Instant,
     ) -> Result<(), OllamaProcessError> {
-        self.native
-            .as_mut()
-            .ok_or(OllamaProcessError::InvalidState)?
-            .terminate_and_reap(deadline)
+        self.terminate()?;
+        self.reap(deadline)
     }
 
     fn abort(&mut self) -> Result<(), OllamaProcessError> {
-        self.native
-            .as_mut()
-            .ok_or(OllamaProcessError::InvalidState)?
-            .terminate_and_reap(Instant::now() + PROCESS_REAP_FALLBACK_TIMEOUT)
+        self.terminate()?;
+        self.reap(Instant::now() + PROCESS_REAP_FALLBACK_TIMEOUT)
     }
 
     pub(super) fn cleanup_failed_publish(
@@ -55,7 +65,8 @@ impl GatedOllamaProcess {
 impl Drop for GatedOllamaProcess {
     fn drop(&mut self) {
         if let Some(native) = self.native.as_mut() {
-            let _ = native.terminate_and_reap(Instant::now() + PROCESS_REAP_FALLBACK_TIMEOUT);
+            let _ = native.terminate();
+            let _ = native.reap(Instant::now() + PROCESS_REAP_FALLBACK_TIMEOUT);
         }
     }
 }

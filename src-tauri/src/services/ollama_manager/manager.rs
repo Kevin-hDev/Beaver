@@ -227,3 +227,4 @@ fn map_admission_error(error: ServiceWorkAdmissionError) -> OllamaErrorCode {
         }
     }
 }
+include!("manager_update.rs");

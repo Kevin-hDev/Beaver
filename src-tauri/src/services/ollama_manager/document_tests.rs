@@ -54,7 +54,6 @@ fn assert_direct_children(paths: &OllamaPaths, root: &Path) {
         &paths.journal_tmp,
         &paths.migration_marker,
         &paths.migration_marker_tmp,
-        &paths.bundle_receipt,
         &paths.process_receipt,
         &paths.probe_models,
     ];

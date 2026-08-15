@@ -115,8 +115,8 @@ pub fn read_receipt<F: OllamaDurableFs>(
 
 pub fn receipt_paths(root: &Path) -> (PathBuf, PathBuf) {
     (
-        root.join("ollama-bundle-receipt.json"),
-        root.join("ollama-bundle-receipt.tmp"),
+        crate::services::paths::bundle_receipt_path(root),
+        crate::services::paths::bundle_receipt_tmp_path(root),
     )
 }
 

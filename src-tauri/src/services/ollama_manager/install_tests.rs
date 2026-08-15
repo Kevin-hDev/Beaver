@@ -114,7 +114,8 @@ async fn version_and_receipt_are_coherent_before_publication() {
         std::fs::read_to_string(paths.install_staging.join("VERSION")).unwrap(),
         "1.2.3"
     );
-    let receipt = read_receipt(&*fs, &paths.bundle_receipt).unwrap().unwrap();
+    let receipt_path = crate::services::paths::bundle_receipt_path(&paths.install_staging);
+    let receipt = read_receipt(&*fs, &receipt_path).unwrap().unwrap();
     assert_eq!(receipt.fingerprint, prepared.fingerprint);
     assert_eq!(receipt, BundleReceipt::new(prepared.fingerprint));
 }
@@ -180,7 +181,8 @@ async fn first_install_publishes_after_probe_and_reinspection() {
         std::fs::read_to_string(request.paths.active.join("VERSION")).unwrap(),
         "1.2.3"
     );
-    let receipt = std::fs::read(&request.paths.bundle_receipt).unwrap();
+    let receipt_path = crate::services::paths::bundle_receipt_path(&request.paths.active);
+    let receipt = std::fs::read(receipt_path).unwrap();
     assert_eq!(
         BundleReceipt::parse_bounded(&receipt)
             .unwrap()

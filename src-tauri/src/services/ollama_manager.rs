@@ -64,6 +64,7 @@ mod spawn_gate_windows;
 mod spawn_profile;
 mod spawn_profile_paths;
 mod types;
+mod update;
 
 #[cfg(test)]
 mod blocking_tests;
@@ -111,6 +112,8 @@ mod spawn_profile_environment_tests;
 mod spawn_profile_test_support;
 #[cfg(test)]
 mod spawn_profile_tests;
+#[cfg(test)]
+mod update_tests;
 #[cfg(all(test, windows))]
 mod windows_durable_fs_tests;
 #[cfg(all(test, windows))]
@@ -152,6 +155,8 @@ pub use port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
 #[allow(unused_imports)]
 pub use probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 #[allow(unused_imports)]
+pub(crate) use process_owned::OwnedProcessSidecar;
+#[allow(unused_imports)]
 pub use recovery::{RecoveryOutcome, RecoveryReason};
 #[allow(unused_imports)]
 pub use release_source::{
@@ -164,3 +169,5 @@ pub use types::{
     BundleState, DaemonState, OllamaEndpoint, OllamaProgressStage, OllamaRuntimeStatus,
     OllamaStartOutcome, OperationState,
 };
+#[allow(unused_imports)]
+pub use update::{UpdateOutcome, UpdateRequest};

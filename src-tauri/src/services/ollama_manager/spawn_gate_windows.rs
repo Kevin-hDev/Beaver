@@ -7,8 +7,8 @@ use std::ptr;
 use std::time::Instant;
 use windows_sys::Win32::Foundation::{CloseHandle, HANDLE, WAIT_OBJECT_0, WAIT_TIMEOUT};
 use windows_sys::Win32::System::Threading::{
-    CreateProcessW, ResumeThread, CREATE_NO_WINDOW, CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT,
-    PROCESS_INFORMATION, STARTUPINFOW,
+    CreateProcessW, ResumeThread, TerminateProcess, WaitForSingleObject, CREATE_NO_WINDOW,
+    CREATE_SUSPENDED, CREATE_UNICODE_ENVIRONMENT, PROCESS_INFORMATION, STARTUPINFOW,
 };
 
 pub(super) use support::{append_entry, environment_block};
@@ -144,14 +144,23 @@ impl NativeGatedProcess {
         self.revalidate(executable)
     }
 
-    pub(crate) fn terminate_and_reap(
-        &mut self,
-        deadline: Instant,
-    ) -> Result<(), OllamaProcessError> {
+    pub(crate) fn terminate(&mut self) -> Result<(), OllamaProcessError> {
         if self.reaped {
             return Ok(());
         }
-        unsafe { TerminateProcess(self.process, 1) };
+        if unsafe { TerminateProcess(self.process, 1) } != 0 {
+            return Ok(());
+        }
+        match unsafe { WaitForSingleObject(self.process, 0) } {
+            WAIT_OBJECT_0 => Ok(()),
+            _ => Err(OllamaProcessError::Gate),
+        }
+    }
+
+    pub(crate) fn reap(&mut self, deadline: Instant) -> Result<(), OllamaProcessError> {
+        if self.reaped {
+            return Ok(());
+        }
         let remaining = deadline.saturating_duration_since(Instant::now());
         let millis = remaining.as_millis().min(u128::from(u32::MAX)) as u32;
         let result = unsafe { WaitForSingleObject(self.process, millis) };
@@ -164,6 +173,14 @@ impl NativeGatedProcess {
             WAIT_TIMEOUT => Err(OllamaProcessError::Reap),
             _ => Err(OllamaProcessError::Reap),
         }
+    }
+
+    pub(crate) fn terminate_and_reap(
+        &mut self,
+        deadline: Instant,
+    ) -> Result<(), OllamaProcessError> {
+        self.terminate()?;
+        self.reap(deadline)
     }
 }
 

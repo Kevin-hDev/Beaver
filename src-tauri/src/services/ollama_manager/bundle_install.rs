@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use super::blocking::run_ollama_blocking;
-use super::bundle_receipt::{read_receipt, write_receipt_at, write_version, BundleReceipt};
+use super::bundle_receipt::{read_receipt, write_receipt, write_version, BundleReceipt};
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion};
@@ -46,17 +46,8 @@ pub async fn write_metadata<F: OllamaDurableFs + 'static>(
     run_ollama_blocking(move || write_version(&*fs_version, &root, &version)).await?;
     let receipt = BundleReceipt::new(prepared.fingerprint.clone());
     let fs_receipt = Arc::clone(fs);
-    let path = paths.bundle_receipt.clone();
-    let tmp = path.with_extension("tmp");
-    run_ollama_blocking(move || write_receipt_at(&*fs_receipt, &path, &tmp, &receipt)).await?;
-    let fs_sync = Arc::clone(fs);
-    let staging = paths.install_staging.clone();
-    run_ollama_blocking(move || {
-        fs_sync
-            .sync_file(&staging)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
-    })
-    .await
+    let root = paths.install_staging.clone();
+    run_ollama_blocking(move || write_receipt(&*fs_receipt, &root, &receipt)).await
 }
 
 pub async fn reinspect_active<F: OllamaDurableFs + 'static>(
@@ -66,7 +57,7 @@ pub async fn reinspect_active<F: OllamaDurableFs + 'static>(
 ) -> Result<(), OllamaErrorCode> {
     let active = paths.active.clone();
     let expected = expected.clone();
-    let receipt_path = paths.bundle_receipt.clone();
+    let receipt_path = crate::services::paths::bundle_receipt_path(&active);
     let fs = Arc::clone(fs);
     run_ollama_blocking(move || {
         let identity = NativePathIdentityResolver;

@@ -1,0 +1,217 @@
+use super::super::blocking::run_ollama_blocking;
+use super::super::bundle_install::{prepare_bundle, write_metadata};
+use super::super::cleanup_inspection;
+use super::super::download::{download_archives, verify_sha256};
+use super::super::durable_fs::{platform_fs, OllamaDurableFs, PlatformOllamaDurableFs};
+use super::super::error::OllamaErrorCode;
+use super::super::extract::{extract_archive, extract_archive_overlay};
+use super::super::fingerprint::BundleFingerprint;
+use super::super::install_archives::remove_archives;
+use super::super::journal::{OllamaJournalState, OllamaTransactionJournal};
+use super::super::journal_store::OllamaJournalStore;
+use super::super::path_identity::NativePathIdentityResolver;
+use super::super::probe::{
+    OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation,
+};
+use super::super::recovery_decision::{DirectoryEvidence, JournalPresence};
+use super::super::spawn_profile::OllamaSpawnProfile;
+use super::{execute, UpdateBackend, UpdateOutcome, UpdateRequest, UpdateSidecar};
+use crate::services::paths::OllamaPaths;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+const UPDATE_PROBE_TIMEOUT: Duration = Duration::from_secs(30);
+
+struct PlatformUpdateBackend {
+    paths: OllamaPaths,
+    fs: Arc<PlatformOllamaDurableFs>,
+    journal: OllamaJournalStore<PlatformOllamaDurableFs>,
+}
+
+impl PlatformUpdateBackend {
+    fn new(paths: OllamaPaths) -> Self {
+        let fs = Arc::new(platform_fs());
+        let journal = OllamaJournalStore::new(Arc::clone(&fs), paths.clone());
+        Self { paths, fs, journal }
+    }
+
+    async fn prepare(&self, request: &UpdateRequest) -> Result<PreparedBundle, OllamaErrorCode> {
+        let manifest = request
+            .manifest
+            .clone()
+            .ok_or(OllamaErrorCode::OllamaDownloadFailed)?;
+        if manifest.version != request.version {
+            return Err(OllamaErrorCode::OllamaBundleInvalid);
+        }
+        ensure_absent(&request.paths.update_staging)?;
+        ensure_absent(&request.paths.archive_staging)?;
+        let fs = Arc::clone(&self.fs);
+        let update_staging = request.paths.update_staging.clone();
+        let archive_staging = request.paths.archive_staging.clone();
+        run_ollama_blocking(move || {
+            fs.create_directory_durable(&update_staging)
+                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+            fs.create_directory_durable(&archive_staging)
+                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+        })
+        .await?;
+        let archives = download_archives(
+            &manifest,
+            &request.paths.archive_staging,
+            &request.cancellation,
+        )
+        .await?;
+        if archives.len() != manifest.archives().len() {
+            return Err(OllamaErrorCode::OllamaDownloadFailed);
+        }
+        for (index, (archive, path)) in manifest.archives().iter().zip(&archives).enumerate() {
+            verify_sha256(path, &archive.sha256)?;
+            let extract = if index == 0 {
+                extract_archive
+            } else {
+                extract_archive_overlay
+            };
+            extract(
+                path,
+                &request.paths.update_staging,
+                archive.file_name.as_str(),
+                &request.cancellation,
+            )?;
+        }
+        remove_archives(&self.fs, &request.paths.archive_staging, &archives).await?;
+        let mut paths = request.paths.clone();
+        paths.install_staging = request.paths.update_staging.clone();
+        let prepared = prepare_bundle(&paths, &request.version).await?;
+        write_metadata(&self.fs, &paths, &prepared).await?;
+        Ok(prepared)
+    }
+
+    async fn rename(
+        &self,
+        source: &std::path::Path,
+        destination: &std::path::Path,
+    ) -> Result<(), OllamaErrorCode> {
+        let fs = Arc::clone(&self.fs);
+        let source = source.to_path_buf();
+        let destination = destination.to_path_buf();
+        run_ollama_blocking(move || {
+            fs.rename_durable(&source, &destination)
+                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+        })
+        .await
+    }
+}
+
+#[async_trait::async_trait]
+impl UpdateBackend for PlatformUpdateBackend {
+    async fn journal(&self) -> Result<Option<OllamaTransactionJournal>, OllamaErrorCode> {
+        self.journal.read().await
+    }
+
+    async fn current(&self) -> Result<BundleFingerprint, OllamaErrorCode> {
+        match cleanup_inspection::snapshot(JournalPresence::Absent, &*self.fs, &self.paths).active {
+            DirectoryEvidence::Present(fingerprint) => Ok(fingerprint),
+            DirectoryEvidence::Absent => Err(OllamaErrorCode::OllamaBundleMissing),
+            DirectoryEvidence::Invalid => Err(OllamaErrorCode::OllamaBundleInvalid),
+            DirectoryEvidence::Unknown => Err(OllamaErrorCode::OllamaStorageUnavailable),
+        }
+    }
+
+    async fn prepare_target(
+        &self,
+        request: &UpdateRequest,
+    ) -> Result<PreparedBundle, OllamaErrorCode> {
+        self.prepare(request).await
+    }
+
+    async fn persist(
+        &self,
+        state: OllamaJournalState,
+        replace: bool,
+    ) -> Result<(), OllamaErrorCode> {
+        let journal = OllamaTransactionJournal::new(state);
+        if replace {
+            self.journal.replace(&journal).await
+        } else {
+            self.journal.write_new(&journal).await
+        }
+    }
+
+    async fn stop_owned_sidecar(&self, request: &UpdateRequest) -> Result<(), OllamaErrorCode> {
+        match &request.sidecar {
+            UpdateSidecar::Owned(sidecar) => sidecar.stop(),
+            UpdateSidecar::Absent | UpdateSidecar::External => Ok(()),
+        }
+    }
+
+    async fn reap_owned_sidecar(&self, request: &UpdateRequest) -> Result<(), OllamaErrorCode> {
+        match &request.sidecar {
+            UpdateSidecar::Owned(sidecar) => sidecar.reap(),
+            UpdateSidecar::Absent | UpdateSidecar::External => Ok(()),
+        }
+    }
+
+    async fn rename_active_to_backup(&self) -> Result<(), OllamaErrorCode> {
+        self.rename(&self.paths.active, &self.paths.backup).await
+    }
+
+    async fn rename_target_to_active(&self) -> Result<(), OllamaErrorCode> {
+        self.rename(&self.paths.update_staging, &self.paths.active)
+            .await
+    }
+
+    async fn probe_active(
+        &self,
+        request: &UpdateRequest,
+        target: &PreparedBundle,
+    ) -> TargetValidation {
+        let receipt_path = crate::services::paths::bundle_receipt_path(&request.paths.active);
+        match super::super::bundle_receipt::read_receipt(&*self.fs, &receipt_path) {
+            Ok(Some(receipt)) if receipt.fingerprint == target.fingerprint => {}
+            Ok(Some(_)) | Ok(None) => {
+                return TargetValidation::InvalidTarget {
+                    code: OllamaErrorCode::OllamaBundleInvalid,
+                }
+            }
+            Err(code) => return TargetValidation::Deferred { code },
+        }
+        let profile = match OllamaSpawnProfile::resolve_probe(
+            &request.paths,
+            request.inherited_environment.clone(),
+            &request.inherited_cwd,
+            &NativePathIdentityResolver,
+        ) {
+            Ok(profile) => profile,
+            Err(
+                OllamaErrorCode::OllamaModelStoreConflict | OllamaErrorCode::OllamaBundleInvalid,
+            ) => {
+                return TargetValidation::InvalidTarget {
+                    code: OllamaErrorCode::OllamaBundleInvalid,
+                }
+            }
+            Err(code) => return TargetValidation::Deferred { code },
+        };
+        let deadline = request
+            .deadline
+            .unwrap_or_else(|| Instant::now() + UPDATE_PROBE_TIMEOUT);
+        OwnedOllamaTargetProbe::with_deadline(deadline)
+            .validate(target, &profile, &request.cancellation)
+            .await
+    }
+}
+
+pub(crate) async fn run(request: UpdateRequest) -> Result<UpdateOutcome, OllamaErrorCode> {
+    if request.manifest.is_none() {
+        return Err(OllamaErrorCode::OllamaDownloadFailed);
+    }
+    let backend = PlatformUpdateBackend::new(request.paths.clone());
+    execute(&backend, &request).await
+}
+
+fn ensure_absent(path: &std::path::Path) -> Result<(), OllamaErrorCode> {
+    match std::fs::symlink_metadata(path) {
+        Ok(_) => Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
+    }
+}
