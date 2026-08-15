@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChatMessagePanel } from "./chat-message-panel";
 import { ChatInput } from "./chat-input";
 import { ScrollBottomButton } from "./scroll-bottom-button";
@@ -28,6 +28,8 @@ import { useCloneGitBranchAction } from "@/hooks/use-clone-git-branch-action";
 import { useSelectedModelCapabilities } from "@/hooks/use-selected-model-capabilities";
 import { useChatViewRuntime } from "@/hooks/use-chat-view-runtime";
 import { usePreflightDirectoryAccessPrompt } from "@/hooks/use-preflight-directory-access-prompt";
+import { useComposerHandoff } from "@/hooks/use-composer-handoff";
+import { hasComposerPosition } from "@/lib/composer-handoff";
 import { PermissionDialog } from "./permission-dialog";
 import type { ChatViewProps } from "./chat-view-types";
 import "./chat.css";
@@ -107,9 +109,20 @@ export function ChatView({
     projects, model, provider, onAddProject, onNewSessionInProject,
   });
   const preflightAccessPrompt = usePreflightDirectoryAccessPrompt(chat.forbiddenAllowedPaths, chat.dismissForbiddenDirectory);
+  /* Une conversation qui vient d'être créée depuis l'accueil n'a rien à charger :
+     elle se montre dès son premier rendu. Attendre la fin de la lecture du
+     disque laissait l'écran vide entre le champ qui part et celui qui arrive,
+     et cette substitution se voyait. */
+  const [handingOver] = useState(hasComposerPosition);
+  const visible = handingOver || !chat.sessionLoading;
+  /* Le champ ne descend qu'une fois la conversation peinte : lancé pendant
+     qu'elle est encore transparente, le glissement se jouerait à l'abri des
+     regards et le champ paraîtrait surgir à sa place. */
+  const inputColumnRef = useRef<HTMLDivElement>(null);
+  useComposerHandoff(inputColumnRef, visible);
   return (
     <FileDropZone dragging={fileDrop.dragging} onDragChange={fileDrop.setDragging} onDropPaths={(paths) => void fileDrop.addByPaths(paths)}>
-      <div className="chat-zone" style={{ opacity: chat.sessionLoading ? 0 : 1 }}>
+      <div className="chat-zone" style={{ opacity: visible ? 1 : 0 }}>
         <div className="chat-messages" ref={containerRef}>
           <ChatMessagePanel
             chat={chat}
@@ -123,7 +136,7 @@ export function ChatView({
           />
         </div>
         <div className="chat-input-area">
-          <div className="chat-input-column">
+          <div className="chat-input-column" ref={inputColumnRef}>
             <TodoProgressPanel sessionId={isSubagent ? undefined : sessionId} />
             {subagents.active.length > 0 && (
               <SubagentAccordion
