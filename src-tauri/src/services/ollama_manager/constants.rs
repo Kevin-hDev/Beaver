@@ -16,3 +16,12 @@ pub(crate) const MAX_OLLAMA_ENV_TOTAL_UNIX_BYTES: usize = 65_536;
 pub(crate) const MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16: usize = 32_767;
 #[allow(dead_code)]
 pub(crate) const PROCESS_REAP_FALLBACK_TIMEOUT: Duration = Duration::from_secs(3);
+
+#[allow(dead_code)]
+pub(crate) const MAX_PROBE_PORT_ATTEMPTS: usize = 3;
+#[allow(dead_code)]
+pub(crate) const MAX_PROBE_RESPONSE_BYTES: usize = 4 * 1024;
+#[allow(dead_code)]
+pub(crate) const PROBE_DEFAULT_PORT: u16 = 11_434;
+#[allow(dead_code)]
+pub(crate) const PROBE_CONNECT_TIMEOUT: Duration = Duration::from_millis(250);

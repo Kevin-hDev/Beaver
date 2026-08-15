@@ -9,6 +9,9 @@ mod journal_store;
 mod manager;
 mod path_identity;
 mod path_identity_resolver;
+mod port;
+mod probe;
+mod probe_http;
 #[allow(dead_code)]
 mod process;
 #[allow(dead_code)]
@@ -38,6 +41,12 @@ mod durable_fs_test_support;
 mod durable_fs_tests;
 #[cfg(test)]
 mod manager_tests;
+#[cfg(test)]
+mod port_tests;
+#[cfg(test)]
+mod probe_http_tests;
+#[cfg(test)]
+mod probe_tests;
 #[cfg(test)]
 mod process_receipt_tests;
 #[cfg(test)]
@@ -78,6 +87,10 @@ pub(crate) use path_identity::{
 };
 #[allow(unused_imports)]
 pub(crate) use path_identity_resolver::NativePathIdentityResolver;
+#[allow(unused_imports)]
+pub use port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
+#[allow(unused_imports)]
+pub use probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 #[allow(unused_imports)]
 pub(crate) use spawn_profile::{FrozenEnvironment, OllamaSpawnAttempt, OllamaSpawnProfile};
 #[allow(unused_imports)]
