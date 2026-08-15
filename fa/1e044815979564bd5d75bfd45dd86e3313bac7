@@ -1,0 +1,31 @@
+Task 6 fix round 2/5 evidence
+
+Base: bb4e281e2611b8f81e9c19b0a78300b92d63af82.
+Commit: fix(ollama): finish native gate recovery.
+
+Red-first findings reproduced:
+- macOS libc exposed neither pipe2 nor SYS_pipe2; the initial direct wrapper attempt was red, then a minimal linked pipe2 wrapper was added.
+- path-recursive stale gate cleanup failed for owner-marked gates; cleanup was changed to bounded dirfd openat/unlinkat with live-owner preservation.
+- recovery used waitpid semantics that cannot reap a process after restart; ECHILD now falls through to bounded object-disappearance polling.
+
+Implemented:
+- Unix pipe2(CLOEXEC) on macOS/Linux; concurrent fork/exec test checks both descriptors.
+- Private hard-link gate directories carry a bounded owner marker, cap stale entries at 32, preserve live gates, use dirfd-anchored removal, and release the link once executable identity is confirmed.
+- Windows CanonicalExecutable identity uses volume serial plus file index from the stable handle, opened with read-only sharing; the suspended process is admitted to the existing global Job before ResumeThread.
+- Windows signal and recovery use OwnedProcess signal/recovery through the retained/reopened process handle with exact identity and WAIT_TIMEOUT mapped to Reap. Native Windows tests cover suspended admission, exact identity, environment/NUL rejection, swap denial while the stable handle is held, and timeout/reap.
+- Linux signal path keeps pidfd; macOS follows ruling Task 6-D: immediate PID/group/start identity re-read before signaling the owned group, failing closed on mismatch.
+- Production receipt recovery inspects native identity before bundle mismatch removal and only removes exact receipts after confirmed reap.
+
+Targeted results read:
+- process filter: 20 passed, 0 failed.
+- Unix gate support: 5 passed, 0 failed.
+- emergency signaler: 6 passed, 0 failed.
+- watchdog: 3 passed, 0 failed.
+- owned_process: 3 passed, 0 failed.
+- cargo check --lib --no-default-features: exit 0.
+- clippy --all-targets --no-default-features -- -D warnings: exit 0.
+- cargo fmt --all -- --check: exit 0.
+- git diff --check: exit 0.
+- graphify update .: completed.
+
+Limits: Windows native execution was not available on macOS and is not claimed green. The known global updater red and PTY hangs were not rerun. No push or merge.
