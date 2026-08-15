@@ -311,6 +311,8 @@ fn native_error_evidence_preserves_the_failed_operation() {
 #[test]
 fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
     let source = include_str!("durable_fs_windows.rs");
+    let verified = include_str!("durable_fs_windows_verified.rs");
+    let entries = include_str!("durable_fs_windows_verified/entries.rs");
     let method = source
         .split_once("fn remove_tree_verified")
         .and_then(|(_, remainder)| remainder.split_once("\n    fn sync_file"))
@@ -319,6 +321,9 @@ fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
 
     assert!(!method.contains("remove_tree(root.path())"));
     assert!(method.contains("verified::remove_tree(root)"));
+    assert!(verified.contains("use super::super::OllamaFsOperation;"));
+    assert!(entries.contains("super::super::super::{"));
+    assert!(entries.contains("OllamaFsOperation"));
 }
 
 #[test]

@@ -1,7 +1,8 @@
 use super::super::super::path_identity::{
     CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver,
 };
-use super::{sync_parent_path, OllamaFsError, OllamaFsErrorKind, OllamaFsOperation};
+use super::super::OllamaFsOperation;
+use super::{sync_parent_path, OllamaFsError, OllamaFsErrorKind};
 use std::os::windows::io::AsRawHandle;
 
 #[path = "durable_fs_windows_verified/entries.rs"]
