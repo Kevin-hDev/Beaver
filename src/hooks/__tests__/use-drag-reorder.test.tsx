@@ -9,11 +9,16 @@ const LAYOUT: Record<string, { top: number; height: number }> = {
   a: { top: 0, height: 40 },
   b: { top: 44, height: 40 },
   c: { top: 88, height: 40 },
+  /* Deux listes imbriquées dans un même conteneur : « p » et « q » à l'une,
+     « r » posée entre les deux à l'autre. */
+  p: { top: 0, height: 40 },
+  r: { top: 44, height: 40 },
+  q: { top: 88, height: 40 },
 };
 
 function Reorderable({ ids, onReorder }: { ids: string[]; onReorder: (ids: string[]) => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const drag = useDragReorder({ ids, axis: "y", containerRef: ref, onReorder });
+  const drag = useDragReorder({ ids, axis: "y", containerRef: ref, group: "essai", onReorder });
   return (
     <div ref={ref} data-testid="list">
       {drag.order.map((id) => (
@@ -96,6 +101,53 @@ describe("useDragReorder", () => {
     expect(getByTestId("item-c").style.transform).toBe("");
   });
 
+  it("fait glisser les voisins et non la case tenue, le temps du geste", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+
+    expect(getByTestId("item-a").style.transition).toBe("none");
+    expect(getByTestId("item-b").style.transition).toBe("transform var(--ease-smooth)");
+  });
+
+  it("retire la durée du mouvement au relâchement", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+    fireEvent.pointerUp(window);
+
+    expect(getByTestId("item-b").style.transition).toBe("");
+  });
+
+  it("empêche la page de surligner du texte pendant le geste", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+
+    expect(document.body.getAttribute("data-drag-active")).toBe("true");
+  });
+
+  it("rend le surlignage à la page au relâchement", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 56 });
+    fireEvent.pointerUp(window);
+
+    expect(document.body.getAttribute("data-drag-active")).toBeNull();
+  });
+
+  it("ne bride jamais la page pour un simple clic", () => {
+    const { getByTestId } = render(<Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />);
+
+    grab(getByTestId("item-a"), 10);
+
+    expect(document.body.getAttribute("data-drag-active")).toBeNull();
+  });
+
   it("garde le nouvel ordre à l'écran tant que la source n'a pas suivi", () => {
     const { getByTestId, getAllByTestId } = render(
       <Reorderable ids={["a", "b", "c"]} onReorder={vi.fn()} />,
@@ -144,11 +196,59 @@ describe("useDragReorder", () => {
     expect(onReorder).toHaveBeenCalledWith(["b", "c", "a"], 0, 2);
   });
 
+  it("ignore les cases d'une autre liste posées dans le même conteneur", () => {
+    const onReorder = vi.fn();
+    function TwoGroups() {
+      const ref = useRef<HTMLDivElement>(null);
+      const mine = useDragReorder({ ids: ["p", "q"], axis: "y", containerRef: ref, group: "mienne", onReorder });
+      const other = useDragReorder({ ids: ["r"], axis: "y", containerRef: ref, group: "autre", onReorder: vi.fn() });
+      return (
+        <div ref={ref}>
+          <div data-testid="item-p" {...mine.itemProps("p")} {...mine.handleProps("p")} />
+          <div data-testid="item-r" {...other.itemProps("r")} {...other.handleProps("r")} />
+          <div data-testid="item-q" {...mine.itemProps("q")} {...mine.handleProps("q")} />
+        </div>
+      );
+    }
+    const { getByTestId } = render(<TwoGroups />);
+
+    /* Assez pour franchir le milieu de « r », pas celui de « q ». Si les deux
+       listes se mélangeaient, ce geste rangerait quelque chose. */
+    grab(getByTestId("item-p"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 60 });
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it("range la liste imbriquée quand le milieu de sa propre voisine est franchi", () => {
+    const onReorder = vi.fn();
+    function TwoGroups() {
+      const ref = useRef<HTMLDivElement>(null);
+      const mine = useDragReorder({ ids: ["p", "q"], axis: "y", containerRef: ref, group: "mienne", onReorder });
+      const other = useDragReorder({ ids: ["r"], axis: "y", containerRef: ref, group: "autre", onReorder: vi.fn() });
+      return (
+        <div ref={ref}>
+          <div data-testid="item-p" {...mine.itemProps("p")} {...mine.handleProps("p")} />
+          <div data-testid="item-r" {...other.itemProps("r")} {...other.handleProps("r")} />
+          <div data-testid="item-q" {...mine.itemProps("q")} {...mine.handleProps("q")} />
+        </div>
+      );
+    }
+    const { getByTestId } = render(<TwoGroups />);
+
+    grab(getByTestId("item-p"), 10);
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 110 });
+    fireEvent.pointerUp(window);
+
+    expect(onReorder).toHaveBeenCalledWith(["q", "p"], 0, 1);
+  });
+
   it("abandonne le geste sans rien enregistrer quand on l'annule", () => {
     const onReorder = vi.fn();
     function Cancellable() {
       const ref = useRef<HTMLDivElement>(null);
-      const drag = useDragReorder({ ids: ["a", "b", "c"], axis: "y", containerRef: ref, onReorder });
+      const drag = useDragReorder({ ids: ["a", "b", "c"], axis: "y", containerRef: ref, group: "essai", onReorder });
       return (
         <div ref={ref}>
           <button onClick={drag.cancel}>annuler</button>

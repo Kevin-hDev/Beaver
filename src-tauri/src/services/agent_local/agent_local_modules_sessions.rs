@@ -5,6 +5,7 @@ pub mod session_index;
 mod session_index_io;
 pub mod session_locks;
 pub mod session_ops;
+pub mod session_order;
 pub mod session_security;
 pub mod session_store;
 mod session_store_compaction;

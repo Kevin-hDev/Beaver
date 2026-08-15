@@ -41,3 +41,21 @@ pub(crate) fn activity_at(meta: &AgentSessionMeta) -> chrono::DateTime<Utc> {
 pub(crate) fn sort_recent_first(metas: &mut [AgentSessionMeta]) {
     metas.sort_by_key(|m| std::cmp::Reverse(activity_at(m)));
 }
+
+/// Ordre d'affichage d'une liste de conversations, rangs manuels compris.
+///
+/// Les conversations jamais déplacées passent devant, la plus récemment active
+/// en tête : une conversation créée après un rangement doit se voir tout de
+/// suite, et non arriver en bas d'une liste figée. Celles qu'on a placées à la
+/// main suivent, dans l'ordre choisi.
+pub(crate) fn sort_for_display(
+    metas: &mut [AgentSessionMeta],
+    ranks: &std::collections::HashMap<String, usize>,
+) {
+    metas.sort_by(|a, b| match (ranks.get(&a.id), ranks.get(&b.id)) {
+        (None, None) => activity_at(b).cmp(&activity_at(a)),
+        (None, Some(_)) => std::cmp::Ordering::Less,
+        (Some(_), None) => std::cmp::Ordering::Greater,
+        (Some(left), Some(right)) => left.cmp(right),
+    });
+}

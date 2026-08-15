@@ -6,6 +6,7 @@ import type { AgentSessionMeta } from "@/types/agent";
 import type { ChannelType } from "@/types/channels";
 import { displaySessionName } from "@/lib/utils";
 import { getSessionAge } from "@/lib/session-age";
+import type { DragHandleProps, DragItemProps } from "@/hooks/use-drag-reorder";
 import "./conversation-session-item.css";
 
 interface ConversationSessionItemProps {
@@ -19,12 +20,17 @@ interface ConversationSessionItemProps {
   onRenameSubmit: (id: string, value: string) => void;
   onCancelRename: () => void;
   onMenu: (e: MouseEvent, id: string) => void;
+  onStartRename: (id: string) => void;
+  dragProps: DragItemProps;
+  dragHandleProps: DragHandleProps;
+  didDrag: () => boolean;
   nowMs: number;
 }
 
 export function ConversationSessionItem({
   session, active, isRunning, hasUnread, renaming, inputRef,
-  onSelect, onRenameSubmit, onCancelRename, onMenu,
+  onSelect, onRenameSubmit, onCancelRename, onMenu, onStartRename,
+  dragProps, dragHandleProps, didDrag,
   nowMs,
 }: ConversationSessionItemProps) {
   const { t } = useTranslation();
@@ -46,7 +52,13 @@ export function ConversationSessionItem({
       tabIndex={active ? 0 : -1}
       aria-current={active ? "page" : undefined}
       data-nav-active={active ? "true" : undefined}
-      onClick={() => onSelect(session.id)}
+      {...dragProps}
+      /* Pendant un renommage, la ligne ne s'attrape plus : l'appui servirait
+         alors à poser le curseur dans le champ, pas à déplacer. */
+      {...(renaming ? {} : dragHandleProps)}
+      /* Un glissement se termine par un clic que le navigateur envoie quand
+         même : sans ce filtre, déplacer une conversation l'ouvrirait. */
+      onClick={() => { if (!didDrag()) onSelect(session.id); }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -69,7 +81,10 @@ export function ConversationSessionItem({
       ) : (
         <>
           {showUnread && <span className="conv-unread-dot" aria-hidden="true" />}
-          <span className="conv-session-main">
+          {/* Le double-clic renomme, comme sur un onglet du terminal. Posé sur
+              la zone du nom seule : ni l'âge ni le bouton de menu, qu'on
+              double-clique par erreur en visant leur action. */}
+          <span className="conv-session-main" onDoubleClick={() => onStartRename(session.id)}>
             <span className={`conv-name ${isRunning ? "thinking-active" : ""}`}>
               <span>{displaySessionName(session.name, t)}</span>
             </span>

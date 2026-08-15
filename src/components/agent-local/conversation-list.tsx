@@ -18,14 +18,14 @@ import { DirectoryAccessPrompt } from "./directory-access-prompt";
 import "./conversation.css";
 import "./conversation-directory-access.css";
 import "./conversation-projects.css";
-import "./conversation-drag.css";
+import "./conversation-rename.css";
 import "./conversation-collapse.css";
 
 export function ConversationList({
   sessions, projects, selectedId,
   onSelect, onCreate, onRename, onDelete,
   onNewSessionInProject, onRenameProject, onDeleteProject,
-  onOpenFolder, onReorderProjects,
+  onOpenFolder, onReorderProjects, onReorderSessions,
   directoryAccessPrompt,
 }: ConversationListProps) {
   const { t } = useTranslation();
@@ -37,14 +37,38 @@ export function ConversationList({
   const nowMs = useMinuteNow();
 
   const projectIds = projects.map((p) => p.id);
+  const projectIdSet = new Set(projectIds);
+  const mainSessions = useMemo(
+    () => sessions.filter((s) => !s.parent_session_id && !s.clone_parent_session_id),
+    [sessions],
+  );
+  const orphanSessions = mainSessions.filter(
+    (s) => !s.project_id || !projectIdSet.has(s.project_id),
+  );
+
   const drag = useDragReorder({
     ids: projectIds,
     axis: "y",
     containerRef: listRef,
+    group: "projects",
     onReorder: onReorderProjects,
   });
+  /* Les conversations hors projet partagent le conteneur de la liste avec les
+     projets : c'est le nom du groupe, et non le conteneur, qui les sépare. */
+  const sessionDrag = useDragReorder({
+    ids: orphanSessions.map((s) => s.id),
+    axis: "y",
+    containerRef: listRef,
+    group: "sessions:orphan",
+    onReorder: (ids) => onReorderSessions(null, ids),
+  });
   useKeyboard({
-    onEscape: () => { setRenamingId(null); setCtx(null); drag.cancel(); },
+    onEscape: () => {
+      setRenamingId(null);
+      setCtx(null);
+      drag.cancel();
+      sessionDrag.cancel();
+    },
   });
 
   const handleSessionMenu = useCallback((e: React.MouseEvent, id: string) => {
@@ -63,16 +87,9 @@ export function ConversationList({
   };
 
   const projectMap = new Map(projects.map((p) => [p.id, p]));
-  const projectIdSet = new Set(projectIds);
-  const mainSessions = useMemo(
-    () => sessions.filter((s) => !s.parent_session_id && !s.clone_parent_session_id),
-    [sessions],
-  );
+  const orphanMap = new Map(orphanSessions.map((s) => [s.id, s]));
   const mainSessionIds = useMemo(() => mainSessions.map((s) => s.id), [mainSessions]);
   const activity = useSessionActivityIndicators(mainSessionIds, selectedId);
-  const orphanSessions = mainSessions.filter(
-    (s) => !s.project_id || !projectIdSet.has(s.project_id),
-  );
   const handleSelect = useCallback((id: string) => {
     activity.markViewed(id);
     onSelect(id);
@@ -87,7 +104,7 @@ export function ConversationList({
         </button>
       </div>
       {directoryAccessPrompt && <div className="conv-dap-anchor"><DirectoryAccessPrompt {...directoryAccessPrompt} /></div>}
-      <div ref={listRef} className={`conv-list ${drag.draggingId ? "is-dragging" : ""}`}>
+      <div ref={listRef} className="conv-list">
         {projects.length > 0 && (
           <>
             <ConversationSectionToggle open={!collapse.projectsCollapsed} onToggle={collapse.toggleProjects}>
@@ -112,6 +129,7 @@ export function ConversationList({
                     onOpenFolder={onOpenFolder}
                     onRenameSession={onRename}
                     onDeleteSession={onDelete}
+                    onReorderSessions={onReorderSessions}
                     dragProps={drag.itemProps(p.id)}
                     dragHandleProps={drag.handleProps(p.id)}
                     didDrag={drag.didDrag}
@@ -133,7 +151,9 @@ export function ConversationList({
               </ConversationSectionToggle>
             )}
             <CollapsePanel open={!collapse.discussionsCollapsed}>
-              {orphanSessions.map((s) => {
+              {sessionDrag.order.map((id) => {
+                const s = orphanMap.get(id);
+                if (!s) return null;
                 const active = idMatch(selectedId, s.id);
                 const renaming = idMatch(renamingId, s.id);
                 return (
@@ -149,6 +169,10 @@ export function ConversationList({
                     onRenameSubmit={handleRenameSubmit}
                     onCancelRename={() => setRenamingId(null)}
                     onMenu={handleSessionMenu}
+                    onStartRename={startRename}
+                    dragProps={sessionDrag.itemProps(s.id)}
+                    dragHandleProps={sessionDrag.handleProps(s.id)}
+                    didDrag={sessionDrag.didDrag}
                     nowMs={nowMs}
                   />
                 );

@@ -39,12 +39,17 @@ export function createChatDomEventHandlers(
 }
 
 export const chatEditorTheme = EditorView.theme({
-  "&": { backgroundColor: "transparent", height: "100%" },
+  /* Pas de hauteur imposée : l'éditeur grandit avec son texte jusqu'au plafond
+     posé sur `.cm-editor` dans chat-input-textarea.css. */
+  "&": { backgroundColor: "transparent" },
   ".cm-scroller": {
     overflowX: "hidden",
     overflowY: "auto",
     overscrollBehavior: "contain",
   },
-  ".cm-content": { padding: 0, caretColor: "var(--ink)" },
-  "&.cm-focused": { outline: "none" },
 });
+
+/* Le reste de l'apparence — marges intérieures, curseur, contour au focus —
+   vit dans chat-input-textarea.css. Déclaré ici en plus, il entrerait en
+   concurrence avec ces règles, et laquelle l'emporte dépendrait de l'ordre de
+   chargement des feuilles. */

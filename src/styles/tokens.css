@@ -70,6 +70,9 @@
      reprend la même : sans cela le texte se décale au moment où l'on passe la
      bulle en édition. */
   --chat-bubble-padding: var(--space-xs) var(--space-sm);
+  /* Hauteur maximale du champ de saisie, marges intérieures comprises :
+     au-delà, il défile au lieu de grandir. */
+  --chat-input-max-height: 200px;
   --dialog-compact-min-width: 18.75rem;
   --dialog-compact-max-width: 27.5rem;
   --dialog-wide-max-width: 53.75rem;

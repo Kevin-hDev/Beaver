@@ -126,7 +126,8 @@ pub async fn get(id: &str) -> Result<AgentSession, String> {
 pub async fn list() -> Result<Vec<AgentSessionMeta>, String> {
     let mut metas = crate::services::agent_local::session_index::read_index().await?;
     metas.retain(super::session_archive::is_active);
-    super::session_archive::sort_recent_first(&mut metas);
+    let ranks = super::session_order::ranks().await;
+    super::session_archive::sort_for_display(&mut metas, &ranks);
     Ok(metas)
 }
 
