@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useFloatingMenuPosition } from "./use-floating-menu-position";
@@ -25,6 +26,18 @@ function MatchingWidthFixture() {
       </button>
       <div ref={floatingRef} style={floatingStyle}>matching menu</div>
     </>
+  );
+}
+
+function SpanningFixture() {
+  const spanRef = useRef<HTMLDivElement | null>(null);
+  const { anchorRef, floatingRef, floatingStyle } =
+    useFloatingMenuPosition(true, "left", 6, "above", false, spanRef);
+  return (
+    <div ref={spanRef} data-span>
+      <button ref={(node) => { anchorRef.current = node; }} data-anchor>anchor</button>
+      <div ref={floatingRef} style={floatingStyle}>spanning menu</div>
+    </div>
   );
 }
 
@@ -101,6 +114,35 @@ describe("useFloatingMenuPosition", () => {
       bottom: "206px",
       top: "auto",
       maxHeight: "282px",
+    }));
+  });
+
+  it("reprend la largeur et le bord gauche de la zone désignée", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function getRect(this: HTMLElement) {
+        if (this.dataset.span !== undefined) {
+          return {
+            x: 40, y: 300, top: 300, right: 540, bottom: 380, left: 40,
+            width: 500, height: 80, toJSON: () => ({}),
+          };
+        }
+        return {
+          x: 120, y: 350, top: 350, right: 200, bottom: 378, left: 120,
+          width: 80, height: 28, toJSON: () => ({}),
+        };
+      });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(160);
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(60);
+    vi.stubGlobal("innerWidth", 900);
+    vi.stubGlobal("innerHeight", 600);
+
+    render(<SpanningFixture />);
+
+    await waitFor(() => expect(screen.getByText("spanning menu")).toHaveStyle({
+      left: "40px",
+      width: "500px",
+      // le placement vertical reste celui du bouton, pas celui de la zone
+      bottom: "256px",
     }));
   });
 });

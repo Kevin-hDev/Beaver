@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { ThemeChoice } from "@/hooks/use-theme";
 import { OllamaSetupScreen } from "@/components/ollama/ollama-setup-screen";
 import { IS_MAC } from "@/lib/platform";
+import { DragRegion } from "@/components/layout/drag-region";
 import { OnboardingWelcome } from "./onboarding-welcome";
 import { OnboardingPreferences } from "./onboarding-preferences";
 import { OnboardingAgentImport } from "./onboarding-agent-import";
@@ -98,6 +99,7 @@ export function OnboardingScreen({
 
   return (
     <div className={`ob-shell ${IS_MAC ? "os-mac" : "os-other"}`}>
+      <DragRegion className="ob-drag-region" />
       <div className="ob-track" style={{ transform: `translateX(-${step * 100}%)` }}>
         {slides.map((slide) => (
           <section className="ob-slide" key={slide.id} data-e2e-step={slide.id}>

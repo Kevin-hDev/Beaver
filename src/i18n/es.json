@@ -496,10 +496,10 @@
   },
   "switchModel": {
     "title": "Cambio de modelo",
-    "description": "Cambiando de {{from}} a {{to}}. ¿Qué deseas hacer con la conversación actual?",
+    "description": "Cambiando de {{from}} a {{to}}. ¿Qué hacemos con la conversación actual?",
     "remember": "Recordar mi elección para esta sesión",
     "newSession": "Nueva sesión",
-    "continue": "Continuar en esta sesión"
+    "continue": "Continuar aquí"
   },
   "switchWorktree": {
     "title": "Cambio de carpeta",
@@ -698,6 +698,12 @@
       "pausedEmpty": "Wakeups pausados"
     },
     "form": {
+      "notice": "Los despertadores solo se activan si tu ordenador está encendido y Beaver en marcha.",
+      "required": "obligatorio",
+      "at": "A las",
+      "namePlaceholder": "revision-matinal",
+      "descriptionPlaceholder": "Revisar los commits de ayer",
+      "promptPlaceholder": "Revisa los commits de las últimas 24 horas, resume lo que ha cambiado y señala lo que merezca seguimiento.",
       "createTitle": "Nuevo wakeup",
       "editTitle": "Editar wakeup",
       "name": "Nombre",
@@ -706,7 +712,7 @@
       "pickModel": "Elegir un modelo",
       "noToolCapable": "Ningún modelo compatible con herramientas",
       "prompt": "Prompt",
-      "description": "Descripción (breve)",
+      "description": "Descripción",
       "schedule": "Programación",
       "cancel": "Cancelar",
       "create": "Crear",

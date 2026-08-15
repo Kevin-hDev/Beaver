@@ -1,0 +1,42 @@
+.wk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wk-badge-active {
+  background: var(--signal-ok-bg);
+  color: var(--signal-ok);
+  border: 1px solid var(--signal-ok-border);
+}
+
+.wk-badge-inactive {
+  background: var(--surface-hover);
+  color: var(--ink-faint);
+  border: 1px solid var(--edge);
+}
+
+.wk-badge-schedule {
+  background: var(--signal-warning-bg);
+  color: var(--signal-warning);
+}
+
+/* Pastille du fournisseur, posée aussi bien dans la liste que dans l'en-tête
+   de détail : une seule définition pour les deux. */
+.wk-provider-tag {
+  flex-shrink: 0;
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}

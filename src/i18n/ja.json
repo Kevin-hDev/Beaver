@@ -499,7 +499,7 @@
     "description": "{{from}} から {{to}} に切り替えます。現在の会話はどうしますか？",
     "remember": "このセッションの選択を記憶する",
     "newSession": "新しいセッション",
-    "continue": "このセッションを続ける"
+    "continue": "ここで続ける"
   },
   "switchWorktree": {
     "title": "フォルダの変更",
@@ -698,6 +698,12 @@
       "pausedEmpty": "ウェイクアップ一時停止中"
     },
     "form": {
+      "notice": "ウェイクアップは、パソコンが起動していて Beaver が実行中のときだけ発火します。",
+      "required": "必須",
+      "at": "時刻",
+      "namePlaceholder": "朝のレビュー",
+      "descriptionPlaceholder": "昨日のコミットを確認する",
+      "promptPlaceholder": "直近 24 時間のコミットを確認し、変更点を要約して、フォローが必要なものを挙げてください。",
       "createTitle": "新しいウェイクアップ",
       "editTitle": "ウェイクアップを編集",
       "name": "名前",
@@ -706,7 +712,7 @@
       "pickModel": "モデルを選択",
       "noToolCapable": "ツール対応モデルがありません",
       "prompt": "プロンプト",
-      "description": "説明（短め）",
+      "description": "説明",
       "schedule": "スケジュール",
       "cancel": "キャンセル",
       "create": "作成",

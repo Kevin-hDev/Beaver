@@ -48,7 +48,7 @@
 
 /* Input area — flotte en bas du chat, pas de section séparée */
 .chat-input-area {
-  padding: 0 var(--chat-column-gutter) var(--space-md);
+  padding: 0 var(--chat-column-gutter) var(--space-sm);
   display: flex;
   align-items: flex-end;
   gap: var(--space-sm);
@@ -71,8 +71,23 @@
   align-items: center;
   gap: var(--space-sm);
   justify-content: space-between;
-  min-height: 32px;
+  /* Exactement la hauteur de ce qu'elle porte — puces de projet, bouton de
+     retour en bas. Quatre pixels de plus et la marge sous le champ diffère
+     selon qu'un dossier est ouvert ou non. */
+  min-height: var(--btn-height);
   flex-wrap: wrap;
+  /* Rapproche la rangée du champ de saisie : le gap de la colonne vaut
+     --space-sm, cette marge le ramène à --space-xs pour cette rangée seule. */
+  margin-top: calc(var(--space-xs) - var(--space-sm));
+}
+
+/* Sans dossier de travail, le sélecteur de projet et celui de branche ne rendent
+   rien : la rangée restait présente et creusait sa hauteur minimale sous le
+   champ de saisie. Elle s'efface quand elle n'a rien à montrer — le gap de la
+   colonne s'efface avec elle — pour que la marge basse soit la même qu'avec un
+   dossier. */
+.chat-input-under-row:not(:has(.cpc-row > *, .chat-input-center-slot)) {
+  display: none;
 }
 
 .chat-input-center-slot {
@@ -100,6 +115,15 @@
   white-space: nowrap;
   padding-bottom: 12px;
   min-width: 70px;
+}
+
+/* Repère du bouton de retour en bas, qui se pose au-dessus du champ sans
+   occuper de place dans le flux. */
+.chat-input-anchor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .chat-input-bubble {
@@ -166,45 +190,6 @@
 }
 
 .chat-plus-btn:hover:not(:disabled) { color: var(--select-text); background: var(--select-bg); }
-
-/* Scroll-to-bottom — composes .icon-btn; keeps its elevated surface,
-   border, opacity and floating position. */
-.scroll-bottom-btn {
-  position: absolute;
-  bottom: var(--space-md);
-  right: var(--space-sm);
-  border: 1px solid var(--edge);
-  background: var(--surface);
-  opacity: 0.85;
-  z-index: var(--z-sticky);
-  color: var(--ink-muted);
-}
-
-.scroll-bottom-btn:hover:not(:disabled) {
-  opacity: 1;
-  background: var(--surface);
-  color: var(--ink-muted);
-}
-
-.scroll-bottom-btn-inline {
-  position: static;
-  flex-shrink: 0;
-  margin-left: auto;
-}
-
-.scroll-bottom-icon { width: 16px; height: 16px; }
-
-[data-theme="light"] .scroll-bottom-btn,
-[data-theme="light"] .scroll-bottom-btn:hover:not(:disabled) {
-  background: var(--chat-composer-bg);
-  border-color: transparent;
-}
-
-[data-theme="dark"] .scroll-bottom-btn,
-[data-theme="dark"] .scroll-bottom-btn:hover:not(:disabled) {
-  background: var(--surface-glass);
-  border-color: transparent;
-}
 
 .chat-loading { display: flex; align-items: center; margin-bottom: var(--space-md); }
 

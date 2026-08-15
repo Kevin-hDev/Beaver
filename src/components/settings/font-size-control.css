@@ -13,6 +13,14 @@
    s'étirer sur toute la ligne de réglage. */
 .fsc-input {
   width: 82px;
+  /* Ce champ affiche le réglage de taille de l'interface, donc son texte grandit
+     avec lui, alors que la hauteur de .field est en pixels fixes. Au-delà de
+     20 px de base, la ligne demande plus que les 26 px intérieurs et le nombre
+     se décale vers le bas. La hauteur suit donc son propre texte, sans jamais
+     descendre sous la hauteur commune des champs. */
+  height: auto;
+  min-height: var(--btn-height);
+  line-height: 1.2;
   font-size: var(--text-lg);
   text-align: center;
   appearance: textfield;

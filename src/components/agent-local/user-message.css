@@ -19,7 +19,7 @@
   max-width: 100%;
   min-width: 0;
   border-radius: 18px 18px 4px 18px; /* intentional: speech-bubble shape */
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--chat-bubble-padding);
   font-size: var(--text-sm);
   overflow-wrap: break-word;
   word-break: normal;

@@ -1,5 +1,6 @@
 @import "./heartbeat-main.css";
-@import "./heartbeat-card.css";
+@import "./heartbeat-badges.css";
+@import "./wakeup-row.css";
 @import "./heartbeat-details.css";
 @import "./heartbeat-sidebar.css";
 @import "./heartbeat-dialog.css";

@@ -17,7 +17,10 @@
 .ts-option {
   position: relative;
   min-width: 0;
-  padding: var(--space-sm);
+  /* Marge latérale réduite : les colonnes sont à largeur fixe et les libellés
+     les plus longs (« Cobalto escarchado », « Scharlachfinsternis ») tiennent
+     à quelques pixels près. Ces 8 px rendus au texte les font tous passer. */
+  padding: var(--space-sm) var(--space-xs);
   border: 1px solid var(--edge);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -92,8 +95,12 @@
   text-align: center;
 }
 
+/* Le gras élargit le libellé d'environ 4 px, assez pour le faire passer à la
+   ligne au moment du clic. Le contour épaissit le trait sans toucher à la
+   métrique du texte : la sélection ne déplace donc plus rien, quelle que soit
+   la langue ou la largeur de la fenêtre. */
 .ts-option.is-active .ts-label {
-  font-weight: 700;
+  -webkit-text-stroke: 0.3px currentColor;
 }
 
 .ts-check {

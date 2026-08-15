@@ -4,7 +4,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useWakeups } from "@/hooks/use-wakeups";
 import { useArrowNavigation } from "@/hooks/use-arrow-navigation";
 import { formatDateTime, formatSchedule } from "@/lib/wakeup-format";
-import { WakeupGrid } from "./wakeup-grid";
+import { WakeupList } from "./wakeup-list";
 import { WakeupDetails } from "./wakeup-details";
 import { NewWakeupDialog } from "./new-wakeup-dialog";
 import type { ScheduledWakeup } from "@/types/wakeup";
@@ -117,7 +117,7 @@ export const HeartbeatTab = memo(function HeartbeatTab({
           onDelete={() => void handleDelete()}
         />
       ) : (
-          <WakeupGrid
+          <WakeupList
             wakeups={wakeups}
             summaries={summaries}
             onSelect={setSelectedId}

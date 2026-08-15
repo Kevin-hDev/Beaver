@@ -5,11 +5,13 @@
   overflow-y: auto;
 }
 
+/* La barre ne porte qu'une ligne de texte et des icônes : sa hauteur suit ce
+   qu'elle contient plutôt qu'une marge verticale pleine. */
 .wk-details-header {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-xs) var(--space-lg);
   border-bottom: 1px solid var(--edge);
 }
 
@@ -98,7 +100,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  max-width: 600px;
+  max-width: var(--settings-content-max-width);
   width: 100%;
   margin: 0 auto;
 }
@@ -111,11 +113,31 @@
   word-break: break-word;
 }
 
-.wk-row-multi {
-  white-space: pre-wrap;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  max-height: 240px;
+/* Le prompt occupe toute la largeur de la carte, sous son libellé : c'est le
+   seul champ dont la valeur ne tient pas sur une ligne. */
+.wk-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  min-width: 0;
+}
+
+.wk-prompt-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.wk-prompt-text {
+  max-height: 15rem;
   overflow-y: auto;
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .wk-history {

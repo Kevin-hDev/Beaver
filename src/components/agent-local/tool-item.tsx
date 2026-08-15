@@ -1,12 +1,13 @@
+import { useState } from "react";
 import type { KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { Spinner } from "@/components/ui/icons";
 import { CaretDown, CaretUp } from "@/components/ui/icons";
 import { isFileTool } from "@/lib/tool-file-path";
 import { FileIcon } from "@/components/file-preview/file-icon";
+import { Collapsible } from "@/components/ui/collapsible";
 import { ToolIcon } from "./tool-icons";
 import { ToolStatusIcon } from "./tool-status-icon";
 import { ToolResultCode, ToolResultMarkdown } from "./tool-result-markdown";
-import { useCollapsiblePresence } from "./use-collapsible-presence";
 
 const RESULT_PREVIEW_TOOLS = new Set([
   "bash", "bash_control", "grep", "glob", "read_file", "list_dir",
@@ -45,7 +46,7 @@ export function ToolItem({
     && (isError || forceResultPreview || (!hasPreview && RESULT_PREVIEW_TOOLS.has(name)));
   const canToggle = hasPreview || hasResult;
   const showCommandPreview = !!commandPreview && hasResult;
-  const { open: isOpen, mounted, toggle, onTransitionEnd } = useCollapsiblePresence();
+  const [isOpen, setIsOpen] = useState(false);
   const targetPath = previewPath?.trim() || summary.trim();
   const clickablePath = isFileTool(name) && targetPath.length > 0 && !!onFilePreview;
   const shownName = displayName ?? name;
@@ -70,7 +71,12 @@ export function ToolItem({
   };
 
   const labelButton = canToggle ? (
-    <button type="button" className="tb-toggle" aria-expanded={isOpen} onClick={toggle}>
+    <button
+      type="button"
+      className="tb-toggle"
+      aria-expanded={isOpen}
+      onClick={() => setIsOpen((value) => !value)}
+    >
       {icon && <ToolIcon name={icon} size="var(--icon-sm)" className="tb-tool-icon" aria-hidden="true" />}
       <span className={`tb-tool-verb${activeClass}`}>{shownName}</span>
       <span className="tb-arrow tb-tool-arrow" aria-hidden="true">
@@ -129,27 +135,23 @@ export function ToolItem({
         {done && isError && <ToolStatusIcon message={errorMessage} />}
       </div>
       {canToggle && (
-        <div className={`tb-accordion${isOpen ? " tb-open" : ""}`} onTransitionEnd={onTransitionEnd}>
-          {mounted && (
-            <div className="tb-accordion-inner">
-              {showCommandPreview && (
-                <div className="chat-column-surface tb-command-preview">{commandPreview}</div>
-              )}
-              {hasPreview && children}
-              {hasResult && (
-                isError ? (
-                  <div className="chat-column-surface tb-result-preview">{result}</div>
-                ) : MARKDOWN_RESULT_TOOLS.has(name) ? (
-                  <ToolResultMarkdown content={result} />
-                ) : TEXT_RESULT_TOOLS.has(name) ? (
-                  <ToolResultCode content={result} path={summary} />
-                ) : (
-                  <div className="chat-column-surface tb-result-preview">{result}</div>
-                )
-              )}
-            </div>
+        <Collapsible open={isOpen} unmountWhenClosed>
+          {showCommandPreview && (
+            <div className="chat-column-surface tb-command-preview">{commandPreview}</div>
           )}
-        </div>
+          {hasPreview && children}
+          {hasResult && (
+            isError ? (
+              <div className="chat-column-surface tb-result-preview">{result}</div>
+            ) : MARKDOWN_RESULT_TOOLS.has(name) ? (
+              <ToolResultMarkdown content={result} />
+            ) : TEXT_RESULT_TOOLS.has(name) ? (
+              <ToolResultCode content={result} path={summary} />
+            ) : (
+              <div className="chat-column-surface tb-result-preview">{result}</div>
+            )
+          )}
+        </Collapsible>
       )}
     </div>
   );

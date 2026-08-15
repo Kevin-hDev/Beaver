@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowsClockwise, Pencil, Copy, Check, GitFork } from "@/components/ui/icons";
+import { Check, GitFork } from "@/components/ui/icons";
+import { ReloadIcon, EditMessageIcon, CopyMessageIcon } from "@/components/ui/message-action-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import "./messages.css";
 
@@ -31,14 +32,14 @@ export function MessageActions({
       {onReload && !isStreaming && (
         <Tooltip label={t("agentLocal.regenerate")}>
           <button className="icon-btn msg-action-btn" onClick={onReload}>
-            <ArrowsClockwise size="var(--icon-sm)" />
+            <ReloadIcon />
           </button>
         </Tooltip>
       )}
       {messageRole === "user" && onEdit && (
         <Tooltip label={t("agentLocal.editMessage")}>
           <button className="icon-btn msg-action-btn" onClick={onEdit}>
-            <Pencil size="var(--icon-sm)" />
+            <EditMessageIcon />
           </button>
         </Tooltip>
       )}
@@ -51,7 +52,7 @@ export function MessageActions({
       )}
       <Tooltip label={t("agentLocal.copy")}>
         <button className="icon-btn msg-action-btn" onClick={() => void handleCopy()}>
-          {copied ? <Check size="var(--icon-sm)" /> : <Copy size="var(--icon-sm)" />}
+          {copied ? <Check size="var(--icon-sm)" /> : <CopyMessageIcon />}
         </button>
       </Tooltip>
       {children}

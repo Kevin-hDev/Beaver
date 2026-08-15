@@ -4,6 +4,9 @@
   z-index: calc(var(--z-toast) - 1); /* click-catcher just below the bubbles */
 }
 
+/* La liste se dimensionne sur la plus longue de ses bulles, et les bulles s'y
+   étirent : largeur adaptée au contenu sans que la pile devienne un escalier.
+   La largeur fixe d'avant tronquait les noms longs bien avant le bouton. */
 .update-list {
   position: fixed;
   top: 42px;
@@ -11,11 +14,28 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: max-content;
+  /* Même borne que l'état déplié : au-delà, un nom de modèle à rallonge
+     étirerait la pile sur toute la largeur de l'écran. */
+  max-width: min(520px, calc(100vw - 24px));
+  /* Un seul rythme pour tout le dépliement — hauteur, opacité, marge, trait,
+     largeur. Trois durées différentes donnaient trois mouvements qui ne
+     finissaient pas ensemble. Hérité par les bulles et leurs panneaux. */
+  --update-fold-duration: 220ms;
+  --update-fold-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* min-width plutôt que width : une largeur en max-content n'est pas une
+     longueur, elle saute au lieu de glisser. La borne, elle, s'anime. */
+  min-width: 0;
+  transition: min-width var(--update-fold-duration) var(--update-fold-ease);
+}
+
+/* Dépliée, la bulle montre les notes de version : largeur portée à la borne,
+   sinon un paragraphe long se lirait dans une colonne étroite. */
+.update-list:has(.update-bubble-expanded) {
+  min-width: min(520px, calc(100vw - 24px));
 }
 
 .update-bubble {
-  width: 320px;
-  max-width: calc(100vw - 24px);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -27,25 +47,26 @@
   border: 1px solid var(--edge);
   border-radius: var(--radius-md-bubble);
   box-shadow: var(--shadow-lg);
-  transition: width 180ms ease, background-color var(--ease-smooth);
+  transition: background-color var(--ease-smooth);
   opacity: 0;
   transform: translateY(-12px);
-  animation: bubble-in 500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.update-bubble-expanded {
-  width: 520px;
+  /* both, pas forwards : chaque bulle attend son tour via animation-delay, et
+     forwards ne s'applique qu'après la fin. Pendant l'attente, la bulle
+     retombait à l'état de base — invisible et remontée de 12px — puis
+     réapparaissait au démarrage de son animation. D'où le clignotement et les
+     bulles qui se chevauchent à la fermeture. */
+  animation: bubble-in 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .update-bubble-main {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: var(--chrome-3) var(--chrome-4);
+  padding: var(--chrome-2) var(--chrome-3);
 }
 
 .update-bubble.bubble-closing {
-  animation: bubble-out 400ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: bubble-out 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes bubble-in {

@@ -25,10 +25,17 @@
   color: var(--ink);
 }
 
+/* Colonne centrée à la largeur des pages de réglages, pour que la carte des
+   réveils s'aligne sur celles des autres onglets. */
+.wk-inner {
+  width: 100%;
+  max-width: var(--settings-content-max-width);
+  margin: 0 auto;
+}
+
 .wk-header-subtitle {
   font-size: var(--text-sm);
   color: var(--ink-muted);
-  max-width: 420px;
 }
 
 .wk-new-btn {

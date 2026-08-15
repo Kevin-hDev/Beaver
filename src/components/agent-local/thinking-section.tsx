@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Brain, CaretDown, CaretUp } from "@/components/ui/icons";
+import { Collapsible } from "@/components/ui/collapsible";
 import "./messages.css";
-import "./tool-bubble.css";
 import "./stream-active.css";
 
 interface ThinkingSectionProps {
@@ -35,11 +35,9 @@ export function ThinkingSection({ content, durationMs, isActive }: ThinkingSecti
           {open ? <CaretUp size="var(--icon-sm)" weight="bold" /> : <CaretDown size="var(--icon-sm)" weight="bold" />}
         </span>
       </button>
-      <div className={`tb-accordion${open ? " tb-open" : ""}`}>
-        <div className="tb-accordion-inner">
-          <div className="thinking-content">{content}</div>
-        </div>
-      </div>
+      <Collapsible open={open}>
+        <div className="thinking-content">{content}</div>
+      </Collapsible>
     </div>
   );
 }

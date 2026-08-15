@@ -14,8 +14,46 @@
   width: 180px;
 }
 
+/* Le bouton s'élargit jusqu'au libellé le plus long, sans jamais passer sous la
+   largeur commune ni déborder de la colonne des valeurs. La borne compte : une
+   liste peut contenir des noms saisis par l'utilisateur, sans longueur connue
+   d'avance. Au-delà, le libellé courant reprend sa coupure en fondu. */
+.ss-wrap.ss-fit {
+  max-width: 100%;
+}
+
+.ss-wrap.ss-fit .ss-trigger {
+  width: auto;
+  min-width: 180px;
+  max-width: 100%;
+}
+
+/* Le libellé courant et le mesureur occupent la même cellule : la largeur vaut
+   le plus large des deux, et non leur somme. */
+.ss-trigger-text {
+  display: grid;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.ss-trigger-text > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.ss-trigger-sizer {
+  display: grid;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.ss-trigger-sizer > span {
+  white-space: nowrap;
+}
+
 .ss-trigger-label {
-  flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -496,10 +496,10 @@
   },
   "switchModel": {
     "title": "Modellwechsel",
-    "description": "Wechsel von {{from}} zu {{to}}. Was möchtest du mit dem aktuellen Gespräch tun?",
+    "description": "Wechsel von {{from}} zu {{to}}. Was soll mit dem aktuellen Gespräch geschehen?",
     "remember": "Meine Wahl für diese Sitzung merken",
     "newSession": "Neue Sitzung",
-    "continue": "In dieser Sitzung fortfahren"
+    "continue": "Hier fortfahren"
   },
   "switchWorktree": {
     "title": "Ordnerwechsel",
@@ -698,6 +698,12 @@
       "pausedEmpty": "Wakeups pausiert"
     },
     "form": {
+      "notice": "Weckrufe werden nur ausgelöst, solange dein Computer eingeschaltet und Beaver geöffnet ist.",
+      "required": "erforderlich",
+      "at": "Um",
+      "namePlaceholder": "morgen-review",
+      "descriptionPlaceholder": "Die Commits von gestern durchsehen",
+      "promptPlaceholder": "Sieh dir die Commits der letzten 24 Stunden an, fasse die Änderungen zusammen und markiere, was Nachverfolgung verdient.",
       "createTitle": "Neues Wakeup",
       "editTitle": "Wakeup bearbeiten",
       "name": "Name",
@@ -706,7 +712,7 @@
       "pickModel": "Modell wählen",
       "noToolCapable": "Kein werkzeugfähiges Modell",
       "prompt": "Prompt",
-      "description": "Beschreibung (kurz)",
+      "description": "Beschreibung",
       "schedule": "Zeitplan",
       "cancel": "Abbrechen",
       "create": "Erstellen",

@@ -93,7 +93,7 @@ export function ArchivedChatsSettings() {
             />
           </label>
           <div className="acs-filter">
-            <SettingsSelect options={options} value={filter} onChange={setFilter} />
+            <SettingsSelect options={options} value={filter} onChange={setFilter} fitLongestOption />
           </div>
         </div>
 

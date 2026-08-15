@@ -2,6 +2,13 @@
   margin: var(--space-sm) 0 var(--space-md);
 }
 
+/* Suivi de la réponse finale, le bloc cède sa marge basse : la réponse se pose
+   alors sous le trait à la même distance que la phase de travail, qui n'a que
+   le retrait de .wss-body. Les deux se lisent comme une seule colonne. */
+.wss-root:has(+ .msg-assistant) {
+  margin-bottom: 0;
+}
+
 .wss-header {
   display: flex;
   align-items: center;

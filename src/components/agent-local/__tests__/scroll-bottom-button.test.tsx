@@ -5,10 +5,10 @@ import { ScrollBottomButton } from "../scroll-bottom-button";
 afterEach(cleanup);
 
 describe("ScrollBottomButton", () => {
-  it("rend la variante inline pour le pied du champ de saisie", () => {
-    const { container } = render(<ScrollBottomButton variant="inline" onClick={vi.fn()} />);
+  it("se pose au-dessus du champ de saisie plutôt que dans le flux", () => {
+    const { container } = render(<ScrollBottomButton onClick={vi.fn()} />);
 
-    expect(container.querySelector(".scroll-bottom-btn-inline")).not.toBeNull();
+    expect(container.querySelector(".scroll-bottom-btn")).not.toBeNull();
   });
 
   it("appelle le retour en bas au clic", () => {

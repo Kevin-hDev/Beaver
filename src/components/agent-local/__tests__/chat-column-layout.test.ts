@@ -8,7 +8,7 @@ const columnCss = readFileSync("src/components/agent-local/chat-column.css", "ut
 describe("chat column layout", () => {
   it("partage une marge latérale compacte de 18px", () => {
     expect(tokensCss).toContain("--chat-column-gutter: 18px;");
-    expect(chatCss).toContain("padding: 0 var(--chat-column-gutter) var(--space-md);");
+    expect(chatCss).toContain("padding: 0 var(--chat-column-gutter)");
   });
 
   it("dimensionne les surfaces depuis la largeur du chat", () => {

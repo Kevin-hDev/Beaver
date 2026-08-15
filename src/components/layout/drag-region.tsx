@@ -5,10 +5,11 @@ const DOUBLE_CLICK_MS = 300;
 
 interface DragRegionProps {
   height?: number;
+  className?: string;
   style?: React.CSSProperties;
 }
 
-export function DragRegion({ height = 32, style }: DragRegionProps) {
+export function DragRegion({ height = 32, className, style }: DragRegionProps) {
   const lastClickRef = useRef(0);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -30,6 +31,7 @@ export function DragRegion({ height = 32, style }: DragRegionProps) {
   return (
     <div
       role="presentation"
+      className={className}
       onMouseDown={handleMouseDown}
       style={{
         height,

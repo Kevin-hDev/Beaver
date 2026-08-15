@@ -1,8 +1,8 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { CaretDown, CaretRight } from "@/components/ui/icons";
-import { useCollapsiblePresence } from "./use-collapsible-presence";
-import "./tool-bubble.css";
+import { Collapsible } from "@/components/ui/collapsible";
 import "./work-stream-summary.css";
 
 function formatWorkDuration(ms?: number): string | null {
@@ -27,7 +27,7 @@ export function WorkStreamSummary({
   durationMs?: number;
 }) {
   const { t } = useTranslation();
-  const { open, mounted, toggle, onTransitionEnd } = useCollapsiblePresence(defaultOpen);
+  const [open, setOpen] = useState(defaultOpen);
   const duration = formatWorkDuration(durationMs);
   const label = duration
     ? t("agentLocal.workSummary", { duration })
@@ -36,16 +36,21 @@ export function WorkStreamSummary({
   return (
     <div className="wss-root">
       <div className="wss-header">
-        <button type="button" className="wss-toggle" aria-expanded={open} onClick={toggle}>
+        <button
+          type="button"
+          className="wss-toggle"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
           <span>{label}</span>
           <span className="wss-chevron" aria-hidden="true">
-            {open ? <CaretDown size="var(--icon-sm)" weight="bold" /> : <CaretRight size="var(--icon-sm)" weight="bold" />}
+            {open ? <CaretDown size="var(--icon-xs)" weight="bold" /> : <CaretRight size="var(--icon-xs)" weight="bold" />}
           </span>
         </button>
       </div>
-      <div className={`tb-accordion${open ? " tb-open" : ""}`} onTransitionEnd={onTransitionEnd}>
-        {mounted && <div className="tb-accordion-inner wss-body">{children}</div>}
-      </div>
+      <Collapsible open={open} unmountWhenClosed innerClassName="wss-body">
+        {children}
+      </Collapsible>
     </div>
   );
 }

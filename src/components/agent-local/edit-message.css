@@ -4,7 +4,7 @@
 
 .em-surface {
   overflow: hidden;
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--chat-bubble-padding);
   border-radius: 18px; /* intentional: matches the user message bubble */
   background: var(--chat-composer-bg);
 }

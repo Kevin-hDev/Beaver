@@ -8,7 +8,7 @@ interface SystemPromptPreviewProps {
 export function SystemPromptPreview({ view, emptyLabel }: SystemPromptPreviewProps) {
   if (!view) return <div className="spp-preview spp-preview-empty">…</div>;
   if (!view.content) return <div className="spp-preview spp-preview-empty">{emptyLabel}</div>;
-  const lines = view.content.split("\n");
-  const preview = lines.slice(0, 22).join("\n");
-  return <div className="spp-preview">{preview}{lines.length > 22 ? "\n…" : ""}</div>;
+  /* Contenu entier : la zone défile. Couper à un nombre de lignes fixe donnait
+     un texte tronqué sans moyen de lire la suite. */
+  return <div className="spp-preview">{view.content}</div>;
 }

@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaretDown, CaretRight } from "@/components/ui/icons";
 import { FileIcon } from "@/components/file-preview/file-icon";
+import { Collapsible } from "@/components/ui/collapsible";
 import { shortPath } from "@/lib/file-preview-utils";
 import type { FileOperation } from "@/types/file-preview";
-import { useCollapsiblePresence } from "./use-collapsible-presence";
 import "./file-change-bubble.css";
 
 interface FileChangeBubbleProps {
@@ -15,7 +15,7 @@ interface FileChangeBubbleProps {
 
 export function FileChangeBubble({ operations, baseDir, onReview }: FileChangeBubbleProps) {
   const { t } = useTranslation();
-  const { open, mounted, toggle, onTransitionEnd } = useCollapsiblePresence(false);
+  const [open, setOpen] = useState(false);
   const totals = useMemo(() => sumOperations(operations), [operations]);
 
   if (operations.length === 0) return null;
@@ -34,7 +34,7 @@ export function FileChangeBubble({ operations, baseDir, onReview }: FileChangeBu
         type="button"
         aria-expanded={open}
         aria-label={t("agentLocal.fileChanges.toggle")}
-        onClick={toggle}
+        onClick={() => setOpen((value) => !value)}
       >
         <span className="fcb-caret" aria-hidden="true">
           {open ? <CaretDown size="var(--icon-sm)" weight="bold" /> : <CaretRight size="var(--icon-sm)" weight="bold" />}
@@ -44,20 +44,18 @@ export function FileChangeBubble({ operations, baseDir, onReview }: FileChangeBu
         </span>
         <ChangeStats additions={totals.additions} deletions={totals.deletions} />
       </button>
-      <div className={`fcb-accordion${open ? " fcb-open" : ""}`} onTransitionEnd={onTransitionEnd}>
-        {mounted && (
-          <div className="fcb-list">
-            {operations.map((operation) => (
-              <FileChangeRow
-                key={operation.id}
-                operation={operation}
-                baseDir={baseDir}
-                onReview={onReview}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <Collapsible open={open} unmountWhenClosed>
+        <div className="fcb-list">
+          {operations.map((operation) => (
+            <FileChangeRow
+              key={operation.id}
+              operation={operation}
+              baseDir={baseDir}
+              onReview={onReview}
+            />
+          ))}
+        </div>
+      </Collapsible>
     </div>
   );
 }

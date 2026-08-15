@@ -501,10 +501,10 @@
   },
   "switchModel": {
     "title": "Changement de modèle",
-    "description": "Tu passes de {{from}} à {{to}}. Que veux-tu faire avec la conversation actuelle ?",
+    "description": "Tu passes de {{from}} à {{to}}. Que faire de la conversation en cours ?",
     "remember": "Mémoriser mon choix pour cette session",
     "newSession": "Nouvelle session",
-    "continue": "Continuer dans cette session"
+    "continue": "Continuer ici"
   },
   "switchWorktree": {
     "title": "Changement de dossier",
@@ -665,7 +665,7 @@
     },
     "fields": {
       "name": "Nom",
-      "provider": "Provider",
+      "provider": "Fournisseur",
       "model": "Modèle",
       "schedule": "Planification",
       "nextFire": "Prochain déclenchement",
@@ -703,15 +703,21 @@
       "pausedEmpty": "Réveils en veille"
     },
     "form": {
+      "notice": "Les réveils ne se déclenchent que si votre ordinateur est allumé et Beaver lancé.",
+      "required": "obligatoire",
+      "at": "À",
+      "namePlaceholder": "revue-du-matin",
+      "descriptionPlaceholder": "Passer en revue les commits d'hier",
+      "promptPlaceholder": "Examine les commits des dernières 24 heures, résume ce qui a changé et signale ce qui mérite un suivi.",
       "createTitle": "Nouveau réveil",
       "editTitle": "Modifier le réveil",
       "name": "Nom",
-      "provider": "Provider",
+      "provider": "Fournisseur",
       "model": "Modèle",
       "pickModel": "Choisir un modèle",
       "noToolCapable": "Aucun modèle tool-capable",
       "prompt": "Prompt",
-      "description": "Description (courte)",
+      "description": "Description",
       "schedule": "Planification",
       "cancel": "Annuler",
       "create": "Créer",

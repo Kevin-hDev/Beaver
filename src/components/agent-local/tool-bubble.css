@@ -4,21 +4,6 @@
   margin: 4px 0;
 }
 
-.tb-accordion {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 400ms ease;
-}
-
-.tb-accordion.tb-open {
-  grid-template-rows: 1fr;
-}
-
-.tb-accordion-inner {
-  overflow: hidden;
-  min-height: 0;
-}
-
 .tb-group-list {
   display: flex;
   flex-direction: column;
@@ -84,23 +69,11 @@
   flex-shrink: 0;
 }
 
-/* Accordion du groupe : les sous-lignes restent toujours muted */
-.tb-group-accordion {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 300ms ease;
-}
-
-.tb-group-accordion.tb-open {
-  grid-template-rows: 1fr;
-}
-
+/* Détails du groupe : les sous-lignes restent toujours muted */
 .tb-group-details {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-height: 0;
-  overflow: hidden;
   padding-top: 4px;
 }
 

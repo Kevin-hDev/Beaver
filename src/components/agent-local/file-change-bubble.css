@@ -70,21 +70,9 @@
   color: var(--signal-error);
 }
 
-.fcb-accordion {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 260ms ease;
-}
-
-.fcb-accordion.fcb-open {
-  grid-template-rows: 1fr;
-}
-
 .fcb-list {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
   border-top: 1px solid var(--edge);
   padding: 8px 0;
 }

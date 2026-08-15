@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChatMessagePanel } from "./chat-message-panel";
 import { ChatInput } from "./chat-input";
+import { ScrollBottomButton } from "./scroll-bottom-button";
 import { ErrorBubble } from "./error-bubble";
 import { FileDropZone } from "./file-drop-zone";
 import { ChatOverlays } from "./chat-overlays";
@@ -142,34 +143,35 @@ export function ChatView({
                 onRetry={runtime.handleRetry}
               />
             )}
-            <ChatInput
-              modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
-              files={fileDrop.files} contextUsed={contextUsage.used}
-              contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
-              retryIndicator={runtime.retryIndicator}
-              interactiveRequest={chat.interactiveChoice}
-              onInteractiveResolved={chat.clearInteractiveChoice}
-              permissionMode={permMode.mode}
-              availablePermissionModes={permMode.availableModes}
-              missingDirectory={chat.missingDirectory}
-              missingDirectoryResolving={chat.missingDirectoryResolving}
-              onPermissionModeChange={(m) => void permMode.change(m)}
-              onResolveMissingDirectory={(action) => void chat.resolveMissingDirectory(action)}
-              planModeEnabled={chat.planModeEnabled}
-              onPlanModeChange={(enabled) => void chat.setPlanModeEnabled(enabled)}
-              onRemoveFile={fileDrop.removeFile} onPreviewFile={setPreview} onSend={handleSend}
-              onStop={() => void chat.stop()} onClearFiles={fileDrop.clearFiles} onFileImport={handleFileImport}
-              onModelChange={handleModelSelect} onReasoningModeChange={onReasoningModeChange}
-            />
+            <div className="chat-input-anchor">
+              {!isAtBottom && <ScrollBottomButton onClick={scrollToBottom} />}
+              <ChatInput
+                modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
+                files={fileDrop.files} contextUsed={contextUsage.used}
+                contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
+                retryIndicator={runtime.retryIndicator}
+                interactiveRequest={chat.interactiveChoice}
+                onInteractiveResolved={chat.clearInteractiveChoice}
+                permissionMode={permMode.mode}
+                availablePermissionModes={permMode.availableModes}
+                missingDirectory={chat.missingDirectory}
+                missingDirectoryResolving={chat.missingDirectoryResolving}
+                onPermissionModeChange={(m) => void permMode.change(m)}
+                onResolveMissingDirectory={(action) => void chat.resolveMissingDirectory(action)}
+                planModeEnabled={chat.planModeEnabled}
+                onPlanModeChange={(enabled) => void chat.setPlanModeEnabled(enabled)}
+                onRemoveFile={fileDrop.removeFile} onPreviewFile={setPreview} onSend={handleSend}
+                onStop={() => void chat.stop()} onClearFiles={fileDrop.clearFiles} onFileImport={handleFileImport}
+                onModelChange={handleModelSelect} onReasoningModeChange={onReasoningModeChange}
+              />
+            </div>
             <ChatInputFooter
               projects={projects}
               projectState={proj}
               git={git}
-              showScrollBottom={!isAtBottom}
               centerSlot={clone.summaryRun && !clone.summaryRun.visible
                 ? <CloneSummaryRunButton onClick={clone.showRunningClone} />
                 : null}
-              onScrollBottom={scrollToBottom}
               onWorktreeSelect={worktreeSwitch.request}
               directoryAccessPrompt={proj.directoryAccessPrompt ?? worktreeSwitch.directoryAccessPrompt ?? preflightAccessPrompt}
               onBranchReady={runtime.handleBranchReady}
