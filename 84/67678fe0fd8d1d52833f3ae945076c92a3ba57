@@ -1,0 +1,9 @@
+J3 Task 12 — completion des transitions de mise a jour Ollama.
+
+Commit: 8467678f.
+
+Implementation: update.rs now creates phase-and-fingerprint-checked ValidatedJournal and RejectedJournal values before completion. Successful validation persists CleanupPending and drives the existing RecoveryExecutor through the platform backend until Ready; cleanup failures keep the validated active bundle usable and return CleanupPending. Rejected validation persists RollbackPending, restores the previous bundle, moves the rejected bundle through failed_delete, and reports the original validation code after recovery. The platform adapter extension is mechanical because the Task 11 backend was extracted from update.rs for the 230-line rule; it delegates to the existing RecoveryExecutor and adds no second journal, probe, or recovery owner.
+
+Tests: TDD red was observed before implementation (update_completion_tests filter exited 1 with Rust test filter failed). Final update_completion_tests filter: 5 passed, 0 failed, 0 ignored. Final transaction_property_tests filter: 2 passed, 0 failed, 0 ignored. Properties cover every success and rejection cutpoint, second-pass convergence, stale phase/fingerprint refusal, distinct rejected target versus previous backup, preservation of the active validated bundle, byte-stable model store, and no empty rejected_target.
+
+Checks: git diff --check passed; production files are all below 230 lines (update.rs 182, update_completion.rs 163, update_platform.rs 224, update_platform_completion.rs 18, rollback.rs 120, cleanup.rs 181); graphify update . completed successfully. The commit was amended once to include the required root module declarations in ollama_manager.rs; the final note is attached to this final SHA. No global check, clippy, neighboring suite, CI, push, or merge was run for this task.
