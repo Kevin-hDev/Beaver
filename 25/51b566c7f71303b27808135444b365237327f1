@@ -8,6 +8,6 @@ Preuves du fix: après la gate Task 6, poll borné jusqu au deadline d un LISTEN
 
 Modèles: revalidation NativePathIdentityResolver juste avant création et suppression; symlink, junction et reparse point rejetés par cette autorité unique. Table de classification conservée; trois ports loopback maximum, HTTP loopback sans redirection borné à 4096 octets, profil modèles isolé OLLAMA_NO_CLOUD=1, aucun effet sur démon externe.
 
-Validation: cargo check exit 0; cargo clippy --all-targets -- -D warnings exit 0; cargo fmt --all -- --check exit 0; git diff --check exit 0; graphify update . terminé. Production découpée: probe.rs 131 lignes, probe_ownership.rs 173, probe_runner.rs 116, probe_support.rs 43, probe_http.rs 226, port.rs 82; toutes sous 230 lignes.
+Validation: cargo check exit 0; cargo clippy --all-targets -- -D warnings exit 0; cargo fmt --all -- --check exit 0; git diff --check exit 0; graphify update . terminé. Production découpée: probe.rs 131 lignes, probe_ownership.rs 159 lignes, probe_runner.rs 116 lignes, probe_support.rs 43 lignes, probe_http.rs 226 lignes, port.rs 82 lignes; toutes sous 230 lignes.
 
-Limites: Windows natif non exécuté sur macOS arm64 et non déclaré vert; suite globale updater/PTy connue non relancée. Aucun push ni merge. Note relue après écriture.
+Limites: Windows natif non exécuté sur macOS arm64 et non déclaré vert; suite globale updater/PTy connue non relancée. Aucun push ni merge. Re-review Task 7 APPROVE: 0 Critical, 0 Important ouverts. Task 7 complete dans le périmètre approuvé. Note relue après écriture.
