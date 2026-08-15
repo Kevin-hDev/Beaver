@@ -7,6 +7,7 @@ mod fingerprint;
 mod journal;
 mod journal_store;
 mod manager;
+mod migration;
 mod path_identity;
 mod path_identity_resolver;
 mod port;
@@ -23,6 +24,8 @@ mod process_owned;
 mod process_receipt;
 #[allow(dead_code)]
 mod process_receipt_recovery;
+mod recovery_decision;
+mod recovery_decision_rules;
 mod spawn_environment;
 #[cfg(unix)]
 #[allow(dead_code)]
@@ -45,6 +48,8 @@ mod durable_fs_tests;
 #[cfg(test)]
 mod manager_tests;
 #[cfg(test)]
+mod migration_tests;
+#[cfg(test)]
 mod port_tests;
 #[cfg(test)]
 mod probe_http_tests;
@@ -54,6 +59,8 @@ mod probe_tests;
 mod process_receipt_tests;
 #[cfg(test)]
 mod process_tests;
+#[cfg(test)]
+mod recovery_decision_tests;
 #[cfg(test)]
 mod spawn_profile_attempt_tests;
 #[cfg(test)]
