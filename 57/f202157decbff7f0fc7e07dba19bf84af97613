@@ -1,0 +1,30 @@
+TASK14-A — consommateurs Ollama routés vers l’autorité manager
+
+Base
+- Parent: ffef12ef4912c834be96040ed72473d8a53e5e89.
+- Commit: 57f20215 — refactor(ollama): route consumers through manager.
+- Périmètre volontairement limité à l’adoption des consommateurs; la supervision de fermeture et la suppression des anciennes autorités restent aux commits B/C.
+
+Décisions
+- Une seule construction de production de OllamaManager et de OllamaClient est faite dans lib.rs; le client reçoit le manager cloné et est enregistré comme State Tauri.
+- Les chemins qui ne reçoivent pas encore directement le State récupèrent uniquement une copie du client déjà enregistré via OllamaClient::from_global(); aucun manager, port ou client runtime parallèle n’est créé.
+- OllamaClient résout son endpoint via OllamaManager::usable_endpoint(). Les actions mutantes pull/delete exigent explicitement owned_endpoint(); une instance externe n’est jamais modifiée.
+- Modelfile passe par OllamaManager::run_cli avec OllamaCliArgs validé; aucun shell intermédiaire ni construction de commande dans le consommateur.
+- is_ollama_installed signifie maintenant BundleState::Ready; un daemon externe peut rester utilisable via usable_endpoint sans être présenté comme une installation Beaver.
+- Les commandes de setup et de mise à jour utilisent le manager pour les opérations et les chemins Ollama centralisés; les anciennes implémentations internes restent présentes uniquement pour la transition B/C.
+
+TDD rouge conservé avant implémentation
+- Le filtre adoption initial a échoué avec « Rust test filter failed ».
+- La compilation détaillée initiale signalait les imports/API absents (CancelOutcome, OllamaCliArgs, start/restart/cancel_operation/usable_endpoint/owned_endpoint/stop_and_wait/run_cli) et l’ancien constructeur OllamaClient::new() sans argument.
+- Le filtre cleanup initial a également échoué avec « Rust test filter failed »; son test reste non commité et sera pris par B.
+
+Preuves lues
+- `node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::adoption_tests`: vert, 2 tests exécutés, 0 échec, 0 ignored.
+- `cargo check --manifest-path src-tauri/Cargo.toml`: vert.
+- `git diff --check`: vert.
+- Contrôle de taille: tous les fichiers de production modifiés restent à 230 lignes ou moins (maximum observé 222).
+- `graphify update .`: vert; graphe reconstruit avec 33 960 nœuds, 69 610 arêtes et 2 050 communautés.
+
+Avertissements
+- Le check ciblé a émis 11 avertissements de code legacy non utilisé (ancien démarrage, lifecycle, retry et types de transaction). Ils ne sont pas masqués; ils doivent disparaître avec la bascule B puis la suppression C.
+- Aucun test global, clippy, CI, push ou fusion n’a été lancé dans ce commit.
