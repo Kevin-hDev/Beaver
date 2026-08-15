@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef, useState } from "react";
 import type { RetryIndicatorState } from "@/types/agent";
 import type { OllamaRuntimeStatus } from "@/types/ollama-runtime";
+import { parseOllamaRuntimeStatus } from "@/lib/ollama-runtime-status";
 
 const MAX_CONNECTION_RETRIES = 10;
 const CONNECTION_RETRY_DELAY_MS = 4000;
@@ -62,7 +63,9 @@ export function useOllamaConnectionRetry({
           maxAttempts: MAX_CONNECTION_RETRIES,
         });
 
-        const status = await invoke<OllamaRuntimeStatus>("get_ollama_runtime_status").catch(() => null);
+        const status = parseOllamaRuntimeStatus(
+          await invoke<unknown>("get_ollama_runtime_status").catch(() => null),
+        );
         if (cancelled) break;
         if (hasAvailableDaemon(status)) {
           setIndicator(null);

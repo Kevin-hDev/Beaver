@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { OllamaRuntimeStatus } from "@/types/ollama-runtime";
+import { parseOllamaRuntimeStatus } from "@/lib/ollama-runtime-status";
 
 export interface OllamaRuntimeStatusResult {
   status: OllamaRuntimeStatus | null;
@@ -17,7 +18,9 @@ export function useOllamaRuntimeStatus(): OllamaRuntimeStatusResult {
     setLoading(true);
     setReadError(false);
     try {
-      setStatus(await invoke<OllamaRuntimeStatus>("get_ollama_runtime_status"));
+      const status = parseOllamaRuntimeStatus(await invoke<unknown>("get_ollama_runtime_status"));
+      if (!status) throw new Error("invalid runtime status");
+      setStatus(status);
     } catch {
       setStatus(null);
       setReadError(true);

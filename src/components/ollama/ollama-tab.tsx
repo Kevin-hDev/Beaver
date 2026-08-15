@@ -156,8 +156,8 @@ function progressLabel(status: OllamaRuntimeStatus, t: (key: string) => string):
   return t(ollamaProgressKey(status.progress));
 }
 
-function daemonKind(daemon: DaemonState): "owned" | "external" | "unavailable" {
-  if (typeof daemon === "string") return "unavailable";
+function daemonKind(daemon: DaemonState | null | undefined): "owned" | "external" | "unavailable" {
+  if (!daemon || typeof daemon === "string") return "unavailable";
   if ("external" in daemon) return "external";
   return "owned";
 }

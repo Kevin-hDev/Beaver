@@ -1,4 +1,5 @@
 import errorContract from "./ollama-runtime-error-contract.json";
+import type { OllamaErrorCode } from "@/types/ollama-runtime";
 
 const GENERIC_ERROR_KEY = "ollama.errors.generic" as const;
 const MAX_ERROR_CODE_LENGTH = 96;
@@ -23,6 +24,12 @@ export type OllamaProgressTranslationKey = typeof PROGRESS_KEYS[keyof typeof PRO
 export function ollamaErrorKey(value: unknown): OllamaErrorTranslationKey {
   if (typeof value !== "string" || value.length > MAX_ERROR_CODE_LENGTH) return GENERIC_ERROR_KEY;
   return Object.prototype.hasOwnProperty.call(ERROR_KEYS, value) ? ERROR_KEYS[value] : GENERIC_ERROR_KEY;
+}
+
+export function isOllamaErrorCode(value: unknown): value is OllamaErrorCode {
+  return typeof value === "string"
+    && value.length <= MAX_ERROR_CODE_LENGTH
+    && Object.prototype.hasOwnProperty.call(ERROR_KEYS, value);
 }
 
 export function ollamaProgressKey(value: unknown): OllamaProgressTranslationKey {

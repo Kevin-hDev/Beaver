@@ -33,4 +33,12 @@ describe("useOllamaRuntimeStatus", () => {
     expect(result.current.status).toBeNull();
     expect(result.current.loading).toBe(false);
   });
+
+  it("rejects an incomplete status instead of exposing an unsafe value", async () => {
+    vi.mocked(invoke).mockResolvedValue({ bundle: "ready" });
+    const { result } = renderHook(() => useOllamaRuntimeStatus());
+
+    await waitFor(() => expect(result.current.readError).toBe(true));
+    expect(result.current.status).toBeNull();
+  });
 });

@@ -43,6 +43,13 @@ vi.mock("@tauri-apps/api/core", async () => {
         source: "beaver",
         selection: "default",
       });
+      if (cmd === "get_ollama_runtime_status") return Promise.resolve({
+        bundle: "ready",
+        daemon: { owned: { endpoint: { port: 11434 } } },
+        operation: "idle",
+        progress: null,
+        last_error: null,
+      });
       if (FAILED_COMMANDS.has(cmd)) return Promise.reject(new Error("test failure"));
       if (cmd === "get_memory_project_topics") {
         const overview = data.memoryOverview();
