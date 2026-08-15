@@ -108,7 +108,7 @@ fn executable_identity_mismatch_is_rejected_before_resume() {
 }
 
 #[test]
-fn image_identity_is_read_from_the_suspended_process_handle_after_path_swap() {
+fn executable_swap_is_denied_while_stable_handle_is_held() {
     let root = tempfile::tempdir().expect("root");
     let (_models, _guard, profile) = attempt(root.path());
     let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_439).expect("port"));
@@ -122,21 +122,25 @@ fn image_identity_is_read_from_the_suspended_process_handle_after_path_swap() {
     replacement.push("v1.0");
     replacement.push("powershell.exe");
     assert!(replacement.exists(), "replacement image");
-    let mut restored = false;
+    let mut swap_denied = false;
     let mut process = spawn_gate_windows::create_with_hooks_for_test(
         &spawn_attempt,
         || {
-            std::fs::rename(&executable, &backup).expect("move active image");
+            if std::fs::rename(&executable, &backup).is_err() {
+                swap_denied = true;
+                return;
+            }
             std::fs::copy(replacement, &executable).expect("replace active image");
         },
         || {
-            std::fs::remove_file(&executable).expect("remove replacement");
-            std::fs::rename(&backup, &executable).expect("restore active image");
-            restored = true;
+            if !swap_denied {
+                std::fs::remove_file(&executable).expect("remove replacement");
+                std::fs::rename(&backup, &executable).expect("restore active image");
+            }
         },
     )
     .expect("suspended process");
-    assert!(restored);
+    assert!(swap_denied, "share lock must deny A to B replacement");
     let expected = profile
         .executable()
         .execution_identity()

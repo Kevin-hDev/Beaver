@@ -138,7 +138,6 @@ impl NativeGatedProcess {
         self.opened = true;
         Ok(())
     }
-
     #[cfg(test)]
     pub(crate) fn close_gate_for_test(&mut self) {
         self.test_gate_keepalive = self.gate.take();
@@ -159,7 +158,7 @@ impl NativeGatedProcess {
     }
 
     pub(crate) fn wait_for_executable(
-        &self,
+        &mut self,
         executable: u128,
         deadline: Instant,
     ) -> Result<(), OllamaProcessError> {
@@ -173,6 +172,7 @@ impl NativeGatedProcess {
                 return Err(OllamaProcessError::Identity);
             }
             if current.executable == executable {
+                self.exec_link.take();
                 return Ok(());
             }
             std::thread::yield_now();
@@ -180,6 +180,12 @@ impl NativeGatedProcess {
         Err(OllamaProcessError::Gate)
     }
 
+    #[cfg(test)]
+    pub(crate) fn exec_link_exists_for_test(&self) -> bool {
+        self.exec_link
+            .as_ref()
+            .is_some_and(|link| link.path().exists())
+    }
     pub(crate) fn terminate_and_reap(
         &mut self,
         deadline: Instant,

@@ -54,6 +54,10 @@ fn create_with_hooks(
     };
     let mut info = unsafe { std::mem::zeroed::<PROCESS_INFORMATION>() };
     let flags = CREATE_SUSPENDED | CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
+    let expected_executable = match attempt.profile().executable().execution_identity() {
+        Some(identity) if identity != 0 => identity,
+        _ => return Err(OllamaProcessError::Identity),
+    };
     before_create();
     let created = unsafe {
         CreateProcessW(
@@ -77,18 +81,13 @@ fn create_with_hooks(
         support::terminate_created_process(info.hProcess, info.hThread);
         return Err(OllamaProcessError::Admission);
     }
-    let identity = match OwnedProcess::identity_from_handle(info.hProcess) {
+    let identity = match OwnedProcess::identity_from_handle_with_executable(
+        info.hProcess,
+        expected_executable,
+    ) {
         Ok(identity) => identity,
         Err(_) => {
             support::terminate_created_process(info.hProcess, info.hThread);
-            return Err(OllamaProcessError::Identity);
-        }
-    };
-    let expected_executable = match attempt.profile().executable().execution_identity() {
-        Some(identity) if identity != 0 => identity,
-        _ => {
-            support::terminate_created_process(info.hProcess, info.hThread);
-            crate::services::owned_process::release(info.dwProcessId);
             return Err(OllamaProcessError::Identity);
         }
     };
@@ -127,15 +126,18 @@ impl NativeGatedProcess {
         if executable == 0 || self.identity.executable != executable {
             return Err(OllamaProcessError::Identity);
         }
-        let current = OwnedProcess::identity_from_handle(self.process)
-            .map_err(|_| OllamaProcessError::Identity)?;
+        let current = OwnedProcess::identity_from_handle_with_executable(
+            self.process,
+            self.identity.executable,
+        )
+        .map_err(|_| OllamaProcessError::Identity)?;
         (current == self.identity)
             .then_some(())
             .ok_or(OllamaProcessError::Identity)
     }
 
     pub(crate) fn wait_for_executable(
-        &self,
+        &mut self,
         executable: u128,
         _deadline: Instant,
     ) -> Result<(), OllamaProcessError> {

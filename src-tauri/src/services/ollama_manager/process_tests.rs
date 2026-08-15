@@ -184,6 +184,12 @@ fn publication_uses_the_supplied_bundle_fingerprint_and_opens_gate() {
     let owned = gated
         .publish(&store, &coordinator.emergency_publisher())
         .expect("publication");
+    #[cfg(unix)]
+    assert!(!owned
+        .native
+        .as_ref()
+        .expect("native")
+        .exec_link_exists_for_test());
     let written = store.read().expect("read receipt").expect("receipt");
     assert_eq!(written.bundle, bundle);
     owned
@@ -303,8 +309,9 @@ fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
         paths.process_receipt.clone(),
         paths.process_receipt.with_extension("tmp"),
     );
+    let publish_result = gated.publish(&store, &publisher);
     assert!(matches!(
-        gated.publish(&store, &publisher),
+        publish_result,
         Err(OllamaProcessError::EmergencyCapacity)
     ));
     assert!(store.read().expect("durable handoff").is_some());

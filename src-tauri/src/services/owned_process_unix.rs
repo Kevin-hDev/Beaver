@@ -63,26 +63,14 @@ pub(super) fn recover_exact(
     if current != expected {
         return Err(OwnedProcessError::Admission);
     }
-    unsafe {
-        libc::kill(-(expected.native_scope as libc::pid_t), libc::SIGTERM);
-        libc::kill(expected.pid as libc::pid_t, libc::SIGTERM);
+    signal_exact(expected, false)?;
+    if wait_for_object_exit(expected.pid, deadline)? {
+        return Ok(());
     }
-    while std::time::Instant::now() < deadline {
-        match wait_for_recovery(expected.pid)? {
-            Some(()) => {
-                release(expected.pid);
-                return Ok(());
-            }
-            None => std::thread::yield_now(),
-        }
-    }
-    unsafe {
-        libc::kill(-(expected.native_scope as libc::pid_t), libc::SIGKILL);
-        libc::kill(expected.pid as libc::pid_t, libc::SIGKILL);
-    }
-    wait_for_recovery_blocking(expected.pid)?;
-    release(expected.pid);
-    Ok(())
+    signal_exact(expected, true)?;
+    wait_for_object_exit(expected.pid, deadline + std::time::Duration::from_secs(2))?
+        .then_some(())
+        .ok_or(OwnedProcessError::Admission)
 }
 
 pub(super) fn signal_exact(
@@ -143,23 +131,24 @@ fn pidfd_signal(fd: libc::c_int, signal: libc::c_int) -> Result<(), OwnedProcess
         .ok_or(OwnedProcessError::Admission)
 }
 
-fn wait_for_recovery(pid: u32) -> Result<Option<()>, OwnedProcessError> {
+fn wait_for_object_exit(pid: u32, deadline: std::time::Instant) -> Result<bool, OwnedProcessError> {
     let mut status = 0;
-    let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
-    if result == pid as libc::pid_t {
-        Ok(Some(()))
-    } else if result == 0 {
-        Ok(None)
-    } else {
-        Err(OwnedProcessError::Admission)
+    while std::time::Instant::now() < deadline {
+        let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
+        if result == pid as libc::pid_t {
+            release(pid);
+            return Ok(true);
+        }
+        if result < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::ECHILD) {
+            return Err(OwnedProcessError::Admission);
+        }
+        if !process_exists(pid) {
+            release(pid);
+            return Ok(true);
+        }
+        std::thread::yield_now();
     }
-}
-
-fn wait_for_recovery_blocking(pid: u32) -> Result<(), OwnedProcessError> {
-    let mut status = 0;
-    (unsafe { libc::waitpid(pid as libc::pid_t, &mut status, 0) } == pid as libc::pid_t)
-        .then_some(())
-        .ok_or(OwnedProcessError::Admission)
+    Ok(false)
 }
 
 pub(super) fn release(pid: u32) {

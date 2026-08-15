@@ -13,6 +13,7 @@ use windows_sys::Win32::Foundation::{SetHandleInformation, HANDLE, HANDLE_FLAG_I
 use windows_sys::Win32::Storage::FileSystem::{
     GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION, FILE_ATTRIBUTE_DIRECTORY,
     FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT,
+    FILE_SHARE_READ,
 };
 
 fn open_handle(
@@ -21,6 +22,7 @@ fn open_handle(
 ) -> Result<(std::fs::File, BY_HANDLE_FILE_INFORMATION), OllamaError> {
     let file = OpenOptions::new()
         .read(true)
+        .share_mode(FILE_SHARE_READ)
         .custom_flags(flags)
         .open(path)
         .map_err(|_| super::super::super::error::OllamaErrorCode::OllamaStorageUnavailable)?;

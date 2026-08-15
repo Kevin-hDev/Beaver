@@ -150,21 +150,15 @@ impl CanonicalExecutable {
 pub(crate) fn windows_file_image_identity(file: &std::fs::File) -> Option<u128> {
     use std::os::windows::io::AsRawHandle;
     use windows_sys::Win32::Storage::FileSystem::{
-        GetFinalPathNameByHandleW, FILE_NAME_NORMALIZED,
+        GetFileInformationByHandle, BY_HANDLE_FILE_INFORMATION,
     };
-    let mut path = vec![0_u16; 32_768];
-    let length = unsafe {
-        GetFinalPathNameByHandleW(
-            file.as_raw_handle() as _,
-            path.as_mut_ptr(),
-            path.len() as u32,
-            FILE_NAME_NORMALIZED,
-        )
-    };
-    if length == 0 || length as usize >= path.len() {
-        return None;
-    }
-    windows_image_identity_from_path(&path[..length as usize])
+    let mut info = std::mem::MaybeUninit::<BY_HANDLE_FILE_INFORMATION>::zeroed();
+    let success =
+        unsafe { GetFileInformationByHandle(file.as_raw_handle() as _, info.as_mut_ptr()) } != 0;
+    let info = success.then(|| unsafe { info.assume_init() })?;
+    let file_id = (u64::from(info.nFileIndexHigh) << 32) | u64::from(info.nFileIndexLow);
+    (file_id != 0 && info.dwVolumeSerialNumber != 0)
+        .then_some((u128::from(info.dwVolumeSerialNumber) << 64) | u128::from(file_id))
 }
 
 #[cfg(windows)]

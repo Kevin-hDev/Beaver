@@ -101,7 +101,7 @@ impl ProcessReceiptStore {
         let Some(receipt) = self.read()? else {
             return Ok(ProcessReceiptRecovery::Missing);
         };
-        let identity = match OwnedProcess::identity(receipt.pid) {
+        let identity = match inspect_native_identity(receipt.pid, expected_executable) {
             Ok(identity) => identity,
             Err(_) => {
                 if OwnedProcess::process_exists(receipt.pid) {
@@ -131,6 +131,19 @@ impl ProcessReceiptStore {
         }
         self.remove()?;
         Ok(ProcessReceiptRecovery::Reaped)
+    }
+}
+
+fn inspect_native_identity(
+    pid: u32,
+    expected_executable: u128,
+) -> Result<OwnedProcessIdentity, crate::services::owned_process::OwnedProcessError> {
+    #[cfg(windows)]
+    return OwnedProcess::identity_with_executable(pid, expected_executable);
+    #[cfg(not(windows))]
+    {
+        let _ = expected_executable;
+        OwnedProcess::identity(pid)
     }
 }
 

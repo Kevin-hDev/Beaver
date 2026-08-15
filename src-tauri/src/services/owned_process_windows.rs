@@ -89,6 +89,14 @@ pub(super) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessErr
 pub(super) fn identity_from_handle(
     process: HANDLE,
 ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+    let executable = executable_identity(process)?;
+    identity_from_handle_with_executable(process, executable)
+}
+
+pub(super) fn identity_from_handle_with_executable(
+    process: HANDLE,
+    executable: u128,
+) -> Result<OwnedProcessIdentity, OwnedProcessError> {
     let pid = unsafe { GetProcessId(process) };
     if pid < 2 {
         return Err(OwnedProcessError::Admission);
@@ -104,15 +112,16 @@ pub(super) fn identity_from_handle(
         pid,
         native_scope: 1,
         native_start_time,
-        executable: executable_identity(process)?,
+        executable,
     })
 }
 
-pub(super) fn identity_matches(expected: OwnedProcessIdentity) -> Result<(), OwnedProcessError> {
-    let process = ProcessHandle::open(expected.pid, PROCESS_QUERY_LIMITED_INFORMATION)?;
-    (identity_from_handle(process.0)? == expected)
-        .then_some(())
-        .ok_or(OwnedProcessError::Admission)
+pub(super) fn identity_with_executable(
+    pid: u32,
+    executable: u128,
+) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+    let process = ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION)?;
+    identity_from_handle_with_executable(process.0, executable)
 }
 
 pub(super) fn recover_exact(
@@ -123,7 +132,7 @@ pub(super) fn recover_exact(
         expected.pid,
         PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
     )?;
-    if identity_from_handle(process.0)? != expected {
+    if identity_from_handle_with_executable(process.0, expected.executable)? != expected {
         return Err(OwnedProcessError::Admission);
     }
     unsafe { TerminateProcess(process.0, 1) };
@@ -142,7 +151,7 @@ pub(super) fn signal_exact(
         expected.pid,
         PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
     )?;
-    if identity_from_handle(process.0)? != expected {
+    if identity_from_handle_with_executable(process.0, expected.executable)? != expected {
         return Err(OwnedProcessError::Admission);
     }
     (unsafe { TerminateProcess(process.0, if force { 1 } else { 0 }) } != 0)

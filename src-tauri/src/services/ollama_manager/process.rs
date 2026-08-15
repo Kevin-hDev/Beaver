@@ -180,7 +180,7 @@ impl GatedOllamaProcess {
         }
         let ready = self
             .native
-            .as_ref()
+            .as_mut()
             .ok_or(OllamaProcessError::InvalidState)
             .and_then(|native| {
                 native.wait_for_executable(

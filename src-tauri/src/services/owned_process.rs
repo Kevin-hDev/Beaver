@@ -45,13 +45,6 @@ impl OwnedProcess {
         platform::identity_with_executable(pid, executable)
     }
 
-    #[cfg(windows)]
-    pub(crate) fn identity_matches(
-        expected: OwnedProcessIdentity,
-    ) -> Result<(), OwnedProcessError> {
-        platform::identity_matches(expected)
-    }
-
     pub(crate) fn recover_exact(
         expected: OwnedProcessIdentity,
         deadline: std::time::Instant,
@@ -113,6 +106,22 @@ impl OwnedProcess {
         process: windows_sys::Win32::Foundation::HANDLE,
     ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
         platform::identity_from_handle(process)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn identity_from_handle_with_executable(
+        process: windows_sys::Win32::Foundation::HANDLE,
+        executable: u128,
+    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity_from_handle_with_executable(process, executable)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn identity_with_executable(
+        pid: u32,
+        executable: u128,
+    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity_with_executable(pid, executable)
     }
 
     fn spawn_with_admitter(
