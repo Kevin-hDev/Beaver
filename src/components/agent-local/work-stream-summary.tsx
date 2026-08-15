@@ -39,7 +39,7 @@ export function WorkStreamSummary({
         <button type="button" className="wss-toggle" aria-expanded={open} onClick={toggle}>
           <span>{label}</span>
           <span className="wss-chevron" aria-hidden="true">
-            {open ? <CaretDown size="var(--icon-sm)" weight="bold" /> : <CaretRight size="var(--icon-sm)" weight="bold" />}
+            {open ? <CaretDown size="var(--icon-xs)" weight="bold" /> : <CaretRight size="var(--icon-xs)" weight="bold" />}
           </span>
         </button>
       </div>
