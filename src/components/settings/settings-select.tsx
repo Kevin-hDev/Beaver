@@ -28,6 +28,10 @@ interface SettingsSelectProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   placement?: "above" | "below";
+  /* Cale la largeur du bouton sur le libellé le plus long de la liste, au lieu
+     de la largeur commune. Réservé aux listes dont les libellés identifient la
+     valeur choisie — un nom de modèle tronqué ne dit plus lequel est actif. */
+  fitLongestOption?: boolean;
 }
 
 const EMPTY_OPTIONS: SelectOption[] = [];
@@ -42,6 +46,7 @@ export function SettingsSelect({
   searchPlaceholder,
   disabled,
   placement = "below",
+  fitLongestOption = false,
 }: SettingsSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -118,7 +123,7 @@ export function SettingsSelect({
 
   return (
     <div
-      className={`ss-wrap ss-${placement} ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
+      className={`ss-wrap ss-${placement} ${fitLongestOption ? "ss-fit" : ""} ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
       data-keyboard-scope={open ? "local" : undefined}
       ref={ref}
     >
@@ -142,8 +147,21 @@ export function SettingsSelect({
         }}
         title={isOverflowing ? displayLabel : undefined}
       >
-        <span className={`ss-trigger-label ${isOverflowing ? "is-overflowing" : ""}`}>
-          {displayLabel}
+        <span className="ss-trigger-text">
+          <span className={`ss-trigger-label ${isOverflowing ? "is-overflowing" : ""}`}>
+            {displayLabel}
+          </span>
+          {fitLongestOption && (
+            /* Mesureur : tous les libellés empilés dans la même cellule que le
+               libellé courant, invisibles et de hauteur nulle. C'est le plus
+               long qui impose sa largeur, donc elle ne change pas d'une
+               sélection à l'autre. */
+            <span className="ss-trigger-sizer" aria-hidden="true">
+              {allOptions.map((option) => (
+                <span key={option.value}>{option.label}</span>
+              ))}
+            </span>
+          )}
         </span>
         <CaretDown size="var(--icon-sm)" weight="bold" className="ss-trigger-icon" />
       </div>

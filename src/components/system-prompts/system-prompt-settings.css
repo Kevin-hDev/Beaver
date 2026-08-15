@@ -70,7 +70,7 @@
 .spp-preview {
   min-height: var(--system-prompt-preview-min-height);
   max-height: var(--system-prompt-preview-max-height);
-  overflow: hidden;
+  overflow-y: auto;
   padding: var(--space-lg);
   color: var(--ink);
   font-size: var(--text-sm);

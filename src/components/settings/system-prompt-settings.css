@@ -1,6 +1,11 @@
 .sps-page {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* La page ne défile plus : c'est la zone de texte qui le fait, sinon la carte
+     déborderait sous le bas de la fenêtre au lieu de s'y arrêter. */
+  overflow: hidden;
   padding: var(--chrome-5);
 }
 
@@ -8,6 +13,10 @@
   width: 100%;
   max-width: var(--settings-content-max-width);
   margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .sps-title {
@@ -15,4 +24,30 @@
   color: var(--ink);
   font-size: var(--text-xl);
   font-weight: 700;
+}
+
+/* Hauteur unique pour la lecture et pour l'édition : la carte prend ce qui
+   reste sous les sélecteurs, et rien de ce qu'elle contient ne la fait varier.
+   Ces règles restent attachées à la page de réglages — le même panneau sert
+   dans la vue d'un modèle Ollama, où il doit garder sa hauteur naturelle. */
+.sps-page .spp-root,
+.sps-page .spp-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sps-page .spp-preview,
+.sps-page .spp-textarea {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+
+.sps-page .spp-textarea {
+  /* Sans cela la poignée de redimensionnement permet de changer la hauteur en
+     édition, et les deux modes ne coïncident plus. */
+  resize: none;
 }

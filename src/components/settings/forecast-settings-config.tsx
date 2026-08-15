@@ -88,14 +88,14 @@ export function ForecastConfigView({
   return (
     <>
       <SettingsCard>
-        <SettingsRow
-          title={t("forecast.modelConfig.title")}
-          description={t("forecast.modelConfig.sidebarTitle")}
-        >
+        {/* Pas de description : elle reprenait « Config », le libellé de l'onglet
+            déjà affiché juste au-dessus. */}
+        <SettingsRow title={t("forecast.modelConfig.title")}>
           <SettingsSelect
             options={modelOptions}
             value={selectedModel.id}
             onChange={onSelectModel}
+            fitLongestOption
           />
         </SettingsRow>
       </SettingsCard>
