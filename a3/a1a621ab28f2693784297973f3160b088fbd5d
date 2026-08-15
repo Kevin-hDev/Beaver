@@ -1,0 +1,17 @@
+Task 10 review follow-up — finding 5 only (2026-08-15).
+
+Scope: close the archive-extraction TOCTOU where path validation could be followed by a parent or staging replacement before File::create. No Task 11+, no push, merge, global suite, CI, or unrelated production changes.
+
+TDD red evidence: before the extraction hook existed, the new swap test failed to compile because extract_archive_for_test was absent. After adding only the test hook, the behavioral test was red: extraction returned Ok(()) while the expected result was Err(OllamaBundleInvalid), proving the path-based implementation could follow a parent symlink and write outside staging.
+
+Implementation: extraction opens a stable ExtractionRoot before archive traversal. Unix anchors the root with O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC and performs every directory/file operation relative to retained directory descriptors through openat/mkdirat; child paths are never reopened through the mutable staging pathname. O_NOFOLLOW and closed error mapping reject symlink/reparse-like substitutions.
+
+Implementation: Windows anchors the root and every created parent with FILE_FLAG_OPEN_REPARSE_POINT and handles opened without FILE_SHARE_DELETE, retaining those handles until extraction ends so the staging/parent names cannot be replaced during writes. Each opened directory/file is checked for reparse-point and directory attributes; failures are closed as invalid or storage errors. The extraction code no longer uses canonicalize plus path-based File::create.
+
+Test evidence: cargo test services::ollama_manager::extract_tests --lib --no-default-features -- --nocapture — 9 passed, 0 failed, including extraction_rejects_parent_swap_after_validation_before_write; cargo test services::ollama_manager::install_tests --lib --no-default-features -- --nocapture — 9 passed, 0 failed.
+
+Verification observed: cargo check --lib --no-default-features passed; cargo clippy --all-targets --no-default-features -- -D warnings passed; cargo fmt --all -- --check passed; git diff --check passed; graphify update . passed and rebuilt the code graph. Production files extract.rs, extract_archive.rs, extract_root.rs, extract_root_unix.rs, and extract_root_windows.rs are all below 230 lines.
+
+Cross-platform limitation: Windows runtime compilation was not possible on this macOS host. x86_64-pc-windows-msvc stopped before Rust checking because the Windows SDK/MSVC headers were absent (VCINSTALLDIR=None; missing windows.h, stdlib.h, string.h, stdio.h, assert.h in aws-lc-sys/zstd-sys). x86_64-pc-windows-gnu reached cef-dll-sys and was rejected because that dependency does not support the GNU target triplet. The Windows implementation was formatted and reviewed, but Windows CI or a Windows SDK build remains required before claiming cross-platform validation.
+
+Commit: a3a1a621 fix(ollama): confine archive extraction handles.
