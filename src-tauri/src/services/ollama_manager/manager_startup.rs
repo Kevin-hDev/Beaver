@@ -14,7 +14,10 @@ impl OllamaManager {
     }
 
     pub async fn run_startup_recovery(&self) -> StartupBarrierState {
-        let guard = match self.begin_operation(super::types::OperationState::Recovering).await {
+        let guard = match self
+            .begin_operation(super::types::OperationState::Recovering)
+            .await
+        {
             Ok(guard) => guard,
             Err(code) => {
                 let state = StartupBarrierState::Blocked { code };
@@ -80,15 +83,11 @@ impl OllamaManager {
         self.inner().lock_state().status.daemon = daemon;
     }
 
-    pub(crate) fn publish_startup_for_test(
-        &self,
-        generation: u64,
-        state: StartupBarrierState,
-    ) {
+    pub(crate) fn publish_startup_for_test(&self, generation: u64, state: StartupBarrierState) {
         self.publish_startup(generation, state);
     }
 
-fn publish_startup(&self, generation: u64, state: StartupBarrierState) {
+    fn publish_startup(&self, generation: u64, state: StartupBarrierState) {
         if self.inner().lock_state().generation == generation {
             self.inner().startup.publish(state);
         }

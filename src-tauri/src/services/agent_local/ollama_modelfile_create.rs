@@ -57,10 +57,7 @@ pub fn use_updated_base(content: &str, name: &str) -> String {
 }
 
 fn validate_content(content: &str) -> Result<(), String> {
-    if content.trim().is_empty()
-        || content.len() > MAX_MODELFILE_BYTES
-        || content.contains('\0')
-    {
+    if content.trim().is_empty() || content.len() > MAX_MODELFILE_BYTES || content.contains('\0') {
         return Err("ollama-modelfile-invalid".into());
     }
     Ok(())

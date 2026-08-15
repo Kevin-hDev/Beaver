@@ -25,7 +25,8 @@ impl OllamaClient {
     }
 
     pub fn from_global() -> Result<Self, String> {
-        let app = super::app_handle_global::get().ok_or_else(|| "ollama-manager-unavailable".to_string())?;
+        let app = super::app_handle_global::get()
+            .ok_or_else(|| "ollama-manager-unavailable".to_string())?;
         app.try_state::<Self>()
             .map(|state| state.inner().clone())
             .ok_or_else(|| "ollama-manager-unavailable".to_string())
@@ -81,18 +82,19 @@ impl OllamaClient {
             .map_err(|_| "failed to initialize Ollama test manager".to_string())?;
         Ok(Self::build(
             OllamaManager::new(coordinator.work_supervisor()),
-            Some(
-            base_url.trim_end_matches('/').to_string(),
-            ),
+            Some(base_url.trim_end_matches('/').to_string()),
         ))
     }
 
     pub async fn is_running(&self) -> bool {
         self.client
-            .get(format!("{}/api/tags", match self.base_url().await {
-                Ok(url) => url,
-                Err(_) => return false,
-            }))
+            .get(format!(
+                "{}/api/tags",
+                match self.base_url().await {
+                    Ok(url) => url,
+                    Err(_) => return false,
+                }
+            ))
             .timeout(TIMEOUT)
             .send()
             .await
@@ -160,13 +162,14 @@ impl OllamaClient {
 
     pub async fn get_model_editor_data(&self, name: &str) -> Result<OllamaModelEditorData, String> {
         let info = self.show_model(name).await?;
-        let decoded = super::ollama_parameter_summary::parse(&info.parameters).and_then(|entries| {
-            super::ollama_parameter_validation::validate_parameter_entries(&entries)?;
-            Ok(entries
-                .into_iter()
-                .map(|(key, value)| OllamaParameter { key, value })
-                .collect())
-        });
+        let decoded =
+            super::ollama_parameter_summary::parse(&info.parameters).and_then(|entries| {
+                super::ollama_parameter_validation::validate_parameter_entries(&entries)?;
+                Ok(entries
+                    .into_iter()
+                    .map(|(key, value)| OllamaParameter { key, value })
+                    .collect())
+            });
         let (parameters, parameter_error) = match decoded {
             Ok(parameters) => (Some(parameters), None),
             Err(error) => (None, Some(error)),

@@ -4,9 +4,7 @@ use crate::services::agent_local::types_ollama::{
 
 pub async fn prepare_subagents(
     session_id: &str,
-    parent_message_inbox: Option<
-        std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>,
-    >,
+    parent_message_inbox: Option<std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>>,
 ) -> super::subagent_orchestration::ParentSubagentOrchestrator {
     super::tool_result_budget::cleanup_old_results();
     super::subagent_orchestration::ParentSubagentOrchestrator::with_parent_inbox(

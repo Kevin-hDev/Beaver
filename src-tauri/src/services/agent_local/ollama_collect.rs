@@ -12,7 +12,13 @@ pub async fn collect_chat(
     model: &str,
     messages: Vec<ChatMessage>,
 ) -> Result<(String, u32), String> {
-    collect_chat_with_timeout(ollama, model, messages, Duration::from_secs(COLLECT_TIMEOUT_SECS)).await
+    collect_chat_with_timeout(
+        ollama,
+        model,
+        messages,
+        Duration::from_secs(COLLECT_TIMEOUT_SECS),
+    )
+    .await
 }
 
 pub async fn collect_chat_with_timeout(

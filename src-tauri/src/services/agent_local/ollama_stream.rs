@@ -1,3 +1,4 @@
+use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::agent_local::ollama_stream_process::{flush_filter, process_chunk};
 use crate::services::agent_local::ollama_stream_request::{
     open_chat_response, OpenChatResponse, RetryCounts, StreamChatOptions,
@@ -6,7 +7,6 @@ use crate::services::agent_local::ollama_tool_parse_retry::{
     is_tool_parse_crash, MAX_PARSER_RETRIES,
 };
 use crate::services::agent_local::stream_events::AgentEventEmitter;
-use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::agent_local::types_ollama::{
     ChatRequest, StreamEvent, StreamOutcome, StreamResult,
 };
@@ -34,7 +34,11 @@ pub async fn collect_chat_with_timeout_and_limit(
 ) -> Result<(String, u32), String> {
     let client = OllamaClient::from_global()?;
     crate::services::agent_local::ollama_collect::collect_chat_with_timeout_and_limit(
-        &client, model, messages, timeout, num_predict,
+        &client,
+        model,
+        messages,
+        timeout,
+        num_predict,
     )
     .await
 }

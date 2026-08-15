@@ -9,8 +9,8 @@ use super::ollama_tool_role::wrap_tool_results;
 use super::ollama_wire;
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::{ChatRequest, StreamEvent};
-use crate::services::llm::vision;
 use crate::services::compress::realtime_budget::RealtimeBudget;
+use crate::services::llm::vision;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 

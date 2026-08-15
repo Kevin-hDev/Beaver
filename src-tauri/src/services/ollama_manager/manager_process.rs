@@ -3,9 +3,7 @@ use super::durable_fs::platform_fs;
 use super::fingerprint::BundleFingerprint;
 use super::path_identity_resolver::NativePathIdentityResolver;
 use super::port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
-use super::process::{
-    DefaultOllamaProcessLauncher, OllamaProcessLauncher, OwnedOllamaProcess,
-};
+use super::process::{DefaultOllamaProcessLauncher, OllamaProcessLauncher, OwnedOllamaProcess};
 use super::process_error::map_process_error;
 use super::process_receipt::ProcessReceiptStore;
 use super::spawn_profile::{OllamaSpawnAttempt, OllamaSpawnProfile};
@@ -49,7 +47,9 @@ impl OllamaManager {
         let allocator = DefaultOllamaPortAllocator::new();
         match allocator.detect_external().await {
             Ok(Some(endpoint)) => {
-                self.publish_daemon(DaemonState::External { endpoint: endpoint.clone() });
+                self.publish_daemon(DaemonState::External {
+                    endpoint: endpoint.clone(),
+                });
                 self.publish_bundle_ready();
                 return OllamaStartOutcome::ExternalAvailable { endpoint };
             }
@@ -63,7 +63,9 @@ impl OllamaManager {
 
         match self.spawn_owned(endpoint.clone()).await {
             Ok(()) => {
-                self.publish_daemon(DaemonState::Owned { endpoint: endpoint.clone() });
+                self.publish_daemon(DaemonState::Owned {
+                    endpoint: endpoint.clone(),
+                });
                 self.publish_bundle_ready();
                 OllamaStartOutcome::OwnedStarted { endpoint }
             }
@@ -76,11 +78,9 @@ impl OllamaManager {
             return Err(OllamaErrorCode::OllamaInternal);
         };
         let paths = ollama_paths(&data_dir());
-        let receipt = bundle_receipt::read_receipt(
-            &platform_fs(),
-            &bundle_receipt_path(&paths.active),
-        )?
-        .ok_or(OllamaErrorCode::OllamaBundleMissing)?;
+        let receipt =
+            bundle_receipt::read_receipt(&platform_fs(), &bundle_receipt_path(&paths.active))?
+                .ok_or(OllamaErrorCode::OllamaBundleMissing)?;
         let bundle = receipt.fingerprint;
         let process = tokio::task::spawn_blocking(move || {
             spawn_owned_process(paths, bundle, endpoint, emergency)
@@ -133,16 +133,13 @@ impl OllamaManager {
                     .owned_process
                     .lock()
                     .map_err(|_| OllamaErrorCode::OllamaInternal)?
-                .replace(process);
+                    .replace(process);
                 Err(code)
             }
         }
     }
 
-    async fn run_cli_impl(
-        &self,
-        args: OllamaCliArgs,
-    ) -> Result<OllamaCliOutput, OllamaErrorCode> {
+    async fn run_cli_impl(&self, args: OllamaCliArgs) -> Result<OllamaCliOutput, OllamaErrorCode> {
         args.validate()?;
         let endpoint = self.usable_endpoint().await?;
         let paths = ollama_paths(&data_dir());
@@ -177,7 +174,9 @@ impl OllamaManager {
         .await
         .map_err(|_| OllamaErrorCode::OllamaSetupTimeout)?
         .map_err(|_| OllamaErrorCode::OllamaStartFailed)?;
-        Ok(OllamaCliOutput { success: status.success() })
+        Ok(OllamaCliOutput {
+            success: status.success(),
+        })
     }
 }
 
@@ -196,11 +195,11 @@ fn spawn_owned_process(
     )?;
     let attempt = OllamaSpawnAttempt::new(&profile, endpoint);
     let launcher = DefaultOllamaProcessLauncher::new(bundle);
-    let gated = launcher
-        .create_gated(&attempt)
-        .map_err(map_process_error)?;
+    let gated = launcher.create_gated(&attempt).map_err(map_process_error)?;
     let receipt = ProcessReceiptStore::platform(paths);
-    gated.publish(&receipt, &emergency).map_err(map_process_error)
+    gated
+        .publish(&receipt, &emergency)
+        .map_err(map_process_error)
 }
 
 fn stop_owned_process(

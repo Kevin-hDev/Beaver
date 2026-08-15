@@ -104,7 +104,10 @@ async fn model_editor_keeps_raw_modelfile_when_parameter_summary_is_too_large() 
 
     assert_eq!(data.modelfile, "FROM x\nPARAMETER stop oversized\n");
     assert_eq!(data.parameters, None);
-    assert_eq!(data.parameter_error.as_deref(), Some("ollama-invalid-response"));
+    assert_eq!(
+        data.parameter_error.as_deref(),
+        Some("ollama-invalid-response")
+    );
 }
 
 #[tokio::test]
@@ -132,7 +135,10 @@ async fn model_editor_disables_editing_instead_of_truncating_stored_parameters()
 
     assert_eq!(data.modelfile, "FROM x\n");
     assert_eq!(data.parameters, None);
-    assert_eq!(data.parameter_error.as_deref(), Some("ollama-parameter-invalid"));
+    assert_eq!(
+        data.parameter_error.as_deref(),
+        Some("ollama-parameter-invalid")
+    );
 }
 
 #[tokio::test]
@@ -156,7 +162,10 @@ async fn model_editor_rejects_decoded_control_characters_before_editing() {
 
     assert_eq!(data.modelfile, "FROM x\nPARAMETER stop safe\n");
     assert_eq!(data.parameters, None);
-    assert_eq!(data.parameter_error.as_deref(), Some("ollama-parameter-invalid"));
+    assert_eq!(
+        data.parameter_error.as_deref(),
+        Some("ollama-parameter-invalid")
+    );
 }
 
 #[test]
