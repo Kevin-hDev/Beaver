@@ -130,6 +130,10 @@ mod polling_tests;
 #[cfg(test)]
 mod adoption_tests;
 #[cfg(test)]
+mod historical_scenarios_tests;
+#[cfg(test)]
+mod layout_fixtures_tests;
+#[cfg(test)]
 mod transaction_property_tests;
 #[cfg(test)]
 mod typescript_contract_tests;

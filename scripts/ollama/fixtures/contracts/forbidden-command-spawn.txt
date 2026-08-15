@@ -1,0 +1,5 @@
+use std::process::Command;
+
+pub fn launch(ollama_binary: &std::path::Path) {
+    let _ = Command::new(ollama_binary);
+}

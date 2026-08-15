@@ -69,6 +69,14 @@ jobs:
         working-directory: src-tauri
         run: cargo test --all
 
+      - name: Ollama manager contracts and historical scenarios
+        run: |
+          cd src-tauri
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
+          cd ..
+          npm run test:ollama-manager-contracts
+          npm run test:j3-reference
+
       - name: E2E profile tests and lint
         working-directory: src-tauri
         run: |
@@ -172,6 +180,14 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::windows_tracker_tests --features windows-tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests --features windows-tests
 
+      - name: Ollama manager contracts and historical scenarios
+        run: |
+          cd src-tauri
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
+          cd ..
+          npm run test:ollama-manager-contracts
+          npm run test:j3-reference
+
       - name: Native Windows CEF journey
         env:
           E2E_REQUIRE_CEF_SMOKE: "1"
@@ -231,6 +247,14 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos::emergency_slots_tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos::tracker_tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests
+
+      - name: Ollama manager contracts and historical scenarios
+        run: |
+          cd src-tauri
+          node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
+          cd ..
+          npm run test:ollama-manager-contracts
+          npm run test:j3-reference
 
       - name: Native macOS CEF journey
         env:

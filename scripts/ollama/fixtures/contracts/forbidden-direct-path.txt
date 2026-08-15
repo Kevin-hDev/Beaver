@@ -1,0 +1,3 @@
+pub fn bundle_path(root: &std::path::Path) -> std::path::PathBuf {
+    root.join("ollama-bundle-update-staging")
+}

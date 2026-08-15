@@ -1,0 +1,5 @@
+use crate::services::ollama_manager::OllamaManager;
+
+pub async fn start(manager: &OllamaManager) {
+    let _ = manager.start().await;
+}
