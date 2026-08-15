@@ -63,20 +63,11 @@ impl ValidatedHttpsUrl {
     pub fn as_url(&self) -> &Url {
         &self.0
     }
-}
 
-pub(crate) fn is_allowlisted_redirect(url: &Url) -> bool {
-    ValidatedHttpsUrl::parse(url.as_str()).is_ok()
-}
-
-pub(crate) fn allowlisted_redirect_policy() -> reqwest::redirect::Policy {
-    reqwest::redirect::Policy::custom(|attempt| {
-        if attempt.previous().len() >= 3 || !is_allowlisted_redirect(attempt.url()) {
-            attempt.stop()
-        } else {
-            attempt.follow()
-        }
-    })
+    #[cfg(test)]
+    pub(crate) fn for_test(raw: &str) -> Self {
+        Self(Url::parse(raw).expect("valid test URL"))
+    }
 }
 
 impl fmt::Display for ValidatedHttpsUrl {
@@ -113,6 +104,16 @@ impl OllamaArchive {
             sha256,
         })
     }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(file_name: &str, url: &str, expected_size: u64, sha256: &str) -> Self {
+        Self {
+            file_name: AllowlistedArchiveName::parse(file_name).expect("valid test archive"),
+            url: ValidatedHttpsUrl::for_test(url),
+            expected_size,
+            sha256: Sha256Digest::from_hex(sha256).expect("valid test digest"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -143,6 +144,11 @@ impl OllamaReleaseManifest {
 
     pub fn archives(&self) -> &[OllamaArchive] {
         &self.archives
+    }
+
+    #[cfg(test)]
+    pub(crate) fn for_test(version: OllamaVersion, archives: Vec<OllamaArchive>) -> Self {
+        Self { version, archives }
     }
 }
 
@@ -191,4 +197,8 @@ pub fn parse_sha256_manifest(
     Err(OllamaErrorCode::OllamaChecksumMismatch)
 }
 
-pub(crate) use super::release_fetch::fetch_manifest;
+pub(crate) use super::release_fetch::{fetch_latest_version, fetch_manifest};
+pub(crate) use super::release_redirect::allowlisted_redirect_policy;
+
+#[cfg(test)]
+pub(crate) use super::release_redirect::{is_allowlisted_redirect, redirect_pair_is_allowed};

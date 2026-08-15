@@ -9,6 +9,8 @@ use super::durable_fs::{platform_fs, OllamaDurableFs};
 use super::error::OllamaErrorCode;
 use super::extract::{extract_archive, extract_archive_overlay};
 use super::fingerprint::{BundleFingerprint, OllamaVersion};
+pub(crate) use super::install_archives::archive_staging_path;
+use super::install_archives::remove_archives;
 use super::path_identity::NativePathIdentityResolver;
 use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, TargetValidation};
 use super::release_source::OllamaReleaseManifest;
@@ -92,21 +94,18 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
     }
     let fs = Arc::new(platform_fs());
     prepare_staging(&fs, &request.paths.install_staging).await?;
+    let archive_staging = archive_staging_path(&request.paths.install_staging);
+    prepare_staging(&fs, &archive_staging).await?;
     #[cfg(test)]
     let archives = super::install_test_support::archive_paths(
         &request,
         &manifest,
-        &request.paths.install_staging,
+        &archive_staging,
         &request.cancellation,
     )
     .await?;
     #[cfg(not(test))]
-    let archives = download_archives(
-        &manifest,
-        &request.paths.install_staging,
-        &request.cancellation,
-    )
-    .await?;
+    let archives = download_archives(&manifest, &archive_staging, &request.cancellation).await?;
     if archives.len() != manifest.archives().len() {
         return Err(OllamaErrorCode::OllamaDownloadFailed);
     }
@@ -125,7 +124,7 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
             &request.cancellation,
         )?;
     }
-    remove_archives(&fs, &archives).await?;
+    remove_archives(&fs, &archive_staging, &archives).await?;
     let prepared = prepare_bundle(&request.paths, &version).await?;
     write_metadata(&fs, &request.paths, &prepared).await?;
     let profile = resolve_install_profile(&request, &request.paths.install_staging)?;
@@ -165,23 +164,6 @@ async fn prepare_staging<F: OllamaDurableFs + 'static>(
             .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
     })
     .await
-}
-
-async fn remove_archives<F: OllamaDurableFs + 'static>(
-    fs: &Arc<F>,
-    archives: &[PathBuf],
-) -> Result<(), OllamaErrorCode> {
-    for path in archives {
-        let fs = Arc::clone(fs);
-        let path = path.clone();
-        run_ollama_blocking(move || match fs.remove_file_durable(&path) {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == super::durable_fs::OllamaFsErrorKind::NotFound => Ok(()),
-            Err(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
-        })
-        .await?;
-    }
-    Ok(())
 }
 
 fn resolve_install_profile(

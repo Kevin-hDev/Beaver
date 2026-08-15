@@ -1,6 +1,8 @@
 use super::ollama_bundle_utils::archives_to_download;
 use super::ollama_setup::OllamaSetupProgress;
-use crate::services::ollama_manager::{self, InstallOutcome, InstallRequest, OllamaVersion};
+use crate::services::ollama_manager::{
+    InstallOutcome, InstallRequest, OllamaManager, OllamaVersion,
+};
 use std::ffi::OsString;
 use std::path::Path;
 use tauri::ipc::Channel;
@@ -10,6 +12,7 @@ const _: fn(&Path) -> Option<std::path::PathBuf> = super::ollama_bundle_utils::f
 const _: fn(&Path, &str) = super::ollama_bundle_utils::write_version_file;
 
 pub(crate) async fn install_ollama_to(
+    manager: &OllamaManager,
     dest: &Path,
     version: &str,
     _on_progress: &Channel<OllamaSetupProgress>,
@@ -29,9 +32,10 @@ pub(crate) async fn install_ollama_to(
             .ok_or("ollama-storage-unavailable")?
     ));
     let names = archives_to_download();
-    let manifest = ollama_manager::release_source::fetch_manifest(version.clone(), &names)
-        .await
-        .map_err(|code| code.as_str().to_string())?;
+    let manifest =
+        crate::services::ollama_manager::release_source::fetch_manifest(version.clone(), &names)
+            .await
+            .map_err(|code| code.as_str().to_string())?;
     let request = InstallRequest {
         paths,
         version: Some(version),
@@ -43,7 +47,8 @@ pub(crate) async fn install_ollama_to(
         #[cfg(test)]
         local_archives: None,
     };
-    match ollama_manager::install_bundle(request)
+    match manager
+        .install(request)
         .await
         .map_err(|code| code.as_str().to_string())?
     {

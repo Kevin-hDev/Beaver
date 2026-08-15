@@ -1,15 +1,12 @@
 use crate::services::ollama_lifecycle;
+use crate::services::ollama_manager::OllamaManager;
 use serde::Serialize;
 use std::sync::LazyLock;
-use tauri::ipc::Channel;
+use tauri::{ipc::Channel, Manager};
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 
 pub(crate) static OLLAMA_INSTALL_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
-
-pub(crate) fn fallback_ollama_version() -> &'static str {
-    include_str!("../../ollama-version.txt").trim()
-}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,7 +51,9 @@ async fn run_download_ollama(
     }
     let dest = ollama_lifecycle::ollama_bundle_dir();
     let version = resolve_install_version().await;
-    super::ollama_setup_install::install_ollama_to(&dest, &version, &on_progress, cancel).await?;
+    let manager = app.state::<OllamaManager>().inner().clone();
+    super::ollama_setup_install::install_ollama_to(&manager, &dest, &version, &on_progress, cancel)
+        .await?;
     super::ollama_setup_start::start_sidecar_and_wait(&app, &on_progress, cancel).await
 }
 
@@ -82,17 +81,16 @@ pub async fn check_model_fits_vram(size_bytes: u64) -> bool {
 }
 
 async fn resolve_install_version() -> String {
-    use super::ollama_bundle_utils::is_valid_semver;
-
-    match super::ollama_version::fetch_latest_github_version().await {
-        Ok((version, _)) if is_valid_semver(&version) => version,
-        Ok((version, _)) => {
-            ::log::warn!("[ollama-setup] latest version invalid: {version}");
-            fallback_ollama_version().to_string()
-        }
-        Err(e) => {
-            ::log::warn!("[ollama-setup] latest version unavailable: {e}");
-            fallback_ollama_version().to_string()
+    match crate::services::ollama_manager::release_source::fetch_latest_version().await {
+        Ok(version) => version.to_string(),
+        Err(error) => {
+            ::log::warn!(
+                "[ollama-setup] latest version unavailable: {}",
+                error.as_str()
+            );
+            crate::services::ollama_manager::release_source::fallback_version()
+                .expect("bundled Ollama version must be valid")
+                .to_string()
         }
     }
 }

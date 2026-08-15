@@ -5,12 +5,6 @@ use super::install::{self, InstallOutcome, InstallRequest};
 use super::manager::OllamaManager;
 use super::types::OperationState;
 
-pub(crate) async fn install_bundle(
-    request: InstallRequest,
-) -> Result<InstallOutcome, OllamaErrorCode> {
-    install::install(request).await
-}
-
 impl OllamaManager {
     pub async fn install(
         &self,

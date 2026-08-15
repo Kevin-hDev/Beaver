@@ -1,9 +1,10 @@
 use super::ollama_bundle_utils::is_valid_semver;
 use super::ollama_setup::{OllamaSetupProgress, OLLAMA_INSTALL_LOCK};
 use crate::services::ollama_lifecycle;
+use crate::services::ollama_manager::OllamaManager;
 use std::path::Path;
 use std::time::Duration;
-use tauri::ipc::Channel;
+use tauri::{ipc::Channel, Manager};
 use tokio_util::sync::CancellationToken;
 
 #[tauri::command]
@@ -27,9 +28,15 @@ pub async fn update_ollama_binary(
     remove_temp_dir(&staging)?;
 
     let cancel = CancellationToken::new();
-    if let Err(error) =
-        super::ollama_setup_install::install_ollama_to(&staging, version, &on_progress, &cancel)
-            .await
+    let manager = app.state::<OllamaManager>().inner().clone();
+    if let Err(error) = super::ollama_setup_install::install_ollama_to(
+        &manager,
+        &staging,
+        version,
+        &on_progress,
+        &cancel,
+    )
+    .await
     {
         let _ = remove_temp_dir(&staging);
         send_status(&on_progress, "error");

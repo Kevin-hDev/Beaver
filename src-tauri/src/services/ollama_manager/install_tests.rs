@@ -3,6 +3,7 @@ use super::bundle_receipt::{read_receipt, BundleReceipt};
 use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
 use super::fingerprint::OllamaVersion;
+use super::install::archive_staging_path;
 use super::install::{InstallOutcome, InstallRequest};
 use super::install_phases::INSTALL_PHASE_ORDER;
 use super::release_source::{OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl};
@@ -12,6 +13,15 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
+use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
+
+#[test]
+fn production_install_entrypoint_uses_the_manager_not_a_free_facade() {
+    let source = include_str!("../../commands/ollama_setup_install.rs");
+    assert!(source.contains(".install(request)"));
+    assert!(!source.contains("install_bundle"));
+}
 
 #[test]
 fn first_install_request_is_bounded_and_has_no_update_journal() {
@@ -24,6 +34,8 @@ fn first_install_request_is_bounded_and_has_no_update_journal() {
         .paths
         .install_staging
         .ends_with("ollama-bundle-install-staging"));
+    assert!(archive_staging_path(&request.paths.install_staging)
+        .ends_with("ollama-bundle-install-staging-archives"));
     assert!(!request.cancellation.is_cancelled());
 }
 
@@ -133,20 +145,36 @@ async fn first_install_publishes_after_probe_and_reinspection() {
     let binary = compile_probe_server(root.path());
     let archive = make_archive(root.path(), &binary);
     let bytes = std::fs::read(&archive).unwrap();
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ollama-darwin.tgz"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(bytes.clone()))
+        .mount(&server)
+        .await;
     let manifest = manifest_for(
         "ollama-darwin.tgz",
         bytes.len() as u64,
         &hex::encode(Sha256::digest(&bytes)),
     );
+    let manifest = OllamaReleaseManifest::for_test(
+        manifest.version.clone(),
+        vec![OllamaArchive::for_test(
+            "ollama-darwin.tgz",
+            &format!("{}/ollama-darwin.tgz", server.uri()),
+            bytes.len() as u64,
+            &hex::encode(Sha256::digest(&bytes)),
+        )],
+    );
     let mut request = InstallRequest::for_test(root_path);
     request.version = Some(OllamaVersion::parse("1.2.3").unwrap());
     request.manifest = Some(manifest);
-    request.local_archives = Some(vec![archive]);
+    request.local_archives = None;
     request.deadline = Some(Instant::now() + Duration::from_secs(20));
     let result = super::install::install(request.clone()).await.unwrap();
     assert!(result.is_ready());
     assert!(request.paths.active.join("bin/ollama").exists());
     assert!(!request.paths.install_staging.exists());
+    assert!(!archive_staging_path(&request.paths.install_staging).exists());
     assert_eq!(
         std::fs::read_to_string(request.paths.active.join("VERSION")).unwrap(),
         "1.2.3"

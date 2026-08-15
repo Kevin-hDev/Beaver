@@ -1,4 +1,6 @@
 use super::error::OllamaErrorCode;
+use super::install::InstallRequest;
+use super::types::BundleState;
 use super::types::OperationState;
 use super::OllamaManager;
 use crate::app_exit::AppExitCoordinator;
@@ -108,6 +110,21 @@ async fn an_error_releases_the_admission() {
     let status = manager.status().await;
     assert_eq!(status.operation, OperationState::Idle);
     assert_eq!(status.last_error, Some(OllamaErrorCode::OllamaInternal));
+}
+
+#[tokio::test]
+async fn install_error_publishes_recovery_required_and_releases_admission() {
+    let (_coordinator, manager) = manager();
+    let root = tempfile::tempdir().unwrap();
+    let request = InstallRequest::for_test(root.path().to_path_buf());
+    std::fs::create_dir_all(&request.paths.active).unwrap();
+
+    let result = manager.install(request).await;
+    assert_eq!(result, Err(OllamaErrorCode::OllamaUpdateRecoveryRequired));
+    let status = manager.status().await;
+    assert_eq!(status.bundle, BundleState::RecoveryRequired);
+    assert_eq!(status.operation, OperationState::Idle);
+    assert_eq!(manager.work_diagnostics_for_test().active, 0);
 }
 
 #[tokio::test]

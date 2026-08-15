@@ -60,3 +60,14 @@ fn manifest_rejects_duplicate_or_oversized_archive_sets() {
         OllamaErrorCode::OllamaBundleInvalid
     );
 }
+
+#[test]
+fn release_source_is_the_only_version_and_fallback_authority() {
+    let setup = include_str!("../../commands/ollama_setup.rs");
+    let version = include_str!("../../commands/ollama_version.rs");
+    assert!(!setup.contains("fallback_ollama_version"));
+    assert!(!setup.contains("fetch_latest_github_version"));
+    assert!(!version.contains("fetch_latest_github_version"));
+    assert!(include_str!("release_source.rs").contains("fetch_latest_version"));
+    assert!(include_str!("release_fetch.rs").contains("pub(crate) async fn fetch_latest_version"));
+}

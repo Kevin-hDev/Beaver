@@ -1,7 +1,12 @@
-use super::download::{bounded_archive_name, download_fixture, verify_sha256, DownloadLimits};
+use super::download::{
+    bounded_archive_name, download_archives, download_fixture, verify_sha256, DownloadLimits,
+};
 use super::error::OllamaErrorCode;
 use super::fingerprint::Sha256Digest;
-use super::release_source::{allowlisted_redirect_policy, is_allowlisted_redirect};
+use super::release_source::{
+    allowlisted_redirect_policy, is_allowlisted_redirect, redirect_pair_is_allowed, OllamaArchive,
+    OllamaReleaseManifest,
+};
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
@@ -51,14 +56,72 @@ fn redirect_policy_requires_https_and_the_github_allowlist() {
         &Url::parse("https://github.com/ollama/ollama/releases/download/v1.2.3/ollama-darwin.tgz")
             .unwrap()
     ));
+    assert!(is_allowlisted_redirect(
+        &Url::parse(
+            "https://release-assets.githubusercontent.com/github-production-release-asset/123?x=1"
+        )
+        .unwrap()
+    ));
+    let source =
+        Url::parse("https://github.com/ollama/ollama/releases/download/v1.2.3/ollama-darwin.tgz")
+            .unwrap();
+    let asset = Url::parse(
+        "https://release-assets.githubusercontent.com/github-production-release-asset/123?x=1",
+    )
+    .unwrap();
+    assert!(redirect_pair_is_allowed(&source, &asset));
+    assert!(!redirect_pair_is_allowed(
+        &source,
+        &Url::parse("https://release-assets.githubusercontent.com/asset?x=1").unwrap()
+    ));
     assert!(!is_allowlisted_redirect(
         &Url::parse("http://github.com/ollama/ollama/releases/download/v1.2.3/ollama-darwin.tgz")
             .unwrap()
     ));
     assert!(!is_allowlisted_redirect(
+        &Url::parse("https://release-assets.githubusercontent.com.evil.test/asset?x=1").unwrap()
+    ));
+    assert!(!is_allowlisted_redirect(
+        &Url::parse("http://release-assets.githubusercontent.com/asset?x=1").unwrap()
+    ));
+    assert!(!is_allowlisted_redirect(
+        &Url::parse("https://release-assets.githubusercontent.com:443/asset?x=1").unwrap()
+    ));
+    assert!(!is_allowlisted_redirect(
         &Url::parse("https://evil.example/ollama-darwin.tgz").unwrap()
     ));
     let _policy = allowlisted_redirect_policy();
+}
+
+#[tokio::test]
+async fn downloaded_archive_can_be_extracted_into_empty_staging() {
+    let body = b"not-a-real-archive-yet".to_vec();
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ollama-darwin.tgz"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(body.clone()))
+        .mount(&server)
+        .await;
+    let root = tempfile::tempdir().unwrap();
+    let archive_dir = root.path().join("archive-cache");
+    let staging = root.path().join("install-staging");
+    std::fs::create_dir(&archive_dir).unwrap();
+    std::fs::create_dir(&staging).unwrap();
+    let digest = hex::encode(Sha256::digest(&body));
+    let version = super::fingerprint::OllamaVersion::parse("1.2.3").unwrap();
+    let archive = OllamaArchive::for_test(
+        "ollama-darwin.tgz",
+        &format!("{}/ollama-darwin.tgz", server.uri()),
+        body.len() as u64,
+        &digest,
+    );
+    let manifest = OllamaReleaseManifest::for_test(version, vec![archive]);
+    let paths = download_archives(&manifest, &archive_dir, &CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(paths, vec![archive_dir.join("ollama-darwin.tgz")]);
+    assert!(staging.read_dir().unwrap().next().is_none());
+    assert_eq!(std::fs::read(&paths[0]).unwrap(), body);
 }
 
 #[tokio::test]

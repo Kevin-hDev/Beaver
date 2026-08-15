@@ -15,6 +15,7 @@ mod extract_fixture;
 mod extract_zip_validate;
 mod fingerprint;
 mod install;
+mod install_archives;
 mod install_confinement;
 mod install_facade;
 #[cfg(test)]
@@ -48,6 +49,7 @@ mod recovery_entry;
 mod recovery_helpers;
 mod recovery_probe;
 mod release_fetch;
+mod release_redirect;
 pub(crate) mod release_source;
 mod rollback;
 mod spawn_environment;
@@ -130,7 +132,6 @@ pub use extract::{extract_archive, extract_archive_overlay};
 pub use fingerprint::{BundleFingerprint, FingerprintError, OllamaVersion, Sha256Digest};
 #[allow(unused_imports)]
 pub use install::{InstallOutcome, InstallRequest};
-pub(crate) use install_facade::install_bundle;
 #[allow(unused_imports)]
 pub use journal::{
     classify_migration_marker, DocumentError, OllamaJournalState, OllamaMigrationMarker,
