@@ -260,6 +260,7 @@ async fn endpoint_ownership_wait_observes_an_expired_deadline() {
     assert_eq!(result, EndpointWaitResult::Deadline);
 }
 
+#[cfg(unix)]
 #[test]
 fn missing_executable_is_classified_as_invalid_target() {
     let fixture = fixture();
@@ -274,18 +275,16 @@ fn missing_executable_is_classified_as_invalid_target() {
     assert_invalid(result);
 }
 
+#[cfg(unix)]
 #[tokio::test]
 async fn invalid_permissions_are_classified_before_spawn() {
     let fixture = fixture();
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(
-            fixture.profile.executable().path(),
-            std::fs::Permissions::from_mode(0o644),
-        )
-        .expect("remove execute permission");
-    }
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(
+        fixture.profile.executable().path(),
+        std::fs::Permissions::from_mode(0o644),
+    )
+    .expect("remove execute permission");
     let result = OwnedOllamaTargetProbe::new(
         AlwaysUnavailable::default(),
         Instant::now() + Duration::from_secs(1),
