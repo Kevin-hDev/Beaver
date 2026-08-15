@@ -159,6 +159,15 @@
      il est seul dans son en-tête, sans libellé pour le désigner, face à un
      titre au corps le plus grand de l'application. */
   --personality-open-icon-size: calc(var(--icon-sm) * 1.5);
+  /* Envoyer, arrêter, confirmer l'arrêt : le dessin du bouton au bout du champ
+     de saisie. Il occupe presque tout son bouton — c'est le geste principal de
+     la conversation, seul de sa taille dans sa rangée et sans libellé.
+
+     Mesuré sur le bouton et non sur le texte, contrairement aux autres icônes :
+     la hauteur de bouton est fixe, donc un dessin qui suivrait le réglage de
+     police déborderait de son cadre dès qu'on agrandit le texte. Les 4px
+     retirés sont l'air qui reste autour du tracé. */
+  --chat-send-icon-size: calc(var(--btn-height) - 4px);
   /* Croix de fermeture d'un panneau. Au-dessus de l'icône de sa rangée : deux
      traits croisés ne couvrent que 42 % de leur cadre, contre 67 à 100 % pour
      les autres actions posées à côté, et à cadre égal la croix rapetisse. */

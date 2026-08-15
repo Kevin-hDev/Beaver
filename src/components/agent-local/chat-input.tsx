@@ -34,7 +34,7 @@ export function ChatInput({
   const slash = useSlashCommands();
   const skills = useActiveSkills(slash, text, setText);
   const bubbleRef = useRef<HTMLDivElement>(null);
-  const { isConfirmingStop, requestStop } = useStopConfirmation(isStreaming, onStop);
+  const { isConfirmingStop, requestStop, stopNow } = useStopConfirmation(isStreaming, onStop);
 
   const interactivePending = !!interactiveRequest;
   const interactiveFeedback = useInteractiveChoiceFeedback(
@@ -178,7 +178,7 @@ export function ChatInput({
             onModelChange={onModelChange}
             onReasoningModeChange={onReasoningModeChange}
             onSend={handleSend}
-            onStop={requestStop}
+            onStop={stopNow}
           />
         </>
       )}
