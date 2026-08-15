@@ -95,7 +95,7 @@ export function PermissionModeSelector({ mode, availableModes = MODES, onChange 
             if (open) listProps.onKeyDown(event);
           }}
         >
-          <ModeIcon mode={mode} className="perm-mode-trigger-icon" size="var(--icon-lg)" />
+          <ModeIcon mode={mode} className="perm-mode-trigger-icon" size="var(--icon-sm)" />
           <span className={`perm-mode-text perm-mode-${mode}`}>{label}</span>
           <CaretDown size="var(--icon-2xs)" className="perm-mode-caret" />
         </button>
