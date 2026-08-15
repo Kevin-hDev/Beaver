@@ -49,7 +49,7 @@ pub(in crate::services::ollama_manager) fn append_entry(
 
 pub(super) fn wide_path(path: &Path) -> Result<Vec<u16>, OllamaProcessError> {
     let mut value = path.as_os_str().encode_wide().collect::<Vec<_>>();
-    if value.iter().any(|unit| *unit == 0) {
+    if value.contains(&0) {
         return Err(OllamaProcessError::InvalidState);
     }
     value.push(0);

@@ -159,20 +159,8 @@ pub(super) fn signal_exact(
         .ok_or(OwnedProcessError::Admission)
 }
 
-pub(super) fn global_job_scope() -> u64 {
-    1
-}
-
-pub(super) fn matches_native_start(pid: u32, expected: u64) -> bool {
-    identity(pid).is_ok_and(|identity| identity.native_start_time == expected)
-}
-
 pub(super) fn process_exists(pid: u32) -> bool {
     ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION).is_ok()
-}
-
-pub(super) fn terminate_native(pid: u32) {
-    support::terminate_native(pid);
 }
 
 pub(super) fn spawn_conpty<T: windows_spawn::AsPseudoConsole>(

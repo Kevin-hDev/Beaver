@@ -4,12 +4,6 @@ use windows_sys::Win32::Foundation::WAIT_OBJECT_0;
 use windows_sys::Win32::System::JobObjects::IsProcessInJob;
 use windows_sys::Win32::System::Threading::{TerminateProcess, WaitForSingleObject};
 
-pub(super) fn terminate_native(pid: u32) {
-    if let Ok(process) = ProcessHandle::open(pid, super::PROCESS_TERMINATE) {
-        unsafe { TerminateProcess(process.0, 1) };
-    }
-}
-
 pub(super) fn spawn_conpty<T: windows_spawn::AsPseudoConsole>(
     command: &mut windows_spawn::Command,
     pseudoconsole: &T,

@@ -51,7 +51,7 @@ fn create_with_hooks(
     command_line.push_str(" serve");
     let mut command_line = wide_string(&command_line)?;
     let environment = environment_block(attempt)?;
-    let mut startup = STARTUPINFOW {
+    let startup = STARTUPINFOW {
         cb: std::mem::size_of::<STARTUPINFOW>() as u32,
         ..unsafe { std::mem::zeroed() }
     };
@@ -72,7 +72,7 @@ fn create_with_hooks(
             flags,
             environment.as_ptr().cast(),
             cwd.as_ptr(),
-            &mut startup,
+            &startup,
             &mut info,
         )
     };

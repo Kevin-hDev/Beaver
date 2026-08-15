@@ -85,7 +85,7 @@ pub(super) fn signal_exact(
             .ok_or(OwnedProcessError::Admission)
             .and_then(|()| pidfd_signal(fd, if force { libc::SIGKILL } else { libc::SIGTERM }));
         unsafe { libc::close(fd) };
-        return result;
+        result
     }
     #[cfg(target_os = "macos")]
     {

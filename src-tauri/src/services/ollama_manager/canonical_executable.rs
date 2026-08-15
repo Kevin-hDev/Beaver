@@ -105,7 +105,7 @@ impl CanonicalExecutable {
     pub(crate) fn execution_identity(&self) -> Option<u128> {
         #[cfg(windows)]
         {
-            return self.stable_image_identity();
+            self.stable_image_identity()
         }
         #[cfg(not(windows))]
         Some(self.value())

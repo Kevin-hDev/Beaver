@@ -106,7 +106,7 @@ fn parse_entry(buffer: &[u8], offset: usize) -> Result<(DirectoryEntry, usize), 
             .checked_add(next as usize)
             .ok_or_else(|| OllamaFsError::new(OllamaFsErrorKind::InvalidInput))?
     };
-    if record_end > buffer.len() || name_length % 2 != 0 {
+    if record_end > buffer.len() || !name_length.is_multiple_of(2) {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
     let name_start = offset

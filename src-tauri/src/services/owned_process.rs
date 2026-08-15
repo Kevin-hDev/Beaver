@@ -102,13 +102,6 @@ impl OwnedProcess {
     }
 
     #[cfg(windows)]
-    pub(crate) fn identity_from_handle(
-        process: windows_sys::Win32::Foundation::HANDLE,
-    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
-        platform::identity_from_handle(process)
-    }
-
-    #[cfg(windows)]
     pub(crate) fn identity_from_handle_with_executable(
         process: windows_sys::Win32::Foundation::HANDLE,
         executable: u128,

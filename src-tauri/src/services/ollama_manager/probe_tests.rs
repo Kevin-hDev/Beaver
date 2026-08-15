@@ -123,6 +123,7 @@ struct Fixture {
     _root: tempfile::TempDir,
     profile: OllamaSpawnProfile,
     target: PreparedBundle,
+    #[cfg(unix)]
     events_file: PathBuf,
 }
 
@@ -213,6 +214,7 @@ fn finish_fixture(
             fingerprint,
         },
         profile,
+        #[cfg(unix)]
         events_file,
     }
 }
