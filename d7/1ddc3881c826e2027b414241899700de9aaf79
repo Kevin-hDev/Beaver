@@ -1,0 +1,17 @@
+Task 9 J3 Ollama — reprise recovery, rollback et cleanup durables.
+
+Base exacte: d1639eb8 (feat(ollama): encode exhaustive recovery decisions). Périmètre strict: aucun Task 10+, Task 14, suite globale, CI, push ou merge.
+
+TDD rouge lu avant production: cd src-tauri && node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::recovery_tests ; sortie exacte: Rust test filter failed. Le diagnostic Cargo signalait error[E0583] pour les modules recovery, cleanup et rollback absents.
+
+Production: RecoveryExecutor inspecte, appelle decide_recovery de Task 8, applique au plus une transition durable par passage et réinspecte après progrès. OllamaManager::recover utilise l admission Recovering et conserve BundleState::RecoveryRequired sur erreur ou report. Les phases backup et failed passent chacune par un rebut distinct avant suppression récursive. Le rollback déplace la cible rejetée vers failed, restaure previous, puis nettoie avec une phase durable. Les journaux tmp sont bornés et les entrées ambiguës restent conservées.
+
+Preuves comportementales: CutpointFs distingue BeforeRename/AfterRename, BeforeRemove/AfterRemove, BeforeSync/AfterSync, BeforeWrite/AfterWrite et BeforePublish/AfterPublish. Les tests couvrent deux passages depuis chaque cutpoint, les rebuts indépendants, les marqueurs sans suppression de layout, les conflits source/rebut et la matrice tmp régulière seule, final valide, final invalide, non-régulière, >4 Kio et symlink.
+
+Filtres ciblés finaux réellement lus: services::ollama_manager::recovery_tests = 6 passed, 0 failed; services::ollama_manager::cleanup_tests = 4 passed, 0 failed; services::ollama_manager::rollback_tests = 5 passed, 0 failed. Aucune suite globale n a été lancée.
+
+Contrôles finaux: cargo check --all-targets --no-default-features code 0; cargo clippy --all-targets --no-default-features -- -D warnings code 0; cargo fmt --all -- --check code 0; git diff --check code 0.
+
+Graphify: graphify update . code 0; 33269 nodes, 67742 edges, 1988 communities, vue agrégée générée; avertissement connu de 73 fichiers sans noeud. Fichiers de production: manager.rs 229, recovery.rs 218, recovery_entry.rs 34, cleanup.rs 177, cleanup_inspection.rs 91, rollback.rs 118 lignes.
+
+Environnement: après un No space left on device pendant une recompilation, cargo clean ciblé dans src-tauri a supprimé 97331 artefacts récupérables, 213.9 GiB; aucun fichier source supprimé. Limite: Windows natif non exécuté sur macOS arm64. Rapport task-9-report.md et ledger progress.md mis à jour. Commit exact: feat(ollama): resume recovery and cleanup durably.
