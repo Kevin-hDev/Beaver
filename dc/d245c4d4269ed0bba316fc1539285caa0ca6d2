@@ -1,0 +1,11 @@
+Jalon 3 Ollama — correction ciblée de la suppression durable Windows.
+
+Constat CI: le run 31909158074 échouait sur cinq tests J3 avec ERROR_ACCESS_DENIED (code 5), tous localisés par OllamaFsOperation::ReopenDirectory. La primitive fautive était ReOpenFile, avant toute énumération ou suppression.
+
+Décision: ouvrir le dossier racine par son identifiant natif déjà vérifié avec OpenFileById, en utilisant le handle stable du même volume comme référence. La documentation Microsoft autorise tout handle de fichier du volume comme hVolumeHint. L’identité du nouveau handle reste comparée à l’identité stable avant toute mutation; aucune suppression récursive par chemin ni aucun repli permissif n’est ajouté.
+
+TDD: services::ollama_manager::durable_fs_tests::windows_verified_delete_reopens_root_by_verified_file_id était rouge avant l’implémentation puis vert.
+
+Preuves locales observées: durable_fs_tests 22/22; filtre services::ollama_manager 270 passés, 0 échec, 1 générateur volontairement ignoré; cargo clippy --all-targets -- -D warnings vert; cargo fmt --all -- --check vert; git diff --check vert; fichiers de production modifiés à 229 lignes maximum; graphify update . terminé.
+
+Limite honnête: l’exécution native Windows de cette nouvelle primitive doit encore être validée par la CI. Ne pas fusionner avant la CI trois systèmes verte et la review complète prévue.
