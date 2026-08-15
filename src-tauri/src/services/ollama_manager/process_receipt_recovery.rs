@@ -104,6 +104,14 @@ impl ProcessReceiptStore {
         let identity = match inspect_native_identity(receipt.pid, expected_executable) {
             Ok(identity) => identity,
             Err(_) => {
+                match OwnedProcess::reap_exited_child(receipt.pid) {
+                    Ok(true) => {
+                        self.remove()?;
+                        return Ok(ProcessReceiptRecovery::Reaped);
+                    }
+                    Ok(false) => {}
+                    Err(_) => return Ok(ProcessReceiptRecovery::RecoveryRequired),
+                }
                 if OwnedProcess::process_exists(receipt.pid) {
                     return Ok(ProcessReceiptRecovery::RecoveryRequired);
                 }

@@ -163,6 +163,10 @@ pub(super) fn process_exists(pid: u32) -> bool {
     ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION).is_ok()
 }
 
+pub(super) fn reap_exited_child(_pid: u32) -> Result<bool, OwnedProcessError> {
+    Ok(false)
+}
+
 pub(super) fn spawn_conpty<T: windows_spawn::AsPseudoConsole>(
     command: &mut windows_spawn::Command,
     pseudoconsole: &T,

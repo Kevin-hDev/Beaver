@@ -321,12 +321,24 @@ fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
         .executable()
         .execution_identity()
         .expect("executable");
-    assert_eq!(
-        launcher
-            .recover_receipt(&store, expected, Instant::now() + Duration::from_secs(2))
-            .expect("recovery"),
-        super::process_receipt::ProcessReceiptRecovery::Reaped
-    );
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        let recovery = launcher
+            .recover_receipt(&store, expected, deadline)
+            .expect("recovery");
+        if recovery == super::process_receipt::ProcessReceiptRecovery::Reaped {
+            break;
+        }
+        assert_eq!(
+            recovery,
+            super::process_receipt::ProcessReceiptRecovery::RecoveryRequired
+        );
+        assert!(
+            Instant::now() < deadline,
+            "recovery did not reap exited child"
+        );
+        std::thread::yield_now();
+    }
     drop(registrations);
 }
 

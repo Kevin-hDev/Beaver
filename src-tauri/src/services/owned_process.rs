@@ -52,6 +52,10 @@ impl OwnedProcess {
         platform::recover_exact(expected, deadline)
     }
 
+    pub(crate) fn reap_exited_child(pid: u32) -> Result<bool, OwnedProcessError> {
+        platform::reap_exited_child(pid)
+    }
+
     pub(crate) fn signal_exact(
         expected: OwnedProcessIdentity,
         force: bool,

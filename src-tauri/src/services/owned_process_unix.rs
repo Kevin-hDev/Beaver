@@ -109,6 +109,22 @@ pub(super) fn process_exists(pid: u32) -> bool {
     result == 0 || std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)
 }
 
+pub(super) fn reap_exited_child(pid: u32) -> Result<bool, OwnedProcessError> {
+    if pid < 2 || pid > i32::MAX as u32 {
+        return Err(OwnedProcessError::Admission);
+    }
+    let mut status = 0;
+    let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
+    if result == pid as libc::pid_t {
+        release(pid);
+        return Ok(true);
+    }
+    if result == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD) {
+        return Ok(false);
+    }
+    Err(OwnedProcessError::Admission)
+}
+
 #[cfg(target_os = "linux")]
 fn pidfd_open(pid: u32) -> Result<libc::c_int, OwnedProcessError> {
     let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) } as libc::c_int;
