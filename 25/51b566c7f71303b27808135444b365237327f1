@@ -1,0 +1,13 @@
+Task 7 fix round 1/5 — sonde Ollama possédée, isolée et bornée.
+
+Base exacte du fix: b0f0ea612d51d9932eba729cd6b2e3f139d83759. Commit: 2551b566c7f71303b27808135444b365237327f1 fix(ollama): prove bounded probe ownership. Base initiale Task 7: b6c7f9de6fd20cd9b9fda94f0ce65604e81e6559. PreparedBundle reste défini dans probe.rs comme unique type futur; aucun ancien launcher, adoption Task 14, Job ou inventaire parallèle.
+
+TDD rouge observé avant production: node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::probe_tests a retourné exactement Rust test filter failed. après ajout du test d ownership et avant le module/type de production. Verts relus: probe_tests 10 passed/0 failed, probe_http_tests 6 passed/0 failed, port_tests 3 passed/0 failed.
+
+Preuves du fix: après la gate Task 6, poll borné jusqu au deadline d un LISTEN loopback netstat2; association acceptée seulement pour le PID ou groupe natif possédé. Un démon externe qui gagne le port retourne Deferred et aucun signal externe. Un binaire natif gated sert /api/version dans le test de succès, qui vérifie Valid, identités avant/après, reap et nettoyage modèles. Un verrou async interne par instance couvre attente et validation, avec annulation et deadline; le test concurrent compte au plus un enfant actif.
+
+Modèles: revalidation NativePathIdentityResolver juste avant création et suppression; symlink, junction et reparse point rejetés par cette autorité unique. Table de classification conservée; trois ports loopback maximum, HTTP loopback sans redirection borné à 4096 octets, profil modèles isolé OLLAMA_NO_CLOUD=1, aucun effet sur démon externe.
+
+Validation: cargo check exit 0; cargo clippy --all-targets -- -D warnings exit 0; cargo fmt --all -- --check exit 0; git diff --check exit 0; graphify update . terminé. Production découpée: probe.rs 131 lignes, probe_ownership.rs 173, probe_runner.rs 116, probe_support.rs 43, probe_http.rs 226, port.rs 82; toutes sous 230 lignes.
+
+Limites: Windows natif non exécuté sur macOS arm64 et non déclaré vert; suite globale updater/PTy connue non relancée. Aucun push ni merge. Note relue après écriture.
