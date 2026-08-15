@@ -12,6 +12,7 @@ mod extract;
 mod extract_archive;
 #[cfg(test)]
 mod extract_fixture;
+mod extract_root;
 mod extract_zip_validate;
 mod fingerprint;
 mod install;

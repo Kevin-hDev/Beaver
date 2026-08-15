@@ -2,9 +2,10 @@
 
 use super::error::OllamaErrorCode;
 use super::extract::{ensure_not_cancelled, validate_member_path, ArchiveMemberKind};
+use super::extract_root::ExtractionRoot;
 use std::collections::HashSet;
 use std::io::{Read, Write};
-use std::path::{Component, Path, PathBuf};
+use std::path::Path;
 use tokio_util::sync::CancellationToken;
 
 const MAX_ENTRIES: usize = 50_000;
@@ -13,11 +14,10 @@ const COPY_BUFFER_BYTES: usize = 64 * 1024;
 
 pub(super) fn extract_tar<R: Read>(
     mut archive: tar::Archive<R>,
-    staging: &Path,
+    root: &ExtractionRoot,
     cancellation: &CancellationToken,
+    before_write: &mut dyn FnMut() -> Result<(), OllamaErrorCode>,
 ) -> Result<(), OllamaErrorCode> {
-    let root =
-        std::fs::canonicalize(staging).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
     let mut names = HashSet::new();
     let mut total = 0_u64;
     for (index, item) in archive
@@ -46,10 +46,9 @@ pub(super) fn extract_tar<R: Read>(
             _ => ArchiveMemberKind::Other,
         };
         kind.validate()?;
-        let target = safe_target(&root, &name)?;
+        before_write()?;
         if kind == ArchiveMemberKind::Directory {
-            std::fs::create_dir_all(&target)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+            root.create_directory_all(&name)?;
             continue;
         }
         total = total
@@ -67,15 +66,16 @@ pub(super) fn extract_tar<R: Read>(
             .header()
             .mode()
             .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?;
-        write_entry(&mut entry, &target, mode, cancellation)?;
+        write_entry(&mut entry, root, &name, mode, cancellation)?;
     }
     Ok(())
 }
 
 pub(super) fn extract_zip(
     archive: &Path,
-    staging: &Path,
+    root: &ExtractionRoot,
     cancellation: &CancellationToken,
+    before_write: &mut dyn FnMut() -> Result<(), OllamaErrorCode>,
 ) -> Result<(), OllamaErrorCode> {
     super::extract_zip_validate::validate_zip_directory(archive)?;
     let file = std::fs::File::open(archive).map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
@@ -84,8 +84,6 @@ pub(super) fn extract_zip(
     if archive.len() > MAX_ENTRIES {
         return Err(OllamaErrorCode::OllamaBundleInvalid);
     }
-    let root =
-        std::fs::canonicalize(staging).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
     let mut names = HashSet::new();
     let mut total = 0_u64;
     for index in 0..archive.len() {
@@ -108,10 +106,9 @@ pub(super) fn extract_zip(
             .map(|mode| mode & 0o170000 == 0o120000)
             .unwrap_or(false);
         ArchiveMemberKind::from_zip(entry.is_dir(), symlink).validate()?;
-        let target = safe_target(&root, &name)?;
+        before_write()?;
         if entry.is_dir() {
-            std::fs::create_dir_all(&target)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+            root.create_directory_all(&name)?;
             continue;
         }
         total = total
@@ -120,14 +117,8 @@ pub(super) fn extract_zip(
         if total > MAX_UNPACKED_BYTES {
             return Err(OllamaErrorCode::OllamaBundleInvalid);
         }
-        let parent = target
-            .parent()
-            .ok_or(OllamaErrorCode::OllamaBundleInvalid)?;
-        std::fs::create_dir_all(parent).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
-        let mut output = std::fs::File::create(&target)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+        let mut output = root.create_file(&name, entry.unix_mode().unwrap_or(0o644))?;
         copy_bounded(&mut entry, &mut output, cancellation)?;
-        apply_mode(&target, entry.unix_mode());
     }
     Ok(())
 }
@@ -144,53 +135,16 @@ impl ArchiveMemberKind {
     }
 }
 
-fn safe_target(root: &Path, name: &Path) -> Result<PathBuf, OllamaErrorCode> {
-    let target = root.join(name);
-    let mut current = root.to_path_buf();
-    for component in name.components() {
-        let Component::Normal(part) = component else {
-            return Err(OllamaErrorCode::OllamaBundleInvalid);
-        };
-        current.push(part);
-        if let Ok(metadata) = std::fs::symlink_metadata(&current) {
-            if metadata.file_type().is_symlink() {
-                return Err(OllamaErrorCode::OllamaBundleInvalid);
-            }
-            let resolved = std::fs::canonicalize(&current)
-                .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?;
-            if !resolved.starts_with(root) {
-                return Err(OllamaErrorCode::OllamaBundleInvalid);
-            }
-        }
-    }
-    Ok(target)
-}
-
 fn write_entry<R: Read>(
     entry: &mut tar::Entry<R>,
-    target: &Path,
+    root: &ExtractionRoot,
+    name: &Path,
     mode: u32,
     cancellation: &CancellationToken,
 ) -> Result<(), OllamaErrorCode> {
-    let parent = target
-        .parent()
-        .ok_or(OllamaErrorCode::OllamaBundleInvalid)?;
-    std::fs::create_dir_all(parent).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
-    let mut output =
-        std::fs::File::create(target).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+    let mut output = root.create_file(name, mode)?;
     copy_bounded(entry, &mut output, cancellation)?;
-    apply_mode(target, Some(mode));
     Ok(())
-}
-
-fn apply_mode(path: &Path, mode: Option<u32>) {
-    #[cfg(unix)]
-    if let Some(mode) = mode {
-        use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode & 0o777));
-    }
-    #[cfg(not(unix))]
-    let _ = (path, mode);
 }
 
 fn copy_bounded<R: Read, W: Write>(

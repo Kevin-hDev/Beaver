@@ -38,6 +38,37 @@ fn extraction_requires_an_existing_empty_regular_staging_directory() {
     assert!(validate_empty_staging(&staging).is_err());
 }
 
+#[cfg(unix)]
+#[test]
+fn extraction_rejects_parent_swap_after_validation_before_write() {
+    let root = tempfile::tempdir().unwrap();
+    let archive = root.path().join("swap.tgz");
+    write_gzip_tar(
+        &archive,
+        &[TarMember::regular(
+            "bin/ollama",
+            b"must-stay-confined",
+            0o755,
+        )],
+    );
+    let staging = empty_staging(root.path());
+    let outside = root.path().join("outside");
+    std::fs::create_dir(&outside).unwrap();
+    let swapped_parent = staging.join("bin");
+    let result = super::extract::extract_archive_for_test(
+        &archive,
+        &staging,
+        "ollama-darwin.tgz",
+        &CancellationToken::new(),
+        || {
+            std::os::unix::fs::symlink(&outside, &swapped_parent).unwrap();
+            Ok(())
+        },
+    );
+    assert_eq!(result, Err(OllamaErrorCode::OllamaBundleInvalid));
+    assert!(!outside.join("ollama").exists());
+}
+
 #[test]
 fn real_tar_and_zip_archives_extract_regular_files() {
     let root = tempfile::tempdir().unwrap();

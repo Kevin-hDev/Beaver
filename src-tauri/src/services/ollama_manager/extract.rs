@@ -66,8 +66,53 @@ pub fn extract_archive(
     archive_name: &str,
     cancellation: &CancellationToken,
 ) -> Result<(), OllamaErrorCode> {
-    validate_empty_staging(staging)?;
-    extract_archive_contents(archive, staging, archive_name, cancellation)
+    extract_archive_with_hook(
+        archive,
+        staging,
+        archive_name,
+        cancellation,
+        true,
+        &mut || Ok::<(), OllamaErrorCode>(()),
+    )
+}
+
+#[cfg(test)]
+pub(super) fn extract_archive_for_test<F>(
+    archive: &Path,
+    staging: &Path,
+    archive_name: &str,
+    cancellation: &CancellationToken,
+    mut before_write: F,
+) -> Result<(), OllamaErrorCode>
+where
+    F: FnMut() -> Result<(), OllamaErrorCode>,
+{
+    extract_archive_with_hook(
+        archive,
+        staging,
+        archive_name,
+        cancellation,
+        true,
+        &mut before_write,
+    )
+}
+
+fn extract_archive_with_hook(
+    archive: &Path,
+    staging: &Path,
+    archive_name: &str,
+    cancellation: &CancellationToken,
+    require_empty: bool,
+    before_write: &mut dyn FnMut() -> Result<(), OllamaErrorCode>,
+) -> Result<(), OllamaErrorCode> {
+    extract_archive_contents(
+        archive,
+        staging,
+        archive_name,
+        cancellation,
+        require_empty,
+        before_write,
+    )
 }
 
 pub fn extract_archive_overlay(
@@ -76,8 +121,14 @@ pub fn extract_archive_overlay(
     archive_name: &str,
     cancellation: &CancellationToken,
 ) -> Result<(), OllamaErrorCode> {
-    validate_staging_directory(staging)?;
-    extract_archive_contents(archive, staging, archive_name, cancellation)
+    extract_archive_contents(
+        archive,
+        staging,
+        archive_name,
+        cancellation,
+        false,
+        &mut || Ok::<(), OllamaErrorCode>(()),
+    )
 }
 
 fn extract_archive_contents(
@@ -85,25 +136,38 @@ fn extract_archive_contents(
     staging: &Path,
     archive_name: &str,
     cancellation: &CancellationToken,
+    require_empty: bool,
+    before_write: &mut dyn FnMut() -> Result<(), OllamaErrorCode>,
 ) -> Result<(), OllamaErrorCode> {
     let archive_name = AllowlistedArchiveName::parse(archive_name)?;
     ensure_not_cancelled(cancellation)?;
+    let root = super::extract_root::ExtractionRoot::open(staging, require_empty)?;
     match archive_name.as_str() {
         name if name.ends_with(".zip") => {
-            super::extract_archive::extract_zip(archive, staging, cancellation)
+            super::extract_archive::extract_zip(archive, &root, cancellation, before_write)
         }
         name if name.ends_with(".tgz") || name.ends_with(".tar.gz") => {
             let file =
                 std::fs::File::open(archive).map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
             let decoder = flate2::read::GzDecoder::new(file);
-            super::extract_archive::extract_tar(tar::Archive::new(decoder), staging, cancellation)
+            super::extract_archive::extract_tar(
+                tar::Archive::new(decoder),
+                &root,
+                cancellation,
+                before_write,
+            )
         }
         name if name.ends_with(".tar.zst") => {
             let file =
                 std::fs::File::open(archive).map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
             let decoder = zstd::stream::read::Decoder::new(file)
                 .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?;
-            super::extract_archive::extract_tar(tar::Archive::new(decoder), staging, cancellation)
+            super::extract_archive::extract_tar(
+                tar::Archive::new(decoder),
+                &root,
+                cancellation,
+                before_write,
+            )
         }
         _ => Err(OllamaErrorCode::OllamaBundleInvalid),
     }
