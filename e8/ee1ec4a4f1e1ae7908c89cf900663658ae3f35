@@ -1,0 +1,3 @@
+Alignement mécanique des fichiers Rust J3 avec le second contrat de formatage CI, qui exécute rustfmt fichier par fichier avec skip_children=true en plus de cargo fmt.
+
+Aucun comportement modifié. Preuves vues vertes: contrôle CI check-rust-format avec la base 39a53c40; cargo fmt --all -- --check; cargo clippy --all-targets -- -D warnings; git diff --check; graphify update terminé.
