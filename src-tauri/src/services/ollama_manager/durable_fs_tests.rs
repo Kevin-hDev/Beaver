@@ -292,6 +292,14 @@ fn windows_file_flush_uses_the_same_write_access_contract() {
 }
 
 #[test]
+fn native_error_evidence_preserves_the_raw_os_code() {
+    let error = OllamaFsError::from_os_code(OllamaFsErrorKind::PermissionDenied, 5);
+
+    assert_eq!(error.kind(), OllamaFsErrorKind::PermissionDenied);
+    assert_eq!(error.os_code(), Some(5));
+}
+
+#[test]
 fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
     let source = include_str!("durable_fs_windows.rs");
     let method = source

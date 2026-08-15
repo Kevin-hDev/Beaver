@@ -233,10 +233,6 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Check macOS backend
-        working-directory: src-tauri
-        run: cargo check --all-targets
-
       - name: Clippy macOS backend
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings

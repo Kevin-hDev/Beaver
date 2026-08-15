@@ -55,6 +55,29 @@ test("a zero-match filter fails before cargo can report success", () => {
   assert.equal(calls.length, 1);
 });
 
+test("an inventory failure reports bounded cargo diagnostics", () => {
+  const oversized = "x".repeat(40_000);
+  const run = () => ({
+    status: 101,
+    signal: "SIGKILL",
+    stdout: "inventory stdout",
+    stderr: `linker failed\n${oversized}`,
+  });
+
+  assert.throws(
+    () => runFilteredRustTests({ filter: FILTER }, run),
+    (error) => {
+      assert.match(error.message, /inventory/u);
+      assert.match(error.message, /status=101/u);
+      assert.match(error.message, /signal=SIGKILL/u);
+      assert.match(error.message, /inventory stdout/u);
+      assert.match(error.message, /linker failed/u);
+      assert.ok(error.message.length < oversized.length);
+      return true;
+    },
+  );
+});
+
 test("a non-empty inventory is executed without a shell", () => {
   const calls = [];
   const run = (_command, args, options) => {

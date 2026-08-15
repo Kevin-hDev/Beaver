@@ -16,9 +16,9 @@ use std::sync::{
 use std::thread;
 
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS, ERROR_FILE_NOT_FOUND,
-    ERROR_INVALID_PARAMETER, ERROR_LOCK_VIOLATION, ERROR_PATH_NOT_FOUND, ERROR_SHARING_VIOLATION,
-    GENERIC_WRITE, INVALID_HANDLE_VALUE,
+    CloseHandle, GetLastError, ERROR_ACCESS_DENIED, ERROR_ALREADY_EXISTS, ERROR_FILE_EXISTS,
+    ERROR_FILE_NOT_FOUND, ERROR_INVALID_PARAMETER, ERROR_LOCK_VIOLATION, ERROR_PATH_NOT_FOUND,
+    ERROR_SHARING_VIOLATION, GENERIC_WRITE, INVALID_HANDLE_VALUE,
 };
 use windows_sys::Win32::Storage::FileSystem::{
     CreateFileW, FlushFileBuffers, MoveFileExW, FILE_FLAG_BACKUP_SEMANTICS, FILE_SHARE_DELETE,
@@ -202,10 +202,11 @@ fn win_error(code: u32) -> OllamaFsError {
         ERROR_FILE_NOT_FOUND | ERROR_PATH_NOT_FOUND => OllamaFsErrorKind::NotFound,
         ERROR_ALREADY_EXISTS | ERROR_FILE_EXISTS => OllamaFsErrorKind::AlreadyExists,
         ERROR_SHARING_VIOLATION | ERROR_LOCK_VIOLATION => OllamaFsErrorKind::SharingViolation,
+        ERROR_ACCESS_DENIED => OllamaFsErrorKind::PermissionDenied,
         ERROR_INVALID_PARAMETER => OllamaFsErrorKind::InvalidInput,
         _ => OllamaFsErrorKind::Other,
     };
-    OllamaFsError::new(kind)
+    OllamaFsError::from_os_code(kind, code)
 }
 
 fn wide(path: &Path) -> Result<Vec<u16>, OllamaFsError> {
@@ -216,3 +217,7 @@ fn wide(path: &Path) -> Result<Vec<u16>, OllamaFsError> {
     result.push(0);
     Ok(result)
 }
+
+#[cfg(test)]
+#[path = "durable_fs_windows/error_tests.rs"]
+mod error_tests;

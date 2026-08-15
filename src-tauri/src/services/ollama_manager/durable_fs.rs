@@ -14,6 +14,7 @@ pub(super) enum OllamaFsErrorKind {
     NotFound,
     AlreadyExists,
     SharingViolation,
+    PermissionDenied,
     InvalidInput,
     Other,
 }
@@ -22,6 +23,7 @@ pub(super) enum OllamaFsErrorKind {
 pub(super) struct OllamaFsError {
     kind: OllamaFsErrorKind,
     cancelled: bool,
+    os_code: Option<u32>,
 }
 
 impl OllamaFsError {
@@ -29,6 +31,15 @@ impl OllamaFsError {
         Self {
             kind,
             cancelled: false,
+            os_code: None,
+        }
+    }
+
+    pub(super) const fn from_os_code(kind: OllamaFsErrorKind, os_code: u32) -> Self {
+        Self {
+            kind,
+            cancelled: false,
+            os_code: Some(os_code),
         }
     }
 
@@ -36,6 +47,7 @@ impl OllamaFsError {
         Self {
             kind: OllamaFsErrorKind::Other,
             cancelled: true,
+            os_code: None,
         }
     }
 
@@ -45,6 +57,10 @@ impl OllamaFsError {
 
     pub(super) const fn is_cancelled(self) -> bool {
         self.cancelled
+    }
+
+    pub(super) const fn os_code(self) -> Option<u32> {
+        self.os_code
     }
 }
 
