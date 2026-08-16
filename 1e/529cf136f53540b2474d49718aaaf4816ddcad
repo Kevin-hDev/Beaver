@@ -29,3 +29,15 @@ Recommandation
 Verdict final du run précédent
 - Le job Backend Windows CEF est finalement vert en 34 min 54 s.
 - Le run 31926015306 est rouge uniquement sur le test Rust instable corrigé par ce commit ; tous les six autres jobs sont verts.
+
+Validation CI finale
+- Run CI 31927419223 sur 1e529cf1 : 7 jobs sur 7 verts.
+- Backend Rust : vert en 11 min 44 s.
+- Linux WebView natif : vert en 4 min 45 s.
+- Desktop E2E CEF : vert en 4 min 23 s.
+- Frontend : vert en 11 min 39 s.
+- macOS CEF natif : vert en 19 min 25 s.
+- Windows tests Rust : vert en 11 min 8 s.
+- Windows CEF natif : vert en 30 min 55 s.
+- Contrôles annexes verts : CodeQL Rust/JS/actions, GitGuardian, RustSec et npm advisories.
+- Aucun job rouge, annulé ou ignoré au verdict final.
