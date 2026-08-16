@@ -1,0 +1,13 @@
+JALON 3 — REPRISE DES RECUS WINDOWS
+
+Contexte : le run CI 31923927978 a valide backend Rust, frontend, Linux WebView, Desktop CEF et macOS CEF. Windows CEF a echoue sur deux fonctions mortes apres la correction precedente. Windows tests a execute 3479 tests verts et conserve exactement deux rouges de reprise de recu.
+
+Cause racine : sous Windows, OwnedProcess::identity exige que le processus soit dans le Job Beaver. La reprise interpretait donc un processus vivant mais exterieur au Job comme une lecture ambigue et gardait le recu pour toujours. Or l absence du Job est une preuve certaine que ce processus n est pas le sidecar possede consigne.
+
+Correction : une inspection de reprise dediee ouvre une fois le processus, interroge le Job Beaver et distingue Owned de Unowned. Unowned retire seulement le recu perime ; une vraie erreur d inspection reste fail-closed. Unix conserve son observation existante. Les wrappers Windows devenus morts sont supprimes ; le controle strict identity_from_handle_with_executable reste l autorite d admission. La logique Windows est extraite dans un module de 15 lignes pour respecter la limite de 230 lignes.
+
+Preuves locales finales : filtre officiel services::ollama_manager = 292 passed, 0 failed, 1 ignored, 293 verified ; cargo clippy --all-targets -- -D warnings vert ; cargo fmt --all -- --check vert ; controle de format Rust personnalise vert ; git diff --check vert. Fichiers de production modifies : 182, 222, 225, 15 et 155 lignes.
+
+Limite de preuve : les deux tests Windows et Clippy Windows doivent encore etre confirmes par le prochain run natif. Aucun resultat Windows vert n est revendique dans cette note.
+
+Graphify : mise a jour terminee, 34323 noeuds, 70327 aretes, 2042 communautes.
