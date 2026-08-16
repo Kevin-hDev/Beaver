@@ -49,7 +49,6 @@ impl NativeGatedProcess {
                 return Err(OllamaProcessError::Identity);
             }
             if current.executable == executable {
-                self.exec_link.take();
                 return Ok(());
             }
             std::thread::yield_now();
@@ -94,6 +93,7 @@ impl NativeGatedProcess {
             match wait_nonblocking(self.pid)? {
                 Some(_) => {
                     crate::services::owned_process::release(self.identity.pid);
+                    self.exec_link.take();
                     self.reaped = true;
                     return Ok(());
                 }
@@ -106,6 +106,7 @@ impl NativeGatedProcess {
         }
         wait_blocking(self.pid)?;
         crate::services::owned_process::release(self.identity.pid);
+        self.exec_link.take();
         self.reaped = true;
         Ok(())
     }

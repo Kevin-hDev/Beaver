@@ -185,7 +185,7 @@ fn publication_uses_the_supplied_bundle_fingerprint_and_opens_gate() {
         .publish(&store, &coordinator.emergency_publisher())
         .expect("publication");
     #[cfg(unix)]
-    assert!(!owned
+    assert!(owned
         .native
         .as_ref()
         .expect("native")
@@ -195,6 +195,19 @@ fn publication_uses_the_supplied_bundle_fingerprint_and_opens_gate() {
     owned
         .terminate_and_reap(Instant::now() + Duration::from_secs(2))
         .expect("reap");
+    #[cfg(unix)]
+    assert_eq!(
+        std::fs::read_dir(&paths.active)
+            .expect("bundle entries")
+            .filter_map(Result::ok)
+            .filter(|entry| entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with(".beaver-gated-"))
+            .count(),
+        0,
+        "the recovery identity link must live exactly as long as the owned process"
+    );
     assert!(store.read().expect("removed receipt").is_none());
 }
 
