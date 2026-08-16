@@ -1,0 +1,9 @@
+CI FOLLOW-UP - WINDOWS CEF IMPORT CONDITIONNEL
+
+Run observé jusqu'au verdict complet: 31948856544 sur ef29d739. Six jobs principaux verts: Backend Linux WebView, Desktop E2E CEF, Frontend, Backend macOS CEF avec parcours natif, Backend Windows tests complet et Backend Rust Linux. Seul Backend Windows CEF était rouge.
+
+Cause exacte dans le log du job 95169072718: Clippy Windows refusait l'import super::types::BundleState dans install_tests.rs. Après suppression du test tautologique au commit précédent, cet import ne sert plus qu'au test first_install_publishes_after_probe_and_reinspection, lui-même cfg(unix). macOS local ne pouvait pas révéler cet import inutilisé conditionnel.
+
+Correction: l'import BundleState porte désormais cfg(unix), sans changement de comportement ni de test. Aucun autre fichier modifié.
+
+Preuves locales après correction: cargo fmt --all -- --check vert; cargo clippy --all-targets -- -D warnings vert sur macOS; git diff --check vert; graphify update . relancé depuis la racine et terminé. La preuve Windows finale reste la prochaine CI; aucun autre correctif ne sera poussé avant son verdict complet.
