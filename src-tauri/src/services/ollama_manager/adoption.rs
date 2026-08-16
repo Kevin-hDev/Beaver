@@ -36,10 +36,10 @@ where
         for path in [&version_path, &executable_path, &receipt_for_sync] {
             fs_for_sync
                 .sync_file(path)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+                .map_err(|error| super::storage_error::durable("adoption-sync-file", error))?;
             fs_for_sync
                 .sync_parent(path)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+                .map_err(|error| super::storage_error::durable("adoption-sync-parent", error))?;
         }
         Ok(())
     })

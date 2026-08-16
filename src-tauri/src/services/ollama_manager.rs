@@ -74,6 +74,7 @@ mod staging_recovery;
 mod startup;
 mod startup_recovery;
 mod storage_error;
+mod temporary_recovery;
 mod types;
 mod update;
 

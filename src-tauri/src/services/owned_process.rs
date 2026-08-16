@@ -53,7 +53,10 @@ impl OwnedProcess {
         #[cfg(unix)]
         return platform::inspect_for_recovery(pid, expected_start_time);
         #[cfg(windows)]
-        platform::inspect_for_recovery(pid)
+        {
+            let _ = expected_start_time;
+            platform::inspect_for_recovery(pid)
+        }
     }
 
     #[cfg(unix)]

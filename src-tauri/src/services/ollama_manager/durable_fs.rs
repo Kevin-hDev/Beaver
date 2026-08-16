@@ -7,7 +7,6 @@ use std::time::Duration;
 
 #[path = "durable_fs_error.rs"]
 mod durable_fs_error;
-#[cfg(any(test, windows))]
 pub(super) use durable_fs_error::OllamaFsOperation;
 pub(super) use durable_fs_error::{OllamaFsError, OllamaFsErrorKind};
 
@@ -119,6 +118,12 @@ where
 mod durable_fs_unix;
 #[cfg(unix)]
 pub(super) use durable_fs_unix::UnixOllamaDurableFs as PlatformOllamaDurableFs;
+#[cfg(all(test, unix))]
+pub(super) use durable_fs_unix::{
+    classify_readdir_for_test as classify_unix_readdir_for_test,
+    directory_stream_count_for_test as unix_directory_stream_count_for_test,
+    reset_directory_stream_count_for_test as reset_unix_directory_stream_count_for_test,
+};
 
 #[cfg(windows)]
 #[path = "durable_fs_windows.rs"]

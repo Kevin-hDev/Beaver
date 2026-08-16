@@ -58,10 +58,7 @@ where
         &self,
         reason: RecoveryReason,
     ) -> Result<RecoveryOutcome, OllamaErrorCode> {
-        if cleanup::remove_safe_migration_marker_tmp(&self.fs, &self.paths).await? {
-            return Ok(RecoveryOutcome::ProgressMade);
-        }
-        if cleanup::remove_safe_journal_tmp(&self.fs, &self.journal, &self.paths).await? {
+        if super::temporary_recovery::remove_one(&self.fs, &self.journal, &self.paths).await? {
             return Ok(RecoveryOutcome::ProgressMade);
         }
         let journal = self

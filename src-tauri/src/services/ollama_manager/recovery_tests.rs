@@ -645,7 +645,7 @@ fn real_snapshot(fs: &RealCutpointFs, paths: &OllamaPaths) -> OllamaLayoutSnapsh
 }
 
 #[tokio::test]
-async fn real_recovery_decision_cutpoints_converge_after_two_passes() {
+async fn real_recovery_cutpoints_reach_the_expected_terminal_layout() {
     let scenarios = [
         RealScenario::RemoveUncommittedInstallStaging,
         RealScenario::CommitFreshInstallFromActive,
@@ -678,20 +678,39 @@ async fn real_recovery_decision_cutpoints_converge_after_two_passes() {
                     "first pass must fail closed at {scenario:?} {operation:?} before={before}"
                 );
                 fixture.fs.clear_failure();
-                let mut previous = None;
-                let mut converged = false;
+                let mut terminal = None;
                 for _ in 0..10 {
-                    let _ = fixture.runner.recover(RecoveryReason::Retry).await;
-                    let current = real_snapshot(&fixture.fs, &fixture.paths);
-                    if previous.as_ref() == Some(&current) {
-                        converged = true;
-                        break;
+                    match fixture.runner.recover(RecoveryReason::Retry).await {
+                        Ok(super::recovery::RecoveryOutcome::Ready) => {
+                            terminal = Some(real_snapshot(&fixture.fs, &fixture.paths));
+                            break;
+                        }
+                        Ok(super::recovery::RecoveryOutcome::ProgressMade) => {}
+                        other => panic!(
+                            "recovery must make progress to Ready at {scenario:?} {operation:?} before={before}, got {other:?}"
+                        ),
                     }
-                    previous = Some(current);
                 }
+                let terminal = terminal.unwrap_or_else(|| {
+                    panic!(
+                        "recovery did not reach Ready at {scenario:?} {operation:?} before={before}"
+                    )
+                });
+                assert_eq!(
+                    super::recovery_decision::decide_recovery(&terminal),
+                    super::recovery_decision::RecoveryDecision::Ready,
+                    "terminal layout must be Ready at {scenario:?} {operation:?} before={before}"
+                );
+                let active_expected =
+                    !matches!(scenario, RealScenario::RemoveUncommittedInstallStaging);
+                assert_eq!(
+                    matches!(terminal.active, DirectoryEvidence::Present(_)),
+                    active_expected,
+                    "terminal active bundle mismatch at {scenario:?} {operation:?} before={before}"
+                );
                 assert!(
-                    converged,
-                    "two retry passes must converge at {scenario:?} {operation:?} before={before}"
+                    !crate::services::paths::bundle_receipt_tmp_path(&fixture.paths.active).exists(),
+                    "bundle receipt temporary survived at {scenario:?} {operation:?} before={before}"
                 );
                 assert!(
                     fixture.fs.events().contains(&RealCutpoint {
@@ -1659,9 +1678,11 @@ async fn journal_tmp_matrix_preserves_invalid_regular_and_nonregular_entries() {
     let fs = Arc::new(super::durable_fs::platform_fs());
     let journal = super::journal_store::OllamaJournalStore::new(Arc::clone(&fs), paths.clone());
     std::fs::write(&paths.journal_tmp, b"partial").unwrap();
-    assert!(cleanup::remove_safe_journal_tmp(&fs, &journal, &paths)
-        .await
-        .unwrap());
+    assert!(
+        super::temporary_recovery::remove_safe_journal_tmp(&fs, &journal, &paths)
+            .await
+            .unwrap()
+    );
     let valid = serde_json::to_vec(&OllamaTransactionJournal::new(
         OllamaJournalState::Prepared {
             target: fp("1.2.3", "11"),
@@ -1671,27 +1692,29 @@ async fn journal_tmp_matrix_preserves_invalid_regular_and_nonregular_entries() {
     .unwrap();
     std::fs::write(&paths.journal, &valid).unwrap();
     std::fs::write(&paths.journal_tmp, b"partial").unwrap();
-    assert!(cleanup::remove_safe_journal_tmp(&fs, &journal, &paths)
-        .await
-        .unwrap());
+    assert!(
+        super::temporary_recovery::remove_safe_journal_tmp(&fs, &journal, &paths)
+            .await
+            .unwrap()
+    );
     assert_eq!(std::fs::read(&paths.journal).unwrap(), valid);
     std::fs::write(&paths.journal, b"invalid").unwrap();
     std::fs::write(&paths.journal_tmp, b"partial").unwrap();
     assert_eq!(
-        cleanup::remove_safe_journal_tmp(&fs, &journal, &paths).await,
+        super::temporary_recovery::remove_safe_journal_tmp(&fs, &journal, &paths).await,
         Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
     );
     assert!(paths.journal_tmp.exists());
     std::fs::remove_file(&paths.journal_tmp).unwrap();
     std::fs::create_dir(&paths.journal_tmp).unwrap();
     assert_eq!(
-        cleanup::remove_safe_journal_tmp(&fs, &journal, &paths).await,
+        super::temporary_recovery::remove_safe_journal_tmp(&fs, &journal, &paths).await,
         Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
     );
     std::fs::remove_dir(&paths.journal_tmp).unwrap();
     std::fs::write(&paths.journal_tmp, vec![b'x'; 4097]).unwrap();
     assert_eq!(
-        cleanup::remove_safe_journal_tmp(&fs, &journal, &paths).await,
+        super::temporary_recovery::remove_safe_journal_tmp(&fs, &journal, &paths).await,
         Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
     );
     std::fs::remove_file(&paths.journal_tmp).unwrap();
@@ -1699,8 +1722,64 @@ async fn journal_tmp_matrix_preserves_invalid_regular_and_nonregular_entries() {
     std::fs::write(&target, b"x").unwrap();
     symlink(&target, &paths.journal_tmp).unwrap();
     assert_eq!(
-        cleanup::remove_safe_journal_tmp(&fs, &journal, &paths).await,
+        super::temporary_recovery::remove_safe_journal_tmp(&fs, &journal, &paths).await,
         Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
     );
     assert!(paths.journal_tmp.exists());
+}
+
+#[tokio::test]
+async fn bundle_receipt_tmp_recovery_removes_only_uncommitted_bounded_files() {
+    let root = tempfile::tempdir_in(".").unwrap();
+    let paths = ollama_paths(root.path());
+    std::fs::create_dir_all(&paths.active).unwrap();
+    let temporary = crate::services::paths::bundle_receipt_tmp_path(&paths.active);
+    let receipt = crate::services::paths::bundle_receipt_path(&paths.active);
+    let fs = Arc::new(super::durable_fs::platform_fs());
+
+    std::fs::write(&temporary, b"partial").unwrap();
+    assert!(
+        super::temporary_recovery::remove_safe_bundle_receipt_tmp(&fs, &paths)
+            .await
+            .unwrap()
+    );
+    assert!(!temporary.exists());
+
+    std::fs::write(&receipt, b"invalid").unwrap();
+    std::fs::write(&temporary, b"partial").unwrap();
+    assert_eq!(
+        super::temporary_recovery::remove_safe_bundle_receipt_tmp(&fs, &paths).await,
+        Err(OllamaErrorCode::OllamaBundleInvalid)
+    );
+    assert!(temporary.exists());
+    std::fs::remove_file(&receipt).unwrap();
+    std::fs::remove_file(&temporary).unwrap();
+
+    std::fs::create_dir(&temporary).unwrap();
+    assert_eq!(
+        super::temporary_recovery::remove_safe_bundle_receipt_tmp(&fs, &paths).await,
+        Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
+    );
+    std::fs::remove_dir(&temporary).unwrap();
+    std::fs::write(
+        &temporary,
+        vec![b'x'; super::constants::MAX_DURABLE_DOCUMENT_BYTES + 1],
+    )
+    .unwrap();
+    assert_eq!(
+        super::temporary_recovery::remove_safe_bundle_receipt_tmp(&fs, &paths).await,
+        Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
+    );
+    #[cfg(unix)]
+    {
+        std::fs::remove_file(&temporary).unwrap();
+        let target = root.path().join("receipt-target");
+        std::fs::write(&target, b"unrelated").unwrap();
+        std::os::unix::fs::symlink(&target, &temporary).unwrap();
+        assert_eq!(
+            super::temporary_recovery::remove_safe_bundle_receipt_tmp(&fs, &paths).await,
+            Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
+        );
+        assert_eq!(std::fs::read(&target).unwrap(), b"unrelated");
+    }
 }

@@ -44,6 +44,22 @@ fn windows_identity_rejects_parent_relationship_for_equal_identity() {
 }
 
 #[test]
+fn windows_unresolved_components_compare_with_native_case_rules() {
+    let resolver = NativePathIdentityResolver;
+    let anchor = CanonicalDirectory::synthetic(
+        PathBuf::from(r"C:\Data"),
+        Some(NativeDirectoryIdentity::synthetic(10)),
+    );
+    let upper =
+        anchor.unresolved_child(super::path_identity::ValidatedPathComponent::new("Models"));
+    let lower =
+        anchor.unresolved_child(super::path_identity::ValidatedPathComponent::new("models"));
+    assert!(resolver
+        .same_directory(&upper, &lower)
+        .expect("native case-insensitive comparison"));
+}
+
+#[test]
 fn windows_environment_keys_are_deduplicated_without_case() {
     let resolver = FakeResolver::with_paths(&paths());
     let result = OllamaSpawnProfile::resolve(

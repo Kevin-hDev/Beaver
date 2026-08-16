@@ -362,6 +362,48 @@ fn unix_verified_delete_refuses_an_overdeep_tree_without_removing_the_root() {
     assert!(trash.exists());
 }
 
+#[cfg(unix)]
+#[test]
+fn unix_verified_delete_closes_directory_stream_on_early_error() {
+    use super::path_identity::{NativePathIdentityResolver, PathIdentityResolver};
+
+    let root = tempfile::tempdir().unwrap();
+    let trash = dunce::canonicalize(root.path()).unwrap().join("trash");
+    let mut nested = trash.clone();
+    for _ in 0..65 {
+        nested.push("nested");
+    }
+    std::fs::create_dir_all(&nested).unwrap();
+    let canonical = NativePathIdentityResolver
+        .canonical_directory(&trash)
+        .unwrap();
+
+    super::durable_fs::reset_unix_directory_stream_count_for_test();
+    assert!(PlatformOllamaDurableFs
+        .remove_tree_verified(&canonical)
+        .is_err());
+    assert_eq!(
+        super::durable_fs::unix_directory_stream_count_for_test(),
+        0,
+        "every fdopendir ownership path must close through Drop"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn unix_readdir_distinguishes_end_of_directory_from_errno() {
+    assert_eq!(
+        super::durable_fs::classify_unix_readdir_for_test(0),
+        Ok(false)
+    );
+    let error = super::durable_fs::classify_unix_readdir_for_test(libc::EBADF).unwrap_err();
+    assert_eq!(error.os_code(), Some(libc::EBADF as u32));
+    assert_eq!(
+        error.operation(),
+        Some(OllamaFsOperation::EnumerateDirectory)
+    );
+}
+
 #[test]
 fn windows_verified_delete_opens_paths_then_revalidates_native_identity() {
     let verified = include_str!("durable_fs_windows_verified.rs");

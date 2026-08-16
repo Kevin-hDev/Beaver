@@ -7,6 +7,9 @@ use std::path::Path;
 use std::time::Instant;
 use tokio_util::sync::CancellationToken;
 
+#[path = "probe_http_hash_error.rs"]
+mod hash_error;
+
 use super::constants::MAX_PROBE_RESPONSE_BYTES;
 use super::error::OllamaErrorCode;
 use super::fingerprint::OllamaVersion;

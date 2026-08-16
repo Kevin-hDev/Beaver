@@ -75,7 +75,7 @@ pub fn write_version<F: OllamaDurableFs>(
     let path = root.join("VERSION");
     let tmp = root.join("VERSION.tmp");
     fs.write_new_atomic(&tmp, &path, version.as_bytes())
-        .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+        .map_err(|error| super::storage_error::durable("bundle-version-write", error))
 }
 
 pub fn write_receipt<F: OllamaDurableFs>(
@@ -99,7 +99,7 @@ pub fn write_receipt_at<F: OllamaDurableFs>(
         return Err(OllamaErrorCode::OllamaBundleInvalid);
     }
     fs.write_new_atomic(tmp, path, &bytes)
-        .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+        .map_err(|error| super::storage_error::durable("bundle-receipt-write", error))
 }
 
 pub fn read_receipt<F: OllamaDurableFs>(
@@ -109,7 +109,7 @@ pub fn read_receipt<F: OllamaDurableFs>(
     match fs.read_bounded(path, MAX_DURABLE_DOCUMENT_BYTES) {
         Ok(bytes) => BundleReceipt::parse_bounded(&bytes).map(Some),
         Err(error) if error.kind() == OllamaFsErrorKind::NotFound => Ok(None),
-        Err(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
+        Err(error) => Err(super::storage_error::durable("bundle-receipt-read", error)),
     }
 }
 

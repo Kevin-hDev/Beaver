@@ -6,12 +6,17 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+#[path = "path_identity_directory.rs"]
+mod path_identity_directory;
 #[cfg(unix)]
 #[path = "path_identity_unix.rs"]
 pub(crate) mod path_identity_unix;
+#[path = "path_identity_unresolved.rs"]
+mod path_identity_unresolved;
 #[cfg(windows)]
 #[path = "path_identity_windows.rs"]
 pub(crate) mod path_identity_windows;
+use path_identity_unresolved::UnresolvedDirectory;
 
 pub type OllamaError = OllamaErrorCode;
 
@@ -50,80 +55,9 @@ pub(crate) struct StableDirectoryHandle(pub(crate) Arc<std::fs::File>);
 pub struct CanonicalDirectory {
     path: PathBuf,
     identity: Option<NativeDirectoryIdentity>,
+    unresolved: Option<UnresolvedDirectory>,
     #[cfg(any(unix, windows))]
     handle: Option<StableDirectoryHandle>,
-}
-
-impl std::fmt::Debug for CanonicalDirectory {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("CanonicalDirectory")
-            .field("path", &self.path)
-            .field("identity", &self.identity)
-            .finish()
-    }
-}
-
-impl PartialEq for CanonicalDirectory {
-    fn eq(&self, other: &Self) -> bool {
-        self.path == other.path && self.identity == other.identity
-    }
-}
-
-impl Eq for CanonicalDirectory {}
-
-impl CanonicalDirectory {
-    pub(crate) fn synthetic(path: PathBuf, identity: Option<NativeDirectoryIdentity>) -> Self {
-        #[cfg(any(unix, windows))]
-        return Self::from_native(path, identity, None);
-        #[cfg(not(any(unix, windows)))]
-        Self::from_native(path, identity)
-    }
-
-    pub(crate) fn from_native(
-        path: PathBuf,
-        identity: Option<NativeDirectoryIdentity>,
-        #[cfg(any(unix, windows))] handle: Option<StableDirectoryHandle>,
-    ) -> Self {
-        Self {
-            path,
-            identity,
-            #[cfg(any(unix, windows))]
-            handle,
-        }
-    }
-
-    pub(crate) fn path(&self) -> &Path {
-        &self.path
-    }
-
-    pub(crate) fn identity(&self) -> Option<&NativeDirectoryIdentity> {
-        self.identity.as_ref()
-    }
-
-    #[cfg(any(unix, windows))]
-    pub(crate) fn stable_handle(&self) -> Option<&std::fs::File> {
-        self.handle.as_ref().map(|handle| handle.0.as_ref())
-    }
-
-    #[cfg(test)]
-    pub(crate) fn has_stable_handle(&self) -> bool {
-        #[cfg(any(unix, windows))]
-        {
-            self.handle.is_some()
-        }
-        #[cfg(not(any(unix, windows)))]
-        {
-            false
-        }
-    }
-
-    pub(crate) fn child(&self, path: PathBuf, identity: Option<NativeDirectoryIdentity>) -> Self {
-        #[cfg(any(unix, windows))]
-        return Self::from_native(path, identity, self.handle.clone());
-        #[cfg(not(any(unix, windows)))]
-        Self::from_native(path, identity)
-    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -144,6 +78,10 @@ impl ValidatedPathComponent {
             return Err(OllamaErrorCode::OllamaModelStoreConflict);
         }
         Ok(Self(value.to_owned()))
+    }
+
+    pub(super) fn as_os_str(&self) -> &std::ffi::OsStr {
+        &self.0
     }
 }
 
@@ -195,12 +133,9 @@ impl VerifiedDirectoryLocation {
     }
 
     pub(crate) fn comparison_directory(&self) -> CanonicalDirectory {
-        self.existing_directory.clone().unwrap_or_else(|| {
-            self.canonical_parent.child(
-                self.canonical_parent.path.join(&self.leaf.0),
-                self.existing_identity.clone(),
-            )
-        })
+        self.existing_directory
+            .clone()
+            .unwrap_or_else(|| self.canonical_parent.unresolved_child(self.leaf.clone()))
     }
 }
 

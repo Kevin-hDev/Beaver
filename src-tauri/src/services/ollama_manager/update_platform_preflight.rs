@@ -21,6 +21,10 @@ pub(super) fn ensure_absent(path: &Path) -> Result<(), OllamaErrorCode> {
     match std::fs::symlink_metadata(path) {
         Ok(_) => Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
+        Err(error) => Err(crate::services::ollama_manager::storage_error::io(
+            "update-preflight-inspect",
+            &error,
+            OllamaErrorCode::OllamaStorageUnavailable,
+        )),
     }
 }

@@ -38,7 +38,7 @@ pub(crate) fn same_directory(
 ) -> Result<bool, OllamaError> {
     Ok(match (left.identity(), right.identity()) {
         (Some(left), Some(right)) => left == right,
-        _ => left.path() == right.path(),
+        _ => left.same_unresolved_location(right)?,
     })
 }
 
@@ -49,16 +49,13 @@ pub(crate) fn contains(
     if same_directory(parent, child)? {
         return Ok(false);
     }
-    if child.identity().is_none() {
-        return Ok(child.path().starts_with(parent.path()));
+    if let Some(descendant) = child.unresolved_descendant_of(parent)? {
+        return Ok(descendant);
     }
     let Some(parent_identity) = parent.identity() else {
-        return Ok(child.path().starts_with(parent.path()));
+        return Ok(false);
     };
-    let mut ancestors = child.path().ancestors();
-    if child.identity().is_none() {
-        ancestors.next();
-    }
+    let ancestors = child.existing_anchor_path().ancestors();
     for ancestor in ancestors {
         if handles::ancestor_identity(ancestor)? == *parent_identity {
             return Ok(true);

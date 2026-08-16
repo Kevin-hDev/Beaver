@@ -90,9 +90,16 @@ pub(crate) fn verified_models_directory(
             Err(_) => return Err(OllamaErrorCode::OllamaStorageUnavailable),
         }
     };
-    Ok(missing.into_iter().rev().fold(existing, |parent, name| {
-        parent.child(parent.path().join(name), None)
-    }))
+    missing
+        .into_iter()
+        .rev()
+        .try_fold(existing, |parent, name| {
+            Ok(
+                parent.unresolved_child(super::path_identity::ValidatedPathComponent::from_os(
+                    &name,
+                )?),
+            )
+        })
 }
 
 pub(super) fn active_executable(active: &Path) -> PathBuf {

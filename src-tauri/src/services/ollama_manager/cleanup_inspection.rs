@@ -18,7 +18,10 @@ pub(crate) fn marker(fs: &dyn OllamaDurableFs, paths: &OllamaPaths) -> Migration
     match fs.read_bounded(&paths.migration_marker, MAX_DURABLE_DOCUMENT_BYTES) {
         Ok(bytes) => classify_migration_marker(Some(&bytes)).into(),
         Err(error) if error.kind() == OllamaFsErrorKind::NotFound => marker_tmp(paths),
-        Err(_) => MigrationMarkerPresence::Invalid,
+        Err(error) => {
+            super::storage_error::record_durable("migration-marker-read", error);
+            MigrationMarkerPresence::Invalid
+        }
     }
 }
 
@@ -57,7 +60,10 @@ fn marker_tmp(paths: &OllamaPaths) -> MigrationMarkerPresence {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             MigrationMarkerPresence::Absent
         }
-        Err(_) => MigrationMarkerPresence::Unknown,
+        Err(error) => {
+            super::storage_error::record_io("migration-marker-tmp-inspect", &error);
+            MigrationMarkerPresence::Unknown
+        }
     }
 }
 
@@ -68,7 +74,10 @@ fn deletion_evidence(path: &Path) -> DirectoryEvidence {
         }
         Ok(_) => DirectoryEvidence::Invalid,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => DirectoryEvidence::Absent,
-        Err(_) => DirectoryEvidence::Unknown,
+        Err(error) => {
+            super::storage_error::record_io("deletion-evidence-inspect", &error);
+            DirectoryEvidence::Unknown
+        }
     }
 }
 
@@ -81,7 +90,10 @@ pub(super) fn directory_presence(path: &Path) -> ArchiveDirectoryEvidence {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             ArchiveDirectoryEvidence::Absent
         }
-        Err(_) => ArchiveDirectoryEvidence::Unknown,
+        Err(error) => {
+            super::storage_error::record_io("archive-directory-inspect", &error);
+            ArchiveDirectoryEvidence::Unknown
+        }
     }
 }
 
@@ -92,17 +104,33 @@ fn evidence(fs: &dyn OllamaDurableFs, path: &Path) -> DirectoryEvidence {
         }
         Ok(_) => DirectoryEvidence::Invalid,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => DirectoryEvidence::Absent,
-        Err(_) => DirectoryEvidence::Unknown,
+        Err(error) => {
+            super::storage_error::record_io("bundle-directory-inspect", &error);
+            DirectoryEvidence::Unknown
+        }
     }
 }
 
 pub(super) fn fingerprint(fs: &dyn OllamaDurableFs, path: &Path) -> Option<DirectoryEvidence> {
     let identity = NativePathIdentityResolver;
-    let root = identity.canonical_directory(path).ok()?;
+    let root = identity
+        .canonical_directory(path)
+        .map_err(|code| {
+            super::storage_error::record_classification("bundle-root-identity", code);
+        })
+        .ok()?;
     let executable_path = active_executable(root.path());
-    let executable = identity.canonical_executable(&executable_path).ok()?;
+    let executable = identity
+        .canonical_executable(&executable_path)
+        .map_err(|code| {
+            super::storage_error::record_classification("bundle-executable-identity", code);
+        })
+        .ok()?;
     let version = fs
         .read_bounded(&root.path().join("VERSION"), 4 * 1024)
+        .map_err(|error| {
+            super::storage_error::record_durable("bundle-version-read", error);
+        })
         .ok()
         .and_then(|bytes| {
             std::str::from_utf8(&bytes)
@@ -111,7 +139,14 @@ pub(super) fn fingerprint(fs: &dyn OllamaDurableFs, path: &Path) -> Option<Direc
                 .map(str::to_owned)
         })
         .and_then(|value| OllamaVersion::parse(&value).ok())?;
-    let digest = super::probe_http::hash_file(executable.path()).ok()?;
+    let digest = super::probe_http::hash_file(executable.path())
+        .map_err(|code| {
+            super::storage_error::record_classification(
+                "bundle-executable-hash",
+                code.diagnostic(),
+            );
+        })
+        .ok()?;
     Some(DirectoryEvidence::Present(BundleFingerprint {
         version,
         executable_sha256: digest,
@@ -123,8 +158,13 @@ pub(crate) fn validate_trash(
     data_root: &Path,
     models: &CanonicalDirectory,
 ) -> Result<CanonicalDirectory, OllamaErrorCode> {
-    let metadata =
-        std::fs::symlink_metadata(path).map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+    let metadata = std::fs::symlink_metadata(path).map_err(|error| {
+        super::storage_error::io(
+            "trash-inspect",
+            &error,
+            OllamaErrorCode::OllamaStorageUnavailable,
+        )
+    })?;
     if !metadata.is_dir() || metadata.file_type().is_symlink() {
         return Err(OllamaErrorCode::OllamaRecoveryDeferred);
     }

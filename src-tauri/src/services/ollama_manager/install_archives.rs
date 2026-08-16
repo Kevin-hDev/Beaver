@@ -22,7 +22,10 @@ pub(crate) async fn remove_archives<F: OllamaDurableFs + 'static>(
         run_ollama_blocking(move || match fs.remove_file_durable(&path) {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == super::durable_fs::OllamaFsErrorKind::NotFound => Ok(()),
-            Err(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
+            Err(error) => Err(super::storage_error::durable(
+                "install-archive-remove",
+                error,
+            )),
         })
         .await?;
     }
@@ -30,7 +33,7 @@ pub(crate) async fn remove_archives<F: OllamaDurableFs + 'static>(
     let archive_staging = archive_staging.to_path_buf();
     run_ollama_blocking(move || {
         fs.remove_tree(&archive_staging)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("install-archive-staging-remove", error))
     })
     .await
 }

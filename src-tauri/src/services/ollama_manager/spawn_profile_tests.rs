@@ -295,6 +295,40 @@ fn unix_resolver_contains_uses_native_ancestors_in_both_directions() {
 
 #[cfg(unix)]
 #[test]
+fn unix_absent_model_descendant_of_transaction_is_rejected_by_native_anchor() {
+    let root = tempfile::tempdir().expect("temp root");
+    let root = dunce::canonicalize(root.path()).expect("canonical root");
+    let paths = crate::services::paths::ollama_paths(&root);
+    let cwd = root.join("cwd");
+    std::fs::create_dir_all(&cwd).expect("cwd");
+    create_active_executable(&paths, 0o755);
+    let resolver = NativePathIdentityResolver;
+    let models = paths.active.join("missing").join("models");
+
+    assert_eq!(
+        OllamaSpawnProfile::resolve(
+            &paths,
+            [("OLLAMA_MODELS".into(), models.as_os_str().into())],
+            &cwd,
+            &resolver,
+        ),
+        Err(OllamaErrorCode::OllamaModelStoreConflict)
+    );
+}
+
+#[test]
+fn native_containment_has_no_textual_prefix_fallback() {
+    for source in [
+        include_str!("path_identity_unix.rs"),
+        include_str!("path_identity_windows.rs"),
+    ] {
+        assert!(!source.contains("starts_with(parent.path())"));
+        assert!(!source.contains("strip_prefix(&parent)"));
+    }
+}
+
+#[cfg(unix)]
+#[test]
 fn unix_profile_requires_a_regular_executable_file() {
     let root = tempfile::tempdir().expect("temp root");
     let root = dunce::canonicalize(root.path()).expect("canonical root");

@@ -11,6 +11,11 @@ use std::path::Path;
 
 #[path = "durable_fs_unix_verified.rs"]
 mod verified;
+#[cfg(test)]
+pub(in crate::services::ollama_manager) use verified::{
+    classify_readdir_for_test, directory_stream_count_for_test,
+    reset_directory_stream_count_for_test,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct UnixOllamaDurableFs;

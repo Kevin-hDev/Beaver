@@ -1,8 +1,12 @@
 use super::super::canonical_executable::CanonicalExecutable;
+use super::super::durable_fs::MAX_WINDOWS_PATH_UNITS;
 use super::{CanonicalDirectory, OllamaError, ValidatedPathComponent, VerifiedDirectoryLocation};
+use std::ffi::OsStr;
 use std::fs;
+use std::os::windows::ffi::OsStrExt;
 use std::os::windows::fs::MetadataExt;
 use std::path::{Component, Path, PathBuf};
+use windows_sys::Win32::Globalization::{CompareStringOrdinal, CSTR_EQUAL};
 use windows_sys::Win32::Storage::FileSystem::FILE_ATTRIBUTE_REPARSE_POINT;
 
 #[path = "path_identity_windows_handles.rs"]
@@ -104,17 +108,13 @@ pub(crate) fn canonical_executable(path: &Path) -> Result<CanonicalExecutable, O
     handles::canonical_executable(path)
 }
 
-fn normalized(path: &Path) -> String {
-    path.to_string_lossy().to_lowercase()
-}
-
 pub(crate) fn same_directory(
     left: &CanonicalDirectory,
     right: &CanonicalDirectory,
 ) -> Result<bool, OllamaError> {
     Ok(match (left.identity(), right.identity()) {
         (Some(left), Some(right)) => left == right,
-        _ => normalized(left.path()) == normalized(right.path()),
+        _ => left.same_unresolved_location(right)?,
     })
 }
 
@@ -125,24 +125,11 @@ pub(crate) fn contains(
     if same_directory(parent, child)? {
         return Ok(false);
     }
-    if child.identity().is_none() {
-        let parent = normalized(parent.path())
-            .trim_end_matches(['/', '\\'])
-            .to_owned();
-        let child = normalized(child.path());
-        return Ok(child
-            .strip_prefix(&parent)
-            .is_some_and(|rest| rest.starts_with(['/', '\\'])));
+    if let Some(descendant) = child.unresolved_descendant_of(parent)? {
+        return Ok(descendant);
     }
     if let Some(parent_identity) = parent.identity() {
-        let child_missing = matches!(
-            fs::symlink_metadata(child.path()),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound
-        );
-        let mut ancestors = child.path().ancestors();
-        if child_missing {
-            ancestors.next();
-        }
+        let ancestors = child.existing_anchor_path().ancestors();
         for ancestor in ancestors {
             if handles::ancestor_identity(ancestor)? == *parent_identity {
                 return Ok(true);
@@ -150,11 +137,30 @@ pub(crate) fn contains(
         }
         return Ok(false);
     }
-    let parent = normalized(parent.path())
-        .trim_end_matches(['/', '\\'])
-        .to_owned();
-    let child = normalized(child.path());
-    Ok(child
-        .strip_prefix(&parent)
-        .is_some_and(|rest| rest.starts_with(['/', '\\'])))
+    Ok(false)
+}
+
+pub(super) fn same_component(left: &OsStr, right: &OsStr) -> Result<bool, OllamaError> {
+    let left = bounded_wide(left)?;
+    let right = bounded_wide(right)?;
+    Ok(unsafe {
+        CompareStringOrdinal(
+            left.as_ptr(),
+            left.len() as i32,
+            right.as_ptr(),
+            right.len() as i32,
+            1,
+        ) == CSTR_EQUAL
+    })
+}
+
+fn bounded_wide(value: &OsStr) -> Result<Vec<u16>, OllamaError> {
+    let units = value
+        .encode_wide()
+        .take(MAX_WINDOWS_PATH_UNITS + 1)
+        .collect::<Vec<_>>();
+    if units.len() > MAX_WINDOWS_PATH_UNITS || i32::try_from(units.len()).is_err() {
+        return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
+    }
+    Ok(units)
 }
