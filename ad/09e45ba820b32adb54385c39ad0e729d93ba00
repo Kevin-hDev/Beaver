@@ -1,0 +1,11 @@
+JALON 3 — PORTABILITE DES CONTROLES DE REPRISE
+
+Contexte : le run CI 31922279871 a termine avec trois jobs rouges et le parcours natif macOS vert en 41 min 20 s. Chaque rouge a ete diagnostique depuis sa sortie exacte avant modification.
+
+Corrections : manager_update.rs est formate par rustfmt direct car il est inclus avec include! et non traverse par cargo fmt ; les imports de la fixture d installation reserves a Unix sont maintenant conditionnels ; la fixture durable Windows utilise la primitive plateforme qui ouvre un handle compatible avec FlushFileBuffers ; la reprise d un recu observe d abord l identite native reelle puis compare au reçu, afin de classer un PID reutilise comme preuve perimee sans affaiblir l admission stricte.
+
+Preuves locales apres correction : filtre officiel services::ollama_manager = 292 passed, 0 failed, 1 ignored, 293 verified ; cargo clippy --all-targets -- -D warnings vert ; controle de format Rust personnalise vert ; cargo fmt --all -- --check vert ; git diff --check vert ; fichiers de production modifies a 159 et 46 lignes.
+
+Preuve du run precedent utile : macOS CEF, Linux WebView, Desktop CEF, frontend, analyses et advisories sont verts. Windows reste a revalider par le prochain run, seule autorite native pour ces corrections.
+
+Graphify : mise a jour terminee, 34318 noeuds, 70313 aretes, 2060 communautes.
