@@ -412,12 +412,19 @@ fn real_bundle_at(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint 
     #[cfg(unix)]
     std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
         .expect("executable permissions");
-    BundleFingerprint {
+    let fingerprint = BundleFingerprint {
         version: OllamaVersion::parse(version).expect("version fingerprint"),
         executable_sha256: super::probe_http::hash_file(&executable)
             .ok()
             .expect("executable hash"),
-    }
+    };
+    super::bundle_receipt::write_receipt(
+        &platform_fs(),
+        path,
+        &super::bundle_receipt::BundleReceipt::new(fingerprint.clone()),
+    )
+    .expect("bundle receipt");
+    fingerprint
 }
 
 fn write_real_journal(paths: &OllamaPaths, journal: &OllamaTransactionJournal) {
@@ -811,12 +818,19 @@ fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFin
     #[cfg(unix)]
     std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
         .expect("executable permissions");
-    BundleFingerprint {
+    let fingerprint = BundleFingerprint {
         version: OllamaVersion::parse(version).expect("version fingerprint"),
         executable_sha256: super::probe_http::hash_file(&executable)
             .ok()
             .expect("executable hash"),
-    }
+    };
+    super::bundle_receipt::write_receipt(
+        &platform_fs(),
+        &bundle,
+        &super::bundle_receipt::BundleReceipt::new(fingerprint.clone()),
+    )
+    .expect("bundle receipt");
+    fingerprint
 }
 
 #[test]
@@ -969,6 +983,24 @@ async fn migration_marker_temporary_is_removed_then_recreated_durably() {
         runner.recover(RecoveryReason::Retry).await,
         Ok(super::recovery::RecoveryOutcome::Ready)
     );
+}
+
+#[tokio::test]
+async fn legacy_adoption_without_an_exact_bundle_receipt_is_preserved_and_blocked() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    real_bundle(root.path(), "ollama-bundle", "1.2.3", b"active");
+    std::fs::remove_file(crate::services::paths::bundle_receipt_path(&paths.active))
+        .expect("remove bundle receipt");
+    let fs = Arc::new(platform_fs());
+    let runner = RecoveryExecutor::new(Arc::clone(&fs), Arc::new(ValidProbe), paths.clone());
+
+    assert_eq!(
+        runner.recover(RecoveryReason::Startup).await,
+        Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
+    );
+    assert!(paths.active.exists());
+    assert!(!paths.migration_marker.exists());
 }
 
 #[tokio::test]
@@ -1538,28 +1570,18 @@ async fn migration_marker_cutpoints_retry_without_layout_deletion() {
         Failure::BeforePublish,
         Failure::AfterPublish,
     ] {
-        let (_root, fs, runner, paths) = setup();
+        let (_root, fs, _runner, paths) = setup();
         fs.seed(&paths.active);
-        let mut snapshot = empty();
-        snapshot.active = known("1.2.3", "11");
         fs.fail_at(failure);
         assert_eq!(
-            runner
-                .execute_snapshot(&snapshot, RecoveryReason::Startup)
-                .await,
+            cleanup::write_marker(&fs, &paths).await,
             Err(OllamaErrorCode::OllamaStorageUnavailable)
         );
         fs.clear_failure();
-        snapshot.migration_marker = if fs.final_bytes.lock().unwrap().is_some() {
-            MigrationMarkerPresence::Valid(Default::default())
-        } else {
-            MigrationMarkerPresence::Absent
-        };
-        for _ in 0..2 {
-            let _ = runner
-                .execute_snapshot(&snapshot, RecoveryReason::Retry)
-                .await;
-            snapshot.migration_marker = MigrationMarkerPresence::Valid(Default::default());
+        if fs.final_bytes.lock().unwrap().is_none() {
+            cleanup::write_marker(&fs, &paths)
+                .await
+                .expect("marker retry");
         }
         assert!(fs.has(&paths.active));
         assert!(!fs.calls().contains(&"layout_remove"));

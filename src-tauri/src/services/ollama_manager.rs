@@ -73,6 +73,7 @@ mod startup_recovery;
 mod types;
 mod update;
 
+mod adoption;
 #[cfg(test)]
 mod adoption_tests;
 #[cfg(test)]
@@ -139,6 +140,8 @@ mod typescript_contract_tests;
 mod update_completion_support;
 #[cfg(test)]
 mod update_completion_tests;
+#[cfg(test)]
+mod update_platform_tests;
 #[cfg(test)]
 mod update_tests;
 #[cfg(all(test, windows))]

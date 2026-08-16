@@ -8,6 +8,8 @@ use super::install::{InstallOutcome, InstallRequest};
 use super::install_phases::INSTALL_PHASE_ORDER;
 use super::release_source::{OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl};
 use super::types::BundleState;
+use super::OllamaManager;
+use crate::app_exit::AppExitCoordinator;
 use sha2::{Digest, Sha256};
 #[cfg(unix)]
 use std::fs::File;
@@ -178,8 +180,11 @@ async fn first_install_publishes_after_probe_and_reinspection() {
     request.manifest = Some(manifest);
     request.local_archives = None;
     request.deadline = Some(Instant::now() + Duration::from_secs(20));
-    let result = super::install::install(request.clone()).await.unwrap();
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let manager = OllamaManager::new(coordinator.work_supervisor());
+    let result = manager.install(request.clone()).await.unwrap();
     assert!(result.is_ready());
+    assert_eq!(manager.status().await.bundle, BundleState::Ready);
     assert!(request.paths.active.join("bin/ollama").exists());
     assert!(!request.paths.install_staging.exists());
     assert!(!archive_staging_path(&request.paths).exists());

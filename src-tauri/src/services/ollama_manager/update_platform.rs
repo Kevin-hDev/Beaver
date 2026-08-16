@@ -24,6 +24,8 @@ use std::time::{Duration, Instant};
 
 #[path = "update_platform_completion.rs"]
 mod completion;
+#[path = "update_platform_preflight.rs"]
+mod preflight;
 
 const UPDATE_PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -48,8 +50,8 @@ impl PlatformUpdateBackend {
         if manifest.version != request.version {
             return Err(OllamaErrorCode::OllamaBundleInvalid);
         }
-        ensure_absent(&request.paths.update_staging)?;
-        ensure_absent(&request.paths.archive_staging)?;
+        preflight::ensure_absent(&request.paths.update_staging)?;
+        preflight::ensure_absent(&request.paths.archive_staging)?;
         let fs = Arc::clone(&self.fs);
         let update_staging = request.paths.update_staging.clone();
         let archive_staging = request.paths.archive_staging.clone();
@@ -189,11 +191,14 @@ impl UpdateBackend for PlatformUpdateBackend {
             &NativePathIdentityResolver,
         ) {
             Ok(profile) => profile,
-            Err(
-                OllamaErrorCode::OllamaModelStoreConflict | OllamaErrorCode::OllamaBundleInvalid,
-            ) => {
+            Err(OllamaErrorCode::OllamaBundleInvalid) => {
                 return TargetValidation::InvalidTarget {
                     code: OllamaErrorCode::OllamaBundleInvalid,
+                }
+            }
+            Err(OllamaErrorCode::OllamaModelStoreConflict) => {
+                return TargetValidation::Deferred {
+                    code: OllamaErrorCode::OllamaModelStoreConflict,
                 }
             }
             Err(code) => return TargetValidation::Deferred { code },
@@ -212,17 +217,10 @@ impl UpdateBackend for PlatformUpdateBackend {
 }
 
 pub(crate) async fn run(request: UpdateRequest) -> Result<UpdateOutcome, OllamaErrorCode> {
+    preflight::validate_request(&request)?;
     if request.manifest.is_none() {
         return Err(OllamaErrorCode::OllamaDownloadFailed);
     }
     let backend = PlatformUpdateBackend::new(request.paths.clone());
     execute(&backend, &request).await
-}
-
-fn ensure_absent(path: &std::path::Path) -> Result<(), OllamaErrorCode> {
-    match std::fs::symlink_metadata(path) {
-        Ok(_) => Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
-    }
 }

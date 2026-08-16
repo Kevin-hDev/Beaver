@@ -349,6 +349,25 @@ async fn launched_then_dead_child_is_deferred_and_models_are_cleaned() {
     assert!(!models_path.exists());
 }
 
+#[tokio::test]
+async fn abnormal_probe_models_path_is_deferred_without_rejecting_the_target() {
+    let fixture = fixture();
+    let models_path = fixture.profile.models_directory().path().to_path_buf();
+    std::fs::write(&models_path, b"not a directory").expect("abnormal probe models path");
+
+    let result = OwnedOllamaTargetProbe::new(SinglePort, Instant::now() + Duration::from_secs(1))
+        .validate(&fixture.target, &fixture.profile, &CancellationToken::new())
+        .await;
+
+    assert_eq!(
+        result,
+        TargetValidation::Deferred {
+            code: OllamaErrorCode::OllamaStorageUnavailable,
+        }
+    );
+    assert!(models_path.exists());
+}
+
 #[cfg(unix)]
 #[tokio::test]
 async fn gated_child_owns_endpoint_serves_version_and_is_reaped() {

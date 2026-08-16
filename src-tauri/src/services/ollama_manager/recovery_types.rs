@@ -15,3 +15,9 @@ pub enum RecoveryOutcome {
     ProgressMade,
     Deferred { code: OllamaErrorCode },
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum ApplyResult {
+    Progress,
+    Deferred(OllamaErrorCode),
+}

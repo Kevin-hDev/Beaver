@@ -80,7 +80,16 @@ impl OllamaManager {
                 .ok_or(OllamaErrorCode::OllamaInternal)?;
             state.generation = generation;
             state.status.operation = operation;
-            state.status.progress = None;
+            if matches!(
+                operation,
+                OperationState::Installing | OperationState::Updating
+            ) {
+                state.status.bundle = super::types::BundleState::TransactionPending;
+                state.status.progress = Some(super::types::OllamaProgressStage::Preparing);
+            } else {
+                state.status.progress = matches!(operation, OperationState::Recovering)
+                    .then_some(super::types::OllamaProgressStage::Recovering);
+            }
             state.status.last_error = None;
             generation
         };
@@ -180,36 +189,6 @@ impl OllamaManagerInner {
     }
 }
 
-impl<'a> OllamaOperationGuard<'a> {
-    #[cfg(test)]
-    pub(crate) fn generation_for_test(&self) -> u64 {
-        self.generation
-    }
-
-    pub(super) fn fail(self, error: OllamaErrorCode) {
-        let mut state = self.manager.lock_state();
-        if state.generation == self.generation {
-            state.status.bundle = super::types::BundleState::RecoveryRequired;
-            state.status.last_error = Some(error);
-        }
-    }
-    #[cfg(test)]
-    pub(crate) fn fail_for_test(self, error: OllamaErrorCode) {
-        self.fail(error);
-    }
-}
-
-impl Drop for OllamaOperationGuard<'_> {
-    fn drop(&mut self) {
-        // Ce champ est conservé pour maintenir le verrou pendant toute la transaction.
-        let _ = &self.operation_lock;
-        self.manager.release_generation(
-            self.generation,
-            self.admission.cancellation().is_cancelled(),
-        );
-    }
-}
-
 fn map_admission_error(error: ServiceWorkAdmissionError) -> OllamaErrorCode {
     match error {
         ServiceWorkAdmissionError::AppClosing | ServiceWorkAdmissionError::Closing => {
@@ -220,5 +199,6 @@ fn map_admission_error(error: ServiceWorkAdmissionError) -> OllamaErrorCode {
         }
     }
 }
+include!("manager_operation_guard.rs");
 include!("manager_update.rs");
 include!("manager_startup.rs");

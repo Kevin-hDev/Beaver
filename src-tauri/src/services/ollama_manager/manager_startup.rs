@@ -28,7 +28,7 @@ impl OllamaManager {
         self.run_startup_recovery_at(paths).await
     }
 
-    async fn run_startup_recovery_at(
+    pub(super) async fn run_startup_recovery_at(
         &self,
         paths: crate::services::paths::OllamaPaths,
     ) -> StartupBarrierState {

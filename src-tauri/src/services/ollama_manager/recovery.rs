@@ -11,6 +11,7 @@ use super::recovery_decision::{
 };
 use super::recovery_helpers::{present, target_of};
 pub(crate) use super::recovery_probe::{RecoveryProbe, RecoveryProbeResult};
+use super::recovery_types::ApplyResult;
 pub use super::recovery_types::{RecoveryOutcome, RecoveryReason};
 use super::rollback;
 use crate::services::paths::OllamaPaths;
@@ -150,6 +151,11 @@ where
                 Ok(ApplyResult::Progress)
             }
             RecoveryDecision::AdoptLegacyActive => {
+                let expected = match &snapshot.active {
+                    super::recovery_decision::DirectoryEvidence::Present(value) => value,
+                    _ => return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
+                };
+                super::adoption::validate_and_sync(&self.fs, &self.paths, expected).await?;
                 cleanup::write_marker(&self.fs, &self.paths).await?;
                 Ok(ApplyResult::Progress)
             }
@@ -217,10 +223,4 @@ where
             RecoveryProbeResult::Deferred(code) => Ok(ApplyResult::Deferred(code)),
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ApplyResult {
-    Progress,
-    Deferred(OllamaErrorCode),
 }

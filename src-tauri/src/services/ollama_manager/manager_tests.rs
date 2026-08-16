@@ -1,8 +1,8 @@
 use super::error::OllamaErrorCode;
 use super::install::InstallRequest;
 use super::types::BundleState;
-use super::types::OperationState;
 use super::types::{DaemonState, OllamaEndpoint};
+use super::types::{OllamaProgressStage, OperationState};
 use super::OllamaManager;
 use crate::app_exit::AppExitCoordinator;
 use std::future;
@@ -57,6 +57,21 @@ async fn one_manager_admission_is_active_at_a_time() {
     ));
     drop(first);
     wait_for_no_active_work(&manager).await;
+}
+
+#[tokio::test]
+async fn admitted_install_publishes_transaction_and_initial_progress() {
+    let (_coordinator, manager) = manager();
+    let operation = manager
+        .begin_operation(OperationState::Installing)
+        .await
+        .expect("install admission");
+
+    let status = manager.status().await;
+    assert_eq!(status.bundle, BundleState::TransactionPending);
+    assert_eq!(status.operation, OperationState::Installing);
+    assert_eq!(status.progress, Some(OllamaProgressStage::Preparing));
+    drop(operation);
 }
 
 #[tokio::test]
@@ -139,6 +154,26 @@ async fn install_error_publishes_recovery_required_and_releases_admission() {
     assert_eq!(status.bundle, BundleState::RecoveryRequired);
     assert_eq!(status.operation, OperationState::Idle);
     assert_eq!(manager.work_diagnostics_for_test().active, 0);
+}
+
+#[tokio::test]
+async fn cancelled_install_without_mutation_restores_absent_instead_of_recovery_required() {
+    let (_coordinator, manager) = manager();
+    let root = tempfile::tempdir().unwrap();
+    let request = InstallRequest::for_test(root.path().to_path_buf());
+    request.cancellation.cancel();
+
+    assert_eq!(
+        manager.install(request).await,
+        Err(OllamaErrorCode::OllamaOperationCancelled)
+    );
+    let status = manager.status().await;
+    assert_eq!(status.bundle, BundleState::Absent);
+    assert_eq!(status.operation, OperationState::Idle);
+    assert_eq!(
+        status.last_error,
+        Some(OllamaErrorCode::OllamaOperationCancelled)
+    );
 }
 
 #[tokio::test]

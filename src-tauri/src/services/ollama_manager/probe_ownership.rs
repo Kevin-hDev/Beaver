@@ -117,7 +117,7 @@ fn inspect_models(
     let path = profile.models_directory().path();
     match std::fs::symlink_metadata(path) {
         Ok(metadata) if !metadata.is_dir() || metadata.file_type().is_symlink() => {
-            Err(invalid_target())
+            Err(storage_deferred())
         }
         Ok(_) => {
             let directory = NativePathIdentityResolver
@@ -138,14 +138,10 @@ fn inspect_models(
 
 fn map_path_error(error: OllamaErrorCode) -> TargetValidation {
     match error {
-        OllamaErrorCode::OllamaModelStoreConflict => invalid_target(),
+        OllamaErrorCode::OllamaModelStoreConflict => TargetValidation::Deferred {
+            code: OllamaErrorCode::OllamaModelStoreConflict,
+        },
         _ => storage_deferred(),
-    }
-}
-
-fn invalid_target() -> TargetValidation {
-    TargetValidation::InvalidTarget {
-        code: OllamaErrorCode::OllamaBundleInvalid,
     }
 }
 
