@@ -1,5 +1,9 @@
+/* Le panneau porte la teinte des surfaces de l'application, et l'écran du
+   terminal y est posé comme une carte, sur le fond le plus sombre. Un fond
+   opaque plutôt que translucide : le panneau recouvre la conversation, et on
+   lirait le texte au travers. */
 .terminal-panel {
-  background: var(--void);
+  background: var(--shell-opaque);
   border-top: 1px solid var(--edge);
   overflow: hidden;
   flex-shrink: 0;
@@ -14,27 +18,62 @@
   transition: none;
 }
 
+/* La poignée montre où saisir. Sans trait, c'est une bande transparente de
+   quatre pixels qu'on ne trouve qu'en promenant la souris le long du bord. */
 .terminal-resize-handle {
-  height: 4px;
+  height: var(--terminal-grip-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: ns-resize;
-  background: transparent;
   flex-shrink: 0;
 }
 
-.terminal-resize-handle:hover {
-  background: var(--edge);
+.terminal-resize-handle::after {
+  content: "";
+  width: var(--terminal-grip-width);
+  height: var(--line-thin);
+  border-radius: var(--line-thin);
+  background: var(--edge-strong);
+  transition: background var(--ease-smooth);
+}
+
+.terminal-resize-handle:hover::after {
+  background: var(--pulse);
 }
 
 .terminal-body {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 4px);
+  height: calc(100% - var(--terminal-grip-height));
   overflow: hidden;
+}
+
+/* Marge entre la carte et les bords du panneau : un filet, assez pour détacher
+   la carte du panneau sans lui prendre de largeur utile. */
+.terminal-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  padding: 0 var(--space-xs) var(--space-xs);
 }
 
 .terminal-instances {
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  min-width: 0;
   position: relative;
+  overflow: hidden;
+  border: var(--line-thin) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--void);
+}
+
+/* Marge intérieure de l'écran. xterm mesure le contenu de cet élément, donc la
+   marge est retranchée de la place calculée : elle ne rogne aucune colonne. */
+.terminal-screen {
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  padding: var(--space-sm) var(--space-md);
 }

@@ -58,4 +58,18 @@
      son tracé n'occupe que 60 % de la hauteur de son cadre, contre 75 à 92 %
      pour eux, et à cadre égal il se lisait comme le petit de la rangée. */
   --nav-heartbeat-icon-size: calc(var(--nav-icon-size) * 1.2);
+  /* Écran devant le nom d'un onglet du terminal. Un cran sous l'icône courante :
+     le tracé est un rectangle plein cadre, quand ses voisines de même palier
+     n'occupent que les deux tiers du leur — à cadre égal il paraissait plus
+     gros que le libellé qu'il accompagne. */
+  --terminal-tab-icon-size: calc(var(--icon-sm) * 0.85);
+  /* Croix de fermeture d'un onglet. Un cran SOUS l'écran qu'elle voisine, à
+     rebours de --panel-close-icon-size : la croix d'un panneau est seule sur sa
+     rangée, celle-ci est côte à côte avec un tracé fin, et ses deux traits
+     épais la faisaient dominer le libellé qu'elle accompagne. */
+  --terminal-tab-close-icon-size: calc(var(--terminal-tab-icon-size) * 0.95);
+  /* Plus et croix de la barre du terminal. Un quart sous l'icône courante,
+     comme leurs boutons : ces deux tracés bordent une piste d'onglets, et à
+     taille pleine ils tiraient l'œil avant les onglets eux-mêmes. */
+  --terminal-bar-action-icon-size: calc(var(--icon-sm) * 0.75);
 }

@@ -1006,7 +1006,10 @@
     "newTab": "Nueva pestaña",
     "closePanel": "Cerrar panel",
     "processExited": "El proceso finalizó con código {{code}}",
-    "failedToStart": "El Terminal no pudo iniciarse"
+    "failedToStart": "El Terminal no pudo iniciarse",
+    "closeTab": "Cerrar la pestaña",
+    "activity": "Nueva salida en esta pestaña",
+    "resizePanel": "Ajustar la altura del panel"
   },
   "skills": {
     "sourceBuiltIn": "Integrado",

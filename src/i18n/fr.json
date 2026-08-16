@@ -1059,7 +1059,10 @@
     "newTab": "Nouvel onglet",
     "closePanel": "Fermer le panneau",
     "processExited": "Processus terminé avec le code {{code}}",
-    "failedToStart": "Le terminal n'a pas pu démarrer"
+    "failedToStart": "Le terminal n'a pas pu démarrer",
+    "closeTab": "Fermer l'onglet",
+    "activity": "Nouvelle sortie dans cet onglet",
+    "resizePanel": "Ajuster la hauteur du panneau"
   },
   "skills": {
     "sourceBuiltIn": "Intégré",

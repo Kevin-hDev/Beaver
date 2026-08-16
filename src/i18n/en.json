@@ -1011,7 +1011,10 @@
     "newTab": "New tab",
     "closePanel": "Close panel",
     "processExited": "Process exited with code {{code}}",
-    "failedToStart": "Terminal failed to start"
+    "failedToStart": "Terminal failed to start",
+    "closeTab": "Close tab",
+    "activity": "New output in this tab",
+    "resizePanel": "Adjust panel height"
   },
   "skills": {
     "sourceBuiltIn": "Built-in",

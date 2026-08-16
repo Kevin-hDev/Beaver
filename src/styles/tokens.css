@@ -111,6 +111,20 @@
   --browser-toolbar-padding-y: 0.125rem;
   --browser-field-padding-y: var(--space-xs);
   --browser-tab-max-width: 12rem;
+  /* Terminal — la poignée porte un trait visible, d'où sa hauteur et sa
+     largeur ; sans repère, on cherche une bande transparente à la souris.
+     Quatre pixels suffisent à la saisir, et c'est autant de pris sur la bande
+     vide au-dessus des onglets. */
+  --terminal-grip-height: 4px;
+  --terminal-grip-width: 44px;
+  --terminal-tab-height: 24px;
+  --terminal-tab-max-width: 10rem;
+  --terminal-tab-close-size: 16px;
+  /* Boutons d'ajout et de fermeture de la barre, un quart sous la taille de
+     bouton courante : ils bordent des onglets hauts de 24 px, pas une rangée
+     de boutons, et à taille normale ils pesaient plus lourd qu'eux. */
+  --terminal-bar-action-size: calc(var(--btn-height) * 0.75);
+  --terminal-activity-dot-size: 5px;
   --browser-home-max-width: 26rem;
   --forecast-model-trigger-max-width: 12.25rem;
   --forecast-model-menu-width: 17.5rem;

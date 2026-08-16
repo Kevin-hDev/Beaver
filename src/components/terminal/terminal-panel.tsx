@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { TerminalTabBar } from "./terminal-tab-bar";
 import { TerminalInstance } from "./terminal-instance";
@@ -19,6 +20,7 @@ interface TerminalPanelProps {
   onReorderTabs: (from: number, to: number) => void;
   onTogglePanel: () => void;
   onPtyReady: (tabId: string, ptyId: number, ptyToken: string) => void;
+  onTabActivity: (tabId: string, hasActivity: boolean) => void;
   onResize: (height: number) => void;
   onSetMaxHeight: (maxH: number) => void;
 }
@@ -37,9 +39,11 @@ export function TerminalPanel({
   onReorderTabs,
   onTogglePanel,
   onPtyReady,
+  onTabActivity,
   onResize,
   onSetMaxHeight,
 }: TerminalPanelProps) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const resizing = useRef(false);
   const [mounted, setMounted] = useState(false);
@@ -138,6 +142,7 @@ export function TerminalPanel({
     >
       <div
         className="terminal-resize-handle"
+        title={t("terminal.resizePanel")}
         onPointerDown={handleResizeStart}
       />
       <div className="terminal-body">
@@ -151,18 +156,21 @@ export function TerminalPanel({
           onReorder={onReorderTabs}
           onClosePanel={onTogglePanel}
         />
-        <div className="terminal-instances">
-          {allTabs.map(({ tab, groupKey }) => (
-            <TerminalInstance
-              key={tab.id}
-              tabId={tab.id}
-              cwd={tab.cwd}
-              isVisible={groupKey === activeGroupKey && tab.id === activeTabId}
-              onPtyReady={onPtyReady}
-              onExit={handleExit}
-              onTogglePanel={onTogglePanel}
-            />
-          ))}
+        <div className="terminal-stage">
+          <div className="terminal-instances">
+            {allTabs.map(({ tab, groupKey }) => (
+              <TerminalInstance
+                key={tab.id}
+                tabId={tab.id}
+                cwd={tab.cwd}
+                isVisible={groupKey === activeGroupKey && tab.id === activeTabId}
+                onPtyReady={onPtyReady}
+                onExit={handleExit}
+                onActivity={onTabActivity}
+                onTogglePanel={onTogglePanel}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
