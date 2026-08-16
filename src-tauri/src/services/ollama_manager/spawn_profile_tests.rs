@@ -25,6 +25,23 @@ fn create_active_executable(paths: &crate::services::paths::OllamaPaths, mode: u
     std::fs::set_permissions(executable, permissions).expect("executable permissions");
 }
 
+#[cfg(unix)]
+fn create_published_active_executable(
+    paths: &crate::services::paths::OllamaPaths,
+    mode: u32,
+) -> PathBuf {
+    use std::os::unix::fs::PermissionsExt;
+    let executable = paths.active.join("ollama");
+    std::fs::create_dir_all(&paths.active).expect("published bundle directory");
+    std::fs::write(&executable, b"published-ollama-test").expect("published executable file");
+    let mut permissions = std::fs::metadata(&executable)
+        .expect("published executable metadata")
+        .permissions();
+    permissions.set_mode(mode);
+    std::fs::set_permissions(&executable, permissions).expect("published executable permissions");
+    executable
+}
+
 #[test]
 fn resolves_absolute_models_path_and_keeps_the_executable_profile() {
     let resolver = FakeResolver::with_paths(&paths());
@@ -204,6 +221,28 @@ fn unix_resolver_keeps_an_absent_location_to_its_existing_parent() {
     assert!(profile.models_directory().has_stable_handle());
     assert!(profile.executable().has_stable_handle());
     assert!(!model.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn unix_profile_launches_the_published_beaver_root_executable() {
+    let root = tempfile::tempdir().expect("temp root");
+    let root_path = dunce::canonicalize(root.path()).expect("canonical root");
+    let paths = crate::services::paths::ollama_paths(&root_path);
+    let cwd = root_path.join("cwd");
+    let home = root_path.join("home");
+    std::fs::create_dir_all(&cwd).expect("cwd");
+    std::fs::create_dir_all(home.join(".ollama")).expect("home");
+    let executable = create_published_active_executable(&paths, 0o755);
+    let profile = OllamaSpawnProfile::resolve(
+        &paths,
+        [("HOME".into(), home.as_os_str().into())],
+        &cwd,
+        &NativePathIdentityResolver,
+    )
+    .expect("published profile");
+    assert_eq!(profile.executable().path(), executable);
+    assert!(profile.executable().has_stable_handle());
 }
 
 #[cfg(unix)]

@@ -851,6 +851,32 @@ fn real_bundle_without_receipt(
     }
 }
 
+fn published_bundle_without_receipt(
+    root: &Path,
+    name: &str,
+    version: &str,
+    body: &[u8],
+) -> BundleFingerprint {
+    let bundle = root.join(name);
+    std::fs::create_dir_all(&bundle).expect("published bundle directory");
+    std::fs::write(bundle.join("VERSION"), version).expect("published version");
+    let executable = bundle.join(if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    });
+    std::fs::write(&executable, body).expect("published executable");
+    #[cfg(unix)]
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
+        .expect("published executable permissions");
+    BundleFingerprint {
+        version: OllamaVersion::parse(version).expect("published version fingerprint"),
+        executable_sha256: super::probe_http::hash_file(&executable)
+            .ok()
+            .expect("published executable hash"),
+    }
+}
+
 fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFingerprint {
     let fingerprint = real_bundle_without_receipt(root, name, version, body);
     super::bundle_receipt::write_receipt(
@@ -1056,7 +1082,7 @@ async fn published_beaver_bundles_without_receipts_are_migrated_durably() {
         let root = tempfile::tempdir_in(".").expect("layout root");
         let paths = ollama_paths(root.path());
         let fingerprint =
-            real_bundle_without_receipt(root.path(), "ollama-bundle", version, b"active");
+            published_bundle_without_receipt(root.path(), "ollama-bundle", version, b"active");
         let fs = Arc::new(platform_fs());
         let runner = RecoveryExecutor::new(Arc::clone(&fs), Arc::new(ValidProbe), paths.clone());
 

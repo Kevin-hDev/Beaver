@@ -108,7 +108,16 @@ pub(super) fn active_executable(active: &Path) -> PathBuf {
     } else {
         "ollama"
     };
-    active.join("bin").join(name)
+    let modern = active.join("bin").join(name);
+    match std::fs::symlink_metadata(&modern) {
+        Ok(_) => modern,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            // Beaver 1.1.x extrayait le binaire publié à la racine du bundle.
+            // Le layout moderne reste prioritaire dès qu'une entrée y existe.
+            active.join(name)
+        }
+        Err(_) => modern,
+    }
 }
 
 pub(super) fn transaction_locations(paths: &OllamaPaths, probe: bool) -> Vec<&PathBuf> {
