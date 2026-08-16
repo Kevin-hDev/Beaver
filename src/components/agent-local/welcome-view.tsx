@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { ChatInput } from "./chat-input";
@@ -12,6 +12,8 @@ import type { ReasoningMode } from "@/lib/reasoning-modes";
 import { useDirectoryAccessGuard } from "@/hooks/use-directory-access-guard";
 import { selectProjectDirectory } from "@/hooks/project-directory-selection";
 import { showToast } from "@/lib/toast-emitter";
+import { noteComposerPosition, takeComposerPosition } from "@/lib/composer-handoff";
+import { waitForTitleExit } from "./welcome-leave";
 import "./welcome-view.css";
 
 interface WelcomeViewProps {
@@ -34,6 +36,7 @@ export function WelcomeView({
   const { prompt: directoryAccessPrompt, request: requestDirectoryAccess } = useDirectoryAccessGuard();
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const handleAddProject = useCallback(async () => {
     const result = await openFileDialog({ directory: true });
@@ -53,11 +56,18 @@ export function WelcomeView({
     const hasFiles = files && files.length > 0;
     if (!text.trim() && !hasFiles && (!skills || skills.length < 1)) return;
     const send = async () => {
+      /* Le champ ne bouge plus d'ici : il note sa place et c'est celui de la
+         conversation qui, en naissant, descendra depuis elle. Une distance
+         parcourue à l'aveugle depuis cet écran ne pouvait être juste qu'à une
+         seule taille de fenêtre. */
+      const bubble = contentRef.current?.querySelector<HTMLElement>(".chat-input-bubble");
+      if (bubble) noteComposerPosition(bubble.getBoundingClientRect().top);
       setLeaving(true);
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await waitForTitleExit(contentRef.current);
       try {
         await onSend(text, files, selectedProjectId ?? undefined, skills);
       } catch (error) {
+        takeComposerPosition();
         setLeaving(false);
         throw error;
       }
@@ -80,10 +90,10 @@ export function WelcomeView({
       onDragChange={fileDrop.setDragging}
       onDropPaths={(paths) => void fileDrop.addByPaths(paths)}
     >
-      <div className={`welcome-zone ${leaving ? "welcome-leaving" : ""}`}>
-        <div className="welcome-content">
+      <div className="welcome-zone">
+        <div className="welcome-content" ref={contentRef}>
           <WelcomeWordmark leaving={leaving} />
-          <div className={`welcome-input-wrap ${leaving ? "welcome-input-leave" : ""}`}>
+          <div className="welcome-input-wrap">
             <ChatInput
               modelName={model}
               providerName={provider}

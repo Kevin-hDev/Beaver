@@ -1,4 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { TerminalTabBar } from "./terminal-tab-bar";
 import { TerminalInstance } from "./terminal-instance";
@@ -19,6 +20,7 @@ interface TerminalPanelProps {
   onReorderTabs: (from: number, to: number) => void;
   onTogglePanel: () => void;
   onPtyReady: (tabId: string, ptyId: number, ptyToken: string) => void;
+  onTabActivity: (tabId: string, hasActivity: boolean) => void;
   onResize: (height: number) => void;
   onSetMaxHeight: (maxH: number) => void;
 }
@@ -37,12 +39,18 @@ export function TerminalPanel({
   onReorderTabs,
   onTogglePanel,
   onPtyReady,
+  onTabActivity,
   onResize,
   onSetMaxHeight,
 }: TerminalPanelProps) {
+  const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   const resizing = useRef(false);
-  const [mounted, setMounted] = useState(false);
+  /* Une fois ouvert, le panneau ne se démonte plus : le démontage tuait les
+     shells, et avec eux les serveurs et les commandes longues qu'ils
+     portaient. Refermé, il garde ses écrans vivants derrière une hauteur
+     nulle. */
+  const [everOpened, setEverOpened] = useState(false);
   const [animatedHeight, setAnimatedHeight] = useState(0);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -58,16 +66,14 @@ export function TerminalPanel({
   useEffect(() => {
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- animation state management is intentional
-      setMounted(true);
+      setEverOpened(true);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setAnimatedHeight(panelHeight);
         });
       });
-    } else if (mounted) {
+    } else {
       setAnimatedHeight(0);
-      const timer = setTimeout(() => setMounted(false), 400);
-      return () => clearTimeout(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- animate only on isOpen toggle
   }, [isOpen]);
@@ -126,7 +132,7 @@ export function TerminalPanel({
     [onCloseTab]
   );
 
-  if (!mounted) return null;
+  if (!everOpened) return null;
 
   return (
     <div
@@ -138,6 +144,7 @@ export function TerminalPanel({
     >
       <div
         className="terminal-resize-handle"
+        title={t("terminal.resizePanel")}
         onPointerDown={handleResizeStart}
       />
       <div className="terminal-body">
@@ -151,18 +158,23 @@ export function TerminalPanel({
           onReorder={onReorderTabs}
           onClosePanel={onTogglePanel}
         />
-        <div className="terminal-instances">
-          {allTabs.map(({ tab, groupKey }) => (
-            <TerminalInstance
-              key={tab.id}
-              tabId={tab.id}
-              cwd={tab.cwd}
-              isVisible={groupKey === activeGroupKey && tab.id === activeTabId}
-              onPtyReady={onPtyReady}
-              onExit={handleExit}
-              onTogglePanel={onTogglePanel}
-            />
-          ))}
+        <div className="terminal-stage">
+          <div className="terminal-instances">
+            {allTabs.map(({ tab, groupKey }) => (
+              <TerminalInstance
+                key={tab.id}
+                tabId={tab.id}
+                cwd={tab.cwd}
+                /* Replié, aucun écran n'est actif : un terminal invisible qui
+                 garde le focus avalerait les touches frappées ailleurs. */
+              isVisible={isOpen && groupKey === activeGroupKey && tab.id === activeTabId}
+                onPtyReady={onPtyReady}
+                onExit={handleExit}
+                onActivity={onTabActivity}
+                onTogglePanel={onTogglePanel}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -1030,7 +1030,10 @@
     "newTab": "新しいタブ",
     "closePanel": "パネルを閉じる",
     "processExited": "プロセスがコード {{code}} で終了しました",
-    "failedToStart": "Terminal を起動できませんでした"
+    "failedToStart": "Terminal を起動できませんでした",
+    "closeTab": "タブを閉じる",
+    "activity": "このタブに新しい出力があります",
+    "resizePanel": "パネルの高さを調整"
   },
   "skills": {
     "sourceBuiltIn": "内蔵",

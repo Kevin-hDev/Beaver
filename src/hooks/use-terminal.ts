@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { homeDir } from "@tauri-apps/api/path";
 import { loadSavedGroups, saveGroups } from "./terminal-persistence";
+import { updateTab } from "./terminal-groups";
 import { generateId, folderName, DEFAULT_GROUP_KEY } from "./terminal-types";
 import type { TerminalTab, TerminalGroup } from "./terminal-types";
 
@@ -30,7 +31,7 @@ export function useTerminal(groupKey: string, defaultCwd: string, validGroupKeys
       const map = new Map<string, TerminalGroup>();
       for (const [key, tabs] of Object.entries(saved)) {
         map.set(key, {
-          tabs: tabs.map((t) => ({ id: generateId(), ptyId: null, ptyToken: null, label: t.label, cwd: t.cwd })),
+          tabs: tabs.map((t) => ({ id: generateId(), ptyId: null, ptyToken: null, label: t.label, cwd: t.cwd, hasActivity: false })),
           activeTabId: null,
         });
       }
@@ -68,7 +69,7 @@ export function useTerminal(groupKey: string, defaultCwd: string, validGroupKeys
 
   const addTab = useCallback((cwd?: string) => {
     const dir = cwd || resolvedCwd;
-    const tab: TerminalTab = { id: generateId(), ptyId: null, ptyToken: null, label: folderName(dir), cwd: dir };
+    const tab: TerminalTab = { id: generateId(), ptyId: null, ptyToken: null, label: folderName(dir), cwd: dir, hasActivity: false };
     setGroups((prev) => {
       const next = new Map(prev);
       const group = next.get(groupKey) ?? { tabs: [], activeTabId: null };
@@ -144,16 +145,13 @@ export function useTerminal(groupKey: string, defaultCwd: string, validGroupKeys
   }, [currentGroup.tabs.length]);
 
   const setPtyId = useCallback((tabId: string, ptyId: number, ptyToken?: string) => {
-    setGroups((prev) => {
-      const next = new Map(prev);
-      for (const [key, group] of next) {
-        if (group.tabs.some((t) => t.id === tabId)) {
-          next.set(key, { ...group, tabs: group.tabs.map((t) => (t.id === tabId ? { ...t, ptyId, ptyToken: ptyToken ?? null } : t)) });
-          break;
-        }
-      }
-      return next;
-    });
+    setGroups((prev) => updateTab(prev, tabId, { ptyId, ptyToken: ptyToken ?? null }) ?? prev);
+  }, []);
+
+  /* Posé par l'écran lui-même : il est le seul à savoir s'il était sous les
+     yeux au moment où le texte est arrivé. */
+  const setTabActivity = useCallback((tabId: string, hasActivity: boolean) => {
+    setGroups((prev) => updateTab(prev, tabId, { hasActivity }) ?? prev);
   }, []);
 
   const resizePanel = useCallback((height: number) => {
@@ -194,6 +192,7 @@ export function useTerminal(groupKey: string, defaultCwd: string, validGroupKeys
     reorderTabs,
     togglePanel,
     setPtyId,
+    setTabActivity,
     resizePanel,
     setMaxHeight,
     removeGroup,

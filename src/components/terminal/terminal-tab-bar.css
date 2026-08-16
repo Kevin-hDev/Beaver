@@ -1,101 +1,152 @@
 .terminal-tab-bar {
   display: flex;
   align-items: center;
-  height: 32px;
-  background: var(--void);
-  border-bottom: 1px solid var(--edge);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-xs);
   user-select: none;
 }
 
-.terminal-tab-bar::-webkit-scrollbar {
+/* Seuls les onglets défilent. Les boutons vivaient dans la même zone et
+   sortaient de l'écran passé une poignée d'onglets. */
+.terminal-tab-track {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: var(--space-2xs);
+  border: var(--line-thin) solid var(--edge);
+  border-radius: var(--radius-md);
+  background: var(--tabbar-track);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.terminal-tab-track::-webkit-scrollbar {
   display: none;
 }
 
+/* Bordure transparente au repos : sans elle, l'onglet qui devient actif
+   grandit d'un pixel et décale ses voisins. */
 .terminal-tab-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 100%;
-  font-size: var(--text-xs);
+  gap: var(--space-2xs);
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: var(--terminal-tab-max-width);
+  height: var(--terminal-tab-height);
+  padding: 0 var(--space-2xs) 0 var(--space-xs);
+  border: var(--line-thin) solid transparent;
+  border-radius: var(--radius-sm);
   color: var(--ink-muted);
+  font-size: var(--text-xs);
   cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
+  transition: background var(--ease-smooth), color var(--ease-smooth);
 }
 
 .terminal-tab-item:hover {
   color: var(--ink);
+  background: var(--surface-hover);
 }
 
-.terminal-tab-item.active-multi {
+.terminal-tab-item.active {
   color: var(--ink);
-  background: var(--edge);
+  background: var(--tabbar-active-bg);
+  border-color: var(--edge);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Icône terminal devant le label — taille fixe, pas de décalage au hover */
-.terminal-tab-icon-wrap {
+/* Largeur fixe : la pastille est plus étroite que l'écran qu'elle remplace, et
+   sans place réservée le libellé d'un onglet marqué glisse vers la gauche
+   pendant que celui de ses voisins reste en place. */
+.terminal-tab-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
   flex-shrink: 0;
-  border-radius: 50%;
-  transition: background 150ms ease;
+  width: var(--terminal-tab-icon-size);
 }
 
-.terminal-tab-icon-wrap .tab-icon-terminal {
+/* Un onglet laissé de côté a parlé pendant ce temps. La pastille s'efface dès
+   qu'on l'ouvre : elle dit « du texte est arrivé depuis ton dernier regard »,
+   pas « un programme tourne » — tout onglet ouvert en a un. */
+.terminal-tab-dot {
+  width: var(--terminal-activity-dot-size);
+  height: var(--terminal-activity-dot-size);
+  border-radius: var(--radius-full);
+  background: var(--signal-ok);
+  flex-shrink: 0;
+}
+
+.terminal-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.terminal-tab-close {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--terminal-tab-close-size);
+  height: var(--terminal-tab-close-size);
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ease-smooth), background var(--ease-smooth);
 }
 
-.terminal-tab-icon-wrap .tab-icon-close {
-  display: none;
+.terminal-tab-item:hover .terminal-tab-close,
+.terminal-tab-item.active .terminal-tab-close {
+  opacity: 0.55;
 }
 
-.terminal-tab-item:hover .terminal-tab-icon-wrap {
-  background: var(--ink-faint);
+/* Invisible ne veut pas dire inatteignable : au clavier, la croix se montre
+   dès qu'elle reçoit le focus. */
+.terminal-tab-close:hover,
+.terminal-tab-close:focus-visible {
+  opacity: 1;
+  background: var(--edge-strong);
 }
 
-.terminal-tab-item:hover .terminal-tab-icon-wrap .tab-icon-terminal {
-  display: none;
+/* Pousse la fermeture du panneau tout à droite. Une marge automatique posée
+   sur le bouton ne servait à rien : l'infobulle qui l'enveloppe est l'élément
+   que la rangée dispose, pas lui. */
+.terminal-tab-gap {
+  flex: 1;
+  min-width: var(--space-sm);
 }
 
-.terminal-tab-item:hover .terminal-tab-icon-wrap .tab-icon-close {
-  display: flex;
+/* Actions de la barre — composent .icon-btn (src/styles/buttons.css), dont
+   elles reprennent tout sauf la taille. */
+.terminal-tab-add,
+.terminal-tab-bar-close {
+  width: var(--terminal-bar-action-size);
+  height: var(--terminal-bar-action-size);
+  color: var(--ink-faint);
+}
+
+.terminal-tab-add:hover:not(:disabled),
+.terminal-tab-bar-close:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-hover);
 }
 
 .terminal-tab-rename {
+  width: 100px;
+  height: calc(var(--terminal-tab-height) - 4px);
+  padding: 0 var(--space-2xs);
+  border: var(--line-thin) solid var(--edge-strong);
+  border-radius: var(--radius-xs);
   background: transparent;
-  border: 1px solid var(--edge);
   color: var(--ink);
   font-size: var(--text-xs);
-  width: 100px;
-  padding: 1px 4px;
-  border-radius: var(--radius-xs);
   outline: none;
-}
-
-/* Tab bar actions — compose .icon-btn (src/styles/buttons.css); keep
-   their color-only hover. */
-.terminal-tab-add {
-  color: var(--ink-muted);
-}
-
-.terminal-tab-add:hover:not(:disabled) {
-  color: var(--ink);
-  background: none;
-}
-
-.terminal-tab-bar-close {
-  margin-left: auto;
-  color: var(--ink-muted);
-}
-
-.terminal-tab-bar-close:hover:not(:disabled) {
-  color: var(--ink);
-  background: none;
 }

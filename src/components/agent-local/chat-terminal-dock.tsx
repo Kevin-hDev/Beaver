@@ -21,6 +21,7 @@ export function ChatTerminalDock({ terminalState }: ChatTerminalDockProps) {
       onReorderTabs={terminalState.reorderTabs}
       onTogglePanel={terminalState.togglePanel}
       onPtyReady={terminalState.setPtyId}
+      onTabActivity={terminalState.setTabActivity}
       onResize={terminalState.resizePanel}
       onSetMaxHeight={terminalState.setMaxHeight}
     />

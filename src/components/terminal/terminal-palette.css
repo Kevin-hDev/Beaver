@@ -1,0 +1,40 @@
+/* Les seize couleurs de la sortie du terminal.
+
+   xterm peint son écran lui-même, hors de portée des feuilles de style : il ne
+   peut pas lire ces jetons, c'est terminal-theme.ts qui les résout pour lui.
+   Ils vivent quand même ici, parce que c'est le seul endroit où une couleur de
+   l'application a le droit d'être décidée.
+
+   Aucune teinte nouvelle : chacune dérive d'un jeton déjà défini dans les six
+   thèmes, donc le terminal suit celui qui est actif sans qu'on écrive une
+   valeur de plus. Les variantes vives sont mélangées à --ink plutôt qu'au
+   blanc : --ink est clair sur les thèmes sombres et sombre sur les clairs, si
+   bien que le mélange s'écarte du fond dans les deux sens. */
+:root {
+  --term-black: color-mix(in srgb, var(--ink-faint) 55%, var(--void));
+  --term-red: var(--signal-error);
+  --term-green: var(--signal-ok);
+  --term-yellow: var(--signal-warning);
+  --term-blue: var(--signal-info);
+  --term-magenta: var(--tool-web);
+  /* Le cyan est tiré vers le vert, et non repris tel quel : dans deux des six
+     thèmes, le jeton dont il vient porte exactement la même valeur que celui du
+     bleu, et dans un troisième les deux variantes vives se touchaient. Deux
+     couleurs de sortie distinctes s'affichaient à l'identique. */
+  --term-cyan: color-mix(in srgb, var(--tool-read) 65%, var(--signal-ok) 35%);
+  --term-white: var(--ink-muted);
+
+  --term-bright-black: var(--ink-faint);
+  --term-bright-red: color-mix(in srgb, var(--signal-error) 72%, var(--ink));
+  --term-bright-green: color-mix(in srgb, var(--signal-ok) 72%, var(--ink));
+  --term-bright-yellow: color-mix(in srgb, var(--signal-warning) 72%, var(--ink));
+  --term-bright-blue: color-mix(in srgb, var(--signal-info) 72%, var(--ink));
+  --term-bright-magenta: color-mix(in srgb, var(--tool-web) 72%, var(--ink));
+  --term-bright-cyan: color-mix(in srgb, var(--term-cyan) 72%, var(--ink));
+  --term-bright-white: var(--ink);
+
+  /* Sélection : une teinte de l'accent plutôt qu'un gris neutre, pour qu'elle
+     se distingue du fond sur les six thèmes sans masquer le texte. */
+  --term-selection: color-mix(in srgb, var(--pulse) 28%, transparent);
+  --term-cursor: var(--pulse);
+}

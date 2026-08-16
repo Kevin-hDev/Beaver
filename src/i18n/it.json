@@ -1030,7 +1030,10 @@
     "newTab": "Nuova scheda",
     "closePanel": "Chiudi pannello",
     "processExited": "Processo terminato con codice {{code}}",
-    "failedToStart": "Impossibile avviare il Terminal"
+    "failedToStart": "Impossibile avviare il Terminal",
+    "closeTab": "Chiudi la scheda",
+    "activity": "Nuovo output in questa scheda",
+    "resizePanel": "Regola l'altezza del pannello"
   },
   "skills": {
     "sourceBuiltIn": "Integrato",

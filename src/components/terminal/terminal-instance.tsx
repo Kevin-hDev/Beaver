@@ -4,6 +4,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { IS_MAC } from "@/lib/platform";
 import i18n from "@/i18n";
+import { readTerminalTheme, readTerminalFont } from "./terminal-theme";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalInstanceProps {
@@ -12,18 +13,8 @@ interface TerminalInstanceProps {
   isVisible: boolean;
   onPtyReady: (tabId: string, ptyId: number, ptyToken: string) => void;
   onExit: (tabId: string) => void;
+  onActivity: (tabId: string, hasActivity: boolean) => void;
   onTogglePanel?: () => void;
-}
-
-function getThemeColors() {
-  const style = getComputedStyle(document.documentElement);
-  return {
-    background: style.getPropertyValue("--void").trim() || "#050b0f",
-    foreground: style.getPropertyValue("--ink").trim() || "#e8e6e3",
-    cursor: style.getPropertyValue("--ink").trim() || "#e8e6e3",
-    cursorAccent: style.getPropertyValue("--void").trim() || "#050b0f",
-    selectionBackground: "rgba(255,255,255,0.15)",
-  };
 }
 
 export function TerminalInstance({
@@ -32,6 +23,7 @@ export function TerminalInstance({
   isVisible,
   onPtyReady,
   onExit,
+  onActivity,
   onTogglePanel,
 }: TerminalInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,15 +31,25 @@ export function TerminalInstance({
   const fitRef = useRef<FitAddon | null>(null);
   const ptyIdRef = useRef<number | null>(null);
   const ptyTokenRef = useRef<string | null>(null);
+  /* Le flux est branché une fois pour toutes au montage : il ne verrait qu'un
+     état figé de la visibilité et du rappel s'ils y étaient lus directement. */
+  const visibleRef = useRef(isVisible);
+  const activityRef = useRef(onActivity);
+  useEffect(() => {
+    visibleRef.current = isVisible;
+    activityRef.current = onActivity;
+  });
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const term = new Terminal({
-      theme: getThemeColors(),
-      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+      theme: readTerminalTheme(),
+      fontFamily: readTerminalFont(),
       fontSize: 13,
       cursorBlink: true,
+      cursorStyle: "bar",
+      cursorWidth: 2,
       allowProposedApi: true,
       rightClickSelectsWord: true,
     });
@@ -107,6 +109,8 @@ export function TerminalInstance({
         onExit(tabId);
       } else {
         term.write(event.data);
+        /* Hors des regards, le texte qui arrive vaut une marque sur l'onglet. */
+        if (!visibleRef.current) activityRef.current(tabId, true);
       }
     };
 
@@ -141,7 +145,11 @@ export function TerminalInstance({
     const resizeObserver = new ResizeObserver(() => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (containerRef.current && containerRef.current.offsetWidth > 0) {
+        /* Replié, le panneau donne une hauteur nulle à ses écrans : ajuster
+           là-dessus réduirait le terminal à une ligne et bousculerait ce qui y
+           tourne. */
+        const host = containerRef.current;
+        if (host && host.offsetWidth > 0 && host.offsetHeight > 0) {
           fit.fit();
         }
       }, 100);
@@ -163,20 +171,22 @@ export function TerminalInstance({
   }, []);
 
   useEffect(() => {
-    if (isVisible && fitRef.current) {
+    if (!isVisible) return;
+    /* Visible vaut vu : la marque tombe ici, et nulle part ailleurs. */
+    onActivity(tabId, false);
+    if (!fitRef.current) return;
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          fitRef.current?.fit();
-          termRef.current?.focus();
-        });
+        fitRef.current?.fit();
+        termRef.current?.focus();
       });
-    }
-  }, [isVisible]);
+    });
+  }, [isVisible, tabId, onActivity]);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
       if (termRef.current) {
-        termRef.current.options.theme = getThemeColors();
+        termRef.current.options.theme = readTerminalTheme();
       }
     });
     observer.observe(document.documentElement, {
@@ -189,14 +199,12 @@ export function TerminalInstance({
   return (
     <div
       ref={containerRef}
+      className="terminal-screen"
       data-keyboard-scope="local"
+      /* Seul l'escamotage est dynamique : la forme de l'écran vit en CSS. */
       style={{
-        width: "100%",
-        height: "100%",
         visibility: isVisible ? "visible" : "hidden",
         position: isVisible ? "relative" : "absolute",
-        top: 0,
-        left: 0,
       }}
     />
   );

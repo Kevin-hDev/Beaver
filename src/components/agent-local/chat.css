@@ -65,6 +65,13 @@
   min-width: 0;
 }
 
+/* Arrivée depuis l'écran d'accueil : la colonne glisse de la place qu'y tenait
+   le champ jusqu'à la sienne. La distance est mesurée à l'exécution par
+   use-composer-handoff ; seules la durée et la courbe vivent ici. */
+.chat-composer-arriving {
+  transition: transform 340ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .chat-input-under-row {
   position: relative;
   display: flex;

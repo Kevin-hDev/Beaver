@@ -1030,7 +1030,10 @@
     "newTab": "Neuer Tab",
     "closePanel": "Panel schließen",
     "processExited": "Prozess mit Code {{code}} beendet",
-    "failedToStart": "Terminal konnte nicht gestartet werden"
+    "failedToStart": "Terminal konnte nicht gestartet werden",
+    "closeTab": "Tab schließen",
+    "activity": "Neue Ausgabe in diesem Tab",
+    "resizePanel": "Panelhöhe anpassen"
   },
   "skills": {
     "sourceBuiltIn": "Integriert",

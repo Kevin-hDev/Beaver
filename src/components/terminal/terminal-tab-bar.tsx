@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { X as XIcon, Plus } from "@/components/ui/icons";
-import { TerminalIcon } from "@/components/ui/chat-header-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useDragReorder } from "@/hooks/use-drag-reorder";
+import { TerminalTabItem } from "./terminal-tab";
 import type { TerminalTab } from "@/hooks/use-terminal";
 import "./terminal-tab-bar.css";
 
@@ -30,13 +30,12 @@ export function TerminalTabBar({
 }: TerminalTabBarProps) {
   const { t } = useTranslation();
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const barRef = useRef<HTMLDivElement>(null);
-  const isMulti = tabs.length > 1;
+  const trackRef = useRef<HTMLDivElement>(null);
 
   const drag = useDragReorder({
     ids: tabs.map((tab) => tab.id),
     axis: "x",
-    containerRef: barRef,
+    containerRef: trackRef,
     group: "terminal-tabs",
     onReorder: (_ids, from, to) => onReorder(from, to),
   });
@@ -52,74 +51,34 @@ export function TerminalTabBar({
   const tabById = new Map(tabs.map((tab) => [tab.id, tab]));
 
   return (
-    <div className="terminal-tab-bar" ref={barRef}>
-      {drag.order.map((id) => {
-        const tab = tabById.get(id);
-        if (!tab) return null;
-        const isSelected = tab.id === activeTabId;
-        const isEditing = editingTabId === tab.id;
-
-        return (
-          <div
-            key={tab.id}
-            {...drag.itemProps(tab.id)}
-            className={[
-              "terminal-tab-item",
-              isSelected && isMulti ? "active-multi" : "",
-            ].join(" ")}
-            role="button"
-            tabIndex={0}
-            /* Un glissement se termine par un clic que le navigateur envoie
-               quand même : sans ce filtre, déplacer un onglet l'activerait. */
-            onClick={() => { if (!drag.didDrag()) onSelect(tab.id); }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(tab.id); }}
-            onPointerDown={(e) => handlePointerDown(tab.id, e)}
-            onDoubleClick={() => setEditingTabId(tab.id)}
-          >
-            <div
-              className="terminal-tab-icon-wrap"
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose(tab.id);
-              }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onClose(tab.id); } }}
-            >
-              <span className="tab-icon-terminal">
-                <TerminalIcon size="var(--icon-xs)" />
-              </span>
-              <span className="tab-icon-close">
-                <XIcon size="var(--icon-2xs)" />
-              </span>
-            </div>
-            {isEditing ? (
-              <input
-                autoFocus
-                className="terminal-tab-rename"
-                defaultValue={tab.label}
-                onFocus={(e) => e.target.select()}
-                onBlur={(e) => { onRename(tab.id, e.target.value); setEditingTabId(null); }}
-                onKeyDown={(e) => {
-                  if (e.code === "Enter" || e.code === "NumpadEnter") {
-                    onRename(tab.id, e.currentTarget.value);
-                    setEditingTabId(null);
-                  }
-                  if (e.code === "Escape") setEditingTabId(null);
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span>{tab.label}</span>
-            )}
-          </div>
-        );
-      })}
+    <div className="terminal-tab-bar">
+      <div className="terminal-tab-track" ref={trackRef}>
+        {drag.order.map((id) => {
+          const tab = tabById.get(id);
+          if (!tab) return null;
+          return (
+            <TerminalTabItem
+              key={tab.id}
+              tab={tab}
+              isActive={tab.id === activeTabId}
+              isEditing={editingTabId === tab.id}
+              dragProps={drag.itemProps(tab.id)}
+              onSelect={() => { if (!drag.didDrag()) onSelect(tab.id); }}
+              onClose={() => onClose(tab.id)}
+              onRename={(label) => onRename(tab.id, label)}
+              onEditStart={() => setEditingTabId(tab.id)}
+              onEditEnd={() => setEditingTabId(null)}
+              onPointerDown={(e) => handlePointerDown(tab.id, e)}
+            />
+          );
+        })}
+      </div>
       <Tooltip label={t("terminal.newTab")}>
         <button className="icon-btn terminal-tab-add" onClick={onAdd}>
           <Plus size="var(--icon-sm)" />
         </button>
       </Tooltip>
+      <span className="terminal-tab-gap" />
       <Tooltip label={t("terminal.closePanel")} align="right">
         <button className="icon-btn terminal-tab-bar-close" onClick={onClosePanel}>
           <XIcon size="var(--icon-sm)" />

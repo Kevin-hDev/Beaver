@@ -4,6 +4,11 @@ export interface TerminalTab {
   ptyToken: string | null;
   label: string;
   cwd: string;
+  /** Du texte est arrivé pendant que l'onglet était en arrière-plan. Effacé
+   *  dès qu'on l'ouvre, et jamais persisté : il ne décrit que cette session.
+   *  Toujours présent, jamais absent — updateTab compare la valeur en place
+   *  pour ne rien réécrire, et « absent » ne se compare à rien. */
+  hasActivity: boolean;
 }
 
 export interface TerminalGroup {
