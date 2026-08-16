@@ -59,6 +59,31 @@ async fn active_bundle_is_never_replaced_by_first_install() {
     assert!(request.paths.active.exists());
 }
 
+#[tokio::test]
+async fn model_store_conflict_is_rejected_before_first_install_staging_mutation() {
+    let root = tempfile::tempdir().unwrap();
+    let root_path = dunce::canonicalize(root.path()).unwrap();
+    let mut request = InstallRequest::for_test(root_path);
+    request.inherited_environment = vec![
+        (
+            std::ffi::OsString::from("HOME"),
+            root.path().as_os_str().to_owned(),
+        ),
+        (
+            std::ffi::OsString::from("OLLAMA_MODELS"),
+            request.paths.install_staging.as_os_str().to_owned(),
+        ),
+    ];
+
+    assert_eq!(
+        super::install::install(request.clone()).await,
+        Err(OllamaErrorCode::OllamaModelStoreConflict)
+    );
+    assert!(!request.paths.install_staging.exists());
+    assert!(!request.paths.archive_staging.exists());
+    assert!(!request.paths.active.exists());
+}
+
 #[test]
 fn install_outcome_does_not_publish_ready_before_commit() {
     assert!(!InstallOutcome::Preparing.is_ready());

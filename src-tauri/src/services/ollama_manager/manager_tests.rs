@@ -209,6 +209,26 @@ async fn cancelled_install_without_mutation_restores_absent_instead_of_recovery_
 }
 
 #[tokio::test]
+async fn failed_install_without_mutation_reconstructs_absent_and_keeps_retry_usable() {
+    let (_coordinator, manager) = manager();
+    let root = tempfile::tempdir().unwrap();
+    let request = InstallRequest::for_test(root.path().to_path_buf());
+
+    assert_eq!(
+        manager.install(request).await,
+        Err(OllamaErrorCode::OllamaDownloadFailed)
+    );
+    let status = manager.status().await;
+    assert_eq!(status.bundle, BundleState::Absent);
+    assert_eq!(status.operation, OperationState::Idle);
+    assert_eq!(
+        status.last_error,
+        Some(OllamaErrorCode::OllamaDownloadFailed)
+    );
+    assert_eq!(manager.request_recovery_retry(), Ok(()));
+}
+
+#[tokio::test]
 async fn a_panicking_task_releases_the_admission() {
     let (_coordinator, manager) = manager();
     let task_manager = manager.clone();

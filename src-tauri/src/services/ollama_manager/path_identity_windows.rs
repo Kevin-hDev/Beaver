@@ -125,6 +125,15 @@ pub(crate) fn contains(
     if same_directory(parent, child)? {
         return Ok(false);
     }
+    if child.identity().is_none() {
+        let parent = normalized(parent.path())
+            .trim_end_matches(['/', '\\'])
+            .to_owned();
+        let child = normalized(child.path());
+        return Ok(child
+            .strip_prefix(&parent)
+            .is_some_and(|rest| rest.starts_with(['/', '\\'])));
+    }
     if let Some(parent_identity) = parent.identity() {
         let child_missing = matches!(
             fs::symlink_metadata(child.path()),

@@ -3,6 +3,7 @@ use super::path_identity::{CanonicalDirectory, PathIdentityResolver};
 use super::spawn_environment::FrozenEnvironment;
 use crate::services::paths::OllamaPaths;
 use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
 
 pub(crate) fn resolve_models_path(
@@ -53,6 +54,45 @@ pub(crate) fn resolve_models_path(
     } else {
         cwd.path().join(path)
     })
+}
+
+pub(crate) fn verified_models_directory(
+    path: &Path,
+    identity: &dyn PathIdentityResolver,
+) -> Result<CanonicalDirectory, OllamaErrorCode> {
+    match identity.verified_location(path) {
+        Ok(location) => return Ok(location.comparison_directory()),
+        Err(OllamaErrorCode::OllamaStorageUnavailable) => {}
+        Err(code) => return Err(code),
+    }
+    let mut cursor = path;
+    let mut missing = Vec::<OsString>::new();
+    let existing = loop {
+        match std::fs::symlink_metadata(cursor) {
+            Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
+                break identity.canonical_directory(cursor)?;
+            }
+            Ok(_) => return Err(OllamaErrorCode::OllamaModelStoreConflict),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                if missing.len() >= super::constants::MAX_OLLAMA_PATH_COMPONENTS {
+                    return Err(OllamaErrorCode::OllamaModelStoreConflict);
+                }
+                missing.push(
+                    cursor
+                        .file_name()
+                        .ok_or(OllamaErrorCode::OllamaModelStoreConflict)?
+                        .to_owned(),
+                );
+                cursor = cursor
+                    .parent()
+                    .ok_or(OllamaErrorCode::OllamaModelStoreConflict)?;
+            }
+            Err(_) => return Err(OllamaErrorCode::OllamaStorageUnavailable),
+        }
+    };
+    Ok(missing.into_iter().rev().fold(existing, |parent, name| {
+        parent.child(parent.path().join(name), None)
+    }))
 }
 
 pub(super) fn active_executable(active: &Path) -> PathBuf {

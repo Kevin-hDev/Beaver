@@ -44,6 +44,7 @@ impl InstallRequest {
     }
 
     pub fn for_test_with_cancel(root: PathBuf, cancellation: CancellationToken) -> Self {
+        let root = dunce::canonicalize(&root).unwrap_or(root);
         let paths = ollama_paths(&root);
         Self {
             paths,
@@ -76,6 +77,12 @@ impl InstallOutcome {
 }
 
 pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaErrorCode> {
+    OllamaSpawnProfile::validate_models_confinement(
+        &request.paths,
+        request.inherited_environment.clone(),
+        &request.inherited_cwd,
+        &NativePathIdentityResolver,
+    )?;
     super::install_confinement::validate_install_confinement(&request.paths)?;
     if request.paths.active.exists() {
         return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);

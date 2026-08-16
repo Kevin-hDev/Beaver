@@ -5,6 +5,7 @@ use super::error::OllamaErrorCode;
 use super::path_identity::{CanonicalDirectory, PathIdentityResolver};
 use super::spawn_profile_paths::{
     active_executable, overlaps, resolve_models_path, transaction_locations,
+    verified_models_directory,
 };
 use super::types::OllamaEndpoint;
 use crate::services::paths::OllamaPaths;
@@ -76,6 +77,19 @@ impl OllamaSpawnProfile {
         )
     }
 
+    pub(crate) fn validate_models_confinement(
+        paths: &OllamaPaths,
+        inherited_environment: impl IntoIterator<Item = (OsString, OsString)>,
+        inherited_cwd: &Path,
+        identity: &dyn PathIdentityResolver,
+    ) -> Result<(), OllamaErrorCode> {
+        let inherited = super::spawn_environment::collect_bounded(inherited_environment)?;
+        let environment = super::spawn_environment::freeze(inherited, Vec::new())?;
+        let working_directory = identity.canonical_directory(inherited_cwd)?;
+        resolve_models_directory(paths, &environment, &working_directory, identity, false)
+            .map(|_| ())
+    }
+
     fn resolve_inner(
         paths: &OllamaPaths,
         inherited: Vec<(OsString, OsString)>,
@@ -86,34 +100,16 @@ impl OllamaSpawnProfile {
     ) -> Result<Self, OllamaErrorCode> {
         let inherited_snapshot = super::spawn_environment::freeze(inherited, Vec::new())?;
         let working_directory = identity.canonical_directory(inherited_cwd)?;
-        let models_path = if probe {
-            paths.probe_models.clone()
-        } else {
-            resolve_models_path(
-                inherited_snapshot.value("OLLAMA_MODELS"),
-                &working_directory,
-                &inherited_snapshot,
-            )?
-        };
-        let models = identity.verified_location(&models_path)?;
-        let models_directory = models.comparison_directory();
+        let models_directory = resolve_models_directory(
+            paths,
+            &inherited_snapshot,
+            &working_directory,
+            identity,
+            probe,
+        )?;
         let active_directory = identity
             .verified_location(&paths.active)?
             .comparison_directory();
-        for transaction_path in transaction_locations(paths, probe) {
-            if transaction_path == &paths.active {
-                continue;
-            }
-            let transaction = identity
-                .verified_location(transaction_path)?
-                .comparison_directory();
-            if overlaps(identity, &models_directory, &transaction)? {
-                return Err(OllamaErrorCode::OllamaModelStoreConflict);
-            }
-        }
-        if overlaps(identity, &models_directory, &active_directory)? {
-            return Err(OllamaErrorCode::OllamaModelStoreConflict);
-        }
         let executable =
             identity.canonical_executable(&active_executable(active_directory.path()))?;
         let mut overrides = dynamic_overrides;
@@ -144,6 +140,34 @@ impl OllamaSpawnProfile {
     pub(crate) fn environment(&self) -> &FrozenEnvironment {
         &self.environment
     }
+}
+
+fn resolve_models_directory(
+    paths: &OllamaPaths,
+    environment: &FrozenEnvironment,
+    working_directory: &CanonicalDirectory,
+    identity: &dyn PathIdentityResolver,
+    probe: bool,
+) -> Result<CanonicalDirectory, OllamaErrorCode> {
+    let models_path = if probe {
+        paths.probe_models.clone()
+    } else {
+        resolve_models_path(
+            environment.value("OLLAMA_MODELS"),
+            working_directory,
+            environment,
+        )?
+    };
+    let models_directory = verified_models_directory(&models_path, identity)?;
+    for transaction_path in transaction_locations(paths, probe) {
+        let transaction = identity
+            .verified_location(transaction_path)?
+            .comparison_directory();
+        if overlaps(identity, &models_directory, &transaction)? {
+            return Err(OllamaErrorCode::OllamaModelStoreConflict);
+        }
+    }
+    Ok(models_directory)
 }
 
 pub struct OllamaSpawnAttempt<'a> {

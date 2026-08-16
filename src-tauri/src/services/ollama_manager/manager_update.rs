@@ -32,14 +32,17 @@ impl OllamaManager {
             }
             Err(OllamaErrorCode::OllamaOperationCancelled) => {
                 drop(guard);
-                if matches!(
-                    self.run_startup_recovery_at(recovery_paths).await,
-                    super::startup::StartupBarrierState::Ready
-                ) {
-                    self.record_last_error(OllamaErrorCode::OllamaOperationCancelled);
-                }
+                self.reconcile_after_operation_error(
+                    recovery_paths,
+                    OllamaErrorCode::OllamaOperationCancelled,
+                )
+                .await;
             }
-            Err(error) => guard.fail(*error),
+            Err(error) => {
+                drop(guard);
+                self.reconcile_after_operation_error(recovery_paths, *error)
+                    .await;
+            }
         }
         result
     }

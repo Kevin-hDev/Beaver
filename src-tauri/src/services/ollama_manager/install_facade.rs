@@ -23,16 +23,11 @@ impl OllamaManager {
                 guard.succeed(super::types::BundleState::Ready);
             }
             Ok(InstallOutcome::Preparing) => drop(guard),
-            Err(OllamaErrorCode::OllamaOperationCancelled) => {
+            Err(error) => {
                 drop(guard);
-                if matches!(
-                    self.run_startup_recovery_at(recovery_paths).await,
-                    super::startup::StartupBarrierState::Ready
-                ) {
-                    self.record_last_error(OllamaErrorCode::OllamaOperationCancelled);
-                }
+                self.reconcile_after_operation_error(recovery_paths, *error)
+                    .await;
             }
-            Err(error) => guard.fail(*error),
         }
         result
     }

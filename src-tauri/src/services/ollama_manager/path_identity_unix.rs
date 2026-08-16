@@ -49,6 +49,9 @@ pub(crate) fn contains(
     if same_directory(parent, child)? {
         return Ok(false);
     }
+    if child.identity().is_none() {
+        return Ok(child.path().starts_with(parent.path()));
+    }
     let Some(parent_identity) = parent.identity() else {
         return Ok(child.path().starts_with(parent.path()));
     };

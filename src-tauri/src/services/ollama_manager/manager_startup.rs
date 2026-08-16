@@ -106,6 +106,19 @@ impl OllamaManager {
         self.inner().retry.request_wake()
     }
 
+    pub(super) async fn reconcile_after_operation_error(
+        &self,
+        paths: crate::services::paths::OllamaPaths,
+        code: super::error::OllamaErrorCode,
+    ) {
+        if matches!(
+            self.run_startup_recovery_at(paths).await,
+            StartupBarrierState::Ready
+        ) {
+            self.record_last_error(code);
+        }
+    }
+
     pub(crate) fn startup_state(&self) -> StartupBarrierState {
         self.inner().startup.state()
     }
