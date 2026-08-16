@@ -1,5 +1,5 @@
 use super::blocking::run_ollama_blocking;
-use super::bundle_receipt::read_receipt;
+use super::bundle_receipt::{read_receipt, write_receipt, BundleReceipt};
 use super::cleanup_inspection;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
@@ -18,12 +18,16 @@ where
     F: OllamaDurableFs + 'static,
 {
     let receipt_path = bundle_receipt_path(&paths.active);
-    let receipt =
-        read_receipt(&**fs, &receipt_path)?.ok_or(OllamaErrorCode::OllamaUpdateRecoveryRequired)?;
-    if receipt.fingerprint != *expected {
-        return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
-    }
     verify_fingerprint(&**fs, paths, expected)?;
+    match read_receipt(&**fs, &receipt_path)? {
+        Some(receipt) if receipt.fingerprint == *expected => {}
+        Some(_) => return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
+        None => {
+            // Les versions Beaver publiées précèdent le reçu J3 : l'empreinte disque est
+            // l'autorité de migration, puis le reçu devient obligatoire dès son écriture.
+            write_receipt(&**fs, &paths.active, &BundleReceipt::new(expected.clone()))?;
+        }
+    }
     let fs_for_sync = Arc::clone(fs);
     let version_path = paths.active.join("VERSION");
     let executable_path = active_executable(&paths.active);

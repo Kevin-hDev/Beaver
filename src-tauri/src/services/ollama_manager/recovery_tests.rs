@@ -396,7 +396,7 @@ struct RealFixture {
     runner: RecoveryExecutor<RealCutpointFs, ValidProbe>,
 }
 
-fn real_bundle_at(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint {
+fn real_bundle_at_without_receipt(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint {
     let bin = path.join("bin");
     std::fs::create_dir_all(&bin).expect("bundle directory");
     std::fs::write(path.join("VERSION"), version).expect("version");
@@ -415,6 +415,11 @@ fn real_bundle_at(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint 
             .ok()
             .expect("executable hash"),
     };
+    fingerprint
+}
+
+fn real_bundle_at(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint {
+    let fingerprint = real_bundle_at_without_receipt(path, version, body);
     super::bundle_receipt::write_receipt(
         &platform_fs(),
         path,
@@ -528,7 +533,7 @@ fn real_fixture(scenario: RealScenario) -> RealFixture {
             .expect("marker");
         }
         RealScenario::AdoptLegacyActive => {
-            real_bundle_at(&paths.active, "1.2.3", b"active");
+            real_bundle_at_without_receipt(&paths.active, "1.1.2", b"active");
         }
         RealScenario::CleanupPendingMoveBackupToDelete => {
             let target = real_bundle_at(&paths.active, "1.2.3", b"target");
@@ -801,7 +806,12 @@ fn rollback_snapshot(fs: &CutpointFs, paths: &OllamaPaths) -> OllamaLayoutSnapsh
     snapshot
 }
 
-fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFingerprint {
+fn real_bundle_without_receipt(
+    root: &Path,
+    name: &str,
+    version: &str,
+    body: &[u8],
+) -> BundleFingerprint {
     let bundle = root.join(name);
     let bin = bundle.join("bin");
     std::fs::create_dir_all(&bin).expect("bundle directory");
@@ -821,9 +831,14 @@ fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFin
             .ok()
             .expect("executable hash"),
     };
+    fingerprint
+}
+
+fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFingerprint {
+    let fingerprint = real_bundle_without_receipt(root, name, version, body);
     super::bundle_receipt::write_receipt(
         &platform_fs(),
-        &bundle,
+        &root.join(name),
         &super::bundle_receipt::BundleReceipt::new(fingerprint.clone()),
     )
     .expect("bundle receipt");
@@ -983,12 +998,46 @@ async fn migration_marker_temporary_is_removed_then_recreated_durably() {
 }
 
 #[tokio::test]
-async fn legacy_adoption_without_an_exact_bundle_receipt_is_preserved_and_blocked() {
+async fn published_beaver_bundles_without_receipts_are_migrated_durably() {
+    for version in ["1.1.0", "1.1.1", "1.1.2"] {
+        let root = tempfile::tempdir_in(".").expect("layout root");
+        let paths = ollama_paths(root.path());
+        let fingerprint =
+            real_bundle_without_receipt(root.path(), "ollama-bundle", version, b"active");
+        let fs = Arc::new(platform_fs());
+        let runner = RecoveryExecutor::new(Arc::clone(&fs), Arc::new(ValidProbe), paths.clone());
+
+        assert_eq!(
+            runner.recover(RecoveryReason::Startup).await,
+            Ok(super::recovery::RecoveryOutcome::ProgressMade),
+            "published Beaver bundle {version}"
+        );
+        let receipt = super::bundle_receipt::read_receipt(
+            &platform_fs(),
+            &crate::services::paths::bundle_receipt_path(&paths.active),
+        )
+        .expect("read migrated receipt")
+        .expect("migrated receipt");
+        assert_eq!(receipt.fingerprint, fingerprint);
+        assert!(paths.migration_marker.exists());
+        assert_eq!(
+            runner.recover(RecoveryReason::Retry).await,
+            Ok(super::recovery::RecoveryOutcome::Ready)
+        );
+    }
+}
+
+#[tokio::test]
+async fn legacy_adoption_rejects_an_existing_mismatched_receipt() {
     let root = tempfile::tempdir_in(".").expect("layout root");
     let paths = ollama_paths(root.path());
-    real_bundle(root.path(), "ollama-bundle", "1.2.3", b"active");
-    std::fs::remove_file(crate::services::paths::bundle_receipt_path(&paths.active))
-        .expect("remove bundle receipt");
+    real_bundle_without_receipt(root.path(), "ollama-bundle", "1.1.2", b"active");
+    super::bundle_receipt::write_receipt(
+        &platform_fs(),
+        &paths.active,
+        &super::bundle_receipt::BundleReceipt::new(fp("9.9.9", "99")),
+    )
+    .expect("mismatched receipt");
     let fs = Arc::new(platform_fs());
     let runner = RecoveryExecutor::new(Arc::clone(&fs), Arc::new(ValidProbe), paths.clone());
 
