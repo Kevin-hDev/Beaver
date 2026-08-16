@@ -143,6 +143,7 @@ impl OllamaManager {
         self.inner().lock_state().status.daemon = daemon;
     }
 
+    #[cfg(test)]
     pub(crate) fn publish_startup_for_test(&self, generation: u64, state: StartupBarrierState) {
         self.publish_startup(generation, state);
     }

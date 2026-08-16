@@ -8,6 +8,8 @@ use std::os::unix::ffi::OsStrExt;
 
 const DIRECTORY_FLAGS: i32 =
     libc::O_RDONLY | libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC;
+const MAX_DELETE_DEPTH: usize = 64;
+const MAX_DELETE_ENTRIES: usize = 8_192;
 
 pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError> {
     let expected = root
@@ -22,7 +24,8 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
     if current.identity() != Some(expected) {
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
-    remove_contents(root_handle.as_raw_fd())?;
+    let mut removed_entries = 0usize;
+    remove_contents(root_handle.as_raw_fd(), 0, &mut removed_entries)?;
 
     let parent_path = root
         .path()
@@ -53,7 +56,11 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
     sync_parent_path(root.path())
 }
 
-fn remove_contents(fd: RawFd) -> Result<(), OllamaFsError> {
+fn remove_contents(
+    fd: RawFd,
+    depth: usize,
+    removed_entries: &mut usize,
+) -> Result<(), OllamaFsError> {
     let duplicate = unsafe { libc::dup(fd) };
     if duplicate < 0 {
         return Err(io_error());
@@ -72,13 +79,22 @@ fn remove_contents(fd: RawFd) -> Result<(), OllamaFsError> {
         if name.to_bytes() == b"." || name.to_bytes() == b".." {
             continue;
         }
-        remove_entry(fd, name)?;
+        if *removed_entries >= MAX_DELETE_ENTRIES {
+            return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
+        }
+        *removed_entries += 1;
+        remove_entry(fd, name, depth, removed_entries)?;
     }
     unsafe { libc::closedir(directory) };
     Ok(())
 }
 
-fn remove_entry(parent: RawFd, name: &CStr) -> Result<(), OllamaFsError> {
+fn remove_entry(
+    parent: RawFd,
+    name: &CStr,
+    depth: usize,
+    removed_entries: &mut usize,
+) -> Result<(), OllamaFsError> {
     let mut stat = unsafe { std::mem::zeroed::<libc::stat>() };
     let result =
         unsafe { libc::fstatat(parent, name.as_ptr(), &mut stat, libc::AT_SYMLINK_NOFOLLOW) };
@@ -86,11 +102,14 @@ fn remove_entry(parent: RawFd, name: &CStr) -> Result<(), OllamaFsError> {
         return Err(io_error());
     }
     if stat.st_mode & libc::S_IFMT == libc::S_IFDIR {
+        if depth >= MAX_DELETE_DEPTH {
+            return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
+        }
         let child = unsafe { libc::openat(parent, name.as_ptr(), DIRECTORY_FLAGS) };
         if child < 0 {
             return Err(io_error());
         }
-        let result = remove_contents(child);
+        let result = remove_contents(child, depth + 1, removed_entries);
         unsafe { libc::close(child) };
         result?;
         let result = unsafe { libc::unlinkat(parent, name.as_ptr(), libc::AT_REMOVEDIR) };

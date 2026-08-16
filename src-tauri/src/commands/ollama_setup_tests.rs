@@ -51,6 +51,21 @@ fn every_typed_progress_stage_has_one_stable_channel_status() {
     }
 }
 
+#[test]
+fn setup_command_returns_only_codes_owned_by_the_runtime_contract() {
+    let source = include_str!("ollama_setup.rs");
+    for forbidden in [
+        "ollama-start-error",
+        "ollama-start-timeout",
+        "ollama-install-incomplete",
+    ] {
+        assert!(
+            !source.contains(forbidden),
+            "non-contract code: {forbidden}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn cancel_active_setup_cancels_manager_token() {
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");

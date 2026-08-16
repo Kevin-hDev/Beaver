@@ -1,7 +1,7 @@
 use crate::services::ollama_manager::{
-    BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaProgressReporter,
-    OllamaProgressStage, OllamaProgressUpdate, OllamaRuntimeStatus, OllamaStartOutcome,
-    OllamaVersion, OperationState,
+    BundleState, InstallOutcome, InstallRequest, OllamaErrorCode, OllamaManager,
+    OllamaProgressReporter, OllamaProgressStage, OllamaProgressUpdate, OllamaRuntimeStatus,
+    OllamaStartOutcome, OllamaVersion, OperationState,
 };
 use serde::Serialize;
 use std::ffi::OsString;
@@ -67,7 +67,8 @@ pub(crate) async fn run_download_ollama(
         version: Some(version),
         manifest: Some(manifest),
         inherited_environment: std::env::vars_os().collect::<Vec<(OsString, OsString)>>(),
-        inherited_cwd: std::env::current_dir().map_err(|_| "ollama-storage-unavailable")?,
+        inherited_cwd: std::env::current_dir()
+            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable.as_str())?,
         cancellation: cancel.clone(),
         deadline: None,
         progress: Some(channel_progress_reporter(on_progress)),
@@ -80,7 +81,7 @@ pub(crate) async fn run_download_ollama(
         .map_err(|code| code.as_str().to_string())?
     {
         InstallOutcome::Installed { .. } => {}
-        InstallOutcome::Preparing => return Err("ollama-install-incomplete".into()),
+        InstallOutcome::Preparing => return Err(OllamaErrorCode::OllamaInternal.as_str().into()),
     }
     start_manager_and_wait(manager, on_progress, cancel).await
 }
@@ -117,7 +118,7 @@ pub(super) fn progress_status(stage: OllamaProgressStage) -> &'static str {
 pub async fn cancel_ollama_setup(manager: tauri::State<'_, OllamaManager>) -> Result<(), String> {
     match manager.cancel_operation().await {
         crate::services::ollama_manager::CancelOutcome::RejectedDuringShutdown => {
-            Err("ollama-closing".into())
+            Err(OllamaErrorCode::OllamaClosing.as_str().into())
         }
         crate::services::ollama_manager::CancelOutcome::Cancelled
         | crate::services::ollama_manager::CancelOutcome::AlreadyIdle => Ok(()),
@@ -148,18 +149,20 @@ pub(crate) async fn start_manager_and_wait(
         OllamaStartOutcome::BlockedByRecovery { code } | OllamaStartOutcome::Failed { code } => {
             return Err(code.as_str().into())
         }
-        OllamaStartOutcome::RejectedDuringShutdown => return Err("ollama-closing".into()),
+        OllamaStartOutcome::RejectedDuringShutdown => {
+            return Err(OllamaErrorCode::OllamaClosing.as_str().into())
+        }
     }
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(2))
         .build()
-        .map_err(|_| "ollama-start-error")?;
+        .map_err(|_| OllamaErrorCode::OllamaInternal.as_str())?;
     let deadline = Instant::now() + Duration::from_secs(45);
     while Instant::now() < deadline {
         if cancel.is_cancelled()
             || matches!(manager.status().await.operation, OperationState::Cancelling)
         {
-            return Err("ollama-operation-cancelled".into());
+            return Err(OllamaErrorCode::OllamaOperationCancelled.as_str().into());
         }
         if let Ok(endpoint) = manager.usable_endpoint().await {
             if client
@@ -174,7 +177,7 @@ pub(crate) async fn start_manager_and_wait(
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
-    Err("ollama-start-timeout".into())
+    Err(OllamaErrorCode::OllamaSetupTimeout.as_str().into())
 }
 
 async fn resolve_install_version() -> OllamaVersion {

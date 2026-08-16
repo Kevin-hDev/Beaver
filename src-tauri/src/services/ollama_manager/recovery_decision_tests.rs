@@ -522,6 +522,24 @@ fn rollback_pending_restored_previous_and_rejected_target_resume_cleanup() {
 }
 
 #[test]
+fn rollback_pending_without_rejected_identity_never_claims_an_unproven_failed_bundle() {
+    let mut state = empty();
+    state.journal = journal(OllamaJournalState::RollbackPending {
+        previous: fp("1.2.3", "11"),
+        rejected_target: None,
+    });
+    state.active = known("1.2.3", "11");
+    state.failed = known("1.2.4", "22");
+
+    assert_eq!(
+        decide_recovery(&state),
+        RecoveryDecision::Defer {
+            code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        }
+    );
+}
+
+#[test]
 fn rollback_cleanup_rejected_rebut_or_partial_rebut_resume_cleanup() {
     for failed_delete in [false, true] {
         let mut state = empty();

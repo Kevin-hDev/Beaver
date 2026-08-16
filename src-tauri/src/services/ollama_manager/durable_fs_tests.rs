@@ -339,6 +339,29 @@ fn windows_verified_delete_contract_forbids_path_recursive_fallback() {
     assert!(entries.contains("OllamaFsOperation"));
 }
 
+#[cfg(unix)]
+#[test]
+fn unix_verified_delete_refuses_an_overdeep_tree_without_removing_the_root() {
+    use super::path_identity::{NativePathIdentityResolver, PathIdentityResolver};
+
+    let root = tempfile::tempdir().unwrap();
+    let trash = dunce::canonicalize(root.path()).unwrap().join("trash");
+    let mut nested = trash.clone();
+    for _ in 0..65 {
+        nested.push("nested");
+    }
+    std::fs::create_dir_all(&nested).unwrap();
+    let canonical = NativePathIdentityResolver
+        .canonical_directory(&trash)
+        .unwrap();
+
+    assert_eq!(
+        PlatformOllamaDurableFs.remove_tree_verified(&canonical),
+        Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput))
+    );
+    assert!(trash.exists());
+}
+
 #[test]
 fn windows_verified_delete_opens_paths_then_revalidates_native_identity() {
     let verified = include_str!("durable_fs_windows_verified.rs");

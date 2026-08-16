@@ -409,13 +409,12 @@ fn real_bundle_at_without_receipt(path: &Path, version: &str, body: &[u8]) -> Bu
     #[cfg(unix)]
     std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
         .expect("executable permissions");
-    let fingerprint = BundleFingerprint {
+    BundleFingerprint {
         version: OllamaVersion::parse(version).expect("version fingerprint"),
         executable_sha256: super::probe_http::hash_file(&executable)
             .ok()
             .expect("executable hash"),
-    };
-    fingerprint
+    }
 }
 
 fn real_bundle_at(path: &Path, version: &str, body: &[u8]) -> BundleFingerprint {
@@ -825,13 +824,12 @@ fn real_bundle_without_receipt(
     #[cfg(unix)]
     std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755))
         .expect("executable permissions");
-    let fingerprint = BundleFingerprint {
+    BundleFingerprint {
         version: OllamaVersion::parse(version).expect("version fingerprint"),
         executable_sha256: super::probe_http::hash_file(&executable)
             .ok()
             .expect("executable hash"),
-    };
-    fingerprint
+    }
 }
 
 fn real_bundle(root: &Path, name: &str, version: &str, body: &[u8]) -> BundleFingerprint {

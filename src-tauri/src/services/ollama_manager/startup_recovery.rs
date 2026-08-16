@@ -70,8 +70,10 @@ fn verify_bundle(
 fn map_receipt_error(error: ProcessReceiptError) -> OllamaErrorCode {
     match error {
         ProcessReceiptError::Storage => OllamaErrorCode::OllamaStorageUnavailable,
-        ProcessReceiptError::Missing
-        | ProcessReceiptError::Oversized
-        | ProcessReceiptError::Invalid => OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        ProcessReceiptError::Missing => OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        ProcessReceiptError::Oversized | ProcessReceiptError::Invalid => {
+            ::log::error!("[ollama] process receipt rejected classification={error:?}");
+            OllamaErrorCode::OllamaUpdateRecoveryRequired
+        }
     }
 }
