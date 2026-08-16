@@ -1,0 +1,29 @@
+JALON 3 - ERREURS TYPEES ET ETAPES UI EXACTES
+
+Constats traites:
+- les vingt traductions erreur existaient sans consommateur dans les trois zones Ollama;
+- le redemarrage reduisait ses six variantes typees a owned external failed et perdait le code stable;
+- preparing validating committing recovering rolling_back et cleaning affichaient des libelles faux ou generiques.
+
+Correction:
+- ollamaErrorKey est consomme par ecran installation, panneau runtime et reglages de redemarrage;
+- les erreurs inconnues ou malformees restent filtrees vers le message generique, aucun texte backend brut est affiche;
+- la presentation du redemarrage conserve le code de blocked_by_recovery ou failed;
+- les dix etapes du contrat ont chacune une cle stable et un libelle propre;
+- les sept langues fr en es de it zh ja fournissent chaque nouveau libelle.
+
+TDD observe:
+- rouge: 25 echecs cibles, dont six mauvaises correspondances et six phases UI inconnues;
+- rouge: le code ollama-download-failed affichait errors.operationFailed;
+- rouge: toutes les variantes restart perdaient le code.
+
+Preuves vertes:
+- trois fichiers Vitest cibles: 41 passes, 0 echec;
+- npx tsc --noEmit: vert;
+- npm run lint: vert;
+- git diff --check: vert;
+- fichiers production touches: maximum 187 lignes;
+- graphify update .: termine, 34353 noeuds et 70418 aretes.
+
+Limite:
+- aucune CI, preuve native, push ou fusion dans ce commit; les preuves natives restent apres review code verte.
