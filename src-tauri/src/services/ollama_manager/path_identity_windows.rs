@@ -141,26 +141,22 @@ pub(crate) fn contains(
 }
 
 pub(super) fn same_component(left: &OsStr, right: &OsStr) -> Result<bool, OllamaError> {
-    let left = bounded_wide(left)?;
-    let right = bounded_wide(right)?;
+    let (left, left_len) = bounded_wide(left)?;
+    let (right, right_len) = bounded_wide(right)?;
     Ok(unsafe {
-        CompareStringOrdinal(
-            left.as_ptr(),
-            left.len() as i32,
-            right.as_ptr(),
-            right.len() as i32,
-            1,
-        ) == CSTR_EQUAL
+        CompareStringOrdinal(left.as_ptr(), left_len, right.as_ptr(), right_len, 1) == CSTR_EQUAL
     })
 }
 
-fn bounded_wide(value: &OsStr) -> Result<Vec<u16>, OllamaError> {
+fn bounded_wide(value: &OsStr) -> Result<(Vec<u16>, i32), OllamaError> {
     let units = value
         .encode_wide()
         .take(MAX_WINDOWS_PATH_UNITS + 1)
         .collect::<Vec<_>>();
-    if units.len() > MAX_WINDOWS_PATH_UNITS || i32::try_from(units.len()).is_err() {
+    if units.len() > MAX_WINDOWS_PATH_UNITS {
         return Err(super::OllamaErrorCode::OllamaModelStoreConflict);
     }
-    Ok(units)
+    let length =
+        i32::try_from(units.len()).map_err(|_| super::OllamaErrorCode::OllamaModelStoreConflict)?;
+    Ok((units, length))
 }

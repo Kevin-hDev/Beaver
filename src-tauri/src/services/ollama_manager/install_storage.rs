@@ -16,7 +16,7 @@ pub(super) async fn prepare_staging<F: OllamaDurableFs + 'static>(
     let staging = staging.to_path_buf();
     run_ollama_blocking(move || {
         fs.create_directory_durable(&staging)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("install-staging-create", error))
     })
     .await
 }
@@ -33,7 +33,7 @@ pub(super) async fn commit_staging<F: OllamaDurableFs + 'static>(
             return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
         }
         fs.rename_durable(&source, &active)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("install-staging-commit", error))
     })
     .await
 }

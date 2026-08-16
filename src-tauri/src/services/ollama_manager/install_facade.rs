@@ -22,7 +22,6 @@ impl OllamaManager {
             Ok(InstallOutcome::Installed { .. }) => {
                 guard.succeed(super::types::BundleState::Ready);
             }
-            Ok(InstallOutcome::Preparing) => drop(guard),
             Err(error) => {
                 drop(guard);
                 self.reconcile_after_operation_error(recovery_paths, *error)

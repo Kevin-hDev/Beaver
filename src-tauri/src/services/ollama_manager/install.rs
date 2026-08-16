@@ -66,14 +66,7 @@ impl InstallRequest {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum InstallOutcome {
-    Preparing,
     Installed { fingerprint: BundleFingerprint },
-}
-
-impl InstallOutcome {
-    pub fn is_ready(&self) -> bool {
-        matches!(self, Self::Installed { .. })
-    }
 }
 
 pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaErrorCode> {

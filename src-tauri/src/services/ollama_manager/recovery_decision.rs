@@ -125,7 +125,6 @@ pub(super) fn exact_mask(
 }
 fn has_invalid(s: &OllamaLayoutSnapshot) -> bool {
     let dirs = [
-        &s.active,
         &s.install_staging,
         &s.update_staging,
         &s.backup,
@@ -135,12 +134,14 @@ fn has_invalid(s: &OllamaLayoutSnapshot) -> bool {
         &s.backup_delete,
         &s.failed_delete,
     ];
-    dirs.iter().any(|e| matches!(e, DirectoryEvidence::Invalid))
+    matches!(
+        s.active,
+        DirectoryEvidence::Invalid | DirectoryEvidence::Unknown
+    ) || dirs.iter().any(|e| matches!(e, DirectoryEvidence::Invalid))
         || matches!(s.migration_marker, MigrationMarkerPresence::Invalid)
 }
 fn has_unknown(s: &OllamaLayoutSnapshot) -> bool {
     let dirs = [
-        &s.active,
         &s.install_staging,
         &s.update_staging,
         &s.backup,
@@ -160,12 +161,7 @@ pub fn decide_recovery(s: &OllamaLayoutSnapshot) -> RecoveryDecision {
             code: OllamaErrorCode::OllamaJournalInvalid,
         };
     }
-    if [s.archive_staging, s.archive_failed]
-        .into_iter()
-        .any(|evidence| !matches!(evidence, ArchiveDirectoryEvidence::Absent))
-    {
-        return defer();
-    }
+    // Les archives sont consommées avant cette table par archive_recovery, leur autorité unique.
     if has_invalid(s) {
         return recovery_required();
     }

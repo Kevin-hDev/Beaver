@@ -81,7 +81,6 @@ pub(crate) async fn run_download_ollama(
         .map_err(|code| code.as_str().to_string())?
     {
         InstallOutcome::Installed { .. } => {}
-        InstallOutcome::Preparing => return Err(OllamaErrorCode::OllamaInternal.as_str().into()),
     }
     start_manager_and_wait(manager, on_progress, cancel).await
 }

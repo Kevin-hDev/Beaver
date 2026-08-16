@@ -160,8 +160,12 @@ fn copy_bounded<R: Read, W: Write>(
         if read == 0 {
             return Ok(());
         }
-        output
-            .write_all(&buffer[..read])
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+        output.write_all(&buffer[..read]).map_err(|error| {
+            super::storage_error::io(
+                "archive-entry-write",
+                &error,
+                OllamaErrorCode::OllamaStorageUnavailable,
+            )
+        })?;
     }
 }

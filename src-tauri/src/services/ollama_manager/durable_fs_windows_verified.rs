@@ -32,8 +32,8 @@ pub(super) fn remove_tree(root: &CanonicalDirectory) -> Result<(), OllamaFsError
         return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
     }
     let mut removed_entries = 0usize;
-    // OpenFileById accepts any handle on the same volume. Reusing the verified
-    // directory avoids the elevated privileges required to open `\\.\C:`.
+    // Chaque descendant est rouvert par chemin puis comparé à l'identité native
+    // énumérée ; aucun accès privilégié au volume n'est nécessaire.
     entries::remove_contents(
         deletion.raw(),
         root.path(),

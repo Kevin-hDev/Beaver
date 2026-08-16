@@ -29,8 +29,10 @@ impl DirectoryStream {
         }
         let directory = unsafe { libc::fdopendir(duplicate) };
         if directory.is_null() {
+            // fdopendir laisse l'errno utile ; close peut l'écraser, donc on capture d'abord.
+            let error = last_error(OllamaFsOperation::EnumerateDirectory);
             unsafe { libc::close(duplicate) };
-            return Err(last_error(OllamaFsOperation::EnumerateDirectory));
+            return Err(error);
         }
         #[cfg(test)]
         DIRECTORY_STREAM_COUNT.with(|count| count.set(count.get() + 1));

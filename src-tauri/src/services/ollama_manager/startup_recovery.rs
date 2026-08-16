@@ -1,4 +1,4 @@
-use super::cleanup_inspection;
+use super::bundle_evidence;
 use super::constants::PROCESS_REAP_FALLBACK_TIMEOUT;
 use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
@@ -60,8 +60,7 @@ fn verify_bundle(
     fs: &super::durable_fs::PlatformOllamaDurableFs,
     expected: &super::fingerprint::BundleFingerprint,
 ) -> Result<(), OllamaErrorCode> {
-    let actual = cleanup_inspection::fingerprint(fs, &paths.active)
-        .ok_or(OllamaErrorCode::OllamaUpdateRecoveryRequired)?;
+    let actual = bundle_evidence::fingerprint(fs, &paths.active);
     matches!(actual, DirectoryEvidence::Present(ref value) if value == expected)
         .then_some(())
         .ok_or(OllamaErrorCode::OllamaUpdateRecoveryRequired)

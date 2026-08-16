@@ -1,6 +1,6 @@
 use super::blocking::run_ollama_blocking;
+use super::bundle_evidence;
 use super::bundle_receipt::{read_receipt, write_receipt, BundleReceipt};
-use super::cleanup_inspection;
 use super::durable_fs::OllamaDurableFs;
 use super::error::OllamaErrorCode;
 use super::fingerprint::BundleFingerprint;
@@ -53,8 +53,8 @@ fn verify_fingerprint(
     expected: &BundleFingerprint,
 ) -> Result<(), OllamaErrorCode> {
     matches!(
-        cleanup_inspection::fingerprint(fs, &paths.active),
-        Some(DirectoryEvidence::Present(ref actual)) if actual == expected
+        bundle_evidence::fingerprint(fs, &paths.active),
+        DirectoryEvidence::Present(ref actual) if actual == expected
     )
     .then_some(())
     .ok_or(OllamaErrorCode::OllamaUpdateRecoveryRequired)

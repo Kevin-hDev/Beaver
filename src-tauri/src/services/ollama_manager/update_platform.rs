@@ -49,8 +49,9 @@ impl PlatformUpdateBackend {
         let source = source.to_path_buf();
         let destination = destination.to_path_buf();
         run_ollama_blocking(move || {
-            fs.rename_durable(&source, &destination)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            fs.rename_durable(&source, &destination).map_err(|error| {
+                super::super::storage_error::durable("update-bundle-rename", error)
+            })
         })
         .await
     }

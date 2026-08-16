@@ -4,7 +4,7 @@ use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
 use super::fingerprint::OllamaVersion;
 use super::install::archive_staging_path;
-use super::install::{InstallOutcome, InstallRequest};
+use super::install::InstallRequest;
 use super::install_phases::INSTALL_PHASE_ORDER;
 use super::release_source::{OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl};
 use super::types::BundleState;
@@ -82,12 +82,6 @@ async fn model_store_conflict_is_rejected_before_first_install_staging_mutation(
     assert!(!request.paths.install_staging.exists());
     assert!(!request.paths.archive_staging.exists());
     assert!(!request.paths.active.exists());
-}
-
-#[test]
-fn install_outcome_does_not_publish_ready_before_commit() {
-    assert!(!InstallOutcome::Preparing.is_ready());
-    assert_eq!(BundleState::Absent, BundleState::Absent);
 }
 
 #[test]
@@ -210,7 +204,10 @@ async fn first_install_publishes_after_probe_and_reinspection() {
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
     let manager = OllamaManager::new(coordinator.work_supervisor());
     let result = manager.install(request.clone()).await.unwrap();
-    assert!(result.is_ready());
+    assert!(matches!(
+        result,
+        super::install::InstallOutcome::Installed { .. }
+    ));
     assert_eq!(manager.status().await.bundle, BundleState::Ready);
     assert!(request.paths.active.join("bin/ollama").exists());
     assert!(!request.paths.install_staging.exists());

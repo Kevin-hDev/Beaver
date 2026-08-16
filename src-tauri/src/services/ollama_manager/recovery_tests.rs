@@ -873,6 +873,42 @@ fn real_layout_snapshot_records_the_bundle_fingerprint() {
     assert_eq!(snapshot.active, DirectoryEvidence::Present(fingerprint));
 }
 
+#[test]
+fn corrupt_active_version_requires_intervention_instead_of_retrying_forever() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    let _fingerprint = real_bundle(root.path(), "ollama-bundle", "1.2.3", b"bundle");
+    std::fs::write(paths.active.join("VERSION"), b"not-a-version").expect("corrupt version");
+    let fs = super::durable_fs::platform_fs();
+    let snapshot = cleanup::snapshot(JournalPresence::Absent, &fs, &paths);
+
+    assert_eq!(snapshot.active, DirectoryEvidence::Invalid);
+    assert_eq!(
+        super::recovery_decision::decide_recovery(&snapshot),
+        super::recovery_decision::RecoveryDecision::Defer {
+            code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        }
+    );
+}
+
+#[test]
+fn active_bundle_without_executable_requires_intervention() {
+    let root = tempfile::tempdir_in(".").expect("layout root");
+    let paths = ollama_paths(root.path());
+    std::fs::create_dir_all(&paths.active).expect("active directory");
+    std::fs::write(paths.active.join("VERSION"), b"1.2.3").expect("version");
+    let fs = super::durable_fs::platform_fs();
+    let snapshot = cleanup::snapshot(JournalPresence::Absent, &fs, &paths);
+
+    assert_eq!(snapshot.active, DirectoryEvidence::Invalid);
+    assert_eq!(
+        super::recovery_decision::decide_recovery(&snapshot),
+        super::recovery_decision::RecoveryDecision::Defer {
+            code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        }
+    );
+}
+
 #[tokio::test]
 async fn real_recovery_executes_install_staging_and_reinspects_it() {
     let root = tempfile::tempdir_in(".").expect("layout root");
@@ -1350,8 +1386,8 @@ async fn prepared_target_rejected_by_probe_rolls_back_to_the_previous_bundle() {
         Ok(super::recovery::RecoveryOutcome::Ready)
     );
     assert_eq!(
-        super::cleanup_inspection::fingerprint(&platform_fs(), &paths.active),
-        Some(DirectoryEvidence::Present(previous))
+        super::bundle_evidence::fingerprint(&platform_fs(), &paths.active),
+        DirectoryEvidence::Present(previous)
     );
     assert!(!paths.backup.exists());
     assert!(!paths.failed.exists());

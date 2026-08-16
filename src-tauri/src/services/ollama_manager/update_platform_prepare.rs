@@ -69,9 +69,19 @@ async fn create_staging(
     let archive_staging = request.paths.archive_staging.clone();
     run_ollama_blocking(move || {
         fs.create_directory_durable(&update_staging)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+            .map_err(|error| {
+                crate::services::ollama_manager::storage_error::durable(
+                    "update-staging-create",
+                    error,
+                )
+            })?;
         fs.create_directory_durable(&archive_staging)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| {
+                crate::services::ollama_manager::storage_error::durable(
+                    "update-archive-staging-create",
+                    error,
+                )
+            })
     })
     .await
 }

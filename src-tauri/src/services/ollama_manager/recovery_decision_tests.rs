@@ -252,6 +252,14 @@ fn unknown_staging_and_different_fingerprint_defer() {
 }
 
 #[test]
+fn unknown_active_bundle_requires_intervention_instead_of_unbounded_retry() {
+    let mut state = empty();
+    state.active = DirectoryEvidence::Unknown;
+
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
+}
+
+#[test]
 fn all_fixed_ten_presence_combinations_are_total_and_bounded() {
     let target = fp("1.2.3", "11");
     let previous = fp("1.2.2", "22");

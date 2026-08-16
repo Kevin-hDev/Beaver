@@ -183,7 +183,13 @@ fn spawn_owned_process(
     endpoint: OllamaEndpoint,
     emergency: crate::app_exit::AppEmergencyPublisher,
 ) -> Result<OwnedOllamaProcess, OllamaErrorCode> {
-    let cwd = std::env::current_dir().map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
+    let cwd = std::env::current_dir().map_err(|error| {
+        super::storage_error::io(
+            "owned-process-current-directory",
+            &error,
+            OllamaErrorCode::OllamaStorageUnavailable,
+        )
+    })?;
     let profile = OllamaSpawnProfile::resolve(
         &paths,
         std::env::vars_os(),

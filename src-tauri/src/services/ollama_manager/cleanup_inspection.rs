@@ -3,14 +3,12 @@
 use super::constants::MAX_DURABLE_DOCUMENT_BYTES;
 use super::durable_fs::{OllamaDurableFs, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
-use super::fingerprint::{BundleFingerprint, OllamaVersion};
 use super::journal::{classify_migration_marker, OllamaMigrationMarkerClassification};
 use super::path_identity::{CanonicalDirectory, NativePathIdentityResolver, PathIdentityResolver};
 use super::recovery_decision::{
     ArchiveDirectoryEvidence, DirectoryEvidence, JournalPresence, MigrationMarkerPresence,
     OllamaLayoutSnapshot,
 };
-use super::spawn_profile_paths::active_executable;
 use crate::services::paths::OllamaPaths;
 use std::path::Path;
 
@@ -100,7 +98,7 @@ pub(super) fn directory_presence(path: &Path) -> ArchiveDirectoryEvidence {
 fn evidence(fs: &dyn OllamaDurableFs, path: &Path) -> DirectoryEvidence {
     match std::fs::symlink_metadata(path) {
         Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
-            fingerprint(fs, path).unwrap_or(DirectoryEvidence::Unknown)
+            super::bundle_evidence::fingerprint(fs, path)
         }
         Ok(_) => DirectoryEvidence::Invalid,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => DirectoryEvidence::Absent,
@@ -109,48 +107,6 @@ fn evidence(fs: &dyn OllamaDurableFs, path: &Path) -> DirectoryEvidence {
             DirectoryEvidence::Unknown
         }
     }
-}
-
-pub(super) fn fingerprint(fs: &dyn OllamaDurableFs, path: &Path) -> Option<DirectoryEvidence> {
-    let identity = NativePathIdentityResolver;
-    let root = identity
-        .canonical_directory(path)
-        .map_err(|code| {
-            super::storage_error::record_classification("bundle-root-identity", code);
-        })
-        .ok()?;
-    let executable_path = active_executable(root.path());
-    let executable = identity
-        .canonical_executable(&executable_path)
-        .map_err(|code| {
-            super::storage_error::record_classification("bundle-executable-identity", code);
-        })
-        .ok()?;
-    let version = fs
-        .read_bounded(&root.path().join("VERSION"), 4 * 1024)
-        .map_err(|error| {
-            super::storage_error::record_durable("bundle-version-read", error);
-        })
-        .ok()
-        .and_then(|bytes| {
-            std::str::from_utf8(&bytes)
-                .ok()
-                .map(str::trim)
-                .map(str::to_owned)
-        })
-        .and_then(|value| OllamaVersion::parse(&value).ok())?;
-    let digest = super::probe_http::hash_file(executable.path())
-        .map_err(|code| {
-            super::storage_error::record_classification(
-                "bundle-executable-hash",
-                code.diagnostic(),
-            );
-        })
-        .ok()?;
-    Some(DirectoryEvidence::Present(BundleFingerprint {
-        version,
-        executable_sha256: digest,
-    }))
 }
 
 pub(crate) fn validate_trash(
