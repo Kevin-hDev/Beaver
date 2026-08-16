@@ -1,0 +1,13 @@
+J3 native Unix gate correction discovered by the macOS upgrade proof.
+
+Observation réelle: après migration réussie du bundle publié v1.1.2, le sidecar possédé écoutait et listait gemma3:latest, mais /api/generate retournait HTTP 500. Ollama 0.32.13 cherchait llama-server à côté du chemin exécuté, qui était ollama-bundle/.beaver-gated-*/executable. Le gate avait déplacé le répertoire apparent du binaire hors des runners et bibliothèques adjacents.
+
+Décision: conserver l’exécution par hard-link pour pinner l’inode exact entre résolution et exec, mais créer ce lien directement dans le répertoire du binaire. Le layout vu par Ollama reste donc le bundle original. Le nom temporaire contient le PID propriétaire et un suffixe aléatoire tempfile; Drop retire le lien après revalidation de l’image exécutée.
+
+Récupération: le scanner borné reconnaît les nouveaux liens réguliers, ouvre sans suivre les symlinks, conserve ceux dont le propriétaire vit et retire seulement ceux dont le PID est prouvé absent. Il continue aussi de nettoyer les anciens répertoires gate avec fichier .owner, afin que le changement de format converge après crash ou mise à niveau.
+
+TDD: avant production, stale_gate_links_are_cleaned_before_next_creation échouait car le lien était dans un sous-dossier et stale_same_directory_gate_link_is_cleaned_before_next_creation échouait car le rebut direct restait. Après correction: support_tests 7/7, process_tests 13/13, filtre services::ollama_manager 311 passed, 0 failed, 1 ignored developer-only.
+
+Validation lue: cargo clippy --all-targets -- -D warnings vert; cargo fmt --check vert; git diff --check vert; production 194/179 lignes; graphify update terminé (34470 noeuds, 70627 arêtes, 2029 communautés).
+
+Le premier arrêt de l’application par SIGINT a volontairement laissé le sidecar ancien et son reçu exact; le prochain build natif doit prouver la récupération de cet orphelin avant nouveau lancement, puis la génération Gemma 3 hors ligne et une fermeture coordonnée via l’interface macOS. Aucun de ces résultats n’est encore déclaré vert.
