@@ -96,6 +96,38 @@ test("a symlink escaping the data directory is rejected", async (t) => {
   }
 });
 
+test("a symlink contained in an allowlisted bundle is recorded without exposing its absolute target", async (t) => {
+  if (process.platform === "win32") {
+    t.skip("Windows symlink creation requires a privileged fixture");
+  }
+  const profile = await makeDisposableProfile();
+  try {
+    await symlink("VERSION", join(profile.dataDirectory, "ollama-bundle", "VERSION-current"));
+    const proof = await collectNativeUpgradeProof(confirmed(profile));
+    const link = proof.entries.find((entry) => entry.relativePath.endsWith("VERSION-current"));
+    assert.deepEqual(link, {
+      relativePath: "data/ollama-bundle/VERSION-current",
+      symlinkTarget: "data/ollama-bundle/VERSION",
+    });
+  } finally {
+    await rm(profile.homeDirectory, { recursive: true, force: true });
+  }
+});
+
+test("a bundle symlink cannot reach a sibling file in the Beaver data directory", async (t) => {
+  if (process.platform === "win32") {
+    t.skip("Windows symlink creation requires a privileged fixture");
+  }
+  const profile = await makeDisposableProfile();
+  try {
+    await writeFile(join(profile.dataDirectory, "config.json"), "{}\n");
+    await symlink("../config.json", join(profile.dataDirectory, "ollama-bundle", "config-link"));
+    await assert.rejects(collectNativeUpgradeProof(confirmed(profile)), /symlink/i);
+  } finally {
+    await rm(profile.homeDirectory, { recursive: true, force: true });
+  }
+});
+
 test("sensitive files inside an allowlisted Ollama root are rejected", async () => {
   const profile = await makeDisposableProfile();
   try {

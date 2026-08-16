@@ -84,6 +84,25 @@ async function hashFile(path, expectedBytes) {
   return digest.digest("hex");
 }
 
+async function collectContainedSymlink(path, scope, state, boundary) {
+  const target = await realpath(path).catch(() => reject("Native upgrade proof symlink is not allowed"));
+  const targetInfo = await lstat(target).catch(() => reject("Native upgrade proof symlink is not allowed"));
+  if (!targetInfo.isFile()) reject("Native upgrade proof symlink is not allowed");
+  let relativeTarget;
+  try {
+    safeRelativePath(boundary, target);
+    relativeTarget = safeRelativePath(state.root, target);
+  } catch {
+    reject("Native upgrade proof symlink is not allowed");
+  }
+  state.count += 1;
+  if (state.count > MAX_INVENTORY_ENTRIES) reject("Native upgrade proof has too many entries");
+  state.entries.push({
+    relativePath: `${scope}/${safeRelativePath(state.root, path)}`,
+    symlinkTarget: `${scope}/${relativeTarget}`,
+  });
+}
+
 function safeRelativePath(root, path) {
   const child = relative(root, path);
   if (!child || child.split(sep).includes("..") || child.startsWith(`..${sep}`) || isAbsolute(child)) {
@@ -92,16 +111,19 @@ function safeRelativePath(root, path) {
   return child.split(sep).join("/");
 }
 
-async function collectDirectory(root, scope, state) {
+async function collectDirectory(root, scope, state, boundary = root) {
   const entries = await readdir(root, { withFileTypes: true });
   entries.sort((left, right) => left.name.localeCompare(right.name));
   for (const entry of entries) {
     checkPathText(entry.name);
     const path = join(root, entry.name);
     const info = await lstat(path).catch(() => reject("Native upgrade proof entry cannot be inspected"));
-    if (info.isSymbolicLink()) reject("Native upgrade proof symlink is not allowed");
+    if (info.isSymbolicLink()) {
+      await collectContainedSymlink(path, scope, state, boundary);
+      continue;
+    }
     if (info.isDirectory()) {
-      await collectDirectory(path, scope, state);
+      await collectDirectory(path, scope, state, boundary);
       continue;
     }
     if (!info.isFile()) reject("Native upgrade proof entry type is not allowed");
