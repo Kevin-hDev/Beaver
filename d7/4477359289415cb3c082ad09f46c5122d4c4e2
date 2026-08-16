@@ -28,3 +28,20 @@ TDD et validation
 
 Validation requise
 - La prochaine CI Windows doit confirmer simultanément le renommage de transaction et le maintien du test anti-remplacement.
+
+VALIDATION CI FINALE — 2026-08-16
+
+Tête réellement testée : d7447735.
+Run CI principal : 31964007743.
+Verdict PR observé : 14 contrôles verts, zéro rouge, zéro pending.
+
+Preuves décisives :
+- Backend Windows tests (Rust) : vert en 10m04s. Les tests de renommage du staging et de verrou anti-remplacement passent ensemble.
+- Backend Windows CEF (Rust) : vert en 27m33s.
+- Backend macOS CEF (Rust) : vert en 19m11s.
+- Backend (Rust) : vert en 10m40s.
+- Frontend (TS/React) : vert en 12m17s.
+- Backend Linux WebView et Desktop E2E : verts.
+- Analyses, CodeQL, RustSec, npm advisories et GitGuardian : verts.
+
+Décision : le partage Windows FILE_SHARE_DELETE reste interdit. La preuve stable du staging est libérée uniquement après journal Prepared durable et arrêt/moissonnage, avant le premier renommage ; une nouvelle preuve canonique est reconstruite sur le bundle actif après commit.
