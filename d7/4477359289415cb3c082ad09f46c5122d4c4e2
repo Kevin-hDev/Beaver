@@ -45,3 +45,29 @@ Preuves décisives :
 - Analyses, CodeQL, RustSec, npm advisories et GitGuardian : verts.
 
 Décision : le partage Windows FILE_SHARE_DELETE reste interdit. La preuve stable du staging est libérée uniquement après journal Prepared durable et arrêt/moissonnage, avant le premier renommage ; une nouvelle preuve canonique est reconstruite sur le bundle actif après commit.
+
+PREUVE NATIVE macOS — TÊTE FINALE d7447735 — 2026-08-16
+
+Bundle final réellement construit et installé dans /Applications/Beaver.app.
+SHA-256 Beaver : 19e3de44ff6f83c7f29037c8fcefa07916ae36f73d4b4622b279b869b132c72c.
+
+Démarrage et Ollama possédé :
+- bundle actif 0.32.13 ; binaire SHA-256 dee2ad206ec73dc19d4eeaf13f35ff54022977242ed38d53dda65da4c70a9c95 ; reçu exact ;
+- sidecar PID 94100 sur 127.0.0.1:51045 ;
+- Gemma 3 a répondu exactement OK suivi d un saut de ligne en 2.538039916 s ;
+- 6 fichiers modèles, 3,1 Go ; listes SHA-256 avant/après identiques, empreinte ec750be2bedbcbb126262998f85eb29db8d0bbc0e38f0d847ba230b3fd80bdd5.
+
+Reprise après sortie non coordonnée :
+- Cmd+Q a laissé le reçu de processus sans processus vivant, défaut macOS séparé déjà connu ;
+- au redémarrage, le gestionnaire a retiré le reçu orphelin puis publié le reçu exact du nouveau PID 95556 ;
+- nouveau sidecar prêt sur 127.0.0.1:51299.
+
+Fermeture coordonnée réelle :
+- action utilisateur via icône Beaver de barre de menus puis Quitter ;
+- demande de fermeture coordonnée observée ; nettoyage 60.688625 ms ; boucle d événements revenue ; descendants WebView 0 ;
+- après sortie : aucun processus Beaver/CEF/Ollama, reçu processus absent, aucun journal/staging/backup/failed.
+
+Preuve privée locale : docs/superpowers/validation/native-upgrade-proofs/macos-final-head-smoke.md
+SHA-256 preuve : 795ab284911802784b31081e2d909d3a403c4b3b3fe2199fea0f113d52b7749d.
+
+Portée : la migration réelle Beaver 1.1.2 et la mise à jour Ollama 0.32.1 vers 0.32.13 ont été exécutées sur 4fabfb65 et consignées dans macos-recovered-final.json. d7447735 est revalidé nativement pour démarrage, propriété, Gemma, modèles, reprise du reçu et fermeture coordonnée. Linux et Windows manuels restent à exécuter sur leurs machines.
