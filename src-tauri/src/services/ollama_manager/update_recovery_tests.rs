@@ -134,10 +134,21 @@ async fn every_journal_cutpoint_leaves_a_single_recovery_snapshot() {
                     | OllamaJournalState::RollbackPending { .. }
             ));
         }
-        assert!(!matches!(
-            backend.recovery_decision(),
-            RecoveryDecision::Defer { .. }
-        ));
+        let decision = backend.recovery_decision();
+        if matches!(point, FailurePoint::PreparedBefore) {
+            assert_eq!(
+                decision,
+                RecoveryDecision::Defer {
+                    code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+                },
+                "the fingerprint table must not clean an unjournaled staging"
+            );
+        } else {
+            assert!(
+                !matches!(decision, RecoveryDecision::Defer { .. }),
+                "cutpoint {point:?} produced {decision:?}"
+            );
+        }
     }
 }
 

@@ -55,7 +55,8 @@ pub(crate) fn choose(
 
 pub(crate) fn rejected_state(journal: &OllamaTransactionJournal) -> Option<OllamaJournalState> {
     match &journal.state {
-        OllamaJournalState::PendingValidation { target, previous } => {
+        OllamaJournalState::Prepared { target, previous }
+        | OllamaJournalState::PendingValidation { target, previous } => {
             Some(OllamaJournalState::RollbackPending {
                 previous: previous.clone(),
                 rejected_target: Some(target.clone()),
@@ -116,5 +117,8 @@ where
 }
 
 fn present(evidence: &DirectoryEvidence) -> bool {
-    matches!(evidence, DirectoryEvidence::Present(_))
+    matches!(
+        evidence,
+        DirectoryEvidence::Present(_) | DirectoryEvidence::Incomplete
+    )
 }

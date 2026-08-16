@@ -10,6 +10,7 @@ use super::recovery_decision_rules;
 pub enum DirectoryEvidence {
     Absent,
     Present(BundleFingerprint),
+    Incomplete,
     Unknown,
     Invalid,
 }
@@ -58,7 +59,6 @@ pub struct OllamaLayoutSnapshot {
 pub enum RecoveryDecision {
     Ready,
     CommitFreshInstall,
-    RemoveUncommittedInstallStaging,
     ResumeTargetValidation,
     ResumeCleanup,
     ResumeRollback,
@@ -74,8 +74,16 @@ pub(super) const fn defer() -> RecoveryDecision {
         code: OllamaErrorCode::OllamaRecoveryDeferred,
     }
 }
+pub(super) const fn recovery_required() -> RecoveryDecision {
+    RecoveryDecision::Defer {
+        code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+    }
+}
 fn is_present(e: &DirectoryEvidence) -> bool {
-    matches!(e, DirectoryEvidence::Present(_))
+    matches!(
+        e,
+        DirectoryEvidence::Present(_) | DirectoryEvidence::Incomplete
+    )
 }
 fn is_exact(e: &DirectoryEvidence, fp: &BundleFingerprint) -> bool {
     matches!(e, DirectoryEvidence::Present(actual) if actual == fp)
@@ -115,6 +123,21 @@ pub(super) fn exact_mask(
             _ => false,
         })
 }
+fn has_invalid(s: &OllamaLayoutSnapshot) -> bool {
+    let dirs = [
+        &s.active,
+        &s.install_staging,
+        &s.update_staging,
+        &s.backup,
+        &s.failed,
+        &s.legacy_staging,
+        &s.legacy_backup,
+        &s.backup_delete,
+        &s.failed_delete,
+    ];
+    dirs.iter().any(|e| matches!(e, DirectoryEvidence::Invalid))
+        || matches!(s.migration_marker, MigrationMarkerPresence::Invalid)
+}
 fn has_unknown(s: &OllamaLayoutSnapshot) -> bool {
     let dirs = [
         &s.active,
@@ -127,13 +150,9 @@ fn has_unknown(s: &OllamaLayoutSnapshot) -> bool {
         &s.backup_delete,
         &s.failed_delete,
     ];
-    dirs.iter()
-        .any(|e| matches!(e, DirectoryEvidence::Unknown | DirectoryEvidence::Invalid))
+    dirs.iter().any(|e| matches!(e, DirectoryEvidence::Unknown))
         || matches!(s.journal, JournalPresence::Unknown)
-        || matches!(
-            s.migration_marker,
-            MigrationMarkerPresence::Invalid | MigrationMarkerPresence::Unknown
-        )
+        || matches!(s.migration_marker, MigrationMarkerPresence::Unknown)
 }
 pub fn decide_recovery(s: &OllamaLayoutSnapshot) -> RecoveryDecision {
     if matches!(s.journal, JournalPresence::Invalid) {
@@ -147,13 +166,17 @@ pub fn decide_recovery(s: &OllamaLayoutSnapshot) -> RecoveryDecision {
     {
         return defer();
     }
-    if has_unknown(s)
-        || matches!(
-            classify_backup_policy(&s.migration_marker),
-            BackupPolicy::Ambiguous
-        )
-    {
+    if has_invalid(s) {
+        return recovery_required();
+    }
+    if has_unknown(s) {
         return defer();
+    }
+    if matches!(
+        classify_backup_policy(&s.migration_marker),
+        BackupPolicy::Ambiguous
+    ) {
+        return recovery_required();
     }
     match &s.journal {
         JournalPresence::Absent => recovery_decision_rules::decide_without_journal(

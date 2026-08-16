@@ -44,13 +44,26 @@ impl OllamaManager {
             }
         };
         let generation = guard.generation;
+        let prepared = tokio::task::spawn_blocking({
+            let paths = paths.clone();
+            move || super::startup_recovery::prepare(&paths)
+        })
+        .await
+        .map_err(|_| super::error::OllamaErrorCode::OllamaInternal)
+        .and_then(|result| result);
+        if let Err(code) = prepared {
+            let state = StartupBarrierState::Blocked { code };
+            self.publish_startup(generation, state.clone());
+            guard.fail(code);
+            return state;
+        }
         loop {
             let outcome = recover_platform_at(paths.clone(), RecoveryReason::Startup).await;
             match outcome {
                 Ok(RecoveryOutcome::Ready) => {
                     let completed = tokio::task::spawn_blocking({
                         let paths = paths.clone();
-                        move || super::startup_recovery::complete(&paths)
+                        move || super::startup_recovery::bundle_state(&paths)
                     })
                     .await
                     .map_err(|_| super::error::OllamaErrorCode::OllamaInternal)

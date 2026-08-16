@@ -206,6 +206,7 @@ pub fn transaction_paths(paths: &crate::services::paths::OllamaPaths) -> Vec<&Pa
         &paths.install_staging,
         &paths.archive_staging,
         &paths.archive_failed,
+        &paths.uncommitted_staging_delete,
         &paths.update_staging,
         &paths.backup,
         &paths.backup_delete,

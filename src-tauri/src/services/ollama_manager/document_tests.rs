@@ -46,6 +46,7 @@ fn assert_direct_children(paths: &OllamaPaths, root: &Path) {
         &paths.install_staging,
         &paths.archive_staging,
         &paths.archive_failed,
+        &paths.uncommitted_staging_delete,
         &paths.update_staging,
         &paths.backup,
         &paths.backup_delete,
@@ -101,6 +102,13 @@ fn ollama_paths_keep_all_named_children_under_the_received_root() {
             .file_name()
             .and_then(|name| name.to_str()),
         Some("ollama-bundle-install-staging")
+    );
+    assert_eq!(
+        paths
+            .uncommitted_staging_delete
+            .file_name()
+            .and_then(|name| name.to_str()),
+        Some("ollama-bundle-uncommitted-staging-delete")
     );
     assert_eq!(
         paths

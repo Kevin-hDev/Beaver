@@ -49,13 +49,10 @@ fn no_journal_and_no_layout_is_ready() {
 }
 
 #[test]
-fn install_staging_alone_is_removable() {
+fn uncommitted_install_staging_is_owned_by_the_presence_recovery() {
     let mut state = empty();
     state.install_staging = known("1.2.3", "11");
-    assert_eq!(
-        decide_recovery(&state),
-        RecoveryDecision::RemoveUncommittedInstallStaging
-    );
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -63,7 +60,7 @@ fn active_and_install_staging_are_ambiguous() {
     let mut state = empty();
     state.active = known("1.2.3", "11");
     state.install_staging = known("1.2.4", "22");
-    assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -83,7 +80,7 @@ fn prepared_journal_with_old_active_and_staging_defers() {
     });
     state.active = DirectoryEvidence::Present(target.clone());
     state.update_staging = DirectoryEvidence::Present(target);
-    assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -111,7 +108,7 @@ fn pending_validation_without_backup_is_ambiguous() {
         previous: fp("1.2.2", "22"),
     });
     state.active = known("1.2.3", "11");
-    assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -131,6 +128,7 @@ fn cleanup_pending_with_exact_target_and_backup_resumes_cleanup() {
 #[test]
 fn rollback_pending_without_rejected_target_and_previous_only_removes_journal() {
     let mut state = empty();
+    state.active = known("1.2.2", "22");
     state.journal = journal(OllamaJournalState::RollbackPending {
         previous: fp("1.2.2", "22"),
         rejected_target: None,
@@ -148,12 +146,13 @@ fn rollback_pending_with_rejected_target_without_rebut_is_ambiguous() {
         previous: fp("1.2.2", "22"),
         rejected_target: Some(fp("1.2.3", "11")),
     });
-    assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
 fn rollback_cleanup_pending_without_rejected_target_and_previous_only_removes_journal() {
     let mut state = empty();
+    state.active = known("1.2.2", "22");
     state.journal = journal(OllamaJournalState::RollbackCleanupPending {
         previous: fp("1.2.2", "22"),
         rejected_target: None,
@@ -162,6 +161,26 @@ fn rollback_cleanup_pending_without_rejected_target_and_previous_only_removes_jo
         decide_recovery(&state),
         RecoveryDecision::RemoveCompletedLegacyJournal
     );
+}
+
+#[test]
+fn rollback_journal_without_the_previous_bundle_requires_intervention() {
+    for cleanup in [false, true] {
+        let mut state = empty();
+        let previous = fp("1.2.2", "22");
+        state.journal = journal(if cleanup {
+            OllamaJournalState::RollbackCleanupPending {
+                previous,
+                rejected_target: None,
+            }
+        } else {
+            OllamaJournalState::RollbackPending {
+                previous,
+                rejected_target: None,
+            }
+        });
+        assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
+    }
 }
 
 #[test]
@@ -177,7 +196,7 @@ fn failed_or_failed_delete_without_rejected_target_stays_ambiguous() {
         } else {
             state.failed_delete = known("1.2.3", "11");
         }
-        assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+        assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
     }
 }
 
@@ -203,7 +222,7 @@ fn legacy_backup_after_durable_marker_is_ambiguous_and_untouched() {
     let mut state = empty();
     state.migration_marker = MigrationMarkerPresence::Valid(Default::default());
     state.legacy_backup = known("1.2.2", "22");
-    assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -229,7 +248,7 @@ fn unknown_staging_and_different_fingerprint_defer() {
     });
     mismatch.active = known("1.2.9", "99");
     mismatch.backup = known("1.2.2", "22");
-    assert_deferred(&mismatch, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&mismatch, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -273,47 +292,35 @@ fn all_fixed_ten_presence_combinations_are_total_and_bounded() {
 }
 
 #[test]
-fn no_journal_active_and_modern_update_staging_only_removes_staging() {
+fn uncommitted_update_staging_is_not_removed_by_the_fingerprint_table() {
     let mut state = empty();
     state.active = known("1.2.3", "11");
     state.update_staging = known("1.2.4", "22");
-    assert_eq!(
-        decide_recovery(&state),
-        RecoveryDecision::RemoveUncommittedInstallStaging
-    );
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
-fn no_journal_active_and_legacy_staging_only_removes_staging_before_marker() {
+fn uncommitted_legacy_staging_is_not_removed_by_the_fingerprint_table() {
     let mut state = empty();
     state.active = known("1.2.3", "11");
     state.legacy_staging = known("1.2.4", "22");
-    assert_eq!(
-        decide_recovery(&state),
-        RecoveryDecision::RemoveUncommittedInstallStaging
-    );
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
-fn no_journal_active_and_legacy_backup_creates_validation_recovery() {
+fn no_journal_active_and_legacy_backup_requires_intervention_without_a_receipt() {
     let mut state = empty();
     state.active = known("1.2.3", "11");
     state.legacy_backup = known("1.2.2", "22");
-    assert_eq!(
-        decide_recovery(&state),
-        RecoveryDecision::ResumeTargetValidation
-    );
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
-fn no_journal_active_and_failed_creates_rollback_cleanup_recovery() {
+fn no_journal_active_and_failed_requires_intervention_without_mutation_authority() {
     let mut state = empty();
     state.active = known("1.2.2", "22");
     state.failed = known("1.2.3", "11");
-    assert_eq!(
-        decide_recovery(&state),
-        RecoveryDecision::ResumeRollbackCleanup
-    );
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
 }
 
 #[test]
@@ -326,9 +333,35 @@ fn no_journal_failed_or_rebut_alone_is_ambiguous_and_unchanged() {
             state.failed_delete = known("1.2.3", "11");
         }
         let before = state.clone();
-        assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+        assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
         assert_eq!(state, before);
     }
+}
+
+#[test]
+fn partial_delete_rebuts_resume_only_the_authorized_cleanup_phase() {
+    let target = fp("1.2.3", "11");
+    let previous = fp("1.2.2", "22");
+    let mut cleanup = empty();
+    cleanup.journal = journal(OllamaJournalState::CleanupPending {
+        target: target.clone(),
+        previous: previous.clone(),
+    });
+    cleanup.active = DirectoryEvidence::Present(target);
+    cleanup.backup_delete = DirectoryEvidence::Incomplete;
+    assert_eq!(decide_recovery(&cleanup), RecoveryDecision::ResumeCleanup);
+
+    let mut rollback = empty();
+    rollback.journal = journal(OllamaJournalState::RollbackCleanupPending {
+        previous: previous.clone(),
+        rejected_target: Some(fp("1.2.4", "33")),
+    });
+    rollback.active = DirectoryEvidence::Present(previous);
+    rollback.failed_delete = DirectoryEvidence::Incomplete;
+    assert_eq!(
+        decide_recovery(&rollback),
+        RecoveryDecision::ResumeRollbackCleanup
+    );
 }
 
 #[test]
@@ -516,7 +549,7 @@ fn durable_marker_changes_legacy_staging_from_cleanup_to_defer() {
     state.active = known("1.2.3", "11");
     state.legacy_staging = known("1.2.4", "22");
     let before = state.clone();
-    assert_deferred(&state, OllamaErrorCode::OllamaRecoveryDeferred);
+    assert_deferred(&state, OllamaErrorCode::OllamaUpdateRecoveryRequired);
     assert_eq!(state, before);
 }
 

@@ -91,6 +91,22 @@ fn rejected_target_and_cleanup_phases_are_durable_and_idempotent() {
 }
 
 #[test]
+fn prepared_target_can_be_rejected_during_recovery_validation() {
+    let journal = OllamaTransactionJournal::new(OllamaJournalState::Prepared {
+        target: fp("1.2.3", "33"),
+        previous: fp("1.2.2", "22"),
+    });
+
+    assert!(matches!(
+        rejected_state(&journal),
+        Some(OllamaJournalState::RollbackPending {
+            rejected_target: Some(_),
+            ..
+        })
+    ));
+}
+
+#[test]
 fn active_and_backup_allow_rejected_target_to_move_to_failed_first() {
     let mut snapshot = empty();
     snapshot.active = known("1.2.3", "33");

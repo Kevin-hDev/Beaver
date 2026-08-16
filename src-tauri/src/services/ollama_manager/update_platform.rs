@@ -118,7 +118,9 @@ impl UpdateBackend for PlatformUpdateBackend {
             DirectoryEvidence::Present(fingerprint) => Ok(fingerprint),
             DirectoryEvidence::Absent => Err(OllamaErrorCode::OllamaBundleMissing),
             DirectoryEvidence::Invalid => Err(OllamaErrorCode::OllamaBundleInvalid),
-            DirectoryEvidence::Unknown => Err(OllamaErrorCode::OllamaStorageUnavailable),
+            DirectoryEvidence::Incomplete | DirectoryEvidence::Unknown => {
+                Err(OllamaErrorCode::OllamaStorageUnavailable)
+            }
         }
     }
 

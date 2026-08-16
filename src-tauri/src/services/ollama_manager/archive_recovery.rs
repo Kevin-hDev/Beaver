@@ -20,12 +20,13 @@ pub(crate) fn decide(
 ) -> Result<Option<ArchiveRecoveryAction>, OllamaErrorCode> {
     if [snapshot.archive_staging, snapshot.archive_failed]
         .into_iter()
-        .any(|evidence| {
-            matches!(
-                evidence,
-                ArchiveDirectoryEvidence::Unknown | ArchiveDirectoryEvidence::Invalid
-            )
-        })
+        .any(|evidence| matches!(evidence, ArchiveDirectoryEvidence::Invalid))
+    {
+        return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
+    }
+    if [snapshot.archive_staging, snapshot.archive_failed]
+        .into_iter()
+        .any(|evidence| matches!(evidence, ArchiveDirectoryEvidence::Unknown))
     {
         return Err(OllamaErrorCode::OllamaRecoveryDeferred);
     }
@@ -38,7 +39,7 @@ pub(crate) fn decide(
             Ok(Some(ArchiveRecoveryAction::RemoveFailed))
         }
         (ArchiveDirectoryEvidence::Present, ArchiveDirectoryEvidence::Present) => {
-            Err(OllamaErrorCode::OllamaRecoveryDeferred)
+            Err(OllamaErrorCode::OllamaUpdateRecoveryRequired)
         }
         _ => Err(OllamaErrorCode::OllamaRecoveryDeferred),
     }

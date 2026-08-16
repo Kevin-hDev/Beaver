@@ -154,3 +154,45 @@ async fn startup_removes_a_stale_process_receipt_before_publishing_ready() {
     assert_eq!(manager.status().await.bundle, BundleState::Ready);
     assert!(store.read().expect("receipt state").is_none());
 }
+
+#[tokio::test]
+async fn process_receipt_recovery_runs_before_an_invalid_layout_blocks_startup() {
+    let root = tempfile::tempdir_in(".").expect("data root");
+    let paths = ollama_paths(root.path());
+    let fingerprint = complete_active_bundle(&paths);
+    let store = ProcessReceiptStore::new(
+        Arc::new(platform_fs()),
+        paths.process_receipt.clone(),
+        paths.process_receipt.with_extension("tmp"),
+    );
+    store
+        .write_new(
+            &ProcessReceipt::new(std::process::id(), 1, 1, fingerprint)
+                .expect("stale process receipt"),
+        )
+        .expect("write stale process receipt");
+    let failed_bin = paths.failed.join("bin");
+    fs::create_dir_all(&failed_bin).expect("failed bundle");
+    fs::write(paths.failed.join("VERSION"), "9.9.9").expect("failed version");
+    let failed_executable = failed_bin.join(if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    });
+    fs::write(&failed_executable, b"#!/bin/sh\nexit 0\n").expect("failed executable");
+    #[cfg(unix)]
+    fs::set_permissions(&failed_executable, fs::Permissions::from_mode(0o755))
+        .expect("failed permissions");
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let manager = OllamaManager::new(coordinator.work_supervisor());
+
+    let state = manager.run_startup_recovery_at_for_test(paths).await;
+
+    assert_eq!(
+        state,
+        StartupBarrierState::Blocked {
+            code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        }
+    );
+    assert!(store.read().expect("receipt state").is_none());
+}

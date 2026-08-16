@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use super::constants::MAX_DURABLE_DOCUMENT_BYTES;
 use super::durable_fs::{OllamaDurableFs, OllamaFsErrorKind};
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion};
@@ -14,11 +15,9 @@ use crate::services::paths::OllamaPaths;
 use std::path::Path;
 
 pub(crate) fn marker(fs: &dyn OllamaDurableFs, paths: &OllamaPaths) -> MigrationMarkerPresence {
-    match fs.read_bounded(&paths.migration_marker, 4 * 1024) {
+    match fs.read_bounded(&paths.migration_marker, MAX_DURABLE_DOCUMENT_BYTES) {
         Ok(bytes) => classify_migration_marker(Some(&bytes)).into(),
-        Err(error) if error.kind() == OllamaFsErrorKind::NotFound => {
-            MigrationMarkerPresence::Absent
-        }
+        Err(error) if error.kind() == OllamaFsErrorKind::NotFound => marker_tmp(paths),
         Err(_) => MigrationMarkerPresence::Invalid,
     }
 }
@@ -33,19 +32,47 @@ pub(crate) fn snapshot<F: OllamaDurableFs>(
         migration_marker: marker(fs, paths),
         active: evidence(fs, &paths.active),
         install_staging: evidence(fs, &paths.install_staging),
-        archive_staging: archive_evidence(&paths.archive_staging),
-        archive_failed: archive_evidence(&paths.archive_failed),
+        archive_staging: directory_presence(&paths.archive_staging),
+        archive_failed: directory_presence(&paths.archive_failed),
         update_staging: evidence(fs, &paths.update_staging),
         backup: evidence(fs, &paths.backup),
         failed: evidence(fs, &paths.failed),
         legacy_staging: evidence(fs, &paths.legacy_staging),
         legacy_backup: evidence(fs, &paths.legacy_backup),
-        backup_delete: evidence(fs, &paths.backup_delete),
-        failed_delete: evidence(fs, &paths.failed_delete),
+        backup_delete: deletion_evidence(&paths.backup_delete),
+        failed_delete: deletion_evidence(&paths.failed_delete),
     }
 }
 
-fn archive_evidence(path: &Path) -> ArchiveDirectoryEvidence {
+fn marker_tmp(paths: &OllamaPaths) -> MigrationMarkerPresence {
+    match std::fs::symlink_metadata(&paths.migration_marker_tmp) {
+        Ok(metadata)
+            if metadata.is_file()
+                && !metadata.file_type().is_symlink()
+                && metadata.len() <= MAX_DURABLE_DOCUMENT_BYTES as u64 =>
+        {
+            MigrationMarkerPresence::Temporary
+        }
+        Ok(_) => MigrationMarkerPresence::Invalid,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            MigrationMarkerPresence::Absent
+        }
+        Err(_) => MigrationMarkerPresence::Unknown,
+    }
+}
+
+fn deletion_evidence(path: &Path) -> DirectoryEvidence {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
+            DirectoryEvidence::Incomplete
+        }
+        Ok(_) => DirectoryEvidence::Invalid,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => DirectoryEvidence::Absent,
+        Err(_) => DirectoryEvidence::Unknown,
+    }
+}
+
+pub(super) fn directory_presence(path: &Path) -> ArchiveDirectoryEvidence {
     match std::fs::symlink_metadata(path) {
         Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {
             ArchiveDirectoryEvidence::Present

@@ -11,22 +11,10 @@ use super::recovery_decision::{
 };
 use super::recovery_helpers::{present, target_of};
 pub(crate) use super::recovery_probe::{RecoveryProbe, RecoveryProbeResult};
+pub use super::recovery_types::{RecoveryOutcome, RecoveryReason};
 use super::rollback;
 use crate::services::paths::OllamaPaths;
 use std::sync::Arc;
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RecoveryReason {
-    Startup,
-    Retry,
-    Manual,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum RecoveryOutcome {
-    Ready,
-    ProgressMade,
-    Deferred { code: OllamaErrorCode },
-}
 pub struct RecoveryExecutor<F, P>
 where
     F: OllamaDurableFs + 'static,
@@ -69,6 +57,9 @@ where
         &self,
         reason: RecoveryReason,
     ) -> Result<RecoveryOutcome, OllamaErrorCode> {
+        if cleanup::remove_safe_migration_marker_tmp(&self.fs, &self.paths).await? {
+            return Ok(RecoveryOutcome::ProgressMade);
+        }
         if cleanup::remove_safe_journal_tmp(&self.fs, &self.journal, &self.paths).await? {
             return Ok(RecoveryOutcome::ProgressMade);
         }
@@ -95,6 +86,16 @@ where
         snapshot: &OllamaLayoutSnapshot,
         _reason: RecoveryReason,
     ) -> Result<RecoveryOutcome, OllamaErrorCode> {
+        if let Some(action) = super::staging_recovery::decide(&snapshot.journal, &self.paths)? {
+            super::staging_recovery::apply(
+                action,
+                &self.fs,
+                &self.paths,
+                self.models_directory.as_ref(),
+            )
+            .await?;
+            return Ok(RecoveryOutcome::ProgressMade);
+        }
         if let Some(action) = super::archive_recovery::decide(snapshot)? {
             super::archive_recovery::apply(
                 action,
@@ -121,10 +122,6 @@ where
         decision: RecoveryDecision,
     ) -> Result<ApplyResult, OllamaErrorCode> {
         match decision {
-            RecoveryDecision::RemoveUncommittedInstallStaging => {
-                cleanup::rename(&self.fs, &self.paths.install_staging, &self.paths.failed).await?;
-                Ok(ApplyResult::Progress)
-            }
             RecoveryDecision::CommitFreshInstall => self.commit(snapshot).await,
             RecoveryDecision::ResumeTargetValidation => self.validate_target(snapshot).await,
             RecoveryDecision::ResumeCleanup => {
