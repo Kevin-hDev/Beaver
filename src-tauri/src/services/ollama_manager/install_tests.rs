@@ -7,6 +7,7 @@ use super::install::archive_staging_path;
 use super::install::InstallRequest;
 use super::install_phases::INSTALL_PHASE_ORDER;
 use super::release_source::{OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl};
+#[cfg(unix)]
 use super::types::BundleState;
 #[cfg(unix)]
 use super::OllamaManager;
