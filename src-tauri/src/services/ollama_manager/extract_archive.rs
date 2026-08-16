@@ -5,7 +5,9 @@ use super::extract::{ensure_not_cancelled, validate_member_path, ArchiveMemberKi
 use super::extract_root::ExtractionRoot;
 use std::collections::HashSet;
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(unix)]
+use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
 
 const MAX_ENTRIES: usize = 50_000;
