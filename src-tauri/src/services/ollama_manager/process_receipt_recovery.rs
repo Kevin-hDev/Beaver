@@ -101,29 +101,29 @@ impl ProcessReceiptStore {
         let Some(receipt) = self.read()? else {
             return Ok(ProcessReceiptRecovery::Missing);
         };
-        let identity = match OwnedProcess::inspect_for_recovery(receipt.pid) {
-            Ok(OwnedProcessInspection::Owned(identity)) => identity,
-            #[cfg(windows)]
-            Ok(OwnedProcessInspection::Unowned) => {
-                self.remove()?;
-                return Ok(ProcessReceiptRecovery::StaleRemoved);
-            }
-            Err(_) => {
-                match OwnedProcess::reap_exited_child(receipt.pid) {
-                    Ok(true) => {
-                        self.remove()?;
-                        return Ok(ProcessReceiptRecovery::Reaped);
+        let identity =
+            match OwnedProcess::inspect_for_recovery(receipt.pid, receipt.native_start_time) {
+                Ok(OwnedProcessInspection::Owned(identity)) => identity,
+                Ok(OwnedProcessInspection::Unowned) => {
+                    self.remove()?;
+                    return Ok(ProcessReceiptRecovery::StaleRemoved);
+                }
+                Err(_) => {
+                    match OwnedProcess::reap_exited_child(receipt.pid) {
+                        Ok(true) => {
+                            self.remove()?;
+                            return Ok(ProcessReceiptRecovery::Reaped);
+                        }
+                        Ok(false) => {}
+                        Err(_) => return Ok(ProcessReceiptRecovery::RecoveryRequired),
                     }
-                    Ok(false) => {}
-                    Err(_) => return Ok(ProcessReceiptRecovery::RecoveryRequired),
+                    if OwnedProcess::process_exists(receipt.pid) {
+                        return Ok(ProcessReceiptRecovery::RecoveryRequired);
+                    }
+                    self.remove()?;
+                    return Ok(ProcessReceiptRecovery::StaleRemoved);
                 }
-                if OwnedProcess::process_exists(receipt.pid) {
-                    return Ok(ProcessReceiptRecovery::RecoveryRequired);
-                }
-                self.remove()?;
-                return Ok(ProcessReceiptRecovery::StaleRemoved);
-            }
-        };
+            };
         let exact_identity = identity.pid == receipt.pid
             && identity.native_start_time == receipt.native_start_time
             && identity.native_scope == receipt.native_scope

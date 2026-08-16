@@ -4,6 +4,9 @@ use super::OwnedProcessInspection;
 #[cfg(target_os = "linux")]
 use std::fs;
 
+#[path = "owned_process_unix_recovery.rs"]
+pub(in crate::services::owned_process) mod recovery;
+
 pub(super) fn admit(pid: u32) -> Result<(), OwnedProcessError> {
     if pid < 2 || pid > i32::MAX as u32 {
         return Err(OwnedProcessError::Admission);
@@ -37,8 +40,11 @@ pub(super) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessErr
     })
 }
 
-pub(super) fn inspect_for_recovery(pid: u32) -> Result<OwnedProcessInspection, OwnedProcessError> {
-    identity(pid).map(OwnedProcessInspection::Owned)
+pub(super) fn inspect_for_recovery(
+    pid: u32,
+    expected_start_time: u64,
+) -> Result<OwnedProcessInspection, OwnedProcessError> {
+    recovery::inspect_for_recovery_with(pid, expected_start_time, start_time, identity)
 }
 
 pub(super) fn identity_with_executable(

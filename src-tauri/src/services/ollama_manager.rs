@@ -73,6 +73,7 @@ mod spawn_profile_paths;
 mod staging_recovery;
 mod startup;
 mod startup_recovery;
+mod storage_error;
 mod types;
 mod update;
 
@@ -135,6 +136,8 @@ mod spawn_profile_test_support;
 mod spawn_profile_tests;
 #[cfg(test)]
 mod startup_tests;
+#[cfg(test)]
+mod storage_error_tests;
 #[cfg(test)]
 mod transaction_property_tests;
 #[cfg(test)]

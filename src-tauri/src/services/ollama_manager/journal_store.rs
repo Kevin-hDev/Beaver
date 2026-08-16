@@ -2,9 +2,7 @@
 
 use super::blocking::run_ollama_blocking;
 use super::constants::MAX_DURABLE_DOCUMENT_BYTES;
-use super::durable_fs::{
-    platform_fs, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind, PlatformOllamaDurableFs,
-};
+use super::durable_fs::{platform_fs, OllamaDurableFs, OllamaFsErrorKind, PlatformOllamaDurableFs};
 use super::error::OllamaErrorCode;
 use super::journal::OllamaTransactionJournal;
 use crate::services::paths::OllamaPaths;
@@ -29,7 +27,7 @@ impl<F: OllamaDurableFs + 'static> OllamaJournalStore<F> {
                     .map(Some)
                     .map_err(|_| OllamaErrorCode::OllamaJournalInvalid),
                 Err(error) if error.kind() == OllamaFsErrorKind::NotFound => Ok(None),
-                Err(error) => Err(storage_error(error)),
+                Err(error) => Err(super::storage_error::durable("journal-read", error)),
             },
         )
         .await
@@ -63,17 +61,18 @@ impl<F: OllamaDurableFs + 'static> OllamaJournalStore<F> {
                 .journal
                 .parent()
                 .ok_or(OllamaErrorCode::OllamaInternal)?;
-            fs.create_directory_durable(parent).map_err(storage_error)?;
+            fs.create_directory_durable(parent)
+                .map_err(|error| super::storage_error::durable("journal-create-parent", error))?;
             refuse_existing_tmp(&*fs, &paths)?;
             if replace {
                 fs.replace_atomic(&paths.journal_tmp, &paths.journal, &bytes)
             } else {
                 fs.write_new_atomic(&paths.journal_tmp, &paths.journal, &bytes)
             }
-            .map_err(storage_error)?;
+            .map_err(|error| super::storage_error::durable("journal-write", error))?;
             let committed = fs
                 .read_bounded(&paths.journal, MAX_DURABLE_DOCUMENT_BYTES)
-                .map_err(storage_error)?;
+                .map_err(|error| super::storage_error::durable("journal-verify", error))?;
             let parsed = OllamaTransactionJournal::parse_bounded(&committed)
                 .map_err(|_| OllamaErrorCode::OllamaJournalInvalid)?;
             (parsed == expected)
@@ -89,7 +88,7 @@ impl<F: OllamaDurableFs + 'static> OllamaJournalStore<F> {
         run_ollama_blocking(move || match fs.remove_file_durable(&path) {
             Ok(()) => Ok(()),
             Err(error) if error.kind() == OllamaFsErrorKind::NotFound => Ok(()),
-            Err(error) => Err(storage_error(error)),
+            Err(error) => Err(super::storage_error::durable("journal-remove", error)),
         })
         .await
     }
@@ -118,16 +117,6 @@ fn refuse_existing_tmp<F: OllamaDurableFs>(
     match fs.read_bounded(&paths.journal_tmp, MAX_DURABLE_DOCUMENT_BYTES) {
         Err(error) if error.kind() == OllamaFsErrorKind::NotFound => Ok(()),
         Ok(_) => Err(OllamaErrorCode::OllamaStorageUnavailable),
-        Err(error) => Err(storage_error(error)),
+        Err(error) => Err(super::storage_error::durable("journal-tmp-read", error)),
     }
-}
-
-fn storage_error(error: OllamaFsError) -> OllamaErrorCode {
-    ::log::error!(
-        "[ollama] durable storage failure kind={:?} operation={:?} os_code={:?}",
-        error.kind(),
-        error.operation(),
-        error.os_code()
-    );
-    OllamaErrorCode::OllamaStorageUnavailable
 }

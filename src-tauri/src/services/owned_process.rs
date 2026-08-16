@@ -10,6 +10,9 @@ mod platform;
 #[cfg(windows)]
 #[path = "owned_process_windows.rs"]
 mod platform;
+#[cfg(all(test, unix))]
+#[path = "owned_process_unix_recovery_tests.rs"]
+mod unix_recovery_tests;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OwnedProcessError {
@@ -28,7 +31,6 @@ pub(crate) struct OwnedProcessIdentity {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum OwnedProcessInspection {
     Owned(OwnedProcessIdentity),
-    #[cfg(windows)]
     Unowned,
 }
 
@@ -46,7 +48,11 @@ impl OwnedProcess {
 
     pub(crate) fn inspect_for_recovery(
         pid: u32,
+        expected_start_time: u64,
     ) -> Result<OwnedProcessInspection, OwnedProcessError> {
+        #[cfg(unix)]
+        return platform::inspect_for_recovery(pid, expected_start_time);
+        #[cfg(windows)]
         platform::inspect_for_recovery(pid)
     }
 

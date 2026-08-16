@@ -101,7 +101,7 @@ where
     let destination = destination.to_path_buf();
     run_ollama_blocking(move || {
         fs.rename_durable(&source, &destination)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("cleanup-rename", error))
     })
     .await
 }
@@ -116,7 +116,7 @@ where
     let paths = paths.clone();
     run_ollama_blocking(move || {
         fs.write_new_atomic(&paths.migration_marker_tmp, &paths.migration_marker, &bytes)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("migration-marker-write", error))
     })
     .await
 }
@@ -131,7 +131,13 @@ where
     let metadata = match std::fs::symlink_metadata(&paths.migration_marker_tmp) {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
-        Err(_) => return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
+        Err(error) => {
+            return Err(super::storage_error::io(
+                "migration-marker-tmp-inspect",
+                &error,
+                OllamaErrorCode::OllamaUpdateRecoveryRequired,
+            ))
+        }
     };
     if metadata.file_type().is_symlink()
         || !metadata.is_file()
@@ -143,7 +149,7 @@ where
     let path = paths.migration_marker_tmp.clone();
     run_ollama_blocking(move || {
         fs.remove_file_durable(&path)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("migration-marker-tmp-remove", error))
     })
     .await?;
     Ok(true)
@@ -160,7 +166,13 @@ where
     let metadata = match std::fs::symlink_metadata(&paths.journal_tmp) {
         Ok(metadata) => metadata,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
-        Err(_) => return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
+        Err(error) => {
+            return Err(super::storage_error::io(
+                "journal-tmp-inspect",
+                &error,
+                OllamaErrorCode::OllamaUpdateRecoveryRequired,
+            ))
+        }
     };
     if metadata.file_type().is_symlink() || !metadata.is_file() || metadata.len() > 4 * 1024 {
         return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
@@ -172,7 +184,7 @@ where
     let path = paths.journal_tmp.clone();
     run_ollama_blocking(move || {
         fs.remove_file_durable(&path)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("journal-tmp-remove", error))
     })
     .await?;
     Ok(true)
@@ -199,7 +211,7 @@ where
     let fs = Arc::clone(fs);
     run_ollama_blocking(move || {
         fs.remove_tree_verified(&trash)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
+            .map_err(|error| super::storage_error::durable("cleanup-remove-tree", error))
     })
     .await
 }
