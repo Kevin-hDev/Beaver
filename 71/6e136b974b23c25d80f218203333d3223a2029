@@ -1,0 +1,11 @@
+J3 native macOS migration correction.
+
+Observation réelle: le bundle installé par la release Beaver v1.1.2 place Ollama à la racine de ollama-bundle, avec VERSION=0.32.13 et ses bibliothèques adjacentes. Le build J3 restait bloqué avec ollama-update-recovery-required parce que son autorité de chemin exigeait bin/ollama. Les anciennes fixtures étiquetées v1.1.x fabriquaient à tort le layout moderne.
+
+Décision: spawn_profile_paths::active_executable est l’autorité unique. Il préfère le layout moderne bin/ollama dès qu’une entrée y existe et ne retombe sur le layout publié racine que si cette entrée est absente. Une erreur d’inspection du chemin moderne reste fail-closed sur ce chemin; un layout moderne invalide ne peut pas être masqué par le fallback. Les bibliothèques du bundle publié ne sont ni déplacées ni dupliquées.
+
+TDD: le test published_beaver_bundles_without_receipts_are_migrated_durably utilise maintenant le layout racine réellement publié pour v1.1.0, v1.1.1 et v1.1.2. Rouge observé avant production: Ok(Deferred { code: OllamaUpdateRecoveryRequired }) au lieu de Ok(ProgressMade). Vert après correction: 1/1. Un test natif Unix supplémentaire prouve que le profil de lancement ouvre ce binaire racine avec un handle stable.
+
+Validation lue: filtre services::ollama_manager 310 passed, 0 failed, 1 ignored developer-only; spawn_profile_tests 22/22; cargo clippy --all-targets -- -D warnings vert; cargo fmt --check vert après formatage; git diff --check vert; fichiers de production sous 230 lignes; graphify update terminé (34466 noeuds, 70614 arêtes, 2062 communautés).
+
+La preuve native macOS doit être reprise sur le profil v1.1.2 réel déjà préparé: reconstruire le bundle J3, vérifier migration, modèle Gemma 3 conservé et appel hors ligne, interruption/reprise et fermeture coordonnée. Aucun résultat natif n’est déclaré avant observation.
