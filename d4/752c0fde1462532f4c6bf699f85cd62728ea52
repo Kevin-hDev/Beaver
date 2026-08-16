@@ -1,0 +1,13 @@
+JALON 3 — CORRECTIONS DE REVIEW — LOT 5
+
+Objet : préserver les résultats typés, rendre les erreurs observables et fermer les derniers contrats statiques.
+
+Corrections : restart_ollama_sidecar expose désormais les six variantes OllamaStartOutcome au frontend ; les toasts sont décidés depuis ce résultat et un échec ne peut plus être affiché comme un succès. Les 20 codes Rust possèdent une clé i18n unique, vérifiée contre le contrat TypeScript et présente dans les sept langues. Les erreurs std::io conservent kind et code OS ; journal_store écrit uniquement kind, opération et code OS sans chemin. La revalidation Windows recalcule réellement l’identité du binaire ouvert. Le nettoyage de sonde supprime les arbres bornés imbriqués. La CI exécute le contrat des assets J3 sur les trois OS et le signaleur d’urgence sur macOS.
+
+TDD rouge observé : module ollama-restart-outcome absent ; OllamaErrorCode::ALL absent ; from_io absent ; cleanup de sonde échouant sur un sous-dossier non vide.
+
+Preuves vertes observées : filtre officiel services::ollama_manager = 292 réussis, 0 échec, 1 ignoré, 293 vérifiés ; app_exit::emergency_signaler_tests = 6/6 ; frontend runtime error + restart = 21/21 ; test:j3-native-assets = 15/15 ; commandes ollama_setup = 5/5 ; tsc et lint verts ; cargo fmt --check, cargo clippy --all-targets -D warnings et git diff --check verts.
+
+Structure : tous les fichiers de production modifiés font au plus 225 lignes. Graphify mis à jour : 34317 nœuds, 70309 arêtes, 2038 communautés.
+
+Limite explicite : la nouvelle revalidation native de l’identité exécutable Windows est cfg(windows) et n’a pas pu être exécutée sur macOS ; elle doit être confirmée par la CI Windows avant fusion. Les preuves natives de mise à niveau et le test manuel d’interruption restent à exécuter séparément.
