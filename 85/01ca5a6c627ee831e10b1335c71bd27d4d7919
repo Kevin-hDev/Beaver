@@ -1,0 +1,33 @@
+Intention
+- Rendre le préflight obligatoire `test:ollama-manager-contracts` réellement exécutable sur Windows avant la preuve native J3.
+
+Cause racine
+- Le test construisait son dossier de fixtures avec `new URL(import.meta.url).pathname`.
+- Sous Windows, `pathname` vaut `/C:/...`; `node:path.join` produit alors `\C:\...`, puis Node tente d'ouvrir `C:\C:\...`.
+- Les fixtures existaient et le worktree n'était pas en cause. Le projet utilise déjà `fileURLToPath(import.meta.url)` comme conversion portable.
+
+TDD rouge observé sur d7447735
+- `npm run test:ollama-manager-contracts`: 1 passé, 5 échecs.
+- Erreur commune: ENOENT sur `C:\C:\Users\huynh\projects\Beaver\.worktrees\j3-windows\scripts\ollama\fixtures\contracts\...`.
+- Reproduction ciblée exécutée deux fois; diagnostic comparatif: chemin via `.pathname` absent, chemin via `fileURLToPath` présent avec les quatre fixtures.
+
+Correction
+- Import de `fileURLToPath` depuis `node:url`.
+- Conversion de `import.meta.url` avant `dirname`; aucun changement du scanner de production ni des règles de contrat.
+
+Preuves vertes Windows
+- Test ciblé: 6/6, 0 échec.
+- Contrat complet: 6/6 puis scan réel de 2 505 fichiers.
+- Préflight archive J3: 15/15.
+- Tous les tests Node Ollama: 35 passés, 3 ignorés faute de privilège de création de symlink Windows, 0 échec.
+- `npm run lint`: code 0.
+- `npx tsc --noEmit`: code 0.
+- `cargo fmt --all -- --check`: code 0.
+- `cargo clippy --all-targets -- -D warnings`: code 0 avec CEF 150.0.10 vérifié et Ninja 1.13.2.
+- `graphify update .`: 34 470 nœuds, 70 712 arêtes.
+- `git diff --check`: code 0; fichier de test 94 lignes.
+
+Limites et suite obligatoire
+- Aucune preuve native d'installation/migration n'est revendiquée par ce commit.
+- La procédure native doit être exécutée dans un compte Windows ou une VM jetable, jamais dans le profil de développement actuel.
+- Cette nouvelle tête exige une CI complète macOS/Linux/Windows puis la preuve native Windows sur la même tête avant toute recommandation de fusion.
