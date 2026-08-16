@@ -1,0 +1,11 @@
+Correctif découvert par la preuve native macOS du jalon 3.
+
+Constat réel: avec un bundle de test déclaré 0.32.1 et la release distante v0.32.13, l'interface proposait bien la mise à jour. Chaque tentative créait les stagings puis revenait immédiatement à l'état précédent. L'archive officielle ollama-darwin.tgz (147 Mo, SHA-256 71efd44f3b5f2019f42bae17ae58eb3de8bd25ce3ca3bc89aea58e53e5d091d1) contient des chaînes de liens symboliques internes pour les dylibs, alors que l'extracteur J3 rejetait tous les symlinks. Les fixtures ne reproduisaient que des fichiers réguliers.
+
+Décision: Unix accepte uniquement un symlink tar relatif dont la cible ne contient aucun composant spécial et désigne une entrée déjà extraite de la même archive. Cette règle accepte les chaînes officielles libggml.dylib -> libggml.0.dylib -> libggml.0.19.0.dylib, mais refuse les liens absolus, les composants parent, les cibles absentes ou futures et tous les hardlinks. La création passe par symlinkat depuis le handle du parent déjà ouvert sous le staging; aucun chemin de destination n'est rouvert par son nom complet.
+
+TDD: official_unix_archive_extracts_only_contained_relative_symlink_chains a d'abord échoué avec OllamaExtractionFailed. Après production il passe et lit la bibliothèque finale via la chaîne. unix_archive_rejects_parent_missing_and_forward_symlink_targets verrouille les refus; les tests historiques de lien absolu, hardlink, traversal et échange de parent restent verts.
+
+Validation lue: extract_tests 11/11; filtre services::ollama_manager 313 passés, 0 échec, 1 test développeur ignoré; cargo clippy --all-targets -- -D warnings vert; cargo fmt --check vert; git diff --check vert. L'archive officielle complète a aussi été extraite par le vrai extracteur dans un test ponctuel retiré ensuite: 1/1 vert en 4,93 s, binaire présent et libggml.dylib correctement relié. Fichiers de production modifiés: 201, 44 et 182 lignes. Graphify mis à jour.
+
+Limite au moment du commit: l'application native finale n'a pas encore été reconstruite avec ce correctif et la transaction interrompue/reprise n'est donc pas encore déclarée verte. Cette preuve doit être ajoutée après exécution réelle.
