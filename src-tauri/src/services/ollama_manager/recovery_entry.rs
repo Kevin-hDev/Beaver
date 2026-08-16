@@ -60,7 +60,13 @@ impl RecoveryProbe for PlatformRecoveryProbe {
 pub(crate) async fn recover_platform(
     reason: RecoveryReason,
 ) -> Result<RecoveryOutcome, OllamaErrorCode> {
-    let paths = ollama_paths(&data_dir());
+    recover_platform_at(ollama_paths(&data_dir()), reason).await
+}
+
+pub(crate) async fn recover_platform_at(
+    paths: crate::services::paths::OllamaPaths,
+    reason: RecoveryReason,
+) -> Result<RecoveryOutcome, OllamaErrorCode> {
     let fs = Arc::new(platform_fs());
     let probe = Arc::new(PlatformRecoveryProbe);
     let executor = match frozen_models_directory(&paths) {

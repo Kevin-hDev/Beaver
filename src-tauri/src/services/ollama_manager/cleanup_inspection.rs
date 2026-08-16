@@ -69,7 +69,7 @@ fn evidence(fs: &dyn OllamaDurableFs, path: &Path) -> DirectoryEvidence {
     }
 }
 
-fn fingerprint(fs: &dyn OllamaDurableFs, path: &Path) -> Option<DirectoryEvidence> {
+pub(super) fn fingerprint(fs: &dyn OllamaDurableFs, path: &Path) -> Option<DirectoryEvidence> {
     let identity = NativePathIdentityResolver;
     let root = identity.canonical_directory(path).ok()?;
     let executable_path = active_executable(root.path());

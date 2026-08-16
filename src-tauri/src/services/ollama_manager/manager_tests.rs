@@ -2,9 +2,11 @@ use super::error::OllamaErrorCode;
 use super::install::InstallRequest;
 use super::types::BundleState;
 use super::types::OperationState;
+use super::types::{DaemonState, OllamaEndpoint};
 use super::OllamaManager;
 use crate::app_exit::AppExitCoordinator;
 use std::future;
+use std::num::NonZeroU16;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Notify;
@@ -16,6 +18,18 @@ fn manager() -> (AppExitCoordinator, OllamaManager) {
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
     let manager = OllamaManager::new(coordinator.work_supervisor());
     (coordinator, manager)
+}
+
+#[tokio::test]
+async fn external_daemon_never_marks_the_beaver_bundle_ready() {
+    let (_coordinator, manager) = manager();
+    let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_434).expect("port"));
+
+    manager.publish_external_daemon(endpoint.clone());
+
+    let status = manager.status().await;
+    assert_eq!(status.bundle, BundleState::Absent);
+    assert_eq!(status.daemon, DaemonState::External { endpoint });
 }
 
 async fn wait_for_no_active_work(manager: &OllamaManager) {

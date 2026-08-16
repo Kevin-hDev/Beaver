@@ -67,6 +67,7 @@ mod spawn_gate_windows;
 mod spawn_profile;
 mod spawn_profile_paths;
 mod startup;
+mod startup_recovery;
 mod types;
 mod update;
 

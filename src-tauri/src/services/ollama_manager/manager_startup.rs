@@ -1,5 +1,5 @@
 use super::recovery::{RecoveryOutcome, RecoveryReason};
-use super::recovery_entry::recover_platform;
+use super::recovery_entry::recover_platform_at;
 use super::startup::StartupBarrierState;
 
 impl OllamaManager {
@@ -14,6 +14,24 @@ impl OllamaManager {
     }
 
     pub async fn run_startup_recovery(&self) -> StartupBarrierState {
+        self.run_startup_recovery_at(crate::services::paths::ollama_paths(
+            &crate::services::paths::data_dir(),
+        ))
+        .await
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn run_startup_recovery_at_for_test(
+        &self,
+        paths: crate::services::paths::OllamaPaths,
+    ) -> StartupBarrierState {
+        self.run_startup_recovery_at(paths).await
+    }
+
+    async fn run_startup_recovery_at(
+        &self,
+        paths: crate::services::paths::OllamaPaths,
+    ) -> StartupBarrierState {
         let guard = match self
             .begin_operation(super::types::OperationState::Recovering)
             .await
@@ -27,10 +45,26 @@ impl OllamaManager {
         };
         let generation = guard.generation;
         loop {
-            let outcome = recover_platform(RecoveryReason::Startup).await;
+            let outcome = recover_platform_at(paths.clone(), RecoveryReason::Startup).await;
             match outcome {
                 Ok(RecoveryOutcome::Ready) => {
-                    self.inner().lock_state().status.bundle = super::types::BundleState::Ready;
+                    let completed = tokio::task::spawn_blocking({
+                        let paths = paths.clone();
+                        move || super::startup_recovery::complete(&paths)
+                    })
+                    .await
+                    .map_err(|_| super::error::OllamaErrorCode::OllamaInternal)
+                    .and_then(|result| result);
+                    let bundle = match completed {
+                        Ok(bundle) => bundle,
+                        Err(code) => {
+                            let state = StartupBarrierState::Blocked { code };
+                            self.publish_startup(generation, state.clone());
+                            guard.fail(code);
+                            return state;
+                        }
+                    };
+                    self.inner().lock_state().status.bundle = bundle;
                     self.publish_startup(generation, StartupBarrierState::Ready);
                     drop(guard);
                     return self.inner().startup.state();

@@ -47,10 +47,7 @@ impl OllamaManager {
         let allocator = DefaultOllamaPortAllocator::new();
         match allocator.detect_external().await {
             Ok(Some(endpoint)) => {
-                self.publish_daemon(DaemonState::External {
-                    endpoint: endpoint.clone(),
-                });
-                self.publish_bundle_ready();
+                self.publish_external_daemon(endpoint.clone());
                 return OllamaStartOutcome::ExternalAvailable { endpoint };
             }
             Ok(None) => {}

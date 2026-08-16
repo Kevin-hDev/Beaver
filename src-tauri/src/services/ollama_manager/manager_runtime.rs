@@ -141,6 +141,10 @@ impl OllamaManager {
         }
     }
 
+    pub(crate) fn publish_external_daemon(&self, endpoint: OllamaEndpoint) {
+        self.publish_daemon(DaemonState::External { endpoint });
+    }
+
     pub async fn stop_and_wait(&self, deadline: Instant) -> Result<(), OllamaErrorCode> {
         self.stop_impl(deadline).await
     }
