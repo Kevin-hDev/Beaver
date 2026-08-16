@@ -1,0 +1,25 @@
+JALON 3 — CORRECTION RB1 : MIGRATION DES BUNDLES PUBLIÉS
+
+Constat vérifié
+- Beaver 1.1.0, 1.1.1 et 1.1.2 ont créé des bundles sans ollama-bundle-receipt.json, document introduit seulement par J3.
+- L'adoption exigeait ce reçu avant de pouvoir le créer et bloquait donc chaque mise à niveau publiée avec ollama-update-recovery-required.
+- La fixture historique écrivait artificiellement le reçu et masquait cette incompatibilité persistée.
+
+TDD rouge observé
+- published_beaver_bundles_without_receipts_are_migrated_durably : Err(OllamaUpdateRecoveryRequired) au lieu de ProgressMade dès Beaver 1.1.0.
+
+Correction
+- L'adoption vérifie d'abord l'empreinte complète calculée depuis VERSION et l'exécutable du bundle actif.
+- Si aucun reçu n'existe, elle écrit durablement le reçu exact puis poursuit l'adoption et le marqueur de migration.
+- Si un reçu existe, l'égalité exacte reste obligatoire ; un reçu divergent bloque sans mutation.
+- Les fixtures historiques réelles 1.1.x ne fabriquent plus de reçu. Le scénario de coupure AdoptLegacyActive utilise maintenant un vrai layout 1.1.2 sans reçu.
+
+Preuves lues
+- published_beaver_bundles_without_receipts_are_migrated_durably : vert pour 1.1.0, 1.1.1 et 1.1.2.
+- legacy_adoption_rejects_an_existing_mismatched_receipt : vert.
+- real_recovery_decision_cutpoints_converge_after_two_passes : vert.
+- Filtre officiel recovery_tests : 24 réussis, 0 échec, 0 ignoré.
+- git diff --check : vert.
+
+Recommandation
+- Conserver l'écriture du reçu uniquement dans l'autorité d'adoption ; les reçus existants ne sont jamais reconstruits ni remplacés silencieusement.
