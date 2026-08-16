@@ -26,3 +26,19 @@ Validation exécutée
 Suite requise
 - Reconstruire et installer l’application complète, puis rejouer la mise à niveau native macOS 0.32.1 vers 0.32.13.
 - Ne déclarer la preuve native verte qu’après validation du modèle conservé, du redémarrage hors ligne et de la fermeture coordonnée.
+
+Preuve native macOS exécutée sur ce commit
+- Build complet : `CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npm run tauri build` terminé ; `.app` et `.dmg` produits puis application complète installée.
+- État de départ réel : bundle actif déclaré 0.32.1, modèle Gemma 3 déjà présent, aucune transaction active.
+- Mise à jour UI réelle : téléchargement/extraction de l’archive officielle, puis convergence vers VERSION 0.32.13 sans journal, staging, backup ni rebut résiduel.
+- Archive macOS officielle : SHA-256 `71efd44f3b5f2019f42bae17ae58eb3de8bd25ce3ca3bc89aea58e53e5d091d1`.
+- Reçu actif : version 0.32.13, exécutable SHA-256 `dee2ad206ec73dc19d4eeaf13f35ff54022977242ed38d53dda65da4c70a9c95`.
+- Modèles : les six entrées et leurs empreintes sont strictement identiques à `macos-before.json` ; 3 338 802 660 octets conservés.
+- Gemma 3 a répondu exactement `OK` via le sidecar possédé 0.32.13 après la mise à jour.
+- Redémarrage avec HTTP_PROXY, HTTPS_PROXY et ALL_PROXY dirigés vers `127.0.0.1:9` : le sidecar local a démarré et Gemma 3 a de nouveau répondu exactement `OK`, sans re-téléchargement.
+- Fermeture coordonnée via le tray exécutée deux fois : nettoyages observés en 89,9 ms puis 239,3 ms ; aucun processus Beaver/Ollama, reçu de processus, gate ou artefact transactionnel restant.
+- Preuve écrite locale : `docs/superpowers/validation/native-upgrade-proofs/macos-recovered-final.json`, 9 979 octets, SHA-256 `3e9af3f5453459d221f6bbe0ae148f40e8bb72b56f16fa81188b8be337c35cf1`.
+
+Portée
+- La preuve macOS de mise à niveau, reprise après interruption, conservation du modèle, redémarrage hors ligne et fermeture coordonnée est verte.
+- Les preuves natives Linux et Windows restent à exécuter sur leurs machines respectives ; elles ne sont pas déclarées vertes ici.
