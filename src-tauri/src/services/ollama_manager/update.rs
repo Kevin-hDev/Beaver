@@ -102,7 +102,7 @@ pub(crate) trait UpdateBackend: Send + Sync {
     async fn probe_active(
         &self,
         request: &UpdateRequest,
-        target: &super::probe::PreparedBundle,
+        target: &BundleFingerprint,
     ) -> super::probe::TargetValidation;
 
     async fn recover_completion(&self) -> Result<CompletionRecovery, OllamaErrorCode> {
@@ -140,10 +140,11 @@ pub(crate) async fn execute<B: UpdateBackend>(
     if target.fingerprint == previous {
         return Ok(UpdateOutcome::AlreadyCurrent);
     }
+    let target_fingerprint = target.fingerprint.clone();
     backend
         .persist(
             super::journal::OllamaJournalState::Prepared {
-                target: target.fingerprint.clone(),
+                target: target_fingerprint.clone(),
                 previous: previous.clone(),
             },
             false,
@@ -151,13 +152,17 @@ pub(crate) async fn execute<B: UpdateBackend>(
         .await?;
     backend.stop_owned_sidecar(request).await?;
     backend.reap_owned_sidecar(request).await?;
+    // Windows intentionally denies renaming an executable while its stable
+    // identity handle is alive. The durable journal owns the fingerprint now;
+    // release the staging proof and rebuild it at the committed destination.
+    drop(target);
     super::progress::report_stage(request.progress.as_ref(), OllamaProgressStage::Committing)?;
     backend.rename_active_to_backup().await?;
     backend.rename_target_to_active().await?;
     backend
         .persist(
             super::journal::OllamaJournalState::PendingValidation {
-                target: target.fingerprint.clone(),
+                target: target_fingerprint.clone(),
                 previous: previous.clone(),
             },
             true,
@@ -165,19 +170,19 @@ pub(crate) async fn execute<B: UpdateBackend>(
         .await?;
     let pending = super::journal::OllamaTransactionJournal::new(
         super::journal::OllamaJournalState::PendingValidation {
-            target: target.fingerprint.clone(),
+            target: target_fingerprint.clone(),
             previous: previous.clone(),
         },
     );
     super::progress::report_stage(request.progress.as_ref(), OllamaProgressStage::Validating)?;
-    let validation = backend.probe_active(request, &target).await;
+    let validation = backend.probe_active(request, &target_fingerprint).await;
     match validation {
         super::probe::TargetValidation::Valid { fingerprint } => {
             let journal = ValidatedJournal::from_pending(&pending, &fingerprint)?;
             complete_valid_update(backend, journal).await
         }
         super::probe::TargetValidation::InvalidTarget { code } => {
-            let journal = RejectedJournal::from_pending(&pending, &target.fingerprint, code)?;
+            let journal = RejectedJournal::from_pending(&pending, &target_fingerprint, code)?;
             reject_target_and_restore(backend, journal).await
         }
         super::probe::TargetValidation::Deferred { code } => Ok(UpdateOutcome::Deferred { code }),

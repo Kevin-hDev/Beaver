@@ -1,4 +1,5 @@
 use super::super::super::error::OllamaErrorCode;
+use super::super::super::fingerprint::BundleFingerprint;
 use super::super::super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::super::super::probe::{PreparedBundle, TargetValidation};
 use super::super::super::update::{UpdateBackend, UpdateRequest};
@@ -156,7 +157,7 @@ impl UpdateBackend for FakeBackend {
     async fn probe_active(
         &self,
         _request: &UpdateRequest,
-        _target: &PreparedBundle,
+        _target: &BundleFingerprint,
     ) -> TargetValidation {
         self.event("probe_active");
         self.probe.lock().unwrap().clone()

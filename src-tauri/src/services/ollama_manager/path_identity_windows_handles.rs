@@ -76,7 +76,7 @@ pub(super) fn canonical_executable(path: &Path) -> Result<CanonicalExecutable, O
         path,
         FILE_FLAG_OPEN_REPARSE_POINT,
         FILE_GENERIC_READ,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
     )?;
     if info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
         return Err(super::super::super::error::OllamaErrorCode::OllamaModelStoreConflict);

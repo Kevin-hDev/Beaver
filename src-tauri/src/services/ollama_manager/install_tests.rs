@@ -171,18 +171,18 @@ async fn reinspection_rebinds_the_prepared_bundle_to_its_committed_path() {
     let staged = prepare_bundle(&paths, &version).await.unwrap();
     let fs = std::sync::Arc::new(platform_fs());
     write_metadata(&fs, &paths, &staged).await.unwrap();
+    let expected = staged.fingerprint.clone();
+    drop(staged);
     std::fs::rename(&paths.install_staging, &paths.active).unwrap();
 
-    let active = reinspect_active(&fs, &paths, &staged.fingerprint)
-        .await
-        .unwrap();
+    let active = reinspect_active(&fs, &paths, &expected).await.unwrap();
 
     assert_eq!(
         active.root.path(),
         dunce::canonicalize(&paths.active).unwrap()
     );
     assert!(active.executable.path().starts_with(&paths.active));
-    assert_eq!(active.fingerprint, staged.fingerprint);
+    assert_eq!(active.fingerprint, expected);
 }
 
 #[tokio::test]

@@ -201,7 +201,7 @@ impl UpdateBackend for CompletionHarness {
     async fn probe_active(
         &self,
         _request: &UpdateRequest,
-        _target: &PreparedBundle,
+        _target: &BundleFingerprint,
     ) -> TargetValidation {
         TargetValidation::Deferred {
             code: OllamaErrorCode::OllamaInternal,

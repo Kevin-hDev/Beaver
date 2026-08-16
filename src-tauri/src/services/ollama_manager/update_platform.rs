@@ -120,25 +120,22 @@ impl UpdateBackend for PlatformUpdateBackend {
     async fn probe_active(
         &self,
         request: &UpdateRequest,
-        target: &PreparedBundle,
+        target: &BundleFingerprint,
     ) -> TargetValidation {
         // A durable rename changes the authoritative path. Rebuild the proof at
         // the destination instead of weakening the probe's path identity check.
-        let active = match super::super::bundle_install::reinspect_active(
-            &self.fs,
-            &request.paths,
-            &target.fingerprint,
-        )
-        .await
-        {
-            Ok(active) => active,
-            Err(OllamaErrorCode::OllamaBundleInvalid) => {
-                return TargetValidation::InvalidTarget {
-                    code: OllamaErrorCode::OllamaBundleInvalid,
+        let active =
+            match super::super::bundle_install::reinspect_active(&self.fs, &request.paths, target)
+                .await
+            {
+                Ok(active) => active,
+                Err(OllamaErrorCode::OllamaBundleInvalid) => {
+                    return TargetValidation::InvalidTarget {
+                        code: OllamaErrorCode::OllamaBundleInvalid,
+                    }
                 }
-            }
-            Err(code) => return TargetValidation::Deferred { code },
-        };
+                Err(code) => return TargetValidation::Deferred { code },
+            };
         let profile = match OllamaSpawnProfile::resolve_probe(
             &request.paths,
             request.inherited_environment.clone(),
