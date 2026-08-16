@@ -34,6 +34,21 @@ describe("Ollama runtime error mapper", () => {
     expect(ollamaProgressKey("backend says /tmp/secret")).toBe("ollama.errors.generic");
   });
 
+  it.each([
+    ["preparing", "ollamaSetup.preparing"],
+    ["downloading", "ollamaSetup.downloading"],
+    ["verifying", "ollamaSetup.verifying"],
+    ["extracting", "ollamaSetup.extracting"],
+    ["validating", "ollamaSetup.validating"],
+    ["committing", "ollamaSetup.committing"],
+    ["starting", "ollamaSetup.starting"],
+    ["recovering", "ollamaSetup.recovering"],
+    ["rolling_back", "ollamaSetup.rollingBack"],
+    ["cleaning", "ollamaSetup.cleaning"],
+  ])("maps progress stage %s to its exact label", (stage, key) => {
+    expect(ollamaProgressKey(stage)).toBe(key);
+  });
+
   it("provides every Rust-owned error key in all seven locales", () => {
     const locales: Record<string, { ollama: { errors: Record<string, string> } }> = {
       de, en, es, fr, it: itJson, ja, zh,
@@ -43,6 +58,22 @@ describe("Ollama runtime error mapper", () => {
         const leaf = key.slice("ollama.errors.".length);
         expect(locale.ollama.errors[leaf], `${language}:${key}`).toBeTypeOf("string");
         expect(locale.ollama.errors[leaf].trim(), `${language}:${key}`).not.toBe("");
+      }
+    }
+  });
+
+  it("provides every progress key in all seven locales", () => {
+    const locales = { de, en, es, fr, it: itJson, ja, zh };
+    const keys = [
+      "preparing", "downloading", "verifying", "extracting", "validating",
+      "committing", "starting", "recovering", "rollingBack", "cleaning",
+    ] as const;
+    for (const [language, locale] of Object.entries(locales)) {
+      const setup = locale.ollamaSetup as Record<string, string | undefined>;
+      for (const key of keys) {
+        const value = setup[key];
+        expect(value, `${language}:ollamaSetup.${key}`).toBeTypeOf("string");
+        expect(value?.trim(), `${language}:ollamaSetup.${key}`).not.toBe("");
       }
     }
   });

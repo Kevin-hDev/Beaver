@@ -6,20 +6,22 @@ const MAX_ERROR_CODE_LENGTH = 96;
 const ERROR_KEYS = Object.freeze(errorContract) as Readonly<Record<string, string>>;
 
 const PROGRESS_KEYS = Object.freeze({
-  preparing: "ollamaSetup.extracting",
+  preparing: "ollamaSetup.preparing",
   downloading: "ollamaSetup.downloading",
   verifying: "ollamaSetup.verifying",
   extracting: "ollamaSetup.extracting",
-  validating: "ollamaSetup.verifying",
-  committing: "ollamaSetup.extracting",
+  validating: "ollamaSetup.validating",
+  committing: "ollamaSetup.committing",
   starting: "ollamaSetup.starting",
-  recovering: "ollama.errors.generic",
-  rolling_back: "ollama.errors.generic",
-  cleaning: "ollamaSetup.extracting",
+  recovering: "ollamaSetup.recovering",
+  rolling_back: "ollamaSetup.rollingBack",
+  cleaning: "ollamaSetup.cleaning",
 } as const);
 
 export type OllamaErrorTranslationKey = `ollama.errors.${string}`;
-export type OllamaProgressTranslationKey = typeof PROGRESS_KEYS[keyof typeof PROGRESS_KEYS];
+export type OllamaProgressTranslationKey =
+  | typeof PROGRESS_KEYS[keyof typeof PROGRESS_KEYS]
+  | typeof GENERIC_ERROR_KEY;
 
 export function ollamaErrorKey(value: unknown): OllamaErrorTranslationKey {
   if (typeof value !== "string" || value.length > MAX_ERROR_CODE_LENGTH) return GENERIC_ERROR_KEY;

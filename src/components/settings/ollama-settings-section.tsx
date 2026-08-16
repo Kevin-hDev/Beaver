@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { IS_MAC } from "@/lib/platform";
 import { showToast } from "@/lib/toast-emitter";
+import { ollamaErrorKey } from "@/lib/ollama-runtime-error";
 import { useOllamaRuntimeStatus } from "@/hooks/use-ollama-runtime-status";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "./settings-card";
@@ -50,17 +51,17 @@ export function OllamaSettingsSection({
       const outcome = await invoke<OllamaStartOutcome>("restart_ollama_sidecar");
       const presentation = classifyOllamaRestartOutcome(outcome);
       await runtime.refresh();
-      if (presentation === "failed") {
-        showToast(t("errors.ollamaRestartFailed"), "error");
+      if (presentation.kind === "failed") {
+        showToast(t(ollamaErrorKey(presentation.code)), "error");
         return;
       }
-      const message = presentation === "external"
+      const message = presentation.kind === "external"
         ? t("settings.advanced.ollamaExternalReused")
         : t("settings.advanced.hardwareAccelRestarted");
       showToast(message, "success");
-      if (presentation === "owned") setAccelChanged(false);
-    } catch {
-      showToast(t("errors.ollamaRestartFailed"), "error");
+      if (presentation.kind === "owned") setAccelChanged(false);
+    } catch (caught) {
+      showToast(t(ollamaErrorKey(caught)), "error");
     } finally {
       setRestarting(false);
     }

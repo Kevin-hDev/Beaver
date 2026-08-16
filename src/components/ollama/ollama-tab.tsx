@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { useOllamaModels } from "@/hooks/use-ollama-models";
 import { useOllamaRuntimeStatus } from "@/hooks/use-ollama-runtime-status";
-import { ollamaProgressKey } from "@/lib/ollama-runtime-error";
+import { ollamaErrorKey, ollamaProgressKey } from "@/lib/ollama-runtime-error";
 import { ModelfileIcon, ModelsIcon } from "@/components/ui/model-browser-icons";
 import { SettingsPanel } from "@/components/settings/shell/settings-panel";
 import { SettingsTabbar } from "@/components/settings/shell/settings-tabbar";
@@ -51,7 +51,7 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
       return <RuntimeMessage message={t("ollama.runtime.loading")} />;
     }
     if (runtimeReadError || !runtimeStatus) {
-      return <RuntimeRetry onRetry={refreshRuntime} t={t} />;
+      return <RuntimeRetry error={null} onRetry={refreshRuntime} t={t} />;
     }
     if (runtimeStatus.bundle === "absent") {
       return (
@@ -69,7 +69,13 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
       return <RuntimeMessage message={progressLabel(runtimeStatus, t)} />;
     }
     if (runtimeStatus.bundle === "recovery_required") {
-      return <RuntimeRetry onRetry={retryRecovery(refreshRuntime)} t={t} />;
+      return (
+        <RuntimeRetry
+          error={runtimeStatus.last_error}
+          onRetry={retryRecovery(refreshRuntime)}
+          t={t}
+        />
+      );
     }
     return (
       <SettingsPanel title={t("settings.tabs.ollama")}>
@@ -123,7 +129,9 @@ function RuntimeMessage({ message }: { message: string }) {
   return <div className="ollama-runtime-message">{message}</div>;
 }
 
-function RuntimeRetry({ onRetry, t }: { onRetry: () => Promise<void>; t: (key: string) => string }) {
+function RuntimeRetry({
+  error, onRetry, t,
+}: { error: unknown; onRetry: () => Promise<void>; t: (key: string) => string }) {
   const [retrying, setRetrying] = useState(false);
   const retry = async () => {
     setRetrying(true);
@@ -131,7 +139,7 @@ function RuntimeRetry({ onRetry, t }: { onRetry: () => Promise<void>; t: (key: s
   };
   return (
     <div className="ollama-runtime-message" data-ollama-runtime-error="generic">
-      <p>{t("ollama.errors.generic")}</p>
+      <p>{t(ollamaErrorKey(error))}</p>
       <button className="btn btn-sm btn-primary" onClick={() => void retry()} disabled={retrying}>
         {t("ollama.runtime.retry")}
       </button>
