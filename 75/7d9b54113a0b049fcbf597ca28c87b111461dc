@@ -1,0 +1,32 @@
+JALON 3 — CORRECTIONS DE REVIEW — PROGRESSION EXACTE
+
+Constat
+- Le nouveau chemin d'installation et de mise à jour publiait uniquement "downloading" avec completed=0 et total=0.
+- La barre pouvait donc rester figée pendant plusieurs centaines de Mo.
+- Une ancienne opération devait aussi être empêchée de remplacer l'étape d'une génération plus récente.
+
+Correction
+- Une autorité OllamaProgressReporter transporte une étape typée et les octets completed/total.
+- Le téléchargement calcule la taille totale bornée, publie zéro puis chaque bloc reçu avec une progression monotone et exacte.
+- Installation et mise à jour publient Preparing, Downloading, Verifying, Extracting, Validating et Committing depuis leurs vrais chemins de production.
+- Le gestionnaire compose le reporter externe avec son état interne et filtre toute publication par génération.
+- Les commandes Tauri installation et mise à jour consomment cette même autorité pour leur Channel; l'ancien événement fictif 0/0 est supprimé.
+- Le téléchargement, le stockage d'installation et la préparation de mise à jour ont été découpés pour conserver chaque fichier de production sous 230 lignes.
+
+TDD observé
+- Rouge initial: download_archives_with_progress et le module progress étaient absents.
+- Rouge génération: progress_reporter_for_generation était absent.
+- Vert ciblé: progression téléchargement 1/1; mapping Channel 1/1; protection génération 1/1.
+- Suites ciblées: download 11/11, install 9/9, update 13/13, manager 19/19, commandes setup 5/5.
+
+Validation finale observée
+- Filtre officiel services::ollama_manager: 289 passed, 0 failed, 1 ignored; 290 tests vérifiés.
+- cargo clippy --all-targets -- -D warnings: vert.
+- cargo fmt --all -- --check: vert.
+- git diff --check: vert.
+- Fichiers de production modifiés: tous <= 230 lignes.
+- graphify update .: 34302 noeuds, 70284 arêtes, 2047 communautés.
+
+Recommandation
+- Conserver ce commit avec aa3f413b, bfcd4f99 et d9eea19c.
+- Les défauts restants de frontière IPC, diagnostic Windows, contrat d'erreurs et preuves natives restent dans les lots suivants; aucune fusion n'est autorisée avant leur validation.
