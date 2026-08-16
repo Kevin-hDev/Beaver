@@ -5,7 +5,7 @@ use super::extract::{ensure_not_cancelled, validate_member_path, ArchiveMemberKi
 use super::extract_root::ExtractionRoot;
 use std::collections::HashSet;
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tokio_util::sync::CancellationToken;
 
 const MAX_ENTRIES: usize = 50_000;
@@ -35,7 +35,7 @@ pub(super) fn extract_tar<R: Read>(
             .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?
             .into_owned();
         validate_member_path(&name)?;
-        if !names.insert(name.clone()) {
+        if names.contains(&name) {
             return Err(OllamaErrorCode::OllamaBundleInvalid);
         }
         let kind = match entry.header().entry_type() {
@@ -45,7 +45,21 @@ pub(super) fn extract_tar<R: Read>(
             kind if kind.is_hard_link() => ArchiveMemberKind::Hardlink,
             _ => ArchiveMemberKind::Other,
         };
+        #[cfg(unix)]
+        if kind == ArchiveMemberKind::Symlink {
+            let target = entry
+                .link_name()
+                .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?
+                .ok_or(OllamaErrorCode::OllamaBundleInvalid)?
+                .into_owned();
+            validate_contained_symlink(&name, &target, &names)?;
+            before_write()?;
+            root.create_symlink(&name, &target)?;
+            names.insert(name);
+            continue;
+        }
         kind.validate()?;
+        names.insert(name.clone());
         before_write()?;
         if kind == ArchiveMemberKind::Directory {
             root.create_directory_all(&name)?;
@@ -69,6 +83,22 @@ pub(super) fn extract_tar<R: Read>(
         write_entry(&mut entry, root, &name, mode, cancellation)?;
     }
     Ok(())
+}
+
+#[cfg(unix)]
+fn validate_contained_symlink(
+    name: &Path,
+    target: &Path,
+    names: &HashSet<PathBuf>,
+) -> Result<(), OllamaErrorCode> {
+    validate_member_path(target)?;
+    let resolved = name.parent().unwrap_or_else(|| Path::new("")).join(target);
+    let components = super::extract_root::relative_components(&resolved)?;
+    let resolved = components.into_iter().collect::<PathBuf>();
+    names
+        .contains(&resolved)
+        .then_some(())
+        .ok_or(OllamaErrorCode::OllamaBundleInvalid)
 }
 
 pub(super) fn extract_zip(

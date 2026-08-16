@@ -27,6 +27,11 @@ impl ExtractionRoot {
     pub(super) fn create_file(&self, path: &Path, mode: u32) -> Result<File, OllamaErrorCode> {
         self.inner.create_file(path, mode)
     }
+
+    #[cfg(unix)]
+    pub(super) fn create_symlink(&self, path: &Path, target: &Path) -> Result<(), OllamaErrorCode> {
+        self.inner.create_symlink(path, target)
+    }
 }
 
 pub(super) fn relative_components(path: &Path) -> Result<Vec<PathBuf>, OllamaErrorCode> {

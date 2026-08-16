@@ -114,6 +114,55 @@ fn real_tar_and_zip_archives_extract_regular_files() {
     );
 }
 
+#[cfg(unix)]
+#[test]
+fn official_unix_archive_extracts_only_contained_relative_symlink_chains() {
+    let root = tempfile::tempdir().unwrap();
+    let archive = root.path().join("ollama-darwin.tgz");
+    write_gzip_tar(
+        &archive,
+        &[
+            TarMember::regular("libggml.0.19.0.dylib", b"library", 0o755),
+            TarMember::raw(
+                "libggml.0.dylib",
+                tar::EntryType::Symlink,
+                &[],
+                0o777,
+                Some("libggml.0.19.0.dylib"),
+            ),
+            TarMember::raw(
+                "libggml.dylib",
+                tar::EntryType::Symlink,
+                &[],
+                0o777,
+                Some("libggml.0.dylib"),
+            ),
+        ],
+    );
+    let staging = empty_staging(root.path());
+
+    extract_archive(
+        &archive,
+        &staging,
+        "ollama-darwin.tgz",
+        &CancellationToken::new(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        std::fs::read_link(staging.join("libggml.0.dylib")).unwrap(),
+        Path::new("libggml.0.19.0.dylib")
+    );
+    assert_eq!(
+        std::fs::read_link(staging.join("libggml.dylib")).unwrap(),
+        Path::new("libggml.0.dylib")
+    );
+    assert_eq!(
+        std::fs::read(staging.join("libggml.dylib")).unwrap(),
+        b"library"
+    );
+}
+
 #[test]
 fn tar_traversal_absolute_symlink_and_hardlink_are_rejected_without_escape() {
     let cases = [
@@ -157,6 +206,55 @@ fn tar_traversal_absolute_symlink_and_hardlink_are_rejected_without_escape() {
         );
         assert!(!root.path().join("escape").exists());
         assert!(!root.path().join("absolute").exists());
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn unix_archive_rejects_parent_missing_and_forward_symlink_targets() {
+    let cases = [
+        vec![TarMember::raw(
+            "bin/link",
+            tar::EntryType::Symlink,
+            &[],
+            0o777,
+            Some("../outside"),
+        )],
+        vec![TarMember::raw(
+            "libmissing.dylib",
+            tar::EntryType::Symlink,
+            &[],
+            0o777,
+            Some("missing.dylib"),
+        )],
+        vec![
+            TarMember::raw(
+                "libforward.dylib",
+                tar::EntryType::Symlink,
+                &[],
+                0o777,
+                Some("libtarget.dylib"),
+            ),
+            TarMember::regular("libtarget.dylib", b"library", 0o755),
+        ],
+    ];
+    for (index, members) in cases.into_iter().enumerate() {
+        let root = tempfile::tempdir().unwrap();
+        let archive = root.path().join(format!("unsafe-link-{index}.tgz"));
+        write_gzip_tar(&archive, &members);
+        let staging = empty_staging(root.path());
+
+        assert_eq!(
+            extract_archive(
+                &archive,
+                &staging,
+                "ollama-darwin.tgz",
+                &CancellationToken::new(),
+            ),
+            Err(OllamaErrorCode::OllamaBundleInvalid),
+            "case {index}"
+        );
+        assert!(!root.path().join("outside").exists());
     }
 }
 

@@ -69,6 +69,20 @@ impl PlatformExtractionRoot {
         Ok(file)
     }
 
+    pub(super) fn create_symlink(&self, path: &Path, target: &Path) -> Result<(), OllamaErrorCode> {
+        let components = relative_components(path)?;
+        let (name, parent_components) = components
+            .split_last()
+            .ok_or(OllamaErrorCode::OllamaBundleInvalid)?;
+        let parent = self.open_components(parent_components)?;
+        let name = c_name(name.as_os_str())?;
+        let target = c_name(target.as_os_str())?;
+        if unsafe { libc::symlinkat(target.as_ptr(), parent.as_raw_fd(), name.as_ptr()) } != 0 {
+            return Err(map_error(io::Error::last_os_error()));
+        }
+        Ok(())
+    }
+
     fn open_parent(&self, path: &Path) -> Result<File, OllamaErrorCode> {
         let components = relative_components(path)?;
         self.open_components(&components)
