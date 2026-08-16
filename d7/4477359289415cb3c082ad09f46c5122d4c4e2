@@ -1,0 +1,30 @@
+Jalon 3 Ollama — libération de la preuve staging avant commit Windows
+
+Second constat CI Windows
+- L’ajout de `FILE_SHARE_DELETE` du commit 34724c8a n’a pas résolu le renommage du dossier staging : Windows renvoyait encore code 5.
+- Il a en plus fait échouer `executable_swap_is_denied_while_stable_handle_is_held`, preuve que cette approche affaiblissait le verrou anti-remplacement de l’exécutable.
+- Le commit 34724c8a est donc explicitement supersédé ; son changement de partage est retiré.
+
+Cause racine
+- `PreparedBundle` conservait un handle stable sur l’exécutable du staging jusqu’après les deux renommages.
+- Windows interdit le renommage du dossier parent tant que ce handle anti-remplacement est vivant.
+- Après écriture durable de l’état Prepared, la transaction n’a plus besoin du chemin staging : le journal détient déjà l’empreinte autoritaire.
+
+Correction
+- L’empreinte est clonée une seule fois après la préparation.
+- Après arrêt et moissonnage confirmés du sidecar, `PreparedBundle` est explicitement détruit avant le premier renommage.
+- Le trait de backend transmet ensuite seulement l’empreinte figée à `probe_active`.
+- Le backend plateforme reconstruit au chemin actif une nouvelle preuve canonique et la compare au reçu et au SHA-256 avant la sonde.
+- Le handle Windows reste sans `FILE_SHARE_DELETE` : le verrou anti-remplacement existant est préservé.
+
+TDD et validation
+- Rouge natif Windows : `reinspection_rebinds_the_prepared_bundle_to_its_committed_path` code 5, plus régression du test anti-remplacement.
+- La fixture reproduit désormais l’ordre de production : empreinte figée, preuve staging détruite, renommage, preuve active reconstruite.
+- Filtre officiel `services::ollama_manager` : 314 passés, 0 échec, 1 commande développeur ignorée.
+- Test exact de reinspection : vert local macOS.
+- `cargo clippy --all-targets -- -D warnings` : vert local.
+- `cargo fmt --all -- --check` et `git diff --check` : verts.
+- Fichiers de production touchés sous 230 lignes ; `graphify update .` terminé.
+
+Validation requise
+- La prochaine CI Windows doit confirmer simultanément le renommage de transaction et le maintien du test anti-remplacement.
