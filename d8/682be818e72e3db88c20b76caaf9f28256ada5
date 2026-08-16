@@ -1,0 +1,12 @@
+J3 Windows validation — restore honest brand-boundary contracts.
+
+The failure predates the Windows fixes and reproduces on a detached, clean 8501ca5a worktree. Milestone 3 changed tracked compatibility references after the last milestone-2 count update, but the locked counters and visible-reference fingerprint were not refreshed.
+
+RED evidence on 8501ca5a:
+- internal actual: CLGO 30, cl-go-dash 251, clgo 101, cl-go 72, cl_go_dash 43, with CL-GO-DASH 3 and CL-GO 38 unchanged;
+- expected still claimed CLGO 21, cl-go-dash 234, cl-go 84, cl_go_dash 48;
+- visible actual: 107 references, SHA-256 6f7ef6024faa118e980704eb7e0c1808ecc12c914e57b7f176aaa2797a1144b8; expected 98 and the previous fingerprint.
+
+Fix: update only the locked counts and visible fingerprint. No file exclusion, classification rule, bound, or compatibility contract changed. The scanner still reports zero unknown references.
+
+GREEN evidence: `npm run test:brand-boundaries` passed 12/12. Graphify update reported no code-graph topology change.
