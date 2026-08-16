@@ -1,6 +1,9 @@
 use super::{OwnedProcessError, OwnedProcessIdentity};
+#[path = "owned_process_windows_recovery.rs"]
+mod recovery;
 #[path = "owned_process_windows_support.rs"]
 mod support;
+pub(super) use recovery::inspect_for_recovery;
 use std::os::windows::io::{AsHandle, AsRawHandle};
 use std::sync::OnceLock;
 use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, WAIT_OBJECT_0};
@@ -113,10 +116,7 @@ fn identity_from_handle_observed(
         return Err(OwnedProcessError::Admission);
     }
     let native_start_time = start_time(process)?;
-    let mut contained = 0;
-    let in_job =
-        unsafe { IsProcessInJob(process, job()?.raw(), &mut contained) } != 0 && contained != 0;
-    if !in_job {
+    if !is_in_owned_job(process)? {
         return Err(OwnedProcessError::Admission);
     }
     Ok(OwnedProcessIdentity {
@@ -127,12 +127,12 @@ fn identity_from_handle_observed(
     })
 }
 
-pub(super) fn identity_with_executable(
-    pid: u32,
-    executable: u128,
-) -> Result<OwnedProcessIdentity, OwnedProcessError> {
-    let process = ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION)?;
-    identity_from_handle_with_executable(process.0, executable)
+fn is_in_owned_job(process: HANDLE) -> Result<bool, OwnedProcessError> {
+    let mut contained = 0;
+    if unsafe { IsProcessInJob(process, job()?.raw(), &mut contained) } == 0 {
+        return Err(OwnedProcessError::Admission);
+    }
+    Ok(contained != 0)
 }
 
 pub(super) fn recover_exact(

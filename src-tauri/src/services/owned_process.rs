@@ -25,6 +25,13 @@ pub(crate) struct OwnedProcessIdentity {
     pub(crate) executable: u128,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum OwnedProcessInspection {
+    Owned(OwnedProcessIdentity),
+    #[cfg(windows)]
+    Unowned,
+}
+
 pub struct OwnedProcess;
 
 impl OwnedProcess {
@@ -35,6 +42,12 @@ impl OwnedProcess {
 
     pub(crate) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessError> {
         platform::identity(pid)
+    }
+
+    pub(crate) fn inspect_for_recovery(
+        pid: u32,
+    ) -> Result<OwnedProcessInspection, OwnedProcessError> {
+        platform::inspect_for_recovery(pid)
     }
 
     #[cfg(unix)]
@@ -111,14 +124,6 @@ impl OwnedProcess {
         executable: u128,
     ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
         platform::identity_from_handle_with_executable(process, executable)
-    }
-
-    #[cfg(windows)]
-    pub(crate) fn identity_with_executable(
-        pid: u32,
-        executable: u128,
-    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
-        platform::identity_with_executable(pid, executable)
     }
 
     fn spawn_with_admitter(

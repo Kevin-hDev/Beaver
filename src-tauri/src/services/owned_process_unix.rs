@@ -1,5 +1,6 @@
 use super::OwnedProcessError;
 use super::OwnedProcessIdentity;
+use super::OwnedProcessInspection;
 #[cfg(target_os = "linux")]
 use std::fs;
 
@@ -34,6 +35,10 @@ pub(super) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessErr
         native_start_time,
         executable,
     })
+}
+
+pub(super) fn inspect_for_recovery(pid: u32) -> Result<OwnedProcessInspection, OwnedProcessError> {
+    identity(pid).map(OwnedProcessInspection::Owned)
 }
 
 pub(super) fn identity_with_executable(

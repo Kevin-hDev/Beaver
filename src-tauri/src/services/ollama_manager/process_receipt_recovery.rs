@@ -1,6 +1,6 @@
 use super::fingerprint::BundleFingerprint;
 use super::process_receipt::{ProcessReceipt, ProcessReceiptError, ProcessReceiptStore};
-use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity};
+use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity, OwnedProcessInspection};
 use std::time::Instant;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -101,8 +101,13 @@ impl ProcessReceiptStore {
         let Some(receipt) = self.read()? else {
             return Ok(ProcessReceiptRecovery::Missing);
         };
-        let identity = match inspect_native_identity(receipt.pid, expected_executable) {
-            Ok(identity) => identity,
+        let identity = match OwnedProcess::inspect_for_recovery(receipt.pid) {
+            Ok(OwnedProcessInspection::Owned(identity)) => identity,
+            #[cfg(windows)]
+            Ok(OwnedProcessInspection::Unowned) => {
+                self.remove()?;
+                return Ok(ProcessReceiptRecovery::StaleRemoved);
+            }
             Err(_) => {
                 match OwnedProcess::reap_exited_child(receipt.pid) {
                     Ok(true) => {
@@ -140,15 +145,6 @@ impl ProcessReceiptStore {
         self.remove()?;
         Ok(ProcessReceiptRecovery::Reaped)
     }
-}
-
-fn inspect_native_identity(
-    pid: u32,
-    expected_executable: u128,
-) -> Result<OwnedProcessIdentity, crate::services::owned_process::OwnedProcessError> {
-    let _ = expected_executable;
-    // La récupération doit observer l'identité réelle pour distinguer un PID réutilisé d'une lecture ambiguë.
-    OwnedProcess::identity(pid)
 }
 
 fn bundle_matches(left: &BundleFingerprint, right: &BundleFingerprint) -> bool {
