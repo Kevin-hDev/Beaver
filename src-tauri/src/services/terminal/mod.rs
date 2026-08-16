@@ -5,6 +5,7 @@ mod public_error;
 mod shutdown;
 
 pub use manager::{PtyChannelEvent, PtyManager};
+pub(crate) use public_error::terminal_error;
 
 #[cfg(test)]
 mod tests;

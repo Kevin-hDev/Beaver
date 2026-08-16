@@ -104,6 +104,8 @@ pub mod subagents_tests;
 pub(crate) mod subagents_validation;
 pub mod system_prompts;
 pub mod terminal;
+#[cfg(test)]
+mod terminal_tests;
 
 pub use agent_chat::*;
 pub use agent_chat_cancel::*;
