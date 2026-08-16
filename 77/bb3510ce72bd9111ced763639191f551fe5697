@@ -1,0 +1,16 @@
+Jalon 3 Ollama — observabilité du parcours natif de mise à jour
+
+Contexte
+- Le premier essai natif macOS téléchargeait et extrayait l’archive officielle, puis restaurait le bundle précédent sans exposer le motif interne.
+- La décision de transaction restait sûre, mais la preuve native ne permettait pas de distinguer un report d’un rejet de cible.
+
+Changement
+- Le gestionnaire journalise le code stable d’une mise à jour différée, d’un nettoyage en attente ou d’un échec.
+- Aucun chemin de décision, de récupération ou de publication n’est modifié.
+
+Preuve observée
+- L’essai natif complet a ensuite produit `update incomplete code=ollama-bundle-invalid` après téléchargement de l’archive officielle macOS et rollback vers 0.32.1.
+- Cette trace a permis de localiser le défaut suivant au rebinding de la preuve après renommage durable.
+
+Limite
+- Ce commit ne corrige pas le rejet ; il rend sa cause observable. La correction fonctionnelle est portée par le commit suivant dédié.
