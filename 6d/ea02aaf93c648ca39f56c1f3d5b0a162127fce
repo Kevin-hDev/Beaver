@@ -1,0 +1,20 @@
+Jalon 3 Ollama — compilation Windows de l’extraction Unix
+
+Constat CI exact
+- Sur la tête native macOS validée, le job Windows CEF a échoué dans `cargo clippy --all-targets -- -D warnings`.
+- Sortie : `extract_archive.rs:8:23 unused import: PathBuf`.
+- `PathBuf` n’est utilisé que par `validate_contained_symlink`, lui-même compilé uniquement sur Unix.
+
+Correction
+- L’import `PathBuf` porte le même `#[cfg(unix)]` que son unique consommateur.
+- Aucun comportement d’extraction, de transaction ou de validation n’est modifié.
+
+Validation locale
+- Filtre officiel `services::ollama_manager::extract_tests` : 11 passés, 0 échec.
+- `cargo clippy --all-targets -- -D warnings` : vert sur macOS.
+- `cargo fmt --all -- --check` : vert.
+- `git diff --check` : vert.
+- `graphify update .` : terminé.
+
+Validation requise
+- Le job Windows CEF doit confirmer Clippy sur Windows à la prochaine CI ; aucune relance n’est déclarée verte avant ce résultat.
