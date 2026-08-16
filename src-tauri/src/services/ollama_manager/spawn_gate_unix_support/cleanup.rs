@@ -30,6 +30,22 @@ pub(super) fn stale_gate_links(
         stale.push(entry.file_name());
     }
     for name in stale {
+        if let Some(owner) = link_owner(&name) {
+            let Some(link) = open_at_file(parent_file, &name) else {
+                continue;
+            };
+            if !link.metadata().is_ok_and(|metadata| metadata.is_file()) || process_is_alive(owner)
+            {
+                continue;
+            }
+            let name = CString::new(name.as_bytes()).map_err(|_| OllamaProcessError::Identity)?;
+            let removed = unsafe { libc::unlinkat(parent_file.as_raw_fd(), name.as_ptr(), 0) };
+            if removed != 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::ENOENT)
+            {
+                return Err(OllamaProcessError::Identity);
+            }
+            continue;
+        }
         let Some(directory) = open_at_directory(parent_file, &name) else {
             continue;
         };
@@ -48,6 +64,26 @@ pub(super) fn stale_gate_links(
         }
     }
     Ok(())
+}
+
+fn link_owner(name: &std::ffi::OsStr) -> Option<u32> {
+    let value = name.to_str()?.strip_prefix(GATE_LINK_PREFIX)?;
+    let (owner, suffix) = value.split_once('-')?;
+    (!suffix.is_empty()).then_some(())?;
+    owner.parse().ok()
+}
+
+fn open_at_file(parent: &File, name: &std::ffi::OsStr) -> Option<File> {
+    let name = CString::new(name.as_bytes()).ok()?;
+    let fd = unsafe {
+        libc::openat(
+            parent.as_raw_fd(),
+            name.as_ptr(),
+            libc::O_RDONLY | libc::O_NOFOLLOW | libc::O_CLOEXEC,
+            0,
+        )
+    };
+    (fd >= 0).then(|| unsafe { File::from_raw_fd(fd) })
 }
 
 fn clear_gate_directory(directory: &File) -> Result<(), OllamaProcessError> {

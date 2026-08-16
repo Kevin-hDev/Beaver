@@ -10,18 +10,22 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 
 const GATE_LINK_PREFIX: &str = ".beaver-gated-";
-const OWNER_FILE: &str = ".owner";
 #[path = "spawn_gate_unix_support/cleanup.rs"]
 mod cleanup;
 
 pub(super) struct StableExecutableLink {
-    directory: tempfile::TempDir,
     path: PathBuf,
 }
 
 impl StableExecutableLink {
     pub(super) fn path(&self) -> &Path {
         &self.path
+    }
+}
+
+impl Drop for StableExecutableLink {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
     }
 }
 
@@ -32,24 +36,21 @@ pub(super) fn stable_executable_link(
     let parent = executable.parent().ok_or(OllamaProcessError::Identity)?;
     let parent_file = open_parent(parent)?;
     cleanup::stale_gate_links(&parent_file, parent)?;
-    let directory = tempfile::Builder::new()
-        .prefix(GATE_LINK_PREFIX)
-        .tempdir_in(parent)
+    let prefix = format!("{GATE_LINK_PREFIX}{}-", std::process::id());
+    let placeholder = tempfile::Builder::new()
+        .prefix(&prefix)
+        .tempfile_in(parent)
         .map_err(|_| OllamaProcessError::Identity)?;
-    std::fs::write(
-        directory.path().join(OWNER_FILE),
-        std::process::id().to_string(),
-    )
-    .map_err(|_| OllamaProcessError::Identity)?;
-    let linked = directory.path().join("executable");
+    let linked = placeholder.path().to_owned();
+    placeholder
+        .close()
+        .map_err(|_| OllamaProcessError::Identity)?;
     std::fs::hard_link(executable, &linked).map_err(|_| OllamaProcessError::Identity)?;
-    let metadata = std::fs::metadata(&linked).map_err(|_| OllamaProcessError::Identity)?;
+    let link = StableExecutableLink { path: linked };
+    let metadata = std::fs::metadata(link.path()).map_err(|_| OllamaProcessError::Identity)?;
     let actual = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
     (actual == expected_identity)
-        .then_some(StableExecutableLink {
-            directory,
-            path: linked,
-        })
+        .then_some(link)
         .ok_or(OllamaProcessError::Identity)
 }
 

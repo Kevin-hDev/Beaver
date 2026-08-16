@@ -56,9 +56,24 @@ fn stale_gate_links_are_cleaned_before_next_creation() {
     let metadata = std::fs::metadata(&executable).expect("metadata");
     let identity = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
     let link = stable_executable_link(&executable, identity).expect("link");
+    assert_eq!(link.path().parent(), executable.parent());
     assert!(!stale.exists());
     drop(link);
     assert!(!root.path().join(".beaver-gated-stale").exists());
+}
+
+#[test]
+fn stale_same_directory_gate_link_is_cleaned_before_next_creation() {
+    let root = tempfile::tempdir().expect("root");
+    let executable = root.path().join("ollama");
+    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    let stale = root.path().join(".beaver-gated-4294967295-stale");
+    std::fs::hard_link(&executable, &stale).expect("stale hard link");
+    let metadata = std::fs::metadata(&executable).expect("metadata");
+    let identity = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
+    let link = stable_executable_link(&executable, identity).expect("replacement link");
+    assert!(!stale.exists());
+    assert_eq!(link.path().parent(), executable.parent());
 }
 
 #[test]
