@@ -10,6 +10,8 @@ import { SettingsRow } from "./settings-row";
 import { SettingsSelect, type SelectOption } from "./settings-select";
 import { HardwareAccelControl } from "./hardware-accel-control";
 import { VramTable } from "./vram-table";
+import { classifyOllamaRestartOutcome } from "./ollama-restart-outcome";
+import type { OllamaStartOutcome } from "@/types/ollama-runtime";
 
 interface OllamaSettingsProps {
   keepAlive: string;
@@ -45,13 +47,18 @@ export function OllamaSettingsSection({
   const handleRestart = async () => {
     setRestarting(true);
     try {
-      const launched = await invoke<boolean>("restart_ollama_sidecar");
+      const outcome = await invoke<OllamaStartOutcome>("restart_ollama_sidecar");
+      const presentation = classifyOllamaRestartOutcome(outcome);
       await runtime.refresh();
-      const msg = isExternal(runtime.status)
+      if (presentation === "failed") {
+        showToast(t("errors.ollamaRestartFailed"), "error");
+        return;
+      }
+      const message = presentation === "external"
         ? t("settings.advanced.ollamaExternalReused")
-        : launched ? t("settings.advanced.hardwareAccelRestarted") : t("errors.ollamaRestartFailed");
-      showToast(msg, "success");
-      setAccelChanged(false);
+        : t("settings.advanced.hardwareAccelRestarted");
+      showToast(message, "success");
+      if (presentation === "owned") setAccelChanged(false);
     } catch {
       showToast(t("errors.ollamaRestartFailed"), "error");
     } finally {
@@ -130,8 +137,4 @@ export function OllamaSettingsSection({
       <VramTable />
     </SettingsCard>
   );
-}
-
-function isExternal(status: ReturnType<typeof useOllamaRuntimeStatus>["status"]): boolean {
-  return status !== null && typeof status.daemon !== "string" && "external" in status.daemon;
 }

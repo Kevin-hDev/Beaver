@@ -349,6 +349,19 @@ async fn launched_then_dead_child_is_deferred_and_models_are_cleaned() {
     assert!(!models_path.exists());
 }
 
+#[test]
+fn probe_cleanup_removes_bounded_nested_model_artifacts() {
+    let fixture = fixture();
+    let models_path = fixture.profile.models_directory().path().to_path_buf();
+    super::probe_ownership::prepare_models(&fixture.profile).expect("prepare probe models");
+    let nested = models_path.join("manifests").join("registry");
+    std::fs::create_dir_all(&nested).expect("nested probe artifacts");
+    std::fs::write(nested.join("manifest.json"), b"fixture").expect("probe artifact");
+
+    assert!(super::probe_ownership::cleanup_models(&fixture.profile));
+    assert!(!models_path.exists());
+}
+
 #[tokio::test]
 async fn abnormal_probe_models_path_is_deferred_without_rejecting_the_target() {
     let fixture = fixture();

@@ -649,7 +649,29 @@
     "noInstalledModels": "No model installed",
     "noVariants": "No variant is available",
     "runtime": { "loading": "Loading Ollama status…", "retry": "Try again", "owned": "Ollama managed by Beaver", "external": "External Ollama", "unavailable": "Ollama unavailable" },
-    "errors": { "generic": "Ollama could not complete this operation. Try again." }
+    "errors": {
+      "generic": "Ollama could not complete this operation. Try again.",
+      "updateCleanupPending": "The update is installed, but its cleanup must be resumed.",
+      "updateRecoveryRequired": "The Ollama installation must be repaired before continuing.",
+      "recoveryDeferred": "Ollama recovery is temporarily unavailable. Try again.",
+      "modelStoreConflict": "The model folder overlaps Ollama installation files.",
+      "storageUnavailable": "Ollama storage is unavailable. Check free space and permissions.",
+      "journalInvalid": "The Ollama update state is unreadable and must be repaired.",
+      "bundleMissing": "Ollama is not installed by Beaver.",
+      "bundleInvalid": "The Ollama installation is damaged or incompatible.",
+      "downloadFailed": "The Ollama download failed. Check the connection and try again.",
+      "checksumMismatch": "The downloaded file failed its integrity check.",
+      "extractionFailed": "Ollama extraction failed.",
+      "validationDeferred": "Ollama validation could not finish. Try again.",
+      "operationInProgress": "Another Ollama operation is already running.",
+      "operationCancelled": "The Ollama operation was cancelled.",
+      "closing": "Beaver is shutting down.",
+      "startFailed": "Ollama could not start.",
+      "stopFailed": "Ollama could not stop cleanly.",
+      "setupTimeout": "Ollama did not respond before the timeout.",
+      "unavailable": "Ollama is currently unavailable.",
+      "internal": "Beaver encountered an internal Ollama error."
+    }
   },
   "heartbeat": {
     "back": "Back",

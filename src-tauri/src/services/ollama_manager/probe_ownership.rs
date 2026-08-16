@@ -6,6 +6,7 @@ use std::time::Instant;
 use tokio_util::sync::CancellationToken;
 
 use super::constants::{MAX_PROBE_SOCKET_RECORDS, PROBE_ENDPOINT_POLL_INTERVAL};
+use super::durable_fs::{platform_fs, OllamaDurableFs};
 use super::error::OllamaErrorCode;
 use super::path_identity::{CanonicalDirectory, PathIdentityResolver};
 use super::path_identity_resolver::NativePathIdentityResolver;
@@ -105,10 +106,10 @@ pub(crate) fn prepare_models(profile: &OllamaSpawnProfile) -> Result<(), TargetV
 
 pub(crate) fn cleanup_models(profile: &OllamaSpawnProfile) -> bool {
     let path = profile.models_directory().path();
-    let Ok(Some(_directory)) = inspect_models(profile) else {
+    let Ok(Some(directory)) = inspect_models(profile) else {
         return !path.exists();
     };
-    std::fs::remove_dir(path).is_ok()
+    platform_fs().remove_tree_verified(&directory).is_ok() && !path.exists()
 }
 
 fn inspect_models(

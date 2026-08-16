@@ -86,28 +86,7 @@ fn ipc_types_serialize_and_generate_typescript() {
 
 #[test]
 fn public_error_codes_are_exactly_twenty_and_kebab_case() {
-    let codes = [
-        OllamaErrorCode::OllamaUpdateCleanupPending,
-        OllamaErrorCode::OllamaUpdateRecoveryRequired,
-        OllamaErrorCode::OllamaRecoveryDeferred,
-        OllamaErrorCode::OllamaModelStoreConflict,
-        OllamaErrorCode::OllamaStorageUnavailable,
-        OllamaErrorCode::OllamaJournalInvalid,
-        OllamaErrorCode::OllamaBundleMissing,
-        OllamaErrorCode::OllamaBundleInvalid,
-        OllamaErrorCode::OllamaDownloadFailed,
-        OllamaErrorCode::OllamaChecksumMismatch,
-        OllamaErrorCode::OllamaExtractionFailed,
-        OllamaErrorCode::OllamaValidationDeferred,
-        OllamaErrorCode::OllamaOperationInProgress,
-        OllamaErrorCode::OllamaOperationCancelled,
-        OllamaErrorCode::OllamaClosing,
-        OllamaErrorCode::OllamaStartFailed,
-        OllamaErrorCode::OllamaStopFailed,
-        OllamaErrorCode::OllamaSetupTimeout,
-        OllamaErrorCode::OllamaUnavailable,
-        OllamaErrorCode::OllamaInternal,
-    ];
+    let codes = OllamaErrorCode::ALL;
     assert_eq!(codes.len(), 20);
     let serialized = codes
         .into_iter()

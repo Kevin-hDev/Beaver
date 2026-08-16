@@ -217,6 +217,19 @@ fn non_sharing_errors_are_not_retried() {
 }
 
 #[test]
+fn standard_io_errors_preserve_kind_and_raw_os_code() {
+    #[cfg(windows)]
+    let code = 5;
+    #[cfg(unix)]
+    let code = libc::EACCES;
+    let error = std::io::Error::from_raw_os_error(code);
+    let evidence = OllamaFsError::from_io(&error);
+
+    assert_eq!(evidence.kind(), OllamaFsErrorKind::PermissionDenied);
+    assert_eq!(evidence.os_code(), Some(code as u32));
+}
+
+#[test]
 #[should_panic(expected = "unexpected fake FS call")]
 fn scripted_fake_rejects_an_unexpected_call() {
     let fs = ScriptedFs::default();

@@ -163,11 +163,8 @@ pub(crate) fn windows_file_image_identity(file: &std::fs::File) -> Option<u128> 
 
 #[cfg(windows)]
 pub(crate) fn windows_image_identity_from_path(path: &[u16]) -> Option<u128> {
-    use sha2::{Digest, Sha256};
-    let mut value = String::from_utf16(path).ok()?.to_ascii_lowercase();
-    if let Some(stripped) = value.strip_prefix(r"\\?\") {
-        value = stripped.to_owned();
-    }
-    let digest = Sha256::digest(value.replace('/', r"\").as_bytes());
-    Some(u128::from_be_bytes(digest[..16].try_into().ok()?))
+    use std::os::windows::ffi::OsStringExt;
+    let path = std::path::PathBuf::from(std::ffi::OsString::from_wide(path));
+    let file = std::fs::File::open(path).ok()?;
+    windows_file_image_identity(&file)
 }

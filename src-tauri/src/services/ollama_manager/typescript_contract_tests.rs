@@ -11,6 +11,13 @@ fn checked_in_typescript_matches_the_rust_runtime_contract() {
 }
 
 #[test]
+fn checked_in_error_translation_contract_is_generated_from_rust_codes() {
+    let checked_in = include_str!("../../../../src/lib/ollama-runtime-error-contract.json")
+        .replace("\r\n", "\n");
+    assert_eq!(checked_in, error_translation_contract());
+}
+
+#[test]
 fn runtime_contract_serializes_every_public_status_variant() {
     let status = OllamaRuntimeStatus {
         bundle: BundleState::TransactionPending,
@@ -77,4 +84,12 @@ fn typescript_bindings() -> String {
         CancelOutcome::decl(&config),
         OllamaRuntimeStatus::decl(&config),
     )
+}
+
+fn error_translation_contract() -> String {
+    let values = OllamaErrorCode::ALL
+        .into_iter()
+        .map(|code| (code.as_str(), code.i18n_key()))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    format!("{}\n", serde_json::to_string_pretty(&values).unwrap())
 }

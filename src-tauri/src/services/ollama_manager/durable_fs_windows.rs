@@ -2,8 +2,8 @@
 
 use super::super::path_identity::CanonicalDirectory;
 use super::{
-    io_error_kind, retry_windows_sharing, sync_parent_pair, validate_wide_units,
-    windows_file_flush_access, OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
+    retry_windows_sharing, sync_parent_pair, validate_wide_units, windows_file_flush_access,
+    OllamaDurableFs, OllamaFsError, OllamaFsErrorKind,
 };
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
@@ -42,17 +42,17 @@ impl WindowsOllamaDurableFs {
 
 impl OllamaDurableFs for WindowsOllamaDurableFs {
     fn read_bounded(&self, path: &Path, max_bytes: usize) -> Result<Vec<u8>, OllamaFsError> {
-        let metadata = fs::symlink_metadata(path)
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+        let metadata =
+            fs::symlink_metadata(path).map_err(|error| OllamaFsError::from_io(&error))?;
         if !metadata.is_file() || metadata.len() > max_bytes as u64 {
             return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
         }
         let mut bytes = Vec::new();
         File::open(path)
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?
+            .map_err(|error| OllamaFsError::from_io(&error))?
             .take(max_bytes.saturating_add(1) as u64)
             .read_to_end(&mut bytes)
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+            .map_err(|error| OllamaFsError::from_io(&error))?;
         if bytes.len() > max_bytes {
             return Err(OllamaFsError::new(OllamaFsErrorKind::InvalidInput));
         }
@@ -60,7 +60,7 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn create_directory_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        fs::create_dir_all(path).map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+        fs::create_dir_all(path).map_err(|error| OllamaFsError::from_io(&error))?;
         sync_directory(path)?;
         sync_parent_path(path)
     }
@@ -89,12 +89,12 @@ impl OllamaDurableFs for WindowsOllamaDurableFs {
     }
 
     fn remove_file_durable(&self, path: &Path) -> Result<(), OllamaFsError> {
-        fs::remove_file(path).map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+        fs::remove_file(path).map_err(|error| OllamaFsError::from_io(&error))?;
         sync_parent_path(path)
     }
 
     fn remove_tree(&self, root: &Path) -> Result<(), OllamaFsError> {
-        fs::remove_dir_all(root).map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+        fs::remove_dir_all(root).map_err(|error| OllamaFsError::from_io(&error))?;
         sync_parent_path(root)
     }
 
@@ -123,11 +123,11 @@ fn write_atomic(
             .create_new(true)
             .write(true)
             .open(tmp)
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+            .map_err(|error| OllamaFsError::from_io(&error))?;
         file.write_all(bytes)
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+            .map_err(|error| OllamaFsError::from_io(&error))?;
         file.sync_all()
-            .map_err(|error| OllamaFsError::new(io_error_kind(&error)))?;
+            .map_err(|error| OllamaFsError::from_io(&error))?;
         move_file(tmp, final_path, replace, cancelled)?;
         sync_parent_pair(tmp, final_path, sync_directory)
     })()

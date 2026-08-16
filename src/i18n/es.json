@@ -644,7 +644,29 @@
     "noInstalledModels": "Ningún modelo instalado",
     "noVariants": "Ninguna variante disponible",
     "runtime": { "loading": "Cargando el estado de Ollama…", "retry": "Reintentar", "owned": "Ollama gestionado por Beaver", "external": "Ollama externo", "unavailable": "Ollama no disponible" },
-    "errors": { "generic": "Ollama no pudo completar esta operación. Inténtalo de nuevo." }
+    "errors": {
+      "generic": "Ollama no pudo completar esta operación. Inténtalo de nuevo.",
+      "updateCleanupPending": "La actualización está instalada, pero su limpieza debe reanudarse.",
+      "updateRecoveryRequired": "La instalación de Ollama debe repararse antes de continuar.",
+      "recoveryDeferred": "La recuperación de Ollama no está disponible temporalmente. Inténtalo de nuevo.",
+      "modelStoreConflict": "La carpeta de modelos se solapa con los archivos de instalación de Ollama.",
+      "storageUnavailable": "El almacenamiento de Ollama no está disponible. Comprueba el espacio y los permisos.",
+      "journalInvalid": "El estado de actualización de Ollama es ilegible y debe repararse.",
+      "bundleMissing": "Ollama no está instalado por Beaver.",
+      "bundleInvalid": "La instalación de Ollama está dañada o es incompatible.",
+      "downloadFailed": "La descarga de Ollama falló. Comprueba la conexión e inténtalo de nuevo.",
+      "checksumMismatch": "El archivo descargado no superó la verificación de integridad.",
+      "extractionFailed": "La extracción de Ollama falló.",
+      "validationDeferred": "La validación de Ollama no pudo terminar. Inténtalo de nuevo.",
+      "operationInProgress": "Ya hay otra operación de Ollama en curso.",
+      "operationCancelled": "La operación de Ollama fue cancelada.",
+      "closing": "Beaver se está cerrando.",
+      "startFailed": "Ollama no pudo iniciarse.",
+      "stopFailed": "Ollama no pudo detenerse correctamente.",
+      "setupTimeout": "Ollama no respondió antes del tiempo límite.",
+      "unavailable": "Ollama no está disponible actualmente.",
+      "internal": "Beaver encontró un error interno con Ollama."
+    }
   },
   "heartbeat": {
     "back": "Volver",

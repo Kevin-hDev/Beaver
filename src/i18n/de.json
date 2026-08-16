@@ -644,7 +644,29 @@
     "noInstalledModels": "Kein Modell installiert",
     "noVariants": "Keine Variante verfügbar",
     "runtime": { "loading": "Ollama-Status wird geladen…", "retry": "Erneut versuchen", "owned": "Ollama wird von Beaver verwaltet", "external": "Externes Ollama", "unavailable": "Ollama nicht verfügbar" },
-    "errors": { "generic": "Ollama konnte diesen Vorgang nicht abschließen. Versuche es erneut." }
+    "errors": {
+      "generic": "Ollama konnte diesen Vorgang nicht abschließen. Versuche es erneut.",
+      "updateCleanupPending": "Das Update ist installiert, aber die Bereinigung muss fortgesetzt werden.",
+      "updateRecoveryRequired": "Die Ollama-Installation muss repariert werden, bevor es weitergeht.",
+      "recoveryDeferred": "Die Ollama-Wiederherstellung ist vorübergehend nicht möglich. Versuche es erneut.",
+      "modelStoreConflict": "Der Modellordner überschneidet sich mit Ollama-Installationsdateien.",
+      "storageUnavailable": "Der Ollama-Speicher ist nicht verfügbar. Prüfe Speicherplatz und Berechtigungen.",
+      "journalInvalid": "Der Ollama-Update-Status ist unlesbar und muss repariert werden.",
+      "bundleMissing": "Ollama wurde nicht von Beaver installiert.",
+      "bundleInvalid": "Die Ollama-Installation ist beschädigt oder inkompatibel.",
+      "downloadFailed": "Der Ollama-Download ist fehlgeschlagen. Prüfe die Verbindung und versuche es erneut.",
+      "checksumMismatch": "Die heruntergeladene Datei hat die Integritätsprüfung nicht bestanden.",
+      "extractionFailed": "Das Entpacken von Ollama ist fehlgeschlagen.",
+      "validationDeferred": "Die Ollama-Prüfung konnte nicht abgeschlossen werden. Versuche es erneut.",
+      "operationInProgress": "Ein anderer Ollama-Vorgang läuft bereits.",
+      "operationCancelled": "Der Ollama-Vorgang wurde abgebrochen.",
+      "closing": "Beaver wird beendet.",
+      "startFailed": "Ollama konnte nicht gestartet werden.",
+      "stopFailed": "Ollama konnte nicht ordnungsgemäß beendet werden.",
+      "setupTimeout": "Ollama hat nicht rechtzeitig geantwortet.",
+      "unavailable": "Ollama ist derzeit nicht verfügbar.",
+      "internal": "Beaver hat einen internen Ollama-Fehler festgestellt."
+    }
   },
   "heartbeat": {
     "back": "Zurück",

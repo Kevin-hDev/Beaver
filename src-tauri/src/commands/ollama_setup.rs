@@ -127,13 +127,8 @@ pub async fn cancel_ollama_setup(manager: tauri::State<'_, OllamaManager>) -> Re
 #[tauri::command]
 pub async fn restart_ollama_sidecar(
     manager: tauri::State<'_, OllamaManager>,
-) -> Result<bool, String> {
-    Ok(matches!(
-        manager.restart().await,
-        OllamaStartOutcome::OwnedStarted { .. }
-            | OllamaStartOutcome::OwnedAlreadyRunning { .. }
-            | OllamaStartOutcome::ExternalAvailable { .. }
-    ))
+) -> Result<OllamaStartOutcome, String> {
+    Ok(manager.restart().await)
 }
 
 pub(crate) async fn start_manager_and_wait(

@@ -2,99 +2,17 @@
 
 use super::constants::{WINDOWS_SHARING_RETRY_INTERVAL, WINDOWS_SHARING_RETRY_TIMEOUT};
 use super::path_identity::CanonicalDirectory;
-use std::fmt;
 use std::path::Path;
 use std::time::Duration;
 
+#[path = "durable_fs_error.rs"]
+mod durable_fs_error;
+#[cfg(any(test, windows))]
+pub(super) use durable_fs_error::OllamaFsOperation;
+pub(super) use durable_fs_error::{OllamaFsError, OllamaFsErrorKind};
+
 pub(super) const MAX_WINDOWS_PATH_UNITS: usize = 32_768;
 pub(super) const WINDOWS_PARENT_FLUSH_ACCESS: u32 = 0x4000_0000;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum OllamaFsErrorKind {
-    NotFound,
-    AlreadyExists,
-    SharingViolation,
-    PermissionDenied,
-    InvalidInput,
-    Other,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum OllamaFsOperation {
-    InspectHandle,
-    OpenRoot,
-    EnumerateDirectory,
-    OpenChild,
-    MarkChildDeleted,
-    MarkRootDeleted,
-    SyncParent,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct OllamaFsError {
-    kind: OllamaFsErrorKind,
-    cancelled: bool,
-    os_code: Option<u32>,
-    operation: Option<OllamaFsOperation>,
-}
-
-impl OllamaFsError {
-    pub(super) const fn new(kind: OllamaFsErrorKind) -> Self {
-        Self {
-            kind,
-            cancelled: false,
-            os_code: None,
-            operation: None,
-        }
-    }
-
-    pub(super) const fn from_os_code(kind: OllamaFsErrorKind, os_code: u32) -> Self {
-        Self {
-            kind,
-            cancelled: false,
-            os_code: Some(os_code),
-            operation: None,
-        }
-    }
-
-    fn cancelled() -> Self {
-        Self {
-            kind: OllamaFsErrorKind::Other,
-            cancelled: true,
-            os_code: None,
-            operation: None,
-        }
-    }
-
-    pub(super) const fn kind(self) -> OllamaFsErrorKind {
-        self.kind
-    }
-
-    pub(super) const fn is_cancelled(self) -> bool {
-        self.cancelled
-    }
-
-    pub(super) const fn os_code(self) -> Option<u32> {
-        self.os_code
-    }
-
-    pub(super) const fn at(mut self, operation: OllamaFsOperation) -> Self {
-        self.operation = Some(operation);
-        self
-    }
-
-    pub(super) const fn operation(self) -> Option<OllamaFsOperation> {
-        self.operation
-    }
-}
-
-impl fmt::Display for OllamaFsError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("durable filesystem operation failed")
-    }
-}
-
-impl std::error::Error for OllamaFsError {}
 
 pub(super) trait OllamaDurableFs: Send + Sync {
     fn read_bounded(&self, path: &Path, max_bytes: usize) -> Result<Vec<u8>, OllamaFsError>;
@@ -160,15 +78,6 @@ where
 
 pub(super) const fn windows_file_flush_access() -> u32 {
     WINDOWS_PARENT_FLUSH_ACCESS
-}
-
-pub(super) fn io_error_kind(error: &std::io::Error) -> OllamaFsErrorKind {
-    match error.kind() {
-        std::io::ErrorKind::NotFound => OllamaFsErrorKind::NotFound,
-        std::io::ErrorKind::AlreadyExists => OllamaFsErrorKind::AlreadyExists,
-        std::io::ErrorKind::InvalidInput => OllamaFsErrorKind::InvalidInput,
-        _ => OllamaFsErrorKind::Other,
-    }
 }
 
 pub(super) fn retry_windows_sharing<T, Operation, Cancel, Sleep>(

@@ -3,7 +3,7 @@ import type { OllamaErrorCode } from "@/types/ollama-runtime";
 
 const GENERIC_ERROR_KEY = "ollama.errors.generic" as const;
 const MAX_ERROR_CODE_LENGTH = 96;
-const ERROR_KEYS = Object.freeze(errorContract) as Readonly<Record<string, typeof GENERIC_ERROR_KEY>>;
+const ERROR_KEYS = Object.freeze(errorContract) as Readonly<Record<string, string>>;
 
 const PROGRESS_KEYS = Object.freeze({
   preparing: "ollamaSetup.extracting",
@@ -18,12 +18,14 @@ const PROGRESS_KEYS = Object.freeze({
   cleaning: "ollamaSetup.extracting",
 } as const);
 
-export type OllamaErrorTranslationKey = typeof GENERIC_ERROR_KEY;
+export type OllamaErrorTranslationKey = `ollama.errors.${string}`;
 export type OllamaProgressTranslationKey = typeof PROGRESS_KEYS[keyof typeof PROGRESS_KEYS];
 
 export function ollamaErrorKey(value: unknown): OllamaErrorTranslationKey {
   if (typeof value !== "string" || value.length > MAX_ERROR_CODE_LENGTH) return GENERIC_ERROR_KEY;
-  return Object.prototype.hasOwnProperty.call(ERROR_KEYS, value) ? ERROR_KEYS[value] : GENERIC_ERROR_KEY;
+  return Object.prototype.hasOwnProperty.call(ERROR_KEYS, value)
+    ? ERROR_KEYS[value] as OllamaErrorTranslationKey
+    : GENERIC_ERROR_KEY;
 }
 
 export function isOllamaErrorCode(value: unknown): value is OllamaErrorCode {

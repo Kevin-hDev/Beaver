@@ -644,7 +644,29 @@
     "noInstalledModels": "インストール済みモデルがありません",
     "noVariants": "利用可能なバリアントがありません",
     "runtime": { "loading": "Ollama の状態を読み込んでいます…", "retry": "再試行", "owned": "Beaver が管理する Ollama", "external": "外部 Ollama", "unavailable": "Ollama は利用できません" },
-    "errors": { "generic": "Ollama はこの操作を完了できませんでした。もう一度お試しください。" }
+    "errors": {
+      "generic": "Ollama はこの操作を完了できませんでした。もう一度お試しください。",
+      "updateCleanupPending": "更新はインストール済みですが、クリーンアップの再開が必要です。",
+      "updateRecoveryRequired": "続行する前に Ollama のインストールを修復する必要があります。",
+      "recoveryDeferred": "Ollama の復旧は一時的に利用できません。もう一度お試しください。",
+      "modelStoreConflict": "モデルフォルダーが Ollama のインストールファイルと重複しています。",
+      "storageUnavailable": "Ollama のストレージを利用できません。空き容量と権限を確認してください。",
+      "journalInvalid": "Ollama の更新状態を読み取れないため、修復が必要です。",
+      "bundleMissing": "Ollama は Beaver によってインストールされていません。",
+      "bundleInvalid": "Ollama のインストールが破損しているか、互換性がありません。",
+      "downloadFailed": "Ollama のダウンロードに失敗しました。接続を確認して再試行してください。",
+      "checksumMismatch": "ダウンロードしたファイルの整合性を確認できませんでした。",
+      "extractionFailed": "Ollama の展開に失敗しました。",
+      "validationDeferred": "Ollama の検証を完了できませんでした。もう一度お試しください。",
+      "operationInProgress": "別の Ollama 操作がすでに実行中です。",
+      "operationCancelled": "Ollama の操作はキャンセルされました。",
+      "closing": "Beaver を終了しています。",
+      "startFailed": "Ollama を起動できませんでした。",
+      "stopFailed": "Ollama を正常に停止できませんでした。",
+      "setupTimeout": "Ollama は時間内に応答しませんでした。",
+      "unavailable": "Ollama は現在利用できません。",
+      "internal": "Beaver で Ollama の内部エラーが発生しました。"
+    }
   },
   "heartbeat": {
     "back": "戻る",

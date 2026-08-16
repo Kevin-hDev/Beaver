@@ -644,7 +644,29 @@
     "noInstalledModels": "未安装模型",
     "noVariants": "没有可用变体",
     "runtime": { "loading": "正在加载 Ollama 状态…", "retry": "重试", "owned": "Beaver 管理的 Ollama", "external": "外部 Ollama", "unavailable": "Ollama 不可用" },
-    "errors": { "generic": "Ollama 无法完成此操作，请重试。" }
+    "errors": {
+      "generic": "Ollama 无法完成此操作，请重试。",
+      "updateCleanupPending": "更新已安装，但仍需继续清理。",
+      "updateRecoveryRequired": "继续之前必须修复 Ollama 安装。",
+      "recoveryDeferred": "Ollama 暂时无法恢复，请重试。",
+      "modelStoreConflict": "模型文件夹与 Ollama 安装文件重叠。",
+      "storageUnavailable": "Ollama 存储不可用，请检查可用空间和权限。",
+      "journalInvalid": "Ollama 更新状态无法读取，必须修复。",
+      "bundleMissing": "Beaver 尚未安装 Ollama。",
+      "bundleInvalid": "Ollama 安装已损坏或不兼容。",
+      "downloadFailed": "Ollama 下载失败，请检查网络后重试。",
+      "checksumMismatch": "下载的文件未通过完整性校验。",
+      "extractionFailed": "Ollama 解压失败。",
+      "validationDeferred": "Ollama 验证未能完成，请重试。",
+      "operationInProgress": "另一个 Ollama 操作正在进行。",
+      "operationCancelled": "Ollama 操作已取消。",
+      "closing": "Beaver 正在关闭。",
+      "startFailed": "Ollama 无法启动。",
+      "stopFailed": "Ollama 无法正常停止。",
+      "setupTimeout": "Ollama 未在规定时间内响应。",
+      "unavailable": "Ollama 当前不可用。",
+      "internal": "Beaver 遇到了 Ollama 内部错误。"
+    }
   },
   "heartbeat": {
     "back": "返回",

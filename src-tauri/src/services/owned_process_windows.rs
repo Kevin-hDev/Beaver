@@ -90,10 +90,21 @@ pub(super) fn identity_from_handle(
     process: HANDLE,
 ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
     let executable = executable_identity(process)?;
-    identity_from_handle_with_executable(process, executable)
+    identity_from_handle_observed(process, executable)
 }
 
 pub(super) fn identity_from_handle_with_executable(
+    process: HANDLE,
+    expected_executable: u128,
+) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+    let executable = executable_identity(process)?;
+    if expected_executable == 0 || executable != expected_executable {
+        return Err(OwnedProcessError::Admission);
+    }
+    identity_from_handle_observed(process, executable)
+}
+
+fn identity_from_handle_observed(
     process: HANDLE,
     executable: u128,
 ) -> Result<OwnedProcessIdentity, OwnedProcessError> {

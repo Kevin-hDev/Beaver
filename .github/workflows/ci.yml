@@ -76,6 +76,7 @@ jobs:
           cd ..
           npm run test:ollama-manager-contracts
           npm run test:j3-reference
+          npm run test:j3-native-assets
 
       - name: E2E profile tests and lint
         working-directory: src-tauri
@@ -187,6 +188,7 @@ jobs:
           cd ..
           npm run test:ollama-manager-contracts
           npm run test:j3-reference
+          npm run test:j3-native-assets
 
       - name: Native Windows CEF journey
         env:
@@ -245,6 +247,7 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos::emergency_slots_tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::macos::tracker_tests
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::browser::cef_supervision::capability_tests
+          node ../scripts/ci/run-rust-test-filter.mjs --filter app_exit::emergency_signaler_tests
 
       - name: Ollama manager contracts and historical scenarios
         run: |
@@ -253,6 +256,7 @@ jobs:
           cd ..
           npm run test:ollama-manager-contracts
           npm run test:j3-reference
+          npm run test:j3-native-assets
 
       - name: Native macOS CEF journey
         env:
