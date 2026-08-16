@@ -1,0 +1,12 @@
+J3 Windows native validation — deterministic CEF hashing.
+
+Root cause: Tauri's beforeBundleCommand launches Windows PowerShell 5.1 with a PowerShell 7 PSModulePath. Microsoft.PowerShell.Utility 7.0 is selected and imports without exposing Get-FileHash, so the NSIS build failed after the successful Rust compilation. The same script outside Tauri used the Windows PowerShell module path and passed, which isolated the environment boundary.
+
+TDD evidence:
+- RED: two complete `npm run tauri build` executions failed at prepare-cef-windows.ps1 on Get-FileHash; the focused regression test failed before the helper existed.
+- GREEN: `npm run test:cef` 39/39 applicable tests passed (6 macOS skips); `npm run test:build-scripts` 50/50 passed; `npm run lint` passed.
+- Native bundle proof: the exact Tauri bundle path that failed now reaches `CEF 150 Windows runtime prepared` and produced Beaver_1.1.2_x64-setup.exe (256234167 bytes, SHA-256 f4d6802de4322c71904eb44ab000809b02ff165094a24083dc66a3e9c83b657c).
+
+Implementation: one PowerShell helper computes SHA-256 with the .NET cryptography API and always disposes the stream and hash object. The reason is documented beside the implementation. The CEF script uses this single helper for bootstrap, credits, and license verification. The regression test poisons ambient Get-FileHash and proves the real helper still returns the hand-checked SHA-256 of `abc`.
+
+Graphify AST update completed: 34473 nodes, 70713 edges. The pre-existing brand-boundary count failure reproduces unchanged on parent 8501ca5a and is intentionally excluded from this root-cause commit.
