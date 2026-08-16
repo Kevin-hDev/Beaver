@@ -1,0 +1,30 @@
+JALON 3 - RECU UNIX REUTILISE ET DIAGNOSTIC STOCKAGE
+
+Constats traites:
+- sur Unix, un PID reutilise par un processus dont executable est illisible restait ambigu alors que heure de depart differente prouvait deja une identite etrangere;
+- cleanup convertissait les erreurs du stockage durable en code generique sans tracer operation ni code systeme.
+
+Correction:
+- inspection de reprise Unix compare heure de depart du processus a celle du recu avant inspection complete de executable;
+- une heure differente produit Unowned et le recu perime est retire sans signaler le processus etranger;
+- une heure identique exige toujours identite complete, sinon la reprise reste fermee;
+- storage_error devient autorite unique des diagnostics durables et conserve contexte, kind, operation et os_code;
+- cleanup et journal_store utilisent cette autorite, y compris remove_tree_verified;
+- la classification Unix est isolee dans un fichier dedie pour garder chaque fichier de production sous 230 lignes.
+
+TDD observe:
+- rouge compilation: inspect_for_recovery_with et variante Unowned absents sur Unix;
+- rouge compilation: module storage_error absent et cleanup ne passait pas par autorite diagnostique.
+
+Preuves vertes:
+- unix_recovery_tests: 2 passes, 0 echec;
+- storage_error_tests: 2 passes, 0 echec;
+- process_receipt_tests: 7 passes, 0 echec;
+- cleanup_tests: 4 passes, 0 echec;
+- cargo fmt --all -- --check: vert;
+- git diff --check: vert;
+- fichiers de production touches: maximum 228 lignes;
+- graphify update .: termine, 34353 noeuds et 70406 aretes.
+
+Limite:
+- la compilation Windows complete sera prouvee par la validation globale et la CI; aucune CI, preuve native, push ou fusion dans ce commit.
