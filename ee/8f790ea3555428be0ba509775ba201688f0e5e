@@ -7,3 +7,14 @@ Cause exacte dans le log du job 95169072718: Clippy Windows refusait l'import su
 Correction: l'import BundleState porte désormais cfg(unix), sans changement de comportement ni de test. Aucun autre fichier modifié.
 
 Preuves locales après correction: cargo fmt --all -- --check vert; cargo clippy --all-targets -- -D warnings vert sur macOS; git diff --check vert; graphify update . relancé depuis la racine et terminé. La preuve Windows finale reste la prochaine CI; aucun autre correctif ne sera poussé avant son verdict complet.
+
+CI FINALE APRES CORRECTIF WINDOWS
+
+- Tete testee: ee8f790ea3555428be0ba509775ba201688f0e5e
+- Workflow principal: run 31950222917, conclusion success, 7/7 jobs verts.
+- Backend Rust, Frontend, Desktop E2E CEF, Linux WebView, Windows tests, macOS CEF natif et Windows CEF natif: tous verts.
+- Le job Windows CEF a passe Clippy, les contrats Ollama et le parcours natif complet.
+- Controles annexes de la PR #19: CodeQL actions/javascript-typescript/rust verts, GitGuardian vert, RustSec vert, npm advisories vert.
+- Aucun nouveau changement de code apres ce verdict.
+
+Limite restante: les preuves manuelles RB3 de mise a niveau reelle v1.1.2 sur macOS/Linux/Windows, interruption-reprise et fermeture coordonnee restent a executer et consigner apres validation de review.
