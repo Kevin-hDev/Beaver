@@ -146,13 +146,9 @@ fn inspect_native_identity(
     pid: u32,
     expected_executable: u128,
 ) -> Result<OwnedProcessIdentity, crate::services::owned_process::OwnedProcessError> {
-    #[cfg(windows)]
-    return OwnedProcess::identity_with_executable(pid, expected_executable);
-    #[cfg(not(windows))]
-    {
-        let _ = expected_executable;
-        OwnedProcess::identity(pid)
-    }
+    let _ = expected_executable;
+    // La récupération doit observer l'identité réelle pour distinguer un PID réutilisé d'une lecture ambiguë.
+    OwnedProcess::identity(pid)
 }
 
 fn bundle_matches(left: &BundleFingerprint, right: &BundleFingerprint) -> bool {

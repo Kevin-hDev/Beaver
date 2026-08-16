@@ -8,7 +8,9 @@ use super::install::{InstallOutcome, InstallRequest};
 use super::install_phases::INSTALL_PHASE_ORDER;
 use super::release_source::{OllamaArchive, OllamaReleaseManifest, ValidatedHttpsUrl};
 use super::types::BundleState;
+#[cfg(unix)]
 use super::OllamaManager;
+#[cfg(unix)]
 use crate::app_exit::AppExitCoordinator;
 use sha2::{Digest, Sha256};
 #[cfg(unix)]

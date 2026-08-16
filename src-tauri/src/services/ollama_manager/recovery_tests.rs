@@ -299,10 +299,7 @@ impl OllamaDurableFs for RealCutpointFs {
 
     fn sync_file(&self, path: &Path) -> Result<(), OllamaFsError> {
         self.boundary(RealOperation::SyncFile, true)?;
-        File::open(path)
-            .map_err(real_io_error)?
-            .sync_all()
-            .map_err(real_io_error)?;
+        platform_fs().sync_file(path)?;
         self.boundary(RealOperation::SyncFile, false)
     }
 
