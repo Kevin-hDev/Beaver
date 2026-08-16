@@ -71,3 +71,142 @@ Preuve privée locale : docs/superpowers/validation/native-upgrade-proofs/macos-
 SHA-256 preuve : 795ab284911802784b31081e2d909d3a403c4b3b3fe2199fea0f113d52b7749d.
 
 Portée : la migration réelle Beaver 1.1.2 et la mise à jour Ollama 0.32.1 vers 0.32.13 ont été exécutées sur 4fabfb65 et consignées dans macos-recovered-final.json. d7447735 est revalidé nativement pour démarrage, propriété, Gemma, modèles, reprise du reçu et fermeture coordonnée. Linux et Windows manuels restent à exécuter sur leurs machines.
+
+PASSATION JALON 3 — VALIDATIONS NATIVES WINDOWS ET LINUX
+Date : 2026-08-16
+
+## Référence à récupérer
+
+- Dépôt : Kevin-hDev/Beaver.
+- PR : #19.
+- Branche : `codex/shutdown-milestone-3-ollama`.
+- Tête obligatoire avant essai : `d74477359289415cb3c082ad09f46c5122d4c4e2`.
+- Base de comparaison de la review complète : `e3df0ee8...d7447735`.
+- Récupère aussi `refs/notes/commits`, puis lis au minimum la note de `d7447735` et les notes des commits cités par celle-ci.
+- Vérifie `git status` propre et `git rev-parse HEAD` égal à la tête ci-dessus. Ne rebase pas, ne fusionne pas `main` et ne réécris pas cette branche avant la preuve native.
+
+Commandes indicatives :
+
+```bash
+git fetch origin codex/shutdown-milestone-3-ollama
+git fetch origin refs/notes/commits:refs/notes/commits
+git switch codex/shutdown-milestone-3-ollama
+git pull --ff-only
+git rev-parse HEAD
+git notes show d7447735
+```
+
+Si la branche locale n'existe pas encore, crée-la en suivi de `origin/codex/shutdown-milestone-3-ollama` sans modifier son histoire.
+
+## Documents obligatoires
+
+Lis avant l'essai :
+
+1. `docs/superpowers/specs/2026-08-09-unified-shutdown-supervision-design.md`
+2. `docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md`
+3. `docs/superpowers/specs/2026-08-09-shutdown-milestone-3-ollama-design.md`
+4. `docs/superpowers/plans/2026-08-14-shutdown-milestone-3-ollama.md`, surtout Tasks 17 et 18
+5. `docs/superpowers/validation/2026-08-14-milestone-3-native-upgrade-template.md`
+6. Les preuves macOS privées transférées par Kevin sous `docs/superpowers/validation/native-upgrade-proofs/`
+
+`docs/` reste privé et ignoré par Git. Kevin transfère ces fichiers entre les machines. Mets à jour le template et ajoute les preuves de ton OS si l'exécution apporte des résultats ou invalide une hypothèse. Ne modifie la spec ou le plan que si une observation réelle impose une décision nouvelle ; écris alors la raison et l'écart constaté.
+
+## Acquis déjà validés
+
+- Les jalons 1, 1B, 2 et la correction CEF macOS sont déjà fusionnés dans la base de cette branche.
+- La review complète du jalon 3 a fini à zéro bloquant et zéro important avant les preuves natives.
+- CI finale sur la tête `d7447735` : run principal `31964007743`, 14 contrôles verts, zéro rouge et zéro attente.
+- Windows tests Rust : vert en 10 min 04 s ; renommage du staging et verrou anti-remplacement de l'exécutable passent ensemble.
+- Windows CEF : vert en 27 min 33 s.
+- macOS CEF : vert en 19 min 11 s.
+- Backend Rust, frontend, Linux WebView, Desktop E2E, analyses et audits : verts.
+- macOS natif : mise à niveau réelle Beaver 1.1.2, Ollama `0.32.1 -> 0.32.13`, modèle Gemma conservé, empreintes modèles identiques et inférence locale `OK`.
+- macOS tête finale : sidecar possédé et reçu exacts, Gemma `OK`, récupération d'un reçu orphelin au redémarrage, fermeture coordonnée en 60,69 ms, aucun processus ni résidu.
+- `Cmd+Q`/Quit natif macOS qui contourne le nettoyage coordonné est un défaut séparé déjà recensé. Ne l'attribue pas au gestionnaire Ollama J3.
+
+## Préflight commun avant la preuve native
+
+Exécute et lis les sorties :
+
+```bash
+npm run test:j3-native-assets
+node scripts/ollama/verify-native-upgrade-assets.mjs --manifest-only
+npm run test:ollama-manager-contracts
+npm run test:j3-reference
+```
+
+Vérifie l'installateur Beaver 1.1.2 réellement utilisé contre le nom, la taille et le SHA-256 de `scripts/ollama/native-upgrade-assets.json`. `node scripts/ollama/verify-native-upgrade-assets.mjs --verify-downloads` fournit la vérification réseau complète des trois assets si elle doit être rejouée.
+
+CL-GO-DASH 1.0.2 est hors périmètre. La source de migration native est uniquement Beaver 1.1.2.
+
+## Preuve native Linux x64
+
+Lance depuis la racine du dépôt :
+
+```bash
+bash scripts/ollama/native-upgrade-linux.sh --confirm-disposable-profile --confirm-data-dir
+```
+
+Prouve et consigne :
+
+1. Beaver 1.1.2 réellement installé et lancé sur le profil confirmé.
+2. Au moins un vrai modèle local installé et une inférence réussie avant la mise à niveau.
+3. `linux-before.json` produit.
+4. Réseau bloqué avant l'installation du build J3 ; aucun téléchargement de modèle ensuite.
+5. Build exact `d7447735` installé par-dessus Beaver 1.1.2.
+6. Même liste de modèles, mêmes tailles et mêmes SHA-256 ; modèle utilisable hors ligne ; `linux-after.json` produit.
+7. Mise à jour interrompue à un cutpoint documenté, Beaver relancé, récupération convergente sans suppression du bundle ni des modèles ; inférence réussie ; `linux-recovered.json` produit.
+8. Pendant installation, mise à jour, validation et retry : fermeture coordonnée, attente bornée par le reste de la grâce de 3 s, récupération au redémarrage.
+9. Après fermeture coordonnée : aucun Beaver, helper ou Ollama possédé, aucun reçu de processus ni résidu transactionnel.
+10. Avec un démon Ollama externe séparé : il reste vivant et n'est jamais revendiqué ou arrêté par Beaver.
+
+## Preuve native Windows x64
+
+Lance depuis la racine du dépôt :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ollama/native-upgrade-windows.ps1 -ConfirmDisposableProfile -ConfirmDataDir
+```
+
+Prouve et consigne :
+
+1. Beaver 1.1.2 réellement installé et lancé sur le profil confirmé.
+2. Au moins un vrai modèle local installé et une inférence réussie avant la mise à niveau.
+3. `windows-before.json` produit.
+4. Réseau bloqué avant l'installation du build J3 ; aucun téléchargement de modèle ensuite.
+5. Build exact `d7447735` installé par-dessus Beaver 1.1.2.
+6. Même liste de modèles, mêmes tailles et mêmes SHA-256 ; modèle utilisable hors ligne ; `windows-after.json` produit.
+7. Mise à jour interrompue à un cutpoint documenté, Beaver relancé, récupération convergente ; `windows-recovered.json` produit.
+8. Vérifie particulièrement qu'un sidecar possédé est arrêté et moissonné avant les renommages, que le dossier staging est renommé sans `Access denied`, et qu'un verrou persistant conserve les deux versions sans perte.
+9. Pendant installation, mise à jour, validation et retry : fermeture coordonnée, attente bornée par le reste de la grâce de 3 s, récupération au redémarrage.
+10. Après fermeture coordonnée : aucun `cl-go-dash.exe`, helper ou `ollama.exe` possédé, aucun reçu de processus ni résidu transactionnel.
+11. Avec un démon Ollama externe séparé : il reste vivant et n'est jamais revendiqué ou arrêté par Beaver.
+
+## Preuves à écrire pour chaque OS
+
+Dans le document privé issu du template, consigne uniquement : OS et build exacts, heure, asset Beaver 1.1.2 et SHA vérifié, modèle non sensible, résultat d'inférence avant/après/reprise, empreinte de la liste des modèles, cutpoint choisi, état de récupération, processus et résidus après fermeture. Ne consigne ni secret, ni chemin utilisateur complet, ni prompt privé.
+
+Ajoute ensuite une section factuelle à la git note du commit réellement testé. Ne déclare jamais vert un contrôle non exécuté. Les preuves JSON et documents restent privés dans `docs/` et sont transférés par Kevin.
+
+## Si aucun défaut n'apparaît
+
+- Ne modifie pas le code.
+- Ajoute seulement la preuve privée de l'OS et la section de git note.
+- Pousse `refs/notes/commits`.
+- Informe Kevin que l'OS est validé avec les commandes et résultats exacts.
+
+## Si un défaut ou une divergence apparaît
+
+1. Arrête la procédure et conserve la première erreur exacte, les logs et le layout sur disque sans masquer l'état.
+2. Détermine la cause racine sur l'OS concerné ; ne corrige pas par supposition.
+3. Écris d'abord un test rouge qui reproduit le défaut ou le contrat manquant.
+4. Corrige uniquement dans le périmètre J3, dans un commit dédié, avec une git note contenant cause, test rouge, correctif et tests verts.
+5. Lance les tests ciblés, `cargo fmt --all -- --check`, `cargo clippy --all-targets -- -D warnings`, les contrats J3 et les contrôles frontend concernés.
+6. Lance `graphify update .` après toute modification de code.
+7. Pousse le commit et les notes, puis exige une nouvelle CI complète macOS/Linux/Windows sur la nouvelle tête. Attends tous les jobs ; ne relance pas à l'aveugle.
+8. Rejoue ensuite la preuve native de ton OS sur cette nouvelle tête.
+9. Mets à jour la spec, le plan ou le template privé si la correction change une décision, une procédure ou un invariant ; écris la raison.
+
+## Condition de clôture du jalon 3
+
+Le jalon n'est prêt à fusionner qu'après : preuves natives macOS, Linux et Windows complètes ; modèle réel conservé et utilisable hors ligne sur les trois OS ; interruption/reprise convergente ; fermeture coordonnée sans processus possédé ; démon externe intact ; CI complète verte sur la dernière tête ; git note agrégée avec les trois résultats ; review finale sur cette même tête.
