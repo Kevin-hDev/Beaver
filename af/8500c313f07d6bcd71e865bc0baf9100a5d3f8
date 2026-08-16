@@ -1,0 +1,27 @@
+JALON 3 — CORRECTION RB2 : TEMPORAIRE DU REÇU DE PROCESSUS
+
+Constat vérifié
+- Une erreur pendant write_new pouvait laisser ollama-process-receipt.tmp.
+- Les écritures suivantes refusaient ce temporaire, tandis que le démarrage ne l'inspectait pas : le sidecar devenait impossible à relancer sans état de récupération visible.
+
+TDD rouge observé
+- startup_removes_a_bounded_regular_process_receipt_temporary : la barrière devenait Ready mais le temporaire restait présent.
+
+Correction
+- OllamaPaths possède désormais l'unique autorité process_receipt_tmp ; aucun with_extension local ne reconstruit ce chemin.
+- prepare purge le temporaire sous le jeton begin_operation, avant toute lecture ou publication de démarrage.
+- Seul un fichier régulier borné peut être supprimé, et seulement si le reçu final est lisible ou absent.
+- Symlink, dossier, fichier surdimensionné ou reçu final invalide restent préservés et bloquent avec ollama-update-recovery-required.
+- La suppression durable traite une disparition concurrente comme déjà convergée et toute autre erreur comme stockage indisponible.
+
+Preuves lues
+- Rouge initial exact conservé dans l'historique de travail.
+- Filtre officiel startup_tests : 9 réussis, 0 échec, 0 ignoré.
+- Cas temporaire régulier : supprimé, bundle Absent et barrière Ready.
+- Cas symlink Unix : préservé, cible externe inchangée, barrière Blocked.
+- Filtre document_tests : 10 réussis, 0 échec, 0 ignoré.
+- cargo fmt --all -- --check : vert.
+- git diff --check : vert.
+
+Recommandation
+- Garder la purge dans prepare uniquement : c'est le point où l'autorité d'opération exclut un spawn concurrent.
