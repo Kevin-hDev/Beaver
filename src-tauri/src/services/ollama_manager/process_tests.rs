@@ -269,9 +269,8 @@ fn revalidation_reap_failure_leaves_durable_recovery_handoff() {
         paths.process_receipt.with_extension("tmp"),
     );
     let coordinator = AppExitCoordinator::initialize().expect("coordinator");
-    let result = gated.publish_with_cutpoint(&store, &coordinator.emergency_publisher(), || {
-        unsafe { libc::kill(pid as libc::pid_t, libc::SIGKILL) };
-    });
+    let result =
+        gated.publish_with_identity_change_for_test(&store, &coordinator.emergency_publisher());
     assert!(matches!(result, Err(OllamaProcessError::Identity)));
     assert!(store.read().expect("durable handoff").is_some());
     unsafe { libc::waitpid(pid as libc::pid_t, std::ptr::null_mut(), 0) };
