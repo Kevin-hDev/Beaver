@@ -65,3 +65,15 @@ LIMITES ET SUITE
 - Les preuves natives v1.1.2 sur macOS, Linux et Windows, interruption/reprise et fermeture coordonnee restent volontairement apres code, CI et review verts.
 
 - Pousser cette tete et attendre un verdict CI complet avant toute autre correction.
+
+CI COMPLETE OBSERVEE APRES PUSH
+
+- PR #19, tete 37b7d913150e14fca1abe4961cc439546bce4bd6.
+
+- Run principal 31944539149: Backend Rust, Linux WebView E2E, Windows CEF, Windows tests, macOS CEF, Frontend et Desktop E2E tous verts.
+
+- Windows CEF natif a termine vert en 29m42s; macOS CEF natif vert en 15m38s.
+
+- Analyses actions, JavaScript/TypeScript, Rust, CodeQL, GitGuardian, RustSec et npm vertes.
+
+- Aucun job rouge, annule ou relance; verdict attendu jusqu a completion avant cette note.
