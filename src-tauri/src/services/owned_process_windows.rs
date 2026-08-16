@@ -1,9 +1,8 @@
-use super::{OwnedProcessError, OwnedProcessIdentity};
+use super::{OwnedProcessError, OwnedProcessIdentity, OwnedProcessInspection};
 #[path = "owned_process_windows_recovery.rs"]
 mod recovery;
 #[path = "owned_process_windows_support.rs"]
 mod support;
-pub(super) use recovery::inspect_for_recovery;
 use std::os::windows::io::{AsHandle, AsRawHandle};
 use std::sync::OnceLock;
 use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, WAIT_OBJECT_0};
@@ -87,6 +86,10 @@ pub(super) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessErr
     }
     let process = ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION)?;
     identity_from_handle(process.0)
+}
+
+pub(super) fn inspect_for_recovery(pid: u32) -> Result<OwnedProcessInspection, OwnedProcessError> {
+    recovery::inspect_for_recovery(pid)
 }
 
 pub(super) fn identity_from_handle(
