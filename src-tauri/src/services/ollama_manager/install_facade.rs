@@ -8,9 +8,12 @@ use super::types::OperationState;
 impl OllamaManager {
     pub async fn install(
         &self,
-        request: InstallRequest,
+        mut request: InstallRequest,
     ) -> Result<InstallOutcome, OllamaErrorCode> {
         let guard = self.begin_operation(OperationState::Installing).await?;
+        request.progress = Some(
+            self.progress_reporter_for_generation(guard.generation(), request.progress.take()),
+        );
         let recovery_paths = request.paths.clone();
         self.set_operation_cancellation(request.cancellation.clone());
         let result = install::install(request).await;

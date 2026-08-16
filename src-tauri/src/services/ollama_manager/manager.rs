@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 use super::constants::OLLAMA_WORK_CAPACITY;
 use super::error::OllamaErrorCode;
+use super::progress::{OllamaProgressReporter, OllamaProgressUpdate};
 use super::retry::OllamaRecoveryRetry;
 use super::startup::OllamaStartupBarrier;
 use super::types::{OllamaRuntimeStatus, OperationState};
@@ -120,6 +121,27 @@ impl OllamaManager {
 
     fn release_generation(&self, generation: u64, cancelled: bool) {
         self.inner().release_generation(generation, cancelled);
+    }
+
+    pub(crate) fn progress_reporter_for_generation(
+        &self,
+        generation: u64,
+        forward: Option<OllamaProgressReporter>,
+    ) -> OllamaProgressReporter {
+        let manager = self.clone();
+        Arc::new(move |update| {
+            manager.publish_progress_for_generation(generation, update);
+            if let Some(reporter) = forward.as_ref() {
+                reporter(update);
+            }
+        })
+    }
+
+    fn publish_progress_for_generation(&self, generation: u64, update: OllamaProgressUpdate) {
+        let mut state = self.inner().lock_state();
+        if state.generation == generation {
+            state.status.progress = Some(update.stage);
+        }
     }
 
     #[cfg(test)]

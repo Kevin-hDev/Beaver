@@ -1,6 +1,8 @@
 use super::error::OllamaErrorCode;
 use super::fingerprint::{BundleFingerprint, OllamaVersion};
+use super::progress::OllamaProgressReporter;
 use super::release_source::OllamaReleaseManifest;
+use super::types::OllamaProgressStage;
 #[cfg(test)]
 use crate::services::paths::ollama_paths;
 use crate::services::paths::OllamaPaths;
@@ -43,6 +45,7 @@ pub struct UpdateRequest {
     pub cancellation: CancellationToken,
     pub deadline: Option<Instant>,
     pub sidecar: UpdateSidecar,
+    pub progress: Option<OllamaProgressReporter>,
 }
 
 impl UpdateRequest {
@@ -57,6 +60,7 @@ impl UpdateRequest {
             cancellation: CancellationToken::new(),
             deadline: None,
             sidecar: UpdateSidecar::Absent,
+            progress: None,
         }
     }
 }
@@ -130,6 +134,7 @@ pub(crate) async fn execute<B: UpdateBackend>(
             _ => Err(OllamaErrorCode::OllamaUpdateRecoveryRequired),
         };
     }
+    super::progress::report_stage(request.progress.as_ref(), OllamaProgressStage::Preparing)?;
     let previous = backend.current().await?;
     let target = backend.prepare_target(request).await?;
     if target.fingerprint == previous {
@@ -146,6 +151,7 @@ pub(crate) async fn execute<B: UpdateBackend>(
         .await?;
     backend.stop_owned_sidecar(request).await?;
     backend.reap_owned_sidecar(request).await?;
+    super::progress::report_stage(request.progress.as_ref(), OllamaProgressStage::Committing)?;
     backend.rename_active_to_backup().await?;
     backend.rename_target_to_active().await?;
     backend
@@ -163,6 +169,7 @@ pub(crate) async fn execute<B: UpdateBackend>(
             previous: previous.clone(),
         },
     );
+    super::progress::report_stage(request.progress.as_ref(), OllamaProgressStage::Validating)?;
     let validation = backend.probe_active(request, &target).await;
     match validation {
         super::probe::TargetValidation::Valid { fingerprint } => {

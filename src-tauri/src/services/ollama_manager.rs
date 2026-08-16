@@ -7,6 +7,7 @@ mod cleanup;
 mod cleanup_inspection;
 mod constants;
 mod download;
+mod download_stream;
 mod durable_fs;
 mod error;
 mod extract;
@@ -22,6 +23,7 @@ mod install_confinement;
 mod install_facade;
 #[cfg(test)]
 mod install_phases;
+mod install_storage;
 #[cfg(test)]
 mod install_test_support;
 mod journal;
@@ -46,6 +48,7 @@ mod process_owned;
 mod process_receipt;
 #[allow(dead_code)]
 mod process_receipt_recovery;
+mod progress;
 mod recovery;
 mod recovery_decision;
 mod recovery_decision_rules;
@@ -186,6 +189,8 @@ pub use port::{DefaultOllamaPortAllocator, OllamaPortAllocator};
 pub use probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, PreparedBundle, TargetValidation};
 #[allow(unused_imports)]
 pub(crate) use process_owned::OwnedProcessSidecar;
+#[allow(unused_imports)]
+pub use progress::{OllamaProgressReporter, OllamaProgressUpdate};
 #[allow(unused_imports)]
 pub use recovery::{RecoveryOutcome, RecoveryReason};
 #[allow(unused_imports)]

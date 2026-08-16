@@ -1,4 +1,4 @@
-use super::ollama_setup::{start_manager_and_wait, OllamaSetupProgress};
+use super::ollama_setup::{channel_progress_reporter, start_manager_and_wait, OllamaSetupProgress};
 use crate::services::ollama_manager::{
     OllamaManager, OllamaVersion, UpdateOutcome, UpdateRequest, UpdateSidecar,
 };
@@ -29,12 +29,8 @@ pub async fn update_ollama_binary(
         cancellation: CancellationToken::new(),
         deadline: None,
         sidecar: UpdateSidecar::Absent,
+        progress: Some(channel_progress_reporter(&on_progress)),
     };
-    let _ = on_progress.send(OllamaSetupProgress {
-        completed: 0,
-        total: 0,
-        status: "downloading".into(),
-    });
     let outcome = manager
         .update(request)
         .await

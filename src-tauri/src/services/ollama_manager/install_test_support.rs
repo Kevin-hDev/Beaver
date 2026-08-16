@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use super::download::download_archives;
+use super::download::download_archives_with_progress;
 use super::error::OllamaErrorCode;
 use super::install::InstallRequest;
 use super::release_source::OllamaReleaseManifest;
@@ -16,5 +16,6 @@ pub(super) async fn archive_paths(
     if let Some(paths) = request.local_archives.clone() {
         return Ok(paths);
     }
-    download_archives(manifest, staging, cancellation).await
+    download_archives_with_progress(manifest, staging, cancellation, request.progress.as_ref())
+        .await
 }

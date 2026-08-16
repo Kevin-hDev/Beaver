@@ -1,6 +1,7 @@
 use crate::services::ollama_manager::{
-    BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaRuntimeStatus,
-    OllamaStartOutcome, OllamaVersion, OperationState,
+    BundleState, InstallOutcome, InstallRequest, OllamaManager, OllamaProgressReporter,
+    OllamaProgressStage, OllamaProgressUpdate, OllamaRuntimeStatus, OllamaStartOutcome,
+    OllamaVersion, OperationState,
 };
 use serde::Serialize;
 use std::ffi::OsString;
@@ -69,14 +70,10 @@ pub(crate) async fn run_download_ollama(
         inherited_cwd: std::env::current_dir().map_err(|_| "ollama-storage-unavailable")?,
         cancellation: cancel.clone(),
         deadline: None,
+        progress: Some(channel_progress_reporter(on_progress)),
         #[cfg(test)]
         local_archives: None,
     };
-    let _ = on_progress.send(OllamaSetupProgress {
-        completed: 0,
-        total: 0,
-        status: "downloading".into(),
-    });
     match manager
         .install(request)
         .await
@@ -86,6 +83,34 @@ pub(crate) async fn run_download_ollama(
         InstallOutcome::Preparing => return Err("ollama-install-incomplete".into()),
     }
     start_manager_and_wait(manager, on_progress, cancel).await
+}
+
+pub(super) fn channel_progress_reporter(
+    on_progress: &Channel<OllamaSetupProgress>,
+) -> OllamaProgressReporter {
+    let channel = on_progress.clone();
+    std::sync::Arc::new(move |update: OllamaProgressUpdate| {
+        let _ = channel.send(OllamaSetupProgress {
+            completed: update.completed,
+            total: update.total,
+            status: progress_status(update.stage).into(),
+        });
+    })
+}
+
+pub(super) fn progress_status(stage: OllamaProgressStage) -> &'static str {
+    match stage {
+        OllamaProgressStage::Preparing => "preparing",
+        OllamaProgressStage::Downloading => "downloading",
+        OllamaProgressStage::Verifying => "verifying",
+        OllamaProgressStage::Extracting => "extracting",
+        OllamaProgressStage::Validating => "validating",
+        OllamaProgressStage::Committing => "committing",
+        OllamaProgressStage::Starting => "starting",
+        OllamaProgressStage::Recovering => "recovering",
+        OllamaProgressStage::RollingBack => "rolling_back",
+        OllamaProgressStage::Cleaning => "cleaning",
+    }
 }
 
 #[tauri::command]

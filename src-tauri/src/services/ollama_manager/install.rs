@@ -1,11 +1,10 @@
 #![allow(dead_code)]
 
-use super::blocking::run_ollama_blocking;
 use super::bundle_install::{prepare_bundle, reinspect_active, write_metadata};
 #[cfg(not(test))]
-use super::download::download_archives;
+use super::download::download_archives_with_progress;
 use super::download::verify_sha256;
-use super::durable_fs::{platform_fs, OllamaDurableFs};
+use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
 use super::extract::{extract_archive, extract_archive_overlay};
 use super::fingerprint::{BundleFingerprint, OllamaVersion};
@@ -13,6 +12,7 @@ pub(crate) use super::install_archives::archive_staging_path;
 use super::install_archives::remove_archives;
 use super::path_identity::NativePathIdentityResolver;
 use super::probe::{OllamaTargetProbe, OwnedOllamaTargetProbe, TargetValidation};
+use super::progress::{self, OllamaProgressReporter};
 use super::release_source::OllamaReleaseManifest;
 use super::spawn_profile::OllamaSpawnProfile;
 use crate::services::paths::{ollama_paths, OllamaPaths};
@@ -33,6 +33,7 @@ pub struct InstallRequest {
     pub inherited_cwd: PathBuf,
     pub cancellation: CancellationToken,
     pub deadline: Option<Instant>,
+    pub progress: Option<OllamaProgressReporter>,
     #[cfg(test)]
     pub(crate) local_archives: Option<Vec<PathBuf>>,
 }
@@ -55,6 +56,7 @@ impl InstallRequest {
             inherited_cwd: root,
             cancellation,
             deadline: None,
+            progress: None,
             #[cfg(test)]
             local_archives: None,
         }
@@ -93,9 +95,13 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
         return Err(OllamaErrorCode::OllamaBundleInvalid);
     }
     let fs = Arc::new(platform_fs());
-    prepare_staging(&fs, &request.paths.install_staging).await?;
+    progress::report_stage(
+        request.progress.as_ref(),
+        super::types::OllamaProgressStage::Preparing,
+    )?;
+    super::install_storage::prepare_staging(&fs, &request.paths.install_staging).await?;
     let archive_staging = archive_staging_path(&request.paths);
-    prepare_staging(&fs, archive_staging).await?;
+    super::install_storage::prepare_staging(&fs, archive_staging).await?;
     #[cfg(test)]
     let archives = super::install_test_support::archive_paths(
         &request,
@@ -105,13 +111,27 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
     )
     .await?;
     #[cfg(not(test))]
-    let archives = download_archives(&manifest, archive_staging, &request.cancellation).await?;
+    let archives = download_archives_with_progress(
+        &manifest,
+        archive_staging,
+        &request.cancellation,
+        request.progress.as_ref(),
+    )
+    .await?;
     if archives.len() != manifest.archives().len() {
         return Err(OllamaErrorCode::OllamaDownloadFailed);
     }
     for (index, (archive, path)) in manifest.archives().iter().zip(&archives).enumerate() {
         ensure_not_cancelled(&request.cancellation)?;
+        progress::report_stage(
+            request.progress.as_ref(),
+            super::types::OllamaProgressStage::Verifying,
+        )?;
         verify_sha256(path, &archive.sha256)?;
+        progress::report_stage(
+            request.progress.as_ref(),
+            super::types::OllamaProgressStage::Extracting,
+        )?;
         let extract = if index == 0 {
             extract_archive
         } else {
@@ -127,6 +147,10 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
     remove_archives(&fs, archive_staging, &archives).await?;
     let prepared = prepare_bundle(&request.paths, &version).await?;
     write_metadata(&fs, &request.paths, &prepared).await?;
+    progress::report_stage(
+        request.progress.as_ref(),
+        super::types::OllamaProgressStage::Validating,
+    )?;
     let profile = resolve_install_profile(&request, &request.paths.install_staging)?;
     let deadline = request
         .deadline
@@ -143,27 +167,15 @@ pub async fn install(request: InstallRequest) -> Result<InstallOutcome, OllamaEr
         TargetValidation::Deferred { code } => return Err(code),
     }
     ensure_not_cancelled(&request.cancellation)?;
-    commit_staging(&fs, &request.paths).await?;
+    progress::report_stage(
+        request.progress.as_ref(),
+        super::types::OllamaProgressStage::Committing,
+    )?;
+    super::install_storage::commit_staging(&fs, &request.paths).await?;
     reinspect_active(&fs, &request.paths, &prepared.fingerprint).await?;
     Ok(InstallOutcome::Installed {
         fingerprint: prepared.fingerprint,
     })
-}
-
-async fn prepare_staging<F: OllamaDurableFs + 'static>(
-    fs: &Arc<F>,
-    staging: &Path,
-) -> Result<(), OllamaErrorCode> {
-    if staging.exists() {
-        return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
-    }
-    let fs = Arc::clone(fs);
-    let staging = staging.to_path_buf();
-    run_ollama_blocking(move || {
-        fs.create_directory_durable(&staging)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
-    })
-    .await
 }
 
 fn resolve_install_profile(
@@ -178,23 +190,6 @@ fn resolve_install_profile(
         &request.inherited_cwd,
         &NativePathIdentityResolver,
     )
-}
-
-async fn commit_staging<F: OllamaDurableFs + 'static>(
-    fs: &Arc<F>,
-    paths: &OllamaPaths,
-) -> Result<(), OllamaErrorCode> {
-    let fs = Arc::clone(fs);
-    let source = paths.install_staging.clone();
-    let active = paths.active.clone();
-    run_ollama_blocking(move || {
-        if active.exists() {
-            return Err(OllamaErrorCode::OllamaUpdateRecoveryRequired);
-        }
-        fs.rename_durable(&source, &active)
-            .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
-    })
-    .await
 }
 
 fn ensure_not_cancelled(cancellation: &CancellationToken) -> Result<(), OllamaErrorCode> {

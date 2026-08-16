@@ -1,14 +1,18 @@
 use super::download::{
-    bounded_archive_name, download_archives, download_fixture, verify_sha256, DownloadLimits,
+    bounded_archive_name, download_archives, download_archives_with_progress, download_fixture,
+    verify_sha256, DownloadLimits,
 };
 use super::error::OllamaErrorCode;
 use super::fingerprint::Sha256Digest;
+use super::progress::{OllamaProgressReporter, OllamaProgressUpdate};
 use super::release_source::{
     allowlisted_redirect_policy, is_allowlisted_redirect, redirect_pair_is_allowed, OllamaArchive,
     OllamaReleaseManifest,
 };
+use super::types::OllamaProgressStage;
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
 use url::Url;
 use wiremock::matchers::{method, path};
@@ -122,6 +126,59 @@ async fn downloaded_archive_can_be_extracted_into_empty_staging() {
     assert_eq!(paths, vec![archive_dir.join("ollama-darwin.tgz")]);
     assert!(staging.read_dir().unwrap().next().is_none());
     assert_eq!(std::fs::read(&paths[0]).unwrap(), body);
+}
+
+#[tokio::test]
+async fn download_progress_reports_monotonic_bytes_and_the_exact_total() {
+    let body = b"progress-fixture-bytes".to_vec();
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/ollama-darwin.tgz"))
+        .respond_with(ResponseTemplate::new(200).set_body_bytes(body.clone()))
+        .mount(&server)
+        .await;
+    let root = tempfile::tempdir().unwrap();
+    let archive_dir = root.path().join("archive-cache");
+    std::fs::create_dir(&archive_dir).unwrap();
+    let archive = OllamaArchive::for_test(
+        "ollama-darwin.tgz",
+        &format!("{}/ollama-darwin.tgz", server.uri()),
+        body.len() as u64,
+        &hex::encode(Sha256::digest(&body)),
+    );
+    let manifest = OllamaReleaseManifest::for_test(
+        super::fingerprint::OllamaVersion::parse("1.2.3").unwrap(),
+        vec![archive],
+    );
+    let events = Arc::new(Mutex::new(Vec::new()));
+    let recorded = Arc::clone(&events);
+    let reporter: OllamaProgressReporter = Arc::new(move |event| {
+        recorded.lock().unwrap().push(event);
+    });
+
+    download_archives_with_progress(
+        &manifest,
+        &archive_dir,
+        &CancellationToken::new(),
+        Some(&reporter),
+    )
+    .await
+    .unwrap();
+
+    let events = events.lock().unwrap();
+    assert_eq!(
+        events.first(),
+        Some(&OllamaProgressUpdate {
+            stage: OllamaProgressStage::Downloading,
+            completed: 0,
+            total: body.len() as u64,
+        })
+    );
+    assert_eq!(events.last().unwrap().completed, body.len() as u64);
+    assert_eq!(events.last().unwrap().total, body.len() as u64);
+    assert!(events
+        .windows(2)
+        .all(|pair| pair[0].completed <= pair[1].completed));
 }
 
 #[tokio::test]

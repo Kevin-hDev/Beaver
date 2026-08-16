@@ -1,18 +1,13 @@
 #![allow(dead_code)]
 
 use super::error::OllamaErrorCode;
-use super::release_source::{
-    allowlisted_redirect_policy, AllowlistedArchiveName, OllamaArchive, OllamaReleaseManifest,
-};
-use futures_util::StreamExt;
+use super::progress::{self, OllamaProgressReporter, OllamaProgressUpdate};
+use super::release_source::{AllowlistedArchiveName, OllamaArchive, OllamaReleaseManifest};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
-use tokio::io::AsyncWriteExt;
 use tokio_util::sync::CancellationToken;
 
 const MAX_BINARY_BYTES: u64 = 3 * 1024 * 1024 * 1024;
-const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(1_800);
 const MAX_ARCHIVE_TEMPORARIES: usize = 2;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -53,16 +48,49 @@ pub async fn download_archives(
     staging: &Path,
     cancellation: &CancellationToken,
 ) -> Result<Vec<PathBuf>, OllamaErrorCode> {
+    download_archives_with_progress(manifest, staging, cancellation, None).await
+}
+
+pub async fn download_archives_with_progress(
+    manifest: &OllamaReleaseManifest,
+    staging: &Path,
+    cancellation: &CancellationToken,
+    reporter: Option<&OllamaProgressReporter>,
+) -> Result<Vec<PathBuf>, OllamaErrorCode> {
     if !DownloadLimits::default().accepts_archive_count(manifest.archives().len()) {
         return Err(OllamaErrorCode::OllamaDownloadFailed);
     }
+    let total = manifest.archives().iter().try_fold(0_u64, |sum, archive| {
+        sum.checked_add(archive.expected_size)
+            .ok_or(OllamaErrorCode::OllamaDownloadFailed)
+    })?;
+    progress::report(
+        reporter,
+        OllamaProgressUpdate {
+            stage: super::types::OllamaProgressStage::Downloading,
+            completed: 0,
+            total,
+        },
+    )?;
     let mut paths = Vec::with_capacity(MAX_ARCHIVE_TEMPORARIES);
+    let mut completed = 0_u64;
     for archive in manifest.archives() {
         if cancellation.is_cancelled() {
             return Err(OllamaErrorCode::OllamaOperationCancelled);
         }
         let destination = staging.join(archive.file_name.as_str());
-        download_archive(archive, &destination, cancellation).await?;
+        super::download_stream::download_archive_with_progress(
+            archive,
+            &destination,
+            cancellation,
+            reporter,
+            completed,
+            total,
+        )
+        .await?;
+        completed = completed
+            .checked_add(archive.expected_size)
+            .ok_or(OllamaErrorCode::OllamaDownloadFailed)?;
         paths.push(destination);
     }
     Ok(paths)
@@ -73,88 +101,15 @@ pub async fn download_archive(
     destination: &Path,
     cancellation: &CancellationToken,
 ) -> Result<(), OllamaErrorCode> {
-    let limits = DownloadLimits::default();
-    if !limits.accepts_declared_size(archive.expected_size)
-        || destination.file_name().and_then(|name| name.to_str())
-            != Some(archive.file_name.as_str())
-    {
-        return Err(OllamaErrorCode::OllamaDownloadFailed);
-    }
-    let client = reqwest::Client::builder()
-        .timeout(DOWNLOAD_TIMEOUT)
-        .redirect(allowlisted_redirect_policy())
-        .build()
-        .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-    download_response(
-        &client,
-        archive.url.as_url(),
-        archive.expected_size,
+    super::download_stream::download_archive_with_progress(
+        archive,
         destination,
         cancellation,
+        None,
+        0,
+        archive.expected_size,
     )
     .await
-}
-
-async fn download_response(
-    client: &reqwest::Client,
-    url: &url::Url,
-    expected_size: u64,
-    destination: &Path,
-    cancellation: &CancellationToken,
-) -> Result<(), OllamaErrorCode> {
-    let limits = DownloadLimits::default();
-    if !limits.accepts_declared_size(expected_size) {
-        return Err(OllamaErrorCode::OllamaDownloadFailed);
-    }
-    let response = tokio::select! {
-        _ = cancellation.cancelled() => return Err(OllamaErrorCode::OllamaOperationCancelled),
-        result = client.get(url.clone()).send() =>
-            result.map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?,
-    };
-    if !response.status().is_success()
-        || response
-            .content_length()
-            .is_some_and(|length| length != expected_size)
-    {
-        return Err(OllamaErrorCode::OllamaDownloadFailed);
-    }
-    let mut file = tokio::fs::OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .open(destination)
-        .await
-        .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-    let mut received = 0_u64;
-    let result = async {
-        let mut stream = response.bytes_stream();
-        while let Some(chunk) = tokio::select! {
-            _ = cancellation.cancelled() => return Err(OllamaErrorCode::OllamaOperationCancelled),
-            chunk = stream.next() => chunk,
-        } {
-            let chunk = chunk.map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-            received = received
-                .checked_add(chunk.len() as u64)
-                .ok_or(OllamaErrorCode::OllamaDownloadFailed)?;
-            if received > expected_size || received > limits.max_bytes {
-                return Err(OllamaErrorCode::OllamaDownloadFailed);
-            }
-            file.write_all(&chunk)
-                .await
-                .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-        }
-        file.flush()
-            .await
-            .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-        file.sync_all()
-            .await
-            .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-        limits.accepts_stream_size(received, expected_size)
-    }
-    .await;
-    if result.is_err() {
-        let _ = tokio::fs::remove_file(destination).await;
-    }
-    result
 }
 
 #[cfg(test)]
@@ -164,12 +119,8 @@ pub(crate) async fn download_fixture(
     destination: &Path,
     cancellation: &CancellationToken,
 ) -> Result<(), OllamaErrorCode> {
-    let client = reqwest::Client::builder()
-        .timeout(DOWNLOAD_TIMEOUT)
-        .redirect(allowlisted_redirect_policy())
-        .build()
-        .map_err(|_| OllamaErrorCode::OllamaDownloadFailed)?;
-    download_response(&client, url, expected_size, destination, cancellation).await
+    super::download_stream::download_fixture_response(url, expected_size, destination, cancellation)
+        .await
 }
 
 pub fn verify_sha256(

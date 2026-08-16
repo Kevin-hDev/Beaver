@@ -4,6 +4,10 @@ impl OllamaManager {
         mut request: super::update::UpdateRequest,
     ) -> Result<super::update::UpdateOutcome, OllamaErrorCode> {
         let guard = self.begin_operation(OperationState::Updating).await?;
+        request.progress = Some(self.progress_reporter_for_generation(
+            guard.generation(),
+            request.progress.take(),
+        ));
         let recovery_paths = request.paths.clone();
         let deadline = request
             .deadline

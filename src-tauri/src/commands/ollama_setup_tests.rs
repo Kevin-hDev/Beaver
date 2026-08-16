@@ -1,6 +1,6 @@
 use crate::app_exit::AppExitCoordinator;
 use crate::services::ollama_manager::{
-    CancelOutcome, OllamaManager, OllamaVersion, OperationState,
+    CancelOutcome, OllamaManager, OllamaProgressStage, OllamaVersion, OperationState,
 };
 use tokio_util::sync::CancellationToken;
 
@@ -30,6 +30,25 @@ fn fallback_install_version_is_current_supported_release() {
         .to_string();
     assert_eq!(fallback, "0.32.1");
     assert!(OllamaVersion::parse(&fallback).is_ok());
+}
+
+#[test]
+fn every_typed_progress_stage_has_one_stable_channel_status() {
+    let cases = [
+        (OllamaProgressStage::Preparing, "preparing"),
+        (OllamaProgressStage::Downloading, "downloading"),
+        (OllamaProgressStage::Verifying, "verifying"),
+        (OllamaProgressStage::Extracting, "extracting"),
+        (OllamaProgressStage::Validating, "validating"),
+        (OllamaProgressStage::Committing, "committing"),
+        (OllamaProgressStage::Starting, "starting"),
+        (OllamaProgressStage::Recovering, "recovering"),
+        (OllamaProgressStage::RollingBack, "rolling_back"),
+        (OllamaProgressStage::Cleaning, "cleaning"),
+    ];
+    for (stage, expected) in cases {
+        assert_eq!(super::ollama_setup::progress_status(stage), expected);
+    }
 }
 
 #[tokio::test]

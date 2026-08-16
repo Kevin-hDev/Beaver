@@ -1,5 +1,6 @@
 use super::error::OllamaErrorCode;
 use super::install::InstallRequest;
+use super::progress::OllamaProgressUpdate;
 use super::types::BundleState;
 use super::types::{DaemonState, OllamaEndpoint};
 use super::types::{OllamaProgressStage, OperationState};
@@ -71,6 +72,37 @@ async fn admitted_install_publishes_transaction_and_initial_progress() {
     assert_eq!(status.bundle, BundleState::TransactionPending);
     assert_eq!(status.operation, OperationState::Installing);
     assert_eq!(status.progress, Some(OllamaProgressStage::Preparing));
+    drop(operation);
+}
+
+#[tokio::test]
+async fn stale_operation_progress_cannot_overwrite_the_current_generation() {
+    let (_coordinator, manager) = manager();
+    let operation = manager
+        .begin_operation(OperationState::Installing)
+        .await
+        .expect("install admission");
+    let reporter = manager.progress_reporter_for_generation(operation.generation_for_test(), None);
+    reporter(OllamaProgressUpdate {
+        stage: OllamaProgressStage::Downloading,
+        completed: 4,
+        total: 10,
+    });
+    assert_eq!(
+        manager.status().await.progress,
+        Some(OllamaProgressStage::Downloading)
+    );
+
+    manager.supersede_generation_for_test(OperationState::Recovering);
+    reporter(OllamaProgressUpdate {
+        stage: OllamaProgressStage::Committing,
+        completed: 10,
+        total: 10,
+    });
+    assert_eq!(
+        manager.status().await.progress,
+        Some(OllamaProgressStage::Downloading)
+    );
     drop(operation);
 }
 

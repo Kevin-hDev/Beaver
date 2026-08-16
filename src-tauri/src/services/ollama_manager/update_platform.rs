@@ -1,12 +1,8 @@
 use super::super::blocking::run_ollama_blocking;
-use super::super::bundle_install::{prepare_bundle, write_metadata};
 use super::super::cleanup_inspection;
-use super::super::download::{download_archives, verify_sha256};
 use super::super::durable_fs::{platform_fs, OllamaDurableFs, PlatformOllamaDurableFs};
 use super::super::error::OllamaErrorCode;
-use super::super::extract::{extract_archive, extract_archive_overlay};
 use super::super::fingerprint::BundleFingerprint;
-use super::super::install_archives::remove_archives;
 use super::super::journal::{OllamaJournalState, OllamaTransactionJournal};
 use super::super::journal_store::OllamaJournalStore;
 use super::super::path_identity::NativePathIdentityResolver;
@@ -26,6 +22,8 @@ use std::time::{Duration, Instant};
 mod completion;
 #[path = "update_platform_preflight.rs"]
 mod preflight;
+#[path = "update_platform_prepare.rs"]
+mod prepare;
 
 const UPDATE_PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -40,57 +38,6 @@ impl PlatformUpdateBackend {
         let fs = Arc::new(platform_fs());
         let journal = OllamaJournalStore::new(Arc::clone(&fs), paths.clone());
         Self { paths, fs, journal }
-    }
-
-    async fn prepare(&self, request: &UpdateRequest) -> Result<PreparedBundle, OllamaErrorCode> {
-        let manifest = request
-            .manifest
-            .clone()
-            .ok_or(OllamaErrorCode::OllamaDownloadFailed)?;
-        if manifest.version != request.version {
-            return Err(OllamaErrorCode::OllamaBundleInvalid);
-        }
-        preflight::ensure_absent(&request.paths.update_staging)?;
-        preflight::ensure_absent(&request.paths.archive_staging)?;
-        let fs = Arc::clone(&self.fs);
-        let update_staging = request.paths.update_staging.clone();
-        let archive_staging = request.paths.archive_staging.clone();
-        run_ollama_blocking(move || {
-            fs.create_directory_durable(&update_staging)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)?;
-            fs.create_directory_durable(&archive_staging)
-                .map_err(|_| OllamaErrorCode::OllamaStorageUnavailable)
-        })
-        .await?;
-        let archives = download_archives(
-            &manifest,
-            &request.paths.archive_staging,
-            &request.cancellation,
-        )
-        .await?;
-        if archives.len() != manifest.archives().len() {
-            return Err(OllamaErrorCode::OllamaDownloadFailed);
-        }
-        for (index, (archive, path)) in manifest.archives().iter().zip(&archives).enumerate() {
-            verify_sha256(path, &archive.sha256)?;
-            let extract = if index == 0 {
-                extract_archive
-            } else {
-                extract_archive_overlay
-            };
-            extract(
-                path,
-                &request.paths.update_staging,
-                archive.file_name.as_str(),
-                &request.cancellation,
-            )?;
-        }
-        remove_archives(&self.fs, &request.paths.archive_staging, &archives).await?;
-        let mut paths = request.paths.clone();
-        paths.install_staging = request.paths.update_staging.clone();
-        let prepared = prepare_bundle(&paths, &request.version).await?;
-        write_metadata(&self.fs, &paths, &prepared).await?;
-        Ok(prepared)
     }
 
     async fn rename(
@@ -130,7 +77,7 @@ impl UpdateBackend for PlatformUpdateBackend {
         &self,
         request: &UpdateRequest,
     ) -> Result<PreparedBundle, OllamaErrorCode> {
-        self.prepare(request).await
+        prepare::prepare(self, request).await
     }
 
     async fn persist(
