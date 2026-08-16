@@ -1,0 +1,21 @@
+Jalon 3 Ollama — preuve Windows conservée pendant le renommage du bundle
+
+Constat CI exact
+- Le job Windows tests a compilé puis exécuté 3 496 tests.
+- Seul `reinspection_rebinds_the_prepared_bundle_to_its_committed_path` a échoué : le renommage staging vers actif a renvoyé Windows code 5, `Access is denied`.
+- La preuve `CanonicalExecutable` gardait volontairement l’exécutable ouvert, mais son handle autorisait seulement le partage lecture/écriture. Le renommage du dossier parent exige aussi le partage suppression Windows.
+
+Correction
+- Le handle stable de l’exécutable ajoute `FILE_SHARE_DELETE` à son mode de partage.
+- Le handle et son identité restent conservés ; aucun relâchement de la revalidation d’identité n’est effectué.
+- Cette capacité permet au renommage durable de déplacer le bundle pendant que la preuve préparée reste vivante, exactement comme l’exige la transaction.
+
+Preuves
+- Rouge natif Windows : test précité, code 5 au `std::fs::rename`.
+- Vert local macOS du même test : 1 passé, 0 échec.
+- `cargo clippy --all-targets -- -D warnings` : vert local.
+- `cargo fmt --all -- --check` et `git diff --check` : verts.
+- `graphify update .` : terminé, aucune nouvelle topologie.
+
+Validation requise
+- La prochaine CI Windows doit exécuter le même test et confirmer que le renommage passe avec le handle stable encore vivant.
