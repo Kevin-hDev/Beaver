@@ -1,0 +1,9 @@
+RB3 MACOS - HARNAIS CORRIGE PAR LA PREUVE REELLE
+
+Contexte: la premiere capture contre le DMG officiel Beaver v1.1.2 a echoue fermee avec Native upgrade proof symlink is not allowed. Le bundle officiel contient 10 alias dylib internes legitimes.
+
+TDD: le test de lien interne a d abord reproduit le refus. Une premiere implementation confinait seulement au dossier de donnees; l auto-review a ajoute un second rouge prouvant qu un lien du bundle pouvait viser config.json voisin. La correction finale borne chaque lien au root allowliste precis, exige une cible finale fichier regulier, refuse toute sortie et ne publie que des chemins relatifs.
+
+Preuves: npm run test:j3-native-assets 17/17 vert; lien sortant refuse; lien vers sibling Beaver refuse; vraie capture macOS v1.1.2 reussie avec 51 entrees, 6 fichiers de modele, 10 liens internes et 3338802660 octets de modeles; npm run lint vert; git diff --check vert; fichiers 227/169 lignes; graphify update . termine.
+
+Limite: seule la preuve avant migration macOS est capturee. Installation du build J3, preuve hors ligne, interruption-reprise et fermeture coordonnee restent a executer.
