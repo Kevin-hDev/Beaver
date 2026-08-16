@@ -266,7 +266,7 @@ fn revalidation_reap_failure_leaves_durable_recovery_handoff() {
     let store = super::process_receipt::ProcessReceiptStore::new(
         std::sync::Arc::new(super::durable_fs::platform_fs()),
         paths.process_receipt.clone(),
-        paths.process_receipt.with_extension("tmp"),
+        paths.process_receipt_tmp.clone(),
     );
     let coordinator = AppExitCoordinator::initialize().expect("coordinator");
     let result =
@@ -305,7 +305,7 @@ fn emergency_capacity_reap_failure_is_recoverable_without_a_slot() {
     let store = super::process_receipt::ProcessReceiptStore::new(
         std::sync::Arc::new(super::durable_fs::platform_fs()),
         paths.process_receipt.clone(),
-        paths.process_receipt.with_extension("tmp"),
+        paths.process_receipt_tmp.clone(),
     );
     let publish_result = gated.publish(&store, &publisher);
     assert!(matches!(

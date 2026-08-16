@@ -124,6 +124,47 @@ async fn empty_layout_opens_startup_with_bundle_absent() {
 }
 
 #[tokio::test]
+async fn startup_removes_a_bounded_regular_process_receipt_temporary() {
+    let root = tempfile::tempdir_in(".").expect("data root");
+    let paths = ollama_paths(root.path());
+    let temporary = paths.process_receipt_tmp.clone();
+    fs::write(&temporary, b"partial receipt").expect("temporary receipt");
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let manager = OllamaManager::new(coordinator.work_supervisor());
+
+    let state = manager.run_startup_recovery_at_for_test(paths).await;
+
+    assert_eq!(state, StartupBarrierState::Ready);
+    assert_eq!(manager.status().await.bundle, BundleState::Absent);
+    assert!(!temporary.exists());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn startup_preserves_a_nonregular_process_receipt_temporary() {
+    use std::os::unix::fs::symlink;
+    let root = tempfile::tempdir_in(".").expect("data root");
+    let paths = ollama_paths(root.path());
+    let target = root.path().join("receipt-target");
+    fs::write(&target, b"external").expect("target");
+    let temporary = paths.process_receipt_tmp.clone();
+    symlink(&target, &temporary).expect("temporary symlink");
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let manager = OllamaManager::new(coordinator.work_supervisor());
+
+    let state = manager.run_startup_recovery_at_for_test(paths).await;
+
+    assert_eq!(
+        state,
+        StartupBarrierState::Blocked {
+            code: OllamaErrorCode::OllamaUpdateRecoveryRequired,
+        }
+    );
+    assert!(temporary.exists());
+    assert_eq!(fs::read(target).expect("external target"), b"external");
+}
+
+#[tokio::test]
 async fn startup_removes_a_stale_process_receipt_before_publishing_ready() {
     let root = tempfile::tempdir_in(".").expect("data root");
     let paths = ollama_paths(root.path());
@@ -131,7 +172,7 @@ async fn startup_removes_a_stale_process_receipt_before_publishing_ready() {
     let store = ProcessReceiptStore::new(
         Arc::new(platform_fs()),
         paths.process_receipt.clone(),
-        paths.process_receipt.with_extension("tmp"),
+        paths.process_receipt_tmp.clone(),
     );
     store
         .write_new(
@@ -163,7 +204,7 @@ async fn process_receipt_recovery_runs_before_an_invalid_layout_blocks_startup()
     let store = ProcessReceiptStore::new(
         Arc::new(platform_fs()),
         paths.process_receipt.clone(),
-        paths.process_receipt.with_extension("tmp"),
+        paths.process_receipt_tmp.clone(),
     );
     store
         .write_new(

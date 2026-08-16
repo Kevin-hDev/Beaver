@@ -157,6 +157,13 @@ fn ollama_paths_keep_all_named_children_under_the_received_root() {
             .and_then(|name| name.to_str()),
         Some("ollama-layout-migration.tmp")
     );
+    assert_eq!(
+        paths
+            .process_receipt_tmp
+            .file_name()
+            .and_then(|name| name.to_str()),
+        Some("ollama-process-receipt.tmp")
+    );
 }
 
 #[test]

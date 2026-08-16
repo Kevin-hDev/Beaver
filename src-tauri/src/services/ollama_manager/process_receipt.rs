@@ -111,12 +111,31 @@ impl ProcessReceiptStore {
     }
 
     pub(crate) fn platform(paths: OllamaPaths) -> Self {
-        let path = paths.process_receipt.clone();
         Self::new(
             Arc::new(super::durable_fs::platform_fs()),
-            path.clone(),
-            path.with_extension("tmp"),
+            paths.process_receipt,
+            paths.process_receipt_tmp,
         )
+    }
+
+    pub(crate) fn remove_safe_tmp(&self) -> Result<bool, ProcessReceiptError> {
+        let metadata = match std::fs::symlink_metadata(&self.tmp) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+            Err(_) => return Err(ProcessReceiptError::Storage),
+        };
+        if metadata.file_type().is_symlink()
+            || !metadata.is_file()
+            || metadata.len() > MAX_DURABLE_DOCUMENT_BYTES as u64
+        {
+            return Err(ProcessReceiptError::Invalid);
+        }
+        self.read()?;
+        match self.fs.remove_file_durable(&self.tmp) {
+            Ok(()) => Ok(true),
+            Err(error) if error.kind() == OllamaFsErrorKind::NotFound => Ok(false),
+            Err(_) => Err(ProcessReceiptError::Storage),
+        }
     }
 
     pub(crate) fn read(&self) -> Result<Option<ProcessReceipt>, ProcessReceiptError> {

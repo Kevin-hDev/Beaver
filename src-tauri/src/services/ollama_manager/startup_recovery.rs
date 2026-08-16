@@ -14,6 +14,9 @@ pub(super) fn prepare(paths: &OllamaPaths) -> Result<(), OllamaErrorCode> {
     let fs = platform_fs();
     let receipt = super::bundle_receipt::read_receipt(&fs, &bundle_receipt_path(&paths.active))?;
     let store = ProcessReceiptStore::platform(paths.clone());
+    // begin_operation garde l'autorité de démarrage pendant cette purge : aucun spawn
+    // possédé ne peut publier un nouveau reçu en parallèle.
+    store.remove_safe_tmp().map_err(map_receipt_error)?;
     if store.read().map_err(map_receipt_error)?.is_none() {
         return Ok(());
     }

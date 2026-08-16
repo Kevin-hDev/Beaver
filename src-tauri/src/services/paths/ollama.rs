@@ -21,6 +21,7 @@ pub struct OllamaPaths {
     pub migration_marker: PathBuf,
     pub migration_marker_tmp: PathBuf,
     pub process_receipt: PathBuf,
+    pub process_receipt_tmp: PathBuf,
     pub probe_models: PathBuf,
 }
 
@@ -51,6 +52,7 @@ pub fn ollama_paths(data_dir: &Path) -> OllamaPaths {
         migration_marker: data_dir.join("ollama-layout-migration.json"),
         migration_marker_tmp: data_dir.join("ollama-layout-migration.tmp"),
         process_receipt: data_dir.join("ollama-process-receipt.json"),
+        process_receipt_tmp: data_dir.join("ollama-process-receipt.tmp"),
         probe_models: data_dir.join("ollama-probe-models"),
     }
 }
