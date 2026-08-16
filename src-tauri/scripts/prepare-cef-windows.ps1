@@ -47,6 +47,9 @@ function Copy-CheckedFile([string] $Source, [string] $Destination) {
 }
 
 $TauriDir = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$Sha256Helper = Join-Path $TauriDir "scripts\file-sha256.ps1"
+Assert-RegularFile $Sha256Helper
+. $Sha256Helper
 $CargoTargetValidator = Join-Path $TauriDir "..\scripts\build\cargo-target-dir.mjs"
 $CargoTargetOutput = @(& node $CargoTargetValidator)
 if ($LASTEXITCODE -ne 0 -or $CargoTargetOutput.Count -ne 1) {
@@ -82,7 +85,7 @@ if (-not (Test-Path -LiteralPath $CefRoot -PathType Container)) {
 
 $Bootstrap = Join-Path $CefRoot "bootstrap.exe"
 Assert-RegularFile $Bootstrap
-$BootstrapSha256 = (Get-FileHash -LiteralPath $Bootstrap -Algorithm SHA256).Hash.ToLowerInvariant()
+$BootstrapSha256 = Get-BeaverFileSha256 $Bootstrap
 if ($BootstrapSha256 -ne $ExpectedBootstrapSha256) {
   throw "CEF runtime validation failed"
 }
@@ -108,13 +111,13 @@ foreach ($Name in $LocaleFiles) {
 
 $Credits = Join-Path $CefRoot "CREDITS.html"
 Copy-CheckedFile $Credits (Join-Path $LicensesDir "CREDITS.html")
-if ((Get-FileHash -LiteralPath $Credits -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedCreditsSha256) {
+if ((Get-BeaverFileSha256 $Credits) -ne $ExpectedCreditsSha256) {
   throw "CEF runtime validation failed"
 }
 
 $License = Join-Path $CefRoot "LICENSE.txt"
 Assert-RegularFile $License
-if ((Get-FileHash -LiteralPath $License -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedLicenseSha256) {
+if ((Get-BeaverFileSha256 $License) -ne $ExpectedLicenseSha256) {
   throw "CEF runtime validation failed"
 }
 Copy-Item -LiteralPath $License -Destination (Join-Path $LicensesDir "LICENSE.txt") -Force
