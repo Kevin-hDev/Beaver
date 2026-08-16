@@ -22,6 +22,7 @@ impl OllamaManager {
             }
             Ok(super::update::UpdateOutcome::CleanupPending { code })
             | Ok(super::update::UpdateOutcome::Deferred { code }) => {
+                ::log::warn!("[ollama] update incomplete code={}", code.as_str());
                 drop(guard);
                 if matches!(
                     self.run_startup_recovery_at(recovery_paths).await,
@@ -39,6 +40,7 @@ impl OllamaManager {
                 .await;
             }
             Err(error) => {
+                ::log::error!("[ollama] update failed code={}", error.as_str());
                 drop(guard);
                 self.reconcile_after_operation_error(recovery_paths, *error)
                     .await;
