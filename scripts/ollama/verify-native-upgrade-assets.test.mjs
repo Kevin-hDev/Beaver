@@ -160,7 +160,7 @@ test("asset verifier rejects a redirect to a foreign host", async () => {
   }
 });
 
-test("asset verifier follows a bounded redirect that stays on the GitHub release host", async () => {
+test("asset verifier follows the bounded signed GitHub asset redirect", async () => {
   const base = await readManifest();
   const payload = Buffer.from("same host redirect payload");
   const manifest = manifestForPayload(base, payload);
@@ -171,10 +171,14 @@ test("asset verifier follows a bounded redirect that stays on the GitHub release
     const result = await verifyNativeUpgradeAssets({
       manifest,
       tempRoot,
-      fetchImpl: async (url) => {
+      fetchImpl: async () => {
         if (firstRequest) {
           firstRequest = false;
-          return responseFor(payload, 302, url);
+          return responseFor(
+            payload,
+            302,
+            "https://release-assets.githubusercontent.com/github-production-release-asset/123/opaque?sig=bounded",
+          );
         }
         return responseFor(payload);
       },

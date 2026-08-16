@@ -13,6 +13,7 @@ const PLATFORM_SUFFIXES = {
 const MAX_ASSET_BYTES = 1024 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
 const RELEASE_HOST = "github.com";
+const RELEASE_ASSET_HOST = "release-assets.githubusercontent.com";
 const MANIFEST_FILE = join(dirname(fileURLToPath(import.meta.url)), "native-upgrade-assets.json");
 
 function invalidManifest() {
@@ -97,6 +98,22 @@ function assertReleaseUrl(value, assetName) {
   return parsed.href;
 }
 
+function assertRedirectUrl(value, assetName) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("Native upgrade asset verification failed");
+  }
+  if (parsed.hostname === RELEASE_HOST) return assertReleaseUrl(parsed.href, assetName);
+  // GitHub publie ses assets via cet hôte signé ; taille et SHA figés restent l'autorité finale.
+  if (parsed.protocol !== "https:" || parsed.hostname !== RELEASE_ASSET_HOST || parsed.port ||
+      parsed.username || parsed.password || parsed.hash || parsed.pathname === "/") {
+    throw new Error("Native upgrade asset verification failed");
+  }
+  return parsed.href;
+}
+
 async function downloadAndVerify(asset, fetchImpl, tempDirectory) {
   let requestUrl = assertReleaseUrl(asset.url, asset.name);
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
@@ -110,7 +127,7 @@ async function downloadAndVerify(asset, fetchImpl, tempDirectory) {
     if (status >= 300 && status < 400) {
       const location = response.headers?.get?.("location");
       if (!location || redirect === MAX_REDIRECTS) throw new Error("Native upgrade asset verification failed");
-      requestUrl = assertReleaseUrl(new URL(location, requestUrl).href, asset.name);
+      requestUrl = assertRedirectUrl(new URL(location, requestUrl).href, asset.name);
       continue;
     }
     if (status !== 200 || !response.body) throw new Error("Native upgrade asset verification failed");
