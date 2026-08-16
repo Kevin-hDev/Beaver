@@ -1,0 +1,9 @@
+JALON 3 — VISIBILITE DE L INSPECTION WINDOWS
+
+Contexte : le run CI 31925069372 a valide backend Rust, frontend, Linux WebView, Desktop CEF et macOS CEF. Les deux jobs Windows ont echoue avant leurs tests sur E0364 et E0603 : une fonction pub(super) du sous-module recovery ne pouvait pas etre reexportee au parent de son parent.
+
+Correction : la reexportation est remplacee par une fonction relais pub(super) dans owned_process_windows.rs. Le sous-module garde sa visibilite minimale ; aucune API n est elargie. Le fichier Windows principal reste a 228 lignes et le sous-module a 15 lignes.
+
+Preuves locales : filtre officiel services::ollama_manager = 292 passed, 0 failed, 1 ignored, 293 verified ; cargo clippy --all-targets -- -D warnings vert ; cargo fmt --all -- --check vert ; git diff --check vert. La compilation native Windows reste a confirmer par le prochain run.
+
+Graphify : mise a jour terminee, 34324 noeuds, 70331 aretes, 2027 communautes.
