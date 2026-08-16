@@ -1,0 +1,28 @@
+Jalon 3 Ollama — preuve de cible reconstruite après renommage durable
+
+Cause racine
+- La cible était préparée sous `ollama-bundle-update-staging`.
+- Après le renommage durable vers `ollama-bundle`, la sonde recevait encore le PreparedBundle lié à l’ancien chemin disparu.
+- Le contrôle strict d’identité de chemin rejetait donc correctement l’archive officielle avec `ollama-bundle-invalid`, puis la transaction restaurait l’ancien bundle.
+
+Correction
+- `reinspect_active` vérifie désormais au chemin actif l’identité canonique, le reçu exact et le SHA-256 réel, puis retourne un nouveau PreparedBundle lié à cette destination.
+- Le backend de mise à jour transmet cette preuve reconstruite à la sonde.
+- Le contrôle strict chemin + identité n’est pas relâché : la preuve change d’autorité au moment précis où le renommage durable change l’emplacement autoritaire.
+
+TDD
+- Rouge : le nouveau test ne compilait pas car `reinspect_active` retournait `()` ; aucune preuve au chemin actif n’était disponible.
+- Vert : `reinspection_rebinds_the_prepared_bundle_to_its_committed_path` passe et exige le chemin actif canonique, l’exécutable sous ce chemin et l’empreinte inchangée.
+
+Validation exécutée
+- Test exact : 1 passé, 0 échec.
+- Filtre officiel `services::ollama_manager` : 314 passés, 0 échec, 1 commande développeur ignorée.
+- `cargo clippy --all-targets -- -D warnings` : vert.
+- `cargo fmt --all -- --check` : vert après formatage mécanique.
+- `git diff --check` : vert.
+- Fichiers de production touchés : 96 et 181 lignes, sous la limite de 230.
+- `graphify update .` : terminé, graphe à jour.
+
+Suite requise
+- Reconstruire et installer l’application complète, puis rejouer la mise à niveau native macOS 0.32.1 vers 0.32.13.
+- Ne déclarer la preuve native verte qu’après validation du modèle conservé, du redémarrage hors ligne et de la fermeture coordonnée.
