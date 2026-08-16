@@ -122,16 +122,23 @@ impl UpdateBackend for PlatformUpdateBackend {
         request: &UpdateRequest,
         target: &PreparedBundle,
     ) -> TargetValidation {
-        let receipt_path = crate::services::paths::bundle_receipt_path(&request.paths.active);
-        match super::super::bundle_receipt::read_receipt(&*self.fs, &receipt_path) {
-            Ok(Some(receipt)) if receipt.fingerprint == target.fingerprint => {}
-            Ok(Some(_)) | Ok(None) => {
+        // A durable rename changes the authoritative path. Rebuild the proof at
+        // the destination instead of weakening the probe's path identity check.
+        let active = match super::super::bundle_install::reinspect_active(
+            &self.fs,
+            &request.paths,
+            &target.fingerprint,
+        )
+        .await
+        {
+            Ok(active) => active,
+            Err(OllamaErrorCode::OllamaBundleInvalid) => {
                 return TargetValidation::InvalidTarget {
                     code: OllamaErrorCode::OllamaBundleInvalid,
                 }
             }
             Err(code) => return TargetValidation::Deferred { code },
-        }
+        };
         let profile = match OllamaSpawnProfile::resolve_probe(
             &request.paths,
             request.inherited_environment.clone(),
@@ -155,7 +162,7 @@ impl UpdateBackend for PlatformUpdateBackend {
             .deadline
             .unwrap_or_else(|| Instant::now() + UPDATE_PROBE_TIMEOUT);
         OwnedOllamaTargetProbe::with_deadline(deadline)
-            .validate(target, &profile, &request.cancellation)
+            .validate(&active, &profile, &request.cancellation)
             .await
     }
 

@@ -1,4 +1,4 @@
-use super::bundle_install::{prepare_bundle, write_metadata};
+use super::bundle_install::{prepare_bundle, reinspect_active, write_metadata};
 use super::bundle_receipt::{read_receipt, BundleReceipt};
 use super::durable_fs::platform_fs;
 use super::error::OllamaErrorCode;
@@ -148,6 +148,41 @@ async fn version_and_receipt_are_coherent_before_publication() {
     let receipt = read_receipt(&*fs, &receipt_path).unwrap().unwrap();
     assert_eq!(receipt.fingerprint, prepared.fingerprint);
     assert_eq!(receipt, BundleReceipt::new(prepared.fingerprint));
+}
+
+#[tokio::test]
+async fn reinspection_rebinds_the_prepared_bundle_to_its_committed_path() {
+    let root = tempfile::tempdir().unwrap();
+    let root_path = dunce::canonicalize(root.path()).unwrap();
+    let paths = crate::services::paths::ollama_paths(&root_path);
+    std::fs::create_dir_all(paths.install_staging.join("bin")).unwrap();
+    let executable = paths.install_staging.join("bin").join(if cfg!(windows) {
+        "ollama.exe"
+    } else {
+        "ollama"
+    });
+    std::fs::write(&executable, b"#!/bin/sh\n").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+    let version = OllamaVersion::parse("1.2.3").unwrap();
+    let staged = prepare_bundle(&paths, &version).await.unwrap();
+    let fs = std::sync::Arc::new(platform_fs());
+    write_metadata(&fs, &paths, &staged).await.unwrap();
+    std::fs::rename(&paths.install_staging, &paths.active).unwrap();
+
+    let active = reinspect_active(&fs, &paths, &staged.fingerprint)
+        .await
+        .unwrap();
+
+    assert_eq!(
+        active.root.path(),
+        dunce::canonicalize(&paths.active).unwrap()
+    );
+    assert!(active.executable.path().starts_with(&paths.active));
+    assert_eq!(active.fingerprint, staged.fingerprint);
 }
 
 #[tokio::test]

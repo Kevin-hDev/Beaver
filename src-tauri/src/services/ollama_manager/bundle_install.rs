@@ -54,7 +54,7 @@ pub async fn reinspect_active<F: OllamaDurableFs + 'static>(
     fs: &Arc<F>,
     paths: &OllamaPaths,
     expected: &BundleFingerprint,
-) -> Result<(), OllamaErrorCode> {
+) -> Result<PreparedBundle, OllamaErrorCode> {
     let active = paths.active.clone();
     let expected = expected.clone();
     let receipt_path = crate::services::paths::bundle_receipt_path(&active);
@@ -66,17 +66,17 @@ pub async fn reinspect_active<F: OllamaDurableFs + 'static>(
         let actual = super::probe_http::hash_file(executable.path())
             .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?;
         let receipt = read_receipt(&*fs, &receipt_path)?;
-        receipt
-            .as_ref()
-            .is_some_and(|receipt| {
-                receipt.fingerprint.version == expected.version
-                    && receipt
-                        .fingerprint
-                        .executable_sha256
-                        .constant_time_eq(&actual)
-            })
-            .then_some(())
-            .ok_or(OllamaErrorCode::OllamaBundleInvalid)
+        let receipt_matches = receipt.as_ref().is_some_and(|receipt| {
+            receipt.fingerprint == expected && expected.executable_sha256.constant_time_eq(&actual)
+        });
+        if !receipt_matches {
+            return Err(OllamaErrorCode::OllamaBundleInvalid);
+        }
+        Ok(PreparedBundle {
+            root,
+            executable,
+            fingerprint: expected,
+        })
     })
     .await
 }
