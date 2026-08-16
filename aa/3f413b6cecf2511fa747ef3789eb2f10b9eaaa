@@ -1,0 +1,11 @@
+Jalon 3 — corrections de review B3, B4 et B5.
+
+Constats reproduits sur a379b443 : la détection d’un démon externe publiait aussi BundleState::Ready ; RecoveryOutcome::Ready publiait Ready sur un disque vierge ; la récupération durable du reçu de processus existait mais aucun chemin de démarrage ne l’appelait.
+
+Correction : la publication External ne modifie plus le bundle. La barrière de démarrage utilise désormais les chemins réellement récupérés, vérifie le reçu du bundle actif contre son empreinte disque, traite le reçu de processus avant ouverture, puis publie Ready ou Absent. Un reçu ambigu ou incohérent bloque avec ollama-update-recovery-required ; une erreur de stockage reste distincte. Les opérations natives de récupération sont exécutées hors du runtime asynchrone.
+
+TDD observé : inventaire initial rouge sur publish_external_daemon et run_startup_recovery_at_for_test absents. Après correction, manager_tests 16/16, startup_tests 6/6 et process_receipt_tests 7/7.
+
+Validation finale observée : filtre officiel services::ollama_manager = 273 réussis, 0 échec, 1 utilitaire ignoré ; cargo clippy --all-targets -- -D warnings vert ; cargo fmt exécuté ; git diff --check vert ; production maximum 213 lignes dans les fichiers touchés ; graphify update . terminé avec 34200 nœuds et 70037 arêtes.
+
+Limite : ce commit ne traite pas encore les layouts transactionnels partiels B1/B2 ni les preuves natives B6. Ne pas fusionner avant les lots suivants, la CI trois systèmes et la nouvelle review complète.
