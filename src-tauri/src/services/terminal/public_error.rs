@@ -14,6 +14,6 @@ pub(super) fn not_found() -> String {
     "terminal-not-found".to_string()
 }
 
-pub(crate) fn terminal_error() -> String {
+pub(super) fn terminal_error() -> String {
     "terminal-error".to_string()
 }
