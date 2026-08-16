@@ -1,0 +1,30 @@
+Jalon 3 - correction de revue: publication et adoption fondées sur les preuves durables
+
+Constats corrigés
+- L'adoption d'un bundle actif sans journal exige maintenant un reçu de bundle exact, une empreinte disque identique avant et après resynchronisation, puis seulement l'écriture du marqueur de migration. Un bundle sans reçu reste intact et la reprise échoue fermée.
+- La validation du stockage réel des modèles est exécutée avant toute création de staging de mise à jour. Un conflit ne peut donc plus être découvert après les renommages.
+- Une anomalie du dossier de modèles isolé de la sonde est classée Deferred; elle ne peut plus transformer une cible saine en InvalidTarget ni autoriser son rollback destructif.
+- Une installation ou mise à jour admise publie BundleState::TransactionPending et le progrès Preparing.
+- Une installation validée, renommée et réinspectée publie BundleState::Ready au niveau du gestionnaire.
+- Une annulation d'installation libère l'admission, exécute immédiatement la récupération durable du staging, puis publie l'état disque reconstruit au lieu d'un faux RecoveryRequired.
+- Les résultats de mise à jour terminés publient Ready; les résultats différés ou de nettoyage repassent par la même récupération durable avant publication.
+- Les décisions d'état restent protégées par la génération du gestionnaire.
+
+TDD et preuves observées
+- Rouge: une adoption sans reçu écrivait le marqueur et renvoyait ProgressMade.
+- Rouge: la mise à jour avec OLLAMA_MODELS pointant dans update-staging renvoyait DownloadFailed avant de vérifier le conflit.
+- Rouge: un fichier à la place du dossier de modèles de sonde produisait InvalidTarget/OllamaBundleInvalid.
+- Rouge: une opération install admise laissait bundle=Absent et progress=None.
+- Rouge: une annulation sans mutation publiait RecoveryRequired.
+- Rouge: une installation native de fixture réussie laissait le gestionnaire à BundleState::Absent.
+- Vert final: node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager => 287 passed, 0 failed, 1 ignored, 288 verified.
+- Vert final: cargo clippy --all-targets -- -D warnings.
+- Vert final: cargo fmt --all -- --check.
+- Vert final: git diff --cached --check.
+- Tous les fichiers Rust de production modifiés sont <= 230 lignes; maxima observés update_platform.rs=226 et recovery.rs=226.
+- graphify update . terminé après le dernier changement: 34255 noeuds, 70183 arêtes, 2031 communautés.
+
+Limites et suite
+- Ce commit publie les étapes typées initiales et finales mais ne transporte pas encore les octets completed/total du flux HTTP vers la Channel Tauri.
+- Les diagnostics OS durables, le contrat d'erreurs frontend et les preuves natives multi-OS restent à traiter dans les lots suivants.
+- Aucun push, run CI ou preuve native n'a été exécuté pour ce commit.
