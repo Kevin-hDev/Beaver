@@ -1,0 +1,28 @@
+Jalon 3 - correction native macOS de l'identité de reprise Unix
+
+Constat réel
+- Le 2026-08-16 à 16:17:56Z, Beaver PID 89072 a été interrompu par SIGKILL pendant un téléchargement de mise à jour, avec 1872 Kio présents dans ollama-bundle-install-staging-archives.
+- Le sidecar exact PID 89320 est resté vivant avec PPID 1 et son reçu durable exact.
+- Au redémarrage, la reprise est restée fermée : le chemin d'exécution publié par macOS était .beaver-gated-89072-na0LwV, mais ce hard-link avait déjà été supprimé après exec. proc_pidpath ne permettait donc plus de recalculer l'identité native et le processus exact ne pouvait pas être signalé sans preuve.
+
+Décision
+- Le hard-link d'identité reste possédé par NativeGatedProcess pendant toute la vie du processus.
+- Il est retiré seulement après le moissonnage confirmé, sur les deux sorties de reap.
+- En cas de crash du parent, le lien survit avec le reçu afin que le prochain Beaver puisse revalider et arrêter exactement l'orphelin. Le nettoyage borné des liens devenus périmés reste l'autorité existante au prochain spawn.
+
+TDD observé
+- Rouge : publication_uses_the_supplied_bundle_fingerprint_and_opens_gate échouait car le lien n'existait plus après publication.
+- Vert : le même test prouve maintenant que le lien existe pendant la possession puis qu'aucun .beaver-gated-* ne reste après terminate_and_reap.
+
+Validations observées
+- Filtre exact du test : 1 passe, 0 échec.
+- Filtre services::ollama_manager : 313 passes, 0 échec, 1 test développeur ignoré.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt --all -- --check : vert après formatage mécanique.
+- git diff --check : vert.
+- spawn_gate_unix_lifecycle.rs : 126 lignes.
+- graphify update . : terminé, 34477 noeuds, 70655 arêtes, 2065 communautés.
+
+État de preuve
+- Cette correction vient d'une vraie interruption native et non d'une hypothèse de test.
+- La reconstruction du bundle macOS et le rejeu complet interruption, reprise, mise à jour et modèle hors ligne restent à exécuter sur ce commit avant de déclarer la preuve macOS verte.
