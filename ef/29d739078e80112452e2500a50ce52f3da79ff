@@ -1,0 +1,17 @@
+JALON 3 - PASSE 5 DE CORRECTION APRES REVIEW
+
+Constat: la lecture du bundle actif écrasait absence prouvée, format invalide, permission et erreur disque dans DirectoryEvidence::Unknown. La table traitait ensuite Unknown comme un report transitoire, donc un VERSION corrompu ou un exécutable absent pouvait être retenté indéfiniment sans état fermé visible.
+
+Correction N2: bundle_evidence.rs devient l'autorité unique de classification de l'empreinte. VERSION absent, surdimensionné ou invalide, forme d'exécutable invalide et identité conflictuelle deviennent Invalid. Les erreurs réellement incertaines restent Unknown. La table de reprise traite toutefois tout actif Unknown comme ollama-update-recovery-required, sans supprimer ni renommer le bundle; les staging Unknown restent différés. Tests réels ajoutés pour VERSION corrompu, exécutable absent et actif Unknown.
+
+Nettoyages de review: suppression de la garde d'archives morte dans decide_recovery, archive_recovery restant l'autorité appelée avant cette table; suppression de la variante InstallOutcome::Preparing jamais construite et du test tautologique associé; remplacement du dernier plafond VERSION local par MAX_DURABLE_DOCUMENT_BYTES; capture de errno avant close après échec fdopendir; suppression du commentaire Windows OpenFileById périmé; conversion bornée des longueurs UTF-16 sans cast.
+
+Observabilité: les erreurs de création et commit du staging d'installation, création des deux staging de mise à jour, renommage de mise à jour, inspection et énumération du staging d'extraction, écriture d'une entrée d'archive et lecture du cwd du processus possédé passent maintenant par storage_error avec contexte, catégorie et code OS disponibles.
+
+TDD rouge observé avant correction: corrupt_active_version_requires_intervention_instead_of_retrying_forever retournait Unknown au lieu de Invalid; unknown_active_bundle_requires_intervention_instead_of_unbounded_retry retournait ollama-recovery-deferred au lieu de ollama-update-recovery-required; le contrat d'observabilité échouait d'abord sur install_storage sans storage_error.
+
+Preuves locales finales: filtre services::ollama_manager = 309 passed, 0 failed, 1 ignored volontaire (générateur TypeScript), 310 vérifiés; recovery_decision_tests 42/42; recovery_tests 27/27; storage_error_tests 3/3; durable_fs_tests 26/26; install_tests 10/10 avant retrait du test tautologique puis inclus dans le filtre global; cargo fmt --all -- --check vert; cargo clippy --all-targets -- -D warnings vert; npm run test:ollama-manager-contracts = 6/6 et scan 2505 fichiers; git diff --check vert; fichiers de production sous 230 lignes; graphify update . terminé.
+
+Incident de validation sans lien avec le code: le premier passage a échoué avec No space left on device. Le cache src-tauri/target de cette worktree occupait 69 Go visibles; cargo clean a supprimé uniquement 61941 artefacts compilés régénérables, puis les mêmes contrôles ont été relancés et sont verts.
+
+Limites et recommandation: validation locale effectuée sur macOS. Les changements conditionnels Windows doivent encore être prouvés par la CI trois OS. Aucune preuve native manuelle RB3 n'est déclarée ici. Pousser commit et notes, attendre un verdict CI complet unique, puis exécuter les preuves natives seulement si la tête finale reste verte.
