@@ -4,7 +4,10 @@
    lirait le texte au travers. */
 .terminal-panel {
   background: var(--shell-opaque);
-  border-top: 1px solid var(--edge);
+  /* Trait intérieur plutôt que bordure : le panneau replié garde ses écrans
+     vivants derrière une hauteur nulle, et une bordure y laisserait une ligne
+     visible sous la conversation. */
+  box-shadow: inset 0 var(--line-thin) 0 var(--edge);
   overflow: hidden;
   flex-shrink: 0;
   transition: height 400ms cubic-bezier(0.4, 0, 0.2, 1);

@@ -145,7 +145,11 @@ export function TerminalInstance({
     const resizeObserver = new ResizeObserver(() => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (containerRef.current && containerRef.current.offsetWidth > 0) {
+        /* Replié, le panneau donne une hauteur nulle à ses écrans : ajuster
+           là-dessus réduirait le terminal à une ligne et bousculerait ce qui y
+           tourne. */
+        const host = containerRef.current;
+        if (host && host.offsetWidth > 0 && host.offsetHeight > 0) {
           fit.fit();
         }
       }, 100);
