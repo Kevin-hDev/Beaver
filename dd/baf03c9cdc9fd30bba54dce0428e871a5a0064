@@ -1,0 +1,27 @@
+JALON 3 - RECONSTRUCTION APRES ERREUR ET CONFINEMENT PREMIER INSTALL
+
+Constats traites:
+- une erreur non liee a une annulation publiait RecoveryRequired meme sans mutation durable et rendait Reessayer inoperant;
+- le confinement du stockage des modeles etait controle avant une mise a jour, mais pas avant les mutations du premier install.
+
+Correction:
+- install et update relancent la meme autorite de reconstruction durable apres toute erreur; si le disque converge vers Ready, le code original reste visible sans inventer un etat RecoveryRequired;
+- le premier install valide le stockage des modeles avant toute creation de staging;
+- les chemins de modeles absents sont resolus depuis le plus proche ancetre existant avec une borne de 64 composants et les memes protections anti-alias sur Unix et Windows;
+- le helper de test canonicalise les racines temporaires afin que le lien macOS /var vers /private/var ne fabrique pas un conflit.
+
+TDD observe:
+- rouge: failed_install_without_mutation_reconstructs_absent_and_keeps_retry_usable publiait RecoveryRequired;
+- rouge: model_store_conflict_is_rejected_before_first_install_staging_mutation atteignait DownloadFailed au lieu de bloquer avant mutation.
+
+Preuves vertes:
+- manager_tests: 20 passes, 0 echec;
+- install_tests: 10 passes, 0 echec;
+- spawn_profile_tests: 19 passes, 0 echec;
+- cargo fmt --all -- --check: vert;
+- git diff --check: vert;
+- production Rust modifiee sous 230 lignes;
+- graphify update .: termine, 34336 noeuds et 70386 aretes.
+
+Limite:
+- aucune CI, preuve native, push ou fusion dans ce commit; la review code doit etre verte avant les preuves natives manuelles.
