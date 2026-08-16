@@ -1,0 +1,28 @@
+Jalon 3 - correction de revue: convergence des reprises interrompues
+
+Constats corrigés
+- Un staging d'installation, de mise à jour ou hérité peut être incomplet après une coupure. Il est désormais classé par présence, déplacé vers un rebut dédié ollama-bundle-uncommitted-staging-delete, puis supprimé avec la primitive vérifiée existante. Il n'est jamais confondu avec ollama-bundle-failed, réservé à une cible rejetée.
+- Les états source + rebut, les alias et les layouts connus sans autorité durable renvoient ollama-update-recovery-required. Seules les erreurs d'inspection réellement transitoires conservent ollama-recovery-deferred.
+- Les rebuts backup-delete et failed-delete déjà partiellement supprimés restent autorisés par le journal de leur phase, sans exiger de recalculer une empreinte devenue impossible.
+- Une cible Prepared rejetée par la sonde peut maintenant entrer dans RollbackPending puis restaurer le bundle précédent.
+- Un temporaire régulier du marqueur de migration est supprimé durablement avant une nouvelle adoption; un temporaire non régulier reste fermé.
+- RollbackPending/RollbackCleanupPending sans bundle précédent ne retire plus le journal sur disque vide.
+- La récupération du reçu de processus est exécutée avant toute décision ou mutation de layout, afin qu'un sidecar orphelin soit moissonné avant les renommages.
+- Les chemins transactionnels et leurs tests partagent la nouvelle autorité OllamaPaths.
+
+TDD et preuves observées
+- Rouge: recovery_decision_tests ne compilait pas avant l'ajout de DirectoryEvidence::Incomplete.
+- Rouge: recovery_tests ne compilait pas avant l'ajout du chemin uncommitted_staging_delete.
+- Rouge: startup_tests observait OllamaJournalInvalid pour active + failed sans journal au lieu de la panne fermée attendue.
+- Rouge: les ambiguïtés archive et les alias renvoyaient encore ollama-recovery-deferred.
+- Rouge: la matrice update PreparedBefore supposait à tort que la table d'empreintes pouvait nettoyer un staging non journalisé; le test distingue maintenant cette table de la récupération par présence.
+- Vert final: node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager => 282 passed, 0 failed, 1 ignored, 283 verified.
+- Vert final: cargo clippy --all-targets -- -D warnings.
+- Vert final: cargo fmt --all -- --check.
+- Vert final: git diff --cached --check.
+- Tous les fichiers Rust de production modifiés sont <= 230 lignes (maximum observé: update_platform.rs 228; recovery.rs 226).
+- graphify update . terminé: 34231 noeuds, 70147 arêtes, 2062 communautés.
+
+Limites et suite
+- Ce commit ne traite pas encore la publication complète de TransactionPending/progress, les diagnostics OS durables, les traductions spécialisées, ni les preuves natives multi-OS.
+- Aucun push, run CI ou preuve native n'a été exécuté pour ce commit.
