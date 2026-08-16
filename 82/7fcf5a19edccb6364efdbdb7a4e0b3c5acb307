@@ -1,0 +1,31 @@
+JALON 3 - ANGLES MINEURS DIRECTEMENT LIES
+
+Perimetre borne:
+- uniquement les mineurs lies aux contrats de reprise corriges; aucune refonte ni nouveau jalon.
+
+Correction:
+- les commandes setup ne produisent plus ollama-start-error, ollama-start-timeout ou ollama-install-incomplete hors contrat; elles renvoient les codes de OllamaErrorCode;
+- la suppression verifiee Unix borne profondeur a 64 et nombre entrees a 8192 avant de poursuivre;
+- un recu de processus invalide ou trop grand est journalise par classification sans contenu sensible;
+- publish_startup_for_test est compile uniquement en test;
+- le cas RollbackPending sans identite de cible rejetee mais avec failed reste ferme et possede un test nomme;
+- deux retours redondants dans les fixtures de migration sont simplifies pour Clippy.
+
+TDD observe:
+- rouge: commande contenait ollama-start-error;
+- rouge: arbre Unix de profondeur 65 etait supprime au lieu de refuser;
+- le cas RollbackPending ajoute couvre un comportement ferme existant manquant dans la matrice.
+
+Preuves vertes:
+- ollama_setup_tests: 6 passes;
+- durable_fs_tests: 24 passes;
+- recovery_decision_tests: 41 passes;
+- startup_tests: 9 passes;
+- cargo clippy --all-targets -- -D warnings: vert;
+- cargo fmt --all -- --check: vert;
+- git diff --check: vert;
+- fichiers production touches: maximum 204 lignes;
+- graphify update .: termine, 34356 noeuds et 70425 aretes.
+
+Limite:
+- les mineurs purement cosmetiques ou refactors sans incidence ne sont pas elargis ici; aucune CI, preuve native, push ou fusion dans ce commit.
