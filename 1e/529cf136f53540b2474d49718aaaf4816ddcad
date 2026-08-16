@@ -1,0 +1,27 @@
+JALON 3 — PREUVE DÉTERMINISTE DU HANDOFF APRÈS ÉCHEC DE MOISSONNAGE
+
+Constat
+- Le run CI 31926015306 a exécuté 3534 tests Rust : 3533 réussis, 1 échec, 5 ignorés.
+- L'unique échec était services::ollama_manager::process_tests::revalidation_reap_failure_leaves_durable_recovery_handoff.
+- Le test envoyait SIGKILL puis supposait immédiatement que l'identité du processus était devenue illisible. La livraison du signal est asynchrone : le noyau pouvait encore rendre l'ancienne identité lors de la revalidation. Le mécanisme de production n'était pas en défaut ; la preuve était soumise à l'ordonnancement.
+
+Correction
+- Le test utilise désormais publish_with_identity_change_for_test, la transition déterministe déjà prévue par le seam de test de NativeGatedProcess.
+- force_reap_failure_for_test reste actif : le scénario prouve toujours qu'une revalidation d'identité échouée suivie d'un échec de moissonnage conserve le reçu durable de reprise.
+- Aucun code de production n'est modifié.
+
+Preuves locales lues
+- Test exact : 1 réussi, 0 échec.
+- Filtre officiel services::ollama_manager : 292 réussis, 0 échec, 1 test-outil ignoré ; 293 tests filtrés vérifiés.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt --all -- --check : vert.
+- git diff --check : vert.
+- graphify update . : terminé, 34324 nœuds, 70331 arêtes, 2025 communautés.
+
+État CI avant ce commit
+- Run 31926015306 : Frontend, Linux WebView, Desktop E2E, macOS CEF et Windows tests verts.
+- Backend Rust rouge uniquement sur la course corrigée ici.
+- Windows CEF encore en cours au moment du commit ; aucun push n'est effectué avant son verdict afin de ne pas annuler cette preuve.
+
+Recommandation
+- Pousser ce commit une seule fois après le verdict final Windows CEF, puis exiger un nouveau run CI complet sans relance intermédiaire.
