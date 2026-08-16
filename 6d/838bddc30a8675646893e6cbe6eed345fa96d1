@@ -1,0 +1,11 @@
+JALON 3 — CORRECTIONS DE REVIEW — PREUVE DES ASSETS
+
+Cause observée : les trois URLs GitHub immuables répondent 302 vers release-assets.githubusercontent.com ; le vérificateur n’autorisait que github.com et --verify-downloads échouait avant tout téléchargement.
+
+Correction : l’URL manifeste reste strictement limitée au chemin exact github.com/Kevin-hDev/Beaver ; une redirection HTTPS est admise uniquement vers le nom d’hôte exact release-assets.githubusercontent.com. Les identifiants, ports et fragments restent refusés. La taille exacte et la comparaison SHA-256 en temps constant restent l’autorité finale.
+
+TDD : le test du redirect signé a échoué avant correction (7 réussis, 1 échec), puis 8/8 après correction.
+
+Preuves observées : npm run test:j3-native-assets = 15/15 ; npm run lint vert ; git diff --check vert ; vérification réseau réelle --verify-downloads = Verified 3 Beaver v1.1.2 assets. Le script de production fait 211 lignes. Graphify : 34318 nœuds, 70312 arêtes, 2058 communautés.
+
+Limite : cette preuve valide les trois fichiers publiés, pas leur installation ni le scénario manuel de coupure/reprise sur chaque OS.
