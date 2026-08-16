@@ -3,10 +3,11 @@ import { mkdtemp, readFile, rm, mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { verifyOllamaManagerContracts } from "./ollama-manager-contracts.mjs";
 
-const FIXTURE_ROOT = join(dirname(new URL(import.meta.url).pathname), "fixtures/contracts");
+const FIXTURE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "fixtures/contracts");
 
 async function readFixture(name) {
   return readFile(join(FIXTURE_ROOT, name), "utf8");
