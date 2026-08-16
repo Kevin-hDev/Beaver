@@ -1,0 +1,18 @@
+Contexte
+Le commit c11a8424 a été produit par un chantier frontend hors du périmètre du jalon 3. Il rendait pty_spawn/pty_kill asynchrones et ajoutait un test source, mais son formatage cassait cargo fmt --check sur la fusion synthétique de la PR J3.
+
+Décision
+Revert complet de c11a8424 plutôt qu'un formatage partiel. La correction de latence Terminal est volontairement différée et sera reprise séparément. Le commit frontend indépendant e091f391 est conservé.
+
+Autorité et portée
+Le revert retire l'ensemble cohérent des cinq fichiers touchés par c11a8424 : les commandes, leur module de test et les deux exports internes ajoutés uniquement pour spawn_blocking. Ne pas restaurer seulement terminal.rs ou terminal_tests.rs, car cela laisserait des branchements morts.
+
+Preuves locales
+- Avant revert : cargo fmt --check échouait uniquement sur terminal.rs et terminal_tests.rs.
+- Après revert : cargo fmt --check sort avec le code 0.
+- git diff c11a8424^..HEAD limité aux cinq fichiers backend est vide : leur contenu correspond exactement à l'état précédant c11a8424.
+- git diff --check HEAD^..HEAD sort avec le code 0.
+- graphify update . exécuté : 32185 noeuds, 64835 arêtes.
+
+Limite de validation locale
+cargo test terminal --lib a été tenté, mais la construction native CEF locale s'arrête avant Beaver dans MSVC avec C1083 sur un fichier généré et un chemin de worktree long. Ce n'est pas déclaré vert. La CI GitHub doit fournir la compilation et les tests complets dans son environnement officiel avant fusion.
