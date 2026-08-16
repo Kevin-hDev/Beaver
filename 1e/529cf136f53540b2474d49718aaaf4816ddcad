@@ -25,3 +25,7 @@ Preuves locales lues
 
 Recommandation
 - Pousser ce commit une seule fois après le verdict final Windows CEF, puis exiger un nouveau run CI complet sans relance intermédiaire.
+
+Verdict final du run précédent
+- Le job Backend Windows CEF est finalement vert en 34 min 54 s.
+- Le run 31926015306 est rouge uniquement sur le test Rust instable corrigé par ce commit ; tous les six autres jobs sont verts.
