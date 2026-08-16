@@ -1,0 +1,14 @@
+Contexte
+La PR #21 a fusionné le revert caeeb3f5 dans main au commit 3f18da82. La branche J3 devait être réellement resynchronisée : relancer un ancien run aurait retesté l'ancien commit de fusion GitHub.
+
+Décision
+Fusion sans conflit de origin/main dans codex/shutdown-milestone-3-ollama. Le backend Terminal reste identique à l'état précédant c11a8424 ; les changements frontend de main, dont e091f391, sont désormais inclus dans la combinaison J3 à valider.
+
+Preuves avant push
+- git merge-tree --write-tree HEAD origin/main : fusion calculée sans conflit.
+- cargo fmt --check : code 0.
+- npm run lint : code 0.
+- graphify update . : 34547 noeuds, 70858 arêtes.
+
+Suite obligatoire
+La nouvelle CI complète de la PR #19 est l'autorité pour la combinaison finale main + J3. La validation native Windows reste distincte : installation 1.1.2, migration vers le build J3, modèle hors ligne, interruption/reprise, fermeture coordonnée et démon externe.
