@@ -146,31 +146,27 @@ fn extract_text_from_ooxml(xml: &str) -> Result<String, String> {
 
     loop {
         match reader.read_event() {
-            Ok(Event::Start(ref e)) => {
-                if e.local_name().as_ref() == b"p" {
-                    in_paragraph = true;
-                    para_text.clear();
-                }
+            Ok(Event::Start(ref e)) if e.local_name().as_ref() == b"p" => {
+                in_paragraph = true;
+                para_text.clear();
             }
-            Ok(Event::End(ref e)) => {
-                if e.local_name().as_ref() == b"p" {
-                    // Trim + collapse des espaces multiples (issus de l'indentation
-                    // XML entre runs) en un seul espace. Préserve les espaces
-                    // significatifs entre runs ("un " + "mot" = "un mot").
-                    let normalized: String =
-                        para_text.split_whitespace().collect::<Vec<_>>().join(" ");
-                    if !normalized.is_empty() {
-                        if !result.is_empty() {
-                            result.push('\n');
-                        }
-                        result.push_str(&normalized);
-                        if result.chars().count() > MAX_EXTRACTED_DOC_CHARS {
-                            return Err("Document trop volumineux".to_string());
-                        }
+            Ok(Event::End(ref e)) if e.local_name().as_ref() == b"p" => {
+                // Trim + collapse des espaces multiples (issus de l'indentation
+                // XML entre runs) en un seul espace. Préserve les espaces
+                // significatifs entre runs ("un " + "mot" = "un mot").
+                let normalized: String =
+                    para_text.split_whitespace().collect::<Vec<_>>().join(" ");
+                if !normalized.is_empty() {
+                    if !result.is_empty() {
+                        result.push('\n');
                     }
-                    in_paragraph = false;
-                    para_text.clear();
+                    result.push_str(&normalized);
+                    if result.chars().count() > MAX_EXTRACTED_DOC_CHARS {
+                        return Err("Document trop volumineux".to_string());
+                        }
                 }
+                in_paragraph = false;
+                para_text.clear();
             }
             Ok(Event::Text(ref e)) if in_paragraph => {
                 if let Ok(decoded) = e.xml10_content() {
