@@ -9,7 +9,7 @@ use crate::app_exit::AppExitCoordinator;
 use std::future;
 use std::num::NonZeroU16;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::Notify;
 
 #[path = "types_tests.rs"]
@@ -41,6 +41,35 @@ async fn wait_for_no_active_work(manager: &OllamaManager) {
     })
     .await
     .expect("Ollama admission released");
+}
+
+#[tokio::test]
+async fn late_shutdown_still_reaps_when_no_setup_operation_holds_the_lock() {
+    let (_coordinator, manager) = manager();
+
+    assert!(manager
+        .stop_for_shutdown(
+            Instant::now() - Duration::from_millis(1),
+            Instant::now() + Duration::from_secs(1),
+        )
+        .await
+        .is_ok());
+}
+
+#[tokio::test]
+async fn late_shutdown_does_not_cross_an_active_setup_operation() {
+    let (_coordinator, manager) = manager();
+    let _operation = manager.hold_operation_for_test().await;
+
+    assert_eq!(
+        manager
+            .stop_for_shutdown(
+                Instant::now() - Duration::from_millis(1),
+                Instant::now() + Duration::from_secs(1),
+            )
+            .await,
+        Err(OllamaErrorCode::OllamaSetupTimeout)
+    );
 }
 
 #[tokio::test]

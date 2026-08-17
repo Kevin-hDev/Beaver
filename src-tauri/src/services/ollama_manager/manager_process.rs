@@ -96,46 +96,6 @@ impl OllamaManager {
         Ok(())
     }
 
-    async fn stop_impl(&self, deadline: Instant) -> Result<(), OllamaErrorCode> {
-        if Instant::now() >= deadline {
-            return Err(OllamaErrorCode::OllamaSetupTimeout);
-        }
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        let _operation = tokio::time::timeout(remaining, self.inner().operation_lock.lock())
-            .await
-            .map_err(|_| OllamaErrorCode::OllamaSetupTimeout)?;
-        if matches!(self.status().await.daemon, DaemonState::External { .. }) {
-            return Ok(());
-        }
-        let process = self
-            .inner()
-            .owned_process
-            .lock()
-            .map_err(|_| OllamaErrorCode::OllamaInternal)?
-            .take();
-        let Some(process) = process else {
-            return Ok(());
-        };
-        let result = tokio::task::spawn_blocking(move || stop_owned_process(process, deadline))
-            .await
-            .map_err(|_| OllamaErrorCode::OllamaStopFailed)?;
-        match result {
-            Ok(()) => {
-                self.publish_daemon(DaemonState::Unavailable);
-                Ok(())
-            }
-            Err(error) => {
-                let (process, code) = *error;
-                self.inner()
-                    .owned_process
-                    .lock()
-                    .map_err(|_| OllamaErrorCode::OllamaInternal)?
-                    .replace(process);
-                Err(code)
-            }
-        }
-    }
-
     async fn run_cli_impl(&self, args: OllamaCliArgs) -> Result<OllamaCliOutput, OllamaErrorCode> {
         args.validate()?;
         let endpoint = self.usable_endpoint().await?;
@@ -203,17 +163,4 @@ fn spawn_owned_process(
     gated
         .publish(&receipt, &emergency)
         .map_err(map_process_error)
-}
-
-fn stop_owned_process(
-    mut process: OwnedOllamaProcess,
-    deadline: Instant,
-) -> Result<(), Box<(OwnedOllamaProcess, OllamaErrorCode)>> {
-    if let Err(error) = process.terminate() {
-        return Err(Box::new((process, map_process_error(error))));
-    }
-    if let Err(error) = process.reap(deadline) {
-        return Err(Box::new((process, map_process_error(error))));
-    }
-    Ok(())
 }

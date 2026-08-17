@@ -146,7 +146,20 @@ impl OllamaManager {
     }
 
     pub async fn stop_and_wait(&self, deadline: Instant) -> Result<(), OllamaErrorCode> {
-        self.stop_impl(deadline).await
+        self.stop_impl(deadline, deadline).await
+    }
+
+    pub(crate) async fn stop_for_shutdown(
+        &self,
+        setup_deadline: Instant,
+        process_deadline: Instant,
+    ) -> Result<(), OllamaErrorCode> {
+        self.stop_impl(setup_deadline, process_deadline).await
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn hold_operation_for_test(&self) -> tokio::sync::MutexGuard<'_, ()> {
+        self.inner().operation_lock.lock().await
     }
 
     pub async fn run_cli(&self, args: OllamaCliArgs) -> Result<OllamaCliOutput, OllamaErrorCode> {
@@ -203,3 +216,4 @@ impl OllamaManager {
 }
 
 include!("manager_process.rs");
+include!("manager_stop.rs");

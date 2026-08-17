@@ -55,7 +55,10 @@ async fn cleanup_services(app: &tauri::AppHandle, timeline: ShutdownTimeline) {
     let ollama_phase = async move {
         if let Some(manager) = ollama {
             if manager
-                .stop_and_wait(timeline.ollama_setup_deadline())
+                .stop_for_shutdown(
+                    timeline.ollama_setup_deadline(),
+                    timeline.graceful_deadline(),
+                )
                 .await
                 .is_err()
             {
