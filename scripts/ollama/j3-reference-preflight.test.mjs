@@ -11,6 +11,7 @@ import {
 } from "./j3-reference-preflight.mjs";
 
 const TEST_DIRECTORY = dirname(fileURLToPath(import.meta.url));
+const PACKAGE_MANIFEST = join(TEST_DIRECTORY, "../../package.json");
 const VALID_FIXTURE = join(TEST_DIRECTORY, "fixtures/j3-reference/valid-inventory.md");
 const MISSING_COMMIT_FIXTURE = join(TEST_DIRECTORY, "fixtures/j3-reference/missing-commit.md");
 const EXPECTED_HEAD = "50b5515c6d849945f08073d04eebb0aecb479f26";
@@ -25,6 +26,14 @@ const EXPECTED_COMMITS = [
 const MAX_INVENTORY_BYTES = 256 * 1024;
 const GENERIC_FAILURE = /J3 reference preflight failed/u;
 
+test("le script npm fournit l'inventaire autoritaire au préflight réel", async () => {
+  const manifest = JSON.parse(await readFile(PACKAGE_MANIFEST, "utf8"));
+  assert.equal(
+    manifest.scripts["preflight:j3-reference"],
+    "node scripts/ollama/j3-reference-preflight.mjs --inventory docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md",
+  );
+});
+
 async function readFixture(path) {
   return readFile(path, "utf8");
 }
@@ -36,6 +45,7 @@ function archiveGitOutput(inventory, note = "REPRISE JALON 3 — BRANCHE HISTORI
     assert.equal(Array.isArray(args), true);
     assert.equal(args.every((argument) => typeof argument === "string"), true);
     const [command] = args;
+    if (command === "fetch") return "";
     if (command === "rev-parse") return `${inventory.archiveHead}\n`;
     if (command === "cat-file") return "";
     if (command === "merge-base") return "";
@@ -71,6 +81,14 @@ test("vérifie la tête distante exacte, les objets, les ancêtres et la note", 
     checkedCommits: EXPECTED_COMMITS,
     noteMatched: true,
   });
+  assert.deepEqual(calls[0], [
+    "fetch",
+    "--no-tags",
+    "--force",
+    "origin",
+    "+refs/heads/codex/fix-app-shutdown-lifecycle:refs/remotes/origin/codex/fix-app-shutdown-lifecycle",
+    "+refs/notes/commits:refs/notes/commits",
+  ]);
   assert.equal(calls.some((args) => args[0] === "rev-parse"), true);
   assert.equal(calls.filter((args) => args[0] === "cat-file").length, 7);
   assert.equal(calls.filter((args) => args[0] === "merge-base").length, 6);

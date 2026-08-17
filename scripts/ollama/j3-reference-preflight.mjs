@@ -180,6 +180,15 @@ export async function verifyJ3ReferenceArchive({
     if (typeof runGit !== "function") fail();
     const inventory = parseJ3ReferenceInventory(await readInventory(inventoryPath, repoRoot, openFile));
     const remoteRef = remoteArchiveRef(inventory.archiveRef);
+    // Fetch the two documented authorities here so the real preflight cannot pass on stale local refs.
+    await callGit(runGit, [
+      "fetch",
+      "--no-tags",
+      "--force",
+      "origin",
+      `+${inventory.archiveRef}:${remoteRef}`,
+      `+${inventory.notesRef}:${inventory.notesRef}`,
+    ]);
     const actualHead = (await callGit(runGit, ["rev-parse", "--verify", `${remoteRef}^{commit}`])).trim();
     if (actualHead !== inventory.archiveHead) fail();
     await callGit(runGit, ["cat-file", "-e", `${inventory.archiveHead}^{commit}`]);
