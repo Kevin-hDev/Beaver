@@ -52,3 +52,13 @@ Final CI proof
 - 14/14 checks passed; 0 failed; 0 pending.
 - GitHub merge state: CLEAN.
 - Windows CEF passed in 29m53s; macOS CEF passed in 22m35s.
+
+Linux native validation still required before merge
+- This Windows host cannot provide the proof: no WSL distribution is installed and WSL2 virtualization support is disabled.
+- Use a real Linux host or disposable Linux account at exact branch head a704227ece4206175bfd7c4495c950d7212dab76.
+- Fetch notes, install dependencies, then run: bash scripts/ollama/native-upgrade-linux.sh --confirm-disposable-profile --confirm-data-dir.
+- Required native evidence mirrors Windows: Beaver 1.1.2 baseline with a real local model; exact before hashes and successful inference; branch .deb installed offline; exact after hashes and inference; controlled durable cutpoint interruption and automatic recovery; final hashes and inference; coordinated close leaves no Beaver-owned Ollama.
+- Also start an external Ollama separately, prove Beaver uses but never owns/signals it, close Beaver, and prove the external PID/port remain alive; stop it explicitly after evidence.
+- Record linux-before.json, linux-after.json, linux-recovered.json and a non-sensitive Linux proof markdown under docs/superpowers/validation/native-upgrade-proofs/.
+- If Linux exposes a defect: TDD first, dedicated commit, git note, Graphify update, push, and rerun the complete 14-check CI on the new exact head.
+- Final gates before merge: independent review of the new Windows-discovered correction diff 1a761306..a704227e (or any later Linux fix), native Linux proof, and full green CI on the final reviewed SHA.
