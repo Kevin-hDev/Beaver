@@ -19,6 +19,17 @@ async fn absent_external_daemon_is_not_a_validation_result() {
     assert_eq!(allocator.detect_external().await.expect("probe"), None);
 }
 
+#[cfg(windows)]
+#[tokio::test]
+async fn a_slow_closed_windows_port_does_not_block_owned_startup() {
+    let listener = TcpListener::bind(("127.0.0.1", 0)).expect("temporary listener");
+    let port = listener.local_addr().expect("address").port();
+    drop(listener);
+
+    let allocator = DefaultOllamaPortAllocator::with_external_port(port);
+    assert_eq!(allocator.detect_external().await.expect("probe"), None);
+}
+
 #[tokio::test]
 async fn listening_external_daemon_is_only_observed() {
     let listener = TcpListener::bind(("127.0.0.1", 0)).expect("listener");

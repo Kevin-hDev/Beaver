@@ -76,7 +76,10 @@ impl OllamaPortAllocator for DefaultOllamaPortAllocator {
         {
             Ok(Ok(_stream)) => Ok(Some(endpoint)),
             Ok(Err(error)) if error.kind() == std::io::ErrorKind::ConnectionRefused => Ok(None),
-            Ok(Err(_)) | Err(_) => Err(OllamaErrorCode::OllamaValidationDeferred),
+            Ok(Err(_)) => Err(OllamaErrorCode::OllamaValidationDeferred),
+            // Un endpoint loopback qui ne répond pas n'est pas un démon externe
+            // utilisable ; le sidecar possédé démarrera sur un autre port.
+            Err(_) => Ok(None),
         }
     }
 }
