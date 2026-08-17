@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build/frontend-build.mjs",
+    "check": "node scripts/ci/run-local-checks.mjs",
     "tauri": "node scripts/cef/run-tauri.mjs",
     "tauri:build:nsis": "node scripts/cef/run-tauri.mjs build --bundles nsis",
     "lint": "node scripts/check-react-component-calls.mjs && eslint src/",
