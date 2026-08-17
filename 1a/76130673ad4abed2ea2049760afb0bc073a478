@@ -1,0 +1,33 @@
+Windows native validation follow-up for milestone 3: coordinated shutdown receipt cleanup.
+
+Observed native failure on the installed f6b4e73d build:
+- Beaver automatically launched its owned Ollama on the second and subsequent cold starts.
+- Closing Beaver through the real Windows close button stopped every Beaver and Ollama process, but ollama-process-receipt.json remained.
+- The failure reproduced twice. A dedicated process watcher observed Beaver helpers changing at 21.109 s, owned Ollama gone at 24.642 s, Beaver gone at 24.748 s, while the receipt remained.
+
+Root cause:
+- Cleanup intentionally stops Ollama after all client services.
+- The manager received ollama_setup_deadline (origin + 3 s) for both operation-lock admission and final process reap.
+- By the time preceding services completed, that short deadline had expired. The idle owned daemon was not reaped by the manager; process::exit then skipped Rust destructors, while Windows ownership still killed the child and left the durable receipt.
+
+Decision:
+- Keep the 3-second absolute deadline as the sole bound for waiting on a concurrent Ollama setup/update operation.
+- Give an already-idle owned process the remaining global graceful deadline for terminate, reap, receipt removal and emergency-registration release.
+- A late shutdown first uses try_lock: an idle manager can still clean up; a genuinely active operation remains fail-closed after its setup deadline.
+- The stop authority was split into manager_stop.rs so every production source file remains below 230 lines.
+
+TDD evidence:
+- RED: the new late-shutdown test failed compilation because stop_for_shutdown did not exist; the old one-deadline API could not express the required contract.
+- GREEN: 2/2 late-shutdown tests pass, proving both idle cleanup and active-operation refusal.
+- app_exit cleanup tests: 9 passed, 0 failed.
+- Full Ollama manager suite (windows-tests): 283 passed, 0 failed, 1 ignored developer command (284 matched).
+
+Fresh verification before commit:
+- cargo fmt --all -- --check: exit 0.
+- cargo check: exit 0.
+- cargo clippy --all-targets -- -D warnings: exit 0.
+- npm run test:ollama-manager-contracts: 6 passed, 0 failed; 2516 source files verified.
+- npm run test:j3-reference: 15 passed, 0 failed.
+- graphify update .: completed; 34557 nodes and 70869 edges.
+
+A rebuilt installed-app shutdown proof and a new complete CI remain required after this commit.
