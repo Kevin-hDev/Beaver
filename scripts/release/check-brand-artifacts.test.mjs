@@ -120,12 +120,15 @@ test("refuse un asset vide ou mal nommé", async () => {
 test("inspecte Beaver.app et les cinq helpers CEF", async () => {
   const fixture = await macFixture();
   try {
-    await validateMacBundle(VERSION, fixture.app, fixture.dmg, fixture.plist);
+    await validateMacBundle(VERSION, fixture.app, fixture.dmg, fixture.plist, () => false);
+    await assert.rejects(
+      validateMacBundle(VERSION, fixture.app, fixture.dmg, fixture.plist, () => true),
+    );
     await rm(join(fixture.app, "Contents/Frameworks/Beaver Helper (GPU).app"), {
       recursive: true,
     });
     await assert.rejects(
-      validateMacBundle(VERSION, fixture.app, fixture.dmg, fixture.plist),
+      validateMacBundle(VERSION, fixture.app, fixture.dmg, fixture.plist, () => false),
     );
   } finally {
     await rm(fixture.directory, { recursive: true, force: true });

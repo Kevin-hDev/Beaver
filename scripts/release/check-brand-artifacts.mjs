@@ -37,13 +37,36 @@ function nativePlistValue(path, key) {
   }
 }
 
+function nativeDmgHasLicenseAgreement(path) {
+  if (process.platform !== "darwin") throw invalid();
+  try {
+    const imageInfo = execFileSync("hdiutil", ["imageinfo", "-plist", path], {
+      maxBuffer: 1024 * 1024,
+      timeout: 30_000,
+      windowsHide: true,
+    });
+    const json = execFileSync("plutil", ["-convert", "json", "-o", "-", "-"], {
+      input: imageInfo,
+      encoding: "utf8",
+      maxBuffer: 1024 * 1024,
+      timeout: 10_000,
+      windowsHide: true,
+    });
+    return JSON.parse(json)?.Properties?.["Software License Agreement"] === true;
+  } catch {
+    throw invalid();
+  }
+}
+
 export async function validateMacBundle(
   versionValue,
   appValue,
   dmgValue,
   plistValue = nativePlistValue,
+  dmgHasLicenseAgreement = nativeDmgHasLicenseAgreement,
 ) {
   await validateAsset("macos", versionValue, dmgValue);
+  if (dmgHasLicenseAgreement(dmgValue)) throw invalid();
   const app = resolveInputPath(appValue);
   const appInfo = await lstat(app);
   if (basename(app) !== "Beaver.app" || !appInfo.isDirectory() || appInfo.isSymbolicLink()) {

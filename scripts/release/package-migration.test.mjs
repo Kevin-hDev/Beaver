@@ -27,6 +27,15 @@ test("le paquet Debian Beaver remplace uniquement le paquet historique", () => {
   });
 });
 
+test("les paquets livrent la licence sans dialogue bloquant dans le DMG", () => {
+  const config = JSON.parse(readBounded("src-tauri/tauri.conf.json"));
+  const windows = JSON.parse(readBounded("src-tauri/tauri.windows.conf.json"));
+
+  assert.equal(config.bundle.licenseFile, undefined);
+  assert.ok(config.bundle.resources.includes("../LICENSE"));
+  assert.equal(windows.bundle.resources["../LICENSE"], "LICENSE.txt");
+});
+
 test("le bundle Windows utilise le hook de migration dédié", () => {
   const config = JSON.parse(readBounded("src-tauri/tauri.conf.json"));
 
