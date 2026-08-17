@@ -68,7 +68,9 @@ pub mod tool_document_read_tests;
 pub mod tool_document_write;
 pub mod tool_document_write_list;
 pub mod tool_document_write_numbering;
+mod tool_document_write_run;
 pub mod tool_document_write_styles;
+mod tool_document_write_table;
 #[cfg(test)]
 pub mod tool_document_write_tests;
 pub mod tool_document_write_xml;
