@@ -1,0 +1,39 @@
+JALON 4 - QUITTER MACOS PASSE PAR LA FERMETURE COORDONNEE
+
+Contexte
+- Branche: codex/milestone-4-convergence.
+- Base du jalon: d0c2864dece2c5a6a1734be9a0bd4df6966f99de.
+- Avant ce commit, Cmd+Q et l'entree Quit du menu macOS terminaient Beaver sans appeler le coordinateur; Ollama, SearXNG ou les ressources CEF pouvaient rester orphelins.
+
+Cause racine prouvee
+- Le menu macOS par defaut de Tauri 2.11.4 construit une PredefinedMenuItem::quit.
+- muda 0.19.3 associe cette entree directement au selecteur Cocoa terminate:.
+- tao 0.35.3 termine alors la boucle native; tauri-runtime-wry 2.11.4 ne publie plus que RunEvent::Exit.
+- Beaver ne peut pas lancer son nettoyage depuis RunEvent::Exit: cet evenement arrive apres la decision native de terminaison.
+
+Decision
+- Conserver Menu::default comme autorite du menu standard macOS.
+- Remplacer uniquement sa derniere entree Quit native par une MenuItem Beaver portant l'identifiant borne beaver-coordinated-quit et l'accelerateur CmdOrCtrl+Q.
+- L'evenement de cette entree appelle l'autorite existante crate::app_exit::request(app, 0).
+- Echouer ferme si la structure du menu Tauri verrouillee n'est plus celle attendue, afin qu'une mise a jour de dependance ne retablisse pas silencieusement terminate:.
+- Les autres OS et le Quit du tray ne changent pas.
+
+TDD
+- Rouge observe: le filtre macos_app_menu::tests echouait a compiler car menu_action, MacosMenuAction et MACOS_QUIT_MENU_ID n'existaient pas.
+- Vert: 2 tests passes, 0 echec, 0 ignore.
+
+Preuves natives macOS
+- E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e: 1 spec passee, parcours 93a033eb-becc-48a8-94d2-88561f76d7d8; helper CEF reel, turnover, chargement, fermeture et absence de processus possede valides.
+- Rejeu direct du bundle E2E puis vrai Cmd+Q via System Events: exit-requested-programmatic, coordinated shutdown requested, cleanup phase finished, Exit, event-loop-returned; aucun processus Beaver restant et aucun fichier restant sous cef-supervision.
+- Rejeu reel npm run tauri dev avec les donnees utilisateur: Beaver PID 76091, Ollama possede PID 78603; Cmd+Q a produit coordinated shutdown requested puis cleanup phase finished; Beaver, Ollama et SearXNG absents apres sortie; ollama-process-receipt.json supprime.
+
+Controles
+- cargo fmt --all -- --check: vert.
+- cargo clippy --all-targets -- -D warnings: vert.
+- git diff --check: vert.
+- src-tauri/src/macos_app_menu.rs: 83 lignes.
+- graphify update .: termine, 26739 noeuds, 54663 aretes, 1684 communautes.
+
+Limites et suite
+- Cette correction ferme uniquement l'entree native macOS prouvee fautive.
+- Les inventaires cumulatifs, la limite du fichier XML de 309 lignes, les preuves de profil persistant, le smoke CEF empaquete et les validations inter-OS du jalon 4 restent a traiter separement.
