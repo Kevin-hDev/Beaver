@@ -1,0 +1,1 @@
+Linux toolchain compatibility. Current cargo clippy --all-targets -- -D warnings reported three collapsible_match diagnostics in app_events.rs and tool_document_read.rs. Syntax-only match guards preserve behavior. Green: app_events tests 3/3; document read tests 7/7; strict clippy green; graphify update completed.
