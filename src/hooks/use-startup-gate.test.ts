@@ -14,7 +14,7 @@ describe("useStartupGate", () => {
 
   it("affiche l'onboarding avant Ollama au premier lancement", async () => {
     vi.mocked(invoke).mockImplementation((command) => {
-      if (command === "is_ollama_installed") return Promise.resolve(false);
+      if (command === "get_ollama_runtime_status") return Promise.resolve({ bundle: "absent" });
       if (command === "get_advanced_settings") {
         return Promise.resolve({
           onboarding_completed: false,
@@ -32,7 +32,7 @@ describe("useStartupGate", () => {
 
   it("termine onboarding et Ollama dans le meme patch", async () => {
     vi.mocked(invoke).mockImplementation((command) => {
-      if (command === "is_ollama_installed") return Promise.resolve(false);
+      if (command === "get_ollama_runtime_status") return Promise.resolve({ bundle: "absent" });
       if (command === "get_advanced_settings") {
         return Promise.resolve({
           onboarding_completed: true,
@@ -56,5 +56,19 @@ describe("useStartupGate", () => {
       },
     });
     expect(result.current.view).toBe("app");
+  });
+
+  it("n'entre pas dans l'application si le statut Ollama est illisible", async () => {
+    vi.mocked(invoke).mockImplementation((command) => {
+      if (command === "get_ollama_runtime_status") return Promise.reject(new Error("internal path"));
+      if (command === "get_advanced_settings") {
+        return Promise.resolve({ onboarding_completed: true, ollama_setup_skipped: true });
+      }
+      return Promise.resolve();
+    });
+
+    const { result } = renderHook(() => useStartupGate());
+    await waitFor(() => expect(result.current.view).toBe("ollama"));
+    expect(result.current.view).not.toBe("app");
   });
 });

@@ -75,20 +75,7 @@ pub mod oauth_provider_models;
 pub mod oauth_providers;
 #[cfg(test)]
 mod ollama_audit_tests;
-pub mod ollama_bundle_utils;
-pub mod ollama_checksum;
-pub mod ollama_download;
-pub mod ollama_extract;
-pub(crate) mod ollama_extract_tar_safe;
-#[cfg(test)]
-mod ollama_extract_tests;
-pub(crate) mod ollama_extract_zip;
-#[cfg(test)]
-mod ollama_extract_zip_tests;
 pub mod ollama_setup;
-pub(crate) mod ollama_setup_cancel;
-pub(crate) mod ollama_setup_install;
-pub(crate) mod ollama_setup_start;
 #[cfg(test)]
 mod ollama_setup_tests;
 pub(crate) mod ollama_setup_update;

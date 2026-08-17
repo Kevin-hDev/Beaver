@@ -10,11 +10,28 @@ mod platform;
 #[cfg(windows)]
 #[path = "owned_process_windows.rs"]
 mod platform;
+#[cfg(all(test, unix))]
+#[path = "owned_process_unix_recovery_tests.rs"]
+mod unix_recovery_tests;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OwnedProcessError {
     Spawn(std::io::ErrorKind),
     Admission,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) struct OwnedProcessIdentity {
+    pub(crate) pid: u32,
+    pub(crate) native_scope: u64,
+    pub(crate) native_start_time: u64,
+    pub(crate) executable: u128,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum OwnedProcessInspection {
+    Owned(OwnedProcessIdentity),
+    Unowned,
 }
 
 pub struct OwnedProcess;
@@ -23,6 +40,53 @@ impl OwnedProcess {
     #[cfg(unix)]
     pub(crate) fn adopt_existing(pid: u32) -> Result<(), OwnedProcessError> {
         platform::admit(pid)
+    }
+
+    pub(crate) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity(pid)
+    }
+
+    pub(crate) fn inspect_for_recovery(
+        pid: u32,
+        expected_start_time: u64,
+    ) -> Result<OwnedProcessInspection, OwnedProcessError> {
+        #[cfg(unix)]
+        return platform::inspect_for_recovery(pid, expected_start_time);
+        #[cfg(windows)]
+        {
+            let _ = expected_start_time;
+            platform::inspect_for_recovery(pid)
+        }
+    }
+
+    #[cfg(unix)]
+    pub(crate) fn identity_with_executable(
+        pid: u32,
+        executable: u128,
+    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity_with_executable(pid, executable)
+    }
+
+    pub(crate) fn recover_exact(
+        expected: OwnedProcessIdentity,
+        deadline: std::time::Instant,
+    ) -> Result<(), OwnedProcessError> {
+        platform::recover_exact(expected, deadline)
+    }
+
+    pub(crate) fn reap_exited_child(pid: u32) -> Result<bool, OwnedProcessError> {
+        platform::reap_exited_child(pid)
+    }
+
+    pub(crate) fn signal_exact(
+        expected: OwnedProcessIdentity,
+        force: bool,
+    ) -> Result<(), OwnedProcessError> {
+        platform::signal_exact(expected, force)
+    }
+
+    pub(crate) fn process_exists(pid: u32) -> bool {
+        platform::process_exists(pid)
     }
 
     pub fn spawn(command: &mut Command, kind: ProcessKind) -> Result<Child, OwnedProcessError> {
@@ -54,6 +118,21 @@ impl OwnedProcess {
         pseudoconsole: &T,
     ) -> Result<windows_spawn::Child, OwnedProcessError> {
         platform::spawn_conpty(command, pseudoconsole)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn admit_suspended_handle(
+        process: windows_sys::Win32::Foundation::HANDLE,
+    ) -> Result<(), OwnedProcessError> {
+        platform::admit_suspended_handle(process)
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn identity_from_handle_with_executable(
+        process: windows_sys::Win32::Foundation::HANDLE,
+        executable: u128,
+    ) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+        platform::identity_from_handle_with_executable(process, executable)
     }
 
     fn spawn_with_admitter(

@@ -10,6 +10,7 @@ import {
   onboardingCompletedPatch,
   shouldReplayOnboarding,
 } from "@/lib/onboarding-gate";
+import { parseOllamaRuntimeStatus } from "@/lib/ollama-runtime-status";
 
 type StartupView = "loading" | "onboarding" | "ollama" | "app";
 
@@ -29,10 +30,13 @@ export function useStartupGate() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [installed, settings] = await Promise.all([
-          invoke<boolean>("is_ollama_installed"),
+        const [runtimeStatusValue, settings] = await Promise.all([
+          invoke<unknown>("get_ollama_runtime_status"),
           invoke<Record<string, unknown>>("get_advanced_settings"),
         ]);
+        const runtimeStatus = parseOllamaRuntimeStatus(runtimeStatusValue);
+        if (!runtimeStatus) throw new Error("invalid runtime status");
+        const installed = runtimeStatus.bundle === "ready";
         const showOllama = shouldShowOllamaSetup({
           installed,
           skipped: hasSkippedOllamaSetup(settings),
@@ -46,7 +50,8 @@ export function useStartupGate() {
           showOllamaSetup: showOllama,
         });
       } catch {
-        setState({ view: "app", showOllamaSetup: false });
+        // Unreadable runtime state must not silently open the app on an unknown bundle.
+        setState({ view: "ollama", showOllamaSetup: true });
       }
     };
     void load();

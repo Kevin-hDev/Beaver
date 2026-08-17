@@ -1,4 +1,4 @@
-use super::ollama_base_url;
+use super::ollama_client::OllamaClient;
 use super::ollama_retry_indicator::{
     send_retry_indicator, server_retry_delay, should_retry_server_status, MAX_SERVER_RETRIES,
     REASON_FEATURE_DROPPED, REASON_PARSER_CRASH, REASON_SERVER,
@@ -9,13 +9,22 @@ use super::ollama_tool_role::wrap_tool_results;
 use super::ollama_wire;
 use super::stream_events::AgentEventEmitter;
 use super::types_ollama::{ChatRequest, StreamEvent};
+use crate::services::compress::realtime_budget::RealtimeBudget;
 use crate::services::llm::vision;
+use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Debug, Clone, Copy)]
 pub struct RetryCounts {
     pub parser_retries: u32,
     pub server_retries: u32,
+}
+
+pub(super) struct StreamChatOptions {
+    pub(super) tool_tx: Option<mpsc::UnboundedSender<(usize, String, serde_json::Value)>>,
+    pub(super) buffer_content: bool,
+    pub(super) realtime_budget: Option<RealtimeBudget>,
+    pub(super) retry_counts: RetryCounts,
 }
 
 pub enum OpenChatResponse {
@@ -27,6 +36,7 @@ pub enum OpenChatResponse {
 }
 
 pub async fn open_chat_response(
+    ollama: &OllamaClient,
     on_event: &AgentEventEmitter,
     request: &ChatRequest,
     cancel: &CancellationToken,
@@ -37,8 +47,9 @@ pub async fn open_chat_response(
     let wire_request = ollama_wire::chat_request(request, &wire_messages);
 
     let client = reqwest::Client::new();
+    let base_url = ollama.base_url().await?;
     let resp = match client
-        .post(format!("{}/api/chat", ollama_base_url()))
+        .post(format!("{base_url}/api/chat"))
         .json(&wire_request)
         .send()
         .await

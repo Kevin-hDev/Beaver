@@ -52,6 +52,8 @@ macro_rules! generate_tail {
             crate::commands::check_ollama_updates,
             crate::commands::check_ollama_binary_update,
             crate::commands::is_ollama_installed,
+            crate::commands::get_ollama_runtime_status,
+            crate::commands::retry_ollama_recovery,
             crate::commands::download_ollama,
             crate::commands::cancel_ollama_setup,
             crate::commands::update_ollama_binary,

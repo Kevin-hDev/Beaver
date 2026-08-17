@@ -3,12 +3,16 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { IS_MAC } from "@/lib/platform";
 import { showToast } from "@/lib/toast-emitter";
+import { ollamaErrorKey } from "@/lib/ollama-runtime-error";
+import { useOllamaRuntimeStatus } from "@/hooks/use-ollama-runtime-status";
 import { ToggleSwitch } from "@/components/ui/toggle-switch";
 import { SettingsCard } from "./settings-card";
 import { SettingsRow } from "./settings-row";
 import { SettingsSelect, type SelectOption } from "./settings-select";
 import { HardwareAccelControl } from "./hardware-accel-control";
 import { VramTable } from "./vram-table";
+import { classifyOllamaRestartOutcome } from "./ollama-restart-outcome";
+import type { OllamaStartOutcome } from "@/types/ollama-runtime";
 
 interface OllamaSettingsProps {
   keepAlive: string;
@@ -24,6 +28,7 @@ export function OllamaSettingsSection({
   const { t } = useTranslation();
   const [accelChanged, setAccelChanged] = useState(false);
   const [restarting, setRestarting] = useState(false);
+  const runtime = useOllamaRuntimeStatus();
 
   const hardwareAccelOptions = useMemo((): SelectOption[] => [
     { value: "cpu", label: t("settings.advanced.hardwareAccelCpu") },
@@ -43,14 +48,20 @@ export function OllamaSettingsSection({
   const handleRestart = async () => {
     setRestarting(true);
     try {
-      const launched = await invoke<boolean>("restart_ollama_sidecar");
-      const msg = launched
-        ? t("settings.advanced.hardwareAccelRestarted")
-        : t("settings.advanced.ollamaExternalReused");
-      showToast(msg, "success");
-      setAccelChanged(false);
-    } catch {
-      showToast(t("errors.ollamaRestartFailed"), "error");
+      const outcome = await invoke<OllamaStartOutcome>("restart_ollama_sidecar");
+      const presentation = classifyOllamaRestartOutcome(outcome);
+      await runtime.refresh();
+      if (presentation.kind === "failed") {
+        showToast(t(ollamaErrorKey(presentation.code)), "error");
+        return;
+      }
+      const message = presentation.kind === "external"
+        ? t("settings.advanced.ollamaExternalReused")
+        : t("settings.advanced.hardwareAccelRestarted");
+      showToast(message, "success");
+      if (presentation.kind === "owned") setAccelChanged(false);
+    } catch (caught) {
+      showToast(t(ollamaErrorKey(caught)), "error");
     } finally {
       setRestarting(false);
     }

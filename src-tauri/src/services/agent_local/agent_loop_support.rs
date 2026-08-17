@@ -1,13 +1,10 @@
-use crate::services::agent_local::ollama_base_url;
 use crate::services::agent_local::types_ollama::{
     ChatMessage, ChatRequest, OllamaThink, StreamResult, ToolCallFunction, ToolCallOllama,
 };
 
 pub async fn prepare_subagents(
     session_id: &str,
-    parent_message_inbox: Option<
-        std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>,
-    >,
+    parent_message_inbox: Option<std::sync::Arc<super::parent_message_inbox::ParentMessageInbox>>,
 ) -> super::subagent_orchestration::ParentSubagentOrchestrator {
     super::tool_result_budget::cleanup_old_results();
     super::subagent_orchestration::ParentSubagentOrchestrator::with_parent_inbox(
@@ -96,9 +93,15 @@ pub async fn decharge_gpu(model: &str) {
     if keep_alive != "0" {
         return;
     }
+    let Ok(ollama) = super::ollama_client::OllamaClient::from_global() else {
+        return;
+    };
+    let Ok(base_url) = ollama.base_url().await else {
+        return;
+    };
     let client = reqwest::Client::new();
     let _ = client
-        .post(format!("{}/api/chat", ollama_base_url()))
+        .post(format!("{base_url}/api/chat"))
         .json(&serde_json::json!({
             "model": model,
             "messages": [],

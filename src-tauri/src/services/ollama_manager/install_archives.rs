@@ -1,0 +1,39 @@
+#![allow(dead_code)]
+
+use super::blocking::run_ollama_blocking;
+use super::durable_fs::OllamaDurableFs;
+use super::error::OllamaErrorCode;
+use crate::services::paths::OllamaPaths;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+pub(crate) fn archive_staging_path(paths: &OllamaPaths) -> &Path {
+    &paths.archive_staging
+}
+
+pub(crate) async fn remove_archives<F: OllamaDurableFs + 'static>(
+    fs: &Arc<F>,
+    archive_staging: &Path,
+    archives: &[PathBuf],
+) -> Result<(), OllamaErrorCode> {
+    for path in archives {
+        let fs = Arc::clone(fs);
+        let path = path.clone();
+        run_ollama_blocking(move || match fs.remove_file_durable(&path) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == super::durable_fs::OllamaFsErrorKind::NotFound => Ok(()),
+            Err(error) => Err(super::storage_error::durable(
+                "install-archive-remove",
+                error,
+            )),
+        })
+        .await?;
+    }
+    let fs = Arc::clone(fs);
+    let archive_staging = archive_staging.to_path_buf();
+    run_ollama_blocking(move || {
+        fs.remove_tree(&archive_staging)
+            .map_err(|error| super::storage_error::durable("install-archive-staging-remove", error))
+    })
+    .await
+}

@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { useOllamaModels } from "@/hooks/use-ollama-models";
+import { useOllamaRuntimeStatus } from "@/hooks/use-ollama-runtime-status";
+import { ollamaErrorKey, ollamaProgressKey } from "@/lib/ollama-runtime-error";
 import { ModelfileIcon, ModelsIcon } from "@/components/ui/model-browser-icons";
 import { SettingsPanel } from "@/components/settings/shell/settings-panel";
 import { SettingsTabbar } from "@/components/settings/shell/settings-tabbar";
@@ -11,6 +13,7 @@ import { OllamaModelfileView } from "./ollama-modelfile-view";
 import { OllamaModelsView } from "./ollama-models-view";
 import type { RegistryModel } from "@/types/agent";
 import type { DeepPartial, SettingsNavState } from "@/types/navigation";
+import type { DaemonState, OllamaRuntimeStatus } from "@/types/ollama-runtime";
 import "./ollama.css";
 
 interface OllamaTabProps {
@@ -25,14 +28,9 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<RegistryModel[]>([]);
   const [searching, setSearching] = useState(false);
-  const [ollamaInstalled, setOllamaInstalled] = useState<boolean | null>(null);
-  const ollamaModels = useOllamaModels({ enabled: ollamaInstalled === true });
-
-  useEffect(() => {
-    invoke<boolean>("is_ollama_installed")
-      .then(setOllamaInstalled)
-      .catch(() => setOllamaInstalled(true));
-  }, []);
+  const runtime = useOllamaRuntimeStatus();
+  const { loading: runtimeLoading, readError: runtimeReadError, status: runtimeStatus, refresh: refreshRuntime } = runtime;
+  const ollamaModels = useOllamaModels({ enabled: runtimeStatus?.bundle === "ready" });
 
   const tabs = useMemo(() => [
     { id: "modelfile" as const, label: t("ollama.modelfileTab"), icon: <ModelfileIcon size="var(--icon-md)" /> },
@@ -49,20 +47,41 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
   }), [searchQuery, searchResults, searching]);
 
   const detail = useMemo(() => {
-    if (ollamaInstalled === false) {
+    if (runtimeLoading) {
+      return <RuntimeMessage message={t("ollama.runtime.loading")} />;
+    }
+    if (runtimeReadError || !runtimeStatus) {
+      return <RuntimeRetry error={null} onRetry={refreshRuntime} t={t} />;
+    }
+    if (runtimeStatus.bundle === "absent") {
       return (
         <div className="ollama-setup-detail">
           <OllamaSetupScreen
             onComplete={async () => {
               await invoke("patch_advanced_settings", { patch: ollamaSetupSkippedPatch(false) });
-              setOllamaInstalled(true);
+              await refreshRuntime();
             }}
           />
         </div>
       );
     }
+    if (runtimeStatus.bundle === "transaction_pending") {
+      return <RuntimeMessage message={progressLabel(runtimeStatus, t)} />;
+    }
+    if (runtimeStatus.bundle === "recovery_required") {
+      return (
+        <RuntimeRetry
+          error={runtimeStatus.last_error}
+          onRetry={retryRecovery(refreshRuntime)}
+          t={t}
+        />
+      );
+    }
     return (
       <SettingsPanel title={t("settings.tabs.ollama")}>
+        <div className="ollama-runtime-status" data-ollama-daemon={daemonKind(runtimeStatus.daemon)}>
+          {t(`ollama.runtime.${daemonKind(runtimeStatus.daemon)}`)}
+        </div>
         <SettingsTabbar
           items={tabs}
           active={subTab}
@@ -90,7 +109,10 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
     navState.ollamaFamily,
     navState.ollamaInstalledModel,
     navState.ollamaVariant,
-    ollamaInstalled,
+    runtimeLoading,
+    runtimeReadError,
+    refreshRuntime,
+    runtimeStatus,
     ollamaModels.models,
     onNavChange,
     onNavReplace,
@@ -101,4 +123,49 @@ export function useOllamaTabContent({ navState, onNavChange, onNavReplace }: Oll
   ]);
 
   return detail;
+}
+
+function RuntimeMessage({ message }: { message: string }) {
+  return <div className="ollama-runtime-message">{message}</div>;
+}
+
+function RuntimeRetry({
+  error, onRetry, t,
+}: { error: unknown; onRetry: () => Promise<void>; t: (key: string) => string }) {
+  const [retrying, setRetrying] = useState(false);
+  const retry = async () => {
+    setRetrying(true);
+    try { await onRetry(); } finally { setRetrying(false); }
+  };
+  return (
+    <div className="ollama-runtime-message" data-ollama-runtime-error="generic">
+      <p>{t(ollamaErrorKey(error))}</p>
+      <button className="btn btn-sm btn-primary" onClick={() => void retry()} disabled={retrying}>
+        {t("ollama.runtime.retry")}
+      </button>
+    </div>
+  );
+}
+
+function retryRecovery(refresh: () => Promise<void>): () => Promise<void> {
+  return async () => {
+    try {
+      await invoke("retry_ollama_recovery");
+    } catch {
+      // The status panel remains generic; backend details never reach the UI.
+    }
+    await refresh();
+  };
+}
+
+function progressLabel(status: OllamaRuntimeStatus, t: (key: string) => string): string {
+  if (status.operation === "cancelling") return t("ollamaSetup.cancelling");
+  if (status.progress === null) return t("ollama.runtime.loading");
+  return t(ollamaProgressKey(status.progress));
+}
+
+function daemonKind(daemon: DaemonState | null | undefined): "owned" | "external" | "unavailable" {
+  if (!daemon || typeof daemon === "string") return "unavailable";
+  if ("external" in daemon) return "external";
+  return "owned";
 }

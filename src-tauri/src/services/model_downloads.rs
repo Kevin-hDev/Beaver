@@ -19,7 +19,13 @@ pub async fn run_ollama_download(
 ) {
     let id = state.id.clone();
     let model = state.model_id.clone();
-    let ollama = OllamaClient::new();
+    let ollama = match OllamaClient::from_global() {
+        Ok(client) => client,
+        Err(error) => {
+            finish_ollama(app, manager, state, Err(error), None, Vec::new()).await;
+            return;
+        }
+    };
     let saved = if state.is_update {
         model_customizations::save_for_update(&ollama, &model).await
     } else {
@@ -43,7 +49,8 @@ pub async fn run_ollama_download(
     };
 
     let result =
-        ollama_registry::pull_model_with_callback(&model, progress, &cancel, &mut digests).await;
+        ollama_registry::pull_model_with_callback(&ollama, &model, progress, &cancel, &mut digests)
+            .await;
     finish_ollama(app, manager, state, result, saved, digests).await;
 }
 
@@ -113,17 +120,20 @@ async fn finish_ollama(
     let id = state.id.clone();
     match result {
         Ok(()) => {
-            let ollama = OllamaClient::new();
+            let ollama = OllamaClient::from_global().ok();
             // Keep this capture before restoring the user's saved Modelfile.
             // At this point Ollama exposes the freshly downloaded native prompt;
             // reversing the order would persist the custom prompt as native.
-            let _ = crate::services::agent_local::ollama_native_prompts::capture_current(
-                &ollama,
-                &state.model_id,
-            )
-            .await;
-            if let Some(perso) = saved {
-                model_customizations::restore_after_update(&ollama, &state.model_id, &perso).await;
+            if let Some(ollama) = ollama.as_ref() {
+                let _ = crate::services::agent_local::ollama_native_prompts::capture_current(
+                    ollama,
+                    &state.model_id,
+                )
+                .await;
+                if let Some(perso) = saved {
+                    model_customizations::restore_after_update(ollama, &state.model_id, &perso)
+                        .await;
+                }
             }
             let _ = app.emit("ollama-models-changed", ());
             emit_states(
@@ -136,7 +146,9 @@ async fn finish_ollama(
         Err(e) if e == "cancelled" => {
             if !state.is_update {
                 let _ = ollama_registry::cleanup_partial_blobs(&digests);
-                let _ = ollama_registry::delete_model(&state.model_id).await;
+                if let Ok(ollama) = OllamaClient::from_global() {
+                    let _ = ollama_registry::delete_model(&ollama, &state.model_id).await;
+                }
             }
             emit_states(
                 &app,

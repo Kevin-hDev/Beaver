@@ -1,4 +1,4 @@
-use crate::services::agent_local::ollama_base_url;
+use crate::services::agent_local::ollama_client::OllamaClient;
 use crate::services::agent_local::types_ollama::{PullProgress, RegistryModel};
 use crate::services::brand;
 use futures_util::StreamExt;
@@ -67,6 +67,7 @@ fn parse_search_html(html: &str) -> Vec<RegistryModel> {
 }
 
 pub async fn pull_model_with_callback<F>(
+    ollama: &OllamaClient,
     name: &str,
     mut on_progress: F,
     cancel: &CancellationToken,
@@ -80,8 +81,14 @@ where
         .build()
         .map_err(|e| e.to_string())?;
 
+    let endpoint = ollama
+        .manager()
+        .owned_endpoint()
+        .await
+        .ok_or_else(|| "ollama-owned-daemon-required".to_string())?;
+    let base_url = endpoint.as_http_url();
     let resp = client
-        .post(format!("{}/api/pull", ollama_base_url()))
+        .post(format!("{base_url}/api/pull"))
         .json(&serde_json::json!({ "model": name, "stream": true }))
         .send()
         .await
@@ -172,10 +179,16 @@ pub fn cleanup_partial_blobs(digests: &[String]) -> usize {
     count
 }
 
-pub async fn delete_model(name: &str) -> Result<(), String> {
+pub async fn delete_model(ollama: &OllamaClient, name: &str) -> Result<(), String> {
     let client = Client::new();
+    let endpoint = ollama
+        .manager()
+        .owned_endpoint()
+        .await
+        .ok_or_else(|| "ollama-owned-daemon-required".to_string())?;
+    let base_url = endpoint.as_http_url();
     let resp = client
-        .delete(format!("{}/api/delete", ollama_base_url()))
+        .delete(format!("{base_url}/api/delete"))
         .json(&serde_json::json!({ "model": name }))
         .send()
         .await

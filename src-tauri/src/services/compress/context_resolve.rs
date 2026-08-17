@@ -1,5 +1,5 @@
 use crate::services::agent_local::modelfile_parser::parse_modelfile;
-use crate::services::agent_local::ollama_base_url;
+use crate::services::agent_local::ollama_client::OllamaClient;
 
 pub struct ContextWindows {
     pub native: u64,
@@ -34,9 +34,21 @@ struct OllamaModelContext {
 }
 
 async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
+    let Ok(ollama) = OllamaClient::from_global() else {
+        return OllamaModelContext {
+            context_length: 0,
+            num_ctx_from_modelfile: None,
+        };
+    };
+    let Ok(base_url) = ollama.base_url().await else {
+        return OllamaModelContext {
+            context_length: 0,
+            num_ctx_from_modelfile: None,
+        };
+    };
     let client = reqwest::Client::new();
     let resp = client
-        .post(format!("{}/api/show", ollama_base_url()))
+        .post(format!("{base_url}/api/show"))
         .json(&serde_json::json!({ "model": model }))
         .send()
         .await;

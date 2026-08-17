@@ -47,6 +47,27 @@ describe("OllamaSetupScreen", () => {
     expect(document.querySelector(".oss-progress-fill-indeterminate")).toBeTruthy();
   });
 
+  it.each([
+    "preparing", "validating", "committing", "recovering", "rolling_back", "cleaning",
+  ])("affiche la phase exacte %s", async (status) => {
+    vi.mocked(invoke).mockImplementation(() => new Promise(() => {}));
+    render(<OllamaSetupScreen onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByText("ollamaSetup.download"));
+    await waitFor(() => expect(invoke).toHaveBeenCalled());
+
+    act(() => activeChannel.onmessage?.({ completed: 0, total: 0, status }));
+    const expected = status === "rolling_back" ? "rollingBack" : status;
+    expect(screen.getByText(`ollamaSetup.${expected}`)).toBeTruthy();
+  });
+
+  it("traduit le code stable renvoye par une installation en echec", async () => {
+    vi.mocked(invoke).mockRejectedValue("ollama-download-failed");
+    render(<OllamaSetupScreen onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByText("ollamaSetup.download"));
+
+    expect(await screen.findByText("ollama.errors.downloadFailed")).toBeTruthy();
+  });
+
   it("demande l'annulation du setup en cours", async () => {
     vi.mocked(invoke).mockImplementation((command) => {
       if (command === "cancel_ollama_setup") return Promise.resolve();

@@ -1,10 +1,10 @@
 use super::blocking;
 use super::cleanup::{
-    global_registry_is_empty, run_ordered, run_service_group, run_with_deadline, CleanupOutcome,
-    StopFuture,
+    global_registry_is_empty, run_ordered_bounded, run_service_group, run_with_deadline,
+    CleanupOutcome, StopFuture,
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 #[tokio::test]
@@ -54,24 +54,22 @@ async fn a_blocking_cleanup_panic_is_not_silently_ignored() {
 }
 
 #[tokio::test]
-async fn ollama_phase_runs_after_the_other_services() {
-    let order = Arc::new(Mutex::new(Vec::with_capacity(2)));
-    let services_order = Arc::clone(&order);
-    let ollama_order = Arc::clone(&order);
-    run_ordered(
+async fn exhausted_service_phase_still_leaves_the_reserved_ollama_phase() {
+    let ollama_ran = Arc::new(AtomicUsize::new(0));
+    let ollama_marker = Arc::clone(&ollama_ran);
+    let started = Instant::now();
+
+    run_ordered_bounded(
+        started + Duration::from_millis(20),
+        std::future::pending::<()>(),
         async move {
-            services_order
-                .lock()
-                .expect("services order")
-                .push("services");
-        },
-        async move {
-            ollama_order.lock().expect("ollama order").push("ollama");
+            ollama_marker.fetch_add(1, Ordering::SeqCst);
         },
     )
     .await;
 
-    assert_eq!(*order.lock().expect("final order"), ["services", "ollama"]);
+    assert_eq!(ollama_ran.load(Ordering::SeqCst), 1);
+    assert!(started.elapsed() < Duration::from_millis(100));
 }
 
 #[tokio::test]
@@ -105,4 +103,16 @@ async fn one_service_timeout_does_not_skip_the_other_services() {
 fn the_global_registry_must_be_empty_after_service_cleanup() {
     assert!(global_registry_is_empty(0));
     assert!(!global_registry_is_empty(1));
+}
+
+mod ollama {
+    #[test]
+    fn cleanup_routes_ollama_through_manager_and_its_setup_deadline() {
+        let source = include_str!("cleanup.rs");
+        assert!(source.contains("stop_for_shutdown"));
+        assert!(source.contains("ollama_setup_deadline"));
+        assert!(source.contains("graceful_deadline"));
+        assert!(!source.contains("ollama_lifecycle"));
+        assert!(!source.contains("ollama_kill"));
+    }
 }

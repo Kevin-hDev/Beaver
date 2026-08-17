@@ -111,14 +111,8 @@ async fn complete_summary(
 ) -> Result<(), String> {
     let serialized = clone_summary::serialize_messages(suffix);
     let messages = clone_summary::build_summary_messages(&serialized, custom_focus);
-    let summary = collect_summary(
-        &clone.provider,
-        &clone.model,
-        &clone.id,
-        messages,
-        cancel,
-    )
-    .await?;
+    let summary =
+        collect_summary(&clone.provider, &clone.model, &clone.id, messages, cancel).await?;
     let summary = crate::services::compress::prompt::extract_summary(&summary);
     let (read_files, modified_files) = clone_summary::extract_traced_files(suffix);
     clone.clone_summary = Some(summary.clone());
@@ -138,7 +132,9 @@ async fn collect_summary(
     cancel: CancellationToken,
 ) -> Result<String, String> {
     if provider == "ollama" {
+        let ollama = super::ollama_client::OllamaClient::from_global()?;
         let request = super::ollama_collect::collect_chat_with_timeout_and_limit(
+            &ollama,
             model,
             messages,
             Duration::from_secs(180),
@@ -149,7 +145,8 @@ async fn collect_summary(
             result = request => result.map(|(content, _)| content),
         };
     }
-    let purpose = crate::services::llm::request_purpose::RequestPurpose::for_session(session_id).await;
+    let purpose =
+        crate::services::llm::request_purpose::RequestPurpose::for_session(session_id).await;
     let result = crate::services::llm::stream::collect_chat_silent_for_compression(
         provider,
         model,

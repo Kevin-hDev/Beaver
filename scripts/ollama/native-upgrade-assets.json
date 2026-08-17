@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "product": "Beaver",
+  "fromVersion": "1.1.2",
+  "assets": {
+    "macos-aarch64": {
+      "name": "Beaver_1.1.2_aarch64.dmg",
+      "url": "https://github.com/Kevin-hDev/Beaver/releases/download/v1.1.2/Beaver_1.1.2_aarch64.dmg",
+      "size": 319922371,
+      "sha256": "747f37be78554b9e891c37505c2aeeb09ec8be195ec15ae7e321102461935f56"
+    },
+    "linux-x64": {
+      "name": "Beaver_1.1.2_amd64.deb",
+      "url": "https://github.com/Kevin-hDev/Beaver/releases/download/v1.1.2/Beaver_1.1.2_amd64.deb",
+      "size": 203321452,
+      "sha256": "fa7b9a08cc3d72a33989bb1a6cb9dcea53e50d6e58964a0a1ac4942d1405cae8"
+    },
+    "windows-x64": {
+      "name": "Beaver_1.1.2_x64-setup.exe",
+      "url": "https://github.com/Kevin-hDev/Beaver/releases/download/v1.1.2/Beaver_1.1.2_x64-setup.exe",
+      "size": 255272960,
+      "sha256": "acb2d9b2953d8f171361a1cd5da0e376be3c22469b2c0e2f6b96c9b2217ea4a1"
+    }
+  },
+  "excluded": [
+    {
+      "product": "CL-GO-DASH",
+      "version": "1.0.2",
+      "reason": "ancien produit sans pont de mise à jour vers Beaver"
+    }
+  ]
+}

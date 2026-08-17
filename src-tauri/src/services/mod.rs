@@ -47,13 +47,7 @@ pub mod oauth_providers;
 pub mod oauth_work;
 #[cfg(test)]
 mod oauth_work_tests;
-pub mod ollama_env;
-pub mod ollama_kill;
-#[cfg(test)]
-mod ollama_kill_tests;
-pub mod ollama_lifecycle;
-pub mod ollama_port;
-pub mod ollama_ps;
+pub mod ollama_manager;
 pub mod owned_process;
 #[cfg(test)]
 mod owned_process_tests;

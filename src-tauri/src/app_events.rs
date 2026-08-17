@@ -25,17 +25,15 @@ pub fn handle_run_event(app_handle: &tauri::AppHandle, event: RunEvent) {
             label,
             event: WindowEvent::CloseRequested { api, .. },
             ..
-        } => {
-            if label == "main" {
-                api.prevent_close();
-                match main_window_close_action(cfg!(target_os = "macos")) {
-                    MainWindowCloseAction::Hide => {
-                        if let Some(win) = app_handle.get_webview_window("main") {
-                            let _ = win.hide();
-                        }
+        } if label == "main" => {
+            api.prevent_close();
+            match main_window_close_action(cfg!(target_os = "macos")) {
+                MainWindowCloseAction::Hide => {
+                    if let Some(win) = app_handle.get_webview_window("main") {
+                        let _ = win.hide();
                     }
-                    MainWindowCloseAction::Quit => crate::app_exit::request(app_handle, 0),
                 }
+                MainWindowCloseAction::Quit => crate::app_exit::request(app_handle, 0),
             }
         }
         RunEvent::ExitRequested { code, api, .. } => {

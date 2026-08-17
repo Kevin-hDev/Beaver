@@ -63,7 +63,8 @@ pub(crate) async fn run(
         ) {
             Some(view) => view,
             None => {
-                let client = crate::services::agent_local::ollama_client::OllamaClient::new();
+                let client =
+                    crate::services::agent_local::ollama_client::OllamaClient::from_global()?;
                 let native_prompt = crate::services::agent_local::ollama_native_prompts::get(
                     &client,
                     &params.model,

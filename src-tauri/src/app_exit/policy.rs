@@ -1,12 +1,24 @@
 use std::time::{Duration, Instant};
 
 const GRACEFUL_TIMEOUT: Duration = Duration::from_secs(8);
+// This grace covers only an admitted setup; it never extends the global shutdown deadlines.
+pub const OLLAMA_SETUP_GRACE_TIMEOUT: Duration = Duration::from_secs(3);
+// Les clients s'arrêtent d'abord, mais ne peuvent pas consommer le temps nécessaire
+// à l'arrêt et au reap du processus Ollama qui doit rester le dernier propriétaire.
+pub(crate) const OLLAMA_REAP_RESERVE_TIMEOUT: Duration = Duration::from_secs(3);
 const TAURI_EXIT_TIMEOUT: Duration = Duration::from_secs(10);
 const POST_LOOP_SWEEP_TIMEOUT: Duration = Duration::from_secs(3);
 const EMERGENCY_TIMEOUT: Duration = Duration::from_secs(13);
 const ULTIMATE_EXIT_TIMEOUT: Duration = Duration::from_secs(15);
+// CEF helpers auto-terminate one second before ultimate exit; this named budget never extends it.
+const CEF_HELPER_EXIT_TIMEOUT: Duration = Duration::from_secs(14);
 const CEF_ADMISSION_BARRIER_TIMEOUT: Duration = Duration::from_millis(50);
 const WATCHDOG_RECHECK_INTERVAL: Duration = Duration::from_millis(10);
+
+fn cef_helper_timeout(ultimate: Duration) -> Duration {
+    ultimate.saturating_mul(CEF_HELPER_EXIT_TIMEOUT.as_secs() as u32)
+        / ULTIMATE_EXIT_TIMEOUT.as_secs() as u32
+}
 
 pub(super) const fn watchdog_recheck_interval() -> Duration {
     WATCHDOG_RECHECK_INTERVAL
@@ -41,10 +53,12 @@ impl ShutdownPolicy {
         emergency: Duration,
         ultimate: Duration,
     ) -> Option<Self> {
+        let cef_helper = cef_helper_timeout(ultimate);
         (Duration::ZERO < graceful
             && graceful < tauri_exit
             && tauri_exit < emergency
-            && emergency < ultimate)
+            && emergency < cef_helper
+            && cef_helper < ultimate)
             .then_some(Self {
                 graceful,
                 tauri_exit,
@@ -85,12 +99,29 @@ impl ShutdownTimeline {
         self.origin + self.policy.graceful()
     }
 
+    pub(super) fn ollama_setup_deadline(self) -> Instant {
+        (self.origin + OLLAMA_SETUP_GRACE_TIMEOUT).min(self.graceful_deadline())
+    }
+
+    pub(super) fn service_cleanup_deadline(self) -> Instant {
+        self.origin
+            + self
+                .policy
+                .graceful()
+                .saturating_sub(OLLAMA_REAP_RESERVE_TIMEOUT)
+    }
+
+    pub(super) fn tracked_work_deadline(self) -> Instant {
+        self.ollama_setup_deadline()
+            .min(self.service_cleanup_deadline())
+    }
+
     pub(super) fn cef_admission_deadline(self) -> Instant {
         self.origin + CEF_ADMISSION_BARRIER_TIMEOUT
     }
 
     pub(super) fn cef_helper_exit_deadline(self) -> Instant {
-        self.emergency_deadline()
+        self.origin + cef_helper_timeout(self.policy.ultimate())
     }
 
     pub(super) fn tauri_exit_deadline(self) -> Instant {

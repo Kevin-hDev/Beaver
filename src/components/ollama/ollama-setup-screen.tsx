@@ -1,13 +1,17 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke, Channel } from "@tauri-apps/api/core";
+import { ollamaErrorKey, ollamaProgressKey } from "@/lib/ollama-runtime-error";
+import type { OllamaProgressStage } from "@/types/ollama-runtime";
 import "./ollama.css";
 import "./ollama-setup-screen.css";
+
+type OllamaSetupStatus = OllamaProgressStage | "downloading-rocm";
 
 interface OllamaSetupProgress {
   completed: number;
   total: number;
-  status: string;
+  status: OllamaSetupStatus;
 }
 
 interface OllamaSetupScreenProps {
@@ -26,7 +30,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
   const cancelledRef = useRef(false);
 
   const isInstallPhase = useMemo(
-    () => ["verifying", "extracting", "starting"].includes(status),
+    () => status !== "" && status !== "downloading" && status !== "downloading-rocm",
     [status],
   );
 
@@ -38,9 +42,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
     if (status === "downloading") {
       return `${t("ollamaSetup.downloading")} ${percent}%`;
     }
-    if (status === "verifying") return t("ollamaSetup.verifying");
-    if (status === "extracting") return t("ollamaSetup.extracting");
-    if (status === "starting") return t("ollamaSetup.starting");
+    if (status !== "") return t(ollamaProgressKey(status));
     return `${percent}%`;
   }, [cancelling, percent, status, t]);
 
@@ -54,7 +56,7 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
 
     const channel = new Channel<OllamaSetupProgress>();
     channel.onmessage = (event) => {
-      setStatus(event.status);
+      setStatus(parseSetupStatus(event.status));
       if (event.total > 0) {
         setPercent(Math.round((event.completed / event.total) * 100));
       }
@@ -63,9 +65,9 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
     try {
       await invoke("download_ollama", { onProgress: channel });
       await onComplete();
-    } catch {
+    } catch (caught) {
       if (!cancelledRef.current) {
-        setError(t("errors.operationFailed"));
+        setError(t(ollamaErrorKey(caught)));
       }
       setDownloading(false);
       setCancelling(false);
@@ -84,10 +86,10 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
       setCancelling(false);
       setStatus("");
       setPercent(0);
-    } catch {
+    } catch (caught) {
       cancelledRef.current = false;
       setCancelling(false);
-      setError(t("errors.operationFailed"));
+      setError(t(ollamaErrorKey(caught)));
     }
   }, [t]);
 
@@ -97,8 +99,8 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
     setError(null);
     try {
       await onSkip();
-    } catch {
-      setError(t("errors.operationFailed"));
+    } catch (caught) {
+      setError(t(ollamaErrorKey(caught)));
       setSkipping(false);
     }
   }, [onSkip, t]);
@@ -163,4 +165,23 @@ export function OllamaSetupScreen({ onComplete, onSkip }: OllamaSetupScreenProps
       )}
     </div>
   );
+}
+
+function parseSetupStatus(value: string): OllamaSetupStatus {
+  switch (value) {
+    case "downloading":
+    case "downloading-rocm":
+    case "preparing":
+    case "verifying":
+    case "extracting":
+    case "validating":
+    case "committing":
+    case "starting":
+    case "recovering":
+    case "rolling_back":
+    case "cleaning":
+      return value;
+    default:
+      return "downloading";
+  }
 }

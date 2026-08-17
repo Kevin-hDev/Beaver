@@ -6,11 +6,11 @@ const contract = (name, file, snippets) => ({ name, file, snippets });
 export const EXPECTED_INTERNAL_REFERENCE_COUNTS = Object.freeze({
   "CL-GO-DASH": 3,
   "CL-GO": 38,
-  CLGO: 21,
-  "cl-go-dash": 234,
+  CLGO: 30,
+  "cl-go-dash": 251,
   clgo: 101,
-  "cl-go": 84,
-  cl_go_dash: 48,
+  "cl-go": 72,
+  cl_go_dash: 43,
 });
 
 export const COMPATIBILITY_CONTRACTS = Object.freeze([

@@ -104,7 +104,10 @@ async fn model_editor_keeps_raw_modelfile_when_parameter_summary_is_too_large() 
 
     assert_eq!(data.modelfile, "FROM x\nPARAMETER stop oversized\n");
     assert_eq!(data.parameters, None);
-    assert_eq!(data.parameter_error.as_deref(), Some("ollama-invalid-response"));
+    assert_eq!(
+        data.parameter_error.as_deref(),
+        Some("ollama-invalid-response")
+    );
 }
 
 #[tokio::test]
@@ -132,7 +135,10 @@ async fn model_editor_disables_editing_instead_of_truncating_stored_parameters()
 
     assert_eq!(data.modelfile, "FROM x\n");
     assert_eq!(data.parameters, None);
-    assert_eq!(data.parameter_error.as_deref(), Some("ollama-parameter-invalid"));
+    assert_eq!(
+        data.parameter_error.as_deref(),
+        Some("ollama-parameter-invalid")
+    );
 }
 
 #[tokio::test]
@@ -156,7 +162,10 @@ async fn model_editor_rejects_decoded_control_characters_before_editing() {
 
     assert_eq!(data.modelfile, "FROM x\nPARAMETER stop safe\n");
     assert_eq!(data.parameters, None);
-    assert_eq!(data.parameter_error.as_deref(), Some("ollama-parameter-invalid"));
+    assert_eq!(
+        data.parameter_error.as_deref(),
+        Some("ollama-parameter-invalid")
+    );
 }
 
 #[test]
@@ -165,8 +174,7 @@ fn ollama_test_client_rejects_non_loopback_urls() {
 }
 
 #[tokio::test]
-async fn client_created_before_port_selection_follows_the_runtime_port() {
-    let _guard = crate::services::ollama_port::PORT_TEST_LOCK.lock().await;
+async fn client_uses_the_injected_runtime_endpoint() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/api/tags"))
@@ -177,11 +185,8 @@ async fn client_created_before_port_selection_follows_the_runtime_port() {
         .mount(&server)
         .await;
 
-    crate::services::ollama_port::set_port(0);
-    let client = OllamaClient::new();
-    crate::services::ollama_port::set_port(server.address().port());
+    let client = OllamaClient::with_base_url(&server.uri()).expect("loopback test server");
     let result = client.list_models().await;
-    crate::services::ollama_port::set_port(0);
 
     assert!(
         result.is_ok(),

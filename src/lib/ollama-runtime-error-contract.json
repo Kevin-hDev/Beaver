@@ -1,0 +1,22 @@
+{
+  "ollama-bundle-invalid": "ollama.errors.bundleInvalid",
+  "ollama-bundle-missing": "ollama.errors.bundleMissing",
+  "ollama-checksum-mismatch": "ollama.errors.checksumMismatch",
+  "ollama-closing": "ollama.errors.closing",
+  "ollama-download-failed": "ollama.errors.downloadFailed",
+  "ollama-extraction-failed": "ollama.errors.extractionFailed",
+  "ollama-internal": "ollama.errors.internal",
+  "ollama-journal-invalid": "ollama.errors.journalInvalid",
+  "ollama-model-store-conflict": "ollama.errors.modelStoreConflict",
+  "ollama-operation-cancelled": "ollama.errors.operationCancelled",
+  "ollama-operation-in-progress": "ollama.errors.operationInProgress",
+  "ollama-recovery-deferred": "ollama.errors.recoveryDeferred",
+  "ollama-setup-timeout": "ollama.errors.setupTimeout",
+  "ollama-start-failed": "ollama.errors.startFailed",
+  "ollama-stop-failed": "ollama.errors.stopFailed",
+  "ollama-storage-unavailable": "ollama.errors.storageUnavailable",
+  "ollama-unavailable": "ollama.errors.unavailable",
+  "ollama-update-cleanup-pending": "ollama.errors.updateCleanupPending",
+  "ollama-update-recovery-required": "ollama.errors.updateRecoveryRequired",
+  "ollama-validation-deferred": "ollama.errors.validationDeferred"
+}

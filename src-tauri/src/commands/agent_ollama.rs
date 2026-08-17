@@ -7,14 +7,16 @@ use crate::services::agent_local::translator;
 use crate::services::agent_local::types_ollama::{
     ModelInfo, OllamaModel, OllamaModelEditorData, RegistryModel, RegistryModelDetails, RegistryTag,
 };
-use crate::services::ollama_lifecycle;
 use tauri::Emitter;
 
 #[tauri::command]
 pub async fn list_ollama_models(
     ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<Vec<OllamaModel>, String> {
-    if !ollama_lifecycle::is_ollama_ready() {
+    if matches!(
+        ollama.manager().status().await.daemon,
+        crate::services::ollama_manager::DaemonState::Unavailable
+    ) {
         return Ok(Vec::new());
     }
     ollama.list_models().await
@@ -62,19 +64,25 @@ pub async fn translate_description(
     text: String,
     target_lang: String,
     translator_model: Option<String>,
+    ollama: tauri::State<'_, OllamaClient>,
 ) -> Result<String, String> {
     if let Some(cached) = translation_cache::get_cached(&model_name, &target_lang).await {
         return Ok(cached);
     }
     let translated =
-        translator::translate_text(&text, &target_lang, translator_model.as_deref()).await?;
+        translator::translate_text(&ollama, &text, &target_lang, translator_model.as_deref())
+            .await?;
     translation_cache::set_cached(&model_name, &target_lang, &translated).await?;
     Ok(translated)
 }
 
 #[tauri::command]
-pub async fn delete_ollama_model(app: tauri::AppHandle, name: String) -> Result<(), String> {
-    ollama_registry::delete_model(&name).await?;
+pub async fn delete_ollama_model(
+    app: tauri::AppHandle,
+    name: String,
+    ollama: tauri::State<'_, OllamaClient>,
+) -> Result<(), String> {
+    ollama_registry::delete_model(&ollama, &name).await?;
     // Construire le tableau exécute les trois nettoyages avant de retenir la
     // première erreur : un store indisponible ne doit pas laisser les suivants orphelins.
     let cleanup_result = first_cleanup_error([

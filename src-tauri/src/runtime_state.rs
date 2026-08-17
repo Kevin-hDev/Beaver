@@ -17,6 +17,7 @@ pub fn agent_work(
 // Une seule construction garantit que tous les services partagent le superviseur de fermeture.
 pub struct RuntimeServices {
     pub agent_work: crate::services::agent_local::agent_work_supervision::AgentWorkServices,
+    pub ollama: crate::services::ollama_manager::OllamaManager,
     pub gateway: crate::services::gateway::GatewayService,
     pub oauth_work: crate::services::oauth_work::OAuthWorkServices,
     pub searxng: crate::services::searxng::SearxngSidecar,
@@ -29,8 +30,13 @@ pub struct RuntimeServices {
 
 pub fn services(exit: &crate::app_exit::AppExitCoordinator) -> RuntimeServices {
     let supervisor = exit.work_supervisor();
+    let ollama = crate::services::ollama_manager::OllamaManager::with_emergency(
+        supervisor.clone(),
+        exit.emergency_publisher(),
+    );
     RuntimeServices {
         agent_work: agent_work(exit),
+        ollama,
         gateway: crate::services::gateway::GatewayService::new(supervisor.clone()),
         oauth_work: crate::services::oauth_work::OAuthWorkServices::new(supervisor.clone()),
         searxng: crate::services::searxng::SearxngSidecar::new(supervisor.clone()),
@@ -54,6 +60,33 @@ pub fn scheduler(app: &tauri::AppHandle) -> std::io::Result<crate::services::sch
     let exit = app.state::<crate::app_exit::AppExitCoordinator>();
     crate::services::scheduler::Scheduler::spawn(app.clone(), exit.work_supervisor())
         .map_err(std::io::Error::other)
+}
+
+pub fn start_ollama_polling(app: &tauri::AppHandle) {
+    let background = app
+        .state::<crate::services::runtime_background::RuntimeBackgroundServices>()
+        .inner()
+        .clone();
+    let manager = app
+        .state::<crate::services::ollama_manager::OllamaManager>()
+        .inner()
+        .clone();
+    if background
+        .spawn_loop(move |cancel| async move {
+            let cancellation = tokio_util::sync::CancellationToken::new();
+            let mut loop_task = Box::pin(manager.run_background_loop(cancellation.clone()));
+            tokio::select! {
+                _ = cancel.cancelled() => {
+                    cancellation.cancel();
+                    loop_task.as_mut().await;
+                }
+                _ = loop_task.as_mut() => {}
+            }
+        })
+        .is_err()
+    {
+        ::log::warn!("[ollama] polling unavailable during shutdown");
+    }
 }
 
 pub fn initialize_agent_runtime(app: &tauri::AppHandle) -> std::io::Result<()> {

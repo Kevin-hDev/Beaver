@@ -1,11 +1,14 @@
 use std::io::Write;
-use std::process::Stdio;
 use std::time::Duration;
 
 const MAX_MODELFILE_BYTES: usize = 2 * 1024 * 1024;
 const CREATE_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 
-pub async fn create_from_modelfile(name: &str, content: &str) -> Result<(), String> {
+pub async fn create_from_modelfile(
+    ollama: &super::ollama_client::OllamaClient,
+    name: &str,
+    content: &str,
+) -> Result<(), String> {
     super::model_customizations::validate_model_name(name)?;
     validate_content(content)?;
 
@@ -22,28 +25,15 @@ pub async fn create_from_modelfile(name: &str, content: &str) -> Result<(), Stri
         "ollama-create-error".to_string()
     })?;
 
-    let binary = crate::services::ollama_lifecycle::ollama_binary_path()
-        .map_err(|_| "ollama-create-error".to_string())?;
-    let mut command = crate::services::background_command::new_tokio(binary);
-    command
-        .arg("create")
-        .arg(name)
-        .arg("--file")
-        .arg(file.path())
-        .env("OLLAMA_HOST", super::ollama_base_url())
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .kill_on_drop(true);
-
-    let status = tokio::time::timeout(CREATE_TIMEOUT, command.status())
+    let args = crate::services::ollama_manager::OllamaCliArgs::Create {
+        model: name.to_string(),
+        modelfile: file.path().to_path_buf(),
+    };
+    let result = tokio::time::timeout(CREATE_TIMEOUT, ollama.manager().run_cli(args))
         .await
         .map_err(|_| "ollama-create-timeout".to_string())?
-        .map_err(|error| {
-            ::log::error!("[ollama-modelfile] command unavailable: {error}");
-            "ollama-create-error".to_string()
-        })?;
-    if status.success() {
+        .map_err(|error| error.as_str().to_string())?;
+    if result.success {
         Ok(())
     } else {
         Err("ollama-create-error".into())
@@ -67,10 +57,7 @@ pub fn use_updated_base(content: &str, name: &str) -> String {
 }
 
 fn validate_content(content: &str) -> Result<(), String> {
-    if content.trim().is_empty()
-        || content.len() > MAX_MODELFILE_BYTES
-        || content.contains('\0')
-    {
+    if content.trim().is_empty() || content.len() > MAX_MODELFILE_BYTES || content.contains('\0') {
         return Err("ollama-modelfile-invalid".into());
     }
     Ok(())

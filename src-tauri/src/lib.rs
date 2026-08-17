@@ -10,7 +10,6 @@ mod commands;
 mod invoke_handler;
 mod invoke_handler_tail;
 mod models;
-mod ollama_polling;
 mod runtime_startup;
 mod runtime_state;
 mod services;
@@ -31,7 +30,6 @@ mod windows_entry_plan;
 use services::agent_local::ollama_client::OllamaClient;
 use services::e2e_profile::{report_lifecycle, LifecycleStage};
 use services::gateway::GatewayService;
-use services::ollama_lifecycle::OllamaSidecar;
 use tauri::{Emitter, Manager};
 
 pub use runtime_state::ActiveStreams;
@@ -79,14 +77,15 @@ pub(crate) fn run_inner(
     let builder = builder.plugin(tauri_plugin_wdio::init());
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    let ollama_manager = runtime.ollama.clone();
     let app = builder
-        .manage(OllamaClient::new())
+        .manage(OllamaClient::new(ollama_manager))
+        .manage(runtime.ollama)
         .manage(exit_coordinator)
         .manage(runtime.agent_work)
         .manage(runtime.oauth_work)
         .manage(ActiveStreams(Default::default()))
         .manage(services::mascot::MascotRuntime::default())
-        .manage(OllamaSidecar::new())
         .manage(runtime.downloads)
         .manage(runtime.app_update)
         .manage(runtime.searxng)
@@ -201,7 +200,7 @@ pub(crate) fn run_inner(
             app.manage(scheduler);
             report_lifecycle(LifecycleStage::SchedulerStarted);
             services::e2e_profile::run_host_mutation(|| {
-                ollama_polling::start(app.handle().clone());
+                runtime_state::start_ollama_polling(app.handle());
                 runtime_startup::start_litellm(&background);
             });
             services::update_health::acknowledge_from_args(std::env::args_os())

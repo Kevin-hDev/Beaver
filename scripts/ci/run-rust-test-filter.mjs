@@ -6,10 +6,34 @@ import { fileURLToPath } from "node:url";
 const FILTER_PATTERN = /^[A-Za-z0-9_:]{1,256}$/u;
 const FEATURES_PATTERN = /^[A-Za-z0-9_,.-]{1,128}$/u;
 const MAX_TEST_THREADS = 64;
+const MAX_FAILURE_CHANNEL_CHARS = 8 * 1024;
 const FAILURE_MESSAGE = "Rust test filter failed";
 
 function rejectInvalid(condition) {
   if (condition) throw new Error(FAILURE_MESSAGE);
+}
+
+function boundedChannel(value) {
+  const text = String(value);
+  if (text.length <= MAX_FAILURE_CHANNEL_CHARS) return text;
+  const half = Math.floor(MAX_FAILURE_CHANNEL_CHARS / 2);
+  return `${text.slice(0, half)}\n... diagnostic truncated ...\n${text.slice(-half)}`;
+}
+
+function inventoryFailure(result) {
+  const status = Number.isInteger(result.status) ? result.status : "none";
+  const signal = result.signal || "none";
+  const details = [
+    result.error ? `error: ${boundedChannel(result.error.message || result.error)}` : "",
+    result.stdout ? `stdout:\n${boundedChannel(result.stdout)}` : "",
+    result.stderr ? `stderr:\n${boundedChannel(result.stderr)}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const suffix = details ? `\n${details}` : "";
+  return new Error(
+    `${FAILURE_MESSAGE} during inventory (status=${status}, signal=${signal}).${suffix}`,
+  );
 }
 
 export function buildCargoCommands({
@@ -56,7 +80,9 @@ export function runFilteredRustTests(config, run = spawnSync) {
     maxBuffer: 16 * 1024 * 1024,
     shell: false,
   });
-  rejectInvalid(inventory.error || inventory.signal || inventory.status !== 0);
+  if (inventory.error || inventory.signal || inventory.status !== 0) {
+    throw inventoryFailure(inventory);
+  }
 
   const count = countListedTests(inventory.stdout);
   rejectInvalid(count === 0);
@@ -107,8 +133,11 @@ if (isDirectExecution(import.meta.url, process.argv[1])) {
   try {
     const count = runFilteredRustTests(parseArguments(process.argv.slice(2)));
     process.stdout.write(`Verified ${count} filtered Rust test(s).\n`);
-  } catch {
-    process.stderr.write(`${FAILURE_MESSAGE}.\n`);
+  } catch (error) {
+    const message = error instanceof Error && error.message.startsWith(FAILURE_MESSAGE)
+      ? error.message
+      : FAILURE_MESSAGE;
+    process.stderr.write(`${message}\n`);
     process.exitCode = 1;
   }
 }

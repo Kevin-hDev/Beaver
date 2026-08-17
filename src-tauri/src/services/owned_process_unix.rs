@@ -1,4 +1,11 @@
 use super::OwnedProcessError;
+use super::OwnedProcessIdentity;
+use super::OwnedProcessInspection;
+#[cfg(target_os = "linux")]
+use std::fs;
+
+#[path = "owned_process_unix_recovery.rs"]
+pub(in crate::services::owned_process) mod recovery;
 
 pub(super) fn admit(pid: u32) -> Result<(), OwnedProcessError> {
     if pid < 2 || pid > i32::MAX as u32 {
@@ -15,11 +22,199 @@ pub(super) fn admit(pid: u32) -> Result<(), OwnedProcessError> {
     }
 }
 
+pub(super) fn identity(pid: u32) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+    if pid < 2 || pid > i32::MAX as u32 {
+        return Err(OwnedProcessError::Admission);
+    }
+    let scope = unsafe { libc::getpgid(pid as i32) };
+    if scope <= 0 {
+        return Err(OwnedProcessError::Admission);
+    }
+    let native_start_time = start_time(pid).ok_or(OwnedProcessError::Admission)?;
+    let executable = executable_identity(pid).ok_or(OwnedProcessError::Admission)?;
+    Ok(OwnedProcessIdentity {
+        pid,
+        native_scope: scope as u64,
+        native_start_time,
+        executable,
+    })
+}
+
+pub(super) fn inspect_for_recovery(
+    pid: u32,
+    expected_start_time: u64,
+) -> Result<OwnedProcessInspection, OwnedProcessError> {
+    recovery::inspect_for_recovery_with(pid, expected_start_time, start_time, identity)
+}
+
+pub(super) fn identity_with_executable(
+    pid: u32,
+    executable: u128,
+) -> Result<OwnedProcessIdentity, OwnedProcessError> {
+    if pid < 2 || pid > i32::MAX as u32 || executable == 0 {
+        return Err(OwnedProcessError::Admission);
+    }
+    let scope = unsafe { libc::getpgid(pid as i32) };
+    if scope <= 0 {
+        return Err(OwnedProcessError::Admission);
+    }
+    Ok(OwnedProcessIdentity {
+        pid,
+        native_scope: scope as u64,
+        native_start_time: start_time(pid).ok_or(OwnedProcessError::Admission)?,
+        executable,
+    })
+}
+
+pub(super) fn recover_exact(
+    expected: OwnedProcessIdentity,
+    deadline: std::time::Instant,
+) -> Result<(), OwnedProcessError> {
+    let current = identity(expected.pid)?;
+    if current != expected {
+        return Err(OwnedProcessError::Admission);
+    }
+    signal_exact(expected, false)?;
+    if wait_for_object_exit(expected.pid, deadline)? {
+        return Ok(());
+    }
+    signal_exact(expected, true)?;
+    wait_for_object_exit(expected.pid, deadline + std::time::Duration::from_secs(2))?
+        .then_some(())
+        .ok_or(OwnedProcessError::Admission)
+}
+
+pub(super) fn signal_exact(
+    expected: OwnedProcessIdentity,
+    force: bool,
+) -> Result<(), OwnedProcessError> {
+    #[cfg(target_os = "linux")]
+    {
+        let fd = pidfd_open(expected.pid)?;
+        let result = (identity(expected.pid)? == expected)
+            .then_some(())
+            .ok_or(OwnedProcessError::Admission)
+            .and_then(|()| pidfd_signal(fd, if force { libc::SIGKILL } else { libc::SIGTERM }));
+        unsafe { libc::close(fd) };
+        result
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let current = identity(expected.pid)?;
+        if current != expected || current.native_scope != expected.pid as u64 {
+            return Err(OwnedProcessError::Admission);
+        }
+        let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
+        let result = unsafe { libc::kill(-(expected.native_scope as libc::pid_t), signal) };
+        (result == 0)
+            .then_some(())
+            .ok_or(OwnedProcessError::Admission)
+    }
+}
+
+pub(super) fn process_exists(pid: u32) -> bool {
+    if pid < 2 || pid > i32::MAX as u32 {
+        return false;
+    }
+    let result = unsafe { libc::kill(pid as libc::pid_t, 0) };
+    result == 0 || std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)
+}
+
+pub(super) fn reap_exited_child(pid: u32) -> Result<bool, OwnedProcessError> {
+    if pid < 2 || pid > i32::MAX as u32 {
+        return Err(OwnedProcessError::Admission);
+    }
+    let mut status = 0;
+    let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
+    if result == pid as libc::pid_t {
+        release(pid);
+        return Ok(true);
+    }
+    if result == 0 || std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD) {
+        return Ok(false);
+    }
+    Err(OwnedProcessError::Admission)
+}
+
+#[cfg(target_os = "linux")]
+fn pidfd_open(pid: u32) -> Result<libc::c_int, OwnedProcessError> {
+    let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) } as libc::c_int;
+    (fd >= 0).then_some(fd).ok_or(OwnedProcessError::Admission)
+}
+
+#[cfg(target_os = "linux")]
+fn pidfd_signal(fd: libc::c_int, signal: libc::c_int) -> Result<(), OwnedProcessError> {
+    let result = unsafe {
+        libc::syscall(
+            libc::SYS_pidfd_send_signal,
+            fd,
+            signal,
+            std::ptr::null::<libc::siginfo_t>(),
+            0,
+        )
+    };
+    (result == 0)
+        .then_some(())
+        .ok_or(OwnedProcessError::Admission)
+}
+
+fn wait_for_object_exit(pid: u32, deadline: std::time::Instant) -> Result<bool, OwnedProcessError> {
+    let mut status = 0;
+    while std::time::Instant::now() < deadline {
+        let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
+        if result == pid as libc::pid_t {
+            release(pid);
+            return Ok(true);
+        }
+        if result < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::ECHILD) {
+            return Err(OwnedProcessError::Admission);
+        }
+        if !process_exists(pid) {
+            release(pid);
+            return Ok(true);
+        }
+        std::thread::yield_now();
+    }
+    Ok(false)
+}
+
 pub(super) fn release(pid: u32) {
     #[cfg(target_os = "macos")]
     super::macos::release(pid);
     #[cfg(not(target_os = "macos"))]
     let _ = pid;
+}
+
+#[cfg(target_os = "linux")]
+fn start_time(pid: u32) -> Option<u64> {
+    let bytes = fs::read(format!("/proc/{pid}/stat")).ok()?;
+    let end = bytes.iter().rposition(|byte| *byte == b')')?;
+    bytes
+        .get(end + 2..)?
+        .split(|byte| *byte == b' ')
+        .filter(|field| !field.is_empty())
+        .nth(19)?
+        .iter()
+        .try_fold(0_u64, |value, byte| {
+            value.checked_mul(10)?.checked_add(u64::from(byte - b'0'))
+        })
+}
+
+#[cfg(target_os = "macos")]
+fn start_time(pid: u32) -> Option<u64> {
+    super::macos::read_start_time(pid)
+}
+
+#[cfg(target_os = "linux")]
+fn executable_identity(pid: u32) -> Option<u128> {
+    use std::os::unix::fs::MetadataExt;
+    let metadata = fs::metadata(format!("/proc/{pid}/exe")).ok()?;
+    Some((u128::from(metadata.dev()) << 64) | u128::from(metadata.ino()))
+}
+
+#[cfg(target_os = "macos")]
+fn executable_identity(pid: u32) -> Option<u128> {
+    super::macos::read_executable_identity(pid)
 }
 
 #[cfg(test)]

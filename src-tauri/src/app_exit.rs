@@ -6,16 +6,23 @@ use tauri::Manager;
 // une sentinelle distincte jusqu'à la fin du nettoyage coordonné.
 const BEAVER_RESTART_REQUEST_CODE: i32 = i32::MAX - 1;
 
+#[cfg(test)]
 mod blocking;
 mod cleanup;
+mod coordinator_emergency;
 mod emergency;
 mod emergency_drain;
+#[allow(dead_code)]
+mod emergency_registration;
+mod emergency_signaler;
 mod final_action;
 mod policy;
+pub(crate) use policy::OLLAMA_REAP_RESERVE_TIMEOUT;
 mod presentation;
 mod raw_exit;
 mod registry;
 mod registry_admission;
+mod request_api;
 mod request_flow;
 mod state;
 #[cfg(test)]
@@ -24,6 +31,15 @@ mod ultimate;
 mod watchdog;
 mod work_supervisor;
 
+#[cfg(all(test, unix))]
+pub(crate) use emergency::EMERGENCY_CAPACITY;
+#[allow(unused_imports)]
+pub(crate) use emergency_registration::EmergencyHandoffReason;
+#[allow(unused_imports)]
+pub(crate) use emergency_signaler::{AppEmergencyPublisher, AppEmergencyRegistration};
+#[cfg(test)]
+pub(crate) use request_api::request_restart_with;
+pub use request_api::{request, request_restart};
 pub use work_supervisor::AppWorkSupervisor;
 pub type AppWorkAdmission = registry::TrackedAdmission;
 pub type AppWorkAdmissionError = registry::AdmissionError;
@@ -32,6 +48,8 @@ pub type AppWorkAdmissionError = registry::AdmissionError;
 mod cleanup_tests;
 #[cfg(test)]
 mod coordinator_tests;
+#[cfg(test)]
+mod emergency_signaler_tests;
 #[cfg(test)]
 mod emergency_tests;
 #[cfg(test)]
@@ -189,18 +207,6 @@ impl AppExitCoordinator {
             watchdog::drain_post_loop(&self.emergency, timeline);
         }
     }
-}
-
-pub fn request(app: &tauri::AppHandle, code: i32) {
-    app.exit(code);
-}
-
-pub fn request_restart(app: &tauri::AppHandle) {
-    request_restart_with(|code| app.exit(code));
-}
-
-fn request_restart_with(exit: impl FnOnce(i32)) {
-    exit(BEAVER_RESTART_REQUEST_CODE);
 }
 
 pub fn handle_requested(app: &tauri::AppHandle, code: Option<i32>, api: &tauri::ExitRequestApi) {
