@@ -6,8 +6,6 @@ use super::extract_root::ExtractionRoot;
 use std::collections::HashSet;
 use std::io::{Read, Write};
 use std::path::Path;
-#[cfg(unix)]
-use std::path::PathBuf;
 use tokio_util::sync::CancellationToken;
 
 const MAX_ENTRIES: usize = 50_000;
@@ -21,6 +19,8 @@ pub(super) fn extract_tar<R: Read>(
     before_write: &mut dyn FnMut() -> Result<(), OllamaErrorCode>,
 ) -> Result<(), OllamaErrorCode> {
     let mut names = HashSet::new();
+    #[cfg(unix)]
+    let mut deferred_symlinks = Vec::new();
     let mut total = 0_u64;
     for (index, item) in archive
         .entries()
@@ -54,9 +54,9 @@ pub(super) fn extract_tar<R: Read>(
                 .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?
                 .ok_or(OllamaErrorCode::OllamaBundleInvalid)?
                 .into_owned();
-            validate_contained_symlink(&name, &target, &names)?;
+            validate_member_path(&target)?;
             before_write()?;
-            root.create_symlink(&name, &target)?;
+            deferred_symlinks.push((name.clone(), target));
             names.insert(name);
             continue;
         }
@@ -84,23 +84,14 @@ pub(super) fn extract_tar<R: Read>(
             .map_err(|_| OllamaErrorCode::OllamaBundleInvalid)?;
         write_entry(&mut entry, root, &name, mode, cancellation)?;
     }
+    #[cfg(unix)]
+    {
+        super::extract_symlink::validate_deferred_symlinks(&names, &deferred_symlinks)?;
+        for (name, target) in deferred_symlinks {
+            root.create_symlink(&name, &target)?;
+        }
+    }
     Ok(())
-}
-
-#[cfg(unix)]
-fn validate_contained_symlink(
-    name: &Path,
-    target: &Path,
-    names: &HashSet<PathBuf>,
-) -> Result<(), OllamaErrorCode> {
-    validate_member_path(target)?;
-    let resolved = name.parent().unwrap_or_else(|| Path::new("")).join(target);
-    let components = super::extract_root::relative_components(&resolved)?;
-    let resolved = components.into_iter().collect::<PathBuf>();
-    names
-        .contains(&resolved)
-        .then_some(())
-        .ok_or(OllamaErrorCode::OllamaBundleInvalid)
 }
 
 pub(super) fn extract_zip(

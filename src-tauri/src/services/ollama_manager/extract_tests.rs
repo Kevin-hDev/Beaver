@@ -163,6 +163,40 @@ fn official_unix_archive_extracts_only_contained_relative_symlink_chains() {
     );
 }
 
+#[cfg(unix)]
+#[test]
+fn official_linux_archive_accepts_a_contained_forward_symlink() {
+    let root = tempfile::tempdir().unwrap();
+    let archive = root.path().join("ollama-darwin.tgz");
+    write_gzip_tar(
+        &archive,
+        &[
+            TarMember::raw(
+                "lib/ollama/libggml.so.0",
+                tar::EntryType::Symlink,
+                &[],
+                0o777,
+                Some("libggml.so.0.20.0"),
+            ),
+            TarMember::regular("lib/ollama/libggml.so.0.20.0", b"library", 0o755),
+        ],
+    );
+    let staging = empty_staging(root.path());
+
+    extract_archive(
+        &archive,
+        &staging,
+        "ollama-darwin.tgz",
+        &CancellationToken::new(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        std::fs::read(staging.join("lib/ollama/libggml.so.0")).unwrap(),
+        b"library"
+    );
+}
+
 #[test]
 fn tar_traversal_absolute_symlink_and_hardlink_are_rejected_without_escape() {
     let cases = [
@@ -211,7 +245,7 @@ fn tar_traversal_absolute_symlink_and_hardlink_are_rejected_without_escape() {
 
 #[cfg(unix)]
 #[test]
-fn unix_archive_rejects_parent_missing_and_forward_symlink_targets() {
+fn unix_archive_rejects_parent_missing_and_cyclic_symlink_targets() {
     let cases = [
         vec![TarMember::raw(
             "bin/link",
@@ -229,13 +263,19 @@ fn unix_archive_rejects_parent_missing_and_forward_symlink_targets() {
         )],
         vec![
             TarMember::raw(
-                "libforward.dylib",
+                "libcycle-a.dylib",
                 tar::EntryType::Symlink,
                 &[],
                 0o777,
-                Some("libtarget.dylib"),
+                Some("libcycle-b.dylib"),
             ),
-            TarMember::regular("libtarget.dylib", b"library", 0o755),
+            TarMember::raw(
+                "libcycle-b.dylib",
+                tar::EntryType::Symlink,
+                &[],
+                0o777,
+                Some("libcycle-a.dylib"),
+            ),
         ],
     ];
     for (index, members) in cases.into_iter().enumerate() {
