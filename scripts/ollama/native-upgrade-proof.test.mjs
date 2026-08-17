@@ -138,6 +138,22 @@ test("sensitive files inside an allowlisted Ollama root are rejected", async () 
   }
 });
 
+test("the published Linux bundle fits inside the bounded inventory", async () => {
+  const profile = await makeDisposableProfile();
+  try {
+    const bundle = join(profile.dataDirectory, "ollama-bundle");
+    await Promise.all(
+      Array.from({ length: 1874 }, (_, index) =>
+        writeFile(join(bundle, `linux-bundle-file-${index}.bin`), `${index}\n`),
+      ),
+    );
+    const proof = await collectNativeUpgradeProof(confirmed(profile));
+    assert.equal(proof.entries.length, 1876);
+  } finally {
+    await rm(profile.homeDirectory, { recursive: true, force: true });
+  }
+});
+
 test(`collection is bounded at ${MAX_INVENTORY_ENTRIES} entries`, async () => {
   const profile = await makeDisposableProfile();
   try {

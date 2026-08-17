@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const MAX_INVENTORY_ENTRIES = 1000;
+export const MAX_INVENTORY_ENTRIES = 4096;
 export const MAX_PROOF_BYTES = 4 * 1024 * 1024;
 const DATA_DIRECTORY_SUFFIX = join(".local", "share", "cl-go-dash");
 const MODELS_DIRECTORY_SUFFIX = join(".ollama", "models");
