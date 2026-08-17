@@ -9,6 +9,7 @@
     "keyringUser": "master-key"
   },
   "transientRoots": [
+    "cef-supervision",
     "chronos-sidecar.pid",
     "ollama-sidecar.pid",
     "searxng-sidecar.pid",
@@ -100,6 +101,7 @@
       "profilePaths": [
         "agent-sessions/index.json",
         "agent-sessions/550e8400-e29b-41d4-a716-446655440000.json",
+        "session-order.json",
         "extension-session-state/550e8400-e29b-41d4-a716-446655440000.json",
         "plans/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440001.md",
         "session-workspaces/550e8400-e29b-41d4-a716-446655440000",
@@ -109,6 +111,11 @@
         {
           "file": "src-tauri/src/services/agent_local/session_index_io.rs",
           "snippets": [".join(\"agent-sessions\")", ".join(\"index.json\")"]
+        },
+        {
+          "scope": "migration",
+          "file": "src-tauri/src/services/agent_local/session_order.rs",
+          "snippets": [".join(\"session-order.json\")"]
         },
         {
           "file": "src-tauri/src/services/agent_local/tool_plan_storage.rs",

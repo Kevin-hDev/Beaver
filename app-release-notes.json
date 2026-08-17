@@ -1,4 +1,62 @@
 {
+  "1.1.3": {
+    "de": [
+      "Beaver beendet sich jetzt schnell und zuverlässig und räumt lokale Laufzeiten, Browser-Helfer, Terminals, Verbindungen und Erweiterungen vollständig auf.",
+      "Ollama-Installationen und -Updates sind jetzt transaktional, behalten vorhandene Modelle und werden nach einer Unterbrechung sicher fortgesetzt.",
+      "Native Browser-Helfer sind unter macOS, Windows und Linux stabiler und verhindern unerwartete Beendigungen beim Starten oder Schließen.",
+      "Globale Systemanweisungen von Beaver und das Verhalten jedes installierten Ollama-Modells lassen sich jetzt prüfen und anpassen.",
+      "Gesprächsreihenfolge, Terminalsitzungen, Fenstersteuerung und Links aus Werkzeugergebnissen sind jetzt zuverlässiger und sicherer.",
+      "Beaver 1.1.3 und neuer erscheinen unter GNU AGPL v3; Versionen bis 1.1.2 behalten ihre ursprüngliche Apache-2.0-Lizenz."
+    ],
+    "en": [
+      "Beaver now closes quickly and predictably, cleaning up local runtimes, browser helpers, terminals, connectors, and extensions without leaving owned processes behind.",
+      "Ollama installation and updates are now transactional, preserve existing models, and recover safely after an interrupted operation.",
+      "Native browser helpers are more stable across macOS, Windows, and Linux, preventing spontaneous exits and improving startup and shutdown reliability.",
+      "You can now review and customize Beaver's global system prompts and set separate behavior for each installed Ollama model.",
+      "Conversation ordering, terminal sessions, window controls, and tool-result links are now more reliable and secure.",
+      "Beaver 1.1.3 and later are released under the GNU AGPL v3; versions through 1.1.2 keep their original Apache 2.0 license."
+    ],
+    "es": [
+      "Beaver ahora se cierra de forma rápida y previsible, limpiando motores locales, procesos del navegador, terminales, conexiones y extensiones.",
+      "La instalación y las actualizaciones de Ollama son ahora transaccionales, conservan los modelos y se recuperan con seguridad tras una interrupción.",
+      "Los procesos nativos del navegador son más estables en macOS, Windows y Linux, evitando cierres espontáneos al iniciar o salir.",
+      "Ahora puedes revisar y personalizar las instrucciones globales de Beaver y definir el comportamiento de cada modelo Ollama instalado.",
+      "El orden de conversaciones, las sesiones de terminal, los controles de ventana y los enlaces de herramientas son más fiables y seguros.",
+      "Beaver 1.1.3 y posteriores se publican bajo GNU AGPL v3; las versiones hasta 1.1.2 conservan su licencia Apache 2.0 original."
+    ],
+    "fr": [
+      "Beaver se ferme maintenant rapidement et proprement, en arrêtant ses moteurs locaux, navigateurs, terminaux, connecteurs et extensions sans laisser de processus.",
+      "L'installation et les mises à jour d'Ollama sont désormais transactionnelles, conservent les modèles et reprennent sûrement après une interruption.",
+      "Les processus natifs du navigateur sont plus stables sur macOS, Windows et Linux, ce qui évite les fermetures spontanées au démarrage ou à l'arrêt.",
+      "Vous pouvez maintenant consulter et personnaliser les instructions système globales de Beaver et le comportement de chaque modèle Ollama installé.",
+      "L'ordre des conversations, les sessions du terminal, les contrôles de fenêtre et les liens des outils sont maintenant plus fiables et sûrs.",
+      "Beaver 1.1.3 et les versions suivantes sont publiés sous GNU AGPL v3 ; les versions jusqu'à 1.1.2 conservent leur licence Apache 2.0."
+    ],
+    "it": [
+      "Beaver ora si chiude rapidamente e in modo prevedibile, arrestando runtime locali, browser, terminali, connessioni ed estensioni senza lasciare processi.",
+      "L'installazione e gli aggiornamenti di Ollama sono ora transazionali, conservano i modelli e riprendono in sicurezza dopo un'interruzione.",
+      "I processi nativi del browser sono più stabili su macOS, Windows e Linux, evitando chiusure spontanee durante l'avvio o l'uscita.",
+      "Ora puoi controllare e personalizzare le istruzioni globali di Beaver e il comportamento di ogni modello Ollama installato.",
+      "L'ordine delle conversazioni, le sessioni del terminale, i controlli finestra e i link degli strumenti sono ora più affidabili e sicuri.",
+      "Beaver 1.1.3 e versioni successive sono rilasciati sotto GNU AGPL v3; le versioni fino alla 1.1.2 mantengono la licenza Apache 2.0 originale."
+    ],
+    "ja": [
+      "Beaver はローカル処理、ブラウザ補助、ターミナル、接続、拡張機能を確実に停止し、プロセスを残さず素早く終了するようになりました。",
+      "Ollama のインストールと更新はトランザクション化され、既存モデルを保持したまま中断後も安全に復旧できるようになりました。",
+      "macOS、Windows、Linux のネイティブブラウザ補助が安定し、起動時や終了時の予期しない終了を防ぐようになりました。",
+      "Beaver 全体のシステム指示と、インストール済み Ollama モデルごとの動作を確認して変更できるようになりました。",
+      "会話の並び順、ターミナルセッション、ウィンドウ操作、ツール結果のリンクがより安全で確実になりました。",
+      "Beaver 1.1.3 以降は GNU AGPL v3 で公開され、1.1.2 以前は元の Apache 2.0 ライセンスを維持します。"
+    ],
+    "zh": [
+      "Beaver 现在会快速且可预测地关闭，并完整清理本地运行时、浏览器辅助进程、终端、连接器和扩展，不再遗留自有进程。",
+      "Ollama 安装和更新现已采用事务机制，可保留现有模型，并在操作中断后安全恢复。",
+      "macOS、Windows 和 Linux 上的原生浏览器辅助进程更加稳定，可避免启动或关闭时意外退出。",
+      "现在可以查看和自定义 Beaver 的全局系统提示，并为每个已安装的 Ollama 模型设置独立行为。",
+      "会话排序、终端会话、窗口控件和工具结果链接现在更加可靠和安全。",
+      "Beaver 1.1.3 及后续版本采用 GNU AGPL v3；截至 1.1.2 的版本仍保留原有 Apache 2.0 许可证。"
+    ]
+  },
   "1.1.2": {
     "de": [
       "Unter Windows blitzen beim Starten, Navigieren oder Beenden von Beaver keine PowerShell- oder Befehlsfenster mehr auf.",

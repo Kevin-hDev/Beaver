@@ -2,15 +2,21 @@
 
 ## [Unreleased]
 
-### Licensing
-
-- **Beaver is now licensed under the GNU Affero General Public License v3.0**, replacing the Apache License 2.0. Everyone remains free to use, study, modify and redistribute Beaver — but any distributed or network-hosted version must now be released under the AGPL v3 with its complete source code. Releases up to and including v1.1.2 stay available under the Apache 2.0 terms they were published with.
-- **Contributor License Agreement added** — contributors keep ownership of their work and grant the project the rights needed to keep publishing Beaver and to offer commercial licenses alongside the AGPL. See `CLA.md` and `CONTRIBUTING.md`.
-- **Contribution guide added** — setup, required checks, and code conventions in `CONTRIBUTING.md`.
-
 ---
 
 ## v1.1.3
+
+### Application shutdown
+
+- **Fast, coordinated shutdown** — Beaver now hides immediately and stops conversations, downloads, local runtimes, connectors, terminals, extensions, and owned process trees within one bounded shutdown timeline.
+- **Reliable native cleanup** — macOS, Linux, and Windows now supervise browser helpers and child processes with explicit ownership, verified identities, and final emergency cleanup without weakening fail-closed safeguards.
+- **Stable CEF lifecycle** — isolated development and test profiles prevent helper cache contamination, while bounded liveness handling avoids false shutdowns during normal short-lived helper turnover.
+
+### Ollama durability
+
+- **Transactional installation and updates** — bundle changes now use durable journals, verified staging, atomic commits, and rollback so interrupted operations can resume without losing the active runtime or downloaded models.
+- **Safe upgrade from v1.1.2** — existing Beaver bundles are adopted into the durable layout, with native upgrade proofs completed on macOS, Linux, and Windows.
+- **Accurate runtime status** — installation, validation, recovery, cancellation, external daemons, and restart outcomes are reported as distinct states with actionable localized errors and real download progress.
 
 ### System prompt customization
 
@@ -18,6 +24,18 @@
 - **Per-model Ollama controls** — customize each installed model independently, preserve native Ollama prompts when available, and switch explicitly between Beaver and Ollama behavior. Per-model choices take priority over the global setting.
 - **Safer prompt replacement** — warn before replacing a custom prompt, offer one-click clipboard copying before it is lost, and keep empty custom prompts intentionally disabled instead of restoring stale text.
 - **Reliable prompt storage** — migrate previous Ollama prompt settings safely, preserve native prompts before model customization, and recover cleanly from unavailable local settings without blocking chat.
+
+### Reliability and security
+
+- **Persistent workspace state** — conversation ordering and terminal tabs survive interrupted writes, while extension readers and Linux development watchers release their resources reliably.
+- **Safer tool-result links** — external links are restricted to approved protocols and the rendering pipeline is covered by an expanded cross-site scripting test corpus.
+- **Smoother native windows** — window controls, splash dragging, navigation, conversation ordering, and chat layout behave more consistently across startup and normal use.
+
+### Licensing
+
+- **GNU Affero General Public License v3.0** — Beaver v1.1.3 and later replace Apache License 2.0 with AGPL v3. Releases up to and including v1.1.2 remain under the terms under which they were published.
+- **Contributor License Agreement added** — contributors keep ownership of their work and grant the project the rights needed to keep publishing Beaver and to offer commercial licenses alongside the AGPL. See `CLA.md` and `CONTRIBUTING.md`.
+- **Contribution guide added** — setup, required checks, and code conventions are now documented in `CONTRIBUTING.md`.
 
 ---
 

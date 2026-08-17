@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -89,6 +89,8 @@ test("écrit les sorties GitHub bornées sans argument CLI", async () => {
   try {
     await writeFile(output, "");
     await mkdir(cargoTargetDir);
+    const canonicalCargoTargetDir = await realpath(cargoTargetDir);
+    const canonicalOutput = await realpath(output);
     const result = spawnSync(process.execPath, ["scripts/release/resolve-artifact-path.mjs"], {
       cwd: process.cwd(),
       env: {
@@ -97,16 +99,16 @@ test("écrit les sorties GitHub bornées sans argument CLI", async () => {
         BUNDLE_TARGET: "x86_64-pc-windows-msvc",
         BUNDLE_DIR: "nsis",
         ASSET_SUFFIX: "_x64-setup.exe",
-        CARGO_TARGET_DIR: cargoTargetDir,
-        GITHUB_OUTPUT: output,
+        CARGO_TARGET_DIR: canonicalCargoTargetDir,
+        GITHUB_OUTPUT: canonicalOutput,
       },
       shell: false,
       encoding: "utf8",
     });
     assert.equal(result.status, 0);
     assert.equal(
-      await readFile(output, "utf8"),
-      `asset=${join(cargoTargetDir, "x86_64-pc-windows-msvc", "release", "bundle", "nsis", "Beaver_1.1.1_x64-setup.exe")}\n`,
+      await readFile(canonicalOutput, "utf8"),
+      `asset=${join(canonicalCargoTargetDir, "x86_64-pc-windows-msvc", "release", "bundle", "nsis", "Beaver_1.1.1_x64-setup.exe")}\n`,
     );
 
     const rejected = spawnSync(
