@@ -46,3 +46,9 @@ Private local evidence
 - docs/superpowers/validation/native-upgrade-proofs/windows-after.json
 - docs/superpowers/validation/native-upgrade-proofs/windows-recovered.json
 These files are ignored intentionally and contain no secrets.
+
+Final CI proof
+- PR #19 exact head a704227ece4206175bfd7c4495c950d7212dab76.
+- 14/14 checks passed; 0 failed; 0 pending.
+- GitHub merge state: CLEAN.
+- Windows CEF passed in 29m53s; macOS CEF passed in 22m35s.
