@@ -342,3 +342,25 @@ async fn generation_overflow_fails_closed_without_recycling() {
     assert_eq!(manager.generation_for_test(), u64::MAX);
     assert_eq!(manager.work_diagnostics_for_test().active, 0);
 }
+
+#[test]
+fn default_update_reap_budget_starts_when_reap_begins() {
+    let operation_started = Instant::now();
+    std::thread::sleep(Duration::from_millis(20));
+    let reap_started = Instant::now();
+
+    let deadline = super::manager::resolve_update_reap_deadline(None);
+
+    assert!(deadline > operation_started + super::constants::PROCESS_REAP_FALLBACK_TIMEOUT);
+    assert!(deadline >= reap_started + super::constants::PROCESS_REAP_FALLBACK_TIMEOUT);
+}
+
+#[test]
+fn explicit_update_deadline_remains_absolute() {
+    let requested = Instant::now() + Duration::from_secs(1);
+
+    assert_eq!(
+        super::manager::resolve_update_reap_deadline(Some(requested)),
+        requested
+    );
+}

@@ -71,12 +71,12 @@ impl OllamaManager {
         .map(|receipt| receipt.fingerprint.version)
     }
 
-    pub(crate) fn update_sidecar(&self, deadline: Instant) -> UpdateSidecar {
+    pub(crate) fn update_sidecar(&self, requested_deadline: Option<Instant>) -> UpdateSidecar {
         match self.inner().lock_state().status.daemon {
             DaemonState::Owned { .. } => {
                 UpdateSidecar::Owned(std::sync::Arc::new(ManagerSidecarController {
                     manager: self.clone(),
-                    deadline,
+                    requested_deadline,
                 }))
             }
             DaemonState::External { .. } => UpdateSidecar::External,
@@ -173,7 +173,13 @@ impl OllamaManager {
 
 struct ManagerSidecarController {
     manager: OllamaManager,
-    deadline: Instant,
+    requested_deadline: Option<Instant>,
+}
+
+pub(crate) fn resolve_update_reap_deadline(requested: Option<Instant>) -> Instant {
+    // La préparation peut télécharger et extraire pendant plusieurs minutes :
+    // le budget local de reap commence seulement quand le reap commence.
+    requested.unwrap_or_else(|| Instant::now() + super::constants::PROCESS_REAP_FALLBACK_TIMEOUT)
 }
 
 impl OwnedSidecarController for ManagerSidecarController {
@@ -182,7 +188,8 @@ impl OwnedSidecarController for ManagerSidecarController {
     }
 
     fn reap(&self) -> Result<(), OllamaErrorCode> {
-        self.manager.manager_sidecar_reap(self.deadline)
+        self.manager
+            .manager_sidecar_reap(resolve_update_reap_deadline(self.requested_deadline))
     }
 }
 

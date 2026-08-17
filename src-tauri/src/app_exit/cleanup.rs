@@ -33,12 +33,17 @@ where
     }
 }
 
-pub(super) async fn run_ordered<Services, Ollama>(services: Services, ollama: Ollama)
-where
+pub(super) async fn run_ordered_bounded<Services, Ollama>(
+    services_deadline: Instant,
+    services: Services,
+    ollama: Ollama,
+) where
     Services: Future,
     Ollama: Future,
 {
-    services.await;
+    if run_with_deadline(services_deadline, services).await != CleanupOutcome::Completed {
+        ::log::warn!("[exit] service phase ended at the Ollama reserve boundary");
+    }
     ollama.await;
 }
 
@@ -50,8 +55,8 @@ async fn cleanup_services(app: &tauri::AppHandle, timeline: ShutdownTimeline) {
     if let Some(manager) = &ollama {
         manager.begin_closing();
     }
-    let deadline = timeline.graceful_deadline();
-    let services_phase = stop_services(app, deadline);
+    let services_deadline = timeline.service_cleanup_deadline();
+    let services_phase = stop_services(app, services_deadline);
     let ollama_phase = async move {
         if let Some(manager) = ollama {
             if manager
@@ -66,7 +71,7 @@ async fn cleanup_services(app: &tauri::AppHandle, timeline: ShutdownTimeline) {
             }
         }
     };
-    run_ordered(services_phase, ollama_phase).await;
+    run_ordered_bounded(services_deadline, services_phase, ollama_phase).await;
 }
 
 async fn stop_services(app: &tauri::AppHandle, deadline: Instant) {

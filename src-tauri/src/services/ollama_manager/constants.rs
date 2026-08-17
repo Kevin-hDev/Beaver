@@ -16,7 +16,8 @@ pub(crate) const MAX_OLLAMA_ENV_TOTAL_UNIX_BYTES: usize = 65_536;
 pub(crate) const MAX_OLLAMA_ENV_TOTAL_WINDOWS_UTF16: usize = 32_767;
 pub(crate) const MAX_OLLAMA_PATH_COMPONENTS: usize = 64;
 #[allow(dead_code)]
-pub(crate) const PROCESS_REAP_FALLBACK_TIMEOUT: Duration = Duration::from_secs(3);
+pub(crate) const PROCESS_REAP_FALLBACK_TIMEOUT: Duration =
+    crate::app_exit::OLLAMA_REAP_RESERVE_TIMEOUT;
 
 #[allow(dead_code)]
 pub(crate) const MAX_PROBE_PORT_ATTEMPTS: usize = 3;

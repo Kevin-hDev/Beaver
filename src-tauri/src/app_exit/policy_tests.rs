@@ -161,6 +161,37 @@ fn ollama_setup_deadline_is_derived_from_the_shutdown_origin() {
 }
 
 #[test]
+fn service_cleanup_reserves_the_final_three_seconds_for_ollama_reap() {
+    let origin = Instant::now();
+    let timeline = ShutdownTimeline::from_origin(origin, ShutdownPolicy::production());
+
+    assert_eq!(
+        timeline.service_cleanup_deadline(),
+        origin + Duration::from_secs(5)
+    );
+    assert_eq!(
+        timeline.graceful_deadline() - timeline.service_cleanup_deadline(),
+        Duration::from_secs(3)
+    );
+}
+
+#[test]
+fn tracked_work_drain_ends_before_service_and_ollama_cleanup() {
+    let origin = Instant::now();
+    let timeline = ShutdownTimeline::from_origin(origin, ShutdownPolicy::production());
+
+    assert_eq!(
+        timeline.tracked_work_deadline(),
+        origin + Duration::from_secs(3)
+    );
+    assert!(timeline.tracked_work_deadline() < timeline.service_cleanup_deadline());
+
+    let flow = include_str!("request_flow.rs").replace("\r\n", "\n");
+    assert!(flow.contains("wait_empty_until(timeline.tracked_work_deadline())"));
+    assert!(!flow.contains("wait_empty_until(timeline.graceful_deadline())"));
+}
+
+#[test]
 fn late_ollama_waiter_only_receives_the_remaining_grace() {
     let origin = Instant::now();
     let timeline = ShutdownTimeline::from_origin(origin, ShutdownPolicy::production());

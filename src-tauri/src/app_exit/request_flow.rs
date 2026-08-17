@@ -55,10 +55,10 @@ fn start_cleanup(
     tauri::async_runtime::spawn(async move {
         let started = std::time::Instant::now();
         if !registry
-            .wait_empty_until(timeline.graceful_deadline())
+            .wait_empty_until(timeline.tracked_work_deadline())
             .await
         {
-            ::log::warn!("[exit] tracked work exceeded graceful deadline");
+            ::log::warn!("[exit] tracked work exceeded its drain deadline");
         }
         log_cleanup_outcome(cleanup::run(&handle, timeline).await);
         ::log::info!("[exit] cleanup phase finished in {:?}", started.elapsed());

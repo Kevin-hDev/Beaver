@@ -17,6 +17,7 @@ mod emergency_registration;
 mod emergency_signaler;
 mod final_action;
 mod policy;
+pub(crate) use policy::OLLAMA_REAP_RESERVE_TIMEOUT;
 mod presentation;
 mod raw_exit;
 mod registry;

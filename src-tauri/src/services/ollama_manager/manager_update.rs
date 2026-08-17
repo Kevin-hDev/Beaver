@@ -8,10 +8,7 @@ impl OllamaManager {
             self.progress_reporter_for_generation(guard.generation(), request.progress.take()),
         );
         let recovery_paths = request.paths.clone();
-        let deadline = request
-            .deadline
-            .unwrap_or_else(|| std::time::Instant::now() + std::time::Duration::from_secs(15));
-        request.sidecar = self.update_sidecar(deadline);
+        request.sidecar = self.update_sidecar(request.deadline);
         self.set_operation_cancellation(request.cancellation.clone());
         let result = super::update::run(request).await;
         self.clear_operation_cancellation();
