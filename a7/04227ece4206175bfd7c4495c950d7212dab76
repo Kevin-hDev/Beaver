@@ -62,3 +62,118 @@ Linux native validation still required before merge
 - Record linux-before.json, linux-after.json, linux-recovered.json and a non-sensitive Linux proof markdown under docs/superpowers/validation/native-upgrade-proofs/.
 - If Linux exposes a defect: TDD first, dedicated commit, git note, Graphify update, push, and rerun the complete 14-check CI on the new exact head.
 - Final gates before merge: independent review of the new Windows-discovered correction diff 1a761306..a704227e (or any later Linux fix), native Linux proof, and full green CI on the final reviewed SHA.
+
+PASSATION CONSOLIDEE JALON 3 — REPRISE LINUX — 2026-08-17
+Cette section remplace les consignes Linux plus courtes ci-dessus et actualise la passation historique de d7447735.
+
+Reference exacte
+- Depot: Kevin-hDev/Beaver.
+- PR: #19, https://github.com/Kevin-hDev/Beaver/pull/19
+- Branche: codex/shutdown-milestone-3-ollama.
+- Base: main.
+- Tete obligatoire a recuperer et tester: a704227ece4206175bfd7c4495c950d7212dab76.
+- Etat observe avant passation: PR ouverte, mergeState CLEAN, branche distante et locale sur le meme SHA, worktree suivi propre.
+- Ne pas fusionner avant preuve Linux, CI finale sur le dernier SHA et review finale de toute correction post-review.
+
+Commandes de reprise
+  git fetch origin codex/shutdown-milestone-3-ollama
+  git fetch origin refs/notes/commits:refs/notes/commits
+  git switch codex/shutdown-milestone-3-ollama
+  git pull --ff-only
+  git rev-parse HEAD
+  git notes show a704227e
+La sortie de git rev-parse HEAD doit etre exactement a704227ece4206175bfd7c4495c950d7212dab76. Ne pas rebase, ne pas fusionner main et ne pas reecrire l'histoire avant la preuve.
+
+Documents obligatoires a lire avant l'essai
+1. docs/superpowers/specs/2026-08-09-unified-shutdown-supervision-design.md
+2. docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md
+3. docs/superpowers/specs/2026-08-09-shutdown-milestone-3-ollama-design.md
+4. docs/superpowers/plans/2026-08-14-shutdown-milestone-3-ollama.md, surtout Tasks 17 et 18
+5. docs/superpowers/validation/2026-08-14-milestone-3-native-upgrade-template.md
+6. docs/superpowers/validation/native-upgrade-proofs/macos-final-head-smoke.md si present sur la machine
+7. docs/superpowers/validation/native-upgrade-proofs/windows-final-head-smoke.md si present sur la machine
+Le dossier docs est prive/ignore et transfere manuellement par Kevin. Ne pas supposer qu'un fichier absent de Git n'existe pas; demander ou utiliser la copie deja transferee.
+
+Acquis confirmes avant Linux
+- La review J3 anterieure et la validation macOS ont ete faites sur les tetes precedentes; la note de d7447735 contient la passation et la preuve macOS detaillees.
+- macOS: migration Beaver 1.1.2, update Ollama, modele reel conserve, inference OK, reprise et fermeture coordonnee validees.
+- Windows sur la tete finale a704227e: paquet 1.1.2 reel puis build de branche installe; qwen3.5:latest conserve; 13 entrees du model store identiques par chemin/taille/SHA-256; inference exactement OK; reprise reelle du cutpoint durable Prepared vers Ollama 0.32.14; fermeture possedee sans processus ni recu; daemon externe laisse vivant puis arrete explicitement apres preuve.
+- La validation Windows a decouvert puis corrige deux budgets: le nettoyage final Ollama devait garder origin+5s..origin+8s, et le delai implicite de reap d'une update devait commencer au reap, pas avant le telechargement/extraction.
+- Commit de cette correction: a704227e. Diff nouveau a reviewer par rapport a l'ancienne tete: git diff 1a761306 a704227e.
+- CI exacte de a704227e: 14/14 controles verts, 0 rouge, 0 pending; Windows CEF 29m53s; macOS CEF 22m35s; mergeState CLEAN.
+- Tests locaux Windows: app_exit 58/58; Ollama manager 285 pass, 0 fail, 1 test developpeur ignore; fmt/check/clippy verts; contrats Ollama 6/6; preflight J3 15/15; assets J3 14 pass, 0 fail, 3 fixtures symlink Windows sautees faute de privilege.
+
+Autorisation et isolation Linux
+- Kevin autorise explicitement l'essai directement sur sa machine Linux et sur ses donnees Beaver actuelles.
+- Les conversations, reglages, bundles Ollama et modeles utilises pour ces essais sont jetables et peuvent etre remplaces/supprimes si la procedure le requiert.
+- Ne pas creer de VM, de conteneur ou de nouveau profil uniquement pour cette validation.
+- Ne jamais toucher au depot source pour simuler l'installation ni supprimer des fichiers du code source. Les mutations autorisees concernent l'application installee et ses donnees de test.
+- Le script demande les confirmations de profil jetable parce que Beaver 1.1.2 ignore les redirections de data dir. Pour cette machine, l'autorisation explicite de Kevin permet de confirmer le profil courant comme DISPOSABLE apres avoir affiche et controle le chemin canonique ~/.local/share/cl-go-dash.
+- Ne supprimer ou remplacer aucun autre repertoire utilisateur. Ne jamais enregistrer secrets, vault, prompts prives ou chemins utilisateur complets dans la preuve.
+
+Preflight obligatoire
+Depuis la racine du depot, lire chaque sortie et verifier les codes de retour:
+  npm ci
+  npm run test:j3-native-assets
+  node scripts/ollama/verify-native-upgrade-assets.mjs --manifest-only
+  npm run test:ollama-manager-contracts
+  npm run test:j3-reference
+Verifier l'asset Linux Beaver 1.1.2 contre scripts/ollama/native-upgrade-assets.json: nom Beaver_1.1.2_amd64.deb, taille 203321452, SHA-256 fa7b9a08cc3d72a33989bb1a6cb9dcea53e50d6e58964a0a1ac4942d1405cae8. CL-GO-DASH 1.0.2 est hors perimetre.
+
+Procedure native Linux directe
+- Construire le build exact a704227e sur Linux avec npm run tauri build et identifier le .deb produit sans modifier les versions du projet.
+- Lancer: bash scripts/ollama/native-upgrade-linux.sh --confirm-disposable-profile --confirm-data-dir
+- Installer et lancer Beaver 1.1.2 reel.
+- Installer au moins un vrai modele local et obtenir une inference exacte et consignée avant migration.
+- Produire linux-before.json avec liste bornee, tailles et SHA-256.
+- Bloquer le reseau avant d'installer le .deb de a704227e; aucun telechargement de modele ne doit aider l'essai apres ce point.
+- Installer le .deb exact de a704227e par-dessus Beaver 1.1.2.
+- Prouver le meme modele, les memes tailles/hashes et une inference hors ligne; produire linux-after.json.
+- Demarrer une update Ollama controlee, interrompre Beaver a un cutpoint durable documente (Prepared ou autre etat reellement observe), conserver les logs/layout, relancer et attendre la convergence.
+- Prouver bundle actif valide, absence de journal/staging/backup residuel attendu, modele intact et inference OK; produire linux-recovered.json.
+- Fermer Beaver par son chemin coordonne pendant les phases installation/update/validation/retry lorsque la procedure le demande; verifier attente bornee, reprise au redemarrage et aucun processus Ollama possede restant.
+- Apres fermeture finale: aucun Beaver, helper, ollama ou llama-server possede; aucun listener possede; aucun recu de processus ni residu transactionnel inattendu.
+
+Test obligatoire du daemon externe Linux
+- Arreter d'abord tout Ollama possede et verifier l'absence de recu Beaver.
+- Demarrer Ollama manuellement comme daemon externe sur son port global et noter PID, executable, port et version sans secret.
+- Lancer Beaver; prouver qu'il utilise le daemon sans creer de recu de propriete ni demarrer un second daemon.
+- Executer une inference reelle.
+- Fermer Beaver par le chemin coordonne.
+- Prouver que le meme PID externe reste vivant, ecoute encore et repond a /api/version.
+- Arreter ensuite explicitement le daemon de test et verifier qu'il ne reste aucun processus/listener de test.
+
+Preuves privees a produire
+- docs/superpowers/validation/native-upgrade-proofs/linux-before.json
+- docs/superpowers/validation/native-upgrade-proofs/linux-after.json
+- docs/superpowers/validation/native-upgrade-proofs/linux-recovered.json
+- docs/superpowers/validation/native-upgrade-proofs/linux-final-head-smoke.md
+Le markdown doit consigner: distribution/kernel/architecture, SHA exact, .deb et SHA-256, version Ollama avant/apres, modele non sensible, resultat inference avant/apres/reprise, hashes du store, cutpoint, etat de reprise, duree/issue de fermeture, processus et residus, preuve du daemon externe. Aucun secret ni chemin personnel complet.
+
+Si tout passe sans modification de code
+- Ne pas creer de commit vide et ne pas changer le code.
+- Completer seulement les preuves privees.
+- Ajouter les resultats exacts a la git note de a704227e et pousser refs/notes/commits.
+- Verifier une derniere fois que la PR reste sur a704227e et que la CI 14/14 est toujours celle de ce SHA.
+- Transmettre au reviewer la correction nouvelle 1a761306..a704227e avec les preuves Windows et Linux.
+
+Si Linux revele un defaut
+1. Arreter et conserver la premiere erreur exacte, les logs et le layout sans detruire la preuve.
+2. Trouver la cause racine; ne pas corriger par supposition.
+3. Ecrire d'abord un test rouge qui reproduit le defaut.
+4. Corriger uniquement le perimetre J3 dans un commit dedie.
+5. Executer tests cibles, cargo fmt --all -- --check, cargo check, cargo clippy --all-targets -- -D warnings, suites Ollama/app_exit, contrats J3 et tests frontend concernes.
+6. Executer graphify update . apres toute modification de code.
+7. Ajouter une git note au nouveau commit: cause, rouge, correction, vert, preuve native.
+8. Pousser commit et notes; lancer une nouvelle CI complete; attendre 14/14 sur le nouveau SHA.
+9. Rejouer toute la preuve Linux sur ce nouveau SHA.
+10. La review finale doit alors couvrir 1a761306..nouveau-SHA et porter sur la tete exacte validee par CI/native.
+
+Condition finale avant fusion
+- Preuves natives macOS, Windows et Linux presentes et coherentes.
+- Vrai modele conserve et utilisable hors ligne sur les trois OS.
+- Interruption/reprise convergente et aucun processus possede apres fermeture.
+- Daemon externe intact sur les trois OS testes.
+- CI complete verte sur le dernier SHA.
+- Git notes agregees et poussees.
+- Review finale du diff post-review acceptee sur ce meme SHA.
