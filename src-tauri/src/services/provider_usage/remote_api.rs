@@ -47,7 +47,9 @@ pub fn add_openrouter_account_balance(remote: &mut RemoteData, body: &serde_json
     if !remaining.is_finite() || remaining.abs() > 1e15 {
         return false;
     }
-    remote.balances.retain(|balance| balance.label_code != "remaining_credits");
+    remote
+        .balances
+        .retain(|balance| balance.label_code != "remaining_credits");
     remote.balances.push(ProviderBalance {
         label_code: "remaining_credits".into(),
         amount: decimal_number(remaining),
