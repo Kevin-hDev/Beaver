@@ -31,3 +31,26 @@ Pending
 - Create and push tag v1.1.3.
 - Observe the release workflow through all three native builds, independent manifest verification, and draft asset creation.
 - Do not publish or declare the release complete until those outputs are observed.
+
+FINAL RELEASE BUILD EVIDENCE — 2026-08-17
+
+Run: https://github.com/Kevin-hDev/Beaver/actions/runs/32052821626
+Exact commit: 818acb243a0e98e3f69dd2605a4175630d329929
+Result: success.
+
+Observed green stages:
+- release validation: 18m17s
+- Linux amd64 DEB build and inspection: 19m05s
+- macOS arm64 DMG build and inspection: 43m57s
+- Windows x64 NSIS build, PowerShell 7/5.1 validators, real install and inspection: 1h03m22s
+- update manifest creation: 1m20s
+- independent SHA-256 verification: 1m32s
+- draft release creation: 37s
+
+Draft release Beaver v1.1.3 was inspected after workflow completion. It is draft=true, prerelease=false, and contains exactly four non-empty uploaded assets:
+- Beaver_1.1.3_aarch64.dmg — 325208998 bytes
+- Beaver_1.1.3_amd64.deb — 205946152 bytes
+- Beaver_1.1.3_x64-setup.exe — 256446991 bytes
+- update-manifest.json — 532 bytes
+
+The draft has not been published. Publication remains a separate explicit decision.
