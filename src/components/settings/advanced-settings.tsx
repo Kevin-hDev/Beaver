@@ -67,7 +67,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
         options: models.map((m) => ({
           value: `${m.provider_id}:${m.id}`,
           label: m.id,
-          dimmed: !m.is_free && !m.is_local,
+          dimmed: false,
         })),
       });
     }

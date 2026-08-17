@@ -28,24 +28,24 @@
       "requestMetrics": { "title": "詳細な計測", "empty": "計測済みのリクエストはありません", "unavailable": "詳細な計測を利用できません", "latestRequest": "最新のリクエスト", "routedProvider": "実際に処理したプロバイダー", "latestSession": "最新の計測セッション", "turn": "ターン {{value}}", "attempt": "試行 {{value}}", "headers": "サーバー応答", "firstEvent": "最初のイベント", "firstUseful": "最初の結果", "totalDuration": "合計時間", "usageIncomplete": "トークンデータが不完全です", "statuses": { "completed": "完了", "interrupted": "圧縮のため中断", "cancelled": "キャンセル", "failed": "失敗" } },
       "providerTitle": "プロバイダーの上限とクレジット", "generalLimitsTitle": "全般的な使用制限", "namedLimitsTitle": "{{name}} の使用制限", "localTitle": "Beaver での使用量", "refresh": "更新", "remoteUnavailable": "アカウントの使用量データを取得できません", "remainingPercent": "残り {{value}}%", "updated": "更新済み", "stale": "古いデータ", "resetsAt": "リセット：{{date}}", "openProviderSite": "プロバイダーで確認", "periodLabel": "期間", "historyEmpty": "使用量の記録はありません", "requests": "リクエスト", "inputTokens": "入力トークン", "outputTokens": "出力トークン", "cachedTokens": "キャッシュ読み取りトークン", "cacheWriteTokens": "キャッシュ書き込みトークン", "cacheMissTokens": "キャッシュミストークン", "reasoningTokens": "推論トークン", "totalTokens": "合計トークン", "cost": "費用", "byOrigin": "送信元別", "byWorkload": "作業別",
       "periods": { "today": "今日", "seven_days": "7 日", "thirty_days": "30 日", "all_time": "全期間" }, "quality": { "exact": "正確", "estimated": "推定", "partial": "一部", "unavailable": "利用不可" }, "origins": { "manual_chat": "手動チャット", "external_channel": "外部チャネル", "automation": "自動化" }, "workloads": { "primary": "メイン", "subagent": "サブエージェント", "compression": "圧縮" },
-      "windows": { "today": "今日", "seven_days": "7 日", "thirty_days": "30 日", "key_limit": "キー上限", "requests_day": "1 日のリクエスト", "tokens_minute": "1 分のトークン", "requests_limit": "リクエスト上限", "tokens_limit": "トークン上限", "rolling_five_hours": "5 時間枠", "weekly": "週間上限", "provider_limit": "プロバイダー上限" }, "balances": { "remaining_credits": "残りクレジット", "available_balance": "利用可能残高", "voucher_balance": "バウチャー残高", "cash_balance": "現金残高", "reset_credits": "リセットクレジット", "extra_usage_balance": "Extra Usage 残高", "extra_usage_monthly_limit": "Extra Usage の月間上限", "extra_usage_monthly_used": "今月使用した Extra Usage" }, "notices": { "usage_fetch_failed": "プロバイダーのデータを更新できませんでした。直近の有効なデータは引き続き表示されます。", "provider_usage_site_only": "xAI はこれらの上限へのアクセスを公開していません。ローカル使用量は確認できます。", "provider_account_usage_unavailable": "このプロバイダーは、この接続のアカウント上限を公開していません。" }
+      "windows": { "today": "今日", "seven_days": "7 日", "thirty_days": "30 日", "key_limit": "キー上限", "requests_day": "1 日のリクエスト", "tokens_minute": "1 分のトークン", "requests_limit": "リクエスト上限", "tokens_limit": "トークン上限", "rolling_five_hours": "5 時間枠", "weekly": "週間上限", "provider_limit": "プロバイダー上限" }, "balances": { "remaining_credits": "残りクレジット", "available_balance": "利用可能残高", "voucher_balance": "バウチャー残高", "cash_balance": "現金残高", "reset_credits": "リセットクレジット", "extra_usage_balance": "Extra Usage 残高", "extra_usage_monthly_limit": "Extra Usage の月間上限", "extra_usage_monthly_used": "今月使用した Extra Usage" }, "notices": { "usage_fetch_failed": "プロバイダーのデータを更新できませんでした。直近の有効なデータは引き続き表示されます。", "provider_usage_site_only": "xAI はこれらの上限へのアクセスを公開していません。ローカル使用量は確認できます。", "provider_account_usage_unavailable": "このプロバイダーは、この接続のアカウント上限を公開していません。", "openrouter_account_balance_requires_management_key": "OpenRouter の全体残高には管理キーが必要です。この API キーに設定された上限は表示され続けます。" }
     }
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "独自 LPU による Llama / GPT-OSS の超高速推論。", "freeTier": "1,000 リクエスト/日" },
-      "google": { "description": "Gemini 3.6 Flash — マルチモーダル、ツール、推論。", "freeTier": "100万トークン/分" },
-      "mistral": { "description": "フランス発のオープンウェイトモデル — 無料の Experiment プラン。", "freeTier": "10億トークン/月" },
-      "cerebras": { "description": "ウェハースケールチップで最大 3,000 tok/s のオープンウェイトモデル。", "freeTier": "100万トークン/日" },
-      "openrouter": { "description": "1 つの API キーで 300 以上のモデルにアクセス。", "freeTier": "17 の無料モデル" },
-      "openai": { "description": "GPT-5.6 Sol、Terra、Luna — 最先端の推論。", "freeTier": "入力 1〜5ドル/100万トークン" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 圧倒的なコストパフォーマンス。", "freeTier": "入力 0.14ドル/100万トークン" },
-      "xai": { "description": "Grok 4.5 — 500K コンテキスト、高度な推論。", "freeTier": "入力 2ドル/100万トークン" },
-      "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "入力 3ドル/100万トークン" },
-      "zai": { "description": "GLM-5.2 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "GLM-4.7-Flash は無料" },
-      "brave": { "description": "独自インデックス。Google／Bing に依存しません。", "freeTier": "毎月 5ドル分のクレジット" },
-      "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "毎月 10ドル分のクレジット" },
-      "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "毎月 1,000 クレジット" }
+      "groq": { "description": "独自 LPU による Llama / GPT-OSS の超高速推論。", "freeTier": "上限付きの無料プラン。組織設定で利用可否が変わる場合があります。" },
+      "google": { "description": "Gemini 3.6 Flash — マルチモーダル、ツール、推論。", "freeTier": "一部モデルに無料枠があり、アカウントと上限により異なります。" },
+      "mistral": { "description": "フランス発のオープンウェイトモデル — 無料の Experiment プラン。", "freeTier": "無料モードと有料プランがあり、利用可否はアカウントによります。" },
+      "cerebras": { "description": "ウェハースケールチップで最大 3,000 tok/s のオープンウェイトモデル。", "freeTier": "無料枠とクォータはプロジェクトとアカウントによります。" },
+      "openrouter": { "description": "1 つの API キーで 300 以上のモデルにアクセス。", "freeTier": "[Free] のモデルはクレジットを使わず、他は残高を使います。" },
+      "openai": { "description": "GPT-5.6 Sol、Terra、Luna — 最先端の推論。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 圧倒的なコストパフォーマンス。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
+      "xai": { "description": "Grok 4.5 — 500K コンテキスト、高度な推論。", "freeTier": "前払いクレジットまたは月額請求で、アカウントにより異なります。" },
+      "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "API は利用量に応じて課金されます。" },
+      "zai": { "description": "GLM-5.2 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "[Free] の Flash モデルは無料で、それ以外は課金されます。" },
+      "brave": { "description": "独自インデックス。Google／Bing に依存しません。", "freeTier": "毎月のクレジット付きで、その後は従量課金です。" },
+      "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "料金とクレジットはプロバイダーのアカウントで確認してください。" },
+      "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "無料プランとクレジットはチームとプランによります。" }
     },
     "main": {
       "title": "API キー",
@@ -59,7 +59,7 @@
       "connected": "接続済み",
       "edit": "編集",
       "delete": "削除",
-      "freeTier": "無料枠",
+      "freeTier": "アクセスと料金",
       "signupLink": "ウェブサイト",
       "openSite": "サイトを開く",
       "quota": "クォータ",
@@ -259,6 +259,7 @@
     "showLess": "閉じる",
     "modelSearch": "モデルを検索…",
     "modelEmpty": "一致するモデルがありません。",
+    "modelFree": "Free",
     "selectModel": "モデルを選択",
     "selectModelHint": "モデルを選択",
     "reasoningTitle": "推論",

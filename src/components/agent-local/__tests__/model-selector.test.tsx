@@ -22,6 +22,7 @@ vi.mock("react-i18next", () => ({
     t: (key: string) => {
       const labels: Record<string, string> = {
         "agentLocal.selectModel": "Select model",
+        "agentLocal.modelFree": "Free",
         "agentLocal.reasoningAuto": "Activée",
         "agentLocal.reasoningHigh": "Forte",
       };
@@ -157,5 +158,48 @@ describe("ModelSelector", () => {
     expect(screen.getByText("Mise à jour requise")).toBeTruthy();
     fireEvent.click(screen.getByText("Chronos"));
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("indique les modèles explicitement gratuits sans griser les autres", () => {
+    groups = new Map([["openrouter", [
+      model({ id: "provider/free", provider_id: "openrouter", provider_name: "OpenRouter", is_local: false, is_free: true }),
+      model({ id: "provider/paid", provider_id: "openrouter", provider_name: "OpenRouter", is_local: false, is_free: false }),
+    ]]]);
+
+    render(
+      <ModelSelector
+        groups={groups}
+        selectedModel=""
+        selectedProvider=""
+        onSelect={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Select model"));
+    fireEvent.click(screen.getByText("OpenRouter"));
+    expect(screen.getByText("[Free]")).toBeTruthy();
+    expect(screen.getByText("provider/paid").closest(".ms-item")?.className).not.toContain("paid");
+  });
+
+  it("garde les modèles gratuits en tête de chaque fournisseur", () => {
+    groups = new Map([["openrouter", [
+      model({ id: "z-paid", provider_id: "openrouter", provider_name: "OpenRouter", is_local: false, is_free: false }),
+      model({ id: "a-free", provider_id: "openrouter", provider_name: "OpenRouter", is_local: false, is_free: true }),
+    ]]]);
+
+    render(
+      <ModelSelector
+        groups={groups}
+        selectedModel=""
+        selectedProvider=""
+        onSelect={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Select model"));
+    fireEvent.click(screen.getByText("OpenRouter"));
+    const names = Array.from(document.querySelectorAll(".ms-item-name"))
+      .map((element) => element.textContent);
+    expect(names).toEqual(["a-free[Free]", "z-paid"]);
   });
 });

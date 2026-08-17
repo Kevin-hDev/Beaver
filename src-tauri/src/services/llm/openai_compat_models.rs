@@ -43,7 +43,7 @@ fn to_model_info(
         supports_thinking: model.supports_thinking,
         reasoning_modes,
         default_reasoning_mode: None,
-        is_free: false,
+        is_free: model.is_free,
     }
 }
 
@@ -65,6 +65,9 @@ mod tests {
         let glm_46 = models.iter().find(|m| m.id == "glm-4.6").unwrap();
         let glm_flash = models.iter().find(|m| m.id == "glm-4.5-flash").unwrap();
         let glm_47_flash = models.iter().find(|m| m.id == "glm-4.7-flash").unwrap();
+        let glm_flashx = models.iter().find(|m| m.id == "glm-4.7-flashx").unwrap();
+        let glm_vision_flash = models.iter().find(|m| m.id == "glm-4.6v-flash").unwrap();
+        let glm_vision_flashx = models.iter().find(|m| m.id == "glm-4.6v-flashx").unwrap();
 
         assert_eq!(models.len(), 19);
         assert_eq!(glm_47_flash.context_length, Some(200_000));
@@ -73,5 +76,10 @@ mod tests {
         assert!(glm_5.supports_thinking);
         assert!(glm_46.supports_thinking);
         assert!(glm_flash.supports_thinking);
+        assert!(glm_flash.is_free);
+        assert!(glm_47_flash.is_free);
+        assert!(glm_vision_flash.is_free);
+        assert!(!glm_flashx.is_free);
+        assert!(!glm_vision_flashx.is_free);
     }
 }

@@ -38,7 +38,7 @@ pub(super) fn models() -> Vec<ModelInfo> {
         supports_thinking: true,
         reasoning_modes: modes.iter().map(|mode| (*mode).to_string()).collect(),
         default_reasoning_mode: None,
-        is_free: true,
+        is_free: false,
     })
     .collect()
 }

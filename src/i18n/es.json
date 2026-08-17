@@ -28,24 +28,24 @@
       "requestMetrics": { "title": "Mediciones detalladas", "empty": "No hay solicitudes medidas", "unavailable": "Las mediciones detalladas no están disponibles", "latestRequest": "Última solicitud", "routedProvider": "Proveedor que atendió la solicitud", "latestSession": "Última sesión medida", "turn": "Turno {{value}}", "attempt": "Intento {{value}}", "headers": "Respuesta del servidor", "firstEvent": "Primer evento", "firstUseful": "Primer resultado", "totalDuration": "Duración total", "usageIncomplete": "Los datos de tokens están incompletos", "statuses": { "completed": "Completada", "interrupted": "Interrumpida para compresión", "cancelled": "Cancelada", "failed": "Fallida" } },
       "providerTitle": "Límites y créditos del proveedor", "generalLimitsTitle": "Límites generales de uso", "namedLimitsTitle": "Límites de uso de {{name}}", "localTitle": "Consumo en Beaver", "refresh": "Actualizar", "remoteUnavailable": "Los datos de la cuenta no están disponibles", "remainingPercent": "{{value}} % restante", "updated": "Actualizado", "stale": "Datos anteriores", "resetsAt": "Se restablece: {{date}}", "openProviderSite": "Ver en el proveedor", "periodLabel": "Periodo", "historyEmpty": "No hay consumo registrado", "requests": "Solicitudes", "inputTokens": "Tokens de entrada", "outputTokens": "Tokens de salida", "cachedTokens": "Tokens leídos de caché", "cacheWriteTokens": "Tokens escritos en caché", "cacheMissTokens": "Tokens sin caché", "reasoningTokens": "Tokens de razonamiento", "totalTokens": "Tokens totales", "cost": "Coste", "byOrigin": "Por origen", "byWorkload": "Por trabajo",
       "periods": { "today": "Hoy", "seven_days": "7 días", "thirty_days": "30 días", "all_time": "Total" }, "quality": { "exact": "Exacto", "estimated": "Estimado", "partial": "Parcial", "unavailable": "No disponible" }, "origins": { "manual_chat": "Chat manual", "external_channel": "Canal externo", "automation": "Automatización" }, "workloads": { "primary": "Principal", "subagent": "Subagente", "compression": "Compresión" },
-      "windows": { "today": "Hoy", "seven_days": "7 días", "thirty_days": "30 días", "key_limit": "Límite de la clave", "requests_day": "Solicitudes diarias", "tokens_minute": "Tokens por minuto", "requests_limit": "Límite de solicitudes", "tokens_limit": "Límite de tokens", "rolling_five_hours": "Ventana de 5 horas", "weekly": "Límite semanal", "provider_limit": "Límite del proveedor" }, "balances": { "remaining_credits": "Créditos restantes", "available_balance": "Saldo disponible", "voucher_balance": "Saldo de vales", "cash_balance": "Saldo en efectivo", "reset_credits": "Créditos de reinicio", "extra_usage_balance": "Saldo de Extra Usage", "extra_usage_monthly_limit": "Límite mensual de Extra Usage", "extra_usage_monthly_used": "Extra Usage usado este mes" }, "notices": { "usage_fetch_failed": "No se pudieron actualizar los datos del proveedor. Se conservan los últimos datos válidos recientes.", "provider_usage_site_only": "xAI no publica acceso a estos límites. El consumo local sigue disponible.", "provider_account_usage_unavailable": "Este proveedor no publica los límites de la cuenta para esta conexión." }
+      "windows": { "today": "Hoy", "seven_days": "7 días", "thirty_days": "30 días", "key_limit": "Límite de la clave", "requests_day": "Solicitudes diarias", "tokens_minute": "Tokens por minuto", "requests_limit": "Límite de solicitudes", "tokens_limit": "Límite de tokens", "rolling_five_hours": "Ventana de 5 horas", "weekly": "Límite semanal", "provider_limit": "Límite del proveedor" }, "balances": { "remaining_credits": "Créditos restantes", "available_balance": "Saldo disponible", "voucher_balance": "Saldo de vales", "cash_balance": "Saldo en efectivo", "reset_credits": "Créditos de reinicio", "extra_usage_balance": "Saldo de Extra Usage", "extra_usage_monthly_limit": "Límite mensual de Extra Usage", "extra_usage_monthly_used": "Extra Usage usado este mes" }, "notices": { "usage_fetch_failed": "No se pudieron actualizar los datos del proveedor. Se conservan los últimos datos válidos recientes.", "provider_usage_site_only": "xAI no publica acceso a estos límites. El consumo local sigue disponible.", "provider_account_usage_unavailable": "Este proveedor no publica los límites de la cuenta para esta conexión.", "openrouter_account_balance_requires_management_key": "El saldo global de OpenRouter requiere una clave de administración. Se sigue mostrando el límite configurado para esta clave." }
     }
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "Inferencia ultrarrápida de Llama / GPT-OSS en LPU propia.", "freeTier": "1 000 req/día" },
-      "google": { "description": "Gemini 3.6 Flash: multimodal, herramientas y razonamiento.", "freeTier": "1 M tokens/min" },
-      "mistral": { "description": "Modelos open-weight franceses: plan Experiment gratuito.", "freeTier": "1000 M tokens/mes" },
-      "cerebras": { "description": "Modelos open-weight a hasta 3.000 tok/s en chip wafer-scale.", "freeTier": "1 M tokens/día" },
-      "openrouter": { "description": "Acceso a más de 300 modelos con una sola clave API.", "freeTier": "17 modelos gratis" },
-      "openai": { "description": "GPT-5.6 Sol, Terra y Luna: razonamiento de vanguardia.", "freeTier": "1–5 USD/Mtok de entrada" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro: relación calidad-precio insuperable.", "freeTier": "0,14 USD/Mtok de entrada" },
-      "xai": { "description": "Grok 4.5: contexto de 500K, razonamiento avanzado.", "freeTier": "2 USD/Mtok de entrada" },
-      "moonshot": { "description": "Kimi K3: codificación agéntica, multimodal, contexto de 1M.", "freeTier": "3 USD/Mtok de entrada" },
-      "zai": { "description": "GLM-5.2: contexto de 1M, codificación de largo alcance y razonamiento.", "freeTier": "GLM-4.7-Flash gratis" },
-      "brave": { "description": "Índice propio, sin depender de Google ni Bing.", "freeTier": "5 USD de créditos/mes" },
-      "exa": { "description": "Neural search: búsqueda por similitud semántica.", "freeTier": "10 USD de créditos/mes" },
-      "firecrawl": { "description": "Extracción de Markdown listo para LLM desde cualquier URL.", "freeTier": "1 000 créditos/mes" }
+      "groq": { "description": "Inferencia ultrarrápida de Llama / GPT-OSS en LPU propia.", "freeTier": "Plan gratuito con límites; el acceso puede depender de la organización." },
+      "google": { "description": "Gemini 3.6 Flash: multimodal, herramientas y razonamiento.", "freeTier": "Nivel gratuito para algunos modelos, según la cuenta y los límites." },
+      "mistral": { "description": "Modelos open-weight franceses: plan Experiment gratuito.", "freeTier": "Modo gratuito y plan de pago; la disponibilidad depende de la cuenta." },
+      "cerebras": { "description": "Modelos open-weight a hasta 3.000 tok/s en chip wafer-scale.", "freeTier": "Nivel gratuito y cuotas según el proyecto y la cuenta." },
+      "openrouter": { "description": "Acceso a más de 300 modelos con una sola clave API.", "freeTier": "Los modelos [Free] no consumen créditos; los demás usan el saldo." },
+      "openai": { "description": "GPT-5.6 Sol, Terra y Luna: razonamiento de vanguardia.", "freeTier": "API facturada por uso y modelo." },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro: relación calidad-precio insuperable.", "freeTier": "API facturada por uso y modelo." },
+      "xai": { "description": "Grok 4.5: contexto de 500K, razonamiento avanzado.", "freeTier": "Créditos prepagados o facturación mensual, según la cuenta." },
+      "moonshot": { "description": "Kimi K3: codificación agéntica, multimodal, contexto de 1M.", "freeTier": "API facturada por uso." },
+      "zai": { "description": "GLM-5.2: contexto de 1M, codificación de largo alcance y razonamiento.", "freeTier": "Los modelos Flash marcados [Free] no tienen coste; los demás se facturan." },
+      "brave": { "description": "Índice propio, sin depender de Google ni Bing.", "freeTier": "Créditos mensuales incluidos y luego facturación por uso." },
+      "exa": { "description": "Neural search: búsqueda por similitud semántica.", "freeTier": "Consulta precios y créditos en la cuenta del proveedor." },
+      "firecrawl": { "description": "Extracción de Markdown listo para LLM desde cualquier URL.", "freeTier": "Plan gratuito y créditos según el equipo y el plan." }
     },
     "main": {
       "title": "Claves API",
@@ -59,7 +59,7 @@
       "connected": "Conectado",
       "edit": "Editar",
       "delete": "Eliminar",
-      "freeTier": "Plan gratuito",
+      "freeTier": "Acceso y precios",
       "signupLink": "Sitio web",
       "openSite": "Abrir sitio",
       "quota": "Cuota",
@@ -259,6 +259,7 @@
     "showLess": "Mostrar menos",
     "modelSearch": "Buscar un modelo…",
     "modelEmpty": "Ningún modelo encontrado.",
+    "modelFree": "Free",
     "selectModel": "Elegir un modelo",
     "selectModelHint": "Seleccionar modelo",
     "reasoningTitle": "Razonamiento",

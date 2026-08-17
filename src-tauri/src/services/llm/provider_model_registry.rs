@@ -17,6 +17,9 @@ pub struct ProviderModelConfig {
     pub id: String,
     #[serde(default)]
     pub aliases: Vec<String>,
+    /// Vrai uniquement lorsqu'une source tarifaire officielle confirme un coût nul.
+    #[serde(default)]
+    pub is_free: bool,
     pub context_window: u32,
     pub max_output_tokens: Option<u32>,
     pub default_output_tokens: Option<u32>,

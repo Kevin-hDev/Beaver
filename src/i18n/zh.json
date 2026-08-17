@@ -28,24 +28,24 @@
       "requestMetrics": { "title": "详细测量", "empty": "暂无已测量的请求", "unavailable": "详细测量不可用", "latestRequest": "最近请求", "routedProvider": "实际提供服务的供应商", "latestSession": "最近测量的会话", "turn": "第 {{value}} 轮", "attempt": "第 {{value}} 次尝试", "headers": "服务器响应", "firstEvent": "首个事件", "firstUseful": "首个结果", "totalDuration": "总耗时", "usageIncomplete": "Token 数据不完整", "statuses": { "completed": "已完成", "interrupted": "因压缩而中断", "cancelled": "已取消", "failed": "失败" } },
       "providerTitle": "提供商限制与额度", "generalLimitsTitle": "常规使用限制", "namedLimitsTitle": "{{name}} 使用限制", "localTitle": "Beaver 中的用量", "refresh": "刷新", "remoteUnavailable": "账户用量数据不可用", "remainingPercent": "剩余 {{value}}%", "updated": "已更新", "stale": "较早的数据", "resetsAt": "重置时间：{{date}}", "openProviderSite": "前往提供商查看", "periodLabel": "时间范围", "historyEmpty": "尚无用量记录", "requests": "请求次数", "inputTokens": "输入 Token", "outputTokens": "输出 Token", "cachedTokens": "缓存读取 Token", "cacheWriteTokens": "缓存写入 Token", "cacheMissTokens": "缓存未命中 Token", "reasoningTokens": "推理 Token", "totalTokens": "Token 总数", "cost": "费用", "byOrigin": "按来源", "byWorkload": "按工作类型",
       "periods": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "all_time": "全部" }, "quality": { "exact": "精确", "estimated": "估算", "partial": "部分", "unavailable": "不可用" }, "origins": { "manual_chat": "手动聊天", "external_channel": "外部频道", "automation": "自动化" }, "workloads": { "primary": "主要", "subagent": "子代理", "compression": "压缩" },
-      "windows": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "key_limit": "密钥限制", "requests_day": "每日请求", "tokens_minute": "每分钟 Token", "requests_limit": "请求限制", "tokens_limit": "Token 限制", "rolling_five_hours": "5 小时窗口", "weekly": "每周限制", "provider_limit": "提供商限制" }, "balances": { "remaining_credits": "剩余额度", "available_balance": "可用余额", "voucher_balance": "代金券余额", "cash_balance": "现金余额", "reset_credits": "重置额度", "extra_usage_balance": "Extra Usage 余额", "extra_usage_monthly_limit": "Extra Usage 每月限额", "extra_usage_monthly_used": "本月已用 Extra Usage" }, "notices": { "usage_fetch_failed": "无法刷新提供商数据。近期有效数据仍会保留显示。", "provider_usage_site_only": "xAI 未公开这些限制的访问方式。本地用量仍可查看。", "provider_account_usage_unavailable": "此提供商未针对该连接公开账户限制。" }
+      "windows": { "today": "今天", "seven_days": "7 天", "thirty_days": "30 天", "key_limit": "密钥限制", "requests_day": "每日请求", "tokens_minute": "每分钟 Token", "requests_limit": "请求限制", "tokens_limit": "Token 限制", "rolling_five_hours": "5 小时窗口", "weekly": "每周限制", "provider_limit": "提供商限制" }, "balances": { "remaining_credits": "剩余额度", "available_balance": "可用余额", "voucher_balance": "代金券余额", "cash_balance": "现金余额", "reset_credits": "重置额度", "extra_usage_balance": "Extra Usage 余额", "extra_usage_monthly_limit": "Extra Usage 每月限额", "extra_usage_monthly_used": "本月已用 Extra Usage" }, "notices": { "usage_fetch_failed": "无法刷新提供商数据。近期有效数据仍会保留显示。", "provider_usage_site_only": "xAI 未公开这些限制的访问方式。本地用量仍可查看。", "provider_account_usage_unavailable": "此提供商未针对该连接公开账户限制。", "openrouter_account_balance_requires_management_key": "OpenRouter 全局余额需要管理密钥。此 API 密钥设置的限额仍会显示。" }
     }
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "自研 LPU 上的 Llama / GPT-OSS 超高速推理。", "freeTier": "1 000 次请求/天" },
-      "google": { "description": "Gemini 3.6 Flash — 多模态、工具调用与推理。", "freeTier": "100 万 tokens/分钟" },
-      "mistral": { "description": "法国开源权重模型 — 免费 Experiment 套餐。", "freeTier": "10 亿 tokens/月" },
-      "cerebras": { "description": "晶圆级芯片上运行开源权重模型，最高 3 000 tok/s。", "freeTier": "100 万 tokens/天" },
-      "openrouter": { "description": "一个 API 密钥访问 300+ 模型。", "freeTier": "17 个免费模型" },
-      "openai": { "description": "GPT-5.6 Sol、Terra 与 Luna — 前沿推理能力。", "freeTier": "输入 1–5 美元/百万 tokens" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 极致性价比。", "freeTier": "输入 0.14 美元/百万 tokens" },
-      "xai": { "description": "Grok 4.5 — 50 万上下文，高级推理。", "freeTier": "输入 2 美元/百万 tokens" },
-      "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "输入 3 美元/百万 tokens" },
-      "zai": { "description": "GLM-5.2 — 100 万上下文，长跨度编程与推理。", "freeTier": "GLM-4.7-Flash 免费" },
-      "brave": { "description": "自建索引，不依赖 Google/Bing。", "freeTier": "每月 5 美元额度" },
-      "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "每月 10 美元额度" },
-      "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "每月 1 000 额度" }
+      "groq": { "description": "自研 LPU 上的 Llama / GPT-OSS 超高速推理。", "freeTier": "提供有限制的免费套餐；访问可能取决于组织设置。" },
+      "google": { "description": "Gemini 3.6 Flash — 多模态、工具调用与推理。", "freeTier": "部分模型提供免费层级，取决于账户和限制。" },
+      "mistral": { "description": "法国开源权重模型 — 免费 Experiment 套餐。", "freeTier": "提供免费模式和付费套餐；可用性取决于账户。" },
+      "cerebras": { "description": "晶圆级芯片上运行开源权重模型，最高 3 000 tok/s。", "freeTier": "免费层级和配额取决于项目与账户。" },
+      "openrouter": { "description": "一个 API 密钥访问 300+ 模型。", "freeTier": "标有[Free]的模型不消耗额度；其他模型使用账户余额。" },
+      "openai": { "description": "GPT-5.6 Sol、Terra 与 Luna — 前沿推理能力。", "freeTier": "API 按使用量和模型计费。" },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 极致性价比。", "freeTier": "API 按使用量和模型计费。" },
+      "xai": { "description": "Grok 4.5 — 50 万上下文，高级推理。", "freeTier": "预付额度或按月计费，取决于账户。" },
+      "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "API 按使用量计费。" },
+      "zai": { "description": "GLM-5.2 — 100 万上下文，长跨度编程与推理。", "freeTier": "标有[Free]的 Flash 模型无费用；其他模型需付费。" },
+      "brave": { "description": "自建索引，不依赖 Google/Bing。", "freeTier": "含每月额度，之后按使用量计费。" },
+      "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "请在提供商账户中查看价格和额度。" },
+      "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "免费套餐和额度取决于团队与套餐。" }
     },
     "main": {
       "title": "API 密钥",
@@ -59,7 +59,7 @@
       "connected": "已连接",
       "edit": "编辑",
       "delete": "删除",
-      "freeTier": "免费套餐",
+      "freeTier": "访问和价格",
       "signupLink": "官网",
       "openSite": "打开网站",
       "quota": "配额",
@@ -259,6 +259,7 @@
     "showLess": "收起",
     "modelSearch": "搜索模型…",
     "modelEmpty": "没有匹配的模型。",
+    "modelFree": "Free",
     "selectModel": "选择模型",
     "selectModelHint": "选择模型",
     "reasoningTitle": "推理",

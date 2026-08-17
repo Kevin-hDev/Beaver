@@ -34,11 +34,10 @@ export function ModelSelectorItem({
   onToggleFav,
 }: ModelSelectorItemProps) {
   const { t } = useTranslation();
-  const isPaid = !m.is_free && !m.is_local;
   const disabled = m.disabled === true;
   return (
     <div
-      className={`ms-item ${isSelected ? "active" : ""} ${isPaid ? "ms-item-paid" : ""} ${disabled ? "ms-item-disabled" : ""}`}
+      className={`ms-item ${isSelected ? "active" : ""} ${disabled ? "ms-item-disabled" : ""}`}
       role="button"
       aria-disabled={disabled || undefined}
       ref={getItemRef(navId)}
@@ -68,7 +67,10 @@ export function ModelSelectorItem({
       >
         <Star size="var(--icon-xs)" weight={isFav ? "fill" : "regular"} />
       </span>
-      <span className="ms-item-name">{m.display_name ?? m.id}</span>
+      <span className="ms-item-name">
+        {m.display_name ?? m.id}
+        {m.is_free && <span className="ms-item-free">[{t("agentLocal.modelFree")}]</span>}
+      </span>
       <span className="ms-item-right">
         {m.supports_vision && (
           <Tooltip label={t("settings.llm.vision")}>

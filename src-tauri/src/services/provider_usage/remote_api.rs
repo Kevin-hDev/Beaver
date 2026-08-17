@@ -30,15 +30,30 @@ fn parse_openrouter(body: &serde_json::Value) -> RemoteData {
             resets_at: None,
         });
     }
-    let balances = remaining
-        .map(|amount| ProviderBalance {
-            label_code: "remaining_credits".into(),
-            amount: decimal_number(amount),
-            currency: "USD".into(),
-        })
-        .into_iter()
-        .collect();
-    finish(windows, balances, None)
+    finish(windows, Vec::new(), None)
+}
+
+pub fn openrouter_is_management_key(body: &serde_json::Value) -> bool {
+    body["data"]["is_management_key"].as_bool() == Some(true)
+}
+
+pub fn add_openrouter_account_balance(remote: &mut RemoteData, body: &serde_json::Value) -> bool {
+    let total = signed(body["data"]["total_credits"].as_f64());
+    let used = signed(body["data"]["total_usage"].as_f64());
+    let Some((total, used)) = total.zip(used) else {
+        return false;
+    };
+    let remaining = total - used;
+    if !remaining.is_finite() || remaining.abs() > 1e15 {
+        return false;
+    }
+    remote.balances.retain(|balance| balance.label_code != "remaining_credits");
+    remote.balances.push(ProviderBalance {
+        label_code: "remaining_credits".into(),
+        amount: decimal_number(remaining),
+        currency: "USD".into(),
+    });
+    true
 }
 
 fn push_openrouter_window(windows: &mut Vec<ProviderWindow>, label: &str, used: Option<f64>) {

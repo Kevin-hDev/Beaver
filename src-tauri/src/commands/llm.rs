@@ -36,7 +36,6 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
         }
     }
     let mut models = chat_filtered;
-    let all_free = is_provider_all_free(canonical_provider);
     for m in &mut models {
         let local_limits = provider_model_lookup::local_limits(canonical_provider, &m.id);
         if let Some(limits) = local_limits {
@@ -81,13 +80,6 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
         {
             m.default_reasoning_mode = None;
         }
-        if all_free {
-            m.is_free = true;
-        } else if canonical_provider == "mistral" {
-            m.is_free = is_mistral_free(&m.id);
-        } else if canonical_provider == "zai" {
-            m.is_free = is_zai_free(&m.id);
-        }
     }
     crate::services::llm::runtime_models::replace_provider(canonical_provider, &models);
     Ok(models)
@@ -119,25 +111,6 @@ pub async fn get_provider_usage(
     force_refresh: bool,
 ) -> Result<crate::services::provider_usage::ProviderUsageSnapshot, String> {
     crate::services::provider_usage::snapshot(&connection_id, force_refresh).await
-}
-
-fn is_provider_all_free(provider_id: &str) -> bool {
-    matches!(provider_id, "groq" | "cerebras" | "google")
-}
-
-fn is_mistral_free(model_id: &str) -> bool {
-    let id = model_id.to_lowercase();
-    id.contains("devstral")
-        || id.contains("magistral")
-        || id.contains("ministral")
-        || id.contains("pixtral")
-        || id.contains("codestral-mamba")
-        || id.contains("open-mistral")
-        || id.contains("mistral-small")
-}
-
-fn is_zai_free(model_id: &str) -> bool {
-    model_id.to_lowercase().contains("flash")
 }
 
 #[cfg(test)]

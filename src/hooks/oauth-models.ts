@@ -56,7 +56,7 @@ export function mapOAuthModels(models: OAuthModelInfo[]): Map<string, AvailableM
       supports_thinking: model.supports_thinking,
       reasoning_modes: model.reasoning_modes,
       default_reasoning_mode: model.default_reasoning_mode,
-      is_free: true,
+      is_free: false,
       interactive_only: model.interactive_only,
       hint: model.context_length ? `${Math.round(model.context_length / 1000)}K ctx` : undefined,
     };

@@ -1,10 +1,11 @@
 {
   "provider": "zai",
   "schema_version": 1,
-  "verified_at": "2026-07-30",
+  "verified_at": "2026-08-17",
   "source_urls": [
     "https://docs.z.ai/guides/overview/overview",
     "https://docs.z.ai/guides/overview/concept-param",
+    "https://docs.z.ai/guides/overview/pricing",
     "https://docs.z.ai/api-reference/llm/chat-completion"
   ],
   "models": [
@@ -13,18 +14,18 @@
     {"id":"glm-5-turbo","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-5","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.7","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
-    {"id":"glm-4.7-flash","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
+    {"id":"glm-4.7-flash","is_free":true,"context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.7-flashx","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.6","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.5","context_window":128000,"max_output_tokens":98304,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.5-air","context_window":128000,"max_output_tokens":98304,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.5-x","context_window":128000,"max_output_tokens":98304,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4.5-airx","context_window":128000,"max_output_tokens":98304,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
-    {"id":"glm-4.5-flash","context_window":200000,"max_output_tokens":98304,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
+    {"id":"glm-4.5-flash","is_free":true,"context_window":200000,"max_output_tokens":98304,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-4-32b-0414-128k","context_window":128000,"max_output_tokens":16384,"supports_tools":true,"supports_vision":false,"supports_thinking":false},
     {"id":"glm-5v-turbo","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
     {"id":"glm-4.6v","context_window":128000,"max_output_tokens":32768,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
-    {"id":"glm-4.6v-flash","context_window":128000,"max_output_tokens":32768,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
+    {"id":"glm-4.6v-flash","is_free":true,"context_window":128000,"max_output_tokens":32768,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
     {"id":"glm-4.6v-flashx","context_window":128000,"max_output_tokens":32768,"supports_tools":true,"supports_vision":true,"supports_thinking":true},
     {"id":"glm-4.5v","context_window":64000,"max_output_tokens":16384,"supports_tools":true,"supports_vision":true,"supports_thinking":true}
   ]

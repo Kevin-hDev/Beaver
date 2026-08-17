@@ -29,7 +29,7 @@ describe("provider-copy", () => {
       "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.",
     );
     expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe(
-      "1 000 crédits/mois",
+      "Offre gratuite et crédits selon l’équipe et le forfait.",
     );
   });
 
@@ -45,7 +45,7 @@ describe("provider-copy", () => {
     await i18n.changeLanguage("ja");
     expect(providerDescription(i18n.t, { id: "moonshot", category: "llm" })).toContain("Kimi K3");
     expect(providerFreeTier(i18n.t, { id: "firecrawl", category: "scraping" })).toBe(
-      "毎月 1,000 クレジット",
+      "無料プランとクレジットはチームとプランによります。",
     );
     expect(providerFreeTier(i18n.t, { id: "chronos", category: "forecast" })).toBe("ローカル");
     await i18n.changeLanguage("fr");

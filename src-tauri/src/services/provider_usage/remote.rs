@@ -53,7 +53,7 @@ async fn cached_or_fallback(connection_id: &str) -> RemoteData {
 
 async fn fetch(connection_id: &str) -> Result<RemoteData, ()> {
     match connection_id {
-        "openrouter" => fetch_api(connection_id, "https://openrouter.ai/api/v1/key").await,
+        "openrouter" => fetch_openrouter().await,
         "deepseek" => fetch_api(connection_id, "https://api.deepseek.com/user/balance").await,
         "moonshot" => fetch_api(connection_id, "https://api.moonshot.ai/v1/users/me/balance").await,
         "codex-oauth" => fetch_codex().await,
@@ -61,6 +61,49 @@ async fn fetch(connection_id: &str) -> Result<RemoteData, ()> {
         "groq" | "cerebras" => Ok(recent_headers(connection_id).await),
         _ => Ok(local_only(connection_id)),
     }
+}
+
+async fn fetch_openrouter() -> Result<RemoteData, ()> {
+    let key = crate::services::api_keys::get_key("openrouter").map_err(|_| ())?;
+    let client = client()?;
+    let key_response = client
+        .send_success(
+            client
+                .get("https://openrouter.ai/api/v1/key")
+                .bearer_auth(key.as_str()),
+        )
+        .await
+        .map_err(|_| ())?;
+    let key_body: serde_json::Value = read_json_bounded(key_response, RESPONSE_LIMIT)
+        .await
+        .map_err(|_| ())?;
+    let mut remote = super::remote_api::parse("openrouter", &key_body).ok_or(())?;
+
+    // Le solde global n'est publié que pour une clé de gestion OpenRouter.
+    if !super::remote_api::openrouter_is_management_key(&key_body) {
+        remote.notice_code = Some("openrouter_account_balance_requires_management_key".into());
+        return Ok(remote);
+    }
+
+    let credits_response = client
+        .send(
+            client
+                .get("https://openrouter.ai/api/v1/credits")
+                .bearer_auth(key.as_str()),
+        )
+        .await
+        .map_err(|_| ())?;
+    if !credits_response.status().is_success() {
+        remote.notice_code = Some("usage_fetch_failed".into());
+        return Ok(remote);
+    }
+    let credits_body: serde_json::Value = read_json_bounded(credits_response, RESPONSE_LIMIT)
+        .await
+        .map_err(|_| ())?;
+    if !super::remote_api::add_openrouter_account_balance(&mut remote, &credits_body) {
+        remote.notice_code = Some("usage_fetch_failed".into());
+    }
+    Ok(remote)
 }
 
 async fn recent_headers(connection_id: &str) -> RemoteData {

@@ -33,24 +33,24 @@
       "workloads": { "primary": "Primary", "subagent": "Subagent", "compression": "Compression" },
       "windows": { "today": "Today", "seven_days": "7 days", "thirty_days": "30 days", "key_limit": "Key limit", "requests_day": "Requests per day", "tokens_minute": "Tokens per minute", "requests_limit": "Request limit", "tokens_limit": "Token limit", "rolling_five_hours": "5-hour window", "weekly": "Weekly limit", "provider_limit": "Provider limit" },
       "balances": { "remaining_credits": "Remaining credits", "available_balance": "Available balance", "voucher_balance": "Voucher balance", "cash_balance": "Cash balance", "reset_credits": "Reset credits", "extra_usage_balance": "Extra Usage balance", "extra_usage_monthly_limit": "Extra Usage monthly limit", "extra_usage_monthly_used": "Extra Usage used this month" },
-      "notices": { "usage_fetch_failed": "Provider usage could not be refreshed. Recent valid data remains visible when available.", "provider_usage_site_only": "xAI does not publish access to these limits. Local usage remains available.", "provider_account_usage_unavailable": "This provider does not publish account limits for this connection." }
+      "notices": { "usage_fetch_failed": "Provider usage could not be refreshed. Recent valid data remains visible when available.", "provider_usage_site_only": "xAI does not publish access to these limits. Local usage remains available.", "provider_account_usage_unavailable": "This provider does not publish account limits for this connection.", "openrouter_account_balance_requires_management_key": "Your OpenRouter account balance requires a management key. Any limit set on this API key remains shown." }
     }
   },
   "apiKeys": {
     "providers": {
-      "groq": { "description": "Ultra-fast Llama / GPT-OSS inference on custom LPU.", "freeTier": "1,000 req/day" },
-      "google": { "description": "Gemini 3.6 Flash — multimodal, tools and reasoning.", "freeTier": "1M tokens/min" },
-      "mistral": { "description": "French open-weight models — free Experiment plan.", "freeTier": "1B tokens/month" },
-      "cerebras": { "description": "Open-weight models up to 3,000 tok/s on wafer-scale chip.", "freeTier": "1M tokens/day" },
-      "openrouter": { "description": "Access 300+ models with a single API key.", "freeTier": "17 free models" },
-      "openai": { "description": "GPT-5.6 Sol, Terra and Luna — frontier reasoning.", "freeTier": "$1–5/Mtok input" },
-      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — unbeatable value for money.", "freeTier": "$0.14/Mtok input" },
-      "xai": { "description": "Grok 4.5 — 500K context, advanced reasoning.", "freeTier": "$2/Mtok input" },
-      "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, 1M context.", "freeTier": "$3/Mtok input" },
-      "zai": { "description": "GLM-5.2 — 1M context, long-horizon coding and reasoning.", "freeTier": "GLM-4.7-Flash free" },
-      "brave": { "description": "Independent index, no Google/Bing dependency.", "freeTier": "$5 credits/month" },
-      "exa": { "description": "Neural search — semantic similarity search.", "freeTier": "$10 credits/month" },
-      "firecrawl": { "description": "LLM-ready Markdown extraction from any URL.", "freeTier": "1,000 credits/month" }
+      "groq": { "description": "Ultra-fast Llama / GPT-OSS inference on custom LPU.", "freeTier": "Free plan with limits; access can depend on the organization." },
+      "google": { "description": "Gemini 3.6 Flash — multimodal, tools and reasoning.", "freeTier": "Free tier for selected models, depending on account and limits." },
+      "mistral": { "description": "French open-weight models — free Experiment plan.", "freeTier": "Free mode and paid plan; availability depends on the account." },
+      "cerebras": { "description": "Open-weight models up to 3,000 tok/s on wafer-scale chip.", "freeTier": "Free tier and quotas depend on the project and account." },
+      "openrouter": { "description": "Access 300+ models with a single API key.", "freeTier": "[Free] models use no credits; all others use your balance." },
+      "openai": { "description": "GPT-5.6 Sol, Terra and Luna — frontier reasoning.", "freeTier": "API billed by usage and model." },
+      "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — unbeatable value for money.", "freeTier": "API billed by usage and model." },
+      "xai": { "description": "Grok 4.5 — 500K context, advanced reasoning.", "freeTier": "Prepaid credits or monthly billing, depending on the account." },
+      "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, 1M context.", "freeTier": "API billed by usage." },
+      "zai": { "description": "GLM-5.2 — 1M context, long-horizon coding and reasoning.", "freeTier": "Flash models marked [Free] have no cost; the others are billed." },
+      "brave": { "description": "Independent index, no Google/Bing dependency.", "freeTier": "Monthly included credits, then usage-based billing." },
+      "exa": { "description": "Neural search — semantic similarity search.", "freeTier": "Check pricing and credits in the provider account." },
+      "firecrawl": { "description": "LLM-ready Markdown extraction from any URL.", "freeTier": "Free plan and credits depend on the team and plan." }
     },
     "main": {
       "title": "API Keys",
@@ -64,7 +64,7 @@
       "connected": "Connected",
       "edit": "Edit",
       "delete": "Delete",
-      "freeTier": "Free tier",
+      "freeTier": "Access and pricing",
       "signupLink": "Website",
       "openSite": "Open site",
       "quota": "Quota",
@@ -264,6 +264,7 @@
     "showLess": "Show less",
     "modelSearch": "Search a model…",
     "modelEmpty": "No matching model.",
+    "modelFree": "Free",
     "selectModel": "Choose a model",
     "selectModelHint": "Select model",
     "reasoningTitle": "Reasoning",

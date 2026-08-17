@@ -3,7 +3,7 @@ use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::json;
 
 #[test]
-fn openrouter_exposes_periods_limit_and_balance() {
+fn openrouter_exposes_periods_and_key_limit() {
     let parsed = remote_api::parse(
         "openrouter",
         &json!({"data": {
@@ -17,11 +17,11 @@ fn openrouter_exposes_periods_limit_and_balance() {
     )
     .unwrap();
     assert_eq!(parsed.windows.len(), 4);
-    assert_eq!(parsed.balances[0].amount, "5.5");
+    assert!(parsed.balances.is_empty());
 }
 
 #[test]
-fn openrouter_preserves_a_negative_remaining_balance() {
+fn openrouter_preserves_a_negative_key_limit() {
     let parsed = remote_api::parse(
         "openrouter",
         &json!({"data": {
@@ -31,7 +31,22 @@ fn openrouter_preserves_a_negative_remaining_balance() {
         }}),
     )
     .unwrap();
-    assert_eq!(parsed.balances[0].amount, "-0.25");
+    assert_eq!(parsed.windows.len(), 1);
+    assert_eq!(parsed.windows[0].remaining, Some(-0.25));
+}
+
+#[test]
+fn openrouter_account_balance_requires_management_key_and_uses_credits_api() {
+    let key = json!({"data": {"is_management_key": true}});
+    assert!(remote_api::openrouter_is_management_key(&key));
+    assert!(!remote_api::openrouter_is_management_key(&json!({"data": {}})));
+
+    let mut remote = remote_api::parse("openrouter", &json!({"data": {}})).unwrap();
+    assert!(remote_api::add_openrouter_account_balance(
+        &mut remote,
+        &json!({"data": {"total_credits": 100.5, "total_usage": 25.75}}),
+    ));
+    assert_eq!(remote.balances[0].amount, "74.75");
 }
 
 #[test]

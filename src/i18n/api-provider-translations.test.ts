@@ -56,6 +56,21 @@ const SECTIONS = [
 ];
 
 describe("api provider translations", () => {
+  it("utilise le badge court Free dans chaque langue", () => {
+    for (const [lang, locale] of Object.entries(locales)) {
+      expect(locale.agentLocal.modelFree, `${lang} → agentLocal.modelFree`).toBe("Free");
+    }
+  });
+
+  it("explique dans chaque langue la limite de solde OpenRouter", () => {
+    for (const [lang, locale] of Object.entries(locales)) {
+      expect(
+        locale.providers.usage.notices.openrouter_account_balance_requires_management_key.trim(),
+        `${lang} → providers.usage.notices.openrouter_account_balance_requires_management_key vide`,
+      ).not.toBe("");
+    }
+  });
+
   it("retrouve les providers des catalogues Rust", () => {
     const [apiKeys, forecast] = SECTIONS;
     expect(apiKeys.ids).toContain("groq");

@@ -43,13 +43,30 @@ fn openrouter_models_use_supported_parameters_for_reasoning() {
 
     assert!(reasoning.supports_tools);
     assert!(reasoning.supports_thinking);
+    assert!(reasoning.is_free);
     assert_eq!(reasoning.max_output_tokens, Some(65_535));
     assert_eq!(
         reasoning.reasoning_modes,
         ["off", "auto", "low", "medium", "high", "xhigh"]
     );
     assert!(!plain.supports_thinking);
+    assert!(!plain.is_free);
     assert!(plain.reasoning_modes.is_empty());
+}
+
+#[test]
+fn unpriced_or_partially_priced_models_are_not_marked_free() {
+    let body = json!({
+        "data": [
+            {"id": "provider/unpriced"},
+            {"id": "provider/image-cost", "pricing": {
+                "prompt": "0", "completion": "0", "image": "0.01"
+            }}
+        ]
+    });
+
+    let models = parse_models_list(&body, "openai").unwrap();
+    assert!(models.iter().all(|model| !model.is_free));
 }
 
 #[test]

@@ -72,8 +72,8 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         supports_thinking,
         reasoning_modes,
         default_reasoning_mode: None,
-        is_free: is_price_free(&model["pricing"]["prompt"])
-            && is_price_free(&model["pricing"]["completion"]),
+        // Un badge gratuit exige un tarif nul explicite pour toutes les unités facturées.
+        is_free: has_zero_pricing(&model["pricing"]),
     })
 }
 
@@ -122,9 +122,23 @@ fn safe_text(value: &Value, max_bytes: usize) -> Option<String> {
         .map(str::to_string)
 }
 
-fn is_price_free(value: &Value) -> bool {
-    match value.as_str() {
-        Some(price) => matches!(price, "0" | "0.0" | "0.00"),
-        None => value.is_null(),
-    }
+fn has_zero_pricing(pricing: &Value) -> bool {
+    let Some(prices) = pricing.as_object() else {
+        return false;
+    };
+    let Some(prompt) = prices.get("prompt") else {
+        return false;
+    };
+    let Some(completion) = prices.get("completion") else {
+        return false;
+    };
+    price_is_zero(prompt) && price_is_zero(completion) && prices.values().all(price_is_zero)
+}
+
+fn price_is_zero(value: &Value) -> bool {
+    let price = value
+        .as_str()
+        .and_then(|raw| raw.parse::<f64>().ok())
+        .or_else(|| value.as_f64());
+    price.is_some_and(|amount| amount.is_finite() && amount == 0.0)
 }

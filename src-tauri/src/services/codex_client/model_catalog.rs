@@ -165,7 +165,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             supports_thinking: !modes.is_empty(),
             reasoning_modes: modes,
             default_reasoning_mode: None,
-            is_free: true,
+            is_free: false,
         },
     })
 }

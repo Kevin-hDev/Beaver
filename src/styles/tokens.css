@@ -105,11 +105,18 @@
   --summary-file-icon-column: var(--chrome-icon-lg);
   --switch-unit: 10px;
 
-  --browser-toolbar-height: 2rem;
-  --browser-control-size: var(--btn-height);
   --compact-control-height: 24px;
-  --browser-toolbar-padding-y: 0.125rem;
-  --browser-field-padding-y: var(--space-xs);
+  /* Le navigateur empile deux rangées — onglets puis adresse — là où les autres
+     modes du panneau latéral n'en ont qu'une. Ses contrôles descendent donc au
+     palier compact de l'application au lieu de la hauteur de bouton courante :
+     c'est ce qui rend les deux rangées tenables côte à côte.
+     Le prix à regarder : en basculant du navigateur vers la prévisualisation de
+     fichiers, la rangée du haut change de hauteur. */
+  --browser-toolbar-height: var(--compact-control-height);
+  --browser-control-size: var(--compact-control-height);
+  /* En pixels, comme le reste des marges structurelles : un filet sous cette
+     valeur n'a plus de sens, et il ne doit pas grandir avec la police. */
+  --browser-toolbar-padding-y: 1px;
   --browser-tab-max-width: 12rem;
   /* Terminal — la poignée porte un trait visible, d'où sa hauteur et sa
      largeur ; sans repère, on cherche une bande transparente à la souris.
@@ -126,6 +133,8 @@
   --terminal-bar-action-size: calc(var(--btn-height) * 0.75);
   --terminal-activity-dot-size: 5px;
   --browser-home-max-width: 26rem;
+  /* 20 % de plus que l'ancien menu (340 px) : le badge [Free] doit rester lisible. */
+  --model-selector-menu-width: 25.5rem;
   --forecast-model-trigger-max-width: 12.25rem;
   --forecast-model-menu-width: 17.5rem;
   --forecast-download-progress-width: 18rem;
