@@ -1,0 +1,11 @@
+/* Un cran au-dessus du calque du splash, qui vit dans index.html hors de
+   l'arbre React et porte sa valeur en dur. Le conteneur crée un contexte
+   d'empilement : les boutons qu'il porte sont en position fixe et gardent donc
+   leur place à l'écran, mais passent devant le splash au lieu de disparaître
+   derrière lui pendant tout le chargement.
+   L'écart entre les deux valeurs est vérifié par startup-window-controls.test :
+   les deux fichiers sont relus et le test échoue si l'écart disparaît. */
+.startup-window-controls {
+  position: relative;
+  z-index: 10000;
+}

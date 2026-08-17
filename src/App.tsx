@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { AppLayout } from "@/components/layout/app-layout";
+import { StartupWindowControls } from "@/components/layout/startup-window-controls";
 import { VaultErrorBanner } from "@/components/layout/vault-error-banner";
 import { OllamaSetupScreen } from "@/components/ollama/ollama-setup-screen";
 import { OnboardingScreen } from "@/components/onboarding/onboarding-screen";
@@ -113,8 +114,11 @@ function MainApp() {
     return () => clearTimeout(timer);
   }, [startupGate.view]);
 
+  /* Le splash couvre encore la fenêtre pendant tout ce temps : les boutons sont
+     le seul moyen de la fermer ou de la réduire là où les décorations natives
+     ont été retirées. */
   if (startupGate.view === "loading") {
-    return null;
+    return <StartupWindowControls />;
   }
 
   if (startupGate.view === "onboarding") {
@@ -133,6 +137,7 @@ function MainApp() {
   if (startupGate.view === "ollama") {
     return (
       <div className="app-startup-shell">
+        <StartupWindowControls />
         <OllamaSetupScreen
           onComplete={startupGate.completeOllamaSetup}
           onSkip={startupGate.skipOllamaSetup}
