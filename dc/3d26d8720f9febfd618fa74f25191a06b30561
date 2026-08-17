@@ -1,0 +1,13 @@
+J3 Linux native proof harness correction (2026-08-17)
+
+Root cause
+- The official Beaver 1.1.2 Linux Ollama bundle contains 1,874 files.
+- The proof collector rejected the real baseline because its inventory bound was 1,000 entries.
+
+TDD
+- Red: the published Linux bundle fixture failed with Native upgrade proof has too many entries.
+- Fix: retain a hard collection bound while raising it to 4,096 entries; retain the independent 4 MiB serialized-output bound.
+- Green: focused Linux/bound tests 2/2; native proof collector 10/10; J3 native assets 18/18.
+- graphify update . completed.
+
+Native proof is still in progress; append exact Linux package, migration, recovery, shutdown, external daemon, and CI results only after they are observed.
