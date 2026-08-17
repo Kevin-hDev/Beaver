@@ -1,1 +1,18 @@
-Objet: ajouter un contrôle local agrégé minimal sans modifier la CI.\n\nImplémentation:\n- npm run check appelle un unique script de 58 lignes.\n- Le script exécute séquentiellement TypeScript, lint, build frontend, tests frontend/scripts, rustfmt, Clippy et tests Rust.\n- Un échec ne masque pas les contrôles suivants.\n- Chaque contrôle est borné à 10 minutes.\n- Le résumé final liste VERT, ROUGE ou TIMEOUT et retourne un code non nul si nécessaire.\n\nVérifications exécutées:\n- node --check scripts/ci/run-local-checks.mjs: vert.\n- npm run check -- --list: 7 contrôles listés.\n- PATH volontairement invalide: TypeScript vert, 6 commandes rouges, les 7 contrôles ont été exécutés et résumés; preuve que le runner continue après erreur.\n- git diff --check: vert.\n- graphify update .: terminé (34608 nœuds, 70902 arêtes).\n\nLimite volontaire:\n- Les suites complètes n'ont pas été relancées après la réduction; cette modification orchestre uniquement les commandes existantes.
+Objet: ajouter un contrôle local agrégé minimal sans modifier la CI.
+
+Implémentation:
+- npm run check appelle un unique script de 58 lignes.
+- Le script exécute séquentiellement TypeScript, lint, build frontend, tests frontend/scripts, rustfmt, Clippy et tests Rust.
+- Un échec ne masque pas les contrôles suivants.
+- Chaque contrôle est borné à 10 minutes.
+- Le résumé final liste VERT, ROUGE ou TIMEOUT et retourne un code non nul si nécessaire.
+
+Vérifications exécutées:
+- node --check scripts/ci/run-local-checks.mjs: vert.
+- npm run check -- --list: 7 contrôles listés.
+- PATH volontairement invalide: TypeScript vert, 6 commandes rouges, les 7 contrôles ont été exécutés et résumés; preuve que le runner continue après erreur.
+- git diff --check: vert.
+- graphify update .: terminé (34608 nœuds, 70902 arêtes).
+
+Limite volontaire:
+- Les suites complètes n'ont pas été relancées après la réduction; cette modification orchestre uniquement les commandes existantes.
