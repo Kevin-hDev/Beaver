@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import { open } from "@tauri-apps/plugin-shell";
+import { openExternalLink } from "@/lib/open-external-link";
 import { languageFromPath } from "@/lib/code-language";
 import { highlightCodeNodes, type HighlightNode } from "@/lib/highlight";
 import "./tool-result-markdown.css";
@@ -48,7 +48,7 @@ export function ToolResultMarkdown({ content }: { content: string }) {
           className="chat-link"
           href={href ?? "#"}
           title={href ?? ""}
-          onClick={(e) => { e.preventDefault(); if (href) void open(href); }}
+          onClick={(e) => { e.preventDefault(); if (href) openExternalLink(href); }}
         >
           {children}
         </a>

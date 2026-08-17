@@ -1,22 +1,8 @@
 import { Children, type ReactElement, type ReactNode } from "react";
 import type { Components } from "react-markdown";
-import { open } from "@tauri-apps/plugin-shell";
+import { openExternalLink } from "@/lib/open-external-link";
 import { highlightSkillNodes } from "@/lib/skill-text";
 import { CodeBlock } from "./code-block";
-
-const ALLOWED_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
-const MAX_LINK_LENGTH = 2048;
-
-function openMarkdownLink(href: string): void {
-  if (href.length > MAX_LINK_LENGTH) return;
-  try {
-    const url = new URL(href);
-    if (!ALLOWED_LINK_PROTOCOLS.has(url.protocol)) return;
-    void open(url.toString()).catch(() => undefined);
-  } catch {
-    // Invalid and relative links stay inert in the desktop chat.
-  }
-}
 
 function renderSkillText(
   children: ReactNode,
@@ -108,7 +94,7 @@ export function createChatMarkdownComponents(
           title={href ?? ""}
           onClick={(event) => {
             event.preventDefault();
-            if (href) openMarkdownLink(href);
+            if (href) openExternalLink(href);
           }}
         >
           {children}
