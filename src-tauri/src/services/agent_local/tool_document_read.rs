@@ -52,10 +52,12 @@ fn read_pdf(path: &Path) -> ToolResult {
 
     let text = match pdf_extract::extract_text(path_str) {
         Ok(t) => t,
-        Err(_) => return ToolResult::validation(
-            "pdf_content_unreadable",
-            "Impossible de lire le fichier PDF",
-        ),
+        Err(_) => {
+            return ToolResult::validation(
+                "pdf_content_unreadable",
+                "Impossible de lire le fichier PDF",
+            )
+        }
     };
 
     let char_count = text.chars().count();
@@ -82,10 +84,12 @@ fn read_docx(path: &Path) -> ToolResult {
 
     let mut archive = match zip::ZipArchive::new(file) {
         Ok(a) => a,
-        Err(_) => return ToolResult::validation(
-            "docx_archive_invalid",
-            "Fichier DOCX invalide ou corrompu",
-        ),
+        Err(_) => {
+            return ToolResult::validation(
+                "docx_archive_invalid",
+                "Fichier DOCX invalide ou corrompu",
+            )
+        }
     };
 
     let xml_content = match archive.by_name("word/document.xml") {
@@ -106,14 +110,13 @@ fn read_docx(path: &Path) -> ToolResult {
                 );
             }
             if buf.len() as u64 > MAX_DOCX_XML_BYTES {
-                return ToolResult::validation(
-                    "docx_xml_too_large",
-                    "XML DOCX trop volumineux",
-                );
+                return ToolResult::validation("docx_xml_too_large", "XML DOCX trop volumineux");
             }
             buf
         }
-        Err(_) => return ToolResult::validation("docx_structure_invalid", "Structure DOCX invalide"),
+        Err(_) => {
+            return ToolResult::validation("docx_structure_invalid", "Structure DOCX invalide")
+        }
     };
 
     let text = match extract_text_from_ooxml(&xml_content) {
@@ -154,8 +157,7 @@ fn extract_text_from_ooxml(xml: &str) -> Result<String, String> {
                 // Trim + collapse des espaces multiples (issus de l'indentation
                 // XML entre runs) en un seul espace. Préserve les espaces
                 // significatifs entre runs ("un " + "mot" = "un mot").
-                let normalized: String =
-                    para_text.split_whitespace().collect::<Vec<_>>().join(" ");
+                let normalized: String = para_text.split_whitespace().collect::<Vec<_>>().join(" ");
                 if !normalized.is_empty() {
                     if !result.is_empty() {
                         result.push('\n');
@@ -163,7 +165,7 @@ fn extract_text_from_ooxml(xml: &str) -> Result<String, String> {
                     result.push_str(&normalized);
                     if result.chars().count() > MAX_EXTRACTED_DOC_CHARS {
                         return Err("Document trop volumineux".to_string());
-                        }
+                    }
                 }
                 in_paragraph = false;
                 para_text.clear();
