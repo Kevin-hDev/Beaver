@@ -1,0 +1,48 @@
+J3 Windows final-head correction and native proof (2026-08-17)
+
+Commit purpose
+- Reserve the final Ollama reap window during coordinated shutdown.
+- Bound tracked-work drain to origin+3s and ordinary services to origin+5s, leaving origin+5s..origin+8s for Ollama termination, reap, and receipt cleanup.
+- Use the central OLLAMA_REAP_RESERVE_TIMEOUT as the single authority.
+- Fix the native-update deadline discovered during validation: an implicit reap deadline must start when reap begins, not before a potentially multi-minute download/extraction. Explicit caller deadlines remain absolute.
+
+Root causes observed natively
+1. The original shutdown path let the global work registry consume the entire graceful deadline before cleanup.
+2. Service cleanup could then consume the same deadline, skipping the final Ollama reap and leaving its receipt/process behind.
+3. The production update path created a 15-second default reap deadline before download/extraction; once Prepared was durable, the already-expired deadline made reap fail with ollama-start-failed before the first rename.
+
+TDD evidence
+- Red: phased-cleanup tests first failed because run_ordered_bounded, service_cleanup_deadline, and tracked_work_deadline did not exist.
+- Red: the update timing tests first failed because resolve_update_reap_deadline did not exist.
+- Green: app_exit suite 58/58; Ollama manager 285 passed, 0 failed, 1 developer-only test ignored; both deadline tests pass.
+- cargo fmt --check, cargo check, and cargo clippy --all-targets -- -D warnings pass.
+- Ollama authority contracts 6/6 over 2516 source files.
+- J3 reference preflight 15/15.
+- J3 native assets 14 passed, 0 failed, 3 Windows symlink fixtures skipped for missing privilege.
+
+Exact Windows package
+- Head: a704227ece4206175bfd7c4495c950d7212dab76
+- Beaver_1.1.2_x64-setup.exe: 256474270 bytes
+- SHA-256: C86C7133F1E26428C472677EFC254E1B799DE10AB548C08E4CA2C7AF0764E280
+- Installed DLL matches the CEF bundle-staging DLL.
+- Installed helper/updater match their release artifacts.
+
+Native recovery proof
+- Real update 0.32.5 -> 0.32.14 reached durable Prepared with the old bundle still active and the complete target staged.
+- The final installed build recovered that cutpoint automatically: journal, update staging, and backup all disappeared; active version became 0.32.14.
+- qwen3.5:latest returned exactly OK.
+- windows-recovered.json SHA-256: 6EFA6E49F55F4867BF3B160C2E0816B850F55A2F21AC87298C2EB1501C4AEF44.
+- All 13 model-store entries exactly match the before snapshot by relative path, byte size, and SHA-256.
+
+Native shutdown proof
+- Owned Ollama: real window close completed in about 3.1s; Beaver, Ollama, and process receipt all disappeared.
+- External Ollama 0.32.14: PID 16268 remained the only daemon on 127.0.0.1:11434 while Beaver ran; no Beaver receipt was created; inference returned exactly OK.
+- After coordinated Beaver close, Beaver count was 0 while PID 16268 still owned port 11434 and answered /api/version.
+- The external test daemon was then stopped explicitly; no ollama.exe, llama-server.exe, listener, or receipt remained.
+
+Private local evidence
+- docs/superpowers/validation/native-upgrade-proofs/windows-final-head-smoke.md
+- docs/superpowers/validation/native-upgrade-proofs/windows-before.json
+- docs/superpowers/validation/native-upgrade-proofs/windows-after.json
+- docs/superpowers/validation/native-upgrade-proofs/windows-recovered.json
+These files are ignored intentionally and contain no secrets.
