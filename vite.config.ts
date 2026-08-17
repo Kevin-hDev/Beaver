@@ -4,6 +4,8 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
+const rustTargetDir = path.resolve(import.meta.dirname, "src-tauri/target");
+
 export default defineConfig({
   plugins: [
     react(),
@@ -25,6 +27,11 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    watch: {
+      ignored: (watchedPath) =>
+        watchedPath === rustTargetDir ||
+        watchedPath.startsWith(`${rustTargetDir}${path.sep}`),
+    },
   },
   // CVE-2023-46115 : ne PAS exposer les variables d'env TAURI_ au frontend
   envPrefix: ["VITE_"],
