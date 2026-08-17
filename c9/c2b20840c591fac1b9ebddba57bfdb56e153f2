@@ -1,0 +1,30 @@
+JALON 4 - CONFORMITE STRUCTURELLE DU GENERATEUR OOXML
+
+Contexte
+- L'audit cumulatif du jalon 4 a trouve un fichier de production hors contrat: tool_document_write_xml.rs faisait 309 lignes pour une limite de 230.
+- Le comportement de generation DOCX etait deja couvert et vert avant la modification: document_write 8/8, document_format 15/15, office_array 3/3.
+
+Decision
+- Conserver tool_document_write_xml.rs comme orchestrateur du document et des paragraphes.
+- Extraire les runs et leurs styles dans tool_document_write_run.rs.
+- Extraire les tables dans tool_document_write_table.rs.
+- Faire consommer la meme autorite write_run/RunStyle par les paragraphes, les tableaux et les listes.
+- Aucun schema, message, limite, ordre XML ou comportement public n'est modifie.
+
+Preuves apres decoupage
+- services::agent_local::tool_document_write_tests: 8 passes, 0 echec, 0 ignore.
+- services::agent_local::tool_document_format_tests: 15 passes, 0 echec, 0 ignore.
+- services::agent_local::tool_office_array_tests: 3 passes, 0 echec, 0 ignore.
+- cargo fmt --all -- --check: vert.
+- cargo clippy --all-targets -- -D warnings: vert.
+- git diff --check: vert.
+
+Tailles finales
+- tool_document_write_xml.rs: 152 lignes.
+- tool_document_write_run.rs: 94 lignes.
+- tool_document_write_table.rs: 71 lignes.
+- tool_document_write_list.rs: 64 lignes.
+
+Maintenance
+- graphify update . termine: 26755 noeuds, 54679 aretes, 1684 communautes.
+- Les fichiers utilisateur deja modifies dans docs/beaver-site et src/styles/tokens.css n'ont pas ete indexes ni touches par ce commit.
