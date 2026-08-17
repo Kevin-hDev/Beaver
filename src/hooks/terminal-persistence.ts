@@ -1,5 +1,5 @@
 import { homeDir, join } from "@tauri-apps/api/path";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, remove, rename, writeTextFile } from "@tauri-apps/plugin-fs";
 import { DEFAULT_GROUP_KEY, type TerminalGroup } from "./terminal-types";
 
 interface SavedGroups {
@@ -37,7 +37,18 @@ export async function saveGroups(groups: Map<string, TerminalGroup>): Promise<vo
         data[key] = group.tabs.map(({ label, cwd }) => ({ label, cwd }));
       }
     }
-    await writeTextFile(path, JSON.stringify(data));
+    /* Écriture directe = JSON tronqué si l'app meurt au milieu : on écrit un
+       fichier temporaire puis on le renomme, opération atomique sur le même
+       volume. Windows refuse de renommer par-dessus un fichier existant :
+       on le retire d'abord, la fenêtre de risque y est réduite mais pas nulle. */
+    const tmpPath = `${path}.tmp`;
+    await writeTextFile(tmpPath, JSON.stringify(data));
+    try {
+      await rename(tmpPath, path);
+    } catch {
+      await remove(path).catch(() => {});
+      await rename(tmpPath, path);
+    }
   } catch {
     console.warn("[terminal-tabs] failed to save");
   }
