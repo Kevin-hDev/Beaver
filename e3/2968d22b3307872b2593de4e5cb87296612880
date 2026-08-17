@@ -67,3 +67,16 @@ PASSATION AU DEV WINDOWS
 
 DECISION RELEASE
 Ce commit corrige le source et les futurs artefacts. Il ne modifie pas silencieusement le tag ni les assets publics v1.1.3 existants. Toute republication ou version hotfix doit etre decidee separement afin de ne pas falsifier un artefact deja publie.
+
+MISE A JOUR PUBLIQUE APRES AUTORISATION EXPLICITE - 2026-08-17
+La section DECISION RELEASE ci-dessus decrit correctement et uniquement etat au moment du commit. Kevin a ensuite autorise explicitement le remplacement des assets publics v1.1.3.
+- Beaver_1.1.3_aarch64.dmg public remplace par le DMG corrige.
+- Ancien DMG sauvegarde localement sous /tmp/beaver-release-v1.1.3.2j4yWc/backup avec SHA-256 1612eda7c890ec5bcad5d8714a0d90cc8fb320e062a54f6ae479dde3cd32dd0c.
+- Nouveau DMG public: SHA-256 3d887d1bc847c7e7af1c744cde083e2dc0835470f1e3116641111a62fe836c2b, taille 325292768.
+- update-manifest.json regenere puis remplace: SHA-256 eb2c6ee3ed82a27bcb6a3601537ea24a9d2e080f48527d570f85fb0a24070dcf, taille 532.
+- Linux et Windows restent byte-identiques aux assets anterieurs.
+- Les deux fichiers ont ete retélécharges depuis GitHub; cmp avec le candidat local a rendu code 0.
+- Le manifeste public retélécharge reference exactement les nouvelles taille et empreinte macOS.
+- Le validateur macOS execute sur le DMG retélécharge rend Beaver artifacts validated.
+- hdiutil imageinfo sur le DMG public retélécharge confirme Software License Agreement=false.
+- Le tag v1.1.3 et les sources archives ne sont pas deplaces; seul asset macOS et manifeste de release ont ete remplaces.
