@@ -9,6 +9,8 @@ mod app_lifecycle;
 mod commands;
 mod invoke_handler;
 mod invoke_handler_tail;
+#[cfg(target_os = "macos")]
+mod macos_app_menu;
 mod models;
 mod runtime_startup;
 mod runtime_state;
@@ -73,6 +75,10 @@ pub(crate) fn run_inner(
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             runtime_state::show_main_window(app);
         }));
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .menu(macos_app_menu::build)
+        .on_menu_event(macos_app_menu::handle_event);
     #[cfg(feature = "e2e")]
     let builder = builder.plugin(tauri_plugin_wdio::init());
     #[cfg(feature = "e2e")]
