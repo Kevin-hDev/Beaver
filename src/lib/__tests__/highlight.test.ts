@@ -44,7 +44,7 @@ describe("highlightLines", () => {
   });
 
   it("échappe une chaîne piégée dans un fichier coloré (ts)", () => {
-    const payload = 'const s = "\"><img src=x onerror=alert(1)>";';
+    const payload = 'const s = ""><img src=x onerror=alert(1)>";';
     const [html] = highlightLines(payload, "example.ts");
 
     expect(html).not.toContain("<img");
