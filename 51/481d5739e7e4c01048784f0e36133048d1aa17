@@ -1,0 +1,9 @@
+JALON 4 - PREFLIGHT DE REFERENCE REEL
+
+Probleme: npm run preflight:j3-reference appelait le validateur sans son argument --inventory et echouait systematiquement. La CI executait seulement les fixtures unitaires, pas la verification des six commits et de la note historiques.
+
+Decision: le script npm transmet le chemin documentaire autoritaire. Le validateur recupere lui-meme la branche d'archive et refs/notes/commits avant toute verification, afin de ne jamais valider des references locales perimees. Le job Rust Linux execute une fois le preflight reel; les tests de fixtures restent executes sur les trois OS.
+
+Preuves rouges: npm run preflight:j3-reference sortait code 1 avec J3 reference preflight failed.
+
+Preuves vertes: npm run test:j3-reference 16/16; npm run preflight:j3-reference verifie 6 commits a la tete 50b5515c6d849945f08073d04eebb0aecb479f26; e2e-process 20/20; cargo fmt --check vert; git diff --check vert; graphify update . termine.
