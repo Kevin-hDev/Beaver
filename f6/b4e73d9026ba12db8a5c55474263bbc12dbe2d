@@ -1,0 +1,28 @@
+Windows native validation follow-up for milestone 3.
+
+Observed cause:
+- On this physical Windows host, connecting to a closed loopback port takes about 2.4 seconds before ConnectionRefused.
+- External-daemon detection had a 250 ms deadline and classified that timeout as OllamaValidationDeferred.
+- Beaver therefore refused to start its owned Ollama sidecar and the UI displayed the translated validation-deferred message.
+
+Decision:
+- A timeout is treated as the absence of a usable external daemon only in external-daemon detection. Beaver may then launch its owned sidecar on another allocated loopback port.
+- Other immediate socket errors remain fail-closed as OllamaValidationDeferred.
+- The reason is documented at the unique decision point in port.rs.
+
+TDD evidence:
+- RED: node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager::port_tests::a_slow_closed_windows_port_does_not_block_owned_startup --features windows-tests
+  Result before the fix: 1 failed after 0.26 s; OllamaValidationDeferred was returned.
+- GREEN: the exact command passed 1/1.
+- Ollama port suite: 4 passed, 0 failed.
+- Full Ollama manager suite with windows-tests: 281 passed, 0 failed, 1 ignored developer command (282 matched).
+
+Fresh verification before commit:
+- cargo fmt --all -- --check: exit 0.
+- cargo check: exit 0.
+- cargo clippy --all-targets -- -D warnings: exit 0.
+- npm run test:ollama-manager-contracts: 6 passed, 0 failed; 2515 source files verified.
+- npm run test:j3-reference: 15 passed, 0 failed.
+- graphify update .: completed; 34548 nodes and 70859 edges.
+
+Native build, installed-app migration/update/recovery/shutdown proofs and the new complete CI remain required after this commit.
