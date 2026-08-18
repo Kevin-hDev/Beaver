@@ -1,0 +1,9 @@
+Validation Windows J4 — tray natif.
+
+Cause : le callback tray restaurait Beaver pour chaque evenement Click, y compris Right + Up, avant que le menu natif ne reste utilisable.
+
+Decision : restaurer uniquement sur Left + Up. show_menu_on_left_click(false) reste l'autorite du clic gauche pour le menu ; le clic droit demeure entierement reserve au menu natif.
+
+Preuves : revue Terra en lecture seule sans bloquant ; cargo fmt -- --check ; cargo test --lib --features windows-tests tray::tests:: -- --nocapture (4/4) ; validation native Windows en dev : clic droit ouvre le menu, clic gauche affiche Beaver.
+
+CI non lancee volontairement : validation locale avant la suite du jalon.
