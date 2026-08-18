@@ -16,3 +16,5 @@ Verification observed
 
 Limits
 The NSIS install/uninstall flow is not executable on macOS. Windows native proof and cross-OS CI are required before merge.
+
+Rectification apres re-review (2026-08-18): l'assertion CI resserree par ce commit concernait Windows et macOS, pas Linux. Le resserrement Linux exact est apporte plus tard par 480141dd.
