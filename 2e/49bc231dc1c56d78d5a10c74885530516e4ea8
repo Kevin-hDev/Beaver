@@ -11,3 +11,6 @@ CI: les jobs natifs Windows et macOS appellent désormais npm run test:e2e:packa
 Preuves exécutées sur macOS le 18 août 2026: npm run test:e2e-runner — 65/65 verts; npm run lint — vert; npx tsc --noEmit — vert; E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged — vert, vraie Beaver.app construite/signée ad hoc, parcours 169f68a5-59ca-40c1-83fe-be6bac4e6e61, 1 spec verte en 11.6 s, turnover CEF observé, page chargée, seconde session ouverte après turnover, fermeture coordonnée, processus possédés et WebViews disparus. git diff --check — vert; graphify update . — terminé.
 
 Limite honnête: le chemin NSIS est couvert par tests Node mais n'a pas été exécuté sur cette machine macOS. Sa preuve native appartient au handoff Windows et à la CI. Gatekeeper/quarantaine et les autres protections système restent des contrôles manuels séparés; ce commit ne les déclare pas validés.
+
+Correction recorded during milestone 4 review
+The macOS normal E2E path already launched the binary inside Beaver.app before this commit. The packaged-mode branch added by 2e49bc23 did not create a distinct macOS execution mode; only its stricter existence check was new. Commit e10ce2a8 removes that misleading distinction and reserves installed-package isolation for Windows NSIS.
