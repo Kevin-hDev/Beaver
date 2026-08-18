@@ -9,3 +9,55 @@ TDD : le nouveau test charge la configuration Vite reelle. Il a d'abord echoue s
 Preuves : npm run test:build-scripts (51/51) ; npm run lint ; npm run tauri dev : Vite pret, Cargo compile dans <repo>/target et Beaver demarre sans EBUSY.
 
 CI non lancee volontairement : validation locale avant la suite du jalon.
+
+PASSATION J4 — SUITE EXCLUSIVEMENT WINDOWS
+
+Autorité locale actuelle
+- Branche : codex/milestone-4-convergence.
+- Tête locale : 217ff621b1fbda0830e8e09619842bde0b0484c7.
+- Worktree propre au moment de cette note.
+- La branche locale est en avance de 2 commits sur origin/codex/milestone-4-convergence. Ces deux commits et leurs notes ne sont PAS encore poussés ; la PR #25 distante est encore sur 186dc124. Ne pas perdre cet état par reset, checkout forcé ou pull non fast-forward.
+
+Commits du périmètre Windows seulement — les seuls à présenter dans une review Windows
+1. e10ce2a82cf903d944a7c19f19b39ea84cf3c074 — fix(e2e): isolate packaged Windows installs
+   Fichiers : .github/workflows/ci.yml ; scripts/e2e/e2e-process.mjs et son test ; scripts/e2e/packaged-app.mjs et son test ; scripts/e2e/run.mjs ; src-tauri/tauri.e2e.windows.conf.json.
+2. 186dc12462f9219cfe4bf8a2f896c13c60f1b1ab — test(windows): complete private store harness deps
+   Fichiers : src-tauri/tests/windows-private-store/Cargo.toml et Cargo.lock.
+3. 5a1bd94a — fix(tray): preserve native right-click menu
+   Fichier : src-tauri/src/tray.rs. Note par defaut deja attachee : cause, decision et preuves.
+4. 217ff621 — fix(dev): ignore Windows Cargo output in Vite
+   Fichiers : vite.config.ts ; scripts/build/vite-watch-target.test.mjs. Note par defaut deja attachee : TDD, cause EBUSY et preuves.
+
+EXCLUSION FORMELLE DE REVIEW WINDOWS
+- Ne pas re-review ni compter comme travail Windows les commits macOS deja revus et valides : e32968d2, 36cd9938, 6359fd71, 94725b6, e1c4c002, 9295ffba.
+- Ils sont presents dans la branche partagee mais hors perimetre de cette passation. Ne pas demander de nouvelles corrections macOS et ne pas inclure leurs diffs dans le rapport Windows.
+- Les fichiers transverses J4 ci-dessous se lisent seulement pour executer et comprendre les tests Windows ; ils ne rouvrent pas une review des changements macOS : src-tauri/src/app_build.rs ; src-tauri/src/app_exit.rs ; src-tauri/src/app_exit/ ; scripts/e2e/run-packaged.mjs.
+
+Documents J4 autoritaires — a lire entierement avant les tests
+- docs/superpowers/specs/2026-08-09-shutdown-milestone-4-convergence-design.md
+- docs/superpowers/specs/2026-08-18-shutdown-milestone-4-cumulative-inventories.md
+- docs/superpowers/specs/2026-08-09-unified-shutdown-supervision-design.md
+- docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md
+- Lire aussi la note historique sans ecraser la note courante : git notes --ref=j4-handoff show 186dc124.
+
+Preuves deja obtenues sur Windows
+- CI exacte de 186dc124 : run 32149420467, 7/7 jobs applicatifs verts ; Windows private-store vert ; E2E CEF empaquete Windows vert, avec installation NSIS, CEF Ready, chargement de page et desinstallation. CodeQL, RustSec, npm audit et GitGuardian verts.
+- Tray 5a1bd94a : revue Terra statique sans bloquant ; cargo fmt -- --check ; cargo test --lib --features windows-tests tray::tests:: -- --nocapture : 4/4 ; test manuel Windows : clic droit ouvre le menu natif et clic gauche affiche Beaver.
+- Vite 217ff621 : test rouge observe avant correction sur target/debug/deps/cl_go_dash_lib.dll ; npm run test:build-scripts : 51/51 ; npm run lint : vert ; npm run tauri dev a demarre Vite, compile Cargo dans <repo>/target et lance Beaver sans EBUSY.
+- Mise a jour Beaver : un essai manuel a deja ete fait ; l'update s'est terminee et la relance de Beaver a ete observee. Cette passation ne contient toutefois ni inventaire final des PID, ni preuve horodatee du helper unique, ni preuve de stabilite assez longue : la revalidation finale doit completer ces elements, sans annoncer d'emblee une regression ni modifier le code.
+
+A faire sur Windows, dans cet ordre
+1. Relire les quatre documents et la note j4-handoff, puis etablir une checklist de preuves Windows seulement.
+2. Sur la vraie machine Windows, Microsoft Defender actif et sans exception antivirus, executer E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged. Conserver commande, heure, resultat et inventaire des processus residuels.
+3. Verifier manuellement avec un PTY actif : fermeture par croix, puis Quitter depuis le tray ; dans les deux cas inventorier Job Object, descendants Beaver/CEF/helper/PTY immediatement puis apres cinq secondes. Le test tray de clic droit/gauche est deja vert, mais Quitter avec PTY et inventaire des descendants reste a prouver.
+4. Rejouer la mise a jour Beaver uniquement comme preuve finale : telechargement/installation, fermeture coordonnee, relance automatique stable, un seul helper transfere, aucun residu. Conserver PID, heures, code de sortie et inventaire ; ne pas corriger sans reproduction precise.
+5. Executer la matrice PTY/handles et Ollama : scenario de mise a jour avec renommage temporairement bloque, reprise, et verification que les handles/processus ne restent pas ouverts.
+6. Si et seulement si tout est vert, pousser les deux commits locaux et refs/notes/commits, mettre a jour la PR #25, lancer la CI. La CI doit etre verte sur la tete poussee, pas seulement sur 186dc124.
+7. Donner au reviewer une plage de commits Windows strictement bornee : e10ce2a8..217ff621 avec la liste Windows ci-dessus et l'exclusion macOS. Si le reviewer remonte un probleme, verifier d'abord la cause, appliquer TDD, commit dedie + git note, pousser, relancer la CI complete puis demander une re-review. Repeter jusqu'a validation explicite du reviewer et CI verte.
+
+Regles de continuation
+- Aucune fusion avant validation finale Windows, CI verte sur la tete exacte et review externe sans bloquant.
+- Chaque correction : reproduction, cause exacte, test rouge, correctif minimal, test vert, commit dedie et git note destinee au reviewer.
+- Maintenir graphify avec graphify update . apres chaque modification de code.
+- Ne pas creer de VM : les donnees Beaver de cette machine sont jetables ; les validations natives se font directement sur Windows.
+- Si Claude travaille depuis un autre clone, Kevin doit d'abord pousser la branche locale et refs/notes/commits ; sinon reprendre directement ce worktree local deja a 217ff621.
