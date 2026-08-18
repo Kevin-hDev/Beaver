@@ -17,3 +17,18 @@ Preuves locales lues
 
 Validation distante requise
 - Le test exécutable reste à confirmer par le job Windows natif de la CI ; macOS ne peut que compiler cette cible MSVC.
+
+PREUVE CI DISTANTE — TÊTE EXACTE 186dc12462f9219cfe4bf8a2f896c13c60f1b1ab
+
+Run CI 32149420467 : 7/7 jobs applicatifs verts.
+- Backend Rust : vert.
+- Backend Linux WebView E2E : vert.
+- Backend Windows tests Rust : vert ; le crate windows-private-store a compilé et ses tests natifs ont été exécutés.
+- Backend Windows CEF Rust : vert ; parcours natif empaqueté terminé en 44 min 56 s.
+- Backend macOS CEF Rust : vert.
+- Desktop E2E CEF : vert.
+- Frontend TS/React : vert.
+
+Contrôles associés également verts : CodeQL actions/javascript/rust, RustSec, npm audit et GitGuardian.
+
+Conclusion : la dépendance manquante du harnais Windows est corrigée et prouvée sur Windows natif ; aucune autre régression CI observée sur la tête exacte.
