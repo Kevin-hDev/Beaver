@@ -1,0 +1,23 @@
+Milestone 4 persistence authority cleanup
+
+Reason
+Several edge paths implemented their own document/PID writes or discarded an index rebuild error. This duplicated persistence policy and hid failures outside the owning authority.
+
+Changes
+- Make session_store_document the single serializer/sanitizer/atomic writer for sessions; startup orphan cleanup delegates to it and propagates index rebuild failure.
+- Route Forecast and SearXNG PID receipts through private_store::atomic_write.
+- Preserve the public storage migration error contract behind one wrapper.
+- Replace one user-facing English project-store sentence with a stable error code.
+- Restore the responsibility and format comments lost when the OOXML run writer was split.
+
+Verification observed
+- cargo test storage_migration -- --test-threads=1: 3 passed.
+- cargo test subagent_startup_cleanup -- --test-threads=1: 4 passed.
+- cargo test services::forecast::sidecar_process -- --test-threads=1: 2 passed.
+- cargo test services::searxng::process -- --test-threads=1: 4 passed.
+- cargo test tool_document_write -- --test-threads=1: 8 passed.
+- cargo test app_build::tests -- --test-threads=1: 1 passed.
+- git diff --check: passed.
+
+Decision
+The migration wrapper intentionally maps every private-store failure back to the pre-existing generic initialization error; this changes the persistence mechanism without changing its public IPC contract.
