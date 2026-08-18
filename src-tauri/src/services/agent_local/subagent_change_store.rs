@@ -62,7 +62,11 @@ async fn save_in_dir(
         .map_err(|_| "Persistance du changement impossible".to_string())
 }
 
-async fn make_room(dir: &std::path::Path, target: &std::path::Path, limit: usize) -> Result<(), String> {
+async fn make_room(
+    dir: &std::path::Path,
+    target: &std::path::Path,
+    limit: usize,
+) -> Result<(), String> {
     if target.exists() {
         return Ok(());
     }
@@ -114,8 +118,11 @@ async fn terminal_updated_at(path: &std::path::Path) -> Option<chrono::DateTime<
     let data = tokio::fs::read(path).await.ok()?;
     let meta = serde_json::from_slice::<SubagentChangeMeta>(&data).ok()?;
     meta.validate().ok()?;
-    matches!(meta.status, SubagentChangeStatus::Applied | SubagentChangeStatus::Discarded)
-        .then_some(meta.updated_at)
+    matches!(
+        meta.status,
+        SubagentChangeStatus::Applied | SubagentChangeStatus::Discarded
+    )
+    .then_some(meta.updated_at)
 }
 
 #[cfg(test)]

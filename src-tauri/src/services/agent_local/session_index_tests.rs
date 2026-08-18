@@ -1,5 +1,5 @@
-use super::*;
 use super::test_support::*;
+use super::*;
 use crate::services::agent_local::session_index_io;
 use chrono::Utc;
 use std::path::Path;
@@ -44,7 +44,10 @@ async fn index_writer_evicts_the_oldest_metadata() {
         .unwrap();
     let stored = load_index(tmp.path()).await;
     assert_eq!(stored.len(), session_index_io::MAX_INDEX_ENTRIES);
-    assert_eq!(stored[0].id, format!("session-{}", session_index_io::MAX_INDEX_ENTRIES));
+    assert_eq!(
+        stored[0].id,
+        format!("session-{}", session_index_io::MAX_INDEX_ENTRIES)
+    );
     assert!(!stored.iter().any(|meta| meta.id == "session-0"));
 }
 
@@ -61,7 +64,10 @@ async fn rebuild_keeps_the_latest_sessions_after_the_limit() {
     let rebuilt = rebuild_index_from(tmp.path()).await.unwrap();
 
     assert_eq!(rebuilt.len(), session_index_io::MAX_INDEX_ENTRIES);
-    assert_eq!(rebuilt[0].id, format!("session-{}", session_index_io::MAX_INDEX_ENTRIES));
+    assert_eq!(
+        rebuilt[0].id,
+        format!("session-{}", session_index_io::MAX_INDEX_ENTRIES)
+    );
     assert!(!rebuilt.iter().any(|meta| meta.id == "session-0"));
 }
 

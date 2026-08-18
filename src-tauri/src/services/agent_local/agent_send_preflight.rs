@@ -5,7 +5,9 @@ use std::path::{Component, Path, PathBuf};
 #[serde(tag = "status", rename_all = "snake_case")]
 pub enum PrepareAgentSend {
     Ready,
-    Forbidden { allowed_paths: Vec<String> },
+    Forbidden {
+        allowed_paths: Vec<String>,
+    },
     Missing {
         missing_path: String,
         nearest_parent: String,
@@ -19,10 +21,7 @@ pub enum MissingDirectoryAction {
     Create,
 }
 
-pub async fn prepare(
-    session_id: &str,
-    incoming: Option<&str>,
-) -> Result<PrepareAgentSend, String> {
+pub async fn prepare(session_id: &str, incoming: Option<&str>) -> Result<PrepareAgentSend, String> {
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| generic_error())?;
@@ -33,15 +32,17 @@ pub async fn prepare(
             .map(|project| PathBuf::from(project.path)),
         None => None,
     };
-    let expected = project_path.or_else(|| incoming
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
-        .or_else(|| {
-            (!session.working_dir_managed)
-                .then(|| non_empty_path(&session.working_dir))
-                .flatten()
-        }));
+    let expected = project_path.or_else(|| {
+        incoming
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from)
+            .or_else(|| {
+                (!session.working_dir_managed)
+                    .then(|| non_empty_path(&session.working_dir))
+                    .flatten()
+            })
+    });
     let Some(expected) = expected else {
         return Ok(PrepareAgentSend::Ready);
     };

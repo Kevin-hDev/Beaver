@@ -78,7 +78,10 @@ pub async fn list() -> Result<Vec<Project>, String> {
 }
 
 pub async fn find(id: &str) -> Result<Option<Project>, String> {
-    Ok(read_all().await?.into_iter().find(|project| project.id == id))
+    Ok(read_all()
+        .await?
+        .into_iter()
+        .find(|project| project.id == id))
 }
 
 pub async fn add(path: &str) -> Result<Project, String> {
@@ -173,9 +176,9 @@ pub async fn delete(id: &str) -> Result<(), String> {
 pub async fn reorder(ids: Vec<String>) -> Result<(), String> {
     let mut unique_ids = HashSet::with_capacity(ids.len().min(MAX_PROJECTS));
     if ids.len() > MAX_PROJECTS
-        || ids.iter().any(|id| {
-            !bounded_text(id, MAX_PROJECT_ID_BYTES) || !unique_ids.insert(id.as_str())
-        })
+        || ids
+            .iter()
+            .any(|id| !bounded_text(id, MAX_PROJECT_ID_BYTES) || !unique_ids.insert(id.as_str()))
     {
         return Err(PROJECT_STORE_UNAVAILABLE.to_string());
     }

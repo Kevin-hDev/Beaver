@@ -19,10 +19,7 @@ impl SessionReadError {
     }
 }
 
-pub(super) async fn read_from_dir(
-    dir: &Path,
-    id: &str,
-) -> Result<AgentSession, SessionReadError> {
+pub(super) async fn read_from_dir(dir: &Path, id: &str) -> Result<AgentSession, SessionReadError> {
     let path = path_in(dir, id).map_err(|_| SessionReadError::Unavailable)?;
     read_from_path(path).await
 }

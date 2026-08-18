@@ -1,9 +1,9 @@
-use super::session_store::validate_session_id;
-use super::session_security;
+pub(crate) use super::session_index_io::write_index_to;
 use super::session_index_io::{
     index_fingerprint, index_path, read_index_from, read_index_raw, write_index, IndexFingerprint,
 };
-pub(crate) use super::session_index_io::write_index_to;
+use super::session_security;
+use super::session_store::validate_session_id;
 use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
 use std::path::Path;
 use tokio::sync::Mutex;
@@ -159,7 +159,9 @@ pub fn meta_from_session(session: &AgentSession) -> AgentSessionMeta {
         subagent_description: session_security::redacted_optional(&session.subagent_description),
         subagent_color_key: session.subagent_color_key.clone(),
         subagent_summary: session_security::redacted_optional(&session.subagent_summary),
-        subagent_last_activity: session_security::redacted_activity(&session.subagent_last_activity),
+        subagent_last_activity: session_security::redacted_activity(
+            &session.subagent_last_activity,
+        ),
         clone_parent_session_id: session.clone_parent_session_id.clone(),
         clone_parent_message_id: session.clone_parent_message_id.clone(),
         clone_mode: session.clone_mode.clone(),

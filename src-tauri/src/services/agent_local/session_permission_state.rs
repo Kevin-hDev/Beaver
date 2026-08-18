@@ -72,11 +72,17 @@ pub async fn load(session_id: &str) -> Result<SessionPermissionState, String> {
     })
 }
 
-pub async fn set_mode(session_id: &str, mode: PermissionMode) -> Result<SessionPermissionState, String> {
+pub async fn set_mode(
+    session_id: &str,
+    mode: PermissionMode,
+) -> Result<SessionPermissionState, String> {
     let lock = super::session_store::lock_session(session_id).await;
     let _guard = lock.lock().await;
     let mut state = load(session_id).await?;
-    if state.permission_family.is_some_and(|family| !family.allows(mode)) {
+    if state
+        .permission_family
+        .is_some_and(|family| !family.allows(mode))
+    {
         return Err("Ce mode n'est pas disponible pour cette session".into());
     }
     state.permission_mode = mode;
@@ -92,7 +98,10 @@ pub async fn prepare_send(session_id: &str, requested: Option<&str>) -> Result<S
         .map(PermissionMode::parse)
         .transpose()?
         .unwrap_or(state.permission_mode);
-    if state.permission_family.is_some_and(|family| !family.allows(mode)) {
+    if state
+        .permission_family
+        .is_some_and(|family| !family.allows(mode))
+    {
         return Err("Ce mode n'est pas disponible pour cette session".into());
     }
     state.permission_family.get_or_insert_with(|| mode.family());
@@ -132,7 +141,9 @@ async fn load_sidecar(session_id: &str) -> Result<Option<SessionPermissionState>
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
         Err(_) => return Err(generic_error()),
     };
-    serde_json::from_slice(&data).map(Some).map_err(|_| generic_error())
+    serde_json::from_slice(&data)
+        .map(Some)
+        .map_err(|_| generic_error())
 }
 
 fn sidecar_path(session_id: &str) -> Result<PathBuf, String> {

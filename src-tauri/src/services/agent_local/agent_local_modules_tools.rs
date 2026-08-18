@@ -1,19 +1,24 @@
+pub mod subagent_coder_project;
+pub mod subagent_directory_workspace;
+pub mod subagent_explorer_process;
 pub mod subagent_working_dir;
 pub mod subagent_worktree;
-pub mod subagent_directory_workspace;
-pub mod subagent_coder_project;
-pub mod subagent_explorer_process;
 include!("agent_local_modules_shell.rs");
+pub mod extension_tool_set;
+pub mod tool_automation;
+#[cfg(test)]
+mod tool_automation_tests;
+mod tool_automation_validation;
 pub mod tool_availability;
 pub mod tool_catalog;
 mod tool_catalog_filter;
 #[cfg(test)]
 pub mod tool_catalog_tests;
 pub mod tool_definitions;
+pub mod tool_definitions_automation;
 pub mod tool_definitions_chat;
 pub mod tool_definitions_core;
 pub mod tool_definitions_extensions;
-pub mod tool_definitions_automation;
 pub mod tool_definitions_forecast;
 pub mod tool_definitions_git;
 pub mod tool_definitions_interactive;
@@ -30,32 +35,29 @@ pub mod tool_delegate_child;
 mod tool_delegate_identity;
 mod tool_delegate_prompt;
 pub mod tool_dispatcher;
-mod tool_dispatcher_error;
-mod tool_dispatcher_entry;
-mod tool_dispatcher_finalize;
-mod tool_dispatcher_route;
-mod tool_workspace_notice;
-pub mod tool_extension_discovery;
-mod tool_web_error;
 pub mod tool_dispatcher_delegate;
-pub mod tool_dispatcher_forecast;
-pub mod tool_dispatcher_forecast_run;
-pub mod tool_dispatcher_forecast_runtime;
-pub mod tool_dispatcher_forecast_selection;
+mod tool_dispatcher_entry;
+mod tool_dispatcher_error;
 pub mod tool_dispatcher_fallback;
+mod tool_dispatcher_finalize;
+pub mod tool_dispatcher_forecast;
 pub mod tool_dispatcher_forecast_analyze;
 mod tool_dispatcher_forecast_annotation;
 pub mod tool_dispatcher_forecast_data_audit;
 pub mod tool_dispatcher_forecast_evaluation;
 pub mod tool_dispatcher_forecast_execute;
+mod tool_dispatcher_forecast_load;
 pub mod tool_dispatcher_forecast_models;
 mod tool_dispatcher_forecast_models_support;
-mod tool_dispatcher_forecast_load;
 pub mod tool_dispatcher_forecast_output;
 pub mod tool_dispatcher_forecast_persist;
+pub mod tool_dispatcher_forecast_run;
+pub mod tool_dispatcher_forecast_runtime;
 pub mod tool_dispatcher_forecast_scenario_params;
+pub mod tool_dispatcher_forecast_selection;
 pub mod tool_dispatcher_mcp;
 pub mod tool_dispatcher_office;
+mod tool_dispatcher_route;
 pub mod tool_dispatcher_shell;
 mod tool_dispatcher_shell_error;
 #[cfg(test)]
@@ -74,6 +76,7 @@ mod tool_document_write_table;
 #[cfg(test)]
 pub mod tool_document_write_tests;
 pub mod tool_document_write_xml;
+pub mod tool_execution_outcome;
 pub mod tool_executor;
 pub mod tool_executor_compression;
 pub mod tool_executor_delegate_batch;
@@ -93,26 +96,22 @@ pub mod tool_executor_results;
 pub mod tool_executor_sequential;
 mod tool_executor_sequential_support;
 pub mod tool_executor_write;
-pub mod tool_execution_outcome;
-pub mod extension_tool_set;
+pub mod tool_extension_discovery;
 pub mod tool_file_changes;
 mod tool_file_error;
 mod tool_file_write;
 pub mod tool_files;
 #[cfg(test)]
 pub mod tool_files_tests;
+mod tool_git_error;
 pub mod tool_glob;
 pub mod tool_grep;
-mod tool_git_error;
-pub mod tool_list_dir;
-#[cfg(test)]
-mod tool_list_dir_tests;
 pub mod tool_group_catalog;
 pub mod tool_hooks;
 #[cfg(test)]
 pub mod tool_hooks_tests;
-pub mod tool_image_process;
 mod tool_image_inspect;
+pub mod tool_image_process;
 #[cfg(test)]
 mod tool_image_process_contract_tests;
 mod tool_image_process_geometry;
@@ -126,6 +125,9 @@ pub mod tool_interactive_parse;
 pub mod tool_interactive_recommendation_tests;
 #[cfg(test)]
 pub mod tool_interactive_tests;
+pub mod tool_list_dir;
+#[cfg(test)]
+mod tool_list_dir_tests;
 pub mod tool_mcp;
 mod tool_mcp_call;
 mod tool_office_array;
@@ -151,19 +153,15 @@ pub mod tool_scan_timeout;
 #[cfg(test)]
 mod tool_search_result_tests;
 pub mod tool_skill_loader;
-pub mod tool_automation;
-#[cfg(test)]
-mod tool_automation_tests;
-mod tool_automation_validation;
-pub mod tool_spreadsheet_calamine;
 mod tool_spreadsheet_border;
+pub mod tool_spreadsheet_calamine;
 mod tool_spreadsheet_error;
 #[cfg(test)]
 pub mod tool_spreadsheet_format_tests;
+mod tool_spreadsheet_range;
 pub mod tool_spreadsheet_read;
 #[cfg(test)]
 pub mod tool_spreadsheet_read_tests;
-mod tool_spreadsheet_range;
 pub mod tool_spreadsheet_write;
 pub mod tool_spreadsheet_write_edit;
 mod tool_spreadsheet_write_format;
@@ -183,6 +181,7 @@ pub mod tool_todo_parse;
 pub mod tool_todo_state;
 pub mod tool_todo_summary;
 pub mod tool_validate;
+mod tool_web_error;
 pub mod tool_web_fetch;
 pub mod tool_web_fetch_ip;
 #[cfg(test)]
@@ -190,6 +189,7 @@ pub mod tool_web_fetch_network_tests;
 #[cfg(test)]
 pub mod tool_web_fetch_tests;
 pub mod tool_web_search;
+mod tool_workspace_notice;
 pub mod translation_cache;
 pub mod translator;
 include!("agent_local_modules_tool_types.rs");

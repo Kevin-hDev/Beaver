@@ -61,10 +61,7 @@ pub(super) fn write_run(
     Ok(())
 }
 
-fn write_properties(
-    writer: &mut Writer<Cursor<Vec<u8>>>,
-    style: &RunStyle,
-) -> Result<(), String> {
+fn write_properties(writer: &mut Writer<Cursor<Vec<u8>>>, style: &RunStyle) -> Result<(), String> {
     writer
         .write_event(Event::Start(BytesStart::new("w:rPr")))
         .map_err(|e| format!("XML error: {e}"))?;

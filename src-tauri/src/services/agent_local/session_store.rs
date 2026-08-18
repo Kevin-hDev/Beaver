@@ -111,12 +111,9 @@ pub async fn find_heartbeat_session(provider: &str, model: &str) -> Result<Optio
 
 pub async fn get(id: &str) -> Result<AgentSession, String> {
     validate_session_id(id)?;
-    let path = crate::services::paths::data_file_for_read(
-        "agent-sessions",
-        &format!("{id}.json"),
-    )
-    .await
-    .map_err(|_| "Session introuvable".to_string())?;
+    let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
+        .await
+        .map_err(|_| "Session introuvable".to_string())?;
     super::session_store_document::read_from_path(path)
         .await
         .map_err(|error| match error {
@@ -171,12 +168,9 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
-    let path = crate::services::paths::data_file_for_read(
-        "agent-sessions",
-        &format!("{id}.json"),
-    )
-    .await
-    .map_err(|_| "Session introuvable".to_string())?;
+    let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
+        .await
+        .map_err(|_| "Session introuvable".to_string())?;
     tokio::fs::remove_file(&path)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;

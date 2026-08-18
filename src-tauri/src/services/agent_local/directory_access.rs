@@ -74,10 +74,7 @@ pub fn ensure_allowed(path: &Path) -> Result<PathBuf, String> {
     ensure_allowed_in_roots(path, &roots)
 }
 
-pub(crate) fn ensure_allowed_in_roots(
-    path: &Path,
-    roots: &[PathBuf],
-) -> Result<PathBuf, String> {
+pub(crate) fn ensure_allowed_in_roots(path: &Path, roots: &[PathBuf]) -> Result<PathBuf, String> {
     let candidate = canonical_access_path(path)?;
     if is_path_in_roots(&candidate, roots) {
         Ok(candidate)
@@ -122,9 +119,7 @@ pub(crate) fn canonical_access_path(path: &Path) -> Result<PathBuf, String> {
             .file_name()
             .ok_or_else(|| ACCESS_ERROR.to_string())?;
         suffix.push(name.to_os_string());
-        existing = existing
-            .parent()
-            .ok_or_else(|| ACCESS_ERROR.to_string())?;
+        existing = existing.parent().ok_or_else(|| ACCESS_ERROR.to_string())?;
     }
     let mut canonical = dunce::canonicalize(existing).map_err(|_| ACCESS_ERROR.to_string())?;
     for part in suffix.into_iter().rev() {
@@ -176,7 +171,9 @@ fn validate_shape(value: &str) -> Result<(), String> {
         || value.chars().count() > MAX_PATH_CHARS
         || value.chars().any(char::is_control)
         || !path.is_absolute()
-        || path.components().any(|part| matches!(part, Component::ParentDir))
+        || path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
     {
         return Err(ACCESS_ERROR.to_string());
     }

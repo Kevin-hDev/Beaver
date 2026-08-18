@@ -60,10 +60,7 @@ pub(super) async fn write_index(entries: &[AgentSessionMeta]) -> Result<(), Stri
     write_index_to(&dir, entries).await
 }
 
-pub(crate) async fn write_index_to(
-    dir: &Path,
-    entries: &[AgentSessionMeta],
-) -> Result<(), String> {
+pub(crate) async fn write_index_to(dir: &Path, entries: &[AgentSessionMeta]) -> Result<(), String> {
     let (entries, evicted) = retain_recent(entries.to_vec());
     if evicted > 0 {
         // Session documents remain authoritative and directly addressable; only
@@ -80,9 +77,7 @@ pub(crate) async fn write_index_to(
     crate::services::private_store::atomic_write_async(path, data).await
 }
 
-pub(super) fn retain_recent(
-    mut entries: Vec<AgentSessionMeta>,
-) -> (Vec<AgentSessionMeta>, usize) {
+pub(super) fn retain_recent(mut entries: Vec<AgentSessionMeta>) -> (Vec<AgentSessionMeta>, usize) {
     let original_len = entries.len();
     entries.sort_by(|left, right| {
         let left_activity = left.updated_at.unwrap_or(left.created_at);
