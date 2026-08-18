@@ -262,7 +262,7 @@ jobs:
       - name: Native macOS CEF journey
         env:
           E2E_REQUIRE_CEF_SMOKE: "1"
-        run: npm run test:e2e:packaged
+        run: npm run test:e2e
 
   backend-windows:
     name: Backend Windows tests (Rust)

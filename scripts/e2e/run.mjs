@@ -20,7 +20,7 @@ const packaged = process.env.E2E_PACKAGED === "1";
 if (process.env.E2E_PACKAGED !== undefined && !packaged) {
   throw new Error("E2E packaged mode is invalid");
 }
-if (packaged && !["darwin", "win32"].includes(process.platform)) {
+if (packaged && process.platform !== "win32") {
   throw new Error("E2E packaged mode is unsupported");
 }
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
@@ -68,10 +68,15 @@ try {
         platform: process.platform,
         cargoTargetDir,
         profilePath,
-        run: (command, args) => runCommand(
+        run: (command, args, options) => runCommand(
           command,
           args,
-          { cwd: repoRoot, env: environment, timeoutMs: E2E_JOURNEY_TIMEOUT_MS },
+          {
+            cwd: repoRoot,
+            env: environment,
+            timeoutMs: E2E_JOURNEY_TIMEOUT_MS,
+            ...options,
+          },
         ),
       });
       environment.E2E_APP_BINARY = packagedApp.binaryPath;

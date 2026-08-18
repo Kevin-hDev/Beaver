@@ -43,6 +43,10 @@ const commandsSource = readFileSync(
   new URL("../../src-tauri/src/commands/mod.rs", import.meta.url),
   "utf8",
 );
+const windowsE2eConfig = JSON.parse(readFileSync(
+  new URL("../../src-tauri/tauri.e2e.windows.conf.json", import.meta.url),
+  "utf8",
+));
 
 test("the E2E build always enables the isolated feature", () => {
   assert.deepEqual(buildArguments("linux"), [
@@ -59,8 +63,15 @@ test("the E2E build always enables the isolated feature", () => {
   ]);
   assert.deepEqual(buildArguments("win32", true), [
     "build", "--debug", "--features", "e2e", "--config",
-    "src-tauri/tauri.e2e.conf.json", "--bundles", "nsis",
+    "src-tauri/tauri.e2e.conf.json", "--config",
+    "src-tauri/tauri.e2e.windows.conf.json", "--bundles", "nsis",
   ]);
+});
+
+test("the Windows packaged build has an isolated product identity", () => {
+  assert.equal(windowsE2eConfig.productName, "Beaver E2E");
+  assert.equal(windowsE2eConfig.identifier, "com.clgo.dash.e2e");
+  assert.equal(windowsE2eConfig.bundle.windows.nsis.installerHooks, null);
 });
 
 test("the packaged runner selects the packaged binary before WebDriver", () => {
@@ -219,8 +230,9 @@ test("CI runs the real CEF journey on Windows and macOS only", () => {
     ciSource.indexOf("  backend-macos-native:"),
     ciSource.indexOf("  backend-windows:"),
   );
-  assert.match(windowsJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged/u);
-  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged/u);
+  assert.match(windowsJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged(?:\r?\n|$)/u);
+  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e(?:\r?\n|$)/u);
+  assert.doesNotMatch(macJob, /npm run test:e2e:packaged/u);
   const extensionHostInstall = /npm ci --ignore-scripts --omit=dev --prefix src-tauri\/resources\/extension-host/u;
   assert.match(windowsJob, extensionHostInstall);
   assert.match(macJob, extensionHostInstall);
