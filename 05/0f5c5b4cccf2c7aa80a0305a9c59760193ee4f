@@ -1,0 +1,15 @@
+Milestone 4 stream error contract
+
+Reason
+Backend stream admission returned French prose directly, so callers had no stable cross-language contract and inventory line 20 could not be closed.
+
+Changes
+- Replace capacity and replacement prose with two stable codes: active-stream-limit-reached and stream-replaced.
+- Add both codes to the single frontend admission-error authority.
+- Provide dedicated messages in all seven supported languages.
+- Test the real capacity boundary and the superseded-request result.
+
+Verification observed
+- cargo test agent_chat_stream_replacement_tests -- --test-threads=1: 5 passed.
+- npx vitest run src/lib/admission-error.test.ts: 17 passed.
+- git diff --check: passed.
