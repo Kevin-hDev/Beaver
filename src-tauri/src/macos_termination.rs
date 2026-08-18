@@ -43,10 +43,11 @@ unsafe extern "C-unwind" fn application_should_terminate(
         crate::app_exit::request(app_handle, 0);
         Ok::<(), ()>(())
     });
-    if !matches!(result, Ok(Ok(()))) {
-        eprintln!("[exit] native termination coordination unavailable");
+    if matches!(result, Ok(Ok(()))) {
+        return 0; // NSTerminateCancel: the independent app_exit guard is armed.
     }
-    0 // NSTerminateCancel: only app_exit may end the process.
+    eprintln!("[exit] native termination coordination unavailable");
+    1 // NSTerminateNow: never trap the user when coordination cannot start.
 }
 
 #[cfg(test)]
@@ -65,6 +66,7 @@ mod tests {
 
         assert!(production.contains("sel!(applicationShouldTerminate:)"));
         assert!(callback.contains("crate::app_exit::request(app_handle, 0)"));
-        assert!(callback.contains("0 // NSTerminateCancel"));
+        assert!(callback.contains("0; // NSTerminateCancel"));
+        assert!(callback.contains("1 // NSTerminateNow"));
     }
 }

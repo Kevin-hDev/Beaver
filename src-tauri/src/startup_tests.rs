@@ -159,15 +159,34 @@ fn asynchronous_exit_cleanup_never_stops_the_browser() {
 
 #[test]
 fn ultimate_exit_is_initialized_before_tauri_builder_side_effects() {
-    let source = include_str!("lib.rs");
-    let coordinator = source
+    let entry = include_str!("lib.rs");
+    let build = include_str!("app_build.rs");
+    let coordinator = entry
         .find("AppExitCoordinator::initialize()")
         .expect("ultimate coordinator initialization");
-    let builder = source
+    let build_call = entry
+        .find("app_build::build(exit_coordinator, runtime)")
+        .expect("application build call");
+    let builder = build
         .find("tauri::Builder::default()")
         .expect("tauri builder");
 
-    assert!(coordinator < builder);
+    assert!(coordinator < build_call);
+    assert!(!entry.contains("tauri::Builder::default()"));
+    assert!(builder < build.find(".build(tauri::generate_context!())").unwrap());
+}
+
+#[test]
+fn macos_termination_hook_is_installed_before_runtime_recovery_and_sidecars() {
+    let source = include_str!("app_build.rs");
+    let setup = source.find("fn setup(").expect("setup");
+    let hook = source[setup..]
+        .find("macos_termination::install")
+        .expect("native termination hook");
+    for operation in ["start_recovery", "prepare_on_startup", "start_ollama"] {
+        let start = source[setup..].find(operation).expect("runtime start");
+        assert!(hook < start, "termination hook must precede {operation}");
+    }
 }
 
 #[test]

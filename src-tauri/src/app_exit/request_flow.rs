@@ -18,9 +18,9 @@ pub(super) fn handle_requested(
         BeginResult::Ready => {}
         BeginResult::Waiting => api.prevent_exit(),
         BeginResult::InvariantViolation => raw_exit::terminate_process(1),
-        BeginResult::Started(timeline, owned_intent) => {
+        BeginResult::Started(timeline, owned_intent, owned_exit_code) => {
             api.prevent_exit();
-            start_cleanup(app, &coordinator, timeline, owned_intent, exit_code);
+            start_cleanup(app, &coordinator, timeline, owned_intent, owned_exit_code);
         }
     }
 }

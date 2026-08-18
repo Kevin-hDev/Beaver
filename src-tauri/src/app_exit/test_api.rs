@@ -18,6 +18,7 @@ impl AppExitCoordinator {
             policy,
             timeline: OnceLock::new(),
             intent: OnceLock::new(),
+            exit_code: OnceLock::new(),
             ultimate,
         }
     }
@@ -42,5 +43,17 @@ impl AppExitCoordinator {
 
     pub(super) fn intent_for_test(&self) -> Option<ExitIntent> {
         self.intent.get().copied()
+    }
+
+    pub(super) fn exit_code_for_test(&self) -> Option<i32> {
+        self.exit_code.get().copied()
+    }
+
+    pub(super) fn prearm_request_for_test(&self, intent: ExitIntent, code: i32) -> bool {
+        self.prearm_request(intent, code)
+    }
+
+    pub(super) fn timeline_for_test(&self) -> Option<policy::ShutdownTimeline> {
+        self.timeline.get().copied()
     }
 }
