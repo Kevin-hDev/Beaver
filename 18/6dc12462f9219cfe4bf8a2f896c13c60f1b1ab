@@ -1,0 +1,19 @@
+JALON 4 — DÉPENDANCES DU HARNAIS PRIVATE STORE WINDOWS
+
+Cause observée
+- Le job Backend Windows tests du run 32144608810 a échoué pendant cargo test du crate indépendant tests/windows-private-store.
+- Ce crate inclut directement les sources private_store du jalon 4, mais son manifeste ne déclarait ni log, désormais utilisé par le code de production inclus, ni tempfile, utilisé par les nouveaux tests de nettoyage.
+- L’application Windows et les tests principaux compilaient ; seul ce manifeste de harnais isolé était incomplet.
+
+Correction
+- Ajout de log 0.4 et tempfile 3 aux dépendances Windows du crate de test.
+- Mise à jour de son Cargo.lock indépendant.
+- Aucun comportement de production modifié.
+
+Preuves locales lues
+- cargo check --tests --target x86_64-pc-windows-msvc : vert ; un avertissement unused_import préexistant reste non fatal dans ce harnais.
+- cargo check --locked --tests --target x86_64-pc-windows-msvc : vert.
+- git diff --check : vert.
+
+Validation distante requise
+- Le test exécutable reste à confirmer par le job Windows natif de la CI ; macOS ne peut que compiler cette cible MSVC.
