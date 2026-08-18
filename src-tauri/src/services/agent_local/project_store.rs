@@ -27,20 +27,10 @@ async fn read_all() -> Vec<Project> {
 
 async fn write_atomic(projects: &[Project]) -> Result<(), String> {
     let path = projects_path();
-    if let Some(parent) = path.parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
-            .map_err(|e| e.to_string())?;
-    }
-    let tmp = path.with_extension("json.tmp");
     let data = serde_json::to_string_pretty(projects).map_err(|e| format!("Serialize: {e}"))?;
-    tokio::fs::write(&tmp, &data)
+    crate::services::private_store::atomic_write_async(path, data.into_bytes())
         .await
-        .map_err(|e| format!("Write tmp: {e}"))?;
-    tokio::fs::rename(&tmp, &path)
-        .await
-        .map_err(|e| format!("Rename: {e}"))?;
-    Ok(())
+        .map_err(|_| "Project store unavailable".to_string())
 }
 
 pub async fn list() -> Result<Vec<Project>, String> {

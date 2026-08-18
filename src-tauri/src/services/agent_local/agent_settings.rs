@@ -88,20 +88,11 @@ pub async fn save(settings: &AgentSettings) -> Result<(), String> {
     }
     let settings = settings.clone().normalized();
     let path = settings_path();
-    if let Some(parent) = path.parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
-            .map_err(|e| e.to_string())?;
-    }
-    let tmp = path.with_extension("tmp");
-    let data = serde_json::to_string_pretty(&settings).map_err(|e| e.to_string())?;
-    tokio::fs::write(&tmp, &data)
+    let data = serde_json::to_vec_pretty(&settings)
+        .map_err(|_| "Paramètres agent indisponibles".to_string())?;
+    crate::services::private_store::atomic_write_async(path, data)
         .await
-        .map_err(|e| e.to_string())?;
-    tokio::fs::rename(&tmp, &path)
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(())
+        .map_err(|_| "Paramètres agent indisponibles".to_string())
 }
 
 pub async fn get_permission_mode() -> String {

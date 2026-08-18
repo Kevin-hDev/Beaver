@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::sync::Mutex;
-use uuid::Uuid;
 
 pub(super) static TABS_LOCK: Mutex<()> = Mutex::const_new(());
 
@@ -26,17 +25,8 @@ pub(super) async fn read_file() -> Result<SessionTabsFile, String> {
 
 pub(super) async fn write_file(file: &SessionTabsFile) -> Result<(), String> {
     let path = tabs_path();
-    if let Some(dir) = path.parent() {
-        tokio::fs::create_dir_all(dir)
-            .await
-            .map_err(|e| e.to_string())?;
-    }
-    let tmp = path.with_file_name(format!(".session-tabs.{}.tmp", Uuid::new_v4()));
-    let data = serde_json::to_string_pretty(file).map_err(|e| e.to_string())?;
-    tokio::fs::write(&tmp, data)
+    let data = serde_json::to_vec_pretty(file).map_err(|_| "Fichier d'onglets invalide")?;
+    crate::services::private_store::atomic_write_async(path, data)
         .await
-        .map_err(|e| e.to_string())?;
-    tokio::fs::rename(&tmp, &path)
-        .await
-        .map_err(|e| e.to_string())
+        .map_err(|_| "Fichier d'onglets indisponible".to_string())
 }

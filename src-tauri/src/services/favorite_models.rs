@@ -49,12 +49,7 @@ pub fn remove(provider: &str, model: &str) -> Result<(), String> {
 
 fn write_atomic(favs: &[FavoriteModel]) -> Result<(), String> {
     let path = favorites_path();
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("mkdir: {e}"))?;
-    }
     let json = serde_json::to_string_pretty(favs).map_err(|e| format!("json: {e}"))?;
-    let tmp = path.with_extension("tmp");
-    fs::write(&tmp, &json).map_err(|e| format!("write: {e}"))?;
-    fs::rename(&tmp, &path).map_err(|e| format!("rename: {e}"))?;
-    Ok(())
+    crate::services::private_store::atomic_write(&path, json.as_bytes())
+        .map_err(|_| "favorite-models-write".to_string())
 }

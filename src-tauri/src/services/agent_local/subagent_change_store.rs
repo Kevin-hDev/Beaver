@@ -51,17 +51,13 @@ async fn save_in_dir(
     let _guard = STORE_LOCK.lock().await;
     meta.validate()?;
     let target = dir.join(format!("{}.json", meta.child_session_id));
-    tokio::fs::create_dir_all(dir)
+    crate::services::private_store::ensure_private_dir_async(dir.to_path_buf())
         .await
         .map_err(|_| "Persistance du changement impossible".to_string())?;
     make_room(dir, &target, limit).await?;
-    let tmp = dir.join(format!(".{}.{}.tmp", meta.child_session_id, uuid::Uuid::new_v4()));
     let data = serde_json::to_vec_pretty(meta)
         .map_err(|_| "Persistance du changement impossible".to_string())?;
-    tokio::fs::write(&tmp, data)
-        .await
-        .map_err(|_| "Persistance du changement impossible".to_string())?;
-    tokio::fs::rename(&tmp, target)
+    crate::services::private_store::atomic_write_async(target, data)
         .await
         .map_err(|_| "Persistance du changement impossible".to_string())
 }

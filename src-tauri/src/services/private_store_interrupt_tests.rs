@@ -76,3 +76,56 @@ fn first_launch_profile_files_use_the_atomic_store() {
         "first-launch profile files must not use direct writes"
     );
 }
+
+#[test]
+fn user_profile_writers_share_the_atomic_store_authority() {
+    let sources = [
+        ("favorite_models", include_str!("favorite_models.rs")),
+        (
+            "personality_injection",
+            include_str!("personality_injection.rs"),
+        ),
+        (
+            "forecast_model_config",
+            include_str!("forecast/model_config/storage.rs"),
+        ),
+        (
+            "agent_settings",
+            include_str!("agent_local/agent_settings.rs"),
+        ),
+        (
+            "project_store",
+            include_str!("agent_local/project_store.rs"),
+        ),
+        (
+            "session_permission_state",
+            include_str!("agent_local/session_permission_state.rs"),
+        ),
+        (
+            "session_tabs",
+            include_str!("agent_local/session_tabs_file.rs"),
+        ),
+        (
+            "subagent_change_store",
+            include_str!("agent_local/subagent_change_store.rs"),
+        ),
+        (
+            "subagent_startup_cleanup",
+            include_str!("agent_local/subagent_startup_cleanup.rs"),
+        ),
+        (
+            "tool_plan",
+            include_str!("agent_local/tool_plan_storage.rs"),
+        ),
+        (
+            "translation_cache",
+            include_str!("agent_local/translation_cache.rs"),
+        ),
+    ];
+    for (name, source) in sources {
+        assert!(
+            source.contains("private_store::atomic_write"),
+            "persistent writer {name} bypasses the atomic store"
+        );
+    }
+}

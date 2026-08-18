@@ -117,12 +117,10 @@ pub async fn remove(session_id: &str) {
 
 async fn persist(session_id: &str, state: &SessionPermissionState) -> Result<(), String> {
     let target = sidecar_path(session_id)?;
-    let dir = target.parent().ok_or_else(generic_error)?;
-    tokio::fs::create_dir_all(dir).await.map_err(|_| generic_error())?;
-    let tmp = dir.join(format!(".{session_id}.{}.tmp", uuid::Uuid::new_v4()));
     let data = serde_json::to_vec_pretty(state).map_err(|_| generic_error())?;
-    tokio::fs::write(&tmp, data).await.map_err(|_| generic_error())?;
-    tokio::fs::rename(&tmp, target).await.map_err(|_| generic_error())?;
+    crate::services::private_store::atomic_write_async(target, data)
+        .await
+        .map_err(|_| generic_error())?;
     let session = super::session_store::get(session_id).await?;
     super::session_store::save(&session).await
 }

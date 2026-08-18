@@ -65,16 +65,9 @@ fn parse_configs(content: &str) -> Result<StoredConfigs, String> {
 
 fn write_all(all: &StoredConfigs) -> Result<(), String> {
     let target = path();
-    if let Some(parent) = target.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|_| "Impossible d'enregistrer la configuration".to_string())?;
-    }
     let body = serde_json::to_string_pretty(all)
         .map_err(|_| "Impossible d'enregistrer la configuration".to_string())?;
-    let tmp = target.with_extension("tmp");
-    std::fs::write(&tmp, body)
-        .map_err(|_| "Impossible d'enregistrer la configuration".to_string())?;
-    std::fs::rename(&tmp, &target)
+    crate::services::private_store::atomic_write(&target, body.as_bytes())
         .map_err(|_| "Impossible d'enregistrer la configuration".to_string())
 }
 

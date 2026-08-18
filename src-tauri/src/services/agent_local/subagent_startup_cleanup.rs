@@ -99,16 +99,9 @@ async fn read_session_from_dir(dir: &Path, id: &str) -> Result<AgentSession, Str
 
 async fn write_session_to_dir(dir: &Path, session: &AgentSession) -> Result<(), String> {
     let path = session_path(dir, &session.id)?;
-    tokio::fs::create_dir_all(dir)
-        .await
-        .map_err(|_| "Mise à jour de session impossible".to_string())?;
-    let tmp = dir.join(format!(".{}.{}.tmp", session.id, uuid::Uuid::new_v4()));
     let data = serde_json::to_string_pretty(session)
         .map_err(|_| "Mise à jour de session impossible".to_string())?;
-    tokio::fs::write(&tmp, &data)
-        .await
-        .map_err(|_| "Mise à jour de session impossible".to_string())?;
-    tokio::fs::rename(&tmp, &path)
+    crate::services::private_store::atomic_write_async(path, data.into_bytes())
         .await
         .map_err(|_| "Mise à jour de session impossible".to_string())
 }
