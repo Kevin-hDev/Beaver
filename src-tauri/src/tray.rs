@@ -1,7 +1,7 @@
 use crate::services::{brand::DISPLAY_NAME, gateway::GatewayService};
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
-    tray::TrayIconBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager,
 };
 
@@ -65,6 +65,14 @@ fn restore_main_window(app: &tauri::AppHandle) {
     }
 }
 
+fn should_restore_from_tray_click(button: &MouseButton, button_state: &MouseButtonState) -> bool {
+    // Le clic droit appartient au menu natif ; seule l'action gauche terminée restaure Beaver.
+    matches!(
+        (button, button_state),
+        (MouseButton::Left, MouseButtonState::Up)
+    )
+}
+
 pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let l = labels();
     let show = MenuItem::with_id(app, SHOW_MENU_ID, l.show, true, None::<&str>)?;
@@ -113,8 +121,15 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
             TrayMenuAction::Ignore => {}
         })
         .on_tray_icon_event(|tray, event| {
-            if let tauri::tray::TrayIconEvent::Click { .. } = event {
-                restore_main_window(tray.app_handle());
+            if let TrayIconEvent::Click {
+                button,
+                button_state,
+                ..
+            } = event
+            {
+                if should_restore_from_tray_click(&button, &button_state) {
+                    restore_main_window(tray.app_handle());
+                }
             }
         })
         .build(app)?;
@@ -123,7 +138,8 @@ pub fn create_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error
 
 #[cfg(test)]
 mod tests {
-    use super::{menu_action, TrayMenuAction};
+    use super::{menu_action, should_restore_from_tray_click, TrayMenuAction};
+    use tauri::tray::{MouseButton, MouseButtonState};
 
     #[test]
     fn quit_menu_is_a_true_quit_on_every_platform() {
@@ -135,5 +151,37 @@ mod tests {
         assert_eq!(menu_action("show"), TrayMenuAction::Show);
         assert_eq!(menu_action("gateway-toggle"), TrayMenuAction::ToggleGateway);
         assert_eq!(menu_action("unknown"), TrayMenuAction::Ignore);
+    }
+
+    #[test]
+    fn tray_left_button_up_triggers_restore() {
+        assert!(should_restore_from_tray_click(
+            &MouseButton::Left,
+            &MouseButtonState::Up
+        ));
+    }
+
+    #[test]
+    fn tray_not_restored_for_other_clicks() {
+        assert!(!should_restore_from_tray_click(
+            &MouseButton::Right,
+            &MouseButtonState::Up
+        ));
+        assert!(!should_restore_from_tray_click(
+            &MouseButton::Left,
+            &MouseButtonState::Down
+        ));
+        assert!(!should_restore_from_tray_click(
+            &MouseButton::Right,
+            &MouseButtonState::Down
+        ));
+        assert!(!should_restore_from_tray_click(
+            &MouseButton::Middle,
+            &MouseButtonState::Up
+        ));
+        assert!(!should_restore_from_tray_click(
+            &MouseButton::Middle,
+            &MouseButtonState::Down
+        ));
     }
 }
