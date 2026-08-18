@@ -32,3 +32,44 @@ Run CI 32149420467 : 7/7 jobs applicatifs verts.
 Contrôles associés également verts : CodeQL actions/javascript/rust, RustSec, npm audit et GitGuardian.
 
 Conclusion : la dépendance manquante du harnais Windows est corrigée et prouvée sur Windows natif ; aucune autre régression CI observée sur la tête exacte.
+
+PASSATION JALON 4 — WINDOWS ET LINUX
+
+Branche et tête autoritaire
+- Branche : codex/milestone-4-convergence
+- Tête à récupérer : 186dc12462f9219cfe4bf8a2f896c13c60f1b1ab
+- PR : #25.
+- Récupération sûre des notes sans écraser des notes locales : git fetch origin refs/notes/commits:refs/notes/j4-handoff puis git notes --ref=j4-handoff show 186dc124.
+
+État validé avant passation
+- Jalons 1, 1B, 2 et 3 déjà fusionnés et validés.
+- Jalon 4 : quatre passes de review ; zéro bloquant et zéro important de code sur la passe 4.
+- CI de la tête exacte : run 32149420467, 7/7 jobs applicatifs verts, audits et CodeQL verts.
+- macOS : parcours CEF natif vert sur la tête ; fermeture Cocoa coordonnée et récupération de repli déjà prouvées.
+- Windows CI : tests backend privés verts et parcours NSIS/CEF empaqueté vert en 44 min 56 s.
+- Linux CI : parcours WebView natif vert.
+
+Documents autoritaires à lire
+- docs/superpowers/specs/2026-08-09-shutdown-milestone-4-convergence-design.md
+- docs/superpowers/specs/2026-08-18-shutdown-milestone-4-cumulative-inventories.md
+- docs/superpowers/specs/2026-08-09-unified-shutdown-supervision-design.md
+- docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md
+Ces documents peuvent être ignorés par Git selon la machine ; Kevin assure leur transfert si nécessaire. Les mettre à jour localement si une preuve ou une décision change.
+
+Preuves Windows restantes
+1. Sur la tête exacte, exécuter E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged avec protections Microsoft actives et sans exception antivirus ; conserver identifiant, heures, version installée et inventaire des résidus.
+2. Installer et lancer réellement le NSIS Beaver E2E isolé ; vérifier CEF Ready supervisé, page chargée, fermeture par croix puis tray, Job Object et descendants vides sous cinq secondes.
+3. Revalider la mise à jour Beaver et surtout le relancement automatique Windows avec helper transféré unique.
+4. Vérifier PTY/handles et une mise à jour Ollama avec renommage temporairement bloqué selon la matrice de la spec.
+
+Preuves Linux restantes
+1. Lancer le build natif de la tête exacte.
+2. Vérifier fermeture par croix et tray, signal de mort du parent, groupe moissonné, zombie non re-signalé, PTY moissonné.
+3. Vérifier native_browser désactivé et absence totale de helper CEF.
+4. Contrôler les processus et fichiers résiduels immédiatement puis après cinq secondes.
+
+Discipline de correction
+- Ne modifier le code qu’après reproduction et cause exacte.
+- Chaque correction reçoit son commit et sa Git note avec test, résultat et recommandation.
+- Si le code change, pousser la branche et les notes puis exiger une nouvelle CI complète trois OS verte sur la nouvelle tête.
+- Ne pas fusionner avant les preuves natives Windows/Linux et la Git note finale agrégée.
