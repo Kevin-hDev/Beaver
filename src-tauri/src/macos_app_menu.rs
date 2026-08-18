@@ -1,4 +1,4 @@
-use tauri::menu::{Menu, MenuItem, MenuItemKind};
+use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
 
 pub(super) const MACOS_QUIT_MENU_ID: &str = "beaver-coordinated-quit";
 const MACOS_QUIT_ACCELERATOR: &str = "CmdOrCtrl+Q";
@@ -17,34 +17,22 @@ pub(super) fn menu_action(id: &str) -> MacosMenuAction {
     }
 }
 
-fn invalid_default_menu() -> tauri::Error {
-    std::io::Error::other("macOS application menu layout is invalid").into()
-}
-
 pub(super) fn build(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
-    let menu = Menu::default(app)?;
-    let app_submenu = menu
-        .items()?
-        .into_iter()
-        .next()
-        .and_then(|item| match item {
-            MenuItemKind::Submenu(submenu) => Some(submenu),
-            _ => None,
-        })
-        .ok_or_else(invalid_default_menu)?;
-    let items = app_submenu.items()?;
-    let last_position = items
-        .len()
-        .checked_sub(1)
-        .ok_or_else(invalid_default_menu)?;
-    let quit_text = match &items[last_position] {
-        MenuItemKind::Predefined(item) if item.text()?.starts_with("Quit ") => item.text()?,
-        _ => return Err(invalid_default_menu()),
+    let package = app.package_info();
+    let about = AboutMetadata {
+        name: Some(package.name.clone()),
+        version: Some(package.version.to_string()),
+        copyright: app.config().bundle.copyright.clone(),
+        authors: app
+            .config()
+            .bundle
+            .publisher
+            .clone()
+            .map(|value| vec![value]),
+        ..Default::default()
     };
-
-    // Tauri's predefined Quit calls Cocoa `terminate:` directly. Replacing only
-    // that item preserves the standard menu while routing Quit through cleanup.
-    app_submenu.remove_at(last_position)?;
+    let native_quit = PredefinedMenuItem::quit(app, None)?;
+    let quit_text = native_quit.text()?;
     let quit = MenuItem::with_id(
         app,
         MACOS_QUIT_MENU_ID,
@@ -52,8 +40,73 @@ pub(super) fn build(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         true,
         Some(MACOS_QUIT_ACCELERATOR),
     )?;
-    app_submenu.append(&quit)?;
-    Ok(menu)
+
+    // Build from public primitives: the framework's default item order and
+    // localized Quit label shape are not stable contracts.
+    let app_menu = Submenu::with_items(
+        app,
+        package.name.clone(),
+        true,
+        &[
+            &PredefinedMenuItem::about(app, None, Some(about))?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::services(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::hide(app, None)?,
+            &PredefinedMenuItem::hide_others(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &quit,
+        ],
+    )?;
+    let file_menu = Submenu::with_items(
+        app,
+        "File",
+        true,
+        &[&PredefinedMenuItem::close_window(app, None)?],
+    )?;
+    let edit_menu = Submenu::with_items(
+        app,
+        "Edit",
+        true,
+        &[
+            &PredefinedMenuItem::undo(app, None)?,
+            &PredefinedMenuItem::redo(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::cut(app, None)?,
+            &PredefinedMenuItem::copy(app, None)?,
+            &PredefinedMenuItem::paste(app, None)?,
+            &PredefinedMenuItem::select_all(app, None)?,
+        ],
+    )?;
+    let view_menu = Submenu::with_items(
+        app,
+        "View",
+        true,
+        &[&PredefinedMenuItem::fullscreen(app, None)?],
+    )?;
+    let window_menu = Submenu::with_items(
+        app,
+        "Window",
+        true,
+        &[
+            &PredefinedMenuItem::minimize(app, None)?,
+            &PredefinedMenuItem::maximize(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::close_window(app, None)?,
+        ],
+    )?;
+    let help_menu = Submenu::with_items(app, "Help", true, &[])?;
+    Menu::with_items(
+        app,
+        &[
+            &app_menu,
+            &file_menu,
+            &edit_menu,
+            &view_menu,
+            &window_menu,
+            &help_menu,
+        ],
+    )
 }
 
 pub(super) fn handle_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
@@ -64,7 +117,7 @@ pub(super) fn handle_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent
 
 #[cfg(test)]
 mod tests {
-    use super::{menu_action, MacosMenuAction, MACOS_QUIT_ACCELERATOR, MACOS_QUIT_MENU_ID};
+    use super::{menu_action, MacosMenuAction, MACOS_QUIT_MENU_ID};
 
     #[test]
     fn only_the_owned_quit_item_requests_application_exit() {
@@ -77,7 +130,16 @@ mod tests {
     }
 
     #[test]
-    fn quit_uses_the_native_macos_accelerator() {
-        assert_eq!(MACOS_QUIT_ACCELERATOR, "CmdOrCtrl+Q");
+    fn menu_does_not_depend_on_default_layout_or_localized_text_shape() {
+        let source = include_str!("macos_app_menu.rs");
+        let production = source
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source must precede tests");
+
+        assert!(!production.contains(&["Menu", "::default"].concat()));
+        assert!(!production.contains(&["starts", "_with"].concat()));
+        assert_eq!(production.matches("native_quit.text()?").count(), 1);
+        assert!(production.contains("&quit,"));
     }
 }
