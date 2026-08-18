@@ -14,3 +14,8 @@ Verification observed
 
 Remaining proof
 The native CEF journey is rerun after this menu-only change so the exact reviewed head, not its parent, is validated.
+
+Native proof on exact commit
+- E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e passed after rebuilding the menu-role change.
+- Journey c0fc8f8d-390a-46f5-be16-577df9a11ceb; WebDriver session 5fa2cbb0-3a36-4401-9552-ae312a0f05db.
+- 1 spec passed in 5.9 s; capability, helper turnover, page load, second session, coordinated exit and disappearance checks all passed.
