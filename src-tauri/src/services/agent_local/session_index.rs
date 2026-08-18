@@ -1,7 +1,7 @@
 use super::session_store::validate_session_id;
 use super::session_security;
 use super::session_index_io::{
-    index_fingerprint, index_path, read_index_raw, write_index, IndexFingerprint,
+    index_fingerprint, index_path, read_index_from, read_index_raw, write_index, IndexFingerprint,
 };
 pub(crate) use super::session_index_io::write_index_to;
 use crate::services::agent_local::types_session::{AgentSession, AgentSessionMeta};
@@ -14,24 +14,17 @@ static INDEX_RECONCILE_FINGERPRINT: Mutex<Option<IndexFingerprint>> = Mutex::con
 pub async fn read_index() -> Result<Vec<AgentSessionMeta>, String> {
     let mut last_fingerprint = INDEX_RECONCILE_FINGERPRINT.lock().await;
     let path = index_path();
-    match tokio::fs::read_to_string(&path).await {
-        Ok(data) => match serde_json::from_str::<Vec<AgentSessionMeta>>(&data) {
-            Ok(entries) => {
-                let fingerprint = index_fingerprint(&path).await;
-                if last_fingerprint.as_ref() == fingerprint.as_ref() {
-                    Ok(entries)
-                } else {
-                    let entries = reconcile_index(&path, entries).await?;
-                    *last_fingerprint = index_fingerprint(&path).await;
-                    Ok(entries)
-                }
-            }
-            Err(_) => {
-                let entries = rebuild_index().await?;
+    match read_index_from(&path).await {
+        Ok(entries) => {
+            let fingerprint = index_fingerprint(&path).await;
+            if last_fingerprint.as_ref() == fingerprint.as_ref() {
+                Ok(entries)
+            } else {
+                let entries = reconcile_index(&path, entries).await?;
                 *last_fingerprint = index_fingerprint(&path).await;
                 Ok(entries)
             }
-        },
+        }
         Err(_) => {
             let entries = rebuild_index().await?;
             *last_fingerprint = index_fingerprint(&path).await;
@@ -52,11 +45,8 @@ async fn reconcile_index(
             return rebuild_index_from(dir).await;
         }
         let path = dir.join(format!("{}.json", meta.id));
-        let Ok(data) = tokio::fs::read_to_string(&path).await else {
+        let Ok(session) = super::session_store_document::read_from_path(path).await else {
             return rebuild_index_from(dir).await;
-        };
-        let Ok(session) = serde_json::from_str::<AgentSession>(&data) else {
-            continue;
         };
         if index_meta_drifted(meta, &session) {
             return rebuild_index_from(dir).await;
@@ -102,10 +92,11 @@ pub async fn rebuild_index_from(dir: &Path) -> Result<Vec<AgentSessionMeta>, Str
         if path.file_name().and_then(|n| n.to_str()) == Some("index.json") {
             continue;
         }
-        if let Ok(data) = tokio::fs::read_to_string(&path).await {
-            if let Ok(session) = serde_json::from_str::<AgentSession>(&data) {
-                entries.push(meta_from_session(&session));
+        if let Ok(session) = super::session_store_document::read_from_path(path).await {
+            if entries.len() >= super::session_index_io::MAX_INDEX_ENTRIES {
+                return Err("index indisponible".to_string());
             }
+            entries.push(meta_from_session(&session));
         }
     }
     write_index_to(dir, &entries).await?;

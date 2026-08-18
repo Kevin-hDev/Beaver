@@ -1147,6 +1147,7 @@
       "ollamaNativePromptsWrite": "Beaver は「ollama-native-system-prompts.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
       "systemPromptsWrite": "Beaver は「system-prompt-settings.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
       "privateStorage": "Beaver のプライベートストレージにアクセスできません。ディスク容量と権限を確認し、もう一度お試しください。",
+      "projects": "Beaver はプロジェクトを読み取りまたは保存できません。ディスクと権限を確認し、もう一度お試しください。",
       "systemPromptsRuntimeFallback": "システムプロンプト設定を利用できません。このメッセージでは一時的に Beaver のデフォルト指示を使用します。",
       "ollamaModelfileInvalid": "Modelfile を安全に変更できません。変更は適用されませんでした。",
       "ollamaParameterInvalid": "少なくとも1つの Ollama パラメーターに、簡易エディターでは変更できない値があります。Modelfile エディターで修正してください。",

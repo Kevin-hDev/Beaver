@@ -9,8 +9,7 @@ pub async fn get_agent_settings() -> Result<AgentSettings, String> {
 
 #[tauri::command]
 pub async fn set_permission_mode(mode: String) -> Result<(), String> {
-    let settings = agent_settings::with_permission_mode(agent_settings::load().await, mode)?;
-    agent_settings::save(&settings).await
+    agent_settings::set_permission_mode(mode).await
 }
 
 #[tauri::command]

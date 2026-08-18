@@ -31,8 +31,8 @@ const STAGES: &[AtomicWriteStage] = &[
     AtomicWriteStage::TempOpened,
     AtomicWriteStage::ContentWritten,
     AtomicWriteStage::FileSynced,
-    AtomicWriteStage::Replaced,
     AtomicWriteStage::PermissionsRepaired,
+    AtomicWriteStage::Replaced,
     AtomicWriteStage::ParentSynced,
 ];
 
@@ -52,6 +52,15 @@ fn representative_profile_reopens_after_every_atomic_write_cutpoint() {
             });
             assert!(interrupted.is_err(), "cutpoint must interrupt the write");
 
+            let parent = path.parent().unwrap();
+            assert!(std::fs::read_dir(parent).unwrap().all(|entry| {
+                !entry
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .ends_with(".tmp")
+            }));
+
             let reopened = std::fs::read(&path).expect("reopen profile value");
             assert!(
                 reopened == old || reopened == new,
@@ -66,6 +75,43 @@ fn representative_profile_reopens_after_every_atomic_write_cutpoint() {
             assert_eq!(std::fs::read(path).unwrap(), new);
         }
     }
+}
+
+#[test]
+fn first_write_remains_complete_or_absent_at_every_cutpoint() {
+    for &cutpoint in STAGES {
+        let root = tempfile::tempdir().expect("temporary profile");
+        let path = root.path().join("new/config.json");
+        let interrupted = std::panic::catch_unwind(|| {
+            atomic_write_with_hook(&path, b"new", |stage| {
+                assert_ne!(stage, cutpoint, "forced first-write interruption");
+            })
+            .expect("write before forced interruption");
+        });
+        assert!(interrupted.is_err());
+        if path.exists() {
+            assert_eq!(std::fs::read(&path).unwrap(), b"new");
+        }
+        atomic_write(&path, b"new").expect("first write must converge");
+        assert_eq!(std::fs::read(path).unwrap(), b"new");
+    }
+}
+
+#[test]
+fn first_write_residue_never_blocks_the_next_generation() {
+    let root = tempfile::tempdir().expect("temporary profile");
+    let path = root.path().join("config.json");
+    let stale = root
+        .path()
+        .join(".config.json.0123456789abcdef0123456789abcdef.tmp");
+    std::fs::write(&stale, b"interrupted").unwrap();
+
+    atomic_write(&path, b"new").expect("random temporary names must remain convergent");
+    assert_eq!(std::fs::read(&path).unwrap(), b"new");
+    assert!(
+        stale.exists(),
+        "recent residue may belong to another writer"
+    );
 }
 
 #[test]
@@ -110,10 +156,6 @@ fn user_profile_writers_share_the_atomic_store_authority() {
             include_str!("agent_local/subagent_change_store.rs"),
         ),
         (
-            "subagent_startup_cleanup",
-            include_str!("agent_local/subagent_startup_cleanup.rs"),
-        ),
-        (
             "tool_plan",
             include_str!("agent_local/tool_plan_storage.rs"),
         ),
@@ -126,6 +168,44 @@ fn user_profile_writers_share_the_atomic_store_authority() {
         assert!(
             source.contains("private_store::atomic_write"),
             "persistent writer {name} bypasses the atomic store"
+        );
+    }
+    assert!(
+        include_str!("agent_local/subagent_startup_cleanup.rs")
+            .contains("session_store::write_to_dir"),
+        "session cleanup must use the session document authority"
+    );
+
+    for (name, source, lock) in [
+        (
+            "favorites",
+            include_str!("favorite_models.rs"),
+            "FAVORITES_LOCK",
+        ),
+        (
+            "personality",
+            include_str!("personality_injection.rs"),
+            "INJECTION_LOCK",
+        ),
+        (
+            "forecast",
+            include_str!("forecast/model_config/storage.rs"),
+            "CONFIG_LOCK",
+        ),
+        (
+            "agent",
+            include_str!("agent_local/agent_settings.rs"),
+            "SETTINGS_LOCK",
+        ),
+        (
+            "projects",
+            include_str!("agent_local/project_store.rs"),
+            "PROJECT_STORE_LOCK",
+        ),
+    ] {
+        assert!(
+            source.contains(lock),
+            "RMW writer {name} lacks its owner lock"
         );
     }
 }

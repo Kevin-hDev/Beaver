@@ -16,6 +16,9 @@ mod cache;
 #[path = "private_store/atomic_write.rs"]
 mod private_store_atomic;
 
+#[path = "private_store/temp_cleanup.rs"]
+mod temp_cleanup;
+
 #[path = "private_store/error_codes.rs"]
 pub(crate) mod error_codes;
 
@@ -53,6 +56,15 @@ pub async fn atomic_write_async(path: PathBuf, bytes: Vec<u8>) -> Result<(), Str
         .map_err(|_| private_store_error())?
 }
 
+pub async fn read_bounded_regular_async(
+    path: PathBuf,
+    max_bytes: u64,
+) -> Result<BoundedFile, String> {
+    tokio::task::spawn_blocking(move || read_bounded_regular(&path, max_bytes))
+        .await
+        .map_err(|_| private_store_error())?
+}
+
 pub async fn write_new_async(path: PathBuf, bytes: Vec<u8>) -> Result<(), String> {
     tokio::task::spawn_blocking(move || write_new(&path, &bytes))
         .await
@@ -79,6 +91,10 @@ pub fn repair_path(path: &Path) -> Result<(), String> {
 pub fn repair_app_storage() -> Result<(), String> {
     let root = crate::services::paths::data_dir();
     create_private_dirs(&root)?;
+    if temp_cleanup::purge_stale_atomic_temps(&root).is_err() {
+        // Hygiene must never make an otherwise valid profile impossible to open.
+        ::log::warn!("[private-store] operation=temp-cleanup result=incomplete");
+    }
     for directory in [
         root.join("agent-sessions"),
         root.join("forecast-notes"),

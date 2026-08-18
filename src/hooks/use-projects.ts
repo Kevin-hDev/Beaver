@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { showToast } from "@/lib/toast-emitter";
+import { localStoreErrorMessage } from "@/lib/local-store-error";
 import i18n from "@/i18n";
 import type { Project } from "@/types/agent";
 import { AGENT_SESSIONS_CHANGED } from "./agent-session-events";
@@ -9,8 +10,12 @@ export function useProjects() {
   const [projects, setProjects] = useState<Project[]>([]);
 
   const refresh = useCallback(async () => {
-    const list = await invoke<Project[]>("list_projects");
-    setProjects(list.sort((a, b) => a.order - b.order));
+    try {
+      const list = await invoke<Project[]>("list_projects");
+      setProjects(list.sort((a, b) => a.order - b.order));
+    } catch (error) {
+      showToast(localStoreErrorMessage(error, i18n.t), "error");
+    }
   }, []);
 
   useEffect(() => {
@@ -35,8 +40,8 @@ export function useProjects() {
       try {
         await invoke("rename_project", { id, name });
         await refresh();
-      } catch {
-        showToast(i18n.t("errors.projectRenameFailed"), "error");
+      } catch (error) {
+        showToast(localStoreErrorMessage(error, i18n.t), "error");
       }
     },
     [refresh],
@@ -47,8 +52,8 @@ export function useProjects() {
       try {
         await invoke("delete_project", { id });
         await refresh();
-      } catch {
-        showToast(i18n.t("errors.projectDeleteFailed"), "error");
+      } catch (error) {
+        showToast(localStoreErrorMessage(error, i18n.t), "error");
       }
     },
     [refresh],
@@ -59,8 +64,8 @@ export function useProjects() {
       try {
         await invoke("reorder_projects", { ids });
         await refresh();
-      } catch {
-        showToast(i18n.t("errors.saveFailed"), "error");
+      } catch (error) {
+        showToast(localStoreErrorMessage(error, i18n.t), "error");
       }
     },
     [refresh],

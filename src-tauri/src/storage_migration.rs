@@ -2,7 +2,7 @@ use crate::services::paths::data_dir;
 
 pub fn initialize(app_handle: &tauri::AppHandle) -> Result<(), String> {
     run(app_handle)?;
-    crate::services::private_store::repair_app_storage()
+    crate::services::private_store::repair_app_storage().map_err(|_| migration_error())
 }
 
 pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {

@@ -94,20 +94,21 @@ pub async fn create_agent_session(
 ) -> Result<AgentSession, String> {
     let provider = provider.unwrap_or_else(|| "ollama".to_string());
     let requested_project_id = project_id.clone();
-    if let Some(project_id) = requested_project_id.as_deref() {
-        crate::services::agent_local::directory_access::project_path(project_id).await?;
-    }
+    let project_path = match requested_project_id.as_deref() {
+        Some(project_id) => {
+            Some(crate::services::agent_local::directory_access::project_path(project_id).await?)
+        }
+        None => None,
+    };
     let mut session =
         session_store::create_full(&name, &model, &provider, false, project_id).await?;
-    if let Some(pid) = requested_project_id.as_deref() {
-        if let Some(path) = super::agent_working_dir::project_path_for_id(pid).await {
-            if session_store::update_working_dir(&session.id, &path)
-                .await
-                .is_ok()
-            {
-                if let Ok(updated) = session_store::get(&session.id).await {
-                    session = updated;
-                }
+    if let Some(path) = project_path {
+        if session_store::update_working_dir(&session.id, path.to_string_lossy().as_ref())
+            .await
+            .is_ok()
+        {
+            if let Ok(updated) = session_store::get(&session.id).await {
+                session = updated;
             }
         }
     }

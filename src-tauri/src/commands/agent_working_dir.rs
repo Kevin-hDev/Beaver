@@ -14,7 +14,7 @@ pub(crate) async fn resolve_for_session(
         .await
         .map_err(|_| "Session introuvable".to_string())?;
     let project_dir = match session.project_id.as_deref() {
-        Some(project_id) => match project_path_for_id(project_id).await {
+        Some(project_id) => match project_path_for_id(project_id).await? {
             Some(path) => Some(canonical_dir(&path)?),
             None => None,
         },
@@ -60,7 +60,7 @@ pub(crate) async fn resolve_existing_for_session(
         .map_err(|_| "Session introuvable".to_string())?;
     let project_dir = match session.project_id.as_deref() {
         Some(project_id) => project_path_for_id(project_id)
-            .await
+            .await?
             .map(|path| canonical_dir(&path))
             .transpose()?,
         None => None,
@@ -83,10 +83,10 @@ pub(crate) async fn resolve_existing_for_session(
     Ok(choose_project_root(project_dir, incoming_dir, stored_dir))
 }
 
-pub(crate) async fn project_path_for_id(project_id: &str) -> Option<String> {
-    project_store::find(project_id)
-        .await
-        .map(|project| project.path)
+pub(crate) async fn project_path_for_id(project_id: &str) -> Result<Option<String>, String> {
+    Ok(project_store::find(project_id)
+        .await?
+        .map(|project| project.path))
 }
 
 fn canonical_dir(input: &str) -> Result<ResolvedWorkingDir, String> {

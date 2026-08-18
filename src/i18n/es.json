@@ -1147,6 +1147,7 @@
       "ollamaNativePromptsWrite": "Beaver no puede guardar «ollama-native-system-prompts.json». Comprueba que el disco no esté lleno y vuelve a intentarlo.",
       "systemPromptsWrite": "Beaver no puede guardar «system-prompt-settings.json». Comprueba que el disco no esté lleno y vuelve a intentarlo.",
       "privateStorage": "Beaver no puede acceder a su almacenamiento privado. Comprueba el espacio en disco y los permisos y vuelve a intentarlo.",
+      "projects": "Beaver no puede leer ni guardar los proyectos. Comprueba el disco y los permisos y vuelve a intentarlo.",
       "systemPromptsRuntimeFallback": "Los ajustes del system prompt no están disponibles. Beaver usa temporalmente sus instrucciones predeterminadas para este mensaje.",
       "ollamaModelfileInvalid": "El Modelfile no se puede modificar de forma segura. No se aplicó ningún cambio.",
       "ollamaParameterInvalid": "Al menos un parámetro de Ollama contiene un valor que el editor simplificado no puede modificar. Usa el editor de Modelfile para corregirlo.",

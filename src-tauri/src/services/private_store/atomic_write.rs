@@ -11,6 +11,11 @@ pub(super) enum AtomicWriteStage {
     ParentSynced,
 }
 
+/// Publishes one complete generation at `path`.
+///
+/// `Ok(())` means readers can observe the new complete generation. If the
+/// directory synchronization fails after publication, the failure is traced
+/// but is not returned: retrying a read-modify-write could apply it twice.
 pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
     write_with_hook(path, bytes, |_| {})
 }
@@ -32,7 +37,8 @@ fn write_with_hook(
     let parent = path.parent().ok_or_else(super::private_store_error)?;
     super::create_private_dirs(parent)?;
     let temp = super::temp_path(path)?;
-    let result = (|| {
+    let _temp_cleanup = TempCleanup(&temp);
+    (|| {
         let mut file = super::open_private_file(&temp)?;
         hook(AtomicWriteStage::TempOpened);
         file.write_all(bytes)
@@ -40,16 +46,39 @@ fn write_with_hook(
         hook(AtomicWriteStage::ContentWritten);
         file.sync_all().map_err(|_| super::private_store_error())?;
         hook(AtomicWriteStage::FileSynced);
+        super::repair_path(&temp)?;
+        hook(AtomicWriteStage::PermissionsRepaired);
         super::replace_file(&temp, path)?;
         hook(AtomicWriteStage::Replaced);
-        super::repair_path(path)?;
-        hook(AtomicWriteStage::PermissionsRepaired);
-        super::sync_parent(parent)?;
+        finish_parent_sync(super::sync_parent(parent))?;
         hook(AtomicWriteStage::ParentSynced);
         Ok(())
-    })();
+    })()
+}
+
+fn finish_parent_sync(result: Result<(), String>) -> Result<(), String> {
     if result.is_err() {
-        let _ = std::fs::remove_file(&temp);
+        // The destination is already authoritative. Returning a retryable error could
+        // repeat a read-modify-write operation against a value that was committed.
+        ::log::error!(
+            "[private-store] operation=parent-sync result=failed publication=complete durability=unconfirmed"
+        );
     }
-    result
+    Ok(())
+}
+
+struct TempCleanup<'a>(&'a Path);
+
+impl Drop for TempCleanup<'_> {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(self.0);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn post_publication_sync_failure_is_not_reported_as_a_retryable_write_failure() {
+        assert!(super::finish_parent_sync(Err("sync failed".to_string())).is_ok());
+    }
 }

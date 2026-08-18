@@ -40,7 +40,11 @@ pub(crate) fn read_config_from_path(path: &Path, data_dir: &Path) -> Result<Clgo
         Err(e) => {
             ::log::warn!("[config] JSON invalide ({}), reset à zéro", e);
             let sentinel = data_dir.join(".config-corrupted");
-            let _ = fs::write(&sentinel, format!("{}", e));
+            if crate::services::private_store::atomic_write(&sentinel, format!("{}", e).as_bytes())
+                .is_err()
+            {
+                ::log::error!("[config] corruption marker unavailable");
+            }
             return Ok(ClgoConfig::default());
         }
     };

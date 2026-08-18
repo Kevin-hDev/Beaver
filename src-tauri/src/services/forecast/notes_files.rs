@@ -8,6 +8,7 @@ use crate::services::private_store;
 use std::path::PathBuf;
 
 const MAX_NOTE_DIRECTORY_ENTRIES: usize = 512;
+const MAX_SCANNED_DIRECTORY_ENTRIES: usize = 4_096;
 
 pub(crate) async fn read_notes(analysis_id: &str) -> Result<Vec<ForecastNote>, String> {
     let Some(directory) = notes_paths::directory_if_exists(analysis_id).await? else {
@@ -18,13 +19,14 @@ pub(crate) async fn read_notes(analysis_id: &str) -> Result<Vec<ForecastNote>, S
         .map_err(|_| "Impossible de lire les notes".to_string())?;
     let mut notes = Vec::new();
     let mut scanned = 0;
+    let mut candidates = 0;
     while let Some(entry) = entries
         .next_entry()
         .await
         .map_err(|_| "Impossible de lire les notes".to_string())?
     {
         scanned += 1;
-        if scanned > MAX_NOTE_DIRECTORY_ENTRIES {
+        if scanned > MAX_SCANNED_DIRECTORY_ENTRIES {
             return Err("Trop de fichiers de notes".into());
         }
         let path = entry.path();
@@ -36,6 +38,10 @@ pub(crate) async fn read_notes(analysis_id: &str) -> Result<Vec<ForecastNote>, S
         };
         if notes_validation::id(note_id, "Note invalide").is_err() {
             continue;
+        }
+        candidates += 1;
+        if candidates > MAX_NOTE_DIRECTORY_ENTRIES {
+            return Err("Trop de fichiers de notes".into());
         }
         let path = notes_paths::verify_directory_entry(&directory, &path).await?;
         notes.push(read_note_file(path, analysis_id, note_id).await?);

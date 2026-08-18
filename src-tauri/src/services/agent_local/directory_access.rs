@@ -89,6 +89,7 @@ pub(crate) fn ensure_allowed_in_roots(
 pub async fn project_path(project_id: &str) -> Result<PathBuf, String> {
     let project = super::project_store::find(project_id)
         .await
+        .map_err(|_| ACCESS_ERROR.to_string())?
         .ok_or_else(|| ACCESS_ERROR.to_string())?;
     ensure_allowed(Path::new(&project.path))
 }

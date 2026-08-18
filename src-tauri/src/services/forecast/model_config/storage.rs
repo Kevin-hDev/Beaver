@@ -1,10 +1,12 @@
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 const MAX_MODELS: usize = 100;
 const MAX_PARAMS_PER_MODEL: usize = 64;
 const MAX_CONFIG_BYTES: u64 = 256 * 1024;
+static CONFIG_LOCK: Mutex<()> = Mutex::new(());
 
 pub type StoredConfigs = BTreeMap<String, Map<String, Value>>;
 
@@ -34,6 +36,9 @@ pub fn read_model(model_id: &str) -> Result<Map<String, Value>, String> {
 }
 
 pub fn write_model(model_id: &str, values: Map<String, Value>) -> Result<(), String> {
+    let _guard = CONFIG_LOCK
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     let mut all = read_all()?;
     if values.is_empty() {
         all.remove(model_id);

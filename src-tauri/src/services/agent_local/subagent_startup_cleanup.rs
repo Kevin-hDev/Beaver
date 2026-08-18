@@ -95,7 +95,13 @@ fn is_orphan_candidate(meta: &AgentSessionMeta, startup_cutoff: DateTime<Utc>) -
 /// Lance `git worktree prune` sur chaque projet connu, en parallèle et avec timeout.
 /// Les projets inaccessibles sont ignorés silencieusement.
 async fn prune_project_worktrees() -> usize {
-    let projects = project_store::list().await.unwrap_or_default();
+    let projects = match project_store::list().await {
+        Ok(projects) => projects,
+        Err(_) => {
+            ::log::warn!("[startup-cleanup] lecture des projets impossible");
+            return 0;
+        }
+    };
     let mut pruned = 0usize;
 
     for project in projects {

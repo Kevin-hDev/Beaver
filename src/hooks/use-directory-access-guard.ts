@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { showToast } from "@/lib/toast-emitter";
+import { localStoreErrorMessage } from "@/lib/local-store-error";
 import { useAppNavigationActions } from "./use-app-navigation-actions";
 import i18n from "@/i18n";
 import {
@@ -29,7 +30,8 @@ export function useDirectoryAccessGuard() {
     try {
       const raw = await invoke<unknown>("validate_session_directory_access", { path });
       decision = parseDirectoryAccessDecision(raw);
-    } catch {
+    } catch (validationError) {
+      void validationError;
       showToast(i18n.t("directoryAccess.error"), "error");
       return;
     }
@@ -40,7 +42,7 @@ export function useDirectoryAccessGuard() {
     setBlocked(null);
     try {
       await onAllowed();
-    } catch {
+    } catch (error) {
       try {
         const retry = parseDirectoryAccessDecision(
           await invoke<unknown>("validate_session_directory_access", { path }),
@@ -49,10 +51,11 @@ export function useDirectoryAccessGuard() {
           setBlocked({ allowedPaths: retry.allowed_paths });
           return;
         }
-      } catch {
+      } catch (retryError) {
+        void retryError;
         // L’erreur visible reste générique et ne révèle aucun détail du backend.
       }
-      showToast(i18n.t("errors.operationFailed"), "error");
+      showToast(localStoreErrorMessage(error, i18n.t), "error");
     }
   }, []);
 

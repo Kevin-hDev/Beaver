@@ -1152,6 +1152,7 @@
       "ollamaNativePromptsWrite": "Beaver cannot save “ollama-native-system-prompts.json”. Check that the disk is not full, then try again.",
       "systemPromptsWrite": "Beaver cannot save “system-prompt-settings.json”. Check that the disk is not full, then try again.",
       "privateStorage": "Beaver cannot access its private storage. Check disk space and permissions, then try again.",
+      "projects": "Beaver cannot read or save projects. Check the disk and permissions, then try again.",
       "systemPromptsRuntimeFallback": "System prompt settings are unavailable. Beaver is temporarily using its default instructions for this message.",
       "ollamaModelfileInvalid": "The Modelfile cannot be changed safely. No changes were applied.",
       "ollamaParameterInvalid": "At least one Ollama parameter contains a value that the simplified editor cannot change. Use the Modelfile editor to correct it.",

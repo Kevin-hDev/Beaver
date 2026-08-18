@@ -1,5 +1,6 @@
 {
   "private-store-unavailable": "errors.localStore.privateStorage",
+  "project-store-unavailable": "errors.localStore.projects",
   "ollama-custom-store-missing": "errors.localStore.ollamaCustomizationMissing",
   "ollama-custom-store-unavailable": "errors.localStore.ollamaCustomization",
   "ollama-custom-store-write": "errors.localStore.ollamaCustomizationWrite",

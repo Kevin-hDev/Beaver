@@ -1,9 +1,18 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
-const PROJECT_STORE_UNAVAILABLE: &str = "project-store-unavailable";
+const PROJECT_STORE_UNAVAILABLE: &str =
+    crate::services::private_store::error_codes::PROJECT_STORE_UNAVAILABLE;
+const MAX_PROJECT_STORE_BYTES: u64 = 4 * 1024 * 1024;
+const MAX_PROJECTS: usize = 4_096;
+const MAX_PROJECT_ID_BYTES: usize = 128;
+const MAX_PROJECT_NAME_BYTES: usize = 512;
+const MAX_PROJECT_PATH_BYTES: usize = 32_768;
+static PROJECT_STORE_LOCK: Mutex<()> = Mutex::const_new(());
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
@@ -18,43 +27,57 @@ fn projects_path() -> PathBuf {
     crate::services::paths::data_dir().join("projects.json")
 }
 
-async fn read_all() -> Vec<Project> {
-    let path = projects_path();
-    let data = match tokio::fs::read_to_string(&path).await {
-        Ok(d) => d,
-        Err(_) => return Vec::new(),
+async fn read_all() -> Result<Vec<Project>, String> {
+    let data = match crate::services::private_store::read_bounded_regular_async(
+        projects_path(),
+        MAX_PROJECT_STORE_BYTES,
+    )
+    .await
+    .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())?
+    {
+        crate::services::private_store::BoundedFile::Missing => return Ok(Vec::new()),
+        crate::services::private_store::BoundedFile::Content(data) => data,
     };
-    serde_json::from_str(&data).unwrap_or_default()
+    let projects: Vec<Project> = serde_json::from_slice(&data)
+        .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())?;
+    validate_projects(&projects)?;
+    Ok(projects)
 }
 
 async fn write_atomic(projects: &[Project]) -> Result<(), String> {
+    validate_projects(projects)?;
     let path = projects_path();
-    let data = serde_json::to_string_pretty(projects).map_err(|e| format!("Serialize: {e}"))?;
+    let data = serde_json::to_string_pretty(projects)
+        .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())?;
     crate::services::private_store::atomic_write_async(path, data.into_bytes())
         .await
         .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())
 }
 
 pub async fn list() -> Result<Vec<Project>, String> {
-    let mut projects = read_all().await;
+    let mut projects = read_all().await?;
     projects.sort_by_key(|p| p.order);
     Ok(projects)
 }
 
-pub async fn find(id: &str) -> Option<Project> {
-    read_all().await.into_iter().find(|project| project.id == id)
+pub async fn find(id: &str) -> Result<Option<Project>, String> {
+    Ok(read_all().await?.into_iter().find(|project| project.id == id))
 }
 
 pub async fn add(path: &str) -> Result<Project, String> {
+    let _guard = PROJECT_STORE_LOCK.lock().await;
     let canonical = canonical_existing_dir(Path::new(path))?;
     super::directory_access::ensure_allowed(&canonical)?;
     let canonical_path = canonical.to_string_lossy().to_string();
-    let mut projects = read_all().await;
+    let mut projects = read_all().await?;
     if let Some(existing) = projects
         .iter()
         .find(|p| project_matches_canonical(&p.path, &canonical))
     {
         return Ok(existing.clone());
+    }
+    if projects.len() >= MAX_PROJECTS {
+        return Err(PROJECT_STORE_UNAVAILABLE.to_string());
     }
     let name = canonical
         .file_name()
@@ -75,7 +98,7 @@ pub async fn add(path: &str) -> Result<Project, String> {
 
 pub async fn authorize_path(path: &Path) -> Result<PathBuf, String> {
     let canonical = canonical_existing_dir(path)?;
-    let projects = read_all().await;
+    let projects = read_all().await?;
     if projects
         .iter()
         .any(|p| path_is_inside_project(&canonical, &p.path))
@@ -110,7 +133,8 @@ fn path_is_inside_project(canonical_path: &Path, project_path: &str) -> bool {
 }
 
 pub async fn rename(id: &str, name: &str) -> Result<(), String> {
-    let mut projects = read_all().await;
+    let _guard = PROJECT_STORE_LOCK.lock().await;
+    let mut projects = read_all().await?;
     let p = projects
         .iter_mut()
         .find(|p| p.id == id)
@@ -120,7 +144,8 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 }
 
 pub async fn delete(id: &str) -> Result<(), String> {
-    let mut projects = read_all().await;
+    let _guard = PROJECT_STORE_LOCK.lock().await;
+    let mut projects = read_all().await?;
     projects.retain(|p| p.id != id);
     for (i, p) in projects.iter_mut().enumerate() {
         p.order = i;
@@ -129,7 +154,16 @@ pub async fn delete(id: &str) -> Result<(), String> {
 }
 
 pub async fn reorder(ids: Vec<String>) -> Result<(), String> {
-    let mut projects = read_all().await;
+    let mut unique_ids = HashSet::with_capacity(ids.len().min(MAX_PROJECTS));
+    if ids.len() > MAX_PROJECTS
+        || ids.iter().any(|id| {
+            !bounded_text(id, MAX_PROJECT_ID_BYTES) || !unique_ids.insert(id.as_str())
+        })
+    {
+        return Err(PROJECT_STORE_UNAVAILABLE.to_string());
+    }
+    let _guard = PROJECT_STORE_LOCK.lock().await;
+    let mut projects = read_all().await?;
     for (i, id) in ids.iter().enumerate() {
         if let Some(p) = projects.iter_mut().find(|p| &p.id == id) {
             p.order = i;
@@ -139,49 +173,27 @@ pub async fn reorder(ids: Vec<String>) -> Result<(), String> {
     write_atomic(&projects).await
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{canonical_existing_dir, path_is_inside_project, project_matches_canonical};
-
-    #[test]
-    fn canonical_existing_dir_normalizes_dot_segments() {
-        let tmp = tempfile::tempdir().expect("temp");
-        let nested = tmp.path().join("nested");
-        std::fs::create_dir_all(&nested).expect("nested");
-
-        let canonical = canonical_existing_dir(&nested.join(".")).expect("canonical");
-
-        assert_eq!(canonical, dunce::canonicalize(&nested).expect("expected"));
+fn validate_projects(projects: &[Project]) -> Result<(), String> {
+    let mut unique_ids = HashSet::with_capacity(projects.len().min(MAX_PROJECTS));
+    if projects.len() > MAX_PROJECTS
+        || projects.iter().any(|project| {
+            !bounded_text(&project.id, MAX_PROJECT_ID_BYTES)
+                || !bounded_text(&project.name, MAX_PROJECT_NAME_BYTES)
+                || !bounded_text(&project.path, MAX_PROJECT_PATH_BYTES)
+                || !unique_ids.insert(project.id.as_str())
+        })
+    {
+        return Err(PROJECT_STORE_UNAVAILABLE.to_string());
     }
-
-    #[test]
-    fn project_match_accepts_equivalent_path() {
-        let tmp = tempfile::tempdir().expect("temp");
-        let canonical = dunce::canonicalize(tmp.path()).expect("canonical");
-        let equivalent = tmp.path().join(".");
-
-        assert!(project_matches_canonical(
-            &equivalent.to_string_lossy(),
-            &canonical
-        ));
-    }
-
-    #[test]
-    fn inside_project_allows_child_and_rejects_sibling() {
-        let tmp = tempfile::tempdir().expect("temp");
-        let project = tmp.path().join("project");
-        let child = project.join("child");
-        let sibling = tmp.path().join("sibling");
-        std::fs::create_dir_all(&child).expect("child");
-        std::fs::create_dir_all(&sibling).expect("sibling");
-
-        let child = dunce::canonicalize(child).expect("canonical child");
-        let sibling = dunce::canonicalize(sibling).expect("canonical sibling");
-
-        assert!(path_is_inside_project(&child, &project.to_string_lossy()));
-        assert!(!path_is_inside_project(
-            &sibling,
-            &project.to_string_lossy()
-        ));
-    }
+    Ok(())
 }
+
+fn bounded_text(value: &str, max_bytes: usize) -> bool {
+    !value.is_empty()
+        && value.len() <= max_bytes
+        && !value.bytes().any(|byte| matches!(byte, 0 | b'\r' | b'\n'))
+}
+
+#[cfg(test)]
+#[path = "project_store_tests.rs"]
+mod tests;

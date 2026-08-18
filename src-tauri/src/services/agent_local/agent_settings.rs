@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use tokio::sync::Mutex;
+
+static SETTINGS_LOCK: Mutex<()> = Mutex::const_new(());
 
 const LEGACY_FORECAST_TOOLS: &[&str] = &[
     "forecast_data_audit",
@@ -138,6 +141,7 @@ pub async fn set_optional_tool_enabled(
     tool_id: String,
     enabled: bool,
 ) -> Result<AgentSettings, String> {
+    let _guard = SETTINGS_LOCK.lock().await;
     super::tool_catalog::validate_optional_tool_id(&tool_id)?;
     let mut settings = load().await;
     if enabled {
@@ -160,9 +164,16 @@ pub async fn set_tool_group_enabled(
     group_id: String,
     enabled: bool,
 ) -> Result<AgentSettings, String> {
+    let _guard = SETTINGS_LOCK.lock().await;
     let settings = with_tool_group_enabled(load().await, &group_id, enabled)?;
     save(&settings).await?;
     Ok(settings)
+}
+
+pub async fn set_permission_mode(mode: String) -> Result<(), String> {
+    let _guard = SETTINGS_LOCK.lock().await;
+    let settings = with_permission_mode(load().await, mode)?;
+    save(&settings).await
 }
 
 pub async fn is_tool_enabled(tool_id: &str) -> bool {

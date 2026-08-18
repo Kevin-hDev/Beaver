@@ -29,6 +29,7 @@ pub async fn prepare(
     let project_path = match session.project_id.as_deref() {
         Some(project_id) => super::project_store::find(project_id)
             .await
+            .map_err(|_| generic_error())?
             .map(|project| PathBuf::from(project.path)),
         None => None,
     };
@@ -77,7 +78,7 @@ pub async fn resolve(
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| generic_error())?;
-    if !is_session_path(&session, &target).await || target.exists() {
+    if !is_session_path(&session, &target).await? || target.exists() {
         return Err(generic_error());
     }
     let resolved = match action {
@@ -106,16 +107,20 @@ pub async fn resolve(
     Ok(text)
 }
 
-async fn is_session_path(session: &super::types_session::AgentSession, target: &Path) -> bool {
+async fn is_session_path(
+    session: &super::types_session::AgentSession,
+    target: &Path,
+) -> Result<bool, String> {
     if non_empty_path(&session.working_dir).as_deref() == Some(target) {
-        return true;
+        return Ok(true);
     }
     let Some(project_id) = session.project_id.as_deref() else {
-        return false;
+        return Ok(false);
     };
-    super::project_store::find(project_id)
+    Ok(super::project_store::find(project_id)
         .await
-        .is_some_and(|project| Path::new(&project.path) == target)
+        .map_err(|_| generic_error())?
+        .is_some_and(|project| Path::new(&project.path) == target))
 }
 
 fn non_empty_path(value: &str) -> Option<PathBuf> {

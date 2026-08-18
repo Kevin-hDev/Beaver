@@ -3,6 +3,9 @@ use super::types_session::AgentSessionMeta;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+pub(super) const MAX_INDEX_FILE_BYTES: u64 = 4 * 1024 * 1024;
+pub(super) const MAX_INDEX_ENTRIES: usize = 4_096;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct IndexFingerprint {
     pub len: u64,
@@ -24,12 +27,31 @@ pub(super) async fn index_fingerprint(path: &Path) -> Option<IndexFingerprint> {
 }
 
 pub(super) async fn read_index_raw() -> Vec<AgentSessionMeta> {
-    let path = index_path();
-    if let Ok(data) = tokio::fs::read_to_string(&path).await {
-        serde_json::from_str(&data).unwrap_or_default()
-    } else {
-        Vec::new()
+    read_index_from(&index_path()).await.unwrap_or_default()
+}
+
+pub(super) async fn read_index_from(path: &Path) -> Result<Vec<AgentSessionMeta>, String> {
+    let data = match crate::services::private_store::read_bounded_regular_async(
+        path.to_path_buf(),
+        MAX_INDEX_FILE_BYTES,
+    )
+    .await?
+    {
+        crate::services::private_store::BoundedFile::Missing => {
+            return Err("index indisponible".to_string());
+        }
+        crate::services::private_store::BoundedFile::Content(data) => data,
+    };
+    parse_index(&data)
+}
+
+pub(super) fn parse_index(data: &[u8]) -> Result<Vec<AgentSessionMeta>, String> {
+    let entries: Vec<AgentSessionMeta> =
+        serde_json::from_slice(data).map_err(|_| "index invalide".to_string())?;
+    if entries.len() > MAX_INDEX_ENTRIES {
+        return Err("index invalide".to_string());
     }
+    Ok(entries)
 }
 
 pub(super) async fn write_index(entries: &[AgentSessionMeta]) -> Result<(), String> {
@@ -41,6 +63,9 @@ pub(crate) async fn write_index_to(
     dir: &Path,
     entries: &[AgentSessionMeta],
 ) -> Result<(), String> {
+    if entries.len() > MAX_INDEX_ENTRIES {
+        return Err("index invalide".to_string());
+    }
     tokio::fs::create_dir_all(dir)
         .await
         .map_err(|_| "index indisponible".to_string())?;

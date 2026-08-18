@@ -117,10 +117,15 @@ pub async fn get(id: &str) -> Result<AgentSession, String> {
     )
     .await
     .map_err(|_| "Session introuvable".to_string())?;
-    let data = tokio::fs::read_to_string(&path)
+    super::session_store_document::read_from_path(path)
         .await
-        .map_err(|_| "Session introuvable".to_string())?;
-    serde_json::from_str(&data).map_err(|_| "Session invalide".to_string())
+        .map_err(|error| {
+            if error == "Session invalide" {
+                error
+            } else {
+                "Session introuvable".to_string()
+            }
+        })
 }
 
 pub async fn list() -> Result<Vec<AgentSessionMeta>, String> {

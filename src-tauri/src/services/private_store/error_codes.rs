@@ -1,4 +1,5 @@
 pub(crate) const PRIVATE_STORE_UNAVAILABLE: &str = "private-store-unavailable";
+pub(crate) const PROJECT_STORE_UNAVAILABLE: &str = "project-store-unavailable";
 
 pub(crate) const OLLAMA_CUSTOM_MISSING: &str = "ollama-custom-store-missing";
 pub(crate) const OLLAMA_CUSTOM_UNAVAILABLE: &str = "ollama-custom-store-unavailable";
@@ -13,8 +14,9 @@ pub(crate) const SYSTEM_PROMPT_UNAVAILABLE: &str = "system-prompt-store-unavaila
 pub(crate) const SYSTEM_PROMPT_WRITE: &str = "system-prompt-store-write";
 
 #[cfg(test)]
-pub(crate) const LOCAL_STORE_CODES: [&str; 10] = [
+pub(crate) const LOCAL_STORE_CODES: [&str; 11] = [
     PRIVATE_STORE_UNAVAILABLE,
+    PROJECT_STORE_UNAVAILABLE,
     OLLAMA_CUSTOM_MISSING,
     OLLAMA_CUSTOM_UNAVAILABLE,
     OLLAMA_CUSTOM_WRITE,

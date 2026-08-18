@@ -1,8 +1,44 @@
 use super::*;
 use super::test_support::*;
+use crate::services::agent_local::session_index_io;
 use chrono::Utc;
 use std::path::Path;
 use tempfile::TempDir;
+
+#[test]
+fn index_parser_rejects_an_unbounded_entry_collection() {
+    let entries = (0..=session_index_io::MAX_INDEX_ENTRIES)
+        .map(|index| test_meta(&format!("session-{index}"), 0))
+        .collect::<Vec<_>>();
+    let data = serde_json::to_vec(&entries).unwrap();
+
+    assert!(session_index_io::parse_index(&data).is_err());
+}
+
+#[tokio::test]
+async fn index_reader_rejects_an_oversized_sparse_file() {
+    let tmp = TempDir::new().unwrap();
+    let path = tmp.path().join("index.json");
+    std::fs::File::create(&path)
+        .unwrap()
+        .set_len(session_index_io::MAX_INDEX_FILE_BYTES + 1)
+        .unwrap();
+
+    assert!(session_index_io::read_index_from(&path).await.is_err());
+}
+
+#[tokio::test]
+async fn index_writer_rejects_an_unbounded_entry_collection() {
+    let tmp = TempDir::new().unwrap();
+    let entries = (0..=session_index_io::MAX_INDEX_ENTRIES)
+        .map(|index| test_meta(&format!("session-{index}"), 0))
+        .collect::<Vec<_>>();
+
+    assert!(session_index_io::write_index_to(tmp.path(), &entries)
+        .await
+        .is_err());
+    assert!(!tmp.path().join("index.json").exists());
+}
 
 #[tokio::test]
 async fn rebuild_produces_correct_index() {
