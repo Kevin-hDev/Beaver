@@ -1,4 +1,6 @@
-use tauri::menu::{AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::menu::{
+    AboutMetadata, Menu, MenuItem, PredefinedMenuItem, Submenu, HELP_SUBMENU_ID, WINDOW_SUBMENU_ID,
+};
 
 pub(super) const MACOS_QUIT_MENU_ID: &str = "beaver-coordinated-quit";
 const MACOS_QUIT_ACCELERATOR: &str = "CmdOrCtrl+Q";
@@ -84,8 +86,9 @@ pub(super) fn build(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
         true,
         &[&PredefinedMenuItem::fullscreen(app, None)?],
     )?;
-    let window_menu = Submenu::with_items(
+    let window_menu = Submenu::with_id_and_items(
         app,
+        WINDOW_SUBMENU_ID,
         "Window",
         true,
         &[
@@ -95,7 +98,7 @@ pub(super) fn build(app: &tauri::AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
             &PredefinedMenuItem::close_window(app, None)?,
         ],
     )?;
-    let help_menu = Submenu::with_items(app, "Help", true, &[])?;
+    let help_menu = Submenu::with_id_and_items(app, HELP_SUBMENU_ID, "Help", true, &[])?;
     Menu::with_items(
         app,
         &[
@@ -141,5 +144,7 @@ mod tests {
         assert!(!production.contains(&["starts", "_with"].concat()));
         assert_eq!(production.matches("native_quit.text()?").count(), 1);
         assert!(production.contains("&quit,"));
+        assert!(production.contains("WINDOW_SUBMENU_ID"));
+        assert!(production.contains("HELP_SUBMENU_ID"));
     }
 }
