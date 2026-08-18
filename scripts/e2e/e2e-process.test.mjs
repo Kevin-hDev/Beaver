@@ -248,7 +248,10 @@ test("CI runs the real Tauri WebView journey on Linux", () => {
     ciSource.indexOf("  backend-linux-native:"),
     ciSource.indexOf("  backend-windows-native:"),
   );
-  assert.match(linuxJob, /E2E_REQUIRE_WEBVIEW_SMOKE: "1"[\s\S]*xvfb-run[\s\S]*npm run test:e2e/u);
+  assert.match(
+    linuxJob,
+    /E2E_REQUIRE_WEBVIEW_SMOKE: "1"[\s\S]*xvfb-run[^\r\n]*npm run test:e2e(?:\r?\n|$)/u,
+  );
   assert.match(linuxJob, /webkit2gtk-driver/u);
 });
 

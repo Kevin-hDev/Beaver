@@ -82,9 +82,14 @@ async function listWindowsInstallers(directory) {
   return entries
     .filter((entry) => (
       entry.isFile()
-      && /^Beaver_E2E_[0-9]+\.[0-9]+\.[0-9]+_x64-setup\.exe$/u.test(entry.name)
+      && isWindowsInstallerName(entry.name)
     ))
     .map((entry) => join(directory, entry.name));
+}
+
+export function isWindowsInstallerName(name) {
+  return typeof name === "string"
+    && /^Beaver(?:_| )E2E_[0-9]+\.[0-9]+\.[0-9]+_x64-setup\.exe$/u.test(name);
 }
 
 async function regularFile(path) {

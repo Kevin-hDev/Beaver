@@ -22,7 +22,9 @@
     }
   },
   "bundle": {
-    "resources": ["default-skills/**/*"],
+    "resources": {
+      "default-skills/": "default-skills/"
+    },
     "macOS": {
       "frameworks": [
         "target/e2e/cef-runtime/macos/Chromium Embedded Framework.framework"

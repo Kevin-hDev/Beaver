@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { join, resolve } from "node:path";
 import test from "node:test";
 import {
+  isWindowsInstallerName,
   preparePackagedApp,
   windowsInstallerDirectory,
 } from "./packaged-app.mjs";
@@ -67,6 +68,16 @@ test("Windows NSIS keeps an isolated install path containing spaces verbatim", a
     ["/S", `/D=${join(profilePath, "packaged-app")}`],
     { windowsVerbatimArguments: true },
   ]);
+});
+
+test("Windows packaged smoke accepts both Tauri separators for Beaver E2E", async () => {
+  for (const name of [
+    "Beaver_E2E_1.1.3_x64-setup.exe",
+    "Beaver E2E_1.1.3_x64-setup.exe",
+  ]) {
+    assert.equal(isWindowsInstallerName(name), true);
+  }
+  assert.equal(isWindowsInstallerName("Beaver_1.1.3_x64-setup.exe"), false);
 });
 
 test("packaged smoke fails closed when the NSIS artifact is ambiguous", async () => {

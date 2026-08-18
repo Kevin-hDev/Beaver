@@ -79,6 +79,9 @@ jobs:
           npm run preflight:j3-reference
           npm run test:j3-native-assets
 
+      - name: Persistence contracts
+        run: npm run test:persistence-migration
+
       - name: E2E profile tests and lint
         working-directory: src-tauri
         run: |

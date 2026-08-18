@@ -116,12 +116,18 @@ test("tous les contrats courants existent réellement dans les sources", () => {
   for (const domain of manifest.domains) {
     for (const contract of domain.contracts) {
       const path = safeRelativePath(contract.file);
-      if ((contract.scope ?? "baseline") === "baseline" && !existsSync(path)) continue;
+      const scope = contract.scope ?? "baseline";
+      if (scope === "baseline" && !existsSync(path)) continue;
       const source = boundedRead(path, MAX_SOURCE_BYTES);
       assert.ok(contract.snippets.length > 0 && contract.snippets.length <= 16);
       for (const snippet of contract.snippets) {
+        const migrated = scope === "baseline" && domain.contracts.some((candidate) => (
+          candidate.scope === "migration"
+          && candidate.snippets.includes(snippet)
+          && boundedRead(safeRelativePath(candidate.file), MAX_SOURCE_BYTES).includes(snippet)
+        ));
         assert.ok(
-          source.includes(snippet),
+          source.includes(snippet) || migrated,
           `${domain.id}: contrat absent dans ${contract.file}: ${snippet}`,
         );
       }
@@ -155,7 +161,7 @@ test("aucune nouvelle identité de stockage Beaver n’est introduite", () => {
 
 test("une migration incomplète bloque le démarrage sans exposer de chemin", () => {
   const startup = boundedRead(
-    safeRelativePath("src-tauri/src/lib.rs"),
+    safeRelativePath("src-tauri/src/app_build.rs"),
     MAX_SOURCE_BYTES,
   );
   assert.match(
