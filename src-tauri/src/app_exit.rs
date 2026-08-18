@@ -38,6 +38,8 @@ pub(crate) use emergency::EMERGENCY_CAPACITY;
 pub(crate) use emergency_registration::EmergencyHandoffReason;
 #[allow(unused_imports)]
 pub(crate) use emergency_signaler::{AppEmergencyPublisher, AppEmergencyRegistration};
+#[cfg(target_os = "macos")]
+pub(crate) use request_api::try_request;
 pub use request_api::{request, request_restart};
 pub use work_supervisor::AppWorkSupervisor;
 pub type AppWorkAdmission = registry::TrackedAdmission;

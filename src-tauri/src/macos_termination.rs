@@ -40,10 +40,13 @@ unsafe extern "C-unwind" fn application_should_terminate(
     let result = std::panic::catch_unwind(|| {
         let app_handle = APP_HANDLE.get().ok_or(())?;
         ::log::info!("[exit] native termination requested");
-        crate::app_exit::request(app_handle, 0);
-        Ok::<(), ()>(())
+        crate::app_exit::try_request(app_handle, 0)
     });
-    if matches!(result, Ok(Ok(()))) {
+    termination_reply(matches!(result, Ok(Ok(()))))
+}
+
+fn termination_reply(coordination_started: bool) -> usize {
+    if coordination_started {
         return 0; // NSTerminateCancel: the independent app_exit guard is armed.
     }
     eprintln!("[exit] native termination coordination unavailable");
@@ -52,6 +55,8 @@ unsafe extern "C-unwind" fn application_should_terminate(
 
 #[cfg(test)]
 mod tests {
+    use super::termination_reply;
+
     #[test]
     fn external_termination_is_cancelled_and_routed_to_the_exit_authority() {
         let source = include_str!("macos_termination.rs");
@@ -65,8 +70,14 @@ mod tests {
             .expect("termination callback");
 
         assert!(production.contains("sel!(applicationShouldTerminate:)"));
-        assert!(callback.contains("crate::app_exit::request(app_handle, 0)"));
+        assert!(callback.contains("crate::app_exit::try_request(app_handle, 0)"));
         assert!(callback.contains("0; // NSTerminateCancel"));
         assert!(callback.contains("1 // NSTerminateNow"));
+    }
+
+    #[test]
+    fn cocoa_terminates_normally_when_coordination_cannot_start() {
+        assert_eq!(termination_reply(true), 0);
+        assert_eq!(termination_reply(false), 1);
     }
 }
