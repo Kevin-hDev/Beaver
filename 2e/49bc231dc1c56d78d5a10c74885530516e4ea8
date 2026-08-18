@@ -1,0 +1,13 @@
+JALON 4 — PREUVE CEF EMPAQUETÉE
+
+Problème: le parcours CEF natif lançait un binaire de build brut sur Windows et ne distinguait pas explicitement la preuve d'un paquet installable. La spécification J4 exige un vrai build empaqueté avec le binaire et la ligne de commande réellement livrés.
+
+Décision: ajouter un unique mode E2E_PACKAGED strict, exposé par npm run test:e2e:packaged. macOS exécute le binaire de Beaver.app. Windows construit un NSIS, exige exactement un installateur régulier au nom borné, l'installe silencieusement sous le profil E2E isolé, exécute le binaire installé puis lance son désinstalleur. Linux conserve son parcours WebView existant, car CEF y est désactivé.
+
+Sécurité et bornes: aucun shell intermédiaire; arguments système séparés; profil créé sous le répertoire temporaire déjà validé; liste d'installateurs bornée à 16; symlinks refusés; erreurs visibles génériques; délais de build et de parcours existants réutilisés; nettoyage du paquet exécuté avant la suppression du profil.
+
+CI: les jobs natifs Windows et macOS appellent désormais npm run test:e2e:packaged avec E2E_REQUIRE_CEF_SMOKE=1. Le build debug garde la feature e2e isolée et la garde de compilation interdit toujours cette feature en release.
+
+Preuves exécutées sur macOS le 18 août 2026: npm run test:e2e-runner — 65/65 verts; npm run lint — vert; npx tsc --noEmit — vert; E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged — vert, vraie Beaver.app construite/signée ad hoc, parcours 169f68a5-59ca-40c1-83fe-be6bac4e6e61, 1 spec verte en 11.6 s, turnover CEF observé, page chargée, seconde session ouverte après turnover, fermeture coordonnée, processus possédés et WebViews disparus. git diff --check — vert; graphify update . — terminé.
+
+Limite honnête: le chemin NSIS est couvert par tests Node mais n'a pas été exécuté sur cette machine macOS. Sa preuve native appartient au handoff Windows et à la CI. Gatekeeper/quarantaine et les autres protections système restent des contrôles manuels séparés; ce commit ne les déclare pas validés.
