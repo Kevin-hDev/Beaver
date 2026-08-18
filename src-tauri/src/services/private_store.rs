@@ -8,9 +8,13 @@ fn private_store_error() -> String {
 }
 
 pub(crate) use cache::{CachedStore, StoreErrorCodes, StoreFailure, StoreLoad};
+pub(crate) use private_store_atomic::atomic_write;
 
 #[path = "private_store/cache.rs"]
 mod cache;
+
+#[path = "private_store/atomic_write.rs"]
+mod private_store_atomic;
 
 #[path = "private_store/error_codes.rs"]
 pub(crate) mod error_codes;
@@ -41,24 +45,6 @@ pub(crate) fn read_bounded_regular(path: &Path, max_bytes: u64) -> Result<Bounde
         return Err(private_store_error());
     }
     Ok(BoundedFile::Content(content))
-}
-
-pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    let parent = path.parent().ok_or_else(private_store_error)?;
-    create_private_dirs(parent)?;
-    let temp = temp_path(path)?;
-    let result = (|| {
-        let mut file = open_private_file(&temp)?;
-        file.write_all(bytes).map_err(|_| private_store_error())?;
-        file.sync_all().map_err(|_| private_store_error())?;
-        replace_file(&temp, path)?;
-        repair_path(path)?;
-        sync_parent(parent)
-    })();
-    if result.is_err() {
-        let _ = std::fs::remove_file(&temp);
-    }
-    result
 }
 
 pub async fn atomic_write_async(path: PathBuf, bytes: Vec<u8>) -> Result<(), String> {
@@ -219,3 +205,7 @@ pub(crate) use windows_token::current_user as current_windows_user;
 #[cfg(test)]
 #[path = "private_store_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "private_store_interrupt_tests.rs"]
+mod interrupt_tests;
