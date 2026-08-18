@@ -16,10 +16,12 @@ export async function canonicalE2eRepoRoot(moduleUrl) {
   return realpath(candidate);
 }
 
-export function buildArguments(platform) {
+export function buildArguments(platform, packaged = false) {
   const bundleArguments = platform === "darwin"
     ? ["--bundles", "app"]
-    : ["--no-bundle"];
+    : platform === "win32" && packaged
+      ? ["--bundles", "nsis"]
+      : ["--no-bundle"];
   return [
     "build", "--debug", "--features", "e2e",
     "--config", "src-tauri/tauri.e2e.conf.json",

@@ -2,6 +2,7 @@ import { mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { reportNativeDiagnostics } from "./native-diagnostics.mjs";
+import { preparePackagedApp } from "./packaged-app.mjs";
 import {
   buildArguments,
   canonicalE2eRepoRoot,
@@ -15,6 +16,13 @@ import {
 } from "./e2e-process.mjs";
 
 const repoRoot = await canonicalE2eRepoRoot(import.meta.url);
+const packaged = process.env.E2E_PACKAGED === "1";
+if (process.env.E2E_PACKAGED !== undefined && !packaged) {
+  throw new Error("E2E packaged mode is invalid");
+}
+if (packaged && !["darwin", "win32"].includes(process.platform)) {
+  throw new Error("E2E packaged mode is unsupported");
+}
 const profilePath = await realpath(await mkdtemp(join(tmpdir(), "beaver-e2e-")));
 const canonicalTemp = await realpath(tmpdir());
 const logDirectory = join(profilePath, "logs");
@@ -40,17 +48,34 @@ const environment = {
 };
 
 let hadPriorFailure = false;
+let packagedApp;
 try {
   if (process.env.E2E_SKIP_BUILD !== "1") {
     const buildExit = await runCommand(
       process.execPath,
-      [resolve(repoRoot, "scripts/cef/run-tauri.mjs"), ...buildArguments(process.platform)],
+      [
+        resolve(repoRoot, "scripts/cef/run-tauri.mjs"),
+        ...buildArguments(process.platform, packaged),
+      ],
       { cwd: repoRoot, env: environment, timeoutMs: E2E_BUILD_TIMEOUT_MS },
     );
     if (buildExit !== 0) process.exitCode = buildExit;
   }
 
   if (!process.exitCode) {
+    if (packaged) {
+      packagedApp = await preparePackagedApp({
+        platform: process.platform,
+        cargoTargetDir,
+        profilePath,
+        run: (command, args) => runCommand(
+          command,
+          args,
+          { cwd: repoRoot, env: environment, timeoutMs: E2E_JOURNEY_TIMEOUT_MS },
+        ),
+      });
+      environment.E2E_APP_BINARY = packagedApp.binaryPath;
+    }
     process.exitCode = await runCommand(
       process.execPath,
       [resolve(repoRoot, "node_modules/@wdio/cli/bin/wdio.js"), "run", "wdio.conf.ts"],
@@ -68,6 +93,14 @@ try {
       await reportNativeDiagnostics(logDirectory);
     } catch {
       process.stderr.write("Native diagnostic collection failed.\n");
+    }
+  }
+  if (packagedApp) {
+    try {
+      await packagedApp.cleanup();
+    } catch {
+      process.stderr.write("Packaged E2E cleanup failed.\n");
+      process.exitCode = 1;
     }
   }
   await cleanupProfile(profilePath, {

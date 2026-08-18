@@ -24,6 +24,7 @@
     "test:cef": "node --test scripts/cef/cef-extract.test.mjs scripts/cef/cef-supervision-contracts.test.mjs scripts/cef/macos-runtime-profile.test.mjs scripts/cef/tauri-bundle-marker.test.mjs scripts/cef/tauri-bundle-request.test.mjs scripts/cef/windows-sha256.test.mjs",
     "test:extensions-host": "node scripts/extensions/prepare-extension-host.mjs --dev && node --test scripts/extensions/*.test.mjs",
     "test:e2e": "node scripts/e2e/run.mjs",
+    "test:e2e:packaged": "node scripts/e2e/run-packaged.mjs",
     "test:e2e-runner": "node --test scripts/e2e/*.test.mjs",
     "test:coverage": "vitest run --coverage",
     "test:install": "bash scripts/test-install-sh.sh && node --test scripts/installers-security.test.mjs && npm run test:package-migration",

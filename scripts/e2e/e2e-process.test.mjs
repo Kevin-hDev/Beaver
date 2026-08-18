@@ -21,6 +21,10 @@ const {
 const ciSource = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const mainSource = readFileSync(new URL("../../src-tauri/src/main.rs", import.meta.url), "utf8");
 const runnerSource = readFileSync(new URL("./run.mjs", import.meta.url), "utf8");
+const packagedRunnerSource = readFileSync(
+  new URL("./run-packaged.mjs", import.meta.url),
+  "utf8",
+);
 const wdioSource = readFileSync(new URL("../../wdio.conf.ts", import.meta.url), "utf8");
 const macObserverSource = readFileSync(new URL("./macos-app-observer.mjs", import.meta.url), "utf8");
 const nativeSmokeSource = readFileSync(
@@ -49,6 +53,22 @@ test("the E2E build always enables the isolated feature", () => {
     "build", "--debug", "--features", "e2e", "--config",
     "src-tauri/tauri.e2e.conf.json", "--bundles", "app",
   ]);
+  assert.deepEqual(buildArguments("win32"), [
+    "build", "--debug", "--features", "e2e", "--config",
+    "src-tauri/tauri.e2e.conf.json", "--no-bundle",
+  ]);
+  assert.deepEqual(buildArguments("win32", true), [
+    "build", "--debug", "--features", "e2e", "--config",
+    "src-tauri/tauri.e2e.conf.json", "--bundles", "nsis",
+  ]);
+});
+
+test("the packaged runner selects the packaged binary before WebDriver", () => {
+  assert.match(packagedRunnerSource, /process\.env\.E2E_PACKAGED = "1"/u);
+  assert.match(packagedRunnerSource, /await import\("\.\/run\.mjs"\)/u);
+  const preparation = runnerSource.indexOf("await preparePackagedApp({");
+  const webdriver = runnerSource.indexOf("node_modules/@wdio/cli/bin/wdio.js");
+  assert.ok(preparation >= 0 && webdriver > preparation);
 });
 
 test("the E2E binary path is platform specific", () => {
@@ -199,8 +219,8 @@ test("CI runs the real CEF journey on Windows and macOS only", () => {
     ciSource.indexOf("  backend-macos-native:"),
     ciSource.indexOf("  backend-windows:"),
   );
-  assert.match(windowsJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e/u);
-  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e/u);
+  assert.match(windowsJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged/u);
+  assert.match(macJob, /E2E_REQUIRE_CEF_SMOKE: "1"[\s\S]*npm run test:e2e:packaged/u);
   const extensionHostInstall = /npm ci --ignore-scripts --omit=dev --prefix src-tauri\/resources\/extension-host/u;
   assert.match(windowsJob, extensionHostInstall);
   assert.match(macJob, extensionHostInstall);
