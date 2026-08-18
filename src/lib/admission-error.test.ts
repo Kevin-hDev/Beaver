@@ -20,6 +20,8 @@ const expected = [
   ["service-work-capacity-reached", "errors.admission.serviceCapacity"],
   ["gateway-shutting-down", "errors.admission.gatewayShuttingDown"],
   ["gateway-busy", "errors.admission.gatewayBusy"],
+  ["active-stream-limit-reached", "errors.admission.activeStreamCapacity"],
+  ["stream-replaced", "errors.admission.streamReplaced"],
 ] as const;
 
 const t = ((key: string) => key) as TFunction;
@@ -35,16 +37,16 @@ describe("admission-error", () => {
     expect(admissionErrorMessage("/private/session.json", t)).toBe("errors.operationFailed");
   });
 
-  it("expose exactement les six codes publics", () => {
+  it("expose exactement les huit codes publics", () => {
     expect(ADMISSION_ERROR_CODES).toEqual(expected.map(([code]) => code));
   });
 
   it.each([
     ["en", en], ["fr", fr], ["es", es], ["de", de],
     ["it", itCatalog], ["zh", zh], ["ja", ja],
-  ])("traduit les six codes en %s", (_language, catalog) => {
+  ])("traduit les huit codes en %s", (_language, catalog) => {
     const admission = catalog.errors.admission;
-    expect(Object.values(admission)).toHaveLength(6);
+    expect(Object.values(admission)).toHaveLength(8);
     expect(Object.values(admission).every((value) => value.trim().length > 0)).toBe(true);
   });
 });

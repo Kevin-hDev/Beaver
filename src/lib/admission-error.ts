@@ -7,6 +7,8 @@ export const ADMISSION_ERROR_CODES = [
   "service-work-capacity-reached",
   "gateway-shutting-down",
   "gateway-busy",
+  "active-stream-limit-reached",
+  "stream-replaced",
 ] as const;
 
 type AdmissionErrorCode = typeof ADMISSION_ERROR_CODES[number];
@@ -20,6 +22,8 @@ const ADMISSION_ERROR_KEYS = {
   "service-work-capacity-reached": "errors.admission.serviceCapacity",
   "gateway-shutting-down": "errors.admission.gatewayShuttingDown",
   "gateway-busy": "errors.admission.gatewayBusy",
+  "active-stream-limit-reached": "errors.admission.activeStreamCapacity",
+  "stream-replaced": "errors.admission.streamReplaced",
 } as const;
 const KNOWN_CODES = new Set<string>(ADMISSION_ERROR_CODES);
 

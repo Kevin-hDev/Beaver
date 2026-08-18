@@ -1,4 +1,6 @@
-use super::agent_chat_streams::replace_active_stream;
+use super::agent_chat_streams::{
+    replace_active_stream, ACTIVE_STREAM_LIMIT_REACHED, STREAM_REPLACED,
+};
 use crate::services::agent_local::subagent_registry;
 use crate::ActiveStreams;
 use std::collections::HashMap;
@@ -114,10 +116,7 @@ async fn later_start_wins_while_previous_cancellation_is_suspended() {
     let winner_owns_child = child_cancel.is_cancelled();
     subagent_registry::unregister(&child_id).await;
 
-    assert!(
-        first_result.is_err(),
-        "le démarrage perdant continue vers le writer"
-    );
+    assert_eq!(first_result, Err(STREAM_REPLACED.to_string()));
     assert_eq!(tracked_count, 1);
     assert_eq!(tracked_generation, 2);
     assert_eq!(tracked_request, "request-b");
@@ -126,6 +125,34 @@ async fn later_start_wins_while_previous_cancellation_is_suspended() {
         winner_owns_child,
         "l'enfant appartient encore au writer perdant"
     );
+}
+
+#[tokio::test]
+async fn a_new_session_is_rejected_with_the_stable_capacity_code() {
+    let streams = ActiveStreams(Mutex::new(HashMap::new()));
+    let mut map = streams.0.lock().await;
+    for generation in
+        0..crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
+    {
+        map.insert(
+            id(),
+            (CancellationToken::new(), generation as u64, id(), inbox()),
+        );
+    }
+    drop(map);
+
+    let result = replace_active_stream(
+        &streams,
+        &id(),
+        CancellationToken::new(),
+        0,
+        inbox(),
+        |_| async {},
+        || async { id() },
+    )
+    .await;
+
+    assert_eq!(result, Err(ACTIVE_STREAM_LIMIT_REACHED.to_string()));
 }
 
 fn id() -> String {

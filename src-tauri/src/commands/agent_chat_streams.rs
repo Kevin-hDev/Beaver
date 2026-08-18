@@ -3,6 +3,9 @@ use std::future::Future;
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
+pub(crate) const ACTIVE_STREAM_LIMIT_REACHED: &str = "active-stream-limit-reached";
+pub(crate) const STREAM_REPLACED: &str = "stream-replaced";
+
 pub(crate) type StreamEntry = (
     CancellationToken,
     u64,
@@ -31,7 +34,7 @@ where
             >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
             && !map.contains_key(session_id)
         {
-            return Err("Trop de flux actifs simultanément".to_string());
+            return Err(ACTIVE_STREAM_LIMIT_REACHED.to_string());
         }
     }
     let request_id = start_request().await;
@@ -41,7 +44,7 @@ where
             >= crate::services::agent_local::agent_work_supervision::MAX_ACTIVE_AGENT_STREAMS
             && !map.contains_key(session_id)
         {
-            return Err("Trop de flux actifs simultanément".to_string());
+            return Err(ACTIVE_STREAM_LIMIT_REACHED.to_string());
         }
         let old_stream = map.insert(
             session_id.to_string(),
@@ -62,7 +65,7 @@ where
     );
     if !is_current {
         cancel.cancel();
-        return Err("Requête remplacée par un flux plus récent".to_string());
+        return Err(STREAM_REPLACED.to_string());
     }
     Ok(request_id)
 }

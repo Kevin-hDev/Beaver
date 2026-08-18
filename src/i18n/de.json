@@ -1132,7 +1132,9 @@
       "serviceShuttingDown": "Dieser Dienst wird beendet. Versuche es gleich erneut.",
       "serviceCapacity": "Es laufen bereits zu viele Vorgänge. Versuche es gleich erneut.",
       "gatewayShuttingDown": "Die Nachrichtenkanäle werden beendet. Versuche es gleich erneut.",
-      "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut."
+      "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut.",
+      "activeStreamCapacity": "Zu viele Unterhaltungen erzeugen bereits Antworten. Versuche es gleich erneut.",
+      "streamReplaced": "Eine neuere Anfrage hat diese Antwort ersetzt."
     },
     "localStore": {
       "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Lösche sie nicht: Ohne Sicherung geht dieser Verlauf beim Neustart verloren und Beaver kann nicht mehr garantieren, dass ein als nativ angezeigter Ollama-Prompt wirklich das Original ist.",

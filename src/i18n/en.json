@@ -1137,7 +1137,9 @@
       "serviceShuttingDown": "This service is stopping. Try again shortly.",
       "serviceCapacity": "Too many operations are already running. Try again shortly.",
       "gatewayShuttingDown": "Messaging channels are stopping. Try again shortly.",
-      "gatewayBusy": "Too many messages are already being processed. Try again shortly."
+      "gatewayBusy": "Too many messages are already being processed. Try again shortly.",
+      "activeStreamCapacity": "Too many conversations are already generating responses. Try again shortly.",
+      "streamReplaced": "A newer request replaced this response."
     },
     "localStore": {
       "ollamaCustomization": "The Ollama customization file is unreadable. Restore “ollama-custom-models.json” from a backup in Settings > Advanced > Beaver data. Do not delete it: without a backup, restarting loses this history and Beaver can no longer guarantee that a prompt shown as native Ollama is truly the original.",

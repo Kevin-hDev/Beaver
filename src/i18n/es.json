@@ -1132,7 +1132,9 @@
       "serviceShuttingDown": "Este servicio se está deteniendo. Inténtalo de nuevo en breve.",
       "serviceCapacity": "Ya hay demasiadas operaciones en curso. Inténtalo de nuevo en breve.",
       "gatewayShuttingDown": "Los canales de mensajería se están deteniendo. Inténtalo de nuevo en breve.",
-      "gatewayBusy": "Ya se están procesando demasiados mensajes. Inténtalo de nuevo en breve."
+      "gatewayBusy": "Ya se están procesando demasiados mensajes. Inténtalo de nuevo en breve.",
+      "activeStreamCapacity": "Ya hay demasiadas conversaciones generando respuestas. Inténtalo de nuevo en breve.",
+      "streamReplaced": "Una solicitud más reciente sustituyó esta respuesta."
     },
     "localStore": {
       "ollamaCustomization": "El archivo de personalización de Ollama no se puede leer. Restaura «ollama-custom-models.json» desde una copia de seguridad en Ajustes > Avanzado > Datos de Beaver. No lo elimines: sin copia, al reiniciar se perderá este historial y Beaver ya no podrá garantizar que un prompt mostrado como nativo de Ollama sea realmente el original.",
