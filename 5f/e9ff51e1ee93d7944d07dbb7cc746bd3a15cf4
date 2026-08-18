@@ -1,0 +1,9 @@
+Jalon 4 - frontieres de persistance du profil fermees
+
+Corrections: lecture des projets, sessions et index bornee et reservee aux fichiers reguliers; maximum 4096 projets/index et validation des identifiants dupliques; propagation fail-closed des erreurs projets jusqu'aux preflights et traduction dediee dans les 7 langues. Les cinq read-modify-write identifies possedent maintenant un verrou unique. Le nettoyage de sessions passe par l'autorite document.
+
+Ecriture atomique: permissions reparees avant publication; temporaire aleatoire supprime par RAII a toute sortie; une erreur de sync parent apres rename est tracee comme durabilite non confirmee mais ne devient pas un faux echec retryable. Le namespace .<cible>.<nonce CSPRNG 32 hex>.tmp est reserve; les residus vieux d'une heure sont purges par un parcours borne (16 niveaux, 65536 entrees), les temporaires recents et symlinks sont preserves. Config et migration propagent leurs contrats stables.
+
+Preuves ciblees finales: private_store temp cleanup 5/5; cutpoints 5/5; project_store 5/5; session_index 12/12; session document 2/2; agent_working_dir 9/9; agent_send_preflight 3/3; frontend projets/directory/contrat 22/22. cargo fmt --check vert; clippy all-targets normal et e2e verts; lint et tsc verts.
+
+Preuves larges: npm test vert (448 fichiers, 2401 tests frontend, 50 build, 7 CI, 38 CEF plus 1 Windows-only ignore, 69 runner E2E, 53 extension host). Filtre Ollama officiel 319 verts plus 1 ignore. Suite Rust globale hors dette connue: 3650 verts, 0 echec, 3 ignores; exclusions explicites: updater handoff connu et famille PTY bloquante deja reservee au chantier terminal. La suite brute reste donc rouge/bloquante uniquement sur ces deux scopes preexistants; rien n'est presente comme vert total.
