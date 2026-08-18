@@ -1,0 +1,40 @@
+Validation Windows J4 — contrat de frontieres de marque.
+
+Cause : npm run test:brand-boundaries echouait sur la tete de branche. Ce test
+n'est pas execute par ci.yml : il ne tourne que dans release.yml, donc la CI de
+la PR restait verte alors que la publication aurait echoue. Le contrat fige un
+decompte exact des references internes de l'ancienne marque et quatre commits
+deja fusionnes en ont ajoute sans mettre a jour ce decompte.
+
+Origine exacte, mesuree en rejouant le test sur chaque commit dans un worktree
+detache :
+- d0c2864d, base main de la branche : contrat respecte, test vert.
+- 6359fd71 (macOS) : cl-go-dash 251 -> 254, dans scripts/e2e/packaged-app.mjs
+  et scripts/e2e/packaged-app.test.mjs.
+- e10ce2a8 (Windows) : clgo 101 -> 103, dans scripts/e2e/e2e-process.test.mjs
+  et src-tauri/tauri.e2e.windows.conf.json.
+- 4641fd5a (stockage) : CLGO 30 -> 32, dans src-tauri/scripts/prepare-cef-windows.ps1
+  et src-tauri/src/services/browser/windows_bundle_layout_tests.rs.
+- 217ff621 (Windows) : cl_go_dash 43 -> 45, dans scripts/build/vite-watch-target.test.mjs.
+
+Decision : mettre a jour les quatre compteurs plutot que de retirer les
+references. Chacune designe un identifiant interne reel et necessaire :
+la variable d'environnement CLGO_CEF_CARGO_FEATURES, le module
+cl_go_dash_lib.dll surveille par Vite, le dossier de donnees cl-go-dash et
+l'identifiant de configuration E2E. Le scanner les classe deja comme internes,
+la liste des references inconnues reste vide et le contrat des references
+visibles est inchange : aucune chaine vue par l'utilisateur n'est touchee.
+
+Portee : le decompte est global et unique, il ne peut donc pas etre corrige
+commit par commit. Ce correctif couvre mecaniquement deux commits Windows du
+perimetre, e10ce2a8 et 217ff621, et deux commits hors perimetre, 6359fd71 et
+4641fd5a. Aucun code de production n'est modifie.
+
+Preuves : test rouge d'abord, avec CLGO 32 attendu a 30, cl-go-dash 254 attendu
+a 251, clgo 103 attendu a 101 et cl_go_dash 45 attendu a 43 ; apres correctif
+npm run test:brand-boundaries 12/12, les trois assertions passant, y compris le
+contrat des references visibles.
+
+Recommandation au reviewer : ci.yml n'execute pas ce contrat, seul release.yml
+le fait. Tant que cet ecart existe, une regression de marque reste invisible
+jusqu'a la publication.
