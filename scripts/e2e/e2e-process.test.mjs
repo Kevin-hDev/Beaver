@@ -43,6 +43,10 @@ const commandsSource = readFileSync(
   new URL("../../src-tauri/src/commands/mod.rs", import.meta.url),
   "utf8",
 );
+const baseE2eConfig = JSON.parse(readFileSync(
+  new URL("../../src-tauri/tauri.e2e.conf.json", import.meta.url),
+  "utf8",
+));
 const windowsE2eConfig = JSON.parse(readFileSync(
   new URL("../../src-tauri/tauri.e2e.windows.conf.json", import.meta.url),
   "utf8",
@@ -69,8 +73,9 @@ test("the E2E build always enables the isolated feature", () => {
 });
 
 test("the Windows packaged build has an isolated product identity", () => {
+  assert.equal(baseE2eConfig.identifier, "com.clgo.dash.e2e");
   assert.equal(windowsE2eConfig.productName, "Beaver E2E");
-  assert.equal(windowsE2eConfig.identifier, "com.clgo.dash.e2e");
+  assert.equal(windowsE2eConfig.identifier, undefined);
   assert.equal(windowsE2eConfig.bundle.windows.nsis.installerHooks, null);
 });
 
