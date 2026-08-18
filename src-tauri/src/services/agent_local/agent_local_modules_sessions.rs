@@ -8,6 +8,7 @@ pub mod session_ops;
 pub mod session_order;
 pub mod session_security;
 pub mod session_store;
+mod session_store_document;
 mod session_store_compaction;
 pub mod session_workspace;
 pub(crate) mod session_store_messages;

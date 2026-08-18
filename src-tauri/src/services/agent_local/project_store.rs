@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
+const PROJECT_STORE_UNAVAILABLE: &str = "project-store-unavailable";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub id: String,
@@ -30,7 +32,7 @@ async fn write_atomic(projects: &[Project]) -> Result<(), String> {
     let data = serde_json::to_string_pretty(projects).map_err(|e| format!("Serialize: {e}"))?;
     crate::services::private_store::atomic_write_async(path, data.into_bytes())
         .await
-        .map_err(|_| "Project store unavailable".to_string())
+        .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())
 }
 
 pub async fn list() -> Result<Vec<Project>, String> {

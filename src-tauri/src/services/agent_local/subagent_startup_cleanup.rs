@@ -5,16 +5,16 @@
 //! forcément le résultat d'un crash ou d'une fermeture brutale précédente.
 //! On la reclasser en "interrupted" et on nettoie son worktree git associé.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 
 use super::project_store;
 use super::session_index;
-use super::session_store::validate_session_id;
+use super::session_store;
 use super::subagent_status;
-use super::types_session::{AgentSession, AgentSessionMeta};
+use super::types_session::AgentSessionMeta;
 
 const PRUNE_TIMEOUT_SECS: u64 = 3;
 
@@ -52,7 +52,7 @@ pub(crate) async fn cleanup_orphans_in_dir(
         .iter()
         .filter(|m| is_orphan_candidate(m, startup_cutoff))
     {
-        let mut session = match read_session_from_dir(sessions_dir, &meta.id).await {
+        let mut session = match session_store::read_from_dir(sessions_dir, &meta.id).await {
             Ok(session) => session,
             Err(_) => {
                 ::log::warn!("[startup-cleanup] lecture session impossible");
@@ -61,7 +61,10 @@ pub(crate) async fn cleanup_orphans_in_dir(
         };
         session.subagent_status = Some(subagent_status::INTERRUPTED.to_string());
 
-        if write_session_to_dir(sessions_dir, &session).await.is_err() {
+        if session_store::write_to_dir(sessions_dir, &session)
+            .await
+            .is_err()
+        {
             ::log::warn!("[startup-cleanup] mise à jour de session impossible");
             continue;
         }
@@ -77,7 +80,7 @@ pub(crate) async fn cleanup_orphans_in_dir(
     }
 
     if cleaned > 0 {
-        let _ = session_index::rebuild_index_from(sessions_dir).await;
+        session_index::rebuild_index_from(sessions_dir).await?;
     }
 
     Ok(cleaned)
@@ -87,28 +90,6 @@ fn is_orphan_candidate(meta: &AgentSessionMeta, startup_cutoff: DateTime<Utc>) -
     meta.parent_session_id.is_some()
         && meta.subagent_status.as_deref() == Some(subagent_status::RUNNING)
         && meta.updated_at.unwrap_or(meta.created_at) <= startup_cutoff
-}
-
-async fn read_session_from_dir(dir: &Path, id: &str) -> Result<AgentSession, String> {
-    let path = session_path(dir, id)?;
-    let data = tokio::fs::read_to_string(&path)
-        .await
-        .map_err(|_| "Session indisponible".to_string())?;
-    serde_json::from_str(&data).map_err(|_| "Session invalide".to_string())
-}
-
-async fn write_session_to_dir(dir: &Path, session: &AgentSession) -> Result<(), String> {
-    let path = session_path(dir, &session.id)?;
-    let data = serde_json::to_string_pretty(session)
-        .map_err(|_| "Mise à jour de session impossible".to_string())?;
-    crate::services::private_store::atomic_write_async(path, data.into_bytes())
-        .await
-        .map_err(|_| "Mise à jour de session impossible".to_string())
-}
-
-fn session_path(dir: &Path, id: &str) -> Result<PathBuf, String> {
-    validate_session_id(id)?;
-    Ok(dir.join(format!("{id}.json")))
 }
 
 /// Lance `git worktree prune` sur chaque projet connu, en parallèle et avec timeout.

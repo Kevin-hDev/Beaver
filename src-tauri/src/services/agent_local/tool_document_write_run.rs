@@ -3,19 +3,23 @@ use quick_xml::Writer;
 use std::io::Cursor;
 
 #[derive(Clone, Default)]
+/// Style appliqué à un run (segment de texte).
 pub(super) struct RunStyle {
     pub(super) bold: bool,
     pub(super) italic: bool,
     pub(super) underline: bool,
+    /// Couleur hex RRGGBB. Le caller reste l'autorité de validation.
     pub(super) color: Option<String>,
 }
 
 impl RunStyle {
+    /// Évite de produire un bloc de propriétés OOXML vide.
     fn has_any(&self) -> bool {
         self.bold || self.italic || self.underline || self.color.is_some()
     }
 }
 
+/// Extrait un style borné depuis l'objet JSON d'un segment.
 pub(super) fn parse_run_style(run: &serde_json::Value) -> Result<RunStyle, String> {
     let color = super::tool_office_utils::validate_color_hex(&run["color"], "color")?;
     Ok(RunStyle {
@@ -39,6 +43,7 @@ pub(super) fn write_run(
         write_properties(writer, style)?;
     }
 
+    // OOXML exige cet attribut pour conserver les espaces de début et de fin.
     let mut text_start = BytesStart::new("w:t");
     text_start.push_attribute(("xml:space", "preserve"));
     writer

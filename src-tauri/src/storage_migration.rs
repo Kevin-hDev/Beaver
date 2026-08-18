@@ -20,7 +20,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
         let legacy_marker = new.join(".migrated-from-cl-go");
         if !legacy_marker.exists() && cl_go_legacy.exists() {
             crate::storage_migration_files::copy_items(&cl_go_legacy, &new)?;
-            crate::services::private_store::atomic_write(&legacy_marker, b"ok")?;
+            write_migration_file(&legacy_marker, b"ok")?;
         }
     }
 
@@ -38,7 +38,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
         if let Some(wrong) = app_support_wrong {
             if !appsupport_marker.exists() && wrong.exists() {
                 crate::storage_migration_files::copy_items(&wrong, &new)?;
-                crate::services::private_store::atomic_write(&appsupport_marker, b"ok")?;
+                write_migration_file(&appsupport_marker, b"ok")?;
             }
         }
     }
@@ -50,7 +50,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
         if let Some(old) = appdata {
             if !win_marker.exists() && old.exists() {
                 crate::storage_migration_files::copy_items(&old, &new)?;
-                crate::services::private_store::atomic_write(&win_marker, b"ok")?;
+                write_migration_file(&win_marker, b"ok")?;
             }
         }
     }
@@ -99,7 +99,7 @@ fn init_base_structure(base: &std::path::Path) -> Result<(), String> {
     for (name, content) in json_defaults {
         let path = base.join(name);
         if !path.exists() {
-            crate::services::private_store::atomic_write(&path, content.as_bytes())?;
+            write_migration_file(&path, content.as_bytes())?;
         }
     }
 
@@ -113,11 +113,15 @@ fn init_base_structure(base: &std::path::Path) -> Result<(), String> {
     for name in &empty_files {
         let path = base.join(name);
         if !path.exists() {
-            crate::services::private_store::atomic_write(&path, b"")?;
+            write_migration_file(&path, b"")?;
         }
     }
 
     Ok(())
+}
+
+fn write_migration_file(path: &std::path::Path, content: &[u8]) -> Result<(), String> {
+    crate::services::private_store::atomic_write(path, content).map_err(|_| migration_error())
 }
 
 fn migration_error() -> String {

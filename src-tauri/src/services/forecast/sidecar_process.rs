@@ -12,9 +12,10 @@ pub fn save_pid(pid: u32) {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let tmp = pid_path().with_extension("tmp");
-    if std::fs::write(&tmp, format!("{pid}:{now}")).is_ok() {
-        let _ = std::fs::rename(&tmp, pid_path());
+    if crate::services::private_store::atomic_write(&pid_path(), format!("{pid}:{now}").as_bytes())
+        .is_err()
+    {
+        ::log::warn!("[forecast] pid receipt unavailable");
     }
 }
 
@@ -113,5 +114,13 @@ mod tests {
             Some(42)
         );
         assert_eq!(probes.get(), 1);
+    }
+
+    #[test]
+    fn pid_receipt_uses_the_private_store_authority() {
+        let source = include_str!("sidecar_process.rs");
+
+        assert!(source.contains("private_store::atomic_write"));
+        assert!(!source.contains("with_extension(\"tmp\")"));
     }
 }

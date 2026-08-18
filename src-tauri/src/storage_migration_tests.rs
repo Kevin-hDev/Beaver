@@ -1,4 +1,4 @@
-use super::init_base_structure;
+use super::{init_base_structure, write_migration_file};
 
 const LEGACY_MEMORY_PATHS: &[&str] = &[
     "memory/archive",
@@ -35,5 +35,17 @@ fn existing_legacy_memory_is_preserved() {
     assert_eq!(
         std::fs::read_to_string(legacy.join("INDEX.md")).unwrap(),
         "contenu existant"
+    );
+}
+
+#[test]
+fn private_store_failures_preserve_the_migration_error_contract() {
+    let root = tempfile::tempdir().unwrap();
+    let occupied_target = root.path().join("marker");
+    std::fs::create_dir(&occupied_target).unwrap();
+
+    assert_eq!(
+        write_migration_file(&occupied_target, b"ok"),
+        Err("Erreur d'initialisation des données".to_string())
     );
 }

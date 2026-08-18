@@ -139,15 +139,21 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     )
     .await
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
-    let mut value = serde_json::to_value(session).map_err(|e| e.to_string())?;
-    super::session_permission_state::merge_into_serialized(&session.id, &mut value).await;
-    super::session_security::sanitize_session_value(&mut value);
-    super::session_store_compaction::compact_tool_history(&mut value);
-    let data = serde_json::to_string_pretty(&value).map_err(|e| e.to_string())?;
-    crate::services::private_store::atomic_write_async(path, data.into_bytes()).await?;
+    super::session_store_document::write_to_path(path, session).await?;
     let meta = crate::services::agent_local::session_index::meta_from_session(session);
     let _ = crate::services::agent_local::session_index::upsert_entry(meta).await;
     Ok(())
+}
+
+pub(crate) async fn read_from_dir(dir: &std::path::Path, id: &str) -> Result<AgentSession, String> {
+    super::session_store_document::read_from_dir(dir, id).await
+}
+
+pub(crate) async fn write_to_dir(
+    dir: &std::path::Path,
+    session: &AgentSession,
+) -> Result<(), String> {
+    super::session_store_document::write_to_dir(dir, session).await
 }
 
 pub async fn rename(id: &str, name: &str) -> Result<(), String> {
