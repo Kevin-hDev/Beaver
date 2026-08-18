@@ -1,0 +1,11 @@
+Validation Windows J4 — watcher Vite.
+
+Cause : le lanceur Windows force CARGO_TARGET_DIR vers <repo>/target pour partager les artefacts CEF, updater et build. Vite ignorait uniquement <repo>/src-tauri/target et tentait donc de surveiller target/debug/deps/cl_go_dash_lib.dll pendant que Cargo la verrouillait, ce qui terminait npm run tauri dev avec EBUSY.
+
+Decision : une seule liste cargoTargetDirs dans vite.config.ts couvre les deux emplacements Cargo possibles ; Vite ne surveille aucun artefact Rust.
+
+TDD : le nouveau test charge la configuration Vite reelle. Il a d'abord echoue sur target/debug/deps/cl_go_dash_lib.dll, puis passe apres le correctif.
+
+Preuves : npm run test:build-scripts (51/51) ; npm run lint ; npm run tauri dev : Vite pret, Cargo compile dans <repo>/target et Beaver demarre sans EBUSY.
+
+CI non lancee volontairement : validation locale avant la suite du jalon.
