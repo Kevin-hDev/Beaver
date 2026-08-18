@@ -21,3 +21,5 @@ Verification observed
 
 Decision
 The migration wrapper intentionally maps every private-store failure back to the pre-existing generic initialization error; this changes the persistence mechanism without changing its public IPC contract.
+
+Rectification apres re-review (2026-08-18): les compteurs de la note initiale etaient devenus perimes apres les dernieres iterations: storage_migration execute 10 tests et sidecar_process 3 au point releve par la review. La phrase every private-store failure etait trop large: repair_app_storage restait alors hors du wrapper. Le commit 5fe9ff51 ferme ensuite cette frontiere et documente les preuves finales.
