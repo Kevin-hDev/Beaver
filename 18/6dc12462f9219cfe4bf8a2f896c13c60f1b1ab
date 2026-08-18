@@ -15,8 +15,8 @@ Preuves locales lues
 - cargo check --locked --tests --target x86_64-pc-windows-msvc : vert.
 - git diff --check : vert.
 
-Validation distante requise
-- Le test exécutable reste à confirmer par le job Windows natif de la CI ; macOS ne peut que compiler cette cible MSVC.
+Validation distante au moment du commit
+- Le test exécutable devait encore être confirmé par Windows natif ; cette confirmation est consignée dans la section suivante.
 
 PREUVE CI DISTANTE — TÊTE EXACTE 186dc12462f9219cfe4bf8a2f896c13c60f1b1ab
 
@@ -33,7 +33,7 @@ Contrôles associés également verts : CodeQL actions/javascript/rust, RustSec,
 
 Conclusion : la dépendance manquante du harnais Windows est corrigée et prouvée sur Windows natif ; aucune autre régression CI observée sur la tête exacte.
 
-PASSATION JALON 4 — WINDOWS ET LINUX
+PASSATION JALON 4 — WINDOWS, LINUX ET MACOS
 
 Branche et tête autoritaire
 - Branche : codex/milestone-4-convergence
@@ -43,10 +43,10 @@ Branche et tête autoritaire
 
 État validé avant passation
 - Jalons 1, 1B, 2 et 3 déjà fusionnés et validés.
-- Jalon 4 : quatre passes de review ; zéro bloquant et zéro important de code sur la passe 4.
+- Jalon 4 : cinq passes de review ; zéro bloquant et zéro important de code sur la passe 5.
 - CI de la tête exacte : run 32149420467, 7/7 jobs applicatifs verts, audits et CodeQL verts.
-- macOS : parcours CEF natif vert sur la tête ; fermeture Cocoa coordonnée et récupération de repli déjà prouvées.
-- Windows CI : tests backend privés verts et parcours NSIS/CEF empaqueté vert en 44 min 56 s.
+- macOS CI : parcours CEF natif vert sur la tête. La preuve du Quitter Cocoa externe existe sur e1c4c002, mais elle précède le remaniement 9295ffba et doit donc être rejouée sur la tête finale.
+- Windows CI : tests backend privés verts ; le parcours empaqueté a réellement installé le NSIS, démarré CEF, chargé une page puis désinstallé Beaver E2E en 44 min 56 s.
 - Linux CI : parcours WebView natif vert.
 
 Documents autoritaires à lire
@@ -57,8 +57,8 @@ Documents autoritaires à lire
 Ces documents peuvent être ignorés par Git selon la machine ; Kevin assure leur transfert si nécessaire. Les mettre à jour localement si une preuve ou une décision change.
 
 Preuves Windows restantes
-1. Sur la tête exacte, exécuter E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged avec protections Microsoft actives et sans exception antivirus ; conserver identifiant, heures, version installée et inventaire des résidus.
-2. Installer et lancer réellement le NSIS Beaver E2E isolé ; vérifier CEF Ready supervisé, page chargée, fermeture par croix puis tray, Job Object et descendants vides sous cinq secondes.
+1. Hors CI, sur une machine Windows réelle avec protections Microsoft actives et sans exception antivirus, rejouer E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged ; conserver identifiant, heures et inventaire des résidus. Cette étape complète la CI déjà verte par la preuve de l’environnement réel.
+2. La CI prouve déjà installation NSIS, CEF Ready, chargement de page et désinstallation. Vérifier manuellement ce qui reste : fermeture par croix puis tray, et Job Object avec descendants vides sous cinq secondes.
 3. Revalider la mise à jour Beaver et surtout le relancement automatique Windows avec helper transféré unique.
 4. Vérifier PTY/handles et une mise à jour Ollama avec renommage temporairement bloqué selon la matrice de la spec.
 
@@ -68,8 +68,12 @@ Preuves Linux restantes
 3. Vérifier native_browser désactivé et absence totale de helper CEF.
 4. Contrôler les processus et fichiers résiduels immédiatement puis après cinq secondes.
 
+Preuve macOS restante
+1. Sur la tête exacte, rejouer une vraie demande Quitter Cocoa externe, depuis le Dock ou AppleScript, et non une commande interne E2E.
+2. Vérifier la demande de fermeture coordonnée, la disparition de l’application et l’absence de sidecar ou descendant résiduel immédiatement puis après cinq secondes.
+
 Discipline de correction
 - Ne modifier le code qu’après reproduction et cause exacte.
 - Chaque correction reçoit son commit et sa Git note avec test, résultat et recommandation.
 - Si le code change, pousser la branche et les notes puis exiger une nouvelle CI complète trois OS verte sur la nouvelle tête.
-- Ne pas fusionner avant les preuves natives Windows/Linux et la Git note finale agrégée.
+- Ne pas fusionner avant les preuves natives Windows, Linux et macOS, puis la Git note finale agrégée.
