@@ -1169,8 +1169,6 @@
     "maxFiles": "最多 {{max}} 个文件",
     "fileTooLarge": "{{name}} 超过 20MB",
     "saveFailed": "保存失败",
-    "projectRenameFailed": "无法重命名项目",
-    "projectDeleteFailed": "无法删除项目",
     "projectOpenFailed": "无法打开文件夹",
     "sessionSaveFailed": "会话无法保存",
     "downloadFailed": "下载失败",

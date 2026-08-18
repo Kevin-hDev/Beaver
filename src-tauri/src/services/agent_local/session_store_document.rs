@@ -4,24 +4,43 @@ use std::path::{Path, PathBuf};
 
 const MAX_SESSION_FILE_BYTES: u64 = 32 * 1024 * 1024;
 
-pub(super) async fn read_from_dir(dir: &Path, id: &str) -> Result<AgentSession, String> {
-    read_from_path(path_in(dir, id)?).await
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum SessionReadError {
+    Unavailable,
+    Invalid,
 }
 
-pub(super) async fn read_from_path(path: PathBuf) -> Result<AgentSession, String> {
+impl SessionReadError {
+    pub(super) const fn message(self) -> &'static str {
+        match self {
+            Self::Unavailable => "Session indisponible",
+            Self::Invalid => "Session invalide",
+        }
+    }
+}
+
+pub(super) async fn read_from_dir(
+    dir: &Path,
+    id: &str,
+) -> Result<AgentSession, SessionReadError> {
+    let path = path_in(dir, id).map_err(|_| SessionReadError::Unavailable)?;
+    read_from_path(path).await
+}
+
+pub(super) async fn read_from_path(path: PathBuf) -> Result<AgentSession, SessionReadError> {
     let data = match crate::services::private_store::read_bounded_regular_async(
         path,
         MAX_SESSION_FILE_BYTES,
     )
     .await
-    .map_err(|_| "Session indisponible".to_string())?
+    .map_err(|_| SessionReadError::Unavailable)?
     {
         crate::services::private_store::BoundedFile::Missing => {
-            return Err("Session indisponible".to_string());
+            return Err(SessionReadError::Unavailable);
         }
         crate::services::private_store::BoundedFile::Content(data) => data,
     };
-    serde_json::from_slice(&data).map_err(|_| "Session invalide".to_string())
+    serde_json::from_slice(&data).map_err(|_| SessionReadError::Invalid)
 }
 
 pub(super) async fn write_to_dir(dir: &Path, session: &AgentSession) -> Result<(), String> {

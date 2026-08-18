@@ -1169,8 +1169,6 @@
     "maxFiles": "最大 {{max}} ファイル",
     "fileTooLarge": "{{name}} は 20MB を超えています",
     "saveFailed": "保存に失敗しました",
-    "projectRenameFailed": "プロジェクトの名前を変更できませんでした",
-    "projectDeleteFailed": "プロジェクトを削除できませんでした",
     "projectOpenFailed": "フォルダーを開けませんでした",
     "sessionSaveFailed": "セッションを保存できませんでした",
     "downloadFailed": "ダウンロードに失敗しました",

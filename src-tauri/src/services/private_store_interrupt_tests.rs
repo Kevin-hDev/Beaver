@@ -89,6 +89,14 @@ fn first_write_remains_complete_or_absent_at_every_cutpoint() {
             .expect("write before forced interruption");
         });
         assert!(interrupted.is_err());
+        let parent = path.parent().unwrap();
+        assert!(std::fs::read_dir(parent).unwrap().all(|entry| {
+            !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .ends_with(".tmp")
+        }));
         if path.exists() {
             assert_eq!(std::fs::read(&path).unwrap(), b"new");
         }
@@ -176,36 +184,49 @@ fn user_profile_writers_share_the_atomic_store_authority() {
         "session cleanup must use the session document authority"
     );
 
-    for (name, source, lock) in [
+    for (name, source, lock, private_writer) in [
         (
             "favorites",
             include_str!("favorite_models.rs"),
             "FAVORITES_LOCK",
+            "fn write_atomic(",
         ),
         (
             "personality",
             include_str!("personality_injection.rs"),
             "INJECTION_LOCK",
+            "fn write_state_unlocked(",
         ),
         (
             "forecast",
             include_str!("forecast/model_config/storage.rs"),
             "CONFIG_LOCK",
+            "fn write_all(",
         ),
         (
             "agent",
             include_str!("agent_local/agent_settings.rs"),
             "SETTINGS_LOCK",
+            "fn save(",
         ),
         (
             "projects",
             include_str!("agent_local/project_store.rs"),
             "PROJECT_STORE_LOCK",
+            "fn write_atomic(",
         ),
     ] {
         assert!(
             source.contains(lock),
             "RMW writer {name} lacks its owner lock"
+        );
+        assert!(
+            source.contains(private_writer)
+                && !source.lines().any(|line| {
+                    let line = line.trim_start();
+                    line.starts_with("pub") && line.contains(private_writer)
+                }),
+            "RMW writer {name} exposes its lock-free persistence helper"
         );
     }
 }

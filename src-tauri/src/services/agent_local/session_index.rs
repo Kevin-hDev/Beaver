@@ -80,6 +80,7 @@ pub async fn rebuild_index() -> Result<Vec<AgentSessionMeta>, String> {
 
 pub async fn rebuild_index_from(dir: &Path) -> Result<Vec<AgentSessionMeta>, String> {
     let mut entries = Vec::new();
+    let mut evicted = 0_usize;
     if !dir.exists() {
         return Ok(entries);
     }
@@ -93,11 +94,19 @@ pub async fn rebuild_index_from(dir: &Path) -> Result<Vec<AgentSessionMeta>, Str
             continue;
         }
         if let Ok(session) = super::session_store_document::read_from_path(path).await {
-            if entries.len() >= super::session_index_io::MAX_INDEX_ENTRIES {
-                return Err("index indisponible".to_string());
-            }
             entries.push(meta_from_session(&session));
+            if entries.len() >= super::session_index_io::MAX_REBUILD_BUFFER_ENTRIES {
+                let bounded = super::session_index_io::retain_recent(entries);
+                entries = bounded.0;
+                evicted = evicted.saturating_add(bounded.1);
+            }
         }
+    }
+    let bounded = super::session_index_io::retain_recent(entries);
+    entries = bounded.0;
+    evicted = evicted.saturating_add(bounded.1);
+    if evicted > 0 {
+        ::log::warn!("[session-index] rebuild-evicted-oldest-metadata count={evicted}");
     }
     write_index_to(dir, &entries).await?;
     Ok(entries)

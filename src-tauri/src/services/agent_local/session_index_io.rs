@@ -5,6 +5,7 @@ use std::time::SystemTime;
 
 pub(super) const MAX_INDEX_FILE_BYTES: u64 = 4 * 1024 * 1024;
 pub(super) const MAX_INDEX_ENTRIES: usize = 4_096;
+pub(super) const MAX_REBUILD_BUFFER_ENTRIES: usize = MAX_INDEX_ENTRIES * 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct IndexFingerprint {
@@ -63,8 +64,11 @@ pub(crate) async fn write_index_to(
     dir: &Path,
     entries: &[AgentSessionMeta],
 ) -> Result<(), String> {
-    if entries.len() > MAX_INDEX_ENTRIES {
-        return Err("index invalide".to_string());
+    let (entries, evicted) = retain_recent(entries.to_vec());
+    if evicted > 0 {
+        // Session documents remain authoritative and directly addressable; only
+        // the bounded conversation listing evicts its oldest metadata entries.
+        ::log::warn!("[session-index] evicted-oldest-metadata count={evicted}");
     }
     tokio::fs::create_dir_all(dir)
         .await
@@ -74,4 +78,19 @@ pub(crate) async fn write_index_to(
     session_security::sanitize_session_value(&mut value);
     let data = serde_json::to_vec_pretty(&value).map_err(|_| "index invalide".to_string())?;
     crate::services::private_store::atomic_write_async(path, data).await
+}
+
+pub(super) fn retain_recent(
+    mut entries: Vec<AgentSessionMeta>,
+) -> (Vec<AgentSessionMeta>, usize) {
+    let original_len = entries.len();
+    entries.sort_by(|left, right| {
+        let left_activity = left.updated_at.unwrap_or(left.created_at);
+        let right_activity = right.updated_at.unwrap_or(right.created_at);
+        right_activity
+            .cmp(&left_activity)
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    entries.truncate(MAX_INDEX_ENTRIES);
+    (entries, original_len.saturating_sub(MAX_INDEX_ENTRIES))
 }

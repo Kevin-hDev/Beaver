@@ -5,6 +5,19 @@ const MAX_SCAN_DEPTH: usize = 16;
 const MAX_SCAN_ENTRIES: usize = 65_536;
 const STALE_TEMP_AGE: Duration = Duration::from_secs(60 * 60);
 
+pub(super) fn purge_stale_atomic_temps_logged(root: &Path) {
+    let started = std::time::Instant::now();
+    let result = purge_stale_atomic_temps(root);
+    ::log::info!(
+        "[private-store] operation=temp-cleanup elapsed_ms={}",
+        started.elapsed().as_millis()
+    );
+    if result.is_err() {
+        // Hygiene must never make an otherwise valid profile impossible to open.
+        ::log::warn!("[private-store] operation=temp-cleanup result=incomplete");
+    }
+}
+
 pub(super) fn purge_stale_atomic_temps(root: &Path) -> Result<(), String> {
     let mut stack = vec![(root.to_path_buf(), 0_usize)];
     let mut scanned = 0_usize;

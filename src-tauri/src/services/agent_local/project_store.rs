@@ -14,6 +14,9 @@ const MAX_PROJECT_NAME_BYTES: usize = 512;
 const MAX_PROJECT_PATH_BYTES: usize = 32_768;
 static PROJECT_STORE_LOCK: Mutex<()> = Mutex::const_new(());
 
+#[path = "project_store_recovery.rs"]
+mod recovery;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub id: String,
@@ -28,8 +31,17 @@ fn projects_path() -> PathBuf {
 }
 
 async fn read_all() -> Result<Vec<Project>, String> {
+    let _guard = PROJECT_STORE_LOCK.lock().await;
+    read_all_unlocked().await
+}
+
+async fn read_all_unlocked() -> Result<Vec<Project>, String> {
+    read_all_from(&projects_path()).await
+}
+
+async fn read_all_from(path: &Path) -> Result<Vec<Project>, String> {
     let data = match crate::services::private_store::read_bounded_regular_async(
-        projects_path(),
+        path.to_path_buf(),
         MAX_PROJECT_STORE_BYTES,
     )
     .await
@@ -38,10 +50,15 @@ async fn read_all() -> Result<Vec<Project>, String> {
         crate::services::private_store::BoundedFile::Missing => return Ok(Vec::new()),
         crate::services::private_store::BoundedFile::Content(data) => data,
     };
-    let projects: Vec<Project> = serde_json::from_slice(&data)
-        .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())?;
-    validate_projects(&projects)?;
-    Ok(projects)
+    match serde_json::from_slice::<Vec<Project>>(&data)
+        .map_err(|_| PROJECT_STORE_UNAVAILABLE.to_string())
+        .and_then(|projects| {
+            validate_projects(&projects)?;
+            Ok(projects)
+        }) {
+        Ok(projects) => Ok(projects),
+        Err(_) => recovery::backup_and_reset(path, data).await,
+    }
 }
 
 async fn write_atomic(projects: &[Project]) -> Result<(), String> {
@@ -69,7 +86,7 @@ pub async fn add(path: &str) -> Result<Project, String> {
     let canonical = canonical_existing_dir(Path::new(path))?;
     super::directory_access::ensure_allowed(&canonical)?;
     let canonical_path = canonical.to_string_lossy().to_string();
-    let mut projects = read_all().await?;
+    let mut projects = read_all_unlocked().await?;
     if let Some(existing) = projects
         .iter()
         .find(|p| project_matches_canonical(&p.path, &canonical))
@@ -134,7 +151,7 @@ fn path_is_inside_project(canonical_path: &Path, project_path: &str) -> bool {
 
 pub async fn rename(id: &str, name: &str) -> Result<(), String> {
     let _guard = PROJECT_STORE_LOCK.lock().await;
-    let mut projects = read_all().await?;
+    let mut projects = read_all_unlocked().await?;
     let p = projects
         .iter_mut()
         .find(|p| p.id == id)
@@ -145,7 +162,7 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub async fn delete(id: &str) -> Result<(), String> {
     let _guard = PROJECT_STORE_LOCK.lock().await;
-    let mut projects = read_all().await?;
+    let mut projects = read_all_unlocked().await?;
     projects.retain(|p| p.id != id);
     for (i, p) in projects.iter_mut().enumerate() {
         p.order = i;
@@ -163,7 +180,7 @@ pub async fn reorder(ids: Vec<String>) -> Result<(), String> {
         return Err(PROJECT_STORE_UNAVAILABLE.to_string());
     }
     let _guard = PROJECT_STORE_LOCK.lock().await;
-    let mut projects = read_all().await?;
+    let mut projects = read_all_unlocked().await?;
     for (i, id) in ids.iter().enumerate() {
         if let Some(p) = projects.iter_mut().find(|p| &p.id == id) {
             p.order = i;

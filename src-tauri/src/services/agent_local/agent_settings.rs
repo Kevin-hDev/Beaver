@@ -85,7 +85,7 @@ pub async fn load() -> AgentSettings {
     }
 }
 
-pub async fn save(settings: &AgentSettings) -> Result<(), String> {
+async fn save(settings: &AgentSettings) -> Result<(), String> {
     if !is_valid_permission_mode(&settings.permission_mode) {
         return Err("permission_mode invalide".into());
     }

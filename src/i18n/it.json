@@ -1169,8 +1169,6 @@
     "maxFiles": "Massimo {{max}} file",
     "fileTooLarge": "{{name}} supera i 20 MB",
     "saveFailed": "Salvataggio non riuscito",
-    "projectRenameFailed": "Impossibile rinominare il progetto",
-    "projectDeleteFailed": "Impossibile eliminare il progetto",
     "projectOpenFailed": "Impossibile aprire la cartella",
     "sessionSaveFailed": "Impossibile salvare la sessione",
     "downloadFailed": "Download non riuscito",

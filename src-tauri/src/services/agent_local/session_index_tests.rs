@@ -28,16 +28,41 @@ async fn index_reader_rejects_an_oversized_sparse_file() {
 }
 
 #[tokio::test]
-async fn index_writer_rejects_an_unbounded_entry_collection() {
+async fn index_writer_evicts_the_oldest_metadata() {
     let tmp = TempDir::new().unwrap();
+    let base = Utc::now();
     let entries = (0..=session_index_io::MAX_INDEX_ENTRIES)
-        .map(|index| test_meta(&format!("session-{index}"), 0))
+        .map(|index| {
+            let mut meta = test_meta(&format!("session-{index}"), 0);
+            meta.updated_at = Some(base + chrono::Duration::seconds(index as i64));
+            meta
+        })
         .collect::<Vec<_>>();
 
-    assert!(session_index_io::write_index_to(tmp.path(), &entries)
+    session_index_io::write_index_to(tmp.path(), &entries)
         .await
-        .is_err());
-    assert!(!tmp.path().join("index.json").exists());
+        .unwrap();
+    let stored = load_index(tmp.path()).await;
+    assert_eq!(stored.len(), session_index_io::MAX_INDEX_ENTRIES);
+    assert_eq!(stored[0].id, format!("session-{}", session_index_io::MAX_INDEX_ENTRIES));
+    assert!(!stored.iter().any(|meta| meta.id == "session-0"));
+}
+
+#[tokio::test]
+async fn rebuild_keeps_the_latest_sessions_after_the_limit() {
+    let tmp = TempDir::new().unwrap();
+    let base = Utc::now();
+    for index in 0..=session_index_io::MAX_INDEX_ENTRIES {
+        let mut session = test_session(&format!("session-{index}"), "Session", true);
+        session.created_at = base + chrono::Duration::seconds(index as i64);
+        persist(tmp.path(), &session).await;
+    }
+
+    let rebuilt = rebuild_index_from(tmp.path()).await.unwrap();
+
+    assert_eq!(rebuilt.len(), session_index_io::MAX_INDEX_ENTRIES);
+    assert_eq!(rebuilt[0].id, format!("session-{}", session_index_io::MAX_INDEX_ENTRIES));
+    assert!(!rebuilt.iter().any(|meta| meta.id == "session-0"));
 }
 
 #[tokio::test]

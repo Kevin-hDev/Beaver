@@ -50,13 +50,13 @@ fn write_with_hook(
         hook(AtomicWriteStage::PermissionsRepaired);
         super::replace_file(&temp, path)?;
         hook(AtomicWriteStage::Replaced);
-        finish_parent_sync(super::sync_parent(parent))?;
+        report_parent_sync(super::sync_parent(parent));
         hook(AtomicWriteStage::ParentSynced);
         Ok(())
     })()
 }
 
-fn finish_parent_sync(result: Result<(), String>) -> Result<(), String> {
+fn report_parent_sync(result: Result<(), String>) {
     if result.is_err() {
         // The destination is already authoritative. Returning a retryable error could
         // repeat a read-modify-write operation against a value that was committed.
@@ -64,7 +64,6 @@ fn finish_parent_sync(result: Result<(), String>) -> Result<(), String> {
             "[private-store] operation=parent-sync result=failed publication=complete durability=unconfirmed"
         );
     }
-    Ok(())
 }
 
 struct TempCleanup<'a>(&'a Path);
@@ -79,6 +78,6 @@ impl Drop for TempCleanup<'_> {
 mod tests {
     #[test]
     fn post_publication_sync_failure_is_not_reported_as_a_retryable_write_failure() {
-        assert!(super::finish_parent_sync(Err("sync failed".to_string())).is_ok());
+        super::report_parent_sync(Err("sync failed".to_string()));
     }
 }

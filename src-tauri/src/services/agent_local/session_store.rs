@@ -119,10 +119,9 @@ pub async fn get(id: &str) -> Result<AgentSession, String> {
     .map_err(|_| "Session introuvable".to_string())?;
     super::session_store_document::read_from_path(path)
         .await
-        .map_err(|error| {
-            if error == "Session invalide" {
-                error
-            } else {
+        .map_err(|error| match error {
+            super::session_store_document::SessionReadError::Invalid => error.message().to_string(),
+            super::session_store_document::SessionReadError::Unavailable => {
                 "Session introuvable".to_string()
             }
         })
@@ -151,7 +150,9 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
 }
 
 pub(crate) async fn read_from_dir(dir: &std::path::Path, id: &str) -> Result<AgentSession, String> {
-    super::session_store_document::read_from_dir(dir, id).await
+    super::session_store_document::read_from_dir(dir, id)
+        .await
+        .map_err(|error| error.message().to_string())
 }
 
 pub(crate) async fn write_to_dir(

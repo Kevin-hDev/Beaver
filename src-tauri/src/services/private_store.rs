@@ -91,10 +91,7 @@ pub fn repair_path(path: &Path) -> Result<(), String> {
 pub fn repair_app_storage() -> Result<(), String> {
     let root = crate::services::paths::data_dir();
     create_private_dirs(&root)?;
-    if temp_cleanup::purge_stale_atomic_temps(&root).is_err() {
-        // Hygiene must never make an otherwise valid profile impossible to open.
-        ::log::warn!("[private-store] operation=temp-cleanup result=incomplete");
-    }
+    temp_cleanup::purge_stale_atomic_temps_logged(&root);
     for directory in [
         root.join("agent-sessions"),
         root.join("forecast-notes"),

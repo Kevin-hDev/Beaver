@@ -77,3 +77,38 @@ fn persisted_project_collection_is_bounded() {
         Err(PROJECT_STORE_UNAVAILABLE.to_string())
     );
 }
+
+#[tokio::test]
+async fn corrupt_project_document_is_backed_up_then_reset() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("projects.json");
+    let corrupt = b"{not-json";
+    std::fs::write(&path, corrupt).unwrap();
+
+    let projects = super::read_all_from(&path).await.unwrap();
+
+    assert!(projects.is_empty());
+    assert_eq!(std::fs::read(&path).unwrap(), b"[]");
+    assert_eq!(
+        std::fs::read(root.path().join("projects.json.corrupted")).unwrap(),
+        corrupt
+    );
+}
+
+#[tokio::test]
+async fn invalid_project_collection_is_backed_up_then_reset() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("projects.json");
+    let duplicate = vec![project("same"), project("same")];
+    let corrupt = serde_json::to_vec(&duplicate).unwrap();
+    std::fs::write(&path, &corrupt).unwrap();
+
+    let projects = super::read_all_from(&path).await.unwrap();
+
+    assert!(projects.is_empty());
+    assert_eq!(std::fs::read(&path).unwrap(), b"[]");
+    assert_eq!(
+        std::fs::read(root.path().join("projects.json.corrupted")).unwrap(),
+        corrupt
+    );
+}
