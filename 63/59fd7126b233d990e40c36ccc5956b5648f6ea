@@ -1,0 +1,20 @@
+Milestone 4 macOS native quit convergence
+
+Reason
+The framework default menu layout and localized Quit label are not stable APIs, and external Cocoa terminate: requests bypass menu events entirely. Every native exit request must enter the single coordinated app_exit authority before any sidecar can survive the main process.
+
+Changes
+- Build the macOS application menu from public primitives and own one coordinated Quit item.
+- Install applicationShouldTerminate: before sidecar startup; external Quit is cancelled while app_exit performs cleanup.
+- Return Tauri build failures to main instead of panicking silently when menu construction fails.
+- Extract application construction into app_build.rs; startup behaviour is unchanged apart from the termination hook.
+
+Verification observed
+- cargo test macos_app_menu -- --test-threads=1: 2 passed.
+- cargo test macos_termination -- --test-threads=1: 1 passed.
+- cargo test app_build::tests -- --test-threads=1: 1 passed.
+- cargo check: passed.
+- Native macOS proof on 2026-08-18: npm run tauri dev started Beaver Dev pid 79557 and SearXNG pid 80231; AppleScript Quit reached the native termination hook, coordinated cleanup completed in 4.476 s, the global work registry was empty, native WebView descendants were 0, and both pids were confirmed absent afterward. AppleScript reported user-cancelled because applicationShouldTerminate intentionally returns NSTerminateCancel while app_exit owns termination.
+
+Limits
+This commit proves macOS only. Windows/Linux handoff and full CI remain pending.
