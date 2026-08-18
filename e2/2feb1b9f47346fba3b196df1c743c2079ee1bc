@@ -1,0 +1,52 @@
+Validation Windows J4 — suite Rust parallele.
+
+Cause : la suite parallele exigee par le jalon 4 echouait sur Windows quand la
+machine etait saturee. Deux tests depensaient un budget absolu sur le demarrage
+d'un vrai processus enfant. Le test MCP donnait 900 ms pour couvrir un delai
+protocolaire de 650 ms plus le lancement de Node ; le test Forecast donnait 2 s
+pour l'apparition du fichier PID de Python, puis mesurait l'annulation depuis un
+instant pris avant le spawn, ce qui melangeait demarrage et annulation.
+
+Reproduction : suite parallele, 3 echecs au premier run (MCP, Forecast et un
+troisieme decrit plus bas). Le test MCP a ensuite echoue 5 fois sur 5 avec une
+charge CPU sur les 20 coeurs, et 1 fois sur 1 en suite complete chargee, contre
+0 sur 8 au repos. Cause confirmee par mesure et non par deduction.
+
+Decision : chaque budget est desormais derive d'une mesure prise dans les memes
+conditions, ou supprime quand il ne portait aucune propriete.
+- MCP : le test mesure d'abord le lancement reel d'un enfant par le meme chemin
+  que la production, puis exige que la disponibilite tienne dans ce cout plus
+  950 ms. La marge reste sous les 500 ms de l'ancien warmup fixe retire par
+  27466cde, donc sa reintroduction echoue toujours.
+- Forecast : l'attente du demarrage de Python devient une garde large de 60 s,
+  car le demarrage d'un interpreteur n'est pas la propriete testee, et la duree
+  de l'annulation est mesuree depuis l'instant qui precede cancel(). La preuve
+  est plus stricte qu'avant : 3 s pour l'annulation seule au lieu de 3 s pour
+  le demarrage et l'annulation cumules.
+
+Preuve de non-regression du test MCP : avec un sleep de 500 ms reinjecte dans
+stdio_transport.rs, le test echoue en annoncant 1.1905407s pour un lancement
+mesure a 47.4403ms. Le fichier de production a ete restaure a l'identique, git
+diff vide, et aucun code de production n'est modifie par ce commit.
+
+Preuves : MCP 6/6 verts sous la charge qui donnait 5/5 rouges ; Forecast 4/4
+verts sous la meme charge ; cargo fmt --check ; cargo clippy --all-targets
+-D warnings ; suite sequentielle windows-tests 3536/3536 ; suite parallele
+windows-tests 3536/3536 deux fois de suite ; graphify update . vert.
+
+Mesure conservee pour le reviewer : sur cette machine, attendre la fin d'un
+enfant lance sans CREATE_NO_WINDOW coute 3,09 s, contre 15 ms avec le flag,
+pour une creation identique de 1,2 ms dans les deux cas. La production n'est
+pas concernee : process_tree::configure applique background_command::configure
+sur Windows, et OwnedProcess::spawn passe par ce chemin. Cette mesure justifie
+que le budget de reference soit pris par le meme chemin que la production.
+
+Constat ouvert, non corrige faute de reproduction : au premier run parallele,
+subagent_git_lifecycle_tests::correction_replays_pending_change_from_new_parent_head
+a echoue sur discard avec le message metier "Suppression de branche impossible",
+emis par subagent_git_command::delete_branch quand git branch -D echoue apres un
+show-ref reussi. Ce test n'a plus echoue en 17 executions ulterieures, dont 6
+sous charge CPU maximale. La cause exacte n'est pas etablie : la sortie de git
+n'est pas conservee par delete_branch, donc l'echec n'est pas diagnosticable a
+posteriori. Aucune modification n'a ete faite sur ce chemin, qui appartient a
+l'agent local et non au perimetre Windows de fermeture.
