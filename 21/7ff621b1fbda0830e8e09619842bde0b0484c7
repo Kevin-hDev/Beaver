@@ -61,3 +61,5 @@ Regles de continuation
 - Maintenir graphify avec graphify update . apres chaque modification de code.
 - Ne pas creer de VM : les donnees Beaver de cette machine sont jetables ; les validations natives se font directement sur Windows.
 - Si Claude travaille depuis un autre clone, Kevin doit d'abord pousser la branche locale et refs/notes/commits ; sinon reprendre directement ce worktree local deja a 217ff621.
+
+Decision Kevin — perimetre plateforme final : la validation native finale du jalon 4 est Windows uniquement. Ne pas planifier ni refaire de validation manuelle Linux ou macOS : macOS a deja ete valide ailleurs et Beaver ne sera plus maintenu sous Linux. Si le workflow CI existant execute encore plusieurs OS, lire et surveiller ses jobs, mais ne pas etendre le perimetre de tests natifs au-dela de Windows.
