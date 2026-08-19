@@ -57,10 +57,14 @@ fn tree_termination_reaps_a_confined_parent_and_child() {
     let pid_file = temp.path().join("tree.pid");
     let gate_file = temp.path().join("admitted.gate");
     let mut command = Command::new(python);
+    // L'arbre dort bien plus longtemps que la garde d'attente plus bas. Avec des
+    // durees egales, un reap defaillant resterait indetectable : l'enfant mourrait
+    // de lui-meme juste avant l'expiration de la garde, et le test verdirait par
+    // hasard sur le bug meme qu'il surveille.
     command
         .args([
             "-c",
-            "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]);\nwhile not gate.exists(): time.sleep(.01)\nchild=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']); pathlib.Path(sys.argv[2]).write_text(f'{os.getpid()},{child.pid}'); time.sleep(30)",
+            "import os,pathlib,subprocess,sys,time; gate=pathlib.Path(sys.argv[1]);\nwhile not gate.exists(): time.sleep(.01)\nchild=subprocess.Popen([sys.executable,'-c','import time;time.sleep(120)']); pathlib.Path(sys.argv[2]).write_text(f'{os.getpid()},{child.pid}'); time.sleep(120)",
         ])
         .arg(&gate_file)
         .arg(&pid_file);
