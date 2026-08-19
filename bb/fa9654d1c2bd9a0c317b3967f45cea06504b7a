@@ -46,3 +46,24 @@ application from the helper job ». Son libelle a ete reformule en « guard the
 relaunch against a confining job » une fois la vraie cause etablie, afin que le
 titre decrive la protection apportee et non une correction qu'il n'apporte pas.
 Seul le message a change ; le contenu est identique.
+
+---
+
+Rectification du 19 aout 2026, apres review.
+
+« afin que CREATE_NO_WINDOW ne soit defini qu'a un seul endroit » est vrai dans
+le perimetre des lanceurs qui passent par std::process::Command ou son
+equivalent tokio, faux au pied de la lettre. Le drapeau apparait a deux endroits
+en production :
+
+- services/background_command.rs, pour tous les lanceurs standard, qui est bien
+  l'autorite unique de ce perimetre.
+- services/ollama_manager/spawn_gate_windows.rs ligne 60, qui appelle
+  CreateProcessW directement avec CREATE_SUSPENDED | CREATE_NO_WINDOW |
+  CREATE_UNICODE_ENVIRONMENT. Ce chemin ne peut pas passer par
+  background_command : il a besoin du processus suspendu pour l'inspecter avant
+  reprise, ce que std::process::Command ne permet pas.
+
+La formulation exacte est donc : configure_with_extra_flags evite de dupliquer
+le drapeau parmi les lanceurs standard ; le gate natif Ollama reste un second
+site, assume, parce qu'il n'utilise pas la meme primitive systeme.
