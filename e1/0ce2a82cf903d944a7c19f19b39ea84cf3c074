@@ -1,0 +1,38 @@
+Perimetre Windows J4 — isolement des installations empaquetees.
+
+Note ajoutee apres coup par la validation Windows, a partir du diff et des
+preuves obtenues sur cette machine. Elle decrit ce que le commit fait ; elle
+n'exprime pas l'intention de son auteur au-dela de ce que le code montre.
+
+Ce que le commit change.
+- Nouvelle configuration `src-tauri/tauri.e2e.windows.conf.json` : le paquet E2E
+  porte un nom et un identifiant distincts du produit, « Beaver E2E » et
+  `com.clgo.dash.e2e`, s'installe en mode `currentUser` et desactive les hooks
+  d'installateur. Le parcours empaquete ne peut donc ni remplacer une
+  installation reelle de Beaver, ni declencher la migration heritee des hooks,
+  ni exiger une elevation.
+- `scripts/e2e/packaged-app.mjs` : l'installation se fait dans
+  `<profil>/packaged-app`, sous le profil temporaire du parcours, avec
+  verification que ce dossier est bien un enfant direct du profil. La
+  desinstallation devient obligatoire et un echec d'installation declenche un
+  retrait avant de propager l'erreur. Les arguments passent en
+  `windowsVerbatimArguments`, sans quoi `/D=` de NSIS n'est pas recu tel quel.
+  Le chemin macOS est retire de cette fonction, qui devient specifique a Windows.
+- `.github/workflows/ci.yml` : le job macOS repasse sur `npm run test:e2e`,
+  le mode empaquete restant propre a Windows.
+
+Preuve obtenue pendant la validation Windows, sur cette machine.
+`E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged` execute le 18 aout 2026 de
+21:40:52Z a 21:50:03Z, code de sortie 0, avec Microsoft Defender actif :
+protection en temps reel, surveillance comportementale et protection contre les
+falsifications toutes activees. Le parcours a construit puis installe
+`Beaver E2E_1.1.3_x64-setup.exe`, demarre un vrai helper CEF en 355 ms, charge
+une page, ferme l'application, puis desinstalle. Inventaire apres coup : aucun
+processus Beaver residuel, et aucun profil temporaire laisse par ce parcours.
+Deux executions supplementaires avec `E2E_SKIP_BUILD=1` ont donne le meme
+resultat.
+
+Limite connue, sans rapport avec ce commit : l'etape `owned_process_exit` du
+parcours mesure environ 16,2 secondes de facon reproductible des qu'une page CEF
+est chargee, contre 1,6 seconde sans page. Cette mesure et son analyse sont
+consignees dans le document J4 des inventaires cumulatifs.
