@@ -1,0 +1,36 @@
+Correction de review J4 — point 3 du rapport reviewer, seconde porte, et
+decision sur la question laissee ouverte par la note de 278ecbb2.
+
+Etat avant : 278ecbb2 figeait le fait mesure — un dossier de bundle tenu par un
+tiers fait echouer le renommage avec ERROR_ACCESS_DENIED, code 5, classe
+PermissionDenied — mais rien ne reliait ce fait au prédicat de la boucle de
+reprise. Le test voisin non_sharing_errors_are_not_retried n'exercait que le
+genre Other. Quelqu'un pouvait donc ajouter PermissionDenied au prédicat sans
+qu'aucun test ne rougisse, alors que c'est precisement la correction tentante.
+
+Decision, et sa raison : le prédicat n'est pas elargi.
+- Rien n'est perdu quand le renommage echoue. Le journal transactionnel relance
+  la mise a jour immediatement, puis selon OLLAMA_RECOVERY_RETRY_DELAYS —
+  5 s, 15 s, 60 s, 300 s — et l'operation aboutit des que le tiers relache le
+  fichier. Cette couche couvre deja le cas.
+- La reprise locale ne dure que 2 s, soit 40 attentes de 50 ms. Un scan
+  antivirus depasse souvent cette duree : elargir n'apporterait presque rien.
+- ERROR_ACCESS_DENIED signale aussi un vrai refus de droits, qu'aucune attente
+  ne resout. L'absorber dans la boucle rendrait ce cas indistinguable d'un
+  verrou passager et retarderait de 2 s chaque echec definitif.
+
+Verrou pose : le test existant boucle desormais sur Other et PermissionDenied,
+et exige zero attente pour les deux. La decision est donc executable, plus
+seulement ecrite.
+
+Preuves, cargo test --lib --features windows-tests :
+- code actuel : vert.
+- prédicat elargi temporairement a PermissionDenied dans durable_fs.rs : rouge,
+  40 attentes mesurees au lieu de 0.
+- durable_fs.rs restaure a l'identique, verifie par git diff --quiet.
+- module durable_fs complet : 26 tests verts.
+- rustfmt applique, --check sans remarque.
+
+Reste au backlog, hors jalon : le message montre a l'utilisateur reste generique
+alors que la situation se resout seule. Le reviewer le recommande, il touche
+l'i18n et la couche de presentation, pas le mecanisme de reprise.
