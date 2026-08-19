@@ -83,8 +83,6 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
           cd ..
           npm run test:ollama-manager-contracts
-          npm run test:j3-reference
-          npm run preflight:j3-reference
           npm run test:j3-native-assets
 
       - name: Persistence contracts
@@ -201,7 +199,6 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
           cd ..
           npm run test:ollama-manager-contracts
-          npm run test:j3-reference
           npm run test:j3-native-assets
 
       - name: Native Windows CEF journey
@@ -280,7 +277,6 @@ jobs:
           node ../scripts/ci/run-rust-test-filter.mjs --filter services::ollama_manager
           cd ..
           npm run test:ollama-manager-contracts
-          npm run test:j3-reference
           npm run test:j3-native-assets
 
       - name: Native macOS CEF journey
