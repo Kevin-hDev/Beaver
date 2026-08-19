@@ -1,0 +1,21 @@
+ci: drop the J3 reference preflight, its archive is gone on purpose
+
+preflight:j3-reference fetched refs/heads/codex/fix-app-shutdown-lifecycle
+from origin and checked six commits against it. That branch was deleted on
+2026-08-19, deliberately: it was never meant to be merged. It held the first
+attempt at the shutdown lifecycle work and was kept only as a landmark, so the
+rewrite would not repeat its mistakes. Once codex/milestone-4-convergence
+closed that chantier for good, the landmark had done its job.
+
+So the check could never pass again. Its six commits still exist locally but
+descend from no published ref, and a runner clones fresh — the fetch fails and
+the whole step fails with it. It broke every Linux run from the moment the
+branch went away.
+
+Restoring the branch to satisfy the check would keep an archive alive for the
+sake of its guard rather than the reverse. The guard goes instead, with the
+script, the authority file that named the dead branch, and the test covering
+them — nothing else referenced any of the three.
+
+test:j3-native-assets and test:ollama-manager-contracts are untouched and still
+run on all three systems; both verified locally.
