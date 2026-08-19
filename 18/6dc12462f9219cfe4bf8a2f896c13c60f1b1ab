@@ -1,0 +1,16 @@
+Perimetre Windows J4 — dependances du harnais private store.
+
+Ce commit ajoute `log` et `tempfile` aux dependances Windows du crate de test
+independant `src-tauri/tests/windows-private-store`, dont le manifeste etait
+incomplet, et met a jour son `Cargo.lock` propre. Aucun comportement de
+production n'est modifie.
+
+La note detaillee d'origine, qui contient la cause observee en CI, la correction
+et les preuves de l'auteur, est attachee a ce meme commit sur une autre
+reference de notes. Pour la lire :
+    git notes --ref=j4-handoff show 186dc124
+Cette reference porte aussi la passation complete du jalon 4.
+
+Preuve rejouee pendant la validation Windows, sur cette machine :
+`cargo test --manifest-path tests/windows-private-store/Cargo.toml` vert,
+20 tests sur 20.
