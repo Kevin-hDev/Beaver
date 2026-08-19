@@ -1,0 +1,45 @@
+Cloture de la review J4 Windows — ce qui reste, et pourquoi ce n'est pas fait.
+
+Le rapport du reviewer liste six points. Trois sont traites sur cette branche :
+- point 1, notes fausses : rectifiees en append sur 727b0bb4, bbfa9654 et
+  d196cb70. Attribution des compteurs de marque remesuree commit par commit ;
+  formulation de CREATE_NO_WINDOW corrigee ; explication de la panne 1.1.3
+  ramenee a ce qui est reellement etabli.
+- point 2, contrat de marque absent de la CI : e0e837e0.
+- point 3, deux verrous a une porte : 8b65d390 et 3ce32660.
+
+S'y ajoute une instabilite trouvee en rejouant la suite complete apres ces
+corrections, corrigee par 86388eb9.
+
+Trois points restent ouverts, volontairement, avec leur raison.
+
+Point 4 — trois copies de « restaurer la fenetre » dans tray, runtime_state et
+app_events, dont une sans unminimize. C'est une autorite unique manquante, donc
+un vrai defaut d'architecture, mais il touche le comportement de la fenetre
+principale sur les trois OS. Le corriger dans un jalon dont le perimetre est la
+validation Windows ferait passer sous le radar un changement que personne ne
+rejouerait sur macOS ni Linux. A traiter comme un travail a lui seul.
+
+Point 5 — le helper de mise a jour echoue en silence : en release son message
+d'erreur ne va nulle part, et rien ne distingue « installateur echoue » de
+« relance refusee ». Defaut preexistant, et c'est exactement le symptome qui a
+coute le plus de temps sur ce jalon : sans trace, la cause s'etablit par
+elimination au lieu de se lire. Une trace minimale, cote helper, est le premier
+travail a faire avant la prochaine campagne de mise a jour.
+
+Point 6 — la liste des dossiers ignores par Vite recode ce que
+resolveCargoTargetDir sait deja. Le contrat du jalon 1B interdit ce doublon pour
+la lecture d'artefacts ; ici c'est un ignore, sans consequence sur ce qui est
+lu. Une seconde autorite nait quand meme, et elle divergera le jour ou le
+dossier cible changera. A derivier de l'autorite lors du prochain passage sur
+la configuration Vite.
+
+S'y ajoute la decision prise sur la question que 278ecbb2 laissait ouverte :
+le prédicat de reprise Ollama n'est pas elargi a PermissionDenied. La raison
+complete est dans la note de 3ce32660, et elle est desormais executable — un
+test rougit si quelqu'un l'elargit.
+
+Constat produit inchange : la 1.1.3 publiee ne se relance pas apres mise a jour
+sur cette machine. La cause exacte n'est pas etablie ; ce qui est etabli, c'est
+que la tete de branche n'execute plus aucune etape faillible apres la
+publication de l'acquittement, la ou la 1.1.3 en executait une.
