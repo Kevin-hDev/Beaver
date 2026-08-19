@@ -1,0 +1,55 @@
+Validation Windows J4 — relance apres mise a jour.
+
+Cause : sur Windows, le helper de mise a jour installe la nouvelle version,
+relance Beaver par updater_worker::command::spawn_background, attend son
+acquittement de sante, puis sort. Ce lancement n'etait pas affranchi du Job
+`kill on close` herite du helper : a la sortie du helper, la fermeture du Job
+emportait l'application qui venait de demarrer. La mise a jour s'appliquait donc
+correctement, mais l'application ne revenait jamais.
+
+Reproduction native, tete de branche construite en 1.1.2 sans correctif, paquet
+NSIS installe et mise a jour reelle vers 1.1.3 :
+- 07:16:46.641Z sortie de l'application 1.1.2 et de ses trois helpers CEF ;
+- 07:17:29.398Z apparition de l'application relancee, pid 21528 ;
+- 07:17:33.292Z sortie de ce meme pid, 3,9 secondes plus tard.
+L'installation etait bien passee en 1.1.3 et aucun processus ne subsistait :
+seul le retour de l'application manquait.
+
+Hypothese concurrente ecartee par la mesure : updater_worker::windows::apply tue
+son enfant quand l'acquittement de sante echoue, mais HEALTH_TIMEOUT vaut 30
+secondes alors que la mort survient a 3,9 secondes, juste apres l'acquittement.
+Le declencheur est donc la sortie du helper, pas son delai de sante.
+
+Decision : `spawn_background` ajoute CREATE_BREAKAWAY_FROM_JOB sur Windows, via
+une fonction dediee du module updater_worker. Les drapeaux de creation restent
+produits par services::background_command, qui recoit `configure_with_extra_flags`
+afin qu'aucun lanceur ne redefinisse les drapeaux communs ; CREATE_NO_WINDOW
+reste donc defini a un seul endroit. Le correctif ne touche que la relance :
+`run_status`, qui execute l'installateur et doit rester attendu, est inchange.
+
+Alternative rejetee : retenter un lancement confine quand l'affranchissement est
+refuse. Cette relance mourrait avec le helper tout en annoncant une mise a jour
+reussie. Le lancement echoue desormais fermé, l'installation restant appliquee.
+
+TDD : deux tests Windows ecrits avant le correctif, chacun verifie rouge puis
+vert, et re-verifie rouge apres retrait temporaire du correctif.
+- the_relaunched_application_survives_the_helper_job_closing : le role helper se
+  confine dans un Job destructeur autorisant l'affranchissement, relance la cible
+  par le chemin de production puis sort ; la cible doit encore ecrire son second
+  marqueur. Message d'echec observe avant correctif : « l'application relancee
+  est morte avec le Job du helper ».
+- a_relaunch_that_cannot_break_away_fails_instead_of_staying_confined : dans un
+  Job sans autorisation d'affranchissement, la relance doit echouer et aucune
+  application ne doit demarrer.
+
+Preuves : cargo fmt --check ; cargo clippy --all-targets -D warnings ; suite
+sequentielle windows-tests 3538/3538 ; suite parallele windows-tests 3538/3538 ;
+graphify update . vert. La preuve native rejouee apres correctif est consignee
+dans la note de validation finale.
+
+Contexte pour le reviewer : un worktree local non commite, .worktrees/j4-update-harness,
+contenait une investigation anterieure de ce defaut avec le meme drapeau, mais
+branche sur `run_status` au lieu de `spawn_background`, accompagnee de sondes de
+debogage — traces eprintln, redirection stderr vers un fichier et sleep de 20
+secondes. Ce travail n'a pas ete repris : la cause a ete reproduite puis corrigee
+avec ses propres tests, et aucune sonde ne subsiste dans ce commit.
