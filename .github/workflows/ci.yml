@@ -11,6 +11,13 @@ permissions:
 
 # Les séries de PR se remplacent ; celles de main sont conservées car elles
 # valident un état déjà fusionné.
+#
+# Chaque job porte un timeout-minutes. Sans lui le défaut de 360 minutes
+# s'applique, et un test qui se bloque au lieu d'échouer retient un runner six
+# heures. Ces budgets sont volontairement larges : ils bornent l'emballement,
+# ils n'arbitrent pas la durée normale. Un budget calé sur une exécution
+# favorable tue les jobs lents pour rien — macOS et Windows tournent
+# couramment 55 minutes, et la suite complète s'y ajoute.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -19,7 +26,7 @@ jobs:
   backend:
     name: Backend (Rust)
     runs-on: ubuntu-22.04
-    timeout-minutes: 25  # observé 10 min
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -99,7 +106,7 @@ jobs:
   backend-linux-native:
     name: Backend Linux WebView (E2E)
     runs-on: ubuntu-22.04
-    timeout-minutes: 15  # observé 4 min
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
@@ -142,7 +149,7 @@ jobs:
   backend-windows-native:
     name: Backend Windows CEF (Rust)
     runs-on: windows-latest
-    timeout-minutes: 90  # observé 51 min
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
@@ -205,7 +212,7 @@ jobs:
   backend-macos-native:
     name: Backend macOS CEF (Rust)
     runs-on: macos-latest
-    timeout-minutes: 45  # observé 20 min
+    timeout-minutes: 150
     env:
       CARGO_PROFILE_TEST_DEBUG: 0
     steps:
@@ -284,7 +291,7 @@ jobs:
   backend-windows:
     name: Backend Windows tests (Rust)
     runs-on: windows-2022
-    timeout-minutes: 35  # observé 13 min
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
@@ -334,7 +341,7 @@ jobs:
   frontend:
     name: Frontend (TS/React)
     runs-on: ubuntu-latest
-    timeout-minutes: 20  # observé 6 min
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
@@ -374,7 +381,7 @@ jobs:
   desktop-e2e:
     name: Desktop E2E (CEF)
     runs-on: ubuntu-22.04
-    timeout-minutes: 25  # observé 9 min
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
