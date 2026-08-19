@@ -1,6 +1,11 @@
+# jaxtyping est une dépendance directe de Kairos (tsfm/model/kairos/layers.py) ;
+# la source auditée s'installe avec --no-deps, donc elle doit figurer ici.
+# transformers reste en 4.x : Kairos exige ~=4.56 et importe
+# find_pruneable_heads_and_indices, retiré dans transformers 5.
 einops==0.8.2
 hatchling==1.31.0
 huggingface-hub==0.36.2
+jaxtyping==0.3.11
 matplotlib==3.11.1
 numpy==2.2.5
 pandas==2.2.3
