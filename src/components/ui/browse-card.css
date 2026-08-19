@@ -60,11 +60,40 @@
   -webkit-box-orient: vertical;
 }
 
-.browse-card-meta {
+/* Première ligne d'une card : le nom, puis ses pastilles et le lien vers la
+   documentation. La description passe en dessous et revient à la ligne.
+
+   Cette ligne remplace une rangée de pastilles posée sous la description. Elle
+   y portait, chez les providers, une phrase entière sur le niveau gratuit,
+   réglée pour ne jamais se couper — la card grandissait donc jusqu'à sortir de
+   la fenêtre. Les trois catalogues y gagnent une rangée de hauteur. */
+.browse-card-heading {
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-xs);
+  /* Les pastilles passent à la ligne plutôt que d'écraser le nom : une card
+     « bientôt disponible » en porte une de plus, et sur une ligne unique le nom
+     — seul élément qui accepte de se réduire — était rogné jusqu'à disparaître.
+     La card ne retrouve sa deuxième rangée que lorsqu'elle en a besoin. */
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-sm);
+  margin-bottom: var(--space-2xs);
+}
+
+/* Le nom est le seul élément de la ligne qui accepte de se raccourcir : sans
+   cela, un nom long pousse les pastilles hors de la card au lieu de se couper. */
+.browse-card-heading .browse-card-name {
+  min-width: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tout ce qui suit le nom garde sa taille : ces éléments sont déjà courts, et
+   les rétrécir ne rendrait la ligne lisible ni pour eux ni pour le nom. */
+.browse-card-heading > :not(.browse-card-name) {
+  flex: none;
 }
 
 /* Pastille d'information : catégorie, quota, auteur. Son fond descend sous

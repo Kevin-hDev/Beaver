@@ -32,7 +32,7 @@ export function ConnectorCard({
         size={40}
       />
       <div className="browse-card-body">
-        <div className="ak-card-heading">
+        <div className="browse-card-heading">
           <span className="browse-card-name">{provider.display_name}</span>
           <span className="browse-chip browse-chip-cat">
             {provider.category.toUpperCase()}

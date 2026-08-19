@@ -76,9 +76,8 @@ export function ChannelsBrowseModal({ onPick, onClose }: ChannelsBrowseModalProp
                   <ChannelIcon channelId={spec.id} size={32} />
                 </div>
                 <div className="browse-card-body">
-                  <div className="browse-card-name">{spec.name}</div>
-                  <div className="browse-card-desc">{t(spec.descKey)}</div>
-                  <div className="browse-card-meta">
+                  <div className="browse-card-heading">
+                    <span className="browse-card-name">{spec.name}</span>
                     <span className="browse-chip browse-chip-cat">
                       {t(`channels.browse.${spec.category}`)}
                     </span>
@@ -91,6 +90,7 @@ export function ChannelsBrowseModal({ onPick, onClose }: ChannelsBrowseModalProp
                       <ArrowSquareOut size="var(--icon-xs)" />
                     </button>
                   </div>
+                  <div className="browse-card-desc">{t(spec.descKey)}</div>
                 </div>
                 <div className="icon-btn browse-card-action">
                   <Plus size="var(--icon-md)" weight="bold" />

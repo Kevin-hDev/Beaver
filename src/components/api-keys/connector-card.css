@@ -23,34 +23,3 @@
   font-size: var(--text-sm);
   text-align: center;
 }
-
-/* Première ligne d'une card de provider : le nom, sa catégorie et le repère de
-   clé côte à côte. La description passe en dessous et revient à la ligne.
-
-   Cette ligne remplace la rangée de pastilles qui vivait sous la description :
-   elle y portait une phrase entière sur le niveau gratuit, réglée pour ne
-   jamais se couper — la card grandissait donc jusqu'à sortir de la fenêtre.
-   Le détail du niveau gratuit reste lisible dans le panneau du provider, où
-   une phrase a la place de s'afficher. */
-.ak-card-heading {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-2xs);
-}
-
-/* Le nom est le seul élément de la ligne qui accepte de se raccourcir : sans
-   cela, un nom long pousse la catégorie hors de la card au lieu de se couper. */
-.ak-card-heading .browse-card-name {
-  min-width: 0;
-  margin-bottom: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ak-card-heading .browse-chip-cat,
-.ak-card-heading .browse-card-keyicon {
-  flex: none;
-}

@@ -27,12 +27,9 @@ export function McpBrowseCard({ connector, configured, onAdd }: McpBrowseCardPro
     <div className={`browse-card ${configured ? "is-configured" : ""} ${locked ? "is-locked" : ""}`}>
       <McpIcon connectorId={connector.id} displayName={connector.display_name} size={40} />
       <div className="browse-card-body">
-        <div className="browse-card-name">
-          {connector.display_name}
+        <div className="browse-card-heading">
+          <span className="browse-card-name">{connector.display_name}</span>
           {locked && <span className="browse-chip mcbc-soon">{t("connectors.comingSoon")}</span>}
-        </div>
-        <div className="browse-card-desc">{getMcpDescription(connector, i18n.language)}</div>
-        <div className="browse-card-meta">
           <span className="browse-chip browse-chip-cat">{connector.category.toUpperCase()}</span>
           <span className="browse-chip">{connector.author}</span>
           <button
@@ -44,6 +41,7 @@ export function McpBrowseCard({ connector, configured, onAdd }: McpBrowseCardPro
             <ArrowSquareOut size="var(--icon-xs)" />
           </button>
         </div>
+        <div className="browse-card-desc">{getMcpDescription(connector, i18n.language)}</div>
       </div>
       <button
         type="button"

@@ -8,11 +8,10 @@
   pointer-events: auto;
 }
 
-/* Mention « bientôt », collée au nom plutôt qu'alignée avec les pastilles
-   posées sous la description. */
+/* Mention « bientôt ». L'écart au nom et l'alignement vertical viennent de la
+   ligne d'en-tête ; ne restent ici que ses différences avec les autres
+   pastilles de cette ligne. */
 .mcbc-soon {
-  margin-left: var(--space-xs);
   font-weight: 500;
   text-transform: uppercase;
-  vertical-align: middle;
 }
