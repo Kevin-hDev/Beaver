@@ -1,7 +1,6 @@
 # transformers reste figé : Sundial exécute le code livré avec le modèle
-# (trust_remote_code), écrit pour l'API de cache de transformers 4.40.
-# Vérifié le 2026-08-19 — generate() casse dès 4.44.2. Il ne bougera qu'une fois
-# le modèle amont mis à jour. torch, lui, monte sans contrainte : 2.10.0 validé.
+# (trust_remote_code), et generate() casse dès 4.44.2. Il ne bougera qu'une fois
+# le modèle amont mis à jour.
 torch==2.10.0
 transformers==4.40.1
 accelerate==0.29.3

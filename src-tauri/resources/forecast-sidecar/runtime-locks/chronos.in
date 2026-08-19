@@ -1,6 +1,4 @@
 # Approved Forecast runtime. Regenerate the lock only after adapter validation.
-# transformers 5.x validé le 2026-08-19 : chronos-bolt-tiny et chronos-2 chargés
-# et prédisent. La montée impose huggingface-hub 1.x (transformers >= 5.15 l'exige).
 chronos-forecasting==2.3.1
 accelerate==1.14.0
 huggingface-hub==1.24.0
