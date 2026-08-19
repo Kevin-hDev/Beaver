@@ -49,3 +49,37 @@ a echoue une fois sur son `remove_dir` final. Ce test cree puis supprime un
 dossier dans le vrai dossier de donnees de l'utilisateur ; la suppression peut
 echouer si un tiers tient le dossier. Une seule occurrence sur trois executions,
 cause non etablie, aucune correction faite.
+
+---
+
+Rectification du 19 aout 2026, apres review.
+
+L'explication de la panne de la 1.1.3 donnee ci-dessus est trop affirmative, et
+le test ajoute par ce commit ne verrouille pas ce qu'il annonce.
+
+Mesure faite pendant la review : en replacant temporairement l'ordre de la 1.1.3
+dans atomic_write — replace_file puis repair_path — le test reste vert. Il ne
+discrimine donc pas l'ordre de publication.
+
+La raison est dans repair_path, identique en 1.1.3 et aujourd'hui : il retourne
+Ok des que le fichier n'existe pas. Un helper qui supprime le fichier
+d'acquittement ne fait donc pas echouer la reparation qui suit. La sequence
+« le helper efface, la reparation echoue » n'est pas le mecanisme decrit.
+
+Ce qui reste etabli :
+- la 1.1.3 execute bien une etape faillible apres la publication —
+  repair_path, donc set_private_permissions, donc SetNamedSecurityInfoW — la
+  ou la tete de branche n'en execute plus aucune ; sur Windows sync_parent y
+  retourne Ok sans rien faire.
+- pour que cette etape echoue, il faut que le fichier disparaisse entre le
+  test d'existence et l'appel ACL, une fenetre bien plus etroite que ce que la
+  note laissait entendre.
+- le symptome observe sur la machine de Kevin est reel et reproductible, mais
+  sa cause exacte dans la 1.1.3 n'est pas etablie par les preuves de ce commit.
+
+Ce qui est verrouille pour de bon : 8b65d390 remplace la course par une
+assertion sur la sequence des etapes — PermissionsRepaired avant Replaced,
+ParentSynced en dernier — verifiee rouge sous l'ordre 1.1.3.
+
+Le test concurrent ajoute ici est conserve : il verifie une propriete reelle
+sous concurrence, il est seulement incapable d'echouer sur cette regression.
