@@ -243,19 +243,11 @@ fn every_fallible_step_runs_before_the_generation_is_published() {
     let mut stages = Vec::new();
     atomic_write_with_hook(&path, b"ok", |stage| stages.push(stage)).expect("publication");
 
-    let position = |wanted: AtomicWriteStage| {
-        stages
-            .iter()
-            .position(|stage| *stage == wanted)
-            .unwrap_or_else(|| panic!("stage {wanted:?} never reached"))
-    };
-    assert!(
-        position(AtomicWriteStage::PermissionsRepaired) < position(AtomicWriteStage::Replaced),
-        "permissions must be repaired on the temporary file, before publication: {stages:?}"
-    );
+    // The whole sequence is asserted, not just the known regression: any step
+    // inserted after `Replaced` breaks this test, whatever it happens to be.
     assert_eq!(
-        stages.last(),
-        Some(&AtomicWriteStage::ParentSynced),
-        "only the parent synchronization may follow publication: {stages:?}"
+        stages.as_slice(),
+        STAGES,
+        "a fallible step must never follow publication"
     );
 }
