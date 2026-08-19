@@ -1,0 +1,29 @@
+Correction de review J4 — point 2 du rapport reviewer.
+
+Constat : npm run test:brand-boundaries n'etait execute que par release.yml.
+Quatre commits deja fusionnes avaient casse le contrat sans qu'aucune PR ne le
+signale, et 727b0bb4 a du le reparer apres coup. C'est la meta-regle du projet :
+un mecanisme adopte a moitie, pas un enieme correctif.
+
+Pourquoi le contrat ne casse jamais sur un diff : le decompte des references
+internes est global au depot. Un commit qui ajoute deux occurrences de clgo ne
+peut pas etre juge seul — seule la tete complete porte l'information. Un
+verrou de ce type doit donc tourner sur chaque tete, c'est-a-dire sur chaque PR.
+
+Choix du verrou : plutot qu'un test separe qui surveillerait ci.yml, le contrat
+de marque se verifie lui-meme. brand-boundaries-contracts.mjs recoit un contrat
+de compatibilite de plus, portant sur .github/workflows/ci.yml et exigeant la
+chaine "npm run test:brand-boundaries". Une seule autorite garantit donc a la
+fois les decomptes et sa propre execution ; retirer le step de ci.yml rend le
+contrat rouge.
+
+Emplacement : job frontend, apres Lint. C'est un contrat statique du depot, il
+n'a besoin ni de Rust ni de CEF.
+
+Cout mesure sur cette machine : 473 ms de tests, 1,3 s en comptant le demarrage
+de npm. Le job frontend dure plusieurs minutes.
+
+Preuves : test rouge d'abord — "execution du contrat en integration continue :
+valeur de compatibilite absente" avec le contrat ajoute et ci.yml inchange ;
+vert ensuite apres ajout du step, 12/12. YAML relu par un parseur : les sept
+jobs se chargent et le step apparait bien entre Lint et Unit tests.
