@@ -1,0 +1,27 @@
+ci(windows): go back to --lib on the windows-tests job
+
+--all was meant to cover the three binaries and the integration target, which
+only ever built on Linux. On Windows under the windows-tests feature it fails
+twice over, and the second failure has no cheap fix.
+
+  error[E0425]: cannot find function `launch_windows_browser_host`
+                in crate `cl_go_dash_lib`
+  CVTRES : fatal error CVT1100: duplicate resource.
+           type:MANIFEST, name:1, language:0x0409
+  LINK   : fatal error LNK1123: failure during conversion to COFF
+
+The first is the same shape as the cef_supervision defect fixed in 10437154:
+lib.rs exports the function only when windows-tests is absent, main.rs calls it
+whenever the target is Windows. Nothing is broken in production — that feature
+exists for CI alone — but --all builds the binary and puts the two conditions
+face to face.
+
+The second is structural. build.rs embeds the test manifest through
+cargo:rustc-link-arg, which reaches every linked target; the binaries already
+carry a manifest of their own and the linker stops. Covering tests/ on Windows
+means narrowing that injection to test targets (cargo:rustc-link-arg-tests),
+which is its own piece of work. tests/ stays covered on Linux only.
+
+The contract test moves with the job and now carries that reason. What it
+protects is unchanged and still asserted: this job prepares no CEF, mounts no
+CEF cache, and without native_browser no binary links libcef.dll.
