@@ -1,0 +1,51 @@
+Validation Windows J4 — ordre de publication de l'acquittement de sante.
+
+Cause du defaut natif observe : l'application relancee apres une mise a jour
+mourait environ une seconde apres la consommation de son acquittement, sans
+aucune ligne d'arret coordonne. Le mecanisme est une course entre deux acteurs.
+L'application publie le fichier `update-health/<jeton>.ok`, et le helper le
+supprime des qu'il le voit, toutes les 100 ms dans HealthToken::wait_for. Dans
+la version 1.1.3 publiee, `private_store::atomic_write` reparait les permissions
+APRES la publication, sur le fichier deja publie : cette reparation echouait sur
+un fichier disparu, `acknowledge_from_args` renvoyait une erreur, le crochet de
+demarrage Tauri echouait et le processus se terminait par une panique interne
+« Failed to setup app: initialisation de la mise a jour impossible », sans
+ecrire dans beaver.log.
+
+Portee exacte : ce defaut appartient a la 1.1.3 publiee, construite le 17 aout,
+et non a cette branche. Le refactor de stockage du 18 aout a deplace la
+reparation des permissions sur le fichier temporaire et fait de la publication
+la derniere etape faillible, ce que montre atomic_write.rs :
+`repair_path(&temp)` puis `replace_file(&temp, path)`. Aucun code de production
+n'est donc modifie ici ; seul l'invariant manquait de garde.
+
+Consequence produit a connaitre : le binaire 1.1.3 deja publie conserve ce
+defaut. Toute mise a jour vers 1.1.3 applique correctement l'installation puis
+laisse l'application morte ; il suffit de la relancer a la main. La prochaine
+release construite depuis cette branche gueri le flux, y compris depuis une
+1.1.3 installee, car le helper 1.1.3 inchange consommera l'acquittement d'une
+application devenue insensible a cette consommation.
+
+Test : acknowledgement_survives_the_helper_consuming_the_ack_at_publication
+rejoue vingt acquittements face a un consommateur qui supprime le fichier des
+son apparition, comme le vrai helper. Verifie dans les deux sens sur cette
+machine : vert sur la branche ; rouge des l'iteration 2 apres reintroduction de
+l'ordre 1.1.3 dans atomic_write.rs, avec le message exact « acquittement perdu
+face au helper (initialisation de la mise a jour impossible) », identique a
+celui de la panique observee en natif.
+
+Origine et verification : la cause racine et ce test proviennent d'une
+investigation menee par un second agent. Les deux affirmations centrales ont ete
+reverifiees ici de facon independante : la comparaison de `atomic_write` entre
+`git show v1.1.3` et la tete de branche confirme l'inversion de l'ordre, et le
+test a ete execute rouge puis vert par mes soins.
+
+Preuves : cargo fmt --check ; cargo clippy --all-targets -D warnings ; suite
+windows-tests 3539/3539 sur deux executions consecutives.
+
+Constat ouvert : lors d'une troisieme execution,
+services::agent_local::security::tests::read_path_allows_nested_app_data_subpath
+a echoue une fois sur son `remove_dir` final. Ce test cree puis supprime un
+dossier dans le vrai dossier de donnees de l'utilisateur ; la suppression peut
+echouer si un tiers tient le dossier. Une seule occurrence sur trois executions,
+cause non etablie, aucune correction faite.
