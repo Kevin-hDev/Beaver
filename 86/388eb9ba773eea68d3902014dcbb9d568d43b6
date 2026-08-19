@@ -1,0 +1,29 @@
+Correction J4 — instabilite trouvee en rejouant la suite Windows complete apres
+les corrections de review.
+
+Symptome : services::process_tree::windows_tests::
+tree_termination_reaps_a_confined_parent_and_child, echec a la ligne 90,
+« assertion failed: pids.iter().all(|pid| processes.process(...).is_none()) ».
+Une seule occurrence sur deux executions completes ; le test relance seul est
+vert 3 fois sur 3, et la suite complete relancee est verte 3541/3541.
+
+Cause, mesuree plutot que supposee : l'assertion lisait la table des processus
+une seule fois, immediatement apres terminate, sans aucun budget. Une sonde
+temporaire a mesure le delai reel de disparition sur 8 executions a vide :
+14,7 / 14,9 / 14,9 / 16,5 / 16,7 / 17,1 / 19,6 ms en une lecture, et 33,6 ms en
+deux lectures. Une fois sur huit, machine au repos, la premiere lecture voit
+donc encore l'arbre. Le test d'origine ne faisait qu'une lecture : il etait
+rouge dans exactement ce cas. Sous la charge de la suite complete, la proportion
+augmente.
+
+Correction : la lecture unique devient une boucle jusqu'a disparition, sous une
+garde de 30 s. La garde n'est pas la propriete testee — elle evite que le test
+pende — et le budget de terminaison reste verifie separement, en amont, par
+l'assertion started.elapsed() < 2 s sur terminate lui-meme. C'est le meme motif
+que e22feb1b : la propriete est mesuree, la garde est large.
+
+Preuves : sonde chiffree ci-dessus ; test relance 10 fois apres correction,
+10/10 verts ; cargo clippy --all-targets -D warnings sans remarque ;
+cargo test --lib --features windows-tests complet, 3541 verts, 0 echec ;
+rustfmt --check sans remarque. Le fichier de sonde a ete restaure depuis sa
+sauvegarde avant d'ecrire la correction definitive.
