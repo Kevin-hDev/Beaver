@@ -230,3 +230,32 @@ fn user_profile_writers_share_the_atomic_store_authority() {
         );
     }
 }
+
+#[test]
+fn every_fallible_step_runs_before_the_generation_is_published() {
+    // A reader can consume the published file at once: the update helper deletes
+    // the health acknowledgement the moment it appears. Any fallible step placed
+    // after `Replaced` would then act on a file it no longer owns and could turn
+    // an acquired publication into a write failure. 1.1.3 repaired the ACL after
+    // the rename; this test fails if that order ever comes back.
+    let root = tempfile::tempdir().expect("temporary profile");
+    let path = root.path().join("update-health").join("token.ok");
+    let mut stages = Vec::new();
+    atomic_write_with_hook(&path, b"ok", |stage| stages.push(stage)).expect("publication");
+
+    let position = |wanted: AtomicWriteStage| {
+        stages
+            .iter()
+            .position(|stage| *stage == wanted)
+            .unwrap_or_else(|| panic!("stage {wanted:?} never reached"))
+    };
+    assert!(
+        position(AtomicWriteStage::PermissionsRepaired) < position(AtomicWriteStage::Replaced),
+        "permissions must be repaired on the temporary file, before publication: {stages:?}"
+    );
+    assert_eq!(
+        stages.last(),
+        Some(&AtomicWriteStage::ParentSynced),
+        "only the parent synchronization may follow publication: {stages:?}"
+    );
+}
