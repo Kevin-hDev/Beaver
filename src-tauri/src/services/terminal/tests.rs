@@ -48,7 +48,12 @@ mod tests {
 
     #[test]
     fn test_pty_kill() {
-        let (mut session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        // Le lecteur partage le descripteur maître avec la session. Tant qu'un
+        // détenteur le garde ouvert sans le drainer, le noyau retient le shell
+        // dans sa sortie. L'application n'a pas ce cas : son fil
+        // beaver-pty-reader lit en continu jusqu'à la fermeture du maître.
+        let (mut session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        drop(reader);
         session.kill().expect("kill failed");
     }
 

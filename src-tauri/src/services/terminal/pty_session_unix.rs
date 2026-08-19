@@ -1,14 +1,18 @@
 use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 type SharedChild = Arc<Mutex<Box<dyn portable_pty::Child + Send + Sync>>>;
 
 pub struct PtySession {
-    master: Box<dyn portable_pty::MasterPty + Send>,
+    master: Option<Box<dyn portable_pty::MasterPty + Send>>,
     child: SharedChild,
     writer: Mutex<Option<Box<dyn Write + Send>>>,
 }
+
+const CHILD_REAP_TIMEOUT: Duration = Duration::from_secs(2);
+const CHILD_REAP_POLL: Duration = Duration::from_millis(20);
 
 #[derive(Clone)]
 pub(crate) struct PtyChildStatus(SharedChild);
@@ -67,7 +71,7 @@ impl PtySession {
         let writer = pair.master.take_writer().map_err(|_| terminal_error())?;
         Ok((
             Self {
-                master: pair.master,
+                master: Some(pair.master),
                 child: Arc::new(Mutex::new(child)),
                 writer: Mutex::new(Some(writer)),
             },
@@ -90,6 +94,8 @@ impl PtySession {
     pub fn resize(&self, cols: u16, rows: u16) -> Result<(), String> {
         validate_size(cols, rows)?;
         self.master
+            .as_ref()
+            .ok_or_else(terminal_error)?
             .resize(pty_size(cols, rows))
             .map_err(|_| terminal_error())
     }
@@ -117,20 +123,47 @@ impl PtySession {
             pid,
             crate::services::process_tree::ProcessKind::Terminal,
         );
+        // Le maître part avant l'attente. Tant qu'il reste ouvert et que
+        // personne ne le draine, le noyau retient le shell dans sa sortie : il
+        // n'atteint jamais l'état zombie et wait() ne rend pas la main. Or ce
+        // maître n'est refermé qu'à la fin du Drop, c'est-à-dire après cette
+        // attente — chacun attendait l'autre.
+        drop(self.master.take());
         let mut child = self.child.lock().map_err(|_| terminal_error())?;
         if child.try_wait().map_err(|_| terminal_error())?.is_none() {
             child.kill().map_err(|_| terminal_error())?;
         }
-        child
-            .wait()
-            .map(|status| status.exit_code())
-            .map_err(|_| terminal_error())
+        reap_within(&mut **child, CHILD_REAP_TIMEOUT).ok_or_else(terminal_error)
     }
 
     fn close_input(&self) -> Result<(), String> {
         let writer = self.writer.lock().map_err(|_| terminal_error())?.take();
         drop(writer);
         Ok(())
+    }
+}
+
+/// Récolte l'enfant sans jamais dépasser `timeout`, et rend `None` s'il ne
+/// meurt pas dans ce budget. Un `Drop` s'exécute sur n'importe quel fil, y
+/// compris celui qui ferme l'application : une attente sans borne y fige tout
+/// ce qui suit. Passé le délai le processus reste zombie jusqu'à la sortie de
+/// Beaver, ce que le système récupère seul.
+fn reap_within(
+    child: &mut (dyn portable_pty::Child + Send + Sync),
+    timeout: Duration,
+) -> Option<u32> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return Some(status.exit_code()),
+            Ok(None) => {}
+            Err(_) => return None,
+        }
+        if Instant::now() >= deadline {
+            ::log::warn!("[terminal] shell non récolté sous {timeout:?}, abandon de l'attente");
+            return None;
+        }
+        std::thread::sleep(CHILD_REAP_POLL);
     }
 }
 
