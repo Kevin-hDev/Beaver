@@ -31,7 +31,7 @@ Point 6 — la liste des dossiers ignores par Vite recode ce que
 resolveCargoTargetDir sait deja. Le contrat du jalon 1B interdit ce doublon pour
 la lecture d'artefacts ; ici c'est un ignore, sans consequence sur ce qui est
 lu. Une seconde autorite nait quand meme, et elle divergera le jour ou le
-dossier cible changera. A derivier de l'autorite lors du prochain passage sur
+dossier cible changera. A deriver de l’autorite lors du prochain passage sur
 la configuration Vite.
 
 S'y ajoute la decision prise sur la question que 278ecbb2 laissait ouverte :
