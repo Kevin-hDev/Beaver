@@ -12,12 +12,9 @@ permissions:
 # Les séries de PR se remplacent ; celles de main sont conservées car elles
 # valident un état déjà fusionné.
 #
-# Chaque job porte un timeout-minutes. Sans lui le défaut de 360 minutes
-# s'applique, et un test qui se bloque au lieu d'échouer retient un runner six
-# heures. Ces budgets sont volontairement larges : ils bornent l'emballement,
-# ils n'arbitrent pas la durée normale. Un budget calé sur une exécution
-# favorable tue les jobs lents pour rien — macOS et Windows tournent
-# couramment 55 minutes, et la suite complète s'y ajoute.
+# Les timeout-minutes remplacent le défaut de 360 minutes, qu'un test bloqué
+# consommerait en entier. Ils sont larges exprès : macOS et Windows tournent
+# couramment 55 minutes.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -251,12 +248,8 @@ jobs:
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings
 
-      # Jusqu'ici macOS ne lançait que des filtres ciblés : tout ce qu'ils ne
-      # nommaient pas n'était jamais exécuté sur macOS, ni ici ni ailleurs.
-      # Les tests PTY et ceux du helper de mise à jour touchent à la gestion de
-      # processus, c'est-à-dire à ce qui diffère le plus d'un OS à l'autre, et
-      # personne ne les voyait. Les étapes ciblées qui suivent restent : elles
-      # échouent sur un nom précis, ce qu'une suite entière ne fait pas.
+      # Les étapes filtrées qui suivent restent : elles nomment le contrat rompu,
+      # ce qu'une suite entière ne fait pas.
       - name: Complete macOS backend suite
         working-directory: src-tauri
         run: cargo test --all -- --test-threads=1
@@ -315,12 +308,13 @@ jobs:
 
       # CEF is replaced by its compile-only profile so the complete backend
       # suite can run without loading libcef.dll in the test process.
-      # --all rather than --lib: the integration test in tests/ and the three
-      # binaries were never built here, so a break in either of them only ever
-      # showed up on Linux.
+      # --lib, not --all: build.rs embeds the test manifest through
+      # cargo:rustc-link-arg, which reaches every linked target. --all applies it
+      # to the application binaries too, which already carry one, and the linker
+      # stops on CVT1100. tests/ is therefore covered on Linux only.
       - name: Complete Windows backend tests
         working-directory: src-tauri
-        run: cargo test --all --features windows-tests -- --test-threads=1
+        run: cargo test --lib --features windows-tests -- --test-threads=1
 
       - name: Windows AppContainer test inventory
         working-directory: src-tauri

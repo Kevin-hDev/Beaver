@@ -148,15 +148,12 @@ fn windows_backend_ci_checks_native_cef_and_isolates_it_from_unit_tests() {
     assert!(preparation < clippy);
     assert!(test_job.contains("runs-on: windows-2022"));
     assert_eq!(test_job.matches("--features windows-tests").count(), 4);
-    // --all et non --lib : --lib ne compilait la bibliothèque qu'en mode test,
-    // où cfg(test) rend cef_supervision présent. La bibliothèque hors test et
-    // les trois binaires n'étaient donc jamais construits sous windows-tests,
-    // et l'incohérence de configuration conditionnelle de cef_supervision est
-    // restée invisible ici. Ce que ce test protège reste vrai : ce job ne
-    // prépare aucun CEF et ne monte aucun cache CEF — les assertions
-    // ci-dessous le vérifient, et sans native_browser aucun binaire ne lie
-    // libcef.dll.
-    assert!(test_job.contains("cargo test --all --features windows-tests -- --test-threads=1"));
+    // --lib et non --all : configure_windows_test_manifest pose /MANIFESTINPUT
+    // par cargo:rustc-link-arg, qui atteint toutes les cibles liées. Avec --all
+    // les binaires reçoivent un second manifeste et l'éditeur de liens s'arrête
+    // sur CVT1100. Y passer demande de restreindre le manifeste aux cibles de
+    // test (cargo:rustc-link-arg-tests).
+    assert!(test_job.contains("cargo test --lib --features windows-tests -- --test-threads=1"));
     assert!(test_job.contains("Windows AppContainer test inventory"));
     assert!(!test_job.contains("prepare-cef-source.mjs"));
     assert!(!test_job.contains(".cef-cache"));

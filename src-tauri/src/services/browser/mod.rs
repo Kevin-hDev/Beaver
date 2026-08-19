@@ -45,12 +45,9 @@ mod cef_request_handler;
 mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
-// La condition suit les appels de cef_runtime_policy, qui sont gardés par l'OS
-// et non par native_browser. Avec `any(test, native_browser)` le module
-// disparaissait de la lib compilée hors test sous la feature windows-tests,
-// alors que begin_cef_shutdown, force_cef_shutdown et cef_has_runnable_helpers
-// l'appellent dès que la cible est Windows ou macOS. native_browser n'est posé
-// que sur ces deux OS, donc cette condition est plus large, jamais plus étroite.
+// La condition suit les appels de cef_runtime_policy, gardés par l'OS et non
+// par native_browser : sous windows-tests le module disparaissait de la lib
+// hors test alors que ces appels restaient.
 #[cfg(any(test, target_os = "windows", target_os = "macos"))]
 mod cef_supervision;
 #[cfg(native_browser)]
