@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
+
+static INJECTION_LOCK: Mutex<()> = Mutex::new(());
 
 fn data_root() -> PathBuf {
     crate::services::paths::data_dir()
@@ -19,17 +22,20 @@ pub fn read_state() -> HashMap<String, bool> {
     serde_json::from_str(&content).unwrap_or_default()
 }
 
-pub fn write_state(state: &HashMap<String, bool>) -> Result<(), String> {
+fn write_state_unlocked(state: &HashMap<String, bool>) -> Result<(), String> {
     let path = state_path();
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("Cannot create dir: {}", e))?;
-    }
-    let tmp = path.with_extension("json.tmp");
     let content =
         serde_json::to_string_pretty(state).map_err(|e| format!("Cannot serialize: {}", e))?;
-    fs::write(&tmp, &content).map_err(|e| format!("Cannot write: {}", e))?;
-    fs::rename(&tmp, &path).map_err(|e| format!("Cannot rename: {}", e))?;
-    Ok(())
+    crate::services::private_store::atomic_write(&path, content.as_bytes())
+}
+
+pub fn set_enabled(name: String, enabled: bool) -> Result<(), String> {
+    let _guard = INJECTION_LOCK
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
+    let mut state = read_state();
+    state.insert(name, enabled);
+    write_state_unlocked(&state)
 }
 
 pub fn load_injected_contents() -> Option<String> {

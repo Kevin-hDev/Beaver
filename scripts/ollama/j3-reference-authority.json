@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "archiveRef": "refs/heads/codex/fix-app-shutdown-lifecycle",
+  "archiveHead": "50b5515c6d849945f08073d04eebb0aecb479f26",
+  "notesRef": "refs/notes/commits",
+  "commits": [
+    "d565b66410110287e5087c33c33c8edcfd3b2db3",
+    "57d380a0b954794626462f92e88aaa74393e791b",
+    "fe9010d4b8360d2cb52248a288a083f8fb4a2e10",
+    "8a6b90e562e601aec979415a6b89a0497a53f160",
+    "b87293901235817b3840977634d233de0f6f3066",
+    "50b5515c6d849945f08073d04eebb0aecb479f26"
+  ]
+}

@@ -76,7 +76,11 @@ jobs:
           cd ..
           npm run test:ollama-manager-contracts
           npm run test:j3-reference
+          npm run preflight:j3-reference
           npm run test:j3-native-assets
+
+      - name: Persistence contracts
+        run: npm run test:persistence-migration
 
       - name: E2E profile tests and lint
         working-directory: src-tauri
@@ -193,7 +197,7 @@ jobs:
       - name: Native Windows CEF journey
         env:
           E2E_REQUIRE_CEF_SMOKE: "1"
-        run: npm run test:e2e
+        run: npm run test:e2e:packaged
 
   backend-macos-native:
     name: Backend macOS CEF (Rust)
@@ -329,6 +333,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Brand boundaries contract
+        run: npm run test:brand-boundaries
 
       - name: Unit tests
         run: npm test

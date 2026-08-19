@@ -39,7 +39,9 @@ fn openrouter_preserves_a_negative_key_limit() {
 fn openrouter_account_balance_requires_management_key_and_uses_credits_api() {
     let key = json!({"data": {"is_management_key": true}});
     assert!(remote_api::openrouter_is_management_key(&key));
-    assert!(!remote_api::openrouter_is_management_key(&json!({"data": {}})));
+    assert!(!remote_api::openrouter_is_management_key(
+        &json!({"data": {}})
+    ));
 
     let mut remote = remote_api::parse("openrouter", &json!({"data": {}})).unwrap();
     assert!(remote_api::add_openrouter_account_balance(

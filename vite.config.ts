@@ -4,7 +4,12 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
-const rustTargetDir = path.resolve(import.meta.dirname, "src-tauri/target");
+// Windows place Cargo à la racine pour partager CEF, updater et artefacts ; les
+// autres lancements gardent la cible sous src-tauri. Vite ne doit surveiller aucun des deux.
+const cargoTargetDirs = [
+  path.resolve(import.meta.dirname, "src-tauri/target"),
+  path.resolve(import.meta.dirname, "target"),
+];
 
 export default defineConfig({
   plugins: [
@@ -29,8 +34,11 @@ export default defineConfig({
     strictPort: true,
     watch: {
       ignored: (watchedPath) =>
-        watchedPath === rustTargetDir ||
-        watchedPath.startsWith(`${rustTargetDir}${path.sep}`),
+        cargoTargetDirs.some(
+          (targetDir) =>
+            watchedPath === targetDir ||
+            watchedPath.startsWith(`${targetDir}${path.sep}`),
+        ),
     },
   },
   // CVE-2023-46115 : ne PAS exposer les variables d'env TAURI_ au frontend

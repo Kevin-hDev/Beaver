@@ -25,6 +25,13 @@ pub fn configure(command: &mut Command) {
     let _ = command;
 }
 
+/// Applique les drapeaux de base et ceux qu'un lanceur particulier exige, sans
+/// que celui-ci redefinisse les drapeaux communs.
+#[cfg(windows)]
+pub fn configure_with_extra_flags(command: &mut Command, extra: u32) {
+    command.creation_flags(CREATE_NO_WINDOW | extra);
+}
+
 pub fn configure_tokio(command: &mut tokio::process::Command) {
     #[cfg(windows)]
     command.as_std_mut().creation_flags(CREATE_NO_WINDOW);

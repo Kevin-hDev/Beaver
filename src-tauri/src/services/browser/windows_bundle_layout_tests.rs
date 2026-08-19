@@ -50,12 +50,13 @@ fn windows_bundle_hook_pins_and_verifies_the_cef_bootstrap() {
     assert!(script.contains("CREDITS.html"));
     assert!(script.contains("$env:CARGO_BUILD_TARGET"));
     assert!(script.contains("cargo-target-dir.mjs"));
-    assert!(script.contains("Join-Path $CargoTargetRoot \"$BuildTarget\\release\""));
+    assert!(script.contains("$env:CLGO_CEF_CARGO_FEATURES"));
+    assert!(script.contains("$CargoProfile = \"debug\""));
+    assert!(script.contains("tauri/custom-protocol,e2e"));
     assert!(!script.contains("Join-Path $TauriDir \"target\\release\""));
     let library_build = script
-        .find("cargo build --release --lib")
-        .expect("explicit Windows application DLL build");
-    assert!(script.contains("--features tauri/custom-protocol"));
+        .find("& cargo @CargoArguments")
+        .expect("profile-aware Windows application DLL build");
     let library_staging = script
         .find("$ApplicationDll")
         .expect("Windows application DLL staging");
@@ -75,6 +76,23 @@ fn windows_bundle_hook_pins_and_verifies_the_cef_bootstrap() {
     assert!(application_source < temporary_bootstrap);
     assert!(temporary_bootstrap < branding);
     assert!(branding < atomic_replace);
+}
+
+#[test]
+fn windows_e2e_overlay_preserves_object_resource_merging() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let config: Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("tauri.e2e.conf.json")).expect("E2E config"),
+    )
+    .expect("valid E2E config");
+
+    assert_eq!(
+        config
+            .pointer("/bundle/resources/default-skills~1")
+            .and_then(Value::as_str),
+        Some("default-skills/")
+    );
+    assert!(config.pointer("/bundle/resources/0").is_none());
 }
 
 #[test]

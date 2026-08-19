@@ -1132,7 +1132,9 @@
       "serviceShuttingDown": "このサービスを停止しています。しばらくしてからもう一度お試しください。",
       "serviceCapacity": "実行中の操作が多すぎます。しばらくしてからもう一度お試しください。",
       "gatewayShuttingDown": "メッセージチャンネルを停止しています。しばらくしてからもう一度お試しください。",
-      "gatewayBusy": "処理中のメッセージが多すぎます。しばらくしてからもう一度お試しください。"
+      "gatewayBusy": "処理中のメッセージが多すぎます。しばらくしてからもう一度お試しください。",
+      "activeStreamCapacity": "応答を生成中の会話が多すぎます。しばらくしてからもう一度お試しください。",
+      "streamReplaced": "新しいリクエストがこの応答を置き換えました。"
     },
     "localStore": {
       "ollamaCustomization": "Ollama のカスタマイズファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-custom-models.json」を復元してください。削除しないでください。バックアップなしで再起動するとこの履歴が失われ、Ollama ネイティブと表示されるプロンプトが本当に元のものか Beaver は保証できなくなります。",
@@ -1145,6 +1147,7 @@
       "ollamaNativePromptsWrite": "Beaver は「ollama-native-system-prompts.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
       "systemPromptsWrite": "Beaver は「system-prompt-settings.json」を保存できません。ディスクに空きがあるか確認し、もう一度お試しください。",
       "privateStorage": "Beaver のプライベートストレージにアクセスできません。ディスク容量と権限を確認し、もう一度お試しください。",
+      "projects": "Beaver はプロジェクトを読み取りまたは保存できません。ディスクと権限を確認し、もう一度お試しください。",
       "systemPromptsRuntimeFallback": "システムプロンプト設定を利用できません。このメッセージでは一時的に Beaver のデフォルト指示を使用します。",
       "ollamaModelfileInvalid": "Modelfile を安全に変更できません。変更は適用されませんでした。",
       "ollamaParameterInvalid": "少なくとも1つの Ollama パラメーターに、簡易エディターでは変更できない値があります。Modelfile エディターで修正してください。",
@@ -1166,8 +1169,6 @@
     "maxFiles": "最大 {{max}} ファイル",
     "fileTooLarge": "{{name}} は 20MB を超えています",
     "saveFailed": "保存に失敗しました",
-    "projectRenameFailed": "プロジェクトの名前を変更できませんでした",
-    "projectDeleteFailed": "プロジェクトを削除できませんでした",
     "projectOpenFailed": "フォルダーを開けませんでした",
     "sessionSaveFailed": "セッションを保存できませんでした",
     "downloadFailed": "ダウンロードに失敗しました",

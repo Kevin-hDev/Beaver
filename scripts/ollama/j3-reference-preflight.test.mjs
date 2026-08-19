@@ -6,13 +6,13 @@ import { tmpdir } from "node:os";
 import { test } from "node:test";
 
 import {
-  parseJ3ReferenceInventory,
+  parseJ3ReferenceAuthority,
   verifyJ3ReferenceArchive,
 } from "./j3-reference-preflight.mjs";
 
-const TEST_DIRECTORY = dirname(fileURLToPath(import.meta.url));
-const VALID_FIXTURE = join(TEST_DIRECTORY, "fixtures/j3-reference/valid-inventory.md");
-const MISSING_COMMIT_FIXTURE = join(TEST_DIRECTORY, "fixtures/j3-reference/missing-commit.md");
+const DIRECTORY = dirname(fileURLToPath(import.meta.url));
+const AUTHORITY = join(DIRECTORY, "j3-reference-authority.json");
+const PACKAGE_MANIFEST = join(DIRECTORY, "../../package.json");
 const EXPECTED_HEAD = "50b5515c6d849945f08073d04eebb0aecb479f26";
 const EXPECTED_COMMITS = [
   "d565b66410110287e5087c33c33c8edcfd3b2db3",
@@ -20,35 +20,40 @@ const EXPECTED_COMMITS = [
   "fe9010d4b8360d2cb52248a288a083f8fb4a2e10",
   "8a6b90e562e601aec979415a6b89a0497a53f160",
   "b87293901235817b3840977634d233de0f6f3066",
-  "50b5515c6d849945f08073d04eebb0aecb479f26",
+  EXPECTED_HEAD,
 ];
-const MAX_INVENTORY_BYTES = 256 * 1024;
+const MAX_AUTHORITY_BYTES = 16 * 1024;
 const GENERIC_FAILURE = /J3 reference preflight failed/u;
 
-async function readFixture(path) {
-  return readFile(path, "utf8");
+async function parsedAuthority() {
+  return parseJ3ReferenceAuthority(await readFile(AUTHORITY, "utf8"));
 }
 
-function archiveGitOutput(inventory, note = "REPRISE JALON 3 — BRANCHE HISTORIQUE RESTAURÉE") {
+function archiveGitOutput(authority, note = "REPRISE JALON 3") {
   const calls = [];
-  const runGit = async (args) => {
-    calls.push(args);
-    assert.equal(Array.isArray(args), true);
-    assert.equal(args.every((argument) => typeof argument === "string"), true);
-    const [command] = args;
-    if (command === "rev-parse") return `${inventory.archiveHead}\n`;
-    if (command === "cat-file") return "";
-    if (command === "merge-base") return "";
-    if (command === "notes") return note;
-    throw new Error(`unexpected git command: ${args.join(" ")}`);
+  return {
+    calls,
+    runGit: async (args) => {
+      calls.push(args);
+      if (args[0] === "fetch") return "";
+      if (args[0] === "rev-parse") return `${authority.archiveHead}\n`;
+      if (["cat-file", "merge-base"].includes(args[0])) return "";
+      if (args[0] === "notes") return note;
+      throw new Error("unexpected command");
+    },
   };
-  return { calls, runGit };
 }
 
-test("parse l'inventaire J3 valide avec six commits complets", async () => {
-  const parsed = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
+test("the npm preflight uses the tracked authority", async () => {
+  const manifest = JSON.parse(await readFile(PACKAGE_MANIFEST, "utf8"));
+  assert.equal(
+    manifest.scripts["preflight:j3-reference"],
+    "node scripts/ollama/j3-reference-preflight.mjs --authority scripts/ollama/j3-reference-authority.json",
+  );
+});
 
-  assert.deepEqual(parsed, {
+test("parses the bounded tracked authority", async () => {
+  assert.deepEqual(await parsedAuthority(), {
     archiveRef: "refs/heads/codex/fix-app-shutdown-lifecycle",
     archiveHead: EXPECTED_HEAD,
     notesRef: "refs/notes/commits",
@@ -56,168 +61,83 @@ test("parse l'inventaire J3 valide avec six commits complets", async () => {
   });
 });
 
-test("vérifie la tête distante exacte, les objets, les ancêtres et la note", async () => {
-  const inventory = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
-  const { calls, runGit } = archiveGitOutput(inventory);
-
-  const result = await verifyJ3ReferenceArchive({
-    repoRoot: TEST_DIRECTORY,
-    inventoryPath: VALID_FIXTURE,
-    runGit,
-  });
+test("fetches remote notes into a dedicated ref and verifies all evidence", async () => {
+  const authority = await parsedAuthority();
+  const { calls, runGit } = archiveGitOutput(authority);
+  const result = await verifyJ3ReferenceArchive({ repoRoot: DIRECTORY, authorityPath: AUTHORITY, runGit });
 
   assert.deepEqual(result, {
     archiveHead: EXPECTED_HEAD,
     checkedCommits: EXPECTED_COMMITS,
     noteMatched: true,
   });
-  assert.equal(calls.some((args) => args[0] === "rev-parse"), true);
-  assert.equal(calls.filter((args) => args[0] === "cat-file").length, 7);
-  assert.equal(calls.filter((args) => args[0] === "merge-base").length, 6);
-  assert.equal(calls.some((args) => args[0] === "notes"), true);
+  assert.deepEqual(calls[0], [
+    "fetch", "--no-tags", "--force", "origin",
+    "+refs/heads/codex/fix-app-shutdown-lifecycle:refs/remotes/origin/codex/fix-app-shutdown-lifecycle",
+    "+refs/notes/commits:refs/notes/beaver-j3-preflight",
+  ]);
+  assert.equal(calls.some((args) => args.includes("refs/notes/commits:refs/notes/commits")), false);
+  assert.deepEqual(calls.at(-1), ["notes", "--ref=refs/notes/beaver-j3-preflight", "show", EXPECTED_HEAD]);
 });
 
-test("bloque une tête divergente", async () => {
-  const inventory = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
-  const { runGit } = archiveGitOutput({ ...inventory, archiveHead: "a".repeat(40) });
-
-  await assert.rejects(
-    () => verifyJ3ReferenceArchive({ repoRoot: TEST_DIRECTORY, inventoryPath: VALID_FIXTURE, runGit }),
-    GENERIC_FAILURE,
-  );
-});
-
-test("bloque une note absente", async () => {
-  const inventory = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
-  const { runGit } = archiveGitOutput(inventory, "");
-
-  await assert.rejects(
-    () => verifyJ3ReferenceArchive({ repoRoot: TEST_DIRECTORY, inventoryPath: VALID_FIXTURE, runGit }),
-    GENERIC_FAILURE,
-  );
-});
-
-test("bloque un objet absent", async () => {
-  const inventory = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
-  const { runGit } = archiveGitOutput(inventory);
-  let catFileCalls = 0;
-  const runMissingObject = async (args) => {
-    if (args[0] === "cat-file" && ++catFileCalls === 2) throw new Error("missing object");
-    return runGit(args);
-  };
-
-  await assert.rejects(
-    () => verifyJ3ReferenceArchive({ repoRoot: TEST_DIRECTORY, inventoryPath: VALID_FIXTURE, runGit: runMissingObject }),
-    GENERIC_FAILURE,
-  );
-});
-
-test("bloque un commit qui n'est pas ancêtre", async () => {
-  const inventory = parseJ3ReferenceInventory(await readFixture(VALID_FIXTURE));
-  const { runGit } = archiveGitOutput(inventory);
-  const runNonAncestor = async (args) => {
-    if (args[0] === "merge-base" && args[2] === EXPECTED_COMMITS[0]) throw new Error("not ancestor");
-    return runGit(args);
-  };
-
-  await assert.rejects(
-    () => verifyJ3ReferenceArchive({ repoRoot: TEST_DIRECTORY, inventoryPath: VALID_FIXTURE, runGit: runNonAncestor }),
-    GENERIC_FAILURE,
-  );
-});
-
-test("bloque une ligne J3 supplémentaire", async () => {
-  const markdown = `${await readFixture(VALID_FIXTURE)}| 23 | \`1111111111111111111111111111111111111111\` | extra |\n`;
-
-  assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
-});
-
-test("bloque un SHA court", async () => {
-  const markdown = (await readFixture(VALID_FIXTURE)).replace(EXPECTED_COMMITS[0], "d565b66");
-
-  assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
-});
-
-test("bloque un SHA J3 de 39 caractères", async () => {
-  const markdown = (await readFixture(VALID_FIXTURE)).replace(EXPECTED_COMMITS[0], EXPECTED_COMMITS[0].slice(0, 39));
-
-  assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
-});
-
-test("bloque un SHA J3 de 41 caractères", async () => {
-  const markdown = (await readFixture(VALID_FIXTURE)).replace(EXPECTED_COMMITS[0], `${EXPECTED_COMMITS[0]}0`);
-
-  assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
-});
-
-test("bloque une valeur dupliquée", async () => {
-  const markdown = (await readFixture(VALID_FIXTURE)).replace(EXPECTED_COMMITS[1], EXPECTED_COMMITS[0]);
-
-  assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
-});
-
-test("bloque une commande Git non nulle", async () => {
-  const runGit = async () => {
-    throw new Error("private git detail");
-  };
-
-  await assert.rejects(
-    () => verifyJ3ReferenceArchive({ repoRoot: TEST_DIRECTORY, inventoryPath: VALID_FIXTURE, runGit }),
-    GENERIC_FAILURE,
-  );
-});
-
-test("bloque l'inventaire auquel il manque un commit", async () => {
-  const markdown = await readFixture(MISSING_COMMIT_FIXTURE);
-  assert.throws(() => parseJ3ReferenceInventory(markdown), GENERIC_FAILURE);
-});
-
-test("refuse un fichier de plus de 256 Kio avant sa lecture", async () => {
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "j3-reference-"));
-  const inventoryPath = join(temporaryRoot, "oversized.md");
-  await writeFile(inventoryPath, Buffer.alloc(MAX_INVENTORY_BYTES + 1, "x"));
-  let statCalls = 0;
-  let openCalls = 0;
-  const openFile = async (...args) => {
-    openCalls += 1;
-    const handle = await open(...args);
-    return {
-      stat: async (...statArgs) => {
-        statCalls += 1;
-        return handle.stat(...statArgs);
-      },
-      read: () => {
-        throw new Error("read should not be called");
-      },
-      close: (...closeArgs) => handle.close(...closeArgs),
+test("rejects divergent, missing and non-ancestor evidence", async () => {
+  const authority = await parsedAuthority();
+  for (const failure of ["head", "note", "object", "ancestor"]) {
+    const { runGit } = archiveGitOutput(authority, failure === "note" ? "" : "REPRISE JALON 3");
+    const failingGit = async (args) => {
+      if (failure === "head" && args[0] === "rev-parse") return `${"a".repeat(40)}\n`;
+      if (failure === "object" && args[0] === "cat-file" && args[2]?.startsWith(EXPECTED_COMMITS[0])) throw new Error("missing");
+      if (failure === "ancestor" && args[0] === "merge-base") throw new Error("not ancestor");
+      return runGit(args);
     };
-  };
-
-  try {
     await assert.rejects(
-      () => verifyJ3ReferenceArchive({
-        repoRoot: temporaryRoot,
-        inventoryPath,
-        runGit: async () => "",
-        openFile,
-      }),
+      verifyJ3ReferenceArchive({ repoRoot: DIRECTORY, authorityPath: AUTHORITY, runGit: failingGit }),
       GENERIC_FAILURE,
     );
-    assert.equal(statCalls, 1);
-    assert.equal(openCalls, 1);
-  } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
   }
 });
 
-test("borne la lecture après une course de taille", async () => {
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "j3-reference-race-"));
-  const inventoryPath = join(temporaryRoot, "race.md");
-  await writeFile(inventoryPath, Buffer.alloc(MAX_INVENTORY_BYTES + 32, "x"));
-  let openCalls = 0;
+test("rejects malformed, duplicate, short and extra authority values", async () => {
+  const valid = JSON.parse(await readFile(AUTHORITY, "utf8"));
+  for (const invalid of [
+    { ...valid, archiveHead: "short" },
+    { ...valid, commits: [...valid.commits.slice(0, 5), valid.commits[0]] },
+    { ...valid, commits: valid.commits.slice(0, 5) },
+    { ...valid, extra: true },
+    { ...valid, archiveRef: "refs/heads/../unsafe" },
+  ]) {
+    assert.throws(() => parseJ3ReferenceAuthority(JSON.stringify(invalid)), GENERIC_FAILURE);
+  }
+});
+
+test("rejects an oversized authority before reading its body", async () => {
+  const root = await mkdtemp(join(tmpdir(), "j3-reference-"));
+  const path = join(root, "authority.json");
+  await writeFile(path, Buffer.alloc(MAX_AUTHORITY_BYTES + 1, "x"));
+  const openFile = async (...args) => {
+    const handle = await open(...args);
+    return {
+      stat: (...statArgs) => handle.stat(...statArgs),
+      read: () => { throw new Error("body must not be read"); },
+      close: (...closeArgs) => handle.close(...closeArgs),
+    };
+  };
+  try {
+    await assert.rejects(
+      verifyJ3ReferenceArchive({ repoRoot: root, authorityPath: path, runGit: async () => "", openFile }),
+      GENERIC_FAILURE,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("bounds a size race to one extra byte", async () => {
+  const root = await mkdtemp(join(tmpdir(), "j3-reference-race-"));
+  const path = join(root, "authority.json");
+  await writeFile(path, Buffer.alloc(MAX_AUTHORITY_BYTES + 8, "x"));
   let requestedBytes = 0;
   const openFile = async (...args) => {
-    openCalls += 1;
     const handle = await open(...args);
     return {
       stat: async () => ({ size: 1 }),
@@ -228,15 +148,13 @@ test("borne la lecture après une course de taille", async () => {
       close: (...closeArgs) => handle.close(...closeArgs),
     };
   };
-
   try {
     await assert.rejects(
-      () => verifyJ3ReferenceArchive({ repoRoot: temporaryRoot, inventoryPath, runGit: async () => "", openFile }),
+      verifyJ3ReferenceArchive({ repoRoot: root, authorityPath: path, runGit: async () => "", openFile }),
       GENERIC_FAILURE,
     );
-    assert.equal(openCalls, 1);
-    assert.equal(requestedBytes, MAX_INVENTORY_BYTES + 1);
+    assert.equal(requestedBytes, MAX_AUTHORITY_BYTES + 1);
   } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
+    await rm(root, { recursive: true, force: true });
   }
 });

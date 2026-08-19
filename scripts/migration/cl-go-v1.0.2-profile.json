@@ -701,6 +701,11 @@
         {
           "file": "src-tauri/src/lib.rs",
           "snippets": ["tauri_plugin_single_instance::init"]
+        },
+        {
+          "file": "src-tauri/src/app_build.rs",
+          "scope": "migration",
+          "snippets": ["tauri_plugin_single_instance::init"]
         }
       ],
       "evidence": ["scripts/release/package-migration.test.mjs"],

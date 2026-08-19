@@ -16,9 +16,10 @@ fn log_path() -> PathBuf {
 }
 
 pub fn save_pid(pid: u32) {
-    let tmp = pid_path().with_extension("tmp");
-    if std::fs::write(&tmp, pid.to_string()).is_ok() {
-        let _ = std::fs::rename(&tmp, pid_path());
+    if crate::services::private_store::atomic_write(&pid_path(), pid.to_string().as_bytes())
+        .is_err()
+    {
+        ::log::warn!("[searxng] pid receipt unavailable");
     }
 }
 
@@ -208,5 +209,13 @@ mod tests {
         let tail = read_log_tail(&log).unwrap();
         assert!(tail.len() <= MAX_STARTUP_LOG_BYTES as usize);
         assert!(String::from_utf8_lossy(&tail).contains("bounded-tail"));
+    }
+
+    #[test]
+    fn pid_receipt_uses_the_private_store_authority() {
+        let source = include_str!("process.rs");
+
+        assert!(source.contains("private_store::atomic_write"));
+        assert!(!source.contains("with_extension(\"tmp\")"));
     }
 }

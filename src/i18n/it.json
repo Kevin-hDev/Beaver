@@ -1132,7 +1132,9 @@
       "serviceShuttingDown": "Questo servizio si sta arrestando. Riprova tra poco.",
       "serviceCapacity": "Sono già in corso troppe operazioni. Riprova tra poco.",
       "gatewayShuttingDown": "I canali di messaggistica si stanno arrestando. Riprova tra poco.",
-      "gatewayBusy": "Sono già in elaborazione troppi messaggi. Riprova tra poco."
+      "gatewayBusy": "Sono già in elaborazione troppi messaggi. Riprova tra poco.",
+      "activeStreamCapacity": "Troppe conversazioni stanno già generando risposte. Riprova tra poco.",
+      "streamReplaced": "Una richiesta più recente ha sostituito questa risposta."
     },
     "localStore": {
       "ollamaCustomization": "Il file di personalizzazione di Ollama non è leggibile. Ripristina “ollama-custom-models.json” da un backup in Impostazioni > Avanzate > Dati Beaver. Non eliminarlo: senza backup, il riavvio perderà questa cronologia e Beaver non potrà più garantire che un prompt mostrato come nativo di Ollama sia davvero l’originale.",
@@ -1145,6 +1147,7 @@
       "ollamaNativePromptsWrite": "Beaver non può salvare “ollama-native-system-prompts.json”. Verifica che il disco non sia pieno, quindi riprova.",
       "systemPromptsWrite": "Beaver non può salvare “system-prompt-settings.json”. Verifica che il disco non sia pieno, quindi riprova.",
       "privateStorage": "Beaver non può accedere al proprio archivio privato. Controlla lo spazio su disco e i permessi, quindi riprova.",
+      "projects": "Beaver non può leggere o salvare i progetti. Controlla il disco e i permessi, quindi riprova.",
       "systemPromptsRuntimeFallback": "Le impostazioni del system prompt non sono disponibili. Beaver usa temporaneamente le istruzioni predefinite per questo messaggio.",
       "ollamaModelfileInvalid": "Il Modelfile non può essere modificato in sicurezza. Non è stata applicata alcuna modifica.",
       "ollamaParameterInvalid": "Almeno un parametro Ollama contiene un valore che l’editor semplificato non può modificare. Usa l’editor Modelfile per correggerlo.",
@@ -1166,8 +1169,6 @@
     "maxFiles": "Massimo {{max}} file",
     "fileTooLarge": "{{name}} supera i 20 MB",
     "saveFailed": "Salvataggio non riuscito",
-    "projectRenameFailed": "Impossibile rinominare il progetto",
-    "projectDeleteFailed": "Impossibile eliminare il progetto",
     "projectOpenFailed": "Impossibile aprire la cartella",
     "sessionSaveFailed": "Impossibile salvare la sessione",
     "downloadFailed": "Download non riuscito",

@@ -24,6 +24,7 @@
     "test:cef": "node --test scripts/cef/cef-extract.test.mjs scripts/cef/cef-supervision-contracts.test.mjs scripts/cef/macos-runtime-profile.test.mjs scripts/cef/tauri-bundle-marker.test.mjs scripts/cef/tauri-bundle-request.test.mjs scripts/cef/windows-sha256.test.mjs",
     "test:extensions-host": "node scripts/extensions/prepare-extension-host.mjs --dev && node --test scripts/extensions/*.test.mjs",
     "test:e2e": "node scripts/e2e/run.mjs",
+    "test:e2e:packaged": "node scripts/e2e/run-packaged.mjs",
     "test:e2e-runner": "node --test scripts/e2e/*.test.mjs",
     "test:coverage": "vitest run --coverage",
     "test:install": "bash scripts/test-install-sh.sh && node --test scripts/installers-security.test.mjs && npm run test:package-migration",
@@ -31,7 +32,7 @@
     "test:j3-reference": "node --test scripts/ollama/j3-reference-preflight.test.mjs",
     "test:j3-native-assets": "node --test scripts/ollama/verify-native-upgrade-assets.test.mjs scripts/ollama/native-upgrade-proof.test.mjs",
     "test:ollama-manager-contracts": "node --test scripts/ollama/ollama-manager-contracts.test.mjs && node scripts/ollama/ollama-manager-contracts.mjs",
-    "preflight:j3-reference": "node scripts/ollama/j3-reference-preflight.mjs",
+    "preflight:j3-reference": "node scripts/ollama/j3-reference-preflight.mjs --authority scripts/ollama/j3-reference-authority.json",
     "contracts:generate": "cd src-tauri && cargo test models::provider_contract_tests::export_typescript_provider_contract -- --ignored --exact --nocapture",
     "contracts:generate:ollama": "cd src-tauri && cargo test services::ollama_manager::typescript_contract_tests::export_typescript_runtime_contract -- --ignored --exact --nocapture",
     "contracts:check": "cd src-tauri && cargo test models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract -- --exact",
@@ -126,6 +127,7 @@
     "brace-expansion@^5.0.0": "5.0.9",
     "serialize-javascript": "7.0.5",
     "@puppeteer/browsers": "3.2.0",
+    "deepmerge-ts": "8.0.1",
     "image-size": "$image-size",
     "https": "npm:https-browserify@1.0.0"
   }

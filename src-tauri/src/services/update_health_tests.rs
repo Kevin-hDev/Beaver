@@ -93,6 +93,40 @@ fn rejects_ambiguous_health_arguments_without_writing_an_ack() {
     }
 }
 
+#[test]
+fn acknowledgement_survives_the_helper_consuming_the_ack_at_publication() {
+    // Le helper de mise à jour supprime le fichier d'ack dès qu'il le voit
+    // (HealthToken::wait_for). L'acquittement doit donc être acquis dès la
+    // publication : toute étape faillible exécutée après (la réparation ACL
+    // en 1.1.3) échoue sur le fichier déjà consommé, fait échouer le hook
+    // setup de Tauri, et l'application relancée meurt juste après l'ack.
+    let root = tempfile::tempdir().unwrap();
+    for index in 0..20_u8 {
+        let value = token(index);
+        let ack = root
+            .path()
+            .join("update-health")
+            .join(format!("{value}.ok"));
+        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let consumer_stop = std::sync::Arc::clone(&stop);
+        let consumer = std::thread::spawn(move || {
+            while !consumer_stop.load(std::sync::atomic::Ordering::Relaxed) {
+                if ack.exists() {
+                    let _ = fs::remove_file(&ack);
+                    return;
+                }
+                std::hint::spin_loop();
+            }
+        });
+        let result = acknowledge_in(["app", UPDATE_HEALTH_ARG, value.as_str()], root.path());
+        stop.store(true, std::sync::atomic::Ordering::Relaxed);
+        consumer.join().unwrap();
+        result.unwrap_or_else(|error| {
+            panic!("itération {index}: acquittement perdu face au helper ({error})")
+        });
+    }
+}
+
 #[cfg(unix)]
 #[test]
 fn refuses_a_symlinked_health_directory() {

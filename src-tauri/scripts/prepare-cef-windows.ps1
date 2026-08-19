@@ -63,17 +63,30 @@ Assert-RegularFile $BundleMarkerScript
 if ($LASTEXITCODE -ne 0) {
   throw "CEF runtime validation failed"
 }
+$BuildFeatures = $env:CLGO_CEF_CARGO_FEATURES
+if ([string]::IsNullOrWhiteSpace($BuildFeatures)) {
+  $CargoProfile = "release"
+  $CargoArguments = @("build", "--release", "--lib", "--features", "tauri/custom-protocol")
+  $ProductConfigName = "tauri.conf.json"
+} elseif ($BuildFeatures -ceq "e2e") {
+  $CargoProfile = "debug"
+  $CargoArguments = @("build", "--lib", "--features", "tauri/custom-protocol,e2e")
+  $ProductConfigName = "tauri.e2e.windows.conf.json"
+} else {
+  throw "CEF runtime validation failed"
+}
 $BuildTarget = $env:CARGO_BUILD_TARGET
 if ([string]::IsNullOrWhiteSpace($BuildTarget)) {
-  $TargetDir = Join-Path $CargoTargetRoot "release"
+  $TargetDir = Join-Path $CargoTargetRoot $CargoProfile
 } else {
   if ($BuildTarget -ne "x86_64-pc-windows-msvc") {
     throw "CEF runtime validation failed"
   }
-  $TargetDir = Join-Path $CargoTargetRoot "$BuildTarget\release"
+  $TargetDir = Join-Path $CargoTargetRoot "$BuildTarget\$CargoProfile"
 }
 $CargoManifest = Join-Path $TauriDir "Cargo.toml"
-& cargo build --release --lib --features tauri/custom-protocol --manifest-path $CargoManifest
+$CargoArguments += @("--manifest-path", $CargoManifest)
+& cargo @CargoArguments
 if ($LASTEXITCODE -ne 0) {
   throw "CEF runtime validation failed"
 }
@@ -133,13 +146,15 @@ $ApplicationExecutable = Join-Path $TargetDir "cl-go-dash.exe"
 $BrandedBootstrap = Join-Path $TargetDir "cl-go-dash.exe.branded.tmp"
 $ExecutableBackup = Join-Path $TargetDir "cl-go-dash.exe.branding.bak"
 $BrandingScript = Join-Path $PSScriptRoot "copy-windows-brand-resources.ps1"
-$TauriConfig = Get-Content -LiteralPath (Join-Path $TauriDir "tauri.conf.json") -Raw | ConvertFrom-Json
+$BaseTauriConfig = Get-Content -LiteralPath (Join-Path $TauriDir "tauri.conf.json") -Raw | ConvertFrom-Json
+$ProductConfig = Get-Content -LiteralPath (Join-Path $TauriDir $ProductConfigName) -Raw | ConvertFrom-Json
+$ExpectedProductName = $ProductConfig.productName
 Assert-RegularFile $ApplicationExecutable
 Assert-RegularFile $BrandingScript
 if (
-  $TauriConfig.productName -cne "Beaver" -or
-  $TauriConfig.version -notmatch "^[0-9]+\.[0-9]+\.[0-9]+$" -or
-  (Get-Item -LiteralPath $ApplicationExecutable).VersionInfo.ProductName -cne $TauriConfig.productName
+  $ExpectedProductName -cnotin @("Beaver", "Beaver E2E") -or
+  $BaseTauriConfig.version -notmatch "^[0-9]+\.[0-9]+\.[0-9]+$" -or
+  (Get-Item -LiteralPath $ApplicationExecutable).VersionInfo.ProductName -cne $ExpectedProductName
 ) {
   throw "CEF runtime validation failed"
 }
@@ -151,8 +166,8 @@ try {
   & $BrandingScript `
     -SourceExecutable $ApplicationExecutable `
     -DestinationExecutable $BrandedBootstrap `
-    -ExpectedProductName $TauriConfig.productName `
-    -ExpectedVersion $TauriConfig.version
+    -ExpectedProductName $ExpectedProductName `
+    -ExpectedVersion $BaseTauriConfig.version
   & node $BundleMarkerScript prepare-bootstrap $BrandedBootstrap
   if ($LASTEXITCODE -ne 0) {
     throw "CEF runtime validation failed"

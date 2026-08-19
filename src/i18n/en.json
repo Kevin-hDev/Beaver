@@ -1137,7 +1137,9 @@
       "serviceShuttingDown": "This service is stopping. Try again shortly.",
       "serviceCapacity": "Too many operations are already running. Try again shortly.",
       "gatewayShuttingDown": "Messaging channels are stopping. Try again shortly.",
-      "gatewayBusy": "Too many messages are already being processed. Try again shortly."
+      "gatewayBusy": "Too many messages are already being processed. Try again shortly.",
+      "activeStreamCapacity": "Too many conversations are already generating responses. Try again shortly.",
+      "streamReplaced": "A newer request replaced this response."
     },
     "localStore": {
       "ollamaCustomization": "The Ollama customization file is unreadable. Restore “ollama-custom-models.json” from a backup in Settings > Advanced > Beaver data. Do not delete it: without a backup, restarting loses this history and Beaver can no longer guarantee that a prompt shown as native Ollama is truly the original.",
@@ -1150,6 +1152,7 @@
       "ollamaNativePromptsWrite": "Beaver cannot save “ollama-native-system-prompts.json”. Check that the disk is not full, then try again.",
       "systemPromptsWrite": "Beaver cannot save “system-prompt-settings.json”. Check that the disk is not full, then try again.",
       "privateStorage": "Beaver cannot access its private storage. Check disk space and permissions, then try again.",
+      "projects": "Beaver cannot read or save projects. Check the disk and permissions, then try again.",
       "systemPromptsRuntimeFallback": "System prompt settings are unavailable. Beaver is temporarily using its default instructions for this message.",
       "ollamaModelfileInvalid": "The Modelfile cannot be changed safely. No changes were applied.",
       "ollamaParameterInvalid": "At least one Ollama parameter contains a value that the simplified editor cannot change. Use the Modelfile editor to correct it.",
@@ -1171,8 +1174,6 @@
     "maxFiles": "Maximum {{max}} files",
     "fileTooLarge": "{{name}} exceeds 20MB",
     "saveFailed": "Save failed",
-    "projectRenameFailed": "Could not rename project",
-    "projectDeleteFailed": "Could not delete project",
     "projectOpenFailed": "Could not open folder",
     "sessionSaveFailed": "Session could not be saved",
     "downloadFailed": "Download failed",

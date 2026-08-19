@@ -17,6 +17,7 @@ mod emergency_registration;
 mod emergency_signaler;
 mod final_action;
 mod policy;
+mod prearm;
 pub(crate) use policy::OLLAMA_REAP_RESERVE_TIMEOUT;
 mod presentation;
 mod raw_exit;
@@ -37,8 +38,8 @@ pub(crate) use emergency::EMERGENCY_CAPACITY;
 pub(crate) use emergency_registration::EmergencyHandoffReason;
 #[allow(unused_imports)]
 pub(crate) use emergency_signaler::{AppEmergencyPublisher, AppEmergencyRegistration};
-#[cfg(test)]
-pub(crate) use request_api::request_restart_with;
+#[cfg(target_os = "macos")]
+pub(crate) use request_api::try_request;
 pub use request_api::{request, request_restart};
 pub use work_supervisor::AppWorkSupervisor;
 pub type AppWorkAdmission = registry::TrackedAdmission;
@@ -75,6 +76,7 @@ pub struct AppExitCoordinator {
     policy: policy::ShutdownPolicy,
     timeline: OnceLock<policy::ShutdownTimeline>,
     intent: OnceLock<ExitIntent>,
+    exit_code: OnceLock<i32>,
     ultimate: ultimate::UltimateExit,
 }
 
@@ -86,7 +88,7 @@ enum ExitIntent {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum BeginResult {
-    Started(policy::ShutdownTimeline, ExitIntent),
+    Started(policy::ShutdownTimeline, ExitIntent, i32),
     Waiting,
     Ready,
     InvariantViolation,
@@ -102,6 +104,7 @@ impl AppExitCoordinator {
             policy: policy::ShutdownPolicy::production(),
             timeline: OnceLock::new(),
             intent: OnceLock::new(),
+            exit_code: OnceLock::new(),
             ultimate: ultimate::UltimateExit::initialize()?,
         })
     }
@@ -156,20 +159,17 @@ impl AppExitCoordinator {
             state::ShutdownPhase::Closing => return BeginResult::Waiting,
             state::ShutdownPhase::Running => {}
         }
-        let origin = std::time::Instant::now();
         if !self.registry.close() {
             return BeginResult::InvariantViolation;
         }
         if self.state.begin_closing() != state::BeginClosing::Started {
             return BeginResult::InvariantViolation;
         }
-        let timeline = policy::ShutdownTimeline::from_origin(origin, self.policy);
-        if self.intent.set(intent).is_err()
-            || self.timeline.set(timeline).is_err()
-            || !self.ultimate.arm(timeline.ultimate_deadline(), exit_code)
-        {
+        let Some((timeline, owned_intent, owned_exit_code)) =
+            self.prepare_exit_locked(intent, exit_code)
+        else {
             return BeginResult::InvariantViolation;
-        }
+        };
         if close_cef(
             timeline.cef_admission_deadline(),
             timeline.cef_helper_exit_deadline(),
@@ -178,7 +178,7 @@ impl AppExitCoordinator {
         {
             ::log::warn!("[exit] CEF admission barrier exceeded; cleanup continues");
         }
-        BeginResult::Started(timeline, intent)
+        BeginResult::Started(timeline, owned_intent, owned_exit_code)
     }
 
     fn spawn_watchdog(

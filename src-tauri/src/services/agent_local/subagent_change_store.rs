@@ -51,22 +51,22 @@ async fn save_in_dir(
     let _guard = STORE_LOCK.lock().await;
     meta.validate()?;
     let target = dir.join(format!("{}.json", meta.child_session_id));
-    tokio::fs::create_dir_all(dir)
+    crate::services::private_store::ensure_private_dir_async(dir.to_path_buf())
         .await
         .map_err(|_| "Persistance du changement impossible".to_string())?;
     make_room(dir, &target, limit).await?;
-    let tmp = dir.join(format!(".{}.{}.tmp", meta.child_session_id, uuid::Uuid::new_v4()));
     let data = serde_json::to_vec_pretty(meta)
         .map_err(|_| "Persistance du changement impossible".to_string())?;
-    tokio::fs::write(&tmp, data)
-        .await
-        .map_err(|_| "Persistance du changement impossible".to_string())?;
-    tokio::fs::rename(&tmp, target)
+    crate::services::private_store::atomic_write_async(target, data)
         .await
         .map_err(|_| "Persistance du changement impossible".to_string())
 }
 
-async fn make_room(dir: &std::path::Path, target: &std::path::Path, limit: usize) -> Result<(), String> {
+async fn make_room(
+    dir: &std::path::Path,
+    target: &std::path::Path,
+    limit: usize,
+) -> Result<(), String> {
     if target.exists() {
         return Ok(());
     }
@@ -118,8 +118,11 @@ async fn terminal_updated_at(path: &std::path::Path) -> Option<chrono::DateTime<
     let data = tokio::fs::read(path).await.ok()?;
     let meta = serde_json::from_slice::<SubagentChangeMeta>(&data).ok()?;
     meta.validate().ok()?;
-    matches!(meta.status, SubagentChangeStatus::Applied | SubagentChangeStatus::Discarded)
-        .then_some(meta.updated_at)
+    matches!(
+        meta.status,
+        SubagentChangeStatus::Applied | SubagentChangeStatus::Discarded
+    )
+    .then_some(meta.updated_at)
 }
 
 #[cfg(test)]

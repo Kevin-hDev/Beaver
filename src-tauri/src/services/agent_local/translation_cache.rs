@@ -1,6 +1,5 @@
 use include_dir::{include_dir, Dir};
 use std::path::PathBuf;
-use uuid::Uuid;
 
 // Traductions pré-bundlées embarquées dans le binaire au build.
 // Permet de livrer l'app avec des traductions pour les modèles populaires.
@@ -49,21 +48,7 @@ pub async fn get_cached(model: &str, lang: &str) -> Option<String> {
 
 pub async fn set_cached(model: &str, lang: &str, text: &str) -> Result<(), String> {
     let path = translation_path(model, lang);
-    if let Some(parent) = path.parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
-            .map_err(|e| format!("Erreur création dossier traductions : {e}"))?;
-    }
-    let filename = path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("translation.md");
-    let tmp = path.with_file_name(format!(".{}.{}.tmp", Uuid::new_v4(), filename));
-    tokio::fs::write(&tmp, text)
+    crate::services::private_store::atomic_write_async(path, text.as_bytes().to_vec())
         .await
-        .map_err(|e| format!("Erreur écriture traduction : {e}"))?;
-    tokio::fs::rename(&tmp, &path)
-        .await
-        .map_err(|e| format!("Erreur rename traduction : {e}"))?;
-    Ok(())
+        .map_err(|_| "Cache de traduction indisponible".to_string())
 }

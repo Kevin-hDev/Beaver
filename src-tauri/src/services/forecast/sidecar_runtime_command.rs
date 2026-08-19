@@ -120,11 +120,13 @@ mod tests {
             .arg(&pid_file);
         let cancel = CancellationToken::new();
         let worker_cancel = cancel.clone();
-        let started = Instant::now();
         let task = tokio::task::spawn_blocking(move || {
             run_cancellable(&mut command, &worker_cancel, "runtime test")
         });
-        tokio::time::timeout(Duration::from_secs(2), async {
+        // Le demarrage d'un interpreteur reel n'est pas la propriete testee : cette
+        // borne evite seulement un test bloque, et reste large parce qu'un premier
+        // lancement analyse par l'antivirus depasse plusieurs secondes.
+        tokio::time::timeout(Duration::from_secs(60), async {
             while !pid_file.exists() {
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
@@ -136,9 +138,12 @@ mod tests {
             .parse::<u32>()
             .unwrap();
 
+        // La propriete testee est la duree de l'annulation seule : la mesurer depuis
+        // le spawn y melangeait le demarrage du processus.
+        let cancelled_at = Instant::now();
         cancel.cancel();
         assert_eq!(task.await.unwrap().unwrap_err(), "cancelled");
-        assert!(started.elapsed() < Duration::from_secs(3));
+        assert!(cancelled_at.elapsed() < Duration::from_secs(3));
         let mut processes = sysinfo::System::new();
         processes.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
         assert!(processes.process(sysinfo::Pid::from_u32(pid)).is_none());

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Beaver E2E",
+  "bundle": {
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": null
+      }
+    }
+  }
+}

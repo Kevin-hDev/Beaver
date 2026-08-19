@@ -114,7 +114,5 @@ pub fn set_injection_state(name: String, enabled: bool) -> Result<(), String> {
     if name.contains("..") || name.contains('/') || name.contains('\\') {
         return Err("Nom de fichier invalide".to_string());
     }
-    let mut state = personality_injection::read_state();
-    state.insert(name, enabled);
-    personality_injection::write_state(&state)
+    personality_injection::set_enabled(name, enabled)
 }

@@ -172,3 +172,12 @@ fn startup_git_prune_uses_the_background_command_boundary() {
         "startup Git prune must not create a Windows console"
     );
 }
+
+#[test]
+fn cleanup_uses_the_session_store_and_propagates_index_rebuild_failure() {
+    let source = include_str!("subagent_startup_cleanup.rs");
+
+    assert!(source.contains("session_store::read_from_dir"));
+    assert!(source.contains("session_store::write_to_dir"));
+    assert!(!source.contains("let _ = session_index::rebuild_index_from"));
+}

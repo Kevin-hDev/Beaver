@@ -2,7 +2,7 @@ use crate::services::paths::data_dir;
 
 pub fn initialize(app_handle: &tauri::AppHandle) -> Result<(), String> {
     run(app_handle)?;
-    crate::services::private_store::repair_app_storage()
+    crate::services::private_store::repair_app_storage().map_err(|_| migration_error())
 }
 
 pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
@@ -20,7 +20,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
         let legacy_marker = new.join(".migrated-from-cl-go");
         if !legacy_marker.exists() && cl_go_legacy.exists() {
             crate::storage_migration_files::copy_items(&cl_go_legacy, &new)?;
-            fs::write(&legacy_marker, b"ok").map_err(|_| migration_error())?;
+            write_migration_file(&legacy_marker, b"ok")?;
         }
     }
 
@@ -38,7 +38,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
         if let Some(wrong) = app_support_wrong {
             if !appsupport_marker.exists() && wrong.exists() {
                 crate::storage_migration_files::copy_items(&wrong, &new)?;
-                fs::write(&appsupport_marker, b"ok").map_err(|_| migration_error())?;
+                write_migration_file(&appsupport_marker, b"ok")?;
             }
         }
     }
@@ -50,7 +50,7 @@ pub fn run(app_handle: &tauri::AppHandle) -> Result<(), String> {
         if let Some(old) = appdata {
             if !win_marker.exists() && old.exists() {
                 crate::storage_migration_files::copy_items(&old, &new)?;
-                fs::write(&win_marker, b"ok").map_err(|_| migration_error())?;
+                write_migration_file(&win_marker, b"ok")?;
             }
         }
     }
@@ -99,7 +99,7 @@ fn init_base_structure(base: &std::path::Path) -> Result<(), String> {
     for (name, content) in json_defaults {
         let path = base.join(name);
         if !path.exists() {
-            fs::write(&path, content).map_err(|_| migration_error())?;
+            write_migration_file(&path, content.as_bytes())?;
         }
     }
 
@@ -113,11 +113,15 @@ fn init_base_structure(base: &std::path::Path) -> Result<(), String> {
     for name in &empty_files {
         let path = base.join(name);
         if !path.exists() {
-            fs::write(&path, b"").map_err(|_| migration_error())?;
+            write_migration_file(&path, b"")?;
         }
     }
 
     Ok(())
+}
+
+fn write_migration_file(path: &std::path::Path, content: &[u8]) -> Result<(), String> {
+    crate::services::private_store::atomic_write(path, content).map_err(|_| migration_error())
 }
 
 fn migration_error() -> String {

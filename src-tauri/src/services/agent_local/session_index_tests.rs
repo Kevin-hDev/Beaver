@@ -1,8 +1,75 @@
-use super::*;
 use super::test_support::*;
+use super::*;
+use crate::services::agent_local::session_index_io;
 use chrono::Utc;
 use std::path::Path;
 use tempfile::TempDir;
+
+#[test]
+fn index_parser_rejects_an_unbounded_entry_collection() {
+    let entries = (0..=session_index_io::MAX_INDEX_ENTRIES)
+        .map(|index| test_meta(&format!("session-{index}"), 0))
+        .collect::<Vec<_>>();
+    let data = serde_json::to_vec(&entries).unwrap();
+
+    assert!(session_index_io::parse_index(&data).is_err());
+}
+
+#[tokio::test]
+async fn index_reader_rejects_an_oversized_sparse_file() {
+    let tmp = TempDir::new().unwrap();
+    let path = tmp.path().join("index.json");
+    std::fs::File::create(&path)
+        .unwrap()
+        .set_len(session_index_io::MAX_INDEX_FILE_BYTES + 1)
+        .unwrap();
+
+    assert!(session_index_io::read_index_from(&path).await.is_err());
+}
+
+#[tokio::test]
+async fn index_writer_evicts_the_oldest_metadata() {
+    let tmp = TempDir::new().unwrap();
+    let base = Utc::now();
+    let entries = (0..=session_index_io::MAX_INDEX_ENTRIES)
+        .map(|index| {
+            let mut meta = test_meta(&format!("session-{index}"), 0);
+            meta.updated_at = Some(base + chrono::Duration::seconds(index as i64));
+            meta
+        })
+        .collect::<Vec<_>>();
+
+    session_index_io::write_index_to(tmp.path(), &entries)
+        .await
+        .unwrap();
+    let stored = load_index(tmp.path()).await;
+    assert_eq!(stored.len(), session_index_io::MAX_INDEX_ENTRIES);
+    assert_eq!(
+        stored[0].id,
+        format!("session-{}", session_index_io::MAX_INDEX_ENTRIES)
+    );
+    assert!(!stored.iter().any(|meta| meta.id == "session-0"));
+}
+
+#[tokio::test]
+async fn rebuild_keeps_the_latest_sessions_after_the_limit() {
+    let tmp = TempDir::new().unwrap();
+    let base = Utc::now();
+    for index in 0..=session_index_io::MAX_INDEX_ENTRIES {
+        let mut session = test_session(&format!("session-{index}"), "Session", true);
+        session.created_at = base + chrono::Duration::seconds(index as i64);
+        persist(tmp.path(), &session).await;
+    }
+
+    let rebuilt = rebuild_index_from(tmp.path()).await.unwrap();
+
+    assert_eq!(rebuilt.len(), session_index_io::MAX_INDEX_ENTRIES);
+    assert_eq!(
+        rebuilt[0].id,
+        format!("session-{}", session_index_io::MAX_INDEX_ENTRIES)
+    );
+    assert!(!rebuilt.iter().any(|meta| meta.id == "session-0"));
+}
 
 #[tokio::test]
 async fn rebuild_produces_correct_index() {

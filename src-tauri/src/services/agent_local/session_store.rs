@@ -111,16 +111,17 @@ pub async fn find_heartbeat_session(provider: &str, model: &str) -> Result<Optio
 
 pub async fn get(id: &str) -> Result<AgentSession, String> {
     validate_session_id(id)?;
-    let path = crate::services::paths::data_file_for_read(
-        "agent-sessions",
-        &format!("{id}.json"),
-    )
-    .await
-    .map_err(|_| "Session introuvable".to_string())?;
-    let data = tokio::fs::read_to_string(&path)
+    let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
         .await
         .map_err(|_| "Session introuvable".to_string())?;
-    serde_json::from_str(&data).map_err(|_| "Session invalide".to_string())
+    super::session_store_document::read_from_path(path)
+        .await
+        .map_err(|error| match error {
+            super::session_store_document::SessionReadError::Invalid => error.message().to_string(),
+            super::session_store_document::SessionReadError::Unavailable => {
+                "Session introuvable".to_string()
+            }
+        })
 }
 
 pub async fn list() -> Result<Vec<AgentSessionMeta>, String> {
@@ -139,15 +140,23 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     )
     .await
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
-    let mut value = serde_json::to_value(session).map_err(|e| e.to_string())?;
-    super::session_permission_state::merge_into_serialized(&session.id, &mut value).await;
-    super::session_security::sanitize_session_value(&mut value);
-    super::session_store_compaction::compact_tool_history(&mut value);
-    let data = serde_json::to_string_pretty(&value).map_err(|e| e.to_string())?;
-    crate::services::private_store::atomic_write_async(path, data.into_bytes()).await?;
+    super::session_store_document::write_to_path(path, session).await?;
     let meta = crate::services::agent_local::session_index::meta_from_session(session);
     let _ = crate::services::agent_local::session_index::upsert_entry(meta).await;
     Ok(())
+}
+
+pub(crate) async fn read_from_dir(dir: &std::path::Path, id: &str) -> Result<AgentSession, String> {
+    super::session_store_document::read_from_dir(dir, id)
+        .await
+        .map_err(|error| error.message().to_string())
+}
+
+pub(crate) async fn write_to_dir(
+    dir: &std::path::Path,
+    session: &AgentSession,
+) -> Result<(), String> {
+    super::session_store_document::write_to_dir(dir, session).await
 }
 
 pub async fn rename(id: &str, name: &str) -> Result<(), String> {
@@ -159,12 +168,9 @@ pub async fn rename(id: &str, name: &str) -> Result<(), String> {
 
 pub(crate) async fn delete_one(id: &str) -> Result<(), String> {
     validate_session_id(id)?;
-    let path = crate::services::paths::data_file_for_read(
-        "agent-sessions",
-        &format!("{id}.json"),
-    )
-    .await
-    .map_err(|_| "Session introuvable".to_string())?;
+    let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))
+        .await
+        .map_err(|_| "Session introuvable".to_string())?;
     tokio::fs::remove_file(&path)
         .await
         .map_err(|_| "Suppression de session impossible".to_string())?;

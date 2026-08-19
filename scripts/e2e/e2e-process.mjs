@@ -16,13 +16,21 @@ export async function canonicalE2eRepoRoot(moduleUrl) {
   return realpath(candidate);
 }
 
-export function buildArguments(platform) {
+export function buildArguments(platform, packaged = false) {
   const bundleArguments = platform === "darwin"
     ? ["--bundles", "app"]
-    : ["--no-bundle"];
+    : platform === "win32" && packaged
+      ? ["--bundles", "nsis"]
+      : ["--no-bundle"];
+  const e2eConfigurations = platform === "win32" && packaged
+    ? [
+      "--config", "src-tauri/tauri.e2e.conf.json",
+      "--config", "src-tauri/tauri.e2e.windows.conf.json",
+    ]
+    : ["--config", "src-tauri/tauri.e2e.conf.json"];
   return [
     "build", "--debug", "--features", "e2e",
-    "--config", "src-tauri/tauri.e2e.conf.json",
+    ...e2eConfigurations,
     ...bundleArguments,
   ];
 }
@@ -85,11 +93,17 @@ function validPath(value) {
     && !/[\0\r\n]/u.test(value);
 }
 
-export function runCommand(command, args, { cwd, env, timeoutMs }) {
+export function runCommand(command, args, {
+  cwd,
+  env,
+  timeoutMs,
+  windowsVerbatimArguments = false,
+}) {
   if (
     !Number.isSafeInteger(timeoutMs)
     || timeoutMs < 1
     || timeoutMs > MAX_PROCESS_TIMEOUT_MS
+    || typeof windowsVerbatimArguments !== "boolean"
   ) {
     return Promise.reject(new Error(PROCESS_TIMEOUT_MESSAGE));
   }
@@ -100,6 +114,7 @@ export function runCommand(command, args, { cwd, env, timeoutMs }) {
       shell: false,
       stdio: "inherit",
       windowsHide: true,
+      windowsVerbatimArguments,
     });
     const timeout = setTimeout(() => {
       process.stderr.write(`${PROCESS_TIMEOUT_MESSAGE} after ${timeoutMs} ms.\n`);

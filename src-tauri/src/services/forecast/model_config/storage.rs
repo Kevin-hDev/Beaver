@@ -1,10 +1,12 @@
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 const MAX_MODELS: usize = 100;
 const MAX_PARAMS_PER_MODEL: usize = 64;
 const MAX_CONFIG_BYTES: u64 = 256 * 1024;
+static CONFIG_LOCK: Mutex<()> = Mutex::new(());
 
 pub type StoredConfigs = BTreeMap<String, Map<String, Value>>;
 
@@ -34,6 +36,9 @@ pub fn read_model(model_id: &str) -> Result<Map<String, Value>, String> {
 }
 
 pub fn write_model(model_id: &str, values: Map<String, Value>) -> Result<(), String> {
+    let _guard = CONFIG_LOCK
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     let mut all = read_all()?;
     if values.is_empty() {
         all.remove(model_id);
@@ -65,16 +70,9 @@ fn parse_configs(content: &str) -> Result<StoredConfigs, String> {
 
 fn write_all(all: &StoredConfigs) -> Result<(), String> {
     let target = path();
-    if let Some(parent) = target.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|_| "Impossible d'enregistrer la configuration".to_string())?;
-    }
     let body = serde_json::to_string_pretty(all)
         .map_err(|_| "Impossible d'enregistrer la configuration".to_string())?;
-    let tmp = target.with_extension("tmp");
-    std::fs::write(&tmp, body)
-        .map_err(|_| "Impossible d'enregistrer la configuration".to_string())?;
-    std::fs::rename(&tmp, &target)
+    crate::services::private_store::atomic_write(&target, body.as_bytes())
         .map_err(|_| "Impossible d'enregistrer la configuration".to_string())
 }
 

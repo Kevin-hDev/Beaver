@@ -8,6 +8,11 @@ export function localStoreErrorMessage(
   error: unknown,
   translate: ErrorTranslator,
 ): string {
-  const key = typeof error === "string" ? LOCAL_STORE_ERROR_KEYS[error] : undefined;
+  const code = typeof error === "string"
+    ? error
+    : error instanceof Error
+      ? error.message
+      : undefined;
+  const key = code ? LOCAL_STORE_ERROR_KEYS[code] : undefined;
   return translate(key ?? "errors.operationFailed");
 }

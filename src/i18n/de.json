@@ -1132,7 +1132,9 @@
       "serviceShuttingDown": "Dieser Dienst wird beendet. Versuche es gleich erneut.",
       "serviceCapacity": "Es laufen bereits zu viele Vorgänge. Versuche es gleich erneut.",
       "gatewayShuttingDown": "Die Nachrichtenkanäle werden beendet. Versuche es gleich erneut.",
-      "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut."
+      "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut.",
+      "activeStreamCapacity": "Zu viele Unterhaltungen erzeugen bereits Antworten. Versuche es gleich erneut.",
+      "streamReplaced": "Eine neuere Anfrage hat diese Antwort ersetzt."
     },
     "localStore": {
       "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Lösche sie nicht: Ohne Sicherung geht dieser Verlauf beim Neustart verloren und Beaver kann nicht mehr garantieren, dass ein als nativ angezeigter Ollama-Prompt wirklich das Original ist.",
@@ -1145,6 +1147,7 @@
       "ollamaNativePromptsWrite": "Beaver kann „ollama-native-system-prompts.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
       "systemPromptsWrite": "Beaver kann „system-prompt-settings.json“ nicht speichern. Prüfe, ob der Datenträger voll ist, und versuche es erneut.",
       "privateStorage": "Beaver kann nicht auf seinen privaten Speicher zugreifen. Prüfe Speicherplatz und Berechtigungen und versuche es erneut.",
+      "projects": "Beaver kann Projekte nicht lesen oder speichern. Prüfe Datenträger und Berechtigungen und versuche es erneut.",
       "systemPromptsRuntimeFallback": "Die System-Prompt-Einstellungen sind nicht verfügbar. Beaver verwendet für diese Nachricht vorübergehend seine Standardanweisungen.",
       "ollamaModelfileInvalid": "Die Modelfile kann nicht sicher geändert werden. Es wurden keine Änderungen angewendet.",
       "ollamaParameterInvalid": "Mindestens ein Ollama-Parameter enthält einen Wert, den der vereinfachte Editor nicht ändern kann. Korrigiere ihn im Modelfile-Editor.",
@@ -1166,8 +1169,6 @@
     "maxFiles": "Maximal {{max}} Dateien",
     "fileTooLarge": "{{name}} überschreitet 20 MB",
     "saveFailed": "Speichern fehlgeschlagen",
-    "projectRenameFailed": "Projekt konnte nicht umbenannt werden",
-    "projectDeleteFailed": "Projekt konnte nicht gelöscht werden",
     "projectOpenFailed": "Ordner konnte nicht geöffnet werden",
     "sessionSaveFailed": "Sitzung konnte nicht gespeichert werden",
     "downloadFailed": "Download fehlgeschlagen",
