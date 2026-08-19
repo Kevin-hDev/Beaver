@@ -1,0 +1,48 @@
+Validation Windows J4 — affranchissement du lancement de relance.
+
+RECTIFICATION IMPORTANTE. La premiere version de cette note attribuait a ce
+commit la correction du defaut natif « l'application ne revient pas apres une
+mise a jour ». Cette attribution est fausse et a ete retiree. La cause reelle de
+ce defaut est l'ordre de publication de l'acquittement de sante dans la version
+1.1.3 publiee ; elle est etablie, mesuree et verrouillee par le commit
+d196cb70, et n'a aucun rapport avec les Jobs Windows.
+
+Mesures qui refutent l'attribution initiale :
+- l'application relancee est HORS Job au moment de mourir, verifie par
+  IsProcessInJob des son apparition ;
+- elle meurt a l'identique quand le helper reste vivant quinze secondes, donc la
+  sortie du helper n'est pas le declencheur ;
+- elle meurt sans aucun drapeau de creation particulier ;
+- le defaut natif a persiste sans changement apres ce commit, sur quatre
+  parcours de mise a jour reels.
+La coincidence de calendrier expliquait l'illusion : le helper sort environ
+150 ms apres avoir consomme l'acquittement, et la mort suit la consommation
+d'environ 0,9 seconde, si bien que les deux evenements paraissaient lies.
+
+CE QUE CE COMMIT APPORTE REELLEMENT. Sur Windows, `spawn_background` relance
+l'application puis le helper disparait. Ce lancement n'etait pas affranchi du
+Job de son parent : dans un environnement ou le helper est confine par un Job
+`kill on close`, la relance mourrait a la fermeture de ce Job. Ce risque est
+reel et demontre par les deux tests, mais il ne s'est pas materialise dans le
+parcours de mise a jour observe, ou aucun Job n'encadre le helper.
+
+Decision : conserver la protection. Le lancement echoue desormais fermé lorsque
+l'affranchissement est refuse, plutot que de demarrer une application confinee
+qui mourrait en annoncant une reussite. Les drapeaux de creation restent
+produits par services::background_command, qui recoit `configure_with_extra_flags`
+afin que CREATE_NO_WINDOW ne soit defini qu'a un seul endroit. `run_status`, qui
+execute l'installateur et doit rester attendu, est inchange.
+
+Tests, chacun verifie rouge puis vert, puis re-verifie rouge apres retrait
+temporaire du correctif :
+- the_relaunched_application_survives_the_helper_job_closing ;
+- a_relaunch_that_cannot_break_away_fails_instead_of_staying_confined.
+
+Preuves : cargo fmt --check ; cargo clippy --all-targets -D warnings ; suite
+sequentielle et parallele windows-tests vertes.
+
+Historique : ce commit s'appelait d'abord « fix(update): free the relaunched
+application from the helper job ». Son libelle a ete reformule en « guard the
+relaunch against a confining job » une fois la vraie cause etablie, afin que le
+titre decrive la protection apportee et non une correction qu'il n'apporte pas.
+Seul le message a change ; le contenu est identique.
