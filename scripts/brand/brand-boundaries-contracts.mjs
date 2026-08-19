@@ -171,4 +171,10 @@ export const COMPATIBILITY_CONTRACTS = Object.freeze([
   contract("empreinte Forecast", "src-tauri/src/services/forecast/data_fingerprint.rs", [
     'b"cl-go-forecast-input-v1"',
   ]),
+  // Le décompte des références internes est global : il ne casse que sur la tête
+  // complète, jamais sur un diff isolé. Tant que ci.yml ne l'exécute pas, une
+  // régression reste invisible jusqu'à la publication.
+  contract("exécution du contrat en intégration continue", ".github/workflows/ci.yml", [
+    "npm run test:brand-boundaries",
+  ]),
 ]);

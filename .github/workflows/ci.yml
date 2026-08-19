@@ -334,6 +334,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Brand boundaries contract
+        run: npm run test:brand-boundaries
+
       - name: Unit tests
         run: npm test
 
