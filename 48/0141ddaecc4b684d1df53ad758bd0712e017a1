@@ -1,0 +1,7 @@
+Jalon 4 - preflight et parcours empaquetes reproductibles
+
+Causes: la CI lisait un inventaire docs ignore; le fetch du preflight ecrasait la ref de notes locale; le hook Windows preparait release alors que l'E2E bundle debug; l'overlay E2E en tableau remplacait les ressources Windows; le filtre NSIS ne tolerait pas les deux separateurs Tauri.
+
+Correction: autorite J3 JSON versionnee et bornee; fetch des notes dans refs/notes/beaver-j3-preflight; hook Windows derive profil, features, cible et identite produit de l'environnement E2E; ressources E2E en objet fusionnable; filtre NSIS reel exporte et teste; contrats persistence executes en CI; assertion Linux resserree a la commande exacte.
+
+Preuves locales: test:j3-reference 7/7; preflight reel 6 commits et ref officielle refs/notes/commits inchangee avant/apres; test:persistence-migration 9/9; test:e2e-runner 69/69; tests Windows bundle 7/7; npm test complet 448 fichiers et 2401 tests frontend, scripts build 50/50, scripts CI 7/7, CEF 38 verts plus 1 Windows-only ignore, E2E runner 69/69, extension host 53/53. Le build/install NSIS reel reste a verifier sur Windows.

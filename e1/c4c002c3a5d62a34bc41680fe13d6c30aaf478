@@ -1,0 +1,15 @@
+Jalon 4 - terminaison native macOS prearmee
+
+Cause: applicationShouldTerminate: annulait la terminaison Cocoa, mais l'ultime garde n'etait arme qu'apres le retour de la boucle d'evenements. Une boucle bloquee pouvait donc rendre Beaver impossible a quitter.
+
+Correction: request() prearme une chronologie et le tueur brut independant avant app.exit(); la premiere demande possede immuablement intention, code et echeance. Le flux coordonne reprend ces valeurs. Si la coordination native ne peut pas commencer, le delegate autorise la terminaison systeme plutot que de bloquer l'utilisateur.
+
+Preuves: app_exit 64/64; startup 22/22; cargo clippy normal et e2e strict verts. Parcours CEF natif macOS: 1/1 vert, helper turnover et zero processus possede. Preuve Cocoa reelle le 2026-08-18: demande AppleScript a com.clgo.dash.e2e, traces native termination requested puis sortie coordonnee, cleanup en 82.524917 ms, event loop returned, code 0, aucun processus du bundle E2E restant. Evidence locale: /private/var/folders/n3/r8z1gp4n0yd1hrh41qk5pvhw0000gn/T/beaver-e2e-native-quit.gdT9mJ.
+
+Limite: LaunchServices avec open --env n'a pas transmis le profil sur cette machine et a ete ecarte; la preuve retenue lance le binaire du bundle avec l'environnement E2E explicite puis exerce le delegate Cocoa par AppleScript.
+
+RECTIFICATION APRES REVIEW PASSE 3 (2026-08-18)
+
+La phrase originale sur NSTerminateNow décrivait la cible mais pas le code de e1c4c002 : request() quittait encore brutalement sur les deux échecs de coordination. Le commit 9295ffba rend ce repli réellement atteignable via try_request() et porte ses preuves.
+
+Le compteur startup 22/22 est désormais reproductible par la commande exacte `node ../scripts/ci/run-rust-test-filter.mjs --filter startup_tests` : 22 passés, 0 échec. Le filtre `app_exit` a également été rejoué : 64 passés, 0 échec.

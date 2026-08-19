@@ -1,0 +1,11 @@
+Jalon 4 — fermeture native macOS : repli réellement atteignable
+
+Décision : l’API générale request() conserve le fail-closed par sortie brute, mais le delegate Cocoa utilise désormais try_request(). Si le coordinateur est absent, si son verrou est empoisonné ou si le préarmement échoue, le callback retourne NSTerminateNow au système au lieu de quitter depuis l’intérieur de request(). Le chemin nominal préarme toujours le tueur ultime avant app.exit().
+
+Preuves exécutées sur macOS : filtre macos_termination = 3 passés, 0 échec ; filtre app_exit::coordinator_tests = 12 passés, 0 échec ; cargo clippy --all-targets -- -D warnings = vert ; cargo clippy --all-targets --features e2e -- -D warnings = vert ; cargo fmt --all -- --check = vert ; suite Rust hors dettes updater/PTY = 3656 passés, 0 échec, 3 ignorés, 8 filtrés.
+
+Review indépendante Terra : zéro nouveau bloquant ou important sur ce chemin. Limite de preuve : le cas d’échec du coordinateur est prouvé par la décision pure Result -> réponse Cocoa ; le parcours Cocoa nominal réel avait déjà été validé avant cette correction et n’a pas été rejoué dans ce commit.
+
+PRECISION APRES REVIEW PASSE 4 (2026-08-18)
+
+Quand try_request() échoue, NSTerminateNow autorise une terminaison native brute sans exécuter le nettoyage coordonné. Ce compromis évite de rendre Beaver impossible à quitter ; les éventuels sidecars orphelins restent récupérés par les autorités de nettoyage au lancement suivant. La réponse système ne doit pas être comprise comme un nettoyage des processus possédés.

@@ -1,3 +1,85 @@
+JALON 4 — DÉPENDANCES DU HARNAIS PRIVATE STORE WINDOWS
+
+Cause observée
+- Le job Backend Windows tests du run 32144608810 a échoué pendant cargo test du crate indépendant tests/windows-private-store.
+- Ce crate inclut directement les sources private_store du jalon 4, mais son manifeste ne déclarait ni log, désormais utilisé par le code de production inclus, ni tempfile, utilisé par les nouveaux tests de nettoyage.
+- L’application Windows et les tests principaux compilaient ; seul ce manifeste de harnais isolé était incomplet.
+
+Correction
+- Ajout de log 0.4 et tempfile 3 aux dépendances Windows du crate de test.
+- Mise à jour de son Cargo.lock indépendant.
+- Aucun comportement de production modifié.
+
+Preuves locales lues
+- cargo check --tests --target x86_64-pc-windows-msvc : vert ; un avertissement unused_import préexistant reste non fatal dans ce harnais.
+- cargo check --locked --tests --target x86_64-pc-windows-msvc : vert.
+- git diff --check : vert.
+
+Validation distante au moment du commit
+- Le test exécutable devait encore être confirmé par Windows natif ; cette confirmation est consignée dans la section suivante.
+
+PREUVE CI DISTANTE — TÊTE EXACTE 186dc12462f9219cfe4bf8a2f896c13c60f1b1ab
+
+Run CI 32149420467 : 7/7 jobs applicatifs verts.
+- Backend Rust : vert.
+- Backend Linux WebView E2E : vert.
+- Backend Windows tests Rust : vert ; le crate windows-private-store a compilé et ses tests natifs ont été exécutés.
+- Backend Windows CEF Rust : vert ; parcours natif empaqueté terminé en 44 min 56 s.
+- Backend macOS CEF Rust : vert.
+- Desktop E2E CEF : vert.
+- Frontend TS/React : vert.
+
+Contrôles associés également verts : CodeQL actions/javascript/rust, RustSec, npm audit et GitGuardian.
+
+Conclusion : la dépendance manquante du harnais Windows est corrigée et prouvée sur Windows natif ; aucune autre régression CI observée sur la tête exacte.
+
+PASSATION JALON 4 — WINDOWS, LINUX ET MACOS
+
+Branche et tête autoritaire
+- Branche : codex/milestone-4-convergence
+- Tête à récupérer : 186dc12462f9219cfe4bf8a2f896c13c60f1b1ab
+- PR : #25.
+- Récupération sûre des notes sans écraser des notes locales : git fetch origin refs/notes/commits:refs/notes/j4-handoff puis git notes --ref=j4-handoff show 186dc124.
+
+État validé avant passation
+- Jalons 1, 1B, 2 et 3 déjà fusionnés et validés.
+- Jalon 4 : cinq passes de review ; zéro bloquant et zéro important de code sur la passe 5.
+- CI de la tête exacte : run 32149420467, 7/7 jobs applicatifs verts, audits et CodeQL verts.
+- macOS CI : parcours CEF natif vert sur la tête. La preuve du Quitter Cocoa externe existe sur e1c4c002, mais elle précède le remaniement 9295ffba et doit donc être rejouée sur la tête finale.
+- Windows CI : tests backend privés verts ; le parcours empaqueté a réellement installé le NSIS, démarré CEF, chargé une page puis désinstallé Beaver E2E en 44 min 56 s.
+- Linux CI : parcours WebView natif vert.
+
+Documents autoritaires à lire
+- docs/superpowers/specs/2026-08-09-shutdown-milestone-4-convergence-design.md
+- docs/superpowers/specs/2026-08-18-shutdown-milestone-4-cumulative-inventories.md
+- docs/superpowers/specs/2026-08-09-unified-shutdown-supervision-design.md
+- docs/superpowers/specs/2026-08-09-shutdown-reference-branch-inventory.md
+Ces documents peuvent être ignorés par Git selon la machine ; Kevin assure leur transfert si nécessaire. Les mettre à jour localement si une preuve ou une décision change.
+
+Preuves Windows restantes
+1. Hors CI, sur une machine Windows réelle avec protections Microsoft actives et sans exception antivirus, rejouer E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e:packaged ; conserver identifiant, heures et inventaire des résidus. Cette étape complète la CI déjà verte par la preuve de l’environnement réel.
+2. La CI prouve déjà installation NSIS, CEF Ready, chargement de page et désinstallation. Vérifier manuellement ce qui reste : fermeture par croix puis tray, et Job Object avec descendants vides sous cinq secondes.
+3. Revalider la mise à jour Beaver et surtout le relancement automatique Windows avec helper transféré unique.
+4. Vérifier PTY/handles et une mise à jour Ollama avec renommage temporairement bloqué selon la matrice de la spec.
+
+Preuves Linux restantes
+1. Lancer le build natif de la tête exacte.
+2. Vérifier fermeture par croix et tray, signal de mort du parent, groupe moissonné, zombie non re-signalé, PTY moissonné.
+3. Vérifier native_browser désactivé et absence totale de helper CEF.
+4. Contrôler les processus et fichiers résiduels immédiatement puis après cinq secondes.
+
+Preuve macOS restante
+1. Sur la tête exacte, rejouer une vraie demande Quitter Cocoa externe, depuis le Dock ou AppleScript, et non une commande interne E2E.
+2. Vérifier la demande de fermeture coordonnée, la disparition de l’application et l’absence de sidecar ou descendant résiduel immédiatement puis après cinq secondes.
+
+Discipline de correction
+- Ne modifier le code qu’après reproduction et cause exacte.
+- Chaque correction reçoit son commit et sa Git note avec test, résultat et recommandation.
+- Si le code change, pousser la branche et les notes puis exiger une nouvelle CI complète trois OS verte sur la nouvelle tête.
+- Ne pas fusionner avant les preuves natives Windows, Linux et macOS, puis la Git note finale agrégée.
+
+-- Complement ajoute par la validation Windows du jalon 4 --
+
 Perimetre Windows J4 — dependances du harnais private store.
 
 Ce commit ajoute `log` et `tempfile` aux dependances Windows du crate de test

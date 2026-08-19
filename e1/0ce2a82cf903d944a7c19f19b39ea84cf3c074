@@ -1,3 +1,26 @@
+Milestone 4 packaged Windows isolation
+
+Reason
+The normal NSIS product identity, hooks, uninstall registry entry and asynchronous uninstall semantics can mutate or race a real Beaver installation. The packaged E2E journey must own a distinct product and profile from build through removal.
+
+Changes
+- Add a Windows-only E2E bundle overlay named Beaver E2E with identifier com.clgo.dash.e2e and no production installer hooks.
+- Pass NSIS /D= and _?= arguments verbatim and last so paths containing spaces stay inside the isolated profile and cleanup waits for the real uninstaller.
+- Attempt bounded cleanup after partial installation failures and normalize preparation errors.
+- Limit packaged mode to Windows. macOS keeps the existing native .app journey because the normal runner already launches the bundle binary.
+- Tighten CI assertions so the Linux job cannot match test:e2e:packaged accidentally.
+
+Verification observed
+- node --test scripts/e2e/packaged-app.test.mjs scripts/e2e/e2e-process.test.mjs: 27 passed, 0 failed.
+- git diff --check: passed.
+
+Limits
+The NSIS install/uninstall flow is not executable on macOS. Windows native proof and cross-OS CI are required before merge.
+
+Rectification apres re-review (2026-08-18): l'assertion CI resserree par ce commit concernait Windows et macOS, pas Linux. Le resserrement Linux exact est apporte plus tard par 480141dd.
+
+-- Complement ajoute par la validation Windows du jalon 4 --
+
 Perimetre Windows J4 — isolement des installations empaquetees.
 
 Note ajoutee apres coup par la validation Windows, a partir du diff et des

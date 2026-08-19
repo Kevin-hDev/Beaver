@@ -1,0 +1,32 @@
+JALON 4 - AUTORITE UNIQUE DES ECRITURES DU PROFIL
+
+Constat
+- Onze ecrivains de donnees utilisateur implementaient chacun leur propre variante temporaire puis renommage.
+- Ces variantes ne partageaient ni les synchronisations fichier/parent, ni les permissions, ni la preuve de coupure de private_store::atomic_write.
+- Les fichiers runtime transitoires et les fichiers AGENTS.md situes dans des projets externes ne sont pas des stockages internes du profil et restent hors de ce lot.
+
+Decision
+- Raccorder favoris, injection de personnalite, configuration de modele Forecast, parametres agent, projets, permissions de session, onglets, changements de sous-agent, nettoyage de sessions orphelines, plans et cache de traduction a private_store::atomic_write ou atomic_write_async.
+- Conserver la serialisation, les bornes, les verrous et les messages publics de chaque domaine ; seule la primitive durable change.
+- Ajouter un contrat de source qui nomme chaque consommateur et interdit qu'il sorte de l'autorite atomique sans faire rougir le test.
+
+Preuve TDD
+- Rouge : user_profile_writers_share_the_atomic_store_authority echouait sur les ecrivains specialises.
+- Vert : services::private_store::interrupt_tests 3/3, dont 42 coupures deterministes et le contrat des onze consommateurs.
+
+Tests de comportement relus verts
+- agent_settings 11/11.
+- project_store 3/3.
+- session_permission_state 4/4.
+- subagent_change_store 2/2.
+- subagent_startup_cleanup 3/3.
+- tool_plan 2/2.
+- session_tabs 4/4.
+- forecast model_config storage 1/1.
+- cargo check : vert.
+- cargo clippy --all-targets -- -D warnings : vert.
+- cargo fmt --all -- --check et git diff --check : verts.
+
+Maintenance
+- graphify update . termine : 30596 noeuds, 66988 aretes, 1621 communautes.
+- Aucun fichier utilisateur deja modifie dans docs/beaver-site ou src/styles/tokens.css n'a ete stage ou modifie par ce commit.

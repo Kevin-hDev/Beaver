@@ -1,0 +1,21 @@
+JALON 4 — ALIGNEMENT RUSTFMT DIRECT
+
+Cause observée
+- Le job CI Backend Rust du run 32143783180 a échoué dans scripts/build/check-rust-format.mjs.
+- cargo fmt --check était vert, mais plusieurs fichiers Rust inclus indirectement ne sont pas parcourus par cargo fmt.
+- Le contrôle CI applique rustfmt directement à chaque fichier Rust modifié depuis la base et a détecté 13 fichiers non alignés.
+
+Correction
+- Application mécanique de rustfmt --edition 2021 --config skip_children=true aux fichiers concernés.
+- Aucun comportement, contrat, valeur ou test métier modifié.
+
+Preuves locales lues
+- rustfmt direct sur chaque fichier modifié : vert.
+- cargo fmt --manifest-path src-tauri/Cargo.toml --check : vert.
+- RUSTFMT_BASE_SHA=$(git merge-base origin/main HEAD) node scripts/build/check-rust-format.mjs : vert.
+- cargo check --locked : vert.
+- git diff --check : vert.
+- graphify update . : terminé.
+
+Décision
+- Commit isolé afin que la correction mécanique reste identifiable et réversible sans mélanger le code métier du jalon 4.

@@ -1,0 +1,30 @@
+JALON 4 - INTEGRITE DU PROFIL AUX FRONTIERES D'ECRITURE
+
+Constat
+- Les ecritures persistantes centrales etaient atomiques, mais aucune preuve deterministe ne les interrompait a chaque frontiere.
+- Les fichiers crees au premier lancement dans storage_migration.rs utilisaient encore fs::write : une interruption pouvait laisser un fichier final tronque que le lancement suivant considerait comme existant.
+
+Decision
+- Extraire sans changer son comportement l'autorite atomic_write dans private_store/atomic_write.rs.
+- Exposer un hook uniquement en compilation de test aux six frontieres : temporaire ouvert, contenu ecrit, fichier synchronise, remplacement, permissions reparees, parent synchronise.
+- Faire passer les marqueurs de migration et les fichiers par defaut du premier lancement par cette meme autorite atomique.
+- La raison est qu'une creation initiale doit etre soit absente, soit entierement engagee ; l'existence d'un fichier ne doit jamais valider un contenu partiel.
+
+Preuves
+- Rouge TDD : le filtre services::private_store::interrupt_tests ne compilait pas, atomic_write_with_hook et AtomicWriteStage etant absents.
+- Vert : services::private_store::interrupt_tests, 2/2. Le test principal exerce 7 familles de profil et 6 frontieres, soit 42 interruptions, relit chaque valeur et exige une generation complete puis une reecriture convergente.
+- Familles couvertes : configuration, session, vault factice, Forecast, skill, memoire, metadonnees Ollama.
+- services::private_store::tests : 10/10.
+- storage_migration : 9/9.
+- cargo fmt --all -- --check : vert.
+- cargo clippy --all-targets -- -D warnings : vert.
+- git diff --check : vert.
+
+Structure
+- private_store.rs : 211 lignes.
+- private_store/atomic_write.rs : 55 lignes.
+- storage_migration.rs : 133 lignes.
+- graphify update . termine : 30595 noeuds, 66987 aretes, 1623 communautes.
+
+Limite explicite
+- Cette preuve valide l'autorite commune et les creations initiales. L'inventaire cumulatif J4 doit encore classer les ecrivains specialises avant de declarer tous les stockages du profil couverts.

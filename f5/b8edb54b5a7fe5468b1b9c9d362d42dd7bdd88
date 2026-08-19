@@ -1,0 +1,5 @@
+Changement hors jalon 4 — espacement de la barre navigateur
+
+Portée : restaure dans l’autorité CSS src/styles/tokens.css les valeurs d’espacement utilisées par la barre navigateur. Ce commit est fonctionnellement disjoint des corrections de fermeture et de persistance du jalon 4.
+
+Traçabilité : ce commit existait avant la plage corrective 9295ffba..4641fd5a. Aucun résultat de test propre à ce commit n’est revendiqué dans cette note.

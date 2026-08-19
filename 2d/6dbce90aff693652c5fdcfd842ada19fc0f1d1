@@ -1,0 +1,9 @@
+CI finale — avis de dépendances publiés après le dernier vert de main
+
+Cause observée sur la PR 25 : RUSTSEC-2026-0258 affecte h2 0.4.15 et GHSA-ggr8-5vv4-36mx affecte deepmerge-ts 7.1.5. origin/main portait les mêmes versions ; ces rouges ne venaient pas du jalon 4 mais bloquaient désormais toute fusion.
+
+Correction minimale : Cargo.lock passe uniquement h2 à 0.4.16. package.json centralise un override deepmerge-ts 8.0.1 car WebdriverIO 9.30.1, dernière version disponible, dépend encore de la branche 7 vulnérable. La rupture v8 concerne les Map imbriquées et des noms de types ; les configurations WebdriverIO utilisées ici sont des objets.
+
+Preuves exécutées : npm audit --audit-level=high = 0 vulnérabilité ; test:e2e-runner = 69 passés, 0 échec ; npm lint et tsc verts ; npm ls confirme deepmerge-ts 8.0.1 sur toute la chaîne WebdriverIO ; cargo check --locked vert ; cargo clippy --all-targets --locked -- -D warnings vert ; cargo tree confirme h2 0.4.16. cargo-audit n’est pas installé localement : le job RustSec distant reste l’autorité de validation de l’avis.
+
+Le premier cargo update avait recalculé plusieurs associations windows-sys sans nécessité ; elles ont été restaurées avant commit. Le diff Cargo.lock final ne contient que h2 0.4.15 vers 0.4.16.

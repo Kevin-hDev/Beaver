@@ -1,0 +1,21 @@
+Milestone 4 native menu role parity
+
+Reason
+The rebuilt macOS menu must preserve Tauri standard Window and Help submenu identifiers; Cocoa/Tauri use those IDs to assign native menu roles. Owning Quit must not silently degrade unrelated menu behaviour.
+
+Changes
+- Construct Window and Help submenus with Tauri public WINDOW_SUBMENU_ID and HELP_SUBMENU_ID constants.
+- Extend the menu contract test to preserve both roles.
+
+Verification observed
+- cargo test macos_app_menu -- --test-threads=1: 2 passed.
+- cargo clippy --all-targets -- -D warnings: passed.
+- git diff --check: passed.
+
+Remaining proof
+The native CEF journey is rerun after this menu-only change so the exact reviewed head, not its parent, is validated.
+
+Native proof on exact commit
+- E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e passed after rebuilding the menu-role change.
+- Journey c0fc8f8d-390a-46f5-be16-577df9a11ceb; WebDriver session 5fa2cbb0-3a36-4401-9552-ae312a0f05db.
+- 1 spec passed in 5.9 s; capability, helper turnover, page load, second session, coordinated exit and disappearance checks all passed.

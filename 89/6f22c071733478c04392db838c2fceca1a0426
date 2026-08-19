@@ -1,0 +1,7 @@
+JALON 4 - RETABLISSEMENT DU CONTRAT DE FORMATAGE
+
+Raison: la branche J4 part du commit main d0c2864, dont le workflow CI 32075626233 echouait avant les tests Rust parce que deux fichiers du dernier changement provider n'etaient pas conformes a rustfmt.
+
+Decision: appliquer uniquement la mise en forme exigee par rustfmt dans remote_api.rs et remote_adapter_tests.rs. Aucun comportement, type ou valeur ne change. Les fichiers locaux de Kevin, notamment src/styles/tokens.css et docs/beaver-site, ne sont ni inclus ni modifies par ce commit.
+
+Preuves: cargo fmt --check vert; filtre services::provider_usage::remote_adapter_tests 8/8 vert; git diff --check vert; graphify update . termine.

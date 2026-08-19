@@ -1,0 +1,64 @@
+Beaver v1.1.3 release preparation
+
+Decision
+- Prepare the corrective release after main CI run 32048546429 completed successfully on commit d9f41fd6 across macOS, Linux, Windows, frontend, Rust, CEF, and desktop E2E.
+- Keep the official release workflow as the authority: the v1.1.3 tag will build and independently verify all three installers before creating a draft release.
+
+Changes
+- Bumped package.json, package-lock.json, Cargo.toml, Cargo.lock, and tauri.conf.json to 1.1.3.
+- Completed the existing English v1.1.3 changelog with lifecycle milestones 1-3, durable Ollama recovery, CEF stability, reliability and security changes, prompt customization, and the AGPL v3 licensing transition.
+- Added concise app release notes in fr, en, es, de, it, zh, and ja.
+- Refreshed the release-only persistence inventory for session-order.json, transient cef-supervision state, and the adopted Ollama manager paths.
+- Canonicalized the macOS temporary paths used by the release artifact resolver test; production behavior is unchanged.
+
+Observed preflight
+- Initial local release preflight exposed one macOS-only path-alias failure in resolve-artifact-path.test.mjs and two stale persistence inventories. These were corrected before tagging.
+
+Validation observed
+- main CI 32048546429: success, all jobs green on d9f41fd6.
+- npm run test:release-workflow: 30 passed, 0 failed.
+- npm run test:persistence-migration: 9 passed, 0 failed.
+- npm run test:update-manifest: 5 passed, 0 failed.
+- npm run test:brand-boundaries: 12 passed, 0 failed.
+- npm run test:bridge-release: 10 passed, 0 failed.
+- node scripts/app-release-notes.mjs v1.1.3: valid English release body emitted.
+- node scripts/release/check-brand-artifacts.mjs source v1.1.3 .: Beaver artifacts validated.
+- git diff --check: clean for the committed changes.
+- graphify update .: completed, 30549 nodes, 66925 edges, 1617 communities.
+
+Pending
+- Push this commit and notes.
+- Create and push tag v1.1.3.
+- Observe the release workflow through all three native builds, independent manifest verification, and draft asset creation.
+- Do not publish or declare the release complete until those outputs are observed.
+
+FINAL RELEASE BUILD EVIDENCE — 2026-08-17
+
+Run: https://github.com/Kevin-hDev/Beaver/actions/runs/32052821626
+Exact commit: 818acb243a0e98e3f69dd2605a4175630d329929
+Result: success.
+
+Observed green stages:
+- release validation: 18m17s
+- Linux amd64 DEB build and inspection: 19m05s
+- macOS arm64 DMG build and inspection: 43m57s
+- Windows x64 NSIS build, PowerShell 7/5.1 validators, real install and inspection: 1h03m22s
+- update manifest creation: 1m20s
+- independent SHA-256 verification: 1m32s
+- draft release creation: 37s
+
+Draft release Beaver v1.1.3 was inspected after workflow completion. It is draft=true, prerelease=false, and contains exactly four non-empty uploaded assets:
+- Beaver_1.1.3_aarch64.dmg — 325208998 bytes
+- Beaver_1.1.3_amd64.deb — 205946152 bytes
+- Beaver_1.1.3_x64-setup.exe — 256446991 bytes
+- update-manifest.json — 532 bytes
+
+The draft has not been published. Publication remains a separate explicit decision.
+
+PUBLICATION EVIDENCE — 2026-08-17
+
+Beaver v1.1.3 was explicitly published after the verified draft was approved.
+Public URL: https://github.com/Kevin-hDev/Beaver/releases/tag/v1.1.3
+Published at: 2026-08-17T19:36:37Z
+GitHub release state observed: draft=false, prerelease=false, latest=v1.1.3.
+All four verified assets retained their names, sizes and SHA-256 digests after publication.

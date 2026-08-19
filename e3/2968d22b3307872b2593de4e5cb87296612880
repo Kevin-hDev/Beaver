@@ -1,0 +1,82 @@
+CORRECTIF UPDATER MULTI-OS - PASSATION WINDOWS
+
+Branche: codex/fix-cross-platform-app-updater
+Base: main 818acb243a0e98e3f69dd2605a4175630d329929 (release v1.1.3 publiee)
+Commit: e32968d2 fix(updater): keep macOS update DMGs noninteractive
+
+ETAT OBSERVE PAR OS
+- Linux: mise a jour, installation et relance automatiques validees par Kevin.
+- macOS: le telechargement allait au bout, Beaver se fermait puis relancait encore la version 1.1.2. Deux relances sur six ont aussi produit un crash de la version restauree.
+- Windows: installation validee, mais Beaver ne se relance pas automatiquement. Ce point reste ouvert et doit etre investigue nativement sous Windows.
+
+CAUSE RACINE MACOS PROUVEE
+1. Le helper updater de la version publiee 1.1.2 a ete rejoue sur une copie isolee de Beaver.app avec le DMG public 1.1.3.
+   Resultat: BEFORE=1.1.2, message update failed, HELPER_EXIT=1, AFTER=1.1.2.
+2. Le montage direct du DMG public 1.1.3 avec hdiutil et une entree standard fermee affiche la licence AGPL puis termine par hdiutil: attach canceled, code 1.
+3. hdiutil imageinfo confirme Software License Agreement=true dans ce DMG.
+4. La cle bundle.licenseFile ajoutee par 3d5d379d transforme la licence en dialogue DMG interactif. Le helper est volontairement non interactif et ne peut donc jamais monter cet asset. Le hdiutil de macOS 27 ne propose pas non plus une option acceptlicense utilisable par le helper.
+5. La relance de 1.1.2 etait le rollback attendu apres cet echec de montage, pas une installation reussie de 1.1.3.
+
+CORRECTION
+- Suppression de bundle.licenseFile pour ne plus fabriquer de DMG avec accord interactif.
+- LICENSE reste livre comme ressource dans Beaver.app; le mapping Windows le nomme LICENSE.txt.
+- Le controle de release macOS inspecte maintenant le vrai DMG avec hdiutil imageinfo et refuse fail-closed tout asset avec Software License Agreement=true.
+- Test de contrat du packaging pour interdire le retour de cette contamination.
+
+PREUVES LUES SUR MACOS
+- Phase TDD rouge: 12 tests, 10 passes, 2 echecs attendus avant correction.
+- Tests modifies: 12/12 verts.
+- npm run test:release-workflow: 30/30 verts.
+- npm run test:brand-boundaries: 12/12 verts.
+- npm run test:update-manifest: 5/5 verts.
+- Build reel: CLGO_CEF_ALLOW_ADHOC_SIGNING=1 npx tauri build --bundles app,dmg --target aarch64-apple-darwin, code 0.
+- Artefacts: Beaver.app et Beaver_1.1.3_aarch64.dmg construits.
+- node scripts/release/check-brand-artifacts.mjs macos v1.1.3 <app> <dmg>: Beaver artifacts validated.
+- hdiutil imageinfo: Software License Agreement=false.
+- Montage readonly et non interactif du nouveau DMG avec stdin=/dev/null: code 0; version interne lue: 1.1.3; detach code 0.
+- LICENSE present dans Contents/Resources/_up_/LICENSE.
+- cargo test updater_worker::macos -- --test-threads=1: 10 passes, 0 echec.
+- npm run lint: code 0.
+- npx tsc --noEmit: code 0.
+- git diff --check: code 0.
+- graphify update .: termine, 30550 noeuds et 66927 aretes.
+
+CRASH MACOS DISTINCT
+Le rapport ~/Library/Logs/DiagnosticReports/cl-go-dash-2026-08-17-215123.ips concerne la version 1.1.2 restauree, SIGTRAP sur CrBrowserMain avec une pile CEF et searxng::source_filter. Ce correctif ferme la cause certaine de non-installation; il ne pretend pas expliquer ce crash secondaire de relance rapide.
+
+PASSATION AU DEV WINDOWS
+1. Recuperer exactement cette branche et ses notes:
+   git fetch origin codex/fix-cross-platform-app-updater
+   git fetch origin refs/notes/commits:refs/notes/commits
+   git switch codex/fix-cross-platform-app-updater
+2. Reproduire une mise a jour native depuis la release v1.1.2 vers un build candidat issu de cette branche.
+3. Prouver separement: fin de l installateur, fin du helper, creation ou non du nouveau processus Beaver, arguments et repertoire de travail de la relance, et version finale affichee.
+4. Capturer les logs exacts du helper, de NSIS et la chronologie des PID. Ne pas deduire la cause Windows depuis la cause DMG macOS.
+5. Inspecter en priorite:
+   - src-tauri/src/updater_worker/windows.rs
+   - src-tauri/src/updater_worker/command.rs
+   - src-tauri/src/updater_worker/health.rs
+   - src-tauri/src/commands/app_update_helper_process.rs
+   - scripts/build/prepare-updater-helper.mjs
+6. Lire avant correction:
+   - docs/superpowers/plans/2026-08-04-windows-update-reliability.md
+   - docs/superpowers/specs/2026-08-12-shutdown-milestone-2-review.md
+   - docs/superpowers/specs/2026-08-12-shutdown-milestone-2-spawn-inventory.md
+   - docs/superpowers/specs/2026-08-15-deferred-updater-pty-test-failures.md
+7. Si une correction Windows est requise: TDD rouge puis vert, commit separe, git note avec logs natifs, mise a jour des documents si la decision change, push des notes, puis CI complete verte avant toute fusion.
+
+DECISION RELEASE
+Ce commit corrige le source et les futurs artefacts. Il ne modifie pas silencieusement le tag ni les assets publics v1.1.3 existants. Toute republication ou version hotfix doit etre decidee separement afin de ne pas falsifier un artefact deja publie.
+
+MISE A JOUR PUBLIQUE APRES AUTORISATION EXPLICITE - 2026-08-17
+La section DECISION RELEASE ci-dessus decrit correctement et uniquement etat au moment du commit. Kevin a ensuite autorise explicitement le remplacement des assets publics v1.1.3.
+- Beaver_1.1.3_aarch64.dmg public remplace par le DMG corrige.
+- Ancien DMG sauvegarde localement sous /tmp/beaver-release-v1.1.3.2j4yWc/backup avec SHA-256 1612eda7c890ec5bcad5d8714a0d90cc8fb320e062a54f6ae479dde3cd32dd0c.
+- Nouveau DMG public: SHA-256 3d887d1bc847c7e7af1c744cde083e2dc0835470f1e3116641111a62fe836c2b, taille 325292768.
+- update-manifest.json regenere puis remplace: SHA-256 eb2c6ee3ed82a27bcb6a3601537ea24a9d2e080f48527d570f85fb0a24070dcf, taille 532.
+- Linux et Windows restent byte-identiques aux assets anterieurs.
+- Les deux fichiers ont ete retélécharges depuis GitHub; cmp avec le candidat local a rendu code 0.
+- Le manifeste public retélécharge reference exactement les nouvelles taille et empreinte macOS.
+- Le validateur macOS execute sur le DMG retélécharge rend Beaver artifacts validated.
+- hdiutil imageinfo sur le DMG public retélécharge confirme Software License Agreement=false.
+- Le tag v1.1.3 et les sources archives ne sont pas deplaces; seul asset macOS et manifeste de release ont ete remplaces.

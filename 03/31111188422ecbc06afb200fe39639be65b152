@@ -1,0 +1,26 @@
+Milestone 4 E2E instance isolation
+
+Reason
+The full macOS journey exposed a production-boundary collision that unit tests missed: while the installed Beaver application was open, the E2E bundle shared com.clgo.dash, so the single-instance plugin exited the test app with code 0 before setup. Test profiles isolated data but not the process identity.
+
+Changes
+- Move com.clgo.dash.e2e into the shared E2E overlay so macOS, Linux and Windows all own a distinct application identity.
+- Keep the Windows-only Beaver E2E product name in its NSIS overlay.
+- Test that one shared authority owns the identifier and the Windows overlay does not duplicate it.
+
+TDD evidence
+- Before the config change, e2e-process.test.mjs failed exactly one assertion: expected com.clgo.dash.e2e, actual undefined.
+- After the change, the combined E2E Node suite passed 27/27.
+
+Native evidence before correction
+- E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e built Beaver.app but the app exited before embedded WebDriver readiness with code 0 and lifecycle stopped after native-prepared.
+- The installed /Applications/Beaver.app process was simultaneously alive, confirming the single-instance collision.
+
+Remaining proof
+The full macOS CEF journey must be rerun on this commit; Windows/Linux identity behaviour remains for CI.
+
+Native proof after correction
+- E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e: passed on macOS while the installed /Applications/Beaver.app remained open.
+- Journey 27e6f1fd-0c74-450d-866c-b52c93ef68a2; WebDriver session f35cdf26-3350-4ac3-9587-ac4d896bf665.
+- 1 spec passed in 12.5 s; CEF turnover, page load, capability after turnover, second browser session, coordinated exit, owned-process disappearance and native-WebView disappearance all completed.
+- This closes the local macOS proof. Windows/Linux remain CI and handoff responsibilities.
