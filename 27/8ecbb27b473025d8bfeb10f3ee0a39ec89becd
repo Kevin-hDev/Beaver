@@ -1,0 +1,44 @@
+Validation Windows J4 — renommage d'un bundle Ollama verrouille.
+
+Angle mort identifie. Le jalon exige le scenario « renommage Windows
+temporairement verrouille puis reussi », et la politique de reprise
+`retry_windows_sharing` ne retente que les erreurs classees SharingViolation.
+Les tests existants injectent cette classe d'erreur ; aucun ne verifiait que la
+primitive native la produit reellement. Si la classification etait fausse, la
+reprise serait inerte et tous ces tests resteraient verts.
+
+Mesure faite sur cette machine. Un dossier `ollama-bundle` contenant un fichier
+ouvert est refuse au renommage avec le code 5, ERROR_ACCESS_DENIED, classe
+PermissionDenied. Le resultat est identique pour les quatre modes de partage
+essayes, y compris le plus permissif FILE_SHARE_READ | WRITE | DELETE :
+
+    aucun partage      kind=PermissionDenied code=5
+    FILE_SHARE_READ    kind=PermissionDenied code=5
+    READ|WRITE         kind=PermissionDenied code=5
+    READ|WRITE|DELETE  kind=PermissionDenied code=5
+
+Consequence : la reprise bornee de 40 essais ne se declenche jamais quand un
+fichier du bundle est tenu ouvert. L'operation echoue fermee, ce qui conserve
+les deux versions et n'entraine aucune perte, mais la reprise automatique
+annoncee par le contrat ne couvre pas ce cas.
+
+Decision : ne pas corriger. Le contrat de supervision fixe explicitement
+« renommer avec une nouvelle tentative bornee uniquement pour les violations de
+partage temporaires ». Etendre la reprise a ERROR_ACCESS_DENIED serait un
+amendement au contrat, pas une correction d'implementation, et ce code couvre
+aussi de vrais defauts de droits qu'il ne faut pas retenter quarante fois. La
+decision revient au reviewer.
+
+Portee reelle du cas. Avant tout renommage, le gestionnaire arrete et moissonne
+le sidecar Ollama possede : le binaire du bundle n'est donc normalement plus
+ouvert. Le cas residuel est un tiers qui tient un fichier au mauvais moment,
+antivirus en cours d'analyse ou explorateur de fichiers.
+
+Test : a_locked_bundle_directory_is_refused_as_a_permission_error fige le
+comportement mesure pour les quatre modes de partage, et verifie qu'apres
+fermeture du handle le renommage aboutit. Il echouera si quelqu'un elargit la
+classification, ce qui obligera a rouvrir la decision au lieu de la subir.
+
+Preuves : cargo fmt --check ; cargo clippy --all-targets -D warnings ; suite
+parallele windows-tests 3540/3540 ; suite sequentielle windows-tests 3540/3540 ;
+graphify update . vert.
