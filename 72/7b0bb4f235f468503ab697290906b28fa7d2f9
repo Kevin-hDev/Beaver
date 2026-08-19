@@ -38,3 +38,30 @@ contrat des references visibles.
 Recommandation au reviewer : ci.yml n'execute pas ce contrat, seul release.yml
 le fait. Tant que cet ecart existe, une regression de marque reste invisible
 jusqu'a la publication.
+
+---
+
+Rectification du 19 aout 2026, apres review.
+
+Deux attributions ci-dessus sont fausses. Les fichiers cites sont justes, les
+hachages ne le sont pas. Mesure refaite en rejouant le scanner de marque sur
+chaque commit de d0c2864d..278ecbb2 dans un worktree detache :
+
+- cl-go-dash 251 -> 254 vient de 2e49bc23, « test(e2e): exercise packaged CEF
+  applications », qui cree scripts/e2e/packaged-app.mjs et son test. Pas de
+  6359fd71, qui ne touche aucun de ces deux fichiers.
+- CLGO 30 -> 32 vient de 480141dd, « fix(ci): make packaged convergence
+  reproducible », qui modifie prepare-cef-windows.ps1 et
+  windows_bundle_layout_tests.rs. Pas de 4641fd5a, qui ne touche ni l'un ni
+  l'autre.
+- clgo 101 -> 103 vient bien de e10ce2a8, et cl_go_dash 43 -> 45 de 217ff621.
+  Ces deux-la etaient exacts.
+
+La portee reelle du correctif est donc : deux commits Windows du perimetre,
+e10ce2a8 et 217ff621, et deux commits hors perimetre, 2e49bc23 et 480141dd.
+
+Le contrat, lui, etait juste : les quatre compteurs corriges correspondent aux
+occurrences reelles, et le test est vert. Seule l'attribution etait erronee.
+
+Le manque de surveillance signale en fin de note est corrige par e0e837e0 :
+ci.yml execute desormais le contrat sur chaque PR.
