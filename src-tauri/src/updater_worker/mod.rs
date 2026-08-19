@@ -10,6 +10,8 @@ mod macos_swap;
 mod process;
 mod verify;
 mod windows;
+#[cfg(windows)]
+mod windows_launch;
 
 pub(crate) const UPDATE_TEMP_PREFIX: &str = "cl-go-dash-update";
 

@@ -36,7 +36,10 @@ pub(crate) fn run_status(spec: &CommandSpec, timeout: Duration) -> Result<(), Wo
 
 pub(crate) fn spawn_background(spec: &CommandSpec) -> Result<Child, WorkerError> {
     validate_spec(spec)?;
-    command(spec)
+    let mut command = command(spec);
+    #[cfg(windows)]
+    super::windows_launch::configure_relaunched_application(&mut command);
+    command
         .stdout(Stdio::null())
         .spawn()
         .map_err(|_| WorkerError)
