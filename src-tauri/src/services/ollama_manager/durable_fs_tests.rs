@@ -206,14 +206,25 @@ fn permanent_sharing_retry_is_bounded_and_cancelable() {
 
 #[test]
 fn non_sharing_errors_are_not_retried() {
-    let mut waits = 0;
-    let result = retry_windows_sharing(
-        || Err::<(), _>(OllamaFsError::new(OllamaFsErrorKind::Other)),
-        || false,
-        |_| waits += 1,
-    );
-    assert!(result.is_err());
-    assert_eq!(waits, 0);
+    // PermissionDenied est le genre que Windows renvoie reellement quand un tiers
+    // tient le dossier du bundle : ERROR_ACCESS_DENIED, jamais
+    // ERROR_SHARING_VIOLATION. Mesure figee par windows_durable_fs_tests. La
+    // boucle ne doit pas l'absorber — c'est aussi le genre d'un vrai refus de
+    // droits, que 2 s de reprise ne resoudraient pas, et la reprise du journal
+    // couvre deja l'attente longue.
+    for kind in [
+        OllamaFsErrorKind::Other,
+        OllamaFsErrorKind::PermissionDenied,
+    ] {
+        let mut waits = 0;
+        let result = retry_windows_sharing(
+            || Err::<(), _>(OllamaFsError::new(kind)),
+            || false,
+            |_| waits += 1,
+        );
+        assert!(result.is_err(), "{kind:?} doit remonter sans reprise");
+        assert_eq!(waits, 0, "{kind:?} ne doit declencher aucune attente");
+    }
 }
 
 #[test]
