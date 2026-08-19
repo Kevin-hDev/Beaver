@@ -1,0 +1,26 @@
+Correction de review J4, second tour — reserve 2.
+
+Constat du reviewer : dans 86388eb9, la garde d'attente vaut 30 s et la fixture
+Python dort 30 s. Les deux durees coincidant, un reap defaillant restait
+indetectable — l'enfant serait mort de lui-meme au moment ou la garde expire, et
+le test aurait verdi par hasard sur le bug qu'il surveille.
+
+Choix entre les deux corrections proposees : allonger la fixture a 120 s plutot
+qu'abaisser la garde a 10 s. Une garde courte reintroduit un faux rouge sous
+charge, et c'est exactement le defaut que 86388eb9 corrigeait. Allonger la
+fixture separe les deux echelles sans toucher au budget d'attente.
+
+Portee : seule la fixture de ce test change. Celle du test voisin,
+tree_termination_never_kills_an_unconfined_process, garde ses 30 s — elle sert a
+prouver qu'un processus hors Job survit, pas a mesurer une disparition.
+
+Preuves, cargo test --lib --features windows-tests :
+- apres allongement : vert, 1,5 s.
+- detection prouvee en remplacant temporairement terminate par un kill du seul
+  parent, suivi de l'attente de sa fin pour atteindre la boucle : rouge apres
+  30,76 s, message « l'arbre confine survit a sa terminaison ». L'enfant etait
+  encore vivant a l'expiration, ce qui n'aurait pas ete le cas avec 30 s.
+- fichier restaure depuis sa sauvegarde, terminate bien remis en place ligne 88.
+- les deux tests du module : verts.
+- suite Windows complete : 3541 verts, 0 echec.
+- cargo clippy --all-targets -D warnings et rustfmt --check sans remarque.
