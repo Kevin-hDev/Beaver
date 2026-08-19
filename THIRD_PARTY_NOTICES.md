@@ -29,8 +29,9 @@ Copyright (c) 2020 Phosphor Icons
 
 ### Grommet Icons
 
-The confirmation icon shown after copying a session ID
-(`src/components/ui/validate-icon.tsx`) is the `validate` icon from
+The confirmation icon (`src/components/ui/validate-icon.tsx`), shown after a
+copy and on the cards of already-configured providers, channels and connectors,
+is the `validate` icon from
 [Grommet Icons](https://github.com/grommet/grommet-icons), licensed under the
 Apache License 2.0.
 
@@ -51,9 +52,64 @@ Changes made: the SVG was converted to a React component, its colour replaced by
 `currentColor`, and its viewBox widened so the drawing matches the visual weight
 of the surrounding icons. The path itself is unchanged.
 
+### Hugeicons
+
+Three icons from [Hugeicons](https://github.com/hugeicons/hugeicons-react),
+licensed under the MIT License:
+
+- `connect` — the Plugins tab of the Extensions page
+  (`src/components/ui/extension-section-icons.tsx`)
+- `file-edit` — the Modifications row of the conversation summary
+  (`src/components/ui/session-summary-icons.tsx`)
+- `task-edit-01` — the Plans row of the same summary
+
+Copyright (c) Hugeicons
+
+### Famicons
+
+The `extension-puzzle-outline` icon of the Extensions tab
+(`src/components/ui/extension-section-icons.tsx`) is from
+[Famicons](https://github.com/familyjs/famicons), licensed under the MIT
+License.
+
+Copyright (c) Family
+
+### Heroicons
+
+The `server-stack` icon of the Host tab
+(`src/components/ui/extension-section-icons.tsx`) is from
+[Heroicons](https://github.com/tailwindlabs/heroicons), licensed under the MIT
+License.
+
+Copyright (c) Tailwind Labs, Inc.
+
+### Streamline
+
+The `application-add` icon of the External applications tab
+(`src/components/ui/extension-section-icons.tsx`) is the Plump variant from
+[Streamline](https://github.com/webalys-hq/streamline-vectors), licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Copyright (c) Streamline
+
+### Font Awesome
+
+The `tasks` icon of the Todo list row of the conversation summary
+(`src/components/ui/session-summary-icons.tsx`) is from
+[Font Awesome 7 Free](https://github.com/FortAwesome/Font-Awesome), whose icons
+are licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Copyright (c) Fonticons, Inc.
+
 ### MIT License
 
-Applies to teenyicons and Phosphor Icons above.
+Applies to teenyicons, Phosphor Icons, Hugeicons, Famicons and Heroicons above.
+
+Changes made to the Hugeicons, Famicons, Heroicons, Streamline and Font Awesome
+icons: each SVG was converted to a React component and its colour replaced by
+`currentColor` so the drawing follows the surrounding text and the active theme.
+The paths themselves are unchanged.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

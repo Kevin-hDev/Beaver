@@ -12,11 +12,11 @@ describe("session summary custom icons", () => {
   it("renders the five supplied drawings with theme-aware colors", () => {
     const { container } = render(
       <>
-        <CommitIcon size="var(--icon-md)" />
-        <ModificationIcon size="var(--icon-md)" />
-        <PlanIcon size="var(--icon-md)" />
-        <TodoListIcon size="var(--icon-md)" />
-        <SubagentSummaryIcon size="var(--icon-md)" />
+        <CommitIcon />
+        <ModificationIcon />
+        <PlanIcon />
+        <TodoListIcon />
+        <SubagentSummaryIcon />
       </>,
     );
 
@@ -26,11 +26,20 @@ describe("session summary custom icons", () => {
     expect(icons.map((icon) => icon.getAttribute("viewBox"))).toEqual([
       "0 0 24 24",
       "0 0 24 24",
-      "0 0 48 48",
       "0 0 24 24",
-      "0 0 32 32",
+      "0 0 640 640",
+      "0 0 24 24",
     ]);
-    expect(icons.every((icon) => icon.style.width === "var(--icon-md)")).toBe(true);
-    expect(container.querySelector('[fill="#d2d2d2"]')).toBeNull();
+    /* Les six rangées de la bulle partagent une seule taille : si un dessin
+       échappe au token, il grandit tout seul au prochain réglage. */
+    expect(icons.every((icon) => icon.style.width === "var(--summary-row-icon-size)")).toBe(true);
+    expect(icons.every((icon) => icon.getAttribute("aria-hidden") === "true")).toBe(true);
+    expect(container.querySelector("[fill^='#']")).toBeNull();
+    expect(container.querySelector("[stroke^='#']")).toBeNull();
+  });
+
+  it("keeps an explicit size overridable", () => {
+    const { container } = render(<PlanIcon size="var(--icon-lg)" />);
+    expect(container.querySelector("svg")?.style.width).toBe("var(--icon-lg)");
   });
 });

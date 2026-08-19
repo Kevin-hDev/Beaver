@@ -141,8 +141,8 @@
 }
 
 .ssb-section-icon svg {
-  width: var(--icon-md);
-  height: var(--icon-md);
+  width: var(--summary-row-icon-size);
+  height: var(--summary-row-icon-size);
 }
 
 .ssb-section-caret {

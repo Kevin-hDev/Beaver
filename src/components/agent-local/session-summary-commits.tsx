@@ -100,7 +100,7 @@ export function SessionSummaryCommits({ git, onOpenFile }: SessionSummaryCommits
         aria-label={t("agentLocal.sessionSummary.commits.toggle")}
         onClick={toggle}
       >
-        <CommitIcon size="var(--icon-md)" className="ssb-row-icon" />
+        <CommitIcon className="ssb-row-icon" />
         <span className="ssb-row-label">{t("agentLocal.sessionSummary.commits.title")}</span>
         <CaretDown className={`ssb-section-caret ${open ? "ssb-section-caret-open" : ""}`} size="var(--icon-sm)" />
       </button>

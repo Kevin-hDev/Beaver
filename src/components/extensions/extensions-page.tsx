@@ -43,9 +43,9 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
     () => EXTENSION_SECTIONS.map(({ id, key, icon: SectionIcon }) => ({
       id,
       label: t(key),
-      icon: <SectionIcon size="var(--icon-md)" weight={section === id ? "fill" : "regular"} />,
+      icon: <SectionIcon />,
     })),
-    [section, t],
+    [t],
   );
 
   if (selected) {

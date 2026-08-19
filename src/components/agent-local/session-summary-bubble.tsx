@@ -94,7 +94,7 @@ export function SessionSummaryBubble({
         <div className="ssb-popover" role="dialog" aria-label={t("agentLocal.sessionSummary.title")}>
           <div className="ssb-kicker">{t("agentLocal.sessionSummary.environment")}</div>
           <div className="ssb-row">
-            <ModificationIcon size="var(--icon-md)" className="ssb-row-icon" />
+            <ModificationIcon className="ssb-row-icon" />
             <span className="ssb-row-label">{t("agentLocal.sessionSummary.modifications")}</span>
             <SessionSummaryChangeStats sessionChanges={summary.changes} git={git} />
           </div>

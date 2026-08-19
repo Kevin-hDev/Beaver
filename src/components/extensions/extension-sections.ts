@@ -1,16 +1,22 @@
-import type { Icon } from "@phosphor-icons/react";
-import { Gear, Link, PuzzlePiece, Wrench } from "@/components/ui/icons";
+import type { ComponentType } from "react";
+import {
+  CustomExtensionsIcon,
+  ExtensionHostIcon,
+  ExternalAppsIcon,
+  PluginsIcon,
+} from "@/components/ui/extension-section-icons";
+import type { InlineIconProps } from "@/components/ui/inline-icon";
 import type { ExtensionsSettingsSection } from "@/types/navigation";
 
 interface ExtensionSectionDef {
   id: ExtensionsSettingsSection;
   key: string;
-  icon: Icon;
+  icon: ComponentType<InlineIconProps>;
 }
 
 export const EXTENSION_SECTIONS: readonly ExtensionSectionDef[] = [
-  { id: "plugins", key: "extensions.sections.plugins", icon: PuzzlePiece },
-  { id: "custom", key: "extensions.sections.custom", icon: Wrench },
-  { id: "external", key: "extensions.sections.external", icon: Link },
-  { id: "host", key: "extensions.sections.host", icon: Gear },
+  { id: "plugins", key: "extensions.sections.plugins", icon: PluginsIcon },
+  { id: "custom", key: "extensions.sections.custom", icon: CustomExtensionsIcon },
+  { id: "external", key: "extensions.sections.external", icon: ExternalAppsIcon },
+  { id: "host", key: "extensions.sections.host", icon: ExtensionHostIcon },
 ];

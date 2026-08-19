@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-shell";
-import { Plus, Check, ArrowSquareOut } from "@/components/ui/icons";
+import { Plus, ArrowSquareOut } from "@/components/ui/icons";
+import { ValidateIcon } from "@/components/ui/validate-icon";
 import { McpIcon } from "@/lib/mcp-icons";
 import { getMcpDescription } from "@/types/mcp";
 import type { McpConnectorSpec } from "@/types/mcp";
@@ -50,7 +51,7 @@ export function McpBrowseCard({ connector, configured, onAdd }: McpBrowseCardPro
         onClick={configured || locked ? undefined : onAdd}
         disabled={configured || locked}
       >
-        {configured ? <Check size="var(--icon-md)" weight="bold" /> : <Plus size="var(--icon-md)" weight="bold" />}
+        {configured ? <ValidateIcon size="var(--icon-md)" /> : <Plus size="var(--icon-md)" weight="bold" />}
       </button>
     </div>
   );

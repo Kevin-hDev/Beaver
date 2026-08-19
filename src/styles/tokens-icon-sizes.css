@@ -72,4 +72,20 @@
      comme leurs boutons : ces deux tracés bordent une piste d'onglets, et à
      taille pleine ils tiraient l'œil avant les onglets eux-mêmes. */
   --terminal-bar-action-icon-size: calc(var(--icon-sm) * 0.75);
+  /* Les six dessins de la bulle « Résumé de conversation » — modifications,
+     branche, commits, todo list, plan, sous-agents. Un quart sous l'icône
+     courante : ils sont posés dans un panneau étroit où chaque rangée tient un
+     dessin, un libellé et une valeur, et à taille pleine le dessin pesait
+     autant que le texte qu'il annonce. Une seule valeur pour les six, sinon
+     les rangées et les sections divergent au premier réglage. */
+  --summary-row-icon-size: calc(var(--icon-md) * 0.75);
+  /* Dessin d'un onglet de la page Extensions. Un quart sous l'icône courante,
+     comme les entrées de navigation et pour la même raison : ces tracés sont
+     denses — une prise, un puzzle, quatre tuiles — et à taille pleine ils
+     tiraient l'œil avant le libellé de l'onglet.
+
+     L'onglet Hôte en est exclu : son serveur est un tracé large et plat qui
+     n'occupe que la moitié de la hauteur de son cadre, et réduit il devenait
+     le petit de la rangée. */
+  --extension-tab-icon-size: calc(var(--icon-md) * 0.75);
 }

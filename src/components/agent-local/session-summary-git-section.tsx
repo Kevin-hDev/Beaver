@@ -28,7 +28,7 @@ export function SessionSummaryGitSection({ git }: SessionSummaryGitSectionProps)
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        <GitBranch size="var(--icon-md)" className="ssb-row-icon" />
+        <GitBranch size="var(--summary-row-icon-size)" className="ssb-row-icon" />
         <span className="ssb-row-label">{t("agentLocal.sessionSummary.branch")}</span>
         <span className="ssb-row-value" title={branch}>{branch}</span>
         <CaretDown className={`ssb-section-caret ${open ? "ssb-section-caret-open" : ""}`} size="var(--icon-sm)" />
@@ -49,7 +49,7 @@ function StaticBranchRow({ branch }: { branch: string }) {
   const { t } = useTranslation();
   return (
     <div className="ssb-row">
-      <GitBranch size="var(--icon-md)" className="ssb-row-icon" />
+      <GitBranch size="var(--summary-row-icon-size)" className="ssb-row-icon" />
       <span className="ssb-row-label">{t("agentLocal.sessionSummary.branch")}</span>
       <span className="ssb-row-value" title={branch}>{branch}</span>
     </div>

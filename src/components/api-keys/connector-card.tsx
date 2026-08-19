@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Plus, Check, Key } from "@/components/ui/icons";
+import { Plus, Key } from "@/components/ui/icons";
+import { ValidateIcon } from "@/components/ui/validate-icon";
 import { ProviderIcon } from "@/lib/provider-icons";
 import { providerDescription, providerFreeTier } from "@/lib/provider-copy";
 import type { ProviderSpec } from "@/types/api";
@@ -43,7 +44,7 @@ export function ConnectorCard({
         </div>
       </div>
       <div className={`icon-btn browse-card-action ${configured ? "done" : ""}`}>
-        {configured ? <Check size="var(--icon-md)" weight="bold" /> : <Plus size="var(--icon-md)" weight="bold" />}
+        {configured ? <ValidateIcon size="var(--icon-md)" /> : <Plus size="var(--icon-md)" weight="bold" />}
       </div>
     </button>
   );

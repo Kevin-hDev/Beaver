@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, Plus, Check } from "@/components/ui/icons";
+import { X, Plus } from "@/components/ui/icons";
+import { ValidateIcon } from "@/components/ui/validate-icon";
 import { ProviderIcon } from "@/lib/provider-icons";
 import type { OAuthProviderStatus } from "@/types/oauth-provider";
 import "@/components/ui/browse-card.css";
@@ -44,7 +45,7 @@ export function OAuthProviderModal({ providers, onPick, onClose }: OAuthProvider
                 </div>
               </div>
               <div className={`icon-btn browse-card-action ${provider.connected ? "done" : ""}`}>
-                {provider.connected ? <Check size="var(--icon-md)" weight="bold" /> : <Plus size="var(--icon-md)" weight="bold" />}
+                {provider.connected ? <ValidateIcon size="var(--icon-md)" /> : <Plus size="var(--icon-md)" weight="bold" />}
               </div>
             </button>
           ))}

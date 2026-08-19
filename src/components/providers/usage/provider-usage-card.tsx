@@ -1,4 +1,4 @@
-import { ArrowsClockwise } from "@/components/ui/icons";
+import { ReloadIcon } from "@/components/ui/message-action-icons";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useProviderUsage } from "@/hooks/use-provider-usage";
 import { useTranslation } from "react-i18next";
@@ -30,7 +30,7 @@ export function ProviderUsageCard({ connectionId, siteUrl }: Props) {
               disabled={refreshing}
               onClick={() => void refresh()}
             >
-              <ArrowsClockwise
+              <ReloadIcon
                 size="var(--icon-sm)"
                 className={refreshing ? "puc-spin" : undefined}
               />
