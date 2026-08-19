@@ -1,0 +1,30 @@
+fix(browser): make cef_supervision exist wherever it is called
+
+Running cargo test --all on Windows under windows-tests failed to compile:
+E0433, cannot find cef_supervision in super. Two conditions described the
+same thing and disagreed. The module existed under any(test, native_browser);
+the three functions in cef_runtime_policy call it under
+any(target_os = "windows", target_os = "macos").
+
+build.rs only sets native_browser for macOS, and for Windows without the
+windows-tests feature. So under windows-tests the module survived on cfg(test)
+alone — which is why --lib never saw it: --lib compiles the library in test
+mode only. --all also builds it in normal mode for the binaries, and there
+the module was gone while the calls remained.
+
+The module condition now follows the calls. native_browser is only ever set
+on those two systems, so this is wider than before and never narrower.
+
+The CI contract test moves with it: it pinned --lib for the Windows job. What
+that test protects is unchanged and still asserted — that job prepares no CEF
+and mounts no CEF cache, and without native_browser no binary links
+libcef.dll. The reason is written next to the assertion.
+
+Job budgets are also widened. The first attempt sized them on one favourable
+run and killed three healthy jobs, including the Linux suite that was green
+before. macOS and Windows commonly run 55 minutes and the full suite adds to
+that, so budgets now bound runaway jobs rather than arbitrate normal duration.
+
+macOS runs with --test-threads=1: in parallel, the full suite fails one extra
+test in app_update_helper_process that passes on its own, so those tests
+interfere. Windows already ran single-threaded.
