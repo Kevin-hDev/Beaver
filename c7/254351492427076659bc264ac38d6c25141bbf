@@ -146,9 +146,15 @@ POINTS QUE LA REVUE PEUT VOULOIR TRANCHER
   cher en CI ; un contrôle plus léger suffirait — vérifier que chaque import
   déclaré par la source auditée figure dans le lock. Chantier à ouvrir,
   volontairement hors de ce commit.
-- Les 38 alertes restantes vont rester ouvertes indéfiniment. Si le bruit gêne, la
-  seule voie honnête est un dismiss motivé côté GitHub (tolerable_risk), pas une
-  montée forcée. Non fait : c'est une décision qui revient à Kevin.
+- Les 38 alertes restantes ont été marquées « tolerable_risk » sur GitHub le
+  2026-08-19, sur décision de Kevin, avec un motif écrit par groupe de cause :
+  transformers bloqué par Sundial (17), torch bloqué par uni2ts (9), torch 2.13
+  inatteignable sur macOS (8), transformers bloqué par Kairos (3), glib (1).
+  Aucune n'a été rejetée sans raison vérifiable : chaque motif nomme la contrainte
+  amont, la version qui casse et la date du test. Elles se rouvrent d'elles-mêmes
+  si un jour la contrainte tombe.
+  Les 14 alertes que ce commit corrige sont restées ouvertes exprès : GitHub les
+  fermera au push, et les fermer à la main aurait masqué la correction réelle.
 - Sundial est le seul adaptateur qui exécute du code livré avec le modèle, et son
   transformers ne bougera plus. Il reste couvert par la vérification sha256, mais
   c'est le seul endroit où la défense tient à une seule couche.
