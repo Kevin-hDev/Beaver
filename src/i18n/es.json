@@ -766,7 +766,14 @@
     "inject": "Contexto",
     "injected": "Inyectado",
     "failedToLoad": "Error al cargar",
-    "failedToRead": "Error al leer el archivo"
+    "failedToRead": "Error al leer el archivo",
+    "descriptions": {
+      "agents": "Instrucciones del agente",
+      "identity": "Quién es el agente",
+      "principles": "Reglas y valores",
+      "user": "Perfil del usuario",
+      "ideaDiscovery": "Ideas pendientes"
+    }
   },
   "settings": {
     "light": "Claro",

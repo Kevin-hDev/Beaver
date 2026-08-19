@@ -10,7 +10,9 @@ use std::process::Command;
 pub struct PersonalityFile {
     pub name: String,
     pub path: String,
-    pub description: String,
+    /* Clé de traduction plutôt que libellé : la description est affichée à
+       l'utilisateur, et l'interface est la seule à connaître sa langue. */
+    pub description_key: String,
 }
 
 fn data_root() -> PathBuf {
@@ -25,15 +27,16 @@ fn inbox_dir() -> PathBuf {
     data_root().join("inbox")
 }
 
-const ROOT_FILES: &[(&str, &str)] = &[("AGENTS.md", "Instructions agent")];
+const ROOT_FILES: &[(&str, &str)] = &[("AGENTS.md", "personality.descriptions.agents")];
 
 const CORE_FILES: &[(&str, &str)] = &[
-    ("identity.md", "Qui est Jackson"),
-    ("principles.md", "Règles et valeurs"),
-    ("user.md", "Profil de Kevin"),
+    ("identity.md", "personality.descriptions.identity"),
+    ("principles.md", "personality.descriptions.principles"),
+    ("user.md", "personality.descriptions.user"),
 ];
 
-const INBOX_FILES: &[(&str, &str)] = &[("idea-discovery.md", "Idées en attente")];
+const INBOX_FILES: &[(&str, &str)] =
+    &[("idea-discovery.md", "personality.descriptions.ideaDiscovery")];
 
 #[tauri::command]
 pub fn list_personality_files() -> Result<Vec<PersonalityFile>, String> {
@@ -50,13 +53,13 @@ pub fn list_personality_files() -> Result<Vec<PersonalityFile>, String> {
     ];
 
     for (dir, entries) in sources {
-        for (name, desc) in *entries {
+        for (name, description_key) in *entries {
             let path = dir.join(name);
             if path.exists() {
                 files.push(PersonalityFile {
                     name: name.to_string(),
                     path: path.to_string_lossy().to_string(),
-                    description: desc.to_string(),
+                    description_key: description_key.to_string(),
                 });
             }
         }

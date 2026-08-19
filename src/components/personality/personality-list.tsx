@@ -57,7 +57,7 @@ export function PersonalityList({
               <div className="pers-icon"><PersonalityFileIcon /></div>
               <div className="pers-item-body">
                 <div className="pers-item-name">{f.name}</div>
-                <div className="pers-item-desc">{f.description}</div>
+                <div className="pers-item-desc">{t(f.description_key)}</div>
               </div>
               {injected && (
                 <Tooltip label={t("personality.injected")} align="right">

@@ -766,7 +766,14 @@
     "inject": "コンテキスト",
     "injected": "注入済み",
     "failedToLoad": "読み込みに失敗しました",
-    "failedToRead": "ファイルの読み取りに失敗しました"
+    "failedToRead": "ファイルの読み取りに失敗しました",
+    "descriptions": {
+      "agents": "エージェントの指示",
+      "identity": "エージェントとは",
+      "principles": "ルールと価値観",
+      "user": "ユーザープロフィール",
+      "ideaDiscovery": "保留中のアイデア"
+    }
   },
   "settings": {
     "light": "ライト",

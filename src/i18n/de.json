@@ -766,7 +766,14 @@
     "inject": "Kontext",
     "injected": "Eingefügt",
     "failedToLoad": "Laden fehlgeschlagen",
-    "failedToRead": "Datei konnte nicht gelesen werden"
+    "failedToRead": "Datei konnte nicht gelesen werden",
+    "descriptions": {
+      "agents": "Agentenanweisungen",
+      "identity": "Wer der Agent ist",
+      "principles": "Regeln und Werte",
+      "user": "Benutzerprofil",
+      "ideaDiscovery": "Offene Ideen"
+    }
   },
   "settings": {
     "light": "Hell",

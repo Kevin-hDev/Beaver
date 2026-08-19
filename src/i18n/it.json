@@ -766,7 +766,14 @@
     "inject": "Contesto",
     "injected": "Iniettato",
     "failedToLoad": "Caricamento fallito",
-    "failedToRead": "Lettura del file fallita"
+    "failedToRead": "Lettura del file fallita",
+    "descriptions": {
+      "agents": "Istruzioni dell'agente",
+      "identity": "Chi è l'agente",
+      "principles": "Regole e valori",
+      "user": "Profilo dell'utente",
+      "ideaDiscovery": "Idee in attesa"
+    }
   },
   "settings": {
     "light": "Chiaro",

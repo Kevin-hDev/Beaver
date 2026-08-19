@@ -771,7 +771,14 @@
     "inject": "Context",
     "injected": "Injected",
     "failedToLoad": "Failed to load",
-    "failedToRead": "Failed to read file"
+    "failedToRead": "Failed to read file",
+    "descriptions": {
+      "agents": "Agent instructions",
+      "identity": "Who the agent is",
+      "principles": "Rules and values",
+      "user": "User profile",
+      "ideaDiscovery": "Pending ideas"
+    }
   },
   "settings": {
     "light": "Light",

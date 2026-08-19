@@ -766,7 +766,14 @@
     "inject": "上下文",
     "injected": "已注入",
     "failedToLoad": "加载失败",
-    "failedToRead": "读取文件失败"
+    "failedToRead": "读取文件失败",
+    "descriptions": {
+      "agents": "智能体指令",
+      "identity": "智能体是谁",
+      "principles": "规则与价值观",
+      "user": "用户档案",
+      "ideaDiscovery": "待处理的想法"
+    }
   },
   "settings": {
     "light": "浅色",

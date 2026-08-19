@@ -771,7 +771,14 @@
     "inject": "Contexte",
     "injected": "Injecté",
     "failedToLoad": "Échec du chargement",
-    "failedToRead": "Échec de la lecture"
+    "failedToRead": "Échec de la lecture",
+    "descriptions": {
+      "agents": "Instructions agent",
+      "identity": "Qui est l'agent",
+      "principles": "Règles et valeurs",
+      "user": "Profil de l'utilisateur",
+      "ideaDiscovery": "Idées en attente"
+    }
   },
   "settings": {
     "light": "Clair",
