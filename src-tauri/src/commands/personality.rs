@@ -11,7 +11,7 @@ pub struct PersonalityFile {
     pub name: String,
     pub path: String,
     /* Clé de traduction plutôt que libellé : la description est affichée à
-       l'utilisateur, et l'interface est la seule à connaître sa langue. */
+    l'utilisateur, et l'interface est la seule à connaître sa langue. */
     pub description_key: String,
 }
 
@@ -35,8 +35,10 @@ const CORE_FILES: &[(&str, &str)] = &[
     ("user.md", "personality.descriptions.user"),
 ];
 
-const INBOX_FILES: &[(&str, &str)] =
-    &[("idea-discovery.md", "personality.descriptions.ideaDiscovery")];
+const INBOX_FILES: &[(&str, &str)] = &[(
+    "idea-discovery.md",
+    "personality.descriptions.ideaDiscovery",
+)];
 
 #[tauri::command]
 pub fn list_personality_files() -> Result<Vec<PersonalityFile>, String> {
