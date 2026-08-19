@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { RefObject, MouseEvent } from "react";
 import { DotsThreeVertical } from "@/components/ui/icons";
 import { ChannelIcon } from "@/components/channels/channel-icon";
+import { SessionRunningIcon } from "@/components/ui/session-running-icon";
 import type { AgentSessionMeta } from "@/types/agent";
 import type { ChannelType } from "@/types/channels";
 import { displaySessionName } from "@/lib/utils";
@@ -81,13 +82,12 @@ export function ConversationSessionItem({
       ) : (
         <>
           {showUnread && <span className="conv-unread-dot" aria-hidden="true" />}
+          {isRunning && <SessionRunningIcon className="conv-running-icon" />}
           {/* Le double-clic renomme, comme sur un onglet du terminal. Posé sur
               la zone du nom seule : ni l'âge ni le bouton de menu, qu'on
               double-clique par erreur en visant leur action. */}
           <span className="conv-session-main" onDoubleClick={() => onStartRename(session.id)}>
-            <span className={`conv-name ${isRunning ? "thinking-active" : ""}`}>
-              <span>{displaySessionName(session.name, t)}</span>
-            </span>
+            <span className="conv-name">{displaySessionName(session.name, t)}</span>
             {session.is_gateway && channelId && (
               <ChannelIcon channelId={channelId} size="var(--icon-xs)" className="conv-gateway-icon" />
             )}

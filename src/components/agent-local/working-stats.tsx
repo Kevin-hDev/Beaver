@@ -18,11 +18,9 @@ function WorkingStats({ startedAt, liveTokenCount }: {
   const hasTokens = liveTokenCount > 0;
 
   return (
-    <span className="working-stats thinking-active">
-      <span>
-        {t("agentLocal.working", { duration: elapsed })}
-        {hasTokens ? ` · ↑ ${liveTokenCount} ${t("agentLocal.tokens")}` : ""}
-      </span>
+    <span className="working-stats">
+      {t("agentLocal.working", { duration: elapsed })}
+      {hasTokens ? ` · ↑ ${liveTokenCount} ${t("agentLocal.tokens")}` : ""}
     </span>
   );
 }

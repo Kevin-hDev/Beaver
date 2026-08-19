@@ -56,14 +56,20 @@ function renderItem(overrides: Partial<Parameters<typeof ConversationSessionItem
 }
 
 describe("ConversationSessionItem", () => {
-  /* L'icône de session portait le second signal d'exécution et a été retirée de
-     la ligne : le nom scintillant reste seul à dire qu'une session tourne. */
-  it("anime le nom quand la session est en cours", () => {
+  /* Un seul signal dit qu'une session tourne : le repère posé dans la gouttière
+     du retrait. Le nom scintillait aussi, deux animations pour une même chose. */
+  it("pose le repère d'activité quand la session est en cours", () => {
     const { container } = renderItem({ isRunning: true });
     const item = container.querySelector(".conv-session-indented");
 
     expect(item?.classList.contains("is-running")).toBe(true);
-    expect(item?.querySelector(".conv-name.thinking-active")).not.toBeNull();
+    expect(item?.querySelector(".conv-running-icon")).not.toBeNull();
+  });
+
+  it("ne pose aucun repère d'activité quand la session est au repos", () => {
+    const { container } = renderItem({ isRunning: false });
+
+    expect(container.querySelector(".conv-running-icon")).toBeNull();
   });
 
   it("affiche le point terminé pour une session non active", () => {

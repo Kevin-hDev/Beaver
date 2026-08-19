@@ -20,6 +20,14 @@
      plat — contre 70 à 75 % pour les autres, et à cadre égal il se lit plus
      petit qu'eux. Exprimé par rapport à eux, pour que l'écart tienne. */
   --project-folder-icon-size: calc(var(--session-icon-size) * 1.2);
+  /* Repère d'une session qui répond, posé dans la gouttière du retrait, à
+     l'aplomb du dossier de son projet.
+
+     À la taille des autres dessins de cette colonne, sans retrait. Je l'avais
+     d'abord posé un cinquième en dessous, en supposant qu'un aplat de vingt-
+     cinq carrés pleins pèserait plus lourd que les tracés au trait qui
+     l'entourent ; à l'écran il ne pesait pas trop, il se lisait trop petit. */
+  --session-running-icon-size: var(--session-icon-size);
   /* Dessin devant un fichier de /beaver, posé au-dessus de l'icône standard :
      la ligne porte un nom et sa description sur deux lignes serrées, et le
      dessin seul en face paraissait maigre. Mesuré à la largeur minimale de la

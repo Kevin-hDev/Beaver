@@ -25,7 +25,7 @@ export function ThinkingSection({ content, durationMs, isActive }: ThinkingSecti
     <div>
       <button
         type="button"
-        className={`thinking-toggle${isActive ? " thinking-active" : ""}`}
+        className="thinking-toggle"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >

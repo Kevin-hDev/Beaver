@@ -119,22 +119,6 @@
   pointer-events: none;
 }
 
-.conv-name.thinking-active > span {
-  background: linear-gradient(
-    90deg,
-    var(--ink-faint) 0%,
-    var(--ink-faint) 40%,
-    var(--ink) 50%,
-    var(--ink-faint) 60%,
-    var(--ink-faint) 100%
-  );
-  background-size: 200% 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: thinking-shimmer 2s ease-in-out infinite;
-}
-
 .conv-name {
   flex: 1;
   min-width: 0;
@@ -142,8 +126,6 @@
   mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
   -webkit-mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
 }
-
-/* thinking-shimmer vit dans global.css : partagé avec les libellés d'outils. */
 
 .conv-session-tail {
   display: inline-grid;

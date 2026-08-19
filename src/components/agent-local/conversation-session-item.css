@@ -1,3 +1,28 @@
 .conv-gateway-icon {
   margin-left: 4px;
 }
+
+/* Le repère d'une session qui répond se pose dans la gouttière du retrait, sur
+   la colonne du dossier de son projet — la place y est déjà réservée et
+   personne ne l'occupe. Centré sur cette colonne et non calé à gauche : sa
+   taille lui est propre, et un calage à gauche le décalerait du dossier au
+   premier réglage.
+
+   Hors du flux : posé dans la rangée, il pousserait le nom de quelques pixels
+   chaque fois qu'une session démarre ou s'arrête. */
+.conv-running-icon {
+  position: absolute;
+  left: calc(var(--space-sm) + var(--icon-sm) / 2);
+  top: 50%;
+  color: var(--pulse);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* La pastille de messages non lus occupe la même gouttière. Une session qui
+   répond est en train de fabriquer les messages que la pastille annonce : le
+   repère d'activité dit la même chose plus précisément, et la pastille revient
+   dès l'arrêt. */
+.conv-item.is-running .conv-unread-dot {
+  display: none;
+}
