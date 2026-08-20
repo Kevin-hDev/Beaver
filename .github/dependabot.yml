@@ -46,11 +46,13 @@ updates:
       cargo-backend:
         update-types: [minor, patch]
 
-  # Pas d'entrée `pip` pour les runtimes Forecast : Dependabot relie un `.in` à
-  # sa sortie par l'en-tête `--output-file`, que lock-runtimes.sh n'écrit pas. Il
-  # modifierait les `.in` sans régénérer les `.lock` embarqués par Rust, et les
-  # deux divergeraient en silence. Ces montées demandent en plus de charger le
-  # modèle pour valider. Les avis de sécurité pip arrivent quand même.
+  # Pas d'entrée `pip` pour les runtimes Forecast. Dependabot relie un `.in` à
+  # sa sortie par l'en-tête `--output-file` que pip-compile inscrit ;
+  # lock-runtimes.sh compile avec `--no-header`, donc cet en-tête est absent et
+  # le lien est perdu. Dependabot modifierait les `.in` sans régénérer les
+  # `.lock` embarqués par Rust, et les deux divergeraient en silence. Ces
+  # montées demandent en plus de charger le modèle pour valider. Les avis de
+  # sécurité pip arrivent quand même.
 
   - package-ecosystem: cargo
     directory: /src-tauri/tests/windows-private-store

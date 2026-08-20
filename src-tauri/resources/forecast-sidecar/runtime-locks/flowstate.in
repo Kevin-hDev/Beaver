@@ -1,3 +1,5 @@
+# granite-tsfm 0.3.8 est un plancher : les versions antérieures plafonnent
+# transformers sous la 5, qu'exige ce runtime.
 # torch reste en 2.10.x : granite-tsfm exige torch<2.11.
 granite-tsfm==0.3.8
 huggingface-hub==1.28.0

@@ -1,4 +1,6 @@
 # Approved Forecast runtime. Regenerate the lock only after adapter validation.
+# huggingface-hub est en 1.x parce que transformers >= 5.15 l'exige : les
+# deux montent ensemble ou pas du tout.
 chronos-forecasting==2.3.1
 accelerate==1.14.0
 huggingface-hub==1.24.0
