@@ -1,0 +1,28 @@
+Task 4 — publish validated runtimes atomically
+
+Why:
+- an interrupted virtualenv rebuild must never replace or corrupt the last usable runtime;
+- only a runtime that installs offline, passes the required import smoke and starts successfully may retire its predecessor.
+
+Implementation:
+- RuntimeEnvironment is the single rebuild orchestrator and always constructs `.venv.next` beside `.venv`;
+- a strict bounded receipt binds CPython, requirements and the existing source hash, and is written temp-then-rename;
+- filesystem transitions accept only the three exact sidecar siblings and reject links or ambiguous targets;
+- publication moves current to previous, moves staged to current, and restores previous if the second rename fails;
+- `.venv.previous` survives publication and is removed only after readiness and a final active-generation check;
+- every install uses `--no-index --find-links`, then the staged Python executes the exact SearXNG import smoke.
+
+Controller review and correction:
+- initial recovery tests stayed green when the smoke call was removed;
+- initial lifecycle order cleaned the previous runtime before the final startup-admission check;
+- the same Terra added an end-to-end fake-Python build test, a failing-smoke preservation test and an executable readiness-order guard.
+
+Evidence:
+- 33/33 targeted Rust tests pass (11 runtime_environment, 14 runtime, 8 lifecycle);
+- cargo fmt --check and strict Clippy pass;
+- mutations red for removed smoke, removed `--no-index`, skipped staging cleanup, invalid receipt acceptance, missing rollback, non-executable runtime acceptance and cleanup-before-admission;
+- all production files remain below 230 lines.
+
+Limits:
+- crash boundaries are injected deterministically rather than by killing between syscalls;
+- process-wide deadlines and bounded runtime logs belong to Task 5.
