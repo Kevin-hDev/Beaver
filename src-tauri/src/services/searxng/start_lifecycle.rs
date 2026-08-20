@@ -1,4 +1,5 @@
 use super::lifecycle::{base_url, shutdown_error, SearxngHandle, SearxngSidecar};
+use super::start_readiness::{ensure_start_active, run_if_start_active};
 use crate::services::work_registry::ServiceWorkCancellation;
 use std::sync::atomic::Ordering;
 
@@ -39,7 +40,16 @@ impl SearxngSidecar {
             super::process::kill_child_process(child).await;
             return Err(error);
         }
-        if ensure_start_active(self, cancel, generation).is_err() {
+        if run_if_start_active(self, cancel, generation, || {
+            if let Err(error) = super::runtime_environment::RuntimeEnvironment::mark_started() {
+                ::log::warn!(
+                    "[searxng] runtime previous cleanup category={}",
+                    error.category()
+                );
+            }
+        })
+        .is_err()
+        {
             super::process::kill_child_process(child).await;
             return Err(shutdown_error());
         }
@@ -202,16 +212,4 @@ impl SearxngSidecar {
             .await
             .map_err(|_| "fixture SearXNG interrompue".to_string())?
     }
-}
-
-fn ensure_start_active(
-    sidecar: &SearxngSidecar,
-    cancel: &ServiceWorkCancellation,
-    generation: u64,
-) -> Result<(), String> {
-    if cancel.is_cancelled() || sidecar.publication_generation.load(Ordering::Acquire) != generation
-    {
-        return Err(shutdown_error());
-    }
-    Ok(())
 }

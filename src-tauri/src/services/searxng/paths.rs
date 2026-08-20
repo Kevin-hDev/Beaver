@@ -10,6 +10,21 @@ pub fn venv_dir() -> PathBuf {
     sidecar_dir().join(".venv")
 }
 
+pub fn staged_venv_dir() -> PathBuf {
+    sidecar_dir().join(".venv.next")
+}
+
+pub fn previous_venv_dir() -> PathBuf {
+    sidecar_dir().join(".venv.previous")
+}
+
+#[allow(dead_code)] // Kept as the single path authority for future runtime diagnostics.
+pub fn runtime_log_path() -> PathBuf {
+    crate::services::paths::data_dir()
+        .join("logs")
+        .join("searxng-runtime.log")
+}
+
 pub fn settings_path() -> PathBuf {
     sidecar_dir().join("settings.yml")
 }

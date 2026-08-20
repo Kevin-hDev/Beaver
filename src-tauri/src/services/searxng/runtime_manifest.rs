@@ -47,7 +47,7 @@ impl RuntimeManifest {
             || wire.implementation != "cpython"
             || wire.major != 3
             || !(10..=99).contains(&wire.minor)
-            || !is_sha256(&wire.requirements_sha256)
+            || !Self::valid_sha256(&wire.requirements_sha256)
         {
             return Err(RuntimeError::ManifestInvalid);
         }
@@ -59,12 +59,23 @@ impl RuntimeManifest {
     }
 
     pub(super) fn matches_stamp(&self, stamp: &str) -> bool {
-        is_sha256(stamp)
+        Self::valid_sha256(stamp)
             && self
                 .requirements_sha256
                 .as_bytes()
                 .ct_eq(stamp.as_bytes())
                 .into()
+    }
+
+    pub(super) fn requirements_sha256(&self) -> &str {
+        &self.requirements_sha256
+    }
+
+    pub(super) fn valid_sha256(value: &str) -> bool {
+        value.len() == 64
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
     }
 
     #[cfg(test)]
@@ -75,11 +86,4 @@ impl RuntimeManifest {
             requirements_sha256: "a".repeat(64),
         }
     }
-}
-
-fn is_sha256(value: &str) -> bool {
-    value.len() == 64
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }

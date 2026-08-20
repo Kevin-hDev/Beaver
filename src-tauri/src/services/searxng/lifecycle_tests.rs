@@ -1,6 +1,27 @@
 use super::lifecycle::SearxngSidecar;
 use crate::app_exit::AppExitCoordinator;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
+
+#[test]
+fn stale_post_readiness_start_cannot_clean_the_previous_runtime() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let sidecar = SearxngSidecar::new(coordinator.work_supervisor());
+    let admission = sidecar.work.try_admit_server().expect("server admission");
+    let cancel = admission.cancellation();
+    let generation = sidecar.publication_generation.load(Ordering::Acquire);
+    sidecar
+        .publication_generation
+        .fetch_add(1, Ordering::AcqRel);
+    let mut cleaned = false;
+
+    let result = super::start_readiness::run_if_start_active(&sidecar, &cancel, generation, || {
+        cleaned = true
+    });
+
+    assert!(result.is_err());
+    assert!(!cleaned);
+}
 
 #[tokio::test]
 async fn shutdown_permanently_refuses_a_new_searxng_start() {
