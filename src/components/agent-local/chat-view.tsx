@@ -142,11 +142,15 @@ export function ChatView({
           />
         </div>
         {isSubagent && runtime.showError && chat.error && (
-          <ErrorBubble
-            message={chat.error}
-            isConnection={chat.isConnectionError}
-            diagnosticSummary={chat.diagnosticSummary}
-          />
+          <div className="chat-input-area">
+            <div className="chat-input-column">
+              <ErrorBubble
+                message={chat.error}
+                isConnection={chat.isConnectionError}
+                diagnosticSummary={chat.diagnosticSummary}
+              />
+            </div>
+          </div>
         )}
         {!isSubagent && <div className="chat-input-area">
           <div className="chat-input-column" ref={inputColumnRef}>

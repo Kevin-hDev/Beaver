@@ -48,18 +48,18 @@ async fn queue_agent_message_rejects_a_child_without_changing_the_active_inbox()
     let after_session = snapshot(&session.id).await;
     let mut queued_messages = Vec::new();
     let queued_batches = sentinel_inbox.drain_into(&mut queued_messages).await;
-    sentinel_token.cancel();
 
     {
         let streams = app.state::<ActiveStreams>();
         let map = streams.0.lock().await;
         assert_eq!(map.len(), 1);
         let (token, generation, request_id, inbox) = map.get(&session.id).expect("sentinel");
-        assert!(token.is_cancelled());
+        assert!(!token.is_cancelled());
         assert_eq!(*generation, 41);
         assert_eq!(request_id, "sentinel-request");
         assert!(Arc::ptr_eq(inbox, &sentinel_inbox));
     }
+    sentinel_token.cancel();
     cleanup(&session).await;
 
     assert_eq!(

@@ -1,9 +1,8 @@
 use crate::services::agent_local::session_permission_state;
 use crate::services::agent_local::session_store;
+pub(super) use crate::services::agent_local::session_user_write::SUBAGENT_READ_ONLY;
 use crate::services::agent_local::types_session::{AgentMessage, AgentSession};
 use std::future::Future;
-
-pub(super) const SUBAGENT_READ_ONLY: &str = "subagent-read-only";
 
 pub(super) async fn child_session(name: &str) -> AgentSession {
     let mut session = session_store::create_full(name, "model", "provider", false, None)
