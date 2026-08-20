@@ -1,0 +1,29 @@
+Task 2 — bind the wheelhouse to its build Python
+
+Why:
+- a SearXNG wheelhouse is valid only for the exact Python implementation, minor and platform used to build it;
+- interrupted publication must recover the last complete bundle without accepting mixed metadata.
+
+Implementation:
+- RuntimeIdentity is the single authority joining the preparation stamp and strict runtime manifest;
+- manifests reject unknown or duplicate fields, unsafe files and inconsistent stamp/runtime hashes;
+- metadata is created exclusively and regular-file checks reject symlinks before any target can be overwritten;
+- current journals retain the complete identity, while legacy journals retain their original stamp only for bounded backward recovery;
+- the transaction state matrix validates NEW against the recorded target identity and OLD against its own recoverable identity before commit or rollback;
+- transaction filesystem and journal responsibilities were extracted so every production file remains below 230 lines.
+
+Review history:
+- review found rollback loss when the old bundle had another identity, stamp/runtime divergence, and metadata symlink overwrite;
+- it also found an over-limit transaction module and duplicated identity logic;
+- all findings were corrected before closure.
+
+Evidence:
+- 43/43 targeted Python tests pass;
+- Ruff and git diff --check pass;
+- direct reproductions confirm divergent identities are rejected, current crash states roll back safely, and legacy post-backup states recover;
+- mutation: validating OLD against the new identity makes four crash-matrix tests fail;
+- mutation: weakening lowercase hexadecimal stamp validation makes test_legacy_bundle_requires_lowercase_hex_stamps fail.
+
+Limits:
+- no live pip download is claimed in this task;
+- GUI runtime discovery and offline environment construction belong to Tasks 3 and 4.
