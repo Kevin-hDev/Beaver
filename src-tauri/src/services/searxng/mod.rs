@@ -9,6 +9,10 @@ mod process;
 mod python_runtime;
 mod python_runtime_path;
 mod runtime;
+mod runtime_command;
+mod runtime_command_drain;
+mod runtime_command_finish;
+mod runtime_command_log;
 mod runtime_environment;
 mod runtime_environment_fs;
 mod runtime_error;
@@ -26,6 +30,8 @@ mod work_supervision;
 
 #[cfg(test)]
 mod python_runtime_tests;
+#[cfg(test)]
+mod runtime_command_tests;
 #[cfg(test)]
 mod runtime_environment_tests;
 #[cfg(test)]

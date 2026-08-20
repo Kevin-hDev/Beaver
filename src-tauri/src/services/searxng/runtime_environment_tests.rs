@@ -5,6 +5,30 @@ use crate::app_exit::AppExitCoordinator;
 #[cfg(unix)]
 use crate::services::work_registry::ServiceWorkSupervisor;
 
+fn layout(root: &std::path::Path) -> super::runtime_environment_fs::Layout {
+    super::runtime_environment_fs::Layout::at(root).expect("layout")
+}
+
+fn recover_at(root: &std::path::Path) -> Result<(), super::runtime_error::RuntimeError> {
+    super::runtime_environment_fs::recover(&layout(root))
+}
+
+fn reusable_at(
+    root: &std::path::Path,
+    manifest: &RuntimeManifest,
+    source_hash: &str,
+) -> Result<bool, super::runtime_error::RuntimeError> {
+    super::runtime_receipt::reusable(&layout(root), manifest, source_hash)
+}
+
+fn mark_started_at(root: &std::path::Path) -> Result<(), super::runtime_error::RuntimeError> {
+    let layout = layout(root);
+    if super::runtime_environment_fs::present_dir(&layout.previous)? {
+        super::runtime_environment_fs::remove_dir(&layout, &layout.previous)?;
+    }
+    Ok(())
+}
+
 #[test]
 fn interrupted_staging_never_replaces_the_current_runtime() {
     let root = tempfile::tempdir().expect("temporary sidecar");
@@ -15,7 +39,7 @@ fn interrupted_staging_never_replaces_the_current_runtime() {
     std::fs::create_dir(&staged).expect("abandoned staging");
     std::fs::write(staged.join("partial"), b"incomplete").expect("staged marker");
 
-    RuntimeEnvironment::recover_at(root.path()).expect("recover staging");
+    recover_at(root.path()).expect("recover staging");
 
     assert!(current.join("current").is_file());
     assert!(!staged.exists());
@@ -30,14 +54,11 @@ fn incompatible_legacy_runtime_is_rebuilt_beside_the_old_one() {
     let manifest = RuntimeManifest::for_test(3, 14);
 
     assert!(
-        !RuntimeEnvironment::reusable_at(root.path(), &manifest, &"a".repeat(64))
-            .expect("legacy receipt is rejected")
+        !reusable_at(root.path(), &manifest, &"a".repeat(64)).expect("legacy receipt is rejected")
     );
-    assert_eq!(
-        RuntimeEnvironment::staging_target_at(root.path()).expect("staging target"),
-        root.path().join(".venv.next")
-    );
-    RuntimeEnvironment::prepare_staging_at(root.path()).expect("stage replacement beside legacy");
+    assert_eq!(layout(root.path()).staged, root.path().join(".venv.next"));
+    super::runtime_environment_fs::prepare_staging(&layout(root.path()))
+        .expect("stage replacement beside legacy");
     assert!(current.join("python").is_file());
     assert!(root.path().join(".venv.next").is_dir());
 }
@@ -52,7 +73,7 @@ fn failed_publication_restores_the_previous_runtime() {
     std::fs::create_dir(&staged).expect("staged runtime");
     std::fs::write(staged.join("staged"), b"new").expect("new marker");
 
-    let result = RuntimeEnvironment::publish_at(root.path(), |_, _| {
+    let result = super::runtime_environment_fs::publish_with(&layout(root.path()), |_, _| {
         Err(super::runtime_error::RuntimeError::EnvironmentUnavailable)
     });
 
@@ -69,7 +90,7 @@ fn recovery_after_current_move_restores_the_complete_previous_runtime() {
     std::fs::create_dir(&previous).expect("previous runtime");
     std::fs::write(previous.join("complete"), b"old").expect("previous marker");
 
-    RuntimeEnvironment::recover_at(root.path()).expect("recover moved current runtime");
+    recover_at(root.path()).expect("recover moved current runtime");
 
     assert!(root.path().join(".venv/complete").is_file());
     assert!(!previous.exists());
@@ -82,24 +103,17 @@ fn receipt_requires_exact_known_fields_before_reuse() {
     std::fs::create_dir(&staged).expect("staged runtime");
     let manifest = RuntimeManifest::for_test(3, 14);
     let hash = "a".repeat(64);
-    let layout = super::runtime_environment_fs::Layout::at(root.path()).expect("layout");
+    let layout = layout(root.path());
     super::runtime_receipt::write_receipt(&layout, &manifest, &hash).expect("write receipt");
     std::fs::rename(&staged, root.path().join(".venv")).expect("publish receipt runtime");
 
+    assert!(reusable_at(root.path(), &manifest, &hash).expect("valid receipt reuses runtime"));
     assert!(
-        RuntimeEnvironment::reusable_at(root.path(), &manifest, &hash)
-            .expect("valid receipt reuses runtime")
+        !reusable_at(root.path(), &RuntimeManifest::for_test(3, 13), &hash)
+            .expect("different manifest is not reusable")
     );
-    assert!(!RuntimeEnvironment::reusable_at(
-        root.path(),
-        &RuntimeManifest::for_test(3, 13),
-        &hash
-    )
-    .expect("different manifest is not reusable"));
-    assert!(
-        !RuntimeEnvironment::reusable_at(root.path(), &manifest, &"b".repeat(64))
-            .expect("different source is not reusable")
-    );
+    assert!(!reusable_at(root.path(), &manifest, &"b".repeat(64))
+        .expect("different source is not reusable"));
     std::fs::write(
         root.path().join(".venv/.runtime.json"),
         format!(
@@ -108,10 +122,7 @@ fn receipt_requires_exact_known_fields_before_reuse() {
     )
     .expect("unknown receipt field");
 
-    assert!(
-        !RuntimeEnvironment::reusable_at(root.path(), &manifest, &hash)
-            .expect("unknown receipt is not reusable")
-    );
+    assert!(!reusable_at(root.path(), &manifest, &hash).expect("unknown receipt is not reusable"));
 }
 
 #[test]
@@ -122,7 +133,7 @@ fn only_mark_started_discards_the_previous_runtime() {
     std::fs::create_dir(&current).expect("published runtime");
     std::fs::create_dir(&previous).expect("previous runtime");
 
-    RuntimeEnvironment::mark_started_at(root.path()).expect("cleanup after readiness");
+    mark_started_at(root.path()).expect("cleanup after readiness");
 
     assert!(current.is_dir());
     assert!(!previous.exists());
@@ -136,7 +147,7 @@ fn recovery_keeps_a_previous_runtime_until_readiness_is_confirmed() {
     std::fs::create_dir(&current).expect("published runtime");
     std::fs::create_dir(&previous).expect("previous runtime");
 
-    RuntimeEnvironment::recover_at(root.path()).expect("recover after publication");
+    recover_at(root.path()).expect("recover after publication");
 
     assert!(current.is_dir());
     assert!(previous.is_dir());
@@ -150,8 +161,10 @@ fn a_receipt_without_an_executable_runtime_is_not_reusable() {
     std::fs::create_dir_all(python.parent().expect("python parent")).expect("venv bin");
     std::fs::write(&python, b"not executable").expect("python placeholder");
 
-    assert!(!RuntimeEnvironment::executable_runtime_at(root.path())
-        .expect("non executable runtime is rejected"));
+    assert!(!super::runtime_environment_fs::regular_executable(
+        &root.path().join(".venv/bin/python")
+    )
+    .expect("non executable runtime is rejected"));
 }
 
 #[cfg(unix)]
@@ -164,7 +177,7 @@ fn recovery_refuses_a_staged_symlink_without_touching_its_target() {
     std::fs::write(outside.path().join("marker"), b"safe").expect("outside marker");
     symlink(outside.path(), root.path().join(".venv.next")).expect("staged symlink");
 
-    assert!(RuntimeEnvironment::recover_at(root.path()).is_err());
+    assert!(recover_at(root.path()).is_err());
     assert!(outside.path().join("marker").is_file());
 }
 
@@ -233,6 +246,38 @@ async fn a_failed_smoke_never_publishes_over_the_old_runtime() {
 }
 
 #[cfg(unix)]
+#[tokio::test]
+async fn all_runtime_stages_share_one_absolute_deadline() {
+    let fixture = RuntimeFixture::new_with_stage_delay(false, "0.04");
+    let old = fixture.root().join(".venv/old-runtime");
+    std::fs::create_dir_all(old.parent().expect("old parent")).expect("old runtime");
+    std::fs::write(&old, b"keep").expect("old marker");
+    let python = fixture.compatible_python().await;
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
+    let admission = supervisor.try_admit().expect("runtime admission");
+    let layout = super::runtime_environment_fs::Layout::at(fixture.root()).expect("layout");
+
+    let result = RuntimeEnvironment::ensure_with_layout_deadline(
+        &fixture.source,
+        &fixture.wheelhouse(),
+        &python,
+        &admission.cancellation(),
+        tokio::time::Instant::now() + std::time::Duration::from_millis(50),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await;
+
+    assert!(matches!(
+        result,
+        Err(super::runtime_error::RuntimeError::EnvironmentUnavailable)
+    ));
+    assert!(old.is_file());
+    assert!(!fixture.root().join(".venv.previous").exists());
+}
+
+#[cfg(unix)]
 struct RuntimeFixture {
     temp: tempfile::TempDir,
     source: std::path::PathBuf,
@@ -244,6 +289,10 @@ struct RuntimeFixture {
 #[cfg(unix)]
 impl RuntimeFixture {
     fn new(fail_smoke: bool) -> Self {
+        Self::new_with_stage_delay(fail_smoke, "0")
+    }
+
+    fn new_with_stage_delay(fail_smoke: bool, stage_delay: &str) -> Self {
         use std::os::unix::fs::PermissionsExt;
 
         let temp = tempfile::tempdir().expect("runtime fixture");
@@ -274,6 +323,7 @@ if [ "$1" = "-c" ] && [ "$2" = "import sys; print(sys.implementation.name); prin
   printf 'cpython\n3\n14\n'
   exit 0
 fi
+/bin/sleep {stage_delay}
 if [ "$1" = "-m" ] && [ "$2" = "venv" ]; then
   /bin/mkdir -p "$3/bin"
   /bin/cp "$0" "$3/bin/python"
@@ -287,6 +337,7 @@ exit 0
 "#,
             commands = commands.display(),
             fail_marker = fail_marker.display(),
+            stage_delay = stage_delay,
         );
         let program = bin.join("python3.14");
         std::fs::write(&program, script).expect("fake Python");
