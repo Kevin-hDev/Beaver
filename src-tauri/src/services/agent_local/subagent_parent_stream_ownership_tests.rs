@@ -48,6 +48,7 @@ async fn replacement_adopts_existing_children_and_current_stop_cancels_them() {
 #[test]
 fn chat_stream_transfers_and_cancels_parent_stream_ownership() {
     let command = include_str!("../../commands/agent_chat.rs");
+    let admission = include_str!("../../commands/agent_chat_admission.rs");
     let stop_command = include_str!("../../commands/agent_chat_cancel.rs");
     let replacement = include_str!("../../commands/agent_chat_streams.rs");
     let adopt = replacement
@@ -60,7 +61,8 @@ fn chat_stream_transfers_and_cancels_parent_stream_ownership() {
 
     assert!(insert < adopt);
     assert!(adopt < cancel);
-    assert!(command.contains("agent_chat_streams::replace_active_stream"));
+    assert!(command.contains("agent_chat_admission::admit"));
+    assert!(admission.contains("agent_chat_streams::replace_active_stream"));
     assert!(stop_command.contains("cancel_stopped_parent_stream_children"));
 }
 

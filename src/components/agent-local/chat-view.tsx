@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { ChatMessagePanel } from "./chat-message-panel";
 import { ChatInput } from "./chat-input";
 import { ScrollBottomButton } from "./scroll-bottom-button";
 import { ErrorBubble } from "./error-bubble";
@@ -30,7 +29,9 @@ import { useChatViewRuntime } from "@/hooks/use-chat-view-runtime";
 import { usePreflightDirectoryAccessPrompt } from "@/hooks/use-preflight-directory-access-prompt";
 import { useComposerHandoff } from "@/hooks/use-composer-handoff";
 import { hasComposerPosition } from "@/lib/composer-handoff";
+import { cn } from "@/lib/utils";
 import { PermissionDialog } from "./permission-dialog";
+import { ChatTranscript } from "./chat-transcript";
 import type { ChatViewProps } from "./chat-view-types";
 import "./chat.css";
 export function ChatView({
@@ -44,7 +45,7 @@ export function ChatView({
   activeSessionTab, onCreateCloneGitBranch, onLinkCloneGitBranch,
 }: ChatViewProps) {
   const permissions = usePermissionRequests();
-  const permMode = usePermissionMode(sessionId);
+  const permMode = usePermissionMode(sessionId, !isSubagent);
   const selectedModelCaps = useSelectedModelCapabilities(provider, model);
   const chat = useAgentChat(sessionId, model, provider, (id, toolName, args) =>
     permissions.enqueue({ id, toolName, arguments: args }),
@@ -76,6 +77,7 @@ export function ChatView({
     onFileOperationsChange,
   );
   const { handleSend, handleFileImport } = useChatActions({
+    readOnly: isSubagent,
     chat, selectedProjectPath: proj.selectedProject?.path,
     selectedProjectId: proj.selectedProjectId ?? undefined,
     onSessionsRefresh, onAutoRename, sessionId,
@@ -95,6 +97,7 @@ export function ChatView({
     onCreateCloneGitBranch,
   });
   const runtime = useChatViewRuntime({
+    readOnly: isSubagent,
     chat,
     projectPath: proj.selectedProject?.path,
     activeSessionTab,
@@ -123,92 +126,87 @@ export function ChatView({
   return (
     <FileDropZone
       enabled={!isSubagent}
-      dragging={!isSubagent && fileDrop.dragging}
+      dragging={fileDrop.dragging}
       onDragChange={fileDrop.setDragging}
       onDropPaths={(paths) => void fileDrop.addByPaths(paths)}
     >
-      <div className="chat-zone" style={{ opacity: visible ? 1 : 0 }}>
-        <div className="chat-messages" ref={containerRef}>
-          <ChatMessagePanel
-            chat={chat}
-            runtime={runtime}
-            projectPath={proj.selectedProject?.path}
-            knownSubagents={knownSubagents}
-            cloneEnabled={canCloneMessages && !!onCloneMessage}
-            requestClone={clone.requestClone}
-            onFilePreviewPath={onFilePreviewPath}
-            onOpenSubagent={onOpenSubagent}
-            readOnly={isSubagent}
-          />
-        </div>
-        {isSubagent && runtime.showError && chat.error && (
+      <div
+        className={cn("chat-zone", isSubagent && "chat-zone-read-only")}
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        <ChatTranscript
+          chat={chat}
+          cloneEnabled={canCloneMessages && !!onCloneMessage}
+          containerRef={containerRef}
+          isAtBottom={isAtBottom}
+          knownSubagents={knownSubagents}
+          onFilePreviewPath={onFilePreviewPath}
+          onOpenSubagent={onOpenSubagent}
+          onScrollBottom={scrollToBottom}
+          projectPath={proj.selectedProject?.path}
+          readOnly={isSubagent}
+          requestClone={clone.requestClone}
+          runtime={runtime}
+        />
+        {!isSubagent && (
           <div className="chat-input-area">
-            <div className="chat-input-column">
-              <ErrorBubble
-                message={chat.error}
-                isConnection={chat.isConnectionError}
-                diagnosticSummary={chat.diagnosticSummary}
+            <div className="chat-input-column" ref={inputColumnRef}>
+              <TodoProgressPanel sessionId={sessionId} />
+              {subagents.active.length > 0 && (
+                <SubagentAccordion
+                  subagents={subagents.active}
+                  onCancel={(id) => void subagents.cancelSubagent(id)}
+                  onOpen={(id) => onOpenSubagent?.(id)}
+                />
+              )}
+              {permissions.current && (
+                <PermissionDialog request={permissions.current} onDecide={(id, decision) => void permissions.respond(id, decision)} />
+              )}
+              {runtime.showError && chat.error && (
+                <ErrorBubble
+                  message={chat.error}
+                  isConnection={chat.isConnectionError}
+                  diagnosticSummary={chat.diagnosticSummary}
+                  onRetry={runtime.handleRetry}
+                />
+              )}
+              <div className="chat-input-anchor">
+                {!isAtBottom && <ScrollBottomButton onClick={scrollToBottom} />}
+                <ChatInput
+                  modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
+                  files={fileDrop.files} contextUsed={contextUsage.used}
+                  contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
+                  retryIndicator={runtime.retryIndicator}
+                  interactiveRequest={chat.interactiveChoice}
+                  onInteractiveResolved={chat.clearInteractiveChoice}
+                  permissionMode={permMode.mode}
+                  availablePermissionModes={permMode.availableModes}
+                  missingDirectory={chat.missingDirectory}
+                  missingDirectoryResolving={chat.missingDirectoryResolving}
+                  onPermissionModeChange={(m) => void permMode.change(m)}
+                  onResolveMissingDirectory={(action) => void chat.resolveMissingDirectory(action)}
+                  planModeEnabled={chat.planModeEnabled}
+                  onPlanModeChange={(enabled) => void chat.setPlanModeEnabled(enabled)}
+                  onRemoveFile={fileDrop.removeFile} onPreviewFile={setPreview} onSend={handleSend}
+                  onStop={() => void chat.stop()} onClearFiles={fileDrop.clearFiles} onFileImport={handleFileImport}
+                  onModelChange={handleModelSelect} onReasoningModeChange={onReasoningModeChange}
+                />
+              </div>
+              <ChatInputFooter
+                projects={projects}
+                projectState={proj}
+                git={git}
+                centerSlot={clone.summaryRun && !clone.summaryRun.visible
+                  ? <CloneSummaryRunButton onClick={clone.showRunningClone} />
+                  : null}
+                onWorktreeSelect={worktreeSwitch.request}
+                directoryAccessPrompt={proj.directoryAccessPrompt ?? worktreeSwitch.directoryAccessPrompt ?? preflightAccessPrompt}
+                onBranchReady={runtime.handleBranchReady}
+                cloneGitBranch={cloneGitBranch}
               />
             </div>
           </div>
         )}
-        {!isSubagent && <div className="chat-input-area">
-          <div className="chat-input-column" ref={inputColumnRef}>
-            <TodoProgressPanel sessionId={isSubagent ? undefined : sessionId} />
-            {subagents.active.length > 0 && (
-              <SubagentAccordion
-                subagents={subagents.active}
-                onCancel={(id) => void subagents.cancelSubagent(id)}
-                onOpen={(id) => onOpenSubagent?.(id)}
-              />
-            )}
-            {permissions.current && (
-              <PermissionDialog request={permissions.current} onDecide={(id, decision) => void permissions.respond(id, decision)} />
-            )}
-            {runtime.showError && chat.error && (
-              <ErrorBubble
-                message={chat.error}
-                isConnection={chat.isConnectionError}
-                diagnosticSummary={chat.diagnosticSummary}
-                onRetry={runtime.handleRetry}
-              />
-            )}
-            <div className="chat-input-anchor">
-              {!isAtBottom && <ScrollBottomButton onClick={scrollToBottom} />}
-              <ChatInput
-                modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
-                files={fileDrop.files} contextUsed={contextUsage.used}
-                contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}
-                retryIndicator={runtime.retryIndicator}
-                interactiveRequest={chat.interactiveChoice}
-                onInteractiveResolved={chat.clearInteractiveChoice}
-                permissionMode={permMode.mode}
-                availablePermissionModes={permMode.availableModes}
-                missingDirectory={chat.missingDirectory}
-                missingDirectoryResolving={chat.missingDirectoryResolving}
-                onPermissionModeChange={(m) => void permMode.change(m)}
-                onResolveMissingDirectory={(action) => void chat.resolveMissingDirectory(action)}
-                planModeEnabled={chat.planModeEnabled}
-                onPlanModeChange={(enabled) => void chat.setPlanModeEnabled(enabled)}
-                onRemoveFile={fileDrop.removeFile} onPreviewFile={setPreview} onSend={handleSend}
-                onStop={() => void chat.stop()} onClearFiles={fileDrop.clearFiles} onFileImport={handleFileImport}
-                onModelChange={handleModelSelect} onReasoningModeChange={onReasoningModeChange}
-              />
-            </div>
-            <ChatInputFooter
-              projects={projects}
-              projectState={proj}
-              git={git}
-              centerSlot={clone.summaryRun && !clone.summaryRun.visible
-                ? <CloneSummaryRunButton onClick={clone.showRunningClone} />
-                : null}
-              onWorktreeSelect={worktreeSwitch.request}
-              directoryAccessPrompt={proj.directoryAccessPrompt ?? worktreeSwitch.directoryAccessPrompt ?? preflightAccessPrompt}
-              onBranchReady={runtime.handleBranchReady}
-              cloneGitBranch={cloneGitBranch}
-            />
-          </div>
-        </div>}
         {!isSubagent && <ChatTerminalDock terminalState={terminalState} />}
       </div>
       <ChatOverlays

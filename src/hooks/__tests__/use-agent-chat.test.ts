@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useAgentChat } from "../use-agent-chat";
+import { showToast } from "@/lib/toast-emitter";
 import type { AgentMessage, AgentSession, FileAttachment } from "@/types/agent";
 
 type StartStreamMock = (
@@ -89,6 +90,25 @@ describe("useAgentChat", () => {
     });
     expect(invoke).not.toHaveBeenCalledWith("truncate_session_at", expect.anything());
     expect(startStream).toHaveBeenCalled();
+  });
+
+  it("affiche le refus lecture seule et ne relance pas après un truncate refusé", async () => {
+    vi.mocked(invoke).mockImplementation((command: string) => {
+      if (command === "get_agent_session") return Promise.resolve(session);
+      if (command === "truncate_and_replace_at") {
+        return Promise.reject(new Error("subagent-read-only"));
+      }
+      return Promise.resolve(undefined);
+    });
+    const { result } = renderHook(() => useAgentChat("session-1", "llama3", "ollama"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.reload("m2");
+    });
+
+    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
+    expect(startStream).not.toHaveBeenCalled();
   });
 
   it("transmet le support vision du modèle sélectionné au stream", async () => {

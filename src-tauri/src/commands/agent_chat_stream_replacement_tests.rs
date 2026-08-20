@@ -10,11 +10,16 @@ use tokio_util::sync::CancellationToken;
 
 #[test]
 fn chat_stream_uses_the_tested_replacement_path() {
-    let source = include_str!("agent_chat.rs");
+    let command = include_str!("agent_chat.rs");
+    let admission = include_str!("agent_chat_admission.rs");
 
     assert!(
-        source.contains("agent_chat_streams::replace_active_stream"),
-        "chat_stream contourne encore la frontière de remplacement testable"
+        command.contains("agent_chat_admission::admit"),
+        "chat_stream contourne la frontière d'admission testable"
+    );
+    assert!(
+        admission.contains("agent_chat_streams::replace_active_stream"),
+        "l'admission contourne la frontière de remplacement testable"
     );
 }
 
@@ -22,8 +27,8 @@ fn chat_stream_uses_the_tested_replacement_path() {
 fn replacement_finishes_before_the_new_work_admission() {
     let source = include_str!("agent_chat.rs");
     let replacement = source
-        .find("agent_chat_streams::replace_active_stream")
-        .expect("replacement boundary");
+        .find("agent_chat_admission::admit")
+        .expect("stream replacement admission boundary");
     let admission = source
         .find("agent_chat_work::admit")
         .expect("stream admission");

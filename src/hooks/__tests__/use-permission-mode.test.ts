@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { usePermissionMode } from "../use-permission-mode";
+import { showToast } from "@/lib/toast-emitter";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -12,6 +13,8 @@ vi.mock("@tauri-apps/api/event", () => ({
 vi.mock("@/hooks/use-fs-event", () => ({
   useFsEvent: vi.fn(),
 }));
+vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
+vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
 
 describe("usePermissionMode", () => {
   beforeEach(() => {
@@ -196,5 +199,31 @@ describe("usePermissionMode", () => {
         await result.current.change("manual");
       }),
     ).resolves.not.toThrow();
+  });
+
+  it("traduit le refus lecture seule du changement de permission", async () => {
+    const { result } = renderHook(() => usePermissionMode("child-session"));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("subagent-read-only"));
+
+    await act(async () => {
+      await result.current.change("manual");
+    });
+
+    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
+  });
+
+  it("désactive toute écriture et le raccourci clavier en lecture seule", async () => {
+    const { result } = renderHook(() => usePermissionMode("child-session", false));
+    await waitFor(() => expect(result.current.loaded).toBe(true));
+    vi.mocked(invoke).mockClear();
+
+    await act(async () => {
+      await result.current.change("manual");
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true }));
+    });
+
+    expect(invoke).not.toHaveBeenCalled();
+    expect(result.current.mode).toBe("auto");
   });
 });

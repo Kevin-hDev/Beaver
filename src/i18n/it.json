@@ -252,6 +252,7 @@
   },
   "agentLocal": {
     "newSession": "Nuova sessione",
+    "parentChat": "Chat principale",
     "noConversations": "Nessuna conversazione",
     "placeholder": "Come posso aiutarti?",
     "thinking": "Elaborazione in corso",

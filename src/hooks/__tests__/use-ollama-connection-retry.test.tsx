@@ -11,6 +11,25 @@ afterEach(() => {
 });
 
 describe("useOllamaConnectionRetry", () => {
+  it("ne sonde ni ne relance Ollama quand la reprise est désactivée", async () => {
+    const onRetry = vi.fn();
+    vi.mocked(invoke).mockResolvedValue(null);
+
+    const { result } = renderHook(() => useOllamaConnectionRetry({
+      enabled: false,
+      error: "errors.ollamaConnectionLost",
+      isConnectionError: true,
+      isStreaming: false,
+      onRetry,
+    }));
+
+    await act(async () => Promise.resolve());
+
+    expect(invoke).not.toHaveBeenCalled();
+    expect(onRetry).not.toHaveBeenCalled();
+    expect(result.current).toEqual({ indicator: null, suppressError: false });
+  });
+
   it("affiche l'indicateur puis relance quand Ollama revient", async () => {
     const onRetry = vi.fn();
     vi.mocked(invoke).mockResolvedValue({

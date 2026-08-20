@@ -34,6 +34,23 @@
   );
 }
 
+/* Sans compositeur, le bas de la transcription reste une surface de lecture :
+   le fondu inférieur réservé au champ ne doit pas effacer le dernier message. */
+.chat-zone-read-only .chat-messages {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--chat-fade-height),
+    black 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--chat-fade-height),
+    black 100%
+  );
+}
+
 .chat-messages > * {
   max-width: 810px;
   margin-left: auto;

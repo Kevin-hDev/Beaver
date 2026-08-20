@@ -252,6 +252,7 @@
   },
   "agentLocal": {
     "newSession": "Neue Sitzung",
+    "parentChat": "Übergeordneter Chat",
     "noConversations": "Keine Gespräche",
     "placeholder": "Wie kann ich helfen?",
     "thinking": "Nachdenken",
@@ -1142,7 +1143,7 @@
       "gatewayBusy": "Es werden bereits zu viele Nachrichten verarbeitet. Versuche es gleich erneut.",
       "activeStreamCapacity": "Zu viele Unterhaltungen erzeugen bereits Antworten. Versuche es gleich erneut.",
       "streamReplaced": "Eine neuere Anfrage hat diese Antwort ersetzt.",
-      "subagentReadOnly": "Diese Unteragent-Sitzung ist schreibgeschützt."
+      "subagentReadOnly": "Diese Subagenten-Sitzung ist schreibgeschützt."
     },
     "localStore": {
       "ollamaCustomization": "Die Ollama-Anpassungsdatei ist nicht lesbar. Stelle „ollama-custom-models.json“ aus einer Sicherung unter Einstellungen > Erweitert > Beaver-Daten wieder her. Lösche sie nicht: Ohne Sicherung geht dieser Verlauf beim Neustart verloren und Beaver kann nicht mehr garantieren, dass ein als nativ angezeigter Ollama-Prompt wirklich das Original ist.",

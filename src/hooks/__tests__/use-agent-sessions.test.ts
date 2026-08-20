@@ -3,6 +3,7 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAgentSessions } from "../use-agent-sessions";
 import { AGENT_SESSIONS_CHANGED } from "../agent-session-events";
+import { showToast } from "@/lib/toast-emitter";
 import type { AgentSessionMeta } from "@/types/agent";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -11,6 +12,8 @@ vi.mock("@tauri-apps/api/core", () => ({
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(() => {})),
 }));
+vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
+vi.mock("@/i18n", () => ({ default: { t: (key: string) => key } }));
 
 const mockSession: AgentSessionMeta = {
   id: "session-1",
@@ -272,17 +275,29 @@ describe("useAgentSessions", () => {
     expect(result.current.sessions).toEqual([mockSession]);
   });
 
-  it("updateModel qui échoue remonte l'erreur et laisse les sessions inchangées", async () => {
+  it("updateModel traduit le refus lecture seule et laisse les sessions inchangées", async () => {
     vi.mocked(invoke)
       .mockResolvedValueOnce([mockSession])           // list au mount
-      .mockRejectedValueOnce(new Error("backend KO")); // updateModel échoue
+      .mockRejectedValueOnce(new Error("subagent-read-only"));
 
     const { result } = renderHook(() => useAgentSessions());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    await expect(
-      act(() => result.current.updateModel("session-1", "mistral", "ollama")),
-    ).rejects.toThrow();
+    await act(() => result.current.updateModel("session-1", "mistral", "ollama"));
     expect(result.current.sessions).toEqual([mockSession]);
+    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
+  });
+
+  it("updateReasoning traduit le refus lecture seule et laisse les sessions inchangées", async () => {
+    vi.mocked(invoke)
+      .mockResolvedValueOnce([mockSession])
+      .mockRejectedValueOnce(new Error("subagent-read-only"));
+    const { result } = renderHook(() => useAgentSessions());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(() => result.current.updateReasoning("session-1", "high"));
+
+    expect(result.current.sessions).toEqual([mockSession]);
+    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
   });
 });

@@ -10,6 +10,7 @@ import { createEditedUserMessage } from "./agent-message-builders";
 import { useAgentMissingDirectory } from "./use-agent-missing-directory";
 import { useAgentMessageSend } from "./use-agent-message-send";
 import { showToast } from "@/lib/toast-emitter";
+import { admissionErrorMessage } from "@/lib/admission-error";
 import i18n from "@/i18n";
 import type { AgentMessage, AgentSession } from "@/types/agent";
 export function useAgentChat(
@@ -160,7 +161,12 @@ export function useAgentChat(
     if (!sessionId) return;
     const idx = state.messages.findIndex((m) => m.id === messageId);
     if (idx < 0) return;
-    await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: null }).catch(() => showToast(i18n.t("errors.sessionSaveFailed"), "error"));
+    try {
+      await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: null });
+    } catch (error) {
+      showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+      return;
+    }
     const freshTokenCount = await syncTokenCount();
     const msgs = state.messages.slice(0, idx + 1);
     await doStream(msgs, msgs, sessionId, undefined, freshTokenCount, permModeRef.current);
@@ -171,7 +177,12 @@ export function useAgentChat(
     const idx = state.messages.findIndex((m) => m.id === messageId);
     if (idx < 0) return;
     const newMsg = createEditedUserMessage(state.messages[idx], newContent);
-    await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: newMsg }).catch(() => showToast(i18n.t("errors.sessionSaveFailed"), "error"));
+    try {
+      await invoke("truncate_and_replace_at", { sessionId, messageId, replacement: newMsg });
+    } catch (error) {
+      showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+      return;
+    }
     const freshTokenCount = await syncTokenCount();
     const msgs = [...state.messages.slice(0, idx), newMsg];
     await doStream(msgs, msgs, sessionId, undefined, freshTokenCount, permModeRef.current);

@@ -1,5 +1,7 @@
 import type { TFunction } from "i18next";
 
+export const SUBAGENT_READ_ONLY_CODE = "subagent-read-only";
+
 export const ADMISSION_ERROR_CODES = [
   "app-shutting-down",
   "app-work-capacity-reached",
@@ -9,7 +11,7 @@ export const ADMISSION_ERROR_CODES = [
   "gateway-busy",
   "active-stream-limit-reached",
   "stream-replaced",
-  "subagent-read-only",
+  SUBAGENT_READ_ONLY_CODE,
 ] as const;
 
 type AdmissionErrorCode = typeof ADMISSION_ERROR_CODES[number];

@@ -8,6 +8,7 @@ const MAX_CONNECTION_RETRIES = 10;
 const CONNECTION_RETRY_DELAY_MS = 4000;
 
 interface OllamaConnectionRetryOptions {
+  enabled?: boolean;
   error?: string;
   isConnectionError?: boolean;
   isStreaming: boolean;
@@ -25,6 +26,7 @@ type RetryPhase = {
 };
 
 export function useOllamaConnectionRetry({
+  enabled = true,
   error,
   isConnectionError,
   isStreaming,
@@ -41,6 +43,11 @@ export function useOllamaConnectionRetry({
   }, [onRetry]);
 
   useEffect(() => {
+    if (!enabled) {
+      terminalRef.current = null;
+      runningRef.current = false;
+      return;
+    }
     if (isStreaming) {
       terminalRef.current = null;
       return;
@@ -95,9 +102,9 @@ export function useOllamaConnectionRetry({
       cancelled = true;
       runningRef.current = false;
     };
-  }, [error, isConnectionError, isStreaming]);
+  }, [enabled, error, isConnectionError, isStreaming]);
 
-  if (isStreaming || !error || !isConnectionError) {
+  if (!enabled || isStreaming || !error || !isConnectionError) {
     return { indicator: null, suppressError: false };
   }
 

@@ -4,6 +4,7 @@ import { showToast } from "@/lib/toast-emitter";
 import i18n from "@/i18n";
 import { notifyAgentSessionsChanged } from "./agent-session-events";
 import { parseAllowedPaths } from "./directory-access-decision";
+import { admissionErrorMessage } from "@/lib/admission-error";
 
 export interface MissingSessionDirectory {
   missing_path: string;
@@ -33,8 +34,8 @@ export function useAgentMissingDirectory(sessionId: string | null) {
         id: sessionId,
         workingDir: workingDir ?? null,
       });
-    } catch {
-      showToast(i18n.t("missingDirectory.error"), "error");
+    } catch (error) {
+      showToast(admissionErrorMessage(error, i18n.t, "missingDirectory.error"), "error");
       return;
     }
     if (result.status === "missing") {
@@ -70,8 +71,8 @@ export function useAgentMissingDirectory(sessionId: string | null) {
       setMissingDirectory(null);
       notifyAgentSessionsChanged();
       if (pending) await pending(resolvedWorkingDir);
-    } catch {
-      showToast(i18n.t("missingDirectory.error"), "error");
+    } catch (error) {
+      showToast(admissionErrorMessage(error, i18n.t, "missingDirectory.error"), "error");
     } finally {
       setResolving(false);
     }

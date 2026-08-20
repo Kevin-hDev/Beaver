@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { useAgentMissingDirectory } from "../use-agent-missing-directory";
+import { showToast } from "@/lib/toast-emitter";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@/lib/toast-emitter", () => ({ showToast: vi.fn() }));
@@ -53,5 +54,16 @@ describe("useAgentMissingDirectory", () => {
     expect(result.current.forbiddenAllowedPaths).toEqual(["/project/allowed"]);
     act(() => result.current.dismissForbidden());
     expect(result.current.forbiddenAllowedPaths).toBeNull();
+  });
+
+  it("traduit le refus lecture seule du préflight", async () => {
+    vi.mocked(invoke).mockRejectedValue(new Error("subagent-read-only"));
+    const { result } = renderHook(() => useAgentMissingDirectory("child-session"));
+
+    await act(async () => {
+      await result.current.runOrDefer(undefined, vi.fn());
+    });
+
+    expect(showToast).toHaveBeenCalledWith("errors.admission.subagentReadOnly", "error");
   });
 });

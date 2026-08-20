@@ -8,9 +8,9 @@ pub async fn queue_agent_message(
     messages: Vec<ChatMessage>,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<bool, String> {
-    crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
     crate::services::agent_local::session_store::validate_session_id(&session_id)
         .map_err(|_| generic_error())?;
+    crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
     let inbox = {
         let map = streams.0.lock().await;
         let Some((_, active_generation, _, inbox)) = map.get(&session_id) else {

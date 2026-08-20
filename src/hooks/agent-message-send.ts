@@ -5,6 +5,7 @@ import {
   type PendingChatFile,
 } from "./agent-message-builders";
 import { showToast } from "@/lib/toast-emitter";
+import { admissionErrorMessage } from "@/lib/admission-error";
 import i18n from "@/i18n";
 import type { AgentMessage } from "@/types/agent";
 
@@ -42,9 +43,12 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
     });
     if (!session.project_id) {
       session.project_id = options.projectId;
-      await invoke("save_agent_session", { session }).catch(() => {
-        showToast(i18n.t("errors.sessionSaveFailed"), "error");
-      });
+      try {
+        await invoke("save_agent_session", { session });
+      } catch (error) {
+        showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+        return;
+      }
     }
   }
   const files = pendingFilesToAttachments(options.sentFiles);
@@ -74,8 +78,8 @@ export async function persistAgentMessage(options: PersistAgentMessageOptions) {
       messages: [userMessage],
       tokens: 0,
     });
-  } catch {
-    showToast(i18n.t("errors.sessionSaveFailed"), "error");
+  } catch (error) {
+    showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
     return;
   }
   await options.doStream(

@@ -1,4 +1,5 @@
 pub mod agent_chat;
+pub(crate) mod agent_chat_admission;
 pub mod agent_chat_cancel;
 pub mod agent_chat_queue;
 #[cfg(test)]

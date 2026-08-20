@@ -12,10 +12,10 @@ const commandSource = readFileSync(
   "utf8",
 );
 
-test("the default E2E journey verifies chat_stream child read-only admission", () => {
+test("every native E2E journey verifies chat_stream child read-only admission", () => {
   assert.match(
     wdioSource,
-    /native-webview-shutdown\.spec\.ts[\s\S]*onboarding\.spec\.ts[\s\S]*child-session-read-only\.spec\.ts/u,
+    /const childSessionReadOnlySpec = ["'].+child-session-read-only\.spec\.ts["']/u,
   );
   assert.match(
     wdioSource,
@@ -24,6 +24,10 @@ test("the default E2E journey verifies chat_stream child read-only admission", (
   assert.match(
     wdioSource,
     /E2E_REQUIRE_WEBVIEW_SMOKE[\s\S]*native-webview-shutdown\.spec\.ts/u,
+  );
+  assert.match(
+    wdioSource,
+    /specs:\s*\[\[shutdownSpec,\s*childSessionReadOnlySpec\]\]/u,
   );
   assert.match(invokeSource, /#\[cfg\(feature = "e2e"\)\][\s\S]*e2e_verify_child_chat_stream_read_only/u);
   assert.match(commandSource, /pub async fn e2e_verify_child_chat_stream_read_only/u);

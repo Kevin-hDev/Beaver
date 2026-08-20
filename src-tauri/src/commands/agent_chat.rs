@@ -5,12 +5,10 @@
 use super::agent_chat_task::{run_stream_task, StreamCapabilityHints, StreamTaskParams};
 
 use crate::services::agent_local::agent_work_supervision::AgentWorkServices;
-use crate::services::agent_local::stream_events::{self, AgentEventEmitter};
+use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::agent_local::types_ollama::{ChatMessage, StreamEvent};
 use crate::ActiveStreams;
-use std::sync::Arc;
 use tauri::Manager;
-use tokio_util::sync::CancellationToken;
 
 #[tauri::command]
 pub async fn chat_stream(
@@ -30,27 +28,13 @@ pub async fn chat_stream(
     plan_mode: Option<bool>,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<u64, String> {
-    crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
-    let permission_mode = Some(
-        crate::services::agent_local::session_permission_state::prepare_send(
-            &session_id,
-            permission_mode.as_deref(),
-        )
-        .await?,
-    );
-    let cancel = CancellationToken::new();
-    let parent_message_inbox =
-        Arc::new(crate::services::agent_local::parent_message_inbox::ParentMessageInbox::new());
-    let generation = stream_events::next_generation();
     let cancelled_session_id = session_id.clone();
     let replacement_app = app.clone();
     let request_session_id = session_id.clone();
-    let request_id = super::agent_chat_streams::replace_active_stream(
-        &streams,
+    let admission = super::agent_chat_admission::admit(
         &session_id,
-        cancel.clone(),
-        generation,
-        parent_message_inbox.clone(),
+        permission_mode.as_deref(),
+        &streams,
         move |(old_token, old_generation, old_request_id, old_inbox)| async move {
             crate::services::mascot::cancel_session(
                 &replacement_app,
@@ -69,7 +53,7 @@ pub async fn chat_stream(
             )
             .await;
         },
-        move || async move {
+        move |generation| async move {
             crate::services::agent_local::stream_diagnostics::start_request(
                 &request_session_id,
                 generation,
@@ -78,6 +62,11 @@ pub async fn chat_stream(
         },
     )
     .await?;
+    let cancel = admission.cancel;
+    let generation = admission.generation;
+    let parent_message_inbox = admission.parent_message_inbox;
+    let permission_mode = Some(admission.permission_mode);
+    let request_id = admission.request_id;
     // Le remplacement doit rendre l'admission précédente avant d'en prendre une
     // nouvelle, sinon un remplacement consomme temporairement deux des 32 places.
     let stream_admission = match super::agent_chat_work::admit(&app.state::<AgentWorkServices>()) {

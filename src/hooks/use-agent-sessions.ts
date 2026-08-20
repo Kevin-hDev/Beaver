@@ -4,6 +4,9 @@ import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { AgentSessionMeta } from "@/types/agent";
 import { AGENT_SESSIONS_CHANGED, notifyAgentSessionsChanged } from "./agent-session-events";
+import { admissionErrorMessage } from "@/lib/admission-error";
+import { showToast } from "@/lib/toast-emitter";
+import i18n from "@/i18n";
 
 export function useAgentSessions() {
   const [sessions, setSessions] = useState<AgentSessionMeta[]>([]);
@@ -113,26 +116,34 @@ export function useAgentSessions() {
       reasoningMode?: string | null,
       supportsThinking?: boolean,
     ) => {
-      await invoke("update_session_model", {
-        id,
-        model,
-        provider,
-        reasoningMode: reasoningMode ?? null,
-        supportsThinking: supportsThinking ?? null,
-      });
-      await refresh();
+      try {
+        await invoke("update_session_model", {
+          id,
+          model,
+          provider,
+          reasoningMode: reasoningMode ?? null,
+          supportsThinking: supportsThinking ?? null,
+        });
+        await refresh();
+      } catch (error) {
+        showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+      }
     },
     [refresh],
   );
 
   const updateReasoning = useCallback(
     async (id: string, reasoningMode: string | null, supportsThinking?: boolean) => {
-      await invoke("update_session_reasoning", {
-        id,
-        reasoningMode,
-        supportsThinking: supportsThinking ?? null,
-      });
-      await refresh();
+      try {
+        await invoke("update_session_reasoning", {
+          id,
+          reasoningMode,
+          supportsThinking: supportsThinking ?? null,
+        });
+        await refresh();
+      } catch (error) {
+        showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+      }
     },
     [refresh],
   );

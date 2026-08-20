@@ -30,3 +30,10 @@ async fn child_session_rejects_user_writes_with_a_fixed_code() {
         .await
         .expect("cleanup");
 }
+
+#[tokio::test]
+async fn unknown_session_is_refused() {
+    let unknown = uuid::Uuid::new_v4().to_string();
+
+    assert!(ensure_allowed(&unknown).await.is_err());
+}

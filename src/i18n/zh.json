@@ -252,6 +252,7 @@
   },
   "agentLocal": {
     "newSession": "新建会话",
+    "parentChat": "父级对话",
     "noConversations": "暂无对话",
     "placeholder": "有什么可以帮你的？",
     "thinking": "思考中",

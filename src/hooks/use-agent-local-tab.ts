@@ -76,6 +76,7 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
   const filePreviewState = useFilePreview(activeSessionId ?? null, fileOperations.all, activeProject?.path);
 
   useUnavailableModelFallback({
+    enabled: !activeSession?.parent_session_id,
     availableModels,
     model,
     provider,

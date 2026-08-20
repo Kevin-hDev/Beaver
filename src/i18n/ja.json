@@ -252,6 +252,7 @@
   },
   "agentLocal": {
     "newSession": "新しいセッション",
+    "parentChat": "親チャット",
     "noConversations": "会話がありません",
     "placeholder": "何かお手伝いできますか？",
     "thinking": "考え中",

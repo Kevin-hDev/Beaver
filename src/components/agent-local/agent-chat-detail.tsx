@@ -15,6 +15,7 @@ import type { FileOperation, FileOperationGroups } from "@/types/file-preview";
 import type { PanelMode } from "@/hooks/use-forecast-panel";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import type { useGitBranch } from "@/hooks/use-git-branch";
+import { useTranslation } from "react-i18next";
 
 interface AgentChatDetailProps {
   sessionId: string;
@@ -58,6 +59,7 @@ interface AgentChatDetailProps {
 }
 
 export function AgentChatDetail(props: AgentChatDetailProps) {
+  const { t } = useTranslation();
   const previewDesiredWidth = props.filePreview.width + props.filePreview.extraWidth;
   const previewFullscreen = props.panelMode !== "forecast" && props.filePreview.fullscreen;
   const openPreviewTarget = (target: string | FileOperation) => (
@@ -83,7 +85,7 @@ export function AgentChatDetail(props: AgentChatDetailProps) {
           onClick={props.onGoToParent}
           type="button"
         >
-          ← Chat parent
+          ← {t("agentLocal.parentChat")}
         </button>
       )}
       <div className={`agent-detail-chat ${previewFullscreen ? "agent-detail-chat-fs" : ""} ${props.fullscreenSwitching ? "agent-detail-chat-instant" : ""}`}>

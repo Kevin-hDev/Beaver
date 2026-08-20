@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useFsEvent } from "@/hooks/use-fs-event";
+import { admissionErrorMessage } from "@/lib/admission-error";
+import { showToast } from "@/lib/toast-emitter";
+import i18n from "@/i18n";
 
 export type PermissionMode = "auto" | "manual" | "chat";
 export type PermissionFamily = "chat" | "tools";
@@ -17,7 +20,7 @@ interface SessionPermissionState {
 const ALL_MODES: PermissionMode[] = ["chat", "manual", "auto"];
 let defaultMode: PermissionMode = "auto";
 
-export function usePermissionMode(sessionId?: string) {
+export function usePermissionMode(sessionId?: string, enabled = true) {
   const [mode, setMode] = useState<PermissionMode>(defaultMode);
   const [family, setFamily] = useState<PermissionFamily | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -56,6 +59,7 @@ export function usePermissionMode(sessionId?: string) {
   }, [family]);
 
   const change = useCallback(async (next: PermissionMode) => {
+    if (!enabled) return;
     if (sessionId) {
       try {
         const state = await invoke<SessionPermissionState>("set_session_permission_mode", {
@@ -64,7 +68,8 @@ export function usePermissionMode(sessionId?: string) {
         });
         setMode(state.permission_mode ?? next);
         setFamily(state.permission_family ?? null);
-      } catch {
+      } catch (error) {
+        showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
         await reload();
         return;
       }
@@ -77,7 +82,7 @@ export function usePermissionMode(sessionId?: string) {
     } catch {
       // Le mode de session reste autoritaire même si le défaut global échoue.
     }
-  }, [reload, sessionId]);
+  }, [enabled, reload, sessionId]);
 
   const toggle = useCallback(() => {
     const idx = availableModes.indexOf(mode);
@@ -85,7 +90,7 @@ export function usePermissionMode(sessionId?: string) {
   }, [availableModes, mode, change]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!enabled || !loaded) return;
     const onKey = (event: KeyboardEvent) => {
       if (!event.shiftKey || !event.key.startsWith("Tab")) return;
       const target = event.target as HTMLElement | null;
@@ -96,7 +101,7 @@ export function usePermissionMode(sessionId?: string) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [loaded, toggle]);
+  }, [enabled, loaded, toggle]);
 
   return { mode, family, availableModes, change, toggle, refresh: reload, loaded };
 }

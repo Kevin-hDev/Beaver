@@ -6,6 +6,7 @@ import type { RetryIndicatorState } from "@/types/agent";
 import type { SessionTab } from "@/types/agent-session";
 
 interface Params {
+  readOnly: boolean;
   chat: {
     messages: AgentMessage[];
     reload: (id: string) => void | Promise<void>;
@@ -27,7 +28,7 @@ interface Params {
 
 export function useChatViewRuntime(params: Params) {
   const {
-    projectPath, activeSessionTab, onLinkCloneGitBranch, setPreview,
+    readOnly, projectPath, activeSessionTab, onLinkCloneGitBranch, setPreview,
   } = params;
   const {
     messages, reload, edit, error, isConnectionError, isStreaming, retryIndicator,
@@ -37,6 +38,7 @@ export function useChatViewRuntime(params: Params) {
     if (message) void reload(message.id);
   }, [messages, reload]);
   const connectionRetry = useOllamaConnectionRetry({
+    enabled: !readOnly,
     error,
     isConnectionError,
     isStreaming,

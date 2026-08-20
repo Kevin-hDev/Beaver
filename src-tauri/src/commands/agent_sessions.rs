@@ -126,6 +126,7 @@ pub async fn create_agent_session(
 
 #[tauri::command]
 pub async fn rename_agent_session(id: String, name: String) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     session_store::rename(&id, &name).await
 }
 
@@ -159,6 +160,8 @@ pub async fn set_session_plan_mode(id: String, enabled: bool) -> Result<(), Stri
 
 #[tauri::command]
 pub async fn delete_agent_session(id: String) -> Result<(), String> {
+    // Supprimer, archiver ou restaurer agit sur le cycle de vie de toute la famille ;
+    // ce n'est pas une édition du contenu produit par le runtime du sous-agent.
     session_store::delete(&id).await
 }
 

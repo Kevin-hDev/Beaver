@@ -17,6 +17,7 @@ type UpdateModel = (
 ) => Promise<void>;
 
 interface Options {
+  enabled?: boolean;
   availableModels: Map<string, AvailableModel[]>;
   model: string;
   provider: string;
@@ -27,6 +28,7 @@ interface Options {
 }
 
 export function useUnavailableModelFallback({
+  enabled = true,
   availableModels,
   model,
   provider,
@@ -36,6 +38,7 @@ export function useUnavailableModelFallback({
   setWelcomeModel,
 }: Options) {
   useEffect(() => {
+    if (!enabled) return;
     if (!model || availableModels.size === 0) return;
     const providerModels = availableModels.get(provider);
     if (!providerModels || providerModels.some((entry) => entry.id === model)) return;
@@ -69,6 +72,7 @@ export function useUnavailableModelFallback({
   }, [
     activeSessionId,
     availableModels,
+    enabled,
     model,
     provider,
     reasoningMode,

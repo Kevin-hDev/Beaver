@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { invokeTauri } from "./tauri-invoke";
+import { SUBAGENT_READ_ONLY_CODE } from "../../src/lib/admission-error";
 
 interface ChildReadOnlyOutcome {
   code: string;
@@ -15,7 +16,7 @@ describe("child session read-only boundary", () => {
     );
 
     assert.deepEqual(outcome, {
-      code: "subagent-read-only",
+      code: SUBAGENT_READ_ONLY_CODE,
       sessionUnchanged: true,
       requestStartUnchanged: true,
       activeStreamAbsent: true,

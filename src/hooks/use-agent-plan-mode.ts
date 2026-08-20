@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { showToast } from "@/lib/toast-emitter";
+import { admissionErrorMessage } from "@/lib/admission-error";
 import i18n from "@/i18n";
 import type { AgentSession } from "@/types/agent";
 import type { ChatState } from "./agent-chat-stream-types";
@@ -28,10 +29,10 @@ export function useAgentPlanMode(sessionId: string | null, setChatState: SetChat
       planModeEnabled: next,
       planPreview: next ? state.planPreview : null,
     }));
-    await invoke("set_session_plan_mode", { id: sessionId, enabled: next }).catch(() => {
+    await invoke("set_session_plan_mode", { id: sessionId, enabled: next }).catch((error: unknown) => {
       setEnabledState(!next);
       setChatState((state) => ({ ...state, planModeEnabled: !next }));
-      showToast(i18n.t("errors.sessionSaveFailed"), "error");
+      showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
     });
   }, [sessionId, setChatState]);
 

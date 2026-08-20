@@ -4,7 +4,7 @@ import type { useChatViewRuntime } from "@/hooks/use-chat-view-runtime";
 import type { SubagentInfo } from "@/types/agent";
 import type { FileOperation } from "@/types/file-preview";
 
-interface ChatMessagePanelProps {
+export interface ChatMessagePanelProps {
   chat: ReturnType<typeof useAgentChat>;
   runtime: ReturnType<typeof useChatViewRuntime>;
   projectPath?: string;
