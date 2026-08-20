@@ -9,6 +9,7 @@ export const ADMISSION_ERROR_CODES = [
   "gateway-busy",
   "active-stream-limit-reached",
   "stream-replaced",
+  "subagent-read-only",
 ] as const;
 
 type AdmissionErrorCode = typeof ADMISSION_ERROR_CODES[number];
@@ -24,6 +25,7 @@ const ADMISSION_ERROR_KEYS = {
   "gateway-busy": "errors.admission.gatewayBusy",
   "active-stream-limit-reached": "errors.admission.activeStreamCapacity",
   "stream-replaced": "errors.admission.streamReplaced",
+  "subagent-read-only": "errors.admission.subagentReadOnly",
 } as const;
 const KNOWN_CODES = new Set<string>(ADMISSION_ERROR_CODES);
 

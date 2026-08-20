@@ -1141,7 +1141,8 @@
       "gatewayShuttingDown": "メッセージチャンネルを停止しています。しばらくしてからもう一度お試しください。",
       "gatewayBusy": "処理中のメッセージが多すぎます。しばらくしてからもう一度お試しください。",
       "activeStreamCapacity": "応答を生成中の会話が多すぎます。しばらくしてからもう一度お試しください。",
-      "streamReplaced": "新しいリクエストがこの応答を置き換えました。"
+      "streamReplaced": "新しいリクエストがこの応答を置き換えました。",
+      "subagentReadOnly": "このサブエージェントのセッションは読み取り専用です。"
     },
     "localStore": {
       "ollamaCustomization": "Ollama のカスタマイズファイルを読み取れません。「設定 > 詳細 > Beaver データ」でバックアップから「ollama-custom-models.json」を復元してください。削除しないでください。バックアップなしで再起動するとこの履歴が失われ、Ollama ネイティブと表示されるプロンプトが本当に元のものか Beaver は保証できなくなります。",

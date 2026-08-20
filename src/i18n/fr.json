@@ -1194,7 +1194,8 @@
       "gatewayShuttingDown": "Les canaux de messagerie sont en cours d’arrêt. Réessaye dans un instant.",
       "gatewayBusy": "Trop de messages sont déjà en cours de traitement. Réessaye dans un instant.",
       "activeStreamCapacity": "Trop de conversations génèrent déjà une réponse. Réessaye dans un instant.",
-      "streamReplaced": "Une requête plus récente a remplacé cette réponse."
+      "streamReplaced": "Une requête plus récente a remplacé cette réponse.",
+      "subagentReadOnly": "Cette session de sous-agent est en lecture seule."
     },
     "localStore": {
       "ollamaCustomization": "Le fichier de personnalisation Ollama est illisible. Restaure « ollama-custom-models.json » depuis une sauvegarde dans Réglages > Avancé > Données Beaver. Ne le supprime pas : sans sauvegarde, un redémarrage fera perdre cet historique et Beaver ne pourra plus garantir qu’un prompt présenté comme natif Ollama est réellement celui d’origine.",

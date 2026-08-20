@@ -22,6 +22,22 @@ const expected = [
   ["gateway-busy", "errors.admission.gatewayBusy"],
   ["active-stream-limit-reached", "errors.admission.activeStreamCapacity"],
   ["stream-replaced", "errors.admission.streamReplaced"],
+  ["subagent-read-only", "errors.admission.subagentReadOnly"],
+] as const;
+const expectedTranslationKeys = [
+  "activeStreamCapacity",
+  "appCapacity",
+  "appShuttingDown",
+  "gatewayBusy",
+  "gatewayShuttingDown",
+  "serviceCapacity",
+  "serviceShuttingDown",
+  "streamReplaced",
+  "subagentReadOnly",
+];
+const catalogs = [
+  ["en", en], ["fr", fr], ["es", es], ["de", de],
+  ["it", itCatalog], ["zh", zh], ["ja", ja],
 ] as const;
 
 const t = ((key: string) => key) as TFunction;
@@ -35,18 +51,18 @@ describe("admission-error", () => {
   it("masque intégralement une erreur inconnue", () => {
     expect(admissionErrorKey("/private/session.json")).toBeNull();
     expect(admissionErrorMessage("/private/session.json", t)).toBe("errors.operationFailed");
+    expect(admissionErrorKey("session-unavailable")).toBeNull();
+    expect(admissionErrorMessage("session-unavailable", t)).toBe("errors.operationFailed");
   });
 
-  it("expose exactement les huit codes publics", () => {
+  it("expose exactement les neuf codes publics", () => {
     expect(ADMISSION_ERROR_CODES).toEqual(expected.map(([code]) => code));
   });
 
-  it.each([
-    ["en", en], ["fr", fr], ["es", es], ["de", de],
-    ["it", itCatalog], ["zh", zh], ["ja", ja],
-  ])("traduit les huit codes en %s", (_language, catalog) => {
+  it.each(catalogs)("traduit les neuf codes en %s", (_language, catalog) => {
     const admission = catalog.errors.admission;
-    expect(Object.values(admission)).toHaveLength(8);
+    expect(Object.keys(admission).sort()).toEqual(expectedTranslationKeys);
+    expect(Object.values(admission)).toHaveLength(9);
     expect(Object.values(admission).every((value) => value.trim().length > 0)).toBe(true);
   });
 });
