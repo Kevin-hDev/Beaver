@@ -1,0 +1,29 @@
+Task 3 — select only the wheel-compatible Python
+
+Why:
+- the runtime must execute the exact CPython implementation and minor recorded by the wheelhouse;
+- Finder-launched macOS applications do not inherit the terminal PATH, while Windows executable lookup requires a controlled `.exe` suffix.
+
+Implementation:
+- strict bounded RuntimeManifest and closed RuntimeError categories;
+- one Python PATH authority reuses agent_local::shell_environment, applies it to lookup, probes, venv creation and venv commands, and never mutates the process PATH;
+- exact probes accept only CPython with the manifest major/minor and time out after five seconds;
+- Unix lookup requires executable files; Windows lookup appends only the program-controlled `.exe` suffix and keeps `py -3.14` as separate arguments;
+- Wheelhouse is exposed only after regular-file, manifest, stamp and allowed-entry validation;
+- runtime installation is offline-only with `--no-index --find-links`.
+
+Controller review and correction:
+- initial tests did not fail when stamp binding, exact probe matching, or command PATH injection were removed;
+- initial Windows lookup searched `py` instead of `py.exe` and could never resolve a launcher;
+- the same Terra amended the implementation with behavioral process/path tests and a portable `.exe` lookup test.
+
+Evidence:
+- 10/10 targeted Rust tests pass;
+- cargo fmt --check and cargo clippy --all-targets -- -D warnings pass;
+- cargo check --lib --target x86_64-pc-windows-gnu --features windows-tests passes (pre-existing unrelated dead-code warnings only);
+- mutations red for removed stamp binding, successful-but-incompatible probe acceptance, omitted GUI PATH on commands, and omitted `.exe` suffix;
+- all production files remain below 230 lines.
+
+Limits:
+- no live SearXNG package download or GUI launch is claimed;
+- atomic virtualenv reconstruction belongs to Task 4.
