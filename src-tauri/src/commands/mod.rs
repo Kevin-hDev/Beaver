@@ -88,6 +88,8 @@ pub mod search;
 #[cfg(test)]
 mod subagent_read_only_command_preflight_tests;
 #[cfg(test)]
+mod subagent_read_only_command_runtime_tests;
+#[cfg(test)]
 mod subagent_read_only_command_structure_tests;
 #[cfg(test)]
 mod subagent_read_only_command_test_support;

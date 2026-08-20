@@ -204,6 +204,8 @@ windows-sys = { version = "0.61", features = [
 cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
 
 [dev-dependencies]
+# Expose le runtime simulé Tauri uniquement aux builds de test des commandes IPC.
+tauri = { version = "=2.11.4", features = ["test"] }
 # Mock de serveur HTTP pour tests d'intégration (LLM, search, gateway, forecast)
 wiremock = "0.6"
 # Horloge simulée pour les attentes événementielles

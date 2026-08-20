@@ -21,7 +21,10 @@ export const config: WebdriverIO.Config = {
     ? "./tests/e2e/native-cef-shutdown.spec.ts"
     : nativeWebViewSmoke
       ? "./tests/e2e/native-webview-shutdown.spec.ts"
-      : "./tests/e2e/onboarding.spec.ts"],
+      : [
+          "./tests/e2e/onboarding.spec.ts",
+          "./tests/e2e/child-session-read-only.spec.ts",
+        ]],
   maxInstances: 1,
   capabilities: [{ browserName: "tauri" }],
   services: [["@wdio/tauri-service", {
