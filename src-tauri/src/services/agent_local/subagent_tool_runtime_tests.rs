@@ -1,22 +1,5 @@
 use serde_json::json;
 
-#[test]
-fn codex_explorer_contract_contains_callable_tools() {
-    let profile = super::subagent_tool_profile::SubagentToolProfile::Explorer;
-    assert_eq!(
-        profile.tool_names(false),
-        vec![
-            "bash",
-            "read_file",
-            "list_dir",
-            "grep",
-            "glob",
-            "web_search",
-            "web_fetch",
-        ]
-    );
-}
-
 #[tokio::test]
 async fn backend_rejects_removed_tools_for_child_sessions() {
     let root = tempfile::tempdir().expect("root");

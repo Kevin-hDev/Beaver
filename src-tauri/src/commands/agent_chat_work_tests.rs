@@ -11,8 +11,12 @@ async fn stream_shutdown_reaches_the_existing_request_token() {
     let work = AgentWorkServices::new(coordinator.work_supervisor());
     let admission = agent_chat_work::admit(&work).expect("stream admission");
     let request_cancel = CancellationToken::new();
-    agent_chat_work::spawn(admission, request_cancel.clone(), future::pending::<()>())
-        .expect("stream task starts");
+    agent_chat_work::spawn(
+        admission,
+        request_cancel.clone(),
+        Box::pin(future::pending::<()>()),
+    )
+    .expect("stream task starts");
 
     assert!(
         work.streams()

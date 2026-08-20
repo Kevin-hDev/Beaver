@@ -6,17 +6,21 @@ fn working_dir_is_prepared_before_the_internal_loop() {
     let task = include_str!("subagent_task.rs");
     let stream = include_str!("subagent_task_stream.rs");
     let spawn = include_str!("subagent_spawn_channel.rs");
+    let spawn_boundary = include_str!("subagent_task_spawn.rs");
     let resolve = task
         .find("subagent_working_dir::resolve")
         .expect("resolve call");
     let loop_start = task.find("loop {").expect("internal loop");
     let task_ownership = task.find("owns_execution").expect("task ownership check");
     let spawn_ownership = spawn.find("owns_execution").expect("spawn ownership check");
-    let spawn_task = spawn.find("subagent_task::run").expect("spawn task call");
+    let spawn_task = spawn
+        .find("subagent_task_spawn::run")
+        .expect("boxed spawn task call");
 
     assert!(task_ownership < resolve);
     assert!(resolve < loop_start);
     assert!(spawn_ownership < spawn_task);
+    assert!(spawn_boundary.contains("Box::pin(super::subagent_task::run"));
     assert!(task.contains("working_dir.clone(),"));
     assert!(!stream.contains("subagent_working_dir::resolve"));
     assert!(!spawn.contains(".ok().flatten()"));

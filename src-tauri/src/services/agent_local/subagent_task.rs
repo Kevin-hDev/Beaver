@@ -8,7 +8,7 @@ use tokio_util::sync::CancellationToken;
 
 pub(super) use super::subagent_task_failure::finish_preparation_failure;
 
-pub async fn run(
+pub(super) async fn run(
     app: AppHandle,
     parent_session_id: String,
     child_session_id: String,

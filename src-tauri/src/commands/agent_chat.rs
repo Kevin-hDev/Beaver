@@ -120,8 +120,10 @@ pub async fn chat_stream(
     let task_cancel = cancel.clone();
     let task_inbox = parent_message_inbox.clone();
 
-    let spawn_result =
-        super::agent_chat_work::spawn(stream_admission, cancel.clone(), async move {
+    let spawn_result = super::agent_chat_work::spawn(
+        stream_admission,
+        cancel.clone(),
+        Box::pin(async move {
             let emitter = AgentEventEmitter::with_generation(
                 task_app.clone(),
                 stream_session.clone(),
@@ -203,7 +205,8 @@ pub async fn chat_stream(
                     });
                 }
             }
-        });
+        }),
+    );
     if let Err(error) = spawn_result {
         cancel.cancel();
         parent_message_inbox.close().await;

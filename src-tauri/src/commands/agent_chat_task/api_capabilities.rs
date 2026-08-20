@@ -1,4 +1,4 @@
-use super::params::StreamTaskParams;
+use super::params::StreamCapabilityHints;
 use crate::services::llm::{self, provider_model_lookup, tool_capable};
 
 pub(super) struct ApiCapabilities {
@@ -7,58 +7,56 @@ pub(super) struct ApiCapabilities {
     pub vision: bool,
 }
 
-fn model_capability_provider_id(connection_id: &str) -> &str {
-    match connection_id {
-        "codex-oauth" => "openai",
-        other => crate::services::llm::route::canonical_provider_id(other),
-    }
-}
-
-pub(super) async fn resolve(params: &StreamTaskParams) -> ApiCapabilities {
-    let capability_provider = model_capability_provider_id(&params.provider);
-    let local = provider_model_lookup::local_capabilities(capability_provider, &params.model);
+pub(super) async fn resolve(
+    provider: &str,
+    model: &str,
+    hints: &StreamCapabilityHints,
+) -> ApiCapabilities {
+    let capability_provider = crate::services::llm::route::canonical_provider_id(provider);
+    let local = provider_model_lookup::local_capabilities(capability_provider, model);
     let registered = match local {
         Some(caps) => Some(caps),
-        None => provider_model_lookup::capabilities(capability_provider, &params.model).await,
+        None => provider_model_lookup::capabilities(capability_provider, model).await,
     };
-    let runtime = llm::runtime_models::lookup(capability_provider, &params.model);
+    let runtime = llm::runtime_models::lookup(capability_provider, model);
     let is_local = local.is_some();
 
     ApiCapabilities {
-        tools: params.capability_hints.supports_tools.unwrap_or_else(|| {
+        tools: tools_capability(provider, hints.supports_tools, {
             capability(
                 is_local,
                 registered.as_ref().is_some_and(|caps| caps.supports_tools),
                 runtime.as_ref().is_some_and(|model| model.supports_tools),
-                tool_capable::supports_tools(capability_provider, &params.model),
+                tool_capable::supports_tools(capability_provider, model),
             )
         }),
-        thinking: params
-            .capability_hints
-            .supports_thinking
-            .unwrap_or_else(|| {
-                params.provider == "codex-oauth"
-                    || capability(
-                        is_local,
-                        registered
-                            .as_ref()
-                            .is_some_and(|caps| caps.supports_thinking),
-                        runtime
-                            .as_ref()
-                            .is_some_and(|model| model.supports_thinking),
-                        tool_capable::supports_thinking(capability_provider, &params.model),
-                    )
-            }),
-        vision: params.capability_hints.supports_vision.unwrap_or_else(|| {
-            params.provider == "codex-oauth"
+        thinking: hints.supports_thinking.unwrap_or_else(|| {
+            provider == crate::services::codex_client::PROVIDER_ID
+                || capability(
+                    is_local,
+                    registered
+                        .as_ref()
+                        .is_some_and(|caps| caps.supports_thinking),
+                    runtime
+                        .as_ref()
+                        .is_some_and(|model| model.supports_thinking),
+                    tool_capable::supports_thinking(capability_provider, model),
+                )
+        }),
+        vision: hints.supports_vision.unwrap_or_else(|| {
+            provider == crate::services::codex_client::PROVIDER_ID
                 || capability(
                     is_local,
                     registered.as_ref().is_some_and(|caps| caps.supports_vision),
                     runtime.as_ref().is_some_and(|model| model.supports_vision),
-                    tool_capable::supports_vision(capability_provider, &params.model),
+                    tool_capable::supports_vision(capability_provider, model),
                 )
         }),
     }
+}
+
+fn tools_capability(provider: &str, hint: Option<bool>, detected: bool) -> bool {
+    hint.unwrap_or(provider == crate::services::codex_client::PROVIDER_ID || detected)
 }
 
 fn capability(is_local: bool, registered: bool, runtime: bool, fallback: bool) -> bool {

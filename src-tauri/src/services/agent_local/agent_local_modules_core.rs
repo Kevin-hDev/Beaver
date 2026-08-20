@@ -207,6 +207,7 @@ pub mod subagent_startup_cleanup;
 pub mod subagent_status;
 pub mod subagent_summary;
 pub mod subagent_task;
+mod subagent_task_spawn;
 pub mod subagent_task_stream;
 #[cfg(test)]
 pub mod subagent_task_tests;

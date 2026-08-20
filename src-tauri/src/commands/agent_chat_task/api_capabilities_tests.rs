@@ -1,5 +1,6 @@
-use super::{capability, model_capability_provider_id};
-use crate::services::llm::{route, tool_capable};
+use super::{capability, resolve};
+use crate::commands::agent_chat_task::StreamCapabilityHints;
+use crate::services::llm::route;
 
 #[test]
 fn local_false_is_authoritative() {
@@ -8,16 +9,28 @@ fn local_false_is_authoritative() {
     assert!(capability(false, false, true, false));
 }
 
-#[test]
-fn codex_uses_openai_only_for_model_capabilities() {
-    let capability_provider = model_capability_provider_id("codex-oauth");
-
-    assert_eq!(capability_provider, "openai");
+#[tokio::test]
+async fn codex_without_hints_keeps_tools_for_every_native_model_family() {
     assert_eq!(route::canonical_provider_id("codex-oauth"), "codex-oauth");
-    assert!(tool_capable::supports_tools(
-        capability_provider,
-        "gpt-5.6-luna"
-    ));
+    for model in ["gpt-5.6-luna", "gpt-5.3-codex-spark"] {
+        assert!(
+            resolve("codex-oauth", model, &StreamCapabilityHints::default())
+                .await
+                .tools
+        );
+    }
+    assert!(
+        !resolve(
+            "codex-oauth",
+            "gpt-5.6-luna",
+            &StreamCapabilityHints {
+                supports_tools: Some(false),
+                ..Default::default()
+            },
+        )
+        .await
+        .tools
+    );
 }
 
 #[test]
@@ -30,7 +43,7 @@ fn capability_mapping_does_not_change_codex_reasoning_modes() {
 
 #[test]
 fn existing_oauth_aliases_keep_their_capability_catalogs() {
-    assert_eq!(model_capability_provider_id("xai-oauth"), "xai");
-    assert_eq!(model_capability_provider_id("moonshot-oauth"), "moonshot");
-    assert_eq!(model_capability_provider_id("mistral"), "mistral");
+    assert_eq!(route::canonical_provider_id("xai-oauth"), "xai");
+    assert_eq!(route::canonical_provider_id("moonshot-oauth"), "moonshot");
+    assert_eq!(route::canonical_provider_id("mistral"), "mistral");
 }

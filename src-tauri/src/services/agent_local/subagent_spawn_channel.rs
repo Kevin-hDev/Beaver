@@ -2,8 +2,6 @@ use crate::services::agent_local::stream_events::AgentEventEmitter;
 use crate::services::work_registry::{
     ServiceWorkAdmission, ServiceWorkAdmissionError, ServiceWorkCancellation,
 };
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::OnceLock;
 use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc;
@@ -31,7 +29,7 @@ pub struct SpawnRequest {
 const MAX_QUEUED: usize = 8;
 
 type SubagentAdmission = ServiceWorkAdmission<MAX_ACTIVE_SUBAGENTS>;
-pub(super) type SpawnedSubagentTask = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+pub(super) use super::subagent_task_spawn::SpawnedSubagentTask;
 
 struct QueuedSpawn {
     request: SpawnRequest,
@@ -96,8 +94,8 @@ async fn receiver_loop(mut rx: mpsc::Receiver<QueuedSpawn>, shutdown: ServiceWor
         let request_cancel = req.cancel.clone();
         let refused_child_id = req.child_session_id.clone();
         let refused_cancel = req.cancel.clone();
-        // Cette frontière possède l'allocation : le registre ne reçoit jamais la
-        // grande machine d'état du sous-agent directement sur sa pile worker.
+        // Cette frontière réduit à un pointeur les états d'orchestration restants.
+        // subagent_task_spawn possède séparément l'allocation de la grande boucle.
         let task: SpawnedSubagentTask = Box::pin(async move {
             let parent_session_id = req.parent_session_id.clone();
             let child_session_id = req.child_session_id.clone();
@@ -120,7 +118,7 @@ async fn receiver_loop(mut rx: mpsc::Receiver<QueuedSpawn>, shutdown: ServiceWor
             } else {
                 None
             };
-            let child = super::subagent_task::run(
+            let child = super::subagent_task_spawn::run(
                 req.app,
                 req.parent_session_id,
                 req.child_session_id,

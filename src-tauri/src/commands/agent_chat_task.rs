@@ -17,6 +17,8 @@ pub(crate) use params::{StreamCapabilityHints, StreamTaskParams};
 
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::mascot::MascotSessionOutcome;
+use std::future::Future;
+use std::pin::Pin;
 
 pub(crate) use common::merge_personality;
 
@@ -34,13 +36,19 @@ fn chat_engine(provider: &str) -> ChatEngine {
     }
 }
 
-pub(crate) async fn run_stream_task(params: StreamTaskParams) -> Result<Vec<ChatMessage>, String> {
+pub(crate) type SpawnedStreamTask =
+    Pin<Box<dyn Future<Output = Result<Vec<ChatMessage>, String>> + Send + 'static>>;
+
+pub(crate) fn run_stream_task(params: StreamTaskParams) -> SpawnedStreamTask {
     let mascot_session = params.on_event.start_mascot_session();
-    let result = run_stream_task_inner(params).await;
-    if let Some(session) = mascot_session {
-        session.finish(mascot_outcome(&result));
-    }
-    result
+    let inner = Box::pin(run_stream_task_inner(params));
+    Box::pin(async move {
+        let result = inner.await;
+        if let Some(session) = mascot_session {
+            session.finish(mascot_outcome(&result));
+        }
+        result
+    })
 }
 
 async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatMessage>, String> {
@@ -108,6 +116,17 @@ mod tests {
         assert_eq!(
             mascot_outcome(&Err("indisponible".into())),
             MascotSessionOutcome::Failed
+        );
+    }
+
+    #[test]
+    fn every_stream_consumer_receives_a_boxed_agent_loop() {
+        type StreamRun = fn(StreamTaskParams) -> SpawnedStreamTask;
+
+        let _run: StreamRun = run_stream_task;
+        assert_eq!(
+            std::mem::size_of::<SpawnedStreamTask>(),
+            std::mem::size_of::<usize>() * 2
         );
     }
 }

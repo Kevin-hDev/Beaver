@@ -13,7 +13,9 @@ pub(crate) async fn run(
     let ctx =
         crate::services::compress::context_resolve::resolve_api(canonical_provider, &params.model)
             .await;
-    let caps = super::api_capabilities::resolve(&params).await;
+    let caps =
+        super::api_capabilities::resolve(&params.provider, &params.model, &params.capability_hints)
+            .await;
     let settings = crate::services::agent_local::agent_settings::load().await;
     let final_tools =
         super::api_tools::resolve(&params, &mode, caps.tools, &settings, canonical_provider);
