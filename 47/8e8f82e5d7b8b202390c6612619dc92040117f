@@ -15,7 +15,11 @@ branch went away.
 Restoring the branch to satisfy the check would keep an archive alive for the
 sake of its guard rather than the reverse. The guard goes instead, with the
 script, the authority file that named the dead branch, and the test covering
-them — nothing else referenced any of the three.
+them.
+
+CORRECTION (review): that last claim was wrong. scripts/ollama/fixtures/
+j3-reference/ stayed tracked with no reader left, and held the references to
+the deleted branch this commit meant to stop maintaining. Removed in 36249a34.
 
 test:j3-native-assets and test:ollama-manager-contracts are untouched and still
 run on all three systems; both verified locally.
