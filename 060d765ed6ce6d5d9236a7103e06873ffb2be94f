@@ -1,0 +1,1 @@
+Le processus de release impose déjà trois bumps manuels. Ce commit transforme cette convention en contrat exécutable : package.json, Cargo.toml et tauri.conf.json doivent porter exactement la même version stable X.Y.Z, bornée à 32 caractères. Les préversions et toute divergence échouent avec une erreur générique. La suite est incluse dans test:release-workflow.
