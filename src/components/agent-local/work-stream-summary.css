@@ -1,5 +1,6 @@
 .wss-root {
-  margin: var(--space-sm) 0 var(--space-md);
+  /* L'alignement horizontal appartient à la colonne commune de chat.css. */
+  margin-block: var(--space-sm) var(--space-md);
 }
 
 /* Suivi de la réponse finale, le bloc cède sa marge basse : la réponse se pose
