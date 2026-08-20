@@ -80,6 +80,22 @@ test("les trois machines construisent sans toucher à une release", () => {
   assert.match(workflow, /--bundles=\$\{\{ matrix\.bundles \}\}/u);
 });
 
+test("construit les roues SearXNG avec la version Python contrôlée", () => {
+  const steps = workflowDocument.jobs.build.steps;
+  const checkoutIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/checkout@"));
+  const setup = steps.find(({ name }) => name === "Install SearXNG Python");
+  const setupIndex = steps.indexOf(setup);
+  const buildIndex = steps.findIndex(({ name }) => name === "Build Tauri app without publishing");
+
+  assert.ok(checkoutIndex >= 0);
+  assert.ok(setup);
+  assert.ok(setupIndex >= 0);
+  assert.ok(buildIndex >= 0);
+  assert.equal(setup.uses, "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1");
+  assert.equal(setup.with["python-version-file"], "scripts/build/searxng-python-version.txt");
+  assert.ok(checkoutIndex < setupIndex && setupIndex < buildIndex);
+});
+
 test("partage la cible Cargo Windows avant le build et sa relecture", () => {
   const configure = workflow.indexOf("Configure Windows Cargo target");
   const build = workflow.indexOf("Build Tauri app without publishing");

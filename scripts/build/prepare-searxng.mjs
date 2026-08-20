@@ -2,7 +2,7 @@ import { lstatSync, realpathSync } from "node:fs";
 import { isAbsolute, join, parse, relative, sep } from "node:path";
 
 import { runCommand } from "./command-runner.mjs";
-import { resolvePythonCommand } from "./python-runtime.mjs";
+import { readSupportedPythonVersion, resolvePythonCommand } from "./python-runtime.mjs";
 
 const ERROR_MESSAGE = "SearXNG preparation failed";
 const MAX_PATH_LENGTH = 4096;
@@ -57,6 +57,10 @@ function validCandidate(candidate) {
     candidate.command.length > 0 &&
     candidate.command.length <= MAX_COMMAND_LENGTH &&
     !/[\0\r\n]/u.test(candidate.command) &&
+    typeof candidate.label === "string" &&
+    candidate.label.length > 0 &&
+    candidate.label.length <= MAX_COMMAND_LENGTH &&
+    !/[\0\r\n]/u.test(candidate.label) &&
     Array.isArray(candidate.prefixArgs) &&
     candidate.prefixArgs.length <= MAX_PREFIX_ARGUMENTS &&
     candidate.prefixArgs.every((argument) => typeof argument === "string" && argument.length <= MAX_COMMAND_LENGTH && !/[\0\r\n]/u.test(argument))
@@ -71,11 +75,13 @@ export async function prepareSearxng({ repoRoot, resolvePython = resolvePythonCo
     const script = join(tauriRoot, "scripts", "prepare_searxng.py");
     const canonicalScript = realpathSync.native(script);
     if (!lstatSync(canonicalScript).isFile() || comparablePath(script) !== comparablePath(canonicalScript) || hasLink(script)) fail();
-    const candidate = await resolvePython({ platform: process.platform });
+    const expectedVersion = readSupportedPythonVersion(root);
+    const candidate = await resolvePython({ platform: process.platform, expectedVersion });
     if (!validCandidate(candidate)) fail();
     const command = candidate.command;
     const prefixArgs = [...candidate.prefixArgs];
-    if (!validCandidate({ command, prefixArgs })) fail();
+    const label = candidate.label;
+    if (!validCandidate({ command, prefixArgs, label })) fail();
     await run({
       command,
       args: [...prefixArgs, canonicalScript, "--root", tauriRoot],
