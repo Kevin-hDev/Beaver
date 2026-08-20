@@ -2,10 +2,19 @@ use super::agent_work_supervision::AgentWorkServices;
 use super::subagent_spawn_channel;
 use crate::app_exit::AppExitCoordinator;
 use std::future;
+use std::mem::size_of;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
+
+#[test]
+fn subagent_run_crosses_the_spawn_boundary_as_a_pointer() {
+    assert_eq!(
+        size_of::<subagent_spawn_channel::SpawnedSubagentTask>(),
+        size_of::<usize>() * 2
+    );
+}
 
 #[test]
 fn full_channel_does_not_publish_spawned_event() {
@@ -55,7 +64,7 @@ async fn tracked_child_shutdown_reaches_the_existing_request_token() {
     subagent_spawn_channel::spawn_tracked(
         admission,
         request_cancel.clone(),
-        future::pending::<()>(),
+        Box::pin(future::pending::<()>()),
     )
     .expect("tracked child starts");
 

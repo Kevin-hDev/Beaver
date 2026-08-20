@@ -3,6 +3,7 @@ use crate::services::work_registry::{
     ServiceWorkAdmission, ServiceWorkAdmissionError, ServiceWorkCancellation,
 };
 use std::future::Future;
+use std::pin::Pin;
 use std::sync::OnceLock;
 use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc;
@@ -30,6 +31,7 @@ pub struct SpawnRequest {
 const MAX_QUEUED: usize = 8;
 
 type SubagentAdmission = ServiceWorkAdmission<MAX_ACTIVE_SUBAGENTS>;
+pub(super) type SpawnedSubagentTask = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
 
 struct QueuedSpawn {
     request: SpawnRequest,
@@ -94,7 +96,9 @@ async fn receiver_loop(mut rx: mpsc::Receiver<QueuedSpawn>, shutdown: ServiceWor
         let request_cancel = req.cancel.clone();
         let refused_child_id = req.child_session_id.clone();
         let refused_cancel = req.cancel.clone();
-        let task = async move {
+        // Cette frontière possède l'allocation : le registre ne reçoit jamais la
+        // grande machine d'état du sous-agent directement sur sa pile worker.
+        let task: SpawnedSubagentTask = Box::pin(async move {
             let parent_session_id = req.parent_session_id.clone();
             let child_session_id = req.child_session_id.clone();
             let subagent_type = req.subagent_type.clone();
@@ -144,7 +148,7 @@ async fn receiver_loop(mut rx: mpsc::Receiver<QueuedSpawn>, shutdown: ServiceWor
                 .await;
             })
             .await;
-        };
+        });
         if spawn_tracked(admission, request_cancel, task).is_err() {
             cancel_unstarted(&refused_child_id, &refused_cancel).await;
             ::log::warn!("[subagent] travail refusé pendant la fermeture");
@@ -178,14 +182,11 @@ pub(super) async fn receive_next<T>(
     }
 }
 
-pub(super) fn spawn_tracked<Task>(
+pub(super) fn spawn_tracked(
     admission: SubagentAdmission,
     request_cancel: CancellationToken,
-    task: Task,
-) -> Result<(), ServiceWorkAdmissionError>
-where
-    Task: Future<Output = ()> + Send + 'static,
-{
+    task: SpawnedSubagentTask,
+) -> Result<(), ServiceWorkAdmissionError> {
     admission.spawn(move |shutdown| async move {
         tokio::pin!(task);
         tokio::select! {
