@@ -14,16 +14,14 @@ fn model_capability_provider_id(connection_id: &str) -> &str {
     }
 }
 
-pub(super) async fn resolve(
-    params: &StreamTaskParams,
-    canonical_provider: &str,
-) -> ApiCapabilities {
-    let local = provider_model_lookup::local_capabilities(canonical_provider, &params.model);
+pub(super) async fn resolve(params: &StreamTaskParams) -> ApiCapabilities {
+    let capability_provider = model_capability_provider_id(&params.provider);
+    let local = provider_model_lookup::local_capabilities(capability_provider, &params.model);
     let registered = match local {
         Some(caps) => Some(caps),
-        None => provider_model_lookup::capabilities(canonical_provider, &params.model).await,
+        None => provider_model_lookup::capabilities(capability_provider, &params.model).await,
     };
-    let runtime = llm::runtime_models::lookup(canonical_provider, &params.model);
+    let runtime = llm::runtime_models::lookup(capability_provider, &params.model);
     let is_local = local.is_some();
 
     ApiCapabilities {
@@ -32,7 +30,7 @@ pub(super) async fn resolve(
                 is_local,
                 registered.as_ref().is_some_and(|caps| caps.supports_tools),
                 runtime.as_ref().is_some_and(|model| model.supports_tools),
-                tool_capable::supports_tools(canonical_provider, &params.model),
+                tool_capable::supports_tools(capability_provider, &params.model),
             )
         }),
         thinking: params
@@ -48,7 +46,7 @@ pub(super) async fn resolve(
                         runtime
                             .as_ref()
                             .is_some_and(|model| model.supports_thinking),
-                        tool_capable::supports_thinking(canonical_provider, &params.model),
+                        tool_capable::supports_thinking(capability_provider, &params.model),
                     )
             }),
         vision: params.capability_hints.supports_vision.unwrap_or_else(|| {
@@ -57,7 +55,7 @@ pub(super) async fn resolve(
                     is_local,
                     registered.as_ref().is_some_and(|caps| caps.supports_vision),
                     runtime.as_ref().is_some_and(|model| model.supports_vision),
-                    tool_capable::supports_vision(canonical_provider, &params.model),
+                    tool_capable::supports_vision(capability_provider, &params.model),
                 )
         }),
     }

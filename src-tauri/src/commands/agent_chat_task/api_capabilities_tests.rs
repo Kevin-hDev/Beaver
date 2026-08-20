@@ -21,6 +21,14 @@ fn codex_uses_openai_only_for_model_capabilities() {
 }
 
 #[test]
+fn capability_mapping_does_not_change_codex_reasoning_modes() {
+    let modes = crate::services::reasoning::supported_modes("codex-oauth", "gpt-5.6-sol", true);
+
+    assert!(modes.contains(&"ultra"));
+    assert_eq!(route::canonical_provider_id("codex-oauth"), "codex-oauth");
+}
+
+#[test]
 fn existing_oauth_aliases_keep_their_capability_catalogs() {
     assert_eq!(model_capability_provider_id("xai-oauth"), "xai");
     assert_eq!(model_capability_provider_id("moonshot-oauth"), "moonshot");
