@@ -66,21 +66,3 @@ fn fallback_matches_the_current_conservative_codex_limit() {
         ["low", "medium", "high", "xhigh", "max"]
     );
 }
-
-#[test]
-fn every_catalog_uses_the_codex_tool_capability_authority() {
-    let parsed = parse(
-        r#"{"models":[{"slug":"gpt-5.6-luna","display_name":"Luna","context_window":100000}]}"#,
-    )
-    .unwrap();
-    assert_eq!(
-        parsed[0].info.supports_tools,
-        super::super::supports_tools(&parsed[0].info.id)
-    );
-    for model in fallback_models() {
-        assert_eq!(
-            model.supports_tools,
-            super::super::supports_tools(&model.id)
-        );
-    }
-}

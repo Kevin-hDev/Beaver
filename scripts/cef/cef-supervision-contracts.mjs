@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 
+import { jobSection } from "../ci/workflow-jobs.mjs";
 import { isDirectExecution } from "./direct-execution.mjs";
 
 export { isDirectExecution } from "./direct-execution.mjs";
@@ -17,7 +18,7 @@ export function validateCefSupervisionContracts({
   requireText(workflow, "backend-windows-native:", "Windows native job is missing", errors);
   requireText(workflow, "backend-macos-native:", "macOS native job is missing", errors);
   requireText(
-    jobSection(workflow, "backend-macos-native:"),
+    jobSection(workflow, "backend-macos-native"),
     "npm run test:cef",
     "macOS CEF script tests are missing",
     errors,
@@ -76,14 +77,6 @@ export function validateCefSupervisionContracts({
     errors.push("macOS tracker lifecycle category type is not in scope");
   }
   return errors;
-}
-
-function jobSection(workflow, heading) {
-  const start = workflow.indexOf(heading);
-  if (start < 0) return "";
-  const remaining = workflow.slice(start + heading.length);
-  const next = remaining.search(/\n(?:  )?[a-z][a-z0-9_-]*:\s*\n/iu);
-  return next < 0 ? remaining : remaining.slice(0, next);
 }
 
 function requireText(source, expected, message, errors) {

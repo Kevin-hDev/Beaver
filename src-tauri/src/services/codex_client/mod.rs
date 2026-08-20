@@ -20,6 +20,9 @@ mod websocket_url;
 
 pub const PROVIDER_ID: &str = "codex-oauth";
 
-pub fn supports_tools(model_id: &str) -> bool {
-    crate::services::llm::runtime_models::valid_model_id(model_id)
+/// Le protocole du catalogue Codex ne publie pas encore cette capacité : tous
+/// les modèles Codex servis acceptent les outils. Lire le champ du protocole
+/// ici si l'API en expose un à l'avenir.
+pub fn supports_tools(_model_id: &str) -> bool {
+    true
 }

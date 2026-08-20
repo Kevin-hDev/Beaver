@@ -62,6 +62,17 @@ test("missing macOS CEF script tests fails the contract", () => {
   assert.ok(errors.includes("macOS CEF script tests are missing"));
 });
 
+test("a following underscore-prefixed job cannot satisfy the macOS CEF contract", () => {
+  const errors = validateCefSupervisionContracts({
+    ...valid,
+    workflow: valid.workflow
+      .replace("  run: npm run test:cef\n", "")
+      .concat("\n_release:\n  run: npm run test:cef\n"),
+  });
+
+  assert.ok(errors.includes("macOS CEF script tests are missing"));
+});
+
 for (const [filter, message] of [
   [
     "services::browser::cef_supervision::macos::liveness_policy_tests",
@@ -132,12 +143,14 @@ test("direct execution is detected from canonical filesystem paths", () => {
 test("an invalid fixture fails when the contract is executed directly", async () => {
   const fixture = await mkdtemp(join(tmpdir(), "beaver-cef-contract-"));
   const scriptDirectory = join(fixture, "scripts", "cef");
+  const ciScriptDirectory = join(fixture, "scripts", "ci");
   const workflowDirectory = join(fixture, ".github", "workflows");
   const browserDirectory = join(fixture, "src-tauri", "src", "services", "browser");
   const macSupervisionDirectory = join(browserDirectory, "cef_supervision", "macos");
   try {
     await Promise.all([
       mkdir(scriptDirectory, { recursive: true }),
+      mkdir(ciScriptDirectory, { recursive: true }),
       mkdir(workflowDirectory, { recursive: true }),
       mkdir(browserDirectory, { recursive: true }),
       mkdir(macSupervisionDirectory, { recursive: true }),
@@ -148,6 +161,10 @@ test("an invalid fixture fails when the contract is executed directly", async ()
       copyFile(
         resolve("scripts/cef/direct-execution.mjs"),
         join(scriptDirectory, "direct-execution.mjs"),
+      ),
+      copyFile(
+        resolve("scripts/ci/workflow-jobs.mjs"),
+        join(ciScriptDirectory, "workflow-jobs.mjs"),
       ),
       writeFile(join(workflowDirectory, "ci.yml"), "jobs: {}\n", "utf8"),
       writeFile(join(fixture, "src-tauri", "build.rs"), "fn main() {}\n", "utf8"),
