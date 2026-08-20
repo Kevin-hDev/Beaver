@@ -2,15 +2,36 @@ use super::{run_helper_operation, SpawnedUpdateHelper};
 use crate::app_exit::AppExitCoordinator;
 use crate::services::process_identity::ProcessIdentity;
 use crate::services::update_handoff::AppUpdateRuntime;
+use std::path::PathBuf;
 use std::process::Stdio;
 use std::time::{Duration, Instant};
 use sysinfo::{Pid, System};
 
+/// Un enfant durable dont l'exécutable ne change pas après le lancement.
+///
+/// ProcessIdentity compare le chemin de l'exécutable pour écarter une
+/// réutilisation de PID. Le lanceur `bin/python3.x` de Homebrew se ré-exécute
+/// dans le binaire du framework : le chemin observé change quelques
+/// millisecondes après le spawn et l'identité capturée devient périmée, alors
+/// que le processus tourne toujours. Le vrai helper de mise à jour est un
+/// binaire natif, sans ce détour.
+fn long_lived_child() -> (PathBuf, &'static [&'static str]) {
+    #[cfg(windows)]
+    {
+        let executable = crate::services::test_runtime::python().expect("runtime Python de test");
+        (executable, &["-c", "import time; time.sleep(30)"])
+    }
+    #[cfg(not(windows))]
+    {
+        (PathBuf::from("/bin/sleep"), &["30"])
+    }
+}
+
 fn test_helper() -> (SpawnedUpdateHelper, ProcessIdentity) {
-    let executable = crate::services::test_runtime::python().expect("runtime Python de test");
+    let (executable, arguments) = long_lived_child();
     let mut command = crate::services::background_command::new(&executable);
     command
-        .args(["-c", "import time; time.sleep(30)"])
+        .args(arguments)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());

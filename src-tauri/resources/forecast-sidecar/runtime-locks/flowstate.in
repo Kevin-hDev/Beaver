@@ -1,7 +1,6 @@
-# granite-tsfm 0.3.8 lève le plafond transformers<5 des versions précédentes.
-# torch reste 2.10.x : granite-tsfm exige torch<2.11 jusqu'à sa version 0.3.8.
-# huggingface-hub est épinglé pour la même raison que les autres : un paquet non
-# épinglé dérive à chaque régénération du lock sans que personne l'ait décidé.
+# granite-tsfm 0.3.8 est un plancher : les versions antérieures plafonnent
+# transformers sous la 5, qu'exige ce runtime.
+# torch reste en 2.10.x : granite-tsfm exige torch<2.11.
 granite-tsfm==0.3.8
 huggingface-hub==1.28.0
 numpy==2.5.1

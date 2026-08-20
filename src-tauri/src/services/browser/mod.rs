@@ -45,7 +45,10 @@ mod cef_request_handler;
 mod cef_runtime_policy;
 #[cfg(native_browser)]
 mod cef_state_bridge;
-#[cfg(any(test, native_browser))]
+// La condition suit les appels de cef_runtime_policy, gardés par l'OS et non
+// par native_browser : sous windows-tests le module disparaissait de la lib
+// hors test alors que ces appels restaient.
+#[cfg(any(test, target_os = "windows", target_os = "macos"))]
 mod cef_supervision;
 #[cfg(native_browser)]
 mod cef_surface;

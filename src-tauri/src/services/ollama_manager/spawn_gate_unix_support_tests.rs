@@ -49,7 +49,7 @@ fn gate_pipe_ends_are_close_on_exec_before_concurrent_spawns() {
 fn stale_gate_links_are_cleaned_before_next_creation() {
     let root = tempfile::tempdir().expect("root");
     let executable = root.path().join("ollama");
-    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    crate::services::test_runtime::install_system_binary("/usr/bin/true", &executable);
     let stale = root.path().join(".beaver-gated-stale");
     std::fs::create_dir(&stale).expect("stale directory");
     std::fs::write(stale.join(".owner"), "4294967295").expect("owner");
@@ -66,7 +66,7 @@ fn stale_gate_links_are_cleaned_before_next_creation() {
 fn stale_same_directory_gate_link_is_cleaned_before_next_creation() {
     let root = tempfile::tempdir().expect("root");
     let executable = root.path().join("ollama");
-    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    crate::services::test_runtime::install_system_binary("/usr/bin/true", &executable);
     let stale = root.path().join(".beaver-gated-4294967295-stale");
     std::fs::hard_link(&executable, &stale).expect("stale hard link");
     let metadata = std::fs::metadata(&executable).expect("metadata");
@@ -80,7 +80,7 @@ fn stale_same_directory_gate_link_is_cleaned_before_next_creation() {
 fn stale_gate_cleanup_is_bounded_and_fails_closed() {
     let root = tempfile::tempdir().expect("root");
     let executable = root.path().join("ollama");
-    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    crate::services::test_runtime::install_system_binary("/usr/bin/true", &executable);
     for index in 0..33 {
         let stale = root.path().join(format!(".beaver-gated-{index}"));
         std::fs::create_dir(&stale).expect("stale directory");
@@ -95,7 +95,7 @@ fn stale_gate_cleanup_is_bounded_and_fails_closed() {
 fn live_gate_owner_is_never_removed_by_recovery() {
     let root = tempfile::tempdir().expect("root");
     let executable = root.path().join("ollama");
-    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    crate::services::test_runtime::install_system_binary("/usr/bin/true", &executable);
     let metadata = std::fs::metadata(&executable).expect("metadata");
     let identity = (u128::from(metadata.dev()) << 64) | u128::from(metadata.ino());
     let live = stable_executable_link(&executable, identity).expect("live link");
@@ -109,7 +109,7 @@ fn live_gate_owner_is_never_removed_by_recovery() {
 fn crashed_parent_gate_directory_is_recovered_on_next_creation() {
     let root = tempfile::tempdir().expect("root");
     let executable = root.path().join("ollama");
-    std::fs::copy("/usr/bin/true", &executable).expect("executable");
+    crate::services::test_runtime::install_system_binary("/usr/bin/true", &executable);
     let stale = root.path().join(".beaver-gated-crashed");
     let child = unsafe { libc::fork() };
     assert!(child >= 0);

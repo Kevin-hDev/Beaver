@@ -9,23 +9,39 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 
+/// Le calendrier d'arrêt, raccourci pour les tests.
+///
+/// Il doit rester plus long que la mise en route d'un fil d'exécution. Passé
+/// l'échéance ultime, run_watchdog sort de sa boucle sans avoir drainé une
+/// seule fois : le signaleur n'est jamais appelé et le test attend un événement
+/// qui ne viendra pas. Les valeurs précédentes plaçaient cette échéance à 40 ms
+/// de l'origine, ce que la mise en place tenait sur une machine libre et pas
+/// sur un runner partagé. La production travaille en secondes, où le temps
+/// d'ordonnancement ne pèse rien.
 fn timeline(origin: Instant) -> ShutdownTimeline {
     ShutdownTimeline::from_origin(
         origin,
         ShutdownPolicy::new(
-            Duration::from_millis(5),
-            Duration::from_millis(10),
-            Duration::from_millis(20),
-            Duration::from_millis(40),
+            Duration::from_millis(50),
+            Duration::from_millis(100),
+            Duration::from_millis(200),
+            Duration::from_millis(400),
         )
         .expect("watchdog policy"),
     )
 }
 
-fn wait_until(condition: impl Fn() -> bool) {
-    let deadline = Instant::now() + Duration::from_secs(1);
+/// Attend `condition`, et nomme l'attente qui expire.
+///
+/// Les quatre appels de ce fichier échouaient sur le même message : un échec
+/// en intégration continue ne disait pas laquelle des attentes avait expiré, et
+/// la question ne se tranchait qu'en reproduisant.
+/// La borne garde le test de rester pendu, elle ne mesure rien : elle est donc
+/// très au-dessus du calendrier observé, et non ajustée sur lui.
+fn wait_until(awaited: &str, condition: impl Fn() -> bool) {
+    let deadline = Instant::now() + Duration::from_secs(10);
     while !condition() {
-        assert!(Instant::now() < deadline, "condition deadline");
+        assert!(Instant::now() < deadline, "attente expirée : {awaited}");
         std::thread::yield_now();
     }
 }
@@ -47,8 +63,6 @@ impl EmergencySignaler for CountingSignaler {
 
 #[test]
 fn watchdog_requests_tauri_exit_then_starts_emergency_drain() {
-    let origin = Instant::now();
-    let timeline = timeline(origin);
     let state = Arc::new(ShutdownState::new());
     assert_eq!(state.begin_closing(), super::state::BeginClosing::Started);
     let inventory = EmergencyInventory::new();
@@ -67,6 +81,9 @@ fn watchdog_requests_tauri_exit_then_starts_emergency_drain() {
         },
         signaler.clone(),
     );
+    // L'origine se prend au plus près du lancement : tout ce qui la précède est
+    // du temps retranché au calendrier que le chien de garde doit parcourir.
+    let timeline = timeline(Instant::now());
     let watchdog = WatchdogThread::spawn(
         timeline,
         Arc::clone(&state),
@@ -77,9 +94,13 @@ fn watchdog_requests_tauri_exit_then_starts_emergency_drain() {
     )
     .expect("watchdog");
 
-    wait_until(|| exits.load(Ordering::Acquire) == 1);
+    wait_until("sortie déclenchée une fois", || {
+        exits.load(Ordering::Acquire) == 1
+    });
     assert_eq!(state.phase(), ShutdownPhase::ReadyToExit);
-    wait_until(|| signaler.calls.load(Ordering::Acquire) > 0);
+    wait_until("processus d'urgence signalé", || {
+        signaler.calls.load(Ordering::Acquire) > 0
+    });
     watchdog.join_for_test();
 }
 
@@ -138,22 +159,8 @@ impl EmergencySignaler for BlockingSignaler {
 
 #[test]
 fn blocked_watchdog_cannot_delay_the_ultimate_exit() {
-    let origin = Instant::now();
-    let timeline = timeline(origin);
     let ultimate_calls = Arc::new(AtomicUsize::new(0));
     let raw_calls = Arc::clone(&ultimate_calls);
-    let mut ultimate = UltimateExit::initialize_for_test(
-        origin,
-        RawExitActions::testing(
-            move |_| {
-                raw_calls.fetch_add(1, Ordering::AcqRel);
-            },
-            |_| {},
-        ),
-    )
-    .expect("ultimate");
-    assert!(ultimate.arm(timeline.ultimate_deadline(), 1));
-
     let state = Arc::new(ShutdownState::new());
     assert_eq!(state.begin_closing(), super::state::BeginClosing::Started);
     let inventory = EmergencyInventory::new();
@@ -166,11 +173,32 @@ fn blocked_watchdog_cannot_delay_the_ultimate_exit() {
         wake: Condvar::new(),
     });
     let actions = WatchdogActions::testing(|_, _| {}, signaler.clone());
+
+    // La sortie ultime et le chien de garde partagent la même origine : c'est
+    // ce qui fait de l'échéance ultime un budget commun. Elle se prend donc
+    // ici, une fois tout le reste en place.
+    let origin = Instant::now();
+    let timeline = timeline(origin);
+    let mut ultimate = UltimateExit::initialize_for_test(
+        origin,
+        RawExitActions::testing(
+            move |_| {
+                raw_calls.fetch_add(1, Ordering::AcqRel);
+            },
+            |_| {},
+        ),
+    )
+    .expect("ultimate");
+    assert!(ultimate.arm(timeline.ultimate_deadline(), 1));
     let watchdog = WatchdogThread::spawn(timeline, state, inventory, ExitIntent::Exit, 0, actions)
         .expect("watchdog");
 
-    wait_until(|| signaler.entered.load(Ordering::Acquire));
-    wait_until(|| ultimate_calls.load(Ordering::Acquire) == 1);
+    wait_until("chien de garde entré dans le signaleur", || {
+        signaler.entered.load(Ordering::Acquire)
+    });
+    wait_until("sortie ultime déclenchée malgré le blocage", || {
+        ultimate_calls.load(Ordering::Acquire) == 1
+    });
     signaler.release();
     watchdog.join_for_test();
     ultimate.stop_for_test();

@@ -18,37 +18,52 @@ mod tests {
         system.process(Pid::from_u32(pid)).is_some()
     }
 
+    /// Ferme une session dans l'ordre que l'application produit : le lecteur,
+    /// puis la session.
+    ///
+    /// Le lecteur partage le descripteur maître avec la session. Tant qu'un
+    /// détenteur le garde ouvert sans le drainer, le noyau retient le shell
+    /// dans sa sortie, et la fermeture ne rend la main qu'en abandonnant au
+    /// bout de son délai — le test passe alors sans avoir exercé la fermeture.
+    /// L'application n'a pas ce cas : son fil beaver-pty-reader lit en continu
+    /// jusqu'à la fermeture du maître.
+    fn close_session(session: PtySession, reader: Box<dyn Read + Send>) {
+        drop(reader);
+        drop(session);
+    }
+
     #[test]
     fn test_pty_spawn() {
-        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn failed");
-        drop(session);
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn failed");
+        close_session(session, reader);
     }
 
     #[test]
     fn test_pty_spawn_with_cwd() {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().to_str().unwrap();
-        let (session, _reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
-        drop(session);
+        let (session, reader) = PtySession::spawn(Some(path), 80, 24).expect("spawn with cwd");
+        close_session(session, reader);
     }
 
     #[test]
     fn test_pty_write() {
-        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.write(b"echo hello\n").expect("write failed");
-        drop(session);
+        close_session(session, reader);
     }
 
     #[test]
     fn test_pty_resize() {
-        let (session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let (session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
         session.resize(40, 10).expect("resize failed");
-        drop(session);
+        close_session(session, reader);
     }
 
     #[test]
     fn test_pty_kill() {
-        let (mut session, _reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        let (mut session, reader) = PtySession::spawn(None, 80, 24).expect("spawn");
+        drop(reader);
         session.kill().expect("kill failed");
     }
 
@@ -79,14 +94,17 @@ mod tests {
             "expected marker in output, got: {}",
             output
         );
-        drop(session);
+        close_session(session, reader);
     }
 
     #[test]
     fn test_multiple_independent_sessions() {
-        let (_s1, _r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
-        let (_s2, _r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
-        let (_s3, _r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+        let (s1, r1) = PtySession::spawn(None, 80, 24).expect("spawn 1");
+        let (s2, r2) = PtySession::spawn(None, 80, 24).expect("spawn 2");
+        let (s3, r3) = PtySession::spawn(None, 80, 24).expect("spawn 3");
+        close_session(s1, r1);
+        close_session(s2, r2);
+        close_session(s3, r3);
     }
 
     #[tokio::test]
