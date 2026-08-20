@@ -22,10 +22,15 @@ fn timeline(origin: Instant) -> ShutdownTimeline {
     )
 }
 
-fn wait_until(condition: impl Fn() -> bool) {
+/// Attend `condition`, et nomme l'attente qui expire.
+///
+/// Les quatre appels de ce fichier échouaient sur le même message : un échec
+/// en intégration continue ne disait pas laquelle des attentes avait expiré, et
+/// la question ne se tranchait qu'en reproduisant.
+fn wait_until(awaited: &str, condition: impl Fn() -> bool) {
     let deadline = Instant::now() + Duration::from_secs(1);
     while !condition() {
-        assert!(Instant::now() < deadline, "condition deadline");
+        assert!(Instant::now() < deadline, "attente expirée : {awaited}");
         std::thread::yield_now();
     }
 }
@@ -77,9 +82,13 @@ fn watchdog_requests_tauri_exit_then_starts_emergency_drain() {
     )
     .expect("watchdog");
 
-    wait_until(|| exits.load(Ordering::Acquire) == 1);
+    wait_until("sortie déclenchée une fois", || {
+        exits.load(Ordering::Acquire) == 1
+    });
     assert_eq!(state.phase(), ShutdownPhase::ReadyToExit);
-    wait_until(|| signaler.calls.load(Ordering::Acquire) > 0);
+    wait_until("processus d'urgence signalé", || {
+        signaler.calls.load(Ordering::Acquire) > 0
+    });
     watchdog.join_for_test();
 }
 
@@ -169,8 +178,12 @@ fn blocked_watchdog_cannot_delay_the_ultimate_exit() {
     let watchdog = WatchdogThread::spawn(timeline, state, inventory, ExitIntent::Exit, 0, actions)
         .expect("watchdog");
 
-    wait_until(|| signaler.entered.load(Ordering::Acquire));
-    wait_until(|| ultimate_calls.load(Ordering::Acquire) == 1);
+    wait_until("chien de garde entré dans le signaleur", || {
+        signaler.entered.load(Ordering::Acquire)
+    });
+    wait_until("sortie ultime déclenchée malgré le blocage", || {
+        ultimate_calls.load(Ordering::Acquire) == 1
+    });
     signaler.release();
     watchdog.join_for_test();
     ultimate.stop_for_test();
