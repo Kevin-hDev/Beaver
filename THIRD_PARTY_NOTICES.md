@@ -54,7 +54,7 @@ of the surrounding icons. The path itself is unchanged.
 
 ### Hugeicons
 
-Three icons from [Hugeicons](https://github.com/hugeicons/hugeicons-react),
+Five icons from [Hugeicons](https://github.com/hugeicons/hugeicons-react),
 licensed under the MIT License:
 
 - `connect` — the Plugins tab of the Extensions page
@@ -62,6 +62,9 @@ licensed under the MIT License:
 - `file-edit` — the Modifications row of the conversation summary
   (`src/components/ui/session-summary-icons.tsx`)
 - `task-edit-01` — the Plans row of the same summary
+- `file-upload` — the Choose a file row of the Add an extension dialog
+  (`src/components/ui/extension-source-icons.tsx`)
+- `npm` — the Install from npm row of the same dialog
 
 Copyright (c) Hugeicons
 

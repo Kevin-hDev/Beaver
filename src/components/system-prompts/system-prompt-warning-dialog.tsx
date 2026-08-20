@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DialogPortal } from "@/components/ui/dialog-portal";
 import "./system-prompt-warning-dialog.css";
 
 export type SystemPromptWarningKind = "global" | "ollama";
@@ -49,47 +50,52 @@ export function SystemPromptWarningDialog({
     onContinue();
   };
 
+  /* Par le portail, comme sa voisine : cette fenêtre est rendue dans une carte
+     de réglages, dont le fond flouté fait d'elle le repère de tout ce qu'elle
+     contient — « posé sur la fenêtre » y devient « posé sur la carte ». */
   return (
-    <div className="spp-warning-overlay">
-      <section
-        className="spp-warning-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-      >
-        <div className="spp-warning-heading">
-          <span className="spp-warning-icon" aria-hidden="true">!</span>
-          <h3 id={titleId} className="spp-warning-title">
-            {t("settings.systemPrompt.warning.title")}
-          </h3>
-        </div>
-        <p id={descriptionId} className="spp-warning-description">
-          {t(`settings.systemPrompt.warning.${kind}.body`)}
-        </p>
-        <label className="spp-warning-remember">
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(event) => setRemember(event.target.checked)}
-          />
-          <span>{t("settings.systemPrompt.warning.remember")}</span>
-        </label>
-        <div className="spp-warning-actions">
-          <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel}>
-            {t("settings.systemPrompt.cancel")}
-          </button>
-          <button
-            ref={continueRef}
-            className="btn btn-sm btn-primary"
-            type="button"
-            onClick={handleContinue}
-          >
-            {t("settings.systemPrompt.warning.continue")}
-          </button>
-        </div>
-      </section>
-    </div>
+    <DialogPortal>
+      <div className="spp-warning-overlay">
+        <section
+          className="spp-warning-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={descriptionId}
+        >
+          <div className="spp-warning-heading">
+            <span className="spp-warning-icon" aria-hidden="true">!</span>
+            <h3 id={titleId} className="spp-warning-title">
+              {t("settings.systemPrompt.warning.title")}
+            </h3>
+          </div>
+          <p id={descriptionId} className="spp-warning-description">
+            {t(`settings.systemPrompt.warning.${kind}.body`)}
+          </p>
+          <label className="spp-warning-remember">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(event) => setRemember(event.target.checked)}
+            />
+            <span>{t("settings.systemPrompt.warning.remember")}</span>
+          </label>
+          <div className="spp-warning-actions">
+            <button className="btn btn-sm btn-secondary" type="button" onClick={onCancel}>
+              {t("settings.systemPrompt.cancel")}
+            </button>
+            <button
+              ref={continueRef}
+              className="btn btn-sm btn-primary"
+              type="button"
+              onClick={handleContinue}
+            >
+              {t("settings.systemPrompt.warning.continue")}
+            </button>
+          </div>
+        </section>
+      </div>
+    </DialogPortal>
   );
 }
 

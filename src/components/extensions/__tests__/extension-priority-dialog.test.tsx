@@ -30,6 +30,28 @@ function plugin(id: string, enabled = true): ExtensionRecord {
 }
 
 describe("ExtensionPriorityDialog", () => {
+
+  /* Le vrai contrat de cette fenêtre : sortir du panneau qui la déclenche. Elle
+     est ouverte depuis une carte de réglages, dont le fond flouté fait d'elle
+     le repère de ses descendants — rendue sur place, « couvre la fenêtre »
+     devenait « couvre la carte » et le contenu s'affichait tronqué. Aucun test
+     d'existence ne l'attrape : les éléments étaient tous là, et invisibles. */
+  it("se pose hors du panneau qui l'ouvre", () => {
+    const { container } = render(
+      <ExtensionPriorityDialog
+        records={[plugin("a")]}
+        selectedIds={[]}
+        busy={false}
+        onCancel={() => {}}
+        onSave={async () => {}}
+      />,
+    );
+
+    expect(container.querySelector(".wk-dialog-overlay")).toBeNull();
+    const overlay = document.body.querySelector(".wk-dialog-overlay");
+    expect(overlay).not.toBeNull();
+    expect(overlay?.parentElement).toBe(document.body);
+  });
   it("exclut les plugins désactivés et enregistre la sélection", () => {
     const onSave = vi.fn(() => Promise.resolve());
     render(

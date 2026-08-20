@@ -2,12 +2,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
-  DownloadSimple,
-  FileText,
-  FolderOpen,
-  GitBranch,
-  ShieldWarning,
-} from "@/components/ui/icons";
+  FileUploadIcon,
+  NpmIcon,
+} from "@/components/ui/extension-source-icons";
+import { FolderStateIcon } from "@/components/ui/folder-state-icon";
+import { GitBranch, ShieldWarning } from "@/components/ui/icons";
 import type { ExtensionInstallSource } from "@/lib/extension-install";
 import { cn } from "@/lib/utils";
 import { ExtensionSourceForm } from "./extension-source-form";
@@ -112,14 +111,14 @@ export function ExtensionAddDialog({ onAdd, onInstall, onClose }: ExtensionAddDi
         )}
         <div className="exta-options">
           <button type="button" className="exta-option" disabled={busy} onClick={() => void choose(false)}>
-            <FileText size="var(--icon-lg)" />
+            <FileUploadIcon size="var(--icon-lg)" />
             <span>
               <strong>{t("extensions.add.file")}</strong>
               <small>{t("extensions.add.fileDescription")}</small>
             </span>
           </button>
           <button type="button" className="exta-option" disabled={busy} onClick={() => void choose(true)}>
-            <FolderOpen size="var(--icon-lg)" />
+            <FolderStateIcon open size="var(--icon-lg)" />
             <span>
               <strong>{t("extensions.add.folder")}</strong>
               <small>{t("extensions.add.folderDescription")}</small>
@@ -145,7 +144,7 @@ export function ExtensionAddDialog({ onAdd, onInstall, onClose }: ExtensionAddDi
             aria-pressed={source === "npm"}
             onClick={() => selectSource("npm")}
           >
-            <DownloadSimple size="var(--icon-lg)" />
+            <NpmIcon size="var(--icon-lg)" />
             <span>
               <strong>{t("extensions.add.npm")}</strong>
               <small>{t("extensions.add.npmDescription")}</small>
