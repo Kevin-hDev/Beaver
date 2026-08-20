@@ -51,19 +51,31 @@
   max-width: 65%;
 }
 
+/* Mêmes couleurs et même arrondi que les cartes d'application de la page
+   Migration (.aim-source-card) : les deux pages sont deux étapes du même
+   parcours d'accueil, et rien ne justifiait qu'une carte y soit plus sombre et
+   plus anguleuse que sa voisine. Reprend terme pour terme le fond, le trait,
+   l'encre et le rayon de l'autre page. */
 .ob-provider-card {
   border: 1px solid var(--edge);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink-muted);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--ink);
   cursor: pointer;
   transition: background var(--ease-smooth), border-color var(--ease-smooth), color var(--ease-smooth);
 }
 
+/* La carte est un bouton : elle répond au survol, comme celles de Migration. */
+.ob-provider-card:hover {
+  background: var(--surface-hover);
+}
+
+/* La carte choisie garde sa couleur propre : c'est elle qui commande le
+   formulaire de clé affiché en dessous, et rien d'autre sur cette page ne dit
+   laquelle est sélectionnée. */
 .ob-provider-card.is-active {
   border-color: var(--pulse);
   background: var(--pulse-muted);
-  color: var(--ink);
 }
 
 /* auto-fit: the column count drops from 5 to 4, 3 then 2 as the window narrows,
@@ -91,9 +103,11 @@
   text-align: center;
 }
 
-.ob-provider-card.is-configured {
-  border-color: var(--toast-ok-text);
-}
+/* Un provider déjà connecté garde le trait neutre de ses voisins : c'est la
+   mention « Connecté », en vert et précédée de sa coche, qui le dit — le même
+   partage qu'à la page Migration, où « Détecté » est écrit en vert sans que la
+   carte change de bordure. Un trait vert en plus disait la même chose une
+   deuxième fois, et par la seule couleur. */
 
 .ob-provider-name {
   color: var(--ink);
