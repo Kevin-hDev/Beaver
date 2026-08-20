@@ -1,0 +1,31 @@
+Task 1 — controlled CPython authority for SearXNG
+
+Why:
+- releases and local preparation previously accepted loosely matched Python runtimes;
+- the runtime/build ABI must share one controlled CPython minor;
+- Node.js and CPython remain external host prerequisites.
+
+Implementation:
+- scripts/build/searxng-python-version.txt is the single operational build-version authority (3.14, LF enforced);
+- exact CPython probe and bounded/symlink-safe authority reader;
+- setup-python pinned by commit SHA in the matrix build job, after checkout and before Tauri;
+- official macOS/Linux/Windows prerequisite commands;
+- Linux installation is fail-closed around existing executables and explicitly pins UV_INSTALL_DIR and UV_PYTHON_BIN_DIR.
+
+Review history:
+- initial review found CRLF, invalid macOS package URL, PATH ordering, workflow-order and symlink-test gaps;
+- re-review found Linux non-login shell visibility;
+- final review found destructive ln -sfn and XDG directory divergence;
+- all findings were corrected and mutation-tested;
+- closure review: SPEC PASS / QUALITY PASS, 0 Critical, 0 Important, 0 Minor.
+
+Evidence:
+- task tests 24/24;
+- release workflow contracts 37/37;
+- npm run lint and npx tsc --noEmit green;
+- mutations red for missing eol=lf, setup before checkout, removed symlink guard, Darwin divergence, destructive/foreign Linux destinations, and XDG bin divergence;
+- Node artifact URLs returned HTTP 200 on 2026-08-20.
+
+Limits:
+- native clean Linux/Windows installations were not executed in this task;
+- Python remains external and is not bundled.
