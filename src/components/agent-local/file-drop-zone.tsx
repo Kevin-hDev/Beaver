@@ -3,13 +3,14 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 
 interface FileDropZoneProps {
+  enabled: boolean;
   dragging: boolean;
   onDragChange: (dragging: boolean) => void;
   onDropPaths: (paths: string[]) => void;
   children: ReactNode;
 }
 
-export function FileDropZone({ dragging, onDragChange, onDropPaths, children }: FileDropZoneProps) {
+export function FileDropZone({ enabled, dragging, onDragChange, onDropPaths, children }: FileDropZoneProps) {
   const dragRef = useRef(onDragChange);
   const dropRef = useRef(onDropPaths);
   // eslint-disable-next-line react-hooks/refs -- callback capture pattern for stable event handler
@@ -18,6 +19,7 @@ export function FileDropZone({ dragging, onDragChange, onDropPaths, children }: 
   dropRef.current = onDropPaths;
 
   useEffect(() => {
+    if (!enabled) return;
     let unlisten: ReturnType<ReturnType<typeof getCurrentWebview>["onDragDropEvent"]>;
     try {
       unlisten = getCurrentWebview().onDragDropEvent((event) => {
@@ -37,7 +39,7 @@ export function FileDropZone({ dragging, onDragChange, onDropPaths, children }: 
     }
 
     return () => { cleanupTauriListener(unlisten); };
-  }, []);
+  }, [enabled]);
 
   return (
     <div style={{ position: "relative", height: "100%", overflow: "hidden", borderRadius: "inherit" }}>

@@ -113,7 +113,7 @@ export function ChatView({
      elle se montre dès son premier rendu. Attendre la fin de la lecture du
      disque laissait l'écran vide entre le champ qui part et celui qui arrive,
      et cette substitution se voyait. */
-  const [handingOver] = useState(hasComposerPosition);
+  const [handingOver] = useState(!isSubagent && hasComposerPosition);
   const visible = handingOver || !chat.sessionLoading;
   /* Le champ ne descend qu'une fois la conversation peinte : lancé pendant
      qu'elle est encore transparente, le glissement se jouerait à l'abri des
@@ -121,7 +121,12 @@ export function ChatView({
   const inputColumnRef = useRef<HTMLDivElement>(null);
   useComposerHandoff(inputColumnRef, visible);
   return (
-    <FileDropZone dragging={fileDrop.dragging} onDragChange={fileDrop.setDragging} onDropPaths={(paths) => void fileDrop.addByPaths(paths)}>
+    <FileDropZone
+      enabled={!isSubagent}
+      dragging={!isSubagent && fileDrop.dragging}
+      onDragChange={fileDrop.setDragging}
+      onDropPaths={(paths) => void fileDrop.addByPaths(paths)}
+    >
       <div className="chat-zone" style={{ opacity: visible ? 1 : 0 }}>
         <div className="chat-messages" ref={containerRef}>
           <ChatMessagePanel
@@ -133,9 +138,17 @@ export function ChatView({
             requestClone={clone.requestClone}
             onFilePreviewPath={onFilePreviewPath}
             onOpenSubagent={onOpenSubagent}
+            readOnly={isSubagent}
           />
         </div>
-        <div className="chat-input-area">
+        {isSubagent && runtime.showError && chat.error && (
+          <ErrorBubble
+            message={chat.error}
+            isConnection={chat.isConnectionError}
+            diagnosticSummary={chat.diagnosticSummary}
+          />
+        )}
+        {!isSubagent && <div className="chat-input-area">
           <div className="chat-input-column" ref={inputColumnRef}>
             <TodoProgressPanel sessionId={isSubagent ? undefined : sessionId} />
             {subagents.active.length > 0 && (
@@ -191,11 +204,12 @@ export function ChatView({
               cloneGitBranch={cloneGitBranch}
             />
           </div>
-        </div>
-        <ChatTerminalDock terminalState={terminalState} />
+        </div>}
+        {!isSubagent && <ChatTerminalDock terminalState={terminalState} />}
       </div>
       <ChatOverlays
         preview={preview} currentModel={model} pendingSwitch={pendingSwitch}
+        readOnly={isSubagent}
         pendingWorktreeSwitch={worktreeSwitch.pending}
         pendingClone={clone.pendingClone}
         cloneBusy={clone.cloneBusy}

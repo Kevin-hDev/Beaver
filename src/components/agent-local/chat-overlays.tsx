@@ -9,6 +9,7 @@ import type { WorktreeSwitchTarget } from "@/hooks/use-worktree-session-switch";
 
 interface ChatOverlaysProps {
   preview: DroppedFile | null;
+  readOnly: boolean;
   currentModel: string;
   pendingSwitch: { model: string; provider: string } | null;
   pendingWorktreeSwitch: WorktreeSwitchTarget | null;
@@ -27,6 +28,7 @@ interface ChatOverlaysProps {
 
 export function ChatOverlays({
   preview,
+  readOnly,
   currentModel,
   pendingSwitch,
   pendingWorktreeSwitch,
@@ -54,7 +56,7 @@ export function ChatOverlays({
           onClose={onClosePreview}
         />
       )}
-      {pendingSwitch && (
+      {!readOnly && pendingSwitch && (
         <SwitchModelDialog
           fromModel={currentModel}
           toModel={pendingSwitch.model}
@@ -63,7 +65,7 @@ export function ChatOverlays({
           onCancel={onCancelSwitch}
         />
       )}
-      {pendingWorktreeSwitch && (
+      {!readOnly && pendingWorktreeSwitch && (
         <WorktreeSwitchDialog
           branch={pendingWorktreeSwitch.branch}
           path={pendingWorktreeSwitch.path}
@@ -71,7 +73,7 @@ export function ChatOverlays({
           onNewSession={onNewWorktreeSession}
         />
       )}
-      {pendingClone && (
+      {!readOnly && pendingClone && (
         <CloneSessionDialog
           canSummarize={pendingClone.canSummarize}
           busy={cloneBusy}

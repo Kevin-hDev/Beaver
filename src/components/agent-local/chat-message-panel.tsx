@@ -13,6 +13,7 @@ interface ChatMessagePanelProps {
   requestClone: (messageId: string) => void;
   onFilePreviewPath?: (target: string | FileOperation) => void;
   onOpenSubagent?: (sessionId: string) => void;
+  readOnly: boolean;
 }
 
 export function ChatMessagePanel({
@@ -24,6 +25,7 @@ export function ChatMessagePanel({
   requestClone,
   onFilePreviewPath,
   onOpenSubagent,
+  readOnly,
 }: ChatMessagePanelProps) {
   return (
     <MessageList
@@ -44,9 +46,9 @@ export function ChatMessagePanel({
       liveTokenCount={chat.liveTokenCount}
       streamRunId={chat.streamRunId}
       planPreview={chat.planPreview}
-      onReload={runtime.handleReload}
-      onEdit={runtime.handleEdit}
-      onCloneMessage={cloneEnabled ? requestClone : undefined}
+      onReload={readOnly ? undefined : runtime.handleReload}
+      onEdit={readOnly ? undefined : runtime.handleEdit}
+      onCloneMessage={readOnly || !cloneEnabled ? undefined : requestClone}
       onFileClick={runtime.handleFileClick}
       onFilePreview={onFilePreviewPath}
       projectPath={projectPath}

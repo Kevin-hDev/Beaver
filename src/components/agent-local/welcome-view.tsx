@@ -86,6 +86,7 @@ export function WelcomeView({
 
   return (
     <FileDropZone
+      enabled
       dragging={fileDrop.dragging}
       onDragChange={fileDrop.setDragging}
       onDropPaths={(paths) => void fileDrop.addByPaths(paths)}
