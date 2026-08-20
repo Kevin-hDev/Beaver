@@ -19,7 +19,10 @@ fn attempt(
     let canonical_root = std::fs::canonicalize(root).expect("canonical root");
     let paths = ollama_paths(&canonical_root);
     std::fs::create_dir_all(paths.active.join("bin")).expect("active");
-    std::fs::copy("/usr/bin/yes", paths.active.join("bin").join("ollama")).expect("binary");
+    crate::services::test_runtime::install_system_binary(
+        "/usr/bin/yes",
+        &paths.active.join("bin").join("ollama"),
+    );
     let models = tempfile::tempdir().expect("models");
     let canonical_models = std::fs::canonicalize(models.path()).expect("canonical models");
     let resolver = super::path_identity_resolver::NativePathIdentityResolver;
@@ -219,7 +222,7 @@ fn replacement_after_profile_resolution_is_rejected_before_fork() {
     let executable = profile.executable().path().to_path_buf();
     let backup = executable.with_extension("original");
     std::fs::rename(&executable, &backup).expect("move stable executable");
-    std::fs::copy("/usr/bin/false", &executable).expect("replacement");
+    crate::services::test_runtime::install_system_binary("/usr/bin/false", &executable);
     let endpoint = OllamaEndpoint::loopback(NonZeroU16::new(11_437).expect("port"));
     let spawn_attempt = OllamaSpawnAttempt::new(&profile, endpoint);
     let launcher = DefaultOllamaProcessLauncher::new(BundleFingerprint {
