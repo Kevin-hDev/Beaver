@@ -7,6 +7,13 @@ pub(super) struct ApiCapabilities {
     pub vision: bool,
 }
 
+fn model_capability_provider_id(connection_id: &str) -> &str {
+    match connection_id {
+        "codex-oauth" => "openai",
+        other => crate::services::llm::route::canonical_provider_id(other),
+    }
+}
+
 pub(super) async fn resolve(
     params: &StreamTaskParams,
     canonical_provider: &str,
@@ -61,13 +68,5 @@ fn capability(is_local: bool, registered: bool, runtime: bool, fallback: bool) -
 }
 
 #[cfg(test)]
-mod tests {
-    use super::capability;
-
-    #[test]
-    fn local_false_is_authoritative() {
-        assert!(!capability(true, false, true, true));
-        assert!(capability(true, true, false, false));
-        assert!(capability(false, false, true, false));
-    }
-}
+#[path = "api_capabilities_tests.rs"]
+mod tests;
