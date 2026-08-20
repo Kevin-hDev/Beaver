@@ -1,0 +1,13 @@
+Review range: 2ff2bdc6..a4e9aa47
+
+Bloquant corrigé: WebdriverIO exécute désormais childSessionReadOnlySpec avant journeySpec. Les parcours CEF/WebView peuvent ensuite fermer la session et l'application sans priver le contrôle enfant de son WebDriver. L'ancien nom du sélecteur a été remplacé par journeySpec car le parcours par défaut est onboarding.spec.ts.
+
+TDD: le contrat E2E a d'abord été inversé et observé rouge sur l'ancien ordre, puis la configuration minimale a été modifiée et le test est passé. Une mutation showScrollButton toujours vraie a fait rougir ChatView lorsque isAtBottom=true, puis a été restaurée.
+
+Exécutions réelles sur le diff final: npm run test:e2e = child-session-read-only puis onboarding, 2/2 en 430 ms; E2E_REQUIRE_CEF_SMOKE=1 npm run test:e2e = child-session-read-only puis parcours CEF natif et fermeture coordonnée complète, 2/2 en 10,9 s. Le parcours CEF a atteint webdriver_release, owned_process_exit et native_webview_exit.
+
+Mineurs traités: Cargo.toml explique désormais pourquoi la version Tauri de dev-dependency doit rester alignée; ChatReadOnlyFooter garde son conteneur monté pour réserver une hauteur stable lorsque le bouton absolu apparaît; un test réel vérifie l'identité du conteneur, et ChatView vérifie l'absence du bouton lorsque la transcription est déjà en bas.
+
+Validation: npm test = Vitest 460 fichiers/2429 tests, build scripts 51, CI 10, CEF 45 + 1 skip Windows attendu, E2E runner 70, extension host 53; cargo test = 3693 passed, 0 failed, 3 ignored, plus prelogger_diagnostics 1/1; npx tsc --noEmit, npm run lint, cargo fmt --check et cargo clippy --all-targets --features e2e -- -D warnings verts; graphify update . vert.
+
+Non modifié: l'extraction supplémentaire de ChatInputColumn reste un refactor optionnel sans défaut fonctionnel; chat-view.tsx reste sous la limite obligatoire à 229 lignes.
