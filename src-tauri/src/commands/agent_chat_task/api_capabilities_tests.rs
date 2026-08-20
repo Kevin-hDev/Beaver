@@ -10,7 +10,7 @@ fn local_false_is_authoritative() {
 }
 
 #[tokio::test]
-async fn codex_without_hints_keeps_tools_for_every_native_model_family() {
+async fn codex_without_hints_keeps_tools_for_sampled_model_ids() {
     assert_eq!(route::canonical_provider_id("codex-oauth"), "codex-oauth");
     for model in ["gpt-5.6-luna", "gpt-5.3-codex-spark"] {
         assert!(
@@ -39,11 +39,4 @@ fn capability_mapping_does_not_change_codex_reasoning_modes() {
 
     assert!(modes.contains(&"ultra"));
     assert_eq!(route::canonical_provider_id("codex-oauth"), "codex-oauth");
-}
-
-#[test]
-fn existing_oauth_aliases_keep_their_capability_catalogs() {
-    assert_eq!(route::canonical_provider_id("xai-oauth"), "xai");
-    assert_eq!(route::canonical_provider_id("moonshot-oauth"), "moonshot");
-    assert_eq!(route::canonical_provider_id("mistral"), "mistral");
 }

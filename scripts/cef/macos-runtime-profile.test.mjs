@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, realpath, rm, utimes, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, symlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -147,6 +147,55 @@ test(
           "9.8.8",
         );
       }
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "macOS Dev rebuilds a runtime with a symlinked bundle version marker",
+  { skip: process.platform !== "darwin" },
+  async () => {
+    const directory = await realpath(await mkdtemp(join(tmpdir(), "beaver-cef-version-link-")));
+    try {
+      const { cargoLog, environment, tauriDirectory } = await createFixture(directory);
+      runScript(tauriDirectory, "scripts/prepare-cef.sh", environment);
+      const runtime = join(tauriDirectory, "target", "cef-runtime", "macos");
+      const external = join(tauriDirectory, "external-version");
+      await writeFile(external, "9.8.7\n", "utf8");
+      await rm(join(runtime, ".bundle-version"));
+      await symlink(external, join(runtime, ".bundle-version"));
+
+      runScript(tauriDirectory, "scripts/ensure-cef-dev-runtime.sh", environment);
+
+      assert.equal(await cargoInvocationCount(cargoLog), 2);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "macOS Dev rebuilds a runtime with an oversized bundle version marker",
+  { skip: process.platform !== "darwin" },
+  async () => {
+    const directory = await realpath(await mkdtemp(join(tmpdir(), "beaver-cef-version-size-")));
+    try {
+      const { cargoLog, environment, tauriDirectory } = await createFixture(directory);
+      runScript(tauriDirectory, "scripts/prepare-cef.sh", environment);
+      const marker = join(
+        tauriDirectory,
+        "target",
+        "cef-runtime",
+        "macos",
+        ".bundle-version",
+      );
+      await writeFile(marker, `9.8.7\n${"x".repeat(64)}\n`, "utf8");
+
+      runScript(tauriDirectory, "scripts/ensure-cef-dev-runtime.sh", environment);
+
+      assert.equal(await cargoInvocationCount(cargoLog), 2);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

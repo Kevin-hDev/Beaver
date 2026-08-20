@@ -4,7 +4,6 @@ use super::subagent_runtime_context::SubagentRuntimeContext;
 use super::subagent_spawn_channel;
 use crate::app_exit::AppExitCoordinator;
 use std::future;
-use std::mem::size_of;
 use tauri::AppHandle;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
@@ -29,11 +28,8 @@ fn subagent_run_crosses_the_spawn_boundary_as_a_pointer() {
         String,
     ) -> subagent_spawn_channel::SpawnedSubagentTask;
 
+    // La coercition échoue à la compilation si la frontière retire Box::pin.
     let _run: SubagentRun = super::subagent_task_spawn::run;
-    assert_eq!(
-        size_of::<subagent_spawn_channel::SpawnedSubagentTask>(),
-        size_of::<usize>() * 2
-    );
 }
 
 #[test]

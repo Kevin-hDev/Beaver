@@ -36,14 +36,19 @@ apply_cef_bundle_version() {
 
 cef_bundle_version_matches() {
   local marker="$1"
+  local marker_size
   local recorded
   if [[ -z "$marker" || ${#marker} -gt 4096 \
     || "$marker" == -* || "$marker" == *$'\n'* \
     || "$marker" == *$'\r'* || "$marker" == *$'\t'* \
-    || ! -f "$marker" ]]; then
+    || -L "$marker" || ! -f "$marker" ]]; then
     return 1
   fi
-  if ! load_cef_bundle_version || ! IFS= read -r recorded < "$marker"; then
+  marker_size="$(wc -c < "$marker")" || return 1
+  if (( marker_size < 2 || marker_size > 40 )); then
+    return 1
+  fi
+  if ! load_cef_bundle_version || ! recorded="$(< "$marker")"; then
     return 1
   fi
   [[ "$recorded" == "$CEF_BUNDLE_VERSION" ]]

@@ -50,6 +50,18 @@ test("rejects prerelease and malformed versions", () => {
   }
 });
 
+test("rejects aligned versions with leading zeros", () => {
+  assert.throws(
+    () =>
+      assertAppVersionContract({
+        packageJson: valid.packageJson.replace("1.2.3", "01.2.3"),
+        cargoToml: valid.cargoToml.replace("1.2.3", "01.2.3"),
+        tauriConfig: valid.tauriConfig.replace("1.2.3", "01.2.3"),
+      }),
+    /Application version contract failed/u,
+  );
+});
+
 test("bounds parsed manifests and keeps the public error generic", () => {
   assert.throws(
     () => assertAppVersionContract({ ...valid, cargoToml: "x".repeat(2_097_153) }),

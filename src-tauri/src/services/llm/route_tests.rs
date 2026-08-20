@@ -25,6 +25,13 @@ fn api_and_oauth_routes_stay_separate() {
 }
 
 #[test]
+fn oauth_aliases_resolve_to_their_canonical_provider() {
+    assert_eq!(canonical_provider_id("xai-oauth"), "xai");
+    assert_eq!(canonical_provider_id("moonshot-oauth"), "moonshot");
+    assert_eq!(canonical_provider_id("mistral"), "mistral");
+}
+
+#[test]
 fn oauth_routes_are_interactive_only() {
     assert!(is_interactive_only("xai-oauth"));
     assert!(is_interactive_only("moonshot-oauth"));

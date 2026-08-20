@@ -22,7 +22,7 @@ pub(super) async fn resolve(
     let is_local = local.is_some();
 
     ApiCapabilities {
-        tools: tools_capability(provider, hints.supports_tools, {
+        tools: tools_capability(provider, model, hints.supports_tools, {
             capability(
                 is_local,
                 registered.as_ref().is_some_and(|caps| caps.supports_tools),
@@ -55,8 +55,14 @@ pub(super) async fn resolve(
     }
 }
 
-fn tools_capability(provider: &str, hint: Option<bool>, detected: bool) -> bool {
-    hint.unwrap_or(provider == crate::services::codex_client::PROVIDER_ID || detected)
+fn tools_capability(provider: &str, model: &str, hint: Option<bool>, detected: bool) -> bool {
+    hint.unwrap_or_else(|| {
+        if provider == crate::services::codex_client::PROVIDER_ID {
+            crate::services::codex_client::supports_tools(model)
+        } else {
+            detected
+        }
+    })
 }
 
 fn capability(is_local: bool, registered: bool, runtime: bool, fallback: bool) -> bool {

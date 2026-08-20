@@ -1,6 +1,6 @@
 const ERROR_MESSAGE = "Application version contract failed";
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
-const STABLE_VERSION = /^[0-9]+\.[0-9]+\.[0-9]+$/u;
+const STABLE_VERSION = /^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*)){2}$/u;
 
 function fail() {
   throw new Error(ERROR_MESSAGE);

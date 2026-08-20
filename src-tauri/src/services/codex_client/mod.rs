@@ -19,3 +19,7 @@ mod websocket_connect;
 mod websocket_url;
 
 pub const PROVIDER_ID: &str = "codex-oauth";
+
+pub fn supports_tools(model_id: &str) -> bool {
+    crate::services::llm::runtime_models::valid_model_id(model_id)
+}

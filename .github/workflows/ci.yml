@@ -359,6 +359,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Release version contract
+        run: npm run test:release-workflow
+
       - name: Coverage report (non-blocking)
         run: npm run test:coverage
         continue-on-error: true

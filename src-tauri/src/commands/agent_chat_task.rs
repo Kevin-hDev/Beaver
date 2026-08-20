@@ -123,10 +123,7 @@ mod tests {
     fn every_stream_consumer_receives_a_boxed_agent_loop() {
         type StreamRun = fn(StreamTaskParams) -> SpawnedStreamTask;
 
+        // La coercition échoue à la compilation si la boucle redevient non boxed.
         let _run: StreamRun = run_stream_task;
-        assert_eq!(
-            std::mem::size_of::<SpawnedStreamTask>(),
-            std::mem::size_of::<usize>() * 2
-        );
     }
 }

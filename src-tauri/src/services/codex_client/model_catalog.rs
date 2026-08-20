@@ -152,6 +152,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
         wire.slug.clone()
     };
     let supports_vision = wire.input_modalities.0.iter().any(|mode| mode == "image");
+    let supports_tools = super::supports_tools(&wire.slug);
     Some(CatalogModel {
         visible: wire.visibility.as_deref().unwrap_or("list") == "list",
         info: ModelInfo {
@@ -160,7 +161,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             owned_by: Some("openai".to_string()),
             context_length: Some(context_length),
             max_output_tokens: None,
-            supports_tools: true,
+            supports_tools,
             supports_vision,
             supports_thinking: !modes.is_empty(),
             reasoning_modes: modes,
