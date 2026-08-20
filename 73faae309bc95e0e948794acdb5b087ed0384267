@@ -1,0 +1,1 @@
+Decision: resolve selects the capability catalog identity itself so no caller can accidentally pass the transport identity; canonical_provider remains used elsewhere for transport, policies, and reasoning.
