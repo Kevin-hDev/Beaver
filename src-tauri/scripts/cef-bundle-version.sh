@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash
+
+# Bibliothèque sourcée par les scripts CEF macOS ; ne pas l'exécuter directement.
 
 # tauri.conf.json reste l'unique autorité : les manifests CEF sont des gabarits.
 load_cef_bundle_version() {
@@ -29,4 +32,19 @@ apply_cef_bundle_version() {
     -string "$CEF_BUNDLE_VERSION" "$manifest" >/dev/null \
     && /usr/bin/plutil -replace CFBundleVersion \
       -string "$CEF_BUNDLE_VERSION" "$manifest" >/dev/null
+}
+
+cef_bundle_version_matches() {
+  local marker="$1"
+  local recorded
+  if [[ -z "$marker" || ${#marker} -gt 4096 \
+    || "$marker" == -* || "$marker" == *$'\n'* \
+    || "$marker" == *$'\r'* || "$marker" == *$'\t'* \
+    || ! -f "$marker" ]]; then
+    return 1
+  fi
+  if ! load_cef_bundle_version || ! IFS= read -r recorded < "$marker"; then
+    return 1
+  fi
+  [[ "$recorded" == "$CEF_BUNDLE_VERSION" ]]
 }

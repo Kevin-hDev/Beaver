@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash
+
+# Bibliothèque sourcée par les scripts CEF macOS ; ne pas l'exécuter directement.
 
 resolve_cef_runtime_profile() {
   case "${CLGO_CEF_CARGO_FEATURES:-}" in

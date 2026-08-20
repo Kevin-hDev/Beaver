@@ -112,7 +112,7 @@ test(
 );
 
 test(
-  "macOS Dev refreshes cached helpers after a version change",
+  "macOS Dev refreshes cached helpers after a version change with preserved timestamps",
   { skip: process.platform !== "darwin" },
   async () => {
     const directory = await realpath(
@@ -124,8 +124,8 @@ test(
 
       const config = join(tauriDirectory, "tauri.conf.json");
       await writeFile(config, `${JSON.stringify({ version: "9.8.8" })}\n`, "utf8");
-      const future = new Date(Date.now() + 5_000);
-      await utimes(config, future, future);
+      const preserved = new Date(1_700_000_000_000);
+      await utimes(config, preserved, preserved);
       runScript(
         tauriDirectory,
         "scripts/run-cef-dev-app.sh",

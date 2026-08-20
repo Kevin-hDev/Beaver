@@ -112,7 +112,7 @@ for helper in "${HELPERS[@]}"; do
   app="$STAGE/helpers/$helper.app"
   destination="$STAGE/helpers/$helper.app/Contents/MacOS/$helper"
   if ! apply_cef_bundle_version "$app/Contents/Info.plist"; then
-    echo "CEF bundle metadata validation failed" >&2
+    echo "CEF helper bundle stamping failed" >&2
     exit 1
   fi
   mkdir -p "$(dirname "$destination")"
@@ -124,4 +124,5 @@ for helper in "${HELPERS[@]}"; do
 done
 
 printf '%s\n' "$CEF_RUNTIME_PROFILE" > "$STAGE/.profile"
+printf '%s\n' "$CEF_BUNDLE_VERSION" > "$STAGE/.bundle-version"
 touch "$STAGE/.prepared"

@@ -9,6 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "$ROOT"
 
 source scripts/cef-runtime-profile.sh
+source scripts/cef-bundle-version.sh
 if ! resolve_cef_runtime_profile; then
   echo "CEF development runtime validation failed" >&2
   exit 1
@@ -18,6 +19,7 @@ HELPER_BINARY="$TARGET_RELEASE_DIR/cl-go-dash-helper"
 STAGE="$CEF_RUNTIME_STAGE"
 STAMP="$STAGE/.prepared"
 PROFILE_MARKER="$STAGE/.profile"
+BUNDLE_VERSION_MARKER="$STAGE/.bundle-version"
 CEF_FRAMEWORK_BINARY=".cef-verified/current/Release/Chromium Embedded Framework.framework/Chromium Embedded Framework"
 CEF_LICENSE=".cef-verified/current/LICENSE.txt"
 HELPERS=(
@@ -47,6 +49,9 @@ if [[ ! -x "$HELPER_BINARY" \
   CACHE_VALID=false
 fi
 if [[ "$CACHE_VALID" == true ]] && ! cef_runtime_profile_matches "$PROFILE_MARKER"; then
+  CACHE_VALID=false
+fi
+if [[ "$CACHE_VALID" == true ]] && ! cef_bundle_version_matches "$BUNDLE_VERSION_MARKER"; then
   CACHE_VALID=false
 fi
 

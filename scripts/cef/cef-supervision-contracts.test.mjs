@@ -18,6 +18,7 @@ backend-windows-native:
   run: cargo clippy --all-targets -- -D warnings
   run: cargo test --lib --features windows-tests services::browser::cef_supervision::windows_tracker_tests
 backend-macos-native:
+  run: npm run test:cef
   run: cargo clippy --all-targets -- -D warnings
   run: cargo test --lib services::browser::cef_supervision::macos::liveness_policy_tests
   run: cargo test --lib services::browser::cef_supervision::macos::process_state_tests
@@ -50,6 +51,15 @@ test("missing native tests and sandbox bypasses fail the contract", () => {
 
   assert.ok(errors.includes("macOS supervision tests are missing"));
   assert.ok(errors.includes("CEF sandbox bypass is forbidden"));
+});
+
+test("missing macOS CEF script tests fails the contract", () => {
+  const errors = validateCefSupervisionContracts({
+    ...valid,
+    workflow: valid.workflow.replace("  run: npm run test:cef\n", ""),
+  });
+
+  assert.ok(errors.includes("macOS CEF script tests are missing"));
 });
 
 for (const [filter, message] of [
