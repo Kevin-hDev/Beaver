@@ -30,6 +30,7 @@ pub async fn chat_stream(
     plan_mode: Option<bool>,
     streams: tauri::State<'_, ActiveStreams>,
 ) -> Result<u64, String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
     let permission_mode = Some(
         crate::services::agent_local::session_permission_state::prepare_send(
             &session_id,

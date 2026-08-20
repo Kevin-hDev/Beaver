@@ -28,6 +28,7 @@ pub async fn get_agent_session(id: String) -> Result<AgentSession, String> {
 
 #[tauri::command]
 pub async fn save_agent_session(mut session: AgentSession) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&session.id).await?;
     let current = session_store::get(&session.id).await?;
     session.working_dir = current.working_dir;
     session.working_dir_managed = current.working_dir_managed;
@@ -49,6 +50,7 @@ pub async fn set_session_permission_mode(
     mode: String,
 ) -> Result<crate::services::agent_local::session_permission_state::SessionPermissionState, String>
 {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     let mode =
         crate::services::agent_local::session_permission_state::PermissionMode::parse(&mode)?;
     crate::services::agent_local::session_permission_state::set_mode(&id, mode).await
@@ -79,6 +81,7 @@ pub async fn add_messages_to_session(
     context_tokens: Option<u32>,
     context_limit: Option<u32>,
 ) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     session_store::add_messages_with_context(&id, messages, tokens, context_tokens, context_limit)
         .await
 }
@@ -134,6 +137,7 @@ pub async fn update_session_model(
     reasoning_mode: Option<String>,
     supports_thinking: Option<bool>,
 ) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     session_store::update_model(&id, &model, &provider, reasoning_mode, supports_thinking).await
 }
 
@@ -143,11 +147,13 @@ pub async fn update_session_reasoning(
     reasoning_mode: Option<String>,
     supports_thinking: Option<bool>,
 ) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     session_store::update_reasoning(&id, reasoning_mode, supports_thinking).await
 }
 
 #[tauri::command]
 pub async fn set_session_plan_mode(id: String, enabled: bool) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
     crate::services::agent_local::tool_plan::set_enabled(&id, enabled).await
 }
 
@@ -187,5 +193,6 @@ pub async fn truncate_and_replace_at(
     message_id: String,
     replacement: Option<AgentMessage>,
 ) -> Result<(), String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&session_id).await?;
     session_store::truncate_and_replace(&session_id, &message_id, replacement).await
 }

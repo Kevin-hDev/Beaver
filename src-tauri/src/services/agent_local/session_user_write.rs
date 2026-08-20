@@ -1,19 +1,5 @@
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "La frontière sera consommée par les commandes utilisateur dans la tâche suivante."
-    )
-)]
 pub(crate) const SUBAGENT_READ_ONLY: &str = "subagent-read-only";
 
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "La frontière sera consommée par les commandes utilisateur dans la tâche suivante."
-    )
-)]
 pub(crate) async fn ensure_allowed(session_id: &str) -> Result<(), String> {
     let session = super::session_store::get(session_id)
         .await

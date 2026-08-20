@@ -22,6 +22,7 @@ pub enum MissingDirectoryAction {
 }
 
 pub async fn prepare(session_id: &str, incoming: Option<&str>) -> Result<PrepareAgentSend, String> {
+    super::session_user_write::ensure_allowed(session_id).await?;
     let session = super::session_store::get(session_id)
         .await
         .map_err(|_| generic_error())?;
@@ -68,6 +69,7 @@ pub async fn resolve(
     missing_path: &str,
     action: MissingDirectoryAction,
 ) -> Result<String, String> {
+    super::session_user_write::ensure_allowed(session_id).await?;
     let target = PathBuf::from(missing_path);
     validate_path(&target)?;
     if !super::directory_access::decision(&target)

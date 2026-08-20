@@ -85,6 +85,14 @@ pub mod personality;
 pub mod projects;
 pub mod registry;
 pub mod search;
+#[cfg(test)]
+mod subagent_read_only_command_preflight_tests;
+#[cfg(test)]
+mod subagent_read_only_command_structure_tests;
+#[cfg(test)]
+mod subagent_read_only_command_test_support;
+#[cfg(test)]
+mod subagent_read_only_command_tests;
 pub mod subagents;
 #[cfg(test)]
 pub mod subagents_tests;
