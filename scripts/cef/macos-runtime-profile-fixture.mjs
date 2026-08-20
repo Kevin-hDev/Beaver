@@ -71,11 +71,26 @@ async function createHelperSkeletons(tauriDirectory) {
       "Contents",
     );
     await mkdir(contents, { recursive: true });
-    await writeFile(join(contents, "Info.plist"), `${helper}\n`, "utf8");
+    await copyFile(
+      resolve(
+        "src-tauri",
+        "resources",
+        "cef",
+        "macos",
+        "helpers",
+        `${helper}.app`,
+        "Contents",
+        "Info.plist",
+      ),
+      join(contents, "Info.plist"),
+    );
   }
   const devApp = join(tauriDirectory, "resources", "cef", "macos", "dev-app");
   await mkdir(devApp, { recursive: true });
-  await writeFile(join(devApp, "Info.plist"), "dev app\n", "utf8");
+  await copyFile(
+    resolve("src-tauri", "resources", "cef", "macos", "dev-app", "Info.plist"),
+    join(devApp, "Info.plist"),
+  );
 }
 
 async function createTrackedInputs(tauriDirectory) {
@@ -90,6 +105,11 @@ async function createTrackedInputs(tauriDirectory) {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, `${input}\n`, "utf8");
   }
+  await writeFile(
+    join(tauriDirectory, "tauri.conf.json"),
+    `${JSON.stringify({ version: "9.8.7" })}\n`,
+    "utf8",
+  );
   for (const targetRoot of ["target", join("target", "e2e")]) {
     const debugRoot = join(tauriDirectory, targetRoot, "debug");
     await mkdir(join(debugRoot, "default-skills"), { recursive: true });
@@ -107,6 +127,7 @@ export async function createFixture(directory) {
     mkdir(fakeBin, { recursive: true }),
   ]);
   for (const script of [
+    "cef-bundle-version.sh",
     "cef-runtime-profile.sh",
     "prepare-cef.sh",
     "ensure-cef-dev-runtime.sh",

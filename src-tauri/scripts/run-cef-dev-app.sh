@@ -7,7 +7,12 @@ if [[ "$(uname -s)" != "Darwin" || $# -lt 1 || $# -gt 65 ]]; then
 fi
 
 source scripts/cef-runtime-profile.sh
+source scripts/cef-bundle-version.sh
 if ! resolve_cef_runtime_profile; then
+  echo "CEF development launch failed" >&2
+  exit 1
+fi
+if ! load_cef_bundle_version; then
   echo "CEF development launch failed" >&2
   exit 1
 fi
@@ -80,6 +85,10 @@ ditto "$FRAMEWORK_SOURCE" "$APP_FRAMEWORKS/Chromium Embedded Framework.framework
 ditto "$HELPERS_SOURCE" "$APP_FRAMEWORKS"
 ditto "$DEFAULT_SKILLS_SOURCE" "$APP_RESOURCES/default-skills"
 install -m 644 "$PLIST_SOURCE" "$APP_ROOT/Contents/Info.plist"
+if ! apply_cef_bundle_version "$APP_ROOT/Contents/Info.plist"; then
+  echo "CEF development launch failed" >&2
+  exit 1
+fi
 install -m 755 "$BINARY" "$APP_EXECUTABLE"
 codesign --force --options runtime --entitlements Entitlements.dev.plist \
   --sign - "$APP_EXECUTABLE" >/dev/null

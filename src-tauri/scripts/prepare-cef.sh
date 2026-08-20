@@ -6,6 +6,7 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
 fi
 
 source scripts/cef-runtime-profile.sh
+source scripts/cef-bundle-version.sh
 
 HELPERS=(
   "Beaver Helper"
@@ -21,6 +22,10 @@ BUILD_FEATURES="${CLGO_CEF_CARGO_FEATURES:-}"
 BUILD_TARGET="${CARGO_BUILD_TARGET:-}"
 if ! resolve_cef_runtime_profile; then
   echo "CEF build features are invalid" >&2
+  exit 1
+fi
+if ! load_cef_bundle_version; then
+  echo "CEF bundle metadata validation failed" >&2
   exit 1
 fi
 if ! cef_e2e_target_dir_matches "$(pwd -P)"; then
@@ -106,6 +111,10 @@ codesign --force --options runtime --sign "$SIGNING_IDENTITY" \
 for helper in "${HELPERS[@]}"; do
   app="$STAGE/helpers/$helper.app"
   destination="$STAGE/helpers/$helper.app/Contents/MacOS/$helper"
+  if ! apply_cef_bundle_version "$app/Contents/Info.plist"; then
+    echo "CEF bundle metadata validation failed" >&2
+    exit 1
+  fi
   mkdir -p "$(dirname "$destination")"
   install -m 755 "$TARGET_RELEASE_DIR/cl-go-dash-helper" "$destination"
   codesign --force --options runtime --entitlements "$ENTITLEMENTS" \
