@@ -205,6 +205,7 @@ cef = { version = "=150.0.0", default-features = false, features = ["sandbox"] }
 
 [dev-dependencies]
 # Expose le runtime simulé Tauri uniquement aux builds de test des commandes IPC.
+# Version répétée à dessein : Cargo refuse ici une dev-dependency sans source ; à garder alignée sur la dépendance principale.
 tauri = { version = "=2.11.4", features = ["test"] }
 # Mock de serveur HTTP pour tests d'intégration (LLM, search, gateway, forecast)
 wiremock = "0.6"

@@ -19,6 +19,7 @@ const state = vi.hoisted(() => ({
   runtimeParams: undefined as { readOnly?: boolean } | undefined,
   chatActionsOptions: undefined as { readOnly?: boolean } | undefined,
   permissionModeEnabled: undefined as boolean | undefined,
+  isAtBottom: false,
 }));
 
 vi.mock("../chat-message-panel", () => ({ ChatMessagePanel: () => <div data-testid="message-panel" /> }));
@@ -59,7 +60,7 @@ vi.mock("@/hooks/use-permission-mode", () => ({
 }));
 vi.mock("@/hooks/use-permission-requests", () => ({ usePermissionRequests: () => ({ enqueue: vi.fn(), current: { id: "request" }, respond: vi.fn() }) }));
 vi.mock("@/hooks/use-session-project", () => ({ useSessionProject: () => ({ selectedProject: undefined, selectedProjectId: undefined, directoryAccessPrompt: undefined }) }));
-vi.mock("@/hooks/use-chat-scroll", () => ({ useChatScroll: () => ({ containerRef: { current: null }, isAtBottom: false, scrollToBottom: vi.fn() }) }));
+vi.mock("@/hooks/use-chat-scroll", () => ({ useChatScroll: () => ({ containerRef: { current: null }, isAtBottom: state.isAtBottom, scrollToBottom: vi.fn() }) }));
 vi.mock("@/hooks/use-model-switch", () => ({ useModelSwitch: () => ({ pendingSwitch: null, setPendingSwitch: vi.fn(), handleModelSelect: vi.fn(), rememberedRef: { current: null } }) }));
 vi.mock("@/hooks/use-worktree-session-switch", () => ({ useWorktreeSessionSwitch: () => ({ pending: null, request: vi.fn(), cancel: vi.fn(), createSession: vi.fn() }) }));
 vi.mock("@/hooks/use-session-files", () => ({ useSessionFileGroups: vi.fn() }));
@@ -124,5 +125,11 @@ describe("ChatView child read-only mode", () => {
     expect(state.runtimeParams?.readOnly).toBe(true);
     expect(state.chatActionsOptions?.readOnly).toBe(true);
     expect(state.permissionModeEnabled).toBe(false);
+
+    state.isAtBottom = true;
+    rerender(<ChatView {...props} isSubagent />);
+
+    expect(document.querySelector(".chat-read-only-footer")).toBeInTheDocument();
+    expect(screen.queryByTestId("scroll-bottom")).not.toBeInTheDocument();
   });
 });

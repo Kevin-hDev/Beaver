@@ -18,10 +18,9 @@ export function ChatReadOnlyFooter({
   showError,
   showScrollButton,
 }: ChatReadOnlyFooterProps) {
-  if ((!showError || !error) && !showScrollButton) return null;
-
+  // Le conteneur reste monté : le bouton absolu peut basculer sans déplacer la transcription.
   return (
-    <div className="chat-input-area">
+    <div className="chat-input-area chat-read-only-footer">
       <div className="chat-input-column">
         {showError && error && (
           <ErrorBubble
