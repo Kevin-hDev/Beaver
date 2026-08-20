@@ -1,0 +1,1 @@
+Le mapping codex-oauth vers openai est volontairement limité aux capacités de modèle. Il ne doit jamais devenir une canonicalisation globale de l’identité de transport HTTP ou du raisonnement Codex.
