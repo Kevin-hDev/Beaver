@@ -1,0 +1,7 @@
+Cause: l'extraction de ChatTranscript a modifié l'ordre effectif des feuilles CSS. Le raccourci margin de .wss-root imposait alors 0 sur l'axe horizontal et écrasait les marges auto définies par .chat-messages > * pour toute la colonne.
+
+Décision: WorkStreamSummary ne possède que son espacement vertical via margin-block. chat.css reste l'unique autorité de la largeur, du padding et du centrage horizontal communs à la phase de travail et à la réponse finale.
+
+Preuve TDD: avant correction, work-stream-summary-layout.test.tsx échouait avec expected auto / received 0 alors que la réponse finale restait à auto. Après correction, le test vérifie les deux marges auto ainsi que la même largeur maximale et les mêmes paddings.
+
+Validation: test ciblé 1/1; npm test 461 fichiers, 2430 tests, contrats build/CI/CEF/E2E/extensions verts (1 test Windows CEF ignoré sur macOS); npx tsc --noEmit vert; npm run lint vert sans avertissement; git diff --check vert; graphify update . exécuté.
