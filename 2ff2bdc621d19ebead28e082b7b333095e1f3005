@@ -13,3 +13,5 @@ Validation sur 2ff2bdc6: cargo test = 3693 passed, 0 failed, 3 ignored, plus pre
 Inspection visuelle manuelle: session enfant ouverte en thèmes sombre et clair, aucun champ de saisie, transcription lisible; longue transcription remontée, bouton de retour en bas visible puis fonctionnel.
 
 Décisions de review: la duplication de version Tauri dans Cargo.toml n'a pas été retirée car Cargo refuse une dev-dependency sans version/path/git/workspace: dependency (tauri) specified without providing a local path, Git repository, version, or workspace dependency to use. Les fichiers de tests restent séparés par responsabilité conformément à AGENTS.md, qui exempte les tests du seuil de 230 lignes. InteractiveChoice reste hors périmètre tant qu'aucun profil enfant ne l'expose.
+
+Rectification E2E: l'ordre de specs présent sur 2ff2bdc6 ne couvrait réellement que le parcours par défaut et plaçait le contrôle enfant après la fermeture de l'application dans les parcours smoke. Cette affirmation est remplacée par le correctif et les preuves du commit a4e9aa47.
