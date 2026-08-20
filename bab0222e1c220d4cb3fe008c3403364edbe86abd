@@ -1,0 +1,6 @@
+Review correction after independent validation:
+- the ActiveStreams sentinel token is now asserted uncancelled before explicit test cleanup, so the assertion can fail on a real mutation;
+- command tests import the production SUBAGENT_READ_ONLY constant instead of duplicating its wire value;
+- child stream errors reuse the established chat input column layout while keeping every write control absent.
+
+Validated by 14 focused Rust tests, 22 focused frontend tests, the full Rust and npm suites, strict Clippy, TypeScript, lint, and the real Tauri/Wry E2E chat_stream path.
