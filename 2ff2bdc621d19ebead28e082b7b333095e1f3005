@@ -1,0 +1,15 @@
+Review range: bab0222e..2ff2bdc6
+
+Backend: chat_stream passe désormais par agent_chat_admission::admit, frontière testable qui refuse une session enfant avant prepare_send, remplacement du stream et diagnostic request_start. Le test MockRuntime conserve le document, le nombre de diagnostics et l'entrée ActiveStreams sentinelle. rename_agent_session est gardé; les identifiants invalides de queue_agent_message gardent leur erreur publique générique; une session absente propage l'erreur existante; la décision de laisser delete/archive/restore gérer le cycle de vie familial est documentée.
+
+Frontend: les reprises Ollama, initialMessage, fallback automatique de modèle et raccourci Maj+Tab du mode de permission sont désactivés en lecture seule. FileDropZone et ChatOverlays sont vérifiés au niveau du câblage ChatView. Toutes les erreurs des commandes gardées passent par admissionErrorMessage. Le champ, les dialogues, le terminal et les actions d'écriture disparaissent, tandis que la bulle d'erreur, le bouton de retour en bas et le dernier message restent lisibles. Le lien parent et le refus lecture seule sont couverts dans les 7 langues.
+
+CI/E2E: child-session-read-only.spec.ts est exécuté après chaque parcours natif CEF/WebView/default. La commande E2E conserve le code backend exact et nettoie sa fixture. Le vrai parcours macOS sur ce commit a passé onboarding + refus chat_stream: 2/2.
+
+Preuves TDD/mutations exécutées puis restaurées: garde d'admission neutralisé => échec sur la génération sentinelle; lecture de session rendue fail-open => unknown_session_is_refused rouge; retry Ollama réactivé => test invoke rouge; câblages FileDrop/overlays modifiés => ChatView rouge; fallback modèle réactivé => updateModel rouge; mode de permission non désactivé => 4 écritures observées dans le test rouge.
+
+Validation sur 2ff2bdc6: cargo test = 3693 passed, 0 failed, 3 ignored, plus prelogger_diagnostics 1/1; cargo clippy --all-targets --features e2e -- -D warnings vert; cargo fmt --check vert; npm test = Vitest 459 fichiers/2428 tests, build scripts 51, CI 10, CEF 45 + 1 skip Windows attendu, E2E runner 70, extension host 53; npx tsc --noEmit vert; npm run lint vert; npm run test:e2e = 2/2. graphify update . vert, aucune modification topologique.
+
+Inspection visuelle manuelle: session enfant ouverte en thèmes sombre et clair, aucun champ de saisie, transcription lisible; longue transcription remontée, bouton de retour en bas visible puis fonctionnel.
+
+Décisions de review: la duplication de version Tauri dans Cargo.toml n'a pas été retirée car Cargo refuse une dev-dependency sans version/path/git/workspace: dependency (tauri) specified without providing a local path, Git repository, version, or workspace dependency to use. Les fichiers de tests restent séparés par responsabilité conformément à AGENTS.md, qui exempte les tests du seuil de 230 lignes. InteractiveChoice reste hors périmètre tant qu'aucun profil enfant ne l'expose.
