@@ -17,4 +17,9 @@ test("le refus Linux reste dans un sous-shell sans fermer le terminal", () => {
   assert.ok(block.startsWith("(\nset -e\n"));
   assert.ok(block.trimEnd().endsWith(")"));
   assert.equal((block.match(/exit 1/g) ?? []).length, 3);
+  const lines = block.split("\n");
+  assert.equal(lines.filter((line) => line === "(").length, 1);
+  assert.equal(lines.filter((line) => line === ")").length, 1);
+  assert.equal(lines[0], "(");
+  assert.equal(lines.at(-1), ")");
 });

@@ -166,6 +166,41 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install uv for Windows SearXNG recipe
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: latest
+          enable-cache: false
+
+      - name: Install Windows SearXNG Python recipe
+        shell: pwsh
+        env:
+          UV_PYTHON_INSTALL_BIN: "1"
+        run: |
+          $version = (Get-Content -Raw scripts/build/searxng-python-version.txt).Trim()
+          if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw "Invalid SearXNG Python version"
+          }
+          uv python install $version
+          if ($LASTEXITCODE -ne 0) {
+            throw "SearXNG Python installation failed"
+          }
+
+      # Une étape séparée ouvre un nouveau PowerShell, comme après la réouverture
+      # demandée dans le README, et prouve que le chemin par défaut de uv suffit.
+      - name: Verify Windows SearXNG Python recipe
+        shell: pwsh
+        run: |
+          $expected = (Get-Content -Raw scripts/build/searxng-python-version.txt).Trim()
+          if ($expected -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw "Invalid SearXNG Python version"
+          }
+          $command = Get-Command "python$expected" -CommandType Application -ErrorAction Stop
+          $actual = & $command.Source --version
+          if ($LASTEXITCODE -ne 0 -or $actual -notmatch "^Python $([regex]::Escape($expected))\.") {
+            throw "SearXNG Python verification failed"
+          }
+
       - name: Install extension host dependencies
         run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host
 

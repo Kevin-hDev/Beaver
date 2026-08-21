@@ -32,6 +32,25 @@ fn every_searxng_machine_code_crosses_the_search_boundary_as_data() {
 }
 
 #[test]
+fn configured_provider_failure_is_not_hidden_by_the_local_fallback_code() {
+    let failure = finish_search(
+        true,
+        false,
+        vec!["Brave: authentification refusée".to_string()],
+        Err(crate::services::searxng::error_codes::RUNTIME_UNAVAILABLE.to_string()),
+    )
+    .unwrap_err();
+
+    assert_eq!(failure.machine_code(), None);
+    assert!(failure
+        .message()
+        .contains("Brave: authentification refusée"));
+    assert!(failure
+        .message()
+        .contains(crate::services::searxng::error_codes::RUNTIME_UNAVAILABLE));
+}
+
+#[test]
 fn a_successful_empty_configured_provider_still_degrades_to_an_empty_result() {
     let result = finish_search(
         true,

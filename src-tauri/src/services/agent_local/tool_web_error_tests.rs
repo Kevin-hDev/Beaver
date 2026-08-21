@@ -105,3 +105,33 @@ fn every_declared_searxng_code_has_an_explicit_tool_classification() {
         assert_eq!(result.error.unwrap().code.as_ref(), expected_tool_code, "{code}");
     }
 }
+
+#[test]
+fn configured_provider_failures_keep_their_tool_classification_when_searxng_is_down() {
+    let cases = [
+        (
+            "Brave: authentification refusée",
+            "web_search_auth_failed",
+            ToolErrorCategory::Permission,
+        ),
+        (
+            "Exa: limite de requêtes atteinte (HTTP 429)",
+            "web_search_rate_limited",
+            ToolErrorCategory::External,
+        ),
+    ];
+
+    for (provider_failure, expected_code, expected_category) in cases {
+        let failure = crate::services::search::finish_search(
+            true,
+            false,
+            vec![provider_failure.to_string()],
+            Err(crate::services::searxng::error_codes::RUNTIME_UNAVAILABLE.to_string()),
+        )
+        .unwrap_err();
+        let error = search(failure).error.unwrap();
+
+        assert_eq!(error.code.as_ref(), expected_code, "{provider_failure}");
+        assert_eq!(error.category, expected_category, "{provider_failure}");
+    }
+}

@@ -26,3 +26,29 @@ test("la CI exécute les tests Python SearXNG avec la version supportée", () =>
     "node scripts/ci/run-searxng-python-tests.mjs",
   );
 });
+
+test("Windows exécute la recette uv puis vérifie Python dans un nouveau shell", () => {
+  const steps = workflow.jobs["backend-windows-native"].steps;
+  const setupUv = steps.find(({ name }) => name === "Install uv for Windows SearXNG recipe");
+  const install = steps.find(({ name }) => name === "Install Windows SearXNG Python recipe");
+  const verify = steps.find(({ name }) => name === "Verify Windows SearXNG Python recipe");
+
+  assert.ok(setupUv);
+  assert.ok(install);
+  assert.ok(verify);
+  assert.equal(
+    setupUv.uses,
+    "astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9",
+  );
+  assert.equal(setupUv.with.version, "latest");
+  assert.equal(setupUv.with["enable-cache"], false);
+  assert.equal(install.shell, "pwsh");
+  assert.equal(install.env.UV_PYTHON_INSTALL_BIN, "1");
+  assert.match(install.run, /Get-Content -Raw scripts\/build\/searxng-python-version\.txt/u);
+  assert.match(install.run, /uv python install \$version/u);
+  assert.equal(verify.shell, "pwsh");
+  assert.match(verify.run, /Get-Content -Raw scripts\/build\/searxng-python-version\.txt/u);
+  assert.match(verify.run, /Get-Command "python\$expected" -CommandType Application/u);
+  assert.ok(steps.indexOf(setupUv) < steps.indexOf(install));
+  assert.ok(steps.indexOf(install) < steps.indexOf(verify));
+});

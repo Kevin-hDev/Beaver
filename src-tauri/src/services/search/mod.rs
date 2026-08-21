@@ -110,10 +110,19 @@ pub(crate) fn finish_search(
             if provider_succeeded {
                 return Ok(Vec::new());
             }
-            if let Some(code) = crate::services::searxng::error_codes::known(&error) {
-                return Err(SearchFailure::searxng(code));
+            match crate::services::searxng::error_codes::known(&error) {
+                // Les erreurs des providers configurés sont plus actionnables
+                // que l'état du repli local : ce code ne doit jamais les masquer.
+                Some(code) if failures.is_empty() => return Err(SearchFailure::searxng(code)),
+                Some(code) => {
+                    ::log::warn!(
+                        "[search] repli SearXNG indisponible code={code} providers_en_echec={}",
+                        failures.len()
+                    );
+                    failures.push(code.to_string());
+                }
+                None => failures.push(common::sanitize_error(&error)),
             }
-            failures.push(common::sanitize_error(&error));
         }
     }
 
