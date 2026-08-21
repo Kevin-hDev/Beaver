@@ -162,6 +162,7 @@
   "projects": {
     "title": "Projekte",
     "discussions": "Gespräche",
+    "pinned": "Angeheftet",
     "workInFolder": "In einem Ordner arbeiten",
     "search": "Projekte suchen",
     "noFolder": "Kein Ordner",
@@ -241,6 +242,8 @@
     "rename": "Umbenennen",
     "delete": "Löschen",
     "archive": "Archivieren",
+    "pin": "Anheften",
+    "unpin": "Lösen",
     "loading": "Wird geladen…"
   },
   "sessionAge": {

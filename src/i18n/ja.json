@@ -162,6 +162,7 @@
   "projects": {
     "title": "プロジェクト",
     "discussions": "ディスカッション",
+    "pinned": "ピン留め",
     "workInFolder": "フォルダで作業",
     "search": "プロジェクトを検索",
     "noFolder": "フォルダなし",
@@ -241,6 +242,8 @@
     "rename": "名前を変更",
     "delete": "削除",
     "archive": "アーカイブ",
+    "pin": "ピン留め",
+    "unpin": "ピン留めを解除",
     "loading": "読み込み中…"
   },
   "sessionAge": {

@@ -162,6 +162,7 @@
   "projects": {
     "title": "Progetti",
     "discussions": "Discussioni",
+    "pinned": "In evidenza",
     "workInFolder": "Lavora in una cartella",
     "search": "Cerca progetti",
     "noFolder": "Nessuna cartella",
@@ -241,6 +242,8 @@
     "rename": "Rinomina",
     "delete": "Elimina",
     "archive": "Archivia",
+    "pin": "Fissa in alto",
+    "unpin": "Rimuovi dall'alto",
     "loading": "Caricamento…"
   },
   "sessionAge": {

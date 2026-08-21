@@ -162,6 +162,7 @@
   "projects": {
     "title": "项目",
     "discussions": "对话",
+    "pinned": "已置顶",
     "workInFolder": "在文件夹中工作",
     "search": "搜索项目",
     "noFolder": "无文件夹",
@@ -241,6 +242,8 @@
     "rename": "重命名",
     "delete": "删除",
     "archive": "归档",
+    "pin": "置顶",
+    "unpin": "取消置顶",
     "loading": "加载中…"
   },
   "sessionAge": {

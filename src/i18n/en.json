@@ -167,6 +167,7 @@
   "projects": {
     "title": "Projects",
     "discussions": "Discussions",
+    "pinned": "Pinned",
     "workInFolder": "Work in a folder",
     "search": "Search projects",
     "noFolder": "No folder",
@@ -246,6 +247,8 @@
     "rename": "Rename",
     "delete": "Delete",
     "archive": "Archive",
+    "pin": "Pin",
+    "unpin": "Unpin",
     "loading": "Loading…"
   },
   "sessionAge": {
