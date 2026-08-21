@@ -7,3 +7,7 @@ The Windows authority now calls GetExitCodeProcess and reports true only for STI
 The attempted Windows resolver test in 7335d2ea also failed because it depended on the runner preinstalled Python rather than the controlled SearXNG recipe. That false proof is removed. resolve_with_path and label are Unix fake-executable fixture seams and are now compiled only with cfg(all(test, unix)); production Windows resolve remains compiled and checked, without dead-code allowances.
 
 Executed locally with Rust 1.98.0: cargo fmt --check; cargo clippy --all-targets -- -D warnings; SearXNG 85 passed and 1 release-wheelhouse test ignored; owned-process tests 3 passed on macOS; graphify update completed. The new Windows liveness test and descendant cleanup require the native PR runner, and no Windows success is claimed before it is green.
+
+Follow-up CI evidence
+
+GitHub Actions run 32495241977 completed successfully at cded095e561ef668c4662aec162b6be1d906f90a. The native Windows CEF job passed in 58m51s, including the Windows SearXNG Python recipe, Rust 1.98 clippy, supervision contracts, owned-process regression coverage, and the native journey. The native macOS CEF job also passed in 53m26s. All seven CI jobs, CodeQL analyses, npm/RustSec audits, and GitGuardian checks are green. This closes the native-Windows evidence gap recorded above.
