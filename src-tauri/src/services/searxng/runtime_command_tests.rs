@@ -7,6 +7,11 @@ use super::runtime_command::{run_runtime_command, RuntimeStage};
 
 static LOG_GUARD: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
+#[cfg(windows)]
+const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_secs(2);
+#[cfg(not(windows))]
+const INHERITED_PIPE_TIMEOUT: Duration = Duration::from_millis(50);
+
 #[tokio::test]
 async fn successful_runtime_command_drains_both_streams() {
     let _guard = LOG_GUARD.lock().await;
@@ -113,15 +118,17 @@ async fn inherited_pipes_from_a_descendant_obey_the_global_deadline() {
     let _guard = LOG_GUARD.lock().await;
     let pid_file = tempfile::NamedTempFile::new().expect("pid file");
     let parent = format!(
-        "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, pass_fds=(stdout, stderr))\nopen({:?}, 'w').write(str(child.pid))",
+        "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, close_fds=False)\nopen({:?}, 'w').write(str(child.pid))",
         pid_file.path()
     );
     let started = std::time::Instant::now();
 
-    let result = run_fixture(&parent, Duration::from_millis(50)).await;
+    // A loaded Windows runner needs enough time to start Python before the
+    // inherited-pipe deadline itself can be exercised.
+    let result = run_fixture(&parent, INHERITED_PIPE_TIMEOUT).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
-    assert!(started.elapsed() < Duration::from_millis(900));
+    assert!(started.elapsed() < INHERITED_PIPE_TIMEOUT + Duration::from_millis(900));
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("descendant pid")
         .parse::<u32>()
@@ -134,7 +141,7 @@ async fn successful_parent_closes_inherited_pipes_without_consuming_the_deadline
     let _guard = LOG_GUARD.lock().await;
     let pid_file = tempfile::NamedTempFile::new().expect("pid file");
     let parent = format!(
-        "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, pass_fds=(stdout, stderr))\nopen({:?}, 'w').write(str(child.pid))\nraise SystemExit(0)",
+        "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, close_fds=False)\nopen({:?}, 'w').write(str(child.pid))\nraise SystemExit(0)",
         pid_file.path()
     );
     let started = std::time::Instant::now();
