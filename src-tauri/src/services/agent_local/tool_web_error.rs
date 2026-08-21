@@ -134,9 +134,12 @@ fn http_status(message: &str) -> Option<u16> {
     let mut parts = message.split_whitespace();
     while let Some(part) = parts.next() {
         if part.eq_ignore_ascii_case("HTTP") {
-            return parts
-                .next()
-                .and_then(|value| value.trim_matches(|c: char| !c.is_ascii_digit()).parse().ok());
+            return parts.next().and_then(|value| {
+                value
+                    .trim_matches(|c: char| !c.is_ascii_digit())
+                    .parse()
+                    .ok()
+            });
         }
     }
     None

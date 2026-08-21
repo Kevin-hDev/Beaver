@@ -165,9 +165,10 @@ Close and reopen PowerShell. Then install CPython for the local SearXNG fallback
 ```powershell
 $env:UV_PYTHON_INSTALL_BIN = "1"
 uv python install 3.14
+uv python update-shell
 ```
 
-On Windows, Beaver follows the executable directory selected by uv's official installer; overriding it with a Unix-style path would bypass the PATH configured by uv.
+On Windows, Beaver follows the executable directory selected by uv's official installer; `uv python update-shell` publishes that directory without overriding it with a Unix-style path.
 
 Close and reopen PowerShell and Beaver, then verify:
 

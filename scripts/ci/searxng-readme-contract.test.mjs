@@ -8,6 +8,10 @@ test("les trois OS publient explicitement Python 3.14 dans le PATH utilisateur",
   assert.equal((readme.match(/UV_PYTHON_BIN_DIR/g) ?? []).length, 2);
   assert.equal((readme.match(/UV_PYTHON_INSTALL_BIN/g) ?? []).length, 3);
   assert.equal((readme.match(/uv python install 3\.14/g) ?? []).length, 3);
+  const windows = readme.slice(readme.indexOf("### Windows"), readme.indexOf("### Development only"));
+  const installBlock = /Then install CPython[^:]+:\n\n```powershell\n([\s\S]+?)\n```/u.exec(windows)?.[1];
+  assert.ok(installBlock);
+  assert.equal((installBlock.match(/uv python update-shell/g) ?? []).length, 1);
 });
 
 test("le refus Linux reste dans un sous-shell sans fermer le terminal", () => {

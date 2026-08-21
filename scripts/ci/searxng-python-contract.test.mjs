@@ -46,6 +46,9 @@ test("Windows exécute la recette uv puis vérifie Python dans un nouveau shell"
   assert.equal(install.env.UV_PYTHON_INSTALL_BIN, "1");
   assert.match(install.run, /Get-Content -Raw scripts\/build\/searxng-python-version\.txt/u);
   assert.match(install.run, /uv python install \$version/u);
+  assert.match(install.run, /uv python update-shell/u);
+  assert.match(install.run, /uv python dir --bin/u);
+  assert.match(install.run, /\$env:GITHUB_PATH/u);
   assert.equal(verify.shell, "pwsh");
   assert.match(verify.run, /Get-Content -Raw scripts\/build\/searxng-python-version\.txt/u);
   assert.match(verify.run, /Get-Command "python\$expected" -CommandType Application/u);

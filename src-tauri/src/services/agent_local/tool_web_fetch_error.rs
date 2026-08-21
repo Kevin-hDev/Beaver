@@ -8,7 +8,12 @@ pub(super) fn classify(message: String) -> ToolResult {
         return http_error(message, status);
     }
     if lower.contains("timeout") {
-        return error(message, "web_fetch_timeout", ToolErrorCategory::Timeout, true);
+        return error(
+            message,
+            "web_fetch_timeout",
+            ToolErrorCategory::Timeout,
+            true,
+        );
     }
     if contains_any(
         &lower,
@@ -81,7 +86,12 @@ fn http_error(message: String, status: u16) -> ToolResult {
             ToolErrorCategory::NotFound,
             false,
         ),
-        408 => error(message, "web_fetch_timeout", ToolErrorCategory::Timeout, true),
+        408 => error(
+            message,
+            "web_fetch_timeout",
+            ToolErrorCategory::Timeout,
+            true,
+        ),
         429 => error(
             message,
             "web_fetch_rate_limited",

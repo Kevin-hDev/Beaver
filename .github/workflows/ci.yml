@@ -185,9 +185,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "SearXNG Python installation failed"
           }
+          uv python update-shell
+          if ($LASTEXITCODE -ne 0) {
+            throw "SearXNG Python PATH publication failed"
+          }
+          $pythonBin = (uv python dir --bin).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $pythonBin -PathType Container)) {
+            throw "SearXNG Python executable directory unavailable"
+          }
+          # setup-uv is isolated from the user installer used in the README;
+          # GITHUB_PATH carries uv's verified executable directory to the next shell.
+          $pythonBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # Une étape séparée ouvre un nouveau PowerShell, comme après la réouverture
-      # demandée dans le README, et prouve que le chemin par défaut de uv suffit.
+      # demandée dans le README, et prouve que l'exécutable publié est utilisable.
       - name: Verify Windows SearXNG Python recipe
         shell: pwsh
         run: |
