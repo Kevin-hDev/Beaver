@@ -4,9 +4,11 @@ import type { AgentSessionMeta, Project } from "@/types/agent";
 import type { DroppedFile } from "@/hooks/use-file-drop";
 import { showToast } from "@/lib/toast-emitter";
 import { useDirectoryAccessGuard } from "./use-directory-access-guard";
+import { addProjectDirectory } from "./project-directory-selection";
 
 interface ProjectsHookRef {
   projects: Project[];
+  add: (path: string) => Promise<Project>;
 }
 
 interface CreateFn {
@@ -94,6 +96,13 @@ export function useSessionActions(deps: SessionActionsDeps) {
     [rename],
   );
 
+  /* Ajouter un dossier depuis la barre latérale. Il passe par le guard d'accès
+     de cet écran, le seul dont le refus s'y affiche. */
+  const handleAddProject = useCallback(
+    () => addProjectDirectory(requestDirectoryAccess, projectsHook.add),
+    [projectsHook, requestDirectoryAccess],
+  );
+
   const handleCreateInProject = useCallback(
     async (projectId: string) => {
       const project = projectsHook.projects.find((candidate) => candidate.id === projectId);
@@ -141,6 +150,7 @@ export function useSessionActions(deps: SessionActionsDeps) {
     handleAutoRename,
     handleCreateInProject,
     handleCreateInProjectWithModel,
+    handleAddProject,
     directoryAccessPrompt,
   };
 }

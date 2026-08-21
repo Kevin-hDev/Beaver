@@ -27,7 +27,7 @@ function dependencies(create = vi.fn()): SessionActionsDeps {
     defaultProvider: "provider",
     welcomeModel: null,
     setWelcomeModel: vi.fn(),
-    projectsHook: { projects: [project] },
+    projectsHook: { projects: [project], add: vi.fn().mockResolvedValue(project) },
     onSessionChange: vi.fn(),
   };
 }

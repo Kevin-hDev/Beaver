@@ -10,7 +10,7 @@ import { useFileDrop, type DroppedFile } from "@/hooks/use-file-drop";
 import type { Project } from "@/types/agent";
 import type { ReasoningMode } from "@/lib/reasoning-modes";
 import { useDirectoryAccessGuard } from "@/hooks/use-directory-access-guard";
-import { selectProjectDirectory } from "@/hooks/project-directory-selection";
+import { addProjectDirectory, selectProjectDirectory } from "@/hooks/project-directory-selection";
 import { showToast } from "@/lib/toast-emitter";
 import { noteComposerPosition, takeComposerPosition } from "@/lib/composer-handoff";
 import { waitForTitleExit } from "./welcome-leave";
@@ -38,15 +38,10 @@ export function WelcomeView({
   const [leaving, setLeaving] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const handleAddProject = useCallback(async () => {
-    const result = await openFileDialog({ directory: true });
-    if (!result) return;
-    const path = typeof result === "string" ? result : String(result);
-    await requestDirectoryAccess(path, async () => {
-      const project = await onAddProject(path);
-      setSelectedProjectId(project.id);
-    });
-  }, [onAddProject, requestDirectoryAccess]);
+  const handleAddProject = useCallback(
+    () => addProjectDirectory(requestDirectoryAccess, onAddProject, (project) => setSelectedProjectId(project.id)),
+    [onAddProject, requestDirectoryAccess],
+  );
 
   const handleSelectProject = useCallback((id: string | null) => {
     selectProjectDirectory(id, projects, requestDirectoryAccess, setSelectedProjectId);

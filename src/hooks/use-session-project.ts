@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import type { AgentSession, Project } from "@/types/agent";
 import { AGENT_SESSIONS_CHANGED } from "./agent-session-events";
 import { useDirectoryAccessGuard } from "./use-directory-access-guard";
-import { selectProjectDirectory } from "./project-directory-selection";
+import { addProjectDirectory, selectProjectDirectory } from "./project-directory-selection";
 
 const SESSION_DIRECTORY_ID = "session-working-directory";
 
@@ -57,15 +56,10 @@ export function useSessionProject(
   const locked = hasMessages && !!selectedProject;
   const hidden = loading || (hasMessages && !selectedProject);
 
-  const handleAddProject = useCallback(async () => {
-    const result = await openFileDialog({ directory: true });
-    if (!result) return;
-    const path = typeof result === "string" ? result : String(result);
-    await requestDirectoryAccess(path, async () => {
-      const project = await onAddProject(path);
-      setSelectedProjectId(project.id);
-    });
-  }, [onAddProject, requestDirectoryAccess]);
+  const handleAddProject = useCallback(
+    () => addProjectDirectory(requestDirectoryAccess, onAddProject, (project) => setSelectedProjectId(project.id)),
+    [onAddProject, requestDirectoryAccess],
+  );
 
   const handleSelectProject = useCallback((id: string | null) => {
     selectProjectDirectory(id, projects, requestDirectoryAccess, setSelectedProjectId);
