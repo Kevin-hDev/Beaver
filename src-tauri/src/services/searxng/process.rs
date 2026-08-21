@@ -1,41 +1,25 @@
 use crate::services::paths::data_dir;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-#[cfg(unix)]
-use std::process::Command;
 use std::process::Stdio;
+use std::time::{Duration, Instant};
 
 const MAX_STARTUP_LOG_BYTES: u64 = 16 * 1024;
-
-fn pid_path() -> PathBuf {
-    data_dir().join("searxng-sidecar.pid")
-}
 
 fn log_path() -> PathBuf {
     data_dir().join("logs").join("searxng-sidecar.log")
 }
 
-pub fn save_pid(pid: u32) {
-    if crate::services::private_store::atomic_write(&pid_path(), pid.to_string().as_bytes())
-        .is_err()
+pub fn recover_orphan_sidecar() -> Result<(), String> {
+    match super::process_receipt::store()
+        .recover_and_reap(Instant::now() + Duration::from_secs(3))
+        .map_err(|_| "SearXNG: état processus illisible".to_string())?
     {
-        ::log::warn!("[searxng] pid receipt unavailable");
+        super::process_receipt::RecoveryOutcome::Blocked => {
+            Err("SearXNG: état processus illisible".to_string())
+        }
+        _ => Ok(()),
     }
-}
-
-pub fn clear_pid_file() {
-    let _ = std::fs::remove_file(pid_path());
-}
-
-pub fn kill_orphan_sidecar() {
-    let Some(pid) = read_saved_pid() else { return };
-    clear_pid_file();
-    if !is_searxng_process(pid) {
-        ::log::warn!("[searxng] pid={pid} ignoré");
-        return;
-    }
-    ::log::info!("[searxng] orphelin détecté pid={pid}, kill");
-    crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Searxng);
 }
 
 pub async fn spawn(
@@ -72,10 +56,32 @@ pub async fn spawn(
     .map_err(|_| "SearXNG: démarrage impossible".to_string())
 }
 
+pub(super) async fn stable_identity(
+    pid: u32,
+) -> Result<crate::services::owned_process::OwnedProcessIdentity, String> {
+    let mut previous = None;
+    let mut stable_observations = 0;
+    for _ in 0..20 {
+        let current = crate::services::owned_process::OwnedProcess::identity(pid)
+            .map_err(|_| "SearXNG: démarrage impossible".to_string())?;
+        if previous == Some(current) {
+            stable_observations += 1;
+            if stable_observations == 2 {
+                return Ok(current);
+            }
+        } else {
+            stable_observations = 0;
+        }
+        previous = Some(current);
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    Err("SearXNG: démarrage impossible".to_string())
+}
+
 pub async fn kill_child_process(mut child: tokio::process::Child) {
     let pid = child.id().unwrap_or_default();
     if let Ok(Some(_)) = child.try_wait() {
-        clear_pid_file();
+        let _ = super::process_receipt::store().remove();
         return;
     }
     ::log::info!("[searxng] kill sidecar pid={pid}");
@@ -84,7 +90,9 @@ pub async fn kill_child_process(mut child: tokio::process::Child) {
         crate::services::process_tree::ProcessKind::Searxng,
     )
     .await;
-    clear_pid_file();
+    if child.try_wait().is_ok_and(|status| status.is_some()) {
+        let _ = super::process_receipt::store().remove();
+    }
 }
 
 #[cfg(test)]
@@ -137,56 +145,9 @@ fn read_log_tail(path: &Path) -> Option<Vec<u8>> {
     Some(bytes)
 }
 
-fn read_saved_pid() -> Option<u32> {
-    let content = std::fs::read_to_string(pid_path()).ok()?;
-    let pid = content.trim().parse::<u32>().ok()?;
-    (pid >= 2).then_some(pid)
-}
-
-fn is_searxng_process(pid: u32) -> bool {
-    #[cfg(unix)]
-    {
-        let output = Command::new("ps")
-            .args(["-p", &pid.to_string(), "-o", "command="])
-            .output();
-        output
-            .ok()
-            .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))
-            .unwrap_or(false)
-    }
-    #[cfg(windows)]
-    {
-        let query =
-            format!("(Get-CimInstance Win32_Process -Filter \"ProcessId = {pid}\").CommandLine");
-        let Ok(powershell) = crate::services::system_executable::powershell() else {
-            return false;
-        };
-        let mut command = crate::services::background_command::new(powershell);
-        let output = command.args(["-NoProfile", "-Command", &query]).output();
-        output
-            .ok()
-            .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))
-            .unwrap_or(false)
-    }
-}
-
-pub(crate) fn process_text_matches(text: &str) -> bool {
-    let lower = text.to_lowercase();
-    lower.contains("searxng-sidecar") && lower.contains("searx.webapp")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn process_match_requires_sidecar_and_webapp() {
-        assert!(process_text_matches(
-            "python -m searx.webapp /searxng-sidecar/.venv"
-        ));
-        assert!(!process_text_matches("python -m searx.webapp"));
-        assert!(!process_text_matches("searxng-sidecar unrelated"));
-    }
 
     #[test]
     fn startup_log_hint_exposes_only_a_fixed_category() {
@@ -209,13 +170,5 @@ mod tests {
         let tail = read_log_tail(&log).unwrap();
         assert!(tail.len() <= MAX_STARTUP_LOG_BYTES as usize);
         assert!(String::from_utf8_lossy(&tail).contains("bounded-tail"));
-    }
-
-    #[test]
-    fn pid_receipt_uses_the_private_store_authority() {
-        let source = include_str!("process.rs");
-
-        assert!(source.contains("private_store::atomic_write"));
-        assert!(!source.contains("with_extension(\"tmp\")"));
     }
 }

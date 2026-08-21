@@ -6,6 +6,7 @@ mod client;
 mod compat;
 mod paths;
 mod process;
+mod process_receipt;
 mod python_runtime;
 mod python_runtime_path;
 mod runtime;
@@ -28,6 +29,8 @@ mod stop_lifecycle;
 mod wheels;
 mod work_supervision;
 
+#[cfg(test)]
+mod process_receipt_tests;
 #[cfg(test)]
 mod python_runtime_tests;
 #[cfg(test)]

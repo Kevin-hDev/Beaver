@@ -85,36 +85,6 @@ async fn shutdown_does_not_wait_for_a_slow_unpublished_start() {
     );
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn pid_persistence_does_not_hold_the_process_lock() {
-    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
-    let sidecar = SearxngSidecar::new(coordinator.work_supervisor());
-    let (saving_tx, saving_rx) = tokio::sync::oneshot::channel();
-    let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
-    let starting = sidecar.clone();
-    let publication = tokio::spawn(async move {
-        starting
-            .publish_test_process_with_pid_save_for_test(move |_| {
-                let _ = saving_tx.send(());
-                release_rx.recv_timeout(Duration::from_secs(2)).unwrap();
-            })
-            .await
-    });
-    saving_rx.await.expect("PID persistence entered");
-
-    let published =
-        tokio::time::timeout(Duration::from_millis(100), sidecar.published_pid_for_test())
-            .await
-            .expect("process lock remained available");
-    release_tx.send(()).unwrap();
-    publication.await.unwrap().unwrap();
-    sidecar
-        .stop_and_wait(Instant::now() + Duration::from_secs(1))
-        .await;
-
-    assert!(published.is_some());
-}
-
 #[tokio::test]
 async fn stale_generation_cannot_publish_over_shutdown() {
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");

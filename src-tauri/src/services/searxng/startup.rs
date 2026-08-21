@@ -38,11 +38,11 @@ pub(super) async fn wait_until_ready(
 
 pub(super) async fn run_blocking<Operation>(operation: Operation) -> Result<(), String>
 where
-    Operation: FnOnce() + Send + 'static,
+    Operation: FnOnce() -> Result<(), String> + Send + 'static,
 {
     tokio::task::spawn_blocking(operation)
         .await
-        .map_err(|_| "SearXNG: opération interrompue".to_string())
+        .map_err(|_| "SearXNG: opération interrompue".to_string())?
 }
 
 fn shutdown_error() -> String {
