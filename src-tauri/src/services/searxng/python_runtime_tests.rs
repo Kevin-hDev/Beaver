@@ -1,7 +1,12 @@
+#[cfg(unix)]
 use super::python_runtime::PythonRuntime;
-use super::python_runtime_path::{command_for, locate_with_suffixes, lookup_suffixes};
+use super::python_runtime_path::lookup_suffixes;
+#[cfg(unix)]
+use super::python_runtime_path::{command_for, locate_with_suffixes};
+#[cfg(unix)]
 use super::runtime_manifest::RuntimeManifest;
 use std::ffi::OsStr;
+#[cfg(unix)]
 use std::path::Path;
 
 #[cfg(unix)]

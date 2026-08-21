@@ -43,10 +43,10 @@ impl CefAuthoritySlot {
             return false;
         }
         let mut difference = 0_u64;
-        for (stored, provided) in self.nonce.iter().zip(publication.nonce.chunks_exact(8)) {
-            let mut bytes = [0_u8; 8];
-            bytes.copy_from_slice(provided);
-            difference |= stored.load(Ordering::Acquire) ^ u64::from_le_bytes(bytes);
+        let (provided_words, remainder) = publication.nonce.as_chunks::<8>();
+        debug_assert!(remainder.is_empty());
+        for (stored, provided) in self.nonce.iter().zip(provided_words) {
+            difference |= stored.load(Ordering::Acquire) ^ u64::from_le_bytes(*provided);
         }
         difference == 0
     }

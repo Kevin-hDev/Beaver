@@ -90,7 +90,9 @@ impl Sha256Digest {
             return Err(FingerprintError::InvalidSha256);
         }
         let mut bytes = [0_u8; 32];
-        for (index, pair) in raw.as_bytes().chunks_exact(2).enumerate() {
+        let (pairs, remainder) = raw.as_bytes().as_chunks::<2>();
+        debug_assert!(remainder.is_empty());
+        for (index, pair) in pairs.iter().enumerate() {
             bytes[index] = decode_hex_pair(pair).ok_or(FingerprintError::InvalidSha256)?;
         }
         Ok(Self { bytes })

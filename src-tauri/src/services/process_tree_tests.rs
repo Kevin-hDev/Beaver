@@ -1,6 +1,9 @@
+#[cfg(unix)]
 use super::unix::UnixProcessIdentity;
+#[cfg(unix)]
 use sysinfo::Pid;
 
+#[cfg(unix)]
 #[test]
 fn stale_descendant_identity_is_rejected_before_signal() {
     let identity = UnixProcessIdentity::new(Pid::from_u32(42), 100);

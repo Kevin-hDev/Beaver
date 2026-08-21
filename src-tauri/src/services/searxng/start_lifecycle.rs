@@ -85,6 +85,7 @@ impl SearxngSidecar {
             _admission: admission,
         };
         if let Err(handle) = self.publish(handle, generation, cancel).await {
+            let handle = *handle;
             super::process::kill_child_process(handle.child).await;
             return Err(shutdown_error());
         }
@@ -113,10 +114,12 @@ impl SearxngSidecar {
         handle: SearxngHandle,
         generation: u64,
         cancel: &ServiceWorkCancellation,
-    ) -> Result<(), SearxngHandle> {
+    ) -> Result<(), Box<SearxngHandle>> {
         let mut guard = self.process.lock().await;
         if ensure_start_active(self, cancel, generation).is_err() || guard.is_some() {
-            return Err(handle);
+            // Rejection returns ownership to cleanup; boxing keeps every result
+            // crossing this uncommon async boundary small.
+            return Err(Box::new(handle));
         }
         *guard = Some(handle);
         Ok(())
@@ -163,7 +166,7 @@ impl SearxngSidecar {
             port: 0,
             _admission: admission,
         };
-        let rejected = self
+        let rejected = *self
             .publish(handle, generation, &cancel)
             .await
             .expect_err("stale generation must lose publication");

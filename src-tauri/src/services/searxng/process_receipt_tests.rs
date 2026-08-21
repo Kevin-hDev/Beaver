@@ -1,6 +1,8 @@
 use std::time::{Duration, Instant};
 
-use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity, OwnedProcessInspection};
+#[cfg(unix)]
+use crate::services::owned_process::OwnedProcess;
+use crate::services::owned_process::{OwnedProcessIdentity, OwnedProcessInspection};
 
 use super::process_receipt::{
     classify_recovery, RecoveryOutcome, SearxngProcessReceipt, SearxngProcessReceiptStore,

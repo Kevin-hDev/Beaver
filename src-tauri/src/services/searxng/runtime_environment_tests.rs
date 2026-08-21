@@ -468,8 +468,8 @@ async fn source_change_during_installation_prevents_publication() {
 
 #[test]
 fn receipt_publication_refuses_a_preexisting_temporary_file() {
-    let fixture = RuntimeFixture::new(false);
-    let layout = layout(fixture.root());
+    let root = tempfile::tempdir().expect("temporary runtime root");
+    let layout = layout(root.path());
     std::fs::create_dir(&layout.staged).expect("staged runtime");
     std::fs::write(
         layout.staged.join(".runtime-receipt.json.next"),
@@ -493,8 +493,8 @@ fn receipt_publication_refuses_a_preexisting_temporary_file() {
 
 #[test]
 fn failed_receipt_rename_never_exposes_a_partial_final_document() {
-    let fixture = RuntimeFixture::new(false);
-    let layout = layout(fixture.root());
+    let root = tempfile::tempdir().expect("temporary runtime root");
+    let layout = layout(root.path());
     std::fs::create_dir(&layout.staged).expect("staged runtime");
     let result = super::runtime_receipt::write_receipt_with(
         &layout,
