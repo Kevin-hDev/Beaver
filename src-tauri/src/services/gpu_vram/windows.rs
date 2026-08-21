@@ -18,7 +18,9 @@ try {
   if ($null -ne $used) { $cimUsed = [UInt64]$used }
   if ($null -ne $limit) { $cimTotal = [UInt64]$limit }
 } catch { $ignoredCounterError = $_ }
-if ($cimTotal -eq 0 -or $cimUsed -eq 0) {
+# Zero usage is a valid idle measurement. Only fall back when CIM has no total,
+# so one refresh never combines counters describing different adapter sets.
+if ($cimTotal -eq 0) {
   try {
     $counterTotal = [UInt64](((Get-Counter '\GPU Adapter Memory(*)\Dedicated Limit' -ErrorAction Stop).CounterSamples | Measure-Object -Property CookedValue -Sum).Sum)
     $counterUsed = [UInt64](((Get-Counter '\GPU Adapter Memory(*)\Dedicated Usage' -ErrorAction Stop).CounterSamples | Measure-Object -Property CookedValue -Sum).Sum)

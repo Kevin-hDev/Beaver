@@ -11,7 +11,7 @@ mod owned_probe_tests;
 mod snapshot;
 #[cfg(target_os = "windows")]
 mod windows;
-#[cfg(any(test, windows))]
+#[cfg(any(test, target_os = "windows"))]
 mod windows_snapshot;
 
 use serde::Serialize;
@@ -47,10 +47,6 @@ const CTX_LOW: u32 = 8192;
 
 pub fn detect_vram_mb() -> Option<u64> {
     SNAPSHOT.get().map(|snapshot| snapshot.total_mb)
-}
-
-pub fn detect_vram_used_mb() -> Option<u64> {
-    SNAPSHOT.get().map(|snapshot| snapshot.used_mb)
 }
 
 pub fn current_snapshot() -> Option<GpuMemorySnapshot> {
@@ -163,7 +159,6 @@ mod tests {
         }));
 
         assert_eq!(detect_vram_mb(), Some(24_576));
-        assert_eq!(detect_vram_used_mb(), Some(8_192));
         assert_eq!(compute_default_num_ctx(), CTX_HIGH);
         SNAPSHOT.replace(None);
     }

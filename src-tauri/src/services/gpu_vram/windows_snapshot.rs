@@ -13,19 +13,37 @@ pub(super) fn parse_sources(bytes: &[u8], truncated: bool) -> Option<(u64, u64)>
     if fields.next().is_some() || lines.any(|line| !line.trim().is_empty()) {
         return None;
     }
-    let total = [registry_total, cim_total, counter_total]
-        .into_iter()
-        .find(|value| *value > 0)
-        .unwrap_or(0);
-    let used = [cim_used, counter_used]
-        .into_iter()
-        .find(|value| *value > 0)
-        .unwrap_or(0);
+    // A total and its usage must describe the same adapter set; mixing sources can
+    // fabricate a percentage above 100% on hybrid-GPU systems.
+    let (total, used) = if cim_total > 0 {
+        (cim_total, cim_used)
+    } else if counter_total > 0 {
+        (counter_total, counter_used)
+    } else if registry_total > 0 {
+        (registry_total, 0)
+    } else if cim_used > 0 {
+        (0, cim_used)
+    } else {
+        (0, counter_used)
+    };
     (total > 0 || used > 0).then_some((total / 1_048_576, used / 1_048_576))
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn totals_and_usage_from_different_sources_are_never_combined() {
+        let registry_only = super::parse_sources(b"8589934592,0,2147483648,0,0\n", false);
+        assert_eq!(registry_only, Some((8_192, 0)));
+
+        let complete_cim = super::parse_sources(b"17179869184,8589934592,2147483648,0,0\n", false);
+        assert_eq!(complete_cim, Some((8_192, 2_048)));
+
+        let idle_cim =
+            super::parse_sources(b"17179869184,8589934592,0,8589934592,2147483648\n", false);
+        assert_eq!(idle_cim, Some((8_192, 0)));
+    }
+
     #[test]
     fn system_counter_values_recover_when_registry_and_cim_are_unavailable() {
         let snapshot = super::parse_sources(b"0,0,0,8589934592,2147483648\n", false);

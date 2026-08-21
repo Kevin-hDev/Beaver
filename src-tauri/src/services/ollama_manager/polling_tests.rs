@@ -39,6 +39,17 @@ fn gpu_with_system_usage_without_total() {
 }
 
 #[test]
+fn ollama_gpu_allocation_without_a_system_measurement_keeps_unknown_values() {
+    let json = r#"{"models":[{"name":"qwen3:14b","size":9000000000,"size_vram":5368709120}]}"#;
+    let ps: PsResponse = serde_json::from_str(json).unwrap();
+    let status = build_gpu_status(&ps, None);
+
+    assert_eq!(status.accelerator, "VRAM");
+    assert_eq!(status.vram_used_mb, 0);
+    assert_eq!(status.vram_total_mb, 0);
+}
+
+#[test]
 fn idle_with_vram_shows_vram() {
     let status = build_gpu_status(
         &PsResponse { models: vec![] },

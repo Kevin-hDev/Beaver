@@ -39,20 +39,26 @@ pub fn detect() -> HardwareProfile {
     system.refresh_memory();
     let available = system.available_memory() / 1_048_576;
     let ram_available_mb = (available > 0).then_some(available);
-    let vram_total_mb = crate::services::gpu_vram::detect_vram_mb();
-    let gpu_memory_kind = if is_apple_silicon() && vram_total_mb.is_some() {
-        GpuMemoryKind::Unified
-    } else if vram_total_mb.is_some() {
-        GpuMemoryKind::Dedicated
-    } else {
-        GpuMemoryKind::Unknown
-    };
+    profile_from_snapshot(
+        crate::services::gpu_vram::current_snapshot(),
+        ram_available_mb,
+    )
+}
+
+fn profile_from_snapshot(
+    snapshot: Option<crate::services::gpu_vram::GpuMemorySnapshot>,
+    ram_available_mb: Option<u64>,
+) -> HardwareProfile {
+    let gpu_memory_kind = snapshot
+        .map(|measurement| measurement.kind)
+        .unwrap_or(GpuMemoryKind::Unknown);
+    let vram_total_mb = snapshot.map(|measurement| measurement.total_mb);
     let vram_available_mb = if gpu_memory_kind == GpuMemoryKind::Unified {
         ram_available_mb
+    } else if gpu_memory_kind == GpuMemoryKind::Dedicated {
+        snapshot.map(|measurement| measurement.total_mb.saturating_sub(measurement.used_mb))
     } else {
-        vram_total_mb
-            .zip(crate::services::gpu_vram::detect_vram_used_mb())
-            .map(|(total, used)| total.saturating_sub(used))
+        None
     };
     HardwareProfile {
         gpu_memory_kind,
@@ -103,10 +109,6 @@ pub(crate) fn validate_model_resources_with_profile(
     }
 }
 
-const fn is_apple_silicon() -> bool {
-    cfg!(all(target_os = "macos", target_arch = "aarch64"))
-}
-
 fn fit(required_mb: u64, available_mb: u64) -> ResourceFit {
     if required_mb == 0 {
         return ResourceFit::Comfortable;
@@ -140,6 +142,33 @@ fn best_fit(gpu: Option<ResourceFit>, cpu: Option<ResourceFit>) -> ResourceFit {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::gpu_vram::GpuMemorySnapshot;
+
+    #[test]
+    fn snapshot_kind_is_the_only_gpu_memory_kind_authority() {
+        let unknown = profile_from_snapshot(
+            Some(GpuMemorySnapshot {
+                kind: GpuMemoryKind::Unknown,
+                total_mb: 32_768,
+                used_mb: 8_192,
+            }),
+            Some(20_000),
+        );
+        assert_eq!(unknown.gpu_memory_kind, GpuMemoryKind::Unknown);
+        assert_eq!(unknown.vram_total_mb, Some(32_768));
+        assert_eq!(unknown.vram_available_mb, None);
+
+        let unified = profile_from_snapshot(
+            Some(GpuMemorySnapshot {
+                kind: GpuMemoryKind::Unified,
+                total_mb: 32_768,
+                used_mb: 8_192,
+            }),
+            Some(20_000),
+        );
+        assert_eq!(unified.gpu_memory_kind, GpuMemoryKind::Unified);
+        assert_eq!(unified.vram_available_mb, Some(20_000));
+    }
 
     #[test]
     fn safety_margin_blocks_tight_resources() {
