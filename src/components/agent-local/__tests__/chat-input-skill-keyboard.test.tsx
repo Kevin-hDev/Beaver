@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { PermissionMode } from "@/hooks/use-permission-mode";
 import type { SkillInfo } from "@/types/agent";
 import { ChatInput } from "../chat-input";
+import { clearComposerDraft } from "@/hooks/use-composer-draft";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -53,6 +54,7 @@ const skills: SkillInfo[] = [
 ];
 
 const baseProps = {
+  draftKey: "skill-keyboard",
   modelName: "test-model",
   providerName: "test-provider",
   isStreaming: false,
@@ -108,6 +110,7 @@ afterAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  clearComposerDraft(baseProps.draftKey);
   vi.mocked(invoke).mockImplementation((command) => {
     if (command === "list_skills") return Promise.resolve(skills);
     if (command === "load_skill") return Promise.resolve("# Skill");
@@ -190,5 +193,27 @@ describe("navigation clavier des skills", () => {
     view.contentDOM.dispatchEvent(letterEvent);
 
     expect(letterEvent.defaultPrevented).toBe(false);
+  });
+
+  it("restaure un skill sélectionné avec son contenu après remontage", async () => {
+    const onSend = vi.fn();
+    const first = render(<ChatInput {...baseProps} onSend={onSend} />);
+    const firstView = editorView(first.container);
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("list_skills"));
+    typeSlash(firstView);
+    await screen.findByText("beta-skill");
+    fireEvent.keyDown(firstView.contentDOM, { key: "ArrowUp" });
+    fireEvent.keyDown(firstView.contentDOM, { key: "Enter" });
+    await waitFor(() => expect(firstView.state.doc.toString()).toBe("/beta-skill"));
+    first.unmount();
+
+    const second = render(<ChatInput {...baseProps} onSend={onSend} />);
+    expect(second.container.querySelector(".skill-chip-name")).toHaveTextContent("beta-skill");
+    fireEvent.keyDown(editorView(second.container).contentDOM, { key: "Enter" });
+
+    expect(onSend).toHaveBeenCalledWith("/beta-skill", undefined, [
+      { name: "beta-skill", content: "# Skill" },
+    ]);
   });
 });

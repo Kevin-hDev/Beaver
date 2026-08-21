@@ -1,24 +1,24 @@
-import { useState, useCallback, useRef } from "react";
+import { useCallback } from "react";
 import type { SkillInfo } from "@/types/agent";
 import type { useSlashCommands } from "@/hooks/use-slash-commands";
 import type { SlashItem } from "@/hooks/use-slash-commands";
 import { activeSkillsInText, replaceSlashToken } from "@/lib/skill-text";
+import type { ComposerDraftSkill } from "@/hooks/use-composer-draft";
 
 export interface ActiveSkillsState {
   activeSkills: SkillInfo[];
-  skillContentsRef: React.RefObject<Map<string, string>>;
   handleSelectSkill: (item: SlashItem) => Promise<void>;
   getSkillsPayload: () => { name: string; content: string }[] | undefined;
-  clearSkills: () => void;
 }
 
 export function useActiveSkills(
   slash: ReturnType<typeof useSlashCommands>,
   text: string,
   setText: (v: string) => void,
+  draftSkills: ComposerDraftSkill[],
+  rememberSkill: (skill: SkillInfo, content: string) => void,
 ): ActiveSkillsState {
-  const [activeSkills, setActiveSkills] = useState<SkillInfo[]>([]);
-  const skillContentsRef = useRef<Map<string, string>>(new Map());
+  const activeSkills = draftSkills.map((entry) => entry.info);
 
   const handleSelectSkill = useCallback(async (item: SlashItem) => {
     const result = await slash.selectItem(item);
@@ -30,32 +30,22 @@ export function useActiveSkills(
     }
 
     const { skill, content } = result;
-    if (!activeSkills.some((s) => s.id === skill.id)) {
-      setActiveSkills((prev) => [...prev, skill]);
-    }
-    skillContentsRef.current.set(skill.id, content);
+    rememberSkill(skill, content);
     setText(replaceSlashToken(text, skill.command));
-  }, [slash, text, setText, activeSkills]);
+  }, [slash, text, setText, rememberSkill]);
 
   const getSkillsPayload = useCallback(() => {
     const visibleSkills = activeSkillsInText(text, activeSkills);
     if (visibleSkills.length === 0) return undefined;
     return visibleSkills.map((s) => ({
       name: s.command,
-      content: skillContentsRef.current.get(s.id) ?? "",
+      content: draftSkills.find((entry) => entry.info.id === s.id)?.content ?? "",
     }));
-  }, [activeSkills, text]);
-
-  const clearSkills = useCallback(() => {
-    setActiveSkills([]);
-    skillContentsRef.current.clear();
-  }, []);
+  }, [activeSkills, draftSkills, text]);
 
   return {
     activeSkills,
-    skillContentsRef,
     handleSelectSkill,
     getSkillsPayload,
-    clearSkills,
   };
 }

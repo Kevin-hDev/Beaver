@@ -14,6 +14,7 @@ import { addProjectDirectory, selectProjectDirectory } from "@/hooks/project-dir
 import { showToast } from "@/lib/toast-emitter";
 import { noteComposerPosition, takeComposerPosition } from "@/lib/composer-handoff";
 import { waitForTitleExit } from "./welcome-leave";
+import { WELCOME_COMPOSER_DRAFT_KEY } from "@/hooks/use-composer-draft";
 import "./welcome-view.css";
 
 interface WelcomeViewProps {
@@ -91,6 +92,7 @@ export function WelcomeView({
           <WelcomeWordmark leaving={leaving} />
           <div className="welcome-input-wrap">
             <ChatInput
+              draftKey={WELCOME_COMPOSER_DRAFT_KEY}
               modelName={model}
               providerName={provider}
               isStreaming={false}

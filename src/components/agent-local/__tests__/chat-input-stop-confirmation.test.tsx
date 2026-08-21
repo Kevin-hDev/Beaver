@@ -69,6 +69,7 @@ vi.mock("../chat-input-textarea.css", () => ({}));
 vi.mock("../chat-input-responsive.css", () => ({}));
 
 const baseProps = {
+  draftKey: "stop-confirmation",
   modelName: "llama3",
   providerName: "ollama",
   isStreaming: true,

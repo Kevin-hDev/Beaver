@@ -30,6 +30,7 @@ import { usePreflightDirectoryAccessPrompt } from "@/hooks/use-preflight-directo
 import { useComposerHandoff } from "@/hooks/use-composer-handoff";
 import { hasComposerPosition } from "@/lib/composer-handoff";
 import { cn } from "@/lib/utils";
+import { sessionComposerDraftKey } from "@/hooks/use-composer-draft";
 import { PermissionDialog } from "./permission-dialog";
 import { ChatTranscript } from "./chat-transcript";
 import type { ChatViewProps } from "./chat-view-types";
@@ -57,7 +58,6 @@ export function ChatView({
     permMode.refresh,
   );
   const subagents = useSubagents(isSubagent ? undefined : sessionId);
-  const knownSubagents = [...subagents.active, ...subagents.completed];
   const fileDrop = useFileDrop();
   const context = useContextProgress(model, chat.sessionTokenCount, provider);
   const contextMax = chat.contextLimitTokens || context.max;
@@ -139,7 +139,7 @@ export function ChatView({
           cloneEnabled={canCloneMessages && !!onCloneMessage}
           containerRef={containerRef}
           isAtBottom={isAtBottom}
-          knownSubagents={knownSubagents}
+          knownSubagents={subagents.active.concat(subagents.completed)}
           onFilePreviewPath={onFilePreviewPath}
           onOpenSubagent={onOpenSubagent}
           onScrollBottom={scrollToBottom}
@@ -173,6 +173,7 @@ export function ChatView({
               <div className="chat-input-anchor">
                 {!isAtBottom && <ScrollBottomButton onClick={scrollToBottom} />}
                 <ChatInput
+                  draftKey={sessionComposerDraftKey(sessionId)}
                   modelName={model} providerName={provider} isStreaming={chat.isStreaming} reasoningMode={reasoningMode}
                   files={fileDrop.files} contextUsed={contextUsage.used}
                   contextMax={chat.contextUsageVisible ? contextMax : 0} contextBreakdown={contextUsage}

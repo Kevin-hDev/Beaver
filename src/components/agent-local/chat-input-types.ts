@@ -6,6 +6,7 @@ import type { AgentInteractiveChoiceRequest, RetryIndicatorState } from "@/types
 import type { MissingSessionDirectory } from "@/hooks/use-agent-missing-directory";
 
 export interface ChatInputProps {
+  draftKey: string;
   modelName: string;
   providerName: string;
   isStreaming: boolean;

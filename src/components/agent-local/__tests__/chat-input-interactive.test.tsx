@@ -58,6 +58,7 @@ vi.mock("../chat-input-responsive.css", () => ({}));
 vi.mock("../interactive-choice-panel.css", () => ({}));
 
 const baseProps = {
+  draftKey: "interactive",
   modelName: "llama3",
   providerName: "ollama",
   isStreaming: false,

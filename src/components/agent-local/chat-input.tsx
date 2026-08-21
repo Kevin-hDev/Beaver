@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChatInputActionsRow } from "./chat-input-actions-row";
 import { ChatInputEditor } from "./chat-input-editor";
@@ -11,6 +11,7 @@ import { SlashAutocomplete } from "./slash-autocomplete";
 import { FileThumbnail } from "./file-thumbnail";
 import { useStopConfirmation } from "./use-stop-confirmation";
 import type { ChatInputProps } from "./chat-input-types";
+import { useComposerDraft } from "@/hooks/use-composer-draft";
 import "./chat.css";
 import "./chat-input-textarea.css";
 import "./chat-input-responsive.css";
@@ -21,6 +22,7 @@ const K_ENTER = "Enter";
 const K_ESC = "Escape";
 
 export function ChatInput({
+  draftKey,
   modelName, providerName, isStreaming, reasoningMode, files,
   contextUsed, contextMax, contextBreakdown, retryIndicator,
   interactiveRequest, onInteractiveResolved,
@@ -30,9 +32,21 @@ export function ChatInput({
   onRemoveFile, onPreviewFile, onClearFiles,
 }: ChatInputProps) {
   const { t } = useTranslation();
-  const [text, setText] = useState("");
+  const {
+    text,
+    skills: draftSkills,
+    setText,
+    rememberSkill,
+    clear: clearDraft,
+  } = useComposerDraft(draftKey);
   const slash = useSlashCommands();
-  const skills = useActiveSkills(slash, text, setText);
+  const skills = useActiveSkills(
+    slash,
+    text,
+    setText,
+    draftSkills,
+    rememberSkill,
+  );
   const bubbleRef = useRef<HTMLDivElement>(null);
   const { isConfirmingStop, requestStop, stopNow } = useStopConfirmation(isStreaming, onStop);
 
@@ -48,15 +62,14 @@ export function ChatInput({
   const handleSend = useCallback(() => {
     if (!hasContent || interactivePending) return;
     onSend(text.trim(), hasFiles ? files : undefined, skills.getSkillsPayload());
-    setText("");
-    skills.clearSkills();
+    clearDraft();
     onClearFiles?.();
-  }, [text, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles]);
+  }, [text, hasContent, hasFiles, files, skills, interactivePending, onSend, onClearFiles, clearDraft]);
 
   const handleChange = useCallback((value: string, cursorPos: number) => {
     setText(value);
     slash.handleInput(value, cursorPos);
-  }, [slash]);
+  }, [setText, slash]);
 
   // Shared Enter logic. The editor gives the four chat control keys priority
   // only when this handler consumes them.
