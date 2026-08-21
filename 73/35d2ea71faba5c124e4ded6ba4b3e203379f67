@@ -1,0 +1,11 @@
+CI evidence and decisions
+
+Run 32491165457 exposed three independent contract gaps. Complete Windows backend tests ran 3616 passing tests but two inherited-pipe fixtures failed: pass_fds is Unix-only, and the 50 ms deadline expired before loaded Windows Python wrote its descendant PID. The fixtures now use inheritable descriptors with close_fds=False on every OS. Unix keeps the 50 ms deadline; Windows gets 2 seconds solely so Python starts before the same global-deadline behavior is exercised.
+
+Windows strict Clippy also found PythonRuntime test helpers unused after Unix fake-executable tests were correctly gated. No dead-code allowance was added. A Windows-only test now reads the actual test interpreter version and exercises resolve_with_path against its real executable directory.
+
+The Linux persistence contract correctly detected that SearXNG data_dir ownership moved from process.rs into paths.rs and process_receipt.rs. The single expected-reference authority now records the exact current distribution: paths 2, process 2, process_receipt 1.
+
+Executed locally with Rust 1.98.0: cargo fmt --check; cargo clippy --all-targets -- -D warnings; inherited-pipe deadline test 5 consecutive passes; successful-parent cleanup test 3 consecutive passes; SearXNG 85 passed and 1 release-wheelhouse test ignored; persistence migration 9 passed; CI script contracts 16 passed; graphify update completed.
+
+The new Windows resolver test and portable inherited-handle behavior still require the native PR runner. This note does not claim Windows success before that run is green.
