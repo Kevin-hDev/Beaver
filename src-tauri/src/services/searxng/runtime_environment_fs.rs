@@ -42,57 +42,38 @@ impl Layout {
 }
 
 pub(super) fn recover(layout: &Layout) -> Result<(), RuntimeError> {
-    if present_dir(&layout.staged)? {
-        remove_dir(layout, &layout.staged)?;
-    }
-    if present_dir(&layout.current)? && present_dir(&layout.previous)? {
-        // `previous` existe jusqu'à la readiness : sa présence au prochain
-        // ensure prouve que `current` n'a jamais été confirmé.
-        remove_dir(layout, &layout.current)?;
-    }
-    if !present_dir(&layout.current)? && present_dir(&layout.previous)? {
-        rename_dir(layout, &layout.previous, &layout.current)?;
-    }
-    Ok(())
+    super::generational_publication::recover(
+        paths(layout),
+        super::generational_publication::RecoveryPolicy::RollBackUnconfirmed,
+        RuntimeError::EnvironmentUnavailable,
+    )
 }
 
 pub(super) fn prepare_staging(layout: &Layout) -> Result<(), RuntimeError> {
-    if present_dir(&layout.staged)? {
-        return Err(RuntimeError::EnvironmentUnavailable);
-    }
-    fs::create_dir(&layout.staged).map_err(|_| RuntimeError::EnvironmentUnavailable)
+    super::generational_publication::prepare_staging(
+        paths(layout),
+        RuntimeError::EnvironmentUnavailable,
+    )
 }
 
 pub(super) fn publish(layout: &Layout) -> Result<(), RuntimeError> {
-    publish_with(layout, |from, to| rename_dir(layout, from, to))
+    super::generational_publication::publish(
+        paths(layout),
+        super::generational_publication::RecoveryPolicy::RollBackUnconfirmed,
+        RuntimeError::EnvironmentUnavailable,
+    )
 }
 
-pub(super) fn publish_with<F>(layout: &Layout, publish_next: F) -> Result<(), RuntimeError>
-where
-    F: FnOnce(&Path, &Path) -> Result<(), RuntimeError>,
-{
-    if present_dir(&layout.current)? {
-        if present_dir(&layout.previous)? {
-            return Err(RuntimeError::EnvironmentUnavailable);
-        }
-        rename_dir(layout, &layout.current, &layout.previous)?;
+pub(super) fn paths(layout: &Layout) -> super::generational_publication::Paths<'_> {
+    super::generational_publication::Paths {
+        current: &layout.current,
+        staged: &layout.staged,
+        previous: &layout.previous,
     }
-    if let Err(error) = publish_next(&layout.staged, &layout.current) {
-        if !present_dir(&layout.current)? && present_dir(&layout.previous)? {
-            rename_dir(layout, &layout.previous, &layout.current)?;
-        }
-        return Err(error);
-    }
-    Ok(())
 }
 
 pub(super) fn present_dir(path: &Path) -> Result<bool, RuntimeError> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_dir() => Ok(true),
-        Ok(_) => Err(RuntimeError::EnvironmentUnavailable),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
-        Err(_) => Err(RuntimeError::EnvironmentUnavailable),
-    }
+    super::generational_publication::present(path, RuntimeError::EnvironmentUnavailable)
 }
 
 pub(super) fn regular_executable(path: &Path) -> Result<bool, RuntimeError> {
@@ -120,19 +101,7 @@ fn executable_metadata(_: &fs::Metadata) -> Result<bool, RuntimeError> {
 
 pub(super) fn remove_dir(layout: &Layout, path: &Path) -> Result<(), RuntimeError> {
     require_layout_path(layout, path)?;
-    if !present_dir(path)? {
-        return Ok(());
-    }
-    fs::remove_dir_all(path).map_err(|_| RuntimeError::EnvironmentUnavailable)
-}
-
-pub(super) fn rename_dir(layout: &Layout, from: &Path, to: &Path) -> Result<(), RuntimeError> {
-    require_layout_path(layout, from)?;
-    require_layout_path(layout, to)?;
-    if !present_dir(from)? || present_dir(to)? {
-        return Err(RuntimeError::EnvironmentUnavailable);
-    }
-    fs::rename(from, to).map_err(|_| RuntimeError::EnvironmentUnavailable)
+    super::generational_publication::remove_if_present(path, RuntimeError::EnvironmentUnavailable)
 }
 
 fn require_layout_path(layout: &Layout, path: &Path) -> Result<(), RuntimeError> {

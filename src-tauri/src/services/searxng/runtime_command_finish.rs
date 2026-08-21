@@ -8,7 +8,7 @@ use crate::services::work_registry::ServiceWorkCancellation;
 use super::runtime_command::{record_output, RuntimeCommandError, RuntimeStage};
 use super::runtime_command_drain::{DrainTasks, DrainWait, DrainedOutput};
 
-const PIPE_DRAIN_GRACE: Duration = Duration::from_millis(100);
+const PIPE_DRAIN_GRACE: Duration = Duration::from_secs(2);
 
 pub(super) async fn after_parent(
     status: ExitStatus,
@@ -49,12 +49,10 @@ async fn finish_after_pipe_cleanup(
     drains: &mut DrainTasks,
     stage: RuntimeStage,
 ) -> Result<(), RuntimeCommandError> {
-    if stop_inherited_pipes(root_pid).await.is_err() {
-        return record_output(
-            RuntimeCommandError::Drain(stage),
-            drains.abort_and_collect().await,
-        );
-    }
+    // Le statut du parent fait foi. Un nettoyage non confirmé est tracé,
+    // mais ne transforme jamais une commande réussie en échec.
+    let cleanup = stop_inherited_pipes(root_pid).await;
+    trace_incomplete_pipe_cleanup(root_pid, cleanup);
     finish_status(status, stage, drains.abort_and_collect().await)
 }
 
@@ -69,7 +67,7 @@ pub(super) async fn after_failure(
         crate::services::process_tree::ProcessKind::Searxng,
     )
     .await;
-    let _ = stop_inherited_pipes(root_pid).await;
+    trace_incomplete_pipe_cleanup(root_pid, stop_inherited_pipes(root_pid).await);
     record_output(error, drains.abort_and_collect().await)
 }
 
@@ -78,7 +76,7 @@ async fn stop_after_parent(
     root_pid: u32,
     drains: &mut DrainTasks,
 ) -> Result<(), RuntimeCommandError> {
-    let _ = stop_inherited_pipes(root_pid).await;
+    trace_incomplete_pipe_cleanup(root_pid, stop_inherited_pipes(root_pid).await);
     record_output(error, drains.abort_and_collect().await)
 }
 
@@ -105,4 +103,10 @@ async fn stop_inherited_pipes(root_pid: u32) -> Result<(), ()> {
     .map_err(|_| ())?
     .then_some(())
     .ok_or(())
+}
+
+fn trace_incomplete_pipe_cleanup(root_pid: u32, result: Result<(), ()>) {
+    if result.is_err() {
+        ::log::warn!("[searxng] nettoyage des pipes non confirmé racine={root_pid}");
+    }
 }

@@ -163,16 +163,17 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 Close and reopen PowerShell. Then install CPython for the local SearXNG fallback:
 
 ```powershell
-$env:UV_PYTHON_BIN_DIR = Join-Path $HOME ".local\bin"
 $env:UV_PYTHON_INSTALL_BIN = "1"
 uv python install 3.14
 ```
+
+On Windows, Beaver follows the executable directory selected by uv's official installer; overriding it with a Unix-style path would bypass the PATH configured by uv.
 
 Close and reopen PowerShell and Beaver, then verify:
 
 ```powershell
 node --version
-py -3.14 --version
+python3.14 --version
 ```
 
 ### Development only

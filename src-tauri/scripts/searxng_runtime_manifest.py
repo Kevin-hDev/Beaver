@@ -127,7 +127,7 @@ def _emit_contract(arguments: list[str]) -> int:
     try:
         if len(arguments) != 2:
             raise ValueError("invalid runtime manifest")
-        sys.stdout.buffer.write(current_manifest(arguments[1]) + b"\n")
+        sys.stdout.buffer.write(current_manifest(arguments[1]))
         return 0
     except (OSError, ValueError):
         sys.stderr.write("invalid runtime manifest\n")

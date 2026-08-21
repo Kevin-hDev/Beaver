@@ -39,6 +39,14 @@ pub(crate) fn file_is_single_link_regular(file: &File) -> bool {
     bounded_read::file_is_single_link_regular(file)
 }
 
+pub(crate) fn open_regular_single_link(path: &Path) -> Result<Option<File>, String> {
+    bounded_read::open_regular_single_link(path).map_err(|_| private_store_error())
+}
+
+pub(crate) fn configure_open_no_follow(options: &mut OpenOptions) {
+    bounded_read::configure_no_follow(options);
+}
+
 pub async fn atomic_write_async(path: PathBuf, bytes: Vec<u8>) -> Result<(), String> {
     tokio::task::spawn_blocking(move || atomic_write(&path, &bytes))
         .await

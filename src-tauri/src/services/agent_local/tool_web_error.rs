@@ -4,38 +4,10 @@ use super::types_tools::ToolResult;
 #[path = "tool_web_fetch_error.rs"]
 mod fetch_error;
 
-pub(super) fn search(message: String) -> ToolResult {
-    if message == crate::services::searxng::error_codes::SHUTTING_DOWN {
-        return error(
-            message,
-            "web_search_cancelled",
-            ToolErrorCategory::Cancelled,
-            false,
-        );
-    }
-    if searxng_runtime_error(&message) {
-        return error(
-            message,
-            "web_search_runtime_unavailable",
-            ToolErrorCategory::Unavailable,
-            true,
-        );
-    }
-    if message == crate::services::searxng::error_codes::SEARCH_RATE_LIMITED {
-        return error(
-            message,
-            "web_search_rate_limited",
-            ToolErrorCategory::External,
-            true,
-        );
-    }
-    if message == crate::services::searxng::error_codes::SEARCH_INVALID_RESPONSE {
-        return error(
-            message,
-            "web_search_invalid_response",
-            ToolErrorCategory::External,
-            true,
-        );
+pub(super) fn search(failure: crate::services::search::SearchFailure) -> ToolResult {
+    let message = failure.message().to_string();
+    if let Some(code) = failure.machine_code() {
+        return classify_searxng(code, message);
     }
     let lower = message.to_lowercase();
     if contains_any(&lower, &["requête vide", "requête trop longue"]) {
@@ -96,22 +68,62 @@ pub(super) fn search(message: String) -> ToolResult {
     )
 }
 
-fn searxng_runtime_error(message: &str) -> bool {
+fn classify_searxng(code: &str, message: String) -> ToolResult {
     use crate::services::searxng::error_codes;
 
-    [
-        error_codes::APP_UNAVAILABLE,
-        error_codes::BUNDLE_INVALID,
-        error_codes::CONFIG_UNAVAILABLE,
-        error_codes::LOG_UNAVAILABLE,
-        error_codes::OPERATION_INTERRUPTED,
-        error_codes::PROCESS_STATE_UNAVAILABLE,
-        error_codes::RUNTIME_UNAVAILABLE,
-        error_codes::SETTINGS_UNAVAILABLE,
-        error_codes::SOURCE_UNAVAILABLE,
-        error_codes::START_FAILED,
-    ]
-    .contains(&message)
+    match code {
+        error_codes::SHUTTING_DOWN => error(
+            message,
+            "web_search_cancelled",
+            ToolErrorCategory::Cancelled,
+            false,
+        ),
+        error_codes::SEARCH_RATE_LIMITED => error(
+            message,
+            "web_search_rate_limited",
+            ToolErrorCategory::External,
+            true,
+        )
+        .with_error_hint("Réessayer plus tard ou utiliser une autre source."),
+        error_codes::SEARCH_INVALID_RESPONSE => error(
+            message,
+            "web_search_invalid_response",
+            ToolErrorCategory::External,
+            true,
+        ),
+        error_codes::SEARCH_FAILED => error(
+            message,
+            "web_search_unavailable",
+            ToolErrorCategory::External,
+            true,
+        ),
+        error_codes::APP_UNAVAILABLE
+        | error_codes::BUNDLE_INVALID
+        | error_codes::CONFIG_UNAVAILABLE
+        | error_codes::LOG_UNAVAILABLE
+        | error_codes::OPERATION_INTERRUPTED
+        | error_codes::PROCESS_STATE_UNAVAILABLE
+        | error_codes::RUNTIME_UNAVAILABLE
+        | error_codes::SETTINGS_UNAVAILABLE
+        | error_codes::SOURCE_UNAVAILABLE
+        | error_codes::START_FAILED => error(
+            message,
+            "web_search_runtime_unavailable",
+            ToolErrorCategory::Unavailable,
+            true,
+        ),
+        _ => error(
+            message,
+            "web_search_unavailable",
+            ToolErrorCategory::External,
+            true,
+        ),
+    }
+}
+
+#[cfg(test)]
+fn unstructured(message: &str) -> crate::services::search::SearchFailure {
+    crate::services::search::SearchFailure::plain(message.to_string())
 }
 
 pub(super) fn fetch(message: String) -> ToolResult {

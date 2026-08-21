@@ -10,13 +10,19 @@ const ERROR_MESSAGE = "SearXNG script tests failed";
 export async function runSearxngPythonTests({
   repoRoot,
   resolvePython = resolvePythonCommand,
+  probePython,
   run = runCommand,
 } = {}) {
   try {
     if (typeof resolvePython !== "function" || typeof run !== "function") throw new Error();
     const root = await canonicalDirectory(repoRoot);
     const expectedVersion = readSupportedPythonVersion(root);
-    const candidate = await resolvePython({ platform: process.platform, expectedVersion });
+    const request = { platform: process.platform, expectedVersion };
+    if (probePython !== undefined) {
+      if (typeof probePython !== "function") throw new Error();
+      request.probe = probePython;
+    }
+    const candidate = await resolvePython(request);
     await run({
       command: candidate.command,
       args: [
@@ -27,7 +33,7 @@ export async function runSearxngPythonTests({
         "-s",
         "src-tauri/scripts",
         "-p",
-        "test_*searxng*.py",
+        "test_*.py",
       ],
       cwd: root,
       timeoutMs: 120_000,

@@ -5,19 +5,9 @@ use std::path::Path;
 use super::BoundedFile;
 
 pub(super) fn read(path: &Path, max_bytes: u64) -> Result<BoundedFile, ()> {
-    let mut options = OpenOptions::new();
-    options.read(true);
-    configure_no_follow(&mut options);
-    let mut file = match options.open(path) {
-        Ok(file) => file,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(BoundedFile::Missing);
-        }
-        Err(_) => return Err(()),
+    let Some(mut file) = open_regular_single_link(path)? else {
+        return Ok(BoundedFile::Missing);
     };
-    if !file_is_single_link_regular(&file) {
-        return Err(());
-    }
     let metadata = file.metadata().map_err(|_| ())?;
     if metadata.len() > max_bytes {
         return Err(());
@@ -34,15 +24,32 @@ pub(super) fn read(path: &Path, max_bytes: u64) -> Result<BoundedFile, ()> {
     Ok(BoundedFile::Content(content))
 }
 
+pub(super) fn open_regular_single_link(path: &Path) -> Result<Option<std::fs::File>, ()> {
+    let mut options = OpenOptions::new();
+    options.read(true);
+    configure_no_follow(&mut options);
+    let file = match options.open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(None);
+        }
+        Err(_) => return Err(()),
+    };
+    if !file_is_single_link_regular(&file) {
+        return Err(());
+    }
+    Ok(Some(file))
+}
+
 #[cfg(unix)]
-fn configure_no_follow(options: &mut OpenOptions) {
+pub(super) fn configure_no_follow(options: &mut OpenOptions) {
     use std::os::unix::fs::OpenOptionsExt;
 
     options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC);
 }
 
 #[cfg(windows)]
-fn configure_no_follow(options: &mut OpenOptions) {
+pub(super) fn configure_no_follow(options: &mut OpenOptions) {
     use std::os::windows::fs::OpenOptionsExt;
 
     const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
@@ -75,7 +82,7 @@ pub(super) fn file_is_single_link_regular(file: &std::fs::File) -> bool {
 }
 
 #[cfg(not(any(unix, windows)))]
-fn configure_no_follow(_: &mut OpenOptions) {}
+pub(super) fn configure_no_follow(_: &mut OpenOptions) {}
 
 #[cfg(not(any(unix, windows)))]
 pub(super) fn file_is_single_link_regular(_: &std::fs::File) -> bool {

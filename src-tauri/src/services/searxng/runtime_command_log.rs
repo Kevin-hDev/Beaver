@@ -44,12 +44,9 @@ pub(super) fn write(
 }
 
 fn reject_link(path: &std::path::Path) -> Result<(), ()> {
-    match crate::services::private_store::read_bounded_regular(path, MAX_LOG_BYTES as u64)
-        .map_err(|_| ())?
-    {
-        crate::services::private_store::BoundedFile::Missing
-        | crate::services::private_store::BoundedFile::Content(_) => Ok(()),
-    }
+    crate::services::private_store::open_regular_single_link(path)
+        .map(|_| ())
+        .map_err(|_| ())
 }
 
 fn render(bytes: &[u8]) -> String {
@@ -98,5 +95,10 @@ fn sensitive_marker(token: &str) -> bool {
         || lower.contains("api-key")
         || lower.contains("apikey")
         || lower.contains("access-key")
+        || lower.contains("passphrase")
+        || lower.contains("passwd")
+        || lower.contains("private_key")
+        || lower.contains("private-key")
+        || lower.contains("cookie")
         || lower.starts_with("sk-")
 }

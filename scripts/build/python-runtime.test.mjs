@@ -15,6 +15,7 @@ import {
 
 const EXPECTED_VERSION = { major: 3, minor: 14, label: "3.14" };
 const VERSION_FILE = "scripts/build/searxng-python-version.txt";
+const MANIFEST_GOLDEN = "src-tauri/resources/searxng-sidecar/runtime-manifest.golden.json";
 
 function git(args) {
   return execFileSync("git", args, {
@@ -37,6 +38,13 @@ test("conserve LF pour le fichier de version même avec core.autocrlf", () => {
   const filtered = git(["-c", "core.autocrlf=true", "cat-file", "--filters", `HEAD:${VERSION_FILE}`]);
   assert.equal(filtered, "3.14\n");
   assert.deepEqual(parseSupportedPythonVersion(filtered), EXPECTED_VERSION);
+});
+
+test("conserve LF pour le contrat partagé du manifeste SearXNG", () => {
+  assert.equal(
+    git(["check-attr", "eol", "--", MANIFEST_GOLDEN]),
+    `${MANIFEST_GOLDEN}: eol: lf\n`,
+  );
 });
 
 test("lit uniquement le fichier de version contrôlé du dépôt", async () => {

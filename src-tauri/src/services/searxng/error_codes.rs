@@ -12,3 +12,24 @@ pub(crate) const SETTINGS_UNAVAILABLE: &str = "searxng_settings_unavailable";
 pub(crate) const SHUTTING_DOWN: &str = "searxng_shutting_down";
 pub(crate) const SOURCE_UNAVAILABLE: &str = "searxng_source_unavailable";
 pub(crate) const START_FAILED: &str = "searxng_start_failed";
+
+pub(crate) const ALL: [&str; 14] = [
+    APP_UNAVAILABLE,
+    BUNDLE_INVALID,
+    CONFIG_UNAVAILABLE,
+    LOG_UNAVAILABLE,
+    OPERATION_INTERRUPTED,
+    PROCESS_STATE_UNAVAILABLE,
+    RUNTIME_UNAVAILABLE,
+    SEARCH_FAILED,
+    SEARCH_INVALID_RESPONSE,
+    SEARCH_RATE_LIMITED,
+    SETTINGS_UNAVAILABLE,
+    SHUTTING_DOWN,
+    SOURCE_UNAVAILABLE,
+    START_FAILED,
+];
+
+pub(crate) fn known(value: &str) -> Option<&'static str> {
+    ALL.into_iter().find(|code| *code == value)
+}

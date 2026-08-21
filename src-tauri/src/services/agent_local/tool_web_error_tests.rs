@@ -25,9 +25,9 @@ fn blocked_and_invalid_urls_are_not_transport_failures() {
 
 #[test]
 fn search_configuration_rate_limit_and_timeout_are_distinct() {
-    let config = search("Aucun provider configuré".to_string());
-    let limited = search("Brave: limite de requêtes atteinte (HTTP 429)".to_string());
-    let timeout = search("SearXNG: timeout".to_string());
+    let config = search(unstructured("Aucun provider configuré"));
+    let limited = search(unstructured("Brave: limite de requêtes atteinte (HTTP 429)"));
+    let timeout = search(unstructured("SearXNG: timeout"));
 
     let config_error = config.error.unwrap();
     assert_eq!(config_error.code.as_ref(), "web_search_not_configured");
@@ -44,9 +44,9 @@ fn search_configuration_rate_limit_and_timeout_are_distinct() {
 
 #[test]
 fn a_retryable_provider_failure_wins_over_an_auth_failure_from_another_provider() {
-    let result = search(
-        "Brave: authentification refusée; Exa: limite de requêtes atteinte (HTTP 429)".to_string(),
-    );
+    let result = search(unstructured(
+        "Brave: authentification refusée; Exa: limite de requêtes atteinte (HTTP 429)",
+    ));
 
     let error = result.error.unwrap();
     assert_eq!(error.code.as_ref(), "web_search_rate_limited");
@@ -55,8 +55,12 @@ fn a_retryable_provider_failure_wins_over_an_auth_failure_from_another_provider(
 
 #[test]
 fn searxng_machine_codes_keep_local_runtime_errors_translatable() {
-    let runtime = search(crate::services::searxng::error_codes::RUNTIME_UNAVAILABLE.to_string());
-    let cancelled = search(crate::services::searxng::error_codes::SHUTTING_DOWN.to_string());
+    let runtime = search(crate::services::search::SearchFailure::searxng(
+        crate::services::searxng::error_codes::RUNTIME_UNAVAILABLE,
+    ));
+    let cancelled = search(crate::services::search::SearchFailure::searxng(
+        crate::services::searxng::error_codes::SHUTTING_DOWN,
+    ));
 
     let runtime_error = runtime.error.unwrap();
     assert_eq!(runtime_error.code.as_ref(), "web_search_runtime_unavailable");
@@ -66,4 +70,38 @@ fn searxng_machine_codes_keep_local_runtime_errors_translatable() {
         cancelled.error.unwrap().category,
         ToolErrorCategory::Cancelled
     );
+}
+
+#[test]
+fn every_declared_searxng_code_has_an_explicit_tool_classification() {
+    use crate::services::searxng::error_codes;
+
+    let expected = [
+        (error_codes::APP_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::BUNDLE_INVALID, "web_search_runtime_unavailable"),
+        (error_codes::CONFIG_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::LOG_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::OPERATION_INTERRUPTED, "web_search_runtime_unavailable"),
+        (error_codes::PROCESS_STATE_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::RUNTIME_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::SEARCH_FAILED, "web_search_unavailable"),
+        (error_codes::SEARCH_INVALID_RESPONSE, "web_search_invalid_response"),
+        (error_codes::SEARCH_RATE_LIMITED, "web_search_rate_limited"),
+        (error_codes::SETTINGS_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::SHUTTING_DOWN, "web_search_cancelled"),
+        (error_codes::SOURCE_UNAVAILABLE, "web_search_runtime_unavailable"),
+        (error_codes::START_FAILED, "web_search_runtime_unavailable"),
+    ];
+    assert_eq!(expected.len(), error_codes::ALL.len());
+    for (code, expected_tool_code) in expected {
+        let failure = crate::services::search::finish_search(
+            false,
+            false,
+            Vec::new(),
+            Err(code.to_string()),
+        )
+        .unwrap_err();
+        let result = search(failure);
+        assert_eq!(result.error.unwrap().code.as_ref(), expected_tool_code, "{code}");
+    }
 }

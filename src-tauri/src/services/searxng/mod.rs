@@ -5,6 +5,7 @@ mod lifecycle_tests;
 mod client;
 mod compat;
 pub(crate) mod error_codes;
+mod generational_publication;
 mod paths;
 mod private_file;
 mod process;
@@ -30,7 +31,6 @@ mod startup;
 mod startup_failure;
 mod stop_lifecycle;
 mod wheels;
-mod wheels_publication;
 mod work_supervision;
 
 #[cfg(test)]
@@ -47,6 +47,8 @@ mod runtime_environment_tests;
 mod runtime_error_tests;
 #[cfg(test)]
 mod runtime_manifest_tests;
+#[cfg(test)]
+mod wheels_tests;
 
 pub use lifecycle::SearxngSidecar;
 

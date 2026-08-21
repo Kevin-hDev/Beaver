@@ -21,17 +21,26 @@ pub(super) fn create_private(path: &Path) -> Result<File, ()> {
         Ok(metadata) if metadata.file_type().is_file() => {
             let existing = open_read(path)?;
             if !crate::services::private_store::file_is_single_link_regular(&existing) {
+                ::log::warn!("[searxng] log sidecar non régulier, démarrage refusé");
                 return Err(());
             }
             std::fs::remove_file(path).map_err(|_| ())?;
         }
-        Ok(_) => return Err(()),
+        Ok(_) => {
+            ::log::warn!("[searxng] log sidecar non régulier, démarrage refusé");
+            return Err(());
+        }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(_) => return Err(()),
     }
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
-    configure_no_follow(&mut options);
+    crate::services::private_store::configure_open_no_follow(&mut options);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
     let file = options.open(path).map_err(|_| ())?;
     if !crate::services::private_store::file_is_single_link_regular(&file) {
         return Err(());
@@ -57,25 +66,8 @@ pub(super) fn read_tail(path: &Path, max_bytes: u64) -> Result<Vec<u8>, ()> {
 fn open_read(path: &Path) -> Result<File, ()> {
     let mut options = OpenOptions::new();
     options.read(true);
-    configure_no_follow(&mut options);
+    crate::services::private_store::configure_open_no_follow(&mut options);
     options.open(path).map_err(|_| ())
-}
-
-#[cfg(unix)]
-fn configure_no_follow(options: &mut OpenOptions) {
-    use std::os::unix::fs::OpenOptionsExt;
-
-    options
-        .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
-        .mode(0o600);
-}
-
-#[cfg(windows)]
-fn configure_no_follow(options: &mut OpenOptions) {
-    use std::os::windows::fs::OpenOptionsExt;
-
-    const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
-    options.custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
 }
 
 #[cfg(test)]

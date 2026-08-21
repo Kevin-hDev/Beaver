@@ -11,10 +11,37 @@ fn stale_descendant_identity_is_rejected_before_signal() {
 
 #[test]
 fn after_parent_cleanup_refuses_a_reused_root_pid() {
-    assert!(!super::kill_pipe_holders_after_parent_exit(
-        std::process::id(),
+    let mut termination_attempted = false;
+    let result = super::after_parent::kill_pipe_holders_with(
+        42,
         super::ProcessKind::Searxng,
-    ));
+        |_| true,
+        |_, _| {
+            termination_attempted = true;
+            true
+        },
+        |_| {},
+    );
+
+    assert!(!result);
+    assert!(!termination_attempted);
+}
+
+#[cfg(unix)]
+#[test]
+fn stale_group_member_is_rechecked_before_any_signal() {
+    let member = UnixProcessIdentity::new(Pid::from_u32(42), 100);
+    let mut signalled = Vec::new();
+
+    super::after_parent::signal_members_with(
+        &[member],
+        7,
+        libc::SIGTERM,
+        |_, _| false,
+        |pid, signal| signalled.push((pid, signal)),
+    );
+
+    assert!(signalled.is_empty());
 }
 
 #[cfg(unix)]

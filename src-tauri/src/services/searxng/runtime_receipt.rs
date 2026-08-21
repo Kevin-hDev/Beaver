@@ -59,6 +59,20 @@ pub(super) fn write_receipt(
     manifest: &RuntimeManifest,
     source_hash: &str,
 ) -> Result<(), RuntimeError> {
+    write_receipt_with(layout, manifest, source_hash, |from, to| {
+        fs::rename(from, to).map_err(|_| RuntimeError::EnvironmentUnavailable)
+    })
+}
+
+pub(super) fn write_receipt_with<F>(
+    layout: &Layout,
+    manifest: &RuntimeManifest,
+    source_hash: &str,
+    publish: F,
+) -> Result<(), RuntimeError>
+where
+    F: FnOnce(&Path, &Path) -> Result<(), RuntimeError>,
+{
     if !RuntimeManifest::valid_sha256(source_hash) || !present_dir(&layout.staged)? {
         return Err(RuntimeError::EnvironmentUnavailable);
     }
@@ -87,7 +101,7 @@ pub(super) fn write_receipt(
         .map_err(|_| RuntimeError::EnvironmentUnavailable)?;
     file.sync_all()
         .map_err(|_| RuntimeError::EnvironmentUnavailable)?;
-    fs::rename(temp_path, final_path).map_err(|_| RuntimeError::EnvironmentUnavailable)
+    publish(&temp_path, &final_path)
 }
 
 pub(super) fn source_hash(source: &Path) -> Result<String, RuntimeError> {

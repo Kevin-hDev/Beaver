@@ -4,6 +4,8 @@ use crate::app_exit::AppExitCoordinator;
 use crate::services::owned_process::OwnedProcessIdentity;
 use crate::services::work_registry::ServiceWorkSupervisor;
 
+static LOG_GUARD: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 #[test]
 fn startup_log_hint_exposes_only_a_fixed_category() {
     let root = tempfile::tempdir().unwrap();
@@ -56,4 +58,28 @@ async fn unstable_identity_stops_at_the_supplied_deadline() {
 
     assert!(result.is_err());
     assert!(started.elapsed() < Duration::from_millis(150));
+}
+
+#[tokio::test]
+async fn spawn_refuses_a_hard_linked_sidecar_log_without_touching_its_target() {
+    let _guard = LOG_GUARD.lock().await;
+    let log = crate::services::paths::data_dir().join("logs/searxng-sidecar.log");
+    std::fs::create_dir_all(log.parent().unwrap()).unwrap();
+    let _ = std::fs::remove_file(&log);
+    let target = log.with_file_name("sidecar-target.log");
+    std::fs::write(&target, b"keep").unwrap();
+    std::fs::hard_link(&target, &log).unwrap();
+
+    let result = super::process::spawn(
+        std::path::Path::new("unused-python"),
+        std::path::Path::new("unused-source"),
+        std::path::Path::new("unused-settings"),
+        1,
+    )
+    .await;
+
+    assert_eq!(result.unwrap_err(), super::error_codes::LOG_UNAVAILABLE);
+    assert_eq!(std::fs::read(&target).unwrap(), b"keep");
+    std::fs::remove_file(log).unwrap();
+    std::fs::remove_file(target).unwrap();
 }

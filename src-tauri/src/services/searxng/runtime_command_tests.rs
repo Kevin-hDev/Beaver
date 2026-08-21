@@ -139,15 +139,35 @@ async fn successful_parent_closes_inherited_pipes_without_consuming_the_deadline
     );
     let started = std::time::Instant::now();
 
-    let result = run_fixture(&parent, Duration::from_millis(500)).await;
+    let result = run_fixture(&parent, Duration::from_secs(3)).await;
 
     assert!(result.is_ok());
-    assert!(started.elapsed() < Duration::from_millis(900));
+    assert!(started.elapsed() < Duration::from_millis(2_900));
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("descendant pid")
         .parse::<u32>()
         .expect("numeric descendant pid");
     assert!(wait_until_process_is_gone(pid).await);
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn successful_parent_stays_successful_when_a_pipe_holder_escapes_its_group() {
+    let _guard = LOG_GUARD.lock().await;
+    let pid_file = tempfile::NamedTempFile::new().expect("pid file");
+    let parent = format!(
+        "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, pass_fds=(stdout, stderr), start_new_session=True)\nopen({:?}, 'w').write(str(child.pid))\nraise SystemExit(0)",
+        pid_file.path()
+    );
+
+    let result = run_fixture(&parent, Duration::from_secs(3)).await;
+    let pid = std::fs::read_to_string(pid_file.path())
+        .expect("escaped descendant pid")
+        .parse::<u32>()
+        .expect("numeric descendant pid");
+    unsafe { libc::kill(pid as i32, libc::SIGKILL) };
+
+    assert!(result.is_ok());
 }
 
 #[tokio::test]
@@ -235,6 +255,34 @@ async fn diagnostics_keep_redaction_across_a_separator() {
 }
 
 #[tokio::test]
+async fn diagnostics_redact_every_supported_private_marker() {
+    let _guard = LOG_GUARD.lock().await;
+    let markers = [
+        ["pass", "phrase"].concat(),
+        ["pass", "wd"].concat(),
+        ["private", "_key"].concat(),
+        ["private", "-key"].concat(),
+        ["coo", "kie"].concat(),
+    ];
+    for marker in markers {
+        let protected = format!("private-value-{}", std::process::id());
+        let result = run_fixture(
+            &format!(
+                "import sys; print('{marker} {protected}', file=sys.stderr); raise SystemExit(5)"
+            ),
+            Duration::from_secs(1),
+        )
+        .await;
+        assert_eq!(result.unwrap_err().category(), "non-zero");
+        let log = std::fs::read_to_string(super::paths::runtime_log_path()).expect("runtime log");
+        assert!(
+            !log.contains(&protected),
+            "marker {marker} leaked its value"
+        );
+    }
+}
+
+#[tokio::test]
 async fn multibyte_diagnostic_truncation_stays_valid_utf8() {
     let _guard = LOG_GUARD.lock().await;
     let result = run_fixture(
@@ -275,6 +323,20 @@ async fn second_diagnostic_replaces_the_first_even_with_a_stale_legacy_temp() {
     assert!(body.contains("second-tail"));
     assert!(!body.contains("first-tail"));
     std::fs::remove_file(stale).expect("remove stale legacy temp");
+}
+
+#[tokio::test]
+async fn oversized_legacy_diagnostic_is_replaced_instead_of_becoming_absorbing() {
+    let _guard = LOG_GUARD.lock().await;
+    let log = super::paths::runtime_log_path();
+    std::fs::create_dir_all(log.parent().expect("log parent")).expect("log parent");
+    std::fs::write(&log, vec![b'x'; 20_000]).expect("oversized legacy log");
+
+    let result = run_fixture("raise SystemExit(3)", Duration::from_secs(1)).await;
+
+    assert_eq!(result.unwrap_err().category(), "non-zero");
+    let body = std::fs::read(&log).expect("replacement log");
+    assert!(body.len() <= 16_384);
 }
 
 #[cfg(unix)]

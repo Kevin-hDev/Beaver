@@ -133,6 +133,45 @@ fn incompatible_legacy_runtime_is_rebuilt_beside_the_old_one() {
 }
 
 #[test]
+fn staging_guard_preserves_an_existing_untrusted_generation() {
+    let root = tempfile::tempdir().expect("temporary sidecar");
+    let layout = layout(root.path());
+    std::fs::create_dir(&layout.staged).expect("occupied staging");
+    std::fs::write(layout.staged.join("keep"), b"occupied").expect("staging marker");
+
+    let result = super::runtime_environment_fs::prepare_staging(&layout);
+
+    assert!(result.is_err());
+    assert_eq!(
+        std::fs::read(layout.staged.join("keep")).unwrap(),
+        b"occupied"
+    );
+}
+
+#[test]
+fn publication_guard_preserves_a_previous_generation_created_by_this_transaction() {
+    let root = tempfile::tempdir().expect("temporary sidecar");
+    let layout = layout(root.path());
+    std::fs::create_dir(&layout.current).expect("current runtime");
+    std::fs::write(layout.current.join("current"), b"current").unwrap();
+    std::fs::create_dir(&layout.staged).expect("staged runtime");
+    std::fs::create_dir(&layout.previous).expect("previous runtime");
+    std::fs::write(layout.previous.join("keep"), b"previous").unwrap();
+
+    let result = super::runtime_environment_fs::publish(&layout);
+
+    assert!(result.is_err());
+    assert_eq!(
+        std::fs::read(layout.previous.join("keep")).unwrap(),
+        b"previous"
+    );
+    assert_eq!(
+        std::fs::read(layout.current.join("current")).unwrap(),
+        b"current"
+    );
+}
+
+#[test]
 fn failed_publication_restores_the_previous_runtime() {
     let root = tempfile::tempdir().expect("temporary sidecar");
     let current = root.path().join(".venv");
@@ -142,9 +181,13 @@ fn failed_publication_restores_the_previous_runtime() {
     std::fs::create_dir(&staged).expect("staged runtime");
     std::fs::write(staged.join("staged"), b"new").expect("new marker");
 
-    let result = super::runtime_environment_fs::publish_with(&layout(root.path()), |_, _| {
-        Err(super::runtime_error::RuntimeError::EnvironmentUnavailable)
-    });
+    let layout = layout(root.path());
+    let result = super::generational_publication::publish_with(
+        super::runtime_environment_fs::paths(&layout),
+        super::generational_publication::RecoveryPolicy::RollBackUnconfirmed,
+        super::runtime_error::RuntimeError::EnvironmentUnavailable,
+        |_, _| Err(super::runtime_error::RuntimeError::EnvironmentUnavailable),
+    );
 
     assert!(result.is_err());
     assert!(current.join("current").is_file());
@@ -446,6 +489,26 @@ fn receipt_publication_refuses_a_preexisting_temporary_file() {
         std::fs::read(layout.staged.join(".runtime-receipt.json.next")).unwrap(),
         b"occupied"
     );
+}
+
+#[test]
+fn failed_receipt_rename_never_exposes_a_partial_final_document() {
+    let fixture = RuntimeFixture::new(false);
+    let layout = layout(fixture.root());
+    std::fs::create_dir(&layout.staged).expect("staged runtime");
+    let result = super::runtime_receipt::write_receipt_with(
+        &layout,
+        &super::runtime_manifest::RuntimeManifest::for_test(3, 14),
+        &"b".repeat(64),
+        |_, _| Err(super::runtime_error::RuntimeError::EnvironmentUnavailable),
+    );
+
+    assert!(result.is_err());
+    assert!(!layout.staged.join(".runtime-receipt.json").exists());
+    let temporary = std::fs::read(layout.staged.join(".runtime-receipt.json.next"))
+        .expect("complete unpublished receipt");
+    let value: serde_json::Value = serde_json::from_slice(&temporary).expect("complete JSON");
+    assert_eq!(value["schema_version"], 1);
 }
 
 #[cfg(unix)]
