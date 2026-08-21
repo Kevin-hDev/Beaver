@@ -1,0 +1,9 @@
+Native Windows evidence and decision
+
+Run 32493403293 disproved two assumptions from 7335d2ea. The portable Python fixtures now started correctly, but both descendant-cleanup tests left the child alive for their full 30 seconds. The root cause was the Windows process_exists authority: OpenProcess succeeds for an exited process object while another handle remains, so the PID-reuse guard treated the completed root as a live replacement and deliberately skipped cleanup.
+
+The Windows authority now calls GetExitCodeProcess and reports true only for STILL_ACTIVE. This remains fail closed: an unreadable process or failed native query does not authorize descendant cleanup, and a reused live PID still blocks it. A Windows-only regression test keeps the Rust Child handle open after wait and requires process_exists to report false.
+
+The attempted Windows resolver test in 7335d2ea also failed because it depended on the runner preinstalled Python rather than the controlled SearXNG recipe. That false proof is removed. resolve_with_path and label are Unix fake-executable fixture seams and are now compiled only with cfg(all(test, unix)); production Windows resolve remains compiled and checked, without dead-code allowances.
+
+Executed locally with Rust 1.98.0: cargo fmt --check; cargo clippy --all-targets -- -D warnings; SearXNG 85 passed and 1 release-wheelhouse test ignored; owned-process tests 3 passed on macOS; graphify update completed. The new Windows liveness test and descendant cleanup require the native PR runner, and no Windows success is claimed before it is green.
