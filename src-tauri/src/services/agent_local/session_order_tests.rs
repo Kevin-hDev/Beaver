@@ -114,3 +114,61 @@ fn un_identifiant_invalide_est_refuse() {
 
     assert!(refus.is_err());
 }
+
+/* Le dossier de données des tests est unique pour tout le processus : deux
+   tests qui écrivent session-order.json en même temps se marcheraient dessus. */
+async fn guard() -> tokio::sync::MutexGuard<'static, ()> {
+    test_lock().lock().await
+}
+
+#[tokio::test]
+async fn la_liste_epinglee_se_range_comme_les_autres() {
+    let _g = guard().await;
+    let a = uuid::Uuid::new_v4().to_string();
+    let b = uuid::Uuid::new_v4().to_string();
+
+    set_pinned(vec![b.clone(), a.clone()]).await.unwrap();
+
+    let ranks = ranks().await;
+    assert_eq!(ranks.get(&b), Some(&0));
+    assert_eq!(ranks.get(&a), Some(&1));
+}
+
+#[tokio::test]
+async fn oublier_le_rang_retire_l_identifiant_de_toutes_les_listes() {
+    let _g = guard().await;
+    let id = uuid::Uuid::new_v4().to_string();
+    set(None, vec![id.clone()]).await.unwrap();
+    set_pinned(vec![id.clone()]).await.unwrap();
+
+    clear_rank(&id).await.unwrap();
+
+    assert!(!ranks().await.contains_key(&id));
+}
+
+#[tokio::test]
+async fn oublier_un_rang_absent_ne_fait_rien() {
+    let _g = guard().await;
+    let id = uuid::Uuid::new_v4().to_string();
+
+    assert!(clear_rank(&id).await.is_ok());
+}
+
+/* Le nettoyage des listes de projets supprimés ne connaît que les projets
+   vivants : sans exception explicite, il effacerait la liste des épinglées. */
+#[tokio::test]
+async fn le_nettoyage_epargne_la_liste_epinglee() {
+    let _g = guard().await;
+    let id = uuid::Uuid::new_v4().to_string();
+    set_pinned(vec![id.clone()]).await.unwrap();
+
+    set(None, Vec::new()).await.unwrap();
+
+    assert_eq!(ranks().await.get(&id), Some(&0));
+}
+
+#[tokio::test]
+async fn un_identifiant_invalide_est_refuse_pour_la_liste_epinglee() {
+    assert!(set_pinned(vec!["../ailleurs".to_string()]).await.is_err());
+    assert!(clear_rank("../ailleurs").await.is_err());
+}
