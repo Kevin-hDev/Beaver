@@ -1,9 +1,35 @@
 CI correction after PR #30 run 32488583395.
 
-Observed failures:\n- Backend (Rust): scripts/build/check-rust-format.mjs found unformatted included sources, beginning at tool_web_error.rs.\n- Backend Windows CEF: uv installed CPython 3.14.7 successfully, but setup-uv does not publish uv's user Python bin directory to the next GitHub Actions shell; Get-Command python3.14 therefore failed.
+Observed failures:
 
-Decisions:\n- Run rustfmt over the included tool-web module tree. These Rust diffs are formatting-only.\n- Keep uv as the authority for the executable directory: run uv python update-shell, obtain uv python dir --bin, validate that directory, and append it to GITHUB_PATH. The next PowerShell step still proves Get-Command python<controlled version>.\n- Document uv python update-shell in the Windows README recipe. The GitHub-specific GITHUB_PATH bridge exists only because setup-uv is isolated from the standalone user installer.
+- Backend (Rust): scripts/build/check-rust-format.mjs found unformatted included sources, beginning at tool_web_error.rs.
 
-Executed locally:\n- npm run test:ci-scripts: 16 passed\n- RUSTFMT_BASE_SHA=3fa0cc3a653cc2232fe092cac21c5dd25a9a03fc node scripts/build/check-rust-format.mjs: passed\n- cargo fmt --check: passed\n- cargo test --lib tool_web_error: 7 passed\n- cargo clippy --all-targets -- -D warnings: passed\n- npm run test:searxng-scripts: 44 passed\n- git diff --check: passed\n- graphify update .: completed
+- Backend Windows CEF: uv installed CPython 3.14.7 successfully, but setup-uv does not publish uv's user Python bin directory to the next GitHub Actions shell; Get-Command python3.14 therefore failed.
+
+Decisions:
+
+- Run rustfmt over the included tool-web module tree. These Rust diffs are formatting-only.
+
+- Keep uv as the authority for the executable directory: run uv python update-shell, obtain uv python dir --bin, validate that directory, and append it to GITHUB_PATH. The next PowerShell step still proves Get-Command python<controlled version>.
+
+- Document uv python update-shell in the Windows README recipe. The GitHub-specific GITHUB_PATH bridge exists only because setup-uv is isolated from the standalone user installer.
+
+Executed locally:
+
+- npm run test:ci-scripts: 16 passed
+
+- RUSTFMT_BASE_SHA=3fa0cc3a653cc2232fe092cac21c5dd25a9a03fc node scripts/build/check-rust-format.mjs: passed
+
+- cargo fmt --check: passed
+
+- cargo test --lib tool_web_error: 7 passed
+
+- cargo clippy --all-targets -- -D warnings: passed
+
+- npm run test:searxng-scripts: 44 passed
+
+- git diff --check: passed
+
+- graphify update .: completed
 
 Native Windows success is not claimed by this note; the pushed PR CI is the authority for that proof.
