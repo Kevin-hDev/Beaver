@@ -1,0 +1,31 @@
+Task 5 — bounded SearXNG runtime command supervision
+
+Why:
+- the old installer could deadlock on full stdout/stderr or outlive its work admission;
+- one global deadline must cover all four runtime-build stages;
+- diagnostics must stay private, bounded and secret-filtered.
+
+Implementation:
+- one command supervisor owns spawn, cancellation and the shared 300 s deadline;
+- stdout/stderr drain concurrently into bounded 4 KiB tails;
+- private atomic log is capped below 16 KiB and rejects links;
+- parent-exit cleanup targets only inherited-pipe descendants: Unix signals the owned process group without resending the reaped root PID; Windows terminates only descendants still confined in the Job Object;
+- visible failures remain generic while the private receipt records only a closed stage/category.
+
+Controller review:
+- found and fixed unbounded inherited-pipe waits, non-replacing Windows log writes and missing drain-error receipts;
+- then found and fixed the Windows post-parent cleanup gap and the Unix PID-reuse exposure caused by releasing identity before signaling;
+- split the post-parent authority to keep every production file at or below 230 lines.
+
+Evidence:
+- cargo test searxng::runtime_command --lib: 10/10;
+- cargo test searxng::runtime --lib: 24/24;
+- cargo test searxng::runtime_environment --lib: 12/12;
+- cargo test process_tree --lib: 3/3;
+- cargo fmt --check and strict Clippy green;
+- x86_64-pc-windows-gnu cross-check green (pre-existing CEF dead-code warnings only);
+- real Unix descendant fixture disappears before the global deadline;
+- graphify update and git diff --check green.
+
+Limits:
+- Windows cleanup is cross-compiled here; its native behavioral execution belongs to the release-OS smoke in Task 7.
