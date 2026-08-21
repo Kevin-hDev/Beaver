@@ -61,6 +61,32 @@ describe("useConversationCollapseState", () => {
     expect(result.current.collapsedProjects.size).toBe(255);
   });
 
+  it("ouvre la section épinglée par défaut et la restaure", () => {
+    const first = renderHook(() => useConversationCollapseState());
+    expect(first.result.current.pinnedCollapsed).toBe(false);
+    act(() => { first.result.current.togglePinned(); });
+    first.unmount();
+
+    const second = renderHook(() => useConversationCollapseState());
+
+    expect(second.result.current.pinnedCollapsed).toBe(true);
+  });
+
+  /* Un état enregistré avant l'arrivée de la section n'a pas ce champ : il
+     vaut « déplié », et les autres sections gardent leur réglage. */
+  it("tolère un état enregistré sans le champ de la section épinglée", () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      projectsCollapsed: true,
+      discussionsCollapsed: false,
+      collapsedProjectIds: [],
+    }));
+
+    const { result } = renderHook(() => useConversationCollapseState());
+
+    expect(result.current.projectsCollapsed).toBe(true);
+    expect(result.current.pinnedCollapsed).toBe(false);
+  });
+
   it("revient à l'état par défaut si le stockage est illisible", () => {
     localStorage.setItem(STORAGE_KEY, "{invalide");
 

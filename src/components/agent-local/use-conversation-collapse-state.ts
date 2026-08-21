@@ -9,12 +9,14 @@ const PROJECT_ID_PATTERN = /^[a-zA-Z0-9-]+$/;
 interface ConversationCollapseState {
   projectsCollapsed: boolean;
   discussionsCollapsed: boolean;
+  pinnedCollapsed: boolean;
   collapsedProjects: Set<string>;
 }
 
 const DEFAULT_STATE: ConversationCollapseState = {
   projectsCollapsed: false,
   discussionsCollapsed: false,
+  pinnedCollapsed: false,
   collapsedProjects: new Set(),
 };
 
@@ -43,6 +45,8 @@ function loadState(): ConversationCollapseState {
     return {
       projectsCollapsed: value.projectsCollapsed,
       discussionsCollapsed: value.discussionsCollapsed,
+      /* Champ arrivé après les deux autres : absent d'un état ancien, il vaut « déplié ». */
+      pinnedCollapsed: value.pinnedCollapsed === true,
       collapsedProjects: new Set(ids),
     };
   } catch {
@@ -55,6 +59,7 @@ function saveState(state: ConversationCollapseState) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       projectsCollapsed: state.projectsCollapsed,
       discussionsCollapsed: state.discussionsCollapsed,
+      pinnedCollapsed: state.pinnedCollapsed,
       collapsedProjectIds: [...state.collapsedProjects].slice(0, MAX_COLLAPSED_PROJECTS),
     }));
   } catch {
@@ -73,6 +78,10 @@ export function useConversationCollapseState() {
 
   const toggleDiscussions = useCallback(() => {
     setState((current) => ({ ...current, discussionsCollapsed: !current.discussionsCollapsed }));
+  }, []);
+
+  const togglePinned = useCallback(() => {
+    setState((current) => ({ ...current, pinnedCollapsed: !current.pinnedCollapsed }));
   }, []);
 
   const toggleProject = useCallback((id: string) => {
@@ -96,6 +105,7 @@ export function useConversationCollapseState() {
     ...state,
     toggleProjects,
     toggleDiscussions,
+    togglePinned,
     toggleProject,
-  }), [state, toggleDiscussions, toggleProject, toggleProjects]);
+  }), [state, toggleDiscussions, togglePinned, toggleProject, toggleProjects]);
 }
