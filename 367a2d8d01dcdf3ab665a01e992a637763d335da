@@ -1,0 +1,17 @@
+Task 7 — preuve release multi-OS et revue contrôleur
+
+Décision : le smoke ignoré s’exécute après le build Tauri dans le job matriciel macOS/Linux/Windows et avant la résolution des artefacts. Il utilise le wheelhouse réellement produit, validé par wheels::for_source, puis une copie isolée ; aucun cache développeur ni réseau ne peut satisfaire l’installation.
+
+Revue du contrôleur : le premier smoke macOS réel a rougi à validate-imports (searx.webapp introuvable), révélant que le contrôle n’était pas lancé depuis le source distribué. Après current_dir(source), il a encore rougi car exécuter searx.webapp sans settings déclenche volontairement la protection secret_key. Le contrôle final importe les roues natives et vérifie la présence résoluble de searx.webapp sans démarrer l’application avant la création de sa configuration. Le harnais factice exige aussi que le cwd contienne searx/webapp.py.
+
+Preuves exécutées sur macOS :
+- préparation réelle via prepareSearxng avec CPython 3.14 : .runtime.json créé et lié au hash des requirements ;
+- smoke release hors ligne exact : 1 passed en 4.47 s, sous la marge de 150 s ;
+- cargo test services::searxng --lib : 54 passed, 1 ignored ;
+- unittest SearXNG Python : 43 passed ;
+- Node build/release ciblés : 26 passed ;
+- npm run lint et npx tsc --noEmit : verts ;
+- cargo clippy --all-targets -- -D warnings et cargo fmt --check : verts ;
+- graphify update . : vert.
+
+La commande réelle Windows/Linux est verrouillée dans la même matrice de release ; leur exécution native reste à observer dans la CI après push.
