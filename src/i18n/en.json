@@ -440,6 +440,7 @@
       "resultCancelled": "Cancelled.",
       "resultTruncated": "Result truncated.",
       "resultMissing": "The tool result is missing after the stream ended.",
+      "webSearchRuntimeUnavailable": "Local web search is temporarily unavailable. Check that Python 3.14 is installed, then try again.",
       "verifyBeforeRetry": "Check the resulting state before retrying because the action may already have run.",
       "errorCategories": {
         "validation": "The request sent to the tool is invalid.",

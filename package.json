@@ -15,6 +15,7 @@
     "test": "vitest run && npm run test:build-scripts && npm run test:ci-scripts && npm run test:cef && npm run test:e2e-runner && npm run test:extensions-host",
     "test:build-scripts": "node --test scripts/build/*.test.mjs",
     "test:ci-scripts": "node --test scripts/ci/*.test.mjs",
+    "test:searxng-scripts": "node scripts/ci/run-searxng-python-tests.mjs",
     "test:brand-boundaries": "node --test scripts/brand/brand-boundaries.test.mjs scripts/brand/brand-boundaries-unit.test.mjs scripts/brand/brand-boundaries-repository.test.mjs",
     "test:bridge-release": "node --test scripts/release/check-bridge-metadata.test.mjs scripts/release/publish-bridge-release.test.mjs",
     "test:release-workflow": "node --test scripts/release/app-version-contract.test.mjs scripts/release/check-brand-artifacts.test.mjs scripts/release/resolve-artifact-path.test.mjs scripts/release/tauri-version-contract.test.mjs scripts/release/text-contracts.test.mjs scripts/release/release-workflow.test.mjs",

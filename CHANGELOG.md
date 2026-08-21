@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Reliability and security
+
+- **Safer private local data** — Beaver now refuses symbolic and hard-linked private documents before reading them, including sessions, projects, prompts, model customizations, and local runtime metadata.
+
 ---
 
 ## v1.1.3

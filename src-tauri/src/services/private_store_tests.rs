@@ -119,6 +119,20 @@ fn bounded_read_rejects_content_larger_than_the_limit() {
 }
 
 #[test]
+fn bounded_read_rejects_a_hard_link_without_touching_its_target() {
+    let root = test_dir();
+    let target = root.join("target.json");
+    let path = root.join("private.json");
+    std::fs::create_dir_all(&root).unwrap();
+    std::fs::write(&target, b"content").unwrap();
+    std::fs::hard_link(&target, &path).unwrap();
+
+    assert!(read_bounded_regular(&path, 8).is_err());
+    assert_eq!(std::fs::read(target).unwrap(), b"content");
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
 fn failed_initial_write_is_not_misreported_as_a_missing_file() {
     let errors = StoreErrorCodes::new("missing", "read", "write");
     let mut store = CachedStore::<usize>::new(StoreLoad::Unavailable(StoreFailure::Write));

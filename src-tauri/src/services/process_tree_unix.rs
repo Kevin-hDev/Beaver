@@ -31,12 +31,49 @@ pub(super) fn collect_children(pid: u32) -> Vec<UnixProcessIdentity> {
     result
 }
 
+pub(super) fn collect_group_members(group: u32) -> (Vec<UnixProcessIdentity>, bool) {
+    let Ok(raw_group) = i32::try_from(group) else {
+        return (Vec::new(), false);
+    };
+    let mut system = System::new();
+    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    let mut result = Vec::new();
+    let mut complete = true;
+    for (pid, process) in system.processes() {
+        if pid.as_u32() == group {
+            continue;
+        }
+        let Ok(raw_pid) = i32::try_from(pid.as_u32()) else {
+            continue;
+        };
+        if unsafe { libc::getpgid(raw_pid) } != raw_group {
+            continue;
+        }
+        if result.len() == MAX_CHILDREN {
+            complete = false;
+            break;
+        }
+        result.push(UnixProcessIdentity::new(*pid, process.start_time()));
+    }
+    (result, complete)
+}
+
 pub(super) fn is_current(identity: UnixProcessIdentity) -> bool {
     let mut system = System::new();
     system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[identity.pid()]), true);
     system
         .process(identity.pid())
         .is_some_and(|process| identity.matches(identity.pid(), process.start_time()))
+}
+
+pub(super) fn is_current_group_member(identity: UnixProcessIdentity, group: u32) -> bool {
+    let Ok(raw_pid) = i32::try_from(identity.pid().as_u32()) else {
+        return false;
+    };
+    let Ok(raw_group) = i32::try_from(group) else {
+        return false;
+    };
+    is_current(identity) && unsafe { libc::getpgid(raw_pid) } == raw_group
 }
 
 fn collect_children_inner(

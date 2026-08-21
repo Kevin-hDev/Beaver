@@ -435,6 +435,7 @@
       "resultCancelled": "Abgebrochen.",
       "resultTruncated": "Ergebnis gekürzt.",
       "resultMissing": "Das Werkzeugergebnis fehlt nach dem Ende des Streams.",
+      "webSearchRuntimeUnavailable": "Die lokale Websuche ist vorübergehend nicht verfügbar. Prüfe, ob Python 3.14 installiert ist, und versuche es erneut.",
       "verifyBeforeRetry": "Prüfen Sie vor einem erneuten Versuch den Zustand, da die Aktion bereits ausgeführt worden sein könnte.",
       "errorCategories": {
         "validation": "Die an das Werkzeug gesendete Anfrage ist ungültig.",

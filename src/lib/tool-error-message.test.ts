@@ -1,10 +1,15 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
-import { toolErrorMessage } from "./tool-error-message";
+import {
+  toolErrorHasLocalizedMessage,
+  toolErrorMessage,
+  toolErrorResultIsMachineCode,
+} from "./tool-error-message";
 
 const translations: Record<string, string> = {
   "agentLocal.toolActivity.errorCategories.conflict": "L’état actuel empêche cette opération.",
   "agentLocal.toolActivity.errorCategories.unavailable": "L’outil est temporairement indisponible.",
+  "agentLocal.toolActivity.webSearchRuntimeUnavailable": "La recherche locale est indisponible.",
   "errors.toolFailed": "L’outil a échoué",
 };
 const t = ((key: string) => translations[key] ?? key) as TFunction;
@@ -30,6 +35,20 @@ describe("toolErrorMessage", () => {
 
     expect(message).toBe("L’outil est temporairement indisponible.");
     expect(message).not.toContain("extension_unavailable");
+  });
+
+  it("traduit le runtime SearXNG sans afficher le code backend", () => {
+    const error = {
+      code: "web_search_runtime_unavailable",
+      category: "unavailable" as const,
+      retryable: true,
+    };
+
+    expect(toolErrorMessage("web_search", "searxng_runtime_unavailable", error, t))
+      .toBe("La recherche locale est indisponible.");
+    expect(toolErrorHasLocalizedMessage(error)).toBe(true);
+    expect(toolErrorResultIsMachineCode("searxng_runtime_unavailable")).toBe(true);
+    expect(toolErrorResultIsMachineCode("SearXNG: runtime unavailable")).toBe(false);
   });
 
   it("se replie sur l'erreur réelle nettoyée sans métadonnée", () => {

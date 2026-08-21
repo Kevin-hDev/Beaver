@@ -14,6 +14,7 @@ describe("tool result translations", () => {
       expect(locale.agentLocal.toolActivity.resultCancelled).toBeTruthy();
       expect(locale.agentLocal.toolActivity.resultMissing).toBeTruthy();
       expect(locale.agentLocal.toolActivity.verifyBeforeRetry).toBeTruthy();
+      expect(locale.agentLocal.toolActivity.webSearchRuntimeUnavailable).toBeTruthy();
       const categories = locale.agentLocal.toolActivity.errorCategories;
       expect([
         categories.validation,

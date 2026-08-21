@@ -14,6 +14,37 @@ use crate::services::agent_local::types_tools::SearchResult;
 use crate::services::api_keys;
 use std::future::Future;
 
+#[derive(Debug)]
+pub(crate) struct SearchFailure {
+    message: String,
+    machine_code: Option<&'static str>,
+}
+
+impl SearchFailure {
+    pub(crate) fn plain(message: String) -> Self {
+        Self {
+            message,
+            machine_code: None,
+        }
+    }
+
+    pub(crate) fn searxng(code: &'static str) -> Self {
+        Self {
+            // A fixed code is safe at the tool boundary; the UI translates it.
+            message: code.to_string(),
+            machine_code: Some(code),
+        }
+    }
+
+    pub(crate) fn message(&self) -> &str {
+        &self.message
+    }
+
+    pub(crate) fn machine_code(&self) -> Option<&'static str> {
+        self.machine_code
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum SearchProvider {
     Brave,
@@ -46,9 +77,9 @@ const PROVIDER_ORDER: [SearchProvider; 3] = [
 ];
 
 /// Orchestrateur de recherche web — essaie chaque provider dans l'ordre.
-pub async fn run_search(query: &str) -> Result<Vec<SearchResult>, String> {
-    let query = common::validate_query(query)?;
-    let (configured, provider_succeeded, mut failures, provider_result) = try_configured_providers(
+pub(crate) async fn run_search(query: &str) -> Result<Vec<SearchResult>, SearchFailure> {
+    let query = common::validate_query(query).map_err(SearchFailure::plain)?;
+    let (configured, provider_succeeded, failures, provider_result) = try_configured_providers(
         &query,
         |provider| api_keys::has_key(provider.id()),
         |provider, query| async move { search_with_provider(provider, &query).await },
@@ -58,23 +89,50 @@ pub async fn run_search(query: &str) -> Result<Vec<SearchResult>, String> {
         return Ok(results);
     }
 
-    match crate::services::searxng::search(&query).await {
+    finish_search(
+        configured,
+        provider_succeeded,
+        failures,
+        crate::services::searxng::search(&query).await,
+    )
+}
+
+pub(crate) fn finish_search(
+    configured: bool,
+    provider_succeeded: bool,
+    mut failures: Vec<String>,
+    searxng_result: Result<Vec<SearchResult>, String>,
+) -> Result<Vec<SearchResult>, SearchFailure> {
+    match searxng_result {
         Ok(results) if !results.is_empty() => return Ok(results),
         Ok(_) => return Ok(Vec::new()),
-        Err(e) => failures.push(common::sanitize_error(&e)),
-    }
-
-    if provider_succeeded {
-        return Ok(Vec::new());
+        Err(error) => {
+            if provider_succeeded {
+                return Ok(Vec::new());
+            }
+            match crate::services::searxng::error_codes::known(&error) {
+                // Les erreurs des providers configurés sont plus actionnables
+                // que l'état du repli local : ce code ne doit jamais les masquer.
+                Some(code) if failures.is_empty() => return Err(SearchFailure::searxng(code)),
+                Some(code) => {
+                    ::log::warn!(
+                        "[search] repli SearXNG indisponible code={code} providers_en_echec={}",
+                        failures.len()
+                    );
+                    failures.push(code.to_string());
+                }
+                None => failures.push(common::sanitize_error(&error)),
+            }
+        }
     }
 
     if configured {
-        Err(format_failures(&failures))
+        Err(SearchFailure::plain(format_failures(&failures)))
     } else {
-        Err(format!(
+        Err(SearchFailure::plain(format!(
             "Aucun provider configuré. Fallback SearXNG indisponible: {}",
             format_failures(&failures)
-        ))
+        )))
     }
 }
 

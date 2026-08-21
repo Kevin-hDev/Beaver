@@ -3,20 +3,36 @@ import subprocess
 import sys
 from pathlib import Path
 
-from searxng_archive import copy_member, is_metadata, safe_extract
-from searxng_bundle import bundle_valid, requirements_hash, temporary_directory, validate_source
-from searxng_safety import ERROR_MESSAGE, PreparationError, fail, safe_directory
-from searxng_transaction import BundleLock, cleanup_orphans, publish_bundle, recover_bundle
+# Point d'entrée unique : scripts/build/prepare-searxng.mjs vérifie déjà que
+# cet interpréteur correspond à scripts/build/searxng-python-version.txt.
 
-MAX_ARCHIVE_ENTRIES = 4096
-MAX_MEMBER_BYTES = 64 * 1024 * 1024
-MAX_WHEEL_BYTES = 150 * 1024 * 1024
-MAX_WHEEL_FILES = 512
-STAMP_NAME = ".requirements.sha256"
+from searxng_archive import safe_extract
+from searxng_bundle import (
+    STAMP_BYTES,
+    STAMP_NAME,
+    bundle_valid,
+    requirements_hash,
+    temporary_directory,
+    validate_source,
+)
+from searxng_runtime_manifest import (
+    MAX_MANIFEST_BYTES,
+    MANIFEST_NAME,
+    current_manifest,
+    runtime_identity,
+)
+from searxng_safety import ERROR_MESSAGE, PreparationError, fail, safe_directory
+from searxng_transaction import cleanup_orphans, publish_bundle, recover_bundle
+from searxng_transaction_fs import BundleLock, create_metadata
 
 
 def _cli_root(value: object) -> Path:
-    if not isinstance(value, str) or not value or len(value) > 4096 or any(char in value for char in ("\0", "\r", "\n")):
+    if (
+        not isinstance(value, str)
+        or not value
+        or len(value) > 4096
+        or any(char in value for char in ("\0", "\r", "\n"))
+    ):
         fail()
     if ".." in value.replace("\\", "/").split("/"):
         fail()
@@ -29,7 +45,16 @@ def _cli_root(value: object) -> Path:
 def _run_download(run_process, requirements: Path, temporary: Path) -> None:
     for arguments in (["-r", str(requirements)], ["setuptools", "wheel"]):
         run_process(
-            [sys.executable, "-m", "pip", "download", "--only-binary=:all:", "--dest", str(temporary), *arguments],
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "download",
+                "--only-binary=:all:",
+                "--dest",
+                str(temporary),
+                *arguments,
+            ],
             check=True,
             shell=False,
             stdout=subprocess.DEVNULL,
@@ -51,16 +76,38 @@ def prepare(root: Path, run_process=subprocess.run) -> None:
                 source = temporary_source / "source"
             requirements, setup = validate_source(source)
             stamp = requirements_hash(requirements, setup)
-            if bundle_valid(sidecar / "wheels", stamp):
+            expected_identity = runtime_identity(stamp, current_manifest(stamp))
+            if bundle_valid(
+                sidecar / "wheels",
+                expected_identity=expected_identity,
+            ):
                 return
             temporary_wheels = temporary_directory(sidecar, "wheels-new-")
             _run_download(run_process, requirements, temporary_wheels)
-            if not bundle_valid(temporary_wheels, stamp, False):
+            create_metadata(
+                temporary_wheels,
+                MANIFEST_NAME,
+                expected_identity.manifest,
+                MAX_MANIFEST_BYTES,
+            )
+            if not bundle_valid(
+                temporary_wheels,
+                expected_identity=expected_identity,
+                needs_stamp=False,
+            ):
                 fail()
-            (temporary_wheels / STAMP_NAME).write_text(stamp, encoding="ascii")
-            if not bundle_valid(temporary_wheels, stamp):
+            create_metadata(
+                temporary_wheels,
+                STAMP_NAME,
+                expected_identity.stamp.encode("ascii"),
+                STAMP_BYTES,
+            )
+            if not bundle_valid(
+                temporary_wheels,
+                expected_identity=expected_identity,
+            ):
                 fail()
-            publish_bundle(sidecar, temporary_wheels, stamp)
+            publish_bundle(sidecar, temporary_wheels, expected_identity)
             temporary_wheels = None
     except PreparationError:
         raise

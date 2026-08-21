@@ -47,16 +47,24 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
-        with:
-          components: rustfmt, clippy
-
       - name: Install Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
           cache: npm
+
+      - name: Install SearXNG test Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version-file: scripts/build/searxng-python-version.txt
+
+      - name: SearXNG preparation script tests
+        run: npm run test:searxng-scripts
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install Linux dependencies
         run: |
@@ -152,6 +160,11 @@ jobs:
           ref: refs/tags/${{ env.RELEASE_TAG }}
           persist-credentials: false
 
+      - name: Install SearXNG Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6; SHA is enforced by the release workflow security contract
+        with:
+          python-version-file: scripts/build/searxng-python-version.txt
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
         with:
@@ -195,6 +208,10 @@ jobs:
           BEAVER_TAURI_BUNDLE_TYPE: ${{ matrix.bundles }}
         with:
           args: --target ${{ matrix.target }} --bundles=${{ matrix.bundles }}
+
+      - name: Verify SearXNG offline runtime
+        working-directory: src-tauri
+        run: cargo test services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin --lib -- --ignored --exact --nocapture
 
       - name: Resolve exact artifact paths
         id: paths

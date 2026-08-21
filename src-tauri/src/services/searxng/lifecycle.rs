@@ -33,7 +33,8 @@ impl SearxngSidecar {
 }
 
 pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
-    let app = app_handle_global::get().ok_or_else(|| "SearXNG: app non initialisée".to_string())?;
+    let app =
+        app_handle_global::get().ok_or_else(|| super::error_codes::APP_UNAVAILABLE.to_string())?;
     let state = app.state::<SearxngSidecar>().inner().clone();
     let run_state = state.clone();
     let run_app = app.clone();
@@ -41,7 +42,7 @@ pub async fn search(query: &str) -> Result<Vec<SearchResult>, String> {
         .work
         .run_start(move |cancel| async move { run_state.ensure_running(&run_app, &cancel).await })
         .await
-        .map_err(|_| "SearXNG: arrêt en cours".to_string())??;
+        .map_err(|_| super::error_codes::SHUTTING_DOWN.to_string())??;
     super::client::search(&base_url, query).await
 }
 
@@ -66,5 +67,5 @@ pub(super) fn base_url(port: u16) -> String {
 }
 
 pub(super) fn shutdown_error() -> String {
-    "SearXNG: arrêt en cours".to_string()
+    super::error_codes::SHUTTING_DOWN.to_string()
 }

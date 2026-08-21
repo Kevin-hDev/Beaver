@@ -9,28 +9,62 @@ import { prepareSearxng } from "./prepare-searxng.mjs";
 async function makeRepository() {
   const root = await mkdtemp(join(await realpath(tmpdir()), "searxng-bridge-"));
   await mkdir(join(root, "src-tauri", "scripts"), { recursive: true });
+  await mkdir(join(root, "scripts", "build"), { recursive: true });
   await writeFile(join(root, "src-tauri", "scripts", "prepare_searxng.py"), "pass\n");
+  await writeFile(join(root, "scripts", "build", "searxng-python-version.txt"), "3.14\n");
   return root;
 }
 
 test("runs the canonical Python preparation script with separated arguments", async () => {
   const repoRoot = await makeRepository();
   const calls = [];
+  const resolverCalls = [];
   try {
     await prepareSearxng({
       repoRoot,
-      resolvePython: async () => ({ command: "py", prefixArgs: ["-3"] }),
+      resolvePython: async (request) => {
+        resolverCalls.push(request);
+        return { command: "py", prefixArgs: ["-3.14"], label: "py-3.14" };
+      },
       run: async (call) => calls.push(call),
     });
     assert.equal(calls.length, 1);
     assert.equal(calls[0].command, "py");
     assert.deepEqual(calls[0].args, [
-      "-3",
+      "-3.14",
       resolve(repoRoot, "src-tauri/scripts/prepare_searxng.py"),
       "--root",
       resolve(repoRoot, "src-tauri"),
     ]);
     assert.equal(calls[0].cwd, await realpath(repoRoot));
+    assert.deepEqual(resolverCalls, [{
+      platform: process.platform,
+      expectedVersion: { major: 3, minor: 14, label: "3.14" },
+    }]);
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("utilise l'identité locale de Python uniquement comme commande séparée", async () => {
+  const repoRoot = await makeRepository();
+  const calls = [];
+  const candidate = {
+    command: "C:\\private\\python3.14.exe",
+    prefixArgs: ["-3.14"],
+    label: "private Python 3.14",
+  };
+  try {
+    await prepareSearxng({
+      repoRoot,
+      resolvePython: async () => candidate,
+      run: async (call) => calls.push(call),
+    });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].command, candidate.command);
+    assert.deepEqual(calls[0].args.slice(0, 2), ["-3.14", resolve(repoRoot, "src-tauri/scripts/prepare_searxng.py")]);
+    assert.ok(!calls[0].args.includes(candidate.command));
+    assert.ok(!calls[0].args.includes(candidate.label));
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }
@@ -42,12 +76,12 @@ test("refuses traversal roots and malformed Python candidates without launching"
   try {
     await assert.rejects(() => prepareSearxng({
       repoRoot: join(repoRoot, "..", "repository"),
-      resolvePython: async () => ({ command: "python", prefixArgs: [] }),
+      resolvePython: async () => ({ command: "python", prefixArgs: [], label: "python" }),
       run: async () => { launched = true; },
     }), (error) => error.message === "SearXNG preparation failed");
     await assert.rejects(() => prepareSearxng({
       repoRoot,
-      resolvePython: async () => ({ command: "python\n", prefixArgs: [] }),
+      resolvePython: async () => ({ command: "python\n", prefixArgs: [], label: "python" }),
       run: async () => { launched = true; },
     }), (error) => error.message === "SearXNG preparation failed");
     assert.equal(launched, false);

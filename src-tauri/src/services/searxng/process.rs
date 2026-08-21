@@ -1,41 +1,35 @@
 use crate::services::paths::data_dir;
-use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-#[cfg(unix)]
-use std::process::Command;
 use std::process::Stdio;
+use std::time::{Duration, Instant};
+
+use super::error_codes as errors;
 
 const MAX_STARTUP_LOG_BYTES: u64 = 16 * 1024;
-
-fn pid_path() -> PathBuf {
-    data_dir().join("searxng-sidecar.pid")
-}
 
 fn log_path() -> PathBuf {
     data_dir().join("logs").join("searxng-sidecar.log")
 }
 
-pub fn save_pid(pid: u32) {
-    if crate::services::private_store::atomic_write(&pid_path(), pid.to_string().as_bytes())
-        .is_err()
-    {
-        ::log::warn!("[searxng] pid receipt unavailable");
+pub fn recover_orphan_sidecar(
+    deadline: Instant,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+) -> Result<(), String> {
+    if cancel.is_cancelled() {
+        return Err(errors::SHUTTING_DOWN.to_string());
     }
-}
-
-pub fn clear_pid_file() {
-    let _ = std::fs::remove_file(pid_path());
-}
-
-pub fn kill_orphan_sidecar() {
-    let Some(pid) = read_saved_pid() else { return };
-    clear_pid_file();
-    if !is_searxng_process(pid) {
-        ::log::warn!("[searxng] pid={pid} ignoré");
-        return;
+    let outcome = super::process_receipt::store()
+        .recover_and_reap_with(deadline, || cancel.is_cancelled())
+        .map_err(|_| errors::PROCESS_STATE_UNAVAILABLE.to_string())?;
+    if cancel.is_cancelled() {
+        return Err(errors::SHUTTING_DOWN.to_string());
     }
-    ::log::info!("[searxng] orphelin détecté pid={pid}, kill");
-    crate::services::process_tree::kill(pid, crate::services::process_tree::ProcessKind::Searxng);
+    match outcome {
+        super::process_receipt::RecoveryOutcome::Blocked => {
+            Err(errors::PROCESS_STATE_UNAVAILABLE.to_string())
+        }
+        _ => Ok(()),
+    }
 }
 
 pub async fn spawn(
@@ -46,8 +40,8 @@ pub async fn spawn(
 ) -> Result<tokio::process::Child, String> {
     let log_dir = data_dir().join("logs");
     let _ = std::fs::create_dir_all(&log_dir);
-    let stderr =
-        std::fs::File::create(log_path()).map_err(|_| "SearXNG: log indisponible".to_string())?;
+    let stderr = super::private_file::create_private(&log_path())
+        .map_err(|_| errors::LOG_UNAVAILABLE.to_string())?;
     let mut cmd = tokio::process::Command::new(python);
     cmd.args(["-m", "searx.webapp"])
         .current_dir(source)
@@ -69,13 +63,54 @@ pub async fn spawn(
         crate::services::process_tree::ProcessKind::Searxng,
     )
     .await
-    .map_err(|_| "SearXNG: démarrage impossible".to_string())
+    .map_err(|_| errors::START_FAILED.to_string())
+}
+
+pub(super) async fn stable_identity(
+    pid: u32,
+    deadline: tokio::time::Instant,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+) -> Result<crate::services::owned_process::OwnedProcessIdentity, String> {
+    stable_identity_with(pid, deadline, cancel, |pid| {
+        crate::services::owned_process::OwnedProcess::identity(pid).map_err(|_| ())
+    })
+    .await
+}
+
+pub(super) async fn stable_identity_with(
+    pid: u32,
+    deadline: tokio::time::Instant,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+    mut identity: impl FnMut(u32) -> Result<crate::services::owned_process::OwnedProcessIdentity, ()>,
+) -> Result<crate::services::owned_process::OwnedProcessIdentity, String> {
+    let mut previous = None;
+    let mut stable_observations = 0;
+    while tokio::time::Instant::now() < deadline {
+        if cancel.is_cancelled() {
+            return Err(errors::SHUTTING_DOWN.to_string());
+        }
+        let current = identity(pid).map_err(|_| errors::START_FAILED.to_string())?;
+        if previous == Some(current) {
+            stable_observations += 1;
+            if stable_observations == 2 {
+                return Ok(current);
+            }
+        } else {
+            stable_observations = 0;
+        }
+        previous = Some(current);
+        tokio::select! {
+            _ = tokio::time::sleep_until(deadline.min(tokio::time::Instant::now() + Duration::from_millis(10))) => {}
+            _ = cancel.cancelled() => return Err(errors::SHUTTING_DOWN.to_string()),
+        }
+    }
+    Err(errors::START_FAILED.to_string())
 }
 
 pub async fn kill_child_process(mut child: tokio::process::Child) {
     let pid = child.id().unwrap_or_default();
     if let Ok(Some(_)) = child.try_wait() {
-        clear_pid_file();
+        let _ = super::process_receipt::store().remove();
         return;
     }
     ::log::info!("[searxng] kill sidecar pid={pid}");
@@ -84,7 +119,9 @@ pub async fn kill_child_process(mut child: tokio::process::Child) {
         crate::services::process_tree::ProcessKind::Searxng,
     )
     .await;
-    clear_pid_file();
+    if child.try_wait().is_ok_and(|status| status.is_some()) {
+        let _ = super::process_receipt::store().remove();
+    }
 }
 
 #[cfg(test)]
@@ -111,7 +148,7 @@ pub fn startup_log_hint() -> Option<String> {
     classify_log_hint(&body).map(str::to_string)
 }
 
-fn classify_log_hint(body: &str) -> Option<&'static str> {
+pub(super) fn classify_log_hint(body: &str) -> Option<&'static str> {
     for (marker, category) in [
         ("ModuleNotFoundError:", "module-not-found"),
         ("ImportError:", "import-error"),
@@ -125,97 +162,6 @@ fn classify_log_hint(body: &str) -> Option<&'static str> {
     None
 }
 
-fn read_log_tail(path: &Path) -> Option<Vec<u8>> {
-    let mut file = std::fs::File::open(path).ok()?;
-    let length = file.metadata().ok()?.len();
-    let start = length.saturating_sub(MAX_STARTUP_LOG_BYTES);
-    file.seek(SeekFrom::Start(start)).ok()?;
-    let mut bytes = Vec::with_capacity((length - start) as usize);
-    file.take(MAX_STARTUP_LOG_BYTES)
-        .read_to_end(&mut bytes)
-        .ok()?;
-    Some(bytes)
-}
-
-fn read_saved_pid() -> Option<u32> {
-    let content = std::fs::read_to_string(pid_path()).ok()?;
-    let pid = content.trim().parse::<u32>().ok()?;
-    (pid >= 2).then_some(pid)
-}
-
-fn is_searxng_process(pid: u32) -> bool {
-    #[cfg(unix)]
-    {
-        let output = Command::new("ps")
-            .args(["-p", &pid.to_string(), "-o", "command="])
-            .output();
-        output
-            .ok()
-            .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))
-            .unwrap_or(false)
-    }
-    #[cfg(windows)]
-    {
-        let query =
-            format!("(Get-CimInstance Win32_Process -Filter \"ProcessId = {pid}\").CommandLine");
-        let Ok(powershell) = crate::services::system_executable::powershell() else {
-            return false;
-        };
-        let mut command = crate::services::background_command::new(powershell);
-        let output = command.args(["-NoProfile", "-Command", &query]).output();
-        output
-            .ok()
-            .map(|o| process_text_matches(&String::from_utf8_lossy(&o.stdout)))
-            .unwrap_or(false)
-    }
-}
-
-pub(crate) fn process_text_matches(text: &str) -> bool {
-    let lower = text.to_lowercase();
-    lower.contains("searxng-sidecar") && lower.contains("searx.webapp")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn process_match_requires_sidecar_and_webapp() {
-        assert!(process_text_matches(
-            "python -m searx.webapp /searxng-sidecar/.venv"
-        ));
-        assert!(!process_text_matches("python -m searx.webapp"));
-        assert!(!process_text_matches("searxng-sidecar unrelated"));
-    }
-
-    #[test]
-    fn startup_log_hint_exposes_only_a_fixed_category() {
-        let root = tempfile::tempdir().unwrap();
-        let log = root.path().join("sidecar.log");
-        std::fs::write(&log, "ModuleNotFoundError: secret/path").unwrap();
-        let body = String::from_utf8_lossy(&read_log_tail(&log).unwrap()).to_string();
-        assert!(body.contains("secret/path"));
-        assert_eq!(classify_log_hint(&body), Some("module-not-found"));
-    }
-
-    #[test]
-    fn startup_diagnostic_reads_only_the_bounded_tail() {
-        let root = tempfile::tempdir().unwrap();
-        let log = root.path().join("sidecar.log");
-        let mut body = vec![b'x'; MAX_STARTUP_LOG_BYTES as usize * 2];
-        body.extend_from_slice(b"\nModuleNotFoundError: bounded-tail");
-        std::fs::write(&log, body).unwrap();
-
-        let tail = read_log_tail(&log).unwrap();
-        assert!(tail.len() <= MAX_STARTUP_LOG_BYTES as usize);
-        assert!(String::from_utf8_lossy(&tail).contains("bounded-tail"));
-    }
-
-    #[test]
-    fn pid_receipt_uses_the_private_store_authority() {
-        let source = include_str!("process.rs");
-
-        assert!(source.contains("private_store::atomic_write"));
-        assert!(!source.contains("with_extension(\"tmp\")"));
-    }
+pub(super) fn read_log_tail(path: &Path) -> Option<Vec<u8>> {
+    super::private_file::read_tail(path, MAX_STARTUP_LOG_BYTES).ok()
 }

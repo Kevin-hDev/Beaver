@@ -29,15 +29,23 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
-        with:
-          components: rustfmt, clippy
-
       - name: Install Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
+
+      - name: Install SearXNG test Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version-file: scripts/build/searxng-python-version.txt
+
+      - name: SearXNG preparation script tests
+        run: npm run test:searxng-scripts
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+        with:
+          components: rustfmt, clippy
 
       - name: Install extension host dependencies
         run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host
@@ -157,6 +165,52 @@ jobs:
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
+
+      - name: Install uv for Windows SearXNG recipe
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: latest
+          enable-cache: false
+
+      - name: Install Windows SearXNG Python recipe
+        shell: pwsh
+        env:
+          UV_PYTHON_INSTALL_BIN: "1"
+        run: |
+          $version = (Get-Content -Raw scripts/build/searxng-python-version.txt).Trim()
+          if ($version -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw "Invalid SearXNG Python version"
+          }
+          uv python install $version
+          if ($LASTEXITCODE -ne 0) {
+            throw "SearXNG Python installation failed"
+          }
+          uv python update-shell
+          if ($LASTEXITCODE -ne 0) {
+            throw "SearXNG Python PATH publication failed"
+          }
+          $pythonBin = (uv python dir --bin).Trim()
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $pythonBin -PathType Container)) {
+            throw "SearXNG Python executable directory unavailable"
+          }
+          # setup-uv is isolated from the user installer used in the README;
+          # GITHUB_PATH carries uv's verified executable directory to the next shell.
+          $pythonBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      # Une étape séparée ouvre un nouveau PowerShell, comme après la réouverture
+      # demandée dans le README, et prouve que l'exécutable publié est utilisable.
+      - name: Verify Windows SearXNG Python recipe
+        shell: pwsh
+        run: |
+          $expected = (Get-Content -Raw scripts/build/searxng-python-version.txt).Trim()
+          if ($expected -notmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+            throw "Invalid SearXNG Python version"
+          }
+          $command = Get-Command "python$expected" -CommandType Application -ErrorAction Stop
+          $actual = & $command.Source --version
+          if ($LASTEXITCODE -ne 0 -or $actual -notmatch "^Python $([regex]::Escape($expected))\.") {
+            throw "SearXNG Python verification failed"
+          }
 
       - name: Install extension host dependencies
         run: npm ci --ignore-scripts --omit=dev --prefix src-tauri/resources/extension-host

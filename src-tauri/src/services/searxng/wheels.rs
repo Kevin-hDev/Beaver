@@ -1,68 +1,127 @@
 use std::path::{Path, PathBuf};
 
-pub fn for_source(source: &Path) -> Option<PathBuf> {
-    source
-        .parent()
-        .map(|p| p.join("wheels"))
-        .filter(|p| usable(p))
+use super::runtime_error::RuntimeError;
+use super::runtime_manifest::{RuntimeManifest, MANIFEST_NAME};
+
+pub(super) const STAMP_NAME: &str = ".requirements.sha256";
+const MAX_WHEELHOUSE_ENTRIES: usize = 512;
+
+pub(super) struct Wheelhouse {
+    pub(super) path: PathBuf,
+    pub(super) manifest: RuntimeManifest,
 }
 
-pub fn sync_from_archive_parent(archive: &Path) -> Result<(), String> {
-    let Some(parent) = archive.parent() else {
-        return Ok(());
+pub(super) fn for_source(source: &Path) -> Result<Option<Wheelhouse>, RuntimeError> {
+    let Some(parent) = source.parent() else {
+        return Ok(None);
     };
-    let bundled = parent.join("wheels");
-    if !usable(&bundled) {
-        return Ok(());
-    }
+    read_wheelhouse(&super::paths::wheelhouse_beside(parent)).map(Some)
+}
 
-    let dest = super::paths::sidecar_dir().join("wheels");
-    let tmp = super::paths::sidecar_dir().join("wheels.tmp");
-    let _ = std::fs::remove_dir_all(&tmp);
-    std::fs::create_dir_all(&tmp).map_err(|_| "SearXNG: wheels indisponibles".to_string())?;
+pub(super) fn sync_from_archive_parent(archive: &Path) -> Result<(), String> {
+    sync(archive).map_err(|error| error.public_code().to_string())
+}
+
+fn sync(archive: &Path) -> Result<(), RuntimeError> {
+    sync_at(
+        archive,
+        &super::paths::wheels_dir(),
+        &super::paths::staged_wheels_dir(),
+        &super::paths::previous_wheels_dir(),
+    )
+}
+
+pub(super) fn sync_at(
+    archive: &Path,
+    dest: &Path,
+    tmp: &Path,
+    previous: &Path,
+) -> Result<(), RuntimeError> {
+    let parent = archive
+        .parent()
+        .ok_or(RuntimeError::WheelhouseUnavailable)?;
+    let wheelhouse = read_wheelhouse(&super::paths::wheelhouse_beside(parent))?;
+    let paths = || super::generational_publication::Paths {
+        current: dest,
+        staged: tmp,
+        previous,
+    };
+    super::generational_publication::recover(
+        paths(),
+        super::generational_publication::RecoveryPolicy::CommitImmediately,
+        RuntimeError::WheelhouseUnavailable,
+    )?;
+    std::fs::create_dir_all(tmp).map_err(|_| RuntimeError::WheelhouseUnavailable)?;
 
     for entry in
-        std::fs::read_dir(&bundled).map_err(|_| "SearXNG: wheels indisponibles".to_string())?
+        std::fs::read_dir(&wheelhouse.path).map_err(|_| RuntimeError::WheelhouseUnavailable)?
     {
-        let entry = entry.map_err(|_| "SearXNG: wheels indisponibles".to_string())?;
-        let path = entry.path();
-        if path.is_file() && is_allowed_wheelhouse_file(&path) {
-            std::fs::copy(&path, tmp.join(entry.file_name()))
-                .map_err(|_| "SearXNG: wheels indisponibles".to_string())?;
+        let entry = entry.map_err(|_| RuntimeError::WheelhouseUnavailable)?;
+        let file_type = entry
+            .file_type()
+            .map_err(|_| RuntimeError::WheelhouseUnavailable)?;
+        if file_type.is_file() && is_allowed_file(&entry.path()) {
+            std::fs::copy(entry.path(), tmp.join(entry.file_name()))
+                .map_err(|_| RuntimeError::WheelhouseUnavailable)?;
         }
     }
 
-    let _ = std::fs::remove_dir_all(&dest);
-    std::fs::rename(&tmp, &dest).map_err(|_| "SearXNG: wheels indisponibles".to_string())?;
-    Ok(())
+    super::generational_publication::publish(
+        paths(),
+        super::generational_publication::RecoveryPolicy::CommitImmediately,
+        RuntimeError::WheelhouseUnavailable,
+    )
 }
 
-pub fn usable(path: &Path) -> bool {
-    let Ok(entries) = std::fs::read_dir(path) else {
-        return false;
-    };
-    entries.flatten().any(|entry| is_wheel(&entry.path()))
+fn read_wheelhouse(path: &Path) -> Result<Wheelhouse, RuntimeError> {
+    let manifest = RuntimeManifest::read_from(path)?;
+    let stamp = read_stamp(path)?;
+    if !manifest.matches_stamp(&stamp) {
+        return Err(RuntimeError::ManifestInvalid);
+    }
+    let mut wheels = 0;
+    for (index, entry) in std::fs::read_dir(path)
+        .map_err(|_| RuntimeError::WheelhouseUnavailable)?
+        .enumerate()
+    {
+        if index >= MAX_WHEELHOUSE_ENTRIES {
+            return Err(RuntimeError::WheelhouseUnavailable);
+        }
+        let entry = entry.map_err(|_| RuntimeError::WheelhouseUnavailable)?;
+        let file_type = entry
+            .file_type()
+            .map_err(|_| RuntimeError::WheelhouseUnavailable)?;
+        if !file_type.is_file() || !is_allowed_file(&entry.path()) {
+            return Err(RuntimeError::WheelhouseUnavailable);
+        }
+        wheels += usize::from(is_wheel(&entry.path()));
+    }
+    if wheels == 0 {
+        return Err(RuntimeError::WheelhouseUnavailable);
+    }
+    Ok(Wheelhouse {
+        path: path.to_path_buf(),
+        manifest,
+    })
 }
 
-fn is_allowed_wheelhouse_file(path: &Path) -> bool {
-    is_wheel(path) || path.file_name().and_then(|n| n.to_str()) == Some(".requirements.sha256")
+fn read_stamp(path: &Path) -> Result<String, RuntimeError> {
+    let bytes = super::private_file::read_bounded(&path.join(STAMP_NAME), 64)
+        .map_err(|_| RuntimeError::ManifestInvalid)?;
+    if bytes.len() != 64 {
+        return Err(RuntimeError::ManifestInvalid);
+    }
+    String::from_utf8(bytes).map_err(|_| RuntimeError::ManifestInvalid)
+}
+
+fn is_allowed_file(path: &Path) -> bool {
+    is_wheel(path)
+        || path.file_name().and_then(|name| name.to_str()) == Some(STAMP_NAME)
+        || path.file_name().and_then(|name| name.to_str()) == Some(MANIFEST_NAME)
 }
 
 fn is_wheel(path: &Path) -> bool {
     path.extension()
         .and_then(|ext| ext.to_str())
         .is_some_and(|ext| ext.eq_ignore_ascii_case("whl"))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn wheelhouse_requires_at_least_one_wheel() {
-        let dir = tempfile::tempdir().unwrap();
-        assert!(!usable(dir.path()));
-        std::fs::write(dir.path().join("a.whl"), b"wheel").unwrap();
-        assert!(usable(dir.path()));
-    }
 }

@@ -1,7 +1,14 @@
 use super::tool_result_contract::ToolErrorCategory;
 use super::types_tools::ToolResult;
 
-pub(super) fn search(message: String) -> ToolResult {
+#[path = "tool_web_fetch_error.rs"]
+mod fetch_error;
+
+pub(super) fn search(failure: crate::services::search::SearchFailure) -> ToolResult {
+    let message = failure.message().to_string();
+    if let Some(code) = failure.machine_code() {
+        return classify_searxng(code, message);
+    }
     let lower = message.to_lowercase();
     if contains_any(&lower, &["requête vide", "requête trop longue"]) {
         return error(
@@ -61,124 +68,78 @@ pub(super) fn search(message: String) -> ToolResult {
     )
 }
 
-pub(super) fn fetch(message: String) -> ToolResult {
-    let lower = message.to_lowercase();
-    if let Some(status) = http_status(&message) {
-        return http_fetch_error(message, status);
-    }
-    if lower.contains("timeout") {
-        return error(
-            message,
-            "web_fetch_timeout",
-            ToolErrorCategory::Timeout,
-            true,
-        );
-    }
-    if contains_any(
-        &lower,
-        &[
-            "url invalide",
-            "url trop longue",
-            "schéma non autorisé",
-            "hôte manquant",
-            "type de contenu non supporté",
-        ],
-    ) {
-        return error(
-            message,
-            "invalid_web_fetch_request",
-            ToolErrorCategory::Validation,
-            false,
-        );
-    }
-    if contains_any(
-        &lower,
-        &[
-            "identifiants url interdits",
-            "cloud metadata bloqué",
-            "adresse privée bloquée",
-            "port non autorisé",
-        ],
-    ) {
-        return error(
-            message,
-            "web_fetch_url_blocked",
-            ToolErrorCategory::Permission,
-            false,
-        );
-    }
-    if lower.contains("trop de redirections") || lower.contains("redirection invalide") {
-        return error(
-            message,
-            "web_fetch_redirect_failed",
-            ToolErrorCategory::External,
-            false,
-        );
-    }
-    if lower.contains("réponse trop volumineuse") {
-        return error(
-            message,
-            "web_fetch_response_too_large",
-            ToolErrorCategory::External,
-            false,
-        );
-    }
-    error(
-        message,
-        "web_fetch_transport_failed",
-        ToolErrorCategory::External,
-        true,
-    )
-}
+fn classify_searxng(code: &str, message: String) -> ToolResult {
+    use crate::services::searxng::error_codes;
 
-fn http_fetch_error(message: String, status: u16) -> ToolResult {
-    match status {
-        401 | 403 => error(
+    match code {
+        error_codes::SHUTTING_DOWN => error(
             message,
-            "web_fetch_access_denied",
-            ToolErrorCategory::Permission,
+            "web_search_cancelled",
+            ToolErrorCategory::Cancelled,
             false,
         ),
-        404 | 410 => error(
+        error_codes::SEARCH_RATE_LIMITED => error(
             message,
-            "web_fetch_not_found",
-            ToolErrorCategory::NotFound,
-            false,
-        ),
-        408 => error(
-            message,
-            "web_fetch_timeout",
-            ToolErrorCategory::Timeout,
+            "web_search_rate_limited",
+            ToolErrorCategory::External,
             true,
-        ),
-        429 => error(
+        )
+        .with_error_hint("Réessayer plus tard ou utiliser une autre source."),
+        error_codes::SEARCH_INVALID_RESPONSE => error(
             message,
-            "web_fetch_rate_limited",
+            "web_search_invalid_response",
             ToolErrorCategory::External,
             true,
         ),
-        500..=599 => error(
+        error_codes::SEARCH_FAILED => error(
             message,
-            "web_fetch_server_error",
+            "web_search_unavailable",
             ToolErrorCategory::External,
+            true,
+        ),
+        error_codes::APP_UNAVAILABLE
+        | error_codes::BUNDLE_INVALID
+        | error_codes::CONFIG_UNAVAILABLE
+        | error_codes::LOG_UNAVAILABLE
+        | error_codes::OPERATION_INTERRUPTED
+        | error_codes::PROCESS_STATE_UNAVAILABLE
+        | error_codes::RUNTIME_UNAVAILABLE
+        | error_codes::SETTINGS_UNAVAILABLE
+        | error_codes::SOURCE_UNAVAILABLE
+        | error_codes::START_FAILED => error(
+            message,
+            "web_search_runtime_unavailable",
+            ToolErrorCategory::Unavailable,
             true,
         ),
         _ => error(
             message,
-            "web_fetch_http_error",
+            "web_search_unavailable",
             ToolErrorCategory::External,
-            false,
+            true,
         ),
     }
+}
+
+#[cfg(test)]
+fn unstructured(message: &str) -> crate::services::search::SearchFailure {
+    crate::services::search::SearchFailure::plain(message.to_string())
+}
+
+pub(super) fn fetch(message: String) -> ToolResult {
+    fetch_error::classify(message)
 }
 
 fn http_status(message: &str) -> Option<u16> {
     let mut parts = message.split_whitespace();
     while let Some(part) = parts.next() {
         if part.eq_ignore_ascii_case("HTTP") {
-            return parts
-                .next()
-                .and_then(|value| value.trim_matches(|c: char| !c.is_ascii_digit()).parse().ok());
+            return parts.next().and_then(|value| {
+                value
+                    .trim_matches(|c: char| !c.is_ascii_digit())
+                    .parse()
+                    .ok()
+            });
         }
     }
     None

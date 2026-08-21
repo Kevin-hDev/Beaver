@@ -80,6 +80,56 @@ test("les trois machines construisent sans toucher à une release", () => {
   assert.match(workflow, /--bundles=\$\{\{ matrix\.bundles \}\}/u);
 });
 
+test("construit les roues SearXNG avec la version Python contrôlée", () => {
+  const steps = workflowDocument.jobs.build.steps;
+  const checkoutIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/checkout@"));
+  const setup = steps.find(({ name }) => name === "Install SearXNG Python");
+  const setupIndex = steps.indexOf(setup);
+  const buildIndex = steps.findIndex(({ name }) => name === "Build Tauri app without publishing");
+
+  assert.ok(checkoutIndex >= 0);
+  assert.ok(setup);
+  assert.ok(setupIndex >= 0);
+  assert.ok(buildIndex >= 0);
+  assert.equal(setup.uses, "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1");
+  assert.equal(setup.with["python-version-file"], "scripts/build/searxng-python-version.txt");
+  assert.ok(checkoutIndex < setupIndex && setupIndex < buildIndex);
+});
+
+test("valide les scripts SearXNG avec le Python contrôlé avant la release", () => {
+  const steps = workflowDocument.jobs.validate.steps;
+  const checkoutIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/checkout@"));
+  const nodeIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/setup-node@"));
+  const setup = steps.find(({ name }) => name === "Install SearXNG test Python");
+  const setupIndex = steps.indexOf(setup);
+  const tests = steps.find(({ name }) => name === "SearXNG preparation script tests");
+  const testsIndex = steps.indexOf(tests);
+
+  assert.ok(setup, "installation du Python de test manquante");
+  assert.ok(tests, "tests Python SearXNG manquants");
+  assert.equal(setup.uses, "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1");
+  assert.equal(setup.with["python-version-file"], "scripts/build/searxng-python-version.txt");
+  assert.equal(tests.run, "npm run test:searxng-scripts");
+  assert.ok(checkoutIndex < nodeIndex && nodeIndex < setupIndex && setupIndex < testsIndex);
+});
+
+test("vérifie le wheelhouse SearXNG après chaque build avant les artefacts", () => {
+  const steps = workflowDocument.jobs.build.steps;
+  const buildIndex = steps.findIndex(({ name }) => name === "Build Tauri app without publishing");
+  const smokeSteps = steps.filter(({ name }) => name === "Verify SearXNG offline runtime");
+  const resolveIndex = steps.findIndex(({ name }) => name === "Resolve exact artifact paths");
+
+  assert.equal(smokeSteps.length, 1);
+  const smoke = smokeSteps[0];
+  assert.equal(smoke["working-directory"], "src-tauri");
+  assert.equal(
+    smoke.run,
+    "cargo test services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin --lib -- --ignored --exact --nocapture",
+  );
+  const smokeIndex = steps.indexOf(smoke);
+  assert.ok(buildIndex < smokeIndex && smokeIndex < resolveIndex);
+});
+
 test("partage la cible Cargo Windows avant le build et sa relecture", () => {
   const configure = workflow.indexOf("Configure Windows Cargo target");
   const build = workflow.indexOf("Build Tauri app without publishing");

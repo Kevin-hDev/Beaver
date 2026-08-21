@@ -1,6 +1,27 @@
 use super::lifecycle::SearxngSidecar;
 use crate::app_exit::AppExitCoordinator;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
+
+#[test]
+fn stale_post_readiness_start_cannot_clean_the_previous_runtime() {
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let sidecar = SearxngSidecar::new(coordinator.work_supervisor());
+    let admission = sidecar.work.try_admit_server().expect("server admission");
+    let cancel = admission.cancellation();
+    let generation = sidecar.publication_generation.load(Ordering::Acquire);
+    sidecar
+        .publication_generation
+        .fetch_add(1, Ordering::AcqRel);
+    let mut cleaned = false;
+
+    let result = super::start_readiness::run_if_start_active(&sidecar, &cancel, generation, || {
+        cleaned = true
+    });
+
+    assert!(result.is_err());
+    assert!(!cleaned);
+}
 
 #[tokio::test]
 async fn shutdown_permanently_refuses_a_new_searxng_start() {
@@ -62,36 +83,6 @@ async fn shutdown_does_not_wait_for_a_slow_unpublished_start() {
         child_gone,
         "unpublished kill_on_drop child survived shutdown"
     );
-}
-
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn pid_persistence_does_not_hold_the_process_lock() {
-    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
-    let sidecar = SearxngSidecar::new(coordinator.work_supervisor());
-    let (saving_tx, saving_rx) = tokio::sync::oneshot::channel();
-    let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
-    let starting = sidecar.clone();
-    let publication = tokio::spawn(async move {
-        starting
-            .publish_test_process_with_pid_save_for_test(move |_| {
-                let _ = saving_tx.send(());
-                release_rx.recv_timeout(Duration::from_secs(2)).unwrap();
-            })
-            .await
-    });
-    saving_rx.await.expect("PID persistence entered");
-
-    let published =
-        tokio::time::timeout(Duration::from_millis(100), sidecar.published_pid_for_test())
-            .await
-            .expect("process lock remained available");
-    release_tx.send(()).unwrap();
-    publication.await.unwrap().unwrap();
-    sidecar
-        .stop_and_wait(Instant::now() + Duration::from_secs(1))
-        .await;
-
-    assert!(published.is_some());
 }
 
 #[tokio::test]

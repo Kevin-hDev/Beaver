@@ -1,15 +1,18 @@
 use super::{OwnedProcessError, OwnedProcessIdentity, OwnedProcessInspection};
 #[path = "owned_process_windows_recovery.rs"]
 mod recovery;
+#[path = "owned_process_windows_termination.rs"]
+mod termination;
+pub(super) use termination::recover_exact_with_cancel;
 #[path = "owned_process_windows_support.rs"]
 mod support;
 use std::os::windows::io::{AsHandle, AsRawHandle};
 use std::sync::OnceLock;
-use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, WAIT_OBJECT_0};
+use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, STILL_ACTIVE};
 use windows_sys::Win32::System::JobObjects::{AssignProcessToJobObject, IsProcessInJob};
 use windows_sys::Win32::System::Threading::{
-    GetProcessId, GetProcessTimes, OpenProcess, QueryFullProcessImageNameW, TerminateProcess,
-    WaitForSingleObject, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
+    GetExitCodeProcess, GetProcessId, GetProcessTimes, OpenProcess, QueryFullProcessImageNameW,
+    TerminateProcess, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
 };
 
 static GLOBAL_JOB: OnceLock<Result<GlobalJob, OwnedProcessError>> = OnceLock::new();
@@ -138,25 +141,6 @@ fn is_in_owned_job(process: HANDLE) -> Result<bool, OwnedProcessError> {
     Ok(contained != 0)
 }
 
-pub(super) fn recover_exact(
-    expected: OwnedProcessIdentity,
-    deadline: std::time::Instant,
-) -> Result<(), OwnedProcessError> {
-    let process = ProcessHandle::open(
-        expected.pid,
-        PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
-    )?;
-    if identity_from_handle_with_executable(process.0, expected.executable)? != expected {
-        return Err(OwnedProcessError::Admission);
-    }
-    unsafe { TerminateProcess(process.0, 1) };
-    let remaining = deadline.saturating_duration_since(std::time::Instant::now());
-    let millis = remaining.as_millis().min(u128::from(u32::MAX)) as u32;
-    (unsafe { WaitForSingleObject(process.0, millis) } == WAIT_OBJECT_0)
-        .then_some(())
-        .ok_or(OwnedProcessError::Admission)
-}
-
 pub(super) fn signal_exact(
     expected: OwnedProcessIdentity,
     force: bool,
@@ -174,7 +158,14 @@ pub(super) fn signal_exact(
 }
 
 pub(super) fn process_exists(pid: u32) -> bool {
-    ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION).is_ok()
+    let Ok(process) = ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION) else {
+        return false;
+    };
+    let mut exit_code = 0_u32;
+    // Windows can keep an exited process object open while handles still
+    // exist. Callers need liveness, not merely the ability to open that PID.
+    (unsafe { GetExitCodeProcess(process.0, &mut exit_code) }) != 0
+        && exit_code == STILL_ACTIVE as u32
 }
 
 pub(super) fn reap_exited_child(_pid: u32) -> Result<bool, OwnedProcessError> {

@@ -3,8 +3,10 @@ use std::time::Duration;
 
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-#[cfg(any(unix, test))]
-#[cfg_attr(all(test, not(unix)), allow(dead_code))]
+#[path = "process_tree_after_parent.rs"]
+mod after_parent;
+pub(crate) use after_parent::kill_pipe_holders_after_parent_exit;
+#[cfg(unix)]
 #[path = "process_tree_unix.rs"]
 mod unix;
 #[cfg(windows)]

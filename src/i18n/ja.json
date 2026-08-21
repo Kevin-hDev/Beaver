@@ -435,6 +435,7 @@
       "resultCancelled": "キャンセルされました。",
       "resultTruncated": "結果は省略されています。",
       "resultMissing": "ストリーム終了後のツール結果がありません。",
+      "webSearchRuntimeUnavailable": "ローカルウェブ検索は一時的に利用できません。Python 3.14 がインストールされていることを確認して、もう一度お試しください。",
       "verifyBeforeRetry": "操作がすでに実行されている可能性があるため、再試行する前に現在の状態を確認してください。",
       "errorCategories": {
         "validation": "ツールに送信されたリクエストが無効です。",

@@ -66,9 +66,120 @@ Beaver includes a dedicated Forecast workspace for time-series analysis:
 
 ## Prerequisites
 
+### External runtimes
+
 - macOS (Apple Silicon), Linux, or Windows
-- Node.js 20+
-- Rust (via `rustup`)
+- Node.js 24 LTS — the general Beaver environment
+- CPython 3.14 — only the local SearXNG fallback
+
+Node.js and CPython are external prerequisites: Beaver does not embed either runtime. CPython 3.14 is needed only when using the local SearXNG fallback, not for Beaver features that do not use that fallback.
+
+The commands below were checked on August 20, 2026 against the official [Node.js download page](https://nodejs.org/en/download) (Node.js 24.19.0 LTS) and [Astral uv documentation](https://docs.astral.sh/uv/getting-started/installation/). They avoid a Linux package manager tied to one distribution.
+
+### macOS (Apple Silicon)
+
+Install Node.js and uv:
+
+```bash
+curl -fsSLO https://nodejs.org/dist/v24.19.0/node-v24.19.0.pkg
+sudo installer -pkg node-v24.19.0.pkg -target /
+rm node-v24.19.0.pkg
+
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Close and reopen the terminal. Then install CPython for the local SearXNG fallback:
+
+```bash
+UV_PYTHON_BIN_DIR="$HOME/.local/bin" UV_PYTHON_INSTALL_BIN=1 uv python install 3.14
+```
+
+Close and reopen the terminal and Beaver, then verify:
+
+```bash
+node --version
+python3.14 --version
+```
+
+### Linux (x64)
+
+Install Node.js and uv:
+
+```bash
+(
+set -e
+curl -fsSLO https://nodejs.org/dist/v24.19.0/node-v24.19.0-linux-x64.tar.xz
+mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
+tar -xJf node-v24.19.0-linux-x64.tar.xz -C "$HOME/.local/opt"
+rm node-v24.19.0-linux-x64.tar.xz
+nodeRoot="$HOME/.local/opt/node-v24.19.0-linux-x64"
+binDir="$HOME/.local/bin"
+for executable in node npm npx corepack; do
+  target="$nodeRoot/bin/$executable"
+  destination="$binDir/$executable"
+  if [ ! -x "$target" ]; then
+    printf 'Node executable is unavailable: %s\n' "$target" >&2
+    exit 1
+  elif [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+    ln -s "$target" "$destination" || exit 1
+  elif [ -L "$destination" ] && [ "$(readlink "$destination")" = "$target" ]; then
+    : # Existing managed link: leave it unchanged.
+  else
+    printf 'Refusing to replace existing %s; move it manually, then rerun this command.\n' "$destination" >&2
+    exit 1
+  fi
+done
+
+curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$binDir" sh
+)
+```
+
+Close and reopen the terminal. `UV_INSTALL_DIR` makes the official uv installer configure this exact `~/.local/bin` directory, where the guarded Node.js links live. Then install CPython for the local SearXNG fallback into the same executable directory:
+
+```bash
+UV_PYTHON_BIN_DIR="$HOME/.local/bin" UV_PYTHON_INSTALL_BIN=1 uv python install 3.14
+```
+
+Close and reopen the terminal and Beaver, then verify:
+
+```bash
+node --version
+python3.14 --version
+```
+
+### Windows (PowerShell)
+
+Install Node.js and uv:
+
+```powershell
+$nodeInstaller = Join-Path $env:TEMP "node-v24.19.0-x64.msi"
+Invoke-WebRequest -Uri "https://nodejs.org/dist/v24.19.0/node-v24.19.0-x64.msi" -OutFile $nodeInstaller
+Start-Process msiexec.exe -Wait -ArgumentList @("/i", $nodeInstaller, "/passive")
+Remove-Item $nodeInstaller
+
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Close and reopen PowerShell. Then install CPython for the local SearXNG fallback:
+
+```powershell
+$env:UV_PYTHON_INSTALL_BIN = "1"
+uv python install 3.14
+uv python update-shell
+```
+
+On Windows, Beaver follows the executable directory selected by uv's official installer; `uv python update-shell` publishes that directory without overriding it with a Unix-style path.
+
+Close and reopen PowerShell and Beaver, then verify:
+
+```powershell
+node --version
+python3.14 --version
+```
+
+### Development only
+
+Rust (via [`rustup`](https://rustup.rs/)) is required only to build or develop Beaver; it is not required by an installed application.
 
 ## Installation
 
@@ -105,6 +216,8 @@ Beaver is the new name of CL-GO. Existing users migrate through the CL-GO 1.0.2 
 ---
 
 ## Development
+
+Install the external prerequisites above first, then install the development dependencies:
 
 ```bash
 # 1. Clone the repo

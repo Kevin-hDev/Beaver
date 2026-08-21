@@ -53,6 +53,28 @@ pub(super) fn terminate_tree(root_pid: u32, deadline: std::time::Instant) {
     }
 }
 
+pub(super) fn terminate_descendants(root_pid: u32, deadline: std::time::Instant) -> bool {
+    if root_pid < 2 {
+        return false;
+    }
+    let mut members = Vec::with_capacity(MAX_TREE_PROCESSES);
+    members.push(root_pid);
+    let Some(snapshot) = ProcessSnapshot::capture() else {
+        return false;
+    };
+    collect_descendants(&snapshot, &mut members);
+    // La racine est déjà récoltée et son PID peut être réutilisé. Seuls
+    // ses descendants encore confinés dans le Job Object sont autorisés ici.
+    members.remove(0);
+    members.reverse();
+    let expected = members.len();
+    let reaped = crate::services::owned_process::terminate_confined(&members, deadline);
+    if reaped != expected {
+        ::log::warn!("[process] descendants Windows incomplets: {reaped}/{expected}");
+    }
+    expected > 0 && reaped == expected
+}
+
 fn collect_descendants(snapshot: &ProcessSnapshot, members: &mut Vec<u32>) {
     loop {
         let before = members.len();
