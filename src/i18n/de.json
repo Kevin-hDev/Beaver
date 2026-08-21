@@ -580,7 +580,7 @@
     "updateAvailable": "Eine neue Version ist verfügbar",
     "installedUpToDate": "Installiert und aktuell",
     "ctx": "ctx",
-    "vramWarning": "Dieses Modell könnte das verfügbare VRAM überschreiten",
+    "vramWarning": "Dieses Modell benötigt möglicherweise mehr Speicher, als dein Computer hat. Der Download wird fortgesetzt.",
     "editModelfile": "Modelfile bearbeiten",
     "parameters": "Parameter",
     "noParameters": "(kein Parameter — Ollama verwendet seine Standardwerte)",

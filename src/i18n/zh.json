@@ -580,7 +580,7 @@
     "updateAvailable": "有新版本可用",
     "installedUpToDate": "已安装且为最新版本",
     "ctx": "ctx",
-    "vramWarning": "该模型可能超出你的可用 VRAM",
+    "vramWarning": "此模型所需的内存可能超过你的设备容量。下载仍将继续。",
     "editModelfile": "编辑 Modelfile",
     "parameters": "参数",
     "noParameters": "（无参数 — Ollama 使用默认值）",
