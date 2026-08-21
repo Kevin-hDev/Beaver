@@ -55,7 +55,9 @@ pub async fn estimate_context_hidden_usage(
     } && tool_catalog::has_plan_tools(&enabled_tool_names);
     let prompt_mode =
         crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
-    let prompt_tier = crate::services::agent_local::system_prompt_defaults::tier_for_model(&model);
+    let context_usage =
+        super::context_usage_memory::usage(provider.as_deref(), &model, &working_dir).await;
+    let prompt_tier = context_usage.prompt_tier;
     let beaver_prompt = crate::services::agent_local::system_prompt_defaults::beaver_prompt(
         prompt_mode,
         prompt_tier,
@@ -95,8 +97,7 @@ pub async fn estimate_context_hidden_usage(
         )
     };
 
-    let memory_usage =
-        super::context_usage_memory::usage(provider.as_deref(), &model, &working_dir).await;
+    let memory_usage = context_usage.memory;
     let system_prompt_tokens = estimate(&base_prompt(
         &mode.mode,
         &working_dir,
@@ -193,3 +194,7 @@ async fn skill_context_tokens(mode: &common::StreamMode, has_tools: bool) -> usi
 fn estimate(input: &str) -> usize {
     crate::services::token_counting::estimate_text_tokens(input)
 }
+
+#[cfg(test)]
+#[path = "context_usage_tests.rs"]
+mod tests;

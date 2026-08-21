@@ -72,4 +72,17 @@ describe("ModelfileViewer data contract", () => {
       );
     });
   });
+
+  it("affiche l'erreur de chargement sans monter une vue partielle", async () => {
+    mocks.invoke.mockRejectedValueOnce("ollama-invalid-response");
+
+    render(<ModelfileViewer modelName="broken-model" onBack={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "errors.localStore.ollamaResponseInvalid",
+      );
+    });
+    expect(screen.queryByTestId("prompt-tier")).toBeNull();
+  });
 });

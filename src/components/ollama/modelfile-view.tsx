@@ -27,7 +27,7 @@ export function ModelfileView({
   return (
     <>
       <SystemPromptSettingsPanel
-        key={modelName}
+        key={`${modelName}:${promptTier}`}
         target={{ scope: "ollama", model: modelName }}
         warningKind="ollama"
         initialMode="agentic"

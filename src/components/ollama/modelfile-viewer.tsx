@@ -115,9 +115,7 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
     <ModelfileView
       modelName={modelName}
       parameters={parameters}
-      parameterError={loadErrorKey !== null
-        ? t(loadErrorKey)
-        : parameterError ? localStoreErrorMessage(parameterError, t) : null}
+      parameterError={parameterError ? localStoreErrorMessage(parameterError, t) : null}
       modelfile={modelfile}
       promptTier={promptTier}
       onEditParameters={() => setMode("edit-parameters")}
