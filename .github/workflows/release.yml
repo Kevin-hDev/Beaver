@@ -355,7 +355,7 @@ jobs:
       - name: Independently verify every SHA-256
         run: node scripts/release/check-brand-artifacts.mjs release "$RELEASE_TAG" release-candidate
 
-  draft_release:
+  publish_release:
     needs: verify_release
     runs-on: ubuntu-22.04
     permissions:
@@ -386,7 +386,7 @@ jobs:
           node scripts/app-release-notes.mjs "$RELEASE_TAG" > "$NOTES_FILE"
           printf 'path=%s\n' "$NOTES_FILE" >> "$GITHUB_OUTPUT"
 
-      - name: Create or update Beaver draft release
+      - name: Create or update Beaver public release
         env:
           GH_TOKEN: ${{ github.token }}
           NOTES_FILE: ${{ steps.notes.outputs.path }}
@@ -396,8 +396,8 @@ jobs:
           DEB="release-candidate/Beaver_${VERSION}_amd64.deb"
           EXE="release-candidate/Beaver_${VERSION}_x64-setup.exe"
           MANIFEST="release-candidate/update-manifest.json"
-          if STATE="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null)"; then
-            if [ "$STATE" != "true" ]; then
+          if STATE="$(gh release view "$RELEASE_TAG" --json isDraft,isPrerelease --jq '[.isDraft, .isPrerelease] | @tsv' 2>/dev/null)"; then
+            if [ "$STATE" != $'false\tfalse' ]; then
               echo "Release validation failed." >&2
               exit 1
             fi
@@ -414,12 +414,12 @@ jobs:
                   ;;
               esac
             done <<< "$EXISTING_ASSETS"
-            gh release edit "$RELEASE_TAG" --draft --title "Beaver $RELEASE_TAG" --notes-file "$NOTES_FILE"
+            gh release edit "$RELEASE_TAG" --draft=false --prerelease=false --latest --title "Beaver $RELEASE_TAG" --notes-file "$NOTES_FILE"
             gh release upload "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MANIFEST" --clobber
           else
             gh release create "$RELEASE_TAG" "$DMG" "$DEB" "$EXE" "$MANIFEST" \
-              --draft \
               --verify-tag \
+              --latest \
               --title "Beaver $RELEASE_TAG" \
               --notes-file "$NOTES_FILE"
           fi

@@ -1,4 +1,62 @@
 {
+  "1.1.4": {
+    "de": [
+      "Codex OAuth und Unteragenten erhalten jetzt zuverlässig ihren vollständigen Werkzeugkontext, während Unterhaltungen der Unteragenten sicher schreibgeschützt bleiben.",
+      "Die SearXNG-Suchreserve bereitet ihre externe Python-Laufzeit unter macOS, Linux und Windows jetzt zuverlässig vor und stellt sie wieder her.",
+      "Ollama-Modelle verwenden jetzt genau eine Größenstufe für Systemanweisungen und zeigen klarere RAM- oder VRAM-Hinweise, ohne Downloads zu blockieren.",
+      "Beaver beendet jetzt über einen koordinierten Ablauf alle eigenen Laufzeiten, Terminals, Verbindungen, Browser-Helfer und Unterprozesse.",
+      "Private lokale Daten, Laufzeitwiederherstellung, Update-Pakete und plattformübergreifende Release-Prüfungen sind jetzt sicherer und robuster.",
+      "Angeheftete Unterhaltungen, dauerhafte Nachrichtenentwürfe, klarere Modellverfügbarkeit und überarbeitete Oberflächendetails erleichtern den Alltag."
+    ],
+    "en": [
+      "Codex OAuth and subagents now receive their complete tool context reliably, while child transcripts remain safely read-only.",
+      "SearXNG search fallback now prepares and recovers its external Python runtime reliably across macOS, Linux, and Windows.",
+      "Ollama models now use one prompt tier based on their reported size, with clearer RAM or VRAM guidance that never blocks downloads.",
+      "Beaver now closes through one coordinated path that stops and reaps its owned runtimes, terminals, connectors, browser helpers, and descendants.",
+      "Private local data, runtime recovery, update packaging, and cross-platform release checks are now safer and more resilient.",
+      "Pinned conversations, persistent unsent drafts, clearer provider availability, and refreshed interface details make daily use more predictable."
+    ],
+    "es": [
+      "Codex OAuth y los subagentes reciben ahora de forma fiable todo su contexto de herramientas, mientras sus conversaciones permanecen seguras y de solo lectura.",
+      "La búsqueda alternativa SearXNG prepara y recupera ahora de forma fiable su entorno Python externo en macOS, Linux y Windows.",
+      "Los modelos Ollama usan ahora un único nivel de instrucciones según su tamaño, con avisos de RAM o VRAM más claros que nunca bloquean las descargas.",
+      "Beaver se cierra ahora mediante una única ruta coordinada que detiene sus entornos, terminales, conexiones, procesos del navegador y descendientes.",
+      "Los datos locales privados, la recuperación, los paquetes de actualización y las comprobaciones multiplataforma son ahora más seguros y resistentes.",
+      "Las conversaciones fijadas, los borradores persistentes, la disponibilidad más clara de modelos y los retoques de interfaz facilitan el uso diario."
+    ],
+    "fr": [
+      "Codex OAuth et les sous-agents reçoivent maintenant fiablement tout leur contexte d’outils, tandis que leurs conversations restent sûres et en lecture seule.",
+      "La recherche de secours SearXNG prépare et restaure maintenant fiablement son environnement Python externe sur macOS, Linux et Windows.",
+      "Les modèles Ollama utilisent maintenant un seul niveau d’instructions selon leur taille, avec des conseils RAM ou VRAM plus clairs qui ne bloquent jamais les téléchargements.",
+      "Beaver se ferme maintenant par un parcours coordonné qui arrête ses moteurs, terminaux, connecteurs, navigateurs et processus descendants.",
+      "Les données locales privées, la reprise des moteurs, les paquets de mise à jour et les contrôles multiplateformes sont maintenant plus sûrs et robustes.",
+      "Les conversations épinglées, les brouillons persistants, la disponibilité plus claire des modèles et l’interface actualisée facilitent le quotidien."
+    ],
+    "it": [
+      "Codex OAuth e i sottoagenti ricevono ora in modo affidabile tutto il contesto degli strumenti, mentre le loro conversazioni restano sicure e di sola lettura.",
+      "La ricerca di riserva SearXNG prepara e ripristina ora in modo affidabile il runtime Python esterno su macOS, Linux e Windows.",
+      "I modelli Ollama usano ora un solo livello di istruzioni in base alla dimensione, con indicazioni RAM o VRAM più chiare che non bloccano mai i download.",
+      "Beaver si chiude ora con un unico percorso coordinato che arresta runtime, terminali, connessioni, processi del browser e discendenti.",
+      "Dati locali privati, ripristino dei runtime, pacchetti di aggiornamento e controlli multipiattaforma sono ora più sicuri e robusti.",
+      "Conversazioni fissate, bozze persistenti, disponibilità dei modelli più chiara e dettagli grafici aggiornati rendono l’uso quotidiano più prevedibile."
+    ],
+    "ja": [
+      "Codex OAuth とサブエージェントに完全なツール情報が確実に渡され、サブエージェントの会話は安全な読み取り専用になりました。",
+      "SearXNG の代替検索は、macOS、Linux、Windows で外部 Python 環境を確実に準備し、中断後も復旧できるようになりました。",
+      "Ollama モデルは報告されたサイズに応じた単一のシステム指示を使い、ダウンロードを妨げない明確な RAM または VRAM 案内を表示します。",
+      "Beaver は一つの連携した終了処理で、所有する実行環境、ターミナル、接続、ブラウザ補助、子プロセスを停止するようになりました。",
+      "非公開のローカルデータ、実行環境の復旧、更新パッケージ、各 OS のリリース検証がより安全で堅牢になりました。",
+      "会話の固定、未送信下書きの保持、モデル利用可否の明確化、画面の改善により、日常操作がより安定しました。"
+    ],
+    "zh": [
+      "Codex OAuth 和子代理现在能可靠获得完整的工具上下文，同时子代理会话保持安全的只读状态。",
+      "SearXNG 后备搜索现在能在 macOS、Linux 和 Windows 上可靠准备并恢复外部 Python 运行环境。",
+      "Ollama 模型现在根据报告的大小使用唯一的系统提示层级，并提供更清晰且不会阻止下载的 RAM 或 VRAM 建议。",
+      "Beaver 现在通过统一的协调流程关闭，并停止自有运行环境、终端、连接器、浏览器辅助进程及其子进程。",
+      "私有本地数据、运行环境恢复、更新打包和跨平台发布检查现在更加安全可靠。",
+      "置顶会话、持久保存的未发送草稿、更清晰的模型可用性和改进的界面细节让日常使用更加稳定。"
+    ]
+  },
   "1.1.3": {
     "de": [
       "Beaver beendet sich jetzt schnell und zuverlässig und räumt lokale Laufzeiten, Browser-Helfer, Terminals, Verbindungen und Erweiterungen vollständig auf.",

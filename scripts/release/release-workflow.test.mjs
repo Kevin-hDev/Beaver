@@ -213,7 +213,7 @@ test("le parcours Windows résout et valide sans Bash", () => {
 test("assemble les trois assets puis revérifie le manifeste séparément", () => {
   assert.match(workflow, /\n  manifest:\n    needs: build\n/);
   assert.match(workflow, /\n  verify_release:\n    needs: manifest\n/);
-  assert.match(workflow, /\n  draft_release:\n    needs: verify_release\n/);
+  assert.match(workflow, /\n  publish_release:\n    needs: verify_release\n/);
   assert.match(
     workflow,
     /create-update-manifest\.mjs "\$RELEASE_TAG" release-candidate/,
@@ -227,22 +227,23 @@ test("assemble les trois assets puis revérifie le manifeste séparément", () =
   assert.match(workflow, /Independently verify every SHA-256/);
 });
 
-test("crée uniquement un brouillon Beaver et refuse une release déjà publiée", () => {
+test("publie Beaver uniquement après vérification complète et refuse un état ambigu", () => {
   assert.match(workflow, /^permissions:\n  contents: read$/mu);
   assert.match(
     workflow,
-    /\n  draft_release:[\s\S]*?\n    permissions:\n      contents: write\n/,
+    /\n  publish_release:[\s\S]*?\n    permissions:\n      contents: write\n/,
   );
   assert.match(workflow, /gh release create "\$RELEASE_TAG"/);
-  assert.match(workflow, /--draft \\\n\s+--verify-tag/);
+  assert.match(workflow, /--verify-tag \\\n\s+--latest/);
   assert.match(workflow, /--title "Beaver \$RELEASE_TAG"/);
-  assert.match(workflow, /if \[ "\$STATE" != "true" \]/);
+  assert.match(workflow, /if \[ "\$STATE" != \$'false\\tfalse' \]/);
   assert.match(workflow, /gh release upload[\s\S]*--clobber/);
-  assert.doesNotMatch(workflow, /--draft=false|releaseDraft: false|\n  publish:\n/);
+  assert.match(workflow, /gh release edit[\s\S]*--draft=false[\s\S]*--prerelease=false[\s\S]*--latest/);
+  assert.doesNotMatch(workflow, /\n\s+--draft \\|\n  draft_release:\n/);
   assert.doesNotMatch(workflow, /CL-GO/);
 });
 
-test("empêche deux brouillons concurrents du même tag", () => {
+test("empêche deux publications concurrentes du même tag", () => {
   assert.match(
     workflow,
     /^concurrency:\n  group: release-\$\{\{ inputs\.version \|\| github\.ref_name \}\}\n  cancel-in-progress: false$/mu,
