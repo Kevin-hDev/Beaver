@@ -1,0 +1,27 @@
+Review note
+
+Reason:
+The context meter was still selecting the Ollama system-prompt tier from the model name, while chat execution uses Ollama parameter_size metadata. Custom or opaque model names could therefore display a context cost for a prompt different from the one actually injected.
+
+Design:
+- context_usage_memory::usage now returns one ResolvedContextUsage containing both memory usage and the prompt tier from the same context_resolve call;
+- API providers retain the existing name/catalog fallback because their ContextWindows intentionally has no Ollama prompt tier;
+- estimate_context_hidden_usage consumes that resolved tier before building and measuring the prompt, without adding another /api/show request;
+- the Modelfile prompt panel identity includes promptTier so a modelfile-updated event that crosses the 25B boundary remounts cleanly;
+- the unreachable loadErrorKey branch inside ModelfileView parameters was removed; load failures remain handled by the outer alert.
+
+TDD / mutation evidence:
+- before implementation, the Rust metadata-precedence test did not compile because the authority helper did not exist;
+- before the React key fix, the remount test stayed on compact after rerendering detailed;
+- mutation back to tier_for_model in context_usage.rs makes hidden_usage_resolves_context_before_selecting_the_prompt fail;
+- mutation back to key={modelName} makes modelfile-view-prompt-tier.test.tsx fail.
+
+Verification:
+- cargo test --lib: 3771 passed, 4 ignored;
+- cargo clippy --all-targets -- -D warnings: passed;
+- cargo fmt --all -- --check: passed;
+- npx vitest run: 462 files, 2428 tests passed;
+- targeted Ollama/system-prompt suite: 11 files, 72 tests passed;
+- npx tsc --noEmit: passed;
+- npm run lint: passed;
+- graphify update . completed.
