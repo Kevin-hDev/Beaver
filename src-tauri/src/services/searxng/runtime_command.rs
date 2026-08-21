@@ -133,10 +133,6 @@ pub(super) async fn run_runtime_command(
                 crate::services::process_tree::ProcessKind::Searxng,
             )
             .await;
-            crate::services::process_tree::kill(
-                root_pid,
-                crate::services::process_tree::ProcessKind::Searxng,
-            );
             return record(
                 RuntimeCommandError::Drain(stage),
                 &OutputTail::new(),

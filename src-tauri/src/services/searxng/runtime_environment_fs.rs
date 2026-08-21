@@ -32,9 +32,11 @@ impl Layout {
         }
         Ok(Self {
             root: root.to_path_buf(),
-            current: root.join(".venv"),
-            staged: root.join(".venv.next"),
-            previous: root.join(".venv.previous"),
+            // Les tests changent uniquement la racine ; les suffixes restent
+            // ceux de l'autorité de chemins utilisée en production.
+            current: root.join(super::paths::VENV_NAME),
+            staged: root.join(super::paths::STAGED_VENV_NAME),
+            previous: root.join(super::paths::PREVIOUS_VENV_NAME),
         })
     }
 }
@@ -42,6 +44,11 @@ impl Layout {
 pub(super) fn recover(layout: &Layout) -> Result<(), RuntimeError> {
     if present_dir(&layout.staged)? {
         remove_dir(layout, &layout.staged)?;
+    }
+    if present_dir(&layout.current)? && present_dir(&layout.previous)? {
+        // `previous` existe jusqu'à la readiness : sa présence au prochain
+        // ensure prouve que `current` n'a jamais été confirmé.
+        remove_dir(layout, &layout.current)?;
     }
     if !present_dir(&layout.current)? && present_dir(&layout.previous)? {
         rename_dir(layout, &layout.previous, &layout.current)?;
@@ -89,8 +96,10 @@ pub(super) fn present_dir(path: &Path) -> Result<bool, RuntimeError> {
 }
 
 pub(super) fn regular_executable(path: &Path) -> Result<bool, RuntimeError> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_file() => executable_metadata(&metadata),
+    // Un venv CPython expose `bin/python` comme lien vers l'interpréteur réel.
+    // On suit uniquement ce lien exécutable ; les dossiers restent contrôlés sans suivi.
+    match fs::metadata(path) {
+        Ok(metadata) if metadata.is_file() => executable_metadata(&metadata),
         Ok(_) => Ok(false),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
         Err(_) => Err(RuntimeError::EnvironmentUnavailable),

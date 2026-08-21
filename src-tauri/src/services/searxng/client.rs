@@ -13,13 +13,19 @@ pub async fn search(base_url: &str, query: &str) -> Result<Vec<SearchResult>, St
         .timeout(TIMEOUT)
         .send()
         .await
-        .map_err(|e| format!("SearXNG: {e}"))?;
+        .map_err(|_| super::error_codes::SEARCH_FAILED.to_string())?;
 
     if !resp.status().is_success() {
-        return Err(format!("SearXNG: HTTP {}", resp.status()));
+        return Err(if resp.status().as_u16() == 429 {
+            super::error_codes::SEARCH_RATE_LIMITED.to_string()
+        } else {
+            super::error_codes::SEARCH_FAILED.to_string()
+        });
     }
 
-    let json = common::read_json_bounded(resp, "SearXNG").await?;
+    let json = common::read_json_bounded(resp, "SearXNG")
+        .await
+        .map_err(|_| super::error_codes::SEARCH_INVALID_RESPONSE.to_string())?;
     Ok(parse_results(&json))
 }
 

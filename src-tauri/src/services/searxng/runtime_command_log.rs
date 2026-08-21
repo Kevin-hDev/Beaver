@@ -44,25 +44,12 @@ pub(super) fn write(
 }
 
 fn reject_link(path: &std::path::Path) -> Result<(), ()> {
-    match fs::symlink_metadata(path) {
-        Ok(metadata) if metadata.file_type().is_symlink() => Err(()),
-        Ok(metadata) if metadata.file_type().is_file() && single_link(&metadata) => Ok(()),
-        Ok(_) => Err(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(_) => Err(()),
+    match crate::services::private_store::read_bounded_regular(path, MAX_LOG_BYTES as u64)
+        .map_err(|_| ())?
+    {
+        crate::services::private_store::BoundedFile::Missing
+        | crate::services::private_store::BoundedFile::Content(_) => Ok(()),
     }
-}
-
-#[cfg(unix)]
-fn single_link(metadata: &fs::Metadata) -> bool {
-    use std::os::unix::fs::MetadataExt;
-
-    metadata.nlink() == 1
-}
-
-#[cfg(not(unix))]
-fn single_link(_: &fs::Metadata) -> bool {
-    true
 }
 
 fn render(bytes: &[u8]) -> String {
@@ -71,10 +58,16 @@ fn render(bytes: &[u8]) -> String {
         .map(|ch| if ch.is_control() { ' ' } else { ch })
         .collect();
     let mut rendered = String::with_capacity(MAX_RENDERED_STREAM_BYTES);
-    let mut redact_next = false;
+    let mut redact_values = 0_u8;
     for token in normalized.split_whitespace() {
-        let sensitive = redact_next || sensitive_marker(token);
-        redact_next = sensitive_marker(token);
+        let marker = sensitive_marker(token);
+        let separator = token.chars().all(|character| !character.is_alphanumeric());
+        let sensitive = marker || redact_values > 0;
+        if marker {
+            redact_values = 1;
+        } else if redact_values > 0 && !separator {
+            redact_values -= 1;
+        }
         let token = if sensitive { "[redacted]" } else { token };
         if !rendered.is_empty() {
             if rendered.len() == MAX_RENDERED_STREAM_BYTES {

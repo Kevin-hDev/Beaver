@@ -18,10 +18,10 @@ impl RuntimeError {
         }
     }
 
-    pub(super) fn public_message(self) -> &'static str {
+    pub(super) fn public_code(self) -> &'static str {
         match self {
-            Self::Cancelled => "SearXNG: arrêt en cours",
-            _ => "SearXNG: installation runtime échouée",
+            Self::Cancelled => super::error_codes::SHUTTING_DOWN,
+            _ => super::error_codes::RUNTIME_UNAVAILABLE,
         }
     }
 }

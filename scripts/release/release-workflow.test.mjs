@@ -96,6 +96,23 @@ test("construit les roues SearXNG avec la version Python contrôlée", () => {
   assert.ok(checkoutIndex < setupIndex && setupIndex < buildIndex);
 });
 
+test("valide les scripts SearXNG avec le Python contrôlé avant la release", () => {
+  const steps = workflowDocument.jobs.validate.steps;
+  const checkoutIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/checkout@"));
+  const nodeIndex = steps.findIndex(({ uses }) => uses?.startsWith("actions/setup-node@"));
+  const setup = steps.find(({ name }) => name === "Install SearXNG test Python");
+  const setupIndex = steps.indexOf(setup);
+  const tests = steps.find(({ name }) => name === "SearXNG preparation script tests");
+  const testsIndex = steps.indexOf(tests);
+
+  assert.ok(setup, "installation du Python de test manquante");
+  assert.ok(tests, "tests Python SearXNG manquants");
+  assert.equal(setup.uses, "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1");
+  assert.equal(setup.with["python-version-file"], "scripts/build/searxng-python-version.txt");
+  assert.equal(tests.run, "npm run test:searxng-scripts");
+  assert.ok(checkoutIndex < nodeIndex && nodeIndex < setupIndex && setupIndex < testsIndex);
+});
+
 test("vérifie le wheelhouse SearXNG après chaque build avant les artefacts", () => {
   const steps = workflowDocument.jobs.build.steps;
   const buildIndex = steps.findIndex(({ name }) => name === "Build Tauri app without publishing");

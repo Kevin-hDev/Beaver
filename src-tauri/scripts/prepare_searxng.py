@@ -3,6 +3,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Point d'entrée unique : scripts/build/prepare-searxng.mjs vérifie déjà que
+# cet interpréteur correspond à scripts/build/searxng-python-version.txt.
+
 from searxng_archive import safe_extract
 from searxng_bundle import (
     STAMP_BYTES,

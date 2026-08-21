@@ -6,6 +6,7 @@ use crate::services::work_registry::ServiceWorkCancellation;
 use super::python_runtime::PythonRuntime;
 use super::runtime_error::RuntimeError;
 use super::wheels::Wheelhouse;
+use subtle::ConstantTimeEq;
 
 pub(super) const RUNTIME_SMOKE_SCRIPT: &str = "import importlib.util, lxml, markupsafe, msgspec, yaml; assert importlib.util.find_spec('searx.webapp') is not None";
 
@@ -83,6 +84,10 @@ impl RuntimeEnvironment {
         smoke(&staged_python, source, deadline, cancel).await?;
         if cancel.is_cancelled() {
             return Err(RuntimeError::Cancelled);
+        }
+        let final_source_hash = super::runtime_receipt::source_hash(source)?;
+        if !bool::from(final_source_hash.as_bytes().ct_eq(source_hash.as_bytes())) {
+            return Err(RuntimeError::EnvironmentUnavailable);
         }
         super::runtime_receipt::write_receipt(layout, &wheelhouse.manifest, &source_hash)?;
         publish(layout)?;

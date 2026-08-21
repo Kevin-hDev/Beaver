@@ -30,21 +30,21 @@ fn receipt_refuses_oversized_unknown_duplicate_and_zero_fields() {
 
     std::fs::write(
         store.path(),
-        br#"{"schema_version":1,"pid":42,"native_start_time":7,"native_scope":9,"executable_high":0,"executable_low":11,"unknown":1}"#,
+        br#"{"schema_version":2,"pid":42,"native_start_time":7,"native_scope":9,"executable_high":11,"executable_low":13,"pending":false,"unknown":1}"#,
     )
     .expect("unknown field receipt");
     assert!(store.read().is_err());
 
     std::fs::write(
         store.path(),
-        br#"{"schema_version":1,"pid":42,"pid":0,"native_start_time":7,"native_scope":9,"executable_high":0,"executable_low":11}"#,
+        br#"{"schema_version":2,"pid":42,"pid":42,"native_start_time":7,"native_scope":9,"executable_high":11,"executable_low":13,"pending":false}"#,
     )
     .expect("duplicate receipt");
     assert!(store.read().is_err());
 
     std::fs::write(
         store.path(),
-        br#"{"schema_version":1,"pid":0,"native_start_time":7,"native_scope":9,"executable_high":0,"executable_low":11}"#,
+        br#"{"schema_version":2,"pid":0,"native_start_time":7,"native_scope":9,"executable_high":0,"executable_low":11,"pending":false}"#,
     )
     .expect("zero field receipt");
     assert!(store.read().is_err());
@@ -64,6 +64,46 @@ fn receipt_writes_atomically_and_round_trips_the_exact_identity() {
     assert_eq!(
         store.read().expect("receipt read"),
         SearxngProcessReceipt::from_identity(identity())
+    );
+}
+
+#[test]
+fn pending_receipt_recovers_the_same_process_after_its_executable_changes() {
+    let initial = identity();
+    let current = OwnedProcessIdentity {
+        executable: (u128::from(17_u64) << 64) | u128::from(19_u64),
+        ..initial
+    };
+    let receipt = SearxngProcessReceipt::pending(initial);
+    let mut recovered = None;
+
+    let outcome = classify_recovery(
+        receipt,
+        |_| true,
+        |_| false,
+        |_, _| Ok(OwnedProcessInspection::Owned(current)),
+        |identity, _| {
+            recovered = Some(identity);
+            Ok(())
+        },
+        Instant::now(),
+    );
+
+    assert_eq!(outcome, RecoveryOutcome::Exact);
+    assert_eq!(recovered, Some(current));
+}
+
+#[test]
+fn pending_receipt_is_durable_before_identity_stabilization() {
+    let (_root, store) = store();
+
+    store
+        .write_pending(&identity())
+        .expect("pending receipt write");
+
+    assert_eq!(
+        store.read().unwrap(),
+        SearxngProcessReceipt::pending(identity())
     );
 }
 
@@ -105,6 +145,18 @@ fn stale_exact_and_ambiguous_inspections_have_closed_outcomes() {
         Instant::now(),
     );
     assert_eq!(exact, RecoveryOutcome::Exact);
+
+    assert_eq!(
+        classify_recovery(
+            receipt.clone(),
+            |_| true,
+            |_| false,
+            |_, _| Ok(OwnedProcessInspection::Owned(identity())),
+            |_, _| Err(()),
+            Instant::now(),
+        ),
+        RecoveryOutcome::Blocked
+    );
 
     let blocked = classify_recovery(
         receipt,
@@ -162,9 +214,18 @@ async fn exact_receipt_reaps_a_real_owned_python_process() {
         .await
         .expect("owned Python fixture");
     let pid = child.id().expect("fixture pid");
-    let identity = super::process::stable_identity(pid)
-        .await
-        .expect("fixture identity");
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().expect("coordinator");
+    let supervisor = crate::services::work_registry::ServiceWorkSupervisor::<1>::new(
+        coordinator.work_supervisor(),
+    );
+    let admission = supervisor.try_admit().expect("admission");
+    let identity = super::process::stable_identity(
+        pid,
+        tokio::time::Instant::now() + Duration::from_millis(250),
+        &admission.cancellation(),
+    )
+    .await
+    .expect("fixture identity");
     assert_eq!(
         OwnedProcess::inspect_for_recovery(pid, identity.native_start_time)
             .expect("fixture inspection"),
@@ -201,4 +262,39 @@ async fn exact_receipt_reaps_a_real_owned_python_process() {
     );
     assert!(!OwnedProcess::process_exists(pid));
     assert!(!store.path().exists());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn cancelled_recovery_keeps_the_receipt_and_process_for_a_safe_retry() {
+    let (_root, store) = store();
+    let mut child = super::process::spawn_test_fixture().await.unwrap();
+    let pid = child.id().unwrap();
+    let coordinator = crate::app_exit::AppExitCoordinator::initialize().unwrap();
+    let supervisor = crate::services::work_registry::ServiceWorkSupervisor::<1>::new(
+        coordinator.work_supervisor(),
+    );
+    let admission = supervisor.try_admit().unwrap();
+    let identity = super::process::stable_identity(
+        pid,
+        tokio::time::Instant::now() + Duration::from_millis(250),
+        &admission.cancellation(),
+    )
+    .await
+    .unwrap();
+    store.write(&identity).unwrap();
+
+    let outcome = store
+        .recover_and_reap_with(Instant::now() + Duration::from_secs(1), || true)
+        .unwrap();
+
+    assert_eq!(outcome, RecoveryOutcome::Blocked);
+    assert!(store.path().exists());
+    assert!(OwnedProcess::process_exists(pid));
+    crate::services::process_tree::terminate_tokio(
+        &mut child,
+        crate::services::process_tree::ProcessKind::Searxng,
+    )
+    .await;
+    store.remove().unwrap();
 }

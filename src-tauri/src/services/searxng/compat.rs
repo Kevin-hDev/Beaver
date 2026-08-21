@@ -6,10 +6,11 @@ pub fn python_path() -> Result<Option<PathBuf>, String> {
     }
 
     let dir = super::paths::sidecar_dir().join("compat");
-    std::fs::create_dir_all(&dir).map_err(|_| "SearXNG: compat Windows impossible".to_string())?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|_| super::error_codes::CONFIG_UNAVAILABLE.to_string())?;
     let stub = dir.join("pwd.py");
     std::fs::write(&stub, pwd_stub_body())
-        .map_err(|_| "SearXNG: compat Windows impossible".to_string())?;
+        .map_err(|_| super::error_codes::CONFIG_UNAVAILABLE.to_string())?;
     Ok(Some(dir))
 }
 

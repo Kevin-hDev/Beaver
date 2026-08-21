@@ -9,7 +9,7 @@ pub async fn ensure_runtime(
 ) -> Result<PathBuf, String> {
     ensure(source, cancel).await.map_err(|error| {
         log::warn!("[searxng] runtime category={}", error.category());
-        error.public_message().to_string()
+        error.public_code().to_string()
     })
 }
 

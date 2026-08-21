@@ -17,6 +17,18 @@ const CATEGORY_KEYS: Record<ToolErrorCategory, string> = {
   internal: "agentLocal.toolActivity.errorCategories.internal",
 };
 
+const ERROR_CODE_KEYS: Readonly<Record<string, string>> = {
+  web_search_runtime_unavailable: "agentLocal.toolActivity.webSearchRuntimeUnavailable",
+};
+
+export function toolErrorHasLocalizedMessage(error: ToolErrorInfo | undefined): boolean {
+  return error ? error.code in ERROR_CODE_KEYS : false;
+}
+
+export function toolErrorResultIsMachineCode(result: string | undefined): boolean {
+  return result !== undefined && /^searxng_[a-z_]+$/u.test(result);
+}
+
 export function toolErrorMessage(
   toolName: string,
   result: string,
@@ -30,6 +42,9 @@ export function toolErrorMessage(
     const officeMessage = officeToolErrorMessage(result, t);
     if (officeMessage) return officeMessage;
   }
+
+  const errorCodeKey = error ? ERROR_CODE_KEYS[error.code] : undefined;
+  if (errorCodeKey) return t(errorCodeKey);
 
   const categoryKey = error ? CATEGORY_KEYS[error.category] : undefined;
   if (categoryKey) return t(categoryKey);

@@ -71,7 +71,15 @@ impl OwnedProcess {
         expected: OwnedProcessIdentity,
         deadline: std::time::Instant,
     ) -> Result<(), OwnedProcessError> {
-        platform::recover_exact(expected, deadline)
+        Self::recover_exact_with_cancel(expected, deadline, || false)
+    }
+
+    pub(crate) fn recover_exact_with_cancel(
+        expected: OwnedProcessIdentity,
+        deadline: std::time::Instant,
+        cancelled: impl Fn() -> bool,
+    ) -> Result<(), OwnedProcessError> {
+        platform::recover_exact_with_cancel(expected, deadline, &cancelled)
     }
 
     pub(crate) fn reap_exited_child(pid: u32) -> Result<bool, OwnedProcessError> {

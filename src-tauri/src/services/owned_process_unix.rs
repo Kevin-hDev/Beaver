@@ -6,6 +6,9 @@ use std::fs;
 
 #[path = "owned_process_unix_recovery.rs"]
 pub(in crate::services::owned_process) mod recovery;
+#[path = "owned_process_unix_termination.rs"]
+mod termination;
+pub(super) use termination::recover_exact_with_cancel;
 
 pub(super) fn admit(pid: u32) -> Result<(), OwnedProcessError> {
     if pid < 2 || pid > i32::MAX as u32 {
@@ -64,24 +67,6 @@ pub(super) fn identity_with_executable(
         native_start_time: start_time(pid).ok_or(OwnedProcessError::Admission)?,
         executable,
     })
-}
-
-pub(super) fn recover_exact(
-    expected: OwnedProcessIdentity,
-    deadline: std::time::Instant,
-) -> Result<(), OwnedProcessError> {
-    let current = identity(expected.pid)?;
-    if current != expected {
-        return Err(OwnedProcessError::Admission);
-    }
-    signal_exact(expected, false)?;
-    if wait_for_object_exit(expected.pid, deadline)? {
-        return Ok(());
-    }
-    signal_exact(expected, true)?;
-    wait_for_object_exit(expected.pid, deadline + std::time::Duration::from_secs(2))?
-        .then_some(())
-        .ok_or(OwnedProcessError::Admission)
 }
 
 pub(super) fn signal_exact(
@@ -156,26 +141,6 @@ fn pidfd_signal(fd: libc::c_int, signal: libc::c_int) -> Result<(), OwnedProcess
     (result == 0)
         .then_some(())
         .ok_or(OwnedProcessError::Admission)
-}
-
-fn wait_for_object_exit(pid: u32, deadline: std::time::Instant) -> Result<bool, OwnedProcessError> {
-    let mut status = 0;
-    while std::time::Instant::now() < deadline {
-        let result = unsafe { libc::waitpid(pid as libc::pid_t, &mut status, libc::WNOHANG) };
-        if result == pid as libc::pid_t {
-            release(pid);
-            return Ok(true);
-        }
-        if result < 0 && std::io::Error::last_os_error().raw_os_error() != Some(libc::ECHILD) {
-            return Err(OwnedProcessError::Admission);
-        }
-        if !process_exists(pid) {
-            release(pid);
-            return Ok(true);
-        }
-        std::thread::yield_now();
-    }
-    Ok(false)
 }
 
 pub(super) fn release(pid: u32) {

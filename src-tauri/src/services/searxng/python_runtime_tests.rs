@@ -1,5 +1,5 @@
 use super::python_runtime::PythonRuntime;
-use super::python_runtime_path::{command_for, locate_with_suffixes};
+use super::python_runtime_path::{command_for, locate_with_suffixes, lookup_suffixes};
 use super::runtime_manifest::RuntimeManifest;
 use std::ffi::OsStr;
 use std::path::Path;
@@ -38,6 +38,50 @@ async fn non_executable_candidate_does_not_mask_the_next_python() {
 
     assert_eq!(selected.expect("next runtime").label(), "python3");
     assert!(marker.is_file());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn pypy_candidate_does_not_mask_the_compatible_cpython() {
+    let directory = tempfile::tempdir().expect("temporary PATH");
+    let pypy = directory.path().join("python3.14");
+    let cpython = directory.path().join("python3");
+    write_fake_python_identity(&pypy, &directory.path().join("pypy-ran"), "pypy", 14, true);
+    write_fake_python_identity(
+        &cpython,
+        &directory.path().join("cpython-ran"),
+        "cpython",
+        14,
+        true,
+    );
+
+    let selected =
+        PythonRuntime::resolve_with_path(&RuntimeManifest::for_test(3, 14), directory.path())
+            .await
+            .expect("compatible CPython");
+
+    assert_eq!(selected.label(), "python3");
+}
+
+#[test]
+fn platform_lookup_suffix_is_the_runtime_authority() {
+    #[cfg(windows)]
+    assert_eq!(lookup_suffixes(), [OsStr::new(".exe")]);
+    #[cfg(not(windows))]
+    assert_eq!(lookup_suffixes(), [OsStr::new("")]);
+}
+
+#[cfg(unix)]
+#[test]
+fn lookup_rejects_a_non_executable_file_directly() {
+    let directory = tempfile::tempdir().expect("temporary PATH");
+    let blocked = directory.path().join("python3.14");
+    std::fs::write(&blocked, b"not executable").expect("blocked Python");
+
+    assert!(
+        locate_with_suffixes(Path::new("python3.14"), directory.path(), &[OsStr::new("")],)
+            .is_none()
+    );
 }
 
 #[cfg(unix)]
@@ -92,13 +136,25 @@ async fn common_command_helper_applies_the_injected_gui_path() {
 
 #[cfg(unix)]
 fn write_fake_python(path: &Path, marker: &Path, minor: u8, executable: bool) {
+    write_fake_python_identity(path, marker, "cpython", minor, executable);
+}
+
+#[cfg(unix)]
+fn write_fake_python_identity(
+    path: &Path,
+    marker: &Path,
+    implementation: &str,
+    minor: u8,
+    executable: bool,
+) {
     use std::os::unix::fs::PermissionsExt;
 
     std::fs::write(
         path,
         format!(
-            "#!/bin/sh\n: > '{}'\nprintf 'cpython\\n3\\n{}\\n'\n",
+            "#!/bin/sh\n: > '{}'\nprintf '{}\\n3\\n{}\\n'\n",
             marker.display(),
+            implementation,
             minor
         ),
     )

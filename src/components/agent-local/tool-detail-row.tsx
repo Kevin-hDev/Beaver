@@ -1,6 +1,10 @@
 import { useTranslation } from "react-i18next";
 import type { ToolActivity } from "@/hooks/agent-chat-utils";
-import { toolErrorMessage } from "@/lib/tool-error-message";
+import {
+  toolErrorHasLocalizedMessage,
+  toolErrorMessage,
+  toolErrorResultIsMachineCode,
+} from "@/lib/tool-error-message";
 import { sanitizeToolErrorDetails } from "@/lib/tool-error-sanitize";
 import type {
   ToolActivityRecord,
@@ -145,7 +149,10 @@ export function ToolDetailRow({
     ...(tool.warnings ?? []),
     ...(tool.truncated ? [t("agentLocal.toolActivity.resultTruncated")] : []),
   ].map(sanitizeToolErrorDetails);
-  const resultDetails = tool.is_error && isAdmissionError(tool.result)
+  const resultDetails = tool.is_error
+    && (isAdmissionError(tool.result)
+      || toolErrorHasLocalizedMessage(tool.error)
+      || toolErrorResultIsMachineCode(tool.result))
     ? ""
     : tool.is_error
     ? sanitizeToolErrorDetails(tool.result ?? "")

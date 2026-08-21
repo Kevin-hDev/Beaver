@@ -4,6 +4,7 @@ use super::runtime_error::RuntimeError;
 use super::runtime_manifest::{RuntimeManifest, MANIFEST_NAME};
 
 const STAMP_NAME: &str = ".requirements.sha256";
+const MAX_WHEELHOUSE_ENTRIES: usize = 512;
 
 pub(super) struct Wheelhouse {
     pub(super) path: PathBuf,
@@ -14,21 +15,22 @@ pub(super) fn for_source(source: &Path) -> Result<Option<Wheelhouse>, RuntimeErr
     let Some(parent) = source.parent() else {
         return Ok(None);
     };
-    read_wheelhouse(&parent.join("wheels")).map(Some)
+    read_wheelhouse(&super::paths::wheelhouse_beside(parent)).map(Some)
 }
 
 pub(super) fn sync_from_archive_parent(archive: &Path) -> Result<(), String> {
-    sync(archive).map_err(|error| error.public_message().to_string())
+    sync(archive).map_err(|error| error.public_code().to_string())
 }
 
 fn sync(archive: &Path) -> Result<(), RuntimeError> {
     let parent = archive
         .parent()
         .ok_or(RuntimeError::WheelhouseUnavailable)?;
-    let wheelhouse = read_wheelhouse(&parent.join("wheels"))?;
-    let dest = super::paths::sidecar_dir().join("wheels");
-    let tmp = super::paths::sidecar_dir().join("wheels.tmp");
-    let _ = std::fs::remove_dir_all(&tmp);
+    let wheelhouse = read_wheelhouse(&super::paths::wheelhouse_beside(parent))?;
+    let dest = super::paths::wheels_dir();
+    let tmp = super::paths::staged_wheels_dir();
+    let previous = super::paths::previous_wheels_dir();
+    super::wheels_publication::recover(&dest, &tmp, &previous)?;
     std::fs::create_dir_all(&tmp).map_err(|_| RuntimeError::WheelhouseUnavailable)?;
 
     for entry in
@@ -44,8 +46,7 @@ fn sync(archive: &Path) -> Result<(), RuntimeError> {
         }
     }
 
-    let _ = std::fs::remove_dir_all(&dest);
-    std::fs::rename(&tmp, &dest).map_err(|_| RuntimeError::WheelhouseUnavailable)
+    super::wheels_publication::publish(&dest, &tmp, &previous)
 }
 
 fn read_wheelhouse(path: &Path) -> Result<Wheelhouse, RuntimeError> {
@@ -55,7 +56,13 @@ fn read_wheelhouse(path: &Path) -> Result<Wheelhouse, RuntimeError> {
         return Err(RuntimeError::ManifestInvalid);
     }
     let mut wheels = 0;
-    for entry in std::fs::read_dir(path).map_err(|_| RuntimeError::WheelhouseUnavailable)? {
+    for (index, entry) in std::fs::read_dir(path)
+        .map_err(|_| RuntimeError::WheelhouseUnavailable)?
+        .enumerate()
+    {
+        if index >= MAX_WHEELHOUSE_ENTRIES {
+            return Err(RuntimeError::WheelhouseUnavailable);
+        }
         let entry = entry.map_err(|_| RuntimeError::WheelhouseUnavailable)?;
         let file_type = entry
             .file_type()
@@ -75,14 +82,12 @@ fn read_wheelhouse(path: &Path) -> Result<Wheelhouse, RuntimeError> {
 }
 
 fn read_stamp(path: &Path) -> Result<String, RuntimeError> {
-    let metadata = std::fs::symlink_metadata(path.join(STAMP_NAME))
+    let bytes = super::private_file::read_bounded(&path.join(STAMP_NAME), 64)
         .map_err(|_| RuntimeError::ManifestInvalid)?;
-    if !metadata.file_type().is_file() || metadata.len() != 64 {
+    if bytes.len() != 64 {
         return Err(RuntimeError::ManifestInvalid);
     }
-    let stamp = std::fs::read_to_string(path.join(STAMP_NAME))
-        .map_err(|_| RuntimeError::ManifestInvalid)?;
-    Ok(stamp)
+    String::from_utf8(bytes).map_err(|_| RuntimeError::ManifestInvalid)
 }
 
 fn is_allowed_file(path: &Path) -> bool {
@@ -126,6 +131,21 @@ mod tests {
     }
 
     #[test]
+    fn wheelhouse_rejects_a_hard_linked_stamp() {
+        let (_parent, source, wheels) = valid_wheelhouse();
+        let stamp = wheels.join(STAMP_NAME);
+        let target = wheels.parent().unwrap().join("stamp-target");
+        std::fs::rename(&stamp, &target).unwrap();
+        std::fs::hard_link(&target, &stamp).unwrap();
+
+        assert!(matches!(
+            for_source(&source),
+            Err(RuntimeError::ManifestInvalid)
+        ));
+        assert_eq!(std::fs::read(target).unwrap(), "a".repeat(64).as_bytes());
+    }
+
+    #[test]
     fn wheelhouse_rejects_an_oversized_manifest_and_a_foreign_file() {
         let (_parent, source, wheels) = valid_wheelhouse();
         std::fs::write(wheels.join(MANIFEST_NAME), vec![b'x'; 513]).unwrap();
@@ -140,6 +160,37 @@ mod tests {
             for_source(&source),
             Err(RuntimeError::WheelhouseUnavailable)
         ));
+    }
+
+    #[test]
+    fn wheelhouse_rejects_more_than_the_bounded_entry_count() {
+        let (_parent, source, wheels) = valid_wheelhouse();
+        for index in 0..510 {
+            std::fs::write(wheels.join(format!("extra-{index}.whl")), b"wheel").unwrap();
+        }
+
+        assert!(matches!(
+            for_source(&source),
+            Err(RuntimeError::WheelhouseUnavailable)
+        ));
+    }
+
+    #[test]
+    fn interrupted_wheelhouse_publication_recovers_one_complete_generation() {
+        let root = tempfile::tempdir().unwrap();
+        let current = root.path().join("wheels");
+        let staged = root.path().join("wheels.next");
+        let previous = root.path().join("wheels.previous");
+        std::fs::create_dir(&previous).unwrap();
+        std::fs::write(previous.join("old.whl"), b"old").unwrap();
+        std::fs::create_dir(&staged).unwrap();
+        std::fs::write(staged.join("partial.whl"), b"partial").unwrap();
+
+        super::super::wheels_publication::recover(&current, &staged, &previous).unwrap();
+
+        assert_eq!(std::fs::read(current.join("old.whl")).unwrap(), b"old");
+        assert!(!staged.exists());
+        assert!(!previous.exists());
     }
 
     #[cfg(unix)]

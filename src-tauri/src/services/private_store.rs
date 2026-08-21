@@ -1,6 +1,6 @@
 use rand::RngCore;
 use std::fs::{File, OpenOptions};
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 fn private_store_error() -> String {
@@ -12,6 +12,9 @@ pub(crate) use private_store_atomic::atomic_write;
 
 #[path = "private_store/cache.rs"]
 mod cache;
+
+#[path = "private_store/bounded_read.rs"]
+mod bounded_read;
 
 #[path = "private_store/atomic_write.rs"]
 mod private_store_atomic;
@@ -29,25 +32,11 @@ pub(crate) enum BoundedFile {
 }
 
 pub(crate) fn read_bounded_regular(path: &Path, max_bytes: u64) -> Result<BoundedFile, String> {
-    let metadata = match std::fs::symlink_metadata(path) {
-        Ok(metadata) => metadata,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(BoundedFile::Missing);
-        }
-        Err(_) => return Err(private_store_error()),
-    };
-    if !metadata.is_file() || metadata.len() > max_bytes {
-        return Err(private_store_error());
-    }
-    let read_limit = max_bytes.checked_add(1).ok_or_else(private_store_error)?;
-    let mut content = Vec::new();
-    File::open(path)
-        .and_then(|file| file.take(read_limit).read_to_end(&mut content))
-        .map_err(|_| private_store_error())?;
-    if content.len() as u64 > max_bytes {
-        return Err(private_store_error());
-    }
-    Ok(BoundedFile::Content(content))
+    bounded_read::read(path, max_bytes).map_err(|_| private_store_error())
+}
+
+pub(crate) fn file_is_single_link_regular(file: &File) -> bool {
+    bounded_read::file_is_single_link_regular(file)
 }
 
 pub async fn atomic_write_async(path: PathBuf, bytes: Vec<u8>) -> Result<(), String> {

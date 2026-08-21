@@ -2,20 +2,43 @@ use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use tauri::Manager;
 
+pub(super) const VENV_NAME: &str = ".venv";
+pub(super) const STAGED_VENV_NAME: &str = ".venv.next";
+pub(super) const PREVIOUS_VENV_NAME: &str = ".venv.previous";
+pub(super) const WHEELS_NAME: &str = "wheels";
+pub(super) const STAGED_WHEELS_NAME: &str = "wheels.next";
+pub(super) const PREVIOUS_WHEELS_NAME: &str = "wheels.previous";
+
 pub fn sidecar_dir() -> PathBuf {
     crate::services::paths::data_dir().join("searxng-sidecar")
 }
 
 pub fn venv_dir() -> PathBuf {
-    sidecar_dir().join(".venv")
+    sidecar_dir().join(VENV_NAME)
 }
 
 pub fn staged_venv_dir() -> PathBuf {
-    sidecar_dir().join(".venv.next")
+    sidecar_dir().join(STAGED_VENV_NAME)
 }
 
 pub fn previous_venv_dir() -> PathBuf {
-    sidecar_dir().join(".venv.previous")
+    sidecar_dir().join(PREVIOUS_VENV_NAME)
+}
+
+pub fn wheels_dir() -> PathBuf {
+    sidecar_dir().join(WHEELS_NAME)
+}
+
+pub fn staged_wheels_dir() -> PathBuf {
+    sidecar_dir().join(STAGED_WHEELS_NAME)
+}
+
+pub fn previous_wheels_dir() -> PathBuf {
+    sidecar_dir().join(PREVIOUS_WHEELS_NAME)
+}
+
+pub(super) fn wheelhouse_beside(parent: &Path) -> PathBuf {
+    parent.join(WHEELS_NAME)
 }
 
 #[allow(dead_code)] // Kept as the single path authority for future runtime diagnostics.
@@ -69,7 +92,7 @@ fn source_archive(app: &tauri::AppHandle) -> Result<PathBuf, String> {
                 .join("source.tar.gz"),
         ))
         .find(|archive| archive.exists())
-        .ok_or_else(|| "SearXNG: source introuvable".to_string())
+        .ok_or_else(|| super::error_codes::SOURCE_UNAVAILABLE.to_string())
 }
 
 fn extract_source_archive(archive: &Path) -> Result<PathBuf, String> {
@@ -87,17 +110,17 @@ fn extract_source_archive(archive: &Path) -> Result<PathBuf, String> {
     let tmp_dir = sidecar_dir().join("source.tmp");
     let _ = std::fs::remove_dir_all(&tmp_dir);
     std::fs::create_dir_all(&tmp_dir)
-        .map_err(|e| format!("SearXNG: extraction impossible ({e})"))?;
+        .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
 
-    let file =
-        std::fs::File::open(archive).map_err(|_| "SearXNG: source introuvable".to_string())?;
+    let file = std::fs::File::open(archive)
+        .map_err(|_| super::error_codes::SOURCE_UNAVAILABLE.to_string())?;
     let decoder = flate2::read::GzDecoder::new(file);
     let mut tar_archive = tar::Archive::new(decoder);
     for entry in tar_archive
         .entries()
-        .map_err(|_| "SearXNG: archive invalide".to_string())?
+        .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?
     {
-        let mut entry = entry.map_err(|_| "SearXNG: archive invalide".to_string())?;
+        let mut entry = entry.map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
         if should_skip_entry(entry.header().entry_type()) {
             continue;
         }
@@ -113,22 +136,22 @@ fn extract_source_archive(archive: &Path) -> Result<PathBuf, String> {
         let dst = tmp_dir.join(&path);
         if let Some(parent) = dst.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| format!("SearXNG: extraction impossible ({e})"))?;
+                .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
         }
         entry
             .unpack(&dst)
-            .map_err(|e| format!("SearXNG: extraction impossible ({e})"))?;
+            .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
     }
 
     let extracted = tmp_dir.join("source");
     if !valid_source(&extracted) {
-        return Err("SearXNG: bundle incomplet".to_string());
+        return Err(super::error_codes::BUNDLE_INVALID.to_string());
     }
     let _ = std::fs::remove_dir_all(&final_dir);
     std::fs::rename(&extracted, &final_dir)
-        .map_err(|e| format!("SearXNG: extraction impossible ({e})"))?;
+        .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
     std::fs::write(stamp_path, stamp)
-        .map_err(|e| format!("SearXNG: extraction impossible ({e})"))?;
+        .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
     let _ = std::fs::remove_dir_all(&tmp_dir);
     super::wheels::sync_from_archive_parent(archive)?;
     Ok(final_dir)
@@ -137,18 +160,19 @@ fn extract_source_archive(archive: &Path) -> Result<PathBuf, String> {
 fn safe_archive_path<R: std::io::Read>(entry: &tar::Entry<'_, R>) -> Result<PathBuf, String> {
     let path = entry
         .path()
-        .map_err(|_| "SearXNG: archive invalide".to_string())?;
+        .map_err(|_| super::error_codes::BUNDLE_INVALID.to_string())?;
     if path
         .components()
         .all(|c| matches!(c, std::path::Component::Normal(_)))
     {
         return Ok(path.into_owned());
     }
-    Err("SearXNG: archive invalide".to_string())
+    Err(super::error_codes::BUNDLE_INVALID.to_string())
 }
 
 fn archive_hash(path: &Path) -> Result<String, String> {
-    let body = std::fs::read(path).map_err(|_| "SearXNG: source introuvable".to_string())?;
+    let body =
+        std::fs::read(path).map_err(|_| super::error_codes::SOURCE_UNAVAILABLE.to_string())?;
     let mut hasher = Sha256::new();
     hasher.update(body);
     Ok(hex::encode(hasher.finalize()))

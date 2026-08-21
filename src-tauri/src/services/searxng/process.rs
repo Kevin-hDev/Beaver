@@ -1,8 +1,9 @@
 use crate::services::paths::data_dir;
-use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::{Duration, Instant};
+
+use super::error_codes as errors;
 
 const MAX_STARTUP_LOG_BYTES: u64 = 16 * 1024;
 
@@ -10,13 +11,22 @@ fn log_path() -> PathBuf {
     data_dir().join("logs").join("searxng-sidecar.log")
 }
 
-pub fn recover_orphan_sidecar() -> Result<(), String> {
-    match super::process_receipt::store()
-        .recover_and_reap(Instant::now() + Duration::from_secs(3))
-        .map_err(|_| "SearXNG: état processus illisible".to_string())?
-    {
+pub fn recover_orphan_sidecar(
+    deadline: Instant,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+) -> Result<(), String> {
+    if cancel.is_cancelled() {
+        return Err(errors::SHUTTING_DOWN.to_string());
+    }
+    let outcome = super::process_receipt::store()
+        .recover_and_reap_with(deadline, || cancel.is_cancelled())
+        .map_err(|_| errors::PROCESS_STATE_UNAVAILABLE.to_string())?;
+    if cancel.is_cancelled() {
+        return Err(errors::SHUTTING_DOWN.to_string());
+    }
+    match outcome {
         super::process_receipt::RecoveryOutcome::Blocked => {
-            Err("SearXNG: état processus illisible".to_string())
+            Err(errors::PROCESS_STATE_UNAVAILABLE.to_string())
         }
         _ => Ok(()),
     }
@@ -30,8 +40,8 @@ pub async fn spawn(
 ) -> Result<tokio::process::Child, String> {
     let log_dir = data_dir().join("logs");
     let _ = std::fs::create_dir_all(&log_dir);
-    let stderr =
-        std::fs::File::create(log_path()).map_err(|_| "SearXNG: log indisponible".to_string())?;
+    let stderr = super::private_file::create_private(&log_path())
+        .map_err(|_| errors::LOG_UNAVAILABLE.to_string())?;
     let mut cmd = tokio::process::Command::new(python);
     cmd.args(["-m", "searx.webapp"])
         .current_dir(source)
@@ -53,17 +63,33 @@ pub async fn spawn(
         crate::services::process_tree::ProcessKind::Searxng,
     )
     .await
-    .map_err(|_| "SearXNG: démarrage impossible".to_string())
+    .map_err(|_| errors::START_FAILED.to_string())
 }
 
 pub(super) async fn stable_identity(
     pid: u32,
+    deadline: tokio::time::Instant,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+) -> Result<crate::services::owned_process::OwnedProcessIdentity, String> {
+    stable_identity_with(pid, deadline, cancel, |pid| {
+        crate::services::owned_process::OwnedProcess::identity(pid).map_err(|_| ())
+    })
+    .await
+}
+
+pub(super) async fn stable_identity_with(
+    pid: u32,
+    deadline: tokio::time::Instant,
+    cancel: &crate::services::work_registry::ServiceWorkCancellation,
+    mut identity: impl FnMut(u32) -> Result<crate::services::owned_process::OwnedProcessIdentity, ()>,
 ) -> Result<crate::services::owned_process::OwnedProcessIdentity, String> {
     let mut previous = None;
     let mut stable_observations = 0;
-    for _ in 0..20 {
-        let current = crate::services::owned_process::OwnedProcess::identity(pid)
-            .map_err(|_| "SearXNG: démarrage impossible".to_string())?;
+    while tokio::time::Instant::now() < deadline {
+        if cancel.is_cancelled() {
+            return Err(errors::SHUTTING_DOWN.to_string());
+        }
+        let current = identity(pid).map_err(|_| errors::START_FAILED.to_string())?;
         if previous == Some(current) {
             stable_observations += 1;
             if stable_observations == 2 {
@@ -73,9 +99,12 @@ pub(super) async fn stable_identity(
             stable_observations = 0;
         }
         previous = Some(current);
-        tokio::time::sleep(Duration::from_millis(10)).await;
+        tokio::select! {
+            _ = tokio::time::sleep_until(deadline.min(tokio::time::Instant::now() + Duration::from_millis(10))) => {}
+            _ = cancel.cancelled() => return Err(errors::SHUTTING_DOWN.to_string()),
+        }
     }
-    Err("SearXNG: démarrage impossible".to_string())
+    Err(errors::START_FAILED.to_string())
 }
 
 pub async fn kill_child_process(mut child: tokio::process::Child) {
@@ -119,7 +148,7 @@ pub fn startup_log_hint() -> Option<String> {
     classify_log_hint(&body).map(str::to_string)
 }
 
-fn classify_log_hint(body: &str) -> Option<&'static str> {
+pub(super) fn classify_log_hint(body: &str) -> Option<&'static str> {
     for (marker, category) in [
         ("ModuleNotFoundError:", "module-not-found"),
         ("ImportError:", "import-error"),
@@ -133,42 +162,6 @@ fn classify_log_hint(body: &str) -> Option<&'static str> {
     None
 }
 
-fn read_log_tail(path: &Path) -> Option<Vec<u8>> {
-    let mut file = std::fs::File::open(path).ok()?;
-    let length = file.metadata().ok()?.len();
-    let start = length.saturating_sub(MAX_STARTUP_LOG_BYTES);
-    file.seek(SeekFrom::Start(start)).ok()?;
-    let mut bytes = Vec::with_capacity((length - start) as usize);
-    file.take(MAX_STARTUP_LOG_BYTES)
-        .read_to_end(&mut bytes)
-        .ok()?;
-    Some(bytes)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn startup_log_hint_exposes_only_a_fixed_category() {
-        let root = tempfile::tempdir().unwrap();
-        let log = root.path().join("sidecar.log");
-        std::fs::write(&log, "ModuleNotFoundError: secret/path").unwrap();
-        let body = String::from_utf8_lossy(&read_log_tail(&log).unwrap()).to_string();
-        assert!(body.contains("secret/path"));
-        assert_eq!(classify_log_hint(&body), Some("module-not-found"));
-    }
-
-    #[test]
-    fn startup_diagnostic_reads_only_the_bounded_tail() {
-        let root = tempfile::tempdir().unwrap();
-        let log = root.path().join("sidecar.log");
-        let mut body = vec![b'x'; MAX_STARTUP_LOG_BYTES as usize * 2];
-        body.extend_from_slice(b"\nModuleNotFoundError: bounded-tail");
-        std::fs::write(&log, body).unwrap();
-
-        let tail = read_log_tail(&log).unwrap();
-        assert!(tail.len() <= MAX_STARTUP_LOG_BYTES as usize);
-        assert!(String::from_utf8_lossy(&tail).contains("bounded-tail"));
-    }
+pub(super) fn read_log_tail(path: &Path) -> Option<Vec<u8>> {
+    super::private_file::read_tail(path, MAX_STARTUP_LOG_BYTES).ok()
 }

@@ -27,12 +27,9 @@ struct RuntimeManifestWire {
 impl RuntimeManifest {
     pub(super) fn read_from(wheelhouse: &Path) -> Result<Self, RuntimeError> {
         let path = wheelhouse.join(MANIFEST_NAME);
-        let metadata =
-            std::fs::symlink_metadata(path).map_err(|_| RuntimeError::ManifestInvalid)?;
-        if !metadata.file_type().is_file() || metadata.len() > MAX_MANIFEST_BYTES {
-            return Err(RuntimeError::ManifestInvalid);
-        }
-        let bytes = std::fs::read(wheelhouse.join(MANIFEST_NAME))
+        // La validation et la lecture portent sur le même descripteur : le
+        // chemin ne peut pas être remplacé par un lien entre deux opérations.
+        let bytes = super::private_file::read_bounded(&path, MAX_MANIFEST_BYTES)
             .map_err(|_| RuntimeError::ManifestInvalid)?;
         Self::parse_bounded(&bytes)
     }

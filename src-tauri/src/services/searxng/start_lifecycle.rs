@@ -2,6 +2,11 @@ use super::lifecycle::{base_url, shutdown_error, SearxngHandle, SearxngSidecar};
 use super::start_readiness::{ensure_start_active, run_if_start_active};
 use crate::services::work_registry::ServiceWorkCancellation;
 use std::sync::atomic::Ordering;
+use std::time::Duration;
+
+const ORPHAN_RECOVERY_TIMEOUT: Duration = Duration::from_secs(3);
+const SIDECAR_START_TIMEOUT: Duration = Duration::from_secs(12);
+const IDENTITY_STABILITY_TIMEOUT: Duration = Duration::from_millis(250);
 
 impl SearxngSidecar {
     pub(super) async fn ensure_running(
@@ -22,37 +27,41 @@ impl SearxngSidecar {
             return Err(error);
         }
 
-        super::startup::run_blocking(super::process::recover_orphan_sidecar).await?;
+        let recovery_cancel = cancel.clone();
+        let recovery_deadline = std::time::Instant::now() + ORPHAN_RECOVERY_TIMEOUT;
+        super::startup::run_blocking(move || {
+            super::process::recover_orphan_sidecar(recovery_deadline, &recovery_cancel)
+        })
+        .await?;
         ensure_start_active(self, cancel, generation)?;
         let source = super::paths::source_dir(app)?;
         let python = super::runtime::ensure_runtime(&source, cancel).await?;
         ensure_start_active(self, cancel, generation)?;
+        let startup_deadline = tokio::time::Instant::now() + SIDECAR_START_TIMEOUT;
         let port = super::settings::find_free_port()?;
         let settings = super::settings::write_settings(port)?;
         let admission = self.work.try_admit_server().map_err(|_| shutdown_error())?;
         let mut child = super::process::spawn(&python, &source, &settings, port).await?;
-        let pid = child
-            .id()
-            .ok_or_else(|| "SearXNG: démarrage impossible".to_string())?;
-        let identity = match super::process::stable_identity(pid).await {
-            Ok(identity) => identity,
-            Err(_) => {
+        let pid = match child.id() {
+            Some(pid) => pid,
+            None => {
                 super::process::kill_child_process(child).await;
-                return Err("SearXNG: démarrage impossible".to_string());
+                return Err(super::error_codes::START_FAILED.to_string());
             }
         };
-        let receipt = super::startup::run_blocking(move || {
-            super::process_receipt::store()
-                .write(&identity)
-                .map_err(|_| "SearXNG: démarrage impossible".to_string())
-        })
-        .await;
-        if receipt.is_err() {
-            super::process::kill_child_process(child).await;
-            return Err("SearXNG: démarrage impossible".to_string());
+        let identity_deadline =
+            startup_deadline.min(tokio::time::Instant::now() + IDENTITY_STABILITY_TIMEOUT);
+        match super::start_process_receipt::stabilize(pid, identity_deadline, cancel).await {
+            Ok(_) => {}
+            Err(error) => {
+                super::process::kill_child_process(child).await;
+                return Err(error);
+            }
         }
         let url = base_url(port);
-        if let Err(error) = super::startup::wait_until_ready(&url, &mut child, cancel).await {
+        if let Err(error) =
+            super::startup::wait_until_ready(&url, &mut child, cancel, startup_deadline).await
+        {
             super::startup_failure::remember(&error);
             super::process::kill_child_process(child).await;
             return Err(error);
@@ -95,7 +104,7 @@ impl SearxngSidecar {
                 *guard = None;
                 Ok(None)
             }
-            Err(_) => Err("SearXNG: état processus illisible".to_string()),
+            Err(_) => Err(super::error_codes::PROCESS_STATE_UNAVAILABLE.to_string()),
         }
     }
 

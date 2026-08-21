@@ -52,3 +52,18 @@ fn a_retryable_provider_failure_wins_over_an_auth_failure_from_another_provider(
     assert_eq!(error.code.as_ref(), "web_search_rate_limited");
     assert!(error.retryable);
 }
+
+#[test]
+fn searxng_machine_codes_keep_local_runtime_errors_translatable() {
+    let runtime = search(crate::services::searxng::error_codes::RUNTIME_UNAVAILABLE.to_string());
+    let cancelled = search(crate::services::searxng::error_codes::SHUTTING_DOWN.to_string());
+
+    let runtime_error = runtime.error.unwrap();
+    assert_eq!(runtime_error.code.as_ref(), "web_search_runtime_unavailable");
+    assert_eq!(runtime_error.category, ToolErrorCategory::Unavailable);
+    assert!(runtime_error.retryable);
+    assert_eq!(
+        cancelled.error.unwrap().category,
+        ToolErrorCategory::Cancelled
+    );
+}

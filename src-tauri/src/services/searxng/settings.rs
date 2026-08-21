@@ -6,11 +6,11 @@ const TEMPLATE: &str = include_str!("../../../resources/searxng-sidecar/settings
 
 pub fn find_free_port() -> Result<u16, String> {
     let listener = TcpListener::bind(("127.0.0.1", 0))
-        .map_err(|_| "SearXNG: port local indisponible".to_string())?;
+        .map_err(|_| super::error_codes::SETTINGS_UNAVAILABLE.to_string())?;
     listener
         .local_addr()
         .map(|addr| addr.port())
-        .map_err(|_| "SearXNG: port local indisponible".to_string())
+        .map_err(|_| super::error_codes::SETTINGS_UNAVAILABLE.to_string())
 }
 
 pub fn write_settings(port: u16) -> Result<PathBuf, String> {
@@ -19,11 +19,11 @@ pub fn write_settings(port: u16) -> Result<PathBuf, String> {
     let body = render_settings(port, &secret);
     let dir = path
         .parent()
-        .ok_or_else(|| "SearXNG: dossier config invalide".to_string())?;
-    std::fs::create_dir_all(dir).map_err(|_| "SearXNG: config impossible".to_string())?;
+        .ok_or_else(|| super::error_codes::CONFIG_UNAVAILABLE.to_string())?;
+    std::fs::create_dir_all(dir).map_err(|_| super::error_codes::CONFIG_UNAVAILABLE.to_string())?;
     let tmp = path.with_extension("tmp");
-    std::fs::write(&tmp, body).map_err(|_| "SearXNG: config impossible".to_string())?;
-    std::fs::rename(&tmp, &path).map_err(|_| "SearXNG: config impossible".to_string())?;
+    std::fs::write(&tmp, body).map_err(|_| super::error_codes::CONFIG_UNAVAILABLE.to_string())?;
+    std::fs::rename(&tmp, &path).map_err(|_| super::error_codes::CONFIG_UNAVAILABLE.to_string())?;
     Ok(path)
 }
 

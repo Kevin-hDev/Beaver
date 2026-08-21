@@ -1,38 +1,62 @@
-/// Arrête uniquement les descendants qui peuvent encore détenir les pipes
-/// d'un parent déjà récolté. La racine n'est jamais resignalée : son PID
-/// peut avoir été réutilisé entre `wait` et ce nettoyage.
-pub(crate) fn kill_pipe_holders_after_parent_exit(root_pid: u32, kind: super::ProcessKind) {
-    if root_pid < 2 {
-        return;
+/// Arrête uniquement les membres encore vérifiés du groupe d'un parent récolté.
+/// Le numéro du groupe ne suffit jamais : chaque PID est lié à son heure de
+/// démarrage puis revérifié juste avant le signal.
+pub(crate) fn kill_pipe_holders_after_parent_exit(root_pid: u32, kind: super::ProcessKind) -> bool {
+    // `wait` a déjà récolté la racine. Si son PID existe encore, il a été
+    // réutilisé : le numéro de groupe ne permet alors plus de relier ses
+    // membres à l'ancien processus et aucun signal n'est sûr.
+    if root_pid < 2 || crate::services::owned_process::OwnedProcess::process_exists(root_pid) {
+        return false;
     }
     let deadline = std::time::Instant::now() + super::GRACEFUL_STOP_TIMEOUT;
     #[cfg(unix)]
-    terminate_group(root_pid, deadline);
+    let complete = terminate_group(root_pid, deadline);
     #[cfg(windows)]
-    super::windows::terminate_descendants(root_pid, deadline);
+    let complete = super::windows::terminate_descendants(root_pid, deadline);
     crate::services::owned_process::release(root_pid);
-    ::log::info!(
-        "[{}] descendants à pipes hérités arrêtés racine={root_pid}",
-        kind.label()
-    );
+    if complete {
+        ::log::info!(
+            "[{}] descendants à pipes hérités arrêtés racine={root_pid}",
+            kind.label()
+        );
+    } else {
+        ::log::warn!(
+            "[{}] nettoyage des descendants non confirmé racine={root_pid}",
+            kind.label()
+        );
+    }
+    complete
 }
 
 #[cfg(unix)]
-fn terminate_group(process_group: u32, deadline: std::time::Instant) {
-    signal_group(process_group, libc::SIGTERM);
+fn terminate_group(process_group: u32, deadline: std::time::Instant) -> bool {
+    let (members, complete) = super::unix::collect_group_members(process_group);
+    if members.is_empty() {
+        return false;
+    }
+    signal_members(&members, process_group, libc::SIGTERM);
     let remaining = deadline.saturating_duration_since(std::time::Instant::now());
     std::thread::sleep(remaining.min(std::time::Duration::from_millis(100)));
-    signal_group(process_group, libc::SIGKILL);
+    signal_members(&members, process_group, libc::SIGKILL);
+    complete
+        && members
+            .into_iter()
+            .all(|member| !super::unix::is_current_group_member(member, process_group))
 }
 
 #[cfg(unix)]
-fn signal_group(process_group: u32, signal: libc::c_int) {
-    let Ok(raw_group) = i32::try_from(process_group) else {
-        return;
-    };
-    // SAFETY: un identifiant positif est validé par l'appelant et le PID de
-    // la racine n'est pas ciblé ; seul le groupe créé au spawn l'est.
-    unsafe {
-        libc::kill(-raw_group, signal);
+fn signal_members(
+    members: &[super::unix::UnixProcessIdentity],
+    process_group: u32,
+    signal: libc::c_int,
+) {
+    for member in members.iter().copied() {
+        if !super::unix::is_current_group_member(member, process_group) {
+            continue;
+        }
+        let Ok(pid) = i32::try_from(member.pid().as_u32()) else {
+            continue;
+        };
+        unsafe { libc::kill(pid, signal) };
     }
 }

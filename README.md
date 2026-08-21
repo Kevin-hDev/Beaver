@@ -91,7 +91,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Close and reopen the terminal. Then install CPython for the local SearXNG fallback:
 
 ```bash
-uv python install 3.14
+UV_PYTHON_BIN_DIR="$HOME/.local/bin" UV_PYTHON_INSTALL_BIN=1 uv python install 3.14
 ```
 
 Close and reopen the terminal and Beaver, then verify:
@@ -106,6 +106,8 @@ python3.14 --version
 Install Node.js and uv:
 
 ```bash
+(
+set -e
 curl -fsSLO https://nodejs.org/dist/v24.19.0/node-v24.19.0-linux-x64.tar.xz
 mkdir -p "$HOME/.local/opt" "$HOME/.local/bin"
 tar -xJf node-v24.19.0-linux-x64.tar.xz -C "$HOME/.local/opt"
@@ -129,12 +131,13 @@ for executable in node npm npx corepack; do
 done
 
 curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$binDir" sh
+)
 ```
 
 Close and reopen the terminal. `UV_INSTALL_DIR` makes the official uv installer configure this exact `~/.local/bin` directory, where the guarded Node.js links live. Then install CPython for the local SearXNG fallback into the same executable directory:
 
 ```bash
-UV_PYTHON_BIN_DIR="$HOME/.local/bin" uv python install 3.14
+UV_PYTHON_BIN_DIR="$HOME/.local/bin" UV_PYTHON_INSTALL_BIN=1 uv python install 3.14
 ```
 
 Close and reopen the terminal and Beaver, then verify:
@@ -160,6 +163,8 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 Close and reopen PowerShell. Then install CPython for the local SearXNG fallback:
 
 ```powershell
+$env:UV_PYTHON_BIN_DIR = Join-Path $HOME ".local\bin"
+$env:UV_PYTHON_INSTALL_BIN = "1"
 uv python install 3.14
 ```
 

@@ -17,13 +17,10 @@ fn runtime_errors_expose_only_fixed_categories_and_messages() {
 
     for (error, category) in cases {
         assert_eq!(error.category(), category);
-        assert_eq!(
-            error.public_message(),
-            "SearXNG: installation runtime échouée"
-        );
+        assert_eq!(error.public_code(), super::error_codes::RUNTIME_UNAVAILABLE);
     }
     assert_eq!(
-        RuntimeError::Cancelled.public_message(),
-        "SearXNG: arrêt en cours"
+        RuntimeError::Cancelled.public_code(),
+        super::error_codes::SHUTTING_DOWN
     );
 }

@@ -3,13 +3,16 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::services::owned_process::{OwnedProcess, OwnedProcessIdentity, OwnedProcessInspection};
 use crate::services::private_store::{self, BoundedFile};
 
-const SCHEMA_VERSION: u8 = 1;
+const SCHEMA_VERSION: u8 = 2;
 const MAX_RECEIPT_BYTES: u64 = 4_096;
+
+#[path = "process_receipt_format.rs"]
+mod format;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub(super) struct SearxngProcessReceipt {
@@ -19,17 +22,7 @@ pub(super) struct SearxngProcessReceipt {
     native_scope: u64,
     executable_high: u64,
     executable_low: u64,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct SearxngProcessReceiptWire {
-    schema_version: u8,
-    pid: u32,
-    native_start_time: u64,
-    native_scope: u64,
-    executable_high: u64,
-    executable_low: u64,
+    pending: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -41,6 +34,7 @@ pub(super) enum RecoveryOutcome {
     Blocked,
 }
 
+#[derive(Clone)]
 pub(super) struct SearxngProcessReceiptStore {
     path: PathBuf,
 }
@@ -60,6 +54,14 @@ impl SearxngProcessReceipt {
             native_scope: identity.native_scope,
             executable_high: (identity.executable >> 64) as u64,
             executable_low: identity.executable as u64,
+            pending: false,
+        }
+    }
+
+    pub(super) fn pending(identity: OwnedProcessIdentity) -> Self {
+        Self {
+            pending: true,
+            ..Self::from_identity(identity)
         }
     }
 
@@ -72,8 +74,14 @@ impl SearxngProcessReceipt {
         }
     }
 
+    fn same_process(&self, identity: OwnedProcessIdentity) -> bool {
+        self.pid == identity.pid
+            && self.native_start_time == identity.native_start_time
+            && self.native_scope == identity.native_scope
+    }
+
     fn valid(&self) -> bool {
-        self.schema_version == SCHEMA_VERSION
+        (self.schema_version == SCHEMA_VERSION || (self.schema_version == 1 && !self.pending))
             && self.pid >= 2
             && self.native_start_time != 0
             && self.native_scope != 0
@@ -94,7 +102,14 @@ impl SearxngProcessReceiptStore {
     }
 
     pub(super) fn write(&self, identity: &OwnedProcessIdentity) -> Result<(), ()> {
-        let receipt = SearxngProcessReceipt::from_identity(*identity);
+        self.write_receipt(SearxngProcessReceipt::from_identity(*identity))
+    }
+
+    pub(super) fn write_pending(&self, identity: &OwnedProcessIdentity) -> Result<(), ()> {
+        self.write_receipt(SearxngProcessReceipt::pending(*identity))
+    }
+
+    fn write_receipt(&self, receipt: SearxngProcessReceipt) -> Result<(), ()> {
         if !receipt.valid() {
             return Err(());
         }
@@ -113,7 +128,16 @@ impl SearxngProcessReceiptStore {
         }
     }
 
+    #[cfg(test)]
     pub(super) fn recover_and_reap(&self, deadline: Instant) -> Result<RecoveryOutcome, ()> {
+        self.recover_and_reap_with(deadline, || false)
+    }
+
+    pub(super) fn recover_and_reap_with(
+        &self,
+        deadline: Instant,
+        cancelled: impl Fn() -> bool,
+    ) -> Result<RecoveryOutcome, ()> {
         match self.load()? {
             ReceiptState::Missing => Ok(RecoveryOutcome::Missing),
             ReceiptState::Legacy => {
@@ -127,7 +151,10 @@ impl SearxngProcessReceiptStore {
                     OwnedProcess::process_exists,
                     |pid| OwnedProcess::reap_exited_child(pid).unwrap_or(false),
                     |pid, started| OwnedProcess::inspect_for_recovery(pid, started).map_err(|_| ()),
-                    |identity, until| OwnedProcess::recover_exact(identity, until).map_err(|_| ()),
+                    |identity, until| {
+                        OwnedProcess::recover_exact_with_cancel(identity, until, &cancelled)
+                            .map_err(|_| ())
+                    },
                     deadline,
                 );
                 if matches!(outcome, RecoveryOutcome::Stale | RecoveryOutcome::Exact) {
@@ -148,8 +175,10 @@ impl SearxngProcessReceiptStore {
     fn load(&self) -> Result<ReceiptState, ()> {
         match private_store::read_bounded_regular(&self.path, MAX_RECEIPT_BYTES).map_err(|_| ())? {
             BoundedFile::Missing => Ok(ReceiptState::Missing),
-            BoundedFile::Content(bytes) if legacy_numeric(&bytes) => Ok(ReceiptState::Legacy),
-            BoundedFile::Content(bytes) => parse(&bytes).map(ReceiptState::Receipt),
+            BoundedFile::Content(bytes) if format::legacy_numeric(&bytes) => {
+                Ok(ReceiptState::Legacy)
+            }
+            BoundedFile::Content(bytes) => format::parse(&bytes).map(ReceiptState::Receipt),
         }
     }
 }
@@ -170,7 +199,10 @@ pub(super) fn classify_recovery(
 ) -> RecoveryOutcome {
     match inspect(receipt.pid, receipt.native_start_time) {
         Ok(OwnedProcessInspection::Unowned) => RecoveryOutcome::Stale,
-        Ok(OwnedProcessInspection::Owned(identity)) if identity == receipt.identity() => {
+        Ok(OwnedProcessInspection::Owned(identity))
+            if (receipt.pending && receipt.same_process(identity))
+                || (!receipt.pending && identity == receipt.identity()) =>
+        {
             recover(identity, deadline)
                 .map(|_| RecoveryOutcome::Exact)
                 .unwrap_or(RecoveryOutcome::Blocked)
@@ -180,24 +212,4 @@ pub(super) fn classify_recovery(
         Err(()) if !exists(receipt.pid) => RecoveryOutcome::Stale,
         Err(()) => RecoveryOutcome::Blocked,
     }
-}
-
-fn parse(bytes: &[u8]) -> Result<SearxngProcessReceipt, ()> {
-    let wire = serde_json::from_slice::<SearxngProcessReceiptWire>(bytes).map_err(|_| ())?;
-    let receipt = SearxngProcessReceipt {
-        schema_version: wire.schema_version,
-        pid: wire.pid,
-        native_start_time: wire.native_start_time,
-        native_scope: wire.native_scope,
-        executable_high: wire.executable_high,
-        executable_low: wire.executable_low,
-    };
-    receipt.valid().then_some(receipt).ok_or(())
-}
-
-fn legacy_numeric(bytes: &[u8]) -> bool {
-    bytes.iter().any(u8::is_ascii_digit)
-        && bytes
-            .iter()
-            .all(|byte| byte.is_ascii_digit() || byte.is_ascii_whitespace())
 }

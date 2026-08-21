@@ -4,7 +4,9 @@ mod lifecycle_tests;
 
 mod client;
 mod compat;
+pub(crate) mod error_codes;
 mod paths;
+mod private_file;
 mod process;
 mod process_receipt;
 mod python_runtime;
@@ -22,15 +24,19 @@ mod runtime_receipt;
 mod settings;
 mod source_filter;
 mod start_lifecycle;
+mod start_process_receipt;
 mod start_readiness;
 mod startup;
 mod startup_failure;
 mod stop_lifecycle;
 mod wheels;
+mod wheels_publication;
 mod work_supervision;
 
 #[cfg(test)]
 mod process_receipt_tests;
+#[cfg(test)]
+mod process_tests;
 #[cfg(test)]
 mod python_runtime_tests;
 #[cfg(test)]

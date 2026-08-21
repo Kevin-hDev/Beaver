@@ -1,6 +1,8 @@
 import json
+import subprocess
 import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from searxng_runtime_manifest import (
@@ -14,6 +16,26 @@ from searxng_runtime_manifest import (
 
 
 class RuntimeManifestTests(unittest.TestCase):
+    def test_checked_in_contract_is_generated_by_the_python_authority(self):
+        contract = (
+            Path(__file__).parents[1]
+            / "resources"
+            / "searxng-sidecar"
+            / "runtime-manifest.golden.json"
+        ).read_bytes()
+        script = Path(__file__).with_name("searxng_runtime_manifest.py")
+
+        result = subprocess.run(
+            [sys.executable, str(script), "a" * 64],
+            check=False,
+            capture_output=True,
+            timeout=5,
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, contract)
+        self.assertEqual(result.stderr, b"")
+
     def test_round_trip_records_exact_cpython_minor_as_canonical_ascii(self):
         raw = build_manifest("cpython", 3, 14, "a" * 64)
 

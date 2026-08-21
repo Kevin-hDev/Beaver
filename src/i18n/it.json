@@ -435,6 +435,7 @@
       "resultCancelled": "Annullato.",
       "resultTruncated": "Risultato troncato.",
       "resultMissing": "Il risultato dello strumento manca dopo la fine del flusso.",
+      "webSearchRuntimeUnavailable": "La ricerca web locale è temporaneamente non disponibile. Verifica che Python 3.14 sia installato e riprova.",
       "verifyBeforeRetry": "Verifica lo stato risultante prima di riprovare, perché l’azione potrebbe essere già stata eseguita.",
       "errorCategories": {
         "validation": "La richiesta inviata allo strumento non è valida.",

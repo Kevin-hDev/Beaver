@@ -33,6 +33,9 @@ vi.mock("react-i18next", () => ({
       if (key === "agentLocal.toolActivity.counts.webSearches") return `${count} web search`;
       if (key === "agentLocal.toolActivity.counts.webFetches") return `${count} web fetch`;
       if (key === "agentLocal.toolActivity.actions.tool") return "Tool";
+      if (key === "agentLocal.toolActivity.webSearchRuntimeUnavailable") {
+        return "Local web search is unavailable";
+      }
       return key;
     },
   }),
@@ -89,5 +92,27 @@ describe("ToolBubble error details", () => {
     expect(container.textContent).toContain("SearXNG");
     expect(container.innerHTML).not.toContain("abc123456");
     expect(container.innerHTML).not.toContain("/Users/me/file");
+  });
+
+  it("traduit et masque le code interne du runtime SearXNG", () => {
+    const { container } = render(
+      <ToolBubble
+        tools={[{
+          name: "web_search",
+          args: { query: "news" },
+          result: "searxng_runtime_unavailable",
+          isError: true,
+          error: {
+            code: "web_search_runtime_unavailable",
+            category: "unavailable",
+            retryable: true,
+          },
+        }]}
+      />,
+    );
+
+    expect(container.querySelector('[data-testid="status-icon-error"]'))
+      .toHaveAttribute("data-message", "Local web search is unavailable");
+    expect(container.textContent).not.toContain("searxng_runtime_unavailable");
   });
 });

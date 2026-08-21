@@ -9,8 +9,10 @@ use super::runtime_environment_fs::{present_dir, Layout};
 use super::runtime_error::RuntimeError;
 use super::runtime_manifest::RuntimeManifest;
 
-const RECEIPT_NAME: &str = ".runtime.json";
-const RECEIPT_TMP_NAME: &str = ".runtime.json.next";
+// Le reçu du venv porte un nom distinct du manifeste du wheelhouse : leurs
+// schémas et leurs cycles de vie n'ont aucune autorité commune.
+const RECEIPT_NAME: &str = ".runtime-receipt.json";
+const RECEIPT_TMP_NAME: &str = ".runtime-receipt.json.next";
 const MAX_RECEIPT_BYTES: u64 = 512;
 
 #[derive(Deserialize, Serialize)]
@@ -32,17 +34,9 @@ pub(super) fn reusable(
         return Ok(false);
     }
     let path = layout.current.join(RECEIPT_NAME);
-    let Ok(metadata) = fs::symlink_metadata(&path) else {
-        return Ok(false);
-    };
-    if !metadata.file_type().is_file()
-        || !single_link(&metadata)
-        || metadata.len() == 0
-        || metadata.len() > MAX_RECEIPT_BYTES
-    {
-        return Ok(false);
-    }
-    let Ok(bytes) = fs::read(path) else {
+    // La validation et la lecture utilisent le même descripteur afin qu'un
+    // remplacement concurrent du chemin ne contourne pas les gardes de lien.
+    let Ok(bytes) = super::private_file::read_bounded(&path, MAX_RECEIPT_BYTES) else {
         return Ok(false);
     };
     let Ok(receipt) = serde_json::from_slice::<Receipt>(&bytes) else {
@@ -107,16 +101,4 @@ pub(super) fn source_hash(source: &Path) -> Result<String, RuntimeError> {
             .update(fs::read(source.join(file)).map_err(|_| RuntimeError::WheelhouseUnavailable)?);
     }
     Ok(hex::encode(hasher.finalize()))
-}
-
-#[cfg(unix)]
-fn single_link(metadata: &fs::Metadata) -> bool {
-    use std::os::unix::fs::MetadataExt;
-
-    metadata.nlink() == 1
-}
-
-#[cfg(not(unix))]
-fn single_link(_: &fs::Metadata) -> bool {
-    true
 }

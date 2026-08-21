@@ -14,12 +14,17 @@ pub(super) fn command_for(program: &Path, path: &OsStr) -> Command {
 }
 
 pub(super) fn locate(name: &Path, path: &OsStr) -> Option<PathBuf> {
+    let suffixes = lookup_suffixes();
+    std::env::split_paths(path)
+        .find_map(|directory| locate_with_suffixes(name, &directory, &suffixes))
+}
+
+pub(super) fn lookup_suffixes() -> [&'static OsStr; 1] {
     #[cfg(windows)]
     let suffixes = [OsStr::new(".exe")];
     #[cfg(not(windows))]
     let suffixes = [OsStr::new("")];
-    std::env::split_paths(path)
-        .find_map(|directory| locate_with_suffixes(name, &directory, &suffixes))
+    suffixes
 }
 
 pub(super) fn locate_with_suffixes(

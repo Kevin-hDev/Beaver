@@ -9,6 +9,14 @@ fn stale_descendant_identity_is_rejected_before_signal() {
     assert!(identity.matches(Pid::from_u32(42), 100));
 }
 
+#[test]
+fn after_parent_cleanup_refuses_a_reused_root_pid() {
+    assert!(!super::kill_pipe_holders_after_parent_exit(
+        std::process::id(),
+        super::ProcessKind::Searxng,
+    ));
+}
+
 #[cfg(unix)]
 #[test]
 fn terminate_reaps_child_without_three_second_delay() {

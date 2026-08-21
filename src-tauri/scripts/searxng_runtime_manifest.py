@@ -4,6 +4,9 @@ import secrets
 import sys
 from dataclasses import dataclass
 
+# Ce point d'entrée est l'unique générateur de la fixture partagée avec Rust ;
+# le fichier golden ne doit jamais être édité à la main.
+
 MANIFEST_NAME = ".runtime.json"
 MAX_MANIFEST_BYTES = 512
 EXPECTED_FIELDS = {
@@ -118,3 +121,18 @@ def runtime_identity(stamp: object, manifest: object) -> RuntimeIdentity:
     if not secrets.compare_digest(document["requirements_sha256"], stamp):
         raise ValueError("invalid runtime manifest")
     return RuntimeIdentity(stamp, canonical)
+
+
+def _emit_contract(arguments: list[str]) -> int:
+    try:
+        if len(arguments) != 2:
+            raise ValueError("invalid runtime manifest")
+        sys.stdout.buffer.write(current_manifest(arguments[1]) + b"\n")
+        return 0
+    except (OSError, ValueError):
+        sys.stderr.write("invalid runtime manifest\n")
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(_emit_contract(sys.argv))

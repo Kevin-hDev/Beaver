@@ -67,6 +67,29 @@ async fn timeout_terminates_the_owned_process_and_bounds_the_log() {
 }
 
 #[tokio::test]
+async fn timeout_terminates_the_explicit_process_tree_not_only_the_root() {
+    let _guard = LOG_GUARD.lock().await;
+    let pid_file = tempfile::NamedTempFile::new().expect("pid file");
+    let code = format!(
+        "import os,subprocess,sys,time\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\nopen({:?}, 'w').write(f'{{os.getpid()}} {{child.pid}}')\ntime.sleep(30)",
+        pid_file.path()
+    );
+
+    let result = run_fixture(&code, Duration::from_millis(80)).await;
+
+    assert_eq!(result.unwrap_err().category(), "timeout");
+    let pids = std::fs::read_to_string(pid_file.path()).expect("tree pids");
+    let pids: Vec<u32> = pids
+        .split_whitespace()
+        .map(|pid| pid.parse().expect("numeric pid"))
+        .collect();
+    assert_eq!(pids.len(), 2);
+    for pid in pids {
+        assert!(wait_until_process_is_gone(pid).await, "pid {pid} survived");
+    }
+}
+
+#[tokio::test]
 async fn expired_deadline_does_not_attempt_to_spawn_a_process() {
     let _guard = LOG_GUARD.lock().await;
     let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
@@ -98,6 +121,27 @@ async fn inherited_pipes_from_a_descendant_obey_the_global_deadline() {
     let result = run_fixture(&parent, Duration::from_millis(50)).await;
 
     assert_eq!(result.unwrap_err().category(), "timeout");
+    assert!(started.elapsed() < Duration::from_millis(900));
+    let pid = std::fs::read_to_string(pid_file.path())
+        .expect("descendant pid")
+        .parse::<u32>()
+        .expect("numeric descendant pid");
+    assert!(wait_until_process_is_gone(pid).await);
+}
+
+#[tokio::test]
+async fn successful_parent_closes_inherited_pipes_without_consuming_the_deadline() {
+    let _guard = LOG_GUARD.lock().await;
+    let pid_file = tempfile::NamedTempFile::new().expect("pid file");
+    let parent = format!(
+        "import os,subprocess,sys\nstdout=os.dup(1)\nstderr=os.dup(2)\nos.set_inheritable(stdout, True)\nos.set_inheritable(stderr, True)\nchild=subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], stdout=stdout, stderr=stderr, pass_fds=(stdout, stderr))\nopen({:?}, 'w').write(str(child.pid))\nraise SystemExit(0)",
+        pid_file.path()
+    );
+    let started = std::time::Instant::now();
+
+    let result = run_fixture(&parent, Duration::from_millis(500)).await;
+
+    assert!(result.is_ok());
     assert!(started.elapsed() < Duration::from_millis(900));
     let pid = std::fs::read_to_string(pid_file.path())
         .expect("descendant pid")
@@ -173,6 +217,39 @@ async fn diagnostics_redact_sensitive_markers_and_their_values() {
 }
 
 #[tokio::test]
+async fn diagnostics_keep_redaction_across_a_separator() {
+    let _guard = LOG_GUARD.lock().await;
+    let protected_value = format!("protected-value-{}", std::process::id());
+    let marker = ["pass", "word"].concat();
+    let result = run_fixture(
+        &format!(
+            "import sys; print('{marker} = {protected_value}', file=sys.stderr); raise SystemExit(5)"
+        ),
+        Duration::from_secs(1),
+    )
+    .await;
+
+    assert_eq!(result.unwrap_err().category(), "non-zero");
+    let log = std::fs::read_to_string(super::paths::runtime_log_path()).expect("runtime log");
+    assert!(!log.contains(&protected_value));
+}
+
+#[tokio::test]
+async fn multibyte_diagnostic_truncation_stays_valid_utf8() {
+    let _guard = LOG_GUARD.lock().await;
+    let result = run_fixture(
+        "import sys; print('é' * 5000, file=sys.stderr); raise SystemExit(4)",
+        Duration::from_secs(1),
+    )
+    .await;
+
+    assert_eq!(result.unwrap_err().category(), "non-zero");
+    let log = std::fs::read(super::paths::runtime_log_path()).expect("runtime log");
+    assert!(std::str::from_utf8(&log).is_ok());
+    assert!(log.len() <= 16_384);
+}
+
+#[tokio::test]
 async fn second_diagnostic_replaces_the_first_even_with_a_stale_legacy_temp() {
     let _guard = LOG_GUARD.lock().await;
     let log = super::paths::runtime_log_path();
@@ -222,6 +299,30 @@ async fn diagnostics_refuse_a_symlinked_log_without_touching_its_target() {
         b"outside"
     );
     std::fs::remove_file(&log).expect("remove test symlink");
+    if let Some(saved) = saved {
+        std::fs::write(log, saved).expect("restore log");
+    }
+}
+
+#[tokio::test]
+async fn diagnostics_refuse_a_hard_linked_log_without_touching_its_target() {
+    let _guard = LOG_GUARD.lock().await;
+    let log = super::paths::runtime_log_path();
+    std::fs::create_dir_all(log.parent().expect("log parent")).expect("log parent");
+    let saved = std::fs::read(&log).ok();
+    let _ = std::fs::remove_file(&log);
+    let outside = tempfile::NamedTempFile::new().expect("outside log target");
+    std::fs::write(outside.path(), b"outside").expect("outside marker");
+    std::fs::hard_link(outside.path(), &log).expect("hard-linked log");
+
+    let result = run_fixture("raise SystemExit(1)", Duration::from_secs(1)).await;
+
+    assert_eq!(result.unwrap_err().category(), "diagnostics");
+    assert_eq!(
+        std::fs::read(outside.path()).expect("outside body"),
+        b"outside"
+    );
+    std::fs::remove_file(&log).expect("remove test hard link");
     if let Some(saved) = saved {
         std::fs::write(log, saved).expect("restore log");
     }

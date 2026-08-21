@@ -879,7 +879,14 @@ class PrepareSearxngTests(unittest.TestCase):
         self.assertEqual(victim.read_bytes(), identity.manifest)
 
     def test_metadata_creation_refuses_preexisting_untrusted_entries(self):
-        kinds = ("regular", "directory", "symlink", "broken-symlink", "hardlink")
+        kinds = (
+            "regular",
+            "empty-regular",
+            "directory",
+            "symlink",
+            "broken-symlink",
+            "hardlink",
+        )
         for metadata_name in (MANIFEST_NAME, ".requirements.sha256"):
             for kind in kinds:
                 with self.subTest(metadata_name=metadata_name, kind=kind):
@@ -897,6 +904,8 @@ class PrepareSearxngTests(unittest.TestCase):
                         target = directory / metadata_name
                         if kind == "regular":
                             target.write_bytes(b"PRESENT")
+                        elif kind == "empty-regular":
+                            target.touch()
                         elif kind == "directory":
                             target.mkdir()
                         elif kind == "symlink":

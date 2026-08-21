@@ -184,7 +184,7 @@ fn receipt_requires_exact_known_fields_before_reuse() {
     assert!(!reusable_at(root.path(), &manifest, &"b".repeat(64))
         .expect("different source is not reusable"));
     std::fs::write(
-        root.path().join(".venv/.runtime.json"),
+        root.path().join(".venv/.runtime-receipt.json"),
         format!(
             r#"{{"schema_version":1,"python_major":3,"python_minor":14,"requirements_sha256":"{hash}","source_sha256":"{hash}","future":true}}"#
         ),
@@ -192,6 +192,26 @@ fn receipt_requires_exact_known_fields_before_reuse() {
     .expect("unknown receipt field");
 
     assert!(!reusable_at(root.path(), &manifest, &hash).expect("unknown receipt is not reusable"));
+}
+
+#[test]
+fn a_hard_linked_receipt_is_never_reused_or_modified() {
+    let root = tempfile::tempdir().expect("temporary sidecar");
+    let staged = root.path().join(".venv.next");
+    std::fs::create_dir(&staged).expect("staged runtime");
+    let manifest = RuntimeManifest::for_test(3, 14);
+    let hash = "a".repeat(64);
+    let layout = layout(root.path());
+    super::runtime_receipt::write_receipt(&layout, &manifest, &hash).expect("write receipt");
+    std::fs::rename(&staged, root.path().join(".venv")).expect("publish runtime");
+    let receipt = root.path().join(".venv/.runtime-receipt.json");
+    let target = root.path().join("receipt-target");
+    std::fs::rename(&receipt, &target).expect("move receipt outside runtime");
+    std::fs::hard_link(&target, &receipt).expect("hard-linked receipt");
+    let original = std::fs::read(&target).expect("target body");
+
+    assert!(!reusable_at(root.path(), &manifest, &hash).expect("hard link is rejected"));
+    assert_eq!(std::fs::read(target).expect("unchanged target"), original);
 }
 
 #[test]
@@ -209,17 +229,20 @@ fn only_mark_started_discards_the_previous_runtime() {
 }
 
 #[test]
-fn recovery_keeps_a_previous_runtime_until_readiness_is_confirmed() {
+fn recovery_rolls_back_an_unconfirmed_runtime() {
     let root = tempfile::tempdir().expect("temporary sidecar");
     let current = root.path().join(".venv");
     let previous = root.path().join(".venv.previous");
     std::fs::create_dir(&current).expect("published runtime");
+    std::fs::write(current.join("unconfirmed"), b"new").expect("unconfirmed marker");
     std::fs::create_dir(&previous).expect("previous runtime");
+    std::fs::write(previous.join("ready"), b"old").expect("previous marker");
 
     recover_at(root.path()).expect("recover after publication");
 
-    assert!(current.is_dir());
-    assert!(previous.is_dir());
+    assert!(current.join("ready").is_file());
+    assert!(!current.join("unconfirmed").exists());
+    assert!(!previous.exists());
 }
 
 #[cfg(unix)]
@@ -268,7 +291,8 @@ async fn ensure_runs_the_offline_smoke_checked_staged_runtime_before_publication
         &admission.cancellation(),
         &layout,
         |layout| {
-            assert!(layout.staged.join(".runtime.json").is_file());
+            assert!(layout.staged.join(".runtime-receipt.json").is_file());
+            assert!(!layout.staged.join(".runtime-receipt.json.next").exists());
             super::runtime_environment_fs::publish(layout)
         },
     )
@@ -276,9 +300,152 @@ async fn ensure_runs_the_offline_smoke_checked_staged_runtime_before_publication
     let runtime = runtime.expect("published runtime");
 
     assert_eq!(runtime, fixture.root().join(".venv/bin/python"));
-    assert!(fixture.root().join(".venv/.runtime.json").is_file());
+    assert!(fixture.root().join(".venv/.runtime-receipt.json").is_file());
     assert!(!fixture.root().join(".venv.previous").exists());
     assert_eq!(fixture.commands(), fixture.expected_commands());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn second_ensure_reuses_a_symlinked_venv_without_running_commands() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = RuntimeFixture::new(false);
+    let python = fixture.compatible_python().await;
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
+    let admission = supervisor.try_admit().expect("runtime admission");
+    let layout = super::runtime_environment_fs::Layout::at(fixture.root()).expect("layout");
+    RuntimeEnvironment::ensure_with_layout(
+        &fixture.source,
+        &fixture.wheelhouse(),
+        &python,
+        &admission.cancellation(),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await
+    .expect("first runtime");
+    let runtime_python = fixture.root().join(".venv/bin/python");
+    let versioned_python = fixture.root().join(".venv/bin/python3.14");
+    std::fs::rename(&runtime_python, &versioned_python).expect("versioned runtime");
+    symlink("python3.14", &runtime_python).expect("real venv link shape");
+    fixture.clear_commands();
+
+    let reused = RuntimeEnvironment::ensure_with_layout(
+        &fixture.source,
+        &fixture.wheelhouse(),
+        &python,
+        &admission.cancellation(),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await
+    .expect("reused runtime");
+
+    assert_eq!(reused, runtime_python);
+    assert!(fixture.commands().is_empty());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn ensure_rolls_back_an_unconfirmed_runtime_before_reuse() {
+    let fixture = RuntimeFixture::new(false);
+    let python = fixture.compatible_python().await;
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
+    let admission = supervisor.try_admit().expect("runtime admission");
+    let layout = super::runtime_environment_fs::Layout::at(fixture.root()).expect("layout");
+    RuntimeEnvironment::ensure_with_layout(
+        &fixture.source,
+        &fixture.wheelhouse(),
+        &python,
+        &admission.cancellation(),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await
+    .expect("confirmed predecessor fixture");
+    std::fs::rename(
+        fixture.root().join(".venv"),
+        fixture.root().join(".venv.previous"),
+    )
+    .expect("previous runtime");
+    std::fs::create_dir(fixture.root().join(".venv")).expect("unconfirmed runtime");
+    std::fs::write(fixture.root().join(".venv/unconfirmed"), b"bad").expect("unconfirmed marker");
+    fixture.clear_commands();
+
+    let reused = RuntimeEnvironment::ensure_with_layout(
+        &fixture.source,
+        &fixture.wheelhouse(),
+        &python,
+        &admission.cancellation(),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await
+    .expect("rolled back runtime");
+
+    assert_eq!(reused, fixture.root().join(".venv/bin/python"));
+    assert!(!fixture.root().join(".venv.previous").exists());
+    assert!(!fixture.root().join(".venv/unconfirmed").exists());
+    assert!(fixture.commands().is_empty());
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn source_change_during_installation_prevents_publication() {
+    let fixture = RuntimeFixture::new_mutating_source();
+    let old = fixture.root().join(".venv/old-runtime");
+    std::fs::create_dir_all(old.parent().expect("old parent")).expect("old runtime");
+    std::fs::write(&old, b"keep").expect("old marker");
+    let python = fixture.compatible_python().await;
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
+    let admission = supervisor.try_admit().expect("runtime admission");
+    let layout = super::runtime_environment_fs::Layout::at(fixture.root()).expect("layout");
+
+    let result = RuntimeEnvironment::ensure_with_layout(
+        &fixture.source,
+        &fixture.wheelhouse(),
+        &python,
+        &admission.cancellation(),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await;
+
+    assert!(matches!(
+        result,
+        Err(super::runtime_error::RuntimeError::EnvironmentUnavailable)
+    ));
+    assert!(old.is_file());
+    assert!(!fixture.root().join(".venv.previous").exists());
+}
+
+#[test]
+fn receipt_publication_refuses_a_preexisting_temporary_file() {
+    let fixture = RuntimeFixture::new(false);
+    let layout = layout(fixture.root());
+    std::fs::create_dir(&layout.staged).expect("staged runtime");
+    std::fs::write(
+        layout.staged.join(".runtime-receipt.json.next"),
+        b"occupied",
+    )
+    .expect("occupied receipt temp");
+
+    let result = super::runtime_receipt::write_receipt(
+        &layout,
+        &super::runtime_manifest::RuntimeManifest::for_test(3, 14),
+        &"b".repeat(64),
+    );
+
+    assert!(result.is_err());
+    assert!(!layout.staged.join(".runtime-receipt.json").exists());
+    assert_eq!(
+        std::fs::read(layout.staged.join(".runtime-receipt.json.next")).unwrap(),
+        b"occupied"
+    );
 }
 
 #[cfg(unix)]
@@ -310,7 +477,7 @@ async fn a_failed_smoke_never_publishes_over_the_old_runtime() {
     ));
     assert!(old.is_file());
     assert!(!fixture.root().join(".venv.previous").exists());
-    assert!(!fixture.root().join(".venv/.runtime.json").exists());
+    assert!(!fixture.root().join(".venv/.runtime-receipt.json").exists());
     assert!(fixture.root().join(".venv.next").is_dir());
 }
 
@@ -362,6 +529,14 @@ impl RuntimeFixture {
     }
 
     fn new_with_stage_delay(fail_smoke: bool, stage_delay: &str) -> Self {
+        Self::new_with_behavior(fail_smoke, stage_delay, false)
+    }
+
+    fn new_mutating_source() -> Self {
+        Self::new_with_behavior(false, "0", true)
+    }
+
+    fn new_with_behavior(fail_smoke: bool, stage_delay: &str, mutate_source: bool) -> Self {
         use std::os::unix::fs::PermissionsExt;
 
         let temp = tempfile::tempdir().expect("runtime fixture");
@@ -369,6 +544,7 @@ impl RuntimeFixture {
         let wheels = temp.path().join("wheels");
         let commands = temp.path().join("commands");
         let fail_marker = temp.path().join("fail-smoke");
+        let mutate_marker = temp.path().join("mutate-source");
         std::fs::create_dir_all(source.join("searx")).expect("source layout");
         std::fs::create_dir(&wheels).expect("wheelhouse");
         for file in [
@@ -382,6 +558,9 @@ impl RuntimeFixture {
         }
         if fail_smoke {
             std::fs::write(&fail_marker, b"fail").expect("smoke marker");
+        }
+        if mutate_source {
+            std::fs::write(&mutate_marker, b"mutate").expect("mutation marker");
         }
         let bin = temp.path().join("bin");
         std::fs::create_dir(&bin).expect("python bin");
@@ -402,11 +581,16 @@ fi
 if [ "$1" = "-c" ] && [ "$2" = "{smoke_script}" ]; then
   [ -f "$PWD/searx/webapp.py" ] || exit 19
   [ ! -f '{fail_marker}' ] || exit 17
+  if [ -f '{mutate_marker}' ]; then
+    printf 'changed' > '{requirements}'
+  fi
 fi
 exit 0
 "#,
             commands = commands.display(),
             fail_marker = fail_marker.display(),
+            mutate_marker = mutate_marker.display(),
+            requirements = source.join("requirements.txt").display(),
             smoke_script = super::runtime_environment::RUNTIME_SMOKE_SCRIPT,
             stage_delay = stage_delay,
         );

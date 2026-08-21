@@ -2,7 +2,7 @@ use super::runtime_manifest::RuntimeManifest;
 
 #[test]
 fn manifest_is_bounded_versioned_and_strict() {
-    let body = br#"{"schema_version":1,"implementation":"cpython","major":3,"minor":14,"requirements_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}"#;
+    let body = include_bytes!("../../../resources/searxng-sidecar/runtime-manifest.golden.json");
     let manifest = RuntimeManifest::parse_bounded(body).expect("manifest");
 
     assert_eq!(manifest.python_major, 3);
