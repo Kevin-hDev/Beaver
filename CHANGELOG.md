@@ -2,9 +2,53 @@
 
 ## [Unreleased]
 
-### Reliability and security
+---
 
-- **Safer private local data** — Beaver now refuses symbolic and hard-linked private documents before reading them, including sessions, projects, prompts, model customizations, and local runtime metadata.
+## v1.1.4
+
+### Subagents and Codex OAuth
+
+- **Reliable Codex OAuth tools** — native Codex model families now keep their complete agent tool set even when provider capability hints or catalog entries are missing, so newly deployed subagents no longer start as plain text-only assistants.
+- **Stable agent startup** — agent streams and subagent tasks now cross their spawn boundaries as boxed work, preventing large asynchronous state from exhausting worker stacks during tool-enabled Codex sessions.
+- **Read-only child sessions** — subagent transcripts can be inspected without allowing user-originated messages, edits, retries, model changes, attachments, permission changes, or other mutations. The subagent runtime remains the only writer of its child session.
+- **Clearer child-session navigation** — read-only transcripts retain scrolling and error feedback, link back to their parent conversation, keep automatic recovery actions disabled, and preserve the established alignment between work updates and final answers.
+
+### Web search and SearXNG
+
+- **Restored local search fallback** — SearXNG now selects the supported wheel-compatible CPython 3.14 runtime on macOS, Linux, and Windows instead of failing against an incompatible interpreter. Node.js and Python remain documented external prerequisites rather than bundled runtimes.
+- **Durable runtime recovery** — SearXNG virtual environments and wheelhouses are validated, published atomically, reused across launches, and recovered after interrupted preparation without leaving stale generations that block later starts.
+- **Exact sidecar ownership** — process receipts identify the process tree Beaver actually owns, reject stale or reused identities, and allow cancelled starts, failed searches, application exit, and later recovery to clean up the correct sidecars without orphaning unrelated processes.
+- **Bounded and private diagnostics** — runtime output, manifests, receipts, paths, process collections, and installation logs are bounded, protected from link redirection, and scrubbed of credentials before persistence or display.
+- **Accurate search errors** — local SearXNG failures now reach the translated web-search error classifier as structured codes, while authentication and rate-limit failures from configured providers remain the primary actionable error when both paths fail.
+- **Cross-platform recovery gates** — Python preparation tests and runtime contracts now run in CI, including a native Windows check that publishes the controlled `python3.14` executable for later steps.
+
+### Ollama system prompts
+
+- **One prompt tier per model** — the Modelfile settings page now shows only the prompt variant applicable to the selected model instead of exposing both Compact and Detailed variants.
+- **Correct 25B boundary** — models up to and including 25B use the Compact prompt; models above 25B use the Detailed prompt.
+- **Authoritative model sizing** — Ollama's reported `parameter_size` decides the tier for both the settings interface and the live chat runtime. Model-name parsing is used only when that metadata is unavailable, preventing the displayed prompt and the injected prompt from diverging.
+
+### Application shutdown and process cleanup
+
+- **Every macOS quit path is coordinated** — `Cmd+Q`, the application menu, external native termination requests, the tray, and programmatic exits now enter Beaver's single bounded cleanup path before the event loop or embedded browser can stop.
+- **No owned runtime left behind** — active conversations, downloads, Ollama, SearXNG, Forecast runtimes, MCP connectors, extension hosts, terminals, CEF helpers, WebViews, and their owned descendants are cancelled, stopped, and reaped before Beaver exits.
+- **Identity-checked emergency cleanup** — process groups and descendants are signalled only after their executable and ownership identities are revalidated, with a final bounded fallback when normal cleanup cannot complete.
+- **Reliable terminal release** — terminal sessions now release their PTY master and reader before waiting for the shell, preventing process handles from keeping Beaver alive during shutdown.
+- **Packaged lifecycle validation** — native and packaged shutdown journeys now use isolated application identities and profiles, with full process-disappearance checks on macOS and Windows and bounded CI jobs on every platform.
+
+### Storage, updates, and release reliability
+
+- **Crash-safe profile writes** — session state, settings, plans, project data, model metadata, Forecast configuration, memory, skills, tabs, and other profile documents now share the same private atomic-write authority and recoverable index rules.
+- **Safer private local data** — Beaver refuses symbolic and hard-linked private documents before reading them, including sessions, projects, prompts, model customizations, and local runtime metadata.
+- **Version-aware CEF caches** — development helper bundles are rebuilt when the application version changes instead of reusing stale stamped executables, and release contracts keep the version identical across every manifest.
+- **Non-interactive macOS updates** — generated DMGs no longer embed an interactive license agreement that the background updater cannot accept, while the license remains included in the application bundle.
+- **Broader native CI coverage** — the complete Rust suite now runs with bounded jobs on macOS and Windows, alongside CEF, packaged application, release-manifest, and cross-platform process contracts.
+
+### Models, security, and interface
+
+- **Safer Forecast dependencies** — compatible Forecast runtimes received security updates, and Kairos now installs the dependency required to load and run its real model instead of failing on first prediction.
+- **Clearer provider availability** — model selectors distinguish explicit zero pricing from account availability and no longer treat paid models as unavailable merely because they are not free.
+- **More consistent settings and activity UI** — refreshed catalog layouts, onboarding cards, icons, translated personality descriptions, API-key overflow handling, and the running-session indicator improve clarity without changing saved user data.
 
 ---
 
