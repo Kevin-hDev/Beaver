@@ -22,7 +22,7 @@ describe("autorité unique du réordonnancement par glissement", () => {
     expect(declarations).toEqual([AUTHORITY]);
   });
 
-  it("est utilisée par les deux listes qui se réordonnent", () => {
+  it("est utilisée par toutes les listes qui se réordonnent", () => {
     const consumers = sourcesOutsideTests()
       .filter(([path, content]) => path !== AUTHORITY && content.includes("useDragReorder"))
       .map(([path]) => path)
@@ -30,6 +30,7 @@ describe("autorité unique du réordonnancement par glissement", () => {
 
     expect(consumers).toEqual([
       "/src/components/agent-local/conversation-list.tsx",
+      "/src/components/agent-local/pinned-section.tsx",
       "/src/components/agent-local/project-section.tsx",
       "/src/components/terminal/terminal-tab-bar.tsx",
     ]);

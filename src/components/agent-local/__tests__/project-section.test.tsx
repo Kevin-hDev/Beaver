@@ -25,6 +25,7 @@ const baseProps = {
   onRenameSession: vi.fn(),
   onDeleteSession: vi.fn(),
   onReorderSessions: vi.fn(),
+  onTogglePin: vi.fn(),
   dragProps: { "data-drag-id": "p1", "data-drag-group": "projects", "data-dragging": undefined, style: {} },
   dragHandleProps: { onPointerDown: vi.fn() },
   didDrag: () => false,

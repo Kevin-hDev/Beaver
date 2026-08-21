@@ -4,6 +4,7 @@ import { ComposeIcon } from "@/components/ui/compose-icon";
 import { ContextMenu } from "@/components/ui/context-menu";
 import { useSessionMenuItems } from "./use-session-menu-items";
 import { ProjectSection } from "./project-section";
+import { PinnedSection } from "./pinned-section";
 import { ConversationSessionItem } from "./conversation-session-item";
 import { CollapsePanel } from "./collapse-panel";
 import { ConversationSectionToggle } from "./conversation-section-toggle";
@@ -26,6 +27,7 @@ export function ConversationList({
   onSelect, onCreate, onRename, onDelete,
   onNewSessionInProject, onRenameProject, onDeleteProject,
   onOpenFolder, onReorderProjects, onReorderSessions,
+  onReorderPinnedSessions, onTogglePin,
   directoryAccessPrompt,
 }: ConversationListProps) {
   const { t } = useTranslation();
@@ -42,7 +44,11 @@ export function ConversationList({
     () => sessions.filter((s) => !s.parent_session_id && !s.clone_parent_session_id),
     [sessions],
   );
-  const orphanSessions = mainSessions.filter(
+  /* Une épinglée quitte sa liste d'origine : tout ce qui suit ne voit que les
+     autres. Son project_id reste intact — seule sa place à l'écran change. */
+  const pinnedSessions = useMemo(() => mainSessions.filter((s) => Boolean(s.pinned_at)), [mainSessions]);
+  const unpinnedSessions = useMemo(() => mainSessions.filter((s) => !s.pinned_at), [mainSessions]);
+  const orphanSessions = unpinnedSessions.filter(
     (s) => !s.project_id || !projectIdSet.has(s.project_id),
   );
 
@@ -80,7 +86,14 @@ export function ConversationList({
     setRenamingId(id);
     setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
-  const ctxItems = useSessionMenuItems({ sessionId: ctx?.id ?? null, onRename: startRename, onArchive: onDelete });
+  const ctxSession = ctx ? mainSessions.find((s) => s.id === ctx.id) : undefined;
+  const ctxItems = useSessionMenuItems({
+    sessionId: ctx?.id ?? null,
+    pinned: Boolean(ctxSession?.pinned_at),
+    onRename: startRename,
+    onArchive: onDelete,
+    onTogglePin,
+  });
   const handleRenameSubmit = (id: string, value: string) => {
     if (value.trim()) onRename(id, value.trim());
     setRenamingId(null);
@@ -105,6 +118,26 @@ export function ConversationList({
       </div>
       {directoryAccessPrompt && <div className="conv-dap-anchor"><DirectoryAccessPrompt {...directoryAccessPrompt} /></div>}
       <div ref={listRef} className="conv-list">
+        {pinnedSessions.length > 0 && (
+          <PinnedSection
+            sessions={pinnedSessions}
+            selectedId={selectedId}
+            runningIds={activity.runningIds}
+            unreadIds={activity.unreadIds}
+            renamingId={renamingId}
+            inputRef={inputRef}
+            onSelect={handleSelect}
+            onRenameSubmit={handleRenameSubmit}
+            onCancelRename={() => setRenamingId(null)}
+            onMenu={handleSessionMenu}
+            onStartRename={startRename}
+            onReorder={onReorderPinnedSessions}
+            collapsed={collapse.pinnedCollapsed}
+            onToggleCollapse={collapse.togglePinned}
+            nowMs={nowMs}
+          />
+        )}
+
         {projects.length > 0 && (
           <>
             <ConversationSectionToggle open={!collapse.projectsCollapsed} onToggle={collapse.toggleProjects}>
@@ -118,7 +151,7 @@ export function ConversationList({
 	                  <ProjectSection
 	                    key={p.id}
 	                    project={p}
-                    sessions={mainSessions.filter((s) => s.project_id === p.id)}
+                    sessions={unpinnedSessions.filter((s) => s.project_id === p.id)}
                     selectedId={selectedId}
                     runningIds={activity.runningIds}
                     unreadIds={activity.unreadIds}
@@ -129,6 +162,7 @@ export function ConversationList({
                     onOpenFolder={onOpenFolder}
                     onRenameSession={onRename}
                     onDeleteSession={onDelete}
+                    onTogglePin={onTogglePin}
                     onReorderSessions={onReorderSessions}
                     dragProps={drag.itemProps(p.id)}
                     dragHandleProps={drag.handleProps(p.id)}
@@ -145,7 +179,7 @@ export function ConversationList({
 
         {orphanSessions.length > 0 && (
           <>
-            {projects.length > 0 && (
+            {(projects.length > 0 || pinnedSessions.length > 0) && (
               <ConversationSectionToggle open={!collapse.discussionsCollapsed} onToggle={collapse.toggleDiscussions}>
                 {t("projects.discussions", "Discussions")}
               </ConversationSectionToggle>

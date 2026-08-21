@@ -16,6 +16,7 @@ const defaultProps = {
   onSelect: vi.fn(), onCreate: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(),
   onNewSessionInProject: vi.fn(), onRenameProject: vi.fn(), onDeleteProject: vi.fn(),
   onOpenFolder: vi.fn(), onReorderProjects: vi.fn(), onReorderSessions: vi.fn(),
+  onTogglePin: vi.fn(), onReorderPinnedSessions: vi.fn(),
 };
 
 vi.mock("react-i18next", () => ({

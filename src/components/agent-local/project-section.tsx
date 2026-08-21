@@ -26,6 +26,7 @@ interface ProjectSectionProps {
   onOpenFolder: (path: string) => void;
   onRenameSession: (id: string, name: string) => void;
   onDeleteSession: (id: string) => void;
+  onTogglePin: (id: string) => void;
   onReorderSessions: (projectId: string | null, ids: string[]) => void;
   /* Le glissement de réordonnancement, tenu par useDragReorder : la case
      entière se décale, mais on ne l'attrape que par son en-tête. */
@@ -41,7 +42,7 @@ export function ProjectSection({
   project, sessions, selectedId,
   runningIds, unreadIds,
   onSelect, onNewSession, onRenameProject, onDeleteProject,
-  onOpenFolder, onRenameSession, onDeleteSession, onReorderSessions,
+  onOpenFolder, onRenameSession, onDeleteSession, onTogglePin, onReorderSessions,
   dragProps, dragHandleProps, didDrag, collapsed, onToggleCollapse,
   nowMs,
 }: ProjectSectionProps) {
@@ -92,20 +93,22 @@ export function ProjectSection({
     setTimeout(() => sessionInputRef.current?.focus(), 0);
   }, []);
 
+  const sessionById = new Map(sessions.map((session) => [session.id, session]));
+
   /* Les conversations d'un projet et celles hors projet ouvrent le même menu.
      Il était écrit deux fois, et les deux copies avaient déjà divergé. */
   const sessionMenuItems = useSessionMenuItems({
     sessionId: sessionCtx?.id ?? null,
+    pinned: Boolean(sessionCtx && sessionById.get(sessionCtx.id)?.pinned_at),
     onRename: startSessionRename,
     onArchive: onDeleteSession,
+    onTogglePin,
   });
 
   const handleRename = useCallback((value: string) => {
     if (value.trim()) onRenameProject(project.id, value.trim());
     setRenaming(false);
   }, [project.id, onRenameProject]);
-
-  const sessionById = new Map(sessions.map((session) => [session.id, session]));
 
   const handleSessionRename = useCallback((id: string, value: string) => {
     if (value.trim()) onRenameSession(id, value.trim());

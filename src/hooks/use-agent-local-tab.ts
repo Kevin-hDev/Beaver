@@ -29,7 +29,7 @@ interface UseAgentLocalTabOpts {
 }
 
 export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listFocused }: UseAgentLocalTabOpts) {
-  const { sessions, refresh, create, rename, reorder: reorderSessions, remove, archive, updateModel, updateReasoning } = useAgentSessions();
+  const { sessions, refresh, create, rename, reorder: reorderSessions, reorderPinned, remove, archive, togglePin, updateModel, updateReasoning } = useAgentSessions();
   const projectsHook = useProjects();
   const activeSessionId = navState.sessionId;
 
@@ -176,7 +176,8 @@ export function useAgentLocalTab({ navState, onSessionChange, onNavChange, listF
   }, [archive, onSessionChange]);
 
   return {
-    sessions, refresh, rename, reorderSessions, remove, archive, updateModel: updateModelWithReasoning,
+    sessions, refresh, rename, reorderSessions, reorderPinned, remove, archive, togglePin,
+    updateModel: updateModelWithReasoning,
     projectsHook, terminal, activeSession, activeSessionId,
     model, provider, currentDefault, activeProject,
     filePreview, fileOperations, setFileOperations,

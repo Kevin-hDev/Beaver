@@ -17,5 +17,9 @@ export interface ConversationListProps {
   /* Range une liste de conversations. `projectId` nul désigne celles qui
      n'appartiennent à aucun projet. */
   onReorderSessions: (projectId: string | null, ids: string[]) => void;
+  /* Range la section « Épinglé ». Les épinglées ont quitté leur liste d'origine. */
+  onReorderPinnedSessions: (ids: string[]) => void;
+  /* Épingle ou désépingle selon l'état courant de la conversation. */
+  onTogglePin: (id: string) => void;
   directoryAccessPrompt?: DirectoryAccessPromptProps;
 }

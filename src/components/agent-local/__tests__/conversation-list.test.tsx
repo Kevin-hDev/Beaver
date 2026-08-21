@@ -17,6 +17,7 @@ const defaultProps = {
   onSelect: vi.fn(), onCreate: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(),
   onNewSessionInProject: vi.fn(), onRenameProject: vi.fn(), onDeleteProject: vi.fn(),
   onOpenFolder: vi.fn(), onReorderProjects: vi.fn(), onReorderSessions: vi.fn(),
+  onTogglePin: vi.fn(), onReorderPinnedSessions: vi.fn(),
 };
 
 vi.mock("react-i18next", () => ({
@@ -204,6 +205,51 @@ describe("ConversationList", () => {
     expect(container.querySelectorAll(".conv-session-indented")).toHaveLength(2);
     expect(actives).toHaveLength(1);
     expect(actives[0].getAttribute("data-nav-active")).toBe("true");
+  });
+
+  it("n'affiche pas de section Épinglé quand rien n'est épinglé", () => {
+    const { container, queryByText } = render(
+      <ConversationList {...defaultProps} sessions={[makeSession()]} />,
+    );
+    expect(queryByText("projects.pinned")).toBeNull();
+    expect(container.querySelectorAll(".conv-session-indented").length).toBe(1);
+  });
+
+  it("affiche les épinglées dans une section en tête, et plus dans Discussions", () => {
+    const pinned = makeSession({ id: "pin", name: "Épinglée", pinned_at: "2026-08-21T10:00:00Z" });
+    const other = makeSession({ id: "s2", name: "Autre" });
+    const { container, getByText } = render(
+      <ConversationList {...defaultProps} sessions={[pinned, other]} />,
+    );
+
+    const labels = Array.from(container.querySelectorAll(".conv-section-label")).map((el) => el.textContent);
+    expect(labels[0]).toBe("projects.pinned");
+    expect(getByText("projects.discussions")).not.toBeNull();
+    const pinnedSection = getByText("projects.pinned").parentElement as HTMLElement;
+    expect(pinnedSection.querySelectorAll(".conv-session-indented").length).toBe(1);
+    expect(container.querySelectorAll(".conv-session-indented").length).toBe(2);
+  });
+
+  it("garde une session de projet épinglée hors de son projet", () => {
+    const project: Project = { id: "p1", name: "Projet", path: "/tmp/p", order: 0, created_at: "2026-01-01" };
+    const pinned = makeSession({ id: "pin", project_id: "p1", pinned_at: "2026-08-21T10:00:00Z" });
+    const { container, getByTestId } = render(
+      <ConversationList {...defaultProps} sessions={[pinned]} projects={[project]} />,
+    );
+
+    expect(container.querySelectorAll(".conv-session-indented").length).toBe(1);
+    expect(getByTestId("project-p1")).not.toBeNull();
+  });
+
+  it("range la section Épinglé avant les projets", () => {
+    const project: Project = { id: "p1", name: "Projet", path: "/tmp/p", order: 0, created_at: "2026-01-01" };
+    const pinned = makeSession({ id: "pin", pinned_at: "2026-08-21T10:00:00Z" });
+    const { container } = render(
+      <ConversationList {...defaultProps} sessions={[pinned]} projects={[project]} />,
+    );
+
+    const labels = Array.from(container.querySelectorAll(".conv-section-label")).map((el) => el.textContent);
+    expect(labels).toEqual(["projects.pinned", "projects.title"]);
   });
 
   it("n'affiche pas les sous-agents (parent_session_id défini) même sans project_id", () => {
