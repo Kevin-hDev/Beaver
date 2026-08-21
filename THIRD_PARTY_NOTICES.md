@@ -95,6 +95,17 @@ The `application-add` icon of the External applications tab
 
 Copyright (c) Streamline
 
+### Codicons
+
+The pin icon of the conversation menu (`src/components/ui/pin-icon.tsx`) is the
+`pinned` icon from [Codicons](https://github.com/microsoft/vscode-codicons),
+by Microsoft, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
+Changes made: the SVG was converted to a React component and its colour
+replaced by `currentColor` so the drawing follows the surrounding text. The
+path itself is unchanged.
+
 ### Font Awesome
 
 The `tasks` icon of the Todo list row of the conversation summary
