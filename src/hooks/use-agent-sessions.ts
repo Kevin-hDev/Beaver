@@ -92,6 +92,11 @@ export function useAgentSessions() {
     await refresh();
   }, [refresh]);
 
+  const reorderPinned = useCallback(async (ids: string[]) => {
+    await invoke("reorder_pinned_agent_sessions", { ids });
+    await refresh();
+  }, [refresh]);
+
   const remove = useCallback(async (id: string) => {
     await invoke("delete_agent_session", { id });
     await refresh();
@@ -107,6 +112,15 @@ export function useAgentSessions() {
     await invoke("restore_agent_session", { id });
     await refresh();
   }, [refresh]);
+
+  /* Une seule commande côté interface : c'est l'état connu de la session qui
+     décide du sens, et la liste rechargée confirme le résultat. */
+  const togglePin = useCallback(async (id: string) => {
+    const pinned = sessions.some((s) => s.id === id && Boolean(s.pinned_at));
+    await invoke(pinned ? "unpin_agent_session" : "pin_agent_session", { id });
+    await refresh();
+    notifyAgentSessionsChanged();
+  }, [refresh, sessions]);
 
   const updateModel = useCallback(
     async (
@@ -155,9 +169,11 @@ export function useAgentSessions() {
     create,
     rename,
     reorder,
+    reorderPinned,
     remove,
     archive,
     restore,
+    togglePin,
     updateModel,
     updateReasoning,
   };

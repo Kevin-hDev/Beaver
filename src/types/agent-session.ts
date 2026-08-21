@@ -34,6 +34,7 @@ export interface AgentSession {
   created_at: string;
   updated_at?: string;
   archived_at?: string;
+  pinned_at?: string;
   model: string;
   provider: string;
   thinking_enabled: boolean;
@@ -80,6 +81,7 @@ export interface AgentSessionMeta {
   created_at: string;
   updated_at?: string;
   archived_at?: string;
+  pinned_at?: string;
   model: string;
   provider: string;
   thinking_enabled?: boolean;
