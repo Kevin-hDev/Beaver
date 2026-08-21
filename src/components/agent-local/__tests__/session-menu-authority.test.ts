@@ -15,10 +15,15 @@ function sourcesOutsideTests(): [string, string][] {
 
 describe("autorité unique du menu d'une conversation", () => {
   /* Le repère est la réunion des deux commandes : « archiver » seul désigne
-     aussi de simples boutons ailleurs, et n'annonce pas un menu. */
+     aussi de simples boutons ailleurs, et n'annonce pas un menu. Les commandes
+     d'épingle, elles, n'existent que dans ce menu : chacune suffit à le
+     désigner, et une seconde déclaration se verrait tout de suite. */
   it("ne déclare les commandes qu'à un seul endroit", () => {
     const declarations = sourcesOutsideTests()
-      .filter(([, c]) => c.includes("history.archive") && c.includes("history.rename"))
+      .filter(([, c]) =>
+        (c.includes("history.archive") && c.includes("history.rename"))
+        || c.includes("history.pin")
+        || c.includes("history.unpin"))
       .map(([path]) => path);
 
     expect(declarations).toEqual([AUTHORITY]);

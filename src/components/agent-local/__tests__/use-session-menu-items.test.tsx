@@ -16,10 +16,10 @@ beforeEach(() => {
   });
 });
 
-function menuFor(sessionId: string | null) {
+function menuFor(sessionId: string | null, pinned = false, onTogglePin = vi.fn()) {
   return renderHook(
     ({ id }: { id: string | null }) =>
-      useSessionMenuItems({ sessionId: id, onRename: vi.fn(), onArchive: vi.fn() }),
+      useSessionMenuItems({ sessionId: id, pinned, onRename: vi.fn(), onArchive: vi.fn(), onTogglePin }),
     { initialProps: { id: sessionId } },
   );
 }
@@ -53,6 +53,24 @@ describe("commandes du menu d'une conversation", () => {
 
     expect(result.current[0].label).toBe("history.copyIdFailed");
     expect(result.current[0].danger).toBe(true);
+  });
+
+  it("propose d'épingler une conversation qui ne l'est pas, avant l'archivage", () => {
+    const onTogglePin = vi.fn();
+    const { result } = menuFor("session-42", false, onTogglePin);
+    const pin = result.current.find((item) => item.id === "pin");
+
+    expect(pin?.label).toBe("history.pin");
+    expect(result.current.map((item) => item.id)).toEqual(["copy-id", "rename", "pin", "archive"]);
+
+    pin?.onClick();
+    expect(onTogglePin).toHaveBeenCalledWith("session-42");
+  });
+
+  it("propose de désépingler une conversation épinglée", () => {
+    const { result } = menuFor("session-42", true);
+
+    expect(result.current.find((item) => item.id === "pin")?.label).toBe("history.unpin");
   });
 
   it("repart de la commande quand le menu s'ouvre sur une autre conversation", async () => {
