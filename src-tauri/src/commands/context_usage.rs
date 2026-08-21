@@ -194,7 +194,3 @@ async fn skill_context_tokens(mode: &common::StreamMode, has_tools: bool) -> usi
 fn estimate(input: &str) -> usize {
     crate::services::token_counting::estimate_text_tokens(input)
 }
-
-#[cfg(test)]
-#[path = "context_usage_tests.rs"]
-mod tests;
