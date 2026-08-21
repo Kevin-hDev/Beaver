@@ -44,6 +44,12 @@
 - **Non-interactive macOS updates** — generated DMGs no longer embed an interactive license agreement that the background updater cannot accept, while the license remains included in the application bundle.
 - **Broader native CI coverage** — the complete Rust suite now runs with bounded jobs on macOS and Windows, alongside CEF, packaged application, release-manifest, and cross-platform process contracts.
 
+### Pinned conversations
+
+- **Pin conversations to the top of the sidebar** — every conversation menu gains a Pin / Unpin action; pinned conversations move into a new "Pinned" section shown above Projects, which only appears while at least one conversation is pinned.
+- **Projects and context preserved** — a pinned project conversation leaves its project list visually but keeps its project, working directory, and history; unpinning returns it to the top of its original list.
+- **Manual ordering and archive rules** — the Pinned section can be reordered by drag and drop like the other lists, archiving a pinned conversation removes it from the sidebar while restoring it brings it back pinned, and the section's collapsed state is remembered across launches.
+
 ### Models, security, and interface
 
 - **Safer Forecast dependencies** — compatible Forecast runtimes received security updates, and Kairos now installs the dependency required to load and run its real model instead of failing on first prediction.
