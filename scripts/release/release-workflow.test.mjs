@@ -96,6 +96,23 @@ test("construit les roues SearXNG avec la version Python contrôlée", () => {
   assert.ok(checkoutIndex < setupIndex && setupIndex < buildIndex);
 });
 
+test("vérifie le wheelhouse SearXNG après chaque build avant les artefacts", () => {
+  const steps = workflowDocument.jobs.build.steps;
+  const buildIndex = steps.findIndex(({ name }) => name === "Build Tauri app without publishing");
+  const smokeSteps = steps.filter(({ name }) => name === "Verify SearXNG offline runtime");
+  const resolveIndex = steps.findIndex(({ name }) => name === "Resolve exact artifact paths");
+
+  assert.equal(smokeSteps.length, 1);
+  const smoke = smokeSteps[0];
+  assert.equal(smoke["working-directory"], "src-tauri");
+  assert.equal(
+    smoke.run,
+    "cargo test services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin --lib -- --ignored --exact --nocapture",
+  );
+  const smokeIndex = steps.indexOf(smoke);
+  assert.ok(buildIndex < smokeIndex && smokeIndex < resolveIndex);
+});
+
 test("partage la cible Cargo Windows avant le build et sa relecture", () => {
   const configure = workflow.indexOf("Configure Windows Cargo target");
   const build = workflow.indexOf("Build Tauri app without publishing");

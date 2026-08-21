@@ -46,6 +46,30 @@ test("runs the canonical Python preparation script with separated arguments", as
   }
 });
 
+test("utilise l'identité locale de Python uniquement comme commande séparée", async () => {
+  const repoRoot = await makeRepository();
+  const calls = [];
+  const candidate = {
+    command: "C:\\private\\python3.14.exe",
+    prefixArgs: ["-3.14"],
+    label: "private Python 3.14",
+  };
+  try {
+    await prepareSearxng({
+      repoRoot,
+      resolvePython: async () => candidate,
+      run: async (call) => calls.push(call),
+    });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].command, candidate.command);
+    assert.deepEqual(calls[0].args.slice(0, 2), ["-3.14", resolve(repoRoot, "src-tauri/scripts/prepare_searxng.py")]);
+    assert.ok(!calls[0].args.includes(candidate.command));
+    assert.ok(!calls[0].args.includes(candidate.label));
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
 test("refuses traversal roots and malformed Python candidates without launching", async () => {
   const repoRoot = await makeRepository();
   let launched = false;

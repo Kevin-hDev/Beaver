@@ -7,6 +7,8 @@ use super::python_runtime::PythonRuntime;
 use super::runtime_error::RuntimeError;
 use super::wheels::Wheelhouse;
 
+pub(super) const RUNTIME_SMOKE_SCRIPT: &str = "import importlib.util, lxml, markupsafe, msgspec, yaml; assert importlib.util.find_spec('searx.webapp') is not None";
+
 pub(super) struct RuntimeEnvironment;
 
 impl RuntimeEnvironment {
@@ -78,7 +80,7 @@ impl RuntimeEnvironment {
         .await?;
         let staged_python = python.with_program(venv_python(&layout.staged));
         install(&staged_python, wheelhouse, source, deadline, cancel).await?;
-        smoke(&staged_python, deadline, cancel).await?;
+        smoke(&staged_python, source, deadline, cancel).await?;
         if cancel.is_cancelled() {
             return Err(RuntimeError::Cancelled);
         }
@@ -133,11 +135,15 @@ async fn install(
 
 async fn smoke(
     python: &PythonRuntime,
+    source: &Path,
     deadline: Instant,
     cancel: &ServiceWorkCancellation,
 ) -> Result<(), RuntimeError> {
     let mut command = python.command();
-    command.args(["-c", "import lxml, markupsafe, msgspec, yaml, searx.webapp"]);
+    // SearXNG is executed from its bundled source tree rather than installed as a wheel.
+    command
+        .args(["-c", RUNTIME_SMOKE_SCRIPT])
+        .current_dir(source);
     execute(
         &mut command,
         super::runtime_command::RuntimeStage::ValidateImports,

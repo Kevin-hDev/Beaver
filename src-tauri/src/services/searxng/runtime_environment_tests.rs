@@ -1,9 +1,8 @@
 use super::runtime_environment::RuntimeEnvironment;
 use super::runtime_manifest::RuntimeManifest;
-#[cfg(unix)]
 use crate::app_exit::AppExitCoordinator;
-#[cfg(unix)]
 use crate::services::work_registry::ServiceWorkSupervisor;
+use std::time::Duration;
 
 fn layout(root: &std::path::Path) -> super::runtime_environment_fs::Layout {
     super::runtime_environment_fs::Layout::at(root).expect("layout")
@@ -27,6 +26,76 @@ fn mark_started_at(root: &std::path::Path) -> Result<(), super::runtime_error::R
         super::runtime_environment_fs::remove_dir(&layout, &layout.previous)?;
     }
     Ok(())
+}
+
+#[tokio::test]
+#[ignore = "requires the platform release wheelhouse"]
+async fn release_wheelhouse_installs_below_the_safety_margin() {
+    let started = std::time::Instant::now();
+    let fixture = release_wheelhouse_fixture().expect("release fixture");
+    let wheelhouse = super::wheels::for_source(&fixture.source)
+        .expect("validated wheelhouse")
+        .expect("release wheelhouse");
+    let python = super::python_runtime::PythonRuntime::resolve(&wheelhouse.manifest)
+        .await
+        .expect("supported Python");
+    let coordinator = AppExitCoordinator::initialize().expect("exit coordinator");
+    let supervisor = ServiceWorkSupervisor::<1>::new(coordinator.work_supervisor());
+    let admission = supervisor.try_admit().expect("runtime admission");
+    let layout = super::runtime_environment_fs::Layout::at(fixture.root()).expect("runtime layout");
+
+    RuntimeEnvironment::ensure_with_layout(
+        &fixture.source,
+        &wheelhouse,
+        &python,
+        &admission.cancellation(),
+        &layout,
+        super::runtime_environment_fs::publish,
+    )
+    .await
+    .expect("offline runtime install");
+
+    assert!(started.elapsed() < Duration::from_secs(150));
+}
+
+struct ReleaseWheelhouseFixture {
+    temp: tempfile::TempDir,
+    source: std::path::PathBuf,
+}
+
+impl ReleaseWheelhouseFixture {
+    fn root(&self) -> &std::path::Path {
+        self.temp.path()
+    }
+}
+
+fn release_wheelhouse_fixture() -> Result<ReleaseWheelhouseFixture, ()> {
+    let temp = tempfile::tempdir().map_err(|_| ())?;
+    let resources = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("resources")
+        .join("searxng-sidecar");
+    let archive = std::fs::File::open(resources.join("source.tar.gz")).map_err(|_| ())?;
+    let decoder = flate2::read::GzDecoder::new(archive);
+    tar::Archive::new(decoder)
+        .unpack(temp.path())
+        .map_err(|_| ())?;
+    let source = temp.path().join("source");
+    if !super::source_filter::is_clean_source(&source) {
+        return Err(());
+    }
+    let packaged_wheelhouse = super::wheels::for_source(&resources.join("source"))
+        .map_err(|_| ())?
+        .ok_or(())?;
+    let copied_wheels = temp.path().join("wheels");
+    std::fs::create_dir(&copied_wheels).map_err(|_| ())?;
+    for entry in std::fs::read_dir(packaged_wheelhouse.path).map_err(|_| ())? {
+        let entry = entry.map_err(|_| ())?;
+        if !entry.file_type().map_err(|_| ())?.is_file() {
+            return Err(());
+        }
+        std::fs::copy(entry.path(), copied_wheels.join(entry.file_name())).map_err(|_| ())?;
+    }
+    Ok(ReleaseWheelhouseFixture { temp, source })
 }
 
 #[test]
@@ -330,13 +399,15 @@ if [ "$1" = "-m" ] && [ "$2" = "venv" ]; then
   /bin/chmod 755 "$3/bin/python"
   exit 0
 fi
-if [ "$1" = "-c" ] && [ "$2" = "import lxml, markupsafe, msgspec, yaml, searx.webapp" ] && [ -f '{fail_marker}' ]; then
-  exit 17
+if [ "$1" = "-c" ] && [ "$2" = "{smoke_script}" ]; then
+  [ -f "$PWD/searx/webapp.py" ] || exit 19
+  [ ! -f '{fail_marker}' ] || exit 17
 fi
 exit 0
 "#,
             commands = commands.display(),
             fail_marker = fail_marker.display(),
+            smoke_script = super::runtime_environment::RUNTIME_SMOKE_SCRIPT,
             stage_delay = stage_delay,
         );
         let program = bin.join("python3.14");
@@ -413,7 +484,7 @@ exit 0
                 "-r",
                 "requirements.txt",
             ],
-            vec!["-c", "import lxml, markupsafe, msgspec, yaml, searx.webapp"],
+            vec!["-c", super::runtime_environment::RUNTIME_SMOKE_SCRIPT],
         ]
         .into_iter()
         .map(|command| {
