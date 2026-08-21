@@ -19,33 +19,45 @@ afterEach(() => {
 });
 
 describe("GpuStatusBadge", () => {
-  it("shows a percentage when total VRAM is known", () => {
+  it("identifies Apple unified memory as RAM", () => {
     mockedUseGpuStatus.mockReturnValue({
-      accelerator: "GPU",
-      vramUsedMb: 4096,
-      vramTotalMb: 8192,
+      accelerator: "RAM",
+      vramUsedMb: 12288,
+      vramTotalMb: 24576,
       modelLoaded: null,
-      hasModel: true,
       vramPercent: 50,
     });
 
     render(<GpuStatusBadge />);
 
-    expect(screen.getByText("GPU 50%")).toBeTruthy();
+    expect(screen.getByText("RAM 50%")).toBeTruthy();
+  });
+
+  it("shows a percentage when total VRAM is known", () => {
+    mockedUseGpuStatus.mockReturnValue({
+      accelerator: "VRAM",
+      vramUsedMb: 4096,
+      vramTotalMb: 8192,
+      modelLoaded: null,
+      vramPercent: 50,
+    });
+
+    render(<GpuStatusBadge />);
+
+    expect(screen.getByText("VRAM 50%")).toBeTruthy();
   });
 
   it("shows used VRAM when total VRAM is unknown", () => {
     mockedUseGpuStatus.mockReturnValue({
-      accelerator: "GPU",
+      accelerator: "VRAM",
       vramUsedMb: 5120,
       vramTotalMb: 0,
       modelLoaded: null,
-      hasModel: true,
       vramPercent: 0,
     });
 
     render(<GpuStatusBadge />);
 
-    expect(screen.getByText("GPU 5.0 GB")).toBeTruthy();
+    expect(screen.getByText("VRAM 5.0 GB")).toBeTruthy();
   });
 });

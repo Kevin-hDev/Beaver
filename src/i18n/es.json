@@ -985,7 +985,7 @@
       "multiModelTitle": "Cargar varios modelos",
       "multiModelDesc": "Mantener varios modelos en VRAM simultáneamente (requiere más memoria GPU)",
       "showGpuStatusTitle": "Mostrar estado GPU",
-      "showGpuStatusDesc": "Muestra el indicador CPU/GPU y el uso de VRAM en el chat",
+      "showGpuStatusDesc": "Muestra el uso de RAM/VRAM y la ejecución en CPU en el chat",
       "vramTableTitle": "VRAM requerida por modelo",
       "vramTableDesc": "VRAM estimada según el tamaño del modelo y la cuantización",
       "vramTableSize": "Tamaño",

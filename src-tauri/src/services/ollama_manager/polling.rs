@@ -34,13 +34,24 @@ pub(crate) struct GpuStatusPayload {
 
 pub(crate) fn build_gpu_status(
     ps: &PsResponse,
-    vram_total_mb: u64,
-    vram_used_mb: u64,
+    snapshot: Option<crate::services::gpu_vram::GpuMemorySnapshot>,
 ) -> GpuStatusPayload {
-    let has_gpu_signal =
-        ps.models.iter().any(|model| model.size_vram > 0) || vram_total_mb > 0 || vram_used_mb > 0;
+    let (accelerator, vram_total_mb, vram_used_mb) = match snapshot {
+        Some(snapshot) => (
+            match snapshot.kind {
+                crate::services::gpu_vram::GpuMemoryKind::Dedicated => "VRAM",
+                crate::services::gpu_vram::GpuMemoryKind::Unified => "RAM",
+                crate::services::gpu_vram::GpuMemoryKind::Unknown => "",
+            },
+            snapshot.total_mb,
+            snapshot.used_mb,
+        ),
+        None if ps.models.iter().any(|model| model.size_vram > 0) => ("VRAM", 0, 0),
+        None if !ps.models.is_empty() => ("CPU", 0, 0),
+        None => ("", 0, 0),
+    };
     GpuStatusPayload {
-        accelerator: if has_gpu_signal { "GPU" } else { "CPU" }.into(),
+        accelerator: accelerator.into(),
         vram_used_mb,
         vram_total_mb,
         model_loaded: ps.models.first().map(|model| model.name.clone()),
@@ -126,8 +137,7 @@ impl OllamaManager {
         status: &OllamaRuntimeStatus,
         cancellation: &CancellationToken,
     ) {
-        let total = crate::services::gpu_vram::detect_vram_mb().unwrap_or(0);
-        let used = crate::services::gpu_vram::detect_vram_used_mb().unwrap_or(0);
+        let snapshot = crate::services::gpu_vram::current_snapshot();
         let ps = if let DaemonState::Owned { endpoint } | DaemonState::External { endpoint } =
             &status.daemon
         {
@@ -148,6 +158,6 @@ impl OllamaManager {
         } else {
             PsResponse { models: vec![] }
         };
-        let _ = app.emit("ollama-gpu-status", &build_gpu_status(&ps, total, used));
+        let _ = app.emit("ollama-gpu-status", &build_gpu_status(&ps, snapshot));
     }
 }

@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+pub use crate::services::gpu_vram::GpuMemoryKind;
+
 const SAFETY_MARGIN_PERCENT: u64 = 20;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -10,14 +12,6 @@ pub enum ResourceFit {
     Insufficient,
     Unknown,
     Cloud,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum GpuMemoryKind {
-    Dedicated,
-    Unified,
-    Unknown,
 }
 
 impl ResourceFit {

@@ -985,7 +985,7 @@
       "multiModelTitle": "加载多个模型",
       "multiModelDesc": "同时在 VRAM 中保留多个模型（需要更多 GPU 内存）",
       "showGpuStatusTitle": "显示 GPU 状态",
-      "showGpuStatusDesc": "在聊天中显示 CPU/GPU 指示器及 VRAM 使用情况",
+      "showGpuStatusDesc": "在聊天中显示 RAM/VRAM 使用情况及 CPU 运行状态",
       "vramTableTitle": "各模型所需 VRAM",
       "vramTableDesc": "根据模型大小和量化方式估算所需 VRAM",
       "vramTableSize": "大小",

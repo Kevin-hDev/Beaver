@@ -102,6 +102,7 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     crate::services::e2e_profile::run_host_mutation(|| {
         crate::services::extensions::initialize_on_startup(app.handle());
         crate::services::searxng::prepare_on_startup(app.handle().clone());
+        crate::runtime_startup::start_gpu_memory(&background);
         crate::runtime_startup::start_ollama(&background, app.handle());
     });
     configure_application(app, &background)?;

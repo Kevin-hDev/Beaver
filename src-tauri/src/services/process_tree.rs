@@ -23,6 +23,7 @@ pub enum ProcessKind {
     ExtensionInstaller,
     Forecast,
     ForecastRuntime,
+    #[cfg(any(test, target_os = "linux", target_os = "windows"))]
     GpuProbe,
     Mcp,
     #[cfg(all(test, unix))]
@@ -50,6 +51,7 @@ impl ProcessKind {
             Self::ExtensionInstaller => "extension-installer",
             Self::Forecast => "forecast",
             Self::ForecastRuntime => "forecast-runtime",
+            #[cfg(any(test, target_os = "linux", target_os = "windows"))]
             Self::GpuProbe => "gpu-probe",
             Self::Mcp => "mcp",
             #[cfg(all(test, unix))]

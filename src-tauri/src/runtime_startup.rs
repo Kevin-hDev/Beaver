@@ -58,10 +58,6 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
                     return;
                 }
             }
-            let _ = crate::services::gpu_vram::refresh_owned(cancel.clone()).await;
-            if cancel.is_cancelled() {
-                return;
-            }
             match manager.start().await {
                 crate::services::ollama_manager::OllamaStartOutcome::Failed { code }
                 | crate::services::ollama_manager::OllamaStartOutcome::BlockedByRecovery { code } =>
@@ -81,6 +77,15 @@ pub fn start_ollama(background: &RuntimeBackgroundServices, app: &tauri::AppHand
         .is_err()
     {
         ::log::warn!("[startup] background task unavailable category=ollama-start");
+    }
+}
+
+pub fn start_gpu_memory(background: &RuntimeBackgroundServices) {
+    if background
+        .spawn_loop(crate::services::gpu_vram::run_refresh_loop)
+        .is_err()
+    {
+        ::log::warn!("[startup] background task unavailable category=gpu-memory");
     }
 }
 

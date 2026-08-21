@@ -2,24 +2,29 @@ use super::owned_probe::{self, ProbeSpec};
 use crate::services::work_registry::ServiceWorkCancellation;
 
 const OWNED_GPU_SCRIPT: &str = r#"
-$total = 0
-$used = 0
+$registryTotal = 0
+$cimTotal = 0
+$cimUsed = 0
+$counterTotal = 0
+$counterUsed = 0
 try {
   $registry = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*' -Name HardwareInformation.qwMemorySize -ErrorAction Stop
-  $total = [UInt64](($registry | Measure-Object -Property 'HardwareInformation.qwMemorySize' -Maximum).Maximum)
+  $registryTotal = [UInt64](($registry | Measure-Object -Property 'HardwareInformation.qwMemorySize' -Maximum).Maximum)
 } catch { $ignoredRegistryError = $_ }
 try {
   $samples = Get-CimInstance -ClassName Win32_PerfFormattedData_GPUPerformanceCounters_GPUMemory -ErrorAction Stop
-  $dedicatedUsed = ($samples | Measure-Object -Property DedicatedUsage -Sum).Sum
-  $sharedUsed = ($samples | Measure-Object -Property SharedUsage -Sum).Sum
-  $dedicatedLimit = ($samples | Measure-Object -Property DedicatedLimit -Sum).Sum
-  $sharedLimit = ($samples | Measure-Object -Property SharedLimit -Sum).Sum
-  if ($null -ne $dedicatedUsed) { $used += $dedicatedUsed }
-  if ($null -ne $sharedUsed) { $used += $sharedUsed }
-  if ($total -eq 0 -and $null -ne $dedicatedLimit) { $total += $dedicatedLimit }
-  if ($total -eq 0 -and $null -ne $sharedLimit) { $total += $sharedLimit }
+  $used = ($samples | Measure-Object -Property DedicatedUsage -Sum).Sum
+  $limit = ($samples | Measure-Object -Property DedicatedLimit -Sum).Sum
+  if ($null -ne $used) { $cimUsed = [UInt64]$used }
+  if ($null -ne $limit) { $cimTotal = [UInt64]$limit }
 } catch { $ignoredCounterError = $_ }
-Write-Output "$total,$used"
+if ($cimTotal -eq 0 -or $cimUsed -eq 0) {
+  try {
+    $counterTotal = [UInt64](((Get-Counter '\GPU Adapter Memory(*)\Dedicated Limit' -ErrorAction Stop).CounterSamples | Measure-Object -Property CookedValue -Sum).Sum)
+    $counterUsed = [UInt64](((Get-Counter '\GPU Adapter Memory(*)\Dedicated Usage' -ErrorAction Stop).CounterSamples | Measure-Object -Property CookedValue -Sum).Sum)
+  } catch { $ignoredLegacyCounterError = $_ }
+}
+Write-Output "$registryTotal,$cimTotal,$cimUsed,$counterTotal,$counterUsed"
 "#;
 
 pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, u64)> {
@@ -53,7 +58,7 @@ async fn powershell_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64,
         cancel,
     )
     .await?;
-    parse_pair_rows(&output.stdout, output.truncated, 1_048_576)
+    super::windows_snapshot::parse_sources(&output.stdout, output.truncated)
 }
 
 fn parse_pair_rows(bytes: &[u8], truncated: bool, divisor: u64) -> Option<(u64, u64)> {

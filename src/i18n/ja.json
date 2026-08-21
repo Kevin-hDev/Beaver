@@ -985,7 +985,7 @@
       "multiModelTitle": "複数モデルを読み込む",
       "multiModelDesc": "複数のモデルを同時に VRAM に保持する（より多くの GPU メモリが必要）",
       "showGpuStatusTitle": "GPU 状態を表示",
-      "showGpuStatusDesc": "チャットに CPU/GPU インジケーターと VRAM 使用量を表示する",
+      "showGpuStatusDesc": "チャットに RAM/VRAM 使用量と CPU 実行状態を表示する",
       "vramTableTitle": "モデルごとに必要な VRAM",
       "vramTableDesc": "モデルサイズと量子化に基づいた推定 VRAM",
       "vramTableSize": "サイズ",

@@ -22,12 +22,7 @@ pub(super) async fn detect_owned(cancel: &ServiceWorkCancellation) -> Option<(u6
 }
 
 fn drm_memory_snapshot() -> Option<(u64, u64)> {
-    let total = drm_memory_mb("mem_info_vram_total", false)
-        .or_else(|| drm_memory_mb("mem_info_gtt_total", false));
-    let used = drm_memory_mb("mem_info_vram_used", true)
-        .filter(|used| *used > 0)
-        .or_else(|| drm_memory_mb("mem_info_gtt_used", true));
-    (total.is_some() || used.is_some()).then(|| (total.unwrap_or(0), used.unwrap_or(0)))
+    super::linux_drm_snapshot::read(std::path::Path::new("/sys/class/drm"))
 }
 
 async fn nvidia_smi_info_owned(cancel: &ServiceWorkCancellation) -> Option<(u64, u64)> {
@@ -57,24 +52,4 @@ fn parse_nvidia_rows(bytes: &[u8], truncated: bool) -> Option<(u64, u64)> {
         found = true;
     }
     found.then_some((total, used))
-}
-
-fn drm_memory_mb(file_name: &str, allow_zero: bool) -> Option<u64> {
-    let drm = std::fs::read_dir("/sys/class/drm").ok()?;
-    let mut found = false;
-    let mut total = 0_u64;
-    for entry in drm.flatten() {
-        let path = entry.path().join("device").join(file_name);
-        if let Ok(raw) = std::fs::read_to_string(&path) {
-            if let Ok(bytes) = raw.trim().parse::<u64>() {
-                found = true;
-                total = total.saturating_add(bytes);
-            }
-        }
-    }
-    if found && (allow_zero || total > 0) {
-        Some(total / 1_048_576)
-    } else {
-        None
-    }
 }
