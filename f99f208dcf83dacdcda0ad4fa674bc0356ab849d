@@ -1,0 +1,33 @@
+Task 6 — exact SearXNG sidecar identity receipt
+
+Why:
+- a numeric PID and command-line text cannot prove process identity after PID reuse;
+- ambiguous state must block a second server instead of guessing or killing by name.
+
+Implementation:
+- strict bounded JSON receipt at the existing searxng-sidecar.pid authority;
+- schema, PID, start time, native scope and full executable identity are validated; unknown, duplicate and zero fields fail closed;
+- legacy numeric receipts are removed without signaling any PID;
+- exact recovery compares every identity field then calls OwnedProcess::recover_exact;
+- stale/reused identities remove the receipt, while invalid or ambiguous inspections retain it and block startup;
+- identity is stabilized across consecutive OS observations and persisted immediately after spawn, before readiness;
+- ps, PowerShell and process_text_matches were removed.
+
+Controller review:
+- found and fixed a swallowed Result that would have made ambiguous recovery fail open;
+- moved receipt I/O off the async runtime thread;
+- added exited-child reaping before ambiguity classification;
+- real testing exposed an executable exec-transition after spawn, fixed by bounded identity stabilization before receipt publication;
+- receipt cleanup remains after proven child termination/recovery.
+
+Evidence:
+- cargo test searxng::process_receipt --lib: 6/6;
+- cargo test searxng::lifecycle --lib: 7/7;
+- real owned Python process disappeared and its receipt was removed;
+- invalid JSON remained on disk and blocked recovery;
+- strict Clippy and fmt green;
+- x86_64-pc-windows-gnu cross-check green (pre-existing CEF warnings only);
+- graphify update and git diff --check green.
+
+Limit:
+- native Windows recovery execution is deferred to Task 7 release CI.
