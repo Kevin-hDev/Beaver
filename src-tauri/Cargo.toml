@@ -102,7 +102,7 @@ umya-spreadsheet = "3"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 
 # Base64
-base64 = "0.22"
+base64 = "0.23"
 
 # Keyring (1 seule entrée master key)
 keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service"] }
