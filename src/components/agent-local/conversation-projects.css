@@ -2,28 +2,56 @@
    Séparé de conversation.css pour garder les fichiers sous 230 lignes ;
    importé après lui pour conserver l'ordre de cascade. */
 
-/* Section labels (Projets / Discussions) — collés à la section qu'ils
+/* Section labels (Projets / Beaver) — collés à la section qu'ils
    annoncent, détachés de ce qui précède. Le même écart des deux côtés les
    faisait flotter entre deux blocs une fois les lignes resserrées. */
 .conv-section-label {
+  display: flex;
+  align-items: center;
   padding: var(--space-xs) var(--space-sm) var(--space-2xs);
   font-size: var(--text-xs);
   color: var(--ink-faint);
   font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .conv-section-toggle {
   display: flex;
+  flex: 1;
   align-items: center;
   gap: var(--space-xs);
   cursor: pointer;
   user-select: none;
+  min-width: 0;
 }
 
 .conv-section-toggle:hover {
   color: var(--ink-muted);
+}
+
+/* Action posée à droite d'un titre de section. Effacée par transparence et non
+   par visibility : cachée, elle reste atteignable au clavier, et le focus la
+   fait réapparaître comme le survol. */
+.conv-section-action-btn {
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ease-smooth), color var(--ease-smooth), background var(--ease-smooth);
+}
+
+.conv-section-label:hover .conv-section-action-btn,
+.conv-section-action-btn:focus-visible {
+  opacity: 1;
+}
+
+.conv-section-action-btn:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
 }
 
 /* Project header in sidebar */
@@ -131,11 +159,20 @@
   background: var(--edge);
 }
 
-/* Le nom de session s'aligne sur le nom de projet, pas sur son icône : la somme
-   reprend terme pour terme le retrait de .conv-project-header — sa marge
-   interne, la largeur de l'icône de dossier, puis l'écart qui la sépare du
-   texte. En tokens et non en pixels, pour que l'alignement tienne à toutes les
-   tailles de police. */
+/* Le nom de session s'aligne sur le nom de projet, pas sur son icône. La valeur
+   et sa raison vivent avec --sidebar-project-indent, dans tokens.css. */
 .conv-session-indented {
-  padding-left: calc(var(--space-sm) + var(--icon-sm) + var(--space-xs));
+  padding-left: var(--sidebar-project-indent);
+}
+
+/* Note d'une section dépliée et vide — même corps et même gris que le titre
+   qui l'annonce : elle constate une absence, elle n'appelle pas l'œil. */
+.conv-empty-note {
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--ink-faint);
+}
+
+.conv-empty-note-indented {
+  padding-left: var(--sidebar-project-indent);
 }

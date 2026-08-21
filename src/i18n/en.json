@@ -166,7 +166,7 @@
   },
   "projects": {
     "title": "Projects",
-    "discussions": "Discussions",
+    "discussions": "Beaver",
     "pinned": "Pinned",
     "workInFolder": "Work in a folder",
     "search": "Search projects",
@@ -176,7 +176,8 @@
     "openFolder": "Open folder",
     "rename": "Rename",
     "delete": "Delete",
-    "noDiscussion": "No sessions"
+    "noDiscussion": "No sessions",
+    "noProject": "No projects"
   },
   "branches": {
     "search": "Search branches",
@@ -261,7 +262,6 @@
   "agentLocal": {
     "newSession": "New session",
     "parentChat": "Parent chat",
-    "noConversations": "No conversations",
     "placeholder": "How can I help you?",
     "thinking": "Thinking",
     "showMore": "Show more",

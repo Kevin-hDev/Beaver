@@ -161,7 +161,7 @@
   },
   "projects": {
     "title": "Proyectos",
-    "discussions": "Conversaciones",
+    "discussions": "Beaver",
     "pinned": "Fijadas",
     "workInFolder": "Trabajar en una carpeta",
     "search": "Buscar proyectos",
@@ -171,7 +171,8 @@
     "openFolder": "Abrir carpeta",
     "rename": "Renombrar",
     "delete": "Eliminar",
-    "noDiscussion": "Sin sesiones"
+    "noDiscussion": "Sin sesiones",
+    "noProject": "Sin proyectos"
   },
   "branches": {
     "search": "Buscar ramas",
@@ -256,7 +257,6 @@
   "agentLocal": {
     "newSession": "Nueva sesión",
     "parentChat": "Conversación principal",
-    "noConversations": "Sin conversaciones",
     "placeholder": "¿En qué puedo ayudarte?",
     "thinking": "Pensando",
     "showMore": "Mostrar más",

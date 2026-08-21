@@ -161,7 +161,7 @@
   },
   "projects": {
     "title": "项目",
-    "discussions": "对话",
+    "discussions": "Beaver",
     "pinned": "已置顶",
     "workInFolder": "在文件夹中工作",
     "search": "搜索项目",
@@ -171,7 +171,8 @@
     "openFolder": "打开文件夹",
     "rename": "重命名",
     "delete": "删除",
-    "noDiscussion": "暂无会话"
+    "noDiscussion": "暂无会话",
+    "noProject": "暂无项目"
   },
   "branches": {
     "search": "搜索分支",
@@ -256,7 +257,6 @@
   "agentLocal": {
     "newSession": "新建会话",
     "parentChat": "父级对话",
-    "noConversations": "暂无对话",
     "placeholder": "有什么可以帮你的？",
     "thinking": "思考中",
     "showMore": "显示更多",

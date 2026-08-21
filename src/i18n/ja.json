@@ -161,7 +161,7 @@
   },
   "projects": {
     "title": "プロジェクト",
-    "discussions": "ディスカッション",
+    "discussions": "Beaver",
     "pinned": "ピン留め",
     "workInFolder": "フォルダで作業",
     "search": "プロジェクトを検索",
@@ -171,7 +171,8 @@
     "openFolder": "フォルダを開く",
     "rename": "名前を変更",
     "delete": "削除",
-    "noDiscussion": "セッションなし"
+    "noDiscussion": "セッションなし",
+    "noProject": "プロジェクトなし"
   },
   "branches": {
     "search": "ブランチを検索",
@@ -256,7 +257,6 @@
   "agentLocal": {
     "newSession": "新しいセッション",
     "parentChat": "親チャット",
-    "noConversations": "会話がありません",
     "placeholder": "何かお手伝いできますか？",
     "thinking": "考え中",
     "showMore": "もっと見る",

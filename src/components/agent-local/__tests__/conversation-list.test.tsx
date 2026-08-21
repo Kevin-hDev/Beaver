@@ -17,7 +17,7 @@ const defaultProps = {
   onSelect: vi.fn(), onCreate: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(),
   onNewSessionInProject: vi.fn(), onRenameProject: vi.fn(), onDeleteProject: vi.fn(),
   onOpenFolder: vi.fn(), onReorderProjects: vi.fn(), onReorderSessions: vi.fn(),
-  onTogglePin: vi.fn(), onReorderPinnedSessions: vi.fn(),
+  onTogglePin: vi.fn(), onReorderPinnedSessions: vi.fn(), onAddProject: vi.fn(),
 };
 
 vi.mock("react-i18next", () => ({
@@ -25,6 +25,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("@/components/ui/icons", () => ({
+  Plus: () => <span data-testid="section-add" />,
   Archive: () => <span />,
   Pencil: () => <span />,
   CaretRight: () => <span data-testid="section-chevron" />,
@@ -81,11 +82,29 @@ describe("ConversationList", () => {
     expect(container.querySelector(".conv-new-btn")).not.toBeNull();
   });
 
-  it("affiche le message vide si aucune session et aucun projet", () => {
+  it("montre ses deux rangements et leur vide quand rien n'existe encore", () => {
     const { container } = render(<ConversationList {...defaultProps} />);
-    const empty = container.querySelector(".hist-empty");
-    expect(empty).not.toBeNull();
-    expect(empty?.textContent).toContain("agentLocal.noConversations");
+
+    const labels = Array.from(container.querySelectorAll(".conv-section-label")).map((el) => el.textContent);
+    expect(labels).toEqual(["projects.title", "projects.discussions"]);
+    const notes = Array.from(container.querySelectorAll(".conv-empty-note")).map((el) => el.textContent);
+    expect(notes).toEqual(["projects.noProject", "projects.noDiscussion"]);
+  });
+
+  it("n'annonce pas Épinglé tant qu'aucune conversation ne l'est", () => {
+    const { queryByText } = render(<ConversationList {...defaultProps} sessions={[makeSession()]} />);
+    expect(queryByText("projects.pinned")).toBeNull();
+  });
+
+  it("ajoute un dossier depuis le titre Projets", () => {
+    const onAddProject = vi.fn();
+    const { getByLabelText } = render(
+      <ConversationList {...defaultProps} onAddProject={onAddProject} />,
+    );
+
+    fireEvent.click(getByLabelText("projects.addNew"));
+
+    expect(onAddProject).toHaveBeenCalledTimes(1);
   });
 
   it("affiche les sessions orphelines sans project_id", () => {
@@ -225,7 +244,7 @@ describe("ConversationList", () => {
     const labels = Array.from(container.querySelectorAll(".conv-section-label")).map((el) => el.textContent);
     expect(labels[0]).toBe("projects.pinned");
     expect(getByText("projects.discussions")).not.toBeNull();
-    const pinnedSection = getByText("projects.pinned").parentElement as HTMLElement;
+    const pinnedSection = getByText("projects.pinned").closest(".conv-session-section") as HTMLElement;
     expect(pinnedSection.querySelectorAll(".conv-session-indented").length).toBe(1);
     expect(container.querySelectorAll(".conv-session-indented").length).toBe(2);
   });
@@ -249,7 +268,7 @@ describe("ConversationList", () => {
     );
 
     const labels = Array.from(container.querySelectorAll(".conv-section-label")).map((el) => el.textContent);
-    expect(labels).toEqual(["projects.pinned", "projects.title"]);
+    expect(labels).toEqual(["projects.pinned", "projects.title", "projects.discussions"]);
   });
 
   it("n'affiche pas les sous-agents (parent_session_id défini) même sans project_id", () => {

@@ -7,6 +7,7 @@ import { FolderStateIcon } from "@/components/ui/folder-state-icon";
 import { CollapsePanel } from "./collapse-panel";
 import { ContextMenu, type ContextMenuItem } from "@/components/ui/context-menu";
 import { ConversationSessionItem } from "./conversation-session-item";
+import { ConversationEmptyNote } from "./conversation-empty-note";
 import { useSessionMenuItems } from "./use-session-menu-items";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useDragReorder, type DragHandleProps, type DragItemProps } from "@/hooks/use-drag-reorder";
@@ -185,9 +186,7 @@ export function ProjectSection({
         })}
 
         {sessions.length === 0 && (
-          <div className="conv-session-indented" style={{ color: "var(--ink-faint)", fontSize: "var(--text-xs)", paddingTop: "var(--space-xs)", paddingBottom: "var(--space-xs)" }}>
-            {t("projects.noDiscussion")}
-          </div>
+          <ConversationEmptyNote indented>{t("projects.noDiscussion")}</ConversationEmptyNote>
         )}
       </CollapsePanel>
 

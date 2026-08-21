@@ -193,6 +193,12 @@
   --nav-item-height: 1.3333rem;
   /* Marge interne verticale des lignes de navigation, dans le même geste. */
   --nav-item-padding-y: var(--space-2xs);
+  /* Retrait de ce qui se range sous un projet dans la barre latérale : ses
+     conversations, et la note qui constate qu'il n'en a aucune. La somme
+     reprend terme pour terme le retrait de l'en-tête d'un projet — sa marge
+     interne, la largeur de son dossier, puis l'écart qui l'en sépare — pour
+     que les textes s'alignent à toutes les tailles de police. */
+  --sidebar-project-indent: calc(var(--space-sm) + var(--icon-sm) + var(--space-xs));
   --nav-item-gap: var(--space-xs);
   --nav-item-padding-x: var(--space-sm);
   --nav-item-radius: var(--radius-sm);

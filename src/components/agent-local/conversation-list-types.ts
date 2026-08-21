@@ -13,6 +13,8 @@ export interface ConversationListProps {
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (id: string) => void;
   onOpenFolder: (path: string) => void;
+  /* Ouvre le sélecteur de dossier puis enregistre le projet choisi. */
+  onAddProject: () => void;
   onReorderProjects: (ids: string[]) => void;
   /* Range une liste de conversations. `projectId` nul désigne celles qui
      n'appartiennent à aucun projet. */

@@ -2,17 +2,17 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ComposeIcon } from "@/components/ui/compose-icon";
 import { ContextMenu } from "@/components/ui/context-menu";
+import { Plus } from "@/components/ui/icons";
 import { useSessionMenuItems } from "./use-session-menu-items";
 import { ProjectSection } from "./project-section";
-import { PinnedSection } from "./pinned-section";
-import { ConversationSessionItem } from "./conversation-session-item";
+import { ConversationSessionSection } from "./conversation-session-section";
+import { ConversationEmptyNote } from "./conversation-empty-note";
 import { CollapsePanel } from "./collapse-panel";
 import { ConversationSectionToggle } from "./conversation-section-toggle";
 import { useKeyboard } from "@/hooks/use-keyboard";
 import { useMinuteNow } from "@/hooks/use-minute-now";
 import { useDragReorder } from "@/hooks/use-drag-reorder";
 import { useSessionActivityIndicators } from "@/hooks/use-session-activity-indicators";
-import { idMatch } from "@/lib/utils";
 import type { ConversationListProps } from "./conversation-list-types";
 import { useConversationCollapseState } from "./use-conversation-collapse-state";
 import { DirectoryAccessPrompt } from "./directory-access-prompt";
@@ -26,7 +26,7 @@ export function ConversationList({
   sessions, projects, selectedId,
   onSelect, onCreate, onRename, onDelete,
   onNewSessionInProject, onRenameProject, onDeleteProject,
-  onOpenFolder, onReorderProjects, onReorderSessions,
+  onOpenFolder, onAddProject, onReorderProjects, onReorderSessions,
   onReorderPinnedSessions, onTogglePin,
   directoryAccessPrompt,
 }: ConversationListProps) {
@@ -59,21 +59,11 @@ export function ConversationList({
     group: "projects",
     onReorder: onReorderProjects,
   });
-  /* Les conversations hors projet partagent le conteneur de la liste avec les
-     projets : c'est le nom du groupe, et non le conteneur, qui les sépare. */
-  const sessionDrag = useDragReorder({
-    ids: orphanSessions.map((s) => s.id),
-    axis: "y",
-    containerRef: listRef,
-    group: "sessions:orphan",
-    onReorder: (ids) => onReorderSessions(null, ids),
-  });
   useKeyboard({
     onEscape: () => {
       setRenamingId(null);
       setCtx(null);
       drag.cancel();
-      sessionDrag.cancel();
     },
   });
 
@@ -98,15 +88,31 @@ export function ConversationList({
     if (value.trim()) onRename(id, value.trim());
     setRenamingId(null);
   };
+  const cancelRename = useCallback(() => setRenamingId(null), []);
 
   const projectMap = new Map(projects.map((p) => [p.id, p]));
-  const orphanMap = new Map(orphanSessions.map((s) => [s.id, s]));
   const mainSessionIds = useMemo(() => mainSessions.map((s) => s.id), [mainSessions]);
   const activity = useSessionActivityIndicators(mainSessionIds, selectedId);
   const handleSelect = useCallback((id: string) => {
     activity.markViewed(id);
     onSelect(id);
   }, [activity, onSelect]);
+
+  /* Ce que les deux sections de conversations partagent : seuls leur titre,
+     leur liste et leur repli les distinguent. */
+  const sessionSectionProps = {
+    selectedId,
+    runningIds: activity.runningIds,
+    unreadIds: activity.unreadIds,
+    renamingId,
+    inputRef,
+    onSelect: handleSelect,
+    onRenameSubmit: handleRenameSubmit,
+    onCancelRename: cancelRename,
+    onMenu: handleSessionMenu,
+    onStartRename: startRename,
+    nowMs,
+  };
 
   return (
     <>
@@ -118,106 +124,78 @@ export function ConversationList({
       </div>
       {directoryAccessPrompt && <div className="conv-dap-anchor"><DirectoryAccessPrompt {...directoryAccessPrompt} /></div>}
       <div ref={listRef} className="conv-list">
+        {/* « Épinglé » n'existe qu'à partir de la première conversation épinglée :
+            une section vide n'apprendrait rien de ce qu'elle sert à ranger. */}
         {pinnedSessions.length > 0 && (
-          <PinnedSection
+          <ConversationSessionSection
+            {...sessionSectionProps}
+            title={t("projects.pinned", "Épinglé")}
+            dragGroup="sessions:pinned"
             sessions={pinnedSessions}
-            selectedId={selectedId}
-            runningIds={activity.runningIds}
-            unreadIds={activity.unreadIds}
-            renamingId={renamingId}
-            inputRef={inputRef}
-            onSelect={handleSelect}
-            onRenameSubmit={handleRenameSubmit}
-            onCancelRename={() => setRenamingId(null)}
-            onMenu={handleSessionMenu}
-            onStartRename={startRename}
+            emptyLabel={t("projects.noDiscussion")}
             onReorder={onReorderPinnedSessions}
             collapsed={collapse.pinnedCollapsed}
             onToggleCollapse={collapse.togglePinned}
-            nowMs={nowMs}
           />
         )}
 
-        {projects.length > 0 && (
-          <>
-            <ConversationSectionToggle open={!collapse.projectsCollapsed} onToggle={collapse.toggleProjects}>
-              {t("projects.title", "Projets")}
-            </ConversationSectionToggle>
-            <CollapsePanel open={!collapse.projectsCollapsed}>
-              {drag.order.map((id) => {
-                const p = projectMap.get(id);
-                if (!p) return null;
-                return (
-	                  <ProjectSection
-	                    key={p.id}
-	                    project={p}
-                    sessions={unpinnedSessions.filter((s) => s.project_id === p.id)}
-                    selectedId={selectedId}
-                    runningIds={activity.runningIds}
-                    unreadIds={activity.unreadIds}
-                    onSelect={handleSelect}
-                    onNewSession={onNewSessionInProject}
-                    onRenameProject={onRenameProject}
-                    onDeleteProject={onDeleteProject}
-                    onOpenFolder={onOpenFolder}
-                    onRenameSession={onRename}
-                    onDeleteSession={onDelete}
-                    onTogglePin={onTogglePin}
-                    onReorderSessions={onReorderSessions}
-                    dragProps={drag.itemProps(p.id)}
-                    dragHandleProps={drag.handleProps(p.id)}
-                    didDrag={drag.didDrag}
-                    collapsed={collapse.collapsedProjects.has(p.id)}
-                    onToggleCollapse={() => collapse.toggleProject(p.id)}
-                    nowMs={nowMs}
-                  />
-                );
-              })}
-            </CollapsePanel>
-          </>
-        )}
+        {/* « Projets » et « Beaver » restent là même vides : ce sont les deux
+            rangements de l'application, et une barre latérale qui ne les montre
+            qu'une fois remplis n'apprend rien à qui démarre. */}
+        <ConversationSectionToggle
+          open={!collapse.projectsCollapsed}
+          onToggle={collapse.toggleProjects}
+          action={{
+            label: t("projects.addNew", "Ajouter un nouveau projet"),
+            icon: <Plus size="var(--conv-section-add-icon-size)" />,
+            onClick: onAddProject,
+          }}
+        >
+          {t("projects.title", "Projets")}
+        </ConversationSectionToggle>
+        <CollapsePanel open={!collapse.projectsCollapsed}>
+          {projects.length === 0 && <ConversationEmptyNote>{t("projects.noProject")}</ConversationEmptyNote>}
+          {drag.order.map((id) => {
+            const p = projectMap.get(id);
+            if (!p) return null;
+            return (
+              <ProjectSection
+                key={p.id}
+                project={p}
+                sessions={unpinnedSessions.filter((s) => s.project_id === p.id)}
+                selectedId={selectedId}
+                runningIds={activity.runningIds}
+                unreadIds={activity.unreadIds}
+                onSelect={handleSelect}
+                onNewSession={onNewSessionInProject}
+                onRenameProject={onRenameProject}
+                onDeleteProject={onDeleteProject}
+                onOpenFolder={onOpenFolder}
+                onRenameSession={onRename}
+                onDeleteSession={onDelete}
+                onTogglePin={onTogglePin}
+                onReorderSessions={onReorderSessions}
+                dragProps={drag.itemProps(p.id)}
+                dragHandleProps={drag.handleProps(p.id)}
+                didDrag={drag.didDrag}
+                collapsed={collapse.collapsedProjects.has(p.id)}
+                onToggleCollapse={() => collapse.toggleProject(p.id)}
+                nowMs={nowMs}
+              />
+            );
+          })}
+        </CollapsePanel>
 
-        {orphanSessions.length > 0 && (
-          <>
-            {(projects.length > 0 || pinnedSessions.length > 0) && (
-              <ConversationSectionToggle open={!collapse.discussionsCollapsed} onToggle={collapse.toggleDiscussions}>
-                {t("projects.discussions", "Discussions")}
-              </ConversationSectionToggle>
-            )}
-            <CollapsePanel open={!collapse.discussionsCollapsed}>
-              {sessionDrag.order.map((id) => {
-                const s = orphanMap.get(id);
-                if (!s) return null;
-                const active = idMatch(selectedId, s.id);
-                const renaming = idMatch(renamingId, s.id);
-                return (
-	                  <ConversationSessionItem
-	                    key={s.id}
-                    session={s}
-                    active={active}
-                    isRunning={activity.runningIds.has(s.id)}
-                    hasUnread={activity.unreadIds.has(s.id)}
-                    renaming={renaming}
-                    inputRef={inputRef}
-                    onSelect={handleSelect}
-                    onRenameSubmit={handleRenameSubmit}
-                    onCancelRename={() => setRenamingId(null)}
-                    onMenu={handleSessionMenu}
-                    onStartRename={startRename}
-                    dragProps={sessionDrag.itemProps(s.id)}
-                    dragHandleProps={sessionDrag.handleProps(s.id)}
-                    didDrag={sessionDrag.didDrag}
-                    nowMs={nowMs}
-                  />
-                );
-              })}
-            </CollapsePanel>
-          </>
-        )}
-
-        {sessions.length === 0 && projects.length === 0 && (
-          <div className="hist-empty">{t("agentLocal.noConversations")}</div>
-        )}
+        <ConversationSessionSection
+          {...sessionSectionProps}
+          title={t("projects.discussions", "Beaver")}
+          dragGroup="sessions:orphan"
+          sessions={orphanSessions}
+          emptyLabel={t("projects.noDiscussion")}
+          onReorder={(ids) => onReorderSessions(null, ids)}
+          collapsed={collapse.discussionsCollapsed}
+          onToggleCollapse={collapse.toggleDiscussions}
+        />
       </div>
       {ctx && <ContextMenu x={ctx.x} y={ctx.y} items={ctxItems} onClose={() => setCtx(null)} />}
     </>
