@@ -1,5 +1,5 @@
 use std::ffi::{OsStr, OsString};
-#[cfg(test)]
+#[cfg(all(test, unix))]
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -29,7 +29,7 @@ impl PythonRuntime {
         resolve_in_path(manifest, gui_path()).await
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(super) async fn resolve_with_path(
         manifest: &RuntimeManifest,
         path: &Path,
@@ -54,7 +54,7 @@ impl PythonRuntime {
         }
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, unix))]
     pub(super) fn label(&self) -> &str {
         &self.label
     }

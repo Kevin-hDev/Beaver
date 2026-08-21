@@ -96,3 +96,15 @@ async fn owned_tokio_spawn_enters_native_confinement_before_returning() {
 
     super::process_tree::terminate_tokio(&mut child, ProcessKind::Terminal).await;
 }
+
+#[cfg(windows)]
+#[test]
+fn completed_windows_child_is_not_reported_alive_while_its_handle_remains_open() {
+    let mut command = Command::new("powershell.exe");
+    command.args(["-NoProfile", "-NonInteractive", "-Command", "exit 0"]);
+    let mut child = OwnedProcess::spawn(&mut command, ProcessKind::Terminal).expect("owned child");
+    let pid = child.id();
+
+    assert!(child.wait().expect("completed child").success());
+    assert!(!OwnedProcess::process_exists(pid));
+}

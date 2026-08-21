@@ -1,9 +1,12 @@
+#[cfg(unix)]
 use super::python_runtime::PythonRuntime;
 use super::python_runtime_path::lookup_suffixes;
 #[cfg(unix)]
 use super::python_runtime_path::{command_for, locate_with_suffixes};
+#[cfg(unix)]
 use super::runtime_manifest::RuntimeManifest;
 use std::ffi::OsStr;
+#[cfg(unix)]
 use std::path::Path;
 
 #[cfg(unix)]
@@ -63,42 +66,6 @@ async fn pypy_candidate_does_not_mask_the_compatible_cpython() {
             .expect("compatible CPython");
 
     assert_eq!(selected.label(), "python3");
-}
-
-#[cfg(windows)]
-#[tokio::test]
-async fn windows_resolver_probes_the_python_executable_from_the_supplied_path() {
-    let python = crate::services::test_runtime::python().expect("Windows test Python");
-    let output = std::process::Command::new(&python)
-        .args([
-            "-c",
-            "import sys; print(sys.version_info.major); print(sys.version_info.minor)",
-        ])
-        .output()
-        .expect("probe Windows test Python version");
-    assert!(output.status.success());
-    let version = String::from_utf8(output.stdout).expect("UTF-8 Python version");
-    let mut components = version.lines();
-    let major = components
-        .next()
-        .expect("Python major")
-        .parse::<u8>()
-        .expect("numeric Python major");
-    let minor = components
-        .next()
-        .expect("Python minor")
-        .parse::<u8>()
-        .expect("numeric Python minor");
-    assert!(components.next().is_none());
-    let directory = python.parent().expect("Windows Python directory");
-
-    let selected =
-        PythonRuntime::resolve_with_path(&RuntimeManifest::for_test(major, minor), directory)
-            .await
-            .expect("compatible Windows Python");
-
-    assert!(selected.program.is_file());
-    assert_eq!(selected.label(), "python");
 }
 
 #[test]

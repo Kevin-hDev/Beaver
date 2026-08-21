@@ -8,11 +8,11 @@ pub(super) use termination::recover_exact_with_cancel;
 mod support;
 use std::os::windows::io::{AsHandle, AsRawHandle};
 use std::sync::OnceLock;
-use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE};
+use windows_sys::Win32::Foundation::{CloseHandle, FILETIME, HANDLE, STILL_ACTIVE};
 use windows_sys::Win32::System::JobObjects::{AssignProcessToJobObject, IsProcessInJob};
 use windows_sys::Win32::System::Threading::{
-    GetProcessId, GetProcessTimes, OpenProcess, QueryFullProcessImageNameW, TerminateProcess,
-    PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
+    GetExitCodeProcess, GetProcessId, GetProcessTimes, OpenProcess, QueryFullProcessImageNameW,
+    TerminateProcess, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
 };
 
 static GLOBAL_JOB: OnceLock<Result<GlobalJob, OwnedProcessError>> = OnceLock::new();
@@ -158,7 +158,14 @@ pub(super) fn signal_exact(
 }
 
 pub(super) fn process_exists(pid: u32) -> bool {
-    ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION).is_ok()
+    let Ok(process) = ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION) else {
+        return false;
+    };
+    let mut exit_code = 0_u32;
+    // Windows can keep an exited process object open while handles still
+    // exist. Callers need liveness, not merely the ability to open that PID.
+    (unsafe { GetExitCodeProcess(process.0, &mut exit_code) }) != 0
+        && exit_code == STILL_ACTIVE as u32
 }
 
 pub(super) fn reap_exited_child(_pid: u32) -> Result<bool, OwnedProcessError> {
