@@ -1,0 +1,1 @@
+Removes the review-only include_str source-order assertion. The behavioral metadata precedence test in context_usage_memory remains the authority. Verified after removal with cargo test --lib (3770 passed, 4 ignored), strict clippy, rustfmt, npm test (462 Vitest files plus build, CI, CEF, E2E runner, and extension-host suites), TypeScript, lint, and graphify update.
