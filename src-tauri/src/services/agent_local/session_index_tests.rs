@@ -234,3 +234,14 @@ async fn corrupt_index_triggers_rebuild() {
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].id, "s1");
 }
+
+#[test]
+fn l_index_reprend_la_date_d_epinglage_de_la_session() {
+    let mut session = test_session("epinglee", "Épinglée", false);
+    let quand = Utc::now();
+    session.pinned_at = Some(quand);
+
+    let meta = meta_from_session(&session);
+
+    assert_eq!(meta.pinned_at, Some(quand));
+}

@@ -44,6 +44,7 @@ pub async fn create_full(
         created_at: now,
         updated_at: Some(now),
         archived_at: None,
+        pinned_at: None,
         model: model.to_string(),
         provider: provider.to_string(),
         thinking_enabled: crate::services::reasoning::enabled(reasoning_mode.as_deref(), false),

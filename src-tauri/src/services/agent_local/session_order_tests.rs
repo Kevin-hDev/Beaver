@@ -11,6 +11,7 @@ fn meta(id: &str, minutes_ago: i64) -> AgentSessionMeta {
         created_at: base - chrono::Duration::minutes(minutes_ago),
         updated_at: Some(base - chrono::Duration::minutes(minutes_ago)),
         archived_at: None,
+        pinned_at: None,
         model: "m".into(),
         provider: "ollama".into(),
         thinking_enabled: false,

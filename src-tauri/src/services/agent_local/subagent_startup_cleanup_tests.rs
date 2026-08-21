@@ -14,6 +14,7 @@ fn session(id: &str, status: &str, parent: bool, offset_secs: i64) -> AgentSessi
         created_at,
         updated_at: Some(created_at),
         archived_at: None,
+        pinned_at: None,
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,

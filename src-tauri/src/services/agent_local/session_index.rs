@@ -143,6 +143,7 @@ pub fn meta_from_session(session: &AgentSession) -> AgentSessionMeta {
         created_at: session.created_at,
         updated_at: session.updated_at,
         archived_at: session.archived_at,
+        pinned_at: session.pinned_at,
         model: session.model.clone(),
         provider: session.provider.clone(),
         thinking_enabled: session.thinking_enabled,

@@ -46,6 +46,7 @@ fn test_session() -> AgentSession {
         created_at: Utc::now(),
         updated_at: None,
         archived_at: None,
+        pinned_at: None,
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,

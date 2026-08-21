@@ -8,6 +8,7 @@ pub fn meta(id: &str, status: &str) -> AgentSessionMeta {
         created_at: Utc::now(),
         updated_at: Some(Utc::now()),
         archived_at: None,
+        pinned_at: None,
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,

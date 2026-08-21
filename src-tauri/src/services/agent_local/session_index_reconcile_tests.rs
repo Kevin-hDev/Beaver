@@ -9,6 +9,7 @@ fn session(id: &str) -> AgentSession {
         created_at: Utc::now(),
         updated_at: Some(Utc::now()),
         archived_at: Some(Utc::now()),
+        pinned_at: None,
         model: "llama3".into(),
         provider: "ollama".into(),
         thinking_enabled: false,
@@ -61,6 +62,7 @@ async fn reconcile_rebuilds_stale_active_clone_index() {
     let session = session("clone-1");
     let stale = AgentSessionMeta {
         archived_at: None,
+        pinned_at: None,
         clone_parent_session_id: None,
         clone_parent_message_id: None,
         clone_mode: None,
