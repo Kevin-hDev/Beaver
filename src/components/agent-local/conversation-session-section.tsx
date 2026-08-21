@@ -57,7 +57,7 @@ export function ConversationSessionSection({
   const byId = new Map(sessions.map((s) => [s.id, s]));
 
   return (
-    <div ref={wrapperRef} className="conv-session-section">
+    <div ref={wrapperRef} data-testid="conv-session-section">
       <ConversationSectionToggle open={!collapsed} onToggle={onToggleCollapse} action={action}>
         {title}
       </ConversationSectionToggle>

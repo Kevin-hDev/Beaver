@@ -24,7 +24,11 @@ export async function addProjectDirectory(
     return;
   }
   if (!result) return;
-  const path = typeof result === "string" ? result : String(result);
+  /* Un seul dossier est demandé, donc le sélecteur rend une chaîne. La branche
+     tableau ne sert qu'à ne pas dépendre de cette promesse : elle prend le
+     premier, là où un String() collerait tous les chemins bout à bout. */
+  const path: unknown = Array.isArray(result) ? result[0] : result;
+  if (typeof path !== "string" || !path) return;
   /* requestAccess attrape déjà l'échec de l'enregistrement et l'affiche. */
   await requestAccess(path, async () => {
     const project = await addProject(path);

@@ -244,7 +244,7 @@ describe("ConversationList", () => {
     const labels = Array.from(container.querySelectorAll(".conv-section-label")).map((el) => el.textContent);
     expect(labels[0]).toBe("projects.pinned");
     expect(getByText("projects.discussions")).not.toBeNull();
-    const pinnedSection = getByText("projects.pinned").closest(".conv-session-section") as HTMLElement;
+    const pinnedSection = getByText("projects.pinned").closest("[data-testid='conv-session-section']") as HTMLElement;
     expect(pinnedSection.querySelectorAll(".conv-session-indented").length).toBe(1);
     expect(container.querySelectorAll(".conv-session-indented").length).toBe(2);
   });

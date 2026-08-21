@@ -20,12 +20,9 @@
      plat — contre 70 à 75 % pour les autres, et à cadre égal il se lit plus
      petit qu'eux. Exprimé par rapport à eux, pour que l'écart tienne. */
   --project-folder-icon-size: calc(var(--session-icon-size) * 1.2);
-  /* « + » d'ajout de dossier, à droite du titre « Projets ». Je l'avais d'abord
-     posé un cinquième sous les dessins de la barre, en supposant que deux
-     traits traversant tout leur cadre pèseraient plus lourd que les tracés
-     voisins ; à l'écran il ne pesait pas trop, il se lisait trop petit — un
-     trait fin ne remplit pas son cadre comme un aplat. Un cinquième au-dessus
-     d'eux, la même proportion que le dossier d'un projet. */
+  /* « + » d'ajout de dossier, à droite du titre « Projets ». Un cinquième
+     au-dessus des dessins de la barre : deux traits fins ne remplissent pas
+     leur cadre comme un aplat, et à cadre égal il s'y lisait plus petit. */
   --conv-section-add-icon-size: calc(var(--session-icon-size) * 1.2);
   /* Repère d'une session qui répond, posé dans la gouttière du retrait, à
      l'aplomb du dossier de son projet.
