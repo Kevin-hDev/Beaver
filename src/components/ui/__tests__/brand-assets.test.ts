@@ -39,7 +39,8 @@ function pngSize(relativePath: string): { width: number; height: number } {
 
 describe("assets de marque", () => {
   it("conserve uniquement les deux sources visuelles actives", () => {
-    expect(fileExists("public/castor.svg")).toBe(true);
+    expect(fileExists("public/castor-surface.svg")).toBe(true);
+    expect(fileExists("public/castor-encre.svg")).toBe(true);
     expect(pngInfo("src/assets/logo.png")).toEqual({
       width: 1024,
       height: 1024,
@@ -50,11 +51,24 @@ describe("assets de marque", () => {
       "src/assets/logo-dark.png",
       "src/assets/logo-light.png",
       "src/assets/icone-app.png",
+      "public/castor.svg",
       "public/splash-icon.png",
       "public/splash-icon-light.png",
     ]) {
       expect(fileExists(obsolete)).toBe(false);
     }
+  });
+
+  /* Les deux pochoirs se superposent, et rien dans le rendu ne signale un décalage :
+     un cadre différent sur l'un des deux réduirait l'encre et la découpe de facteurs
+     différents, et l'erreur ne se verrait qu'à l'œil, sur un écran, dans une palette. */
+  it("aligne les deux pochoirs sur un cadre commun", () => {
+    const viewBox = /viewBox="([^"]+)"/;
+    const surface = readText("public/castor-surface.svg").match(viewBox)?.[1];
+    const ink = readText("public/castor-encre.svg").match(viewBox)?.[1];
+
+    expect(surface).toBeDefined();
+    expect(ink).toBe(surface);
   });
 
   it("colore le castor selon le thème aux tailles prévues", () => {
@@ -63,11 +77,27 @@ describe("assets de marque", () => {
 
     expect(splash).toContain("width: 170px");
     expect(splash).toContain("height: 170px");
-    expect(splash).toContain("--splash-mark: #c8c8ce");
-    expect(splash).toContain("--splash-mark: #1a1a1a");
-    expect(splash).toContain('mask: url("/castor.svg")');
+    expect(splash).toContain('mask: url("/castor-surface.svg")');
+    expect(splash).toContain('mask: url("/castor-encre.svg")');
     expect(onboarding).toContain("width: 4.5rem");
-    expect(onboarding).toContain("background: var(--ink)");
+    expect(onboarding).toContain('mask: url("/castor-surface.svg")');
+    expect(onboarding).toContain('mask: url("/castor-encre.svg")');
+    expect(onboarding).toContain("background: var(--brand-surface)");
+    expect(onboarding).toContain("background: var(--brand-mark)");
+  });
+
+  /* L'onboarding lit les jetons de thème, le splash les recopie en dur faute d'être
+     peint après leur chargement. Les deux déclarations doivent donc échanger les
+     rôles au même endroit : sur fond sombre la découpe prend --ink, sur fond clair
+     elle prend --void et disparaît dans le fond. */
+  it("échange découpe et encre entre les palettes claires et sombres", () => {
+    const onboarding = readText("src/components/onboarding/onboarding.css");
+
+    expect(onboarding).toContain("--brand-surface: var(--void)");
+    expect(onboarding).toContain("--brand-mark: var(--ink)");
+    expect(onboarding).toMatch(
+      /\[data-theme="dark"\] \.ob-brand-castor \{\s*--brand-surface: var\(--ink\);\s*--brand-mark: var\(--void\);/,
+    );
   });
 
   it("fournit toutes les icônes desktop requises", () => {

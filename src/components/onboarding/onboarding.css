@@ -83,13 +83,44 @@
   gap: var(--space-sm);
 }
 
+/* Le castor est un dessin en aplats, donc deux couleurs : la découpe claire posée
+   dessous, l'encre par-dessus. Les deux pochoirs partagent le même viewBox, ce qui
+   les aligne — « contain » les réduit alors du même facteur dans la même boîte.
+   Sur fond clair la découpe vaut --void, donc la couleur du fond : elle disparaît
+   et il ne reste que le dessin. Sur fond sombre les deux rôles s'échangent.
+   Le splash de index.html porte les mêmes couleurs, en dur : il peint avant que
+   ces jetons existent. brand-assets.test.ts tient les deux déclarations ensemble. */
 .ob-brand-castor {
+  position: relative;
   width: 4.5rem;
   height: 4.5rem;
   flex-shrink: 0;
-  background: var(--ink);
-  -webkit-mask: url("/castor.svg") center / contain no-repeat;
-  mask: url("/castor.svg") center / contain no-repeat;
+  --brand-surface: var(--void);
+  --brand-mark: var(--ink);
+}
+
+[data-theme="dark"] .ob-brand-castor {
+  --brand-surface: var(--ink);
+  --brand-mark: var(--void);
+}
+
+.ob-brand-castor::before,
+.ob-brand-castor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.ob-brand-castor::before {
+  background: var(--brand-surface);
+  -webkit-mask: url("/castor-surface.svg") center / contain no-repeat;
+  mask: url("/castor-surface.svg") center / contain no-repeat;
+}
+
+.ob-brand-castor::after {
+  background: var(--brand-mark);
+  -webkit-mask: url("/castor-encre.svg") center / contain no-repeat;
+  mask: url("/castor-encre.svg") center / contain no-repeat;
 }
 
 .ob-copy {

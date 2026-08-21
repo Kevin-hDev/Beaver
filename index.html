@@ -31,7 +31,8 @@
         document.documentElement.setAttribute("data-palette", choice);
       })();
     </script>
-    <link rel="preload" href="/castor.svg" as="image" type="image/svg+xml" />
+    <link rel="preload" href="/castor-surface.svg" as="image" type="image/svg+xml" />
+    <link rel="preload" href="/castor-encre.svg" as="image" type="image/svg+xml" />
     <style>
       #splash {
         position: fixed;
@@ -41,37 +42,66 @@
         justify-content: center;
         z-index: 9999;
       }
+      /* Le castor est un dessin en aplats, donc deux couleurs : la découpe claire
+         posée dessous, l'encre par-dessus. Les palettes sombres et claires les
+         échangent — sur fond sombre la découpe prend --ink et l'encre prend --void,
+         sur fond clair l'inverse, ce qui rend la découpe invisible puisqu'elle vaut
+         alors la couleur du fond. Les valeurs sont écrites en dur parce que ce bloc
+         peint avant que les feuilles de thème soient chargées ; splash-theme.test.ts
+         vérifie palette par palette qu'elles valent bien --void et --ink. */
       [data-theme="dark"] #splash {
         background: #121212;
-        --splash-mark: #c8c8ce;
+        --splash-surface: #c8c8ce;
+        --splash-mark: #121212;
       }
       [data-theme="light"] #splash {
         background: #f7f6f3;
+        --splash-surface: #f7f6f3;
         --splash-mark: #1a1a1a;
       }
       [data-palette="emerald-night"] #splash {
         background: #031f1c;
-        --splash-mark: #f1e2c3;
+        --splash-surface: #f1e2c3;
+        --splash-mark: #031f1c;
       }
       [data-palette="cobalt-frost"] #splash {
         background: #f7f9fd;
+        --splash-surface: #f7f9fd;
         --splash-mark: #101828;
       }
       [data-palette="astral-mist"] #splash {
         background: #030817;
-        --splash-mark: #dce4ee;
+        --splash-surface: #dce4ee;
+        --splash-mark: #030817;
       }
       [data-palette="crimson-eclipse"] #splash {
         background: #070709;
-        --splash-mark: #e4e4e7;
+        --splash-surface: #e4e4e7;
+        --splash-mark: #070709;
       }
       #splash .splash-icon {
+        position: relative;
         width: 170px;
         height: 170px;
         display: block;
+      }
+      /* Les deux pochoirs partagent le même viewBox : c'est ce qui les aligne,
+         « contain » les réduisant alors du même facteur dans la même boîte. */
+      #splash .splash-icon::before,
+      #splash .splash-icon::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+      }
+      #splash .splash-icon::before {
+        background: var(--splash-surface);
+        -webkit-mask: url("/castor-surface.svg") center / contain no-repeat;
+        mask: url("/castor-surface.svg") center / contain no-repeat;
+      }
+      #splash .splash-icon::after {
         background: var(--splash-mark);
-        -webkit-mask: url("/castor.svg") center / contain no-repeat;
-        mask: url("/castor.svg") center / contain no-repeat;
+        -webkit-mask: url("/castor-encre.svg") center / contain no-repeat;
+        mask: url("/castor-encre.svg") center / contain no-repeat;
       }
     </style>
   </head>

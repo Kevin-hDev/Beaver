@@ -7,7 +7,7 @@ describe("entrée de la mascotte", () => {
 
     expect(html).toContain("/src/mascot-main.tsx");
     expect(html).not.toContain('id="splash"');
-    expect(html).not.toContain("castor.svg");
+    expect(html).not.toContain("castor-");
   });
 
   it("autorise le déplacement natif de la fenêtre sous Linux", () => {

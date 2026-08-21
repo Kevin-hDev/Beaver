@@ -62,10 +62,20 @@ describe("thème du splash de démarrage", () => {
         "data-palette": id,
       });
 
+      /* Le castor a deux couleurs : la découpe posée dessous et l'encre par-dessus.
+         Sur fond sombre la découpe prend --ink et l'encre --void ; sur fond clair
+         les rôles s'échangent, la découpe valant alors la couleur du fond, donc
+         invisible. Ces valeurs sont écrites en dur dans index.html parce que le
+         splash peint avant les feuilles de thème : ce test est le seul lien qui
+         les tient sur les jetons de leur palette. */
       const tokens = themeTokens(id);
       const rule = splashRule(id);
+      const surfaceColor = colorScheme === "dark" ? tokens.mark : tokens.background;
+      const markColor = colorScheme === "dark" ? tokens.background : tokens.mark;
+
       expect(rule).toContain(`background: ${tokens.background};`);
-      expect(rule).toContain(`--splash-mark: ${tokens.mark};`);
+      expect(rule).toContain(`--splash-surface: ${surfaceColor};`);
+      expect(rule).toContain(`--splash-mark: ${markColor};`);
     },
   );
 
