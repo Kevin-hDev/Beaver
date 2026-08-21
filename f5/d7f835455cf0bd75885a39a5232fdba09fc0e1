@@ -1,1 +1,33 @@
-Review follow-up\n\nDecision\n- GpuMemorySnapshot.kind is the sole authority for forecast memory semantics. Forecast now consumes one complete snapshot instead of recomputing the kind from the host platform and reading total/usage separately.\n- Windows accepts total and usage as a pair only when both describe the same source. A zero usage value is valid and no longer triggers a second counter source. This prevents fabricated percentages on hybrid-GPU systems.\n- A missing system measurement plus Ollama GPU allocation intentionally emits VRAM with unknown numeric values (0/0); the UI shows the accelerator without claiming a measurement.\n- The Windows cfg spelling now consistently uses target_os = "windows".\n\nProof\n- TDD red: snapshot authority test initially failed to compile before profile_from_snapshot existed.\n- cargo test --lib gpu_vram: 14 passed.\n- cargo test --lib hardware_profile: 5 passed.\n- cargo test --lib ollama_manager::polling_tests: 8 passed.\n- cargo test --lib -- --test-threads=4: 3793 passed, 4 ignored.\n- Targeted Vitest: 2 files, 4 tests passed.\n- cargo clippy --all-targets -- -D warnings, cargo fmt --check, npx tsc --noEmit, npm run lint, and git diff --check passed.\n- graphify update . completed.\n\nWindows boundary\nThe parser and source-coherence behavior execute in native unit tests on macOS. The PowerShell/WMI counter availability itself still requires a real Windows run; no native Windows success is claimed by this commit. Microsoft also documents inaccuracies in GPU process-memory counters, so source coherence is enforced even when a counter is available.
+Review follow-up
+
+Decision
+
+- GpuMemorySnapshot.kind is the sole authority for forecast memory semantics. Forecast consumes one complete snapshot instead of recomputing the kind from the host platform and reading total and usage separately.
+
+- Windows accepts total and usage as a pair only when both describe the same source. Zero usage is valid and no longer triggers a second counter source. This prevents fabricated percentages on hybrid-GPU systems.
+
+- Missing system measurement plus Ollama GPU allocation intentionally emits VRAM with unknown numeric values (0/0); the UI shows the accelerator without claiming a measurement.
+
+- The Windows cfg spelling now consistently uses target_os = "windows".
+
+Proof
+
+- TDD red: the snapshot authority test initially failed to compile before profile_from_snapshot existed.
+
+- cargo test --lib gpu_vram: 14 passed.
+
+- cargo test --lib hardware_profile: 5 passed.
+
+- cargo test --lib ollama_manager::polling_tests: 8 passed.
+
+- cargo test --lib -- --test-threads=4: 3793 passed, 4 ignored.
+
+- Targeted Vitest: 2 files, 4 tests passed.
+
+- cargo clippy --all-targets -- -D warnings, cargo fmt --check, npx tsc --noEmit, npm run lint, and git diff --check passed.
+
+- graphify update . completed.
+
+Windows boundary
+
+The parser and source-coherence behavior execute in native unit tests on macOS. PowerShell/WMI counter availability still requires a real Windows run; no native Windows success is claimed. Microsoft also documents inaccuracies in GPU process-memory counters, so source coherence is enforced even when a counter is available.
