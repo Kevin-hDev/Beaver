@@ -16,6 +16,13 @@ pub async fn reorder_agent_sessions(
     crate::services::agent_local::session_order::set(project_id.as_deref(), ids).await
 }
 
+/// Range la liste des conversations épinglées dans l'ordre reçu. Les noms
+/// de listes restent dans session_order : rien ne traverse la frontière.
+#[tauri::command]
+pub async fn reorder_pinned_agent_sessions(ids: Vec<String>) -> Result<(), String> {
+    crate::services::agent_local::session_order::set_pinned(ids).await
+}
+
 #[tauri::command]
 pub async fn list_archived_agent_sessions() -> Result<Vec<AgentSessionMeta>, String> {
     session_store::list_archived().await
@@ -183,6 +190,16 @@ pub async fn archive_agent_session(id: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn restore_agent_session(id: String) -> Result<(), String> {
     session_store::restore(&id).await
+}
+
+#[tauri::command]
+pub async fn pin_agent_session(id: String) -> Result<(), String> {
+    crate::services::agent_local::session_pin::pin(&id).await
+}
+
+#[tauri::command]
+pub async fn unpin_agent_session(id: String) -> Result<(), String> {
+    crate::services::agent_local::session_pin::unpin(&id).await
 }
 
 #[tauri::command]
