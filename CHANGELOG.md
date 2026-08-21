@@ -52,6 +52,7 @@
 
 ### Models, security, and interface
 
+- **Persistent message drafts** — unsent text in existing conversations and the new-conversation welcome view now survives switching sessions or application tabs while Beaver remains open, with selected skills restored alongside the draft.
 - **Safer Forecast dependencies** — compatible Forecast runtimes received security updates, and Kairos now installs the dependency required to load and run its real model instead of failing on first prediction.
 - **Clearer provider availability** — model selectors distinguish explicit zero pricing from account availability and no longer treat paid models as unavailable merely because they are not free.
 - **More consistent settings and activity UI** — refreshed catalog layouts, onboarding cards, icons, translated personality descriptions, API-key overflow handling, and the running-session indicator improve clarity without changing saved user data.
