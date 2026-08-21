@@ -56,6 +56,7 @@ pub struct OllamaModelEditorData {
     pub modelfile: String,
     pub parameters: Option<Vec<OllamaParameter>>,
     pub parameter_error: Option<String>,
+    pub prompt_tier: super::system_prompt_types::PromptTier,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

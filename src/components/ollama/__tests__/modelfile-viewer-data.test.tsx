@@ -13,16 +13,18 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("../modelfile-view", () => ({
-  ModelfileView: ({ modelfile, parameters, parameterError }: {
+  ModelfileView: ({ modelfile, parameters, parameterError, promptTier }: {
     modelfile: string;
     parameters: Array<{ key: string; value: string }> | null;
     parameterError: string | null;
+    promptTier: string;
   }) => (
     <div>
       <span>{modelfile}</span>
       <span data-testid="semantic-parameters">
         {parameters?.map(({ key, value }) => `${key}:${value}`).join("|")}
       </span>
+      <span data-testid="prompt-tier">{promptTier}</span>
       {parameterError && <span role="alert">{parameterError}</span>}
     </div>
   ),
@@ -35,6 +37,7 @@ describe("ModelfileViewer data contract", () => {
       modelfile: "FROM x",
       parameters: [{ key: "stop", value: " line one\nline two " }],
       parameterError: null,
+      promptTier: "compact",
     });
   });
 
@@ -46,6 +49,7 @@ describe("ModelfileViewer data contract", () => {
       expect(screen.getByTestId("semantic-parameters").textContent).toBe(
         "stop: line one\nline two ",
       );
+      expect(screen.getByTestId("prompt-tier")).toHaveTextContent("compact");
     });
     expect(mocks.invoke).toHaveBeenCalledWith("get_modelfile", {
       name: "gemma4:e2b",
@@ -57,6 +61,7 @@ describe("ModelfileViewer data contract", () => {
       modelfile: "FROM x\nPARAMETER stop oversized",
       parameters: null,
       parameterError: "ollama-invalid-response",
+      promptTier: "detailed",
     });
 
     render(<ModelfileViewer modelName="large:latest" onBack={vi.fn()} />);

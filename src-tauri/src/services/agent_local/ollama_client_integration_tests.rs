@@ -52,7 +52,7 @@ async fn model_editor_data_uses_the_authoritative_parameter_summary() {
     let server = MockServer::start().await;
     Mock::given(method("POST"))
         .and(path("/api/show"))
-        .and(body_json(serde_json::json!({ "model": "quoted:latest" })))
+        .and(body_json(serde_json::json!({ "model": "quoted:70b" })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "modelfile": concat!(
                 "FROM x\n",
@@ -62,7 +62,8 @@ async fn model_editor_data_uses_the_authoritative_parameter_summary() {
             "parameters": concat!(
                 "stop                           \"\\\"User:\\\"\"\n",
                 "stop                           \"Assistant: \""
-            )
+            ),
+            "details": { "parameter_size": "7B" }
         })))
         .expect(1)
         .mount(&server)
@@ -70,7 +71,7 @@ async fn model_editor_data_uses_the_authoritative_parameter_summary() {
 
     let client = OllamaClient::with_base_url(&server.uri()).expect("loopback test server");
     let data = client
-        .get_model_editor_data("quoted:latest")
+        .get_model_editor_data("quoted:70b")
         .await
         .expect("model editor data");
 
@@ -80,6 +81,7 @@ async fn model_editor_data_uses_the_authoritative_parameter_summary() {
     assert_eq!(parameters[1].value, "Assistant: ");
     assert_eq!(data.parameter_error, None);
     assert!(data.modelfile.starts_with("FROM x\n"));
+    assert_eq!(data.prompt_tier, super::system_prompt_types::PromptTier::Compact);
 }
 
 #[tokio::test]

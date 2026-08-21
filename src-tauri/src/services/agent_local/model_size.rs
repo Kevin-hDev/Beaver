@@ -1,17 +1,37 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum PromptTier {
-    Compact,
-    Detailed,
-}
+use super::system_prompt_types::PromptTier;
 
-const THRESHOLD_B: f64 = 25.0;
+const MAX_COMPACT_B: f64 = 25.0;
 
 pub fn detect_tier(model: &str) -> PromptTier {
     match extract_param_billions(model) {
-        Some(b) if b < THRESHOLD_B => PromptTier::Compact,
+        Some(b) if b <= MAX_COMPACT_B => PromptTier::Compact,
         Some(_) => PromptTier::Detailed,
         None => infer_from_keywords(model),
     }
+}
+
+/// Ollama metadata is authoritative; the model name is only a fallback for
+/// older or incomplete `/api/show` responses.
+pub fn detect_ollama_tier(parameter_size: &str, model: &str) -> PromptTier {
+    parse_parameter_size(parameter_size).unwrap_or_else(|| detect_tier(model))
+}
+
+fn parse_parameter_size(parameter_size: &str) -> Option<PromptTier> {
+    let normalized = parameter_size.trim().to_ascii_lowercase();
+    let billions = if let Some(value) = normalized.strip_suffix('b') {
+        value.trim().parse::<f64>().ok()?
+    } else {
+        let value = normalized.strip_suffix('m')?;
+        value.trim().parse::<f64>().ok()? / 1_000.0
+    };
+    if !billions.is_finite() || billions < 0.0 {
+        return None;
+    }
+    Some(if billions <= MAX_COMPACT_B {
+        PromptTier::Compact
+    } else {
+        PromptTier::Detailed
+    })
 }
 
 fn extract_param_billions(model: &str) -> Option<f64> {
@@ -51,7 +71,7 @@ mod tests {
         assert_eq!(detect_tier("qwen3-7b"), PromptTier::Compact);
         assert_eq!(detect_tier("llama-3.3-8b"), PromptTier::Compact);
         assert_eq!(detect_tier("model-24b"), PromptTier::Compact);
-        assert_eq!(detect_tier("model-25b"), PromptTier::Detailed);
+        assert_eq!(detect_tier("model-25b"), PromptTier::Compact);
         assert_eq!(detect_tier("model-24.5b"), PromptTier::Compact);
         assert_eq!(detect_tier("model-25.5b"), PromptTier::Detailed);
         assert_eq!(detect_tier("qwen3-32b"), PromptTier::Detailed);
@@ -60,5 +80,18 @@ mod tests {
         assert_eq!(detect_tier("mistral-large-3"), PromptTier::Detailed);
         assert_eq!(detect_tier("deepseek-chat"), PromptTier::Detailed);
         assert_eq!(detect_tier("gpt-5"), PromptTier::Detailed);
+    }
+
+    #[test]
+    fn ollama_parameter_size_is_authoritative_over_the_model_name() {
+        assert_eq!(
+            detect_ollama_tier("7B", "misleading:70b"),
+            PromptTier::Compact
+        );
+        assert_eq!(
+            detect_ollama_tier("26B", "misleading:2b"),
+            PromptTier::Detailed
+        );
+        assert_eq!(detect_ollama_tier("", "fallback:25b"), PromptTier::Compact);
     }
 }

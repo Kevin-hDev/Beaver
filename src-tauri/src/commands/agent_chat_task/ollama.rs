@@ -46,8 +46,9 @@ pub(crate) async fn run(
     let ollama_think = resolve_ollama_think(&params);
     let prompt_mode =
         crate::services::agent_local::system_prompt_defaults::mode_for_permission(&mode.mode);
-    let prompt_tier =
-        crate::services::agent_local::system_prompt_defaults::tier_for_model(&params.model);
+    let prompt_tier = ctx.prompt_tier.unwrap_or_else(|| {
+        crate::services::agent_local::system_prompt_defaults::tier_for_model(&params.model)
+    });
     let beaver_prompt = crate::services::agent_local::system_prompt_defaults::beaver_prompt(
         prompt_mode,
         prompt_tier,

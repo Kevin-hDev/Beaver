@@ -27,8 +27,5 @@ pub fn mode_for_permission(permission_mode: &str) -> PromptMode {
 }
 
 pub fn tier_for_model(model: &str) -> PromptTier {
-    match super::model_size::detect_tier(model) {
-        super::model_size::PromptTier::Compact => PromptTier::Compact,
-        super::model_size::PromptTier::Detailed => PromptTier::Detailed,
-    }
+    super::model_size::detect_tier(model)
 }

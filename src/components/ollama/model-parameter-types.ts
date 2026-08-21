@@ -7,4 +7,5 @@ export interface OllamaModelEditorData {
   modelfile: string;
   parameters: ModelParameter[] | null;
   parameterError: string | null;
+  promptTier: "compact" | "detailed";
 }

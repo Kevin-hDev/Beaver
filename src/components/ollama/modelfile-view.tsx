@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { SettingsCard } from "@/components/settings/settings-card";
 import { SystemPromptSettingsPanel } from "@/components/system-prompts/system-prompt-settings-panel";
-import { systemPromptTierForModel } from "@/lib/system-prompt-tiers";
+import type { SystemPromptTier } from "@/types/system-prompts";
 import "./ollama.css";
 import "./modelfile-view.css";
 
@@ -10,6 +10,7 @@ interface ModelfileViewProps {
   parameters: { key: string; value: string }[] | null;
   parameterError: string | null;
   modelfile: string;
+  promptTier: SystemPromptTier;
   onEditParameters: () => void;
 }
 
@@ -18,6 +19,7 @@ export function ModelfileView({
   parameters,
   parameterError,
   modelfile,
+  promptTier,
   onEditParameters,
 }: ModelfileViewProps) {
   const { t } = useTranslation();
@@ -29,7 +31,8 @@ export function ModelfileView({
         target={{ scope: "ollama", model: modelName }}
         warningKind="ollama"
         initialMode="agentic"
-        initialTier={systemPromptTierForModel(modelName)}
+        initialTier={promptTier}
+        fixedTier={promptTier}
       />
 
       <SettingsCard className="mfv-parameters-card">

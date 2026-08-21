@@ -1,9 +1,11 @@
 use crate::services::agent_local::modelfile_parser::parse_modelfile;
 use crate::services::agent_local::ollama_client::OllamaClient;
+use crate::services::agent_local::system_prompt_types::PromptTier;
 
 pub struct ContextWindows {
     pub native: u64,
     pub configured: u64,
+    pub prompt_tier: Option<PromptTier>,
 }
 
 pub async fn resolve_ollama(model: &str) -> ContextWindows {
@@ -17,7 +19,11 @@ pub async fn resolve_ollama(model: &str) -> ContextWindows {
             native
         }
     });
-    ContextWindows { native, configured }
+    ContextWindows {
+        native,
+        configured,
+        prompt_tier: Some(info.prompt_tier),
+    }
 }
 
 pub async fn resolve_api(provider: &str, model: &str) -> ContextWindows {
@@ -25,12 +31,14 @@ pub async fn resolve_api(provider: &str, model: &str) -> ContextWindows {
     ContextWindows {
         native,
         configured: native,
+        prompt_tier: None,
     }
 }
 
 struct OllamaModelContext {
     context_length: u64,
     num_ctx_from_modelfile: Option<u64>,
+    prompt_tier: PromptTier,
 }
 
 async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
@@ -38,12 +46,14 @@ async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
         return OllamaModelContext {
             context_length: 0,
             num_ctx_from_modelfile: None,
+            prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
         };
     };
     let Ok(base_url) = ollama.base_url().await else {
         return OllamaModelContext {
             context_length: 0,
             num_ctx_from_modelfile: None,
+            prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
         };
     };
     let client = reqwest::Client::new();
@@ -59,10 +69,15 @@ async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
             return OllamaModelContext {
                 context_length: 0,
                 num_ctx_from_modelfile: None,
+                prompt_tier: crate::services::agent_local::model_size::detect_tier(model),
             }
         }
     };
 
+    ollama_model_context_from_json(model, &json)
+}
+
+fn ollama_model_context_from_json(model: &str, json: &serde_json::Value) -> OllamaModelContext {
     let mi = &json["model_info"];
     let arch = mi["general.architecture"].as_str().unwrap_or("");
     let context_length = mi[format!("{arch}.context_length")].as_u64().unwrap_or(0);
@@ -78,6 +93,12 @@ async fn fetch_ollama_model_info(model: &str) -> OllamaModelContext {
     OllamaModelContext {
         context_length,
         num_ctx_from_modelfile: num_ctx,
+        prompt_tier: crate::services::agent_local::model_size::detect_ollama_tier(
+            json["details"]["parameter_size"]
+                .as_str()
+                .unwrap_or_default(),
+            model,
+        ),
     }
 }
 
@@ -113,9 +134,27 @@ mod tests {
         let ctx = ContextWindows {
             native: 131_072,
             configured: 32_768,
+            prompt_tier: None,
         };
         assert_eq!(ctx.native, 131_072);
         assert_eq!(ctx.configured, 32_768);
+    }
+
+    #[test]
+    fn ollama_context_uses_parameter_size_for_the_runtime_prompt_tier() {
+        let context = ollama_model_context_from_json(
+            "misleading:70b",
+            &serde_json::json!({
+                "details": { "parameter_size": "7B" },
+                "model_info": {
+                    "general.architecture": "gemma",
+                    "gemma.context_length": 8192
+                }
+            }),
+        );
+
+        assert_eq!(context.prompt_tier, PromptTier::Compact);
+        assert_eq!(context.context_length, 8192);
     }
 
     #[tokio::test]

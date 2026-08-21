@@ -178,6 +178,7 @@ impl OllamaClient {
             modelfile: info.modelfile,
             parameters,
             parameter_error,
+            prompt_tier: super::model_size::detect_ollama_tier(&info.parameter_size, name),
         })
     }
 

@@ -75,7 +75,7 @@ describe("SystemPromptSettingsPanel", () => {
       />,
     );
     await screen.findByText("Beaver instructions");
-    expect(screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact < 25B" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact ≤ 25B" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("tab", { name: "settings.systemPrompt.modes.chatbot" }));
     fireEvent.click(screen.getByRole("tab", { name: /settings.systemPrompt.tiers.compact/ }));
@@ -180,6 +180,7 @@ describe("SystemPromptSettingsPanel", () => {
         warningKind="ollama"
         initialMode="agentic"
         initialTier="compact"
+        fixedTier="compact"
       />,
     );
     await screen.findByText("Beaver instructions");
@@ -189,8 +190,14 @@ describe("SystemPromptSettingsPanel", () => {
       screen.getByRole("tab", { name: "settings.systemPrompt.modes.agentic" }),
     );
     expect(row).toContainElement(
-      screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact < 25B" }),
+      screen.getByRole("tab", { name: "settings.systemPrompt.tiers.compact ≤ 25B" }),
     );
+    expect(screen.queryByRole("tab", { name: /settings.systemPrompt.tiers.detailed/ })).toBeNull();
+    expect(invoke).toHaveBeenLastCalledWith("get_system_prompt_setting", {
+      target: { scope: "ollama", model: "gemma4:e2b" },
+      mode: "agentic",
+      tier: "compact",
+    });
   });
 
   it("utilise Beaver seulement pour la combinaison sélectionnée", async () => {

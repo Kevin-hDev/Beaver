@@ -17,6 +17,7 @@ describe("ModelfileView parameter error", () => {
         parameters={null}
         parameterError="errors.localStore.ollamaResponseInvalid"
         modelfile={"FROM x\nPARAMETER stop oversized"}
+        promptTier="detailed"
         onEditParameters={vi.fn()}
       />,
     );

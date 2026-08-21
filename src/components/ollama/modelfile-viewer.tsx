@@ -24,6 +24,7 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
   const [modelfile, setModelfile] = useState("");
   const [parameters, setParameters] = useState<ModelParameter[] | null>([]);
   const [parameterError, setParameterError] = useState<string | null>(null);
+  const [promptTier, setPromptTier] = useState<"compact" | "detailed" | null>(null);
   const [loadErrorKey, setLoadErrorKey] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("view");
   const [loading, setLoading] = useState(true);
@@ -47,12 +48,14 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
         setModelfile(data.modelfile);
         setParameters(data.parameters);
         setParameterError(data.parameterError);
+        setPromptTier(data.promptTier);
         setLoadErrorKey(null);
       })
       .catch((cause: unknown) => {
         setModelfile("");
         setParameters(null);
         setParameterError(null);
+        setPromptTier(null);
         setLoadErrorKey(localStoreErrorMessage(cause, (key) => key));
       });
   }, [modelName]);
@@ -108,7 +111,7 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
       onSave={(c) => { setModelfile(c); setMode("view"); }}
       onCancel={() => setMode("view")}
     />
-  ) : (
+  ) : promptTier !== null ? (
     <ModelfileView
       modelName={modelName}
       parameters={parameters}
@@ -116,8 +119,11 @@ export function ModelfileViewer({ modelName, onBack, onDeleted }: ModelfileViewe
         ? t(loadErrorKey)
         : parameterError ? localStoreErrorMessage(parameterError, t) : null}
       modelfile={modelfile}
+      promptTier={promptTier}
       onEditParameters={() => setMode("edit-parameters")}
     />
+  ) : (
+    <div role="alert">{t(loadErrorKey ?? "errors.localStore.ollamaResponseInvalid")}</div>
   );
 
   return (

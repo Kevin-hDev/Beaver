@@ -9,6 +9,7 @@ interface SystemPromptSelectorsProps {
   tier: SystemPromptTier;
   onModeChange: (mode: SystemPromptMode) => void;
   onTierChange: (tier: SystemPromptTier) => void;
+  fixedTier?: SystemPromptTier;
 }
 
 export function SystemPromptSelectors({
@@ -16,17 +17,20 @@ export function SystemPromptSelectors({
   tier,
   onModeChange,
   onTierChange,
+  fixedTier,
 }: SystemPromptSelectorsProps) {
   const { t } = useTranslation();
   const modes = useMemo(() => [
     { id: "chatbot" as const, label: t("settings.systemPrompt.modes.chatbot") },
     { id: "agentic" as const, label: t("settings.systemPrompt.modes.agentic") },
   ], [t]);
-  const tiers = useMemo(() => SYSTEM_PROMPT_TIER_OPTIONS.map((item) => ({
+  const tiers = useMemo(() => SYSTEM_PROMPT_TIER_OPTIONS
+    .filter((item) => fixedTier === undefined || item.id === fixedTier)
+    .map((item) => ({
     id: item.id,
     label: t(`settings.systemPrompt.tiers.${item.id}`),
     hint: item.range,
-  })), [t]);
+  })), [fixedTier, t]);
 
   return (
     <div className="spp-selectors">

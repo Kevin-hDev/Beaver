@@ -32,6 +32,7 @@ interface SystemPromptSettingsPanelProps {
   warningKind: SystemPromptWarningKind;
   initialMode: SystemPromptMode;
   initialTier: SystemPromptTier;
+  fixedTier?: SystemPromptTier;
 }
 
 export function SystemPromptSettingsPanel({
@@ -39,10 +40,11 @@ export function SystemPromptSettingsPanel({
   warningKind,
   initialMode,
   initialTier,
+  fixedTier,
 }: SystemPromptSettingsPanelProps) {
   const { t } = useTranslation();
   const [mode, setMode] = useState(initialMode);
-  const [tier, setTier] = useState(initialTier);
+  const [tier, setTier] = useState(fixedTier ?? initialTier);
   const [view, setView] = useState<SystemPromptView | null>(null);
   const [editing, setEditing] = useState(false);
   const [warning, setWarning] = useState(false);
@@ -167,6 +169,7 @@ export function SystemPromptSettingsPanel({
         tier={tier}
         onModeChange={selectMode}
         onTierChange={selectTier}
+        fixedTier={fixedTier}
       />
       {editing && view ? (
         <SystemPromptEditorCard
