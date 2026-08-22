@@ -57,17 +57,7 @@ pub fn validate_wakeup(wakeup: &ScheduledWakeup) -> Result<(), String> {
         &wakeup.description,
         &wakeup.schedule,
         wakeup.active,
-    )?;
-    if wakeup.skill_ids.len() > 8 || wakeup.tool_names.len() > 12 {
-        return Err("Automatisation trop grande".into());
-    }
-    if wakeup.agentic {
-        let path = std::path::Path::new(&wakeup.working_dir);
-        if !path.is_absolute() || !path.is_dir() {
-            return Err("Dossier d'automatisation invalide".into());
-        }
-    }
-    Ok(())
+    )
 }
 
 fn validate_provider(provider: &str) -> Result<(), String> {

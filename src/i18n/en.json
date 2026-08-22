@@ -745,6 +745,8 @@
       "name": "Name",
       "provider": "Provider",
       "model": "Model",
+      "project": "Project",
+      "beaverWorkspace": "Beaver workspace",
       "pickModel": "Pick a model",
       "noToolCapable": "No tool-capable model",
       "prompt": "Prompt",

@@ -3,59 +3,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChatMessage {
-    pub role: String, // "system" | "user" | "assistant" | "tool"
-    pub content: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tool_call_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tool_calls: Option<Vec<ToolCall>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolCall {
-    pub id: String,
-    #[serde(rename = "type")]
-    pub call_type: String, // toujours "function" pour OpenAI-compat
-    pub function: ToolFunction,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolFunction {
-    pub name: String,
-    pub arguments: String, // JSON stringifié (format OpenAI)
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolDefinition {
-    #[serde(rename = "type")]
-    pub tool_type: String, // "function"
-    pub function: ToolFunctionDef,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolFunctionDef {
-    pub name: String,
-    pub description: String,
-    pub parameters: serde_json::Value, // JSON schema
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ChatRequest {
-    pub model: String,
-    pub messages: Vec<ChatMessage>,
-    pub tools: Vec<ToolDefinition>,
-    pub max_tokens: Option<u32>,
-    pub temperature: Option<f32>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ChatResponse {
-    pub content: String,
-    pub usage: crate::services::provider_usage::RequestUsage,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]

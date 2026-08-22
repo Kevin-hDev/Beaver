@@ -14,10 +14,7 @@ export interface ScheduledWakeup {
   active: boolean;
   paused_by_global: boolean;
   created_at: string;
-  agentic?: boolean;
-  working_dir?: string;
-  skill_ids?: string[];
-  tool_names?: string[];
+  project_id?: string;
 }
 
 export interface CreateWakeupInput {
@@ -27,6 +24,7 @@ export interface CreateWakeupInput {
   prompt: string;
   schedule: WakeupSchedule;
   description: string;
+  project_id?: string;
 }
 
 export interface HeartbeatConfig {

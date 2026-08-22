@@ -740,6 +740,8 @@
       "name": "Nombre",
       "provider": "Proveedor",
       "model": "Modelo",
+      "project": "Proyecto",
+      "beaverWorkspace": "Espacio de trabajo de Beaver",
       "pickModel": "Elegir un modelo",
       "noToolCapable": "Ningún modelo compatible con herramientas",
       "prompt": "Prompt",

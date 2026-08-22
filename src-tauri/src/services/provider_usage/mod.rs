@@ -80,17 +80,6 @@ pub async fn record_for_session(
     record(connection_id, model, origin, workload, usage).await;
 }
 
-pub async fn record_automation(connection_id: &str, model: &str, usage: Option<&RequestUsage>) {
-    record(
-        connection_id,
-        model,
-        types::UsageOrigin::Automation,
-        UsageWorkload::Primary,
-        usage,
-    )
-    .await;
-}
-
 async fn record(
     connection_id: &str,
     model: &str,

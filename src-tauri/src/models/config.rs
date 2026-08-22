@@ -139,18 +139,12 @@ pub struct ScheduledWakeup {
     pub schedule: WakeupSchedule,
     #[serde(default)]
     pub description: String,
+    #[serde(default)]
+    pub project_id: Option<String>,
     pub active: bool,
     #[serde(default)]
     pub paused_by_global: bool,
     pub created_at: String,
-    #[serde(default)]
-    pub agentic: bool,
-    #[serde(default)]
-    pub working_dir: String,
-    #[serde(default)]
-    pub skill_ids: Vec<String>,
-    #[serde(default)]
-    pub tool_names: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

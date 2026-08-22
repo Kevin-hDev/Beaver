@@ -48,11 +48,12 @@ fn context_names_are_sanitized_and_bounded() {
 
 #[tokio::test]
 async fn current_session_can_open_a_historical_analysis() {
-    let session = crate::services::agent_local::session_store::create_with_flags(
+    let session = crate::services::agent_local::session_store::create_full(
         "Session active",
         "model",
         "provider",
         false,
+        None,
     )
     .await
     .expect("create session");

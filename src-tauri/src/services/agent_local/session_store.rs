@@ -7,15 +7,6 @@ pub(crate) use super::session_locks::lock_session;
 pub use super::session_locks::remove_session_lock;
 pub use super::session_store_messages::{add_messages, add_messages_with_context};
 
-pub async fn create_with_flags(
-    name: &str,
-    model: &str,
-    provider: &str,
-    is_heartbeat: bool,
-) -> Result<AgentSession, String> {
-    create_full(name, model, provider, is_heartbeat, None).await
-}
-
 pub async fn create_gateway(
     name: &str,
     model: &str,
@@ -91,23 +82,6 @@ pub async fn create_full(
     };
     save(&session).await?;
     Ok(session)
-}
-
-/// Cherche la conversation heartbeat existante pour un couple (provider, model).
-/// Retourne la plus récente si plusieurs existent, `None` sinon.
-pub async fn find_heartbeat_session(provider: &str, model: &str) -> Result<Option<String>, String> {
-    let metas = crate::services::agent_local::session_index::read_index().await?;
-    let best = metas
-        .iter()
-        .filter(|m| {
-            super::session_archive::is_active(m)
-                && m.is_heartbeat
-                && m.provider == provider
-                && m.model == model
-        })
-        .max_by_key(|m| super::session_archive::activity_at(m))
-        .map(|m| m.id.clone());
-    Ok(best)
 }
 
 pub async fn get(id: &str) -> Result<AgentSession, String> {

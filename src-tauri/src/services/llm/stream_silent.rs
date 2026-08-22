@@ -2,66 +2,11 @@
     clippy::too_many_arguments,
     reason = "orchestration boundary keeps related runtime context explicit"
 )]
-use super::stream_http::{
-    post_chat_request_measured, post_chat_request_with_timeout_measured, RequestConfig,
-};
+use super::stream_http::{post_chat_request_with_timeout_measured, RequestConfig};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::agent_local::types_ollama::StreamResult;
 use crate::services::llm::request_purpose::RequestPurpose;
 use tokio_util::sync::CancellationToken;
-
-pub async fn collect_chat_silent(
-    provider_id: &str,
-    model: &str,
-    messages: &[ChatMessage],
-    purpose: RequestPurpose,
-    session_id: Option<&str>,
-    cancel: CancellationToken,
-) -> Result<StreamResult, String> {
-    let request_id = uuid::Uuid::new_v4().to_string();
-    let mut measurement = super::stream_metrics::start(
-        provider_id,
-        model,
-        session_id,
-        &request_id,
-        None,
-        1,
-        crate::services::provider_usage::UsageWorkload::Primary,
-    );
-    let result = if provider_id == "codex-oauth" {
-        crate::services::codex_client::stream::collect_chat_silent(
-            model,
-            messages,
-            &[],
-            None,
-            None,
-            session_id,
-            cancel,
-            measurement.as_mut(),
-        )
-        .await
-    } else {
-        let cfg = request_config(provider_id, model, messages, None, purpose, session_id);
-        match post_chat_request_measured(&cfg, measurement.as_mut()).await {
-            Ok(resp) => {
-                super::stream_silent_consume::consume_silent(
-                    resp,
-                    cancel,
-                    super::timeouts::idle_timeout_for(provider_id),
-                    crate::services::provider_usage::UsageContext::chat(
-                        crate::services::llm::route::canonical_provider_id(provider_id),
-                        model,
-                    ),
-                    measurement.as_mut(),
-                )
-                .await
-            }
-            Err(error) => Err(error.to_string()),
-        }
-    };
-    super::stream_metrics::finish_silent(measurement, &result).await;
-    result
-}
 
 pub async fn collect_chat_silent_for_compression(
     provider_id: &str,

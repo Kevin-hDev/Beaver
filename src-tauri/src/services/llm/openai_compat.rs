@@ -4,7 +4,7 @@ use super::openai_compat_models;
 use super::openai_compat_parsing::{map_error_status, parse_models_list};
 use super::request_purpose::RequestPurpose;
 use super::route::{self, LlmRoute, RouteError};
-use super::types::{ChatRequest, ChatResponse, LlmError, ModelInfo};
+use super::types::{LlmError, ModelInfo};
 use crate::services::secure_http::{read_json_bounded, AuthenticatedClient, LLM_BODY_LIMIT};
 
 pub struct OpenAiCompatProvider {
@@ -45,15 +45,6 @@ impl OpenAiCompatProvider {
         } else {
             parse_models_list(&body, canonical)
         }
-    }
-
-    pub async fn chat_completion_for_session(
-        &self,
-        request: ChatRequest,
-        purpose: RequestPurpose,
-        session_id: Option<&str>,
-    ) -> Result<ChatResponse, LlmError> {
-        super::openai_compat_chat::chat_completion(self, request, purpose, session_id).await
     }
 
     pub async fn test_connection(&self) -> Result<(), LlmError> {

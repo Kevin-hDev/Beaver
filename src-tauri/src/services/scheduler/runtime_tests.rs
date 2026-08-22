@@ -22,13 +22,10 @@ fn daily_wakeup(
             time: scheduled_for.format("%H:%M").to_string(),
         },
         description: String::new(),
+        project_id: None,
         active: true,
         paused_by_global: false,
         created_at: "2026-05-17T00:00:00Z".into(),
-        agentic: false,
-        working_dir: String::new(),
-        skill_ids: Vec::new(),
-        tool_names: Vec::new(),
     }
 }
 

@@ -7,34 +7,8 @@ use eventsource_stream::Eventsource;
 use futures_util::StreamExt;
 use tokio_util::sync::CancellationToken;
 
-use super::limits::{MAX_STREAM_TEXT_BYTES, STREAM_STALL_TIMEOUT};
+use super::limits::MAX_STREAM_TEXT_BYTES;
 use super::{request, stream_measurement::StreamMeasurement, stream_protocol};
-
-pub async fn collect_chat_silent(
-    model: &str,
-    messages: &[ChatMessage],
-    tools: &[serde_json::Value],
-    reasoning_mode: Option<&str>,
-    max_output_tokens: Option<u32>,
-    session_id: Option<&str>,
-    cancel: CancellationToken,
-    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
-) -> Result<StreamResult, String> {
-    let mut measurement = StreamMeasurement::new(measurement);
-    let resp =
-        request::post_codex_stream(model, messages, tools, reasoning_mode, session_id, &cancel)
-            .await?;
-    measurement.mark_headers();
-    consume_sse_silent(
-        resp,
-        cancel,
-        STREAM_STALL_TIMEOUT,
-        max_output_tokens,
-        model,
-        &mut measurement,
-    )
-    .await
-}
 
 pub async fn collect_chat_silent_for_compression(
     model: &str,

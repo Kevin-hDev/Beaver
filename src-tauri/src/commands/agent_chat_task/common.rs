@@ -31,22 +31,31 @@ pub(crate) struct PromptContext<'a> {
     pub memory_context: Option<String>,
 }
 
-pub(crate) async fn resolve_permission_mode(override_mode: Option<&str>) -> StreamMode {
+pub(crate) async fn resolve_permission_mode(requested: &super::StreamPermissionMode) -> StreamMode {
     let stored = agent_settings::get_permission_mode().await;
-    let mode = match override_mode {
-        Some(m) if matches!(m, "auto" | "manual" | "chat" | "subagent") => {
-            if is_more_permissive(m, &stored) {
-                stored
-            } else {
-                m.to_string()
-            }
-        }
-        _ => stored,
-    };
+    let mode = select_permission_mode(requested, &stored);
     StreamMode {
         is_chat: mode == "chat",
         is_subagent: mode == "subagent",
         mode,
+    }
+}
+
+fn select_permission_mode(requested: &super::StreamPermissionMode, stored: &str) -> String {
+    match requested {
+        // Un réveil est une exécution locale explicitement programmée : son contrat
+        // produit est le même que celui d'une session manuelle en accès complet.
+        super::StreamPermissionMode::FullAccess => "auto".to_string(),
+        super::StreamPermissionMode::Bounded(override_mode) => match override_mode.as_deref() {
+            Some(m) if matches!(m, "auto" | "manual" | "chat" | "subagent") => {
+                if is_more_permissive(m, stored) {
+                    stored.to_string()
+                } else {
+                    m.to_string()
+                }
+            }
+            _ => stored.to_string(),
+        },
     }
 }
 
@@ -192,4 +201,24 @@ fn permission_level(mode: &str) -> u8 {
 
 fn is_more_permissive(requested: &str, stored: &str) -> bool {
     permission_level(requested) > permission_level(stored)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scheduled_full_access_is_not_clamped_by_manual_settings() {
+        let selected =
+            select_permission_mode(&super::super::StreamPermissionMode::FullAccess, "manual");
+
+        assert_eq!(selected, "auto");
+    }
+
+    #[test]
+    fn ordinary_requests_remain_bounded_by_manual_settings() {
+        let requested = super::super::StreamPermissionMode::Bounded(Some("auto".into()));
+
+        assert_eq!(select_permission_mode(&requested, "manual"), "manual");
+    }
 }

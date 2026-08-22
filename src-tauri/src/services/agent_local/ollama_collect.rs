@@ -4,32 +4,6 @@ use crate::services::agent_local::ollama_wire;
 use crate::services::agent_local::types_ollama::ChatMessage;
 use std::time::Duration;
 
-const COLLECT_TIMEOUT_SECS: u64 = 180;
-
-/// Appel Ollama non-interactif (sans streaming UI).
-pub async fn collect_chat(
-    ollama: &OllamaClient,
-    model: &str,
-    messages: Vec<ChatMessage>,
-) -> Result<(String, u32), String> {
-    collect_chat_with_timeout(
-        ollama,
-        model,
-        messages,
-        Duration::from_secs(COLLECT_TIMEOUT_SECS),
-    )
-    .await
-}
-
-pub async fn collect_chat_with_timeout(
-    ollama: &OllamaClient,
-    model: &str,
-    messages: Vec<ChatMessage>,
-    timeout: Duration,
-) -> Result<(String, u32), String> {
-    collect_chat_with_timeout_and_limit(ollama, model, messages, timeout, None).await
-}
-
 pub async fn collect_chat_with_timeout_and_limit(
     ollama: &OllamaClient,
     model: &str,

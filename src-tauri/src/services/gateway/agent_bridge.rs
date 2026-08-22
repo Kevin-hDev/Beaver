@@ -153,7 +153,9 @@ impl GatewayAgentBridge {
             outputs_dir,
             capability_hints: StreamCapabilityHints::default(),
             reasoning_mode: None,
-            permission_mode_override: Some("auto".to_string()),
+            permission_mode: crate::commands::agent_chat_task::StreamPermissionMode::Bounded(Some(
+                "auto".to_string(),
+            )),
             permission_emitter: None,
             parent_message_inbox: None,
             subagent_profile: None,

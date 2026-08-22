@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Info, X } from "@/components/ui/icons";
+import { CustomSelect } from "@/components/ui/custom-select";
 import type { CreateWakeupInput, ScheduledWakeup, WakeupSchedule } from "@/types/wakeup";
 import { useAvailableModels, withoutInteractiveOnlyModels } from "@/hooks/use-available-models";
+import { useProjects } from "@/hooks/use-projects";
 import { SchedulePicker } from "./schedule-picker";
 import { WakeupField, WakeupModelFields } from "./wakeup-form-fields";
 import "./new-wakeup-dialog.css";
@@ -26,12 +28,14 @@ export function NewWakeupDialog({
 }: NewWakeupDialogProps) {
   const { t } = useTranslation();
   const { groups } = useAvailableModels();
+  const { projects } = useProjects();
   const heartbeatGroups = useMemo(() => withoutInteractiveOnlyModels(groups), [groups]);
   const [name, setName] = useState(initial?.name ?? "");
   const [provider, setProvider] = useState(initial?.provider ?? "ollama");
   const [model, setModel] = useState(initial?.model ?? "");
   const [prompt, setPrompt] = useState(initial?.prompt ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [projectId, setProjectId] = useState(initial?.project_id ?? "");
   const [schedule, setSchedule] = useState<WakeupSchedule>(
     initial?.schedule ?? defaultSchedule(),
   );
@@ -73,9 +77,26 @@ export function NewWakeupDialog({
     setError(null);
     try {
       if (initial) {
-        await onUpdate({ ...initial, name, provider, model, prompt, description, schedule });
+        await onUpdate({
+          ...initial,
+          name,
+          provider,
+          model,
+          prompt,
+          description,
+          schedule,
+          project_id: projectId || undefined,
+        });
       } else {
-        await onCreate({ name, model, provider, prompt, description, schedule });
+        await onCreate({
+          name,
+          model,
+          provider,
+          prompt,
+          description,
+          schedule,
+          project_id: projectId || undefined,
+        });
       }
       onClose();
     } catch (err) {
@@ -139,6 +160,18 @@ export function NewWakeupDialog({
             onProviderChange={setProvider}
             onModelChange={setModel}
           />
+
+          <WakeupField label={t("heartbeat.form.project")}>
+            <CustomSelect
+              value={projectId}
+              onChange={setProjectId}
+              ariaLabel={t("heartbeat.form.project")}
+              options={[
+                { value: "", label: t("heartbeat.form.beaverWorkspace") },
+                ...projects.map((project) => ({ value: project.id, label: project.name })),
+              ]}
+            />
+          </WakeupField>
 
           <WakeupField label={t("heartbeat.form.prompt")} required>
             <textarea

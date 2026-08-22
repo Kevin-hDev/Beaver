@@ -740,6 +740,8 @@
       "name": "名称",
       "provider": "提供商",
       "model": "模型",
+      "project": "项目",
+      "beaverWorkspace": "Beaver 工作区",
       "pickModel": "选择模型",
       "noToolCapable": "无支持工具的模型",
       "prompt": "提示词",

@@ -75,7 +75,9 @@ pub(super) async fn run_inner(
         outputs_dir: None,
         capability_hints: StreamCapabilityHints::default(),
         reasoning_mode: runtime_context.reasoning_mode,
-        permission_mode_override: Some(runtime_context.permission_mode),
+        permission_mode: crate::commands::agent_chat_task::StreamPermissionMode::Bounded(Some(
+            runtime_context.permission_mode,
+        )),
         permission_emitter: Some(permission_emitter),
         parent_message_inbox: None,
         subagent_profile: Some(profile),

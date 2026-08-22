@@ -745,6 +745,8 @@
       "name": "Nom",
       "provider": "Fournisseur",
       "model": "Modèle",
+      "project": "Projet",
+      "beaverWorkspace": "Espace de travail Beaver",
       "pickModel": "Choisir un modèle",
       "noToolCapable": "Aucun modèle tool-capable",
       "prompt": "Prompt",

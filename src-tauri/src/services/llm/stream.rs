@@ -89,4 +89,4 @@ pub async fn stream_chat_no_done(
     super::stream_metrics::finish_stream(measurement, &result).await;
     result
 }
-pub use super::stream_silent::{collect_chat_silent, collect_chat_silent_for_compression};
+pub use super::stream_silent::collect_chat_silent_for_compression;

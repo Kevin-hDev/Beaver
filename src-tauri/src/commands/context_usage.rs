@@ -23,7 +23,10 @@ pub async fn estimate_context_hidden_usage(
     plan_mode: Option<bool>,
     supports_tools: Option<bool>,
 ) -> Result<HiddenContextUsage, String> {
-    let mode = common::resolve_permission_mode(permission_mode.as_deref()).await;
+    let mode = common::resolve_permission_mode(
+        &super::agent_chat_task::StreamPermissionMode::Bounded(permission_mode),
+    )
+    .await;
     let Some(working_dir) =
         super::agent_working_dir::resolve_existing_for_session(&session_id, working_dir.as_deref())
             .await?

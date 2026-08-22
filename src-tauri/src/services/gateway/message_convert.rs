@@ -174,3 +174,40 @@ pub fn new_user_agent_message(content: &str) -> AgentMessage {
         stream_part: None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scheduled_history_keeps_tool_calls_and_results() {
+        let call = ToolCallOllama {
+            id: Some("call-1".into()),
+            extra_content: None,
+            function: ToolCallFunction {
+                name: "read_file".into(),
+                arguments: serde_json::json!({"path":"README.md"}),
+            },
+        };
+        let assistant = ChatMessage {
+            role: "assistant".into(),
+            tool_calls: Some(vec![call]),
+            ..Default::default()
+        };
+        let tool = ChatMessage {
+            role: "tool".into(),
+            content: "Beaver".into(),
+            tool_name: Some("read_file".into()),
+            tool_call_id: Some("call-1".into()),
+            ..Default::default()
+        };
+
+        let saved_call = chat_to_agent_message(&assistant).unwrap();
+        let saved_result = chat_to_agent_message(&tool).unwrap();
+
+        assert_eq!(saved_call.tool_calls.unwrap()[0].function.name, "read_file");
+        assert_eq!(saved_result.role, "tool");
+        assert_eq!(saved_result.tool_name.as_deref(), Some("read_file"));
+        assert_eq!(saved_result.content, "Beaver");
+    }
+}

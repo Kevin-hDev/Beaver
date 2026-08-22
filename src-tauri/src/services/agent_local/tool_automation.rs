@@ -5,10 +5,10 @@ use serde_json::{json, Value};
 use std::path::Path;
 use uuid::Uuid;
 
-pub async fn execute(args: &Value, working_dir: &Path, session_id: &str) -> ToolResult {
+pub async fn execute(args: &Value, _working_dir: &Path, session_id: &str) -> ToolResult {
     match args["action"].as_str() {
         Some("list") => list(),
-        Some("create") => create(args, working_dir, session_id).await,
+        Some("create") => create(args, session_id).await,
         Some("update") => update(args).await,
         Some("delete") => delete(args),
         _ => ToolResult::validation("automation_action_invalid", "Action d'automatisation invalide."),
@@ -21,7 +21,6 @@ fn list() -> ToolResult {
             let entries = config
                 .scheduled_wakeups
                 .into_iter()
-                .filter(|wakeup| wakeup.agentic)
                 .map(|wakeup| public_value(&wakeup))
                 .collect::<Vec<_>>();
             ToolResult::ok(serde_json::to_string_pretty(&entries).unwrap_or_else(|_| "[]".into()))
@@ -30,25 +29,13 @@ fn list() -> ToolResult {
     }
 }
 
-async fn create(args: &Value, working_dir: &Path, session_id: &str) -> ToolResult {
+async fn create(args: &Value, session_id: &str) -> ToolResult {
     let session = match super::session_store::get(session_id).await {
         Ok(session) => session,
         Err(_) => return validation::internal_error(),
     };
     let schedule = match validation::parse_schedule(args.get("schedule")) {
         Ok(value) => value, Err(result) => return result,
-    };
-    let skill_ids = match validation::validate_skills(args.get("skill_ids")).await {
-        Ok(value) => value, Err(result) => return result,
-    };
-    let tool_names = match validation::validate_tools(args.get("tool_names")) {
-        Ok(value) => value, Err(result) => return result,
-    };
-    let root = match working_dir.canonicalize() {
-        Ok(path) => path,
-        Err(_) => return ToolResult::validation(
-            "automation_directory_invalid", "Dossier d'automatisation invalide.",
-        ),
     };
     let wakeup = ScheduledWakeup {
         id: Uuid::new_v4().to_string(),
@@ -58,13 +45,10 @@ async fn create(args: &Value, working_dir: &Path, session_id: &str) -> ToolResul
         prompt: validation::text(args, "prompt"),
         schedule,
         description: validation::text(args, "description"),
+        project_id: session.project_id,
         active: args["active"].as_bool().unwrap_or(true),
         paused_by_global: false,
         created_at: chrono::Utc::now().to_rfc3339(),
-        agentic: true,
-        working_dir: root.to_string_lossy().to_string(),
-        skill_ids,
-        tool_names,
     };
     if let Err(error) = crate::commands::heartbeat_validation::validate_wakeup(&wakeup) {
         return ToolResult::validation("automation_invalid", error);
@@ -97,17 +81,7 @@ fn save_new(wakeup: ScheduledWakeup) -> ToolResult {
 async fn update(args: &Value) -> ToolResult {
     let id = validation::text(args, "id");
     let schedule = match optional_schedule(args) { Ok(value) => value, Err(result) => return result };
-    let skill_ids = if args.get("skill_ids").is_some() {
-        match validation::validate_skills(args.get("skill_ids")).await {
-            Ok(value) => Some(value), Err(result) => return result,
-        }
-    } else { None };
-    let tool_names = if args.get("tool_names").is_some() {
-        match validation::validate_tools(args.get("tool_names")) {
-            Ok(value) => Some(value), Err(result) => return result,
-        }
-    } else { None };
-    update_saved(args, &id, schedule, skill_ids, tool_names)
+    update_saved(args, &id, schedule)
 }
 
 fn optional_schedule(args: &Value) -> Result<Option<WakeupSchedule>, ToolResult> {
@@ -121,15 +95,13 @@ fn update_saved(
     args: &Value,
     id: &str,
     schedule: Option<WakeupSchedule>,
-    skill_ids: Option<Vec<String>>,
-    tool_names: Option<Vec<String>>,
 ) -> ToolResult {
     let result = crate::services::config::update_config(|config| {
         let globally_paused = config.heartbeat.global_paused;
         let wakeup = config.scheduled_wakeups.iter_mut()
-            .find(|wakeup| wakeup.id == id && wakeup.agentic)
+            .find(|wakeup| wakeup.id == id)
             .ok_or_else(|| "Automatisation introuvable".to_string())?;
-        apply_optional(args, wakeup, schedule, skill_ids, tool_names);
+        apply_optional(args, wakeup, schedule);
         if globally_paused && wakeup.active {
             wakeup.active = false;
             wakeup.paused_by_global = true;
@@ -157,7 +129,7 @@ fn delete(args: &Value) -> ToolResult {
     let id = validation::text(args, "id");
     let result = crate::services::config::update_config(|config| {
         let before = config.scheduled_wakeups.len();
-        config.scheduled_wakeups.retain(|wakeup| wakeup.id != id || !wakeup.agentic);
+        config.scheduled_wakeups.retain(|wakeup| wakeup.id != id);
         if config.scheduled_wakeups.len() == before { return Err("Automatisation introuvable".into()); }
         Ok(())
     });
@@ -174,16 +146,12 @@ fn apply_optional(
     args: &Value,
     wakeup: &mut ScheduledWakeup,
     schedule: Option<WakeupSchedule>,
-    skill_ids: Option<Vec<String>>,
-    tool_names: Option<Vec<String>>,
 ) {
     if let Some(value) = args["name"].as_str() { wakeup.name = value.to_string(); }
     if let Some(value) = args["description"].as_str() { wakeup.description = value.to_string(); }
     if let Some(value) = args["prompt"].as_str() { wakeup.prompt = value.to_string(); }
     if let Some(value) = args["active"].as_bool() { wakeup.active = value; }
     if let Some(value) = schedule { wakeup.schedule = value; }
-    if let Some(value) = skill_ids { wakeup.skill_ids = value; }
-    if let Some(value) = tool_names { wakeup.tool_names = value; }
 }
 
 pub(super) fn public_value(wakeup: &ScheduledWakeup) -> Value {
@@ -194,7 +162,6 @@ pub(super) fn public_value(wakeup: &ScheduledWakeup) -> Value {
         "prompt": wakeup.prompt,
         "schedule": wakeup.schedule,
         "active": wakeup.active,
-        "skill_ids": wakeup.skill_ids,
-        "tool_names": wakeup.tool_names,
+        "project_id": wakeup.project_id,
     })
 }

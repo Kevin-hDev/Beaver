@@ -18,6 +18,8 @@ pub struct CreateWakeupInput {
     pub schedule: WakeupSchedule,
     #[serde(default)]
     pub description: String,
+    #[serde(default)]
+    pub project_id: Option<String>,
 }
 
 #[tauri::command]
@@ -26,7 +28,7 @@ pub fn list_wakeups() -> Result<Vec<ScheduledWakeup>, String> {
 }
 
 #[tauri::command]
-pub fn create_wakeup(
+pub async fn create_wakeup(
     input: CreateWakeupInput,
     scheduler: State<'_, Scheduler>,
 ) -> Result<ScheduledWakeup, String> {
@@ -39,6 +41,7 @@ pub fn create_wakeup(
         &input.schedule,
         true,
     )?;
+    validate_project(input.project_id.as_deref()).await?;
 
     let wakeup = cfg::update_config(move |config| {
         validation::validate_capacity(config.scheduled_wakeups.len())?;
@@ -51,13 +54,10 @@ pub fn create_wakeup(
             prompt: input.prompt,
             schedule: input.schedule,
             description: input.description,
+            project_id: input.project_id,
             active: !globally_paused,
             paused_by_global: globally_paused,
             created_at: chrono::Utc::now().to_rfc3339(),
-            agentic: false,
-            working_dir: String::new(),
-            skill_ids: Vec::new(),
-            tool_names: Vec::new(),
         };
         config.scheduled_wakeups.push(wakeup.clone());
         Ok(wakeup)
@@ -67,10 +67,11 @@ pub fn create_wakeup(
 }
 
 #[tauri::command]
-pub fn update_wakeup(
+pub async fn update_wakeup(
     mut wakeup: ScheduledWakeup,
     scheduler: State<'_, Scheduler>,
 ) -> Result<(), String> {
+    validate_project(wakeup.project_id.as_deref()).await?;
     cfg::update_config(move |config| {
         if config.heartbeat.global_paused && wakeup.active {
             wakeup.active = false;
@@ -86,6 +87,13 @@ pub fn update_wakeup(
         Ok(())
     })?;
     scheduler.notify_config_changed();
+    Ok(())
+}
+
+async fn validate_project(project_id: Option<&str>) -> Result<(), String> {
+    if let Some(project_id) = project_id {
+        crate::services::agent_local::directory_access::project_path(project_id).await?;
+    }
     Ok(())
 }
 

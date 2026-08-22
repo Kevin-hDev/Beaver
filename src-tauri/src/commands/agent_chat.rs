@@ -137,7 +137,9 @@ pub async fn chat_stream(
                     supports_vision,
                 },
                 reasoning_mode,
-                permission_mode_override: permission_mode,
+                permission_mode: super::agent_chat_task::StreamPermissionMode::Bounded(
+                    permission_mode,
+                ),
                 permission_emitter: None,
                 parent_message_inbox: Some(task_inbox.clone()),
                 subagent_profile: None,

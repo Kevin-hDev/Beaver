@@ -1,14 +1,11 @@
 use crate::models::{ScheduledWakeup, WakeupSchedule};
-use crate::services::agent_local::ollama_stream;
 use crate::services::agent_local::session_store;
-use crate::services::agent_local::types_ollama::ChatMessage;
-use crate::services::agent_local::types_session::AgentMessage;
+use crate::services::gateway::message_convert;
 use crate::services::llm;
 use crate::services::scheduler::log;
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Local};
 use tauri::{AppHandle, Emitter};
 use tokio_util::sync::CancellationToken;
-use uuid::Uuid;
 
 pub(crate) use super::fire_once::{claim_once, run_wakeup_steps, WakeupStepOutcome};
 #[cfg(test)]
@@ -78,94 +75,42 @@ async fn dispatch(
     if llm::route::is_interactive_only(&wakeup.provider) {
         return Err("Provider réservé aux conversations manuelles".to_string());
     }
-    let session_id = find_or_create_heartbeat_session(&wakeup.provider, &wakeup.model).await?;
-    // Route selon provider : Ollama (local) ou LLM API (via catalog).
-    let (reply, tokens) = if wakeup.agentic {
-        super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?
-    } else {
-        let response = async {
-            if wakeup.provider == "ollama" {
-                ollama_stream::collect_chat(
-                    &wakeup.model,
-                    vec![ChatMessage {
-                        role: "user".into(),
-                        content: wakeup.prompt.clone(),
-                        images: None,
-                        tool_calls: None,
-                        tool_name: None,
-                        tool_call_id: None,
-                        reasoning_content: None,
-                    }],
-                )
-                .await
-            } else {
-                llm::collect_chat(
-                    &wakeup.provider,
-                    &wakeup.model,
-                    &wakeup.prompt,
-                    Some(&session_id),
-                )
-                .await
-            }
-        };
-        tokio::select! {
-            biased;
-            _ = cancel.cancelled() => return Err("cancelled".to_string()),
-            result = response => result?,
-        }
-    };
-
-    let user_msg = AgentMessage {
-        id: Uuid::new_v4().to_string(),
-        role: "user".into(),
-        content: wakeup.prompt.clone(),
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_activities: None,
-        segments: None,
-        files: Vec::new(),
-        timestamp: Utc::now(),
-        tokens: 0,
-        work_duration_ms: None,
-        skill_names: None,
-        stream_run_id: None,
-        stream_part: None,
-    };
-
-    let assistant_msg = AgentMessage {
-        id: Uuid::new_v4().to_string(),
-        role: "assistant".into(),
-        content: reply,
-        thinking: None,
-        tool_calls: None,
-        tool_name: None,
-        tool_activities: None,
-        segments: None,
-        files: Vec::new(),
-        timestamp: Utc::now(),
-        tokens,
-        work_duration_ms: None,
-        skill_names: None,
-        stream_run_id: None,
-        stream_part: None,
-    };
-
-    session_store::add_messages(&session_id, vec![user_msg, assistant_msg], tokens).await?;
-    Ok((session_id, tokens))
+    let session_id = create_heartbeat_session(wakeup).await?;
+    // Le scheduler ne possède pas de second moteur : tout réveil utilise le
+    // contexte et les outils de l'Agent Local en accès complet.
+    let result = super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?;
+    let mut messages = result
+        .messages
+        .iter()
+        .filter_map(message_convert::chat_to_agent_message)
+        .collect::<Vec<_>>();
+    if let Some(message) = messages
+        .iter_mut()
+        .rev()
+        .find(|message| message.role == "assistant")
+    {
+        message.tokens = result.tokens;
+    }
+    session_store::add_messages(&session_id, messages, result.tokens).await?;
+    Ok((session_id, result.tokens))
 }
 
-async fn find_or_create_heartbeat_session(provider: &str, model: &str) -> Result<String, String> {
-    if let Some(id) = session_store::find_heartbeat_session(provider, model).await? {
-        return Ok(id);
-    }
-    let name = if provider == "ollama" {
-        format!("Heartbeat • {}", model)
+async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, String> {
+    let name = if wakeup.provider == "ollama" {
+        format!("Heartbeat • {} • {}", wakeup.name, wakeup.model)
     } else {
-        format!("Heartbeat • {} • {}", provider, model)
+        format!(
+            "Heartbeat • {} • {} • {}",
+            wakeup.name, wakeup.provider, wakeup.model
+        )
     };
-    let session = session_store::create_with_flags(&name, model, provider, true).await?;
-    // La conserver même après un échec évite de supprimer une session déjà
-    // utilisée par un autre réveil concurrent et stabilise la clé de cache.
+    let session = session_store::create_full(
+        &name,
+        &wakeup.model,
+        &wakeup.provider,
+        true,
+        wakeup.project_id.clone(),
+    )
+    .await?;
     Ok(session.id)
 }

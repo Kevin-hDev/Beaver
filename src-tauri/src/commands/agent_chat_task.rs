@@ -13,7 +13,7 @@ mod session_events;
 pub(crate) mod tool_policy;
 mod workspace_prompt;
 
-pub(crate) use params::{StreamCapabilityHints, StreamTaskParams};
+pub(crate) use params::{StreamCapabilityHints, StreamPermissionMode, StreamTaskParams};
 
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::mascot::MascotSessionOutcome;
@@ -72,7 +72,7 @@ async fn run_stream_task_inner(mut params: StreamTaskParams) -> Result<Vec<ChatM
         return Ok(params.messages);
     }
 
-    let mode = common::resolve_permission_mode(params.permission_mode_override.as_deref()).await;
+    let mode = common::resolve_permission_mode(&params.permission_mode).await;
     let response_language = common::response_language();
     session_events::emit_started(&params.session_id, &mode.mode);
 

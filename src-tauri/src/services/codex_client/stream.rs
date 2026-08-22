@@ -16,7 +16,7 @@ use super::{
     stream_protocol, websocket,
 };
 
-pub use super::stream_silent::{collect_chat_silent, collect_chat_silent_for_compression};
+pub use super::stream_silent::collect_chat_silent_for_compression;
 
 pub async fn stream_chat_with_budget(
     on_event: &AgentEventEmitter,

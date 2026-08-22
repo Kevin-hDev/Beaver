@@ -23,13 +23,10 @@ fn once_wakeup(active: bool) -> ScheduledWakeup {
             datetime: "2026-08-12T10:00".into(),
         },
         description: String::new(),
+        project_id: None,
         active,
         paused_by_global: false,
         created_at: "2026-08-12T00:00:00Z".into(),
-        agentic: false,
-        working_dir: String::new(),
-        skill_ids: Vec::new(),
-        tool_names: Vec::new(),
     }
 }
 

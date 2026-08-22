@@ -1,16 +1,5 @@
-use super::openai_compat_parsing::{build_payload, parse_chat_response, parse_models_list};
-use super::types::ChatRequest;
+use super::openai_compat_parsing::parse_models_list;
 use serde_json::json;
-
-#[test]
-fn embedded_openrouter_errors_never_become_empty_successes() {
-    for body in [
-        json!({ "error": { "code": 429, "message": "private" } }),
-        json!({ "choices": [{ "finish_reason": "error", "message": {} }] }),
-    ] {
-        assert!(parse_chat_response(&body, "openrouter", "openai/gpt-5.6").is_err());
-    }
-}
 
 #[test]
 fn openrouter_models_use_supported_parameters_for_reasoning() {
@@ -211,35 +200,4 @@ fn openrouter_new_models_use_provider_specific_reasoning_modes() {
     );
     assert_eq!(grok.reasoning_modes, ["low", "medium", "high"]);
     assert_eq!(terra.reasoning_modes, sol.reasoning_modes);
-}
-
-#[test]
-fn non_streaming_output_limit_field_matches_each_api() {
-    for (provider, model, expected, absent) in [
-        (
-            "openai",
-            "gpt-5.6-sol",
-            "max_completion_tokens",
-            "max_tokens",
-        ),
-        ("openai", "o3", "max_completion_tokens", "max_tokens"),
-        ("openai", "gpt-4o", "max_tokens", "max_completion_tokens"),
-        ("moonshot", "kimi-k3", "max_completion_tokens", "max_tokens"),
-        (
-            "moonshot",
-            "kimi-k2.7-code",
-            "max_tokens",
-            "max_completion_tokens",
-        ),
-    ] {
-        let request = ChatRequest {
-            model: model.to_string(),
-            max_tokens: Some(4_096),
-            ..ChatRequest::default()
-        };
-        let payload = build_payload(&request, provider, false);
-
-        assert_eq!(payload[expected], 4_096, "{provider}/{model}");
-        assert!(payload.get(absent).is_none(), "{provider}/{model}");
-    }
 }

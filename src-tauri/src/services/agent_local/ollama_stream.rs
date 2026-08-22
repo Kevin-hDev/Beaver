@@ -18,14 +18,6 @@ use tokio::sync::mpsc;
 use tokio_util::io::StreamReader;
 use tokio_util::sync::CancellationToken;
 
-pub async fn collect_chat(
-    model: &str,
-    messages: Vec<crate::services::agent_local::types_ollama::ChatMessage>,
-) -> Result<(String, u32), String> {
-    let client = OllamaClient::from_global()?;
-    crate::services::agent_local::ollama_collect::collect_chat(&client, model, messages).await
-}
-
 pub async fn collect_chat_with_timeout_and_limit(
     model: &str,
     messages: Vec<crate::services::agent_local::types_ollama::ChatMessage>,

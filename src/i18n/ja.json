@@ -740,6 +740,8 @@
       "name": "名前",
       "provider": "プロバイダー",
       "model": "モデル",
+      "project": "プロジェクト",
+      "beaverWorkspace": "Beaver ワークスペース",
       "pickModel": "モデルを選択",
       "noToolCapable": "ツール対応モデルがありません",
       "prompt": "プロンプト",
