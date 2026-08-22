@@ -1,0 +1,5 @@
+Suite de la revue du correctif des réveils Agent Local.
+
+Cas corrigé : lorsque le moteur termine avec des appels outils et leurs résultats mais sans texte assistant, la trace complète est désormais persistée avant de renvoyer erreur absence de résultat. Le journal conserve donc le statut erreur tandis que la session garde les actions réellement exécutées.
+
+Le test tool_trace_is_persisted_before_missing_text_is_reported a été observé rouge avec seulement le prompt sauvegardé, puis vert avec les rôles user, assistant et tool. Validation : 45 tests scheduler passent ; cargo test donne 3798 réussis, 4 ignorés et 0 échec ; cargo clippy --all-targets -- -D warnings passe ; graphify update . exécuté.
