@@ -37,6 +37,6 @@ async fn codex_without_hints_keeps_tools_for_sampled_model_ids() {
 fn capability_mapping_does_not_change_codex_reasoning_modes() {
     let modes = crate::services::reasoning::supported_modes("codex-oauth", "gpt-5.6-sol", true);
 
-    assert!(modes.contains(&"ultra"));
+    assert!(modes.iter().any(|mode| mode == "ultra"));
     assert_eq!(route::canonical_provider_id("codex-oauth"), "codex-oauth");
 }

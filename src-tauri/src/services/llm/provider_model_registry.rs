@@ -3,7 +3,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 use super::provider_model_registry_sources::{EmbeddedProviderModels, SOURCES};
-use super::provider_model_registry_validation::{valid_date, valid_provider_id, valid_source_url};
+use super::provider_model_registry_validation::{
+    valid_date, valid_provider_id, valid_reasoning_contract, valid_source_url,
+};
 
 const MAX_PROVIDERS: usize = 16;
 const MAX_MODELS_PER_PROVIDER: usize = 500;
@@ -26,6 +28,10 @@ pub struct ProviderModelConfig {
     pub supports_tools: bool,
     pub supports_vision: bool,
     pub supports_thinking: bool,
+    #[serde(default)]
+    pub reasoning_modes: Vec<String>,
+    #[serde(default)]
+    pub default_reasoning_mode: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -186,6 +192,11 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
         }) {
             return Err("output_default");
         }
+        valid_reasoning_contract(
+            model.supports_thinking,
+            &model.reasoning_modes,
+            model.default_reasoning_mode.as_deref(),
+        )?;
     }
     Ok(())
 }

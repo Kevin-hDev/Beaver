@@ -82,6 +82,7 @@ fn token_bundle(
         access: Zeroizing::new(std::mem::take(&mut wire.access_token)),
         refresh: Zeroizing::new(refresh),
         expires_at: chrono::Utc::now().timestamp().saturating_add(expires_in),
+        user_id: None,
     })
 }
 

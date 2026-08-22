@@ -21,13 +21,33 @@ fn every_supported_provider_has_one_valid_local_file() {
 fn static_providers_keep_the_verified_order_and_limits() {
     let xai = list("xai");
     let zai = list("zai");
+    let google = list("google");
 
-    assert_eq!(xai.first().unwrap().id, "grok-4.5");
+    assert_eq!(xai.first().unwrap().id, "grok-4.6");
     assert_eq!(xai.first().unwrap().context_window, 500_000);
-    assert_eq!(xai.len(), 6);
-    assert_eq!(zai.first().unwrap().id, "glm-5.2");
+    assert_eq!(xai.len(), 7);
+    assert_eq!(zai.first().unwrap().id, "glm-5.3");
     assert_eq!(zai.first().unwrap().context_window, 1_000_000);
-    assert_eq!(zai.len(), 19);
+    assert_eq!(zai.len(), 20);
+    assert_eq!(google.first().unwrap().id, "gemini-3.7-flash");
+    assert_eq!(google.len(), 14);
+}
+
+#[test]
+fn new_models_publish_their_official_reasoning_contracts() {
+    let glm = lookup("zai", "glm-5.3").unwrap();
+    let grok = lookup("xai", "grok-4.6").unwrap();
+    let gemini = lookup("google", "gemini-3.7-flash").unwrap();
+
+    assert_eq!(glm.reasoning_modes, ["low", "high", "max"]);
+    assert_eq!(glm.default_reasoning_mode.as_deref(), Some("max"));
+    assert_eq!(grok.reasoning_modes, ["low", "medium", "high", "xhigh"]);
+    assert_eq!(grok.default_reasoning_mode.as_deref(), Some("high"));
+    assert_eq!(gemini.reasoning_modes, ["low", "medium", "high"]);
+    assert_eq!(gemini.default_reasoning_mode.as_deref(), Some("medium"));
+    assert!(!glm.is_free);
+    assert!(!grok.is_free);
+    assert!(!gemini.is_free);
 }
 
 #[test]
@@ -205,6 +225,87 @@ fn rejects_unbounded_aliases_and_missing_sources() {
 
     assert_eq!(parse_sources(&[aliases]).err(), Some("model_id"));
     assert_eq!(parse_sources(&[no_sources]).err(), Some("provenance"));
+}
+
+#[test]
+fn rejects_invalid_reasoning_contracts() {
+    let unknown = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-08-22",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"model",
+            "context_window":10,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":true,
+            "reasoning_modes":["turbo"]
+          }]
+        }"#,
+    );
+    let duplicate = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-08-22",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"model",
+            "context_window":10,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":true,
+            "reasoning_modes":["high","high"]
+          }]
+        }"#,
+    );
+    let invalid_default = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-08-22",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"model",
+            "context_window":10,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":true,
+            "reasoning_modes":["low","high"],
+            "default_reasoning_mode":"medium"
+          }]
+        }"#,
+    );
+    let too_many = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-08-22",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"model",
+            "context_window":10,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":true,
+            "reasoning_modes":["off","minimal","low","medium","high","xhigh","max","auto","extra"]
+          }]
+        }"#,
+    );
+
+    assert_eq!(parse_sources(&[unknown]).err(), Some("reasoning_modes"));
+    assert_eq!(parse_sources(&[duplicate]).err(), Some("reasoning_modes"));
+    assert_eq!(parse_sources(&[too_many]).err(), Some("reasoning_modes"));
+    assert_eq!(
+        parse_sources(&[invalid_default]).err(),
+        Some("reasoning_default")
+    );
 }
 
 #[test]

@@ -9,6 +9,12 @@ mod refresh;
 mod store;
 mod types;
 mod xai;
+mod xai_catalog;
+#[cfg(test)]
+mod xai_catalog_tests;
+mod xai_catalog_wire;
+mod xai_headers;
+mod xai_identity;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
@@ -16,7 +22,21 @@ use tauri::{AppHandle, Emitter};
 use crate::services::work_registry::ServiceWorkCancellation;
 
 pub use device_flow::DeviceFlowConfig;
-pub use headers::request_headers_for;
+pub use headers::request_headers_with_identity;
+pub(crate) use xai_catalog_wire::{XaiBackend, XaiCatalogModel};
+pub(crate) use xai_headers::model_header as xai_model_header;
+pub use xai_headers::PROXY_BASE_URL as XAI_PROXY_BASE_URL;
+
+pub async fn xai_models(
+) -> Result<Vec<crate::services::llm::types::ModelInfo>, crate::services::llm::types::LlmError> {
+    xai_catalog::list_models().await
+}
+
+pub(crate) async fn xai_catalog_model(model: &str) -> Result<XaiCatalogModel, String> {
+    xai_catalog::model(model)
+        .await
+        .map_err(|_| "provider_configuration_invalid".to_string())
+}
 pub use types::{AccessToken, DeviceAuthorization, LlmOAuthProvider, OAuthFailure, TokenBundle};
 
 const PROGRESS_EVENT: &str = "oauth-login-progress";
@@ -52,7 +72,14 @@ pub async fn login(
         _ = work_cancel.cancelled() => Err(OAuthFailure::Cancelled),
     };
     let outcome = match result {
-        Ok(tokens) => {
+        Ok(mut tokens) => {
+            if provider == LlmOAuthProvider::Xai
+                && xai_identity::enrich(&mut tokens, None).await.is_err()
+            {
+                emit_progress(&app, provider, "error", None, None);
+                registered.completion.complete(());
+                return Err("Connexion impossible".to_string());
+            }
             let _guard = lifecycle::lock(provider).await;
             if registered.cancel.is_cancelled() {
                 emit_progress(&app, provider, "cancelled", None, None);

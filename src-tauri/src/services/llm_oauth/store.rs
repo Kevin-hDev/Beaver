@@ -14,12 +14,17 @@ struct StoredTokens {
     access: String,
     refresh: String,
     expires_at: i64,
+    #[serde(default)]
+    user_id: Option<String>,
 }
 
 impl Drop for StoredTokens {
     fn drop(&mut self) {
         self.access.zeroize();
         self.refresh.zeroize();
+        if let Some(value) = &mut self.user_id {
+            value.zeroize();
+        }
     }
 }
 
@@ -40,6 +45,7 @@ fn save(provider: LlmOAuthProvider, tokens: &TokenBundle) -> Result<u64, String>
         access: tokens.access.to_string(),
         refresh: tokens.refresh.to_string(),
         expires_at: tokens.expires_at,
+        user_id: tokens.user_id.as_ref().map(|value| value.to_string()),
     };
     let mut json = serde_json::to_string(&stored).map_err(|_| unavailable())?;
     let result = api_keys::set_raw(provider.vault_key(), &json);
@@ -58,6 +64,7 @@ pub fn load(provider: LlmOAuthProvider) -> Result<Option<TokenBundle>, String> {
         access: Zeroizing::new(std::mem::take(&mut stored.access)),
         refresh: Zeroizing::new(std::mem::take(&mut stored.refresh)),
         expires_at: stored.expires_at,
+        user_id: stored.user_id.take().map(Zeroizing::new),
     };
     validate(&tokens)?;
     Ok(Some(tokens))
@@ -77,6 +84,10 @@ fn validate(tokens: &TokenBundle) -> Result<(), String> {
     if !(1..=MAX_TOKEN_LEN).contains(&tokens.access.len())
         || !(1..=MAX_TOKEN_LEN).contains(&tokens.refresh.len())
         || tokens.expires_at <= 0
+        || tokens
+            .user_id
+            .as_ref()
+            .is_some_and(|value| value.is_empty() || value.len() > 256)
     {
         return Err(unavailable());
     }
@@ -97,6 +108,7 @@ mod tests {
             access: Zeroizing::new("a".repeat(MAX_TOKEN_LEN + 1)),
             refresh: Zeroizing::new("r".to_string()),
             expires_at: 1,
+            user_id: None,
         };
         assert!(validate(&tokens).is_err());
     }
@@ -118,6 +130,7 @@ mod tests {
             access: Zeroizing::new("access".to_string()),
             refresh: Zeroizing::new("refresh".to_string()),
             expires_at: 1,
+            user_id: None,
         };
         let stale = generation(provider).saturating_add(1);
         assert!(save_if_generation(provider, &tokens, stale).is_err());

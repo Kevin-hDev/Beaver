@@ -76,3 +76,12 @@ fn provider_rejection_is_not_classified_as_a_connection_loss() {
         "provider_error"
     );
 }
+
+#[test]
+fn stable_provider_codes_survive_session_persistence() {
+    assert_eq!(
+        classify_error("provider_quota_exhausted", false),
+        "provider_quota_exhausted"
+    );
+    assert_eq!(safe_code("rate_limit"), "rate_limit");
+}

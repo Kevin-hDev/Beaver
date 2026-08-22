@@ -69,6 +69,9 @@ mod tool_schema_names;
 mod tool_schema_profile;
 pub mod types;
 pub mod vision;
+mod xai_oauth_transport;
+#[cfg(test)]
+mod xai_oauth_transport_tests;
 
 #[cfg(test)]
 #[path = "sanitize_log_body_tests.rs"]

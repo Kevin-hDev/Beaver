@@ -34,15 +34,15 @@
   "apiKeys": {
     "providers": {
       "groq": { "description": "独自 LPU による Llama / GPT-OSS の超高速推論。", "freeTier": "上限付きの無料プラン。組織設定で利用可否が変わる場合があります。" },
-      "google": { "description": "Gemini 3.6 Flash — マルチモーダル、ツール、推論。", "freeTier": "一部モデルに無料枠があり、アカウントと上限により異なります。" },
+      "google": { "description": "Gemini 3.7 Flash — マルチモーダル、ツール、推論。", "freeTier": "一部モデルに無料枠があり、アカウントと上限により異なります。" },
       "mistral": { "description": "フランス発のオープンウェイトモデル — 無料の Experiment プラン。", "freeTier": "無料モードと有料プランがあり、利用可否はアカウントによります。" },
       "cerebras": { "description": "ウェハースケールチップで最大 3,000 tok/s のオープンウェイトモデル。", "freeTier": "無料枠とクォータはプロジェクトとアカウントによります。" },
       "openrouter": { "description": "1 つの API キーで 300 以上のモデルにアクセス。", "freeTier": "[Free] のモデルはクレジットを使わず、他は残高を使います。" },
       "openai": { "description": "GPT-5.6 Sol、Terra、Luna — 最先端の推論。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
       "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 圧倒的なコストパフォーマンス。", "freeTier": "API は利用量とモデルに応じて課金されます。" },
-      "xai": { "description": "Grok 4.5 — 500K コンテキスト、高度な推論。", "freeTier": "前払いクレジットまたは月額請求で、アカウントにより異なります。" },
+      "xai": { "description": "Grok 4.6 — 500K コンテキスト、高度な推論。", "freeTier": "前払いクレジットまたは月額請求で、アカウントにより異なります。" },
       "moonshot": { "description": "Kimi K3 — エージェント型コーディング、マルチモーダル、1M コンテキスト。", "freeTier": "API は利用量に応じて課金されます。" },
-      "zai": { "description": "GLM-5.2 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "[Free] の Flash モデルは無料で、それ以外は課金されます。" },
+      "zai": { "description": "GLM-5.3 — 1M コンテキスト、長期的なコーディングと推論。", "freeTier": "[Free] の Flash モデルは無料で、それ以外は課金されます。" },
       "brave": { "description": "独自インデックス。Google／Bing に依存しません。", "freeTier": "毎月のクレジット付きで、その後は従量課金です。" },
       "exa": { "description": "ニューラル検索 — 意味的類似度による検索。", "freeTier": "料金とクレジットはプロバイダーのアカウントで確認してください。" },
       "firecrawl": { "description": "任意の URL から LLM 対応 Markdown を抽出。", "freeTier": "無料プランとクレジットはチームとプランによります。" }
@@ -1199,6 +1199,7 @@
     "moonshotMembershipUnverified": "Moonshot は有効な Kimi Code サブスクリプションを確認できません。",
     "xaiSubscriptionOrCreditsRequired": "xAI は Grok サブスクリプションまたはクレジットが必要だと報告しています。",
     "providerAccessUnavailable": "プロバイダーは現在、このモデルへのアクセスを拒否しています。",
+    "providerQuotaExhausted": "xAI サブスクリプションの割り当てを使い切ったか、一時的に利用できません。",
     "providerConnectionFailed": "プロバイダーに接続できませんでした。",
     "providerTemporarilyUnavailable": "プロバイダーは一時的に利用できません。しばらくしてからもう一度お試しください。",
     "providerRequestRejected": "プロバイダーがリクエストを拒否しました。",

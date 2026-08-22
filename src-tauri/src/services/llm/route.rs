@@ -63,15 +63,30 @@ impl LlmRoute {
                 let token = llm_oauth::access_token(provider)
                     .await
                     .map_err(|_| RouteError::Unauthorized)?;
-                let response = send_oauth(client, provider, purpose, &token.value, &build).await?;
+                let response = send_oauth(
+                    client,
+                    provider,
+                    purpose,
+                    &token.value,
+                    token.user_id.as_ref().map(|value| value.as_str()),
+                    &build,
+                )
+                .await?;
                 if oauth_401_action(response.status().as_u16(), false) != OAuth401Action::Refresh {
                     return Ok(response);
                 }
                 let refreshed = llm_oauth::force_refresh(provider, token.generation)
                     .await
                     .map_err(|_| RouteError::Unauthorized)?;
-                let response =
-                    send_oauth(client, provider, purpose, &refreshed.value, &build).await?;
+                let response = send_oauth(
+                    client,
+                    provider,
+                    purpose,
+                    &refreshed.value,
+                    refreshed.user_id.as_ref().map(|value| value.as_str()),
+                    &build,
+                )
+                .await?;
                 if oauth_401_action(response.status().as_u16(), true) == OAuth401Action::Invalidate
                 {
                     llm_oauth::invalidate(provider).await;
@@ -110,13 +125,14 @@ async fn send_oauth<F>(
     provider: LlmOAuthProvider,
     purpose: RequestPurpose,
     token: &str,
+    user_id: Option<&str>,
     build: &F,
 ) -> Result<Response, RouteError>
 where
     F: Fn(&str, HeaderMap) -> RequestBuilder,
 {
-    let headers =
-        llm_oauth::request_headers_for(provider, purpose).map_err(|_| RouteError::Network)?;
+    let headers = llm_oauth::request_headers_with_identity(provider, purpose, user_id)
+        .map_err(|_| RouteError::Network)?;
     client
         .send(build(token, headers))
         .await
@@ -128,8 +144,8 @@ pub fn resolve(provider_id: &str) -> Option<LlmRoute> {
         "xai-oauth" => Some(oauth_route(
             "xai-oauth",
             "xai",
-            "https://api.x.ai/v1",
-            "/models",
+            crate::services::llm_oauth::XAI_PROXY_BASE_URL,
+            "/models-v2",
             "xAI",
             LlmOAuthProvider::Xai,
         )),

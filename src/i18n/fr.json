@@ -39,15 +39,15 @@
   "apiKeys": {
     "providers": {
       "groq": { "description": "Inférence ultra-rapide Llama / GPT-OSS sur LPU custom.", "freeTier": "Offre gratuite avec limites ; l’accès peut dépendre de l’organisation." },
-      "google": { "description": "Gemini 3.6 Flash — multimodal, tools et raisonnement.", "freeTier": "Niveau gratuit pour certains modèles, selon le compte et les limites." },
+      "google": { "description": "Gemini 3.7 Flash — multimodal, tools et raisonnement.", "freeTier": "Niveau gratuit pour certains modèles, selon le compte et les limites." },
       "mistral": { "description": "Modèles open-weight français — Experiment plan gratuit.", "freeTier": "Mode gratuit et plan payant ; disponibilité selon le compte." },
       "cerebras": { "description": "Modèles open-weight jusqu’à 3 000 tok/s sur puce wafer-scale.", "freeTier": "Niveau gratuit et quotas selon le projet et le compte." },
       "openrouter": { "description": "Accès à 300+ modèles via une seule clé API.", "freeTier": "Les modèles [Free] n’utilisent pas de crédits ; les autres utilisent le solde." },
       "openai": { "description": "GPT-5.6 Sol, Terra et Luna — raisonnement de pointe.", "freeTier": "API facturée à l’utilisation selon le modèle." },
       "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — rapport qualité/prix imbattable.", "freeTier": "API facturée à l’utilisation selon le modèle." },
-      "xai": { "description": "Grok 4.5 — contexte 500K, raisonnement avancé.", "freeTier": "Crédits prépayés ou facturation mensuelle selon le compte." },
+      "xai": { "description": "Grok 4.6 — contexte 500K, raisonnement avancé.", "freeTier": "Crédits prépayés ou facturation mensuelle selon le compte." },
       "moonshot": { "description": "Kimi K3 — agentic coding, multimodal, contexte 1M.", "freeTier": "API facturée à l’utilisation." },
-      "zai": { "description": "GLM-5.2 — contexte 1M, coding long-horizon et raisonnement.", "freeTier": "Les modèles Flash indiqués [Free] sont sans coût ; les autres sont facturés." },
+      "zai": { "description": "GLM-5.3 — contexte 1M, coding long-horizon et raisonnement.", "freeTier": "Les modèles Flash indiqués [Free] sont sans coût ; les autres sont facturés." },
       "brave": { "description": "Index propre, pas de dépendance Google/Bing.", "freeTier": "Crédits mensuels inclus, puis facturation à l’utilisation." },
       "exa": { "description": "Neural search — recherche par similarité sémantique.", "freeTier": "Tarification et crédits à consulter sur le compte fournisseur." },
       "firecrawl": { "description": "Extraction Markdown LLM-ready depuis une URL.", "freeTier": "Offre gratuite et crédits selon l’équipe et le forfait." }
@@ -1252,6 +1252,7 @@
     "moonshotMembershipUnverified": "Moonshot ne parvient pas à confirmer un abonnement Kimi Code actif.",
     "xaiSubscriptionOrCreditsRequired": "xAI indique qu’un abonnement Grok ou des crédits sont requis.",
     "providerAccessUnavailable": "Le provider refuse actuellement l’accès au modèle.",
+    "providerQuotaExhausted": "Le quota de l’abonnement xAI est épuisé ou momentanément indisponible.",
     "providerConnectionFailed": "Connexion au provider impossible.",
     "providerTemporarilyUnavailable": "Le provider est temporairement indisponible. Réessaie dans un instant.",
     "providerRequestRejected": "Le provider a refusé la requête.",

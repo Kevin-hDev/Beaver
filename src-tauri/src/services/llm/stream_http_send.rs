@@ -17,10 +17,17 @@ pub async fn send_json_request(
     let cache_headers =
         super::prompt_cache_policy::request_headers(route, Some(model), session_id, purpose)
             .map_err(|_| RequestError::InvalidConfiguration)?;
+    let xai_headers = (route.chat_provider_id == "xai-oauth")
+        .then(|| crate::services::llm_oauth::xai_model_header(model))
+        .transpose()
+        .map_err(|_| RequestError::InvalidConfiguration)?;
     route
         .send_authenticated(client, purpose, |token, headers| {
             let mut headers = headers;
             headers.extend(cache_headers.clone());
+            if let Some(model_headers) = &xai_headers {
+                headers.extend(model_headers.clone());
+            }
             client
                 .post(url)
                 .headers(headers)

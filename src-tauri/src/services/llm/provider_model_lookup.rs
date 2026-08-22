@@ -14,6 +14,12 @@ pub struct ModelLimits {
     pub default_output_tokens: Option<u32>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ModelReasoning {
+    pub modes: Vec<String>,
+    pub default_mode: Option<String>,
+}
+
 pub async fn capabilities(provider_id: &str, model_id: &str) -> Option<ModelCapabilities> {
     if let Some(capabilities) = local_capabilities(provider_id, model_id) {
         return Some(capabilities);
@@ -46,6 +52,14 @@ pub fn local_limits(provider_id: &str, model_id: &str) -> Option<ModelLimits> {
         context_window: Some(model.context_window),
         max_output_tokens: model.max_output_tokens,
         default_output_tokens: model.default_output_tokens,
+    })
+}
+
+pub fn local_reasoning(provider_id: &str, model_id: &str) -> Option<ModelReasoning> {
+    let model = local_entry(provider_id, model_id)?;
+    Some(ModelReasoning {
+        modes: model.reasoning_modes,
+        default_mode: model.default_reasoning_mode,
     })
 }
 

@@ -26,6 +26,9 @@ impl OpenAiCompatProvider {
     }
 
     pub async fn list_models(&self) -> Result<Vec<ModelInfo>, LlmError> {
+        if self.route.chat_provider_id == "xai-oauth" {
+            return crate::services::llm_oauth::xai_models().await;
+        }
         let canonical = self.route.canonical_provider_id;
         if let Some(models) = openai_compat_models::static_model_infos(canonical) {
             return Ok(models);

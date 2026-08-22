@@ -5,7 +5,7 @@ pub fn codex(model: &str, mode: Option<&str>) -> String {
     } else {
         "medium"
     };
-    mode.filter(|value| supported.contains(value))
+    mode.filter(|value| supported.iter().any(|candidate| candidate == value))
         .unwrap_or(default)
         .to_string()
 }

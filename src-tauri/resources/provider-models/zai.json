@@ -1,14 +1,16 @@
 {
   "provider": "zai",
   "schema_version": 1,
-  "verified_at": "2026-08-17",
+  "verified_at": "2026-08-22",
   "source_urls": [
     "https://docs.z.ai/guides/overview/overview",
     "https://docs.z.ai/guides/overview/concept-param",
     "https://docs.z.ai/guides/overview/pricing",
-    "https://docs.z.ai/api-reference/llm/chat-completion"
+    "https://docs.z.ai/api-reference/llm/chat-completion",
+    "https://z.ai/blog/glm-5.3"
   ],
   "models": [
+    {"id":"glm-5.3","context_window":1000000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true,"reasoning_modes":["low","high","max"],"default_reasoning_mode":"max"},
     {"id":"glm-5.2","context_window":1000000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-5.1","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},
     {"id":"glm-5-turbo","context_window":200000,"max_output_tokens":131072,"supports_tools":true,"supports_vision":false,"supports_thinking":true},

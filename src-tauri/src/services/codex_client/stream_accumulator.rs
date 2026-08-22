@@ -19,6 +19,7 @@ pub(super) struct StreamAccumulator<'a> {
 
 impl<'a> StreamAccumulator<'a> {
     pub(super) fn new(
+        provider: &'a str,
         model: &'a str,
         tools: &'a [serde_json::Value],
         buffer_content: bool,
@@ -34,7 +35,7 @@ impl<'a> StreamAccumulator<'a> {
             buffer_content,
             realtime_budget,
             usage_context: crate::services::provider_usage::UsageContext::responses(
-                "openai", model,
+                provider, model,
             ),
         }
     }

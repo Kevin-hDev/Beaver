@@ -78,6 +78,17 @@ fn zai_glm_52_uses_reasoning_effort() {
 }
 
 #[test]
+fn zai_glm_53_keeps_forced_thinking_and_defaults_to_max() {
+    let default = payload("zai", "glm-5.3", None);
+    assert_eq!(default["thinking"], json!({ "type": "enabled" }));
+    assert_eq!(default["reasoning_effort"], "max");
+
+    let invalid_off = payload("zai", "glm-5.3", Some("off"));
+    assert_eq!(invalid_off["thinking"], json!({ "type": "enabled" }));
+    assert_eq!(invalid_off["reasoning_effort"], "max");
+}
+
+#[test]
 fn google_gemini_35_requests_thought_summaries() {
     let payload = payload("google", "gemini-3.5-flash", Some("low"));
     assert_eq!(
@@ -87,6 +98,15 @@ fn google_gemini_35_requests_thought_summaries() {
     assert!(payload["extra_body"]["google"]
         .get("thought_tag_marker")
         .is_none());
+}
+
+#[test]
+fn google_gemini_37_uses_its_default_thinking_level() {
+    let payload = payload("google", "gemini-3.7-flash", Some("medium"));
+    assert_eq!(
+        payload["extra_body"]["google"]["thinking_config"],
+        json!({ "include_thoughts": true, "thinking_level": "medium" })
+    );
 }
 
 #[test]
@@ -155,6 +175,10 @@ fn openrouter_gpt_56_keeps_nested_reasoning_shape() {
 
 #[test]
 fn xai_only_sends_configurable_effort_for_supported_models() {
+    assert_eq!(
+        payload("xai", "grok-4.6", Some("xhigh"))["reasoning_effort"],
+        "xhigh"
+    );
     assert_eq!(
         payload("xai", "grok-4.5", Some("medium"))["reasoning_effort"],
         "medium"

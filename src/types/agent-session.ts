@@ -28,6 +28,19 @@ interface AgentStreamFailure {
   active_todo_title?: string;
 }
 
+export interface AgentDiagnosticRun {
+  request_id: string;
+  generation: number;
+  status: string;
+  severity: string;
+  started_at: string;
+  updated_at: string;
+  ended_at?: string;
+  phase: string;
+  error_type?: string;
+  safe_summary?: string;
+}
+
 export interface AgentSession {
   id: string;
   name: string;
@@ -46,6 +59,7 @@ export interface AgentSession {
   todo_runs?: AgentTodoRun[];
   active_todo_run_id?: string;
   stream_failures?: AgentStreamFailure[];
+  diagnostic_runs?: AgentDiagnosticRun[];
   plan_mode_enabled?: boolean;
   plan_runs?: AgentPlanRun[];
   active_plan_id?: string;

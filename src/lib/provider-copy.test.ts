@@ -2,8 +2,12 @@ import { createInstance } from "i18next";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import en from "@/i18n/en.json";
+import de from "@/i18n/de.json";
+import es from "@/i18n/es.json";
 import fr from "@/i18n/fr.json";
+import itLocale from "@/i18n/it.json";
 import ja from "@/i18n/ja.json";
+import zh from "@/i18n/zh.json";
 import { providerDescription, providerFreeTier } from "./provider-copy";
 
 // Instance dédiée : on veut vérifier la résolution réelle des clés, ce que les
@@ -15,6 +19,10 @@ beforeAll(async () => {
     resources: {
       fr: { translation: fr },
       en: { translation: en },
+      es: { translation: es },
+      de: { translation: de },
+      it: { translation: itLocale },
+      zh: { translation: zh },
       ja: { translation: ja },
     },
     lng: "fr",
@@ -61,5 +69,23 @@ describe("provider-copy", () => {
     // Jamais la clé technique : elle exposerait la structure interne à l'écran.
     expect(providerDescription(i18n.t, { id: "provider-fantome" })).toBe("");
     expect(providerFreeTier(i18n.t, { id: "provider-fantome" })).toBe("");
+  });
+
+  it("présente les modèles actuels dans les sept langues", async () => {
+    for (const language of ["fr", "en", "es", "de", "it", "zh", "ja"]) {
+      await i18n.changeLanguage(language);
+      const descriptions = [
+        providerDescription(i18n.t, { id: "zai", category: "llm" }),
+        providerDescription(i18n.t, { id: "xai", category: "llm" }),
+        providerDescription(i18n.t, { id: "google", category: "llm" }),
+      ];
+      expect(descriptions[0]).toContain("GLM-5.3");
+      expect(descriptions[1]).toContain("Grok 4.6");
+      expect(descriptions[2]).toContain("Gemini 3.7 Flash");
+      for (const description of descriptions) {
+        expect(description).not.toMatch(/[$€£¥]|\d+[,.]\d+\s*[x×]/u);
+      }
+    }
+    await i18n.changeLanguage("fr");
   });
 });

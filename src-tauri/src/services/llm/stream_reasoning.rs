@@ -31,6 +31,15 @@ fn apply_thinking(payload: &mut Value, reasoning_mode: Option<&str>) {
 }
 
 fn apply_zai(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
+    if model.eq_ignore_ascii_case("glm-5.3") {
+        // GLM 5.3 raisonne toujours : "off" est donc replié sur le défaut officiel.
+        apply_thinking(payload, Some("max"));
+        payload["reasoning_effort"] = reasoning_mode
+            .filter(|mode| matches!(*mode, "low" | "high" | "max"))
+            .unwrap_or("max")
+            .into();
+        return;
+    }
     apply_thinking(payload, reasoning_mode);
     if model.to_lowercase().starts_with("glm-5.2") {
         if let Some(effort) = crate::services::reasoning::zai_effort(reasoning_mode) {
@@ -41,7 +50,7 @@ fn apply_zai(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
 
 fn apply_openrouter(payload: &mut Value, model: &str, think: bool, reasoning_mode: Option<&str>) {
     let supported = crate::services::reasoning::supported_modes("openrouter", model, true);
-    if reasoning_mode.is_some_and(|mode| !supported.contains(&mode)) {
+    if reasoning_mode.is_some_and(|mode| !supported.iter().any(|candidate| candidate == mode)) {
         return;
     }
     if reasoning_mode == Some("off") {
@@ -161,7 +170,7 @@ fn apply_openai(payload: &mut Value, model: &str, think: bool, reasoning_mode: O
         return;
     }
     let supported = crate::services::reasoning::supported_modes("openai", model, true);
-    if reasoning_mode.is_some_and(|mode| !supported.contains(&mode)) {
+    if reasoning_mode.is_some_and(|mode| !supported.iter().any(|candidate| candidate == mode)) {
         return;
     }
     if let Some(effort) = crate::services::reasoning::openai_effort(reasoning_mode) {

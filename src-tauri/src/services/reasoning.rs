@@ -26,15 +26,25 @@ fn is_zai_effort_reasoning(model: &str) -> bool {
     model.to_lowercase().starts_with("glm-5.2")
 }
 
-pub fn supported_modes(
-    provider: &str,
-    model: &str,
-    supports_thinking: bool,
-) -> &'static [&'static str] {
+pub fn supported_modes(provider: &str, model: &str, supports_thinking: bool) -> Vec<String> {
     if !supports_thinking {
-        return &[];
+        return Vec::new();
     }
     let provider = crate::services::llm::route::canonical_provider_id(provider);
+    if let Some(reasoning) =
+        crate::services::llm::provider_model_lookup::local_reasoning(provider, model)
+    {
+        if !reasoning.modes.is_empty() {
+            return reasoning.modes;
+        }
+    }
+    fallback_supported_modes(provider, model)
+        .iter()
+        .map(|mode| (*mode).to_string())
+        .collect()
+}
+
+fn fallback_supported_modes(provider: &str, model: &str) -> &'static [&'static str] {
     match provider {
         "codex-oauth" if model == "gpt-5.6-sol" || model == "gpt-5.6-terra" => {
             &["low", "medium", "high", "xhigh", "max", "ultra"]
@@ -112,36 +122,40 @@ pub fn normalize_for_model(
     if modes.is_empty() {
         return None;
     }
-    if let Some(mode) = requested.filter(|mode| modes.contains(mode)) {
+    if let Some(mode) = requested.filter(|mode| modes.iter().any(|candidate| candidate == mode)) {
         return Some(mode.to_string());
     }
     if provider == "codex-oauth" && model == "gpt-5.3-codex-spark" {
         return Some("high".to_string());
     }
-    if provider == "moonshot" {
-        let preferred = crate::services::llm::runtime_models::lookup(provider, model)
-            .and_then(|entry| entry.default_reasoning_mode)
-            .or_else(|| {
+    let preferred = crate::services::llm::provider_model_lookup::local_reasoning(provider, model)
+        .and_then(|reasoning| reasoning.default_mode)
+        .or_else(|| {
+            crate::services::llm::runtime_models::lookup(provider, model)
+                .and_then(|entry| entry.default_reasoning_mode)
+        })
+        .or_else(|| {
+            (provider == "moonshot").then(|| {
                 crate::services::llm::providers::moonshot::default_reasoning_mode(&lower(model))
                     .map(str::to_string)
-            });
-        if preferred
-            .as_ref()
-            .is_some_and(|mode| modes.contains(&mode.as_str()))
-        {
-            return preferred;
-        }
+            })?
+        });
+    if preferred
+        .as_ref()
+        .is_some_and(|mode| modes.iter().any(|candidate| candidate == mode))
+    {
+        return preferred;
     }
-    if modes.contains(&"medium") {
+    if modes.iter().any(|mode| mode == "medium") {
         return Some("medium".to_string());
     }
-    if modes.contains(&"auto") {
+    if modes.iter().any(|mode| mode == "auto") {
         return Some("auto".to_string());
     }
-    if let Some(mode) = modes.iter().find(|mode| **mode != "off") {
-        return Some((*mode).to_string());
+    if let Some(mode) = modes.iter().find(|mode| mode.as_str() != "off") {
+        return Some(mode.clone());
     }
-    modes.first().map(|mode| mode.to_string())
+    modes.first().cloned()
 }
 
 pub fn default_mode(provider: &str, model: &str) -> Option<String> {

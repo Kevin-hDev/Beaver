@@ -23,6 +23,8 @@ export const KNOWN_ERROR_KEYS: Record<string, string> = {
   moonshot_membership_unverified: "errors.moonshotMembershipUnverified",
   xai_subscription_or_credits_required: "errors.xaiSubscriptionOrCreditsRequired",
   provider_access_unavailable: "errors.providerAccessUnavailable",
+  provider_quota_exhausted: "errors.providerQuotaExhausted",
+  stream_interrupted: "errors.streamInterrupted",
   provider_connection_failed: "errors.providerConnectionFailed",
   provider_temporarily_unavailable: "errors.providerTemporarilyUnavailable",
   provider_request_rejected: "errors.providerRequestRejected",

@@ -105,6 +105,7 @@ pub(super) async fn post_chat_request_with_timeout_measured(
 
     let status = resp.status();
     if !status.is_success() {
+        let has_retry_after = resp.headers().contains_key("retry-after");
         let body = read_provider_error(resp).await;
         let log_code =
             super::provider_error::safe_log_code(route.chat_provider_id, status.as_u16(), &body);
@@ -123,6 +124,7 @@ pub(super) async fn post_chat_request_with_timeout_measured(
             route.display_name,
             route.chat_provider_id,
             route.is_oauth(),
+            has_retry_after,
         ));
     }
     Ok(resp)
@@ -141,6 +143,7 @@ fn classify_error(
     _provider_name: &str,
     provider_id: &str,
     oauth: bool,
+    has_retry_after: bool,
 ) -> RequestError {
     match status {
         402 => RequestError::Fatal(
@@ -152,6 +155,15 @@ fn classify_error(
         403 if oauth => RequestError::Fatal("provider_access_unavailable".into()),
         401 | 403 => RequestError::Fatal("auth_failed".into()),
         413 => RequestError::PayloadTooLarge,
+        429 if provider_id == "xai-oauth"
+            && !has_retry_after
+            && super::provider_error::safe_details(body)
+                .error_code
+                .as_deref()
+                == Some("resource-exhausted") =>
+        {
+            RequestError::Fatal("provider_quota_exhausted".into())
+        }
         429 => RequestError::Fatal("rate_limit".into()),
         500..=599 => RequestError::Fatal(
             ProviderErrorCode::ProviderTemporarilyUnavailable

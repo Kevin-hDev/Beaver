@@ -10,6 +10,7 @@ pub fn supports_thinking(model: &str) -> bool {
     !model.contains("non-reasoning")
         && (model.contains("reasoning")
             || model.contains("multi-agent")
+            || model.starts_with("grok-4.6")
             || model.starts_with("grok-4.5")
             || model.starts_with("grok-4.3")
             || model.starts_with("grok-3-mini")
@@ -24,6 +25,8 @@ pub fn reasoning_modes(model: &str) -> &'static [&'static str] {
     let model = model.to_lowercase();
     if model.contains("non-reasoning") {
         &[]
+    } else if is_grok_46(&model) {
+        &["low", "medium", "high", "xhigh"]
     } else if is_grok_45(&model) {
         &["low", "medium", "high"]
     } else if is_grok_43(&model) {
@@ -40,16 +43,29 @@ pub fn reasoning_modes(model: &str) -> &'static [&'static str] {
 
 pub fn reasoning_effort(model: &str, mode: Option<&str>) -> Option<&'static str> {
     let model = model.to_lowercase();
-    match (is_grok_45(&model), is_grok_43(&model), mode) {
-        (true, _, Some("low")) => Some("low"),
-        (true, _, Some("medium")) => Some("medium"),
-        (true, _, Some("high")) => Some("high"),
-        (_, true, Some("off")) => Some("none"),
-        (_, true, Some("low")) => Some("low"),
-        (_, true, Some("medium")) => Some("medium"),
-        (_, true, Some("high")) => Some("high"),
+    match (
+        is_grok_46(&model),
+        is_grok_45(&model),
+        is_grok_43(&model),
+        mode,
+    ) {
+        (true, _, _, Some("low")) => Some("low"),
+        (true, _, _, Some("medium")) => Some("medium"),
+        (true, _, _, Some("high")) => Some("high"),
+        (true, _, _, Some("xhigh")) => Some("xhigh"),
+        (_, true, _, Some("low")) => Some("low"),
+        (_, true, _, Some("medium")) => Some("medium"),
+        (_, true, _, Some("high")) => Some("high"),
+        (_, _, true, Some("off")) => Some("none"),
+        (_, _, true, Some("low")) => Some("low"),
+        (_, _, true, Some("medium")) => Some("medium"),
+        (_, _, true, Some("high")) => Some("high"),
         _ => None,
     }
+}
+
+fn is_grok_46(model: &str) -> bool {
+    matches!(model, "grok-4.6" | "grok-4.6-latest")
 }
 
 fn is_grok_45(model: &str) -> bool {
@@ -83,6 +99,7 @@ mod tests {
         assert!(supports_thinking("grok-3-mini"));
         assert!(supports_thinking("grok-3-mini-fast-beta"));
         assert!(supports_thinking("grok-4.5"));
+        assert!(supports_thinking("grok-4.6"));
         assert!(supports_thinking("grok-build-0.1"));
         assert!(!supports_thinking("grok-4.20-0309-non-reasoning"));
         assert!(!supports_thinking("grok-4"));
@@ -102,6 +119,10 @@ mod tests {
 
     #[test]
     fn aliases_keep_their_official_reasoning_modes() {
+        assert_eq!(
+            reasoning_modes("grok-4.6"),
+            &["low", "medium", "high", "xhigh"]
+        );
         assert_eq!(
             reasoning_modes("grok-4.5-latest"),
             &["low", "medium", "high"]

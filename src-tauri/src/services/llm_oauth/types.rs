@@ -33,6 +33,7 @@ pub struct TokenBundle {
     pub access: Zeroizing<String>,
     pub refresh: Zeroizing<String>,
     pub expires_at: i64,
+    pub user_id: Option<Zeroizing<String>>,
 }
 
 impl TokenBundle {
@@ -44,6 +45,7 @@ impl TokenBundle {
 pub struct AccessToken {
     pub value: Zeroizing<String>,
     pub generation: u64,
+    pub user_id: Option<Zeroizing<String>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

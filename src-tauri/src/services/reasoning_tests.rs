@@ -70,6 +70,18 @@ fn provider_specific_modes_are_distinct() {
         &["off", "auto", "low", "medium", "high", "xhigh"]
     );
     assert_eq!(
+        supported_modes("zai", "glm-5.3", true),
+        &["low", "high", "max"]
+    );
+    assert_eq!(
+        supported_modes("xai", "grok-4.6", true),
+        &["low", "medium", "high", "xhigh"]
+    );
+    assert_eq!(
+        supported_modes("google", "gemini-3.7-flash", true),
+        &["low", "medium", "high"]
+    );
+    assert_eq!(
         supported_modes("moonshot", "kimi-k2.7-code", true),
         &["auto"]
     );
@@ -85,6 +97,24 @@ fn provider_specific_modes_are_distinct() {
         supported_modes("xai", "grok-4.20-0309-reasoning", true),
         &["auto"]
     );
+}
+
+#[test]
+fn new_models_use_the_registry_default_and_reject_unsupported_off() {
+    for (provider, model, expected) in [
+        ("zai", "glm-5.3", "max"),
+        ("xai", "grok-4.6", "high"),
+        ("google", "gemini-3.7-flash", "medium"),
+    ] {
+        assert_eq!(
+            normalize_for_model(provider, model, None, true).as_deref(),
+            Some(expected)
+        );
+        assert_eq!(
+            normalize_for_model(provider, model, Some("off"), true).as_deref(),
+            Some(expected)
+        );
+    }
 }
 
 #[test]

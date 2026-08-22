@@ -98,6 +98,18 @@ fn safe_code(message: &str) -> String {
 
 pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     let lower = message.to_ascii_lowercase();
+    if matches!(
+        lower.as_str(),
+        "rate_limit"
+            | "auth_failed"
+            | "oauth_reauthentication_required"
+            | "provider_access_unavailable"
+            | "provider_quota_exhausted"
+            | "provider_payload_too_large"
+            | "provider_configuration_invalid"
+    ) {
+        return lower;
+    }
     if is_connection || is_connection_error(message) {
         return "connection_lost".to_string();
     }
@@ -112,9 +124,7 @@ pub(super) fn classify_error(message: &str, is_connection: bool) -> String {
     }
     if matches!(
         lower.as_str(),
-        "provider_connection_failed"
-            | "provider_request_rejected"
-            | "provider_configuration_invalid"
+        "provider_connection_failed" | "provider_request_rejected"
     ) {
         return "provider_error".to_string();
     }

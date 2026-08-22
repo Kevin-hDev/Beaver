@@ -11,15 +11,15 @@ fn ids(provider_id: &str) -> Vec<String> {
 fn canonical_inventory_sizes_match_the_official_catalogs() {
     for (provider, expected) in [
         ("groq", 9),
-        ("google", 13),
+        ("google", 14),
         ("mistral", 8),
         ("cerebras", 3),
         ("openrouter", 0),
         ("openai", 19),
         ("deepseek", 2),
-        ("xai", 6),
+        ("xai", 7),
         ("moonshot", 15),
-        ("zai", 19),
+        ("zai", 20),
     ] {
         assert_eq!(list(provider).len(), expected, "{provider}");
     }
@@ -47,6 +47,7 @@ fn inventories_keep_current_canonical_ids() {
     assert_eq!(
         ids("xai"),
         [
+            "grok-4.6",
             "grok-4.5",
             "grok-build-0.1",
             "grok-4.3",

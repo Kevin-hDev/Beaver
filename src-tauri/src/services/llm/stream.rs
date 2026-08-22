@@ -50,6 +50,28 @@ pub async fn stream_chat_no_done(
             measurement.as_mut(),
         )
         .await
+    } else if provider_id == "xai-oauth" {
+        super::xai_oauth_transport::stream_chat(
+            super::xai_oauth_transport::StreamContext {
+                on_event,
+                request: RequestConfig {
+                    provider_id,
+                    model,
+                    messages,
+                    tools,
+                    think: true,
+                    reasoning_mode,
+                    max_tokens: None,
+                    purpose,
+                    session_id: Some(session_id),
+                },
+                cancel,
+                buffer_content,
+                realtime_budget,
+            },
+            measurement.as_mut(),
+        )
+        .await
     } else {
         let cfg = RequestConfig {
             provider_id,

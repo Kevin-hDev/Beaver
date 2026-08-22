@@ -110,10 +110,38 @@ async fn consume_sse(
         cancel,
         buffer_content,
         realtime_budget,
+        "openai",
         model,
         tools,
         STREAM_STALL_TIMEOUT,
         measurement,
+    )
+    .await
+}
+
+pub(crate) async fn consume_external_responses_sse(
+    on_event: &impl StreamEventSink,
+    resp: reqwest::Response,
+    cancel: CancellationToken,
+    buffer_content: bool,
+    realtime_budget: Option<RealtimeBudget>,
+    provider: &str,
+    model: &str,
+    tools: &[serde_json::Value],
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<StreamOutcome, String> {
+    let mut measurement = StreamMeasurement::new(measurement);
+    consume_sse_with_timeout(
+        on_event,
+        resp,
+        cancel,
+        buffer_content,
+        realtime_budget,
+        provider,
+        model,
+        tools,
+        STREAM_STALL_TIMEOUT,
+        &mut measurement,
     )
     .await
 }
@@ -124,13 +152,15 @@ async fn consume_sse_with_timeout(
     cancel: CancellationToken,
     buffer_content: bool,
     realtime_budget: Option<RealtimeBudget>,
+    provider: &str,
     model: &str,
     tools: &[serde_json::Value],
     idle_timeout: std::time::Duration,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamOutcome, String> {
     let mut sse = resp.bytes_stream().eventsource();
-    let mut accumulator = StreamAccumulator::new(model, tools, buffer_content, realtime_budget);
+    let mut accumulator =
+        StreamAccumulator::new(provider, model, tools, buffer_content, realtime_budget);
     loop {
         let event = tokio::select! {
             _ = cancel.cancelled() => return Err("Annulé".to_string()),

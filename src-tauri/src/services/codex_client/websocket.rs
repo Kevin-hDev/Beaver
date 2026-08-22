@@ -116,7 +116,8 @@ async fn receive_response(
 ) -> Result<StreamOutcome, WebSocketFailure> {
     let idle = STREAM_STALL_TIMEOUT;
     let mut deadline = tokio::time::Instant::now() + idle;
-    let mut accumulator = StreamAccumulator::new(model, tools, buffer_content, realtime_budget);
+    let mut accumulator =
+        StreamAccumulator::new("openai", model, tools, buffer_content, realtime_budget);
     let mut partial = false;
     loop {
         let message = tokio::select! {

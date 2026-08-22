@@ -34,15 +34,15 @@
   "apiKeys": {
     "providers": {
       "groq": { "description": "自研 LPU 上的 Llama / GPT-OSS 超高速推理。", "freeTier": "提供有限制的免费套餐；访问可能取决于组织设置。" },
-      "google": { "description": "Gemini 3.6 Flash — 多模态、工具调用与推理。", "freeTier": "部分模型提供免费层级，取决于账户和限制。" },
+      "google": { "description": "Gemini 3.7 Flash — 多模态、工具调用与推理。", "freeTier": "部分模型提供免费层级，取决于账户和限制。" },
       "mistral": { "description": "法国开源权重模型 — 免费 Experiment 套餐。", "freeTier": "提供免费模式和付费套餐；可用性取决于账户。" },
       "cerebras": { "description": "晶圆级芯片上运行开源权重模型，最高 3 000 tok/s。", "freeTier": "免费层级和配额取决于项目与账户。" },
       "openrouter": { "description": "一个 API 密钥访问 300+ 模型。", "freeTier": "标有[Free]的模型不消耗额度；其他模型使用账户余额。" },
       "openai": { "description": "GPT-5.6 Sol、Terra 与 Luna — 前沿推理能力。", "freeTier": "API 按使用量和模型计费。" },
       "deepseek": { "description": "DeepSeek V4-Flash / V4-Pro — 极致性价比。", "freeTier": "API 按使用量和模型计费。" },
-      "xai": { "description": "Grok 4.5 — 50 万上下文，高级推理。", "freeTier": "预付额度或按月计费，取决于账户。" },
+      "xai": { "description": "Grok 4.6 — 50 万上下文，高级推理。", "freeTier": "预付额度或按月计费，取决于账户。" },
       "moonshot": { "description": "Kimi K3 — 智能体编程、多模态、100 万上下文。", "freeTier": "API 按使用量计费。" },
-      "zai": { "description": "GLM-5.2 — 100 万上下文，长跨度编程与推理。", "freeTier": "标有[Free]的 Flash 模型无费用；其他模型需付费。" },
+      "zai": { "description": "GLM-5.3 — 100 万上下文，长跨度编程与推理。", "freeTier": "标有[Free]的 Flash 模型无费用；其他模型需付费。" },
       "brave": { "description": "自建索引，不依赖 Google/Bing。", "freeTier": "含每月额度，之后按使用量计费。" },
       "exa": { "description": "神经检索 — 基于语义相似度的搜索。", "freeTier": "请在提供商账户中查看价格和额度。" },
       "firecrawl": { "description": "从任意网址提取 LLM 就绪的 Markdown。", "freeTier": "免费套餐和额度取决于团队与套餐。" }
@@ -1199,6 +1199,7 @@
     "moonshotMembershipUnverified": "Moonshot 无法确认有效的 Kimi Code 订阅。",
     "xaiSubscriptionOrCreditsRequired": "xAI 表示需要 Grok 订阅或额度。",
     "providerAccessUnavailable": "提供商当前拒绝访问该模型。",
+    "providerQuotaExhausted": "xAI 订阅配额已用尽或暂时不可用。",
     "providerConnectionFailed": "无法连接到提供商。",
     "providerTemporarilyUnavailable": "提供商暂时不可用，请稍后重试。",
     "providerRequestRejected": "提供商拒绝了该请求。",

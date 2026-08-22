@@ -28,10 +28,7 @@ fn to_model_info(
         provider_id,
         &model.id,
         model.supports_thinking,
-    )
-    .iter()
-    .map(|mode| mode.to_string())
-    .collect();
+    );
     ModelInfo {
         id: model.id,
         display_name: None,
@@ -42,7 +39,7 @@ fn to_model_info(
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
         reasoning_modes,
-        default_reasoning_mode: None,
+        default_reasoning_mode: model.default_reasoning_mode,
         is_free: model.is_free,
     }
 }
@@ -60,6 +57,7 @@ mod tests {
     #[test]
     fn zai_static_models_expose_reasoning_capabilities() {
         let models = static_model_infos("zai").unwrap();
+        let glm_53 = models.iter().find(|m| m.id == "glm-5.3").unwrap();
         let glm_52 = models.iter().find(|m| m.id == "glm-5.2").unwrap();
         let glm_5 = models.iter().find(|m| m.id == "glm-5").unwrap();
         let glm_46 = models.iter().find(|m| m.id == "glm-4.6").unwrap();
@@ -69,7 +67,10 @@ mod tests {
         let glm_vision_flash = models.iter().find(|m| m.id == "glm-4.6v-flash").unwrap();
         let glm_vision_flashx = models.iter().find(|m| m.id == "glm-4.6v-flashx").unwrap();
 
-        assert_eq!(models.len(), 19);
+        assert_eq!(models.len(), 20);
+        assert_eq!(models[0].id, "glm-5.3");
+        assert_eq!(glm_53.reasoning_modes, ["low", "high", "max"]);
+        assert_eq!(glm_53.default_reasoning_mode.as_deref(), Some("max"));
         assert_eq!(glm_47_flash.context_length, Some(200_000));
         assert_eq!(glm_52.context_length, Some(1_000_000));
         assert!(glm_52.supports_thinking);

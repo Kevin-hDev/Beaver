@@ -4,10 +4,15 @@ use super::types_session::AgentSession;
 use chrono::Utc;
 
 #[test]
-fn stable_provider_failures_are_provider_errors() {
-    for code in ["provider_request_rejected", "provider_configuration_invalid"] {
-        assert_eq!(classify_error(code, false), "provider_error");
-    }
+fn stable_provider_failures_keep_only_actionable_codes() {
+    assert_eq!(
+        classify_error("provider_request_rejected", false),
+        "provider_error"
+    );
+    assert_eq!(
+        classify_error("provider_configuration_invalid", false),
+        "provider_configuration_invalid"
+    );
 }
 
 #[test]

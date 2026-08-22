@@ -99,10 +99,13 @@ async fn add_external_models(
         ProviderId::Moonshot => "moonshot-oauth",
         ProviderId::OpenAi => return,
     };
-    let result = crate::services::llm::openai_compat::OpenAiCompatProvider::new(provider_id);
-    let result = match result {
-        Ok(provider) => provider.list_models().await,
-        Err(error) => Err(error),
+    let result = if id == ProviderId::Xai {
+        crate::services::llm_oauth::xai_models().await
+    } else {
+        match crate::services::llm::openai_compat::OpenAiCompatProvider::new(provider_id) {
+            Ok(provider) => provider.list_models().await,
+            Err(error) => Err(error),
+        }
     };
     match result {
         Ok(mut models) => {

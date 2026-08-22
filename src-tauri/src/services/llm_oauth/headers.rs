@@ -15,6 +15,22 @@ pub fn request_headers(provider: LlmOAuthProvider) -> Result<HeaderMap, String> 
     insert(&mut headers, USER_AGENT, &user_agent())?;
     if provider == LlmOAuthProvider::Kimi {
         insert_kimi_identity(&mut headers, &kimi_device_id()?)?;
+    } else if provider == LlmOAuthProvider::Xai {
+        super::xai_headers::insert_identity(&mut headers)?;
+    }
+    Ok(headers)
+}
+
+pub fn request_headers_with_identity(
+    provider: LlmOAuthProvider,
+    purpose: RequestPurpose,
+    user_id: Option<&str>,
+) -> Result<HeaderMap, String> {
+    let mut headers = request_headers_for(provider, purpose)?;
+    if provider == LlmOAuthProvider::Xai {
+        if let Some(user_id) = user_id {
+            super::xai_headers::insert_user(&mut headers, user_id)?;
+        }
     }
     Ok(headers)
 }
