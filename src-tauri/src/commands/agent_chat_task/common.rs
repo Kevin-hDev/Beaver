@@ -43,8 +43,8 @@ pub(crate) async fn resolve_permission_mode(requested: &super::StreamPermissionM
 
 fn select_permission_mode(requested: &super::StreamPermissionMode, stored: &str) -> String {
     match requested {
-        // Un réveil est une exécution locale explicitement programmée : son contrat
-        // produit est le même que celui d'une session manuelle en accès complet.
+        // Un réveil est une exécution locale programmée, y compris par un agent : son
+        // contrat produit est le même qu'une session manuelle en accès complet.
         super::StreamPermissionMode::FullAccess => "auto".to_string(),
         super::StreamPermissionMode::Bounded(override_mode) => match override_mode.as_deref() {
             Some(m) if matches!(m, "auto" | "manual" | "chat" | "subagent") => {

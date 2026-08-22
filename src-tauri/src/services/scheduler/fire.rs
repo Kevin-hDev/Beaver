@@ -79,11 +79,7 @@ async fn dispatch(
     // Le scheduler ne possède pas de second moteur : tout réveil utilise le
     // contexte et les outils de l'Agent Local en accès complet.
     let result = super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?;
-    let mut messages = result
-        .messages
-        .iter()
-        .filter_map(message_convert::chat_to_agent_message)
-        .collect::<Vec<_>>();
+    let mut messages = persisted_agent_messages(&result.messages);
     if let Some(message) = messages
         .iter_mut()
         .rev()
@@ -95,6 +91,16 @@ async fn dispatch(
     Ok((session_id, result.tokens))
 }
 
+fn persisted_agent_messages(
+    completed: &[crate::services::agent_local::types_ollama::ChatMessage],
+) -> Vec<crate::services::agent_local::types_session::AgentMessage> {
+    let mut non_system = completed.iter().filter(|message| message.role != "system");
+    non_system.next();
+    non_system
+        .filter_map(message_convert::chat_to_agent_message)
+        .collect()
+}
+
 async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, String> {
     let name = if wakeup.provider == "ollama" {
         format!("Heartbeat • {} • {}", wakeup.name, wakeup.model)
@@ -104,7 +110,7 @@ async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, St
             wakeup.name, wakeup.provider, wakeup.model
         )
     };
-    let session = session_store::create_full(
+    let session = session_store::create_with_project(
         &name,
         &wakeup.model,
         &wakeup.provider,
@@ -112,5 +118,19 @@ async fn create_heartbeat_session(wakeup: &ScheduledWakeup) -> Result<String, St
         wakeup.project_id.clone(),
     )
     .await?;
+    if let Err(error) = session_store::add_messages(
+        &session.id,
+        vec![message_convert::new_user_agent_message(&wakeup.prompt)],
+        0,
+    )
+    .await
+    {
+        let _ = session_store::delete_one(&session.id).await;
+        return Err(error);
+    }
     Ok(session.id)
 }
+
+#[cfg(test)]
+#[path = "fire_tests.rs"]
+mod tests;

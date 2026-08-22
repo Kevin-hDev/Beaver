@@ -41,18 +41,29 @@ pub async fn run(
         cancel,
     })
     .await?;
-    let reply = completed
+    if !completed
         .iter()
-        .rev()
-        .find(|message| message.role == "assistant" && !message.content.trim().is_empty())
-        .map(|message| message.content.clone())
-        .ok_or_else(|| "L'automatisation n'a produit aucun résultat.".to_string())?;
-    let tokens =
-        crate::services::token_counting::estimate_text_tokens(&reply).min(u32::MAX as usize) as u32;
+        .any(|message| message.role == "assistant" && !message.content.trim().is_empty())
+    {
+        return Err("L'automatisation n'a produit aucun résultat.".to_string());
+    }
+    let tokens = generated_output_tokens(&completed);
     Ok(ScheduledAgentResult {
         messages: completed,
         tokens,
     })
+}
+
+fn generated_output_tokens(messages: &[ChatMessage]) -> u32 {
+    messages
+        .iter()
+        .filter(|message| message.role == "assistant")
+        .fold(0usize, |total, message| {
+            total.saturating_add(
+                crate::services::token_counting::estimate_chat_message_tokens(message),
+            )
+        })
+        .min(u32::MAX as usize) as u32
 }
 
 fn initial_messages(prompt: &str) -> Vec<ChatMessage> {
@@ -66,6 +77,7 @@ fn initial_messages(prompt: &str) -> Vec<ChatMessage> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::agent_local::types_ollama::{ToolCallFunction, ToolCallOllama};
 
     #[test]
     fn scheduled_prompt_leaves_system_context_to_the_agent_engine() {
@@ -74,5 +86,37 @@ mod tests {
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].role, "user");
         assert_eq!(messages[0].content, "cherche les nouveautés");
+    }
+
+    #[test]
+    fn token_estimate_includes_intermediate_answers_and_tool_calls() {
+        let messages = vec![
+            ChatMessage {
+                role: "assistant".into(),
+                content: "a".repeat(400),
+                tool_calls: Some(vec![ToolCallOllama {
+                    id: Some("call-1".into()),
+                    extra_content: None,
+                    function: ToolCallFunction {
+                        name: "list_dir".into(),
+                        arguments: serde_json::json!({"path": "."}),
+                    },
+                }]),
+                ..Default::default()
+            },
+            ChatMessage {
+                role: "tool".into(),
+                content: "README.md".into(),
+                tool_name: Some("list_dir".into()),
+                ..Default::default()
+            },
+            ChatMessage {
+                role: "assistant".into(),
+                content: "Terminé.".into(),
+                ..Default::default()
+            },
+        ];
+
+        assert!(generated_output_tokens(&messages) >= 100);
     }
 }

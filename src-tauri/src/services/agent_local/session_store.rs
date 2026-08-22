@@ -84,6 +84,28 @@ pub async fn create_full(
     Ok(session)
 }
 
+pub async fn create_with_project(
+    name: &str,
+    model: &str,
+    provider: &str,
+    is_heartbeat: bool,
+    project_id: Option<String>,
+) -> Result<AgentSession, String> {
+    let project_path = match project_id.as_deref() {
+        Some(project_id) => Some(super::directory_access::project_path(project_id).await?),
+        None => None,
+    };
+    let mut session = create_full(name, model, provider, is_heartbeat, project_id).await?;
+    if let Some(path) = project_path {
+        session.working_dir = path.to_string_lossy().to_string();
+        if let Err(error) = save(&session).await {
+            let _ = delete_one(&session.id).await;
+            return Err(error);
+        }
+    }
+    Ok(session)
+}
+
 pub async fn get(id: &str) -> Result<AgentSession, String> {
     validate_session_id(id)?;
     let path = crate::services::paths::data_file_for_read("agent-sessions", &format!("{id}.json"))

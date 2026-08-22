@@ -103,25 +103,8 @@ pub async fn create_agent_session(
     supports_thinking: Option<bool>,
 ) -> Result<AgentSession, String> {
     let provider = provider.unwrap_or_else(|| "ollama".to_string());
-    let requested_project_id = project_id.clone();
-    let project_path = match requested_project_id.as_deref() {
-        Some(project_id) => {
-            Some(crate::services::agent_local::directory_access::project_path(project_id).await?)
-        }
-        None => None,
-    };
     let mut session =
-        session_store::create_full(&name, &model, &provider, false, project_id).await?;
-    if let Some(path) = project_path {
-        if session_store::update_working_dir(&session.id, path.to_string_lossy().as_ref())
-            .await
-            .is_ok()
-        {
-            if let Ok(updated) = session_store::get(&session.id).await {
-                session = updated;
-            }
-        }
-    }
+        session_store::create_with_project(&name, &model, &provider, false, project_id).await?;
     if reasoning_mode.is_some() {
         session_store::update_reasoning(&session.id, reasoning_mode, supports_thinking).await?;
         if let Ok(updated) = session_store::get(&session.id).await {
