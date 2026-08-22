@@ -15,6 +15,7 @@ pub struct OAuthProviderModel {
     pub supports_tools: bool,
     pub supports_vision: bool,
     pub supports_thinking: bool,
+    pub supports_fast_mode: bool,
     pub reasoning_modes: Vec<String>,
     pub default_reasoning_mode: Option<String>,
     pub interactive_only: bool,
@@ -79,6 +80,7 @@ async fn add_codex_models(
             supports_tools: model.supports_tools,
             supports_vision: model.supports_vision,
             supports_thinking: model.supports_thinking,
+            supports_fast_mode: model.supports_fast_mode,
             reasoning_modes: model.reasoning_modes,
             default_reasoning_mode: model.default_reasoning_mode,
             interactive_only: false,
@@ -147,8 +149,37 @@ fn oauth_model(provider_id: ProviderId, model: ModelInfo) -> OAuthProviderModel 
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
+        supports_fast_mode: model.supports_fast_mode,
         reasoning_modes: model.reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,
         interactive_only: true,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn oauth_model_transports_fast_mode_without_recalculating_it() {
+        let model = oauth_model(
+            ProviderId::OpenAi,
+            ModelInfo {
+                id: "gpt-5.6-sol".to_string(),
+                display_name: None,
+                owned_by: Some("openai".to_string()),
+                context_length: Some(258_400),
+                max_output_tokens: None,
+                supports_tools: true,
+                supports_vision: true,
+                supports_thinking: true,
+                supports_fast_mode: true,
+                reasoning_modes: vec!["high".to_string()],
+                default_reasoning_mode: Some("high".to_string()),
+                is_free: false,
+            },
+        );
+
+        assert!(model.supports_fast_mode);
     }
 }

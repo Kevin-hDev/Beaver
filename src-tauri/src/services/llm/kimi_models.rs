@@ -73,6 +73,7 @@ fn parse_model(value: &Value) -> Option<Result<ModelInfo, LlmError>> {
             super::providers::moonshot::supports_vision(&id),
         ),
         supports_thinking,
+        supports_fast_mode: false,
         reasoning_modes,
         default_reasoning_mode,
         is_free: false,

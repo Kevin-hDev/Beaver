@@ -63,6 +63,19 @@ pub async fn context_length(model_id: &str) -> u64 {
         .unwrap_or(128_000)
 }
 
+// Phase suivante : la requête Fast lit le même catalogue borné, sans fallback.
+#[allow(dead_code)]
+pub async fn supports_fast_mode(model_id: &str) -> Result<bool, String> {
+    if !crate::services::llm::runtime_models::valid_model_id(model_id) {
+        return Ok(false);
+    }
+    Ok(load_catalog()
+        .await?
+        .iter()
+        .find(|model| model.info.id == model_id)
+        .is_some_and(|model| model.info.supports_fast_mode))
+}
+
 pub fn fallback_models() -> Vec<ModelInfo> {
     super::model_catalog_fallback::models()
 }
@@ -145,6 +158,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
         .effective_context_window_percent
         .unwrap_or(DEFAULT_EFFECTIVE_PERCENT);
     let context_length = effective_context(raw_context, percent)?;
+    let supports_fast_mode = super::model_catalog_fast::supports_fast_mode(&wire);
     let modes = validated_modes(wire.supported_reasoning_levels.0);
     let display_name = if valid_display_name(&wire.display_name) {
         wire.display_name.clone()
@@ -164,6 +178,7 @@ fn convert_model(wire: WireModel) -> Option<CatalogModel> {
             supports_tools,
             supports_vision,
             supports_thinking: !modes.is_empty(),
+            supports_fast_mode,
             reasoning_modes: modes,
             default_reasoning_mode: None,
             is_free: false,

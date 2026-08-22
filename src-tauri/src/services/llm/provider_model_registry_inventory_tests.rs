@@ -100,3 +100,20 @@ fn corrected_limits_and_capabilities_are_stable() {
     assert_eq!(glm_vision.max_output_tokens, Some(16_384));
     assert!(glm_vision.supports_vision);
 }
+
+#[test]
+fn openai_fast_mode_is_limited_to_the_verified_api_models() {
+    for model in ["gpt-5.6-sol", "gpt-5.6", "gpt-5.6-terra", "gpt-5.6-luna"] {
+        assert!(
+            lookup("openai", model).unwrap().supports_fast_mode,
+            "{model}"
+        );
+    }
+    assert!(lookup("openai", "gpt-5.6-terra-pro").is_none());
+    assert!(
+        !crate::services::llm::provider_model_lookup::supports_fast_mode(
+            "openrouter",
+            "openai/gpt-5.6-sol",
+        )
+    );
+}

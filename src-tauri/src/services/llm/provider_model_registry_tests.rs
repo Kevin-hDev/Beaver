@@ -343,3 +343,26 @@ fn rejects_untrusted_provenance_and_provider_mismatch() {
     assert_eq!(parse_sources(&[impossible_date]).err(), Some("provenance"));
     assert_eq!(parse_sources(&[empty]).err(), Some("model_count"));
 }
+
+#[test]
+fn rejects_fast_mode_outside_openai() {
+    let source = source(
+        "test",
+        r#"{
+          "provider":"test",
+          "schema_version":1,
+          "verified_at":"2026-08-23",
+          "source_urls":["https://example.com/models"],
+          "models":[{
+            "id":"model",
+            "context_window":10,
+            "supports_tools":false,
+            "supports_vision":false,
+            "supports_thinking":false,
+            "supports_fast_mode":true
+          }]
+        }"#,
+    );
+
+    assert_eq!(parse_sources(&[source]).err(), Some("fast_mode_provider"));
+}

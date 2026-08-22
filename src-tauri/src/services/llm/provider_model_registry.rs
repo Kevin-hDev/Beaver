@@ -29,6 +29,8 @@ pub struct ProviderModelConfig {
     pub supports_vision: bool,
     pub supports_thinking: bool,
     #[serde(default)]
+    pub supports_fast_mode: bool,
+    #[serde(default)]
     pub reasoning_modes: Vec<String>,
     #[serde(default)]
     pub default_reasoning_mode: Option<String>,
@@ -140,6 +142,11 @@ fn validate_file(expected_provider: &str, file: &ProviderModelFile) -> Result<()
     }
     if file.provider != expected_provider || !valid_provider_id(&file.provider) {
         return Err("provider_id");
+    }
+    if file.provider != crate::services::llm::providers::openai::PROVIDER_ID
+        && file.models.iter().any(|model| model.supports_fast_mode)
+    {
+        return Err("fast_mode_provider");
     }
     if !valid_date(&file.verified_at)
         || file.source_urls.is_empty()

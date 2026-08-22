@@ -8,7 +8,7 @@ fn parse(json: &str) -> Result<Vec<CatalogModel>, String> {
 #[test]
 fn computes_the_effective_context_from_openai_metadata() {
     let models = parse(
-        r#"{"models":[{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","supported_reasoning_levels":[{"effort":"low"},{"effort":"max"}],"default_reasoning_level":"low","visibility":"list","context_window":272000,"max_context_window":272000,"effective_context_window_percent":95,"input_modalities":["text","image"]}]}"#,
+        r#"{"models":[{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","supported_reasoning_levels":[{"effort":"low"},{"effort":"max"}],"default_reasoning_level":"low","visibility":"list","context_window":272000,"max_context_window":272000,"effective_context_window_percent":95,"input_modalities":["text","image"],"service_tiers":[{"id":"priority","name":"Fast","description":"faster"}],"additional_speed_tiers":["fast"]}]}"#,
     )
     .unwrap();
 
@@ -16,7 +16,39 @@ fn computes_the_effective_context_from_openai_metadata() {
     assert_eq!(models[0].info.reasoning_modes, ["low", "max"]);
     assert_eq!(models[0].info.default_reasoning_mode, None);
     assert!(models[0].info.supports_vision);
+    assert!(models[0].info.supports_fast_mode);
     assert!(models[0].visible);
+}
+
+#[test]
+fn fast_mode_requires_the_bounded_priority_service_tier() {
+    let without_tiers = parse(
+        r#"{"models":[{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","context_window":272000,"effective_context_window_percent":95,"additional_speed_tiers":["fast"]}]}"#,
+    )
+    .unwrap();
+    assert!(!without_tiers[0].info.supports_fast_mode);
+
+    for (tiers, expected_fast_mode) in [
+        (r#"[{"id":"flex"}]"#, false),
+        (r#"[{"id":"ultrafast"}]"#, false),
+        (r#"[{"id":"priority"},{"id":"priority"}]"#, true),
+        (
+            r#"[{"id":"priority-service-tier-name-that-is-too-long"}]"#,
+            false,
+        ),
+    ] {
+        let json = format!(
+            r#"{{"models":[{{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","context_window":272000,"effective_context_window_percent":95,"service_tiers":{tiers}}}]}}"#
+        );
+        let models = parse(&json).unwrap();
+        assert_eq!(models[0].info.supports_fast_mode, expected_fast_mode);
+    }
+
+    let nine_tiers = r#"[{"id":"flex"},{"id":"flex"},{"id":"flex"},{"id":"flex"},{"id":"flex"},{"id":"flex"},{"id":"flex"},{"id":"flex"},{"id":"priority"}]"#;
+    let json = format!(
+        r#"{{"models":[{{"slug":"gpt-5.6-sol","display_name":"GPT-5.6 Sol","context_window":272000,"effective_context_window_percent":95,"service_tiers":{nine_tiers}}}]}}"#
+    );
+    assert!(parse(&json).is_err());
 }
 
 #[test]
@@ -65,4 +97,5 @@ fn fallback_matches_the_current_conservative_codex_limit() {
         luna.reasoning_modes,
         ["low", "medium", "high", "xhigh", "max"]
     );
+    assert!(!models.iter().any(|model| model.supports_fast_mode));
 }

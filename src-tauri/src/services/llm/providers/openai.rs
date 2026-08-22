@@ -1,3 +1,5 @@
+pub const PROVIDER_ID: &str = "openai";
+
 pub fn is_gpt_56(model: &str) -> bool {
     let model = model.rsplit_once('/').map(|(_, id)| id).unwrap_or(model);
     matches!(

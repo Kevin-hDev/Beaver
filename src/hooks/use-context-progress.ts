@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { ModelInfo } from "@/types/agent";
+import type { LlmModelInfo } from "./available-model-types";
 
 export interface ContextProgressState {
   max: number;
@@ -11,11 +12,6 @@ export interface ContextProgressState {
 function parseNumCtxFromModelfile(modelfile: string): number | null {
   const m = modelfile.match(/^PARAMETER\s+num_ctx\s+(\d+)/mi);
   return m ? parseInt(m[1], 10) : null;
-}
-
-interface LlmModelInfo {
-  id: string;
-  context_length?: number;
 }
 
 export function useContextProgress(

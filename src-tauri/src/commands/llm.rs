@@ -39,6 +39,7 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
     // Autorité dynamique brute : l'enrichissement ci-dessous sert uniquement à l'UI.
     let runtime_catalog = models.clone();
     for m in &mut models {
+        m.supports_fast_mode = provider_model_lookup::supports_fast_mode(canonical_provider, &m.id);
         let local_limits = provider_model_lookup::local_limits(canonical_provider, &m.id);
         if let Some(limits) = local_limits {
             m.context_length = limits.context_window;

@@ -11,6 +11,7 @@ fn empty_reasoning_modes_cross_the_model_info_serialization_boundary() {
         supports_tools: false,
         supports_vision: false,
         supports_thinking: true,
+        supports_fast_mode: false,
         reasoning_modes: Vec::new(),
         default_reasoning_mode: None,
         is_free: false,

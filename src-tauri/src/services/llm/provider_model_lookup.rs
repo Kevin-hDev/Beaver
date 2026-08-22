@@ -63,6 +63,11 @@ pub fn local_reasoning(provider_id: &str, model_id: &str) -> Option<ModelReasoni
     })
 }
 
+pub fn supports_fast_mode(provider_id: &str, model_id: &str) -> bool {
+    provider_id == crate::services::llm::providers::openai::PROVIDER_ID
+        && direct_entry(provider_id, model_id).is_some_and(|model| model.supports_fast_mode)
+}
+
 pub async fn is_chat_model(provider_id: &str, model_id: &str) -> bool {
     local_entry(provider_id, model_id).is_some()
         || super::litellm_catalog_lookup::is_chat_model(provider_id, model_id).await

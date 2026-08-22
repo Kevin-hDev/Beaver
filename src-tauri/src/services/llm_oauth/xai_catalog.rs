@@ -134,6 +134,7 @@ fn to_model_info(model: &XaiCatalogModel) -> ModelInfo {
         supports_tools: local.supports_tools,
         supports_vision: local.supports_vision,
         supports_thinking: local.supports_thinking || !model.reasoning_modes.is_empty(),
+        supports_fast_mode: false,
         reasoning_modes: if model.reasoning_modes.is_empty() {
             local_reasoning
                 .as_ref()

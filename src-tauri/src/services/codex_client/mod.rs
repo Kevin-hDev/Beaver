@@ -3,6 +3,7 @@ mod http_error;
 mod limits;
 pub mod model_catalog;
 mod model_catalog_fallback;
+mod model_catalog_fast;
 mod model_catalog_wire;
 mod replay;
 pub mod request;

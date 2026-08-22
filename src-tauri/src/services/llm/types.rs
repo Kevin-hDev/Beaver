@@ -20,6 +20,8 @@ pub struct ModelInfo {
     #[serde(default)]
     pub supports_thinking: bool,
     #[serde(default)]
+    pub supports_fast_mode: bool,
+    #[serde(default)]
     pub reasoning_modes: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub default_reasoning_mode: Option<String>,

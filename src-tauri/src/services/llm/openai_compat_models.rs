@@ -38,6 +38,7 @@ fn to_model_info(
         supports_tools: model.supports_tools,
         supports_vision: model.supports_vision,
         supports_thinking: model.supports_thinking,
+        supports_fast_mode: model.supports_fast_mode,
         reasoning_modes,
         default_reasoning_mode: model.default_reasoning_mode,
         is_free: model.is_free,

@@ -4,8 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { cleanupTauriListener } from "@/lib/tauri-listen";
 import type { OllamaModel } from "@/types/agent";
 import type { ProviderSpec } from "@/types/api";
-import type { ReasoningMode } from "@/lib/reasoning-modes";
-import type { AvailableModel } from "./available-model-types";
+import type { AvailableModel, LlmModelInfo } from "./available-model-types";
 import {
   fetchOAuthModels, invalidateOAuthModelsCache, mapOAuthModels, mapOAuthResponse,
   OAUTH_MODELS_UPDATED_EVENT,
@@ -13,19 +12,6 @@ import {
 
 export { mapOAuthModels, mapOAuthResponse };
 export type { AvailableModel } from "./available-model-types";
-
-interface LlmModelInfo {
-  id: string;
-  display_name?: string;
-  owned_by?: string;
-  context_length?: number;
-  supports_tools: boolean;
-  supports_vision?: boolean;
-  supports_thinking?: boolean;
-  reasoning_modes?: ReasoningMode[];
-  default_reasoning_mode?: ReasoningMode;
-  is_free?: boolean;
-}
 
 let cachedGroups: Map<string, AvailableModel[]> = new Map();
 let pendingFetchAll: Promise<Map<string, AvailableModel[]>> | null = null;
@@ -79,6 +65,7 @@ async function fetchCloudModels(): Promise<Map<string, AvailableModel[]>> {
         supports_tools: m.supports_tools,
         supports_vision: m.supports_vision ?? false,
         supports_thinking: m.supports_thinking ?? false,
+        supports_fast_mode: m.supports_fast_mode,
         reasoning_modes: m.reasoning_modes,
         default_reasoning_mode: m.default_reasoning_mode,
         is_free: m.is_free ?? false,

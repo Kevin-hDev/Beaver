@@ -7,6 +7,7 @@ use serde::{Deserialize, Deserializer};
 pub(super) const MAX_CATALOG_MODELS: usize = 64;
 const MAX_REASONING_MODES: usize = 8;
 const MAX_INPUT_MODALITIES: usize = 8;
+const MAX_SERVICE_TIERS: usize = 8;
 
 #[derive(Debug, Clone)]
 pub(super) struct BoundedVec<T, const LIMIT: usize>(pub Vec<T>);
@@ -73,6 +74,13 @@ pub(super) struct WireModel {
     pub effective_context_window_percent: Option<u64>,
     #[serde(default)]
     pub input_modalities: BoundedVec<String, MAX_INPUT_MODALITIES>,
+    #[serde(default)]
+    pub service_tiers: BoundedVec<WireServiceTier, MAX_SERVICE_TIERS>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(super) struct WireServiceTier {
+    pub id: String,
 }
 
 #[derive(Debug, Deserialize)]
