@@ -1,0 +1,11 @@
+Phase 1 — modèles providers et transport xAI OAuth
+
+Autorités reviewer :
+- docs/providers/releases-2026-08/SPEC.md
+- docs/superpowers/plans/2026-08-22-phase-1-provider-models.md
+
+Décisions : registres JSON autoritaires pour les capacités statiques ; catalogue /models-v2 autoritaire pour le compte xAI OAuth ; transport OAuth isolé sur https://cli-chat-proxy.grok.com/v1 ; aucune tarification ajoutée ; erreurs sans réponse restaurées depuis diagnostic_runs.
+
+Validation : npm test (467 fichiers, 2452 tests), tsc, lint, cargo check, clippy strict et cargo test (3813 réussis, 4 ignorés) verts. Graphify AST mis à jour.
+
+Limite volontaire : aucun appel provider réel potentiellement facturé ni validation visuelle des deux thèmes sans accord de coût/session ; les fixtures réelles datées et cette acceptation restent à effectuer avant de déclarer la phase 1 totalement validée.
