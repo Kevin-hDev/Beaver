@@ -9,6 +9,7 @@ use uuid::Uuid;
 pub struct ScheduledAgentResult {
     pub messages: Vec<ChatMessage>,
     pub tokens: u32,
+    pub has_text_result: bool,
 }
 
 pub async fn run(
@@ -41,16 +42,14 @@ pub async fn run(
         cancel,
     })
     .await?;
-    if !completed
+    let has_text_result = completed
         .iter()
-        .any(|message| message.role == "assistant" && !message.content.trim().is_empty())
-    {
-        return Err("L'automatisation n'a produit aucun résultat.".to_string());
-    }
+        .any(|message| message.role == "assistant" && !message.content.trim().is_empty());
     let tokens = generated_output_tokens(&completed);
     Ok(ScheduledAgentResult {
         messages: completed,
         tokens,
+        has_text_result,
     })
 }
 

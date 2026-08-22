@@ -79,6 +79,14 @@ async fn dispatch(
     // Le scheduler ne possède pas de second moteur : tout réveil utilise le
     // contexte et les outils de l'Agent Local en accès complet.
     let result = super::agentic::run(app, wakeup, &session_id, cancel.clone()).await?;
+    let tokens = persist_agent_result(&session_id, result).await?;
+    Ok((session_id, tokens))
+}
+
+async fn persist_agent_result(
+    session_id: &str,
+    result: super::agentic::ScheduledAgentResult,
+) -> Result<u32, String> {
     let mut messages = persisted_agent_messages(&result.messages);
     if let Some(message) = messages
         .iter_mut()
@@ -87,8 +95,11 @@ async fn dispatch(
     {
         message.tokens = result.tokens;
     }
-    session_store::add_messages(&session_id, messages, result.tokens).await?;
-    Ok((session_id, result.tokens))
+    session_store::add_messages(session_id, messages, 0).await?;
+    if !result.has_text_result {
+        return Err("L'automatisation n'a produit aucun résultat.".to_string());
+    }
+    Ok(result.tokens)
 }
 
 fn persisted_agent_messages(

@@ -1,7 +1,8 @@
-use super::{create_heartbeat_session, persisted_agent_messages};
+use super::{create_heartbeat_session, persist_agent_result, persisted_agent_messages};
 use crate::models::{ScheduledWakeup, WakeupSchedule};
 use crate::services::agent_local::session_store;
-use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::agent_local::types_ollama::{ChatMessage, ToolCallFunction, ToolCallOllama};
+use crate::services::scheduler::agentic::ScheduledAgentResult;
 
 fn wakeup(project_id: Option<String>) -> ScheduledWakeup {
     ScheduledWakeup {
@@ -106,4 +107,57 @@ fn persistence_keeps_only_messages_produced_after_the_scheduled_prompt() {
         .collect::<Vec<_>>();
 
     assert_eq!(roles, vec!["assistant", "tool", "assistant"]);
+}
+
+#[tokio::test]
+async fn tool_trace_is_persisted_before_missing_text_is_reported() {
+    let session_id = create_heartbeat_session(&wakeup(None))
+        .await
+        .expect("create heartbeat session");
+    let result = ScheduledAgentResult {
+        messages: vec![
+            ChatMessage {
+                role: "user".into(),
+                content: "Inspecte le projet".into(),
+                ..Default::default()
+            },
+            ChatMessage {
+                role: "assistant".into(),
+                tool_calls: Some(vec![ToolCallOllama {
+                    id: Some("call-1".into()),
+                    extra_content: None,
+                    function: ToolCallFunction {
+                        name: "list_dir".into(),
+                        arguments: serde_json::json!({"path": "."}),
+                    },
+                }]),
+                ..Default::default()
+            },
+            ChatMessage {
+                role: "tool".into(),
+                content: "README.md".into(),
+                tool_name: Some("list_dir".into()),
+                ..Default::default()
+            },
+        ],
+        tokens: 12,
+        has_text_result: false,
+    };
+
+    let outcome = persist_agent_result(&session_id, result).await;
+    let saved = session_store::get(&session_id)
+        .await
+        .expect("reload heartbeat session");
+    let roles = saved
+        .messages
+        .iter()
+        .map(|message| message.role.as_str())
+        .collect::<Vec<_>>();
+
+    assert!(outcome.is_err());
+    assert_eq!(roles, vec!["user", "assistant", "tool"]);
+
+    session_store::delete_one(&session_id)
+        .await
+        .expect("delete heartbeat session");
 }
