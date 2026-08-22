@@ -1,13 +1,22 @@
+use super::python_runtime::probe_matches;
 #[cfg(unix)]
 use super::python_runtime::PythonRuntime;
 use super::python_runtime_path::lookup_suffixes;
 #[cfg(unix)]
 use super::python_runtime_path::{command_for, locate_with_suffixes};
-#[cfg(unix)]
 use super::runtime_manifest::RuntimeManifest;
 use std::ffi::OsStr;
 #[cfg(unix)]
 use std::path::Path;
+
+#[test]
+fn python_probe_accepts_native_lf_and_crlf_output() {
+    let manifest = RuntimeManifest::for_test(3, 14);
+
+    assert!(probe_matches(b"cpython\n3\n14\n", &manifest));
+    assert!(probe_matches(b"cpython\r\n3\r\n14\r\n", &manifest));
+    assert!(!probe_matches(b"cpython\r3\r14\r", &manifest));
+}
 
 #[cfg(unix)]
 #[tokio::test]

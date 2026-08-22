@@ -154,11 +154,13 @@ async fn probe(candidate: &PythonRuntime, manifest: &RuntimeManifest) -> bool {
     .unwrap_or(false)
 }
 
-fn probe_matches(output: &[u8], manifest: &RuntimeManifest) -> bool {
+pub(super) fn probe_matches(output: &[u8], manifest: &RuntimeManifest) -> bool {
     let Ok(output) = std::str::from_utf8(output) else {
         return false;
     };
-    let mut values = output.split_terminator('\n');
+    // `lines` normalise uniquement LF et CRLF : la même sonde reste stricte
+    // tout en acceptant la sortie native de CPython sous Windows.
+    let mut values = output.lines();
     let implementation = values.next();
     let major = values.next().and_then(|value| value.parse::<u8>().ok());
     let minor = values.next().and_then(|value| value.parse::<u8>().ok());
