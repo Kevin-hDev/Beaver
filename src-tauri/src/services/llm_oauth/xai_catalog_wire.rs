@@ -32,16 +32,18 @@ pub fn parse_catalog(body: &Value) -> Result<Vec<XaiCatalogModel>, &'static str>
     let mut models = Vec::with_capacity(data.len());
     for value in data {
         let object = value.as_object().ok_or("model")?;
-        reject_remote_route(object)?;
-        let id = string(object, &["model", "modelId", "id"]).ok_or("model_id")?;
-        if !crate::services::llm::runtime_models::valid_model_id(id) {
-            return Err("model_id");
-        }
-        if !ids.insert(id.to_string()) {
+        let raw_id = string(object, &["model", "modelId", "id"]);
+        if raw_id.is_some_and(|id| !ids.insert(id.to_string())) {
             return Err("duplicate_model");
         }
         if !is_visible_text_chat_model(object)? {
+            // Une entrée filtrée ne peut pas nous nuire et ne doit donc pas nous bloquer.
             continue;
+        }
+        reject_remote_route(object)?;
+        let id = raw_id.ok_or("model_id")?;
+        if !crate::services::llm::runtime_models::valid_model_id(id) {
+            return Err("model_id");
         }
         let model = parse_model(object, id)?;
         models.push(model);

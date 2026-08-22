@@ -79,4 +79,18 @@ describe("latestTerminalFailure", () => {
     });
     expect(latestTerminalFailure(fixture)).toBeNull();
   });
+
+  it("ne réordonne pas l'historique des diagnostics de la session", () => {
+    const fixture = session();
+    fixture.diagnostic_runs!.unshift({
+      request_id: "request-old", generation: 0, status: "completed", severity: "info",
+      started_at: "2026-08-22T12:49:00Z", updated_at: "2026-08-22T12:49:10Z",
+      ended_at: "2026-08-22T12:49:10Z", phase: "completed",
+    });
+
+    latestTerminalFailure(fixture);
+
+    expect(fixture.diagnostic_runs?.map((run) => run.request_id))
+      .toEqual(["request-old", "request-1"]);
+  });
 });

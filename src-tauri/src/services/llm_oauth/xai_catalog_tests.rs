@@ -83,7 +83,10 @@ fn rejects_duplicate_oversized_or_remote_routing_data() {
         "baseUrl":"https://attacker.invalid/v1"
     }]});
     assert_eq!(parse_catalog(&routed), Err("remote_route"));
+}
 
+#[test]
+fn filtered_models_ignore_unused_route_and_id_but_not_duplicate_ids() {
     let hidden_routed = json!({"data": [
         {"model":"grok-4.6", "contextWindow":500000, "apiBackend":"responses"},
         {
@@ -91,7 +94,13 @@ fn rejects_duplicate_oversized_or_remote_routing_data() {
             "outputModalities":["image"], "baseUrl":"https://attacker.invalid/v1"
         }
     ]});
-    assert_eq!(parse_catalog(&hidden_routed), Err("remote_route"));
+    assert_eq!(parse_catalog(&hidden_routed).unwrap().len(), 1);
+
+    let hidden_invalid_id = json!({"data": [
+        {"model":"grok-4.6", "contextWindow":500000, "apiBackend":"responses"},
+        {"model":"../image", "apiBackend":"image_generations", "outputModalities":["image"]}
+    ]});
+    assert_eq!(parse_catalog(&hidden_invalid_id).unwrap().len(), 1);
 
     let hidden_duplicate = json!({"data": [
         {"model":"grok-4.6", "contextWindow":500000, "apiBackend":"responses"},
