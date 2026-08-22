@@ -1,7 +1,10 @@
 use super::xai_oauth_transport::{
     backend_path, build_responses_payload, catalog_reasoning_mode, classify_status,
+    prepare_chat_request,
 };
 use crate::services::agent_local::types_ollama::ChatMessage;
+use crate::services::llm::request_purpose::RequestPurpose;
+use crate::services::llm::stream_http::RequestConfig;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 
 fn catalog_model() -> XaiCatalogModel {
@@ -53,6 +56,31 @@ fn chat_reasoning_is_restricted_by_the_subscription_catalog() {
     assert_eq!(catalog_reasoning_mode(&model, Some("low")), Some("low"));
     assert_eq!(catalog_reasoning_mode(&model, Some("xhigh")), Some("high"));
     assert_eq!(catalog_reasoning_mode(&model, None), Some("high"));
+}
+
+#[test]
+fn chat_request_uses_the_subscription_catalog_restriction() {
+    let messages = [];
+    let tools = [];
+    let request = RequestConfig {
+        provider_id: "xai-oauth",
+        model: "grok-4.6",
+        messages: &messages,
+        tools: &tools,
+        think: true,
+        reasoning_mode: Some("xhigh"),
+        max_tokens: None,
+        purpose: RequestPurpose::ManualChat,
+        session_id: Some("session-fixture"),
+    };
+    let mut model = catalog_model();
+    model.backend = XaiBackend::ChatCompletions;
+    model.reasoning_modes = vec!["low".into(), "high".into()];
+    model.default_reasoning_mode = Some("high".into());
+
+    let prepared = prepare_chat_request(request, &model);
+
+    assert_eq!(prepared.reasoning_mode, Some("high"));
 }
 
 #[test]

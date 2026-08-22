@@ -27,13 +27,8 @@ pub(super) async fn stream_chat(
     let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
-            let mut request = request;
-            request.reasoning_mode = catalog_reasoning_mode(&catalog_model, request.reasoning_mode);
-            let response = super::stream_http::post_chat_request_measured(
-                &request,
-                measurement.as_deref_mut(),
-            )
-            .await;
+            let request = prepare_chat_request(request, &catalog_model);
+            let response = post_catalog_chat_request(&request, measurement.as_deref_mut()).await;
             let response = response.map_err(|error| error.to_string())?;
             super::stream_consume::consume_stream(
                 on_event,
@@ -70,6 +65,44 @@ pub(super) async fn stream_chat(
             .await
         }
     }
+}
+
+pub(super) struct CatalogChatRequest<'a>(super::stream_http::RequestConfig<'a>);
+
+impl<'a> std::ops::Deref for CatalogChatRequest<'a> {
+    type Target = super::stream_http::RequestConfig<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+async fn post_catalog_chat_request(
+    request: &CatalogChatRequest<'_>,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<reqwest::Response, super::stream_http::RequestError> {
+    // Ce type fermé empêche le chemin OAuth d'envoyer une requête chat non restreinte.
+    super::stream_http::post_chat_request_measured(request, measurement).await
+}
+
+pub(super) fn prepare_chat_request<'request, 'catalog>(
+    request: super::stream_http::RequestConfig<'request>,
+    model: &'catalog XaiCatalogModel,
+) -> CatalogChatRequest<'catalog>
+where
+    'request: 'catalog,
+{
+    CatalogChatRequest(super::stream_http::RequestConfig {
+        provider_id: request.provider_id,
+        model: request.model,
+        messages: request.messages,
+        tools: request.tools,
+        think: request.think,
+        reasoning_mode: catalog_reasoning_mode(model, request.reasoning_mode),
+        max_tokens: request.max_tokens,
+        purpose: request.purpose,
+        session_id: request.session_id,
+    })
 }
 
 pub(super) fn catalog_reasoning_mode<'a>(

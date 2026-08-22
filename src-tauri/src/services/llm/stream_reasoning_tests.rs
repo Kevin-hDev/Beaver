@@ -95,6 +95,15 @@ fn zai_glm_53_keeps_forced_thinking_and_defaults_to_max() {
 }
 
 #[test]
+fn zai_glm_53_keeps_max_when_the_registry_is_unavailable() {
+    assert_eq!(
+        stream_reasoning::resolve_glm_53_effort(Some("high"), None),
+        "max"
+    );
+    assert_eq!(stream_reasoning::resolve_glm_53_effort(None, None), "max");
+}
+
+#[test]
 fn google_gemini_35_requests_thought_summaries() {
     let payload = payload("google", "gemini-3.5-flash", Some("low"));
     assert_eq!(

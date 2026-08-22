@@ -55,6 +55,12 @@ describe("ReasoningSelector", () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it("reste masqué lorsque le catalogue n'autorise aucun niveau", () => {
+    const { container } = renderSelector({ reasoning_modes: [] });
+
+    expect(container.firstChild).toBeNull();
+  });
+
   it("affiche le niveau dans un bouton séparé", () => {
     renderSelector();
 

@@ -26,6 +26,7 @@ pub(super) fn valid_reasoning_contract(
     if !supports_thinking && (!modes.is_empty() || default_mode.is_some()) {
         return Err("reasoning_modes");
     }
+    // Borne implicite : huit valeurs autorisées et uniques, avec entrées bornées en amont.
     let mut seen = std::collections::HashSet::with_capacity(modes.len());
     if modes
         .iter()

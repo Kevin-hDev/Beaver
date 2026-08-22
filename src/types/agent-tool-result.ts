@@ -1,22 +1,6 @@
-export type ToolResultStatus =
-  | "success"
-  | "running"
-  | "partial"
-  | "error"
-  | "cancelled"
-  | "stopped";
+import type { ToolErrorCategory, ToolResultStatus } from "./agent-tool-result-contract";
 
-export type ToolErrorCategory =
-  | "validation"
-  | "permission"
-  | "not_found"
-  | "conflict"
-  | "timeout"
-  | "cancelled"
-  | "unavailable"
-  | "external"
-  | "execution"
-  | "internal";
+export type { ToolErrorCategory, ToolResultStatus } from "./agent-tool-result-contract";
 
 export interface ToolErrorInfo {
   code: string;

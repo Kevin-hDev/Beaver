@@ -117,6 +117,10 @@ describe("reasoning modes", () => {
     ]);
   });
 
+  it("n'invente aucun niveau lorsque le catalogue publie une liste vide", () => {
+    expect(reasoningModeOptions(model("xai", "grok-4.5", []))).toEqual([]);
+  });
+
   it("normalise un mode invalide vers la valeur sûre", () => {
     const options = reasoningModeOptions(model("codex-oauth", "gpt-5.5"));
     expect(normalizeReasoningMode("off", options)).toBe("medium");

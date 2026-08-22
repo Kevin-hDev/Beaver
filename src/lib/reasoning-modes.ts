@@ -109,7 +109,7 @@ function isZaiEffortReasoning(model: AvailableModel | null): boolean {
 
 export function reasoningModeOptions(model: AvailableModel | null): ReasoningModeOption[] {
   if (!model?.supports_thinking) return [];
-  if (model.reasoning_modes?.length) return options(model.reasoning_modes);
+  if (model.reasoning_modes !== undefined) return options(model.reasoning_modes);
   switch (model.provider_id) {
     case "codex-oauth":
       if (isGpt56CodexUltra(model)) {

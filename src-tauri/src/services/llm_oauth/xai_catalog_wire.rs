@@ -31,14 +31,19 @@ pub fn parse_catalog(body: &Value) -> Result<Vec<XaiCatalogModel>, &'static str>
     let mut ids = HashSet::with_capacity(data.len());
     let mut models = Vec::with_capacity(data.len());
     for value in data {
-        let model = parse_model(value)?;
         let object = value.as_object().ok_or("model")?;
+        reject_remote_route(object)?;
+        let id = string(object, &["model", "modelId", "id"]).ok_or("model_id")?;
+        if !crate::services::llm::runtime_models::valid_model_id(id) {
+            return Err("model_id");
+        }
+        if !ids.insert(id.to_string()) {
+            return Err("duplicate_model");
+        }
         if !is_visible_text_chat_model(object)? {
             continue;
         }
-        if !ids.insert(model.id.clone()) {
-            return Err("duplicate_model");
-        }
+        let model = parse_model(object, id)?;
         models.push(model);
     }
     if models.is_empty() {
@@ -91,13 +96,7 @@ fn optional_bool(
         .transpose()
 }
 
-fn parse_model(value: &Value) -> Result<XaiCatalogModel, &'static str> {
-    let object = value.as_object().ok_or("model")?;
-    reject_remote_route(object)?;
-    let id = string(object, &["model", "modelId", "id"]).ok_or("model_id")?;
-    if !crate::services::llm::runtime_models::valid_model_id(id) {
-        return Err("model_id");
-    }
+fn parse_model(object: &Map<String, Value>, id: &str) -> Result<XaiCatalogModel, &'static str> {
     let display_name = string(object, &["name"]).unwrap_or(id);
     if display_name.is_empty()
         || display_name.chars().count() > MAX_NAME_CHARS

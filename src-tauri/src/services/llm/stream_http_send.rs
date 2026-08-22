@@ -5,6 +5,22 @@ use super::route::{LlmRoute, RouteError};
 use super::stream_http::RequestError;
 use crate::services::secure_http::AuthenticatedClient;
 
+pub(super) fn json_request_builder(
+    client: &AuthenticatedClient,
+    url: &str,
+    payload: &serde_json::Value,
+    token: &str,
+    mut auth_headers: reqwest::header::HeaderMap,
+    outbound_headers: &reqwest::header::HeaderMap,
+) -> reqwest::RequestBuilder {
+    auth_headers.extend(outbound_headers.clone());
+    client
+        .post(url)
+        .headers(auth_headers)
+        .bearer_auth(token)
+        .json(payload)
+}
+
 pub async fn send_json_request(
     client: &AuthenticatedClient,
     route: &LlmRoute,
@@ -17,13 +33,7 @@ pub async fn send_json_request(
     let outbound_headers = outbound_headers(route, model, session_id, purpose)?;
     route
         .send_authenticated(client, purpose, |token, headers| {
-            let mut headers = headers;
-            headers.extend(outbound_headers.clone());
-            client
-                .post(url)
-                .headers(headers)
-                .bearer_auth(token)
-                .json(payload)
+            json_request_builder(client, url, payload, token, headers, &outbound_headers)
         })
         .await
         .map_err(|error| match error {

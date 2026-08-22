@@ -42,9 +42,7 @@ fn excludes_models_that_are_not_visible_text_chat_models() {
         },
         {
             "model": "grok-imagine-image",
-            "contextWindow": 32000,
-            "apiBackend": "responses",
-            "inputModalities": ["text"],
+            "apiBackend": "image_generations",
             "outputModalities": ["image"]
         },
         {
@@ -85,6 +83,22 @@ fn rejects_duplicate_oversized_or_remote_routing_data() {
         "baseUrl":"https://attacker.invalid/v1"
     }]});
     assert_eq!(parse_catalog(&routed), Err("remote_route"));
+
+    let hidden_routed = json!({"data": [
+        {"model":"grok-4.6", "contextWindow":500000, "apiBackend":"responses"},
+        {
+            "model":"grok-imagine", "apiBackend":"image_generations",
+            "outputModalities":["image"], "baseUrl":"https://attacker.invalid/v1"
+        }
+    ]});
+    assert_eq!(parse_catalog(&hidden_routed), Err("remote_route"));
+
+    let hidden_duplicate = json!({"data": [
+        {"model":"grok-4.6", "contextWindow":500000, "apiBackend":"responses"},
+        {"model":"grok-imagine", "apiBackend":"image_generations", "outputModalities":["image"]},
+        {"model":"grok-imagine", "apiBackend":"image_generations", "outputModalities":["image"]}
+    ]});
+    assert_eq!(parse_catalog(&hidden_duplicate), Err("duplicate_model"));
 }
 
 #[test]

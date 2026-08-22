@@ -10,7 +10,6 @@ export function latestTerminalFailure(session: AgentSession): TerminalFailure | 
   // Une exécution active a autorité sur les anciens diagnostics terminaux.
   if ((session.diagnostic_runs ?? []).some((run) => run.status === "running")) return null;
   const terminalRuns = (session.diagnostic_runs ?? [])
-    .filter((run) => run.status !== "running")
     .sort((left, right) => timestamp(right.ended_at ?? right.updated_at)
       - timestamp(left.ended_at ?? left.updated_at));
   const latest = terminalRuns[0];

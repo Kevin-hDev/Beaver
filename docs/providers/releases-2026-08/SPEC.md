@@ -116,7 +116,7 @@ Sources officielles :
 
 - <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/README.md#using-authjson-for-api-access>
 - <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/remote/client.rs>
-- <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/config.rs>
+- <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/agent/config.rs>
 
 Le jeton de session d’abonnement cible le proxy
 `https://cli-chat-proxy.grok.com/v1`, pas `https://api.x.ai/v1`.
@@ -125,7 +125,7 @@ Le contrat observé dans le client officiel comprend au minimum :
 
 - `Authorization: Bearer <token>` ;
 - `X-XAI-Token-Auth: xai-grok-cli` ;
-- `X-Authenticate-Response: authenticate-response` ;
+- `x-authenticateresponse: authenticate-response` (orthographe exacte du client officiel) ;
 - une identité utilisateur obtenue par l’endpoint officiel `/user` lorsque le
   chemin l’exige ;
 - un identifiant et une version client véridiques pour Beaver ;

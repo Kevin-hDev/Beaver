@@ -57,6 +57,13 @@ describe("latestTerminalFailure", () => {
     expect(latestTerminalFailure(fixture)?.code).toBe(code);
   });
 
+  it("remplace un code inconnu par l'erreur generique persistable", () => {
+    const fixture = session();
+    fixture.stream_failures![0].code = "provider_internal_secret";
+
+    expect(latestTerminalFailure(fixture)?.code).toBe("stream_interrupted");
+  });
+
   it.each(["completed", "cancelled"])("ignore une execution %s", (status) => {
     const fixture = session();
     fixture.diagnostic_runs![0].status = status;

@@ -15,6 +15,8 @@ pub enum UsageScope {
 enum AuthSource {
     ApiKey(&'static str),
     OAuth(LlmOAuthProvider),
+    #[cfg(test)]
+    TestToken(&'static str),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -93,6 +95,11 @@ impl LlmRoute {
                 }
                 Ok(response)
             }
+            #[cfg(test)]
+            AuthSource::TestToken(token) => client
+                .send(build(token, HeaderMap::new()))
+                .await
+                .map_err(|_| RouteError::Network),
         }
     }
 
@@ -202,6 +209,14 @@ fn oauth_route(
         usage_scope: UsageScope::InteractiveOnly,
         auth_source: AuthSource::OAuth(provider),
     }
+}
+
+#[cfg(test)]
+#[path = "route_test_support.rs"]
+mod test_support;
+#[cfg(test)]
+pub(super) fn test_route(chat_provider_id: &'static str) -> LlmRoute {
+    test_support::test_route(chat_provider_id)
 }
 
 #[cfg(test)]
