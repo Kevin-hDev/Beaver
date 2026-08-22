@@ -1,0 +1,11 @@
+Cloture de la re-review 51edbd8d - D1, D2 et D3 uniquement.
+
+Autorite reviewer: docs/providers/releases-2026-08/reviews/REREVIEW-51edbd8d.md. D4, D5 et D6 sont informatifs et restent intacts.
+
+D1: ModelInfo serialise toujours reasoning_modes, y compris la liste vide; le test traverse serde_json et exige reasoning_modes: []. D2: latestTerminalFailure trie une copie et ne modifie plus diagnostic_runs. D3: les doublons sont controles avant filtrage; route et identifiant ne sont valides que pour les modeles retenus; model_count et le fail-closed des modeles retenus sont conserves.
+
+Mutations executees et rouges: restauration de skip_serializing_if; retrait de la copie avant sort; validation de route avant filtre; validation identifiant avant filtre. Apres restauration: test serialization 1/1, catalogue xAI 5/5, agent-session-failure 15/15.
+
+Preuves globales finales: cargo test 3830 passes, 5 ignores, puis 1 integration passe; npm test 468 fichiers et 2469 tests Vitest, build scripts 56, CI 16, CEF 45 avec 1 skip Windows, E2E 70, extensions 53; clippy strict, cargo fmt, cargo check lib, TypeScript, lint, contracts check et git diff check verts. Graphify mis a jour.
+
+Revue independante finale: pret a commit, aucun finding critique, majeur ou mineur. Aucun appel provider reel ni reproduction visuelle du catalogue vide effectues.
