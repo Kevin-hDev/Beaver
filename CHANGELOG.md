@@ -4,6 +4,16 @@
 
 ---
 
+## v1.1.5
+
+### Scheduled wakeups
+
+- **Full Agent Local execution** — scheduled wakeups now use the same system instructions, enabled tools, skills, memory, MCP connectors, project root, and full-access permission contract as a manually started Agent Local session.
+- **Reliable isolated sessions** — every execution receives its own conversation, saves the scheduled prompt before resolving its workspace, supports the project-free default, and refuses a project that has been removed instead of silently running elsewhere.
+- **Complete automation history** — wakeup conversations preserve intermediate assistant turns, tool calls, and tool results without duplicating the prompt, including when the agent finishes without a textual reply, while token estimates cover the complete generated trace.
+
+---
+
 ## v1.1.4
 
 ### Subagents and Codex OAuth
