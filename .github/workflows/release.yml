@@ -139,18 +139,23 @@ jobs:
             bundles: app,dmg
             bundle_dir: dmg
             asset_suffix: _aarch64.dmg
+            searxng_test_features: ""
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             label: beaver-linux-x64
             bundles: deb
             bundle_dir: deb
             asset_suffix: _amd64.deb
+            searxng_test_features: ""
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             label: beaver-windows-x64
             bundles: nsis
             bundle_dir: nsis
             asset_suffix: _x64-setup.exe
+            # Rust test executables must not load the CEF DLLs staged by the
+            # release build; this is the same isolated profile used by Windows CI.
+            searxng_test_features: --features windows-tests
 
     runs-on: ${{ matrix.os }}
 
@@ -211,7 +216,7 @@ jobs:
 
       - name: Verify SearXNG offline runtime
         working-directory: src-tauri
-        run: cargo test services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin --lib -- --ignored --exact --nocapture
+        run: cargo test --lib ${{ matrix.searxng_test_features }} services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin -- --ignored --exact --nocapture
 
       - name: Resolve exact artifact paths
         id: paths

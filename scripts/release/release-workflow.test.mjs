@@ -114,6 +114,7 @@ test("valide les scripts SearXNG avec le Python contrôlé avant la release", ()
 });
 
 test("vérifie le wheelhouse SearXNG après chaque build avant les artefacts", () => {
+  const builds = workflowDocument.jobs.build.strategy.matrix.include;
   const steps = workflowDocument.jobs.build.steps;
   const buildIndex = steps.findIndex(({ name }) => name === "Build Tauri app without publishing");
   const smokeSteps = steps.filter(({ name }) => name === "Verify SearXNG offline runtime");
@@ -124,7 +125,15 @@ test("vérifie le wheelhouse SearXNG après chaque build avant les artefacts", (
   assert.equal(smoke["working-directory"], "src-tauri");
   assert.equal(
     smoke.run,
-    "cargo test services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin --lib -- --ignored --exact --nocapture",
+    "cargo test --lib ${{ matrix.searxng_test_features }} services::searxng::runtime_environment_tests::release_wheelhouse_installs_below_the_safety_margin -- --ignored --exact --nocapture",
+  );
+  assert.deepEqual(
+    builds.map(({ os, searxng_test_features: features }) => [os, features]),
+    [
+      ["macos-latest", ""],
+      ["ubuntu-22.04", ""],
+      ["windows-latest", "--features windows-tests"],
+    ],
   );
   const smokeIndex = steps.indexOf(smoke);
   assert.ok(buildIndex < smokeIndex && smokeIndex < resolveIndex);
