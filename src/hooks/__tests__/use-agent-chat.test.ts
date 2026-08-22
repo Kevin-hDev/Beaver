@@ -211,4 +211,51 @@ describe("useAgentChat", () => {
     expect(startStream).toHaveBeenCalledTimes(1);
     expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "add_messages_to_session")).toHaveLength(1);
   });
+
+  it("restaure l'erreur persistee sans message assistant ni diagnostic brut", async () => {
+    const failedSession: AgentSession = {
+      ...session,
+      messages: [session.messages[0]],
+      diagnostic_runs: [{
+        request_id: "request-1", generation: 1, status: "failed", severity: "error",
+        started_at: "2026-08-22T12:50:32Z", updated_at: "2026-08-22T12:50:48Z",
+        ended_at: "2026-08-22T12:50:48Z", phase: "retrying", error_type: "provider_error",
+        safe_summary: "Interruption pendant retrying (provider_error).",
+      }],
+      stream_failures: [{
+        code: "provider_quota_exhausted",
+        occurred_at: "2026-08-22T12:50:48Z",
+        is_connection: false,
+      }],
+    };
+    mockSessionInvoke(failedSession);
+
+    const { result } = renderHook(() => useAgentChat("session-1", "grok-4.6", "xai-oauth"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+
+    expect(result.current.messages).toEqual([session.messages[0]]);
+    expect(result.current.error).toBe("errors.providerQuotaExhausted");
+    expect(result.current.diagnosticSummary).toBeUndefined();
+  });
+
+  it("ne restaure plus l'erreur lorsqu'une reponse assistant est plus recente", async () => {
+    mockSessionInvoke({
+      ...session,
+      diagnostic_runs: [{
+        request_id: "request-1", generation: 1, status: "failed", severity: "error",
+        started_at: "2026-06-24T09:59:58Z", updated_at: "2026-06-24T09:59:59Z",
+        ended_at: "2026-06-24T09:59:59Z", phase: "retrying", error_type: "provider_error",
+      }],
+      stream_failures: [{
+        code: "provider_error",
+        occurred_at: "2026-06-24T09:59:59Z",
+        is_connection: false,
+      }],
+    });
+
+    const { result } = renderHook(() => useAgentChat("session-1", "grok-4.6", "xai-oauth"));
+    await waitFor(() => expect(result.current.sessionLoading).toBe(false));
+
+    expect(result.current.error).toBeUndefined();
+  });
 });

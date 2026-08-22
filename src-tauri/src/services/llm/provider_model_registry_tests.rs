@@ -53,9 +53,15 @@ fn new_models_publish_their_official_reasoning_contracts() {
 #[test]
 fn aliases_resolve_without_duplicating_the_visible_inventory() {
     let alias = lookup("xai", "grok-4.5-latest").unwrap();
+    let grok_46_alias = lookup("xai", "grok-4.6-latest").unwrap();
 
     assert_eq!(alias.id, "grok-4.5");
     assert_eq!(alias.context_window, 500_000);
+    assert_eq!(grok_46_alias.id, "grok-4.6");
+    assert_eq!(
+        grok_46_alias.default_reasoning_mode.as_deref(),
+        Some("high")
+    );
     assert!(!list("xai")
         .iter()
         .any(|model| model.id == "grok-4.5-latest"));
@@ -281,27 +287,8 @@ fn rejects_invalid_reasoning_contracts() {
           }]
         }"#,
     );
-    let too_many = source(
-        "test",
-        r#"{
-          "provider":"test",
-          "schema_version":1,
-          "verified_at":"2026-08-22",
-          "source_urls":["https://example.com/models"],
-          "models":[{
-            "id":"model",
-            "context_window":10,
-            "supports_tools":false,
-            "supports_vision":false,
-            "supports_thinking":true,
-            "reasoning_modes":["off","minimal","low","medium","high","xhigh","max","auto","extra"]
-          }]
-        }"#,
-    );
-
     assert_eq!(parse_sources(&[unknown]).err(), Some("reasoning_modes"));
     assert_eq!(parse_sources(&[duplicate]).err(), Some("reasoning_modes"));
-    assert_eq!(parse_sources(&[too_many]).err(), Some("reasoning_modes"));
     assert_eq!(
         parse_sources(&[invalid_default]).err(),
         Some("reasoning_default")

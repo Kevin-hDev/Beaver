@@ -118,6 +118,59 @@ fn new_models_use_the_registry_default_and_reject_unsupported_off() {
 }
 
 #[test]
+fn grok_45_keeps_its_previous_medium_default() {
+    assert_eq!(
+        normalize_for_model("xai", "grok-4.5", None, true).as_deref(),
+        Some("medium")
+    );
+}
+
+#[test]
+fn dynamic_reasoning_levels_can_only_restrict_the_static_registry() {
+    let base = ["low", "medium", "high", "xhigh"]
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    let dynamic = ["low", "medium", "high"]
+        .into_iter()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        restrict_to_dynamic_modes(base, Some(&dynamic)),
+        ["low", "medium", "high"]
+    );
+    assert!(restrict_to_dynamic_modes(vec!["high".into()], Some(&["low".into()])).is_empty());
+}
+
+#[test]
+fn supported_modes_and_default_use_validated_runtime_restrictions() {
+    let model = crate::services::llm::types::ModelInfo {
+        id: "dynamic-model".into(),
+        display_name: None,
+        owned_by: None,
+        context_length: Some(32_000),
+        max_output_tokens: None,
+        supports_tools: true,
+        supports_vision: false,
+        supports_thinking: true,
+        reasoning_modes: vec!["auto".into()],
+        default_reasoning_mode: Some("auto".into()),
+        is_free: false,
+    };
+    crate::services::llm::runtime_models::replace_provider("dynamic-fixture", &[model]);
+
+    assert_eq!(
+        supported_modes("dynamic-fixture", "dynamic-model", true),
+        ["auto"]
+    );
+    assert_eq!(
+        normalize_for_model("dynamic-fixture", "dynamic-model", None, true).as_deref(),
+        Some("auto")
+    );
+}
+
+#[test]
 fn xai_multi_agent_is_detected_as_thinking() {
     assert!(provider_model_supports_thinking(
         "xai",

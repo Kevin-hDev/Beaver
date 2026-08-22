@@ -36,6 +36,8 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
         }
     }
     let mut models = chat_filtered;
+    // Autorité dynamique brute : l'enrichissement ci-dessous sert uniquement à l'UI.
+    let runtime_catalog = models.clone();
     for m in &mut models {
         let local_limits = provider_model_lookup::local_limits(canonical_provider, &m.id);
         if let Some(limits) = local_limits {
@@ -46,14 +48,25 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
             m.supports_tools = caps.supports_tools;
             m.supports_vision = caps.supports_vision;
             m.supports_thinking = caps.supports_thinking;
-            m.reasoning_modes = crate::services::reasoning::supported_modes(
-                canonical_provider,
-                &m.id,
-                m.supports_thinking,
-            )
-            .iter()
-            .map(|mode| mode.to_string())
-            .collect();
+            if let Some(reasoning) =
+                provider_model_lookup::local_reasoning(canonical_provider, &m.id)
+            {
+                let dynamic_modes =
+                    (!m.reasoning_modes.is_empty()).then_some(m.reasoning_modes.as_slice());
+                m.reasoning_modes = crate::services::reasoning::restrict_to_dynamic_modes(
+                    reasoning.modes,
+                    dynamic_modes,
+                );
+                m.default_reasoning_mode = m
+                    .default_reasoning_mode
+                    .take()
+                    .filter(|mode| m.reasoning_modes.contains(mode))
+                    .or_else(|| {
+                        reasoning
+                            .default_mode
+                            .filter(|mode| m.reasoning_modes.contains(mode))
+                    });
+            }
         } else {
             if let Some(caps) = provider_model_lookup::capabilities(canonical_provider, &m.id).await
             {
@@ -81,7 +94,7 @@ pub async fn list_llm_models(provider_id: String) -> Result<Vec<ModelInfo>, Stri
             m.default_reasoning_mode = None;
         }
     }
-    crate::services::llm::runtime_models::replace_provider(canonical_provider, &models);
+    crate::services::llm::runtime_models::replace_provider(canonical_provider, &runtime_catalog);
     Ok(models)
 }
 

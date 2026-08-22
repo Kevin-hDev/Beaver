@@ -38,6 +38,12 @@ export type {
   TokenPhase,
 } from "./agent-stream";
 export type {
+  AgentDiagnosticEvent,
+  AgentDiagnosticRun,
+  AgentDiagnosticTodo,
+  AgentDiagnosticTool,
+} from "./agent-diagnostics";
+export type {
   AgentSession,
   AgentSessionMeta,
   CloneMode,

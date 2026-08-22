@@ -31,7 +31,7 @@ fn insert(headers: &mut HeaderMap, name: &'static str, value: &str) -> Result<()
 }
 
 fn unavailable() -> String {
-    "Connexion indisponible".to_string()
+    "provider_configuration_invalid".to_string()
 }
 
 #[cfg(test)]
@@ -58,6 +58,9 @@ mod tests {
             model_header("grok-4.6").unwrap()["x-grok-model-override"],
             "grok-4.6"
         );
-        assert!(model_header("../invalid").is_err());
+        assert_eq!(
+            model_header("../invalid").unwrap_err(),
+            "provider_configuration_invalid"
+        );
     }
 }

@@ -1,4 +1,6 @@
-use super::xai_oauth_transport::{backend_path, build_responses_payload, classify_status};
+use super::xai_oauth_transport::{
+    backend_path, build_responses_payload, catalog_reasoning_mode, classify_status,
+};
 use crate::services::agent_local::types_ollama::ChatMessage;
 use crate::services::llm_oauth::{XaiBackend, XaiCatalogModel};
 
@@ -41,6 +43,16 @@ fn responses_payload_uses_catalog_reasoning_and_never_a_remote_route() {
     assert_eq!(payload["reasoning"]["effort"], "xhigh");
     assert_eq!(payload["stream"], true);
     assert!(payload.get("base_url").is_none());
+}
+
+#[test]
+fn chat_reasoning_is_restricted_by_the_subscription_catalog() {
+    let mut model = catalog_model();
+    model.reasoning_modes.retain(|mode| mode != "xhigh");
+
+    assert_eq!(catalog_reasoning_mode(&model, Some("low")), Some("low"));
+    assert_eq!(catalog_reasoning_mode(&model, Some("xhigh")), Some("high"));
+    assert_eq!(catalog_reasoning_mode(&model, None), Some("high"));
 }
 
 #[test]

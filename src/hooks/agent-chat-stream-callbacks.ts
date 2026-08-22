@@ -3,10 +3,11 @@ import type { StreamEvent, TokenPhase } from "@/types/agent";
 import i18n from "@/i18n";
 import { isHiddenAgentTool } from "@/lib/hidden-agent-tools";
 import {
-  MAX_PENDING_PERMISSIONS, KNOWN_ERROR_KEYS,
+  MAX_PENDING_PERMISSIONS,
   type ChatState, type ManagedStreamState, type StreamApplyResult,
   type PermissionRequestState,
 } from "./agent-chat-stream-types";
+import { KNOWN_ERROR_KEYS } from "@/lib/agent-error-codes";
 import { activeItemAfterToolResult, pendingToolIndices, thinkingItem, toolItems } from "./active-stream-item";
 import { applyToolResult } from "./agent-chat-tool-results";
 import { checkpointQueuedUserMessages } from "./agent-stream-user-checkpoint";

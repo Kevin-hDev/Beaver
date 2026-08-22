@@ -34,10 +34,17 @@ fn apply_zai(payload: &mut Value, model: &str, reasoning_mode: Option<&str>) {
     if model.eq_ignore_ascii_case("glm-5.3") {
         // GLM 5.3 raisonne toujours : "off" est donc replié sur le défaut officiel.
         apply_thinking(payload, Some("max"));
-        payload["reasoning_effort"] = reasoning_mode
-            .filter(|mode| matches!(*mode, "low" | "high" | "max"))
-            .unwrap_or("max")
-            .into();
+        if let Some(contract) =
+            crate::services::llm::provider_model_lookup::local_reasoning("zai", model)
+        {
+            let effort = reasoning_mode
+                .filter(|mode| contract.modes.iter().any(|candidate| candidate == mode))
+                .map(str::to_string)
+                .or(contract.default_mode);
+            if let Some(effort) = effort {
+                payload["reasoning_effort"] = effort.into();
+            }
+        }
         return;
     }
     apply_thinking(payload, reasoning_mode);

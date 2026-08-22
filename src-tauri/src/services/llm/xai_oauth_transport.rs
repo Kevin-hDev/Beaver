@@ -27,6 +27,8 @@ pub(super) async fn stream_chat(
     let catalog_model = crate::services::llm_oauth::xai_catalog_model(request.model).await?;
     match catalog_model.backend {
         XaiBackend::ChatCompletions => {
+            let mut request = request;
+            request.reasoning_mode = catalog_reasoning_mode(&catalog_model, request.reasoning_mode);
             let response = super::stream_http::post_chat_request_measured(
                 &request,
                 measurement.as_deref_mut(),
@@ -70,6 +72,27 @@ pub(super) async fn stream_chat(
     }
 }
 
+pub(super) fn catalog_reasoning_mode<'a>(
+    model: &'a XaiCatalogModel,
+    requested_mode: Option<&'a str>,
+) -> Option<&'a str> {
+    requested_mode
+        .filter(|mode| {
+            model
+                .reasoning_modes
+                .iter()
+                .any(|candidate| candidate == mode)
+        })
+        .or_else(|| {
+            model.default_reasoning_mode.as_deref().filter(|mode| {
+                model
+                    .reasoning_modes
+                    .iter()
+                    .any(|candidate| candidate == mode)
+            })
+        })
+}
+
 pub(super) fn build_responses_payload(
     model: &XaiCatalogModel,
     messages: &[ChatMessage],
@@ -79,15 +102,7 @@ pub(super) fn build_responses_payload(
 ) -> serde_json::Value {
     let (instructions, input) =
         crate::services::codex_client::convert::convert_messages_with_tools(messages, tools);
-    let effort = requested_mode
-        .filter(|mode| {
-            model
-                .reasoning_modes
-                .iter()
-                .any(|candidate| candidate == mode)
-        })
-        .map(str::to_string)
-        .or_else(|| model.default_reasoning_mode.clone());
+    let effort = catalog_reasoning_mode(model, requested_mode);
     let mut payload = serde_json::json!({
         "model": model.id,
         "instructions": instructions,

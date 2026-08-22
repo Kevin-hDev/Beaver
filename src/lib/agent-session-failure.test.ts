@@ -27,9 +27,8 @@ describe("latestTerminalFailure", () => {
   it("restaure un échec terminal sans fabriquer de message assistant", () => {
     const fixture = session();
     expect(latestTerminalFailure(fixture)).toEqual({
-      code: "stream_interrupted",
+      code: "provider_error",
       isConnection: false,
-      diagnosticSummary: "Interruption pendant retrying (provider_error).",
     });
     expect(fixture.messages).toHaveLength(1);
   });
@@ -43,9 +42,34 @@ describe("latestTerminalFailure", () => {
     expect(latestTerminalFailure(fixture)).toBeNull();
   });
 
-  it("conserve un code provider stable connu", () => {
+  it.each([
+    "connection_lost",
+    "timeout",
+    "provider_overloaded",
+    "provider_error",
+    "max_turns",
+    "circuit_breaker",
+    "tool_error",
+    "stream_error",
+  ])("conserve le code Rust persiste %s", (code) => {
     const fixture = session();
-    fixture.stream_failures![0].code = "provider_quota_exhausted";
-    expect(latestTerminalFailure(fixture)?.code).toBe("provider_quota_exhausted");
+    fixture.stream_failures![0].code = code;
+    expect(latestTerminalFailure(fixture)?.code).toBe(code);
+  });
+
+  it.each(["completed", "cancelled"])("ignore une execution %s", (status) => {
+    const fixture = session();
+    fixture.diagnostic_runs![0].status = status;
+    expect(latestTerminalFailure(fixture)).toBeNull();
+  });
+
+  it("n'affiche pas un ancien echec lorsqu'une execution est encore active", () => {
+    const fixture = session();
+    fixture.diagnostic_runs!.push({
+      request_id: "request-2", generation: 2, status: "running", severity: "info",
+      started_at: "2026-08-22T12:51:00Z", updated_at: "2026-08-22T12:51:01Z",
+      phase: "streaming",
+    });
+    expect(latestTerminalFailure(fixture)).toBeNull();
   });
 });

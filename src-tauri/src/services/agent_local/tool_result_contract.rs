@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 const MAX_HINT_CHARS: usize = 1_000;
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
 pub enum ToolResultStatus {
     #[default]
     Success,
@@ -32,7 +34,9 @@ impl ToolResultStatus {
 }
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 #[serde(rename_all = "snake_case")]
+#[cfg_attr(test, ts(rename_all = "snake_case"))]
 pub enum ToolErrorCategory {
     Validation,
     Permission,

@@ -1,25 +1,14 @@
 import type { AgentSession } from "@/types/agent";
-
-const KNOWN_CODES = new Set([
-  "rate_limit",
-  "auth_failed",
-  "oauth_reauthentication_required",
-  "provider_access_unavailable",
-  "provider_connection_failed",
-  "provider_temporarily_unavailable",
-  "provider_request_rejected",
-  "provider_payload_too_large",
-  "provider_configuration_invalid",
-  "provider_quota_exhausted",
-]);
+import { isKnownAgentErrorCode } from "./agent-error-codes";
 
 export interface TerminalFailure {
   code: string;
   isConnection: boolean;
-  diagnosticSummary?: string;
 }
 
 export function latestTerminalFailure(session: AgentSession): TerminalFailure | null {
+  // Une exécution active a autorité sur les anciens diagnostics terminaux.
+  if ((session.diagnostic_runs ?? []).some((run) => run.status === "running")) return null;
   const terminalRuns = (session.diagnostic_runs ?? [])
     .filter((run) => run.status !== "running")
     .sort((left, right) => timestamp(right.ended_at ?? right.updated_at)
@@ -35,13 +24,12 @@ export function latestTerminalFailure(session: AgentSession): TerminalFailure | 
   const failure = (session.stream_failures ?? [])
     .filter((entry) => timestamp(entry.occurred_at) <= endedAt + 1_000)
     .sort((left, right) => timestamp(right.occurred_at) - timestamp(left.occurred_at))[0];
-  const code = failure?.code && KNOWN_CODES.has(failure.code)
+  const code = failure?.code && isKnownAgentErrorCode(failure.code)
     ? failure.code
     : "stream_interrupted";
   return {
     code,
     isConnection: failure?.is_connection ?? latest.error_type === "connection_lost",
-    diagnosticSummary: latest.safe_summary,
   };
 }
 

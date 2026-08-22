@@ -34,13 +34,37 @@ fn openrouter_models_use_supported_parameters_for_reasoning() {
     assert!(reasoning.supports_thinking);
     assert!(reasoning.is_free);
     assert_eq!(reasoning.max_output_tokens, Some(65_535));
-    assert_eq!(
-        reasoning.reasoning_modes,
-        ["off", "auto", "low", "medium", "high", "xhigh"]
-    );
+    assert!(reasoning.reasoning_modes.is_empty());
     assert!(!plain.supports_thinking);
     assert!(!plain.is_free);
     assert!(plain.reasoning_modes.is_empty());
+}
+
+#[test]
+fn feature_flags_do_not_invent_dynamic_reasoning_levels() {
+    let body = json!({
+        "data": [{
+            "id": "provider/reasoning-model",
+            "supported_parameters": ["reasoning_effort"]
+        }]
+    });
+
+    let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
+
+    assert!(model.supports_thinking);
+    assert!(model.reasoning_modes.is_empty());
+    assert!(model.default_reasoning_mode.is_none());
+}
+
+#[test]
+fn disabled_dynamic_reasoning_never_publishes_a_static_default() {
+    let body = json!({"data": [{"id": "x-ai/grok-4.6"}]});
+
+    let model = parse_models_list(&body, "openrouter").unwrap().remove(0);
+
+    assert!(!model.supports_thinking);
+    assert!(model.reasoning_modes.is_empty());
+    assert!(model.default_reasoning_mode.is_none());
 }
 
 #[test]
@@ -111,7 +135,7 @@ fn local_limits_override_conflicting_runtime_metadata() {
 }
 
 #[test]
-fn google_models_use_name_based_reasoning_modes() {
+fn generic_google_catalog_does_not_invent_reasoning_modes() {
     let body = json!({
         "data": [
             {
@@ -131,8 +155,8 @@ fn google_models_use_name_based_reasoning_modes() {
     let gemini_35 = models.iter().find(|m| m.id == "gemini-3.5-flash").unwrap();
     let gemini_25 = models.iter().find(|m| m.id == "gemini-2.5-flash").unwrap();
 
-    assert_eq!(gemini_35.reasoning_modes, ["low", "medium", "high"]);
-    assert_eq!(gemini_25.reasoning_modes, ["off", "low", "medium", "high"]);
+    assert!(gemini_35.reasoning_modes.is_empty());
+    assert!(gemini_25.reasoning_modes.is_empty());
 }
 
 #[test]
@@ -154,15 +178,12 @@ fn openai_gpt_56_models_receive_official_capabilities() {
         assert!(model.supports_tools);
         assert!(model.supports_vision);
         assert!(model.supports_thinking);
-        assert_eq!(
-            model.reasoning_modes,
-            ["off", "low", "medium", "high", "xhigh", "max"]
-        );
+        assert!(model.reasoning_modes.is_empty());
     }
 }
 
 #[test]
-fn openrouter_new_models_use_provider_specific_reasoning_modes() {
+fn openrouter_feature_flags_do_not_duplicate_static_reasoning_modes() {
     let body = json!({
         "data": [
             {
@@ -194,10 +215,7 @@ fn openrouter_new_models_use_provider_specific_reasoning_modes() {
         .find(|model| model.id == "openai/gpt-5.6-terra")
         .unwrap();
 
-    assert_eq!(
-        sol.reasoning_modes,
-        ["off", "low", "medium", "high", "xhigh", "max"]
-    );
-    assert_eq!(grok.reasoning_modes, ["low", "medium", "high"]);
-    assert_eq!(terra.reasoning_modes, sol.reasoning_modes);
+    assert!(sol.reasoning_modes.is_empty());
+    assert!(grok.reasoning_modes.is_empty());
+    assert!(terra.reasoning_modes.is_empty());
 }

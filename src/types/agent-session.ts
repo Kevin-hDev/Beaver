@@ -1,6 +1,7 @@
 import type { AgentMessage } from "./agent-message";
 import type { AgentPlanRun, AgentPlanWorkflowStatus } from "./agent-plan";
 import type { AgentTodoItem, AgentTodoRun } from "./agent-todo";
+import type { AgentDiagnosticRun } from "./agent-diagnostics";
 
 export type CloneMode = "cut" | "summary";
 export type SubagentStatus = "running" | "completed" | "failed" | "cancelled" | "interrupted";
@@ -26,19 +27,6 @@ interface AgentStreamFailure {
   is_connection: boolean;
   active_todo_run_id?: string;
   active_todo_title?: string;
-}
-
-export interface AgentDiagnosticRun {
-  request_id: string;
-  generation: number;
-  status: string;
-  severity: string;
-  started_at: string;
-  updated_at: string;
-  ended_at?: string;
-  phase: string;
-  error_type?: string;
-  safe_summary?: string;
 }
 
 export interface AgentSession {

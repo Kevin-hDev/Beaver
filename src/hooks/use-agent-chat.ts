@@ -11,8 +11,7 @@ import { useAgentMissingDirectory } from "./use-agent-missing-directory";
 import { useAgentMessageSend } from "./use-agent-message-send";
 import { showToast } from "@/lib/toast-emitter";
 import { admissionErrorMessage } from "@/lib/admission-error";
-import { latestTerminalFailure } from "@/lib/agent-session-failure";
-import { KNOWN_ERROR_KEYS } from "./agent-chat-stream-types";
+import { restoredFailureState } from "./agent-chat-restored-failure";
 import i18n from "@/i18n";
 import type { AgentMessage, AgentSession } from "@/types/agent";
 export function useAgentChat(
@@ -209,21 +208,5 @@ export function useAgentChat(
     forbiddenAllowedPaths,
     dismissForbiddenDirectory: dismissForbidden,
     sendMessage, reload, edit, stop, clearInteractiveChoice,
-  };
-}
-
-function restoredFailureState(session: AgentSession): Pick<
-  ChatState,
-  "error" | "isConnectionError" | "diagnosticSummary"
-> {
-  const failure = latestTerminalFailure(session);
-  if (!failure) {
-    return { error: undefined, isConnectionError: false, diagnosticSummary: undefined };
-  }
-  const key = KNOWN_ERROR_KEYS[failure.code] ?? "errors.streamInterrupted";
-  return {
-    error: i18n.t(key),
-    isConnectionError: failure.isConnection,
-    diagnosticSummary: failure.diagnosticSummary,
   };
 }

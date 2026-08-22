@@ -19,14 +19,11 @@ pub(super) fn valid_reasoning_contract(
     modes: &[String],
     default_mode: Option<&str>,
 ) -> Result<(), &'static str> {
-    const MAX_MODES: usize = 8;
     const ALLOWED_MODES: [&str; 8] = [
         "off", "auto", "low", "medium", "high", "xhigh", "max", "ultra",
     ];
 
-    if modes.len() > MAX_MODES
-        || (!supports_thinking && (!modes.is_empty() || default_mode.is_some()))
-    {
+    if !supports_thinking && (!modes.is_empty() || default_mode.is_some()) {
         return Err("reasoning_modes");
     }
     let mut seen = std::collections::HashSet::with_capacity(modes.len());

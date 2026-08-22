@@ -31,17 +31,39 @@ pub fn supported_modes(provider: &str, model: &str, supports_thinking: bool) -> 
         return Vec::new();
     }
     let provider = crate::services::llm::route::canonical_provider_id(provider);
-    if let Some(reasoning) =
+    let base = if let Some(reasoning) =
         crate::services::llm::provider_model_lookup::local_reasoning(provider, model)
     {
         if !reasoning.modes.is_empty() {
-            return reasoning.modes;
+            reasoning.modes
+        } else {
+            fallback_supported_modes(provider, model)
+                .iter()
+                .map(|mode| (*mode).to_string())
+                .collect()
         }
+    } else {
+        fallback_supported_modes(provider, model)
+            .iter()
+            .map(|mode| (*mode).to_string())
+            .collect()
+    };
+    let dynamic = crate::services::llm::runtime_models::lookup(provider, model)
+        .map(|entry| entry.reasoning_modes);
+    restrict_to_dynamic_modes(base, dynamic.as_deref())
+}
+
+pub(crate) fn restrict_to_dynamic_modes(
+    base: Vec<String>,
+    dynamic: Option<&[String]>,
+) -> Vec<String> {
+    match dynamic {
+        Some(dynamic) if !dynamic.is_empty() => base
+            .into_iter()
+            .filter(|mode| dynamic.contains(mode))
+            .collect(),
+        _ => base,
     }
-    fallback_supported_modes(provider, model)
-        .iter()
-        .map(|mode| (*mode).to_string())
-        .collect()
 }
 
 fn fallback_supported_modes(provider: &str, model: &str) -> &'static [&'static str] {
@@ -128,11 +150,11 @@ pub fn normalize_for_model(
     if provider == "codex-oauth" && model == "gpt-5.3-codex-spark" {
         return Some("high".to_string());
     }
-    let preferred = crate::services::llm::provider_model_lookup::local_reasoning(provider, model)
-        .and_then(|reasoning| reasoning.default_mode)
+    let preferred = crate::services::llm::runtime_models::lookup(provider, model)
+        .and_then(|entry| entry.default_reasoning_mode)
         .or_else(|| {
-            crate::services::llm::runtime_models::lookup(provider, model)
-                .and_then(|entry| entry.default_reasoning_mode)
+            crate::services::llm::provider_model_lookup::local_reasoning(provider, model)
+                .and_then(|reasoning| reasoning.default_mode)
         })
         .or_else(|| {
             (provider == "moonshot").then(|| {

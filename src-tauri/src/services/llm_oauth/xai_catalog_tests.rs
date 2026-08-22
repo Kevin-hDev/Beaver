@@ -31,6 +31,43 @@ fn parses_bounded_chat_and_responses_models() {
 }
 
 #[test]
+fn excludes_models_that_are_not_visible_text_chat_models() {
+    let body = json!({"data": [
+        {
+            "model": "grok-4.6",
+            "contextWindow": 500000,
+            "apiBackend": "responses",
+            "inputModalities": ["text", "image"],
+            "outputModalities": ["text"]
+        },
+        {
+            "model": "grok-imagine-image",
+            "contextWindow": 32000,
+            "apiBackend": "responses",
+            "inputModalities": ["text"],
+            "outputModalities": ["image"]
+        },
+        {
+            "model": "hidden-chat-model",
+            "contextWindow": 32000,
+            "apiBackend": "chat_completions",
+            "hidden": true
+        },
+        {
+            "model": "unsupported-chat-model",
+            "contextWindow": 32000,
+            "apiBackend": "chat_completions",
+            "supportedInApi": false
+        }
+    ]});
+
+    let models = parse_catalog(&body).unwrap();
+
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0].id, "grok-4.6");
+}
+
+#[test]
 fn rejects_duplicate_oversized_or_remote_routing_data() {
     let duplicate = json!({"data": [
         {"model":"grok-4.6","contextWindow":500000,"apiBackend":"responses"},

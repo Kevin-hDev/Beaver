@@ -33,8 +33,9 @@
     "test:j3-native-assets": "node --test scripts/ollama/verify-native-upgrade-assets.test.mjs scripts/ollama/native-upgrade-proof.test.mjs",
     "test:ollama-manager-contracts": "node --test scripts/ollama/ollama-manager-contracts.test.mjs && node scripts/ollama/ollama-manager-contracts.mjs",
     "contracts:generate": "cd src-tauri && cargo test models::provider_contract_tests::export_typescript_provider_contract -- --ignored --exact --nocapture",
+    "contracts:generate:diagnostics": "cd src-tauri && cargo test services::agent_local::types_diagnostics_contract_tests::export_typescript_diagnostics_contract -- --ignored --exact --nocapture",
     "contracts:generate:ollama": "cd src-tauri && cargo test services::ollama_manager::typescript_contract_tests::export_typescript_runtime_contract -- --ignored --exact --nocapture",
-    "contracts:check": "cd src-tauri && cargo test models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract -- --exact",
+    "contracts:check": "cd src-tauri && cargo test models::provider_contract_tests::checked_in_typescript_matches_the_rust_contract -- --exact && cargo test services::agent_local::types_diagnostics_contract_tests::checked_in_typescript_matches_the_rust_diagnostics_contract -- --exact",
     "forecast:lock-runtimes": "bash scripts/forecast/lock-runtimes.sh",
     "test:watch": "vitest"
   },

@@ -28,6 +28,8 @@ async fn enrich_existing_xai(expected_generation: u64) -> Result<AccessToken, St
             user_id: tokens.user_id,
         });
     }
+    // Login antérieur à l'identité OAuth : sans principal sauvegardé à comparer,
+    // la première réponse /user authentifiée devient l'autorité de migration.
     super::xai_identity::enrich(&mut tokens, None)
         .await
         .map_err(|_| "Connexion impossible".to_string())?;

@@ -32,12 +32,63 @@ pub fn parse_catalog(body: &Value) -> Result<Vec<XaiCatalogModel>, &'static str>
     let mut models = Vec::with_capacity(data.len());
     for value in data {
         let model = parse_model(value)?;
+        let object = value.as_object().ok_or("model")?;
+        if !is_visible_text_chat_model(object)? {
+            continue;
+        }
         if !ids.insert(model.id.clone()) {
             return Err("duplicate_model");
         }
         models.push(model);
     }
-    Ok(models)
+    if models.is_empty() {
+        Err("model_count")
+    } else {
+        Ok(models)
+    }
+}
+
+fn is_visible_text_chat_model(object: &Map<String, Value>) -> Result<bool, &'static str> {
+    if optional_bool(object, &["hidden"])?.unwrap_or(false)
+        || optional_bool(object, &["supportedInApi", "supported_in_api"])? == Some(false)
+    {
+        return Ok(false);
+    }
+    Ok(
+        has_text_modality(object, &["inputModalities", "input_modalities"])?
+            && has_text_modality(object, &["outputModalities", "output_modalities"])?,
+    )
+}
+
+fn has_text_modality(object: &Map<String, Value>, fields: &[&str]) -> Result<bool, &'static str> {
+    let Some(value) = fields.iter().find_map(|field| object.get(*field)) else {
+        // Le catalogue /models-v2 officiel omet encore ces champs pour certains modèles.
+        return Ok(true);
+    };
+    let values = value.as_array().ok_or("modalities")?;
+    if values.is_empty() || values.len() > 16 {
+        return Err("modalities");
+    }
+    let mut has_text = false;
+    for value in values {
+        let modality = value.as_str().ok_or("modalities")?;
+        if modality.is_empty() || modality.len() > 32 || modality.chars().any(char::is_control) {
+            return Err("modalities");
+        }
+        has_text |= modality.eq_ignore_ascii_case("text");
+    }
+    Ok(has_text)
+}
+
+fn optional_bool(
+    object: &Map<String, Value>,
+    fields: &[&str],
+) -> Result<Option<bool>, &'static str> {
+    fields
+        .iter()
+        .find_map(|field| object.get(*field))
+        .map(|value| value.as_bool().ok_or("model_visibility"))
+        .transpose()
 }
 
 fn parse_model(value: &Value) -> Result<XaiCatalogModel, &'static str> {

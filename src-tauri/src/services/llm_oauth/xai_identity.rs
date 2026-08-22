@@ -7,7 +7,6 @@ use zeroize::{Zeroize, Zeroizing};
 use super::{headers, LlmOAuthProvider, OAuthFailure, TokenBundle};
 use crate::services::secure_http::{read_json_bounded, AuthenticatedClient, OAUTH_BODY_LIMIT};
 
-const USER_URL: &str = "https://cli-chat-proxy.grok.com/v1/user";
 const USER_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_USER_ID_BYTES: usize = 256;
 
@@ -40,7 +39,7 @@ async fn fetch(token: &str) -> Result<Zeroizing<String>, OAuthFailure> {
     let headers =
         headers::request_headers(LlmOAuthProvider::Xai).map_err(|_| OAuthFailure::Generic)?;
     let response = client
-        .send(client.get(USER_URL).headers(headers).bearer_auth(token))
+        .send(client.get(user_url()).headers(headers).bearer_auth(token))
         .await
         .map_err(|_| OAuthFailure::Generic)?;
     if matches!(response.status().as_u16(), 401 | 403) {
@@ -54,6 +53,10 @@ async fn fetch(token: &str) -> Result<Zeroizing<String>, OAuthFailure> {
         .map_err(|_| OAuthFailure::Generic)?;
     validate_user_id(&wire.user_id)?;
     Ok(Zeroizing::new(std::mem::take(&mut wire.user_id)))
+}
+
+fn user_url() -> String {
+    format!("{}/user", super::xai_headers::PROXY_BASE_URL)
 }
 
 fn validate_user_id(value: &str) -> Result<(), OAuthFailure> {
@@ -77,12 +80,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn identity_is_bounded_and_compared_in_constant_time() {
+    fn identity_is_bounded_and_compared() {
         assert!(validate_user_id("user_fixture-1").is_ok());
         assert!(validate_user_id("").is_err());
         assert!(validate_user_id("bad/user").is_err());
         assert!(validate_user_id(&"a".repeat(MAX_USER_ID_BYTES + 1)).is_err());
         assert!(same_identity("principal-a", "principal-a"));
         assert!(!same_identity("principal-a", "principal-b"));
+    }
+
+    #[test]
+    fn user_endpoint_stays_on_the_subscription_proxy() {
+        assert_eq!(user_url(), "https://cli-chat-proxy.grok.com/v1/user");
+        assert!(!user_url().contains("api.x.ai"));
     }
 }

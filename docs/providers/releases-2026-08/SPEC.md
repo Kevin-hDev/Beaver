@@ -116,6 +116,7 @@ Sources officielles :
 
 - <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/README.md#using-authjson-for-api-access>
 - <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/remote/client.rs>
+- <https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-shell/src/config.rs>
 
 Le jeton de session d’abonnement cible le proxy
 `https://cli-chat-proxy.grok.com/v1`, pas `https://api.x.ai/v1`.
@@ -124,6 +125,7 @@ Le contrat observé dans le client officiel comprend au minimum :
 
 - `Authorization: Bearer <token>` ;
 - `X-XAI-Token-Auth: xai-grok-cli` ;
+- `X-Authenticate-Response: authenticate-response` ;
 - une identité utilisateur obtenue par l’endpoint officiel `/user` lorsque le
   chemin l’exige ;
 - un identifiant et une version client véridiques pour Beaver ;
@@ -197,7 +199,10 @@ Les métadonnées du registre acceptent des `reasoning_modes` et un
 - Grok 4.6 : `low`, `medium`, `high`, `xhigh`, défaut `high` ;
 - Gemini 3.7 Flash : `low`, `medium`, `high`, défaut `medium` ;
 - Grok 4.5 : inchangé ;
-- les valeurs dynamiques plus restrictives gagnent sur le registre ;
+- les niveaux dynamiques explicitement publiés gagnent par intersection avec
+  le registre ; une liste dynamique disjointe donne donc zéro niveau autorisé ;
+- des indicateurs génériques comme « reasoning supporté » n’inventent aucun
+  niveau dynamique ;
 - une valeur inconnue est rejetée, jamais transmise telle quelle.
 
 Pour GLM-5.3, le payload contient toujours `thinking.type: "enabled"` et un
@@ -229,8 +234,10 @@ Une erreur sans texte n’est pas un message assistant. L’autorité reste
 `AgentSession.diagnostic_runs`.
 
 Le frontend dérive le dernier échec terminal de cette collection et l’affiche
-après rechargement lorsqu’aucune réponse plus récente ne le rend obsolète. Il
-utilise un code stable traduit, pas `safe_summary` comme texte produit.
+après rechargement lorsqu’aucune réponse plus récente et aucune exécution active
+ne le rendent obsolète. Son contrat TypeScript est généré depuis les structures
+Rust sérialisées. Il utilise un code stable traduit, pas `safe_summary` comme
+texte produit ou comme détail visible.
 
 Pour xAI OAuth :
 

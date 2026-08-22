@@ -133,7 +133,7 @@ fn insert(headers: &mut HeaderMap, name: HeaderName, value: &str) -> Result<(), 
 }
 
 fn unavailable() -> String {
-    "Connexion indisponible".to_string()
+    "provider_configuration_invalid".to_string()
 }
 
 #[cfg(test)]

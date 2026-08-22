@@ -33,6 +33,8 @@ pub mod stream_diagnostics_support;
 #[cfg(test)]
 mod stream_diagnostics_support_tests;
 #[cfg(test)]
+mod types_diagnostics_contract_tests;
+#[cfg(test)]
 pub mod stream_diagnostics_tests;
 mod stream_diagnostics_tool_record;
 pub mod stream_events;

@@ -24,7 +24,14 @@ pub fn replace_provider(provider_id: &str, models: &[ModelInfo]) {
     };
     let mut provider_models = HashMap::with_capacity(models.len().min(MAX_MODELS_PER_PROVIDER));
     for model in models.iter().take(MAX_MODELS_PER_PROVIDER) {
-        if valid_model_id(&model.id) {
+        if valid_model_id(&model.id)
+            && super::provider_model_registry_validation::valid_reasoning_contract(
+                model.supports_thinking,
+                &model.reasoning_modes,
+                model.default_reasoning_mode.as_deref(),
+            )
+            .is_ok()
+        {
             provider_models.insert(model.id.clone(), model.clone());
         }
     }
@@ -98,6 +105,12 @@ mod tests {
         assert!(lookup("moonshot", "kimi-500").is_none());
         replace_provider("moonshot", &[model("../invalid".to_string())]);
         assert!(lookup("moonshot", "../invalid").is_none());
+
+        let mut invalid_reasoning = model("invalid-reasoning".to_string());
+        invalid_reasoning.reasoning_modes = vec!["quantum".to_string()];
+        invalid_reasoning.default_reasoning_mode = Some("quantum".to_string());
+        replace_provider("moonshot", &[invalid_reasoning]);
+        assert!(lookup("moonshot", "invalid-reasoning").is_none());
     }
 
     #[test]

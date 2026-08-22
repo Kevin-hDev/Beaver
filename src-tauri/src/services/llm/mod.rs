@@ -53,6 +53,8 @@ mod stream_http;
 mod stream_http_error;
 mod stream_http_payload;
 mod stream_http_send;
+#[cfg(test)]
+mod stream_http_send_tests;
 mod stream_max_tokens;
 mod stream_metrics;
 mod stream_reasoning;

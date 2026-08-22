@@ -79,6 +79,12 @@ fn zai_glm_52_uses_reasoning_effort() {
 
 #[test]
 fn zai_glm_53_keeps_forced_thinking_and_defaults_to_max() {
+    for effort in ["low", "high", "max"] {
+        let selected = payload("zai", "glm-5.3", Some(effort));
+        assert_eq!(selected["thinking"], json!({ "type": "enabled" }));
+        assert_eq!(selected["reasoning_effort"], effort);
+    }
+
     let default = payload("zai", "glm-5.3", None);
     assert_eq!(default["thinking"], json!({ "type": "enabled" }));
     assert_eq!(default["reasoning_effort"], "max");

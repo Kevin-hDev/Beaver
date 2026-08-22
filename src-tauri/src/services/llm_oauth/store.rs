@@ -95,7 +95,7 @@ fn validate(tokens: &TokenBundle) -> Result<(), String> {
 }
 
 fn unavailable() -> String {
-    "Connexion indisponible".to_string()
+    "provider_configuration_invalid".to_string()
 }
 
 #[cfg(test)]

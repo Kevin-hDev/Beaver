@@ -14,20 +14,11 @@ pub async fn send_json_request(
     model: &str,
     session_id: Option<&str>,
 ) -> Result<Response, RequestError> {
-    let cache_headers =
-        super::prompt_cache_policy::request_headers(route, Some(model), session_id, purpose)
-            .map_err(|_| RequestError::InvalidConfiguration)?;
-    let xai_headers = (route.chat_provider_id == "xai-oauth")
-        .then(|| crate::services::llm_oauth::xai_model_header(model))
-        .transpose()
-        .map_err(|_| RequestError::InvalidConfiguration)?;
+    let outbound_headers = outbound_headers(route, model, session_id, purpose)?;
     route
         .send_authenticated(client, purpose, |token, headers| {
             let mut headers = headers;
-            headers.extend(cache_headers.clone());
-            if let Some(model_headers) = &xai_headers {
-                headers.extend(model_headers.clone());
-            }
+            headers.extend(outbound_headers.clone());
             client
                 .post(url)
                 .headers(headers)
@@ -47,4 +38,22 @@ pub async fn send_json_request(
                     .into(),
             ),
         })
+}
+
+pub(super) fn outbound_headers(
+    route: &LlmRoute,
+    model: &str,
+    session_id: Option<&str>,
+    purpose: RequestPurpose,
+) -> Result<reqwest::header::HeaderMap, RequestError> {
+    let mut headers =
+        super::prompt_cache_policy::request_headers(route, Some(model), session_id, purpose)
+            .map_err(|_| RequestError::InvalidConfiguration)?;
+    if route.chat_provider_id == "xai-oauth" {
+        headers.extend(
+            crate::services::llm_oauth::xai_model_header(model)
+                .map_err(|_| RequestError::InvalidConfiguration)?,
+        );
+    }
+    Ok(headers)
 }

@@ -52,12 +52,9 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         || has_param("reasoning_effort")
         || has_param("include_reasoning")
         || super::tool_capable::supports_thinking(provider_id, id);
-    let local_reasoning = super::provider_model_lookup::local_reasoning(provider_id, id);
-    let reasoning_modes = if supports_thinking {
-        crate::services::reasoning::supported_modes(provider_id, id, true)
-    } else {
-        Vec::new()
-    };
+    // `supported_parameters` annonce une fonctionnalité, pas les niveaux permis.
+    // Le catalogue dynamique reste vide tant qu'il ne publie pas ces valeurs.
+    let (reasoning_modes, default_reasoning_mode) = (Vec::new(), None);
 
     Some(ModelInfo {
         id: id.to_string(),
@@ -69,7 +66,7 @@ fn parse_model(model: &Value, provider_id: &str) -> Option<ModelInfo> {
         supports_vision,
         supports_thinking,
         reasoning_modes,
-        default_reasoning_mode: local_reasoning.and_then(|reasoning| reasoning.default_mode),
+        default_reasoning_mode,
         // Un badge gratuit exige un tarif nul explicite pour toutes les unités facturées.
         is_free: has_zero_pricing(&model["pricing"]),
     })
