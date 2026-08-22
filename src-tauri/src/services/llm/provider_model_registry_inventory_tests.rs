@@ -112,6 +112,12 @@ fn openai_fast_mode_is_limited_to_the_verified_api_models() {
     assert!(lookup("openai", "gpt-5.6-terra-pro").is_none());
     assert!(
         !crate::services::llm::provider_model_lookup::supports_fast_mode(
+            "openai",
+            "openai/gpt-5.6-sol",
+        )
+    );
+    assert!(
+        !crate::services::llm::provider_model_lookup::supports_fast_mode(
             "openrouter",
             "openai/gpt-5.6-sol",
         )
