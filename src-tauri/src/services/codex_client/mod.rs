@@ -20,6 +20,14 @@ mod websocket;
 mod websocket_connect;
 mod websocket_url;
 
+#[cfg(test)]
+#[path = "test_transport.rs"]
+pub(crate) mod test_transport;
+
+#[cfg(test)]
+#[path = "transport_orchestration_tests.rs"]
+mod transport_orchestration_tests;
+
 pub const PROVIDER_ID: &str = "codex-oauth";
 
 /// Le protocole du catalogue Codex ne publie pas encore cette capacité : tous

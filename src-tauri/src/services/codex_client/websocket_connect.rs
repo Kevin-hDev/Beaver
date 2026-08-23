@@ -24,6 +24,10 @@ pub(super) async fn connect(
     session_id: &str,
     routing_hint: &str,
 ) -> Result<CodexSocket, ConnectError> {
+    #[cfg(test)]
+    if let Some(socket) = super::test_transport::connect_websocket(session_id, routing_hint).await {
+        return socket;
+    }
     let credentials = token::ensure_valid()
         .await
         .map_err(|_| ConnectError::Unavailable)?;
@@ -55,7 +59,7 @@ async fn connect_once(
 }
 
 #[cfg(test)]
-async fn connect_loopback_at(
+pub(super) async fn connect_loopback_at(
     url: &str,
     credentials: &CodexTokens,
     session_id: Option<&str>,

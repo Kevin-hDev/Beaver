@@ -1,3 +1,4 @@
+use std::future::Future;
 use std::time::Duration;
 
 use reqwest::{Response, StatusCode};
@@ -23,15 +24,50 @@ pub(super) async fn post(
     tool_count: usize,
     deadline: RequestDeadline,
 ) -> Result<Response, String> {
+    #[cfg(test)]
+    if let Some(response) =
+        super::test_transport::dispatch_http(body, routing_hint, model, tool_count).await
+    {
+        return response;
+    }
     let client = build_client(deadline)?;
     let credentials = token::ensure_valid().await?;
     let endpoint = format!("{CODEX_API_BASE}/responses");
-    let mut response = send_once(&client, &credentials, &endpoint, body, routing_hint).await?;
+    post_with_refresh(
+        &client,
+        &credentials,
+        &endpoint,
+        body,
+        routing_hint,
+        model,
+        tool_count,
+        token::recover_after_unauthorized(credentials.access.as_str()),
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "shared HTTP boundary keeps the body and validated routing capture explicit"
+)]
+pub(super) async fn post_with_refresh<F>(
+    client: &AuthenticatedClient,
+    credentials: &CodexTokens,
+    endpoint: &str,
+    body: &str,
+    routing_hint: &str,
+    model: &str,
+    tool_count: usize,
+    refresh: F,
+) -> Result<Response, String>
+where
+    F: Future<Output = Result<CodexTokens, String>>,
+{
+    let mut response = send_once(client, credentials, endpoint, body, routing_hint).await?;
     if response.status() == StatusCode::UNAUTHORIZED {
-        let refreshed = token::recover_after_unauthorized(credentials.access.as_str()).await?;
+        let refreshed = refresh.await?;
         drop(response);
-        drop(credentials);
-        response = send_once(&client, &refreshed, &endpoint, body, routing_hint).await?;
+        response = send_once(client, &refreshed, endpoint, body, routing_hint).await?;
     }
     http_error::require_success(response, model, body.len(), tool_count).await
 }
