@@ -70,23 +70,3 @@ impl ToolCompression<'_> {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::ToolCompressionProvider;
-    use crate::services::llm::fast_mode::FastModeRequest;
-
-    #[test]
-    fn tool_executor_compression_carries_the_generation_capture() {
-        let provider = ToolCompressionProvider::Cloud {
-            provider_id: "openai",
-            model: "gpt-5.6-luna",
-            fast_mode: FastModeRequest::Fast,
-        };
-
-        let ToolCompressionProvider::Cloud { fast_mode, .. } = provider else {
-            panic!("cloud compression expected");
-        };
-        assert_eq!(fast_mode, FastModeRequest::Fast);
-    }
-}

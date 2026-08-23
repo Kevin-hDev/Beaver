@@ -70,6 +70,10 @@ pub(super) async fn post_chat_request_with_timeout_measured(
     .await
     .map_err(request_error_for_limit)?;
     let payload = build_chat_payload(cfg, &route, max_tokens);
+    #[cfg(test)]
+    if let Some(response) = super::stream_test_transport::dispatch(cfg, &payload).await {
+        return response;
+    }
     let request_bytes = serde_json::to_vec(&payload)
         .map(zeroize::Zeroizing::new)
         .map_or(0, |bytes| bytes.len());

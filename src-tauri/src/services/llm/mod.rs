@@ -64,6 +64,8 @@ mod stream_reasoning_tests;
 mod stream_silent;
 mod stream_silent_consume;
 pub(crate) mod stream_sse;
+#[cfg(test)]
+pub(crate) mod stream_test_transport;
 mod stream_tools;
 mod timeouts;
 pub mod tool_capable;

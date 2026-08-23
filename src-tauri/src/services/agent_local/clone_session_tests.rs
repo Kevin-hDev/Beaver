@@ -1,4 +1,5 @@
 use super::*;
+use crate::services::llm::stream_test_transport::{ScriptedResponse, StreamScenario};
 use chrono::Utc;
 
 fn message(id: &str, role: &str, content: &str) -> AgentMessage {
@@ -179,4 +180,41 @@ fn build_clone_does_not_inherit_fast_mode() {
     let clone = build_clone(&source, "m2", CloneMode::Cut, 1, &source.id);
 
     assert!(!clone.fast_mode_enabled);
+}
+
+#[tokio::test]
+async fn clone_summary_sends_openai_default_even_for_a_fast_source_session() {
+    let source = session_store::create_with_project_and_fast_mode(
+        "Clone summary Fast source",
+        "gpt-5.6-luna",
+        "openai",
+        None,
+        true,
+    )
+    .await
+    .expect("create source session");
+    let scenario = StreamScenario::start(&source.id, [ScriptedResponse::Success]).await;
+    let messages = vec![ChatMessage {
+        role: "user".into(),
+        content: "summarize this".into(),
+        ..Default::default()
+    }];
+
+    let summary = collect_summary(
+        "openai",
+        "gpt-5.6-luna",
+        &source.id,
+        messages,
+        CancellationToken::new(),
+    )
+    .await
+    .expect("collect clone summary");
+    let payloads = scenario.payloads();
+    session_store::delete_one(&source.id)
+        .await
+        .expect("delete source session");
+
+    assert_eq!(summary, "ok");
+    assert_eq!(payloads.len(), 1);
+    assert_eq!(payloads[0]["service_tier"], "default");
 }

@@ -200,3 +200,7 @@ pub(super) async fn run(params: ApiRequestParams<'_>) -> Result<ApiRequestOutput
         generation,
     })
 }
+
+#[cfg(test)]
+#[path = "agent_loop_request_fast_mode_tests.rs"]
+mod fast_mode_tests;

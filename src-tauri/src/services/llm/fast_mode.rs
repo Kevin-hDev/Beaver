@@ -92,23 +92,6 @@ pub(crate) fn standard_for_internal(provider_id: &str) -> FastModeRequest {
 mod tests {
     use super::{standard_for_internal, FastModeRequest};
 
-    fn api_payload(fast_mode: FastModeRequest, model: &str) -> serde_json::Value {
-        let cfg = super::super::stream_http::RequestConfig {
-            provider_id: "openai",
-            model,
-            messages: &[],
-            tools: &[],
-            think: false,
-            reasoning_mode: None,
-            max_tokens: None,
-            purpose: super::super::request_purpose::RequestPurpose::ManualChat,
-            session_id: None,
-            fast_mode,
-        };
-        let route = super::super::route::resolve("openai").expect("OpenAI route");
-        super::super::stream_http_payload::build_chat_payload(&cfg, &route, None)
-    }
-
     #[test]
     fn api_decision_always_neutralizes_inactive_fast() {
         assert_eq!(
@@ -172,48 +155,5 @@ mod tests {
                 .await
                 .is_err()
         );
-    }
-
-    #[tokio::test]
-    async fn generation_capture_survives_session_changes_until_the_next_request() {
-        let session =
-            crate::services::agent_local::session_store::create_with_project_and_fast_mode(
-                "Fast capture",
-                "gpt-5.6-luna",
-                "openai",
-                None,
-                true,
-            )
-            .await
-            .expect("create session");
-        let captured = super::for_session(&session.id, "openai", "gpt-5.6-luna")
-            .await
-            .expect("capture fast mode");
-
-        crate::services::agent_local::session_store::update_fast_mode(&session.id, false)
-            .await
-            .expect("disable next generation");
-        let retry_payload = api_payload(captured, "gpt-5.6-luna");
-        let compression_payload = api_payload(captured, "gpt-5.6-luna");
-        let next = super::for_session(&session.id, "openai", "gpt-5.6-luna")
-            .await
-            .expect("capture next generation");
-        let next_payload = api_payload(next, "gpt-5.6-luna");
-
-        crate::services::agent_local::session_store::update_fast_mode(&session.id, true)
-            .await
-            .expect("restore preference");
-        let unadvertised = super::for_session(&session.id, "openai", "unadvertised-model")
-            .await
-            .expect("capture unadvertised model");
-        let unadvertised_payload = api_payload(unadvertised, "unadvertised-model");
-        crate::services::agent_local::session_store::delete_one(&session.id)
-            .await
-            .expect("delete session");
-
-        assert_eq!(retry_payload["service_tier"], "fast");
-        assert_eq!(compression_payload["service_tier"], "fast");
-        assert_eq!(next_payload["service_tier"], "default");
-        assert_eq!(unadvertised_payload["service_tier"], "default");
     }
 }

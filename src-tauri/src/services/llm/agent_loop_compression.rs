@@ -173,3 +173,7 @@ impl LoopCompression<'_> {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "agent_loop_compression_fast_mode_tests.rs"]
+mod fast_mode_tests;

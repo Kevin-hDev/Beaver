@@ -12,7 +12,10 @@ pub fn next_generation() -> u64 {
 
 #[derive(Clone)]
 pub struct AgentEventEmitter {
+    #[cfg(not(test))]
     app: AppHandle,
+    #[cfg(test)]
+    app: Option<AppHandle>,
     session_id: String,
     generation: Option<u64>,
     permission_emitter: Option<Box<AgentEventEmitter>>,
@@ -29,6 +32,8 @@ struct StreamEventPayload {
 
 impl AgentEventEmitter {
     pub fn new(app: AppHandle, session_id: String) -> Self {
+        #[cfg(test)]
+        let app = Some(app);
         Self {
             app,
             session_id,
@@ -37,7 +42,19 @@ impl AgentEventEmitter {
         }
     }
 
+    #[cfg(test)]
+    pub fn test(session_id: String) -> Self {
+        Self {
+            app: None,
+            session_id,
+            generation: None,
+            permission_emitter: None,
+        }
+    }
+
     pub fn with_generation(app: AppHandle, session_id: String, generation: u64) -> Self {
+        #[cfg(test)]
+        let app = Some(app);
         Self {
             app,
             session_id,
@@ -52,9 +69,10 @@ impl AgentEventEmitter {
     }
 
     pub fn start_mascot_session(&self) -> Option<crate::services::mascot::MascotSession> {
+        let app = self.app()?;
         self.generation.map(|generation| {
             crate::services::mascot::MascotSession::start(
-                &self.app,
+                app,
                 self.session_id.clone(),
                 generation,
             )
@@ -67,22 +85,34 @@ impl AgentEventEmitter {
                 return emitter.send(event);
             }
         }
+        let Some(app) = self.app() else {
+            return Ok(());
+        };
         crate::services::mascot::observe_stream_event(
-            &self.app,
+            app,
             &self.session_id,
             self.generation,
             &event,
         );
-        self.app
-            .emit(
-                AGENT_STREAM_EVENT,
-                StreamEventPayload {
-                    session_id: self.session_id.clone(),
-                    generation: self.generation,
-                    event,
-                },
-            )
-            .map_err(|_| "Emission evenement impossible".to_string())
+        app.emit(
+            AGENT_STREAM_EVENT,
+            StreamEventPayload {
+                session_id: self.session_id.clone(),
+                generation: self.generation,
+                event,
+            },
+        )
+        .map_err(|_| "Emission evenement impossible".to_string())
+    }
+
+    #[cfg(not(test))]
+    fn app(&self) -> Option<&AppHandle> {
+        Some(&self.app)
+    }
+
+    #[cfg(test)]
+    fn app(&self) -> Option<&AppHandle> {
+        self.app.as_ref()
     }
 }
 

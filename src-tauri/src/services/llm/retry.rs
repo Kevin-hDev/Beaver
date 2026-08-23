@@ -188,3 +188,7 @@ mod tests {
         assert_eq!(next, 3);
     }
 }
+
+#[cfg(test)]
+#[path = "retry_fast_mode_tests.rs"]
+mod fast_mode_tests;
