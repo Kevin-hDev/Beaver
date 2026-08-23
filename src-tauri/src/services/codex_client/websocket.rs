@@ -52,8 +52,8 @@ pub(super) async fn stream_chat(
         fast_mode,
     );
     let payload = build_payload(&request)?;
-    let routing_hint = super::routing_hint::for_request(&request)
-        .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
+    let routing_hint =
+        super::routing_hint::for_request(&request).map_err(|_| configuration_rejected())?;
     let mut socket = websocket_connect::connect(session_id, &routing_hint)
         .await
         .map_err(|_| WebSocketFailure::Unavailable { partial: false })?;
@@ -70,6 +70,12 @@ pub(super) async fn stream_chat(
         measurement,
     )
     .await
+}
+
+fn configuration_rejected() -> WebSocketFailure {
+    WebSocketFailure::ProviderRejected {
+        code: crate::services::llm::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
+    }
 }
 
 pub(super) fn should_attempt() -> bool {

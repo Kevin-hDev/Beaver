@@ -29,9 +29,11 @@ pub(super) fn build_request(config: &RequestConfig<'_>) -> serde_json::Value {
             config.model,
             config.session_id,
         ),
-        "service_tier": config.fast_mode.api_value(),
         "include": ["reasoning.encrypted_content"],
     });
+    if let Some(tier) = config.fast_mode.api_value() {
+        body["service_tier"] = tier.into();
+    }
     if let Some(limit) = config.max_tokens {
         body["max_output_tokens"] = limit.into();
     }

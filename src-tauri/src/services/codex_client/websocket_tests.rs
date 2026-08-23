@@ -71,3 +71,63 @@ fn accumulator_keeps_only_closed_permanent_provider_codes() {
         WebSocketFailure::Unavailable { partial: false }
     );
 }
+
+#[tokio::test]
+async fn invalid_routing_configuration_is_a_permanent_rejection() {
+    let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
+        "session-invalid-routing".into(),
+    );
+    let mut measurement =
+        crate::services::codex_client::stream_measurement::StreamMeasurement::new(None);
+
+    let error = stream_chat(
+        &emitter,
+        "session-invalid-routing",
+        "../invalid-model",
+        &[],
+        &[],
+        None,
+        FastModeRequest::Fast,
+        tokio_util::sync::CancellationToken::new(),
+        false,
+        None,
+        &mut measurement,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(
+        error,
+        WebSocketFailure::ProviderRejected {
+            code: crate::services::llm::provider_error::ProviderErrorCode::ProviderConfigurationInvalid,
+        }
+    );
+}
+
+#[tokio::test]
+async fn invalid_routing_configuration_never_disables_websocket_or_falls_back() {
+    mark_available();
+    let emitter = crate::services::agent_local::stream_events::AgentEventEmitter::test(
+        "session-invalid-routing-orchestration".into(),
+    );
+
+    let error = crate::services::codex_client::stream::stream_chat_with_budget(
+        &emitter,
+        "session-invalid-routing-orchestration",
+        "request-invalid-routing-orchestration",
+        "../invalid-model",
+        &[],
+        &[],
+        None,
+        FastModeRequest::Fast,
+        tokio_util::sync::CancellationToken::new(),
+        false,
+        None,
+        None,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(error, "provider_configuration_invalid");
+    assert!(should_attempt());
+}

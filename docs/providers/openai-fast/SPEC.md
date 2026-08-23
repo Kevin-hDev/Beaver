@@ -218,6 +218,8 @@ Exemple normatif :
 
 Pour un modèle compatible, la ligne Fast apparaît en tête de la liste des modes de raisonnement :
 
+L'hébergement actuel suppose donc qu'un modèle Fast publié expose au moins un mode de raisonnement. Cette contrainte est vérifiée dans les catalogues actuels; si un futur modèle Fast n'en expose aucun, le sélecteur devra être dissocié avant de publier sa capacité Fast.
+
 ```text
 [éclair] Rapide                                      [toggle]
 ```

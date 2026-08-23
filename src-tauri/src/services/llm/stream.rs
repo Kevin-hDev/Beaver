@@ -37,7 +37,7 @@ pub async fn stream_chat_no_done(
         crate::services::provider_usage::UsageWorkload::Primary,
         fast_mode,
     );
-    let result = if provider_id == "codex-oauth" {
+    let result = if provider_id == crate::services::codex_client::PROVIDER_ID {
         crate::services::codex_client::stream::stream_chat_with_budget(
             on_event,
             session_id,
@@ -53,7 +53,7 @@ pub async fn stream_chat_no_done(
             measurement.as_mut(),
         )
         .await
-    } else if provider_id == "openai" {
+    } else if provider_id == super::providers::openai::PROVIDER_ID {
         let config = RequestConfig {
             provider_id,
             model,
@@ -130,9 +130,11 @@ pub async fn stream_chat_no_done(
                 .await
             }
             Err(RequestError::PayloadTooLarge) => Err("provider_payload_too_large".to_string()),
-            Err(RequestError::InvalidConfiguration) => {
-                Err("provider_configuration_invalid".to_string())
-            }
+            Err(RequestError::InvalidConfiguration) => Err(
+                super::provider_error::ProviderErrorCode::ProviderConfigurationInvalid
+                    .as_str()
+                    .to_string(),
+            ),
             Err(RequestError::Fatal(msg)) => Err(msg),
         }
     };

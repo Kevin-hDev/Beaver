@@ -63,8 +63,6 @@ pub async fn context_length(model_id: &str) -> u64 {
         .unwrap_or(128_000)
 }
 
-// Phase suivante : la requête Fast lit le même catalogue borné, sans fallback.
-#[allow(dead_code)]
 pub async fn supports_fast_mode(model_id: &str) -> Result<bool, String> {
     if !crate::services::llm::runtime_models::valid_model_id(model_id) {
         return Ok(false);

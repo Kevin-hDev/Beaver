@@ -30,10 +30,6 @@ impl FastModeRequest {
         }
     }
 
-    #[allow(
-        dead_code,
-        reason = "Task 4 transports the already-defined Codex mapping"
-    )]
     pub const fn codex_value(self) -> Option<&'static str> {
         match self {
             Self::Unsupported | Self::Standard => None,
@@ -41,10 +37,6 @@ impl FastModeRequest {
         }
     }
 
-    #[allow(
-        dead_code,
-        reason = "Task 5 records the captured request in diagnostics"
-    )]
     pub const fn fast_requested(self) -> bool {
         matches!(self, Self::Fast)
     }

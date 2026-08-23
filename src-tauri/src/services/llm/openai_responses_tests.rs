@@ -93,6 +93,23 @@ fn api_request_preserves_tool_continuation_in_responses_shape() {
     assert_eq!(body["input"][1]["type"], "function_call_output");
 }
 
+#[test]
+fn unsupported_fast_mode_omits_service_tier() {
+    let messages = [ChatMessage {
+        role: "user".into(),
+        content: "bonjour".into(),
+        ..Default::default()
+    }];
+    let body = build_request(&request(
+        &messages,
+        &[],
+        Some("medium"),
+        FastModeRequest::Unsupported,
+    ));
+
+    assert!(body.get("service_tier").is_none());
+}
+
 #[tokio::test]
 async fn runtime_dispatch_cannot_fall_back_to_chat_completions() {
     let session_id = "openai-responses-runtime";

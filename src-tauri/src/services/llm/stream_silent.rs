@@ -33,7 +33,7 @@ pub async fn collect_chat_silent_for_compression(
         crate::services::provider_usage::UsageWorkload::Compression,
         fast_mode,
     );
-    let result = if provider_id == "codex-oauth" {
+    let result = if provider_id == crate::services::codex_client::PROVIDER_ID {
         crate::services::codex_client::stream::collect_chat_silent_for_compression(
             model,
             messages,
@@ -46,7 +46,7 @@ pub async fn collect_chat_silent_for_compression(
             measurement.as_mut(),
         )
         .await
-    } else if provider_id == "openai" {
+    } else if provider_id == super::providers::openai::PROVIDER_ID {
         let config = request_config(
             provider_id,
             fast_mode,
