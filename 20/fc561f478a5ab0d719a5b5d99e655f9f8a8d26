@@ -1,0 +1,9 @@
+macOS native CI run 32650860470 exposed an invalid test assumption: the inherited-pipe fixture allowed only 50 ms for Python to start and write its descendant PID. The production timeout was not changed and no retry was added. Linux keeps the proven 50 ms fixture deadline; macOS now shares Windows' existing 2-second startup budget so the test reaches the inherited-pipe behavior it claims to verify.
+
+Evidence:
+- Failed macOS job: 3912 passed, 1 failed, 5 ignored; empty descendant PID in inherited_pipes_from_a_descendant_obey_the_global_deadline.
+- Targeted test passed 5 consecutive local macOS runs after the correction.
+- cargo fmt --check and cargo clippy --all-targets -- -D warnings passed.
+- graphify update . completed.
+
+No production code changed.
