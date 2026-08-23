@@ -2,7 +2,9 @@ import { execFileSync } from "node:child_process";
 import { lstatSync, readFileSync } from "node:fs";
 import { extname, isAbsolute, resolve, sep } from "node:path";
 
-export const MAX_REPOSITORY_FILES = 5_000;
+// Git inventory and text scanning have distinct caps so binary bundles cannot disable the audit.
+export const MAX_GIT_ENTRIES = 10_000;
+export const MAX_SCANNED_FILES = 5_000;
 export const MAX_TEXT_FILE_BYTES = 2 * 1024 * 1024;
 
 const TEXT_EXTENSIONS = new Set([
@@ -37,18 +39,29 @@ function shouldScan(file) {
   );
 }
 
-function parseTrackedFiles(raw) {
+export function parseTrackedFiles(raw) {
   const files = [];
   let start = 0;
   for (let cursor = 0; cursor <= raw.length; cursor += 1) {
     if (cursor < raw.length && raw[cursor] !== "\0") continue;
     if (cursor > start) {
-      if (files.length >= MAX_REPOSITORY_FILES) throw new Error("trop de fichiers suivis");
+      if (files.length >= MAX_GIT_ENTRIES) throw new Error("trop d'entrées Git");
       files.push(raw.slice(start, cursor));
     }
     start = cursor + 1;
   }
   return files;
+}
+
+export function selectScannableFiles(files, deleted) {
+  const selected = [];
+  for (const file of files) {
+    validateTrackedPath(file);
+    if (deleted.has(file) || !shouldScan(file)) continue;
+    if (selected.length >= MAX_SCANNED_FILES) throw new Error("trop de fichiers texte");
+    selected.push(file);
+  }
+  return selected;
 }
 
 export function loadTrackedEntries(root) {
@@ -59,8 +72,8 @@ export function loadTrackedEntries(root) {
   const deleted = new Set(parseTrackedFiles(gitFileList(root, ["ls-files", "-z", "--deleted"])));
   const files = parseTrackedFiles(raw);
   const safeRoot = resolve(root);
-  return files.filter((file) => !deleted.has(file)).filter(shouldScan).map((file) => {
-    validateTrackedPath(file);
+  // Binary assets count toward the bounded Git inventory, not the text-audit budget.
+  return selectScannableFiles(files, deleted).map((file) => {
     const absolute = resolve(safeRoot, file);
     if (!absolute.startsWith(`${safeRoot}${sep}`)) throw new Error("chemin suivi invalide");
     const stats = lstatSync(absolute);

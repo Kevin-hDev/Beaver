@@ -32,12 +32,13 @@ function trackedRustFiles() {
   return files;
 }
 
-function sourceBeforeTests(file) {
+function boundedRustSource(file) {
   const absolute = resolve(ROOT, file);
   const inside = relative(ROOT, absolute);
   assert.ok(inside && !inside.startsWith(".."));
   assert.ok(statSync(absolute).size <= MAX_SOURCE_BYTES);
-  return readFileSync(absolute, "utf8").split("\n#[cfg(test)]")[0];
+  // Test-only items may precede production items, so source order must not hide accesses.
+  return readFileSync(absolute, "utf8");
 }
 
 test("chaque racine Rust persistante est classée ou explicitement transitoire", () => {
@@ -50,7 +51,7 @@ test("chaque racine Rust persistante est classée ou explicitement transitoire",
   assert.ok(allowed.size <= 128);
   const findings = [];
   for (const file of trackedRustFiles()) {
-    for (const match of sourceBeforeTests(file).matchAll(DATA_JOIN)) {
+    for (const match of boundedRustSource(file).matchAll(DATA_JOIN)) {
       findings.push({ file, root: match[1].split("/")[0] });
       assert.ok(findings.length <= MAX_FINDINGS);
     }
@@ -65,7 +66,7 @@ test("chaque racine Rust persistante est classée ou explicitement transitoire",
 test("chaque accès Rust au dossier de données reste explicitement revu", () => {
   const actual = [];
   for (const file of trackedRustFiles()) {
-    const count = [...sourceBeforeTests(file).matchAll(DATA_DIR_CALL)].length;
+    const count = [...boundedRustSource(file).matchAll(DATA_DIR_CALL)].length;
     if (count > 0) actual.push([file, count]);
   }
   assert.deepEqual(actual, EXPECTED_DATA_DIR_REFERENCES);

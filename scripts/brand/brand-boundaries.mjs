@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { COMPATIBILITY_CONTRACTS } from "./brand-boundaries-contracts.mjs";
 import {
   loadTrackedEntries,
-  MAX_REPOSITORY_FILES,
+  MAX_SCANNED_FILES,
   MAX_TEXT_FILE_BYTES,
   validateTrackedPath,
 } from "./brand-boundaries-repository.mjs";
@@ -76,7 +76,7 @@ function contextHash(line) {
 }
 
 export function scanEntries(entries, options = {}) {
-  const maxFiles = positiveLimit(options.maxFiles, MAX_REPOSITORY_FILES);
+  const maxFiles = positiveLimit(options.maxFiles, MAX_SCANNED_FILES);
   const maxFileBytes = positiveLimit(options.maxFileBytes, MAX_TEXT_FILE_BYTES);
   const maxOccurrences = positiveLimit(options.maxOccurrences, MAX_OCCURRENCES);
   if (!Array.isArray(entries) || entries.length > maxFiles) {

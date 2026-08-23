@@ -5,7 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { loadTrackedEntries } from "./brand-boundaries-repository.mjs";
+import {
+  MAX_GIT_ENTRIES,
+  MAX_SCANNED_FILES,
+  loadTrackedEntries,
+  parseTrackedFiles,
+  selectScannableFiles,
+} from "./brand-boundaries-repository.mjs";
 
 function git(root, args) {
   execFileSync("git", ["-C", root, ...args], {
@@ -45,4 +51,31 @@ test("ignore un fichier suivi qui vient d'être supprimé", (context) => {
   const files = loadTrackedEntries(root).map((entry) => entry.file);
 
   assert.deepEqual(files, ["kept.ts"]);
+});
+
+test("les ressources binaires ne consomment pas le budget des textes", () => {
+  const files = Array.from(
+    { length: MAX_SCANNED_FILES + 1 },
+    (_, index) => `icons/icon-${index}.png`,
+  );
+  files.push("src/app.ts");
+
+  assert.deepEqual(selectScannableFiles(files, new Set()), ["src/app.ts"]);
+});
+
+test("refuse un inventaire Git ou texte au-delà de sa borne", () => {
+  const raw = `${Array.from(
+    { length: MAX_GIT_ENTRIES + 1 },
+    (_, index) => `asset-${index}.png`,
+  ).join("\0")}\0`;
+  assert.throws(() => parseTrackedFiles(raw), /trop d'entrées Git/u);
+
+  const textFiles = Array.from(
+    { length: MAX_SCANNED_FILES + 1 },
+    (_, index) => `src/file-${index}.ts`,
+  );
+  assert.throws(
+    () => selectScannableFiles(textFiles, new Set()),
+    /trop de fichiers texte/u,
+  );
 });
