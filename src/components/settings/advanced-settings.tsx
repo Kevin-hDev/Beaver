@@ -58,6 +58,11 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
     }
   }, [loadSettings]);
 
+  const saveFromEvent = useCallback((patch: Partial<AdvancedSettingsState>): void => {
+    // Generic controls do not restart Ollama, so their handled save result is intentionally ignored.
+    void save(patch);
+  }, [save]);
+
   const saveAllowedPaths = useCallback(async (paths: string[]) => {
     try {
       const normalized = await invoke<string[]>("set_allowed_paths", { paths });
@@ -104,7 +109,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
             <ToggleSwitch
               checked={state.show_tray}
               ariaLabel={t("settings.advanced.trayTitle")}
-              onCheckedChange={(v) => save({ show_tray: v })}
+              onCheckedChange={(v) => saveFromEvent({ show_tray: v })}
             />
           </SettingsRow>
 
@@ -115,7 +120,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
             <SettingsSelect
               groups={modelGroups}
               value={state.default_model}
-              onChange={(v) => save({ default_model: v })}
+              onChange={(v) => saveFromEvent({ default_model: v })}
               searchable
               searchPlaceholder={t("settings.advanced.searchModel")}
             />
@@ -143,7 +148,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
             <ToggleSwitch
               checked={state.compression_enabled}
               ariaLabel={t("settings.advanced.compressionEnabledTitle")}
-              onCheckedChange={(v) => save({ compression_enabled: v })}
+              onCheckedChange={(v) => saveFromEvent({ compression_enabled: v })}
             />
           </SettingsRow>
 
@@ -158,7 +163,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
                 max={100}
                 value={state.compression_threshold}
                 disabled={!state.compression_enabled}
-                onChange={(e) => save({ compression_threshold: Number(e.target.value) })}
+                onChange={(e) => saveFromEvent({ compression_threshold: Number(e.target.value) })}
                 className="compression-slider"
                 style={{ width: 120, opacity: state.compression_enabled ? 1 : 0.4, cursor: state.compression_enabled ? "pointer" : "not-allowed" }}
               />
@@ -178,7 +183,7 @@ export function AdvancedSettings({ focusTarget, onFocusTargetHandled }: Advanced
 
         <SessionWorkspaceSettings
           outputsDirectory={state.session_outputs_directory}
-          onOutputsDirectoryChange={(directory) => save({ session_outputs_directory: directory })}
+          onOutputsDirectoryChange={(directory) => saveFromEvent({ session_outputs_directory: directory })}
         />
 
       </div>
