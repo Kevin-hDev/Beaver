@@ -67,16 +67,20 @@ where
     F: FnOnce(Zeroizing<String>) -> Fut,
     Fut: Future<Output = Result<CodexTokens, String>>,
 {
-    let mut response = send_once(client, &credentials.tokens, endpoint, body, routing_hint).await?;
+    let response = send_once(client, &credentials.tokens, endpoint, body, routing_hint).await?;
+    #[cfg(test)]
+    let response = super::test_transport::observe_initial_response(response);
     if response.status() == StatusCode::UNAUTHORIZED {
         drop(response);
         let rejected_access = Zeroizing::new(credentials.tokens.access.to_string());
         drop(credentials);
         let refreshed = refresh(rejected_access).await?;
-        response = send_once(client, &refreshed, endpoint, body, routing_hint).await?;
-    } else {
-        drop(credentials);
+        let response = send_once(client, &refreshed, endpoint, body, routing_hint).await?;
+        return http_error::require_success(response, model, body.len(), tool_count).await;
     }
+    drop(credentials);
+    #[cfg(test)]
+    let response = response.into_inner();
     http_error::require_success(response, model, body.len(), tool_count).await
 }
 

@@ -34,6 +34,7 @@ async fn websocket_capture_never_retains_secret_marker_from_input() {
 
     let debug_capture = format!("{:?}", scenario.websocket_captures());
     assert!(!debug_capture.contains(SECRET_MARKER));
+    assert!(scenario.websocket_payload_buffer_zeroized());
 }
 
 #[tokio::test]

@@ -5,7 +5,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use zeroize::Zeroizing;
 
 use super::{
-    projection, record_http, record_refresh, state, HttpCapture, HttpReply, ScenarioContext,
+    projection, record_http, record_refresh, sensitive_buffer::SensitiveBuffer, state, HttpCapture,
+    HttpReply, ScenarioContext,
 };
 use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token::constant_time_secret_eq;
@@ -54,8 +55,17 @@ pub(super) async fn dispatch_http(
         Arc::clone(&initial_dropped),
     );
     let endpoint = format!("http://{address}/responses");
-    let refresh = move |_rejected_access: Zeroizing<String>| async move {
-        record_refresh(&context, initial_dropped.load(Ordering::SeqCst));
+    let refresh = move |rejected_access: Zeroizing<String>| async move {
+        let rejected_access_valid =
+            constant_time_secret_eq(rejected_access.as_bytes(), b"access-test");
+        record_refresh(
+            &context,
+            initial_dropped.load(Ordering::SeqCst),
+            rejected_access_valid,
+        );
+        if !rejected_access_valid {
+            return Err("provider_configuration_invalid".to_string());
+        }
         Ok(credentials("access-refreshed"))
     };
     let response = crate::services::codex_client::request_http::post_with_refresh(
@@ -102,7 +112,7 @@ async fn serve_once(
     reply: HttpReply,
     expected_access: &[u8],
 ) -> Result<(), String> {
-    let bytes = read_request(&mut socket).await?;
+    let bytes = read_request(&mut socket, Arc::clone(&context.http_payload_zeroized)).await?;
     let split = bytes
         .windows(4)
         .position(|window| window == b"\r\n\r\n")
@@ -148,8 +158,11 @@ async fn serve_once(
         .map_err(|_| invalid())
 }
 
-async fn read_request(socket: &mut tokio::net::TcpStream) -> Result<Zeroizing<Vec<u8>>, String> {
-    let mut bytes = Zeroizing::new(Vec::with_capacity(2 * 1024));
+async fn read_request(
+    socket: &mut tokio::net::TcpStream,
+    zeroized: Arc<std::sync::atomic::AtomicBool>,
+) -> Result<SensitiveBuffer, String> {
+    let mut bytes = SensitiveBuffer::with_capacity(2 * 1024, zeroized);
     loop {
         if bytes.len() >= MAX_TEST_REQUEST_BYTES {
             return Err(invalid());

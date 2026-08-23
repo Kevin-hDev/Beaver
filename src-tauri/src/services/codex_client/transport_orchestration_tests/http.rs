@@ -62,6 +62,7 @@ async fn http_capture_never_retains_secret_marker_from_input() {
 
     let debug_capture = format!("{:?}", scenario.http_captures());
     assert!(!debug_capture.contains(SECRET_MARKER));
+    assert!(scenario.http_payload_buffer_zeroized());
 }
 
 #[tokio::test]
@@ -132,6 +133,8 @@ async fn unauthorized_refresh_reuses_the_exact_fast_pair_once() {
     assert_eq!(captures.len(), 2);
     assert_eq!(scenario.refresh_count(), 1);
     assert!(scenario.initial_credentials_dropped_before_refresh());
+    assert!(scenario.initial_response_dropped_before_refresh());
+    assert!(scenario.rejected_access_valid());
     assert_eq!(captures[0].request, captures[1].request);
     assert_eq!(captures[0].routing_hint, captures[1].routing_hint);
     for capture in &captures {

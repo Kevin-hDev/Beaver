@@ -2,61 +2,26 @@
 mod http;
 #[path = "test_transport/projection.rs"]
 mod projection;
+#[path = "test_transport/response.rs"]
+mod response;
+#[path = "test_transport/sensitive_buffer.rs"]
+mod sensitive_buffer;
+#[path = "test_transport/types.rs"]
+mod types;
 #[path = "test_transport/websocket.rs"]
 mod websocket;
+#[path = "test_transport/websocket_raw.rs"]
+mod websocket_raw;
 
 use std::future::Future;
 use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 use tokio::sync::{Mutex as AsyncMutex, OwnedMutexGuard};
+pub(crate) use types::{
+    HttpCapture, HttpReply, RequestProjection, WebSocketCapture, WebSocketReply,
+};
 
 const MAX_SCRIPT_ITEMS: usize = 16;
 const MAX_CAPTURES: usize = 16;
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum HttpReply {
-    Unauthorized,
-    Success,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum WebSocketReply {
-    Success,
-    Unavailable,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct HttpCapture {
-    pub request: RequestProjection,
-    pub routing_hint: Option<String>,
-    pub authorization_valid: bool,
-    pub account_header_present: bool,
-    pub originator_valid: bool,
-    pub user_agent_present: bool,
-    pub response_path_valid: bool,
-}
-
-#[derive(Debug, Clone)]
-pub(crate) struct WebSocketCapture {
-    pub request: RequestProjection,
-    pub routing_hint: Option<String>,
-    pub authorization_valid: bool,
-    pub account_header_present: bool,
-    pub originator_valid: bool,
-    pub user_agent_present: bool,
-    pub beta_header_valid: bool,
-    pub session_headers_valid: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct RequestProjection {
-    pub model: String,
-    pub service_tier: Option<String>,
-    pub envelope_type: Option<String>,
-    pub input_count: usize,
-    pub tool_count: usize,
-    pub forbidden_field_present: bool,
-    pub body_bytes: usize,
-}
 
 #[derive(Default)]
 struct State {
@@ -66,11 +31,16 @@ struct State {
     websocket_captures: Vec<WebSocketCapture>,
     refresh_count: usize,
     initial_credentials_dropped_before_refresh: bool,
+    initial_response_dropped_before_refresh: bool,
+    rejected_access_valid: bool,
 }
 
 struct ScenarioContext {
     state: Mutex<State>,
     websocket_captured: tokio::sync::Notify,
+    http_payload_zeroized: Arc<std::sync::atomic::AtomicBool>,
+    websocket_payload_zeroized: Arc<std::sync::atomic::AtomicBool>,
+    initial_response_dropped: Arc<std::sync::atomic::AtomicBool>,
 }
 
 tokio::task_local! {
@@ -97,6 +67,10 @@ pub(super) async fn connect_websocket(
     Some(websocket::connect_websocket(context, session_id, routing_hint).await)
 }
 
+pub(super) fn observe_initial_response(response: reqwest::Response) -> response::ObservedResponse {
+    response::observe(response)
+}
+
 pub(crate) struct CodexTransportScenario {
     _serial: OwnedMutexGuard<()>,
     context: Arc<ScenarioContext>,
@@ -119,6 +93,9 @@ impl CodexTransportScenario {
                 ..State::default()
             }),
             websocket_captured: tokio::sync::Notify::new(),
+            http_payload_zeroized: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            websocket_payload_zeroized: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            initial_response_dropped: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         });
         super::websocket::mark_available();
         Self {
@@ -150,6 +127,26 @@ impl CodexTransportScenario {
 
     pub(crate) fn initial_credentials_dropped_before_refresh(&self) -> bool {
         state(&self.context).initial_credentials_dropped_before_refresh
+    }
+
+    pub(crate) fn initial_response_dropped_before_refresh(&self) -> bool {
+        state(&self.context).initial_response_dropped_before_refresh
+    }
+
+    pub(crate) fn rejected_access_valid(&self) -> bool {
+        state(&self.context).rejected_access_valid
+    }
+
+    pub(crate) fn http_payload_buffer_zeroized(&self) -> bool {
+        self.context
+            .http_payload_zeroized
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub(crate) fn websocket_payload_buffer_zeroized(&self) -> bool {
+        self.context
+            .websocket_payload_zeroized
+            .load(std::sync::atomic::Ordering::SeqCst)
     }
 
     pub(crate) async fn wait_for_websocket_captures(&self, expected: usize) {
@@ -201,8 +198,16 @@ fn record_websocket(context: &ScenarioContext, capture: WebSocketCapture) -> Res
     Ok(())
 }
 
-fn record_refresh(context: &ScenarioContext, initial_credentials_dropped: bool) {
+fn record_refresh(
+    context: &ScenarioContext,
+    initial_credentials_dropped: bool,
+    rejected_access_valid: bool,
+) {
     let mut state = state(context);
     state.refresh_count = state.refresh_count.saturating_add(1);
     state.initial_credentials_dropped_before_refresh = initial_credentials_dropped;
+    state.initial_response_dropped_before_refresh = context
+        .initial_response_dropped
+        .load(std::sync::atomic::Ordering::SeqCst);
+    state.rejected_access_valid = rejected_access_valid;
 }

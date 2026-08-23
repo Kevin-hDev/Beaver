@@ -1,30 +1,17 @@
+use std::sync::Arc;
 use std::time::Duration;
 
-use futures_util::{SinkExt, StreamExt};
-use tokio::sync::oneshot;
-use tokio_tungstenite::tungstenite::http::header::AUTHORIZATION;
-use tokio_tungstenite::tungstenite::Message as WsMessage;
 use zeroize::Zeroizing;
 
 use super::{
-    projection, record_websocket, state, ScenarioContext, WebSocketCapture, WebSocketReply,
+    projection, record_websocket, state, websocket_raw, ScenarioContext, WebSocketCapture,
+    WebSocketReply,
 };
 use crate::services::codex_client::websocket_connect::{CodexSocket, ConnectError};
 use crate::services::codex_oauth::store::CodexTokens;
-use crate::services::codex_oauth::token::constant_time_secret_eq;
-
-struct HandshakeCapture {
-    routing_hint: Option<String>,
-    authorization_valid: bool,
-    account_header_present: bool,
-    originator_valid: bool,
-    user_agent_present: bool,
-    beta_header_valid: bool,
-    session_headers_valid: bool,
-}
 
 pub(super) async fn connect_websocket(
-    context: std::sync::Arc<ScenarioContext>,
+    context: Arc<ScenarioContext>,
     session_id: &str,
     routing_hint: &str,
 ) -> Result<CodexSocket, ConnectError> {
@@ -45,7 +32,7 @@ pub(super) async fn connect_websocket(
     };
     let expected_session = session_id.to_string();
     tokio::spawn(async move {
-        let _ = serve(listener, expected_session, reply, context).await;
+        let _ = serve(listener, &expected_session, reply, context).await;
     });
     let url = format!("ws://{address}");
     crate::services::codex_client::websocket_connect::connect_loopback_at(
@@ -57,74 +44,30 @@ pub(super) async fn connect_websocket(
     .await
 }
 
-#[allow(clippy::result_large_err)] // Signature imposée par le callback de tungstenite.
 async fn serve(
     listener: tokio::net::TcpListener,
-    expected_session: String,
+    expected_session: &str,
     reply: WebSocketReply,
-    context: std::sync::Arc<ScenarioContext>,
+    context: Arc<ScenarioContext>,
 ) -> Result<(), String> {
     let (stream, _) = tokio::time::timeout(Duration::from_secs(2), listener.accept())
         .await
         .map_err(|_| invalid())?
         .map_err(|_| invalid())?;
-    let (header_tx, header_rx) = oneshot::channel();
-    let mut header_tx = Some(header_tx);
-    let mut socket = tokio_tungstenite::accept_hdr_async(
-        stream,
-        move |request: &tokio_tungstenite::tungstenite::handshake::server::Request, response| {
-            let headers = request.headers();
-            let routing_hint = headers
-                .get("x-codex-routing-hint")
-                .and_then(|value| value.to_str().ok())
-                .filter(|value| value.len() <= 160)
-                .map(str::to_string);
-            let authorization_valid = headers.get(AUTHORIZATION).is_some_and(|value| {
-                constant_time_secret_eq(value.as_bytes(), b"Bearer access-test")
-            });
-            let session_headers_valid = ["session-id", "thread-id", "x-client-request-id"]
-                .into_iter()
-                .all(|name| {
-                    headers.get(name).and_then(|value| value.to_str().ok())
-                        == Some(expected_session.as_str())
-                });
-            let capture = HandshakeCapture {
-                routing_hint,
-                authorization_valid,
-                account_header_present: headers.contains_key("chatgpt-account-id"),
-                originator_valid: headers
-                    .get("originator")
-                    .and_then(|value| value.to_str().ok())
-                    == Some(crate::services::codex_oauth::ORIGINATOR),
-                user_agent_present: headers.contains_key("user-agent"),
-                beta_header_valid: headers
-                    .get("openai-beta")
-                    .and_then(|value| value.to_str().ok())
-                    == Some("responses_websockets=2026-02-06"),
-                session_headers_valid,
-            };
-            if let Some(sender) = header_tx.take() {
-                let _ = sender.send(capture);
-            }
-            Ok(response)
-        },
+    let (mut stream, handshake) = tokio::time::timeout(
+        Duration::from_secs(2),
+        websocket_raw::accept(stream, expected_session),
     )
     .await
-    .map_err(|_| invalid())?;
-    let message = tokio::time::timeout(Duration::from_secs(2), socket.next())
-        .await
-        .map_err(|_| invalid())?
-        .ok_or_else(invalid)?
-        .map_err(|_| invalid())?;
-    let WsMessage::Text(text) = message else {
-        return Err(invalid());
-    };
-    if text.len() > crate::services::secure_http::LLM_BODY_LIMIT {
-        return Err(invalid());
-    }
-    let request = projection::parse(text.as_bytes())?;
-    drop(text);
-    let handshake = header_rx.await.map_err(|_| invalid())?;
+    .map_err(|_| invalid())??;
+    let payload = tokio::time::timeout(
+        Duration::from_secs(2),
+        websocket_raw::read_text(&mut stream, Arc::clone(&context.websocket_payload_zeroized)),
+    )
+    .await
+    .map_err(|_| invalid())??;
+    let request = projection::parse(&payload)?;
+    drop(payload);
     record_websocket(
         &context,
         WebSocketCapture {
@@ -138,18 +81,7 @@ async fn serve(
             session_headers_valid: handshake.session_headers_valid,
         },
     )?;
-
-    match reply {
-        WebSocketReply::Success => socket
-            .send(WsMessage::Text(
-                "{\"type\":\"response.completed\",\"response\":{\"usage\":{}}}"
-                    .to_string()
-                    .into(),
-            ))
-            .await
-            .map_err(|_| invalid()),
-        WebSocketReply::Unavailable => socket.close(None).await.map_err(|_| invalid()),
-    }
+    websocket_raw::write_reply(&mut stream, reply).await
 }
 
 fn credentials() -> CodexTokens {
