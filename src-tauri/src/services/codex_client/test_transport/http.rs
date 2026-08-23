@@ -1,9 +1,12 @@
 use std::time::Duration;
+use std::{sync::atomic::Ordering, sync::Arc};
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use zeroize::Zeroizing;
 
-use super::{record_http, record_refresh, state, HttpCapture, HttpReply};
+use super::{
+    projection, record_http, record_refresh, state, HttpCapture, HttpReply, ScenarioContext,
+};
 use crate::services::codex_oauth::store::CodexTokens;
 use crate::services::codex_oauth::token::constant_time_secret_eq;
 use crate::services::secure_http::AuthenticatedClient;
@@ -15,19 +18,17 @@ const SUCCESS_BODY: &str = concat!(
 );
 
 pub(super) async fn dispatch_http(
+    context: Arc<ScenarioContext>,
     body: &str,
     routing_hint: &str,
     model: &str,
     tool_count: usize,
-) -> Option<Result<reqwest::Response, String>> {
+) -> Result<reqwest::Response, String> {
     let script = {
-        let mut state = state();
-        if !state.active {
-            return None;
-        }
+        let mut state = state(&context);
         match state.http_script.take() {
             Some(script) => script,
-            None => return Some(Err("provider_configuration_invalid".to_string())),
+            None => return Err("provider_configuration_invalid".to_string()),
         }
     };
     let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
@@ -35,26 +36,31 @@ pub(super) async fn dispatch_http(
         .map_err(|_| "provider_configuration_invalid".to_string());
     let listener = match listener {
         Ok(listener) => listener,
-        Err(error) => return Some(Err(error)),
+        Err(error) => return Err(error),
     };
     let address = match listener.local_addr() {
         Ok(address) => address,
-        Err(_) => return Some(Err("provider_configuration_invalid".to_string())),
+        Err(_) => return Err("provider_configuration_invalid".to_string()),
     };
-    let server = tokio::spawn(serve(listener, script));
+    let server_context = Arc::clone(&context);
+    let server = tokio::spawn(serve(listener, script, server_context));
     let client = match AuthenticatedClient::new_loopback(Duration::from_secs(2)) {
         Ok(client) => client,
-        Err(_) => return Some(Err("provider_configuration_invalid".to_string())),
+        Err(_) => return Err("provider_configuration_invalid".to_string()),
     };
-    let initial = credentials("access-test");
+    let initial_dropped = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let initial = crate::services::codex_client::request_http::RequestCredentials::observed(
+        credentials("access-test"),
+        Arc::clone(&initial_dropped),
+    );
     let endpoint = format!("http://{address}/responses");
-    let refresh = async {
-        record_refresh();
+    let refresh = move |_rejected_access: Zeroizing<String>| async move {
+        record_refresh(&context, initial_dropped.load(Ordering::SeqCst));
         Ok(credentials("access-refreshed"))
     };
     let response = crate::services::codex_client::request_http::post_with_refresh(
         &client,
-        &initial,
+        initial,
         &endpoint,
         body,
         routing_hint,
@@ -65,12 +71,16 @@ pub(super) async fn dispatch_http(
     .await;
     let server_result = tokio::time::timeout(Duration::from_secs(2), server).await;
     if !matches!(server_result, Ok(Ok(Ok(())))) {
-        return Some(Err("provider_configuration_invalid".to_string()));
+        return Err("provider_configuration_invalid".to_string());
     }
-    Some(response)
+    response
 }
 
-async fn serve(listener: tokio::net::TcpListener, script: Vec<HttpReply>) -> Result<(), String> {
+async fn serve(
+    listener: tokio::net::TcpListener,
+    script: Vec<HttpReply>,
+    context: Arc<ScenarioContext>,
+) -> Result<(), String> {
     for (index, reply) in script.into_iter().enumerate() {
         let (socket, _) = tokio::time::timeout(Duration::from_secs(2), listener.accept())
             .await
@@ -81,12 +91,13 @@ async fn serve(listener: tokio::net::TcpListener, script: Vec<HttpReply>) -> Res
         } else {
             b"Bearer access-refreshed".as_slice()
         };
-        serve_once(socket, reply, expected_access).await?;
+        serve_once(&context, socket, reply, expected_access).await?;
     }
     Ok(())
 }
 
 async fn serve_once(
+    context: &ScenarioContext,
     mut socket: tokio::net::TcpStream,
     reply: HttpReply,
     expected_access: &[u8],
@@ -98,31 +109,30 @@ async fn serve_once(
         .ok_or_else(invalid)?;
     let headers = std::str::from_utf8(&bytes[..split]).map_err(|_| invalid())?;
     let body_bytes = &bytes[split + 4..];
-    let body: serde_json::Value = serde_json::from_slice(body_bytes).map_err(|_| invalid())?;
+    let request = projection::parse(body_bytes)?;
     let routing_hint = header_value(headers, "x-codex-routing-hint").map(str::to_string);
     if routing_hint.as_ref().is_some_and(|value| value.len() > 160) {
         return Err(invalid());
     }
     let authorization_valid = header_value(headers, "authorization")
         .is_some_and(|value| constant_time_secret_eq(value.as_bytes(), expected_access));
-    let path = headers
+    let response_path_valid = headers
         .lines()
         .next()
         .and_then(|line| line.split_whitespace().nth(1))
-        .ok_or_else(invalid)?
-        .to_string();
-    record_http(HttpCapture {
-        body_has_access_token: body.to_string().contains("\"access_token\""),
-        body,
+        == Some("/responses");
+    let capture = HttpCapture {
+        request,
         routing_hint,
         authorization_valid,
         account_header_present: header_value(headers, "chatgpt-account-id").is_some(),
         originator_valid: header_value(headers, "originator")
             == Some(crate::services::codex_oauth::ORIGINATOR),
         user_agent_present: header_value(headers, "user-agent").is_some(),
-        path,
-        body_bytes: body_bytes.len(),
-    })?;
+        response_path_valid,
+    };
+    drop(bytes);
+    record_http(context, capture)?;
 
     let (status, content_type, response_body) = match reply {
         HttpReply::Unauthorized => ("401 Unauthorized", "application/json", "{}"),

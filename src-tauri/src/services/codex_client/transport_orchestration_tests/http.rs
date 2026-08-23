@@ -5,6 +5,66 @@ use crate::services::llm::fast_mode::FastModeRequest;
 use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
+async fn transport_scenario_never_intercepts_a_concurrent_task_outside_its_scope() {
+    let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Success]), None).await;
+    let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(2));
+    let outside_barrier = std::sync::Arc::clone(&barrier);
+    let outside = tokio::spawn(async move {
+        outside_barrier.wait().await;
+        crate::services::codex_client::test_transport::dispatch_http(
+            "{}",
+            "model=gpt-5.6-sol",
+            "gpt-5.6-sol",
+            0,
+        )
+        .await
+    });
+    let response = scenario
+        .scope(async {
+            barrier.wait().await;
+            request::post_codex_stream(
+                "gpt-5.6-sol",
+                &messages(),
+                &[],
+                None,
+                None,
+                FastModeRequest::Standard,
+                &CancellationToken::new(),
+            )
+            .await
+        })
+        .await;
+
+    assert!(outside.await.expect("outside task completes").is_none());
+    drop(response.expect("scoped request reaches loopback"));
+    assert_eq!(scenario.http_captures().len(), 1);
+}
+
+#[tokio::test]
+async fn http_capture_never_retains_secret_marker_from_input() {
+    const SECRET_MARKER: &str = "secret-prompt-marker-must-not-survive";
+    let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Success]), None).await;
+    let mut input = messages();
+    input[0].content = SECRET_MARKER.to_string();
+    let response = scenario
+        .scope(request::post_codex_stream(
+            "gpt-5.6-sol",
+            &input,
+            &[],
+            None,
+            None,
+            FastModeRequest::Fast,
+            &CancellationToken::new(),
+        ))
+        .await
+        .expect("loopback POST succeeds");
+    drop(response);
+
+    let debug_capture = format!("{:?}", scenario.http_captures());
+    assert!(!debug_capture.contains(SECRET_MARKER));
+}
+
+#[tokio::test]
 async fn request_keeps_body_and_header_aligned_for_every_mode() {
     for (mode, model, expected_tier, expected_hint) in [
         (
@@ -27,17 +87,18 @@ async fn request_keeps_body_and_header_aligned_for_every_mode() {
         ),
     ] {
         let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Success]), None).await;
-        let response = request::post_codex_stream(
-            model,
-            &messages(),
-            &[],
-            None,
-            None,
-            mode,
-            &CancellationToken::new(),
-        )
-        .await
-        .expect("loopback POST succeeds");
+        let response = scenario
+            .scope(request::post_codex_stream(
+                model,
+                &messages(),
+                &[],
+                None,
+                None,
+                mode,
+                &CancellationToken::new(),
+            ))
+            .await
+            .expect("loopback POST succeeds");
         drop(response);
 
         let captures = scenario.http_captures();
@@ -53,23 +114,25 @@ async fn unauthorized_refresh_reuses_the_exact_fast_pair_once() {
         None,
     )
     .await;
-    let response = request::post_codex_stream(
-        "gpt-5.6-sol",
-        &messages(),
-        &[],
-        None,
-        None,
-        FastModeRequest::Fast,
-        &CancellationToken::new(),
-    )
-    .await
-    .expect("refresh succeeds");
+    let response = scenario
+        .scope(request::post_codex_stream(
+            "gpt-5.6-sol",
+            &messages(),
+            &[],
+            None,
+            None,
+            FastModeRequest::Fast,
+            &CancellationToken::new(),
+        ))
+        .await
+        .expect("refresh succeeds");
     drop(response);
 
     let captures = scenario.http_captures();
     assert_eq!(captures.len(), 2);
     assert_eq!(scenario.refresh_count(), 1);
-    assert_eq!(captures[0].body, captures[1].body);
+    assert!(scenario.initial_credentials_dropped_before_refresh());
+    assert_eq!(captures[0].request, captures[1].request);
     assert_eq!(captures[0].routing_hint, captures[1].routing_hint);
     for capture in &captures {
         assert_http_capture(
@@ -93,18 +156,19 @@ async fn silent_compression_keeps_the_explicit_fast_capture() {
     .await
     .expect("create Standard session");
     let scenario = CodexTransportScenario::start(Some(vec![HttpReply::Success]), None).await;
-    let result = stream_silent::collect_chat_silent_for_compression(
-        "gpt-5.6-sol",
-        &messages(),
-        &[],
-        None,
-        FastModeRequest::Fast,
-        Some(64),
-        Some(&session.id),
-        CancellationToken::new(),
-        None,
-    )
-    .await;
+    let result = scenario
+        .scope(stream_silent::collect_chat_silent_for_compression(
+            "gpt-5.6-sol",
+            &messages(),
+            &[],
+            None,
+            FastModeRequest::Fast,
+            Some(64),
+            Some(&session.id),
+            CancellationToken::new(),
+            None,
+        ))
+        .await;
     let captures = scenario.http_captures();
     crate::services::agent_local::session_store::delete_one(&session.id)
         .await

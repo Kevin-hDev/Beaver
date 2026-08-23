@@ -2,6 +2,7 @@ use std::future::Future;
 use std::time::Duration;
 
 use reqwest::{Response, StatusCode};
+use zeroize::Zeroizing;
 
 use super::http_error;
 use super::limits::{CONNECT_TIMEOUT, MODELS_TIMEOUT, STREAM_STALL_TIMEOUT};
@@ -31,17 +32,19 @@ pub(super) async fn post(
         return response;
     }
     let client = build_client(deadline)?;
-    let credentials = token::ensure_valid().await?;
+    let credentials = RequestCredentials::new(token::ensure_valid().await?);
     let endpoint = format!("{CODEX_API_BASE}/responses");
     post_with_refresh(
         &client,
-        &credentials,
+        credentials,
         &endpoint,
         body,
         routing_hint,
         model,
         tool_count,
-        token::recover_after_unauthorized(credentials.access.as_str()),
+        |rejected_access| async move {
+            token::recover_after_unauthorized(rejected_access.as_str()).await
+        },
     )
     .await
 }
@@ -50,9 +53,9 @@ pub(super) async fn post(
     clippy::too_many_arguments,
     reason = "shared HTTP boundary keeps the body and validated routing capture explicit"
 )]
-pub(super) async fn post_with_refresh<F>(
+pub(super) async fn post_with_refresh<F, Fut>(
     client: &AuthenticatedClient,
-    credentials: &CodexTokens,
+    credentials: RequestCredentials,
     endpoint: &str,
     body: &str,
     routing_hint: &str,
@@ -61,15 +64,56 @@ pub(super) async fn post_with_refresh<F>(
     refresh: F,
 ) -> Result<Response, String>
 where
-    F: Future<Output = Result<CodexTokens, String>>,
+    F: FnOnce(Zeroizing<String>) -> Fut,
+    Fut: Future<Output = Result<CodexTokens, String>>,
 {
-    let mut response = send_once(client, credentials, endpoint, body, routing_hint).await?;
+    let mut response = send_once(client, &credentials.tokens, endpoint, body, routing_hint).await?;
     if response.status() == StatusCode::UNAUTHORIZED {
-        let refreshed = refresh.await?;
         drop(response);
+        let rejected_access = Zeroizing::new(credentials.tokens.access.to_string());
+        drop(credentials);
+        let refreshed = refresh(rejected_access).await?;
         response = send_once(client, &refreshed, endpoint, body, routing_hint).await?;
+    } else {
+        drop(credentials);
     }
     http_error::require_success(response, model, body.len(), tool_count).await
+}
+
+pub(super) struct RequestCredentials {
+    tokens: CodexTokens,
+    #[cfg(test)]
+    drop_observer: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
+}
+
+impl RequestCredentials {
+    fn new(tokens: CodexTokens) -> Self {
+        Self {
+            tokens,
+            #[cfg(test)]
+            drop_observer: None,
+        }
+    }
+
+    #[cfg(test)]
+    pub(super) fn observed(
+        tokens: CodexTokens,
+        observer: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
+        Self {
+            tokens,
+            drop_observer: Some(observer),
+        }
+    }
+}
+
+impl Drop for RequestCredentials {
+    fn drop(&mut self) {
+        #[cfg(test)]
+        if let Some(observer) = &self.drop_observer {
+            observer.store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
 }
 
 pub(super) async fn get_models() -> Result<Response, String> {

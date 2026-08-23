@@ -8,6 +8,35 @@ use crate::services::llm::fast_mode::FastModeRequest;
 use tokio_util::sync::CancellationToken;
 
 #[tokio::test]
+async fn websocket_capture_never_retains_secret_marker_from_input() {
+    const SECRET_MARKER: &str = "secret-ws-marker-must-not-survive";
+    let scenario = CodexTransportScenario::start(None, Some(WebSocketReply::Success)).await;
+    let emitter = AgentEventEmitter::test("session-ws-secret".to_string());
+    let mut measurement = StreamMeasurement::new(None);
+    let mut input = messages();
+    input[0].content = SECRET_MARKER.to_string();
+    scenario
+        .scope(websocket::stream_chat(
+            &emitter,
+            "session-ws-secret",
+            "gpt-5.6-sol",
+            &input,
+            &[],
+            None,
+            FastModeRequest::Fast,
+            CancellationToken::new(),
+            false,
+            None,
+            &mut measurement,
+        ))
+        .await
+        .expect("loopback WebSocket succeeds");
+
+    let debug_capture = format!("{:?}", scenario.websocket_captures());
+    assert!(!debug_capture.contains(SECRET_MARKER));
+}
+
+#[tokio::test]
 async fn request_keeps_payload_and_handshake_aligned_for_every_mode() {
     for (mode, model, expected_tier, expected_hint) in [
         (
@@ -32,21 +61,22 @@ async fn request_keeps_payload_and_handshake_aligned_for_every_mode() {
         let scenario = CodexTransportScenario::start(None, Some(WebSocketReply::Success)).await;
         let emitter = AgentEventEmitter::test("session-ws-routing".to_string());
         let mut measurement = StreamMeasurement::new(None);
-        websocket::stream_chat(
-            &emitter,
-            "session-ws-routing",
-            model,
-            &messages(),
-            &[],
-            None,
-            mode,
-            CancellationToken::new(),
-            false,
-            None,
-            &mut measurement,
-        )
-        .await
-        .expect("loopback WebSocket succeeds");
+        scenario
+            .scope(websocket::stream_chat(
+                &emitter,
+                "session-ws-routing",
+                model,
+                &messages(),
+                &[],
+                None,
+                mode,
+                CancellationToken::new(),
+                false,
+                None,
+                &mut measurement,
+            ))
+            .await
+            .expect("loopback WebSocket succeeds");
         scenario.wait_for_websocket_captures(1).await;
 
         let captures = scenario.websocket_captures();
@@ -72,21 +102,22 @@ async fn fallback_to_http_keeps_the_original_fast_capture() {
     )
     .await;
     let emitter = AgentEventEmitter::test(session.id.clone());
-    let result = stream::stream_chat_with_budget(
-        &emitter,
-        &session.id,
-        "request-fallback-fast",
-        "gpt-5.6-sol",
-        &messages(),
-        &[],
-        None,
-        FastModeRequest::Fast,
-        CancellationToken::new(),
-        false,
-        None,
-        None,
-    )
-    .await;
+    let result = scenario
+        .scope(stream::stream_chat_with_budget(
+            &emitter,
+            &session.id,
+            "request-fallback-fast",
+            "gpt-5.6-sol",
+            &messages(),
+            &[],
+            None,
+            FastModeRequest::Fast,
+            CancellationToken::new(),
+            false,
+            None,
+            None,
+        ))
+        .await;
     scenario.wait_for_websocket_captures(1).await;
     let websocket_captures = scenario.websocket_captures();
     let http_captures = scenario.http_captures();

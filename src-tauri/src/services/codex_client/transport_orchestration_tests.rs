@@ -21,7 +21,7 @@ fn assert_http_capture(
     routing_hint: &str,
 ) {
     assert_body_and_hint(
-        &capture.body,
+        &capture.request,
         capture.routing_hint.as_deref(),
         model,
         service_tier,
@@ -31,9 +31,11 @@ fn assert_http_capture(
     assert!(capture.account_header_present);
     assert!(capture.originator_valid);
     assert!(capture.user_agent_present);
-    assert_eq!(capture.path, "/responses");
-    assert!(!capture.body_has_access_token);
-    assert!(capture.body_bytes <= crate::services::secure_http::LLM_BODY_LIMIT);
+    assert!(capture.response_path_valid);
+    assert!(!capture.request.forbidden_field_present);
+    assert!(capture.request.body_bytes <= crate::services::secure_http::LLM_BODY_LIMIT);
+    assert!(capture.request.input_count <= 2_048);
+    assert!(capture.request.tool_count <= 2_048);
 }
 
 fn assert_websocket_capture(
@@ -43,35 +45,37 @@ fn assert_websocket_capture(
     routing_hint: &str,
 ) {
     assert_body_and_hint(
-        &capture.body,
+        &capture.request,
         capture.routing_hint.as_deref(),
         model,
         service_tier,
         routing_hint,
     );
-    assert_eq!(capture.body["type"], "response.create");
+    assert_eq!(
+        capture.request.envelope_type.as_deref(),
+        Some("response.create")
+    );
     assert!(capture.authorization_valid);
     assert!(capture.account_header_present);
     assert!(capture.originator_valid);
     assert!(capture.user_agent_present);
     assert!(capture.beta_header_valid);
     assert!(capture.session_headers_valid);
-    assert!(!capture.body_has_access_token);
-    assert!(capture.body_bytes <= crate::services::secure_http::LLM_BODY_LIMIT);
+    assert!(!capture.request.forbidden_field_present);
+    assert!(capture.request.body_bytes <= crate::services::secure_http::LLM_BODY_LIMIT);
+    assert!(capture.request.input_count <= 2_048);
+    assert!(capture.request.tool_count <= 2_048);
 }
 
 fn assert_body_and_hint(
-    body: &serde_json::Value,
+    request: &super::test_transport::RequestProjection,
     actual_hint: Option<&str>,
     model: &str,
     service_tier: Option<&str>,
     expected_hint: &str,
 ) {
-    assert_eq!(body["model"], model);
-    match service_tier {
-        Some(value) => assert_eq!(body["service_tier"], value),
-        None => assert!(body.get("service_tier").is_none()),
-    }
+    assert_eq!(request.model, model);
+    assert_eq!(request.service_tier.as_deref(), service_tier);
     assert_eq!(actual_hint, Some(expected_hint));
     assert!(actual_hint.unwrap().len() <= 160);
 }

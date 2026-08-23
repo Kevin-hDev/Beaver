@@ -1,9 +1,12 @@
 #[path = "test_transport/http.rs"]
 mod http;
+#[path = "test_transport/projection.rs"]
+mod projection;
 #[path = "test_transport/websocket.rs"]
 mod websocket;
 
-use std::sync::{LazyLock, Mutex, MutexGuard};
+use std::future::Future;
+use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 use tokio::sync::{Mutex as AsyncMutex, OwnedMutexGuard};
 
 const MAX_SCRIPT_ITEMS: usize = 16;
@@ -23,20 +26,18 @@ pub(crate) enum WebSocketReply {
 
 #[derive(Debug, Clone)]
 pub(crate) struct HttpCapture {
-    pub body: serde_json::Value,
+    pub request: RequestProjection,
     pub routing_hint: Option<String>,
     pub authorization_valid: bool,
     pub account_header_present: bool,
     pub originator_valid: bool,
     pub user_agent_present: bool,
-    pub path: String,
-    pub body_has_access_token: bool,
-    pub body_bytes: usize,
+    pub response_path_valid: bool,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct WebSocketCapture {
-    pub body: serde_json::Value,
+    pub request: RequestProjection,
     pub routing_hint: Option<String>,
     pub authorization_valid: bool,
     pub account_header_present: bool,
@@ -44,43 +45,61 @@ pub(crate) struct WebSocketCapture {
     pub user_agent_present: bool,
     pub beta_header_valid: bool,
     pub session_headers_valid: bool,
-    pub body_has_access_token: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RequestProjection {
+    pub model: String,
+    pub service_tier: Option<String>,
+    pub envelope_type: Option<String>,
+    pub input_count: usize,
+    pub tool_count: usize,
+    pub forbidden_field_present: bool,
     pub body_bytes: usize,
 }
 
 #[derive(Default)]
 struct State {
-    active: bool,
     http_script: Option<Vec<HttpReply>>,
     websocket_script: Option<WebSocketReply>,
     http_captures: Vec<HttpCapture>,
     websocket_captures: Vec<WebSocketCapture>,
     refresh_count: usize,
+    initial_credentials_dropped_before_refresh: bool,
+}
+
+struct ScenarioContext {
+    state: Mutex<State>,
+    websocket_captured: tokio::sync::Notify,
+}
+
+tokio::task_local! {
+    static ACTIVE_SCENARIO: Arc<ScenarioContext>;
 }
 
 static SERIAL: LazyLock<std::sync::Arc<AsyncMutex<()>>> =
     LazyLock::new(|| std::sync::Arc::new(AsyncMutex::new(())));
-static STATE: LazyLock<Mutex<State>> = LazyLock::new(|| Mutex::new(State::default()));
-static WEBSOCKET_CAPTURED: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync::Notify::new);
-
 pub(super) async fn dispatch_http(
     body: &str,
     routing_hint: &str,
     model: &str,
     tool_count: usize,
 ) -> Option<Result<reqwest::Response, String>> {
-    http::dispatch_http(body, routing_hint, model, tool_count).await
+    let context = ACTIVE_SCENARIO.try_with(Arc::clone).ok()?;
+    Some(http::dispatch_http(context, body, routing_hint, model, tool_count).await)
 }
 
 pub(super) async fn connect_websocket(
     session_id: &str,
     routing_hint: &str,
 ) -> Option<Result<super::websocket_connect::CodexSocket, super::websocket_connect::ConnectError>> {
-    websocket::connect_websocket(session_id, routing_hint).await
+    let context = ACTIVE_SCENARIO.try_with(Arc::clone).ok()?;
+    Some(websocket::connect_websocket(context, session_id, routing_hint).await)
 }
 
 pub(crate) struct CodexTransportScenario {
     _serial: OwnedMutexGuard<()>,
+    context: Arc<ScenarioContext>,
 }
 
 impl CodexTransportScenario {
@@ -93,33 +112,51 @@ impl CodexTransportScenario {
             assert!(!script.is_empty());
             assert!(script.len() <= MAX_SCRIPT_ITEMS);
         }
-        *state() = State {
-            active: true,
-            http_script,
-            websocket_script,
-            ..State::default()
-        };
+        let context = Arc::new(ScenarioContext {
+            state: Mutex::new(State {
+                http_script,
+                websocket_script,
+                ..State::default()
+            }),
+            websocket_captured: tokio::sync::Notify::new(),
+        });
         super::websocket::mark_available();
-        Self { _serial: serial }
+        Self {
+            _serial: serial,
+            context,
+        }
+    }
+
+    pub(crate) async fn scope<F>(&self, future: F) -> F::Output
+    where
+        F: Future,
+    {
+        ACTIVE_SCENARIO
+            .scope(Arc::clone(&self.context), future)
+            .await
     }
 
     pub(crate) fn http_captures(&self) -> Vec<HttpCapture> {
-        state().http_captures.clone()
+        state(&self.context).http_captures.clone()
     }
 
     pub(crate) fn websocket_captures(&self) -> Vec<WebSocketCapture> {
-        state().websocket_captures.clone()
+        state(&self.context).websocket_captures.clone()
     }
 
     pub(crate) fn refresh_count(&self) -> usize {
-        state().refresh_count
+        state(&self.context).refresh_count
+    }
+
+    pub(crate) fn initial_credentials_dropped_before_refresh(&self) -> bool {
+        state(&self.context).initial_credentials_dropped_before_refresh
     }
 
     pub(crate) async fn wait_for_websocket_captures(&self, expected: usize) {
         let wait = async {
             loop {
-                let notified = WEBSOCKET_CAPTURED.notified();
-                if state().websocket_captures.len() >= expected {
+                let notified = self.context.websocket_captured.notified();
+                if state(&self.context).websocket_captures.len() >= expected {
                     return;
                 }
                 notified.await;
@@ -133,17 +170,19 @@ impl CodexTransportScenario {
 
 impl Drop for CodexTransportScenario {
     fn drop(&mut self) {
-        *state() = State::default();
         super::websocket::mark_available();
     }
 }
 
-fn state() -> MutexGuard<'static, State> {
-    STATE.lock().unwrap_or_else(|error| error.into_inner())
+fn state(context: &ScenarioContext) -> MutexGuard<'_, State> {
+    context
+        .state
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
 }
 
-fn record_http(capture: HttpCapture) -> Result<(), String> {
-    let mut state = state();
+fn record_http(context: &ScenarioContext, capture: HttpCapture) -> Result<(), String> {
+    let mut state = state(context);
     if state.http_captures.len() >= MAX_CAPTURES {
         return Err("provider_configuration_invalid".to_string());
     }
@@ -151,18 +190,19 @@ fn record_http(capture: HttpCapture) -> Result<(), String> {
     Ok(())
 }
 
-fn record_websocket(capture: WebSocketCapture) -> Result<(), String> {
-    let mut state = state();
+fn record_websocket(context: &ScenarioContext, capture: WebSocketCapture) -> Result<(), String> {
+    let mut state = state(context);
     if state.websocket_captures.len() >= MAX_CAPTURES {
         return Err("provider_configuration_invalid".to_string());
     }
     state.websocket_captures.push(capture);
     drop(state);
-    WEBSOCKET_CAPTURED.notify_waiters();
+    context.websocket_captured.notify_waiters();
     Ok(())
 }
 
-fn record_refresh() {
-    let mut state = state();
+fn record_refresh(context: &ScenarioContext, initial_credentials_dropped: bool) {
+    let mut state = state(context);
     state.refresh_count = state.refresh_count.saturating_add(1);
+    state.initial_credentials_dropped_before_refresh = initial_credentials_dropped;
 }
