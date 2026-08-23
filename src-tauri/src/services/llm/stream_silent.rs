@@ -31,6 +31,7 @@ pub async fn collect_chat_silent_for_compression(
         None,
         1,
         crate::services::provider_usage::UsageWorkload::Compression,
+        fast_mode,
     );
     let result = if provider_id == "codex-oauth" {
         crate::services::codex_client::stream::collect_chat_silent_for_compression(

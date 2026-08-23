@@ -1,6 +1,8 @@
 use std::time::Instant;
 
-use super::request_journal::{ProviderRequestMetric, RequestMetricStatus};
+use super::request_journal::{
+    served_tier, ProviderRequestMetric, RequestMetricStatus, ServiceTierServed,
+};
 use super::{RequestUsage, UsageApiFormat, UsageWorkload};
 
 pub(crate) struct RequestMeasurementContext<'a> {
@@ -13,6 +15,7 @@ pub(crate) struct RequestMeasurementContext<'a> {
     pub turn: Option<u32>,
     pub attempt: u32,
     pub workload: UsageWorkload,
+    pub fast_mode: crate::services::llm::fast_mode::FastModeRequest,
 }
 
 pub(crate) struct RequestMeasurement {
@@ -34,6 +37,7 @@ impl RequestMeasurement {
             turn: context.turn,
             attempt: context.attempt,
             workload: workload_name(context.workload).to_string(),
+            fast_requested: context.fast_mode.fast_requested(),
             origin: if context.session_id.is_some() {
                 "manual_chat"
             } else {
@@ -65,6 +69,17 @@ impl RequestMeasurement {
     }
 
     pub(crate) fn observe_response_metadata(&mut self, value: &serde_json::Value) {
+        if self.metric.canonical_provider_id == "openai" {
+            let observed = value
+                .get("service_tier")
+                .or_else(|| value.pointer("/response/service_tier"))
+                .and_then(serde_json::Value::as_str)
+                .map(served_tier)
+                .unwrap_or_default();
+            if observed != ServiceTierServed::Unknown {
+                self.metric.service_tier_served = observed;
+            }
+        }
         if self.metric.canonical_provider_id != "openrouter" {
             return;
         }
@@ -94,6 +109,11 @@ impl RequestMeasurement {
             self.metric.routed_provider.as_deref(),
             self.metric.routed_model.as_deref(),
         )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fast_observation(&self) -> (bool, ServiceTierServed) {
+        (self.metric.fast_requested, self.metric.service_tier_served)
     }
 
     pub(crate) async fn finish(

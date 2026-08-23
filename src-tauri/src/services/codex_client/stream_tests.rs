@@ -6,6 +6,7 @@ use tokio::net::TcpListener;
 use super::*;
 use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome};
+use crate::services::llm::fast_mode::FastModeRequest;
 use crate::services::provider_usage::{
     RequestMeasurement, RequestMeasurementContext, UsageApiFormat, UsageWorkload,
 };
@@ -30,6 +31,7 @@ fn request_measurement() -> RequestMeasurement {
         turn: Some(1),
         attempt: 1,
         workload: UsageWorkload::Primary,
+        fast_mode: FastModeRequest::Fast,
     })
     .unwrap()
 }
@@ -66,7 +68,7 @@ async fn sse_response(
 
 #[tokio::test]
 async fn completed_sse_returns_the_accumulated_result() {
-    let body = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\ndata: {\"type\":\"response.completed\"}\n\n";
+    let body = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"service_tier\":\"priority\"}}\n\n";
     let (response, server) = sse_response(body, Duration::ZERO).await;
     let mut request_measurement = request_measurement();
     request_measurement.mark_headers();
@@ -91,6 +93,10 @@ async fn completed_sse_returns_the_accumulated_result() {
     assert_eq!(outcome.into_result().content, "ok");
     assert!(request_measurement.timing().first_event_ms.is_some());
     assert!(request_measurement.timing().first_useful_ms.is_some());
+    assert_eq!(
+        request_measurement.fast_observation().1,
+        crate::services::provider_usage::ServiceTierServed::Fast
+    );
     server.await.unwrap();
 }
 

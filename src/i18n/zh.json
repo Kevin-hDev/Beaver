@@ -1203,6 +1203,7 @@
     "providerConnectionFailed": "无法连接到提供商。",
     "providerTemporarilyUnavailable": "提供商暂时不可用，请稍后重试。",
     "providerRequestRejected": "提供商拒绝了该请求。",
+    "serviceTierUnavailable": "快速模式不适用于此请求。请将其关闭或选择兼容的模型。",
     "providerPayloadTooLarge": "尝试缩减后，请求仍然过大。",
     "providerConfigurationInvalid": "无法准备该请求。",
     "oauthReauthenticationRequired": "OAuth 连接已过期。请重新连接提供商。",

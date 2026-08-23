@@ -31,6 +31,12 @@ impl<'a> StreamMeasurement<'a> {
         }
     }
 
+    pub(super) fn observe_response_metadata(&mut self, event: &serde_json::Value) {
+        if let Some(measurement) = self.inner.as_mut() {
+            measurement.observe_response_metadata(event);
+        }
+    }
+
     pub(super) fn apply(
         &mut self,
         accumulator: &mut StreamAccumulator<'_>,
@@ -38,6 +44,7 @@ impl<'a> StreamMeasurement<'a> {
         event: &serde_json::Value,
     ) -> Result<Option<StreamOutcome>, String> {
         self.mark_first_event();
+        self.observe_response_metadata(event);
         let useful_before = accumulator.has_useful_output();
         let outcome = accumulator.apply(on_event, event)?;
         if !useful_before && accumulator.has_useful_output() {

@@ -106,6 +106,7 @@ fn unavailable() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::services::provider_usage::request_journal::ServiceTierServed;
 
     #[test]
     fn version_one_turns_are_migrated_without_touching_missing_values() {
@@ -142,5 +143,36 @@ mod tests {
 
         current.version = 99;
         assert!(migrate_version(&mut current).is_err());
+    }
+
+    #[test]
+    fn store_round_trip_preserves_fast_observation_and_defaults_old_entries() {
+        let old: RequestStore = serde_json::from_value(serde_json::json!({
+            "version": STORE_VERSION,
+            "entries": [{}]
+        }))
+        .unwrap();
+        assert!(!old.entries[0].fast_requested);
+        assert_eq!(
+            old.entries[0].service_tier_served,
+            ServiceTierServed::Unknown
+        );
+
+        let current = RequestStore {
+            version: STORE_VERSION,
+            entries: vec![ProviderRequestMetric {
+                fast_requested: true,
+                service_tier_served: ServiceTierServed::Default,
+                ..Default::default()
+            }],
+        };
+        let reloaded: RequestStore =
+            serde_json::from_slice(&serde_json::to_vec(&current).unwrap()).unwrap();
+
+        assert!(reloaded.entries[0].fast_requested);
+        assert_eq!(
+            reloaded.entries[0].service_tier_served,
+            ServiceTierServed::Default
+        );
     }
 }

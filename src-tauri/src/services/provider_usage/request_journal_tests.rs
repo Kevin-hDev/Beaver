@@ -1,5 +1,6 @@
 use super::request_journal::{
-    ProviderRequestMetric, RequestMetricStatus, RequestTiming, REQUEST_LIMIT,
+    served_tier, ProviderRequestMetric, RequestMetricStatus, RequestTiming, ServiceTierServed,
+    REQUEST_LIMIT,
 };
 use super::{RequestUsage, UsageApiFormat};
 
@@ -24,6 +25,15 @@ fn metric(session_id: Option<&str>, attempt: u32) -> ProviderRequestMetric {
         usage_complete: false,
         ..Default::default()
     }
+}
+
+#[test]
+fn served_tier_accepts_only_the_closed_provider_values() {
+    assert_eq!(served_tier("fast"), ServiceTierServed::Fast);
+    assert_eq!(served_tier("priority"), ServiceTierServed::Fast);
+    assert_eq!(served_tier("default"), ServiceTierServed::Default);
+    assert_eq!(served_tier("auto"), ServiceTierServed::Unknown);
+    assert_eq!(served_tier("ultrafast"), ServiceTierServed::Unknown);
 }
 
 #[test]

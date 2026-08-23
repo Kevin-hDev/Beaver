@@ -9,6 +9,7 @@ const MAX_RECORDED_PAYLOADS: usize = 16;
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum ScriptedResponse {
     RetryablePaused,
+    ServiceTierRejected,
     PayloadTooLargePaused,
     Success,
 }
@@ -93,6 +94,16 @@ pub(super) async fn dispatch(
             wait_for_release().await;
             Some(Err(RequestError::Fatal(
                 "provider_temporarily_unavailable".into(),
+            )))
+        }
+        Some(ScriptedResponse::ServiceTierRejected) => {
+            Some(Err(super::stream_http::classify_error(
+                400,
+                r#"{"error":{"param":"service_tier","code":"invalid_request_error"}}"#,
+                "OpenAI",
+                "openai",
+                false,
+                false,
             )))
         }
         Some(ScriptedResponse::PayloadTooLargePaused) => {

@@ -35,6 +35,7 @@ pub async fn stream_chat_no_done(
         Some(turn),
         attempt,
         crate::services::provider_usage::UsageWorkload::Primary,
+        fast_mode,
     );
     let result = if provider_id == "codex-oauth" {
         crate::services::codex_client::stream::stream_chat_with_budget(

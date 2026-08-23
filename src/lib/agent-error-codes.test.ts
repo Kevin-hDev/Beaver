@@ -6,7 +6,7 @@ import fr from "@/i18n/fr.json";
 import itCatalog from "@/i18n/it.json";
 import ja from "@/i18n/ja.json";
 import zh from "@/i18n/zh.json";
-import { KNOWN_ERROR_KEYS } from "./agent-error-codes";
+import { isKnownAgentErrorCode, KNOWN_ERROR_KEYS } from "./agent-error-codes";
 
 const catalogs: ReadonlyArray<Record<string, unknown>> = [fr, en, es, de, itCatalog, zh, ja];
 
@@ -17,6 +17,21 @@ describe("KNOWN_ERROR_KEYS", () => {
         expect(readTranslation(catalog, translationKey)).not.toBeUndefined();
       }
     }
+  });
+
+  it("expose le refus Fast avec le texte exact dans les sept langues", () => {
+    expect(isKnownAgentErrorCode("service_tier_unavailable")).toBe(true);
+    expect(
+      catalogs.map((catalog) => readTranslation(catalog, "errors.serviceTierUnavailable")),
+    ).toEqual([
+      "Le mode Rapide n'est pas disponible pour cette requête. Désactive-le ou choisis un modèle compatible.",
+      "Fast mode is not available for this request. Turn it off or choose a compatible model.",
+      "El modo Rápido no está disponible para esta solicitud. Desactívalo o elige un modelo compatible.",
+      "Der Schnellmodus ist für diese Anfrage nicht verfügbar. Deaktiviere ihn oder wähle ein kompatibles Modell.",
+      "La modalità Rapida non è disponibile per questa richiesta. Disattivala o scegli un modello compatibile.",
+      "快速模式不适用于此请求。请将其关闭或选择兼容的模型。",
+      "高速モードはこのリクエストでは利用できません。無効にするか、対応モデルを選択してください。",
+    ]);
   });
 });
 

@@ -1256,6 +1256,7 @@
     "providerConnectionFailed": "Connexion au provider impossible.",
     "providerTemporarilyUnavailable": "Le provider est temporairement indisponible. Réessaie dans un instant.",
     "providerRequestRejected": "Le provider a refusé la requête.",
+    "serviceTierUnavailable": "Le mode Rapide n'est pas disponible pour cette requête. Désactive-le ou choisis un modèle compatible.",
     "providerPayloadTooLarge": "La demande reste trop volumineuse après la tentative de réduction.",
     "providerConfigurationInvalid": "La requête n’a pas pu être préparée.",
     "oauthReauthenticationRequired": "La connexion OAuth a expiré. Reconnecte le provider.",

@@ -153,6 +153,7 @@ mod tests {
 
     #[test]
     fn permanent_request_errors_are_not_retried() {
+        assert!(!is_retryable_error("service_tier_unavailable"));
         assert!(!is_retryable_error("Codex: Invalid request."));
         assert!(!is_retryable_error("SSE: private transport details"));
     }

@@ -15,6 +15,7 @@ pub enum ProviderErrorCode {
     ProviderRequestRejected,
     ProviderConfigurationInvalid,
     ModelCatalogUnavailable,
+    ServiceTierUnavailable,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
@@ -37,8 +38,37 @@ impl ProviderErrorCode {
             Self::ProviderRequestRejected => "provider_request_rejected",
             Self::ProviderConfigurationInvalid => "provider_configuration_invalid",
             Self::ModelCatalogUnavailable => "model_catalog_unavailable",
+            Self::ServiceTierUnavailable => "service_tier_unavailable",
         }
     }
+}
+
+pub fn is_service_tier_rejection(body: &str) -> bool {
+    let Ok(document) = serde_json::from_str::<serde_json::Value>(body) else {
+        return false;
+    };
+    service_tier_error_fields(
+        document.pointer("/error/param"),
+        document.pointer("/error/code"),
+    )
+}
+
+pub fn is_service_tier_response_error(event: &serde_json::Value) -> bool {
+    service_tier_error_fields(
+        event.pointer("/response/error/param"),
+        event.pointer("/response/error/code"),
+    )
+}
+
+fn service_tier_error_fields(
+    param: Option<&serde_json::Value>,
+    code: Option<&serde_json::Value>,
+) -> bool {
+    if param.and_then(serde_json::Value::as_str) == Some("service_tier") {
+        return true;
+    }
+    // Hypothèse défensive fermée, à retirer si la campagne réelle ne l'observe pas.
+    code.and_then(serde_json::Value::as_str) == Some("unsupported_service_tier")
 }
 
 pub fn classify_http(provider_id: &str, status: u16, body: &str) -> ProviderErrorCode {

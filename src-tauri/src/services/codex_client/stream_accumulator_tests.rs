@@ -1,6 +1,10 @@
 use super::*;
 use crate::services::agent_local::stream_buffer::StreamEventSink;
 use crate::services::agent_local::types_ollama::{StreamEvent, StreamOutcome};
+use crate::services::llm::fast_mode::FastModeRequest;
+use crate::services::provider_usage::{
+    RequestMeasurement, RequestMeasurementContext, UsageApiFormat, UsageWorkload,
+};
 
 struct NoopSink;
 
@@ -8,6 +12,43 @@ impl StreamEventSink for NoopSink {
     fn send_event(&self, _event: StreamEvent) -> Result<(), String> {
         Ok(())
     }
+}
+
+#[test]
+fn responses_consumer_observes_the_tier_before_completion() {
+    let mut request_measurement = RequestMeasurement::start(RequestMeasurementContext {
+        connection_id: "codex-oauth",
+        canonical_provider_id: "openai",
+        api_format: UsageApiFormat::Responses,
+        model: "gpt-5.6-sol",
+        session_id: Some("session-1"),
+        request_id: "request-1",
+        turn: Some(1),
+        attempt: 1,
+        workload: UsageWorkload::Primary,
+        fast_mode: FastModeRequest::Fast,
+    })
+    .unwrap();
+    let mut accumulator = StreamAccumulator::new("openai", "gpt-5.6-sol", &[], false, None);
+    let mut measurement = crate::services::codex_client::stream_measurement::StreamMeasurement::new(
+        Some(&mut request_measurement),
+    );
+
+    measurement
+        .apply(
+            &mut accumulator,
+            &NoopSink,
+            &serde_json::json!({
+                "type": "response.completed",
+                "response": {"service_tier": "priority"}
+            }),
+        )
+        .unwrap();
+
+    assert_eq!(
+        request_measurement.fast_observation().1,
+        crate::services::provider_usage::ServiceTierServed::Fast
+    );
 }
 
 #[test]

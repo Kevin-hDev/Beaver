@@ -21,6 +21,24 @@ pub enum RequestMetricStatus {
     Cancelled,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ServiceTierServed {
+    Fast,
+    Default,
+    #[default]
+    #[serde(other)]
+    Unknown,
+}
+
+pub(super) fn served_tier(value: &str) -> ServiceTierServed {
+    match value {
+        "fast" | "priority" => ServiceTierServed::Fast,
+        "default" => ServiceTierServed::Default,
+        _ => ServiceTierServed::Unknown,
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct RequestTiming {
@@ -47,6 +65,8 @@ pub struct ProviderRequestMetric {
     pub workload: String,
     pub origin: String,
     pub status: RequestMetricStatus,
+    pub fast_requested: bool,
+    pub service_tier_served: ServiceTierServed,
     pub timing: RequestTiming,
     pub usage: Option<RequestUsage>,
     pub usage_complete: bool,

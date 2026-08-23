@@ -1,6 +1,30 @@
 use super::*;
 
 #[test]
+fn service_tier_rejection_uses_only_closed_structured_fields() {
+    let by_param =
+        r#"{"error":{"code":"invalid_request_error","param":"service_tier","message":"private"}}"#;
+    let by_code = r#"{"error":{"code":"unsupported_service_tier","message":"private"}}"#;
+
+    assert!(is_service_tier_rejection(by_param));
+    assert!(is_service_tier_rejection(by_code));
+    assert!(!is_service_tier_rejection(
+        r#"{"error":{"message":"service tier unavailable"}}"#
+    ));
+    assert!(!is_service_tier_rejection(
+        r#"{"error":{"param":"other","code":"unsupported_other"}}"#
+    ));
+}
+
+#[test]
+fn service_tier_error_code_has_a_stable_public_value() {
+    assert_eq!(
+        ProviderErrorCode::ServiceTierUnavailable.as_str(),
+        "service_tier_unavailable"
+    );
+}
+
+#[test]
 fn classifies_the_exact_moonshot_membership_response() {
     let body = r#"{"error":{"message":"We're unable to verify your membership benefits at this time. Please ensure your membership is active.","type":"invalid_request_error"}}"#;
 

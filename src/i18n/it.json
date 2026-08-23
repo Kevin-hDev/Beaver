@@ -1203,6 +1203,7 @@
     "providerConnectionFailed": "Impossibile connettersi al provider.",
     "providerTemporarilyUnavailable": "Il provider è temporaneamente non disponibile. Riprova tra poco.",
     "providerRequestRejected": "Il provider ha rifiutato la richiesta.",
+    "serviceTierUnavailable": "La modalità Rapida non è disponibile per questa richiesta. Disattivala o scegli un modello compatibile.",
     "providerPayloadTooLarge": "La richiesta è ancora troppo grande dopo il tentativo di riduzione.",
     "providerConfigurationInvalid": "Non è stato possibile preparare la richiesta.",
     "oauthReauthenticationRequired": "La connessione OAuth è scaduta. Riconnetti il provider.",

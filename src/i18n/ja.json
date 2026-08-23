@@ -1203,6 +1203,7 @@
     "providerConnectionFailed": "プロバイダーに接続できませんでした。",
     "providerTemporarilyUnavailable": "プロバイダーは一時的に利用できません。しばらくしてからもう一度お試しください。",
     "providerRequestRejected": "プロバイダーがリクエストを拒否しました。",
+    "serviceTierUnavailable": "高速モードはこのリクエストでは利用できません。無効にするか、対応モデルを選択してください。",
     "providerPayloadTooLarge": "縮小を試みましたが、リクエストはまだ大きすぎます。",
     "providerConfigurationInvalid": "リクエストを準備できませんでした。",
     "oauthReauthenticationRequired": "OAuth 接続の有効期限が切れました。プロバイダーに再接続してください。",

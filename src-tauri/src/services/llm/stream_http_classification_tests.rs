@@ -95,3 +95,29 @@ fn provider_wording_never_disables_tools_silently() {
 
     assert_eq!(error.to_string(), "provider_request_rejected");
 }
+
+#[test]
+fn structured_service_tier_rejection_precedes_the_generic_http_error() {
+    for body in [
+        r#"{"error":{"param":"service_tier","code":"invalid_request_error"}}"#,
+        r#"{"error":{"code":"unsupported_service_tier"}}"#,
+    ] {
+        assert_eq!(
+            classify_error(400, body, "OpenAI", "openai", false, false).to_string(),
+            "service_tier_unavailable"
+        );
+    }
+
+    assert_eq!(
+        classify_error(
+            400,
+            r#"{"error":{"message":"service tier unavailable"}}"#,
+            "OpenAI",
+            "openai",
+            false,
+            false,
+        )
+        .to_string(),
+        "provider_request_rejected"
+    );
+}

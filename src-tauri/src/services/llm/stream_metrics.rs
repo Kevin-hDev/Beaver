@@ -1,3 +1,7 @@
+#![expect(
+    clippy::too_many_arguments,
+    reason = "measurement boundary keeps the captured generation fields explicit"
+)]
 use crate::services::agent_local::types_ollama::{StreamOutcome, StreamResult};
 use crate::services::provider_usage::{
     RequestMeasurement, RequestMeasurementContext, RequestMetricStatus, UsageApiFormat,
@@ -12,6 +16,7 @@ pub(super) fn start(
     turn: Option<u32>,
     attempt: u32,
     workload: UsageWorkload,
+    fast_mode: super::fast_mode::FastModeRequest,
 ) -> Option<RequestMeasurement> {
     let (canonical_provider_id, api_format) = if connection_id == "codex-oauth" {
         ("openai", UsageApiFormat::Responses)
@@ -31,6 +36,7 @@ pub(super) fn start(
         turn,
         attempt,
         workload,
+        fast_mode,
     })
 }
 

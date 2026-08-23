@@ -1203,6 +1203,7 @@
     "providerConnectionFailed": "Verbindung zum Anbieter nicht möglich.",
     "providerTemporarilyUnavailable": "Der Anbieter ist vorübergehend nicht verfügbar. Versuche es gleich noch einmal.",
     "providerRequestRejected": "Der Anbieter hat die Anfrage abgelehnt.",
+    "serviceTierUnavailable": "Der Schnellmodus ist für diese Anfrage nicht verfügbar. Deaktiviere ihn oder wähle ein kompatibles Modell.",
     "providerPayloadTooLarge": "Die Anfrage ist nach dem Reduzierungsversuch weiterhin zu groß.",
     "providerConfigurationInvalid": "Die Anfrage konnte nicht vorbereitet werden.",
     "oauthReauthenticationRequired": "Die OAuth-Verbindung ist abgelaufen. Verbinde den Anbieter erneut.",

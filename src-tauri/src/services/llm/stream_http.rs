@@ -142,7 +142,7 @@ fn request_error_for_limit(error: super::stream_max_tokens::ResolveError) -> Req
     }
 }
 
-fn classify_error(
+pub(super) fn classify_error(
     status: u16,
     body: &str,
     _provider_name: &str,
@@ -150,6 +150,13 @@ fn classify_error(
     oauth: bool,
     has_retry_after: bool,
 ) -> RequestError {
+    if super::provider_error::is_service_tier_rejection(body) {
+        return RequestError::Fatal(
+            ProviderErrorCode::ServiceTierUnavailable
+                .as_str()
+                .to_string(),
+        );
+    }
     match status {
         402 => RequestError::Fatal(
             super::provider_error::classify_http(provider_id, status, body)

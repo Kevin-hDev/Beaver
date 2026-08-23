@@ -80,6 +80,8 @@ const snapshot: ProviderUsageSnapshot = {
       workload: "primary",
       origin: "manual_chat",
       status: "completed",
+      fast_requested: false,
+      service_tier_served: "unknown",
       timing: { headers_ms: 120, first_event_ms: 180, first_useful_ms: 220, total_ms: 400 },
       usage: {
         input_tokens: 100,

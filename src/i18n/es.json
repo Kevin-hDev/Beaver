@@ -1203,6 +1203,7 @@
     "providerConnectionFailed": "No se pudo conectar con el proveedor.",
     "providerTemporarilyUnavailable": "El proveedor no está disponible temporalmente. Vuelve a intentarlo en unos instantes.",
     "providerRequestRejected": "El proveedor rechazó la solicitud.",
+    "serviceTierUnavailable": "El modo Rápido no está disponible para esta solicitud. Desactívalo o elige un modelo compatible.",
     "providerPayloadTooLarge": "La solicitud sigue siendo demasiado grande tras el intento de reducción.",
     "providerConfigurationInvalid": "No se pudo preparar la solicitud.",
     "oauthReauthenticationRequired": "La conexión OAuth ha caducado. Vuelve a conectar el proveedor.",

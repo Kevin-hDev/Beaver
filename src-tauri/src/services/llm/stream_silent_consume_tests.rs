@@ -1,5 +1,9 @@
 use std::time::Duration;
 
+use crate::services::llm::fast_mode::FastModeRequest;
+use crate::services::provider_usage::{
+    RequestMeasurement, RequestMeasurementContext, UsageApiFormat, UsageWorkload,
+};
 use tokio_util::sync::CancellationToken;
 use wiremock::matchers::any;
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -46,20 +50,37 @@ async fn eof_before_done_is_rejected_as_truncated() {
 #[tokio::test]
 async fn explicit_done_completes_the_stream() {
     let (_server, response) = streaming_response(concat!(
-        "data: {\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}\n\n",
+        "data: {\"service_tier\":\"fast\",\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}\n\n",
         "data: [DONE]\n\n",
     ))
     .await;
+    let mut request_measurement = RequestMeasurement::start(RequestMeasurementContext {
+        connection_id: "openai",
+        canonical_provider_id: "openai",
+        api_format: UsageApiFormat::ChatCompletions,
+        model: "gpt-5.6-sol",
+        session_id: Some("session-1"),
+        request_id: "request-1",
+        turn: Some(1),
+        attempt: 1,
+        workload: UsageWorkload::Compression,
+        fast_mode: FastModeRequest::Fast,
+    })
+    .unwrap();
 
     let result = consume_silent(
         response,
         CancellationToken::new(),
         Duration::from_secs(2),
         crate::services::provider_usage::UsageContext::chat("openai", "gpt-5.6-sol"),
-        None,
+        Some(&mut request_measurement),
     )
     .await
     .unwrap();
 
     assert_eq!(result.content, "ok");
+    assert_eq!(
+        request_measurement.fast_observation().1,
+        crate::services::provider_usage::ServiceTierServed::Fast
+    );
 }

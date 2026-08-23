@@ -23,6 +23,8 @@ mod types;
 mod usage_context;
 
 pub(crate) use request_journal::RequestMetricStatus;
+#[cfg(test)]
+pub(crate) use request_journal::ServiceTierServed;
 pub(crate) use request_measurement::{RequestMeasurement, RequestMeasurementContext};
 pub use request_usage::RequestUsage;
 pub use snapshot::ProviderUsageSnapshot;

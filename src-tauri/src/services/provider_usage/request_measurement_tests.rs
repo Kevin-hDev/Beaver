@@ -1,5 +1,7 @@
+use super::request_journal::ServiceTierServed;
 use super::request_measurement::{RequestMeasurement, RequestMeasurementContext};
 use super::{UsageApiFormat, UsageWorkload};
+use crate::services::llm::fast_mode::FastModeRequest;
 use serde_json::json;
 
 fn context<'a>(session_id: Option<&'a str>) -> RequestMeasurementContext<'a> {
@@ -13,7 +15,35 @@ fn context<'a>(session_id: Option<&'a str>) -> RequestMeasurementContext<'a> {
         turn: Some(1),
         attempt: 1,
         workload: UsageWorkload::Primary,
+        fast_mode: FastModeRequest::Fast,
     }
+}
+
+#[test]
+fn measurement_records_the_captured_request_and_real_served_tier() {
+    let mut measurement = RequestMeasurement::start(context(Some("session-1"))).unwrap();
+
+    measurement.observe_response_metadata(&json!({"service_tier": "priority"}));
+
+    assert_eq!(
+        measurement.fast_observation(),
+        (true, ServiceTierServed::Fast)
+    );
+}
+
+#[test]
+fn unknown_metadata_never_erases_a_known_served_tier() {
+    let mut measurement = RequestMeasurement::start(context(Some("session-1"))).unwrap();
+    measurement.observe_response_metadata(&json!({
+        "response": {"service_tier": "default"}
+    }));
+
+    measurement.observe_response_metadata(&json!({"service_tier": "ultrafast"}));
+
+    assert_eq!(
+        measurement.fast_observation(),
+        (true, ServiceTierServed::Default)
+    );
 }
 
 #[test]

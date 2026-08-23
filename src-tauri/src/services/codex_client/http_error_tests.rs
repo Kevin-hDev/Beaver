@@ -57,3 +57,56 @@ fn codex_payload_too_large_is_not_mislabeled_as_rate_limit() {
         "provider_payload_too_large"
     );
 }
+
+#[test]
+fn codex_structured_service_tier_http_rejection_is_stable() {
+    for body in [
+        r#"{"error":{"param":"service_tier","code":"invalid_request_error"}}"#,
+        r#"{"error":{"code":"unsupported_service_tier"}}"#,
+    ] {
+        assert_eq!(
+            status_error(StatusCode::BAD_REQUEST, body),
+            "service_tier_unavailable"
+        );
+    }
+    assert_eq!(
+        status_error(
+            StatusCode::BAD_REQUEST,
+            r#"{"error":{"message":"service tier unavailable"}}"#
+        ),
+        "provider_request_rejected"
+    );
+}
+
+#[tokio::test]
+async fn codex_http_consumer_returns_the_service_tier_code_without_exposing_body() {
+    let body = r#"{"error":{"param":"service_tier","message":"private account detail"}}"#;
+    let response = tauri::http::Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(body)
+        .unwrap();
+
+    let error = require_success(reqwest::Response::from(response), "gpt-5.6-sol", 128, 1)
+        .await
+        .unwrap_err();
+
+    assert_eq!(error, "service_tier_unavailable");
+    assert!(!error.contains("private account detail"));
+}
+
+#[test]
+fn codex_responses_error_checks_param_before_the_defensive_code() {
+    let by_param = serde_json::json!({
+        "response": {"error": {"param": "service_tier", "code": "invalid_request"}}
+    });
+    let by_code = serde_json::json!({
+        "response": {"error": {"code": "unsupported_service_tier"}}
+    });
+    let wording_only = serde_json::json!({
+        "response": {"error": {"message": "service tier unavailable"}}
+    });
+
+    assert_eq!(stream_failure(&by_param), "service_tier_unavailable");
+    assert_eq!(stream_failure(&by_code), "service_tier_unavailable");
+    assert_eq!(stream_failure(&wording_only), "provider_request_rejected");
+}

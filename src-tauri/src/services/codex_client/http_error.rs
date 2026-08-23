@@ -30,6 +30,9 @@ pub async fn require_success(
 }
 
 pub fn stream_failure(event: &serde_json::Value) -> String {
+    if crate::services::llm::provider_error::is_service_tier_response_error(event) {
+        return service_tier_unavailable();
+    }
     let code = event
         .pointer("/response/error/code")
         .and_then(serde_json::Value::as_str)
@@ -52,6 +55,9 @@ async fn read_error_body(response: Response) -> Zeroizing<String> {
 }
 
 fn status_error(status: StatusCode, body: &str) -> String {
+    if crate::services::llm::provider_error::is_service_tier_rejection(body) {
+        return service_tier_unavailable();
+    }
     match status.as_u16() {
         401 => "oauth_reauthentication_required".to_string(),
         403 => "provider_access_unavailable".to_string(),
@@ -61,6 +67,12 @@ fn status_error(status: StatusCode, body: &str) -> String {
         _ if body_has_temporary_code(body) => temporarily_unavailable(),
         _ => "provider_request_rejected".to_string(),
     }
+}
+
+fn service_tier_unavailable() -> String {
+    ProviderErrorCode::ServiceTierUnavailable
+        .as_str()
+        .to_string()
 }
 
 fn temporarily_unavailable() -> String {

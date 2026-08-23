@@ -80,6 +80,8 @@ export interface ProviderRequestMetric {
   workload: "primary" | "subagent" | "compression";
   origin: "manual_chat" | "external_channel" | "automation";
   status: "completed" | "interrupted" | "cancelled" | "failed";
+  fast_requested: boolean;
+  service_tier_served: "fast" | "default" | "unknown";
   timing: {
     headers_ms: number | null;
     first_event_ms: number | null;

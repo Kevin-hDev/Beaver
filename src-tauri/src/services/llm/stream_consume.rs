@@ -197,3 +197,7 @@ fn record_filtered(
         }
     }
 }
+
+#[cfg(test)]
+#[path = "stream_consume_tests.rs"]
+mod tests;

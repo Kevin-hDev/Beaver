@@ -101,3 +101,63 @@ async fn temporary_retry_keeps_fast_after_the_session_changes() {
     assert_eq!(payloads.len(), 1);
     assert_eq!(payloads[0]["service_tier"], "default");
 }
+
+#[tokio::test]
+async fn structured_service_tier_refusal_is_sent_once_even_with_tools() {
+    let session = crate::services::agent_local::session_store::create_with_project_and_fast_mode(
+        "Fast refusal",
+        "gpt-5.6-luna",
+        "openai",
+        None,
+        true,
+    )
+    .await
+    .expect("create session");
+    let scenario =
+        StreamScenario::start(&session.id, [ScriptedResponse::ServiceTierRejected]).await;
+    let emitter = AgentEventEmitter::test(session.id.clone());
+    let messages = [ChatMessage {
+        role: "user".into(),
+        content: "hello".into(),
+        ..Default::default()
+    }];
+    let tools = [serde_json::json!({
+        "type": "function",
+        "function": {
+            "name": "safe_tool",
+            "description": "test",
+            "parameters": {"type": "object", "properties": {}}
+        }
+    })];
+    let mut next_attempt = 1;
+
+    let error = retry_stream(
+        &emitter,
+        &session.id,
+        "request-fast-refusal",
+        1,
+        &mut next_attempt,
+        "openai",
+        FastModeRequest::Fast,
+        RequestPurpose::ManualChat,
+        "gpt-5.6-luna",
+        &messages,
+        &tools,
+        false,
+        None,
+        CancellationToken::new(),
+        false,
+        None,
+    )
+    .await
+    .unwrap_err();
+    let payloads = scenario.payloads();
+    crate::services::agent_local::session_store::delete_one(&session.id)
+        .await
+        .expect("delete session");
+
+    assert_eq!(error, "service_tier_unavailable");
+    assert_eq!(payloads.len(), 1);
+    assert_eq!(payloads[0]["service_tier"], "fast");
+    assert_eq!(payloads[0]["tools"].as_array().map(Vec::len), Some(1));
+}

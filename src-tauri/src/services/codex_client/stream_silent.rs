@@ -77,6 +77,7 @@ async fn consume_sse_silent(
         }
         let parsed = crate::services::llm::stream_sse::parse_json(&event.data)?;
         measurement.mark_first_event();
+        measurement.observe_response_metadata(&parsed);
         match parsed["type"].as_str().unwrap_or("") {
             "response.reasoning_summary_text.delta" => {
                 if parsed["delta"]
