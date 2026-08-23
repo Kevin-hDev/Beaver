@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const readme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
+// Git may materialize CRLF on Windows; contracts are about Markdown structure, not checkout EOLs.
+const readme = (await readFile(new URL("../../README.md", import.meta.url), "utf8"))
+  .replaceAll("\r\n", "\n");
 
 test("les trois OS publient explicitement Python 3.14 dans le PATH utilisateur", () => {
   assert.equal((readme.match(/UV_PYTHON_BIN_DIR/g) ?? []).length, 2);

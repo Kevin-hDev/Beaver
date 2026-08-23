@@ -56,7 +56,8 @@ test("la résolution par défaut lit la version contrôlée avant de lancer les 
     });
 
     assert.equal(observed.length, 1);
-    assert.equal(observed[0].candidate.label, "python3.99");
+    const expectedLabel = process.platform === "win32" ? "py-3.99" : "python3.99";
+    assert.equal(observed[0].candidate.label, expectedLabel);
     assert.deepEqual(observed[0].expectedVersion, { major: 3, minor: 99, label: "3.99" });
   } finally {
     await rm(root, { recursive: true, force: true });
