@@ -195,3 +195,68 @@ fn public_and_legacy_contracts_are_exact() {
     assert_eq!(AUTOSTART_ARG, "--clgo-autostart");
     assert_eq!(MARKER_FILE, "autostart-beaver-v1");
 }
+
+struct ExactFakeEntry {
+    state: Cell<ExactEntryState>,
+    installs: Cell<usize>,
+    removals: Cell<usize>,
+}
+
+impl ExactFakeEntry {
+    fn new(state: ExactEntryState) -> Self {
+        Self {
+            state: Cell::new(state),
+            installs: Cell::new(0),
+            removals: Cell::new(0),
+        }
+    }
+}
+
+impl ExactLaunchEntry for ExactFakeEntry {
+    fn state(&self) -> Result<ExactEntryState, MigrationError> {
+        Ok(self.state.get())
+    }
+
+    fn install(&self) -> Result<(), MigrationError> {
+        self.installs.set(self.installs.get() + 1);
+        self.state.set(ExactEntryState::Exact);
+        Ok(())
+    }
+
+    fn remove(&self) -> Result<(), MigrationError> {
+        self.removals.set(self.removals.get() + 1);
+        self.state.set(ExactEntryState::Absent);
+        Ok(())
+    }
+}
+
+#[test]
+fn stale_active_entry_is_replaced_and_verified() {
+    let entry = ExactFakeEntry::new(ExactEntryState::Stale);
+
+    synchronize_exact_entry(&entry, true).unwrap();
+
+    assert_eq!(entry.state.get(), ExactEntryState::Exact);
+    assert_eq!(entry.installs.get(), 1);
+    assert_eq!(entry.removals.get(), 0);
+}
+
+#[test]
+fn exact_active_entry_is_not_rewritten() {
+    let entry = ExactFakeEntry::new(ExactEntryState::Exact);
+
+    synchronize_exact_entry(&entry, true).unwrap();
+
+    assert_eq!(entry.installs.get(), 0);
+    assert_eq!(entry.removals.get(), 0);
+}
+
+#[test]
+fn absent_active_entry_is_already_disabled() {
+    let entry = ExactFakeEntry::new(ExactEntryState::Absent);
+
+    synchronize_exact_entry(&entry, false).unwrap();
+
+    assert_eq!(entry.installs.get(), 0);
+    assert_eq!(entry.removals.get(), 0);
+}

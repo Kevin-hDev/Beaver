@@ -1054,7 +1054,6 @@ dependencies = [
  "tar",
  "tauri",
  "tauri-build",
- "tauri-plugin-autostart",
  "tauri-plugin-dialog",
  "tauri-plugin-fs",
  "tauri-plugin-log",
@@ -1077,6 +1076,7 @@ dependencies = [
  "windows",
  "windows-spawn",
  "windows-sys 0.61.2",
+ "winreg 0.55.0",
  "wiremock",
  "zeroize",
  "zip 8.6.0",
@@ -6674,20 +6674,6 @@ dependencies = [
  "serde_json",
  "tauri-utils",
  "walkdir",
-]
-
-[[package]]
-name = "tauri-plugin-autostart"
-version = "2.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "459383cebc193cdd03d1ba4acc40f2c408a7abce419d64bdcd2d745bc2886f70"
-dependencies = [
- "auto-launch",
- "serde",
- "serde_json",
- "tauri",
- "tauri-plugin",
- "thiserror 2.0.19",
 ]
 
 [[package]]
