@@ -60,8 +60,7 @@ describe("persistAgentMessage", () => {
 
   it("arrête l'envoi si l'association du projet est refusée", async () => {
     invoke.mockImplementation((command: string) => {
-      if (command === "get_agent_session") return Promise.resolve({ project_id: null });
-      if (command === "save_agent_session") {
+      if (command === "assign_session_project") {
         return Promise.reject(new Error("subagent-read-only"));
       }
       return Promise.resolve(undefined);
@@ -78,5 +77,22 @@ describe("persistAgentMessage", () => {
 
     expect(invoke).not.toHaveBeenCalledWith("add_messages_to_session", expect.anything());
     expect(doStream).not.toHaveBeenCalled();
+  });
+
+  it("associe seulement le projet sans renvoyer le document de session", async () => {
+    await persistAgentMessage({
+      sessionId: "session-1",
+      messages: [],
+      text: "Premier message",
+      projectId: "project-1",
+      doStream: vi.fn(),
+    });
+
+    expect(invoke).toHaveBeenCalledWith("assign_session_project", {
+      id: "session-1",
+      projectId: "project-1",
+    });
+    expect(invoke).not.toHaveBeenCalledWith("get_agent_session", expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith("save_agent_session", expect.anything());
   });
 });

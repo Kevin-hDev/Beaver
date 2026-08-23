@@ -91,17 +91,6 @@ pub async fn project_path(project_id: &str) -> Result<PathBuf, String> {
     ensure_allowed(Path::new(&project.path))
 }
 
-pub async fn ensure_session_allowed(
-    session: &super::types_session::AgentSession,
-) -> Result<(), String> {
-    if let Some(project_id) = session.project_id.as_deref() {
-        project_path(project_id).await?;
-    } else if !session.working_dir_managed && !session.working_dir.trim().is_empty() {
-        ensure_allowed(Path::new(&session.working_dir))?;
-    }
-    Ok(())
-}
-
 pub(crate) fn is_path_in_roots(path: &Path, roots: &[PathBuf]) -> bool {
     super::directory_access_scope::roots_allow_full_disk(roots)
         || roots.iter().any(|root| path.starts_with(root))

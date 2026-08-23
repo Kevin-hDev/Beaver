@@ -105,3 +105,52 @@ async fn cleanup_refuses_to_delete_main_branch() {
 
     cleanup_sessions(&root_id, &[clone_id]).await;
 }
+
+#[tokio::test]
+async fn unlink_revalidates_the_selected_branch_under_lock() {
+    let root_id = Uuid::new_v4().to_string();
+    let clone_id = Uuid::new_v4().to_string();
+    let old_branch = "clone-44444444";
+    let new_branch = "feature/relinked";
+    save_clone_tabs(&root_id, &clone_id, None, old_branch).await;
+    let selected = linked_sessions_for_branch(old_branch, &clone_id)
+        .await
+        .expect("select linked session");
+    let (selected_tx, selected_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let cleanup = tokio::spawn(async move {
+        unlink_branch_from_sessions_with_before_update(
+            &selected,
+            old_branch,
+            move || async move {
+                let _ = selected_tx.send(());
+                let _ = release_rx.await;
+            },
+        )
+        .await
+    });
+    selected_rx.await.expect("cleanup paused after selection");
+
+    crate::services::agent_local::session_store_updates::update_locked(&clone_id, |session| {
+        session.git_branch = Some(new_branch.to_string());
+    })
+    .await
+    .expect("relink session");
+    super::session_tabs::set_clone_git_branch(
+        &root_id,
+        &clone_id,
+        Some(new_branch.to_string()),
+    )
+    .await
+    .expect("relink tab");
+    let _ = release_tx.send(());
+    cleanup.await.expect("join cleanup").expect("unlink stale branch");
+
+    let saved = super::session_store::get(&clone_id).await.expect("reload clone");
+    let tabs = super::session_tabs::list(&root_id).await.expect("reload tabs");
+    assert_eq!(saved.git_branch.as_deref(), Some(new_branch));
+    assert!(tabs.tabs.iter().find(|tab| tab.session_id == clone_id).is_some_and(
+        |tab| tab.git_branch.as_deref() == Some(new_branch)
+    ));
+    cleanup_sessions(&root_id, &[clone_id]).await;
+}

@@ -67,7 +67,7 @@ macro_rules! generate {
             crate::commands::reorder_agent_sessions,
             crate::commands::reorder_pinned_agent_sessions,
             crate::commands::get_agent_session,
-            crate::commands::save_agent_session,
+            crate::commands::assign_session_project,
             crate::commands::get_session_permission_state,
             crate::commands::set_session_permission_mode,
             crate::commands::prepare_agent_send,

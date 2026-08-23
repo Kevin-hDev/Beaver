@@ -151,6 +151,122 @@ async fn fast_mode_update_and_rename_keep_both_mutations() {
         .expect("delete session");
 }
 
+async fn paused_project_assignment(
+    session_id: String,
+    loaded_tx: tokio::sync::oneshot::Sender<()>,
+    release_rx: tokio::sync::oneshot::Receiver<()>,
+) -> Result<bool, String> {
+    session_store_updates::assign_project_with_after_load(
+        &session_id,
+        "project-new",
+        move || async move {
+            let _ = loaded_tx.send(());
+            let _ = release_rx.await;
+        },
+    )
+    .await
+}
+
+#[tokio::test]
+async fn project_assignment_and_rename_keep_both_mutations() {
+    let session = session_store::create_full("Before", "gpt-5.6", "openai", false, None)
+        .await
+        .expect("create session");
+    let (loaded_tx, loaded_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let update = tokio::spawn(paused_project_assignment(
+        session.id.clone(),
+        loaded_tx,
+        release_rx,
+    ));
+    loaded_rx.await.expect("project assignment loaded session");
+    let rename_id = session.id.clone();
+    let rename = tokio::spawn(async move { session_store::rename(&rename_id, "After").await });
+    let mut rename = Box::pin(rename);
+    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut rename)
+        .await
+        .is_err());
+
+    let _ = release_tx.send(());
+    assert!(update.await.expect("join assignment").expect("assignment"));
+    rename.await.expect("join rename").expect("rename session");
+    let saved = session_store::get(&session.id).await.expect("load session");
+    assert_eq!(saved.project_id.as_deref(), Some("project-new"));
+    assert_eq!(saved.name, "After");
+    session_store::delete_one(&session.id).await.expect("cleanup");
+}
+
+#[tokio::test]
+async fn project_assignment_and_model_update_keep_both_mutations() {
+    let session = session_store::create_full("Model", "gpt-5.6", "openai", false, None)
+        .await
+        .expect("create session");
+    let (loaded_tx, loaded_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let update = tokio::spawn(paused_project_assignment(
+        session.id.clone(),
+        loaded_tx,
+        release_rx,
+    ));
+    loaded_rx.await.expect("project assignment loaded session");
+    let model_id = session.id.clone();
+    let model = tokio::spawn(async move {
+        session_store_updates::update_model(&model_id, "llama3", "ollama", None, Some(false))
+            .await
+    });
+    let mut model = Box::pin(model);
+    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut model)
+        .await
+        .is_err());
+
+    let _ = release_tx.send(());
+    assert!(update.await.expect("join assignment").expect("assignment"));
+    model.await.expect("join model").expect("update model");
+    let saved = session_store::get(&session.id).await.expect("load session");
+    assert_eq!(saved.project_id.as_deref(), Some("project-new"));
+    assert_eq!((saved.model.as_str(), saved.provider.as_str()), ("llama3", "ollama"));
+    session_store::delete_one(&session.id).await.expect("cleanup");
+}
+
+#[tokio::test]
+async fn project_assignment_and_reasoning_update_keep_both_mutations() {
+    let session = session_store::create_full("Reasoning", "gpt-5.6", "openai", false, None)
+        .await
+        .expect("create session");
+    let (loaded_tx, loaded_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let update = tokio::spawn(paused_project_assignment(
+        session.id.clone(),
+        loaded_tx,
+        release_rx,
+    ));
+    loaded_rx.await.expect("project assignment loaded session");
+    let reasoning_id = session.id.clone();
+    let reasoning = tokio::spawn(async move {
+        session_store_updates::update_reasoning(
+            &reasoning_id,
+            Some("high".to_string()),
+            Some(true),
+        )
+        .await
+    });
+    let mut reasoning = Box::pin(reasoning);
+    assert!(tokio::time::timeout(std::time::Duration::from_millis(30), &mut reasoning)
+        .await
+        .is_err());
+
+    let _ = release_tx.send(());
+    assert!(update.await.expect("join assignment").expect("assignment"));
+    reasoning
+        .await
+        .expect("join reasoning")
+        .expect("update reasoning");
+    let saved = session_store::get(&session.id).await.expect("load session");
+    assert_eq!(saved.project_id.as_deref(), Some("project-new"));
+    assert_eq!(saved.reasoning_mode.as_deref(), Some("high"));
+    session_store::delete_one(&session.id).await.expect("cleanup");
+}
+
 #[test]
 fn user_session_writers_are_routed_through_the_shared_lock_gate() {
     let updates = include_str!("session_store_updates.rs");
@@ -163,9 +279,9 @@ fn user_session_writers_are_routed_through_the_shared_lock_gate() {
     let session_ops = include_str!("session_ops.rs");
     let delegate_child = include_str!("tool_delegate_child.rs");
 
-    assert_eq!(updates.matches("update_locked(id, |session|").count(), 3);
+    assert_eq!(updates.matches("update_locked(id, |session|").count(), 4);
     assert!(store.contains("session_store_updates::update_locked(id, |session|"));
-    assert!(commands.contains("let lock = session_store::lock_session(&session.id).await;"));
+    assert!(commands.contains("session_store::assign_project_if_missing"));
     assert_eq!(clone_git.matches("lock_session(clone_session_id)").count(), 2);
     assert!(clone_git_link.contains("lock_session(clone_session_id)"));
     assert!(clone_git_cleanup.contains("lock_session(session_id)"));

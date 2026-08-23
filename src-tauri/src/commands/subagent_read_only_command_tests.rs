@@ -6,16 +6,17 @@ use crate::services::agent_local::session_store;
 use crate::services::agent_local::tool_plan;
 
 #[tokio::test]
-async fn save_agent_session_rejects_a_child_without_persisting_the_edit() {
+async fn assign_session_project_rejects_a_child_without_persisting_the_project() {
     let session = child_session("Save").await;
     let before = snapshot(&session.id).await;
-    let mut edited = session.clone();
-    edited.name = "Edited by user".to_string();
 
     assert_rejected(
         &session,
         &before,
-        super::agent_sessions::save_agent_session(edited),
+        super::agent_sessions::assign_session_project(
+            session.id.clone(),
+            "blocked-project".to_string(),
+        ),
     )
     .await;
 }

@@ -10,6 +10,8 @@ use tokio::sync::Mutex;
 
 static INDEX_LOCK: Mutex<()> = Mutex::const_new(());
 static INDEX_RECONCILE_FINGERPRINT: Mutex<Option<IndexFingerprint>> = Mutex::const_new(None);
+#[cfg(test)]
+static FAIL_NEXT_UPSERT_SESSION: Mutex<Option<String>> = Mutex::const_new(None);
 
 pub async fn read_index() -> Result<Vec<AgentSessionMeta>, String> {
     let mut last_fingerprint = INDEX_RECONCILE_FINGERPRINT.lock().await;
@@ -114,6 +116,14 @@ pub async fn rebuild_index_from(dir: &Path) -> Result<Vec<AgentSessionMeta>, Str
 }
 
 pub async fn upsert_entry(meta: AgentSessionMeta) -> Result<(), String> {
+    #[cfg(test)]
+    {
+        let mut failed_id = FAIL_NEXT_UPSERT_SESSION.lock().await;
+        if failed_id.as_deref() == Some(meta.id.as_str()) {
+            *failed_id = None;
+            return Err("injected index upsert failure".to_string());
+        }
+    }
     let _guard = INDEX_LOCK.lock().await;
     let mut entries = read_index_raw().await;
     if let Some(pos) = entries.iter().position(|e| e.id == meta.id) {
@@ -124,6 +134,22 @@ pub async fn upsert_entry(meta: AgentSessionMeta) -> Result<(), String> {
     write_index(&entries).await?;
     refresh_reconcile_fingerprint().await;
     Ok(())
+}
+
+pub(super) async fn repair_after_upsert_failure() -> Result<(), String> {
+    let _guard = INDEX_LOCK.lock().await;
+    rebuild_index().await?;
+    refresh_reconcile_fingerprint().await;
+    Ok(())
+}
+
+pub(super) async fn invalidate_reconcile_fingerprint() {
+    *INDEX_RECONCILE_FINGERPRINT.lock().await = None;
+}
+
+#[cfg(test)]
+pub(super) async fn fail_next_upsert_for_session(id: &str) {
+    *FAIL_NEXT_UPSERT_SESSION.lock().await = Some(id.to_string());
 }
 
 pub async fn remove_entry(id: &str) -> Result<(), String> {

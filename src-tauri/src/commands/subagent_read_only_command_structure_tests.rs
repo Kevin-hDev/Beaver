@@ -31,7 +31,10 @@ fn child_guard_runs_before_queue_stream_lookup() {
 fn child_guard_runs_before_each_user_session_mutation() {
     let source = include_str!("agent_sessions.rs");
     for (command, boundary) in [
-        ("pub async fn save_agent_session", "session_store::get"),
+        (
+            "pub async fn assign_session_project",
+            "directory_access::project_path",
+        ),
         ("pub async fn rename_agent_session", "session_store::rename"),
         (
             "pub async fn set_session_permission_mode",

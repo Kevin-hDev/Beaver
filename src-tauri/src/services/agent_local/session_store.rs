@@ -40,7 +40,17 @@ pub async fn save(session: &AgentSession) -> Result<(), String> {
     .map_err(|_| "Sauvegarde de session impossible".to_string())?;
     super::session_store_document::write_to_path(path, session).await?;
     let meta = crate::services::agent_local::session_index::meta_from_session(session);
-    let _ = crate::services::agent_local::session_index::upsert_entry(meta).await;
+    if crate::services::agent_local::session_index::upsert_entry(meta)
+        .await
+        .is_err()
+        && crate::services::agent_local::session_index::repair_after_upsert_failure()
+            .await
+            .is_err()
+    {
+        // Le document est l'autorité déjà durable : invalider force la prochaine lecture
+        // à reconstruire la projection sans annoncer à tort que sa sauvegarde a échoué.
+        crate::services::agent_local::session_index::invalidate_reconcile_fingerprint().await;
+    }
     Ok(())
 }
 
@@ -96,8 +106,9 @@ pub async fn restore(id: &str) -> Result<(), String> {
 pub use super::session_archive::list_archived;
 pub use super::session_ops::{clear_project_id, export_markdown, truncate_and_replace};
 pub use super::session_store_updates::{
-    refresh_working_dir, set_managed_working_dir, switch_working_dir_to_project, update_model,
-    update_fast_mode, update_reasoning, update_working_dir,
+    assign_project_if_missing, refresh_working_dir, set_managed_working_dir,
+    switch_working_dir_to_project, update_fast_mode, update_model, update_reasoning,
+    update_working_dir,
 };
 
 #[path = "session_store_tests.rs"]

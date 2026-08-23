@@ -38,17 +38,14 @@ interface PersistAgentMessageOptions extends AgentSendPayload {
 
 export async function persistAgentMessage(options: PersistAgentMessageOptions) {
   if (options.projectId && options.messages.length === 0) {
-    const session = await invoke<Record<string, unknown>>("get_agent_session", {
-      id: options.sessionId,
-    });
-    if (!session.project_id) {
-      session.project_id = options.projectId;
-      try {
-        await invoke("save_agent_session", { session });
-      } catch (error) {
-        showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
-        return;
-      }
+    try {
+      await invoke("assign_session_project", {
+        id: options.sessionId,
+        projectId: options.projectId,
+      });
+    } catch (error) {
+      showToast(admissionErrorMessage(error, i18n.t, "errors.sessionSaveFailed"), "error");
+      return;
     }
   }
   const files = pendingFilesToAttachments(options.sentFiles);

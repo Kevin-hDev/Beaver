@@ -1,7 +1,8 @@
 use super::session_store::{get, save, validate_session_id};
 #[cfg(test)]
 pub(super) use super::session_store_update_gate::{
-    update_fast_mode_with_after_load, update_fast_mode_with_writer,
+    assign_project_with_after_load, update_fast_mode_with_after_load,
+    update_fast_mode_with_writer,
 };
 
 pub(super) async fn update_locked<R>(
@@ -15,6 +16,17 @@ pub async fn update_fast_mode(id: &str, enabled: bool) -> Result<bool, String> {
     update_locked(id, |session| {
         session.fast_mode_enabled = enabled;
         session.fast_mode_enabled
+    })
+    .await
+}
+
+pub async fn assign_project_if_missing(id: &str, project_id: &str) -> Result<bool, String> {
+    update_locked(id, |session| {
+        if session.project_id.is_some() {
+            return false;
+        }
+        session.project_id = Some(project_id.to_string());
+        true
     })
     .await
 }

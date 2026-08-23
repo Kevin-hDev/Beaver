@@ -34,16 +34,10 @@ pub async fn get_agent_session(id: String) -> Result<AgentSession, String> {
 }
 
 #[tauri::command]
-pub async fn save_agent_session(mut session: AgentSession) -> Result<(), String> {
-    crate::services::agent_local::session_user_write::ensure_allowed(&session.id).await?;
-    let lock = session_store::lock_session(&session.id).await;
-    let _guard = lock.lock().await;
-    let current = session_store::get(&session.id).await?;
-    session.fast_mode_enabled = current.fast_mode_enabled;
-    session.working_dir = current.working_dir;
-    session.working_dir_managed = current.working_dir_managed;
-    crate::services::agent_local::directory_access::ensure_session_allowed(&session).await?;
-    session_store::save(&session).await
+pub async fn assign_session_project(id: String, project_id: String) -> Result<bool, String> {
+    crate::services::agent_local::session_user_write::ensure_allowed(&id).await?;
+    crate::services::agent_local::directory_access::project_path(&project_id).await?;
+    session_store::assign_project_if_missing(&id, &project_id).await
 }
 
 #[tauri::command]

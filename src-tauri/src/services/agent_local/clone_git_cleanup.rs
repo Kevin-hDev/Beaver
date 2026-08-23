@@ -40,7 +40,7 @@ pub async fn close_tab_with_branch_cleanup(
         GitActionError::InternalError
     })??;
 
-    unlink_branch_from_sessions(&linked_session_ids).await?;
+    unlink_branch_from_sessions(&linked_session_ids, &git_branch).await?;
     session_tabs::replace_main_checkpoint_branch(&git_branch, &replacement_branch)
         .await
         .map_err(|_| GitActionError::InternalError)?;
@@ -66,21 +66,55 @@ async fn linked_sessions_for_branch(
     Ok(ids)
 }
 
-async fn unlink_branch_from_sessions(session_ids: &[String]) -> Result<(), GitActionError> {
+async fn unlink_branch_from_sessions(
+    session_ids: &[String],
+    branch_name: &str,
+) -> Result<(), GitActionError> {
+    unlink_branch_from_sessions_inner(session_ids, branch_name, || async {}).await
+}
+
+async fn unlink_branch_from_sessions_inner<F, Fut>(
+    session_ids: &[String],
+    branch_name: &str,
+    before_update: F,
+) -> Result<(), GitActionError>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    before_update().await;
+    let mut unlinked_ids = Vec::with_capacity(session_ids.len());
     for session_id in session_ids {
         let lock = session_store::lock_session(session_id).await;
         let _guard = lock.lock().await;
         let mut session = session_store::get(session_id)
             .await
             .map_err(|_| GitActionError::InternalError)?;
+        if session.git_branch.as_deref() != Some(branch_name) {
+            continue;
+        }
         session.git_branch = None;
         session_store::save(&session)
             .await
             .map_err(|_| GitActionError::InternalError)?;
+        unlinked_ids.push(session_id.clone());
     }
-    session_tabs::clear_git_branch_for_sessions(session_ids)
+    session_tabs::clear_git_branch_for_sessions(&unlinked_ids)
         .await
         .map_err(|_| GitActionError::InternalError)
+}
+
+#[cfg(test)]
+async fn unlink_branch_from_sessions_with_before_update<F, Fut>(
+    session_ids: &[String],
+    branch_name: &str,
+    before_update: F,
+) -> Result<(), GitActionError>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    unlink_branch_from_sessions_inner(session_ids, branch_name, before_update).await
 }
 
 fn cleanup_linked_branch(

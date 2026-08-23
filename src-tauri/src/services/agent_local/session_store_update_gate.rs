@@ -79,3 +79,28 @@ where
     )
     .await
 }
+
+#[cfg(test)]
+pub(super) async fn assign_project_with_after_load<F, Fut>(
+    id: &str,
+    project_id: &str,
+    after_load: F,
+) -> Result<bool, String>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    update_locked_with(
+        id,
+        |session| {
+            if session.project_id.is_some() {
+                return false;
+            }
+            session.project_id = Some(project_id.to_string());
+            true
+        },
+        after_load,
+        |session| async move { super::session_store::save(&session).await },
+    )
+    .await
+}

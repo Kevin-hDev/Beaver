@@ -92,9 +92,24 @@ pub async fn sync_git_branches_from_sessions(
     root_session_id: &str,
     tabs: &mut SessionTabs,
 ) -> Result<(), String> {
+    sync_git_branches_with_writer(root_session_id, tabs, |session| async move {
+        session_store::save(&session).await
+    })
+    .await
+}
+
+async fn sync_git_branches_with_writer<W, Fut>(
+    root_session_id: &str,
+    tabs: &mut SessionTabs,
+    mut save_session: W,
+) -> Result<(), String>
+where
+    W: FnMut(super::types_session::AgentSession) -> Fut,
+    Fut: std::future::Future<Output = Result<(), String>>,
+{
     let metas = super::session_index::read_index().await?;
     let mut synced_tabs = Vec::with_capacity(tabs.tabs.len());
-    for mut tab in tabs.tabs.drain(..) {
+    for mut tab in tabs.tabs.iter().cloned() {
         if tab.is_main {
             tab.git_branch = None;
             synced_tabs.push(tab);
@@ -123,7 +138,10 @@ pub async fn sync_git_branches_from_sessions(
                 &branch,
             ) {
                 session.git_branch = None;
-                let _ = session_store::save(&session).await;
+                // L'appelant tient TABS_LOCK : l'ordre commun reste onglets puis session.
+                save_session(session.clone())
+                    .await
+                    .map_err(|_| "Action impossible".to_string())?;
             }
         }
         tab.clone_parent_session_id = Some(root_session_id.to_string());
@@ -136,3 +154,7 @@ pub async fn sync_git_branches_from_sessions(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "session_tabs_git_tests.rs"]
+mod tests;

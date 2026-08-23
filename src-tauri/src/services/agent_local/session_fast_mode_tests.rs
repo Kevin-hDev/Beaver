@@ -153,22 +153,27 @@ async fn session_fast_mode_failed_writer_keeps_previous_file_value() {
 }
 
 #[tokio::test]
-async fn stale_general_save_cannot_overwrite_rust_owned_fast_mode() {
-    let session = session_store::create_full("Stale", "gpt-5.6", "openai", false, None)
+async fn failed_index_upsert_is_reconciled_from_the_fast_mode_document() {
+    let session = session_store::create_full("Index failure", "gpt-5.6", "openai", false, None)
         .await
         .expect("create session");
-    let stale_frontend_copy = session_store::get(&session.id).await.expect("load stale copy");
-    session_store_updates::update_fast_mode(&session.id, true)
-        .await
-        .expect("enable fast mode");
+    session_index::fail_next_upsert_for_session(&session.id).await;
 
-    crate::commands::save_agent_session(stale_frontend_copy)
+    assert!(crate::commands::set_session_fast_mode(session.id.clone(), true)
         .await
-        .expect("save stale frontend copy");
+        .expect("document save remains authoritative"));
+    let reloaded = crate::commands::get_agent_session(session.id.clone())
+        .await
+        .expect("reload document");
+    let listed = crate::commands::list_agent_sessions()
+        .await
+        .expect("reconcile derived index");
 
-    assert!(session_store::get(&session.id)
-        .await
-        .expect("reload saved session")
+    assert!(reloaded.fast_mode_enabled);
+    assert!(listed
+        .iter()
+        .find(|meta| meta.id == session.id)
+        .expect("reconciled metadata")
         .fast_mode_enabled);
     delete_sessions(&[&session.id]).await;
 }

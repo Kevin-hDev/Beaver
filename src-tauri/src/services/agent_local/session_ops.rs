@@ -42,14 +42,41 @@ pub async fn truncate_and_replace(
 }
 
 pub async fn clear_project_id(project_id: &str) -> Result<(), String> {
+    clear_project_id_inner(project_id, || async {}).await
+}
+
+async fn clear_project_id_inner<F, Fut>(project_id: &str, after_list: F) -> Result<(), String>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
     let all = list().await?;
+    after_list().await;
     for meta in all {
         if meta.project_id.as_deref() == Some(project_id) {
             super::session_store_updates::update_locked(&meta.id, |session| {
-                session.project_id = None;
+                if session.project_id.as_deref() == Some(project_id) {
+                    session.project_id = None;
+                }
             })
             .await?;
         }
     }
     Ok(())
 }
+
+#[cfg(test)]
+async fn clear_project_id_with_after_list<F, Fut>(
+    project_id: &str,
+    after_list: F,
+) -> Result<(), String>
+where
+    F: FnOnce() -> Fut,
+    Fut: std::future::Future<Output = ()>,
+{
+    clear_project_id_inner(project_id, after_list).await
+}
+
+#[cfg(test)]
+#[path = "session_ops_tests.rs"]
+mod tests;
