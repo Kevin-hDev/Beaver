@@ -110,6 +110,12 @@ fn openai_fast_mode_is_limited_to_the_verified_api_models() {
         );
     }
     assert!(lookup("openai", "gpt-5.6-terra-pro").is_none());
+    for model in ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini"] {
+        assert!(
+            !crate::services::llm::provider_model_lookup::supports_fast_mode("openai", model),
+            "{model} must remain outside the closed Fast inventory"
+        );
+    }
     assert!(
         !crate::services::llm::provider_model_lookup::supports_fast_mode(
             "openai",
