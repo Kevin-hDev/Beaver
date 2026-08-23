@@ -4,9 +4,11 @@
 
 **Goal:** Ajouter une bascule « Rapide » indépendante et persistante par session, puis transmettre le tier Fast exact sur OpenAI API et Codex OAuth uniquement pour les modèles qui le déclarent.
 
-**Architecture:** `AgentSession.fast_mode_enabled` est l'unique préférence durable. `ModelInfo.supports_fast_mode` est l'unique capacité publiée à l'interface. Au début de chaque génération, Rust capture le provider, la capacité et la préférence dans un `FastModeRequest` fermé (`Unsupported | Standard | Fast`) qui traverse sans être recalculé les tours outils, retries, compressions et transports : OpenAI API sérialise toujours `default` hors Fast effectif, tandis que Codex OAuth sérialise `priority` ou omet le champ et dérive le même tier dans `x-codex-routing-hint`.
+**Architecture:** `AgentSession.fast_mode_enabled` est l'unique préférence durable. `ModelInfo.supports_fast_mode` est l'unique capacité publiée à l'interface. Au début de chaque génération, Rust capture le provider, la capacité et la préférence dans un `FastModeRequest` fermé (`Unsupported | Standard | Fast`) qui traverse sans être recalculé les tours outils, retries, compressions et transports : OpenAI API utilise Responses et sérialise toujours `default` hors Fast effectif, tandis que Codex OAuth sérialise `priority` ou omet le champ et dérive le même tier dans `x-codex-routing-hint`.
 
-**Tech Stack:** Rust, Tauri 2, serde, reqwest, OpenAI Chat Completions, OpenAI Responses HTTP/WebSocket, React 19, TypeScript, Vitest, Testing Library.
+**Tech Stack:** Rust, Tauri 2, serde, reqwest, OpenAI Responses HTTP, Codex Responses HTTP/WebSocket, React 19, TypeScript, Vitest, Testing Library.
+
+**Correction issue de la validation réelle du 23 août 2026 :** le chemin OpenAI API Chat Completions a été remplacé par Responses pour toutes les générations. Les essais discriminants ont prouvé que Fast fonctionnait sans raisonnement sur Chat Completions, tandis que `reasoning_effort` y provoquait HTTP 400; Responses a terminé avec Fast servi sous `priority` et `reasoning.effort = medium`. Le module `llm/openai_responses.rs` partage la conversion, le lecteur SSE, les outils, le replay et les métriques Responses avec Codex, mais charge uniquement la clé API OpenAI et appelle uniquement `api.openai.com/v1/responses`.
 
 **Spec:** `docs/providers/openai-fast/SPEC.md`
 
@@ -44,6 +46,7 @@
 ### Nouveaux fichiers
 
 - `src-tauri/src/services/llm/fast_mode.rs` — décision fermée `Unsupported | Standard | Fast`, capacité effective et valeurs réseau.
+- `src-tauri/src/services/llm/openai_responses.rs` — payload, authentification par clé et transport Responses OpenAI API; aucun jeton OAuth.
 - `src-tauri/src/services/codex_client/model_catalog_fast.rs` — lecture bornée des tiers Fast/Priority du catalogue Codex, séparée de `model_catalog.rs` déjà proche de 230 lignes.
 - `src-tauri/src/services/codex_client/routing_hint.rs` — valeur validée de `x-codex-routing-hint`, dérivée uniquement de `CodexRequest`.
 - `src-tauri/src/services/agent_local/session_fast_mode_tests.rs` — persistance, indépendance, concurrence et sérialisation de la préférence.
@@ -74,7 +77,7 @@ ModelInfo.supports_fast_mode ─────→ interface
             ↓
 AgentSession.fast_mode_enabled ───→ FastModeRequest capturé
                                       ↓
-                         API Chat / Codex HTTP / Codex WS
+                      API Responses / Codex HTTP / Codex WS
                                       ↓
                          tier réellement servi → journal borné
 ```

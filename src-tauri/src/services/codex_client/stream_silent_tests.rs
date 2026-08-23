@@ -57,6 +57,7 @@ async fn silent_stream_rejects_the_generic_error_event_immediately() {
         CancellationToken::new(),
         Duration::from_secs(1),
         None,
+        "openai",
         "gpt-5.6-sol",
         &mut measurement,
     )
@@ -111,6 +112,7 @@ async fn silent_responses_consumer_observes_the_final_served_tier() {
         CancellationToken::new(),
         Duration::from_secs(1),
         None,
+        "openai",
         "gpt-5.6-sol",
         &mut measurement,
     )

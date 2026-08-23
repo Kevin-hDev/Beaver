@@ -123,8 +123,12 @@ fn fix_array_schemas(v: &mut serde_json::Value) {
     }
 }
 
-pub fn convert_tools_to_responses_api(tools: &[serde_json::Value]) -> Vec<serde_json::Value> {
-    crate::services::llm::tool_schema::tools_for_provider("codex-oauth", "", tools)
+pub fn convert_tools_to_responses_api(
+    provider_id: &str,
+    model: &str,
+    tools: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    crate::services::llm::tool_schema::tools_for_provider(provider_id, model, tools)
         .iter()
         .filter_map(|t| {
             let func = t.get("function")?;

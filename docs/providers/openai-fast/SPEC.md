@@ -1,6 +1,6 @@
 # Phase 2 — Mode Fast OpenAI
 
-Statut : spécification normative, prête à implémenter
+Statut : implémentée, validation provider partielle
 
 Date de recherche : 22 août 2026, sources revérifiées le 23 août 2026
 
@@ -40,6 +40,8 @@ Source principale : [Fast mode](https://developers.openai.com/api/docs/guides/fa
 - Fast est facturé séparément de Scale Tier.
 
 La [référence Responses](https://developers.openai.com/api/reference/cli/resources/responses/methods/create) expose aussi `ultrafast`. Ce tier est distinct, soumis à un accès particulier, et ne doit jamais être produit par la bascule Rapide.
+
+Décision de transport Beaver, validée le 23 août 2026 : OpenAI par clé API utilise Responses pour toutes les générations, Fast ou Standard. Chat Completions acceptait Fast sans raisonnement, mais rejetait `reasoning_effort` avec HTTP 400 sur GPT-5.5 et GPT-5.6; le même compte, le même modèle et `reasoning: { effort: "medium" }` ont réussi via Responses. Un transport unique évite qu'activer le raisonnement change silencieusement de protocole ou perde le choix de l'utilisateur.
 
 La [grille tarifaire Fast](https://developers.openai.com/api/docs/pricing?latest-pricing=fast), ouverte sous l'onglet Fast le 23 août 2026, confirme dans le tableau principal `gpt-5.6-sol`, `gpt-5.6-terra` et `gpt-5.6-luna`; elle affiche aussi séparément certains modèles spécialisés. Elle ne confirme pas actuellement GPT-5.5 ni GPT-5.4 pour l'API par clé. Cette absence de preuve API ne signifie pas que ces modèles sont incompatibles dans Codex OAuth, où ils sont documentés et annoncés par le catalogue du compte. Cette SPEC n'ajoute pas de modèle absent du registre Beaver.
 
@@ -299,7 +301,7 @@ Pour un modèle compatible :
 
 Pour un autre provider, le champ est absent.
 
-La même règle s'applique aux payloads Chat Completions et Responses s'ils sont utilisés par Beaver.
+Beaver applique cette règle dans son payload Responses unique. Le raisonnement y est envoyé sous la forme imbriquée `reasoning.effort`; le champ Chat Completions `reasoning_effort` n'est jamais émis par ce chemin.
 
 ### 7.3 OpenAI/Codex OAuth
 

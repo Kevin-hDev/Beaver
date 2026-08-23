@@ -109,7 +109,7 @@ pub(super) fn build_codex_request(
     fast_mode: FastModeRequest,
 ) -> CodexRequest {
     let (instructions, input) = convert::convert_messages_with_tools(messages, tools);
-    let converted_tools = convert::convert_tools_to_responses_api(tools);
+    let converted_tools = convert::convert_tools_to_responses_api(super::PROVIDER_ID, model, tools);
     CodexRequest {
         model: model.to_string(),
         instructions,

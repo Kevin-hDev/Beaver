@@ -150,37 +150,6 @@ fn mistral_adjustable_uses_reasoning_effort() {
 }
 
 #[test]
-fn openai_chat_completions_uses_top_level_reasoning_effort() {
-    let payload = payload("openai", "gpt-5.6-sol", Some("max"));
-
-    assert_eq!(payload["reasoning_effort"], "max");
-    assert!(payload.get("reasoning").is_none());
-}
-
-#[test]
-fn openai_with_think_disabled_only_sends_explicit_off() {
-    let mut active_payload = json!({});
-    stream_reasoning::apply(
-        &mut active_payload,
-        "openai",
-        "gpt-5.6-sol",
-        false,
-        Some("medium"),
-    );
-    assert!(active_payload.get("reasoning_effort").is_none());
-
-    let mut off_payload = json!({});
-    stream_reasoning::apply(
-        &mut off_payload,
-        "openai",
-        "gpt-5.6-sol",
-        false,
-        Some("off"),
-    );
-    assert_eq!(off_payload["reasoning_effort"], "none");
-}
-
-#[test]
 fn openrouter_gpt_56_keeps_nested_reasoning_shape() {
     let payload = payload("openrouter", "openai/gpt-5.6-terra", Some("max"));
 

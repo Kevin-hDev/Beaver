@@ -80,5 +80,6 @@ async fn payload_reduction_retry_keeps_the_generation_fast_capture() {
     assert_eq!(payloads.len(), 2);
     assert_eq!(payloads[0]["service_tier"], "fast");
     assert_eq!(payloads[1]["service_tier"], "fast");
-    assert!(payloads[1]["messages"].as_array().unwrap().len() < 3);
+    assert!(payloads[1]["input"].as_array().unwrap().len() < 3);
+    assert!(payloads[1].get("reasoning_effort").is_none());
 }

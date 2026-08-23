@@ -46,6 +46,17 @@ pub async fn collect_chat_silent_for_compression(
             measurement.as_mut(),
         )
         .await
+    } else if provider_id == "openai" {
+        let config = request_config(
+            provider_id,
+            fast_mode,
+            model,
+            messages,
+            Some(max_tokens),
+            purpose,
+            Some(session_id),
+        );
+        super::openai_responses::collect_silent(&config, cancel, measurement.as_mut()).await
     } else {
         let cfg = request_config(
             provider_id,

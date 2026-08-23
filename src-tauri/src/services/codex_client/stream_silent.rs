@@ -41,6 +41,28 @@ pub async fn collect_chat_silent_for_compression(
         cancel,
         idle_timeout,
         max_output_tokens,
+        "openai",
+        model,
+        &mut measurement,
+    )
+    .await
+}
+
+pub(crate) async fn consume_external_responses_sse_silent(
+    resp: reqwest::Response,
+    cancel: CancellationToken,
+    max_output_tokens: Option<u32>,
+    provider: &str,
+    model: &str,
+    measurement: Option<&mut crate::services::provider_usage::RequestMeasurement>,
+) -> Result<StreamResult, String> {
+    let mut measurement = StreamMeasurement::new(measurement);
+    consume_sse_silent(
+        resp,
+        cancel,
+        crate::services::compress::timeouts::compression_idle_timeout(),
+        max_output_tokens,
+        provider,
         model,
         &mut measurement,
     )
@@ -52,6 +74,7 @@ async fn consume_sse_silent(
     cancel: CancellationToken,
     idle_timeout: std::time::Duration,
     max_output_tokens: Option<u32>,
+    provider: &str,
     model: &str,
     measurement: &mut StreamMeasurement<'_>,
 ) -> Result<StreamResult, String> {
@@ -114,7 +137,7 @@ async fn consume_sse_silent(
                         crate::services::provider_usage::RequestUsage::from_json_with_context(
                             usage,
                             crate::services::provider_usage::UsageContext::responses(
-                                "openai", model,
+                                provider, model,
                             ),
                         );
                     if let Some(usage) = &result.usage {

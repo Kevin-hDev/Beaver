@@ -110,7 +110,9 @@ pub(super) async fn dispatch(
             wait_for_release().await;
             Some(Err(RequestError::PayloadTooLarge))
         }
-        Some(ScriptedResponse::Success) => Some(Ok(success_response())),
+        Some(ScriptedResponse::Success) => {
+            Some(Ok(success_response(payload.get("input").is_some())))
+        }
         None => Some(Err(RequestError::InvalidConfiguration)),
     }
 }
@@ -145,11 +147,18 @@ fn drain_releases() {
     }
 }
 
-fn success_response() -> reqwest::Response {
-    let body = concat!(
-        "data: {\"choices\":[{\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\n",
-        "data: [DONE]\n\n",
-    );
+fn success_response(responses_api: bool) -> reqwest::Response {
+    let body = if responses_api {
+        concat!(
+            "data: {\"type\":\"response.output_text.delta\",\"delta\":\"ok\"}\n\n",
+            "data: {\"type\":\"response.completed\",\"response\":{\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}}\n\n",
+        )
+    } else {
+        concat!(
+            "data: {\"choices\":[{\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\n",
+            "data: [DONE]\n\n",
+        )
+    };
     let response = tauri::http::Response::builder()
         .status(200)
         .header("content-type", "text/event-stream")

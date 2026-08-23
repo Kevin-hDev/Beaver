@@ -83,6 +83,7 @@ async fn loop_compression_reaches_the_payload_with_the_generation_capture() {
     assert!(result.is_some());
     assert_eq!(payloads.len(), 1);
     assert_eq!(payloads[0]["service_tier"], "fast");
+    assert!(payloads[0]["input"].is_array());
 }
 
 #[tokio::test]
@@ -117,4 +118,5 @@ async fn tool_executor_compression_reaches_the_payload_with_the_generation_captu
     assert!(result);
     assert_eq!(payloads.len(), 1);
     assert_eq!(payloads[0]["service_tier"], "fast");
+    assert!(payloads[0]["input"].is_array());
 }

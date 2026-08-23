@@ -132,7 +132,7 @@ fn codex_aliases_extension_tool_names_in_definitions_and_history() {
         ..Default::default()
     }];
 
-    let converted_tools = convert_tools_to_responses_api(&tools);
+    let converted_tools = convert_tools_to_responses_api("codex-oauth", "gpt-5.6-sol", &tools);
     let (_, input) = convert_messages(&messages);
     let wire_name = converted_tools[0]["name"].as_str().unwrap();
 

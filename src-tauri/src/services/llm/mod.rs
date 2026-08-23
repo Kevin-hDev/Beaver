@@ -29,6 +29,7 @@ mod openai_compat_models;
 mod openai_compat_parsing;
 #[cfg(test)]
 mod openai_compat_parsing_tests;
+mod openai_responses;
 pub(crate) mod prompt_cache_policy;
 #[cfg(test)]
 mod prompt_cache_policy_tests;

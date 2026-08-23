@@ -63,7 +63,7 @@ async fn oversized_provider_error_is_not_loaded() {
 }
 
 #[test]
-fn gpt_56_uses_max_completion_tokens_in_chat_payload() {
+fn legacy_openai_chat_payload_never_reintroduces_flat_reasoning() {
     let cfg = RequestConfig {
         provider_id: "openai",
         model: "gpt-5.6-luna",
@@ -82,7 +82,8 @@ fn gpt_56_uses_max_completion_tokens_in_chat_payload() {
 
     assert_eq!(payload["max_completion_tokens"], 32_000);
     assert!(payload.get("max_tokens").is_none());
-    assert_eq!(payload["reasoning_effort"], "medium");
+    assert!(payload.get("reasoning_effort").is_none());
+    assert!(payload.get("reasoning").is_none());
 }
 
 #[test]

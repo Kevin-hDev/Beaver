@@ -137,13 +137,16 @@ pub(super) fn build_responses_payload(
     let (instructions, input) =
         crate::services::codex_client::convert::convert_messages_with_tools(messages, tools);
     let effort = catalog_reasoning_mode(model, requested_mode);
+    let tools = crate::services::codex_client::convert::convert_tools_to_responses_api(
+        "xai", &model.id, tools,
+    );
     let mut payload = serde_json::json!({
         "model": model.id,
         "instructions": instructions,
         "input": input,
         "stream": true,
         "store": false,
-        "tools": crate::services::codex_client::convert::convert_tools_to_responses_api(tools),
+        "tools": tools,
         "tool_choice": "auto",
         "parallel_tool_calls": false,
         "prompt_cache_key": super::prompt_cache_policy::routing_key(
@@ -165,7 +168,7 @@ async fn post_responses(
     let route = super::route::resolve("xai-oauth")
         .ok_or_else(|| "provider_configuration_invalid".to_string())?;
     let client = AuthenticatedClient::new_streaming(
-        std::time::Duration::from_secs(10),
+        super::timeouts::connect_timeout(),
         super::timeouts::idle_timeout_for("xai-oauth"),
     )
     .map_err(|_| "provider_configuration_invalid".to_string())?;
