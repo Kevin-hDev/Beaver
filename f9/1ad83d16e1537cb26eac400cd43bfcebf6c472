@@ -1,0 +1,7 @@
+PR #34 — correction Clippy native Linux/macOS du helper de sonde Python Windows.
+
+Cause racine confirmée dans les jobs 97297311712 et 97297311615 du run 32680894514: run_probe_for_test était sous cfg(test), mais ses deux seuls appels sont des tests sous cfg(windows). Clippy --all-targets compilait donc sur Linux et macOS une fonction de test sans consommateur et échouait avec dead_code sous -D warnings.
+
+Correction: la fonction porte cfg(all(test, windows)), exactement comme ses seuls consommateurs. Aucun allow/expect dead_code, aucune désactivation de Clippy et aucun comportement de production modifié.
+
+Preuves locales Windows: cargo fmt --check vert; cargo clippy --all-targets -- -D warnings vert; cargo test --features windows-tests services::searxng::python_runtime_tests --lib => 4/4; git diff --check vert; graphify update . sans changement de topologie. La preuve native Linux/macOS reste la nouvelle CI complète déclenchée par ce commit.
